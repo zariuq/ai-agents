@@ -1,0 +1,12 @@
+::Lesson 3: Modes (type definitions)
+
+environ
+ vocabularies LESSON3, XBOOLE_0;
+ notations XBOOLE_0;
+ constructors XBOOLE_0;
+
+begin
+
+definition
+  mode MySet is set;
+end;

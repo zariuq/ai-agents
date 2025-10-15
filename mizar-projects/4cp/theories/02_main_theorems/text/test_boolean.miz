@@ -1,0 +1,20 @@
+::  Test file for BOOLEAN operations from MARGREL1
+::  Minimal smoke test - verifies environment setup is correct
+
+environ
+
+ vocabularies MARGREL1, XBOOLEAN;
+ notations MARGREL1, XBOOLEAN;
+ constructors MARGREL1;
+ registrations MARGREL1;
+ requirements BOOLE;
+ theorems MARGREL1;
+
+begin
+
+:: Smoke test: BOOLEAN, TRUE, FALSE are accessible
+:: Just verify that boolean operations compile
+
+:: Simplest possible smoke test
+theorem
+  TRUE in BOOLEAN & FALSE in BOOLEAN;
