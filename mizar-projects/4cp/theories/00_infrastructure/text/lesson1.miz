@@ -1,0 +1,20 @@
+::Lesson 1: Basic Predicates with means (WITH VOCABULARY)
+
+environ
+ vocabularies LESSON1, XBOOLE_0;
+ notations XBOOLE_0;
+ constructors XBOOLE_0;
+
+begin
+
+definition
+  let X be set;
+  pred X is_empty means
+  X = {};
+end;
+
+definition
+  let X, Y be set;
+  pred X is_subset_of Y means
+  for x being object st x in X holds x in Y;
+end;

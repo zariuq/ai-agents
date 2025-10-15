@@ -1,0 +1,19 @@
+::Lesson 5: Theorems and Simple Proofs
+
+environ
+ vocabularies LESSON1, XBOOLE_0;
+ notations XBOOLE_0;
+ constructors XBOOLE_0;
+
+begin
+
+:: First reuse our predicate definition from Lesson 1
+definition
+  let X be set;
+  pred X is_empty means
+  X = {};
+end;
+
+:: Now prove a simple theorem using this predicate
+theorem Th1:
+  {} is_empty;

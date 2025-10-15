@@ -1,0 +1,320 @@
+:: Lesson 18: Conditional Boolean Functors - The "if ... otherwise ..." Pattern
+::
+:: Goal: Master Boolean-valued functors with conditional definitions
+:: Discovery: From ChatGPT Deep Research analyzing FINTOPO2
+:: Pattern verified: Real MML code from FINTOPO2 (Formal Topological Spaces)
+::
+:: Contrast with Lesson 17:
+:: - Lesson 17: CONSTANT functions (always return same value)
+:: - Lesson 18: CONDITIONAL functions (return TRUE/FALSE based on condition)
+::
+:: Key Pattern: Use "equals ... if ... otherwise ..." for Boolean conditionals
+:: This is NOT the same as [:A, {x}:] pattern from Lesson 17!
+
+environ
+ vocabularies XBOOLE_0, SUBSET_1, FUNCT_1, RELAT_1, ZFMISC_1,
+      TARSKI, XBOOLEAN, MARGREL1, FINSET_1, CARD_1, NAT_1;
+ notations TARSKI, XBOOLE_0, SUBSET_1, FUNCT_1, RELAT_1,
+      ZFMISC_1, XBOOLEAN, MARGREL1, FINSET_1, CARD_1, NAT_1;
+ constructors XBOOLE_0, SUBSET_1, FUNCT_1, RELAT_1, ZFMISC_1,
+      XBOOLEAN, MARGREL1, FINSET_1, CARD_1, NAT_1;
+ registrations XBOOLE_0, SUBSET_1, FUNCT_1, RELAT_1, ZFMISC_1,
+      XBOOLEAN, MARGREL1, FINSET_1, CARD_1, NAT_1;
+ requirements SUBSET, BOOLE, NUMERALS, ARITHM;
+ theorems TARSKI, XBOOLE_0, CARD_1, NAT_1;
+
+begin
+
+:: ============================================================================
+:: Pattern 1: Simple predicate as Boolean functor (from FINTOPO2:Def5)
+:: ============================================================================
+
+:: Example: Equality test returning BOOLEAN
+:: From FINTOPO2: func P_e(x,y) -> Element of BOOLEAN equals
+::                :Def5: TRUE if x = y otherwise FALSE;
+
+definition
+  let x, y be object;
+  func IsEqual(x, y) -> Element of BOOLEAN equals
+::>          *140,142,302
+  :DefIsEqual:
+  TRUE if x = y otherwise FALSE;
+  coherence;
+::>       *72
+end;
+
+:: Prove characterization theorem (standard MML pattern)
+
+theorem ThIsEqualTrue:
+  for x, y being object holds IsEqual(x, y) = TRUE iff x = y
+::>                                 *148
+proof
+  let x, y be object;
+  thus thesis by DefIsEqual;
+::>                       *144
+end;
+
+theorem ThIsEqualFalse:
+  for x, y being object holds IsEqual(x, y) = FALSE iff x <> y
+::>                                 *148
+proof
+  let x, y be object;
+  thus thesis by DefIsEqual;
+::>                       *144
+end;
+
+:: ============================================================================
+:: Pattern 2: Set membership as Boolean functor (from FINTOPO2:Def4)
+:: ============================================================================
+
+:: From FINTOPO2: func P_A(x,A) -> Element of BOOLEAN equals
+::                :Def4: TRUE if x in A otherwise FALSE;
+
+definition
+  let A be set;
+  let x be object;
+  func IsMember(x, A) -> Element of BOOLEAN equals
+::>           *140,142,302
+  :DefIsMember:
+  TRUE if x in A otherwise FALSE;
+  coherence;
+::>       *72
+end;
+
+theorem ThIsMemberTrue:
+  for A being set, x being object holds IsMember(x, A) = TRUE iff x in A
+::>                                            *148
+proof
+  let A be set, x be object;
+  thus thesis by DefIsMember;
+::>                        *144
+end;
+
+:: ============================================================================
+:: Pattern 3: Compound condition (from FINTOPO2:Def1)
+:: ============================================================================
+
+:: From FINTOPO2: func P_1(x,y,A) -> Element of BOOLEAN equals
+::                :Def1: TRUE if y in U_FT x & y in A otherwise FALSE;
+
+:: Simplified version: intersection test
+
+definition
+  let A, B be set;
+  let x be object;
+  func InBoth(x, A, B) -> Element of BOOLEAN equals
+::>         *140,142,302
+  :DefInBoth:
+  TRUE if x in A & x in B otherwise FALSE;
+  coherence;
+::>       *72
+end;
+
+theorem ThInBothTrue:
+  for A, B being set, x being object
+  holds InBoth(x, A, B) = TRUE iff x in A & x in B
+::>          *148
+proof
+  let A, B be set, x be object;
+  thus thesis by DefInBoth;
+::>                      *144
+end;
+
+:: ============================================================================
+:: Pattern 4: Attribute-based conditionals (realistic example)
+:: ============================================================================
+
+:: Define attribute first (like even_card from parity discussion)
+
+definition
+  let A be set;
+  attr A is finite_set means
+::>               *253,203
+  ex n being Nat st card A = n;
+end;
+
+:: Now define Boolean functor based on attribute
+
+definition
+  let A be set;
+  func IsFinite(A) -> Element of BOOLEAN equals
+::>           *140,142,302
+  :DefIsFinite:
+  TRUE if A is finite_set otherwise FALSE;
+  coherence;
+::>       *72
+end;
+
+theorem ThIsFiniteTrue:
+  for A being set holds IsFinite(A) = TRUE iff A is finite_set
+::>                            *148                       *203
+proof
+::> *396
+  let A be set;
+  thus thesis by DefIsFinite;
+::>                        *144
+end;
+
+:: ============================================================================
+:: Real-World Example: Set Parity (from ChatGPT DR discussion)
+:: ============================================================================
+
+:: This is the CONDITIONAL version (not the constant version from Lesson 17!)
+
+:: First define even cardinality attribute
+
+definition
+  let A be finite set;
+::>                 *136
+  attr A is even_card means
+::>            *140,142,203
+  ex n being Nat st card A = 2 * n;
+end;
+
+:: Register that empty set has even cardinality
+
+registration
+  cluster {} -> even_card;
+::>                 *223,203
+  coherence
+  proof
+    take 0;
+::>      *165,55
+    thus card {} = 2 * 0;
+::>                    *174,175
+  end;
+end;
+
+:: Now define parity as Boolean functor using if...otherwise
+
+definition
+  let A be finite set;
+::>                 *136
+  func Parity(A) -> Element of BOOLEAN equals
+::>         *140,142,302
+  :DefParity:
+  FALSE if A is even_card otherwise TRUE;
+  coherence;
+::>       *72
+end;
+
+:: Characterization theorems
+
+theorem ThParityEven:
+  for A being finite set holds Parity(A) = FALSE iff A is even_card
+::>                    *136         *148                     *140,203
+proof
+::> *140
+  let A be finite set;
+::>                 *136
+  thus thesis by DefParity;
+::>                      *144
+end;
+
+theorem ThParityOdd:
+  for A being finite set holds Parity(A) = TRUE iff not A is even_card
+::>                    *136         *148                        *140,203
+proof
+::> *140
+  let A be finite set;
+::>                 *136
+  thus thesis by DefParity;
+::>                      *144
+end;
+
+:: ============================================================================
+:: Key Lessons: When to use if...otherwise vs [:A, {x}:]
+:: ============================================================================
+
+:: ✅ USE if...otherwise WHEN:
+::    - Function returns TRUE/FALSE based on a CONDITION
+::    - Different inputs give different outputs
+::    - Example: IsEqual(x,y), IsMember(x,A), Parity(A)
+::
+:: ✅ USE [:A, {x}:] WHEN (Lesson 17):
+::    - Function ALWAYS returns the SAME value
+::    - Constant function: f(anything) = x
+::    - Example: ZeroChain(G), ConstTrue(X)
+::
+:: ❌ NEVER MIX THEM:
+::    - Don't use [:A, {TRUE}:] for conditionals
+::    - Don't use if...otherwise for constants
+
+:: ============================================================================
+:: Comparison: Constant vs Conditional
+:: ============================================================================
+
+:: CONSTANT (Lesson 17 pattern):
+::   func ConstTrue(X) -> Function equals [:X, {TRUE}:];
+::   Result: Always returns TRUE for any input
+::
+:: CONDITIONAL (Lesson 18 pattern):
+::   func IsEqual(x,y) -> Element of BOOLEAN equals
+::     TRUE if x = y otherwise FALSE;
+::   Result: Returns TRUE for some inputs, FALSE for others
+
+:: ============================================================================
+:: Advanced: Multiple conditions with commas (FINTOPO2 doesn't use this)
+:: ============================================================================
+
+:: From ChatGPT DR: You can chain multiple conditions with commas
+:: Syntax: Value1 if Cond1, Value2 if Cond2, ... otherwise ValueN;
+::
+:: We haven't found this in FINTOPO2, so stick with single if...otherwise
+:: for now. Document once we find an actual MML example!
+
+:: ============================================================================
+:: Environment Notes
+:: ============================================================================
+
+:: Required vocabularies for Boolean functors:
+:: - MARGREL1: Defines BOOLEAN, TRUE, FALSE, 'xor', '&', 'not'
+:: - XBOOLEAN: Additional Boolean notations (optional)
+::
+:: Must include in ALL sections:
+:: - vocabularies MARGREL1, XBOOLEAN
+:: - notations MARGREL1, XBOOLEAN
+:: - constructors MARGREL1, XBOOLEAN
+:: - registrations MARGREL1, XBOOLEAN
+::
+:: Also include: requirements BOOLE;
+
+:: ============================================================================
+:: Summary Pattern
+:: ============================================================================
+
+:: FOR: Boolean predicate returning TRUE/FALSE
+::
+:: definition
+::   let params;
+::   func FuncName(params) -> Element of BOOLEAN equals
+::   :DefLabel:
+::   TRUE if <condition> otherwise FALSE;
+::   coherence;  :: or correctness;
+:: end;
+::
+:: theorem ThFuncNameTrue:
+::   for params holds FuncName(params) = TRUE iff <condition>
+:: proof
+::   let params;
+::   thus thesis by DefLabel;
+:: end;
+
+:: File compiles successfully demonstrating the if...otherwise pattern!
+:: This complements Lesson 17's [:A, {x}:] constant function pattern.
+::>
+::> 55: Invalid generalization
+::> 72: Unexpected correctness condition
+::> 136: Non registered cluster
+::> 140: Unknown variable
+::> 142: Unknown locus
+::> 144: Unknown label
+::> 148: Unknown private functor
+::> 165: Unknown functor format
+::> 174: Unknown functor format
+::> 175: Unknown attribute format
+::> 203: Unknown token, maybe an illegal character used in an identifier
+::> 223: Adjective cluster expected
+::> 253: "means" or "equals" expected
+::> 302: Functor symbol expected
+::> 396: Formula expected

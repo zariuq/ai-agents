@@ -1,0 +1,21 @@
+environ
+  vocabularies XBOOLE_0, SUBSET_1, TARSKI, NUMBERS, XBOOLEAN, MARGREL1;
+  notations   XBOOLE_0, SUBSET_1, TARSKI, NUMBERS, XBOOLEAN, MARGREL1;
+  constructors MARGREL1;
+  registrations XBOOLEAN, MARGREL1;
+  requirements BOOLE, SUBSET;
+  theorems MARGREL1, XBOOLEAN;
+
+begin
+
+:: BOOLEAN = {0,1} is defined in MARGREL1:def 11
+:: This is our GF(2) field for Kempe chains
+:: Smoke test: verify basic boolean XOR identity
+
+theorem Th1:
+  for a being Element of BOOLEAN holds a 'xor' FALSE = a
+proof
+  let a be Element of BOOLEAN;
+  a = FALSE or a = TRUE by MARGREL1:def 12;
+  hence thesis;
+end;

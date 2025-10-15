@@ -1,0 +1,15 @@
+::Lesson 4: Attributes
+
+environ
+ vocabularies LESSON4, XBOOLE_0;
+ notations XBOOLE_0;
+ constructors XBOOLE_0;
+
+begin
+
+definition
+  let X be set;
+  attr X is my-attr means
+  :Def1:
+  X = {};
+end;
