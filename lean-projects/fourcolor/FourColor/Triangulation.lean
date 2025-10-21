@@ -815,29 +815,73 @@ lemma support₁_sum_faceBoundary_gamma10_eq_oddOn {E : Type*}
     support₁ (∑ f ∈ S, faceBoundaryChain (γ := (1,0)) f) = oddOn S := by
   classical
   ext e
+  -- left side: in support₁ ↔ fst != 0  (no further simp)
+  have hL :
+      e ∈ support₁ (∑ f ∈ S, faceBoundaryChain (γ := (1,0)) f)
+      ↔ (((∑ f ∈ S, faceBoundaryChain (γ := (1,0)) f) e).fst ≠ 0) := by
+    simp only [support₁, Finset.mem_filter, Finset.mem_univ, true_and]
+  -- fst-of-sum pointwise identity, kept separate
+  have hfst :
+      ((∑ f ∈ S, faceBoundaryChain (γ := (1,0)) f) e).fst
+      = ∑ f ∈ S, (if e ∈ f then (1 : ZMod 2) else 0) :=
+    fst_sum_faceBoundary_at S e
+  -- right side: oddOn ↔ sum != 0  (no further simp)
+  have hR :
+      e ∈ oddOn S
+      ↔ ((∑ f ∈ S, (if e ∈ f then (1 : ZMod 2) else 0)) ≠ 0) := by
+    simp only [oddOn, Finset.mem_filter, Finset.mem_univ, true_and]
+
   constructor
   · intro h
-    -- e ∈ support₁(Σ ∂f) ↔ ((Σ ∂f) e).fst ≠ 0
-    have hL : (((∑ f ∈ S, faceBoundaryChain (γ := (1,0)) f) e).fst ≠ 0) := by
-      simpa [support₁, Finset.mem_filter, Finset.mem_univ, true_and] using h
-    -- rewrite fst via the pointwise identity
-    have : ((∑ f ∈ S, (if e ∈ f then (1 : ZMod 2) else 0)) ≠ 0) := by
-      simpa [fst_sum_faceBoundary_at] using hL
-    -- fold back to membership in oddOn
-    simpa [oddOn, Finset.mem_filter, Finset.mem_univ, true_and] using this
+    -- transport LHS predicate through hfst
+    have : (((∑ f ∈ S, faceBoundaryChain (γ := (1,0)) f) e).fst ≠ 0) := (hL.mp h)
+    have : ((∑ f ∈ S, (if e ∈ f then (1 : ZMod 2) else 0)) ≠ 0) := by rw [← hfst]; exact this
+    exact (hR.mpr this)
   · intro h
-    -- e ∈ oddOn S ↔ Σ (ite (e∈f) 1 0) ≠ 0
-    have hR : ((∑ f ∈ S, (if e ∈ f then (1 : ZMod 2) else 0)) ≠ 0) := by
-      simpa [oddOn, Finset.mem_filter, Finset.mem_univ, true_and] using h
-    -- rewrite back to fst ≠ 0 and conclude membership in support₁
-    have : (((∑ f ∈ S, faceBoundaryChain (γ := (1,0)) f) e).fst ≠ 0) := by
-      simpa [fst_sum_faceBoundary_at] using hR
-    simpa [support₁, Finset.mem_filter, Finset.mem_univ, true_and] using this
+    -- transport RHS predicate back through hfst
+    have : ((∑ f ∈ S, (if e ∈ f then (1 : ZMod 2) else 0)) ≠ 0) := (hR.mp h)
+    have : (((∑ f ∈ S, faceBoundaryChain (γ := (1,0)) f) e).fst ≠ 0) := by rw [hfst]; exact this
+    exact (hL.mpr this)
 
 lemma support₁_sum_faceBoundary_of_zero {E : Type*} [Fintype E] [DecidableEq E]
     (S : Finset (Finset E)) :
     support₁ (∑ f ∈ S, faceBoundaryChain (γ := (1,0)) f) = oddOn S :=
   support₁_sum_faceBoundary_gamma10_eq_oddOn S
+
+-- Symmetric (0,1) parity lemma: support₂ of the sum equals the odd-incidence set.
+lemma support₂_sum_faceBoundary_gamma01_eq_oddOn {E : Type*}
+    [Fintype E] [DecidableEq E]
+    (S : Finset (Finset E)) :
+    support₂ (∑ f ∈ S, faceBoundaryChain (γ := (0,1)) f) = oddOn S := by
+  classical
+  ext e
+  -- left side: in support₂ ↔ snd != 0  (no further simp)
+  have hL :
+      e ∈ support₂ (∑ f ∈ S, faceBoundaryChain (γ := (0,1)) f)
+      ↔ (((∑ f ∈ S, faceBoundaryChain (γ := (0,1)) f) e).snd ≠ 0) := by
+    simp only [support₂, Finset.mem_filter, Finset.mem_univ, true_and]
+  -- snd-of-sum pointwise identity, kept separate
+  have hsnd :
+      ((∑ f ∈ S, faceBoundaryChain (γ := (0,1)) f) e).snd
+      = ∑ f ∈ S, (if e ∈ f then (1 : ZMod 2) else 0) :=
+    snd_sum_faceBoundary_at S e
+  -- right side: oddOn ↔ sum != 0  (no further simp)
+  have hR :
+      e ∈ oddOn S
+      ↔ ((∑ f ∈ S, (if e ∈ f then (1 : ZMod 2) else 0)) ≠ 0) := by
+    simp only [oddOn, Finset.mem_filter, Finset.mem_univ, true_and]
+
+  constructor
+  · intro h
+    -- transport LHS predicate through hsnd
+    have : (((∑ f ∈ S, faceBoundaryChain (γ := (0,1)) f) e).snd ≠ 0) := (hL.mp h)
+    have : ((∑ f ∈ S, (if e ∈ f then (1 : ZMod 2) else 0)) ≠ 0) := by rw [← hsnd]; exact this
+    exact (hR.mpr this)
+  · intro h
+    -- transport RHS predicate back through hsnd
+    have : ((∑ f ∈ S, (if e ∈ f then (1 : ZMod 2) else 0)) ≠ 0) := (hR.mp h)
+    have : (((∑ f ∈ S, faceBoundaryChain (γ := (0,1)) f) e).snd ≠ 0) := by rw [hsnd]; exact this
+    exact (hL.mpr this)
 
 /-- "Span" of face boundary chains: all finite XOR-sums of the given face
 boundaries, coloured by `γ`.  We encode the span concretely via `Finset` sums so

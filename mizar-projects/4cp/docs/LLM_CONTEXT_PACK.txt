@@ -29,9 +29,21 @@ Vocabulary (.voc)
 
 Definitions (canonical)
 - equals  → label on next line + `coherence;`
+- equals with if...otherwise → `correctness;` NOT `coherence;` (see Boolean conditionals below)
 - means   → label on next line + `correctness;` (wrap existence/uniqueness when needed)
 - modes   → `correctness;`
 - Label must be on its own line after equals/means.
+
+Boolean conditionals (if...otherwise pattern)
+- Use `correctness;` NOT `coherence;` for conditional Boolean functions:
+  ```mizar
+  func IsEqual(x, y) -> Element of BOOLEAN equals
+  TRUE if x = y otherwise FALSE;
+  correctness;
+  ```
+- Requires: vocabularies/notations/constructors/registrations MARGREL1, XBOOLEAN
+- Requires: requirements BOOLE;
+- TRUE/FALSE are constants from MARGREL1:def 12, NOT keywords
 
 Ready-to-use environ templates
 

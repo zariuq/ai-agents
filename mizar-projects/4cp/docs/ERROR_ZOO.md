@@ -114,12 +114,27 @@ Legend: A = triggers; B = fixed. Snippets are intentionally tiny and self-contai
     ```mizar
     definition let X be set; func double X -> set equals X \/ X; end;
     ```
-  - B: Add `coherence;`
+  - B: Add `coherence;` for `equals` definitions
     ```mizar
     definition let X be set; func double X -> set equals X \/ X; coherence; end;
     ```
+  - **B (for conditional Boolean functions with `if...otherwise`)**: Use `correctness;` NOT `coherence;`
+    ```mizar
+    definition
+      let x, y be object;
+      func IsEqual(x, y) -> Element of BOOLEAN equals
+      TRUE if x = y otherwise FALSE;
+      correctness;  :: NOT coherence!
+    end;
+    ```
+  - **Critical Rule**:
+    - `coherence;` for `equals` with explicit values
+    - `correctness;` for `if...otherwise` conditionals
+    - `correctness;` for `means` definitions
   - Curriculum refs:
     - Positive: `theories/00_curriculum/text/lesson2b_coherence.miz` (equals → coherence)
+    - Positive: `theories/00_curriculum/text/lesson18.miz` (if...otherwise → correctness)
+    - **Working example**: `build/chain_lesson18.miz` (verified 0 errors)
 
 - 72 — Correctness cannot be established (too implicit)
   - A: Overly implicit constructor typing; missing visible target type
