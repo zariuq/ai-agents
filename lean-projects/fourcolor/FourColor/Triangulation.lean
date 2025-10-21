@@ -808,11 +808,36 @@ def oddOn {E : Type*} [Fintype E] [DecidableEq E]
   Finset.univ.filter (fun e =>
     (∑ f ∈ S, (if e ∈ f then (1 : ZMod 2) else 0)) ≠ 0)
 
-lemma support₁_sum_faceBoundary_of_zero {E : Type*} [Fintype E] [DecidableEq E]
+-- Clean parity identity for γ = (1,0): support₁ of the sum equals the odd-incidence set.
+lemma support₁_sum_faceBoundary_gamma10_eq_oddOn {E : Type*}
+    [Fintype E] [DecidableEq E]
     (S : Finset (Finset E)) :
     support₁ (∑ f ∈ S, faceBoundaryChain (γ := (1,0)) f) = oddOn S := by
   classical
-  ext e; simp [support₁, oddOn, fst_sum_faceBoundary_at]
+  ext e
+  constructor
+  · intro h
+    -- e ∈ support₁(Σ ∂f) ↔ ((Σ ∂f) e).fst ≠ 0
+    have hL : (((∑ f ∈ S, faceBoundaryChain (γ := (1,0)) f) e).fst ≠ 0) := by
+      simpa [support₁, Finset.mem_filter, Finset.mem_univ, true_and] using h
+    -- rewrite fst via the pointwise identity
+    have : ((∑ f ∈ S, (if e ∈ f then (1 : ZMod 2) else 0)) ≠ 0) := by
+      simpa [fst_sum_faceBoundary_at] using hL
+    -- fold back to membership in oddOn
+    simpa [oddOn, Finset.mem_filter, Finset.mem_univ, true_and] using this
+  · intro h
+    -- e ∈ oddOn S ↔ Σ (ite (e∈f) 1 0) ≠ 0
+    have hR : ((∑ f ∈ S, (if e ∈ f then (1 : ZMod 2) else 0)) ≠ 0) := by
+      simpa [oddOn, Finset.mem_filter, Finset.mem_univ, true_and] using h
+    -- rewrite back to fst ≠ 0 and conclude membership in support₁
+    have : (((∑ f ∈ S, faceBoundaryChain (γ := (1,0)) f) e).fst ≠ 0) := by
+      simpa [fst_sum_faceBoundary_at] using hR
+    simpa [support₁, Finset.mem_filter, Finset.mem_univ, true_and] using this
+
+lemma support₁_sum_faceBoundary_of_zero {E : Type*} [Fintype E] [DecidableEq E]
+    (S : Finset (Finset E)) :
+    support₁ (∑ f ∈ S, faceBoundaryChain (γ := (1,0)) f) = oddOn S :=
+  support₁_sum_faceBoundary_gamma10_eq_oddOn S
 
 /-- "Span" of face boundary chains: all finite XOR-sums of the given face
 boundaries, coloured by `γ`.  We encode the span concretely via `Finset` sums so
