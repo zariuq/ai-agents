@@ -1,12 +1,15 @@
 venv/
 __pycache__/
 *.pyc
-.env
+*.env
 
-.backup
+*.backup
 
-.tar
-.zip
+*.tar
+*.tar.gz
+*.zip
+
+.lake
 
 # Mizar build artifacts
 *.aco
@@ -30,6 +33,7 @@ __pycache__/
 *.frm
 *.frx
 *.idx
+*.irv
 *.log
 *.msx
 *.nol
@@ -40,3 +44,4 @@ __pycache__/
 *.vcl
 *.wsx
 *.xml
+*.out
