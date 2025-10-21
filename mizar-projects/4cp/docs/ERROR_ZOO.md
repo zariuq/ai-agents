@@ -252,6 +252,35 @@ Legend: A = triggers; B = fixed. Snippets are intentionally tiny and self-contai
   - **Working example**: `theories/02_parity/text/fparity.miz` — defines parity with `n mod 2`
 
 - 103 — Unknown functor (function application - typed dot pattern)
+  - **A (incomplete environment - Error 103 on `f.x`)**:
+    ```mizar
+    environ
+    vocabularies FUNCT_1, FUNCT_2, ...;
+    notations FUNCT_2;           :: MISSING FUNCT_1!
+    constructors FUNCT_2;        :: MISSING FUNCT_1!
+    registrations FUNCT_2;       :: MISSING FUNCT_1!
+    theorems FUNCT_2;            :: MISSING FUNCT_1!
+    begin
+    let f be Function of X, Y;
+    let x be Element of X;
+    ... f.x ...  :: Error 103: Unknown functor
+    ```
+  - **B (complete environment - WORKS)**:
+    ```mizar
+    environ
+    vocabularies FUNCT_1, FUNCT_2, ...;
+    notations FUNCT_1, FUNCT_2;       :: FUNCT_1 added!
+    constructors FUNCT_1, FUNCT_2;    :: FUNCT_1 added!
+    registrations FUNCT_1, FUNCT_2;   :: FUNCT_1 added!
+    theorems FUNCT_1, FUNCT_2;        :: FUNCT_1 added!
+    begin
+    let f be Function of X, Y;
+    let x be Element of X;
+    ... f.x ...  :: Works!
+    ```
+  - **Key insight**: FUNCT_1 must be in **ALL** environment sections (notations, constructors, registrations, theorems), not just vocabularies, for dot notation to work
+  - **Discovered**: 2025-10-21 during M3 Step 1 (chain_dot_m3_s1s2s3.miz)
+  - **Positive example**: `theories/03_chain_dot/text/chain_dot_m3_s1s2s3.miz` (lines 8-20)
   - Curriculum refs:
     - See How‑To "Function application and pairs" (typed dot + FUNCT_2:sch 4) and reuse that pattern
 

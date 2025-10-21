@@ -9,6 +9,8 @@ __pycache__/
 *.tar.gz
 *.zip
 
+.lake
+
 # Mizar build artifacts
 *.aco
 *.ano
