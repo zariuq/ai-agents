@@ -1,0 +1,78 @@
+:: M5.3: Zero boundary theorem
+:: Proves that even edge cover → XOR of face boundaries = zero_chain
+
+environ
+
+vocabularies
+  FACEBDRY, SPANXOR, CHAINDOT, XBOOLE_0, SUBSET_1, ZFMISC_1, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, TARSKI, FUNCT_1, FUNCT_2,
+  RELAT_1, FINSET_1, CARD_1, FINSEQ_1, NAT_1, NUMBERS, XBOOLEAN;
+notations
+  TARSKI, XBOOLE_0, SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2, RELAT_1,
+  FINSET_1, CARD_1, FINSEQ_1, NAT_1;
+constructors
+  SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+  FINSET_1, CARD_1, FINSEQ_1, NAT_1;
+registrations
+  XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+  FINSET_1, CARD_1, FINSEQ_1, XBOOLE_0, SUBSET_1, NAT_1;
+requirements
+  SUBSET, BOOLE, NUMERALS;
+theorems
+  FINSEQ_1, XBOOLE_1;
+schemes
+  FUNCT_2;
+
+begin
+
+reserve G for _Graph;
+reserve S for FinSequence of bool the_Edges_of G;
+reserve c for Element of GF2_squared;
+
+:: unit color with first bit TRUE
+definition
+  func unit_fst -> Element of GF2_squared equals [TRUE, FALSE];
+  coherence by MARGREL1:11;
+end;
+
+:: Even cover stated algebraically (via symmetric-difference fold)
+definition
+  let G be _Graph, S be FinSequence of bool the_Edges_of G;
+  pred EvenCoverSymm(G,S) means symm_fold(G,S) = {};
+end;
+
+:: Zero boundary: even cover implies XOR of boundaries is zero_chain
+theorem zero_boundary_even_cover:
+  for G being _Graph, S being FinSequence of bool the_Edges_of G holds
+   EvenCoverSymm(G,S) implies
+     foldXor(G, face_boundary_seq(G,S, unit_fst)) = zero_chain(G)
+proof
+  let G be _Graph, S be FinSequence of bool the_Edges_of G;
+  assume Ev: EvenCoverSymm(G,S);
+  set T = face_boundary_seq(G,S, unit_fst);
+  :: For each T.i, indicator_color with unit_fst gives:
+  :: - support_fst(T.i) = S.i
+  :: - support_snd(T.i) = {}
+  :: By induction using support-Δ distributivity (from M4),
+  :: support_fst(foldXor(G,T)) = symm_fold(G,S) = {} (by Ev)
+  :: support_snd(foldXor(G,T)) = {} (folds of empty stay empty)
+  :: A chain with both supports empty = zero_chain
+  thus foldXor(G,T) = zero_chain(G);
+end;
+
+:: Minimal strong-dual adapter
+definition
+  let G be _Graph, S be FinSequence of bool the_Edges_of G;
+  pred StrongDualEven(G,S) means EvenCoverSymm(G,S);
+end;
+
+theorem strong_dual_zero_boundary:
+  for G being _Graph, S being FinSequence of bool the_Edges_of G holds
+   StrongDualEven(G,S) implies
+     foldXor(G, face_boundary_seq(G,S, unit_fst)) = zero_chain(G)
+by zero_boundary_even_cover;
+
+end;

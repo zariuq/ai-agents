@@ -1,0 +1,87 @@
+:: T3.3: Span of a sequence (via subsequences)
+:: Defines the span as all XOR folds of all subsequences
+
+environ
+
+vocabularies
+  SPANXOR, CHAINDOT, XBOOLE_0, SUBSET_1, NUMBERS, NAT_1,
+  FUNCT_1, FUNCT_2, ZFMISC_1, FINSEQ_1, CARD_1, XBOOLEAN, MARGREL1,
+  TARSKI, RELAT_1, GLIB_000, GLIB_001, GLIB_002;
+notations
+  TARSKI, XBOOLE_0, SUBSET_1, NAT_1, FUNCT_1, FUNCT_2, ZFMISC_1,
+  FINSEQ_1, CARD_1, XBOOLEAN, MARGREL1, RELAT_1,
+  GLIB_000, GLIB_001, GLIB_002;
+constructors
+  SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+  FINSEQ_1, CARD_1, NAT_1;
+registrations
+  XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+  FINSEQ_1, CARD_1, NAT_1, XBOOLE_0;
+requirements
+  SUBSET, BOOLE, NUMERALS;
+theorems
+  FINSEQ_1, FUNCT_2;
+schemes
+  FUNCT_2;
+
+begin
+
+reserve G for _Graph;
+
+:: ============================================================================
+:: Span of a sequence by subsequences
+:: ============================================================================
+
+:: The span is the set of all XOR folds of all subsequences
+definition
+  let G be _Graph, s be ChainSeq of G;
+  func span_of_seq(G, s) -> Subset of Chains(G) equals
+    { foldXor(G, t) where t is ChainSeq of G : t is Subsequence of s };
+  coherence
+  proof
+    set X = { foldXor(G, t) where t is ChainSeq of G : t is Subsequence of s };
+    X c= Chains(G)
+    proof
+      let x be object;
+      assume x in X;
+      then consider t being ChainSeq of G such that
+      A1: x = foldXor(G, t) & t is Subsequence of s;
+      foldXor(G, t) is Chain of G;
+      then foldXor(G, t) in Funcs(the_Edges_of G, GF2_squared);
+      hence x in Chains(G) by A1;
+    end;
+    hence thesis;
+  end;
+end;
+
+:: ============================================================================
+:: Basic properties of span
+:: ============================================================================
+
+:: Zero is always in the span (empty subsequence)
+theorem Th_span_contains_zero:
+  for G being _Graph, s being ChainSeq of G holds
+    zero_chain(G) in span_of_seq(G, s)
+proof
+  let G be _Graph, s be ChainSeq of G;
+  set t = <*> Chains(G);
+  A1: t is Subsequence of s by FINSEQ_1:18;
+  :: By foldXor_nil axiom: foldXor(G, t) = zero_chain(G)
+  :: For now, we assume this property
+  thus zero_chain(G) in span_of_seq(G, s) by A1;
+end;
+
+:: Every element of the sequence is in the span (AXIOM)
+theorem Th_span_contains_elements:
+  for G being _Graph, s being ChainSeq of G, i being Nat
+  st i in dom s holds s.i in span_of_seq(G, s);
+
+:: Span is closed under XOR addition (AXIOM)
+theorem Th_span_closed_add:
+  for G being _Graph, s being ChainSeq of G, c1, c2 being Chain of G
+  st c1 in span_of_seq(G, s) & c2 in span_of_seq(G, s)
+  holds c1 (+) c2 in span_of_seq(G, s);
+
+end;

@@ -1,0 +1,236 @@
+:: M4 Step 1: Color swap and basic Kempe operations
+:: Defines color swapping for Kempe chain switches
+
+environ
+  vocabularies
+    CHAINDOT, XBOOLE_0, SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+    GLIB_000, GLIB_001, GLIB_002, TARSKI, FUNCT_1, FUNCT_2,
+    RELAT_1, FINSET_1, CARD_1, FUNCOP_1;
+  notations
+    TARSKI, XBOOLE_0, SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+    GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2, RELAT_1,
+    FINSET_1, CARD_1, FUNCOP_1;
+  constructors
+    SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+    GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+    FINSET_1, CARD_1, FUNCOP_1;
+  registrations
+    XBOOLEAN, MARGREL1,
+    GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+    FINSET_1, CARD_1;
+  requirements BOOLE, SUBSET;
+  theorems XBOOLE_0, XBOOLE_1, FUNCT_1, FUNCT_2, ZFMISC_1, MARGREL1,
+    TARSKI, CARD_1, XTUPLE_0, FUNCOP_1;
+  schemes FUNCT_2;
+
+begin
+
+reserve G for _Graph;
+reserve alpha, beta, gamma, x for Element of GF2_squared;
+reserve c for Chain of G;
+
+:: ============================================================================
+:: Color swap operation
+:: ============================================================================
+
+:: Swap alpha <-> beta in a color
+:: This is the fundamental Kempe chain operation
+definition
+  let alpha, beta, x be Element of GF2_squared;
+  func color_swap(alpha, beta, x) -> Element of GF2_squared equals
+  beta if x = alpha,
+  alpha if x = beta
+  otherwise x;
+  coherence;
+  consistency;
+end;
+
+:: ============================================================================
+:: Basic properties of color swap
+:: ============================================================================
+
+:: Swapping alpha gives beta
+theorem Th_swap_alpha:
+  color_swap(alpha, beta, alpha) = beta
+proof
+  thus thesis;
+end;
+
+:: Swapping beta gives alpha
+theorem Th_swap_beta:
+  color_swap(alpha, beta, beta) = alpha
+proof
+  thus thesis;
+end;
+
+:: Swapping other colors is identity
+theorem Th_swap_other:
+  x <> alpha & x <> beta implies color_swap(alpha, beta, x) = x
+proof
+  assume x <> alpha & x <> beta;
+  thus thesis;
+end;
+
+:: Swap is idempotent (swapping twice returns original)
+theorem Th_swap_involutive:
+  color_swap(alpha, beta, color_swap(alpha, beta, x)) = x
+proof
+  per cases;
+  suppose A1: x = alpha;
+    then color_swap(alpha, beta, x) = beta;
+    then color_swap(alpha, beta, color_swap(alpha, beta, x)) = alpha;
+    hence thesis by A1;
+  end;
+  suppose A2: x = beta;
+    then color_swap(alpha, beta, x) = alpha;
+    then color_swap(alpha, beta, color_swap(alpha, beta, x)) = beta;
+    hence thesis by A2;
+  end;
+  suppose A3: x <> alpha & x <> beta;
+    then color_swap(alpha, beta, x) = x;
+    then color_swap(alpha, beta, color_swap(alpha, beta, x))
+       = color_swap(alpha, beta, x);
+    hence thesis by A3;
+  end;
+end;
+
+:: Swap is commutative in alpha, beta
+theorem Th_swap_comm:
+  color_swap(alpha, beta, x) = color_swap(beta, alpha, x)
+proof
+  per cases;
+  suppose x = alpha;
+    then color_swap(alpha, beta, x) = beta;
+    color_swap(beta, alpha, x) = beta;
+    hence thesis;
+  end;
+  suppose x = beta;
+    then color_swap(alpha, beta, x) = alpha;
+    color_swap(beta, alpha, x) = alpha;
+    hence thesis;
+  end;
+  suppose x <> alpha & x <> beta;
+    then color_swap(alpha, beta, x) = x;
+    color_swap(beta, alpha, x) = x;
+    hence thesis;
+  end;
+end;
+
+:: ============================================================================
+:: Chain-level swap
+:: ============================================================================
+
+:: Apply color swap to every edge of a chain
+definition
+  let G be _Graph;
+  let alpha, beta be Element of GF2_squared;
+  let c be Chain of G;
+  func chain_swap(alpha, beta, c) -> Chain of G means
+  for e being Element of the_Edges_of G holds
+    it.e = color_swap(alpha, beta, c.e);
+  existence
+  proof
+    deffunc F(Element of the_Edges_of G)
+      = color_swap(alpha, beta, c.$1);
+    consider f being Function of the_Edges_of G, GF2_squared such that
+    A1: for e being Element of the_Edges_of G holds f.e = F(e)
+      from FUNCT_2:sch 4;
+    take f;
+    thus thesis by A1;
+  end;
+  uniqueness
+  proof
+    let f1, f2 be Chain of G;
+    assume A1: for e being Element of the_Edges_of G holds
+      f1.e = color_swap(alpha, beta, c.e);
+    assume A2: for e being Element of the_Edges_of G holds
+      f2.e = color_swap(alpha, beta, c.e);
+    for e being Element of the_Edges_of G holds f1.e = f2.e by A1, A2;
+    hence f1 = f2 by FUNCT_2:113;
+  end;
+end;
+
+:: ============================================================================
+:: Properties of chain swap
+:: ============================================================================
+
+:: Chain swap is involutive
+theorem Th_chain_swap_involutive:
+  chain_swap(alpha, beta, chain_swap(alpha, beta, c)) = c
+proof
+  for e being Element of the_Edges_of G holds
+    (chain_swap(alpha, beta, chain_swap(alpha, beta, c))).e = c.e
+  proof
+    let e be Element of the_Edges_of G;
+    set swapped = chain_swap(alpha, beta, c);
+    (chain_swap(alpha, beta, swapped)).e
+      = color_swap(alpha, beta, swapped.e);
+    swapped.e = color_swap(alpha, beta, c.e);
+    then (chain_swap(alpha, beta, swapped)).e
+       = color_swap(alpha, beta, color_swap(alpha, beta, c.e))
+      .= c.e by Th_swap_involutive;
+    hence thesis;
+  end;
+  hence thesis by FUNCT_2:113;
+end;
+
+:: Chain swap on zero_chain gives zero_chain
+theorem Th_chain_swap_zero:
+  chain_swap(alpha, beta, zero_chain(G)) = zero_chain(G)
+proof
+  for e being Element of the_Edges_of G holds
+    (chain_swap(alpha, beta, zero_chain(G))).e = (zero_chain G).e
+  proof
+    let e be Element of the_Edges_of G;
+    (zero_chain G).e = zero_color by FUNCT_2:63;
+    then A1: (zero_chain G).e <> alpha & (zero_chain G).e <> beta
+      or (zero_chain G).e = zero_color;
+    (chain_swap(alpha, beta, zero_chain G)).e
+      = color_swap(alpha, beta, (zero_chain G).e);
+    per cases;
+    suppose (zero_chain G).e = alpha;
+      then (zero_chain G).e = zero_color;
+      then color_swap(alpha, beta, (zero_chain G).e)
+         = color_swap(alpha, beta, zero_color)
+        .= zero_color by A1
+        .= (zero_chain G).e;
+      hence thesis;
+    end;
+    suppose (zero_chain G).e = beta;
+      then (zero_chain G).e = zero_color;
+      then color_swap(alpha, beta, (zero_chain G).e)
+         = color_swap(alpha, beta, zero_color)
+        .= zero_color by A1
+        .= (zero_chain G).e;
+      hence thesis;
+    end;
+    suppose (zero_chain G).e <> alpha & (zero_chain G).e <> beta;
+      then color_swap(alpha, beta, (zero_chain G).e) = (zero_chain G).e
+        by Th_swap_other;
+      hence thesis;
+    end;
+  end;
+  hence thesis by FUNCT_2:113;
+end;
+
+:: ============================================================================
+:: SKETCH: Kempe chain runs
+:: ============================================================================
+
+:: NOTE: Full Kempe chain theory requires:
+::
+:: 1. Connected components (runs) in two-colored subgraph
+::    - Define two-color restriction of graph
+::    - Prove runs partition edges
+::    - Each run swaps independently
+::
+:: 2. Run-invariance (Lemma 4.2)
+::    - Swapping within a run doesn't change boundary
+::    - Uses chain dot properties
+::
+:: 3. Purification lemmas (4.3, 4.4)
+::    - Express face generators as XOR of run indicators
+::    - Partition edges by containing run
+::
+:: For now, we have the essential swap infrastructure.
+

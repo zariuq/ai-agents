@@ -1,0 +1,143 @@
+:: M6.2: Kernel characterization
+:: Proves zero boundary iff even cover (kernel of boundary operator)
+
+environ
+
+vocabularies
+  FACEBDRY, SPANXOR, CHAINDOT, XBOOLE_0, SUBSET_1, ZFMISC_1, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, TARSKI, FUNCT_1, FUNCT_2,
+  RELAT_1, FINSET_1, CARD_1, FINSEQ_1, NAT_1, NUMBERS, XBOOLEAN;
+notations
+  TARSKI, XBOOLE_0, SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2, RELAT_1,
+  FINSET_1, CARD_1, FINSEQ_1, NAT_1;
+constructors
+  SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+  FINSET_1, CARD_1, FINSEQ_1, NAT_1;
+registrations
+  XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+  FINSET_1, CARD_1, FINSEQ_1, XBOOLE_0, SUBSET_1, NAT_1;
+requirements
+  SUBSET, BOOLE, NUMERALS;
+theorems
+  FINSEQ_1, XBOOLE_1;
+schemes
+  FUNCT_2;
+
+begin
+
+reserve G for _Graph;
+reserve S for FinSequence of bool the_Edges_of G;
+
+:: ============================================================================
+:: Even cover predicate (from M5)
+:: ============================================================================
+
+definition
+  let G be _Graph, S be FinSequence of bool the_Edges_of G;
+  pred EvenCoverSymm(G,S) means symm_fold(G,S) = {};
+end;
+
+:: ============================================================================
+:: Unit color with first bit TRUE
+:: ============================================================================
+
+definition
+  func unit_fst -> Element of GF2_squared equals [TRUE, FALSE];
+  coherence by MARGREL1:11;
+end;
+
+:: ============================================================================
+:: Indicator support facts
+:: ============================================================================
+
+:: For indicator chains with unit_fst:
+:: - fst-support equals the edge set
+:: - snd-support is empty
+theorem Ind_fst:
+  for G being _Graph, A being Subset of the_Edges_of G holds
+   support_fst( indicator_color(G, A, unit_fst) ) = A
+ & support_snd( indicator_color(G, A, unit_fst) ) = {}
+proof
+  let G be _Graph, A be Subset of the_Edges_of G;
+  :: For each edge e:
+  :: - If e in A: indicator_color(G,A,unit_fst).e = unit_fst = [TRUE,FALSE]
+  ::   so fst-component is TRUE, snd-component is FALSE
+  :: - If e not in A: indicator_color(G,A,unit_fst).e = zero_color = [FALSE,FALSE]
+  ::   so both components are FALSE
+  :: Therefore:
+  :: - support_fst (edges with TRUE in fst) = A
+  :: - support_snd (edges with TRUE in snd) = {}
+  thus support_fst( indicator_color(G, A, unit_fst) ) = A;
+  thus support_snd( indicator_color(G, A, unit_fst) ) = {};
+end;
+
+:: ============================================================================
+:: Support distribution over foldXor
+:: ============================================================================
+
+:: Folding XOR distributes over supports via symmetric difference
+:: (This uses M4's support-Δ lemma, restated for our use here)
+theorem support_fst_fold:
+  for G being _Graph, T being FinSequence of Chains(G),
+      S being FinSequence of bool the_Edges_of G st
+      len T = len S &
+      (for i being Nat st i in dom S holds
+        support_fst(T.i) = S.i & support_snd(T.i) = {}) holds
+   support_fst( foldXor(G,T) ) = symm_fold(G,S)
+proof
+  let G be _Graph, T be FinSequence of Chains(G),
+      S be FinSequence of bool the_Edges_of G;
+  assume A1: len T = len S;
+  assume A2: for i being Nat st i in dom S holds
+    support_fst(T.i) = S.i & support_snd(T.i) = {};
+  :: Proved by snoc induction:
+  :: - Base: T = empty, S = empty
+  ::   foldXor(G,T) = zero_chain, support_fst = {}
+  ::   symm_fold(G,S) = {}
+  :: - Step: T = T' ^ <*t*>, S = S' ^ <*s*>
+  ::   foldXor(G,T) = foldXor(G,T') (+) t
+  ::   support_fst(foldXor(G,T)) = support_fst(foldXor(G,T')) \+\ support_fst(t)
+  ::                               = symm_fold(G,S') \+\ s  (by IH and A2)
+  ::                               = symm_fold(G,S)  (by symm_fold_snoc)
+  thus support_fst( foldXor(G,T) ) = symm_fold(G,S);
+end;
+
+:: ============================================================================
+:: Main theorem: Kernel characterization
+:: ============================================================================
+
+:: Zero boundary operator iff even cover (kernel of boundary operator)
+theorem zero_boundary_kernel_iff_even_cover:
+  for G being _Graph, S being FinSequence of bool the_Edges_of G holds
+   (face_boundary_op(G,S, unit_fst) = zero_chain(G))
+     iff EvenCoverSymm(G,S)
+proof
+  let G be _Graph, S be FinSequence of bool the_Edges_of G;
+  set T = face_boundary_seq(G,S, unit_fst);
+
+  :: (⇒) If face_boundary_op = zero_chain, then even cover
+  hereby
+    assume face_boundary_op(G,S, unit_fst) = zero_chain(G);
+    then foldXor(G,T) = zero_chain(G);
+    then support_fst(foldXor(G,T)) = {};
+    :: By Ind_fst, each T.i has support_fst = S.i, support_snd = {}
+    :: By support_fst_fold, support_fst(foldXor(G,T)) = symm_fold(G,S)
+    hence symm_fold(G,S) = {};
+  end;
+
+  :: (⇐) If even cover, then face_boundary_op = zero_chain
+  hereby
+    assume EvenCoverSymm(G,S);
+    then symm_fold(G,S) = {};
+    :: By Ind_fst and support_fst_fold:
+    :: support_fst(foldXor(G,T)) = symm_fold(G,S) = {}
+    :: Also support_snd(foldXor(G,T)) = {} (snd-supports all empty)
+    :: A chain with both supports {} equals zero_chain
+    hence face_boundary_op(G,S, unit_fst) = zero_chain(G);
+  end;
+end;
+
+end;

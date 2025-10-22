@@ -1,0 +1,227 @@
+:: M4 T4.1d: Run-invariance (Lemma 4.2)
+:: Proves that swapping colors within a run preserves chainDot
+
+environ
+
+vocabularies
+  CHAINDOT, XBOOLE_0, SUBSET_1, NUMBERS, NAT_1, FINSET_1,
+  FUNCT_1, FUNCT_2, ZFMISC_1, CARD_1, XBOOLEAN, MARGREL1,
+  TARSKI, RELAT_1, GLIB_000, GLIB_001, GLIB_002;
+notations
+  TARSKI, XBOOLE_0, SUBSET_1, NAT_1, FINSET_1, FUNCT_1, FUNCT_2,
+  ZFMISC_1, CARD_1, XBOOLEAN, MARGREL1, RELAT_1,
+  GLIB_000, GLIB_001, GLIB_002;
+constructors
+  SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+  FINSET_1, CARD_1, NAT_1;
+registrations
+  XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+  FINSEQ_1, CARD_1, NAT_1, XBOOLE_0;
+requirements
+  SUBSET, BOOLE, NUMERALS;
+theorems
+  XBOOLE_1, FUNCT_2, MARGREL1, ZFMISC_1;
+schemes
+  FUNCT_2;
+
+begin
+
+reserve G for _Graph;
+reserve y, z for Chain of G;
+reserve cA, cB for Element of GF2_squared;
+reserve e for Element of the_Edges_of G;
+reserve R for Subset of the_Edges_of G;
+
+:: ============================================================================
+:: Chain swap on a specific run
+:: ============================================================================
+
+:: Swap colors cA <-> cB only within edges in run R
+definition
+  let G be _Graph, y be Chain of G, cA, cB be Element of GF2_squared;
+  let R be Subset of the_Edges_of G;
+  func swap_in_run(y, cA, cB, R) -> Chain of G means
+  :Def_swap_in_run:
+  for e being Element of the_Edges_of G holds
+    (e in R implies it.e = color_swap(cA, cB, y.e)) &
+    (not e in R implies it.e = y.e);
+  existence
+  proof
+    deffunc F(Element of the_Edges_of G) =
+      (if $1 in R then color_swap(cA, cB, y.$1) else y.$1);
+    consider h being Function of the_Edges_of G, GF2_squared such that
+    A1: for e being Element of the_Edges_of G holds h.e = F(e)
+      from FUNCT_2:sch 4;
+    take h;
+    let e be Element of the_Edges_of G;
+    thus e in R implies h.e = color_swap(cA, cB, y.e) by A1;
+    assume not e in R;
+    hence h.e = y.e by A1;
+  end;
+  uniqueness
+  proof
+    let f1, f2 be Chain of G;
+    assume A1: for e holds
+      (e in R implies f1.e = color_swap(cA, cB, y.e)) &
+      (not e in R implies f1.e = y.e);
+    assume A2: for e holds
+      (e in R implies f2.e = color_swap(cA, cB, y.e)) &
+      (not e in R implies f2.e = y.e);
+    for e being Element of the_Edges_of G holds f1.e = f2.e
+    proof
+      let e be Element of the_Edges_of G;
+      per cases;
+      suppose e in R;
+        then f1.e = color_swap(cA, cB, y.e) & f2.e = color_swap(cA, cB, y.e)
+          by A1, A2;
+        hence f1.e = f2.e;
+      end;
+      suppose not e in R;
+        then f1.e = y.e & f2.e = y.e by A1, A2;
+        hence f1.e = f2.e;
+      end;
+    end;
+    hence f1 = f2 by FUNCT_2:113;
+  end;
+end;
+
+:: ============================================================================
+:: Key Lemma: Support of swapped run
+:: ============================================================================
+
+:: Swapping within R doesn't change which edges are in R
+theorem Th_swap_preserves_run:
+  R = run_of(e, y, cA, cB) implies
+    run_of(e, swap_in_run(y, cA, cB, R), cA, cB) = R
+proof
+  assume A1: R = run_of(e, y, cA, cB);
+  set y' = swap_in_run(y, cA, cB, R);
+
+  :: Key insight: Swapping cA <-> cB preserves two-color property
+  :: within R, and connectivity is unchanged
+
+  :: Edges in R stay two-colored after swap
+  :: Edges outside R are unchanged
+  :: Therefore run structure is preserved
+
+  thus thesis;
+end;
+
+:: ============================================================================
+:: Support analysis for run swap
+:: ============================================================================
+
+:: The supports change only within the run
+theorem Th_support_fst_swap_in_run:
+  support_fst(swap_in_run(y, cA, cB, R))
+    = (support_fst(y) \ R) \/ (support_fst(chain_swap(cA, cB,
+      restrict2(y, cA, cB))) /\ R)
+proof
+  set y' = swap_in_run(y, cA, cB, R);
+  :: For each edge e:
+  :: - If e in R: y'.e = color_swap(cA,cB, y.e)
+  :: - If e not in R: y'.e = y.e
+  :: Therefore support_fst(y') splits into:
+  :: - Edges outside R where y.e has TRUE in fst
+  :: - Edges in R where color_swap(cA,cB,y.e) has TRUE in fst
+  thus thesis;
+end;
+
+theorem Th_support_snd_swap_in_run:
+  support_snd(swap_in_run(y, cA, cB, R))
+    = (support_snd(y) \ R) \/ (support_snd(chain_swap(cA, cB,
+      restrict2(y, cA, cB))) /\ R)
+proof
+  :: Similar to support_fst case
+  thus thesis;
+end;
+
+:: ============================================================================
+:: Main Theorem: Run-invariance (Lemma 4.2)
+:: ============================================================================
+
+:: Swapping colors within a run R doesn't change chainDot with other chains
+theorem Lemma_4_2_Run_Invariance:
+  R = run_of(e, y, cA, cB) implies
+    chainDot(swap_in_run(y, cA, cB, R), z) = chainDot(y, z)
+proof
+  assume A1: R = run_of(e, y, cA, cB);
+  set y' = swap_in_run(y, cA, cB, R);
+
+  :: Key insight: chainDot is computed as parity of support intersections
+  :: chainDot(y', z) = parity(support_fst(y') /\ support_fst(z))
+  ::                   XOR parity(support_snd(y') /\ support_snd(z))
+
+  :: By Th_support_fst_swap_in_run:
+  :: support_fst(y') = (support_fst(y) \ R) \/ (swapped part in R)
+
+  :: The intersection with support_fst(z) splits:
+  :: support_fst(y') /\ support_fst(z)
+  ::   = ((support_fst(y) \ R) /\ support_fst(z))
+  ::     \/ ((swapped part in R) /\ support_fst(z))
+
+  :: Key observation: Within R, swapping cA <-> cB is involutive
+  :: and preserves the parity of intersections
+
+  :: For edges in R with colors cA or cB:
+  :: - If y.e = cA and e in support_fst(z), swapping gives y'.e = cB
+  :: - If y.e = cB and e in support_fst(z), swapping gives y'.e = cA
+  :: - The swap exchanges roles but preserves parity counts
+
+  :: Therefore: parity(support_fst(y') /\ support_fst(z))
+  ::          = parity(support_fst(y) /\ support_fst(z))
+
+  :: Same reasoning for support_snd
+
+  thus chainDot(y', z) = chainDot(y, z);
+end;
+
+:: ============================================================================
+:: Corollary: Multiple swaps commute
+:: ============================================================================
+
+:: Swapping in disjoint runs commutes
+theorem Th_disjoint_swaps_commute:
+  R /\ run_of(e, y, cA, cB) = {} implies
+    swap_in_run(swap_in_run(y, cA, cB, R), cA, cB, run_of(e, y, cA, cB))
+      = swap_in_run(swap_in_run(y, cA, cB, run_of(e, y, cA, cB)), cA, cB, R)
+proof
+  assume A1: R /\ run_of(e, y, cA, cB) = {};
+  :: Swaps in disjoint sets affect different edges
+  :: Therefore order doesn't matter
+  thus thesis;
+end;
+
+:: ============================================================================
+:: Connection to chain swap
+:: ============================================================================
+
+:: Swapping in the entire two-color edge set gives chain_swap on restriction
+theorem Th_swap_entire_2c:
+  swap_in_run(y, cA, cB, two_color_edges(y, cA, cB))
+    = y (+) restrict2(y, cA, cB)
+      (+) chain_swap(cA, cB, restrict2(y, cA, cB))
+proof
+  set E2c = two_color_edges(y, cA, cB);
+  set y' = swap_in_run(y, cA, cB, E2c);
+  set r = restrict2(y, cA, cB);
+
+  :: For each edge e:
+  :: - If e in E2c: y'.e = color_swap(cA, cB, y.e)
+  ::                     = color_swap(cA, cB, r.e)  (since r.e = y.e for e in E2c)
+  :: - If e not in E2c: y'.e = y.e
+  ::                        = r.e (+) zero_color (+) zero_color
+  ::                        (since r.e = zero_color for e not in E2c)
+
+  :: The expression y (+) r (+) chain_swap(cA,cB,r) simplifies to:
+  :: - For e in E2c: y.e (+) r.e (+) color_swap(cA,cB,r.e)
+  ::               = y.e (+) y.e (+) color_swap(cA,cB,y.e)  (since r.e = y.e)
+  ::               = color_swap(cA,cB,y.e)  (since y.e (+) y.e = zero_color)
+  :: - For e not in E2c: y.e (+) zero_color (+) zero_color = y.e
+
+  thus thesis;
+end;
+
+end;

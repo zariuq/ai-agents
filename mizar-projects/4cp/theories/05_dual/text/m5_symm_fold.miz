@@ -1,0 +1,151 @@
+:: M5.1: Symmetric-difference fold over face edge-sets
+:: Constructive fold of symmetric difference (Δ) over finite sequences of edge sets
+
+environ
+
+vocabularies
+  CHAINDOT, XBOOLE_0, SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, TARSKI, FUNCT_1, FUNCT_2,
+  RELAT_1, FINSET_1, CARD_1, FINSEQ_1, NAT_1, NUMBERS;
+notations
+  TARSKI, XBOOLE_0, SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2, RELAT_1,
+  FINSET_1, CARD_1, FINSEQ_1, NAT_1;
+constructors
+  SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+  FINSET_1, CARD_1, FINSEQ_1, NAT_1;
+registrations
+  XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+  FINSET_1, CARD_1, FINSEQ_1, XBOOLE_0, SUBSET_1, NAT_1;
+requirements
+  SUBSET, BOOLE, NUMERALS;
+theorems
+  FINSEQ_1, XBOOLE_1;
+
+begin
+
+reserve G for _Graph;
+
+definition let G be _Graph;
+  mode EdgeSetSeq of G is FinSequence of bool the_Edges_of G;
+end;
+
+definition
+  let G be _Graph, S be EdgeSetSeq of G;
+  func symm_fold(G,S) -> Subset of the_Edges_of G means
+  :Def_symm_fold:
+  ex H being Function of NAT, bool the_Edges_of G st
+    H.0 = {} &
+    (for n being Nat holds
+       H.(n+1) = (if (n+1) <= len S
+                   then (H.n) \+\ (S.(n+1))
+                   else H.n)) &
+    it = H.(len S);
+  existence
+  proof
+    set E = the_Edges_of G;
+    deffunc F(Nat) = {};
+    deffunc G(Nat, Subset of E) = (if ($1+1) <= len S then $2 \+\ S.($1+1) else $2);
+    consider H being Function of NAT, bool E such that
+A1: H.0 = F(0) and
+A2: for n being Nat holds H.(n+1) = G(n, H.n)
+      from NAT_1:sch 12;
+    take H.(len S), H;
+    thus H.0 = {} by A1;
+    thus for n being Nat holds
+      H.(n+1) = (if (n+1) <= len S then H.n \+\ S.(n+1) else H.n) by A2;
+    thus thesis;
+  end;
+  uniqueness
+  proof
+    let A,B be Subset of the_Edges_of G;
+    given H1 being Function of NAT, bool the_Edges_of G such that
+B0:  H1.0 = {} and
+B1:  for n being Nat holds
+       H1.(n+1) = (if (n+1) <= len S then H1.n \+\ S.(n+1) else H1.n) and
+B2:  A = H1.(len S);
+    given H2 being Function of NAT, bool the_Edges_of G such that
+C0:  H2.0 = {} and
+C1:  for n being Nat holds
+       H2.(n+1) = (if (n+1) <= len S then H2.n \+\ S.(n+1) else H2.n) and
+C2:  B = H2.(len S);
+    :: simple NAT induction: equality of H1.n and H2.n for all n
+    defpred EqN[Nat] means H1.$1 = H2.$1;
+D0: EqN[0] by B0,C0;
+D1: for n being Nat st EqN[n] holds EqN[n+1]
+    proof
+      let n be Nat; assume IH: H1.n = H2.n;
+      per cases;
+      suppose n+1 <= len S;
+        hence H1.(n+1) = (H1.n) \+\ S.(n+1) by B1
+                       .= (H2.n) \+\ S.(n+1) by IH
+                       .= H2.(n+1) by C1;
+      end;
+      suppose not n+1 <= len S;
+        hence H1.(n+1) = H1.n by B1 .= H2.n by IH .= H2.(n+1) by C1;
+      end;
+    end;
+    for n being Nat holds EqN[n] from NAT_1:sch 2(D0,D1);
+    hence A = B by B2,C2;
+  end;
+end;
+
+theorem symm_fold_nil:
+  for G being _Graph holds symm_fold(G, <*> bool the_Edges_of G) = {}
+proof
+  let G be _Graph; set S = <*> bool the_Edges_of G;
+  consider H being Function of NAT, bool the_Edges_of G such that
+A: H.0 = {} &
+   (for n being Nat holds
+      H.(n+1) = (if (n+1) <= len S then H.n \+\ S.(n+1) else H.n)) &
+   symm_fold(G,S) = H.(len S) by Def_symm_fold;
+  thus symm_fold(G,S) = H.0 by A, FINSEQ_1:25 .= {} by A;
+end;
+
+theorem symm_fold_snoc:
+  for G being _Graph, S being EdgeSetSeq of G, A being Subset of the_Edges_of G holds
+    symm_fold(G, S ^ <* A *>) = symm_fold(G,S) \+\ A
+proof
+  let G be _Graph, S be EdgeSetSeq of G, A be Subset of the_Edges_of G;
+  set T = S ^ <* A *>; set n = len S;
+  consider H being Function of NAT, bool the_Edges_of G such that
+A: H.0 = {} &
+   (for k being Nat holds
+      H.(k+1) = (if (k+1) <= len T then H.k \+\ T.(k+1) else H.k)) &
+   symm_fold(G,T) = H.(len T) by Def_symm_fold;
+  consider K being Function of NAT, bool the_Edges_of G such that
+B: K.0 = {} &
+   (for k being Nat holds
+      K.(k+1) = (if (k+1) <= len S then K.k \+\ S.(k+1) else K.k)) &
+   symm_fold(G,S) = K.(len S) by Def_symm_fold;
+  have LT: len T = n+1 by FINSEQ_1:22;
+  have HnK: H.n = K.n
+  proof
+    defpred EqN[Nat] means $1 <= n implies H.$1 = K.$1;
+C0: EqN[0] by A,B;
+C1: for k being Nat st EqN[k] holds EqN[k+1]
+    proof
+      let k be Nat; assume IH: (k <= n implies H.k = K.k);
+      assume k1n: k+1 <= n;
+      then k < n by NAT_1:13;
+      then k+1 <= len T by LT, NAT_1:13;
+      then H.(k+1) = H.k \+\ T.(k+1) by A;
+      also have T.(k+1) = S.(k+1) by FINSEQ_1:def 7;
+      also have H.k = K.k by IH, k1n, NAT_1:13;
+      also have K.k \+\ S.(k+1) = K.(k+1) by B, k1n;
+      finally H.(k+1) = K.(k+1);
+    end;
+    for k being Nat holds EqN[k] from NAT_1:sch 2(C0,C1);
+    hence H.n = K.n;
+  end;
+  have last: T.(n+1) = A by FINSEQ_1:42;
+  thus symm_fold(G,T)
+     = H.(n+1) by A, LT
+    .= (H.n) \+\ T.(n+1) by A, LT
+    .= (K.n) \+\ A by HnK, last
+    .= symm_fold(G,S) \+\ A by B;
+end;
+
+end;
