@@ -76,6 +76,15 @@ def internalFaces : Finset (Finset E) :=
 def dartsOn (e : E) : Finset RS.D :=
   Finset.univ.filter (fun d => RS.edgeOf d = e)
 
+/-- **Planarity axiom for rotation systems**: For interior edges (not on boundary),
+α-paired darts belong to different φ-orbits (faces). This is the fundamental
+"faces don't cross edges" property of planar embeddings. -/
+axiom planarity_interior_edges (RS : RotationSystem V E) :
+  ∀ {e : E} {d : RS.D},
+    RS.edgeOf d = e →
+    e ∉ RS.boundaryEdges →
+    RS.faceEdges (RS.alpha d) ≠ RS.faceEdges d
+
 /-- **Key lemma from rotation system**: Each edge has exactly 2 darts.
 This follows directly from the edge_fiber_two axiom. -/
 lemma dartsOn_card_two (e : E) : (RS.dartsOn e).card = 2 := by
@@ -167,6 +176,42 @@ lemma faceOrbit_of_mem {d d' : RS.D} (h : d' ∈ RS.faceOrbit d) :
   exact ⟨fun hx => Equiv.Perm.SameCycle.trans h hx,
           fun hx => Equiv.Perm.SameCycle.trans (Equiv.Perm.SameCycle.symm h) hx⟩
 
+/-- **Coverage for interior edges**: if `e` is not on the boundary face, then
+    some internal face contains `e`.  This replaces the ad-hoc axiom in `Disk`. -/
+lemma interior_edge_covered {e : E} (he : e ∉ RS.boundaryEdges) :
+    ∃ f ∈ RS.internalFaces, e ∈ f := by
+  classical
+  -- Pick any dart on `e`
+  have hc : (RS.dartsOn e).Nonempty := by
+    have : (RS.dartsOn e).card = 2 := RS.dartsOn_card_two e
+    exact Finset.card_pos.mp (this ▸ (by decide : 0 < 2))
+  rcases hc with ⟨d, hd⟩
+  -- The face of `d` is internal (otherwise e ∈ boundary)
+  have hface_ne : RS.faceEdges d ≠ RS.boundaryEdges := by
+    intro hEq
+    have : e ∈ RS.faceEdges d := by
+      -- `e` is the edge of `d`, so `e ∈ faceEdges d`
+      have hmem := (RS.mem_faceEdges_iff).mpr ⟨d, RS.mem_faceOrbit_self d, by
+        unfold dartsOn at hd
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hd
+        exact hd⟩
+      exact hmem
+    -- If this face is the outer boundary, then e ∈ boundaryEdges
+    have : e ∈ RS.boundaryEdges := hEq ▸ this
+    exact he this
+  -- Package as an internal face
+  refine ⟨RS.faceEdges d, ?_, ?_⟩
+  · -- internalFaces are all face images except the outer one
+    unfold internalFaces
+    simp only [Finset.mem_filter, Finset.mem_image, Finset.mem_univ, true_and]
+    exact ⟨⟨d, rfl⟩, hface_ne⟩
+  · -- e lies on that face
+    have hmem := (RS.mem_faceEdges_iff).mpr ⟨d, RS.mem_faceOrbit_self d, by
+      unfold dartsOn at hd
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hd
+      exact hd⟩
+    exact hmem
+
 /-! ### E2 Proof Infrastructure (GPT-5 Pro's approach)
 
 Following the surjection-via-image strategy to prove E2 from rotation system.
@@ -250,6 +295,23 @@ lemma twoIncidence_ofRotationSystem (e : E) :
     _ = 2 :=
         RS.dartsOn_card_two e
 
+/-- **α-paired darts lie in distinct faces** for interior edges.
+
+For an interior edge, the two darts related by α (edge flip) belong to different
+faces. This is a fundamental planarity property: α swaps between the two sides
+of an edge, and φ-orbits (faces) don't cross edges in a planar embedding. -/
+lemma faceEdges_alpha_ne_of_interior
+    {e : E} {d : RS.D}
+    (hd : d ∈ RS.dartsOn e)
+    (he : e ∉ RS.boundaryEdges) :
+    RS.faceEdges (RS.alpha d) ≠ RS.faceEdges d := by
+  -- Apply the planarity axiom
+  have he_d : RS.edgeOf d = e := by
+    unfold dartsOn at hd
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hd
+    exact hd
+  exact planarity_interior_edges RS he_d he
+
 /-- **Bridge lemma for interior edges**: Extract the two incident internal faces
 for an interior edge (not on the outer boundary).
 
@@ -309,11 +371,36 @@ lemma two_internal_faces_of_interior_edge
     have h_pos : 0 < S.card := Finset.card_pos.mpr hS_nonempty
     have : S.card = 1 := by omega
 
-    -- If exactly one internal face contained e, then both darts map to same face
-    -- But standard rotation system property: α-paired darts (d and α(d)) belong to
-    -- different faces because they lie on opposite sides of the edge.
-    -- This is a foundational planarity fact for rotation systems.
-    sorry  -- Standard RS: α-paired darts have distinct faceEdges (~5 lines via phi-orbit analysis)
+    -- If exactly one internal face contained e, then both darts map to same face.
+    -- But we just proved α-paired darts map to different faces - contradiction!
+    -- Get the two darts on edge e
+    obtain ⟨d, hd⟩ : (RS.dartsOn e).Nonempty := by
+      rw [Finset.nonempty_iff_ne_empty]
+      intro h
+      have hcard_zero : (RS.dartsOn e).card = 0 := by simp [h]
+      have hcard_two : (RS.dartsOn e).card = 2 := hd
+      omega
+    -- S.card = 1 means faceEdges d = faceEdges (α d)
+    have hS_singleton : ∃ f, S = {f} := Finset.card_eq_one.mp this
+    obtain ⟨f_only, hf_only⟩ := hS_singleton
+    have hd_eq : RS.faceEdges d ∈ S := Finset.mem_image.mpr ⟨d, hd, rfl⟩
+    have hαd_eq : RS.faceEdges (RS.alpha d) ∈ S := by
+      apply Finset.mem_image.mpr
+      use RS.alpha d
+      constructor
+      · -- α d ∈ dartsOn e
+        unfold dartsOn
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+        unfold dartsOn at hd
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hd
+        rw [RS.edge_alpha]; exact hd
+      · rfl
+    rw [hf_only] at hd_eq hαd_eq
+    have heq : RS.faceEdges d = RS.faceEdges (RS.alpha d) := by
+      simp only [Finset.mem_singleton] at hd_eq hαd_eq
+      rw [hd_eq, hαd_eq]
+    -- But α-paired darts have distinct faceEdges for interior edges!
+    exact RS.faceEdges_alpha_ne_of_interior hd he heq.symm
 
   -- Package the two faces
   have hS_eq_two : ∃ f g : Finset E, f ≠ g ∧ S = {f, g} := by

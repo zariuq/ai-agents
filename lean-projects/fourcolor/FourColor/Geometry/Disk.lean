@@ -287,6 +287,14 @@ lemma rtransgen_tail {α : Type*} {R : α → α → Prop} {a b c : α}
     · rfl
   · intro h1; simp [h1]
 
+@[simp] lemma fst_add_apply (x y : E → Color) (e : E) :
+  ((x + y) e).fst = (x e).fst + (y e).fst := by
+  simp [Pi.add_apply, Prod.fst_add]
+
+@[simp] lemma snd_add_apply (x y : E → Color) (e : E) :
+  ((x + y) e).snd = (x e).snd + (y e).snd := by
+  simp [Pi.add_apply, Prod.snd_add]
+
 @[simp] lemma snd_faceBoundary_gamma10 {f : Finset E} {e : E} :
     (faceBoundaryChain (1,0) f e).snd = 0 := by
   classical
@@ -517,20 +525,16 @@ lemma aggregated_toggle_strict_descent_at_prescribed_cut
         have he_eq_e0 : e = e0 := by simpa using heq
         have hx_ne : (x e).fst ≠ 0 := by
           rw [he_eq_e0]; simp only [support₁, Finset.mem_filter] at he0_supp; exact he0_supp.2
-        have hx_eq_1 : (x e).fst = 1 := by
-          have : ZMod 2 → (· ≠ 0) → (· = 1) := fun a ha => by
-            interval_cases a <;> simp_all
-          exact this _ hx_ne
+        have hx_eq_1 : (x e).fst = 1 :=
+          (zmod2_ne_zero_iff_eq_one ((x e).fst)).1 hx_ne
         have hts_ne : (toggleSum G (1,0) S₀ e).fst ≠ 0 := by
           have : e = e0 := he_eq_e0
           rw [this]; exact (hsupp e0).mpr rfl
-        have hts_eq_1 : (toggleSum G (1,0) S₀ e).fst = 1 := by
-          have : ZMod 2 → (· ≠ 0) → (· = 1) := fun a ha => by
-            interval_cases a <;> simp_all
-          exact this _ hts_ne
-        simp only [Prod.fst_add] at h
+        have hts_eq_1 : (toggleSum G (1,0) S₀ e).fst = 1 :=
+          (zmod2_ne_zero_iff_eq_one ((toggleSum G (1,0) S₀ e).fst)).1 hts_ne
+        simp only [fst_add_apply] at h
         rw [hx_eq_1, hts_eq_1] at h
-        norm_num at h
+        simp at h
     · intro ⟨hx_supp, hne⟩
       -- hx_supp : (x e).fst ≠ 0 (unfolded from e ∈ support₁ x), hne : e ≠ e0
       -- Since e ≠ e0, toggleSum flips nothing: (toggleSum e).fst = 0
@@ -608,20 +612,16 @@ lemma aggregated_toggle_strict_descent_at_prescribed_cut_01
         have he_eq_e0 : e = e0 := by simpa using heq
         have hx_ne : (x e).snd ≠ 0 := by
           rw [he_eq_e0]; simp only [support₂, Finset.mem_filter] at he0_supp; exact he0_supp.2
-        have hx_eq_1 : (x e).snd = 1 := by
-          have : ZMod 2 → (· ≠ 0) → (· = 1) := fun a ha => by
-            interval_cases a <;> simp_all
-          exact this _ hx_ne
+        have hx_eq_1 : (x e).snd = 1 :=
+          (zmod2_ne_zero_iff_eq_one ((x e).snd)).1 hx_ne
         have hts_ne : (toggleSum G (0,1) S₀ e).snd ≠ 0 := by
           have : e = e0 := he_eq_e0
           rw [this]; exact (hsupp e0).mpr rfl
-        have hts_eq_1 : (toggleSum G (0,1) S₀ e).snd = 1 := by
-          have : ZMod 2 → (· ≠ 0) → (· = 1) := fun a ha => by
-            interval_cases a <;> simp_all
-          exact this _ hts_ne
-        simp only [Prod.snd_add] at h
+        have hts_eq_1 : (toggleSum G (0,1) S₀ e).snd = 1 :=
+          (zmod2_ne_zero_iff_eq_one ((toggleSum G (0,1) S₀ e).snd)).1 hts_ne
+        simp only [snd_add_apply] at h
         rw [hx_eq_1, hts_eq_1] at h
-        norm_num at h
+        simp at h
     · intro ⟨hx_supp, hne⟩
       -- hx_supp : (x e).snd ≠ 0 (unfolded from e ∈ support₂ x), hne : e ≠ e0
       -- Since e ≠ e0, toggleSum flips nothing: (toggleSum e).snd = 0
