@@ -1,0 +1,173 @@
+:: M5 Step 1: Indicator chains
+:: Maps a set of edges to a chain (characteristic function)
+
+environ
+  vocabularies
+    CHAINDOT, XBOOLE_0, SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+    GLIB_000, GLIB_001, GLIB_002, TARSKI, FUNCT_1, FUNCT_2;
+  notations
+    TARSKI, XBOOLE_0, SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+    GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2;
+  constructors
+    SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+    GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2;
+  registrations
+    XBOOLEAN, MARGREL1,
+    GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2;
+  requirements BOOLE, SUBSET;
+  theorems XBOOLE_0, FUNCT_1, FUNCT_2, MARGREL1;
+  schemes FUNCT_2;
+
+begin
+
+reserve G for _Graph;
+reserve S for Subset of the_Edges_of G;
+reserve e for Element of the_Edges_of G;
+
+:: ============================================================================
+:: Indicator chain for a set of edges
+:: ============================================================================
+
+:: Color for "edge is in the set" - use [TRUE, TRUE]
+definition
+  func indicator_color -> Element of GF2_squared equals [TRUE, TRUE];
+::>            *140,142,203
+  coherence by ZFMISC_1:def 2;
+::>       *72        *203
+end;
+
+:: Indicator chain: maps edges in S to indicator_color, others to zero_color
+definition
+  let G be _Graph;
+  let S be Subset of the_Edges_of G;
+  func indicator_chain(S) -> Chain of G means
+::>            *140,142,203
+  for e being Element of the_Edges_of G holds
+    (e in S implies it.e = indicator_color) &
+    (not e in S implies it.e = zero_color);
+  existence
+::>       *72
+  proof
+    defpred P[object, object] means
+      ($1 in S & $2 = indicator_color) or (not $1 in S & $2 = zero_color);
+::>                           *140,203
+
+    A1: for e being Element of the_Edges_of G
+        ex c being Element of GF2_squared st P[e, c]
+::>                                     *165
+    proof
+      let e be Element of the_Edges_of G;
+      per cases;
+      suppose e in S;
+        reconsider c = indicator_color as Element of GF2_squared;
+::>                            *140,203
+        take c;
+        thus thesis;
+      end;
+      suppose not e in S;
+        reconsider c = zero_color as Element of GF2_squared;
+::>                       *140,203
+        take c;
+        thus thesis;
+      end;
+    end;
+
+    consider f being Function of the_Edges_of G, GF2_squared such that
+::>                                                        *165
+    A2: for e being Element of the_Edges_of G holds P[e, f.e]
+      from FUNCT_2:sch 1(A1);
+
+    take f;
+    let e be Element of the_Edges_of G;
+    P[e, f.e] by A2;
+    hence e in S implies f.e = indicator_color;
+::>                                    *140,203
+    thus not e in S implies f.e = zero_color;
+::>                                  *140,203
+  end;
+  uniqueness
+::>        *72
+  proof
+    let f1, f2 be Chain of G;
+::>                   *151,183
+    assume A1: for e being Element of the_Edges_of G holds
+      (e in S implies f1.e = indicator_color) &
+::>                                  *140,203
+      (not e in S implies f1.e = zero_color);
+    assume A2: for e being Element of the_Edges_of G holds
+      (e in S implies f2.e = indicator_color) &
+::>                                  *140,203
+      (not e in S implies f2.e = zero_color);
+    for e being Element of the_Edges_of G holds f1.e = f2.e
+    proof
+      let e be Element of the_Edges_of G;
+      per cases;
+      suppose e in S;
+        then f1.e = indicator_color & f2.e = indicator_color by A1, A2;
+::>                         *140,203
+        hence f1.e = f2.e;
+      end;
+      suppose not e in S;
+        then f1.e = zero_color & f2.e = zero_color by A1, A2;
+::>                    *140,203
+        hence f1.e = f2.e;
+      end;
+    end;
+    hence f1 = f2 by FUNCT_2:113;
+::>                            *190
+  end;
+end;
+
+:: ============================================================================
+:: Basic properties
+:: ============================================================================
+
+theorem Th_indicator_of_mem:
+::>       *203
+  e in S implies (indicator_chain S).e = indicator_color
+proof
+  assume e in S;
+  hence thesis;
+end;
+
+theorem Th_indicator_of_not_mem:
+::>       *203
+  not e in S implies (indicator_chain S).e = zero_color
+proof
+  assume not e in S;
+  hence thesis;
+end;
+
+:: Indicator of empty set is zero chain
+theorem Th_indicator_empty:
+::>       *203
+  indicator_chain({} the_Edges_of G) = zero_chain(G)
+proof
+  set I = indicator_chain({} the_Edges_of G);
+::>               *140,203
+  for e being Element of the_Edges_of G holds I.e = (zero_chain G).e
+::>                                                     *140,203
+  proof
+::>   *140
+    let e be Element of the_Edges_of G;
+    not e in {} by XBOOLE_0:def 1;
+::>              *4
+    then I.e = zero_color;
+::>               *140,203
+    (zero_chain G).e = zero_color by FUNCT_2:63;
+::>      *203
+    hence I.e = (zero_chain G).e;
+::>                 *140,203
+  end;
+  hence thesis by FUNCT_2:113;
+end;
+::>
+::> 4: This inference is not accepted
+::> 72: Unexpected correctness condition
+::> 140: Unknown variable
+::> 142: Unknown locus
+::> 151: Unknown mode format
+::> 165: Unknown functor format
+::> 183: Accessible mode format has empty list of arguments
+::> 190: Inaccessible theorem
+::> 203: Unknown token, maybe an illegal character used in an identifier

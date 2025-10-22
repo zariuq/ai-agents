@@ -651,6 +651,39 @@ lemma zeroChain_mem_zeroBoundarySet {V E : Type*} [Fintype V] [DecidableEq V]
   intro e he
   rfl
 
+lemma isZeroBoundary_add (D : ZeroBoundaryData V E)
+    {x y : E → Color}
+    (hx : D.isZeroBoundary x) (hy : D.isZeroBoundary y) :
+    D.isZeroBoundary (x + y) := by
+  intro v
+  -- ∑ (x + y) = ∑ x + ∑ y = 0
+  simpa [Pi.add_apply, Finset.sum_add_distrib, hx v, hy v]
+
+lemma mem_zero_add (D : ZeroBoundaryData V E)
+    {x y : E → Color}
+    (hx : x ∈ D.zeroBoundarySet) (hy : y ∈ D.zeroBoundarySet) :
+    x + y ∈ D.zeroBoundarySet := by
+  rcases hx with ⟨hxV, hxB⟩
+  rcases hy with ⟨hyV, hyB⟩
+  refine ⟨D.isZeroBoundary_add hxV hyV, ?_⟩
+  intro e he
+  -- boundary values: (x + y) e = 0 + 0
+  simp [hxB e he, hyB e he]
+
+lemma sum_mem_zero {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (D : ZeroBoundaryData V E)
+    (S : Finset ι) (f : ι → E → Color)
+    (h : ∀ i ∈ S, f i ∈ D.zeroBoundarySet) :
+    (∑ i ∈ S, f i) ∈ D.zeroBoundarySet := by
+  classical
+  induction' S using Finset.induction with i S hi ih
+  · simpa using D.zeroChain_mem_zeroBoundarySet
+  · have hi' : f i ∈ D.zeroBoundarySet := h i (Finset.mem_insert_self _ _)
+    have hS : ∀ j ∈ S, f j ∈ D.zeroBoundarySet :=
+      fun j hj => h j (Finset.mem_insert_of_mem hj)
+    simpa [Finset.sum_insert hi] using
+      D.mem_zero_add hi' (ih hS)
+
 end ZeroBoundaryData
 
 

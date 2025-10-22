@@ -1,0 +1,254 @@
+:: M5 Steps 2-3: Face boundaries
+:: Defines faces and their boundary chains with key properties
+
+environ
+  vocabularies
+    CHAINDOT, XBOOLE_0, SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+    GLIB_000, GLIB_001, GLIB_002, TARSKI, FUNCT_1, FUNCT_2,
+    RELAT_1, FINSET_1, CARD_1;
+  notations
+    TARSKI, XBOOLE_0, SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+    GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2, RELAT_1,
+    FINSET_1, CARD_1;
+  constructors
+    SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+    GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+    FINSET_1, CARD_1;
+  registrations
+    XBOOLEAN, MARGREL1,
+    GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+    FINSET_1, CARD_1;
+  requirements BOOLE, SUBSET;
+  theorems XBOOLE_0, XBOOLE_1, FUNCT_1, FUNCT_2, ZFMISC_1, MARGREL1,
+    TARSKI, CARD_1, FINSET_1;
+  schemes FUNCT_2;
+
+begin
+
+reserve G for _Graph;
+reserve F, F1, F2 for Subset of the_Edges_of G;
+reserve e for Element of the_Edges_of G;
+reserve x, y for Chain of G;
+::>                  *151,183
+
+:: ============================================================================
+:: Face boundary as a chain
+:: ============================================================================
+
+:: A face is represented by its boundary - a set of edges forming a cycle
+:: In planar graphs, faces are regions; we represent them via their boundaries
+::
+:: The boundary chain of a face F maps edges in F to indicator_color
+:: This connects set-theoretic representation to chain algebra
+definition
+  let G be _Graph;
+  let F be Subset of the_Edges_of G;
+  func face_boundary(F) -> Chain of G equals
+::>       *140,142,203
+  indicator_chain(F);
+  coherence;
+::>       *72
+end;
+
+:: ============================================================================
+:: Basic properties of face boundaries
+:: ============================================================================
+
+:: Boundary of a face containing edge e has indicator_color at e
+theorem Th_face_boundary_mem:
+::>       *203
+  e in F implies (face_boundary F).e = indicator_color
+proof
+  assume e in F;
+  then (indicator_chain F).e = indicator_color;
+::>              *203
+  hence thesis;
+end;
+
+:: Boundary of a face not containing edge e has zero_color at e
+theorem Th_face_boundary_not_mem:
+::>       *203
+  not e in F implies (face_boundary F).e = zero_color
+proof
+  assume not e in F;
+  then (indicator_chain F).e = zero_color;
+::>              *203
+  hence thesis;
+end;
+
+:: Empty face has zero boundary
+theorem Th_face_boundary_empty:
+::>       *203
+  face_boundary({} the_Edges_of G) = zero_chain(G)
+proof
+  face_boundary({} the_Edges_of G) = indicator_chain({} the_Edges_of G);
+::>   *203
+  hence thesis by Th_indicator_empty;
+::>                 *203
+end;
+
+:: ============================================================================
+:: Algebraic properties
+:: ============================================================================
+
+:: Sum of two face boundaries = boundary of symmetric difference
+:: This is the key algebraic property for boundary operators
+theorem Th_face_boundary_add:
+::>       *203
+  face_boundary(F1) (+) face_boundary(F2)
+    = face_boundary(F1 \+\ F2)
+proof
+  set b1 = face_boundary(F1);
+::>           *140,203
+  set b2 = face_boundary(F2);
+::>           *140,203
+  set b_sum = face_boundary(F1 \+\ F2);
+::>    *203
+
+  for e being Element of the_Edges_of G holds
+    (b1 (+) b2).e = b_sum.e
+::>       *165       *203
+  proof
+::>   *396
+    let e be Element of the_Edges_of G;
+::>                *143              *143
+    per cases;
+    suppose A1: e in F1 & e in F2;
+      then A2: not e in (F1 \+\ F2) by XBOOLE_0:def 3;
+      b1.e = indicator_color & b2.e = indicator_color by A1;
+::>                  *140,203
+      then (b1 (+) b2).e = indicator_color (+) indicator_color
+::>              *165              *140,203
+                         = [TRUE, TRUE] (+) [TRUE, TRUE]
+                         = [TRUE 'xor' TRUE, TRUE 'xor' TRUE]
+                         = [FALSE, FALSE] by MARGREL1:68
+                         = zero_color;
+      b_sum.e = zero_color by A2;
+::>    *203
+      hence (b1 (+) b2).e = b_sum.e;
+::>               *165       *203
+    end;
+    suppose A3: e in F1 & not e in F2;
+      then A4: e in (F1 \+\ F2) by XBOOLE_0:def 3;
+      b1.e = indicator_color & b2.e = zero_color by A3;
+::>                  *140,203
+      then (b1 (+) b2).e = indicator_color (+) zero_color
+::>              *165              *140,203
+                         = [TRUE, TRUE] (+) [FALSE, FALSE]
+                         = [TRUE 'xor' FALSE, TRUE 'xor' FALSE]
+                         = [TRUE, TRUE] by MARGREL1:67
+                         = indicator_color;
+      b_sum.e = indicator_color by A4;
+::>    *203
+      hence (b1 (+) b2).e = b_sum.e;
+::>               *165       *203
+    end;
+    suppose A5: not e in F1 & e in F2;
+      then A6: e in (F1 \+\ F2) by XBOOLE_0:def 3;
+      b1.e = zero_color & b2.e = indicator_color by A5;
+::>                   *165               *140,203
+      then (b1 (+) b2).e = zero_color (+) indicator_color
+::>              *165               *166          *140,203
+                         = [FALSE, FALSE] (+) [TRUE, TRUE]
+                         = [FALSE 'xor' TRUE, FALSE 'xor' TRUE]
+                         = [TRUE, TRUE] by MARGREL1:67
+                         = indicator_color;
+      b_sum.e = indicator_color by A6;
+::>    *203
+      hence (b1 (+) b2).e = b_sum.e;
+::>               *165       *203
+    end;
+    suppose A7: not e in F1 & not e in F2;
+      then A8: not e in (F1 \+\ F2) by XBOOLE_0:def 3;
+      b1.e = zero_color & b2.e = zero_color by A7;
+::>                   *165                *165
+      then (b1 (+) b2).e = zero_color (+) zero_color
+::>              *165               *166
+                         = [FALSE, FALSE] (+) [FALSE, FALSE]
+::>                                         *165
+                         = [FALSE 'xor' FALSE, FALSE 'xor' FALSE]
+                         = [FALSE, FALSE] by MARGREL1:67
+::>                                                     *330
+                         = zero_color;
+      b_sum.e = zero_color by A8;
+::>    *203
+      hence (b1 (+) b2).e = b_sum.e;
+::>               *165       *203
+    end;
+  end;
+  hence thesis by FUNCT_2:113;
+end;
+
+:: ============================================================================
+:: Topological property: boundary of boundary
+:: ============================================================================
+
+:: Key property: Face boundary summed with itself gives zero
+:: This represents the idempotent property in GF(2) algebra
+theorem Th_face_boundary_involutive:
+::>       *203
+  face_boundary(F) (+) face_boundary(F) = zero_chain(G)
+proof
+  :: F symmetric-difference F = {} (set XOR with itself)
+  A1: F \+\ F = {} the_Edges_of G
+  proof
+    for x being object holds
+      not x in F \+\ F
+    proof
+      let x be object;
+      assume x in F \+\ F;
+      then (x in F & not x in F) or (not x in F & x in F)
+        by XBOOLE_0:def 3;
+::>      *4,4
+      hence contradiction;
+    end;
+    then F \+\ F c= {} the_Edges_of G;
+::>                                 *4
+    hence thesis;
+::>            *4
+  end;
+
+  thus face_boundary(F) (+) face_boundary(F)
+::>        *203
+     = face_boundary(F \+\ F) by Th_face_boundary_add
+    .= face_boundary({} the_Edges_of G) by A1
+    .= zero_chain(G) by Th_face_boundary_empty;
+end;
+
+:: ============================================================================
+:: SKETCH: Advanced properties for full formalization
+:: ============================================================================
+
+:: NOTE: These properties would require additional infrastructure:
+::
+:: 1. Planar graph structure
+::    - Definition of planarity
+::    - Face enumeration
+::    - Euler characteristic (V - E + F = 2)
+::
+:: 2. Cycle detection
+::    - Path and cycle definitions
+::    - face_boundary(F) is a cycle
+::    - Cycle space basis
+::
+:: 3. Homological properties
+::    - Sum of all face boundaries = zero_chain
+::    - Face boundaries span cycle space
+::    - Exactness of chain complex
+::
+:: For now, we have the essential algebraic properties needed
+:: for chain-based reasoning about face boundaries.
+
+::>
+::> 4: This inference is not accepted
+::> 72: Unexpected correctness condition
+::> 140: Unknown variable
+::> 142: Unknown locus
+::> 143: No implicit qualification
+::> 151: Unknown mode format
+::> 165: Unknown functor format
+::> 166: Unknown functor format
+::> 183: Accessible mode format has empty list of arguments
+::> 203: Unknown token, maybe an illegal character used in an identifier
+::> 330: Unexpected end of an item (perhaps ";" missing)
+::> 396: Formula expected

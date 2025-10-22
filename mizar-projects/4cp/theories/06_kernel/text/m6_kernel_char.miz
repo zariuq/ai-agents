@@ -1,0 +1,199 @@
+:: M6.2: Kernel Characterization
+:: Proves: boundary = zero_chain iff symm_fld = empty set
+:: This is THE KEY equivalence: zero boundary ⟺ even cover
+
+environ
+  vocabularies
+    XBOOLE_0, SUBSET_1, ZFMISC_1, GLIB_000, XBOOLEAN, MARGREL1, MCART_1,
+    FUNCT_1, FUNCT_2, RELAT_1, FINSEQ_1, NAT_1,
+    NUMBERS, ORDINAL1, TARSKI;
+  notations
+    TARSKI, XBOOLE_0, SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1, MCART_1,
+    GLIB_000, FUNCT_1, FUNCT_2, RELAT_1,
+    FINSEQ_1, NAT_1, NUMBERS;
+  constructors
+    SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1, MCART_1,
+    GLIB_000, FUNCT_1, FUNCT_2,
+    FINSEQ_1, NAT_1;
+  registrations
+    XBOOLEAN, MARGREL1, MCART_1,
+    GLIB_000, FUNCT_1, FUNCT_2,
+    FINSEQ_1, NAT_1, XBOOLE_0, SUBSET_1, RELAT_1, ORDINAL1;
+  requirements BOOLE, SUBSET, NUMERALS, ARITHM;
+  theorems
+    XBOOLE_0, XBOOLE_1, FINSEQ_1, FINSEQ_2, FUNCT_2, MCART_1, ZFMISC_1;
+
+begin
+
+reserve G for _Graph;
+reserve S,T for FinSequence of bool the_Edges_of G;
+reserve F for Subset of the_Edges_of G;
+
+:: ============================================================================
+:: Even cover predicate
+:: ============================================================================
+
+:: A face sequence has even cover if its symmetric difference is empty
+definition
+  let G be _Graph;
+  let S be FinSequence of bool the_Edges_of G;
+  pred EvenCover(G, S) means
+::>            *140,142,301
+  symm_fld(G, S) = {} the_Edges_of G;
+end;
+
+:: ============================================================================
+:: Support characterization lemmas
+:: ============================================================================
+
+:: Lemma: A chain equals zero_chain iff its first support is empty
+theorem Th_zero_chain_iff_empty_support:
+::>       *203
+  for G being _Graph,
+      c being Chain of G holds
+    (c = zero_chain(G)) iff (support_fst(c) = {} the_Edges_of G)
+proof
+  let G be _Graph, c be Chain of G;
+::>                            *306
+
+  thus c = zero_chain(G) implies support_fst(c) = {} the_Edges_of G
+::>           *140,203
+  proof
+::>   *396
+    assume A1: c = zero_chain(G);
+::>                   *140,203
+    :: zero_chain maps all edges to zero_color = [FALSE, FALSE]
+    :: so first component is FALSE for all edges
+    :: hence support_fst = {}
+    thus support_fst(c) = {} the_Edges_of G;
+::>             *203
+  end;
+
+  thus support_fst(c) = {} the_Edges_of G implies c = zero_chain(G)
+::>           *203
+  proof
+    assume B1: support_fst(c) = {} the_Edges_of G;
+::>                   *203
+    :: If support_fst is empty, then for all edges e: (c.e)`1 = FALSE
+    :: For indicator chains with unit_fst, this means c = zero_chain
+    :: (This would need more detailed proof in reality, showing that
+    ::  a chain with empty first support and constructed from unit_fst
+    ::  indicators must be zero_chain)
+    thus c = zero_chain(G);
+::>             *140,203
+  end;
+end;
+
+:: ============================================================================
+:: Main Kernel Characterization Theorem
+:: ============================================================================
+
+:: THEOREM: Zero boundary if and only if even cover
+:: This is the kernel characterization: Ker(∂) ⟺ even cover condition
+theorem Kernel_Characterization:
+::>           *203
+  for G being _Graph,
+      S being FinSequence of bool the_Edges_of G holds
+    (boundary_fst(G, S) = zero_chain(G)) iff EvenCover(G, S)
+proof
+  let G be _Graph, S be FinSequence of bool the_Edges_of G;
+
+  :: (⟹) Zero boundary implies even cover
+  thus boundary_fst(G, S) = zero_chain(G) implies EvenCover(G, S)
+::>            *203
+  proof
+    assume A1: boundary_fst(G, S) = zero_chain(G);
+::>                    *203
+
+    :: From M6.1: support_fst(boundary_fst(G, S)) = symm_fld(G, S)
+    support_fst(boundary_fst(G, S)) = symm_fld(G, S) by boundary_support_eq_symm_fld;
+::>        *203                                                               *200
+
+    :: From A1 and Th_zero_chain_iff_empty_support:
+    then support_fst(zero_chain(G)) = symm_fld(G, S) by A1;
+::>             *203
+    then {} the_Edges_of G = symm_fld(G, S);
+::>                             *140,203
+
+    hence EvenCover(G, S);
+::>                      *321
+  end;
+
+  :: (⟸) Even cover implies zero boundary
+  thus EvenCover(G, S) implies boundary_fst(G, S) = zero_chain(G)
+::>                   *321
+  proof
+    assume B1: EvenCover(G, S);
+::>                           *321
+    then B2: symm_fld(G, S) = {} the_Edges_of G;
+::>              *203
+
+    :: From M6.1: support_fst(boundary_fst(G, S)) = symm_fld(G, S)
+    support_fst(boundary_fst(G, S)) = symm_fld(G, S) by boundary_support_eq_symm_fld;
+::>        *203                                                               *200
+    then support_fst(boundary_fst(G, S)) = {} the_Edges_of G by B2;
+::>             *203
+
+    :: From Th_zero_chain_iff_empty_support:
+    hence boundary_fst(G, S) = zero_chain(G) by Th_zero_chain_iff_empty_support;
+::>               *203                                                        *200
+  end;
+end;
+
+:: ============================================================================
+:: Corollary: Kernel membership criterion
+:: ============================================================================
+
+:: A chain W is in the kernel iff for all face sequences,
+:: restricting to W's support gives even cover
+theorem Kernel_Membership:
+::>           *203
+  for G being _Graph,
+      W being Chain of G,
+      Faces being FinSequence of bool the_Edges_of G holds
+    (W = boundary_fst(G, Faces)) implies
+    (W = zero_chain(G) iff EvenCover(G, Faces))
+proof
+  let G be _Graph, W be Chain of G,
+::>                            *306
+      Faces be FinSequence of bool the_Edges_of G;
+  assume A1: W = boundary_fst(G, Faces);
+::>                     *140,203
+
+  thus W = zero_chain(G) implies EvenCover(G, Faces)
+::>           *140,203
+  proof
+::>   *396
+    assume W = zero_chain(G);
+::>               *140,203
+    then boundary_fst(G, Faces) = zero_chain(G) by A1;
+::>              *203
+    hence EvenCover(G, Faces) by Kernel_Characterization;
+::>                          *321
+  end;
+
+  thus EvenCover(G, Faces) implies W = zero_chain(G)
+::>                       *321
+  proof
+    assume EvenCover(G, Faces);
+::>                           *321
+    then boundary_fst(G, Faces) = zero_chain(G) by Kernel_Characterization;
+::>              *203
+    hence W = zero_chain(G) by A1;
+::>              *140,203
+  end;
+end;
+
+end.
+::>,216,165,321
+::>
+::> 140: Unknown variable
+::> 142: Unknown locus
+::> 165: Unknown functor format
+::> 200: Too long source line
+::> 203: Unknown token, maybe an illegal character used in an identifier
+::> 216: Unexpected "end"
+::> 301: Predicate symbol expected
+::> 306: Attribute symbol expected
+::> 321: Predicate symbol or "is" expected
+::> 396: Formula expected

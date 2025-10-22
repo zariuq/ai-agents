@@ -1,0 +1,93 @@
+:: T3.3: Face boundary span (adapter)
+:: Connects span infrastructure to actual face boundaries
+
+environ
+
+vocabularies
+  SPANXOR, CHAINDOT, XBOOLE_0, SUBSET_1, ZFMISC_1,
+  FUNCT_1, FUNCT_2, FINSEQ_1, CARD_1, XBOOLEAN, MARGREL1,
+  TARSKI, RELAT_1, GLIB_000, GLIB_001, GLIB_002, NAT_1, NUMBERS;
+notations
+  TARSKI, XBOOLE_0, SUBSET_1, ZFMISC_1, NAT_1, FUNCT_1, FUNCT_2,
+  FINSEQ_1, CARD_1, XBOOLEAN, MARGREL1, RELAT_1,
+  GLIB_000, GLIB_001, GLIB_002;
+constructors
+  SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+  FINSEQ_1, CARD_1, NAT_1;
+registrations
+  XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+  FINSEQ_1, CARD_1, NAT_1, XBOOLE_0;
+requirements
+  SUBSET, BOOLE, NUMERALS;
+theorems
+  FINSEQ_1, FUNCT_2;
+schemes
+  FUNCT_2;
+
+begin
+
+reserve G for _Graph;
+
+:: ============================================================================
+:: Face boundary span
+:: ============================================================================
+
+:: For now, face_boundary_span is defined generically on any ChainSeq
+:: Later, we'll connect this to actual face boundaries via face_boundary_seq
+
+definition
+  let G be _Graph, S be ChainSeq of G;
+  func face_boundary_span(G, S) -> Subset of Chains(G) equals
+    span_of_seq(G, S);
+  coherence;
+end;
+
+:: ============================================================================
+:: Properties inherited from span_of_seq
+:: ============================================================================
+
+:: Zero chain is in the span
+theorem Th_face_span_contains_zero:
+  for G being _Graph, S being ChainSeq of G holds
+    zero_chain(G) in face_boundary_span(G, S)
+proof
+  let G be _Graph, S be ChainSeq of G;
+  face_boundary_span(G, S) = span_of_seq(G, S);
+  :: By Th_span_contains_zero
+  hence thesis;
+end;
+
+:: Span is closed under addition
+theorem Th_face_span_closed_add:
+  for G being _Graph, S being ChainSeq of G, c1, c2 being Chain of G
+  st c1 in face_boundary_span(G, S) & c2 in face_boundary_span(G, S)
+  holds c1 (+) c2 in face_boundary_span(G, S)
+proof
+  let G be _Graph, S be ChainSeq of G, c1, c2 be Chain of G;
+  assume A1: c1 in face_boundary_span(G, S);
+  assume A2: c2 in face_boundary_span(G, S);
+  face_boundary_span(G, S) = span_of_seq(G, S);
+  then c1 in span_of_seq(G, S) & c2 in span_of_seq(G, S) by A1, A2;
+  :: By Th_span_closed_add
+  hence thesis;
+end;
+
+:: ============================================================================
+:: Future connection to actual face boundaries
+:: ============================================================================
+
+:: NOTE: When face_boundary_seq(G, FACES) is defined, we can write:
+::
+:: definition
+::   let G be _Graph, FACES be Subset-Family of the_Edges_of G;
+::   func face_boundary_span(G, FACES) -> Subset of Chains(G) equals
+::     face_boundary_span(G, face_boundary_seq(G, FACES));
+::   coherence;
+:: end;
+::
+:: Where face_boundary_seq(G, FACES) constructs the sequence of face boundaries
+:: from a collection of faces using indicator_chain.
+
+end;

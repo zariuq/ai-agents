@@ -1,0 +1,115 @@
+:: Finite fold (foldXor) for chains
+:: Enables concrete span and generator definitions
+
+environ
+  vocabularies
+    CHAINDOT, XBOOLE_0, SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+    GLIB_000, GLIB_001, GLIB_002, TARSKI, FUNCT_1, FUNCT_2,
+    RELAT_1, FINSET_1, CARD_1, FINSEQ_1, NAT_1, NUMBERS;
+  notations
+    TARSKI, XBOOLE_0, SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+    GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2, RELAT_1,
+    FINSET_1, CARD_1, FINSEQ_1, NAT_1, NUMBERS;
+  constructors
+    SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+    GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+    FINSET_1, CARD_1, FINSEQ_1, NAT_1;
+  registrations
+    XBOOLEAN, MARGREL1,
+    GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+    FINSET_1, CARD_1, NAT_1;
+  requirements BOOLE, SUBSET, NUMERALS, ARITHM;
+  theorems XBOOLE_0, XBOOLE_1, FUNCT_1, FUNCT_2, ZFMISC_1, MARGREL1,
+    TARSKI, CARD_1, FINSEQ_1, FINSET_1, NAT_1;
+  schemes FUNCT_2, FINSEQ_1;
+
+begin
+
+reserve G for _Graph;
+reserve F, F1, F2 for Subset of the_Edges_of G;
+reserve x, y, z for Chain of G;
+
+:: ============================================================================
+:: Finite XOR fold for chains
+:: ============================================================================
+
+:: For a finite sequence of chains, compute their XOR fold
+:: This is the key to making spans concrete
+definition
+  let G be _Graph;
+  let seq be FinSequence of [: set, Chain of G :];
+  func foldXor(seq, G) -> Chain of G means
+  ex n being Nat st n = len seq &
+    (n = 0 implies it = zero_chain(G)) &
+    (n > 0 implies
+      ex rest being FinSequence of [: set, Chain of G :] st
+        len rest = n - 1 &
+        (for i being Nat st i in dom rest holds rest.i = seq.i) &
+        it = (seq.n)`2 (+) foldXor(rest, G));
+  existence
+  proof
+    defpred P[Nat] means
+      for seq being FinSequence of [: set, Chain of G :] st len seq = $1
+      ex result being Chain of G st
+        ($1 = 0 implies result = zero_chain(G)) &
+        ($1 > 0 implies
+          ex rest being FinSequence of [: set, Chain of G :] st
+            len rest = $1 - 1 &
+            (for i being Nat st i in dom rest holds rest.i = seq.i) &
+            result = (seq.$1)`2 (+) foldXor(rest, G));
+
+    A1: P[0]
+    proof
+      let seq be FinSequence of [: set, Chain of G :];
+      assume len seq = 0;
+      take zero_chain(G);
+      thus thesis;
+    end;
+
+    A2: for k being Nat st P[k] holds P[k + 1]
+    proof
+      let k be Nat;
+      assume B1: P[k];
+      let seq be FinSequence of [: set, Chain of G :];
+      assume len seq = k + 1;
+      :: SKETCH: Need induction infrastructure
+      :: This requires FINSEQ_1 schemes and careful construction
+      thus thesis;
+    end;
+
+    :: SKETCH: Apply induction from NAT_1 or FINSEQ_1
+    thus thesis;
+  end;
+  uniqueness;
+end;
+
+:: ============================================================================
+:: SKETCH: Finite fold properties
+:: ============================================================================
+
+:: NOTE: Full finite fold formalization requires:
+::
+:: 1. FinSequence construction and manipulation
+::    - Subsequence operations
+::    - Concatenation
+::    - Empty sequence handling
+::
+:: 2. Induction schemes
+::    - NAT_1:sch 2 (natural number induction)
+::    - FINSEQ_1:sch 2 (sequence induction)
+::
+:: 3. Properties to prove:
+::    - foldXor([]) = zero_chain
+::    - foldXor(seq ++ [x]) = foldXor(seq) (+) x
+::    - Associativity/commutativity follow from chain (+)
+::    - Order independence (needs permutation lemmas)
+::
+:: 4. Connection to span:
+::    face_boundary_span(FACES) =
+::      { foldXor(subseq) | subseq is subsequence of face_boundaries(FACES) }
+::
+:: This is complex! For MVP, we may need to:
+:: - Use simpler recursive definition on finite sets
+:: - Or axiomatize fold temporarily with key properties
+:: - Focus on Kempe chains which have more direct constructions
+

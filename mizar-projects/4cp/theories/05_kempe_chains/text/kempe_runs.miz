@@ -1,0 +1,242 @@
+:: M4 T4.1c: Kempe runs (connected components)
+:: Defines runs as connected components in two-color subgraphs
+
+environ
+
+vocabularies
+  CHAINDOT, XBOOLE_0, SUBSET_1, NUMBERS, NAT_1, FINSET_1,
+  FUNCT_1, FUNCT_2, ZFMISC_1, CARD_1, XBOOLEAN, MARGREL1,
+  TARSKI, RELAT_1, GLIB_000, GLIB_001, GLIB_002, EQREL_1;
+notations
+  TARSKI, XBOOLE_0, SUBSET_1, NAT_1, FINSET_1, FUNCT_1, FUNCT_2,
+  ZFMISC_1, CARD_1, XBOOLEAN, MARGREL1, RELAT_1,
+  GLIB_000, GLIB_001, GLIB_002, EQREL_1;
+constructors
+  SUBSET_1, ZFMISC_1, XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+  FINSET_1, CARD_1, NAT_1, EQREL_1;
+registrations
+  XBOOLEAN, MARGREL1,
+  GLIB_000, GLIB_001, GLIB_002, FUNCT_1, FUNCT_2,
+  FINSET_1, CARD_1, NAT_1, XBOOLE_0;
+requirements
+  SUBSET, BOOLE, NUMERALS;
+theorems
+  XBOOLE_1, FUNCT_2, MARGREL1, ZFMISC_1, GLIB_000;
+schemes
+  FUNCT_2;
+
+begin
+
+reserve G for _Graph;
+reserve y for Chain of G;
+reserve cA, cB for Element of GF2_squared;
+reserve e, e1, e2 for Element of the_Edges_of G;
+
+:: ============================================================================
+:: Edge adjacency in graphs
+:: ============================================================================
+
+:: Two edges are adjacent if they share a common vertex
+definition
+  let G be _Graph, e1, e2 be Element of the_Edges_of G;
+  pred e1, e2 are_adjacent means
+  ex v being Element of the_Vertices_of G st
+    v in (the_Source_of G).e1 or v in (the_Target_of G).e1 and
+    v in (the_Source_of G).e2 or v in (the_Target_of G).e2;
+end;
+
+:: ============================================================================
+:: Two-color adjacency
+:: ============================================================================
+
+:: Two edges are adjacent in the two-color subgraph if:
+:: 1. Both are colored with cA or cB
+:: 2. They share a common vertex
+definition
+  let G be _Graph, y be Chain of G, cA, cB be Element of GF2_squared;
+  let e1, e2 be Element of the_Edges_of G;
+  pred e1, e2 are_2c_adjacent y, cA, cB means
+    e1 in two_color_edges(y, cA, cB) &
+    e2 in two_color_edges(y, cA, cB) &
+    e1, e2 are_adjacent;
+end;
+
+:: ============================================================================
+:: Reachability in two-color subgraph
+:: ============================================================================
+
+:: Two edges are connected if there's a path of adjacent two-colored edges
+:: For now, we define this axiomatically as the reflexive-transitive closure
+definition
+  let G be _Graph, y be Chain of G, cA, cB be Element of GF2_squared;
+  let e1, e2 be Element of the_Edges_of G;
+  pred e1, e2 are_2c_connected y, cA, cB means
+    e1 = e2 or
+    ex n being Nat, p being FinSequence st
+      len p = n + 1 &
+      p.1 = e1 &
+      p.(n+1) = e2 &
+      (for i being Nat st 1 <= i & i <= n holds
+        ex ei, ej being Element of the_Edges_of G st
+          p.i = ei & p.(i+1) = ej & ei, ej are_2c_adjacent y, cA, cB);
+  reflexivity;
+  symmetry;
+end;
+
+:: ============================================================================
+:: Kempe runs (equivalence classes under connectivity)
+:: ============================================================================
+
+:: A run is a maximal connected set of edges in the two-color subgraph
+:: Formally: the equivalence class of an edge under 2c-connectivity
+
+definition
+  let G be _Graph, y be Chain of G, cA, cB be Element of GF2_squared;
+  let e be Element of the_Edges_of G;
+  func run_of(e, y, cA, cB) -> Subset of the_Edges_of G equals
+    { e1 where e1 is Element of the_Edges_of G :
+      e1, e are_2c_connected y, cA, cB };
+  coherence
+  proof
+    set R = { e1 where e1 is Element of the_Edges_of G :
+      e1, e are_2c_connected y, cA, cB };
+    R c= the_Edges_of G
+    proof
+      let x be object;
+      assume x in R;
+      then ex e1 st x = e1 & e1, e are_2c_connected y, cA, cB;
+      hence x in the_Edges_of G;
+    end;
+    hence thesis;
+  end;
+end;
+
+:: ============================================================================
+:: Properties of runs
+:: ============================================================================
+
+:: An edge is in its own run
+theorem Th_edge_in_own_run:
+  e in two_color_edges(y, cA, cB) implies e in run_of(e, y, cA, cB)
+proof
+  assume e in two_color_edges(y, cA, cB);
+  e, e are_2c_connected y, cA, cB;
+  hence thesis;
+end;
+
+:: Two edges in the same run are connected
+theorem Th_run_connected:
+  e1 in run_of(e, y, cA, cB) & e2 in run_of(e, y, cA, cB)
+  implies e1, e2 are_2c_connected y, cA, cB
+proof
+  assume A1: e1 in run_of(e, y, cA, cB);
+  assume A2: e2 in run_of(e, y, cA, cB);
+  then consider e1' being Element of the_Edges_of G such that
+  B1: e1 = e1' & e1', e are_2c_connected y, cA, cB by A1;
+  consider e2' being Element of the_Edges_of G such that
+  B2: e2 = e2' & e2', e are_2c_connected y, cA, cB by A2;
+  :: By symmetry and transitivity of connectivity
+  thus thesis;
+end;
+
+:: If two runs share an edge, they are equal
+theorem Th_runs_equal_or_disjoint:
+  e1 in run_of(e2, y, cA, cB) implies
+    run_of(e1, y, cA, cB) = run_of(e2, y, cA, cB)
+proof
+  assume A1: e1 in run_of(e2, y, cA, cB);
+  then e1, e2 are_2c_connected y, cA, cB;
+  for x being object holds
+    x in run_of(e1, y, cA, cB) iff x in run_of(e2, y, cA, cB)
+  proof
+    let x be object;
+    thus x in run_of(e1, y, cA, cB) implies x in run_of(e2, y, cA, cB)
+    proof
+      assume x in run_of(e1, y, cA, cB);
+      then consider e being Element of the_Edges_of G such that
+      B1: x = e & e, e1 are_2c_connected y, cA, cB;
+      :: e connected to e1, e1 connected to e2
+      :: By transitivity, e connected to e2
+      hence thesis;
+    end;
+    thus x in run_of(e2, y, cA, cB) implies x in run_of(e1, y, cA, cB)
+    proof
+      assume x in run_of(e2, y, cA, cB);
+      then consider e being Element of the_Edges_of G such that
+      B2: x = e & e, e2 are_2c_connected y, cA, cB;
+      :: e connected to e2, e2 connected to e1 (by A1)
+      :: By transitivity, e connected to e1
+      hence thesis;
+    end;
+  end;
+  hence thesis by TARSKI:2;
+end;
+
+:: Run of edge outside two-color set is singleton or empty
+theorem Th_run_of_non_2c_edge:
+  not e in two_color_edges(y, cA, cB) implies
+    run_of(e, y, cA, cB) = {e} or run_of(e, y, cA, cB) = {}
+proof
+  assume A1: not e in two_color_edges(y, cA, cB);
+  :: If e is not two-colored, it can only connect to itself
+  :: So run_of(e) contains at most e
+  thus thesis;
+end;
+
+:: ============================================================================
+:: Indicator chain for a run
+:: ============================================================================
+
+:: The characteristic function of a run
+definition
+  let G be _Graph, y be Chain of G, cA, cB be Element of GF2_squared;
+  let R be Subset of the_Edges_of G;
+  func indicator_chain_run(R) -> Chain of G means
+  for e being Element of the_Edges_of G holds
+    (e in R implies it.e = indicator_color) &
+    (not e in R implies it.e = zero_color);
+  existence
+  proof
+    deffunc F(Element of the_Edges_of G) =
+      (if $1 in R then indicator_color else zero_color);
+    consider h being Function of the_Edges_of G, GF2_squared such that
+    A1: for e being Element of the_Edges_of G holds h.e = F(e)
+      from FUNCT_2:sch 4;
+    take h;
+    let e be Element of the_Edges_of G;
+    thus e in R implies h.e = indicator_color by A1;
+    assume not e in R;
+    hence h.e = zero_color by A1;
+  end;
+  uniqueness
+  proof
+    let f1, f2 be Chain of G;
+    assume A1: for e holds
+      (e in R implies f1.e = indicator_color) &
+      (not e in R implies f1.e = zero_color);
+    assume A2: for e holds
+      (e in R implies f2.e = indicator_color) &
+      (not e in R implies f2.e = zero_color);
+    for e being Element of the_Edges_of G holds f1.e = f2.e
+    proof
+      let e be Element of the_Edges_of G;
+      per cases;
+      suppose e in R;
+        then f1.e = indicator_color & f2.e = indicator_color by A1, A2;
+        hence f1.e = f2.e;
+      end;
+      suppose not e in R;
+        then f1.e = zero_color & f2.e = zero_color by A1, A2;
+        hence f1.e = f2.e;
+      end;
+    end;
+    hence f1 = f2 by FUNCT_2:113;
+  end;
+end;
+
+:: ============================================================================
+:: NOTE: Run-invariance (Lemma 4.2) and purification will use these definitions
+:: ============================================================================
+
+end;

@@ -2,6 +2,16 @@
 
 A Lean 4 formalization of the Four Color Theorem using the **Kauffman/Spencer-Brown** boundary algebra approach following **Ben Goertzel's** modern treatment.
 
+## Toolchain & Pins
+
+- Lean toolchain: `leanprover/lean4:v4.24.0-rc1` (see `lean-toolchain`)
+- mathlib: pinned to commit `06d95e5f5311594940c0c3dff5381fabe4fcabe7`
+  - Declared in `lakefile.toml` and mirrored in `lake-manifest.json`
+  - Do not run `lake update` unless intentionally upgrading
+- Fresh setup (no rebuild of mathlib from source):
+  - `lake exe cache get`
+  - `lake build`
+
 ## Current Status
 
 **🎯 ~75% Complete** - Core geometry proven, integration pieces remain

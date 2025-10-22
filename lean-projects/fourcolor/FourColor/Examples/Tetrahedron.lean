@@ -122,7 +122,7 @@ lemma adj_spec (f g : Finset TetraEdge) (hf : f ∈ faces) (hg : g ∈ faces)
   <;> try (left; use TetraEdge.e23; simp; decide)
 
 /-- Construct the DiskGeometry structure for the tetrahedron. -/
-def diskGeometry : Geometry.DiskGeometry TetraVertex TetraEdge where
+def diskGeometry : DiskGeometry TetraVertex TetraEdge where
   D := {
     incident := incident
     boundaryEdges := boundaryEdges
