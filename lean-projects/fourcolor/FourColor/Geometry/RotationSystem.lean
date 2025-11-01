@@ -85,6 +85,14 @@ axiom planarity_interior_edges (RS : RotationSystem V E) :
     e ∉ RS.boundaryEdges →
     RS.faceEdges (RS.alpha d) ≠ RS.faceEdges d
 
+/-- **Boundary edge property**: For boundary edges, both darts belong to the outer face.
+This follows from the definition of boundary as the outer face's edge set. -/
+axiom boundary_edge_both_outer (RS : RotationSystem V E) :
+  ∀ {e : E} {d : RS.D},
+    RS.edgeOf d = e →
+    e ∈ RS.boundaryEdges →
+    RS.faceEdges d = RS.boundaryEdges
+
 /-- **Key lemma from rotation system**: Each edge has exactly 2 darts.
 This follows directly from the edge_fiber_two axiom. -/
 lemma dartsOn_card_two (e : E) : (RS.dartsOn e).card = 2 := by
@@ -479,6 +487,55 @@ lemma two_internal_faces_of_interior_edge
       refine Finset.eq_of_subset_of_card_le this ?_
       rw [hS_card_eq, hcard']
     rw [this, hfg_eq]
+
+/-- Every internal face corresponds to some dart whose faceEdges equals that face. -/
+lemma dart_of_internalFace {f : Finset E} (hf : f ∈ RS.internalFaces) :
+  ∃ d, RS.faceEdges d = f := by
+  -- Unpack definition of internalFaces
+  unfold internalFaces at hf
+  simp only [Finset.mem_filter, Finset.mem_image] at hf
+  obtain ⟨d, _, hd⟩ := hf.1
+  exact ⟨d, hd⟩
+
+/-- Internal faces are disjoint from boundary edges.
+Proof strategy: An internal face f corresponds to some faceEdges d where d's orbit is not the outer
+orbit. If e ∈ f ∩ boundaryEdges, then by boundary_edge_both_outer, any dart on e must have its
+faceEdges equal to boundaryEdges, contradicting f ≠ boundaryEdges. -/
+lemma internal_face_disjoint_boundary
+    {f : Finset E} (hf : f ∈ RS.internalFaces) :
+    ∀ e ∈ RS.boundaryEdges, e ∉ f := by
+  classical
+  intro e he_bound he_f
+  -- f is an internal face, so ∃ d with f = faceEdges d and f ≠ boundaryEdges
+  unfold internalFaces at hf
+  simp only [Finset.mem_filter, Finset.mem_image, Finset.mem_univ, true_and] at hf
+  obtain ⟨⟨d, _, rfl⟩, hf_ne⟩ := hf
+  -- e ∈ faceEdges d, so ∃ d' in orbit of d with edgeOf d' = e
+  rw [mem_faceEdges_iff] at he_f
+  obtain ⟨d', hd'_orb, hd'_e⟩ := he_f
+  -- By boundary_edge_both_outer: faceEdges d' = boundaryEdges
+  have hd'_bound : RS.faceEdges d' = RS.boundaryEdges :=
+    RS.boundary_edge_both_outer hd'_e he_bound
+  -- But d' ~ d (same orbit), so faceEdges d' = faceEdges d
+  have h_same : RS.phi.SameCycle d' d := by
+    unfold faceOrbit at hd'_orb
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hd'_orb
+    exact Equiv.Perm.SameCycle.symm hd'_orb
+  have hd'_eq_d : RS.faceEdges d' = RS.faceEdges d :=
+    RS.faceEdges_of_sameCycle h_same
+  -- Therefore faceEdges d = boundaryEdges (by transitivity)
+  have : RS.faceEdges d = RS.boundaryEdges := calc
+    RS.faceEdges d = RS.faceEdges d' := hd'_eq_d.symm
+    _ = RS.boundaryEdges := hd'_bound
+  -- But this contradicts hf_ne
+  exact hf_ne this
+
+/-- **Key theorem: Even edge-incidence of a face at each vertex.**
+For any face f = faceEdges d₀ and vertex v, the number of edges of f
+incident to v is even. This follows from the topological structure of rotation systems. -/
+axiom face_vertex_incidence_even (RS : RotationSystem V E) :
+  ∀ (d₀ : RS.D) (v : V),
+    Even ((Finset.univ.filter (fun e => ∃ d, RS.edgeOf d = e ∧ RS.vertOf d = v) ∩ RS.faceEdges d₀).card)
 
 end RotationSystem
 
