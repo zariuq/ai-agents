@@ -9,4 +9,5 @@ import FourColor.Geometry.RotationSystem
 import FourColor.StrongDual
 import FourColor.Tait
 import FourColor.GraphTheory.SpanningForest
-import FourColor.Examples.Tetrahedron
+-- Tetrahedron example removed from build (incomplete, not needed for main proof)
+-- import FourColor.Examples.Tetrahedron
