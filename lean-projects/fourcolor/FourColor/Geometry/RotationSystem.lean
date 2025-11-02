@@ -1,10 +1,12 @@
 import FourColor.Triangulation
+import FourColor.Compat.CompatV2024
 
 namespace FourColor
 namespace Geometry
 
 open scoped BigOperators
 open Classical
+open FourColor.Compat
 
 noncomputable section
 
@@ -559,14 +561,13 @@ lemma edge_fiber_two_cases {e : E} {d y : RS.D}
     y = d ∨ y = RS.alpha d := by
   classical
   have hx : RS.edgeOf (RS.alpha d) = e := by simpa [hd, RS.edge_alpha d]
-  haveI : DecidableEq E := Classical.decEq E
   let S : Finset RS.D := (Finset.univ.filter (fun x => RS.edgeOf x = e))
   have hcard : S.card = 2 := RS.edge_fiber_two e
   have hmem_d  : d ∈ S := by simpa [S, hd]
   have hmem_ad : RS.alpha d ∈ S := by simpa [S, hx]
   have hneq : RS.alpha d ≠ d := RS.alpha_fixfree d
   have hpair_card : ({d, RS.alpha d} : Finset RS.D).card = 2 := by
-    rw [Finset.card_insert_of_not_mem, Finset.card_singleton]
+    rw [Finset.card_insert_of_notMem, Finset.card_singleton]
     simp only [Finset.mem_singleton]
     exact hneq.symm
   have hpair_subset : ({d, RS.alpha d} : Finset RS.D) ⊆ S := by
@@ -583,10 +584,25 @@ lemma edge_fiber_two_cases {e : E} {d y : RS.D}
   simp only [Finset.mem_insert, Finset.mem_singleton] at this
   exact this
 
+-- d ∈ faceOrbit d₀ ⇒ φ d ∈ faceOrbit d₀
 lemma phi_maps_faceOrbit {d₀ d : RS.D} (hd : d ∈ RS.faceOrbit d₀) :
     RS.phi d ∈ RS.faceOrbit d₀ := by
-  rw [mem_faceOrbit] at hd ⊢
-  exact hd.apply_right
+  have h₀ : RS.phi.SameCycle d₀ d := by
+    simpa [RotationSystem.faceOrbit] using hd
+  have h₁ : RS.phi.SameCycle d (RS.phi d) :=
+    (Compat.Perm.sameCycle_apply_right (RS.phi)).mpr (Equiv.Perm.SameCycle.refl _ _)
+  have : RS.phi.SameCycle d₀ (RS.phi d) := h₀.trans h₁
+  simpa [RotationSystem.faceOrbit] using this
+
+-- d ∈ faceOrbit d₀ ⇒ φ⁻¹ d ∈ faceOrbit d₀
+lemma phi_symm_maps_faceOrbit {d₀ d : RS.D} (hd : d ∈ RS.faceOrbit d₀) :
+    RS.phi.symm d ∈ RS.faceOrbit d₀ := by
+  have h₀ : RS.phi.SameCycle d₀ d := by
+    simpa [RotationSystem.faceOrbit] using hd
+  have h₁ : RS.phi.SameCycle d (RS.phi.symm d) :=
+    (Compat.Perm.sameCycle_inv_apply_right (RS.phi)).mpr (Equiv.Perm.SameCycle.refl _ _)
+  have : RS.phi.SameCycle d₀ (RS.phi.symm d) := h₀.trans h₁
+  simpa [RotationSystem.faceOrbit] using this
 
 -- Image of orbit by φ is itself
 lemma image_phi_faceOrbit (d₀ : RS.D) :
@@ -599,15 +615,10 @@ lemma image_phi_faceOrbit (d₀ : RS.D) :
   have h₂ : RS.faceOrbit d₀ ⊆ (RS.faceOrbit d₀).image RS.phi := by
     intro y hy
     refine Finset.mem_image.mpr ?_
-    refine ⟨RS.phi.invFun y, ?hx, ?eq⟩
-    · have hy' : RS.phi.SameCycle d₀ y := by simpa [mem_faceOrbit] using hy
-      have hback : RS.phi.SameCycle y (RS.phi.invFun y) := by
-        have : RS.phi (RS.phi.invFun y) = y := RS.phi.right_inv y
-        rw [← this]
-        exact Equiv.Perm.SameCycle.symm (Equiv.Perm.SameCycle.apply_right (Equiv.Perm.SameCycle.refl (RS.phi.invFun y)))
-      have : RS.phi.SameCycle d₀ (RS.phi.invFun y) := hy'.trans hback
-      simpa [mem_faceOrbit] using this
-    · simpa [RS.phi.left_inv y]
+    use RS.phi.symm y
+    constructor
+    · exact RS.phi_symm_maps_faceOrbit hy
+    · simp
   exact le_antisymm h₁ h₂
 
 -- Reindex sum by φ permutation
@@ -803,7 +814,7 @@ lemma toggles_biject_edges_internal (d₀ : RS.D) (v : V)
     have hf   : e ∈ RS.faceEdges d₀ := by
       simpa [Finset.mem_inter] using (Finset.mem_of_subset (by intro x hx; exact And.right hx) he)
     rcases Finset.mem_image.mp hf with ⟨d, hdS, rfl⟩
-    rcases (mem_incidentEdges.mp hinc) with ⟨d', hd'e, hv'⟩
+    rcases ((mem_incidentEdges (RS := RS) (v := v) (e := e)).1 hinc) with ⟨d', hd'e, hv'⟩
     have hcases := RS.edge_fiber_two_cases
                       (e := RS.edgeOf d) (d := d) (y := d') rfl hd'e
     have hx : Decidable.decide (RS.vertOf d = v)
