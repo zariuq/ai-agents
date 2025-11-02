@@ -64,12 +64,18 @@ def kempeSwitch {V E : Type*} [Fintype V] [DecidableEq V] [Fintype E] [Decidable
   else x e
 
 /-- Extract colors that witness non-properness at a vertex -/
-def colorsAtBadVertex {V E : Type*} [Fintype V] [Fintype E]
+def colorsAtBadVertex {V E : Type*} [Fintype V] [Fintype E] [DecidableEq E]
     (incident : V → Finset E) (v : V) (x : E → Color)
     (hv : v ∈ badVerts incident x) : Color × Color :=
-  -- Find two incident edges with the same color
-  -- This is guaranteed to exist by definition of badVerts
-  sorry  -- Will implement after seeing your incident edge structure
+  classical
+  -- v is bad means ¬taitProperAt, i.e., ∃ e₁ e₂ distinct incident edges with same color
+  have : ∃ e₁ e₂, e₁ ∈ incident v ∧ e₂ ∈ incident v ∧ e₁ ≠ e₂ ∧ x e₁ = x e₂ := by
+    simp [mem_badVerts, taitProperAt] at hv
+    push_neg at hv
+    exact hv
+  let e₁ := Classical.choose this
+  let e₂ := Classical.choose (Classical.choose_spec this)
+  (x e₁, x e₂)
 
 /-- Kempe chain through a vertex for a pair of colors -/
 def kempeChain {V E : Type*} [Fintype V] [DecidableEq V] [Fintype E] [DecidableEq E]
@@ -77,17 +83,24 @@ def kempeChain {V E : Type*} [Fintype V] [DecidableEq V] [Fintype E] [DecidableE
     (x : E → Color)
     (v : V)
     (c₁ c₂ : Color) : Finset E :=
-  -- Connected component in subgraph of edges colored c₁ or c₂
-  sorry  -- Will implement reachability component
+  -- For now: all edges colored c₁ or c₂ (conservative overapproximation)
+  -- TODO: implement proper connected component reachability
+  classical
+  Finset.univ.filter (fun e => x e = c₁ ∨ x e = c₂)
 
 /-- Kempe fix: switch along a chain through a bad vertex -/
 def kempeFix {V E : Type*} [Fintype V] [DecidableEq V] [Fintype E] [DecidableEq E]
     (incident : V → Finset E)
     (x : E → Color)
     (v : V) : E → Color :=
-  let (c₁, c₂) := colorsAtBadVertex incident v x sorry  -- need proof v is bad
-  let chain := kempeChain incident x v c₁ c₂
-  kempeSwitch incident x c₁ c₂ chain
+  classical
+  if hv : v ∈ badVerts incident x then
+    let (c₁, c₂) := colorsAtBadVertex incident v x hv
+    let chain := kempeChain incident x v c₁ c₂
+    kempeSwitch incident x c₁ c₂ chain
+  else
+    -- v is not bad, return x unchanged
+    x
 
 /-- Kempe switch preserves zero-boundary property -/
 lemma kempeSwitch_preserves_zero {V E : Type*} [Fintype V] [DecidableEq V]
