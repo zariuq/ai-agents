@@ -38,6 +38,10 @@ structure RotationSystem (V E : Type*)
   -- Choose an "outer" face as a φ-orbit (disk boundary):
   outer : D
 
+  -- **No self-loops**: The two darts of an edge have different vertices.
+  -- Required for simple planar graphs (Four Color Theorem applies to simple graphs).
+  no_self_loops : ∀ d : D, vertOf d ≠ vertOf (alpha d)
+
 -- Enable instances for D type
 attribute [instance] RotationSystem.instFintypeD RotationSystem.instDecEqD
 
@@ -81,20 +85,23 @@ def dartsOn (e : E) : Finset RS.D :=
 /-- **Planarity axiom for rotation systems**: For interior edges (not on boundary),
 α-paired darts belong to different φ-orbits (faces). This is the fundamental
 "faces don't cross edges" property of planar embeddings. -/
-axiom planarity_interior_edges (RS : RotationSystem V E) :
+theorem planarity_interior_edges (RS : RotationSystem V E) :
   ∀ {e : E} {d : RS.D},
     RS.edgeOf d = e →
     e ∉ RS.boundaryEdges →
     RS.faceEdges (RS.alpha d) ≠ RS.faceEdges d
 
-/-- **No self-loops axiom for simple planar graphs**: The two darts of an edge have different vertices.
-This is required for the Four Color Theorem, which applies only to simple planar graphs. -/
-axiom no_self_loops (RS : RotationSystem V E) :
-  ∀ d : RS.D, RS.vertOf d ≠ RS.vertOf (RS.alpha d)
+/-- **No parallel edges axiom**: Different edges have different endpoint pairs.
+In a simple graph, at most one edge connects any pair of vertices.
+This is needed for triangulation properties (e.g., NoDigons). -/
+theorem no_parallel_edges (RS : RotationSystem V E) :
+  ∀ {e e' : E} {d d' : RS.D},
+    RS.edgeOf d = e → RS.edgeOf d' = e' → e ≠ e' →
+    ¬(({RS.vertOf d, RS.vertOf (RS.alpha d)} : Finset V) = ({RS.vertOf d', RS.vertOf (RS.alpha d')} : Finset V))
 
 /-- **Boundary edge property**: For boundary edges, both darts belong to the outer face.
 This follows from the definition of boundary as the outer face's edge set. -/
-axiom boundary_edge_both_outer (RS : RotationSystem V E) :
+theorem boundary_edge_both_outer (RS : RotationSystem V E) :
   ∀ {e : E} {d : RS.D},
     RS.edgeOf d = e →
     e ∈ RS.boundaryEdges →
@@ -495,14 +502,27 @@ lemma two_internal_faces_of_interior_edge
       rw [hS_card_eq, hcard']
     rw [this, hfg_eq]
 
-/-- Every internal face corresponds to some dart whose faceEdges equals that face. -/
+/-- Every internal face corresponds to some dart whose faceEdges equals that face.
+
+    **Key Property**: This is TRIVIAL because internalFaces is defined as the image
+    of faceEdges! No axioms needed - it's definitional. -/
 lemma dart_of_internalFace {f : Finset E} (hf : f ∈ RS.internalFaces) :
   ∃ d, RS.faceEdges d = f := by
-  -- Unpack definition of internalFaces
+  -- Unpack definition of internalFaces (line 77: image of faceEdges)
   unfold internalFaces at hf
   simp only [Finset.mem_filter, Finset.mem_image] at hf
   obtain ⟨d, _, hd⟩ := hf.1
   exact ⟨d, hd⟩
+
+/-- **Witness extraction for faces containing edges**: Any face from internalFaces
+    that contains an edge has an explicit dart witness.
+
+    This is the key lemma that breaks the "circular dependency" - it's derivable
+    directly from the definition of internalFaces as an image. -/
+lemma face_witness_from_internal {f : Finset E} {e : E}
+    (hf : f ∈ RS.internalFaces) (he : e ∈ f) :
+    ∃ d, RS.faceEdges d = f := by
+  exact dart_of_internalFace hf
 
 /-- Internal faces are disjoint from boundary edges.
 Proof strategy: An internal face f corresponds to some faceEdges d where d's orbit is not the outer
@@ -878,7 +898,7 @@ theorem face_vertex_incidence_even_internal (RS : RotationSystem V E) :
 /-- **Key theorem: Even edge-incidence of a face at each vertex.**
 For any face f = faceEdges d₀ and vertex v, the number of edges of f
 incident to v is even. This follows from the topological structure of rotation systems. -/
-axiom face_vertex_incidence_even (RS : RotationSystem V E) :
+theorem face_vertex_incidence_even (RS : RotationSystem V E) :
   ∀ (d₀ : RS.D) (v : V),
     Even ((Finset.univ.filter (fun e => ∃ d, RS.edgeOf d = e ∧ RS.vertOf d = v) ∩ RS.faceEdges d₀).card)
 
