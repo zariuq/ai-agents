@@ -4,7 +4,7 @@
 -- This is the VertexKempeChain we factored out from Tait.lean.
 -- It lives separately to avoid name collision with edge-based Kempe chains.
 
-import FourColor.Tait
+-- import FourColor.Tait -- TODO: Re-enable after Tait lemmas are completed (icing on the cake)
 
 namespace FourColor.VertexKempe
 

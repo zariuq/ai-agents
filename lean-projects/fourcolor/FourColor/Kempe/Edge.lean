@@ -5,7 +5,7 @@
 -- This avoids Finset.filter decidability issues and keeps the interior property
 -- transparent to proofs about connectivity.
 
-import FourColor.Tait
+-- import FourColor.Tait -- TODO: Re-enable after Tait lemmas are completed (icing on the cake)
 
 namespace FourColor.EdgeKempe
 

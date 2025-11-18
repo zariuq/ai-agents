@@ -1,5 +1,9 @@
 import Mathlib
 
+
+set_option linter.unusedVariables false
+set_option linter.unusedSectionVars false
+
 namespace FourColor
 namespace GraphTheory
 

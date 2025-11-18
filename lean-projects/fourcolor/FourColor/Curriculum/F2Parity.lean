@@ -47,7 +47,7 @@ Hint: Use `ZMod.intCast_zmod_eq_zero_iff_even` and the fact that
 example (n : ℕ) (h : (n : ZMod 2) = 0) : Even n := by
   -- In ZMod 2, a nat casts to 0 iff 2 divides it, i.e., iff it's even
   rw [Nat.even_iff_two_dvd]
-  exact ZMod.natCast_zmod_eq_zero_iff_dvd.mp h
+  exact ZMod.natCast_eq_zero_iff.mp h
 
 /-! ## Exercise 2: Single Coordinate Sum -/
 
@@ -79,7 +79,7 @@ example (xs : List (ZMod 2)) (h : xs.sum = 0) (h_all_one : ∀ x ∈ xs, x = 1) 
 
   -- Apply Exercise 1a
   rw [Nat.even_iff_two_dvd]
-  exact ZMod.natCast_zmod_eq_zero_iff_dvd.mp h
+  exact ZMod.natCast_eq_zero_iff.mp h
 
 /-! ## Exercise 3: Product Coordinates (F₂²) -/
 

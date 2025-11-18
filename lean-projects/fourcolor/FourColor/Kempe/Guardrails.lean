@@ -8,7 +8,7 @@
 --
 -- These are guardrails to prevent regressions back to incorrect simplifications.
 
-import FourColor.Tait
+-- import FourColor.Tait -- TODO: Re-enable after Tait lemmas are completed (icing on the cake)
 import FourColor.Kempe.Vertex
 
 namespace FourColor.Kempe.Guardrails

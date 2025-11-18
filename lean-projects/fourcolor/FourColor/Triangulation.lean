@@ -1,5 +1,12 @@
 import Mathlib
 
+-- Linter configuration: silence warnings pending systematic cleanup
+set_option linter.unnecessarySimpa false
+set_option linter.unusedSimpArgs false
+set_option linter.unusedSectionVars false
+set_option linter.unreachableTactic false
+set_option linter.unusedTactic false
+
 open scoped BigOperators
 open Classical
 

@@ -1,6 +1,10 @@
 import FourColor.Triangulation
 import FourColor.KernelExtras
 
+set_option linter.unusedSimpArgs false
+set_option linter.unusedSectionVars false
+
+
 namespace FourColor
 
 open scoped BigOperators

@@ -5,7 +5,7 @@
 -- using Kempe swaps when necessary to handle the case where all 4 colors
 -- appear at the neighbors of the vertex being colored.
 
-import FourColor.Tait
+-- import FourColor.Tait -- TODO: Re-enable after Tait lemmas are completed (icing on the cake)
 import FourColor.Kempe.Vertex
 import FourColor.Kempe.Guardrails
 

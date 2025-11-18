@@ -8,7 +8,7 @@ open Classical
 
 noncomputable section
 
-variables {V E : Type*}
+-- Variable declarations omitted - types are inferred from usage
 
 /--
 Core data for the “static dual forest” transport path: a single fixed

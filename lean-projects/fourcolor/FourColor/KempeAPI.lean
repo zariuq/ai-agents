@@ -1,6 +1,6 @@
 import FourColor.Triangulation
 import FourColor.Geometry.Disk
-import FourColor.Tait
+-- import FourColor.Tait -- TODO: Re-enable after Tait lemmas are completed (icing on the cake)
 import FourColor.Algebra.KempeCycles
 
 /-!
@@ -484,7 +484,7 @@ lemma kempePred_even_at
     -- So the filter is empty
     have h_empty : (D.incident w).filter (fun e => KempePred incident D x v α β e) = ∅ := by
       ext e
-      simp only [Finset.mem_filter, Finset.not_mem_empty, iff_false]
+      simp only [Finset.mem_filter, Finset.notMem_empty, iff_false]
       intro ⟨he_mem, he_Kempe⟩
       -- e ∈ D.incident w and KempePred e
       -- KempePred e implies x e = α ∨ x e = β

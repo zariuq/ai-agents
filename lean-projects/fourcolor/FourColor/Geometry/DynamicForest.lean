@@ -22,7 +22,7 @@ This file sets up the interface.  Proving that a concrete planar disc
 embedded graph satisfies these hypotheses is deferred to later development.
 -/
 
-variables {V E : Type*}
+-- Variable declarations omitted - types are inferred from usage
 
 namespace DynamicForest
 

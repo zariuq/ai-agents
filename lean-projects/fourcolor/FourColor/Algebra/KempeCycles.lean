@@ -83,7 +83,7 @@ lemma kempe_interior_degree_two (incident : V → Finset E) (x : E → Color)
     · subst_vars; simp [he₁_C, he₁_v]
     · subst_vars; simp [he₂_C, he₂_v]
   have h_card_two : ({e₁, e₂} : Finset E).card = 2 := by
-    simp [Finset.card_insert_of_not_mem, hne]
+    simp [Finset.card_insert_of_notMem, hne]
   have := Finset.card_le_card h_two_in
   omega
 

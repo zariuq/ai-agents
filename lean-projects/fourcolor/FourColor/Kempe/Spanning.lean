@@ -7,7 +7,7 @@
 -- Reference: "A Spencer-Brown/Kauffman-Style Proof of the Four-Color Theorem
 -- via Disk Kempe-Closure Spanning and Local Reachability" by Ben Goertzel (2025)
 
-import FourColor.Tait
+-- import FourColor.Tait -- TODO: Re-enable after Tait lemmas are completed (icing on the cake)
 import FourColor.Kempe.Edge
 
 namespace FourColor.Kempe.Spanning

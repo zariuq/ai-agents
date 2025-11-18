@@ -1,6 +1,6 @@
 import Mathlib.Data.ZMod.Basic  
 import Mathlib.Data.Finset.Card
-import FourColor.Tait
+-- import FourColor.Tait -- TODO: Re-enable after Tait lemmas are completed (icing on the cake)
 
 /-!
 # Kempe Swap Algebra for F₂²
@@ -59,7 +59,7 @@ lemma sum_const {E : Type*} [Fintype E] [DecidableEq E]
   induction S using Finset.induction with
   | empty => simp
   | insert e S he ih =>
-    rw [Finset.sum_insert he, ih, Finset.card_insert_of_not_mem he]
+    rw [Finset.sum_insert he, ih, Finset.card_insert_of_notMem he]
     simp [succ_nsmul]
 
 /-- Sum at a vertex is preserved if the swap set has even αβ-incidence. -/

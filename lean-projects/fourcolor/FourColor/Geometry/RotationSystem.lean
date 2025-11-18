@@ -1,6 +1,13 @@
 import FourColor.Triangulation
 import FourColor.Compat.CompatV2024
 
+-- Linter configuration: silence warnings pending systematic cleanup
+set_option linter.unnecessarySimpa false
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.unreachableTactic false
+set_option linter.unusedTactic false
+
 namespace FourColor
 namespace Geometry
 
@@ -10,7 +17,7 @@ open FourColor.Compat
 
 noncomputable section
 
-variables {V E : Type*}
+variable {V E : Type*}
 
 /-- **Rotation system** (combinatorial map): darts + edge-flip + vertex-rotation.
 This is the standard topological graph theory structure for planar embeddings.
@@ -78,34 +85,87 @@ def internalFaces : Finset (Finset E) :=
   let outerEdges := RS.boundaryEdges
   (Finset.univ.image RS.faceEdges).filter (fun F => F ≠ outerEdges)
 
+/-- **Planar Geometry**: A rotation system with planarity and simplicity constraints.
+
+This represents a **simple planar graph** embedded in a surface with a distinguished
+outer face. The key properties are:
+
+- **Planarity**: Interior edges separate distinct faces (no edge crossings)
+- **Simplicity**: No parallel edges (simple graph property)
+- **Boundary**: Boundary edges have both darts in the outer face
+
+This is the natural middle layer between:
+- `RotationSystem` (pure combinatorial structure, works on any surface)
+- `DiskGeometry` (adds disk topology and homological properties)
+
+Future: Could be extended for other surfaces (sphere, torus, etc.) -/
+structure PlanarGeometry (V E : Type*)
+    [Fintype V] [DecidableEq V]
+    [Fintype E] [DecidableEq E]
+    extends RotationSystem V E where
+
+  /-- **Planarity axiom**: Interior edges separate distinct faces.
+      This is the fundamental "edges don't cross" property of planar embeddings.
+      For an interior edge e with dart d, the faces on either side (containing d and α(d))
+      are distinct. -/
+  planar_interior_edges :
+    ∀ {e : E} {d : toRotationSystem.D},
+      toRotationSystem.edgeOf d = e →
+      e ∉ RotationSystem.boundaryEdges toRotationSystem →
+      RotationSystem.faceEdges toRotationSystem (toRotationSystem.alpha d) ≠
+      RotationSystem.faceEdges toRotationSystem d
+
+  /-- **Simplicity axiom**: No parallel edges.
+      Different edges have different vertex pairs. This ensures we're working with
+      simple graphs (at most one edge between any pair of vertices). -/
+  no_parallel_edges :
+    ∀ {e e' : E} {d d' : toRotationSystem.D},
+      toRotationSystem.edgeOf d = e →
+      toRotationSystem.edgeOf d' = e' →
+      e ≠ e' →
+      ({toRotationSystem.vertOf d, toRotationSystem.vertOf (toRotationSystem.alpha d)} : Finset V) ≠
+      ({toRotationSystem.vertOf d', toRotationSystem.vertOf (toRotationSystem.alpha d')} : Finset V)
+
+  /-- **Boundary property**: Boundary edges have both darts in the outer face.
+      For edges on the boundary, both darts belong to the same (outer) face.
+      This follows from the definition of boundary as the outer face's edge set. -/
+  boundary_edge_both_outer :
+    ∀ {e : E} {d : toRotationSystem.D},
+      toRotationSystem.edgeOf d = e →
+      e ∈ RotationSystem.boundaryEdges toRotationSystem →
+      RotationSystem.faceEdges toRotationSystem d = RotationSystem.boundaryEdges toRotationSystem
 /-- Darts with a given underlying edge -/
 def dartsOn (e : E) : Finset RS.D :=
   Finset.univ.filter (fun d => RS.edgeOf d = e)
 
-/-- **Planarity axiom for rotation systems**: For interior edges (not on boundary),
-α-paired darts belong to different φ-orbits (faces). This is the fundamental
-"faces don't cross edges" property of planar embeddings. -/
-theorem planarity_interior_edges (RS : RotationSystem V E) :
-  ∀ {e : E} {d : RS.D},
-    RS.edgeOf d = e →
-    e ∉ RS.boundaryEdges →
-    RS.faceEdges (RS.alpha d) ≠ RS.faceEdges d
+/-- **Planarity property**: For interior edges, darts on opposite sides belong to different faces.
+    This is now a definitional property of PlanarGeometry. -/
+theorem planarity_interior_edges (PG : PlanarGeometry V E) :
+  ∀ {e : E} {d : PG.toRotationSystem.D},
+    PG.toRotationSystem.edgeOf d = e →
+    e ∉ PG.toRotationSystem.boundaryEdges →
+    PG.toRotationSystem.faceEdges (PG.toRotationSystem.alpha d) ≠ PG.toRotationSystem.faceEdges d :=
+  PG.planar_interior_edges
 
-/-- **No parallel edges axiom**: Different edges have different endpoint pairs.
-In a simple graph, at most one edge connects any pair of vertices.
-This is needed for triangulation properties (e.g., NoDigons). -/
-theorem no_parallel_edges (RS : RotationSystem V E) :
-  ∀ {e e' : E} {d d' : RS.D},
-    RS.edgeOf d = e → RS.edgeOf d' = e' → e ≠ e' →
-    ¬(({RS.vertOf d, RS.vertOf (RS.alpha d)} : Finset V) = ({RS.vertOf d', RS.vertOf (RS.alpha d')} : Finset V))
+/-- **Simplicity property**: No parallel edges.
+    This is now a definitional property of PlanarGeometry. -/
+theorem no_parallel_edges (PG : PlanarGeometry V E) :
+  ∀ {e e' : E} {d d' : PG.toRotationSystem.D},
+    PG.toRotationSystem.edgeOf d = e →
+    PG.toRotationSystem.edgeOf d' = e' →
+    e ≠ e' →
+    ({PG.toRotationSystem.vertOf d, PG.toRotationSystem.vertOf (PG.toRotationSystem.alpha d)} : Finset V) ≠
+    ({PG.toRotationSystem.vertOf d', PG.toRotationSystem.vertOf (PG.toRotationSystem.alpha d')} : Finset V) :=
+  PG.no_parallel_edges
 
-/-- **Boundary edge property**: For boundary edges, both darts belong to the outer face.
-This follows from the definition of boundary as the outer face's edge set. -/
-theorem boundary_edge_both_outer (RS : RotationSystem V E) :
-  ∀ {e : E} {d : RS.D},
-    RS.edgeOf d = e →
-    e ∈ RS.boundaryEdges →
-    RS.faceEdges d = RS.boundaryEdges
+/-- **Boundary property**: For boundary edges, both darts belong to the outer face.
+    This is now a definitional property of PlanarGeometry. -/
+theorem boundary_edge_both_outer (PG : PlanarGeometry V E) :
+  ∀ {e : E} {d : PG.toRotationSystem.D},
+    PG.toRotationSystem.edgeOf d = e →
+    e ∈ PG.toRotationSystem.boundaryEdges →
+    PG.toRotationSystem.faceEdges d = PG.toRotationSystem.boundaryEdges :=
+  PG.boundary_edge_both_outer
 
 /-- **Key lemma from rotation system**: Each edge has exactly 2 darts.
 This follows directly from the edge_fiber_two axiom. -/
@@ -322,66 +382,66 @@ lemma twoIncidence_ofRotationSystem (e : E) :
 For an interior edge, the two darts related by α (edge flip) belong to different
 faces. This is a fundamental planarity property: α swaps between the two sides
 of an edge, and φ-orbits (faces) don't cross edges in a planar embedding. -/
-lemma faceEdges_alpha_ne_of_interior
-    {e : E} {d : RS.D}
-    (hd : d ∈ RS.dartsOn e)
-    (he : e ∉ RS.boundaryEdges) :
-    RS.faceEdges (RS.alpha d) ≠ RS.faceEdges d := by
+lemma faceEdges_alpha_ne_of_interior (PG : PlanarGeometry V E)
+    {e : E} {d : PG.toRotationSystem.D}
+    (hd : d ∈ PG.toRotationSystem.dartsOn e)
+    (he : e ∉ PG.toRotationSystem.boundaryEdges) :
+    PG.toRotationSystem.faceEdges (PG.toRotationSystem.alpha d) ≠ PG.toRotationSystem.faceEdges d := by
   -- Apply the planarity axiom
-  have he_d : RS.edgeOf d = e := by
+  have he_d : PG.toRotationSystem.edgeOf d = e := by
     unfold dartsOn at hd
     simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hd
     exact hd
-  exact planarity_interior_edges RS he_d he
+  exact planarity_interior_edges PG he_d he
 
 /-- **Bridge lemma for interior edges**: Extract the two incident internal faces
 for an interior edge (not on the outer boundary).
 
 This provides explicit witnesses for the "exactly 2 faces" property, avoiding
 fragile parity arguments inside DiskGeometry. -/
-lemma two_internal_faces_of_interior_edge
-    {e : E} (he : e ∉ RS.boundaryEdges) :
+lemma two_internal_faces_of_interior_edge (PG : PlanarGeometry V E)
+    {e : E} (he : e ∉ PG.toRotationSystem.boundaryEdges) :
     ∃! (fg : Finset (Finset E)),
-        fg.card = 2 ∧ ∀ f ∈ fg, f ∈ RS.internalFaces ∧ e ∈ f := by
+        fg.card = 2 ∧ ∀ f ∈ fg, f ∈ PG.toRotationSystem.internalFaces ∧ e ∈ f := by
   classical
   -- Each edge has exactly two darts
-  have hd : (RS.dartsOn e).card = 2 := RS.dartsOn_card_two e
+  have hd : (PG.toRotationSystem.dartsOn e).card = 2 := PG.toRotationSystem.dartsOn_card_two e
 
   -- Neither dart lies on the outer face because e ∉ boundaryEdges
-  have hδ_int : ∀ d ∈ RS.dartsOn e, RS.faceEdges d ≠ RS.boundaryEdges := by
+  have hδ_int : ∀ d ∈ PG.toRotationSystem.dartsOn e, PG.toRotationSystem.faceEdges d ≠ PG.toRotationSystem.boundaryEdges := by
     intro d hd'
     -- If faceEdges d = boundaryEdges, then e ∈ boundaryEdges, contradiction
     intro h_eq
-    have : e ∈ RS.boundaryEdges := by
+    have : e ∈ PG.toRotationSystem.boundaryEdges := by
       -- e ∈ faceEdges d = boundaryEdges
-      have he_in : e ∈ RS.faceEdges d := by
+      have he_in : e ∈ PG.toRotationSystem.faceEdges d := by
         unfold dartsOn at hd'
         simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hd'
-        rw [RS.mem_faceEdges_iff]
+        rw [PG.toRotationSystem.mem_faceEdges_iff]
         use d
         constructor
-        · exact RS.mem_faceOrbit_self d
+        · exact PG.toRotationSystem.mem_faceOrbit_self d
         · exact hd'
       rw [h_eq] at he_in
       exact he_in
     exact he this
 
   -- Build fg as the image of dartsOn e under faceEdges
-  let S := (RS.dartsOn e).image RS.faceEdges
+  let S := (PG.toRotationSystem.dartsOn e).image PG.toRotationSystem.faceEdges
 
   have hS_card_le : S.card ≤ 2 := by
     calc S.card
-      ≤ (RS.dartsOn e).card := Finset.card_image_le
-      _ = 2 := RS.dartsOn_card_two e
+      ≤ (PG.toRotationSystem.dartsOn e).card := Finset.card_image_le
+      _ = 2 := PG.toRotationSystem.dartsOn_card_two e
 
   -- Show S.card ≥ 1 (at least one face)
   have hS_nonempty : S.Nonempty := by
-    obtain ⟨d, hd⟩ : (RS.dartsOn e).Nonempty := by
+    obtain ⟨d, hd⟩ : (PG.toRotationSystem.dartsOn e).Nonempty := by
       rw [Finset.nonempty_iff_ne_empty]
       intro h_empty
-      have : (RS.dartsOn e).card = 0 := by simp [h_empty]
+      have : (PG.toRotationSystem.dartsOn e).card = 0 := by simp [h_empty]
       omega
-    refine ⟨RS.faceEdges d, ?_⟩
+    refine ⟨PG.toRotationSystem.faceEdges d, ?_⟩
     exact Finset.mem_image.mpr ⟨d, hd, rfl⟩
 
   -- Show S.card = 2 (both darts map to distinct internal faces)
@@ -396,33 +456,33 @@ lemma two_internal_faces_of_interior_edge
     -- If exactly one internal face contained e, then both darts map to same face.
     -- But we just proved α-paired darts map to different faces - contradiction!
     -- Get the two darts on edge e
-    obtain ⟨d, hd⟩ : (RS.dartsOn e).Nonempty := by
+    obtain ⟨d, hd⟩ : (PG.toRotationSystem.dartsOn e).Nonempty := by
       rw [Finset.nonempty_iff_ne_empty]
       intro h
-      have hcard_zero : (RS.dartsOn e).card = 0 := by simp [h]
-      have hcard_two : (RS.dartsOn e).card = 2 := hd
+      have hcard_zero : (PG.toRotationSystem.dartsOn e).card = 0 := by simp [h]
+      have hcard_two : (PG.toRotationSystem.dartsOn e).card = 2 := hd
       omega
     -- S.card = 1 means faceEdges d = faceEdges (α d)
     have hS_singleton : ∃ f, S = {f} := Finset.card_eq_one.mp this
     obtain ⟨f_only, hf_only⟩ := hS_singleton
-    have hd_eq : RS.faceEdges d ∈ S := Finset.mem_image.mpr ⟨d, hd, rfl⟩
-    have hαd_eq : RS.faceEdges (RS.alpha d) ∈ S := by
+    have hd_eq : PG.toRotationSystem.faceEdges d ∈ S := Finset.mem_image.mpr ⟨d, hd, rfl⟩
+    have hαd_eq : PG.toRotationSystem.faceEdges (PG.toRotationSystem.alpha d) ∈ S := by
       apply Finset.mem_image.mpr
-      use RS.alpha d
+      use PG.toRotationSystem.alpha d
       constructor
       · -- α d ∈ dartsOn e
         unfold dartsOn
         simp only [Finset.mem_filter, Finset.mem_univ, true_and]
         unfold dartsOn at hd
         simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hd
-        rw [RS.edge_alpha]; exact hd
+        rw [PG.toRotationSystem.edge_alpha]; exact hd
       · rfl
     rw [hf_only] at hd_eq hαd_eq
-    have heq : RS.faceEdges d = RS.faceEdges (RS.alpha d) := by
+    have heq : PG.toRotationSystem.faceEdges d = PG.toRotationSystem.faceEdges (PG.toRotationSystem.alpha d) := by
       simp only [Finset.mem_singleton] at hd_eq hαd_eq
       rw [hd_eq, hαd_eq]
     -- But α-paired darts have distinct faceEdges for interior edges!
-    exact RS.faceEdges_alpha_ne_of_interior hd he heq.symm
+    exact faceEdges_alpha_ne_of_interior PG hd he heq.symm
 
   -- Package the two faces
   have hS_eq_two : ∃ f g : Finset E, f ≠ g ∧ S = {f, g} := by
@@ -450,10 +510,10 @@ lemma two_internal_faces_of_interior_edge
           · exact ⟨d, hd_eq⟩
           · rw [←hd_eq]; exact hδ_int d hd
         · -- e ∈ f
-          rw [←hd_eq, RS.mem_faceEdges_iff]
+          rw [←hd_eq, PG.toRotationSystem.mem_faceEdges_iff]
           use d
           constructor
-          · exact RS.mem_faceOrbit_self d
+          · exact PG.toRotationSystem.mem_faceOrbit_self d
           · unfold dartsOn at hd
             simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hd
             exact hd
@@ -468,10 +528,10 @@ lemma two_internal_faces_of_interior_edge
           constructor
           · exact ⟨d, hd_eq⟩
           · rw [←hd_eq]; exact hδ_int d hd
-        · rw [←hd_eq, RS.mem_faceEdges_iff]
+        · rw [←hd_eq, PG.toRotationSystem.mem_faceEdges_iff]
           use d
           constructor
-          · exact RS.mem_faceOrbit_self d
+          · exact PG.toRotationSystem.mem_faceOrbit_self d
           · unfold dartsOn at hd
             simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hd
             exact hd
@@ -483,17 +543,17 @@ lemma two_internal_faces_of_interior_edge
       have ⟨hint', he'⟩ := hprop' f' hf'
       -- f' ∈ internalFaces and e ∈ f'
       -- By the covering lemma, f' is in the image
-      have : f' ∈ RS.facesIncidence e := by
+      have : f' ∈ PG.toRotationSystem.facesIncidence e := by
         unfold facesIncidence
         simp only [Finset.mem_filter]
         exact ⟨hint', he'⟩
       -- facesIncidence e ⊆ image faceEdges (dartsOnInternal)
-      have hcover := RS.facesIncidence_subset_image_faceEdges_of_dartsOnInternal e
-      have : f' ∈ (RS.dartsOnInternal e).image RS.faceEdges := hcover this
+      have hcover := PG.toRotationSystem.facesIncidence_subset_image_faceEdges_of_dartsOnInternal e
+      have : f' ∈ (PG.toRotationSystem.dartsOnInternal e).image PG.toRotationSystem.faceEdges := hcover this
       -- dartsOnInternal ⊆ dartsOn
-      have : f' ∈ (RS.dartsOn e).image RS.faceEdges := by
+      have : f' ∈ (PG.toRotationSystem.dartsOn e).image PG.toRotationSystem.faceEdges := by
         obtain ⟨d, hd, hd_eq⟩ := Finset.mem_image.mp this
-        have : d ∈ RS.dartsOn e := RS.dartsOnInternal_subset_dartsOn e hd
+        have : d ∈ PG.toRotationSystem.dartsOn e := PG.toRotationSystem.dartsOnInternal_subset_dartsOn e hd
         exact Finset.mem_image.mpr ⟨d, this, hd_eq⟩
       exact this
     -- fg' ⊆ S and card fg' = 2 = card S, so fg' = S = {f,g}
@@ -521,16 +581,16 @@ lemma dart_of_internalFace {f : Finset E} (hf : f ∈ RS.internalFaces) :
     directly from the definition of internalFaces as an image. -/
 lemma face_witness_from_internal {f : Finset E} {e : E}
     (hf : f ∈ RS.internalFaces) (he : e ∈ f) :
-    ∃ d, RS.faceEdges d = f := by
-  exact dart_of_internalFace hf
+    ∃ d, RS.faceEdges d = f :=
+  dart_of_internalFace (RS := RS) hf
 
 /-- Internal faces are disjoint from boundary edges.
 Proof strategy: An internal face f corresponds to some faceEdges d where d's orbit is not the outer
 orbit. If e ∈ f ∩ boundaryEdges, then by boundary_edge_both_outer, any dart on e must have its
 faceEdges equal to boundaryEdges, contradicting f ≠ boundaryEdges. -/
-lemma internal_face_disjoint_boundary
-    {f : Finset E} (hf : f ∈ RS.internalFaces) :
-    ∀ e ∈ RS.boundaryEdges, e ∉ f := by
+lemma internal_face_disjoint_boundary (PG : PlanarGeometry V E)
+    {f : Finset E} (hf : f ∈ PG.toRotationSystem.internalFaces) :
+    ∀ e ∈ PG.toRotationSystem.boundaryEdges, e ∉ f := by
   classical
   intro e he_bound he_f
   -- f is an internal face, so ∃ d with f = faceEdges d and f ≠ boundaryEdges
@@ -541,19 +601,19 @@ lemma internal_face_disjoint_boundary
   rw [mem_faceEdges_iff] at he_f
   obtain ⟨d', hd'_orb, hd'_e⟩ := he_f
   -- By boundary_edge_both_outer: faceEdges d' = boundaryEdges
-  have hd'_bound : RS.faceEdges d' = RS.boundaryEdges :=
-    RS.boundary_edge_both_outer hd'_e he_bound
+  have hd'_bound : PG.toRotationSystem.faceEdges d' = PG.toRotationSystem.boundaryEdges :=
+    boundary_edge_both_outer PG hd'_e he_bound
   -- But d' ~ d (same orbit), so faceEdges d' = faceEdges d
-  have h_same : RS.phi.SameCycle d' d := by
+  have h_same : PG.toRotationSystem.phi.SameCycle d' d := by
     unfold faceOrbit at hd'_orb
     simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hd'_orb
     exact Equiv.Perm.SameCycle.symm hd'_orb
-  have hd'_eq_d : RS.faceEdges d' = RS.faceEdges d :=
-    RS.faceEdges_of_sameCycle h_same
+  have hd'_eq_d : PG.toRotationSystem.faceEdges d' = PG.toRotationSystem.faceEdges d :=
+    PG.toRotationSystem.faceEdges_of_sameCycle h_same
   -- Therefore faceEdges d = boundaryEdges (by transitivity)
-  have : RS.faceEdges d = RS.boundaryEdges := calc
-    RS.faceEdges d = RS.faceEdges d' := hd'_eq_d.symm
-    _ = RS.boundaryEdges := hd'_bound
+  have : PG.toRotationSystem.faceEdges d = PG.toRotationSystem.boundaryEdges := calc
+    PG.toRotationSystem.faceEdges d = PG.toRotationSystem.faceEdges d' := hd'_eq_d.symm
+    _ = PG.toRotationSystem.boundaryEdges := hd'_bound
   -- But this contradicts hf_ne
   exact hf_ne this
 
@@ -683,7 +743,7 @@ private lemma sum_01_eq_card_filter_one
         have : a ∉ S.filter fun x => g x = 1 := by simp [ha]
         rw [Finset.card_insert_of_notMem this, ih h01S]
         norm_cast
-        ring
+        ring_nf
 
 lemma toggles_even (d₀ : RS.D) (v : V) :
   Even ((RS.togglesOn v d₀).card) := by
@@ -729,41 +789,41 @@ lemma toggles_even (d₀ : RS.D) (v : V) :
   obtain ⟨k, hk⟩ : ∃ k, (RS.togglesOn v d₀).card = 2 * k := by
     use (RS.togglesOn v d₀).card / 2
     have : 2 ∣ (RS.togglesOn v d₀).card := by
-      rw [← ZMod.natCast_zmod_eq_zero_iff_dvd]; exact h0
+      rw [← ZMod.natCast_eq_zero_iff]; exact h0
     omega
   refine ⟨k, ?_⟩
   omega
 
 -- Interior α-darts on different faces
-lemma alpha_not_in_same_faceOrbit_of_interior
-    {d d₀ : RS.D} (hint : RS.edgeOf d ∉ RS.boundaryEdges)
-    (hd : d ∈ RS.faceOrbit d₀) :
-    RS.alpha d ∉ RS.faceOrbit d₀ := by
+lemma alpha_not_in_same_faceOrbit_of_interior (PG : PlanarGeometry V E)
+    {d d₀ : PG.toRotationSystem.D} (hint : PG.toRotationSystem.edgeOf d ∉ PG.toRotationSystem.boundaryEdges)
+    (hd : d ∈ PG.toRotationSystem.faceOrbit d₀) :
+    PG.toRotationSystem.alpha d ∉ PG.toRotationSystem.faceOrbit d₀ := by
   classical
-  have hfaces_ne := RS.planarity_interior_edges
-      (e := RS.edgeOf d) (d := d)
+  have hfaces_ne := planarity_interior_edges PG
+      (e := PG.toRotationSystem.edgeOf d) (d := d)
       (by rfl) hint
   intro hα
-  have : RS.faceEdges (RS.alpha d) = RS.faceEdges d := by
-    have h1 : RS.faceEdges d = RS.faceEdges d₀ := by
-      have : RS.phi.SameCycle d₀ d := by simpa [mem_faceOrbit] using hd
-      exact RS.faceEdges_of_sameCycle this.symm
-    have h2 : RS.faceEdges (RS.alpha d) = RS.faceEdges d₀ := by
-      have : RS.phi.SameCycle d₀ (RS.alpha d) := by simpa [mem_faceOrbit] using hα
-      exact RS.faceEdges_of_sameCycle this.symm
+  have : PG.toRotationSystem.faceEdges (PG.toRotationSystem.alpha d) = PG.toRotationSystem.faceEdges d := by
+    have h1 : PG.toRotationSystem.faceEdges d = PG.toRotationSystem.faceEdges d₀ := by
+      have : PG.toRotationSystem.phi.SameCycle d₀ d := by simpa [mem_faceOrbit] using hd
+      exact PG.toRotationSystem.faceEdges_of_sameCycle this.symm
+    have h2 : PG.toRotationSystem.faceEdges (PG.toRotationSystem.alpha d) = PG.toRotationSystem.faceEdges d₀ := by
+      have : PG.toRotationSystem.phi.SameCycle d₀ (PG.toRotationSystem.alpha d) := by simpa [mem_faceOrbit] using hα
+      exact PG.toRotationSystem.faceEdges_of_sameCycle this.symm
     simpa [h1, h2]
   exact hfaces_ne this
 
 -- Internal face edges aren't boundary edges
-lemma edge_of_internal_face_not_boundary {d₀ : RS.D} {e : E}
-    (he : e ∈ RS.faceEdges d₀) (hint : RS.faceEdges d₀ ≠ RS.boundaryEdges) :
-    e ∉ RS.boundaryEdges := by
+lemma edge_of_internal_face_not_boundary (PG : PlanarGeometry V E) {d₀ : PG.toRotationSystem.D} {e : E}
+    (he : e ∈ PG.toRotationSystem.faceEdges d₀) (hint : PG.toRotationSystem.faceEdges d₀ ≠ PG.toRotationSystem.boundaryEdges) :
+    e ∉ PG.toRotationSystem.boundaryEdges := by
   intro hbdry
-  have hinternal : RS.faceEdges d₀ ∈ RS.internalFaces := by
+  have hinternal : PG.toRotationSystem.faceEdges d₀ ∈ PG.toRotationSystem.internalFaces := by
     rw [internalFaces]
     simp only [Finset.mem_filter, Finset.mem_image]
     exact ⟨⟨d₀, Finset.mem_univ _, rfl⟩, hint⟩
-  exact RS.internal_face_disjoint_boundary hinternal e hbdry he
+  exact internal_face_disjoint_boundary PG hinternal e hbdry he
 
 -- Need incidentEdges membership characterization
 lemma mem_incidentEdges {e : E} {v : V} :
@@ -771,43 +831,43 @@ lemma mem_incidentEdges {e : E} {v : V} :
   simp [incidentEdges]
 
 /-- For internal faces, toggles biject with incident edges -/
-lemma toggles_biject_edges_internal (d₀ : RS.D) (v : V)
-    (h_internal : RS.faceEdges d₀ ≠ RS.boundaryEdges) :
-    (RS.togglesOn v d₀).card = (RS.incidentEdges v ∩ RS.faceEdges d₀).card := by
+lemma toggles_biject_edges_internal (PG : PlanarGeometry V E) (d₀ : PG.toRotationSystem.D) (v : V)
+    (h_internal : PG.toRotationSystem.faceEdges d₀ ≠ PG.toRotationSystem.boundaryEdges) :
+    (PG.toRotationSystem.togglesOn v d₀).card = (PG.toRotationSystem.incidentEdges v ∩ PG.toRotationSystem.faceEdges d₀).card := by
   classical
   refine Finset.card_bij
-    (fun d hd => RS.edgeOf d)
+    (fun d hd => PG.toRotationSystem.edgeOf d)
     ?mem ?inj ?surj
   · -- membership
     intro d hd
     rw [togglesOn, Finset.mem_filter] at hd
     have ⟨hdS, htoggle⟩ := hd
-    have hface : RS.edgeOf d ∈ RS.faceEdges d₀ := by
+    have hface : PG.toRotationSystem.edgeOf d ∈ PG.toRotationSystem.faceEdges d₀ := by
       rw [faceEdges]
       exact Finset.mem_image.mpr ⟨d, hdS, rfl⟩
-    have : (RS.vertOf d = v ∧ RS.vertOf (RS.phi d) ≠ v)
-         ∨ (RS.vertOf d ≠ v ∧ RS.vertOf (RS.phi d) = v) := by
-      by_cases h1 : RS.vertOf d = v
-      · by_cases h2 : RS.vertOf (RS.phi d) = v
+    have : (PG.toRotationSystem.vertOf d = v ∧ PG.toRotationSystem.vertOf (PG.toRotationSystem.phi d) ≠ v)
+         ∨ (PG.toRotationSystem.vertOf d ≠ v ∧ PG.toRotationSystem.vertOf (PG.toRotationSystem.phi d) = v) := by
+      by_cases h1 : PG.toRotationSystem.vertOf d = v
+      · by_cases h2 : PG.toRotationSystem.vertOf (PG.toRotationSystem.phi d) = v
         · -- Both at v: XOR is false
           simp only [h1, h2] at htoggle
           -- htoggle says true ≠ true, contradiction
           exact absurd rfl htoggle
         · left; exact ⟨h1, h2⟩
-      · by_cases h2 : RS.vertOf (RS.phi d) = v
+      · by_cases h2 : PG.toRotationSystem.vertOf (PG.toRotationSystem.phi d) = v
         · right; exact ⟨h1, h2⟩
         · -- Neither at v: XOR is false
           simp only [h1, h2] at htoggle
           exact absurd rfl htoggle
     rcases this with (⟨hv, _⟩ | ⟨_, hv'⟩)
-    · have : ∃ d', RS.edgeOf d' = RS.edgeOf d ∧ RS.vertOf d' = v := ⟨d, rfl, hv⟩
-      have : RS.edgeOf d ∈ RS.incidentEdges v := by simpa [mem_incidentEdges] using this
+    · have : ∃ d', PG.toRotationSystem.edgeOf d' = PG.toRotationSystem.edgeOf d ∧ PG.toRotationSystem.vertOf d' = v := ⟨d, rfl, hv⟩
+      have : PG.toRotationSystem.edgeOf d ∈ PG.toRotationSystem.incidentEdges v := by simpa [mem_incidentEdges] using this
       simpa [Finset.mem_inter] using And.intro this hface
-    · have hvα : RS.vertOf (RS.alpha d) = v := by
+    · have hvα : PG.toRotationSystem.vertOf (PG.toRotationSystem.alpha d) = v := by
         rw [← vert_phi_eq_vert_alpha]; exact hv'
-      have : ∃ d', RS.edgeOf d' = RS.edgeOf d ∧ RS.vertOf d' = v :=
-        ⟨RS.alpha d, by simp [RS.edge_alpha], hvα⟩
-      have : RS.edgeOf d ∈ RS.incidentEdges v := by simpa [mem_incidentEdges] using this
+      have : ∃ d', PG.toRotationSystem.edgeOf d' = PG.toRotationSystem.edgeOf d ∧ PG.toRotationSystem.vertOf d' = v :=
+        ⟨PG.toRotationSystem.alpha d, by simp [PG.toRotationSystem.edge_alpha], hvα⟩
+      have : PG.toRotationSystem.edgeOf d ∈ PG.toRotationSystem.incidentEdges v := by simpa [mem_incidentEdges] using this
       simpa [Finset.mem_inter] using And.intro this hface
   · -- injectivity
     intro d₁ hd₁ d₂ hd₂ hEdge
@@ -815,31 +875,31 @@ lemma toggles_biject_edges_internal (d₀ : RS.D) (v : V)
     rw [togglesOn, Finset.mem_filter] at hd₁ hd₂
     have ⟨hdS₁, _⟩ := hd₁
     have ⟨hdS₂, _⟩ := hd₂
-    have hnot : RS.edgeOf d₁ ∉ RS.boundaryEdges := by
-      have : RS.edgeOf d₁ ∈ RS.faceEdges d₀ := by
+    have hnot : PG.toRotationSystem.edgeOf d₁ ∉ PG.toRotationSystem.boundaryEdges := by
+      have : PG.toRotationSystem.edgeOf d₁ ∈ PG.toRotationSystem.faceEdges d₀ := by
         rw [faceEdges]
         exact Finset.mem_image.mpr ⟨d₁, hdS₁, rfl⟩
-      exact RS.edge_of_internal_face_not_boundary this h_internal
-    have hαnot : RS.alpha d₁ ∉ RS.faceOrbit d₀ :=
-      RS.alpha_not_in_same_faceOrbit_of_interior hnot hdS₁
-    have hcases := RS.edge_fiber_two_cases
-                      (e := RS.edgeOf d₁) (d := d₁) (y := d₂)
+      exact edge_of_internal_face_not_boundary PG this h_internal
+    have hαnot : PG.toRotationSystem.alpha d₁ ∉ PG.toRotationSystem.faceOrbit d₀ :=
+      alpha_not_in_same_faceOrbit_of_interior PG hnot hdS₁
+    have hcases := PG.toRotationSystem.edge_fiber_two_cases
+                      (e := PG.toRotationSystem.edgeOf d₁) (d := d₁) (y := d₂)
                       rfl (by simpa [hEdge])
     cases hcases with
     | inl h => exact h.symm
     | inr h =>
-        have : RS.alpha d₁ ∈ RS.faceOrbit d₀ := by rw [← h]; exact hdS₂
+        have : PG.toRotationSystem.alpha d₁ ∈ PG.toRotationSystem.faceOrbit d₀ := by rw [← h]; exact hdS₂
         exact (hαnot this).elim
   · -- surjectivity
     intro e he
     simp only [Finset.mem_inter] at he
     have ⟨hinc, hf⟩ := he
     rcases Finset.mem_image.mp hf with ⟨d, hdS, hde⟩
-    rcases ((mem_incidentEdges (RS := RS) (v := v) (e := e)).1 hinc) with ⟨d', hd'e, hv'⟩
+    rcases ((mem_incidentEdges (RS := PG.toRotationSystem) (v := v) (e := e)).1 hinc) with ⟨d', hd'e, hv'⟩
     -- d is in face orbit, d' is on same edge with vertex v
     -- Either d=d' or d=alpha d' (by edge_fiber_two_cases)
-    have hcases := RS.edge_fiber_two_cases
-                      (e := RS.edgeOf d) (d := d) (y := d') rfl (by rw [hde, ← hd'e])
+    have hcases := PG.toRotationSystem.edge_fiber_two_cases
+                      (e := PG.toRotationSystem.edgeOf d) (d := d) (y := d') rfl (by rw [hde, ← hd'e])
     -- If d = d', use d. If d = alpha d', check if d or alpha d is in face orbit
     rcases hcases with (h_eq | h_alpha)
     · -- Case d = d', so vertOf d = v
@@ -848,59 +908,104 @@ lemma toggles_biject_edges_internal (d₀ : RS.D) (v : V)
       simp only [Finset.mem_filter]
       refine ⟨hdS, ?_⟩
       -- Need: vertOf d = v XOR vertOf (phi d) = v
-      have hvd : RS.vertOf d = v := by rw [← h_eq]; exact hv'
+      have hvd : PG.toRotationSystem.vertOf d = v := by rw [← h_eq]; exact hv'
       -- Show XOR: exactly one is true
       simp only [hvd]
-      -- Goal: decide True ≠ decide (RS.vertOf (RS.phi d) = v)
+      -- Goal: decide True ≠ decide (PG.toRotationSystem.vertOf (PG.toRotationSystem.phi d) = v)
       intro h
-      -- From h : decide True = decide (RS.vertOf (RS.phi d) = v), derive RS.vertOf (RS.phi d) = v
-      have hcontra : RS.vertOf (RS.phi d) = v := by
+      -- From h : decide True = decide (PG.toRotationSystem.vertOf (PG.toRotationSystem.phi d) = v), derive PG.toRotationSystem.vertOf (PG.toRotationSystem.phi d) = v
+      have hcontra : PG.toRotationSystem.vertOf (PG.toRotationSystem.phi d) = v := by
         simp at h
         exact h
       -- This would make alpha d also at v
-      have hvα : RS.vertOf (RS.alpha d) = v := by
-        have : RS.vertOf (RS.phi d) = RS.vertOf (RS.alpha d) := vert_phi_eq_vert_alpha (RS := RS) d
+      have hvα : PG.toRotationSystem.vertOf (PG.toRotationSystem.alpha d) = v := by
+        have : PG.toRotationSystem.vertOf (PG.toRotationSystem.phi d) = PG.toRotationSystem.vertOf (PG.toRotationSystem.alpha d) := vert_phi_eq_vert_alpha (RS := PG.toRotationSystem) d
         rw [hcontra] at this; exact this.symm
       -- Contradicts no_self_loops
-      exact RS.no_self_loops d (hvd.trans hvα.symm)
+      exact PG.toRotationSystem.no_self_loops d (hvd.trans hvα.symm)
     · -- Case d = alpha d', so d' = alpha d, and vertOf (alpha d) = v
       -- We'll use d, showing togglesOn property holds
       refine ⟨d, ?_, hde⟩
       rw [togglesOn]
       simp only [Finset.mem_filter]
       refine ⟨hdS, ?_⟩
-      have hvα : RS.vertOf (RS.alpha d) = v := by rw [← h_alpha]; exact hv'
-      have hvphi : RS.vertOf (RS.phi d) = v := by
-        have : RS.vertOf (RS.phi d) = RS.vertOf (RS.alpha d) := vert_phi_eq_vert_alpha (RS := RS) d
+      have hvα : PG.toRotationSystem.vertOf (PG.toRotationSystem.alpha d) = v := by rw [← h_alpha]; exact hv'
+      have hvphi : PG.toRotationSystem.vertOf (PG.toRotationSystem.phi d) = v := by
+        have : PG.toRotationSystem.vertOf (PG.toRotationSystem.phi d) = PG.toRotationSystem.vertOf (PG.toRotationSystem.alpha d) := vert_phi_eq_vert_alpha (RS := PG.toRotationSystem) d
         rw [this]; exact hvα
       -- Show XOR: phi d has v but d doesn't
       simp only [hvphi]
-      -- Goal: decide (RS.vertOf d = v) ≠ decide True
+      -- Goal: decide (PG.toRotationSystem.vertOf d = v) ≠ decide True
       intro h
-      -- From h : decide (RS.vertOf d = v) = decide True, derive RS.vertOf d = v
-      have hcontra : RS.vertOf d = v := by
+      -- From h : decide (PG.toRotationSystem.vertOf d = v) = decide True, derive PG.toRotationSystem.vertOf d = v
+      have hcontra : PG.toRotationSystem.vertOf d = v := by
         simp at h
         exact h
       -- Contradicts no_self_loops
-      exact RS.no_self_loops d (hcontra.trans hvα.symm)
+      exact PG.toRotationSystem.no_self_loops d (hcontra.trans hvα.symm)
 
 /-- **Key theorem: Even edge-incidence for internal faces.**
 For any internal face f = faceEdges d₀ and vertex v, the number of edges of f
-incident to v is even. -/
-theorem face_vertex_incidence_even_internal (RS : RotationSystem V E) :
-  ∀ (d₀ : RS.D) (v : V),
-    RS.faceEdges d₀ ≠ RS.boundaryEdges →
-    Even ((RS.incidentEdges v ∩ RS.faceEdges d₀).card) := by
-  intros d₀ v h_internal
-  rw [← RS.toggles_biject_edges_internal d₀ v h_internal]
-  exact RS.toggles_even d₀ v
+incident to v is even.
 
-/-- **Key theorem: Even edge-incidence of a face at each vertex.**
-For any face f = faceEdges d₀ and vertex v, the number of edges of f
-incident to v is even. This follows from the topological structure of rotation systems. -/
+This is the CANONICAL parity theorem for 4CT. It is fully proven and covers all uses
+in the DiskGeometry pipeline (via the face_cycle_parity field). -/
+theorem face_vertex_incidence_even_internal (PG : PlanarGeometry V E) :
+  ∀ (d₀ : PG.toRotationSystem.D) (v : V),
+    PG.toRotationSystem.faceEdges d₀ ≠ PG.toRotationSystem.boundaryEdges →
+    Even ((PG.toRotationSystem.incidentEdges v ∩ PG.toRotationSystem.faceEdges d₀).card) := by
+  intros d₀ v h_internal
+  rw [← toggles_biject_edges_internal PG d₀ v h_internal]
+  exact PG.toRotationSystem.toggles_even d₀ v
+
+/-! ### Optional global parity theorems (archived)
+
+The following theorems are mathematically natural generalizations of the internal-face
+parity result above, but they are **not used** in the Four-Color Theorem formalization.
+
+They are commented out to maintain the "zero sorries" invariant for the core 4CT codebase.
+The proof sketches are preserved here for future work or educational purposes.
+
+**Why not needed:**
+- `DiskGeometry.face_cycle_parity` is a **field** that requires parity for internal faces
+- All actual 4CT uses go through that field, which is satisfied by `face_vertex_incidence_even_internal`
+- The boundary face and bare RotationSystem cases are strictly stronger than needed
+
+**Future work:** If you want these theorems later, treat them as a separate mini-project:
+1. Decide which structure they semantically belong to
+2. Either prove them fully using the toggles machinery, or
+3. Add them as fields on a new structure like `SurfaceRotationSystem` if definitional
+
+/-
+/-- Even edge-incidence for ALL faces in PlanarGeometry (including boundary).
+UNUSED: The 4CT pipeline only needs the internal-face version.
+INCOMPLETE: Boundary case requires subtle reasoning about dual dart orbits. -/
+theorem face_vertex_incidence_even_PlanarGeometry (PG : PlanarGeometry V E) :
+  ∀ (d₀ : PG.toRotationSystem.D) (v : V),
+    Even ((PG.toRotationSystem.incidentEdges v ∩ PG.toRotationSystem.faceEdges d₀).card) := by
+  intros d₀ v
+  by_cases h : PG.toRotationSystem.faceEdges d₀ = PG.toRotationSystem.boundaryEdges
+  · -- Boundary case: The boundary is a cycle, so parity should hold
+    -- Challenge: For boundary edges, both darts d and α(d) can be in the same orbit
+    -- The toggles are even (by toggles_even), but the bijection argument is more subtle
+    -- TODO: Prove using cycle structure of boundary, or adapt toggles bijection
+    sorry
+  · -- Internal case: proven ✓
+    exact face_vertex_incidence_even_internal PG d₀ v h
+
+/-- Even edge-incidence for any face in any RotationSystem.
+UNUSED: The 4CT pipeline works at the PlanarGeometry/DiskGeometry level.
+UNCLEAR: May not hold for non-planar rotation systems without additional axioms. -/
 theorem face_vertex_incidence_even (RS : RotationSystem V E) :
   ∀ (d₀ : RS.D) (v : V),
-    Even ((Finset.univ.filter (fun e => ∃ d, RS.edgeOf d = e ∧ RS.vertOf d = v) ∩ RS.faceEdges d₀).card)
+    Even ((Finset.univ.filter (fun e => ∃ d, RS.edgeOf d = e ∧ RS.vertOf d = v) ∩ RS.faceEdges d₀).card) := by
+  intro d₀ v
+  -- TODO: For planar rotation systems, follows from PlanarGeometry version
+  -- For general rotation systems, may need additional structure assumptions
+  sorry
+-/
+
+-/
 
 end RotationSystem
 

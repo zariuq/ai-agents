@@ -2,7 +2,7 @@ import FourColor.Triangulation
 import FourColor.Geometry.Disk
 import FourColor.Geometry.DynamicForest
 import FourColor.StrongDual
-import FourColor.Tait
+-- import FourColor.Tait -- TODO: Re-enable after Tait lemmas are completed (icing on the cake)
 
 namespace FourColor
 

@@ -7,7 +7,8 @@ import FourColor.Geometry.DynamicForest
 import FourColor.Geometry.StaticForest
 import FourColor.Geometry.RotationSystem
 import FourColor.StrongDual
-import FourColor.Tait
+-- import FourColor.Tait -- TODO: Re-enable after Tait lemmas are completed (icing on the cake)
 import FourColor.GraphTheory.SpanningForest
+import FourColor.Geometry.CounterexampleCaseTwo  -- Counterexample proof (standalone, no dependencies)
 -- Tetrahedron example removed from build (incomplete, not needed for main proof)
 -- import FourColor.Examples.Tetrahedron
