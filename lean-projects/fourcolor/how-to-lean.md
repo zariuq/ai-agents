@@ -1001,6 +1001,170 @@ have h_path_rev : ReflTransGen R b a :=
 
 **Caveat**: Make sure `rflTransGen_reverse_of_symmetric` is available (may need import).
 
+## Lean 3 → Lean 4 Syntax Migration
+
+### Common Syntax Issues
+
+When porting code from Lean 3 or dealing with older proof patterns:
+
+#### 1. Let Bindings: No More `in` Keyword
+
+**Lean 3** ❌:
+```lean
+let S := Finset.univ.filter (fun v => faceDeg G f v = 2) in
+have h_sum := sum_faceDeg_eq_two_card G f
+```
+
+**Lean 4** ✅:
+```lean
+let S := Finset.univ.filter (fun v => faceDeg G f v = 2)
+have h_sum := sum_faceDeg_eq_two_card G f
+```
+
+**Key change**: In Lean 4, `let` bindings use newlines or semicolons, not `in`.
+
+#### 2. Finset.card_sdiff Is a Theorem, Not a Function
+
+**Wrong** ❌:
+```lean
+have : (f \ shared).card = 1 := by
+  rw [Finset.card_sdiff h_subset_f]  -- ERROR: card_sdiff is not a function!
+  simp [hf_card]
+```
+
+**Right** ✅:
+```lean
+have : (f \ shared).card = 1 := by
+  -- card_sdiff is a theorem: (s \ t).card = s.card - (t ∩ s).card
+  -- Need to compute the pieces explicitly
+  have h_inter : (shared ∩ f).card = 2 := by
+    rw [Finset.inter_eq_left.mpr h_subset_f]
+    exact Finset.card_pair hne
+  have : f.card = shared.card + (f \ shared).card - (shared ∩ f).card := by
+    omega
+  simp [hf_card, h_inter] at this
+  omega
+```
+
+**Lesson**: `Finset.card_sdiff` is an equality theorem, not a rewrite that directly gives you the card. Compute intermediate cardinalities explicitly.
+
+#### 3. Sum Notation: Explicit vs Implicit Forms
+
+**Both valid but elaborate differently**:
+```lean
+-- Explicit Finset.sum (more stable)
+Finset.sum S (fun v => faceDeg G f v)
+
+-- Sugared notation (can cause elaboration issues)
+∑ v in S, faceDeg G f v
+
+-- Univ sum (different type)
+∑ v, faceDeg G f v
+```
+
+**Common issue**: Mixing forms in calc chains causes type mismatches.
+
+**Solution**: Be consistent within a single calc chain:
+```lean
+calc Finset.sum S f
+    = Finset.sum S g := by ...
+    = Finset.sum T g := by ...
+```
+
+#### 4. Omega Limitations with Finset Arithmetic
+
+**Problem**: `omega` can't always solve cardinality arithmetic involving intersections/differences.
+
+**Example that fails** ❌:
+```lean
+-- Given: f.card = 3, shared.card = 2, (shared ∩ f).card = 2
+have : (f \ shared).card = 1 := by omega  -- FAILS!
+```
+
+**Solution** ✅:
+```lean
+-- Compute intermediate step explicitly, then omega
+have h_inter : (shared ∩ f).card = 2 := by simp [...]
+have : f.card = shared.card + (f \ shared).card - (shared ∩ f).card := by
+  omega  -- This simple form works
+simp [hf_card, h_inter] at this
+omega  -- Now this works
+```
+
+**Lesson**: Help `omega` by breaking complex finset card equations into simpler arithmetic.
+
+#### 5. Redundant Tactics Cause Errors
+
+**Wrong** ❌:
+```lean
+have : endpoints G e = {u, v} := by
+  ext x
+  simp [h1, h2]
+  exact h3  -- ERROR: No goals to be solved
+```
+
+**Right** ✅:
+```lean
+have : endpoints G e = {u, v} := by
+  ext x
+  simp [h1, h2]  -- This closes the goal, stop here!
+```
+
+**Check**: If `simp` makes no progress, it tells you. If you get "No goals to be solved", remove the next tactic.
+
+#### 6. Finset.inter_subset_left Doesn't Take Arguments
+
+**Wrong** ❌:
+```lean
+have : (s ∩ t).card ≤ s.card :=
+  Finset.card_le_card (Finset.inter_subset_left _ _)  -- ERROR!
+```
+
+**Right** ✅:
+```lean
+have : (s ∩ t).card ≤ s.card := by
+  apply Finset.card_le_card
+  exact Finset.inter_subset_left  -- No arguments!
+-- Or just:
+have : (s ∩ t).card ≤ s.card :=
+  Finset.card_le_card Finset.inter_subset_right  -- Use right for s ∩ t ⊆ t
+```
+
+#### 7. Finset.sum_const Signature
+
+**Modern form**:
+```lean
+-- Sum of constant over finset
+have : ∑ v in S, (2 : ℕ) = 2 * S.card := by
+  rw [Finset.sum_const]
+  omega  -- Or norm_num, depending on context
+```
+
+**Note**: `Finset.sum_const` produces `S.card • 2`, which needs to be converted to `2 * S.card` via `omega` or arithmetic simplification.
+
+### Migration Checklist
+
+When porting Lean 3 code or fixing syntax errors:
+
+- [ ] Remove all `let ... in` → use newlines
+- [ ] Check `Finset.card_sdiff` usage → compute pieces explicitly
+- [ ] Ensure sum notation is consistent in calc chains
+- [ ] Add explicit types to lambdas in higher-order contexts
+- [ ] Remove redundant tactics after goals are solved
+- [ ] Help `omega` with intermediate steps for finset card arithmetic
+- [ ] Check that subset lemmas like `inter_subset_left` don't take arguments
+
+### Resources for API Changes
+
+- **Lean 4 Documentation**: https://lean-lang.org/doc/
+- **Mathlib4 vs Mathlib3**: https://leanprover-community.github.io/mathlib-port-status/
+- **When in doubt**: Use `#check` to see current signatures!
+
+```lean
+#check Finset.card_sdiff  -- Shows it's a theorem, not a function
+#check Finset.inter_subset_left  -- Shows correct type
+```
+
 ## References
 
 - [Lean 4 Tactic Reference](https://lean-lang.org/doc/reference/latest/Tactic-Proofs/Tactic-Reference/)
@@ -1008,3 +1172,4 @@ have h_path_rev : ReflTransGen R b a :=
 - [Mathlib4 Documentation](https://leanprover-community.github.io/mathlib4_docs/)
 - [Stack Exchange: Synthesizing decidability for Finset.filter](https://proofassistants.stackexchange.com/questions/4587/synthesizing-decidablity-for-finset-filter)
 - GPT-5 Pro's predicate-based architecture (2025-11-09) - Four Color Project
+- NoDigons.lean syntax fixing session (2025-11-20) - Lean 3 → Lean 4 migration patterns
