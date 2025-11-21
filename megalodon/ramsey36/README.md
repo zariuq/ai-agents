@@ -10,9 +10,11 @@ This directory contains a formalization of the Ramsey number R(3,6) = 18 in the 
 |---------|--------|-------|
 | `Adj17_sym` | **Kernel verified** | 2.8s, 2572 lines |
 | `neq_lemmas` (10-16) | **Kernel verified** | Extends preamble |
-| `Adj17_triangle_free` | **ATP verified** | Vampire ~60s, reconstruction in progress |
-| `Adj17_no_6_indep` | **ATP verified** | Vampire ~7s (CASC mode), needs script |
-| `lower_bound` | **Kernel verified** | Proof body compiles! Uses helper lemmas |
+| `Adj17_not_i_j` (190 non-edges) | **Kernel verified** | ~11s, all non-edge proofs |
+| `Adj17_path_i_j_k` (316 paths) | **Kernel verified** | Triangle-free witnesses |
+| `Adj17_triangle_free` | **Reconstruction WIP** | Need to connect path lemmas to set quantifiers |
+| `Adj17_no_6_indep` | **ATP verified** | Vampire ~7s, 12376 6-subsets to check |
+| `lower_bound` | **Proof structure done** | Uses helper lemmas |
 | `triangle_free_no_3clique` | Admitted | Helper: triangle_free => no 3-clique |
 | `no_k_indep_no_indep_set` | Admitted | Helper: no_k_indep => no k-indep set |
 | `upper_bound` | TODO | Requires Cariolaro Claims 1-3 (see below) |
@@ -22,10 +24,12 @@ This directory contains a formalization of the Ramsey number R(3,6) = 18 in the 
 
 - `ramsey36_mizar.mg` - Main proof file (Mizar theory)
 - `lower_bound_proof.mg` - Kernel-verified lower_bound proof structure
-- `adj17_with_sym.mg` - Kernel-verified Adj17_sym proof
+- `adj17_with_sym.mg` - Kernel-verified Adj17_sym proof (2572 lines)
+- `adj17_all_proofs.mg` - Combined proofs: sym + neq + non-edges + paths (30554 lines)
+- `adj17_nonedge_proofs.mg` - Non-edge and path lemma proofs
 - `neq_lemmas.mg` - Additional inequality lemmas for 10-16
-- `adj17_triangle_free_auto.mg` - Codex-generated triangle_free reconstruction (WIP)
-- `gen_*.py` - Proof generators
+- `gen_adj17_nonedge_proofs.py` - Proof generator for non-edges and paths
+- `gen_adj17_proofs.py` - Original proof generator (edge theorems)
 
 ## ATP Verification Results
 
