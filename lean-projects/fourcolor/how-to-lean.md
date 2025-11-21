@@ -1165,6 +1165,134 @@ When porting Lean 3 code or fixing syntax errors:
 #check Finset.inter_subset_left  -- Shows correct type
 ```
 
+## LeanHammer: Automated Theorem Proving
+
+### What is LeanHammer?
+
+LeanHammer is an automated theorem prover that combines:
+- **AI premise selection** - Finds relevant lemmas from mathlib (100k+ theorems)
+- **Duper** - Native Lean superposition prover
+- **Aesop** - Automated proof search
+- **Zipperposition** - External first-order ATP (optional)
+
+### Installation
+
+Already integrated! Just add to your file:
+```lean
+import Hammer
+```
+
+### Basic Usage
+
+```lean
+-- Let hammer find the proof
+example (s t : Finset α) (h : s ⊆ t) : s.card ≤ t.card := by
+  hammer
+
+-- Hammer outputs "Try this:" with the proof it found
+-- info: Try this: duper [*, card_le_card] {preprocessing := full}
+```
+
+### The Workflow: Hammer as Lemma Discovery
+
+**When stuck on a sorry:**
+
+1. **Extract the goal** to a test file:
+```lean
+import Hammer
+import Mathlib.Data.Finset.Card
+
+example {V : Type*} [Fintype V] (h : Fintype.card V = 1) (u v : V) : u = v := by
+  hammer
+```
+
+2. **Build and check output** - hammer prints "Try this:" with the proof:
+```
+info: Try this:
+    duper [*, Fintype.card_eq_one_iff, Fintype.card_le_one_iff]
+```
+
+3. **Copy the discovered lemma** into your real code:
+```lean
+have : u = v := by
+  exact Fintype.card_le_one_iff.mp (le_of_eq h_finite) u v
+```
+
+### What Hammer Solves Well
+
+| Pattern | Hammer Solution |
+|---------|-----------------|
+| Finset membership | `simp_all [mem_filter, mem_inter]` |
+| Cardinality bounds | `Finset.card_le_card`, `card_filter_le` |
+| Set operations | `Finset.erase_subset`, `inter_subset_left` |
+| ZMod 2 arithmetic | `ZModModule.add_self`, `rfl` |
+| Subset transitivity | `duper [powerset_mono, subset_iff]` |
+| Fintype uniqueness | `duper [Fintype.card_le_one_iff]` |
+| Sum over singleton | `simp_all [sum_singleton]` |
+
+### What Hammer Struggles With
+
+- Complex custom definitions (needs unfolding first)
+- Deep induction proofs
+- Goals requiring domain-specific reasoning
+- Very large proof contexts (>2048 premises warning)
+
+### Advanced Options
+
+```lean
+-- Use only native tactics (faster, no external ATP)
+example : ... := by hammer {solver := aesop_only}
+
+-- Use Zipperposition (if installed)
+example : ... := by hammer {solver := zipperposition}
+
+-- Increase timeout (default 10s)
+example : ... := by hammer {timeout := 30}
+```
+
+### Iterative Breakdown Strategy
+
+When hammer can't solve directly, break into sub-goals:
+
+```lean
+-- Original sorry
+lemma complex_goal : P ∧ Q ∧ R := by sorry
+
+-- Break down for hammer
+lemma complex_goal : P ∧ Q ∧ R := by
+  constructor
+  · -- P
+    have h1 : ... := by hammer  -- Let hammer find sub-lemma
+    have h2 : ... := by hammer
+    exact ...
+  constructor
+  · -- Q
+    hammer  -- Maybe hammer solves this directly
+  · -- R
+    hammer
+```
+
+### Test Files
+
+See working examples in:
+- `FourColor/Test/HammerQuickTest.lean` - Basic patterns (17/17 pass)
+- `FourColor/Test/HammerOnProject.lean` - Project-specific tests
+
+### Common Warnings
+
+```
+warning: Found 5450 unindexed premises in the environment,
+which exceeds the maximum number of new premises (2048).
+Discarding premises beyond this limit
+```
+
+This is normal for large mathlib imports. Hammer still works but may miss some relevant lemmas.
+
+### Resources
+
+- [LeanHammer GitHub](https://github.com/JOSHCLUNE/LeanHammer)
+- Requires Lean 4.20.0 - 4.25.0
+
 ## References
 
 - [Lean 4 Tactic Reference](https://lean-lang.org/doc/reference/latest/Tactic-Proofs/Tactic-Reference/)
@@ -1173,3 +1301,4 @@ When porting Lean 3 code or fixing syntax errors:
 - [Stack Exchange: Synthesizing decidability for Finset.filter](https://proofassistants.stackexchange.com/questions/4587/synthesizing-decidablity-for-finset-filter)
 - GPT-5 Pro's predicate-based architecture (2025-11-09) - Four Color Project
 - NoDigons.lean syntax fixing session (2025-11-20) - Lean 3 → Lean 4 migration patterns
+- LeanHammer integration session (2025-11-21) - Automated lemma discovery
