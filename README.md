@@ -17,6 +17,10 @@ Novel proof approach via Kempe chain algebra and XOR parity.
 - **[lean-projects/ramsey36/](lean-projects/ramsey36/)** - R(3,6) = 18 formalization in Lean 4
 - **[megalodon/ramsey36/](megalodon/ramsey36/)** - Adj17 edge theorem proofs
 
+### Tools
+
+- **[tools/tptp-metta/](tools/tptp-metta/)** - TPTP ↔ S-expression ↔ MeTTa converters, propositional resolution prover
+
 ## Status
 
 Work in progress. See individual project READMEs for details.
