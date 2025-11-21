@@ -7,7 +7,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 This file defines the Graver-Yackel graph: one of the 7 non-isomorphic
 triangle-free graphs on 17 vertices with independence number α = 5.
 
-This proves R(3,6) ≥ 18.
+This proves R(3,6) ≥ 18, conditional on the existence of R(3,6).
 
 ## Approach
 
@@ -79,7 +79,6 @@ instance : DecidableRel criticalGraph17.Adj := by
   unfold criticalGraph17 adj17
   exact Finset.decidableMem w (neighbors17 v)
 
--- Explicit instances using simple graph library
 instance : Decidable (TriangleFree criticalGraph17) := by
   unfold TriangleFree CliqueFree
   infer_instance
@@ -114,13 +113,17 @@ lemma not_hasRamseyProperty_17 : ¬ HasRamseyProperty 3 6 criticalGraph17 := by
     intro s h_indep
     exact criticalGraph17_no_6_indep s h_indep
 
--- Existence of Ramsey numbers (Upper bound implies existence)
-axiom ramsey_exists (k l : ℕ) : Set.Nonempty { n | n > 0 ∧ ∀ (G : SimpleGraph (Fin n)) [DecidableRel G.Adj], HasRamseyProperty k l G }
+/-- **Lower Bound**: R(3,6) ≥ 18, assuming the Ramsey number exists.
 
-/-- **Main Theorem**: R(3,6) ≥ 18 -/
-theorem ramsey_three_six_ge_18 : 18 ≤ ramseyNumber 3 6 := by
+    This lemma avoids axiomatizing Ramsey's theorem. Instead, it shows that
+    IF there is any n with the Ramsey property, THEN the minimal such n is ≥ 18.
+    The existence will be provided by the upper bound proof later.
+-/
+theorem ramsey_three_six_ge_18_of_nonempty
+    (h_nonempty : Set.Nonempty {n : ℕ | n > 0 ∧ ∀ (G : SimpleGraph (Fin n)) [DecidableRel G.Adj], HasRamseyProperty 3 6 G}) :
+    18 ≤ ramseyNumber 3 6 := by
   apply le_csInf
-  · exact ramsey_exists 3 6
+  · exact h_nonempty
   · intro n hn
     rw [Set.mem_setOf_eq] at hn
     rcases hn with ⟨h_pos, h_forall⟩
@@ -140,7 +143,7 @@ theorem ramsey_three_six_ge_18 : 18 ≤ ramseyNumber 3 6 := by
           have hne : x' ≠ y' := fun h => hxy (congr_arg f h)
           exact h_clique.isClique hx' hy' hne
         · simp [h_clique.card_eq]
-      exact criticalGraph17_triangleFree (s.map f) h_clique'
+      exact not_hasRamseyProperty_17 (Or.inl ⟨s.map f, h_clique'⟩)
     · have h_indep' : criticalGraph17.IsNIndepSet 6 (s.map f) := by
         constructor
         · intro x hx y hy hxy
@@ -150,4 +153,4 @@ theorem ramsey_three_six_ge_18 : 18 ≤ ramseyNumber 3 6 := by
           have hne : x' ≠ y' := fun h => hxy (congr_arg f h)
           exact h_indep.isIndepSet hx' hy' hne
         · simp [h_indep.card_eq]
-      exact criticalGraph17_no_6_indep (s.map f) h_indep'
+      exact not_hasRamseyProperty_17 (Or.inr ⟨s.map f, h_indep'⟩)

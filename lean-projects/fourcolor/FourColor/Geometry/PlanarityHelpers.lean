@@ -67,10 +67,37 @@ lemma interior_edge_two_internal_faces (PG : PlanarGeometry V E)
 
   -- By uniqueness of faces, f' must be in faces
   have hf'_in_faces : f' ∈ faces := by
-      -- STUB: Temporarily sorry'd complex proof with Finset.insert issues
-      -- TODO: Fix after circular import test - needs Finset API updates
-      -- Strategy: Show f' must be in faces by uniqueness
-      sorry
+    classical
+    -- If f' is already one of the two faces we are done.
+    by_cases hf' : f' = f
+    · subst hf'; exact hf_mem
+    by_cases hg' : f' = g
+    · subst hg'; exact hg_mem
+    -- Otherwise, build an alternative candidate set of faces containing e and use uniqueness.
+    -- The set `{f', g}` also has cardinality 2 and every member is internal and contains `e`.
+    let fg' : Finset (Finset E) := insert g ({f'} : Finset (Finset E))
+    -- Handy facts for reuse
+    have hfaces_g := hfaces g hg_mem
+    have hcard_fg' : fg'.card = 2 := by
+      have hnot : g ∉ ({f'} : Finset (Finset E)) := by
+        have hg_ne : g ≠ f' := by intro h; exact hg' h.symm
+        simp [hg_ne]
+      -- `fg'` is a doubleton because `g ∉ {f'}`.
+      simpa [fg', Finset.card_singleton] using
+        (Finset.card_insert_of_notMem (s := ({f'} : Finset (Finset E))) (a := g) hnot)
+    have hprop_fg' :
+        ∀ f'' ∈ fg',
+          f'' ∈ PG.toRotationSystem.internalFaces ∧ e ∈ f'' := by
+      intro f'' hf''
+      simp [fg'] at hf''
+      rcases hf'' with hf'' | hf''
+      · subst hf''
+        exact hfaces_g
+      · subst hf''
+        exact ⟨hf'_internal, he_f'⟩
+    have hfaces_eq : fg' = faces := hunique _ ⟨hcard_fg', hprop_fg'⟩
+    have : f' ∈ fg' := by simp [fg']
+    simpa [fg', hfaces_eq] using this
 
   -- Once f' ∈ faces, and faces = {f, g}, we have f' = f ∨ f' = g
   rw [hfg_all] at hf'_in_faces

@@ -40,7 +40,7 @@ lemma incident_iff_endpoint (G : DiskGeometry V E) {e : E} {v : V} :
     e ∈ G.asZeroBoundary.incident v ↔ v ∈ endpoints G.toPlanarGeometry e := by
   classical
   simp [endpoints, RotationSystem.dartsOn, G.incident_compat, Finset.mem_image,
-    Finset.mem_filter, and_left_comm, and_assoc, and_comm]
+    Finset.mem_filter]
 
 /-- Each edge has exactly two endpoints. -/
 lemma endpoints_card_two (PG : PlanarGeometry V E) (e : E) :
@@ -50,9 +50,9 @@ lemma endpoints_card_two (PG : PlanarGeometry V E) (e : E) :
   obtain ⟨d1, d2, hne, hdarts⟩ :=
     Finset.card_eq_two.mp (PG.toRotationSystem.dartsOn_card_two e)
   have hd1_edge : PG.toRotationSystem.edgeOf d1 = e :=
-    (PG.toRotationSystem.mem_dartsOn).1 (by simpa [hdarts])
+    (PG.toRotationSystem.mem_dartsOn).1 (by simp [hdarts])
   have hd2_edge : PG.toRotationSystem.edgeOf d2 = e :=
-    (PG.toRotationSystem.mem_dartsOn).1 (by simpa [hdarts])
+    (PG.toRotationSystem.mem_dartsOn).1 (by simp [hdarts])
 
   -- The second dart is the α-partner (since the fiber has size 2)
   have hd2_alpha : d2 = PG.toRotationSystem.alpha d1 := by
@@ -71,7 +71,7 @@ lemma endpoints_card_two (PG : PlanarGeometry V E) (e : E) :
   have hcard :
       ({PG.toRotationSystem.vertOf d1,
         PG.toRotationSystem.vertOf d2} : Finset V).card = 2 := by
-    simp [Finset.card_pair, hv_ne]
+    simp [hv_ne]
   unfold endpoints
   simpa [hdarts, hne] using hcard
 
@@ -86,21 +86,21 @@ lemma endpoints_injective (PG : PlanarGeometry V E) {e1 e2 : E} (h : e1 ≠ e2) 
     Finset.card_eq_two.mp (PG.toRotationSystem.dartsOn_card_two e2)
 
   have hedge1 : PG.toRotationSystem.edgeOf d1 = e1 :=
-    (PG.toRotationSystem.mem_dartsOn).1 (by simpa [hdarts1])
+    (PG.toRotationSystem.mem_dartsOn).1 (by simp [hdarts1])
   have hedge2 : PG.toRotationSystem.edgeOf d2 = e2 :=
-    (PG.toRotationSystem.mem_dartsOn).1 (by simpa [hdarts2])
+    (PG.toRotationSystem.mem_dartsOn).1 (by simp [hdarts2])
 
   -- The second dart on each edge is the α-partner
   have hd1'_alpha : d1' = PG.toRotationSystem.alpha d1 := by
     have hd1'_edge : PG.toRotationSystem.edgeOf d1' = e1 :=
-      (PG.toRotationSystem.mem_dartsOn).1 (by simpa [hdarts1])
+      (PG.toRotationSystem.mem_dartsOn).1 (by simp [hdarts1])
     rcases PG.toRotationSystem.edge_fiber_two_cases
         (e := e1) (d := d1) (y := d1') hedge1 hd1'_edge with h' | h'
     · exact (hne1 h'.symm).elim
     · exact h'
   have hd2'_alpha : d2' = PG.toRotationSystem.alpha d2 := by
     have hd2'_edge : PG.toRotationSystem.edgeOf d2' = e2 :=
-      (PG.toRotationSystem.mem_dartsOn).1 (by simpa [hdarts2])
+      (PG.toRotationSystem.mem_dartsOn).1 (by simp [hdarts2])
     rcases PG.toRotationSystem.edge_fiber_two_cases
         (e := e2) (d := d2) (y := d2') hedge2 hd2'_edge with h' | h'
     · exact (hne2 h'.symm).elim
@@ -111,12 +111,12 @@ lemma endpoints_injective (PG : PlanarGeometry V E) {e1 e2 : E} (h : e1 ≠ e2) 
       ({PG.toRotationSystem.vertOf d1,
         PG.toRotationSystem.vertOf (PG.toRotationSystem.alpha d1)} : Finset V) := by
     unfold endpoints
-    simp [hdarts1, hd1'_alpha, hne1, Finset.insert_comm]
+    simp [hdarts1, hd1'_alpha]
   have hend2 : endpoints PG e2 =
       ({PG.toRotationSystem.vertOf d2,
         PG.toRotationSystem.vertOf (PG.toRotationSystem.alpha d2)} : Finset V) := by
     unfold endpoints
-    simp [hdarts2, hd2'_alpha, hne2, Finset.insert_comm]
+    simp [hdarts2, hd2'_alpha]
 
   intro h_eq
   have hno :=
@@ -135,8 +135,17 @@ lemma faceDeg_eq_card_bipartiteAbove (G : DiskGeometry V E) (f : Finset E) (v : 
       G.asZeroBoundary.incident v ∩ f =
         Finset.bipartiteAbove (fun v e => e ∈ G.asZeroBoundary.incident v) f v := by
     ext e
-    simp [Finset.mem_bipartiteAbove, Finset.mem_inter, and_left_comm, and_assoc, and_comm]
-  simpa [hset]
+    constructor
+    · intro h
+      -- reorder the conjunction
+      have : e ∈ f ∧ e ∈ G.asZeroBoundary.incident v := by
+        simpa [Finset.mem_inter, and_comm] using h
+      simpa [Finset.mem_bipartiteAbove, and_comm] using this
+    · intro h
+      have : e ∈ G.asZeroBoundary.incident v ∧ e ∈ f := by
+        simpa [Finset.mem_bipartiteAbove, and_comm] using h
+      simpa [Finset.mem_inter] using this
+  simp [hset]
 
 /-- Each edge is incident to exactly two vertices, expressed via the bipartite fiber. -/
 lemma card_bipartiteBelow_eq_two (G : DiskGeometry V E) (e : E) :
@@ -168,7 +177,7 @@ lemma sum_faceDeg_eq_two_card (G : DiskGeometry V E) (f : Finset E) :
       funext v
       simpa [r] using faceDeg_eq_card_bipartiteAbove (G := G) (f := f) v
     have : ∑ v : V, faceDeg G f v = ∑ v : V, (Finset.bipartiteAbove r f v).card := by
-      simpa [hfun]
+      simp [hfun]
     -- change the right side to a `Finset` sum over `univ`
     simpa using this
 
@@ -190,7 +199,7 @@ lemma sum_faceDeg_eq_two_card (G : DiskGeometry V E) (f : Finset E) :
 
   -- Sum the constant 2 over `f`
   have hConst : Finset.sum f (fun _ => (2 : Nat)) = 2 * f.card := by
-    simp [Finset.sum_const, Nat.mul_comm, Nat.mul_left_comm, Nat.mul_assoc]
+    simp [Finset.sum_const, Nat.mul_comm]
 
   calc
     ∑ v : V, faceDeg G f v

@@ -21,8 +21,7 @@ Formalize David Cariolaro's elementary proof that R(3,6) = 18.
 
 ⚠️ **NEVER run `lake update`** unless intentionally upgrading mathlib
 - mathlib is pinned to commit `06d95e5f5311594940c0c3dff5381fabe4fcabe7`
-- **MATCHES fourcolor project** - both share the same mathlib build cache!
-- Lean version: `v4.24.0-rc1` (also matches fourcolor)
+- Lean version: `v4.24.0-rc1`
 - Declared in `lakefile.toml` and mirrored in `lake-manifest.json`
 - Breaking this pin will force mathlib rebuild from source (hours of work)
 
@@ -73,7 +72,6 @@ lake build          # Build project only
 2. **No limit** = 100% CPU sustained, computer unusable
 3. **Never** run multiple builds in parallel
 4. **Never** break mathlib pin without coordination
-5. **Shares cache with fourcolor** - rebuilding one project doesn't rebuild mathlib for the other
 
 ## Project Structure
 
@@ -157,17 +155,6 @@ Accept that the last contradiction involves:
 - Lots of "by symmetry" reasoning
 
 **Solution**: Break it into MANY small lemmas, use automation aggressively.
-
-## Comparison to Four Color
-
-| Aspect | Four Color | R(3,6) |
-|--------|-----------|--------|
-| **Pages** | 200+ | 5 |
-| **Proof technique** | Reducibility + Discharging | Direct + Case analysis |
-| **Graph properties** | Planarity, coloring | Triangle-free, regularity |
-| **Computation** | Heavy (Gonthier) | Light (one graph) |
-| **Formalization** | Years | Weeks |
-| **Difficulty** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
 
 ## Estimated Effort
 

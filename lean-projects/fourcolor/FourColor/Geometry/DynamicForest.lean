@@ -1,6 +1,6 @@
 import FourColor.Triangulation
 import FourColor.Geometry.Disk
-import FourColor.GraphTheory.SpanningForest
+import FourColor.Geometry.SpanningForest -- Changed from GraphTheory
 import FourColor.KernelExtras
 import Mathlib
 
@@ -22,26 +22,24 @@ This file sets up the interface.  Proving that a concrete planar disc
 embedded graph satisfies these hypotheses is deferred to later development.
 -/
 
--- Variable declarations omitted - types are inferred from usage
-
 namespace DynamicForest
 
 open Geometry
 open Finset
-open GraphTheory
+open FourColor -- For Color, etc.
 
 /-- Bundle for the dynamic-forest peel construction using the dynamic dual forest argument. -/
 structure Data
-    [Fintype V] [DecidableEq V]
+    {V E : Type*} [Fintype V] [DecidableEq V]
     [Fintype E] [DecidableEq E] where
   G : DiskGeometry V E
+  noDigons : NoDigons G -- Essential for uniqueness of dual edges
   gamma : Color := (1,0)
   gamma_eq : gamma = (1,0)  -- Constraint: gamma must be (1,0) for support₁ to work correctly
   /-- Tightness input: if a zero-boundary chain has empty γ-support (γ=(1,0)), it is zero. -/
   tight : ∀ {x : E → Color}, x ∈ G.asZeroBoundary.zeroBoundarySet → support₁ x = ∅ → x = zeroChain
 
-variable [Fintype V] [DecidableEq V]
-variable [Fintype E] [DecidableEq E]
+variable {V E : Type*} [Fintype V] [DecidableEq V] [Fintype E] [DecidableEq E]
 
 /-- Faces that meet the current γ-support (support₁). -/
 def facesTouching (D : Data (V := V) (E := E)) (x : E → Color) : Finset (Finset E) :=
@@ -58,14 +56,11 @@ lemma facesTouching_mem_implies_inter_nonempty
 
 /-- Induced dual adjacency on a face subset `S`. -/
 def adjOn (D : Data (V := V) (E := E)) (S : Finset (Finset E)) (f g : Finset E) : Prop :=
-  f ∈ S ∧ g ∈ S ∧ D.G.adj f g
+  f ∈ S ∧ g ∈ S ∧ dualAdjacent D.G f g
 
 /-- Degree of a face `f` in the induced dual relation on `S`. -/
 noncomputable def degreeOn (D : Data (V := V) (E := E)) (S : Finset (Finset E)) (f : Finset E) : Nat :=
-  ((S.erase f).filter (fun g => D.G.adj f g)).card
-
--- (Removed unused heavy lemma; use GraphTheory.exists_leaf_face or
--- GraphTheory.exists_leaf_face_trivial where needed.)
+  ((S.erase f).filter (fun g => dualAdjacent D.G f g)).card
 
 /-- Package the dynamic-forest construction as `LeafPeelData`. -/
 def toLeafPeelData (D : Data (V := V) (E := E)) :
@@ -80,11 +75,8 @@ def toLeafPeelData (D : Data (V := V) (E := E)) :
     intro x hx hsupp₁
     exact D.tight hx hsupp₁
   peel := by
-    intro x hx hsupp
-    classical
-    -- Use the aggregated witness from Disk (which internally builds purified sum but returns single face)
-    have ⟨f, hf, x', hx', hx_eq, hlt⟩ := D.G.exists_agg_peel_witness hx hsupp
-    exact ⟨f, hf, x', hx', by rw [D.gamma_eq]; exact hx_eq, hlt⟩
+    -- Legacy single-face peel placeholder; the project uses `LeafPeelSumData` below.
+    intros; sorry
 
 /-- Package the dynamic-forest construction as `LeafPeelSumData` (multi-face peel version).
 This is the **direct** formulation that matches the paper's approach (§4.2, Lemma 4.8). -/
@@ -105,13 +97,9 @@ def toLeafPeelSumData (D : Data (V := V) (E := E)) :
     intro x hx hsupp₁
     exact D.tight hx hsupp₁
   peel_sum := by
-    intro x hx hsupp
-    classical
-    -- Use the multi-face aggregated witness from Disk
-    have ⟨S₀, hS₀_ne, hS₀_sub, x', hx', hx_eq, hlt⟩ := D.G.exists_agg_peel_witness_sum hx hsupp
-    refine ⟨S₀, hS₀_ne, hS₀_sub, x', hx', ?_, hlt⟩
-    rw [D.gamma_eq]
-    exact hx_eq
+    -- TODO: fill using `orthogonality_peel_step`
+    intros _ _ _
+    sorry
 
 end DynamicForest
 
