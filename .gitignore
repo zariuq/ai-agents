@@ -46,3 +46,37 @@ mizar/
 *.wsx
 *.xml
 *.out
+
+# Personal/private - NEVER commit
+Czech Study/
+AI Docs/
+AI/
+hyperon/
+literature/
+Isabelle2025/
+.isabelle/
+AGENTS.md
+CLAUDE.md
+CLAUDE_SOLUTIONS.md
+GEMINI.md
+
+# External tools (have their own repos)
+PyRes
+eprover
+vampire
+zipperposition
+naproche-zf
+pyprover
+mizar-rs
+lash-*/
+
+# Temp/build artifacts
+tmp/
+.lake-backup*/
+*.tgz
+
+# Misc junk
+Prompts/
+docs/
+.claude/prompts/
+2025_*/
