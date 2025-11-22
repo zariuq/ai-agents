@@ -69,6 +69,15 @@ naproche-zf
 pyprover
 mizar-rs
 lash-*/
+megalodon/bin/
+megalodon/src/
+megalodon/examples/
+megalodon/secp256k1/
+megalodon/INSTALL
+megalodon/LICENSE
+megalodon/README
+megalodon/makebytecode
+megalodon/makeopt
 
 # Temp/build artifacts
 tmp/
