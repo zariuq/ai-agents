@@ -6,9 +6,13 @@ This directory contains a ground-up formalization attempt of Ben Goertzel's P â‰
 (arXiv:2510.08814v1) in the Megalodon theorem prover for Proofgold.
 
 **Current State:**
-- `00_preamble.mg`: Basic logical and set-theoretic foundations with actual proofs for bit operations, XOR
-- `01_foundations.mg`: P/NP definitions, matrices, computation model (needs work)
-- Other files: Skeleton definitions (need to be rebuilt on top of proper foundations)
+- `00_preamble.mg`: Self-contained logical and set-theoretic foundations with proven XOR/AND lemmas
+- `01_foundations.mg`: Category-theoretic foundations (monoids, F_2 field, complexity classes)
+- `02_weakness_quantale.mg`: **COMPLETE** - Quantale structure with full proofs (no admits!)
+- `03_cnf_sat.mg`: CNF/SAT formalization with evaluation semantics and basic properties
+- `04_masking.mg`: Mask group H_m = S_m â‹‰ (Z_2)^m with sign invariance
+- `05_vv_isolation.mg`: Valiant-Vazirani isolation lemma and VV instances
+- Other files: Need rebuilding on top of these foundations
 
 **Note:** Building a formalization from the ground up requires extensive foundational infrastructure.
 The proofs here demonstrate the structure but many use `admit` placeholders pending complete foundations.
