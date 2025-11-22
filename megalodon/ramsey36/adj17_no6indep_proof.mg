@@ -1,20 +1,3 @@
-Generating 12376 subset lemmas...
-  Progress: 0/12376
-  Progress: 1000/12376
-  Progress: 2000/12376
-  Progress: 3000/12376
-  Progress: 4000/12376
-  Progress: 5000/12376
-  Progress: 6000/12376
-  Progress: 7000/12376
-  Progress: 8000/12376
-  Progress: 9000/12376
-  Progress: 10000/12376
-  Progress: 11000/12376
-  Progress: 12000/12376
-  Progress: 12376/12376
-Generating cases axiom...
-Generating main theorem...
 Definition is_indep_set : set -> (set -> set -> prop) -> set -> prop :=
   fun V R S => S c= V /\ (forall x :e S, forall y :e S, x <> y -> ~R x y).
 
