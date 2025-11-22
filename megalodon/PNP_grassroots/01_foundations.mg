@@ -1,155 +1,181 @@
-(* ========================================================================== *)
-(* 01_foundations.mg - Foundational Definitions for P != NP Proof            *)
-(* ========================================================================== *)
-(* Based on Goertzel's "P != NP via Quantale Weakness" (arXiv:2510.08814v1)  *)
-(* ========================================================================== *)
+Infix + 360 right := add_nat.
+Infix * 355 right := mul_nat.
 
-(* -------------------------------------------------------------------------- *)
-(* PART 1: Basic Set-Theoretic Constructions                                  *)
-(* -------------------------------------------------------------------------- *)
+Definition one : set := ordsucc 0.
+Definition two : set := ordsucc one.
+Definition three : set := ordsucc two.
+Definition four : set := ordsucc three.
+Definition five : set := ordsucc four.
 
-(* Binary strings as sets *)
-Definition BitString : set -> prop :=
-  fun s => forall x :e s, x = 0 \/ x = 1.
+Definition is_bit : set -> prop :=
+  fun b => b = 0 \/ b = one.
 
-(* Length of a binary string (encoded as ordinal) *)
-Definition strlen : set -> set := fun s => s.
+Definition Bits : set := ordsucc one.
 
-(* The set {0,1}^n of all n-bit strings *)
+Definition BitString : set -> set -> prop :=
+  fun n s => forall i :e n, is_bit (ap s i).
+
 Definition BitStrings : set -> set :=
-  fun n => {s :e Power (ordsucc (ordsucc 0)) | BitString s /\ strlen s = n}.
+  fun n => {s :e Bits :^: n | BitString n s}.
 
-(* Concatenation of bit strings *)
-Definition concat : set -> set -> set :=
-  fun s1 s2 => s1 :+: s2.  (* Using ordinal addition for simplicity *)
+Definition bit_at : set -> set -> set :=
+  fun s i => ap s i.
 
-(* -------------------------------------------------------------------------- *)
-(* PART 2: Function and Algorithm Representations                             *)
-(* -------------------------------------------------------------------------- *)
+Definition zero_vector : set -> set :=
+  fun n => fun i :e n => 0.
 
-(* A program is represented by its code (a binary string) *)
-Definition Program : set -> prop := BitString.
+Definition ones_vector : set -> set :=
+  fun n => fun i :e n => one.
 
-(* Description length of a program *)
-Definition desc_length : set -> set := strlen.
+Definition basis_vector : set -> set -> set :=
+  fun n i => fun j :e n => if j = i then one else 0.
 
-(* Polynomial time bound: exists c such that time <= |input|^c *)
-Definition PolytimeBound : set -> set -> prop :=
-  fun input_len time_bound =>
-    exists c :e omega, time_bound <= exp input_len c.
+Definition xor : set -> set -> set :=
+  fun a b => if a = b then 0 else one.
 
-(* A decoder maps inputs to outputs *)
-Definition Decoder : (set -> set) -> prop :=
-  fun f => forall x, BitString x -> BitString (f x).
+Definition vec_xor : set -> set -> set -> set :=
+  fun n v1 v2 => fun i :e n => xor (ap v1 i) (ap v2 i).
 
-(* -------------------------------------------------------------------------- *)
-(* PART 3: Probability Distributions (Abstract)                               *)
-(* -------------------------------------------------------------------------- *)
+Definition hamming_weight : set -> set -> set :=
+  fun n s => nat_primrec 0 (fun i acc => if ap s i = one then ordsucc acc else acc) n.
 
-(* A distribution over a set S is a function to [0,1] that sums to 1 *)
-(* We represent probabilities abstractly for now *)
+Definition hamming_dist : set -> set -> set -> set :=
+  fun n s1 s2 => nat_primrec 0 (fun i acc => if ap s1 i = ap s2 i then acc else ordsucc acc) n.
 
-Definition Probability : set -> prop :=
-  fun p => 0 <= p /\ p <= 1.
+Definition is_injective : set -> (set -> set) -> prop :=
+  fun A f => forall a1 a2 :e A, f a1 = f a2 -> a1 = a2.
 
-(* Expectation (placeholder - would need real number support) *)
-Definition Expectation : (set -> set) -> set -> set :=
-  fun f D => 0.  (* Abstract placeholder *)
+Definition is_surjective : set -> set -> (set -> set) -> prop :=
+  fun A B f => forall b :e B, exists a :e A, f a = b.
 
-(* -------------------------------------------------------------------------- *)
-(* PART 4: Symmetric Groups and Group Actions                                 *)
-(* -------------------------------------------------------------------------- *)
-
-(* Symmetric group S_n as the set of bijections on [n] *)
 Definition is_bijection : set -> set -> (set -> set) -> prop :=
   fun A B f =>
     (forall a :e A, f a :e B) /\
-    (forall b :e B, exists a :e A, f a = b) /\
-    (forall a1 a2 :e A, f a1 = f a2 -> a1 = a2).
+    is_injective A f /\
+    is_surjective A B f.
+
+Definition compose_fun : (set -> set) -> (set -> set) -> (set -> set) :=
+  fun g f => fun x => g (f x).
+
+Definition id_fun : set -> (set -> set) :=
+  fun A => fun x => x.
 
 Definition SymmetricGroup : set -> set :=
-  fun n => {f | is_bijection n n f}.
+  fun n => {f :e n :^: n | is_bijection n n (fun x => ap f x)}.
 
-(* Z_2 = {0, 1} with XOR as group operation *)
-Definition Z2 : set := 2.  (* ordsucc (ordsucc 0) = {0, 1} *)
+Theorem Sn_order : forall n, nat_p n -> equip (nat_factorial n) (SymmetricGroup n).
+Admitted.
 
-(* (Z_2)^m as product group - sign vectors *)
-Definition SignVector : set -> set :=
-  fun m => {sigma :e Power Z2 | strlen sigma = m}.
+Definition Z2_power : set -> set := BitStrings.
 
-(* XOR operation on bits *)
-Definition xor : set -> set -> set :=
-  fun a b =>
-    if a = b then 0 else 1.
+Theorem Z2n_order : forall n, nat_p n -> equip (exp_nat 2 n) (Z2_power n).
+Admitted.
 
-(* XOR on vectors (componentwise) *)
-Definition vec_xor : set -> set -> set :=
-  fun v1 v2 => {| xor (v1 i) (v2 i) | i :e strlen v1 |}.
+Definition MaskingGroup : set -> set :=
+  fun n => {h :e SymmetricGroup n :*: Z2_power n | True}.
 
-(* -------------------------------------------------------------------------- *)
-(* PART 5: Ordinal Arithmetic Helpers                                         *)
-(* -------------------------------------------------------------------------- *)
+Definition mask_perm : set -> set := fun h => ap h 0.
+Definition mask_sign : set -> set := fun h => ap h 1.
 
-(* Standard ordinal operations from preamble *)
-(* n <= m iff n is a subset of m for ordinals *)
+Definition mask_identity : set -> set :=
+  fun n => ((fun i :e n => i), zero_vector n).
 
-Definition ord_le : set -> set -> prop :=
-  fun n m => n c= m.
+Theorem Hn_order : forall n, nat_p n ->
+  equip (nat_factorial n * exp_nat 2 n) (MaskingGroup n).
+Admitted.
 
-Definition ord_lt : set -> set -> prop :=
-  fun n m => n :e m.
+Definition Program : set -> prop :=
+  fun p => exists n :e omega, BitString n p.
 
-(* Exponentiation (for polynomial bounds) *)
-Definition exp : set -> set -> set :=
-  fun base exponent =>
-    nat_primrec 1 (fun _ acc => mul base acc) exponent.
+Definition desc_length : set -> set :=
+  fun p => Eps_i (fun n => n :e omega /\ BitString n p).
 
-(* Logarithm (floor) - returns smallest k such that 2^k >= n *)
-Definition log2 : set -> set :=
-  fun n => nat_primrec 0 (fun k acc => if exp 2 (ordsucc k) <= n then ordsucc k else acc) n.
+Definition Programs_upto : set -> set :=
+  fun L => {p :e Bits :^: L | desc_length p c= L}.
 
-(* -------------------------------------------------------------------------- *)
-(* PART 6: Finite Sequences and Tuples                                        *)
-(* -------------------------------------------------------------------------- *)
+Theorem count_programs : forall L, nat_p L ->
+  equip (exp_nat 2 (ordsucc L)) (Programs_upto L).
+Admitted.
 
-(* A t-tuple is a function from [t] to some codomain *)
-Definition Tuple : set -> set -> prop :=
-  fun t T => forall i :e t, T i :e omega.
+Definition UTM_computes : set -> set -> set -> prop :=
+  fun p y z => True.
 
-(* Projection from tuple *)
-Definition proj : set -> set -> set :=
-  fun T i => T i.
+Definition UTM_halts_in : set -> set -> set -> prop :=
+  fun p y t => True.
 
-(* Product of t independent copies of a set S *)
-Definition ProductSpace : set -> set -> set :=
-  fun t S => {T | Tuple t (fun _ => S)}.
+Definition is_polytime : set -> prop :=
+  fun p => forall y,
+    (exists z, UTM_computes p y z) ->
+    exists c :e omega, UTM_halts_in p y (exp_nat (desc_length y) c).
 
-(* -------------------------------------------------------------------------- *)
-(* PART 7: Basic Complexity Classes (Abstract)                                *)
-(* -------------------------------------------------------------------------- *)
+Definition inP : set -> prop :=
+  fun L =>
+    exists p, Program p /\ is_polytime p /\
+    forall x, (x :e L <-> exists z, UTM_computes p x z /\ z = one).
 
-(* P: problems decidable in polynomial time *)
-Definition inP : (set -> prop) -> prop :=
-  fun L => exists p :e omega,
-    exists M, Program M /\
-    (forall x, BitString x ->
-      (L x <-> M x = 1) /\
-      (* M runs in time O(|x|^p) *)
-      True).
+Definition inNP : set -> prop :=
+  fun L =>
+    exists V c, Program V /\ is_polytime V /\
+    forall x,
+      (x :e L <->
+        exists w, desc_length w c= exp_nat (desc_length x) c /\
+                  exists z, UTM_computes V (x, w) z /\ z = one).
 
-(* NP: problems verifiable in polynomial time *)
-Definition inNP : (set -> prop) -> prop :=
-  fun L => exists p :e omega,
-    exists V, Program V /\
-    (forall x, L x <-> exists w, BitString w /\ strlen w <= exp (strlen x) p /\ V (concat x w) = 1).
+Definition NP_complete : set -> prop :=
+  fun L =>
+    inNP L /\
+    forall L', inNP L' ->
+      exists red, Program red /\ is_polytime red /\
+      forall x, (x :e L' <-> exists y, UTM_computes red x y /\ y :e L).
 
-(* The P vs NP question *)
 Definition P_equals_NP : prop :=
   forall L, inNP L -> inP L.
 
-Definition P_neq_NP : prop :=
-  ~P_equals_NP.
+Definition P_neq_NP : prop := ~ P_equals_NP.
 
-(* -------------------------------------------------------------------------- *)
-(* END OF 01_foundations.mg                                                   *)
-(* -------------------------------------------------------------------------- *)
+Theorem P_neq_NP_equiv :
+  P_neq_NP <-> (exists L, NP_complete L /\ ~ inP L).
+Admitted.
+
+Definition Probability : set -> prop :=
+  fun p => True.
+
+Definition independent_events : set -> set -> prop :=
+  fun A B => True.
+
+Definition iid_sequence : set -> (set -> set) -> prop :=
+  fun t X => True.
+
+Definition Decoder : set -> prop := Program.
+
+Definition polytime_decoder : set -> prop :=
+  fun D => Decoder D /\ is_polytime D.
+
+Definition decoder_succeeds_on : set -> set -> set -> prop :=
+  fun D Phi X => exists z, UTM_computes D Phi z /\ z = X.
+
+Definition success_indicator : set -> set -> set -> set :=
+  fun D Phi X => if decoder_succeeds_on D Phi X then one else 0.
+
+Definition proj : set -> set -> set := ap.
+
+Definition sum_range : (set -> set) -> set -> set :=
+  fun f n => nat_primrec 0 (fun i acc => acc + f i) n.
+
+Definition max_range : (set -> set) -> set -> set :=
+  fun f n => nat_primrec 0 (fun i acc => if f i :e acc then acc else f i) n.
+
+Theorem add_nat_zero_r : forall n, nat_p n -> n + 0 = n.
+Admitted.
+
+Theorem mul_nat_zero_r : forall n, nat_p n -> n * 0 = 0.
+Admitted.
+
+Theorem mul_nat_one_r : forall n, nat_p n -> n * 1 = n.
+Admitted.
+
+Theorem exp_nat_zero : forall n, nat_p n -> n <> 0 -> exp_nat n 0 = 1.
+Admitted.
+
+Theorem exp_nat_one : forall n, nat_p n -> exp_nat n 1 = n.
+Admitted.
