@@ -119,10 +119,60 @@ Step 6: Contradiction
 
 ## Recommendations for Megalodon Integration
 
-1. **Import verified lemmas**: The degree_bound lemma can be imported as axiom, justified by ATP proof
-2. **Prove R(3,4)=9 separately**: This is simpler and could be done by case analysis
-3. **Manual proof of Step 5**: The extension argument may require manual reasoning in Megalodon
-4. **Alternative**: Use SAT/SMT solvers for finite model checking, then trust the result
+The key theorem to prove is `good_graph_contradiction` in `upper_bound_proof.mg`:
+```
+Theorem good_graph_contradiction : forall R:set -> set -> prop,
+  (forall x y, R x y -> R y x) -> triangle_free 18 R -> no_k_indep 18 R 6 -> False.
+```
+
+### Strategy 1: Use ATP-verified lemmas as building blocks
+1. **Import degree_bound**: Triangle-free + no-6-indep ⟹ max_degree ≤ 5
+2. **Import neighborhood_indep**: Neighbors in triangle-free are pairwise non-adjacent
+3. **Import degree_from_no_k_indep**: k neighbors + no-k-indep ⟹ contradiction
+
+### Strategy 2: Exhaustive case analysis
+The R(3,6)≤18 proof can potentially be done by:
+1. Fix vertex 0 with some degree d ∈ {0,1,2,3,4,5}
+2. For each case, show 6-indep exists using R(3,4)=9 and R(3,3)=6
+3. This requires proving R(3,4)=9 first (similar techniques to Adj17 lower bound)
+
+### Strategy 3: SAT/SMT verification
+1. Encode full problem as SAT instance (variables for each potential edge)
+2. Verify unsatisfiability with external SAT solver
+3. Trust the result as axiom in Megalodon
+
+### What Works and What Doesn't with ATP
+
+**ATP can verify:**
+- Degree bound lemma (neighbors form independent set, so degree < k)
+- Neighborhood independence (direct from triangle-free definition)
+- Specific case analysis when vertices are named explicitly
+
+**ATP struggles with:**
+- Universal quantification over all 18564 6-tuples (C(18,6) = 18564)
+- Finite combinatorics like R(3,4)=9 (requires exhaustive enumeration)
+- Counting arguments (total edges ≤ 45 vs edges needed to block)
+- Extension step with only partial vertex information
+
+### Recommended Next Steps
+
+1. **Prove R(3,4)=9 in Megalodon** using similar techniques to Adj17_no_6_indep
+   - Construct (3,3)-Ramsey graph on 8 vertices (Paley graph P_8 or cycle C_8)
+   - Show any 9-vertex graph has K_3 or I_4 by case analysis
+
+2. **Add helper lemmas to upper_bound_proof.mg**:
+   ```
+   Theorem neighborhood_independent : forall V R,
+     triangle_free V R ->
+     forall v :e V, forall x y, R v x -> R v y -> x <> y -> ~R x y.
+
+   Theorem degree_bound : forall V R k,
+     triangle_free V R -> no_k_indep V R k ->
+     forall v :e V, ~exists S, S c= V /\ equip k S /\
+       (forall x :e S, R v x).
+   ```
+
+3. **Complete good_graph_contradiction** using the lemmas above
 
 ## References
 
