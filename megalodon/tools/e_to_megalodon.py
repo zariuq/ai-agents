@@ -542,11 +542,168 @@ def generate_megalodon_direct_contradiction(steps: List[ProofStep]) -> str:
     return '\n'.join(output)
 
 
+def extract_predicate_args(formula: str) -> Tuple[str, List[str]]:
+    """Extract predicate name and arguments from a formula like 'pred(a,b,c)'."""
+    formula = formula.strip()
+    if formula.startswith('~'):
+        formula = formula[1:].strip()
+
+    match = re.match(r'(\w+)\(([^)]*)\)', formula)
+    if match:
+        pred = match.group(1)
+        args_str = match.group(2)
+        args = [a.strip() for a in args_str.split(',')] if args_str else []
+        return pred, args
+    return formula, []
+
+
+def find_unification(clause1_lit: str, clause2_lit: str) -> Optional[Dict[str, str]]:
+    """
+    Find unification between two literals.
+    Returns substitution mapping variables to terms.
+    """
+    pred1, args1 = extract_predicate_args(clause1_lit)
+    pred2, args2 = extract_predicate_args(clause2_lit)
+
+    if pred1 != pred2 or len(args1) != len(args2):
+        return None
+
+    subst = {}
+    for a1, a2 in zip(args1, args2):
+        # Variable starts with uppercase in TPTP
+        if a1[0].isupper() and a1 not in subst:
+            subst[a1] = a2
+        elif a2[0].isupper() and a2 not in subst:
+            subst[a2] = a1
+        elif a1 != a2 and a1 not in subst and a2 not in subst:
+            return None  # Can't unify
+
+    return subst
+
+
+def generate_superposition_proof(steps: List[ProofStep]) -> Optional[str]:
+    """
+    Generate Megalodon proof for superposition-based refutation.
+
+    Strategy: Track the resolution chain and generate explicit
+    instantiations of the universal formulas.
+    """
+    output = []
+    step_map = {s.name: s for s in steps}
+
+    # Find the original universal formula (usually from triangle_free or similar)
+    universal_axioms = []
+    unit_facts = []
+
+    for step in steps:
+        if step.is_axiom():
+            f = step.formula.strip()
+            if f.startswith('!['):
+                universal_axioms.append(step)
+            elif '|' not in f and not f.startswith('~'):
+                unit_facts.append(step)
+
+    # Find resolution chain
+    resolution_steps = [s for s in steps if s.inference in ['spm', 'rw', 'sr', 'cn']]
+
+    if not resolution_steps:
+        return None
+
+    output.append("(* === Megalodon superposition proof === *)")
+    output.append("")
+
+    # Build dependency graph to trace the proof
+    output.append("(* Proof trace: *)")
+    for step in resolution_steps:
+        output.append(f"(*   {step.name}: {step.inference} from {step.parents} *)")
+        output.append(f"(*     Result: {step.formula[:60]}... *)")
+
+    output.append("")
+
+    # Try to reconstruct the instantiation
+    # For triangle_free style proofs: ~adj(X,Y) | ~adj(Y,Z) | ~adj(X,Z)
+    # with unit facts adj(a,b), adj(b,c), adj(a,c)
+    # The proof instantiates X=a, Y=b, Z=c
+
+    if unit_facts:
+        output.append("(* Unit facts (positive literals): *)")
+        for uf in unit_facts:
+            pred, args = extract_predicate_args(uf.formula)
+            output.append(f"(*   {uf.name}: {pred}({', '.join(args)}) *)")
+        output.append("")
+
+    # Generate Megalodon proof skeleton
+    output.append("(* Megalodon proof: *)")
+    output.append("")
+
+    # Collect all terms from unit facts
+    all_terms = set()
+    for uf in unit_facts:
+        _, args = extract_predicate_args(uf.formula)
+        all_terms.update(args)
+
+    if universal_axioms and unit_facts:
+        output.append("(* Given the universal formula and unit facts, *)")
+        output.append("(* instantiate the universal formula with the concrete terms: *)")
+        output.append(f"(*   Terms: {sorted(all_terms)} *)")
+        output.append("")
+
+        # Generate the actual proof
+        if len(unit_facts) >= 3:
+            # This looks like a triangle-free proof
+            facts = [extract_predicate_args(uf.formula) for uf in unit_facts]
+            pred_name = facts[0][0] if facts else "R"
+
+            output.append("prove False.")
+            output.append("")
+
+            # Try to find a triangle pattern
+            # adj(a,b), adj(b,c), adj(a,c) forms a triangle
+            terms_by_pair = {}
+            for uf in unit_facts:
+                pred, args = extract_predicate_args(uf.formula)
+                if len(args) == 2:
+                    pair = tuple(sorted(args))
+                    terms_by_pair[pair] = (uf.name, args)
+
+            # Find three facts that form a triangle
+            all_terms_list = sorted(all_terms)
+            for i, t1 in enumerate(all_terms_list):
+                for j, t2 in enumerate(all_terms_list[i+1:], i+1):
+                    for t3 in all_terms_list[j+1:]:
+                        p12 = tuple(sorted([t1, t2]))
+                        p23 = tuple(sorted([t2, t3]))
+                        p13 = tuple(sorted([t1, t3]))
+                        if p12 in terms_by_pair and p23 in terms_by_pair and p13 in terms_by_pair:
+                            h12, args12 = terms_by_pair[p12]
+                            h23, args23 = terms_by_pair[p23]
+                            h13, args13 = terms_by_pair[p13]
+                            output.append(f"(* Triangle found: {t1}, {t2}, {t3} *)")
+                            output.append(f"(* Using: {h12}, {h23}, {h13} *)")
+                            output.append("")
+                            output.append(f"(* Apply triangle_free with x={t1}, y={t2}, z={t3}: *)")
+                            output.append(f"exact Htf {t1} {t2} {t3} {h12} {h23} {h13}.")
+                            return '\n'.join(output)
+
+        # Fallback: just show the structure
+        output.append("(* Instantiate Htf with appropriate terms and facts *)")
+        output.append("exact Htf _ _ _ H1 H2 H3.  (* fill in terms *)")
+
+    return '\n'.join(output)
+
+
 def generate_resolution_analysis(steps: List[ProofStep]) -> str:
     """
     Analyze resolution steps (spm, rw) to help with Megalodon translation.
     """
     output = []
+
+    # First try to generate a proper superposition proof
+    spm_proof = generate_superposition_proof(steps)
+    if spm_proof:
+        output.append(spm_proof)
+        output.append("")
+
     output.append("(* === Resolution proof analysis === *)")
     output.append("")
 
@@ -557,7 +714,7 @@ def generate_resolution_analysis(steps: List[ProofStep]) -> str:
     resolution_steps = [s for s in steps if s.inference in ['spm', 'rw', 'sr']]
 
     if not resolution_steps:
-        return None
+        return '\n'.join(output) if output else None
 
     output.append(f"(* Found {len(resolution_steps)} resolution steps *)")
     output.append("")
