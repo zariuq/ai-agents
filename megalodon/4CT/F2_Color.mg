@@ -381,3 +381,525 @@ apply eq_i_tra (color_xor 2 1) (if 1 = 0 then 2
        else if 2 = 3 /\ 1 = 2 then 1
        else 0) L4. }
 Qed.
+
+Theorem xor_1_3 : color_xor 1 3 = 2.
+claim L1: ~(1 = 0). exact neq_1_0.
+claim L2: ~(3 = 0). exact neq_3_0.
+claim L3: ~(1 = 3).
+  assume H: 1 = 3.
+  claim H': 3 = 1.
+    let Q:set->set->prop.
+    assume HQ: Q 3 1.
+    exact H (fun a b:set => Q b a) HQ.
+  exact neq_3_1 H'.
+claim L4: ~(1 = 1 /\ 3 = 2).
+  assume H. apply H. assume H1: 1 = 1. assume H2: 3 = 2. exact neq_3_2 H2.
+claim L5: ~(1 = 2 /\ 3 = 1).
+  assume H. apply H. assume H1: 1 = 2. assume H2: 3 = 1. exact neq_1_2 H1.
+claim L6: 1 = 1 /\ 3 = 3. apply andI. reflexivity. reflexivity.
+apply eq_i_tra (color_xor 1 3) (if 3 = 0 then 1
+       else if 1 = 3 then 0
+       else if 1 = 1 /\ 3 = 2 then 3
+       else if 1 = 2 /\ 3 = 1 then 3
+       else if 1 = 1 /\ 3 = 3 then 2
+       else if 1 = 3 /\ 3 = 1 then 2
+       else if 1 = 2 /\ 3 = 3 then 1
+       else if 1 = 3 /\ 3 = 2 then 1
+       else 0) 2.
+- exact If_i_0 (1 = 0) 3 (if 3 = 0 then 1
+       else if 1 = 3 then 0
+       else if 1 = 1 /\ 3 = 2 then 3
+       else if 1 = 2 /\ 3 = 1 then 3
+       else if 1 = 1 /\ 3 = 3 then 2
+       else if 1 = 3 /\ 3 = 1 then 2
+       else if 1 = 2 /\ 3 = 3 then 1
+       else if 1 = 3 /\ 3 = 2 then 1
+       else 0) L1.
+- apply eq_i_tra (if 3 = 0 then 1
+       else if 1 = 3 then 0
+       else if 1 = 1 /\ 3 = 2 then 3
+       else if 1 = 2 /\ 3 = 1 then 3
+       else if 1 = 1 /\ 3 = 3 then 2
+       else if 1 = 3 /\ 3 = 1 then 2
+       else if 1 = 2 /\ 3 = 3 then 1
+       else if 1 = 3 /\ 3 = 2 then 1
+       else 0) (if 1 = 3 then 0
+       else if 1 = 1 /\ 3 = 2 then 3
+       else if 1 = 2 /\ 3 = 1 then 3
+       else if 1 = 1 /\ 3 = 3 then 2
+       else if 1 = 3 /\ 3 = 1 then 2
+       else if 1 = 2 /\ 3 = 3 then 1
+       else if 1 = 3 /\ 3 = 2 then 1
+       else 0) 2.
+  + exact If_i_0 (3 = 0) 1 (if 1 = 3 then 0
+       else if 1 = 1 /\ 3 = 2 then 3
+       else if 1 = 2 /\ 3 = 1 then 3
+       else if 1 = 1 /\ 3 = 3 then 2
+       else if 1 = 3 /\ 3 = 1 then 2
+       else if 1 = 2 /\ 3 = 3 then 1
+       else if 1 = 3 /\ 3 = 2 then 1
+       else 0) L2.
+  + apply eq_i_tra (if 1 = 3 then 0
+       else if 1 = 1 /\ 3 = 2 then 3
+       else if 1 = 2 /\ 3 = 1 then 3
+       else if 1 = 1 /\ 3 = 3 then 2
+       else if 1 = 3 /\ 3 = 1 then 2
+       else if 1 = 2 /\ 3 = 3 then 1
+       else if 1 = 3 /\ 3 = 2 then 1
+       else 0) (if 1 = 1 /\ 3 = 2 then 3
+       else if 1 = 2 /\ 3 = 1 then 3
+       else if 1 = 1 /\ 3 = 3 then 2
+       else if 1 = 3 /\ 3 = 1 then 2
+       else if 1 = 2 /\ 3 = 3 then 1
+       else if 1 = 3 /\ 3 = 2 then 1
+       else 0) 2.
+    * exact If_i_0 (1 = 3) 0 (if 1 = 1 /\ 3 = 2 then 3
+       else if 1 = 2 /\ 3 = 1 then 3
+       else if 1 = 1 /\ 3 = 3 then 2
+       else if 1 = 3 /\ 3 = 1 then 2
+       else if 1 = 2 /\ 3 = 3 then 1
+       else if 1 = 3 /\ 3 = 2 then 1
+       else 0) L3.
+    * apply eq_i_tra (if 1 = 1 /\ 3 = 2 then 3
+       else if 1 = 2 /\ 3 = 1 then 3
+       else if 1 = 1 /\ 3 = 3 then 2
+       else if 1 = 3 /\ 3 = 1 then 2
+       else if 1 = 2 /\ 3 = 3 then 1
+       else if 1 = 3 /\ 3 = 2 then 1
+       else 0) (if 1 = 2 /\ 3 = 1 then 3
+       else if 1 = 1 /\ 3 = 3 then 2
+       else if 1 = 3 /\ 3 = 1 then 2
+       else if 1 = 2 /\ 3 = 3 then 1
+       else if 1 = 3 /\ 3 = 2 then 1
+       else 0) 2.
+      { exact If_i_0 (1 = 1 /\ 3 = 2) 3 (if 1 = 2 /\ 3 = 1 then 3
+       else if 1 = 1 /\ 3 = 3 then 2
+       else if 1 = 3 /\ 3 = 1 then 2
+       else if 1 = 2 /\ 3 = 3 then 1
+       else if 1 = 3 /\ 3 = 2 then 1
+       else 0) L4. }
+      { apply eq_i_tra (if 1 = 2 /\ 3 = 1 then 3
+       else if 1 = 1 /\ 3 = 3 then 2
+       else if 1 = 3 /\ 3 = 1 then 2
+       else if 1 = 2 /\ 3 = 3 then 1
+       else if 1 = 3 /\ 3 = 2 then 1
+       else 0) (if 1 = 1 /\ 3 = 3 then 2
+       else if 1 = 3 /\ 3 = 1 then 2
+       else if 1 = 2 /\ 3 = 3 then 1
+       else if 1 = 3 /\ 3 = 2 then 1
+       else 0) 2.
+        { exact If_i_0 (1 = 2 /\ 3 = 1) 3 (if 1 = 1 /\ 3 = 3 then 2
+       else if 1 = 3 /\ 3 = 1 then 2
+       else if 1 = 2 /\ 3 = 3 then 1
+       else if 1 = 3 /\ 3 = 2 then 1
+       else 0) L5. }
+        { exact If_i_1 (1 = 1 /\ 3 = 3) 2 (if 1 = 3 /\ 3 = 1 then 2
+       else if 1 = 2 /\ 3 = 3 then 1
+       else if 1 = 3 /\ 3 = 2 then 1
+       else 0) L6. } }
+Qed.
+
+Theorem xor_3_1 : color_xor 3 1 = 2.
+claim L1: ~(3 = 0). exact neq_3_0.
+claim L2: ~(1 = 0). exact neq_1_0.
+claim L3: ~(3 = 1). exact neq_3_1.
+claim L4: ~(3 = 1 /\ 1 = 2).
+  assume H. apply H. assume H1: 3 = 1. assume H2: 1 = 2. exact L3 H1.
+claim L5: ~(3 = 2 /\ 1 = 1).
+  assume H. apply H. assume H1: 3 = 2. assume H2: 1 = 1. exact neq_3_2 H1.
+claim L6: ~(3 = 1 /\ 1 = 3).
+  assume H. apply H. assume H1: 3 = 1. assume H2: 1 = 3. exact L3 H1.
+claim L7: 3 = 3 /\ 1 = 1. apply andI. reflexivity. reflexivity.
+apply eq_i_tra (color_xor 3 1) (if 1 = 0 then 3
+       else if 3 = 1 then 0
+       else if 3 = 1 /\ 1 = 2 then 3
+       else if 3 = 2 /\ 1 = 1 then 3
+       else if 3 = 1 /\ 1 = 3 then 2
+       else if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) 2.
+- exact If_i_0 (3 = 0) 1 (if 1 = 0 then 3
+       else if 3 = 1 then 0
+       else if 3 = 1 /\ 1 = 2 then 3
+       else if 3 = 2 /\ 1 = 1 then 3
+       else if 3 = 1 /\ 1 = 3 then 2
+       else if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) L1.
+- apply eq_i_tra (if 1 = 0 then 3
+       else if 3 = 1 then 0
+       else if 3 = 1 /\ 1 = 2 then 3
+       else if 3 = 2 /\ 1 = 1 then 3
+       else if 3 = 1 /\ 1 = 3 then 2
+       else if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) (if 3 = 1 then 0
+       else if 3 = 1 /\ 1 = 2 then 3
+       else if 3 = 2 /\ 1 = 1 then 3
+       else if 3 = 1 /\ 1 = 3 then 2
+       else if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) 2.
+  + exact If_i_0 (1 = 0) 3 (if 3 = 1 then 0
+       else if 3 = 1 /\ 1 = 2 then 3
+       else if 3 = 2 /\ 1 = 1 then 3
+       else if 3 = 1 /\ 1 = 3 then 2
+       else if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) L2.
+  + apply eq_i_tra (if 3 = 1 then 0
+       else if 3 = 1 /\ 1 = 2 then 3
+       else if 3 = 2 /\ 1 = 1 then 3
+       else if 3 = 1 /\ 1 = 3 then 2
+       else if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) (if 3 = 1 /\ 1 = 2 then 3
+       else if 3 = 2 /\ 1 = 1 then 3
+       else if 3 = 1 /\ 1 = 3 then 2
+       else if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) 2.
+    * exact If_i_0 (3 = 1) 0 (if 3 = 1 /\ 1 = 2 then 3
+       else if 3 = 2 /\ 1 = 1 then 3
+       else if 3 = 1 /\ 1 = 3 then 2
+       else if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) L3.
+    * apply eq_i_tra (if 3 = 1 /\ 1 = 2 then 3
+       else if 3 = 2 /\ 1 = 1 then 3
+       else if 3 = 1 /\ 1 = 3 then 2
+       else if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) (if 3 = 2 /\ 1 = 1 then 3
+       else if 3 = 1 /\ 1 = 3 then 2
+       else if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) 2.
+      { exact If_i_0 (3 = 1 /\ 1 = 2) 3 (if 3 = 2 /\ 1 = 1 then 3
+       else if 3 = 1 /\ 1 = 3 then 2
+       else if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) L4. }
+      { apply eq_i_tra (if 3 = 2 /\ 1 = 1 then 3
+       else if 3 = 1 /\ 1 = 3 then 2
+       else if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) (if 3 = 1 /\ 1 = 3 then 2
+       else if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) 2.
+        { exact If_i_0 (3 = 2 /\ 1 = 1) 3 (if 3 = 1 /\ 1 = 3 then 2
+       else if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) L5. }
+        { apply eq_i_tra (if 3 = 1 /\ 1 = 3 then 2
+       else if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) (if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) 2.
+          { exact If_i_0 (3 = 1 /\ 1 = 3) 2 (if 3 = 3 /\ 1 = 1 then 2
+       else if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) L6. }
+          { exact If_i_1 (3 = 3 /\ 1 = 1) 2 (if 3 = 2 /\ 1 = 3 then 1
+       else if 3 = 3 /\ 1 = 2 then 1
+       else 0) L7. } } }
+Qed.
+
+Theorem xor_2_3 : color_xor 2 3 = 1.
+claim L1: ~(2 = 0). exact neq_2_0.
+claim L2: ~(3 = 0). exact neq_3_0.
+claim L3: ~(2 = 3).
+  assume H: 2 = 3.
+  claim H': 3 = 2.
+    let Q:set->set->prop.
+    assume HQ: Q 3 2.
+    exact H (fun a b:set => Q b a) HQ.
+  exact neq_3_2 H'.
+claim L4: ~(2 = 1 /\ 3 = 2).
+  assume H. apply H. assume H1: 2 = 1. assume H2: 3 = 2. exact neq_2_1 H1.
+claim L5: ~(2 = 2 /\ 3 = 1).
+  assume H. apply H. assume H1: 2 = 2. assume H2: 3 = 1. exact neq_3_1 H2.
+claim L6: ~(2 = 1 /\ 3 = 3).
+  assume H. apply H. assume H1: 2 = 1. assume H2: 3 = 3. exact neq_2_1 H1.
+claim L7: ~(2 = 3 /\ 3 = 1).
+  assume H. apply H. assume H1: 2 = 3. assume H2: 3 = 1. exact L3 H1.
+claim L8: 2 = 2 /\ 3 = 3. apply andI. reflexivity. reflexivity.
+apply eq_i_tra (color_xor 2 3) (if 3 = 0 then 2
+       else if 2 = 3 then 0
+       else if 2 = 1 /\ 3 = 2 then 3
+       else if 2 = 2 /\ 3 = 1 then 3
+       else if 2 = 1 /\ 3 = 3 then 2
+       else if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) 1.
+- exact If_i_0 (2 = 0) 3 (if 3 = 0 then 2
+       else if 2 = 3 then 0
+       else if 2 = 1 /\ 3 = 2 then 3
+       else if 2 = 2 /\ 3 = 1 then 3
+       else if 2 = 1 /\ 3 = 3 then 2
+       else if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) L1.
+- apply eq_i_tra (if 3 = 0 then 2
+       else if 2 = 3 then 0
+       else if 2 = 1 /\ 3 = 2 then 3
+       else if 2 = 2 /\ 3 = 1 then 3
+       else if 2 = 1 /\ 3 = 3 then 2
+       else if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) (if 2 = 3 then 0
+       else if 2 = 1 /\ 3 = 2 then 3
+       else if 2 = 2 /\ 3 = 1 then 3
+       else if 2 = 1 /\ 3 = 3 then 2
+       else if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) 1.
+  + exact If_i_0 (3 = 0) 2 (if 2 = 3 then 0
+       else if 2 = 1 /\ 3 = 2 then 3
+       else if 2 = 2 /\ 3 = 1 then 3
+       else if 2 = 1 /\ 3 = 3 then 2
+       else if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) L2.
+  + apply eq_i_tra (if 2 = 3 then 0
+       else if 2 = 1 /\ 3 = 2 then 3
+       else if 2 = 2 /\ 3 = 1 then 3
+       else if 2 = 1 /\ 3 = 3 then 2
+       else if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) (if 2 = 1 /\ 3 = 2 then 3
+       else if 2 = 2 /\ 3 = 1 then 3
+       else if 2 = 1 /\ 3 = 3 then 2
+       else if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) 1.
+    * exact If_i_0 (2 = 3) 0 (if 2 = 1 /\ 3 = 2 then 3
+       else if 2 = 2 /\ 3 = 1 then 3
+       else if 2 = 1 /\ 3 = 3 then 2
+       else if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) L3.
+    * apply eq_i_tra (if 2 = 1 /\ 3 = 2 then 3
+       else if 2 = 2 /\ 3 = 1 then 3
+       else if 2 = 1 /\ 3 = 3 then 2
+       else if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) (if 2 = 2 /\ 3 = 1 then 3
+       else if 2 = 1 /\ 3 = 3 then 2
+       else if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) 1.
+      { exact If_i_0 (2 = 1 /\ 3 = 2) 3 (if 2 = 2 /\ 3 = 1 then 3
+       else if 2 = 1 /\ 3 = 3 then 2
+       else if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) L4. }
+      { apply eq_i_tra (if 2 = 2 /\ 3 = 1 then 3
+       else if 2 = 1 /\ 3 = 3 then 2
+       else if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) (if 2 = 1 /\ 3 = 3 then 2
+       else if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) 1.
+        { exact If_i_0 (2 = 2 /\ 3 = 1) 3 (if 2 = 1 /\ 3 = 3 then 2
+       else if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) L5. }
+        { apply eq_i_tra (if 2 = 1 /\ 3 = 3 then 2
+       else if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) (if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) 1.
+          { exact If_i_0 (2 = 1 /\ 3 = 3) 2 (if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) L6. }
+          { apply eq_i_tra (if 2 = 3 /\ 3 = 1 then 2
+       else if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) (if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) 1.
+            { exact If_i_0 (2 = 3 /\ 3 = 1) 2 (if 2 = 2 /\ 3 = 3 then 1
+       else if 2 = 3 /\ 3 = 2 then 1
+       else 0) L7. }
+            { exact If_i_1 (2 = 2 /\ 3 = 3) 1 (if 2 = 3 /\ 3 = 2 then 1
+       else 0) L8. } } } }
+Qed.
+
+Theorem xor_3_2 : color_xor 3 2 = 1.
+claim L1: ~(3 = 0). exact neq_3_0.
+claim L2: ~(2 = 0). exact neq_2_0.
+claim L3: ~(3 = 2). exact neq_3_2.
+claim L4: ~(3 = 1 /\ 2 = 2).
+  assume H. apply H. assume H1: 3 = 1. assume H2: 2 = 2. exact neq_3_1 H1.
+claim L5: ~(3 = 2 /\ 2 = 1).
+  assume H. apply H. assume H1: 3 = 2. assume H2: 2 = 1. exact L3 H1.
+claim L6: ~(3 = 1 /\ 2 = 3).
+  assume H. apply H. assume H1: 3 = 1. assume H2: 2 = 3. exact neq_3_1 H1.
+claim L7: ~(3 = 3 /\ 2 = 1).
+  assume H. apply H. assume H1: 3 = 3. assume H2: 2 = 1. exact neq_2_1 H2.
+claim L8: ~(3 = 2 /\ 2 = 3).
+  assume H. apply H. assume H1: 3 = 2. assume H2: 2 = 3. exact L3 H1.
+claim L9: 3 = 3 /\ 2 = 2. apply andI. reflexivity. reflexivity.
+apply eq_i_tra (color_xor 3 2) (if 2 = 0 then 3
+       else if 3 = 2 then 0
+       else if 3 = 1 /\ 2 = 2 then 3
+       else if 3 = 2 /\ 2 = 1 then 3
+       else if 3 = 1 /\ 2 = 3 then 2
+       else if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) 1.
+- exact If_i_0 (3 = 0) 2 (if 2 = 0 then 3
+       else if 3 = 2 then 0
+       else if 3 = 1 /\ 2 = 2 then 3
+       else if 3 = 2 /\ 2 = 1 then 3
+       else if 3 = 1 /\ 2 = 3 then 2
+       else if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) L1.
+- apply eq_i_tra (if 2 = 0 then 3
+       else if 3 = 2 then 0
+       else if 3 = 1 /\ 2 = 2 then 3
+       else if 3 = 2 /\ 2 = 1 then 3
+       else if 3 = 1 /\ 2 = 3 then 2
+       else if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) (if 3 = 2 then 0
+       else if 3 = 1 /\ 2 = 2 then 3
+       else if 3 = 2 /\ 2 = 1 then 3
+       else if 3 = 1 /\ 2 = 3 then 2
+       else if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) 1.
+  + exact If_i_0 (2 = 0) 3 (if 3 = 2 then 0
+       else if 3 = 1 /\ 2 = 2 then 3
+       else if 3 = 2 /\ 2 = 1 then 3
+       else if 3 = 1 /\ 2 = 3 then 2
+       else if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) L2.
+  + apply eq_i_tra (if 3 = 2 then 0
+       else if 3 = 1 /\ 2 = 2 then 3
+       else if 3 = 2 /\ 2 = 1 then 3
+       else if 3 = 1 /\ 2 = 3 then 2
+       else if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) (if 3 = 1 /\ 2 = 2 then 3
+       else if 3 = 2 /\ 2 = 1 then 3
+       else if 3 = 1 /\ 2 = 3 then 2
+       else if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) 1.
+    * exact If_i_0 (3 = 2) 0 (if 3 = 1 /\ 2 = 2 then 3
+       else if 3 = 2 /\ 2 = 1 then 3
+       else if 3 = 1 /\ 2 = 3 then 2
+       else if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) L3.
+    * apply eq_i_tra (if 3 = 1 /\ 2 = 2 then 3
+       else if 3 = 2 /\ 2 = 1 then 3
+       else if 3 = 1 /\ 2 = 3 then 2
+       else if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) (if 3 = 2 /\ 2 = 1 then 3
+       else if 3 = 1 /\ 2 = 3 then 2
+       else if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) 1.
+      { exact If_i_0 (3 = 1 /\ 2 = 2) 3 (if 3 = 2 /\ 2 = 1 then 3
+       else if 3 = 1 /\ 2 = 3 then 2
+       else if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) L4. }
+      { apply eq_i_tra (if 3 = 2 /\ 2 = 1 then 3
+       else if 3 = 1 /\ 2 = 3 then 2
+       else if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) (if 3 = 1 /\ 2 = 3 then 2
+       else if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) 1.
+        { exact If_i_0 (3 = 2 /\ 2 = 1) 3 (if 3 = 1 /\ 2 = 3 then 2
+       else if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) L5. }
+        { apply eq_i_tra (if 3 = 1 /\ 2 = 3 then 2
+       else if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) (if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) 1.
+          { exact If_i_0 (3 = 1 /\ 2 = 3) 2 (if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) L6. }
+          { apply eq_i_tra (if 3 = 3 /\ 2 = 1 then 2
+       else if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) (if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) 1.
+            { exact If_i_0 (3 = 3 /\ 2 = 1) 2 (if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) L7. }
+            { apply eq_i_tra (if 3 = 2 /\ 2 = 3 then 1
+       else if 3 = 3 /\ 2 = 2 then 1
+       else 0) (if 3 = 3 /\ 2 = 2 then 1
+       else 0) 1.
+              { exact If_i_0 (3 = 2 /\ 2 = 3) 1 (if 3 = 3 /\ 2 = 2 then 1
+       else 0) L8. }
+              { exact If_i_1 (3 = 3 /\ 2 = 2) 1 0 L9. } } } } }
+Qed.
