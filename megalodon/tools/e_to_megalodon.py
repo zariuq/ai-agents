@@ -490,12 +490,65 @@ def generate_orE_chain(literals: List[str], negation_hyps: Dict[str, str], inden
         return output
 
 
+def generate_megalodon_direct_contradiction(steps: List[ProofStep]) -> str:
+    """
+    Generate Megalodon proof for direct contradiction (positive vs negative literal).
+    """
+    output = []
+
+    # Find positive literals and negations from ALL steps (including derived)
+    positives = {}
+    negations = {}
+
+    for step in steps:
+        f = step.formula.strip()
+        # Remove outer parens
+        if f.startswith('(') and f.endswith(')'):
+            f = f[1:-1]
+
+        if f.startswith('~'):
+            pos = f[1:].strip()
+            if pos.startswith('(') and pos.endswith(')'):
+                pos = pos[1:-1]
+            negations[pos] = step.name
+        elif '|' not in f and '&' not in f and '->' not in f and f != '$false':
+            # Simple positive literal
+            positives[f] = step.name
+
+    # Find contradictions
+    contradictions = []
+    for lit, pos_name in positives.items():
+        if lit in negations:
+            contradictions.append((lit, pos_name, negations[lit]))
+
+    if not contradictions:
+        return None
+
+    output.append("(* === Megalodon direct contradiction proof === *)")
+    output.append("")
+
+    for lit, pos_name, neg_name in contradictions:
+        output.append(f"(* {pos_name} asserts: {lit} *)")
+        output.append(f"(* {neg_name} asserts: ~{lit} *)")
+        output.append("")
+        output.append("prove False.")
+        output.append(f"exact {neg_name} {pos_name}.")
+        output.append("")
+
+    return '\n'.join(output)
+
+
 def generate_megalodon_orE_proof(steps: List[ProofStep]) -> str:
     """
     Generate Megalodon proof using orE chains for disjunction elimination.
     """
     analysis = analyze_proof_structure(steps)
     output = []
+
+    # First, try direct contradiction
+    direct = generate_megalodon_direct_contradiction(steps)
+    if direct:
+        return direct
 
     # Find disjunctions and negations
     disjunctions = []
