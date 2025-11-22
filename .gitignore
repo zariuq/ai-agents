@@ -70,6 +70,17 @@ pyprover
 mizar-rs
 lash-*/
 
+# Megalodon source/binaries (external, downloaded from tarball)
+megalodon/bin/
+megalodon/src/
+megalodon/secp256k1/
+megalodon/examples/
+megalodon/INSTALL
+megalodon/LICENSE
+megalodon/README
+megalodon/makebytecode
+megalodon/makeopt
+
 # Temp/build artifacts
 tmp/
 .lake-backup*/
