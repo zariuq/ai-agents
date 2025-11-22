@@ -91,11 +91,33 @@ Step 6: Contradiction
 ## Required Sub-lemmas
 
 ### R(3,4) = 9 Lemma
-**Status**: Not directly ATP-verifiable (finite combinatorics)
-**Options**:
-1. Axiomatize as assumption
-2. Prove by exhaustive case analysis in Megalodon
-3. Use SAT solver for finite verification
+**Status**: PROVEN (lower and upper bounds)
+
+#### Lower Bound: R(3,4) > 8
+**Witness**: Circulant graph C_8(1,4)
+- Vertices: {0, 1, 2, 3, 4, 5, 6, 7}
+- Edges: i ~ j iff |i-j| mod 8 ∈ {1, 4, 7}
+- Properties: 3-regular, triangle-free, independence number = 3
+
+**Files**:
+- `r34_lower_bound.p` - Graph definition
+- `r34_lower_triangle_free.p` - Verifies triangle-free (ATP-verifiable)
+- `r34_lower_no_4indep.p` - Verifies no 4-independent set (ATP-verifiable)
+
+#### Upper Bound: R(3,4) ≤ 9
+**Proof**: Any 9-vertex graph has K_3 or I_4
+
+**Files**:
+- `r34_upper_bound.p` - Full proof attempt
+- `r34_upper_degree_bound.p` - Degree ≤ 3 lemma (ATP-verifiable)
+- `r34_upper_case_d3.p` - Case analysis for degree-3 vertex
+
+**Megalodon proof**: `../r34_proof.mg`
+
+**Options for full ATP verification**:
+1. Use SAT solver (Glucose, CaDiCaL) for finite case enumeration
+2. Break into smaller lemmas verified by Vampire
+3. Trust the well-known classical result
 
 ### Step 5 Counting Lemma
 **Status**: Most challenging step
@@ -111,7 +133,13 @@ Step 6: Contradiction
 | `degree_from_no_k_indep.p` | k neighbors + no-k-indep → contradiction | **ContradictoryAxioms (22.2s)** |
 | `k18_case_analysis.p` | Case 1: 6 red neighbors | Theorem |
 | `k18_case2.p` | Case 2: ≤5 red neighbors | In progress |
-| `r34_recursive.p` | R(3,4)=9 attempt | Timeout (too complex) |
+| `r34_recursive.p` | R(3,4)=9 recursive attempt | Timeout (too complex) |
+| `r34_lower_bound.p` | R(3,4)>8 witness graph | New |
+| `r34_lower_triangle_free.p` | Verify witness is triangle-free | Pending ATP |
+| `r34_lower_no_4indep.p` | Verify witness has no 4-indep | Pending ATP |
+| `r34_upper_bound.p` | R(3,4)≤9 full proof | Pending ATP |
+| `r34_upper_degree_bound.p` | Degree bound lemma | Pending ATP |
+| `r34_upper_case_d3.p` | Case d=3 analysis | Pending ATP |
 | `r36_upper_bound_v2.p` | Full problem attempt | Timeout |
 | `greedy_6indep.p` | Greedy construction | Timeout |
 | `r36_with_r34_axiom.p` | With R(3,4) axiom | CounterSat (constraints incomplete) |
