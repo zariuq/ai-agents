@@ -51,7 +51,6 @@ mizar/
 Czech Study/
 AI Docs/
 AI/
-hyperon/
 literature/
 Isabelle2025/
 .isabelle/
@@ -68,6 +67,8 @@ zipperposition
 naproche-zf
 pyprover
 mizar-rs
+hyperon/
+Dedukti
 lash-*/
 
 # Megalodon source/binaries (external, downloaded from tarball)
