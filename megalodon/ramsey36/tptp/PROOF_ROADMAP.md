@@ -23,7 +23,23 @@ This document focuses on the **upper bound** proof.
 
 **TPTP encoding**: See `degree_bound_simple.p` for minimal encoding.
 
-### Lemma 2: Case 1 - 6 Red Neighbors (VERIFIED by Vampire)
+### Lemma 2: Neighborhood Independence (VERIFIED by Vampire)
+**File**: `neighborhood_indep.p`
+**Status**: `SZS status Theorem` (0.018s)
+
+**Statement**: In a triangle-free graph, neighbors of any vertex are pairwise non-adjacent.
+
+**TPTP encoding**: Direct logical encoding of triangle-free constraint.
+
+### Lemma 3: Degree from No-K-Indep (VERIFIED by Vampire)
+**File**: `degree_from_no_k_indep.p`
+**Status**: `SZS status ContradictoryAxioms` (22.2s)
+
+**Statement**: If vertex v has k neighbors in a triangle-free graph with no k-independent set, contradiction follows.
+
+This is a generalized version of the degree bound that works for any k.
+
+### Lemma 4: Case 1 - 6 Red Neighbors (VERIFIED by Vampire)
 **File**: `k18_case_analysis.p`
 **Status**: `SZS status Theorem`
 
@@ -89,10 +105,13 @@ Step 6: Contradiction
 
 | File | Purpose | Vampire Status |
 |------|---------|----------------|
-| `degree_bound.p` | General degree bound | Theorem (22.6s) |
-| `degree_bound_simple.p` | Minimal degree bound | ContradictoryAxioms (0.018s) |
+| `degree_bound.p` | General degree bound | **Theorem (22.6s)** |
+| `degree_bound_simple.p` | Minimal degree bound | **ContradictoryAxioms (0.018s)** |
+| `neighborhood_indep.p` | Neighbors are independent | **Theorem (0.018s)** |
+| `degree_from_no_k_indep.p` | k neighbors + no-k-indep → contradiction | **ContradictoryAxioms (22.2s)** |
 | `k18_case_analysis.p` | Case 1: 6 red neighbors | Theorem |
 | `k18_case2.p` | Case 2: ≤5 red neighbors | In progress |
+| `r34_recursive.p` | R(3,4)=9 attempt | Timeout (too complex) |
 | `r36_upper_bound_v2.p` | Full problem attempt | Timeout |
 | `greedy_6indep.p` | Greedy construction | Timeout |
 | `r36_with_r34_axiom.p` | With R(3,4) axiom | CounterSat (constraints incomplete) |
