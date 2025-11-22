@@ -70,6 +70,15 @@ mizar-rs
 hyperon/
 Dedukti
 lash-*/
+megalodon/bin/
+megalodon/src/
+megalodon/examples/
+megalodon/secp256k1/
+megalodon/INSTALL
+megalodon/LICENSE
+megalodon/README
+megalodon/makebytecode
+megalodon/makeopt
 
 # Megalodon source/binaries (external, downloaded from tarball)
 megalodon/bin/
