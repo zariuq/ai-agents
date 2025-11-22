@@ -167,5 +167,67 @@ cnf(c_0_4, plain, ($false), inference(cn,[status(thm)],[c_0_1,c_0_2,c_0_3]), ['p
         self.assertIn("assume H:", result)
 
 
+class TestSuperpositionTranslation(unittest.TestCase):
+    """Test superposition proof translation"""
+
+    @unittest.skipUnless(os.path.exists(EPROVER), "E prover not found")
+    def test_triangle_free_proof(self):
+        """Test triangle_free style proof generates correct Megalodon"""
+        problem = """
+fof(triangle_free, axiom, ![X,Y,Z]: ~(adj(X,Y) & adj(Y,Z) & adj(X,Z))).
+fof(clique_ab, axiom, adj(a,b)).
+fof(clique_bc, axiom, adj(b,c)).
+fof(clique_ac, axiom, adj(a,c)).
+fof(goal, conjecture, $false).
+"""
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.p', delete=False) as f:
+            f.write(problem)
+            temp_file = f.name
+
+        try:
+            result = subprocess.run(
+                [EPROVER, "--auto", "--proof-object", temp_file],
+                capture_output=True, text=True
+            )
+
+            self.assertIn("Proof found", result.stdout)
+
+            steps = parse_e_proof(result.stdout)
+
+            # Import the function we need to test
+            from e_to_megalodon import generate_superposition_proof
+
+            spm_proof = generate_superposition_proof(steps)
+
+            # Should find the triangle
+            self.assertIsNotNone(spm_proof)
+            self.assertIn("Triangle found", spm_proof)
+            self.assertIn("exact Htf", spm_proof)
+            # Should have correct terms
+            self.assertIn("a", spm_proof)
+            self.assertIn("b", spm_proof)
+            self.assertIn("c", spm_proof)
+
+        finally:
+            os.unlink(temp_file)
+
+    def test_extract_predicate_args(self):
+        """Test predicate argument extraction"""
+        from e_to_megalodon import extract_predicate_args
+
+        pred, args = extract_predicate_args("adj(a,b)")
+        self.assertEqual(pred, "adj")
+        self.assertEqual(args, ["a", "b"])
+
+        pred, args = extract_predicate_args("~adj(x,y)")
+        self.assertEqual(pred, "adj")
+        self.assertEqual(args, ["x", "y"])
+
+        pred, args = extract_predicate_args("foo(a,b,c)")
+        self.assertEqual(pred, "foo")
+        self.assertEqual(args, ["a", "b", "c"])
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
