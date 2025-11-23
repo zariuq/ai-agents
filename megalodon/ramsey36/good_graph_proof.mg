@@ -7,6 +7,59 @@ Definition is_indep_set : set -> (set -> set -> prop) -> set -> prop :=
 Definition no_k_indep : set -> (set -> set -> prop) -> set -> prop :=
   fun V R k => forall S, S c= V -> equip k S -> ~is_indep_set V R S.
 
+Theorem equip_subset : forall n k U:set,
+  k c= n ->
+  equip n U ->
+  exists T:set, T c= U /\ equip k T.
+let n. let k. let U.
+assume Hkn: k c= n.
+assume Heq: equip n U.
+apply equip_bij n U Heq.
+let f: set -> set.
+assume Hbij: bij n U f.
+set T := {f i | i :e k}.
+witness T.
+prove T c= U /\ equip k T.
+apply and3E (forall u :e n, f u :e U) (forall u v :e n, f u = f v -> u = v) (forall w :e U, exists u :e n, f u = w) Hbij (T c= U /\ equip k T).
+assume HfU: forall u :e n, f u :e U.
+assume Hinj: forall u v :e n, f u = f v -> u = v.
+assume Hsurj: forall w :e U, exists u :e n, f u = w.
+apply andI (T c= U) (equip k T).
+- prove T c= U.
+  let y. assume Hy: y :e T.
+  apply ReplE_impred k f y Hy (y :e U).
+  let i. assume Hi: i :e k.
+  assume Hyi: y = f i.
+  prove y :e U.
+  claim Hin: i :e n. exact Hkn i Hi.
+  claim HfiU: f i :e U. exact HfU i Hin.
+  exact Hyi (fun a b => b :e U) HfiU.
+- prove equip k T.
+  apply bij_equip k T f.
+  prove bij k T f.
+  apply and3I (forall u :e k, f u :e T) (forall u v :e k, f u = f v -> u = v) (forall w :e T, exists u :e k, f u = w).
+  + prove forall u :e k, f u :e T.
+    let u. assume Hu: u :e k.
+    exact ReplI k f u Hu.
+  + prove forall u v :e k, f u = f v -> u = v.
+    let u. assume Hu: u :e k.
+    let v. assume Hv: v :e k.
+    assume Hfuv: f u = f v.
+    exact Hinj u (Hkn u Hu) v (Hkn v Hv) Hfuv.
+  + prove forall w :e T, exists u :e k, f u = w.
+    let w. assume Hw: w :e T.
+    apply ReplE_impred k f w Hw (exists u :e k, f u = w).
+    let i. assume Hi: i :e k.
+    assume Hwi: w = f i.
+    witness i.
+    prove i :e k /\ f i = w.
+    claim Hfiw: f i = w.
+      prove forall Q: set -> set -> prop, Q (f i) w -> Q w (f i).
+      let Q: set -> set -> prop. assume HQ: Q (f i) w.
+      exact Hwi (fun a b => Q b a) HQ.
+    exact andI (i :e k) (f i = w) Hi Hfiw.
+Qed.
+
 Theorem neighborhood_indep : forall V:set, forall R:set -> set -> prop,
   (forall x y, R x y -> R y x) ->
   triangle_free V R ->
@@ -326,6 +379,61 @@ apply has_triangle_or_4indep_on_9 V R Hsym Hequip.
   exact H4.
 Qed.
 
+Theorem triangle_free_Subq : forall V W:set, forall R:set -> set -> prop,
+  W c= V ->
+  triangle_free V R ->
+  triangle_free W R.
+let V. let W. let R: set -> set -> prop.
+assume HWV: W c= V.
+assume Htf: triangle_free V R.
+prove triangle_free W R.
+prove forall x :e W, forall y :e W, forall z :e W, R x y -> R y z -> R x z -> False.
+let x. assume Hx: x :e W.
+let y. assume Hy: y :e W.
+let z. assume Hz: z :e W.
+exact Htf x (HWV x Hx) y (HWV y Hy) z (HWV z Hz).
+Qed.
+
+Theorem is_indep_set_enlarge : forall V W:set, forall R:set -> set -> prop, forall S:set,
+  V c= W ->
+  S c= V ->
+  is_indep_set V R S ->
+  is_indep_set W R S.
+let V. let W. let R: set -> set -> prop. let S.
+assume HVW: V c= W.
+assume HSV: S c= V.
+assume Hindep: is_indep_set V R S.
+prove is_indep_set W R S.
+prove S c= W /\ (forall x :e S, forall y :e S, x <> y -> ~R x y).
+apply andI (S c= W) (forall x :e S, forall y :e S, x <> y -> ~R x y).
+- prove S c= W.
+  let s. assume Hs: s :e S.
+  exact HVW s (HSV s Hs).
+- prove forall x :e S, forall y :e S, x <> y -> ~R x y.
+  apply andER (S c= V) (forall x :e S, forall y :e S, x <> y -> ~R x y) Hindep.
+Qed.
+
+Theorem nat_p_12 : nat_p 12.
+exact nat_ordsucc 11 (nat_ordsucc 10 (nat_ordsucc 9 (nat_ordsucc 8 (nat_ordsucc 7
+      (nat_ordsucc 6 (nat_ordsucc 5 (nat_ordsucc 4 (nat_ordsucc 3 (nat_ordsucc 2 nat_2))))))))).
+Qed.
+
+Theorem in_9_12 : 9 :e 12.
+prove 9 :e 12.
+prove 9 :e ordsucc 11.
+apply ordsuccI1 11.
+prove 9 :e 11.
+apply ordsuccI1 10.
+prove 9 :e 10.
+exact ordsuccI2 9.
+Qed.
+
+Theorem Subq_9_12 : 9 c= 12.
+prove forall x :e 9, x :e 12.
+let x. assume Hx: x :e 9.
+exact nat_trans 12 nat_p_12 9 in_9_12 x Hx.
+Qed.
+
 Theorem non_neighbors_contain_4indep : forall R:set -> set -> prop,
   (forall x y, R x y -> R y x) ->
   triangle_free 18 R ->
@@ -334,7 +442,40 @@ Theorem non_neighbors_contain_4indep : forall R:set -> set -> prop,
     equip 12 T ->
     (forall t :e T, ~R v t) ->
     exists S, S c= T /\ equip 4 S /\ is_indep_set 18 R S.
-Admitted.
+let R: set -> set -> prop.
+assume Hsym: forall x y, R x y -> R y x.
+assume Htf: triangle_free 18 R.
+let v. assume Hv: v :e 18.
+let T. assume HT18: T c= 18.
+assume HT12: equip 12 T.
+assume Hnonadj: forall t :e T, ~R v t.
+prove exists S, S c= T /\ equip 4 S /\ is_indep_set 18 R S.
+apply equip_subset 12 9 T Subq_9_12 HT12.
+let T'. assume HT'prop: T' c= T /\ equip 9 T'.
+claim HT'T: T' c= T. exact andEL (T' c= T) (equip 9 T') HT'prop.
+claim HT'9: equip 9 T'. exact andER (T' c= T) (equip 9 T') HT'prop.
+claim HT'18: T' c= 18.
+  let x. assume Hx: x :e T'.
+  exact HT18 x (HT'T x Hx).
+claim Htf_T': triangle_free T' R.
+  exact triangle_free_Subq 18 T' R HT'18 Htf.
+apply triangle_free_9_has_4indep T' R Hsym Htf_T' HT'9.
+let S. assume HS: S c= T' /\ equip 4 S /\ is_indep_set T' R S.
+apply and3E (S c= T') (equip 4 S) (is_indep_set T' R S) HS (exists S, S c= T /\ equip 4 S /\ is_indep_set 18 R S).
+assume HS_T': S c= T'.
+assume HS4: equip 4 S.
+assume HS_indep_T': is_indep_set T' R S.
+witness S.
+prove S c= T /\ equip 4 S /\ is_indep_set 18 R S.
+apply and3I (S c= T) (equip 4 S) (is_indep_set 18 R S).
+- prove S c= T.
+  let s. assume Hs: s :e S.
+  exact HT'T s (HS_T' s Hs).
+- prove equip 4 S.
+  exact HS4.
+- prove is_indep_set 18 R S.
+  exact is_indep_set_enlarge T' 18 R S HT'18 HS_T' HS_indep_T'.
+Qed.
 
 Theorem vertex_has_12_nonneighbors : forall R:set -> set -> prop,
   (forall x y, R x y -> R y x) ->
