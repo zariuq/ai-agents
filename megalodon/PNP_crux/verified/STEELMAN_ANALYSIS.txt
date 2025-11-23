@@ -122,33 +122,35 @@ VERDICT: Needs careful analysis. The wrapper might need to
          recompute rather than store training data.
 
 ============================================================
-FAILURE POINT 4: SIGN-INVARIANCE OF LOCALITY
+FAILURE POINT 4: SIGN-INVARIANCE OF LOCALITY - **RESOLVED**
 ============================================================
 
-The neutrality argument requires sign-invariant predicates.
+ORIGINAL CONCERN: Does "local view" include sign information?
 
-CRITICAL QUESTION: Is "depends only on local view" sign-invariant?
+**RESOLUTION FROM PAPER (arXiv:2510.08814):**
 
-Local view = the log-radius neighborhood of variable i
+The paper EXPLICITLY addresses this by defining SILS
+(Sign-Invariant Local Sketch). Key findings:
 
-Under T_j transformation:
-  - sigma_j flips (sign at position j changes)
-  - Formula structure might change depending on sigma
+1. Local view is sign-invariant BY DEFINITION
+   - Features must be invariant under H_m = S_m ⋉ (Z_2)^m
+   - The (Z_2)^m factor flips literal signs
 
-If local view INCLUDES sign information:
-  - Flipping sigma_j changes the local view at j
-  - Local predictors are NOT sign-invariant
-  - Neutrality doesn't apply!
-  STATUS: POTENTIAL ISSUE
+2. ADMISSIBLE features (sign-invariant):
+   - Variable degree histograms (unsigned)
+   - Neighborhood structure IGNORING literal signs
+   - Co-occurrence statistics without signs
 
-If local view is sign-AGNOSTIC (only structure):
-  - Flipping sigma_j doesn't change the structure
-  - Local predictors ARE sign-invariant
-  - Neutrality applies
-  STATUS: This is what we need
+3. EXCLUDED features (sign-sensitive):
+   - Clause parity by signs
+   - Features distinguishing positive/negative literals
 
-VERDICT: The paper must define "local view" carefully to
-         exclude sign information. Otherwise neutrality fails.
+4. KEY PROPERTY: T_i preserves SILS while toggling X_i
+   Quote: "T_i preserves I [σ-algebra from SILS] and toggles X_i"
+
+**STATUS: CONCERN RESOLVED** ✓
+
+See sign_invariance_resolved.mg for formalization.
 
 ============================================================
 FAILURE POINT 5: THE DELTA CONSTANT
@@ -180,28 +182,35 @@ VERDICT: Depends on the specific D_m construction. The paper's
          construction must ensure delta = Omega(1).
 
 ============================================================
-OVERALL ASSESSMENT
+OVERALL ASSESSMENT (UPDATED AFTER INVESTIGATION)
 ============================================================
 
-CRITICAL CONCERNS (could break the proof):
+**RESOLVED CONCERNS:**
+- Sign-invariance of locality: RESOLVED ✓
+  The paper explicitly defines SILS (Sign-Invariant Local Sketch)
+  to be sign-agnostic by construction. Neutrality applies.
+
+**REMAINING CRITICAL CONCERN:**
 1. |H| might be quasi-polynomial, not polynomial
-2. "Local view" must be sign-agnostic for neutrality
+   - If |H| = m^{O(log m)}, ERM may not generalize
+   - This is the PRIMARY remaining concern
 
-MODERATE CONCERNS (need careful verification):
-3. Calibration lemma for mixed local/global decoders
-4. Wrapper encoding when recomputing vs storing labels
+**MODERATE CONCERNS (need careful verification):**
+2. Calibration lemma for mixed local/global decoders
+3. Wrapper encoding when recomputing vs storing labels
 
-LOW CONCERNS (likely OK with care):
-5. Training/test split specification
-6. Delta being constant
+**LOW CONCERNS (likely OK with care):**
+4. Training/test split specification
+5. Delta being constant
 
-LIKELIHOOD OF FAILURE: NOT NEAR ZERO
+**REVISED LIKELIHOOD OF FAILURE: 15-30%**
 
-I estimate 20-40% chance that one of these failure points
-is fatal, primarily:
-- The |H| size issue (quasi-poly vs poly)
-- The sign-invariance of locality issue
+With sign-invariance resolved, the main remaining issue is |H| size.
+This requires careful analysis of what "poly(log m)-size circuits" means
+and whether ERM generalizes with the available training data.
 
-These are exactly what a rigorous formal proof must address!
+Sources:
+- arXiv:2510.08814 (Goertzel's paper)
+- sign_invariance_resolved.mg (formalization)
 
 ============================================================
