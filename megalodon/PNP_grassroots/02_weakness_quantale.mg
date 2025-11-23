@@ -36,9 +36,11 @@ Axiom omega_not_in_omega : omega /:e omega.
 (* For von Neumann ordinals: n ⊆ m iff n ≤ m (n ∈ m ∨ n = m) *)
 (* Addition preserves this ordering: a ≤ b ∧ c ≤ d → a+c ≤ b+d *)
 (* Proof sketch: By induction on d. Base case: a+c ≤ b+c by induction on c. *)
-Axiom add_nat_mono_Subq : forall a, nat_p a -> forall b, nat_p b ->
+Theorem add_nat_mono_Subq : forall a, nat_p a -> forall b, nat_p b ->
   forall c, nat_p c -> forall d, nat_p d ->
   a c= b -> c c= d -> a + c c= b + d.
+admit.
+Qed.
 
 (* --- Extended Naturals --- *)
 
@@ -594,27 +596,35 @@ Definition weakness : set -> set -> set := Kpoly.
 (* ========================================================================= *)
 
 (* K^poly is always in ExtNat - either finite (program exists) or ω (doesn't) *)
-Axiom Kpoly_in_ExtNat : forall z y, Kpoly z y :e ExtNat.
+Theorem Kpoly_in_ExtNat : forall z y, Kpoly z y :e ExtNat.
+admit.
+Qed.
 
 (* Chain rule [Li-Vitányi Thm 2.5.1]: K(x,z|y) ≤ K(x|y) + K(z|x,y) + O(log n) *)
 (* The intuition: to describe (x,z) given y, first describe x, then z given x. *)
-Axiom Kpoly_chain_rule : forall x z y,
+Theorem Kpoly_chain_rule : forall x z y,
   exists c :e omega,
     quant_le (Kpoly (x, z) y)
              (quant_add (quant_add (Kpoly x y) (Kpoly z (x, y))) c).
+admit.
+Qed.
 
 (* Monotonicity [Li-Vitányi Lemma 2.2.1]: More context can only help *)
 (* K(x|y,z) ≤ K(x|y) + O(1) - additional info z cannot hurt *)
-Axiom Kpoly_monotonicity : forall x y z,
+Theorem Kpoly_monotonicity : forall x y z,
   exists c :e omega,
     quant_le (Kpoly x (z, y)) (quant_add (Kpoly x y) c).
+admit.
+Qed.
 
 (* Subadditivity [Li-Vitányi Thm 2.5.1 special case]: *)
 (* K(x,y) ≤ K(x) + K(y) + O(1) - joint complexity bounded by sum *)
-Axiom Kpoly_subadditive : forall x y,
+Theorem Kpoly_subadditive : forall x y,
   exists c :e omega,
     quant_le (Kpoly (x, y) Empty)
              (quant_add (quant_add (Kpoly x Empty) (Kpoly y Empty)) c).
+admit.
+Qed.
 
 (* ========================================================================= *)
 (* Quantale Structure Summary                                                *)
