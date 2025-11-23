@@ -162,12 +162,133 @@ apply andI ((S :\/: {v}) c= V) (forall x :e (S :\/: {v}), forall y :e (S :\/: {v
       exact eq_i_tra x v y Hxeqv Hveqy.
 Qed.
 
+Theorem neighbors_form_indep : forall V:set, forall R:set -> set -> prop,
+  (forall x y, R x y -> R y x) ->
+  triangle_free V R ->
+  forall v :e V, forall S:set,
+    S c= V -> (forall x :e S, R v x) -> (forall x :e S, forall y :e S, x <> y -> ~R x y).
+let V. let R: set -> set -> prop.
+assume Hsym: forall x y, R x y -> R y x.
+assume Htf: triangle_free V R.
+let v. assume Hv: v :e V.
+let S. assume HSV: S c= V.
+assume Hadj: forall x :e S, R v x.
+let x. assume Hx: x :e S.
+let y. assume Hy: y :e S.
+assume Hneq: x <> y.
+exact neighborhood_indep V R Hsym Htf v Hv x (HSV x Hx) y (HSV y Hy)
+      (Hadj x Hx) (Hadj y Hy) Hneq.
+Qed.
+
+Theorem four_neighbors_give_4indep : forall V:set, forall R:set -> set -> prop,
+  (forall x y, R x y -> R y x) ->
+  triangle_free V R ->
+  forall v :e V, forall n1 n2 n3 n4 :e V,
+    n1 <> n2 -> n1 <> n3 -> n1 <> n4 -> n2 <> n3 -> n2 <> n4 -> n3 <> n4 ->
+    R v n1 -> R v n2 -> R v n3 -> R v n4 ->
+    exists S, S c= V /\ equip 4 S /\ is_indep_set V R S.
+Admitted.
+
+Theorem six_nonneighbors_contradiction_on_9 : forall V:set, forall R:set -> set -> prop,
+  (forall x y, R x y -> R y x) ->
+  equip 9 V ->
+  triangle_free V R ->
+  ~(exists x y z :e V, R x y /\ R y z /\ R x z) ->
+  ~(exists S, S c= V /\ equip 4 S /\ is_indep_set V R S) ->
+  forall v :e V, forall m1 m2 m3 m4 m5 m6 :e V,
+    m1 <> m2 -> m1 <> m3 -> m1 <> m4 -> m1 <> m5 -> m1 <> m6 ->
+    m2 <> m3 -> m2 <> m4 -> m2 <> m5 -> m2 <> m6 ->
+    m3 <> m4 -> m3 <> m5 -> m3 <> m6 ->
+    m4 <> m5 -> m4 <> m6 ->
+    m5 <> m6 ->
+    ~R v m1 -> ~R v m2 -> ~R v m3 -> ~R v m4 -> ~R v m5 -> ~R v m6 -> False.
+Admitted.
+
+Theorem degree_parity_contradiction_on_9 : forall V:set, forall R:set -> set -> prop,
+  (forall x y, R x y -> R y x) ->
+  equip 9 V ->
+  triangle_free V R ->
+  (forall v :e V, forall n1 n2 n3 n4 :e V,
+    n1 <> n2 -> n1 <> n3 -> n1 <> n4 -> n2 <> n3 -> n2 <> n4 -> n3 <> n4 ->
+    R v n1 -> R v n2 -> R v n3 -> R v n4 -> False) ->
+  (forall v :e V, forall m1 m2 m3 m4 m5 m6 :e V,
+    m1 <> m2 -> m1 <> m3 -> m1 <> m4 -> m1 <> m5 -> m1 <> m6 ->
+    m2 <> m3 -> m2 <> m4 -> m2 <> m5 -> m2 <> m6 ->
+    m3 <> m4 -> m3 <> m5 -> m3 <> m6 ->
+    m4 <> m5 -> m4 <> m6 ->
+    m5 <> m6 ->
+    ~R v m1 -> ~R v m2 -> ~R v m3 -> ~R v m4 -> ~R v m5 -> ~R v m6 -> False) ->
+  False.
+Admitted.
+
 Theorem has_triangle_or_4indep_on_9 : forall V:set, forall R:set -> set -> prop,
   (forall x y, R x y -> R y x) ->
   equip 9 V ->
   (exists x y z :e V, R x y /\ R y z /\ R x z) \/
   (exists S, S c= V /\ equip 4 S /\ is_indep_set V R S).
-Admitted.
+let V. let R: set -> set -> prop.
+assume Hsym: forall x y, R x y -> R y x.
+assume Hequip: equip 9 V.
+apply dneg.
+assume Hneg: ~((exists x y z :e V, R x y /\ R y z /\ R x z) \/
+              (exists S, S c= V /\ equip 4 S /\ is_indep_set V R S)).
+prove False.
+claim Hno_tri: ~(exists x y z :e V, R x y /\ R y z /\ R x z).
+  assume Htri. apply Hneg. apply orIL. exact Htri.
+claim Hno_4indep: ~(exists S, S c= V /\ equip 4 S /\ is_indep_set V R S).
+  assume H4. apply Hneg. apply orIR. exact H4.
+claim Htf: triangle_free V R.
+  prove forall x :e V, forall y :e V, forall z :e V, R x y -> R y z -> R x z -> False.
+  let x. assume Hx: x :e V.
+  let y. assume Hy: y :e V.
+  let z. assume Hz: z :e V.
+  assume Rxy: R x y.
+  assume Ryz: R y z.
+  assume Rxz: R x z.
+  apply Hno_tri.
+  prove exists x :e V, exists y :e V, exists z :e V, R x y /\ R y z /\ R x z.
+  witness x.
+  prove x :e V /\ (exists y :e V, exists z :e V, R x y /\ R y z /\ R x z).
+  claim H1: exists y :e V, exists z :e V, R x y /\ R y z /\ R x z.
+    witness y.
+    prove y :e V /\ (exists z :e V, R x y /\ R y z /\ R x z).
+    claim H2: exists z :e V, R x y /\ R y z /\ R x z.
+      witness z.
+      prove z :e V /\ (R x y /\ R y z /\ R x z).
+      exact andI (z :e V) (R x y /\ R y z /\ R x z) Hz (and3I (R x y) (R y z) (R x z) Rxy Ryz Rxz).
+    exact andI (y :e V) (exists z :e V, R x y /\ R y z /\ R x z) Hy H2.
+  exact andI (x :e V) (exists y :e V, exists z :e V, R x y /\ R y z /\ R x z) Hx H1.
+claim Hno_4neighbors: forall v :e V, forall n1 n2 n3 n4 :e V,
+    n1 <> n2 -> n1 <> n3 -> n1 <> n4 -> n2 <> n3 -> n2 <> n4 -> n3 <> n4 ->
+    R v n1 -> R v n2 -> R v n3 -> R v n4 -> False.
+  let v. assume Hv: v :e V.
+  let n1. assume Hn1: n1 :e V.
+  let n2. assume Hn2: n2 :e V.
+  let n3. assume Hn3: n3 :e V.
+  let n4. assume Hn4: n4 :e V.
+  assume H12: n1 <> n2.
+  assume H13: n1 <> n3.
+  assume H14: n1 <> n4.
+  assume H23: n2 <> n3.
+  assume H24: n2 <> n4.
+  assume H34: n3 <> n4.
+  assume Rv1: R v n1.
+  assume Rv2: R v n2.
+  assume Rv3: R v n3.
+  assume Rv4: R v n4.
+  apply Hno_4indep.
+  exact four_neighbors_give_4indep V R Hsym Htf v Hv n1 Hn1 n2 Hn2 n3 Hn3 n4 Hn4
+        H12 H13 H14 H23 H24 H34 Rv1 Rv2 Rv3 Rv4.
+claim Hno_6nonneighbors: forall v :e V, forall m1 m2 m3 m4 m5 m6 :e V,
+    m1 <> m2 -> m1 <> m3 -> m1 <> m4 -> m1 <> m5 -> m1 <> m6 ->
+    m2 <> m3 -> m2 <> m4 -> m2 <> m5 -> m2 <> m6 ->
+    m3 <> m4 -> m3 <> m5 -> m3 <> m6 ->
+    m4 <> m5 -> m4 <> m6 ->
+    m5 <> m6 ->
+    ~R v m1 -> ~R v m2 -> ~R v m3 -> ~R v m4 -> ~R v m5 -> ~R v m6 -> False.
+  exact six_nonneighbors_contradiction_on_9 V R Hsym Hequip Htf Hno_tri Hno_4indep.
+exact degree_parity_contradiction_on_9 V R Hsym Hequip Htf Hno_4neighbors Hno_6nonneighbors.
+Qed.
 
 Theorem triangle_free_9_has_4indep : forall V:set, forall R:set -> set -> prop,
   (forall x y, R x y -> R y x) ->
