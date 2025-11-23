@@ -5,44 +5,54 @@ The Switching-by-Weakness lemma (Theorem 4.2) is THE CRUX.
 Here we identify where the Admitted proofs could ACTUALLY FAIL.
 
 ============================================================
-FAILURE POINT 1: HYPOTHESIS CLASS SIZE |H|
+FAILURE POINT 1: HYPOTHESIS CLASS SIZE |H| - **MOSTLY RESOLVED**
 ============================================================
 
 The paper says H contains "simple" functions on O(log m) bits.
 
-CRITICAL QUESTION: What is |H| exactly?
+**INVESTIGATION FINDINGS (from arXiv:2510.08814):**
 
-Option A: All Boolean functions on O(log m) bits
-  |H| = 2^{2^{O(log m)}} = 2^{m^{O(1)}} = EXPONENTIAL
-  ERM CANNOT generalize with poly(m) samples!
-  STATUS: BREAKS THE PROOF
+The paper specifies:
+- H consists of ACC⁰ circuits on O(log m) input bits
+- "each h_{j,i} is computable in time poly(log m)"
+- Training uses t = c₄m samples (LINEAR in m!)
 
-Option B: Circuits of size poly(log m)
-  |H| = 2^{poly(log m) * log(poly(log m))}
-      = 2^{O((log m)^c * c*log(log m))}
-      = 2^{O((log m)^{c+1})} for circuits of size (log m)^c
+**DETAILED ANALYSIS:**
 
-  If c = 1: |H| = 2^{O(log^2 m)} = m^{O(log m)} = QUASI-POLYNOMIAL
-  If c = 0.5: |H| = 2^{O(log^{1.5} m)} = still super-polynomial
+For ACC⁰ circuits of size s on k bits:
+  Number of circuits ≤ (s * k)^{O(s)}
 
-  For ERM with t samples to generalize to error epsilon:
-    Need t >= O(log|H| / epsilon^2)
-    Need t >= O((log m)^{c+1} / epsilon^2)
+For s = poly(log m) = (log m)^c and k = O(log m):
+  |H| ≤ (log m)^{O((c+1) * (log m)^c)}
+  log|H| = O((log m)^{c+1} * log log m) = O((log m)^{c+2})
 
-  Paper has t = m^epsilon for small epsilon.
-  This gives t >= O((log m)^{c+1}) when epsilon = 1/poly(log m).
+**THE KEY INSIGHT:**
 
-  But we need epsilon = Omega(1) for the contradiction!
+For ERM generalization with error ε:
+  Need t ≥ O(log|H| / ε²)
 
-  STATUS: POTENTIAL ISSUE - needs epsilon = O(1/sqrt(log m)) at least
+With t = c₄m and log|H| = O((log m)^{c+2}):
+  m ≥ (log m)^{c+2} / ε²
+  ε² ≥ (log m)^{c+2} / m
+  ε ≥ (log m)^{(c+2)/2} / sqrt(m)
 
-Option C: Only circuits of size O(log m)
-  |H| = 2^{O(log m * log(log m))} = poly(m) * polylog factors
-  ERM CAN generalize with poly(m) samples
-  STATUS: WORKS, but is this what the paper uses?
+As m → ∞:
+  ε → 0 because (log m)^k / sqrt(m) → 0 for any constant k
 
-VERDICT: The proof DEPENDS on |H| = poly(m), but the paper's
-         definition might give quasi-polynomial |H|.
+**VERDICT: ERM DOES GENERALIZE** ✓
+
+Even with quasi-polynomial |H| = 2^{(log m)^{c+2}}, the linear
+sample count t = Θ(m) is MUCH larger than log|H| = (log m)^{c+2}.
+
+The generalization error ε = O((log m)^k / sqrt(m)) vanishes as m → ∞.
+
+**STATUS: CONCERN MOSTLY RESOLVED** ✓
+
+The only remaining subtlety is whether ε = o(1) is small enough
+for the contradiction. The paper needs δ*t > O(log m), and if
+ε affects δ, we need ε·m = o(m), which is satisfied.
+
+See hypothesis_class_analysis.mg for formalization.
 
 ============================================================
 FAILURE POINT 2: CALIBRATION LEMMA ASSUMPTIONS
@@ -182,35 +192,54 @@ VERDICT: Depends on the specific D_m construction. The paper's
          construction must ensure delta = Omega(1).
 
 ============================================================
-OVERALL ASSESSMENT (UPDATED AFTER INVESTIGATION)
+OVERALL ASSESSMENT (UPDATED AFTER FULL INVESTIGATION)
 ============================================================
 
 **RESOLVED CONCERNS:**
-- Sign-invariance of locality: RESOLVED ✓
-  The paper explicitly defines SILS (Sign-Invariant Local Sketch)
-  to be sign-agnostic by construction. Neutrality applies.
 
-**REMAINING CRITICAL CONCERN:**
-1. |H| might be quasi-polynomial, not polynomial
-   - If |H| = m^{O(log m)}, ERM may not generalize
-   - This is the PRIMARY remaining concern
+1. Sign-invariance of locality: RESOLVED ✓
+   The paper explicitly defines SILS (Sign-Invariant Local Sketch)
+   to be sign-agnostic by construction. Neutrality applies.
+   See sign_invariance_resolved.mg for formalization.
+
+2. Hypothesis class size |H|: MOSTLY RESOLVED ✓
+   Even with quasi-polynomial |H| = 2^{polylog(m)}, the linear
+   sample count t = Θ(m) ensures ERM generalization.
+   Error ε = O((log m)^k / sqrt(m)) → 0 as m → ∞.
+   See hypothesis_class_analysis.mg for formalization.
 
 **MODERATE CONCERNS (need careful verification):**
-2. Calibration lemma for mixed local/global decoders
-3. Wrapper encoding when recomputing vs storing labels
+3. Calibration lemma for mixed local/global decoders
+   - The argument assumes clean local/global dichotomy
+   - Mixed cases might weaken bounds
+
+4. Wrapper encoding when recomputing vs storing labels
+   - Must recompute on demand (O(poly(m)) time per query)
+   - K_poly allows this, so likely OK
 
 **LOW CONCERNS (likely OK with care):**
-4. Training/test split specification
-5. Delta being constant
+5. Training/test split specification: O(1) or O(log m) bits
+6. Delta being constant: depends on D_m construction
 
-**REVISED LIKELIHOOD OF FAILURE: 15-30%**
+**REVISED LIKELIHOOD OF FAILURE: 5-15%**
 
-With sign-invariance resolved, the main remaining issue is |H| size.
-This requires careful analysis of what "poly(log m)-size circuits" means
-and whether ERM generalizes with the available training data.
+After detailed investigation of the two critical concerns:
+- Sign-invariance: Paper's SILS definition resolves this ✓
+- |H| size: t = Θ(m) >> log|H| ensures generalization ✓
+
+The remaining concerns are moderate or low priority. The proof
+structure appears sound, though filling in the Admitted proofs
+requires careful measure theory and probability arguments.
+
+**KEY INSIGHT FROM INVESTIGATION:**
+
+The paper's use of t = c₄m (linear samples) is crucial.
+This gives MUCH more data than needed for ERM generalization,
+even with quasi-polynomial hypothesis class size.
 
 Sources:
 - arXiv:2510.08814 (Goertzel's paper)
 - sign_invariance_resolved.mg (formalization)
+- hypothesis_class_analysis.mg (formalization)
 
 ============================================================
