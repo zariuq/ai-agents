@@ -101,3 +101,31 @@ REMAINING FOR FULL NEUTRALITY:
 4. Prove sign-invariant predicates exist (e.g., formula structure)
 
 The hardest part (the algebra) is DONE. The rest is plumbing.
+
+PHASE 2: SPARSIFICATION
+=======================
+
+sparsification_foundation.mg - Graph theory for tree-likeness (VERIFIED SYNTAX)
+  - Graph: subset of m x m
+  - has_edge, symmetric_graph, no_self_loops
+  - is_tree: graph with no cycles
+  - neighborhood_1: 1-hop neighborhood
+  - bipartite: bipartite graph definition
+  - permutation_on_m: bijection on m
+  - VarClauseGraph: variable-clause incidence graph
+  - perm_preserves_tree: permutation preserves tree structure
+
+The key sparsification claim is:
+  For r = c * log(m) with c small enough,
+  the r-neighborhood of any variable in a random 3-CNF
+  is a TREE with high probability (1 - m^{-beta}).
+
+This follows from:
+1. Expected degree d = 3*alpha = O(1) for constant clause density
+2. Expected cycles at radius r: d^{2r}/m
+3. For r = c*log(m): d^{2r}/m = m^{2c*log(d) - 1}
+4. When 2c*log(d) < 1, this goes to 0
+
+With alpha = 4, d = 12, log(d) ≈ 3.58
+Need 2c*3.58 < 1, i.e., c < 0.14
+Paper uses c = 0.1, giving m^{-0.28} cycle probability.
