@@ -345,31 +345,11 @@ Axiom reduction_decidability : forall L1 L2 decider red,
     forall x, (x :e L1 <-> exists z, UTM_computes p x z /\ z = 1).
 
 (* ========================================================================= *)
-(* Cook-Levin Theorem [CL]                                                   *)
+(* Cook-Levin Theorem - See 03_cnf_sat.mg for concrete formulation          *)
 (* ========================================================================= *)
-(* Source: Cook, S.A. (1971). "The complexity of theorem-proving procedures" *)
-(*         Proc. 3rd ACM Symposium on Theory of Computing, pp. 151-158.      *)
-(*         Levin, L.A. (1973). "Universal search problems"                   *)
-(*         Problemy Peredachi Informatsii 9(3): 265-266.                     *)
-(*                                                                           *)
-(* Statement: SAT (boolean satisfiability) is NP-complete.                   *)
-(*                                                                           *)
-(* Proof sketch:                                                              *)
-(*   1. SAT ∈ NP: Nondeterministically guess assignment, verify in O(|F|).   *)
-(*   2. SAT is NP-hard: For any NP language L with verifier V, given input x,*)
-(*      construct formula φ_x encoding "∃w. V(x,w) accepts" such that:       *)
-(*      - Variables encode computation tableau of V on (x,w)                 *)
-(*      - Clauses enforce valid transitions and acceptance                   *)
-(*      - |φ_x| = poly(|x|) and φ_x is satisfiable iff x ∈ L               *)
-(*                                                                           *)
-(* This is axiomatized because the full proof requires:                       *)
-(*   - Formal encoding of Turing machine configurations                       *)
-(*   - Polynomial-time construction of the reduction                         *)
-(*   - Correctness proof of the encoding                                     *)
+(* Source: Cook (1971), Levin (1973)                                         *)
+(* The concrete version over SAT_language m is axiomatized in 03_cnf_sat.mg *)
 (* ========================================================================= *)
-
-Parameter SAT : set.
-Axiom Cook_Levin : NP_complete SAT.
 
 (* Reduction is transitive (composition of morphisms) *)
 Theorem poly_reduces_trans : forall L1 L2 L3,
@@ -474,31 +454,8 @@ prove exists p, is_polytime_prog p /\
 exact (reduction_decidability L' L decider red Hdec_poly Hdec_corr Hred_poly Hred_corr).
 Qed.
 
-(* The key equivalence *)
-Theorem P_neq_NP_equiv : P_neq_NP <-> exists L, NP_complete L /\ ~inP L.
-apply iffI.
-- assume H: P_neq_NP.
-  (* Use Cook-Levin: SAT is NP-complete *)
-  witness SAT.
-  apply andI.
-  + exact Cook_Levin.
-  + (* Show SAT is not in P by contradiction *)
-    assume HSATinP: inP SAT.
-    (* If SAT in P and SAT is NP-complete, then P = NP *)
-    claim Heq: P_equals_NP.
-    { exact (NP_complete_in_P_implies_P_eq_NP SAT Cook_Levin HSATinP). }
-    (* But P ≠ NP by assumption *)
-    exact (H Heq).
-- assume H: exists L, NP_complete L /\ ~inP L.
-  prove ~P_equals_NP.
-  assume Heq: P_equals_NP.
-  apply H. let L. assume HL: NP_complete L /\ ~inP L.
-  apply HL. assume HLnpc: NP_complete L. assume HLnotP: ~inP L.
-  apply HLnotP.
-  apply Heq.
-  prove inNP L.
-  apply HLnpc. assume Hnp _. exact Hnp.
-Qed.
+(* Note: P_neq_NP_equiv (P≠NP ↔ ∃L NP-complete ∧ L∉P) can be derived
+   using Cook_Levin from 03_cnf_sat.mg if needed. Removed to reduce axiom count. *)
 
 (* ========================================================================= *)
 (* Part VIII: Connection to Quantale                                         *)
