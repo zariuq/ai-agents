@@ -156,18 +156,29 @@ The proof uses excluded middle (`xm`) and double negation elimination (`dneg`):
 6. `good_graph_contradiction` - Structure complete, uses admitted sub-lemmas
    - Derives False from triangle_free 18 R and no_k_indep 18 R 6
 
+### R(3,4) = 9 Proof Structure (Route B)
+
+The theorem `has_triangle_or_4indep_on_9` uses the clever degree/parity argument:
+1. If any vertex has 4+ neighbors: those neighbors form 4-indep (triangle-free)
+2. If any vertex has 6+ non-neighbors: R(3,3)=6 gives 3-indep extending to 4-indep with vertex
+3. If all vertices have 3-5 neighbors: all must have exactly 3 (constraints force this)
+4. Parity contradiction: 9 vertices × 3 degree = 27, but sum of degrees must be even
+
+Helper theorems:
+- `neighbors_form_indep` - **Kernel verified**: In triangle-free graph, neighbors of v are independent
+- `four_neighbors_give_4indep` - **Admitted**: 4 distinct neighbors form a 4-independent set
+- `six_nonneighbors_contradiction_on_9` - **Admitted**: R(3,3) on 6 non-neighbors
+- `degree_parity_contradiction_on_9` - **Admitted**: Parity argument (requires arithmetic)
+
 ### Remaining Admitted Lemmas (require cardinality reasoning)
 
-1. `has_triangle_or_4indep_on_9` - R(3,4) = 9 base case
-   - Requires 729+ case analysis or clever combinatorial argument
-
-2. `non_neighbors_contain_4indep` - 12 non-neighbors contain 4-indep
+1. `non_neighbors_contain_4indep` - 12 non-neighbors contain 4-indep
    - Uses R(3,4) on 9-element subset extraction
 
-3. `vertex_has_12_nonneighbors` - Every vertex has 12+ non-neighbors
+2. `vertex_has_12_nonneighbors` - Every vertex has 12+ non-neighbors
    - Requires cardinality arithmetic: 18 - 1 - 5 = 12
 
-4. `can_extend_4indep_with_nonneighbor` - 4-indep plus vertex gives contradiction
+3. `can_extend_4indep_with_nonneighbor` - 4-indep plus vertex gives contradiction
    - Requires pigeonhole principle formalization
 
 ## References
