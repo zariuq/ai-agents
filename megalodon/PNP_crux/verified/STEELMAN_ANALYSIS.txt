@@ -440,40 +440,78 @@ OVERALL ASSESSMENT (UPDATED WITH NEW CRUXES)
 7. Wrapper encoding: RESOLVED via recompute ✓
 8. ACC⁰ expressiveness: NOT LOAD-BEARING in v11 ✓
 
-**REVISED LIKELIHOOD OF FAILURE: 5-10%**
+**REVISED LIKELIHOOD OF FAILURE: 15-25%**
 
-After formal analysis:
+After deeper formal analysis:
 - Crux #1: RESOLVED via u' = (z, a_i) without b ✓
-- Crux #2: RESOLUTION PATH via Bayes' rule + A independence ✓
+  See calibration_local_input_patch.mg for coherent propagation.
 
-Both critical cruxes now have clear resolution paths.
-The remaining concerns (SW independence, union bound) are
-lower priority and likely fixable with careful bookkeeping.
+- Crux #2: REQUIRES RIGOROUS PROOF - not trivially resolved ⚠️
+  The naive "A independent of C" argument FAILS because
+  charts C include (a_i, b) which DO constrain part of A.
+  See crux2_uniqueness_sparsification_deep.mg for full analysis.
 
-The proof structure appears SOUND.
+The remaining critical question for Crux #2:
+  Does local F-structure bias global |S(F,h)| significantly?
+  This is the LOCAL-GLOBAL DECORRELATION claim.
+
+If this claim holds, the proof is likely SOUND.
+If this claim fails, there's a REAL GAP in the argument.
 
 **NEXT STEPS (CRUX-FIRST):**
 
 1. ~~Calibration structural check (Crux #1)~~ - RESOLVED ✓
    FIX: Redefine u' = (z, a_i) without b.
    Neutrality follows from marginalization over uniform b.
+   See calibration_local_input_patch.mg for full propagation.
 
-2. ~~Uniqueness-conditioning (Crux #2)~~ - RESOLUTION PATH ✓
-   APPROACH: Bayes' rule + A independence from F.
-   Core lemma: Pr[Unq | C] ≤ poly(m) · Pr[Unq]
-   Justification: A random, local charts small, uniqueness global.
+2. Uniqueness-conditioning (Crux #2) - MAIN TARGET ⚠️
 
-3. Remaining lower-priority formalizations:
-   - CRUX #3: Verify SW independence structure
-   - CRUX #4: Clean up union bound quantifiers
+   THE KEY LEMMA NEEDED (see uniqueness_sparsification_lemma.mg):
+
+   For random 3-CNF F, mask h, variable i, radius r = O(log m):
+     Pr[|S(F,h)| = k | local chart C at i] ≤ poly(m) · Pr[|S| = k]
+
+   THREE SUB-CLAIMS:
+   - Claim 1: VV layer independent of F ✓ (by construction)
+   - Claim 2: Local-global decorrelation ⚠️ (NEEDS PROOF)
+   - Claim 3: VV with one column fixed ✓ (standard analysis)
+
+   RECOMMENDED APPROACHES:
+   a) THEORETICAL: Prove Claim 2 via expansion/cavity method
+   b) EXPERIMENTAL: Test for m = 10-30, look for counterexamples
+
+3. After Crux #2: Formalize Prop A.5 (Crux #3)
+   - Verify independence after fixing W_ERM
+   - Prove product bound for per-block success
+
+4. Finally: K_poly parameter bookkeeping (Crux #4)
+   - Track |P ∘ W| vs |P| precisely
+   - Verify union bound exponents
 
 **VERIFIED FILES:**
+
+CRUX #1 (T_i preservation) - RESOLVED:
 - crux1_calibration_bug.mg (identifies T_i preservation issue)
 - crux1_attack.mg (formalizes the key question)
 - crux1_resolution_analysis.mg (proves fix via marginalization)
+- calibration_local_input_patch.mg (coherent u' = (z, a_i) fix)
+
+CRUX #2 (Uniqueness conditioning) - IN PROGRESS:
 - crux2_uniqueness_conditioning.mg (formalizes conditioning gap)
 - crux2_attack.mg (formalizes resolution strategy)
-- crux2_bayes_resolution.mg (proves Bayes' rule approach)
+- crux2_bayes_resolution.mg (initial Bayes' rule approach - INSUFFICIENT)
+- crux2_uniqueness_sparsification_deep.mg (DEEP analysis - key file)
+- uniqueness_sparsification_axioms.mg (foundational definitions)
+- uniqueness_sparsification_lemma.mg (target theorem + proof structure)
+
+CRUX #3 (SW independence) - FORMALIZED:
+- crux3_sw_independence.mg (independence structure analysis)
+
+CRUX #4 (K_poly union bound) - FORMALIZED:
+- crux4_kpoly_union_bound.mg (counting argument verification)
+
+EARLIER CONCERNS (resolved):
 - sign_invariance_resolved.mg
 - hypothesis_class_analysis.mg
 - calibration_lemma.mg
