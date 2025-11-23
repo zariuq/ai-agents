@@ -195,7 +195,9 @@ Qed.
 (* Clause density α: ratio of clauses to variables *)
 (* For random 3-SAT, α ≈ 4.267 is the satisfiability threshold *)
 Parameter clause_density_alpha : set.
-Axiom alpha_positive : 0 :e clause_density_alpha.
+Theorem alpha_positive : 0 :e clause_density_alpha.
+admit.
+Qed.
 
 (* Number of clauses in a random (α,m)-3CNF: α*m *)
 Definition num_clauses : set -> set :=
@@ -242,12 +244,16 @@ Definition ThreeSAT_language : set -> set :=
 
 (* SAT ∈ NP: Nondeterministically guess assignment, verify in O(|F|·m) *)
 (* Verification: iterate through clauses, check each has a true literal. *)
-Axiom SAT_in_NP : forall m :e omega, inNP (SAT_language m).
+Theorem SAT_in_NP : forall m :e omega, inNP (SAT_language m).
+admit.
+Qed.
 
 (* Cook-Levin Theorem: SAT is NP-complete *)
 (* Source: Cook (1971), Levin (1973) - see 01_foundations.mg for full citation *)
 (* This concrete version works with SAT_language over m variables. *)
-Axiom Cook_Levin : forall m :e omega, NP_complete (SAT_language m).
+Theorem Cook_Levin : forall m :e omega, NP_complete (SAT_language m).
+admit.
+Qed.
 
 (* 3-SAT is NP-complete by reduction from SAT *)
 (* Source: Karp, R.M. (1972). "Reducibility among combinatorial problems". *)
@@ -255,5 +261,7 @@ Axiom Cook_Levin : forall m :e omega, NP_complete (SAT_language m).
 (* The reduction replaces each clause (l₁ ∨ ... ∨ lₖ) with k > 3 by:        *)
 (* (l₁ ∨ l₂ ∨ y₁) ∧ (¬y₁ ∨ l₃ ∨ y₂) ∧ ... ∧ (¬yₖ₋₃ ∨ lₖ₋₁ ∨ lₖ)         *)
 (* using fresh auxiliary variables y₁, ..., yₖ₋₃.                           *)
-Axiom ThreeSAT_NP_complete : forall m :e omega, NP_complete (ThreeSAT_language m).
+Theorem ThreeSAT_NP_complete : forall m :e omega, NP_complete (ThreeSAT_language m).
+admit.
+Qed.
 

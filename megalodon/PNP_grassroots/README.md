@@ -5,26 +5,27 @@
 This directory contains a formalization of Ben Goertzel's P ≠ NP proof strategy
 (arXiv:2510.08814v1) in the Megalodon theorem prover for Proofgold.
 
-**Philosophy:** This formalization prioritizes clarity over completeness. We use
-axioms with citations for deep theorems rather than placeholder admits with True.
+**Philosophy:** This formalization uses `admit` for unproven theorems (deep results
+that require additional infrastructure). True foundational axioms (ZFC, excluded
+middle, choice) remain as `Axiom` in `00_preamble.mg`.
 
 ## File Structure (7 files)
 
 | File | Description | Status |
 |------|-------------|--------|
 | `00_preamble.mg` | Set theory foundations, bits, XOR, vectors | **Proven** |
-| `01_foundations.mg` | Category theory, F₂ field, complexity classes | **Proven** |
-| `02_weakness_quantale.mg` | ExtNat quantale structure | **Proven** |
-| `03_cnf_sat.mg` | CNF/SAT formalization, Cook-Levin | Axiomatized |
-| `04_masking.mg` | Mask group H_m = S_m ⋉ (Z₂)^m | Axiomatized |
-| `05_vv_isolation.mg` | Valiant-Vazirani isolation | Axiomatized |
-| `13_main_theorem.mg` | Main P ≠ NP theorem | **Proven from axioms** |
+| `01_foundations.mg` | Category theory, F₂ field, complexity classes | Partial admits |
+| `02_weakness_quantale.mg` | ExtNat quantale structure | Partial admits |
+| `03_cnf_sat.mg` | CNF/SAT formalization, Cook-Levin | Admits |
+| `04_masking.mg` | Mask group H_m = S_m ⋉ (Z₂)^m | Admits |
+| `05_vv_isolation.mg` | Valiant-Vazirani isolation | Admits |
+| `13_main_theorem.mg` | Main P ≠ NP theorem | **Proven from admits** |
 
-## Axiom Classification
+## Classification
 
-### Foundational Axioms (Cannot be eliminated)
+### True Axioms (Foundational - in 00_preamble.mg and 02_weakness_quantale.mg)
 
-These are standard set-theoretic and logical axioms:
+These are standard set-theoretic and logical axioms that cannot be eliminated:
 
 | Axiom | Source | File |
 |-------|--------|------|
@@ -34,9 +35,12 @@ These are standard set-theoretic and logical axioms:
 | Eps_i_ax (choice) | Hilbert-Bernays (1939) | `00_preamble.mg` |
 | omega_not_in_omega | Foundation axiom | `02_weakness_quantale.mg` |
 
-### Deep Theorems (Provable but complex)
+### Admits (Unproven Theorems)
 
-These are well-known results that require extensive infrastructure to formalize:
+These are theorems we assume without proof. They are well-known results that
+require extensive infrastructure to formalize, or key lemmas in the proof:
+
+**Deep Theorems (well-established results):**
 
 | Theorem | Source | File |
 |---------|--------|------|
@@ -46,17 +50,17 @@ These are well-known results that require extensive infrastructure to formalize:
 | Linear hash pairwise independence | Carter-Wegman 1979 | `05_vv_isolation.mg` |
 | K^poly chain rule, subadditivity | Li-Vitányi 2008 | `02_weakness_quantale.mg` |
 
-### Derivable Axioms (Could be proven with more infrastructure)
+**Derivable Lemmas (could be proven with more infrastructure):**
 
-| Axiom | Status | Notes |
-|-------|--------|-------|
-| Mask group axioms | Derivable | Need permutation inverse properties |
-| vv_witness_unique | Derivable | Need equip infrastructure |
-| mask_preserves_SAT | Derivable | Need semantic analysis |
+| Theorem | Notes |
+|---------|-------|
+| Mask group axioms | Need permutation inverse properties |
+| vv_witness_unique | Need equip infrastructure |
+| mask_preserves_SAT | Need semantic analysis |
 
-### Main Proof Axioms
+**Main Proof Admits:**
 
-The main theorem uses 3 key axioms:
+The main theorem uses 3 key admits:
 
 1. **self_reduction_upper_bound**: P=NP implies polytime witness extraction
 2. **tuple_incompressibility**: Lower bound on witness tuple complexity
@@ -132,7 +136,7 @@ admits (conclusions of `True`):
 - `10_switching.mg` - Switching-by-Weakness
 - `11_small_success.mg` - Per-program success bounds
 
-The mathematical content of these files is captured by the axioms in
+The mathematical content of these files is captured by the admits in
 `13_main_theorem.mg` (specifically `tuple_incompressibility` and
 `quantale_clash`).
 
