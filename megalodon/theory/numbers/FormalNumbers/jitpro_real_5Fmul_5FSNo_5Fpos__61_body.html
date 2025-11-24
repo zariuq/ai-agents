@@ -1,0 +1,54 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const omega : set
+const SNo : set prop
+const eps_ : set set
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const ordsucc : set set
+const Empty : set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.SNo x -> SNo y -> z iIn omega -> eps_ z * x < ordsucc Empty -> eps_ z * y < ordsucc Empty -> w iIn omega -> w + ordsucc Empty iIn omega -> w + ordsucc (ordsucc Empty) iIn omega -> u < x -> SNo u -> v < y -> SNo v -> SNo (eps_ z) -> SNo (eps_ (w + ordsucc Empty)) -> SNo (eps_ (w + ordsucc (ordsucc Empty))) -> (u * eps_ z * eps_ (w + ordsucc (ordsucc Empty)) + (eps_ z * eps_ (w + ordsucc (ordsucc Empty))) * v + (eps_ z * eps_ (w + ordsucc (ordsucc Empty))) * eps_ z * eps_ (w + ordsucc (ordsucc Empty))) < (eps_ (w + ordsucc (ordsucc Empty)) + eps_ (w + ordsucc (ordsucc Empty))) + eps_ (w + ordsucc Empty)
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+hyp SNo x
+hyp SNo y
+hyp z iIn omega
+hyp eps_ z * x < ordsucc Empty
+hyp eps_ z * y < ordsucc Empty
+hyp w iIn omega
+hyp w + ordsucc Empty iIn omega
+hyp w + ordsucc (ordsucc Empty) iIn omega
+hyp u < x
+hyp SNo u
+hyp v < y
+hyp SNo v
+hyp SNo (eps_ z)
+claim SNo (eps_ (w + ordsucc Empty)) -> (u * eps_ z * eps_ (w + ordsucc (ordsucc Empty)) + (eps_ z * eps_ (w + ordsucc (ordsucc Empty))) * v + (eps_ z * eps_ (w + ordsucc (ordsucc Empty))) * eps_ z * eps_ (w + ordsucc (ordsucc Empty))) < (eps_ (w + ordsucc (ordsucc Empty)) + eps_ (w + ordsucc (ordsucc Empty))) + eps_ (w + ordsucc Empty)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

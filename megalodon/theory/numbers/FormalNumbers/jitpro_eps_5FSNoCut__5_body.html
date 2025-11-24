@@ -1,0 +1,42 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+const binintersect : set set set
+axiom binintersectE2: !x:set.!y:set.!z:set.z iIn binintersect x y -> z iIn y
+axiom In_irref: !x:set.nIn x x
+axiom FalseE: ~ False
+const Sing : set set
+const Empty : set
+const SNoCut : set set set
+const Repl : set (set set) set
+const eps_ : set set
+const SNoLev : set set
+const SNoEq_ : set set set prop
+var x:set
+var y:set
+hyp !z:set.z iIn Repl x eps_ -> SNo z
+hyp SNo (SNoCut (Sing Empty) (Repl x eps_))
+hyp !z:set.z iIn Repl x eps_ -> SNoCut (Sing Empty) (Repl x eps_) < z
+hyp !z:set.SNo z -> (!w:set.w iIn Sing Empty -> w < z) -> (!w:set.w iIn Repl x eps_ -> z < w) -> Subq (SNoLev (SNoCut (Sing Empty) (Repl x eps_))) (SNoLev z) & SNoEq_ (SNoLev (SNoCut (Sing Empty) (Repl x eps_))) (SNoCut (Sing Empty) (Repl x eps_)) z
+hyp SNo y
+hyp SNoLev y iIn binintersect (SNoLev (eps_ x)) (SNoLev (SNoCut (Sing Empty) (Repl x eps_)))
+hyp y < SNoCut (Sing Empty) (Repl x eps_)
+hyp !z:set.z iIn Sing Empty -> z < y
+claim ~ !z:set.z iIn Repl x eps_ -> y < z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

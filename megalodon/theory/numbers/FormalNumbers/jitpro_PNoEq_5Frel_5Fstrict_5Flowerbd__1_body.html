@@ -1,0 +1,32 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const PNo_upc : (set (set prop) prop) set (set prop) prop
+const PNoLt : set (set prop) set (set prop) prop
+term PNo_rel_strict_lowerbd = \P:set (set prop) prop.\x:set.\p:set prop.!y:set.y iIn x -> !q:set prop.PNo_upc P y q -> PNoLt x p y q
+const PNoEq_ : set (set prop) (set prop) prop
+axiom PNoEq_sym_: !x:set.!p:set prop.!q:set prop.PNoEq_ x p q -> PNoEq_ x q p
+const ordinal : set prop
+axiom PNoEqLt_tra: !x:set.!y:set.ordinal x -> ordinal y -> !p:set prop.!q:set prop.!p2:set prop.PNoEq_ x p q -> PNoLt x q y p2 -> PNoLt x p y p2
+var P:set (set prop) prop
+var x:set
+var p:set prop
+var q:set prop
+var y:set
+var p2:set prop
+hyp ordinal x
+hyp PNoEq_ x p q
+hyp PNo_rel_strict_lowerbd P x p
+hyp y iIn x
+hyp PNo_upc P y p2
+claim ordinal y -> PNoLt x q y p2
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,37 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const bij : set set (set set) prop
+term equip = \x:set.\y:set.?f:set set.bij x y f
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+term inj = \x:set.\y:set.\f:set set.(!z:set.z iIn x -> f z iIn y) & !z:set.z iIn x -> !w:set.w iIn x -> f z = f w -> z = w
+const setminus : set set set
+axiom setminusE1: !x:set.!y:set.!z:set.z iIn setminus x y -> z iIn x
+const inv : set (set set) set set
+axiom inj_linv: !x:set.!f:set set.(!y:set.y iIn x -> !z:set.z iIn x -> f y = f z -> y = z) -> !y:set.y iIn x -> inv x f (f y) = y
+const Repl : set (set set) set
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+var x:set
+var y:set
+var f:set set
+var f2:set set
+var z:set
+var w:set
+var u:set
+var v:set
+hyp !x2:set.x2 iIn y -> !y2:set.y2 iIn y -> f2 x2 = f2 y2 -> x2 = y2
+hyp (\x2:set.Repl (setminus y (Repl (setminus x x2) \y2:set.f y2)) \y2:set.f2 y2) z = z
+hyp w = f2 v
+hyp v iIn y
+hyp u iIn z
+claim u iIn Repl (setminus y (Repl (setminus x z) f)) f2 -> inv y f2 w = inv y f2 u -> w = u
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

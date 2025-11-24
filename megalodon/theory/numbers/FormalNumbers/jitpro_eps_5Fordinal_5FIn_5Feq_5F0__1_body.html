@@ -1,0 +1,27 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const binunion : set set set
+const Sing : set set
+const Empty : set
+const Repl : set (set set) set
+const SetAdjoin : set set set
+const ordsucc : set set
+term eps_ = \x:set.binunion (Sing Empty) (Repl x \y:set.SetAdjoin (ordsucc y) (Sing (ordsucc Empty)))
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+axiom SingE: !x:set.!y:set.y iIn Sing x -> y = x
+const ordinal : set prop
+axiom tagged_not_ordinal: !x:set.~ ordinal (SetAdjoin x (Sing (ordsucc Empty)))
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+axiom FalseE: ~ False
+axiom binunionE: !x:set.!y:set.!z:set.z iIn binunion x y -> z iIn x | z iIn y
+claim !x:set.!y:set.ordinal y -> y iIn eps_ x -> y = Empty
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

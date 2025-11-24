@@ -1,0 +1,34 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const ordsucc : set set
+const Empty : set
+axiom SNo_2: SNo (ordsucc (ordsucc Empty))
+const nat_p : set prop
+const exp_SNo_nat : set set set
+axiom SNo_exp_SNo_nat: !x:set.SNo x -> !y:set.nat_p y -> SNo (exp_SNo_nat x y)
+axiom SNo_1: SNo (ordsucc Empty)
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const eps_ : set set
+axiom eps_ordsucc_half_add: !x:set.nat_p x -> eps_ (ordsucc x) + eps_ (ordsucc x) = eps_ x
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom mul_SNo_oneR: !x:set.SNo x -> x * ordsucc Empty = x
+axiom mul_SNo_distrL: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x * (y + z) = x * y + x * z
+axiom add_SNo_1_1_2: ordsucc Empty + ordsucc Empty = ordsucc (ordsucc Empty)
+axiom mul_SNo_assoc: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x * y * z = (x * y) * z
+var x:set
+hyp nat_p x
+hyp eps_ x * exp_SNo_nat (ordsucc (ordsucc Empty)) x = ordsucc Empty
+claim SNo (eps_ (ordsucc x)) -> eps_ (ordsucc x) * ordsucc (ordsucc Empty) * exp_SNo_nat (ordsucc (ordsucc Empty)) x = ordsucc Empty
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

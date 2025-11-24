@@ -1,0 +1,24 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+axiom iffI: !P:prop.!Q:prop.(P -> Q) -> (Q -> P) -> (P <-> Q)
+axiom pred_ext: !p:set prop.!q:set prop.(!x:set.p x <-> q x) -> p = q
+const Eps_i : (set prop) set
+const Empty : set
+lemma !P:prop.Eps_i (\x:set.x = Empty | P) = Empty -> Eps_i (\x:set.x != Empty | P) != Empty -> P -> (\x:set.x = Empty | P) != \x:set.x != Empty | P
+const Power : set set
+var P:prop
+hyp Eps_i (\x:set.x = Empty | P) = Empty | P
+hyp Power Empty != Empty | P
+claim Eps_i (\x:set.x != Empty | P) != Empty | P -> P | ~ P
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

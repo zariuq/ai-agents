@@ -1,0 +1,39 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+term SNo_max_of = \x:set.\y:set.y iIn x & SNo y & !z:set.z iIn x -> SNo z -> z <= y
+const bij : set set (set set) prop
+term equip = \x:set.\y:set.?f:set set.bij x y f
+const omega : set
+term finite = \x:set.?y:set.y iIn omega & equip x y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+const ordsucc : set set
+const Repl : set (set set) set
+lemma !x:set.!y:set.!f:set set.!z:set.(!w:set.w iIn y -> SNo w) -> (!w:set.w iIn y -> ?u:set.u iIn ordsucc (ordsucc x) & f u = w) -> Subq (Repl (ordsucc x) f) y -> z iIn Repl (ordsucc x) (\w:set.f w) -> SNo z -> (!w:set.w iIn Repl (ordsucc x) f -> SNo w -> w <= z) -> f (ordsucc x) iIn y -> SNo (f (ordsucc x)) -> ?w:set.SNo_max_of y w
+var x:set
+var y:set
+var f:set set
+var z:set
+hyp !w:set.w iIn y -> SNo w
+hyp !w:set.w iIn ordsucc (ordsucc x) -> f w iIn y
+hyp !w:set.w iIn y -> ?u:set.u iIn ordsucc (ordsucc x) & f u = w
+hyp Subq (Repl (ordsucc x) f) y
+hyp z iIn Repl (ordsucc x) \w:set.f w
+hyp SNo z
+hyp !w:set.w iIn Repl (ordsucc x) f -> SNo w -> w <= z
+claim f (ordsucc x) iIn y -> ?w:set.SNo_max_of y w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

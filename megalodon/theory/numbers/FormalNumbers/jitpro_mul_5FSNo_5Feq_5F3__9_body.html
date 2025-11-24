@@ -1,0 +1,51 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom SNo_mul_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x * y)
+const SNoL : set set
+const SNoR : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const minus_SNo : set set
+term - = minus_SNo
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.!x2:set.SNo x -> SNo y -> (!y2:set.y2 iIn z -> !P:prop.(!z2:set.z2 iIn SNoL x -> !w2:set.w2 iIn SNoR y -> y2 = z2 * y + x * w2 + - z2 * w2 -> P) -> (!z2:set.z2 iIn SNoR x -> !w2:set.w2 iIn SNoL y -> y2 = z2 * y + x * w2 + - z2 * w2 -> P) -> P) -> SNo (x * y) -> (!y2:set.y2 iIn SNoR x -> !z2:set.z2 iIn SNoR y -> (y2 * y + x * z2) < x * y + y2 * z2) -> (!y2:set.y2 iIn SNoL x -> !z2:set.z2 iIn SNoR y -> (x * y + y2 * z2) < y2 * y + x * z2) -> (!y2:set.y2 iIn SNoR x -> !z2:set.z2 iIn SNoL y -> (x * y + y2 * z2) < y2 * y + x * z2) -> u iIn z -> v iIn SNoR x -> x2 iIn SNoR y -> w = v * y + x * x2 + - v * x2 -> SNo v -> SNo x2 -> SNo (v * y) -> SNo (x * x2) -> w < u
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+var x2:set
+hyp SNo x
+hyp SNo y
+hyp !y2:set.y2 iIn z -> !P:prop.(!z2:set.z2 iIn SNoL x -> !w2:set.w2 iIn SNoR y -> y2 = z2 * y + x * w2 + - z2 * w2 -> P) -> (!z2:set.z2 iIn SNoR x -> !w2:set.w2 iIn SNoL y -> y2 = z2 * y + x * w2 + - z2 * w2 -> P) -> P
+hyp SNo (x * y)
+hyp !y2:set.y2 iIn SNoR x -> !z2:set.z2 iIn SNoR y -> (y2 * y + x * z2) < x * y + y2 * z2
+hyp !y2:set.y2 iIn SNoL x -> !z2:set.z2 iIn SNoR y -> (x * y + y2 * z2) < y2 * y + x * z2
+hyp !y2:set.y2 iIn SNoR x -> !z2:set.z2 iIn SNoL y -> (x * y + y2 * z2) < y2 * y + x * z2
+hyp u iIn z
+hyp v iIn SNoR x
+hyp x2 iIn SNoR y
+hyp w = v * y + x * x2 + - v * x2
+hyp SNo v
+hyp SNo x2
+claim SNo (v * y) -> w < u
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

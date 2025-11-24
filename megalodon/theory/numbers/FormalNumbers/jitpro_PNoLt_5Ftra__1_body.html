@@ -1,0 +1,45 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+term PNoLt_ = \x:set.\p:set prop.\q:set prop.?y:set.y iIn x & (PNoEq_ y p q & ~ p y & q y)
+axiom PNoEq_antimon_: !p:set prop.!q:set prop.!x:set.ordinal x -> !y:set.y iIn x -> PNoEq_ x p q -> PNoEq_ y p q
+axiom PNoEq_tra_: !x:set.!p:set prop.!q:set prop.!p2:set prop.PNoEq_ x p q -> PNoEq_ x q p2 -> PNoEq_ x p p2
+axiom iffEL: !P:prop.!Q:prop.(P <-> Q) -> P -> Q
+const PNoLt : set (set prop) set (set prop) prop
+axiom PNoLtI2: !x:set.!y:set.!p:set prop.!q:set prop.x iIn y -> PNoEq_ x p q -> q x -> PNoLt x p y q
+const binintersect : set set set
+axiom binintersectI: !x:set.!y:set.!z:set.z iIn x -> z iIn y -> z iIn binintersect x y
+axiom PNoLtI1: !x:set.!y:set.!p:set prop.!q:set prop.PNoLt_ (binintersect x y) p q -> PNoLt x p y q
+axiom ordinal_trichotomy_or: !x:set.!y:set.ordinal x -> ordinal y -> x iIn y | x = y | y iIn x
+var x:set
+var y:set
+var z:set
+var p:set prop
+var q:set prop
+var p2:set prop
+var w:set
+hyp ordinal x
+hyp ordinal y
+hyp TransSet z
+hyp PNoEq_ x p q
+hyp q x
+hyp w iIn y
+hyp w iIn z
+hyp PNoEq_ w q p2
+hyp ~ q w
+hyp p2 w
+claim ordinal w -> PNoLt x p z p2
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

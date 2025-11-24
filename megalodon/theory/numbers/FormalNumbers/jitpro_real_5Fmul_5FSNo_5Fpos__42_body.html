@@ -1,0 +1,58 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const SNo : set prop
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom SNo_mul_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x * y)
+const SNoR : set set
+const omega : set
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+const eps_ : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const minus_SNo : set set
+term - = minus_SNo
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const abs_SNo : set set
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.SNo x -> SNo y -> SNo (x * y) -> (!v:set.v iIn SNoR x -> !P:prop.(!x2:set.x2 iIn omega -> eps_ x2 <= v + - x -> P) -> P) -> (!v:set.v iIn SNoR y -> !P:prop.(!x2:set.x2 iIn omega -> eps_ x2 <= v + - y -> P) -> P) -> (!v:set.v iIn omega -> abs_SNo (z + - x * y) < eps_ v) -> SNo z -> z < x * y -> w iIn SNoR x -> u iIn SNoR y -> SNo w -> SNo u -> (z + w * u) <= w * y + x * u -> SNo (w * u) -> ~ SNo (x * u)
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+hyp SNo x
+hyp SNo y
+hyp SNo (x * y)
+hyp !v:set.v iIn SNoR x -> !P:prop.(!x2:set.x2 iIn omega -> eps_ x2 <= v + - x -> P) -> P
+hyp !v:set.v iIn SNoR y -> !P:prop.(!x2:set.x2 iIn omega -> eps_ x2 <= v + - y -> P) -> P
+hyp !v:set.v iIn omega -> abs_SNo (z + - x * y) < eps_ v
+hyp SNo z
+hyp z < x * y
+hyp w iIn SNoR x
+hyp u iIn SNoR y
+hyp SNo w
+hyp SNo u
+hyp (z + w * u) <= w * y + x * u
+claim ~ SNo (w * u)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

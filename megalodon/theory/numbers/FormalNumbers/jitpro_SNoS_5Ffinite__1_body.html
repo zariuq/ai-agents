@@ -1,0 +1,38 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const omega : set
+const equip : set set prop
+term finite = \x:set.?y:set.y iIn omega & equip x y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const nat_p : set prop
+const ordsucc : set set
+const Empty : set
+axiom nat_2: nat_p (ordsucc (ordsucc Empty))
+axiom nat_p_trans: !x:set.nat_p x -> !y:set.y iIn x -> nat_p y
+const exp_SNo_nat : set set set
+axiom nat_exp_SNo_nat: !x:set.nat_p x -> !y:set.nat_p y -> nat_p (exp_SNo_nat x y)
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+const Sep : set (set prop) set
+const SNoS_ : set set
+const SNoLev : set set
+axiom SNoS_omega_Lev_equip: !x:set.nat_p x -> equip (Sep (SNoS_ omega) \y:set.SNoLev y = x) (exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+const famunion : set (set set) set
+axiom famunion_nat_finite: !f:set set.!x:set.nat_p x -> (!y:set.y iIn x -> finite (f y)) -> finite (famunion x f)
+const ordinal : set prop
+var x:set
+hyp x iIn omega
+hyp nat_p x
+hyp ordinal x
+claim SNoS_ x = famunion x (\y:set.Sep (SNoS_ omega) \z:set.SNoLev z = y) -> finite (SNoS_ x)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

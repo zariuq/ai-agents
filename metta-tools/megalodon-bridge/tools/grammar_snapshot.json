@@ -1,0 +1,482 @@
+{
+  "docitems": [
+    {
+      "name": "Author",
+      "payload": "string * string list"
+    },
+    {
+      "name": "Title",
+      "payload": "string"
+    },
+    {
+      "name": "Salt",
+      "payload": "string"
+    },
+    {
+      "name": "Opaque",
+      "payload": "string list"
+    },
+    {
+      "name": "Transparent",
+      "payload": "string list"
+    },
+    {
+      "name": "Treasure",
+      "payload": "string"
+    },
+    {
+      "name": "ShowProofTerms",
+      "payload": "bool"
+    },
+    {
+      "name": "Section",
+      "payload": "string"
+    },
+    {
+      "name": "End",
+      "payload": "string"
+    },
+    {
+      "name": "VarDecl",
+      "payload": "string list * asckind * ltree"
+    },
+    {
+      "name": "LetDecl",
+      "payload": "string * (asckind * ltree) option * ltree"
+    },
+    {
+      "name": "HypDecl",
+      "payload": "string * ltree"
+    },
+    {
+      "name": "PostInfixDecl",
+      "payload": "string * ltree * int * picase"
+    },
+    {
+      "name": "PrefixDecl",
+      "payload": "string * ltree * int"
+    },
+    {
+      "name": "BinderDecl",
+      "payload": "bool * bool * string * ltree * ltree option"
+    },
+    {
+      "name": "NotationDecl",
+      "payload": "string * string list"
+    },
+    {
+      "name": "UnicodeDecl",
+      "payload": "string * string list"
+    },
+    {
+      "name": "SubscriptDecl",
+      "payload": "string"
+    },
+    {
+      "name": "SuperscriptDecl",
+      "payload": "string"
+    },
+    {
+      "name": "ParamDecl",
+      "payload": "string * ltree"
+    },
+    {
+      "name": "DefDecl",
+      "payload": "string * ltree option * ltree"
+    },
+    {
+      "name": "ParamHash",
+      "payload": "string * string * string option"
+    },
+    {
+      "name": "AxDecl",
+      "payload": "string * ltree"
+    },
+    {
+      "name": "ThmDecl",
+      "payload": "string * string * ltree"
+    }
+  ],
+  "pftacitems": [
+    {
+      "name": "PfStruct",
+      "payload": "int"
+    },
+    {
+      "name": "Exact",
+      "payload": "ltree"
+    },
+    {
+      "name": "LetTac",
+      "payload": "string list * ltree option"
+    },
+    {
+      "name": "AssumeTac",
+      "payload": "string list * ltree option"
+    },
+    {
+      "name": "SetTac",
+      "payload": "string * ltree option * ltree"
+    },
+    {
+      "name": "ApplyTac",
+      "payload": "ltree"
+    },
+    {
+      "name": "ClaimTac",
+      "payload": "string * ltree"
+    },
+    {
+      "name": "ProveTac",
+      "payload": "ltree * ltree list"
+    },
+    {
+      "name": "CasesTac",
+      "payload": "ltree * (string * ltree) list list"
+    },
+    {
+      "name": "WitnessTac",
+      "payload": "ltree"
+    },
+    {
+      "name": "RewriteTac",
+      "payload": "bool * ltree * int list"
+    },
+    {
+      "name": "SpecialTac",
+      "payload": "string * ltree list"
+    },
+    {
+      "name": "Qed",
+      "payload": null
+    },
+    {
+      "name": "Admitted",
+      "payload": null
+    },
+    {
+      "name": "Admit",
+      "payload": null
+    },
+    {
+      "name": "Aby",
+      "payload": "string list"
+    }
+  ],
+  "precedence_seeds": {
+    "disallowedprefixpriorities": [
+      {
+        "value": 800
+      },
+      {
+        "value": 790
+      }
+    ],
+    "penv_binder": [
+      {
+        "name": "fun",
+        "value": "DARR"
+      },
+      {
+        "name": "forall",
+        "value": "COMMA"
+      }
+    ],
+    "penv_postinfop": [
+      {
+        "name": "->",
+        "value": "(800,InfixRight)"
+      },
+      {
+        "name": "^",
+        "value": "(790,InfixNone)"
+      }
+    ],
+    "rightinfixpriorities": [
+      {
+        "value": 800
+      },
+      {
+        "value": 790
+      }
+    ]
+  },
+  "source": {
+    "parser": "/home/zar/claude/megalodon/src/parser.ml",
+    "syntax": "/home/zar/claude/megalodon/src/syntax.mli"
+  },
+  "tokens": [
+    {
+      "name": "STRING",
+      "payload": "string"
+    },
+    {
+      "name": "QUESTIONSTRING",
+      "payload": "string"
+    },
+    {
+      "name": "NAM",
+      "payload": "string"
+    },
+    {
+      "name": "NUM",
+      "payload": "bool * string * string option * string option"
+    },
+    {
+      "name": "LPAREN",
+      "payload": null
+    },
+    {
+      "name": "RPAREN",
+      "payload": null
+    },
+    {
+      "name": "COMMA",
+      "payload": null
+    },
+    {
+      "name": "COLON",
+      "payload": null
+    },
+    {
+      "name": "DARR",
+      "payload": null
+    },
+    {
+      "name": "DEQ",
+      "payload": null
+    },
+    {
+      "name": "IN",
+      "payload": null
+    },
+    {
+      "name": "MEM",
+      "payload": null
+    },
+    {
+      "name": "SUBEQ",
+      "payload": null
+    },
+    {
+      "name": "VBAR",
+      "payload": null
+    },
+    {
+      "name": "LCBRACE",
+      "payload": null
+    },
+    {
+      "name": "RCBRACE",
+      "payload": null
+    },
+    {
+      "name": "LBRACK",
+      "payload": null
+    },
+    {
+      "name": "RBRACK",
+      "payload": null
+    },
+    {
+      "name": "AT",
+      "payload": null
+    },
+    {
+      "name": "IF",
+      "payload": null
+    },
+    {
+      "name": "THEN",
+      "payload": null
+    },
+    {
+      "name": "ELSE",
+      "payload": null
+    },
+    {
+      "name": "SEMICOLON",
+      "payload": null
+    },
+    {
+      "name": "BACKSLASH",
+      "payload": null
+    },
+    {
+      "name": "DOLLAR",
+      "payload": null
+    },
+    {
+      "name": "DOT",
+      "payload": null
+    },
+    {
+      "name": "OPENCOM",
+      "payload": null
+    },
+    {
+      "name": "CLOSECOM",
+      "payload": null
+    },
+    {
+      "name": "SALT",
+      "payload": null
+    },
+    {
+      "name": "OPAQUE",
+      "payload": null
+    },
+    {
+      "name": "TRANSPARENT",
+      "payload": null
+    },
+    {
+      "name": "TREASURE",
+      "payload": null
+    },
+    {
+      "name": "TITLE",
+      "payload": null
+    },
+    {
+      "name": "AUTHOR",
+      "payload": null
+    },
+    {
+      "name": "ADMITTED",
+      "payload": null
+    },
+    {
+      "name": "ADMIT",
+      "payload": null
+    },
+    {
+      "name": "ABY",
+      "payload": null
+    },
+    {
+      "name": "SECTION",
+      "payload": null
+    },
+    {
+      "name": "END",
+      "payload": null
+    },
+    {
+      "name": "LETDEC",
+      "payload": null
+    },
+    {
+      "name": "STYPE",
+      "payload": null
+    },
+    {
+      "name": "INDTYPE",
+      "payload": null
+    },
+    {
+      "name": "PROPTYPE",
+      "payload": null
+    },
+    {
+      "name": "VAR",
+      "payload": null
+    },
+    {
+      "name": "HYP",
+      "payload": null
+    },
+    {
+      "name": "PARAM",
+      "payload": null
+    },
+    {
+      "name": "AXIOM",
+      "payload": null
+    },
+    {
+      "name": "PREFIX",
+      "payload": null
+    },
+    {
+      "name": "POSTFIX",
+      "payload": null
+    },
+    {
+      "name": "INFIX",
+      "payload": null
+    },
+    {
+      "name": "BINDER",
+      "payload": null
+    },
+    {
+      "name": "BINDERPLUS",
+      "payload": null
+    },
+    {
+      "name": "NOTATION",
+      "payload": null
+    },
+    {
+      "name": "UNICODE",
+      "payload": null
+    },
+    {
+      "name": "SUPERSCRIPT",
+      "payload": null
+    },
+    {
+      "name": "SUBSCRIPT",
+      "payload": null
+    },
+    {
+      "name": "DEF",
+      "payload": null
+    },
+    {
+      "name": "THEOREM",
+      "payload": "string"
+    },
+    {
+      "name": "CONJECTURE",
+      "payload": null
+    },
+    {
+      "name": "LET",
+      "payload": null
+    },
+    {
+      "name": "ASSUME",
+      "payload": null
+    },
+    {
+      "name": "APPLY",
+      "payload": null
+    },
+    {
+      "name": "CLAIM",
+      "payload": null
+    },
+    {
+      "name": "PROVE",
+      "payload": null
+    },
+    {
+      "name": "EXACT",
+      "payload": null
+    },
+    {
+      "name": "QED",
+      "payload": null
+    },
+    {
+      "name": "TEXT",
+      "payload": null
+    },
+    {
+      "name": "SPECCOMM",
+      "payload": "string"
+    }
+  ]
+}

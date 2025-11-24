@@ -1,0 +1,53 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const ordinal : set prop
+const omega : set
+axiom omega_ordinal: ordinal omega
+const SNo : set prop
+const eps_ : set set
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const Empty : set
+const abs_SNo : set set
+axiom pos_abs_SNo: !x:set.Empty < x -> abs_SNo x = x
+const nat_p : set prop
+axiom omega_nat_p: !x:set.x iIn omega -> nat_p x
+const ordsucc : set set
+axiom ordinal_ordsucc: !x:set.ordinal x -> ordinal (ordsucc x)
+axiom ordsuccI2: !x:set.x iIn ordsucc x
+const SNo_ : set set prop
+const SNoS_ : set set
+axiom SNoS_I: !x:set.ordinal x -> !y:set.!z:set.z iIn x -> SNo_ z y -> y iIn SNoS_ x
+axiom SNo_pos_eps_Lt: !x:set.nat_p x -> !y:set.y iIn SNoS_ (ordsucc x) -> Empty < y -> eps_ x < y
+axiom SNoLt_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x < y -> y < z -> x < z
+axiom SNoLt_irref: !x:set.~ x < x
+const SNoLev : set set
+axiom SNoS_E2: !x:set.ordinal x -> !y:set.y iIn SNoS_ x -> !P:prop.(SNoLev y iIn x -> ordinal (SNoLev y) -> SNo y -> SNo_ (SNoLev y) y -> P) -> P
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const minus_SNo : set set
+term - = minus_SNo
+lemma !x:set.!y:set.(!z:set.z iIn omega -> abs_SNo (y + - x) < eps_ z) -> Empty < y + - x -> SNoLev (y + - x) iIn omega -> abs_SNo (y + - x) = y + - x -> (y + - x) < eps_ (SNoLev (y + - x))
+var x:set
+var y:set
+hyp x iIn SNoS_ omega
+hyp y iIn SNoS_ omega
+hyp !z:set.z iIn omega -> abs_SNo (y + - x) < eps_ z
+hyp Empty < y + - x
+claim ~ y + - x iIn SNoS_ omega
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

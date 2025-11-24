@@ -1,0 +1,36 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo_rec_ii : (set (set set set) set set) set set set
+const If_i : prop set set set
+const SNo : set prop
+const SNo_rec_i : (set (set set) set) set set
+const Empty : set
+term SNo_rec2 = \P:set set (set set set) set.SNo_rec_ii \x:set.\g:set set set.\y:set.If_i (SNo y) (SNo_rec_i (\z:set.\f:set set.P x z \w:set.\u:set.If_i (w = x) (f u) (g w u)) y) Empty
+const ordinal : set prop
+const SNoLev : set set
+axiom SNoLev_ordinal: !x:set.SNo x -> ordinal (SNoLev x)
+const ordsucc : set set
+axiom ordinal_ordsucc: !x:set.ordinal x -> ordinal (ordsucc x)
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoS_ : set set
+axiom SNoS_SNoLev: !x:set.SNo x -> x iIn SNoS_ (ordsucc (SNoLev x))
+var P:set set (set set set) set
+var x:set
+var g:set set set
+var h:set set set
+var y:set
+hyp !z:set.SNo z -> !w:set.SNo w -> !g2:set set set.!h2:set set set.(!u:set.u iIn SNoS_ (SNoLev z) -> !v:set.SNo v -> g2 u v = h2 u v) -> (!u:set.u iIn SNoS_ (SNoLev w) -> g2 z u = h2 z u) -> P z w g2 = P z w h2
+hyp SNo x
+hyp !z:set.z iIn SNoS_ (SNoLev x) -> g z = h z
+hyp SNo y
+claim (!z:set.ordinal z -> !w:set.w iIn SNoS_ z -> SNo_rec_i (\u:set.\f:set set.P x u \v:set.\x2:set.If_i (v = x) (f x2) (g v x2)) w = SNo_rec_i (\u:set.\f:set set.P x u \v:set.\x2:set.If_i (v = x) (f x2) (h v x2)) w) -> SNo_rec_i (\z:set.\f:set set.P x z \w:set.\u:set.If_i (w = x) (f u) (g w u)) y = SNo_rec_i (\z:set.\f:set set.P x z \w:set.\u:set.If_i (w = x) (f u) (h w u)) y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,35 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const ordinal : set prop
+const PNo_strict_imv : (set (set prop) prop) (set (set prop) prop) set (set prop) prop
+term PNo_least_rep = \P:set (set prop) prop.\Q:set (set prop) prop.\x:set.\p:set prop.ordinal x & PNo_strict_imv P Q x p & !y:set.y iIn x -> !q:set prop.~ PNo_strict_imv P Q y q
+term PNo_least_rep2 = \P:set (set prop) prop.\Q:set (set prop) prop.\x:set.\p:set prop.PNo_least_rep P Q x p & !y:set.nIn y x -> ~ p y
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+axiom iffI: !P:prop.!Q:prop.(P -> Q) -> (Q -> P) -> (P <-> Q)
+axiom PNoEq_strict_imv: !P:set (set prop) prop.!Q:set (set prop) prop.!x:set.ordinal x -> !p:set prop.!q:set prop.PNoEq_ x p q -> PNo_strict_imv P Q x p -> PNo_strict_imv P Q x q
+const PNoLt_pwise : (set (set prop) prop) (set (set prop) prop) prop
+axiom PNo_strict_imv_pred_eq: !P:set (set prop) prop.!Q:set (set prop) prop.PNoLt_pwise P Q -> !x:set.ordinal x -> !p:set prop.!q:set prop.PNo_least_rep P Q x p -> PNo_strict_imv P Q x q -> !y:set.y iIn x -> (p y <-> q y)
+axiom FalseE: ~ False
+axiom xm: !P:prop.P | ~ P
+axiom pred_ext: !p:set prop.!q:set prop.(!x:set.p x <-> q x) -> p = q
+const PNo_lenbdd : set (set (set prop) prop) prop
+var P:set (set prop) prop
+var Q:set (set prop) prop
+var x:set
+hyp PNoLt_pwise P Q
+hyp ordinal x
+hyp PNo_lenbdd x P
+hyp PNo_lenbdd x Q
+claim (?y:set.ordinal y & (?p:set prop.PNo_strict_imv P Q y p) & !z:set.z iIn y -> ~ ?p:set prop.PNo_strict_imv P Q z p) -> ?y:set.(?p:set prop.PNo_least_rep2 P Q y p) & !p:set prop.!q:set prop.PNo_least_rep2 P Q y p -> PNo_least_rep2 P Q y q -> p = q
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

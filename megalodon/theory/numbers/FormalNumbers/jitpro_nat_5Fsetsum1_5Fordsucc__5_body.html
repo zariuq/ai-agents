@@ -1,0 +1,34 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const nat_p : set prop
+const Empty : set
+const ordsucc : set set
+axiom nat_0_in_ordsucc: !x:set.nat_p x -> Empty iIn ordsucc x
+axiom nat_ordsucc_in_ordsucc: !x:set.nat_p x -> !y:set.y iIn x -> ordsucc y iIn ordsucc x
+axiom exandE_i: !p:set prop.!q:set prop.(?x:set.p x & q x) -> !P:prop.(!x:set.p x -> q x -> P) -> P
+const Inj1 : set set
+axiom Inj1E: !x:set.!y:set.y iIn Inj1 x -> y = Empty | ?z:set.z iIn x & y = Inj1 z
+axiom nat_p_trans: !x:set.nat_p x -> !y:set.y iIn x -> nat_p y
+axiom Inj1I1: !x:set.Empty iIn Inj1 x
+axiom ordsuccI2: !x:set.x iIn ordsucc x
+axiom nat_inv: !x:set.nat_p x -> x = Empty | ?y:set.nat_p y & x = ordsucc y
+axiom ordsuccE: !x:set.!y:set.y iIn ordsucc x -> y iIn x | y = x
+axiom set_ext: !x:set.!y:set.Subq x y -> Subq y x -> x = y
+axiom nat_complete_ind: !p:set prop.(!x:set.nat_p x -> (!y:set.y iIn x -> p y) -> p x) -> !x:set.nat_p x -> p x
+const setsum : set set set
+lemma (!x:set.nat_p x -> Inj1 x = ordsucc x) -> !x:set.nat_p x -> setsum (ordsucc Empty) x = ordsucc x
+lemma !x:set.!y:set.!z:set.nat_p x -> (!w:set.w iIn x -> Inj1 w = ordsucc w) -> y iIn x -> y = ordsucc z -> z iIn y -> ordsucc z iIn Inj1 x
+lemma !x:set.!y:set.(!z:set.z iIn x -> Inj1 z = ordsucc z) -> x = ordsucc y -> y iIn x -> ordsucc y iIn Inj1 x
+claim !x:set.nat_p x -> setsum (ordsucc Empty) x = ordsucc x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

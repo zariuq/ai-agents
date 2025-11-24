@@ -1,0 +1,59 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+const minus_SNo : set set
+term - = minus_SNo
+axiom SNo_minus_SNo: !x:set.SNo x -> SNo - x
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const Empty : set
+const ordsucc : set set
+const Sep : set (set prop) set
+const SNoS_ : set set
+const omega : set
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const SNoCut : set set set
+const eps_ : set set
+const abs_SNo : set set
+lemma !x:set.!y:set.!z:set.Empty < x -> x < ordsucc Empty -> SNo x -> (!w:set.w iIn Sep (SNoS_ omega) (\u:set.x * u < ordsucc Empty) -> w < SNoCut (Sep (SNoS_ omega) \u:set.x * u < ordsucc Empty) (Sep (SNoS_ omega) \u:set.ordsucc Empty < x * u)) -> (!w:set.w iIn Sep (SNoS_ omega) (\u:set.ordsucc Empty < x * u) -> SNoCut (Sep (SNoS_ omega) \u:set.x * u < ordsucc Empty) (Sep (SNoS_ omega) \u:set.ordsucc Empty < x * u) < w) -> SNo (SNoCut (Sep (SNoS_ omega) \w:set.x * w < ordsucc Empty) (Sep (SNoS_ omega) \w:set.ordsucc Empty < x * w)) -> SNo (x * SNoCut (Sep (SNoS_ omega) \w:set.x * w < ordsucc Empty) (Sep (SNoS_ omega) \w:set.ordsucc Empty < x * w)) -> SNo (x * SNoCut (Sep (SNoS_ omega) \w:set.x * w < ordsucc Empty) (Sep (SNoS_ omega) \w:set.ordsucc Empty < x * w)) -> y iIn omega -> z iIn SNoS_ omega -> z < SNoCut (Sep (SNoS_ omega) \w:set.x * w < ordsucc Empty) (Sep (SNoS_ omega) \w:set.ordsucc Empty < x * w) -> SNoCut (Sep (SNoS_ omega) \w:set.x * w < ordsucc Empty) (Sep (SNoS_ omega) \w:set.ordsucc Empty < x * w) < z + eps_ (ordsucc y) -> SNo z -> SNo (x * z) -> SNo (eps_ (ordsucc y)) -> SNo (x * eps_ (ordsucc y)) -> SNo (z + eps_ (ordsucc y)) -> SNo (ordsucc Empty + - x * z) -> SNo (x * z + - x * SNoCut (Sep (SNoS_ omega) \w:set.x * w < ordsucc Empty) (Sep (SNoS_ omega) \w:set.ordsucc Empty < x * w)) -> abs_SNo (ordsucc Empty + - x * SNoCut (Sep (SNoS_ omega) \w:set.x * w < ordsucc Empty) (Sep (SNoS_ omega) \w:set.ordsucc Empty < x * w)) < eps_ y
+var x:set
+var y:set
+var z:set
+hyp Empty < x
+hyp x < ordsucc Empty
+hyp SNo x
+hyp !w:set.w iIn Sep (SNoS_ omega) (\u:set.x * u < ordsucc Empty) -> w < SNoCut (Sep (SNoS_ omega) \u:set.x * u < ordsucc Empty) (Sep (SNoS_ omega) \u:set.ordsucc Empty < x * u)
+hyp !w:set.w iIn Sep (SNoS_ omega) (\u:set.ordsucc Empty < x * u) -> SNoCut (Sep (SNoS_ omega) \u:set.x * u < ordsucc Empty) (Sep (SNoS_ omega) \u:set.ordsucc Empty < x * u) < w
+hyp SNo (SNoCut (Sep (SNoS_ omega) \w:set.x * w < ordsucc Empty) (Sep (SNoS_ omega) \w:set.ordsucc Empty < x * w))
+hyp SNo (x * SNoCut (Sep (SNoS_ omega) \w:set.x * w < ordsucc Empty) (Sep (SNoS_ omega) \w:set.ordsucc Empty < x * w))
+hyp SNo (x * SNoCut (Sep (SNoS_ omega) \w:set.x * w < ordsucc Empty) (Sep (SNoS_ omega) \w:set.ordsucc Empty < x * w))
+hyp y iIn omega
+hyp z iIn SNoS_ omega
+hyp z < SNoCut (Sep (SNoS_ omega) \w:set.x * w < ordsucc Empty) (Sep (SNoS_ omega) \w:set.ordsucc Empty < x * w)
+hyp SNoCut (Sep (SNoS_ omega) \w:set.x * w < ordsucc Empty) (Sep (SNoS_ omega) \w:set.ordsucc Empty < x * w) < z + eps_ (ordsucc y)
+hyp SNo z
+hyp SNo (x * z)
+hyp SNo (eps_ (ordsucc y))
+hyp SNo (x * eps_ (ordsucc y))
+hyp SNo (z + eps_ (ordsucc y))
+claim SNo (ordsucc Empty + - x * z) -> abs_SNo (ordsucc Empty + - x * SNoCut (Sep (SNoS_ omega) \w:set.x * w < ordsucc Empty) (Sep (SNoS_ omega) \w:set.ordsucc Empty < x * w)) < eps_ y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

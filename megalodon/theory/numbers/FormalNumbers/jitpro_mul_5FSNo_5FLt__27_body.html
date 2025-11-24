@@ -1,0 +1,49 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoR : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.SNo (x * y) -> SNo (z * y) -> SNo (x * w) -> SNo (z * w) -> (!v:set.v iIn SNoR z -> !x2:set.x2 iIn SNoR w -> (v * w + z * x2) < z * w + v * x2) -> SNo (z * y + x * w) -> SNo (x * y + z * w) -> u iIn SNoR z -> SNo (u * y) -> SNo (u * w) -> SNo (z * w + u * y) -> SNo (u * w + x * y) -> SNo (x * w + u * y) -> SNo (u * w + z * y) -> y iIn SNoR w -> (x * w + u * y) < u * w + x * y -> (u * w + z * y) < z * w + u * y -> (z * y + x * w) < x * y + z * w
+const SNoL : set set
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+hyp SNo (x * y)
+hyp SNo (z * y)
+hyp SNo (x * w)
+hyp !v:set.v iIn SNoL x -> !x2:set.x2 iIn SNoR w -> (x * w + v * x2) < v * w + x * x2
+hyp SNo (z * w)
+hyp !v:set.v iIn SNoR z -> !x2:set.x2 iIn SNoR w -> (v * w + z * x2) < z * w + v * x2
+hyp SNo (z * y + x * w)
+hyp SNo (x * y + z * w)
+hyp u iIn SNoL x
+hyp u iIn SNoR z
+hyp SNo (u * y)
+hyp SNo (u * w)
+hyp SNo (z * w + u * y)
+hyp SNo (u * w + x * y)
+hyp SNo (x * w + u * y)
+hyp SNo (u * w + z * y)
+hyp y iIn SNoR w
+claim (x * w + u * y) < u * w + x * y -> (z * y + x * w) < x * y + z * w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

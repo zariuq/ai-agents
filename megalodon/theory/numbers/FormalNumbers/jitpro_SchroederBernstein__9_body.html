@@ -1,0 +1,24 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const bij : set set (set set) prop
+term equip = \x:set.\y:set.?f:set set.bij x y f
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+term inj = \x:set.\y:set.\f:set set.(!z:set.z iIn x -> f z iIn y) & !z:set.z iIn x -> !w:set.w iIn x -> f z = f w -> z = w
+const setminus : set set set
+const Power : set set
+axiom setminus_In_Power: !x:set.!y:set.setminus x y iIn Power x
+const Repl : set (set set) set
+axiom image_In_Power: !x:set.!y:set.!f:set set.(!z:set.z iIn x -> f z iIn y) -> !z:set.z iIn Power x -> Repl z f iIn Power y
+lemma !x:set.!y:set.!f:set set.!f2:set set.(!z:set.z iIn x -> f z iIn y) -> (!z:set.z iIn x -> !w:set.w iIn x -> f z = f w -> z = w) -> (!z:set.z iIn y -> f2 z iIn x) -> (!z:set.z iIn y -> !w:set.w iIn y -> f2 z = f2 w -> z = w) -> (!z:set.z iIn Power x -> Repl (setminus y (Repl (setminus x z) f)) f2 iIn Power x) -> equip x y
+claim !x:set.!y:set.!f:set set.!f2:set set.inj x y f -> inj y x f2 -> equip x y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

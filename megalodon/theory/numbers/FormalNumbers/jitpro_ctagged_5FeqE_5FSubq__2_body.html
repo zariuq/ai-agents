@@ -1,0 +1,35 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const binunion : set set set
+const Repl : set (set set) set
+const Sing : set set
+term SetAdjoin = \x:set.\y:set.binunion x (Sing y)
+const ordsucc : set set
+const Empty : set
+term SNoElts_ = \x:set.binunion x (Repl x \y:set.SetAdjoin y (Sing (ordsucc Empty)))
+term SNoElts_ = \x:set.binunion x (Repl x \y:set.SetAdjoin y (Sing (ordsucc Empty)))
+term SNo_ = \x:set.\y:set.Subq y (SNoElts_ x) & !z:set.z iIn x -> ~(SetAdjoin z (Sing (ordsucc Empty)) iIn y <-> z iIn y)
+const ordinal : set prop
+lemma !x:set.!y:set.Sing (ordsucc (ordsucc Empty)) iIn x -> x = SetAdjoin y (Sing (ordsucc Empty)) -> ordinal y -> ~ Sing (ordsucc (ordsucc Empty)) iIn SetAdjoin y (Sing (ordsucc Empty))
+const SNoLev : set set
+var x:set
+var y:set
+var z:set
+hyp Sing (ordsucc (ordsucc Empty)) iIn y
+hyp ordinal (SNoLev x)
+hyp z iIn SNoLev x
+hyp y = SetAdjoin z (Sing (ordsucc Empty))
+claim ~ ordinal z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

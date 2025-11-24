@@ -1,0 +1,5 @@
+(Parameter y98 (-> set prop))
+(Definition z26 prop (-> ((Q15 (A2 A15)) (-> (z94 y39) x7)) ((forall ((B94 set)) B96) (forall ((A19 prop)) z83))))
+(Parameter baz80 (-> set prop))
+(Definition bar17 (-> set set) y31)
+(Definition baz21 prop (-> foo58 ((((forall (-> ((z78 :) set) prop)) ,) (forall ((x63 (-> set prop))) A40)) B15)))

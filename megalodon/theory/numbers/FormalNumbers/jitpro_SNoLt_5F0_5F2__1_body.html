@@ -1,0 +1,23 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const ordinal : set prop
+const ordsucc : set set
+const Empty : set
+axiom ordinal_2: ordinal (ordsucc (ordsucc Empty))
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+axiom In_0_2: Empty iIn ordsucc (ordsucc Empty)
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom ordinal_In_SNoLt: !x:set.ordinal x -> !y:set.y iIn x -> y < x
+claim Empty < ordsucc (ordsucc Empty)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

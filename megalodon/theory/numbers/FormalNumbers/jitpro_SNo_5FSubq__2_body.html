@@ -1,0 +1,37 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+const binunion : set set set
+const Repl : set (set set) set
+const SetAdjoin : set set set
+const Sing : set set
+const ordsucc : set set
+const Empty : set
+term SNoElts_ = \x:set.binunion x (Repl x \y:set.SetAdjoin y (Sing (ordsucc Empty)))
+term SNo_ = \x:set.\y:set.Subq y (SNoElts_ x) & !z:set.z iIn x -> ~(SetAdjoin z (Sing (ordsucc Empty)) iIn y <-> z iIn y)
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+axiom binunionE: !x:set.!y:set.!z:set.z iIn binunion x y -> z iIn x | z iIn y
+const SNoLev : set set
+lemma !x:set.!y:set.!z:set.!w:set.Subq (SNoLev x) (SNoLev y) -> (!u:set.u iIn SNoLev x -> (u iIn x <-> u iIn y)) -> (!u:set.u iIn SNoLev x -> ~(SetAdjoin u (Sing (ordsucc Empty)) iIn x <-> u iIn x)) -> (!u:set.u iIn SNoLev y -> ~(SetAdjoin u (Sing (ordsucc Empty)) iIn y <-> u iIn y)) -> z iIn x -> w iIn SNoLev x -> z = SetAdjoin w (Sing (ordsucc Empty)) -> w iIn SNoLev y -> z iIn y
+var x:set
+var y:set
+var z:set
+hyp Subq (SNoLev x) (SNoLev y)
+hyp !w:set.w iIn SNoLev x -> (w iIn x <-> w iIn y)
+hyp Subq x (SNoElts_ (SNoLev x))
+hyp !w:set.w iIn SNoLev x -> ~(SetAdjoin w (Sing (ordsucc Empty)) iIn x <-> w iIn x)
+hyp !w:set.w iIn SNoLev y -> ~(SetAdjoin w (Sing (ordsucc Empty)) iIn y <-> w iIn y)
+hyp z iIn x
+claim z iIn binunion (SNoLev x) (Repl (SNoLev x) \w:set.SetAdjoin w (Sing (ordsucc Empty))) -> z iIn y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

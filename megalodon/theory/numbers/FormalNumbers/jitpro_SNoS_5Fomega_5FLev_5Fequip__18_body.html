@@ -1,0 +1,61 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const bij : set set (set set) prop
+term equip = \x:set.\y:set.?f:set set.bij x y f
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term nIn = \x:set.\y:set.~ x iIn y
+term SNoEq_ = \x:set.\y:set.\z:set.PNoEq_ x (\w:set.w iIn y) \w:set.w iIn z
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom SNoLt_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x < y -> y < z -> x < z
+const ordinal : set prop
+axiom ordinal_SNoLt_In: !x:set.!y:set.ordinal x -> ordinal y -> x < y -> x iIn y
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_SNo_ordinal_ordinal: !x:set.ordinal x -> !y:set.ordinal y -> ordinal (x + y)
+axiom xm: !P:prop.P | ~ P
+const ordsucc : set set
+axiom ordsuccI2: !x:set.x iIn ordsucc x
+const nat_p : set prop
+axiom nat_p_trans: !x:set.nat_p x -> !y:set.y iIn x -> nat_p y
+axiom bijI: !x:set.!y:set.!f:set set.(!z:set.z iIn x -> f z iIn y) -> (!z:set.z iIn x -> !w:set.w iIn x -> f z = f w -> z = w) -> (!z:set.z iIn y -> ?w:set.w iIn x & f w = z) -> bij x y f
+const exp_SNo_nat : set set set
+const Empty : set
+const Sep : set (set prop) set
+const SNoS_ : set set
+const omega : set
+const SNoLev : set set
+const binintersect : set set set
+const SNoElts_ : set set
+lemma !x:set.!f:set set.!f2:set set.!y:set.!z:set.SNo (exp_SNo_nat (ordsucc (ordsucc Empty)) x) -> (!w:set.w iIn Sep (SNoS_ omega) (\u:set.SNoLev u = x) -> !u:set.u iIn Sep (SNoS_ omega) (\v:set.SNoLev v = x) -> f w = f u -> w = u) -> (!w:set.x iIn w -> f2 w = f (binintersect w (SNoElts_ x))) -> (!w:set.nIn x w -> f2 w = exp_SNo_nat (ordsucc (ordsucc Empty)) x + f (binintersect w (SNoElts_ x))) -> SNo y -> SNoLev y = ordsucc x -> binintersect y (SNoElts_ x) iIn Sep (SNoS_ omega) (\w:set.SNoLev w = x) -> nat_p (f (binintersect y (SNoElts_ x))) -> SNo (f (binintersect y (SNoElts_ x))) -> f (binintersect y (SNoElts_ x)) < exp_SNo_nat (ordsucc (ordsucc Empty)) x -> SNo z -> SNoLev z = ordsucc x -> binintersect z (SNoElts_ x) iIn Sep (SNoS_ omega) (\w:set.SNoLev w = x) -> nat_p (f (binintersect z (SNoElts_ x))) -> SNo (f (binintersect z (SNoElts_ x))) -> f (binintersect z (SNoElts_ x)) < exp_SNo_nat (ordsucc (ordsucc Empty)) x -> x iIn SNoLev y -> f2 y = f2 z -> y = z
+lemma !x:set.!f:set set.!f2:set set.!y:set.nat_p x -> nat_p (exp_SNo_nat (ordsucc (ordsucc Empty)) x) -> SNo (exp_SNo_nat (ordsucc (ordsucc Empty)) x) -> nat_p (exp_SNo_nat (ordsucc (ordsucc Empty)) x + exp_SNo_nat (ordsucc (ordsucc Empty)) x) -> (!z:set.z iIn exp_SNo_nat (ordsucc (ordsucc Empty)) x -> ?w:set.w iIn Sep (SNoS_ omega) (\u:set.SNoLev u = x) & f w = z) -> (!z:set.x iIn z -> f2 z = f (binintersect z (SNoElts_ x))) -> (!z:set.nIn x z -> f2 z = exp_SNo_nat (ordsucc (ordsucc Empty)) x + f (binintersect z (SNoElts_ x))) -> y iIn exp_SNo_nat (ordsucc (ordsucc Empty)) x + exp_SNo_nat (ordsucc (ordsucc Empty)) x -> nat_p y -> ?z:set.z iIn Sep (SNoS_ omega) (\w:set.SNoLev w = ordsucc x) & f2 z = y
+var x:set
+var f:set set
+hyp nat_p x
+hyp nat_p (exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+hyp ordinal (exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+hyp SNo (exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+hyp nat_p (exp_SNo_nat (ordsucc (ordsucc Empty)) x + exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+hyp ordinal (exp_SNo_nat (ordsucc (ordsucc Empty)) x + exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+hyp SNo (exp_SNo_nat (ordsucc (ordsucc Empty)) x + exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+hyp !y:set.SNo y -> y < exp_SNo_nat (ordsucc (ordsucc Empty)) x -> (exp_SNo_nat (ordsucc (ordsucc Empty)) x + y) < exp_SNo_nat (ordsucc (ordsucc Empty)) x + exp_SNo_nat (ordsucc (ordsucc Empty)) x
+hyp exp_SNo_nat (ordsucc (ordsucc Empty)) x < exp_SNo_nat (ordsucc (ordsucc Empty)) x + exp_SNo_nat (ordsucc (ordsucc Empty)) x
+hyp !y:set.y iIn Sep (SNoS_ omega) (\z:set.SNoLev z = x) -> !z:set.z iIn Sep (SNoS_ omega) (\w:set.SNoLev w = x) -> f y = f z -> y = z
+hyp !y:set.y iIn exp_SNo_nat (ordsucc (ordsucc Empty)) x -> ?z:set.z iIn Sep (SNoS_ omega) (\w:set.SNoLev w = x) & f z = y
+hyp !y:set.y iIn Sep (SNoS_ omega) (\z:set.SNoLev z = ordsucc x) -> !P:prop.(SNo y -> SNoLev y = ordsucc x -> binintersect y (SNoElts_ x) iIn Sep (SNoS_ omega) (\z:set.SNoLev z = x) -> SNo (binintersect y (SNoElts_ x)) -> SNoLev (binintersect y (SNoElts_ x)) = x -> P) -> P
+hyp !y:set.y iIn Sep (SNoS_ omega) (\z:set.SNoLev z = ordsucc x) -> !P:prop.(nat_p (f (binintersect y (SNoElts_ x))) -> ordinal (f (binintersect y (SNoElts_ x))) -> SNo (f (binintersect y (SNoElts_ x))) -> f (binintersect y (SNoElts_ x)) < exp_SNo_nat (ordsucc (ordsucc Empty)) x -> P) -> P
+claim (?f2:set set.(!y:set.x iIn y -> f2 y = f (binintersect y (SNoElts_ x))) & !y:set.nIn x y -> f2 y = exp_SNo_nat (ordsucc (ordsucc Empty)) x + f (binintersect y (SNoElts_ x))) -> ?f2:set set.bij (Sep (SNoS_ omega) \y:set.SNoLev y = ordsucc x) (exp_SNo_nat (ordsucc (ordsucc Empty)) x + exp_SNo_nat (ordsucc (ordsucc Empty)) x) f2
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,34 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+const Empty : set
+const ordsucc : set set
+axiom In_0_1: Empty iIn ordsucc Empty
+axiom EmptyE: !x:set.nIn x Empty
+const nat_p : set prop
+axiom nat_ordsucc: !x:set.nat_p x -> nat_p (ordsucc x)
+axiom nat_ordsucc_in_ordsucc: !x:set.nat_p x -> !y:set.y iIn x -> ordsucc y iIn ordsucc x
+const If_i : prop set set set
+axiom If_i_1: !P:prop.!x:set.!y:set.P -> If_i P x y = x
+axiom ordsuccI1: !x:set.Subq x (ordsucc x)
+axiom FalseE: ~ False
+axiom ordsuccE: !x:set.!y:set.y iIn ordsucc x -> y iIn x | y = x
+axiom If_i_0: !P:prop.!x:set.!y:set.~ P -> If_i P x y = y
+axiom xm: !P:prop.P | ~ P
+axiom nat_ind: !p:set prop.p Empty -> (!x:set.nat_p x -> p x -> p (ordsucc x)) -> !x:set.nat_p x -> p x
+lemma !x:set.!f:set set.!y:set.!z:set.nat_p x -> (!w:set.w iIn ordsucc (ordsucc x) -> f w iIn ordsucc x) -> (!w:set.w iIn ordsucc (ordsucc x) -> !u:set.u iIn ordsucc (ordsucc x) -> f w = f u -> w = u) -> y iIn ordsucc (ordsucc x) -> f y = x -> z iIn ordsucc x -> Subq y z -> ordsucc z iIn ordsucc (ordsucc x) -> f (ordsucc z) iIn x
+lemma !x:set.!f:set set.!y:set.!z:set.(!w:set.w iIn ordsucc (ordsucc x) -> !u:set.u iIn ordsucc (ordsucc x) -> f w = f u -> w = u) -> y iIn ordsucc (ordsucc x) -> f y = x -> z iIn ordsucc x -> f z = x -> y = z -> Subq y z
+lemma !x:set.!f:set set.!y:set.!z:set.!w:set.nat_p x -> (!u:set.u iIn ordsucc (ordsucc x) -> !v:set.v iIn ordsucc (ordsucc x) -> f u = f v -> u = v) -> z iIn ordsucc x -> w iIn ordsucc x -> z iIn ordsucc (ordsucc x) -> If_i (Subq y z) (f (ordsucc z)) (f z) = If_i (Subq y w) (f (ordsucc w)) (f w) -> z = w
+claim !x:set.nat_p x -> !f:set set.(!y:set.y iIn ordsucc x -> f y iIn x) -> ~ !y:set.y iIn ordsucc x -> !z:set.z iIn ordsucc x -> f y = f z -> y = z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

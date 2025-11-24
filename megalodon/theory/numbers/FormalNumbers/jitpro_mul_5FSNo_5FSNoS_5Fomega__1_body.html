@@ -1,0 +1,23 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoS_ : set set
+const omega : set
+const diadic_rational_p : set prop
+axiom SNoS_omega_diadic_rational_p: !x:set.x iIn SNoS_ omega -> diadic_rational_p x
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom mul_SNo_diadic_rational_p: !x:set.!y:set.diadic_rational_p x -> diadic_rational_p y -> diadic_rational_p (x * y)
+axiom diadic_rational_p_SNoS_omega: !x:set.diadic_rational_p x -> x iIn SNoS_ omega
+claim !x:set.x iIn SNoS_ omega -> !y:set.y iIn SNoS_ omega -> x * y iIn SNoS_ omega
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,20 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term PNoLt_ = \x:set.\p:set prop.\q:set prop.?y:set.y iIn x & (PNoEq_ y p q & ~ p y & q y)
+const ordinal : set prop
+axiom ordinal_Hered: !x:set.ordinal x -> !y:set.y iIn x -> ordinal y
+axiom PNoLt_E_: !x:set.!p:set prop.!q:set prop.PNoLt_ x p q -> !P:prop.(!y:set.y iIn x -> PNoEq_ y p q -> ~ p y -> q y -> P) -> P
+lemma !x:set.!p:set prop.!q:set prop.!p2:set prop.!y:set.!z:set.ordinal x -> y iIn x -> PNoEq_ y p q -> ~ p y -> q y -> z iIn x -> PNoEq_ z q p2 -> ~ q z -> p2 z -> ordinal y -> ?w:set.w iIn x & (PNoEq_ w p p2 & ~ p w & p2 w)
+claim !x:set.ordinal x -> !p:set prop.!q:set prop.!p2:set prop.PNoLt_ x p q -> PNoLt_ x q p2 -> PNoLt_ x p p2
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

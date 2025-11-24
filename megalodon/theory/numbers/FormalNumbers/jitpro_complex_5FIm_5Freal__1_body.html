@@ -1,0 +1,20 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const real : set
+const CSNo_Im : set set
+const SNo_pair : set set set
+axiom complex_Im_eq: !x:set.x iIn real -> !y:set.y iIn real -> CSNo_Im (SNo_pair x y) = y
+const complex : set
+axiom complex_E: !x:set.x iIn complex -> !P:prop.(!y:set.y iIn real -> !z:set.z iIn real -> x = SNo_pair y z -> P) -> P
+claim !x:set.x iIn complex -> CSNo_Im x iIn real
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

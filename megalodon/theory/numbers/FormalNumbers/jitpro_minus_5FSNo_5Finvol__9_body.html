@@ -1,0 +1,25 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+const SNoCut : set set set
+axiom SNoCutP_SNo_SNoCut: !x:set.!y:set.SNoCutP x y -> SNo (SNoCut x y)
+axiom SNo_ind: !p:set prop.(!x:set.!y:set.SNoCutP x y -> (!z:set.z iIn x -> p z) -> (!z:set.z iIn y -> p z) -> p (SNoCut x y)) -> !x:set.SNo x -> p x
+const minus_SNo : set set
+term - = minus_SNo
+lemma !x:set.!y:set.SNoCutP x y -> (!z:set.z iIn x -> - - z = z) -> (!z:set.z iIn y -> - - z = z) -> (!z:set.z iIn x -> SNo z) -> (!z:set.z iIn y -> SNo z) -> SNo (SNoCut x y) -> - - SNoCut x y = SNoCut x y
+claim !x:set.SNo x -> - - x = x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

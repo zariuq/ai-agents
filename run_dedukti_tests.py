@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
+import argparse
+import glob
 import os
 import subprocess
 import sys
-import glob
 import tempfile
+
+try:
+    import resource
+except ImportError:  # pragma: no cover - Windows/unsupported
+    resource = None
 
 # Configuration
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -17,6 +23,45 @@ DK_PRELUDE = os.path.join(PROJECT_ROOT, "megalodon/tests/dedukti_bridge/dk_prelu
 TEST_DIR = os.path.join(PROJECT_ROOT, "megalodon/tests/dedukti_bridge")
 # Ramsey TPTP directory (Mizar theory)
 RAMSEY_TPTP_DIR = os.path.join(PROJECT_ROOT, "megalodon/ramsey36/tptp")
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Vampire -> Dedukti -> Megalodon pipeline runner")
+    parser.add_argument(
+        "--include-sh",
+        action="store_true",
+        help="Include stress .sh tests (requires memory cap)",
+    )
+    parser.add_argument(
+        "--max-mem-mb",
+        type=int,
+        default=None,
+        help="Set RLIMIT_AS (soft+hard) before running; recommended 8000 for stress tests",
+    )
+    parser.add_argument(
+        "--force-uncapped-sh",
+        action="store_true",
+        help="Allow .sh tests without a memory cap (not recommended)",
+    )
+    return parser.parse_args()
+
+def set_memory_limit(max_mem_mb):
+    if not resource or max_mem_mb is None:
+        return
+    max_bytes = max_mem_mb * 1024 * 1024
+    try:
+        resource.setrlimit(resource.RLIMIT_AS, (max_bytes, max_bytes))
+        print(f"Set memory limit: {max_mem_mb} MB")
+    except (ValueError, OSError) as e:  # pragma: no cover - system dependent
+        print(f"Warning: failed to set memory limit to {max_mem_mb} MB: {e}")
+
+def has_memory_cap():
+    if not resource:
+        return True
+    try:
+        soft, _ = resource.getrlimit(resource.RLIMIT_AS)
+    except (ValueError, OSError):  # pragma: no cover - system dependent
+        return True
+    return soft != resource.RLIM_INFINITY
 
 def run_command(cmd, shell=False, capture_output=True):
     try:
@@ -117,6 +162,7 @@ def run_test(test_path):
         return False
 
 def main():
+    args = parse_args()
     if not os.path.exists(VAMPIRE_BIN):
         print(f"Vampire binary not found at {VAMPIRE_BIN}")
         sys.exit(1)
@@ -124,6 +170,17 @@ def main():
     if not os.path.exists(MEGALODON_BIN):
         print(f"Megalodon binary not found at {MEGALODON_BIN}")
         sys.exit(1)
+
+    # Default: skip .sh stress tests unless explicitly requested
+    env_skip = os.environ.get("DEDUSKIP_SH")
+    env_run = os.environ.get("DEDU_RUN_SH")
+    skip_sh = True
+    if env_skip is not None:
+        skip_sh = env_skip not in ("0", "false", "", "no")
+    if env_run in ("1", "true", "yes"):
+        skip_sh = False
+    if args.include_sh:
+        skip_sh = False
 
     test_files = sorted(glob.glob(os.path.join(TEST_DIR, "*.p")))
     # Only run hand-authored .dk fixtures, not auto-generated archives
@@ -144,8 +201,20 @@ def main():
         if os.path.exists(path):
             test_files.append(path)
 
-    if os.environ.get("DEDUSKIP_SH", "") == "":
-        # Include .sh tests only if not explicitly skipped
+    # Memory guard for stress tests
+    max_mem_env = os.environ.get("DEDUMAXMEM_MB")
+    max_mem_mb = args.max_mem_mb or (int(max_mem_env) if max_mem_env else None)
+    if not skip_sh and max_mem_mb is None:
+        max_mem_mb = 8000
+    if max_mem_mb:
+        set_memory_limit(max_mem_mb)
+
+    if not skip_sh:
+        if not has_memory_cap() and not args.force_uncapped_sh and os.environ.get("DEDUSH_FORCE_UNCAPPED") != "1":
+            print("Refusing to run .sh stress tests without a memory cap.")
+            print("Set a limit first, e.g.: ulimit -Sv 8000000")
+            print("Or rerun with --max-mem-mb 8000 or --force-uncapped-sh if you know what you're doing.")
+            sys.exit(1)
         test_files += sorted(glob.glob(os.path.join(TEST_DIR, "*.sh")))
     if not test_files:
         print(f"No test files found in {TEST_DIR}")

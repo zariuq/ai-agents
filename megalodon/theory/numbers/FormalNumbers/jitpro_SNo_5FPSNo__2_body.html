@@ -1,0 +1,40 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const binunion : set set set
+const Sep : set (set prop) set
+const ReplSep : set (set prop) (set set) set
+const SetAdjoin : set set set
+const Sing : set set
+const ordsucc : set set
+const Empty : set
+term PSNo = \x:set.\p:set prop.binunion (Sep x p) (ReplSep x (\y:set.~ p y) \y:set.SetAdjoin y (Sing (ordsucc Empty)))
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const Repl : set (set set) set
+term SNoElts_ = \x:set.binunion x (Repl x \y:set.SetAdjoin y (Sing (ordsucc Empty)))
+term nIn = \x:set.\y:set.~ x iIn y
+term SNo_ = \x:set.\y:set.Subq y (SNoElts_ x) & !z:set.z iIn x -> ~(SetAdjoin z (Sing (ordsucc Empty)) iIn y <-> z iIn y)
+const ordinal : set prop
+axiom tagged_eqE_eq: !x:set.!y:set.ordinal x -> ordinal y -> SetAdjoin x (Sing (ordsucc Empty)) = SetAdjoin y (Sing (ordsucc Empty)) -> x = y
+lemma !p:set prop.!x:set.!y:set.ordinal x -> p x -> ~ p y -> SetAdjoin x (Sing (ordsucc Empty)) = SetAdjoin y (Sing (ordsucc Empty)) -> ordinal y -> x != y
+var x:set
+var p:set prop
+var y:set
+var z:set
+hyp ordinal x
+hyp ordinal y
+hyp p y
+hyp z iIn x
+hyp ~ p z
+hyp SetAdjoin y (Sing (ordsucc Empty)) = SetAdjoin z (Sing (ordsucc Empty))
+claim ~ ordinal z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

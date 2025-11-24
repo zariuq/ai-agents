@@ -1,0 +1,51 @@
+{
+  "metadata": {
+    "file": "iff_prop.p",
+    "domain": "Propositional Logic",
+    "problem": "Equivalence (biconditional)",
+    "english": "Given p <=> q and p, prove q"
+  },
+  "comments": [
+    "------------------------------------------------------------------------------",
+    "------------------------------------------------------------------------------",
+    "Axioms",
+    "Goal",
+    "------------------------------------------------------------------------------"
+  ],
+  "formulas": [
+    {
+      "name": "equivalence",
+      "role": "axiom",
+      "formula": [
+        "iff",
+        [
+          "atom",
+          "p"
+        ],
+        [
+          "atom",
+          "q"
+        ]
+      ],
+      "type": "fof"
+    },
+    {
+      "name": "fact_p",
+      "role": "axiom",
+      "formula": [
+        "atom",
+        "p"
+      ],
+      "type": "fof"
+    },
+    {
+      "name": "goal",
+      "role": "conjecture",
+      "formula": [
+        "atom",
+        "q"
+      ],
+      "type": "fof"
+    }
+  ]
+}

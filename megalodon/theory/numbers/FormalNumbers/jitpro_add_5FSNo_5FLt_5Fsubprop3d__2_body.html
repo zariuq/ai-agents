@@ -1,0 +1,35 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_SNo_assoc: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x + y + z = (x + y) + z
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+axiom add_SNo_com: !x:set.!y:set.SNo x -> SNo y -> x + y = y + x
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.SNo x -> SNo y -> SNo z -> SNo w -> SNo u -> SNo v -> (x + u) < v + w -> x + y + z + u = (y + z) + x + u -> (y + z + w) + v = (y + z) + v + w -> (x + y + z + u) < (y + z + w) + v
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+hyp SNo x
+hyp SNo y
+hyp SNo z
+hyp SNo w
+hyp SNo u
+hyp SNo v
+hyp (x + u) < v + w
+claim x + y + z + u = (y + z) + x + u -> (x + y + z + u) < (y + z + w) + v
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

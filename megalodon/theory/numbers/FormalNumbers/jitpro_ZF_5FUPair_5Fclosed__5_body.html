@@ -1,0 +1,29 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const ZF_closed : set prop
+const Power : set set
+axiom ZF_Power_closed: !x:set.ZF_closed x -> !y:set.y iIn x -> Power y iIn x
+const Repl : set (set set) set
+const If_i : prop set set set
+lemma !x:set.!y:set.!z:set.ZF_closed x -> y iIn x -> z iIn x -> Power (Power y) iIn x -> Repl (Power (Power y)) (\w:set.If_i (y iIn w) y z) iIn x
+const UPair : set set set
+var x:set
+var y:set
+var z:set
+hyp ZF_closed x
+hyp y iIn x
+hyp z iIn x
+claim Repl (Power (Power y)) (\w:set.If_i (y iIn w) y z) = UPair y z -> UPair y z iIn x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

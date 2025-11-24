@@ -1,0 +1,23 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const Empty : set
+const Power : set set
+axiom Empty_In_Power: !x:set.Empty iIn Power x
+axiom EmptyE: !x:set.nIn x Empty
+const Eps_i : (set prop) set
+lemma !P:prop.Eps_i (\x:set.x = Empty | P) = Empty | P -> Power Empty != Empty | P -> P | ~ P
+var P:prop
+hyp Empty = Empty | P
+claim Eps_i (\x:set.x = Empty | P) = Empty | P -> P | ~ P
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

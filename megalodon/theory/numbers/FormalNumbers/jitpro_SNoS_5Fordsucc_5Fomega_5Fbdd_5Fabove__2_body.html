@@ -1,0 +1,28 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const ordinal : set prop
+const ordsucc : set set
+axiom ordinal_ordsucc: !x:set.ordinal x -> ordinal (ordsucc x)
+const SNo : set prop
+const SNoLev : set set
+const omega : set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+lemma !x:set.SNo x -> SNoLev x iIn omega -> ordinal (SNoLev x) -> ordinal (ordsucc (SNoLev x)) -> ?y:set.y iIn omega & x < y
+var x:set
+hyp SNo x
+hyp SNoLev x iIn omega
+claim ordinal (SNoLev x) -> ?y:set.y iIn omega & x < y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

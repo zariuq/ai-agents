@@ -1,0 +1,34 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const ordinal : set prop
+const omega : set
+axiom omega_ordinal: ordinal omega
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const eps_ : set set
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const SNoS_ : set set
+const SNoLev : set set
+const SNo_ : set set prop
+axiom SNoS_E2: !x:set.ordinal x -> !y:set.y iIn SNoS_ x -> !P:prop.(SNoLev y iIn x -> ordinal (SNoLev y) -> SNo y -> SNo_ (SNoLev y) y -> P) -> P
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const minus_SNo : set set
+term - = minus_SNo
+lemma !x:set.!y:set.!z:set.SNo x -> y iIn omega -> z iIn SNoS_ omega -> z < x -> x < z + eps_ y -> SNo z -> SNo (z + eps_ y) -> ?w:set.w iIn SNoS_ omega & (w < - x & - x < w + eps_ y)
+claim !x:set.SNo x -> (!y:set.y iIn omega -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + eps_ y)) -> !y:set.y iIn omega -> ?z:set.z iIn SNoS_ omega & (z < - x & - x < z + eps_ y)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

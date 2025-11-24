@@ -1,0 +1,36 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom SNo_mul_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x * y)
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoS_ : set set
+const SNoLev : set set
+lemma !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> (!w:set.w iIn SNoS_ (SNoLev x) -> w * y * z = (w * y) * z) -> (!w:set.w iIn SNoS_ (SNoLev y) -> x * w * z = (x * w) * z) -> (!w:set.w iIn SNoS_ (SNoLev z) -> x * y * w = (x * y) * w) -> (!w:set.w iIn SNoS_ (SNoLev x) -> !u:set.u iIn SNoS_ (SNoLev y) -> w * u * z = (w * u) * z) -> (!w:set.w iIn SNoS_ (SNoLev x) -> !u:set.u iIn SNoS_ (SNoLev z) -> w * y * u = (w * y) * u) -> (!w:set.w iIn SNoS_ (SNoLev y) -> !u:set.u iIn SNoS_ (SNoLev z) -> x * w * u = (x * w) * u) -> (!w:set.w iIn SNoS_ (SNoLev x) -> !u:set.u iIn SNoS_ (SNoLev y) -> !v:set.v iIn SNoS_ (SNoLev z) -> w * u * v = (w * u) * v) -> SNo (x * y) -> SNo (y * z) -> SNo (x * y * z) -> x * y * z = (x * y) * z
+var x:set
+var y:set
+var z:set
+hyp SNo x
+hyp SNo y
+hyp SNo z
+hyp !w:set.w iIn SNoS_ (SNoLev x) -> w * y * z = (w * y) * z
+hyp !w:set.w iIn SNoS_ (SNoLev y) -> x * w * z = (x * w) * z
+hyp !w:set.w iIn SNoS_ (SNoLev z) -> x * y * w = (x * y) * w
+hyp !w:set.w iIn SNoS_ (SNoLev x) -> !u:set.u iIn SNoS_ (SNoLev y) -> w * u * z = (w * u) * z
+hyp !w:set.w iIn SNoS_ (SNoLev x) -> !u:set.u iIn SNoS_ (SNoLev z) -> w * y * u = (w * y) * u
+hyp !w:set.w iIn SNoS_ (SNoLev y) -> !u:set.u iIn SNoS_ (SNoLev z) -> x * w * u = (x * w) * u
+hyp !w:set.w iIn SNoS_ (SNoLev x) -> !u:set.u iIn SNoS_ (SNoLev y) -> !v:set.v iIn SNoS_ (SNoLev z) -> w * u * v = (w * u) * v
+hyp SNo (x * y)
+claim SNo (y * z) -> x * y * z = (x * y) * z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,27 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const ordinal : set prop
+const PNo_rel_strict_split_imv : (set (set prop) prop) (set (set prop) prop) set (set prop) prop
+const PNo_strict_imv : (set (set prop) prop) (set (set prop) prop) set (set prop) prop
+axiom PNo_rel_split_imv_imp_strict_imv: !P:set (set prop) prop.!Q:set (set prop) prop.!x:set.ordinal x -> !p:set prop.PNo_rel_strict_split_imv P Q x p -> PNo_strict_imv P Q x p
+const ordsucc : set set
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+var P:set (set prop) prop
+var Q:set (set prop) prop
+var x:set
+var y:set
+var p:set prop
+hyp y iIn ordsucc x
+hyp PNo_rel_strict_split_imv P Q y p
+hyp ordinal (ordsucc x)
+claim ordinal y -> ?z:set.z iIn ordsucc x & ?q:set prop.PNo_strict_imv P Q z q
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

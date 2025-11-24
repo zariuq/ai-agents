@@ -1,0 +1,54 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const nat_p : set prop
+const ordsucc : set set
+axiom nat_ordsucc: !x:set.nat_p x -> nat_p (ordsucc x)
+const ordinal : set prop
+axiom nat_p_ordinal: !x:set.nat_p x -> ordinal x
+const omega : set
+const SNo : set prop
+const eps_ : set set
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+const SNoLev : set set
+axiom SNoLev_ordinal: !x:set.SNo x -> ordinal (SNoLev x)
+const Empty : set
+axiom eps_ordinal_In_eq_0: !x:set.!y:set.ordinal y -> y iIn eps_ x -> y = Empty
+axiom SNoLev_0_eq_0: !x:set.SNo x -> SNoLev x = Empty -> x = Empty
+axiom In_no2cycle: !x:set.!y:set.x iIn y -> ~ y iIn x
+axiom In_irref: !x:set.nIn x x
+axiom ordsuccE: !x:set.!y:set.y iIn ordsucc x -> y iIn x | y = x
+axiom FalseE: ~ False
+axiom SNoLev_eps_: !x:set.x iIn omega -> SNoLev (eps_ x) = ordsucc x
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const binintersect : set set set
+const SNoEq_ : set set set prop
+axiom SNoLtE: !x:set.!y:set.SNo x -> SNo y -> x < y -> !P:prop.(!z:set.SNo z -> SNoLev z iIn binintersect (SNoLev x) (SNoLev y) -> SNoEq_ (SNoLev z) z x -> SNoEq_ (SNoLev z) z y -> x < z -> z < y -> nIn (SNoLev z) x -> SNoLev z iIn y -> P) -> (SNoLev x iIn SNoLev y -> SNoEq_ (SNoLev x) x y -> SNoLev x iIn y -> P) -> (SNoLev y iIn SNoLev x -> SNoEq_ (SNoLev y) x y -> nIn (SNoLev y) x -> P) -> P
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+axiom SNoLtLe_or: !x:set.!y:set.SNo x -> SNo y -> x < y | y <= x
+const SNoS_ : set set
+const SNo_ : set set prop
+axiom SNoS_E2: !x:set.ordinal x -> !y:set.y iIn SNoS_ x -> !P:prop.(SNoLev y iIn x -> ordinal (SNoLev y) -> SNo y -> SNo_ (SNoLev y) y -> P) -> P
+lemma !x:set.!y:set.!z:set.Empty < y -> SNo y -> SNo z -> y < z -> SNoLev z iIn eps_ x -> z != Empty
+lemma !x:set.!y:set.Empty < y -> ordinal (SNoLev y) -> SNo y -> SNoLev y iIn eps_ x -> y != Empty
+var x:set
+var y:set
+hyp nat_p x
+hyp y iIn SNoS_ (ordsucc (ordsucc x))
+hyp Empty < y
+claim x iIn omega -> eps_ x <= y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

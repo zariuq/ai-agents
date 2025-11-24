@@ -1,0 +1,44 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const nat_p : set prop
+const exp_SNo_nat : set set set
+axiom SNo_exp_SNo_nat: !x:set.SNo x -> !y:set.nat_p y -> SNo (exp_SNo_nat x y)
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const ordsucc : set set
+const Empty : set
+axiom mul_SNo_oneR: !x:set.SNo x -> x * ordsucc Empty = x
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_SNo_0R: !x:set.SNo x -> x + Empty = x
+axiom exp_SNo_nat_0: !x:set.SNo x -> exp_SNo_nat x Empty = ordsucc Empty
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const omega : set
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+axiom omega_ordsucc: !x:set.x iIn omega -> ordsucc x iIn omega
+const add_nat : set set set
+axiom add_nat_p: !x:set.nat_p x -> !y:set.nat_p y -> nat_p (add_nat x y)
+axiom mul_SNo_assoc: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x * y * z = (x * y) * z
+axiom mul_SNo_com: !x:set.!y:set.SNo x -> SNo y -> x * y = y * x
+axiom add_nat_add_SNo: !x:set.x iIn omega -> !y:set.y iIn omega -> add_nat x y = x + y
+axiom exp_SNo_nat_S: !x:set.SNo x -> !y:set.nat_p y -> exp_SNo_nat x (ordsucc y) = x * exp_SNo_nat x y
+axiom add_nat_SR: !x:set.!y:set.nat_p y -> add_nat x (ordsucc y) = ordsucc (add_nat x y)
+axiom nat_ind: !p:set prop.p Empty -> (!x:set.nat_p x -> p x -> p (ordsucc x)) -> !x:set.nat_p x -> p x
+var x:set
+var y:set
+hyp SNo x
+hyp nat_p y
+claim SNo y -> !z:set.nat_p z -> exp_SNo_nat x y * exp_SNo_nat x z = exp_SNo_nat x (y + z)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

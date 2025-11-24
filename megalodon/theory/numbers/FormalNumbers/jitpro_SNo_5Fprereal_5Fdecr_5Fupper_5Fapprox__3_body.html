@@ -1,0 +1,38 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const ap : set set set
+const Sigma : set (set set) set
+axiom beta: !x:set.!f:set set.!y:set.y iIn x -> ap (Sigma x f) y = f y
+const omega : set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const minus_SNo : set set
+term - = minus_SNo
+const eps_ : set set
+lemma !x:set.!y:set.!z:set.z iIn omega -> (- ap y z + - eps_ z) < x & x < - ap y z & (!w:set.w iIn z -> - ap y z < ap (Sigma omega \u:set.- ap y u) w) -> ap (Sigma omega \w:set.- ap y w) z = - ap y z -> (ap (Sigma omega \w:set.- ap y w) z + - eps_ z) < x & x < ap (Sigma omega \w:set.- ap y w) z & !w:set.w iIn z -> ap (Sigma omega \u:set.- ap y u) z < ap (Sigma omega \u:set.- ap y u) w
+const SNo : set prop
+var x:set
+var y:set
+var z:set
+hyp SNo x
+hyp !w:set.w iIn omega -> ap y w < - x & - x < ap y w + eps_ w & !u:set.u iIn w -> ap y u < ap y w
+hyp !w:set.w iIn omega -> SNo (ap y w)
+hyp z iIn omega
+claim (- ap y z + - eps_ z) < x & x < - ap y z & (!w:set.w iIn z -> - ap y z < ap (Sigma omega \u:set.- ap y u) w) -> (ap (Sigma omega \w:set.- ap y w) z + - eps_ z) < x & x < ap (Sigma omega \w:set.- ap y w) z & !w:set.w iIn z -> ap (Sigma omega \u:set.- ap y u) z < ap (Sigma omega \u:set.- ap y u) w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

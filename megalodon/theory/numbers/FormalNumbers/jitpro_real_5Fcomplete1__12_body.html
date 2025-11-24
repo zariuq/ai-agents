@@ -1,0 +1,64 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term nIn = \x:set.\y:set.~ x iIn y
+const ordinal : set prop
+const omega : set
+axiom omega_ordinal: ordinal omega
+const ordsucc : set set
+axiom omega_ordsucc: !x:set.x iIn omega -> ordsucc x iIn omega
+const SNoLev : set set
+axiom SNoLev_ordinal: !x:set.SNo x -> ordinal (SNoLev x)
+axiom ordinal_ordsucc: !x:set.ordinal x -> ordinal (ordsucc x)
+axiom ordsuccI2: !x:set.x iIn ordsucc x
+axiom In_irref: !x:set.nIn x x
+axiom FalseE: ~ False
+axiom ordinal_In_Or_Subq: !x:set.!y:set.ordinal x -> ordinal y -> x iIn y | Subq y x
+axiom omega_TransSet: TransSet omega
+const SNo_ : set set prop
+axiom SNoLev_: !x:set.SNo x -> SNo_ (SNoLev x) x
+const SNoS_ : set set
+axiom SNoS_I: !x:set.ordinal x -> !y:set.!z:set.z iIn x -> SNo_ z y -> y iIn SNoS_ x
+const real : set
+axiom SNoS_omega_real: Subq (SNoS_ omega) real
+const Sep : set (set prop) set
+const ap : set set set
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+const SNoCut : set set set
+const SNoEq_ : set set set prop
+var x:set
+var y:set
+var z:set
+hyp ~ ?w:set.w iIn real & !u:set.u iIn omega -> ap x u <= w & w <= ap y u
+hyp !w:set.w iIn omega -> SNo (ap y w)
+hyp SNo (SNoCut (Sep (SNoS_ omega) \w:set.?u:set.u iIn omega & w < ap x u) (Sep (SNoS_ omega) \w:set.?u:set.u iIn omega & ap y u < w))
+hyp !w:set.SNo w -> (!u:set.u iIn Sep (SNoS_ omega) (\v:set.?x2:set.x2 iIn omega & v < ap x x2) -> u < w) -> (!u:set.u iIn Sep (SNoS_ omega) (\v:set.?x2:set.x2 iIn omega & ap y x2 < v) -> w < u) -> Subq (SNoLev (SNoCut (Sep (SNoS_ omega) \u:set.?v:set.v iIn omega & u < ap x v) (Sep (SNoS_ omega) \u:set.?v:set.v iIn omega & ap y v < u))) (SNoLev w) & SNoEq_ (SNoLev (SNoCut (Sep (SNoS_ omega) \u:set.?v:set.v iIn omega & u < ap x v) (Sep (SNoS_ omega) \u:set.?v:set.v iIn omega & ap y v < u))) (SNoCut (Sep (SNoS_ omega) \u:set.?v:set.v iIn omega & u < ap x v) (Sep (SNoS_ omega) \u:set.?v:set.v iIn omega & ap y v < u)) w
+hyp !w:set.w iIn omega -> ap x w <= SNoCut (Sep (SNoS_ omega) \u:set.?v:set.v iIn omega & u < ap x v) (Sep (SNoS_ omega) \u:set.?v:set.v iIn omega & ap y v < u) & SNoCut (Sep (SNoS_ omega) \u:set.?v:set.v iIn omega & u < ap x v) (Sep (SNoS_ omega) \u:set.?v:set.v iIn omega & ap y v < u) <= ap y w
+hyp z iIn SNoS_ omega
+hyp ~ (z iIn Sep (SNoS_ omega) (\w:set.?u:set.u iIn omega & w < ap x u) | z iIn Sep (SNoS_ omega) \w:set.?u:set.u iIn omega & ap y u < w)
+hyp SNoLev z iIn omega
+hyp ordinal (SNoLev z)
+hyp SNo z
+hyp !w:set.w iIn Sep (SNoS_ omega) (\u:set.?v:set.v iIn omega & u < ap x v) -> w < z
+claim ~ !w:set.w iIn Sep (SNoS_ omega) (\u:set.?v:set.v iIn omega & ap y v < u) -> z < w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

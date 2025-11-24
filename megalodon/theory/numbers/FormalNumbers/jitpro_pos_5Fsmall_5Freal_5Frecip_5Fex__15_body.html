@@ -1,0 +1,45 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+const nat_p : set prop
+axiom nat_p_SNo: !x:set.nat_p x -> SNo x
+const Empty : set
+const SNoCut : set set set
+const Sep : set (set prop) set
+const SNoS_ : set set
+const omega : set
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const ordsucc : set set
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+const eps_ : set set
+const exp_SNo_nat : set set set
+lemma !x:set.!y:set.Empty < x -> SNo x -> SNo (SNoCut (Sep (SNoS_ omega) \z:set.x * z < ordsucc Empty) (Sep (SNoS_ omega) \z:set.ordsucc Empty < x * z)) -> (!z:set.z iIn Sep (SNoS_ omega) (\w:set.ordsucc Empty < x * w) -> SNoCut (Sep (SNoS_ omega) \w:set.x * w < ordsucc Empty) (Sep (SNoS_ omega) \w:set.ordsucc Empty < x * w) < z) -> y iIn omega -> eps_ y <= x -> nat_p (exp_SNo_nat (ordsucc (ordsucc Empty)) y) -> SNo (exp_SNo_nat (ordsucc (ordsucc Empty)) y) -> SNoCut (Sep (SNoS_ omega) \z:set.x * z < ordsucc Empty) (Sep (SNoS_ omega) \z:set.ordsucc Empty < x * z) < omega
+var x:set
+var y:set
+hyp Empty < x
+hyp SNo x
+hyp SNo (SNoCut (Sep (SNoS_ omega) \z:set.x * z < ordsucc Empty) (Sep (SNoS_ omega) \z:set.ordsucc Empty < x * z))
+hyp !z:set.z iIn Sep (SNoS_ omega) (\w:set.ordsucc Empty < x * w) -> SNoCut (Sep (SNoS_ omega) \w:set.x * w < ordsucc Empty) (Sep (SNoS_ omega) \w:set.ordsucc Empty < x * w) < z
+hyp y iIn omega
+hyp eps_ y <= x
+claim nat_p (exp_SNo_nat (ordsucc (ordsucc Empty)) y) -> SNoCut (Sep (SNoS_ omega) \z:set.x * z < ordsucc Empty) (Sep (SNoS_ omega) \z:set.ordsucc Empty < x * z) < omega
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

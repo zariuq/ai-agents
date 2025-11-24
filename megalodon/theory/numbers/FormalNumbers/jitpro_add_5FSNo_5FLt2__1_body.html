@@ -1,0 +1,37 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoLev : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const SNoR : set set
+axiom SNoR_I: !x:set.SNo x -> !y:set.SNo y -> SNoLev y iIn SNoLev x -> x < y -> y iIn SNoR x
+const SNoL : set set
+axiom SNoL_I: !x:set.SNo x -> !y:set.SNo y -> SNoLev y iIn SNoLev x -> y < x -> y iIn SNoL x
+axiom SNoLt_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x < y -> y < z -> x < z
+const binintersect : set set set
+axiom binintersectE: !x:set.!y:set.!z:set.z iIn binintersect x y -> z iIn x & z iIn y
+const SNoEq_ : set set set prop
+const nIn : set set prop
+axiom SNoLtE: !x:set.!y:set.SNo x -> SNo y -> x < y -> !P:prop.(!z:set.SNo z -> SNoLev z iIn binintersect (SNoLev x) (SNoLev y) -> SNoEq_ (SNoLev z) z x -> SNoEq_ (SNoLev z) z y -> x < z -> z < y -> nIn (SNoLev z) x -> SNoLev z iIn y -> P) -> (SNoLev x iIn SNoLev y -> SNoEq_ (SNoLev x) x y -> SNoLev x iIn y -> P) -> (SNoLev y iIn SNoLev x -> SNoEq_ (SNoLev y) x y -> nIn (SNoLev y) x -> P) -> P
+const SNoCutP : set set prop
+const binunion : set set set
+const Repl : set (set set) set
+axiom add_SNo_prop1: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y) & (!z:set.z iIn SNoL x -> (z + y) < x + y) & (!z:set.z iIn SNoR x -> (x + y) < z + y) & (!z:set.z iIn SNoL y -> (x + z) < x + y) & (!z:set.z iIn SNoR y -> (x + y) < x + z) & SNoCutP (binunion (Repl (SNoL x) \z:set.z + y) (Repl (SNoL y) (add_SNo x))) (binunion (Repl (SNoR x) \z:set.z + y) (Repl (SNoR y) (add_SNo x)))
+claim !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> y < z -> (x + y) < x + z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

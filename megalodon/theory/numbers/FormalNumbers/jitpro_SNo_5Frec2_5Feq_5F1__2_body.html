@@ -1,0 +1,25 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoS_ : set set
+const SNoLev : set set
+const SNo_rec_i : (set (set set) set) set set
+axiom SNo_rec_i_eq: !P:set (set set) set.(!x:set.SNo x -> !f:set set.!f2:set set.(!y:set.y iIn SNoS_ (SNoLev x) -> f y = f2 y) -> P x f = P x f2) -> !x:set.SNo x -> SNo_rec_i P x = P x (SNo_rec_i P)
+const If_i : prop set set set
+var P:set set (set set set) set
+var x:set
+var g:set set set
+hyp !y:set.SNo y -> !z:set.SNo z -> !h:set set set.!g2:set set set.(!w:set.w iIn SNoS_ (SNoLev y) -> !u:set.SNo u -> h w u = g2 w u) -> (!w:set.w iIn SNoS_ (SNoLev z) -> h y w = g2 y w) -> P y z h = P y z g2
+hyp SNo x
+claim (!y:set.SNo y -> !f:set set.!f2:set set.(!z:set.z iIn SNoS_ (SNoLev y) -> f z = f2 z) -> P x y (\z:set.\w:set.If_i (z = x) (f w) (g z w)) = P x y \z:set.\w:set.If_i (z = x) (f2 w) (g z w)) -> !y:set.SNo y -> SNo_rec_i (\z:set.\f:set set.P x z \w:set.\u:set.If_i (w = x) (f u) (g w u)) y = P x y \z:set.\w:set.If_i (z = x) (SNo_rec_i (\u:set.\f:set set.P x u \v:set.\x2:set.If_i (v = x) (f x2) (g v x2)) w) (g z w)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

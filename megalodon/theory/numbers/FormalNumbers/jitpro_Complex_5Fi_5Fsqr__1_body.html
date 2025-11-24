@@ -1,0 +1,48 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const CSNo : set prop
+const Complex_i : set
+axiom CSNo_Complex_i: CSNo Complex_i
+const ordsucc : set set
+const Empty : set
+axiom CSNo_1: CSNo (ordsucc Empty)
+const SNo : set prop
+axiom SNo_0: SNo Empty
+axiom SNo_1: SNo (ordsucc Empty)
+const minus_SNo : set set
+term - = minus_SNo
+axiom SNo_minus_SNo: !x:set.SNo x -> SNo - x
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_SNo_0L: !x:set.SNo x -> Empty + x = x
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom mul_SNo_oneL: !x:set.SNo x -> ordsucc Empty * x = x
+axiom mul_SNo_zeroL: !x:set.SNo x -> Empty * x = Empty
+const CSNo_Re : set set
+axiom Re_1: CSNo_Re (ordsucc Empty) = ordsucc Empty
+const CSNo_Im : set set
+axiom Im_i: CSNo_Im Complex_i = ordsucc Empty
+axiom Re_i: CSNo_Re Complex_i = Empty
+const minus_CSNo : set set
+axiom minus_CSNo_CRe: !x:set.CSNo x -> CSNo_Re (minus_CSNo x) = - CSNo_Re x
+const mul_CSNo : set set set
+axiom mul_CSNo_CRe: !x:set.!y:set.CSNo x -> CSNo y -> CSNo_Re (mul_CSNo x y) = CSNo_Re x * CSNo_Re y + - CSNo_Im x * CSNo_Im y
+axiom mul_SNo_zeroR: !x:set.SNo x -> x * Empty = Empty
+axiom minus_SNo_0: - Empty = Empty
+axiom Im_1: CSNo_Im (ordsucc Empty) = Empty
+axiom minus_CSNo_CIm: !x:set.CSNo x -> CSNo_Im (minus_CSNo x) = - CSNo_Im x
+axiom mul_CSNo_CIm: !x:set.!y:set.CSNo x -> CSNo y -> CSNo_Im (mul_CSNo x y) = CSNo_Re x * CSNo_Im y + CSNo_Im x * CSNo_Re y
+axiom CSNo_ReIm_split: !x:set.!y:set.CSNo x -> CSNo y -> CSNo_Re x = CSNo_Re y -> CSNo_Im x = CSNo_Im y -> x = y
+hyp CSNo (mul_CSNo Complex_i Complex_i)
+claim CSNo (minus_CSNo (ordsucc Empty)) -> mul_CSNo Complex_i Complex_i = minus_CSNo (ordsucc Empty)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

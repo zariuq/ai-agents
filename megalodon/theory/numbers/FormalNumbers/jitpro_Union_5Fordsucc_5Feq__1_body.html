@@ -1,0 +1,24 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const nat_p : set prop
+const ordsucc : set set
+axiom nat_ordsucc_trans: !x:set.nat_p x -> !y:set.y iIn ordsucc x -> Subq y x
+const Union : set set
+axiom UnionE_impred: !x:set.!y:set.y iIn Union x -> !P:prop.(!z:set.y iIn z -> z iIn x -> P) -> P
+axiom ordsuccI2: !x:set.x iIn ordsucc x
+axiom UnionI: !x:set.!y:set.!z:set.y iIn z -> z iIn x -> y iIn Union x
+axiom set_ext: !x:set.!y:set.Subq x y -> Subq y x -> x = y
+axiom nat_complete_ind: !p:set prop.(!x:set.nat_p x -> (!y:set.y iIn x -> p y) -> p x) -> !x:set.nat_p x -> p x
+claim !x:set.nat_p x -> Union (ordsucc x) = x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

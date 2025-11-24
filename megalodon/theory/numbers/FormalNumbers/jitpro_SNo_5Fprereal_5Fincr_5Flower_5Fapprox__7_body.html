@@ -1,0 +1,55 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const nat_p : set prop
+const omega : set
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+const ordsucc : set set
+axiom omega_ordsucc: !x:set.x iIn omega -> ordsucc x iIn omega
+const SNo : set prop
+const eps_ : set set
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+const SNoS_ : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const abs_SNo : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const minus_SNo : set set
+term - = minus_SNo
+const nat_primrec : set (set set set) set set
+const Eps_i : (set prop) set
+const Empty : set
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+lemma !x:set.!y:set.!z:set.SNo x -> (!w:set.w iIn SNoS_ omega -> (!u:set.u iIn omega -> abs_SNo (w + - x) < eps_ u) -> w = x) -> nat_p y -> nat_primrec (Eps_i \w:set.w iIn SNoS_ omega & w < x & x < w + eps_ Empty) (\w:set.\u:set.Eps_i \v:set.v iIn SNoS_ omega & v < x & x < v + eps_ (ordsucc w) & u < v) y iIn SNoS_ omega -> nat_primrec (Eps_i \w:set.w iIn SNoS_ omega & w < x & x < w + eps_ Empty) (\w:set.\u:set.Eps_i \v:set.v iIn SNoS_ omega & v < x & x < v + eps_ (ordsucc w) & u < v) y < x -> SNo (nat_primrec (Eps_i \w:set.w iIn SNoS_ omega & w < x & x < w + eps_ Empty) (\w:set.\u:set.Eps_i \v:set.v iIn SNoS_ omega & v < x & x < v + eps_ (ordsucc w) & u < v) y) -> x < z + eps_ (ordsucc y) -> SNo z -> z <= nat_primrec (Eps_i \w:set.w iIn SNoS_ omega & w < x & x < w + eps_ Empty) (\w:set.\u:set.Eps_i \v:set.v iIn SNoS_ omega & v < x & x < v + eps_ (ordsucc w) & u < v) y -> SNo - nat_primrec (Eps_i \w:set.w iIn SNoS_ omega & w < x & x < w + eps_ Empty) (\w:set.\u:set.Eps_i \v:set.v iIn SNoS_ omega & v < x & x < v + eps_ (ordsucc w) & u < v) y -> SNo (x + - nat_primrec (Eps_i \w:set.w iIn SNoS_ omega & w < x & x < w + eps_ Empty) (\w:set.\u:set.Eps_i \v:set.v iIn SNoS_ omega & v < x & x < v + eps_ (ordsucc w) & u < v) y) -> SNo (eps_ (ordsucc y)) -> ?w:set.w iIn SNoS_ omega & w < x & x < w + eps_ (ordsucc y) & nat_primrec (Eps_i \u:set.u iIn SNoS_ omega & u < x & x < u + eps_ Empty) (\u:set.\v:set.Eps_i \x2:set.x2 iIn SNoS_ omega & x2 < x & x < x2 + eps_ (ordsucc u) & v < x2) y < w
+var x:set
+var y:set
+var z:set
+hyp SNo x
+hyp !w:set.w iIn SNoS_ omega -> (!u:set.u iIn omega -> abs_SNo (w + - x) < eps_ u) -> w = x
+hyp nat_p y
+hyp nat_primrec (Eps_i \w:set.w iIn SNoS_ omega & w < x & x < w + eps_ Empty) (\w:set.\u:set.Eps_i \v:set.v iIn SNoS_ omega & v < x & x < v + eps_ (ordsucc w) & u < v) y iIn SNoS_ omega
+hyp nat_primrec (Eps_i \w:set.w iIn SNoS_ omega & w < x & x < w + eps_ Empty) (\w:set.\u:set.Eps_i \v:set.v iIn SNoS_ omega & v < x & x < v + eps_ (ordsucc w) & u < v) y < x
+hyp SNo (nat_primrec (Eps_i \w:set.w iIn SNoS_ omega & w < x & x < w + eps_ Empty) (\w:set.\u:set.Eps_i \v:set.v iIn SNoS_ omega & v < x & x < v + eps_ (ordsucc w) & u < v) y)
+hyp x < z + eps_ (ordsucc y)
+hyp SNo z
+hyp z <= nat_primrec (Eps_i \w:set.w iIn SNoS_ omega & w < x & x < w + eps_ Empty) (\w:set.\u:set.Eps_i \v:set.v iIn SNoS_ omega & v < x & x < v + eps_ (ordsucc w) & u < v) y
+hyp SNo - nat_primrec (Eps_i \w:set.w iIn SNoS_ omega & w < x & x < w + eps_ Empty) (\w:set.\u:set.Eps_i \v:set.v iIn SNoS_ omega & v < x & x < v + eps_ (ordsucc w) & u < v) y
+claim SNo (x + - nat_primrec (Eps_i \w:set.w iIn SNoS_ omega & w < x & x < w + eps_ Empty) (\w:set.\u:set.Eps_i \v:set.v iIn SNoS_ omega & v < x & x < v + eps_ (ordsucc w) & u < v) y) -> ?w:set.w iIn SNoS_ omega & w < x & x < w + eps_ (ordsucc y) & nat_primrec (Eps_i \u:set.u iIn SNoS_ omega & u < x & x < u + eps_ Empty) (\u:set.\v:set.Eps_i \x2:set.x2 iIn SNoS_ omega & x2 < x & x < x2 + eps_ (ordsucc u) & v < x2) y < w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

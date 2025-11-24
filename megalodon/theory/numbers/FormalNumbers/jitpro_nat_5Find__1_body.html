@@ -1,0 +1,19 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Empty : set
+const ordsucc : set set
+term nat_p = \x:set.!p:set prop.p Empty -> (!y:set.p y -> p (ordsucc y)) -> p x
+var p:set prop
+var x:set
+hyp nat_p Empty & p Empty
+hyp !y:set.nat_p y & p y -> nat_p (ordsucc y) & p (ordsucc y)
+hyp nat_p x
+claim nat_p x & p x -> p x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,38 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const Repl : set (set set) set
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+const binunion : set set set
+axiom binunionE: !x:set.!y:set.!z:set.z iIn binunion x y -> z iIn x | z iIn y
+const omega : set
+const eps_ : set set
+const SNoCut : set set set
+const Sing : set set
+const Empty : set
+axiom eps_SNoCut: !x:set.x iIn omega -> eps_ x = SNoCut (Sing Empty) (Repl x eps_)
+const SNo : set prop
+const ordsucc : set set
+const nat_p : set prop
+const SNoR : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+var x:set
+hyp nat_p x
+hyp x iIn omega
+hyp SNo (eps_ (ordsucc x))
+claim (!y:set.y iIn SNoR (eps_ (ordsucc x)) -> eps_ x < y + eps_ (ordsucc x) & eps_ x < eps_ (ordsucc x) + y) -> !y:set.y iIn binunion (Repl (SNoR (eps_ (ordsucc x))) \z:set.z + eps_ (ordsucc x)) (Repl (SNoR (eps_ (ordsucc x))) (add_SNo (eps_ (ordsucc x)))) -> SNoCut (Sing Empty) (Repl x eps_) < y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

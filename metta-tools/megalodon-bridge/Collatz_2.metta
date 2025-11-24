@@ -1,0 +1,6 @@
+(Infix + 360 right := add_nat)
+(Infix * 355 right := mul_nat)
+(Infix :/: 353 none := div_SNo)
+(Theorem Collatz_v1 (forall ((f (-> set (-> set set)))) (forall ((m (e omega))) (-> ((((f m) 0) =) m) (-> (* ((((((forall (((m :) e) omega)) (((n :) e) omega)) (((k :) e) omega)) ,) (((f m) n) =)) 2) k) (-> ((((f m) (ordsucc n)) =) k) (-> ((((((forall (((m :) e) omega)) (((n :) e) omega)) (((k :) e) omega)) ,) odd_nat) ((f m) n)) (-> (+ (* ((((f m) (ordsucc n)) =) 3) ((f m) n)) 1) (((((((((((((((((((() :) e) omega) :) \) :) 1) ,) exists) n) :) e) omega) ,) f) m) n) =) 1)))))))) Admitted)
+(Definition Collatz_seq (-> set (-> set set)) (fun ((m Any) (n Any)) (((nat_primrec m) (fun ((_ Any) (r Any)) (if (even_nat r) ((((r :) /) :) 2) (+ (* 3 r) 1)))) n)))
+(Theorem Collatz_v2 (forall ((m (((((e omega) :) \) :) 1))) (exists ((n (e omega))) ((((Collatz_seq m) n) =) 1))) Admitted)

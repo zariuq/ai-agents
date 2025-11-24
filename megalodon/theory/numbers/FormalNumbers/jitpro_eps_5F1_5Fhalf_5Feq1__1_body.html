@@ -1,0 +1,21 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const nat_p : set prop
+const Empty : set
+axiom nat_0: nat_p Empty
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const eps_ : set set
+const ordsucc : set set
+axiom eps_ordsucc_half_add: !x:set.nat_p x -> eps_ (ordsucc x) + eps_ (ordsucc x) = eps_ x
+axiom eps_0_1: eps_ Empty = ordsucc Empty
+claim eps_ (ordsucc Empty) + eps_ (ordsucc Empty) = ordsucc Empty
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

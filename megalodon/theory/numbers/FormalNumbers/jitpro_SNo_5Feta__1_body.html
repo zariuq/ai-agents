@@ -1,0 +1,39 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term SNoEq_ = \x:set.\y:set.\z:set.PNoEq_ x (\w:set.w iIn y) \w:set.w iIn z
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+const Sep : set (set prop) set
+const SNoS_ : set set
+const SNoLev : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoL = \x:set.Sep (SNoS_ (SNoLev x)) \y:set.y < x
+term SNoR = \x:set.Sep (SNoS_ (SNoLev x)) (SNoLt x)
+const SNo : set prop
+axiom SNo_eq: !x:set.!y:set.SNo x -> SNo y -> SNoLev x = SNoLev y -> SNoEq_ (SNoLev x) x y -> x = y
+const SNoCut : set set set
+const ordinal : set prop
+var x:set
+hyp SNo x
+hyp ordinal (SNoLev x)
+hyp SNo (SNoCut (SNoL x) (SNoR x))
+hyp !y:set.y iIn SNoL x -> y < SNoCut (SNoL x) (SNoR x)
+hyp !y:set.y iIn SNoR x -> SNoCut (SNoL x) (SNoR x) < y
+hyp ordinal (SNoLev (SNoCut (SNoL x) (SNoR x)))
+hyp Subq (SNoLev (SNoCut (SNoL x) (SNoR x))) (SNoLev x)
+hyp PNoEq_ (SNoLev (SNoCut (SNoL x) (SNoR x))) (\y:set.y iIn SNoCut (SNoL x) (SNoR x)) \y:set.y iIn x
+claim SNoLev (SNoCut (SNoL x) (SNoR x)) = SNoLev x -> x = SNoCut (SNoL x) (SNoR x)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

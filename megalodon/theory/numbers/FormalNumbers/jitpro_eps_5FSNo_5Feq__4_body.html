@@ -1,0 +1,37 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const binunion : set set set
+const Sing : set set
+const Empty : set
+const Repl : set (set set) set
+const SetAdjoin : set set set
+const ordsucc : set set
+term eps_ = \x:set.binunion (Sing Empty) (Repl x \y:set.SetAdjoin (ordsucc y) (Sing (ordsucc Empty)))
+const nat_p : set prop
+axiom nat_ordsucc: !x:set.nat_p x -> nat_p (ordsucc x)
+const ordinal : set prop
+axiom nat_p_ordinal: !x:set.nat_p x -> ordinal x
+axiom nat_p_trans: !x:set.nat_p x -> !y:set.y iIn x -> nat_p y
+const SNoS_ : set set
+const SNoLev : set set
+const SNo : set prop
+const SNo_ : set set prop
+axiom SNoS_E2: !x:set.ordinal x -> !y:set.y iIn SNoS_ x -> !P:prop.(SNoLev y iIn x -> ordinal (SNoLev y) -> SNo y -> SNo_ (SNoLev y) y -> P) -> P
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const SNoEq_ : set set set prop
+lemma !x:set.!y:set.nat_p x -> Empty < y -> SNoEq_ (SNoLev y) (eps_ x) y -> SNoLev y iIn ordsucc x -> SNo y -> nat_p (SNoLev y) -> ?z:set.z iIn x & y = eps_ z
+claim !x:set.nat_p x -> !y:set.y iIn SNoS_ (ordsucc x) -> Empty < y -> SNoEq_ (SNoLev y) (eps_ x) y -> ?z:set.z iIn x & y = eps_ z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

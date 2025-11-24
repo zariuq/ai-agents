@@ -1,0 +1,18 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Sep : set (set prop) set
+const nIn : set set prop
+term setminus = \x:set.\y:set.Sep x \z:set.nIn z y
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+axiom SepE1: !x:set.!p:set prop.!y:set.y iIn Sep x p -> y iIn x
+claim !x:set.!y:set.!z:set.z iIn setminus x y -> z iIn x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

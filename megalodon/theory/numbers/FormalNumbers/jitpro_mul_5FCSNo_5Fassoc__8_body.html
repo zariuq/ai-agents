@@ -1,0 +1,23 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const CSNo : set prop
+const mul_CSNo : set set set
+axiom CSNo_mul_CSNo: !x:set.!y:set.CSNo x -> CSNo y -> CSNo (mul_CSNo x y)
+lemma !x:set.!y:set.!z:set.CSNo x -> CSNo y -> CSNo z -> CSNo (mul_CSNo y z) -> CSNo (mul_CSNo x y) -> CSNo (mul_CSNo x (mul_CSNo y z)) -> CSNo (mul_CSNo (mul_CSNo x y) z) -> mul_CSNo x (mul_CSNo y z) = mul_CSNo (mul_CSNo x y) z
+var x:set
+var y:set
+var z:set
+hyp CSNo x
+hyp CSNo y
+hyp CSNo z
+hyp CSNo (mul_CSNo y z)
+hyp CSNo (mul_CSNo x y)
+claim CSNo (mul_CSNo x (mul_CSNo y z)) -> mul_CSNo x (mul_CSNo y z) = mul_CSNo (mul_CSNo x y) z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,57 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom SNo_mul_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x * y)
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoS_ : set set
+const SNoLev : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const SNoR : set set
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.SNo x -> SNo y -> SNo z -> (!x2:set.x2 iIn SNoS_ (SNoLev x) -> (x2 + y) * z = x2 * z + y * z) -> (!x2:set.x2 iIn SNoS_ (SNoLev z) -> (x + y) * x2 = x * x2 + y * x2) -> (!x2:set.x2 iIn SNoS_ (SNoLev x) -> !y2:set.y2 iIn SNoS_ (SNoLev z) -> (x2 + y) * y2 = x2 * y2 + y * y2) -> SNo (x + y) -> SNo ((x + y) * z) -> SNo (y * z) -> SNo w -> u iIn SNoR x -> v iIn SNoR z -> (w + u * v) <= u * z + x * v -> SNo u -> x < u -> SNo v -> z < v -> SNo (u * v) -> SNo (u + y) -> SNo (w + u * v) -> SNo ((x + y) * v) -> (w + y * z) < (x + y) * z
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+hyp SNo x
+hyp SNo y
+hyp SNo z
+hyp !x2:set.x2 iIn SNoS_ (SNoLev x) -> (x2 + y) * z = x2 * z + y * z
+hyp !x2:set.x2 iIn SNoS_ (SNoLev z) -> (x + y) * x2 = x * x2 + y * x2
+hyp !x2:set.x2 iIn SNoS_ (SNoLev x) -> !y2:set.y2 iIn SNoS_ (SNoLev z) -> (x2 + y) * y2 = x2 * y2 + y * y2
+hyp SNo (x + y)
+hyp SNo ((x + y) * z)
+hyp SNo (y * z)
+hyp SNo w
+hyp u iIn SNoR x
+hyp v iIn SNoR z
+hyp (w + u * v) <= u * z + x * v
+hyp SNo u
+hyp x < u
+hyp SNo v
+hyp z < v
+hyp SNo (u * v)
+hyp SNo (u + y)
+claim SNo (w + u * v) -> (w + y * z) < (x + y) * z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

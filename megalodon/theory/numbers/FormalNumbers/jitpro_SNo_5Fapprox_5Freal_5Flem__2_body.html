@@ -1,0 +1,45 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const ordinal : set prop
+const ordsucc : set set
+const omega : set
+axiom ordsucc_omega_ordinal: ordinal (ordsucc omega)
+const SNo_ : set set prop
+const SNoLev : set set
+axiom SNoLev_: !x:set.SNo x -> SNo_ (SNoLev x) x
+const SNoS_ : set set
+axiom SNoS_I: !x:set.ordinal x -> !y:set.!z:set.z iIn x -> SNo_ z y -> y iIn SNoS_ x
+const Repl : set (set set) set
+const ap : set set set
+const SNoCut : set set set
+lemma !x:set.!y:set.!P:prop.(SNoCutP (Repl omega (ap x)) (Repl omega (ap y)) -> SNo (SNoCut (Repl omega (ap x)) (Repl omega (ap y))) -> SNoLev (SNoCut (Repl omega (ap x)) (Repl omega (ap y))) iIn ordsucc omega -> SNoCut (Repl omega (ap x)) (Repl omega (ap y)) iIn SNoS_ (ordsucc omega) -> (!z:set.z iIn omega -> ap x z < SNoCut (Repl omega (ap x)) (Repl omega (ap y))) -> (!z:set.z iIn omega -> SNoCut (Repl omega (ap x)) (Repl omega (ap y)) < ap y z) -> P) -> SNoCutP (Repl omega (ap x)) (Repl omega (ap y)) -> SNo (SNoCut (Repl omega (ap x)) (Repl omega (ap y))) -> (!z:set.z iIn Repl omega (ap x) -> z < SNoCut (Repl omega (ap x)) (Repl omega (ap y))) -> (!z:set.z iIn Repl omega (ap y) -> SNoCut (Repl omega (ap x)) (Repl omega (ap y)) < z) -> SNoLev (SNoCut (Repl omega (ap x)) (Repl omega (ap y))) iIn ordsucc omega -> SNoCut (Repl omega (ap x)) (Repl omega (ap y)) iIn SNoS_ (ordsucc omega) -> P
+var x:set
+var y:set
+var P:prop
+hyp SNoCutP (Repl omega (ap x)) (Repl omega (ap y)) -> SNo (SNoCut (Repl omega (ap x)) (Repl omega (ap y))) -> SNoLev (SNoCut (Repl omega (ap x)) (Repl omega (ap y))) iIn ordsucc omega -> SNoCut (Repl omega (ap x)) (Repl omega (ap y)) iIn SNoS_ (ordsucc omega) -> (!z:set.z iIn omega -> ap x z < SNoCut (Repl omega (ap x)) (Repl omega (ap y))) -> (!z:set.z iIn omega -> SNoCut (Repl omega (ap x)) (Repl omega (ap y)) < ap y z) -> P
+hyp SNoCutP (Repl omega (ap x)) (Repl omega (ap y))
+hyp SNo (SNoCut (Repl omega (ap x)) (Repl omega (ap y)))
+hyp !z:set.z iIn Repl omega (ap x) -> z < SNoCut (Repl omega (ap x)) (Repl omega (ap y))
+hyp !z:set.z iIn Repl omega (ap y) -> SNoCut (Repl omega (ap x)) (Repl omega (ap y)) < z
+hyp Subq (Repl omega (ap x)) (SNoS_ omega)
+hyp Subq (Repl omega (ap y)) (SNoS_ omega)
+claim SNoLev (SNoCut (Repl omega (ap x)) (Repl omega (ap y))) iIn ordsucc omega -> P
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

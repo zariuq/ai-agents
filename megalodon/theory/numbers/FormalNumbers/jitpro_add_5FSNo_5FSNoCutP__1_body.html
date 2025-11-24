@@ -1,0 +1,27 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoL : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const SNoR : set set
+const SNoCutP : set set prop
+const binunion : set set set
+const Repl : set (set set) set
+axiom add_SNo_prop1: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y) & (!z:set.z iIn SNoL x -> (z + y) < x + y) & (!z:set.z iIn SNoR x -> (x + y) < z + y) & (!z:set.z iIn SNoL y -> (x + z) < x + y) & (!z:set.z iIn SNoR y -> (x + y) < x + z) & SNoCutP (binunion (Repl (SNoL x) \z:set.z + y) (Repl (SNoL y) (add_SNo x))) (binunion (Repl (SNoR x) \z:set.z + y) (Repl (SNoR y) (add_SNo x)))
+claim !x:set.!y:set.SNo x -> SNo y -> SNoCutP (binunion (Repl (SNoL x) \z:set.z + y) (Repl (SNoL y) (add_SNo x))) (binunion (Repl (SNoR x) \z:set.z + y) (Repl (SNoR y) (add_SNo x)))
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

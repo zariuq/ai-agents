@@ -1,0 +1,47 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term SNoEq_ = \x:set.\y:set.\z:set.PNoEq_ x (\w:set.w iIn y) \w:set.w iIn z
+const binunion : set set set
+const Sing : set set
+const Empty : set
+const Repl : set (set set) set
+const SetAdjoin : set set set
+const ordsucc : set set
+term eps_ = \x:set.binunion (Sing Empty) (Repl x \y:set.SetAdjoin (ordsucc y) (Sing (ordsucc Empty)))
+const nat_p : set prop
+axiom nat_ordsucc_in_ordsucc: !x:set.nat_p x -> !y:set.y iIn x -> ordsucc y iIn ordsucc x
+const omega : set
+const SNoLev : set set
+axiom SNoLev_eps_: !x:set.x iIn omega -> SNoLev (eps_ x) = ordsucc x
+axiom nat_ordsucc: !x:set.nat_p x -> nat_p (ordsucc x)
+axiom nat_p_trans: !x:set.nat_p x -> !y:set.y iIn x -> nat_p y
+const ordinal : set prop
+axiom nat_p_ordinal: !x:set.nat_p x -> ordinal x
+axiom ordinal_ordsucc: !x:set.ordinal x -> ordinal (ordsucc x)
+axiom eps_ordinal_In_eq_0: !x:set.!y:set.ordinal y -> y iIn eps_ x -> y = Empty
+axiom neq_ordsucc_0: !x:set.ordsucc x != Empty
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom SNoLtI3: !x:set.!y:set.SNoLev y iIn SNoLev x -> SNoEq_ (SNoLev y) x y -> nIn (SNoLev y) x -> x < y
+lemma !x:set.!y:set.!z:set.nat_p y -> z iIn ordsucc y -> ordinal z -> (z iIn eps_ x <-> z iIn eps_ y)
+var x:set
+var y:set
+hyp x iIn omega
+hyp y iIn x
+hyp nat_p x
+hyp nat_p y
+claim y iIn omega -> eps_ x < eps_ y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

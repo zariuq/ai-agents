@@ -1,0 +1,33 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const Subq : set set prop
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+const PNoEq_ : set (set prop) (set prop) prop
+axiom PNoEq_sym_: !x:set.!p:set prop.!q:set prop.PNoEq_ x p q -> PNoEq_ x q p
+const PNoLt : set (set prop) set (set prop) prop
+axiom PNoLtI2: !x:set.!y:set.!p:set prop.!q:set prop.x iIn y -> PNoEq_ x p q -> q x -> PNoLt x p y q
+axiom or3I3: !P:prop.!Q:prop.!R:prop.R -> P | Q | R
+axiom PNoLtI3: !x:set.!y:set.!p:set prop.!q:set prop.y iIn x -> PNoEq_ y p q -> ~ p y -> PNoLt x p y q
+axiom or3I1: !P:prop.!Q:prop.!R:prop.P -> P | Q | R
+axiom xm: !P:prop.P | ~ P
+const binintersect : set set set
+var x:set
+var y:set
+var p:set prop
+var q:set prop
+hyp PNoEq_ (binintersect x y) p q
+hyp y iIn x
+hyp binintersect x y = y
+claim PNoEq_ y p q -> PNoLt x p y q | x = y & PNoEq_ x p q | PNoLt y q x p
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

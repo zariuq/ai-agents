@@ -1,0 +1,33 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const SNoCutP : set set prop
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoL : set set
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const minus_SNo : set set
+term - = minus_SNo
+const SNoR : set set
+const SNoCut : set set set
+axiom mul_SNo_eq_3: !x:set.!y:set.SNo x -> SNo y -> !P:prop.(!z:set.!w:set.SNoCutP z w -> (!u:set.u iIn z -> !Q:prop.(!v:set.v iIn SNoL x -> !x2:set.x2 iIn SNoL y -> u = v * y + x * x2 + - v * x2 -> Q) -> (!v:set.v iIn SNoR x -> !x2:set.x2 iIn SNoR y -> u = v * y + x * x2 + - v * x2 -> Q) -> Q) -> (!u:set.u iIn SNoL x -> !v:set.v iIn SNoL y -> u * y + x * v + - u * v iIn z) -> (!u:set.u iIn SNoR x -> !v:set.v iIn SNoR y -> u * y + x * v + - u * v iIn z) -> (!u:set.u iIn w -> !Q:prop.(!v:set.v iIn SNoL x -> !x2:set.x2 iIn SNoR y -> u = v * y + x * x2 + - v * x2 -> Q) -> (!v:set.v iIn SNoR x -> !x2:set.x2 iIn SNoL y -> u = v * y + x * x2 + - v * x2 -> Q) -> Q) -> (!u:set.u iIn SNoL x -> !v:set.v iIn SNoR y -> u * y + x * v + - u * v iIn w) -> (!u:set.u iIn SNoR x -> !v:set.v iIn SNoL y -> u * y + x * v + - u * v iIn w) -> x * y = SNoCut z w -> P) -> P
+const SNoS_ : set set
+const SNoLev : set set
+axiom SNoLev_ind3: !P:set set set prop.(!x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> (!w:set.w iIn SNoS_ (SNoLev x) -> P w y z) -> (!w:set.w iIn SNoS_ (SNoLev y) -> P x w z) -> (!w:set.w iIn SNoS_ (SNoLev z) -> P x y w) -> (!w:set.w iIn SNoS_ (SNoLev x) -> !u:set.u iIn SNoS_ (SNoLev y) -> P w u z) -> (!w:set.w iIn SNoS_ (SNoLev x) -> !u:set.u iIn SNoS_ (SNoLev z) -> P w y u) -> (!w:set.w iIn SNoS_ (SNoLev y) -> !u:set.u iIn SNoS_ (SNoLev z) -> P x w u) -> (!w:set.w iIn SNoS_ (SNoLev x) -> !u:set.u iIn SNoS_ (SNoLev y) -> !v:set.v iIn SNoS_ (SNoLev z) -> P w u v) -> P x y z) -> !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> P x y z
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.SNo x -> SNo y -> SNo z -> (!v:set.v iIn SNoS_ (SNoLev x) -> (v + y) * z = v * z + y * z) -> (!v:set.v iIn SNoS_ (SNoLev y) -> (x + v) * z = x * z + v * z) -> (!v:set.v iIn SNoS_ (SNoLev z) -> (x + y) * v = x * v + y * v) -> (!v:set.v iIn SNoS_ (SNoLev x) -> !x2:set.x2 iIn SNoS_ (SNoLev z) -> (v + y) * x2 = v * x2 + y * x2) -> (!v:set.v iIn SNoS_ (SNoLev y) -> !x2:set.x2 iIn SNoS_ (SNoLev z) -> (x + v) * x2 = x * x2 + v * x2) -> SNoCutP w u -> (!v:set.v iIn w -> !P:prop.(!x2:set.x2 iIn SNoL (x + y) -> !y2:set.y2 iIn SNoL z -> v = x2 * z + (x + y) * y2 + - x2 * y2 -> P) -> (!x2:set.x2 iIn SNoR (x + y) -> !y2:set.y2 iIn SNoR z -> v = x2 * z + (x + y) * y2 + - x2 * y2 -> P) -> P) -> (!v:set.v iIn u -> !P:prop.(!x2:set.x2 iIn SNoL (x + y) -> !y2:set.y2 iIn SNoR z -> v = x2 * z + (x + y) * y2 + - x2 * y2 -> P) -> (!x2:set.x2 iIn SNoR (x + y) -> !y2:set.y2 iIn SNoL z -> v = x2 * z + (x + y) * y2 + - x2 * y2 -> P) -> P) -> (x + y) * z = SNoCut w u -> SNo (x + y) -> (x + y) * z = x * z + y * z
+claim !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> (x + y) * z = x * z + y * z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

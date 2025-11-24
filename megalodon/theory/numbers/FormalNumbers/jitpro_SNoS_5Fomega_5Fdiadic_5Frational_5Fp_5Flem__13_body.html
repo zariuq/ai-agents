@@ -1,0 +1,53 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+term SNo_max_of = \x:set.\y:set.y iIn x & SNo y & !z:set.z iIn x -> SNo z -> z <= y
+term nIn = \x:set.\y:set.~ x iIn y
+term SNo_min_of = \x:set.\y:set.y iIn x & SNo y & !z:set.z iIn x -> SNo z -> y <= z
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const nat_p : set prop
+const SNoLev : set set
+const diadic_rational_p : set prop
+const SNoL : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const SNoR : set set
+lemma !x:set.!y:set.!z:set.!w:set.nat_p x -> (!u:set.u iIn x -> !v:set.SNo v -> SNoLev v = u -> diadic_rational_p v) -> SNo y -> SNoLev y = x -> ~ diadic_rational_p y -> SNo_max_of (SNoL y) z -> SNo z -> SNoLev z iIn SNoLev y -> z < y -> SNo_min_of (SNoR y) w -> SNo w -> SNoLev w iIn SNoLev y -> y < w -> SNo (y + y) -> ~ SNo (z + w)
+var x:set
+var y:set
+var z:set
+var w:set
+hyp nat_p x
+hyp !u:set.u iIn x -> !v:set.SNo v -> SNoLev v = u -> diadic_rational_p v
+hyp SNo y
+hyp SNoLev y = x
+hyp ~ diadic_rational_p y
+hyp SNo_max_of (SNoL y) z
+hyp SNo z
+hyp SNoLev z iIn SNoLev y
+hyp z < y
+hyp SNo_min_of (SNoR y) w
+hyp SNo w
+hyp SNoLev w iIn SNoLev y
+hyp y < w
+claim ~ SNo (y + y)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,19 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const In_rec_G_ii : (set (set set set) set set) set (set set) prop
+const In_rec_ii : (set (set set set) set set) set set set
+axiom In_rec_G_ii_In_rec_ii: !P:set (set set set) set set.(!x:set.!g:set set set.!h:set set set.(!y:set.y iIn x -> g y = h y) -> P x g = P x h) -> !x:set.In_rec_G_ii P x (In_rec_ii P x)
+axiom In_rec_G_ii_In_rec_ii_d: !P:set (set set set) set set.(!x:set.!g:set set set.!h:set set set.(!y:set.y iIn x -> g y = h y) -> P x g = P x h) -> !x:set.In_rec_G_ii P x (P x (In_rec_ii P))
+axiom In_rec_G_ii_f: !P:set (set set set) set set.(!x:set.!g:set set set.!h:set set set.(!y:set.y iIn x -> g y = h y) -> P x g = P x h) -> !x:set.!f:set set.!f2:set set.In_rec_G_ii P x f -> In_rec_G_ii P x f2 -> f = f2
+claim !P:set (set set set) set set.(!x:set.!g:set set set.!h:set set set.(!y:set.y iIn x -> g y = h y) -> P x g = P x h) -> !x:set.In_rec_ii P x = P x (In_rec_ii P)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

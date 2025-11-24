@@ -1,0 +1,26 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const Repl : set (set set) set
+const Inj1 : set set
+term Inj0 = \x:set.Repl x Inj1
+const Unj : set set
+var x:set
+var y:set
+var z:set
+var w:set
+hyp y = Unj z
+hyp w iIn x
+hyp z = Inj1 w
+claim y = w -> y iIn x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

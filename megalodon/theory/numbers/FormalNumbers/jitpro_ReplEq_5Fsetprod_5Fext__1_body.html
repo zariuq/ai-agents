@@ -1,0 +1,23 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Sigma : set (set set) set
+term setprod = \x:set.\y:set.Sigma x \z:set.y
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const ap : set set set
+const Empty : set
+axiom ap0_Sigma: !x:set.!f:set set.!y:set.y iIn Sigma x f -> ap y Empty iIn x
+const ordsucc : set set
+axiom ap1_Sigma: !x:set.!f:set set.!y:set.y iIn Sigma x f -> ap y (ordsucc Empty) iIn f (ap y Empty)
+const Repl : set (set set) set
+axiom ReplEq_ext: !x:set.!f:set set.!f2:set set.(!y:set.y iIn x -> f y = f2 y) -> Repl x f = Repl x f2
+claim !x:set.!y:set.!g:set set set.!h:set set set.(!z:set.z iIn x -> !w:set.w iIn y -> g z w = h z w) -> Repl (setprod x y) (\z:set.g (ap z Empty) (ap z (ordsucc Empty))) = Repl (setprod x y) \z:set.h (ap z Empty) (ap z (ordsucc Empty))
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

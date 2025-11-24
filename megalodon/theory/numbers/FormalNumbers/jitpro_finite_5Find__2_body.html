@@ -1,0 +1,41 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const bij : set set (set set) prop
+term equip = \x:set.\y:set.?f:set set.bij x y f
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const omega : set
+term finite = \x:set.?y:set.y iIn omega & equip x y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+const Repl : set (set set) set
+axiom ReplI: !x:set.!f:set set.!y:set.y iIn x -> f y iIn Repl x f
+const ordsucc : set set
+axiom ordsuccI1: !x:set.Subq x (ordsucc x)
+axiom ReplE': !x:set.!f:set set.!p:set prop.(!y:set.y iIn x -> p (f y)) -> !y:set.y iIn Repl x f -> p y
+axiom bijI: !x:set.!y:set.!f:set set.(!z:set.z iIn x -> f z iIn y) -> (!z:set.z iIn x -> !w:set.w iIn x -> f z = f w -> z = w) -> (!z:set.z iIn y -> ?w:set.w iIn x & f w = z) -> bij x y f
+axiom equip_sym: !x:set.!y:set.equip x y -> equip y x
+const binunion : set set set
+const Sing : set set
+const nat_p : set prop
+lemma !p:set prop.!x:set.!y:set.!f:set set.(!z:set.!w:set.finite z -> nIn w z -> p z -> p (binunion z (Sing w))) -> nat_p x -> (!z:set.equip z x -> p z) -> (!z:set.z iIn ordsucc x -> !w:set.w iIn ordsucc x -> f z = f w -> z = w) -> y = binunion (Repl x f) (Sing (f x)) -> equip (Repl x f) x -> p y
+var p:set prop
+var x:set
+var y:set
+var f:set set
+hyp !z:set.!w:set.finite z -> nIn w z -> p z -> p (binunion z (Sing w))
+hyp nat_p x
+hyp !z:set.equip z x -> p z
+hyp !z:set.z iIn ordsucc x -> f z iIn y
+hyp !z:set.z iIn ordsucc x -> !w:set.w iIn ordsucc x -> f z = f w -> z = w
+hyp !z:set.z iIn y -> ?w:set.w iIn ordsucc x & f w = z
+claim y = binunion (Repl x f) (Sing (f x)) -> p y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

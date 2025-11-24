@@ -1,0 +1,26 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoLev : set set
+const SNo_ : set set prop
+const binintersect : set set set
+const SNoElts_ : set set
+axiom restr_SNo_: !x:set.SNo x -> !y:set.y iIn SNoLev x -> SNo_ y (binintersect x (SNoElts_ y))
+const ordinal : set prop
+lemma !x:set.!y:set.SNo x -> y iIn SNoLev x -> ordinal y -> SNo_ y (binintersect x (SNoElts_ y)) -> SNoLev (binintersect x (SNoElts_ y)) = y
+var x:set
+var y:set
+hyp SNo x
+hyp y iIn SNoLev x
+claim ordinal y -> SNoLev (binintersect x (SNoElts_ y)) = y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

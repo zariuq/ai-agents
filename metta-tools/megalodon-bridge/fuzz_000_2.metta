@@ -1,0 +1,5 @@
+(Definition P100 (-> set set) P4)
+(Definition z77 (-> set prop) baz13)
+(Definition bar23 (-> set set) Q99)
+(Definition B62 set (forall ((baz12 (-> set set))) (forall ((baz84 set)) (forall ((baz98 (-> set prop))) (-> x21 (Q12 z7))))))
+(Parameter foo25 set)

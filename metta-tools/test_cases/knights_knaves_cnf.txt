@@ -1,0 +1,13 @@
+;; Knights and Knaves - CNF Clauses
+
+1. knight_a | knave_a
+2. knight_b | knave_b
+3. ~knight_a | ~knave_a
+4. ~knight_b | ~knave_b
+5. ~statement_a | knave_a | knave_b
+6. statement_a | ~knave_a
+7. statement_a | ~knave_b
+8. ~knight_a | statement_a
+9. ~knave_a | ~statement_a
+10. knight_a
+11. knave_b

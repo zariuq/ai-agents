@@ -1,0 +1,45 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const ordinal : set prop
+const omega : set
+axiom omega_ordinal: ordinal omega
+const SNoS_ : set set
+const SNoLev : set set
+const SNo : set prop
+const SNo_ : set set prop
+axiom SNoS_E2: !x:set.ordinal x -> !y:set.y iIn SNoS_ x -> !P:prop.(SNoLev y iIn x -> ordinal (SNoLev y) -> SNo y -> SNo_ (SNoLev y) y -> P) -> P
+const ap : set set set
+const Sigma : set (set set) set
+axiom beta: !x:set.!f:set set.!y:set.y iIn x -> ap (Sigma x f) y = f y
+const nat_primrec : set (set set set) set set
+const Eps_i : (set prop) set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const eps_ : set set
+const Empty : set
+const ordsucc : set set
+var x:set
+var y:set
+var z:set
+hyp !w:set.w iIn omega -> nat_primrec (Eps_i \u:set.u iIn SNoS_ omega & u < x & x < u + eps_ Empty) (\u:set.\v:set.Eps_i \x2:set.x2 iIn SNoS_ omega & x2 < x & x < x2 + eps_ (ordsucc u) & v < x2) w iIn SNoS_ omega & ap (Sigma omega (nat_primrec (Eps_i \u:set.u iIn SNoS_ omega & u < x & x < u + eps_ Empty) \u:set.\v:set.Eps_i \x2:set.x2 iIn SNoS_ omega & x2 < x & x < x2 + eps_ (ordsucc u) & v < x2)) w < x & x < ap (Sigma omega (nat_primrec (Eps_i \u:set.u iIn SNoS_ omega & u < x & x < u + eps_ Empty) \u:set.\v:set.Eps_i \x2:set.x2 iIn SNoS_ omega & x2 < x & x < x2 + eps_ (ordsucc u) & v < x2)) w + eps_ w & !u:set.u iIn w -> SNo (ap (Sigma omega (nat_primrec (Eps_i \v:set.v iIn SNoS_ omega & v < x & x < v + eps_ Empty) \v:set.\x2:set.Eps_i \y2:set.y2 iIn SNoS_ omega & y2 < x & x < y2 + eps_ (ordsucc v) & x2 < y2)) u) -> ap (Sigma omega (nat_primrec (Eps_i \v:set.v iIn SNoS_ omega & v < x & x < v + eps_ Empty) \v:set.\x2:set.Eps_i \y2:set.y2 iIn SNoS_ omega & y2 < x & x < y2 + eps_ (ordsucc v) & x2 < y2)) u < ap (Sigma omega (nat_primrec (Eps_i \v:set.v iIn SNoS_ omega & v < x & x < v + eps_ Empty) \v:set.\x2:set.Eps_i \y2:set.y2 iIn SNoS_ omega & y2 < x & x < y2 + eps_ (ordsucc v) & x2 < y2)) w
+hyp y iIn omega
+hyp z iIn y
+claim z iIn omega -> SNo (ap (Sigma omega (nat_primrec (Eps_i \w:set.w iIn SNoS_ omega & w < x & x < w + eps_ Empty) \w:set.\u:set.Eps_i \v:set.v iIn SNoS_ omega & v < x & x < v + eps_ (ordsucc w) & u < v)) z)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

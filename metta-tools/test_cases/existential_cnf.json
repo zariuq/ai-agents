@@ -1,0 +1,50 @@
+{
+  "metadata": {},
+  "comments": [],
+  "formulas": [
+    {
+      "name": "i_0_1",
+      "role": "plain",
+      "formula": [
+        "clause",
+        [
+          "lit",
+          [
+            "loves",
+            [
+              "const",
+              "esk1_0"
+            ],
+            [
+              "var",
+              "X1"
+            ]
+          ]
+        ]
+      ],
+      "type": "cnf"
+    },
+    {
+      "name": "i_0_2",
+      "role": "negated_conjecture",
+      "formula": [
+        "clause",
+        [
+          "lit-neg",
+          [
+            "loves",
+            [
+              "var",
+              "X1"
+            ],
+            [
+              "const",
+              "esk2_0"
+            ]
+          ]
+        ]
+      ],
+      "type": "cnf"
+    }
+  ]
+}

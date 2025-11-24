@@ -1,0 +1,24 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const ordinal : set prop
+const ordsucc : set set
+axiom ordinal_ordsucc: !x:set.ordinal x -> ordinal (ordsucc x)
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+lemma !x:set.!y:set.ordinal x -> ordinal y -> SNo y -> SNo x -> ordinal (ordsucc y) -> x + ordsucc y = ordsucc (x + y)
+var x:set
+var y:set
+hyp ordinal x
+hyp ordinal y
+hyp SNo y
+claim SNo x -> x + ordsucc y = ordsucc (x + y)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

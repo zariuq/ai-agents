@@ -1,0 +1,41 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Sep : set (set prop) set
+const SNoS_ : set set
+const ordsucc : set set
+const omega : set
+const minus_SNo : set set
+term - = minus_SNo
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const abs_SNo : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const eps_ : set set
+term real = Sep (SNoS_ (ordsucc omega)) \x:set.x != omega & x != - omega & !y:set.y iIn SNoS_ omega -> (!z:set.z iIn omega -> abs_SNo (y + - x) < eps_ z) -> y = x
+const SNo : set prop
+axiom SNo_omega: SNo omega
+axiom FalseE: ~ False
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+axiom SNoLeE: !x:set.!y:set.SNo x -> SNo y -> x <= y -> x < y | x = y
+const SNoLev : set set
+var x:set
+hyp x != omega
+hyp SNoLev x iIn ordsucc omega
+hyp SNo x
+claim x <= omega -> x < omega
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

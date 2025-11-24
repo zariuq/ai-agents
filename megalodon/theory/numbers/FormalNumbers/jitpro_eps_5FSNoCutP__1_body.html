@@ -1,0 +1,34 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+const Empty : set
+axiom SNo_0: SNo Empty
+const Sing : set set
+axiom SingE: !x:set.!y:set.y iIn Sing x -> y = x
+const nat_p : set prop
+axiom nat_p_trans: !x:set.nat_p x -> !y:set.y iIn x -> nat_p y
+const omega : set
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+const eps_ : set set
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+const Repl : set (set set) set
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+axiom SNo_eps_pos: !x:set.x iIn omega -> Empty < eps_ x
+var x:set
+hyp x iIn omega
+claim nat_p x -> (!y:set.y iIn Sing Empty -> SNo y) & (!y:set.y iIn Repl x eps_ -> SNo y) & !y:set.y iIn Sing Empty -> !z:set.z iIn Repl x eps_ -> y < z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>
