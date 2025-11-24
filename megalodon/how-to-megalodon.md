@@ -428,10 +428,15 @@ apply andER A B H.  (* gets B from A /\ B *)
 
 ## Important Gotchas
 
-1. **No comments at file start** - Files must start with `Definition` or `Theorem`, not `(* *)` comments
-2. **No `_` placeholders** - Unlike Coq, you cannot use `_` for implicit arguments
-3. **Use `reflexivity`** for equality proofs like `0 = 0`
-4. **Use `claim`** for local lemmas within a proof
+1. **NO COMMENT-ONLY LINES IN MIZAR MODE** - In `-mizar` mode, files MUST NOT start with comment-only lines (lines starting with `%`). This causes "lexing: empty token" errors. Start directly with `Definition` or `Theorem`. Inline comments (e.g., `assume H. % this is ok`) are fine, but standalone comment lines at the file start or between top-level declarations will break the lexer.
+
+2. **Argument order for `forall x :e V` telescopes** - When applying a function with type `forall a b c :e V, ...`, arguments must be interleaved with membership proofs: `f a Ha b Hb c Hc ...` NOT `f a b c Ha Hb Hc ...`. The telescope `forall x :e V` desugars to `forall x, x :e V -> ...`.
+
+3. **No `_` placeholders in `-mizar` mode** - Unlike standard mode, Mizar mode does not accept `_` for implicit arguments in function applications. You must provide all arguments explicitly or use the proof branching syntax (`-`, `+`, `*`, etc.).
+
+4. **Use `reflexivity`** for equality proofs like `0 = 0`
+
+5. **Use `claim`** for local lemmas within a proof
 
 ## If-Then-Else Proofs
 
@@ -688,14 +693,102 @@ zipperposition -i tptp -o tptp --timeout 60 pruned.p
   ```
 - The preamble has `or3I1..or3I3`, `or4I1..or4I4`, `or5I1..or5I5` for small disjunctions
 
+### 8a. Church-Encoded Disjunction Elimination (CRITICAL)
+
+**Problem:** Given `H : P1 \/ P2 \/ ... \/ Pn` and case handlers `C1 : P1 -> False`, ..., `Cn : Pn -> False`, prove `False`.
+
+**Key Insight:** The `\/` operator is **LEFT-ASSOCIATIVE**:
+```megalodon
+Infix \/ 785 left := or.
+```
+
+This means `P1 \/ P2 \/ P3` parses as `((P1 \/ P2) \/ P3)`, NOT `P1 \/ (P2 \/ P3)`.
+
+**Church Encoding:**
+```megalodon
+Definition or : prop -> prop -> prop :=
+  fun A B => forall p:prop, (A -> p) -> (B -> p) -> p.
+```
+
+So a proof `H : A \/ B` has type:
+```megalodon
+forall p:prop, (A -> p) -> (B -> p) -> p
+```
+
+**Elimination Pattern:** To eliminate left-associative n-way disjunction, peel from OUTSIDE-IN:
+
+```megalodon
+(* For P1 \/ P2 \/ P3 = ((P1 \/ P2) \/ P3) *)
+exact (
+  H False
+    (fun H2 =>              (* H2 : P1 \/ P2 *)
+      H2 False C1 C2)       (* Eliminate inner disjunction *)
+    C3).                    (* Handle outermost case P3 *)
+```
+
+**General n-way pattern (15-way example):**
+```megalodon
+(* Given: Ledge : P1 \/ P2 \/ ... \/ P15  (left-associative)
+   Goal: False
+   Have: C1 : P1 -> False, ..., C15 : P15 -> False *)
+
+exact (
+  Ledge False
+    (fun H14 =>             (* H14 : prefix14 = P1 \/ ... \/ P14 *)
+      H14 False
+        (fun H13 =>         (* H13 : prefix13 *)
+          H13 False
+            (fun H12 =>     (* Keep nesting... *)
+              ...
+                (fun H2 =>  (* H2 : P1 \/ P2 *)
+                  H2 False C1 C2)
+                C3)         (* Handle P3 *)
+            C4)             (* Handle P4 *)
+        C14)                (* Handle P14 *)
+    C15).                   (* Handle P15 (outermost) *)
+```
+
+**Why This Works:**
+1. `Ledge` has type `(prefix14 \/ P15)` where `prefix14 = P1 \/ ... \/ P14` (left-nested)
+2. Applying `Ledge False` gives: `(prefix14 -> False) -> (P15 -> False) -> False`
+3. First argument needs type `prefix14 -> False`, constructed recursively
+4. Second argument is `C15 : P15 -> False`
+5. Recursively build `kill_k : prefix_k -> False` from `kill_(k-1)` and `Ck`
+6. Base case: `kill_2 = fun H2 => H2 False C1 C2`
+
+**Common Mistake:** Trying to eliminate left-to-right (handling P1 first):
+```megalodon
+(* WRONG - treats as right-associative *)
+exact (Ledge False C1 (fun rest => ...)).  (* Type error! *)
+```
+The error occurs because `C1 : P1 -> False` but the first argument expects `prefix14 -> False`.
+
 ### 9. Use Bullets and Braces Consistently
 - Each branch from `apply` starts with `-` / `+` / `*`
 - `claim` proofs go in `{ ... }` braces
 
 ## Common Pitfalls
 
-### 1. File Start
-Don't start with a plain `(* comment *)`. Begin with metadata or a declaration.
+### 1. File Start (CRITICAL FOR MIZAR MODE)
+**DO NOT** start `.mg` files with comment-only lines (`%` at start of line) when using `-mizar` mode. This causes "lexing: empty token" errors that are hard to debug.
+
+**WRONG:**
+```megalodon
+% This is a proof of...
+% Author: ...
+
+Definition foo := ...
+```
+
+**CORRECT:**
+```megalodon
+Definition foo := ...  % This comment is OK
+
+% Later comments between definitions are also fine in some contexts
+Definition bar := ...
+```
+
+**SAFEST:** Just don't use standalone comment lines at all in Mizar mode. Use inline comments instead.
 
 ### 2. Preamble Restrictions
 `.mgs` files cannot contain proofs. If you add a proof there, compilation fails.
