@@ -353,6 +353,55 @@ assume HeqmB: equip m B.
 admit.
 Qed.
 
+Theorem t_card_1_equip_1_singleton : forall x:set, equip 1 {x}.
+admit.
+Qed.
+
+Theorem t_card_1_singleton_equip_1 : forall S:set,
+  (exists x:set, S = {x}) -> equip 1 S.
+let S. assume Hex: exists x:set, S = {x}. apply Hex.
+let x. assume HS: S = {x}. rewrite HS. exact t_card_1_equip_1_singleton x.
+Qed.
+
+Theorem t_card_1_equip_2_pair : forall x y:set, x <> y -> equip 2 {x, y}.
+admit.
+Qed.
+
+Theorem t_card_1_equip_add_elem : forall S x n:set,
+  nat_p n -> x /:e S -> equip n S -> equip (ordsucc n) ({x} :\/: S).
+admit.
+Qed.
+
+Theorem t_card_1_equip_remove_elem : forall S x n:set,
+  nat_p n -> x :e S -> equip (ordsucc n) S -> equip n (S :\: {x}).
+admit.
+Qed.
+
+Theorem t_card_1_finite_Subq : forall X Y:set,
+  X c= Y -> finite Y -> finite X.
+admit.
+Qed.
+
+Theorem t_card_1_finite_union : forall X Y:set,
+  finite X -> finite Y -> finite (X :\/: Y).
+admit.
+Qed.
+
+Theorem t_card_1_finite_setminus : forall X Y:set,
+  finite X -> finite (X :\: Y).
+admit.
+Qed.
+
+Theorem t_card_1_finite_inter : forall X Y:set,
+  finite X -> finite (X :/\: Y).
+admit.
+Qed.
+
+Theorem t_card_1_nat_ordinal_equip : forall n:set,
+  nat_p n -> equip n n.
+let n. assume Hn: nat_p n. exact equip_ref n.
+Qed.
+
 Theorem card_1_compiles : True.
 exact TrueI.
 Qed.
