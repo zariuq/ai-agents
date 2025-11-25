@@ -114,3 +114,6 @@ mizar-projects/4cp/theories/*/old_*/
 # Keep README.md and search scripts, ignore extracted libraries
 megalodon/theory/metamath/mmmg/
 megalodon/theory/mizar/mmlmg/
+
+# Block all markdown files (use git add -f for legitimate READMEs)
+*.md
