@@ -144,6 +144,30 @@ apply equip_nonempty (ordsucc n) X n.
 - exact equip_sym_card X (ordsucc n) Heq.
 Qed.
 
+Theorem t_card_1_Th1 : forall M N:set,
+  cardinal M -> cardinal N -> equip M N -> M = N.
+exact cardinal_eq_of_equip.
+Qed.
+
+Theorem t_card_1_equip_refl : forall X:set, equip X X.
+let X.
+exact equip_ref X.
+Qed.
+
+Theorem t_card_1_equip_sym : forall X Y:set, equip X Y -> equip Y X.
+let X Y.
+assume H: equip X Y.
+exact equip_sym X Y H.
+Qed.
+
+Theorem t_card_1_equip_tra : forall X Y Z:set,
+  equip X Y -> equip Y Z -> equip X Z.
+let X Y Z.
+assume HXY: equip X Y.
+assume HYZ: equip Y Z.
+exact equip_tra X Y Z HXY HYZ.
+Qed.
+
 Theorem equip_singleton_shape : forall X a:set, equip X {a} -> exists x:set, X = {x}.
 let X. let a.
 assume Heq: equip X {a}.
@@ -191,4 +215,49 @@ apply set_ext X {x0}.
   let y. assume Hy: y :e {x0}.
   rewrite (SingE x0 y Hy).
   exact Hx0_in.
+Qed.
+
+Theorem t_card_1_Subq_equip : forall X Y:set,
+  X c= Y -> equip X Y -> X = Y.
+let X Y.
+assume HXY: X c= Y.
+assume Heq: equip X Y.
+admit.
+Qed.
+
+Theorem t_card_1_equip_Empty_iff : forall X:set,
+  equip X Empty <-> X = Empty.
+let X.
+apply iffI.
+- exact equip_empty_eq X.
+- assume HX: X = Empty.
+  rewrite HX.
+  exact equip_ref Empty.
+Qed.
+
+Theorem t_card_1_singleton_equip : forall x:set, equip {x} 1.
+let x.
+admit.
+Qed.
+
+Theorem t_card_1_Sing_power_0 : {Empty} = Power Empty.
+apply set_ext.
+- let x. assume Hx: x :e {Empty}.
+  claim Hxe: x = Empty.
+    exact SingE Empty x Hx.
+  rewrite Hxe.
+  prove Empty :e Power Empty.
+  apply PowerI Empty Empty.
+  exact Subq_ref Empty.
+- let x. assume Hx: x :e Power Empty.
+  claim Hxe: x c= Empty.
+    exact PowerE Empty x Hx.
+  claim Hxeq: x = Empty.
+    exact Empty_Subq_eq x Hxe.
+  rewrite Hxeq.
+  exact SingI Empty.
+Qed.
+
+Theorem card_1_compiles : True.
+exact TrueI.
 Qed.
