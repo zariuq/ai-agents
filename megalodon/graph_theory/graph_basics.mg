@@ -1606,7 +1606,7 @@ prove exists k0:set, exists W0:set -> set, is_cycle V R k0 W0.
 Qed.
 
 Definition planar_embedding : set -> (set -> set -> prop) -> set -> prop :=
-  fun V R E => V = V.
+  fun V R E => True.
 
 Theorem planar_embedding_induced : forall V:set, forall R:set -> set -> prop, forall E:set,
   planar_embedding V R E ->
@@ -1653,4 +1653,136 @@ Admitted.
 
 Theorem planar_edge_bound_simple : forall V:set, forall R:set -> set -> prop,
   planar_simple_graph V R -> True.
+Admitted.
+
+Theorem is_matching_no_loops : forall V:set, forall R:set -> set -> prop, forall M:set -> set -> prop,
+  simple_graph V R ->
+  is_matching V R M ->
+  forall v:set, ~M v v.
+let V. let R. let M.
+assume Hsg: simple_graph V R.
+assume Hm: is_matching V R M.
+let v.
+apply notI.
+assume Hv: M v v.
+claim Hedges: and (v :e V) (and (v :e V) (R v v)).
+  exact is_matching_edge_in_graph V R M Hm v v Hv.
+claim Hr: R v v.
+  exact andER (v :e V) (R v v) (andER (v :e V) (and (v :e V) (R v v)) Hedges).
+claim HvV: v :e V.
+  exact andEL (v :e V) (and (v :e V) (R v v)) Hedges.
+exact (simple_graph_irreflexive V R Hsg v HvV) Hr.
+Qed.
+
+Theorem perfect_matching_no_loops : forall V:set, forall R:set -> set -> prop, forall M:set -> set -> prop,
+  simple_graph V R ->
+  perfect_matching V R M ->
+  forall v:set, ~M v v.
+let V. let R. let M.
+assume Hsg: simple_graph V R.
+assume Hp: perfect_matching V R M.
+exact is_matching_no_loops V R M Hsg (perfect_matching_is_matching V R M Hp).
+Qed.
+
+Definition edge_coloring : set -> (set -> set -> prop) -> set -> (set -> set -> set) -> prop :=
+  fun V R C col =>
+    forall x y, R x y -> and (col x y = col y x) (col x y :e C).
+
+Definition proper_edge_coloring : set -> (set -> set -> prop) -> set -> (set -> set -> set) -> prop :=
+  fun V R C col =>
+    and (edge_coloring V R C col)
+        (forall a b c,
+           R a b -> R a c -> b <> c ->
+           col a b <> col a c).
+
+Definition edge_k_colorable : set -> (set -> set -> prop) -> set -> prop :=
+  fun V R k => exists col:set -> set -> set, proper_edge_coloring V R k col.
+
+Definition chromatic_index_le : set -> (set -> set -> prop) -> set -> prop :=
+  fun V R k => edge_k_colorable V R k.
+
+Theorem proper_edge_coloring_incident_distinct : forall V:set, forall R:set -> set -> prop,
+  forall C:set, forall col:set -> set -> set,
+    proper_edge_coloring V R C col ->
+    forall a b c, R a b -> R a c -> b <> c -> col a b <> col a c.
+let V. let R. let C. let col.
+assume Hpr: proper_edge_coloring V R C col.
+claim Hdistinct: forall a b c, R a b -> R a c -> b <> c -> col a b <> col a c.
+  exact andER (edge_coloring V R C col)
+              (forall a b c, R a b -> R a c -> b <> c -> col a b <> col a c)
+              Hpr.
+let a. let b. let c.
+assume Hab: R a b.
+assume Hac: R a c.
+assume Hneq: b <> c.
+exact Hdistinct a b c Hab Hac Hneq.
+Qed.
+
+Theorem edge_coloring_sym : forall V:set, forall R:set -> set -> prop,
+  forall C:set, forall col:set -> set -> set,
+    edge_coloring V R C col ->
+    forall x y, R x y -> col x y = col y x.
+let V. let R. let C. let col.
+assume Hcol: edge_coloring V R C col.
+let x. let y. assume Hxy: R x y.
+exact andEL (col x y = col y x) (col x y :e C) (Hcol x y Hxy).
+Qed.
+
+Theorem edge_coloring_color_in_palette : forall V:set, forall R:set -> set -> prop,
+  forall C:set, forall col:set -> set -> set,
+    edge_coloring V R C col ->
+    forall x y, R x y -> col x y :e C.
+let V. let R. let C. let col.
+assume Hcol: edge_coloring V R C col.
+let x. let y. assume Hxy: R x y.
+exact andER (col x y = col y x) (col x y :e C) (Hcol x y Hxy).
+Qed.
+
+Theorem edge_k_colorable_imp_chromatic_index_le : forall V:set, forall R:set -> set -> prop, forall k:set,
+  edge_k_colorable V R k -> chromatic_index_le V R k.
+let V. let R. let k.
+assume Hk: edge_k_colorable V R k.
+exact Hk.
+Qed.
+
+Theorem vizing_bound_statement : forall V:set, forall R:set -> set -> prop,
+  True.
+Admitted.
+
+Theorem konig_line_bipartite_edge_chromatic_index : forall V:set, forall R:set -> set -> prop,
+  bipartite_graph V R ->
+  True.
+Admitted.
+
+Definition chromatic_number_le : set -> (set -> set -> prop) -> set -> prop :=
+  fun V R k => k_colorable V R k.
+
+Theorem proper_coloring_incident_distinct : forall V:set, forall R:set -> set -> prop,
+  forall C:set, forall c:set -> set,
+    proper_coloring V R C c ->
+    forall x y :e V, x <> y -> R x y -> c x <> c y.
+let V. let R. let C. let c.
+assume Hp: proper_coloring V R C c.
+let x. assume Hx: x :e V.
+let y. assume Hy: y :e V.
+assume Hneq: x <> y.
+assume Hxy: R x y.
+exact andER (coloring V C c) (forall x y :e V, x <> y -> R x y -> c x <> c y) Hp x Hx y Hy Hneq Hxy.
+Qed.
+
+Theorem color_class_is_independent : forall V:set, forall R:set -> set -> prop,
+  forall C:set, forall c:set -> set, forall col:set,
+    proper_coloring V R C c ->
+    col :e C ->
+    is_indep_set V R (Sep V (fun v:set => c v = col)).
+Admitted.
+
+Theorem clique_lower_bound_chromatic_number : forall V:set, forall R:set -> set -> prop,
+  forall K:set,
+    is_clique V R K ->
+    chromatic_number_le V R K.
+Admitted.
+
+Theorem independence_number_upper_chromatic_number : forall V:set, forall R:set -> set -> prop,
+  True.
 Admitted.

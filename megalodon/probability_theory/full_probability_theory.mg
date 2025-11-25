@@ -191,21 +191,63 @@ claim FEmpty: Empty :e F.
 set f := fun n : set => If_i (n = 0) A (If_i (n = 1) B Empty).
 
 claim Ff: forall n :e omega, f n :e F.
-{ admit. }
+{
+  let n. assume Hn.
+  claim Eq: f n = If_i (n=0) A (If_i (n=1) B Empty). { reflexivity. }
+  claim C0: n = 0 -> f n :e F.
+  {
+    assume Hz.
+    rewrite Eq.
+    rewrite (If_i_1 (n=0) A (If_i (n=1) B Empty) Hz).
+    exact HA.
+  }
+  claim Cnot0: n <> 0 -> f n :e F.
+  {
+    assume Hnz.
+    rewrite Eq.
+    rewrite (If_i_0 (n=0) A (If_i (n=1) B Empty) Hnz).
+    claim C1: n = 1 -> If_i (n=1) B Empty :e F.
+    {
+      assume H1.
+      rewrite (If_i_1 (n=1) B Empty H1).
+      exact HB.
+    }
+    claim Cnot1: n <> 1 -> If_i (n=1) B Empty :e F.
+    {
+      assume Hn1.
+      rewrite (If_i_0 (n=1) B Empty Hn1).
+      exact FEmpty.
+    }
+    exact orE (n=1) (n<>1) (If_i (n=1) B Empty :e F) C1 Cnot1 (xm (n=1)).
+  }
+  exact orE (n=0) (n<>0) (f n :e F) C0 Cnot0 (xm (n=0)).
+}
 
 claim Fdisj: pairwise_disjoint f.
-{ admit. }
+{
+  admit.
+}
 
 claim HUnionSym: A :\/: B = bigcup_nat f.
 { admit. }
 
 claim HSum: P (bigcup_nat f) = sum_nat (fun n => P (f n)).
 {
-  admit.
+  claim H1: (forall A :e F, P A :e real /\ 0 <= P A) /\ (P Omega = 1 /\ (P Empty = 0 /\ (forall f : set -> set, (forall n :e omega, f n :e F) -> pairwise_disjoint f -> P (bigcup_nat f) = sum_nat (fun n => P (f n))))).
+  { exact andER (is_sigma_field Omega F) ((forall A :e F, P A :e real /\ 0 <= P A) /\ (P Omega = 1 /\ (P Empty = 0 /\ (forall f : set -> set, (forall n :e omega, f n :e F) -> pairwise_disjoint f -> P (bigcup_nat f) = sum_nat (fun n => P (f n)))))) H. }
+  claim H2: P Omega = 1 /\ (P Empty = 0 /\ (forall f : set -> set, (forall n :e omega, f n :e F) -> pairwise_disjoint f -> P (bigcup_nat f) = sum_nat (fun n => P (f n)))).
+  { exact andER (forall A :e F, P A :e real /\ 0 <= P A) (P Omega = 1 /\ (P Empty = 0 /\ (forall f : set -> set, (forall n :e omega, f n :e F) -> pairwise_disjoint f -> P (bigcup_nat f) = sum_nat (fun n => P (f n))))) H1. }
+  claim H3: P Empty = 0 /\ (forall f : set -> set, (forall n :e omega, f n :e F) -> pairwise_disjoint f -> P (bigcup_nat f) = sum_nat (fun n => P (f n))).
+  { exact andER (P Omega = 1) (P Empty = 0 /\ (forall f : set -> set, (forall n :e omega, f n :e F) -> pairwise_disjoint f -> P (bigcup_nat f) = sum_nat (fun n => P (f n)))) H2. }
+  claim Hadd: forall f : set -> set, (forall n :e omega, f n :e F) -> pairwise_disjoint f -> P (bigcup_nat f) = sum_nat (fun n => P (f n)).
+  { exact andER (P Empty = 0) (forall f : set -> set, (forall n :e omega, f n :e F) -> pairwise_disjoint f -> P (bigcup_nat f) = sum_nat (fun n => P (f n))) H3. }
+  exact Hadd f Ff Fdisj.
 }
 
 claim HSumVal: sum_nat (fun n => P (f n)) = P A + P B.
-{ admit. }
+{
+  admit.
+}
 
 rewrite HUnionSym.
 rewrite HSum.
@@ -256,6 +298,16 @@ Theorem product_rule :
     P (A :/\: B) = P B * conditional_prob Omega P A B.
 let Omega. let F. let P. let A. let B.
 assume H. assume HA. assume HB. assume Hp.
+
+claim EqCond: conditional_prob Omega P A B = P (A :/\: B) :/: P B.
+{
+  claim Def: conditional_prob Omega P A B = If_i (0 < P B) (P (A :/\: B) :/: P B) 0. { reflexivity. }
+  rewrite Def.
+  rewrite (If_i_1 (0 < P B) (P (A :/\: B) :/: P B) 0 Hp).
+  reflexivity.
+}
+
+rewrite EqCond.
 admit.
 Qed.
 
