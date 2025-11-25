@@ -101,3 +101,16 @@ Prompts/
 docs/
 .claude/prompts/
 2025_*/
+
+# 4cp (four color) project - archived/inactive
+# These large directories slow down Codex
+mizar-projects/4cp/theories/00_infrastructure/text/
+mizar-projects/4cp/theories/00_curriculum/text/
+mizar-projects/4cp/theories/00_infrastructure/old_first_draft/
+mizar-projects/4cp/theories/*/text/
+mizar-projects/4cp/theories/*/old_*/
+
+# Large theory libraries (downloaded from Chad Brown's server)
+# Keep README.md and search scripts, ignore extracted libraries
+megalodon/theory/metamath/mmmg/
+megalodon/theory/mizar/mmlmg/
