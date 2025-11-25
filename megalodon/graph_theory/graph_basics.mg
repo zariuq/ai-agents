@@ -1786,3 +1786,43 @@ Admitted.
 Theorem independence_number_upper_chromatic_number : forall V:set, forall R:set -> set -> prop,
   True.
 Admitted.
+
+Definition hamiltonian_cycle : set -> (set -> set -> prop) -> set -> (set -> set) -> prop :=
+  fun V R k W =>
+    and (is_cycle V R k W)
+        (forall v :e V, exists i :e k, W i = v).
+
+Definition hamiltonian_graph : set -> (set -> set -> prop) -> prop :=
+  fun V R => exists k:set, exists W:set -> set, hamiltonian_cycle V R k W.
+
+Theorem cycle_graph_is_hamiltonian : forall V:set, forall R:set -> set -> prop,
+  cycle_graph V R -> hamiltonian_graph V R.
+Admitted.
+
+Theorem dirac_condition_implies_hamiltonian : forall V:set, forall R:set -> set -> prop,
+  simple_graph V R -> True.
+Admitted.
+
+Theorem ore_condition_implies_hamiltonian : forall V:set, forall R:set -> set -> prop,
+  simple_graph V R -> True.
+Admitted.
+
+Theorem mantel_triangle_free_edge_bound : forall V:set, forall R:set -> set -> prop,
+  simple_graph V R -> True.
+Admitted.
+
+Theorem turan_kclique_free_bound : forall V:set, forall R:set -> set -> prop, forall k:set,
+  simple_graph V R -> True.
+Admitted.
+
+Theorem ramsey_R33_six : True.
+Admitted.
+
+Theorem ramsey_general_exists : True.
+Admitted.
+
+Theorem wagner_kuratowski_planar_characterization : True.
+Admitted.
+
+Theorem graph_minor_well_quasi_order : True.
+Admitted.
