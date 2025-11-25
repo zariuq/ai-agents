@@ -115,5 +115,8 @@ mizar-projects/4cp/theories/*/old_*/
 megalodon/theory/metamath/mmmg/
 megalodon/theory/mizar/mmlmg/
 
-# Block all markdown files (use git add -f for legitimate READMEs)
+# Block all markdown files (use git add -f for whitelisted files)
 *.md
+!README.md
+!megalodon/how-to-megalodon.md
+!megalodon/PNP_crux/RIGOROUS_ANALYSIS_REPORT.md
