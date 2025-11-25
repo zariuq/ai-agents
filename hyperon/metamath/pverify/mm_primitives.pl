@@ -9,6 +9,9 @@
     % High-level parsing (complete file -> structured statements)
     parse_mm_file/2,
 
+    % Streaming interface (parse and yield statements one-by-one)
+    next_statement/2,  % next_statement(+Tokens, -Result) where Result = [Stmt, Rest] | [end] | [error]
+
     % MeTTa generation (complete file -> .metta file)
     generate_petta_verifier/2,
     generate_petta_verifier/3,
@@ -275,6 +278,19 @@ mm_symbols_until_equals([S|Ss]) -->
     !,
     mm_symbols_until_equals(Ss).
 mm_symbols_until_equals([]) --> [].
+
+%% ======================================================================
+%% Streaming Interface (for PeTTa pipeline)
+%% ======================================================================
+
+% next_statement(+Tokens, -Result)
+% Parse one statement from token list
+% Returns [Statement, RestTokens] for success, ['end'] for end, ['error'] for error
+next_statement([], ['end']) :- !.
+next_statement(Tokens, [Statement, Rest]) :-
+    phrase(mm_statement(Statement), Tokens, Rest),
+    !.
+next_statement(_, ['error']).
 
 %% ======================================================================
 %% MeTTa Generation (mmverify.py-style output)
