@@ -275,6 +275,157 @@ axiom r35_critical_is_4_regular {V : Type*} [Fintype V] [DecidableEq V] (G : Sim
 
 /-! ## Claim 1 -/
 
+/-- In an 18-vertex triangle-free graph with no 6-independent set,
+    every vertex has degree at least 4.
+
+    Proof: If deg(v) ≤ 3, then the non-neighbors H have size ≥ 14.
+    By R(3,5)=14, any 14-vertex graph contains a triangle or 5-independent set.
+    - Triangle in H extends to triangle in G (contradiction)
+    - 5-independent in H extends to 6-independent in G (adding v) -/
+lemma degree_ge_four_of_triangleFree_no_6indep
+    {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
+    (h_tri : TriangleFree G)
+    (h_no6 : NoKIndepSet 6 G)
+    (v : Fin 18) :
+    G.degree v ≥ 4 := by
+  -- Proof by contradiction: assume deg(v) ≤ 3
+  by_contra h_not
+  push_neg at h_not
+  have h_deg_le_3 : G.degree v ≤ 3 := Nat.lt_succ_iff.mp h_not
+
+  -- Non-neighbors of v (excluding v itself)
+  let H := (Finset.univ : Finset (Fin 18)) \ (insert v (G.neighborFinset v))
+
+  have h_H_card : H.card ≥ 14 := by
+    -- |H| = 18 - |{v} ∪ neighbors(v)| = 18 - (1 + deg(v)) ≥ 18 - 4 = 14
+    have h_union_card : (insert v (G.neighborFinset v)).card ≤ 4 := by
+      calc (insert v (G.neighborFinset v)).card
+          = (G.neighborFinset v).card + 1 := by
+            rw [Finset.card_insert_of_notMem (G.notMem_neighborFinset_self v)]
+        _ = G.degree v + 1 := by rw [G.card_neighborFinset_eq_degree]
+        _ ≤ 3 + 1 := by omega
+        _ = 4 := by norm_num
+    have h_disjoint : Disjoint H (insert v (G.neighborFinset v)) := by
+      rw [Finset.disjoint_iff_inter_eq_empty]
+      ext w
+      simp only [H, Finset.mem_inter, Finset.mem_sdiff, Finset.mem_univ,
+                 Finset.mem_insert, mem_neighborFinset, true_and,
+                 Finset.notMem_empty, iff_false]
+      tauto
+    have h_union : H ∪ (insert v (G.neighborFinset v)) = Finset.univ := by
+      ext w
+      simp only [H, Finset.mem_union, Finset.mem_sdiff, Finset.mem_univ,
+                 Finset.mem_insert, mem_neighborFinset, true_and, iff_true]
+      tauto
+    have h_card_union : H.card + (insert v (G.neighborFinset v)).card = 18 := by
+      have h_eq : (H ∪ (insert v (G.neighborFinset v))).card =
+                   H.card + (insert v (G.neighborFinset v)).card :=
+        Finset.card_union_of_disjoint h_disjoint
+      rw [h_union] at h_eq
+      have : (Finset.univ : Finset (Fin 18)).card = 18 := by simp [Fintype.card_fin]
+      rw [this] at h_eq
+      exact h_eq.symm
+    calc H.card
+        = 18 - (insert v (G.neighborFinset v)).card := by omega
+      _ ≥ 18 - 4 := by omega
+      _ = 14 := by norm_num
+
+  -- Extract 14-element subset from H
+  obtain ⟨H14, hH14_sub, hH14_card⟩ := Finset.exists_subset_card_eq h_H_card
+
+  -- v is not adjacent to any vertex in H14
+  have h_v_nonadj_H14 : ∀ w ∈ H14, ¬ G.Adj v w := by
+    intro w hw h_adj
+    have hw_in_H : w ∈ H := hH14_sub hw
+    simp only [H, Finset.mem_sdiff, Finset.mem_univ, true_and] at hw_in_H
+    apply hw_in_H
+    apply Finset.mem_insert_of_mem
+    rw [mem_neighborFinset]
+    exact h_adj
+
+  -- Create induced subgraph on H14 via comap
+  have h_H14_card_type : Fintype.card (↑H14 : Set (Fin 18)) = 14 := by
+    simp [Fintype.card_coe, hH14_card]
+
+  have h_card_eq : Fintype.card (Fin 14) = Fintype.card (↑H14 : Set (Fin 18)) := by
+    simp only [Fintype.card_fin]
+    exact h_H14_card_type.symm
+  let e : Fin 14 ≃ (↑H14 : Set (Fin 18)) := Fintype.equivOfCardEq h_card_eq
+  let f : Fin 14 ↪ Fin 18 := e.toEmbedding.trans (Function.Embedding.subtype _)
+  let G_H14 := G.comap f
+
+  -- Apply R(3,5)=14 to G_H14
+  have h_ramsey_prop : HasRamseyProperty 3 5 G_H14 := by
+    exact (ramsey_of_ramseyNumber_eq ramsey_three_five).2 G_H14
+  rcases h_ramsey_prop with ⟨S, hS⟩ | ⟨T, hT⟩
+
+  · -- Case 1: G_H14 contains a 3-clique S → triangle in G
+    have h_clique_G : G.IsNClique 3 (S.map f) := by
+      constructor
+      · intro x hx y hy hxy
+        rcases Finset.mem_map.mp hx with ⟨x', hx', rfl⟩
+        rcases Finset.mem_map.mp hy with ⟨y', hy', rfl⟩
+        have hne : x' ≠ y' := by
+          intro h_eq
+          apply hxy
+          simp [h_eq]
+        exact hS.1 hx' hy' hne
+      · simp [Finset.card_map, hS.2]
+    exact h_tri (S.map f) h_clique_G
+
+  · -- Case 2: G_H14 contains a 5-independent set T → T ∪ {v} is 6-independent in G
+    let T_plus_v := insert v (T.map f)
+    have h_indep_6 : G.IsNIndepSet 6 T_plus_v := by
+      constructor
+      · -- Show T_plus_v is independent
+        intro x hx y hy hxy h_adj
+        show False
+        have hx' : x = v ∨ x ∈ T.map f := Finset.mem_insert.mp hx
+        have hy' : y = v ∨ y ∈ T.map f := Finset.mem_insert.mp hy
+        rcases hx' with rfl | hx_in_T <;> rcases hy' with rfl | hy_in_T
+        · exact hxy rfl
+        · have : y ∈ (↑H14 : Set (Fin 18)) := by
+            rcases Finset.mem_map.mp hy_in_T with ⟨y', hy'_in_T, rfl⟩
+            show (f y') ∈ ↑H14
+            change (e y').val ∈ ↑H14
+            exact (e y').property
+          have h_y_nonadj_v : ¬ G.Adj x y := h_v_nonadj_H14 y this
+          exact h_y_nonadj_v h_adj
+        · have : x ∈ (↑H14 : Set (Fin 18)) := by
+            rcases Finset.mem_map.mp hx_in_T with ⟨x', hx'_in_T, rfl⟩
+            show (f x') ∈ ↑H14
+            change (e x').val ∈ ↑H14
+            exact (e x').property
+          have h_x_nonadj_v : ¬ G.Adj y x := h_v_nonadj_H14 x this
+          exact h_x_nonadj_v (G.symm h_adj)
+        · rcases Finset.mem_map.mp hx_in_T with ⟨x', hx'_in_T, rfl⟩
+          rcases Finset.mem_map.mp hy_in_T with ⟨y', hy'_in_T, rfl⟩
+          have hne : x' ≠ y' := by
+            intro h_eq
+            apply hxy
+            simp [h_eq]
+          exact hT.1 hx'_in_T hy'_in_T hne h_adj
+      · have h_v_not_in_map : v ∉ T.map f := by
+          intro h_v_in_T
+          rcases Finset.mem_map.mp h_v_in_T with ⟨t, ht, h_eq⟩
+          have h_ft_in_H14 : (f t : Fin 18) ∈ H14 := by
+            have : (f t : Fin 18) ∈ (↑H14 : Set (Fin 18)) := by
+              change (e t).val ∈ ↑H14
+              exact (e t).property
+            simpa using this
+          have h_v_in_H14 : v ∈ H14 := by rwa [h_eq] at h_ft_in_H14
+          -- But v ∈ H14 means v ∉ insert v (neighborFinset v), which contradicts v ∈ insert v ...
+          have h_v_in_H : v ∈ H := hH14_sub h_v_in_H14
+          simp only [H, Finset.mem_sdiff, Finset.mem_univ, true_and] at h_v_in_H
+          exact h_v_in_H (Finset.mem_insert_self v _)
+        calc T_plus_v.card
+            = (insert v (T.map f)).card := rfl
+          _ = (T.map f).card + 1 := Finset.card_insert_of_notMem h_v_not_in_map
+          _ = T.card + 1 := by rw [Finset.card_map]
+          _ = 5 + 1 := by rw [hT.2]
+          _ = 6 := by norm_num
+    exact h_no6 T_plus_v h_indep_6
+
 lemma claim1_five_regular {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
     (h_tri : TriangleFree G) (h_no6 : NoKIndepSet 6 G) :
     IsKRegular G 5 := by
@@ -282,11 +433,24 @@ lemma claim1_five_regular {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
   have h_le : ∀ v, G.degree v ≤ 5 := by
     intro v
     apply degree_le_of_triangleFree_no_indep h_tri h_no6
-  
-  -- Part 2: degree >= 5 (TODO: fully formalize; this is a placeholder to preserve build)
-  have h_ge : ∀ v, G.degree v ≥ 5 := by
+
+  -- Part 2: degree >= 4 (proven via R(3,5)=14)
+  have h_ge_4 : ∀ v, G.degree v ≥ 4 := by
+    intro v
+    exact degree_ge_four_of_triangleFree_no_6indep h_tri h_no6 v
+
+  -- Part 3: degree = 4 leads to contradiction (TODO)
+  have h_no_deg_4 : ∀ v, G.degree v ≠ 4 := by
     intro v
     sorry
+
+  -- Therefore degree = 5
+  have h_ge : ∀ v, G.degree v ≥ 5 := by
+    intro v
+    have h_le_v := h_le v
+    have h_ge_4_v := h_ge_4 v
+    have h_no_4_v := h_no_deg_4 v
+    omega
 
   intro v
   exact le_antisymm (h_le v) (h_ge v)

@@ -323,6 +323,273 @@ theorem ramsey_three_five_ge_14_of_nonempty
       exact not_hasRamseyProperty_35 (Or.inr ⟨s.map f, h_indep⟩)
 
 /-
+# General Ramsey Recursion
+-/
+
+/-- **Ramsey Recursion Theorem**: R(r,s) ≤ R(r-1,s) + R(r,s-1)
+
+This is the fundamental recursion relation for Ramsey numbers. Given a graph on
+R(r-1,s) + R(r,s-1) vertices, pick any vertex v and partition the remaining vertices
+into those adjacent to v and those not adjacent to v. By pigeonhole, one partition
+has enough vertices to apply the inductive hypothesis.
+
+This generalizes the proof technique used for R(3,3)=6.
+-/
+theorem ramsey_recursion {r s : ℕ} (hr : r ≥ 2) (hs : s ≥ 2)
+    (h_r : 0 < ramseyNumber (r-1) s ∧
+           ∀ (G : SimpleGraph (Fin (ramseyNumber (r-1) s))) [DecidableRel G.Adj],
+           HasRamseyProperty (r-1) s G)
+    (h_s : 0 < ramseyNumber r (s-1) ∧
+           ∀ (G : SimpleGraph (Fin (ramseyNumber r (s-1)))) [DecidableRel G.Adj],
+           HasRamseyProperty r (s-1) G) :
+    ∀ (G : SimpleGraph (Fin (ramseyNumber (r-1) s + ramseyNumber r (s-1)))) [DecidableRel G.Adj],
+    HasRamseyProperty r s G := by
+  intro G inst
+  unfold HasRamseyProperty
+
+  -- Pick vertex v and partition others into adjacent/nonadjacent
+  let n := ramseyNumber (r-1) s + ramseyNumber r (s-1)
+  have h_n_pos : 0 < n := by omega
+  let v : Fin n := ⟨0, h_n_pos⟩
+  let others := (Finset.univ : Finset (Fin n)).erase v
+  let adjacent := others.filter (fun u => G.Adj v u)
+  let nonadjacent := others.filter (fun u => ¬ G.Adj v u)
+
+  -- Basic partition properties
+  have h_card : others.card = n - 1 := by
+    simp [others, Fintype.card_fin]
+  have h_partition : adjacent ∪ nonadjacent = others := by
+    ext u; simp [adjacent, nonadjacent]; tauto
+  have h_disjoint : Disjoint adjacent nonadjacent := by
+    rw [Finset.disjoint_iff_inter_eq_empty]
+    ext u; simp [adjacent, nonadjacent]; tauto
+  have h_sum : adjacent.card + nonadjacent.card = n - 1 := by
+    have := Finset.card_union_of_disjoint h_disjoint
+    rw [h_partition] at this
+    rw [← this, h_card]
+
+  -- Pigeonhole: one partition has enough vertices (FIXED SWAP)
+  have h_pigeon : adjacent.card ≥ ramseyNumber (r-1) s ∨
+                   nonadjacent.card ≥ ramseyNumber r (s-1) := by
+    by_contra h_not
+    push_neg at h_not
+    have : adjacent.card + nonadjacent.card < ramseyNumber (r-1) s + ramseyNumber r (s-1) := by
+      omega
+    rw [h_sum] at this
+    have : n - 1 < n := by omega
+    omega
+
+  rcases h_pigeon with h_adj | h_nonadj
+
+  · -- Case 1: adjacent has ≥ R(r-1, s) vertices
+    -- Greenwood-Gleason: Find (r-1)-clique in adjacent → add v to get r-clique
+    -- Or find s-independent set → done
+    obtain ⟨S, hS_sub, hS_card⟩ := Finset.exists_subset_card_eq h_adj
+
+    -- Build equivalence Fin (R(r-1,s)) ≃ ↑S
+    have hS_card_type : Fintype.card (↑S : Set (Fin n)) = ramseyNumber (r-1) s := by
+      simp [Fintype.card_coe, hS_card]
+    have h_card_eq : Fintype.card (Fin (ramseyNumber (r-1) s)) = Fintype.card (↑S : Set (Fin n)) := by
+      simp only [Fintype.card_fin]
+      exact hS_card_type.symm
+    let e : Fin (ramseyNumber (r-1) s) ≃ (↑S : Set (Fin n)) := Fintype.equivOfCardEq h_card_eq
+    let f : Fin (ramseyNumber (r-1) s) ↪ Fin n := e.toEmbedding.trans (Function.Embedding.subtype _)
+    let G_S := G.comap f
+
+    -- v is adjacent to all vertices in S
+    have h_v_adj_S : ∀ u ∈ S, G.Adj v u := by
+      intro u hu
+      have : u ∈ adjacent := hS_sub hu
+      exact (Finset.mem_filter.mp this).2
+
+    -- S ⊆ others, so v ∉ S
+    have hS_sub_others : S ⊆ others := by
+      intro u hu
+      have : u ∈ adjacent := hS_sub hu
+      exact (Finset.mem_filter.mp this).1
+    have hv_not_in_S : v ∉ S := by
+      have : v ∉ others := by simp [others]
+      exact fun h => this (hS_sub_others h)
+
+    -- Apply h_r to G_S
+    have h_GS : HasRamseyProperty (r-1) s G_S := h_r.2 G_S
+    rcases h_GS with ⟨clique_sub, h_clique_sub⟩ | ⟨indep_sub, h_indep_sub⟩
+
+    · -- Subcase 1a: (r-1)-clique in G_S → add v to get r-clique in G
+      have h_clique_in_G : G.IsNClique (r-1) (clique_sub.map f) := by
+        constructor
+        · intro x hx y hy hxy
+          rcases Finset.mem_map.mp hx with ⟨x', hx', rfl⟩
+          rcases Finset.mem_map.mp hy with ⟨y', hy', rfl⟩
+          have hne : x' ≠ y' := by
+            intro h_eq
+            apply hxy
+            simp [h_eq]
+          exact h_clique_sub.1 hx' hy' hne
+        · simp [Finset.card_map, h_clique_sub.2]
+
+      let S_clique := insert v (clique_sub.map f)
+      have hv_not_in_image : v ∉ clique_sub.map f := by
+        intro hv
+        rcases Finset.mem_map.mp hv with ⟨x', hx', h_eq⟩
+        have hf_in_S : f x' ∈ S := by
+          change (e x').val ∈ S
+          exact (e x').property
+        have : v ∈ S := by rwa [h_eq] at hf_in_S
+        exact hv_not_in_S this
+
+      have h_big_clique : G.IsNClique r S_clique := by
+        constructor
+        · intro x hx y hy hxy
+          have hx' := Finset.mem_insert.mp hx
+          have hy' := Finset.mem_insert.mp hy
+          rcases hx' with rfl | hx_in <;> rcases hy' with rfl | hy_in
+          · exact (hxy rfl).elim
+          · rcases Finset.mem_map.mp hy_in with ⟨y', hy', rfl⟩
+            have : f y' ∈ S := by
+              change (e y').val ∈ S
+              exact (e y').property
+            exact h_v_adj_S _ this
+          · rcases Finset.mem_map.mp hx_in with ⟨x', hx', rfl⟩
+            have : f x' ∈ S := by
+              change (e x').val ∈ S
+              exact (e x').property
+            exact G.symm (h_v_adj_S _ this)
+          · rcases Finset.mem_map.mp hx_in with ⟨x', hx', rfl⟩
+            rcases Finset.mem_map.mp hy_in with ⟨y', hy', rfl⟩
+            have hne_f : f x' ≠ f y' := by
+              intro h_eq
+              apply hxy
+              exact h_eq
+            exact h_clique_in_G.1 (Finset.mem_map_of_mem f hx') (Finset.mem_map_of_mem f hy') hne_f
+        · calc S_clique.card
+              = (clique_sub.map f).card + 1 := Finset.card_insert_of_notMem hv_not_in_image
+            _ = clique_sub.card + 1 := by rw [Finset.card_map]
+            _ = (r - 1) + 1 := by rw [h_clique_sub.2]
+            _ = r := by have : 1 ≤ r := le_trans (by decide : 1 ≤ 2) hr; omega
+
+      exact Or.inl ⟨S_clique, h_big_clique⟩
+
+    · -- Subcase 1b: s-independent set in G_S → lift to G
+      have h_indep_in_G : G.IsNIndepSet s (indep_sub.map f) := by
+        constructor
+        · intro x hx y hy hxy h_adj
+          rcases Finset.mem_map.mp hx with ⟨x', hx', rfl⟩
+          rcases Finset.mem_map.mp hy with ⟨y', hy', rfl⟩
+          have hne : x' ≠ y' := by
+            intro h_eq
+            apply hxy
+            simp [h_eq]
+          exact h_indep_sub.1 hx' hy' hne h_adj
+        · simp [Finset.card_map, h_indep_sub.2]
+
+      exact Or.inr ⟨indep_sub.map f, h_indep_in_G⟩
+
+  · -- Case 2: nonadjacent has ≥ R(r, s-1) vertices
+    -- Greenwood-Gleason: Find r-clique → done
+    -- Or find (s-1)-independent set in nonadjacent → add v to get s-independent
+    obtain ⟨S, hS_sub, hS_card⟩ := Finset.exists_subset_card_eq h_nonadj
+
+    -- Build equivalence Fin (R(r,s-1)) ≃ ↑S
+    have hS_card_type : Fintype.card (↑S : Set (Fin n)) = ramseyNumber r (s-1) := by
+      simp [Fintype.card_coe, hS_card]
+    have h_card_eq : Fintype.card (Fin (ramseyNumber r (s-1))) = Fintype.card (↑S : Set (Fin n)) := by
+      simp only [Fintype.card_fin]
+      exact hS_card_type.symm
+    let e : Fin (ramseyNumber r (s-1)) ≃ (↑S : Set (Fin n)) := Fintype.equivOfCardEq h_card_eq
+    let f : Fin (ramseyNumber r (s-1)) ↪ Fin n := e.toEmbedding.trans (Function.Embedding.subtype _)
+    let G_S := G.comap f
+
+    -- v is NOT adjacent to vertices in S
+    have h_v_nonadj_S : ∀ u ∈ S, ¬ G.Adj v u := by
+      intro u hu
+      have : u ∈ nonadjacent := hS_sub hu
+      exact (Finset.mem_filter.mp this).2
+
+    -- S ⊆ others, so v ∉ S
+    have hS_sub_others : S ⊆ others := by
+      intro u hu
+      have : u ∈ nonadjacent := hS_sub hu
+      exact (Finset.mem_filter.mp this).1
+    have hv_not_in_S : v ∉ S := by
+      have : v ∉ others := by simp [others]
+      exact fun h => this (hS_sub_others h)
+
+    -- Apply h_s to G_S
+    have h_GS : HasRamseyProperty r (s-1) G_S := h_s.2 G_S
+    rcases h_GS with ⟨clique_sub, h_clique_sub⟩ | ⟨indep_sub, h_indep_sub⟩
+
+    · -- Subcase 2a: r-clique in G_S → lift to G
+      have h_clique_in_G : G.IsNClique r (clique_sub.map f) := by
+        constructor
+        · intro x hx y hy hxy
+          rcases Finset.mem_map.mp hx with ⟨x', hx', rfl⟩
+          rcases Finset.mem_map.mp hy with ⟨y', hy', rfl⟩
+          have hne : x' ≠ y' := by
+            intro h_eq
+            apply hxy
+            simp [h_eq]
+          exact h_clique_sub.1 hx' hy' hne
+        · simp [Finset.card_map, h_clique_sub.2]
+
+      exact Or.inl ⟨clique_sub.map f, h_clique_in_G⟩
+
+    · -- Subcase 2b: (s-1)-independent in G_S → add v to get s-independent in G
+      have h_indep_in_G_S : G.IsNIndepSet (s-1) (indep_sub.map f) := by
+        constructor
+        · intro x hx y hy hxy h_adj
+          rcases Finset.mem_map.mp hx with ⟨x', hx', rfl⟩
+          rcases Finset.mem_map.mp hy with ⟨y', hy', rfl⟩
+          have hne : x' ≠ y' := by
+            intro h_eq
+            apply hxy
+            simp [h_eq]
+          exact h_indep_sub.1 hx' hy' hne h_adj
+        · simp [Finset.card_map, h_indep_sub.2]
+
+      let T_plus_v := insert v (indep_sub.map f)
+      have hv_not_in_image : v ∉ indep_sub.map f := by
+        intro hv
+        rcases Finset.mem_map.mp hv with ⟨x', hx', h_eq⟩
+        have hf_in_S : f x' ∈ S := by
+          change (e x').val ∈ S
+          exact (e x').property
+        have : v ∈ S := by rwa [h_eq] at hf_in_S
+        exact hv_not_in_S this
+
+      have h_indep_T_plus_v : G.IsNIndepSet s T_plus_v := by
+        constructor
+        · intro x hx y hy hxy h_adj
+          have hx' := Finset.mem_insert.mp hx
+          have hy' := Finset.mem_insert.mp hy
+          rcases hx' with rfl | hx_in <;> rcases hy' with rfl | hy_in
+          · exact (hxy rfl).elim
+          · rcases Finset.mem_map.mp hy_in with ⟨y', hy', rfl⟩
+            have : f y' ∈ S := by
+              change (e y').val ∈ S
+              exact (e y').property
+            exact h_v_nonadj_S _ this h_adj
+          · rcases Finset.mem_map.mp hx_in with ⟨x', hx', rfl⟩
+            have : f x' ∈ S := by
+              change (e x').val ∈ S
+              exact (e x').property
+            exact h_v_nonadj_S _ this (G.symm h_adj)
+          · rcases Finset.mem_map.mp hx_in with ⟨x', hx', rfl⟩
+            rcases Finset.mem_map.mp hy_in with ⟨y', hy', rfl⟩
+            have hne_f : f x' ≠ f y' := by
+              intro h_eq
+              apply hxy
+              exact h_eq
+            exact h_indep_in_G_S.1 (Finset.mem_map_of_mem f hx') (Finset.mem_map_of_mem f hy') hne_f h_adj
+        · calc T_plus_v.card
+              = (indep_sub.map f).card + 1 := Finset.card_insert_of_notMem hv_not_in_image
+            _ = indep_sub.card + 1 := by rw [Finset.card_map]
+            _ = (s - 1) + 1 := by rw [h_indep_sub.2]
+            _ = s := by have : 1 ≤ s := le_trans (by decide : 1 ≤ 2) hs; omega
+
+      exact Or.inr ⟨T_plus_v, h_indep_T_plus_v⟩
+
+/-
 # Upper bounds (placeholders)
 -/
 
