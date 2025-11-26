@@ -552,7 +552,36 @@ lemma commonNeighborsCard_le_two
 
   -- Degree partitioning: w has ≤2 neighbors in M'
   have h_w_nbrs_in_M_le : (M' ∩ G.neighborFinset w).card ≤ 2 := by
-    sorry -- TODO: Prove via degree arithmetic (deg(w)=5, ≥3 common with v, so ≤2 outside N)
+    -- Partition w's neighbors: Nw = (Nw ∩ N) ∪ (Nw \ N)
+    let Nw := G.neighborFinset w
+    have h_common_ge : (Nw ∩ N).card ≥ 3 := by
+      -- commonNeighborsCard G v w = (N ∩ Nw).card = (Nw ∩ N).card
+      have : (N ∩ Nw).card = commonNeighborsCard G v w := rfl
+      rw [Finset.inter_comm] at this
+      omega
+    -- Show Nw = (Nw ∩ N) ∪ (Nw \ N)
+    have h_partition : Nw = (Nw ∩ N) ∪ (Nw \ N) := by
+      ext x
+      simp [Finset.mem_union, Finset.mem_inter, Finset.mem_sdiff]
+      tauto
+    -- Show disjoint
+    have h_disj : Disjoint (Nw ∩ N) (Nw \ N) := by
+      rw [Finset.disjoint_iff_inter_eq_empty]
+      ext x
+      simp only [Finset.mem_inter, Finset.mem_sdiff]
+      tauto
+    -- Show card sum
+    have h_card_sum : (Nw ∩ N).card + (Nw \ N).card = Nw.card := by
+      rw [← Finset.card_union_of_disjoint h_disj, ← h_partition]
+    have h_deg_w : Nw.card = 5 := h_reg w
+    have h_sdiff_le : (Nw \ N).card ≤ 2 := by omega
+    -- M' ∩ Nw ⊆ Nw \ N
+    have h_sub : M' ∩ Nw ⊆ Nw \ N := by
+      intro x hx
+      simp only [Finset.mem_inter, Finset.mem_sdiff] at hx ⊢
+      simp only [M', M, Finset.mem_erase, Finset.mem_sdiff, Finset.mem_insert, Finset.mem_univ, true_and] at hx
+      tauto
+    exact Finset.card_le_card h_sub |>.trans h_sdiff_le
 
   -- X = non-neighbors of w in M', |X| ≥ 9
   let X := M'.filter (fun x => ¬G.Adj w x)
@@ -649,9 +678,43 @@ lemma commonNeighborsCard_le_two
             exact hT.1 hx' hy' hne h_adj
       · have h_v_ne_w : v ≠ w := hw_neq.symm
         have h_v_notin_T : v ∉ T.map f := by
-          sorry -- TODO: v can't be in X9 since it's in insert v N
+          intro hv_in
+          rcases Finset.mem_map.mp hv_in with ⟨t, _, hv_eq_ft⟩
+          have hft_in_X9 : (f t) ∈ X9 := by
+            change (e t).val ∈ X9
+            exact (e t).property
+          -- Now have v = f t ∈ X9 ⊆ X ⊆ M' ⊆ M
+          have hvX : v ∈ X := by
+            rw [← hv_eq_ft]
+            exact hX9_sub hft_in_X9
+          have hvM' : v ∈ M' := by
+            simp only [X, Finset.mem_filter] at hvX
+            exact hvX.1
+          have hvM : v ∈ M := Finset.mem_of_mem_erase hvM'
+          -- But M = univ \ insert v N, so v ∉ insert v N, which contradicts v ∈ insert v
+          have : v ∉ insert v N := by
+            simp only [M, Finset.mem_sdiff, Finset.mem_univ, true_and] at hvM
+            exact hvM
+          have hv_in : v ∈ insert v N := Finset.mem_insert_self v N
+          exact this hv_in
         have h_w_notin_T : w ∉ T.map f := by
-          sorry -- TODO: w is erased from M'
+          intro hw_in
+          rcases Finset.mem_map.mp hw_in with ⟨t, _, hw_eq_ft⟩
+          have hft_in_X9 : (f t) ∈ X9 := by
+            change (e t).val ∈ X9
+            exact (e t).property
+          -- Now have w = f t ∈ X9 ⊆ X, but X is filter of M', and M' = M.erase w
+          have hwX : w ∈ X := by
+            rw [← hw_eq_ft]
+            exact hX9_sub hft_in_X9
+          have hwM' : w ∈ M' := by
+            simp only [X, Finset.mem_filter] at hwX
+            exact hwX.1
+          -- But M' = M.erase w, so w ∉ M' (contradiction!)
+          have hw_ne_w : w ≠ w := by
+            simp only [M', Finset.mem_erase] at hwM'
+            exact hwM'.1
+          exact hw_ne_w rfl
         have h_v_notin_wT : v ∉ insert w (T.map f) := by
           simp only [Finset.mem_insert, not_or]
           exact ⟨h_v_ne_w, h_v_notin_T⟩
