@@ -193,10 +193,36 @@ mm_tokens([]) -->
 
 % parse_mm_file(+Filename, -Statements)
 % Read file, tokenize, and parse into structured statements
-% Returns list of Prolog terms matching CDTools style
+% Returns list of MeTTa-friendly lists (not compounds)
 parse_mm_file(Filename, Statements) :-
     tokenize_mm_file(Filename, Tokens),
-    phrase(mm_statements(Statements), Tokens, []).
+    phrase(mm_statements(CompoundStmts), Tokens, []),
+    maplist(compound_to_list, CompoundStmts, Statements).
+
+% compound_to_list(+CompoundStmt, -ListStmt)
+% Convert Prolog compound to list for MeTTa processing
+% NOTE: Atoms are converted to strings because mmverify-utils expects strings
+compound_to_list(c(Symbols), [c, SymbolsStr]) :- atoms_to_strings(Symbols, SymbolsStr).
+compound_to_list(v(Vars), [v, VarsStr]) :- atoms_to_strings(Vars, VarsStr).
+compound_to_list(f(Label, Type, Var), [f, LabelStr, TypeStr, VarStr]) :-
+    atom_string(Label, LabelStr), atom_string(Type, TypeStr), atom_string(Var, VarStr).
+compound_to_list(e(Label, Type, Math), [e, LabelStr, TypeStr, MathStr]) :-
+    atom_string(Label, LabelStr), atom_string(Type, TypeStr), atoms_to_strings(Math, MathStr).
+compound_to_list(a(Label, Type, Math), [a, LabelStr, TypeStr, MathStr]) :-
+    atom_string(Label, LabelStr), atom_string(Type, TypeStr), atoms_to_strings(Math, MathStr).
+compound_to_list(p(Label, Type, Math, Proof), [p, LabelStr, TypeStr, MathStr, ProofStr]) :-
+    atom_string(Label, LabelStr), atom_string(Type, TypeStr),
+    atoms_to_strings(Math, MathStr), atoms_to_strings(Proof, ProofStr).
+compound_to_list(d(Vars), [d, VarsStr]) :- atoms_to_strings(Vars, VarsStr).
+compound_to_list(open_frame, [open_frame]).
+compound_to_list(close_frame, [close_frame]).
+
+% atoms_to_strings(+AtomList, -StringList)
+% Convert list of atoms to list of strings
+atoms_to_strings([], []).
+atoms_to_strings([H|T], [HS|TS]) :-
+    atom_string(H, HS),
+    atoms_to_strings(T, TS).
 
 % Parse multiple statements
 mm_statements([Stmt|Rest]) -->

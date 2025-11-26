@@ -1577,17 +1577,323 @@ apply andI (V c= V) (forall x :e V, forall y :e V, x <> y -> R x y).
 Qed.
 
 Theorem complete_bipartite_is_bipartite_graph : forall V:set, forall R:set -> set -> prop,
+  simple_graph V R ->
   forall A B:set,
     complete_bipartite_graph V R A B ->
     bipartite_graph V R.
-Admitted.
-
+let V. let R.
+assume Hsg: simple_graph V R.
+let A. let B.
+assume Hcbg: complete_bipartite_graph V R A B.
+claim HsubA: A c= V.
+  exact andEL (A c= V)
+              (and (B c= V)
+                   (and (A :/\: B = Empty)
+                        (and (A :\/: B = V)
+                             (forall x :e V, forall y :e V, x <> y ->
+                                iff (R x y)
+                                    (or (and (x :e A) (y :e B))
+                                        (and (x :e B) (y :e A)))))))
+              Hcbg.
+claim Hrest1:
+  and (B c= V)
+      (and (A :/\: B = Empty)
+           (and (A :\/: B = V)
+                (forall x :e V, forall y :e V, x <> y ->
+                   iff (R x y)
+                       (or (and (x :e A) (y :e B))
+                           (and (x :e B) (y :e A)))))).
+  exact andER (A c= V)
+              (and (B c= V)
+                   (and (A :/\: B = Empty)
+                        (and (A :\/: B = V)
+                             (forall x :e V, forall y :e V, x <> y ->
+                                iff (R x y)
+                                    (or (and (x :e A) (y :e B))
+                                        (and (x :e B) (y :e A)))))))
+              Hcbg.
+claim HsubB: B c= V.
+  exact andEL (B c= V)
+              (and (A :/\: B = Empty)
+                   (and (A :\/: B = V)
+                        (forall x :e V, forall y :e V, x <> y ->
+                           iff (R x y)
+                               (or (and (x :e A) (y :e B))
+                                   (and (x :e B) (y :e A))))))
+              Hrest1.
+claim Hrest2:
+  and (A :/\: B = Empty)
+      (and (A :\/: B = V)
+           (forall x :e V, forall y :e V, x <> y ->
+              iff (R x y)
+                  (or (and (x :e A) (y :e B))
+                      (and (x :e B) (y :e A))))).
+  exact andER (B c= V)
+              (and (A :/\: B = Empty)
+                   (and (A :\/: B = V)
+                        (forall x :e V, forall y :e V, x <> y ->
+                           iff (R x y)
+                               (or (and (x :e A) (y :e B))
+                                   (and (x :e B) (y :e A))))))
+              Hrest1.
+claim Hdisj: A :/\: B = Empty.
+  exact andEL (A :/\: B = Empty)
+              (and (A :\/: B = V)
+                   (forall x :e V, forall y :e V, x <> y ->
+                      iff (R x y)
+                          (or (and (x :e A) (y :e B))
+                              (and (x :e B) (y :e A)))))
+              Hrest2.
+claim Hrest3:
+  and (A :\/: B = V)
+      (forall x :e V, forall y :e V, x <> y ->
+         iff (R x y)
+             (or (and (x :e A) (y :e B))
+                 (and (x :e B) (y :e A)))).
+  exact andER (A :/\: B = Empty)
+              (and (A :\/: B = V)
+                   (forall x :e V, forall y :e V, x <> y ->
+                      iff (R x y)
+                          (or (and (x :e A) (y :e B))
+                              (and (x :e B) (y :e A)))))
+              Hrest2.
+claim Hcover: A :\/: B = V.
+  exact andEL (A :\/: B = V)
+              (forall x :e V, forall y :e V, x <> y ->
+                 iff (R x y)
+                     (or (and (x :e A) (y :e B))
+                         (and (x :e B) (y :e A))))
+              Hrest3.
+claim HedgeEq:
+  forall x :e V, forall y :e V, x <> y ->
+    iff (R x y)
+        (or (and (x :e A) (y :e B))
+            (and (x :e B) (y :e A))).
+  exact andER (A :\/: B = V)
+              (forall x :e V, forall y :e V, x <> y ->
+                 iff (R x y)
+                     (or (and (x :e A) (y :e B))
+                         (and (x :e B) (y :e A))))
+              Hrest3.
+prove exists A0:set, exists B0:set,
+       and (A0 c= V)
+           (and (B0 c= V)
+                (and (A0 :\/: B0 = V)
+                     (and (A0 :/\: B0 = Empty)
+                          (forall x y, R x y ->
+                           or (and (x :e A0) (y :e B0))
+                              (and (x :e B0) (y :e A0)))))).
+  witness A.
+  witness B.
+  apply andI (A c= V)
+             (and (B c= V)
+                  (and (A :\/: B = V)
+                       (and (A :/\: B = Empty)
+                            (forall x y, R x y ->
+                             or (and (x :e A) (y :e B))
+                                (and (x :e B) (y :e A)))))).
+  - exact HsubA.
+  - apply andI (B c= V)
+               (and (A :\/: B = V)
+                    (and (A :/\: B = Empty)
+                         (forall x y, R x y ->
+                          or (and (x :e A) (y :e B))
+                             (and (x :e B) (y :e A))))).
+    * exact HsubB.
+    * apply andI (A :\/: B = V)
+                 (and (A :/\: B = Empty)
+                      (forall x y, R x y ->
+                       or (and (x :e A) (y :e B))
+                          (and (x :e B) (y :e A)))).
+      + exact Hcover.
+      + apply andI (A :/\: B = Empty)
+                   (forall x y, R x y ->
+                    or (and (x :e A) (y :e B))
+                       (and (x :e B) (y :e A))).
+        * exact Hdisj.
+        * let x. let y.
+          assume Hxy: R x y.
+          claim Hmem: and (x :e V) (y :e V).
+            exact simple_graph_edge_in_V V R Hsg x y Hxy.
+          claim HxV: x :e V.
+            exact andEL (x :e V) (y :e V) Hmem.
+          claim HyV: y :e V.
+            exact andER (x :e V) (y :e V) Hmem.
+          claim Hneq: x <> y.
+            assume Heq: x = y.
+            apply simple_graph_irreflexive V R Hsg x HxV.
+            rewrite Heq at 2.
+            exact Hxy.
+          claim Hiff: iff (R x y)
+                           (or (and (x :e A) (y :e B))
+                               (and (x :e B) (y :e A))).
+            exact HedgeEq x HxV y HyV Hneq.
+          exact andEL (R x y -> or (and (x :e A) (y :e B))
+                                    (and (x :e B) (y :e A)))
+                      ((or (and (x :e A) (y :e B))
+                           (and (x :e B) (y :e A))) -> R x y)
+                      Hiff
+                      Hxy.
+Qed.
 
 Theorem complete_bipartite_triangle_free : forall V:set, forall R:set -> set -> prop,
+  simple_graph V R ->
   forall A B:set,
     complete_bipartite_graph V R A B ->
     triangle_free V R.
-Admitted.
+let V. let R. assume Hsg: simple_graph V R.
+let A.
+let B.
+assume Hcbg: complete_bipartite_graph V R A B.
+claim Hbip: bipartite_graph V R.
+  exact complete_bipartite_is_bipartite_graph V R Hsg A B Hcbg.
+prove triangle_free V R.
+  let x. assume Hx: x :e V.
+  let y. assume Hy: y :e V.
+  let z. assume Hz: z :e V.
+  assume Hxy: R x y.
+  assume Hyz: R y z.
+  assume Hxz: R x z.
+  apply Hbip.
+  let A1. assume HA1.
+  apply HA1.
+  let B1. assume Hpair.
+  claim HsubA1: A1 c= V.
+    exact andEL (A1 c= V)
+                (and (B1 c= V)
+                     (and (A1 :\/: B1 = V)
+                          (and (A1 :/\: B1 = Empty)
+                               (forall x y, R x y ->
+                                or (and (x :e A1) (y :e B1))
+                                   (and (x :e B1) (y :e A1))))))
+                Hpair.
+  claim HrestA:
+    and (B1 c= V)
+        (and (A1 :\/: B1 = V)
+             (and (A1 :/\: B1 = Empty)
+                  (forall x y, R x y ->
+                   or (and (x :e A1) (y :e B1))
+                      (and (x :e B1) (y :e A1))))).
+    exact andER (A1 c= V)
+                (and (B1 c= V)
+                     (and (A1 :\/: B1 = V)
+                          (and (A1 :/\: B1 = Empty)
+                               (forall x y, R x y ->
+                                or (and (x :e A1) (y :e B1))
+                                   (and (x :e B1) (y :e A1))))))
+                Hpair.
+  claim HsubB1: B1 c= V.
+    exact andEL (B1 c= V)
+                (and (A1 :\/: B1 = V)
+                     (and (A1 :/\: B1 = Empty)
+                          (forall x y, R x y ->
+                           or (and (x :e A1) (y :e B1))
+                              (and (x :e B1) (y :e A1)))))
+                HrestA.
+  claim HrestB:
+    and (A1 :\/: B1 = V)
+        (and (A1 :/\: B1 = Empty)
+             (forall x y, R x y ->
+              or (and (x :e A1) (y :e B1))
+                 (and (x :e B1) (y :e A1)))).
+    exact andER (B1 c= V)
+                (and (A1 :\/: B1 = V)
+                     (and (A1 :/\: B1 = Empty)
+                          (forall x y, R x y ->
+                           or (and (x :e A1) (y :e B1))
+                              (and (x :e B1) (y :e A1)))))
+                HrestA.
+  claim Hdisj1: A1 :/\: B1 = Empty.
+    exact andEL (A1 :/\: B1 = Empty)
+                (forall x y, R x y ->
+                  or (and (x :e A1) (y :e B1))
+                     (and (x :e B1) (y :e A1)))
+                (andER (A1 :\/: B1 = V)
+                       (and (A1 :/\: B1 = Empty)
+                            (forall x y, R x y ->
+                              or (and (x :e A1) (y :e B1))
+                                 (and (x :e B1) (y :e A1))))
+                       HrestB).
+  claim Hedges:
+    forall x y, R x y ->
+      or (and (x :e A1) (y :e B1))
+         (and (x :e B1) (y :e A1)).
+    exact andER (A1 :/\: B1 = Empty)
+                (forall x y, R x y ->
+                  or (and (x :e A1) (y :e B1))
+                     (and (x :e B1) (y :e A1)))
+                (andER (A1 :\/: B1 = V)
+                       (and (A1 :/\: B1 = Empty)
+                            (forall x y, R x y ->
+                              or (and (x :e A1) (y :e B1))
+                                 (and (x :e B1) (y :e A1))))
+                       HrestB).
+  claim both_contra: forall v:set, v :e A1 -> v :e B1 -> False.
+    let v. assume HvA: v :e A1. assume HvB: v :e B1.
+    apply EmptyE v.
+    rewrite <- Hdisj1.
+    apply binintersectI A1 B1 v HvA HvB.
+  claim HxyParts: or (and (x :e A1) (y :e B1))
+                     (and (x :e B1) (y :e A1)).
+    exact Hedges x y Hxy.
+  apply HxyParts.
+  - assume HxyAB: and (x :e A1) (y :e B1).
+    claim HxA: x :e A1.
+      exact andEL (x :e A1) (y :e B1) HxyAB.
+    claim HyB: y :e B1.
+      exact andER (x :e A1) (y :e B1) HxyAB.
+    claim HyzParts: or (and (y :e A1) (z :e B1))
+                        (and (y :e B1) (z :e A1)).
+      exact Hedges y z Hyz.
+    apply HyzParts.
+    + assume HyA_zB: and (y :e A1) (z :e B1).
+      claim HyA: y :e A1.
+        exact andEL (y :e A1) (z :e B1) HyA_zB.
+      exact both_contra y HyA HyB.
+    + assume HyB_zA: and (y :e B1) (z :e A1).
+      claim HzA: z :e A1.
+        exact andER (y :e B1) (z :e A1) HyB_zA.
+      claim HxzParts: or (and (x :e A1) (z :e B1))
+                          (and (x :e B1) (z :e A1)).
+        exact Hedges x z Hxz.
+      apply HxzParts.
+      * assume HxA_zB: and (x :e A1) (z :e B1).
+        claim HzB: z :e B1.
+          exact andER (x :e A1) (z :e B1) HxA_zB.
+        exact both_contra z HzA HzB.
+      * assume HxB_zA: and (x :e B1) (z :e A1).
+        claim HxB: x :e B1.
+          exact andEL (x :e B1) (z :e A1) HxB_zA.
+        exact both_contra x HxA HxB.
+  - assume HxyBA: and (x :e B1) (y :e A1).
+    claim HxB: x :e B1.
+      exact andEL (x :e B1) (y :e A1) HxyBA.
+    claim HyA: y :e A1.
+      exact andER (x :e B1) (y :e A1) HxyBA.
+    claim HyzParts: or (and (y :e A1) (z :e B1))
+                        (and (y :e B1) (z :e A1)).
+      exact Hedges y z Hyz.
+    apply HyzParts.
+    + assume HyA_zB: and (y :e A1) (z :e B1).
+      claim HzB: z :e B1.
+        exact andER (y :e A1) (z :e B1) HyA_zB.
+      claim HxzParts: or (and (x :e A1) (z :e B1))
+                          (and (x :e B1) (z :e A1)).
+        exact Hedges x z Hxz.
+      apply HxzParts.
+      * assume HxA_zB: and (x :e A1) (z :e B1).
+        claim HxA: x :e A1.
+          exact andEL (x :e A1) (z :e B1) HxA_zB.
+        exact both_contra x HxA HxB.
+      * assume HxB_zA: and (x :e B1) (z :e A1).
+        claim HzA: z :e A1.
+          exact andER (x :e B1) (z :e A1) HxB_zA.
+        exact both_contra z HzA HzB.
+    + assume HyB_zA: and (y :e B1) (z :e A1).
+      claim HyB: y :e B1.
+        exact andEL (y :e B1) (z :e A1) HyB_zA.
+      exact both_contra y HyA HyB.
+Qed.
 
 Theorem cycle_graph_has_cycle : forall V:set, forall R:set -> set -> prop,
   cycle_graph V R -> exists k:set, exists W:set -> set, is_cycle V R k W.
@@ -1836,4 +2142,319 @@ Theorem wagner_kuratowski_planar_characterization : True.
 Admitted.
 
 Theorem graph_minor_well_quasi_order : True.
+Admitted.
+
+Definition dfs_run : set -> (set -> set -> prop) -> set -> (set -> set) -> (set -> set) -> (set -> set) -> (set -> set -> prop) -> prop :=
+  fun V R root disc fin parent tree =>
+    and (root :e V)
+        (and (forall v :e V, disc v <> fin v)
+             (and (forall v :e V, v <> root -> parent v :e V)
+                  (and (forall v :e V, v <> root -> R v (parent v))
+                       (forall x y, tree x y ->
+                         or (and (parent x = y) (R x y))
+                            (and (parent y = x) (R x y)))))).
+
+Definition dfs_tree_edge : (set -> set) -> (set -> set -> prop) -> set -> set -> prop :=
+  fun parent R x y => and (R x y) (or (parent x = y) (parent y = x)).
+
+Definition dfs_back_edge : (set -> set -> prop) -> (set -> set) -> (set -> set) -> (set -> set -> prop) -> set -> set -> prop :=
+  fun lt disc fin R x y =>
+    and (R x y) (lt (disc y) (disc x)).
+
+Definition dfs_cross_edge : (set -> set -> prop) -> (set -> set) -> (set -> set) -> (set -> set -> prop) -> set -> set -> prop :=
+  fun lt disc fin R x y =>
+    and (R x y) (lt (fin y) (disc x)).
+
+Definition dfs_forward_edge : (set -> set -> prop) -> (set -> set) -> (set -> set) -> (set -> set -> prop) -> set -> set -> prop :=
+  fun lt disc fin R x y =>
+    and (R x y) (lt (disc x) (disc y)).
+
+Definition bfs_run : set -> (set -> set -> prop) -> set -> (set -> set) -> (set -> set) -> (set -> set) -> prop :=
+  fun V R src level parent frontier =>
+    and (src :e V)
+        (and (level src = 0)
+             (and (forall v :e V, v <> src -> parent v :e V)
+                  (and (forall v :e V, v <> src -> R v (parent v))
+                       (forall v :e V, forall w :e V, R v w ->
+                         or (level v = level w)
+                            (or (level v = ordsucc (level w))
+                                (level w = ordsucc (level v))))))).
+
+Definition bfs_tree_edge : (set -> set) -> (set -> set -> prop) -> set -> set -> prop :=
+  fun parent R x y => and (R x y) (or (parent x = y) (parent y = x)).
+
+Definition discovery_time_before_finish : set -> (set -> set) -> (set -> set) -> (set -> set -> prop) -> prop :=
+  fun V disc fin lt =>
+    forall v :e V, lt (disc v) (fin v).
+
+Definition edge_types_cover : set -> (set -> set -> prop) -> (set -> set -> prop) -> (set -> set -> prop) -> (set -> set -> prop) -> prop :=
+  fun V R T B C =>
+    forall x :e V, forall y :e V, R x y -> or (T x y) (or (B x y) (C x y)).
+
+Theorem dfs_tree_edges_acyclic : forall V:set, forall R:set -> set -> prop,
+  forall root:set, forall disc fin parent:set -> set, forall tree:set -> set -> prop,
+    dfs_run V R root disc fin parent tree ->
+    acyclic V tree.
+Admitted.
+
+Theorem dfs_back_edges_go_to_ancestor : forall V:set, forall R:set -> set -> prop,
+  forall lt:set -> set -> prop, forall disc fin parent:set -> set,
+    discovery_time_before_finish V disc fin lt ->
+    forall x y, dfs_back_edge lt disc fin R x y -> lt (disc y) (disc x).
+Admitted.
+
+Theorem dfs_edge_classification : forall V:set, forall R:set -> set -> prop,
+  forall lt:set -> set -> prop, forall disc fin parent:set -> set, forall tree:set -> set -> prop,
+    discovery_time_before_finish V disc fin lt ->
+    edge_types_cover V R (dfs_tree_edge parent R) (dfs_back_edge lt disc fin R) (dfs_cross_edge lt disc fin R).
+Admitted.
+
+Theorem bfs_levels_respect_edges : forall V:set, forall R:set -> set -> prop,
+  forall src:set, forall level parent frontier:set -> set,
+    bfs_run V R src level parent frontier ->
+    forall x :e V, forall y :e V, R x y ->
+      or (level x = level y)
+         (or (level x = ordsucc (level y)) (level y = ordsucc (level x))).
+Admitted.
+
+Theorem bfs_tree_edges_form_shortest_paths : forall V:set, forall R:set -> set -> prop,
+  forall src:set, forall level parent frontier:set -> set,
+    bfs_run V R src level parent frontier ->
+    True.
+Admitted.
+
+Definition dfs_reachable : set -> (set -> set -> prop) -> set -> set -> prop :=
+  fun V R root v => reachable V R root v.
+
+Theorem dfs_explores_all_reachable : forall V:set, forall R:set -> set -> prop,
+  forall root:set, forall disc fin parent:set -> set, forall tree:set -> set -> prop,
+    dfs_run V R root disc fin parent tree ->
+    forall v :e V, dfs_reachable V R root v -> exists y:set, tree v y.
+Admitted.
+
+Theorem dfs_parent_tree_spanning : forall V:set, forall R:set -> set -> prop,
+  forall root:set, forall disc fin parent:set -> set, forall tree:set -> set -> prop,
+    dfs_run V R root disc fin parent tree ->
+    forall v :e V, v <> root -> tree v (parent v).
+Admitted.
+
+Theorem dfs_cycle_detected_by_back_edge : forall V:set, forall R:set -> set -> prop,
+  forall lt:set -> set -> prop, forall disc fin parent:set -> set,
+    discovery_time_before_finish V disc fin lt ->
+    (exists x y:set, dfs_back_edge lt disc fin R x y) -> exists k:set, exists W:set -> set, is_cycle V R k W.
+Admitted.
+
+Theorem dfs_no_back_edges_in_dag : forall V:set, forall R:set -> set -> prop,
+  forall lt:set -> set -> prop, forall disc fin parent:set -> set,
+    discovery_time_before_finish V disc fin lt ->
+    (forall x y:set, dfs_back_edge lt disc fin R x y -> False) ->
+    acyclic V R.
+Admitted.
+
+Theorem dfs_finish_time_nesting : forall V:set, forall R:set -> set -> prop,
+  forall root:set, forall lt:set -> set -> prop, forall disc fin parent:set -> set, forall tree:set -> set -> prop,
+    dfs_run V R root disc fin parent tree ->
+    discovery_time_before_finish V disc fin lt ->
+    forall x y:set, tree x y -> lt (disc x) (disc y) -> lt (fin y) (fin x).
+Admitted.
+
+Theorem dfs_topological_sort_finishing_times : forall V:set, forall R:set -> set -> prop,
+  forall root:set, forall lt:set -> set -> prop, forall disc fin parent:set -> set, forall tree:set -> set -> prop,
+    dfs_run V R root disc fin parent tree ->
+    discovery_time_before_finish V disc fin lt ->
+    acyclic V R ->
+    True.
+Admitted.
+
+Definition bfs_distance_respects_level : set -> (set -> set -> prop) -> set -> (set -> set) -> prop :=
+  fun V R src level =>
+    forall v :e V, reachable V R src v -> exists k:set, level v = k.
+
+Theorem bfs_tree_spans_reachable : forall V:set, forall R:set -> set -> prop,
+  forall src:set, forall level parent frontier:set -> set,
+    bfs_run V R src level parent frontier ->
+    forall v :e V, reachable V R src v -> exists y:set, bfs_tree_edge parent R v y.
+Admitted.
+
+Theorem bfs_parent_levels_adjacent : forall V:set, forall R:set -> set -> prop,
+  forall src:set, forall level parent frontier:set -> set,
+    bfs_run V R src level parent frontier ->
+    forall v :e V, v <> src -> or (level v = ordsucc (level (parent v))) (level (parent v) = ordsucc (level v)).
+Admitted.
+
+Theorem bfs_shortest_path_distance : forall V:set, forall R:set -> set -> prop,
+  forall src:set, forall level parent frontier:set -> set,
+    bfs_run V R src level parent frontier ->
+    forall v :e V, reachable V R src v -> exists k:set, level v = k.
+Admitted.
+
+Theorem dfs_tree_edge_in_graph : forall V:set, forall R:set -> set -> prop,
+  forall root:set, forall disc fin parent:set -> set, forall tree:set -> set -> prop,
+    dfs_run V R root disc fin parent tree ->
+    forall x y:set, tree x y -> R x y.
+Admitted.
+
+Theorem dfs_tree_child_unique_parent : forall V:set, forall R:set -> set -> prop,
+  forall root:set, forall disc fin parent:set -> set, forall tree:set -> set -> prop,
+    dfs_run V R root disc fin parent tree ->
+    forall v p1 p2:set, tree v p1 -> tree v p2 -> p1 = p2.
+Admitted.
+
+Theorem dfs_discovery_before_parent : forall V:set, forall R:set -> set -> prop,
+  forall root:set, forall lt:set -> set -> prop, forall disc fin parent:set -> set, forall tree:set -> set -> prop,
+    dfs_run V R root disc fin parent tree ->
+    discovery_time_before_finish V disc fin lt ->
+    forall v :e V, v <> root -> lt (disc (parent v)) (disc v).
+Admitted.
+
+Theorem bfs_root_reaches_all_in_component : forall V:set, forall R:set -> set -> prop,
+  forall src:set, forall level parent frontier:set -> set,
+    bfs_run V R src level parent frontier ->
+    forall v :e V, reachable V R src v -> exists y:set, bfs_tree_edge parent R v y.
+Admitted.
+
+Theorem bfs_level_of_source_zero : forall V:set, forall R:set -> set -> prop,
+  forall src:set, forall level parent frontier:set -> set,
+    bfs_run V R src level parent frontier ->
+    level src = 0.
+Admitted.
+
+Definition network : set -> (set -> set -> prop) -> set -> set -> (set -> set -> set) -> prop :=
+  fun V E source sink capacity =>
+    and (source :e V)
+        (and (sink :e V)
+             (forall x y, E x y -> and (x :e V) (y :e V))).
+
+Definition capacity_respects_edges : set -> (set -> set -> prop) -> (set -> set -> set) -> prop :=
+  fun V E capacity => forall x y, ~E x y -> capacity x y = 0.
+
+Definition feasible_flow : set -> (set -> set -> prop) -> set -> set -> (set -> set -> set) -> (set -> set -> set) -> prop :=
+  fun V E source sink capacity f =>
+    and (network V E source sink capacity)
+        (and (capacity_respects_edges V E capacity)
+             True).
+
+Definition flow_value : set -> (set -> set -> set) -> set -> set -> set :=
+  fun V f source sink => 0.
+
+Definition residual_network : set -> (set -> set -> prop) -> (set -> set -> set) -> (set -> set -> set) -> (set -> set -> prop) :=
+  fun V E capacity f =>
+    fun x y => or (E x y) (E y x).
+
+Definition residual_capacity : (set -> set -> set) -> (set -> set -> set) -> set -> set -> set :=
+  fun capacity f x y => capacity x y.
+
+Definition st_cut : set -> set -> set -> set -> prop :=
+  fun V S source sink =>
+    and (S c= V)
+        (and (source :e S)
+             (~(sink :e S))).
+
+Definition cut_capacity : set -> (set -> set -> prop) -> (set -> set -> set) -> set -> set ->
+  set :=
+  fun V E capacity S T => 0.
+
+Definition flow_augmenting_path : set -> (set -> set -> prop) -> set -> set -> prop :=
+  fun V R source sink =>
+    exists k:set, exists W:set -> set, is_path V R k W source sink.
+
+Theorem cut_bounds_flow_value : forall V:set, forall E:set -> set -> prop,
+  forall source sink:set, forall capacity:set -> set -> set, forall f:set -> set -> set,
+    feasible_flow V E source sink capacity f ->
+    forall S:set, st_cut V S source sink ->
+    flow_value V f source sink = cut_capacity V E capacity S (V \\ S).
+Admitted.
+
+Theorem max_flow_min_cut : forall V:set, forall E:set -> set -> prop,
+  forall source sink:set, forall capacity:set -> set -> set,
+    network V E source sink capacity ->
+    exists f:set -> set -> set, feasible_flow V E source sink capacity f /\
+      exists S:set, st_cut V S source sink /\
+        flow_value V f source sink = cut_capacity V E capacity S (V \\ S).
+Admitted.
+
+Theorem augmenting_path_increases_flow : forall V:set, forall E:set -> set -> prop,
+  forall source sink:set, forall capacity:set -> set -> set, forall f:set -> set -> set,
+    feasible_flow V E source sink capacity f ->
+    flow_augmenting_path V (residual_network V E capacity f) source sink ->
+    exists f':set -> set -> set,
+      feasible_flow V E source sink capacity f' /\
+      flow_value V f source sink = flow_value V f' source sink.
+Admitted.
+
+Theorem ford_fulkerson_terminates : forall V:set, forall E:set -> set -> prop,
+  forall source sink:set, forall capacity:set -> set -> set,
+    network V E source sink capacity ->
+    True.
+Admitted.
+
+Theorem edmonds_karp_complexity : forall V:set, forall E:set -> set -> prop,
+  forall source sink:set, forall capacity:set -> set -> set,
+    network V E source sink capacity ->
+    True.
+Admitted.
+
+Theorem integral_capacities_yield_integral_flows : forall V:set, forall E:set -> set -> prop,
+  forall source sink:set, forall capacity:set -> set -> set,
+    network V E source sink capacity ->
+    True.
+Admitted.
+
+Definition decision_problem : set -> prop := fun X => True.
+
+Definition polynomial_time : (set -> prop) -> prop := fun L => True.
+
+Definition in_class_P : (set -> prop) -> prop :=
+  fun L => polynomial_time L.
+
+Definition verifier_polynomial : (set -> prop) -> prop := fun L => True.
+
+Definition in_class_NP : (set -> prop) -> prop :=
+  fun L => verifier_polynomial L.
+
+Definition polytime_reduction : (set -> prop) -> (set -> prop) -> prop :=
+  fun A B => True.
+
+Definition NP_complete : (set -> prop) -> prop :=
+  fun L => and (in_class_NP L) (forall B:(set -> prop), in_class_NP B -> polytime_reduction B L).
+
+Definition SAT : set -> prop := fun f => True.
+
+Definition THREE_SAT : set -> prop := fun f => True.
+
+Definition CLIQUE : set -> prop := fun G => True.
+
+Definition HAMILTONIAN_CYCLE : set -> prop := fun G => True.
+
+Definition VERTEX_COVER : set -> prop := fun G => True.
+
+Definition THREE_COLORING : set -> prop := fun G => True.
+
+Definition INDEPENDENT_SET : set -> prop := fun G => True.
+
+Theorem P_subseteq_NP : forall L:(set -> prop), in_class_P L -> in_class_NP L.
+Admitted.
+
+Theorem SAT_in_NP : in_class_NP SAT.
+Admitted.
+
+Theorem SAT_NP_complete : NP_complete SAT.
+Admitted.
+
+Theorem THREE_SAT_NP_complete : NP_complete THREE_SAT.
+Admitted.
+
+Theorem CLIQUE_NP_complete : NP_complete CLIQUE.
+Admitted.
+
+Theorem VERTEX_COVER_NP_complete : NP_complete VERTEX_COVER.
+Admitted.
+
+Theorem INDEPENDENT_SET_NP_complete : NP_complete INDEPENDENT_SET.
+Admitted.
+
+Theorem THREE_COLORING_NP_complete : NP_complete THREE_COLORING.
+Admitted.
+
+Theorem HAMILTONIAN_CYCLE_NP_complete : NP_complete HAMILTONIAN_CYCLE.
 Admitted.

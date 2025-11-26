@@ -1161,3 +1161,77 @@ Files using set theory need Egal preamble:
 - TPTP format: http://www.tptp.org/
 
 **Verified 2025-11-25**: Bidirectional Megalodon ↔ Vampire translation operational!
+
+## Finding Background Theory in UpToOctonions
+
+**Critical lesson learned 2025-11-26**: Don't axiomatize what Chad already proved!
+
+### The Pattern
+
+Chad's UpToOctonions has a common pattern:
+- **Part10b.mg** - Extensive proven theorems (6000+ lines)
+- **Part12.mg** - Lazily axiomatizes what Part10b proved
+
+### Example: Parity Theory
+
+Needed: `even_nat_not_odd_nat`, `odd_nat_mul_nat`, etc.
+
+**Wrong approach** (what I did initially):
+```bash
+grep "even_nat_not_odd_nat" Part12.mg
+# Found: Axiom even_nat_not_odd_nat ...
+# Conclusion: Must axiomatize it ❌
+```
+
+**Right approach** (what I should have done):
+```bash
+find Megalodon/examples -name "*.mg" -exec grep -l "even_nat_not_odd_nat" {} \;
+# Results: Part10b.mg, Part12.mg, ...
+
+grep "^Theorem even_nat_not_odd_nat\|^Axiom even_nat_not_odd_nat" Part10b.mg
+# Theorem even_nat_not_odd_nat : ...  ✅ PROVEN!
+
+grep "^Theorem even_nat_not_odd_nat\|^Axiom even_nat_not_odd_nat" Part12.mg  
+# Axiom even_nat_not_odd_nat : ...   ❌ Lazy
+```
+
+### Search Strategy
+
+1. **First search all files**:
+   ```bash
+   find Megalodon/examples -name "*.mg" -exec grep -l "theorem_name" {} \;
+   ```
+
+2. **Check each file** to see if it's `Theorem` (proven) or `Axiom`:
+   ```bash
+   grep "^Theorem theorem_name\|^Axiom theorem_name" file.mg
+   ```
+
+3. **Prefer proven versions** - Copy proof from Part10b.mg, not axiom from Part12.mg
+
+4. **Extract complete dependencies** - The proven theorem may depend on other theorems in the same file
+
+### Part10b.mg Contains
+
+Extensive background theory with **proofs**:
+- Parity: `even_nat`, `odd_nat`, `even_nat_not_odd_nat`, `odd_nat_mul_nat`
+- Arithmetic: `add_nat`, `mul_nat`, successors, induction
+- Logic helpers: `exactly1of2`, `iff` properties
+- Set operations with cardinality
+
+### Why Part12.mg Axiomatizes
+
+Part12.mg is **standalone** (defines everything from scratch). It axiomatizes background theory because:
+1. It redefines primitives (incompatible with Part10b)
+2. It's meant as self-contained document
+3. Chad was being pragmatic for that specific use case
+
+**For new work**: Extract proven theorems from Part10b.mg, don't copy axioms from Part12.mg!
+
+### Result
+
+After finding Part10b.mg proofs, our parity file went from:
+- ❌ 5 axioms (lazy approach)
+- ✅ 0 axioms - Everything proven! (correct approach)
+
+**Time saved for future you**: ~2 hours of frustration and Church encoding debugging.
