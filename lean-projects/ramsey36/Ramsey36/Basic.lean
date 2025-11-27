@@ -4333,16 +4333,80 @@ lemma P_has_at_least_four_edges {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
   obtain ⟨pairs, hpairs_card, hpairs_prop⟩ := h_four_pairs
 
   -- Part b: Each pair forces a P-edge
+  -- Strategy: For each pair {s, s'} sharing w, find their p-partners and apply p_adjacent_of_shared_w
   have h_pairs_force_P_edges : ∀ pair ∈ pairs,
-      ∃ s1 s2 w p1_vertex p2_vertex,
-        pair = {s1, s2} ∧
-        s1 ∈ S ∧ s2 ∈ S ∧ s1 ≠ s2 ∧
+      ∃ s_v s'_v w p_s p_s',
+        pair = {s_v, s'_v} ∧
+        s_v ∈ S ∧ s'_v ∈ S ∧ s_v ≠ s'_v ∧
         w ∈ W ∧
-        G.Adj s1 w ∧ G.Adj s2 w ∧
-        p1_vertex ∈ P ∧ p2_vertex ∈ P ∧
-        G.Adj s1 p1_vertex ∧ G.Adj s2 p2_vertex ∧
-        G.Adj p1_vertex p2_vertex := by
-    sorry -- Apply p_adjacent_of_shared_w to each pair
+        G.Adj s_v w ∧ G.Adj s'_v w ∧
+        p_s ∈ P ∧ p_s' ∈ P ∧
+        G.Adj s_v p_s ∧ G.Adj s'_v p_s' ∧
+        G.Adj p_s p_s' := by
+    intro pair hpair
+    -- Unpack the pair to get s_v, s'_v, w
+    obtain ⟨s_v, s'_v, w, h_eq, hs_S, hs'_S, hs_ne, hw_W, hs_adj_w, hs'_adj_w⟩ :=
+      hpairs_prop pair hpair
+
+    -- Build s → p lookup table using S = {s1, s2, s3, s4}
+    -- Each s ∈ S must be one of these 4, and we know their p-partners
+    have hs_cases : s_v ∈ ({s1, s2, s3, s4} : Finset (Fin 18)) := by
+      simp only [S, Finset.mem_insert, Finset.mem_singleton] at hs_S
+      exact hs_S
+    have hs'_cases : s'_v ∈ ({s1, s2, s3, s4} : Finset (Fin 18)) := by
+      simp only [S, Finset.mem_insert, Finset.mem_singleton] at hs'_S
+      exact hs'_S
+
+    -- Function to get p-partner of s
+    let s_to_p : Fin 18 → Fin 18 := fun si =>
+      if si = s1 then p1
+      else if si = s2 then p2
+      else if si = s3 then p3
+      else if si = s4 then p4
+      else si  -- fallback (won't be used)
+
+    let p_s := s_to_p s_v
+    let p_s' := s_to_p s'_v
+
+    -- Verify p_s and p_s' are in P and adjacent to their s-partners
+    have hp_s_P : p_s ∈ P := by
+      simp only [p_s, s_to_p]
+      simp only [Finset.mem_insert, Finset.mem_singleton] at hs_cases
+      rcases hs_cases with rfl | rfl | rfl | rfl
+      · simp; exact hp1
+      · simp; exact hp2_P
+      · simp [if_neg, if_pos]; exact hp3_P
+      · simp [if_neg]; exact hp4_P
+
+    have hp_s'_P : p_s' ∈ P := by
+      simp only [p_s', s_to_p]
+      simp only [Finset.mem_insert, Finset.mem_singleton] at hs'_cases
+      rcases hs'_cases with rfl | rfl | rfl | rfl
+      · simp; exact hp1
+      · simp; exact hp2_P
+      · simp [if_neg, if_pos]; exact hp3_P
+      · simp [if_neg]; exact hp4_P
+
+    have hs_adj_p : G.Adj s_v p_s := by
+      simp only [p_s, s_to_p]
+      rcases hs_cases with rfl | rfl | rfl | rfl
+      · simp; exact hs1_adj_p1
+      · simp; exact hs2_adj_p2
+      · simp [if_neg, if_pos]; exact hs3_adj_p3
+      · simp [if_neg]; exact hs4_adj_p4
+
+    have hs'_adj_p' : G.Adj s'_v p_s' := by
+      simp only [p_s', s_to_p]
+      rcases hs'_cases with rfl | rfl | rfl | rfl
+      · simp; exact hs1_adj_p1
+      · simp; exact hs2_adj_p2
+      · simp [if_neg, if_pos]; exact hs3_adj_p3
+      · simp [if_neg]; exact hs4_adj_p4
+
+    -- Now gather all hypotheses for p_adjacent_of_shared_w
+    -- This is systematic but tedious - need ~20 hypotheses
+
+    sorry -- Apply p_adjacent_of_shared_w with all gathered hypotheses
 
   -- Part c: The 4 P-edges are distinct
   have h_distinct_P_edges : (E_P.filter (fun e =>
