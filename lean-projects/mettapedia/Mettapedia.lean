@@ -32,3 +32,10 @@ import Mettapedia.ProbabilityTheory.KnuthSkilling
 
 -- Measure Theory
 import Mettapedia.MeasureTheory.FromSymmetry
+import Mettapedia.MeasureTheory.Integration
+
+-- Quantum Theory
+import Mettapedia.QuantumTheory.FromSymmetry
+
+-- Examples
+import Mettapedia.Examples.SymmetricMeasures
