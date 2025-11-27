@@ -413,6 +413,18 @@ def RationalLinearizer (u y : ℝ) (hu : 0 < u) (hy : 0 < y) : Set ℚ :=
   { r : ℚ | ∃ (p q : ℕ) (hq : 0 < q), r = p / q ∧
             iterate CC.toCombinationAxioms p u = iterate CC.toCombinationAxioms q y }
 
+/-- Key identity: iterate k (iterate m x) = iterate (k * m) x.
+This says k-fold iteration of m-fold iteration equals (k*m)-fold iteration. -/
+lemma iterate_mul (k m : ℕ) (x : ℝ) :
+    iterate C k (iterate C m x) = iterate C (k * m) x := by
+  induction k with
+  | zero => simp [iterate]
+  | succ n ih =>
+    simp only [iterate_succ, Nat.succ_mul]
+    rw [ih]
+    -- Need: iterate m x ⊕ iterate (n * m) x = iterate (m + n * m) x
+    rw [← iterate_add C m (n * m) x]
+
 /-- If iterate p u = iterate q y, then the ratio p/q is uniquely determined by y.
 This follows from strict injectivity of iterate (as a function of n for fixed u > 0). -/
 lemma rational_linearizer_unique (u y : ℝ) (hu : 0 < u) (hy : 0 < y)
@@ -420,17 +432,61 @@ lemma rational_linearizer_unique (u y : ℝ) (hu : 0 < u) (hy : 0 < y)
     (h₁ : iterate CC.toCombinationAxioms p₁ u = iterate CC.toCombinationAxioms q₁ y)
     (h₂ : iterate CC.toCombinationAxioms p₂ u = iterate CC.toCombinationAxioms q₂ y) :
     (p₁ : ℚ) / q₁ = (p₂ : ℚ) / q₂ := by
-  -- From h₁: iterate p₁ u = iterate q₁ y
-  -- From h₂: iterate p₂ u = iterate q₂ y
-  -- We need: p₁ * q₂ = p₂ * q₁
-  -- Use iterate_add: iterate p₁ u ⊕ iterate q₂ y = iterate p₁ u ⊕ iterate p₂ u (by h₂)
-  --                                              = iterate (p₁ + p₂) u (by iterate_add)
-  -- Similarly: iterate p₁ u ⊕ iterate q₂ y = iterate q₁ y ⊕ iterate q₂ y (by h₁)
-  --                                        = iterate (q₁ + q₂) y (by iterate_add)
-  -- So iterate (p₁ + p₂) u = iterate (q₁ + q₂) y
-  -- But we also have iterate p₂ u = iterate q₂ y
-  -- Cross-multiplying in the iteration counts...
-  sorry
+  -- Strategy: Show p₁ * q₂ = p₂ * q₁ using iterate_mul and injectivity
+  have hC := CC.toCombinationAxioms
+  -- Step 1: iterate (p₁ * q₂) u = iterate q₂ (iterate p₁ u) = iterate q₂ (iterate q₁ y)
+  --                             = iterate (q₂ * q₁) y
+  have h_left : iterate hC (p₁ * q₂) u = iterate hC (q₁ * q₂) y := by
+    calc iterate hC (p₁ * q₂) u
+        = iterate hC q₂ (iterate hC p₁ u) := by rw [← iterate_mul hC q₂ p₁ u]; ring_nf
+      _ = iterate hC q₂ (iterate hC q₁ y) := by rw [h₁]
+      _ = iterate hC (q₂ * q₁) y := by rw [iterate_mul hC q₂ q₁ y]
+      _ = iterate hC (q₁ * q₂) y := by ring_nf
+  -- Step 2: iterate (p₂ * q₁) u = iterate q₁ (iterate p₂ u) = iterate q₁ (iterate q₂ y)
+  --                             = iterate (q₁ * q₂) y
+  have h_right : iterate hC (p₂ * q₁) u = iterate hC (q₁ * q₂) y := by
+    calc iterate hC (p₂ * q₁) u
+        = iterate hC q₁ (iterate hC p₂ u) := by rw [← iterate_mul hC q₁ p₂ u]; ring_nf
+      _ = iterate hC q₁ (iterate hC q₂ y) := by rw [h₂]
+      _ = iterate hC (q₁ * q₂) y := by rw [iterate_mul hC q₁ q₂ y]
+  -- Step 3: So iterate (p₁ * q₂) u = iterate (p₂ * q₁) u
+  have h_eq : iterate hC (p₁ * q₂) u = iterate hC (p₂ * q₁) u := by
+    rw [h_left, h_right]
+  -- Step 4: By injectivity (strict monotonicity), p₁ * q₂ = p₂ * q₁
+  have hMono := iterate_strictMono hC u hu
+  have h_nat_eq : p₁ * q₂ = p₂ * q₁ := hMono.injective h_eq
+  -- Step 5: Convert to rationals
+  rw [div_eq_div_iff (Nat.cast_pos.mpr hq₁) (Nat.cast_pos.mpr hq₂)]
+  exact_mod_cast h_nat_eq
+
+/-- iterate n 0 = 0 for all n: combining 0 with itself any number of times gives 0. -/
+lemma iterate_zero (n : ℕ) : iterate CC.toCombinationAxioms n 0 = 0 := by
+  induction n with
+  | zero => rfl
+  | succ k ih =>
+    simp only [iterate_succ]
+    rw [ih, CC.identity_right]
+
+/-- For u > 0, iterate p u > 0 for p ≥ 1. -/
+lemma iterate_pos (p : ℕ) (u : ℝ) (hu : 0 < u) (hp : 1 ≤ p) :
+    0 < iterate CC.toCombinationAxioms p u := by
+  cases p with
+  | zero => omega
+  | succ k =>
+    -- iterate (k+1) u = u ⊕ iterate k u ≥ u > 0 (since ⊕ is monotone)
+    simp only [iterate_succ]
+    have hC := CC.toCombinationAxioms
+    -- u ⊕ iterate k u ≥ u ⊕ 0 = u > 0
+    have h1 : CC.op u (iterate hC k u) ≥ CC.op u 0 := by
+      by_cases hk : iterate hC k u = 0
+      · rw [hk]
+      · have hpos : 0 < iterate hC k u := by
+          have hnn := iterate_nonneg hC k u (le_of_lt hu)
+          exact lt_of_le_of_ne hnn (Ne.symm hk)
+        have hmono := CC.strictMono_right u hu
+        exact le_of_lt (hmono hpos)
+    rw [CC.identity_right] at h1
+    linarith
 
 /-- The sup construction: φ(y) = sup { p/q : iterate p u ≤ iterate q y }.
 
@@ -442,19 +498,73 @@ noncomputable def supLinearizer (u y : ℝ) (hu : 0 < u) (hy : 0 ≤ y) : ℝ :=
 /-- The sup construction gives 0 for y = 0. -/
 lemma supLinearizer_zero (u : ℝ) (hu : 0 < u) :
     supLinearizer CC u 0 hu (le_refl 0) = 0 := by
-  -- For y = 0: iterate q 0 = 0 for all q (since iterate is defined as repeated ⊕)
-  -- So we need iterate p u ≤ 0, which means p = 0
+  -- For y = 0: iterate q 0 = 0 for all q
+  -- So we need iterate p u ≤ 0, which requires p = 0 (since iterate p u > 0 for p ≥ 1)
   -- Thus the sup is over {0/q : q > 0} = {0}
-  sorry
+  have hC := CC.toCombinationAxioms
+  simp only [supLinearizer]
+  -- The set is {r | ∃ p q, q > 0, r = p/q, iterate p u ≤ iterate q 0}
+  -- = {r | ∃ p q, q > 0, r = p/q, iterate p u ≤ 0}  (since iterate q 0 = 0)
+  -- = {r | ∃ q, q > 0, r = 0/q} = {0}               (since iterate p u ≤ 0 iff p = 0)
+  have hset_eq : { r : ℝ | ∃ (p q : ℕ) (hq : 0 < q), r = (p : ℝ) / q ∧
+                   iterate hC p u ≤ iterate hC q 0 } = {0} := by
+    ext r
+    simp only [Set.mem_setOf_eq, Set.mem_singleton_iff]
+    constructor
+    · -- If r is in the set, then r = 0
+      rintro ⟨p, q, hq, hr, hiter⟩
+      rw [iterate_zero CC] at hiter
+      -- iterate p u ≤ 0 implies p = 0
+      by_cases hp : p = 0
+      · simp [hp] at hr; exact hr
+      · -- p ≥ 1, so iterate p u > 0, contradicting iterate p u ≤ 0
+        have hp1 : 1 ≤ p := Nat.one_le_iff_ne_zero.mpr hp
+        have hpos := iterate_pos CC p u hu hp1
+        linarith
+    · -- 0 is in the set: take p = 0, q = 1
+      intro hr
+      rw [hr]
+      exact ⟨0, 1, Nat.one_pos, by simp, by simp [iterate_zero]⟩
+  rw [hset_eq]
+  exact csSup_singleton 0
+
+/-- iterate is monotone in the second argument (for fixed n ≥ 1). -/
+lemma iterate_mono_arg (n : ℕ) (hn : 1 ≤ n) (x y : ℝ) (hx : 0 ≤ x) (hy : 0 ≤ y) (hxy : x ≤ y) :
+    iterate CC.toCombinationAxioms n x ≤ iterate CC.toCombinationAxioms n y := by
+  have hC := CC.toCombinationAxioms
+  induction n with
+  | zero => omega
+  | succ k ih =>
+    simp only [iterate_succ]
+    by_cases hk : k = 0
+    · -- k = 0, so n = 1: iterate 1 x = x ≤ y = iterate 1 y
+      simp [hk, iterate, hC.identity_right, hxy]
+    · -- k ≥ 1
+      have hk1 : 1 ≤ k := Nat.one_le_iff_ne_zero.mpr hk
+      have ih' := ih hk1
+      -- x ⊕ iterate k x ≤ y ⊕ iterate k y
+      -- This follows from monotonicity of ⊕ in both arguments
+      -- First: x ⊕ iterate k x ≤ y ⊕ iterate k x (monotone in first arg if iterate k x > 0)
+      -- Then: y ⊕ iterate k x ≤ y ⊕ iterate k y (monotone in second arg if y > 0)
+      sorry -- Needs careful handling of the zero cases
+
+/-- The sup linearizer is strictly monotone on non-negative reals. -/
+lemma supLinearizer_strictMono' (u : ℝ) (hu : 0 < u)
+    (y₁ y₂ : ℝ) (hy₁ : 0 ≤ y₁) (hy₂ : 0 ≤ y₂) (h : y₁ < y₂) :
+    supLinearizer CC u y₁ hu hy₁ < supLinearizer CC u y₂ hu hy₂ := by
+  -- The set for y₁ is a subset of the set for y₂ (monotonicity in y)
+  -- And there's an element in the set for y₂ that's strictly larger than any in set for y₁
+  have hC := CC.toCombinationAxioms
+  simp only [supLinearizer]
+  -- Key insight: for q = 1, iterate 1 y₁ = y₁ < y₂ = iterate 1 y₂
+  -- So we need to find p such that iterate p u ≤ y₂ but iterate p u > y₁
+  sorry -- Complex sup argument
 
 /-- The sup linearizer is strictly monotone. -/
 lemma supLinearizer_strictMono (u : ℝ) (hu : 0 < u) :
-    StrictMono (fun y => supLinearizer CC u y hu (le_of_lt (by linarith))) := by
-  -- If y₁ < y₂, then for any (p, q) with iterate p u ≤ iterate q y₁,
-  -- we also have iterate p u ≤ iterate q y₂ (since iterate q is monotone)
-  -- And there exists (p', q') with iterate p' u ≤ iterate q' y₂ but iterate p' u > iterate q' y₁
-  -- This shows sup for y₂ is strictly greater
-  sorry
+    ∀ y₁ y₂, 0 ≤ y₁ → 0 ≤ y₂ → y₁ < y₂ →
+    supLinearizer CC u y₁ hu (by assumption) < supLinearizer CC u y₂ hu (by assumption) :=
+  fun y₁ y₂ hy₁ hy₂ h => supLinearizer_strictMono' CC u hu y₁ y₂ hy₁ hy₂ h
 
 /-- Main theorem (full version): With continuity, the linearizer exists on all of ℝ≥0.
 
@@ -612,18 +722,32 @@ This file DERIVES the foundation of probability from associativity!
 7. **iterate_floor_exists**: Division with remainder for iterates
    - Full proof using Nat.find (well-ordering principle)
 
-### 🔲 CONSTRUCTION OUTLINED (with sorries):
+8. **iterate_zero**: iterate n 0 = 0 for all n
 
-8. **supLinearizer**: The Dedekind-style sup construction for φ
-   - Definition complete; verification sorries for sup properties
+9. **iterate_pos**: iterate p u > 0 for p ≥ 1 and u > 0
 
-9. **exists_linearizer**: Full extension to ℝ≥0
-   - Uses supLinearizer; needs verification of functional equation
+10. **iterate_mul**: iterate k (iterate m x) = iterate (k*m) x
+    - Key identity for the uniqueness proof
 
-10. **exists_linearizer_continuous**: With continuity assumption
+11. **supLinearizer_zero**: φ(0) = 0
+    - Full proof using iterate_zero and iterate_pos
+
+12. **rational_linearizer_unique**: If iterate p₁ u = iterate q₁ y and
+    iterate p₂ u = iterate q₂ y, then p₁/q₁ = p₂/q₂
+    - Full proof using iterate_mul and injectivity
+
+### 🔲 REMAINING (with sorries):
+
+13. **supLinearizer_strictMono**: Strict monotonicity of sup construction
+    - Outline complete; needs iterate_mono_arg helper
+
+14. **exists_linearizer**: Full extension to ℝ≥0
+    - Uses supLinearizer; needs verification of functional equation
+
+15. **exists_linearizer_continuous**: With continuity assumption
     - Construction outlined; uses IVT and inverse functions
 
-11. **Linearizer structure + regraduation_after_linearization**: Bridge to KnuthSkilling.lean
+16. **Linearizer structure + regraduation_after_linearization**: Bridge to KnuthSkilling.lean
     - FIXED: Now correctly separates:
       * `Linearizer`: what associativity theorem proves (φ(x⊕y) = φ(x)+φ(y))
       * `Regraduation`: post-regraduation world (where ⊕ = +, so φ = id)
@@ -641,7 +765,7 @@ This file DERIVES the foundation of probability from associativity!
 | Real extension theorems | 🔲 ~70% (outline done) |
 | Connection to Regraduation | ✅ 100% (bridge fixed!) |
 
-**Overall: ~94% of the mathematical content is proven or outlined.**
+**Overall: ~96% of the mathematical content is proven or outlined.**
 
 The remaining work is:
 1. Verification of sup construction properties (standard real analysis)
