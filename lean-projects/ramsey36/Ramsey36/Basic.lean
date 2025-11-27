@@ -2737,7 +2737,118 @@ lemma P_has_at_most_four_edges {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
         p1 ∈ P ∧ p2 ∈ P ∧ p3 ∈ P ∧ p4 ∈ P ∧
         p1 ≠ p2 ∧ p1 ≠ p3 ∧ p1 ≠ p4 ∧ p2 ≠ p3 ∧ p2 ≠ p4 ∧ p3 ≠ p4 ∧
         P = {p1, p2, p3, p4} := by
-      sorry -- Extract 4 distinct elements from P with card = 4
+      -- Extract elements from P using card = 4
+      have hP_ne : P.Nonempty := by
+        rw [Finset.nonempty_iff_ne_empty]
+        intro h
+        rw [h, Finset.card_empty] at hP_card
+        norm_num at hP_card
+
+      -- Get first element
+      obtain ⟨p1, hp1⟩ := hP_ne
+      have hP1 : (P \ {p1}).card = 3 := by
+        rw [Finset.card_sdiff (Finset.singleton_subset_iff.mpr hp1)]
+        simp [hP_card]
+
+      -- Get second element
+      have hP1_ne : (P \ {p1}).Nonempty := by
+        rw [Finset.nonempty_iff_ne_empty]
+        intro h
+        rw [h, Finset.card_empty] at hP1
+        norm_num at hP1
+      obtain ⟨p2, hp2⟩ := hP1_ne
+      have hp2_mem : p2 ∈ P := by simp only [Finset.mem_sdiff, Finset.mem_singleton] at hp2; exact hp2.1
+      have h12 : p1 ≠ p2 := by simp only [Finset.mem_sdiff, Finset.mem_singleton] at hp2; exact hp2.2
+
+      have hP2 : (P \ {p1, p2}).card = 2 := by
+        rw [Finset.card_sdiff]
+        · simp [hP_card]
+          intro h
+          cases h <;> (subst_vars; contradiction)
+        · intro x
+          simp only [Finset.mem_insert, Finset.mem_singleton]
+          intro h
+          cases h with
+          | inl h => exact h ▸ hp1
+          | inr h => exact h ▸ hp2_mem
+
+      -- Get third element
+      have hP2_ne : (P \ {p1, p2}).Nonempty := by
+        rw [Finset.nonempty_iff_ne_empty]
+        intro h
+        rw [h, Finset.card_empty] at hP2
+        norm_num at hP2
+      obtain ⟨p3, hp3⟩ := hP2_ne
+      have hp3_mem : p3 ∈ P := by simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton] at hp3; exact hp3.1
+      have h13 : p1 ≠ p3 := by simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton] at hp3; exact hp3.2.1
+      have h23 : p2 ≠ p3 := by simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton] at hp3; exact hp3.2.2
+
+      have hP3 : (P \ {p1, p2, p3}).card = 1 := by
+        rw [Finset.card_sdiff]
+        · simp [hP_card]
+          intro h
+          cases h <;> (subst_vars; contradiction)
+        · intro x
+          simp only [Finset.mem_insert, Finset.mem_singleton]
+          intro h
+          cases h with
+          | inl h => exact h ▸ hp1
+          | inr h => cases h with
+            | inl h => exact h ▸ hp2_mem
+            | inr h => exact h ▸ hp3_mem
+
+      -- Get fourth element
+      have hP3_singleton : ∃ p4, P \ {p1, p2, p3} = {p4} := by
+        apply Finset.card_eq_one.mp hP3
+      obtain ⟨p4, hP4_eq⟩ := hP3_singleton
+      have hp4_mem : p4 ∈ P := by
+        have : p4 ∈ P \ {p1, p2, p3} := by rw [hP4_eq]; exact Finset.mem_singleton_self p4
+        exact Finset.mem_of_mem_diff this
+      have h14 : p1 ≠ p4 := by
+        intro h
+        have : p4 ∈ {p1, p2, p3} := by simp [h]
+        have : p4 ∈ P \ {p1, p2, p3} := by rw [hP4_eq]; exact Finset.mem_singleton_self p4
+        exact Finset.not_mem_diff_of_mem this this
+      have h24 : p2 ≠ p4 := by
+        intro h
+        have : p4 ∈ {p1, p2, p3} := by simp [h]
+        have : p4 ∈ P \ {p1, p2, p3} := by rw [hP4_eq]; exact Finset.mem_singleton_self p4
+        exact Finset.not_mem_diff_of_mem this this
+      have h34 : p3 ≠ p4 := by
+        intro h
+        have : p4 ∈ {p1, p2, p3} := by simp [h]
+        have : p4 ∈ P \ {p1, p2, p3} := by rw [hP4_eq]; exact Finset.mem_singleton_self p4
+        exact Finset.not_mem_diff_of_mem this this
+
+      -- Prove P = {p1, p2, p3, p4}
+      have hP_eq : P = {p1, p2, p3, p4} := by
+        ext x
+        constructor
+        · intro hx
+          by_cases hx1 : x = p1
+          · simp [hx1]
+          by_cases hx2 : x = p2
+          · simp [hx2]
+          by_cases hx3 : x = p3
+          · simp [hx3]
+          · have : x ∈ P \ {p1, p2, p3} := by
+              simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton]
+              exact ⟨hx, hx1, hx2, hx3⟩
+            rw [hP4_eq] at this
+            simp only [Finset.mem_singleton] at this
+            simp [this]
+        · intro hx
+          simp only [Finset.mem_insert, Finset.mem_singleton] at hx
+          cases hx with
+          | inl h => exact h ▸ hp1
+          | inr h => cases h with
+            | inl h => exact h ▸ hp2_mem
+            | inr h => cases h with
+              | inl h => exact h ▸ hp3_mem
+              | inr h => exact h ▸ hp4_mem
+
+      exact ⟨p1, p2, p3, p4, hp1, hp2_mem, hp3_mem, hp4_mem,
+             h12, h13, h14, h23, h24, h34, hP_eq⟩
 
     obtain ⟨p1, p2, p3, p4, hp1, hp2, hp3, hp4, h12, h13, h14, h23, h24, h34, hP_eq⟩ := hP_four
 
