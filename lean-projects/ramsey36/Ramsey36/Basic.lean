@@ -2155,9 +2155,20 @@ lemma P_is_two_regular {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
   have h_not_3 : P_nbrs.card ≠ 3 := by
     intro h3
     have h_Q_1 : Q_nbrs.card = 1 := by omega
-    -- If all p's had ≥3 P-neighbors, then |E(P)| ≥ 6
-    -- But P_has_at_most_four_edges gives contradiction
-    sorry
+    -- If p has 3 P-neighbors, we can apply P_has_at_most_four_edges
+    -- to derive a contradiction via edge counting
+
+    -- Define the edge set
+    let E_P := Finset.univ.filter (fun e : Fin 18 × Fin 18 =>
+      e.1 ∈ P ∧ e.2 ∈ P ∧ e.1 < e.2 ∧ G.Adj e.1 e.2)
+
+    -- By P_has_at_most_four_edges, E_P.card ≤ 4
+    have h_edge_bound := P_has_at_most_four_edges h_reg h_tri h_no6 v P hP_card hP_props
+
+    -- But if p has 3 P-neighbors and the structure is uniform (by symmetry),
+    -- then we would have more than 4 edges
+    -- This requires analyzing the global degree sequence
+    sorry -- Use edge bound + degree counting to derive contradiction
 
   -- Case |P_nbrs| = 4: p has 0 Q-neighbors
   have h_not_4 : P_nbrs.card ≠ 4 := by
