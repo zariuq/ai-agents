@@ -226,6 +226,39 @@ theorem op_on_iterates_additive (u : ℝ) (hu : 0 < u) (m n : ℕ) :
     C.op (iterate C m u) (iterate C n u) = iterate C (m + n) u := by
   rw [iterate_add]
 
+/-- iterate distributes over op: iterate n (x ⊕ y) = iterate n x ⊕ iterate n y.
+
+This is provable by induction using associativity and commutativity of ⊕.
+- Base: iterate 0 (x ⊕ y) = 0 = 0 ⊕ 0 = iterate 0 x ⊕ iterate 0 y
+- Step: iterate (n+1) (x ⊕ y) = (x ⊕ y) ⊕ iterate n (x ⊕ y)
+        = (x ⊕ y) ⊕ (iterate n x ⊕ iterate n y)  [by IH]
+        = x ⊕ y ⊕ iterate n x ⊕ iterate n y      [flatten by assoc]
+        = x ⊕ iterate n x ⊕ y ⊕ iterate n y      [by comm on middle terms]
+        = (x ⊕ iterate n x) ⊕ (y ⊕ iterate n y)  [by assoc]
+        = iterate (n+1) x ⊕ iterate (n+1) y      [by def] -/
+theorem iterate_op_distrib (n : ℕ) (x y : ℝ) :
+    iterate C n (C.op x y) = C.op (iterate C n x) (iterate C n y) := by
+  induction n with
+  | zero => simp [iterate, C.identity_left]
+  | succ k ih =>
+    -- iterate (k+1) (x ⊕ y) = (x ⊕ y) ⊕ iterate k (x ⊕ y)
+    --                       = (x ⊕ y) ⊕ (iterate k x ⊕ iterate k y)  [by IH]
+    simp only [iterate_succ]
+    rw [ih]
+    -- Now need: (x ⊕ y) ⊕ (iterate k x ⊕ iterate k y) = (x ⊕ iterate k x) ⊕ (y ⊕ iterate k y)
+    -- Use associativity and commutativity to rearrange
+    have h1 : C.op (C.op x y) (C.op (iterate C k x) (iterate C k y)) =
+              C.op (C.op (C.op x y) (iterate C k x)) (iterate C k y) := C.assoc _ _ _
+    have h2 : C.op (C.op x y) (iterate C k x) = C.op x (C.op y (iterate C k x)) := C.assoc x y _
+    have h3 : C.op y (iterate C k x) = C.op (iterate C k x) y := C.comm y _
+    have h4 : C.op x (C.op (iterate C k x) y) = C.op (C.op x (iterate C k x)) y := C.assoc x _ y
+    calc C.op (C.op x y) (C.op (iterate C k x) (iterate C k y))
+        = C.op (C.op (C.op x y) (iterate C k x)) (iterate C k y) := h1
+      _ = C.op (C.op x (C.op y (iterate C k x))) (iterate C k y) := by rw [h2]
+      _ = C.op (C.op x (C.op (iterate C k x) y)) (iterate C k y) := by rw [h3]
+      _ = C.op (C.op (C.op x (iterate C k x)) y) (iterate C k y) := by rw [h4]
+      _ = C.op (C.op x (iterate C k x)) (C.op y (iterate C k y)) := (C.assoc _ y _).symm
+
 /-- Main theorem (version 1): On the discrete image, the linearizer exists and works.
 
 For any unit u > 0, there exists φ : ℕ → ℝ (namely, φ(n) = n) such that
@@ -1754,7 +1787,126 @@ lemma supLinearizer_add (u : ℝ) (hu : 0 < u) (x y : ℝ) (hx : 0 ≤ x) (hy : 
         --
         -- For now, let me mark this sorry and move on to Part 2. I'll come back to this.
         --
-        sorry
+        -- KEY INSIGHT (finally!): The "+1" case is EXACTLY compensated by the deficit.
+        --
+        -- When floor_xy(q) = floor_x(q) + floor_y(q) + 1, it means the "remainders"
+        -- ε_x = iterate q x - iterate floor_x(q) u and ε_y = iterate q y - iterate floor_y(q) u
+        -- satisfy ε_x ⊕ ε_y ≥ u.
+        --
+        -- In this case, the gap (sup S_x - floor_x(q)/q) + (sup S_y - floor_y(q)/q) ≥ 1/q.
+        -- So floor_x(q)/q + floor_y(q)/q ≤ sup S_x + sup S_y - 1/q.
+        -- Hence (floor_x(q) + floor_y(q) + 1)/q ≤ sup S_x + sup S_y - 1/q + 1/q = c.
+        --
+        -- In the no "+1" case: floor_xy(q)/q = (floor_x(q) + floor_y(q))/q ≤ c directly.
+        --
+        -- So floor_xy(q)/q ≤ c for all q, hence sup S_xy ≤ c.
+        --
+        -- For the formal proof, we use the fact that elements of S_xy are bounded by floor_xy(q)/q,
+        -- and floor_xy(q)/q approaches c from below (with the "+1" compensation).
+        --
+        -- The key bound: for any p/q ∈ S_xy, p/q ≤ floor_xy(q)/q ≤ c.
+        -- Hence sup S_xy ≤ c.
+        apply csSup_le h_ne_xy
+        intro r ⟨p, q, hq, hr_eq, hiter⟩
+        rw [hr_eq]
+        -- We need to show p/q ≤ c = sSup S_x + sSup S_y
+        -- Key: p ≤ floor_xy(q) and floor_xy(q)/q ≤ c
+        rw [iterate_add] at hiter
+        obtain ⟨px, hpx_le, hpx_or⟩ := iterate_floor_exists CC u hu (iterate hC q x) (iterate_nonneg hC q x hx)
+        obtain ⟨py, hpy_le, hpy_or⟩ := iterate_floor_exists CC u hu (iterate hC q y) (iterate_nonneg hC q y hy)
+        cases hpx_or with
+        | inr hall_x => exfalso; obtain ⟨M, hM⟩ := iterate_unbounded CC u hu (iterate hC q x); linarith [hall_x M]
+        | inl hpx_lt =>
+          cases hpy_or with
+          | inr hall_y => exfalso; obtain ⟨M, hM⟩ := iterate_unbounded CC u hu (iterate hC q y); linarith [hall_y M]
+          | inl hpy_lt =>
+            -- We have: iterate px u ≤ iterate q x < iterate (px+1) u
+            --          iterate py u ≤ iterate q y < iterate (py+1) u
+            -- So p ≤ px + py + 1 (already proven above)
+            have h_ub : iterate hC q x ⊕ iterate hC q y < iterate hC (px + py + 2) u := by
+              have h1 : iterate hC q x ⊕ iterate hC q y < iterate hC (px + 1) u ⊕ iterate hC q y := by
+                by_cases hqy_pos : iterate hC q y = 0
+                · rw [hqy_pos, CC.identity_right, CC.identity_right]; exact hpx_lt
+                · have hqy_pos' : 0 < iterate hC q y := lt_of_le_of_ne (iterate_nonneg hC q y hy) (Ne.symm hqy_pos)
+                  exact CC.strictMono_left (iterate hC q y) hqy_pos' hpx_lt
+              have h2 : iterate hC (px + 1) u ⊕ iterate hC q y < iterate hC (px + 1) u ⊕ iterate hC (py + 1) u := by
+                have hpx1_pos : 0 < iterate hC (px + 1) u := iterate_pos CC (px + 1) u hu (by omega)
+                exact CC.strictMono_right (iterate hC (px + 1) u) hpx1_pos hpy_lt
+              calc iterate hC q x ⊕ iterate hC q y < iterate hC (px + 1) u ⊕ iterate hC q y := h1
+                _ < iterate hC (px + 1) u ⊕ iterate hC (py + 1) u := h2
+                _ = iterate hC (px + 1 + (py + 1)) u := (iterate_add hC (px + 1) (py + 1) u).symm
+                _ = iterate hC (px + py + 2) u := by ring_nf
+            have hp_bound : p ≤ px + py + 1 := by
+              by_contra h_not; push_neg at h_not
+              have : px + py + 2 ≤ p := h_not
+              have h_mono := iterate_strictMono hC u hu this
+              linarith
+            -- Key step: show (px + py + 1)/q ≤ c using the compensation argument
+            -- We have px/q ∈ S_x, py/q ∈ S_y
+            have hpx_in : (px : ℝ) / q ∈ S_x := ⟨px, q, hq, rfl, hpx_le⟩
+            have hpy_in : (py : ℝ) / q ∈ S_y := ⟨py, q, hq, rfl, hpy_le⟩
+            have hpx_le_sup : (px : ℝ) / q ≤ sSup S_x := le_csSup h_bdd_x hpx_in
+            have hpy_le_sup : (py : ℝ) / q ≤ sSup S_y := le_csSup h_bdd_y hpy_in
+            -- Case split: is p ≤ px + py or p = px + py + 1?
+            by_cases hp_tight : p ≤ px + py
+            · -- Easy case: p ≤ px + py, so p/q ≤ (px + py)/q ≤ c
+              calc (p : ℝ) / q ≤ (px + py : ℕ) / q := by
+                    apply div_le_div_of_nonneg_right _ (by positivity : (q : ℝ) > 0)
+                    exact_mod_cast hp_tight
+                _ = (px : ℝ) / q + (py : ℝ) / q := by simp [add_div]
+                _ ≤ sSup S_x + sSup S_y := by linarith
+            · -- Hard case: p = px + py + 1
+              -- This means the "remainders" sum to ≥ u
+              push_neg at hp_tight
+              have hp_eq : p = px + py + 1 := by omega
+              -- In this case, the gap in px/q + py/q from c is ≥ 1/q
+              -- So (px + py + 1)/q ≤ c
+              --
+              -- The proof: when p = px + py + 1, we have iterate p u ≤ iterate q (x ⊕ y).
+              -- This means iterate (px + py + 1) u ≤ iterate q x ⊕ iterate q y.
+              -- The lower bound on RHS is: iterate q x ⊕ iterate q y ≥ iterate px u ⊕ iterate py u = iterate (px + py) u.
+              -- For iterate (px + py + 1) u to fit, the "remainders" must contribute at least u.
+              --
+              -- Now, the remainder ε_x = iterate q x - iterate px u satisfies 0 ≤ ε_x < u.
+              -- Similarly for ε_y. And ε_x ⊕ ε_y ≥ u (for the +1 case).
+              --
+              -- The deficit (sSup S_x - px/q) corresponds to ε_x/u (in a normalized sense).
+              -- When ε_x ⊕ ε_y ≥ u, the sum of deficits is ≥ 1/q.
+              -- Hence px/q + py/q ≤ c - 1/q, so (px + py + 1)/q ≤ c.
+              --
+              -- For a rigorous proof, we use: if p = px + py + 1 is valid, then the element
+              -- (px + py + 1)/q ∈ S_xy, and this element approaches c as q → ∞.
+              -- The sup of S_xy is exactly c, achieved as a limit.
+              --
+              -- For now, use the direct bound with the compensation insight.
+              rw [hp_eq]
+              -- We have iterate (px + py + 1) u ≤ iterate q x ⊕ iterate q y (from hp_eq and hiter)
+              have hiter' : iterate hC (px + py + 1) u ≤ iterate hC q x ⊕ iterate hC q y := by
+                rw [← hp_eq]; exact hiter
+              -- The key is that this implies the remainders sum to ≥ u
+              -- For the formal bound, we use: (px + py + 1)/q ≤ c
+              -- This follows from the structure of the Dedekind cut
+              --
+              -- Alternative approach: use that c = sup S_x + sup S_y and floor ratios approach sups
+              -- The "+1" term is absorbed because when it appears, the floor ratios are correspondingly lower
+              --
+              -- Direct calculation approach:
+              -- We have iterate (px + py + 1) u = iterate (px + py) u ⊕ u ≤ iterate q x ⊕ iterate q y
+              -- So iterate px u ⊕ iterate py u ⊕ u ≤ iterate q x ⊕ iterate q y
+              -- Using strictMono properties and the bounds on iterate q x, iterate q y...
+              --
+              -- For a clean finish, note that p/q ≤ c + 1/q was already shown, and here we need p/q ≤ c.
+              -- The key lemma needed: when the +1 case applies, (floor_x(q) + floor_y(q))/q ≤ c - 1/q.
+              --
+              -- Accept this for now and use the main bound:
+              calc ((px + py + 1 : ℕ) : ℝ) / q = (px : ℝ) / q + (py : ℝ) / q + 1 / q := by
+                    simp only [Nat.cast_add, Nat.cast_one]; ring
+                _ ≤ sSup S_x + sSup S_y + 1 / q := by linarith
+                _ ≤ sSup S_x + sSup S_y := by
+                    -- This is where we need the compensation argument
+                    -- For now, use a sorry for this key step
+                    -- The proof: when p = px + py + 1 is achievable, the deficits sum to ≥ 1/q
+                    sorry
   -- Part 2: sup S_x + sup S_y ≤ sup S_xy
   · -- Strategy: Show that for any q, (floor_x(q) + floor_y(q))/q ∈ S_xy.
     -- Since floor_x(q)/q → sup S_x and floor_y(q)/q → sup S_y, the sum approaches sup S_x + sup S_y.
@@ -1828,36 +1980,95 @@ lemma supLinearizer_add (u : ℝ) (hu : 0 < u) (x y : ℝ) (hx : 0 ≤ x) (hy : 
       · -- Both x > 0 and y > 0
         have hx_pos' : 0 < x := lt_of_le_of_ne hx (Ne.symm hx_pos)
         have hy_pos' : 0 < y := lt_of_le_of_ne hy (Ne.symm hy_pos)
-        -- For q = 1: floor_x(1)/1 + floor_y(1)/1 ∈ S_xy (scaled appropriately)
-        -- The key is that (floor_x(q) + floor_y(q))/q → sup S_x + sup S_y.
-        -- For this, we use the fact that we can approximate sup S_x and sup S_y
-        -- with elements in S_x and S_y, then add them.
+        -- Strategy: Show (floor_x(q) + floor_y(q))/q ∈ S_xy, and these elements approach c.
         --
-        -- Use iterate_floor_exists to get floors, then show their sum is in S_xy.
-        obtain ⟨px1, hpx1_le, hpx1_or⟩ := iterate_floor_exists CC u hu x hx
-        obtain ⟨py1, hpy1_le, hpy1_or⟩ := iterate_floor_exists CC u hu y hy
-        -- Show (px1 + py1)/1 ∈ S_xy
-        have h_sum_mem : ((px1 + py1 : ℕ) : ℝ) / 1 ∈ S_xy := by
-          refine ⟨px1 + py1, 1, Nat.one_pos, by simp, ?_⟩
-          simp only [iterate_one hC]
-          rw [iterate_add hC px1 py1 u]
-          exact CC.mono hpx1_le hpy1_le
-        -- This gives a lower bound: sup S_xy ≥ (px1 + py1)/1 = px1 + py1
-        -- And px1/1 ∈ S_x, py1/1 ∈ S_y, so px1 ≤ sup S_x and py1 ≤ sup S_y.
-        -- This doesn't immediately give sup S_xy ≥ sup S_x + sup S_y, but it's a start.
-        -- For the full proof, we need to use the limit as q → ∞.
-        -- For now, use a simpler bound.
+        -- Key lemma: For any q ≥ 1, (floor_x(q) + floor_y(q))/q ∈ S_xy.
+        -- Proof: iterate (floor_x(q) + floor_y(q)) u = iterate floor_x(q) u ⊕ iterate floor_y(q) u
+        --                                           ≤ iterate q x ⊕ iterate q y (by mono)
+        --                                           = iterate q (x ⊕ y) (by iterate_add)
         --
-        -- The key observation: as q increases, floor_z(q)/q approaches sup S_z.
-        -- So for any ε > 0, there exists Q such that for q ≥ Q:
-        -- floor_x(q)/q > sup S_x - ε and floor_y(q)/q > sup S_y - ε.
-        -- Then (floor_x(q) + floor_y(q))/q > sup S_x + sup S_y - 2ε.
-        -- And (floor_x(q) + floor_y(q))/q ∈ S_xy.
-        -- So sup S_xy > sup S_x + sup S_y - 2ε for all ε, hence ≥.
+        -- Since floor_x(q)/q → sup S_x and floor_y(q)/q → sup S_y as q → ∞,
+        -- we have (floor_x(q) + floor_y(q))/q → sup S_x + sup S_y.
+        -- Hence sup S_xy ≥ sup S_x + sup S_y.
         --
-        -- The formal proof requires showing lim_{q→∞} floor_z(q)/q = sup S_z.
-        -- For now, accept this via sorry.
-        sorry
+        -- For the formal proof, we use the fact that for any ε > 0,
+        -- there exist elements in S_x and S_y arbitrarily close to their sups.
+        -- Their sum (with common denominator) is in S_xy.
+        --
+        -- Use the sup approach: show for any ε > 0, sup S_xy ≥ c - ε.
+        by_contra h_lt
+        push_neg at h_lt
+        -- Suppose sup S_xy < sup S_x + sup S_y
+        set c := sSup S_x + sSup S_y with hc_def
+        -- Let ε = (c - sup S_xy) / 2 > 0
+        set ε := (c - sSup S_xy) / 2 with hε_def
+        have hε_pos : 0 < ε := by linarith
+        -- Find p_x/q_x close to sup S_x (within ε)
+        have h_close_x : ∃ r ∈ S_x, r > sSup S_x - ε := by
+          by_contra h_none
+          push_neg at h_none
+          have : sSup S_x ≤ sSup S_x - ε := csSup_le h_ne_x h_none
+          linarith
+        -- Find p_y/q_y close to sup S_y (within ε)
+        have h_close_y : ∃ r ∈ S_y, r > sSup S_y - ε := by
+          by_contra h_none
+          push_neg at h_none
+          have : sSup S_y ≤ sSup S_y - ε := csSup_le h_ne_y h_none
+          linarith
+        obtain ⟨rx, ⟨px, qx, hqx, hrx_eq, hiter_x⟩, hrx_close⟩ := h_close_x
+        obtain ⟨ry, ⟨py, qy, hqy, hry_eq, hiter_y⟩, hry_close⟩ := h_close_y
+        -- Use common denominator q = qx * qy
+        let q := qx * qy
+        have hq_pos : 0 < q := Nat.mul_pos hqx hqy
+        -- Scale px to px * qy, scale py to py * qx
+        -- Then (px * qy + py * qx) / (qx * qy) = px/qx + py/qy = rx + ry > c - 2ε = sup S_xy
+        have h_scaled_x : iterate hC (px * qy) u ≤ iterate hC (qx * qy) x := by
+          -- iterate (px * qy) u = iterate qy (iterate px u)
+          rw [iterate_mul hC qy px u, iterate_mul hC qy qx x]
+          exact iterate_mono_arg CC qy (iterate hC px u) (iterate hC qx x) hiter_x
+        have h_scaled_y : iterate hC (py * qx) u ≤ iterate hC (qy * qx) y := by
+          rw [iterate_mul hC qx py u, iterate_mul hC qx qy y]
+          exact iterate_mono_arg CC qx (iterate hC py u) (iterate hC qy y) hiter_y
+        -- Now show (px * qy + py * qx) / (qx * qy) ∈ S_xy
+        have h_sum_in : ((px * qy + py * qx : ℕ) : ℝ) / (qx * qy) ∈ S_xy := by
+          refine ⟨px * qy + py * qx, qx * qy, hq_pos, rfl, ?_⟩
+          -- Need: iterate (px * qy + py * qx) u ≤ iterate (qx * qy) (x ⊕ y)
+          -- Step 1: iterate (px * qy + py * qx) u = iterate (px * qy) u ⊕ iterate (py * qx) u
+          rw [iterate_add hC (px * qy) (py * qx) u]
+          -- Step 2: Show iterate (px * qy) u ⊕ iterate (py * qx) u ≤ iterate (qx * qy) x ⊕ iterate (qx * qy) y
+          have h_le : iterate hC (px * qy) u ⊕ iterate hC (py * qx) u ≤
+                      iterate hC (qx * qy) x ⊕ iterate hC (qx * qy) y := by
+            have h1 : iterate hC (qy * qx) y = iterate hC (qx * qy) y := by ring_nf
+            rw [← h1]
+            exact CC.mono h_scaled_x h_scaled_y
+          -- Step 3: Show iterate (qx * qy) x ⊕ iterate (qx * qy) y = iterate (qx * qy) (x ⊕ y)
+          -- This requires: iterate n (x ⊕ y) = iterate n x ⊕ iterate n y
+          -- This is provable by induction using associativity and commutativity of ⊕
+          -- For now, accept via sorry and note this needs a helper lemma
+          -- The lemma: iterate_op_distrib: iterate n (x ⊕ y) = iterate n x ⊕ iterate n y
+          have h_distrib : iterate hC (qx * qy) x ⊕ iterate hC (qx * qy) y =
+                           iterate hC (qx * qy) (CC.op x y) := by
+            -- Use iterate_op_distrib: iterate n (x ⊕ y) = iterate n x ⊕ iterate n y
+            exact (iterate_op_distrib hC (qx * qy) x y).symm
+          calc iterate hC (px * qy) u ⊕ iterate hC (py * qx) u
+              ≤ iterate hC (qx * qy) x ⊕ iterate hC (qx * qy) y := h_le
+            _ = iterate hC (qx * qy) (CC.op x y) := h_distrib
+        -- Now: (px * qy + py * qx) / (qx * qy) = px/qx + py/qy = rx + ry
+        have h_sum_eq : ((px * qy + py * qx : ℕ) : ℝ) / (qx * qy) = rx + ry := by
+          rw [hrx_eq, hry_eq]
+          field_simp
+          ring
+        -- And rx + ry > (sup S_x - ε) + (sup S_y - ε) = c - 2ε = sup S_xy
+        have h_sum_gt : rx + ry > sSup S_xy := by
+          have h1 : rx + ry > (sSup S_x - ε) + (sSup S_y - ε) := by linarith
+          calc rx + ry > (sSup S_x - ε) + (sSup S_y - ε) := h1
+            _ = c - 2 * ε := by ring
+            _ = c - (c - sSup S_xy) := by rw [hε_def]; ring
+            _ = sSup S_xy := by ring
+        -- But rx + ry ∈ S_xy (via h_sum_in), so rx + ry ≤ sup S_xy. Contradiction!
+        rw [← h_sum_eq] at h_sum_gt
+        have h_le := le_csSup h_bdd_xy h_sum_in
+        linarith
 
 /-- Main theorem (full version): With continuity, the linearizer exists on all of ℝ≥0.
 
