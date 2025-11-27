@@ -1780,10 +1780,10 @@ lemma two_regular_four_vertices_is_cycle
       exact Finset.mem_erase.mpr ⟨hp3ne4.symm, hp4P⟩
   have h_card_three : ({p1, p2, p4} : Finset α).card = 3 := by
     simp [hp1ne2, hp1ne4, hp2ne4]
-  have hErase3_eq : P.erase p3 = {p1, p2, p4} := by
-    have hle : (P.erase p3).card ≤ ({p1, p2, p4} : Finset α).card := by
-      simp only [hP_erase3_card, h_card_three]; rfl
-    exact (Finset.eq_of_subset_of_card_le hsubset_erase3 hle).symm
+  have hErase3_eq : ({p1, p2, p4} : Finset α) = P.erase p3 := by
+    apply Finset.eq_of_subset_of_card_le hsubset_erase3
+    -- goal: (P.erase p3).card ≤ ({p1, p2, p4} : Finset α).card
+    simp [hP_erase3_card, h_card_three]
 
   -- neighbors of p3: they live in {p2,p4} since p1 is not adjacent
   set N3 : Finset α := P.filter (fun q => q ≠ p3 ∧ adj p3 q)
@@ -1803,12 +1803,8 @@ lemma two_regular_four_vertices_is_cycle
     · simp only [Finset.mem_singleton] at hx3; subst hx3; simp
   have hN3_eq : N3 = ({p2, p4} : Finset α) := by
     apply Finset.eq_of_subset_of_card_le hN3_subset
-    have hcard : ({p2, p4} : Finset α).card = 2 := by simp [hp2ne4]
-    have : N3.card ≤ ({p2, p4} : Finset α).card := by
-      have : N3.card = 2 := hN3_card
-      have : N3.card ≤ 2 := by omega
-      simpa [hcard] using this
-    simpa [hN3_card, hcard] using this
+    -- card bound: ({p2, p4}).card ≤ N3.card, both sides are 2
+    simp [hN3_card, hp2ne4]
   have hp3p2 : adj p3 p2 := by
     have : p2 ∈ N3 := by simpa [hN3_eq] using Finset.mem_insert_self _ _
     exact (Finset.mem_filter.mp this).2.2
@@ -1854,7 +1850,7 @@ lemma two_regular_four_vertices_is_cycle
       have hp1ne3 : p1 ≠ p3 := hp3ne1.symm
       simp [hp1ne3]
     have hle : N2.card ≤ ({p1, p3} : Finset α).card := by
-      simp only [hN2_card, hcard]; rfl
+      simp [hN2_card, hcard]
     exact (Finset.eq_of_subset_of_card_le hN2_subset hle).symm
 
   have hp2p3 : adj p2 p3 := h_symm _ _ hp3p2
