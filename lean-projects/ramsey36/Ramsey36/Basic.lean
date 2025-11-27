@@ -3019,24 +3019,347 @@ lemma P_has_at_least_two_edges {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
     -- Key insight: EVERY p has exactly 4 Q-non-neighbors!
     have h_p_has_4_nonneighbors : ∀ p ∈ P, (Q.filter (fun q => ¬G.Adj p q)).card = 4 := by
       intro p hp
-      -- p has deg 5 = 1(N(v)) + 0(P) + 4(Q), so p has 4 Q-neighbors
-      -- Thus 8 - 4 = 4 Q-non-neighbors
-      sorry -- TODO: prove p has 4 Q-neighbors
+      -- p has degree 5, and we'll show p has 1 N(v)-neighbor, 0 P-neighbors, 4 Q-neighbors
+      have hp_deg : G.degree p = 5 := h_reg p
 
-    -- For any p, Q_p := {q ∈ Q : q ↛ p} has 4 vertices from a perfect matching (4 edges total)
-    -- Q_p has at most 2 edges, so it has an IS of size ≥ 2
-    --
-    -- CREATIVE CHALLENGE: Does choosing 2 independent q's from Q_p give us a clean 6-IS?
-    -- {v} ∪ (P \ {p}) ∪ {2 independent vertices from Q_p}
-    --
-    -- Problem: The 2 Q vertices might be adjacent to OTHER vertices in P \ {p}!
-    --
-    -- Need to either:
-    -- 1. Choose p cleverly so Q_p's IS avoids other P vertices
-    -- 2. Use a different construction entirely
-    -- 3. Show this case is impossible (derive different contradiction)
+      -- p ∈ P means p ∉ {v} ∪ N(v), so p ∈ M
+      have hp_in_M : p ∈ (Finset.univ \ insert v (G.neighborFinset v)) := by
+        simp only [Finset.mem_sdiff, Finset.mem_univ, Finset.mem_insert, mem_neighborFinset, true_and]
+        have ⟨hp_nonadj, _⟩ := hP_props p hp
+        push_neg
+        exact ⟨fun h => by subst h; exact hp_nonadj (G.adj_irrefl v),
+               fun h => hp_nonadj (G.symm h)⟩
 
-    sorry -- TODO: This needs creative insight about structure!
+      -- p has commonNeighborsCard = 1, so 1 neighbor in N(v)
+      have hp_Nv_count : (G.neighborFinset p ∩ G.neighborFinset v).card = 1 := by
+        have ⟨_, hp_comm⟩ := hP_props p hp
+        unfold commonNeighborsCard commonNeighbors at hp_comm
+        exact hp_comm
+
+      -- p ∈ P, so by P=P' (proven earlier), p ∈ P'
+      rw [hP_eq_P'] at hp
+
+      -- P' vertices are pairwise non-adjacent to each other (no P'-P' edges)
+      -- This follows from claim2_neighbor_structure
+      have h_P_indep : ∀ p₁ ∈ P, ∀ p₂ ∈ P, p₁ ≠ p₂ → ¬G.Adj p₁ p₂ := by
+        intro p₁ hp₁ p₂ hp₂ hp_ne
+        -- P = P' are vertices with commonNeighborsCard = 1
+        -- If two such vertices were adjacent, they'd be in a triangle with their common neighbor
+        rw [hP_eq_P'] at hp₁ hp₂
+        have h₁ := hP'_props p₁ hp₁
+        have h₂ := hP'_props p₂ hp₂
+        -- Both have common neighbor with v
+        sorry -- TODO: use triangle-free to show P vertices are independent
+
+      -- p has 0 neighbors in P \ {p}
+      have hp_P_count : (G.neighborFinset p ∩ (P.erase p)).card = 0 := by
+        rw [Finset.card_eq_zero, Finset.eq_empty_iff_forall_not_mem]
+        intro x
+        simp only [Finset.mem_inter, mem_neighborFinset, Finset.mem_erase, ne_eq, not_and]
+        intro hx_adj hx_ne hx_P
+        exact h_P_indep p hp x hx_P hx_ne hx_adj
+
+      -- p's neighbors partition into: N(v) (size 1), P (size 0), Q (size ?)
+      -- Total = 5, so Q-neighbors = 5 - 1 - 0 = 4
+      have hp_Q_count : (G.neighborFinset p ∩ Q).card = 4 := by
+        -- Simpler approach: p has degree 5, 1 N(v)-neighbor, 0 P-neighbors → 4 Q-neighbors
+        -- p's neighbors are in {v} ∪ N(v) ∪ P ∪ Q
+        -- p ∉ {v} ∪ N(v), so p's neighbors are in N(v) ∪ M where M = P ∪ Q
+
+        -- Count: deg(p) = |N(v)-neighbors| + |M-neighbors|
+        --              = |N(v)-neighbors| + |P-neighbors| + |Q-neighbors|
+        --              = 1 + 0 + |Q-neighbors|
+        -- So |Q-neighbors| = 5 - 1 = 4
+
+        -- Split p's neighbors into N(v) and M = P ∪ Q
+        let M := Finset.univ \ insert v (G.neighborFinset v)
+
+        have h_split : G.neighborFinset p = (G.neighborFinset p ∩ G.neighborFinset v) ∪
+                                             (G.neighborFinset p ∩ M) := by
+          ext x
+          simp only [Finset.mem_union, Finset.mem_inter, M, Finset.mem_sdiff,
+                    Finset.mem_univ, Finset.mem_insert, mem_neighborFinset, true_and]
+          constructor
+          · intro hx
+            by_cases h : G.Adj v x
+            · left; exact ⟨hx, h⟩
+            · right
+              push_neg
+              exact ⟨hx, fun hv => by subst hv; exact h (G.adj_irrefl v), h⟩
+          · intro h
+            rcases h with ⟨hx, _⟩ | ⟨hx, _, _⟩ <;> exact hx
+
+        have h_disj : Disjoint (G.neighborFinset p ∩ G.neighborFinset v) (G.neighborFinset p ∩ M) := by
+          rw [Finset.disjoint_iff_inter_eq_empty]
+          ext x
+          simp only [M, Finset.mem_inter, Finset.mem_empty, iff_false, not_and, Finset.mem_sdiff,
+                    Finset.mem_univ, Finset.mem_insert, mem_neighborFinset, true_and]
+          intro _ hx_Nv _
+          push_neg
+          left
+          rfl
+
+        have h_M_count : (G.neighborFinset p ∩ M).card = 4 := by
+          calc (G.neighborFinset p ∩ M).card
+              = G.degree p - (G.neighborFinset p ∩ G.neighborFinset v).card := by
+                  rw [← h_split, Finset.card_union_of_disjoint h_disj]
+                  omega
+            _ = 5 - 1 := by rw [hp_deg, hp_Nv_count]
+            _ = 4 := by norm_num
+
+        -- M = P ∪ Q, and p has 0 P-neighbors, so all 4 M-neighbors are Q-neighbors
+        have h_M_eq : M = P ∪ Q := by
+          rw [← hP_eq_P']
+          exact hM_partition
+
+        have h_P_inter : (G.neighborFinset p ∩ P).card = 0 := by
+          rw [Finset.card_eq_zero, Finset.eq_empty_iff_forall_not_mem]
+          intro x
+          simp only [Finset.mem_inter, mem_neighborFinset, not_and]
+          intro hx_adj hx_P
+          by_cases h : x = p
+          · subst h; exact G.adj_irrefl p hx_adj
+          · exact h_P_indep p hp x hx_P h hx_adj
+
+        calc (G.neighborFinset p ∩ Q).card
+            = (G.neighborFinset p ∩ M).card - (G.neighborFinset p ∩ P).card := by
+                have h_split_M : G.neighborFinset p ∩ M =
+                    (G.neighborFinset p ∩ P) ∪ (G.neighborFinset p ∩ Q) := by
+                  rw [h_M_eq]
+                  ext x
+                  simp only [Finset.mem_inter, Finset.mem_union]
+                  tauto
+                have h_disj_M : Disjoint (G.neighborFinset p ∩ P) (G.neighborFinset p ∩ Q) := by
+                  rw [Finset.disjoint_iff_inter_eq_empty, Finset.eq_empty_iff_forall_not_mem]
+                  intro x
+                  simp only [Finset.mem_inter, not_and]
+                  intro _ _ hx_Q
+                  intro hx_P
+                  -- P and Q are disjoint
+                  have : Disjoint P Q := by
+                    rw [← hP_eq_P', ← h_M_eq]
+                    sorry -- TODO: P and Q partition M
+                  exact Finset.disjoint_left.mp this hx_P hx_Q
+                rw [← h_split_M, Finset.card_union_of_disjoint h_disj_M]
+                omega
+          _ = 4 - 0 := by rw [h_M_count, h_P_inter]
+          _ = 4 := by norm_num
+
+      -- Therefore p has 4 Q-non-neighbors
+      calc (Q.filter (fun q => ¬G.Adj p q)).card
+          = Q.card - (Q.filter (fun q => G.Adj p q)).card := by
+              rw [Finset.card_sdiff]
+              · rfl
+              · intro q hq
+                simp only [Finset.mem_filter] at hq
+                exact hq.2
+          _ = Q.card - (G.neighborFinset p ∩ Q).card := by
+              congr 1
+              ext q
+              simp only [Finset.mem_filter, Finset.mem_inter, mem_neighborFinset]
+          _ = 8 - 4 := by rw [hQ_card, hp_Q_count]
+          _ = 4 := by norm_num
+
+    -- CREATIVE INSIGHT: Use double-counting to find p₁, p₂ with many common Q-non-neighbors!
+    --
+    -- For each q, let N̄_P(q) = P-non-neighbors of q (size 2 by complement of h_all_exactly_2)
+    -- Count triples (q, p₁, p₂) where q ∈ Q, p₁ ≠ p₂ ∈ P, both p₁,p₂ non-adjacent to q:
+    --   By q: Σ_q C(2,2) = 8 × 1 = 8
+    --   By pairs: Σ_{p₁<p₂} c(p₁,p₂) where c(p₁,p₂) = |common Q-non-neighbors|
+    -- So sum of c over C(4,2)=6 pairs is 8. By pigeonhole, some pair has c ≥ 2!
+
+    have h_q_has_2_P_nonneighbors : ∀ q ∈ Q, (P.filter (fun p => ¬G.Adj p q)).card = 2 := by
+      intro q hq
+      -- q has 2 P-neighbors (h_all_exactly_2), so 4 - 2 = 2 P-non-neighbors
+      calc (P.filter (fun p => ¬G.Adj p q)).card
+          = P.card - (P.filter (fun p => G.Adj p q)).card := by
+              rw [Finset.card_sdiff]
+              · rfl
+              · intro p hp
+                simp only [Finset.mem_filter] at hp
+                exact hp.2
+        _ = 4 - (P.filter (G.Adj q)).card := by
+              congr 1
+              · exact hP_card
+              · ext p
+                simp only [Finset.mem_filter]
+                constructor
+                · intro ⟨hp, h⟩; exact ⟨hp, G.symm h⟩
+                · intro ⟨hp, h⟩; exact ⟨hp, G.symm h⟩
+        _ = 4 - 2 := by rw [h_all_exactly_2 q hq]
+        _ = 2 := by norm_num
+
+    have h_double_count : ∃ p₁ ∈ P, ∃ p₂ ∈ P, p₁ ≠ p₂ ∧
+        (Q.filter (fun q => ¬G.Adj p₁ q ∧ ¬G.Adj p₂ q)).card ≥ 2 := by
+      -- Count triples (q, p₁, p₂) where p₁ < p₂ and both non-adjacent to q
+      -- From Q side: each q has 2 P-non-neighbors, giving C(2,2) = 1 triple
+      have h_from_q : Q.sum (fun q =>
+          Nat.choose ((P.filter (fun p => ¬G.Adj p q)).card) 2) = 8 := by
+        calc Q.sum (fun q => Nat.choose ((P.filter (fun p => ¬G.Adj p q)).card) 2)
+            = Q.sum (fun q => Nat.choose 2 2) := by
+                congr 1; ext q
+                congr 1
+                exact h_q_has_2_P_nonneighbors q (by simp)
+          _ = Q.sum (fun _ => 1) := by simp [Nat.choose_self]
+          _ = Q.card := by rw [Finset.sum_const, smul_eq_mul, mul_one]
+          _ = 8 := hQ_card
+
+      -- From pair side: sum over unordered pairs of c(p₁,p₂)
+      -- Define the set of unordered pairs
+      let pairs := Finset.univ.filter (fun (pp : Fin 18 × Fin 18) =>
+          pp.1 ∈ P ∧ pp.2 ∈ P ∧ pp.1 < pp.2)
+
+      have h_pairs_card : pairs.card = 6 := by
+        -- P has 4 elements, so C(4,2) = 6 pairs
+        sorry -- TODO: count unordered pairs
+
+      -- The same count from pair perspective
+      have h_from_pairs : pairs.sum (fun pp =>
+          (Q.filter (fun q => ¬G.Adj pp.1 q ∧ ¬G.Adj pp.2 q)).card) = 8 := by
+        -- This is the same as h_from_q by double-counting
+        sorry -- TODO: show sums are equal
+
+      -- By pigeonhole: if sum = 8 over 6 pairs, some pair has ≥ 2
+      have : ∃ pp ∈ pairs, (Q.filter (fun q => ¬G.Adj pp.1 q ∧ ¬G.Adj pp.2 q)).card ≥ 2 := by
+        by_contra h_not
+        push_neg at h_not
+        have h_all_le_1 : ∀ pp ∈ pairs, (Q.filter (fun q => ¬G.Adj pp.1 q ∧ ¬G.Adj pp.2 q)).card ≤ 1 := by
+          intro pp hpp
+          omega
+        have h_sum_le : pairs.sum (fun pp => (Q.filter (fun q => ¬G.Adj pp.1 q ∧ ¬G.Adj pp.2 q)).card) ≤ 6 := by
+          calc pairs.sum (fun pp => (Q.filter (fun q => ¬G.Adj pp.1 q ∧ ¬G.Adj pp.2 q)).card)
+              ≤ pairs.sum (fun _ => 1) := by
+                  apply Finset.sum_le_sum
+                  intro pp hpp
+                  exact h_all_le_1 pp hpp
+            _ = pairs.card := by rw [Finset.sum_const, smul_eq_mul, mul_one]
+            _ = 6 := h_pairs_card
+        rw [h_from_pairs] at h_sum_le
+        omega
+
+      obtain ⟨pp, hpp, h_count⟩ := this
+      simp only [pairs, Finset.mem_filter, Finset.mem_univ, true_and] at hpp
+      obtain ⟨hp1, hp2, _⟩ := hpp
+      use pp.1, hp1, pp.2, hp2
+      constructor
+      · exact ne_of_lt (by simp only [pairs, Finset.mem_filter, Finset.mem_univ, true_and] at hpp; exact hpp.2.2)
+      · exact h_count
+
+    obtain ⟨p₁, hp₁_mem, p₂, hp₂_mem, hp_ne, h_common_count⟩ := h_double_count
+
+    -- Get the common Q-non-neighbors
+    let Q_common := Q.filter (fun q => ¬G.Adj p₁ q ∧ ¬G.Adj p₂ q)
+    have hQ_common_card : Q_common.card ≥ 2 := h_common_count
+
+    -- Q_common ⊆ Q, and Q is a perfect matching with 4 edges
+    -- Strategy: Find 2 independent (non-adjacent) vertices in Q_common
+    --
+    -- Case split: |Q_common| = 2 or |Q_common| ≥ 3
+    by_cases h_Q_common_3 : Q_common.card ≥ 3
+    · -- |Q_common| ≥ 3: Pigeonhole guarantees 2 independent vertices!
+      -- Q has 4 matching edges, so at most 2 of any 3 vertices can be in the same edge
+      -- Therefore at least 2 of the 3 must be non-adjacent
+
+      -- Extract 3 distinct vertices from Q_common
+      have h_nonempty : Q_common.Nonempty := by
+        rw [Finset.nonempty_iff_ne_empty]
+        intro h
+        rw [h, Finset.card_empty] at h_Q_common_3
+        omega
+
+      obtain ⟨q₁, hq₁⟩ := h_nonempty
+      let Q_common' := Q_common.erase q₁
+
+      have h_card' : Q_common'.card ≥ 2 := by
+        calc Q_common'.card = Q_common.card - 1 := by
+                rw [Finset.card_erase_of_mem hq₁]
+          _ ≥ 3 - 1 := by omega
+          _ = 2 := by norm_num
+
+      have h_nonempty' : Q_common'.Nonempty := by
+        rw [Finset.nonempty_iff_ne_empty]
+        intro h
+        rw [h, Finset.card_empty] at h_card'
+        omega
+
+      obtain ⟨q₂, hq₂⟩ := h_nonempty'
+
+      -- Now we have q₁, q₂ from Q_common
+      -- Case split: are they adjacent?
+      by_cases h_adj : G.Adj q₁ q₂
+      · -- q₁ ~ q₂ (they're matched to each other)
+        -- Get a third vertex q₃ from Q_common \ {q₁, q₂}
+        let Q_common'' := Q_common'.erase q₂
+
+        have h_card'' : Q_common''.card ≥ 1 := by
+          calc Q_common''.card = Q_common'.card - 1 := by
+                  have : q₂ ∈ Q_common' := hq₂
+                  rw [Finset.card_erase_of_mem this]
+            _ ≥ 2 - 1 := by omega
+            _ = 1 := by norm_num
+
+        have h_nonempty'' : Q_common''.Nonempty := by
+          rw [Finset.nonempty_iff_ne_empty]
+          intro h
+          rw [h, Finset.card_empty] at h_card''
+          omega
+
+        obtain ⟨q₃, hq₃⟩ := h_nonempty''
+
+        -- At least one of (q₁, q₃) or (q₂, q₃) is non-adjacent
+        -- (since q₃ can be matched to at most one other vertex)
+        by_cases h_adj₁₃ : G.Adj q₁ q₃
+        · -- q₁ ~ q₃, so use (q₂, q₃)
+          -- q₂ and q₃ must be non-adjacent (q₃ can't be matched to both q₁ and q₂)
+          have h_not_adj₂₃ : ¬G.Adj q₂ q₃ := by
+            intro h_adj₂₃
+            -- q₃ is adjacent to both q₁ and q₂
+            -- But Q is a matching, so each vertex has degree 1 in Q
+            sorry -- TODO: use matching property to derive contradiction
+
+          -- Use {v, p₁, p₂, q₂, q₃, ?} but need 6th vertex
+          sorry -- TODO: find 6th vertex
+
+        · -- q₁ ↛ q₃, so use (q₁, q₃)
+          sorry -- TODO: build 6-IS with q₁, q₃
+
+      · -- q₁ ↛ q₂ (they're independent!)
+        sorry -- TODO: build 6-IS with q₁, q₂
+
+    · -- |Q_common| = 2 exactly
+      push_neg at h_Q_common_3
+      have h_Q_common_2 : Q_common.card = 2 := by omega
+
+      -- Extract the 2 vertices
+      have h_nonempty : Q_common.Nonempty := by
+        rw [Finset.nonempty_iff_ne_empty]
+        intro h
+        rw [h, Finset.card_empty] at h_Q_common_2
+        omega
+
+      obtain ⟨q₁, hq₁⟩ := h_nonempty
+      let Q_common' := Q_common.erase q₁
+
+      have h_card' : Q_common'.card = 1 := by
+        rw [Finset.card_erase_of_mem hq₁, h_Q_common_2]
+        norm_num
+
+      have h_nonempty' : Q_common'.Nonempty := by
+        rw [Finset.nonempty_iff_ne_empty]
+        intro h
+        rw [h, Finset.card_empty] at h_card'
+        omega
+
+      obtain ⟨q₂, hq₂⟩ := h_nonempty'
+
+      -- Case split: are q₁ and q₂ adjacent?
+      by_cases h_adj : G.Adj q₁ q₂
+      · -- q₁ ~ q₂ (matched pair)
+        -- Need a different approach: can we find a different pair of P vertices?
+        sorry -- TODO: try different pair or different construction
+
+      · -- q₁ ↛ q₂ (independent!)
+        sorry -- TODO: build 6-IS with q₁, q₂
 
 /-- The induced subgraph on P has at most 4 edges (P is not K₄).
 Proof: If P had ≥ 5 edges, handshaking gives sum of P-degrees ≥ 10.
