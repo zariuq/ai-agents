@@ -4438,8 +4438,19 @@ lemma P_has_at_least_four_edges {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
     have hw_nonadj_v : ¬G.Adj w v := by
       have := hQ_props w (by simp only [W, Finset.mem_filter] at hw_W; exact hw_W.1)
       exact this.1
-    have hw_nonadj_p_s : ¬G.Adj w p_s := by sorry -- P ∩ Q = ∅
-    have hw_nonadj_p_s' : ¬G.Adj w p_s' := by sorry -- P ∩ Q = ∅
+    have hw_nonadj_p_s : ¬G.Adj w p_s := by
+      intro h_adj
+      -- w ∈ W ⊆ Q, p_s ∈ P, but P ∩ Q = ∅
+      have hw_Q : w ∈ Q := by simp only [W, Finset.mem_filter] at hw_W; exact hw_W.1
+      have : w ∈ P ∩ Q := Finset.mem_inter.mpr ⟨hp_s_P, hw_Q⟩
+      have : w ∉ P ∩ Q := Finset.disjoint_iff_inter_eq_empty.mp hPQ_disj w
+      contradiction
+    have hw_nonadj_p_s' : ¬G.Adj w p_s' := by
+      intro h_adj
+      have hw_Q : w ∈ Q := by simp only [W, Finset.mem_filter] at hw_W; exact hw_W.1
+      have : w ∈ P ∩ Q := Finset.mem_inter.mpr ⟨hp_s'_P, hw_Q⟩
+      have : w ∉ P ∩ Q := Finset.disjoint_iff_inter_eq_empty.mp hPQ_disj w
+      contradiction
 
     -- ✓ s's not adjacent (triangle-free)
     have hs_hs'_nonadj : ¬G.Adj s_v s'_v :=
@@ -4447,12 +4458,26 @@ lemma P_has_at_least_four_edges {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
                        s'_v (mem_neighborFinset.mpr hs'_adj_v) hs_ne
 
     -- ✓ PATTERN 2: Extract 3 witnesses from N(v) \ {s_v, s'_v}
+    -- Cleaner: Remove both at once, then extract 3 (card = 5 - 2 = 3)
     have h_witnesses : ∃ w1 w2 w3,
         w1 ∈ G.neighborFinset v ∧ w2 ∈ G.neighborFinset v ∧ w3 ∈ G.neighborFinset v ∧
         w1 ≠ s_v ∧ w1 ≠ s'_v ∧ w2 ≠ s_v ∧ w2 ≠ s'_v ∧ w3 ≠ s_v ∧ w3 ≠ s'_v ∧
         w1 ≠ w2 ∧ w1 ≠ w3 ∧ w2 ≠ w3 := by
-      -- Card = 5, remove 2, get 3
-      sorry -- Finite extraction pattern
+      -- Define the 3-element set
+      let witnesses := ((G.neighborFinset v).erase s_v).erase s'_v
+      have h_wit_card : witnesses.card = 3 := by
+        calc witnesses.card
+            = ((G.neighborFinset v).erase s_v).card - 1 := by
+              have : s'_v ∈ (G.neighborFinset v).erase s_v := by
+                exact Finset.mem_erase.mpr ⟨hs_ne.symm, mem_neighborFinset.mpr hs'_adj_v⟩
+              exact Finset.card_erase_of_mem this
+          _ = ((G.neighborFinset v).card - 1) - 1 := by
+              have : s_v ∈ G.neighborFinset v := mem_neighborFinset.mpr hs_adj_v
+              rw [Finset.card_erase_of_mem this]
+          _ = 5 - 1 - 1 := by rw [h_card]
+          _ = 3 := by norm_num
+      -- Extract using card = 3
+      sorry -- Use Finset.card_eq_three or similar
 
     obtain ⟨wit1, wit2, wit3, hwit1_v, hwit2_v, hwit3_v,
             hwit1_ne_s, hwit1_ne_s', hwit2_ne_s, hwit2_ne_s', hwit3_ne_s, hwit3_ne_s',
