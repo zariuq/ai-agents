@@ -3334,7 +3334,38 @@ lemma P_has_at_least_four_edges {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
 
   -- S-partners are distinct (proven elsewhere in claim3_four_cycle)
   have hs_distinct : s1 ≠ s2 ∧ s1 ≠ s3 ∧ s1 ≠ s4 ∧ s2 ≠ s3 ∧ s2 ≠ s4 ∧ s3 ≠ s4 := by
-    sorry -- Distinctness from uniqueness
+    -- Each pi has unique s-partner, and pi's are distinct, so s-partners are distinct
+    constructor
+    · -- s1 ≠ s2
+      intro h_eq
+      -- If s1 = s2, then s1 is adjacent to both p1 and p2
+      -- By uniqueness of s1's partner, p1 = p2, contradicting hp12_ne
+      have : p1 = p2 := hs1_unique p2 (h_eq ▸ hs2_in_N) (h_eq ▸ hs2_adj_p2)
+      exact hp12_ne this
+    constructor
+    · -- s1 ≠ s3
+      intro h_eq
+      have : p1 = p3 := hs1_unique p3 (h_eq ▸ hs3_in_N) (h_eq ▸ hs3_adj_p3)
+      exact hp13_ne this
+    constructor
+    · -- s1 ≠ s4
+      intro h_eq
+      have : p1 = p4 := hs1_unique p4 (h_eq ▸ hs4_in_N) (h_eq ▸ hs4_adj_p4)
+      exact hp14_ne this
+    constructor
+    · -- s2 ≠ s3
+      intro h_eq
+      have : p2 = p3 := hs2_unique p3 (h_eq ▸ hs3_in_N) (h_eq ▸ hs3_adj_p3)
+      exact hp23_ne this
+    constructor
+    · -- s2 ≠ s4
+      intro h_eq
+      have : p2 = p4 := hs2_unique p4 (h_eq ▸ hs4_in_N) (h_eq ▸ hs4_adj_p4)
+      exact hp24_ne this
+    · -- s3 ≠ s4
+      intro h_eq
+      have : p3 = p4 := hs3_unique p4 (h_eq ▸ hs4_in_N) (h_eq ▸ hs4_adj_p4)
+      exact hp34_ne this
 
   -- The 5th element t exists
   let S := ({s1, s2, s3, s4} : Finset (Fin 18))
