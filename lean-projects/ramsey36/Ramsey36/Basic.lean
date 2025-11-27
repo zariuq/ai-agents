@@ -2643,43 +2643,238 @@ lemma P_has_at_least_two_edges {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
 
   have h_E_Q : E_Q.card = 4 := by omega
 
-  -- 🎯 PARITY REVISION PAYOFF: Use E_Q = 4 with Ramsey R(3,4) = 9!
+  -- 🎯 PARITY REVISION PAYOFF: Use E_Q = 4 sparsity!
   --
-  -- BREAKTHROUGH IDEA: Use R(3,3) = 6 on Q directly!
+  -- COUNTING ARGUMENT: Find a Q vertex with no P-neighbors!
   --
-  -- Strategy:
-  -- 1. Q has 8 vertices with 4 edges
-  -- 2. Take ANY 6-vertex subset of Q
-  -- 3. This subset has at most 4 edges (could have fewer if we exclude some edges)
-  -- 4. By R(3,3) = 6: Any 6-vertex graph has triangle OR 3-IS
-  -- 5. Triangle impossible (h_tri)
-  -- 6. So we get a 3-IS from Q
+  -- From h_PQ_edges: sum_{p in P} |N_Q(p)| = 16
+  -- By symmetry: sum_{q in Q} |N_P(q)| = 16
+  -- With |Q| = 8, average = 16/8 = 2 P-neighbors per q
   --
-  -- Now combine:
-  -- - {v}: 1 vertex, not adjacent to anyone in P ∪ Q
-  -- - P: 4 vertices, independent, not adjacent to v
-  -- - 3-IS from Q: 3 vertices, independent among themselves
-  --
-  -- Total: 1 + 4 + 3 = 8 vertices
-  --
-  -- But are they ALL mutually independent?
-  -- - v ↛ P ✓ (definition of P)
-  -- - v ↛ Q ✓ (definition of Q)
-  -- - P independent ✓
-  -- - 3-IS independent ✓
-  -- - P ↛ 3-IS? ✗ (h_PQ_edges = 16, so P-Q edges exist!)
-  --
-  -- So we can't just union them. We need to CHOOSE the 3-IS from Q
-  -- such that it avoids edges to P (or choose subset of P that avoids edges to Q)
-  --
-  -- Refined approach: Among the 16 P-Q edges with |P|=4, |Q|=8:
-  -- Some vertices in Q have fewer P-neighbors than others
-  -- If we can find 3 vertices in Q that together are not adjacent to SOME p ∈ P,
-  -- then {v, p, and 4 more from P ∪ Q...} might work
-  --
-  -- This is getting complex. Let me defer the exact construction.
+  -- Strategy: Show ∃ q ∈ Q with 0 P-neighbors
+  -- Then {v} ∪ P ∪ {q} is a 6-IS!
 
-  sorry -- TODO: Use R(3,3) on Q to get 3-IS, carefully combine with P and v to get 6-IS
+  -- By symmetry of edge counting (already proven above as h_PQ_symm):
+  have h_QP_edges : Q.sum (fun q => (P.filter (G.Adj q)).card) = 16 := by
+    -- Already have h_PQ_symm from above
+    have h_PQ_symm : P.sum (fun p => (Q.filter (G.Adj p)).card) =
+                     Q.sum (fun q => (P.filter (G.Adj q)).card) := by
+      have h1 : P.sum (fun p => (Q.filter (G.Adj p)).card) =
+                P.sum (fun p => Q.sum (fun q => if G.Adj p q then 1 else 0)) := by
+        congr 1; ext p
+        rw [Finset.card_eq_sum_ones]
+        congr 1; ext q
+        simp only [Finset.sum_filter, Finset.mem_filter]
+      have h2 : Q.sum (fun q => (P.filter (G.Adj q)).card) =
+                Q.sum (fun q => P.sum (fun p => if G.Adj p q then 1 else 0)) := by
+        congr 1; ext q
+        rw [Finset.card_eq_sum_ones]
+        congr 1; ext p
+        simp only [Finset.sum_filter, Finset.mem_filter]
+      rw [h1, h2, Finset.sum_comm]
+    rw [← h_PQ_symm, h_PQ_edges]
+
+  -- Key insight: If all q had ≥ 3 P-neighbors, sum would be ≥ 24
+  -- But sum = 16, so some q must have ≤ 2 P-neighbors
+  -- In fact, if at least 7 vertices have ≥ 3, that's already ≥ 21, contradiction!
+
+  -- Actually, we need to be more careful. Let's count directly:
+  -- Suppose all q ∈ Q have ≥ 1 P-neighbor. Then sum ≥ 8.
+  -- We have sum = 16, so average = 2.
+
+  -- Let's try a different approach: show that NOT all q can have ≥ 3 P-neighbors
+  -- If 6+ vertices have ≥ 3: sum ≥ 6*3 + 2*0 = 18 > 16, contradiction
+  -- So ≤ 5 vertices have ≥ 3 P-neighbors
+  -- Meaning ≥ 3 vertices have ≤ 2 P-neighbors
+
+  -- Actually the cleanest approach: show ∃ q with |N_P(q)| ≤ 1
+  -- If all 8 have ≥ 2: sum ≥ 16 ✓ (exactly equal!)
+  -- But we also have Q's internal structure: 4 edges, so sparse
+
+  -- Wait, let me think more carefully. We need q with 0 or 1 P-neighbor.
+  -- If all q have ≥ 2: sum ≥ 16, and equality holds when all have exactly 2
+  -- So either all have exactly 2, or some have < 2
+
+  -- Case 1: Some q has ≤ 1 P-neighbors
+  -- Case 2: All q have ≥ 2 P-neighbors, so all have exactly 2 (by sum = 16)
+
+  -- Let's handle Case 1 first (the easy case)
+  by_cases h_case : ∃ q ∈ Q, (P.filter (G.Adj q)).card ≤ 1
+  · -- Case 1: ∃ q with ≤ 1 P-neighbors
+    obtain ⟨q_sparse, hq_sparse_mem, hq_sparse_bound⟩ := h_case
+
+    -- Subcase 1a: q has 0 P-neighbors
+    by_cases h_subcase : (P.filter (G.Adj q_sparse)).card = 0
+    · -- {v} ∪ P ∪ {q_sparse} is a 6-IS!
+      have h_6IS : G.IsIndepSet (insert v (P ∪ {q_sparse} : Set (Fin 18))) := by
+        intro x hx y hy hxy h_adj
+        simp only [Set.mem_insert_iff, Set.mem_union, Finset.mem_coe, Finset.mem_singleton] at hx hy
+        rcases hx with rfl | hx_P | rfl <;> rcases hy with rfl | hy_P | rfl
+        · -- x = v, y = v
+          exact hxy rfl
+        · -- x = v, y ∈ P
+          have ⟨hp_nonadj, _⟩ := hP_props y hy_P
+          exact hp_nonadj h_adj
+        · -- x = v, y = q_sparse
+          -- v ∉ G.neighborFinset q_sparse (since q_sparse ∈ Q and Q ⊆ M, and v ∉ M)
+          have hq_props := hQ_props q_sparse hq_sparse_mem
+          exact hq_props.1 (G.symm h_adj)
+        · -- x ∈ P, y = v
+          have ⟨hp_nonadj, _⟩ := hP_props x hx_P
+          exact hp_nonadj (G.symm h_adj)
+        · -- x ∈ P, y ∈ P
+          exact h_P_indep hx_P hy_P hxy h_adj
+        · -- x ∈ P, y = q_sparse
+          -- q_sparse has no P-neighbors
+          have : (P.filter (G.Adj q_sparse)).card = 0 := h_subcase
+          have hx_not_adj : x ∉ P.filter (G.Adj q_sparse) := by
+            rw [this]
+            exact Finset.not_mem_empty x
+          simp only [Finset.mem_filter] at hx_not_adj
+          push_neg at hx_not_adj
+          have := hx_not_adj hx_P
+          exact this (G.symm h_adj)
+        · -- x = q_sparse, y = v
+          have hq_props := hQ_props q_sparse hq_sparse_mem
+          exact hq_props.1 h_adj
+        · -- x = q_sparse, y ∈ P
+          -- q_sparse has no P-neighbors
+          have : (P.filter (G.Adj q_sparse)).card = 0 := h_subcase
+          have hy_not_adj : y ∉ P.filter (G.Adj q_sparse) := by
+            rw [this]
+            exact Finset.not_mem_empty y
+          simp only [Finset.mem_filter] at hy_not_adj
+          push_neg at hy_not_adj
+          exact (hy_not_adj hy_P) h_adj
+        · -- x = q_sparse, y = q_sparse
+          exact hxy rfl
+
+      have h_6IS_card : (insert v (P ∪ {q_sparse} : Set (Fin 18))).toFinset.card = 6 := by
+        have hv_not_in_P : v ∉ P := by
+          intro hv_P
+          have ⟨hv_nonadj, _⟩ := hP_props v hv_P
+          exact hv_nonadj (G.refl_of_adj rfl)
+        have hv_ne_q : v ≠ q_sparse := by
+          intro h_eq
+          subst h_eq
+          have hq_props := hQ_props q_sparse hq_sparse_mem
+          exact hq_props.1 (G.refl_of_adj rfl)
+        -- Need to get P', Q from claim2 and prove P = P'
+        obtain ⟨P', Q_local, hP'_card, hQ_local_card, hP'_props, hQ_local_props⟩ :=
+          claim2_neighbor_structure h_reg h_tri h_no6 v
+
+        -- Define M locally
+        let M := Finset.univ \ insert v (G.neighborFinset v)
+
+        -- Prove P = P'
+        have hP_eq_P' : P = P' := by
+          have hP_subset_P' : P ⊆ P' := by
+            intro p hp
+            have ⟨hp_nonadj, hp_comm⟩ := hP_props p hp
+            simp only [P', M, Finset.mem_filter, Finset.mem_sdiff, Finset.mem_univ,
+                      Finset.mem_insert, true_and]
+            constructor
+            · push_neg
+              constructor
+              · intro h_eq; subst h_eq; exact hp_nonadj (G.refl_of_adj rfl)
+              · intro hp_N
+                rw [mem_neighborFinset] at hp_N
+                exact hp_nonadj (G.symm hp_N)
+            · exact hp_comm
+          apply Finset.eq_of_subset_of_card_le hP_subset_P'
+          rw [hP_card, hP'_card]
+
+        -- Prove Q = Q_local (same argument)
+        have hQ_eq : Q = Q_local := by
+          have hQ_subset : Q ⊆ Q_local := by
+            intro q hq
+            have ⟨hq_nonadj, hq_comm⟩ := hQ_props q hq
+            simp only [Q_local, M, Finset.mem_filter, Finset.mem_sdiff, Finset.mem_univ,
+                      Finset.mem_insert, true_and]
+            constructor
+            · push_neg
+              constructor
+              · intro h_eq; subst h_eq; exact hq_nonadj (G.refl_of_adj rfl)
+              · intro hq_N
+                rw [mem_neighborFinset] at hq_N
+                exact hq_nonadj (G.symm hq_N)
+            · exact hq_comm
+          have : Q_local.card = Q.card := by rw [hQ_local_card, hQ_card]
+          apply Finset.eq_of_subset_of_card_le hQ_subset
+          omega
+
+        have hPQ_disj : Disjoint P Q := by
+          rw [hP_eq_P', hQ_eq]
+          rw [Finset.disjoint_iff_inter_eq_empty]
+          ext w
+          simp only [P', Q_local, Finset.mem_inter, Finset.mem_filter, Finset.not_mem_empty, iff_false]
+          intro ⟨⟨_, h1⟩, ⟨_, h2⟩⟩
+          rw [h1] at h2
+          norm_num at h2
+
+        have hq_not_in_P : q_sparse ∉ P := by
+          intro hq_P
+          have : q_sparse ∈ P ∩ Q := by
+            simp only [Finset.mem_inter]
+            exact ⟨hq_P, hq_sparse_mem⟩
+          rw [Finset.disjoint_iff_inter_eq_empty.mp hPQ_disj] at this
+          exact Finset.not_mem_empty q_sparse this
+
+        have h_6IS_card : (insert v (P ∪ {q_sparse} : Set (Fin 18))).toFinset.card = 6 := by
+          have h_tofinset_eq : (insert v (P ∪ {q_sparse} : Set (Fin 18))).toFinset =
+                 insert v (P ∪ {q_sparse}) := by
+            ext x
+            simp only [Set.mem_toFinset, Set.mem_insert_iff, Set.mem_union,
+                      Finset.mem_insert, Finset.mem_coe, Finset.mem_union, Finset.mem_singleton]
+          rw [h_tofinset_eq]
+          have hv_not_in_P : v ∉ P := by
+            intro hv_P
+            have ⟨hv_nonadj, _⟩ := hP_props v hv_P
+            exact hv_nonadj (G.refl_of_adj rfl)
+          have hv_ne_q : v ≠ q_sparse := by
+            intro h_eq
+            subst h_eq
+            have hq_props := hQ_props q_sparse hq_sparse_mem
+            exact hq_props.1 (G.refl_of_adj rfl)
+          rw [Finset.card_insert_of_not_mem]
+          · rw [Finset.card_union_of_disjoint]
+            · rw [hP_card, Finset.card_singleton]
+              norm_num
+            · exact Finset.disjoint_singleton_right.mpr hq_not_in_P
+          · simp only [Finset.mem_union, Finset.mem_singleton]
+            push_neg
+            exact ⟨hv_not_in_P, hv_ne_q⟩
+
+        -- Now we have a 6-IS, contradicting h_no6
+        have h_is_6IS : IsNIndepSet 6 G (insert v (P ∪ {q_sparse} : Set (Fin 18))) := by
+          constructor
+          · exact h_6IS
+          · simpa using h_6IS_card
+
+        have h_not_6IS : ¬IsNIndepSet 6 G (insert v (P ∪ {q_sparse} : Set (Fin 18))) := by
+          apply h_no6
+
+        contradiction
+
+    · -- Subcase 1b: q has exactly 1 P-neighbor
+      sorry -- TODO: Handle subcase 1b
+
+  · -- Case 2: All q have ≥ 2 P-neighbors
+    push_neg at h_case
+    -- h_case : ∀ q ∈ Q, 2 ≤ (P.filter (G.Adj q)).card
+
+    -- Key insight: since sum = 16 and all ≥ 2, combined with degree constraints,
+    -- we deduce all q have exactly 2 P-neighbors
+
+    -- For now, use pigeonhole on non-adjacencies even without proving "exactly 2"
+    -- Count: sum of |{p ∈ P : q ↛ p}| over q ∈ Q
+    -- If q has k P-neighbors, it has 4-k P-non-neighbors
+    -- Sum over Q of P-neighbors = 16
+    -- So sum over Q of P-non-neighbors = 8×4 - 16 = 32 - 16 = 16
+
+    -- By pigeonhole on P: some p has ≥ ⌈16/4⌉ = 4 Q-non-neighbors
+
+    sorry -- TODO: Complete case 2 with pigeonhole + perfect matching argument
 
 /-- The induced subgraph on P has at most 4 edges (P is not K₄).
 Proof: If P had ≥ 5 edges, handshaking gives sum of P-degrees ≥ 10.
