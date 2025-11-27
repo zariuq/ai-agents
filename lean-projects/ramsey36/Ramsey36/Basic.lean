@@ -1817,10 +1817,84 @@ lemma P_has_at_most_four_edges {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
         obtain ⟨he_P1, he_P2, he_lt, he_adj⟩ := he
         -- The two ordered pairs are (e.1, e.2) and (e.2, e.1)
         have h_ne : e.1 ≠ e.2 := ne_of_lt he_lt
-        sorry -- Show exactly {(e.1, e.2), (e.2, e.1)} map to e
+
+        -- Show the fiber equals {(e.1, e.2), (e.2, e.1)}
+        have h_eq : ordered_pairs.filter (fun p => toEdge p = e) = {(e.1, e.2), (e.2, e.1)} := by
+          ext p
+          simp only [ordered_pairs, toEdge, Finset.mem_filter, Finset.mem_univ, Finset.mem_insert,
+                     Finset.mem_singleton, true_and]
+          constructor
+          · intro ⟨⟨hp1, hp2, hp_ne, hp_adj⟩, hp_toEdge⟩
+            -- p ∈ ordered_pairs and toEdge p = e
+            by_cases h : p.1 < p.2
+            · simp [h] at hp_toEdge
+              left
+              exact hp_toEdge
+            · simp [h] at hp_toEdge
+              right
+              ext <;> simp [hp_toEdge]
+          · intro hp
+            cases hp with
+            | inl hp_eq =>
+              -- p = (e.1, e.2)
+              subst hp_eq
+              constructor
+              · exact ⟨he_P1, he_P2, h_ne, he_adj⟩
+              · simp [toEdge, he_lt]
+            | inr hp_eq =>
+              -- p = (e.2, e.1)
+              subst hp_eq
+              constructor
+              · exact ⟨he_P2, he_P1, h_ne.symm, G.symm he_adj⟩
+              · simp [toEdge, he_lt]
+                omega
+
+        rw [h_eq, Finset.card_insert_of_notMem, Finset.card_singleton]
+        · norm_num
+        · simp only [Finset.mem_singleton, Prod.ext_iff, not_and]
+          intro h1
+          exact ne_of_lt he_lt h1
 
       -- Sum over fibers gives total count
-      sorry -- Use fiber cardinality to conclude ordered_pairs.card = 2 * E_P.card
+      -- Partition ordered_pairs by which edge they map to
+      have h_partition : ∀ p ∈ ordered_pairs, toEdge p ∈ E_P := by
+        intro p hp
+        simp only [ordered_pairs, Finset.mem_filter, Finset.mem_univ, true_and] at hp
+        obtain ⟨hp1, hp2, hp_ne, hp_adj⟩ := hp
+        simp only [E_P, toEdge, Finset.mem_filter, Finset.mem_univ, true_and]
+        by_cases h : p.1 < p.2
+        · simp [h]
+          exact ⟨hp1, hp2, h, hp_adj⟩
+        · simp [h]
+          push_neg at h
+          have : p.2 < p.1 := by
+            cases' Ne.lt_or_lt hp_ne with hlt hlt
+            · exact hlt
+            · exact absurd hlt h
+          exact ⟨hp2, hp1, this, G.symm hp_adj⟩
+
+      -- Now use fiber partition to count
+      calc ordered_pairs.card
+          = (E_P.sum fun e => (ordered_pairs.filter (fun p => toEdge p = e)).card) := by
+              -- Partition ordered_pairs by toEdge
+              rw [← Finset.card_biUnion]
+              · congr 1
+                ext p
+                simp only [Finset.mem_biUnion, Finset.mem_filter]
+                exact ⟨fun hp => ⟨toEdge p, h_partition p hp, hp, rfl⟩,
+                       fun ⟨e, _, hp, _⟩ => hp⟩
+              · intros e1 he1 e2 he2 hne
+                rw [Finset.disjoint_iff_inter_eq_empty]
+                ext p
+                simp only [Finset.mem_inter, Finset.mem_filter, Finset.not_mem_empty, iff_false, not_and]
+                intro _ h1 _ h2
+                exact hne (h1.trans h2.symm)
+        _ = E_P.sum (fun _ => 2) := by
+              apply Finset.sum_congr rfl
+              intros e he
+              exact h_fiber_2 e he
+        _ = 2 * E_P.card := by
+              rw [Finset.sum_const, smul_eq_mul]
 
     rw [h_lhs, h_rhs]
 
