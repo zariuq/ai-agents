@@ -3397,26 +3397,328 @@ lemma P_has_at_least_four_edges {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
   let T := Q.filter (G.Adj t)
   let W := Q.filter (fun q => ¬G.Adj t q)
 
+  -- Helper lemmas for vertex classification (reusable for all si)
+  -- These encode the key exclusion rules from triangle-free and uniqueness
+
+  -- Exclusion Rule 1: Triangle-free prevents N(v)-N(v) edges
+  have h_no_Nv_Nv_edges : ∀ u w ∈ G.neighborFinset v, u ≠ w → ¬G.Adj u w := by
+    intro u hu w hw huw hadj
+    -- {v, u, w} would be a triangle
+    have : G.IsNClique 3 {v, u, w} := by
+      rw [isNClique_iff]
+      constructor
+      · intro x hx y hy hxy
+        simp only [Finset.mem_insert, Finset.mem_singleton] at hx hy
+        rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl
+        · exfalso; exact hxy rfl
+        · rw [mem_neighborFinset] at hu; exact hu
+        · rw [mem_neighborFinset] at hw; exact hw
+        · rw [mem_neighborFinset] at hu; exact G.adj_comm.mp hu
+        · exfalso; exact hxy rfl
+        · exact hadj
+        · rw [mem_neighborFinset] at hw; exact G.adj_comm.mp hw
+        · exact G.adj_comm.mp hadj
+        · exfalso; exact hxy rfl
+      · simp only [Finset.card_insert_of_not_mem, Finset.card_singleton]
+        · omega
+        all_goals { simp; intro h; subst h; tauto }
+    exact h_tri {v, u, w} this
+
+  -- Exclusion Rule 2: Uniqueness means each s-partner is adjacent to exactly one p
+  -- (And conversely, each p is adjacent to exactly one s-partner)
+  have h_s_unique_P_partner : ∀ (s : Fin 18) (p_s : Fin 18),
+      s ∈ G.neighborFinset v →
+      p_s ∈ P →
+      G.Adj s p_s →
+      (∀ p' ∈ P, G.Adj s p' → p' = p_s) := by
+    intro s p_s hs_in_N hp_s hs_adj_ps p' hp' hs_adj_p'
+    -- s is adjacent to both p_s and p', so both are common neighbors of v and s
+    -- Since s ∈ N(v), if p_s ∈ P then p_s has exactly 1 common neighbor with v
+    -- That common neighbor must be s (since s ~ v and s ~ p_s)
+    have ⟨hp_s_nonadj, hp_s_comm1⟩ := hP_props p_s hp_s
+    have ⟨hp'_nonadj, hp'_comm1⟩ := hP_props p' hp'
+    -- Both p_s and p' have s as a common neighbor with v
+    -- By uniqueness (from P_partner_in_N structure), they must be the same
+    rw [mem_neighborFinset] at hs_in_N
+    obtain ⟨s_witness, ⟨hs_witness_in_N, hs_witness_adj⟩, hs_witness_unique⟩ :=
+      P_partner_in_N h_reg h_tri v p_s hp_s_nonadj hp_s_comm1
+    -- s and s_witness are both in N(v) and adjacent to p_s
+    -- Need to show they're the same, then use uniqueness
+    have : s = s_witness := by
+      apply hs_witness_unique s hs_in_N hs_adj_ps
+    subst this
+    -- Now s_witness ~ p' and s_witness ~ v, so by uniqueness, p' = p_s
+    exact hs_witness_unique p' (by rw [mem_neighborFinset]; exact hp'_nonadj) hs_adj_p'
+
+  -- Define M for local use
+  let M := Finset.univ \ insert v (G.neighborFinset v)
+
+  -- P and Q partition M (from claim2)
+  have hPQ_partition : P ∪ Q = M := by
+    rw [hP_eq_P']
+    -- From claim2_neighbor_structure structure (reproving locally)
+    ext w
+    simp only [P', Q, Finset.mem_union, Finset.mem_filter]
+    constructor
+    · intro h
+      cases h with
+      | inl hp => exact hp.1
+      | inr hq => exact hq.1
+    · intro hwM
+      -- Every w in M has commonNeighborsCard 1 or 2
+      have : commonNeighborsCard G v w = 1 ∨ commonNeighborsCard G v w = 2 := by
+        have hw_ne_v : w ≠ v := by
+          intro h; subst h
+          simp [M] at hwM
+        have hw_nonadj : ¬G.Adj v w := by
+          intro h_adj
+          have : w ∈ G.neighborFinset v := mem_neighborFinset.mpr h_adj
+          simp [M, this] at hwM
+        have h_pos := commonNeighborsCard_pos h_tri h_no6 h_reg v w hw_ne_v hw_nonadj
+        have h_le := commonNeighborsCard_le_two h_tri h_no6 h_reg v w hw_ne_v hw_nonadj
+        omega
+      cases this with
+      | inl h1 => left; exact ⟨hwM, h1⟩
+      | inr h2 => right; exact ⟨hwM, h2⟩
+
+  have hPQ_disj : Disjoint P Q := by
+    rw [hP_eq_P']
+    rw [Finset.disjoint_iff_inter_eq_empty]
+    ext w
+    simp only [P', Q, Finset.mem_inter, Finset.mem_filter, Finset.not_mem_empty, iff_false]
+    intro ⟨⟨_, h1⟩, ⟨_, h2⟩⟩
+    rw [h1] at h2
+    norm_num at h2
+
   -- Step 7: Show each si has exactly 3 Q-neighbors
-  -- Simpler approach: s1's neighbors partition by location
-  -- Degree 5 = |N(s1) ∩ {v}| + |N(s1) ∩ (N(v)\{v,s1})| + |N(s1) ∩ M|
-  --         = 1 + 0 (triangle-free) + |N(s1) ∩ M|
-  -- M = P ∪ Q, and s1 can only be adjacent to p1 in P (by uniqueness)
-  -- So: 5 = 1 + |N(s1) ∩ {p1}| + |N(s1) ∩ Q| = 1 + 1 + |N(s1) ∩ Q|
+  -- Strategy: deg(si) = 1 (v) + 0 (other N(v)) + 1 (P) + 3 (Q)
   have hs1_Q_nbrs : (Q.filter (G.Adj s1)).card = 3 := by
-    -- For the more technical argument, we need to show the partition and count carefully
-    -- This requires substantial setup, so we defer to sorry for now
-    -- The key insight is correct: degree 5 - v - p1 = 3 Q-neighbors
-    sorry -- s1 has degree 5 = 1(v) + 1(p1) + 3(Q)
+    have hs1_deg : G.degree s1 = 5 := h_reg s1
+    -- s1 adjacent to exactly p1 in P
+    have hs1_one_P : (P.filter (G.Adj s1)).card = 1 := by
+      have h_mem : p1 ∈ P.filter (G.Adj s1) := by simp [Finset.mem_filter, hp1, hs1_adj_p1]
+      have h_subset : P.filter (G.Adj s1) ⊆ {p1} := by
+        intro p hp
+        simp only [Finset.mem_filter] at hp
+        simp only [Finset.mem_singleton]
+        exact h_s_unique_P_partner s1 p1 hs1_in_N hp1 hs1_adj_p1 p hp.1 hp.2
+      have : P.filter (G.Adj s1) = {p1} := Finset.eq_singleton_iff_unique_mem.mpr ⟨h_mem, h_subset⟩
+      simp [this]
+    -- s1's M-neighbors are exactly P-neighbors ∪ Q-neighbors
+    have hs1_M_split : (M.filter (G.Adj s1)).card = (P.filter (G.Adj s1)).card + (Q.filter (G.Adj s1)).card := by
+      have : M.filter (G.Adj s1) = (P.filter (G.Adj s1)) ∪ (Q.filter (G.Adj s1)) := by
+        rw [← hPQ_partition, Finset.filter_union]
+      rw [this, Finset.card_union_of_disjoint]
+      apply Finset.disjoint_of_subset_left (Finset.filter_subset _ _)
+      apply Finset.disjoint_of_subset_right (Finset.filter_subset _ _)
+      exact hPQ_disj
+    -- s1's neighbors partition: {v} ∪ M (triangle-free eliminates other N(v))
+    have hs1_M_count : (M.filter (G.Adj s1)).card = 4 := by
+      -- Show G.neighborFinset s1 = {v} ∪ (M.filter (G.Adj s1))
+      have h_partition : G.neighborFinset s1 = {v} ∪ (M.filter (G.Adj s1)) := by
+        ext w
+        simp only [mem_neighborFinset, Finset.mem_union, Finset.mem_singleton, Finset.mem_filter, M]
+        constructor
+        · intro hw_adj
+          by_cases hw_v : w = v
+          · left; exact hw_v
+          · right
+            constructor
+            · -- Show w ∈ M = univ \ insert v N(v)
+              simp only [Finset.mem_sdiff, Finset.mem_univ, Finset.mem_insert, mem_neighborFinset, true_and]
+              push_neg
+              constructor
+              · exact hw_v
+              · intro hw_Nv
+                -- w ∈ N(v) and w ≠ v, so w ∈ N(v)\{v}
+                -- But s1 ∈ N(v), so triangle-free prevents s1 ~ w
+                have : ¬G.Adj s1 w := h_no_Nv_Nv_edges s1 hs1_in_N w (mem_neighborFinset.mpr hw_Nv) (ne_comm.mp hw_v)
+                exact this hw_adj
+            · exact hw_adj
+        · intro hw
+          cases hw with
+          | inl h => rw [h]; exact G.adj_comm.mp (mem_neighborFinset.mp hs1_in_N)
+          | inr h => exact h.2
+      -- Count: {v} has 1 element, disjoint from M.filter (G.Adj s1)
+      have h_disj : Disjoint ({v} : Finset (Fin 18)) (M.filter (G.Adj s1)) := by
+        rw [Finset.disjoint_iff_inter_eq_empty]
+        ext w
+        simp only [Finset.mem_inter, Finset.mem_singleton, Finset.mem_filter, Finset.not_mem_empty, iff_false, M]
+        intro ⟨hw_v, hw_M, _⟩
+        subst hw_v
+        simp [Finset.mem_sdiff] at hw_M
+      calc (M.filter (G.Adj s1)).card
+          = (G.neighborFinset s1).card - ({v} : Finset (Fin 18)).card := by
+            rw [h_partition, Finset.card_union_of_disjoint h_disj, Finset.card_singleton]
+            omega
+        _ = 5 - 1 := by rw [G.card_neighborFinset_eq_degree, hs1_deg]
+        _ = 4 := by norm_num
+    omega
 
   have hs2_Q_nbrs : (Q.filter (G.Adj s2)).card = 3 := by
-    sorry -- s2 has degree 5 = 1(v) + 1(p2) + 3(Q)
+    have hs2_deg : G.degree s2 = 5 := h_reg s2
+    have hs2_one_P : (P.filter (G.Adj s2)).card = 1 := by
+      have h_mem : p2 ∈ P.filter (G.Adj s2) := by simp [Finset.mem_filter, hp2_P, hs2_adj_p2]
+      have h_subset : P.filter (G.Adj s2) ⊆ {p2} := by
+        intro p hp
+        simp only [Finset.mem_filter] at hp
+        simp only [Finset.mem_singleton]
+        exact h_s_unique_P_partner s2 p2 hs2_in_N hp2_P hs2_adj_p2 p hp.1 hp.2
+      have : P.filter (G.Adj s2) = {p2} := Finset.eq_singleton_iff_unique_mem.mpr ⟨h_mem, h_subset⟩
+      simp [this]
+    have hs2_M_split : (M.filter (G.Adj s2)).card = (P.filter (G.Adj s2)).card + (Q.filter (G.Adj s2)).card := by
+      have : M.filter (G.Adj s2) = (P.filter (G.Adj s2)) ∪ (Q.filter (G.Adj s2)) := by
+        rw [← hPQ_partition, Finset.filter_union]
+      rw [this, Finset.card_union_of_disjoint]
+      apply Finset.disjoint_of_subset_left (Finset.filter_subset _ _)
+      apply Finset.disjoint_of_subset_right (Finset.filter_subset _ _)
+      exact hPQ_disj
+    have hs2_M_count : (M.filter (G.Adj s2)).card = 4 := by
+      have h_partition : G.neighborFinset s2 = {v} ∪ (M.filter (G.Adj s2)) := by
+        ext w
+        simp only [mem_neighborFinset, Finset.mem_union, Finset.mem_singleton, Finset.mem_filter, M]
+        constructor
+        · intro hw_adj
+          by_cases hw_v : w = v
+          · left; exact hw_v
+          · right
+            constructor
+            · simp only [Finset.mem_sdiff, Finset.mem_univ, Finset.mem_insert, mem_neighborFinset, true_and]
+              push_neg
+              constructor
+              · exact hw_v
+              · intro hw_Nv
+                have : ¬G.Adj s2 w := h_no_Nv_Nv_edges s2 hs2_in_N w (mem_neighborFinset.mpr hw_Nv) (ne_comm.mp hw_v)
+                exact this hw_adj
+            · exact hw_adj
+        · intro hw
+          cases hw with
+          | inl h => rw [h]; exact G.adj_comm.mp (mem_neighborFinset.mp hs2_in_N)
+          | inr h => exact h.2
+      have h_disj : Disjoint ({v} : Finset (Fin 18)) (M.filter (G.Adj s2)) := by
+        rw [Finset.disjoint_iff_inter_eq_empty]
+        ext w
+        simp only [Finset.mem_inter, Finset.mem_singleton, Finset.mem_filter, Finset.not_mem_empty, iff_false, M]
+        intro ⟨hw_v, hw_M, _⟩
+        subst hw_v
+        simp [Finset.mem_sdiff] at hw_M
+      calc (M.filter (G.Adj s2)).card
+          = (G.neighborFinset s2).card - ({v} : Finset (Fin 18)).card := by
+            rw [h_partition, Finset.card_union_of_disjoint h_disj, Finset.card_singleton]
+            omega
+        _ = 5 - 1 := by rw [G.card_neighborFinset_eq_degree, hs2_deg]
+        _ = 4 := by norm_num
+    omega
 
   have hs3_Q_nbrs : (Q.filter (G.Adj s3)).card = 3 := by
-    sorry -- s3 has degree 5 = 1(v) + 1(p3) + 3(Q)
+    have hs3_deg : G.degree s3 = 5 := h_reg s3
+    have hs3_one_P : (P.filter (G.Adj s3)).card = 1 := by
+      have h_mem : p3 ∈ P.filter (G.Adj s3) := by simp [Finset.mem_filter, hp3_P, hs3_adj_p3]
+      have h_subset : P.filter (G.Adj s3) ⊆ {p3} := by
+        intro p hp
+        simp only [Finset.mem_filter] at hp
+        simp only [Finset.mem_singleton]
+        exact h_s_unique_P_partner s3 p3 hs3_in_N hp3_P hs3_adj_p3 p hp.1 hp.2
+      have : P.filter (G.Adj s3) = {p3} := Finset.eq_singleton_iff_unique_mem.mpr ⟨h_mem, h_subset⟩
+      simp [this]
+    have hs3_M_split : (M.filter (G.Adj s3)).card = (P.filter (G.Adj s3)).card + (Q.filter (G.Adj s3)).card := by
+      have : M.filter (G.Adj s3) = (P.filter (G.Adj s3)) ∪ (Q.filter (G.Adj s3)) := by
+        rw [← hPQ_partition, Finset.filter_union]
+      rw [this, Finset.card_union_of_disjoint]
+      apply Finset.disjoint_of_subset_left (Finset.filter_subset _ _)
+      apply Finset.disjoint_of_subset_right (Finset.filter_subset _ _)
+      exact hPQ_disj
+    have hs3_M_count : (M.filter (G.Adj s3)).card = 4 := by
+      have h_partition : G.neighborFinset s3 = {v} ∪ (M.filter (G.Adj s3)) := by
+        ext w
+        simp only [mem_neighborFinset, Finset.mem_union, Finset.mem_singleton, Finset.mem_filter, M]
+        constructor
+        · intro hw_adj
+          by_cases hw_v : w = v
+          · left; exact hw_v
+          · right
+            constructor
+            · simp only [Finset.mem_sdiff, Finset.mem_univ, Finset.mem_insert, mem_neighborFinset, true_and]
+              push_neg
+              constructor
+              · exact hw_v
+              · intro hw_Nv
+                have : ¬G.Adj s3 w := h_no_Nv_Nv_edges s3 hs3_in_N w (mem_neighborFinset.mpr hw_Nv) (ne_comm.mp hw_v)
+                exact this hw_adj
+            · exact hw_adj
+        · intro hw
+          cases hw with
+          | inl h => rw [h]; exact G.adj_comm.mp (mem_neighborFinset.mp hs3_in_N)
+          | inr h => exact h.2
+      have h_disj : Disjoint ({v} : Finset (Fin 18)) (M.filter (G.Adj s3)) := by
+        rw [Finset.disjoint_iff_inter_eq_empty]
+        ext w
+        simp only [Finset.mem_inter, Finset.mem_singleton, Finset.mem_filter, Finset.not_mem_empty, iff_false, M]
+        intro ⟨hw_v, hw_M, _⟩
+        subst hw_v
+        simp [Finset.mem_sdiff] at hw_M
+      calc (M.filter (G.Adj s3)).card
+          = (G.neighborFinset s3).card - ({v} : Finset (Fin 18)).card := by
+            rw [h_partition, Finset.card_union_of_disjoint h_disj, Finset.card_singleton]
+            omega
+        _ = 5 - 1 := by rw [G.card_neighborFinset_eq_degree, hs3_deg]
+        _ = 4 := by norm_num
+    omega
 
   have hs4_Q_nbrs : (Q.filter (G.Adj s4)).card = 3 := by
-    sorry -- s4 has degree 5 = 1(v) + 1(p4) + 3(Q)
+    have hs4_deg : G.degree s4 = 5 := h_reg s4
+    have hs4_one_P : (P.filter (G.Adj s4)).card = 1 := by
+      have h_mem : p4 ∈ P.filter (G.Adj s4) := by simp [Finset.mem_filter, hp4_P, hs4_adj_p4]
+      have h_subset : P.filter (G.Adj s4) ⊆ {p4} := by
+        intro p hp
+        simp only [Finset.mem_filter] at hp
+        simp only [Finset.mem_singleton]
+        exact h_s_unique_P_partner s4 p4 hs4_in_N hp4_P hs4_adj_p4 p hp.1 hp.2
+      have : P.filter (G.Adj s4) = {p4} := Finset.eq_singleton_iff_unique_mem.mpr ⟨h_mem, h_subset⟩
+      simp [this]
+    have hs4_M_split : (M.filter (G.Adj s4)).card = (P.filter (G.Adj s4)).card + (Q.filter (G.Adj s4)).card := by
+      have : M.filter (G.Adj s4) = (P.filter (G.Adj s4)) ∪ (Q.filter (G.Adj s4)) := by
+        rw [← hPQ_partition, Finset.filter_union]
+      rw [this, Finset.card_union_of_disjoint]
+      apply Finset.disjoint_of_subset_left (Finset.filter_subset _ _)
+      apply Finset.disjoint_of_subset_right (Finset.filter_subset _ _)
+      exact hPQ_disj
+    have hs4_M_count : (M.filter (G.Adj s4)).card = 4 := by
+      have h_partition : G.neighborFinset s4 = {v} ∪ (M.filter (G.Adj s4)) := by
+        ext w
+        simp only [mem_neighborFinset, Finset.mem_union, Finset.mem_singleton, Finset.mem_filter, M]
+        constructor
+        · intro hw_adj
+          by_cases hw_v : w = v
+          · left; exact hw_v
+          · right
+            constructor
+            · simp only [Finset.mem_sdiff, Finset.mem_univ, Finset.mem_insert, mem_neighborFinset, true_and]
+              push_neg
+              constructor
+              · exact hw_v
+              · intro hw_Nv
+                have : ¬G.Adj s4 w := h_no_Nv_Nv_edges s4 hs4_in_N w (mem_neighborFinset.mpr hw_Nv) (ne_comm.mp hw_v)
+                exact this hw_adj
+            · exact hw_adj
+        · intro hw
+          cases hw with
+          | inl h => rw [h]; exact G.adj_comm.mp (mem_neighborFinset.mp hs4_in_N)
+          | inr h => exact h.2
+      have h_disj : Disjoint ({v} : Finset (Fin 18)) (M.filter (G.Adj s4)) := by
+        rw [Finset.disjoint_iff_inter_eq_empty]
+        ext w
+        simp only [Finset.mem_inter, Finset.mem_singleton, Finset.mem_filter, Finset.not_mem_empty, iff_false, M]
+        intro ⟨hw_v, hw_M, _⟩
+        subst hw_v
+        simp [Finset.mem_sdiff] at hw_M
+      calc (M.filter (G.Adj s4)).card
+          = (G.neighborFinset s4).card - ({v} : Finset (Fin 18)).card := by
+            rw [h_partition, Finset.card_union_of_disjoint h_disj, Finset.card_singleton]
+            omega
+        _ = 5 - 1 := by rw [G.card_neighborFinset_eq_degree, hs4_deg]
+        _ = 4 := by norm_num
+    omega
 
   -- Step 8: Count edges from N(v) to Q
   -- Q side: each q has 2 N(v)-neighbors, so sum = 8 × 2 = 16
