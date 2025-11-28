@@ -11,11 +11,8 @@
 !(import! &self /home/zar/claude/hyperon/metamath/mmverify/mmverify-utils_petta)
 
 
-;;; Import halt for proper exit code handling
-!(import_prolog_function halt)
-
 !(import_prolog_functions_from_file "/home/zar/claude/hyperon/metamath/pverify/mm_primitives.pl"
-  (parse_mm_file))
+  (parse_mm_file halt_with_code))
 !(import_prolog_functions_from_file "/home/zar/claude/hyperon/metamath/pverify/env_utils.pl"
   (get_env_var_or_default))
 
@@ -106,7 +103,7 @@
      (println! "")
      (println! "=== VERIFICATION FAILED ===")
      (println! ("Error:" $info $msg))
-     (callPredicate (Predicate (halt 1)))))
+     (halt_with_code 1)))
 
 (= (handle-proof-result ())
    ())
@@ -189,7 +186,7 @@
    (if (== $result ())
        Empty
        (case (car-atom $result)
-         (((failed) (callPredicate (Predicate (halt 1))))
+         (((failed) (halt_with_code 1))
           ($_ Empty)))))
 
 !(printif! "")

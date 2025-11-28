@@ -6,6 +6,9 @@
     % File I/O
     read_mm_file/2,
 
+    % Exit with error code
+    halt_with_code/2,
+
     % High-level parsing (complete file -> structured statements)
     parse_mm_file/2,
 
@@ -59,6 +62,60 @@ is_mm_printable(C) :-
 
 % Dollar sign (for keyword detection)
 is_dollar(0'$).
+
+%% ======================================================================
+%% Token Validation (Metamath spec Section 4)
+%% ======================================================================
+
+% is_label_char(+CharCode)
+% Label tokens: letters, digits, hyphen (-), underscore (_), period (.)
+is_label_char(C) :- C >= 0'a, C =< 0'z, !.  % a-z
+is_label_char(C) :- C >= 0'A, C =< 0'Z, !.  % A-Z
+is_label_char(C) :- C >= 0'0, C =< 0'9, !.  % 0-9
+is_label_char(0'-).  % hyphen
+is_label_char(0'_).  % underscore
+is_label_char(0'.).  % period
+
+% valid_label(+Atom)
+% Check if atom is a valid Metamath label
+valid_label(Label) :-
+    atom(Label),
+    atom_codes(Label, Codes),
+    Codes \= [],
+    forall(member(C, Codes), is_label_char(C)).
+
+% valid_math_symbol(+Atom)
+% Math symbols: any printable ASCII except space or $
+valid_math_symbol(Symbol) :-
+    atom(Symbol),
+    atom_codes(Symbol, Codes),
+    Codes \= [],
+    forall(member(C, Codes), (is_mm_printable(C), C \= 0'$)).
+
+% validate_label(+Label)
+% Throws error if label is invalid
+validate_label(Label) :-
+    (   valid_label(Label)
+    ->  true
+    ;   format(user_error, 'Error: Invalid label "~w" - must contain only letters, digits, hyphen, underscore, or period~n', [Label]),
+        throw(error(invalid_label(Label), _))
+    ).
+
+% validate_math_symbol(+Symbol)
+% Throws error if math symbol contains $
+validate_math_symbol(Symbol) :-
+    (   valid_math_symbol(Symbol)
+    ->  true
+    ;   format(user_error, 'Error: Invalid math symbol "~w" - must not contain $~n', [Symbol]),
+        throw(error(invalid_math_symbol(Symbol), _))
+    ).
+
+% validate_math_symbols(+SymbolList)
+% Validate a list of math symbols
+validate_math_symbols([]).
+validate_math_symbols([S|Ss]) :-
+    validate_math_symbol(S),
+    validate_math_symbols(Ss).
 
 %% ======================================================================
 %% DCG Grammar (Internal - efficient parsing)
@@ -199,6 +256,12 @@ parse_mm_file(Filename, Statements) :-
     phrase(mm_statements(CompoundStmts), Tokens, []),
     maplist(compound_to_list, CompoundStmts, Statements).
 
+% parse_mm_file_compounds(+Filename, -Statements)
+% Same as parse_mm_file but returns Prolog compounds (for generate_petta_verifier)
+parse_mm_file_compounds(Filename, Statements) :-
+    tokenize_mm_file(Filename, Tokens),
+    phrase(mm_statements(Statements), Tokens, []).
+
 % compound_to_list(+CompoundStmt, -ListStmt)
 % Convert Prolog compound to list for MeTTa processing
 % NOTE: Atoms are converted to strings because mmverify-utils expects strings
@@ -235,19 +298,24 @@ mm_statements([]) --> [].
 % $c statement: $c symbols* $.
 mm_statement(c(Symbols)) -->
     ['$c'],
-    mm_symbols_until_period(Symbols).
+    mm_symbols_until_period(Symbols),
+    { validate_math_symbols(Symbols) }.
 
 % $v statement: $v vars* $.
 mm_statement(v(Vars)) -->
     ['$v'],
-    mm_symbols_until_period(Vars).
+    mm_symbols_until_period(Vars),
+    { validate_math_symbols(Vars) }.
 
 % $f statement: label $f typecode variable $.
 mm_statement(f(Label, Type, Var)) -->
     [Label, '$f', Type, Var, '$.'],
     { Label \= '$c', Label \= '$v', Label \= '$f', Label \= '$e',
       Label \= '$a', Label \= '$p', Label \= '$d',
-      Label \= '${', Label \= '$}', Label \= '$=', Label \= '$.' }.
+      Label \= '${', Label \= '$}', Label \= '$=', Label \= '$.',
+      validate_label(Label),
+      validate_math_symbol(Type),
+      validate_math_symbol(Var) }.
 
 % $e statement: label $e typecode math* $.
 mm_statement(e(Label, Type, Math)) -->
@@ -255,7 +323,10 @@ mm_statement(e(Label, Type, Math)) -->
     mm_symbols_until_period(Math),
     { Label \= '$c', Label \= '$v', Label \= '$f', Label \= '$e',
       Label \= '$a', Label \= '$p', Label \= '$d',
-      Label \= '${', Label \= '$}', Label \= '$=', Label \= '$.' }.
+      Label \= '${', Label \= '$}', Label \= '$=', Label \= '$.',
+      validate_label(Label),
+      validate_math_symbol(Type),
+      validate_math_symbols(Math) }.
 
 % $a statement: label $a typecode math* $.
 mm_statement(a(Label, Type, Math)) -->
@@ -263,7 +334,10 @@ mm_statement(a(Label, Type, Math)) -->
     mm_symbols_until_period(Math),
     { Label \= '$c', Label \= '$v', Label \= '$f', Label \= '$e',
       Label \= '$a', Label \= '$p', Label \= '$d',
-      Label \= '${', Label \= '$}', Label \= '$=', Label \= '$.' }.
+      Label \= '${', Label \= '$}', Label \= '$=', Label \= '$.',
+      validate_label(Label),
+      validate_math_symbol(Type),
+      validate_math_symbols(Math) }.
 
 % $p statement: label $p typecode math* $= proof $.
 mm_statement(p(Label, Type, Math, Proof)) -->
@@ -273,12 +347,17 @@ mm_statement(p(Label, Type, Math, Proof)) -->
     mm_symbols_until_period(Proof),
     { Label \= '$c', Label \= '$v', Label \= '$f', Label \= '$e',
       Label \= '$a', Label \= '$p', Label \= '$d',
-      Label \= '${', Label \= '$}', Label \= '$=', Label \= '$.' }.
+      Label \= '${', Label \= '$}', Label \= '$=', Label \= '$.',
+      validate_label(Label),
+      validate_math_symbol(Type),
+      validate_math_symbols(Math) }.
+      % Note: Proof labels are validated at verification time, not parse time
 
 % $d statement: $d vars* $.
 mm_statement(d(Vars)) -->
     ['$d'],
-    mm_symbols_until_period(Vars).
+    mm_symbols_until_period(Vars),
+    { validate_math_symbols(Vars) }.
 
 % ${ statement: frame open
 mm_statement(open_frame) -->
@@ -329,7 +408,7 @@ generate_petta_verifier(InputFile, OutputFile) :-
 
 % generate_petta_verifier(+InputFile, +OutputFile, +VerifyProofs)
 generate_petta_verifier(InputFile, OutputFile, VerifyProofs) :-
-    parse_mm_file(InputFile, Statements),
+    parse_mm_file_compounds(InputFile, Statements),
     open(OutputFile, write, Out),
     emit_header(Out, InputFile, VerifyProofs),
     forall(member(Stmt, Statements),
@@ -421,3 +500,9 @@ format_var_list([V|Rest], Str) :-
 starts_with([], _).
 starts_with([H|T], [H|PT]) :-
     starts_with(T, PT).
+
+%% ======================================================================
+%% Halt with exit code (for error handling from MeTTa)
+%% ======================================================================
+
+halt_with_code(Code, true) :- halt(Code).
