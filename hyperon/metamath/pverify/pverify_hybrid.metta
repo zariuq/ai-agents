@@ -43,8 +43,8 @@
 ;; process-statements - Process tuple using map-atom (avoids recursion non-determinism)
 ;; Returns (ok) or (failed) to indicate success/failure
 (= (process-statements $stmts)
-   (let $results (map-atom $stmts $stmt (process-statement $stmt))
-     (let $errors (filter-errors $results)
+   (let $results (collapse (map-atom $stmts $stmt (process-statement $stmt)))
+     (let $errors (filter-errors (car-atom $results))
        (if (> (size-atom $errors) 0)
            (failed)
            (progn
@@ -174,14 +174,15 @@
                             $cmdline_arg)
          (let true (printif! (concat "  File: " $input_file))
            (let true (printif! "Step 2: Parse file using Prolog...")
-             (let $stmts (parse_mm_file $input_file)
+             (let $stmts_raw (collapse (parse_mm_file $input_file))
+              (let $stmts (car-atom $stmts_raw)
                (let true (printif! (Got (size-atom $stmts) statements))
                  (let true (printif! "")
                    (let true (printif! "Step 3: Process statements in PeTTa...")
                      (let $status (process-statements $stmts)
                        (case $status
                          ((failed (failed))
-                          ((ok) (ok))))))))))))))
+                          ((ok) (ok)))))))))))))))
    (if (== $result ())
        Empty
        (case (car-atom $result)

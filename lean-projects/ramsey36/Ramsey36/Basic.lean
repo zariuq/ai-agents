@@ -2679,42 +2679,6 @@ lemma S_pair_share_at_most_one_W {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
     commonNeighborsCard_le_two h_tri h_no6 h_reg s1 s2 hs1_ne_s2.symm hs12_nonadj
   omega
 
-/-! ### Existence of CariolaroSetup -/
-
-/-- Existence of a CariolaroSetup for any counterexample graph, centered at any vertex v.
-This is the central construction that bundles the S-W bipartite structure.
-The proof requires careful constraint tracking of the T/W partition of Q. -/
-lemma exists_CariolaroSetup_at {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
-    (h_reg : IsKRegular G 5) (h_tri : TriangleFree G) (h_no6 : NoKIndepSet 6 G)
-    (v : Fin 18) :
-    ∃ setup : CariolaroSetup G h_reg h_tri h_no6, setup.v = v := by
-  classical
-  -- The construction follows Cariolaro's labeling scheme:
-  -- 1. Use the given vertex v
-  -- 2. Split N(v) = {t, s₁, s₂, s₃, s₄} where t is the special neighbor
-  -- 3. Use Claim 2 to get P = {p₁, p₂, p₃, p₄} with unique s-partners
-  -- 4. Split Q into T (neighbors of t) and W (non-neighbors of t)
-  -- 5. The S-W bipartite structure forces the C₄ pairing pattern
-  --
-  -- The detailed construction requires:
-  -- - Showing |T| = |W| = 4
-  -- - Showing each w ∈ W has exactly 2 S-neighbors
-  -- - Verifying the pairing avoids triangles (hence is a C₄)
-  sorry
-
-/-- Existence of a CariolaroSetup for any counterexample graph. -/
-lemma exists_CariolaroSetup {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
-    (h_reg : IsKRegular G 5) (h_tri : TriangleFree G) (h_no6 : NoKIndepSet 6 G) :
-    Nonempty (CariolaroSetup G h_reg h_tri h_no6) := by
-  obtain ⟨setup, _⟩ := exists_CariolaroSetup_at h_reg h_tri h_no6 0
-  exact ⟨setup⟩
-
-/-- Canonical choice of CariolaroSetup for a counterexample graph. -/
-noncomputable def someCariolaroSetup (G : SimpleGraph (Fin 18)) [DecidableRel G.Adj]
-    (h_reg : IsKRegular G 5) (h_tri : TriangleFree G) (h_no6 : NoKIndepSet 6 G) :
-    CariolaroSetup G h_reg h_tri h_no6 :=
-  (exists_CariolaroSetup h_reg h_tri h_no6).some
-
 /-! ### Degree computation from explicit cycle structure -/
 
 /-- In a 4-cycle p1-p2-p3-p4-p1, each vertex has exactly 2 neighbors among {p1,p2,p3,p4}.
@@ -4636,6 +4600,311 @@ lemma claim3_four_cycle {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
 
   -- The cycle structure gives us the result directly
   exact h_cycle
+
+/-! ### Existence of CariolaroSetup -/
+
+/-- Existence of a CariolaroSetup for any counterexample graph, centered at any vertex v.
+This is the central construction that bundles the S-W bipartite structure.
+The proof requires careful constraint tracking of the T/W partition of Q. -/
+lemma exists_CariolaroSetup_at {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
+    (h_reg : IsKRegular G 5) (h_tri : TriangleFree G) (h_no6 : NoKIndepSet 6 G)
+    (v : Fin 18) :
+    ∃ setup : CariolaroSetup G h_reg h_tri h_no6, setup.v = v := by
+  classical
+  -- ═══════════════════════════════════════════════════════════════════════════
+  -- STEP 1: Get P (4 vertices with common=1) and Q (8 vertices with common=2)
+  -- ═══════════════════════════════════════════════════════════════════════════
+  obtain ⟨P, Q, hP_card, hQ_card, hP_props, hQ_props⟩ :=
+    claim2_neighbor_structure h_reg h_tri h_no6 v
+
+  -- ═══════════════════════════════════════════════════════════════════════════
+  -- STEP 2: Get the 4-cycle structure p1-p2-p3-p4-p1 from claim3
+  -- ═══════════════════════════════════════════════════════════════════════════
+  obtain ⟨p1, p2, p3, p4, hp_ne12, hp_ne13, hp_ne14, hp_ne23, hp_ne24, hp_ne34,
+          hP_eq, h_adj_p1p2, h_adj_p2p3, h_adj_p3p4, h_adj_p4p1, h_nonadj_p1p3, h_nonadj_p2p4⟩ :=
+    claim3_four_cycle h_reg h_tri h_no6 v P ⟨hP_card, hP_props⟩
+
+  -- Extract P properties
+  have hp1_in_P : p1 ∈ P := by rw [hP_eq]; simp
+  have hp2_in_P : p2 ∈ P := by rw [hP_eq]; simp
+  have hp3_in_P : p3 ∈ P := by rw [hP_eq]; simp
+  have hp4_in_P : p4 ∈ P := by rw [hP_eq]; simp
+  have ⟨hp1_nonadj_v, hp1_common1⟩ := hP_props p1 hp1_in_P
+  have ⟨hp2_nonadj_v, hp2_common1⟩ := hP_props p2 hp2_in_P
+  have ⟨hp3_nonadj_v, hp3_common1⟩ := hP_props p3 hp3_in_P
+  have ⟨hp4_nonadj_v, hp4_common1⟩ := hP_props p4 hp4_in_P
+
+  -- ═══════════════════════════════════════════════════════════════════════════
+  -- STEP 3: Get s-partners for each p using P_partner_in_N
+  -- ═══════════════════════════════════════════════════════════════════════════
+  obtain ⟨s1, ⟨hs1_in_N, hs1_adj_p1⟩, hs1_unique⟩ := P_partner_in_N h_reg h_tri v p1 hp1_nonadj_v hp1_common1
+  obtain ⟨s2, ⟨hs2_in_N, hs2_adj_p2⟩, hs2_unique⟩ := P_partner_in_N h_reg h_tri v p2 hp2_nonadj_v hp2_common1
+  obtain ⟨s3, ⟨hs3_in_N, hs3_adj_p3⟩, hs3_unique⟩ := P_partner_in_N h_reg h_tri v p3 hp3_nonadj_v hp3_common1
+  obtain ⟨s4, ⟨hs4_in_N, hs4_adj_p4⟩, hs4_unique⟩ := P_partner_in_N h_reg h_tri v p4 hp4_nonadj_v hp4_common1
+
+  -- ═══════════════════════════════════════════════════════════════════════════
+  -- STEP 3b: Prove all s-partners are pairwise distinct
+  -- ═══════════════════════════════════════════════════════════════════════════
+
+  -- Setup for the distinct_helper approach
+  let N := G.neighborFinset v
+  have hN_card : N.card = 5 := h_reg v
+  have hN_indep : G.IsIndepSet (G.neighborSet v) := neighborSet_indep_of_triangleFree h_tri v
+
+  -- Helper: if two p's share the same s-partner, contradiction
+  have distinct_helper : ∀ (pa pb s : Fin 18),
+      pa ≠ pb →
+      ¬G.Adj v pa → ¬G.Adj v pb →
+      s ∈ N → G.Adj s pa → G.Adj s pb →
+      (∀ x, x ∈ N → x ≠ s → ¬G.Adj x pa) →
+      (∀ x, x ∈ N → x ≠ s → ¬G.Adj x pb) →
+      False := by
+    intro pa pb s hne hpa_nonadj hpb_nonadj hs_in hs_pa hs_pb hunique_pa hunique_pb
+    by_cases hadj : G.Adj pa pb
+    · -- Case 1: pa-pb adjacent → {s, pa, pb} is a triangle
+      have h_clique : G.IsNClique 3 {s, pa, pb} := by
+        rw [isNClique_iff]
+        constructor
+        · intro x hx y hy hxy
+          simp only [mem_coe, mem_insert, mem_singleton] at hx hy
+          obtain (rfl | rfl | rfl) := hx <;> obtain (rfl | rfl | rfl) := hy
+          all_goals first | exact absurd rfl hxy | exact hs_pa | exact hs_pb
+                          | exact G.symm hs_pa | exact G.symm hs_pb | exact hadj | exact G.symm hadj
+        · have h1 : s ≠ pa := G.ne_of_adj hs_pa
+          have h2 : s ≠ pb := G.ne_of_adj hs_pb
+          rw [card_insert_of_notMem, card_insert_of_notMem, card_singleton]
+          · simp only [mem_singleton]; exact hne
+          · simp only [mem_insert, mem_singleton, not_or]; exact ⟨h1, h2⟩
+      exact h_tri {s, pa, pb} h_clique
+    · -- Case 2: pa-pb not adjacent → {pa, pb} ∪ (N \ {s}) is a 6-IS
+      let N' := N.erase s
+      have hN'_card : N'.card = 4 := by rw [card_erase_of_mem hs_in, hN_card]
+      let I := insert pa (insert pb N')
+      have hI_card : I.card = 6 := by
+        have h_pa_notin : pa ∉ insert pb N' := by
+          simp only [mem_insert, not_or]
+          refine ⟨hne, ?_⟩
+          intro h
+          have hpa_in_N := mem_of_mem_erase h
+          rw [mem_neighborFinset] at hpa_in_N
+          exact hpa_nonadj hpa_in_N
+        have h_pb_notin_N' : pb ∉ N' := by
+          intro h
+          have hpb_in_N := mem_of_mem_erase h
+          rw [mem_neighborFinset] at hpb_in_N
+          exact hpb_nonadj hpb_in_N
+        rw [card_insert_of_notMem h_pa_notin, card_insert_of_notMem h_pb_notin_N', hN'_card]
+      have hI_indep : G.IsIndepSet I := by
+        intro x hx y hy hxy h_edge
+        simp only [I, mem_coe, mem_insert] at hx hy
+        have h_N'_to_N : ∀ z, z ∈ N' → z ∈ N := fun z hz => mem_of_mem_erase hz
+        rcases hx with rfl | rfl | hx_N' <;> rcases hy with rfl | rfl | hy_N'
+        · exact hxy rfl
+        · exact hadj h_edge
+        · -- pa adj to y ∈ N', y ≠ s
+          have hy_ne_s : y ≠ s := (mem_erase.mp hy_N').1
+          exact hunique_pa y (h_N'_to_N y hy_N') hy_ne_s (G.symm h_edge)
+        · exact hadj (G.symm h_edge)
+        · exact hxy rfl
+        · have hy_ne_s : y ≠ s := (mem_erase.mp hy_N').1
+          exact hunique_pb y (h_N'_to_N y hy_N') hy_ne_s (G.symm h_edge)
+        · have hx_ne_s : x ≠ s := (mem_erase.mp hx_N').1
+          exact hunique_pa x (h_N'_to_N x hx_N') hx_ne_s h_edge
+        · have hx_ne_s : x ≠ s := (mem_erase.mp hx_N').1
+          exact hunique_pb x (h_N'_to_N x hx_N') hx_ne_s h_edge
+        · -- Both in N', use N indep
+          have hx_in_N : x ∈ N := h_N'_to_N x hx_N'
+          have hy_in_N : y ∈ N := h_N'_to_N y hy_N'
+          rw [mem_neighborFinset] at hx_in_N hy_in_N
+          exact hN_indep hx_in_N hy_in_N hxy h_edge
+      exact h_no6 I ⟨hI_indep, hI_card⟩
+
+  -- Get uniqueness facts for each p's partner
+  have h1_unique : ∀ x, x ∈ N → x ≠ s1 → ¬G.Adj x p1 := by
+    intro x hx hne hadj
+    have h_and : x ∈ G.neighborFinset v ∧ G.Adj x p1 := And.intro hx hadj
+    exact hne (hs1_unique x h_and)
+  have h2_unique : ∀ x, x ∈ N → x ≠ s2 → ¬G.Adj x p2 := by
+    intro x hx hne hadj
+    have h_and : x ∈ G.neighborFinset v ∧ G.Adj x p2 := And.intro hx hadj
+    exact hne (hs2_unique x h_and)
+  have h3_unique : ∀ x, x ∈ N → x ≠ s3 → ¬G.Adj x p3 := by
+    intro x hx hne hadj
+    have h_and : x ∈ G.neighborFinset v ∧ G.Adj x p3 := And.intro hx hadj
+    exact hne (hs3_unique x h_and)
+  have h4_unique : ∀ x, x ∈ N → x ≠ s4 → ¬G.Adj x p4 := by
+    intro x hx hne hadj
+    have h_and : x ∈ G.neighborFinset v ∧ G.Adj x p4 := And.intro hx hadj
+    exact hne (hs4_unique x h_and)
+
+  -- All 6 pairwise distinctness facts
+  have hs_ne12 : s1 ≠ s2 := by
+    intro h_eq; subst h_eq
+    exact distinct_helper p1 p2 s1 hp_ne12 hp1_nonadj_v hp2_nonadj_v hs1_in_N hs1_adj_p1 hs2_adj_p2 h1_unique h2_unique
+  have hs_ne13 : s1 ≠ s3 := by
+    intro h_eq; subst h_eq
+    exact distinct_helper p1 p3 s1 hp_ne13 hp1_nonadj_v hp3_nonadj_v hs1_in_N hs1_adj_p1 hs3_adj_p3 h1_unique h3_unique
+  have hs_ne14 : s1 ≠ s4 := by
+    intro h_eq; subst h_eq
+    exact distinct_helper p1 p4 s1 hp_ne14 hp1_nonadj_v hp4_nonadj_v hs1_in_N hs1_adj_p1 hs4_adj_p4 h1_unique h4_unique
+  have hs_ne23 : s2 ≠ s3 := by
+    intro h_eq; subst h_eq
+    exact distinct_helper p2 p3 s2 hp_ne23 hp2_nonadj_v hp3_nonadj_v hs2_in_N hs2_adj_p2 hs3_adj_p3 h2_unique h3_unique
+  have hs_ne24 : s2 ≠ s4 := by
+    intro h_eq; subst h_eq
+    exact distinct_helper p2 p4 s2 hp_ne24 hp2_nonadj_v hp4_nonadj_v hs2_in_N hs2_adj_p2 hs4_adj_p4 h2_unique h4_unique
+  have hs_ne34 : s3 ≠ s4 := by
+    intro h_eq; subst h_eq
+    exact distinct_helper p3 p4 s3 hp_ne34 hp3_nonadj_v hp4_nonadj_v hs3_in_N hs3_adj_p3 hs4_adj_p4 h3_unique h4_unique
+
+  -- ═══════════════════════════════════════════════════════════════════════════
+  -- STEP 4: Get t as the remaining element of N(v) \ {s1, s2, s3, s4}
+  -- ═══════════════════════════════════════════════════════════════════════════
+
+  -- {s1, s2, s3, s4} ⊆ N
+  have hS_sub_N : {s1, s2, s3, s4} ⊆ N := by
+    intro x hx
+    simp only [mem_insert, mem_singleton] at hx
+    rcases hx with rfl | rfl | rfl | rfl
+    · exact hs1_in_N
+    · exact hs2_in_N
+    · exact hs3_in_N
+    · exact hs4_in_N
+
+  have hS_card : ({s1, s2, s3, s4} : Finset (Fin 18)).card = 4 := by
+    rw [card_insert_of_notMem, card_insert_of_notMem, card_insert_of_notMem, card_singleton]
+    · simp [hs_ne34]
+    · simp [hs_ne23, hs_ne24]
+    · simp [hs_ne12, hs_ne13, hs_ne14]
+
+  -- N \ {s1, s2, s3, s4} has exactly 1 element
+  have h_diff_card : (N \ {s1, s2, s3, s4}).card = 1 := by
+    simp only [Finset.card_sdiff_of_subset hS_sub_N, hN_card, hS_card]
+
+  have h_diff_nonempty : (N \ {s1, s2, s3, s4}).Nonempty := by
+    rw [← card_pos]; omega
+
+  obtain ⟨t, ht_mem⟩ := h_diff_nonempty
+  have ht_in_N : t ∈ N := (mem_sdiff.mp ht_mem).1
+  have ht_ne_s1 : t ≠ s1 := by
+    intro h; have := (mem_sdiff.mp ht_mem).2; simp [h] at this
+  have ht_ne_s2 : t ≠ s2 := by
+    intro h; have := (mem_sdiff.mp ht_mem).2; simp [h] at this
+  have ht_ne_s3 : t ≠ s3 := by
+    intro h; have := (mem_sdiff.mp ht_mem).2; simp [h] at this
+  have ht_ne_s4 : t ≠ s4 := by
+    intro h; have := (mem_sdiff.mp ht_mem).2; simp [h] at this
+
+  have ht_adj_v : G.Adj v t := by rw [← mem_neighborFinset]; exact ht_in_N
+
+  -- ═══════════════════════════════════════════════════════════════════════════
+  -- STEP 5: Split Q into T (neighbors of t in Q) and W (non-neighbors of t in Q)
+  -- ═══════════════════════════════════════════════════════════════════════════
+  let T := Q.filter (G.Adj t)
+  let W := Q.filter (fun q => ¬G.Adj t q)
+
+  have hTW_disj : Disjoint T W := by
+    rw [Finset.disjoint_iff_ne]
+    intro a ha b hb h_eq
+    simp only [T, W, mem_filter] at ha hb
+    subst h_eq; exact hb.2 ha.2
+
+  have hTW_union : T ∪ W = Q := by
+    ext x; simp only [T, W, mem_union, mem_filter]
+    constructor
+    · intro h; cases h with | inl hl => exact hl.1 | inr hr => exact hr.1
+    · intro hx; by_cases h : G.Adj t x <;> simp [hx, h]
+
+  -- t is not adjacent to any p ∈ P (each p's unique N(v)-neighbor is its s-partner)
+  have ht_nonadj_p1 : ¬G.Adj t p1 := by
+    intro h
+    have h_witness : t ∈ G.neighborFinset v ∧ G.Adj t p1 := ⟨ht_in_N, h⟩
+    have h_eq : t = s1 := hs1_unique t h_witness
+    exact ht_ne_s1 h_eq
+
+  have ht_nonadj_p2 : ¬G.Adj t p2 := by
+    intro h
+    have h_witness : t ∈ G.neighborFinset v ∧ G.Adj t p2 := ⟨ht_in_N, h⟩
+    exact ht_ne_s2 (hs2_unique t h_witness)
+
+  have ht_nonadj_p3 : ¬G.Adj t p3 := by
+    intro h
+    have h_witness : t ∈ G.neighborFinset v ∧ G.Adj t p3 := ⟨ht_in_N, h⟩
+    exact ht_ne_s3 (hs3_unique t h_witness)
+
+  have ht_nonadj_p4 : ¬G.Adj t p4 := by
+    intro h
+    have h_witness : t ∈ G.neighborFinset v ∧ G.Adj t p4 := ⟨ht_in_N, h⟩
+    exact ht_ne_s4 (hs4_unique t h_witness)
+
+  -- |T| = 4 (t has 4 Q-neighbors)
+  have hT_card : T.card = 4 := by
+    -- Use t_has_four_Q_neighbors
+    have ⟨hP_complete, hQ_complete⟩ := PQ_partition_completeness h_reg h_tri h_no6 v P Q
+        hP_card hQ_card hP_props hQ_props
+    have hv_notin_Q : v ∉ Q := by
+      intro hv
+      have ⟨_, h_common2⟩ := hQ_props v hv
+      have h_common5 : commonNeighborsCard G v v = 5 := by
+        unfold commonNeighborsCard _root_.commonNeighbors
+        rw [Finset.inter_self]
+        exact h_reg v
+      omega
+    exact t_has_four_Q_neighbors h_reg h_tri h_no6 v t ht_adj_v Q hQ_card
+      (by
+        intro hv
+        have ⟨_, h_common2⟩ := hQ_props v hv
+        have h_common5 : commonNeighborsCard G v v = 5 := by
+          unfold commonNeighborsCard _root_.commonNeighbors
+          rw [Finset.inter_self]
+          exact h_reg v
+        omega)
+      (fun x hx hxv hx2 => hQ_complete x hxv hx hx2)
+      P hP_card hP_props
+      (by
+        intro p hp
+        rw [hP_eq, mem_insert, mem_insert, mem_insert, mem_singleton] at hp
+        rcases hp with rfl | rfl | rfl | rfl
+        · exact ht_nonadj_p1
+        · exact ht_nonadj_p2
+        · exact ht_nonadj_p3
+        · exact ht_nonadj_p4)
+      (fun x hxv hx_nadj => ⟨hP_complete x hxv hx_nadj, hQ_complete x hxv hx_nadj⟩)
+
+  have hW_card : W.card = 4 := by
+    have h_sum : T.card + W.card = Q.card := by
+      rw [← hTW_union, card_union_of_disjoint hTW_disj]
+    omega
+
+  -- ═══════════════════════════════════════════════════════════════════════════
+  -- STEP 6: Extract t1, t2, t3, t4 from T and w1, w2, w3, w4 from W
+  -- This requires showing the S-W bipartite structure is an 8-cycle and choosing
+  -- the specific labeling. This is the most complex part of the construction.
+  -- ═══════════════════════════════════════════════════════════════════════════
+
+  -- TODO: Complete the extraction and labeling of T and W vertices
+  -- The key insight is:
+  -- 1. Each W vertex has exactly 2 S-neighbors (W_vertex_has_two_S_neighbors)
+  -- 2. No two S vertices share a PAIR of W-neighbors (S_pair_share_at_most_one_W)
+  -- 3. This forces the S-W bipartite graph to be an 8-cycle
+  -- 4. We can then choose the labeling w1~{s1,s2}, w2~{s2,s3}, etc.
+  --
+  -- The proof requires extracting 4 elements from each of T and W,
+  -- then verifying all ~100 adjacency properties of CariolaroSetup.
+  sorry
+
+/-- Existence of a CariolaroSetup for any counterexample graph. -/
+lemma exists_CariolaroSetup {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
+    (h_reg : IsKRegular G 5) (h_tri : TriangleFree G) (h_no6 : NoKIndepSet 6 G) :
+    Nonempty (CariolaroSetup G h_reg h_tri h_no6) := by
+  obtain ⟨setup, _⟩ := exists_CariolaroSetup_at h_reg h_tri h_no6 0
+  exact ⟨setup⟩
+
+/-- Canonical choice of CariolaroSetup for a counterexample graph. -/
+noncomputable def someCariolaroSetup (G : SimpleGraph (Fin 18)) [DecidableRel G.Adj]
+    (h_reg : IsKRegular G 5) (h_tri : TriangleFree G) (h_no6 : NoKIndepSet 6 G) :
+    CariolaroSetup G h_reg h_tri h_no6 :=
+  (exists_CariolaroSetup h_reg h_tri h_no6).some
 
 /-- Final step of Cariolaro's proof: derive contradiction from the 4-cycle structure.
 
