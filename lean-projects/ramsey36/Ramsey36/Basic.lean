@@ -4882,15 +4882,167 @@ lemma exists_CariolaroSetup_at {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
   -- the specific labeling. This is the most complex part of the construction.
   -- ═══════════════════════════════════════════════════════════════════════════
 
-  -- TODO: Complete the extraction and labeling of T and W vertices
-  -- The key insight is:
-  -- 1. Each W vertex has exactly 2 S-neighbors (W_vertex_has_two_S_neighbors)
-  -- 2. No two S vertices share a PAIR of W-neighbors (S_pair_share_at_most_one_W)
-  -- 3. This forces the S-W bipartite graph to be an 8-cycle
-  -- 4. We can then choose the labeling w1~{s1,s2}, w2~{s2,s3}, etc.
+  -- Define S = {s1, s2, s3, s4} (the s-partners, which is N(v) \ {t})
+  let S := ({s1, s2, s3, s4} : Finset (Fin 18))
+
+  -- S = N(v) \ {t}
+  have hS_eq_erase : S = N.erase t := by
+    ext x
+    simp only [S, mem_insert, mem_singleton, mem_erase]
+    constructor
+    · intro hx
+      rcases hx with rfl | rfl | rfl | rfl
+      · exact ⟨ht_ne_s1.symm, hs1_in_N⟩
+      · exact ⟨ht_ne_s2.symm, hs2_in_N⟩
+      · exact ⟨ht_ne_s3.symm, hs3_in_N⟩
+      · exact ⟨ht_ne_s4.symm, hs4_in_N⟩
+    · intro ⟨hx_ne_t, hx_in_N⟩
+      -- x ∈ N(v) and x ≠ t means x ∈ {s1, s2, s3, s4}
+      -- Key: |N| = 5, |S| = 4, S ⊆ N, so N \ S = {t}
+      have hS_card : S.card = 4 := by
+        have h1 : s4 ∉ (∅ : Finset (Fin 18)) := Finset.notMem_empty s4
+        have h2 : s3 ∉ ({s4} : Finset (Fin 18)) := by
+          simp only [mem_singleton]; exact hs_ne34
+        have h3 : s2 ∉ ({s3, s4} : Finset (Fin 18)) := by
+          simp only [mem_insert, mem_singleton, not_or]
+          exact ⟨hs_ne23, hs_ne24⟩
+        have h4 : s1 ∉ ({s2, s3, s4} : Finset (Fin 18)) := by
+          simp only [mem_insert, mem_singleton, not_or]
+          exact ⟨hs_ne12, hs_ne13, hs_ne14⟩
+        simp only [S, card_insert_of_notMem h4, card_insert_of_notMem h3,
+                   card_insert_of_notMem h2, card_singleton]
+      have hS_sub_N : S ⊆ N := by
+        intro y hy
+        simp only [S, mem_insert, mem_singleton] at hy
+        rcases hy with rfl | rfl | rfl | rfl
+        · exact hs1_in_N
+        · exact hs2_in_N
+        · exact hs3_in_N
+        · exact hs4_in_N
+      have h_diff_card : (N \ S).card = 1 := by
+        rw [Finset.card_sdiff_of_subset hS_sub_N, hN_card, hS_card]
+      have ht_in_diff : t ∈ N \ S := by
+        simp only [mem_sdiff, S, mem_insert, mem_singleton, not_or]
+        exact ⟨ht_in_N, ht_ne_s1, ht_ne_s2, ht_ne_s3, ht_ne_s4⟩
+      have h_diff_single : N \ S = {t} := by
+        rw [Finset.card_eq_one] at h_diff_card
+        obtain ⟨z, hz⟩ := h_diff_card
+        rw [hz] at ht_in_diff
+        simp only [mem_singleton] at ht_in_diff
+        rw [hz, ← ht_in_diff]
+      -- x ∉ N \ S (since N \ S = {t} and x ≠ t)
+      have hx_notin_diff : x ∉ N \ S := by
+        rw [h_diff_single]
+        simp only [mem_singleton]
+        exact hx_ne_t
+      -- So x ∈ S
+      rw [mem_sdiff, not_and_or, not_not] at hx_notin_diff
+      rcases hx_notin_diff with hx_notin_N | hx_in_S
+      · exact (hx_notin_N hx_in_N).elim
+      · simp only [S, mem_insert, mem_singleton] at hx_in_S
+        exact hx_in_S
+
+  -- STEP 6a: Extract t1, t2, t3, t4 from T
+  -- T has 4 elements, so we can extract them
+  have hT_nonempty : T.Nonempty := card_pos.mp (by omega : 0 < T.card)
+  obtain ⟨t1, ht1_mem⟩ := hT_nonempty
+
+  have hT_erase1 : (T.erase t1).card = 3 := by rw [card_erase_of_mem ht1_mem, hT_card]
+  have hT_nonempty2 : (T.erase t1).Nonempty := card_pos.mp (by omega)
+  obtain ⟨t2, ht2_mem⟩ := hT_nonempty2
+  have ht2_in_T : t2 ∈ T := mem_of_mem_erase ht2_mem
+  have ht1_ne_t2 : t1 ≠ t2 := fun h => (mem_erase.mp ht2_mem).1 h.symm
+
+  have hT_erase2 : ((T.erase t1).erase t2).card = 2 := by rw [card_erase_of_mem ht2_mem, hT_erase1]
+  have hT_nonempty3 : ((T.erase t1).erase t2).Nonempty := card_pos.mp (by omega)
+  obtain ⟨t3, ht3_mem⟩ := hT_nonempty3
+  have ht3_in_erase1 : t3 ∈ T.erase t1 := mem_of_mem_erase ht3_mem
+  have ht3_in_T : t3 ∈ T := mem_of_mem_erase ht3_in_erase1
+  have ht2_ne_t3 : t2 ≠ t3 := fun h => (mem_erase.mp ht3_mem).1 h.symm
+  have ht1_ne_t3 : t1 ≠ t3 := fun h => (mem_erase.mp ht3_in_erase1).1 h.symm
+
+  have hT_erase3 : (((T.erase t1).erase t2).erase t3).card = 1 := by rw [card_erase_of_mem ht3_mem, hT_erase2]
+  have hT_nonempty4 : (((T.erase t1).erase t2).erase t3).Nonempty := card_pos.mp (by omega)
+  obtain ⟨t4, ht4_mem⟩ := hT_nonempty4
+  have ht4_in_erase2 : t4 ∈ (T.erase t1).erase t2 := mem_of_mem_erase ht4_mem
+  have ht4_in_erase1 : t4 ∈ T.erase t1 := mem_of_mem_erase ht4_in_erase2
+  have ht4_in_T : t4 ∈ T := mem_of_mem_erase ht4_in_erase1
+  have ht3_ne_t4 : t3 ≠ t4 := fun h => (mem_erase.mp ht4_mem).1 h.symm
+  have ht2_ne_t4 : t2 ≠ t4 := fun h => (mem_erase.mp ht4_in_erase2).1 h.symm
+  have ht1_ne_t4 : t1 ≠ t4 := fun h => (mem_erase.mp ht4_in_erase1).1 h.symm
+
+  -- T properties from being in T
+  have ht1_props : t1 ∈ Q ∧ G.Adj t t1 := by simp only [T, mem_filter] at ht1_mem; exact ht1_mem
+  have ht2_props : t2 ∈ Q ∧ G.Adj t t2 := by simp only [T, mem_filter] at ht2_in_T; exact ht2_in_T
+  have ht3_props : t3 ∈ Q ∧ G.Adj t t3 := by simp only [T, mem_filter] at ht3_in_T; exact ht3_in_T
+  have ht4_props : t4 ∈ Q ∧ G.Adj t t4 := by simp only [T, mem_filter] at ht4_in_T; exact ht4_in_T
+
+  -- Q properties for ti
+  have ht1_Q_props := hQ_props t1 ht1_props.1
+  have ht2_Q_props := hQ_props t2 ht2_props.1
+  have ht3_Q_props := hQ_props t3 ht3_props.1
+  have ht4_Q_props := hQ_props t4 ht4_props.1
+
+  -- STEP 6b: Extract w1, w2, w3, w4 from W
+  have hW_nonempty : W.Nonempty := card_pos.mp (by omega : 0 < W.card)
+  obtain ⟨w1, hw1_mem⟩ := hW_nonempty
+
+  have hW_erase1 : (W.erase w1).card = 3 := by rw [card_erase_of_mem hw1_mem, hW_card]
+  have hW_nonempty2 : (W.erase w1).Nonempty := card_pos.mp (by omega)
+  obtain ⟨w2, hw2_mem⟩ := hW_nonempty2
+  have hw2_in_W : w2 ∈ W := mem_of_mem_erase hw2_mem
+  have hw1_ne_w2 : w1 ≠ w2 := fun h => (mem_erase.mp hw2_mem).1 h.symm
+
+  have hW_erase2 : ((W.erase w1).erase w2).card = 2 := by rw [card_erase_of_mem hw2_mem, hW_erase1]
+  have hW_nonempty3 : ((W.erase w1).erase w2).Nonempty := card_pos.mp (by omega)
+  obtain ⟨w3, hw3_mem⟩ := hW_nonempty3
+  have hw3_in_erase1 : w3 ∈ W.erase w1 := mem_of_mem_erase hw3_mem
+  have hw3_in_W : w3 ∈ W := mem_of_mem_erase hw3_in_erase1
+  have hw2_ne_w3 : w2 ≠ w3 := fun h => (mem_erase.mp hw3_mem).1 h.symm
+  have hw1_ne_w3 : w1 ≠ w3 := fun h => (mem_erase.mp hw3_in_erase1).1 h.symm
+
+  have hW_erase3 : (((W.erase w1).erase w2).erase w3).card = 1 := by rw [card_erase_of_mem hw3_mem, hW_erase2]
+  have hW_nonempty4 : (((W.erase w1).erase w2).erase w3).Nonempty := card_pos.mp (by omega)
+  obtain ⟨w4, hw4_mem⟩ := hW_nonempty4
+  have hw4_in_erase2 : w4 ∈ (W.erase w1).erase w2 := mem_of_mem_erase hw4_mem
+  have hw4_in_erase1 : w4 ∈ W.erase w1 := mem_of_mem_erase hw4_in_erase2
+  have hw4_in_W : w4 ∈ W := mem_of_mem_erase hw4_in_erase1
+  have hw3_ne_w4 : w3 ≠ w4 := fun h => (mem_erase.mp hw4_mem).1 h.symm
+  have hw2_ne_w4 : w2 ≠ w4 := fun h => (mem_erase.mp hw4_in_erase2).1 h.symm
+  have hw1_ne_w4 : w1 ≠ w4 := fun h => (mem_erase.mp hw4_in_erase1).1 h.symm
+
+  -- W properties from being in W
+  have hw1_props : w1 ∈ Q ∧ ¬G.Adj t w1 := by simp only [W, mem_filter] at hw1_mem; exact hw1_mem
+  have hw2_props : w2 ∈ Q ∧ ¬G.Adj t w2 := by simp only [W, mem_filter] at hw2_in_W; exact hw2_in_W
+  have hw3_props : w3 ∈ Q ∧ ¬G.Adj t w3 := by simp only [W, mem_filter] at hw3_in_W; exact hw3_in_W
+  have hw4_props : w4 ∈ Q ∧ ¬G.Adj t w4 := by simp only [W, mem_filter] at hw4_in_W; exact hw4_in_W
+
+  -- Q properties for wi
+  have hw1_Q_props := hQ_props w1 hw1_props.1
+  have hw2_Q_props := hQ_props w2 hw2_props.1
+  have hw3_Q_props := hQ_props w3 hw3_props.1
+  have hw4_Q_props := hQ_props w4 hw4_props.1
+
+  -- ═══════════════════════════════════════════════════════════════════════════
+  -- STEP 6c: Build the CariolaroSetup
   --
-  -- The proof requires extracting 4 elements from each of T and W,
-  -- then verifying all ~100 adjacency properties of CariolaroSetup.
+  -- NOTE: The current extraction is just 4 arbitrary elements from T and W.
+  -- To get the SPECIFIC 8-cycle labeling (w1~{s1,s2}, w2~{s2,s3}, etc.),
+  -- we would need to:
+  -- 1. Prove consecutive s's (s1,s2), (s2,s3), (s3,s4), (s4,s1) share W-neighbors
+  --    (using the five_cycle_structure argument from Cariolaro)
+  -- 2. Label w1 = the unique W shared by s1, s2, etc.
+  --
+  -- For now, we leave this as a sorry with the structure in place.
+  -- The key combinatorial insight is that the S-W bipartite graph being an 8-cycle
+  -- (forced by S_pair_share_at_most_one_W) aligns with the P 4-cycle structure.
+  -- ═══════════════════════════════════════════════════════════════════════════
+
+  -- TODO: Complete the specific 8-cycle labeling and verify all CariolaroSetup properties
+  -- This requires:
+  -- 1. Using five_cycle_structure to show adjacent p's have s's sharing W's
+  -- 2. Extracting the shared W's and relabeling w1, w2, w3, w4 appropriately
+  -- 3. Proving all ~100 adjacency properties of CariolaroSetup
   sorry
 
 /-- Existence of a CariolaroSetup for any counterexample graph. -/
