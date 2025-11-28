@@ -185,6 +185,8 @@ mm_keyword_char(0'{).  % ${
 mm_keyword_char(0'}).  % $}
 mm_keyword_char(0'=).  % $=
 mm_keyword_char(0'.).  % $.
+mm_keyword_char(0'[).  % $[ (include start)
+mm_keyword_char(0']).  % $] (include end)
 
 % Valid characters in tokens
 mm_token_char(C) :-
@@ -229,13 +231,58 @@ skip_comment(Codes, Result) :-
 % tokenize_mm_file(+Filename, -Tokens)
 % Read file and tokenize in one go - fully deterministic
 % Also validates: no non-ASCII chars, no nested comments, no dangling $, whitespace after keywords
+% Handles $[ filename $] includes by recursively tokenizing included files
 tokenize_mm_file(Filename, Tokens) :-
-    read_mm_file(Filename, Codes),
+    tokenize_mm_file_with_base(Filename, '', Tokens).
+
+% tokenize_mm_file_with_base(+Filename, +BaseDir, -Tokens)
+% Tokenize file, resolving includes relative to BaseDir
+tokenize_mm_file_with_base(Filename, BaseDir, Tokens) :-
+    % Resolve path relative to base directory if not absolute
+    resolve_path(Filename, BaseDir, FullPath),
+    % Get directory of current file for nested includes
+    file_directory_name(FullPath, CurrentDir),
+    read_mm_file(FullPath, Codes),
     validate_mm_chars(Codes),
     validate_no_nested_comments(Codes),
     validate_no_dangling_dollar(Codes),
     validate_keyword_whitespace(Codes),
-    tokenize_codes(Codes, Tokens).
+    tokenize_codes(Codes, RawTokens),
+    % Process includes (recursively)
+    process_includes(RawTokens, CurrentDir, Tokens).
+
+% resolve_path(+Filename, +BaseDir, -FullPath)
+% Resolve filename relative to base directory
+resolve_path(Filename, '', Filename) :- !.  % No base dir, use as-is
+resolve_path(Filename, _, Filename) :-
+    atom_codes(Filename, [0'/|_]), !.  % Absolute path, use as-is
+resolve_path(Filename, BaseDir, FullPath) :-
+    atomic_list_concat([BaseDir, '/', Filename], FullPath).
+
+% process_includes(+Tokens, +BaseDir, -ExpandedTokens)
+% Scan for $[ filename $] and replace with included file's tokens
+process_includes([], _, []) :- !.
+process_includes(['$['|Rest], BaseDir, ExpandedTokens) :-
+    !,
+    % Expect filename followed by $]
+    (   Rest = [IncludeFile, '$]'|AfterInclude]
+    ->  % Recursively tokenize the included file
+        (   catch(
+                tokenize_mm_file_with_base(IncludeFile, BaseDir, IncludedTokens),
+                Error,
+                (   format(user_error, 'Error including file ~w: ~w~n', [IncludeFile, Error]),
+                    throw(Error)
+                )
+            )
+        ->  % Continue processing rest of tokens
+            process_includes(AfterInclude, BaseDir, RestTokens),
+            append(IncludedTokens, RestTokens, ExpandedTokens)
+        )
+    ;   format(user_error, 'Error: Malformed include directive~n', []),
+        throw(error(malformed_include, _))
+    ).
+process_includes([Token|Rest], BaseDir, [Token|ExpandedRest]) :-
+    process_includes(Rest, BaseDir, ExpandedRest).
 
 % validate_mm_chars(+Codes)
 % Verify all characters are valid Metamath chars (ASCII printable + whitespace)
