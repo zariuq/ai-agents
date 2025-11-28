@@ -100,6 +100,17 @@
            (printif! (Processing a: $label))
            (add_a &kb $label (cons-atom $type $math)))))))
 
+;; Helper to handle proof verification result - pattern matching instead of case
+(= (handle-proof-result (Error $info $msg))
+   (progn
+     (println! "")
+     (println! "=== VERIFICATION FAILED ===")
+     (println! ("Error:" $info $msg))
+     (callPredicate (Predicate (halt 1)))))
+
+(= (handle-proof-result ())
+   ())
+
 (= (process-by-tag p $rest)
    (let ($label $rest2) (decons-atom $rest)
      (let ($type $rest3) (decons-atom $rest2)
@@ -109,15 +120,7 @@
              (printif! (Processing p: $label))
              (let $results (collapse (add_p &kb &stack &sp $label (cons-atom $type $math) $proof True))
                (let $result (if (== (size-atom $results) 0) () (car-atom $results))
-                   (case $result
-                 (((Error $info $msg)
-                    (progn
-                      (println! "")
-                      (println! "=== VERIFICATION FAILED ===")
-                      (println! ("Error:" $info $msg))
-                      (callPredicate halt)))
-                  (() ())))))))))))
-
+                 (handle-proof-result $result)))))))))
 
 (= (process-by-tag d $rest)
    (let ($vars $_) (decons-atom $rest)
