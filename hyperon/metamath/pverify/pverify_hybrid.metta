@@ -116,15 +116,16 @@
                       (println! "=== VERIFICATION FAILED ===")
                       (println! "Terminating verification.")
                       (println! ("On error:" $info $msg))
-                      $result)))
-                  ((ok) Empty))))))))))
+                      $result))
+                  (() Empty)))))))))))
 
 
 (= (process-by-tag d $rest)
    (let ($vars $_) (decons-atom $rest)
-     (progn
-       (println! (Processing d statement))
-       (add_d &kb $vars &fd))))
+     (let $level (get-state &fd)
+       (progn
+         (println! (Processing d statement at level $level))
+         (add_d &kb $vars $level)))))
 
 (= (process-by-tag open_frame $_)
    (progn
