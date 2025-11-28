@@ -1,0 +1,26 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const Power : set set
+axiom PowerE: !x:set.!y:set.y iIn Power x -> Subq y x
+const Sep : set (set prop) set
+axiom SepI: !x:set.!p:set prop.!y:set.y iIn x -> p y -> y iIn Sep x p
+lemma !x:set.!f:set set.(!y:set.y iIn Power x -> !z:set.z iIn Power x -> Subq y z -> Subq (f y) (f z)) -> Sep x (\y:set.!z:set.z iIn Power x -> Subq (f z) z -> y iIn z) iIn Power x -> f (Sep x \y:set.!z:set.z iIn Power x -> Subq (f z) z -> y iIn z) iIn Power x -> (!y:set.y iIn Power x -> Subq (f y) y -> Subq (Sep x \z:set.!w:set.w iIn Power x -> Subq (f w) w -> z iIn w) y) -> Subq (f (Sep x \y:set.!z:set.z iIn Power x -> Subq (f z) z -> y iIn z)) (Sep x \y:set.!z:set.z iIn Power x -> Subq (f z) z -> y iIn z) -> ?y:set.y iIn Power x & f y = y
+lemma !x:set.!f:set set.!y:set.!z:set.(!w:set.w iIn Power x -> !u:set.u iIn Power x -> Subq w u -> Subq (f w) (f u)) -> Sep x (\w:set.!u:set.u iIn Power x -> Subq (f u) u -> w iIn u) iIn Power x -> (!w:set.w iIn Power x -> Subq (f w) w -> Subq (Sep x \u:set.!v:set.v iIn Power x -> Subq (f v) v -> u iIn v) w) -> y iIn f (Sep x \w:set.!u:set.u iIn Power x -> Subq (f u) u -> w iIn u) -> z iIn Power x -> Subq (f z) z -> Subq (Sep x \w:set.!u:set.u iIn Power x -> Subq (f u) u -> w iIn u) z -> y iIn z
+var x:set
+var f:set set
+hyp !y:set.y iIn Power x -> !z:set.z iIn Power x -> Subq y z -> Subq (f y) (f z)
+hyp Sep x (\y:set.!z:set.z iIn Power x -> Subq (f z) z -> y iIn z) iIn Power x
+hyp f (Sep x \y:set.!z:set.z iIn Power x -> Subq (f z) z -> y iIn z) iIn Power x
+claim (!y:set.y iIn Power x -> Subq (f y) y -> Subq (Sep x \z:set.!w:set.w iIn Power x -> Subq (f w) w -> z iIn w) y) -> ?y:set.y iIn Power x & f y = y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

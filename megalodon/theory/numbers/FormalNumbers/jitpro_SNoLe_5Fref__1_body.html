@@ -1,0 +1,20 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const PNoLe : set (set prop) set (set prop) prop
+const SNoLev : set set
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term SNoLe = \x:set.\y:set.PNoLe (SNoLev x) (\z:set.z iIn x) (SNoLev y) \z:set.z iIn y
+term <= = SNoLe
+infix <= 2020 2020
+axiom PNoLe_ref: !x:set.!p:set prop.PNoLe x p x p
+claim !x:set.x <= x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

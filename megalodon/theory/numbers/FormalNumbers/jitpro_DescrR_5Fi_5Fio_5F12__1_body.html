@@ -1,0 +1,18 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Descr_Vo1 : ((set prop) prop) set prop
+const Eps_i : (set prop) set
+term DescrR_i_io_1 = \P:set (set prop) prop.Eps_i \x:set.(?p:set prop.P x p) & !p:set prop.!q:set prop.P x p -> P x q -> p = q
+term DescrR_i_io_2 = \P:set (set prop) prop.Descr_Vo1 (P (DescrR_i_io_1 P))
+axiom Descr_Vo1_prop: !P:(set prop) prop.(?p:set prop.P p) -> (!p:set prop.!q:set prop.P p -> P q -> p = q) -> P (Descr_Vo1 P)
+var P:set (set prop) prop
+hyp ?x:set.(?p:set prop.P x p) & !p:set prop.!q:set prop.P x p -> P x q -> p = q
+claim (?p:set prop.P (DescrR_i_io_1 P) p) & (!p:set prop.!q:set prop.P (DescrR_i_io_1 P) p -> P (DescrR_i_io_1 P) q -> p = q) -> P (DescrR_i_io_1 P) (DescrR_i_io_2 P)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

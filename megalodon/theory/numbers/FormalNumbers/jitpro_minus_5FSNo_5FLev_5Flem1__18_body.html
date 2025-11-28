@@ -1,0 +1,39 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+term nIn = \x:set.\y:set.~ x iIn y
+const ordsucc : set set
+axiom ordinal_ordsucc_In_eq: !x:set.!y:set.ordinal x -> y iIn x -> ordsucc y iIn x | x = ordsucc y
+const SNoS_ : set set
+const SNoLev : set set
+const minus_SNo : set set
+term - = minus_SNo
+const SNo : set prop
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.TransSet x -> (!v:set.v iIn x -> !x2:set.x2 iIn SNoS_ v -> Subq (SNoLev - x2) (SNoLev x2)) -> SNoLev y iIn x -> ordinal (SNoLev y) -> z iIn ordsucc (SNoLev w) -> w = - u -> SNo u -> SNoLev u iIn SNoLev y -> u iIn SNoS_ (ordsucc (SNoLev u)) -> ordsucc (SNoLev u) iIn x -> z iIn SNoLev y
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+hyp TransSet x
+hyp !v:set.v iIn x -> !x2:set.x2 iIn SNoS_ v -> Subq (SNoLev - x2) (SNoLev x2)
+hyp SNoLev y iIn x
+hyp ordinal (SNoLev y)
+hyp z iIn ordsucc (SNoLev w)
+hyp w = - u
+hyp SNo u
+hyp SNoLev u iIn SNoLev y
+claim u iIn SNoS_ (ordsucc (SNoLev u)) -> z iIn SNoLev y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

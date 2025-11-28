@@ -1,0 +1,36 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+const In_rec_ii : (set (set set set) set set) set set set
+const If_ii : prop (set set) (set set) set set
+const If_i : prop set set set
+const SNoS_ : set set
+const ordsucc : set set
+const SNoLev : set set
+const Eps_i : (set prop) set
+term SNo_rec_i = \P:set (set set) set.\x:set.In_rec_ii (\y:set.\g:set set set.If_ii (ordinal y) (\z:set.If_i (z iIn SNoS_ (ordsucc y)) (P z \w:set.g (SNoLev w) w) (Eps_i \w:set.True)) \z:set.Eps_i \w:set.True) (SNoLev x) x
+term nIn = \x:set.\y:set.~ x iIn y
+axiom ordinal_ordsucc: !x:set.ordinal x -> ordinal (ordsucc x)
+axiom If_i_1: !P:prop.!x:set.!y:set.P -> If_i P x y = x
+axiom If_i_0: !P:prop.!x:set.!y:set.~ P -> If_i P x y = y
+axiom xm: !P:prop.P | ~ P
+axiom func_ext: !f:set set.!f2:set set.(!x:set.f x = f2 x) -> f = f2
+axiom If_ii_1: !P:prop.!f:set set.!f2:set set.P -> If_ii P f f2 = f
+axiom If_ii_0: !P:prop.!f:set set.!f2:set set.~ P -> If_ii P f f2 = f2
+const SNo : set prop
+lemma !P:set (set set) set.!x:set.(!y:set.SNo y -> !f:set set.!f2:set set.(!z:set.z iIn SNoS_ (SNoLev y) -> f z = f2 z) -> P y f = P y f2) -> SNo x -> (!y:set.!g:set set set.!h:set set set.(!z:set.z iIn y -> g z = h z) -> If_ii (ordinal y) (\z:set.If_i (z iIn SNoS_ (ordsucc y)) (P z \w:set.g (SNoLev w) w) (Eps_i \w:set.True)) (\z:set.Eps_i \w:set.True) = If_ii (ordinal y) (\z:set.If_i (z iIn SNoS_ (ordsucc y)) (P z \w:set.h (SNoLev w) w) (Eps_i \w:set.True)) \z:set.Eps_i \w:set.True) -> In_rec_ii (\y:set.\g:set set set.If_ii (ordinal y) (\z:set.If_i (z iIn SNoS_ (ordsucc y)) (P z \w:set.g (SNoLev w) w) (Eps_i \w:set.True)) \z:set.Eps_i \w:set.True) (SNoLev x) x = P x \y:set.In_rec_ii (\z:set.\g:set set set.If_ii (ordinal z) (\w:set.If_i (w iIn SNoS_ (ordsucc z)) (P w \u:set.g (SNoLev u) u) (Eps_i \u:set.True)) \w:set.Eps_i \u:set.True) (SNoLev y) y
+lemma !P:set (set set) set.!x:set.!g:set set set.!h:set set set.!y:set.(!z:set.SNo z -> !f:set set.!f2:set set.(!w:set.w iIn SNoS_ (SNoLev z) -> f w = f2 w) -> P z f = P z f2) -> (!z:set.z iIn x -> g z = h z) -> ordinal x -> y iIn SNoS_ (ordsucc x) -> ordinal (ordsucc x) -> P y (\z:set.g (SNoLev z) z) = P y \z:set.h (SNoLev z) z
+claim !P:set (set set) set.(!x:set.SNo x -> !f:set set.!f2:set set.(!y:set.y iIn SNoS_ (SNoLev x) -> f y = f2 y) -> P x f = P x f2) -> !x:set.SNo x -> SNo_rec_i P x = P x (SNo_rec_i P)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

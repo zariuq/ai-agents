@@ -1,0 +1,41 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term nIn = \x:set.\y:set.~ x iIn y
+const minus_SNo : set set
+term - = minus_SNo
+axiom minus_SNo_invol: !x:set.SNo x -> - - x = x
+const Repl : set (set set) set
+axiom Repl_invol_eq: !p:set prop.!f:set set.(!x:set.p x -> f (f x) = x) -> !x:set.(!y:set.y iIn x -> p y) -> Repl (Repl x f) f = x
+const SNoCut : set set set
+const SNoLev : set set
+lemma !x:set.!y:set.!z:set.SNo x -> (!w:set.w iIn y -> SNo w) -> (!w:set.w iIn z -> SNo w) -> x = SNoCut y z -> SNo (SNoCut (Repl z minus_SNo) (Repl y minus_SNo)) -> SNoLev (SNoCut (Repl z \w:set.- w) (Repl y \w:set.- w)) iIn SNoLev - x -> - SNoCut (Repl z minus_SNo) (Repl y minus_SNo) = SNoCut (Repl (Repl y minus_SNo) minus_SNo) (Repl (Repl z minus_SNo) minus_SNo) -> Repl (Repl y minus_SNo) minus_SNo != y
+const SNoS_ : set set
+var x:set
+var y:set
+var z:set
+hyp SNo x
+hyp !w:set.w iIn SNoS_ (SNoLev x) -> !u:set.!v:set.SNoCutP u v -> w = SNoCut u v -> - w = SNoCut (Repl v minus_SNo) (Repl u minus_SNo)
+hyp !w:set.w iIn y -> SNo w
+hyp !w:set.w iIn z -> SNo w
+hyp x = SNoCut y z
+hyp SNoCutP (Repl z minus_SNo) (Repl y minus_SNo)
+hyp SNo (SNoCut (Repl z minus_SNo) (Repl y minus_SNo))
+hyp SNoLev (SNoCut (Repl z \w:set.- w) (Repl y \w:set.- w)) iIn SNoLev - x
+hyp SNoCut (Repl z minus_SNo) (Repl y minus_SNo) iIn SNoS_ (SNoLev x)
+claim - SNoCut (Repl z minus_SNo) (Repl y minus_SNo) != SNoCut (Repl (Repl y minus_SNo) minus_SNo) (Repl (Repl z minus_SNo) minus_SNo)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,42 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_SNo_com: !x:set.!y:set.SNo x -> SNo y -> x + y = y + x
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoLev : set set
+const SNoL : set set
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const SNoR : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+var x:set
+var y:set
+var z:set
+var w:set
+hyp SNo y
+hyp SNo w
+hyp w < y
+hyp SNo (x * y)
+hyp SNo (z * y)
+hyp SNo (x * w)
+hyp !u:set.u iIn SNoL x -> !v:set.v iIn SNoR w -> (x * w + u * v) < u * w + x * v
+hyp SNo (z * w)
+hyp z iIn SNoL x
+hyp SNoLev y iIn SNoLev w
+claim y iIn SNoR w -> (z * y + x * w) < x * y + z * w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

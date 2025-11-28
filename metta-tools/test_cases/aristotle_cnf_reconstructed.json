@@ -1,0 +1,102 @@
+{
+  "metadata": {},
+  "comments": [
+    "-----------------------------------------------------------------------------",
+    "-----------------------------------------------------------------------------",
+    "-----------------------------------------------------------------------------"
+  ],
+  "formulas": [
+    {
+      "name": "i_0_4",
+      "role": "negated_conjecture",
+      "formula": [
+        "clause",
+        [
+          "lit",
+          [
+            "greek",
+            [
+              "const",
+              "esk1_0"
+            ]
+          ]
+        ]
+      ],
+      "type": "cnf"
+    },
+    {
+      "name": "i_0_3",
+      "role": "negated_conjecture",
+      "formula": [
+        "clause",
+        [
+          "lit-neg",
+          [
+            "mortal",
+            [
+              "const",
+              "esk1_0"
+            ]
+          ]
+        ]
+      ],
+      "type": "cnf"
+    },
+    {
+      "name": "i_0_2",
+      "role": "plain",
+      "formula": [
+        "clause",
+        [
+          "lit",
+          [
+            "man",
+            [
+              "var",
+              "X1"
+            ]
+          ]
+        ],
+        [
+          "lit-neg",
+          [
+            "greek",
+            [
+              "var",
+              "X1"
+            ]
+          ]
+        ]
+      ],
+      "type": "cnf"
+    },
+    {
+      "name": "i_0_1",
+      "role": "plain",
+      "formula": [
+        "clause",
+        [
+          "lit",
+          [
+            "mortal",
+            [
+              "var",
+              "X1"
+            ]
+          ]
+        ],
+        [
+          "lit-neg",
+          [
+            "man",
+            [
+              "var",
+              "X1"
+            ]
+          ]
+        ]
+      ],
+      "type": "cnf"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const PNo_upc : (set (set prop) prop) set (set prop) prop
+const PNoLt : set (set prop) set (set prop) prop
+term PNo_rel_strict_lowerbd = \P:set (set prop) prop.\x:set.\p:set prop.!y:set.y iIn x -> !q:set prop.PNo_upc P y q -> PNoLt x p y q
+const PNo_downc : (set (set prop) prop) set (set prop) prop
+term PNo_rel_strict_upperbd = \P:set (set prop) prop.\x:set.\p:set prop.!y:set.y iIn x -> !q:set prop.PNo_downc P y q -> PNoLt y q x p
+term PNo_rel_strict_imv = \P:set (set prop) prop.\Q:set (set prop) prop.\x:set.\p:set prop.PNo_rel_strict_upperbd P x p & PNo_rel_strict_lowerbd Q x p
+const ordsucc : set set
+term PNo_rel_strict_split_imv = \P:set (set prop) prop.\Q:set (set prop) prop.\x:set.\p:set prop.PNo_rel_strict_imv P Q (ordsucc x) (\y:set.p y & y != x) & PNo_rel_strict_imv P Q (ordsucc x) \y:set.p y | y = x
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term PNo_rel_strict_uniq_imv = \P:set (set prop) prop.\Q:set (set prop) prop.\x:set.\p:set prop.PNo_rel_strict_imv P Q x p & !q:set prop.PNo_rel_strict_imv P Q x q -> PNoEq_ x p q
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+term PNoLt_pwise = \P:set (set prop) prop.\Q:set (set prop) prop.!x:set.ordinal x -> !p:set prop.P x p -> !y:set.ordinal y -> !q:set prop.Q y q -> PNoLt x p y q
+term nIn = \x:set.\y:set.~ x iIn y
+term PNoLt_ = \x:set.\p:set prop.\q:set prop.?y:set.y iIn x & (PNoEq_ y p q & ~ p y & q y)
+term PNoLe = \x:set.\p:set prop.\y:set.\q:set prop.PNoLt x p y q | x = y & PNoEq_ x p q
+axiom ordinal_Hered: !x:set.ordinal x -> !y:set.y iIn x -> ordinal y
+axiom PNoEq_sym_: !x:set.!p:set prop.!q:set prop.PNoEq_ x p q -> PNoEq_ x q p
+axiom PNoEq_tra_: !x:set.!p:set prop.!q:set prop.!p2:set prop.PNoEq_ x p q -> PNoEq_ x q p2 -> PNoEq_ x p p2
+axiom FalseE: ~ False
+axiom ordsuccI2: !x:set.x iIn ordsucc x
+axiom In_no2cycle: !x:set.!y:set.x iIn y -> ~ y iIn x
+const binintersect : set set set
+axiom PNoLtE: !x:set.!y:set.!p:set prop.!q:set prop.PNoLt x p y q -> !P:prop.(PNoLt_ (binintersect x y) p q -> P) -> (x iIn y -> PNoEq_ x p q -> q x -> P) -> (y iIn x -> PNoEq_ y p q -> ~ p y -> P) -> P
+axiom In_irref: !x:set.nIn x x
+axiom PNoLt_trichotomy_or: !x:set.!y:set.!p:set prop.!q:set prop.ordinal x -> ordinal y -> PNoLt x p y q | x = y & PNoEq_ x p q | PNoLt y q x p
+axiom ordsuccE: !x:set.!y:set.y iIn ordsucc x -> y iIn x | y = x
+lemma !P:set (set prop) prop.!x:set.!p:set prop.!y:set.!q:set prop.ordinal x -> (!z:set.z iIn x -> !p2:set prop.PNo_upc P z p2 -> PNoLt x p z p2) -> PNoEq_ x p (\z:set.p z | z = x) -> PNo_upc P y q -> y iIn x -> PNoLt x p y q -> PNoLt (ordsucc x) (\z:set.p z | z = x) y q
+lemma !P:set (set prop) prop.!x:set.!p:set prop.!y:set.!q:set prop.!z:set.ordinal x -> (!w:set.w iIn x -> !p2:set prop.PNo_upc P w p2 -> PNoLt x p w p2) -> PNoEq_ x p (\w:set.p w | w = x) -> PNo_upc P y q -> ordinal y -> y = x -> z iIn x -> PNoEq_ z q (\w:set.p w | w = x) -> ~ q z -> p z | z = x -> ordinal z -> PNoLt (ordsucc x) (\w:set.p w | w = x) x q
+var P:set (set prop) prop
+var x:set
+var p:set prop
+var y:set
+var q:set prop
+hyp ordinal x
+hyp ordinal (ordsucc x)
+hyp binintersect x (ordsucc x) = x
+hyp !z:set.z iIn x -> !p2:set prop.PNo_upc P z p2 -> PNoLt x p z p2
+hyp PNoEq_ x p \z:set.p z | z = x
+hyp !p2:set prop.PNo_upc P x p2 -> ~ PNoEq_ x p p2
+hyp y iIn ordsucc x
+hyp PNo_upc P y q
+claim ordinal y -> PNoLt (ordsucc x) (\z:set.p z | z = x) y q
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

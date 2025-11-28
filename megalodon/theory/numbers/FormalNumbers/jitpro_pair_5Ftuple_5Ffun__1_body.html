@@ -1,0 +1,18 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const setsum : set set set
+const Sigma : set (set set) set
+const ordsucc : set set
+const Empty : set
+const If_i : prop set set set
+axiom tuple_pair: !x:set.!y:set.setsum x y = Sigma (ordsucc (ordsucc Empty)) \z:set.If_i (z = Empty) x y
+axiom func_ext: !f:set set.!f2:set set.(!x:set.f x = f2 x) -> f = f2
+claim setsum = \x:set.\y:set.Sigma (ordsucc (ordsucc Empty)) \z:set.If_i (z = Empty) x y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

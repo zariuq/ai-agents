@@ -1,0 +1,3 @@
+cnf(i_0_2, plain, (f(b)=f(a))).
+cnf(i_0_3, negated_conjecture, (b!=a)).
+cnf(i_0_1, plain, (X1=X2|f(X1)!=f(X2))).

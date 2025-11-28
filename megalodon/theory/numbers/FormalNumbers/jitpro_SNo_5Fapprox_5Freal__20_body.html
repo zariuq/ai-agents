@@ -1,0 +1,73 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const omega : set
+const ordsucc : set set
+axiom omega_ordsucc: !x:set.x iIn omega -> ordsucc x iIn omega
+const ap : set set set
+axiom ap_Pi: !x:set.!f:set set.!y:set.!z:set.y iIn Pi x f -> z iIn x -> ap y z iIn f z
+const SNoS_ : set set
+const real : set
+axiom SNoS_omega_real: Subq (SNoS_ omega) real
+const SNo : set prop
+const SNoLev : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const minus_SNo : set set
+term - = minus_SNo
+const abs_SNo : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const eps_ : set set
+axiom real_E: !x:set.x iIn real -> !P:prop.(SNo x -> SNoLev x iIn ordsucc omega -> x iIn SNoS_ (ordsucc omega) -> - omega < x -> x < omega -> (!y:set.y iIn SNoS_ omega -> (!z:set.z iIn omega -> abs_SNo (y + - x) < eps_ z) -> y = x) -> (!y:set.y iIn omega -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + eps_ y)) -> P) -> P
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+axiom SNoLtLe_or: !x:set.!y:set.SNo x -> SNo y -> x < y | y <= x
+const Repl : set (set set) set
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+const SNoCut : set set set
+const SNoEq_ : set set set prop
+lemma !x:set.!y:set.!z:set.!w:set.SNo x -> z iIn setexp (SNoS_ omega) omega -> (!u:set.u iIn omega -> x < ap z u) -> (!u:set.u iIn omega -> !v:set.v iIn u -> ap z u < ap z v) -> x = SNoCut (Repl omega (ap y)) (Repl omega (ap z)) -> SNo - x -> (!u:set.u iIn omega -> SNo (ap z u)) -> (!u:set.SNo u -> (!v:set.v iIn Repl omega (ap y) -> v < u) -> (!v:set.v iIn Repl omega (ap z) -> u < v) -> Subq (SNoLev (SNoCut (Repl omega (ap y)) (Repl omega (ap z)))) (SNoLev u) & SNoEq_ (SNoLev (SNoCut (Repl omega (ap y)) (Repl omega (ap z)))) (SNoCut (Repl omega (ap y)) (Repl omega (ap z))) u) -> SNoLev x = omega -> w iIn SNoS_ omega -> (!u:set.u iIn omega -> abs_SNo (w + - x) < eps_ u) -> SNoLev w iIn omega -> SNo w -> SNo (w + - x) -> (!u:set.u iIn Repl omega (ap y) -> u < w) -> (!u:set.u iIn Repl omega (ap z) -> w < u) -> w = x
+lemma !x:set.!y:set.!z:set.!w:set.SNo x -> (!u:set.u iIn omega -> x < ap y u) -> (!u:set.u iIn omega -> !v:set.v iIn u -> ap y u < ap y v) -> SNo - x -> (!u:set.u iIn omega -> SNo (ap y u)) -> z iIn SNoS_ omega -> (!u:set.u iIn omega -> abs_SNo (z + - x) < eps_ u) -> SNo z -> SNo (z + - x) -> w iIn omega -> ap y w <= z -> (!u:set.u iIn SNoS_ omega -> (!v:set.v iIn omega -> abs_SNo (u + - ap y (ordsucc w)) < eps_ v) -> u = ap y (ordsucc w)) -> SNo (ap y (ordsucc w)) -> z < ap y w
+var x:set
+var y:set
+var z:set
+var w:set
+hyp SNo x
+hyp y iIn setexp (SNoS_ omega) omega
+hyp z iIn setexp (SNoS_ omega) omega
+hyp !u:set.u iIn omega -> ap y u < x
+hyp !u:set.u iIn omega -> !v:set.v iIn u -> ap y v < ap y u
+hyp !u:set.u iIn omega -> x < ap z u
+hyp !u:set.u iIn omega -> !v:set.v iIn u -> ap z u < ap z v
+hyp x = SNoCut (Repl omega (ap y)) (Repl omega (ap z))
+hyp SNo - x
+hyp !u:set.u iIn omega -> SNo (ap y u)
+hyp !u:set.u iIn omega -> SNo (ap z u)
+hyp !u:set.SNo u -> (!v:set.v iIn Repl omega (ap y) -> v < u) -> (!v:set.v iIn Repl omega (ap z) -> u < v) -> Subq (SNoLev (SNoCut (Repl omega (ap y)) (Repl omega (ap z)))) (SNoLev u) & SNoEq_ (SNoLev (SNoCut (Repl omega (ap y)) (Repl omega (ap z)))) (SNoCut (Repl omega (ap y)) (Repl omega (ap z))) u
+hyp SNoLev x = omega
+hyp w iIn SNoS_ omega
+hyp !u:set.u iIn omega -> abs_SNo (w + - x) < eps_ u
+hyp SNoLev w iIn omega
+hyp SNo w
+hyp SNo - w
+hyp SNo (x + - w)
+hyp SNo (w + - x)
+claim (!u:set.u iIn Repl omega (ap y) -> u < w) -> w = x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,35 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const omega : set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_SNo_In_omega: !x:set.x iIn omega -> !y:set.y iIn omega -> x + y iIn omega
+const int : set
+axiom Subq_omega_int: Subq omega int
+const nat_p : set prop
+axiom omega_nat_p: !x:set.x iIn omega -> nat_p x
+const ordinal : set prop
+axiom nat_p_ordinal: !x:set.nat_p x -> ordinal x
+const SNo : set prop
+axiom ordinal_SNo: !x:set.ordinal x -> SNo x
+const minus_SNo : set set
+term - = minus_SNo
+axiom SNo_minus_SNo: !x:set.SNo x -> SNo - x
+axiom int_add_SNo_lem: !x:set.x iIn omega -> !y:set.nat_p y -> - x + y iIn int
+axiom add_SNo_com: !x:set.!y:set.SNo x -> SNo y -> x + y = y + x
+axiom int_SNo_cases: !p:set prop.(!x:set.x iIn omega -> p x) -> (!x:set.x iIn omega -> p - x) -> !x:set.x iIn int -> p x
+lemma !x:set.!y:set.x iIn omega -> y iIn omega -> SNo x -> - x + - y iIn int
+claim !x:set.x iIn int -> !y:set.y iIn int -> x + y iIn int
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

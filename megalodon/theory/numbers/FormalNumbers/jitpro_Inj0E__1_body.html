@@ -1,0 +1,18 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Repl : set (set set) set
+const Inj1 : set set
+term Inj0 = \x:set.Repl x Inj1
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+axiom ReplE: !x:set.!f:set set.!y:set.y iIn Repl x f -> ?z:set.z iIn x & y = f z
+claim !x:set.!y:set.y iIn Inj0 x -> ?z:set.z iIn x & y = Inj1 z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

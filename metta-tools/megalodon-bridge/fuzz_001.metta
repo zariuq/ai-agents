@@ -1,0 +1,5 @@
+(Parameter bar23 set)
+(Definition Q38 set (forall ((P11 prop)) Q9))
+(Definition Q42 prop ((-> ((forall ((P10 prop)) foo45) (-> x27 B58)) (z1 (A46 z43))) A20))
+(Definition foo86 set y32)
+(Parameter x66 set)

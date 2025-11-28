@@ -1,0 +1,57 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const omega : set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const SNoCut : set set set
+const Repl : set (set set) set
+const ap : set set set
+const SNo : set prop
+const SNoCutP : set set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const minus_SNo : set set
+term - = minus_SNo
+const eps_ : set set
+const SNoS_ : set set
+const abs_SNo : set set
+const real : set
+var x:set
+var P:prop
+var y:set
+var z:set
+hyp x iIn real
+hyp !w:set.w iIn setexp (SNoS_ omega) omega -> !u:set.u iIn setexp (SNoS_ omega) omega -> (!v:set.v iIn omega -> ap w v < x) -> (!v:set.v iIn omega -> x < ap w v + eps_ v) -> (!v:set.v iIn omega -> !x2:set.x2 iIn v -> ap w x2 < ap w v) -> (!v:set.v iIn omega -> (ap u v + - eps_ v) < x) -> (!v:set.v iIn omega -> x < ap u v) -> (!v:set.v iIn omega -> !x2:set.x2 iIn v -> ap u v < ap u x2) -> SNoCutP (Repl omega (ap w)) (Repl omega (ap u)) -> x = SNoCut (Repl omega (ap w)) (Repl omega (ap u)) -> P
+hyp SNo x
+hyp !w:set.w iIn SNoS_ omega -> (!u:set.u iIn omega -> abs_SNo (w + - x) < eps_ u) -> w = x
+hyp y iIn setexp (SNoS_ omega) omega
+hyp !w:set.w iIn omega -> ap y w < x & x < ap y w + eps_ w & !u:set.u iIn w -> ap y u < ap y w
+hyp z iIn setexp (SNoS_ omega) omega
+hyp !w:set.w iIn omega -> SNo (ap y w)
+hyp !w:set.w iIn omega -> SNo (ap z w)
+hyp !w:set.w iIn omega -> ap y w < x
+hyp !w:set.w iIn omega -> x < ap y w + eps_ w
+hyp !w:set.w iIn omega -> !u:set.u iIn w -> ap y u < ap y w
+hyp !w:set.w iIn omega -> (ap z w + - eps_ w) < x
+hyp !w:set.w iIn omega -> x < ap z w
+hyp !w:set.w iIn omega -> !u:set.u iIn w -> ap z w < ap z u
+hyp SNoCutP (Repl omega (ap y)) (Repl omega (ap z))
+hyp SNo (SNoCut (Repl omega (ap y)) (Repl omega (ap z)))
+hyp !w:set.w iIn omega -> ap y w < SNoCut (Repl omega (ap y)) (Repl omega (ap z))
+hyp !w:set.w iIn omega -> SNoCut (Repl omega (ap y)) (Repl omega (ap z)) < ap z w
+claim x = SNoCut (Repl omega (ap y)) (Repl omega (ap z)) -> P
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

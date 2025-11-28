@@ -1,0 +1,24 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const ordsucc : set set
+const Empty : set
+const Sing : set set
+axiom Subq_1_Sing0: Subq (ordsucc Empty) (Sing Empty)
+axiom SingE: !x:set.!y:set.y iIn Sing x -> y = x
+const UPair : set set set
+axiom UPairI2: !x:set.!y:set.y iIn UPair x y
+axiom ordsuccE: !x:set.!y:set.y iIn ordsucc x -> y iIn x | y = x
+lemma !x:set.x iIn ordsucc Empty -> x = Empty -> x iIn UPair Empty (ordsucc Empty)
+claim !x:set.x iIn ordsucc (ordsucc Empty) -> x iIn UPair Empty (ordsucc Empty)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

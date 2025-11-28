@@ -1,0 +1,93 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const Empty : set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const minus_SNo : set set
+term - = minus_SNo
+axiom SNoLt_minus_pos: !x:set.!y:set.SNo x -> SNo y -> x < y -> Empty < y + - x
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom SNo_mul_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x * y)
+const omega : set
+const eps_ : set set
+axiom SNo_eps_pos: !x:set.x iIn omega -> Empty < eps_ x
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+axiom SNoLtLe: !x:set.!y:set.x < y -> x <= y
+axiom nonneg_mul_SNo_Le2: !x:set.!y:set.!z:set.!w:set.SNo x -> SNo y -> SNo z -> SNo w -> Empty <= x -> Empty <= y -> x <= z -> y <= w -> x * y <= z * w
+axiom add_SNo_Le1: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x <= z -> (x + y) <= z + y
+axiom SNo_add_SNo_3: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> SNo (x + y + z)
+axiom add_SNo_Le2: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> y <= z -> (x + y) <= x + z
+axiom SNoLe_ref: !x:set.x <= x
+axiom add_SNo_0R: !x:set.SNo x -> x + Empty = x
+axiom add_SNo_minus_SNo_linv: !x:set.SNo x -> - x + x = Empty
+axiom add_SNo_minus_SNo_prop5: !x:set.!y:set.!z:set.!w:set.SNo x -> SNo y -> SNo z -> SNo w -> (x + y + - z) + z + w = x + y + w
+axiom SNoLe_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x <= y -> y <= z -> x <= z
+axiom add_SNo_com: !x:set.!y:set.SNo x -> SNo y -> x + y = y + x
+axiom add_SNo_assoc: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x + y + z = (x + y) + z
+axiom add_SNo_assoc_4: !x:set.!y:set.!z:set.!w:set.SNo x -> SNo y -> SNo z -> SNo w -> x + y + z + w = (x + y + z) + w
+axiom SNo_foil_mm: !x:set.!y:set.!z:set.!w:set.SNo x -> SNo y -> SNo z -> SNo w -> (x + - y) * (z + - w) = x * z + - x * w + - y * z + y * w
+axiom mul_SNo_eps_eps_add_SNo: !x:set.x iIn omega -> !y:set.y iIn omega -> eps_ x * eps_ y = eps_ (x + y)
+axiom add_SNo_minus_Le2b: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> (z + y) <= x -> z <= x + - y
+const abs_SNo : set set
+axiom pos_abs_SNo: !x:set.Empty < x -> abs_SNo x = x
+axiom abs_SNo_dist_swap: !x:set.!y:set.SNo x -> SNo y -> abs_SNo (x + - y) = abs_SNo (y + - x)
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.!x2:set.SNo x -> SNo y -> SNo (x * y) -> SNo - x * y -> SNo z -> z < x * y -> SNo w -> SNo u -> (z + w * u) <= w * y + x * u -> SNo (w * u) -> SNo (x * u) -> SNo - x * u -> SNo (w * y) -> SNo - w * y -> SNo (x + - w) -> SNo (y + - u) -> v iIn omega -> eps_ v <= x + - w -> x2 iIn omega -> eps_ x2 <= y + - u -> SNo (eps_ v) -> SNo (eps_ x2) -> SNo (eps_ (v + x2)) -> SNo (eps_ v * eps_ x2) -> abs_SNo (z + - x * y) < eps_ (v + x2) -> ~ eps_ (v + x2) <= abs_SNo (z + - x * y)
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+var x2:set
+hyp SNo x
+hyp SNo y
+hyp SNo (x * y)
+hyp SNo - x * y
+hyp !y2:set.y2 iIn omega -> abs_SNo (z + - x * y) < eps_ y2
+hyp SNo z
+hyp z < x * y
+hyp SNo w
+hyp SNo u
+hyp (z + w * u) <= w * y + x * u
+hyp SNo (w * u)
+hyp SNo (x * u)
+hyp SNo - x * u
+hyp SNo (w * y)
+hyp SNo - w * y
+hyp SNo (x + - w)
+hyp SNo (y + - u)
+hyp v iIn omega
+hyp eps_ v <= x + - w
+hyp x2 iIn omega
+hyp eps_ x2 <= y + - u
+hyp SNo (eps_ v)
+hyp SNo (eps_ x2)
+hyp SNo (eps_ (v + x2))
+hyp SNo (eps_ v * eps_ x2)
+claim ~ abs_SNo (z + - x * y) < eps_ (v + x2)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

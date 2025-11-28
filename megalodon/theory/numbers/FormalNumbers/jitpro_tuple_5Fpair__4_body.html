@@ -1,0 +1,28 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const ordsucc : set set
+const Empty : set
+const UPair : set set set
+axiom Subq_2_UPair01: Subq (ordsucc (ordsucc Empty)) (UPair Empty (ordsucc Empty))
+axiom exandE_i: !p:set prop.!q:set prop.(?x:set.p x & q x) -> !P:prop.(!x:set.p x -> q x -> P) -> P
+const If_i : prop set set set
+const setsum : set set set
+lemma !x:set.!y:set.!z:set.!w:set.z iIn ordsucc (ordsucc Empty) -> w iIn If_i (z = Empty) x y -> z iIn UPair Empty (ordsucc Empty) -> setsum z w iIn setsum x y
+const Sigma : set (set set) set
+var x:set
+var y:set
+var z:set
+hyp z iIn Sigma (ordsucc (ordsucc Empty)) \w:set.If_i (w = Empty) x y
+claim (?w:set.w iIn ordsucc (ordsucc Empty) & ?u:set.u iIn If_i (w = Empty) x y & z = setsum w u) -> z iIn setsum x y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

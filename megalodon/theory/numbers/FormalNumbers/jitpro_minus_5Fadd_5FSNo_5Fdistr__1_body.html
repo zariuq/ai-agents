@@ -1,0 +1,27 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const minus_SNo : set set
+term - = minus_SNo
+axiom SNo_minus_SNo: !x:set.SNo x -> SNo - x
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+axiom add_SNo_cancel_L: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x + y = x + z -> y = z
+var x:set
+var y:set
+hyp SNo x
+hyp SNo y
+hyp SNo - x
+hyp SNo - y
+hyp SNo (x + y)
+claim (x + y) + - (x + y) = (x + y) + - x + - y -> - (x + y) = - x + - y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

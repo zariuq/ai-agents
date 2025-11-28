@@ -1,0 +1,83 @@
+{
+  "metadata": {},
+  "comments": [
+    "Simple propositional test for resolution",
+    "Should derive empty clause (UNSAT)",
+    "These four clauses are contradictory",
+    "Resolution should find empty clause"
+  ],
+  "formulas": [
+    {
+      "name": "clause1",
+      "role": "axiom",
+      "formula": [
+        "or",
+        [
+          "atom",
+          "p"
+        ],
+        [
+          "atom",
+          "q"
+        ]
+      ]
+    },
+    {
+      "name": "clause2",
+      "role": "axiom",
+      "formula": [
+        "or",
+        [
+          "not",
+          [
+            "atom",
+            "p"
+          ]
+        ],
+        [
+          "atom",
+          "q"
+        ]
+      ]
+    },
+    {
+      "name": "clause3",
+      "role": "axiom",
+      "formula": [
+        "or",
+        [
+          "atom",
+          "p"
+        ],
+        [
+          "not",
+          [
+            "atom",
+            "q"
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "clause4",
+      "role": "axiom",
+      "formula": [
+        "or",
+        [
+          "not",
+          [
+            "atom",
+            "p"
+          ]
+        ],
+        [
+          "not",
+          [
+            "atom",
+            "q"
+          ]
+        ]
+      ]
+    }
+  ]
+}

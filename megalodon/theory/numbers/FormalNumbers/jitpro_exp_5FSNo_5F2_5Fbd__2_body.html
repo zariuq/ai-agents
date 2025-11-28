@@ -1,0 +1,25 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const ordsucc : set set
+const Empty : set
+axiom SNo_2: SNo (ordsucc (ordsucc Empty))
+const nat_p : set prop
+const exp_SNo_nat : set set set
+axiom SNo_exp_SNo_nat: !x:set.SNo x -> !y:set.nat_p y -> SNo (exp_SNo_nat x y)
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+lemma !x:set.nat_p x -> x < exp_SNo_nat (ordsucc (ordsucc Empty)) x -> SNo x -> SNo (exp_SNo_nat (ordsucc (ordsucc Empty)) x) -> ordsucc x < exp_SNo_nat (ordsucc (ordsucc Empty)) (ordsucc x)
+var x:set
+hyp nat_p x
+hyp x < exp_SNo_nat (ordsucc (ordsucc Empty)) x
+claim SNo x -> ordsucc x < exp_SNo_nat (ordsucc (ordsucc Empty)) (ordsucc x)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,4 @@
+% Multiple variables
+fof(axiom1, axiom, ![X,Y]: (r(X,Y) => r(Y,X))).
+fof(axiom2, axiom, r(a,b)).
+fof(goal, conjecture, r(b,a)).

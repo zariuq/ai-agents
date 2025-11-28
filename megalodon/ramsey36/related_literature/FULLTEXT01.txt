@@ -1,0 +1,1743 @@
+On linear graph invariants related
+to Ramsey and edge numbers
+or how I learned to stop worrying and love the alien invasion
+
+Oliver Krüger
+
+Doctoral Thesis in Mathematics at Stockholm University, Sweden 2019
+
+On linear graph invariants related to Ramsey and
+edge numbers
+or how I learned to stop worrying and love the alien invasion
+Oliver Krüger
+Academic dissertation for the Degree of Doctor of Philosophy in Mathematics at Stockholm
+University to be publicly defended on Monday 16 December 2019 at 10.00 in sal 14, hus 5,
+Kräftriket, Roslagsvägen 101.
+Abstract
+
+In this thesis we study the Ramsey numbers, R(l,k), the edge numbers, e(l,k;n) and graphs that are related to these. The
+edge number e(l,k;n) may be defined as the least natural number m for which all graphs on n vertices and less than m
+edges either contains a complete subgraph of size l or an independent set of size k. The Ramsey number R(l,k) may then
+be defined as the least natural number n for which e(l,k;n) = ∞ .
+In Paper I, IV and V we study strict lower bounds for e(l,k;n). In Paper I we do this in the case where l = 3 by, in
+particular, showing e(G) ≥ (1/3)(17n(G) - 35α(G) - N(C4;G)) for all triangle-free graphs G, where N(C4;G) denotes the
+number of cycles of length 4 in G. In Paper IV we describe a general method for generating similar inequalities to the
+one above but for graphs that may contain triangles, but no complete subgraphs of size 4. We then show a selection of the
+inequalities we get from the computerised generation. In Paper V we study the inequality
+e(G) ≥ (1/2)(ceil((7l - 2)/2)n(G) - l floor((5l + 1)/2)α(G))
+for l ≥ 2, and examine the properties of graphs G without cliques of size l+1 such that G is minimal with respect to the
+above inequality not holding, and show for small l that no such graphs G can exist.
+In Paper II we study constructions of graphs G such that e(G) - e(3,k;n) is small when n ≤ 3.5(k-1). We employ a
+description of some of these graphs in terms of 'patterns' and a recursive procedure to construct them from the patterns. We
+also present the result of computer calculations where we actually have performed such constructions of Ramsey graphs
+and compare these lists to previously computed lists of Ramsey graphs.
+In Paper III we develop a method for computing, recursively, upper bounds for Ramsey numbers R(l,k). In particular the
+method uses bounds for the edge numbers e(l,k;n). In Paper III we have implemented this method as a computer program
+which we have used to improve several of the best known upper bounds for small Ramsey numbers R(l,k).
+Keywords: Ramsey number, edge number, minimal Ramsey graph, independence number, clique number, Turán's
+theorem, crochet pattern, H13-pattern, linear graph invariant, triangle-free graph.
+Stockholm 2019
+http://urn.kb.se/resolve?urn=urn:nbn:se:su:diva-174786
+ISBN 978-91-7797-905-0
+ISBN 978-91-7797-906-7
+
+Department of Mathematics
+Stockholm University, 106 91 Stockholm
+
+ON LINEAR GRAPH INVARIANTS RELATED TO RAMSEY AND
+EDGE NUMBERS
+
+Oliver Krüger
+
+On linear graph invariants
+related to Ramsey and edge
+numbers
+or how I learned to stop worrying and love the alien invasion
+
+Oliver Krüger
+
+©Oliver Krüger, Stockholm University 2019
+ISBN print 978-91-7797-905-0
+ISBN PDF 978-91-7797-906-7
+Printed in Sweden by Universitetsservice US-AB, Stockholm 2019
+
+Till far - för att du
+definierade primtalen.
+
+Abstract
+
+In this thesis we study the Ramsey numbers, R(`, k), the edge numbers, e(`, k; n)
+and graphs that are related to these. The edge number e(`, k; n) may be defined
+as the least natural number m for which all graphs on n vertices and less than
+m edges either contains a complete subgraph of size ` or an independent set
+of size k. The Ramsey number R(`, k) may then be defined as the least natural
+number n for which e(`, k; n) = ∞.
+In Paper I, IV and V we study strict lower bounds for e(`, k; n). In Paper I we do this in the case where ` = 3 by, in particular, showing e(G) ≥
+1
+3 (17n(G) − 35α(G) − N(C4 ; G)) for all triangle-free graphs G, where N(C4 ; G)
+denotes the number of cycles of length 4 in G. In Paper IV we describe a general method for generating similar inequalities to the one above but for graphs
+that may contain triangles, but no complete subgraphs of size 4. We then show
+a selection of the inequalities we get from the computerised generation. In
+Paper V we study the inequality
+
+
+
+
+
+1
+7` − 2
+5` + 1
+e(G) ≥
+n(G) − `
+α(G)
+2
+2
+2
+for ` ≥ 2, and examine the properties of K`+1 -free graphs G such that G is
+minimal with respect to the above inequality not holding, and show for small
+` that no such graphs G can exist.
+In Paper II we study constructions of graphs G such that e(G) − e(3, k; n)
+is small and n ≤ 3.5(k − 1). We employ a description of some of these graphs
+in terms of ‘patterns’ and a recursive procedure to construct them from the
+patterns. We also present the result of computer calculations where we actually
+have preformed such constructions of Ramsey graphs and compare these lists
+to previously computed lists of Ramsey graphs.
+In Paper III we develop a method for computing, recursively, upper bounds
+for Ramsey numbers R(`, k). In particular the method uses bounds for the
+edge numbers e(`, k; n). In Paper III we have implemented this method as a
+computer program which we have used to improve several of the best known
+upper bounds for small Ramsey numbers R(`, k).
+
+Sammanfattning
+
+I denna avhandling studerar vi Ramseytalen, R(`, k), kanttalen, e(`, k; n) och
+grafer som är relaterade till dessa. Kanttalet e(`, k; n) kan definieras som det
+minsta naturliga talet m för vilket alla grafer med n hörn och färre än m kanter
+antingen innehåller en komplett delgraf av storlek ` eller en oberoende mängd
+av storlek k. Ramseytalet R(`, k) kan då definieras som det minsta talet n för
+vilket e(`, k; n) = ∞.
+I den första, fjärde och sista artikeln (I, IV och V) studerar vi strikta undre
+gränser för e(`, k; n). I den första artikeln gör vi det speciellt för ` = 3 genom
+att visa att e(G) ≥ 31 (17n(G) − 35α(G) − N(C4 ; G)) för alla triangelfria grafer
+G, där N(C4 ; G) är antalet cykler av längd 4 i G. I den fjärde artikeln beskriver
+vi en allmän metod för att, med hjälp av datorberäkningar, framställa liknande
+olikheter som den ovan fast för grafer som kan ha trianglar, men inte har några
+kompletta delgrafer av storlek 4. Vi visar sedan ett urval av de olikheter som
+vi får från datorberäkningarna. I den sista artikeln studerar vi istället olikheten
+
+
+
+
+
+1
+7` − 2
+5` + 1
+e(G) ≥
+n(G) − `
+α(G) ,
+2
+2
+2
+för ` ≥ 2, och undersöker egenskaper för de K`+1 -fria grafer G med egenskapen
+att de är minimala med avseendet på att ovanstående olikhet inte uppfylls, samt
+visar att för små värden på ` så finns inga sådana grafer G.
+I den andra artikeln studerar vi konstruktioner av grafer G så att e(G) −
+e(3, k; n) är litet och n ≤ 3.5(k − 1). Vi använder ett sätt att beskriva somliga
+av dessa i termer av ”mönster” och en rekursiv procedur för att konstruera de
+eftersökta graferna från mönstren. Vi redogör också för resultat av datorberäkningar där vi har framställt Ramseygrafer enligt dessa konstruktioner och
+jämför dessa listor av grafer med befintliga listor från beräkningar av Ramseygrafer.
+I den tredje artikeln utvecklar vi en metod för att beräkna, rekursivt, övre
+gränser för Ramseytal R(`, k). Metoden utnyttjar bland annat gränser på kanttalen e(`, k; n). Vi har i artikeln implementerat denna metod och utnyttjar ett
+datorprogram för att förbättra de kända övre gränserna på flertalet små Ramseytal R(`, k).
+
+List of Papers
+
+The following papers, referred to in the text by their Roman numerals, have
+papers that are based on them included in this thesis. For details on how the
+published versions differ from the manuscripts see Section 1.8.
+PAPER I: An invariant for minimum triangle-free graphs
+O. K RÜGER, Australas. J. Combin. 74 (2019), 371–388.
+PAPER II: A computerised classification of some almost minimal trianglefree Ramsey graphs
+O. K RÜGER, eprint arXiv:1710.06644 [math.CO], 18 Oct 2017.
+PAPER III: An improved method for recursively computing upper bounds
+for two-colour Ramsey numbers
+O. K RÜGER, eprint arXiv:1804.00322 [math.CO], 1 Apr 2018.
+(Accepted for publication in Utilitas Math.)
+PAPER IV: Searching for non-negative invariants for K4 -free graphs
+O. K RÜGER, manuscript, 2019.
+PAPER V: On invariants related to edge numbers of K`+1 -free graphs
+O. K RÜGER, manuscript, 2019.
+
+All papers in the list above are published under licenses which allow for the
+inclusion of the related manuscripts in this thesis (Paper I in published under
+CC BY 4.0, whereas manuscripts of Paper II and III appear on arXiv under
+arXiv nonexclusive-distrib 1.0).
+Versions of Papers I and II were also included in:
+O. K RÜGER, On minimal triangle-free Ramsey graphs, Licentiate Thesis in
+Mathematics, Stockholm University, Jan. 2018.
+
+Acknowledgements
+
+I would here like to generalise Alfréd Rényi’s assertion that ‘a mathematician
+is a machine for turning coffee into theorems’ to the following statement.
+A mathematician is a machine for turning beans into theorems.
+By this statement I also would like to acknowledge everyone who has provided me with beans, of coffee or other variety, during the last five years.
+Foremost I thank every person that is a member, or has ever been a member,
+of the Matlag. I would also like to thank everyone who has provided me with
+espresso, or beans for making espresso.
+As all members of the Matlag have been thanked it may seem redundant
+to thank the member who has been most significant for me again. It is however impossible to show too much, or even enough, gratitude to my supervisor
+Jörgen Backelin. Your guidance has been invaluable.
+I would also like to thank all the wonderful friends and colleagues I have
+had the privilege to meet during my time as a Ph.D. student at Stockholm
+University. Thank you, tack, grazie, danke, obrigado, bedankt, gracias. You
+are all great! (Yes, you are included!)
+To my family, thank you for always being there to listen to me lament my
+existence and provide me with cobeans (in mathematics the prefix ‘co-’ may
+be used for something that is a counterpart or dual).
+Lastly, I thank the people in and around Sol Invictus. You have made my
+life bearable by distracting me from mathematics when I most needed to be
+distracted.
+
+Contents
+
+Abstract
+
+v
+
+Sammanfattning
+
+vii
+
+List of Papers
+
+ix
+
+Acknowledgements
+
+xi
+
+General Introduction
+17
+1.1 Ramsey theory on graphs . . . . . . . . . . . . . . . . . . . . 18
+1.2 Linear invariants bounding the edge numbers of triangle-free
+graphs . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 23
+1.2.1 Extremal graphs with respect to the linear inequalities
+24
+1.3 A new invariant and its extremal graphs . . . . . . . . . . . . 28
+1.4 Characterising the minimal (or almost minimal) Ramsey graphs 29
+1.5 Improved upper bounds for Ramsey numbers . . . . . . . . . 32
+1.6 Finding similar invariants of K4 -free graphs . . . . . . . . . . 35
+1.7 Invariants for K`+1 -free graphs . . . . . . . . . . . . . . . . . 37
+1.8 Comparison between manuscripts in the thesis and other versions 42
+References
+
+45
+
+PAPER I: An invariant for minimum triangle-free graphs
+2.1 Introduction . . . . . . . . . . . . . . . . . . . . . . . . . . .
+2.1.1 Background . . . . . . . . . . . . . . . . . . . . . . .
+2.1.2 Graphs with ν-value 0 and the main theorem . . . . .
+2.1.3 Outline of the proof of Theorem 2.1.1 . . . . . . . . .
+2.1.4 Preliminaries and notation . . . . . . . . . . . . . . .
+2.2 Lemmas and the proof . . . . . . . . . . . . . . . . . . . . .
+2.2.1 Proof of the main Lemma 2.2.2 . . . . . . . . . . . .
+References . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+1
+1
+1
+3
+5
+6
+11
+12
+31
+
+PAPER II: A computerised classification of some almost minimal trianglefree graphs
+1
+3.1 Introduction . . . . . . . . . . . . . . . . . . . . . . . . . . .
+1
+3.2 Crochet patterns and patterned graphs . . . . . . . . . . . . .
+2
+3.2.1 Stitches . . . . . . . . . . . . . . . . . . . . . . . . .
+3
+3.2.2 Other kinds of stitches . . . . . . . . . . . . . . . . .
+4
+3.2.3 Patterned graphs . . . . . . . . . . . . . . . . . . . .
+5
+3.2.4 H13 -decorated patterned graphs . . . . . . . . . . . .
+9
+3.3 Computation . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+3.4 Example: Patterned and non-patterned (3, 6; 16, 32)- and (3, 6; 16, 33)graphs . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12
+References . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16
+3.5 Appendix: Tables of counts of H13 -patterned graphs . . . . . . 17
+PAPER III: An improved method for recursively computing upper
+bounds for two-colour Ramsey numbers
+4.1 Introduction . . . . . . . . . . . . . . . . . . . . . . . . . . .
+4.2 The new method . . . . . . . . . . . . . . . . . . . . . . . . .
+4.3 Example: Application to small Ramsey numbers as given in
+the literature . . . . . . . . . . . . . . . . . . . . . . . . . . .
+References . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+4.4 Appendix: Calculation parameters . . . . . . . . . . . . . . .
+4.5 Appendix: Source code . . . . . . . . . . . . . . . . . . . . .
+PAPER IV: Searching for non-negative invariants for K4 -free graphs
+5.1 Introduction . . . . . . . . . . . . . . . . . . . . . . . . . . .
+5.2 Theoretical background . . . . . . . . . . . . . . . . . . . . .
+5.3 Computations and hypotheses . . . . . . . . . . . . . . . . .
+5.4 Proof of some special cases . . . . . . . . . . . . . . . . . . .
+5.5 Discussion about further generalisation . . . . . . . . . . . . .
+References . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+5.6 Appendix: Raw, filtered, computation result . . . . . . . . . .
+
+1
+1
+1
+3
+4
+6
+8
+1
+1
+1
+3
+6
+9
+9
+11
+
+PAPER V: On invariants related to edge numbers of K`+1 -free graphs 1
+6.1 Introduction . . . . . . . . . . . . . . . . . . . . . . . . . . .
+1
+6.2 Small values of ` . . . . . . . . . . . . . . . . . . . . . . . .
+2
+6.3 General lemmas and lower bounds on minimum valency . . .
+4
+6.4 Upper bounds on the minimum valency . . . . . . . . . . . .
+7
+6.5 The fractional invariant t . . . . . . . . . . . . . . . . . . . . 11
+6.5.1 τ-critical induced subgraphs of neighbourhoods . . . . 15
+6.6 The case for even ` . . . . . . . . . . . . . . . . . . . . . . . 20
+
+6.6.1 Special case: ` = 16 . . . . . . . . . . . . . . . . . .
+6.7 Conclusion and discussion . . . . . . . . . . . . . . . . . . .
+References . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+23
+26
+27
+
+General Introduction
+
+In this chapter we give a short introduction to the topic of this Ph.D. thesis
+and motivate the questions investigated. We introduce classical two-colour
+Ramsey theory for graphs and explain how this is related to edge numbers and
+edge-minimal graphs, which are the main objects we study throughout this
+thesis. We also give an introduction to each of the five papers (subsequent
+chapters) of this thesis.
+The majority of this chapter is copied, verbatim, from the introduction of
+the author’s licentiate thesis [18]. For full details on the relationship between
+this thesis and other works published by the author see Section 1.8.
+We begin with the following quote, which relates the subtitle of this thesis
+to its contents, attributed to Paul Erdös.
+‘[Suppose] aliens invade the earth and threaten to obliterate it in
+a year’s time unless human beings can find the Ramsey number for
+red five and blue five. We could marshal the world’s best minds
+and fastest computers, and within a year we could probably calculate the value. If the aliens demanded the Ramsey number for red
+six and blue six, however, we would have no choice but to launch
+a preemptive attack.’ 1
+
+1.1
+
+Ramsey theory on graphs
+
+Graphs in this thesis will always be simple undirected finite graphs. In this
+thesis we will generally only consider graphs up to isomorphism, we will
+therefore employ the usual convention to say ‘graph’ where we more formally
+mean an isomorphism class of graphs. We define the clique number, ω(G),
+of a graph G to be the maximum size of a complete subgraph of G, and the
+independence number, α(G), to be the maximum size of an independent set in
+G.
+One of the most fundamental questions of two-colour Ramsey theory on
+graphs can be formulated as follows: What is the least natural number n such
+that every graph on n vertices either contains a clique of size ` or an independent set of size k? A particular consequence of a theorem from 1930 by F.
+Ramsey in [30], concerning a problem in formal logic, is that there exist such
+a number, denoted R(`, k), for each natural `, k ≥ 1. The numbers R(`, k) are
+called the (two-colour) Ramsey numbers.
+For most values of `, k it is a difficult problem to determine the Ramsey
+number R(`, k). In particular, the only `, k ≥ 3 for which we know the exact
+1 Quoted as it appears in by Ronald L. Graham and Joel H. Spencer, in Scientific
+
+American vol. 263, no. 1 (July 1990), pp. 112–117.
+
+18
+
+value of R(`, k) is when {`, k} ∈ {{3, k} | 3 ≤ k ≤ 9}∪{{4}, {4, 5}}. Determining these values is work done by several different authors over several decades
+in the last century [8–10; 14–16; 24; 25]. For all other values of ` and k we
+have only some upper and lower bounds on the Ramsey numbers, although
+some asymptotics are known. For a survey on the topic of these, and similar,
+Ramsey numbers which is regularly updated with new results see [27].
+To determine exact values and better bounds on Ramsey numbers it is
+sometimes useful to know about the structure of graphs G which have n vertices but for which ω(G) < ` and α(G) < k, where we have fixed `, n and k.
+Such graphs only exist when n < R(`, k), and often they exhibit some common
+properties. Such graphs are called Ramsey (`, k; n)-graphs, or sometimes just
+(`, k; n)-graphs. All graphs G are (`, k; n)-graphs for some choice of `, k and n,
+but the ones we are most interested in are those where n is close to the upper
+bound R(`, k) − 1. Note that the existence of an (`, k; n)-graph shows, in particular, that R(`, k) ≥ n + 1, since R(`, k) can be thought of as the least number
+n such that there are no (`, k; n)-graphs.
+Example 1.1.1. The cycle of length 5, C5 , has clique number 2 and independence number 2. It is therefore a Ramsey (3, 3; 5)-graph. This implies that
+R(3, 3) ≥ 6. It is not difficult to show that there are no Ramsey (3, 3; 6)-graphs,
+and therefore R(3, 3) = 6.
+In fact, one can show that C5 is the only Ramsey (3, 3; 5)-graph since every
+other graph on five vertices either contains a clique of size 3 or an independent
+set of size 3.
+One property of Ramsey (`, k; n)-graphs we are particularly interested in is
+the number of edges. We now define one of the main objects we investigate in
+this thesis. Om this thesis these numbers ar also used as a tool for bounding
+Ramsey numbers.
+Definition 1.1.1. The minimum edge number e(`, k; n) is defined as the least
+number of edges an (`, k; n)-graph can have, i.e.
+e(`, k; n) = min{e(G) | G is an (`, k; n)-graph}.
+We have seen in Example 1.1.1 that C5 is the only (3, 3; 5)-graph and therefore we have e(3, 3; 5) = 5. We may also observe that one can express the
+Ramsey numbers in terms of the minimum edge numbers as
+R(`, k) = min{n ∈ N | e(`, k; n) = ∞}.
+This means that a complete determination of the minimum edge numbers would
+in particular yield a complete determination of the Ramsey numbers. But
+19
+
+k
+R(3, k) ≥
+R(3, k) ≤
+
+3
+6
+6
+
+4
+9
+9
+
+5
+14
+14
+
+6
+18
+18
+
+7
+23
+23
+
+8
+28
+28
+
+9
+36
+36
+
+10
+40
+42
+
+11
+47
+50
+
+12
+53
+59
+
+13
+60
+68
+
+14
+67
+77
+
+15
+74
+87
+
+Table 1.1: Best known bounds on the Ramsey numbers R(3, k) for small k.
+
+since computing the Ramsey numbers is notoriously difficult any effort to completely establish the edge numbers seems futile. However, the minimum edge
+numbers have been used to compute some small Ramsey numbers.
+In Paper I and Paper II of this thesis we study the minimum edge numbers
+of the form e(3, k; n), which are related to the Ramsey numbers R(3, k). It
+is only prudent to here mention that the asymptotic behaviour of the Ramsey
+numbers R(3, k) is quite well known as k → ∞ (unlike R(`, k) for ` ≥ 4), since
+we have the following theorem by J. H. Kim.
+Theorem 1.1.1 (Kim [17]).
+
+k2
+R(3, k) = Θ
+.
+log k
+
+
+Despite this, not much is known about the exact value of the Ramsey numbers R(3, k). For k ≤ 15 we only have the upper and lower bounds given in
+Table 1.1, for references see [27]. The exact value of R(3, k) is unknown for
+k ≥ 10.
+Ramsey (`, k; n)-graphs G with the property that e(G) = e(`, k; n) are said
+to be minimal Ramsey graphs. We say that a graph G is triangle-free if it
+contains no complete subgraph of size 3, i.e. if ω(G) < 3. For any set of
+vertices S ⊆ V (G) we define the closed neighbourhood, N[S], to be the vertex
+S
+set S ∪ N(S), where N(S) = v∈S N(v) is the union of the neighbourhoods of
+vertices in S. When there is no ambiguity we may drop the use of set parenthesis in this and other notation and write e.g. N[v1 , v2 ] instead of N[{v1 , v2 }].
+For any vertex v ∈ V (G) we define the neighbourhood removed subgraph, Gv ,
+to be the graph obtained by removing v and all its neighbours (and the edges
+incident to those vertices) from G. In other words Gv is the induced subgraph
+on V (G) \ N[v]. More generally we may, for a set S ⊆ V (G), define the graph
+GS to be the induced subgraph on V (G) \ N[S].
+The number of neighbours of a vertex v is will be called the valency of v,
+and a vertex with valency 1 will be called monovalent, valency 2 called bivalent
+and so on. The valency of v will be denoted by d(v). We will denote the
+minimum and maximum valency of a graph G by δ (G) and ∆(G), respectively.
+20
+
+Figure 1.1: The graph Ch3 , which is a Ramsey (3, 4; 8)-graph. The circled vertices form an independent set of maximal size.
+
+We illustrate some of the main ideas used to compute small Ramsey numbers, by utilising bounds on even smaller Ramsey numbers and minimal Ramsey graphs in Example 1.1.2.
+Example 1.1.2. We will in this example show that R(3, 4) = 9, R(3, 5) = 14
+and R(3, 6) = 18.
+We first observe that if G is a Ramsey (3, `; n)-graph then Gv is a Ramsey (3, ` − 1; n − d(v) − 1)-graph for every vertex v, since Gv contains no triangles when G is triangle-free, any independent set in Gv can be extended
+to an independent set in G by adding v to it, and if G has n vertices then
+|V (Gv )| = |V (G) \ N[v]| = n − d(v) − 1.
+We begin by showing R(3, 4) = 9. Note that the graph in Figure 1.1, which
+in this thesis is denoted by Ch3 , is a Ramsey (3, 4; 8)-graph. This implies, in
+particular, that R(3, 4) ≥ 9. One approach to showing that, in fact, R(3, 4) = 9
+is to assume that G is a Ramsey (3, 4; 9)-graph. Thus Gv has to be a Ramsey
+(3, 3; 8 − d(v))-graph for all v ∈ V (G). By R(3, 3) = 6, as we have seen in
+Example 1.1.1, we must have d(v) ≥ 3 for all v ∈ V (G). Furthermore, the
+neighbourhood N(v) of every vertex v forms an independent set in G since G
+is triangle-free. This means that |N(v)| < 4 for all v ∈ V (G). Hence, G has
+to be 3-regular, which is impossible since we can not have a graph on an odd
+number of vertices where every vertex has odd valency. This contradiction
+proves that there are no (3, 4; 9)-graphs and therefore R(3, 4) = 9.
+Now we will show that R(3, 5) = 14. The graph which is denoted H13 in
+this thesis, and is illustrated in Figure 1.9, is a Ramsey (3, 5; 13)-graph, which
+shows that R(3, 5) ≥ 14. Assume, now, that G is a Ramsey (3, 5; 14)-graph.
+For every vertex v ∈ V (G) we have that Gv is a (3, 4; 13 − d(v))-graph. By
+R(3, 4) = 9 we get d(v) ≥ 5 for all v ∈ V (G), but then N(v) is an independent
+set of size 5 or G contains a triangle. This is clearly a contradiction and thus
+R(3, 5) = 14.
+In the final part of this example we show that R(3, 6) = 18. Radziszowski
+and Kreher have shown, in [28], that there are seven Ramsey (3, 6; 17)-graphs.
+One of these graphs can be formed by taking the disjoint union of H13 (with
+vertices labelled as in Definition 1.2.4) and C4 with vertices V (C4 ) = {c0 , c1 , c2 , c4 },
+then adding the edges c0 x1 , c0 x5 , c1 x3 , c1 x9 , c2 x0 , c2 x2 , c2 x6 , c3 x4 , c3 x8 and
+21
+
+Figure 1.2: Example of a Ramsey (3, 6; 17)-graph. Dotted lines indicate the
+edges that are added to the disjoint union of C4 and H13 in the definition.
+
+c3 x11 to the edge set. The resulting graph is illustrated in Figure 1.2 and shows,
+in particular, that R(3, 6) ≥ 18.
+Assume there is some Ramsey (3, 6; 18)-graph G. For every v ∈ V (G)
+have that Gv is a (3, 5; 17 − d(v))-graph and therefore, by R(3, 5) = 14, we
+have δ (G) ≥ 4. Since N(v) is independent for all v ∈ V (G) we also have
+∆(G) ≤ 5. Suppose v is a tetravalent vertex in G. The graph Gv has to be
+(isomorphic to) H13 since it can be shown that H13 is the unique Ramsey
+(3, 5; 13)-graph. In particular, H13 is a minimal Ramsey graph. But H13 is
+4-regular and e(3, 5; 13) = 26 so if we have at least 14 edges between N(v)
+and Gv we would get a vertex of valency at least 6. Thus we have at most one
+pentavalent neighbour of every tetravalent vertex in G. On the other hand if
+the number of edges between N(v) and Gv is 13 (or 12) then a neighbour of v
+would be tetravalent with at least two pentavalent neighbours. This show that
+there are no tetravalent vertices in G, i.e. G has to be 5-regular. This means
+that e(Gv ) = e(G) − 25 = 45 − 25 = 20, which is equal to the minimum edge
+number e(3, 5; 12) = 20. There is a unique minimal Ramsey (3, 5; 12)-graph,
+which is denoted by BC4 in this thesis and is illustrated in Figure 1.6. Hence
+Gv ∼
+= BC4 for all v ∈ V (G). Note that in BC4 every cycle of length 4 contains
+at least two tetravalent vertices. Fix some v ∈ V (G), and note that some neighbour, w, of v is adjacent to only trivalent vertices of Gv ∼
+= BC4 . The neighbours
+of w in Gv forms an independent set of trivalent vertices in Gv . It is easily seen
+by looking at the independent sets of size 4 among trivalent vertices in BC4
+that this implies the existence of a cycle of length 4 containing only trivalent
+vertices in Gw , contradicting Gw ∼
+= BC4 . This contradiction shows that there
+22
+
+are no (3, 6; 18)-graphs and therefore R(3, 6) = 18.
+One more example, using more immediately lower bounds on the edge
+numbers, can be seen in Example 1.5.1. There we show, using the results from
+Paper III, that R(5, 8) ≤ 215.
+The previous example illustrates a very special case of a more general
+philosophy which may be used to determine upper bounds on Ramsey numbers using minimum edge numbers and characterisations of minimal Ramsey
+graphs. The principle behind this is to assume that we have a (`, k; n0 )-graph
+G for some n0 that we desire to show is an upper bound on R(`, k). This
+graph must then contain other Ramsey graphs as subgraphs. The structure of
+these subgraphs can then be used to derive a contradiction, which shows that
+R(`, k) ≤ n0 . These techniques have been employed by Kalbfleich [15] to compute R(3, 6), by Graver and Yackel [8] to compute R(3, 7), by Grinstead and
+Roberts [10] to compute R(3, 8) and R(3, 9). This has also been employed successfully by Radziszowski and Kreher to compute several upper bounds for
+R(3, k).
+Furthermore, McKay and Radziszowski used refinements of this technique
+to compute R(4, 5) in [25]. These, and similar, considerations also play an
+important role in the recent proof that R(5, 5) ≤ 48 by Angeltveit and McKay,
+see [1].
+Having a good understanding of the minimum edge numbers and the minimal Ramsey graphs appear to be a very useful tool for improving upper bounds
+on the Ramsey numbers.
+We will use the principle which the above example illustrates heavily in
+Paper III of this thesis to improve the upper bounds on many of the values
+R(`, k).
+
+1.2
+
+Linear invariants bounding the edge numbers of trianglefree graphs
+
+We can express a trivial lower bound on the minimum edge numbers e(3, k +
+1; n) as e(3, k + 1; n) ≥ n − k or equivalently as the proposition that for every
+triangle-free graph G, we have that e(G) ≥ n(G) − α(G). If we write this
+as e(G) − n(G) + α(G) ≥ 0 we get the first inequality in a series of similar
+inequalities, which are
+t1 (G) := e(G) − n(G) + α(G) ≥ 0,
+t2 (G) := e(G) − 3n(G) + 5α(G) ≥ 0,
+t3 (G) := e(G) − 5n(G) + 10α(G) ≥ 0, and
+t4 (G) := e(G) − 6n(G) + 13α(G) ≥ 0.
+23
+
+These inequalities have been shown to hold for all triangle-free graphs by
+Radziszowski and Kreher in [28; 29].
+Note that if G ∼
+= G1 + G2 , where the right hand side means taking the disjoint union of the two graphs G1 and G2 , we have ti (G1 + G2 ) = ti (G1 ) +ti (G2 )
+for all the invariants ti listed above. This is the characterising property of what
+we call linear graph invariants. Note that each of the inequalities ti (G) ≥ 0
+gives bounds on the minimum edge numbers. Furthermore, determining what
+triangle-free graphs that achieve these inequalities with equality determines
+some minimal Ramsey graphs.
+In particular, the triangle-free graphs G such that t1 (G) = 0 are exactly
+those that consist of isolated vertices and isolated edges, i.e. they are disjoint
+unions of complete graphs on one and two vertices, respectively. These are
+precisely the minimal Ramsey (3, k + 1; n)-graphs for k < n ≤ 2k. Similarly,
+the graphs for which t2 (G) = 0 are minimal Ramsey (3, k + 1; n)-graphs for
+2k < n ≤ 5k/2, the graphs for which t3 (G) = 0 are minimal (3, k + 1; n)-graphs
+for 5k/2 ≤ n ≤ 3k and lastly those graphs for which t4 (G) = 0 are minimal
+(3, k + 1; n)-graphs for 3k ≤ n ≤ 13k/4 − 1 or n = 13k/4 when k ≡ 0 mod 4
+(see [4]).
+
+1.2.1
+
+Extremal graphs with respect to the linear inequalities
+
+We here give a brief description of the minimal Ramsey graphs which are such
+that they satisfy the inequalities involving linear graph invariants listed above
+with equality. Note that if G1 , G2 are two graphs such that ti (G1 ) = ti (G2 ) = 0
+for some i, then by linearity of the invariant ti we have that also ti (G1 +G2 ) = 0.
+So to characterise the graphs G for which ti (G) = 0 it is enough to characterise
+the connected graphs with this property. All the graphs that are introduced
+here also play important roles in Paper I and Paper II.
+Example 1.2.1. There are only two connected triangle-free graphs G such that
+t1 (G) = 0, namely G ∼
+= K1 (for which e(G) = 0, n(G) = 1 and α(G) = 1) and
+G∼
+= K2 (for which e(G) = 1, n(G) = 2 and α(G) = 1). One way to see that
+there are no other connected triangle-free graphs G for which t1 (G) = 0 is the
+following. Note that for v ∈ V (G) we have that e(Gv ) = e(G) − ∑w∈N(v) d(w),
+n(Gv ) = n(G) − d(v) − 1 and α(Gv ) ≤ α(G) − 1. This means that we get
+t1 (Gv ) = e(Gv ) − n(Gv ) + α(Gv ) ≤ t1 (G) + d(v) −
+
+∑ d(w).
+w∈N(v)
+
+In particular, if v is assumed to be of minimal valency in the graph we get
+that t1 (Gv ) ≤ −d(v)2 + d(v). It is now clear that if we (inductively) assume
+that t1 (Gv ) ≥ 0, then d(v) ≤ 1 and if d(v) = 1 then the neighbour of v is also
+24
+
+K1 =
+
+K2 =
+
+Figure 1.3: The two connected triangle-free graphs which have t1 -value 0.
+
+K2 =
+
+C5 =
+
+Figure 1.4: The two connected triangle-free graphs which have t2 -value 0.
+
+monovalent. This means that either v is an isolated vertex (it forms a K1 ) or it
+is one of the vertices in a K2 .
+Example 1.2.2. Note that t2 (K2 ) = 0, and that t2 (C5 ) = 0 since e(C5 ) = n(C5 ) =
+5 and α(C5 ) = 2. The graphs K2 and C5 are the only two connected trianglefree graphs with t2 -value 0. We can see this in a like manner as we did for the
+graphs with t1 -value 0. We observe that we here must have
+t2 (Gv ) ≤ t2 (G) −
+
+∑ d(w) + 3d(v) − 2.
+
+(1.1)
+
+w∈N(v)
+
+If we inductively have that t2 (Gv ) ≥ 0 and t2 (Gv ) = 0 ⇒ Gv ∈ {K2 ,C5 } it is
+easy to see from inequality (1.1) that we must have minimum valency 1 or 2,
+and in both cases G must be regular. Furthermore if d(v) = 2 and the graph is
+2-regular, then we get that t2 (Gv ) = 0 and therefore Gv ∼
+= K2 , whence G ∼
+= C5 .
+The general idea outlined above to determine the graphs with ti -value 0 for
+i = 1 and i = 2, in Examples 1.2.1 and 1.2.2, is also important in the proof of the
+main theorem of Paper I. However, there we work with a slightly more complicated invariant where the inductive step is far less obvious - which seems to
+require a significantly more technical approach.
+The characterisation of the (connected) triangle-free graphs for which the
+t3 -value is 0 was done by Radziszowski and Kreher in [29]. These graphs are
+the ones defined in the following two definitions.
+The first class of graphs (which appear in [3, Chapter 3] and [4] as chains
+denoted by Chk , in [29] as Fk and in [13] as Hk ) that we need is defined as
+follows.
+25
+
+w2
+v
+
+x
+
+w1
+
+Figure 1.5: The graph Ch4 , the non-dotted edges are edges of a Ch3 -subgraph
+where (Ch4 )v ∼
+= Ch3 , with vertices named as in Definition 1.2.1
+
+BC4
+
+BC5
+
+BC6
+
+Figure 1.6: Examples of bicycle graphs BCk for k = 4, 5, 6.
+
+Definition 1.2.1. Let Ch2 be a cycle of length 5. We recursively define Chk+1
+for k ≥ 2. Let x ∈ V (Chk ) be some bivalent vertex. Let V (Chk+1 ) = V (Chk ) ∪·
+{v, w1 , w2 } and E(Chk+1 ) = E(Chk ) ∪ {vw1 , vw2 , w1 x} ∪ {w2 y | y ∈ N(x)}.
+We have illustrated Ch2 = C5 and Ch3 in Figures 1.4 and 1.1, respectively.
+In Figure 1.5 we illustrate the graph Ch4 and highlight how this graph may be
+constructed recursively from the graph Ch3 .
+Our second class of extremal graphs that we will define here are the so
+called bicycles BCk . The graphs BCk also appear with this notation in [2, p. 20]
+and [4] or as extended k-chains (in [13], denoted Ek ) and Gk (in [29]).
+Definition 1.2.2. Let BCk , k ≥ 4, be a graph consisting of an induced cycle on
+vertices c1 , c2 . . . , c2k and one induced cycle on vertices d1 , d2 . . . , dk . Connect
+the cycles by edges di c2i−2 and di c2i+1 for i ∈ {1, . . . , k}, taking indices modulo
+2k for ci ’s and modulo k for di ’s.
+Apart from the two infinite classes of minimal Ramsey graphs defined in
+Definitions 1.2.1 and 1.2.2 the following three graphs play crucial roles in this
+thesis. Two of them are 3-regular graphs, denoted (2C7 )2i and W5 , which may
+be defined as follows.
+Definition 1.2.3. Let V ((2C7 )2i ) = {a0 , a1 , . . . , a6 } ∪ {b0 , b1 , . . . , b6 } and the
+edges of (2C7 )2i be such that both a0 , a1 , . . . , a6 and b0 , b1 , . . . , b6 form cycles
+of length 7 in (2C7 )2i . Connect these two cycles by adding an edge bi a2i for all
+i ∈ {0, 1, . . . , 6}, taking indices modulo 7.
+26
+
+Let V (W5 ) = {a0 , a1 } ∪ {b0 , . . . , b3 } ∪ {c0 , . . . , c7 } and the edges of W5 be
+such that a0 a1 is an edge, b0 , . . . , b4 are independent and c0 , . . . , c7 form a cycle
+of length 8. Add edges bi ai for i ∈ {1, 2, 3, 4} taking ai -indices modulo 2. Also
+add edges bi c2i and bi c2i+3 for i ∈ {1, 2, 3, 4} taking indices modulo 8.
+a0
+a6
+
+a1
+b0
+b4
+b3
+
+b1
+
+b6
+
+b5
+
+a2
+
+a5
+
+b2
+a3
+
+a4
+
+Figure 1.7: The graph (2C7 )2i .
+
+The graph (2C7 )2i is also known as a generalised Petersen graph, variously
+denoted GP(7, 2) or P(7, 2). It has been illustrated in Figure 1.7, and the graph
+W5 is illustrated in Figure 1.8.
+c0
+c7
+
+c1
+b3
+c2
+
+b0
+
+a0
+
+c6
+
+b2
+a1
+
+b1
+c3
+
+c5
+c4
+Figure 1.8: The graph W5 .
+
+The final graph which we will define here is called H13 , and is of particular
+27
+
+x0
+
+x1
+
+x12
+
+x2
+
+x11
+
+x3
+
+x10
+
+x4
+
+x9
+x5
+
+x8
+x6
+
+x7
+
+Figure 1.9: The graph H13 .
+
+importance in Paper II. It is the unique minimal (3, 5; 13)-graph (which has 26
+edges). It is also illustrated in Figure 1.9.
+Definition 1.2.4. Let V (H13 ) = {x0 , x1 , . . . , x12 } and let the edges of H13 be
+such that xi x j ∈ E(H13 ) if and only if i− j ≡ k mod 13 for some k ∈ {±1, ±5}.
+Since H13 has 26 edges, 13 vertices and independence number 4 we have
+t4 (H13 ) = 0.
+As we have mentioned above we have that the graphs Chk , have t3 -value 0
+for all k ≥ 2 and the graphs BCk have t3 -value 0 for all k ≥ 4. It has been shown
+by Radziszowski and Kreher in [29] that these are in fact the only connected
+triangle-free graphs G for which t3 (G) = 0. It was suggested by Radziszowski
+and Kreher that the bicycles BCk , and the regular graph H13 could be the only
+graphs G for which t4 (G) = 0. This was later proved to be the case by Backelin,
+see e.g. [4, Theorem 3].
+
+1.3
+
+A new invariant and its extremal graphs
+
+In a similar vein as the results concerning the non-negativity of the linear invariants defined in the previous section, we define, in Paper I, a linear invariant
+ν(G) := 3e(G) − 17n(G) + 35α(G) + N(C4 ; G),
+where N(C4 ; G) denotes the number of cycles of length 4 in the graph G. The
+main theorem of Paper I shows that this linear invariant is non-negative for all
+triangle-free graphs G, and characterises the graphs which have ν-value 0.
+28
+
+Theorem 1.3.1 (Theorem 2.1.1, Paper I). If G is a triangle-free graph then
+ν(G) ≥ 0, and if ν(G) = 0, with G connected, then G ∈ {W5 , (2C7 )2i } ∪ {Chk |
+k ≥ 2} ∪ {BCk | k ≥ 5}.
+13
+This theorem implies, in particular, that e(C≤4 , k +1; n) ≥ 17
+3 n− 3 k, where
+e(C≤4 , k + 1; n) is the least number of edges possible in a graph containing no
+cycle of length at most 4, on n vertices and with independence number at most
+k. This is a variation on the ordinary minimum edge numbers e(`, k + 1; n)
+where we instead of restricting the clique number of the graphs to be less than
+`, we make restrict the girth to be at least 5.
+The theorem also has interesting consequences for Ramsey (3, k + 1; n)35
+m
+graphs. It shows that if G is a (3, k + 1; n)-graph on 17
+3 n − 3 k − 3 edges
+for some m ≥ 0 then G contains at least m cycles of length 4. This gives
+us information about the structure of minimal Ramsey (3, k + 1; n)-graphs for
+some k and n, and graphs that are in some sense ‘close’ to being minimal
+Ramsey graphs, by having few, but not necessarily the least possible number
+of, edges.
+Another consequence of Theorem 2.1.1 of Paper I is that it improves the
+best known lower bound on the independence ratio i(G) := α(G)/n(G) in
+some special cases. A general result by Hopkins and Staton in 1982, in [11],
+7
+implies that i(G) ≥ 23
+for all graphs G of girth at least 5 and average valency 4.
+Their result has later been improved on by Lichiardopol in 2004 (see [21]). It
+follows from Theorem 2.1.1 of Paper I that i(G) ≥ 11
+35 for all graphs of girth at
+least 5 and average valency 4. This improves the bound by Hopkins and Staton
+and also improves the bounds given by Lichiardopol for graphs of maximum
+valency 4 and girth 5, 6 and 7. For graphs of girth at least 8 Lichiardopol
+provides a better lower bound on the independence ratio than 11
+35 .
+
+1.4 Characterising the minimal (or almost minimal) Ramsey graphs
+In Paper II we aim to give a description of minimal Ramsey (3, k + 1; n)-graphs
+by a form of ‘pattern’ that was introduced by J. Backelin in [3, Chapter 6].
+The main objective of Paper II is to count the number of graphs that are either
+minimal Ramsey graphs or are close to being minimal Ramsey graphs (i.e.
+have slightly more edges than e(3, k + 1; n)) that can be described by these
+patterns. In several cases we then compare this to counts of Ramsey graphs
+that have been computed elsewhere. The moral of Paper II is that many, and
+in some cases almost all, minimal and almost minimal Ramsey graphs can be
+described by this kind of pattern when n ≤ 3.5k.
+29
+
+Ch2
+
+Ch3
+
+Ch4
+
+pattern:
+
+pattern:
+
+pattern:
+
+Figure 1.10: Chains Chk and their corresponding patterns. The dotted edges indicate in what way we consider Chk−1 to be a neighbourhood removed subgraph
+of Chk , and the corresponding structure in the patterns.
+
+The main philosophy behind the procedure for constructing the graphs that
+are enumerated Paper II is that we start with some Ramsey minimal graph, in
+our case K2 or H13 . We then build larger graphs from these by adding in each
+step only a few edges, but a ‘comparatively large’ number of vertices, and
+simultaneously only increasing the independence number by 1. In Paper II
+this is formalised. We there work with a partially directed graph (that may
+also include one hyperedge), called a pattern (or H13 -pattern) which encodes
+exactly how we add vertices and edges, starting with either the graph K2 or H13 .
+The idea behind this comes from the observation that many of the minimal
+Ramsey graphs we have seen in fact can be formed this way. We will not go
+into the details in this introduction, for which we refer to Paper II. We will
+however give some examples of patterns of graphs.
+Example 1.4.1. The graphs Chk are constructed from Ch2 in the way described
+in Definition 1.2.1. For each k ≥ 3 we have that (Chk )v = Chk−1 where v ∈
+V (Chk ) is a bivalent vertex. This may be encoded as a pattern by saying that
+the pattern for the graph Chk is a path of length k. That this pattern has the path
+of length k − 1 as a subpattern corresponds precisely to the fact that (Chk )v =
+Chk−1 . Some examples of chains and their corresponding patterns are given in
+Figure 1.10.
+Example 1.4.2. The bicycles, BCk , correspond to patterns that are cycles of
+length k. The fact that cycles of length k contains paths as length k − 1 corresponds precisely to the fact that (BCk )v = Chk−1 for all trivalent vertices
+v ∈ V (BCk ). We can see examples of this correspondence in Figure 1.11.
+The idea described in Paper II is generalising the above way of constructing
+minimal Ramsey graphs by extensions of smaller minimal Ramsey graphs.
+The generalised version of patterns does not only describe chains and cycles
+(that may be constructed recursively from K2 ) but also H13 and graphs that may
+be constructed from H13 in a special way. We give an example of such a graph,
+30
+
+BC4
+
+BC5
+
+BC6
+
+pattern:
+
+pattern:
+
+pattern:
+
+Figure 1.11: Examples of bicycle graphs BCk and their patterns. The dotted
+edges illustrate how the paths form subpatterns and the chains form subgraphs in
+a corresponding way.
+
+with its corresponding pattern, Figure 1.12. For the details on this procedure
+see Paper II.
+
+pattern:
+
+Figure 1.12: The (3, 6; 16)-graph (left) on 33 edges obtained from the H13 pattern (right).
+
+The main result of the Paper II is the enumeration, and computer construction of the graphs that can be described using these so called H13 -patterns. This
+can then be compared to previous calculations that enumerate all (minimal)
+Ramsey graphs, done in particular by McKay [23], Goedgebeur and Radziszowski [7; 26], and Radziszowski and Kreher [28; 29], combined with Backelin, e.g. in [3, Chapter 6] and [4, Theorem 3]. Some of these works (in
+particular those by Radziszowski and Kreher and those by Backelin) contain
+general characterisations of minimal Ramsey graphs which, a fortiori, imply
+that all minimal Ramsey (3, k + 1; n)-graphs for which n ≤ 13k/4 − 1 must be
+patterned. The more interesting part of the results in the computations of Paper
+31
+
+II are therefore where n > 13k/4 − 1 or where we have Ramsey (3, k + 1; n)graphs that are not minimal.
+
+1.5 Improved upper bounds for Ramsey numbers
+Recall that we have defined the minimum edge numbers e(`, k; n) to be the
+least number of edges a Ramsey (`, k; n)-graph can have. Similarly we have
+the following.
+Definition 1.5.1. The maximum edge number E(`, k; n) is defined as the greatest number of edges an (`, k; n)-graph can have, i.e.
+E(`, k; n) = max{e(G) | G is an (`, k; n)-graph}.
+Note for example that e(3, 3; 5) = E(3, 3; 5) = 5 since, as we have seen in
+Example 1.1.1, C5 is the only Ramsey (3, 3; 5)-graph. In general e(`, k; n) and
+E(`, k; n) are the greatest and least numbers, respectively, for which
+e(`, k; n) ≤ e(G) ≤ E(`, k; n)
+for all Ramsey (`, k; n)-graphs G.
+In Paper III of this thesis we employ the idea of using lower bounds on
+e(`, k; n), and upper bounds on E(`, k; n) to create an algorithm for computing
+upper bounds of Ramsey numbers R(`1 , k1 ), recursively, from upper bounds of
+R(`2 , k2 ), where `2 < `1 or k2 < k1 .
+The method described is a refinement of a method developed in by Huang
+et al. in [12]. We also show how, in particular, this method may be used to
+improve several of the best known upper bounds for Ramsey numbers R(`, k)
+where 4 ≤ ` ≤ 10 and 5 ≤ k ≤ 15.
+The two main theorems of Paper III are the following.
+Theorem 1.5.1 (Theorem 4.2.1, Paper III). If p ≤ R(`, k)−1, α ≥ R(`−2, k)−
+1, β ≥ R(`, k − 2) − 1, γ ≥ R(` − 1, k) − 1 and δ ≥ R(`, k − 1) − 1, then
+
+
+
+p−d −1
+(p − 1)(p − 2) ≤ max 2
++ 2∆(`, k, p, d) + 3d(p − d − 1),
+2
+d∈[p−1−δ ,γ]
+where
+∆(`, k, p, d) = E(` − 1, k; d) − e(`, k − 1; p − d − 1).
+
+32
+
+Theorem 1.5.2 (Theorem 4.2.2, Paper III). Let p, α, β , γ, δ be as in Theorem
+1.5.1. Then
+(
+)
+√
+p(p − δ − 1) A − A2 − B
+e(`, k; p) ≥ max
+,
+2
+12
+)
+(
+√
+pγ A + A2 − B
+,
+E(`, k; p) ≤ min
+,
+2
+12
+where
+A = (α − β + 3(p − 1))p,
+
+B = 12p2 (p − 1)(p − β − 2).
+
+We will now show how these theorems may be employed to compute upper
+bounds for Ramsey numbers. We will exemplify this by showing that R(5, 8) ≤
+215, which is a small improvement of the bound R(5, 8) ≤ 216 which appears
+in [27].
+Example 1.5.1. From the upper bounds in [27] we have R(3, 8) ≤ 28, R(5, 6) ≤
+87 and R(4, 8) ≤ 84. Furthermore, if we use the method described in [12], one
+can easily show that R(5, 7) ≤ 142.
+Therefore, if we define α = 27, β = 86, γ = 83 and δ = 141 these numbers
+satisfy the premises of Theorem 1.5.1 when ` = 5 and k = 8.
+Now, note that if R(5, 8) ≥ 216 then the inequality in the statement of
+Theorem 1.5.1,
+
+
+p−d −1
+(p − 1)(p − 2) ≤
+max
+2
++ 2∆(5, 8, p, d) + 3d(p − d − 1),
+2
+d∈[p−1−141,83]
+(1.2)
+would hold for p = 215. We want to show that this is not the case to conclude
+that R(5, 8) ≤ 215. Inserting this value of p into equation (1.2) we get the
+inequality
+
+
+214 − d
+45582 ≤ max 2
++ 2∆(5, 8, 215, d) + 3d(214 − d),
+(1.3)
+2
+d∈[73,83]
+where ∆(5, 8, 215, d) = E(4, 8; d) − e(5, 7; 214 − d). Note that we want to compute upper bounds for ∆(5, 8, 215, d) where d ∈ [73, 83], i.e. we want bounds
+for E(4, 8; 73)−e(5, 7, 141), E(4, 8, 74)−e(5, 7, 140), . . . , E(4, 8; 83)−e(5, 7, 131).
+To obtain these we will use Theorem 1.5.2.
+We want to apply Theorem 1.5.2 for ` = 4 and k = 8 to get upper bounds
+for E(4, 8, d). This means that the values of α, β , γ and δ comes from the
+bounds R(2, 8) = 8, R(4, 6) ≤ 41, R(3, 8) = 28 and R(4, 7) = 23, respectively.
+Hence, we get that in Theorem 1.5.2 we have
+Ad = 3d(d − 12), and Bd = 12d 2 (d − 1)(d − 42).
+33
+
+q
+j
+k
+Computing E(4, 8; d) ≤ min{d · 83/2, (Ad + A2d − Bd )/12} for d ∈ [73, 83]
+we get the upper bounds listed in Table 1.2.
+d
+E(4, 8; d) ≤
+
+73
+985
+
+74
+999
+
+75
+1012
+
+76
+1026
+
+77
+1039
+
+78
+1053
+
+79
+1066
+
+80
+1080
+
+81
+1093
+
+82
+1107
+
+83
+1120
+
+Table 1.2: Upper bounds for E(4, 8; d) for d ∈ [73, 83].
+
+Similarly, we want to apply Theorem 1.5.2 for ` = 5 and k = 7 for getting
+lower bounds on e(5, 7; 214 − d), where d ∈ [73, 83]. Note that in this case we
+get the corresponding values of α, β , γ and δ from R(3, 7) = 23, R(5, 5) ≤ 48,
+R(4, 7) ≤ 61 and R(5, 6) ≤ 87, respectively. In Theorem 1.5.2 we therefore
+want to use
+Ad = (d − 214)(3d − 614), and Bd = 12(d − 214)2 (d − 213)(d − 165).
+q
+l
+m
+Computing e(5, 7; 214−d) ≥ max{(214 − d)(127 − d)/2, (Ad − A2d − Bd )/12}
+for d ∈ [73, 83] we get the lower bounds listed in Table 1.3.
+d
+e(5, 7; 214 − d) ≥
+
+73
+4192
+
+74
+4069
+
+75
+3953
+
+76
+3844
+
+77
+3740
+
+78
+3641
+
+79
+3545
+
+80
+3452
+
+81
+3362
+
+82
+3275
+
+83
+3190
+
+Table 1.3: Lower bounds for e(5, 7; 214 − d) for d ∈ [73, 83].
+
+Using these values we may now find upper bounds of ∆(5, 8, 215, d) for
+d ∈ [73, 83]. If ∆0 (5, 8, 215, d) is the value of the upper bounds listed in Table
+1.2 minus the lower bounds in Table 1.3, for each d ∈ [73, 83], then we have
+that the right hand side of the inequality (1.3) does not exceed
+
+
+214 − d
+td := 2
++ 2∆0 (5, 8, 215, d) + 3d(214 − d).
+2
+Explicitly computing this for each value d ∈ [73, 83] we get the values listed in
+Table 1.4.
+d
+td
+
+73
+44205
+
+74
+44400
+
+75
+44575
+
+76
+44734
+
+77
+44877
+
+78
+45008
+
+79
+45127
+
+80
+45238
+
+81
+45337
+
+82
+45428
+
+83
+45509
+
+Table 1.4: Values for td where d ∈ [73, 83].
+
+Note, in particular, that the maximum of the values listed in Table 1.4 is
+45509 and therefore the right hand side of the inequality (1.3) evaluates to at
+most 45509, which is less than the left hand side. This shows that our choice
+of p = 215, is not valid and whence R(5, 8) ≤ 215.
+34
+
+To conclude this example we note that if we try to do the same procedure
+as described above, but starting with the assumption that p = 214, we instead
+get that the left hand side in inequality (1.2) becomes 45156 while the right
+hand side evaluates to at most 45166. Therefore, Theorem 1.5.1 and 1.5.2 are
+not sufficient to also prove R(5, 8) ≤ 214.
+In practice, to use this method for computing upper bounds for Ramsey
+numbers is quite tedious if done by hand. Therefore we have, in Paper III, employed a simple algorithm – implemented as a computer program – for doing
+the necessary, simple but tedious, calculations. The source code of this computer program appears as an appendix to Paper III, and is also available for
+scrutiny online at [20].
+A selection of the resulting improvements, compared to the best published
+bounds (see e.g. [27]) are listed in the Table 1.5 with boldface.
+k
+`
+5
+6
+7
+8
+9
+10
+
+5
+
+6
+
+7
+
+8
+
+9
+
+10
+
+11
+
+12
+
+13
+
+14
+
+15
+
+48
+
+87
+165
+
+142
+298
+539
+
+215
+495
+1029
+1865
+
+316
+780
+1711
+3576
+6582
+
+442
+1171
+2775
+6061
+12643
+23327
+
+629
+1782
+4518
+10297
+22161
+45488
+
+846
+2549
+6821
+16777
+38000
+80231
+
+1102
+3526
+10017
+25933
+62763
+139767
+
+1442
+4927
+14841
+40140
+100614
+236772
+
+1832
+6614
+20928
+59916
+157549
+385139
+
+Table 1.5: Upper bounds of R(`, k). Boldface indicates improved bounds (compared to [27]).
+
+1.6
+
+Finding similar invariants of K4 -free graphs
+
+In Paper I and Paper II we are concerned with triangle-free graphs, and some
+linear invariants that are related to them. In Paper IV and Paper V we try,
+in two different ways, to develop similar theories but for graphs with higher
+clique number than 2. In Paper IV we allow triangles in the graphs, but no
+complete subgraph of size 4.
+In Paper IV we develop a method for finding linear graph invariants, similar to the ones we have studied for triangle-free graphs that may be nonnegative for all K4 -free graphs. We use some computer calculations to find
+a list of invariants that are interesting in the sense that both a counterexample to their non-negativity, and a proof of their non-negativity would be useful
+within the theory of K4 -free graphs.
+We also prove, in general, that some of the invariants we find by these
+computer calculations indeed are non-negative for K4 -free graphs.
+We define P as the set of points (k1 (G), k2 (G), k3 (G), α(G)), in the lattice
+Z4 , where ki (G) denotes the number of complete subgraphs of size i in G where
+35
+
+G ranges over all K4 -free graphs. A hyperplane in R4 is a set of points x ∈ R4
+that satisfy an equation (a, b, c, d)x = 0, where (a, b, c, d) ∈ R4 \{0}. Similarly,
+a half-space is a set of points x ∈ R4 that satisfy an inequality (a, b, c, d)x ≥ 0.
+For a set of lattice points S ⊆ Z4 we say that a half-space, defined by the
+inequality (a, b, c, d)x ≥ 0, is a bounding half-space if dim(span{S ∩ {x ∈ R4 |
+(a, b, c, d)x = 0}}) = 3.
+Note that an inequality of the form
+ak1 (G) + bk2 (G) + ck3 (G) + dα(G) ≥ 0,
+
+(1.4)
+
+which holds for all K4 -free graphs corresponds to a half-space which contains
+all of P. A convex cone is an intersection of finitely many half-spaces. We
+would like to determine a convex cone containing P.
+Example 1.6.1. We know that k1 (G)−α(G) ≥ 0 for all graphs G, in particular
+for all K4 -free graphs G. Therefore the half-space
+H = {x ∈ R4 | (1, 0, 0, −1)x ≥ 0}
+contains P.
+H is however not a bounding half-space for P since the only set of points
+x ∈ P such that (1, 0, 0, −1)x are those that correspond to graphs, G, where
+k1 (G) = α(G), i.e. graphs without any edges. Those graphs are just disjoint
+unions of vertices and the corresponding points of these graphs in P all lie on
+a line (a subspace of dimension 1).
+Furthermore, we do not want the convex cone to contain unnecessarily
+many points of Z4 \ P. To this end we would like the half-spaces which define
+the convex cone to be bounding half-spaces. Note that it is not clear, a priori,
+that there even exists a convex cone for P such that every defining half-space is
+a bounding half-space, because we may need an infinite number of bounding
+half-spaces.
+It is not trivial to determine bounding half-spaces for the set P since we
+do not have any explicit description of its points. In Paper IV we develop
+a method where instead of P we consider a finite subset P0 ⊆ P, generated
+from a database of ‘interesting’ K4 -free graphs. For P0 it is then possible to
+determine a convex cone which contains it and such that every half-space is
+bounding for P0 .
+In fact, in Paper IV, we restrict the set P0 even further to a set of points P00 ,
+defined to be the only points of P0 that are relevant for finding bounding halfspaces corresponding to inequalities (a, b, c, d)x ≥ 0 where a ≤ 0, and b, c, d ≥
+0. Note that this is analogous to the inequalities t1 (G),t2 (G),t3 (G),t4 (G) ≥ 0
+that we discussed in Section 1.2.
+36
+
+Using computer calculations for finding bounding half-spaces for a convex
+cone containing a finite number of lattice points we then determine a list of
+potential inequalities of the form in (1.4) that we hypothesise hold for all K4 free graphs. Some of the inequalities we generate in this way seem to be a
+consequence of how we restrict from P to P00 , while others are more likely to
+correspond to bounding half-spaces also for P. In particular we prove, in Paper
+IV, that (a, b, c, d)x ≥ 0 corresponds to a bounding half-space for P if
+(a, b, c, d) ∈ {(−3, 1, 1, 5),
+(−5, 1, 0, 12),
+(−5, 1, 2, 10),
+(−6, 1, 2, 13)}.
+
+1.7 Invariants for K`+1 -free graphs
+Finally, in Paper V, we want to generalise the sort of invariant we study in
+several of the previous papers of this thesis to other classes of graphs. Instead
+of fixing a number `, such as ` = 2 in Paper I and II or ` = 3 in Paper IV,
+and looking at K`+1 -free graphs we, in Paper V, consider K`+1 -free graphs for
+general ` ≥ 1.
+Perhaps the most fundamental theorem of extremal graph theory is what is
+known as Mantel’s theorem (see [22]), which states that the complete bipartite
+graph Kdn/2e,bn/2c is the triangle-free graph on n vertices with the most number
+of edges. This was generalised, in [33], by Turán who proved the following
+theorem.
+We define the Turán graph, T (n, k), as the n-vertex graph obtained by partitioning the vertex set V (T (n, k)) = {1, 2, . . . , n} into k disjoint sets U1 ,U2 , . . . ,Uk
+of as equal sizes as possible, and prescribing that vw ∈ E(T (n, k)) if and
+only if v and w belong to different sets of the partition. Note in particular
+T (n, 2) = Kdn/2e,bn/2c .
+Theorem 1.7.1 (Turán’s theorem, 1941). If G is a Kk+1 -free graph with n
+vertices then e(G) ≤ e(T (n, k)), with equality if and only if G ∼
+= T (n, k).
+Example 1.7.1. If G is a triangle-free (i.e. K3 -free) graph on n vertices then
+we have that e(G) ≤ e(T (n, 2)) = e(Kdn/2e,bn/2c ). For example we have that
+every triangle-free graph on n = 7, n = 8, n = 9 and n = 10 vertices has at
+most 12, 16, 20 and 25 edges, respectively.
+The unique graphs that achieve these maximum number of edges are illustrated in Figure 1.13.
+37
+
+Figure 1.13: The Turán graphs T (7, 2), T (8, 2), T (9, 2) and T (10, 2), respectively.
+
+We may reformulate Turán’s theorem by considering the complement graph
+instead. For the complement graph Turán’s theorem states that if G is a graph
+without an independent set of size k + 1 on n vertices then e(G) ≥ e(T (n, k)).
+Note that the complement graphs of the Turán graphs, T (n, k), are disjoint
+unions of k complete graphs of as equal sizes as possible.
+We, for example, have T (7, 2) ∼
+= K3 +K4 , T (8, 2) ∼
+= 2K4 , T (9, 2) ∼
+= K4 +K5
+∼
+and T (10, 2) = 2K5 .
+The independence number of T (n, k) is just α(T (n, k)) = bn/kc. Therefore, among all graphs without an independent set of size k + 1 and with independence number at most bn/kc, the graphs T (n, k) has the least number
+of edges possible. The question we study in Paper V is what happens if we
+restrict the independence number further. We study the minimum number of
+edges among all K`+1 -free graphs without an independent set of size k +1. This
+is just the minimum edge numbers e(` + 1, k + 1; n). From Turán’s theorem we
+get that e(` + 1, k + 1; n) ≥ n(n − k)/(2k), but we are interested in whether we
+can improve this bound if we force ` to be strictly less than bn/kc = α(T (n, k)).
+Example 1.7.2. Suppose ` = 4 and k = 2, we then get that e(5, 3; 7) = e(T (7, 2)) =
+9, e(5, 3; 8) = e(T (8, 2)) = 12. But note that ω(T (9, 2)) = ω(T (10, 2)) = 5, so
+these do not satisfy the condition that the clique number is less than ` + 1 = 5.
+Every triangle-free graph on 9 (or 10) vertices has at least 16 (or 20) edges,
+by Turán’s theorem, and so does in particular every triangle-free graph with
+clique number at most 4. Hence we do get the weaker statements e(5, 3; 9) ≥
+16 and e(5, 3; 10) ≥ 20 immediately from Turán’s theorem. But what are the
+actual values of e(5, 3; 9) and e(5, 3; 10)? Can we get some stronger bound
+than the bound we get from Turán’s theorem?
+As a special case of the results presented in Paper V we have that 2e(5, k +
+1; n) ≥ 13n − 42k. This bound implies that e(5, 3; 9) ≥ 19 and e(5, 3; 10) ≥ 25.
+So, in this case we are able to improve on the bounds given by Turán’s theorem.
+Moreover, we have that the graph illustrated in Figure 1.14, which is denoted C(5,4/2) , has independence number 2, clique number 4, 25 edges and
+therefore e(5, 3; 10) = 25.
+38
+
+Figure 1.14: The graph C(5,4/2) , with 25 edges.
+
+In order to state the main hypothesis we work with in Paper V we define
+the following graphs.
+Definition 1.7.1. Let ` ≥ 2. The butterfly graph C(5,`/2) is the graph formed
+by a vertex set
+V (C(5,`/2) ) = A1 ∪· A2 ∪· · · · ∪· A5 ,
+ 
+ 
+such that |A1 | = |A3 | = |A4 | = 2` and |A2 | = |A5 | = 2` . Moreover, there is
+an edge in C(5,`/2) between v ∈ Ai and w ∈ A j if v 6= w and the indices i and j,
+taken modulo 5, differ by at most 1.
+A special case of the butterfly graphs first appear (with that name) in [5] as
+graphs which show that the bound α(G) ≥ 2n(G)/(∆(G) + ω(G) + 1) is sharp.
+They are also considered, in full generality, in [34].
+Example 1.7.3. If ` = 2 then the graph C(5,2/2) has a vertex set that is a disjoint
+union of five singleton sets, |A1 | = |A2 | = · · · = |A5 | = 1. The vertex in A1 is
+adjacent to the vertices in A5 and A2 , the vertex in A3 is adjacent to the vertices
+in A2 and A4 and the vertex in A4 is adjacent to the vertex in A5 . There are
+no other adjacencies than these. Hence, C(5,2/2) is just a cycle of length 5, i.e.
+C(5,2/2) = C5 .
+The graphs C(5,`/2) for 2 ≤ ` ≤ 5 have been illustrated in Figure 1.15.
+
+Figure 1.15: The graphs C(5,2/2) , C(5,3/2) , C(5,4/2) and C(5,5/2) , respectively.
+
+39
+
+The main hypothesis we work with in Paper V is the following, where we
+define the linear invariants i` by
+
+
+
+
+7` − 2
+5` + 1
+i` (G) = 2e(G) −
+n(G) + `
+α(G).
+2
+2
+Hypothesis 1.7.1. For all K`+1 -free graphs G we have i` (G) ≥ 0 and if 3 6=
+` ≥ 1 then i` (G) = 0 implies that every connected component of G is either K`
+or C(5,`/2) .
+That i` (G) ≥ 0 for all K`+1 -free graphs is equivalent to a pair of conjectures
+of Weigand, which appear in [34]. Note that the coefficients of e(G), n(G)
+and α(G) in the definition of i` (G) have been chosen in such a way to make
+i` (K` ) = i` (C(5,`/2) ) = 0. The hypothesis then states that K` and C(5,`/2) are the
+two connected graphs that minimise i` over all K`+1 -free graphs.
+Example 1.7.4.
+• If ` = 1 the hypothesis just states that for all K2 -free graphs G (graphs
+without any edges) we have 2e(G) − 3n(G) + 3α(G) ≥ 0. This is trivially true, since in all such graphs α(G) = n(G). Moreover, the only
+connected K2 -free graph is K1 so the second part of the hypothesis is
+trivial as well.
+• If ` = 2 the hypothesis states that i2 (G) = 2e(G) − 6n(G) + 10α(G) ≥ 0
+for all triangle-free graphs G, with equality if and only if every component is either a K2 or a C(5,2/2) ∼
+= C5 . That this holds was shown by
+Radziszowski and Kreher in [28].
+• The case when ` = 3 is somewhat special since the second part of the
+hypothesis does not apply for this value of `. In the hypothesis we get the
+inequality i3 (G) = 2e(G) − 10n(G) + 24α(G) ≥ 0. This inequality does
+in fact hold for all K4 -free graphs, which was shown by Fraugnaugh
+and Locke in [6], but there is one additional connected graph (to the
+two in the hypothesis) that satisfies this with equality. The fact that this
+exceptional graph, W8;1,2 which is illustrated in Figure 1.16, is the only
+exception to the statement in the hypothesis was shown by Backelin in
+[2, Theorem 17].
+• Weigand (see [34]) has verified that i` (G) ≥ 0 for all K`+1 -free graphs G
+for ` ≤ 12 and for ` = 14. Weigand does however not classify the graphs
+for which we have i` -value 0.
+In Paper V we develop a theory related to to Hypothesis 1.7.1 and, in particular, we prove several interesting lemmas about the invariants i` .
+40
+
+Figure 1.16: The graph W8;1,2 .
+
+For example, we show that a minimal counterexample G to Hypothesis
+1.7.1, must be such that
+` + 2 ≤ δ (G) ≤
+
+3` − 1
+,
+2
+
+if ` is odd and
+
+3`
+− 2,
+2
+if ` is even. This has the particular consequence that we know that the hypothesis holds for all graphs with maximum valency at most ` + 2 (or at most ` + 3
+if ` is even). More generally, the hypothesis holds for all d-degenerate graphs
+(i.e. graphs such that every subgraph contains a vertex of valency of at most
+d), where d = 2 b`/2c + 3.
+The concept of bounded valency Ramsey-numbers, Rm (`, k), were introduced by Staton in [31] (see also [32]). They are defined as follows. Let
+n = Rm (`, k) be the smallest positive integer such that every graph on n vertices with maximum valency at most m either contains a clique of size ` or an
+independent set of size k. Note that Rm (`, k) ≤ R(`, k) for all positive integers
+m and that if m is large enough (depending on ` and k) then Rm (`, k) = R(`, k).
+Suppose that G is a K`+1 -free graph, ` is odd and that ∆(G) ≤ ` + 2, then
+we know that the Hypothesis holds for this `. This implies that, since e(G) ≤
+∆(G)n(G)/2,
+` + 3 ≤ δ (G) ≤
+
+(` + 2)n(G) −
+
+7` − 1
+`(5` + 1)
+n(G) +
+α(G) ≥ 0,
+2
+2
+
+which simplifies to the bound
+n(G) ≤
+
+`(5` + 1)α(G)
+.
+5(` − 1)
+
+In terms of the bounded valency Ramsey numbers this can be expressed as
+
+
+`(5` + 1)k
+R`+2 (` + 1, k + 1) ≤
++1 .
+5(` − 1)
+41
+
+Similarly, for even ` we get
+
+5`2 k
+R`+3 (` + 1, k + 1) ≤
++1 .
+5` − 8
+
+
+Finally, in Paper V we prove Hypothesis 1.7.1 in some special cases. We
+indicate how one may show the hypothesis for all even ` ≤ 14 and prove it
+explicitly for ` = 16.
+
+1.8 Comparison between manuscripts in the thesis and other
+versions
+Sections 1.1 through 1.4 of the current chapter are copied, essentially verbatim, from the introduction of the author’s licentiate thesis [18]. We will in
+this section detail how the manuscripts that appear in this thesis correspond to
+previously available versions.
+Other than the differences that are specified in this section some purely
+cosmetic changes have been made – such as change of fonts, formatting and
+the use of synonymous terminology (e.g. ‘degree’ versus ‘valency’) to make it
+consistent throughout this thesis. Furthermore, in both Paper I and Paper II the
+references to the unpublished work [3] have been changed to be more specific
+with respect to where in [3] they may be found. Also, whenever it is possible
+we have changed these references to instead refer to an earlier version of the
+same manuscript, [2], which is available online.
+Paper I is an extended manuscript on which the article [19] is based. The
+main difference is that details of proofs from [18] that do not appear in [19]
+have been included in Paper I of this thesis for increased readability and selfcontainment. In [19] the reader is instead referred to the author’s licentiate
+thesis [18] for full proofs. This is, however, entirely undesirable for the present
+thesis. Here follows a detailed explanation of where details that appear in Paper
+I have been omitted in [19] from Paper I.
+The last paragraph in Section 2.1.1 in Paper I does not appear in [19], but is
+useful for motivating the introduction of N(C4 ; ·) to the uninitiated reader. An
+example of consequences of Theorem 2.1.1 and clarification of the notation in
+Section 2.1.4 of Paper I does not appear in [19].
+In Section 2.1.4 of Paper I we include (independent) proofs of the following lemmata, since these statements first appear the unpublished works [2–4]
+by Backelin: Lemma 2.1.3 (appears as [19, Lemma 1.1]), Lemma 2.1.4 (appears as [19, Lemma 1.2]), Lemma 2.1.6 (appears as [19, Lemma 1.4]) and
+Lemma 2.1.7 (appears as [19, Lemma 1.5]). Furthermore, Corollary 2.1.1 and
+the definition of an H-avoiding graph from Paper I is omitted in [19]. The
+42
+
+proof of [19, Claim 1] is the same as the proof Claim 1 of Paper I, except that
+some details have been removed making the proof in [19] significantly more
+difficult to follow. Similarly, some of the details of the proof of parts (vii)-(x)
+of Lemma 2.2.2 are omitted in the proof of [19, Lemma 2.2] purely for reasons
+of brevity. For clarity, however, the author has chosen to include these details
+in Paper I. The same holds for the proofs of [19, Claims 4-10] for which, in
+[19], the reader is referred to the manuscript which appears in [18], whereas
+in Paper I of this thesis (where the corresponding statements are Claims 4-17)
+we include the complete proofs.
+Paper II differs from [18, Paper II] mainly in that some errata have been
+corrected. Throughout Paper II some purely linguistic corrections have been
+made, and some inconsistencies in use of variable names have been fixed. Errata in the definitions of ‘stitches’ in Section 3.2.2 have also been corrected.
+Furthermore, Section 3.3 has been expanded upon to include slightly more details on the computer implementation. Lastly, a reference to source code that
+now is available online has been added to Paper II since the publication of [18,
+Paper II].
+Apart from the purely cosmetic changes (such as replacing the word ‘degree’ with the synonymous word ‘valency’) Paper III only differs from the
+version that has been accepted for publication in that we have included the
+source code for the programs used as an appendix to Paper III.
+
+43
+
+44
+
+References
+
+[1] V. A NGELTVEIT AND B. D. M C K AY, R(5, 5) ≤ 48, Journal of Graph
+Theory 89 (2018), 5–13. 23
+[2] J. BACKELIN, Contributions to a Ramsey calculus, unpublished
+manuscript version 2007-04-04, https://www2.math.su.se/~joeb/
+public/Ramsey/Ramsey.pdf. Accessed: 2019-10-12. 26, 40, 42
+[3]
+
+, Contributions to a Ramsey calculus, unpublished manuscript
+version 2016-08-18. 25, 29, 31, 42
+
+[4]
+
+, Edge number critical triangle free graphs woth low independence number, arXiv:1309.7874v1 [math.CO] 30 Sep 2013 (2013). 24,
+25, 26, 28, 31, 42
+
+[5] S. FAJTLOWICZ, On the size of independent sets in graphs, Proc. 9th SE Conf. on Combinatorics, Graph Theory and Computing, Boca Raton
+(1978), 269–274. 39
+[6] K .L. F RAUGHNAUGH AND S. C. L OCKE, Lower bounds on size and independence in K4 free graphs, Journal of Graph Theory 26 (1997), 26:61–
+71. 40
+[7] J. G OEDGEBEUR AND S. P. R ADZISZOWSKI, New computational upper
+bounds for Ramsey numbers R(3, k), Electronic Journal of Combinatorics
+20 (2013), no. 1. 31
+[8] J. E. G RAVER AND J. YACKEL, Some graph theoretic results associated
+with Ramsey’s theorem, Journal of Combinatorial Theory 4 (1968), 125–
+175. 19, 23
+[9] R. E. G REENWOOD AND A. M. G LEASON, Combinatorial relations and
+chromatic graphs, Canadian Journal of Mathematics 7 (1955), 1–7.
+[10] C. G RINSTEAD AND S. ROBERTS, On the Ramsey numbers R(3, 8) and
+R(3, 9), Journal of Combinatorial Theory 33 (1982), 27–51. 19, 23
+45
+
+[11] G. H OPKINS AND W. S TATON, Girth and independence ratio, Canadian
+Mathematical Bulletin 25 (1982), no. 2, 179–186. 29
+[12] Y. H UANG , Y. WANG , W. S HENG , J. YANG , K. Z HANG , AND
+J. H UANG, New upper bound formulas with parameters for Ramsey numbers, Discrete Mathematics 307 (2007), 760–763. 32, 33
+[13] C. F. J ONES, Independence in graphs, Journal of Combinatorial Theory
+37 (1984), 254–269. 25, 26
+[14] J. G. K ALBFLEISCH, Construction of special edge-chromatic graphs,
+Canadian Mathematical Bulletin 8 (1965), 575–584. 19
+[15]
+
+, Chromatic graphs and Ramsey’s theorem, Ph.D. thesis, University of Waterloo, 1966. 23
+
+[16] G. K ÉRY, On a theorem of Ramsey (in Hungarian), Matematikai Lapok
+15 (1964), 204–224. 19
+[17] J. H. K IM, The Ramsey number R(3,t) has order of magnitude t 2 / logt,
+Random Structures & Algorithms 7 (1995), no. 3, 173–207. 20
+[18] O. K RÜGER, On minimal triangle-free Ramsey graphs, Licentiate Thesis
+in Mathematics, Stockholm University, Jan. 2018. 18, 42, 43
+[19]
+
+, An invariant for minimum triangle-free graphs, The Australasian Journal of Combinatorics 74 (2019), 371–388. 42, 43
+
+[20]
+
+, GitHub repository for ramseyrecursion, https://github.
+com/tbk1988/ramseyrecursion, Accessed: 2019-05-21. 35
+
+[21] N. L ICHIARDOPOL, New lower bounds on independence number in
+triangle-free graphs in terms of order, maximum degree and girth, Discrete Mathematics 332 (2014), 55–59. 29
+[22] W. M ANTEL, Problem 28 (Solution by H. Gouwentak, W. Mantel, J. Teixeira de Mattes, F. Schuh and W. A. Wythoff), Wiskundige Opgaven, 10
+(1907), 60–61. 37
+[23] B. D. M C K AY, Ramsey graphs, http://users.cecs.anu.edu.au/
+~bdm/data/ramsey.html, Accessed: 2015-05-06. 31
+[24] B. D. M C K AY AND Z. K E M IN, The value of the Ramsey number
+R(3, 8), Journal of Graph Theory 16 (1992), 99–105. 19
+[25] B. D. M C K AY AND S. P. R ADZISZOWSKI, R(4, 5) = 25, Journal of
+Graph Theory 19 (1995), 309–322. 19, 23
+46
+
+[26] H OUSE OF G RAPHS, Minimal Ramsey graphs, https://hog.grinvin.
+org/MinRamsey, Accessed: 2015-05-06. 31
+[27] S. P. R ADZISZOWSKI, Small Ramsey numbers; dynamic survey, revision
+#15, Electronic Journal of Combinatorics (2017). 19, 20, 33, 35
+[28] S. P. R ADZISZOWSKI AND D. L. K REHER, On (3,k) Ramsey graphs:
+Theoretical and computational results, Journal of Combinatorial Mathematics and Combinatorial Computing 4 (1988), 37–52. 21, 24, 31, 40
+[29]
+
+, Minimum triangle-free graphs, Ars Combinatoria 31 (1991),
+65–92. 24, 25, 26, 28, 31
+
+[30] F. R AMSEY, On a problem of fromal logic, Proceedings of the London
+Mathematical Society 30 (1930), 264–286. 18
+[31] W. S TATON, Some Ramsey-type numbers and the independence ratio,
+Ph.D. thesis, University of Huston, 1977. 41
+[32]
+
+, Some Ramsey-type numbers and the independence ratio, Transactions of the American Mathematical Society 256 (1979), 353–370. 41
+
+[33] P. T URÁN, On an extremal problem in graph theory, Matematikai és
+Fizikai Lapok (in Hungarian) 48 (1941), 436–452. 37
+[34] J. W EIGAND, Size bound and Ramsey-type numbers, Ph.D. thesis, University of Colorado at Denver, 2006. 39, 40
+
+47
+
+

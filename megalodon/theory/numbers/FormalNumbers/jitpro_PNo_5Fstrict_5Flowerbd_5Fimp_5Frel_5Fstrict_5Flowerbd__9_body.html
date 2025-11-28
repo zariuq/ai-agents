@@ -1,0 +1,40 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+term nIn = \x:set.\y:set.~ x iIn y
+const PNoEq_ : set (set prop) (set prop) prop
+term PNoLt_ = \x:set.\p:set prop.\q:set prop.?y:set.y iIn x & (PNoEq_ y p q & ~ p y & q y)
+const PNoLe : set (set prop) set (set prop) prop
+term PNo_upc = \P:set (set prop) prop.\x:set.\p:set prop.?y:set.ordinal y & ?q:set prop.P y q & PNoLe y q x p
+const PNoLt : set (set prop) set (set prop) prop
+term PNo_rel_strict_lowerbd = \P:set (set prop) prop.\x:set.\p:set prop.!y:set.y iIn x -> !q:set prop.PNo_upc P y q -> PNoLt x p y q
+term PNo_strict_lowerbd = \P:set (set prop) prop.\x:set.\p:set prop.!y:set.ordinal y -> !q:set prop.P y q -> PNoLt x p y q
+axiom ordinal_Hered: !x:set.ordinal x -> !y:set.y iIn x -> ordinal y
+const ordsucc : set set
+lemma !P:set (set prop) prop.!x:set.!y:set.!p:set prop.!z:set.!q:set prop.ordinal x -> y iIn ordsucc x -> PNo_strict_lowerbd P x p -> z iIn y -> PNo_upc P z q -> TransSet x -> ordinal (ordsucc x) -> ordinal y -> PNoLt y p z q
+var P:set (set prop) prop
+var x:set
+var y:set
+var p:set prop
+var z:set
+var q:set prop
+hyp ordinal x
+hyp y iIn ordsucc x
+hyp PNo_strict_lowerbd P x p
+hyp z iIn y
+hyp PNo_upc P z q
+hyp TransSet x
+claim ordinal (ordsucc x) -> PNoLt y p z q
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

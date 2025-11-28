@@ -1,0 +1,52 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_SNo_Lt_subprop2: !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.SNo x -> SNo y -> SNo z -> SNo w -> SNo u -> SNo v -> (x + u) < z + v -> (y + v) < w + u -> (x + y) < z + w
+axiom add_SNo_com: !x:set.!y:set.SNo x -> SNo y -> x + y = y + x
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const SNoR : set set
+const SNoL : set set
+const SNoS_ : set set
+const SNoLev : set set
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+hyp SNo x
+hyp !x2:set.x2 iIn SNoS_ (SNoLev x) -> !y2:set.SNo y2 -> !P:prop.(SNo (x2 * y2) -> (!z2:set.z2 iIn SNoL x2 -> !w2:set.w2 iIn SNoL y2 -> (z2 * y2 + x2 * w2) < x2 * y2 + z2 * w2) -> (!z2:set.z2 iIn SNoR x2 -> !w2:set.w2 iIn SNoR y2 -> (z2 * y2 + x2 * w2) < x2 * y2 + z2 * w2) -> (!z2:set.z2 iIn SNoL x2 -> !w2:set.w2 iIn SNoR y2 -> (x2 * y2 + z2 * w2) < z2 * y2 + x2 * w2) -> (!z2:set.z2 iIn SNoR x2 -> !w2:set.w2 iIn SNoL y2 -> (x2 * y2 + z2 * w2) < z2 * y2 + x2 * w2) -> P) -> P
+hyp SNo y
+hyp w iIn SNoL x
+hyp SNo (z * y)
+hyp SNo (w * y)
+hyp u iIn SNoR y
+hyp SNo (z * u)
+hyp SNo (w * u)
+hyp v iIn SNoR w
+hyp SNo (v * u)
+hyp SNo (v * y)
+hyp (z * y + v * u) < z * u + v * y
+claim (w * u + v * y) < w * y + v * u -> (z * y + w * u) < w * y + z * u
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

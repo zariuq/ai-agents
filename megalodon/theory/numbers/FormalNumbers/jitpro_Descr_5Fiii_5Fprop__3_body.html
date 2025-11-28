@@ -1,0 +1,17 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Eps_i : (set prop) set
+term Descr_iii = \P:(set set set) prop.\x:set.\y:set.Eps_i \z:set.!g:set set set.P g -> g x y = z
+var P:(set set set) prop
+var g:set set set
+hyp !h:set set set.!g2:set set set.P h -> P g2 -> h = g2
+hyp P g
+claim g = Descr_iii P -> P (Descr_iii P)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,34 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const bij : set set (set set) prop
+term equip = \x:set.\y:set.?f:set set.bij x y f
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const omega : set
+term finite = \x:set.?y:set.y iIn omega & equip x y
+const Repl : set (set set) set
+axiom ReplI: !x:set.!f:set set.!y:set.y iIn x -> f y iIn Repl x f
+const Empty : set
+axiom EmptyE: !x:set.nIn x Empty
+axiom Empty_eq: !x:set.(!y:set.nIn y x) -> x = Empty
+const SNo : set prop
+const minus_SNo : set set
+term - = minus_SNo
+const SNo_min_of : set set prop
+lemma !x:set.(!y:set.y iIn x -> SNo y) -> x != Empty -> (!y:set.y iIn Repl x minus_SNo -> SNo y) -> finite (Repl x minus_SNo) -> Repl x minus_SNo != Empty -> ?y:set.SNo_min_of x y
+var x:set
+hyp !y:set.y iIn x -> SNo y
+hyp finite x
+hyp x != Empty
+hyp !y:set.y iIn Repl x minus_SNo -> SNo y
+claim finite (Repl x minus_SNo) -> ?y:set.SNo_min_of x y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

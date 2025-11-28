@@ -1,0 +1,42 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+term nIn = \x:set.\y:set.~ x iIn y
+const SNo : set prop
+axiom ordinal_SNo: !x:set.ordinal x -> SNo x
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const ordsucc : set set
+const SNoLev : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+lemma !x:set.!y:set.!z:set.ordinal x -> SNo x -> SNo y -> ordinal (x + y) -> ordinal (ordsucc (x + y)) -> SNo (ordsucc (x + y)) -> SNoLev z iIn ordsucc x -> ordinal (SNoLev z) -> SNo z -> ordinal (SNoLev z + y) -> SNo (SNoLev z + y) -> (z + y) < ordsucc (x + y)
+var x:set
+var y:set
+var z:set
+hyp ordinal x
+hyp ordinal y
+hyp SNo x
+hyp SNo y
+hyp ordinal (x + y)
+hyp ordinal (ordsucc (x + y))
+hyp SNo (ordsucc (x + y))
+hyp SNoLev z iIn ordsucc x
+hyp ordinal (SNoLev z)
+hyp SNo z
+claim ordinal (SNoLev z + y) -> (z + y) < ordsucc (x + y)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

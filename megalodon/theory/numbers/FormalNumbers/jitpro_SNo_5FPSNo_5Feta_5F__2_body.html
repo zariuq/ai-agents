@@ -1,0 +1,39 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const binunion : set set set
+const Sep : set (set prop) set
+const ReplSep : set (set prop) (set set) set
+const SetAdjoin : set set set
+const Sing : set set
+const ordsucc : set set
+const Empty : set
+term PSNo = \x:set.\p:set prop.binunion (Sep x p) (ReplSep x (\y:set.~ p y) \y:set.SetAdjoin y (Sing (ordsucc Empty)))
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const Repl : set (set set) set
+term SNoElts_ = \x:set.binunion x (Repl x \y:set.SetAdjoin y (Sing (ordsucc Empty)))
+term SNo_ = \x:set.\y:set.Subq y (SNoElts_ x) & !z:set.z iIn x -> ~(SetAdjoin z (Sing (ordsucc Empty)) iIn y <-> z iIn y)
+axiom SepI: !x:set.!p:set prop.!y:set.y iIn x -> p y -> y iIn Sep x p
+axiom binunionI1: !x:set.!y:set.!z:set.z iIn x -> z iIn binunion x y
+axiom exactly1of2_E: !P:prop.!Q:prop.~(P <-> Q) -> !R:prop.(P -> ~ Q -> R) -> (~ P -> Q -> R) -> R
+axiom binunionI2: !x:set.!y:set.!z:set.z iIn y -> z iIn binunion x y
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+axiom binunionE: !x:set.!y:set.!z:set.z iIn binunion x y -> z iIn x | z iIn y
+axiom SepE: !x:set.!p:set prop.!y:set.y iIn Sep x p -> y iIn x & p y
+axiom FalseE: ~ False
+axiom ReplSepE_impred: !x:set.!p:set prop.!f:set set.!y:set.y iIn ReplSep x p f -> !P:prop.(!z:set.z iIn x -> p z -> y = f z -> P) -> P
+axiom set_ext: !x:set.!y:set.Subq x y -> Subq y x -> x = y
+lemma !x:set.!y:set.!z:set.!w:set.(!u:set.u iIn x -> ~(SetAdjoin u (Sing (ordsucc Empty)) iIn y <-> u iIn y)) -> z iIn y -> w iIn x -> z = SetAdjoin w (Sing (ordsucc Empty)) -> nIn w y -> SetAdjoin w (Sing (ordsucc Empty)) iIn ReplSep x (\u:set.nIn u y) \u:set.SetAdjoin u (Sing (ordsucc Empty))
+const ordinal : set prop
+claim !x:set.!y:set.ordinal x -> SNo_ x y -> y = PSNo x \z:set.z iIn y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

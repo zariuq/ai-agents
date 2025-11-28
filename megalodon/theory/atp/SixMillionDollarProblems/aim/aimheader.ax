@@ -1,0 +1,67 @@
+thf(c_Eps_5Fi,type,(c_Eps_5Fi : (($i > $o) > $i))). % 174b78e53fc239e8c2aab4ab5a996a27e3e5741e88070dad186e05fb13f275e5
+thf(c_Eps_5Fi_5Fax,axiom,(! [X0:($i > $o)] : (! [X1:$i] : ((X0 @ X1) => (X0 @ (c_Eps_5Fi @ X0)))))). % 4d0b1b3ca489073915e8701e021a09da22887f41f83e407df8eafe040825db18
+thf(prop_5Fext,axiom,(! [X0:$o] : (! [X1:$o] : ((X0 <=> X1) => (X0 = X1))))). % d8c32d0ac70c5760222c9adf1a3ca90f3cb6b5182b0f70a5d82cb9000abc77ef
+thf(c_In,type,(c_In : ($i > ($i > $o)))). % 73c9efe869770ab42f7cde0b33fe26bbc3e2bd157dad141c0c27d1e7348d60f5
+thf(c_Subq,type,(c_Subq : ($i > ($i > $o)))).
+thf(c_Subq_def,definition,(c_Subq = (^ [X0:$i] : (^ [X1:$i] : (! [X2:$i] : (((c_In @ X2) @ X0) => ((c_In @ X2) @ X1))))))). % 8a8e36b858cd07fc5e5f164d8075dc68a88221ed1e4c9f28dac4a6fdb2172e87
+thf(set_5Fext,axiom,(! [X0:$i] : (! [X1:$i] : (((c_Subq @ X0) @ X1) => (((c_Subq @ X1) @ X0) => (X0 = X1)))))). % 5189b0389a1efe35ba744aa1436bb23541e75e8a85658313375e1e0b3321128f
+thf(c_In_5Find,axiom,(! [X0:($i > $o)] : ((! [X1:$i] : ((! [X2:$i] : (((c_In @ X2) @ X1) => (X0 @ X2))) => (X0 @ X1))) => (! [X1:$i] : (X0 @ X1))))). % 73fa935250c44cafb3971bffe3b0cdef8869cd5693da6149f81741261543e04d
+thf(c_Empty,type,(c_Empty : $i)). % e2a83319facad3a3d8ff453f4ef821d9da495e56a623695546bb7d7ac333f3fe
+thf(c_EmptyAx,axiom,(~ (? [X0:$i] : ((c_In @ X0) @ c_Empty)))). % 920f955f033a1286fcaba96c8eb55d2079812a3041ff6b812df4cc2636156b59
+thf(c_Union,type,(c_Union : ($i > $i))). % 844774016d959cff921a3292054b30b52f175032308aa11e418cb73f5fef3d54
+thf(c_UnionEq,axiom,(! [X0:$i] : (! [X1:$i] : (((c_In @ X1) @ (c_Union @ X0)) <=> (? [X2:$i] : (((c_In @ X1) @ X2) & ((c_In @ X2) @ X0))))))). % 0b67fbe4188c03468f8cd69c462ea8e5fb2269bf1fd67125a6456853d4ab7c74
+thf(c_Power,type,(c_Power : ($i > $i))). % 2a38dbb37506341b157c11dddf8eb7d8404ce97eb50d5e940b23d5094ae39d70
+thf(c_PowerEq,axiom,(! [X0:$i] : (! [X1:$i] : (((c_In @ X1) @ (c_Power @ X0)) <=> ((c_Subq @ X1) @ X0))))). % b492ab96942311595fd53c93243cb7ab5314986bb8460d580d9382dfab90f7d1
+thf(c_Repl,type,(c_Repl : ($i > (($i > $i) > $i)))). % b1b8f6f9d4d6136be8375ed2faddb54df84cdb3018ec6bd2ac07b2c25d3d8af8
+thf(c_ReplEq,axiom,(! [X0:$i] : (! [X1:($i > $i)] : (! [X2:$i] : (((c_In @ X2) @ ((c_Repl @ X0) @ (^ [X3:$i] : (X1 @ X3)))) <=> (? [X3:$i] : (((c_In @ X3) @ X0) & (X2 = (X1 @ X3))))))))). % c10976371705fb97042c207e4021721b0543188b170452fb918fb78d30b85c02
+thf(c_TransSet,type,(c_TransSet : ($i > $o))).
+thf(c_TransSet_def,definition,(c_TransSet = (^ [X0:$i] : (! [X1:$i] : (((c_In @ X1) @ X0) => ((c_Subq @ X1) @ X0)))))). % e7493d5f5a73b6cb40310f6fcb87d02b2965921a25ab96d312adf7eb8157e4b3
+thf(c_Union_5Fclosed,type,(c_Union_5Fclosed : ($i > $o))).
+thf(c_Union_5Fclosed_def,definition,(c_Union_5Fclosed = (^ [X0:$i] : (! [X1:$i] : (((c_In @ X1) @ X0) => ((c_In @ (c_Union @ X1)) @ X0)))))). % 54850182033d0575e98bc2b12aa8b9baaa7a541e9d5abc7fddeb74fc5d0a19ac
+thf(c_Power_5Fclosed,type,(c_Power_5Fclosed : ($i > $o))).
+thf(c_Power_5Fclosed_def,definition,(c_Power_5Fclosed = (^ [X0:$i] : (! [X1:$i] : (((c_In @ X1) @ X0) => ((c_In @ (c_Power @ X1)) @ X0)))))). % 5a811b601343da9ff9d05d188d672be567de94b980bbbe0e04e628d817f4c7ac
+thf(c_Repl_5Fclosed,type,(c_Repl_5Fclosed : ($i > $o))).
+thf(c_Repl_5Fclosed_def,definition,(c_Repl_5Fclosed = (^ [X0:$i] : (! [X1:$i] : (((c_In @ X1) @ X0) => (! [X2:($i > $i)] : ((! [X3:$i] : (((c_In @ X3) @ X1) => ((c_In @ (X2 @ X3)) @ X0))) => ((c_In @ ((c_Repl @ X1) @ (^ [X3:$i] : (X2 @ X3)))) @ X0)))))))). % 962d14a92fc8c61bb8319f6fe1508fa2dfbe404fd3a3766ebce0c6db17eeeaa1
+thf(c_ZF_5Fclosed,type,(c_ZF_5Fclosed : ($i > $o))).
+thf(c_ZF_5Fclosed_def,definition,(c_ZF_5Fclosed = (^ [X0:$i] : (((c_Union_5Fclosed @ X0) & (c_Power_5Fclosed @ X0)) & (c_Repl_5Fclosed @ X0))))). % 43f34d6a2314b56cb12bf5cf84f271f3f02a3e68417b09404cc73152523dbfa0
+thf(c_UnivOf,type,(c_UnivOf : ($i > $i))). % 5a50bfe3a33a99c34615616f54f10cc2df28717bcf140147a4c61b78529a8e94
+thf(c_UnivOf_5FIn,axiom,(! [X0:$i] : ((c_In @ X0) @ (c_UnivOf @ X0)))). % 64ad93d240a001e91d619642c36f7ea8387780b9860b748f282d12bc22d4a677
+thf(c_UnivOf_5FTransSet,axiom,(! [X0:$i] : (c_TransSet @ (c_UnivOf @ X0)))). % 40723e6db0df4f3bce8b35ba709f46fd1f4a94f61bdd2e206b8d4e21ea660332
+thf(c_UnivOf_5FZF_5Fclosed,axiom,(! [X0:$i] : (c_ZF_5Fclosed @ (c_UnivOf @ X0)))). % 4181a4a1a92ac574d2c6208a18ed79b8773a8c1de9330f96e76e3edabcf083ea
+thf(c_UnivOf_5FMin,axiom,(! [X0:$i] : (! [X1:$i] : (((c_In @ X0) @ X1) => ((c_TransSet @ X1) => ((c_ZF_5Fclosed @ X1) => ((c_Subq @ (c_UnivOf @ X0)) @ X1))))))). % 9a6fd4292d63e7be0caf7c85f8d8c56e3be3c23ff46c2001263cd459da21e6ed
+thf(c_X_tp,type,(c_X : $i)).
+thf(m_tp,type,(m : ($i > ($i > $i)))).
+thf(b_tp,type,(b : ($i > ($i > $i)))).
+thf(s_tp,type,(s : ($i > ($i > $i)))).
+thf(e_tp,type,(e : $i)).
+thf(c_K_tp,type,(c_K : ($i > ($i > $i)))).
+thf(a_tp,type,(a : ($i > ($i > ($i > $i))))).
+thf(c_T_tp,type,(c_T : ($i > ($i > $i)))).
+thf(c_L_tp,type,(c_L : ($i > ($i > ($i > $i))))).
+thf(c_R_tp,type,(c_R : ($i > ($i > ($i > $i))))).
+thf(c_He,axiom,((c_In @ e) @ c_X)).
+thf(c_Hm,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => ((c_In @ ((m @ X10) @ X11)) @ c_X)))))).
+thf(c_Hs,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => ((c_In @ ((s @ X10) @ X11)) @ c_X)))))).
+thf(c_Hb,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => ((c_In @ ((b @ X10) @ X11)) @ c_X)))))).
+thf(c_HKdef,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (((c_K @ X10) @ X11) = ((b @ ((m @ X11) @ X10)) @ ((m @ X10) @ X11)))))))).
+thf(c_HK,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => ((c_In @ ((c_K @ X10) @ X11)) @ c_X)))))).
+thf(c_Hadef,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (! [X12:$i] : (((c_In @ X12) @ c_X) => ((((a @ X10) @ X11) @ X12) = ((b @ ((m @ X10) @ ((m @ X11) @ X12))) @ ((m @ ((m @ X10) @ X11)) @ X12)))))))))).
+thf(c_Ha,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (! [X12:$i] : (((c_In @ X12) @ c_X) => ((c_In @ (((a @ X10) @ X11) @ X12)) @ c_X)))))))).
+thf(c_HTdef,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (((c_T @ X10) @ X11) = ((b @ X11) @ ((m @ X10) @ X11)))))))).
+thf(c_HT,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => ((c_In @ ((c_T @ X10) @ X11)) @ c_X)))))).
+thf(c_HLdef,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (! [X12:$i] : (((c_In @ X12) @ c_X) => ((((c_L @ X10) @ X11) @ X12) = ((b @ ((m @ X12) @ X11)) @ ((m @ X12) @ ((m @ X11) @ X10))))))))))).
+thf(c_HL,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (! [X12:$i] : (((c_In @ X12) @ c_X) => ((c_In @ (((c_L @ X10) @ X11) @ X12)) @ c_X)))))))).
+thf(c_HRdef,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (! [X12:$i] : (((c_In @ X12) @ c_X) => ((((c_R @ X10) @ X11) @ X12) = ((s @ ((m @ ((m @ X10) @ X11)) @ X12)) @ ((m @ X11) @ X12)))))))))).
+thf(c_HR,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (! [X12:$i] : (((c_In @ X12) @ c_X) => ((c_In @ (((c_R @ X10) @ X11) @ X12)) @ c_X)))))))).
+thf(c_HeL,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (((m @ e) @ X10) = X10)))).
+thf(c_HeR,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (((m @ X10) @ e) = X10)))).
+thf(c_Hbm,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (((b @ X10) @ ((m @ X10) @ X11)) = X11)))))).
+thf(c_Hmb,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (((m @ X10) @ ((b @ X10) @ X11)) = X11)))))).
+thf(c_Hsm,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (((s @ ((m @ X10) @ X11)) @ X11) = X10)))))).
+thf(c_Hms,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (((m @ ((s @ X10) @ X11)) @ X11) = X10)))))).
+thf(c_HTT,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (! [X12:$i] : (((c_In @ X12) @ c_X) => (((c_T @ ((c_T @ X10) @ X11)) @ X12) = ((c_T @ ((c_T @ X10) @ X12)) @ X11))))))))).
+thf(c_HTL,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (! [X12:$i] : (((c_In @ X12) @ c_X) => (! [X13:$i] : (((c_In @ X13) @ c_X) => (((c_T @ (((c_L @ X10) @ X11) @ X12)) @ X13) = (((c_L @ ((c_T @ X10) @ X13)) @ X11) @ X12))))))))))).
+thf(c_HTR,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (! [X12:$i] : (((c_In @ X12) @ c_X) => (! [X13:$i] : (((c_In @ X13) @ c_X) => (((c_T @ (((c_R @ X10) @ X11) @ X12)) @ X13) = (((c_R @ ((c_T @ X10) @ X13)) @ X11) @ X12))))))))))).
+thf(c_HLR,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (! [X12:$i] : (((c_In @ X12) @ c_X) => (! [X13:$i] : (((c_In @ X13) @ c_X) => (! [X14:$i] : (((c_In @ X14) @ c_X) => ((((c_L @ (((c_R @ X10) @ X11) @ X12)) @ X13) @ X14) = (((c_R @ (((c_L @ X10) @ X13) @ X14)) @ X11) @ X12))))))))))))).
+thf(c_HLL,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (! [X12:$i] : (((c_In @ X12) @ c_X) => (! [X13:$i] : (((c_In @ X13) @ c_X) => (! [X14:$i] : (((c_In @ X14) @ c_X) => ((((c_L @ (((c_L @ X10) @ X11) @ X12)) @ X13) @ X14) = (((c_L @ (((c_L @ X10) @ X13) @ X14)) @ X11) @ X12))))))))))))).
+thf(c_HRR,axiom,(! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (! [X12:$i] : (((c_In @ X12) @ c_X) => (! [X13:$i] : (((c_In @ X13) @ c_X) => (! [X14:$i] : (((c_In @ X14) @ c_X) => ((((c_R @ (((c_R @ X10) @ X11) @ X12)) @ X13) @ X14) = (((c_R @ (((c_R @ X10) @ X13) @ X14)) @ X11) @ X12))))))))))))).

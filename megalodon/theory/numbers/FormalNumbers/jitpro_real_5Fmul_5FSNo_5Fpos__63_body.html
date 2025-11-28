@@ -1,0 +1,86 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const SNoS_ : set set
+const omega : set
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom mul_SNo_SNoS_omega: !x:set.x iIn SNoS_ omega -> !y:set.y iIn SNoS_ omega -> x * y iIn SNoS_ omega
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const Empty : set
+axiom pos_mul_SNo_Lt2: !x:set.!y:set.!z:set.!w:set.SNo x -> SNo y -> SNo z -> SNo w -> Empty < x -> Empty < y -> x < z -> y < w -> x * y < z * w
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+axiom SNo_mul_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x * y)
+axiom SNo_add_SNo_3: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> SNo (x + y + z)
+const nat_p : set prop
+axiom omega_nat_p: !x:set.x iIn omega -> nat_p x
+const ordsucc : set set
+axiom nat_ordsucc: !x:set.nat_p x -> nat_p (ordsucc x)
+axiom nat_1: nat_p (ordsucc Empty)
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+axiom add_SNo_In_omega: !x:set.x iIn omega -> !y:set.y iIn omega -> x + y iIn omega
+axiom omega_SNo: !x:set.x iIn omega -> SNo x
+axiom SNo_1: SNo (ordsucc Empty)
+const eps_ : set set
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+axiom add_SNo_1_1_2: ordsucc Empty + ordsucc Empty = ordsucc (ordsucc Empty)
+axiom add_SNo_assoc: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x + y + z = (x + y) + z
+axiom add_SNo_1_ordsucc: !x:set.x iIn omega -> x + ordsucc Empty = ordsucc x
+axiom eps_ordsucc_half_add: !x:set.nat_p x -> eps_ (ordsucc x) + eps_ (ordsucc x) = eps_ x
+axiom mul_SNo_eps_eps_add_SNo: !x:set.x iIn omega -> !y:set.y iIn omega -> eps_ x * eps_ y = eps_ (x + y)
+axiom add_SNo_Lt2: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> y < z -> (x + y) < x + z
+axiom SNo_foil: !x:set.!y:set.!z:set.!w:set.SNo x -> SNo y -> SNo z -> SNo w -> (x + y) * (z + w) = x * z + x * w + y * z + y * w
+axiom SNoLt_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x < y -> y < z -> x < z
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.SNo x -> SNo y -> z iIn omega -> eps_ z * x < ordsucc Empty -> eps_ z * y < ordsucc Empty -> w iIn omega -> w + ordsucc Empty iIn omega -> w + ordsucc (ordsucc Empty) iIn omega -> u < x -> SNo u -> v < y -> SNo v -> SNo (eps_ z) -> (u * eps_ z * eps_ (w + ordsucc (ordsucc Empty)) + (eps_ z * eps_ (w + ordsucc (ordsucc Empty))) * v + (eps_ z * eps_ (w + ordsucc (ordsucc Empty))) * eps_ z * eps_ (w + ordsucc (ordsucc Empty))) < (eps_ (w + ordsucc (ordsucc Empty)) + eps_ (w + ordsucc (ordsucc Empty))) + eps_ (w + ordsucc Empty)
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+hyp Empty < x
+hyp Empty < y
+hyp SNo x
+hyp SNo y
+hyp SNo (x * y)
+hyp z iIn omega
+hyp eps_ z * x < ordsucc Empty
+hyp eps_ z * y < ordsucc Empty
+hyp w iIn omega
+hyp SNo (eps_ w)
+hyp w + ordsucc Empty iIn omega
+hyp w + ordsucc (ordsucc Empty) iIn omega
+hyp SNo (eps_ (z + w + ordsucc (ordsucc Empty)))
+hyp u iIn SNoS_ omega
+hyp Empty < u
+hyp u < x
+hyp x < u + eps_ (z + w + ordsucc (ordsucc Empty))
+hyp SNo u
+hyp v iIn SNoS_ omega
+hyp Empty < v
+hyp v < y
+hyp y < v + eps_ (z + w + ordsucc (ordsucc Empty))
+hyp SNo v
+claim SNo (u * v) -> ?x2:set.x2 iIn SNoS_ omega & (x2 < x * y & x * y < x2 + eps_ w)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

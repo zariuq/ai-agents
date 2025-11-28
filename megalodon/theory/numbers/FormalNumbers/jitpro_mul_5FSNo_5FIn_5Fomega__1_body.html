@@ -1,0 +1,24 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const omega : set
+const nat_p : set prop
+axiom omega_nat_p: !x:set.x iIn omega -> nat_p x
+const mul_nat : set set set
+axiom mul_nat_p: !x:set.nat_p x -> !y:set.nat_p y -> nat_p (mul_nat x y)
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom mul_nat_mul_SNo: !x:set.x iIn omega -> !y:set.y iIn omega -> mul_nat x y = x * y
+claim !x:set.x iIn omega -> !y:set.y iIn omega -> x * y iIn omega
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

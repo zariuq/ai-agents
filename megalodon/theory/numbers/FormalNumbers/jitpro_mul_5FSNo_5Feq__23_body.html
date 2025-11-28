@@ -1,0 +1,51 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo_rec2 : (set set (set set set) set) set set set
+const SNoCut : set set set
+const binunion : set set set
+const Repl : set (set set) set
+const setprod : set set set
+const SNoL : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const ap : set set set
+const Empty : set
+const ordsucc : set set
+const minus_SNo : set set
+term - = minus_SNo
+const SNoR : set set
+term mul_SNo = SNo_rec2 \x:set.\y:set.\g:set set set.SNoCut (binunion (Repl (setprod (SNoL x) (SNoL y)) \z:set.g (ap z Empty) y + g x (ap z (ordsucc Empty)) + - g (ap z Empty) (ap z (ordsucc Empty))) (Repl (setprod (SNoR x) (SNoR y)) \z:set.g (ap z Empty) y + g x (ap z (ordsucc Empty)) + - g (ap z Empty) (ap z (ordsucc Empty)))) (binunion (Repl (setprod (SNoL x) (SNoR y)) \z:set.g (ap z Empty) y + g x (ap z (ordsucc Empty)) + - g (ap z Empty) (ap z (ordsucc Empty))) (Repl (setprod (SNoR x) (SNoL y)) \z:set.g (ap z Empty) y + g x (ap z (ordsucc Empty)) + - g (ap z Empty) (ap z (ordsucc Empty))))
+term * = mul_SNo
+infix * 2291 2290
+const SNo : set prop
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoLev : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom SNoL_E: !x:set.SNo x -> !y:set.y iIn SNoL x -> !P:prop.(SNo y -> SNoLev y iIn SNoLev x -> y < x -> P) -> P
+const SNoS_ : set set
+lemma !x:set.!y:set.!g:set set set.!h:set set set.!z:set.!w:set.SNo y -> (!u:set.u iIn SNoS_ (SNoLev x) -> !v:set.SNo v -> g u v = h u v) -> (!u:set.u iIn SNoS_ (SNoLev y) -> g x u = h x u) -> w iIn SNoL y -> z iIn SNoS_ (SNoLev x) -> w iIn SNoS_ (SNoLev y) -> SNo w -> g z y + g x w + - g z w = h z y + h x w + - h z w
+var x:set
+var y:set
+var g:set set set
+var h:set set set
+var z:set
+var w:set
+hyp SNo y
+hyp !u:set.u iIn SNoS_ (SNoLev x) -> !v:set.SNo v -> g u v = h u v
+hyp !u:set.u iIn SNoS_ (SNoLev y) -> g x u = h x u
+hyp w iIn SNoL y
+hyp z iIn SNoS_ (SNoLev x)
+claim w iIn SNoS_ (SNoLev y) -> g z y + g x w + - g z w = h z y + h x w + - h z w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

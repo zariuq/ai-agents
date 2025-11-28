@@ -1,0 +1,35 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const Sing : set set
+axiom SingI: !x:set.x iIn Sing x
+axiom FalseE: ~ False
+axiom exandE_i: !p:set prop.!q:set prop.(?x:set.p x & q x) -> !P:prop.(!x:set.p x -> q x -> P) -> P
+const Inj1 : set set
+const Empty : set
+axiom Inj1E: !x:set.!y:set.y iIn Inj1 x -> y = Empty | ?z:set.z iIn x & y = Inj1 z
+const setminus : set set set
+axiom setminusE: !x:set.!y:set.!z:set.z iIn setminus x y -> z iIn x & nIn z y
+const Repl : set (set set) set
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+axiom Inj1I2: !x:set.!y:set.y iIn x -> Inj1 y iIn Inj1 x
+axiom Inj1NE2: !x:set.nIn (Inj1 x) (Sing Empty)
+axiom setminusI: !x:set.!y:set.!z:set.z iIn x -> nIn z y -> z iIn setminus x y
+axiom ReplI: !x:set.!f:set set.!y:set.y iIn x -> f y iIn Repl x f
+axiom set_ext: !x:set.!y:set.Subq x y -> Subq y x -> x = y
+const Unj : set set
+axiom Unj_eq: !x:set.Unj x = Repl (setminus x (Sing Empty)) Unj
+axiom In_ind: !p:set prop.(!x:set.(!y:set.y iIn x -> p y) -> p x) -> !x:set.p x
+claim !x:set.Unj (Inj1 x) = x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

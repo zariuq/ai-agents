@@ -1,0 +1,161 @@
+{
+  "metadata": {
+    "file": "knights_knaves.p",
+    "domain": "Puzzles (Logic)",
+    "problem": "Knights and Knaves - Island puzzle",
+    "version": "Propositional encoding",
+    "english": "On an island, knights always tell the truth and knaves always lie.",
+    "solution": "A is a knight, B is a knave.",
+    "refs": "Classic Raymond Smullyan puzzle",
+    "status": "Theorem"
+  },
+  "comments": [
+    "------------------------------------------------------------------------------",
+    "You meet two inhabitants, A and B.",
+    "B says nothing.",
+    "What are A and B?",
+    "",
+    "",
+    "",
+    "------------------------------------------------------------------------------",
+    "------------------------------------------------------------------------------"
+  ],
+  "formulas": [
+    {
+      "name": "a_is_knight_or_knave",
+      "role": "axiom",
+      "formula": [
+        "or",
+        [
+          "atom",
+          "knight_a"
+        ],
+        [
+          "atom",
+          "knave_a"
+        ]
+      ]
+    },
+    {
+      "name": "b_is_knight_or_knave",
+      "role": "axiom",
+      "formula": [
+        "or",
+        [
+          "atom",
+          "knight_b"
+        ],
+        [
+          "atom",
+          "knave_b"
+        ]
+      ]
+    },
+    {
+      "name": "a_not_both",
+      "role": "axiom",
+      "formula": [
+        "not",
+        [
+          "and",
+          [
+            "atom",
+            "knight_a"
+          ],
+          [
+            "atom",
+            "knave_a"
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "b_not_both",
+      "role": "axiom",
+      "formula": [
+        "not",
+        [
+          "and",
+          [
+            "atom",
+            "knight_b"
+          ],
+          [
+            "atom",
+            "knave_b"
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "statement_true_def",
+      "role": "axiom",
+      "formula": [
+        "iff",
+        [
+          "atom",
+          "statement_a"
+        ],
+        [
+          "or",
+          [
+            "atom",
+            "knave_a"
+          ],
+          [
+            "atom",
+            "knave_b"
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "a_knight_implies_truth",
+      "role": "axiom",
+      "formula": [
+        "implies",
+        [
+          "atom",
+          "knight_a"
+        ],
+        [
+          "atom",
+          "statement_a"
+        ]
+      ]
+    },
+    {
+      "name": "a_knave_implies_false",
+      "role": "axiom",
+      "formula": [
+        "implies",
+        [
+          "atom",
+          "knave_a"
+        ],
+        [
+          "not",
+          [
+            "atom",
+            "statement_a"
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "conclusion",
+      "role": "conjecture",
+      "formula": [
+        "and",
+        [
+          "atom",
+          "knight_a"
+        ],
+        [
+          "atom",
+          "knave_b"
+        ]
+      ]
+    }
+  ]
+}

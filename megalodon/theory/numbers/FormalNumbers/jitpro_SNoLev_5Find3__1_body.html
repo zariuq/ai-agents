@@ -1,0 +1,21 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const ordinal : set prop
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoS_ : set set
+const SNo : set prop
+axiom SNo_ordinal_ind3: !P:set set set prop.(!x:set.ordinal x -> !y:set.ordinal y -> !z:set.ordinal z -> !w:set.w iIn SNoS_ x -> !u:set.u iIn SNoS_ y -> !v:set.v iIn SNoS_ z -> P w u v) -> !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> P x y z
+const SNoLev : set set
+var P:set set set prop
+hyp !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> (!w:set.w iIn SNoS_ (SNoLev x) -> P w y z) -> (!w:set.w iIn SNoS_ (SNoLev y) -> P x w z) -> (!w:set.w iIn SNoS_ (SNoLev z) -> P x y w) -> (!w:set.w iIn SNoS_ (SNoLev x) -> !u:set.u iIn SNoS_ (SNoLev y) -> P w u z) -> (!w:set.w iIn SNoS_ (SNoLev x) -> !u:set.u iIn SNoS_ (SNoLev z) -> P w y u) -> (!w:set.w iIn SNoS_ (SNoLev y) -> !u:set.u iIn SNoS_ (SNoLev z) -> P x w u) -> (!w:set.w iIn SNoS_ (SNoLev x) -> !u:set.u iIn SNoS_ (SNoLev y) -> !v:set.v iIn SNoS_ (SNoLev z) -> P w u v) -> P x y z
+claim (!x:set.ordinal x -> !y:set.ordinal y -> !z:set.ordinal z -> !w:set.w iIn SNoS_ x -> !u:set.u iIn SNoS_ y -> !v:set.v iIn SNoS_ z -> P w u v) -> !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> P x y z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

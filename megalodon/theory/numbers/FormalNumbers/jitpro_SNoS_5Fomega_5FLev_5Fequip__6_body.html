@@ -1,0 +1,64 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const bij : set set (set set) prop
+term equip = \x:set.\y:set.?f:set set.bij x y f
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term nIn = \x:set.\y:set.~ x iIn y
+term SNoEq_ = \x:set.\y:set.\z:set.PNoEq_ x (\w:set.w iIn y) \w:set.w iIn z
+const ordinal : set prop
+const omega : set
+axiom omega_ordinal: ordinal omega
+const nat_p : set prop
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+const ordsucc : set set
+axiom omega_ordsucc: !x:set.x iIn omega -> ordsucc x iIn omega
+const SNo : set prop
+const SNo_ : set set prop
+const SNoLev : set set
+const SNo_extend0 : set set
+axiom SNo_extend0_SNo_: !x:set.SNo x -> SNo_ (ordsucc (SNoLev x)) (SNo_extend0 x)
+const SNoS_ : set set
+axiom SNoS_I: !x:set.ordinal x -> !y:set.!z:set.z iIn x -> SNo_ z y -> y iIn SNoS_ x
+const Sep : set (set prop) set
+axiom SepI: !x:set.!p:set prop.!y:set.y iIn x -> p y -> y iIn Sep x p
+const minus_SNo : set set
+term - = minus_SNo
+axiom SNo_minus_SNo: !x:set.SNo x -> SNo - x
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const Empty : set
+axiom add_SNo_0R: !x:set.SNo x -> x + Empty = x
+axiom add_SNo_minus_SNo_linv: !x:set.SNo x -> - x + x = Empty
+axiom add_SNo_assoc: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x + y + z = (x + y) + z
+axiom add_SNo_com: !x:set.!y:set.SNo x -> SNo y -> x + y = y + x
+const binintersect : set set set
+const SNoElts_ : set set
+axiom SNo_extend0_restr_eq: !x:set.SNo x -> x = binintersect (SNo_extend0 x) (SNoElts_ (SNoLev x))
+const exp_SNo_nat : set set set
+var x:set
+var f:set set
+var f2:set set
+var y:set
+var z:set
+hyp nat_p x
+hyp SNo (exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+hyp !w:set.nIn x w -> f2 w = exp_SNo_nat (ordsucc (ordsucc Empty)) x + f (binintersect w (SNoElts_ x))
+hyp SNo y
+hyp f z = y + - exp_SNo_nat (ordsucc (ordsucc Empty)) x
+hyp SNoLev z = x
+hyp SNo z
+hyp SNoLev (SNo_extend0 z) = ordsucc x
+claim nIn x (SNo_extend0 z) -> ?w:set.w iIn Sep (SNoS_ omega) (\u:set.SNoLev u = ordsucc x) & f2 w = y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

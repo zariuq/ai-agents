@@ -1,0 +1,60 @@
+{
+  "metadata": {},
+  "comments": [
+    "Simple universal quantifier"
+  ],
+  "formulas": [
+    {
+      "name": "axiom1",
+      "role": "axiom",
+      "formula": [
+        "forall",
+        [
+          "X"
+        ],
+        [
+          "implies",
+          [
+            "human",
+            [
+              "var",
+              "X"
+            ]
+          ],
+          [
+            "mortal",
+            [
+              "var",
+              "X"
+            ]
+          ]
+        ]
+      ],
+      "type": "fof"
+    },
+    {
+      "name": "axiom2",
+      "role": "axiom",
+      "formula": [
+        "human",
+        [
+          "const",
+          "socrates"
+        ]
+      ],
+      "type": "fof"
+    },
+    {
+      "name": "goal",
+      "role": "conjecture",
+      "formula": [
+        "mortal",
+        [
+          "const",
+          "socrates"
+        ]
+      ],
+      "type": "fof"
+    }
+  ]
+}

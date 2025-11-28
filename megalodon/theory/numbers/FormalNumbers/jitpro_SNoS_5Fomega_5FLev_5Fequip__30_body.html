@@ -1,0 +1,66 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const bij : set set (set set) prop
+term equip = \x:set.\y:set.?f:set set.bij x y f
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term nIn = \x:set.\y:set.~ x iIn y
+term SNoEq_ = \x:set.\y:set.\z:set.PNoEq_ x (\w:set.w iIn y) \w:set.w iIn z
+const SNo : set prop
+const ordsucc : set set
+const Empty : set
+axiom SNo_2: SNo (ordsucc (ordsucc Empty))
+const ordinal : set prop
+const omega : set
+axiom omega_ordinal: ordinal omega
+const nat_p : set prop
+axiom nat_0: nat_p Empty
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+axiom ordinal_Empty: ordinal Empty
+const SNo_ : set set prop
+axiom ordinal_SNo_: !x:set.ordinal x -> SNo_ x x
+const SNoS_ : set set
+axiom SNoS_I: !x:set.ordinal x -> !y:set.!z:set.z iIn x -> SNo_ z y -> y iIn SNoS_ x
+const SNoLev : set set
+axiom SNoLev_0: SNoLev Empty = Empty
+const Sep : set (set prop) set
+axiom SepI: !x:set.!p:set prop.!y:set.y iIn x -> p y -> y iIn Sep x p
+axiom cases_1: !x:set.x iIn ordsucc Empty -> !p:set prop.p Empty -> p x
+axiom SNo_0: SNo Empty
+axiom EmptyE: !x:set.nIn x Empty
+axiom FalseE: ~ False
+axiom SNo_eq: !x:set.!y:set.SNo x -> SNo y -> SNoLev x = SNoLev y -> SNoEq_ (SNoLev x) x y -> x = y
+axiom SNoS_E2: !x:set.ordinal x -> !y:set.y iIn SNoS_ x -> !P:prop.(SNoLev y iIn x -> ordinal (SNoLev y) -> SNo y -> SNo_ (SNoLev y) y -> P) -> P
+axiom SepE: !x:set.!p:set prop.!y:set.y iIn Sep x p -> y iIn x & p y
+axiom bijI: !x:set.!y:set.!f:set set.(!z:set.z iIn x -> f z iIn y) -> (!z:set.z iIn x -> !w:set.w iIn x -> f z = f w -> z = w) -> (!z:set.z iIn y -> ?w:set.w iIn x & f w = z) -> bij x y f
+axiom equip_sym: !x:set.!y:set.equip x y -> equip y x
+const exp_SNo_nat : set set set
+axiom exp_SNo_nat_0: !x:set.SNo x -> exp_SNo_nat x Empty = ordsucc Empty
+axiom SNo_1: SNo (ordsucc Empty)
+axiom SNo_exp_SNo_nat: !x:set.SNo x -> !y:set.nat_p y -> SNo (exp_SNo_nat x y)
+axiom nat_2: nat_p (ordsucc (ordsucc Empty))
+axiom nat_exp_SNo_nat: !x:set.nat_p x -> !y:set.nat_p y -> nat_p (exp_SNo_nat x y)
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom mul_SNo_oneL: !x:set.SNo x -> ordsucc Empty * x = x
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom mul_SNo_distrR: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> (x + y) * z = x * z + y * z
+axiom add_SNo_1_1_2: ordsucc Empty + ordsucc Empty = ordsucc (ordsucc Empty)
+axiom exp_SNo_nat_S: !x:set.SNo x -> !y:set.nat_p y -> exp_SNo_nat x (ordsucc y) = x * exp_SNo_nat x y
+axiom nat_ind: !p:set prop.p Empty -> (!x:set.nat_p x -> p x -> p (ordsucc x)) -> !x:set.nat_p x -> p x
+lemma !x:set.SNoLev x = Empty -> SNo x -> x = Empty -> ?y:set.y iIn ordsucc Empty & Empty = x
+lemma !x:set.nat_p x -> equip (Sep (SNoS_ omega) \y:set.SNoLev y = x) (exp_SNo_nat (ordsucc (ordsucc Empty)) x) -> nat_p (exp_SNo_nat (ordsucc (ordsucc Empty)) x) -> equip (Sep (SNoS_ omega) \y:set.SNoLev y = ordsucc x) (exp_SNo_nat (ordsucc (ordsucc Empty)) x + exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+claim !x:set.nat_p x -> equip (Sep (SNoS_ omega) \y:set.SNoLev y = x) (exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

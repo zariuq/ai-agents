@@ -1,0 +1,38 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const SNo : set prop
+const Empty : set
+axiom SNo_0: SNo Empty
+const SNoL : set set
+const SNoS_ : set set
+const SNoLev : set set
+axiom SNoL_SNoS_: !x:set.Subq (SNoL x) (SNoS_ (SNoLev x))
+const Repl : set (set set) set
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+axiom ReplI: !x:set.!f:set set.!y:set.y iIn x -> f y iIn Repl x f
+axiom set_ext: !x:set.!y:set.Subq x y -> Subq y x -> x = y
+const binunion : set set set
+axiom binunion_idl: !x:set.binunion Empty x = x
+axiom Repl_Empty: !f:set set.Repl Empty f = Empty
+axiom SNoL_0: SNoL Empty = Empty
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const SNoCut : set set set
+const SNoR : set set
+axiom add_SNo_eq: !x:set.SNo x -> !y:set.SNo y -> x + y = SNoCut (binunion (Repl (SNoL x) \z:set.z + y) (Repl (SNoL y) (add_SNo x))) (binunion (Repl (SNoR x) \z:set.z + y) (Repl (SNoR y) (add_SNo x)))
+axiom SNoLev_ind: !p:set prop.(!x:set.SNo x -> (!y:set.y iIn SNoS_ (SNoLev x) -> p y) -> p x) -> !x:set.SNo x -> p x
+lemma !x:set.SNo x -> (!y:set.y iIn SNoS_ (SNoLev x) -> Empty + y = y) -> binunion (Repl (SNoL Empty) \y:set.y + x) (Repl (SNoL x) (add_SNo Empty)) = SNoL x -> SNoCut (binunion (Repl (SNoL Empty) \y:set.y + x) (Repl (SNoL x) (add_SNo Empty))) (binunion (Repl (SNoR Empty) \y:set.y + x) (Repl (SNoR x) (add_SNo Empty))) = x
+claim !x:set.SNo x -> Empty + x = x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

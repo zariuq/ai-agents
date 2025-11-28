@@ -1,0 +1,24 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const Sigma : set (set set) set
+const setsum : set set set
+axiom lamE: !x:set.!f:set set.!y:set.y iIn Sigma x f -> ?z:set.z iIn x & ?w:set.w iIn f z & y = setsum z w
+const ap : set set set
+axiom beta: !x:set.!f:set set.!y:set.y iIn x -> ap (Sigma x f) y = f y
+const pair_p : set prop
+const Empty : set
+const Pi : set (set set) set
+axiom PiI: !x:set.!f:set set.!y:set.(!z:set.z iIn y -> pair_p z & ap z Empty iIn x) -> (!z:set.z iIn x -> ap y z iIn f z) -> y iIn Pi x f
+lemma !x:set.!f:set set.!y:set.y iIn Sigma x f -> (?z:set.z iIn x & ?w:set.w iIn f z & y = setsum z w) -> pair_p y & ap y Empty iIn x
+claim !x:set.!f:set set.!f2:set set.(!y:set.y iIn x -> f2 y iIn f y) -> Sigma x f2 iIn Pi x f
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

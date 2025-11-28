@@ -1,0 +1,74 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const bij : set set (set set) prop
+term equip = \x:set.\y:set.?f:set set.bij x y f
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term nIn = \x:set.\y:set.~ x iIn y
+term SNoEq_ = \x:set.\y:set.\z:set.PNoEq_ x (\w:set.w iIn y) \w:set.w iIn z
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const Empty : set
+axiom SNo_0: SNo Empty
+const nat_p : set prop
+const omega : set
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+axiom omega_nonneg: !x:set.x iIn omega -> Empty <= x
+axiom add_SNo_Le2: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> y <= z -> (x + y) <= x + z
+axiom add_SNo_0R: !x:set.SNo x -> x + Empty = x
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom SNoLeLt_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x <= y -> y < z -> x < z
+axiom SNoLt_irref: !x:set.~ x < x
+axiom FalseE: ~ False
+axiom xm: !P:prop.P | ~ P
+axiom add_SNo_cancel_L: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x + y = x + z -> y = z
+const Sep : set (set prop) set
+const SNoS_ : set set
+const SNoLev : set set
+const ordsucc : set set
+const binintersect : set set set
+const SNoElts_ : set set
+lemma !x:set.!f:set set.!y:set.!z:set.(!w:set.w iIn Sep (SNoS_ omega) (\u:set.SNoLev u = x) -> !u:set.u iIn Sep (SNoS_ omega) (\v:set.SNoLev v = x) -> f w = f u -> w = u) -> SNo y -> SNoLev y = ordsucc x -> binintersect y (SNoElts_ x) iIn Sep (SNoS_ omega) (\w:set.SNoLev w = x) -> SNo z -> SNoLev z = ordsucc x -> binintersect z (SNoElts_ x) iIn Sep (SNoS_ omega) (\w:set.SNoLev w = x) -> x iIn SNoLev y -> x iIn SNoLev z -> x iIn y -> x iIn z -> f (binintersect y (SNoElts_ x)) = f (binintersect z (SNoElts_ x)) -> binintersect y (SNoElts_ x) = binintersect z (SNoElts_ x) -> y = z
+const exp_SNo_nat : set set set
+lemma !x:set.!f:set set.!y:set.!z:set.SNo (exp_SNo_nat (ordsucc (ordsucc Empty)) x) -> (!w:set.w iIn Sep (SNoS_ omega) (\u:set.SNoLev u = x) -> !u:set.u iIn Sep (SNoS_ omega) (\v:set.SNoLev v = x) -> f w = f u -> w = u) -> SNo y -> SNoLev y = ordsucc x -> binintersect y (SNoElts_ x) iIn Sep (SNoS_ omega) (\w:set.SNoLev w = x) -> SNo (f (binintersect y (SNoElts_ x))) -> SNo z -> SNoLev z = ordsucc x -> binintersect z (SNoElts_ x) iIn Sep (SNoS_ omega) (\w:set.SNoLev w = x) -> SNo (f (binintersect z (SNoElts_ x))) -> x iIn SNoLev y -> x iIn SNoLev z -> nIn x y -> nIn x z -> exp_SNo_nat (ordsucc (ordsucc Empty)) x + f (binintersect y (SNoElts_ x)) = exp_SNo_nat (ordsucc (ordsucc Empty)) x + f (binintersect z (SNoElts_ x)) -> binintersect y (SNoElts_ x) = binintersect z (SNoElts_ x) -> y = z
+var x:set
+var f:set set
+var f2:set set
+var y:set
+var z:set
+hyp SNo (exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+hyp !w:set.w iIn Sep (SNoS_ omega) (\u:set.SNoLev u = x) -> !u:set.u iIn Sep (SNoS_ omega) (\v:set.SNoLev v = x) -> f w = f u -> w = u
+hyp !w:set.x iIn w -> f2 w = f (binintersect w (SNoElts_ x))
+hyp !w:set.nIn x w -> f2 w = exp_SNo_nat (ordsucc (ordsucc Empty)) x + f (binintersect w (SNoElts_ x))
+hyp SNo y
+hyp SNoLev y = ordsucc x
+hyp binintersect y (SNoElts_ x) iIn Sep (SNoS_ omega) \w:set.SNoLev w = x
+hyp nat_p (f (binintersect y (SNoElts_ x)))
+hyp SNo (f (binintersect y (SNoElts_ x)))
+hyp f (binintersect y (SNoElts_ x)) < exp_SNo_nat (ordsucc (ordsucc Empty)) x
+hyp SNo z
+hyp SNoLev z = ordsucc x
+hyp binintersect z (SNoElts_ x) iIn Sep (SNoS_ omega) \w:set.SNoLev w = x
+hyp nat_p (f (binintersect z (SNoElts_ x)))
+hyp SNo (f (binintersect z (SNoElts_ x)))
+hyp f (binintersect z (SNoElts_ x)) < exp_SNo_nat (ordsucc (ordsucc Empty)) x
+hyp x iIn SNoLev y
+claim x iIn SNoLev z -> f2 y = f2 z -> y = z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,28 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+const Empty : set
+axiom EmptyE: !x:set.nIn x Empty
+axiom FalseE: ~ False
+axiom exandE_i: !p:set prop.!q:set prop.(?x:set.p x & q x) -> !P:prop.(!x:set.p x -> q x -> P) -> P
+const Inj1 : set set
+const Inj0 : set set
+axiom Inj0I: !x:set.!y:set.y iIn x -> Inj1 y iIn Inj0 x
+const setsum : set set set
+axiom setsum_Inj_inv: !x:set.!y:set.!z:set.z iIn setsum x y -> (?w:set.w iIn x & z = Inj0 w) | ?w:set.w iIn y & z = Inj1 w
+axiom Inj0E: !x:set.!y:set.y iIn Inj0 x -> ?z:set.z iIn x & y = Inj1 z
+axiom Inj1_setsum: !x:set.!y:set.!z:set.z iIn y -> Inj1 z iIn setsum x y
+axiom set_ext: !x:set.!y:set.Subq x y -> Subq y x -> x = y
+claim !x:set.setsum Empty x = Inj0 x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

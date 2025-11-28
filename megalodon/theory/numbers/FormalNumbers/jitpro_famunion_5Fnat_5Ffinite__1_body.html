@@ -1,0 +1,26 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const ordsucc : set set
+axiom ordsuccI1: !x:set.Subq x (ordsucc x)
+axiom ordsuccI2: !x:set.x iIn ordsucc x
+const finite : set prop
+const binunion : set set set
+axiom binunion_finite: !x:set.finite x -> !y:set.finite y -> finite (binunion x y)
+const famunion : set (set set) set
+var f:set set
+var x:set
+hyp (!y:set.y iIn x -> finite (f y)) -> finite (famunion x f)
+hyp !y:set.y iIn ordsucc x -> finite (f y)
+claim famunion (ordsucc x) f = binunion (famunion x f) (f x) -> finite (famunion (ordsucc x) f)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

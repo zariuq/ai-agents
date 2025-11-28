@@ -1,0 +1,5 @@
+(Parameter baz94 (-> set prop))
+(Definition Q98 prop x50)
+(Parameter baz17 prop)
+(Parameter Q97 (-> set prop))
+(Definition A62 prop (-> A0 baz91))

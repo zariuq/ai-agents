@@ -1,0 +1,49 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+term PNoLt_ = \x:set.\p:set prop.\q:set prop.?y:set.y iIn x & (PNoEq_ y p q & ~ p y & q y)
+axiom ordinal_Hered: !x:set.ordinal x -> !y:set.y iIn x -> ordinal y
+const binintersect : set set set
+axiom binintersectE: !x:set.!y:set.!z:set.z iIn binintersect x y -> z iIn x & z iIn y
+axiom binintersectI: !x:set.!y:set.!z:set.z iIn x -> z iIn y -> z iIn binintersect x y
+axiom PNoEq_antimon_: !p:set prop.!q:set prop.!x:set.ordinal x -> !y:set.y iIn x -> PNoEq_ x p q -> PNoEq_ y p q
+axiom PNoEq_tra_: !x:set.!p:set prop.!q:set prop.!p2:set prop.PNoEq_ x p q -> PNoEq_ x q p2 -> PNoEq_ x p p2
+axiom iffEL: !P:prop.!Q:prop.(P <-> Q) -> P -> Q
+const PNoLt : set (set prop) set (set prop) prop
+axiom PNoLtI1: !x:set.!y:set.!p:set prop.!q:set prop.PNoLt_ (binintersect x y) p q -> PNoLt x p y q
+axiom PNoLtI3: !x:set.!y:set.!p:set prop.!q:set prop.y iIn x -> PNoEq_ y p q -> ~ p y -> PNoLt x p y q
+axiom ordinal_trichotomy_or: !x:set.!y:set.ordinal x -> ordinal y -> x iIn y | x = y | y iIn x
+axiom PNoLtE: !x:set.!y:set.!p:set prop.!q:set prop.PNoLt x p y q -> !P:prop.(PNoLt_ (binintersect x y) p q -> P) -> (x iIn y -> PNoEq_ x p q -> q x -> P) -> (y iIn x -> PNoEq_ y p q -> ~ p y -> P) -> P
+lemma !x:set.!y:set.!z:set.!p:set prop.!q:set prop.!p2:set prop.!w:set.!u:set.ordinal y -> TransSet x -> TransSet z -> w iIn x -> PNoEq_ w p q -> ~ p w -> q w -> ordinal w -> u iIn y -> u iIn z -> PNoEq_ u q p2 -> ~ q u -> p2 u -> ordinal u -> PNoLt x p z p2
+var x:set
+var y:set
+var z:set
+var p:set prop
+var q:set prop
+var p2:set prop
+var w:set
+hyp ordinal y
+hyp ordinal z
+hyp TransSet x
+hyp TransSet z
+hyp PNoLt y q z p2
+hyp w iIn x
+hyp w iIn y
+hyp PNoEq_ w p q
+hyp ~ p w
+hyp q w
+claim ordinal w -> PNoLt x p z p2
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

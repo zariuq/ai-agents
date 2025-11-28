@@ -1,0 +1,46 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const omega : set
+const int : set
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const eps_ : set set
+term diadic_rational_p = \x:set.?y:set.y iIn omega & ?z:set.z iIn int & x = eps_ y * z
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+axiom int_mul_SNo: !x:set.x iIn int -> !y:set.y iIn int -> x * y iIn int
+const SNo : set prop
+const exp_SNo_nat : set set set
+const ordsucc : set set
+const Empty : set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.z iIn omega -> SNo (eps_ z) -> w iIn int -> x = eps_ z * w -> u iIn omega -> SNo (eps_ u) -> v iIn int -> y = eps_ u * v -> SNo (eps_ u * v) -> exp_SNo_nat (ordsucc (ordsucc Empty)) u iIn int -> exp_SNo_nat (ordsucc (ordsucc Empty)) u * w iIn int -> exp_SNo_nat (ordsucc (ordsucc Empty)) u * w + exp_SNo_nat (ordsucc (ordsucc Empty)) z * v iIn int & x + y = eps_ (z + u) * (exp_SNo_nat (ordsucc (ordsucc Empty)) u * w + exp_SNo_nat (ordsucc (ordsucc Empty)) z * v)
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+hyp z iIn omega
+hyp SNo (eps_ z)
+hyp w iIn int
+hyp x = eps_ z * w
+hyp u iIn omega
+hyp SNo (eps_ u)
+hyp v iIn int
+hyp y = eps_ u * v
+hyp SNo (eps_ u * v)
+claim exp_SNo_nat (ordsucc (ordsucc Empty)) u iIn int -> exp_SNo_nat (ordsucc (ordsucc Empty)) u * w + exp_SNo_nat (ordsucc (ordsucc Empty)) z * v iIn int & x + y = eps_ (z + u) * (exp_SNo_nat (ordsucc (ordsucc Empty)) u * w + exp_SNo_nat (ordsucc (ordsucc Empty)) z * v)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

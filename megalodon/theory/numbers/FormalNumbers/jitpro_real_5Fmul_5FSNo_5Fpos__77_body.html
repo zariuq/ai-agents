@@ -1,0 +1,67 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const omega : set
+const SNo : set prop
+const eps_ : set set
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const minus_SNo : set set
+term - = minus_SNo
+const ap : set set set
+const SNoCut : set set set
+const Repl : set (set set) set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.!x2:set.!y2:set.!z2:set.SNo x -> SNo y -> SNo (x * y) -> SNo - x * y -> (!w2:set.w2 iIn omega -> SNo (ap w w2)) -> SNo (SNoCut (Repl omega (ap z)) (Repl omega (ap w))) -> (!w2:set.w2 iIn omega -> SNoCut (Repl omega (ap z)) (Repl omega (ap w)) < ap w w2) -> (!w2:set.w2 iIn omega -> (ap w w2 + - eps_ w2) < x * y) -> u = v * y + x * x2 + - v * x2 -> y2 iIn omega -> eps_ y2 <= v + - x -> z2 iIn omega -> eps_ z2 <= y + - x2 -> SNo v -> SNo x2 -> SNo (eps_ y2) -> SNo (eps_ z2) -> y2 + z2 iIn omega -> SNo (eps_ (y2 + z2)) -> SNoCut (Repl omega (ap z)) (Repl omega (ap w)) < u
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+var x2:set
+var y2:set
+var z2:set
+hyp SNo x
+hyp SNo y
+hyp SNo (x * y)
+hyp SNo - x * y
+hyp !w2:set.w2 iIn omega -> SNo (ap w w2)
+hyp SNo (SNoCut (Repl omega (ap z)) (Repl omega (ap w)))
+hyp !w2:set.w2 iIn omega -> SNoCut (Repl omega (ap z)) (Repl omega (ap w)) < ap w w2
+hyp !w2:set.w2 iIn omega -> (ap w w2 + - eps_ w2) < x * y
+hyp u = v * y + x * x2 + - v * x2
+hyp y2 iIn omega
+hyp eps_ y2 <= v + - x
+hyp z2 iIn omega
+hyp eps_ z2 <= y + - x2
+hyp SNo v
+hyp SNo x2
+hyp SNo (eps_ y2)
+hyp SNo (eps_ z2)
+claim y2 + z2 iIn omega -> SNoCut (Repl omega (ap z)) (Repl omega (ap w)) < u
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

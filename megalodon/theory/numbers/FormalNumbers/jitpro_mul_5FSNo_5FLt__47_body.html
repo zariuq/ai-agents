@@ -1,0 +1,54 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom SNo_mul_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x * y)
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoL : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const SNoR : set set
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.SNo (x * y) -> (!x2:set.x2 iIn SNoL x -> !y2:set.y2 iIn SNoL y -> (x2 * y + x * y2) < x * y + x2 * y2) -> SNo (z * y) -> (!x2:set.x2 iIn SNoR z -> !y2:set.y2 iIn SNoL y -> (z * y + x2 * y2) < x2 * y + z * y2) -> SNo (x * w) -> (!x2:set.x2 iIn SNoL x -> !y2:set.y2 iIn SNoR w -> (x * w + x2 * y2) < x2 * w + x * y2) -> SNo (z * w) -> (!x2:set.x2 iIn SNoR z -> !y2:set.y2 iIn SNoR w -> (x2 * w + z * y2) < z * w + x2 * y2) -> SNo (z * y + x * w) -> SNo (x * y + z * w) -> SNo u -> u iIn SNoL x -> u iIn SNoR z -> SNo (u * y) -> SNo (u * w) -> SNo v -> v iIn SNoL y -> v iIn SNoR w -> SNo (x * v) -> SNo (z * v) -> SNo (u * v) -> (z * y + x * w) < x * y + z * w
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+hyp SNo z
+hyp SNo (x * y)
+hyp !x2:set.x2 iIn SNoL x -> !y2:set.y2 iIn SNoL y -> (x2 * y + x * y2) < x * y + x2 * y2
+hyp SNo (z * y)
+hyp !x2:set.x2 iIn SNoR z -> !y2:set.y2 iIn SNoL y -> (z * y + x2 * y2) < x2 * y + z * y2
+hyp SNo (x * w)
+hyp !x2:set.x2 iIn SNoL x -> !y2:set.y2 iIn SNoR w -> (x * w + x2 * y2) < x2 * w + x * y2
+hyp SNo (z * w)
+hyp !x2:set.x2 iIn SNoR z -> !y2:set.y2 iIn SNoR w -> (x2 * w + z * y2) < z * w + x2 * y2
+hyp SNo (z * y + x * w)
+hyp SNo (x * y + z * w)
+hyp SNo u
+hyp u iIn SNoL x
+hyp u iIn SNoR z
+hyp SNo (u * y)
+hyp SNo (u * w)
+hyp SNo v
+hyp v iIn SNoL y
+hyp v iIn SNoR w
+hyp SNo (x * v)
+claim SNo (z * v) -> (z * y + x * w) < x * y + z * w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

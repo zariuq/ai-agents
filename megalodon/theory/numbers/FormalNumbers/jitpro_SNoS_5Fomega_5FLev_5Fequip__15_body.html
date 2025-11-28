@@ -1,0 +1,49 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const bij : set set (set set) prop
+term equip = \x:set.\y:set.?f:set set.bij x y f
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term nIn = \x:set.\y:set.~ x iIn y
+term SNoEq_ = \x:set.\y:set.\z:set.PNoEq_ x (\w:set.w iIn y) \w:set.w iIn z
+const SNo : set prop
+const SNoLev : set set
+const binintersect : set set set
+const SNoElts_ : set set
+axiom restr_SNoEq: !x:set.SNo x -> !y:set.y iIn SNoLev x -> SNoEq_ y (binintersect x (SNoElts_ y)) x
+axiom iff_sym: !P:prop.!Q:prop.(P <-> Q) -> (Q <-> P)
+axiom iff_trans: !P:prop.!Q:prop.!R:prop.(P <-> Q) -> (Q <-> R) -> (P <-> R)
+axiom iffI: !P:prop.!Q:prop.(P -> Q) -> (Q -> P) -> (P <-> Q)
+const ordsucc : set set
+axiom ordsuccE: !x:set.!y:set.y iIn ordsucc x -> y iIn x | y = x
+axiom SNo_eq: !x:set.!y:set.SNo x -> SNo y -> SNoLev x = SNoLev y -> SNoEq_ (SNoLev x) x y -> x = y
+const Sep : set (set prop) set
+const SNoS_ : set set
+const omega : set
+var x:set
+var f:set set
+var y:set
+var z:set
+hyp !w:set.w iIn Sep (SNoS_ omega) (\u:set.SNoLev u = x) -> !u:set.u iIn Sep (SNoS_ omega) (\v:set.SNoLev v = x) -> f w = f u -> w = u
+hyp SNo y
+hyp SNoLev y = ordsucc x
+hyp binintersect y (SNoElts_ x) iIn Sep (SNoS_ omega) \w:set.SNoLev w = x
+hyp SNo z
+hyp SNoLev z = ordsucc x
+hyp binintersect z (SNoElts_ x) iIn Sep (SNoS_ omega) \w:set.SNoLev w = x
+hyp x iIn SNoLev y
+hyp x iIn SNoLev z
+hyp x iIn y
+hyp x iIn z
+hyp f (binintersect y (SNoElts_ x)) = f (binintersect z (SNoElts_ x))
+claim binintersect y (SNoElts_ x) = binintersect z (SNoElts_ x) -> y = z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

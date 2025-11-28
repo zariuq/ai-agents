@@ -1,0 +1,33 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo_rec_ii : (set (set set set) set set) set set set
+const If_i : prop set set set
+const SNo : set prop
+const SNo_rec_i : (set (set set) set) set set
+const Empty : set
+term SNo_rec2 = \P:set set (set set set) set.SNo_rec_ii \x:set.\g:set set set.\y:set.If_i (SNo y) (SNo_rec_i (\z:set.\f:set set.P x z \w:set.\u:set.If_i (w = x) (f u) (g w u)) y) Empty
+axiom If_i_1: !P:prop.!x:set.!y:set.P -> If_i P x y = x
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoS_ : set set
+const SNoLev : set set
+axiom SNo_rec_ii_eq: !P:set (set set set) set set.(!x:set.SNo x -> !g:set set set.!h:set set set.(!y:set.y iIn SNoS_ (SNoLev x) -> g y = h y) -> P x g = P x h) -> !x:set.SNo x -> SNo_rec_ii P x = P x (SNo_rec_ii P)
+axiom eq_i_tra: !x:set.!y:set.!z:set.x = y -> y = z -> x = z
+var P:set set (set set set) set
+var x:set
+var y:set
+var z:set
+hyp SNo x
+hyp SNo y
+hyp !w:set.SNo w -> !g:set set set.!h:set set set.(!u:set.u iIn SNoS_ (SNoLev w) -> g u = h u) -> (\u:set.If_i (SNo u) (SNo_rec_i (\v:set.\f:set set.P w v \x2:set.\y2:set.If_i (x2 = w) (f y2) (g x2 y2)) u) Empty) = \u:set.If_i (SNo u) (SNo_rec_i (\v:set.\f:set set.P w v \x2:set.\y2:set.If_i (x2 = w) (f y2) (h x2 y2)) u) Empty
+hyp z iIn SNoS_ (SNoLev y)
+claim SNo z -> SNo_rec_i (\w:set.\f:set set.P x w \u:set.\v:set.If_i (u = x) (f v) (SNo_rec_ii (\x2:set.\g:set set set.\y2:set.If_i (SNo y2) (SNo_rec_i (\z2:set.\f2:set set.P x2 z2 \w2:set.\u2:set.If_i (w2 = x2) (f2 u2) (g w2 u2)) y2) Empty) u v)) z = SNo_rec_ii (\w:set.\g:set set set.\u:set.If_i (SNo u) (SNo_rec_i (\v:set.\f:set set.P w v \x2:set.\y2:set.If_i (x2 = w) (f y2) (g x2 y2)) u) Empty) x z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

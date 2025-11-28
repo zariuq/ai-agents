@@ -1,0 +1,16 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const nat_primrec : set (set set set) set set
+const ordsucc : set set
+term add_nat = \x:set.nat_primrec x \y:set.ordsucc
+const nat_p : set prop
+axiom nat_primrec_S: !x:set.!g:set set set.!y:set.nat_p y -> nat_primrec x g (ordsucc y) = g y (nat_primrec x g y)
+claim !x:set.!y:set.nat_p y -> add_nat x (ordsucc y) = ordsucc (add_nat x y)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

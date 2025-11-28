@@ -1,0 +1,31 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const ordinal : set prop
+const omega : set
+axiom omega_ordinal: ordinal omega
+const SNo : set prop
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoL : set set
+const SNoLev : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom SNoL_E: !x:set.SNo x -> !y:set.y iIn SNoL x -> !P:prop.(SNo y -> SNoLev y iIn SNoLev x -> y < x -> P) -> P
+const SNoS_ : set set
+const SNo_ : set set prop
+axiom SNoS_E2: !x:set.ordinal x -> !y:set.y iIn SNoS_ x -> !P:prop.(SNoLev y iIn x -> ordinal (SNoLev y) -> SNo y -> SNo_ (SNoLev y) y -> P) -> P
+axiom xm: !P:prop.P | ~ P
+const Empty : set
+const SNo_max_of : set set prop
+lemma !x:set.x iIn SNoS_ omega -> SNoL x != Empty -> (!y:set.y iIn SNoL x -> SNo y) -> ?y:set.SNo_max_of (SNoL x) y
+claim !x:set.x iIn SNoS_ omega -> SNoL x = Empty | ?y:set.SNo_max_of (SNoL x) y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

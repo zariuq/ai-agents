@@ -1,0 +1,23 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const Sigma : set (set set) set
+const proj1 : set set
+const proj0 : set set
+axiom proj1_Sigma: !x:set.!f:set set.!y:set.y iIn Sigma x f -> proj1 y iIn f (proj0 y)
+const ap : set set set
+const ordsucc : set set
+const Empty : set
+axiom proj1_ap_1: !x:set.proj1 x = ap x (ordsucc Empty)
+axiom proj0_ap_0: !x:set.proj0 x = ap x Empty
+claim !x:set.!f:set set.!y:set.y iIn Sigma x f -> ap y (ordsucc Empty) iIn f (ap y Empty)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

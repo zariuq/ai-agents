@@ -1,0 +1,17 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const setsum : set set set
+const ordsucc : set set
+const Empty : set
+const Inj1 : set set
+axiom Inj1_setsum_1L: !x:set.setsum (ordsucc Empty) x = Inj1 x
+axiom func_ext: !f:set set.!f2:set set.(!x:set.f x = f2 x) -> f = f2
+claim Inj1 = setsum (ordsucc Empty)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

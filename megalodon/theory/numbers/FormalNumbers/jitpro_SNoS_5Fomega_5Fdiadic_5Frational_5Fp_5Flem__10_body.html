@@ -1,0 +1,73 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+term SNo_max_of = \x:set.\y:set.y iIn x & SNo y & !z:set.z iIn x -> SNo z -> z <= y
+term nIn = \x:set.\y:set.~ x iIn y
+term SNo_min_of = \x:set.\y:set.y iIn x & SNo y & !z:set.z iIn x -> SNo z -> y <= z
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const nat_p : set prop
+const ordinal : set prop
+axiom nat_p_ordinal: !x:set.nat_p x -> ordinal x
+axiom ordinal_TransSet: !x:set.ordinal x -> TransSet x
+const SNoL : set set
+const SNoLev : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom SNoL_E: !x:set.SNo x -> !y:set.y iIn SNoL x -> !P:prop.(SNo y -> SNoLev y iIn SNoLev x -> y < x -> P) -> P
+const SNoR : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom double_SNo_min_1: !x:set.!y:set.SNo x -> SNo_min_of (SNoR x) y -> !z:set.SNo z -> z < x -> (x + x) < y + z -> ?w:set.w iIn SNoL z & y + w = x + x
+axiom add_SNo_com: !x:set.!y:set.SNo x -> SNo y -> x + y = y + x
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const eps_ : set set
+const ordsucc : set set
+const Empty : set
+axiom double_eps_1: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x + x = y + z -> x = eps_ (ordsucc Empty) * (y + z)
+axiom SNoR_E: !x:set.SNo x -> !y:set.y iIn SNoR x -> !P:prop.(SNo y -> SNoLev y iIn SNoLev x -> x < y -> P) -> P
+axiom double_SNo_max_1: !x:set.!y:set.SNo x -> SNo_max_of (SNoL x) y -> !z:set.SNo z -> x < z -> (y + z) < x + x -> ?w:set.w iIn SNoR z & y + w = x + x
+axiom SNoLt_trichotomy_or_impred: !x:set.!y:set.SNo x -> SNo y -> !P:prop.(x < y -> P) -> (x = y -> P) -> (y < x -> P) -> P
+const diadic_rational_p : set prop
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.nat_p x -> (!v:set.v iIn x -> !x2:set.SNo x2 -> SNoLev x2 = v -> diadic_rational_p x2) -> SNo y -> SNoLev y = x -> ~ diadic_rational_p y -> SNoLev z iIn SNoLev y -> SNo w -> diadic_rational_p w -> w + u = y + y -> SNo u -> SNoLev u iIn SNoLev z -> ~ diadic_rational_p u
+lemma !x:set.!y:set.!z:set.SNo x -> ~ diadic_rational_p x -> SNo y -> SNo z -> diadic_rational_p y -> diadic_rational_p z -> x + x = y + z -> x != eps_ (ordsucc Empty) * (y + z)
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.nat_p x -> (!v:set.v iIn x -> !x2:set.SNo x2 -> SNoLev x2 = v -> diadic_rational_p x2) -> SNo y -> SNoLev y = x -> ~ diadic_rational_p y -> SNo z -> SNoLev w iIn SNoLev y -> diadic_rational_p z -> z + u = y + y -> SNo u -> SNoLev u iIn SNoLev w -> ~ diadic_rational_p u
+var x:set
+var y:set
+var z:set
+var w:set
+hyp nat_p x
+hyp !u:set.u iIn x -> !v:set.SNo v -> SNoLev v = u -> diadic_rational_p v
+hyp SNo y
+hyp SNoLev y = x
+hyp ~ diadic_rational_p y
+hyp SNo_max_of (SNoL y) z
+hyp SNo z
+hyp SNoLev z iIn SNoLev y
+hyp z < y
+hyp SNo_min_of (SNoR y) w
+hyp SNo w
+hyp SNoLev w iIn SNoLev y
+hyp y < w
+hyp SNo (y + y)
+hyp SNo (z + w)
+hyp diadic_rational_p z
+claim ~ diadic_rational_p w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

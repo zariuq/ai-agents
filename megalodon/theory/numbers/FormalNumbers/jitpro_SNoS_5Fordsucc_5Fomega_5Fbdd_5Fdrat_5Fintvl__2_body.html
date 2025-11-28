@@ -1,0 +1,42 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const nat_p : set prop
+const omega : set
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+const SNoS_ : set set
+axiom omega_SNoS_omega: Subq omega (SNoS_ omega)
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const minus_SNo : set set
+term - = minus_SNo
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const ordsucc : set set
+const Empty : set
+lemma !x:set.!y:set.SNo x -> nIn x (SNoS_ omega) -> nat_p y -> (- y < x -> x < y -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + ordsucc Empty)) -> - ordsucc y < x -> x < ordsucc y -> SNo y -> SNo - y -> y iIn SNoS_ omega -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + ordsucc Empty)
+var x:set
+var y:set
+hyp SNo x
+hyp nIn x (SNoS_ omega)
+hyp nat_p y
+hyp - y < x -> x < y -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + ordsucc Empty)
+hyp - ordsucc y < x
+hyp x < ordsucc y
+hyp SNo y
+claim SNo - y -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + ordsucc Empty)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

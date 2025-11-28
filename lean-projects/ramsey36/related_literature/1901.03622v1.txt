@@ -1,0 +1,3504 @@
+arXiv:1901.03622v1 [math.CO] 11 Jan 2019
+
+Gallai-Ramsey number for K5
+Colton Magnant∗†, Ingo Schiermeyer‡
+January 14, 2019
+
+Abstract
+Given a graph H, the k-colored Gallai Ramsey number grk (K3 : H)
+is defined to be the minimum integer n such that every k-coloring of the
+edges of the complete graph on n vertices contains either a rainbow triangle or a monochromatic copy of H. Fox et al. [J. Fox, A. Grinshpun,
+and J. Pach. The Erdős-Hajnal conjecture for rainbow triangles. J. Combin. Theory Ser. B, 111:75-125, 2015.] conjectured the value of the Gallai
+Ramsey numbers for complete graphs. Recently, this conjecture has been
+verified for the first open case, when H = K4 .
+In this paper we attack the next case, when H = K5 . Surprisingly it turns out, that the validity of the conjecture depends upon the
+(yet unknown) value of the Ramsey number R(5, 5). It is known that
+43 ≤ R(5, 5) ≤ 48 and conjectured that R(5, 5) = 43 [B.D. McKay and
+S.P. Radziszowski. Subgraph counting identities and Ramsey numbers.
+J. Combin. Theory Ser. B, 69:193-209, 1997]. If 44 ≤ R(5, 5) ≤ 48, then
+Fox et al.’s conjecture is true and we present a complete proof. If, however, R(5, 5) = 43, then Fox et al.’s conjecture is false, meaning that
+at least one of these two conjectures must be false. For the case when
+R(5, 5) = 43, we show lower and upper bounds for the Gallai Ramsey
+number grk (K3 : K5 ).
+
+1
+
+Introduction
+
+Given a graph G and a positive integer k, the k-color Ramsey number rk (G)
+is the minimum number of vertices n such that every k-coloring of the edges
+of KN for N ≥ n must contain a monochromatic copy of G. We refer to [11]
+for a dynamic survey of known Ramsey numbers. As a restricted version of the
+Ramsey number, the k-color Gallai-Ramsey number grk (K3 : G) is defined to
+be the minimum integer n such that every k-coloring of the edges of KN for
+∗ Department of Mathematics, Clayton State University, Morrow, GA 30260 USA.
+dr.colton.magnant@gmail.com
+† Center for Mathematics and Interdisciplinary Sciences of Qinghai Province, Xining, Qinghai 810008, China.
+‡ Technische Universität Bergakademie Freiberg, Institut für Diskrete Mathematik und Algebra, 09596 Freiberg, Germany. Ingo.Schiermeyer@tu-freiberg.de
+
+1
+
+N ≥ n must contain a either a rainbow triangle or a monochromatic copy of
+G. We refer to [3] for a dynamic survey of known Gallai-Ramsey numbers. In
+particular, the following was recently conjectured for complete graphs.
+Conjecture 1 ([2]). For k ≥ 1 and p ≥ 3,
+(
+(r(p) − 1)k/2 + 1
+grk (K3 : Kp ) =
+(p − 1)(r(p) − 1)(k−1)/2 + 1
+
+if k is even,
+if k is odd.
+
+The case where p = 3 was actually verified in 1983 by Chung and Graham
+[1]. A simplified proof was given by Gyárfás et al. [6].
+Theorem 1 ([1]). For k ≥ 1,
+grk (K3 : K3 ) =
+
+(
+
+5k/2 + 1
+2 · 5(k−1)/2 + 1
+
+if k is even,
+if k is odd.
+
+The next case, where p = 4, was proven in [7].
+Theorem 2. For k ≥ 1,
+(
+17k/2 + 1
+grk (K3 : K4 ) =
+3 · 17(k−1)/2 + 1
+
+if k is even,
+if k is odd.
+
+Our main result is to essentially prove Conjecture 1 in the case where p = 5.
+This result is particularly interesting since r(K5 , K5 ) is still not known. Let
+R = r(K5 , K5 ) − 1 and note that the known bounds on this Ramsey number
+give us 42 ≤ R ≤ 47.
+Theorem 3. For any integer k ≥ 2,
+(
+Rk/2 + 1
+grk (K3 : K5 ) =
+4 · R(k−1)/2 + 1
+
+if k is even,
+if k is odd
+
+unless R = 42, in which case we have
+
+
+grk (K3 : K5 ) = 43
+42k/2 + 1 ≤ grk (K3 : K5 ) ≤ 43k/2 + 1
+
+
+169 · 42(k−3)/2 + 1 ≤ grk (K3 : K5 ) ≤ 4 · 43(k−1)/2 + 1
+
+if k = 2,
+if k ≥ 4 is even,
+if k ≥ 3 is odd.
+
+Theorem 3 is proven in Section 4. Note that if R = 43, then Theorem 3
+implies that Conjecture 1 is false.
+Also recall the following well known conjecture about the sharp value for the
+2-color Ramsey number of K5 .
+Conjecture 2 ([10]). R(K5 , K5 ) = 43.
+2
+
+By Theorem 3, it turns out that at least one of Conjecture 1 or Conjecture 2
+must be false.
+In order to prove Theorem 3, we actually prove a more refined version, stated
+in Theorem 4. Note that Theorem 3 follows from Theorem 4 by setting r = k,
+s = 0 and t = 0.
+To simplify the notation, we let c1 denote the case where r, s, t are all even,
+c2 denote the case where r, s are both even and t is odd, and so on for c3 , . . . , c11 .
+Theorem 4. For nonnegative integers r, s, t, let k = r + s + t. Then
+ r/2
+R · 17s/2 · 5t/2 + 1
+
+
+
+
+
+if r, s, t are even, (c1 )
+
+
+
+
+
+2 · Rr/2 · 17s/2 · 5(t−1)/2 + 1
+
+
+
+
+if r, s are even, and t is odd, (c2 )
+
+
+
+
+
+3 · Rr/2 · 17(s−1)/2 + 1
+
+
+
+
+
+if r is even, s is odd, and t = 0, (c3 )
+
+
+
+
+4 · R(r−1)/2 + 1
+
+
+
+
+
+if r is odd, and s = t = 0, (c4 )
+
+
+
+
+8 · Rr/2 · 17(s−1)/2 · 5(t−1)/2 + 1
+
+
+
+
+
+if r is even, and s, t are odd, (c5 )
+
+
+
+13 · R(r−1)/2 · 17s/2 · 5(t−1)/2 + 1
+grk (K3 : rK5 , sK4 , tK3 ) =
+ if r, t are odd, and s is even, (c6 )
+
+
+
+
+
+16 · Rr/2 · 17(s−1)/2 · 5(t−2)/2 + 1
+
+
+
+
+if r, t are even, t ≥ 2, and s is odd, (c7 )
+
+
+
+
+
+24 · R(r−1)/2 · 17(s−1)/2 · 5t/2 + 1
+
+
+
+
+ if r, s are odd, and t is even, (c8 )
+
+
+
+
+
+26 · R(r−1)/2 · 17s/2 · 5(t−2)/2 + 1
+
+
+
+
+
+if r is odd, s is even, t ≥ 2 is even, (c9 )
+
+
+
+
+48 · R(r−1)/2 · 17(s−1)/2 · 5(t−1)/2 + 1
+
+
+
+
+
+if r, s, t are odd, (c10 )
+
+
+
+
+72 · R(r−1)/2 · 17(s−2)/2 + 1
+
+
+
+if r is odd, t = 0, and s ≥ 2 is even. (c11 )
+
+For ease of notation, let g(r, s, t) be the value of grk (K3 : rK5 , sK4 , tK3 )
+claimed above. Also, for each i with 1 ≤ i ≤ 11, let gi (r, s, t) = g(r, s, t) − 1 in
+the case where (ci ) holds.
+
+2
+
+Preliminaries
+
+In this section, we recall some known results and provide several helpful lemmas
+that will be used in the proof. First we state the main tool for looking at colored
+complete graphs with no rainbow triangle.
+3
+
+Theorem 5 ([4]). In any coloring of a complete graph containing no rainbow triangle, there exists a nontrivial partition of the vertices (called a Gallai-partition)
+such that there are at most two colors on the edges between the parts and only
+one color on the edges between each pair of parts.
+In light of this result, a colored complete graph with no rainbow triangle is
+called a Gallai coloring and the partition resulting from Theorem 5 is called a
+Gallai partition.
+Next recall some useful Ramsey numbers.
+Theorem 6 ([5]).
+R(K3 , K5 ) = 14.
+Theorem 7 ([9]).
+R(K4 , K5 ) = 25.
+Also a general lower bound for Gallai-Ramsey numbers, a special case of
+the main result in [8]. We will present a more refined construction later for the
+purpose of proving Theorem 4.
+Lemma 1 ([8]). For a connected complete graph H of order n and an integer
+k ≥ 2, we have
+(
+(R(H, H) − 1)k/2 + 1
+if k is even,
+grk (K3 : H) ≥
+(n − 1) · (R(H, H) − 1)(k−1)/2 + 1 if k is odd.
+We next present several tables of values which concisely capture computations that will be used throughout the proof. Each cell contains the ratio of
+the corresponding type g(r1 , s1 , t1 ) in relation to the order of the whole graph
+g(r, s, t) in the given case. For example, the top left cell of Table 1 contains the
+value of the ratio
+g(r, s, t − 1)
+g(r, s, t)
+in the case (c1 ).
+Each row of the following tables represents a case (perhaps with some subcases) and each column represents a Type, one of the referenced inequalities
+listed above it. In some cells containing two values, these values correspond to
+the extra assumptions listed in the far right column. The cases marked with −
+do not occur because of base assumptions. The maximum value in each column
+yields an upper bound on the ratio for that type over all the cases, and these
+are displayed in Inequalities (1)-(22).
+
+4
+
+Table 1 contains the case analysis for the following inequalities:
+1
+g(r, s, t − 1)
+≤ ,
+g(r, s, t)
+2
+g(r, s, t − 2)
+1
+Type T2:
+≤ ,
+g(r, s, t)
+5
+2
+g(r, s − 1, t + 1)
+≤ ,
+Type T3:
+g(r, s, t)
+3
+g(r, s − 1, t)
+1
+Type T4:
+≤ ,
+g(r, s, t)
+3
+1
+g(r, s − 1, t − 1)
+≤ ,
+Type T5:
+g(r, s, t)
+8
+13
+g(r, s − 2, t + 2)
+≤
+.
+Type T6:
+g(r, s, t)
+36
+
+(1)
+
+Type T1:
+
+Case
+
+(1)T1 (2)T2
+
+(3)T3 (4)T4
+
+(c1 )
+
+2
+5
+
+1
+5
+
+8
+17
+
+3
+17
+16
+85
+
+(c2 )
+
+1
+2
+
+1
+5
+
+8
+17
+
+4
+17
+
+(c3 )
+(c4 )
+
+−
+−
+
+−
+−
+
+2
+15
+
+−
+
+1
+3
+
+(c5 )
+
+3
+8
+2
+5
+
+1
+5
+
+1
+8
+
+(c6 )
+
+4
+13
+2
+5
+72
+221
+
+1
+5
+
+(c7 )
+
+1
+2
+
+(c8 )
+(c9 )
+
+(5)T5
+
+(6)T6
+
+8
+85
+
+5
+17
+
+3
+34
+8
+85
+
+5
+17
+
+−
+
+−
+−
+
+16
+51
+
+1
+4
+
+1
+8
+
+5
+17
+
+24
+65
+
+48
+221
+
+24
+221
+
+5
+17
+
+3
+16
+
+1
+8
+
+1
+8
+
+5
+17
+
+2
+5
+
+1
+5
+
+13
+24
+
+13
+120
+
+5
+17
+
+1
+2
+
+2
+13
+
+24
+221
+
+5
+16
+3
+17
+13
+60
+60
+221
+
+−
+
+5
+17
+
+8
+85
+13
+120
+3
+34
+1
+12
+
+(c10 )
+
+1
+2
+
+1
+5
+
+13
+120
+
+13
+48
+
+(c11 )
+Max
+
+−
+
+−
+
+1
+2
+
+1
+5
+
+2
+3
+2
+3
+
+1
+3
+1
+3
+
+−
+1
+8
+
+Table 1: Types T1 - T6.
+5
+
+(2)
+(3)
+(4)
+(5)
+(6)
+
+t=0
+t≥2
+t=1
+t≥3
+
+−
+
+5
+17
+
+13
+36
+13
+36
+
+t=1
+t≥3
+t=1
+s=0
+t≥3
+t=1
+s≥2
+t=0
+t≥2
+s, t ≥ 3
+s=1
+t≥3
+s≥3
+t=1
+s=t=1
+
+Table 2 contains the case analysis for the following inequalities:
+g(r, s − 2, t + 1)
+13
+≤
+,
+g(r, s, t)
+72
+1
+g(r, s − 2, t)
+≤
+,
+Type T8:
+g(r, s, t)
+17
+g(r − 1, s + 1, t)
+3
+Type T9:
+≤ ,
+g(r, s, t)
+4
+17
+g(r − 1, s + 1, t − 1)
+≤
+,
+Type T10:
+g(r, s, t)
+48
+g(r − 1, s, t + 1)
+5
+Type T11:
+≤
+,
+g(r, s, t)
+13
+5
+g(r − 1, s, t)
+Type T12:
+≤
+.
+g(r, s, t)
+26
+Type T7:
+
+Case
+(c1 )
+(c2 )
+(c3 )
+(c4 )
+
+(7)
+
+(8)
+
+(9)
+
+(10)
+
+2
+17
+5
+34
+8
+51
+
+1
+17
+1
+17
+1
+17
+
+48
+5R
+48
+5R
+
+−
+
+24
+R
+24
+R
+24
+R
+3
+4
+
+(c5 )
+
+2
+17
+
+1
+17
+
+221
+8R
+
+(c6 )
+
+2
+17
+
+1
+17
+
+8
+13
+
+(c7 )
+(c8 )
+(c9 )
+(c10 )
+(c11 )
+Max
+
+5
+34
+2
+17
+5
+34
+5
+34
+13
+72
+13
+72
+
+1
+17
+1
+17
+1
+17
+1
+17
+1
+18
+1
+17
+
+221
+8R
+17
+24
+8
+13
+17
+24
+17
+24
+3
+4
+
+−
+
+−
+−
+
+9
+R
+221
+20·R
+3
+13
+16
+65
+221
+16R
+17
+60
+4
+13
+17
+48
+
+−
+
+17
+48
+
+(11) (12)
+13
+R
+13
+R
+
+26
+5R
+26
+5R
+
+15
+R
+
+6
+R
+
+5
+13
+
+2
+13
+
+15
+R
+1
+3
+5
+13
+1
+15
+
+15
+2R
+2
+15
+5
+26
+1
+6
+
+5
+13
+
+5
+26
+
+−
+−
+
+−
+
+Table 2: Types T7 - T12.
+
+6
+
+−
+−
+
+−
+
+t=1
+t≥3
+t=1
+t≥3
+
+s=2
+
+(7)
+(8)
+(9)
+(10)
+(11)
+(12)
+
+Table 3 contains the case analysis for the following inequalities:
+g(r − 1, s, t − 1)
+1
+≤
+,
+g(r, s, t)
+13
+5
+g(r − 1, s − 1, t + 2)
+≤
+,
+Type T14:
+g(r, s, t)
+24
+g(r − 1, s − 1, t + 1)
+1
+Type T15:
+≤ ,
+g(r, s, t)
+9
+1
+g(r − 1, s − 1, t)
+≤
+,
+Type T16:
+g(r, s, t)
+24
+g(r − 2, s + 2, t)
+18
+Type T17:
+≤
+,
+g(r, s, t)
+R
+12
+g(r − 2, s + 1, t + 1)
+Type T18:
+≤
+.
+g(r, s, t)
+R
+Type T13:
+
+Case
+(c1 )
+(c2 )
+
+(13)
+
+(14)
+
+(15)
+
+(16)
+
+13
+5R
+13
+5R
+36
+17R
+2
+R
+
+120
+17R
+
+48
+17R
+
+24
+17R
+
+17
+R
+
+8
+R
+
+120
+17R
+
+60
+17R
+
+24
+17R
+
+17
+R
+
+8
+R
+
+120
+17R
+20
+3R
+
+13
+3R
+
+17
+R
+
+34
+3R
+
+−
+
+−
+
+24
+17R
+4
+3R
+
+65
+8R
+40
+221
+65
+8R
+5
+24
+40
+221
+
+13
+4R
+16
+221
+65
+16R
+1
+12
+20
+221
+
+13
+8R
+8
+221
+13
+8R
+1
+24
+8
+221
+
+18
+R
+17
+R
+17
+R
+17
+R
+17
+R
+17
+R
+
+12
+R
+85
+8R
+120
+13R
+85
+8R
+221
+24R
+120
+13R
+
+5
+24
+
+5
+48
+
+1
+24
+
+17
+R
+
+221
+24R
+
+5
+24
+5
+24
+
+1
+9
+1
+9
+
+1
+24
+1
+24
+
+17
+R
+18
+R
+
+34
+3R
+12
+R
+
+(c3 )
+
+−
+
+(c4 )
+(c5 )
+(c6 )
+(c7 )
+(c8 )
+(c9 )
+
+−
+
+(c10 )
+(c11 )
+Max
+
+3
+R
+1
+13
+3
+R
+1
+15
+1
+13
+1
+15
+1
+16
+
+−
+
+1
+13
+
+−
+
+(17) (18)
+
+Table 3: Types T13 - T18.
+
+7
+
+t≥1
+t = 1, s ≥ 2
+t−1 = s=0
+s≥3
+s=1
+
+t≥1
+t=1
+
+(13)
+(14)
+(15)
+(16)
+(17)
+(18)
+
+Table 4 contains the case analysis for the following inequalities:
+g(r − 2, s + 1, t)
+6
+≤ ,
+g(r, s, t)
+R
+13
+g(r − 2, s, t + 2)
+≤
+,
+Type T20:
+g(r, s, t)
+2R
+g(r − 2, s, t + 1)
+13
+Type T21:
+≤
+,
+g(r, s, t)
+4R
+1
+g(r − 2, s, t)
+≤ .
+Type T22:
+g(r, s, t)
+R
+
+Type T19:
+
+Case
+(c1 )
+(c2 )
+(c3 )
+(c4 )
+(c5 )
+(c6 )
+(c7 )
+(c8 )
+(c9 )
+(c10 )
+(c11 )
+Max
+
+(19)
+16
+5R
+3
+R
+4
+R
+17
+3R
+6
+R
+17
+4R
+48
+13R
+85
+16R
+221
+60R
+3
+R
+60
+13R
+221
+48R
+17
+3R
+6
+R
+
+(20) (21) (22)
+5
+R
+
+2
+R
+
+1
+R
+
+5
+R
+16
+3R
+13
+2R
+5
+R
+5
+R
+5
+R
+
+5
+2R
+8
+3R
+13
+4R
+2
+R
+2
+R
+1
+2R
+
+1
+R
+1
+R
+1
+R
+1
+R
+1
+R
+1
+R
+
+5
+R
+
+2
+R
+
+1
+R
+
+5
+R
+5
+R
+221
+36R
+13
+2R
+
+1
+2R
+1
+2R
+221
+72R
+13
+4R
+
+1
+R
+1
+R
+1
+R
+1
+R
+
+Table 4: Types T19 - T22.
+
+8
+
+t≥2
+t=0
+
+t≥2
+t=0
+
+(19)
+(20)
+(21)
+(22)
+
+Next we provide several lemmas specific to the proof of Theorem 3 but first
+some definitions.
+We call a part X of a Gallai partition free, if it contains neither red nor blue
+edges. We call a part red (blue) if it contains red (respectively blue) edges, but
+no red (blue) copy of a K3 , and no blue (red) edges. Note that these notations
+do not characterize all parts since clearly a part X might fall into none of these
+categories.
+Let H be a Gallai colored complete graph where red and blue are the colors
+appearing on edges of the reduced graph. We call such a graph (or part of the
+partition) H a (Ri , Bj )-graph if it contains neither a red copy of Ki nor a blue
+copy of Kj .
+Let wi,j (H) = |H|
+|G| be the weight of H as a subgraph of an (Ri , Bj )-graph G.
+For convenience, when a part A of a Gallai partition of H is assumed, let HR
+(and HB ) denote the sets of vertices in H \ A with all red (respectively blue)
+edges to A.
+For (R3 , B3 )-graphs, we get the following.
+Lemma 2. Let H be an (R3 , B3 )-graph, whose parts are either free, red, or
+blue. Then w5,5 (H) ≤ 6.5
+R .
+Proof. In order to avoid a red or blue triangle, the graph H has t ≤ 5 =
+5
+R(3, 3)−1 parts. If all parts are free, then w5,5 (H) ≤ Rt ≤ R
+by Inequality (22).
+Suppose H has a red part (and note that a symmetric argument also works for
+a blue part). Then HR is empty and HB contains no blue edges. If all parts of
+2
+by Inequality (22) since there can be at most
+HB are free, then w5,5 (HB ) ≤ R
+two parts in HB (with all red edges in between them). On the other hand, if HB
+contains a red part, then w5,5 (HB ) ≤ 3.25
+R by Inequality (21) since H consists of
+two red parts joined by blue edges. In either case, we have w5,5 (H) ≤ 6.5
+R .
+For (R3 , B4 )-graphs, we get the following.
+Lemma 3. Let H be a (R3 , B4 )-graph, whose parts are either free, red, or blue.
+Then
+(i) w5,5 (H) ≤ 9.75
+R , and furthermore
+(ii) if H contains no red part, then w5,5 (H) ≤ 9.5
+R .
+Proof. Since H is an (R3 , B4 )-graph, H has t ≤ 8 = R(3, 4) − 1 parts. If
+8
+all parts are free, then w5,5 (H) ≤ Rt ≤ R
+by Inequality (22). Suppose first
+that H contains no red parts. Let X1 be a blue part, so w5,5 (X1 ) = 3.25
+R by
+Inequality (21). Then HR is an (R2 , B4 )-graph and HB is an (R3 , B2 )-graph.
+Similar arguments as in the proof of Lemma 2 lead to
+
+
+4.25
+1
+1 3.25
+=
++
+w5,5 (HB ) ≤ max 3 · ,
+R R
+R
+R
+and
+w5,5 (HR ) ≤ 2 ·
+9
+
+1
+2
+=
+R
+R
+
+since there is no red part. This gives
+w5,5 (H) ≤
+
+9.5
+1
+(3.25 + 4.25 + 2) =
+.
+R
+R
+
+Now suppose that H contains a red part X1 . Then HR is empty and HB is
+an (R3 , B3 )-graph. By Inequality (21) and Lemma 2, we obtain
+w5,5 (H) ≤ w5,5 (X1 ) + w5,5 (HB ) ≤
+
+1
+9.75
+(3.25 + 6.5) =
+.
+R
+R
+
+The sharpness of Lemma 3 is given by the following examples:
+(1) Three red parts joined by blue edges
+(2) Two blue parts joined by red edges, which are joined by blue edges with a
+red part
+For (R5 , B3 )-graphs, we get the following.
+Lemma 4. Let H be an (R5 , B3 )-graph, whose parts are either free, red or blue.
+Then
+(i) w5,5 (H) ≤ 13
+R if H contains only free parts;
+(ii) w5,5 (H) ≤ 13
+R if H contains at least one blue part;
+(iii) w5,5 (H) ≤ 12.25
+if H contains exactly one red part;
+R
+(iv) w5,5 (H) ≤ 14.5
+R if H contains at least two red parts but no two red parts
+joined by blue edges;
+(v) w5,5 (H) ≤ 13.5
+R if H contains exactly two red parts and they are joined by
+blue edges;
+(vi) w5,5 (H) ≤ 16.25
+R .
+Proof. Since H is an (R5 , B3 )-graph, H has t ≤ 13 = R(5, 3) − 1 parts. If all
+parts are free, then w5,5 (H) ≤ Rt ≤ 13
+R by Inequality (22). This proves (i) and
+means that we may assume that H contains at least one red or blue part.
+Suppose first that H contains a blue part X1 , so w5,5 (X1 ) ≤ 3.25
+R by Inequality (21). Then HB is empty and HR is an (R4 , B3 )-graph. By Lemma 3 (and
+symmetry of red and blue) we obtain
+w5,5 (H) = w5,5 (X1 ) + w5,5 (HR ) ≤
+
+13
+1
+(3.25 + 9.75) =
+.
+R
+R
+
+This shows (ii) and means that we may assume H contains no blue parts for
+the remainder of the proof.
+10
+
+Suppose next that H contains exactly one red part X1 . Then HR has at
+most R(3, 3) − 1 = 5 parts, HB has at most R(5, 2) − 1 = 4 parts, and each of
+these parts must be free. By Inequalities (21) and (22), this gives
+w5,5 (H) ≤
+
+1
+12.25
+(3.25 + 5 + 4) =
+,
+R
+R
+
+confirming (iii).
+Next suppose there are at least two red parts X1 and X2 but no two red
+parts joined by blue edges. With only red edges between the red parts, there can
+only be two such parts. Then HR (with respect to X1 ) contains only free parts
+other than X2 and HB also contains only free parts. As in (iii), HR has at most
+R(3, 3)− 1 = 5 parts, HB has at most R(5, 2)− 1 = 4 parts. By Inequalities (21)
+and (22), this gives
+w5,5 (H) =
+≤
+=
+
+w5,5 (X1 ) + w5,5 (X2 ) + w5,5 (HR \ X2 ) + w5,5 (HB )
+1
+(3.25 + 3.25 + 4 + 4)
+R
+14.5
+,
+R
+
+confirming (iv).
+Next suppose there are exactly two red parts X1 and X2 and they are joined
+by blue edges. Then HR (with respect to X1 ) contains only free parts and
+at most R(3, 3) − 1 = 5 of them and HB contains only free parts other than
+X2 but no blue edges at all so there can be at most 3 total parts in HB . By
+Inequalities (21) and (22), this means
+w5,5 (H) =
+≤
+=
+
+w5,5 (X1 ) + w5,5 (HR ) + w5,5 (X2 ) + w5,5 (HB \ X2 )
+1
+(3.25 + 5 + 3.25 + 2)
+R
+13.5
+,
+R
+
+confirming (v).
+Finally let X1 be a red part. Then HB contains no blue edges so it contains
+at most 4 free parts, one red part and at most 2 free parts, or two red parts.
+By Inequalities (21) and (22), this means that
+
+
+6.5
+4 3.25 + 2 2 · 3.25
+=
+,
+,
+.
+w5,5 (HB ) ≤ max
+R
+R
+R
+R
+On the other side, HR contains no red or blue triangle so it has at most 5 free
+parts, one red part and at most 2 free parts, or two red parts (joined by blue
+edges). By Inequalities (21) and (22), this means that
+
+
+6.5
+5 3.25 + 2 2 · 3.25
+=
+,
+,
+.
+w5,5 (HR ) ≤ max
+R
+R
+R
+R
+11
+
+Finally, we have
+w5,5 (H) ≤ w5,5 (X1 ) + w5,5 (HB ) + w5,5 (HR ) ≤
+
+3.25 + 6.5 + 6.5
+16.25
+=
+,
+R
+R
+
+confirming (vi).
+Lemma 5. Let H be an (R3 , B3 )-graph, whose parts are either free, red or blue.
+Then w4,5 (H) ≤ 29 .
+Proof. To avoid a red or blue triangle, H must have at most R(3, 3)−1 = 5 parts.
+5
+If all these parts are free, then by Inequality (16), we have w4,5 (H) ≤ 24
+. If H
+has a red or blue part X1 , say red, then HR is empty and HB contains no blue
+1
+by Inequality (16). On
+edges. If all parts in HB are free, then w4,5 (HB ) ≤ 12
+the other hand, if HB contains a red part, then w4,5 (HB ) ≤ 19 by Inequality (15).
+In either case, we have w4,5 (H) ≤ 29 .
+Lemma 6. Let H be an (R3 , B4 )-graph, whose parts are either free, red or blue.
+Then
+(i) w4,5 (H) ≤ 25
+72 if H contains exactly two blue parts, no red part, and the reduced graph of H is the unique 2-coloring of K5 containing no monochromatic triangle (see Figure 1), or
+(ii) w4,5 (H) ≤ 31 otherwise.
+
+Figure 1: The structure of H with solid edges being blue and dashed edges
+being red
+
+Proof. This proof is very similar to the proof of Lemma 3. Since H is an
+(R3 , B4 )-graph, it must have t ≤ 8 = R(3, 4) − 1 parts. If all parts are free, then
+8
+t
+≤ 24
+= 31 .
+by Inequality (16), we have w4,5 (H) ≤ 24
+Suppose first that H contains no red parts but does contain at least one blue
+part. Let X1 be a blue part, so w4,5 (X1 ) = 19 by Inequality (15). Then HR is an
+(R2 , B4 )-graph and HB is an (R3 , B2 )-graph. Since HB contains no blue edge
+and there are no red parts, HB must contain at most 2 parts and these must be
+2
+by Inequality (16). Since HR contains no red edge, there
+free so w4,5 (HB ) ≤ 24
+can be either at most three parts in HR that are all free (with all blue edges in
+12
+
+between them), or one blue part and one free part. By Lemmas (15) and (16),
+this means that
+
+
+1
+1 1
+11
+.
+w4,5 (HR ) ≤ max 3 · , +
+=
+24 9 24
+72
+Putting these together, we get
+w4,5 (H) ≤
+
+1
+25
+(8 + 6 + 11) =
+.
+72
+72
+
+In fact, this bound is only achievable if HR contains one blue part and one
+9
+23
+meaning that w4,5 (H) ≤ 72
+< 31 .
+free part since otherwise w4,5 (HR ) ≤ 81 = 72
+1
+Therefore, in order for w4,5 (H) > 3 , H must have the structure pictured in
+Figure 1.
+Finally suppose H contains a red part X1 . Then HR is empty and HB is an
+(R3 , B3 )-graph. By Inequality (15) and Lemma 5, we obtain
+w4,5 (H) ≤ w4,5 (X1 ) + w4,5 (HB ) ≤
+
+1
+1 2
++ = .
+9 9
+3
+
+Lemma 7. Let H be an (R5 , B3 )-graph, whose parts are either free, red or blue.
+Then
+(i) w4,5 (H) ≤ 95 if H consists of 5 red parts and the reduced graph of H is the
+unique 2-coloring of K5 with no monochromatic triangle, or
+39
+otherwise.
+(ii) w4,5 (H) ≤ 72
+
+Proof. Since H is an (R5 , B3 )-graph, there are at most R(5, 3) − 1 = 13 parts
+39
+in H. If all these parts are free, then w4,5 (H) ≤ 13
+24 = 72 by Inequality (16).
+First suppose H contains a blue part X1 . Then HB is empty and HR is an
+(R4 , B3 )-graph so by Inequality (15) and Lemma 6, we get
+w4,5 (H) ≤ w4,5 (X1 ) + w4,5 (HR ) ≤
+
+33
+1 25
++
+=
+.
+9 72
+72
+
+We may therefore assume H contains no blue part.
+If H contains 5 red parts as described in the statement then clearly w4,5 (H) ≤
+5
+so
+suppose this is not the case. That is, suppose H contains a red part X1
+9
+and at least one free part, so HB (defined in terms of X1 ) contains no blue edges
+and HR is an (R3 , B3 )-graph. Then HB either contains at most 4 parts that
+are all free (with all red edges in between them), or one red part and two free
+parts, or two red parts. By Inequalities (15) and (16), this means
+
+
+4 1
+2
+2 2
+w4,5 (HB ) ≤ max
+= .
+, + ,
+24 9 24 9
+9
+13
+
+If HB is not two red parts, then w4,5 (HB ) ≤ 14
+72 . This together with Lemma 5
+gives
+w4,5 (H) ≤ w4,5 (X1 ) + w4,5 (HB ) + w4,5 (HR ) ≤
+
+38
+1 14 2
++
++ =
+.
+9 72 9
+72
+
+Thus, suppose HB has two red parts (so w4,5 (HB ) ≤ 29 ) and HR does not have
+5
+. Putting these
+two red parts. By the proof of Lemma 5, we have w4,5 (HR ) ≤ 24
+together, we get
+w4,5 (H) ≤ w4,5 (X1 ) + w4,5 (HB ) + w4,5 (HR ) ≤
+
+3
+
+5
+39
+1 2
++ +
+=
+.
+9 9 24
+72
+
+Three Colors
+
+In this section, we discuss a lower bound example that leads to a counterexample
+to either Conjecture 1 or Conjecture 2.
+Lemma 8. There exists a 3-colored copy of K169 which contains no rainbow
+triangle and no monochromatic copy of K5 .
+Proof. Let Grb be a sharpness example on 13 vertices for the Ramsey number
+R(K3 , K5 ) = 14 say using colors red and blue respectively. Such an example as
+Grb is 4-regular in red and 8-regular in blue. Similarly, let Grg be a copy of the
+same graph with all blue edges replaced by green edges. We construct the desired
+graph G by making 13 copies of each vertex in Grb and for each set of copies
+(corresponding to a vertex), insert a copy of Grg . If an edge uv in Grb is red
+(respectively blue), then all edges in G between the two inserted copies of Grg
+corresponding to u and v are colored red (respectively blue). Then G contains
+no rainbow triangle by construction but also contains no monochromatic K5 .
+Since |G| = 169, this provides the desired example.
+Note that if R(K5 , K5 ) = 43 so R = 42, then Conjecture 1 claims that
+gr3 (K3 : K5 ) = 169 but this example refutes this claim. On the other hand,
+if R(K5 : K5 ) > 43, then the conjecture holds for K5 , as proven in Section 4
+below.
+
+4
+
+Proof of Theorem 4 (and Theorem 3)
+
+Note that the lower bound for Theorem 3 follows from Lemma 1 and was also
+presented in [2] but the lower bound for Theorem 4 must be more detailed.
+Proof. For the lower bounds, use the following constructions. For all constructions, we start with an i-colored base graph Gi (constructed below) and inductively suppose we have constructed an i-colored graph Gi containing no rainbow
+14
+
+triangle an no appropriately colored monochromatic cliques. For each two unused colors requiring a K5 , we construct Gi+2 by making R copies of Gi , adding
+all edges in between the copies to form a blow-up of a sharpness example for
+r(K5 , K5 ) on R vertices. For each two unused colors requiring a K4 , we construct Gi+2 by making 17 copies of Gi , adding all edges in between the copies
+to form a blow-up of a sharpness example for r(K4 , K4 ) on 17 vertices. For
+each two unused colors requiring a K3 , we construct Gi+2 by making 5 copies
+of Gi , adding all edges in between the copies to form a blow-up of the sharpness
+example for r(K3 , K3 ) on 5 vertices.
+The base graphs for this construction are constructed by case as follows.
+For Case (c1 ), the base graph G0 is a single vertex. For Case (c2 ), the base
+graph G1 is a monochromatic copy of K2 . For Case (c3 ), the base graph G1 is
+a monochromatic copy of K3 . For Case (c4 ), the base graph G1 is a monochromatic K4 . For Case (c5 ), the base graph G2 is a sharpness example on 8 vertices
+for r(K3 , K4 ) = 9. For Case (c6 ), the base graph G2 is a sharpness example
+on 13 vertices for r(K3 , K5 ) = 14. For Case (c7 ), the base graph G3 is two
+copies of a sharpness example for r(K3 , K4 ) = 9 with all edges in between the
+copies having a third color. For Case (c8 ), the base graph G2 is a sharpness
+example on 24 vertices for r(K4 , K5 ) = 25. For Case (c9 ), the base graph G3
+is two copies of a sharpness example on 13 vertices for r(K3 , K5 ) = 14. For
+Case (c10 ), the base graph G3 is two copies of a sharpness example on 24 vertices for r(K4 , K5 ) = 25 with all edges in between the copies having a third
+color. For Case (c11 ), the base graph G3 is three copies of a sharpness example
+on 24 vertices for r(K4 , K5 ) = 25 with all edges in between the copies having
+a third color. These base graphs and the corresponding completed constructions contain no rainbow triangle and no appropriately colored monochromatic
+cliques.
+For the upper bound, let G be a Gallai coloring of Kn where n is given in
+the statement. We prove this result by induction on 3r + 2s + t, meaning that
+it suffices to either reduce the order of a desired monochromatic subgraph or
+eliminate a color. Consider a Gallai partition of G and let q be the number of
+parts in this partition. Choose such a partition so that q is minimized.
+Claim 1. We may assume that q ≥ 4.
+Proof. For a contradiction, suppose q ≤ 3. If q = 3, then the reduced graph is
+a 2-colored triangle, which contains two edges of the same color. This means
+that there is a bipartition of the vertices so that all edges in between have one
+color, contradicting the minimality of q. Thus, assume q = 2. Let red be the
+color between the two sets, A and B.
+First suppose that red is among the last t colors, so we hope to find a red
+triangle. To avoid a red triangle, there must be no red edges within A or B. By
+induction on 3r + 2s + t and using Inequality (1), we get
+|G| = |A| + |B| ≤ 2[g(r, s, t − 1)] = g(r, s, t) < |G|,
+a contradiction.
+15
+
+Next suppose that red is among the middle s colors, so we hope to find a red
+K4 . To avoid a red K4 , only one of A or B can have any red edges. Suppose A
+is allowed to have red edges so B is not. Then observe that A cannot contain a
+red triangle as this would also create a red K4 . Thus, by induction on 3r + 2s+ t
+and using Inequalities (3) and (4) respectively, we get
+|G| = |A| + |B| ≤ g(r, s − 1, t + 1) + g(r, s − 1, t) < g(r, s, t) < |G|,
+a contradiction.
+Finally suppose red is among the first r colors, so we hope to find a red K5 .
+Supposing that the red clique number within A is at least as large as the red
+clique number within B, we get the following requirements:
+• A contains no red K4 , and
+• if A contains a red K3 , then B contains no red edges.
+These leave only two options:
+1. A and B both may contain red edges but no red K3 , or
+2. A contains a red K3 (but no red K4 ) and B contains no red edges.
+For the first option, we remove 1 from r but add 1 to t within both A and
+B. By induction on 3r + 2s + t and using Inequality (11), we get
+|G| = |A| + |B| ≤ 2g(r − 1, s, t + 1) < g(r, s, t) < |G|,
+a contradiction.
+For the second option, we remove 1 from r in both A and B but add 1 to s
+in A. By induction on 3r + 2s + t and using Inequalities (9) and (12), we get
+|G| = |A| + |B| ≤ g(r − 1, s + 1, t) + g(r − 1, s, t) < g(r, s, t) < |G|,
+a contradiction. This completes the proof of Claim 1.
+Let D be the reduced graph of the Gallai partition, with vertices wi corresponding to parts Gi of the partition. Let Vr denote the set of vertices in
+D whose corresponding sets in the partition contain at least one red edge and
+let Vb denote the set of vertices in D whose corresponding sets in the partition
+contain at least one blue edge. Let p2 = |Vr ∩ Vb | be the number of parts containing at least one red and at least one blue edge, p1 = |Vr △Vb | be the number
+of parts containing at least one red edge or at least one blue edge but not both,
+and p0 = |V (D) \ (Vr ∪ Vb )| be the number of parts with no red or blue edges.
+For each vertex wi ∈ D, let dr (wi ) and db (wi ) denote its red and blue degrees
+respectively within D. Then dr (wi ) + db (wi ) = q − 1 for all i. By the choice
+of the Gallai partition with the smallest number of parts, the following fact is
+immediate.
+Fact 1. For all wi ∈ V (D), we have dr (wi ), db (wi ) ≥ 1.
+16
+
+To avoid a monochromatic copy of K5 , the following facts follow immediately
+from the relevant definitions.
+Fact 2. If wi ∈ D is in a red K4 ⊆ D, then wi ∈
+/ Vr . If wi ∈ D is in a blue
+K4 ⊆ D, then wi ∈
+/ Vb .
+Fact 3. For all i,
+dr (wi ) ≤ 24, and db (wi ) ≤ 24.
+If a vertex wi ∈ D has at least r(3, 5) = 14 incident edges in red (in D), then
+the neighborhood contains either a red K3 or a blue K5 . Certainly the latter is
+not an option so the former must occur, meaning that wi is contained in a red
+K4 within D. By Fact 2, we get the following fact.
+Fact 4. If dr (wi ) ≥ 14, then wi ∈
+/ Vr . If db (wi ) ≥ 14, then wi ∈
+/ Vb .
+The remainder of the proof is broken into cases based on where red and blue
+fall in the list of colors relative to the first r colors, the middle s colors, and the
+last t colors.
+Case 1. Both red and blue occur within the last t colors.
+In this case, the graph G contains no red or blue triangle. Since r(K3 , K3 ) =
+6, we find that 4 ≤ q ≤ 5. By Fact 1, for every i, it follows that Gi contains no
+red or blue edge. This means that every Gi is colored with at most k − 2 colors
+with
+|Gi | ≤ g(r, s, t − 2).
+By induction and Inequality (2),
+|G| =
+
+q
+X
+
+|Gi | ≤ 5g(r, s, t − 2) ≤ g(r, s, t) < |G|,
+
+1=1
+
+a contradiction, completing the proof of Case 1.
+Case 2. Red is among the middle s colors while blue is among the last t colors.
+In this case, the graph G contains no red K4 and no blue triangle. Since
+r(K4 , K3 ) = 9, we find that 4 ≤ q ≤ 8. By Fact 1, for every i, it follows that Gi
+contains no blue edge and no red triangle.
+If Gi contains no red edges for some i, then Gi is colored with at most k − 2
+colors with |Gi | ≤ g(r, s − 1, t − 1) so by induction and Inequality (5),
+|Gi | ≤ g(r, s − 1, t − 1) ≤
+
+1
+g(r, s, t).
+8
+
+(23)
+
+Next if Gi contains at least one red edge, then by Fact 1, there can be no red
+triangle in Gi so |Gi | ≤ g(r, s − 1, t). Therefore, by the induction hypothesis
+and Inequality (4), we have
+|Gi | ≤ g(r, s − 1, t) ≤
+17
+
+1
+g(r, s, t).
+3
+
+(24)
+
+By Inequalities (23) and (24), we get the key inequality
+
+
+1
+1
+g(r, s, t).
+|G| ≤ p1 + p0
+3
+8
+This means that as long as we can show
+
+
+1
+1
+p1 + p0
+≤ 1,
+3
+8
+
+(25)
+
+(26)
+
+then we obtain a contradiction by showing |G| ≤ g(r, s, t). The remainder of
+this case can be concluded by establishing Inequality (26), which follows by the
+same argument as used in the corresponding case of [7].
+Case 3. Both red and blue occur within the middle s colors.
+In this case, the graph G contains no red or blue K4 and cases (c4 ) and
+(c9 ) cannot occur since s ≥ 2. Since r(K4 , K4 ) = 18, we find that 4 ≤ q ≤ 17.
+First some bounds on the orders of the parts Gi , leading to a counterpart of
+Inequality 25.
+First suppose Gi contains no red and no blue edges. Then by induction and
+Inequality (8), imply that
+1
+g(r, s, t).
+(27)
+17
+Next suppose Gi contains no blue edges but contains some red edges. Then by
+induction and Inequality (7), we get
+|Gi | ≤ g(r, s − 2, t) =
+
+13
+g(r, s, t).
+(28)
+72
+Finally suppose Gi contains both red and blue edges. Then by induction and
+Inequality (6), we get
+|Gi | ≤ g(r, s − 2, t + 1) ≤
+
+|Gi | ≤ g(r, s − 2, t + 2) =
+
+13
+g(r, s, t).
+36
+
+(29)
+
+Combining Inequalities (27), (28), and (29), we obtain the key inequality
+
+
+13
+13
+1
+g(r, s, t).
+(30)
+|G| ≤ p2
++ p1
++ p0
+36
+72
+17
+As in Case 2, if we can show that
+13
+1
+13
++ p1
++ p0
+≤ 1,
+(31)
+36
+72
+17
+then we will arrive at a contradiction that |G| ≤ g(r, s, t). Thus, for the remainder of the proof of this case, it suffices to show Inequality (31).
+Next we derive several facts. Within the red neighborhood of some vertex
+wi in R, there can be no red triangle since otherwise we would have a red K4
+in G. There can also be no blue K4 within this neighborhood so that means
+the red neighborhood of wi (and similarly the blue neighborhood) has at most
+r(4, 3) − 1 = 8 vertices. Formally, we obtain the following fact.
+p2
+
+18
+
+Fact 5. For all wi ∈ V (R), we have dr (wi ), db (wi ) ≤ 8.
+If a vertex wi ∈ R is contained in a red (or blue) triangle, then the part
+Gi cannot contain any red (respectively blue) edges to avoid creating a red
+(respectively blue) copy of K4 . The following fact is then immediate.
+Fact 6. If wi is in a red triangle in R, then wi ∈
+/ Vr . Similarly if wi is in a
+blue triangle in R, then wi ∈
+/ Vb .
+If dr (wi ) ≥ 4 for some wi ∈ V (R), then the red neighborhood of wi certainly
+must contain at least one red edge since otherwise, if all edges were blue, we
+would have a blue K4 . Thus wi is in a red triangle in R. A similar observation
+holds with the roles of red and blue switched. Thus from Fact 6, we obtain the
+following fact.
+Fact 7. If dr (wi ) ≥ 4 then wi ∈
+/ Vr , and if db (wi ) ≥ 4 then wi ∈
+/ Vb .
+If two parts Gi and Gj each contain at least one red edge, say ei and ej
+respectively, then the edge wi wj in R cannot be red since otherwise the subgraph
+induced on the vertices of ei ∪ ej is a red K4 . Thus, we obtain the following
+fact.
+Fact 8. The subgraph induced on Vr is a blue clique and the subgraph induced
+on Vb is a red clique.
+Next, we prove three helpful claims about the values of p0 , p1 , and p2 .
+Claim 2. p2 = |Vr ∩ Vb | ≤ 1 and if p2 = 1, then q ≤ 7.
+Proof. If we have wi , wj ∈ Vr ∩ Vb , then by Fact 8, wi , wj ∈ Vr implies that
+the edge wi wj is blue in R, while wi , wj ∈ Vb implies that wi wj is red, a
+contradiction.
+Now suppose p0 = 1 and, for a contradiction, that q ≥ 8. If w1 ∈ Vr ∩ Vb ,
+then there are at least 4 other vertices, say W = {w2 , w3 , w4 , w5 } with all one
+color, say red, on edges to w1 . Since w1 ∈ Vr ∩Vb and to avoid a red K4 , all edges
+between vertices in W must be blue, forming a blue K4 for a contradiction.
+Claim 3. |Vr | + |Vb | ≤ 4.
+Proof. Suppose first that there is a vertex wi ∈ Vr ∩ Vb . Then by Fact 6, wi
+is contained in neither a red triangle nor a blue triangle within R. By Fact 8,
+any vertex of Vr \ {wi } must be a blue neighbor of wi in R, and since the blue
+neighborhood of wi induces a red clique in R, again Fact 8 implies that there
+can only be at most one vertex in Vr \ {wi }. This means that |Vr | ≤ 2, and
+similarly, |Vb | ≤ 2.
+Thus, we may assume Vr ∩ Vb = ∅. We next claim that |Vr | ≤ 3 and |Vb | ≤ 3.
+If |Vr | ≥ 4, then by Fact 8, the subgraph of R induced on the vertices of Vr
+contains a blue K4 , a contradiction. Thus |Vr | ≤ 3, and symmetrically |Vb | ≤ 3.
+Now suppose that |Vr | = |Vb | = 3. If there exists a vertex wi ∈ Vr with
+at least two red neighbors in Vb , then by Fact 8, wi is in a red triangle in R,
+and this contradicts Fact 6. Thus, there can be at most one red edge from each
+19
+
+vertex in Vr to Vb , and similarly, at most one blue edge from each vertex in Vb
+to Vr , for a total of at most 6 edges. But R has 9 edges between Vr and Vb ,
+a contradiction. Finally suppose |Vr | = 3 and |Vb | = 2. Then again, there can
+be at most one red edge from each vertex of Vr to Vb , and at most one blue
+edge from each vertex of Vb to Vr , for a total of at most 5 edges, while R has 6
+edges between Vr and Vb , another contradiction. Symmetrically we cannot have
+|Vr | = 2 and |Vb | = 3, thus completing the proof of Claim 3.
+Claim 4. If either |Vr | ≥ 2 or |Vb | ≥ 2, then
+(a) q ≤ 10,
+(b) If q = 10, then p2 = 0 and p1 = 2, and
+(c) If q = 9, then p1 + p2 ≤ 3.
+In particular, if |Vr | + |Vb | ≥ 3, then either |Vr | ≥ 2 or |Vb | ≥ 2 so this claim
+may be applied.
+Proof. Working under the assumption that |Vr | + |Vb | ≥ 3, without loss of
+generality, we may assume |Vr | ≥ 2. Suppose G1 and G2 each contain at least
+one red edge. By Fact 8, all edges from G1 to G2 must be blue. For i with
+1 ≤ i ≤ 2, define
+Ri
+
+= {j|j ≥ 3, and Gj is joined to Gi by red edges
+
+R1,2
+
+and to G3−i by blue edges}
+= {j|j ≥ 3, and Gj is joined to Gi and G3−i by red edges}
+
+B
+
+= {j|j ≥ 3, and Gj is joined to Gi and G3−i by blue edges}
+
+If j1 , j2 ∈ Ri , then Gj1 and Gj2 are joined by blue edges to avoid a red K4 .
+Suppose that |Ri | ≥ 3 for some i, say |R1 | ≥ 3 with {j1 , j2 , j3 } ⊆ R1 . Then
+there is a blue K4 with vertices chosen from G2 , Gj1 , Gj2 , Gj3 , a contradiction.
+This means that |Ri | ≤ 2 for each i with 1 ≤ i ≤ 2.
+If j1 , j2 ∈ Ri ∪ R1,2 , then again Gj1 and Gj2 are joined by blue edges to
+avoid a red K4 . Then to avoid a blue K4 , it is clear that |R1,2 | + |Ri | ≤ 3 for
+each i with 1 ≤ i ≤ 2. Exchanging the roles of the colors, it is also clear that
+|B| ≤ 3.
+Then if:
+• |R1,2 | = 0, then |R1,2 | + |R1 | + |R2 | + |B| ≤ 0 + 2 · 2 + 3 = 7,
+• |R1,2 | = 1, then |R1,2 | + |R1 | + |R2 | + |B| ≤ 1 + 2 · 2 + 3 = 8,
+• |R1,2 | = 2, then |R1,2 | + |R1 | + |R2 | + |B| ≤ 2 + 2 · 1 + 3 = 7,
+• |R1,2 | = 3, then |R1,2 | + |R1 | + |R2 | + |B| ≤ 3 + 2 · 0 + 3 = 6,
+20
+
+so in every case, q = 2 + |R1,2 | + |R1 | + |R2 | + |B| ≤ 2 + 8 = 10, completing the
+proof of (a).
+If q = 10, then we must have |R1,2 | + |R1 | + |R2 | + |B| = 1 + 2 · 2 + 3 = 8
+so |R1,2 | = 1, |R1 | = |R2 | = 2 and |B| = 3. By the observations above, all
+edges between pairs of parts with indices in B are red, meaning that each of
+these parts is in a red triangle in R. Similarly, all edges between pairs of parts
+with indices in R1,2 ∪ Ri are blue for each i with 1 ≤ i ≤ 2, meaning that each
+of these parts is in a blue triangle in R. Thus, for all j with 3 ≤ j ≤ 10, we
+have Gj contains no red or blue edges. Similarly, with Ri = 2 for each i, there
+can be no blue edges in either G1 or G2 . This means that p2 = 0 and p1 = 2,
+completing the proof of (b).
+Finally suppose q = 9. What remains of the proof of Claim 4, we break into
+cases based on the value of |R1,2 |.
+If |R1,2 | = 0, then |R1 | = |R2 | = 2 and |B| = 3. As in the case when q = 10,
+G1 and G2 each contain no blue edges and for all j with 3 ≤ j ≤ 10, Gj must
+contain no red or blue edges. Thus, p2 = 0 and p1 = 2.
+If |R1,2 | = 1, then it is possible that either |R1 | = 1 or |R2 | = 1, say |R1 | = 1.
+Then the set Gj corresponding to R1 can have blue edges but all other sets Gj
+with j ≥ 3 must have no blue and no red edges. Thus, p1 + p2 ≤ 3. On the
+other hand, if |R1 | = |R2 | = 2, then it is possible that |B| = 2. Then at most
+one of the sets Gj corresponding to B can have red edges but all other sets Gj
+with j ≥ 3 must have no blue and no red edges. Thus, p1 + p2 ≤ 3.
+If |R1,2 | = 2, then |R1 | = |R2 | = 1 and |B| = 3. Each of the sets with indices
+in R1 ∪ R2 ∪ R1,2 is contained in a blue triangle in R, meaning that for all j
+with 3 ≤ j ≤ 10, the set Gj contains no red or blue edges. Each set G1 and G2
+may contain blue edges or not but in either case, p1 + p2 = 2, completing the
+proof of (c) and Claim 4.
+We now consider subcases based on the value of q.
+Subcase 3.1. 13 ≤ q ≤ 17.
+By Fact 5, we have dr (wi ), db (wi ) ≤ 8 so this means that db (wi ), dr (wi ) ≥ 4
+for all wi ∈ V (R). This means that Gi contains no red or blue edges for all i.
+Thus p2 = p1 = 0, p0 = q, and
+p2
+
+16/3
+8/3
+1
+q
++ p1
++ p0
+=
+≤ 1,
+17
+17
+17
+17
+
+as required for Inequality (31).
+Subcase 3.2. 4 ≤ q ≤ 10.
+By Claim 2, we have p2 ≤ 1. First suppose p2 = 1. Then if q ≥ 8, every
+vertex wi ∈ V (R) must have at least 4 edges in one color and, by Fact 7, every set
+Gi is missing either red or blue, contradicting the assumption that p2 = 1. Thus,
+21
+
+we have 4 ≤ q ≤ 7. By Claim 3, since p2 = 1, we have p1 = |Vr | + |Vb | − 2p2 ≤ 2.
+Thus,
+p2
+
+13
+13
+1
+13
+13
+1
+1172
++ p1
++ p0
+≤1·
++2·
++ (q − 3) ·
+≤
+< 1.
+36
+72
+17
+36
+72
+17
+1224
+
+Next suppose p2 = 0 so by Claim 3, p1 ≤ 4. If q ≤ 8, we get
+p2
+
+13
+13
+1
+13
+1
+1172
++ p1
++ p0
+≤4·
++4·
+=
+< 1.
+36
+72
+17
+72
+17
+1224
+
+If q = 10, then by Claim 4, we have p1 = 2, so
+p2
+
+13
+1
+13
+1
+1018
+13
++ p1
++ p0
+≤2·
++8·
+=
+< 1.
+36
+72
+17
+72
+17
+1224
+
+If q = 9, then by Claim 4, we have p1 ≤ 3, so
+p2
+
+13
+13
+1
+13
+1
+1095
++ p1
++ p0
+≤3·
++6·
+=
+< 1.
+36
+72
+17
+72
+17
+1224
+
+Subcase 3.3. q ∈ {11, 12}.
+By Claim 4, we see that |Vr | + |Vb | ≤ 2. By Claim 2, we have p2 = 0 so
+p1 ≤ 2 and
+p2
+
+13
+13
+1
+13
+1
+1162
++ p1
++ p0
+≤2·
++ 10 ·
+=
+<1
+36
+72
+17
+72
+17
+1224
+
+completing the proof of this subcase, and the proof of Case 3.
+Case 4. Red is among the first r colors while blue is among the last t colors.
+In this case, the graph G contains no red K5 and no blue triangle. Since
+r(K3 , K5 ) = 14, we find that 4 ≤ q ≤ 13. By Fact 1, each part of the Gallai
+partition has both red and blue incident edges in the reduced graph. This
+means that there can be no red K4 and no blue edge in any part, leading to the
+following main subcases.
+1. No part has any red edges,
+2. There is a part with a red K3 , and
+3. There is a part with red edges but no part has a red K3 .
+We first consider Subcase 1. Since every part Gi contains no red or blue
+edges, this means that |Gi | ≤ g(r − 1, s, t− 1). By induction and Inequality (13),
+we get
+|G| =
+
+q
+X
+i=1
+
+|Gi | ≤
+
+q
+X
+
+g(r − 1, s, t − 1) ≤
+
+i=1
+
+q
+g(r, s, t) ≤ g(r, s, t) < |G|,
+13
+
+a contradiction, completing the proof of Subcase 1.
+22
+
+Next we consider Subcase 2. Let G1 be a part of the Gallai partition containing a red triangle. Partition the remaining vertices of G into GR and GB such
+that GR contains all vertices in parts having red edges to G1 and GB contains
+all vertices in parts having blue edges to G1 .
+Certainly GR contains no red edges and no blue triangle and GB contains
+no red K5 and no blue edges. This means that
+|GR | ≤ g(r − 1, s, t)
+
+and
+
+|GB | ≤ g(r, s, t − 1).
+
+Furthermore, since G1 contains a red triangle but no red K4 and no blue edges,
+we get
+|G1 | ≤ g(r − 1, s + 1, t − 1).
+By considering each of the cases of the statement ((c1 ) up to (c11 )) individually across Types T1, T10, and T12 in Tables 1 and 2, we see that in each of
+the cases, we have
+g(r − 1, s + 1, t − 1) + g(r − 1, s, t) + g(r, s, t − 1) ≤ g(r, s, t)
+except in the two cases (c7 ) and (c10 ). We sharpen the bounds by observing
+that G1 contains a red triangle, so every pair of parts in GR are joined by blue
+edges. Since G has no blue triangle, this means that GR must have at most two
+parts. If GR has only one part, then by Fact 1, it must have blue edges to some
+part in GB , and so cannot contain a blue edge so |GR | ≤ g(r − 1, s, t − 1). If
+GR has two parts, then similarly each cannot contain blue edges meaning that
+|GR | ≤ 2g(r − 1, s, t − 1). Then the calculations for these two specific cases
+become
+221
+(c7 ) : 2 R3 + 16R
++ 12 < 1, and
+1
+2
++ 17
+(c10 ) : 15
+48 + 2 < 1.
+
+In either case, |G| = |G1 | + |GR | + |GB | < |G|, a contradiction.
+Finally we consider Subcase 3. Let G1 be a part of the Gallai partition
+containing at least one red edge (but no red triangle). Again partition the
+remaining vertices of G into GR and GB such that GR contains all vertices in
+parts having red edges to G1 and GB contains all vertices in parts having blue
+edges to G1 .
+Then GR contains no red K3 and no blue K3 . Similarly, GB contains no red
+K5 and no blue edges at all. This means that
+|GR | ≤ g(r − 1, s, t + 1)
+
+and
+
+|GB | ≤ g(r, s, t − 1).
+
+Furthermore, since G1 contains red edges but no red triangle and no blue edges,
+we get
+|G1 | ≤ g(r − 1, s, t).
+By considering each of the cases of the statement ((c1 ) up to (c11 )) individually
+across Types T1, T11, and T12 in Tables 1 and 2, we see that in each of the
+23
+
+cases, we have
+g(r − 1, s, t + 1) + g(r − 1, s, t) + g(r, s, t − 1)
+≤1
+g(r, s, t)
+except in the two cases (c7 ) and (c9 ).
+Certainly GB contains no blue edges so every pair of parts in GB are joined
+by red edges. Since G has no red K5 , there must be at most 4 parts in GB . By
+Fact 1, no individual part contains a red K4 so if there is only one part in GB , it
+has order at most g(r − 1, s + 1, t − 1). If a part Gi ⊆ GB contains a red triangle,
+then there can only be one other part, which must have no red edge. In this case
+|GB | ≤ g(r − 1, s + 1, t − 1) + g(r − 1, s, t − 1). If two parts have red edges (but no
+red triangle), then these are the only two parts in GB and |GB | ≤ 2g(r − 1, s, t).
+Finally if one part has red edges (but no red triangle), then there are at most
+3 parts in GB , meaning that |GB | ≤ g(r − 1, s, t) + 2g(r − 1, s, t − 1). Putting
+these observations together, we see that
+
+|GB | ≤
+
+≤
+
+
+g(r − 1, s + 1, t − 1),
+
+
+
+g(r − 1, s + 1, t − 1) + g(r − 1, s, t − 1),
+2g(r − 1, s, t),
+
+
+
+g(r − 1, s, t) + 2g(r − 1, s, t − 1)
+g(r − 1, s + 1, t − 1) + g(r − 1, s, t − 1).
+
+This means that
+|G| =
+≤
+
+|G1 | + |GR | + |GB |
+g(r − 1, s, t) + g(r − 1, s, t + 1)
+
+≤
+
++g(r − 1, s + 1, t − 1) + g(r − 1, s, t − 1)
+g(r, s, t)
+
+<
+
+|G|,
+
+a contradiction, completing the proof of Case 4.
+Case 5. Red is among the first r colors while blue is among the middle s colors.
+In this case, the graph G contains no red K5 and no blue K4 . Since
+r(K4 , K5 ) = 25, we find that 4 ≤ q ≤ 24. We break the proof into subcases
+based on the red and blue edges that appear within parts of a Gallai partition.
+These subcases are listed as follows.
+5.1. No part of the partition contains any red or blue edges.
+5.2. A part G1 contains a red copy of K3 and at least one blue edge.
+5.3. A part G1 contains red and blue edges, but no red or blue copy of K3 .
+5.4. A part G1 contains a red copy of K3 and no blue edges.
+24
+
+5.5. A part G1 contains blue edges.
+5.6. A part G1 contains red edges but no red copy of K3 , and no blue edges.
+We now consider these subcases.
+Subcase 5.1. No part of the partition contains any red or blue edges.
+If each part Gi of the partition contains no red or blue edges, then this is
+1
+Type T16 so by Inequality (16), we get g(r−1,s−1,t)
+≤ 24
+. This means that
+g(r,s,t)
+|G| =
+≤
+≤
+=
+≤
+
+q
+X
+
+i=1
+q
+X
+
+|Gi |
+g(r − 1, s − 1, t)
+
+i=1
+q
+X
+
+1
+g(r, s, t)
+24
+i=1
+q
+g(r, s, t)
+24
+g(r, s, t),
+
+a contradiction, completing the proof for Subcase 5.1.
+Subcase 5.2. A part G1 contains a red copy of K3 and at least one blue edge.
+Let GR (and GB ) be the set of vertices with all red (respectively blue) edges
+to G1 . Then |GB | can be bounded from above by g(r, s−1, t). By Inequality (4),
+we get
+g(r, s − 1, t)
+1
+≤ .
+g(r, s, t)
+3
+We can also bound |G1 | from above by g(r − 1, s, t + 1). By Inequality (11), we
+get
+17
+g(r − 1, s, t + 1)
+≤
+.
+g(r, s, t)
+36
+Finally, since GR contains no red edges, it has at most three parts. No part
+has a blue K3 so there can be three parts with no blue edges or one part with
+blue edges and another with no blue edges. Thus, we obtain
+
+
+|GR |
+11
+1 1
+1
+=
+≤ max 3 · , +
+.
+g(r, s, t)
+24 9 24
+72
+Summarizing, we get
+|G| = |G1 | + |GR | + |GB | ≤
+
+
+
+17 11 1
++
++
+36 72 3
+
+a contradiction.
+25
+
+
+
+g(r, s, t) =
+
+69
+g(r, s, t) < g(r, s, t),
+72
+
+Subcase 5.3. A part G1 contains red and blue edges, but no red or blue copy
+of K3 .
+Then Gr is of Type T11 so by Inequality (11), we obtain
+g(r − 1, s, t + 1)
+17
+≤
+.
+g(r, s, t)
+36
+Similarly, G1 is of Type T12 so by Inequality (12), we have
+2
+g(r − 1, s − 1, t + 2)
+≤ .
+g(r, s, t)
+9
+Since GB has no blue edges, it has at most four parts. There can be four
+parts with no red edges, or one part with red edges and two parts with no red
+edges, or two parts with a red K3 in one part and no red edges in the other
+part, or two parts with red edges, or one part with a red K3 . This means that
+
+
+5
+1 1
+2 17
+1
+1 17
+|GB |
+g(r, s, t) =
+≤ max 4 · , + ,
++ ,2· ,
+g(r, s, t).
+g(r, s, t)
+24 9 24 72 24
+9 72
+18
+Summarizing we obtain
+|G| = |G1 | + |GR | + |GB | ≤
+
+
+
+2 17
+5
++
++
+9 36 18
+
+
+
+g(r, s, t) =
+
+35
+g(r, s, t) < g(r, s, t),
+36
+
+a contradiction.
+Subcase 5.4. A part G1 contains a red copy of K3 and no blue edges.
+First a claim that there is only one such part.
+Claim 5. At most one part contains a red copy of K3 .
+Proof. Suppose there are two parts G1 and G2 containing a red copy of K3 . To
+avoid a red copy of K5 , there must be all blue edges in between G1 and G2 .
+Then GR , the set of vertices with red edges to G1 , is an (R2 , B4 )-graph, and G2
+is contained in GB , the set of vertices with all blue edges to G1 . We also see that
+the set of vertices in GB with all red edges to G1 , GBR is an (R2 , B3 )-graph, and
+the set of vertices in GB with all blue edges to G2 , GBB is an (R5 , B2 )-graph.
+We deduce that
+
+
+11
+1 1
+1
+=
+w(GR ) ≤ max 2 · , +
+,
+24 9 24
+72
+w(GBR ) ≤ max
+
+
+
+26
+
+1
+1
+,2 ·
+9
+24
+
+
+
+=
+
+1
+,
+9
+
+|GB |
+g(r, s, t)
+
+
+1 1
+2 17
+1
+1 17
+≤ max 4 · , + ,
++ ,2 · ,
+g(r, s, t)
+24 9 24 72 24
+9 72
+5
+=
+g(r, s, t).
+18
+We now distinguish two cases. First if GR contains a blue part, then all
+edges from this blue part to GBB are red. So GBB contains no red copy of K4 .
+Then
+
+
+17
+1
+1
+17 1
+=
+, + ,3 ·
+.
+w(GBB ) ≤ max
+72 9 24
+24
+72
+Thus, we obtain
+w(GBB ) ≤
+
+|G| =
+≤
+=
+<
+
+|G1 | + |G2 | + |GR | + |GBR | + |GBB |
+
+
+5
+17 1 17
+2·
+g(r, s, t)
++
++ +
+26 72 9 72
+151
+g(r, s, t)
+156
+g(r, s, t),
+
+a contradiction.
+2
+, so we obtain
+If GBR contains no blue part, then w(GBR ) ≤ 24
+|G| =
+≤
+=
+<
+
+|G1 | + |G2 | + |GR | + |GBR | + |GBB |
+
+
+2
+5
+17 11
+g(r, s, t)
++
++
++
+2·
+72 72 24 18
+71
+g(r, s, t)
+72
+g(r, s, t),
+
+a contradiction.
+Let G1 be a part containing a red copy of K3 . Then GR is an (R2 , B4 )-graph
+and GB is an (R5 , B3 )-graph. We deduce that
+
+
+1
+1
+11
+1
++ ,3 ·
+,
+=
+w(GR ) ≤ max
+9 24
+24
+72
+and w(GB ) ≤ 59 by Lemma 7. Thus, we obtain
+
+
+17 11 5
+17
+|G| = |G1 | + |GR | + |GB | ≤
+g(r, s, t) =
++
++
+g(r, s, t) < g(r, s, t),
+72 72 9
+18
+a contradiction.
+For the remaining subcases, we therefore know that each part Gi can contain
+red (or blue) edges but no red (respectively blue) copy of K3 , and no blue
+(respectively red) edges.
+27
+
+Subcase 5.5. A part G1 contains a blue edges.
+Suppose G1 contains a blue edge. Let GR (or GB ) denote the set of vertices
+in G \ G1 with red (respectively blue) edges to G1 . Let q1 be the number of
+parts of the Gallai partition in GR and let q2 be the number of parts of the
+Gallai partition in GB . Then
+q1 ≤ 17 = R(K4 , K4 ) − 1
+since the reduced graph of GR contains no monochromatic copy of K4 . Similarly,
+q2 ≤ 4 since GB contains no blue edges.
+For the situation when GR contains either red or blue edges, we apply Inequality (15) to get |GR | ≤ g(r − 1, s − 1, t + 1) ≤ 91 g(r, s, t).
+We intend to show that
+|G| = |G1 | + |GR | + |GB | ≤ g(r, s, t),
+which would be a contradiction. This would hold if we could show that
+|G1 | + |GB | ≤
+
+1
+g(r, s, t)
+3
+
+and
+
+|GR | ≤
+
+2
+g(r, s, t)
+3
+
+or equivalently if
+1
+|G1 | + |GB |
+≤
+g(r, s, t)
+3
+
+and
+
+|GR |
+2
+≤ .
+g(r, s, t)
+3
+
+Certainly there are no blue edges within GB so every pair of parts in GB is
+joined entirely by red edges. Since G contains no red copy of K5 , there can be
+at most 4 parts of the Gallai partition in GB . If two parts have red edges (but
+certainly no red triangle in this subcase), then these are the only two parts in
+GB and if one part has red edges (but no red triangle), then there are at most
+3 parts in GB .
+This means that
+
+
+|G1 | + |GB |
+3
+1 1 1
+1 1
+1
+1
+1
+= = ,
+≤ max
++2· , + +2· , +4·
+g(r, s, t)
+9
+9 9 9
+24 9
+24
+9
+3
+as desired.
+Within GR , we first note that there is no red copy of K4 and no blue copy of
+K4 . We may therefore follow along with the proof of Case 3 with the following
+arguments, cases concerning the possible values of q1 .
+First suppose q1 = 17. If a part in G2 in GB contains a red edge, then since
+R(K3 , K4 ) = 9, there must be at most 8 parts in GR with red edges to G2 and
+at most 8 parts in GR with blue edgs to G2 , meaning q1 ≤ 16. Thus, no part in
+GB has a red edge, so
+|G1 | + |GB |
+q1
+4
+21
+|GR |
++
+≤
++
+≤
+< 1,
+g(r, s, t)
+g(r, s, t)
+24 24
+24
+28
+
+a contradiction. If 13 ≤ q1 ≤ 16, then
+|GR |
+16
+2
+≤
+= ,
+g(r, s, t)
+24
+3
+as claimed.
+When 4 ≤ q1 ≤ 12, we apply Claim 4 and note that p2 = 0. Following the
+proof of Subcase 3.2, we get the following. If q1 ≤ 8, then
+p1 ·
+
+1
+1
+4
+4
+2
++ p0 ·
+≤ +
+< .
+9
+24
+9 24
+3
+
+If q1 = 9, then
+
+1
+1
+3
+6
+1 1
+2
++ p0
+≤ +
+= + < .
+9
+24
+9 24
+3 4
+3
+If q1 = 10, then p1 ≤ 2 and
+p1 ·
+
+p1 ·
+
+1
+1
+2
+8
+2
++ p0 ·
+≤ +
+< .
+9
+24
+9 24
+3
+
+Finally if 11 ≤ q1 ≤ 12, then p1 ≤ 2 and
+p1 ·
+
+1
+2 10
+23
+2
+1
++ p0 ·
+≤ +
+=
+< ,
+9
+24
+9 24
+36
+3
+
+completing the proof of Subcase 5.5.
+For the remaining subcase, all parts are either free or red, and there is at
+least one red part.
+Subcase 5.6. A part G1 contains red edges but no red copy of K3 , and no blue
+edges.
+Then GR is an (R3 , B4 )-graph and GB is an (R5 , B3 )-graph. So by Inequality (15) and Lemmas 6 and 7, we obtain
+|G| =
+≤
+=
+
+|G1 | + |GR | + |GB |
+
+
+1 1 5 1 25 39
+max
+· g(r, s, t)
++ + , +
++
+9 3 9 9 72 72
+g(r, s, t) < g(r, s, t) + 1,
+
+a contradiction, unless GR and GB are both very specific blow-ups of the unique
+2-coloring of K5 with no monochromatic triangle as in Lemmas 6 and 7.
+In order to avoid creating a red K5 , each part in GR can have red edges
+to at most two parts in GB . This means that there must be at least 15 pairs
+of parts (one in GR and one in GB ) with blue edges between them. To avoid
+creating a blue copy of K4 , the only way for a part in GB to have blue edges
+to three parts in GR is for all of those blue edges to go to the free parts in GR .
+This leaves all red edges from the blue parts in GR to GB , making a red copy
+of K5 , completing the proof of Subcase 5.6 and Case 5.
+29
+
+Case 6. Red and blue are both within the first r colors.
+In this case, the graph G contains no red or blue K5 . Since r(K5 , K5 ) = R+1,
+we find that 4 ≤ q ≤ R. It turns out that a better bound is almost immediate.
+Claim 6. If red and blue occur within the first r colors, then
+q ≤ 38.
+Proof. Suppose, for a contradiction, that q ≥ 39. By Fact 3, for each vertex
+wi ∈ D, we have dr (wi ) ≤ 24 and db (wi ) ≤ 24. Since q = |D| ≥ 39, this means
+that dr (wi ) ≥ 14 and db (wi ) ≥ 14. By Fact 4, we get that Vr = ∅ and Vb = ∅,
+so p0 = q. By induction on the number of colors,
+|Gi | ≤
+so this means that
+|G| ≤
+
+1
+g(r, s, t)
+R
+
+q
+g(r, s, t) < |G|,
+R
+
+a contradiction.
+We break the remainder of the proof of this case into the following subcases:
+1. There is a part G1 containing a red triangle and a blue triangle but no
+red or blue copy of K4 .
+2. There is a part G1 containing a red edge and a blue triangle but no red
+triangle and no blue copy of K4 .
+3. There is a part G1 containing a red edge and a blue edge but no red or
+blue triangle. So G1 is an (R3 , B3 )-part.
+4. There is an (R2 , B4 )-part G1 .
+5. Each part is either a free part or a red part or a blue part.
+Subcase 6.1. There is a part G1 containing a red triangle and a blue triangle
+but no red or blue copy of K4 .
+If we let GR and GB be the sets of vertices with all red or respectively blue
+edges to G1 , then it is clear that GR contains no red edges and GB contains no
+blue edges. Since all edges between parts in GR must be blue, there can be at
+most 4 parts and similar there can be at most 4 parts in GB . Since G1 contains
+a red triangle and a blue triangle but no red or blue copy of K4 , we see from
+Inequality (17) that
+|G1 |
+18
+≤
+.
+|G|
+R
+The orders of GR and GB satisfy identical bounds so, by symmetry, we will
+consider only |GR |.
+30
+
+If GR contains only one part, this part contains no red edges and perhaps
+some blue triangles but no blue copy of K4 (recall that for every part Gi , there
+exists a part Gj with all blue edges to Gi ). By Inequality (19), this means that
+|GR |/|G| ≤ R6 .
+If GR contains two parts, these must have all blue edges between them.
+Then either one of these parts contains a blue triangle and the other contains
+no blue edges, or each part contains blue edges but no blue triangle. In the
+former situation, by Inequalities (22) and (19), we have
+|GR |
+6
+1
+7
+≤
++
+= .
+|G|
+R R
+R
+In the latter situation, by Inequality (20), we have
+13
+13
+|GR |
+≤2
+=
+.
+|G|
+2·R
+R
+If GR contains three parts, at most one of them can contain any blue edges
+so, by Inequalities (22) and (21), we have
+13
+1
+21
+|GR |
+≤
++2 =
+.
+|G|
+4·R
+R
+4·R
+Finally if GR contains four parts, none of these may contain any blue edges so,
+by Inequality (22), we have
+1
+4
+|GR |
+≤4 = .
+|G|
+R
+R
+7
+R|
+Putting these together, we have |G
+|G| ≤ R and so symmetrically we also get
+|GB |
+7
+|G| ≤ R . These imply that
+
+|G| = |G1 | + |GR | + |GB | ≤
+
+|G|
+(18 + 7 + 7) < |G|,
+R
+
+a contradiction, completing the proof of this subcase.
+Subcase 6.2. There is a part G1 containing a red edge and a blue triangle but
+no red triangle and no blue copy of K4 .
+Again let GR and GB be the sets of vertices with all red or respectively blue
+edges to G1 , so GR contains no red triangle and GB contains no blue edges.
+By Inequality (18), we see that |G1 | ≤ 12
+R |G|. From the same argument as in
+the previous subcase, we see that |GB | ≤ R7 |G|. By Inequality (11), we see that
+5
+|GR | ≤ 13
+|G|. Putting all these together, we get
+
+
+12
+7
+5
+|G| = |G1 | + |GB | + |GR | ≤
+|G| < |G|,
++ +
+R
+R 13
+a contradiction, completing the proof of this subcase.
+31
+
+Subcase 6.3. There is an (R3 , B3 )-part G1 .
+With GR and GB being the sets of vertices with red or blue edges respectively
+to G1 , we consider several possible situations. We further break into cases based
+on the surrounding structures.
+Subcase 6.3.1. No other part contains red or blue edges.
+Then since GB contains no blue triangle and no red copy of K5 , we see
+that GB contains at most R(K3 , K5 ) − 1 = 13 parts of the Gallai partition and
+similarly GR also contains at most 13 parts of the Gallai partition. This means
+that
+
+
+|G| 13
+32.5|G|
+|G| = |G1 | + |GB | + |GR | ≤
++ 13 + 13 =
+< |G|,
+R
+2
+R
+a contradiction.
+Subcase 6.3.2. There is a (R2 , B4 )-part G2 .
+In order to avoid creating a blue copy of K5 , all edges from G1 to G2 must be
+red. Let F2B denote the set of vertices with blue edges to G2 , let F1R denote any
+remaining vertices with red edges to G1 and let F1B denote the set of vertices
+with blue edges to G1 . Note that F2B contains no blue edges, F1R contains no
+red edges since both G1 and G2 have all red edges to F1R , and F1B contains no
+blue triangle and no red copy of K4 . This means that
+|G|
+
+= |G1 | + |G2 | + |F1B | + |F1R | + |F2B |
+
+
+|G| 13
++ 6 + 12 + 7 + 7
+≤
+R
+2
+38.5|G|
+=
+< |G|,
+R
+
+a contradiction.
+Subcase 6.3.3. There is another (R3 , B3 )-part G2 .
+Without loss of generality, suppose the edges between G1 and G2 are red.
+If we let F1R denote the set of vertices with red edges to G1 , then all of F1R
+must have blue edges to G2 . Let F1B be the remaining vertices, those with blue
+edges to G1 . Then F1B contains no blue triangle and F1R contains no blue or
+red triangle. This means that
+|G| =
+≤
+≤
+
+|G1 | + |G2 | + |F1R | + |F1B |
+
+
+5
+|G| 13 13 13
++ |G|
++
++
+R
+2
+2
+2
+13
+
+
+18.5
+5
+|G| < |G|,
++
+R
+13
+
+a contradiction.
+32
+
+Subcase 6.3.4. Every other part is either free, red or blue.
+Note that GR is an (R3 , B5 )-graph and GB is an (R5 , B3 )-graph. So by
+Lemma 4, we obtain
+
+
+39
+13
+16.25
+|G| = |G1 |+|GR |+|GB | ≤
+g(r, s, t) =
+|G| + 2 ·
+g(r, s, t) < g(r, s, t),
+2R
+R
+R
+a contradiction, completing the proof of this subsubcase.
+Subcase 6.4. There is an (R2 , B4 )-part G1 .
+With GR and GB being the sets of vertices with red or blue edges respectively to G1 , the graph induced on GR contains no blue edge. We consider
+several possible situations and further break into cases based on the surrounding structures.
+Subcase 6.4.1. No part in GR contains red or blue edges.
+Then since GB contains no blue edges and no red copy of K5 , we see that GB
+contains at most R(K2 , K5 ) − 1 = 4 parts of the Gallai partition and similarly
+GR also contains at most R(K4 , K5 ) − 1 = 24 parts of the Gallai partition. This
+means that
+|G| = |X1 | + |GB | + |GR | ≤
+
+34|G|
+|G|
+(6 + 4 + 24) =
+< |G|,
+R
+R
+
+a contradiction.
+Subcase 6.4.2. There is an (R4 , B2 )-part G2 in GR .
+Without loss of generality, suppose the edges between G1 and G2 are all red.
+Let F1R be the set of vertices (other than G2 ) with red edges to G1 and let F1B
+be the set of vertices with blue edges to G1 . Then F1B contains no blue edges
+and F1R must have blue edges to G2 to avoid creating a red copy of K5 so F1R
+contains no red or blue copy of K4 . This means that
+|G|
+
+= |G1 | + |G2 | + |F1B | + |F1R |
+|G|
+≤
+(6 + 6 + 7 + 18)
+R
+37
+|G| < |G|,
+=
+R
+
+a contradiction.
+Subcase 6.4.3. There is an (R3 , B2 )-part G2 in GR .
+Let GRR be the set of vertices in GR with red edges to G2 and let GRB be
+those vertices in GR with blue edges to G2 . Then GB contains no blue edges,
+33
+
+GRR contains no red edges, and GRB contains no red or blue copy of K4 . This
+means that
+|G| =
+≤
+=
+
+|G1 | + |G2 | + |GB | + |GRR | + |GRB |
+
+
+|G|
+13
+6+
++ 7 + 7 + 18
+R
+4
+41.25
+|G| < |G|,
+R
+
+a contradiction.
+Subcase 6.4.4. There is an (R2 , B3 )-part G2 in GR .
+Note that we may assume that GB contains no red triangle since if it did,
+this structure would be symmetric to the assumed structure considered in Subcase 6.4.2.
+Let GRR denote the set of vertices in GR with red edges to G2 and let GRB
+denote the set of vertices in GR with blue edges to G2 . Then GB contains no
+blue edges and GRB contains no red K4 and no blue triangle.
+Hence GRR is an (R3 , B5 )-graph and GRB is a (R4, B3)-graph. Using Lemmas 3 and 4, we obtain
+|G| =
+≤
+=
+
+|G1 | + |G2 | + |GB | + |GRR | + |GRB |
+
+
+13
+|G|
+6+
++ 7 + 16.25 + 9.75
+R
+4
+42.25
+|G| < |G|,
+R
+
+a contradiction.
+Subcase 6.4.5. There is an (R2 , B4 )-part G2 .
+Then all edges between G1 and G2 are red. Let F1B be the set of vertices
+with blue edges to G1 , let FRR be the set of vertices with red edges to both G1
+and G2 , and let FRB be the set of vertices with red edges to G1 and blue edges
+toG2 . Then F1B contains no blue edges and FRB contains no blue edges and
+no red K4 . If FRR contains no blue K3 , then FRR is an (R3 , B5 )-graph. This
+means that
+|G| =
+≤
+=
+
+|G1 | + |G2 | + |F1B | + |F1R | + |FRR |
+|G|
+(6 + 6 + 7 + 16.25) + 6
+R
+41.25
+|G| < |G|,
+R
+
+a contradiction.
+34
+
+Suppose there is an (R2 , B4 )-part G3 in FRR . Repeating above arguments
+leads to
+|G| =
+≤
+=
+
+|G1 | + |G2 | + |G3 | + |F1B | + |F1R | + |F3R | + |F3B |
+|G|
+(4 · 6 + 2 · +7 + 3.25)
+R
+41.25
+|G| < |G|,
+R
+
+a contradiction.
+Subcase 6.5. Each part is either a free part or a red part or a blue part.
+First suppose that G has exactly one non-free part. Let G1 be this part
+containing red edges. Then GR is an (R3 , B5 )-graph and GB is an (R5 , B4 )graph. So we obtain
+
+
+1 13
+40.25
+40.25
+|G| ≤
++ 13 + 24 =
+≤
+< 1,
+R 4
+R
+43
+a contradiction.
+Hence we may assume that G contains at least two non-free parts, say G1
+and G2 . If G1 and G2 both contain red edges, and G1 and G2 are joined by
+blue edges, then we call this a RBR-pair. Analogously, RRR-pairs, RRB-pairs
+(BBR-pairs), BBB-pairs, BRB-pairs, and BBR-pairs (RBB)-pairs are defined.
+Claim 7. G contains an RRR-pair or a BBB-pair.
+Proof. Suppose not. First assume that G contains a RBR-pair. So let G1
+and G2 contain red edges and G1 and G2 are joined by blue edges. Then
+GR is an (R3 , B5 )-graph, GBB is an (R5 , B3 )-graph and GBR is an (R3 , B4 )graph. Since there is no RRR-pair, both GR and GBR contain no red parts.
+Hence w(GBR ) ≤ 9.5
+R by Lemma 3 (ii). Now GR can have at most two blue
+parts, since otherwise there is a BBB-pair. Now by Lemma 4, we conclude that
+13.5
+w(GR ) ≤ 13.5
+R . Using the same arguments, we conclude that w(GBB ) ≤ R .
+Thus, we obtain
+
+
+1
+43
+13
+|G| ≤
++ 2 · 13.5 + 9.5 g(r, s, t) =
+g(r, s, t) ≤ g(r, s, t),
+2·
+R
+4
+R
+a contradiction.
+Hence we may assume that G contains no RBR-pair, no BRB-pair, but a
+RRB-pair (BBR-pair). Let G1 contain red edges, let G2 contain blue edges and
+G1 and G2 are joined by red edges. Then GRR is an (R2 , B5 )-graph, GRB is an
+(R3 , B3 )-graph and GB is an (R5 , B4 )-graph.
+By the assumptions there are no red parts in GRR , GRB and GB , and no
+blue part in GRB . Furthermore, GRR and GB have at most one blue part by
+the assumption. So we conclude that
+35
+
+
+
+5.25
+1
+1
+1 13
+=
++ 2 · ,3 ·
+,
+w(GRR ) ≤ max 4 · ,
+R 4R
+R
+R
+R
+
+1
+5
+w(GRB ) ≤ (R(3, 3) − 1)) ·
+= ,
+R
+R
+
+
+1
+13
+26.25
+1
+.
+=
+w(GB ) ≤ max 24 · , (24 − 1) · +
+R
+R 4R
+R
+Thus, we obtain
+
+
+1
+13
+43
+|G| ≤
+2·
++ 5.25 + 5 + 26.25 g(r, s, t) =
+g(r, s, t) ≤ g(r, s, t),
+R
+4
+R
+a contradiction.
+We now consider a RRR-pair, say G1 and G2 each red parts and joined by
+red edges. Then GR is an (R3 , B4 )-graph. Suppose first that there is no other
+red part in GB . If GB contains no blue part, then
+|G| = |G1 |+|G2 |+|GR |+|GB | ≤
+
+|G|
+40.25|G|
+(3.25 + 3.25 + 9.75 + 24) =
+< |G|,
+R
+R
+
+a contradiction.
+Suppose next that there is blue part G3 in GB . Let F2 be the set of parts
+which are joined by blue edges with G2 and G3 , and let F3 be the set of parts
+which are joined by blue edges with G2 and by red edges with G3 . Then F2 is
+an (R5 , B2 )-graph and F3 is an (R4 , B4 )-graph. Suppose F3 contains no blue
+part, then
+|G|
+
+= |G1 | + |G2 | + |GR | + |G3 | + |F2 | + |F3 |
+|G|
+(3.25 + 3.25 + 9.75 + 3.25 + 4 · 1 + 17)
+≤
+R
+40.5|G|
+=
+< |G|,
+R
+
+a contradiction. Now suppose that F3 contains a blue part G4 . Let G4R and
+G4B denote the parts joined by red or blue edges with G4 . Then G4R is an
+(R3 , B4 )-graph and G4B is an (R4 , B2 )-graph. So we obtain
+|G| =
+≤
+=
+
+|G1 | + |G2 | + |GR | + |G3 | + |F2 | + |G4 | + |G4R | + |G4B |
+|G|
+(3.25 + 3.25 + 9.75 + 3.25 + 4 · 1 + 3.25 + 6.5 + 3 · 1)
+R
+36.25|G|
+< |G|,
+R
+
+a contradiction.
+Hence we may assume that there is a red part G3 in GB . Let F1 be the set
+of parts which are joined by red edges with G1 and by blue edges with G2 , let
+36
+
+F2 be the set of parts which are joined by blue edges with G2 and G3 , and let
+F3 be the set of parts which are joined by blue edges with G2 and by red edges
+with G3 . Then F1 is an (R3 , B4 )-graph, F2 is an (R5 , B2 )-graph, and F3 is an
+(R4 , B4 )-graph. By Lemma 3 we have w(Fi ) ≤ 9.75
+R for i = 1, 3. By Lemma 4,
+,
+so
+if (i) or (ii) or (iii) holds, then w(F2 ) ≤ 13.5
+R
+|G| =
+≤
+=
+
+|G1 | + |G2 | + |G3 | + |F1 | + |F2 | + |F3 |
+|G|
+(3 · 3.25 + 2 · 9.75 + 13.5)
+R
+42.75|G|
+< |G|,
+R
+
+a contradiction.
+Hence F2 contains two red parts G3 and G4 joined by red edges.
+Suppose first that G1 and G4 as well as G2 and G3 are joined by red edges.
+Let F1 be the set of parts which are joined by red edges with G1 and by blue
+edges with G2 and G4 , let F2 be the set of parts which are joined by red edges
+with G3 and by blue edges with G2 and G4 , and let F3 be the set of parts which
+are joined by blue edges with G1 and G3 . Then F1 and F2 are (R3 , B3 )-graphs
+and F3 is an (R5 , B3 )-graph.
+By Lemmas 2 and 4, we obtain
+|G| =
+
+4
+X
+
+|Gi | +
+
+i=1
+
+3
+X
+
+|Fj | ≤
+
+j=1
+
+|G|
+42.25|G|
+(4 · 3.25 + 2 · 6.5 + 16.25) =
+< |G|,
+R
+R
+
+a contradiction.
+Hence we may assume that G1 is joined by blue edges with G3 and G4 . By
+Lemma 3, we have w(Fi ) ≤ 9.75
+R for i = 1, 3. By Lemma 4, if (i) or (ii) or (iii)
+holds, then w(F2 ) ≤ 13.5
+.
+So
+we
+obtain
+R
+|G| =
+≤
+=
+
+|G1 | + |G2 | + |G3 | + |F1 | + |F2 | + |F3 |
+|G|
+(3 · 3.25 + 2 · 9.75 + 13.5)
+R
+42.75|G|
+< |G|,
+R
+
+a contradiction.
+Hence F2 contains two red parts joined by red edges. By symmetry, replacing
+G4 by G3 , we obtain by Lemma 4 (ii) that G3 also contains no blue parts.
+Now we consider the subgraph H spanned by G3 , G4 , F2 and F3 . These parts
+are all adjacent in blue to G1 . If w(H) ≤ 26.75
+R , then we obtain
+|G| = |G1 | + |G2 | + |F1 | + |H| ≤
+
+|G|
+43|G|
+(2 · 3.25 + 9.75 + 26.75) =
+≤ |G|,
+R
+R
+
+a contradiction.
+37
+
+Next we observe that F3 is an (R3 , B3 )-graph. If w(F3 ) ≤ 4, then we obtain
+1
+26.75
+(2 · 3.25 + 5 · 3.25 + 4) =
+,
+R
+R
+which gives a contradiction as before.
+So we may assume that w(F3 ) > 4. Now we obtain the following two final
+cases:
+(i) H contains nine red parts.
+Since R(3, 4) = 9, there is a blue K4 or a red K3 leading to a red K6 , a
+contradiction.
+(ii) H contains eight red parts and a free part. Now contract every red part
+to a red vertex, we obtain a graph H ′ with eight red vertices and a vertex. Now
+R(3, 4) = 9 gives a blue K4 or a red K3 with at least two red vertices implying
+that there is a red complete subgraph with at least 2 · 2 + 1 = 5 vertices, a
+contradiction, completing the proof of Case 6 and Theorem 4.
+w(H) ≤
+
+References
+[1] F. R. K. Chung and R. L. Graham. Edge-colored complete graphs with
+precisely colored subgraphs. Combinatorica, 3(3-4):315–324, 1983.
+[2] J. Fox, A. Grinshpun, and J. Pach. The Erdős-Hajnal conjecture for rainbow triangles. J. Combin. Theory Ser. B, 111:75–125, 2015.
+[3] S. Fujita, C. Magnant, and K. Ozeki. Rainbow generalizations of Ramsey
+theory - a dynamic survey. Theo. Appl. Graphs, 0(1), 2014.
+[4] T. Gallai. Transitiv orientierbare Graphen. Acta Math. Acad. Sci. Hungar,
+18:25–66, 1967.
+[5] R. E. Greenwood and A. M. Gleason. Combinatorial relations and chromatic graphs. Canad. J. Math., 7:1–7, 1955.
+[6] A. Gyárfás, G. Sárközy, A. Sebő, and S. Selkow. Ramsey-type results for
+gallai colorings. J. Graph Theory, 64(3):233–243, 2010.
+[7] H. Liu, C. Magnant, A. Saito, I. Schiermeyer, and Y. Shi. Gallai-Ramsey
+number for K4 . Submitted.
+[8] C. Magnant. A general lower bound on Gallai-Ramsey numbers for nonbipartite graphs. Theo. and Appl. Graphs, 5(1):Article 4, 2018.
+[9] B. D. McKay and S. P. Radziszowski. R(4, 5) = 25. J. Graph Theory,
+19(3):309–322, 1995.
+[10] B. D. McKay and S. P. Radziszowski. Subgraph counting identities and
+Ramsey numbers. J. Combin. Theory Ser. B, 69(2):193–209, 1997.
+[11] S. P. Radziszowski. Small Ramsey numbers. Electron. J. Combin., 1:Dynamic Survey 1, 30 pp. (electronic), 1994.
+
+38
+
+

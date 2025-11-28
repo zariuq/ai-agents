@@ -1,0 +1,33 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+const In_rec_iii : (set (set set set set) set set set) set set set set
+const If_iii : prop (set set set) (set set set) set set set
+const If_ii : prop (set set) (set set) set set
+const SNoS_ : set set
+const ordsucc : set set
+const SNoLev : set set
+const Descr_ii : ((set set) prop) set set
+term SNo_rec_ii = \P:set (set set set) set set.\x:set.In_rec_iii (\y:set.\Q:set set set set.If_iii (ordinal y) (\z:set.If_ii (z iIn SNoS_ (ordsucc y)) (P z \w:set.Q (SNoLev w) w) (Descr_ii \f:set set.True)) \z:set.Descr_ii \f:set set.True) (SNoLev x) x
+term nIn = \x:set.\y:set.~ x iIn y
+const SNo : set prop
+axiom SNoS_SNoLev: !x:set.SNo x -> x iIn SNoS_ (ordsucc (SNoLev x))
+axiom If_iii_1: !P:prop.!g:set set set.!h:set set set.P -> If_iii P g h = g
+lemma !P:set (set set set) set set.!x:set.SNo x -> x iIn SNoS_ (ordsucc (SNoLev x)) -> If_ii (x iIn SNoS_ (ordsucc (SNoLev x))) (P x \y:set.In_rec_iii (\z:set.\Q:set set set set.If_iii (ordinal z) (\w:set.If_ii (w iIn SNoS_ (ordsucc z)) (P w \u:set.Q (SNoLev u) u) (Descr_ii \f:set set.True)) \w:set.Descr_ii \f:set set.True) (SNoLev y) y) (Descr_ii \f:set set.True) = P x \y:set.In_rec_iii (\z:set.\Q:set set set set.If_iii (ordinal z) (\w:set.If_ii (w iIn SNoS_ (ordsucc z)) (P w \u:set.Q (SNoLev u) u) (Descr_ii \f:set set.True)) \w:set.Descr_ii \f:set set.True) (SNoLev y) y
+var P:set (set set set) set set
+var x:set
+hyp SNo x
+claim ordinal (SNoLev x) -> If_iii (ordinal (SNoLev x)) (\y:set.If_ii (y iIn SNoS_ (ordsucc (SNoLev x))) (P y \z:set.In_rec_iii (\w:set.\Q:set set set set.If_iii (ordinal w) (\u:set.If_ii (u iIn SNoS_ (ordsucc w)) (P u \v:set.Q (SNoLev v) v) (Descr_ii \f:set set.True)) \u:set.Descr_ii \f:set set.True) (SNoLev z) z) (Descr_ii \f:set set.True)) (\y:set.Descr_ii \f:set set.True) x = P x \y:set.In_rec_iii (\z:set.\Q:set set set set.If_iii (ordinal z) (\w:set.If_ii (w iIn SNoS_ (ordsucc z)) (P w \u:set.Q (SNoLev u) u) (Descr_ii \f:set set.True)) \w:set.Descr_ii \f:set set.True) (SNoLev y) y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

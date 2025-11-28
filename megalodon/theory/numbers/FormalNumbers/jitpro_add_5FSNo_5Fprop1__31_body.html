@@ -1,0 +1,34 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const ordinal : set prop
+const SNoLev : set set
+axiom SNoLev_ordinal: !x:set.SNo x -> ordinal (SNoLev x)
+const SNoS_ : set set
+axiom SNoLev_ind2: !r:set set prop.(!x:set.!y:set.SNo x -> SNo y -> (!z:set.z iIn SNoS_ (SNoLev x) -> r z y) -> (!z:set.z iIn SNoS_ (SNoLev y) -> r x z) -> (!z:set.z iIn SNoS_ (SNoLev x) -> !w:set.w iIn SNoS_ (SNoLev y) -> r z w) -> r x y) -> !x:set.!y:set.SNo x -> SNo y -> r x y
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const SNoL : set set
+const SNoR : set set
+const binunion : set set set
+const Repl : set (set set) set
+lemma !x:set.!y:set.(!z:set.!w:set.SNo (z + w) & (!u:set.u iIn SNoL z -> (u + w) < z + w) & (!u:set.u iIn SNoR z -> (z + w) < u + w) & (!u:set.u iIn SNoL w -> (z + u) < z + w) & (!u:set.u iIn SNoR w -> (z + w) < z + u) & SNoCutP (binunion (Repl (SNoL z) \u:set.u + w) (Repl (SNoL w) (add_SNo z))) (binunion (Repl (SNoR z) \u:set.u + w) (Repl (SNoR w) (add_SNo z))) -> !P:prop.(SNo (z + w) -> (!u:set.u iIn SNoL z -> (u + w) < z + w) -> (!u:set.u iIn SNoR z -> (z + w) < u + w) -> (!u:set.u iIn SNoL w -> (z + u) < z + w) -> (!u:set.u iIn SNoR w -> (z + w) < z + u) -> P) -> P) -> SNo x -> SNo y -> (!z:set.z iIn SNoS_ (SNoLev x) -> SNo (z + y) & (!w:set.w iIn SNoL z -> (w + y) < z + y) & (!w:set.w iIn SNoR z -> (z + y) < w + y) & (!w:set.w iIn SNoL y -> (z + w) < z + y) & (!w:set.w iIn SNoR y -> (z + y) < z + w) & SNoCutP (binunion (Repl (SNoL z) \w:set.w + y) (Repl (SNoL y) (add_SNo z))) (binunion (Repl (SNoR z) \w:set.w + y) (Repl (SNoR y) (add_SNo z)))) -> (!z:set.z iIn SNoS_ (SNoLev y) -> SNo (x + z) & (!w:set.w iIn SNoL x -> (w + z) < x + z) & (!w:set.w iIn SNoR x -> (x + z) < w + z) & (!w:set.w iIn SNoL z -> (x + w) < x + z) & (!w:set.w iIn SNoR z -> (x + z) < x + w) & SNoCutP (binunion (Repl (SNoL x) \w:set.w + z) (Repl (SNoL z) (add_SNo x))) (binunion (Repl (SNoR x) \w:set.w + z) (Repl (SNoR z) (add_SNo x)))) -> (!z:set.z iIn SNoS_ (SNoLev x) -> !w:set.w iIn SNoS_ (SNoLev y) -> SNo (z + w) & (!u:set.u iIn SNoL z -> (u + w) < z + w) & (!u:set.u iIn SNoR z -> (z + w) < u + w) & (!u:set.u iIn SNoL w -> (z + u) < z + w) & (!u:set.u iIn SNoR w -> (z + w) < z + u) & SNoCutP (binunion (Repl (SNoL z) \u:set.u + w) (Repl (SNoL w) (add_SNo z))) (binunion (Repl (SNoR z) \u:set.u + w) (Repl (SNoR w) (add_SNo z)))) -> ordinal (SNoLev x) -> SNo (x + y) & (!z:set.z iIn SNoL x -> (z + y) < x + y) & (!z:set.z iIn SNoR x -> (x + y) < z + y) & (!z:set.z iIn SNoL y -> (x + z) < x + y) & (!z:set.z iIn SNoR y -> (x + y) < x + z) & SNoCutP (binunion (Repl (SNoL x) \z:set.z + y) (Repl (SNoL y) (add_SNo x))) (binunion (Repl (SNoR x) \z:set.z + y) (Repl (SNoR y) (add_SNo x)))
+claim (!x:set.!y:set.SNo (x + y) & (!z:set.z iIn SNoL x -> (z + y) < x + y) & (!z:set.z iIn SNoR x -> (x + y) < z + y) & (!z:set.z iIn SNoL y -> (x + z) < x + y) & (!z:set.z iIn SNoR y -> (x + y) < x + z) & SNoCutP (binunion (Repl (SNoL x) \z:set.z + y) (Repl (SNoL y) (add_SNo x))) (binunion (Repl (SNoR x) \z:set.z + y) (Repl (SNoR y) (add_SNo x))) -> !P:prop.(SNo (x + y) -> (!z:set.z iIn SNoL x -> (z + y) < x + y) -> (!z:set.z iIn SNoR x -> (x + y) < z + y) -> (!z:set.z iIn SNoL y -> (x + z) < x + y) -> (!z:set.z iIn SNoR y -> (x + y) < x + z) -> P) -> P) -> !x:set.!y:set.SNo x -> SNo y -> SNo (x + y) & (!z:set.z iIn SNoL x -> (z + y) < x + y) & (!z:set.z iIn SNoR x -> (x + y) < z + y) & (!z:set.z iIn SNoL y -> (x + z) < x + y) & (!z:set.z iIn SNoR y -> (x + y) < x + z) & SNoCutP (binunion (Repl (SNoL x) \z:set.z + y) (Repl (SNoL y) (add_SNo x))) (binunion (Repl (SNoR x) \z:set.z + y) (Repl (SNoR y) (add_SNo x)))
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

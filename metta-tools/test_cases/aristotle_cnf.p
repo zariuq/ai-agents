@@ -1,0 +1,4 @@
+cnf(i_0_4, negated_conjecture, (greek(esk1_0))).
+cnf(i_0_3, negated_conjecture, (~mortal(esk1_0))).
+cnf(i_0_2, plain, (man(X1)|~greek(X1))).
+cnf(i_0_1, plain, (mortal(X1)|~man(X1))).

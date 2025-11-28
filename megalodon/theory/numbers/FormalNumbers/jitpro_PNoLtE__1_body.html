@@ -1,0 +1,18 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const PNoLt_ : set (set prop) (set prop) prop
+const binintersect : set set set
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const PNoEq_ : set (set prop) (set prop) prop
+term PNoLt = \x:set.\p:set prop.\y:set.\q:set prop.PNoLt_ (binintersect x y) p q | x iIn y & PNoEq_ x p q & q x | y iIn x & PNoEq_ y p q & ~ p y
+claim !x:set.!y:set.!p:set prop.!q:set prop.PNoLt x p y q -> !P:prop.(PNoLt_ (binintersect x y) p q -> P) -> (x iIn y -> PNoEq_ x p q -> q x -> P) -> (y iIn x -> PNoEq_ y p q -> ~ p y -> P) -> P
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

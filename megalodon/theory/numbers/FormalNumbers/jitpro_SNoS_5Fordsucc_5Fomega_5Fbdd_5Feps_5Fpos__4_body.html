@@ -1,0 +1,34 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const ordinal : set prop
+const ordsucc : set set
+const omega : set
+axiom ordsucc_omega_ordinal: ordinal (ordsucc omega)
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+axiom omega_SNo: !x:set.x iIn omega -> SNo x
+const SNoS_ : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom SNoS_ordsucc_omega_bdd_above: !x:set.x iIn SNoS_ (ordsucc omega) -> x < omega -> ?y:set.y iIn omega & x < y
+const SNoLev : set set
+const SNo_ : set set prop
+axiom SNoS_E2: !x:set.ordinal x -> !y:set.y iIn SNoS_ x -> !P:prop.(SNoLev y iIn x -> ordinal (SNoLev y) -> SNo y -> SNo_ (SNoLev y) y -> P) -> P
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const eps_ : set set
+const Empty : set
+lemma !x:set.!y:set.SNo x -> y iIn omega -> x < y -> SNo y -> ?z:set.z iIn omega & eps_ z * x < ordsucc Empty
+claim !x:set.x iIn SNoS_ (ordsucc omega) -> Empty < x -> x < omega -> ?y:set.y iIn omega & eps_ y * x < ordsucc Empty
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

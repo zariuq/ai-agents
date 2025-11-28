@@ -1,0 +1,28 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term bij = \x:set.\y:set.\f:set set.(!z:set.z iIn x -> f z iIn y) & (!z:set.z iIn x -> !w:set.w iIn x -> f z = f w -> z = w) & !z:set.z iIn y -> ?w:set.w iIn x & f w = z
+const ordsucc : set set
+axiom ordsuccE: !x:set.!y:set.y iIn ordsucc x -> y iIn x | y = x
+const If_i : prop set set set
+lemma !x:set.!f:set set.!y:set.!z:set.!w:set.(!u:set.u iIn x -> !v:set.v iIn x -> f u = f v -> u = v) -> ~ (?u:set.u iIn x & f u = y) -> w iIn ordsucc x -> (z != x -> z iIn x) -> (w != x -> w iIn x) -> If_i (z = x) y (f z) = If_i (w = x) y (f w) -> z = w
+var x:set
+var f:set set
+var y:set
+var z:set
+var w:set
+hyp !u:set.u iIn x -> !v:set.v iIn x -> f u = f v -> u = v
+hyp ~ ?u:set.u iIn x & f u = y
+hyp z iIn ordsucc x
+hyp w iIn ordsucc x
+claim (z != x -> z iIn x) -> If_i (z = x) y (f z) = If_i (w = x) y (f w) -> z = w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

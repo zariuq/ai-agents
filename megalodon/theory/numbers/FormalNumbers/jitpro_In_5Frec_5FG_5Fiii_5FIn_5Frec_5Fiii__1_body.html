@@ -1,0 +1,21 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Descr_iii : ((set set set) prop) set set set
+const In_rec_G_iii : (set (set set set set) set set set) set (set set set) prop
+term In_rec_iii = \P:set (set set set set) set set set.\x:set.Descr_iii (In_rec_G_iii P x)
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+axiom In_rec_G_iii_c: !P:set (set set set set) set set set.!x:set.!Q:set set set set.(!y:set.y iIn x -> In_rec_G_iii P y (Q y)) -> In_rec_G_iii P x (P x Q)
+axiom In_rec_G_iii_f: !P:set (set set set set) set set set.(!x:set.!Q:set set set set.!R:set set set set.(!y:set.y iIn x -> Q y = R y) -> P x Q = P x R) -> !x:set.!g:set set set.!h:set set set.In_rec_G_iii P x g -> In_rec_G_iii P x h -> g = h
+axiom Descr_iii_prop: !P:(set set set) prop.(?g:set set set.P g) -> (!g:set set set.!h:set set set.P g -> P h -> g = h) -> P (Descr_iii P)
+axiom In_ind: !p:set prop.(!x:set.(!y:set.y iIn x -> p y) -> p x) -> !x:set.p x
+claim !P:set (set set set set) set set set.(!x:set.!Q:set set set set.!R:set set set set.(!y:set.y iIn x -> Q y = R y) -> P x Q = P x R) -> !x:set.In_rec_G_iii P x (In_rec_iii P x)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,66 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom SNo_mul_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x * y)
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom mul_SNo_Lt: !x:set.!y:set.!z:set.!w:set.SNo x -> SNo y -> SNo z -> SNo w -> z < x -> w < y -> (z * y + x * w) < x * y + z * w
+axiom add_SNo_com: !x:set.!y:set.SNo x -> SNo y -> x + y = y + x
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoS_ : set set
+const SNoLev : set set
+const SNoCutP : set set prop
+const SNoL : set set
+const minus_SNo : set set
+term - = minus_SNo
+const SNoR : set set
+const SNoCut : set set set
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.!x2:set.SNo x -> SNo y -> SNo z -> (!y2:set.y2 iIn SNoS_ (SNoLev x) -> y2 * y * z = (y2 * y) * z) -> (!y2:set.y2 iIn SNoS_ (SNoLev y) -> x * y2 * z = (x * y2) * z) -> (!y2:set.y2 iIn SNoS_ (SNoLev z) -> x * y * y2 = (x * y) * y2) -> (!y2:set.y2 iIn SNoS_ (SNoLev x) -> !z2:set.z2 iIn SNoS_ (SNoLev y) -> y2 * z2 * z = (y2 * z2) * z) -> (!y2:set.y2 iIn SNoS_ (SNoLev x) -> !z2:set.z2 iIn SNoS_ (SNoLev z) -> y2 * y * z2 = (y2 * y) * z2) -> (!y2:set.y2 iIn SNoS_ (SNoLev y) -> !z2:set.z2 iIn SNoS_ (SNoLev z) -> x * y2 * z2 = (x * y2) * z2) -> (!y2:set.y2 iIn SNoS_ (SNoLev x) -> !z2:set.z2 iIn SNoS_ (SNoLev y) -> !w2:set.w2 iIn SNoS_ (SNoLev z) -> y2 * z2 * w2 = (y2 * z2) * w2) -> SNo (x * y) -> SNoCutP w u -> (!y2:set.y2 iIn w -> !P:prop.(!z2:set.z2 iIn SNoL x -> !w2:set.w2 iIn SNoL (y * z) -> y2 = z2 * y * z + x * w2 + - z2 * w2 -> P) -> (!z2:set.z2 iIn SNoR x -> !w2:set.w2 iIn SNoR (y * z) -> y2 = z2 * y * z + x * w2 + - z2 * w2 -> P) -> P) -> (!y2:set.y2 iIn u -> !P:prop.(!z2:set.z2 iIn SNoL x -> !w2:set.w2 iIn SNoR (y * z) -> y2 = z2 * y * z + x * w2 + - z2 * w2 -> P) -> (!z2:set.z2 iIn SNoR x -> !w2:set.w2 iIn SNoL (y * z) -> y2 = z2 * y * z + x * w2 + - z2 * w2 -> P) -> P) -> x * y * z = SNoCut w u -> SNoCutP v x2 -> (!y2:set.y2 iIn v -> !P:prop.(!z2:set.z2 iIn SNoL (x * y) -> !w2:set.w2 iIn SNoL z -> y2 = z2 * z + (x * y) * w2 + - z2 * w2 -> P) -> (!z2:set.z2 iIn SNoR (x * y) -> !w2:set.w2 iIn SNoR z -> y2 = z2 * z + (x * y) * w2 + - z2 * w2 -> P) -> P) -> (!y2:set.y2 iIn x2 -> !P:prop.(!z2:set.z2 iIn SNoL (x * y) -> !w2:set.w2 iIn SNoR z -> y2 = z2 * z + (x * y) * w2 + - z2 * w2 -> P) -> (!z2:set.z2 iIn SNoR (x * y) -> !w2:set.w2 iIn SNoL z -> y2 = z2 * z + (x * y) * w2 + - z2 * w2 -> P) -> P) -> (x * y) * z = SNoCut v x2 -> (!y2:set.!z2:set.SNo y2 -> SNo z2 -> !w2:set.w2 iIn SNoL (z2 * y2) -> !P:prop.(!u2:set.u2 iIn SNoL y2 -> !v2:set.v2 iIn SNoL z2 -> (w2 + v2 * u2) <= z2 * u2 + v2 * y2 -> P) -> (!u2:set.u2 iIn SNoR y2 -> !v2:set.v2 iIn SNoR z2 -> (w2 + v2 * u2) <= z2 * u2 + v2 * y2 -> P) -> P) -> (!y2:set.!z2:set.SNo y2 -> SNo z2 -> !w2:set.w2 iIn SNoR (z2 * y2) -> !P:prop.(!u2:set.u2 iIn SNoL y2 -> !v2:set.v2 iIn SNoR z2 -> (z2 * u2 + v2 * y2) <= w2 + v2 * u2 -> P) -> (!u2:set.u2 iIn SNoR y2 -> !v2:set.v2 iIn SNoL z2 -> (z2 * u2 + v2 * y2) <= w2 + v2 * u2 -> P) -> P) -> (!y2:set.!z2:set.!w2:set.!u2:set.SNo y2 -> SNo z2 -> SNo w2 -> SNo u2 -> w2 < y2 -> u2 < z2 -> (z2 * w2 + u2 * y2) < z2 * y2 + u2 * w2) -> SNoCut w u = SNoCut v x2
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+var x2:set
+hyp SNo x
+hyp SNo y
+hyp SNo z
+hyp !y2:set.y2 iIn SNoS_ (SNoLev x) -> y2 * y * z = (y2 * y) * z
+hyp !y2:set.y2 iIn SNoS_ (SNoLev y) -> x * y2 * z = (x * y2) * z
+hyp !y2:set.y2 iIn SNoS_ (SNoLev z) -> x * y * y2 = (x * y) * y2
+hyp !y2:set.y2 iIn SNoS_ (SNoLev x) -> !z2:set.z2 iIn SNoS_ (SNoLev y) -> y2 * z2 * z = (y2 * z2) * z
+hyp !y2:set.y2 iIn SNoS_ (SNoLev x) -> !z2:set.z2 iIn SNoS_ (SNoLev z) -> y2 * y * z2 = (y2 * y) * z2
+hyp !y2:set.y2 iIn SNoS_ (SNoLev y) -> !z2:set.z2 iIn SNoS_ (SNoLev z) -> x * y2 * z2 = (x * y2) * z2
+hyp !y2:set.y2 iIn SNoS_ (SNoLev x) -> !z2:set.z2 iIn SNoS_ (SNoLev y) -> !w2:set.w2 iIn SNoS_ (SNoLev z) -> y2 * z2 * w2 = (y2 * z2) * w2
+hyp SNo (x * y)
+hyp SNoCutP w u
+hyp !y2:set.y2 iIn w -> !P:prop.(!z2:set.z2 iIn SNoL x -> !w2:set.w2 iIn SNoL (y * z) -> y2 = z2 * y * z + x * w2 + - z2 * w2 -> P) -> (!z2:set.z2 iIn SNoR x -> !w2:set.w2 iIn SNoR (y * z) -> y2 = z2 * y * z + x * w2 + - z2 * w2 -> P) -> P
+hyp !y2:set.y2 iIn u -> !P:prop.(!z2:set.z2 iIn SNoL x -> !w2:set.w2 iIn SNoR (y * z) -> y2 = z2 * y * z + x * w2 + - z2 * w2 -> P) -> (!z2:set.z2 iIn SNoR x -> !w2:set.w2 iIn SNoL (y * z) -> y2 = z2 * y * z + x * w2 + - z2 * w2 -> P) -> P
+hyp x * y * z = SNoCut w u
+hyp SNoCutP v x2
+hyp !y2:set.y2 iIn v -> !P:prop.(!z2:set.z2 iIn SNoL (x * y) -> !w2:set.w2 iIn SNoL z -> y2 = z2 * z + (x * y) * w2 + - z2 * w2 -> P) -> (!z2:set.z2 iIn SNoR (x * y) -> !w2:set.w2 iIn SNoR z -> y2 = z2 * z + (x * y) * w2 + - z2 * w2 -> P) -> P
+hyp !y2:set.y2 iIn x2 -> !P:prop.(!z2:set.z2 iIn SNoL (x * y) -> !w2:set.w2 iIn SNoR z -> y2 = z2 * z + (x * y) * w2 + - z2 * w2 -> P) -> (!z2:set.z2 iIn SNoR (x * y) -> !w2:set.w2 iIn SNoL z -> y2 = z2 * z + (x * y) * w2 + - z2 * w2 -> P) -> P
+hyp (x * y) * z = SNoCut v x2
+hyp !y2:set.!z2:set.SNo y2 -> SNo z2 -> !w2:set.w2 iIn SNoL (z2 * y2) -> !P:prop.(!u2:set.u2 iIn SNoL y2 -> !v2:set.v2 iIn SNoL z2 -> (w2 + v2 * u2) <= z2 * u2 + v2 * y2 -> P) -> (!u2:set.u2 iIn SNoR y2 -> !v2:set.v2 iIn SNoR z2 -> (w2 + v2 * u2) <= z2 * u2 + v2 * y2 -> P) -> P
+claim (!y2:set.!z2:set.SNo y2 -> SNo z2 -> !w2:set.w2 iIn SNoR (z2 * y2) -> !P:prop.(!u2:set.u2 iIn SNoL y2 -> !v2:set.v2 iIn SNoR z2 -> (z2 * u2 + v2 * y2) <= w2 + v2 * u2 -> P) -> (!u2:set.u2 iIn SNoR y2 -> !v2:set.v2 iIn SNoL z2 -> (z2 * u2 + v2 * y2) <= w2 + v2 * u2 -> P) -> P) -> SNoCut w u = SNoCut v x2
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

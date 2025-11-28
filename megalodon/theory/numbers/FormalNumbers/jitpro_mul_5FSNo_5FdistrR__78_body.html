@@ -1,0 +1,61 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoS_ : set set
+const SNoLev : set set
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const SNoL : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const SNoR : set set
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.SNo x -> SNo y -> SNo z -> (!x2:set.x2 iIn SNoS_ (SNoLev y) -> (x + x2) * z = x * z + x2 * z) -> (!x2:set.x2 iIn SNoS_ (SNoLev y) -> !y2:set.y2 iIn SNoS_ (SNoLev z) -> (x + x2) * y2 = x * y2 + x2 * y2) -> SNo (x * z) -> SNo (y * z) -> u iIn SNoL z -> SNo w -> SNo u -> u < z -> SNo (x * u) -> SNo (y * u) -> SNo (w * z) -> SNo (w * u) -> SNo (w * z + x * u + y * u) -> SNo (x * z + y * z + w * u) -> v iIn SNoR y -> (x + v) <= w -> SNo v -> y < v -> SNo (v * u) -> SNo (v * z) -> SNo (x + v) -> (x * z + y * z + w * u) < w * z + x * u + y * u
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+hyp SNo x
+hyp SNo y
+hyp SNo z
+hyp !x2:set.x2 iIn SNoS_ (SNoLev y) -> (x + x2) * z = x * z + x2 * z
+hyp !x2:set.x2 iIn SNoS_ (SNoLev y) -> !y2:set.y2 iIn SNoS_ (SNoLev z) -> (x + x2) * y2 = x * y2 + x2 * y2
+hyp SNo (x * z)
+hyp SNo (y * z)
+hyp u iIn SNoL z
+hyp SNo w
+hyp SNo u
+hyp u < z
+hyp SNo (x * u)
+hyp SNo (y * u)
+hyp SNo (w * z)
+hyp SNo (w * u)
+hyp SNo (w * z + x * u + y * u)
+hyp SNo (x * z + y * z + w * u)
+hyp v iIn SNoR y
+hyp (x + v) <= w
+hyp SNo v
+hyp y < v
+hyp SNo (v * u)
+claim SNo (v * z) -> (x * z + y * z + w * u) < w * z + x * u + y * u
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

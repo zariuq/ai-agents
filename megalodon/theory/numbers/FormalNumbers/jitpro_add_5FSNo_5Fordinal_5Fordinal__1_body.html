@@ -1,0 +1,45 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+axiom In_irref: !x:set.nIn x x
+const binunion : set set set
+const Repl : set (set set) set
+const SNoS_ : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const Empty : set
+const SNoLev : set set
+const SNoCut : set set set
+const SNoEq_ : set set set prop
+const ordinal : set prop
+var x:set
+var y:set
+var z:set
+hyp ordinal x
+hyp ordinal y
+hyp SNo (x + y)
+hyp SNoLev z iIn SNoLev (x + y)
+hyp SNo z
+hyp (x + y) < z
+hyp !w:set.w iIn binunion (Repl (SNoS_ x) \u:set.u + y) (Repl (SNoS_ y) \u:set.x + u) -> SNo w
+hyp !w:set.w iIn binunion (Repl (SNoS_ x) \u:set.u + y) (Repl (SNoS_ y) \u:set.x + u) -> w < SNoCut (binunion (Repl (SNoS_ x) \u:set.u + y) (Repl (SNoS_ y) \u:set.x + u)) Empty
+hyp !w:set.SNo w -> (!u:set.u iIn binunion (Repl (SNoS_ x) \v:set.v + y) (Repl (SNoS_ y) (add_SNo x)) -> u < w) -> (!u:set.u iIn Empty -> w < u) -> Subq (SNoLev (SNoCut (binunion (Repl (SNoS_ x) \u:set.u + y) (Repl (SNoS_ y) (add_SNo x))) Empty)) (SNoLev w) & SNoEq_ (SNoLev (SNoCut (binunion (Repl (SNoS_ x) \u:set.u + y) (Repl (SNoS_ y) (add_SNo x))) Empty)) (SNoCut (binunion (Repl (SNoS_ x) \u:set.u + y) (Repl (SNoS_ y) (add_SNo x))) Empty) w
+claim ~ (Subq (SNoLev (x + y)) (SNoLev z) & SNoEq_ (SNoLev (x + y)) (x + y) z)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

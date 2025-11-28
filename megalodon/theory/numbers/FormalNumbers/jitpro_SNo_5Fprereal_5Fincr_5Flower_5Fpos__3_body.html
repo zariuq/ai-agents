@@ -1,0 +1,48 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const omega : set
+const ordsucc : set set
+axiom omega_ordsucc: !x:set.x iIn omega -> ordsucc x iIn omega
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const Empty : set
+const eps_ : set set
+axiom SNo_eps_pos: !x:set.x iIn omega -> Empty < eps_ x
+const SNo : set prop
+const SNoS_ : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+lemma !x:set.!y:set.!P:prop.!z:set.!w:set.SNo x -> y iIn omega -> (!u:set.u iIn SNoS_ omega -> Empty < u -> u < x -> x < u + eps_ y -> P) -> x < z + eps_ y -> SNo z -> z <= Empty -> ~ P -> w iIn omega -> eps_ w <= x -> SNo (eps_ w) -> SNo (eps_ (ordsucc w)) -> Empty < eps_ (ordsucc w) -> x < eps_ w
+var x:set
+var y:set
+var P:prop
+var z:set
+var w:set
+hyp SNo x
+hyp y iIn omega
+hyp !u:set.u iIn SNoS_ omega -> Empty < u -> u < x -> x < u + eps_ y -> P
+hyp x < z + eps_ y
+hyp SNo z
+hyp z <= Empty
+hyp ~ P
+hyp w iIn omega
+hyp eps_ w <= x
+hyp SNo (eps_ w)
+claim SNo (eps_ (ordsucc w)) -> x < eps_ w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,88 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const omega : set
+const SNo : set prop
+const eps_ : set set
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+const SNoL : set set
+const SNoLev : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom SNoL_E: !x:set.SNo x -> !y:set.y iIn SNoL x -> !P:prop.(SNo y -> SNoLev y iIn SNoLev x -> y < x -> P) -> P
+const SNoR : set set
+axiom SNoR_E: !x:set.SNo x -> !y:set.y iIn SNoR x -> !P:prop.(SNo y -> SNoLev y iIn SNoLev x -> x < y -> P) -> P
+const Repl : set (set set) set
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+const SNoCutP : set set prop
+const SNoCut : set set set
+axiom SNoCut_ext: !x:set.!y:set.!z:set.!w:set.SNoCutP x y -> SNoCutP z w -> (!u:set.u iIn x -> u < SNoCut z w) -> (!u:set.u iIn y -> SNoCut z w < u) -> (!u:set.u iIn z -> u < SNoCut x y) -> (!u:set.u iIn w -> SNoCut x y < u) -> SNoCut x y = SNoCut z w
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const real : set
+const minus_SNo : set set
+term - = minus_SNo
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const SNoS_ : set set
+const ap : set set set
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.~ x * y iIn real -> SNo x -> SNo y -> SNo (x * y) -> SNo - x * y -> (!x2:set.x2 iIn SNoL x -> !P:prop.(!y2:set.y2 iIn omega -> eps_ y2 <= x + - x2 -> P) -> P) -> (!x2:set.x2 iIn SNoR x -> !P:prop.(!y2:set.y2 iIn omega -> eps_ y2 <= x2 + - x -> P) -> P) -> (!x2:set.x2 iIn SNoL y -> !P:prop.(!y2:set.y2 iIn omega -> eps_ y2 <= y + - x2 -> P) -> P) -> (!x2:set.x2 iIn SNoR y -> !P:prop.(!y2:set.y2 iIn omega -> eps_ y2 <= x2 + - y -> P) -> P) -> SNoCutP z w -> (!x2:set.x2 iIn z -> !P:prop.(!y2:set.y2 iIn SNoL x -> !z2:set.z2 iIn SNoL y -> x2 = y2 * y + x * z2 + - y2 * z2 -> P) -> (!y2:set.y2 iIn SNoR x -> !z2:set.z2 iIn SNoR y -> x2 = y2 * y + x * z2 + - y2 * z2 -> P) -> P) -> (!x2:set.x2 iIn w -> !P:prop.(!y2:set.y2 iIn SNoL x -> !z2:set.z2 iIn SNoR y -> x2 = y2 * y + x * z2 + - y2 * z2 -> P) -> (!y2:set.y2 iIn SNoR x -> !z2:set.z2 iIn SNoL y -> x2 = y2 * y + x * z2 + - y2 * z2 -> P) -> P) -> x * y = SNoCut z w -> u iIn setexp (SNoS_ omega) omega -> v iIn setexp (SNoS_ omega) omega -> (!x2:set.x2 iIn omega -> SNo (ap u x2)) -> (!x2:set.x2 iIn omega -> SNo (ap v x2)) -> (!x2:set.x2 iIn omega -> ap u x2 < x * y) -> (!x2:set.x2 iIn omega -> x * y < ap v x2) -> SNoCutP (Repl omega (ap u)) (Repl omega (ap v)) -> SNo (SNoCut (Repl omega (ap u)) (Repl omega (ap v))) -> (!x2:set.x2 iIn omega -> ap u x2 < SNoCut (Repl omega (ap u)) (Repl omega (ap v))) -> (!x2:set.x2 iIn omega -> SNoCut (Repl omega (ap u)) (Repl omega (ap v)) < ap v x2) -> (!x2:set.x2 iIn omega -> x * y < ap u x2 + eps_ x2) -> (!x2:set.x2 iIn omega -> !y2:set.y2 iIn x2 -> ap u y2 < ap u x2) -> (!x2:set.x2 iIn omega -> (ap v x2 + - eps_ x2) < x * y) -> (!x2:set.x2 iIn omega -> !y2:set.y2 iIn x2 -> ap v x2 < ap v y2) -> x * y != SNoCut (Repl omega (ap u)) (Repl omega (ap v))
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.!x2:set.!y2:set.!z2:set.SNo x -> SNo y -> SNo (x * y) -> (!w2:set.w2 iIn omega -> SNo (ap z w2)) -> SNo (SNoCut (Repl omega (ap z)) (Repl omega (ap w))) -> (!w2:set.w2 iIn omega -> ap z w2 < SNoCut (Repl omega (ap z)) (Repl omega (ap w))) -> (!w2:set.w2 iIn omega -> x * y < ap z w2 + eps_ w2) -> u = v * y + x * x2 + - v * x2 -> y2 iIn omega -> eps_ y2 <= x + - v -> z2 iIn omega -> eps_ z2 <= y + - x2 -> SNo v -> SNo x2 -> SNo (eps_ y2) -> u < SNoCut (Repl omega (ap z)) (Repl omega (ap w))
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.!x2:set.!y2:set.!z2:set.SNo x -> SNo y -> SNo (x * y) -> (!w2:set.w2 iIn omega -> SNo (ap z w2)) -> SNo (SNoCut (Repl omega (ap z)) (Repl omega (ap w))) -> (!w2:set.w2 iIn omega -> ap z w2 < SNoCut (Repl omega (ap z)) (Repl omega (ap w))) -> (!w2:set.w2 iIn omega -> x * y < ap z w2 + eps_ w2) -> u = v * y + x * x2 + - v * x2 -> y2 iIn omega -> eps_ y2 <= v + - x -> z2 iIn omega -> eps_ z2 <= x2 + - y -> SNo v -> SNo x2 -> SNo (eps_ y2) -> u < SNoCut (Repl omega (ap z)) (Repl omega (ap w))
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.!x2:set.!y2:set.!z2:set.SNo x -> SNo y -> SNo (x * y) -> SNo - x * y -> (!w2:set.w2 iIn omega -> SNo (ap w w2)) -> SNo (SNoCut (Repl omega (ap z)) (Repl omega (ap w))) -> (!w2:set.w2 iIn omega -> SNoCut (Repl omega (ap z)) (Repl omega (ap w)) < ap w w2) -> (!w2:set.w2 iIn omega -> (ap w w2 + - eps_ w2) < x * y) -> u = v * y + x * x2 + - v * x2 -> y2 iIn omega -> eps_ y2 <= x + - v -> z2 iIn omega -> eps_ z2 <= x2 + - y -> SNo v -> SNo x2 -> SNo (eps_ y2) -> SNoCut (Repl omega (ap z)) (Repl omega (ap w)) < u
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.!x2:set.!y2:set.!z2:set.SNo x -> SNo y -> SNo (x * y) -> SNo - x * y -> (!w2:set.w2 iIn omega -> SNo (ap w w2)) -> SNo (SNoCut (Repl omega (ap z)) (Repl omega (ap w))) -> (!w2:set.w2 iIn omega -> SNoCut (Repl omega (ap z)) (Repl omega (ap w)) < ap w w2) -> (!w2:set.w2 iIn omega -> (ap w w2 + - eps_ w2) < x * y) -> u = v * y + x * x2 + - v * x2 -> y2 iIn omega -> eps_ y2 <= v + - x -> z2 iIn omega -> eps_ z2 <= y + - x2 -> SNo v -> SNo x2 -> SNo (eps_ y2) -> SNoCut (Repl omega (ap z)) (Repl omega (ap w)) < u
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+hyp ~ x * y iIn real
+hyp SNo x
+hyp SNo y
+hyp SNo (x * y)
+hyp SNo - x * y
+hyp !x2:set.x2 iIn SNoL x -> !P:prop.(!y2:set.y2 iIn omega -> eps_ y2 <= x + - x2 -> P) -> P
+hyp !x2:set.x2 iIn SNoR x -> !P:prop.(!y2:set.y2 iIn omega -> eps_ y2 <= x2 + - x -> P) -> P
+hyp !x2:set.x2 iIn SNoL y -> !P:prop.(!y2:set.y2 iIn omega -> eps_ y2 <= y + - x2 -> P) -> P
+hyp !x2:set.x2 iIn SNoR y -> !P:prop.(!y2:set.y2 iIn omega -> eps_ y2 <= x2 + - y -> P) -> P
+hyp SNoCutP z w
+hyp !x2:set.x2 iIn z -> !P:prop.(!y2:set.y2 iIn SNoL x -> !z2:set.z2 iIn SNoL y -> x2 = y2 * y + x * z2 + - y2 * z2 -> P) -> (!y2:set.y2 iIn SNoR x -> !z2:set.z2 iIn SNoR y -> x2 = y2 * y + x * z2 + - y2 * z2 -> P) -> P
+hyp !x2:set.x2 iIn w -> !P:prop.(!y2:set.y2 iIn SNoL x -> !z2:set.z2 iIn SNoR y -> x2 = y2 * y + x * z2 + - y2 * z2 -> P) -> (!y2:set.y2 iIn SNoR x -> !z2:set.z2 iIn SNoL y -> x2 = y2 * y + x * z2 + - y2 * z2 -> P) -> P
+hyp x * y = SNoCut z w
+hyp u iIn setexp (SNoS_ omega) omega
+hyp v iIn setexp (SNoS_ omega) omega
+hyp !x2:set.x2 iIn omega -> (ap v x2 + - eps_ x2) < x * y & x * y < ap v x2 & !y2:set.y2 iIn x2 -> ap v x2 < ap v y2
+hyp !x2:set.x2 iIn omega -> SNo (ap u x2)
+hyp !x2:set.x2 iIn omega -> SNo (ap v x2)
+hyp !x2:set.x2 iIn omega -> ap u x2 < x * y
+hyp !x2:set.x2 iIn omega -> x * y < ap v x2
+hyp SNoCutP (Repl omega (ap u)) (Repl omega (ap v))
+hyp SNo (SNoCut (Repl omega (ap u)) (Repl omega (ap v)))
+hyp !x2:set.x2 iIn omega -> ap u x2 < SNoCut (Repl omega (ap u)) (Repl omega (ap v))
+hyp !x2:set.x2 iIn omega -> SNoCut (Repl omega (ap u)) (Repl omega (ap v)) < ap v x2
+hyp !x2:set.x2 iIn omega -> x * y < ap u x2 + eps_ x2
+hyp !x2:set.x2 iIn omega -> !y2:set.y2 iIn x2 -> ap u y2 < ap u x2
+hyp !x2:set.x2 iIn omega -> (ap v x2 + - eps_ x2) < x * y
+claim ~ !x2:set.x2 iIn omega -> !y2:set.y2 iIn x2 -> ap v x2 < ap v y2
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

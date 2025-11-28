@@ -1,0 +1,24 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+axiom exandE_iii: !P:(set set set) prop.!Q:(set set set) prop.(?g:set set set.P g & Q g) -> !R:prop.(!g:set set set.P g -> Q g -> R) -> R
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const In_rec_G_ii : (set (set set set) set set) set (set set) prop
+var P:set (set set set) set set
+var x:set
+var f:set set
+var f2:set set
+hyp !y:set.!g:set set set.!h:set set set.(!z:set.z iIn y -> g z = h z) -> P y g = P y h
+hyp !y:set.y iIn x -> !f3:set set.!f4:set set.In_rec_G_ii P y f3 -> In_rec_G_ii P y f4 -> f3 = f4
+hyp In_rec_G_ii P x f2
+hyp ?g:set set set.(!y:set.y iIn x -> In_rec_G_ii P y (g y)) & f = P x g
+claim (?g:set set set.(!y:set.y iIn x -> In_rec_G_ii P y (g y)) & f2 = P x g) -> f = f2
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

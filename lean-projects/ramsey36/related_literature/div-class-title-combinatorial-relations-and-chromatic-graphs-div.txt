@@ -1,0 +1,513 @@
+%
+
+COMBINATORIAL RELATIONS AND CHROMATIC
+GRAPHS
+R. E. GREENWOOD AND A. M. GLEASON
+
+1. Introduction. The following elementary logical problem was a question in
+the William Lowell Putnam Mathematical Competition held in March 1953 (1):
+Six points are in general position in space (no three in a line, no four in a
+plane). The fifteen line segments joining them in pairs are drawn, and
+then painted, some segments red, some blue. Prove that some triangle has
+all its sides the same color.
+This problem may be generalized as follows:
+N vertex points are given, and r colors are available. Each of the
+%N(N — 1) segments joining two vertices is colored by one and one only
+of the r given colors. Find the minimum integer n = n(ki, k2l . . . , kr)
+such that, if N > n, either there will exist a subset of ki vertices with all
+interconnecting segments of the first color, or there will exist a subset of
+k2 vertices with all interconnecting segments of the second color, . . . ,
+or there will exist a subset of kr vertices with all interconnecting
+segments of the rth color.
+The elementary problem is then the special case r = 2, k± = 3, &2 = 3,
+and essentially asserts that n(3, 3) < 6. A slightly more general form would
+assert that w(3, 3) = 6.
+THEOREM 1.
+
+»(3, 3) =
+
+6.
+
+Proof. To show n(3, 3) > 5, consider the five points to be the vertices of
+a regular pentagon. Let the two colors be red and blue. Color the edges
+red and the interior diagonals blue. In this assemblage of 5 vertices and 10
+segments there is no triangle with all its sides the same color.
+To show 6 is a sufficient number of vertices, select some one vertex point
+and call it a. Of the five line segments terminating at a, select a set of three
+all of which have the same color. Consider the three segments joining their
+farther ends in pairs. If no one of these segments is of the same color as the
+initial set, then all three segments are of the other color and do form a required
+triangle.
+Note. The second part of the above proof is essentially the same as that
+given by one of the Putnam examination candidates.
+2. General case for 2 colors. We define
+n(l,m) = 1
+n(k, 1) = 1
+Received July 25, 1953; in revised form June 8, 1954.
+1
+
+https://doi.org/10.4153/CJM-1955-001-4 Published online by Cambridge University Press
+
+(m = 1,2, 3, . . .),
+(* = 1 , 2 , 3 , . . . ) .
+
+2
+
+R. E. GREENWOOD AND A. M. GLEASON
+
+It is easy to see that
+n(2, m) — m
+»(*, 2) = k
+
+{m = 2, 3, 4, . . .),
+(k = 2, 3, 4, . . .)•
+
+The relation w(&, m) = w(m, &) is an obvious consequence of the symmetry
+or duality of the problem.
+It is possible to establish two inequalities for n(k, m) which are similar in
+appearance to a well-known identity for binomial coefficients.
+For convenience, a set of vertices K will be said to be a red interconnected
+set if all segments joining pairs of vertices in K are colored red. A set of
+vertices M will be said to be a blue interconnected set if all segments joining
+pairs of vertices in M are colored blue. In the minimum vertex number
+n(k, m), the first argument will be used for the red color, and the second argument for the blue color.
+THEOREM 2.
+
+n(k,
+
+m) < n(k
+
+— 1, m) + n(k,
+
+m — 1).
+
+Proof. Let T be any set of n(k — 1, m) + n(k, m — 1) vertices. Form a
+chromatic graph by coloring each interconnecting segment either red or blue.
+Select one vertex and call it a. For vertex a consider the two associated
+numbers:
+n\ = number of vertices such that the segments joining them to a are red,
+n2 = number of vertices such that the segments joining them to a are blue.
+Call these sets of vertices 7 \ and T2.
+Since all vertices other than a belong to either 7 \ or T2, one obtains
+n\ + n2 + 1 = n(k — 1, m) + n(k, m — 1).
+If n\ < n(Jk — \,m), then ^2 > n(k, m — 1) and one selects the set T2.
+In T2 there is either a red interconnected set Si with k vertices or a blue interconnected set S2 with m — 1 vertices. If the latter holds, the set {5*2 + vertex
+a} is a blue interconnected set with m vertices. Hence the inequality of
+Theorem 2 is established for this case.
+If n\ > n(k — 1, m), one selects the set T\. In 7 \ there is either a red
+interconnected set S% with k — 1 vertices or a blue interconnected set 54
+with m vertices. In the first case the set {S3 + vertex a] is seen to be a red
+interconnected set with k vertices. The proof of Theorem 2 is now complete.
+COROLLARY
+
+1.
+
+By an obvious extension of this argument one may prove:
+COROLLARY 2.
+
+For the case of more than two colors,
+
+n(ku k2,. . . , kT) < n(ki — 1, k2l...
+
+, kr) + n(ki, k2 — 1, . . . , kr)
++ n(ki, k2, . . . , kr — 1).
+
+https://doi.org/10.4153/CJM-1955-001-4 Published online by Cambridge University Press
+
+3
+
+CHROMATIC GRAPHS
+
+COROLLARY 3. For the multi-color case, an inequality on the size of the
+minimum number is afforded by the multinomial coefficient
+/L
+
+i
+
+1 z.
+
+I
+
+1
+
+z.
+
+i
+
+i\
+
+^
+
+(^1 +
+
+n(ki + 1, k2 + 1, . . . , kr + 1) <
+THEOREM 3.
+
+Ifn(k
+
+— 1, m) = 2pandn(k,m
+
+^2 +
+
+YYk~\
+
+> • « +
+
+fer)!
+
+k~\
+
+•
+
+— 1) = 2q,then
+
+n(k, m) < 2p + 2q = n(& — 1, m) + ^(&> w — 1).
+Proof. Take a set of 2£ + 2g — 1 vertices. Select one vertex and call it a.
+There are 2p + 2g — 2 segments terminating at a. Three possibilities might
+arise :
+(a) 2p or more segments terminating at a are red,
+(b) 2q or more segments are blue, or
+(c) 2p — 1 segments are red and 2q — 1 segments are blue.
+For case (a) consider the set 7\ of the vertices at the farther ends of the 2p
+or more red segments. Since the number of vertices in T\ is greater than or
+equal to n(k — 1, m), there is either a red interconnected set Si with k — 1
+vertices or a blue interconnected set 62 with m vertices. In the first situation,
+the set {Si + vertex a} is a red interconnected k vertex set. Thus the theorem
+is true for case (a).
+Likewise, a similar argument holds for case (b).
+Case (c) cannot hold for each vertex of the chromatic graph. For if it did
+hold, then there would be (2p + 2q — l)(2p — 1) red ends. This calls for an
+odd number of red ends, but since each segment has two ends, the number of
+red ends is required to be even. Hence there must be at least one vertex where
+either case (a) or case (b) holds, and the theorem is true for both these cases.
+3. Special values for the two color problem. It is known that w(2, 4)
+= 4 and w(3, 3) = 6. From Theorem 3 it follows that w(3, 4) < 9. This
+value shows that the strict inequality sign in Corollary 1 has to be used in
+some cases.
+To assist in evaluating n (3, 5) consider the 13 element field with the elements
+numbered from 0 to 12 inclusive and take each field element as a vertex in a
+graph. The cubic residues in this field are 1, 5, 8, and 12 = — 1 (mod 13).
+If the difference of two vertices is a cubic residue, color the corresponding
+line segment red. If the difference is not a cubic residue, color the corresponding
+line segment blue. Since 1 and — 1 are both cubic residues, the order of differencing is immaterial. In this chromatic graph there is no subset of three which
+is red interconnected and no subset of five which is blue interconnected.
+Hence n(3, 5) > 13.
+Theorem 2 may now be used to remove the doubt as to the values n (3, 4) < 9
+and «(3, 5) > 14. Since w(2, 5) = 5 and »(3, 5) < «(2, 5) + «(3, 4), one
+readily obtains that w(3, 4) = 9 and w(3, 5) = 14.
+It will now be shown that n(4, 4) > 17. Consider the field of 17 elements
+numbered from 0 to 16 inclusive. Let each element be a vertex. If two vertices
+
+https://doi.org/10.4153/CJM-1955-001-4 Published online by Cambridge University Press
+
+4
+
+R. E. GREENWOOD AND A. M. GLEASON
+
+have a numerical difference which is a quadratic residue of 17, the corresponding segment is to be colored red. Note that — 1 = 16 (mod 17), a square,
+and hence the order in which the subtraction is performed makes no difference.
+The other segments are to be colored blue.
+Suppose that some four vertices are connected by segments of one color.
+Without loss of generality, one of these vertices may be considered to be the
+field element marked 0. Call the other three a, b, c. Then the six numbers
+a, b, c, a — b, a — c, and b — c are either all residues or all non-residues.
+Since a is not the zero element in the field, multiplication by a~l is permissible.
+If one sets B = bar1 and C = ca~x, one can consider the new set of six numbers
+1, By C, 1 — B, 1 — C, B — C. All of these must be quadratic residues of 17,
+further none of them can be zero. But the residues of 17 are 1, 2, 4, 8, 9, 13,
+15 and 16 and it is impossible for all members of the set above to be residues.
+Theorem 3 may now be used to establish that w(4, 4) = 18.
+On the basis of these values, an array may be set up giving the known
+values n(k, m) as entries in the body of Table 1.
+TABLE I
+m =
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+k = 1
+
+1
+
+1
+
+1
+
+1
+
+1
+
+1
+
+1
+
+2
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+3
+
+1
+
+3
+
+6
+
+9
+
+14
+
+19 or less
+
+4
+
+1
+
+4
+
+9
+
+18
+
+31 or less
+
+5
+
+1
+
+5
+
+14
+
+31 or less
+
+6
+
+1
+
+6
+
+19 or less
+
+7
+
+1
+
+7
+
+The authors desire to point out that deep combinatorial questions are
+encountered in attempting evaluations of the minimum numbers. In this
+paper proof or disproof of the possibility of a chromatic graph construction
+leans heavily upon finite field theory.
+4. Three or more colors. For three colors, red, green and blue, the evaluation of n (3, 3, 3) may be of interest.
+THEOREM 4.
+
+« ( 3 , 3 , 3 ) = 17.
+
+Proof. It will be convenient to give the proof in two parts. First, one may
+show that n(S, 3, 3) > 16 by use of a 2 4 = 16 element field. In such a field
+
+https://doi.org/10.4153/CJM-1955-001-4 Published online by Cambridge University Press
+
+5
+
+CHROMATIC GRAPHS
+
+the elements may be identified by the symbols 0, Xf X , • • • , X 16 = 1. To
+assist in identifying cubic residues, one may factor
+x16 - 1 ss (x4 - x - 1)(x11 + xs + x7 + x5 + x 3 + x2 + x + 1)
+
+(mod 2),
+
+4
+
+and take x as a root of x — x — 1 = 0 (mod 2). Then the cubic residues of
+the field elements are x3, x 3 + x2, x 3 + x, x 3 + x2 + x + 1, and 1. The field
+elements are taken as vertices and a chromatic graph is constructed as follows.
+If the difference of two vertex elements is a cubic residue, the corresponding
+segment is colored red. If the difference of two elements belongs to the first
+coset of the cubic residues in the multiplicative group of the non-zero field
+elements, the segment is colored green. If the difference belongs to the second
+coset, the segment is colored blue. These specifications define completely the
+chromatic graph. Again one notes that —1 = 1 (mod 2), and the order of
+differencing is immaterial.
+Suppose now that a set of three vertices is completely interconnected by
+segments of the same color. Without any loss of generality, the color may
+be considered as red and the vertices may be considered as having been
+numbered 0, 1 and A, where A and (1 — A) are both cubic residues. But a
+comparison with the list of cubic residues above shows that this situation
+cannot arise. Hence there is no set of three vertices interconnected by segments
+of the same color, and w(3, 3, 3) > 16.
+For the second part, it must be proved that 17 is a sufficient number.
+In any chromatic graph with 3 colors and 17 vertices, select any one vertex
+and call this vertex a. At least six segments terminating at a must all have
+the same color. If in the subgraph consisting of a and the six farther ends
+there is no triangle of the original color, then all interconnections among the
+six farther ends must be of the other two colors. But this is now a case of
+n(3} 3) = 6, and there is an interconnected set of three here.
+Remark. This example serves also to prove that w(6, 3) > 16. One imagines
+the graph to be examined by a man who is red-green color blind and hence sees
+only two colors, namely blue and red-green. Supposing that there is no set
+of three vertices interconnected in blue, then the existence of a set of six
+interconnected in red-green would furnish a red triangle or a green triangle,
+since n(3, 3) = 6.
+THEOREM 5.
+
+41 < «(3, 3, 3, 3) <
+
+66.
+
+Proof. The upper bound given in the theorem follows at once in the same
+way as used in the proof of Theorem 4, i.e., reducing to the next lower case.
+To establish a lower bound, one could consider chromatic graphs whose
+cosets of fourth power residues were employed in connection with fields in
+which the multiplicative group is of order 4k. This suggests the primes 41,
+53, 61 and the extension field of 49 elements. Unfortunately, — 1 is not a
+quartic residue for the cases 53 and 61, and the order of subtraction of vertex
+
+https://doi.org/10.4153/CJM-1955-001-4 Published online by Cambridge University Press
+
+6
+
+R. E. GREENWOOD AND A. M. GLEASON
+
+elements would affect the question of what coset of residues the difference is
+in, and thus lead to a non-unique coloring scheme. For the 41 element field,
+the quartic residues are 1, 4, 10, 16, 18, 23, 25, 31, 37 and 40. There are no
+consécutives in this list, and thus a triangle whose vertices are 0, 1, and A
+cannot be interconnected by segments of the same color. Thus n (3, 3, 3, 3) > 4 1 .
+The authors have not further narrowed the range on n (3, 3, 3, 3).
+5. Upper and Lower Bounds for n(3r). Let tr = n(3r) = n(3y 3, . . . , 3).
+The upper bounds used in Theorems 1, 4 and 5 can all be obtained by the
+use of
+THEOREM 6.
+
+tr+1
+
+<
+
+(r +
+
+1) (tr -
+
+1) +
+
+2.
+
+This theorem is easily proved by induction; and then it is trivial to
+establish, also by induction, that
+/ r + i < 3 ( r + 1)!.
+A somewhat sharper inequality may be obtained, however, without any
+added difficulties. It has already been established that
+tr<
+
+l(rï)e] + 1,
+
+r = 2,3,4,
+
+where [M] means the greatest integer contained in M. Such a bound holds for
+all integers r > 2, for if it did not there would be a least integer, say 5 + 1 ,
+for which the relation failed to hold. By Theorem 6,
+ts+1<
+
+(s+
+
+l)[(sï)e]
+
++ 2,
+
+s>2.
+
+But [ 0 + 1)! e] = (s + 1)[0!) e] + 1, and hence
+ts+i<
+
+[(s+l)\e]
+
++ 1
+
+and the stated upper bound follows.
+For h, an upper bound of 327 is thus obtained. In order to determine a
+possible lower bound, one may generalize to some extent the previous
+arguments for lower bounds.
+Assume a chromatic graph with p vertices (where the p vertices are to be
+thought of as field elements) and 5 colors. To ensure uniqueness of coloring,
+one would require that — 1 be a 5th power residue. If p is odd, this means that
+5 divides \{p — 1). If p is even, then —1 = 1 (mod 2) and the condition that
+— 1 be a 5th power residue is trivially satisfied.
+For r = 5, and restricting p to primes less than 327, one sees that 317,
+313, 307, 293, 283 do not satisfy the divisibility condition and hence 311 and
+281 (which do satisfy the divisibility condition) are the most likely cases.
+For the field with 311 elements, 168 and 169 are both quintic residues. Thus
+the argument that the triangle with vertices at 0, 1 and A cannot be interconnected by segments of the same color breaks down because of this unit
+difference in the quintic residues. The authors have not made a complete
+investigation of the case p — 281.
+
+https://doi.org/10.4153/CJM-1955-001-4 Published online by Cambridge University Press
+
+CHROMATIC GRAPHS
+
+7
+
+6. Relationship to Fermat's theorem and a certain trinomial congruence.
+Returning to the general case for a lower bound to ^(3 r ), one requires that
+— 1 be an rth power residue in a field of p elements. This requires a divisibility
+condition (already stated for 5), namely that r divides \(p — 1) when p is
+odd. One also requires that there be no solution of the trinomial congruence
+
+V + xr + yr = 0
+in the field. This congruence has been extensively studied by people interested
+in Fermat's theorem (2; 3). Under the conditions assumed above a chromatic
+graph on p vertices with r colors can be so constructed that no monochromatic
+triangle appears.
+Since an upper bound for n(Sr) has been established by Theorem 6, it
+follows that when p > n(3r) and a chromatic graph has been constructed with
+r colors on the p field elements, a monochromatic triangle must appear. For
+such cases, then, the trinomial congruence is solvable.
+The previous restriction that r divides \{p — 1) may be stated as r divides
+p — 1 when r is odd. This may be interpreted as requiring the group of rth
+residues to have r cosets (including the original group of residues as one of
+its cosets). If r does not divide p — 1, then in the field being an rth power is
+the same thing as being an rath power, where m is the greatest common divisor
+of r and p — 1.
+In view of the existence of the upper bound one obtains the result that there
+are only a finite number of finite fields for which the trinomial congruence is
+not solvable for given r (3).
+
+REFERENCES
+
+1. L. E. Bush, The William Lowell Putnam Mathematical Competition, Amer. Math. Monthly,
+60 (1953), 539-542.
+2. H. S. Vandiver, Fermat's Last Theorem, Amer. Math. Monthly, 53 (1946), 555-578.
+3. L. E. Dickson, History of the theory of numbers, Carnegie Institution of Washington,
+2, 763.
+
+University of Texas
+
+https://doi.org/10.4153/CJM-1955-001-4 Published online by Cambridge University Press
+
+Harvard University
+
+

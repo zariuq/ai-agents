@@ -1,0 +1,20 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const ordinal : set prop
+const SNo_ : set set prop
+const SNoS_ : set set
+axiom SNoS_I: !x:set.ordinal x -> !y:set.!z:set.z iIn x -> SNo_ z y -> y iIn SNoS_ x
+axiom SNoS_E: !x:set.ordinal x -> !y:set.y iIn SNoS_ x -> ?z:set.z iIn x & SNo_ z y
+claim !x:set.!y:set.ordinal x -> ordinal y -> Subq x y -> !z:set.z iIn SNoS_ x -> z iIn SNoS_ y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,44 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+const SNo : set prop
+const ordsucc : set set
+const Empty : set
+axiom SNo_1: SNo (ordsucc Empty)
+const nat_p : set prop
+axiom nat_1: nat_p (ordsucc Empty)
+const ordinal : set prop
+axiom nat_p_ordinal: !x:set.nat_p x -> ordinal x
+axiom SNo_0: SNo Empty
+axiom cases_1: !x:set.x iIn ordsucc Empty -> !p:set prop.p Empty -> p x
+const SNoLev : set set
+axiom SNoLev_0: SNoLev Empty = Empty
+axiom EmptyE: !x:set.nIn x Empty
+axiom FalseE: ~ False
+const SNoEq_ : set set set prop
+axiom SNoEq_I: !x:set.!y:set.!z:set.(!w:set.w iIn x -> (w iIn y <-> w iIn z)) -> SNoEq_ x y z
+axiom SNo_eq: !x:set.!y:set.SNo x -> SNo y -> SNoLev x = SNoLev y -> SNoEq_ (SNoLev x) x y -> x = y
+axiom ordinal_SNoLev: !x:set.ordinal x -> SNoLev x = x
+const SNoL : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom SNoL_E: !x:set.SNo x -> !y:set.y iIn SNoL x -> !P:prop.(SNo y -> SNoLev y iIn SNoLev x -> y < x -> P) -> P
+axiom In_0_1: Empty iIn ordsucc Empty
+axiom ordinal_In_SNoLt: !x:set.ordinal x -> !y:set.y iIn x -> y < x
+axiom SNoL_I: !x:set.SNo x -> !y:set.SNo y -> SNoLev y iIn SNoLev x -> y < x -> y iIn SNoL x
+axiom set_ext: !x:set.!y:set.Subq x y -> Subq y x -> x = y
+lemma !x:set.SNo x -> SNoLev x iIn ordsucc Empty -> Empty = x -> x iIn ordsucc Empty
+claim SNoL (ordsucc Empty) = ordsucc Empty
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

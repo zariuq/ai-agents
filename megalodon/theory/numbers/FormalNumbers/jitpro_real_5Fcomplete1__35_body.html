@@ -1,0 +1,49 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term nIn = \x:set.\y:set.~ x iIn y
+const ap : set set set
+axiom ap_Pi: !x:set.!f:set set.!y:set.!z:set.y iIn Pi x f -> z iIn x -> ap y z iIn f z
+const real : set
+const SNoLev : set set
+const ordsucc : set set
+const omega : set
+const SNoS_ : set set
+const minus_SNo : set set
+term - = minus_SNo
+const abs_SNo : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const eps_ : set set
+axiom real_E: !x:set.x iIn real -> !P:prop.(SNo x -> SNoLev x iIn ordsucc omega -> x iIn SNoS_ (ordsucc omega) -> - omega < x -> x < omega -> (!y:set.y iIn SNoS_ omega -> (!z:set.z iIn omega -> abs_SNo (y + - x) < eps_ z) -> y = x) -> (!y:set.y iIn omega -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + eps_ y)) -> P) -> P
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+lemma !x:set.!y:set.x iIn setexp real omega -> y iIn setexp real omega -> (!z:set.z iIn omega -> ap x z <= ap y z & ap x z <= ap x (ordsucc z) & ap y (ordsucc z) <= ap y z) -> ~ (?z:set.z iIn real & !w:set.w iIn omega -> ap x w <= z & z <= ap y w) -> (!z:set.z iIn omega -> SNo (ap x z)) -> ~ !z:set.z iIn omega -> SNo (ap y z)
+var x:set
+var y:set
+hyp x iIn setexp real omega
+hyp y iIn setexp real omega
+hyp !z:set.z iIn omega -> ap x z <= ap y z & ap x z <= ap x (ordsucc z) & ap y (ordsucc z) <= ap y z
+hyp ~ ?z:set.z iIn real & !w:set.w iIn omega -> ap x w <= z & z <= ap y w
+claim ~ !z:set.z iIn omega -> SNo (ap x z)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

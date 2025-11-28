@@ -1,0 +1,30 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoLev : set set
+const binintersect : set set set
+const SNoElts_ : set set
+axiom restr_SNo: !x:set.SNo x -> !y:set.y iIn SNoLev x -> SNo (binintersect x (SNoElts_ y))
+axiom restr_SNoLev: !x:set.SNo x -> !y:set.y iIn SNoLev x -> SNoLev (binintersect x (SNoElts_ y)) = y
+const SNoEq_ : set set set prop
+axiom restr_SNoEq: !x:set.SNo x -> !y:set.y iIn SNoLev x -> SNoEq_ y (binintersect x (SNoElts_ y)) x
+const SNo_extend1 : set set
+axiom SNo_extend1_SNoEq: !x:set.SNo x -> SNoEq_ (SNoLev x) (SNo_extend1 x) x
+axiom SNoEq_tra_: !x:set.!y:set.!z:set.!w:set.SNoEq_ x y z -> SNoEq_ x z w -> SNoEq_ x y w
+axiom SNoEq_sym_: !x:set.!y:set.!z:set.SNoEq_ x y z -> SNoEq_ x z y
+axiom SNo_eq: !x:set.!y:set.SNo x -> SNo y -> SNoLev x = SNoLev y -> SNoEq_ (SNoLev x) x y -> x = y
+var x:set
+hyp SNo x
+hyp SNo (SNo_extend1 x)
+claim SNoLev x iIn SNoLev (SNo_extend1 x) -> x = binintersect (SNo_extend1 x) (SNoElts_ (SNoLev x))
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

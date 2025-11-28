@@ -1,0 +1,87 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const SNo : set prop
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom SNo_mul_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x * y)
+const ordsucc : set set
+const Empty : set
+axiom SNo_1: SNo (ordsucc Empty)
+const omega : set
+const eps_ : set set
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom SNo_eps_pos: !x:set.x iIn omega -> Empty < eps_ x
+axiom pos_mul_SNo_Lt': !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> Empty < z -> x < y -> x * z < y * z
+axiom mul_SNo_com: !x:set.!y:set.SNo x -> SNo y -> x * y = y * x
+axiom SNoLt_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x < y -> y < z -> x < z
+axiom mul_SNo_Lt1_pos_Lt: !x:set.!y:set.SNo x -> SNo y -> x < ordsucc Empty -> Empty < y -> x * y < y
+axiom mul_SNo_assoc: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x * y * z = (x * y) * z
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+axiom SNoLtLe: !x:set.!y:set.x < y -> x <= y
+axiom eps_bd_1: !x:set.x iIn omega -> eps_ x <= ordsucc Empty
+axiom nonneg_mul_SNo_Le2: !x:set.!y:set.!z:set.!w:set.SNo x -> SNo y -> SNo z -> SNo w -> Empty <= x -> Empty <= y -> x <= z -> y <= w -> x * y <= z * w
+axiom mul_SNo_oneL: !x:set.SNo x -> ordsucc Empty * x = x
+axiom mul_SNo_pos_pos: !x:set.!y:set.SNo x -> SNo y -> Empty < x -> Empty < y -> Empty < x * y
+axiom mul_SNo_Le1_nonneg_Le: !x:set.!y:set.SNo x -> SNo y -> x <= ordsucc Empty -> Empty <= y -> x * y <= y
+axiom SNoLe_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x <= y -> y <= z -> x <= z
+const nat_p : set prop
+axiom omega_nat_p: !x:set.x iIn omega -> nat_p x
+const ordinal : set prop
+axiom nat_p_ordinal: !x:set.nat_p x -> ordinal x
+axiom omega_SNo: !x:set.x iIn omega -> SNo x
+axiom SNo_2: SNo (ordsucc (ordsucc Empty))
+axiom SNoLt_1_2: ordsucc Empty < ordsucc (ordsucc Empty)
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_SNo_Lt2: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> y < z -> (x + y) < x + z
+axiom ordinal_SNoLt_In: !x:set.!y:set.ordinal x -> ordinal y -> x < y -> x iIn y
+axiom SNo_eps_decr: !x:set.x iIn omega -> !y:set.y iIn x -> eps_ x < eps_ y
+axiom SNoLeLt_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x <= y -> y < z -> x < z
+axiom add_SNo_Lt4: !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.SNo x -> SNo y -> SNo z -> SNo w -> SNo u -> SNo v -> x < w -> y < u -> z < v -> (x + y + z) < w + u + v
+axiom add_SNo_assoc: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x + y + z = (x + y) + z
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+hyp SNo x
+hyp SNo y
+hyp z iIn omega
+hyp eps_ z * x < ordsucc Empty
+hyp eps_ z * y < ordsucc Empty
+hyp w iIn omega
+hyp w + ordsucc Empty iIn omega
+hyp w + ordsucc (ordsucc Empty) iIn omega
+hyp u < x
+hyp SNo u
+hyp v < y
+hyp SNo v
+hyp SNo (eps_ z)
+hyp SNo (eps_ (w + ordsucc Empty))
+hyp SNo (eps_ (w + ordsucc (ordsucc Empty)))
+hyp SNo (eps_ z * eps_ (w + ordsucc (ordsucc Empty)))
+claim SNo ((eps_ z * eps_ (w + ordsucc (ordsucc Empty))) * eps_ z * eps_ (w + ordsucc (ordsucc Empty))) -> (u * eps_ z * eps_ (w + ordsucc (ordsucc Empty)) + (eps_ z * eps_ (w + ordsucc (ordsucc Empty))) * v + (eps_ z * eps_ (w + ordsucc (ordsucc Empty))) * eps_ z * eps_ (w + ordsucc (ordsucc Empty))) < (eps_ (w + ordsucc (ordsucc Empty)) + eps_ (w + ordsucc (ordsucc Empty))) + eps_ (w + ordsucc Empty)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

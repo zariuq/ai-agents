@@ -1,0 +1,15 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+term Descr_Vo1 = \P:(set prop) prop.\x:set.!p:set prop.P p -> p x
+axiom prop_ext_2: !P:prop.!Q:prop.(P -> Q) -> (Q -> P) -> P = Q
+axiom func_ext: !p:set prop.!q:set prop.(!x:set.p x = q x) -> p = q
+lemma !P:(set prop) prop.!p:set prop.(!q:set prop.!p2:set prop.P q -> P p2 -> q = p2) -> P p -> p = Descr_Vo1 P -> P (Descr_Vo1 P)
+claim !P:(set prop) prop.(?p:set prop.P p) -> (!p:set prop.!q:set prop.P p -> P q -> p = q) -> P (Descr_Vo1 P)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

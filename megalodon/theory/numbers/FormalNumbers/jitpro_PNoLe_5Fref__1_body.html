@@ -1,0 +1,15 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const PNoEq_ : set (set prop) (set prop) prop
+axiom PNoEq_ref_: !x:set.!p:set prop.PNoEq_ x p p
+const PNoLe : set (set prop) set (set prop) prop
+axiom PNoLeI2: !x:set.!p:set prop.!q:set prop.PNoEq_ x p q -> PNoLe x p x q
+claim !x:set.!p:set prop.PNoLe x p x p
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

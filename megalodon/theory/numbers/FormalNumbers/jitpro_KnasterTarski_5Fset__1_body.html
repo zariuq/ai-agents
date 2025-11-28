@@ -1,0 +1,27 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const Sep : set (set prop) set
+const Power : set set
+var x:set
+var f:set set
+var y:set
+var z:set
+hyp !w:set.w iIn Power x -> !u:set.u iIn Power x -> Subq w u -> Subq (f w) (f u)
+hyp Sep x (\w:set.!u:set.u iIn Power x -> Subq (f u) u -> w iIn u) iIn Power x
+hyp y iIn f (Sep x \w:set.!u:set.u iIn Power x -> Subq (f u) u -> w iIn u)
+hyp z iIn Power x
+hyp Subq (f z) z
+hyp Subq (Sep x \w:set.!u:set.u iIn Power x -> Subq (f u) u -> w iIn u) z
+claim Subq (f (Sep x \w:set.!u:set.u iIn Power x -> Subq (f u) u -> w iIn u)) (f z) -> y iIn z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

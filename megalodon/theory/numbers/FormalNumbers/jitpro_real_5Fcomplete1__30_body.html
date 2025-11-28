@@ -1,0 +1,42 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term nIn = \x:set.\y:set.~ x iIn y
+const Sep : set (set prop) set
+axiom Sep_Subq: !x:set.!p:set prop.Subq (Sep x p) x
+const real : set
+const omega : set
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+const ap : set set set
+const SNoS_ : set set
+lemma !x:set.!y:set.x iIn setexp real omega -> y iIn setexp real omega -> ~ (?z:set.z iIn real & !w:set.w iIn omega -> ap x w <= z & z <= ap y w) -> (!z:set.z iIn omega -> SNo (ap x z)) -> (!z:set.z iIn omega -> SNo (ap y z)) -> (!z:set.z iIn omega -> !w:set.w iIn omega -> ap x z <= ap y w) -> Subq (Sep (SNoS_ omega) \z:set.?w:set.w iIn omega & z < ap x w) (SNoS_ omega) -> ~ Subq (Sep (SNoS_ omega) \z:set.?w:set.w iIn omega & ap y w < z) (SNoS_ omega)
+var x:set
+var y:set
+hyp x iIn setexp real omega
+hyp y iIn setexp real omega
+hyp ~ ?z:set.z iIn real & !w:set.w iIn omega -> ap x w <= z & z <= ap y w
+hyp !z:set.z iIn omega -> SNo (ap x z)
+hyp !z:set.z iIn omega -> SNo (ap y z)
+hyp !z:set.z iIn omega -> !w:set.w iIn omega -> ap x z <= ap y w
+claim ~ Subq (Sep (SNoS_ omega) \z:set.?w:set.w iIn omega & z < ap x w) (SNoS_ omega)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

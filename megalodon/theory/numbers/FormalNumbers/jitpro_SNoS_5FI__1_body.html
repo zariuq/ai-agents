@@ -1,0 +1,30 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Subq : set set prop
+const SNoElts_ : set set
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SetAdjoin : set set set
+const Sing : set set
+const ordsucc : set set
+const Empty : set
+term SNo_ = \x:set.\y:set.Subq y (SNoElts_ x) & !z:set.z iIn x -> ~(SetAdjoin z (Sing (ordsucc Empty)) iIn y <-> z iIn y)
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const Sep : set (set prop) set
+const Power : set set
+term SNoS_ = \x:set.Sep (Power (SNoElts_ x)) \y:set.?z:set.z iIn x & SNo_ z y
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+axiom SNoElts_mon: !x:set.!y:set.Subq x y -> Subq (SNoElts_ x) (SNoElts_ y)
+axiom Subq_tra: !x:set.!y:set.!z:set.Subq x y -> Subq y z -> Subq x z
+axiom PowerI: !x:set.!y:set.Subq y x -> y iIn Power x
+axiom SepI: !x:set.!p:set prop.!y:set.y iIn x -> p y -> y iIn Sep x p
+claim !x:set.ordinal x -> !y:set.!z:set.z iIn x -> SNo_ z y -> y iIn SNoS_ x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

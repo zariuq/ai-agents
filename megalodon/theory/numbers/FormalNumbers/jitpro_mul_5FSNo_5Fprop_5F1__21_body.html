@@ -1,0 +1,59 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+axiom add_SNo_Lt_subprop3d: !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.!x2:set.!y2:set.SNo x -> SNo y -> SNo z -> SNo w -> SNo u -> SNo v -> SNo x2 -> SNo y2 -> (x + v) < x2 + u -> y < y2 + w -> (x2 + y2) < z + v -> (x + y) < z + w + u
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const SNoR : set set
+const SNoS_ : set set
+const SNoLev : set set
+const SNoL : set set
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+var x2:set
+hyp SNo x
+hyp !y2:set.y2 iIn SNoS_ (SNoLev x) -> !z2:set.SNo z2 -> !P:prop.(SNo (y2 * z2) -> (!w2:set.w2 iIn SNoL y2 -> !u2:set.u2 iIn SNoL z2 -> (w2 * z2 + y2 * u2) < y2 * z2 + w2 * u2) -> (!w2:set.w2 iIn SNoR y2 -> !u2:set.u2 iIn SNoR z2 -> (w2 * z2 + y2 * u2) < y2 * z2 + w2 * u2) -> (!w2:set.w2 iIn SNoL y2 -> !u2:set.u2 iIn SNoR z2 -> (y2 * z2 + w2 * u2) < w2 * z2 + y2 * u2) -> (!w2:set.w2 iIn SNoR y2 -> !u2:set.u2 iIn SNoL z2 -> (y2 * z2 + w2 * u2) < w2 * z2 + y2 * u2) -> P) -> P
+hyp SNo y
+hyp !y2:set.y2 iIn SNoR x -> !z2:set.SNo z2 -> SNo (y2 * z2)
+hyp !y2:set.y2 iIn SNoR x -> SNo (y2 * y)
+hyp w iIn SNoR y
+hyp SNo w
+hyp u iIn SNoR x
+hyp SNo (z * y)
+hyp SNo (x * w)
+hyp SNo (z * w)
+hyp SNo (u * y)
+hyp SNo (x * v)
+hyp SNo (u * v)
+hyp SNo (u * w)
+hyp (x * w + u * v) < u * w + x * v
+hyp x2 iIn SNoR u
+hyp x2 iIn SNoR x
+hyp (z * y + x2 * w) < x2 * y + z * w
+claim (x2 * y + u * w) < u * y + x2 * w -> (z * y + x * w + u * v) < u * y + x * v + z * w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

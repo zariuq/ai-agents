@@ -1,0 +1,38 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const omega : set
+const eps_ : set set
+const SNoS_ : set set
+axiom SNo_eps_SNoS_omega: !x:set.x iIn omega -> eps_ x iIn SNoS_ omega
+const real : set
+axiom SNoS_omega_real: Subq (SNoS_ omega) real
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom real_mul_SNo: !x:set.x iIn real -> !y:set.y iIn real -> x * y iIn real
+const SNo : set prop
+axiom real_SNo: !x:set.x iIn real -> SNo x
+axiom mul_SNo_com: !x:set.!y:set.SNo x -> SNo y -> x * y = y * x
+axiom mul_SNo_assoc: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x * y * z = (x * y) * z
+const ordsucc : set set
+const Empty : set
+var x:set
+var y:set
+var z:set
+hyp SNo x
+hyp y iIn omega
+hyp z iIn real
+hyp (eps_ y * x) * z = ordsucc Empty
+claim SNo (eps_ y) -> ?w:set.w iIn real & x * w = ordsucc Empty
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

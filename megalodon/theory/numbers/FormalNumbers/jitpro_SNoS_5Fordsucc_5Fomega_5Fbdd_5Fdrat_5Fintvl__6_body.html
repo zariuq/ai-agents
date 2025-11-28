@@ -1,0 +1,62 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const SNo : set prop
+const Empty : set
+axiom SNo_0: SNo Empty
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom SNoLt_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x < y -> y < z -> x < z
+axiom SNoLt_irref: !x:set.~ x < x
+axiom FalseE: ~ False
+const minus_SNo : set set
+term - = minus_SNo
+axiom minus_SNo_0: - Empty = Empty
+const nat_p : set prop
+axiom nat_p_SNo: !x:set.nat_p x -> SNo x
+const ordsucc : set set
+axiom nat_ind: !p:set prop.p Empty -> (!x:set.nat_p x -> p x -> p (ordsucc x)) -> !x:set.nat_p x -> p x
+const eps_ : set set
+axiom eps_0_1: eps_ Empty = ordsucc Empty
+const ordinal : set prop
+const omega : set
+axiom omega_ordinal: ordinal omega
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+axiom omega_ordsucc: !x:set.x iIn omega -> ordsucc x iIn omega
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const SNoS_ : set set
+axiom SNo_eps_SNoS_omega: !x:set.x iIn omega -> eps_ x iIn SNoS_ omega
+axiom add_SNo_SNoS_omega: !x:set.x iIn SNoS_ omega -> !y:set.y iIn SNoS_ omega -> x + y iIn SNoS_ omega
+axiom eps_ordsucc_half_add: !x:set.nat_p x -> eps_ (ordsucc x) + eps_ (ordsucc x) = eps_ x
+axiom add_SNo_assoc: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x + y + z = (x + y) + z
+axiom SNoLt_trichotomy_or_impred: !x:set.!y:set.SNo x -> SNo y -> !P:prop.(x < y -> P) -> (x = y -> P) -> (y < x -> P) -> P
+const SNoLev : set set
+const SNo_ : set set prop
+axiom SNoS_E2: !x:set.ordinal x -> !y:set.y iIn SNoS_ x -> !P:prop.(SNoLev y iIn x -> ordinal (SNoLev y) -> SNo y -> SNo_ (SNoLev y) y -> P) -> P
+lemma !x:set.x iIn SNoS_ (ordsucc omega) -> - omega < x -> x < omega -> SNo x -> ~ (!y:set.y iIn omega -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + eps_ y)) -> nIn x (SNoS_ omega) -> ~ !y:set.nat_p y -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + eps_ y)
+lemma !x:set.x iIn SNoS_ (ordsucc omega) -> - omega < x -> x < omega -> SNo x -> nIn x (SNoS_ omega) -> (!y:set.nat_p y -> - y < x -> x < y -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + ordsucc Empty)) -> ?y:set.y iIn SNoS_ omega & (y < x & x < y + ordsucc Empty)
+lemma !x:set.!y:set.SNo x -> nIn x (SNoS_ omega) -> nat_p y -> (- y < x -> x < y -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + ordsucc Empty)) -> - ordsucc y < x -> x < ordsucc y -> SNo y -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + ordsucc Empty)
+var x:set
+hyp x iIn SNoS_ (ordsucc omega)
+hyp - omega < x
+hyp x < omega
+hyp SNo x
+hyp ~ !y:set.y iIn omega -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + eps_ y)
+claim ~ nIn x (SNoS_ omega)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

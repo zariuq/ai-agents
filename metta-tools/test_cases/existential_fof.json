@@ -1,0 +1,63 @@
+{
+  "metadata": {},
+  "comments": [
+    "Simple existential quantifier example",
+    "Someone loves everyone. Therefore, everyone is loved by someone."
+  ],
+  "formulas": [
+    {
+      "name": "someone_loves_all",
+      "role": "axiom",
+      "formula": [
+        "exists",
+        [
+          "X"
+        ],
+        [
+          "forall",
+          [
+            "Y"
+          ],
+          [
+            "loves",
+            [
+              "var",
+              "X"
+            ],
+            [
+              "var",
+              "Y"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "all_loved",
+      "role": "conjecture",
+      "formula": [
+        "forall",
+        [
+          "Y"
+        ],
+        [
+          "exists",
+          [
+            "X"
+          ],
+          [
+            "loves",
+            [
+              "var",
+              "X"
+            ],
+            [
+              "var",
+              "Y"
+            ]
+          ]
+        ]
+      ]
+    }
+  ]
+}

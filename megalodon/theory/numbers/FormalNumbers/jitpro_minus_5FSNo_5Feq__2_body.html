@@ -1,0 +1,32 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo_rec_i : (set (set set) set) set set
+const SNoCut : set set set
+const Repl : set (set set) set
+const SNoR : set set
+const SNoL : set set
+term minus_SNo = SNo_rec_i \x:set.\f:set set.SNoCut (Repl (SNoR x) f) (Repl (SNoL x) f)
+term - = minus_SNo
+const SNo : set prop
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoS_ : set set
+const SNoLev : set set
+axiom SNoL_SNoS: !x:set.SNo x -> !y:set.y iIn SNoL x -> y iIn SNoS_ (SNoLev x)
+axiom ReplEq_ext: !x:set.!f:set set.!f2:set set.(!y:set.y iIn x -> f y = f2 y) -> Repl x f = Repl x f2
+lemma !x:set.!f:set set.!f2:set set.SNo x -> (!y:set.y iIn SNoS_ (SNoLev x) -> f y = f2 y) -> Repl (SNoR x) f = Repl (SNoR x) f2 -> Repl (SNoL x) f = Repl (SNoL x) f2 -> SNoCut (Repl (SNoR x) f) (Repl (SNoL x) f) = SNoCut (Repl (SNoR x) f2) (Repl (SNoL x) f2)
+var x:set
+var f:set set
+var f2:set set
+hyp SNo x
+hyp !y:set.y iIn SNoS_ (SNoLev x) -> f y = f2 y
+claim Repl (SNoR x) f = Repl (SNoR x) f2 -> SNoCut (Repl (SNoR x) f) (Repl (SNoL x) f) = SNoCut (Repl (SNoR x) f2) (Repl (SNoL x) f2)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

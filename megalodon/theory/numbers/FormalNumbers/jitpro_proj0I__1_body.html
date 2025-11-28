@@ -1,0 +1,23 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const ReplSep : set (set prop) (set set) set
+const Inj0 : set set
+const Unj : set set
+term proj0 = \x:set.ReplSep x (\y:set.?z:set.Inj0 z = y) Unj
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+axiom ReplSepI: !x:set.!p:set prop.!f:set set.!y:set.y iIn x -> p y -> f y iIn ReplSep x p f
+axiom Unj_Inj0_eq: !x:set.Unj (Inj0 x) = x
+const setsum : set set set
+const Empty : set
+axiom Inj0_pair_0_eq: Inj0 = setsum Empty
+claim !x:set.!y:set.setsum Empty y iIn x -> y iIn proj0 x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

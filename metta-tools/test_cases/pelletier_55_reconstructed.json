@@ -1,0 +1,425 @@
+{
+  "metadata": {
+    "file": "PUZ001+1 : TPTP v9.2.1. Released v2.0.0.",
+    "domain": "Puzzles",
+    "problem": "Dreadbury Mansion",
+    "english": "Someone who lives in Dreadbury Mansion killed Aunt Agatha."
+  },
+  "comments": [
+    "-----------------------------------------------------------------------------",
+    "-----------------------------------------------------------------------------",
+    "-----------------------------------------------------------------------------"
+  ],
+  "formulas": [
+    {
+      "name": "pel55_1",
+      "role": "axiom",
+      "formula": [
+        "exists",
+        [
+          "X"
+        ],
+        [
+          "and",
+          [
+            "lives",
+            [
+              "var",
+              "X"
+            ]
+          ],
+          [
+            "killed",
+            [
+              "var",
+              "X"
+            ],
+            [
+              "const",
+              "agatha"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "pel55_2_1",
+      "role": "axiom",
+      "formula": [
+        "lives",
+        [
+          "const",
+          "agatha"
+        ]
+      ]
+    },
+    {
+      "name": "pel55_2_2",
+      "role": "axiom",
+      "formula": [
+        "lives",
+        [
+          "const",
+          "butler"
+        ]
+      ]
+    },
+    {
+      "name": "pel55_2_3",
+      "role": "axiom",
+      "formula": [
+        "lives",
+        [
+          "const",
+          "charles"
+        ]
+      ]
+    },
+    {
+      "name": "pel55_3",
+      "role": "axiom",
+      "formula": [
+        "forall",
+        [
+          "X"
+        ],
+        [
+          "implies",
+          [
+            "lives",
+            [
+              "var",
+              "X"
+            ]
+          ],
+          [
+            "or",
+            [
+              "=",
+              [
+                "var",
+                "X"
+              ],
+              [
+                "const",
+                "agatha"
+              ]
+            ],
+            [
+              "or",
+              [
+                "=",
+                [
+                  "var",
+                  "X"
+                ],
+                [
+                  "const",
+                  "butler"
+                ]
+              ],
+              [
+                "=",
+                [
+                  "var",
+                  "X"
+                ],
+                [
+                  "const",
+                  "charles"
+                ]
+              ]
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "pel55_4",
+      "role": "axiom",
+      "formula": [
+        "forall",
+        [
+          "X",
+          "Y"
+        ],
+        [
+          "implies",
+          [
+            "killed",
+            [
+              "var",
+              "X"
+            ],
+            [
+              "var",
+              "Y"
+            ]
+          ],
+          [
+            "hates",
+            [
+              "var",
+              "X"
+            ],
+            [
+              "var",
+              "Y"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "pel55_5",
+      "role": "axiom",
+      "formula": [
+        "forall",
+        [
+          "X",
+          "Y"
+        ],
+        [
+          "implies",
+          [
+            "killed",
+            [
+              "var",
+              "X"
+            ],
+            [
+              "var",
+              "Y"
+            ]
+          ],
+          [
+            "not",
+            [
+              "richer",
+              [
+                "var",
+                "X"
+              ],
+              [
+                "var",
+                "Y"
+              ]
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "pel55_6",
+      "role": "axiom",
+      "formula": [
+        "forall",
+        [
+          "X"
+        ],
+        [
+          "implies",
+          [
+            "hates",
+            [
+              "const",
+              "agatha"
+            ],
+            [
+              "var",
+              "X"
+            ]
+          ],
+          [
+            "not",
+            [
+              "hates",
+              [
+                "const",
+                "charles"
+              ],
+              [
+                "var",
+                "X"
+              ]
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "pel55_7",
+      "role": "axiom",
+      "formula": [
+        "forall",
+        [
+          "X"
+        ],
+        [
+          "implies",
+          [
+            "not",
+            [
+              "=",
+              [
+                "var",
+                "X"
+              ],
+              [
+                "const",
+                "butler"
+              ]
+            ]
+          ],
+          [
+            "hates",
+            [
+              "const",
+              "agatha"
+            ],
+            [
+              "var",
+              "X"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "pel55_8",
+      "role": "axiom",
+      "formula": [
+        "forall",
+        [
+          "X"
+        ],
+        [
+          "implies",
+          [
+            "not",
+            [
+              "richer",
+              [
+                "var",
+                "X"
+              ],
+              [
+                "const",
+                "agatha"
+              ]
+            ]
+          ],
+          [
+            "hates",
+            [
+              "const",
+              "butler"
+            ],
+            [
+              "var",
+              "X"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "pel55_9",
+      "role": "axiom",
+      "formula": [
+        "forall",
+        [
+          "X"
+        ],
+        [
+          "implies",
+          [
+            "hates",
+            [
+              "const",
+              "agatha"
+            ],
+            [
+              "var",
+              "X"
+            ]
+          ],
+          [
+            "hates",
+            [
+              "const",
+              "butler"
+            ],
+            [
+              "var",
+              "X"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "pel55_10",
+      "role": "axiom",
+      "formula": [
+        "forall",
+        [
+          "X"
+        ],
+        [
+          "exists",
+          [
+            "Y"
+          ],
+          [
+            "not",
+            [
+              "hates",
+              [
+                "var",
+                "X"
+              ],
+              [
+                "var",
+                "Y"
+              ]
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "pel55_11",
+      "role": "axiom",
+      "formula": [
+        "not",
+        [
+          "=",
+          [
+            "const",
+            "agatha"
+          ],
+          [
+            "const",
+            "butler"
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "pel55",
+      "role": "conjecture",
+      "formula": [
+        "killed",
+        [
+          "const",
+          "agatha"
+        ],
+        [
+          "const",
+          "agatha"
+        ]
+      ]
+    }
+  ]
+}

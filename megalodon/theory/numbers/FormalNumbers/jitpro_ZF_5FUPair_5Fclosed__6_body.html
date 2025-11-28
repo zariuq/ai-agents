@@ -1,0 +1,32 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const UPair : set set set
+axiom UPairI1: !x:set.!y:set.x iIn UPair x y
+const If_i : prop set set set
+axiom If_i_1: !P:prop.!x:set.!y:set.P -> If_i P x y = x
+axiom UPairI2: !x:set.!y:set.y iIn UPair x y
+axiom If_i_0: !P:prop.!x:set.!y:set.~ P -> If_i P x y = y
+axiom xm: !P:prop.P | ~ P
+const Repl : set (set set) set
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+const Power : set set
+axiom Self_In_Power: !x:set.x iIn Power x
+axiom ReplI: !x:set.!f:set set.!y:set.y iIn x -> f y iIn Repl x f
+axiom set_ext: !x:set.!y:set.Subq x y -> Subq y x -> x = y
+const ZF_closed : set prop
+lemma !x:set.!y:set.!z:set.ZF_closed x -> y iIn x -> z iIn x -> Repl (Power (Power y)) (\w:set.If_i (y iIn w) y z) = UPair y z -> UPair y z iIn x
+lemma !x:set.!y:set.!z:set.z iIn UPair x y -> If_i (x iIn Power x) x y iIn Repl (Power (Power x)) (\w:set.If_i (x iIn w) x y) -> z iIn Repl (Power (Power x)) \w:set.If_i (x iIn w) x y
+claim !x:set.ZF_closed x -> !y:set.y iIn x -> !z:set.z iIn x -> UPair y z iIn x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

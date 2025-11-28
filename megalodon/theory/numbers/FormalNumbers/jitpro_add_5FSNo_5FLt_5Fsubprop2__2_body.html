@@ -1,0 +1,24 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+axiom add_SNo_rotate_3_1: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x + y + z = z + x + y
+axiom add_SNo_assoc: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x + y + z = (x + y) + z
+axiom add_SNo_com_4_inner_mid: !x:set.!y:set.!z:set.!w:set.SNo x -> SNo y -> SNo z -> SNo w -> (x + y) + z + w = (x + z) + y + w
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom add_SNo_Lt1_cancel: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> (x + y) < z + y -> x < z
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.SNo x -> SNo y -> SNo z -> SNo w -> SNo u -> SNo v -> (x + u) < z + v -> (y + v) < w + u -> (z + w) + u + v = (z + v) + w + u -> ((x + u) + y + v) < (z + w) + u + v
+claim !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.SNo x -> SNo y -> SNo z -> SNo w -> SNo u -> SNo v -> (x + u) < z + v -> (y + v) < w + u -> (x + y) < z + w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

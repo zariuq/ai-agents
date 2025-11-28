@@ -1,0 +1,24 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const binunion : set set set
+const Sing : set set
+term SetAdjoin = \x:set.\y:set.binunion x (Sing y)
+const ordinal : set prop
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+axiom ordinal_Hered: !x:set.ordinal x -> !y:set.y iIn x -> ordinal y
+const ordsucc : set set
+const Empty : set
+axiom not_ordinal_Sing2: ~ ordinal (Sing (ordsucc (ordsucc Empty)))
+var x:set
+hyp ordinal (SetAdjoin x (Sing (ordsucc (ordsucc Empty))))
+claim ~ Sing (ordsucc (ordsucc Empty)) iIn SetAdjoin x (Sing (ordsucc (ordsucc Empty)))
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

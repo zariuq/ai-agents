@@ -1,0 +1,10 @@
+Definition foo33 : set -> prop := z8 -> forall (baz56:set -> set), forall (A41:set -> prop), z92 -> Q77.
+
+Definition x2 : prop := forall (y7:set -> set), A7.
+
+Parameter baz83 : set -> set.
+
+Definition B29 : set -> prop := z34.
+
+Definition P40 : prop := bar51.
+

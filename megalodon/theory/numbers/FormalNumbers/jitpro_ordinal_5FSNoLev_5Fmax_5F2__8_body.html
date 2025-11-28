@@ -1,0 +1,28 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+term nIn = \x:set.\y:set.~ x iIn y
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term SNoEq_ = \x:set.\y:set.\z:set.PNoEq_ x (\w:set.w iIn y) \w:set.w iIn z
+const SNo : set prop
+axiom ordinal_SNo: !x:set.ordinal x -> SNo x
+const SNoLev : set set
+const ordsucc : set set
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+lemma !x:set.!y:set.ordinal x -> TransSet x -> SNo y -> SNoLev y iIn ordsucc x -> SNo x -> y <= x
+claim !x:set.ordinal x -> !y:set.SNo y -> SNoLev y iIn ordsucc x -> y <= x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>
