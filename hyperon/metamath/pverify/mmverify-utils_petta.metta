@@ -1,5 +1,5 @@
 ;; mmverify-utils_petta.metta - Clean reconstruction
-; !(import! &self /home/zar/claude/hyperon/PeTTa/lib/lib_he)  ;; commented out - pverify_hybrid imports lib_he first
+; !(import! &self ../../PeTTa/lib/lib_he)  ;; commented out - pverify_hybrid imports lib_he first
 
 ;; exec - wrapper for fail-fast execution with error handling
 ;; Halts execution on Error, returns the evaluated value otherwise

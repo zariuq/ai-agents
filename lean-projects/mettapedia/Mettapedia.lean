@@ -39,6 +39,9 @@ import Mettapedia.QuantumTheory.FromSymmetry
 
 -- Logic
 import Mettapedia.Logic.PLNDistributional
+import Mettapedia.Logic.PLNTemporal
+import Mettapedia.Logic.PLNDeduction
+import Mettapedia.Logic.TemporalQuantale
 
 -- Bridge (connects geometry to probability/logic)
 import Mettapedia.Bridge.BitVectorEvidence

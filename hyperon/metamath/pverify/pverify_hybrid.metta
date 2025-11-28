@@ -9,10 +9,8 @@
 ;;; Import order is critical - lib_he FIRST, then pverify-utils!
 ;;; pverify-utils has lib_he import commented out to avoid double-import
 
-!(import! &self /home/zar/claude/hyperon/PeTTa/lib/lib_he)
 !(import! &self /home/zar/claude/hyperon/PeTTa/lib/lib_prolog)
-; !(import! &self pverify-utils)
-!(import! &self mmverify-utils_petta)
+!(import! &self /home/zar/claude/hyperon/metamath/mmverify/mmverify-utils_petta)
 
 
 ;;; Import halt for proper exit code handling
@@ -114,10 +112,9 @@
                     (progn
                       (println! "")
                       (println! "=== VERIFICATION FAILED ===")
-                      (println! "Terminating verification.")
-                      (println! ("On error:" $info $msg))
-                      $result))
-                  (() Empty)))))))))))
+                      (println! ("Error:" $info $msg))
+                      (callPredicate halt)))
+                  (() ())))))))))))
 
 
 (= (process-by-tag d $rest)
@@ -147,7 +144,7 @@
 
 (= (process-symbols $syms $func)
    (if (== (size-atom $syms) 0)
-       Empty
+       ()
        (let ($first $rest) (decons-atom $syms)
          (progn
            ($func &kb $first)
