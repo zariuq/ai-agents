@@ -175,14 +175,19 @@
          (let true (printif! (concat "  File: " $input_file))
            (let true (printif! "Step 2: Parse file using Prolog...")
              (let $stmts_raw (collapse (parse_mm_file $input_file))
-              (let $stmts (car-atom $stmts_raw)
-               (let true (printif! (Got (size-atom $stmts) statements))
-                 (let true (printif! "")
-                   (let true (printif! "Step 3: Process statements in PeTTa...")
-                     (let $status (process-statements $stmts)
-                       (case $status
-                         ((failed (failed))
-                          ((ok) (ok)))))))))))))))
+              (if (== (size-atom $stmts_raw) 0)
+                  (progn
+                    (println! "")
+                    (println! "=== PARSE FAILED ===")
+                    (failed))
+                  (let $stmts (car-atom $stmts_raw)
+                    (let true (printif! (Got (size-atom $stmts) statements))
+                      (let true (printif! "")
+                        (let true (printif! "Step 3: Process statements in PeTTa...")
+                          (let $status (process-statements $stmts)
+                            (case $status
+                              ((failed (failed))
+                               ((ok) (ok))))))))))))))))
    (if (== $result ())
        Empty
        (case (car-atom $result)

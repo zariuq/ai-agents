@@ -60,6 +60,12 @@ is_mm_printable(C) :-
     C >= 33,
     C =< 126.
 
+% is_valid_mm_char(+CharCode)
+% Valid characters in Metamath: printable ASCII (33-126) or whitespace
+is_valid_mm_char(C) :- is_mm_printable(C), !.
+is_valid_mm_char(C) :- is_whitespace(C), !.
+is_valid_mm_char(12).  % Form feed (allowed per spec)
+
 % Dollar sign (for keyword detection)
 is_dollar(0'$).
 
@@ -144,11 +150,12 @@ mm_token(T) -->
     { T \= [] }.
 
 % Token characters (keywords or identifiers)
-mm_token_chars([0'$, C|Rest]) -->
+% Keywords ($c, $v, etc.) must be followed by whitespace or end
+mm_token_chars([0'$, C]) -->
     [0'$, C],
     { mm_keyword_char(C) },
-    !,
-    mm_rest_of_token(Rest).
+    !.
+    % Keywords are single tokens - no continuation
 
 mm_token_chars([C|Rest]) -->
     [C],
@@ -221,9 +228,120 @@ skip_comment(Codes, Result) :-
 
 % tokenize_mm_file(+Filename, -Tokens)
 % Read file and tokenize in one go - fully deterministic
+% Also validates: no non-ASCII chars, no nested comments, no dangling $, whitespace after keywords
 tokenize_mm_file(Filename, Tokens) :-
     read_mm_file(Filename, Codes),
+    validate_mm_chars(Codes),
+    validate_no_nested_comments(Codes),
+    validate_no_dangling_dollar(Codes),
+    validate_keyword_whitespace(Codes),
     tokenize_codes(Codes, Tokens).
+
+% validate_mm_chars(+Codes)
+% Verify all characters are valid Metamath chars (ASCII printable + whitespace)
+validate_mm_chars([]).
+validate_mm_chars([C|Cs]) :-
+    (   is_valid_mm_char(C)
+    ->  validate_mm_chars(Cs)
+    ;   format(user_error, 'Error: Non-ASCII character code ~w found in file~n', [C]),
+        throw(error(invalid_character(C), _))
+    ).
+
+% validate_no_nested_comments(+Codes)
+% Check that $( does not appear inside a comment
+validate_no_nested_comments(Codes) :-
+    (   check_nested_comments(Codes, outside)
+    ->  true
+    ;   format(user_error, 'Error: Nested comment delimiter $( found inside comment~n', []),
+        throw(error(nested_comment, _))
+    ).
+
+% check_nested_comments(+Codes, +State)
+% State = outside | inside
+check_nested_comments([], _) :- !.
+check_nested_comments([0'$, 0'(|Rest], outside) :-
+    !, check_nested_comments(Rest, inside).
+check_nested_comments([0'$, 0')|Rest], inside) :-
+    !, check_nested_comments(Rest, outside).
+check_nested_comments([0'$, 0'(|_], inside) :-
+    !, fail.  % Nested $( inside comment
+check_nested_comments([_|Rest], State) :-
+    check_nested_comments(Rest, State).
+
+% validate_no_dangling_dollar(+Codes)
+% Check that file doesn't end with a lone $
+validate_no_dangling_dollar(Codes) :-
+    (   check_dangling_dollar(Codes)
+    ->  true
+    ;   format(user_error, 'Error: Dangling $ at end of file~n', []),
+        throw(error(dangling_dollar, _))
+    ).
+
+check_dangling_dollar(Codes) :-
+    check_dangling_dollar(Codes, outside).
+
+check_dangling_dollar([], _) :- !.
+check_dangling_dollar([0'$], outside) :- !, fail.  % Single $ at end is invalid (only outside comments)
+% Inside comment: skip until $)
+check_dangling_dollar([0'$, 0')|Rest], inside) :-
+    !,  % $) ends comment
+    check_dangling_dollar(Rest, outside).
+check_dangling_dollar([_|Rest], inside) :-
+    !,  % Skip everything inside comments (including $ followed by anything)
+    check_dangling_dollar(Rest, inside).
+% Outside comment
+check_dangling_dollar([0'$, 0'(|Rest], outside) :-
+    !,  % $( starts comment
+    check_dangling_dollar(Rest, inside).
+check_dangling_dollar([0'$, C|Rest], outside) :-
+    !,
+    % $ must be followed by valid keyword char or comment closer
+    (   mm_keyword_char(C)
+    ;   C = 0')   % $) ends comment (shouldn't happen outside, but allow)
+    ),
+    check_dangling_dollar(Rest, outside).
+check_dangling_dollar([_|Rest], outside) :-
+    check_dangling_dollar(Rest, outside).
+
+% validate_keyword_whitespace(+Codes)
+% Check that $ keywords are followed by whitespace
+validate_keyword_whitespace(Codes) :-
+    (   check_keyword_whitespace(Codes, outside)
+    ->  true
+    ;   format(user_error, 'Error: Missing whitespace after $ keyword~n', []),
+        throw(error(missing_whitespace, _))
+    ).
+
+% State = outside | inside_comment
+check_keyword_whitespace([], _) :- !.
+check_keyword_whitespace([0'$, 0'(|Rest], outside) :-
+    !, check_keyword_whitespace(Rest, inside_comment).
+check_keyword_whitespace([0'$, 0')|Rest], inside_comment) :-
+    !,
+    % Comment close $) must be followed by whitespace or EOF
+    % Note: $)$ is NOT valid - tokens must be whitespace-separated
+    (   Rest = []
+    ->  true  % EOF is ok
+    ;   Rest = [Next|_],
+        is_whitespace(Next)  % Only whitespace allowed (not $)
+    ->  check_keyword_whitespace(Rest, outside)
+    ;   fail  % Not followed by whitespace - error per spec
+    ).
+check_keyword_whitespace([_|Rest], inside_comment) :-
+    !, check_keyword_whitespace(Rest, inside_comment).
+check_keyword_whitespace([0'$, C|Rest], outside) :-
+    mm_keyword_char(C),
+    !,
+    % Must be followed by whitespace or EOF
+    (   Rest = []
+    ->  true  % EOF is ok
+    ;   Rest = [Next|_],
+        (is_whitespace(Next) ; Next = 0'$)  % $ for things like $. or $( comment
+    ->  check_keyword_whitespace(Rest, outside)
+    ;   fail  % Not followed by whitespace
+    ).
+check_keyword_whitespace([_|Rest], State) :-
+    check_keyword_whitespace(Rest, State).
 
 % tokenize_codes(+Codes, -Tokens)
 % Extract all tokens from code list
@@ -254,13 +372,330 @@ mm_tokens([]) -->
 parse_mm_file(Filename, Statements) :-
     tokenize_mm_file(Filename, Tokens),
     phrase(mm_statements(CompoundStmts), Tokens, []),
+    validate_frame_balance(CompoundStmts),  % Check with compound form
+    validate_semantic_rules(CompoundStmts), % Check semantic rules
     maplist(compound_to_list, CompoundStmts, Statements).
 
 % parse_mm_file_compounds(+Filename, -Statements)
 % Same as parse_mm_file but returns Prolog compounds (for generate_petta_verifier)
 parse_mm_file_compounds(Filename, Statements) :-
     tokenize_mm_file(Filename, Tokens),
-    phrase(mm_statements(Statements), Tokens, []).
+    phrase(mm_statements(Statements), Tokens, []),
+    validate_frame_balance(Statements),
+    validate_semantic_rules(Statements).
+
+% validate_frame_balance(+Statements)
+% Check that ${ and $} are balanced
+validate_frame_balance(Stmts) :-
+    (   check_frame_balance(Stmts, 0, Final), Final = 0
+    ->  true
+    ;   format(user_error, 'Error: Unbalanced ${ and $} delimiters~n', []),
+        throw(error(unbalanced_frames, _))
+    ).
+
+check_frame_balance([], N, N) :- !.
+% Handle compound form (with cuts to prevent backtracking)
+check_frame_balance([open_frame|Rest], N, Final) :-
+    !,  % Commit: don't try catch-all for open_frame
+    N1 is N + 1,
+    check_frame_balance(Rest, N1, Final).
+check_frame_balance([close_frame|Rest], N, Final) :-
+    !,  % Commit: don't try catch-all for close_frame
+    N > 0,
+    N1 is N - 1,
+    check_frame_balance(Rest, N1, Final).
+% Handle list form (from compound_to_list)
+check_frame_balance([[open_frame]|Rest], N, Final) :-
+    !,  % Commit: don't try catch-all for [open_frame]
+    N1 is N + 1,
+    check_frame_balance(Rest, N1, Final).
+check_frame_balance([[close_frame]|Rest], N, Final) :-
+    !,  % Commit: don't try catch-all for [close_frame]
+    N > 0,
+    N1 is N - 1,
+    check_frame_balance(Rest, N1, Final).
+% Catch-all for other statements (after frame cases are committed)
+check_frame_balance([_|Rest], N, Final) :-
+    check_frame_balance(Rest, N, Final).
+
+%% ======================================================================
+%% Semantic Validation (Metamath spec compliance)
+%% ======================================================================
+
+% validate_semantic_rules(+Statements)
+% Check all semantic rules: no duplicate labels, no label/symbol conflicts, etc.
+validate_semantic_rules(Stmts) :-
+    collect_symbols_and_labels(Stmts, [], [], [], Consts, Vars, Labels),
+    validate_no_duplicate_labels(Labels),
+    validate_no_label_symbol_conflicts(Labels, Consts, Vars),
+    validate_no_constant_redeclaration(Stmts),
+    validate_typecode_is_constant(Stmts, Consts),
+    validate_d_contains_only_variables(Stmts, Vars),
+    validate_compressed_proof_format(Stmts),
+    validate_scoped_rules(Stmts).
+
+% collect_symbols_and_labels(+Stmts, +AccConsts, +AccVars, +AccLabels, -Consts, -Vars, -Labels)
+collect_symbols_and_labels([], C, V, L, C, V, L).
+collect_symbols_and_labels([c(Syms)|Rest], C0, V, L, C, Vf, Lf) :-
+    !,
+    append(C0, Syms, C1),
+    collect_symbols_and_labels(Rest, C1, V, L, C, Vf, Lf).
+collect_symbols_and_labels([v(Syms)|Rest], C, V0, L, Cf, V, Lf) :-
+    !,
+    append(V0, Syms, V1),
+    collect_symbols_and_labels(Rest, C, V1, L, Cf, V, Lf).
+collect_symbols_and_labels([f(Label, _, _)|Rest], C, V, L0, Cf, Vf, L) :-
+    !,
+    collect_symbols_and_labels(Rest, C, V, [Label|L0], Cf, Vf, L).
+collect_symbols_and_labels([e(Label, _, _)|Rest], C, V, L0, Cf, Vf, L) :-
+    !,
+    collect_symbols_and_labels(Rest, C, V, [Label|L0], Cf, Vf, L).
+collect_symbols_and_labels([a(Label, _, _)|Rest], C, V, L0, Cf, Vf, L) :-
+    !,
+    collect_symbols_and_labels(Rest, C, V, [Label|L0], Cf, Vf, L).
+collect_symbols_and_labels([p(Label, _, _, _)|Rest], C, V, L0, Cf, Vf, L) :-
+    !,
+    collect_symbols_and_labels(Rest, C, V, [Label|L0], Cf, Vf, L).
+collect_symbols_and_labels([_|Rest], C, V, L, Cf, Vf, Lf) :-
+    collect_symbols_and_labels(Rest, C, V, L, Cf, Vf, Lf).
+
+% validate_no_duplicate_labels(+Labels)
+% Spec: label tokens must be unique (L179-180)
+validate_no_duplicate_labels(Labels) :-
+    (   has_duplicates(Labels, Dup)
+    ->  format(user_error, 'Error: Duplicate label "~w"~n', [Dup]),
+        throw(error(duplicate_label(Dup), _))
+    ;   true
+    ).
+
+has_duplicates([H|T], H) :- member(H, T), !.
+has_duplicates([_|T], Dup) :- has_duplicates(T, Dup).
+
+% validate_no_label_symbol_conflicts(+Labels, +Consts, +Vars)
+% Spec: no label may match any math symbol (L179-180)
+validate_no_label_symbol_conflicts(Labels, Consts, Vars) :-
+    (   member(L, Labels), (member(L, Consts) ; member(L, Vars))
+    ->  format(user_error, 'Error: Label "~w" conflicts with math symbol~n', [L]),
+        throw(error(label_symbol_conflict(L), _))
+    ;   true
+    ).
+
+% validate_no_constant_redeclaration(+Stmts)
+% Spec: constants may not be redeclared (L161-163)
+validate_no_constant_redeclaration(Stmts) :-
+    collect_all_constants(Stmts, [], AllConsts),
+    (   has_duplicates(AllConsts, Dup)
+    ->  format(user_error, 'Error: Constant "~w" redeclared~n', [Dup]),
+        throw(error(constant_redeclared(Dup), _))
+    ;   true
+    ).
+
+collect_all_constants([], Acc, Acc).
+collect_all_constants([c(Syms)|Rest], Acc, Result) :-
+    !,
+    append(Acc, Syms, NewAcc),
+    collect_all_constants(Rest, NewAcc, Result).
+collect_all_constants([_|Rest], Acc, Result) :-
+    collect_all_constants(Rest, Acc, Result).
+
+% validate_typecode_is_constant(+Stmts, +Consts)
+% Spec: first symbol in $f must be a constant (L286-292)
+validate_typecode_is_constant([], _).
+validate_typecode_is_constant([f(_, Type, _)|Rest], Consts) :-
+    !,
+    (   member(Type, Consts)
+    ->  validate_typecode_is_constant(Rest, Consts)
+    ;   format(user_error, 'Error: Typecode "~w" in $f is not a declared constant~n', [Type]),
+        throw(error(non_constant_typecode(Type), _))
+    ).
+validate_typecode_is_constant([e(_, Type, _)|Rest], Consts) :-
+    !,
+    (   member(Type, Consts)
+    ->  validate_typecode_is_constant(Rest, Consts)
+    ;   format(user_error, 'Error: Typecode "~w" in $e is not a declared constant~n', [Type]),
+        throw(error(non_constant_typecode(Type), _))
+    ).
+validate_typecode_is_constant([a(_, Type, _)|Rest], Consts) :-
+    !,
+    (   member(Type, Consts)
+    ->  validate_typecode_is_constant(Rest, Consts)
+    ;   format(user_error, 'Error: Typecode "~w" in $a is not a declared constant~n', [Type]),
+        throw(error(non_constant_typecode(Type), _))
+    ).
+validate_typecode_is_constant([p(_, Type, _, _)|Rest], Consts) :-
+    !,
+    (   member(Type, Consts)
+    ->  validate_typecode_is_constant(Rest, Consts)
+    ;   format(user_error, 'Error: Typecode "~w" in $p is not a declared constant~n', [Type]),
+        throw(error(non_constant_typecode(Type), _))
+    ).
+validate_typecode_is_constant([_|Rest], Consts) :-
+    validate_typecode_is_constant(Rest, Consts).
+
+% validate_d_contains_only_variables(+Stmts, +Vars)
+% Spec: $d must contain only variables (L547-549), and no duplicates (L553-558)
+validate_d_contains_only_variables([], _).
+validate_d_contains_only_variables([d(DVars)|Rest], Vars) :-
+    !,
+    % Check all are variables
+    (   forall(member(V, DVars), member(V, Vars))
+    ->  true
+    ;   member(V, DVars), \+ member(V, Vars),
+        format(user_error, 'Error: "$d" contains non-variable "~w"~n', [V]),
+        throw(error(d_non_variable(V), _))
+    ),
+    % Check no duplicates in $d (L553-558: $d x x is error)
+    (   has_duplicates(DVars, Dup)
+    ->  format(user_error, 'Error: "$d" contains duplicate variable "~w"~n', [Dup]),
+        throw(error(d_duplicate_var(Dup), _))
+    ;   true
+    ),
+    validate_d_contains_only_variables(Rest, Vars).
+validate_d_contains_only_variables([_|Rest], Vars) :-
+    validate_d_contains_only_variables(Rest, Vars).
+
+% validate_compressed_proof_format(+Stmts)
+% Check compressed proof format: tokens after ) must only contain A-Z and ?
+% Spec: AppB - compressed proofs use [A-Z?]+, no digits, no whitespace within token
+validate_compressed_proof_format([]).
+validate_compressed_proof_format([p(Label, _, _, Proof)|Rest]) :-
+    !,
+    (   is_compressed_proof(Proof, CompressedPart)
+    ->  (   validate_compressed_tokens(CompressedPart)
+        ->  true
+        ;   format(user_error, 'Error: Invalid compressed proof format in "~w"~n', [Label]),
+            throw(error(invalid_compressed_proof(Label), _))
+        )
+    ;   true  % Not compressed, skip
+    ),
+    validate_compressed_proof_format(Rest).
+validate_compressed_proof_format([_|Rest]) :-
+    validate_compressed_proof_format(Rest).
+
+% is_compressed_proof(+Proof, -CompressedPart)
+% Detect compressed proof format: [( ... ) COMPRESSED_TOKENS ...]
+is_compressed_proof(Proof, Compressed) :-
+    Proof = ['('|Rest],
+    find_close_paren(Rest, Compressed).
+
+find_close_paren([')'|Rest], Rest) :- !.
+find_close_paren([_|T], Rest) :- find_close_paren(T, Rest).
+
+% validate_compressed_tokens(+Tokens)
+% Each token must match [A-Z?]+ (no digits, no lowercase)
+validate_compressed_tokens([]).
+validate_compressed_tokens([Token|Rest]) :-
+    atom_codes(Token, Codes),
+    forall(member(C, Codes), valid_compressed_char(C)),
+    validate_compressed_tokens(Rest).
+
+% valid_compressed_char(+Code)
+% Valid chars: A-Z (65-90) and ? (63)
+valid_compressed_char(C) :- C >= 65, C =< 90, !.  % A-Z
+valid_compressed_char(63).  % ?
+
+%% ======================================================================
+%% Scoped Validation (tracks ${ / $} scopes)
+%% ======================================================================
+
+% validate_scoped_rules(+Statements)
+% Check scope-dependent rules:
+%   - Variables in $a/$e/$p must have active $f (test08, test14, test35)
+%   - $f variable must be declared in active $v scope (test13)
+%   - No two active $f may have same variable (test15, test16)
+validate_scoped_rules(Stmts) :-
+    % First collect ALL declared variables (global knowledge)
+    collect_all_vars(Stmts, AllVars),
+    % Then validate with scope tracking
+    validate_scoped(Stmts, [], [], [], AllVars).
+
+% collect_all_vars(+Stmts, -AllVars)
+% Collect all variable declarations from entire file
+collect_all_vars([], []).
+collect_all_vars([v(NewVars)|Rest], AllVars) :-
+    !,
+    collect_all_vars(Rest, RestVars),
+    append(NewVars, RestVars, AllVars).
+collect_all_vars([_|Rest], AllVars) :-
+    collect_all_vars(Rest, AllVars).
+
+% validate_scoped(+Stmts, +ScopeVars, +ActiveFHyps, +ScopeStack, +AllVars)
+% ScopeVars: variables declared in current and ancestor scopes (for $f checking)
+% ActiveFHyps: list of Var-Type pairs for active $f hypotheses
+% ScopeStack: list of [ScopeVars, FHyps] for outer scopes
+% AllVars: ALL variables declared in the file (for distinguishing vars from consts)
+
+validate_scoped([], _, _, _, _) :- !.
+
+% ${ - push scope
+validate_scoped([open_frame|Rest], ScopeVars, FHyps, Stack, AllVars) :-
+    !,
+    validate_scoped(Rest, ScopeVars, FHyps, [[ScopeVars, FHyps]|Stack], AllVars).
+
+% $} - pop scope (restore outer scope's state)
+validate_scoped([close_frame|Rest], _, _, [[OuterVars, OuterFHyps]|Stack], AllVars) :-
+    !,
+    validate_scoped(Rest, OuterVars, OuterFHyps, Stack, AllVars).
+
+% $v - add variables to scope
+validate_scoped([v(NewVars)|Rest], ScopeVars, FHyps, Stack, AllVars) :-
+    !,
+    append(ScopeVars, NewVars, UpdatedScopeVars),
+    validate_scoped(Rest, UpdatedScopeVars, FHyps, Stack, AllVars).
+
+% $f - add floating hypothesis (check no duplicate variable)
+validate_scoped([f(Label, Type, Var)|Rest], ScopeVars, FHyps, Stack, AllVars) :-
+    !,
+    % Check variable is declared in current/ancestor scope
+    (   member(Var, ScopeVars)
+    ->  true
+    ;   format(user_error, 'Error: $f "~w" uses undeclared variable "~w"~n', [Label, Var]),
+        throw(error(f_undeclared_var(Label, Var), _))
+    ),
+    % Check no duplicate active $f for same variable
+    (   member(Var-_, FHyps)
+    ->  format(user_error, 'Error: Multiple active $f for variable "~w"~n', [Var]),
+        throw(error(multiple_f_same_var(Var), _))
+    ;   true
+    ),
+    validate_scoped(Rest, ScopeVars, [Var-Type|FHyps], Stack, AllVars).
+
+% $e - check variables have active $f
+validate_scoped([e(Label, Type, Math)|Rest], ScopeVars, FHyps, Stack, AllVars) :-
+    !,
+    check_vars_have_active_f(Label, [Type|Math], AllVars, FHyps, e),
+    validate_scoped(Rest, ScopeVars, FHyps, Stack, AllVars).
+
+% $a - check variables have active $f
+validate_scoped([a(Label, Type, Math)|Rest], ScopeVars, FHyps, Stack, AllVars) :-
+    !,
+    check_vars_have_active_f(Label, [Type|Math], AllVars, FHyps, a),
+    validate_scoped(Rest, ScopeVars, FHyps, Stack, AllVars).
+
+% $p - check variables have active $f
+validate_scoped([p(Label, Type, Math, _)|Rest], ScopeVars, FHyps, Stack, AllVars) :-
+    !,
+    check_vars_have_active_f(Label, [Type|Math], AllVars, FHyps, p),
+    validate_scoped(Rest, ScopeVars, FHyps, Stack, AllVars).
+
+% Other statements (c, d, etc.) - skip
+validate_scoped([_|Rest], ScopeVars, FHyps, Stack, AllVars) :-
+    validate_scoped(Rest, ScopeVars, FHyps, Stack, AllVars).
+
+% check_vars_have_active_f(+Label, +Symbols, +AllVars, +ActiveFHyps, +StmtType)
+% Check that every variable in Symbols has an active $f hypothesis
+check_vars_have_active_f(_, [], _, _, _) :- !.
+check_vars_have_active_f(Label, [Sym|Rest], AllVars, FHyps, StmtType) :-
+    (   member(Sym, AllVars)  % Is this symbol a variable (globally)?
+    ->  % Yes, check it has active $f
+        (   member(Sym-_, FHyps)
+        ->  true
+        ;   format(user_error, 'Error: Variable "~w" in $~w "~w" has no active $f~n', [Sym, StmtType, Label]),
+            throw(error(var_without_active_f(Sym, Label), _))
+        )
+    ;   true  % Not a variable (constant), skip
+    ),
+    check_vars_have_active_f(Label, Rest, AllVars, FHyps, StmtType).
 
 % compound_to_list(+CompoundStmt, -ListStmt)
 % Convert Prolog compound to list for MeTTa processing
