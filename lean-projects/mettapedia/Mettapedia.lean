@@ -37,5 +37,11 @@ import Mettapedia.MeasureTheory.Integration
 -- Quantum Theory
 import Mettapedia.QuantumTheory.FromSymmetry
 
+-- Logic
+import Mettapedia.Logic.PLNDistributional
+
+-- Bridge (connects geometry to probability/logic)
+import Mettapedia.Bridge.BitVectorEvidence
+
 -- Examples
 import Mettapedia.Examples.SymmetricMeasures
