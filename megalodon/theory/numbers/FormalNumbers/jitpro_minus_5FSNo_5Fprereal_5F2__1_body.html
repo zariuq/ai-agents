@@ -1,0 +1,43 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const omega : set
+const eps_ : set set
+const SNoS_ : set set
+axiom SNo_eps_SNoS_omega: !x:set.x iIn omega -> eps_ x iIn SNoS_ omega
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_SNo_SNoS_omega: !x:set.x iIn SNoS_ omega -> !y:set.y iIn SNoS_ omega -> x + y iIn SNoS_ omega
+const minus_SNo : set set
+term - = minus_SNo
+axiom minus_SNo_SNoS_omega: !x:set.x iIn SNoS_ omega -> - x iIn SNoS_ omega
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom minus_SNo_Lt_contra: !x:set.!y:set.SNo x -> SNo y -> x < y -> - y < - x
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+axiom SNo_minus_SNo: !x:set.SNo x -> SNo - x
+axiom add_SNo_minus_R2': !x:set.!y:set.SNo x -> SNo y -> (x + - y) + y = x
+axiom minus_add_SNo_distr: !x:set.!y:set.SNo x -> SNo y -> - (x + y) = - x + - y
+var x:set
+var y:set
+var z:set
+hyp SNo x
+hyp y iIn omega
+hyp z iIn SNoS_ omega
+hyp z < x
+hyp x < z + eps_ y
+hyp SNo z
+claim SNo (z + eps_ y) -> ?w:set.w iIn SNoS_ omega & (w < - x & - x < w + eps_ y)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

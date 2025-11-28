@@ -1,0 +1,61 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+const omega : set
+const eps_ : set set
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+const Empty : set
+axiom SNo_0: SNo Empty
+axiom SNo_eps_pos: !x:set.x iIn omega -> Empty < eps_ x
+axiom SNoLt_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x < y -> y < z -> x < z
+const Sing : set set
+axiom SingE: !x:set.!y:set.y iIn Sing x -> y = x
+axiom In_no2cycle: !x:set.!y:set.x iIn y -> ~ y iIn x
+axiom FalseE: ~ False
+const SNoLev : set set
+const ordsucc : set set
+axiom SNoLev_eps_: !x:set.x iIn omega -> SNoLev (eps_ x) = ordsucc x
+const nat_p : set prop
+axiom omega_nat_p: !x:set.x iIn omega -> nat_p x
+axiom nat_ordsucc: !x:set.nat_p x -> nat_p (ordsucc x)
+const ordinal : set prop
+axiom nat_p_ordinal: !x:set.nat_p x -> ordinal x
+const SNo_ : set set prop
+axiom SNoLev_: !x:set.SNo x -> SNo_ (SNoLev x) x
+const SNoS_ : set set
+axiom SNoS_I: !x:set.ordinal x -> !y:set.!z:set.z iIn x -> SNo_ z y -> y iIn SNoS_ x
+axiom SingI: !x:set.x iIn Sing x
+const SNoEq_ : set set set prop
+axiom eps_SNo_eq: !x:set.nat_p x -> !y:set.y iIn SNoS_ (ordsucc x) -> Empty < y -> SNoEq_ (SNoLev y) (eps_ x) y -> ?z:set.z iIn x & y = eps_ z
+const binintersect : set set set
+axiom SNoLtE: !x:set.!y:set.SNo x -> SNo y -> x < y -> !P:prop.(!z:set.SNo z -> SNoLev z iIn binintersect (SNoLev x) (SNoLev y) -> SNoEq_ (SNoLev z) z x -> SNoEq_ (SNoLev z) z y -> x < z -> z < y -> nIn (SNoLev z) x -> SNoLev z iIn y -> P) -> (SNoLev x iIn SNoLev y -> SNoEq_ (SNoLev x) x y -> SNoLev x iIn y -> P) -> (SNoLev y iIn SNoLev x -> SNoEq_ (SNoLev y) x y -> nIn (SNoLev y) x -> P) -> P
+const Repl : set (set set) set
+const SNoCut : set set set
+lemma !x:set.!y:set.x iIn omega -> (!z:set.z iIn Repl x eps_ -> SNo z) -> SNo (SNoCut (Sing Empty) (Repl x eps_)) -> (!z:set.z iIn Repl x eps_ -> SNoCut (Sing Empty) (Repl x eps_) < z) -> (!z:set.SNo z -> (!w:set.w iIn Sing Empty -> w < z) -> (!w:set.w iIn Repl x eps_ -> z < w) -> Subq (SNoLev (SNoCut (Sing Empty) (Repl x eps_))) (SNoLev z) & SNoEq_ (SNoLev (SNoCut (Sing Empty) (Repl x eps_))) (SNoCut (Sing Empty) (Repl x eps_)) z) -> SNo y -> SNoLev y iIn binintersect (SNoLev (eps_ x)) (SNoLev (SNoCut (Sing Empty) (Repl x eps_))) -> eps_ x < y -> y < SNoCut (Sing Empty) (Repl x eps_) -> ~ !z:set.z iIn Sing Empty -> z < y
+lemma !x:set.x iIn omega -> SNo (SNoCut (Sing Empty) (Repl x eps_)) -> (!y:set.y iIn Sing Empty -> y < SNoCut (Sing Empty) (Repl x eps_)) -> (!y:set.y iIn Repl x eps_ -> SNoCut (Sing Empty) (Repl x eps_) < y) -> SNoLev (SNoCut (Sing Empty) (Repl x eps_)) iIn ordsucc x -> SNoEq_ (SNoLev (SNoCut (Sing Empty) (Repl x eps_))) (eps_ x) (SNoCut (Sing Empty) (Repl x eps_)) -> ~ ?y:set.y iIn x & SNoCut (Sing Empty) (Repl x eps_) = eps_ y
+var x:set
+hyp x iIn omega
+hyp !y:set.y iIn Repl x eps_ -> SNo y
+hyp SNo (SNoCut (Sing Empty) (Repl x eps_))
+hyp !y:set.y iIn Sing Empty -> y < SNoCut (Sing Empty) (Repl x eps_)
+hyp !y:set.y iIn Repl x eps_ -> SNoCut (Sing Empty) (Repl x eps_) < y
+hyp !y:set.SNo y -> (!z:set.z iIn Sing Empty -> z < y) -> (!z:set.z iIn Repl x eps_ -> y < z) -> Subq (SNoLev (SNoCut (Sing Empty) (Repl x eps_))) (SNoLev y) & SNoEq_ (SNoLev (SNoCut (Sing Empty) (Repl x eps_))) (SNoCut (Sing Empty) (Repl x eps_)) y
+hyp SNoLev (SNoCut (Sing Empty) (Repl x \y:set.eps_ y)) iIn ordsucc x
+claim ~ eps_ x < SNoCut (Sing Empty) (Repl x eps_)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

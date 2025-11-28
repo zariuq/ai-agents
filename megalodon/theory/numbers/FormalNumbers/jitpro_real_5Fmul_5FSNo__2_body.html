@@ -1,0 +1,43 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const Empty : set
+axiom SNo_0: SNo Empty
+const minus_SNo : set set
+term - = minus_SNo
+axiom minus_SNo_0: - Empty = Empty
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom minus_SNo_Lt_contra2: !x:set.!y:set.SNo x -> SNo y -> x < - y -> y < - x
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const real : set
+axiom real_0: Empty iIn real
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom mul_SNo_zeroL: !x:set.SNo x -> Empty * x = Empty
+axiom real_minus_SNo: !x:set.x iIn real -> - x iIn real
+axiom real_mul_SNo_pos: !x:set.x iIn real -> !y:set.y iIn real -> Empty < x -> Empty < y -> x * y iIn real
+axiom mul_SNo_minus_distrR: !x:set.!y:set.SNo x -> SNo y -> x * - y = - x * y
+axiom minus_SNo_invol: !x:set.SNo x -> - - x = x
+axiom mul_SNo_zeroR: !x:set.SNo x -> x * Empty = Empty
+axiom SNoLt_trichotomy_or_impred: !x:set.!y:set.SNo x -> SNo y -> !P:prop.(x < y -> P) -> (x = y -> P) -> (y < x -> P) -> P
+lemma !x:set.!y:set.x iIn real -> y iIn real -> SNo x -> SNo y -> SNo (x * y) -> x < Empty -> Empty < - x -> x * y iIn real
+var x:set
+var y:set
+hyp x iIn real
+hyp y iIn real
+hyp SNo x
+hyp SNo y
+claim SNo (x * y) -> x * y iIn real
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

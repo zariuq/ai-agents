@@ -1,0 +1,44 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term nIn = \x:set.\y:set.~ x iIn y
+const minus_SNo : set set
+term - = minus_SNo
+axiom SNo_minus_SNo: !x:set.SNo x -> SNo - x
+const ordinal : set prop
+const SNoLev : set set
+axiom SNoLev_ordinal: !x:set.SNo x -> ordinal (SNoLev x)
+const SNoS_ : set set
+const SNoCut : set set set
+const Repl : set (set set) set
+const Subq : set set prop
+const SNoEq_ : set set set prop
+lemma !x:set.!y:set.!z:set.SNo x -> (!w:set.w iIn SNoS_ (SNoLev x) -> !u:set.!v:set.SNoCutP u v -> w = SNoCut u v -> - w = SNoCut (Repl v minus_SNo) (Repl u minus_SNo)) -> (!w:set.w iIn y -> SNo w) -> (!w:set.w iIn z -> SNo w) -> x = SNoCut y z -> SNoCutP (Repl z minus_SNo) (Repl y minus_SNo) -> SNo (SNoCut (Repl z minus_SNo) (Repl y minus_SNo)) -> Subq (SNoLev (SNoCut (Repl z \w:set.- w) (Repl y \w:set.- w))) (SNoLev - x) -> SNoEq_ (SNoLev (SNoCut (Repl z \w:set.- w) (Repl y \w:set.- w))) (SNoCut (Repl z \w:set.- w) (Repl y \w:set.- w)) - x -> ordinal (SNoLev (SNoCut (Repl z minus_SNo) (Repl y minus_SNo))) -> ordinal (SNoLev - x) -> - x = SNoCut (Repl z minus_SNo) (Repl y minus_SNo)
+var x:set
+var y:set
+var z:set
+hyp SNo x
+hyp !w:set.w iIn SNoS_ (SNoLev x) -> !u:set.!v:set.SNoCutP u v -> w = SNoCut u v -> - w = SNoCut (Repl v minus_SNo) (Repl u minus_SNo)
+hyp !w:set.w iIn y -> SNo w
+hyp !w:set.w iIn z -> SNo w
+hyp x = SNoCut y z
+hyp SNoCutP (Repl z minus_SNo) (Repl y minus_SNo)
+hyp SNo (SNoCut (Repl z minus_SNo) (Repl y minus_SNo))
+hyp Subq (SNoLev (SNoCut (Repl z \w:set.- w) (Repl y \w:set.- w))) (SNoLev - x)
+hyp SNoEq_ (SNoLev (SNoCut (Repl z \w:set.- w) (Repl y \w:set.- w))) (SNoCut (Repl z \w:set.- w) (Repl y \w:set.- w)) - x
+claim ordinal (SNoLev (SNoCut (Repl z minus_SNo) (Repl y minus_SNo))) -> - x = SNoCut (Repl z minus_SNo) (Repl y minus_SNo)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

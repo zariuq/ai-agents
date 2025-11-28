@@ -1,0 +1,19 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Union : set set
+const UPair : set set set
+term binunion = \x:set.\y:set.Union (UPair x y)
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+axiom UPairI1: !x:set.!y:set.x iIn UPair x y
+axiom UnionI: !x:set.!y:set.!z:set.y iIn z -> z iIn x -> y iIn Union x
+claim !x:set.!y:set.!z:set.z iIn x -> z iIn binunion x y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

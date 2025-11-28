@@ -1,0 +1,21 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const setsum : set set set
+const ordsucc : set set
+const Empty : set
+const Inj1 : set set
+axiom Inj1_setsum_1L: !x:set.setsum (ordsucc Empty) x = Inj1 x
+const nat_p : set prop
+claim (!x:set.nat_p x -> Inj1 x = ordsucc x) -> !x:set.nat_p x -> setsum (ordsucc Empty) x = ordsucc x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

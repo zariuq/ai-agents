@@ -51,7 +51,6 @@ mizar/
 Czech Study/
 AI Docs/
 AI/
-hyperon/
 literature/
 Isabelle2025/
 .isabelle/
@@ -68,7 +67,18 @@ zipperposition
 naproche-zf
 pyprover
 mizar-rs
+hyperon/
+Dedukti
 lash-*/
+megalodon/bin/
+megalodon/src/
+megalodon/examples/
+megalodon/secp256k1/
+megalodon/INSTALL
+megalodon/LICENSE
+megalodon/README
+megalodon/makebytecode
+megalodon/makeopt
 
 # Megalodon source/binaries (external, downloaded from tarball)
 megalodon/bin/
@@ -91,3 +101,22 @@ Prompts/
 docs/
 .claude/prompts/
 2025_*/
+
+# 4cp (four color) project - archived/inactive
+# These large directories slow down Codex
+mizar-projects/4cp/theories/00_infrastructure/text/
+mizar-projects/4cp/theories/00_curriculum/text/
+mizar-projects/4cp/theories/00_infrastructure/old_first_draft/
+mizar-projects/4cp/theories/*/text/
+mizar-projects/4cp/theories/*/old_*/
+
+# Large theory libraries (downloaded from Chad Brown's server)
+# Keep README.md and search scripts, ignore extracted libraries
+megalodon/theory/metamath/mmmg/
+megalodon/theory/mizar/mmlmg/
+
+# Block all markdown files (use git add -f for whitelisted files)
+*.md
+!README.md
+!megalodon/how-to-megalodon.md
+!megalodon/PNP_crux/RIGOROUS_ANALYSIS_REPORT.md

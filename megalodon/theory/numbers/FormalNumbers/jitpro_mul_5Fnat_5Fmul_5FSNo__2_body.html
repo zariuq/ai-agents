@@ -1,0 +1,48 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const mul_nat : set set set
+const Empty : set
+axiom mul_nat_0R: !x:set.mul_nat x Empty = Empty
+const SNo : set prop
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom mul_SNo_zeroR: !x:set.SNo x -> x * Empty = Empty
+const nat_p : set prop
+const ordsucc : set set
+const add_nat : set set set
+axiom mul_nat_SR: !x:set.!y:set.nat_p y -> mul_nat x (ordsucc y) = add_nat x (mul_nat x y)
+axiom mul_nat_p: !x:set.nat_p x -> !y:set.nat_p y -> nat_p (mul_nat x y)
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const omega : set
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_nat_add_SNo: !x:set.x iIn omega -> !y:set.y iIn omega -> add_nat x y = x + y
+const ordinal : set prop
+axiom nat_p_ordinal: !x:set.nat_p x -> ordinal x
+axiom ordinal_SNo: !x:set.ordinal x -> SNo x
+axiom ordinal_Empty: ordinal Empty
+axiom SNo_1: SNo (ordsucc Empty)
+axiom mul_SNo_oneR: !x:set.SNo x -> x * ordsucc Empty = x
+axiom mul_SNo_distrL: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x * (y + z) = x * y + x * z
+axiom add_SNo_ordinal_SL: !x:set.ordinal x -> !y:set.ordinal y -> ordsucc x + y = ordsucc (x + y)
+axiom add_SNo_0L: !x:set.SNo x -> Empty + x = x
+axiom nat_ind: !p:set prop.p Empty -> (!x:set.nat_p x -> p x -> p (ordsucc x)) -> !x:set.nat_p x -> p x
+lemma !x:set.x iIn omega -> nat_p x -> SNo x -> (!y:set.nat_p y -> mul_nat x y = x * y) -> !y:set.y iIn omega -> mul_nat x y = x * y
+var x:set
+hyp x iIn omega
+hyp nat_p x
+hyp ordinal x
+claim SNo x -> !y:set.y iIn omega -> mul_nat x y = x * y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

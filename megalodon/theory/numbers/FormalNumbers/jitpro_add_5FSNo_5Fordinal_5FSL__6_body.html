@@ -1,0 +1,53 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+term nIn = \x:set.\y:set.~ x iIn y
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+axiom ordinal_SNo: !x:set.ordinal x -> SNo x
+const ordsucc : set set
+axiom ordsuccI2: !x:set.x iIn ordsucc x
+const SNoLev : set set
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+axiom ordinal_SNoLev_max_2: !x:set.ordinal x -> !y:set.SNo y -> SNoLev y iIn ordsucc x -> y <= x
+axiom add_SNo_Le1: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x <= z -> (x + y) <= z + y
+axiom Subq_ref: !x:set.Subq x x
+axiom ordsuccE: !x:set.!y:set.y iIn ordsucc x -> y iIn x | y = x
+axiom ordinal_Subq_SNoLe: !x:set.!y:set.ordinal x -> ordinal y -> Subq x y -> x <= y
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom ordinal_In_SNoLt: !x:set.ordinal x -> !y:set.y iIn x -> y < x
+axiom SNoLeLt_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x <= y -> y < z -> x < z
+var x:set
+var y:set
+var z:set
+hyp ordinal x
+hyp SNo x
+hyp SNo y
+hyp ordinal (x + y)
+hyp ordinal (ordsucc (x + y))
+hyp SNo (ordsucc (x + y))
+hyp SNoLev z iIn ordsucc x
+hyp ordinal (SNoLev z)
+hyp SNo z
+hyp ordinal (SNoLev z + y)
+claim SNo (SNoLev z + y) -> (z + y) < ordsucc (x + y)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

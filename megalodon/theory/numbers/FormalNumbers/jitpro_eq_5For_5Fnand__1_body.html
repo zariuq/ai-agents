@@ -1,0 +1,14 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+axiom xm: !P:prop.P | ~ P
+axiom prop_ext_2: !P:prop.!Q:prop.(P -> Q) -> (Q -> P) -> P = Q
+axiom func_ext: !P:prop prop.!Q:prop prop.(!R:prop.P R = Q R) -> P = Q
+claim or = \P:prop.\Q:prop.~ (~ P & ~ Q)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,89 @@
+{
+  "metadata": {},
+  "comments": [
+    "All men are mortal. All Greeks are men. Therefore, all Greeks are mortal."
+  ],
+  "formulas": [
+    {
+      "name": "all_men_mortal",
+      "role": "axiom",
+      "formula": [
+        "forall",
+        [
+          "X"
+        ],
+        [
+          "implies",
+          [
+            "man",
+            [
+              "var",
+              "X"
+            ]
+          ],
+          [
+            "mortal",
+            [
+              "var",
+              "X"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "all_greeks_men",
+      "role": "axiom",
+      "formula": [
+        "forall",
+        [
+          "X"
+        ],
+        [
+          "implies",
+          [
+            "greek",
+            [
+              "var",
+              "X"
+            ]
+          ],
+          [
+            "man",
+            [
+              "var",
+              "X"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "all_greeks_mortal",
+      "role": "conjecture",
+      "formula": [
+        "forall",
+        [
+          "X"
+        ],
+        [
+          "implies",
+          [
+            "greek",
+            [
+              "var",
+              "X"
+            ]
+          ],
+          [
+            "mortal",
+            [
+              "var",
+              "X"
+            ]
+          ]
+        ]
+      ]
+    }
+  ]
+}

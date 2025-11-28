@@ -1,0 +1,48 @@
+{
+  "metadata": {
+    "file": "simple_prop.p",
+    "domain": "Propositional Logic",
+    "problem": "Modus Ponens - Simplest inference",
+    "english": "Given P and P => Q, prove Q"
+  },
+  "comments": [
+    "------------------------------------------------------------------------------",
+    "------------------------------------------------------------------------------",
+    "Axioms (facts in KB)",
+    "Goal (conjecture to prove)",
+    "------------------------------------------------------------------------------"
+  ],
+  "formulas": [
+    {
+      "name": "fact_p",
+      "role": "axiom",
+      "formula": [
+        "atom",
+        "p"
+      ]
+    },
+    {
+      "name": "fact_impl",
+      "role": "axiom",
+      "formula": [
+        "implies",
+        [
+          "atom",
+          "p"
+        ],
+        [
+          "atom",
+          "q"
+        ]
+      ]
+    },
+    {
+      "name": "goal",
+      "role": "conjecture",
+      "formula": [
+        "atom",
+        "q"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const nat_p : set prop
+const SNo : set prop
+axiom nat_p_SNo: !x:set.nat_p x -> SNo x
+const exp_SNo_nat : set set set
+lemma !x:set.nat_p x -> SNo x -> !y:set.nat_p y -> nat_p (exp_SNo_nat x y)
+claim !x:set.nat_p x -> !y:set.nat_p y -> nat_p (exp_SNo_nat x y)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

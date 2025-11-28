@@ -1,0 +1,43 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const Empty : set
+axiom add_SNo_0R: !x:set.SNo x -> x + Empty = x
+const nat_p : set prop
+const omega : set
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+axiom nat_p_SNo: !x:set.nat_p x -> SNo x
+const ordsucc : set set
+axiom SNo_1: SNo (ordsucc Empty)
+axiom add_SNo_In_omega: !x:set.x iIn omega -> !y:set.y iIn omega -> x + y iIn omega
+axiom ordsuccI1: !x:set.Subq x (ordsucc x)
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const minus_SNo : set set
+term - = minus_SNo
+axiom SNo_minus_SNo: !x:set.SNo x -> SNo - x
+axiom ordsuccI2: !x:set.x iIn ordsucc x
+axiom add_SNo_minus_L2: !x:set.!y:set.SNo x -> SNo y -> - x + x + y = y
+axiom add_SNo_com: !x:set.!y:set.SNo x -> SNo y -> x + y = y + x
+axiom ordsuccE: !x:set.!y:set.y iIn ordsucc x -> y iIn x | y = x
+axiom add_SNo_1_ordsucc: !x:set.x iIn omega -> x + ordsucc Empty = ordsucc x
+axiom add_SNo_assoc: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x + y + z = (x + y) + z
+axiom nat_ind: !p:set prop.p Empty -> (!x:set.nat_p x -> p x -> p (ordsucc x)) -> !x:set.nat_p x -> p x
+var x:set
+var y:set
+hyp y iIn omega
+claim SNo y -> !z:set.nat_p z -> x iIn y + z -> x iIn y | x + - y iIn z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

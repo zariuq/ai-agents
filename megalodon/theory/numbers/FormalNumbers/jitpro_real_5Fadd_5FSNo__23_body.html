@@ -1,0 +1,80 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const binunion : set set set
+const Repl : set (set set) set
+const SNoL : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const SNoR : set set
+axiom add_SNo_SNoCutP: !x:set.!y:set.SNo x -> SNo y -> SNoCutP (binunion (Repl (SNoL x) \z:set.z + y) (Repl (SNoL y) (add_SNo x))) (binunion (Repl (SNoR x) \z:set.z + y) (Repl (SNoR y) (add_SNo x)))
+const real : set
+const SNoLev : set set
+const SNoS_ : set set
+const omega : set
+axiom SNoLev_In_real_SNoS_omega: !x:set.x iIn real -> !y:set.SNo y -> SNoLev y iIn SNoLev x -> y iIn SNoS_ omega
+axiom SNoL_E: !x:set.SNo x -> !y:set.y iIn SNoL x -> !P:prop.(SNo y -> SNoLev y iIn SNoLev x -> y < x -> P) -> P
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+axiom binunionE: !x:set.!y:set.!z:set.z iIn binunion x y -> z iIn x | z iIn y
+axiom SNoR_E: !x:set.SNo x -> !y:set.y iIn SNoR x -> !P:prop.(SNo y -> SNoLev y iIn SNoLev x -> x < y -> P) -> P
+const SNoCut : set set set
+axiom add_SNo_eq: !x:set.SNo x -> !y:set.SNo y -> x + y = SNoCut (binunion (Repl (SNoL x) \z:set.z + y) (Repl (SNoL y) (add_SNo x))) (binunion (Repl (SNoR x) \z:set.z + y) (Repl (SNoR y) (add_SNo x)))
+axiom SNoCut_ext: !x:set.!y:set.!z:set.!w:set.SNoCutP x y -> SNoCutP z w -> (!u:set.u iIn x -> u < SNoCut z w) -> (!u:set.u iIn y -> SNoCut z w < u) -> (!u:set.u iIn z -> u < SNoCut x y) -> (!u:set.u iIn w -> SNoCut x y < u) -> SNoCut x y = SNoCut z w
+const ordsucc : set set
+const famunion : set (set set) set
+const Subq : set set prop
+const SNoEq_ : set set set prop
+axiom SNoCutP_SNoCut_impred: !x:set.!y:set.SNoCutP x y -> !P:prop.(SNo (SNoCut x y) -> SNoLev (SNoCut x y) iIn ordsucc (binunion (famunion x \z:set.ordsucc (SNoLev z)) (famunion y \z:set.ordsucc (SNoLev z))) -> (!z:set.z iIn x -> z < SNoCut x y) -> (!z:set.z iIn y -> SNoCut x y < z) -> (!z:set.SNo z -> (!w:set.w iIn x -> w < z) -> (!w:set.w iIn y -> z < w) -> Subq (SNoLev (SNoCut x y)) (SNoLev z) & SNoEq_ (SNoLev (SNoCut x y)) (SNoCut x y) z) -> P) -> P
+const abs_SNo : set set
+const minus_SNo : set set
+term - = minus_SNo
+const eps_ : set set
+const ap : set set set
+const Sigma : set (set set) set
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.x iIn real -> y iIn real -> SNo x -> SNo y -> SNo (x + y) -> (!x2:set.x2 iIn SNoS_ omega -> (!y2:set.y2 iIn omega -> abs_SNo (x2 + - x) < eps_ y2) -> x2 = x) -> (!x2:set.x2 iIn SNoS_ omega -> (!y2:set.y2 iIn omega -> abs_SNo (x2 + - y) < eps_ y2) -> x2 = y) -> (!x2:set.x2 iIn omega -> SNo (ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2)) x2)) -> (!x2:set.x2 iIn omega -> SNo (ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2)) x2)) -> Sigma omega (\x2:set.ap z (ordsucc x2) + ap u (ordsucc x2)) iIn setexp (SNoS_ omega) omega -> Sigma omega (\x2:set.ap w (ordsucc x2) + ap v (ordsucc x2)) iIn setexp (SNoS_ omega) omega -> (!x2:set.x2 iIn omega -> ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2)) x2 < x + y) -> (!x2:set.x2 iIn omega -> (x + y) < ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2)) x2 + eps_ x2) -> (!x2:set.x2 iIn omega -> !y2:set.y2 iIn x2 -> ap (Sigma omega \z2:set.ap z (ordsucc z2) + ap u (ordsucc z2)) y2 < ap (Sigma omega \z2:set.ap z (ordsucc z2) + ap u (ordsucc z2)) x2) -> (!x2:set.x2 iIn omega -> (ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2)) x2 + - eps_ x2) < x + y) -> (!x2:set.x2 iIn omega -> (x + y) < ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2)) x2) -> (!x2:set.x2 iIn omega -> !y2:set.y2 iIn x2 -> ap (Sigma omega \z2:set.ap w (ordsucc z2) + ap v (ordsucc z2)) x2 < ap (Sigma omega \z2:set.ap w (ordsucc z2) + ap v (ordsucc z2)) y2) -> SNoCutP (Repl omega (ap (Sigma omega \x2:set.ap z (ordsucc x2) + ap u (ordsucc x2)))) (Repl omega (ap (Sigma omega \x2:set.ap w (ordsucc x2) + ap v (ordsucc x2)))) -> SNo (SNoCut (Repl omega (ap (Sigma omega \x2:set.ap z (ordsucc x2) + ap u (ordsucc x2)))) (Repl omega (ap (Sigma omega \x2:set.ap w (ordsucc x2) + ap v (ordsucc x2))))) -> (!x2:set.x2 iIn Repl omega (ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2))) -> x2 < SNoCut (Repl omega (ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2)))) (Repl omega (ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2))))) -> (!x2:set.x2 iIn Repl omega (ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2))) -> SNoCut (Repl omega (ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2)))) (Repl omega (ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2)))) < x2) -> x + y = SNoCut (Repl omega (ap (Sigma omega \x2:set.ap z (ordsucc x2) + ap u (ordsucc x2)))) (Repl omega (ap (Sigma omega \x2:set.ap w (ordsucc x2) + ap v (ordsucc x2)))) -> x + y iIn real
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.!x2:set.x iIn real -> SNo x -> SNo y -> SNo (x + y) -> (!y2:set.y2 iIn SNoS_ omega -> (!z2:set.z2 iIn omega -> abs_SNo (y2 + - x) < eps_ z2) -> y2 = x) -> (!y2:set.y2 iIn omega -> SNo (ap (Sigma omega \z2:set.ap z (ordsucc z2) + ap u (ordsucc z2)) y2)) -> (!y2:set.y2 iIn omega -> (x + y) < ap (Sigma omega \z2:set.ap z (ordsucc z2) + ap u (ordsucc z2)) y2 + eps_ y2) -> SNo (SNoCut (Repl omega (ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2)))) (Repl omega (ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2))))) -> (!y2:set.y2 iIn Repl omega (ap (Sigma omega \z2:set.ap z (ordsucc z2) + ap u (ordsucc z2))) -> y2 < SNoCut (Repl omega (ap (Sigma omega \z2:set.ap z (ordsucc z2) + ap u (ordsucc z2)))) (Repl omega (ap (Sigma omega \z2:set.ap w (ordsucc z2) + ap v (ordsucc z2))))) -> SNo x2 -> SNoLev x2 iIn SNoLev x -> x2 < x -> x2 iIn SNoS_ omega -> (x2 + y) < SNoCut (Repl omega (ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2)))) (Repl omega (ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2))))
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.!x2:set.y iIn real -> SNo x -> SNo y -> SNo (x + y) -> (!y2:set.y2 iIn SNoS_ omega -> (!z2:set.z2 iIn omega -> abs_SNo (y2 + - y) < eps_ z2) -> y2 = y) -> (!y2:set.y2 iIn omega -> SNo (ap (Sigma omega \z2:set.ap z (ordsucc z2) + ap u (ordsucc z2)) y2)) -> (!y2:set.y2 iIn omega -> (x + y) < ap (Sigma omega \z2:set.ap z (ordsucc z2) + ap u (ordsucc z2)) y2 + eps_ y2) -> SNo (SNoCut (Repl omega (ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2)))) (Repl omega (ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2))))) -> (!y2:set.y2 iIn Repl omega (ap (Sigma omega \z2:set.ap z (ordsucc z2) + ap u (ordsucc z2))) -> y2 < SNoCut (Repl omega (ap (Sigma omega \z2:set.ap z (ordsucc z2) + ap u (ordsucc z2)))) (Repl omega (ap (Sigma omega \z2:set.ap w (ordsucc z2) + ap v (ordsucc z2))))) -> SNo x2 -> SNoLev x2 iIn SNoLev y -> x2 < y -> x2 iIn SNoS_ omega -> (x + x2) < SNoCut (Repl omega (ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2)))) (Repl omega (ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2))))
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.!x2:set.x iIn real -> SNo x -> SNo y -> SNo (x + y) -> (!y2:set.y2 iIn SNoS_ omega -> (!z2:set.z2 iIn omega -> abs_SNo (y2 + - x) < eps_ z2) -> y2 = x) -> (!y2:set.y2 iIn omega -> SNo (ap (Sigma omega \z2:set.ap w (ordsucc z2) + ap v (ordsucc z2)) y2)) -> (!y2:set.y2 iIn omega -> (ap (Sigma omega \z2:set.ap w (ordsucc z2) + ap v (ordsucc z2)) y2 + - eps_ y2) < x + y) -> SNo (SNoCut (Repl omega (ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2)))) (Repl omega (ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2))))) -> (!y2:set.y2 iIn Repl omega (ap (Sigma omega \z2:set.ap w (ordsucc z2) + ap v (ordsucc z2))) -> SNoCut (Repl omega (ap (Sigma omega \z2:set.ap z (ordsucc z2) + ap u (ordsucc z2)))) (Repl omega (ap (Sigma omega \z2:set.ap w (ordsucc z2) + ap v (ordsucc z2)))) < y2) -> SNo x2 -> SNoLev x2 iIn SNoLev x -> x < x2 -> x2 iIn SNoS_ omega -> SNoCut (Repl omega (ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2)))) (Repl omega (ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2)))) < x2 + y
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.!x2:set.y iIn real -> SNo x -> SNo y -> SNo (x + y) -> (!y2:set.y2 iIn SNoS_ omega -> (!z2:set.z2 iIn omega -> abs_SNo (y2 + - y) < eps_ z2) -> y2 = y) -> (!y2:set.y2 iIn omega -> SNo (ap (Sigma omega \z2:set.ap w (ordsucc z2) + ap v (ordsucc z2)) y2)) -> (!y2:set.y2 iIn omega -> (ap (Sigma omega \z2:set.ap w (ordsucc z2) + ap v (ordsucc z2)) y2 + - eps_ y2) < x + y) -> SNo (SNoCut (Repl omega (ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2)))) (Repl omega (ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2))))) -> (!y2:set.y2 iIn Repl omega (ap (Sigma omega \z2:set.ap w (ordsucc z2) + ap v (ordsucc z2))) -> SNoCut (Repl omega (ap (Sigma omega \z2:set.ap z (ordsucc z2) + ap u (ordsucc z2)))) (Repl omega (ap (Sigma omega \z2:set.ap w (ordsucc z2) + ap v (ordsucc z2)))) < y2) -> SNo x2 -> SNoLev x2 iIn SNoLev y -> y < x2 -> x2 iIn SNoS_ omega -> SNoCut (Repl omega (ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2)))) (Repl omega (ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2)))) < x + x2
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+hyp x iIn real
+hyp y iIn real
+hyp SNo x
+hyp SNo y
+hyp SNo (x + y)
+hyp !x2:set.x2 iIn SNoS_ omega -> (!y2:set.y2 iIn omega -> abs_SNo (x2 + - x) < eps_ y2) -> x2 = x
+hyp !x2:set.x2 iIn SNoS_ omega -> (!y2:set.y2 iIn omega -> abs_SNo (x2 + - y) < eps_ y2) -> x2 = y
+hyp !x2:set.x2 iIn omega -> SNo (ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2)) x2)
+hyp !x2:set.x2 iIn omega -> SNo (ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2)) x2)
+hyp Sigma omega (\x2:set.ap z (ordsucc x2) + ap u (ordsucc x2)) iIn setexp (SNoS_ omega) omega
+hyp Sigma omega (\x2:set.ap w (ordsucc x2) + ap v (ordsucc x2)) iIn setexp (SNoS_ omega) omega
+hyp !x2:set.x2 iIn omega -> ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2)) x2 < x + y
+hyp !x2:set.x2 iIn omega -> (x + y) < ap (Sigma omega \y2:set.ap z (ordsucc y2) + ap u (ordsucc y2)) x2 + eps_ x2
+hyp !x2:set.x2 iIn omega -> !y2:set.y2 iIn x2 -> ap (Sigma omega \z2:set.ap z (ordsucc z2) + ap u (ordsucc z2)) y2 < ap (Sigma omega \z2:set.ap z (ordsucc z2) + ap u (ordsucc z2)) x2
+hyp !x2:set.x2 iIn omega -> (ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2)) x2 + - eps_ x2) < x + y
+hyp !x2:set.x2 iIn omega -> (x + y) < ap (Sigma omega \y2:set.ap w (ordsucc y2) + ap v (ordsucc y2)) x2
+hyp !x2:set.x2 iIn omega -> !y2:set.y2 iIn x2 -> ap (Sigma omega \z2:set.ap w (ordsucc z2) + ap v (ordsucc z2)) x2 < ap (Sigma omega \z2:set.ap w (ordsucc z2) + ap v (ordsucc z2)) y2
+claim SNoCutP (Repl omega (ap (Sigma omega \x2:set.ap z (ordsucc x2) + ap u (ordsucc x2)))) (Repl omega (ap (Sigma omega \x2:set.ap w (ordsucc x2) + ap v (ordsucc x2)))) -> x + y iIn real
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

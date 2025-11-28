@@ -1,0 +1,46 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const omega : set
+const nat_p : set prop
+axiom omega_nat_p: !x:set.x iIn omega -> nat_p x
+const SNo : set prop
+const ordsucc : set set
+const Empty : set
+axiom SNo_1: SNo (ordsucc Empty)
+axiom nat_1: nat_p (ordsucc Empty)
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+const int : set
+axiom Subq_omega_int: Subq omega int
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_SNo_0R: !x:set.SNo x -> x + Empty = x
+const minus_SNo : set set
+term - = minus_SNo
+axiom minus_SNo_0: - Empty = Empty
+const ordinal : set prop
+axiom nat_p_ordinal: !x:set.nat_p x -> ordinal x
+axiom ordinal_SNo: !x:set.ordinal x -> SNo x
+axiom SNo_minus_SNo: !x:set.SNo x -> SNo - x
+axiom int_minus_SNo_omega: !x:set.x iIn omega -> - x iIn int
+axiom add_SNo_minus_L2': !x:set.!y:set.SNo x -> SNo y -> x + - x + y = y
+axiom minus_add_SNo_distr: !x:set.!y:set.SNo x -> SNo y -> - (x + y) = - x + - y
+axiom ordinal_ordsucc_SNo_eq: !x:set.ordinal x -> ordsucc x = ordsucc Empty + x
+axiom nat_inv: !x:set.nat_p x -> x = Empty | ?y:set.nat_p y & x = ordsucc y
+lemma !x:set.!y:set.- x + y iIn int -> (!z:set.z iIn omega -> - x + y = z -> ordsucc Empty + - x + y iIn int) -> (!z:set.z iIn omega -> - x + y = - z -> ordsucc Empty + - x + y iIn int) -> ordsucc Empty + - x + y iIn int
+var x:set
+var y:set
+hyp - x + y iIn int
+claim (!z:set.z iIn omega -> - x + y = z -> ordsucc Empty + - x + y iIn int) -> ordsucc Empty + - x + y iIn int
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

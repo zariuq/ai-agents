@@ -1,0 +1,66 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const omega : set
+const eps_ : set set
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+axiom add_SNo_com: !x:set.!y:set.SNo x -> SNo y -> x + y = y + x
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+axiom add_SNo_Le1: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x <= z -> (x + y) <= z + y
+axiom add_SNo_com_3b_1_2: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> (x + y) + z = (x + z) + y
+axiom SNoLeLt_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x <= y -> y < z -> x < z
+axiom add_SNo_Lt1_cancel: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> (x + y) < z + y -> x < z
+axiom SNoLtLe: !x:set.!y:set.x < y -> x <= y
+axiom FalseE: ~ False
+axiom SNoLtLe_or: !x:set.!y:set.SNo x -> SNo y -> x < y | y <= x
+const minus_SNo : set set
+term - = minus_SNo
+axiom add_SNo_minus_Lt1b: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x < z + y -> (x + - y) < z
+const Empty : set
+const abs_SNo : set set
+axiom pos_abs_SNo: !x:set.Empty < x -> abs_SNo x = x
+axiom abs_SNo_dist_swap: !x:set.!y:set.SNo x -> SNo y -> abs_SNo (x + - y) = abs_SNo (y + - x)
+const SNoS_ : set set
+const ap : set set set
+const Sigma : set (set set) set
+const ordsucc : set set
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.SNo x -> SNo y -> SNo (x + y) -> (!v:set.v iIn SNoS_ omega -> (!x2:set.x2 iIn omega -> abs_SNo (v + - x) < eps_ x2) -> v = x) -> (!v:set.v iIn omega -> SNo (ap (Sigma omega \x2:set.ap z (ordsucc x2) + ap w (ordsucc x2)) v)) -> (!v:set.v iIn omega -> (x + y) < ap (Sigma omega \x2:set.ap z (ordsucc x2) + ap w (ordsucc x2)) v + eps_ v) -> SNo u -> u < x -> u iIn SNoS_ omega -> ~ (?v:set.v iIn omega & (u + y) <= ap (Sigma omega \x2:set.ap z (ordsucc x2) + ap w (ordsucc x2)) v) -> Empty < x + - u -> u != x
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+hyp SNo x
+hyp SNo y
+hyp SNo (x + y)
+hyp !v:set.v iIn SNoS_ omega -> (!x2:set.x2 iIn omega -> abs_SNo (v + - x) < eps_ x2) -> v = x
+hyp !v:set.v iIn omega -> SNo (ap (Sigma omega \x2:set.ap z (ordsucc x2) + ap w (ordsucc x2)) v)
+hyp !v:set.v iIn omega -> (x + y) < ap (Sigma omega \x2:set.ap z (ordsucc x2) + ap w (ordsucc x2)) v + eps_ v
+hyp SNo u
+hyp u < x
+hyp u iIn SNoS_ omega
+hyp ~ ?v:set.v iIn omega & (u + y) <= ap (Sigma omega \x2:set.ap z (ordsucc x2) + ap w (ordsucc x2)) v
+claim ~ Empty < x + - u
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

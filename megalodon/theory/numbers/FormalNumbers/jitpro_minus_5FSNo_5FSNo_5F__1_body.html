@@ -1,0 +1,22 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const minus_SNo : set set
+term - = minus_SNo
+axiom SNo_minus_SNo: !x:set.SNo x -> SNo - x
+const SNo_ : set set prop
+const SNoLev : set set
+axiom SNoLev_: !x:set.SNo x -> SNo_ (SNoLev x) x
+var x:set
+var y:set
+hyp SNo y
+hyp SNoLev y = x
+claim SNoLev - y = x -> SNo_ x - y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,26 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo_pair : set set set
+const minus_SNo : set set
+term - = minus_SNo
+const CSNo_Re : set set
+const CSNo_Im : set set
+term minus_CSNo = \x:set.SNo_pair (- CSNo_Re x) - CSNo_Im x
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const complex : set
+const real : set
+axiom complex_Re_real: !x:set.x iIn complex -> CSNo_Re x iIn real
+axiom real_minus_SNo: !x:set.x iIn real -> - x iIn real
+axiom complex_Im_real: !x:set.x iIn complex -> CSNo_Im x iIn real
+axiom complex_I: !x:set.x iIn real -> !y:set.y iIn real -> SNo_pair x y iIn complex
+claim !x:set.x iIn complex -> minus_CSNo x iIn complex
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

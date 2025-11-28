@@ -1,0 +1,26 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SetAdjoin : set set set
+const Sing : set set
+const ordsucc : set set
+const Empty : set
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const ordinal : set prop
+var x:set
+var y:set
+var z:set
+hyp ordinal x
+hyp ordinal y
+hyp z iIn x
+hyp SetAdjoin y (Sing (ordsucc Empty)) = SetAdjoin z (Sing (ordsucc Empty))
+claim y = z -> y iIn x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

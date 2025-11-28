@@ -1,0 +1,21 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const Sing : set set
+axiom SingI: !x:set.x iIn Sing x
+axiom SingE: !x:set.!y:set.y iIn Sing x -> y = x
+const ordsucc : set set
+const Empty : set
+lemma Sing (ordsucc (ordsucc Empty)) iIn Sing (Sing (ordsucc Empty)) -> ~ ordsucc Empty iIn Sing (ordsucc (ordsucc Empty))
+claim ~ Sing (ordsucc (ordsucc Empty)) iIn Sing (Sing (ordsucc Empty))
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,17 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term In_rec_i_G = \P:set (set set) set.\x:set.\y:set.!r:set set prop.(!z:set.!f:set set.(!w:set.w iIn z -> r w (f w)) -> r z (P z f)) -> r x y
+const In_rec_i : (set (set set) set) set set
+axiom In_rec_i_G_In_rec_i: !P:set (set set) set.(!x:set.!f:set set.!f2:set set.(!y:set.y iIn x -> f y = f2 y) -> P x f = P x f2) -> !x:set.In_rec_i_G P x (In_rec_i P x)
+claim !P:set (set set) set.(!x:set.!f:set set.!f2:set set.(!y:set.y iIn x -> f y = f2 y) -> P x f = P x f2) -> !x:set.!r:set set prop.(!y:set.!f:set set.(!z:set.z iIn y -> r z (f z)) -> r y (P y f)) -> r x (P x (In_rec_i P))
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

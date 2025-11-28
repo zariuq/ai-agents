@@ -1,0 +1,23 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const minus_SNo : set set
+term - = minus_SNo
+axiom minus_SNo_invol: !x:set.SNo x -> - - x = x
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const Repl : set (set set) set
+axiom Repl_invol_eq: !p:set prop.!f:set set.(!x:set.p x -> f (f x) = x) -> !x:set.(!y:set.y iIn x -> p y) -> Repl (Repl x f) f = x
+const SNo_max_of : set set prop
+const SNo_min_of : set set prop
+lemma !x:set.!y:set.(!z:set.z iIn x -> SNo z) -> SNo_max_of (Repl x minus_SNo) y -> Repl (Repl x minus_SNo) minus_SNo = x -> SNo_min_of x - y
+claim !x:set.!y:set.(!z:set.z iIn x -> SNo z) -> SNo_max_of (Repl x minus_SNo) y -> SNo_min_of x - y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

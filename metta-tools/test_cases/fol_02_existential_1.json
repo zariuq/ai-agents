@@ -1,0 +1,54 @@
+{
+  "metadata": {},
+  "comments": [
+    "Existential quantifier"
+  ],
+  "formulas": [
+    {
+      "name": "axiom1",
+      "role": "axiom",
+      "formula": [
+        "exists",
+        [
+          "X"
+        ],
+        [
+          "and",
+          [
+            "human",
+            [
+              "var",
+              "X"
+            ]
+          ],
+          [
+            "mortal",
+            [
+              "var",
+              "X"
+            ]
+          ]
+        ]
+      ],
+      "type": "fof"
+    },
+    {
+      "name": "goal",
+      "role": "conjecture",
+      "formula": [
+        "exists",
+        [
+          "Y"
+        ],
+        [
+          "mortal",
+          [
+            "var",
+            "Y"
+          ]
+        ]
+      ],
+      "type": "fof"
+    }
+  ]
+}

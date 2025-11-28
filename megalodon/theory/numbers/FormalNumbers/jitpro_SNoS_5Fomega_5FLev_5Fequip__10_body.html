@@ -1,0 +1,41 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const bij : set set (set set) prop
+term equip = \x:set.\y:set.?f:set set.bij x y f
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term nIn = \x:set.\y:set.~ x iIn y
+term SNoEq_ = \x:set.\y:set.\z:set.PNoEq_ x (\w:set.w iIn y) \w:set.w iIn z
+const SNo : set prop
+const SNoLev : set set
+const SNo_extend1 : set set
+axiom SNo_extend1_In: !x:set.SNo x -> SNoLev x iIn SNo_extend1 x
+const nat_p : set prop
+const binintersect : set set set
+const SNoElts_ : set set
+const ordsucc : set set
+const Sep : set (set prop) set
+const SNoS_ : set set
+const omega : set
+lemma !x:set.!f:set set.!f2:set set.!y:set.!z:set.nat_p x -> (!w:set.x iIn w -> f2 w = f (binintersect w (SNoElts_ x))) -> f z = y -> SNoLev z = x -> SNo z -> SNoLev (SNo_extend1 z) = ordsucc x -> x iIn SNo_extend1 z -> ?w:set.w iIn Sep (SNoS_ omega) (\u:set.SNoLev u = ordsucc x) & f2 w = y
+var x:set
+var f:set set
+var f2:set set
+var y:set
+var z:set
+hyp nat_p x
+hyp !w:set.x iIn w -> f2 w = f (binintersect w (SNoElts_ x))
+hyp f z = y
+hyp SNoLev z = x
+hyp SNo z
+claim SNoLev (SNo_extend1 z) = ordsucc x -> ?w:set.w iIn Sep (SNoS_ omega) (\u:set.SNoLev u = ordsucc x) & f2 w = y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

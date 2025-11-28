@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "file": "negation_prop.p",
+    "domain": "Propositional Logic",
+    "problem": "Double negation elimination",
+    "english": "Prove p from ~ ~ p",
+    "axiom": "double negation",
+    "goal": "eliminate double negation"
+  },
+  "comments": [
+    "------------------------------------------------------------------------------",
+    "------------------------------------------------------------------------------",
+    "------------------------------------------------------------------------------"
+  ],
+  "formulas": [
+    {
+      "name": "double_neg",
+      "role": "axiom",
+      "formula": [
+        "not",
+        [
+          "not",
+          [
+            "atom",
+            "p"
+          ]
+        ]
+      ],
+      "type": "fof"
+    },
+    {
+      "name": "goal",
+      "role": "conjecture",
+      "formula": [
+        "atom",
+        "p"
+      ],
+      "type": "fof"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const nat_primrec : set (set set set) set set
+const Empty : set
+axiom nat_primrec_0: !x:set.!g:set set set.nat_primrec x g Empty = x
+const SNo : set prop
+const SNoS_ : set set
+const omega : set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const abs_SNo : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const minus_SNo : set set
+term - = minus_SNo
+const eps_ : set set
+const Eps_i : (set prop) set
+const ordsucc : set set
+const ap : set set set
+lemma !x:set.SNo x -> (!y:set.y iIn SNoS_ omega -> (!z:set.z iIn omega -> abs_SNo (y + - x) < eps_ z) -> y = x) -> (!y:set.y iIn omega -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + eps_ y)) -> nat_primrec (Eps_i \y:set.y iIn SNoS_ omega & y < x & x < y + eps_ Empty) (\y:set.\z:set.Eps_i \w:set.w iIn SNoS_ omega & w < x & x < w + eps_ (ordsucc y) & z < w) Empty = Eps_i (\y:set.y iIn SNoS_ omega & y < x & x < y + eps_ Empty) -> ?y:set.y iIn setexp (SNoS_ omega) omega & !z:set.z iIn omega -> ap y z < x & x < ap y z + eps_ z & !w:set.w iIn z -> ap y w < ap y z
+claim !x:set.SNo x -> (!y:set.y iIn SNoS_ omega -> (!z:set.z iIn omega -> abs_SNo (y + - x) < eps_ z) -> y = x) -> (!y:set.y iIn omega -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + eps_ y)) -> ?y:set.y iIn setexp (SNoS_ omega) omega & !z:set.z iIn omega -> ap y z < x & x < ap y z + eps_ z & !w:set.w iIn z -> ap y w < ap y z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

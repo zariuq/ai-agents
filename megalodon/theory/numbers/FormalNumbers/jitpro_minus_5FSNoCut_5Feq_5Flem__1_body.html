@@ -1,0 +1,37 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term nIn = \x:set.\y:set.~ x iIn y
+const SNoLev : set set
+const minus_SNo : set set
+term - = minus_SNo
+axiom minus_SNo_Lev: !x:set.SNo x -> SNoLev - x = SNoLev x
+axiom In_irref: !x:set.nIn x x
+const Repl : set (set set) set
+const SNoCut : set set set
+var x:set
+var y:set
+var z:set
+hyp SNo x
+hyp x = SNoCut y z
+hyp SNo (SNoCut (Repl z minus_SNo) (Repl y minus_SNo))
+hyp SNoLev (SNoCut (Repl z \w:set.- w) (Repl y \w:set.- w)) iIn SNoLev - x
+hyp - SNoCut (Repl z minus_SNo) (Repl y minus_SNo) = SNoCut (Repl (Repl y minus_SNo) minus_SNo) (Repl (Repl z minus_SNo) minus_SNo)
+hyp Repl (Repl y minus_SNo) minus_SNo = y
+hyp Repl (Repl z minus_SNo) minus_SNo = z
+claim - SNoCut (Repl z minus_SNo) (Repl y minus_SNo) != x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

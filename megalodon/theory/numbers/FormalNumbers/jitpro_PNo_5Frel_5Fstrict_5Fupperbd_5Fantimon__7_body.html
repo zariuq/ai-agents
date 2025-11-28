@@ -1,0 +1,22 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const PNo_downc : (set (set prop) prop) set (set prop) prop
+const PNoLt : set (set prop) set (set prop) prop
+term PNo_rel_strict_upperbd = \P:set (set prop) prop.\x:set.\p:set prop.!y:set.y iIn x -> !q:set prop.PNo_downc P y q -> PNoLt y q x p
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+axiom ordinal_Hered: !x:set.ordinal x -> !y:set.y iIn x -> ordinal y
+lemma !P:set (set prop) prop.!x:set.!p:set prop.!y:set.ordinal x -> y iIn x -> TransSet x -> ordinal y -> (!z:set.z iIn x -> !q:set prop.PNo_downc P z q -> PNoLt z q x p) -> !z:set.z iIn y -> !q:set prop.PNo_downc P z q -> PNoLt z q y p
+claim !P:set (set prop) prop.!x:set.ordinal x -> !p:set prop.!y:set.y iIn x -> PNo_rel_strict_upperbd P x p -> PNo_rel_strict_upperbd P y p
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

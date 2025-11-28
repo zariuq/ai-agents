@@ -1,0 +1,39 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const real : set
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom real_mul_SNo: !x:set.x iIn real -> !y:set.y iIn real -> x * y iIn real
+const omega : set
+const SNo : set prop
+const eps_ : set set
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const Empty : set
+const ordsucc : set set
+axiom pos_small_real_recip_ex: !x:set.x iIn real -> Empty < x -> x < ordsucc Empty -> ?y:set.y iIn real & x * y = ordsucc Empty
+lemma !x:set.!y:set.!z:set.SNo x -> y iIn omega -> z iIn real -> (eps_ y * x) * z = ordsucc Empty -> SNo (eps_ y) -> ?w:set.w iIn real & x * w = ordsucc Empty
+var x:set
+var y:set
+hyp x iIn real
+hyp Empty < x
+hyp SNo x
+hyp y iIn omega
+hyp eps_ y * x < ordsucc Empty
+hyp eps_ y iIn real
+claim Empty < eps_ y * x -> ?z:set.z iIn real & x * z = ordsucc Empty
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

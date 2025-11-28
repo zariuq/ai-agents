@@ -1,0 +1,31 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const Empty : set
+const ordsucc : set set
+axiom In_0_2: Empty iIn ordsucc (ordsucc Empty)
+const If_i : prop set set set
+axiom If_i_1: !P:prop.!x:set.!y:set.P -> If_i P x y = x
+const setsum : set set set
+const Sigma : set (set set) set
+axiom lamI: !x:set.!f:set set.!y:set.y iIn x -> !z:set.z iIn f y -> setsum y z iIn Sigma x f
+axiom exandE_i: !p:set prop.!q:set prop.(?x:set.p x & q x) -> !P:prop.(!x:set.p x -> q x -> P) -> P
+axiom In_1_2: ordsucc Empty iIn ordsucc (ordsucc Empty)
+axiom neq_1_0: ordsucc Empty != Empty
+axiom If_i_0: !P:prop.!x:set.!y:set.~ P -> If_i P x y = y
+axiom pairE: !x:set.!y:set.!z:set.z iIn setsum x y -> (?w:set.w iIn x & z = setsum Empty w) | ?w:set.w iIn y & z = setsum (ordsucc Empty) w
+axiom lamE: !x:set.!f:set set.!y:set.y iIn Sigma x f -> ?z:set.z iIn x & ?w:set.w iIn f z & y = setsum z w
+axiom set_ext: !x:set.!y:set.Subq x y -> Subq y x -> x = y
+lemma !x:set.!y:set.!z:set.z iIn Sigma (ordsucc (ordsucc Empty)) (\w:set.If_i (w = Empty) x y) -> (?w:set.w iIn ordsucc (ordsucc Empty) & ?u:set.u iIn If_i (w = Empty) x y & z = setsum w u) -> z iIn setsum x y
+claim !x:set.!y:set.setsum x y = Sigma (ordsucc (ordsucc Empty)) \z:set.If_i (z = Empty) x y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

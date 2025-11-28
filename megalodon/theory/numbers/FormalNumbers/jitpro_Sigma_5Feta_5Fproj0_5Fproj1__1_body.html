@@ -1,0 +1,28 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const famunion : set (set set) set
+const Repl : set (set set) set
+const setsum : set set set
+term Sigma = \x:set.\f:set set.famunion x \y:set.Repl (f y) (setsum y)
+const proj1 : set set
+axiom proj1_pair_eq: !x:set.!y:set.proj1 (setsum x y) = y
+const proj0 : set set
+axiom proj0_pair_eq: !x:set.!y:set.proj0 (setsum x y) = x
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+axiom exandE_i: !p:set prop.!q:set prop.(?x:set.p x & q x) -> !P:prop.(!x:set.p x -> q x -> P) -> P
+var x:set
+var f:set set
+var y:set
+hyp y iIn Sigma x f
+claim (?z:set.z iIn x & y iIn Repl (f z) (setsum z)) -> setsum (proj0 y) (proj1 y) = y & proj0 y iIn x & proj1 y iIn f (proj0 y)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

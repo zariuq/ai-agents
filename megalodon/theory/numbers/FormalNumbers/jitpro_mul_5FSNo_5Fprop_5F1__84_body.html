@@ -1,0 +1,67 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+axiom add_SNo_Lt_subprop3b: !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.SNo x -> SNo y -> SNo z -> SNo w -> SNo u -> SNo v -> (x + v) < z + u -> y < v + w -> (x + y) < z + w + u
+const SNoS_ : set set
+const SNoLev : set set
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const SNoL : set set
+const SNoR : set set
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.SNo x -> (!x2:set.x2 iIn SNoS_ (SNoLev x) -> !y2:set.SNo y2 -> !P:prop.(SNo (x2 * y2) -> (!z2:set.z2 iIn SNoL x2 -> !w2:set.w2 iIn SNoL y2 -> (z2 * y2 + x2 * w2) < x2 * y2 + z2 * w2) -> (!z2:set.z2 iIn SNoR x2 -> !w2:set.w2 iIn SNoR y2 -> (z2 * y2 + x2 * w2) < x2 * y2 + z2 * w2) -> (!z2:set.z2 iIn SNoL x2 -> !w2:set.w2 iIn SNoR y2 -> (x2 * y2 + z2 * w2) < z2 * y2 + x2 * w2) -> (!z2:set.z2 iIn SNoR x2 -> !w2:set.w2 iIn SNoL y2 -> (x2 * y2 + z2 * w2) < z2 * y2 + x2 * w2) -> P) -> P) -> SNo y -> (!x2:set.x2 iIn SNoL x -> !y2:set.SNo y2 -> SNo (x2 * y2)) -> (!x2:set.x2 iIn SNoL x -> SNo (x2 * y)) -> z iIn SNoL x -> w iIn SNoL y -> SNo z -> SNoLev z iIn SNoLev x -> z < x -> SNo w -> u iIn SNoL x -> v iIn SNoR y -> SNo u -> SNoLev u iIn SNoLev x -> u < x -> SNo v -> SNo (z * y) -> SNo (x * w) -> SNo (z * w) -> SNo (u * y) -> SNo (x * v) -> SNo (u * v) -> SNo (z * v) -> SNo (u * w) -> (x * w + z * v) < z * w + x * v -> (x * w + u * v) < u * w + x * v -> ((z * y + u * v) < u * y + z * v -> (z * y + x * w + u * v) < u * y + x * v + z * w) -> ((z * y + u * w) < u * y + z * w -> (z * y + x * w + u * v) < u * y + x * v + z * w) -> (z * y + x * w + u * v) < u * y + x * v + z * w
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+hyp SNo x
+hyp !x2:set.x2 iIn SNoS_ (SNoLev x) -> !y2:set.SNo y2 -> !P:prop.(SNo (x2 * y2) -> (!z2:set.z2 iIn SNoL x2 -> !w2:set.w2 iIn SNoL y2 -> (z2 * y2 + x2 * w2) < x2 * y2 + z2 * w2) -> (!z2:set.z2 iIn SNoR x2 -> !w2:set.w2 iIn SNoR y2 -> (z2 * y2 + x2 * w2) < x2 * y2 + z2 * w2) -> (!z2:set.z2 iIn SNoL x2 -> !w2:set.w2 iIn SNoR y2 -> (x2 * y2 + z2 * w2) < z2 * y2 + x2 * w2) -> (!z2:set.z2 iIn SNoR x2 -> !w2:set.w2 iIn SNoL y2 -> (x2 * y2 + z2 * w2) < z2 * y2 + x2 * w2) -> P) -> P
+hyp SNo y
+hyp !x2:set.x2 iIn SNoL x -> !y2:set.SNo y2 -> SNo (x2 * y2)
+hyp !x2:set.x2 iIn SNoL x -> SNo (x2 * y)
+hyp z iIn SNoL x
+hyp w iIn SNoL y
+hyp SNo z
+hyp SNoLev z iIn SNoLev x
+hyp z < x
+hyp SNo w
+hyp u iIn SNoL x
+hyp v iIn SNoR y
+hyp SNo u
+hyp SNoLev u iIn SNoLev x
+hyp u < x
+hyp SNo v
+hyp SNo (z * y)
+hyp SNo (x * w)
+hyp SNo (z * w)
+hyp SNo (u * y)
+hyp SNo (x * v)
+hyp SNo (u * v)
+hyp SNo (z * v)
+hyp SNo (u * w)
+hyp (x * w + z * v) < z * w + x * v
+hyp (x * w + u * v) < u * w + x * v
+claim ((z * y + u * v) < u * y + z * v -> (z * y + x * w + u * v) < u * y + x * v + z * w) -> (z * y + x * w + u * v) < u * y + x * v + z * w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

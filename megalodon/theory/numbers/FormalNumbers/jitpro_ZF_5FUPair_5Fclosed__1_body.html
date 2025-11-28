@@ -1,0 +1,31 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const Power : set set
+axiom Self_In_Power: !x:set.x iIn Power x
+const If_i : prop set set set
+axiom If_i_1: !P:prop.!x:set.!y:set.P -> If_i P x y = x
+const Empty : set
+axiom EmptyE: !x:set.nIn x Empty
+axiom If_i_0: !P:prop.!x:set.!y:set.~ P -> If_i P x y = y
+const UPair : set set set
+axiom UPairE: !x:set.!y:set.!z:set.x iIn UPair y z -> x = y | x = z
+const Repl : set (set set) set
+var x:set
+var y:set
+var z:set
+hyp z iIn UPair x y
+hyp If_i (x iIn Power x) x y iIn Repl (Power (Power x)) \w:set.If_i (x iIn w) x y
+claim If_i (x iIn Empty) x y iIn Repl (Power (Power x)) (\w:set.If_i (x iIn w) x y) -> z iIn Repl (Power (Power x)) \w:set.If_i (x iIn w) x y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,38 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+term SNo_max_of = \x:set.\y:set.y iIn x & SNo y & !z:set.z iIn x -> SNo z -> z <= y
+const bij : set set (set set) prop
+term equip = \x:set.\y:set.?f:set set.bij x y f
+const omega : set
+term finite = \x:set.?y:set.y iIn omega & equip x y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+const Empty : set
+const ordsucc : set set
+axiom In_0_1: Empty iIn ordsucc Empty
+axiom bijE: !x:set.!y:set.!f:set set.bij x y f -> !P:prop.((!z:set.z iIn x -> f z iIn y) -> (!z:set.z iIn x -> !w:set.w iIn x -> f z = f w -> z = w) -> (!z:set.z iIn y -> ?w:set.w iIn x & f w = z) -> P) -> P
+axiom equip_sym: !x:set.!y:set.equip x y -> equip y x
+axiom ordsuccI1: !x:set.Subq x (ordsucc x)
+const Repl : set (set set) set
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+const nat_p : set prop
+axiom nat_ind: !p:set prop.p Empty -> (!x:set.nat_p x -> p x -> p (ordsucc x)) -> !x:set.nat_p x -> p x
+lemma (!x:set.nat_p x -> !y:set.(!z:set.z iIn y -> SNo z) -> equip y (ordsucc x) -> ?z:set.SNo_max_of y z) -> !x:set.(!y:set.y iIn x -> SNo y) -> finite x -> x != Empty -> ?y:set.SNo_max_of x y
+lemma !x:set.!f:set set.(!y:set.y iIn x -> SNo y) -> (!y:set.y iIn ordsucc Empty -> f y iIn x) -> (!y:set.y iIn x -> ?z:set.z iIn ordsucc Empty & f z = y) -> f Empty iIn x -> f Empty iIn x & SNo (f Empty) & !y:set.y iIn x -> SNo y -> y <= f Empty
+lemma !x:set.!y:set.!f:set set.(!z:set.(!w:set.w iIn z -> SNo w) -> equip z (ordsucc x) -> ?w:set.SNo_max_of z w) -> (!z:set.z iIn y -> SNo z) -> (!z:set.z iIn ordsucc (ordsucc x) -> f z iIn y) -> (!z:set.z iIn ordsucc (ordsucc x) -> !w:set.w iIn ordsucc (ordsucc x) -> f z = f w -> z = w) -> (!z:set.z iIn y -> ?w:set.w iIn ordsucc (ordsucc x) & f w = z) -> Subq (Repl (ordsucc x) f) y -> ?z:set.SNo_max_of y z
+claim !x:set.(!y:set.y iIn x -> SNo y) -> finite x -> x != Empty -> ?y:set.SNo_max_of x y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

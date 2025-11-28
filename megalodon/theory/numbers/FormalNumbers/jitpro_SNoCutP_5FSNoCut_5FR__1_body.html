@@ -1,0 +1,27 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNoCutP : set set prop
+const SNo : set prop
+const SNoCut : set set set
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoLev : set set
+const ordsucc : set set
+const binunion : set set set
+const famunion : set (set set) set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const Subq : set set prop
+const SNoEq_ : set set set prop
+axiom SNoCutP_SNoCut: !x:set.!y:set.SNoCutP x y -> SNo (SNoCut x y) & SNoLev (SNoCut x y) iIn ordsucc (binunion (famunion x \z:set.ordsucc (SNoLev z)) (famunion y \z:set.ordsucc (SNoLev z))) & (!z:set.z iIn x -> z < SNoCut x y) & (!z:set.z iIn y -> SNoCut x y < z) & !z:set.SNo z -> (!w:set.w iIn x -> w < z) -> (!w:set.w iIn y -> z < w) -> Subq (SNoLev (SNoCut x y)) (SNoLev z) & SNoEq_ (SNoLev (SNoCut x y)) (SNoCut x y) z
+claim !x:set.!y:set.SNoCutP x y -> !z:set.z iIn y -> SNoCut x y < z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

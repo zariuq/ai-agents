@@ -1,0 +1,49 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const SNo : set prop
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom SNo_mul_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x * y)
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+axiom SNoLtLe_or: !x:set.!y:set.SNo x -> SNo y -> x < y | y <= x
+const SNoR : set set
+const SNoLev : set set
+axiom SNoR_E: !x:set.SNo x -> !y:set.y iIn SNoR x -> !P:prop.(SNo y -> SNoLev y iIn SNoLev x -> x < y -> P) -> P
+const SNoS_ : set set
+const SNoL : set set
+lemma !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo (x * y) -> SNo z -> (!w:set.w iIn SNoS_ (SNoLev z) -> SNoLev w iIn SNoLev (x * y) -> w < x * y -> (?u:set.u iIn SNoL x & ?v:set.v iIn SNoL y & (w + u * v) <= u * y + x * v) | ?u:set.u iIn SNoR x & ?v:set.v iIn SNoR y & (w + u * v) <= u * y + x * v) -> SNoLev z iIn SNoLev (x * y) -> z < x * y -> ~ ((?w:set.w iIn SNoL x & ?u:set.u iIn SNoL y & (z + w * u) <= w * y + x * u) | ?w:set.w iIn SNoR x & ?u:set.u iIn SNoR y & (z + w * u) <= w * y + x * u) -> (!w:set.w iIn SNoL x -> !u:set.u iIn SNoL y -> (w * y + x * u) < z + w * u) -> ~ !w:set.w iIn SNoR x -> !u:set.u iIn SNoR y -> (w * y + x * u) < z + w * u
+var x:set
+var y:set
+var z:set
+hyp SNo x
+hyp SNo y
+hyp SNo (x * y)
+hyp SNo z
+hyp !w:set.w iIn SNoS_ (SNoLev z) -> SNoLev w iIn SNoLev (x * y) -> w < x * y -> (?u:set.u iIn SNoL x & ?v:set.v iIn SNoL y & (w + u * v) <= u * y + x * v) | ?u:set.u iIn SNoR x & ?v:set.v iIn SNoR y & (w + u * v) <= u * y + x * v
+hyp SNoLev z iIn SNoLev (x * y)
+hyp z < x * y
+hyp ~ ((?w:set.w iIn SNoL x & ?u:set.u iIn SNoL y & (z + w * u) <= w * y + x * u) | ?w:set.w iIn SNoR x & ?u:set.u iIn SNoR y & (z + w * u) <= w * y + x * u)
+claim ~ !w:set.w iIn SNoL x -> !u:set.u iIn SNoL y -> (w * y + x * u) < z + w * u
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

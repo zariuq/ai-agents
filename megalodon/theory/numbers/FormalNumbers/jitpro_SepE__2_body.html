@@ -1,0 +1,28 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const If_i : prop set set set
+const Repl : set (set set) set
+const Eps_i : (set prop) set
+const Empty : set
+term Sep = \x:set.\p:set prop.If_i (?y:set.y iIn x & p y) (Repl x \y:set.If_i (p y) y (Eps_i \z:set.z iIn x & p z)) Empty
+axiom Eps_i_ex: !p:set prop.(?x:set.p x) -> p (Eps_i p)
+var x:set
+var p:set prop
+var y:set
+var z:set
+hyp ?w:set.w iIn x & p w
+hyp y = If_i (p z) z (Eps_i \w:set.w iIn x & p w)
+hyp ~ p z
+claim y = Eps_i (\w:set.w iIn x & p w) -> y iIn x & p y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

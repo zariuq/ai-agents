@@ -1,0 +1,57 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+axiom In_irref: !x:set.nIn x x
+axiom FalseE: ~ False
+const Repl : set (set set) set
+const omega : set
+const ap : set set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const minus_SNo : set set
+term - = minus_SNo
+const SNoLev : set set
+const abs_SNo : set set
+const eps_ : set set
+const SNoS_ : set set
+const SNoCut : set set set
+const SNoEq_ : set set set prop
+var x:set
+var y:set
+var z:set
+var w:set
+hyp SNo x
+hyp z iIn setexp (SNoS_ omega) omega
+hyp !u:set.u iIn omega -> x < ap z u
+hyp !u:set.u iIn omega -> !v:set.v iIn u -> ap z u < ap z v
+hyp x = SNoCut (Repl omega (ap y)) (Repl omega (ap z))
+hyp SNo - x
+hyp !u:set.u iIn omega -> SNo (ap z u)
+hyp !u:set.SNo u -> (!v:set.v iIn Repl omega (ap y) -> v < u) -> (!v:set.v iIn Repl omega (ap z) -> u < v) -> Subq (SNoLev (SNoCut (Repl omega (ap y)) (Repl omega (ap z)))) (SNoLev u) & SNoEq_ (SNoLev (SNoCut (Repl omega (ap y)) (Repl omega (ap z)))) (SNoCut (Repl omega (ap y)) (Repl omega (ap z))) u
+hyp SNoLev x = omega
+hyp w iIn SNoS_ omega
+hyp !u:set.u iIn omega -> abs_SNo (w + - x) < eps_ u
+hyp SNoLev w iIn omega
+hyp SNo w
+hyp SNo (w + - x)
+hyp !u:set.u iIn Repl omega (ap y) -> u < w
+claim (!u:set.u iIn Repl omega (ap z) -> w < u) -> w = x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

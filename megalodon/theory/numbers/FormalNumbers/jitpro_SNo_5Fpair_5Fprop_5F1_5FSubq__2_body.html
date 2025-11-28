@@ -1,0 +1,26 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const binunion : set set set
+const Repl : set (set set) set
+const SetAdjoin : set set set
+const Sing : set set
+const ordsucc : set set
+const Empty : set
+term SNo_pair = \x:set.\y:set.binunion x (Repl y \z:set.SetAdjoin z (Sing (ordsucc (ordsucc Empty))))
+axiom binunionI1: !x:set.!y:set.!z:set.z iIn x -> z iIn binunion x y
+const SNo : set prop
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.SNo x -> SNo_pair x y = SNo_pair z w -> u iIn x -> u iIn SNo_pair z w -> u iIn z
+claim !x:set.!y:set.!z:set.!w:set.SNo x -> SNo_pair x y = SNo_pair z w -> !u:set.u iIn x -> u iIn z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

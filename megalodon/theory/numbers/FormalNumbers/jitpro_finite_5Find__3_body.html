@@ -1,0 +1,28 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const bij : set set (set set) prop
+term equip = \x:set.\y:set.?f:set set.bij x y f
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const omega : set
+term finite = \x:set.?y:set.y iIn omega & equip x y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+const nat_p : set prop
+axiom omega_nat_p: !x:set.x iIn omega -> nat_p x
+const binunion : set set set
+const Sing : set set
+const Empty : set
+var p:set prop
+hyp p Empty
+hyp !x:set.!y:set.finite x -> nIn y x -> p x -> p (binunion x (Sing y))
+claim (!x:set.nat_p x -> !y:set.equip y x -> p y) -> !x:set.finite x -> p x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

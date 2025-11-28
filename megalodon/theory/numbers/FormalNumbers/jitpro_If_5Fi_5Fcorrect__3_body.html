@@ -1,0 +1,16 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Eps_i : (set prop) set
+term If_i = \P:prop.\x:set.\y:set.Eps_i \z:set.P & z = x | ~ P & z = y
+axiom xm: !P:prop.P | ~ P
+lemma !P:prop.!x:set.!y:set.P -> P & x = x | ~ P & x = y -> P & Eps_i (\z:set.P & z = x | ~ P & z = y) = x | ~ P & Eps_i (\z:set.P & z = x | ~ P & z = y) = y
+lemma !P:prop.!x:set.!y:set.~ P -> P & y = x | ~ P & y = y -> P & Eps_i (\z:set.P & z = x | ~ P & z = y) = x | ~ P & Eps_i (\z:set.P & z = x | ~ P & z = y) = y
+claim !P:prop.!x:set.!y:set.P & If_i P x y = x | ~ P & If_i P x y = y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,87 @@
+{
+  "metadata": {},
+  "comments": [
+    "Functions and equality",
+    "If f is injective and f(x) = f(y), then x = y"
+  ],
+  "formulas": [
+    {
+      "name": "f_injective",
+      "role": "axiom",
+      "formula": [
+        "forall",
+        [
+          "X",
+          "Y"
+        ],
+        [
+          "implies",
+          [
+            "=",
+            [
+              "f",
+              [
+                "var",
+                "X"
+              ]
+            ],
+            [
+              "f",
+              [
+                "var",
+                "Y"
+              ]
+            ]
+          ],
+          [
+            "=",
+            [
+              "var",
+              "X"
+            ],
+            [
+              "var",
+              "Y"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "f_a_equals_f_b",
+      "role": "axiom",
+      "formula": [
+        "=",
+        [
+          "f",
+          [
+            "const",
+            "a"
+          ]
+        ],
+        [
+          "f",
+          [
+            "const",
+            "b"
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "a_equals_b",
+      "role": "conjecture",
+      "formula": [
+        "=",
+        [
+          "const",
+          "a"
+        ],
+        [
+          "const",
+          "b"
+        ]
+      ]
+    }
+  ]
+}

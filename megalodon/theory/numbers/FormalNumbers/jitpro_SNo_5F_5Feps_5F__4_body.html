@@ -1,0 +1,49 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const binunion : set set set
+const Repl : set (set set) set
+const Sing : set set
+term SetAdjoin = \x:set.\y:set.binunion x (Sing y)
+const Empty : set
+const ordsucc : set set
+term eps_ = \x:set.binunion (Sing Empty) (Repl x \y:set.SetAdjoin (ordsucc y) (Sing (ordsucc Empty)))
+term SNoElts_ = \x:set.binunion x (Repl x \y:set.SetAdjoin y (Sing (ordsucc Empty)))
+term nIn = \x:set.\y:set.~ x iIn y
+term SNo_ = \x:set.\y:set.Subq y (SNoElts_ x) & !z:set.z iIn x -> ~(SetAdjoin z (Sing (ordsucc Empty)) iIn y <-> z iIn y)
+term SNoElts_ = \x:set.binunion x (Repl x \y:set.SetAdjoin y (Sing (ordsucc Empty)))
+term SNo_ = \x:set.\y:set.Subq y (SNoElts_ x) & !z:set.z iIn x -> ~(SetAdjoin z (Sing (ordsucc Empty)) iIn y <-> z iIn y)
+axiom SingI: !x:set.x iIn Sing x
+axiom binunionI2: !x:set.!y:set.!z:set.z iIn y -> z iIn binunion x y
+axiom SingE: !x:set.!y:set.y iIn Sing x -> y = x
+axiom EmptyE: !x:set.nIn x Empty
+const ordinal : set prop
+axiom ordinal_Empty: ordinal Empty
+const nat_p : set prop
+axiom nat_p_trans: !x:set.nat_p x -> !y:set.y iIn x -> nat_p y
+axiom nat_ordsucc: !x:set.nat_p x -> nat_p (ordsucc x)
+axiom nat_p_ordinal: !x:set.nat_p x -> ordinal x
+axiom tagged_eqE_eq: !x:set.!y:set.ordinal x -> ordinal y -> SetAdjoin x (Sing (ordsucc Empty)) = SetAdjoin y (Sing (ordsucc Empty)) -> x = y
+axiom neq_0_ordsucc: !x:set.Empty != ordsucc x
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+axiom binunionE: !x:set.!y:set.!z:set.z iIn binunion x y -> z iIn x | z iIn y
+axiom binunionI1: !x:set.!y:set.!z:set.z iIn x -> z iIn binunion x y
+axiom exactly1of2_I2: !P:prop.!Q:prop.~ P -> Q -> ~(P <-> Q)
+axiom nat_inv: !x:set.nat_p x -> x = Empty | ?y:set.nat_p y & x = ordsucc y
+lemma !x:set.!y:set.!z:set.nat_p x -> y iIn ordsucc x -> nat_p z -> y = ordsucc z -> nat_p y -> ~(SetAdjoin y (Sing (ordsucc Empty)) iIn eps_ x <-> y iIn eps_ x)
+var x:set
+var y:set
+hyp nat_p x
+hyp y iIn ordsucc x
+claim nat_p y -> ~(SetAdjoin y (Sing (ordsucc Empty)) iIn eps_ x <-> y iIn eps_ x)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

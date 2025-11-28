@@ -1,0 +1,43 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+const SNo : set prop
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom SNoLeLt_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x <= y -> y < z -> x < z
+const SNoR : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const SNoLev : set set
+const SNoS_ : set set
+var x:set
+var y:set
+var z:set
+hyp SNo x
+hyp SNo y
+hyp SNo (x + y)
+hyp SNo z
+hyp !w:set.w iIn SNoS_ (SNoLev z) -> SNoLev w iIn SNoLev (x + y) -> (x + y) < w -> (?u:set.u iIn SNoR x & (u + y) <= w) | ?u:set.u iIn SNoR y & (x + u) <= w
+hyp SNoLev z iIn SNoLev (x + y)
+hyp (x + y) < z
+hyp ~ ((?w:set.w iIn SNoR x & (w + y) <= z) | ?w:set.w iIn SNoR y & (x + w) <= z)
+claim z <= x + y -> z < z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

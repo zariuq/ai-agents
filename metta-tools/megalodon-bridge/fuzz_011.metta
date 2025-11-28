@@ -1,0 +1,5 @@
+(Definition z22 set y16)
+(Parameter foo56 (-> set set))
+(Definition foo0 (-> set set) P21)
+(Definition Q27 (-> set prop) P78)
+(Definition baz92 prop B23)

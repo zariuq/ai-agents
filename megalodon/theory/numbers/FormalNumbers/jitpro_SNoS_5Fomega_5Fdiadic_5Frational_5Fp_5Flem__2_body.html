@@ -1,0 +1,41 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+term SNo_max_of = \x:set.\y:set.y iIn x & SNo y & !z:set.z iIn x -> SNo z -> z <= y
+term nIn = \x:set.\y:set.~ x iIn y
+term SNo_min_of = \x:set.\y:set.y iIn x & SNo y & !z:set.z iIn x -> SNo z -> y <= z
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const ordinal : set prop
+const SNoLev : set set
+axiom ordinal_SNoLev: !x:set.ordinal x -> SNoLev x = x
+const minus_SNo : set set
+term - = minus_SNo
+axiom minus_SNo_Lev: !x:set.SNo x -> SNoLev - x = SNoLev x
+const nat_p : set prop
+const diadic_rational_p : set prop
+const SNoL : set set
+lemma !x:set.!y:set.nat_p x -> SNo y -> SNoLev y = x -> ~ diadic_rational_p y -> ordinal - y -> - y = x -> ?z:set.SNo_max_of (SNoL y) z
+const Empty : set
+var x:set
+var y:set
+hyp nat_p x
+hyp SNo y
+hyp SNoLev y = x
+hyp ~ diadic_rational_p y
+hyp SNoL y = Empty
+claim ordinal - y -> ?z:set.SNo_max_of (SNoL y) z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

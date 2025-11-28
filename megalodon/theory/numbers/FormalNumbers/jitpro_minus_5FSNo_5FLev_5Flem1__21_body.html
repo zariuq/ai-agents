@@ -1,0 +1,39 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+term nIn = \x:set.\y:set.~ x iIn y
+const SNoS_ : set set
+const SNoLev : set set
+const minus_SNo : set set
+term - = minus_SNo
+const SNo : set prop
+const SNoCut : set set set
+const Repl : set (set set) set
+const SNoR : set set
+const SNoL : set set
+const ordsucc : set set
+const binunion : set set set
+const famunion : set (set set) set
+lemma !x:set.!y:set.TransSet x -> (!z:set.z iIn x -> !w:set.w iIn SNoS_ z -> Subq (SNoLev - w) (SNoLev w)) -> SNoLev y iIn x -> ordinal (SNoLev y) -> SNo y -> SNoLev (SNoCut (Repl (SNoR y) minus_SNo) (Repl (SNoL y) minus_SNo)) iIn ordsucc (binunion (famunion (Repl (SNoR y) minus_SNo) \z:set.ordsucc (SNoLev z)) (famunion (Repl (SNoL y) minus_SNo) \z:set.ordsucc (SNoLev z))) -> ordinal (binunion (famunion (Repl (SNoR y) minus_SNo) \z:set.ordsucc (SNoLev z)) (famunion (Repl (SNoL y) minus_SNo) \z:set.ordsucc (SNoLev z))) -> TransSet (binunion (famunion (Repl (SNoR y) minus_SNo) \z:set.ordsucc (SNoLev z)) (famunion (Repl (SNoL y) minus_SNo) \z:set.ordsucc (SNoLev z))) -> !z:set.z iIn SNoLev (SNoCut (Repl (SNoR y) minus_SNo) (Repl (SNoL y) minus_SNo)) -> z iIn SNoLev y
+var x:set
+var y:set
+hyp TransSet x
+hyp !z:set.z iIn x -> !w:set.w iIn SNoS_ z -> Subq (SNoLev - w) (SNoLev w)
+hyp SNoLev y iIn x
+hyp ordinal (SNoLev y)
+hyp SNo y
+hyp SNoLev (SNoCut (Repl (SNoR y) minus_SNo) (Repl (SNoL y) minus_SNo)) iIn ordsucc (binunion (famunion (Repl (SNoR y) minus_SNo) \z:set.ordsucc (SNoLev z)) (famunion (Repl (SNoL y) minus_SNo) \z:set.ordsucc (SNoLev z)))
+claim ordinal (binunion (famunion (Repl (SNoR y) minus_SNo) \z:set.ordsucc (SNoLev z)) (famunion (Repl (SNoL y) minus_SNo) \z:set.ordsucc (SNoLev z))) -> !z:set.z iIn SNoLev (SNoCut (Repl (SNoR y) minus_SNo) (Repl (SNoL y) minus_SNo)) -> z iIn SNoLev y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

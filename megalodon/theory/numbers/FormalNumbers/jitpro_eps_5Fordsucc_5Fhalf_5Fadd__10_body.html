@@ -1,0 +1,36 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const omega : set
+const ordsucc : set set
+axiom omega_ordsucc: !x:set.x iIn omega -> ordsucc x iIn omega
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const Empty : set
+const eps_ : set set
+axiom SNo_eps_pos: !x:set.x iIn omega -> Empty < eps_ x
+const nat_p : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const SNo : set prop
+const SNoCut : set set set
+const Sing : set set
+const Repl : set (set set) set
+lemma !x:set.nat_p x -> (!y:set.y iIn x -> eps_ (ordsucc y) + eps_ (ordsucc y) = eps_ y) -> x iIn omega -> SNo (eps_ (ordsucc x)) -> Empty < eps_ (ordsucc x) -> eps_ (ordsucc x) + eps_ (ordsucc x) = SNoCut (Sing Empty) (Repl x eps_)
+var x:set
+hyp nat_p x
+hyp !y:set.y iIn x -> eps_ (ordsucc y) + eps_ (ordsucc y) = eps_ y
+hyp x iIn omega
+claim SNo (eps_ (ordsucc x)) -> eps_ (ordsucc x) + eps_ (ordsucc x) = SNoCut (Sing Empty) (Repl x eps_)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

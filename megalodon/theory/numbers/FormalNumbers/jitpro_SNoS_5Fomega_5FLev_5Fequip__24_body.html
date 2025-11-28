@@ -1,0 +1,41 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const bij : set set (set set) prop
+term equip = \x:set.\y:set.?f:set set.bij x y f
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term nIn = \x:set.\y:set.~ x iIn y
+term SNoEq_ = \x:set.\y:set.\z:set.PNoEq_ x (\w:set.w iIn y) \w:set.w iIn z
+const ordinal : set prop
+const SNo : set prop
+axiom ordinal_SNo: !x:set.ordinal x -> SNo x
+const nat_p : set prop
+const Sep : set (set prop) set
+const SNoS_ : set set
+const omega : set
+const SNoLev : set set
+const exp_SNo_nat : set set set
+const ordsucc : set set
+const Empty : set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+lemma !x:set.nat_p x -> equip (Sep (SNoS_ omega) \y:set.SNoLev y = x) (exp_SNo_nat (ordsucc (ordsucc Empty)) x) -> nat_p (exp_SNo_nat (ordsucc (ordsucc Empty)) x) -> ordinal (exp_SNo_nat (ordsucc (ordsucc Empty)) x) -> SNo (exp_SNo_nat (ordsucc (ordsucc Empty)) x) -> nat_p (exp_SNo_nat (ordsucc (ordsucc Empty)) x + exp_SNo_nat (ordsucc (ordsucc Empty)) x) -> ordinal (exp_SNo_nat (ordsucc (ordsucc Empty)) x + exp_SNo_nat (ordsucc (ordsucc Empty)) x) -> SNo (exp_SNo_nat (ordsucc (ordsucc Empty)) x + exp_SNo_nat (ordsucc (ordsucc Empty)) x) -> equip (Sep (SNoS_ omega) \y:set.SNoLev y = ordsucc x) (exp_SNo_nat (ordsucc (ordsucc Empty)) x + exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+var x:set
+hyp nat_p x
+hyp equip (Sep (SNoS_ omega) \y:set.SNoLev y = x) (exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+hyp nat_p (exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+hyp ordinal (exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+hyp SNo (exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+hyp nat_p (exp_SNo_nat (ordsucc (ordsucc Empty)) x + exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+claim ordinal (exp_SNo_nat (ordsucc (ordsucc Empty)) x + exp_SNo_nat (ordsucc (ordsucc Empty)) x) -> equip (Sep (SNoS_ omega) \y:set.SNoLev y = ordsucc x) (exp_SNo_nat (ordsucc (ordsucc Empty)) x + exp_SNo_nat (ordsucc (ordsucc Empty)) x)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

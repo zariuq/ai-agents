@@ -1,0 +1,45 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom add_SNo_Lt1_cancel: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> (x + y) < z + y -> x < z
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.SNo (x * y) -> SNo (z * y) -> SNo (x * w) -> SNo (z * w) -> SNo (z * y + x * w) -> SNo (x * y + z * w) -> SNo (u * y) -> SNo (u * w) -> SNo (x * v) -> SNo (z * v) -> SNo (u * v) -> (u * y + x * v) < x * y + u * v -> (u * w + z * v) < z * w + u * v -> (x * w + u * v) < u * w + x * v -> (z * y + u * v) < u * y + z * v -> SNo (u * v + u * v) -> SNo (u * y + z * v) -> ((z * y + x * w) + u * v + u * v) < (x * y + z * w) + u * v + u * v
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+hyp SNo (x * y)
+hyp SNo (z * y)
+hyp SNo (x * w)
+hyp SNo (z * w)
+hyp SNo (z * y + x * w)
+hyp SNo (x * y + z * w)
+hyp SNo (u * y)
+hyp SNo (u * w)
+hyp SNo (x * v)
+hyp SNo (z * v)
+hyp SNo (u * v)
+hyp (u * y + x * v) < x * y + u * v
+hyp (u * w + z * v) < z * w + u * v
+hyp (x * w + u * v) < u * w + x * v
+hyp (z * y + u * v) < u * y + z * v
+claim SNo (u * v + u * v) -> (z * y + x * w) < x * y + z * w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

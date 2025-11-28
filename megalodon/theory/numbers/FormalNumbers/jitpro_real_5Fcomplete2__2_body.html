@@ -1,0 +1,36 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const nat_p : set prop
+const ordsucc : set set
+const Empty : set
+axiom nat_1: nat_p (ordsucc Empty)
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const omega : set
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+axiom nat_0: nat_p Empty
+const add_nat : set set set
+axiom add_nat_0R: !x:set.add_nat x Empty = x
+axiom add_nat_SR: !x:set.!y:set.nat_p y -> add_nat x (ordsucc y) = ordsucc (add_nat x y)
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_nat_add_SNo: !x:set.x iIn omega -> !y:set.y iIn omega -> add_nat x y = x + y
+const setexp : set set set
+const real : set
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+const ap : set set set
+axiom real_complete1: !x:set.x iIn setexp real omega -> !y:set.y iIn setexp real omega -> (!z:set.z iIn omega -> ap x z <= ap y z & ap x z <= ap x (ordsucc z) & ap y (ordsucc z) <= ap y z) -> ?z:set.z iIn real & !w:set.w iIn omega -> ap x w <= z & z <= ap y w
+lemma !x:set.!y:set.!z:set.(!w:set.w iIn omega -> ap x w <= ap y w & ap x w <= ap x (w + ordsucc Empty) & ap y (w + ordsucc Empty) <= ap y w) -> z iIn omega -> ordsucc z = z + ordsucc Empty -> ap x z <= ap y z & ap x z <= ap x (ordsucc z) & ap y (ordsucc z) <= ap y z
+claim !x:set.x iIn setexp real omega -> !y:set.y iIn setexp real omega -> (!z:set.z iIn omega -> ap x z <= ap y z & ap x z <= ap x (z + ordsucc Empty) & ap y (z + ordsucc Empty) <= ap y z) -> ?z:set.z iIn real & !w:set.w iIn omega -> ap x w <= z & z <= ap y w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

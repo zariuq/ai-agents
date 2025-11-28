@@ -1,0 +1,31 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+const PNoLe : set (set prop) set (set prop) prop
+term PNo_upc = \P:set (set prop) prop.\x:set.\p:set prop.?y:set.ordinal y & ?q:set prop.P y q & PNoLe y q x p
+const PNoLt : set (set prop) set (set prop) prop
+term PNo_rel_strict_lowerbd = \P:set (set prop) prop.\x:set.\p:set prop.!y:set.y iIn x -> !q:set prop.PNo_upc P y q -> PNoLt x p y q
+term PNo_downc = \P:set (set prop) prop.\x:set.\p:set prop.?y:set.ordinal y & ?q:set prop.P y q & PNoLe x p y q
+term PNo_rel_strict_upperbd = \P:set (set prop) prop.\x:set.\p:set prop.!y:set.y iIn x -> !q:set prop.PNo_downc P y q -> PNoLt y q x p
+term PNo_rel_strict_imv = \P:set (set prop) prop.\Q:set (set prop) prop.\x:set.\p:set prop.PNo_rel_strict_upperbd P x p & PNo_rel_strict_lowerbd Q x p
+term PNo_lenbdd = \x:set.\P:set (set prop) prop.!y:set.!p:set prop.P y p -> y iIn x
+term nIn = \x:set.\y:set.~ x iIn y
+const PNoEq_ : set (set prop) (set prop) prop
+term PNoLt_ = \x:set.\p:set prop.\q:set prop.?y:set.y iIn x & (PNoEq_ y p q & ~ p y & q y)
+const ordsucc : set set
+axiom ordinal_ordsucc: !x:set.ordinal x -> ordinal (ordsucc x)
+lemma !P:set (set prop) prop.!Q:set (set prop) prop.!x:set.!p:set prop.ordinal x -> TransSet x -> PNo_lenbdd x P -> PNo_lenbdd x Q -> PNo_rel_strict_upperbd P x p -> PNo_rel_strict_lowerbd Q x p -> ordinal (ordsucc x) -> PNo_rel_strict_upperbd P (ordsucc x) (\y:set.p y | y = x) & PNo_rel_strict_lowerbd Q (ordsucc x) \y:set.p y | y = x
+claim !P:set (set prop) prop.!Q:set (set prop) prop.!x:set.ordinal x -> PNo_lenbdd x P -> PNo_lenbdd x Q -> !p:set prop.PNo_rel_strict_imv P Q x p -> PNo_rel_strict_imv P Q (ordsucc x) \y:set.p y | y = x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

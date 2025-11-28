@@ -1,0 +1,33 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const binunion : set set set
+const Sing : set set
+const Empty : set
+const Repl : set (set set) set
+const SetAdjoin : set set set
+const ordsucc : set set
+term eps_ = \x:set.binunion (Sing Empty) (Repl x \y:set.SetAdjoin (ordsucc y) (Sing (ordsucc Empty)))
+axiom SingI: !x:set.x iIn Sing x
+axiom binunionI1: !x:set.!y:set.!z:set.z iIn x -> z iIn binunion x y
+const ordinal : set prop
+axiom eps_ordinal_In_eq_0: !x:set.!y:set.ordinal y -> y iIn eps_ x -> y = Empty
+axiom iffI: !P:prop.!Q:prop.(P -> Q) -> (Q -> P) -> (P <-> Q)
+const nat_p : set prop
+var x:set
+var y:set
+var z:set
+hyp nat_p y
+hyp z iIn ordsucc y
+claim ordinal z -> (z iIn eps_ x <-> z iIn eps_ y)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,76 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const CSNo : set prop
+const mul_CSNo : set set set
+axiom CSNo_mul_CSNo: !x:set.!y:set.CSNo x -> CSNo y -> CSNo (mul_CSNo x y)
+const ordsucc : set set
+const Empty : set
+axiom CSNo_1: CSNo (ordsucc Empty)
+const Complex_i : set
+axiom CSNo_Complex_i: CSNo Complex_i
+const SNo : set prop
+axiom SNo_0: SNo Empty
+axiom SNo_1: SNo (ordsucc Empty)
+const minus_SNo : set set
+term - = minus_SNo
+axiom SNo_minus_SNo: !x:set.SNo x -> SNo - x
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom mul_SNo_distrR: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> (x + y) * z = x * z + y * z
+axiom mul_SNo_com: !x:set.!y:set.SNo x -> SNo y -> x * y = y * x
+axiom mul_SNo_com_3_0_1: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x * y * z = y * x * z
+axiom minus_SNo_invol: !x:set.SNo x -> - - x = x
+axiom mul_SNo_minus_distrR: !x:set.!y:set.SNo x -> SNo y -> x * - y = - x * y
+axiom add_SNo_0L: !x:set.SNo x -> Empty + x = x
+axiom mul_SNo_oneL: !x:set.SNo x -> ordsucc Empty * x = x
+axiom add_SNo_0R: !x:set.SNo x -> x + Empty = x
+axiom minus_SNo_0: - Empty = Empty
+axiom mul_SNo_zeroR: !x:set.SNo x -> x * Empty = Empty
+axiom mul_SNo_zeroL: !x:set.SNo x -> Empty * x = Empty
+const CSNo_Im : set set
+axiom SNo_Im: !x:set.SNo x -> CSNo_Im x = Empty
+const CSNo_Re : set set
+axiom SNo_Re: !x:set.SNo x -> CSNo_Re x = x
+axiom Im_i: CSNo_Im Complex_i = ordsucc Empty
+axiom Re_i: CSNo_Re Complex_i = Empty
+axiom mul_CSNo_CIm: !x:set.!y:set.CSNo x -> CSNo y -> CSNo_Im (mul_CSNo x y) = CSNo_Re x * CSNo_Im y + CSNo_Im x * CSNo_Re y
+axiom mul_CSNo_CRe: !x:set.!y:set.CSNo x -> CSNo y -> CSNo_Re (mul_CSNo x y) = CSNo_Re x * CSNo_Re y + - CSNo_Im x * CSNo_Im y
+const minus_CSNo : set set
+axiom minus_CSNo_CIm: !x:set.CSNo x -> CSNo_Im (minus_CSNo x) = - CSNo_Im x
+axiom minus_CSNo_CRe: !x:set.CSNo x -> CSNo_Re (minus_CSNo x) = - CSNo_Re x
+const add_CSNo : set set set
+axiom add_CSNo_CIm: !x:set.!y:set.CSNo x -> CSNo y -> CSNo_Im (add_CSNo x y) = CSNo_Im x + CSNo_Im y
+axiom add_CSNo_CRe: !x:set.!y:set.CSNo x -> CSNo y -> CSNo_Re (add_CSNo x y) = CSNo_Re x + CSNo_Re y
+axiom Re_1: CSNo_Re (ordsucc Empty) = ordsucc Empty
+axiom SNo_mul_SNo_3: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> SNo (x * y * z)
+axiom add_SNo_minus_SNo_linv: !x:set.SNo x -> - x + x = Empty
+axiom Im_1: CSNo_Im (ordsucc Empty) = Empty
+axiom CSNo_ReIm_split: !x:set.!y:set.CSNo x -> CSNo y -> CSNo_Re x = CSNo_Re y -> CSNo_Im x = CSNo_Im y -> x = y
+var x:set
+var y:set
+hyp CSNo x
+hyp SNo y
+hyp (CSNo_Re x * CSNo_Re x + CSNo_Im x * CSNo_Im x) * y = ordsucc Empty
+hyp SNo (CSNo_Re x)
+hyp SNo (CSNo_Im x)
+hyp SNo (y * CSNo_Re x)
+hyp CSNo (y * CSNo_Re x)
+hyp SNo (y * CSNo_Im x)
+hyp CSNo (y * CSNo_Im x)
+hyp CSNo (mul_CSNo Complex_i (y * CSNo_Im x))
+hyp CSNo (minus_CSNo (mul_CSNo Complex_i (y * CSNo_Im x)))
+hyp CSNo (add_CSNo (y * CSNo_Re x) (minus_CSNo (mul_CSNo Complex_i (y * CSNo_Im x))))
+hyp SNo (CSNo_Re x * CSNo_Re x)
+claim SNo (CSNo_Im x * CSNo_Im x) -> mul_CSNo x (add_CSNo (y * CSNo_Re x) (minus_CSNo (mul_CSNo Complex_i (y * CSNo_Im x)))) = ordsucc Empty
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

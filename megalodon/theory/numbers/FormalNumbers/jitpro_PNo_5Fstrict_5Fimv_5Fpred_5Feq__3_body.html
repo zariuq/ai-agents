@@ -1,0 +1,38 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+const PNoLt : set (set prop) set (set prop) prop
+term PNo_strict_lowerbd = \P:set (set prop) prop.\x:set.\p:set prop.!y:set.ordinal y -> !q:set prop.P y q -> PNoLt x p y q
+term PNo_strict_upperbd = \P:set (set prop) prop.\x:set.\p:set prop.!y:set.ordinal y -> !q:set prop.P y q -> PNoLt y q x p
+term PNo_strict_imv = \P:set (set prop) prop.\Q:set (set prop) prop.\x:set.\p:set prop.PNo_strict_upperbd P x p & PNo_strict_lowerbd Q x p
+term PNo_least_rep = \P:set (set prop) prop.\Q:set (set prop) prop.\x:set.\p:set prop.ordinal x & PNo_strict_imv P Q x p & !y:set.y iIn x -> !q:set prop.~ PNo_strict_imv P Q y q
+axiom PNoLt_tra: !x:set.!y:set.!z:set.ordinal x -> ordinal y -> ordinal z -> !p:set prop.!q:set prop.!p2:set prop.PNoLt x p y q -> PNoLt y q z p2 -> PNoLt x p z p2
+var P:set (set prop) prop
+var Q:set (set prop) prop
+var x:set
+var p:set prop
+var q:set prop
+var y:set
+hyp ordinal x
+hyp !z:set.z iIn x -> !p2:set prop.~ PNo_strict_imv P Q z p2
+hyp PNo_strict_lowerbd Q x p
+hyp PNo_strict_upperbd P x q
+hyp ordinal y
+hyp y iIn x
+hyp ~ q y
+hyp PNoLt y q x p
+claim ~ PNoLt x q y q
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

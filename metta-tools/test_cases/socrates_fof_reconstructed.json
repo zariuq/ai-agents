@@ -1,0 +1,59 @@
+{
+  "metadata": {},
+  "comments": [
+    "-----------------------------------------------------------------------------",
+    "-----------------------------------------------------------------------------",
+    "-----------------------------------------------------------------------------"
+  ],
+  "formulas": [
+    {
+      "name": "all_humans_mortal",
+      "role": "axiom",
+      "formula": [
+        "forall",
+        [
+          "X"
+        ],
+        [
+          "implies",
+          [
+            "human",
+            [
+              "var",
+              "X"
+            ]
+          ],
+          [
+            "mortal",
+            [
+              "var",
+              "X"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "socrates_human",
+      "role": "axiom",
+      "formula": [
+        "human",
+        [
+          "const",
+          "socrates"
+        ]
+      ]
+    },
+    {
+      "name": "socrates_mortal",
+      "role": "conjecture",
+      "formula": [
+        "mortal",
+        [
+          "const",
+          "socrates"
+        ]
+      ]
+    }
+  ]
+}

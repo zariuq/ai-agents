@@ -1,0 +1,40 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+const In_rec_iii : (set (set set set set) set set set) set set set set
+const If_iii : prop (set set set) (set set set) set set set
+const If_ii : prop (set set) (set set) set set
+const SNoS_ : set set
+const ordsucc : set set
+const SNoLev : set set
+const Descr_ii : ((set set) prop) set set
+term SNo_rec_ii = \P:set (set set set) set set.\x:set.In_rec_iii (\y:set.\Q:set set set set.If_iii (ordinal y) (\z:set.If_ii (z iIn SNoS_ (ordsucc y)) (P z \w:set.Q (SNoLev w) w) (Descr_ii \f:set set.True)) \z:set.Descr_ii \f:set set.True) (SNoLev x) x
+term nIn = \x:set.\y:set.~ x iIn y
+axiom ordsuccE: !x:set.!y:set.y iIn ordsucc x -> y iIn x | y = x
+const SNo : set prop
+const SNo_ : set set prop
+axiom SNoS_E2: !x:set.ordinal x -> !y:set.y iIn SNoS_ x -> !P:prop.(SNoLev y iIn x -> ordinal (SNoLev y) -> SNo y -> SNo_ (SNoLev y) y -> P) -> P
+lemma !x:set.!P:set set set set.!Q:set set set set.!y:set.!z:set.(!w:set.w iIn x -> P w = Q w) -> ordinal x -> SNoLev y iIn ordsucc x -> SNoLev z iIn SNoLev y -> SNoLev z iIn x -> P (SNoLev z) z = Q (SNoLev z) z
+var P:set (set set set) set set
+var x:set
+var Q:set set set set
+var R:set set set set
+var y:set
+hyp !z:set.SNo z -> !g:set set set.!h:set set set.(!w:set.w iIn SNoS_ (SNoLev z) -> g w = h w) -> P z g = P z h
+hyp !z:set.z iIn x -> Q z = R z
+hyp ordinal x
+hyp y iIn SNoS_ (ordsucc x)
+claim ordinal (ordsucc x) -> P y (\z:set.Q (SNoLev z) z) = P y \z:set.R (SNoLev z) z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

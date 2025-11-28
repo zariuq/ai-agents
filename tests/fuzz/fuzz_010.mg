@@ -1,0 +1,9 @@
+Definition x32 : set -> prop := ((baz45 ((B72 B100) (z19 y59))) (((forall y15:set -> set, Q71) (y8 -> y58)) (A62 (B69 -> y58)))).
+
+Parameter z5 : prop.
+
+Parameter B6 : set.
+
+Definition P46 : set -> set := ((forall bar3:set, bar35) (forall bar49:set, z14)).
+
+Parameter baz64 : set -> prop.

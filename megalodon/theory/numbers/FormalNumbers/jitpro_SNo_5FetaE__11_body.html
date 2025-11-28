@@ -1,0 +1,37 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const ordinal : set prop
+const SNo_ : set set prop
+term SNo = \x:set.?y:set.ordinal y & SNo_ y x
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+const Sep : set (set prop) set
+const SNoS_ : set set
+const SNoLev : set set
+term SNoL = \x:set.Sep (SNoS_ (SNoLev x)) \y:set.y < x
+term SNoR = \x:set.Sep (SNoS_ (SNoLev x)) (SNoLt x)
+axiom ordinal_Hered: !x:set.ordinal x -> !y:set.y iIn x -> ordinal y
+axiom SNoS_E: !x:set.ordinal x -> !y:set.y iIn SNoS_ x -> ?z:set.z iIn x & SNo_ z y
+axiom SepE: !x:set.!p:set prop.!y:set.y iIn Sep x p -> y iIn x & p y
+const SNoCut : set set set
+lemma !x:set.!P:prop.SNo x -> (!y:set.!z:set.SNoCutP y z -> (!w:set.w iIn y -> SNoLev w iIn SNoLev x) -> (!w:set.w iIn z -> SNoLev w iIn SNoLev x) -> x = SNoCut y z -> P) -> ordinal (SNoLev x) -> x = SNoCut (Sep (SNoS_ (SNoLev x)) \y:set.y < x) (Sep (SNoS_ (SNoLev x)) (SNoLt x)) -> (!y:set.y iIn Sep (SNoS_ (SNoLev x)) (\z:set.z < x) -> SNo y & SNoLev y iIn SNoLev x & y < x) -> P
+lemma !x:set.!y:set.!z:set.ordinal (SNoLev x) -> y < x -> z iIn SNoLev x -> SNo_ z y -> ordinal z -> SNo y & SNoLev y iIn SNoLev x & y < x
+var x:set
+var P:prop
+hyp SNo x
+hyp !y:set.!z:set.SNoCutP y z -> (!w:set.w iIn y -> SNoLev w iIn SNoLev x) -> (!w:set.w iIn z -> SNoLev w iIn SNoLev x) -> x = SNoCut y z -> P
+hyp ordinal (SNoLev x)
+claim x = SNoCut (Sep (SNoS_ (SNoLev x)) \y:set.y < x) (Sep (SNoS_ (SNoLev x)) (SNoLt x)) -> P
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

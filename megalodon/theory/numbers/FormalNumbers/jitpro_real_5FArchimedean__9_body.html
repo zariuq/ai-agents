@@ -1,0 +1,49 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const nat_p : set prop
+const ordsucc : set set
+const Empty : set
+axiom nat_2: nat_p (ordsucc (ordsucc Empty))
+const omega : set
+axiom omega_nat_p: !x:set.x iIn omega -> nat_p x
+const exp_SNo_nat : set set set
+axiom nat_exp_SNo_nat: !x:set.nat_p x -> !y:set.nat_p y -> nat_p (exp_SNo_nat x y)
+const real : set
+const SNo : set prop
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+const eps_ : set set
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+lemma !x:set.!y:set.!z:set.y iIn real -> SNo x -> z iIn omega -> eps_ z <= x -> nat_p (exp_SNo_nat (ordsucc (ordsucc Empty)) z) -> ?w:set.w iIn omega & y <= w * x
+const SNoS_ : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const abs_SNo : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const minus_SNo : set set
+term - = minus_SNo
+var x:set
+var y:set
+hyp y iIn real
+hyp Empty < x
+hyp SNo x
+hyp !z:set.z iIn SNoS_ omega -> (!w:set.w iIn omega -> abs_SNo (z + - x) < eps_ w) -> z = x
+claim (?z:set.z iIn omega & eps_ z <= x) -> ?z:set.z iIn omega & y <= z * x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

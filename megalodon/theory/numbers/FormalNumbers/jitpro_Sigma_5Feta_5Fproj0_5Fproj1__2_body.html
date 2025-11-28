@@ -1,0 +1,22 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const famunion : set (set set) set
+const Repl : set (set set) set
+const setsum : set set set
+term Sigma = \x:set.\f:set set.famunion x \y:set.Repl (f y) (setsum y)
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+axiom famunionE: !x:set.!f:set set.!y:set.y iIn famunion x f -> ?z:set.z iIn x & y iIn f z
+const proj0 : set set
+const proj1 : set set
+lemma !x:set.!f:set set.!y:set.y iIn Sigma x f -> (?z:set.z iIn x & y iIn Repl (f z) (setsum z)) -> setsum (proj0 y) (proj1 y) = y & proj0 y iIn x & proj1 y iIn f (proj0 y)
+claim !x:set.!f:set set.!y:set.y iIn Sigma x f -> setsum (proj0 y) (proj1 y) = y & proj0 y iIn x & proj1 y iIn f (proj0 y)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

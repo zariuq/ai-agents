@@ -1,0 +1,30 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo_pair : set set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const CSNo_Re : set set
+const minus_SNo : set set
+term - = minus_SNo
+const CSNo_Im : set set
+term mul_CSNo = \x:set.\y:set.SNo_pair (CSNo_Re x * CSNo_Re y + - CSNo_Im x * CSNo_Im y) (CSNo_Re x * CSNo_Im y + CSNo_Im x * CSNo_Re y)
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const complex : set
+const real : set
+axiom complex_Re_real: !x:set.x iIn complex -> CSNo_Re x iIn real
+lemma !x:set.!y:set.x iIn complex -> y iIn complex -> CSNo_Re x iIn real -> SNo_pair (CSNo_Re x * CSNo_Re y + - CSNo_Im x * CSNo_Im y) (CSNo_Re x * CSNo_Im y + CSNo_Im x * CSNo_Re y) iIn complex
+claim !x:set.x iIn complex -> !y:set.y iIn complex -> mul_CSNo x y iIn complex
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

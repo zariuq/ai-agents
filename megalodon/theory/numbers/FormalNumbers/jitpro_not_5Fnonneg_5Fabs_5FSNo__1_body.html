@@ -1,0 +1,20 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const If_i : prop set set set
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+const Empty : set
+const minus_SNo : set set
+term - = minus_SNo
+term abs_SNo = \x:set.If_i (Empty <= x) x - x
+axiom If_i_0: !P:prop.!x:set.!y:set.~ P -> If_i P x y = y
+claim !x:set.~ Empty <= x -> abs_SNo x = - x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

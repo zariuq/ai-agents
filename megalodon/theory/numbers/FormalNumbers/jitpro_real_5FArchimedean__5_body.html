@@ -1,0 +1,59 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const nat_p : set prop
+const omega : set
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+axiom omega_nat_p: !x:set.x iIn omega -> nat_p x
+const mul_nat : set set set
+axiom mul_nat_p: !x:set.nat_p x -> !y:set.nat_p y -> nat_p (mul_nat x y)
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom mul_nat_mul_SNo: !x:set.x iIn omega -> !y:set.y iIn omega -> mul_nat x y = x * y
+const SNo : set prop
+axiom omega_SNo: !x:set.x iIn omega -> SNo x
+const SNoS_ : set set
+const ordsucc : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom SNoS_ordsucc_omega_bdd_above: !x:set.x iIn SNoS_ (ordsucc omega) -> x < omega -> ?y:set.y iIn omega & x < y
+const real : set
+const SNoLev : set set
+const minus_SNo : set set
+term - = minus_SNo
+const abs_SNo : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const eps_ : set set
+axiom real_E: !x:set.x iIn real -> !P:prop.(SNo x -> SNoLev x iIn ordsucc omega -> x iIn SNoS_ (ordsucc omega) -> - omega < x -> x < omega -> (!y:set.y iIn SNoS_ omega -> (!z:set.z iIn omega -> abs_SNo (y + - x) < eps_ z) -> y = x) -> (!y:set.y iIn omega -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + eps_ y)) -> P) -> P
+const exp_SNo_nat : set set set
+const Empty : set
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+lemma !x:set.!y:set.!z:set.!w:set.SNo x -> SNo (exp_SNo_nat (ordsucc (ordsucc Empty)) z) -> ordsucc Empty <= exp_SNo_nat (ordsucc (ordsucc Empty)) z * x -> SNo y -> w iIn omega -> y < w -> SNo w -> y <= (w * exp_SNo_nat (ordsucc (ordsucc Empty)) z) * x
+var x:set
+var y:set
+var z:set
+hyp y iIn real
+hyp SNo x
+hyp z iIn omega
+hyp eps_ z <= x
+hyp nat_p (exp_SNo_nat (ordsucc (ordsucc Empty)) z)
+hyp SNo (exp_SNo_nat (ordsucc (ordsucc Empty)) z)
+hyp Empty <= exp_SNo_nat (ordsucc (ordsucc Empty)) z
+claim ordsucc Empty <= exp_SNo_nat (ordsucc (ordsucc Empty)) z * x -> ?w:set.w iIn omega & y <= w * x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

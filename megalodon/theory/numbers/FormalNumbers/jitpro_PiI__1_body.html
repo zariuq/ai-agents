@@ -1,0 +1,30 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Sep : set (set prop) set
+const Power : set set
+const Sigma : set (set set) set
+const Union : set set
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const ap : set set set
+term Pi = \x:set.\f:set set.Sep (Power (Sigma x \y:set.Union (f y))) \y:set.!z:set.z iIn x -> ap y z iIn f z
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const setsum : set set set
+const Empty : set
+const ordsucc : set set
+term pair_p = \x:set.setsum (ap x Empty) (ap x (ordsucc Empty)) = x
+axiom apI: !x:set.!y:set.!z:set.setsum y z iIn x -> z iIn ap x y
+axiom UnionI: !x:set.!y:set.!z:set.y iIn z -> z iIn x -> y iIn Union x
+axiom lamI: !x:set.!f:set set.!y:set.y iIn x -> !z:set.z iIn f y -> setsum y z iIn Sigma x f
+axiom PowerI: !x:set.!y:set.Subq y x -> y iIn Power x
+axiom SepI: !x:set.!p:set prop.!y:set.y iIn x -> p y -> y iIn Sep x p
+claim !x:set.!f:set set.!y:set.(!z:set.z iIn y -> pair_p z & ap z Empty iIn x) -> (!z:set.z iIn x -> ap y z iIn f z) -> y iIn Pi x f
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

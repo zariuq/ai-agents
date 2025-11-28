@@ -1,0 +1,20 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const binunion : set set set
+const Empty : set
+axiom binunion_idr: !x:set.binunion x Empty = x
+const finite : set prop
+const Sing : set set
+axiom adjoin_finite: !x:set.!y:set.finite x -> finite (binunion x (Sing y))
+axiom binunion_asso: !x:set.!y:set.!z:set.binunion x (binunion y z) = binunion (binunion x y) z
+const nIn : set set prop
+axiom finite_ind: !p:set prop.p Empty -> (!x:set.!y:set.finite x -> nIn y x -> p x -> p (binunion x (Sing y))) -> !x:set.finite x -> p x
+claim !x:set.finite x -> !y:set.finite y -> finite (binunion x y)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

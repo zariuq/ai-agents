@@ -1,0 +1,21 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Repl : set (set set) set
+const Power : set set
+const Empty : set
+const If_i : prop set set set
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term UPair = \x:set.\y:set.Repl (Power (Power Empty)) \z:set.If_i (Empty iIn z) x y
+axiom ReplE: !x:set.!f:set set.!y:set.y iIn Repl x f -> ?z:set.z iIn x & y = f z
+lemma !x:set.!y:set.!z:set.!w:set.w iIn Power (Power Empty) & x = If_i (Empty iIn w) y z -> x = If_i (Empty iIn w) y z -> x = y | x = z
+claim !x:set.!y:set.!z:set.x iIn UPair y z -> x = y | x = z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

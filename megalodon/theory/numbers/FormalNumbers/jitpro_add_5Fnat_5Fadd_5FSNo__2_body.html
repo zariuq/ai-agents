@@ -1,0 +1,33 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const add_nat : set set set
+const Empty : set
+axiom add_nat_0R: !x:set.add_nat x Empty = x
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_SNo_0R: !x:set.SNo x -> x + Empty = x
+const nat_p : set prop
+const ordinal : set prop
+axiom nat_p_ordinal: !x:set.nat_p x -> ordinal x
+const ordsucc : set set
+axiom add_nat_SR: !x:set.!y:set.nat_p y -> add_nat x (ordsucc y) = ordsucc (add_nat x y)
+axiom add_SNo_ordinal_SR: !x:set.ordinal x -> !y:set.ordinal y -> x + ordsucc y = ordsucc (x + y)
+axiom nat_ind: !p:set prop.p Empty -> (!x:set.nat_p x -> p x -> p (ordsucc x)) -> !x:set.nat_p x -> p x
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const omega : set
+lemma !x:set.ordinal x -> SNo x -> (!y:set.nat_p y -> add_nat x y = x + y) -> !y:set.y iIn omega -> add_nat x y = x + y
+var x:set
+hyp ordinal x
+claim SNo x -> !y:set.y iIn omega -> add_nat x y = x + y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

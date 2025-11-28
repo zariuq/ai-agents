@@ -1,0 +1,105 @@
+{
+  "metadata": {},
+  "comments": [
+    "Transitivity of a binary relation",
+    "If R is transitive and R(a,b) and R(b,c), then R(a,c)"
+  ],
+  "formulas": [
+    {
+      "name": "transitivity",
+      "role": "axiom",
+      "formula": [
+        "forall",
+        [
+          "X",
+          "Y",
+          "Z"
+        ],
+        [
+          "implies",
+          [
+            "and",
+            [
+              "r",
+              [
+                "var",
+                "X"
+              ],
+              [
+                "var",
+                "Y"
+              ]
+            ],
+            [
+              "r",
+              [
+                "var",
+                "Y"
+              ],
+              [
+                "var",
+                "Z"
+              ]
+            ]
+          ],
+          [
+            "r",
+            [
+              "var",
+              "X"
+            ],
+            [
+              "var",
+              "Z"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "r_ab",
+      "role": "axiom",
+      "formula": [
+        "r",
+        [
+          "const",
+          "a"
+        ],
+        [
+          "const",
+          "b"
+        ]
+      ]
+    },
+    {
+      "name": "r_bc",
+      "role": "axiom",
+      "formula": [
+        "r",
+        [
+          "const",
+          "b"
+        ],
+        [
+          "const",
+          "c"
+        ]
+      ]
+    },
+    {
+      "name": "r_ac",
+      "role": "conjecture",
+      "formula": [
+        "r",
+        [
+          "const",
+          "a"
+        ],
+        [
+          "const",
+          "c"
+        ]
+      ]
+    }
+  ]
+}

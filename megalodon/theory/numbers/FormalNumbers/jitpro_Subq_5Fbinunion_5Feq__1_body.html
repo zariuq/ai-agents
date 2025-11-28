@@ -1,0 +1,19 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Subq : set set prop
+axiom Subq_ref: !x:set.Subq x x
+const binunion : set set set
+axiom binunion_Subq_min: !x:set.!y:set.!z:set.Subq x z -> Subq y z -> Subq (binunion x y) z
+axiom binunion_Subq_2: !x:set.!y:set.Subq y (binunion x y)
+axiom set_ext: !x:set.!y:set.Subq x y -> Subq y x -> x = y
+axiom binunion_Subq_1: !x:set.!y:set.Subq x (binunion x y)
+axiom prop_ext_2: !P:prop.!Q:prop.(P -> Q) -> (Q -> P) -> P = Q
+claim !x:set.!y:set.Subq x y = (binunion x y = y)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

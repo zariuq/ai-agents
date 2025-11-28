@@ -1,0 +1,28 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+axiom FalseE: ~ False
+const ordinal : set prop
+axiom ordinal_TransSet: !x:set.ordinal x -> TransSet x
+var x:set
+var y:set
+var z:set
+hyp !w:set.w iIn x -> !u:set.ordinal w -> ordinal u -> w iIn u | w = u | u iIn w
+hyp ordinal x
+hyp ordinal y
+hyp nIn y x
+hyp z iIn x
+claim ordinal z -> z iIn y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,62 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+const SNo : set prop
+const SNoCutP : set set prop
+const SNoL : set set
+const SNoR : set set
+axiom SNoCutP_SNoL_SNoR: !x:set.SNo x -> SNoCutP (SNoL x) (SNoR x)
+const binunion : set set set
+const Repl : set (set set) set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_SNo_SNoCutP: !x:set.!y:set.SNo x -> SNo y -> SNoCutP (binunion (Repl (SNoL x) \z:set.z + y) (Repl (SNoL y) (add_SNo x))) (binunion (Repl (SNoR x) \z:set.z + y) (Repl (SNoR y) (add_SNo x)))
+axiom In_no2cycle: !x:set.!y:set.x iIn y -> ~ y iIn x
+axiom FalseE: ~ False
+const SNoS_ : set set
+const SNoLev : set set
+axiom SNoL_SNoS_: !x:set.Subq (SNoL x) (SNoS_ (SNoLev x))
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom SNoLt_trichotomy_or: !x:set.!y:set.SNo x -> SNo y -> x < y | x = y | y < x
+axiom SNoL_E: !x:set.SNo x -> !y:set.y iIn SNoL x -> !P:prop.(SNo y -> SNoLev y iIn SNoLev x -> y < x -> P) -> P
+const SNoCut : set set set
+axiom add_SNo_eq: !x:set.SNo x -> !y:set.SNo y -> x + y = SNoCut (binunion (Repl (SNoL x) \z:set.z + y) (Repl (SNoL y) (add_SNo x))) (binunion (Repl (SNoR x) \z:set.z + y) (Repl (SNoR y) (add_SNo x)))
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+axiom SNoR_E: !x:set.SNo x -> !y:set.y iIn SNoR x -> !P:prop.(SNo y -> SNoLev y iIn SNoLev x -> x < y -> P) -> P
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+axiom binunionE: !x:set.!y:set.!z:set.z iIn binunion x y -> z iIn x | z iIn y
+axiom SNo_eta: !x:set.SNo x -> x = SNoCut (SNoL x) (SNoR x)
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+axiom SNoCut_Le: !x:set.!y:set.!z:set.!w:set.SNoCutP x y -> SNoCutP z w -> (!u:set.u iIn x -> u < SNoCut z w) -> (!u:set.u iIn w -> SNoCut x y < u) -> SNoCut x y <= SNoCut z w
+axiom SNoLt_irref: !x:set.~ x < x
+axiom dneg: !P:prop.~ ~ P -> P
+axiom SNoLev_ind: !p:set prop.(!x:set.SNo x -> (!y:set.y iIn SNoS_ (SNoLev x) -> p y) -> p x) -> !x:set.SNo x -> p x
+lemma !x:set.!y:set.SNo x -> SNo y -> SNo (x + y) -> (!z:set.SNo z -> SNoLev z iIn SNoLev (x + y) -> (x + y) < z -> (?w:set.w iIn SNoR x & (w + y) <= z) | ?w:set.w iIn SNoR y & (x + w) <= z) -> !z:set.z iIn SNoR (x + y) -> (?w:set.w iIn SNoR x & (w + y) <= z) | ?w:set.w iIn SNoR y & (x + w) <= z
+lemma !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo (x + y) -> SNo z -> (!w:set.w iIn SNoS_ (SNoLev z) -> SNoLev w iIn SNoLev (x + y) -> (x + y) < w -> (?u:set.u iIn SNoR x & (u + y) <= w) | ?u:set.u iIn SNoR y & (x + u) <= w) -> SNoLev z iIn SNoLev (x + y) -> (x + y) < z -> ~ ((?w:set.w iIn SNoR x & (w + y) <= z) | ?w:set.w iIn SNoR y & (x + w) <= z) -> z <= x + y -> z < z
+lemma !x:set.!y:set.!z:set.!w:set.SNo x -> SNo y -> SNo (x + y) -> SNo z -> (!u:set.u iIn SNoS_ (SNoLev z) -> SNoLev u iIn SNoLev (x + y) -> (x + y) < u -> (?v:set.v iIn SNoR x & (v + y) <= u) | ?v:set.v iIn SNoR y & (x + v) <= u) -> SNoLev z iIn SNoLev (x + y) -> ~ ((?u:set.u iIn SNoR x & (u + y) <= z) | ?u:set.u iIn SNoR y & (x + u) <= z) -> w iIn SNoL z -> SNo w -> SNoLev w iIn SNoLev z -> w < z -> (x + y) < w -> ~ w iIn SNoS_ (SNoLev z)
+lemma !x:set.!y:set.!z:set.!w:set.SNo y -> SNo z -> ~ ((?u:set.u iIn SNoR x & (u + y) <= z) | ?u:set.u iIn SNoR y & (x + u) <= z) -> w iIn SNoR x -> SNo w -> SNo (w + y) -> z < w + y
+lemma !x:set.!y:set.!z:set.!w:set.SNo x -> SNo z -> ~ ((?u:set.u iIn SNoR x & (u + y) <= z) | ?u:set.u iIn SNoR y & (x + u) <= z) -> w iIn SNoR y -> SNo w -> SNo (x + w) -> z < x + w
+var x:set
+var y:set
+hyp SNo x
+hyp SNo y
+claim SNo (x + y) -> !z:set.z iIn SNoR (x + y) -> (?w:set.w iIn SNoR x & (w + y) <= z) | ?w:set.w iIn SNoR y & (x + w) <= z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

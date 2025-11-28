@@ -1,0 +1,24 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In_rec_i : (set (set set) set) set set
+const If_i : prop set set set
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const Union : set set
+term nat_primrec = \x:set.\g:set set set.In_rec_i \y:set.\f:set set.If_i (Union y iIn y) (g (Union y) (f (Union y))) x
+term nIn = \x:set.\y:set.~ x iIn y
+axiom nat_primrec_r: !x:set.!g:set set set.!y:set.!f:set set.!f2:set set.(!z:set.z iIn y -> f z = f2 z) -> If_i (Union y iIn y) (g (Union y) (f (Union y))) x = If_i (Union y iIn y) (g (Union y) (f2 (Union y))) x
+const Empty : set
+axiom EmptyE: !x:set.nIn x Empty
+axiom If_i_0: !P:prop.!x:set.!y:set.~ P -> If_i P x y = y
+axiom In_rec_i_eq: !P:set (set set) set.(!x:set.!f:set set.!f2:set set.(!y:set.y iIn x -> f y = f2 y) -> P x f = P x f2) -> !x:set.In_rec_i P x = P x (In_rec_i P)
+claim !x:set.!g:set set set.nat_primrec x g Empty = x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

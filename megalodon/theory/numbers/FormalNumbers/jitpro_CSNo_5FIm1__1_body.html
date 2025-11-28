@@ -1,0 +1,20 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Eps_i : (set prop) set
+const SNo : set prop
+const SNo_pair : set set set
+const CSNo_Re : set set
+term CSNo_Im = \x:set.Eps_i \y:set.SNo y & x = SNo_pair (CSNo_Re x) y
+axiom CSNo_Re2: !x:set.!y:set.SNo x -> SNo y -> CSNo_Re (SNo_pair x y) = x
+const CSNo : set prop
+axiom CSNo_E: !x:set.CSNo x -> !p:set prop.(!y:set.!z:set.SNo y -> SNo z -> x = SNo_pair y z -> p (SNo_pair y z)) -> p x
+axiom Eps_i_ex: !p:set prop.(?x:set.p x) -> p (Eps_i p)
+claim !x:set.CSNo x -> SNo (CSNo_Im x) & x = SNo_pair (CSNo_Re x) (CSNo_Im x)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

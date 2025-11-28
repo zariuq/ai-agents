@@ -1,0 +1,27 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo_pair : set set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const CSNo_Re : set set
+const CSNo_Im : set set
+term add_CSNo = \x:set.\y:set.SNo_pair (CSNo_Re x + CSNo_Re y) (CSNo_Im x + CSNo_Im y)
+const CSNo : set prop
+const SNo : set prop
+axiom CSNo_ReR: !x:set.CSNo x -> SNo (CSNo_Re x)
+axiom CSNo_ImR: !x:set.CSNo x -> SNo (CSNo_Im x)
+axiom CSNo_ReIm: !x:set.CSNo x -> x = SNo_pair (CSNo_Re x) (CSNo_Im x)
+const Empty : set
+axiom add_SNo_0R: !x:set.SNo x -> x + Empty = x
+axiom Im_0: CSNo_Im Empty = Empty
+axiom Re_0: CSNo_Re Empty = Empty
+claim !x:set.CSNo x -> add_CSNo x Empty = x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

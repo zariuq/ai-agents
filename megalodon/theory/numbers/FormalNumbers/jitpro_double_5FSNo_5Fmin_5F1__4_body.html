@@ -1,0 +1,46 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+term SNo_min_of = \x:set.\y:set.y iIn x & SNo y & !z:set.z iIn x -> SNo z -> y <= z
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const minus_SNo : set set
+term - = minus_SNo
+axiom minus_SNo_Lt_contra: !x:set.!y:set.SNo x -> SNo y -> x < y -> - y < - x
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const SNo_max_of : set set prop
+const SNoL : set set
+lemma !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> z < x -> (x + x) < y + z -> SNo - x -> SNo - y -> SNo - z -> SNo (x + x) -> SNo (y + z) -> SNo_max_of (SNoL - x) - y -> - x < - z -> ?w:set.w iIn SNoL z & y + w = x + x
+const SNoR : set set
+var x:set
+var y:set
+var z:set
+hyp SNo x
+hyp SNo_min_of (SNoR x) y
+hyp SNo y
+hyp SNo z
+hyp z < x
+hyp (x + x) < y + z
+hyp SNo - x
+hyp SNo - y
+hyp SNo - z
+hyp SNo (x + x)
+hyp SNo (y + z)
+claim SNo_max_of (SNoL - x) - y -> ?w:set.w iIn SNoL z & y + w = x + x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

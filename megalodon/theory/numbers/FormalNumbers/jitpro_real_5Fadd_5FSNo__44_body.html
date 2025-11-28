@@ -1,0 +1,64 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const omega : set
+const ordsucc : set set
+axiom omega_ordsucc: !x:set.x iIn omega -> ordsucc x iIn omega
+const ap : set set set
+axiom ap_Pi: !x:set.!f:set set.!y:set.!z:set.y iIn Pi x f -> z iIn x -> ap y z iIn f z
+const real : set
+const SNoS_ : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const eps_ : set set
+const minus_SNo : set set
+term - = minus_SNo
+const abs_SNo : set set
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.x iIn real -> y iIn real -> z iIn setexp (SNoS_ omega) omega -> w iIn setexp (SNoS_ omega) omega -> (!x2:set.x2 iIn omega -> ap z x2 < x) -> (!x2:set.x2 iIn omega -> x < ap z x2 + eps_ x2) -> (!x2:set.x2 iIn omega -> !y2:set.y2 iIn x2 -> ap z y2 < ap z x2) -> (!x2:set.x2 iIn omega -> (ap w x2 + - eps_ x2) < x) -> (!x2:set.x2 iIn omega -> x < ap w x2) -> (!x2:set.x2 iIn omega -> !y2:set.y2 iIn x2 -> ap w x2 < ap w y2) -> u iIn setexp (SNoS_ omega) omega -> v iIn setexp (SNoS_ omega) omega -> (!x2:set.x2 iIn omega -> ap u x2 < y) -> (!x2:set.x2 iIn omega -> y < ap u x2 + eps_ x2) -> (!x2:set.x2 iIn omega -> !y2:set.y2 iIn x2 -> ap u y2 < ap u x2) -> (!x2:set.x2 iIn omega -> (ap v x2 + - eps_ x2) < y) -> (!x2:set.x2 iIn omega -> y < ap v x2) -> (!x2:set.x2 iIn omega -> !y2:set.y2 iIn x2 -> ap v x2 < ap v y2) -> SNo x -> SNo y -> SNo (x + y) -> (!x2:set.x2 iIn SNoS_ omega -> (!y2:set.y2 iIn omega -> abs_SNo (x2 + - x) < eps_ y2) -> x2 = x) -> (!x2:set.x2 iIn SNoS_ omega -> (!y2:set.y2 iIn omega -> abs_SNo (x2 + - y) < eps_ y2) -> x2 = y) -> (!x2:set.x2 iIn omega -> ap z (ordsucc x2) iIn SNoS_ omega) -> x + y iIn real
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+hyp x iIn real
+hyp y iIn real
+hyp z iIn setexp (SNoS_ omega) omega
+hyp w iIn setexp (SNoS_ omega) omega
+hyp !x2:set.x2 iIn omega -> ap z x2 < x
+hyp !x2:set.x2 iIn omega -> x < ap z x2 + eps_ x2
+hyp !x2:set.x2 iIn omega -> !y2:set.y2 iIn x2 -> ap z y2 < ap z x2
+hyp !x2:set.x2 iIn omega -> (ap w x2 + - eps_ x2) < x
+hyp !x2:set.x2 iIn omega -> x < ap w x2
+hyp !x2:set.x2 iIn omega -> !y2:set.y2 iIn x2 -> ap w x2 < ap w y2
+hyp u iIn setexp (SNoS_ omega) omega
+hyp v iIn setexp (SNoS_ omega) omega
+hyp !x2:set.x2 iIn omega -> ap u x2 < y
+hyp !x2:set.x2 iIn omega -> y < ap u x2 + eps_ x2
+hyp !x2:set.x2 iIn omega -> !y2:set.y2 iIn x2 -> ap u y2 < ap u x2
+hyp !x2:set.x2 iIn omega -> (ap v x2 + - eps_ x2) < y
+hyp !x2:set.x2 iIn omega -> y < ap v x2
+hyp !x2:set.x2 iIn omega -> !y2:set.y2 iIn x2 -> ap v x2 < ap v y2
+hyp SNo x
+hyp SNo y
+hyp SNo (x + y)
+hyp !x2:set.x2 iIn SNoS_ omega -> (!y2:set.y2 iIn omega -> abs_SNo (x2 + - x) < eps_ y2) -> x2 = x
+claim (!x2:set.x2 iIn SNoS_ omega -> (!y2:set.y2 iIn omega -> abs_SNo (x2 + - y) < eps_ y2) -> x2 = y) -> x + y iIn real
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

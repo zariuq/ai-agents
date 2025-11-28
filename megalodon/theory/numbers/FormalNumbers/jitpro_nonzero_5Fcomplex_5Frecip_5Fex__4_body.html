@@ -1,0 +1,39 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const real : set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom real_add_SNo: !x:set.x iIn real -> !y:set.y iIn real -> x + y iIn real
+const complex : set
+const Empty : set
+const CSNo_Re : set set
+const CSNo_Im : set set
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const SNo : set prop
+const mul_CSNo : set set set
+const ordsucc : set set
+lemma !x:set.x iIn complex -> x != Empty -> CSNo_Re x iIn real -> CSNo_Im x iIn real -> CSNo_Re x * CSNo_Re x iIn real -> SNo (CSNo_Re x * CSNo_Re x) -> CSNo_Im x * CSNo_Im x iIn real -> SNo (CSNo_Im x * CSNo_Im x) -> CSNo_Re x * CSNo_Re x + CSNo_Im x * CSNo_Im x iIn real -> ?y:set.y iIn complex & mul_CSNo x y = ordsucc Empty
+var x:set
+hyp x iIn complex
+hyp x != Empty
+hyp CSNo_Re x iIn real
+hyp CSNo_Im x iIn real
+hyp CSNo_Re x * CSNo_Re x iIn real
+hyp SNo (CSNo_Re x * CSNo_Re x)
+hyp CSNo_Im x * CSNo_Im x iIn real
+claim SNo (CSNo_Im x * CSNo_Im x) -> ?y:set.y iIn complex & mul_CSNo x y = ordsucc Empty
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

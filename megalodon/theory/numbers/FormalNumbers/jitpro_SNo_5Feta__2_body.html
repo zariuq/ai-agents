@@ -1,0 +1,48 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term SNoEq_ = \x:set.\y:set.\z:set.PNoEq_ x (\w:set.w iIn y) \w:set.w iIn z
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+const Sep : set (set prop) set
+const SNoS_ : set set
+const SNoLev : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoL = \x:set.Sep (SNoS_ (SNoLev x)) \y:set.y < x
+term SNoR = \x:set.Sep (SNoS_ (SNoLev x)) (SNoLt x)
+const SNo : set prop
+const SNo_ : set set prop
+axiom SNoLev_: !x:set.SNo x -> SNo_ (SNoLev x) x
+const ordinal : set prop
+axiom SNoS_I: !x:set.ordinal x -> !y:set.!z:set.z iIn x -> SNo_ z y -> y iIn SNoS_ x
+axiom SepI: !x:set.!p:set prop.!y:set.y iIn x -> p y -> y iIn Sep x p
+axiom SNoLt_irref: !x:set.~ x < x
+axiom In_irref: !x:set.nIn x x
+axiom SNoLt_trichotomy_or: !x:set.!y:set.SNo x -> SNo y -> x < y | x = y | y < x
+axiom FalseE: ~ False
+axiom ordinal_trichotomy_or: !x:set.!y:set.ordinal x -> ordinal y -> x iIn y | x = y | y iIn x
+const SNoCut : set set set
+lemma !x:set.SNo x -> ordinal (SNoLev x) -> SNo (SNoCut (SNoL x) (SNoR x)) -> (!y:set.y iIn SNoL x -> y < SNoCut (SNoL x) (SNoR x)) -> (!y:set.y iIn SNoR x -> SNoCut (SNoL x) (SNoR x) < y) -> ordinal (SNoLev (SNoCut (SNoL x) (SNoR x))) -> Subq (SNoLev (SNoCut (SNoL x) (SNoR x))) (SNoLev x) -> PNoEq_ (SNoLev (SNoCut (SNoL x) (SNoR x))) (\y:set.y iIn SNoCut (SNoL x) (SNoR x)) (\y:set.y iIn x) -> SNoLev (SNoCut (SNoL x) (SNoR x)) = SNoLev x -> x = SNoCut (SNoL x) (SNoR x)
+var x:set
+hyp SNo x
+hyp ordinal (SNoLev x)
+hyp SNo (SNoCut (SNoL x) (SNoR x))
+hyp !y:set.y iIn SNoL x -> y < SNoCut (SNoL x) (SNoR x)
+hyp !y:set.y iIn SNoR x -> SNoCut (SNoL x) (SNoR x) < y
+hyp !y:set.SNo y -> (!z:set.z iIn SNoL x -> z < y) -> (!z:set.z iIn SNoR x -> y < z) -> Subq (SNoLev (SNoCut (SNoL x) (SNoR x))) (SNoLev y) & SNoEq_ (SNoLev (SNoCut (SNoL x) (SNoR x))) (SNoCut (SNoL x) (SNoR x)) y
+hyp ordinal (SNoLev (SNoCut (SNoL x) (SNoR x)))
+hyp !y:set.y iIn SNoL x -> y < x
+claim (!y:set.y iIn SNoR x -> x < y) -> x = SNoCut (SNoL x) (SNoR x)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

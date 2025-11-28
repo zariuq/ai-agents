@@ -1,0 +1,24 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const setsum : set set set
+const Sigma : set (set set) set
+axiom pair_Sigma_E1: !x:set.!f:set set.!y:set.!z:set.setsum y z iIn Sigma x f -> z iIn f y
+const ap : set set set
+var x:set
+var f:set set
+var y:set
+var z:set
+hyp z iIn ap (Sigma x f) y
+claim setsum y z iIn Sigma x f -> z iIn f y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

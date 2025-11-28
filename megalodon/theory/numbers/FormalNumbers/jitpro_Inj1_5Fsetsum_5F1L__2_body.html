@@ -1,0 +1,33 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const ordsucc : set set
+const Empty : set
+const Sing : set set
+axiom Subq_1_Sing0: Subq (ordsucc Empty) (Sing Empty)
+axiom SingE: !x:set.!y:set.y iIn Sing x -> y = x
+axiom exandE_i: !p:set prop.!q:set prop.(?x:set.p x & q x) -> !P:prop.(!x:set.p x -> q x -> P) -> P
+const Inj1 : set set
+axiom Inj1I2: !x:set.!y:set.y iIn x -> Inj1 y iIn Inj1 x
+const setsum : set set set
+const Inj0 : set set
+axiom setsum_Inj_inv: !x:set.!y:set.!z:set.z iIn setsum x y -> (?w:set.w iIn x & z = Inj0 w) | ?w:set.w iIn y & z = Inj1 w
+axiom In_0_1: Empty iIn ordsucc Empty
+axiom Inj0_setsum: !x:set.!y:set.!z:set.z iIn x -> Inj0 z iIn setsum x y
+axiom Inj0_0: Inj0 Empty = Empty
+axiom Inj1_setsum: !x:set.!y:set.!z:set.z iIn y -> Inj1 z iIn setsum x y
+axiom Inj1E: !x:set.!y:set.y iIn Inj1 x -> y = Empty | ?z:set.z iIn x & y = Inj1 z
+axiom set_ext: !x:set.!y:set.Subq x y -> Subq y x -> x = y
+lemma !x:set.!y:set.y iIn ordsucc Empty -> y = Empty -> Inj0 y iIn Inj1 x
+claim !x:set.setsum (ordsucc Empty) x = Inj1 x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

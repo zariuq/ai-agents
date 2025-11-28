@@ -1,0 +1,4 @@
+% https://mgwiki.github.io/mgw_test/conj/aim/AIMBountiesNov2024.mg.html#com__nil3_24
+% Bounty in April 2025: about 296.4 pfg bars ($23712)
+include('aimheader.ax').
+thf(conj_aim2024_com__nil3_24,conjecture,((! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (((m @ X10) @ X11) = ((m @ X11) @ X10)))))) => (! [X10:$i] : (((c_In @ X10) @ c_X) => (! [X11:$i] : (((c_In @ X11) @ c_X) => (! [X12:$i] : (((c_In @ X12) @ c_X) => (! [X13:$i] : (((c_In @ X13) @ c_X) => (! [X14:$i] : (((c_In @ X14) @ c_X) => (! [X15:$i] : (((c_In @ X15) @ c_X) => (! [X16:$i] : (((c_In @ X16) @ c_X) => ((((a @ (((a @ (((a @ X10) @ X11) @ X12)) @ X13) @ X14)) @ X15) @ X16) = e))))))))))))))))).

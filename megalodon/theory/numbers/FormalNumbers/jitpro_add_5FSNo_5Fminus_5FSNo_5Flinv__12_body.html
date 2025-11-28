@@ -1,0 +1,39 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const SNoLev : set set
+const minus_SNo : set set
+term - = minus_SNo
+axiom minus_SNo_Lev: !x:set.SNo x -> SNoLev - x = SNoLev x
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoS_ : set set
+axiom SNoS_I2: !x:set.!y:set.SNo x -> SNo y -> SNoLev x iIn SNoLev y -> x iIn SNoS_ (SNoLev y)
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const Empty : set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+lemma !x:set.!y:set.!z:set.SNo x -> (!w:set.w iIn SNoS_ (SNoLev x) -> - w + w = Empty) -> SNo - x -> y = z + x -> SNo z -> SNoLev z iIn SNoLev - x -> z < - x -> SNo - z -> - z + z = Empty -> y < Empty
+var x:set
+var y:set
+var z:set
+hyp SNo x
+hyp !w:set.w iIn SNoS_ (SNoLev x) -> - w + w = Empty
+hyp SNo - x
+hyp y = z + x
+hyp SNo z
+hyp SNoLev z iIn SNoLev - x
+hyp z < - x
+claim SNo - z -> y < Empty
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,41 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const PNoLt : set (set prop) set (set prop) prop
+const PNoEq_ : set (set prop) (set prop) prop
+term PNoLe = \x:set.\p:set prop.\y:set.\q:set prop.PNoLt x p y q | x = y & PNoEq_ x p q
+const ordinal : set prop
+term PNoLt_pwise = \P:set (set prop) prop.\Q:set (set prop) prop.!x:set.ordinal x -> !p:set prop.P x p -> !y:set.ordinal y -> !q:set prop.Q y q -> PNoLt x p y q
+term PNo_upc = \P:set (set prop) prop.\x:set.\p:set prop.?y:set.ordinal y & ?q:set prop.P y q & PNoLe y q x p
+term PNo_downc = \P:set (set prop) prop.\x:set.\p:set prop.?y:set.ordinal y & ?q:set prop.P y q & PNoLe x p y q
+axiom PNoLt_tra: !x:set.!y:set.!z:set.ordinal x -> ordinal y -> ordinal z -> !p:set prop.!q:set prop.!p2:set prop.PNoLt x p y q -> PNoLt y q z p2 -> PNoLt x p z p2
+axiom PNoLt_irref: !x:set.!p:set prop.~ PNoLt x p x p
+axiom PNoLeLt_tra: !x:set.!y:set.!z:set.ordinal x -> ordinal y -> ordinal z -> !p:set prop.!q:set prop.!p2:set prop.PNoLe x p y q -> PNoLt y q z p2 -> PNoLt x p z p2
+axiom PNoLt_trichotomy_or: !x:set.!y:set.!p:set prop.!q:set prop.ordinal x -> ordinal y -> PNoLt x p y q | x = y & PNoEq_ x p q | PNoLt y q x p
+var P:set (set prop) prop
+var Q:set (set prop) prop
+var x:set
+var p:set prop
+var y:set
+var q:set prop
+var z:set
+var p2:set prop
+var w:set
+var q2:set prop
+hyp PNoLt_pwise P Q
+hyp ordinal x
+hyp ordinal y
+hyp ordinal z
+hyp P z p2
+hyp PNoLe x p z p2
+hyp ordinal w
+hyp Q w q2
+hyp PNoLe w q2 y q
+claim PNoLt x p y q -> PNoLt x p y q
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

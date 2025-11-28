@@ -1,0 +1,27 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const ordsucc : set set
+const Empty : set
+axiom SNo_1: SNo (ordsucc Empty)
+const eps_ : set set
+axiom SNo_eps_1: SNo (eps_ (ordsucc Empty))
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom eps_1_half_eq1: eps_ (ordsucc Empty) + eps_ (ordsucc Empty) = ordsucc Empty
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom mul_SNo_oneL: !x:set.SNo x -> ordsucc Empty * x = x
+axiom mul_SNo_distrR: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> (x + y) * z = x * z + y * z
+axiom add_SNo_1_1_2: ordsucc Empty + ordsucc Empty = ordsucc (ordsucc Empty)
+claim ordsucc (ordsucc Empty) * eps_ (ordsucc Empty) = ordsucc Empty
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

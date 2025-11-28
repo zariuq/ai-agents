@@ -1,0 +1,36 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.SNo (x * y) -> SNo (x * w) -> SNo (z * w) -> SNo (x * u) -> SNo (z * u) -> (z * y + x * u) < x * y + z * u -> (x * w + z * u) < z * w + x * u -> SNo (z * y + x * u) -> SNo (z * u + x * y) -> SNo (z * w + x * u) -> (x * w + z * y + x * u) < x * y + z * w + x * u
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+hyp SNo (x * y)
+hyp SNo (x * w)
+hyp SNo (z * w)
+hyp SNo (x * u)
+hyp SNo (z * u)
+hyp (z * y + x * u) < x * y + z * u
+hyp (x * w + z * u) < z * w + x * u
+hyp SNo (z * y + x * u)
+claim SNo (z * u + x * y) -> (x * w + z * y + x * u) < x * y + z * w + x * u
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

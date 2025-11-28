@@ -1,0 +1,42 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const SNo : set prop
+const minus_SNo : set set
+term - = minus_SNo
+axiom SNo_minus_SNo: !x:set.SNo x -> SNo - x
+const SNoCutP : set set prop
+const SNoCut : set set set
+const Repl : set (set set) set
+axiom minus_SNoCut_eq: !x:set.!y:set.SNoCutP x y -> - SNoCut x y = SNoCut (Repl y minus_SNo) (Repl x minus_SNo)
+const SNoL : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const SNoR : set set
+axiom mul_SNo_eq_3: !x:set.!y:set.SNo x -> SNo y -> !P:prop.(!z:set.!w:set.SNoCutP z w -> (!u:set.u iIn z -> !Q:prop.(!v:set.v iIn SNoL x -> !x2:set.x2 iIn SNoL y -> u = v * y + x * x2 + - v * x2 -> Q) -> (!v:set.v iIn SNoR x -> !x2:set.x2 iIn SNoR y -> u = v * y + x * x2 + - v * x2 -> Q) -> Q) -> (!u:set.u iIn SNoL x -> !v:set.v iIn SNoL y -> u * y + x * v + - u * v iIn z) -> (!u:set.u iIn SNoR x -> !v:set.v iIn SNoR y -> u * y + x * v + - u * v iIn z) -> (!u:set.u iIn w -> !Q:prop.(!v:set.v iIn SNoL x -> !x2:set.x2 iIn SNoR y -> u = v * y + x * x2 + - v * x2 -> Q) -> (!v:set.v iIn SNoR x -> !x2:set.x2 iIn SNoL y -> u = v * y + x * x2 + - v * x2 -> Q) -> Q) -> (!u:set.u iIn SNoL x -> !v:set.v iIn SNoR y -> u * y + x * v + - u * v iIn w) -> (!u:set.u iIn SNoR x -> !v:set.v iIn SNoL y -> u * y + x * v + - u * v iIn w) -> x * y = SNoCut z w -> P) -> P
+const SNoS_ : set set
+const SNoLev : set set
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.SNo x -> SNo y -> (!x2:set.x2 iIn SNoS_ (SNoLev x) -> (- x2) * y = - x2 * y) -> (!x2:set.x2 iIn SNoS_ (SNoLev y) -> (- x) * x2 = - x * x2) -> (!x2:set.x2 iIn SNoS_ (SNoLev x) -> !y2:set.y2 iIn SNoS_ (SNoLev y) -> (- x2) * y2 = - x2 * y2) -> SNo - x -> SNoCutP z w -> (!x2:set.x2 iIn z -> !P:prop.(!y2:set.y2 iIn SNoL x -> !z2:set.z2 iIn SNoL y -> x2 = y2 * y + x * z2 + - y2 * z2 -> P) -> (!y2:set.y2 iIn SNoR x -> !z2:set.z2 iIn SNoR y -> x2 = y2 * y + x * z2 + - y2 * z2 -> P) -> P) -> (!x2:set.x2 iIn SNoL x -> !y2:set.y2 iIn SNoL y -> x2 * y + x * y2 + - x2 * y2 iIn z) -> (!x2:set.x2 iIn SNoR x -> !y2:set.y2 iIn SNoR y -> x2 * y + x * y2 + - x2 * y2 iIn z) -> (!x2:set.x2 iIn w -> !P:prop.(!y2:set.y2 iIn SNoL x -> !z2:set.z2 iIn SNoR y -> x2 = y2 * y + x * z2 + - y2 * z2 -> P) -> (!y2:set.y2 iIn SNoR x -> !z2:set.z2 iIn SNoL y -> x2 = y2 * y + x * z2 + - y2 * z2 -> P) -> P) -> (!x2:set.x2 iIn SNoL x -> !y2:set.y2 iIn SNoR y -> x2 * y + x * y2 + - x2 * y2 iIn w) -> (!x2:set.x2 iIn SNoR x -> !y2:set.y2 iIn SNoL y -> x2 * y + x * y2 + - x2 * y2 iIn w) -> x * y = SNoCut z w -> (!x2:set.x2 iIn u -> !P:prop.(!y2:set.y2 iIn SNoL - x -> !z2:set.z2 iIn SNoL y -> x2 = y2 * y + (- x) * z2 + - y2 * z2 -> P) -> (!y2:set.y2 iIn SNoR - x -> !z2:set.z2 iIn SNoR y -> x2 = y2 * y + (- x) * z2 + - y2 * z2 -> P) -> P) -> (!x2:set.x2 iIn SNoL - x -> !y2:set.y2 iIn SNoL y -> x2 * y + (- x) * y2 + - x2 * y2 iIn u) -> (!x2:set.x2 iIn SNoR - x -> !y2:set.y2 iIn SNoR y -> x2 * y + (- x) * y2 + - x2 * y2 iIn u) -> (!x2:set.x2 iIn v -> !P:prop.(!y2:set.y2 iIn SNoL - x -> !z2:set.z2 iIn SNoR y -> x2 = y2 * y + (- x) * z2 + - y2 * z2 -> P) -> (!y2:set.y2 iIn SNoR - x -> !z2:set.z2 iIn SNoL y -> x2 = y2 * y + (- x) * z2 + - y2 * z2 -> P) -> P) -> (!x2:set.x2 iIn SNoL - x -> !y2:set.y2 iIn SNoR y -> x2 * y + (- x) * y2 + - x2 * y2 iIn v) -> (!x2:set.x2 iIn SNoR - x -> !y2:set.y2 iIn SNoL y -> x2 * y + (- x) * y2 + - x2 * y2 iIn v) -> (- x) * y = SNoCut u v -> - x * y = SNoCut (Repl w minus_SNo) (Repl z minus_SNo) -> (- x) * y = - x * y
+var x:set
+var y:set
+hyp SNo x
+hyp SNo y
+hyp !z:set.z iIn SNoS_ (SNoLev x) -> (- z) * y = - z * y
+hyp !z:set.z iIn SNoS_ (SNoLev y) -> (- x) * z = - x * z
+hyp !z:set.z iIn SNoS_ (SNoLev x) -> !w:set.w iIn SNoS_ (SNoLev y) -> (- z) * w = - z * w
+claim SNo - x -> (- x) * y = - x * y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

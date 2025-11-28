@@ -1,0 +1,33 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+axiom In_irref: !x:set.nIn x x
+axiom FalseE: ~ False
+const ordsucc : set set
+axiom ordsuccE: !x:set.!y:set.y iIn ordsucc x -> y iIn x | y = x
+lemma !x:set.!f:set set.!y:set.!z:set.(!w:set.w iIn ordsucc (ordsucc x) -> !u:set.u iIn ordsucc (ordsucc x) -> f w = f u -> w = u) -> y iIn ordsucc (ordsucc x) -> f y = x -> Subq y z -> ordsucc z iIn ordsucc (ordsucc x) -> f (ordsucc z) = x -> y = ordsucc z -> z iIn z
+const nat_p : set prop
+var x:set
+var f:set set
+var y:set
+var z:set
+hyp nat_p x
+hyp !w:set.w iIn ordsucc (ordsucc x) -> f w iIn ordsucc x
+hyp !w:set.w iIn ordsucc (ordsucc x) -> !u:set.u iIn ordsucc (ordsucc x) -> f w = f u -> w = u
+hyp y iIn ordsucc (ordsucc x)
+hyp f y = x
+hyp z iIn ordsucc x
+hyp Subq y z
+claim ordsucc z iIn ordsucc (ordsucc x) -> f (ordsucc z) iIn x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,39 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+axiom SNoLt_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x < y -> y < z -> x < z
+const SNoLev : set set
+const binintersect : set set set
+const SNoEq_ : set set set prop
+axiom SNoLtE: !x:set.!y:set.SNo x -> SNo y -> x < y -> !P:prop.(!z:set.SNo z -> SNoLev z iIn binintersect (SNoLev x) (SNoLev y) -> SNoEq_ (SNoLev z) z x -> SNoEq_ (SNoLev z) z y -> x < z -> z < y -> nIn (SNoLev z) x -> SNoLev z iIn y -> P) -> (SNoLev x iIn SNoLev y -> SNoEq_ (SNoLev x) x y -> SNoLev x iIn y -> P) -> (SNoLev y iIn SNoLev x -> SNoEq_ (SNoLev y) x y -> nIn (SNoLev y) x -> P) -> P
+axiom FalseE: ~ False
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+axiom SNoLtLe_or: !x:set.!y:set.SNo x -> SNo y -> x < y | y <= x
+const SNoCut : set set set
+const ordsucc : set set
+const binunion : set set set
+const famunion : set (set set) set
+axiom SNoCutP_SNoCut: !x:set.!y:set.SNoCutP x y -> SNo (SNoCut x y) & SNoLev (SNoCut x y) iIn ordsucc (binunion (famunion x \z:set.ordsucc (SNoLev z)) (famunion y \z:set.ordsucc (SNoLev z))) & (!z:set.z iIn x -> z < SNoCut x y) & (!z:set.z iIn y -> SNoCut x y < z) & !z:set.SNo z -> (!w:set.w iIn x -> w < z) -> (!w:set.w iIn y -> z < w) -> Subq (SNoLev (SNoCut x y)) (SNoLev z) & SNoEq_ (SNoLev (SNoCut x y)) (SNoCut x y) z
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.(!v:set.v iIn x -> v < SNoCut z w) -> (!v:set.v iIn x -> SNo v) -> (!v:set.v iIn y -> SNo v) -> SNo (SNoCut x y) -> (!v:set.v iIn y -> SNoCut x y < v) -> (!v:set.SNo v -> (!x2:set.x2 iIn x -> x2 < v) -> (!x2:set.x2 iIn y -> v < x2) -> Subq (SNoLev (SNoCut x y)) (SNoLev v) & SNoEq_ (SNoLev (SNoCut x y)) (SNoCut x y) v) -> SNo (SNoCut z w) -> SNo u -> SNoLev u iIn binintersect (SNoLev (SNoCut z w)) (SNoLev (SNoCut x y)) -> SNoCut z w < u -> u < SNoCut x y -> ~ !v:set.v iIn x -> v < u
+lemma !x:set.!y:set.!z:set.!w:set.(!u:set.u iIn x -> u < SNoCut z w) -> (!u:set.u iIn y -> SNo u) -> SNo (SNoCut x y) -> (!u:set.u iIn y -> SNoCut x y < u) -> (!u:set.SNo u -> (!v:set.v iIn x -> v < u) -> (!v:set.v iIn y -> u < v) -> Subq (SNoLev (SNoCut x y)) (SNoLev u) & SNoEq_ (SNoLev (SNoCut x y)) (SNoCut x y) u) -> SNo (SNoCut z w) -> SNoCut z w < SNoCut x y -> SNoLev (SNoCut z w) iIn SNoLev (SNoCut x y) -> ~ !u:set.u iIn y -> SNoCut z w < u
+lemma !x:set.!y:set.!z:set.!w:set.(!u:set.u iIn w -> SNoCut x y < u) -> (!u:set.u iIn z -> SNo u) -> SNo (SNoCut x y) -> SNo (SNoCut z w) -> (!u:set.u iIn z -> u < SNoCut z w) -> (!u:set.SNo u -> (!v:set.v iIn z -> v < u) -> (!v:set.v iIn w -> u < v) -> Subq (SNoLev (SNoCut z w)) (SNoLev u) & SNoEq_ (SNoLev (SNoCut z w)) (SNoCut z w) u) -> SNoCut z w < SNoCut x y -> SNoLev (SNoCut x y) iIn SNoLev (SNoCut z w) -> ~ !u:set.u iIn z -> u < SNoCut x y
+claim !x:set.!y:set.!z:set.!w:set.SNoCutP x y -> SNoCutP z w -> (!u:set.u iIn x -> u < SNoCut z w) -> (!u:set.u iIn w -> SNoCut x y < u) -> SNoCut x y <= SNoCut z w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

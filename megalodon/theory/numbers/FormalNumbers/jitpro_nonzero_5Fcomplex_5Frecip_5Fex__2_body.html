@@ -1,0 +1,61 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const complex : set
+const CSNo : set prop
+axiom complex_CSNo: !x:set.x iIn complex -> CSNo x
+const Empty : set
+axiom CSNo_0: CSNo Empty
+const real : set
+const SNo : set prop
+axiom real_SNo: !x:set.x iIn real -> SNo x
+axiom SNo_0: SNo Empty
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom SNo_sqr_nonneg: !x:set.SNo x -> Empty <= x * x
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_SNo_Le2: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> y <= z -> (x + y) <= x + z
+axiom add_SNo_0R: !x:set.SNo x -> x + Empty = x
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom SNoLtLe_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x < y -> y <= z -> x < z
+axiom SNoLt_irref: !x:set.~ x < x
+axiom FalseE: ~ False
+axiom SNo_zero_or_sqr_pos: !x:set.SNo x -> x = Empty | Empty < x * x
+const CSNo_Re : set set
+axiom Re_0: CSNo_Re Empty = Empty
+axiom add_SNo_Le1: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x <= z -> (x + y) <= z + y
+axiom add_SNo_0L: !x:set.SNo x -> Empty + x = x
+const CSNo_Im : set set
+axiom Im_0: CSNo_Im Empty = Empty
+axiom CSNo_ReIm_split: !x:set.!y:set.CSNo x -> CSNo y -> CSNo_Re x = CSNo_Re y -> CSNo_Im x = CSNo_Im y -> x = y
+const mul_CSNo : set set set
+const ordsucc : set set
+lemma !x:set.x iIn complex -> x != Empty -> CSNo_Re x iIn real -> CSNo_Im x iIn real -> SNo (CSNo_Re x * CSNo_Re x) -> SNo (CSNo_Im x * CSNo_Im x) -> CSNo_Re x * CSNo_Re x + CSNo_Im x * CSNo_Im x iIn real -> SNo (CSNo_Re x * CSNo_Re x + CSNo_Im x * CSNo_Im x) -> CSNo_Re x * CSNo_Re x + CSNo_Im x * CSNo_Im x != Empty -> ?y:set.y iIn complex & mul_CSNo x y = ordsucc Empty
+var x:set
+hyp x iIn complex
+hyp x != Empty
+hyp CSNo_Re x iIn real
+hyp CSNo_Im x iIn real
+hyp SNo (CSNo_Re x * CSNo_Re x)
+hyp SNo (CSNo_Im x * CSNo_Im x)
+hyp CSNo_Re x * CSNo_Re x + CSNo_Im x * CSNo_Im x iIn real
+claim SNo (CSNo_Re x * CSNo_Re x + CSNo_Im x * CSNo_Im x) -> ?y:set.y iIn complex & mul_CSNo x y = ordsucc Empty
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

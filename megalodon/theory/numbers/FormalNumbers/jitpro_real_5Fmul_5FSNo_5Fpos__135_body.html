@@ -1,0 +1,58 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const SNo : set prop
+const minus_SNo : set set
+term - = minus_SNo
+axiom SNo_minus_SNo: !x:set.SNo x -> SNo - x
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const Empty : set
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const real : set
+const SNoLev : set set
+const ordsucc : set set
+const omega : set
+const SNoS_ : set set
+const abs_SNo : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const eps_ : set set
+lemma !x:set.!y:set.Empty < x -> Empty < y -> ~ x * y iIn real -> SNo x -> SNoLev x iIn ordsucc omega -> x iIn SNoS_ (ordsucc omega) -> x < omega -> (!z:set.z iIn SNoS_ omega -> (!w:set.w iIn omega -> abs_SNo (z + - x) < eps_ w) -> z = x) -> SNo y -> SNoLev y iIn ordsucc omega -> y iIn SNoS_ (ordsucc omega) -> y < omega -> (!z:set.z iIn SNoS_ omega -> (!w:set.w iIn omega -> abs_SNo (z + - y) < eps_ w) -> z = y) -> (!z:set.z iIn omega -> !P:prop.(!w:set.w iIn SNoS_ omega -> Empty < w -> w < x -> x < w + eps_ z -> P) -> P) -> (!z:set.z iIn omega -> !P:prop.(!w:set.w iIn SNoS_ omega -> Empty < w -> w < y -> y < w + eps_ z -> P) -> P) -> SNo (x * y) -> ~ SNo - x * y
+var x:set
+var y:set
+hyp Empty < x
+hyp Empty < y
+hyp ~ x * y iIn real
+hyp SNo x
+hyp SNoLev x iIn ordsucc omega
+hyp x iIn SNoS_ (ordsucc omega)
+hyp x < omega
+hyp !z:set.z iIn SNoS_ omega -> (!w:set.w iIn omega -> abs_SNo (z + - x) < eps_ w) -> z = x
+hyp SNo y
+hyp SNoLev y iIn ordsucc omega
+hyp y iIn SNoS_ (ordsucc omega)
+hyp y < omega
+hyp !z:set.z iIn SNoS_ omega -> (!w:set.w iIn omega -> abs_SNo (z + - y) < eps_ w) -> z = y
+hyp !z:set.z iIn omega -> !P:prop.(!w:set.w iIn SNoS_ omega -> Empty < w -> w < x -> x < w + eps_ z -> P) -> P
+hyp !z:set.z iIn omega -> !P:prop.(!w:set.w iIn SNoS_ omega -> Empty < w -> w < y -> y < w + eps_ z -> P) -> P
+claim ~ SNo (x * y)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

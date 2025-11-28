@@ -1,0 +1,26 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const ReplSep : set (set prop) (set set) set
+const setsum : set set set
+const proj1 : set set
+term ap = \x:set.\y:set.ReplSep x (\z:set.?w:set.z = setsum y w) proj1
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+hyp w iIn x
+hyp w = setsum y u
+hyp z = u
+claim w = setsum y z -> setsum y z iIn x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

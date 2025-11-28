@@ -1,0 +1,41 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const ordinal : set prop
+const SNo_ : set set prop
+term SNo = \x:set.?y:set.ordinal y & SNo_ y x
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const PNoLt : set (set prop) set (set prop) prop
+const SNoLev : set set
+term SNoLt = \x:set.\y:set.PNoLt (SNoLev x) (\z:set.z iIn x) (SNoLev y) \z:set.z iIn y
+term < = SNoLt
+infix < 2020 2020
+const PNoEq_ : set (set prop) (set prop) prop
+term SNoEq_ = \x:set.\y:set.\z:set.PNoEq_ x (\w:set.w iIn y) \w:set.w iIn z
+const PSNo : set (set prop) set
+axiom SNo_PSNo: !x:set.ordinal x -> !p:set prop.SNo_ x (PSNo x p)
+const binintersect : set set set
+lemma !x:set.!y:set.!P:prop.!z:set.(!w:set.SNo w -> SNoLev w iIn binintersect (SNoLev x) (SNoLev y) -> SNoEq_ (SNoLev w) w x -> SNoEq_ (SNoLev w) w y -> x < w -> w < y -> nIn (SNoLev w) x -> SNoLev w iIn y -> P) -> z iIn binintersect (SNoLev x) (SNoLev y) -> PNoEq_ z (\w:set.w iIn x) (\w:set.w iIn y) -> ~ z iIn x -> z iIn y -> z iIn SNoLev x -> z iIn SNoLev y -> ordinal z -> SNo_ z (PSNo z \w:set.w iIn x) -> P
+var x:set
+var y:set
+var P:prop
+var z:set
+hyp !w:set.SNo w -> SNoLev w iIn binintersect (SNoLev x) (SNoLev y) -> SNoEq_ (SNoLev w) w x -> SNoEq_ (SNoLev w) w y -> x < w -> w < y -> nIn (SNoLev w) x -> SNoLev w iIn y -> P
+hyp ordinal (SNoLev x)
+hyp z iIn binintersect (SNoLev x) (SNoLev y)
+hyp PNoEq_ z (\w:set.w iIn x) \w:set.w iIn y
+hyp ~ z iIn x
+hyp z iIn y
+hyp z iIn SNoLev x
+hyp z iIn SNoLev y
+claim ordinal z -> P
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

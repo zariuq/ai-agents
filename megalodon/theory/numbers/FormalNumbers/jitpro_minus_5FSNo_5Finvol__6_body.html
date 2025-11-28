@@ -1,0 +1,38 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+const Subq : set set prop
+const SNoLev : set set
+const SNoCut : set set set
+const SNoEq_ : set set set prop
+axiom SNoCutP_SNoCut_fst: !x:set.!y:set.SNoCutP x y -> !z:set.SNo z -> (!w:set.w iIn x -> w < z) -> (!w:set.w iIn y -> z < w) -> Subq (SNoLev (SNoCut x y)) (SNoLev z) & SNoEq_ (SNoLev (SNoCut x y)) (SNoCut x y) z
+const minus_SNo : set set
+term - = minus_SNo
+lemma !x:set.!y:set.SNoCutP x y -> (!z:set.z iIn x -> - - z = z) -> (!z:set.z iIn y -> - - z = z) -> (!z:set.z iIn x -> SNo z) -> (!z:set.z iIn y -> SNo z) -> SNo (SNoCut x y) -> SNo - SNoCut x y -> SNo - - SNoCut x y -> Subq (SNoLev (SNoCut x y)) (SNoLev - - SNoCut x y) & SNoEq_ (SNoLev (SNoCut x y)) (SNoCut x y) - - SNoCut x y -> - - SNoCut x y = SNoCut x y
+lemma !x:set.!y:set.!z:set.SNoCutP x y -> (!w:set.w iIn x -> SNo w) -> SNo (SNoCut x y) -> SNo - SNoCut x y -> z iIn x -> SNo z -> - - z < - - SNoCut x y
+lemma !x:set.!y:set.!z:set.SNoCutP x y -> (!w:set.w iIn y -> SNo w) -> SNo (SNoCut x y) -> SNo - SNoCut x y -> z iIn y -> SNo z -> - - SNoCut x y < - - z
+var x:set
+var y:set
+hyp SNoCutP x y
+hyp !z:set.z iIn x -> - - z = z
+hyp !z:set.z iIn y -> - - z = z
+hyp !z:set.z iIn x -> SNo z
+hyp !z:set.z iIn y -> SNo z
+hyp SNo (SNoCut x y)
+hyp SNo - SNoCut x y
+claim SNo - - SNoCut x y -> - - SNoCut x y = SNoCut x y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

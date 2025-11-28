@@ -1,0 +1,55 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+term SNo_max_of = \x:set.\y:set.y iIn x & SNo y & !z:set.z iIn x -> SNo z -> z <= y
+term nIn = \x:set.\y:set.~ x iIn y
+term SNo_min_of = \x:set.\y:set.y iIn x & SNo y & !z:set.z iIn x -> SNo z -> y <= z
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const ordinal : set prop
+const SNoLev : set set
+axiom SNoLev_ordinal: !x:set.SNo x -> ordinal (SNoLev x)
+axiom In_irref: !x:set.nIn x x
+axiom FalseE: ~ False
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const SNoR : set set
+axiom SNoR_I: !x:set.SNo x -> !y:set.SNo y -> SNoLev y iIn SNoLev x -> x < y -> y iIn SNoR x
+const Empty : set
+axiom EmptyE: !x:set.nIn x Empty
+axiom SNoLt_trichotomy_or_impred: !x:set.!y:set.SNo x -> SNo y -> !P:prop.(x < y -> P) -> (x = y -> P) -> (y < x -> P) -> P
+const SNoS_ : set set
+const SNo_ : set set prop
+axiom SNoS_E2: !x:set.ordinal x -> !y:set.y iIn SNoS_ x -> !P:prop.(SNoLev y iIn x -> ordinal (SNoLev y) -> SNo y -> SNo_ (SNoLev y) y -> P) -> P
+axiom SNo_max_ordinal: !x:set.SNo x -> (!y:set.y iIn SNoS_ (SNoLev x) -> y < x) -> ordinal x
+const omega : set
+axiom SNoS_omega_SNoR_min_exists: !x:set.x iIn SNoS_ omega -> SNoR x = Empty | ?y:set.SNo_min_of (SNoR x) y
+const nat_p : set prop
+const diadic_rational_p : set prop
+const SNoL : set set
+lemma !x:set.!y:set.nat_p x -> (!z:set.z iIn x -> !w:set.SNo w -> SNoLev w = z -> diadic_rational_p w) -> SNo y -> SNoLev y = x -> ~ diadic_rational_p y -> y iIn SNoS_ omega -> (?z:set.SNo_max_of (SNoL y) z) -> ~ ?z:set.SNo_min_of (SNoR y) z
+lemma !x:set.!y:set.nat_p x -> SNo y -> SNoLev y = x -> ~ diadic_rational_p y -> SNoR y = Empty -> ordinal y -> ?z:set.SNo_min_of (SNoR y) z
+var x:set
+var y:set
+hyp nat_p x
+hyp !z:set.z iIn x -> !w:set.SNo w -> SNoLev w = z -> diadic_rational_p w
+hyp SNo y
+hyp SNoLev y = x
+hyp ~ diadic_rational_p y
+hyp y iIn SNoS_ omega
+claim ~ ?z:set.SNo_max_of (SNoL y) z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

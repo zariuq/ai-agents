@@ -1,0 +1,52 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const CSNo : set prop
+const CSNo_Re : set set
+const mul_CSNo : set set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const minus_SNo : set set
+term - = minus_SNo
+const CSNo_Im : set set
+axiom mul_CSNo_CRe: !x:set.!y:set.CSNo x -> CSNo y -> CSNo_Re (mul_CSNo x y) = CSNo_Re x * CSNo_Re y + - CSNo_Im x * CSNo_Im y
+const SNo : set prop
+axiom SNo_mul_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x * y)
+axiom SNo_minus_SNo: !x:set.SNo x -> SNo - x
+axiom mul_SNo_distrL: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x * (y + z) = x * y + x * z
+axiom mul_SNo_minus_distrR: !x:set.!y:set.SNo x -> SNo y -> x * - y = - x * y
+axiom mul_CSNo_CIm: !x:set.!y:set.CSNo x -> CSNo y -> CSNo_Im (mul_CSNo x y) = CSNo_Re x * CSNo_Im y + CSNo_Im x * CSNo_Re y
+axiom SNo_mul_SNo_3: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> SNo (x * y * z)
+axiom minus_add_SNo_distr: !x:set.!y:set.SNo x -> SNo y -> - (x + y) = - x + - y
+axiom add_SNo_rotate_4_0312: !x:set.!y:set.!z:set.!w:set.SNo x -> SNo y -> SNo z -> SNo w -> (x + y) + z + w = (x + w) + y + z
+axiom mul_SNo_assoc: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x * y * z = (x * y) * z
+axiom mul_SNo_minus_distrL: !x:set.!y:set.SNo x -> SNo y -> (- x) * y = - x * y
+axiom mul_SNo_distrR: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> (x + y) * z = x * z + y * z
+axiom CSNo_ReIm_split: !x:set.!y:set.CSNo x -> CSNo y -> CSNo_Re x = CSNo_Re y -> CSNo_Im x = CSNo_Im y -> x = y
+var x:set
+var y:set
+var z:set
+hyp CSNo x
+hyp CSNo y
+hyp CSNo z
+hyp CSNo (mul_CSNo y z)
+hyp CSNo (mul_CSNo x y)
+hyp CSNo (mul_CSNo x (mul_CSNo y z))
+hyp CSNo (mul_CSNo (mul_CSNo x y) z)
+hyp SNo (CSNo_Re x)
+hyp SNo (CSNo_Re y)
+hyp SNo (CSNo_Re z)
+hyp SNo (CSNo_Im x)
+hyp SNo (CSNo_Im y)
+claim SNo (CSNo_Im z) -> mul_CSNo x (mul_CSNo y z) = mul_CSNo (mul_CSNo x y) z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

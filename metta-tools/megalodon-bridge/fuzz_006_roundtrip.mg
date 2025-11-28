@@ -1,0 +1,10 @@
+Definition P59 : prop := z52.
+
+Definition B28 : set -> set := ((foo34 Q96)) ((A48 ((((y98 A24)) B65)))).
+
+Parameter x34 : set.
+
+Definition A6 : set -> set := x49.
+
+Parameter A34 : set -> prop.
+

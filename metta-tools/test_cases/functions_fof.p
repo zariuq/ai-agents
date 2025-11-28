@@ -1,0 +1,11 @@
+% Functions and equality
+% If f is injective and f(x) = f(y), then x = y
+
+fof(f_injective, axiom,
+    ![X,Y]: (f(X) = f(Y) => X = Y)).
+
+fof(f_a_equals_f_b, axiom,
+    f(a) = f(b)).
+
+fof(a_equals_b, conjecture,
+    a = b).

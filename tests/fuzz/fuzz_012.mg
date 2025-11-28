@@ -1,0 +1,9 @@
+Parameter x65 : set -> prop.
+
+Parameter foo34 : set.
+
+Parameter P18 : prop.
+
+Parameter z56 : set.
+
+Definition z28 : set := ((B49 Q45) A62).

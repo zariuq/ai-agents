@@ -1,0 +1,36 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const Empty : set
+axiom SNo_0: SNo Empty
+const minus_SNo : set set
+term - = minus_SNo
+axiom minus_SNo_0: - Empty = Empty
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom minus_SNo_Lt_contra2: !x:set.!y:set.SNo x -> SNo y -> x < - y -> y < - x
+axiom FalseE: ~ False
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const real : set
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const ordsucc : set set
+axiom pos_real_recip_ex: !x:set.x iIn real -> Empty < x -> ?y:set.y iIn real & x * y = ordsucc Empty
+axiom SNoLt_trichotomy_or_impred: !x:set.!y:set.SNo x -> SNo y -> !P:prop.(x < y -> P) -> (x = y -> P) -> (y < x -> P) -> P
+lemma !x:set.x iIn real -> SNo x -> x < Empty -> Empty < - x -> ?y:set.y iIn real & x * y = ordsucc Empty
+var x:set
+hyp x iIn real
+hyp x != Empty
+claim SNo x -> ?y:set.y iIn real & x * y = ordsucc Empty
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

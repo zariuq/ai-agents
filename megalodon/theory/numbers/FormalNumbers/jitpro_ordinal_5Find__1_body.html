@@ -1,0 +1,17 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const ordinal : set prop
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+axiom ordinal_Hered: !x:set.ordinal x -> !y:set.y iIn x -> ordinal y
+axiom In_ind: !p:set prop.(!x:set.(!y:set.y iIn x -> p y) -> p x) -> !x:set.p x
+claim !p:set prop.(!x:set.ordinal x -> (!y:set.y iIn x -> p y) -> p x) -> !x:set.ordinal x -> p x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

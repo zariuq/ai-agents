@@ -1,0 +1,27 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term PNoLt_ = \x:set.\p:set prop.\q:set prop.?y:set.y iIn x & (PNoEq_ y p q & ~ p y & q y)
+term nIn = \x:set.\y:set.~ x iIn y
+axiom FalseE: ~ False
+axiom xm: !P:prop.P | ~ P
+const ordinal : set prop
+lemma !p:set prop.!q:set prop.!x:set.!y:set.ordinal x -> (!z:set.z iIn x -> PNoLt_ z p q | PNoEq_ z p q | PNoLt_ z q p) -> ~ (y iIn x -> (p y <-> q y)) -> y iIn x & ~ (p y <-> q y) -> PNoLt_ x p q | PNoEq_ x p q | PNoLt_ x q p
+var p:set prop
+var q:set prop
+var x:set
+hyp ordinal x
+hyp !y:set.y iIn x -> PNoLt_ y p q | PNoEq_ y p q | PNoLt_ y q p
+hyp ~ PNoEq_ x p q
+claim (?y:set.~ (y iIn x -> (p y <-> q y))) -> PNoLt_ x p q | PNoEq_ x p q | PNoLt_ x q p
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

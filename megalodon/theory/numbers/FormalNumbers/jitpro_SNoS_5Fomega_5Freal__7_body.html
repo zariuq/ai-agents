@@ -1,0 +1,50 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const ordinal : set prop
+const omega : set
+axiom omega_ordinal: ordinal omega
+const ordsucc : set set
+axiom ordsucc_omega_ordinal: ordinal (ordsucc omega)
+axiom ordsuccI1: !x:set.Subq x (ordsucc x)
+const SNoS_ : set set
+axiom SNoS_Subq: !x:set.!y:set.ordinal x -> ordinal y -> Subq x y -> Subq (SNoS_ x) (SNoS_ y)
+const SNoLev : set set
+axiom ordinal_SNoLev: !x:set.ordinal x -> SNoLev x = x
+axiom In_irref: !x:set.nIn x x
+const SNo : set prop
+axiom SNo_omega: SNo omega
+const minus_SNo : set set
+term - = minus_SNo
+axiom minus_SNo_Lev: !x:set.SNo x -> SNoLev - x = SNoLev x
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const Empty : set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNoLt_minus_pos: !x:set.!y:set.SNo x -> SNo y -> x < y -> Empty < y + - x
+axiom FalseE: ~ False
+axiom SNoLt_trichotomy_or_impred: !x:set.!y:set.SNo x -> SNo y -> !P:prop.(x < y -> P) -> (x = y -> P) -> (y < x -> P) -> P
+const SNo_ : set set prop
+axiom SNoS_E2: !x:set.ordinal x -> !y:set.y iIn SNoS_ x -> !P:prop.(SNoLev y iIn x -> ordinal (SNoLev y) -> SNo y -> SNo_ (SNoLev y) y -> P) -> P
+const abs_SNo : set set
+const eps_ : set set
+const real : set
+axiom real_I: !x:set.x iIn SNoS_ (ordsucc omega) -> x != omega -> x != - omega -> (!y:set.y iIn SNoS_ omega -> (!z:set.z iIn omega -> abs_SNo (y + - x) < eps_ z) -> y = x) -> x iIn real
+lemma !x:set.!y:set.x iIn SNoS_ omega -> SNo x -> y iIn SNoS_ omega -> (!z:set.z iIn omega -> abs_SNo (y + - x) < eps_ z) -> SNo y -> y < x -> ~ Empty < x + - y
+lemma !x:set.!y:set.x iIn SNoS_ omega -> SNo x -> y iIn SNoS_ omega -> (!z:set.z iIn omega -> abs_SNo (y + - x) < eps_ z) -> SNo y -> x < y -> ~ Empty < y + - x
+claim !x:set.x iIn SNoS_ omega -> x iIn real
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

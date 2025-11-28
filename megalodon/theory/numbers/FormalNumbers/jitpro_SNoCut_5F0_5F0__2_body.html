@@ -1,0 +1,34 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const SNoCutP : set set prop
+const Empty : set
+axiom SNoCutP_0_0: SNoCutP Empty Empty
+const ordsucc : set set
+axiom cases_1: !x:set.x iIn ordsucc Empty -> !p:set prop.p Empty -> p x
+const binunion : set set set
+axiom binunion_idl: !x:set.binunion Empty x = x
+const famunion : set (set set) set
+axiom famunion_Empty: !f:set set.famunion Empty f = Empty
+const SNo : set prop
+const SNoCut : set set set
+const SNoLev : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const Subq : set set prop
+const SNoEq_ : set set set prop
+axiom SNoCutP_SNoCut_impred: !x:set.!y:set.SNoCutP x y -> !P:prop.(SNo (SNoCut x y) -> SNoLev (SNoCut x y) iIn ordsucc (binunion (famunion x \z:set.ordsucc (SNoLev z)) (famunion y \z:set.ordsucc (SNoLev z))) -> (!z:set.z iIn x -> z < SNoCut x y) -> (!z:set.z iIn y -> SNoCut x y < z) -> (!z:set.SNo z -> (!w:set.w iIn x -> w < z) -> (!w:set.w iIn y -> z < w) -> Subq (SNoLev (SNoCut x y)) (SNoLev z) & SNoEq_ (SNoLev (SNoCut x y)) (SNoCut x y) z) -> P) -> P
+lemma SNo (SNoCut Empty Empty) -> SNoLev (SNoCut Empty Empty) iIn ordsucc Empty -> SNoLev (SNoCut Empty Empty) = Empty -> SNoCut Empty Empty = Empty
+claim SNoCut Empty Empty = Empty
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

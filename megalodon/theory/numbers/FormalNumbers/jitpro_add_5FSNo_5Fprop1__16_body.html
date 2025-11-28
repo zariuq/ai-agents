@@ -1,0 +1,57 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+axiom SNoLt_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x < y -> y < z -> x < z
+const SNoR : set set
+const SNoLev : set set
+axiom SNoR_E: !x:set.SNo x -> !y:set.y iIn SNoR x -> !P:prop.(SNo y -> SNoLev y iIn SNoLev x -> x < y -> P) -> P
+const Repl : set (set set) set
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+const SNoS_ : set set
+axiom SNoS_I2: !x:set.!y:set.SNo x -> SNo y -> SNoLev x iIn SNoLev y -> x iIn SNoS_ (SNoLev y)
+const binunion : set set set
+axiom binunionE: !x:set.!y:set.!z:set.z iIn binunion x y -> z iIn x | z iIn y
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const SNoL : set set
+lemma !x:set.!y:set.!z:set.!w:set.(!u:set.!v:set.SNo (u + v) & (!x2:set.x2 iIn SNoL u -> (x2 + v) < u + v) & (!x2:set.x2 iIn SNoR u -> (u + v) < x2 + v) & (!x2:set.x2 iIn SNoL v -> (u + x2) < u + v) & (!x2:set.x2 iIn SNoR v -> (u + v) < u + x2) & SNoCutP (binunion (Repl (SNoL u) \x2:set.x2 + v) (Repl (SNoL v) (add_SNo u))) (binunion (Repl (SNoR u) \x2:set.x2 + v) (Repl (SNoR v) (add_SNo u))) -> !P:prop.(SNo (u + v) -> (!x2:set.x2 iIn SNoL u -> (x2 + v) < u + v) -> (!x2:set.x2 iIn SNoR u -> (u + v) < x2 + v) -> (!x2:set.x2 iIn SNoL v -> (u + x2) < u + v) -> (!x2:set.x2 iIn SNoR v -> (u + v) < u + x2) -> P) -> P) -> SNo x -> (!u:set.u iIn SNoS_ (SNoLev x) -> SNo (u + y) & (!v:set.v iIn SNoL u -> (v + y) < u + y) & (!v:set.v iIn SNoR u -> (u + y) < v + y) & (!v:set.v iIn SNoL y -> (u + v) < u + y) & (!v:set.v iIn SNoR y -> (u + y) < u + v) & SNoCutP (binunion (Repl (SNoL u) \v:set.v + y) (Repl (SNoL y) (add_SNo u))) (binunion (Repl (SNoR u) \v:set.v + y) (Repl (SNoR y) (add_SNo u)))) -> TransSet (SNoLev x) -> SNo z -> SNoLev z iIn SNoLev x -> z < x -> SNo (z + y) -> (!u:set.u iIn SNoR z -> (z + y) < u + y) -> SNo w -> x < w -> SNo (w + y) -> (!u:set.u iIn SNoL w -> (u + y) < w + y) -> z < w -> (z + y) < w + y
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.(!v:set.!x2:set.SNo (v + x2) & (!y2:set.y2 iIn SNoL v -> (y2 + x2) < v + x2) & (!y2:set.y2 iIn SNoR v -> (v + x2) < y2 + x2) & (!y2:set.y2 iIn SNoL x2 -> (v + y2) < v + x2) & (!y2:set.y2 iIn SNoR x2 -> (v + x2) < v + y2) & SNoCutP (binunion (Repl (SNoL v) \y2:set.y2 + x2) (Repl (SNoL x2) (add_SNo v))) (binunion (Repl (SNoR v) \y2:set.y2 + x2) (Repl (SNoR x2) (add_SNo v))) -> !P:prop.(SNo (v + x2) -> (!y2:set.y2 iIn SNoL v -> (y2 + x2) < v + x2) -> (!y2:set.y2 iIn SNoR v -> (v + x2) < y2 + x2) -> (!y2:set.y2 iIn SNoL x2 -> (v + y2) < v + x2) -> (!y2:set.y2 iIn SNoR x2 -> (v + x2) < v + y2) -> P) -> P) -> SNo x -> SNo y -> (!v:set.v iIn SNoS_ (SNoLev x) -> !x2:set.x2 iIn SNoS_ (SNoLev y) -> SNo (v + x2) & (!y2:set.y2 iIn SNoL v -> (y2 + x2) < v + x2) & (!y2:set.y2 iIn SNoR v -> (v + x2) < y2 + x2) & (!y2:set.y2 iIn SNoL x2 -> (v + y2) < v + x2) & (!y2:set.y2 iIn SNoR x2 -> (v + x2) < v + y2) & SNoCutP (binunion (Repl (SNoL v) \y2:set.y2 + x2) (Repl (SNoL x2) (add_SNo v))) (binunion (Repl (SNoR v) \y2:set.y2 + x2) (Repl (SNoR x2) (add_SNo v)))) -> (!v:set.v iIn SNoR y -> SNo (x + v) & (!x2:set.x2 iIn SNoL x -> (x2 + v) < x + v) & (!x2:set.x2 iIn SNoR x -> (x + v) < x2 + v) & (!x2:set.x2 iIn SNoL v -> (x + x2) < x + v) & (!x2:set.x2 iIn SNoR v -> (x + v) < x + x2) & SNoCutP (binunion (Repl (SNoL x) \x2:set.x2 + v) (Repl (SNoL v) (add_SNo x))) (binunion (Repl (SNoR x) \x2:set.x2 + v) (Repl (SNoR v) (add_SNo x)))) -> SNo w -> SNoLev w iIn SNoLev x -> w < x -> w iIn SNoS_ (SNoLev x) -> SNo (w + y) -> (!v:set.v iIn SNoR y -> (w + y) < w + v) -> u iIn SNoR y -> z = x + u -> SNo u -> SNoLev u iIn SNoLev y -> y < u -> u iIn SNoS_ (SNoLev y) -> (w + y) < z
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+hyp !v:set.!x2:set.SNo (v + x2) & (!y2:set.y2 iIn SNoL v -> (y2 + x2) < v + x2) & (!y2:set.y2 iIn SNoR v -> (v + x2) < y2 + x2) & (!y2:set.y2 iIn SNoL x2 -> (v + y2) < v + x2) & (!y2:set.y2 iIn SNoR x2 -> (v + x2) < v + y2) & SNoCutP (binunion (Repl (SNoL v) \y2:set.y2 + x2) (Repl (SNoL x2) (add_SNo v))) (binunion (Repl (SNoR v) \y2:set.y2 + x2) (Repl (SNoR x2) (add_SNo v))) -> !P:prop.(SNo (v + x2) -> (!y2:set.y2 iIn SNoL v -> (y2 + x2) < v + x2) -> (!y2:set.y2 iIn SNoR v -> (v + x2) < y2 + x2) -> (!y2:set.y2 iIn SNoL x2 -> (v + y2) < v + x2) -> (!y2:set.y2 iIn SNoR x2 -> (v + x2) < v + y2) -> P) -> P
+hyp SNo x
+hyp SNo y
+hyp !v:set.v iIn SNoS_ (SNoLev x) -> SNo (v + y) & (!x2:set.x2 iIn SNoL v -> (x2 + y) < v + y) & (!x2:set.x2 iIn SNoR v -> (v + y) < x2 + y) & (!x2:set.x2 iIn SNoL y -> (v + x2) < v + y) & (!x2:set.x2 iIn SNoR y -> (v + y) < v + x2) & SNoCutP (binunion (Repl (SNoL v) \x2:set.x2 + y) (Repl (SNoL y) (add_SNo v))) (binunion (Repl (SNoR v) \x2:set.x2 + y) (Repl (SNoR y) (add_SNo v)))
+hyp !v:set.v iIn SNoS_ (SNoLev x) -> !x2:set.x2 iIn SNoS_ (SNoLev y) -> SNo (v + x2) & (!y2:set.y2 iIn SNoL v -> (y2 + x2) < v + x2) & (!y2:set.y2 iIn SNoR v -> (v + x2) < y2 + x2) & (!y2:set.y2 iIn SNoL x2 -> (v + y2) < v + x2) & (!y2:set.y2 iIn SNoR x2 -> (v + x2) < v + y2) & SNoCutP (binunion (Repl (SNoL v) \y2:set.y2 + x2) (Repl (SNoL x2) (add_SNo v))) (binunion (Repl (SNoR v) \y2:set.y2 + x2) (Repl (SNoR x2) (add_SNo v)))
+hyp TransSet (SNoLev x)
+hyp !v:set.v iIn SNoL x -> SNo (v + y) & (!x2:set.x2 iIn SNoL v -> (x2 + y) < v + y) & (!x2:set.x2 iIn SNoR v -> (v + y) < x2 + y) & (!x2:set.x2 iIn SNoL y -> (v + x2) < v + y) & (!x2:set.x2 iIn SNoR y -> (v + y) < v + x2) & SNoCutP (binunion (Repl (SNoL v) \x2:set.x2 + y) (Repl (SNoL y) (add_SNo v))) (binunion (Repl (SNoR v) \x2:set.x2 + y) (Repl (SNoR y) (add_SNo v)))
+hyp !v:set.v iIn SNoR x -> SNo (v + y) & (!x2:set.x2 iIn SNoL v -> (x2 + y) < v + y) & (!x2:set.x2 iIn SNoR v -> (v + y) < x2 + y) & (!x2:set.x2 iIn SNoL y -> (v + x2) < v + y) & (!x2:set.x2 iIn SNoR y -> (v + y) < v + x2) & SNoCutP (binunion (Repl (SNoL v) \x2:set.x2 + y) (Repl (SNoL y) (add_SNo v))) (binunion (Repl (SNoR v) \x2:set.x2 + y) (Repl (SNoR y) (add_SNo v)))
+hyp !v:set.v iIn SNoR y -> SNo (x + v) & (!x2:set.x2 iIn SNoL x -> (x2 + v) < x + v) & (!x2:set.x2 iIn SNoR x -> (x + v) < x2 + v) & (!x2:set.x2 iIn SNoL v -> (x + x2) < x + v) & (!x2:set.x2 iIn SNoR v -> (x + v) < x + x2) & SNoCutP (binunion (Repl (SNoL x) \x2:set.x2 + v) (Repl (SNoL v) (add_SNo x))) (binunion (Repl (SNoR x) \x2:set.x2 + v) (Repl (SNoR v) (add_SNo x)))
+hyp w iIn binunion (Repl (SNoR x) \v:set.v + y) (Repl (SNoR y) (add_SNo x))
+hyp u iIn SNoL x
+hyp z = u + y
+hyp SNo u
+hyp SNoLev u iIn SNoLev x
+hyp u < x
+claim u iIn SNoS_ (SNoLev x) -> z < w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

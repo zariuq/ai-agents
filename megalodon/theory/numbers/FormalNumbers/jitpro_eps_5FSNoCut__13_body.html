@@ -1,0 +1,52 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+const nat_p : set prop
+axiom nat_p_trans: !x:set.nat_p x -> !y:set.y iIn x -> nat_p y
+const omega : set
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+const ordinal : set prop
+axiom nat_p_ordinal: !x:set.nat_p x -> ordinal x
+const ordsucc : set set
+axiom ordinal_ordsucc_In: !x:set.ordinal x -> !y:set.y iIn x -> ordsucc y iIn ordsucc x
+const SNoLev : set set
+const eps_ : set set
+axiom SNoLev_eps_: !x:set.x iIn omega -> SNoLev (eps_ x) = ordsucc x
+const Repl : set (set set) set
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+const famunion : set (set set) set
+axiom famunionE_impred: !x:set.!f:set set.!y:set.y iIn famunion x f -> !P:prop.(!z:set.z iIn x -> y iIn f z -> P) -> P
+axiom FalseE: ~ False
+axiom ordsuccI2: !x:set.x iIn ordsucc x
+axiom ReplI: !x:set.!f:set set.!y:set.y iIn x -> f y iIn Repl x f
+axiom famunionI: !x:set.!f:set set.!y:set.!z:set.y iIn x -> z iIn f y -> z iIn famunion x f
+const Empty : set
+axiom nat_inv: !x:set.nat_p x -> x = Empty | ?y:set.nat_p y & x = ordsucc y
+axiom set_ext: !x:set.!y:set.Subq x y -> Subq y x -> x = y
+const Sing : set set
+const SNoCut : set set set
+lemma !x:set.x iIn omega -> nat_p x -> SNoCutP (Sing Empty) (Repl x eps_) -> (!y:set.y iIn Repl x eps_ -> SNo y) -> famunion (Sing Empty) (\y:set.ordsucc (SNoLev y)) = ordsucc Empty -> (x != Empty -> famunion (Repl x eps_) (\y:set.ordsucc (SNoLev y)) = ordsucc x) -> eps_ x = SNoCut (Sing Empty) (Repl x eps_)
+lemma !x:set.!y:set.!z:set.nat_p x -> z iIn x -> y iIn ordsucc (ordsucc z) -> ordsucc z iIn ordsucc x -> y iIn ordsucc x
+var x:set
+hyp x iIn omega
+hyp nat_p x
+hyp SNoCutP (Sing Empty) (Repl x eps_)
+hyp !y:set.y iIn Repl x eps_ -> SNo y
+claim famunion (Sing Empty) (\y:set.ordsucc (SNoLev y)) = ordsucc Empty -> eps_ x = SNoCut (Sing Empty) (Repl x eps_)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

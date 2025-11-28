@@ -1,0 +1,43 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const SNo : set prop
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const Empty : set
+axiom mul_SNo_zeroR: !x:set.SNo x -> x * Empty = Empty
+const ordsucc : set set
+axiom SNo_1: SNo (ordsucc Empty)
+axiom SNo_mul_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x * y)
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_SNo_0R: !x:set.SNo x -> x + Empty = x
+const SNoL : set set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+lemma !x:set.!y:set.SNo x -> (!z:set.z iIn SNoL x -> !w:set.w iIn SNoL (ordsucc Empty) -> (z * ordsucc Empty + x * w) < x * ordsucc Empty + z * w) -> Empty iIn SNoL (ordsucc Empty) -> y iIn SNoL x -> SNo y -> y * ordsucc Empty + x * Empty = y -> x * ordsucc Empty + y * Empty = x * ordsucc Empty -> y < x * ordsucc Empty
+const SNoS_ : set set
+const SNoLev : set set
+var x:set
+var y:set
+hyp SNo x
+hyp !z:set.z iIn SNoS_ (SNoLev x) -> z * ordsucc Empty = z
+hyp !z:set.z iIn SNoL x -> !w:set.w iIn SNoL (ordsucc Empty) -> (z * ordsucc Empty + x * w) < x * ordsucc Empty + z * w
+hyp Empty iIn SNoL (ordsucc Empty)
+hyp y iIn SNoL x
+hyp SNo y
+claim y * ordsucc Empty + x * Empty = y -> y < x * ordsucc Empty
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

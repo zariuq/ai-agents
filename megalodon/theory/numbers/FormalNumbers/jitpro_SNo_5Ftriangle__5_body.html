@@ -1,0 +1,52 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const Empty : set
+axiom SNo_0: SNo Empty
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_SNo_Lt3: !x:set.!y:set.!z:set.!w:set.SNo x -> SNo y -> SNo z -> SNo w -> x < z -> y < w -> (x + y) < z + w
+axiom add_SNo_0L: !x:set.SNo x -> Empty + x = x
+const abs_SNo : set set
+const minus_SNo : set set
+term - = minus_SNo
+axiom neg_abs_SNo: !x:set.SNo x -> x < Empty -> abs_SNo x = - x
+axiom minus_SNo_0: - Empty = Empty
+axiom minus_SNo_Lt_contra2: !x:set.!y:set.SNo x -> SNo y -> x < - y -> y < - x
+axiom SNoLt_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x < y -> y < z -> x < z
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+axiom SNoLtLe: !x:set.!y:set.x < y -> x <= y
+axiom add_SNo_Le1: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x <= z -> (x + y) <= z + y
+axiom nonneg_abs_SNo: !x:set.Empty <= x -> abs_SNo x = x
+axiom minus_SNo_Le_contra: !x:set.!y:set.SNo x -> SNo y -> x <= y -> - y <= - x
+axiom add_SNo_Le2: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> y <= z -> (x + y) <= x + z
+axiom minus_add_SNo_distr: !x:set.!y:set.SNo x -> SNo y -> - (x + y) = - x + - y
+axiom not_nonneg_abs_SNo: !x:set.~ Empty <= x -> abs_SNo x = - x
+axiom xm: !P:prop.P | ~ P
+axiom SNoLtLe_or: !x:set.!y:set.SNo x -> SNo y -> x < y | y <= x
+axiom add_SNo_Le3: !x:set.!y:set.!z:set.!w:set.SNo x -> SNo y -> SNo z -> SNo w -> x <= z -> y <= w -> (x + y) <= z + w
+lemma !x:set.!y:set.SNo x -> SNo y -> SNo (x + y) -> x < Empty -> y < Empty -> (x + y) < Empty -> abs_SNo (x + y) <= - x + - y
+lemma !x:set.SNo x -> SNo - x -> Empty <= x -> - x <= Empty -> - x <= x
+lemma !x:set.SNo x -> SNo - x -> Empty <= x -> - x <= Empty -> - x <= x
+lemma !x:set.!y:set.SNo x -> SNo y -> Empty <= x -> Empty <= y -> Empty <= x + y -> abs_SNo (x + y) <= x + y
+var x:set
+var y:set
+hyp SNo x
+hyp SNo y
+hyp SNo (x + y)
+hyp SNo - x
+claim SNo - y -> abs_SNo (x + y) <= abs_SNo x + abs_SNo y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

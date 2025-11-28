@@ -1,0 +1,56 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+term nIn = \x:set.\y:set.~ x iIn y
+const SNoCutP : set set prop
+const binunion : set set set
+const Repl : set (set set) set
+const SNoS_ : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const Empty : set
+axiom add_SNo_ordinal_SNoCutP: !x:set.ordinal x -> !y:set.ordinal y -> SNoCutP (binunion (Repl (SNoS_ x) \z:set.z + y) (Repl (SNoS_ y) (add_SNo x))) Empty
+const ordsucc : set set
+axiom ordsuccI2: !x:set.x iIn ordsucc x
+const SNo_ : set set prop
+axiom ordinal_SNo_: !x:set.ordinal x -> SNo_ x x
+axiom SNoS_I: !x:set.ordinal x -> !y:set.!z:set.z iIn x -> SNo_ z y -> y iIn SNoS_ x
+axiom ReplI: !x:set.!f:set set.!y:set.y iIn x -> f y iIn Repl x f
+axiom binunionI1: !x:set.!y:set.!z:set.z iIn x -> z iIn binunion x y
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom ordinal_SNoLt_In: !x:set.!y:set.ordinal x -> ordinal y -> x < y -> x iIn y
+const SNoCut : set set set
+axiom add_SNo_ordinal_eq: !x:set.ordinal x -> !y:set.ordinal y -> x + y = SNoCut (binunion (Repl (SNoS_ x) \z:set.z + y) (Repl (SNoS_ y) (add_SNo x))) Empty
+const SNo : set prop
+const SNoLev : set set
+const famunion : set (set set) set
+const SNoEq_ : set set set prop
+axiom SNoCutP_SNoCut: !x:set.!y:set.SNoCutP x y -> SNo (SNoCut x y) & SNoLev (SNoCut x y) iIn ordsucc (binunion (famunion x \z:set.ordsucc (SNoLev z)) (famunion y \z:set.ordsucc (SNoLev z))) & (!z:set.z iIn x -> z < SNoCut x y) & (!z:set.z iIn y -> SNoCut x y < z) & !z:set.SNo z -> (!w:set.w iIn x -> w < z) -> (!w:set.w iIn y -> z < w) -> Subq (SNoLev (SNoCut x y)) (SNoLev z) & SNoEq_ (SNoLev (SNoCut x y)) (SNoCut x y) z
+lemma !x:set.!y:set.ordinal x -> ordinal y -> (!z:set.z iIn y -> ordsucc x + z = ordsucc (x + z)) -> SNo x -> SNo y -> ordinal (x + y) -> ordinal (ordsucc x) -> SNo (ordsucc x) -> ordinal (ordsucc x + y) -> (!z:set.z iIn binunion (Repl (SNoS_ (ordsucc x)) \w:set.w + y) (Repl (SNoS_ y) (add_SNo (ordsucc x))) -> z < ordsucc x + y) -> (!z:set.SNo z -> (!w:set.w iIn binunion (Repl (SNoS_ (ordsucc x)) \u:set.u + y) (Repl (SNoS_ y) (add_SNo (ordsucc x))) -> w < z) -> (!w:set.w iIn Empty -> z < w) -> Subq (SNoLev (ordsucc x + y)) (SNoLev z) & SNoEq_ (SNoLev (ordsucc x + y)) (ordsucc x + y) z) -> x + y iIn ordsucc x + y -> ordsucc x + y = ordsucc (x + y)
+var x:set
+var y:set
+hyp ordinal x
+hyp ordinal y
+hyp !z:set.z iIn y -> ordsucc x + z = ordsucc (x + z)
+hyp SNo x
+hyp SNo y
+hyp ordinal (x + y)
+hyp ordinal (ordsucc x)
+hyp SNo (ordsucc x)
+claim ordinal (ordsucc x + y) -> ordsucc x + y = ordsucc (x + y)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

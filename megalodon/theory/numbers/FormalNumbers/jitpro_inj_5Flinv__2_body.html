@@ -1,0 +1,18 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Eps_i : (set prop) set
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term inv = \x:set.\f:set set.\y:set.Eps_i \z:set.z iIn x & f z = y
+axiom Eps_i_ax: !p:set prop.!x:set.p x -> p (Eps_i p)
+lemma !x:set.!f:set set.!y:set.(!z:set.z iIn x -> !w:set.w iIn x -> f z = f w -> z = w) -> y iIn x -> inv x f (f y) iIn x & f (inv x f (f y)) = f y -> inv x f (f y) = y
+claim !x:set.!f:set set.(!y:set.y iIn x -> !z:set.z iIn x -> f y = f z -> y = z) -> !y:set.y iIn x -> inv x f (f y) = y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

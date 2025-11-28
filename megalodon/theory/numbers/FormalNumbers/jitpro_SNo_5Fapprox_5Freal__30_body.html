@@ -1,0 +1,36 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term nIn = \x:set.\y:set.~ x iIn y
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const SNo : set prop
+const minus_SNo : set set
+term - = minus_SNo
+axiom SNo_minus_SNo: !x:set.SNo x -> SNo - x
+const SNoS_ : set set
+const omega : set
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const ap : set set set
+const SNoCut : set set set
+const Repl : set (set set) set
+const real : set
+lemma !x:set.!y:set.!z:set.SNo x -> y iIn setexp (SNoS_ omega) omega -> z iIn setexp (SNoS_ omega) omega -> (!w:set.w iIn omega -> ap y w < x) -> (!w:set.w iIn omega -> !u:set.u iIn w -> ap y u < ap y w) -> (!w:set.w iIn omega -> x < ap z w) -> (!w:set.w iIn omega -> !u:set.u iIn w -> ap z w < ap z u) -> x = SNoCut (Repl omega (ap y)) (Repl omega (ap z)) -> SNo - x -> x iIn real
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const eps_ : set set
+claim !x:set.SNo x -> !y:set.y iIn setexp (SNoS_ omega) omega -> !z:set.z iIn setexp (SNoS_ omega) omega -> (!w:set.w iIn omega -> ap y w < x) -> (!w:set.w iIn omega -> x < ap y w + eps_ w) -> (!w:set.w iIn omega -> !u:set.u iIn w -> ap y u < ap y w) -> (!w:set.w iIn omega -> x < ap z w) -> (!w:set.w iIn omega -> !u:set.u iIn w -> ap z w < ap z u) -> x = SNoCut (Repl omega (ap y)) (Repl omega (ap z)) -> x iIn real
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

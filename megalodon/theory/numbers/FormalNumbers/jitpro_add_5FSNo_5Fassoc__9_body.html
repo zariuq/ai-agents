@@ -1,0 +1,39 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom add_SNo_Lt1: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x < z -> (x + y) < z + y
+const SNoR : set set
+const SNoS_ : set set
+const SNoLev : set set
+var x:set
+var y:set
+var z:set
+var w:set
+hyp SNo x
+hyp SNo y
+hyp SNo z
+hyp !u:set.u iIn SNoS_ (SNoLev x) -> u + y + z = (u + y) + z
+hyp SNo (x + y)
+hyp w iIn SNoR x
+hyp SNo w
+hyp x < w
+claim w + y + z = (w + y) + z -> ((x + y) + z) < w + y + z
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

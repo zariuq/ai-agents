@@ -1,0 +1,68 @@
+{
+  "metadata": {
+    "file": "dnf_prop.p",
+    "domain": "Propositional Logic",
+    "problem": "Disjunctive Normal Form example",
+    "english": "Prove (p & q) | (p & r) from p & (q | r)",
+    "axiom": "distributivity premise",
+    "goal": "distributivity conclusion"
+  },
+  "comments": [
+    "------------------------------------------------------------------------------",
+    "------------------------------------------------------------------------------",
+    "------------------------------------------------------------------------------"
+  ],
+  "formulas": [
+    {
+      "name": "premise",
+      "role": "axiom",
+      "formula": [
+        "and",
+        [
+          "atom",
+          "p"
+        ],
+        [
+          "or",
+          [
+            "atom",
+            "q"
+          ],
+          [
+            "atom",
+            "r"
+          ]
+        ]
+      ]
+    },
+    {
+      "name": "goal",
+      "role": "conjecture",
+      "formula": [
+        "or",
+        [
+          "and",
+          [
+            "atom",
+            "p"
+          ],
+          [
+            "atom",
+            "q"
+          ]
+        ],
+        [
+          "and",
+          [
+            "atom",
+            "p"
+          ],
+          [
+            "atom",
+            "r"
+          ]
+        ]
+      ]
+    }
+  ]
+}

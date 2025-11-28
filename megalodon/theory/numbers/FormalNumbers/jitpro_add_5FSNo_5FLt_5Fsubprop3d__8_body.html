@@ -1,0 +1,20 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom add_SNo_Lt_subprop3b: !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.SNo x -> SNo y -> SNo z -> SNo w -> SNo u -> SNo v -> (x + v) < z + u -> y < v + w -> (x + y) < z + w + u
+lemma !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.!x2:set.!y2:set.SNo x -> SNo y -> SNo z -> SNo w -> SNo u -> SNo v -> SNo x2 -> SNo y2 -> (x + v) < x2 + u -> y < y2 + w -> (x2 + y2) < z + v -> (x2 + y) < z + w + v -> (x + y) < z + w + u
+claim !x:set.!y:set.!z:set.!w:set.!u:set.!v:set.!x2:set.!y2:set.SNo x -> SNo y -> SNo z -> SNo w -> SNo u -> SNo v -> SNo x2 -> SNo y2 -> (x + v) < x2 + u -> y < y2 + w -> (x2 + y2) < z + v -> (x + y) < z + w + u
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

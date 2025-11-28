@@ -1,0 +1,46 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const ordsucc : set set
+const Empty : set
+axiom SNo_2: SNo (ordsucc (ordsucc Empty))
+axiom neq_2_0: ordsucc (ordsucc Empty) != Empty
+const nat_p : set prop
+axiom nat_1: nat_p (ordsucc Empty)
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const omega : set
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+const eps_ : set set
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+axiom SNo_mul_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x * y)
+axiom SNo_1: SNo (ordsucc Empty)
+axiom mul_SNo_oneL: !x:set.SNo x -> ordsucc Empty * x = x
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom mul_SNo_distrR: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> (x + y) * z = x * z + y * z
+axiom add_SNo_1_1_2: ordsucc Empty + ordsucc Empty = ordsucc (ordsucc Empty)
+axiom eps_1_half_eq2: ordsucc (ordsucc Empty) * eps_ (ordsucc Empty) = ordsucc Empty
+axiom mul_SNo_assoc: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x * y * z = (x * y) * z
+axiom mul_SNo_nonzero_cancel: !x:set.!y:set.!z:set.SNo x -> x != Empty -> SNo y -> SNo z -> x * y = x * z -> y = z
+var x:set
+var y:set
+var z:set
+hyp SNo x
+hyp SNo y
+hyp SNo z
+hyp x + x = y + z
+claim SNo (y + z) -> x = eps_ (ordsucc Empty) * (y + z)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,51 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+const SNo : set prop
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+axiom SNoLtLe: !x:set.!y:set.x < y -> x <= y
+axiom SNoLe_tra: !x:set.!y:set.!z:set.SNo x -> SNo y -> SNo z -> x <= y -> y <= z -> x <= z
+const SNoR : set set
+const SNoLev : set set
+axiom SNoR_E: !x:set.SNo x -> !y:set.y iIn SNoR x -> !P:prop.(SNo y -> SNoLev y iIn SNoLev x -> x < y -> P) -> P
+const SNoS_ : set set
+var x:set
+var y:set
+var z:set
+var w:set
+hyp SNo x
+hyp SNo y
+hyp SNo (x + y)
+hyp SNo z
+hyp !u:set.u iIn SNoS_ (SNoLev z) -> SNoLev u iIn SNoLev (x + y) -> (x + y) < u -> (?v:set.v iIn SNoR x & (v + y) <= u) | ?v:set.v iIn SNoR y & (x + v) <= u
+hyp SNoLev z iIn SNoLev (x + y)
+hyp ~ ((?u:set.u iIn SNoR x & (u + y) <= z) | ?u:set.u iIn SNoR y & (x + u) <= z)
+hyp SNo w
+hyp SNoLev w iIn SNoLev z
+hyp w < z
+hyp (x + y) < w
+hyp w iIn SNoS_ (SNoLev z)
+claim ~ SNoLev w iIn SNoLev (x + y)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

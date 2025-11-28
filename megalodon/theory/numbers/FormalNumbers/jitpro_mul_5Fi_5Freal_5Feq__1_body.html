@@ -1,0 +1,45 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo_pair : set set set
+const Empty : set
+const ordsucc : set set
+term Complex_i = SNo_pair Empty (ordsucc Empty)
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const CSNo_Re : set set
+const minus_SNo : set set
+term - = minus_SNo
+const CSNo_Im : set set
+term mul_CSNo = \x:set.\y:set.SNo_pair (CSNo_Re x * CSNo_Re y + - CSNo_Im x * CSNo_Im y) (CSNo_Re x * CSNo_Im y + CSNo_Im x * CSNo_Re y)
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const real : set
+axiom real_0: Empty iIn real
+axiom real_1: ordsucc Empty iIn real
+const SNo : set prop
+axiom real_SNo: !x:set.x iIn real -> SNo x
+axiom SNo_1: SNo (ordsucc Empty)
+axiom SNo_0: SNo Empty
+axiom add_SNo_0L: !x:set.SNo x -> Empty + x = x
+axiom mul_SNo_oneL: !x:set.SNo x -> ordsucc Empty * x = x
+axiom mul_SNo_zeroL: !x:set.SNo x -> Empty * x = Empty
+axiom minus_SNo_0: - Empty = Empty
+axiom mul_SNo_zeroR: !x:set.SNo x -> x * Empty = Empty
+axiom complex_Im_eq: !x:set.x iIn real -> !y:set.y iIn real -> CSNo_Im (SNo_pair x y) = y
+axiom complex_Re_eq: !x:set.x iIn real -> !y:set.y iIn real -> CSNo_Re (SNo_pair x y) = x
+axiom real_Im_eq: !x:set.x iIn real -> CSNo_Im x = Empty
+axiom real_Re_eq: !x:set.x iIn real -> CSNo_Re x = x
+claim !x:set.x iIn real -> mul_CSNo Complex_i x = SNo_pair Empty x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,57 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term SNoEq_ = \x:set.\y:set.\z:set.PNoEq_ x (\w:set.w iIn y) \w:set.w iIn z
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const ordinal : set prop
+const SNo_ : set set prop
+term SNo = \x:set.?y:set.ordinal y & SNo_ y x
+const PNoLt : set (set prop) set (set prop) prop
+term PNoLt_pwise = \P:set (set prop) prop.\Q:set (set prop) prop.!x:set.ordinal x -> !p:set prop.P x p -> !y:set.ordinal y -> !q:set prop.Q y q -> PNoLt x p y q
+term PNo_strict_upperbd = \P:set (set prop) prop.\x:set.\p:set prop.!y:set.ordinal y -> !q:set prop.P y q -> PNoLt y q x p
+term PNo_strict_lowerbd = \P:set (set prop) prop.\x:set.\p:set prop.!y:set.ordinal y -> !q:set prop.P y q -> PNoLt x p y q
+term PNo_strict_imv = \P:set (set prop) prop.\Q:set (set prop) prop.\x:set.\p:set prop.PNo_strict_upperbd P x p & PNo_strict_lowerbd Q x p
+term nIn = \x:set.\y:set.~ x iIn y
+const PNo_rel_strict_imv : (set (set prop) prop) (set (set prop) prop) set (set prop) prop
+const ordsucc : set set
+term PNo_rel_strict_split_imv = \P:set (set prop) prop.\Q:set (set prop) prop.\x:set.\p:set prop.PNo_rel_strict_imv P Q (ordsucc x) (\y:set.p y & y != x) & PNo_rel_strict_imv P Q (ordsucc x) \y:set.p y | y = x
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term PNo_least_rep = \P:set (set prop) prop.\Q:set (set prop) prop.\x:set.\p:set prop.ordinal x & PNo_strict_imv P Q x p & !y:set.y iIn x -> !q:set prop.~ PNo_strict_imv P Q y q
+const PSNo : set (set prop) set
+const PNo_bd : (set (set prop) prop) (set (set prop) prop) set
+const PNo_pred : (set (set prop) prop) (set (set prop) prop) set prop
+term SNoCut = \x:set.\y:set.PSNo (PNo_bd (\z:set.\p:set prop.ordinal z & PSNo z p iIn x) \z:set.\p:set prop.ordinal z & PSNo z p iIn y) (PNo_pred (\z:set.\p:set prop.ordinal z & PSNo z p iIn x) \z:set.\p:set prop.ordinal z & PSNo z p iIn y)
+term PNoLt_ = \x:set.\p:set prop.\q:set prop.?y:set.y iIn x & (PNoEq_ y p q & ~ p y & q y)
+term PNo_lenbdd = \x:set.\P:set (set prop) prop.!y:set.!p:set prop.P y p -> y iIn x
+const SNoLev : set set
+lemma !x:set.!y:set.!z:set.!w:set.ordinal (PNo_bd (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) \u:set.\p:set prop.ordinal u & PSNo u p iIn y) -> PNo_strict_imv (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) (\u:set.\p:set prop.ordinal u & PSNo u p iIn y) (PNo_bd (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) \u:set.\p:set prop.ordinal u & PSNo u p iIn y) (PNo_pred (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) \u:set.\p:set prop.ordinal u & PSNo u p iIn y) -> (!u:set.u iIn PNo_bd (\v:set.\p:set prop.ordinal v & PSNo v p iIn x) (\v:set.\p:set prop.ordinal v & PSNo v p iIn y) -> !p:set prop.~ PNo_strict_imv (\v:set.\q:set prop.ordinal v & PSNo v q iIn x) (\v:set.\q:set prop.ordinal v & PSNo v q iIn y) u p) -> ordinal (SNoLev z) -> PNo_strict_imv (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) (\u:set.\p:set prop.ordinal u & PSNo u p iIn y) (SNoLev z) (\u:set.u iIn z) -> Subq (PNo_bd (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) \u:set.\p:set prop.ordinal u & PSNo u p iIn y) (SNoLev z) -> w iIn PNo_bd (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) (\u:set.\p:set prop.ordinal u & PSNo u p iIn y) -> PNoEq_ w (PNo_pred (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) \u:set.\p:set prop.ordinal u & PSNo u p iIn y) (\u:set.u iIn z) -> ~ PNo_pred (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) (\u:set.\p:set prop.ordinal u & PSNo u p iIn y) w -> w iIn z -> ordinal w -> ordinal (ordsucc w) -> ~ ~ (w iIn z & w != w)
+var x:set
+var y:set
+var z:set
+var w:set
+hyp ordinal (PNo_bd (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) \u:set.\p:set prop.ordinal u & PSNo u p iIn y)
+hyp PNo_strict_imv (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) (\u:set.\p:set prop.ordinal u & PSNo u p iIn y) (PNo_bd (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) \u:set.\p:set prop.ordinal u & PSNo u p iIn y) (PNo_pred (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) \u:set.\p:set prop.ordinal u & PSNo u p iIn y)
+hyp !u:set.u iIn PNo_bd (\v:set.\p:set prop.ordinal v & PSNo v p iIn x) (\v:set.\p:set prop.ordinal v & PSNo v p iIn y) -> !p:set prop.~ PNo_strict_imv (\v:set.\q:set prop.ordinal v & PSNo v q iIn x) (\v:set.\q:set prop.ordinal v & PSNo v q iIn y) u p
+hyp ordinal (SNoLev z)
+hyp PNo_strict_imv (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) (\u:set.\p:set prop.ordinal u & PSNo u p iIn y) (SNoLev z) \u:set.u iIn z
+hyp Subq (PNo_bd (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) \u:set.\p:set prop.ordinal u & PSNo u p iIn y) (SNoLev z)
+hyp w iIn PNo_bd (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) \u:set.\p:set prop.ordinal u & PSNo u p iIn y
+hyp PNoEq_ w (PNo_pred (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) \u:set.\p:set prop.ordinal u & PSNo u p iIn y) \u:set.u iIn z
+hyp ~ PNo_pred (\u:set.\p:set prop.ordinal u & PSNo u p iIn x) (\u:set.\p:set prop.ordinal u & PSNo u p iIn y) w
+hyp w iIn z
+hyp ordinal w
+claim ~ ordinal (ordsucc w)
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

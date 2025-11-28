@@ -1,0 +1,17 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const ordinal : set prop
+const SNo_ : set set prop
+term SNo = \x:set.?y:set.ordinal y & SNo_ y x
+const Eps_i : (set prop) set
+term SNoLev = \x:set.Eps_i \y:set.ordinal y & SNo_ y x
+axiom Eps_i_ex: !p:set prop.(?x:set.p x) -> p (Eps_i p)
+claim !x:set.SNo x -> ordinal (SNoLev x) & SNo_ (SNoLev x) x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

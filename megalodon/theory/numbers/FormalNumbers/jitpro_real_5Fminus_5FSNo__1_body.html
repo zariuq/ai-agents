@@ -1,0 +1,39 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const ordinal : set prop
+const ordsucc : set set
+const omega : set
+axiom ordsucc_omega_ordinal: ordinal (ordsucc omega)
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNoS_ : set set
+const minus_SNo : set set
+term - = minus_SNo
+axiom minus_SNo_SNoS_: !x:set.ordinal x -> !y:set.y iIn SNoS_ x -> - y iIn SNoS_ x
+const SNo : set prop
+axiom minus_SNo_invol: !x:set.SNo x -> - - x = x
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom SNoLt_irref: !x:set.~ x < x
+axiom SNo_omega: SNo omega
+const abs_SNo : set set
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const eps_ : set set
+axiom minus_SNo_prereal_1: !x:set.SNo x -> (!y:set.y iIn SNoS_ omega -> (!z:set.z iIn omega -> abs_SNo (y + - x) < eps_ z) -> y = x) -> !y:set.y iIn SNoS_ omega -> (!z:set.z iIn omega -> abs_SNo (y + - - x) < eps_ z) -> y = - x
+const real : set
+axiom real_I: !x:set.x iIn SNoS_ (ordsucc omega) -> x != omega -> x != - omega -> (!y:set.y iIn SNoS_ omega -> (!z:set.z iIn omega -> abs_SNo (y + - x) < eps_ z) -> y = x) -> x iIn real
+const SNoLev : set set
+axiom real_E: !x:set.x iIn real -> !P:prop.(SNo x -> SNoLev x iIn ordsucc omega -> x iIn SNoS_ (ordsucc omega) -> - omega < x -> x < omega -> (!y:set.y iIn SNoS_ omega -> (!z:set.z iIn omega -> abs_SNo (y + - x) < eps_ z) -> y = x) -> (!y:set.y iIn omega -> ?z:set.z iIn SNoS_ omega & (z < x & x < z + eps_ y)) -> P) -> P
+claim !x:set.x iIn real -> - x iIn real
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,17 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const PNoEq_ : set (set prop) (set prop) prop
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term SNoEq_ = \x:set.\y:set.\z:set.PNoEq_ x (\w:set.w iIn y) \w:set.w iIn z
+axiom PNoEq_tra_: !x:set.!p:set prop.!q:set prop.!p2:set prop.PNoEq_ x p q -> PNoEq_ x q p2 -> PNoEq_ x p p2
+claim !x:set.!y:set.!z:set.!w:set.SNoEq_ x y z -> SNoEq_ x z w -> SNoEq_ x y w
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

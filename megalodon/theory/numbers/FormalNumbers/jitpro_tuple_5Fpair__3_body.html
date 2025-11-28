@@ -1,0 +1,34 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+const If_i : prop set set set
+axiom If_i_1: !P:prop.!x:set.!y:set.P -> If_i P x y = x
+const setsum : set set set
+const Empty : set
+axiom pairI0: !x:set.!y:set.!z:set.z iIn x -> setsum Empty z iIn setsum x y
+const ordsucc : set set
+axiom neq_1_0: ordsucc Empty != Empty
+axiom If_i_0: !P:prop.!x:set.!y:set.~ P -> If_i P x y = y
+axiom pairI1: !x:set.!y:set.!z:set.z iIn y -> setsum (ordsucc Empty) z iIn setsum x y
+const UPair : set set set
+axiom UPairE: !x:set.!y:set.!z:set.x iIn UPair y z -> x = y | x = z
+lemma !x:set.!y:set.!z:set.!w:set.w iIn If_i (z = Empty) x y -> z = Empty -> If_i (z = Empty) x y = x -> w iIn x
+lemma !x:set.!y:set.!z:set.!w:set.w iIn If_i (z = Empty) x y -> z = ordsucc Empty -> If_i (z = Empty) x y = y -> w iIn y
+var x:set
+var y:set
+var z:set
+var w:set
+hyp z iIn ordsucc (ordsucc Empty)
+hyp w iIn If_i (z = Empty) x y
+claim z iIn UPair Empty (ordsucc Empty) -> setsum z w iIn setsum x y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

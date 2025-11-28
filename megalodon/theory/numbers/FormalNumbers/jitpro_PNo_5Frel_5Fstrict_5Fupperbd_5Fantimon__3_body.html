@@ -1,0 +1,41 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const PNo_downc : (set (set prop) prop) set (set prop) prop
+const PNoLt : set (set prop) set (set prop) prop
+term PNo_rel_strict_upperbd = \P:set (set prop) prop.\x:set.\p:set prop.!y:set.y iIn x -> !q:set prop.PNo_downc P y q -> PNoLt y q x p
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+const binintersect : set set set
+axiom binintersect_Subq_eq_1: !x:set.!y:set.Subq x y -> binintersect x y = x
+const PNoEq_ : set (set prop) (set prop) prop
+axiom PNoLtI2: !x:set.!y:set.!p:set prop.!q:set prop.x iIn y -> PNoEq_ x p q -> q x -> PNoLt x p y q
+axiom In_no2cycle: !x:set.!y:set.x iIn y -> ~ y iIn x
+axiom FalseE: ~ False
+const PNoLt_ : set (set prop) (set prop) prop
+axiom PNoLtE: !x:set.!y:set.!p:set prop.!q:set prop.PNoLt x p y q -> !P:prop.(PNoLt_ (binintersect x y) p q -> P) -> (x iIn y -> PNoEq_ x p q -> q x -> P) -> (y iIn x -> PNoEq_ y p q -> ~ p y -> P) -> P
+lemma !x:set.!p:set prop.!y:set.!z:set.!q:set prop.TransSet x -> TransSet y -> z iIn y -> z iIn x -> PNoLt_ (binintersect z x) q p -> binintersect z x = z -> PNoLt z q y p
+var P:set (set prop) prop
+var x:set
+var p:set prop
+var y:set
+var z:set
+var q:set prop
+hyp TransSet x
+hyp TransSet y
+hyp !w:set.w iIn x -> !p2:set prop.PNo_downc P w p2 -> PNoLt w p2 x p
+hyp z iIn y
+hyp PNo_downc P z q
+hyp z iIn x
+claim PNoLt z q x p -> PNoLt z q y p
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

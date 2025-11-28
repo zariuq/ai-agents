@@ -1,0 +1,35 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const SNo : set prop
+const Empty : set
+axiom SNo_0: SNo Empty
+const minus_SNo : set set
+term - = minus_SNo
+axiom minus_SNo_0: - Empty = Empty
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom minus_SNo_Lt_contra2: !x:set.!y:set.SNo x -> SNo y -> x < - y -> y < - x
+const SNoLe : set set prop
+term <= = SNoLe
+infix <= 2020 2020
+axiom SNoLtLe: !x:set.!y:set.x < y -> x <= y
+const abs_SNo : set set
+axiom neg_abs_SNo: !x:set.SNo x -> x < Empty -> abs_SNo x = - x
+axiom SNo_minus_SNo: !x:set.SNo x -> SNo - x
+axiom minus_SNo_invol: !x:set.SNo x -> - - x = x
+axiom nonneg_abs_SNo: !x:set.Empty <= x -> abs_SNo x = x
+axiom minus_SNo_Le_contra: !x:set.!y:set.SNo x -> SNo y -> x <= y -> - y <= - x
+axiom SNoLe_antisym: !x:set.!y:set.SNo x -> SNo y -> x <= y -> y <= x -> x = y
+axiom SNoLtLe_or: !x:set.!y:set.SNo x -> SNo y -> x < y | y <= x
+lemma !x:set.SNo x -> x < Empty -> Empty <= - x -> abs_SNo - x = - x
+lemma !x:set.SNo x -> Empty <= x -> Empty <= - x -> x = Empty -> abs_SNo - x = abs_SNo x
+claim !x:set.SNo x -> abs_SNo - x = abs_SNo x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,41 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const SNo : set prop
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+term SNoCutP = \x:set.\y:set.(!z:set.z iIn x -> SNo z) & (!z:set.z iIn y -> SNo z) & !z:set.z iIn x -> !w:set.w iIn y -> z < w
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+const mul_SNo : set set set
+term * = mul_SNo
+infix * 2291 2290
+const minus_SNo : set set
+term - = minus_SNo
+var x:set
+var y:set
+var z:set
+var w:set
+var u:set
+var v:set
+hyp SNo (z * u)
+hyp SNo (w * v)
+hyp SNo (w * y)
+hyp SNo (x * v)
+hyp (z * y + x * u + w * v) < w * y + x * v + z * u
+hyp (z * y + x * u + - z * u) + z * u + w * v = z * y + x * u + w * v
+claim (w * y + x * v + - w * v) + z * u + w * v = w * y + x * v + z * u -> ((z * y + x * u + - z * u) + z * u + w * v) < (w * y + x * v + - w * v) + z * u + w * v
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

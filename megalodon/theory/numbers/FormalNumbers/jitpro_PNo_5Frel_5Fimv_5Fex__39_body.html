@@ -1,0 +1,46 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const PNo_upc : (set (set prop) prop) set (set prop) prop
+const PNoLt : set (set prop) set (set prop) prop
+term PNo_rel_strict_lowerbd = \P:set (set prop) prop.\x:set.\p:set prop.!y:set.y iIn x -> !q:set prop.PNo_upc P y q -> PNoLt x p y q
+const PNo_downc : (set (set prop) prop) set (set prop) prop
+term PNo_rel_strict_upperbd = \P:set (set prop) prop.\x:set.\p:set prop.!y:set.y iIn x -> !q:set prop.PNo_downc P y q -> PNoLt y q x p
+term PNo_rel_strict_imv = \P:set (set prop) prop.\Q:set (set prop) prop.\x:set.\p:set prop.PNo_rel_strict_upperbd P x p & PNo_rel_strict_lowerbd Q x p
+const ordsucc : set set
+term PNo_rel_strict_split_imv = \P:set (set prop) prop.\Q:set (set prop) prop.\x:set.\p:set prop.PNo_rel_strict_imv P Q (ordsucc x) (\y:set.p y & y != x) & PNo_rel_strict_imv P Q (ordsucc x) \y:set.p y | y = x
+term PNoEq_ = \x:set.\p:set prop.\q:set prop.!y:set.y iIn x -> (p y <-> q y)
+term PNo_rel_strict_uniq_imv = \P:set (set prop) prop.\Q:set (set prop) prop.\x:set.\p:set prop.PNo_rel_strict_imv P Q x p & !q:set prop.PNo_rel_strict_imv P Q x q -> PNoEq_ x p q
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term TransSet = \x:set.!y:set.y iIn x -> Subq y x
+term ordinal = \x:set.TransSet x & !y:set.y iIn x -> TransSet y
+term PNoLt_pwise = \P:set (set prop) prop.\Q:set (set prop) prop.!x:set.ordinal x -> !p:set prop.P x p -> !y:set.ordinal y -> !q:set prop.Q y q -> PNoLt x p y q
+term nIn = \x:set.\y:set.~ x iIn y
+term PNoLt_ = \x:set.\p:set prop.\q:set prop.?y:set.y iIn x & (PNoEq_ y p q & ~ p y & q y)
+term PNoLe = \x:set.\p:set prop.\y:set.\q:set prop.PNoLt x p y q | x = y & PNoEq_ x p q
+const binintersect : set set set
+axiom binintersect_com: !x:set.!y:set.binintersect x y = binintersect y x
+lemma !P:set (set prop) prop.!Q:set (set prop) prop.!x:set.!y:set.PNoLt_pwise (PNo_downc P) (PNo_upc Q) -> ~ (?p:set prop.PNo_rel_strict_uniq_imv P Q x p) -> ~ (?z:set.z iIn x & ?p:set prop.PNo_rel_strict_split_imv P Q z p) -> (!z:set.z iIn x -> ?p:set prop.PNo_rel_strict_uniq_imv P Q z p) -> y iIn x -> x = ordsucc y -> ordinal y -> ordinal (ordsucc y) -> binintersect y (ordsucc y) = y -> binintersect (ordsucc y) y != y
+var P:set (set prop) prop
+var Q:set (set prop) prop
+var x:set
+var y:set
+hyp PNoLt_pwise (PNo_downc P) (PNo_upc Q)
+hyp ~ ?p:set prop.PNo_rel_strict_uniq_imv P Q x p
+hyp ~ ?z:set.z iIn x & ?p:set prop.PNo_rel_strict_split_imv P Q z p
+hyp !z:set.z iIn x -> ?p:set prop.PNo_rel_strict_uniq_imv P Q z p
+hyp y iIn x
+hyp x = ordsucc y
+hyp ordinal y
+hyp ordinal (ordsucc y)
+claim binintersect y (ordsucc y) != y
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

@@ -1,0 +1,49 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const Pi : set (set set) set
+term setexp = \x:set.\y:set.Pi y \z:set.x
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const ap : set set set
+axiom ap_Pi: !x:set.!f:set set.!y:set.!z:set.y iIn Pi x f -> z iIn x -> ap y z iIn f z
+const SNoS_ : set set
+const omega : set
+const minus_SNo : set set
+term - = minus_SNo
+axiom minus_SNo_SNoS_omega: !x:set.x iIn SNoS_ omega -> - x iIn SNoS_ omega
+const Sigma : set (set set) set
+axiom lam_Pi: !x:set.!f:set set.!f2:set set.(!y:set.y iIn x -> f2 y iIn f y) -> Sigma x f2 iIn Pi x f
+const SNo : set prop
+const eps_ : set set
+axiom SNo_eps_: !x:set.x iIn omega -> SNo (eps_ x)
+const add_SNo : set set set
+term + = add_SNo
+infix + 2281 2280
+axiom SNo_add_SNo: !x:set.!y:set.SNo x -> SNo y -> SNo (x + y)
+const SNoLt : set set prop
+term < = SNoLt
+infix < 2020 2020
+axiom minus_SNo_Lt_contra1: !x:set.!y:set.SNo x -> SNo y -> - x < y -> - y < x
+axiom minus_add_SNo_distr: !x:set.!y:set.SNo x -> SNo y -> - (x + y) = - x + - y
+axiom minus_SNo_Lt_contra2: !x:set.!y:set.SNo x -> SNo y -> x < - y -> y < - x
+const nat_p : set prop
+axiom omega_nat_p: !x:set.x iIn omega -> nat_p x
+axiom nat_p_trans: !x:set.nat_p x -> !y:set.y iIn x -> nat_p y
+axiom nat_p_omega: !x:set.nat_p x -> x iIn omega
+lemma !x:set.!y:set.!z:set.SNo x -> (!w:set.w iIn omega -> ap y w < - x & - x < ap y w + eps_ w & !u:set.u iIn w -> ap y u < ap y w) -> (!w:set.w iIn omega -> SNo (ap y w)) -> z iIn omega -> (- ap y z + - eps_ z) < x & x < - ap y z & (!w:set.w iIn z -> - ap y z < ap (Sigma omega \u:set.- ap y u) w) -> (ap (Sigma omega \w:set.- ap y w) z + - eps_ z) < x & x < ap (Sigma omega \w:set.- ap y w) z & !w:set.w iIn z -> ap (Sigma omega \u:set.- ap y u) z < ap (Sigma omega \u:set.- ap y u) w
+lemma !x:set.!y:set.!z:set.(!w:set.w iIn omega -> SNo (ap x w)) -> y iIn omega -> (!w:set.w iIn y -> ap x w < ap x y) -> z iIn y -> z iIn omega -> - ap x y < ap (Sigma omega \w:set.- ap x w) z
+var x:set
+var y:set
+hyp SNo x
+hyp y iIn setexp (SNoS_ omega) omega
+hyp !z:set.z iIn omega -> ap y z < - x & - x < ap y z + eps_ z & !w:set.w iIn z -> ap y w < ap y z
+claim (!z:set.z iIn omega -> SNo (ap y z)) -> ?z:set.z iIn setexp (SNoS_ omega) omega & !w:set.w iIn omega -> (ap z w + - eps_ w) < x & x < ap z w & !u:set.u iIn w -> ap z w < ap z u
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>

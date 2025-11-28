@@ -1,0 +1,5 @@
+(Parameter z59 set)
+(Parameter foo48 (-> set set))
+(Parameter Q78 set)
+(Parameter P57 (-> set prop))
+(Definition baz1 prop (-> (((-> z78 bar50) baz46) (-> baz74 Q60)) Q37))

@@ -1,0 +1,43 @@
+<html><head><meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"></head><body>
+<div id="maintop">
+</div>
+<center>
+<div id="main">
+<textarea id="spec" rows="10" cols="80" onmouseover="this.focus()">
+const bij : set set (set set) prop
+term equip = \x:set.\y:set.?f:set set.bij x y f
+const In : set set prop
+term iIn = In
+infix iIn 2000 2000
+const omega : set
+term finite = \x:set.?y:set.y iIn omega & equip x y
+term Subq = \x:set.\y:set.!z:set.z iIn x -> z iIn y
+term nIn = \x:set.\y:set.~ x iIn y
+const Empty : set
+axiom equip_0_Empty: !x:set.equip x Empty -> x = Empty
+const Repl : set (set set) set
+axiom ReplI: !x:set.!f:set set.!y:set.y iIn x -> f y iIn Repl x f
+const binunion : set set set
+axiom binunionI1: !x:set.!y:set.!z:set.z iIn x -> z iIn binunion x y
+const Sing : set set
+axiom SingI: !x:set.x iIn Sing x
+axiom binunionI2: !x:set.!y:set.!z:set.z iIn y -> z iIn binunion x y
+const ordsucc : set set
+axiom ordsuccE: !x:set.!y:set.y iIn ordsucc x -> y iIn x | y = x
+axiom ordsuccI1: !x:set.Subq x (ordsucc x)
+axiom ReplE_impred: !x:set.!f:set set.!y:set.y iIn Repl x f -> !P:prop.(!z:set.z iIn x -> y = f z -> P) -> P
+axiom ordsuccI2: !x:set.x iIn ordsucc x
+axiom SingE: !x:set.!y:set.y iIn Sing x -> y = x
+axiom binunionE: !x:set.!y:set.!z:set.z iIn binunion x y -> z iIn x | z iIn y
+axiom set_ext: !x:set.!y:set.Subq x y -> Subq y x -> x = y
+axiom bijE: !x:set.!y:set.!f:set set.bij x y f -> !P:prop.((!z:set.z iIn x -> f z iIn y) -> (!z:set.z iIn x -> !w:set.w iIn x -> f z = f w -> z = w) -> (!z:set.z iIn y -> ?w:set.w iIn x & f w = z) -> P) -> P
+axiom equip_sym: !x:set.!y:set.equip x y -> equip y x
+const nat_p : set prop
+axiom nat_ind: !p:set prop.p Empty -> (!x:set.nat_p x -> p x -> p (ordsucc x)) -> !x:set.nat_p x -> p x
+lemma !p:set prop.p Empty -> (!x:set.!y:set.finite x -> nIn y x -> p x -> p (binunion x (Sing y))) -> (!x:set.nat_p x -> !y:set.equip y x -> p y) -> !x:set.finite x -> p x
+lemma !p:set prop.!x:set.!y:set.!f:set set.(!z:set.!w:set.finite z -> nIn w z -> p z -> p (binunion z (Sing w))) -> nat_p x -> (!z:set.equip z x -> p z) -> (!z:set.z iIn ordsucc x -> f z iIn y) -> (!z:set.z iIn ordsucc x -> !w:set.w iIn ordsucc x -> f z = f w -> z = w) -> (!z:set.z iIn y -> ?w:set.w iIn ordsucc x & f w = z) -> y = binunion (Repl x f) (Sing (f x)) -> p y
+claim !p:set prop.p Empty -> (!x:set.!y:set.finite x -> nIn y x -> p x -> p (binunion x (Sing y))) -> !x:set.finite x -> p x
+</textarea><br>
+<input onclick="if (top.parse_spec('spec')) { top.prove() }" value="Prove" type="submit"><br>
+</div>
+</center></body></html>
