@@ -36,10 +36,10 @@ import Mathlib.Data.Real.Basic
 import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Topology.Order.Basic
 import Mathlib.Topology.Order.MonotoneContinuity
-import Mathlib.Topology.Algebra.Order.Compact
-import Mathlib.Topology.Instances.Real
+import Mathlib.Topology.Order.Compact
+import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Order.Monotone.Basic
-import Mathlib.Order.Filter.AtTopBot
+import Mathlib.Order.Filter.AtTopBot.Basic
 import Mathlib.Tactic
 import Mettapedia.ProbabilityTheory.KnuthSkilling
 
@@ -82,6 +82,7 @@ lemma op_zero_zero : C.op 0 0 = 0 := C.identity_right 0
 /-- Strict monotonicity in second argument -/
 lemma strictMono_right (x : ℝ) (hx : 0 < x) : StrictMono (fun y => C.op x y) := by
   intro y₁ y₂ h
+  simp only  -- beta reduce (fun y => C.op x y) y₁ to C.op x y₁
   rw [C.comm x y₁, C.comm x y₂]
   exact C.strictMono_left x hx h
 
@@ -115,7 +116,7 @@ def iterate : ℕ → ℝ → ℝ
     iterate C (n + 1) x = C.op x (iterate C n x) := rfl
 
 lemma iterate_one (x : ℝ) : iterate C 1 x = x := by
-  simp [iterate, identity_right]
+  simp [iterate, C.identity_right]
 
 /-- Key lemma: iterate distributes over addition of indices.
 This is THE crucial property that forces ⊕ to be addition.
@@ -170,7 +171,7 @@ lemma iterate_succ_gt (n : ℕ) (x : ℝ) (hx : 0 < x) :
     _ < C.op x (iterate C n x) := by
         by_cases hn : iterate C n x = 0
         · -- If iterate n x = 0, use identity
-          simp [hn, identity_right, hx]
+          simp [hn, C.identity_right, hx]
         · -- If iterate n x > 0, use strictMono_left
           have hpos : 0 < iterate C n x := lt_of_le_of_ne h2 (Ne.symm hn)
           exact C.strictMono_left (iterate C n x) hpos hx
@@ -204,15 +205,15 @@ lemma zero_mem_iterateImage (u : ℝ) : (0 : ℝ) ∈ iterateImage C u :=
   ⟨0, rfl⟩
 
 /-- The linearizer on the iterate image: φ(iterate n u) = n -/
-noncomputable def linearizer_on_image (u : ℝ) (hu : 0 < u) (x : ℝ)
-    (hx : x ∈ iterateImage C u) : ℝ :=
+noncomputable def linearizer_on_image (u : ℝ) (_hu : 0 < u) (x : ℝ)
+    (hx : x ∈ iterateImage C u) : ℕ :=
   -- Since iterate is strictly monotone for u > 0, there's a unique n with x = iterate n u
   Classical.choose hx
 
 /-- The linearizer returns the iteration count -/
 lemma linearizer_on_image_spec (u : ℝ) (hu : 0 < u) (x : ℝ) (hx : x ∈ iterateImage C u) :
-    x = iterate C (linearizer_on_image C u hu x hx).toNat u := by
-  sorry -- Follows from definition and properties of Classical.choose
+    x = iterate C (linearizer_on_image C u hu x hx) u :=
+  Classical.choose_spec hx
 
 /-- KEY: The linearizer satisfies the functional equation on the iterate image.
 This follows directly from iterate_add! -/
@@ -239,7 +240,7 @@ This is provable by induction using associativity and commutativity of ⊕.
 theorem iterate_op_distrib (n : ℕ) (x y : ℝ) :
     iterate C n (C.op x y) = C.op (iterate C n x) (iterate C n y) := by
   induction n with
-  | zero => simp [iterate, C.identity_left]
+  | zero => simp [iterate, identity_left]
   | succ k ih =>
     -- iterate (k+1) (x ⊕ y) = (x ⊕ y) ⊕ iterate k (x ⊕ y)
     --                       = (x ⊕ y) ⊕ (iterate k x ⊕ iterate k y)  [by IH]
@@ -248,7 +249,7 @@ theorem iterate_op_distrib (n : ℕ) (x y : ℝ) :
     -- Now need: (x ⊕ y) ⊕ (iterate k x ⊕ iterate k y) = (x ⊕ iterate k x) ⊕ (y ⊕ iterate k y)
     -- Use associativity and commutativity to rearrange
     have h1 : C.op (C.op x y) (C.op (iterate C k x) (iterate C k y)) =
-              C.op (C.op (C.op x y) (iterate C k x)) (iterate C k y) := C.assoc _ _ _
+              C.op (C.op (C.op x y) (iterate C k x)) (iterate C k y) := (C.assoc _ _ _).symm
     have h2 : C.op (C.op x y) (iterate C k x) = C.op x (C.op y (iterate C k x)) := C.assoc x y _
     have h3 : C.op y (iterate C k x) = C.op (iterate C k x) y := C.comm y _
     have h4 : C.op x (C.op (iterate C k x) y) = C.op (C.op x (iterate C k x)) y := C.assoc x _ y
@@ -266,19 +267,18 @@ For any unit u > 0, there exists φ : ℕ → ℝ (namely, φ(n) = n) such that
   iterate (m + n) = iterate m ⊕ iterate n
 
 This is the ESSENCE of the Aczél/KS theorem - the rest is just extending to ℝ. -/
-theorem discrete_linearizer_exists (u : ℝ) (hu : 0 < u) :
+theorem discrete_linearizer_exists (u : ℝ) (_hu : 0 < u) :
     ∃ φ : ℕ → ℝ,
       (∀ n, φ n = n) ∧
       (∀ m n, φ (m + n) = φ m + φ n) ∧
-      (∀ m n, C.op (iterate C m u) (iterate C n u) = iterate C (φ (m + n)).toNat u) := by
+      (∀ m n, C.op (iterate C m u) (iterate C n u) = iterate C (m + n) u) := by
   use fun n => n
   constructor
   · intro n; rfl
   constructor
-  · intro m n; ring
+  · intro m n; push_cast; ring
   · intro m n
-    simp only [Nat.cast_add, Int.toNat_natCast]
-    exact iterate_add C m n u
+    exact (iterate_add C m n u).symm
 
 /-! ## Part 4: Extension to All Reals
 
@@ -304,6 +304,11 @@ structure ContinuousCombination extends CombinationAxioms where
   continuous_op : Continuous (fun p : ℝ × ℝ => op p.1 p.2)
 
 variable (CC : ContinuousCombination)
+
+/-- Strict monotonicity in second argument for ContinuousCombination -/
+lemma ContinuousCombination.strictMono_right (x : ℝ) (hx : 0 < x) :
+    StrictMono (fun y => CC.op x y) :=
+  strictMono_right CC.toCombinationAxioms x hx
 
 /-- With continuity, iterate extends to a continuous function -/
 lemma iterate_continuous (n : ℕ) : Continuous (fun x => iterate CC.toCombinationAxioms n x) := by
@@ -344,27 +349,25 @@ lemma iterate_unbounded (u : ℝ) (hu : 0 < u) : ∀ M : ℝ, ∃ n : ℕ, M < i
   push_neg at h
   -- h : ∀ n, iterate n u ≤ M
   -- Step 1: The sequence is strictly increasing and bounded above
-  have hC := CC.toCombinationAxioms
-  have hMono : StrictMono (fun n => iterate hC n u) := iterate_strictMono hC u hu
-  have hBdd : BddAbove (Set.range (fun n => iterate hC n u)) := ⟨M, by
+  let hC := CC.toCombinationAxioms
+  have hMono : StrictMono (fun n => iterate CC.toCombinationAxioms n u) := iterate_strictMono CC.toCombinationAxioms u hu
+  have hBdd : BddAbove (Set.range (fun n => iterate CC.toCombinationAxioms n u)) := ⟨M, by
     intro x hx
     obtain ⟨n, rfl⟩ := hx
     exact h n⟩
   -- Step 2: By monotone convergence, the sequence has a supremum L
-  let L := sSup (Set.range (fun n => iterate hC n u))
+  let L := sSup (Set.range (fun n => iterate CC.toCombinationAxioms n u))
   have hL_le : L ≤ M := csSup_le (Set.range_nonempty _) (fun x hx => by
     obtain ⟨n, rfl⟩ := hx
     exact h n)
   -- Step 3: Each iterate is ≤ L
-  have h_iter_le : ∀ n, iterate hC n u ≤ L := fun n =>
+  have h_iter_le : ∀ n, iterate CC.toCombinationAxioms n u ≤ L := fun n =>
     le_csSup hBdd ⟨n, rfl⟩
   -- Step 4: L is a limit point - iterate n u → L
   -- For a strictly increasing bounded sequence in ℝ, it converges to its sup
-  have hMono' : Monotone (fun n => iterate hC n u) := hMono.monotone
-  have h_converges : Filter.Tendsto (fun n => iterate hC n u) Filter.atTop (nhds L) := by
+  have hMono' : Monotone (fun n => iterate CC.toCombinationAxioms n u) := hMono.monotone
+  have h_converges : Filter.Tendsto (fun n => iterate CC.toCombinationAxioms n u) Filter.atTop (nhds L) := by
     -- Use: a monotone bounded sequence converges to its supremum
-    -- In Mathlib: tendsto_atTop_csSup or similar
-    rw [← isLUB_csSup (Set.range_nonempty _) hBdd |>.csSup_eq]
     exact tendsto_atTop_ciSup hMono' hBdd
   -- Step 5: By continuity of ⊕, taking limits:
   -- L = lim iterate (n+1) u = lim (u ⊕ iterate n u) = u ⊕ L
@@ -376,28 +379,27 @@ lemma iterate_unbounded (u : ℝ) (hu : 0 < u) : ∀ M : ℝ, ∃ n : ℕ, M < i
       rw [this]
       exact CC.continuous_op.comp (continuous_const.prod_mk continuous_id)
     -- Filter.Tendsto f l (nhds y) → Filter.Tendsto (g ∘ f) l (nhds (g y)) for continuous g
-    have h_tends : Filter.Tendsto (fun n => CC.op u (iterate hC n u)) Filter.atTop (nhds (CC.op u L)) :=
+    have h_tends : Filter.Tendsto (fun n => CC.op u (iterate CC.toCombinationAxioms n u)) Filter.atTop (nhds (CC.op u L)) :=
       h_cont.continuousAt.tendsto.comp h_converges
     -- But iterate (n+1) u = u ⊕ iterate n u
-    have h_eq : (fun n => CC.op u (iterate hC n u)) = (fun n => iterate hC (n + 1) u) := by
+    have h_eq : (fun n => CC.op u (iterate CC.toCombinationAxioms n u)) = (fun n => iterate CC.toCombinationAxioms (n + 1) u) := by
       ext n; rfl
     rw [h_eq] at h_tends
     -- So lim iterate (n+1) u = u ⊕ L
     -- But also lim iterate (n+1) u = L (shifted sequence has same limit)
-    have h_shift_converges : Filter.Tendsto (fun n => iterate hC (n + 1) u) Filter.atTop (nhds L) := by
+    have h_shift_converges : Filter.Tendsto (fun n => iterate CC.toCombinationAxioms (n + 1) u) Filter.atTop (nhds L) := by
       -- Shifting a convergent sequence doesn't change the limit
-      -- (fun n => iterate hC (n + 1) u) = (fun n => iterate hC n u) ∘ (· + 1)
-      have heq : (fun n => iterate hC (n + 1) u) = (fun n => iterate hC n u) ∘ (· + 1) := rfl
+      have heq : (fun n => iterate CC.toCombinationAxioms (n + 1) u) = (fun n => iterate CC.toCombinationAxioms n u) ∘ (· + 1) := rfl
       rw [heq]
-      exact h_converges.comp (tendsto_add_atTop_nat 1)
+      exact h_converges.comp (Filter.tendsto_atTop_add_const_right _ 1 Filter.tendsto_id)
     exact tendsto_nhds_unique h_shift_converges h_tends
   -- Step 6: But u ⊕ L > 0 ⊕ L = L, contradiction
   have h_gt : CC.op u L > CC.op 0 L := by
     apply CC.strictMono_left L
     · -- Need L > 0. Since iterate 1 u = u > 0 and iterate n u ≤ L, we have L ≥ u > 0
       have : u ≤ L := by
-        have : iterate hC 1 u ≤ L := h_iter_le 1
-        simp only [iterate_one hC] at this
+        have : iterate CC.toCombinationAxioms 1 u ≤ L := h_iter_le 1
+        simp only [iterate_one CC.toCombinationAxioms] at this
         exact this
       linarith
     · exact hu
@@ -411,15 +413,14 @@ lemma iterate_floor_exists (u : ℝ) (hu : 0 < u) (y : ℝ) (hy : 0 ≤ y) :
              (y < iterate CC.toCombinationAxioms (n + 1) u ∨ ∀ m, iterate CC.toCombinationAxioms m u ≤ y) := by
   -- Either y is in some interval [iterate n u, iterate (n+1) u)
   -- or y is an upper bound for all iterates (impossible by iterate_unbounded)
-  have hC := CC.toCombinationAxioms
-  by_cases hbdd : ∃ n, y < iterate hC n u
+  by_cases hbdd : ∃ n, y < iterate CC.toCombinationAxioms n u
   · -- y is bounded by some iterate, so we can find the floor using Nat.find
     obtain ⟨m, hm⟩ := hbdd
     -- Find the smallest n such that y < iterate n u
-    let P := fun n => y < iterate hC n u
+    let P := fun n => y < iterate CC.toCombinationAxioms n u
     have hP : ∃ n, P n := ⟨m, hm⟩
     let n₀ := Nat.find hP
-    have hn₀ : y < iterate hC n₀ u := Nat.find_spec hP
+    have hn₀ : y < iterate CC.toCombinationAxioms n₀ u := Nat.find_spec hP
     -- n₀ is the smallest such, so n₀ - 1 (if exists) has iterate ≤ y
     by_cases hn₀_zero : n₀ = 0
     · -- If n₀ = 0, then y < iterate 0 u = 0, contradicting y ≥ 0
@@ -456,44 +457,49 @@ lemma iterate_mul (k m : ℕ) (x : ℝ) :
     simp only [iterate_succ, Nat.succ_mul]
     rw [ih]
     -- Need: iterate m x ⊕ iterate (n * m) x = iterate (m + n * m) x
-    rw [← iterate_add C m (n * m) x]
+    have h : m + n * m = n * m + m := by ring
+    rw [← iterate_add C m (n * m) x, h]
 
 /-- If iterate p u = iterate q y, then the ratio p/q is uniquely determined by y.
 This follows from strict injectivity of iterate (as a function of n for fixed u > 0). -/
-lemma rational_linearizer_unique (u y : ℝ) (hu : 0 < u) (hy : 0 < y)
+lemma rational_linearizer_unique (u y : ℝ) (hu : 0 < u) (_hy : 0 < y)
     (p₁ q₁ p₂ q₂ : ℕ) (hq₁ : 0 < q₁) (hq₂ : 0 < q₂)
     (h₁ : iterate CC.toCombinationAxioms p₁ u = iterate CC.toCombinationAxioms q₁ y)
     (h₂ : iterate CC.toCombinationAxioms p₂ u = iterate CC.toCombinationAxioms q₂ y) :
     (p₁ : ℚ) / q₁ = (p₂ : ℚ) / q₂ := by
   -- Strategy: Show p₁ * q₂ = p₂ * q₁ using iterate_mul and injectivity
-  have hC := CC.toCombinationAxioms
+  let hC := CC.toCombinationAxioms
   -- Step 1: iterate (p₁ * q₂) u = iterate q₂ (iterate p₁ u) = iterate q₂ (iterate q₁ y)
   --                             = iterate (q₂ * q₁) y
-  have h_left : iterate hC (p₁ * q₂) u = iterate hC (q₁ * q₂) y := by
-    calc iterate hC (p₁ * q₂) u
-        = iterate hC q₂ (iterate hC p₁ u) := by rw [← iterate_mul hC q₂ p₁ u]; ring_nf
-      _ = iterate hC q₂ (iterate hC q₁ y) := by rw [h₁]
-      _ = iterate hC (q₂ * q₁) y := by rw [iterate_mul hC q₂ q₁ y]
-      _ = iterate hC (q₁ * q₂) y := by ring_nf
+  have h_left : iterate CC.toCombinationAxioms (p₁ * q₂) u = iterate CC.toCombinationAxioms (q₁ * q₂) y := by
+    calc iterate CC.toCombinationAxioms (p₁ * q₂) u
+        = iterate CC.toCombinationAxioms (q₂ * p₁) u := by ring_nf
+      _ = iterate CC.toCombinationAxioms q₂ (iterate CC.toCombinationAxioms p₁ u) := by rw [iterate_mul hC q₂ p₁ u]
+      _ = iterate CC.toCombinationAxioms q₂ (iterate CC.toCombinationAxioms q₁ y) := by rw [h₁]
+      _ = iterate CC.toCombinationAxioms (q₂ * q₁) y := by rw [iterate_mul hC q₂ q₁ y]
+      _ = iterate CC.toCombinationAxioms (q₁ * q₂) y := by ring_nf
   -- Step 2: iterate (p₂ * q₁) u = iterate q₁ (iterate p₂ u) = iterate q₁ (iterate q₂ y)
   --                             = iterate (q₁ * q₂) y
-  have h_right : iterate hC (p₂ * q₁) u = iterate hC (q₁ * q₂) y := by
-    calc iterate hC (p₂ * q₁) u
-        = iterate hC q₁ (iterate hC p₂ u) := by rw [← iterate_mul hC q₁ p₂ u]; ring_nf
-      _ = iterate hC q₁ (iterate hC q₂ y) := by rw [h₂]
-      _ = iterate hC (q₁ * q₂) y := by rw [iterate_mul hC q₁ q₂ y]
+  have h_right : iterate CC.toCombinationAxioms (p₂ * q₁) u = iterate CC.toCombinationAxioms (q₁ * q₂) y := by
+    calc iterate CC.toCombinationAxioms (p₂ * q₁) u
+        = iterate CC.toCombinationAxioms (q₁ * p₂) u := by ring_nf
+      _ = iterate CC.toCombinationAxioms q₁ (iterate CC.toCombinationAxioms p₂ u) := by rw [iterate_mul hC q₁ p₂ u]
+      _ = iterate CC.toCombinationAxioms q₁ (iterate CC.toCombinationAxioms q₂ y) := by rw [h₂]
+      _ = iterate CC.toCombinationAxioms (q₁ * q₂) y := by rw [iterate_mul hC q₁ q₂ y]
   -- Step 3: So iterate (p₁ * q₂) u = iterate (p₂ * q₁) u
-  have h_eq : iterate hC (p₁ * q₂) u = iterate hC (p₂ * q₁) u := by
+  have h_eq : iterate CC.toCombinationAxioms (p₁ * q₂) u = iterate CC.toCombinationAxioms (p₂ * q₁) u := by
     rw [h_left, h_right]
   -- Step 4: By injectivity (strict monotonicity), p₁ * q₂ = p₂ * q₁
-  have hMono := iterate_strictMono hC u hu
+  have hMono := iterate_strictMono CC.toCombinationAxioms u hu
   have h_nat_eq : p₁ * q₂ = p₂ * q₁ := hMono.injective h_eq
   -- Step 5: Convert to rationals
-  rw [div_eq_div_iff (Nat.cast_pos.mpr hq₁) (Nat.cast_pos.mpr hq₂)]
+  have hq₁' : (q₁ : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.pos_iff_ne_zero.mp hq₁)
+  have hq₂' : (q₂ : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.pos_iff_ne_zero.mp hq₂)
+  rw [div_eq_div_iff hq₁' hq₂']
   exact_mod_cast h_nat_eq
 
 /-- iterate n 0 = 0 for all n: combining 0 with itself any number of times gives 0. -/
-lemma iterate_zero (n : ℕ) : iterate CC.toCombinationAxioms n 0 = 0 := by
+lemma iterate_zero_arg (n : ℕ) : iterate CC.toCombinationAxioms n 0 = 0 := by
   induction n with
   | zero => rfl
   | succ k ih =>
