@@ -2978,25 +2978,9 @@ lemma cycle_vertex_has_two_neighbors {G : SimpleGraph (Fin 18)} [DecidableRel G.
     rw [h_filter_eq]
     simp [Finset.card_insert_of_not_mem, hne13]
 
-/-- The P from Claim 2 equals the P from any CariolaroSetup for the same vertex. -/
-lemma P_eq_setup_P {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
-    {h_reg : IsKRegular G 5} {h_tri : TriangleFree G} {h_no6 : NoKIndepSet 6 G}
-    (setup : CariolaroSetup G h_reg h_tri h_no6)
-    (P : Finset (Fin 18))
-    (hP_card : P.card = 4)
-    (hP_props : ∀ p ∈ P, ¬G.Adj setup.v p ∧ commonNeighborsCard G setup.v p = 1) :
-    P = {setup.p1, setup.p2, setup.p3, setup.p4} := by
-  -- The unique set of 4 non-neighbors with commonNeighborsCard = 1 is {p1,p2,p3,p4}.
-  -- From claim2_neighbor_structure: exactly 4 vertices satisfy this property.
-  -- Both P and {p1,p2,p3,p4} have cardinality 4 and satisfy the property,
-  -- so they must be equal.
-  -- TODO: The counting argument is proven in claim2_neighbor_structure.
-  -- This lemma follows by showing both sets are the same filter set.
-  sorry
-
 /-! ### Helper lemmas for the 4-cycle structure -/
 
-/- COMMENTED OUT: Unused helper lemmas. Can be restored if needed for P_is_two_regular proof.
+/- COMMENTED OUT: Needs Q.card = 8 hypothesis or more structure to prove.
 
 /-- Each s ∈ N(v) has exactly 3 neighbors in Q (non-neighbors of v).
 This is because s has degree 5, with 1 edge to v and 1 edge to its p-partner,
@@ -3010,29 +2994,6 @@ lemma s_has_three_Q_neighbors {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
     (hQ_def : ∀ q, q ∈ Q ↔ ¬G.Adj v q ∧ commonNeighborsCard G v q = 2)
     (hQ_complete : ∀ q, ¬G.Adj v q → commonNeighborsCard G v q = 2 → q ∈ Q) :
     (Q.filter (G.Adj s)).card = 3 := by
-  sorry
-
-/-- The induced subgraph on P has at least 2 edges (P is not too sparse).
-This follows from the S-W structure: at least 2 pairs of s's share W-neighbors. -/
-lemma P_has_at_least_two_edges {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
-    (h_reg : IsKRegular G 5) (h_tri : TriangleFree G) (h_no6 : NoKIndepSet 6 G)
-    (v : Fin 18) (P : Finset (Fin 18))
-    (hP_card : P.card = 4)
-    (hP_props : ∀ p ∈ P, ¬G.Adj v p ∧ commonNeighborsCard G v p = 1) :
-    2 ≤ (P.filter (fun p₁ => (P.filter (fun p₂ => p₁ ≠ p₂ ∧ G.Adj p₁ p₂)).Nonempty)).card := by
-  sorry
-
-/-- The induced subgraph on P has at most 4 edges (P is not K₄).
-Proof: If P were K₄ (6 edges), then each p would have 3 P-neighbors.
-With 1 N(v)-neighbor, each p would have only 1 Q-neighbor.
-But the S-W structure requires each p to have at least 2 Q-neighbors. -/
-lemma P_has_at_most_four_edges {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
-    (h_reg : IsKRegular G 5) (h_tri : TriangleFree G) (h_no6 : NoKIndepSet 6 G)
-    (v : Fin 18) (P : Finset (Fin 18))
-    (hP_card : P.card = 4)
-    (hP_props : ∀ p ∈ P, ¬G.Adj v p ∧ commonNeighborsCard G v p = 1) :
-    (Finset.filter (fun e : Fin 18 × Fin 18 => e.1 ∈ P ∧ e.2 ∈ P ∧ e.1 < e.2 ∧ G.Adj e.1 e.2)
-      Finset.univ).card ≤ 4 := by
   sorry
 
 -/
@@ -3161,6 +3122,81 @@ lemma PQ_partition_completeness {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
     cases hx_in_PQ with
     | inl h => exact absurd h hx_notin_P
     | inr h => exact h
+
+/-- The P from Claim 2 equals the P from any CariolaroSetup for the same vertex.
+This follows from the uniqueness of the P set via PQ_partition_completeness. -/
+lemma P_eq_setup_P {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
+    {h_reg : IsKRegular G 5} {h_tri : TriangleFree G} {h_no6 : NoKIndepSet 6 G}
+    (setup : CariolaroSetup G h_reg h_tri h_no6)
+    (P : Finset (Fin 18))
+    (hP_card : P.card = 4)
+    (hP_props : ∀ p ∈ P, ¬G.Adj setup.v p ∧ commonNeighborsCard G setup.v p = 1) :
+    P = {setup.p1, setup.p2, setup.p3, setup.p4} := by
+  -- Both P and {p1,p2,p3,p4} have cardinality 4 and satisfy the same property.
+  -- By uniqueness from PQ_partition_completeness, they must be equal.
+  let setup_P := ({setup.p1, setup.p2, setup.p3, setup.p4} : Finset (Fin 18))
+  -- Card of setup_P = 4
+  have hsetup_P_card : setup_P.card = 4 := by
+    have h := setup.h_P_distinct
+    show ({setup.p1, setup.p2, setup.p3, setup.p4} : Finset (Fin 18)).card = 4
+    rw [Finset.card_insert_of_notMem]
+    · rw [Finset.card_insert_of_notMem]
+      · rw [Finset.card_insert_of_notMem]
+        · rw [Finset.card_singleton]
+        · simp only [Finset.mem_singleton]; exact h.2.2.2.2.2
+      · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
+        exact ⟨h.2.2.2.1, h.2.2.2.2.1⟩
+    · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
+      exact ⟨h.1, h.2.1, h.2.2.1⟩
+  -- Setup P satisfies P-properties
+  have hsetup_P_props : ∀ p ∈ setup_P, ¬G.Adj setup.v p ∧ commonNeighborsCard G setup.v p = 1 := by
+    intro p hp
+    simp only [setup_P, Finset.mem_insert, Finset.mem_singleton] at hp
+    rcases hp with rfl | rfl | rfl | rfl
+    · exact ⟨setup.h_p1_nonadj_v, setup.h_p1_common1⟩
+    · exact ⟨setup.h_p2_nonadj_v, setup.h_p2_common1⟩
+    · exact ⟨setup.h_p3_nonadj_v, setup.h_p3_common1⟩
+    · exact ⟨setup.h_p4_nonadj_v, setup.h_p4_common1⟩
+  -- Get Q from claim2
+  obtain ⟨P', Q, hP'_card, hQ_card, hP'_props, hQ_props⟩ :=
+    claim2_neighbor_structure h_reg h_tri h_no6 setup.v
+  -- By PQ_partition_completeness, any p with commonNeighborsCard=1 is in P'
+  have ⟨hP'_complete, _⟩ := PQ_partition_completeness h_reg h_tri h_no6 setup.v P' Q
+      hP'_card hQ_card hP'_props hQ_props
+  -- P ⊆ P'
+  have hP_sub_P' : P ⊆ P' := by
+    intro p hp
+    have ⟨hp_nonadj, hp_common1⟩ := hP_props p hp
+    have hp_ne_v : p ≠ setup.v := by
+      intro h_eq
+      subst h_eq
+      have h5 : commonNeighborsCard G setup.v setup.v = 5 := by
+        unfold commonNeighborsCard _root_.commonNeighbors
+        rw [Finset.inter_self]
+        exact h_reg setup.v
+      rw [h5] at hp_common1
+      norm_num at hp_common1
+    exact hP'_complete p hp_ne_v hp_nonadj hp_common1
+  -- setup_P ⊆ P'
+  have hsetup_sub_P' : setup_P ⊆ P' := by
+    intro p hp
+    have ⟨hp_nonadj, hp_common1⟩ := hsetup_P_props p hp
+    have hp_ne_v : p ≠ setup.v := by
+      intro h_eq
+      subst h_eq
+      have h5 : commonNeighborsCard G setup.v setup.v = 5 := by
+        unfold commonNeighborsCard _root_.commonNeighbors
+        rw [Finset.inter_self]
+        exact h_reg setup.v
+      rw [h5] at hp_common1
+      norm_num at hp_common1
+    exact hP'_complete p hp_ne_v hp_nonadj hp_common1
+  -- P' has card 4, P ⊆ P' with |P| = 4, so P = P'
+  have hP_eq_P' : P = P' := Finset.eq_of_subset_of_card_le hP_sub_P' (by rw [hP_card, hP'_card])
+  -- setup_P ⊆ P' with |setup_P| = 4, so setup_P = P'
+  have hsetup_eq_P' : setup_P = P' := Finset.eq_of_subset_of_card_le hsetup_sub_P' (by rw [hsetup_P_card, hP'_card])
+  -- Therefore P = setup_P
+  rw [hP_eq_P', ← hsetup_eq_P']
 
 /-- P is 2-regular: each p ∈ P has exactly 2 neighbors in P.
 This is the key structural lemma that implies P is a 4-cycle.
@@ -4195,9 +4231,382 @@ lemma P_is_two_regular {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
   -- We need to show NQ.card = 2, then NP.card = 2.
   have h_eq : NP.card = 4 - NQ.card := by omega
 
-  -- The full proof that NQ.card = 2 requires the independent set argument above.
-  -- TODO: Complete the detailed counting/independent-set argument.
-  sorry
+  -- Step 1: NQ.card ≤ 4 (from NP.card ≥ 0 and sum = 4)
+  have hNQ_le4 : NQ.card ≤ 4 := by omega
+
+  -- Step 2: NQ.card ≤ 2 using independence constraint
+  -- If NQ.card ≥ 3, then p has 3+ Q-neighbors forming a 3-IS (triangle-free).
+  -- Combined with v (not adjacent to Q-vertices), we get a 4-IS.
+  -- p's unique N(v)-neighbor s is not adjacent to Q-vertices (would form triangle with p).
+  -- This leads to a contradiction with 6-IS.
+  have hNQ_le2 : NQ.card ≤ 2 := by
+    by_contra h_gt2
+    push_neg at h_gt2
+    -- NQ.card ≥ 3: extract 3 Q-neighbors using two_lt_card_iff
+    have h3 : 2 < NQ.card := by omega
+    obtain ⟨q1, q2, q3, hq1_in, hq2_in, hq3_in, hq_ne12, hq_ne13, hq_ne23⟩ :=
+      Finset.two_lt_card_iff.mp h3
+    simp only [NQ, mem_filter] at hq1_in hq2_in hq3_in
+    have hq1_Q : q1 ∈ Q := hq1_in.1
+    have hq2_Q : q2 ∈ Q := hq2_in.1
+    have hq3_Q : q3 ∈ Q := hq3_in.1
+    have hp_adj_q1 : G.Adj p q1 := hq1_in.2
+    have hp_adj_q2 : G.Adj p q2 := hq2_in.2
+    have hp_adj_q3 : G.Adj p q3 := hq3_in.2
+    -- Q-properties: qi ∈ Q means qi not adjacent to v
+    have hq1_nonadj_v : ¬G.Adj v q1 := (hQ_props q1 hq1_Q).1
+    have hq2_nonadj_v : ¬G.Adj v q2 := (hQ_props q2 hq2_Q).1
+    have hq3_nonadj_v : ¬G.Adj v q3 := (hQ_props q3 hq3_Q).1
+    -- qi are pairwise non-adjacent (otherwise triangle with p)
+    have hq12_nonadj : ¬G.Adj q1 q2 := by
+      intro h
+      have h_clique : G.IsNClique 3 {p, q1, q2} := by
+        rw [SimpleGraph.isNClique_iff]
+        constructor
+        · intro a ha b hb hab
+          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at ha hb
+          rcases ha with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
+          · exact absurd rfl hab
+          · exact hp_adj_q1
+          · exact hp_adj_q2
+          · exact G.symm hp_adj_q1
+          · exact absurd rfl hab
+          · exact h
+          · exact G.symm hp_adj_q2
+          · exact G.symm h
+          · exact absurd rfl hab
+        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
+          · simp only [Finset.mem_singleton]; exact hq_ne12
+          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
+            exact ⟨(G.ne_of_adj hp_adj_q1), (G.ne_of_adj hp_adj_q2)⟩
+      exact h_tri _ h_clique
+    have hq13_nonadj : ¬G.Adj q1 q3 := by
+      intro h
+      have h_clique : G.IsNClique 3 {p, q1, q3} := by
+        rw [SimpleGraph.isNClique_iff]
+        constructor
+        · intro a ha b hb hab
+          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at ha hb
+          rcases ha with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
+          · exact absurd rfl hab
+          · exact hp_adj_q1
+          · exact hp_adj_q3
+          · exact G.symm hp_adj_q1
+          · exact absurd rfl hab
+          · exact h
+          · exact G.symm hp_adj_q3
+          · exact G.symm h
+          · exact absurd rfl hab
+        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
+          · simp only [Finset.mem_singleton]; exact hq_ne13
+          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
+            exact ⟨(G.ne_of_adj hp_adj_q1), (G.ne_of_adj hp_adj_q3)⟩
+      exact h_tri _ h_clique
+    have hq23_nonadj : ¬G.Adj q2 q3 := by
+      intro h
+      have h_clique : G.IsNClique 3 {p, q2, q3} := by
+        rw [SimpleGraph.isNClique_iff]
+        constructor
+        · intro a ha b hb hab
+          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at ha hb
+          rcases ha with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
+          · exact absurd rfl hab
+          · exact hp_adj_q2
+          · exact hp_adj_q3
+          · exact G.symm hp_adj_q2
+          · exact absurd rfl hab
+          · exact h
+          · exact G.symm hp_adj_q3
+          · exact G.symm h
+          · exact absurd rfl hab
+        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
+          · simp only [Finset.mem_singleton]; exact hq_ne23
+          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
+            exact ⟨(G.ne_of_adj hp_adj_q2), (G.ne_of_adj hp_adj_q3)⟩
+      exact h_tri _ h_clique
+    -- v ≠ qi (since p ~ qi but p ≁ v)
+    have hv_ne_q1 : v ≠ q1 := fun h => hp_nonadj_v (G.symm (h ▸ hp_adj_q1))
+    have hv_ne_q2 : v ≠ q2 := fun h => hp_nonadj_v (G.symm (h ▸ hp_adj_q2))
+    have hv_ne_q3 : v ≠ q3 := fun h => hp_nonadj_v (G.symm (h ▸ hp_adj_q3))
+    -- p's unique N(v)-neighbor
+    have hNN_nonempty : NN.Nonempty := by rw [← Finset.card_pos]; simp [hNN_card]
+    obtain ⟨s, hs_in_NN⟩ := hNN_nonempty
+    simp only [NN, mem_filter, mem_neighborFinset] at hs_in_NN
+    have hs_adj_v : G.Adj v s := hs_in_NN.1
+    have hs_adj_p : G.Adj s p := G.symm hs_in_NN.2
+    -- s is not adjacent to qi (would form triangle s-p-qi)
+    have hs_nonadj_q1 : ¬G.Adj s q1 := by
+      intro h
+      have h_clique : G.IsNClique 3 {s, p, q1} := by
+        rw [SimpleGraph.isNClique_iff]
+        constructor
+        · intro a ha b hb hab
+          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at ha hb
+          rcases ha with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
+          · exact absurd rfl hab
+          · exact hs_adj_p
+          · exact h
+          · exact G.symm hs_adj_p
+          · exact absurd rfl hab
+          · exact hp_adj_q1
+          · exact G.symm h
+          · exact G.symm hp_adj_q1
+          · exact absurd rfl hab
+        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
+          · simp only [Finset.mem_singleton]; exact (G.ne_of_adj hp_adj_q1)
+          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
+            exact ⟨(G.ne_of_adj hs_adj_p), (G.ne_of_adj h)⟩
+      exact h_tri _ h_clique
+    have hs_nonadj_q2 : ¬G.Adj s q2 := by
+      intro h
+      have h_clique : G.IsNClique 3 {s, p, q2} := by
+        rw [SimpleGraph.isNClique_iff]
+        constructor
+        · intro a ha b hb hab
+          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at ha hb
+          rcases ha with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
+          · exact absurd rfl hab
+          · exact hs_adj_p
+          · exact h
+          · exact G.symm hs_adj_p
+          · exact absurd rfl hab
+          · exact hp_adj_q2
+          · exact G.symm h
+          · exact G.symm hp_adj_q2
+          · exact absurd rfl hab
+        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
+          · simp only [Finset.mem_singleton]; exact (G.ne_of_adj hp_adj_q2)
+          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
+            exact ⟨(G.ne_of_adj hs_adj_p), (G.ne_of_adj h)⟩
+      exact h_tri _ h_clique
+    have hs_nonadj_q3 : ¬G.Adj s q3 := by
+      intro h
+      have h_clique : G.IsNClique 3 {s, p, q3} := by
+        rw [SimpleGraph.isNClique_iff]
+        constructor
+        · intro a ha b hb hab
+          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at ha hb
+          rcases ha with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
+          · exact absurd rfl hab
+          · exact hs_adj_p
+          · exact h
+          · exact G.symm hs_adj_p
+          · exact absurd rfl hab
+          · exact hp_adj_q3
+          · exact G.symm h
+          · exact G.symm hp_adj_q3
+          · exact absurd rfl hab
+        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
+          · simp only [Finset.mem_singleton]; exact (G.ne_of_adj hp_adj_q3)
+          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
+            exact ⟨(G.ne_of_adj hs_adj_p), (G.ne_of_adj h)⟩
+      exact h_tri _ h_clique
+    -- s ≠ qi (s ∈ N(v) but qi ∉ N(v), so v ~ s but v ≁ qi)
+    have hs_ne_q1 : s ≠ q1 := fun h => hq1_nonadj_v (h ▸ hs_adj_v)
+    have hs_ne_q2 : s ≠ q2 := fun h => hq2_nonadj_v (h ▸ hs_adj_v)
+    have hs_ne_q3 : s ≠ q3 := fun h => hq3_nonadj_v (h ▸ hs_adj_v)
+    -- p ≠ qi
+    have hp_ne_q1 : p ≠ q1 := G.ne_of_adj hp_adj_q1
+    have hp_ne_q2 : p ≠ q2 := G.ne_of_adj hp_adj_q2
+    have hp_ne_q3 : p ≠ q3 := G.ne_of_adj hp_adj_q3
+
+    -- {v, s, q1, q2, q3} is a 5-IS (all pairwise non-adjacent)
+    -- Need to extend to 6-IS by finding one more vertex from P \ {p}
+
+    -- CARIOLARO'S CONSTRUCTION 3:
+    -- P \ {p} has 3 vertices, each with exactly 1 N(v)-neighbor.
+    -- If any two share the same N(v)-neighbor, we get a 6-IS.
+
+    -- Extract P \ {p} = {a, b, c}
+    have hP_erase_card_loc : (P.erase p).card = 3 := by
+      rw [Finset.card_erase_of_mem hp, hP_card]
+    obtain ⟨a, b, c, hab, hac, hbc, hPerase_eq⟩ := Finset.card_eq_three.mp hP_erase_card_loc
+    have ha_in : a ∈ P.erase p := by rw [hPerase_eq]; simp
+    have hb_in : b ∈ P.erase p := by rw [hPerase_eq]; simp
+    have hc_in : c ∈ P.erase p := by rw [hPerase_eq]; simp
+    have ha_P : a ∈ P := (Finset.mem_erase.mp ha_in).2
+    have hb_P : b ∈ P := (Finset.mem_erase.mp hb_in).2
+    have hc_P : c ∈ P := (Finset.mem_erase.mp hc_in).2
+
+    -- Each has exactly 1 N(v)-neighbor (by P-property)
+    have ha_common1 : commonNeighborsCard G v a = 1 := (hP_props a ha_P).2
+    have hb_common1 : commonNeighborsCard G v b = 1 := (hP_props b hb_P).2
+    have hc_common1 : commonNeighborsCard G v c = 1 := (hP_props c hc_P).2
+
+    -- Get the unique N(v)-neighbors for each
+    have ha_Nv_ex : ∃ s_a, G.neighborFinset v ∩ G.neighborFinset a = {s_a} := by
+      unfold commonNeighborsCard _root_.commonNeighbors at ha_common1
+      exact Finset.card_eq_one.mp ha_common1
+    obtain ⟨s_a, hs_a_eq⟩ := ha_Nv_ex
+    have hb_Nv_ex : ∃ s_b, G.neighborFinset v ∩ G.neighborFinset b = {s_b} := by
+      unfold commonNeighborsCard _root_.commonNeighbors at hb_common1
+      exact Finset.card_eq_one.mp hb_common1
+    obtain ⟨s_b, hs_b_eq⟩ := hb_Nv_ex
+    have hc_Nv_ex : ∃ s_c, G.neighborFinset v ∩ G.neighborFinset c = {s_c} := by
+      unfold commonNeighborsCard _root_.commonNeighbors at hc_common1
+      exact Finset.card_eq_one.mp hc_common1
+    obtain ⟨s_c, hs_c_eq⟩ := hc_Nv_ex
+
+    -- If any two of {a, b, c} share the same N(v)-neighbor, we get a 6-IS
+    by_cases hab_same : s_a = s_b
+    · -- Case: a and b share the same N(v)-neighbor s_a
+      -- Then {a, b} ∪ (N(v) \ {s_a}) is a 6-IS
+      sorry
+    · by_cases hac_same : s_a = s_c
+      · -- Case: a and c share the same N(v)-neighbor s_a
+        sorry
+      · by_cases hbc_same : s_b = s_c
+        · -- Case: b and c share the same N(v)-neighbor s_b
+          sorry
+        · -- Case: s_a, s_b, s_c are all distinct
+          -- Combined with s (p's neighbor), we have 4 distinct N(v)-neighbors
+          -- But |N(v)| = 5, so there's 1 unused N(v)-vertex
+          -- This case requires more analysis
+          sorry
+
+  -- Step 3: NQ.card ≥ 2 using independence constraint
+  -- If NQ.card ≤ 1, then NP.card ≥ 3, so p is adjacent to ≥3 other P-vertices.
+  -- Triangle-free means those 3 P-neighbors are pairwise non-adjacent (3-IS).
+  -- With v, we get 4-IS. Extend to 6-IS → contradiction.
+  have hNQ_ge2 : NQ.card ≥ 2 := by
+    by_contra h_lt2
+    push_neg at h_lt2
+    -- NQ.card ≤ 1 → NP.card ≥ 3
+    have hNP_ge3 : NP.card ≥ 3 := by omega
+    -- P \ {p} has exactly 3 elements
+    have hP_erase_card : (P.erase p).card = 3 := by
+      rw [Finset.card_erase_of_mem hp, hP_card]
+    -- NP ⊆ P.erase p, so if NP.card ≥ 3 and (P.erase p).card = 3, then NP = P.erase p
+    have hNP_eq : NP = P.erase p := by
+      apply Finset.eq_of_subset_of_card_le
+      · intro x hx; simp only [NP, mem_filter, mem_erase] at hx ⊢; exact hx.1
+      · rw [hP_erase_card]; exact hNP_ge3
+    -- p is adjacent to all other P-vertices
+    have hp_adj_all : ∀ q ∈ P, q ≠ p → G.Adj p q := by
+      intro q hq hne
+      have : q ∈ P.erase p := Finset.mem_erase.mpr ⟨hne, hq⟩
+      rw [← hNP_eq] at this
+      simp only [NP, mem_filter, mem_erase] at this
+      exact this.2
+    -- Triangle-free: the 3 other P-vertices are pairwise non-adjacent
+    -- Extract the 3 other P-vertices
+    obtain ⟨a, b, c, hab, hac, hbc, hPerase_eq⟩ := Finset.card_eq_three.mp hP_erase_card
+    have ha_in : a ∈ P.erase p := by rw [hPerase_eq]; simp
+    have hb_in : b ∈ P.erase p := by rw [hPerase_eq]; simp
+    have hc_in : c ∈ P.erase p := by rw [hPerase_eq]; simp
+    have ha_P : a ∈ P := (Finset.mem_erase.mp ha_in).2
+    have hb_P : b ∈ P := (Finset.mem_erase.mp hb_in).2
+    have hc_P : c ∈ P := (Finset.mem_erase.mp hc_in).2
+    have ha_ne_p : a ≠ p := (Finset.mem_erase.mp ha_in).1
+    have hb_ne_p : b ≠ p := (Finset.mem_erase.mp hb_in).1
+    have hc_ne_p : c ≠ p := (Finset.mem_erase.mp hc_in).1
+    have hp_adj_a : G.Adj p a := hp_adj_all a ha_P ha_ne_p
+    have hp_adj_b : G.Adj p b := hp_adj_all b hb_P hb_ne_p
+    have hp_adj_c : G.Adj p c := hp_adj_all c hc_P hc_ne_p
+    -- a, b, c are pairwise non-adjacent (would form triangle with p)
+    have hab_nonadj : ¬G.Adj a b := by
+      intro h
+      have h_clique : G.IsNClique 3 {p, a, b} := by
+        rw [SimpleGraph.isNClique_iff]
+        constructor
+        · intro x hx y hy hxy
+          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at hx hy
+          rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl
+          · exact absurd rfl hxy
+          · exact hp_adj_a
+          · exact hp_adj_b
+          · exact G.symm hp_adj_a
+          · exact absurd rfl hxy
+          · exact h
+          · exact G.symm hp_adj_b
+          · exact G.symm h
+          · exact absurd rfl hxy
+        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
+          · simp only [Finset.mem_singleton]; exact hab
+          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
+            exact ⟨ha_ne_p.symm, hb_ne_p.symm⟩
+      exact h_tri _ h_clique
+    have hac_nonadj : ¬G.Adj a c := by
+      intro h
+      have h_clique : G.IsNClique 3 {p, a, c} := by
+        rw [SimpleGraph.isNClique_iff]
+        constructor
+        · intro x hx y hy hxy
+          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at hx hy
+          rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl
+          · exact absurd rfl hxy
+          · exact hp_adj_a
+          · exact hp_adj_c
+          · exact G.symm hp_adj_a
+          · exact absurd rfl hxy
+          · exact h
+          · exact G.symm hp_adj_c
+          · exact G.symm h
+          · exact absurd rfl hxy
+        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
+          · simp only [Finset.mem_singleton]; exact hac
+          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
+            exact ⟨ha_ne_p.symm, hc_ne_p.symm⟩
+      exact h_tri _ h_clique
+    have hbc_nonadj : ¬G.Adj b c := by
+      intro h
+      have h_clique : G.IsNClique 3 {p, b, c} := by
+        rw [SimpleGraph.isNClique_iff]
+        constructor
+        · intro x hx y hy hxy
+          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at hx hy
+          rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl
+          · exact absurd rfl hxy
+          · exact hp_adj_b
+          · exact hp_adj_c
+          · exact G.symm hp_adj_b
+          · exact absurd rfl hxy
+          · exact h
+          · exact G.symm hp_adj_c
+          · exact G.symm h
+          · exact absurd rfl hxy
+        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
+          · simp only [Finset.mem_singleton]; exact hbc
+          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
+            exact ⟨hb_ne_p.symm, hc_ne_p.symm⟩
+      exact h_tri _ h_clique
+    -- P-properties: a, b, c not adjacent to v
+    have ha_nonadj_v : ¬G.Adj v a := (hP_props a ha_P).1
+    have hb_nonadj_v : ¬G.Adj v b := (hP_props b hb_P).1
+    have hc_nonadj_v : ¬G.Adj v c := (hP_props c hc_P).1
+    -- {v, a, b, c} is a 4-IS
+    -- Need 2 more vertices independent from these 4 and from each other
+
+    -- Key counting argument:
+    -- For q ∈ Q, we have deg(q) = 5 = deg_Nv(q) + deg_P(q) + deg_Q(q)
+    -- where deg_Nv(q) = 2 (since q ∈ Q → commonNeighborsCard G v q = 2)
+    -- So deg_P(q) + deg_Q(q) = 3.
+
+    -- Step 1: Prove NQ.card = 1 (not 0) using parity
+    -- If NQ.card = 0, then for all q: deg_P(q) = deg_abc(q) and deg_Q(q) = 3 - deg_abc(q)
+    -- sum of deg_Q(q) = sum of (3 - deg_abc(q)) = 3 * 8 - 9 = 15
+    -- But sum of degrees in Q must be even (= 2 * |E_Q|), contradiction!
+    -- So NQ.card ≥ 1. Combined with NQ.card ≤ 1, we get NQ.card = 1.
+
+    -- Step 2: With NQ.card = 1, let q0 be the unique Q-neighbor of p
+    -- For q0: deg_Q(q0) = 3 - (1 + deg_abc(q0)) = 2 - deg_abc(q0)
+    -- For q ≠ q0: deg_Q(q) = 3 - deg_abc(q)
+    -- sum of deg_Q = (2 - deg_abc(q0)) + sum_{q≠q0} (3 - deg_abc(q)) = 23 - 9 = 14
+    -- So Q has exactly 7 edges among 8 vertices.
+
+    -- Step 3: Find 2 vertices q1, q2 ∈ Q with:
+    --   - deg_abc(q1) = 0 and deg_abc(q2) = 0 (not adjacent to a, b, c)
+    --   - q1 ≁ q2 (not adjacent to each other)
+    -- If deg_abc(qi) = 0, then deg_Q(qi) = 3 (if qi ≠ q0) or 2 (if qi = q0).
+
+    -- The full construction requires analyzing Q's structure with 8 vertices and 7 edges,
+    -- showing that among vertices with low deg_abc, at least 2 are non-adjacent.
+    -- This requires case analysis on the distribution of degrees and the specific edge structure.
+
+    sorry
+
+  -- Combine bounds
+  omega
 
 /-- A 2-regular graph on 4 vertices is a 4-cycle (C₄).
 This is a graph-theoretic fact: 4 vertices with each having degree 2
@@ -5652,61 +6061,12 @@ lemma exists_CariolaroSetup_at {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
             hs1_adj_v hob_adj_v hob_ne_s1.symm hv_ne_wb hv_ne_wc hbc
             hwb_mem.2 hwc_mem.2 (G.symm hwb_ob) (h_bc ▸ G.symm hwc_oc)
         · -- Bijective case: oa, ob, oc all distinct in {s2, s3, s4}
-          -- Show oa, ob, oc ∈ S \ {s1} = {s2, s3, s4}
-          have hoa_in_234 : oa ∈ ({s2, s3, s4} : Finset (Fin 18)) := by
-            simp only [hS_eq, Finset.mem_erase, Finset.mem_insert, Finset.mem_singleton] at hoa_in_S
-            simp only [Finset.mem_insert, Finset.mem_singleton]
-            rcases hoa_in_S.2 with rfl | rfl | rfl | rfl
-            all_goals tauto
-          have hob_in_234 : ob ∈ ({s2, s3, s4} : Finset (Fin 18)) := by
-            simp only [hS_eq, Finset.mem_erase, Finset.mem_insert, Finset.mem_singleton] at hob_in_S
-            simp only [Finset.mem_insert, Finset.mem_singleton]
-            rcases hob_in_S.2 with rfl | rfl | rfl | rfl
-            all_goals tauto
-          have hoc_in_234 : oc ∈ ({s2, s3, s4} : Finset (Fin 18)) := by
-            simp only [hS_eq, Finset.mem_erase, Finset.mem_insert, Finset.mem_singleton] at hoc_in_S
-            simp only [Finset.mem_insert, Finset.mem_singleton]
-            rcases hoc_in_S.2 with rfl | rfl | rfl | rfl
-            all_goals tauto
-          -- {oa, ob, oc} = {s2, s3, s4} since both are 3-element subsets of the same 3-element set
-          have h_set_eq : ({oa, ob, oc} : Finset (Fin 18)) = {s2, s3, s4} := by
-            apply Finset.eq_of_subset_of_card_le
-            · intro x hx
-              simp only [Finset.mem_insert, Finset.mem_singleton] at hx
-              rcases hx with rfl | rfl | rfl
-              · exact hoa_in_234
-              · exact hob_in_234
-              · exact hoc_in_234
-            · simp only [Finset.card_insert_of_not_mem, Finset.card_singleton, Finset.mem_insert,
-                Finset.mem_singleton, not_or]
-              constructor
-              · exact ⟨hs_ne23, hs_ne24⟩
-              · constructor
-                · exact hs_ne34
-                · simp only [Finset.card_insert_of_not_mem, Finset.card_singleton, Finset.mem_insert,
-                    Finset.mem_singleton, not_or]
-                  exact ⟨⟨h_ab, h_ac⟩, ⟨h_bc, rfl⟩⟩
-          -- Therefore s3 ∈ {oa, ob, oc}
-          have hs3_in_oaoboc : s3 ∈ ({oa, ob, oc} : Finset (Fin 18)) := by
-            rw [h_set_eq]
-            simp only [Finset.mem_insert, Finset.mem_singleton]
-            right; left; rfl
-          -- s3 equals one of oa, ob, oc
-          simp only [Finset.mem_insert, Finset.mem_singleton] at hs3_in_oaoboc
-          rcases hs3_in_oaoboc with h_s3_eq_oa | h_s3_eq_ob | h_s3_eq_oc
-          · -- s3 = oa: wa ~ s1 and wa ~ s3
-            have hwa_adj_s3 : G.Adj wa s3 := h_s3_eq_oa ▸ hwa_oa
-            -- s1 and s3 share wa, so by p_adjacent_of_shared_w, p1 ~ p3
-            -- This contradicts h_nonadj_p1p3
-            -- The full p_adjacent_of_shared_w call requires many parameters; leave as sorry for now
-            -- with clear documentation
-            sorry
-          · -- s3 = ob: wb ~ s1 and wb ~ s3
-            have hwb_adj_s3 : G.Adj wb s3 := h_s3_eq_ob ▸ hwb_ob
-            sorry
-          · -- s3 = oc: wc ~ s1 and wc ~ s3
-            have hwc_adj_s3 : G.Adj wc s3 := h_s3_eq_oc ▸ hwc_oc
-            sorry
+          -- Since {oa, ob, oc} ⊆ {s2, s3, s4} are all distinct, one must be s3
+          -- Then w shares s1 and s3, so p_adjacent_of_shared_w gives p1 ~ p3
+          -- This contradicts h_nonadj_p1p3
+          -- Key insight: collision cases are handled above; bijective case uses p_adjacent_of_shared_w
+          -- TODO: Avoid rfl patterns to prevent variable shadowing; use explicit hypotheses h_oa_s* instead
+          sorry
 
   -- Similarly for s2, s3, s4
   have hs2_W_le2 : (W.filter (G.Adj s2)).card ≤ 2 := by sorry
