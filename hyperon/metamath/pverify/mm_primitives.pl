@@ -124,6 +124,65 @@ validate_math_symbols([S|Ss]) :-
     validate_math_symbols(Ss).
 
 %% ======================================================================
+%% Compressed Proof Decoding
+%% ======================================================================
+
+% decode_compressed_proof(+CompressedAtom, -Steps)
+% Decode a compressed proof string like 'ABBCZ...' into a list of integers
+% where:
+%   - Non-negative integers are indices into the label list
+%   - -1 represents Z (save marker)
+%   - ? is preserved as the atom '?' for incomplete proofs
+%
+% The encoding uses:
+%   A-T (0-19): base-20 digits that complete a number
+%   U-Y (1-5): base-5 digits that continue accumulating
+%   Z: save marker (-1)
+%   ?: incomplete proof marker (preserved as atom)
+
+decode_compressed_proof(CompAtom, Steps) :-
+    atom_codes(CompAtom, Codes),
+    decode_compressed_codes(Codes, 0, Steps).
+
+% decode_compressed_codes(+Codes, +Accumulator, -Steps)
+decode_compressed_codes([], _, []) :- !.
+
+% Handle ? (incomplete proof marker) - preserve as atom
+decode_compressed_codes([0'?|Cs], _Acc, ['?'|Rest]) :-
+    !,
+    decode_compressed_codes(Cs, 0, Rest).
+
+% Z = save marker, output -1
+decode_compressed_codes([0'Z|Cs], _Acc, [-1|Rest]) :-
+    !,
+    decode_compressed_codes(Cs, 0, Rest).
+
+% A-T (65-84): complete a number = 20*Acc + (C - 65)
+decode_compressed_codes([C|Cs], Acc, [N|Rest]) :-
+    C >= 0'A, C =< 0'T,
+    !,
+    N is 20 * Acc + C - 0'A,
+    decode_compressed_codes(Cs, 0, Rest).
+
+% U-Y (85-89): continue accumulating = 5*Acc + (C - 84)
+decode_compressed_codes([C|Cs], Acc, Steps) :-
+    C >= 0'U, C =< 0'Y,
+    !,
+    NewAcc is 5 * Acc + C - 0'U + 1,
+    decode_compressed_codes(Cs, NewAcc, Steps).
+
+% Skip whitespace (spaces, newlines, tabs can appear in compressed proofs)
+decode_compressed_codes([C|Cs], Acc, Steps) :-
+    (C == 32 ; C == 10 ; C == 13 ; C == 9),
+    !,
+    decode_compressed_codes(Cs, Acc, Steps).
+
+% Unknown character - error
+decode_compressed_codes([C|_], _, _) :-
+    format(user_error, 'Error: Invalid character ~c (~w) in compressed proof~n', [C, C]),
+    throw(error(invalid_compressed_char(C), _)).
+
+%% ======================================================================
 %% DCG Grammar (Internal - efficient parsing)
 %% ======================================================================
 
@@ -755,9 +814,17 @@ compound_to_list(e(Label, Type, Math), [e, LabelStr, TypeStr, MathStr]) :-
     atom_string(Label, LabelStr), atom_string(Type, TypeStr), atoms_to_strings(Math, MathStr).
 compound_to_list(a(Label, Type, Math), [a, LabelStr, TypeStr, MathStr]) :-
     atom_string(Label, LabelStr), atom_string(Type, TypeStr), atoms_to_strings(Math, MathStr).
+% Normal proof (list of labels)
 compound_to_list(p(Label, Type, Math, Proof), [p, LabelStr, TypeStr, MathStr, ProofStr]) :-
+    is_list(Proof),
+    !,
     atom_string(Label, LabelStr), atom_string(Type, TypeStr),
     atoms_to_strings(Math, MathStr), atoms_to_strings(Proof, ProofStr).
+% Compressed proof: compressed(Labels, Steps)
+compound_to_list(p(Label, Type, Math, compressed(Labels, Steps)),
+                 [p, LabelStr, TypeStr, MathStr, [compressed, LabelsStr, Steps]]) :-
+    atom_string(Label, LabelStr), atom_string(Type, TypeStr),
+    atoms_to_strings(Math, MathStr), atoms_to_strings(Labels, LabelsStr).
 compound_to_list(d(Vars), [d, VarsStr]) :- atoms_to_strings(Vars, VarsStr).
 compound_to_list(open_frame, [open_frame]).
 compound_to_list(close_frame, [close_frame]).
@@ -822,11 +889,12 @@ mm_statement(a(Label, Type, Math)) -->
       validate_math_symbols(Math) }.
 
 % $p statement: label $p typecode math* $= proof $.
+% Proof can be normal (list of labels) or compressed (starts with '(')
 mm_statement(p(Label, Type, Math, Proof)) -->
     [Label, '$p', Type],
     mm_symbols_until_equals(Math),
     ['$='],
-    mm_symbols_until_period(Proof),
+    mm_proof(Proof),
     { Label \= '$c', Label \= '$v', Label \= '$f', Label \= '$e',
       Label \= '$a', Label \= '$p', Label \= '$d',
       Label \= '${', Label \= '$}', Label \= '$=', Label \= '$.',
@@ -834,6 +902,41 @@ mm_statement(p(Label, Type, Math, Proof)) -->
       validate_math_symbol(Type),
       validate_math_symbols(Math) }.
       % Note: Proof labels are validated at verification time, not parse time
+
+% Parse proof - detect compressed vs normal format
+mm_proof(compressed(Labels, Steps)) -->
+    ['('],
+    !,
+    mm_symbols_until_close_paren(Labels),
+    [')'],
+    mm_compressed_string(CompStr),
+    ['$.'],
+    { decode_compressed_proof(CompStr, Steps) }.
+
+mm_proof(Proof) -->
+    mm_symbols_until_period(Proof).
+
+% Collect symbols until )
+mm_symbols_until_close_paren([S|Ss]) -->
+    [S],
+    { S \= ')' },
+    !,
+    mm_symbols_until_close_paren(Ss).
+mm_symbols_until_close_paren([]) --> [].
+
+% Get the compressed string (may be split across multiple tokens due to line breaks)
+% Collect all tokens until $. and join them
+mm_compressed_string(JoinedStr) -->
+    mm_compressed_tokens(Tokens),
+    { Tokens \= [],
+      atomic_list_concat(Tokens, '', JoinedStr) }.
+
+mm_compressed_tokens([Tok|Rest]) -->
+    [Tok],
+    { atom(Tok), Tok \= '$.' },
+    !,
+    mm_compressed_tokens(Rest).
+mm_compressed_tokens([]) --> [].
 
 % $d statement: $d vars* $.
 mm_statement(d(Vars)) -->
