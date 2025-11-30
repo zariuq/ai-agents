@@ -299,16 +299,19 @@ tokenize_mm_file(Filename, Tokens) :-
 tokenize_mm_file_with_base(Filename, BaseDir, Tokens) :-
     % Resolve path relative to base directory if not absolute
     resolve_path(Filename, BaseDir, FullPath),
+    % Get absolute path for seen-files tracking
+    absolute_file_name(FullPath, AbsPath),
     % Get directory of current file for nested includes
-    file_directory_name(FullPath, CurrentDir),
-    read_mm_file(FullPath, Codes),
+    file_directory_name(AbsPath, CurrentDir),
+    read_mm_file(AbsPath, Codes),
     validate_mm_chars(Codes),
     validate_no_nested_comments(Codes),
     validate_no_dangling_dollar(Codes),
     validate_keyword_whitespace(Codes),
     tokenize_codes(Codes, RawTokens),
-    % Process includes (recursively)
-    process_includes(RawTokens, CurrentDir, Tokens).
+    % Process includes with seen-files tracking (L111-113: duplicates ignored)
+    % and scope depth tracking (L105-106: only in outermost scope)
+    process_includes(RawTokens, CurrentDir, [AbsPath], 0, Tokens).
 
 % resolve_path(+Filename, +BaseDir, -FullPath)
 % Resolve filename relative to base directory
@@ -318,30 +321,73 @@ resolve_path(Filename, _, Filename) :-
 resolve_path(Filename, BaseDir, FullPath) :-
     atomic_list_concat([BaseDir, '/', Filename], FullPath).
 
-% process_includes(+Tokens, +BaseDir, -ExpandedTokens)
+% process_includes(+Tokens, +BaseDir, +SeenFiles, +ScopeDepth, -ExpandedTokens)
 % Scan for $[ filename $] and replace with included file's tokens
-process_includes([], _, []) :- !.
-process_includes(['$['|Rest], BaseDir, ExpandedTokens) :-
+% SeenFiles: list of absolute paths already included (L111-113: duplicates ignored)
+% ScopeDepth: nesting level of ${ $} blocks (L105-106: $[ only at depth 0)
+process_includes([], _, _, _, []) :- !.
+
+% Track ${ - increment scope depth
+process_includes(['${'|Rest], BaseDir, Seen, Depth, ['${'|ExpandedRest]) :-
     !,
+    Depth1 is Depth + 1,
+    process_includes(Rest, BaseDir, Seen, Depth1, ExpandedRest).
+
+% Track $} - decrement scope depth
+process_includes(['$}'|Rest], BaseDir, Seen, Depth, ['$}'|ExpandedRest]) :-
+    !,
+    Depth1 is Depth - 1,
+    process_includes(Rest, BaseDir, Seen, Depth1, ExpandedRest).
+
+% Handle $[ include directive
+process_includes(['$['|Rest], BaseDir, Seen, Depth, ExpandedTokens) :-
+    !,
+    % L105-106: Check that we're in outermost scope (depth 0)
+    (   Depth > 0
+    ->  format(user_error, 'Error: $[ $] include directive not allowed inside block (L105-106)~n', []),
+        throw(error(include_in_block, _))
+    ;   true
+    ),
     % Expect filename followed by $]
     (   Rest = [IncludeFile, '$]'|AfterInclude]
-    ->  % Recursively tokenize the included file
-        (   catch(
-                tokenize_mm_file_with_base(IncludeFile, BaseDir, IncludedTokens),
-                Error,
-                (   format(user_error, 'Error including file ~w: ~w~n', [IncludeFile, Error]),
-                    throw(Error)
+    ->  % Resolve to absolute path for duplicate checking
+        resolve_path(IncludeFile, BaseDir, ResolvedPath),
+        (   catch(absolute_file_name(ResolvedPath, AbsPath), _, fail)
+        ->  true
+        ;   AbsPath = ResolvedPath  % fallback if file doesn't exist yet
+        ),
+        % L111-113: Check if already included - if so, skip (treat as whitespace)
+        (   member(AbsPath, Seen)
+        ->  % Duplicate include - ignore per spec L111-113
+            process_includes(AfterInclude, BaseDir, Seen, Depth, ExpandedTokens)
+        ;   % First include of this file - process it
+            file_directory_name(AbsPath, IncludeDir),
+            (   catch(
+                    read_mm_file(AbsPath, Codes),
+                    Error,
+                    (   format(user_error, 'Error including file ~w: ~w~n', [IncludeFile, Error]),
+                        throw(Error)
+                    )
                 )
+            ->  validate_mm_chars(Codes),
+                validate_no_nested_comments(Codes),
+                validate_no_dangling_dollar(Codes),
+                validate_keyword_whitespace(Codes),
+                tokenize_codes(Codes, IncludeRawTokens),
+                % Recursively process includes in included file (with updated seen list)
+                process_includes(IncludeRawTokens, IncludeDir, [AbsPath|Seen], 0, IncludedTokens),
+                % Continue processing rest of tokens (with updated seen list including this file)
+                process_includes(AfterInclude, BaseDir, [AbsPath|Seen], Depth, RestTokens),
+                append(IncludedTokens, RestTokens, ExpandedTokens)
             )
-        ->  % Continue processing rest of tokens
-            process_includes(AfterInclude, BaseDir, RestTokens),
-            append(IncludedTokens, RestTokens, ExpandedTokens)
         )
     ;   format(user_error, 'Error: Malformed include directive~n', []),
         throw(error(malformed_include, _))
     ).
-process_includes([Token|Rest], BaseDir, [Token|ExpandedRest]) :-
-    process_includes(Rest, BaseDir, ExpandedRest).
+
+% Pass through other tokens
+process_includes([Token|Rest], BaseDir, Seen, Depth, [Token|ExpandedRest]) :-
+    process_includes(Rest, BaseDir, Seen, Depth, ExpandedRest).
 
 % validate_mm_chars(+Codes)
 % Verify all characters are valid Metamath chars (ASCII printable + whitespace)
@@ -784,7 +830,18 @@ validate_scoped([p(Label, Type, Math, _)|Rest], ScopeVars, FHyps, Stack, AllVars
     check_vars_have_active_f(Label, [Type|Math], AllVars, FHyps, p),
     validate_scoped(Rest, ScopeVars, FHyps, Stack, AllVars).
 
-% Other statements (c, d, etc.) - skip
+% $c - must be in outermost block (L1088)
+validate_scoped([c(_)|Rest], ScopeVars, FHyps, Stack, AllVars) :-
+    !,
+    % L1088: "All $c statements must be placed in the outermost block"
+    (   Stack = []
+    ->  true  % Outermost scope - OK
+    ;   format(user_error, 'Error: $c must be in outermost block (L1088)~n', []),
+        throw(error(c_not_outermost, _))
+    ),
+    validate_scoped(Rest, ScopeVars, FHyps, Stack, AllVars).
+
+% Other statements (d, etc.) - skip
 validate_scoped([_|Rest], ScopeVars, FHyps, Stack, AllVars) :-
     validate_scoped(Rest, ScopeVars, FHyps, Stack, AllVars).
 
