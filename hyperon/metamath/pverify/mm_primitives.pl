@@ -299,7 +299,7 @@ tokenize_mm_file(Filename, Tokens) :-
 tokenize_mm_file_with_base(Filename, BaseDir, Tokens) :-
     % Resolve path relative to base directory if not absolute
     resolve_path(Filename, BaseDir, FullPath),
-    % Get absolute path for seen-files tracking
+    % Get absolute path for tracking
     absolute_file_name(FullPath, AbsPath),
     % Get directory of current file for nested includes
     file_directory_name(AbsPath, CurrentDir),
@@ -309,9 +309,12 @@ tokenize_mm_file_with_base(Filename, BaseDir, Tokens) :-
     validate_no_dangling_dollar(Codes),
     validate_keyword_whitespace(Codes),
     tokenize_codes(Codes, RawTokens),
-    % Process includes with seen-files tracking (L111-113: duplicates ignored)
-    % and scope depth tracking (L105-106: only in outermost scope)
-    process_includes(RawTokens, CurrentDir, [AbsPath], 0, Tokens).
+    % Process includes with:
+    % - ProcessingStack [AbsPath] - files currently being processed (cycle detection)
+    % - CompletedFiles [] - files fully processed (duplicate detection, L111-113)
+    % - ScopeDepth 0 - block nesting level (L105-106: $[ only at depth 0)
+    % - InStatement false - whether inside a statement (L105-106: $[ not inside statement)
+    process_includes(RawTokens, CurrentDir, [AbsPath], [], 0, false, Tokens).
 
 % resolve_path(+Filename, +BaseDir, -FullPath)
 % Resolve filename relative to base directory
@@ -321,26 +324,56 @@ resolve_path(Filename, _, Filename) :-
 resolve_path(Filename, BaseDir, FullPath) :-
     atomic_list_concat([BaseDir, '/', Filename], FullPath).
 
-% process_includes(+Tokens, +BaseDir, +SeenFiles, +ScopeDepth, -ExpandedTokens)
+% process_includes(+Tokens, +BaseDir, +Stack, +Completed, +Depth, +InStmt, -ExpandedTokens)
 % Scan for $[ filename $] and replace with included file's tokens
-% SeenFiles: list of absolute paths already included (L111-113: duplicates ignored)
-% ScopeDepth: nesting level of ${ $} blocks (L105-106: $[ only at depth 0)
-process_includes([], _, _, _, []) :- !.
+% Stack: files currently being processed (cycle detection - ERROR if found)
+% Completed: files fully processed (L111-113: duplicates ignored - SKIP if found)
+% Depth: nesting level of ${ $} blocks (L105-106: $[ only at depth 0)
+% InStmt: whether currently inside a statement (L105-106: $[ not inside statement)
+process_includes([], _, _, _, _, _, []) :- !.
 
 % Track ${ - increment scope depth
-process_includes(['${'|Rest], BaseDir, Seen, Depth, ['${'|ExpandedRest]) :-
+process_includes(['${'|Rest], BaseDir, Stack, Completed, Depth, InStmt, ['${'|ExpandedRest]) :-
     !,
     Depth1 is Depth + 1,
-    process_includes(Rest, BaseDir, Seen, Depth1, ExpandedRest).
+    process_includes(Rest, BaseDir, Stack, Completed, Depth1, InStmt, ExpandedRest).
 
 % Track $} - decrement scope depth
-process_includes(['$}'|Rest], BaseDir, Seen, Depth, ['$}'|ExpandedRest]) :-
+process_includes(['$}'|Rest], BaseDir, Stack, Completed, Depth, InStmt, ['$}'|ExpandedRest]) :-
     !,
     Depth1 is Depth - 1,
-    process_includes(Rest, BaseDir, Seen, Depth1, ExpandedRest).
+    process_includes(Rest, BaseDir, Stack, Completed, Depth1, InStmt, ExpandedRest).
+
+% Track statement start keywords - set InStmt to true
+process_includes(['$a'|Rest], BaseDir, Stack, Completed, Depth, _, ['$a'|ExpandedRest]) :-
+    !,
+    process_includes(Rest, BaseDir, Stack, Completed, Depth, true, ExpandedRest).
+process_includes(['$p'|Rest], BaseDir, Stack, Completed, Depth, _, ['$p'|ExpandedRest]) :-
+    !,
+    process_includes(Rest, BaseDir, Stack, Completed, Depth, true, ExpandedRest).
+process_includes(['$e'|Rest], BaseDir, Stack, Completed, Depth, _, ['$e'|ExpandedRest]) :-
+    !,
+    process_includes(Rest, BaseDir, Stack, Completed, Depth, true, ExpandedRest).
+process_includes(['$f'|Rest], BaseDir, Stack, Completed, Depth, _, ['$f'|ExpandedRest]) :-
+    !,
+    process_includes(Rest, BaseDir, Stack, Completed, Depth, true, ExpandedRest).
+process_includes(['$c'|Rest], BaseDir, Stack, Completed, Depth, _, ['$c'|ExpandedRest]) :-
+    !,
+    process_includes(Rest, BaseDir, Stack, Completed, Depth, true, ExpandedRest).
+process_includes(['$v'|Rest], BaseDir, Stack, Completed, Depth, _, ['$v'|ExpandedRest]) :-
+    !,
+    process_includes(Rest, BaseDir, Stack, Completed, Depth, true, ExpandedRest).
+process_includes(['$d'|Rest], BaseDir, Stack, Completed, Depth, _, ['$d'|ExpandedRest]) :-
+    !,
+    process_includes(Rest, BaseDir, Stack, Completed, Depth, true, ExpandedRest).
+
+% Track statement end - set InStmt to false
+process_includes(['$.'|Rest], BaseDir, Stack, Completed, Depth, _, ['$.'|ExpandedRest]) :-
+    !,
+    process_includes(Rest, BaseDir, Stack, Completed, Depth, false, ExpandedRest).
 
 % Handle $[ include directive
-process_includes(['$['|Rest], BaseDir, Seen, Depth, ExpandedTokens) :-
+process_includes(['$['|Rest], BaseDir, Stack, Completed, Depth, InStmt, ExpandedTokens) :-
     !,
     % L105-106: Check that we're in outermost scope (depth 0)
     (   Depth > 0
@@ -348,20 +381,29 @@ process_includes(['$['|Rest], BaseDir, Seen, Depth, ExpandedTokens) :-
         throw(error(include_in_block, _))
     ;   true
     ),
+    % L105-106: Check that we're not inside a statement
+    (   InStmt = true
+    ->  format(user_error, 'Error: $[ $] include directive not allowed inside statement (L105-106)~n', []),
+        throw(error(include_in_statement, _))
+    ;   true
+    ),
     % Expect filename followed by $]
     (   Rest = [IncludeFile, '$]'|AfterInclude]
-    ->  % Resolve to absolute path for duplicate checking
+    ->  % Resolve to absolute path for checking
         resolve_path(IncludeFile, BaseDir, ResolvedPath),
         (   catch(absolute_file_name(ResolvedPath, AbsPath), _, fail)
         ->  true
         ;   AbsPath = ResolvedPath  % fallback if file doesn't exist yet
         ),
-        % L111-113: Check if already included - if so, skip (treat as whitespace)
-        (   member(AbsPath, Seen)
-        ->  % Duplicate include - ignore per spec L111-113
-            process_includes(AfterInclude, BaseDir, Seen, Depth, ExpandedTokens)
-        ;   % First include of this file - process it
-            file_directory_name(AbsPath, IncludeDir),
+        % Check for cycle (file currently being processed)
+        (   member(AbsPath, Stack)
+        ->  format(user_error, 'Error: Circular include detected: ~w~n', [AbsPath]),
+            throw(error(circular_include(AbsPath), _))
+        % Check for duplicate (file already fully processed) - L111-113: ignore
+        ;   member(AbsPath, Completed)
+        ->  process_includes(AfterInclude, BaseDir, Stack, Completed, Depth, InStmt, ExpandedTokens)
+        % First include of this file - process it
+        ;   file_directory_name(AbsPath, IncludeDir),
             (   catch(
                     read_mm_file(AbsPath, Codes),
                     Error,
@@ -374,10 +416,16 @@ process_includes(['$['|Rest], BaseDir, Seen, Depth, ExpandedTokens) :-
                 validate_no_dangling_dollar(Codes),
                 validate_keyword_whitespace(Codes),
                 tokenize_codes(Codes, IncludeRawTokens),
-                % Recursively process includes in included file (with updated seen list)
-                process_includes(IncludeRawTokens, IncludeDir, [AbsPath|Seen], 0, IncludedTokens),
-                % Continue processing rest of tokens (with updated seen list including this file)
-                process_includes(AfterInclude, BaseDir, [AbsPath|Seen], Depth, RestTokens),
+                % Recursively process includes in included file
+                % - Add to stack (for cycle detection in nested includes)
+                % - Keep completed as-is (will be updated after this file completes)
+                % - Reset depth to 0 (new file starts at outermost scope)
+                % - Reset InStmt to false (new file starts outside statements)
+                process_includes(IncludeRawTokens, IncludeDir, [AbsPath|Stack], Completed, 0, false, IncludedTokens),
+                % Continue processing rest of tokens
+                % - Remove from stack (done processing this include)
+                % - Add to completed (fully processed, ignore future duplicates)
+                process_includes(AfterInclude, BaseDir, Stack, [AbsPath|Completed], Depth, InStmt, RestTokens),
                 append(IncludedTokens, RestTokens, ExpandedTokens)
             )
         )
@@ -386,8 +434,8 @@ process_includes(['$['|Rest], BaseDir, Seen, Depth, ExpandedTokens) :-
     ).
 
 % Pass through other tokens
-process_includes([Token|Rest], BaseDir, Seen, Depth, [Token|ExpandedRest]) :-
-    process_includes(Rest, BaseDir, Seen, Depth, ExpandedRest).
+process_includes([Token|Rest], BaseDir, Stack, Completed, Depth, InStmt, [Token|ExpandedRest]) :-
+    process_includes(Rest, BaseDir, Stack, Completed, Depth, InStmt, ExpandedRest).
 
 % validate_mm_chars(+Codes)
 % Verify all characters are valid Metamath chars (ASCII printable + whitespace)
