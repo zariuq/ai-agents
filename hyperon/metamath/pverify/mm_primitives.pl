@@ -1,6 +1,18 @@
 % mm_primitives.pl - Low-level parsing primitives for Metamath
-% CDTools-inspired with DCG patterns internally
-% All parsing LOGIC is in PeTTa - this provides only character-level operations
+%
+% Inspired by CD Tools (Christoph Wernhard, 2024) - https://github.com/cwernhard/cdtools
+% Key patterns adopted from CDTools mm_read.pl:
+%   - DCG-based parsing with phrase/2
+%   - Grammar-based scope enforcement (outermost_scope_stmt vs stmt)
+%   - Canonical $d handling (multi-var → pairwise)
+%   - Frame abstraction pattern for unified assertion access
+%
+% Our adaptations for pverify:
+%   - Token-based parsing (vs character-level DCG) for MeTTa integration
+%   - Validation-based scope enforcement (ProcessingStack/CompletedFiles/InStmt)
+%   - Include cycle detection (Stack vs Completed lists)
+%
+% All high-level parsing LOGIC is in PeTTa - this provides low-level operations
 
 :- module(mm_primitives, [
     % File I/O
@@ -8,6 +20,17 @@
 
     % Exit with error code
     halt_with_code/2,
+
+    % CDTools-inspired utilities
+    canonical_d/2,      % canonical_d(+DVars, -Pairs) - multi-var $d → pairwise d(X,Y)
+
+    % Frame abstraction (CDTools pattern)
+    build_assertion_frame/5,   % Build frame(Assertion, MandHyps, DVPairs) from context
+
+    % Z-wrapping compressed proofs as DAG for PeTTa
+    decode_compressed_proof_dag/3, % Simple: decode_compressed_proof_dag(+Atom, +NumMandHyps, -DAG)
+    decode_compressed_proof_dag/4, % Full: decode_compressed_proof_dag(+Atom, +NumMandHyps, +NumLabels, -DAG)
+    raw_steps_to_dag/5,            % Convert raw proof steps to DAG format
 
     % High-level parsing (complete file -> structured statements)
     parse_mm_file/2,
@@ -44,6 +67,234 @@
 % This matches CDTools pattern and is more efficient
 read_mm_file(Filename, Codes) :-
     read_file_to_codes(Filename, Codes, []).
+
+%% ======================================================================
+%% CDTools-Inspired Utilities
+%% ======================================================================
+
+% canonical_d(+DVars, -Pairs)
+% Convert multi-variable $d declaration to pairwise d(X,Y) pairs.
+% Example: canonical_d([a, b, c], [d(a,b), d(a,c), d(b,c)])
+%
+% This elegant pattern is from CDTools mm_read.pl (mm_canonical_d/2).
+% The memcdr/3 helper enumerates each element with its tail,
+% generating all ordered pairs where X comes before Y in the list.
+canonical_d(DVars, Pairs) :-
+    findall(d(X, Y), (memcdr(X, DVars, Rest), member(Y, Rest)), Pairs).
+
+% memcdr(X, [X|L], L) - X is head, L is tail
+% memcdr(X, [_|L], L1) - recurse into tail
+% This gives each element paired with its "rest of list" (cdr in Lisp terms)
+memcdr(X, [X|L], L).
+memcdr(X, [_|L], L1) :-
+    memcdr(X, L, L1).
+
+%% ======================================================================
+%% Frame Abstraction (CDTools pattern)
+%% ======================================================================
+%
+% A frame bundles an assertion with its mandatory hypotheses and DV constraints.
+% This is the core abstraction from CDTools that enables efficient verification.
+%
+% Frame structure: frame(Assertion, MandatoryHyps, DVPairs)
+%   - Assertion: a(Label, Type, Statement) or p(Label, Type, Statement, Proof)
+%   - MandatoryHyps: list of f(Label, Type, Var) and e(Label, Type, Statement)
+%   - DVPairs: list of d(Var1, Var2) in canonical form
+
+% build_assertion_frame(+Assertion, +FHyps, +EHyps, +DVars, -Frame)
+% Build a frame from assertion and its context.
+% FHyps = [f(Label, Type, Var), ...]  - floating hypotheses in scope
+% EHyps = [e(Label, Type, Stmt), ...] - essential hypotheses in scope
+% DVars = [[V1,V2,...], ...]          - $d variable lists in scope
+build_assertion_frame(Assertion, FHyps, EHyps, DVars, Frame) :-
+    % Get all variables used in the assertion statement
+    assertion_statement(Assertion, Statement),
+    findall(V, (member(V, Statement), is_var_in_fhyps(V, FHyps)), StmtVars),
+    sort(StmtVars, StmtVarsUniq),
+    % Get all variables used in essential hypotheses
+    findall(V, (member(e(_, _, EStmt), EHyps), member(V, EStmt), is_var_in_fhyps(V, FHyps)), EHypVars),
+    sort(EHypVars, EHypVarsUniq),
+    % Combine: mandatory variables are those in statement or essential hyps
+    ord_union(StmtVarsUniq, EHypVarsUniq, MandVars),
+    % Filter FHyps to only mandatory ones
+    include(fhyp_for_vars(MandVars), FHyps, MandFHyps),
+    % Combine mandatory hypotheses (FHyps first, then EHyps - per Metamath spec order)
+    append(MandFHyps, EHyps, MandHyps),
+    % Canonicalize DVars and filter to mandatory variables
+    collect_canonical_dvs(DVars, AllDVPairs),
+    include(dv_pair_for_vars(MandVars), AllDVPairs, MandDVPairs),
+    % Build frame
+    Frame = frame(Assertion, MandHyps, MandDVPairs).
+
+% Helper: get statement from assertion
+assertion_statement(a(_, _, Stmt), Stmt).
+assertion_statement(p(_, _, Stmt, _), Stmt).
+
+% Helper: check if V is a variable (has an $f declaration)
+is_var_in_fhyps(V, FHyps) :-
+    member(f(_, _, V), FHyps).
+
+% Helper: check if FHyp is for one of the mandatory variables
+fhyp_for_vars(MandVars, f(_, _, V)) :-
+    member(V, MandVars).
+
+% Helper: check if DV pair involves only mandatory variables
+dv_pair_for_vars(MandVars, d(V1, V2)) :-
+    member(V1, MandVars),
+    member(V2, MandVars).
+
+% Helper: collect all canonical DV pairs from list of $d declarations
+collect_canonical_dvs([], []).
+collect_canonical_dvs([DVList|Rest], AllPairs) :-
+    canonical_d(DVList, Pairs),
+    collect_canonical_dvs(Rest, RestPairs),
+    append(Pairs, RestPairs, AllPairs).
+
+%% ======================================================================
+%% raw_steps_to_dag - Convert raw proof steps to DAG format for PeTTa
+%% ======================================================================
+%
+% Converts decode_compressed_proof output to PeTTa-friendly format:
+%   -1 → save
+%   '?' → incomplete
+%   N (integer) → N (raw index - PeTTa interprets with NumMandHyps)
+%
+% PeTTa will interpret indices at verification time:
+%   index < NumMandHyps → push mandatory hypothesis
+%   NumMandHyps <= index < NumMandHyps+NumLabels → apply labels[index-NumMandHyps]
+%   index >= NumMandHyps+NumLabels → push saved ref (index-NumMandHyps-NumLabels)
+
+raw_steps_to_dag([], _, _, _, []).
+raw_steps_to_dag([-1|Rs], SC, NL, Ls, [-1|Rest]) :-
+    !, raw_steps_to_dag(Rs, SC, NL, Ls, Rest).
+raw_steps_to_dag(['?'|Rs], SC, NL, Ls, [-2|Rest]) :-
+    !, raw_steps_to_dag(Rs, SC, NL, Ls, Rest).
+raw_steps_to_dag([N|Rs], SC, NL, Ls, [N|Rest]) :-
+    raw_steps_to_dag(Rs, SC, NL, Ls, Rest).
+
+%% ======================================================================
+%% Z-Wrapping: Compressed Proof as DAG for PeTTa
+%% ======================================================================
+%
+% Compressed proofs with Z markers create a DAG structure.
+% Instead of expanding Z references, we pass the DAG to PeTTa.
+% PeTTa processes the DAG, caching saved expressions for efficiency.
+%
+% DAG Format for PeTTa:
+%   dag(Steps) where Steps is a list of:
+%     - hyp(N)     : push mandatory hypothesis N onto stack
+%     - label(N)   : apply assertion labels[N-NumMandHyps] to stack
+%     - save       : save current stack top to saved list
+%     - ref(N)     : push saved expression N back onto stack
+%     - incomplete : ? marker (incomplete proof)
+%
+% Example: compressed "ABCZD" with 2 mand hyps:
+%   dag([hyp(0), hyp(1), label(2), save, ref(0)])
+%
+% PeTTa maintains:
+%   - proof stack (expressions being verified)
+%   - saved list (expressions saved by 'save', indexed for 'ref')
+
+% decode_compressed_proof_dag(+CompAtom, +NumMandHyps, +NumLabels, -DAG)
+% Decode compressed proof string to PeTTa-friendly DAG.
+% NumMandHyps = number of mandatory hypotheses
+% NumLabels = number of labels in the ( ) header
+%
+% Index interpretation:
+%   0..NumMandHyps-1          → hyp(N)
+%   NumMandHyps..NumMandHyps+NumLabels-1 → label(N-NumMandHyps)
+%   NumMandHyps+NumLabels..   → ref(N-NumMandHyps-NumLabels)
+decode_compressed_proof_dag(CompAtom, NumMandHyps, NumLabels, dag(Steps)) :-
+    atom_codes(CompAtom, Codes),
+    decode_dag_acc(Codes, 0, NumMandHyps, NumLabels, [], Steps).
+
+% Also provide 2-arg version that doesn't distinguish labels from refs
+% (simpler but less accurate for PeTTa)
+decode_compressed_proof_dag(CompAtom, NumMandHyps, dag(Steps)) :-
+    atom_codes(CompAtom, Codes),
+    decode_dag_simple_acc(Codes, 0, NumMandHyps, 0, [], Steps).
+
+% decode_dag_acc(+Codes, +Acc, +NumMH, +NumLabels, +AccSteps, -Steps)
+% Builds list in forward order using accumulator.
+decode_dag_acc([], _, _, _, Acc, Steps) :-
+    !, reverse(Acc, Steps).
+
+% Z = save marker (not tracked as index - just a marker)
+decode_dag_acc([0'Z|Cs], _Acc, NumMH, NumLabels, Acc, Steps) :-
+    !,
+    decode_dag_acc(Cs, 0, NumMH, NumLabels, [save|Acc], Steps).
+
+% ? = incomplete proof marker
+decode_dag_acc([0'?|Cs], _Acc, NumMH, NumLabels, Acc, Steps) :-
+    !,
+    decode_dag_acc(Cs, 0, NumMH, NumLabels, [incomplete|Acc], Steps).
+
+% A-T: complete a number
+decode_dag_acc([C|Cs], Acc, NumMH, NumLabels, AccSteps, Steps) :-
+    C >= 0'A, C =< 0'T,
+    !,
+    N is 20 * Acc + C - 0'A,
+    RefBoundary is NumMH + NumLabels,
+    (   N < NumMH
+    ->  Step = hyp(N)
+    ;   N < RefBoundary
+    ->  LabelIdx is N - NumMH,
+        Step = label(LabelIdx)
+    ;   RefIdx is N - RefBoundary,
+        Step = ref(RefIdx)
+    ),
+    decode_dag_acc(Cs, 0, NumMH, NumLabels, [Step|AccSteps], Steps).
+
+% U-Y: continue accumulating
+decode_dag_acc([C|Cs], Acc, NumMH, NumLabels, AccSteps, Steps) :-
+    C >= 0'U, C =< 0'Y,
+    !,
+    NewAcc is 5 * Acc + C - 0'U + 1,
+    decode_dag_acc(Cs, NewAcc, NumMH, NumLabels, AccSteps, Steps).
+
+% Skip whitespace
+decode_dag_acc([C|Cs], Acc, NumMH, NumLabels, AccSteps, Steps) :-
+    (C == 32 ; C == 10 ; C == 13 ; C == 9),
+    !,
+    decode_dag_acc(Cs, Acc, NumMH, NumLabels, AccSteps, Steps).
+
+% Simple version that tracks save count dynamically (for backward compat)
+decode_dag_simple_acc([], _, _, _, Acc, Steps) :-
+    !, reverse(Acc, Steps).
+
+decode_dag_simple_acc([0'Z|Cs], _Acc, NumMH, SaveCount, Acc, Steps) :-
+    !,
+    SaveCount1 is SaveCount + 1,
+    decode_dag_simple_acc(Cs, 0, NumMH, SaveCount1, [save|Acc], Steps).
+
+decode_dag_simple_acc([0'?|Cs], _Acc, NumMH, SaveCount, Acc, Steps) :-
+    !,
+    decode_dag_simple_acc(Cs, 0, NumMH, SaveCount, [incomplete|Acc], Steps).
+
+decode_dag_simple_acc([C|Cs], Acc, NumMH, SaveCount, AccSteps, Steps) :-
+    C >= 0'A, C =< 0'T,
+    !,
+    N is 20 * Acc + C - 0'A,
+    (   N < NumMH
+    ->  Step = hyp(N)
+    ;   RefIdx is N - NumMH,
+        (   RefIdx < SaveCount
+        ->  Step = ref(RefIdx)
+        ;   Step = label(N)
+        )
+    ),
+    decode_dag_simple_acc(Cs, 0, NumMH, SaveCount, [Step|AccSteps], Steps).
+
+decode_dag_simple_acc([C|Cs], Acc, NumMH, SaveCount, AccSteps, Steps) :-
+    C >= 0'U, C =< 0'Y,
+    !,
+    NewAcc is 5 * Acc + C - 0'U + 1,
+    decode_dag_simple_acc(Cs, NewAcc, NumMH, SaveCount, AccSteps, Steps).
+
+decode_dag_simple_acc([C|Cs], Acc, NumMH, SaveCount, AccSteps, Steps) :-
+    (C == 32 ; C == 10 ; C == 13 ; C == 9),
+    !,
+    decode_dag_simple_acc(Cs, Acc, NumMH, SaveCount, AccSteps, Steps).
 
 %% ======================================================================
 %% Character Classification
@@ -925,11 +1176,21 @@ compound_to_list(p(Label, Type, Math, Proof), [p, LabelStr, TypeStr, MathStr, Pr
     !,
     atom_string(Label, LabelStr), atom_string(Type, TypeStr),
     atoms_to_strings(Math, MathStr), atoms_to_strings(Proof, ProofStr).
-% Compressed proof: compressed(Labels, Steps)
-compound_to_list(p(Label, Type, Math, compressed(Labels, Steps)),
-                 [p, LabelStr, TypeStr, MathStr, [compressed, LabelsStr, Steps]]) :-
+% Compressed proof: compressed(Labels, Steps) → DAG format for PeTTa
+% Output: [p, Label, Type, Math, [compressed_dag, Labels, DagSteps]]
+% Where DagSteps are semantically-tagged: integers, save, incomplete
+% PeTTa interprets indices using NumMandHyps at verification time:
+%   index < NumMandHyps → mandatory hyp
+%   NumMandHyps <= index < NumMandHyps+len(Labels) → Labels[index-NumMandHyps]
+%   index >= NumMandHyps+len(Labels) → saved ref
+compound_to_list(p(Label, Type, Math, compressed(Labels, RawSteps)),
+                 [p, LabelStr, TypeStr, MathStr, [compressed_dag, LabelsStr, DagSteps]]) :-
     atom_string(Label, LabelStr), atom_string(Type, TypeStr),
-    atoms_to_strings(Math, MathStr), atoms_to_strings(Labels, LabelsStr).
+    atoms_to_strings(Math, MathStr),
+    atoms_to_strings(Labels, LabelsStr),
+    length(Labels, NumLabels),
+    % Convert raw steps to DAG format
+    raw_steps_to_dag(RawSteps, 0, NumLabels, Labels, DagSteps).
 compound_to_list(d(Vars), [d, VarsStr]) :- atoms_to_strings(Vars, VarsStr).
 compound_to_list(open_frame, [open_frame]).
 compound_to_list(close_frame, [close_frame]).
@@ -1107,7 +1368,8 @@ generate_petta_verifier(InputFile, OutputFile, VerifyProofs) :-
     close(Out).
 
 % Emit MeTTa header with imports
-emit_header(Out, InputFile, VerifyProofs) :-
+% VerifyProofs is reserved for future conditional proof verification
+emit_header(Out, InputFile, _VerifyProofs) :-
     format(Out, ';;; Auto-generated PeTTa Metamath verifier~n', []),
     format(Out, ';;; Source: ~w~n', [InputFile]),
     format(Out, ';;; Generated by: mm_primitives.pl~n~n', []),
