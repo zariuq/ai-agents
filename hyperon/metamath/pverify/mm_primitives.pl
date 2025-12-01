@@ -59,6 +59,10 @@
 
 :- use_module(library(dcg/basics)).
 
+% Suppress warning about scattered mm_statement/3 clauses
+% (They're intentionally separated to group helpers near their usage)
+:- discontiguous mm_statement/3.
+
 %% ======================================================================
 %% File I/O Primitives
 %% ======================================================================
