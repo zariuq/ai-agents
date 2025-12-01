@@ -160,6 +160,16 @@
 ;;; Main
 ;;; ==========================================================================
 
+;; has-string-flag - check if --string flag is present in command-line args
+;; Returns true if --string found, false otherwise
+(= (has-string-flag $args)
+   (if (== (size-atom $args) 0)
+       false
+       (let ($first $rest) (decons-atom $args)
+         (if (== $first --string)
+             true
+             (has-string-flag $rest)))))
+
 !(printif! "")
 !(printif! "=== Hybrid Prolog+PeTTa Metamath Verifier ===")
 !(printif! "")
@@ -172,9 +182,11 @@
        (let $input_file (if (== $cmdline_arg Empty)
                             (get_env_var_or_default "MM_INPUT_FILE" "/home/zar/claude/hyperon/metamath/mmverify/tests/demo0.mm")
                             $cmdline_arg)
-         (let true (printif! (concat "  File: " $input_file))
-           (let true (printif! "Step 2: Parse file using Prolog...")
-             (let $stmts_raw (collapse (parse_mm_file $input_file))
+         (let $encoding (if (has-string-flag (get_cmdline_args)) string unicode)
+           (let true (printif! (concat "  File: " $input_file))
+             (let true (printif! (concat "  Encoding: " $encoding))
+               (let true (printif! "Step 2: Parse file using Prolog...")
+                 (let $stmts_raw (collapse (parse_mm_file $input_file $encoding))
               (if (== (size-atom $stmts_raw) 0)
                   (progn
                     (println! "")
@@ -187,7 +199,7 @@
                           (let $status (process-statements $stmts)
                             (case $status
                               ((failed (failed))
-                               ((ok) (ok))))))))))))))))
+                               ((ok) (ok))))))))))))))))))
    (if (== $result ())
        Empty
        (case (car-atom $result)

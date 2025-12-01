@@ -34,6 +34,7 @@
 
     % High-level parsing (complete file -> structured statements)
     parse_mm_file/2,
+    parse_mm_file/3,  % With encoding parameter
 
     % Streaming interface (parse and yield statements one-by-one)
     next_statement/2,  % next_statement(+Tokens, -Result) where Result = [Stmt, Rest] | [end] | [error]
@@ -821,15 +822,21 @@ mm_tokens([]) -->
 %% Statement Parsing (CDTools-style structured output)
 %% ======================================================================
 
-% parse_mm_file(+Filename, -Statements)
+% parse_mm_file(+Filename, +Encoding, -Statements)
 % Read file, tokenize, and parse into structured statements
 % Returns list of MeTTa-friendly lists (not compounds)
-parse_mm_file(Filename, Statements) :-
+% Encoding: unicode (default, ⟨atom⟩ format) | string ("atom" format)
+parse_mm_file(Filename, Encoding, Statements) :-
     tokenize_mm_file(Filename, Tokens),
     phrase(mm_statements(CompoundStmts), Tokens, []),
     validate_frame_balance(CompoundStmts),  % Check with compound form
     validate_semantic_rules(CompoundStmts), % Check semantic rules
-    maplist(compound_to_list, CompoundStmts, Statements).
+    maplist(compound_to_list(Encoding), CompoundStmts, Statements).
+
+% parse_mm_file(+Filename, -Statements)
+% Backward compatibility - defaults to unicode encoding
+parse_mm_file(Filename, Statements) :-
+    parse_mm_file(Filename, unicode, Statements).
 
 % parse_mm_file_compounds(+Filename, -Statements)
 % Same as parse_mm_file but returns Prolog compounds (for generate_petta_verifier)
@@ -1163,23 +1170,33 @@ check_vars_have_active_f(Label, [Sym|Rest], AllVars, FHyps, StmtType) :-
     ),
     check_vars_have_active_f(Label, Rest, AllVars, FHyps, StmtType).
 
-% compound_to_list(+CompoundStmt, -ListStmt)
+% compound_to_list(+Encoding, +CompoundStmt, -ListStmt)
 % Convert Prolog compound to list for MeTTa processing
-% NOTE: Atoms are converted to strings because mmverify-utils expects strings
-compound_to_list(c(Symbols), [c, SymbolsStr]) :- atoms_to_strings(Symbols, SymbolsStr).
-compound_to_list(v(Vars), [v, VarsStr]) :- atoms_to_strings(Vars, VarsStr).
-compound_to_list(f(Label, Type, Var), [f, LabelStr, TypeStr, VarStr]) :-
-    atom_string(Label, LabelStr), atom_string(Type, TypeStr), atom_string(Var, VarStr).
-compound_to_list(e(Label, Type, Math), [e, LabelStr, TypeStr, MathStr]) :-
-    atom_string(Label, LabelStr), atom_string(Type, TypeStr), atoms_to_strings(Math, MathStr).
-compound_to_list(a(Label, Type, Math), [a, LabelStr, TypeStr, MathStr]) :-
-    atom_string(Label, LabelStr), atom_string(Type, TypeStr), atoms_to_strings(Math, MathStr).
+% Encoding: unicode (⟨atom⟩ format) | string ("atom" format)
+compound_to_list(Encoding, c(Symbols), [c, SymbolsEncoded]) :-
+    atoms_to_encoding(Encoding, Symbols, SymbolsEncoded).
+compound_to_list(Encoding, v(Vars), [v, VarsEncoded]) :-
+    atoms_to_encoding(Encoding, Vars, VarsEncoded).
+compound_to_list(Encoding, f(Label, Type, Var), [f, LabelEncoded, TypeEncoded, VarEncoded]) :-
+    atom_to_encoding(Encoding, Label, LabelEncoded),
+    atom_to_encoding(Encoding, Type, TypeEncoded),
+    atom_to_encoding(Encoding, Var, VarEncoded).
+compound_to_list(Encoding, e(Label, Type, Math), [e, LabelEncoded, TypeEncoded, MathEncoded]) :-
+    atom_to_encoding(Encoding, Label, LabelEncoded),
+    atom_to_encoding(Encoding, Type, TypeEncoded),
+    atoms_to_encoding(Encoding, Math, MathEncoded).
+compound_to_list(Encoding, a(Label, Type, Math), [a, LabelEncoded, TypeEncoded, MathEncoded]) :-
+    atom_to_encoding(Encoding, Label, LabelEncoded),
+    atom_to_encoding(Encoding, Type, TypeEncoded),
+    atoms_to_encoding(Encoding, Math, MathEncoded).
 % Normal proof (list of labels)
-compound_to_list(p(Label, Type, Math, Proof), [p, LabelStr, TypeStr, MathStr, ProofStr]) :-
+compound_to_list(Encoding, p(Label, Type, Math, Proof), [p, LabelEncoded, TypeEncoded, MathEncoded, ProofEncoded]) :-
     is_list(Proof),
     !,
-    atom_string(Label, LabelStr), atom_string(Type, TypeStr),
-    atoms_to_strings(Math, MathStr), atoms_to_strings(Proof, ProofStr).
+    atom_to_encoding(Encoding, Label, LabelEncoded),
+    atom_to_encoding(Encoding, Type, TypeEncoded),
+    atoms_to_encoding(Encoding, Math, MathEncoded),
+    atoms_to_encoding(Encoding, Proof, ProofEncoded).
 % Compressed proof: compressed(Labels, Steps) → DAG format for PeTTa
 % Output: [p, Label, Type, Math, [compressed_dag, Labels, DagSteps]]
 % Where DagSteps are semantically-tagged: integers, save, incomplete
@@ -1187,17 +1204,20 @@ compound_to_list(p(Label, Type, Math, Proof), [p, LabelStr, TypeStr, MathStr, Pr
 %   index < NumMandHyps → mandatory hyp
 %   NumMandHyps <= index < NumMandHyps+len(Labels) → Labels[index-NumMandHyps]
 %   index >= NumMandHyps+len(Labels) → saved ref
-compound_to_list(p(Label, Type, Math, compressed(Labels, RawSteps)),
-                 [p, LabelStr, TypeStr, MathStr, [compressed_dag, LabelsStr, DagSteps]]) :-
-    atom_string(Label, LabelStr), atom_string(Type, TypeStr),
-    atoms_to_strings(Math, MathStr),
-    atoms_to_strings(Labels, LabelsStr),
+compound_to_list(Encoding, p(Label, Type, Math, compressed(Labels, RawSteps)),
+                 [p, LabelEncoded, TypeEncoded, MathEncoded, [compressed_dag, LabelsEncoded, DagSteps]]) :-
+    atom_to_encoding(Encoding, Label, LabelEncoded),
+    atom_to_encoding(Encoding, Type, TypeEncoded),
+    atoms_to_encoding(Encoding, Math, MathEncoded),
+    atoms_to_encoding(Encoding, Labels, LabelsEncoded),
     length(Labels, NumLabels),
     % Convert raw steps to DAG format
     raw_steps_to_dag(RawSteps, 0, NumLabels, Labels, DagSteps).
-compound_to_list(d(Vars), [d, VarsStr]) :- atoms_to_strings(Vars, VarsStr).
-compound_to_list(open_frame, [open_frame]).
-compound_to_list(close_frame, [close_frame]).
+compound_to_list(_, d(Vars), [d, VarsEncoded]) :-
+    % Always use unicode for $d variables (they're meta-level)
+    atoms_to_encoding(unicode, Vars, VarsEncoded).
+compound_to_list(_, open_frame, [open_frame]).
+compound_to_list(_, close_frame, [close_frame]).
 
 % atoms_to_strings(+AtomList, -StringList)
 % Convert list of atoms to list of strings
@@ -1205,6 +1225,34 @@ atoms_to_strings([], []).
 atoms_to_strings([H|T], [HS|TS]) :-
     atom_string(H, HS),
     atoms_to_strings(T, TS).
+
+% atoms_to_encoding(+Encoding, +AtomList, -EncodedList)
+% Convert list of atoms using specified encoding
+atoms_to_encoding(string, Atoms, Strings) :-
+    atoms_to_strings(Atoms, Strings).
+atoms_to_encoding(unicode, [], []).
+atoms_to_encoding(unicode, [Atom|Rest], [Unicode|RestEncoded]) :-
+    atom_to_unicode(Atom, Unicode),
+    atoms_to_encoding(unicode, Rest, RestEncoded).
+
+% atom_to_encoding(+Encoding, +Atom, -Encoded)
+% Convert single atom using specified encoding
+atom_to_encoding(string, Atom, String) :-
+    atom_string(Atom, String).
+atom_to_encoding(unicode, Atom, Unicode) :-
+    atom_to_unicode(Atom, Unicode).
+
+% atom_to_unicode(+Atom, -UnicodeAtom)
+% Convert atom to unicode-bracketed atom: 'wff' → ⟨wff⟩
+% Uses Unicode characters U+27E8 (⟨) and U+27E9 (⟩)
+% SPECIAL CASE: '?' is the incomplete proof marker per Metamath spec
+% We keep it as bare '?' symbol for easier matching in PeTTa
+atom_to_unicode('?', '?') :- !.  % Keep ? as-is for incomplete proofs
+atom_to_unicode(Atom, UnicodeAtom) :-
+    atom_codes(Atom, Codes),
+    append([0x27E8], Codes, Temp),        % Prepend ⟨
+    append(Temp, [0x27E9], FullCodes),    % Append ⟩
+    atom_codes(UnicodeAtom, FullCodes).
 
 % Parse multiple statements
 mm_statements([Stmt|Rest]) -->
