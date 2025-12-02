@@ -11,7 +11,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Import Prolog functions for term ordering
-!(import! &self ../../../hyperon/PeTTa/lib/lib_prolog)
+!(import! &self ../../hyperon/PeTTa/lib/lib_prolog)
 !(import_prolog_function @<)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
