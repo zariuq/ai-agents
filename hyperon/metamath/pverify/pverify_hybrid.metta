@@ -27,26 +27,24 @@
 ;;; Process Statements Using decons-atom
 ;;; ==========================================================================
 
-;; filter-errors - Extract Error atoms from results
-(= (filter-errors $results)
-   (if (== (size-atom $results) 0)
-       ()
-       (let ($first $rest) (decons-atom $results)
-         (case $first
-           (((Error $info $msg)
-              (cons-atom $first (filter-errors $rest)))
-            ($_ (filter-errors $rest)))))))
-
-;; process-statements - Process tuple using map-atom (avoids recursion non-determinism)
-;; Returns (ok) or (failed) to indicate success/failure
+;; process-statements - Tail-recursive statement processing with collapse
+;; Errors are handled immediately by handle-proof-result (halts on error)
+;; Uses collapse to force deterministic execution before recursing
+;; This avoids building a massive intermediate tuple for large files
 (= (process-statements $stmts)
-   (let $results (collapse (map-atom $stmts $stmt (process-statement $stmt)))
-     (let $errors (filter-errors (car-atom $results))
-       (if (> (size-atom $errors) 0)
-           (failed)
-           (progn
-             (printif! "=== All statements processed ===")
-             (ok))))))
+   (process-statements-tail $stmts))
+
+;; Base case: empty list
+(= (process-statements-tail ())
+   (progn
+     (printif! "=== All statements processed ===")
+     (ok)))
+
+;; Recursive case: process first with collapse, tail-recurse on rest
+(= (process-statements-tail $stmts)
+   (let ($first $rest) (decons-atom $stmts)
+     (let $_ (collapse (process-statement $first))
+       (process-statements-tail $rest))))  ;; tail call - O(1) space
 
 
 
