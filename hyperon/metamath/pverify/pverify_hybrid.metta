@@ -113,9 +113,8 @@
          (let ($proof $_) (decons-atom $rest4)
            (progn
              (printif! (Processing p: $label))
-             (let $results (collapse (add_p &kb &stack &sp $label (cons-atom $type $math) $proof True))
-               (let $result (if (== (size-atom $results) 0) () (car-atom $results))
-                 (handle-proof-result $result)))))))))
+             (let $result (add_p &kb &stack &sp $label (cons-atom $type $math) $proof True)
+               (handle-proof-result $result))))))))
 
 (= (process-by-tag d $rest)
    (let ($vars $_) (decons-atom $rest)
