@@ -17,3 +17,12 @@ get_env_var_or_default(VarName, Default, Value) :-
 % Set environment variable value and return success
 set_env_var(VarName, Value, ok) :-
     setenv(VarName, Value).
+
+% is_flag_arg(+Arg, -Result)
+% Check if an argument starts with "--"
+% Returns true if it's a flag, false otherwise
+is_flag_arg(Arg, true) :-
+    atom(Arg),
+    atom_codes(Arg, [0'-, 0'-|_]),
+    !.
+is_flag_arg(_, false).

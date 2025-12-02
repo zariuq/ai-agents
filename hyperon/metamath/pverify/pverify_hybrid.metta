@@ -10,11 +10,22 @@
 
 !(import! &self /home/zar/claude/hyperon/metamath/mmverify/mmverify-utils_petta)
 
+;;; get-first-non-flag-arg - Get the first command line argument that doesn't start with --
+;;; Returns Empty if no non-flag arguments found
+(= (get-first-non-flag-arg $idx)
+   (let $arg (get_cmdline_arg $idx)
+     (if (== $arg Empty)
+         Empty
+         ;; Check if arg starts with -- by using Prolog's is_flag_arg
+         (let $is_flag (collapse (is_flag_arg $arg))
+           (if (== (car-atom $is_flag) true)
+               (get-first-non-flag-arg (+ $idx 1))
+               $arg)))))
 
 !(import_prolog_functions_from_file "/home/zar/claude/hyperon/metamath/pverify/mm_primitives.pl"
   (parse_mm_file halt_with_code))
 !(import_prolog_functions_from_file "/home/zar/claude/hyperon/metamath/pverify/env_utils.pl"
-  (get_env_var_or_default))
+  (get_env_var_or_default is_flag_arg))
 
 ;;; Initialize State
 !(bind! &sp (new-state -1))  ; Stack pointer starts at -1 (increments to 0 on first push)
@@ -167,7 +178,7 @@
 ;;; Use collapse to force deterministic execution (avoid running multiple times)
 !(let $result
    (collapse
-     (let $cmdline_arg (get_cmdline_arg 0)
+     (let $cmdline_arg (get-first-non-flag-arg 0)
        (let $input_file (if (== $cmdline_arg Empty)
                             (get_env_var_or_default "MM_INPUT_FILE" "/home/zar/claude/hyperon/metamath/mmverify/tests/demo0.mm")
                             $cmdline_arg)
