@@ -128,58 +128,76 @@ validate_math_symbols([S|Ss]) :-
 %% Compressed Proof Decoding
 %% ======================================================================
 
+% use_dag_format(-UseDag)
+% Check if --compressed-dag flag is present in command line arguments
+% First try environment variable MM_COMPRESSED_DAG, then check Prolog argv
+use_dag_format(UseDag) :-
+    ( getenv('MM_COMPRESSED_DAG', 'true')
+    -> UseDag = true
+    ;  ( current_prolog_flag(argv, Args),
+         member('--compressed-dag', Args)
+      -> UseDag = true
+      ;  UseDag = false
+      )
+    ).
+
 % decode_compressed_proof(+CompressedAtom, -Steps)
 % Decode a compressed proof string like 'ABBCZ...' into a list of integers
 % where:
 %   - Non-negative integers are indices into the label list
-%   - -1 represents Z (save marker)
-%   - ? is preserved as the atom '?' for incomplete proofs
+%   - -1 represents Z (save marker) in classic format
+%   - save represents Z in DAG format
+%   - ? is preserved as the atom '?' in classic format
+%   - incomplete is used for ? in DAG format
 %
 % The encoding uses:
 %   A-T (0-19): base-20 digits that complete a number
 %   U-Y (1-5): base-5 digits that continue accumulating
-%   Z: save marker (-1)
-%   ?: incomplete proof marker (preserved as atom)
+%   Z: save marker (-1 or save atom)
+%   ?: incomplete proof marker ('?' or incomplete atom)
 
 decode_compressed_proof(CompAtom, Steps) :-
+    use_dag_format(UseDag),
     atom_codes(CompAtom, Codes),
-    decode_compressed_codes(Codes, 0, Steps).
+    decode_compressed_codes(Codes, 0, UseDag, Steps).
 
-% decode_compressed_codes(+Codes, +Accumulator, -Steps)
-decode_compressed_codes([], _, []) :- !.
+% decode_compressed_codes(+Codes, +Accumulator, +UseDag, -Steps)
+decode_compressed_codes([], _, _, []) :- !.
 
-% Handle ? (incomplete proof marker) - preserve as atom
-decode_compressed_codes([0'?|Cs], _Acc, ['?'|Rest]) :-
+% Handle ? (incomplete proof marker) - '?' or incomplete atom depending on format
+decode_compressed_codes([0'?|Cs], _Acc, UseDag, [Marker|Rest]) :-
     !,
-    decode_compressed_codes(Cs, 0, Rest).
+    ( UseDag = true -> Marker = incomplete ; Marker = '?' ),
+    decode_compressed_codes(Cs, 0, UseDag, Rest).
 
-% Z = save marker, output -1
-decode_compressed_codes([0'Z|Cs], _Acc, [-1|Rest]) :-
+% Z = save marker, output -1 or save atom depending on format
+decode_compressed_codes([0'Z|Cs], _Acc, UseDag, [Marker|Rest]) :-
     !,
-    decode_compressed_codes(Cs, 0, Rest).
+    ( UseDag = true -> Marker = save ; Marker = -1 ),
+    decode_compressed_codes(Cs, 0, UseDag, Rest).
 
 % A-T (65-84): complete a number = 20*Acc + (C - 65)
-decode_compressed_codes([C|Cs], Acc, [N|Rest]) :-
+decode_compressed_codes([C|Cs], Acc, UseDag, [N|Rest]) :-
     C >= 0'A, C =< 0'T,
     !,
     N is 20 * Acc + C - 0'A,
-    decode_compressed_codes(Cs, 0, Rest).
+    decode_compressed_codes(Cs, 0, UseDag, Rest).
 
 % U-Y (85-89): continue accumulating = 5*Acc + (C - 84)
-decode_compressed_codes([C|Cs], Acc, Steps) :-
+decode_compressed_codes([C|Cs], Acc, UseDag, Steps) :-
     C >= 0'U, C =< 0'Y,
     !,
     NewAcc is 5 * Acc + C - 0'U + 1,
-    decode_compressed_codes(Cs, NewAcc, Steps).
+    decode_compressed_codes(Cs, NewAcc, UseDag, Steps).
 
 % Skip whitespace (spaces, newlines, tabs can appear in compressed proofs)
-decode_compressed_codes([C|Cs], Acc, Steps) :-
+decode_compressed_codes([C|Cs], Acc, UseDag, Steps) :-
     (C == 32 ; C == 10 ; C == 13 ; C == 9),
     !,
-    decode_compressed_codes(Cs, Acc, Steps).
+    decode_compressed_codes(Cs, Acc, UseDag, Steps).
 
 % Unknown character - error
-decode_compressed_codes([C|_], _, _) :-
+decode_compressed_codes([C|_], _, _, _) :-
     format(user_error, 'Error: Invalid character ~c (~w) in compressed proof~n', [C, C]),
     throw(error(invalid_compressed_char(C), _)).
 
@@ -926,11 +944,13 @@ compound_to_list(p(Label, Type, Math, Proof), [p, LabelStr, TypeStr, MathStr, Pr
     !,
     atom_string(Label, LabelStr), atom_string(Type, TypeStr),
     atoms_to_strings(Math, MathStr), atoms_to_strings(Proof, ProofStr).
-% Compressed proof: compressed(Labels, Steps)
+% Compressed proof: compressed(Labels, Steps) or compressed_dag(Labels, Steps)
+% Check environment variable to decide which format to use
 compound_to_list(p(Label, Type, Math, compressed(Labels, Steps)),
-                 [p, LabelStr, TypeStr, MathStr, [compressed, LabelsStr, Steps]]) :-
+                 [p, LabelStr, TypeStr, MathStr, [Format, LabelsStr, Steps]]) :-
     atom_string(Label, LabelStr), atom_string(Type, TypeStr),
-    atoms_to_strings(Math, MathStr), atoms_to_strings(Labels, LabelsStr).
+    atoms_to_strings(Math, MathStr), atoms_to_strings(Labels, LabelsStr),
+    ( use_dag_format(true) -> Format = compressed_dag ; Format = compressed ).
 compound_to_list(d(Vars), [d, VarsStr]) :- atoms_to_strings(Vars, VarsStr).
 compound_to_list(open_frame, [open_frame]).
 compound_to_list(close_frame, [close_frame]).

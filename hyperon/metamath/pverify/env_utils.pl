@@ -12,3 +12,8 @@ get_env_var_or_default(VarName, Default, Value) :-
     -> Value = EnvValue
     ;  Value = Default
     ).
+
+% set_env_var(+VarName, +Value, -Result)
+% Set environment variable value and return success
+set_env_var(VarName, Value, ok) :-
+    setenv(VarName, Value).
