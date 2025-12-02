@@ -27,24 +27,26 @@
 ;;; Process Statements Using decons-atom
 ;;; ==========================================================================
 
-;; process-statements - Tail-recursive statement processing with collapse
-;; Errors are handled immediately by handle-proof-result (halts on error)
-;; Uses collapse to force deterministic execution before recursing
-;; This avoids building a massive intermediate tuple for large files
+;; filter-errors - Extract Error atoms from results
+(= (filter-errors $results)
+   (if (== (size-atom $results) 0)
+       ()
+       (let ($first $rest) (decons-atom $results)
+         (case $first
+           (((Error $info $msg)
+              (cons-atom $first (filter-errors $rest)))
+            ($_ (filter-errors $rest)))))))
+
+;; process-statements - Process tuple using map-atom (avoids recursion non-determinism)
+;; Returns (ok) or (failed) to indicate success/failure
 (= (process-statements $stmts)
-   (process-statements-tail $stmts))
-
-;; Base case: empty list
-(= (process-statements-tail ())
-   (progn
-     (printif! "=== All statements processed ===")
-     (ok)))
-
-;; Recursive case: process first with collapse, tail-recurse on rest
-(= (process-statements-tail $stmts)
-   (let ($first $rest) (decons-atom $stmts)
-     (let $_ (collapse (process-statement $first))
-       (process-statements-tail $rest))))  ;; tail call - O(1) space
+   (let $results (collapse (map-atom $stmts $stmt (process-statement $stmt)))
+     (let $errors (filter-errors (car-atom $results))
+       (if (> (size-atom $errors) 0)
+           (failed)
+           (progn
+             (printif! "=== All statements processed ===")
+             (ok))))))
 
 
 
@@ -157,16 +159,6 @@
 ;;; Main
 ;;; ==========================================================================
 
-;; has-string-flag - check if --string flag is present in command-line args
-;; Returns true if --string found, false otherwise
-(= (has-string-flag $args)
-   (if (== (size-atom $args) 0)
-       false
-       (let ($first $rest) (decons-atom $args)
-         (if (== $first --string)
-             true
-             (has-string-flag $rest)))))
-
 !(printif! "")
 !(printif! "=== Hybrid Prolog+PeTTa Metamath Verifier ===")
 !(printif! "")
@@ -179,11 +171,9 @@
        (let $input_file (if (== $cmdline_arg Empty)
                             (get_env_var_or_default "MM_INPUT_FILE" "/home/zar/claude/hyperon/metamath/mmverify/tests/demo0.mm")
                             $cmdline_arg)
-         (let $encoding (if (has-string-flag (get_cmdline_args)) string unicode)
-           (let true (printif! (concat "  File: " $input_file))
-             (let true (printif! (concat "  Encoding: " $encoding))
-               (let true (printif! "Step 2: Parse file using Prolog...")
-                 (let $stmts_raw (collapse (parse_mm_file $input_file $encoding))
+         (let true (printif! (concat "  File: " $input_file))
+           (let true (printif! "Step 2: Parse file using Prolog...")
+             (let $stmts_raw (collapse (parse_mm_file $input_file))
               (if (== (size-atom $stmts_raw) 0)
                   (progn
                     (println! "")
@@ -196,7 +186,7 @@
                           (let $status (process-statements $stmts)
                             (case $status
                               ((failed (failed))
-                               ((ok) (ok))))))))))))))))))
+                               ((ok) (ok))))))))))))))))
    (if (== $result ())
        Empty
        (case (car-atom $result)

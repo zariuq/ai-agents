@@ -496,117 +496,6 @@
         )
         (if (== $error_list ()) () (car-atom $error_list)))))
 
-;; ============ Compressed DAG Proof Verification ============
-
-;; nth-atom - get nth element from expression (0-indexed)
-(= (nth-atom 0 $expr) (car-atom $expr))
-(= (nth-atom $n $expr)
-   (if (> $n 0)
-       (nth-atom (- $n 1) (cdr-atom $expr))
-       (car-atom $expr)))
-
-;; treat_dag_step - process a single DAG step
-;; $mand_hyps = list of mandatory hypothesis expressions (FHyps first, then EHyps)
-;; $labels = header labels list
-;; $num_mand = number of mandatory hyps
-;; $saved = space for saved expressions (Z refs)
-;; Returns () on success, (Error ...) on failure
-(= (treat_dag_step $kb $stack $sp $step $mand_hyps $labels $num_mand $saved)
-   (case $step
-     ;; save - save current stack top to saved space
-     ((save
-        (let $stack_len (case (collapse (match $stack ((Num $n) $s) $n)) ( ( () 0 ) ( $nums (+ 1 (max-atom $nums))) ))
-          (if (< $stack_len 1)
-              (Error (save) "Stack empty - cannot save")
-              (let $top (case (collapse (match $stack ((Num $n) $s) ($n $s)))
-                          ( ( (($n $s)) $s ) ( () (Error () "Stack read error")) ))
-                (let $save_idx (case (collapse (match $saved ((SaveIdx $i) $_) $i)) ( ( () 0 ) ( ($i) $i )))
-                  (let*
-                    (($_1 (add-atom $saved ((SaveIdx (+ $save_idx 1)))))
-                     ($_2 (add-atom $saved ((Saved $save_idx) $top)))
-                     ($_3 (remove-atom $saved (SaveIdx $save_idx)))
-                    ) ()))))))
-      ;; incomplete - mark proof as incomplete (? marker)
-      (incomplete
-        (Error (incomplete) "Incomplete proof marker found"))
-      ;; numeric index - interpret as mand hyp or label
-      ($idx
-        (if (< $idx $num_mand)
-            ;; Mandatory hypothesis: push onto stack
-            (let $hyp_expr (nth-atom $idx $mand_hyps)
-              (let $stack_len (case (collapse (match $stack ((Num $n) $s) $n)) ( ( () 0 ) ( $nums (+ 1 (max-atom $nums))) ))
-                (add-atom $stack ((Num $stack_len) $hyp_expr))))
-            ;; Label reference: apply assertion
-            (let $label_idx (- $idx $num_mand)
-              (let $num_labels (size-atom $labels)
-                (if (< $label_idx $num_labels)
-                    ;; Apply label from header
-                    (let $label (nth-atom $label_idx $labels)
-                      (let* (($_p (println! (DAG: applying label $label)))
-                            ) (treat_step $kb $stack $sp $label)))
-                    ;; Saved ref: push saved expression
-                    (let $ref_idx (- $label_idx $num_labels)
-                      (let $saved_expr (case (collapse (match $saved ((Saved $ref_idx) $e) $e))
-                                         ( ( ($e) $e ) ( () (Error (ref $ref_idx) "Invalid saved reference")) ))
-                        (if (== (get-metatype $saved_expr) Expression)
-                            (if (== (car-atom $saved_expr) Error)
-                                $saved_expr
-                                (let $stack_len (case (collapse (match $stack ((Num $n) $s) $n)) ( ( () 0 ) ( $nums (+ 1 (max-atom $nums))) ))
-                                  (add-atom $stack ((Num $stack_len) $saved_expr))))
-                            (let $stack_len (case (collapse (match $stack ((Num $n) $s) $n)) ( ( () 0 ) ( $nums (+ 1 (max-atom $nums))) ))
-                              (add-atom $stack ((Num $stack_len) $saved_expr)))))))))))))))
-
-;; treat_dag_step_with_errors - wrapper that records errors
-(= (treat_dag_step_with_errors $kb $stack $sp $step $mand_hyps $labels $num_mand $saved $errors)
-    (let $result (treat_dag_step $kb $stack $sp $step $mand_hyps $labels $num_mand $saved)
-      (case $result
-        (((Error $info $msg)
-           (add-atom $errors (Error $info $msg)))
-         ($_ ())))))
-
-;; treat_compressed_dag_proof - process compressed proof in DAG format
-;; $proof = (compressed_dag (labels...) (steps...))
-;; $mand_hyps = mandatory hypotheses from make_assertion (FHyps ++ EHyps expressions)
-;; Returns () on success, (Error ...) on first failure
-(= (treat_compressed_dag_proof $kb $stack $sp $labels $steps $mand_hyps)
-    (let $errors (new-space)
-      (let $saved (new-space)
-        (let*
-          (
-            ($_0 (println! (DAG Proof: labels= $labels steps= $steps)))
-            ($_1 (empty-space $stack))
-            ($_2 (add-atom $saved (SaveIdx 0)))  ; Initialize save counter
-            ($_3 (collapse (match $kb ((Label $label) FHyp $FSDepth $Data) (add-atom $kb (ActiveHyp $label)))))
-            ($_4 (collapse (match $kb ((Label $label) EHyp $FSDepth $Data) (add-atom $kb (ActiveHyp $label)))))
-            ($num_mand (size-atom $mand_hyps))
-            ($_5 (collapse (map-atom $steps $step
-                    (treat_dag_step_with_errors $kb $stack $sp $step $mand_hyps $labels $num_mand $saved $errors))))
-            ($_6 (remove-patternc $kb (ActiveHyp $_)))
-            ($error_list (collapse (match $errors $e $e)))
-            ($_cleanup1 (delete-space $errors))
-            ($_cleanup2 (delete-space $saved))
-          )
-          (if (== $error_list ()) () (car-atom $error_list))))))
-
-;; verify_compressed_dag - verify compressed DAG proof yields expected conclusion
-(= (verify_compressed_dag $kb $stack $sp $labels $steps $mand_hyps $conclusion)
-    (let $proof_result (treat_compressed_dag_proof $kb $stack $sp $labels $steps $mand_hyps)
-      (case $proof_result
-        (((Error $info $msg)
-           (Error $info $msg))
-         (()
-           (let $stack_expr (collapse (match $stack ((Num $n) $f) $f))
-             (if (== () $stack_expr)
-                 (Error (assertion: $conclusion) "Empty stack at end of proof.")
-                 (if (> (size-atom $stack_expr) 1)
-                     (Error ((assertion: $conclusion) (stack: $stack_expr)) "Stack has more than one entry at end of proof.")
-                     (let $stack_top (car-atom $stack_expr)
-                       (let* (($_print (println! (Comparing: $stack_top "==" $conclusion))))
-                         (if (== $conclusion $stack_top)
-                             (let* (($_success (println! "Correct proof!")))
-                               (success $stack_top))
-                             (Error ((assertion: $conclusion) (stack: $stack_expr)) "Stack entry does not match proved assertion."))))))))))))
-
 ;; verify - verify proof yields expected conclusion (new-space version)
 ;; Returns (Error ...) on failure, stack_top on success
 (= (verify $kb $stack $sp $proof $conclusion)
@@ -630,63 +519,32 @@
                                (success $stack_top))
                              (Error ((assertion: $conclusion) (stack: $stack_expr)) "Stack entry does not match proved assertion."))))))))))))
 
-;; is_compressed_dag - check if proof is in compressed DAG format
-(= (is_compressed_dag $proof)
-   (if (== (get-metatype $proof) Expression)
-       (if (> (size-atom $proof) 0)
-           (== (car-atom $proof) compressed_dag)
-           False)
-       False))
-
-;; concat-exprs - concatenate two expressions
-(= (concat-exprs $e1 $e2)
-   (if (== (size-atom $e1) 0)
-       $e2
-       (cons-atom (car-atom $e1) (concat-exprs (cdr-atom $e1) $e2))))
-
 ;; add_p - add a proof to the knowledge base (new-space version)
-;; Handles both normal proofs and compressed DAG proofs
 (= (add_p $kb $stack $sp $label $stmt $proof $verify_proofs)
   (progn
     (println! "")
     (println! (Verifying conclusion ($label) $stmt with proof $proof))
-    ;; First get assertion data (needed for both verification and KB storage)
-    (let (( (DVars $dvs) (FHyps $f_hyps) (EHyps $e_hyps) (Statement $s) ) (make_assertion $kb $stmt))
-      (progn
-        (println! ("gathered assertion data:" $dvs $f_hyps $e_hyps $stmt))
-        (if $verify_proofs
-            ;; Check if compressed DAG format
-            (if (is_compressed_dag $proof)
-                ;; Compressed DAG proof: (compressed_dag Labels Steps)
-                (let ($_ $labels $steps) (decons-atom (cdr-atom $proof))
-                  (let ($labels_list $rest) (decons-atom (cons-atom $labels $steps))
-                    (let ($steps_list $_2) (decons-atom $rest)
-                      ;; Build mand_hyps = f_hyps ++ e_hyps
-                      (let $mand_hyps (concat-exprs $f_hyps $e_hyps)
-                        (let $verify_results (collapse (verify_compressed_dag $kb $stack $sp $labels_list $steps_list $mand_hyps $stmt))
-                          (let $verify_result (if (== (size-atom $verify_results) 0) () (car-atom $verify_results))
-                            (case $verify_result
-                              (((Error $info $msg)
-                                 (progn
-                                   (println! (PROOF FAILED: $label - $verify_result))
-                                   $verify_result))
-                               ((success $stack_top)
-                                 (progn
-                                   (add-atom $kb ( (Label $label) Proof ( (DVars $dvs) (FHyps $f_hyps) (EHyps $e_hyps) (Statement $stmt) (Type "$p") (ProofSequence $proof) )))
-                                   (ok)))))))))))
-                ;; Normal proof (list of labels)
-                (let $verify_results (collapse (verify $kb $stack $sp $proof $stmt))
-                  (let $verify_result (if (== (size-atom $verify_results) 0) () (car-atom $verify_results))
-                    (case $verify_result
-                      (((Error $info $msg)
-                         (progn
-                           (println! (PROOF FAILED: $label - $verify_result))
-                           $verify_result))
-                       ((success $stack_top)
-                         (progn
-                           (add-atom $kb ( (Label $label) Proof ( (DVars $dvs) (FHyps $f_hyps) (EHyps $e_hyps) (Statement $stmt) (Type "$p") (ProofSequence $proof) )))
-                           (ok))))))))
-            ;; No verification - just add to KB
+    (if $verify_proofs
+        (let $verify_results (collapse (verify $kb $stack $sp $proof $stmt))
+          (let $verify_result (if (== (size-atom $verify_results) 0) () (car-atom $verify_results))
+            (case $verify_result
+              (((Error $info $msg)
+                 (progn
+                   (println! (PROOF FAILED: $label - $verify_result))
+                   $verify_result))
+               ((success $stack_top)
+                 (progn
+                   (println! ("make_assertion" $label - $stmt))
+                   (let (( (DVars $dvs) (FHyps $f_hyps) (EHyps $e_hyps) (Statement $stmt) ) (make_assertion $kb $stmt))
+                     (progn
+                       (println! ("gathered assertion data:" $dvs $f_hyps $e_hyps $stmt))
+                       (add-atom $kb ( (Label $label) Proof ( (DVars $dvs) (FHyps $f_hyps) (EHyps $e_hyps) (Statement $stmt) (Type "$p") (ProofSequence $proof) )))
+                       (ok))))))
+        (progn
+          (println! ("make_assertion" $label - $stmt))
+          (let (( (DVars $dvs) (FHyps $f_hyps) (EHyps $e_hyps) (Statement $stmt) ) (make_assertion $kb $stmt))
             (progn
+              (println! ("gathered assertion data:" $dvs $f_hyps $e_hyps $stmt))
               (add-atom $kb ( (Label $label) Proof ( (DVars $dvs) (FHyps $f_hyps) (EHyps $e_hyps) (Statement $stmt) (Type "$p") (ProofSequence $proof) )))
-              (ok))))))))
+              (ok))))))
+))))
