@@ -860,12 +860,7 @@
                (find-lightest-clause $original $current-min $rest
                                      (append-lists $before (cons-atom $candidate ()))))))))
 
-;; Helper: append two lists
-(= (append-lists $list1 $list2)
-   (if (== $list1 ())
-       $list2
-       (cons-atom (car-atom $list1)
-                  (append-lists (cdr-atom $list1) $list2))))
+;; NOTE: append-lists is defined earlier (line 358) - removed duplicate to prevent non-determinism
 
 ;; === Section 4: Queue Operations ===
 
@@ -891,8 +886,8 @@
 ;; Select clause based on strategy
 (= (select-clause $strategy $queue)
    (case $strategy
-     (((FIFO) (select-clause-fifo $queue))
-      ((WEIGHT) (select-clause-weight $queue))
+     ((FIFO (select-clause-fifo $queue))
+      (WEIGHT (select-clause-weight $queue))
       ($_ (NoClause)))))
 
 ;; Generate all inferences between given clause and processed clauses
@@ -962,6 +957,34 @@
                      (let $filtered (forward-subsume $normalized $acc)
                        (simplify-clauses-helper $rest (cons-atom $normalized $filtered))))))))))
 
+;; Variable renaming: Simple iteration-based approach
+;; Rename all variables in a term by appending iteration number
+(= (rename-term $term $iter)
+   (case $term
+     (((Var $x) (Var (:: $x "_" $iter)))
+      ((Fun $f $args) (Fun $f (rename-terms-list $args $iter)))
+      ($_ $term))))
+
+(= (rename-terms-list $terms $iter)
+   (if (== $terms ())
+       ()
+       (cons-atom (rename-term (car-atom $terms) $iter)
+                  (rename-terms-list (cdr-atom $terms) $iter))))
+
+;; Rename variables in a literal
+(= (rename-literal ((⩳ $t1 $t2) $sign) $iter)
+   ((⩳ (rename-term $t1 $iter) (rename-term $t2 $iter)) $sign))
+
+;; Rename variables in a clause
+(= (rename-clause (Clause $lits) $iter)
+   (Clause (rename-literals-list $lits $iter)))
+
+(= (rename-literals-list $lits $iter)
+   (if (== $lits ())
+       ()
+       (cons-atom (rename-literal (car-atom $lits) $iter)
+                  (rename-literals-list (cdr-atom $lits) $iter))))
+
 ;; Main proving function with iteration limit
 (= (prove $axioms $strategy)
    (prove-with-limit $axioms $strategy 1000))
@@ -979,20 +1002,21 @@
        (Saturated)
        (case (select-clause $strategy $queue)
          (((NoClause) (Saturated))
-          ((Selected $given $remaining)
-           (if (is-empty-clause $given)
-               (UNSAT)
-               (let $new-clauses (generate-inferences $given $processed)
-                 (let $simplified (simplify-clauses $new-clauses)
-                   (if (contains-empty-clause $simplified)
-                       (UNSAT)
-                       (let $new-queue (add-clauses-to-queue $simplified $remaining)
-                         (given-loop $new-queue
-                                     ;; Backward subsumption: add given and remove all clauses it subsumes
-                                     (cons-atom $given (remove-subsumed-by $given $processed))
-                                     $strategy
-                                     (+ $iter 1)
-                                     $max-iters)))))))))))
+          ((Selected $given-orig $remaining)
+           ;; ✅ CRITICAL: Variable renaming (like PyRes freshVarCopy)
+           (let $given (rename-clause $given-orig $iter)
+             (if (is-empty-clause $given)
+                 (UNSAT)
+                 (let $new-clauses (generate-inferences $given $processed)
+                   (let $simplified (simplify-clauses $new-clauses)
+                     (if (contains-empty-clause $simplified)
+                         (UNSAT)
+                         (let $new-queue (add-clauses-to-queue $simplified $remaining)
+                           (given-loop $new-queue
+                                       (cons-atom $given (remove-subsumed-by $given $processed))
+                                       $strategy
+                                       (+ $iter 1)
+                                       $max-iters))))))))))))
 
 ;; Check if a list contains the empty clause
 (= (contains-empty-clause $clauses)
@@ -1002,3 +1026,171 @@
          (if (is-empty-clause $first)
              true
              (contains-empty-clause (cdr-atom $clauses))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Phase 7: Clause Indexing (Space-based Discrimination Trees)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Goal: O(1) average-case retrieval of unification candidates
+;; Approach: Separate spaces for different clause types
+;;
+;; ✅ VERIFIED: new-space works with match in PeTTa when using let bindings!
+;; See examples/spaces4.metta - all tests pass.
+;; NOTE: bind! doesn't work with spaces, but let bindings do!
+;;
+;; Index structure:
+;;   (Index $pos-unit-space $neg-unit-space $nonunit-space)
+;;
+;; Storage format:
+;;   pos-unit-space: Contains (PosUnit $lhs $rhs $clause)
+;;   neg-unit-space: Contains (NegUnit $lhs $rhs $clause)
+;;   nonunit-space:  Contains (NonUnit $clause)
+;;
+;; Based on Zipperposition's fold_unify pattern and PyRes top symbol hashing
+
+;; make-index : -> Index
+;; Creates empty index with three fresh spaces
+(= (make-index)
+   (let $pos-space (new-space)
+     (let $neg-space (new-space)
+       (let $nu-space (new-space)
+         (Index $pos-space $neg-space $nu-space)))))
+
+;; is-index : Index -> Bool
+;; Check if value is an Index
+(= (is-index (Index $pos $neg $nu)) true)
+(= (is-index $_) false)
+
+;; index-add-clause : Index × Clause -> Index
+;; Add clause to appropriate index space based on structure
+
+;; Positive unit clause: single literal with true sign
+(= (index-add-clause (Index $pos-space $neg-space $nu-space)
+                      (Clause (((⩳ $lhs $rhs) true))))
+   (let $_ (add-atom $pos-space (PosUnit $lhs $rhs (Clause (((⩳ $lhs $rhs) true)))))
+     (Index $pos-space $neg-space $nu-space)))
+
+;; Negative unit clause: single literal with false sign
+(= (index-add-clause (Index $pos-space $neg-space $nu-space)
+                      (Clause (((⩳ $lhs $rhs) false))))
+   (let $_ (add-atom $neg-space (NegUnit $lhs $rhs (Clause (((⩳ $lhs $rhs) false)))))
+     (Index $pos-space $neg-space $nu-space)))
+
+;; Non-unit clause: anything else (multiple literals, empty clause, etc.)
+(= (index-add-clause (Index $pos-space $neg-space $nu-space) $clause)
+   (let $_ (add-atom $nu-space (NonUnit $clause))
+     (Index $pos-space $neg-space $nu-space)))
+
+;; index-find-pos-unit : Index × Term -> [Clause]
+;; Find all positive unit clauses with LHS potentially unifiable with query
+;; Uses collapse(match ...) pattern - verified working in PeTTa (examples/spaces4.metta)
+;; NOTE: Current implementation returns ALL positive units (query unused)
+;; TODO Phase 6: Filter by unifiability with query term
+(= (index-find-pos-unit (Index $pos-space $neg-space $nu-space) $query)
+   (collapse (match $pos-space (PosUnit $lhs $rhs $clause) $clause)))
+
+;; index-find-neg-unit : Index × Term -> [Clause]
+;; Find all negative unit clauses with LHS potentially unifiable with query
+;; Uses collapse(match ...) pattern - verified working in PeTTa (examples/spaces4.metta)
+;; NOTE: Current implementation returns ALL negative units (query unused)
+;; TODO Phase 6: Filter by unifiability with query term
+(= (index-find-neg-unit (Index $pos-space $neg-space $nu-space) $query)
+   (collapse (match $neg-space (NegUnit $lhs $rhs $clause) $clause)))
+
+;; index-find-nonunit : Index -> [Clause]
+;; Retrieve all non-unit clauses (no filtering - optimization opportunity)
+(= (index-find-nonunit (Index $pos-space $neg-space $nu-space))
+   (collapse (match $nu-space (NonUnit $clause) $clause)))
+
+;; index-get-all-clauses : Index -> [Clause]
+;; Retrieve ALL clauses from index (for compatibility with current algorithm)
+(= (index-get-all-clauses (Index $pos-space $neg-space $nu-space))
+   (let $pos (collapse (match $pos-space (PosUnit $lhs $rhs $clause) $clause))
+     (let $neg (collapse (match $neg-space (NegUnit $lhs $rhs $clause) $clause))
+       (let $nu (collapse (match $nu-space (NonUnit $clause) $clause))
+         (append-lists $pos (append-lists $neg $nu))))))
+
+;; contains-clause : [Clause] × Clause -> Bool
+;; Check if clause list contains specific clause (structural equality)
+(= (contains-clause () $clause) false)
+(= (contains-clause (cons-atom $c $rest) $clause)
+   (if (== $c $clause)
+       true
+       (contains-clause $rest $clause)))
+
+;; prove-indexed : [Clause] × Strategy -> ProofResult
+;; Main proving loop using indexed inference generation
+(= (prove-indexed $axioms $strategy)
+   (prove-indexed-with-limit $axioms $strategy 1000))
+
+;; Indexed prover with iteration limit
+(= (prove-indexed-with-limit $axioms $strategy $max-iters)
+   (let $simplified-axioms (simplify-clauses $axioms)
+     (if (contains-empty-clause $simplified-axioms)
+         (UNSAT)
+         ;; Build initial index from axioms
+         (let $initial-index (build-index-from-clauses $simplified-axioms (make-index))
+           (given-loop-indexed $simplified-axioms $initial-index $strategy 0 $max-iters)))))
+
+;; Build index from list of clauses
+;; NOTE: Use 'once' to prevent non-deterministic explosion in recursive list processing
+;; (per NON_DETERMINISM_ANALYSIS.md: "Add collapse at specific choice points INSIDE functions")
+(= (build-index-from-clauses $clauses $index)
+   (if (== $clauses ())
+       $index
+       (once (let $first (car-atom $clauses)
+               (let $rest (cdr-atom $clauses)
+                 (let $new-index (index-add-clause $index $first)
+                   (build-index-from-clauses $rest $new-index)))))))
+
+;; Indexed saturation loop (given clause algorithm with index)
+(= (given-loop-indexed $queue $index $strategy $iter $max-iters)
+   (if (>= $iter $max-iters)
+       (Saturated)
+       (case (select-clause $strategy $queue)
+         (((NoClause) (Saturated))
+          ((Selected $given $remaining)
+           (if (is-empty-clause $given)
+               (UNSAT)
+               ;; Use indexed inference generation
+               (let $new-clauses (generate-inferences-indexed $given $index)
+                 (let $simplified (simplify-clauses $new-clauses)
+                   (if (contains-empty-clause $simplified)
+                       (UNSAT)
+                       (let $new-queue (add-clauses-to-queue $simplified $remaining)
+                         ;; Add given clause to index for future inferences
+                         (let $new-index (index-add-clause $index $given)
+                           (given-loop-indexed $new-queue
+                                                $new-index
+                                                $strategy
+                                                (+ $iter 1)
+                                                $max-iters))))))))))))
+
+;; Note: This version does NOT implement backward subsumption removal from index
+;; TODO Phase 6: Add index removal operation for backward subsumption
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Phase 3: Indexed Inference Generation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Replace O(n) linear scan with indexed retrieval
+;; Strategy: Use index to organize clauses by type, reducing search space
+
+;; generate-inferences-indexed : Clause × Index -> [Clause]
+;; Generate all inferences between given clause and clauses in index
+;; Uses index to retrieve organized subsets instead of linear scan
+(= (generate-inferences-indexed $given $index)
+   (let $self-inferences (apply-self-inferences $given)
+     (generate-inferences-with-index $given $index $self-inferences)))
+
+;; Helper: generate inferences using index retrieval
+(= (generate-inferences-with-index $given $index $acc)
+   (let $all-clauses (index-get-all-clauses $index)
+     (generate-inferences-with-list $given $all-clauses $acc)))
+
+;; Note: This version retrieves ALL clauses from index.
+;; Future optimization (Phase 6): Filter by actual unifiability
+;; For now, this gives us:
+;;   1. Organized structure (positive/negative/non-unit separation)
+;;   2. Clean interface for future optimizations
+;;   3. Foundation for top-symbol indexing

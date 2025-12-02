@@ -1,59 +1,40 @@
-{
-  "metadata": {
-    "problem": "Basic resolution test"
-  },
-  "comments": [
-    "Simple propositional test problem for binary resolution",
-    "(p | q) & (~p | r) => (q | r)"
-  ],
-  "formulas": [
-    {
-      "name": "clause1",
-      "role": "axiom",
-      "formula": [
-        "or",
-        [
-          "atom",
-          "p"
-        ],
-        [
-          "atom",
-          "q"
-        ]
-      ]
-    },
-    {
-      "name": "clause2",
-      "role": "axiom",
-      "formula": [
-        "or",
-        [
-          "not",
-          [
-            "atom",
-            "p"
-          ]
-        ],
-        [
-          "atom",
-          "r"
-        ]
-      ]
-    },
-    {
-      "name": "goal",
-      "role": "conjecture",
-      "formula": [
-        "or",
-        [
-          "atom",
-          "q"
-        ],
-        [
-          "atom",
-          "r"
-        ]
-      ]
-    }
-  ]
-}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; TPTP FOF to MeTTa - Generated via S-expression
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;; Nat for depth control
+(: Nat Type)
+(: Z Nat)
+(: S (-> Nat Nat))
+(: fromNumber (-> Number Nat))
+(= (fromNumber $n) (if (<= $n 0) Z (S (fromNumber (- $n 1)))))
+
+;;; Knowledge Base (Facts)
+!(bind! &kb (new-space))
+
+;; clause1
+!(add-atom &kb (or (atom p) (atom q)))
+;; clause2
+!(add-atom &kb (or (not (atom p)) (atom r)))
+
+;;; Rule Base (Inference Rules)
+!(bind! &rb (new-space))
+
+
+;;; Backward Chainer
+(: bc (-> Atom Nat Atom))
+
+;; Base case: match goal against KB
+(= (bc $goal Z)
+   (match &kb $goal $goal))
+
+;; Recursive case: apply rule from RB
+(= (bc $goal (S $k))
+   (match &rb
+     (⊢ $premise $goal)
+     (let $premise (bc $premise $k)
+       $goal)))
+
+;;; Query (Prove the conjecture)
+; Proving: goal
+!(bc (or (atom q) (atom r)) (fromNumber 5))
