@@ -89,7 +89,7 @@
          (let $level (get-state &fd)
            (progn
              (printif! (Processing f: $label $type $var))
-             (add_f &kb $label $type $var $level)))))))
+             (add_f &mork $label $type $var $level)))))))
 
 (= (process-by-tag e $rest)
    (let ($label $rest2) (decons-atom $rest)
@@ -98,7 +98,7 @@
          (let $level (get-state &fd)
            (progn
              (printif! (Processing e: $label))
-             (add_e &kb $label (cons-atom $type $math) $level)))))))
+             (add_e &mork $label (cons-atom $type $math) $level)))))))
 
 (= (process-by-tag a $rest)
    (let ($label $rest2) (decons-atom $rest)
@@ -106,7 +106,7 @@
        (let ($math $_) (decons-atom $rest3)
          (progn
            (printif! (Processing a: $label))
-           (add_a &kb $label (cons-atom $type $math)))))))
+           (add_a &mork $label (cons-atom $type $math)))))))
 
 ;; Helper to handle proof verification result - pattern matching instead of case
 (= (handle-proof-result (Error $info $msg))
@@ -126,7 +126,7 @@
          (let ($proof $_) (decons-atom $rest4)
            (progn
              (printif! (Processing p: $label))
-             (let $result (add_p &kb &stack &sp $label (cons-atom $type $math) $proof True)
+             (let $result (add_p &mork &stack &sp $label (cons-atom $type $math) $proof True)
                (handle-proof-result $result))))))))
 
 (= (process-by-tag d $rest)
@@ -134,7 +134,7 @@
      (let $level (get-state &fd)
        (progn
          (printif! (Processing d statement at level $level))
-         (add_d &kb $vars $level)))))
+         (add_d &mork $vars $level)))))
 
 (= (process-by-tag open_frame $_)
    (progn
@@ -144,7 +144,7 @@
 (= (process-by-tag close_frame $_)
    (progn
      (printif! "Processing }")
-     (pop-frame &kb &fd)))
+     (pop-frame &mork &fd)))
 
 ;; process-c-symbols - Process tuple of c symbols
 (= (process-c-symbols $symbols)
@@ -164,7 +164,7 @@
 
 (= (add_v_wrapper $var)
    (let $level (get-state &fd)
-     (add_v &kb $var $level)))
+     (add_v &mork $var $level)))
 
 ;;; ==========================================================================
 ;;; Main
@@ -206,7 +206,7 @@
 
 !(printif! "")
 !(printif! "Step 4: Close outer frame...")
-!(pop-frame &kb &fd)
+!(pop-frame &mork &fd)
 
 !(println! "")
 !(println! "=== Verification Complete ===")
