@@ -159,12 +159,12 @@
        Empty
        (let ($first $rest) (decons-atom $syms)
          (progn
-           ($func &kb $first)
+           ($func $first)
            (process-symbols $rest $func)))))
 
-(= (add_v_wrapper $kb $var)
+(= (add_v_wrapper $var)
    (let $level (get-state &fd)
-     (add_v $kb $var $level)))
+     (add_v &kb $var $level)))
 
 ;;; ==========================================================================
 ;;; Main
