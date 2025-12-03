@@ -89,7 +89,7 @@
          (let $level (get-state &fd)
            (progn
              (printif! (Processing f: $label $type $var))
-             (add_f &mork $label $type $var $level)))))))
+             (add_f $label $type $var $level)))))))
 
 (= (process-by-tag e $rest)
    (let ($label $rest2) (decons-atom $rest)
@@ -98,7 +98,7 @@
          (let $level (get-state &fd)
            (progn
              (printif! (Processing e: $label))
-             (add_e &mork $label (cons-atom $type $math) $level)))))))
+             (add_e $label (cons-atom $type $math) $level)))))))
 
 (= (process-by-tag a $rest)
    (let ($label $rest2) (decons-atom $rest)
