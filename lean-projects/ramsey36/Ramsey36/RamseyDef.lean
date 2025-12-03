@@ -101,15 +101,3 @@ lemma degree_le_of_triangleFree_no_indep {n k : ℕ} {G : SimpleGraph (Fin n)} [
       rw [isNIndepSet_iff]
       exact ⟨h_s_indep, hs_card⟩
     exact h_no_indep s h_nindep
-
-/-! ## Ramsey Property Extension -/
-
-/-- If R(k,l) = n, then any graph on n vertices has the Ramsey property. -/
-theorem ramsey_of_ramseyNumber_eq {k l n : ℕ} (h : ramseyNumber k l = n) :
-    n > 0 ∧ ∀ (G : SimpleGraph (Fin n)) [DecidableRel G.Adj], HasRamseyProperty k l G := by
-  have h_nonempty : Set.Nonempty {n : ℕ | n > 0 ∧ ∀ (G : SimpleGraph (Fin n)) [DecidableRel G.Adj], HasRamseyProperty k l G} := by
-    sorry -- TODO: Prove from small Ramsey proofs
-  rw [ramseyNumber] at h
-  have h_mem := Nat.sInf_mem h_nonempty
-  rw [h] at h_mem
-  exact h_mem

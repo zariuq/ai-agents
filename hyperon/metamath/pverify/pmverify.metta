@@ -8,7 +8,7 @@
 ;;;
 ;;; mmverify-utils_petta imports lib_he and lib_prolog, so we don't import them here
 
-!(import! &self /home/zar/claude/hyperon/metamath/mmverify/mmverify-utils_pmork)
+!(import! &self ../mmverify/mmverify-utils_pmork)
 
 ;;; get-first-non-flag-arg - Get the first command line argument that doesn't start with --
 ;;; Returns Empty if no non-flag arguments found
@@ -22,9 +22,9 @@
                (get-first-non-flag-arg (+ $idx 1))
                $arg)))))
 
-!(import_prolog_functions_from_file "/home/zar/claude/hyperon/metamath/pverify/mm_primitives.pl"
+!(import_prolog_functions_from_file "../metamath/pverify/mm_primitives.pl"
   (parse_mm_file halt_with_code))
-!(import_prolog_functions_from_file "/home/zar/claude/hyperon/metamath/pverify/env_utils.pl"
+!(import_prolog_functions_from_file "../metamath/pverify/env_utils.pl"
   (get_env_var_or_default is_flag_arg))
 
 ;;; Initialize State
@@ -180,7 +180,7 @@
    (collapse
      (let $cmdline_arg (get-first-non-flag-arg 0)
        (let $input_file (if (== $cmdline_arg Empty)
-                            (get_env_var_or_default "MM_INPUT_FILE" "/home/zar/claude/hyperon/metamath/mmverify/tests/demo0.mm")
+                            (get_env_var_or_default "MM_INPUT_FILE" "../metamath/mmverify/tests/demo0.mm")
                             $cmdline_arg)
          (let true (printif! (concat "  File: " $input_file))
            (let true (printif! "Step 2: Parse file using Prolog...")

@@ -42,29 +42,31 @@ Original implementation using standard MeTTa spaces with O(N) linear scans.
 ### pmverify (MORK-optimized)
 
 ```bash
-cd /home/zar/claude/hyperon/PeTTa
-./run.sh /home/zar/claude/hyperon/metamath/pverify/pmverify.metta /path/to/file.mm --silent
+# From PeTTa directory
+cd ../../PeTTa
+./run.sh ../metamath/pverify/pmverify.metta /path/to/file.mm --silent
 ```
 
 ### pverify_hybrid (baseline)
 
 ```bash
-cd /home/zar/claude/hyperon/PeTTa
-./run.sh /home/zar/claude/hyperon/metamath/pverify/pverify_hybrid.metta /path/to/file.mm --silent
+# From PeTTa directory
+cd ../../PeTTa
+./run.sh ../metamath/pverify/pverify_hybrid.metta /path/to/file.mm --silent
 ```
 
 ### Using the wrapper script
 
 ```bash
-/home/zar/claude/hyperon/metamath/pverify/verify_mm.sh path/to/file.mm
+./verify_mm.sh path/to/file.mm
 ```
 
 ### Using environment variable
 
 ```bash
 export MM_INPUT_FILE="/path/to/file.mm"
-cd /home/zar/claude/hyperon/PeTTa
-./run.sh /home/zar/claude/hyperon/metamath/pverify/pmverify.metta --silent
+cd ../../PeTTa
+./run.sh ../metamath/pverify/pmverify.metta --silent
 ```
 
 ## Testing
@@ -72,7 +74,7 @@ cd /home/zar/claude/hyperon/PeTTa
 Comprehensive test suite in `../metamath-test/`:
 
 ```bash
-cd /home/zar/claude/hyperon/metamath/metamath-test
+cd ../metamath-test
 
 # Test pmverify (MORK-optimized)
 ./run-testsuite-all ./test-pmverify --small-only

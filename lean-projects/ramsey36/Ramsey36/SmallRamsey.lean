@@ -946,7 +946,7 @@ lemma degree_ge_three_of_triangleFree_no_4indep
 
   -- Apply R(3,3)=6 to G_H6
   have h_ramsey_prop : HasRamseyProperty 3 3 G_H6 := by
-    exact (ramsey_of_ramseyNumber_eq ramsey_three_three_proof).2 G_H6
+    exact hasRamseyProperty_3_3_6.2 G_H6
   rcases h_ramsey_prop with ⟨S, hS⟩ | ⟨T, hT⟩
 
   · -- Case 1: G_H6 contains a 3-clique S
@@ -1163,6 +1163,32 @@ theorem hasRamseyProperty_3_5_14 :
   · norm_num
   · intro G inst
     sorry
+
+/-- If `ramseyNumber 3 4 = 9`, then any graph on 9 vertices has the (3,4) Ramsey property. -/
+theorem ramsey_of_ramseyNumber_eq_3_4
+    (h : ramseyNumber 3 4 = 9) :
+    9 > 0 ∧ ∀ (G : SimpleGraph (Fin 9)) [DecidableRel G.Adj], HasRamseyProperty 3 4 G := by
+  have h_nonempty :
+      Set.Nonempty {n : ℕ |
+        n > 0 ∧ ∀ (G : SimpleGraph (Fin n)) [DecidableRel G.Adj],
+          HasRamseyProperty 3 4 G} :=
+    ⟨9, hasRamseyProperty_3_4_9⟩
+  rw [ramseyNumber] at h
+  have h_mem := Nat.sInf_mem h_nonempty
+  simpa [h] using h_mem
+
+/-- If `ramseyNumber 3 5 = 14`, then any graph on 14 vertices has the (3,5) Ramsey property. -/
+theorem ramsey_of_ramseyNumber_eq_3_5
+    (h : ramseyNumber 3 5 = 14) :
+    14 > 0 ∧ ∀ (G : SimpleGraph (Fin 14)) [DecidableRel G.Adj], HasRamseyProperty 3 5 G := by
+  have h_nonempty :
+      Set.Nonempty {n : ℕ |
+        n > 0 ∧ ∀ (G : SimpleGraph (Fin n)) [DecidableRel G.Adj],
+          HasRamseyProperty 3 5 G} :=
+    ⟨14, hasRamseyProperty_3_5_14⟩
+  rw [ramseyNumber] at h
+  have h_mem := Nat.sInf_mem h_nonempty
+  simpa [h] using h_mem
 
 /-! ## Small Ramsey equalities (continued) -/
 

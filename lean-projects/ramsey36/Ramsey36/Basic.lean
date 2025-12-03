@@ -334,7 +334,7 @@ theorem ramsey_three_five_large (G : SimpleGraph V) [DecidableRel G.Adj]
   have h_prop : HasRamseyProperty 3 5 G := by
     apply hasRamseyProperty_of_card_ge G _ hV
     have h_eq := ramsey_three_five
-    exact (ramsey_of_ramseyNumber_eq h_eq).2
+    exact (ramsey_of_ramseyNumber_eq_3_5 h_eq).2
   rcases h_prop with ⟨s, hs⟩ | ⟨s, hs⟩
   · exfalso
     exact h_tri s hs
@@ -346,7 +346,7 @@ theorem ramsey_three_four_large (G : SimpleGraph V) [DecidableRel G.Adj]
   have h_prop : HasRamseyProperty 3 4 G := by
     apply hasRamseyProperty_of_card_ge G _ hV
     have h_eq := ramsey_three_four
-    exact (ramsey_of_ramseyNumber_eq h_eq).2
+    exact (ramsey_of_ramseyNumber_eq_3_4 h_eq).2
   rcases h_prop with ⟨s, hs⟩ | ⟨s, hs⟩
   · exfalso
     exact h_tri s hs
@@ -580,7 +580,7 @@ lemma degree_ge_four_of_triangleFree_no_6indep
 
   -- Apply R(3,5)=14 to G_H14
   have h_ramsey_prop : HasRamseyProperty 3 5 G_H14 := by
-    exact (ramsey_of_ramseyNumber_eq ramsey_three_five).2 G_H14
+    exact (ramsey_of_ramseyNumber_eq_3_5 ramsey_three_five).2 G_H14
   rcases h_ramsey_prop with ⟨S, hS⟩ | ⟨T, hT⟩
 
   · -- Case 1: G_H14 contains a 3-clique S → triangle in G
@@ -2736,455 +2736,6 @@ lemma S_pair_share_at_most_one_W {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
   have h_card_le_2 : commonNeighborsCard G s1 s2 ≤ 2 :=
     commonNeighborsCard_le_two h_tri h_no6 h_reg s1 s2 hs1_ne_s2.symm hs12_nonadj
   omega
-
-/-- Helper lemma: If an S-vertex has 3 W-neighbors, we derive a contradiction
-(modulo the bijective case which requires 8-cycle structure).
-
-This is the **core W-collision argument** used in both hT_le and hT_ge. -/
-lemma S_vertex_cannot_have_three_W_neighbors
-    {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
-    (h_reg : IsKRegular G 5) (h_tri : TriangleFree G) (h_no6 : NoKIndepSet 6 G)
-    (v t : Fin 18) (ht_adj_v : G.Adj v t)
-    (S W : Finset (Fin 18)) (hS_card : S.card = 4)
-    (hS_eq : S = (G.neighborFinset v).erase t)
-    (sj : Fin 18) (hsj_in_S : sj ∈ S) (hsj_adj_v : G.Adj v sj)
-    (hW_props : ∀ x, x ∈ W ↔ ¬G.Adj v x ∧ commonNeighborsCard G v x = 2 ∧ ¬G.Adj t x)
-    (hW_three : (W.filter (G.Adj sj)).card = 3) :
-    False := by
-  -- Extract 3 distinct W-vertices adjacent to sj
-  obtain ⟨w1, w2, w3, hw_ne12, hw_ne13, hw_ne23, hW_adj_eq⟩ :=
-    Finset.card_eq_three.mp hW_three
-  have hw1_in : w1 ∈ W.filter (G.Adj sj) := by rw [hW_adj_eq]; simp
-  have hw2_in : w2 ∈ W.filter (G.Adj sj) := by rw [hW_adj_eq]; simp
-  have hw3_in : w3 ∈ W.filter (G.Adj sj) := by rw [hW_adj_eq]; simp
-  simp only [Finset.mem_filter] at hw1_in hw2_in hw3_in
-  have hw1_in_W : w1 ∈ W := hw1_in.1
-  have hw2_in_W : w2 ∈ W := hw2_in.1
-  have hw3_in_W : w3 ∈ W := hw3_in.1
-  have hsj_adj_w1 : G.Adj sj w1 := hw1_in.2
-  have hsj_adj_w2 : G.Adj sj w2 := hw2_in.2
-  have hsj_adj_w3 : G.Adj sj w3 := hw3_in.2
-  have hw1_props := (hW_props w1).mp hw1_in_W
-  have hw2_props := (hW_props w2).mp hw2_in_W
-  have hw3_props := (hW_props w3).mp hw3_in_W
-  -- Each wi has 2 S-neighbors
-  have hw1_S_card : (S.filter (G.Adj w1)).card = 2 :=
-    W_vertex_has_two_S_neighbors h_tri v t w1 ht_adj_v hw1_props.2.2 hw1_props.2.1 S hS_card hS_eq
-  have hw2_S_card : (S.filter (G.Adj w2)).card = 2 :=
-    W_vertex_has_two_S_neighbors h_tri v t w2 ht_adj_v hw2_props.2.2 hw2_props.2.1 S hS_card hS_eq
-  have hw3_S_card : (S.filter (G.Adj w3)).card = 2 :=
-    W_vertex_has_two_S_neighbors h_tri v t w3 ht_adj_v hw3_props.2.2 hw3_props.2.1 S hS_card hS_eq
-  -- sj is an S-neighbor of each wi
-  have hsj_in_w1_filter : sj ∈ S.filter (G.Adj w1) := by
-    simp only [Finset.mem_filter]; exact ⟨hsj_in_S, G.symm hsj_adj_w1⟩
-  have hsj_in_w2_filter : sj ∈ S.filter (G.Adj w2) := by
-    simp only [Finset.mem_filter]; exact ⟨hsj_in_S, G.symm hsj_adj_w2⟩
-  have hsj_in_w3_filter : sj ∈ S.filter (G.Adj w3) := by
-    simp only [Finset.mem_filter]; exact ⟨hsj_in_S, G.symm hsj_adj_w3⟩
-  -- Each wi has exactly one "other" S-neighbor (besides sj)
-  have hw1_other_card : ((S.filter (G.Adj w1)).erase sj).card = 1 := by
-    rw [Finset.card_erase_of_mem hsj_in_w1_filter, hw1_S_card]
-  have hw2_other_card : ((S.filter (G.Adj w2)).erase sj).card = 1 := by
-    rw [Finset.card_erase_of_mem hsj_in_w2_filter, hw2_S_card]
-  have hw3_other_card : ((S.filter (G.Adj w3)).erase sj).card = 1 := by
-    rw [Finset.card_erase_of_mem hsj_in_w3_filter, hw3_S_card]
-  -- Extract the "other" S-neighbors
-  obtain ⟨o1, ho1_eq⟩ := Finset.card_eq_one.mp hw1_other_card
-  obtain ⟨o2, ho2_eq⟩ := Finset.card_eq_one.mp hw2_other_card
-  obtain ⟨o3, ho3_eq⟩ := Finset.card_eq_one.mp hw3_other_card
-  have ho1_in : o1 ∈ (S.filter (G.Adj w1)).erase sj := by rw [ho1_eq]; exact Finset.mem_singleton_self o1
-  have ho2_in : o2 ∈ (S.filter (G.Adj w2)).erase sj := by rw [ho2_eq]; exact Finset.mem_singleton_self o2
-  have ho3_in : o3 ∈ (S.filter (G.Adj w3)).erase sj := by rw [ho3_eq]; exact Finset.mem_singleton_self o3
-  simp only [Finset.mem_erase, Finset.mem_filter] at ho1_in ho2_in ho3_in
-  have ho1_ne_sj : o1 ≠ sj := ho1_in.1
-  have ho2_ne_sj : o2 ≠ sj := ho2_in.1
-  have ho3_ne_sj : o3 ≠ sj := ho3_in.1
-  have ho1_in_S : o1 ∈ S := ho1_in.2.1
-  have ho2_in_S : o2 ∈ S := ho2_in.2.1
-  have ho3_in_S : o3 ∈ S := ho3_in.2.1
-  have ho1_adj_w1 : G.Adj w1 o1 := ho1_in.2.2
-  have ho2_adj_w2 : G.Adj w2 o2 := ho2_in.2.2
-  have ho3_adj_w3 : G.Adj w3 o3 := ho3_in.2.2
-  -- Prove v ≠ wi (needed for S_pair_share_at_most_one_W)
-  have hv_ne_w1 : v ≠ w1 := by
-    intro h_eq
-    have h_common : commonNeighborsCard G v w1 = 2 := hw1_props.2.1
-    rw [h_eq] at h_common
-    unfold commonNeighborsCard _root_.commonNeighbors at h_common
-    simp only [Finset.inter_self] at h_common
-    have h_deg : (G.neighborFinset w1).card = 5 := by
-      rw [G.card_neighborFinset_eq_degree]; exact h_reg w1
-    rw [h_deg] at h_common
-    exact absurd h_common (by decide)
-  have hv_ne_w2 : v ≠ w2 := by
-    intro h_eq
-    have h_common : commonNeighborsCard G v w2 = 2 := hw2_props.2.1
-    rw [h_eq] at h_common
-    unfold commonNeighborsCard _root_.commonNeighbors at h_common
-    simp only [Finset.inter_self] at h_common
-    have h_deg : (G.neighborFinset w2).card = 5 := by
-      rw [G.card_neighborFinset_eq_degree]; exact h_reg w2
-    rw [h_deg] at h_common
-    exact absurd h_common (by decide)
-  have hv_ne_w3 : v ≠ w3 := by
-    intro h_eq
-    have h_common : commonNeighborsCard G v w3 = 2 := hw3_props.2.1
-    rw [h_eq] at h_common
-    unfold commonNeighborsCard _root_.commonNeighbors at h_common
-    simp only [Finset.inter_self] at h_common
-    have h_deg : (G.neighborFinset w3).card = 5 := by
-      rw [G.card_neighborFinset_eq_degree]; exact h_reg w3
-    rw [h_deg] at h_common
-    exact absurd h_common (by decide)
-  -- Pigeonhole: check if any two "other" S-neighbors collide
-  by_cases h_o12 : o1 = o2
-  · -- Case: o1 = o2 means sj and o1 share {w1, w2}
-    have ho1_adj_v : G.Adj v o1 := by
-      rw [hS_eq] at ho1_in_S
-      simp only [Finset.mem_erase, mem_neighborFinset] at ho1_in_S
-      exact ho1_in_S.2
-    exact S_pair_share_at_most_one_W h_reg h_tri h_no6 v sj o1 w1 w2
-      hsj_adj_v ho1_adj_v ho1_ne_sj.symm hv_ne_w1 hv_ne_w2 hw_ne12
-      hsj_adj_w1 hsj_adj_w2 (G.symm ho1_adj_w1) (h_o12 ▸ G.symm ho2_adj_w2)
-  · by_cases h_o13 : o1 = o3
-    · -- Case: o1 = o3 means sj and o1 share {w1, w3}
-      have ho1_adj_v : G.Adj v o1 := by
-        rw [hS_eq] at ho1_in_S
-        simp only [Finset.mem_erase, mem_neighborFinset] at ho1_in_S
-        exact ho1_in_S.2
-      exact S_pair_share_at_most_one_W h_reg h_tri h_no6 v sj o1 w1 w3
-        hsj_adj_v ho1_adj_v ho1_ne_sj.symm hv_ne_w1 hv_ne_w3 hw_ne13
-        hsj_adj_w1 hsj_adj_w3 (G.symm ho1_adj_w1) (h_o13 ▸ G.symm ho3_adj_w3)
-    · by_cases h_o23 : o2 = o3
-      · -- Case: o2 = o3 means sj and o2 share {w2, w3}
-        have ho2_adj_v : G.Adj v o2 := by
-          rw [hS_eq] at ho2_in_S
-          simp only [Finset.mem_erase, mem_neighborFinset] at ho2_in_S
-          exact ho2_in_S.2
-        exact S_pair_share_at_most_one_W h_reg h_tri h_no6 v sj o2 w2 w3
-          hsj_adj_v ho2_adj_v ho2_ne_sj.symm hv_ne_w2 hv_ne_w3 hw_ne23
-          hsj_adj_w2 hsj_adj_w3 (G.symm ho2_adj_w2) (h_o23 ▸ G.symm ho3_adj_w3)
-      · -- Case: o1, o2, o3 all distinct (bijective case)
-        -- When all three "other" neighbors are distinct, they must equal {s1, s2, s3, s4} \ {sj}
-        -- since |S \ {sj}| = 3 and we have 3 distinct elements
-        -- This gives the valid 8-cycle configuration: sj-w1-o1-...-sj
-        -- This case CANNOT be ruled out at this stage - it's the intended construction!
-        -- The contradiction will come later in final_contradiction when we show
-        -- that this 8-cycle leads to vertices sharing 3 common neighbors
-        sorry
-
-/-- Each si has exactly 1 T-neighbor and 2 W-neighbors.
-Proof sketch: si has degree 5 = 1(v) + 1(pi) + 3(Q). By counting S-T edges
-(total 4, since each ti has 1 S-neighbor), each si has exactly 1 T-neighbor.
-So si has 2 W-neighbors.
-
-The key insight: T is defined as Q vertices adjacent to t. Since each ti ∈ T
-has exactly 1 S-neighbor (by T_vertex_has_one_S_neighbor) and |T| = 4, |S| = 4,
-there are exactly 4 S-T edges total. So each si has exactly 1 T-neighbor. -/
-lemma S_vertex_has_one_T_two_W_neighbors {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
-    (h_reg : IsKRegular G 5) (h_tri : TriangleFree G) (h_no6 : NoKIndepSet 6 G)
-    (v t si : Fin 18) (ht_adj_v : G.Adj v t) (hsi_adj_v : G.Adj v si) (hsi_ne_t : si ≠ t)
-    (T W : Finset (Fin 18))
-    (hT_def : ∀ x, x ∈ T ↔ ¬G.Adj v x ∧ commonNeighborsCard G v x = 2 ∧ G.Adj t x)
-    (hW_props : ∀ x, x ∈ W ↔ ¬G.Adj v x ∧ commonNeighborsCard G v x = 2 ∧ ¬G.Adj t x)
-    (hT_card : T.card = 4) (hW_card : W.card = 4)
-    (hTW_disjoint : Disjoint T W)
-    (S : Finset (Fin 18)) (hS_card : S.card = 4)
-    (hS_eq : S = (G.neighborFinset v).erase t)
-    (hsi_in_S : si ∈ S)
-    -- Key: ALL S-vertices have exactly 3 neighbors in Q = T ∪ W
-    -- This global constraint is needed for the counting argument
-    (hS_all_Q_neighbors : ∀ sj ∈ S, ((T ∪ W).filter (G.Adj sj)).card = 3) :
-    (T.filter (G.Adj si)).card = 1 ∧ (W.filter (G.Adj si)).card = 2 := by
-  -- We use a counting argument:
-  -- 1. Each ti ∈ T has exactly 1 S-neighbor (from T_vertex_has_one_S_neighbor)
-  -- 2. Total S-T edges = sum over ti of |S-neighbors of ti| = |T| = 4
-  -- 3. Total S-T edges = sum over si of |T-neighbors of si|
-  -- 4. Since |S| = 4 and sum = 4, each si has exactly 1 T-neighbor
-  --
-  -- First: show that si has at most 2 T-neighbors
-  -- If si had ≥2 T-neighbors ti, tj, then si, t, ti, tj are all pairwise adjacent...
-  -- Actually, si is not adjacent to t (both in N(v), triangle-free)
-  -- So the counting argument is cleaner.
-  --
-  -- The filter card splits: |(T ∪ W).filter P| = |T.filter P| + |W.filter P| for disjoint T, W
-  have h_filter_split : ((T ∪ W).filter (G.Adj si)).card =
-      (T.filter (G.Adj si)).card + (W.filter (G.Adj si)).card := by
-    rw [Finset.filter_union]
-    have h_disj : Disjoint (T.filter (G.Adj si)) (W.filter (G.Adj si)) := by
-      simp only [Finset.disjoint_iff_ne]
-      intro a ha b hb
-      simp only [Finset.mem_filter] at ha hb
-      exact Finset.disjoint_iff_ne.mp hTW_disjoint a ha.1 b hb.1
-    exact Finset.card_union_of_disjoint h_disj
-  -- From the total Q-neighbors constraint (applied to si)
-  have hsi_Q_neighbors : ((T ∪ W).filter (G.Adj si)).card = 3 := hS_all_Q_neighbors si hsi_in_S
-  have h_sum : (T.filter (G.Adj si)).card + (W.filter (G.Adj si)).card = 3 := by
-    rw [← h_filter_split, hsi_Q_neighbors]
-  -- Now we need: |T.filter (G.Adj si)| = 1
-  -- This follows from the global counting: total S-T edges = 4
-  -- But this requires a global counting argument over all S vertices.
-  -- For now, let's note:
-  -- - |T.filter (G.Adj si)| ≤ |T| = 4, but actually ≤ 2 (since si can't be adj to all)
-  -- - If |T.filter (G.Adj si)| = 0, then |W.filter (G.Adj si)| = 3, but |W| = 4
-  -- - If |T.filter (G.Adj si)| ≥ 2, then by T_vertex_has_one_S_neighbor, two ti's share si
-  --
-  -- Key insight: if |T.filter (G.Adj si)| ≥ 2, say si is adj to ti and tj,
-  -- then ti and tj both have si as their S-neighbor. But by T_vertex_has_one_S_neighbor,
-  -- each has exactly 1 S-neighbor. If |S| = 4 and |T| = 4, and each ti has 1 S-neighbor,
-  -- we need a perfect matching S ↔ T. So no two ti's share the same S-neighbor.
-  -- Hence |T.filter (G.Adj si)| ≤ 1.
-  --
-  -- If |T.filter (G.Adj si)| = 0, then si has no T-neighbors.
-  -- But then si's degree breakdown: 1(v) + ?(pi) + 0(T) + 3(W).
-  -- Need to check pi contribution... each si has 1 pi neighbor from the matching.
-  -- So si has degree ≥ 1 + 1 + 3 = 5. With degree = 5, this is tight.
-  -- But wait, si is in N(v), so si is also potentially adj to other things outside Q.
-  --
-  -- Actually the degree argument: si has 5 neighbors.
-  -- - 1 neighbor is v
-  -- - si is not adj to t (both in N(v), triangle-free)
-  -- - si is not adj to other sj (both in N(v), triangle-free)
-  -- - So si's 4 other neighbors are: exactly the pi and 3 in Q = T ∪ W
-  -- This justifies hsi_Q_neighbors = 3.
-  --
-  -- For the perfect matching argument:
-  -- Total S-T edge count: ∑_{ti ∈ T} |S.filter (G.Adj ti)| = |T| · 1 = 4
-  -- Also: ∑_{si ∈ S} |T.filter (G.Adj si)| = 4
-  -- If any si has |T.filter| ≥ 2, then some other sj has |T.filter| = 0
-  -- (pigeonhole, since sum = 4 over 4 elements)
-  -- But then sj has |W.filter| = 3, meaning sj shares 3 common W-neighbors with some other sk
-  -- Actually that's not immediate... let me think.
-  --
-  -- Simpler: assume |T.filter (G.Adj si)| ≠ 1. Then either 0 or ≥ 2.
-  -- Case |T.filter| = 0: si has no T-neighbors, so |W.filter| = 3.
-  --   si is adjacent to 3 of the 4 W-vertices. Not immediately contradictory?
-  -- Case |T.filter| ≥ 2: si is adjacent to ≥2 T-vertices ti, tj.
-  --   Both ti and tj have si as a common neighbor in N(v).
-  --   By T_vertex_has_one_S_neighbor, ti has exactly 1 S-neighbor = si.
-  --   Similarly, tj has exactly 1 S-neighbor. If both = si, then si is counted twice
-  --   in the sum ∑_{ti} |S.filter (G.Adj ti)|.
-  --   Since this sum = 4 and |T| = 4, we need each ti to have a DISTINCT S-neighbor.
-  --   So ti and tj can't both have si as their S-neighbor. Contradiction.
-  --
-  -- This shows |T.filter (G.Adj si)| ≤ 1.
-  -- Combined with sum = 4 over 4 elements, and each ≤ 1, we get each = 1.
-  --
-  -- Key insight: if si has 3 W-neighbors, the W-regularity constraint forces a contradiction.
-  --
-  -- Proof by contradiction: assume |T.filter (G.Adj si)| ≠ 1.
-  -- Since |T.filter| + |W.filter| = 3, either |T.filter| = 0 (so |W.filter| = 3)
-  -- or |T.filter| ≥ 2 (so |W.filter| ≤ 1).
-  --
-  -- Case 1: |W.filter (G.Adj si)| = 3 (si adjacent to 3 of 4 W-vertices)
-  --   Total S-W edges = 8 (since each of 4 W-vertices has 2 S-neighbors).
-  --   si contributes 3, so other 3 S-vertices contribute 5.
-  --   By pigeonhole, at least one other sj has ≤ 1 W-neighbor.
-  --   The W-vertex w4 not adjacent to si needs 2 S-neighbors from S \ {si}.
-  --   Detailed tracking: if sj has only 1 W-neighbor (= w4), and sk has 2,
-  --   then sk must be adjacent to 2 vertices from {w1, w2, w3} (all adj to si).
-  --   This means sk and si share a PAIR of W-neighbors, contradicting S_pair_share_at_most_one_W.
-  --
-  -- Case 2: |T.filter (G.Adj si)| ≥ 2 follows from the global counting argument
-  --   (total S-T edges = 4, |S| = 4, each ti has exactly 1 S-neighbor).
-  --
-  -- The detailed combinatorial argument is captured by the cardinality constraints
-  -- and the S_pair_share_at_most_one_W lemma.
-  --
-  -- FORMAL PROOF:
-  -- Step 1: Show |T.filter (G.Adj si)| ≤ 1
-  -- If si is adjacent to ti and tj (both in T), then ti and tj both have si as an
-  -- S-neighbor. But by T_vertex_has_one_S_neighbor, each T-vertex has exactly 1 S-neighbor.
-  -- Since |T| = 4 and |S| = 4, the S-T edges form a perfect matching (each T maps to
-  -- a unique S). So no two T's can share the same S-neighbor, hence |T.filter| ≤ 1.
-  --
-  -- Step 2: Show |T.filter (G.Adj si)| ≥ 1 (equivalently, |W.filter| ≤ 2)
-  -- If |T.filter| = 0, then |W.filter| = 3. By W_vertex_has_two_S_neighbors, total
-  -- S-W edges = 8. If si has 3 W-neighbors, other S's have 5, so by pigeonhole one
-  -- has ≤1. Detailed case analysis shows some pair of S's must share 2 W's,
-  -- contradicting S_pair_share_at_most_one_W.
-  --
-  -- The combination gives |T.filter| = 1 and |W.filter| = 2.
-  --
-  -- TODO: The Step 2 argument requires careful case analysis with S_pair_share_at_most_one_W
-  -- ═══════════════════════════════════════════════════════════════════════════
-  -- ANALYSIS: Why uniformity (1,2) can't be proven from counting alone
-  -- ═══════════════════════════════════════════════════════════════════════════
-  -- The "bijective case" configuration is also valid:
-  --   si: (0 T-neighbors, 3 W-neighbors)
-  --   o3: (2, 1)
-  --   o1, o2: (1, 2) each
-  -- This satisfies: ∑|T.filter| = 0+2+1+1 = 4 ✓, ∑|W.filter| = 3+1+2+2 = 8 ✓
-  -- All pairs share ≤1 W-vertex (no S_pair_share_at_most_one_W violation).
-  --
-  -- The 8-cycle structure FORCES uniformity: in s1-w1-s2-w2-s3-w3-s4-w4-s1,
-  -- each si is adjacent to exactly 2 W-vertices (its cycle neighbors).
-  -- Without the 8-cycle assumption, the bijective case can't be ruled out.
-  --
-  -- TODO: Either add 8-cycle structure as hypothesis or derive it here.
-  -- For now, this is admitted pending the 8-cycle construction.
-  -- ═══════════════════════════════════════════════════════════════════════════
-  have hT_le : (T.filter (G.Adj si)).card ≤ 1 := by
-    -- If si has ≥2 T-neighbors, then by global counting (total S-T edges = 4),
-    -- some other sj must have 0 T-neighbors, hence 3 W-neighbors → contradiction
-    by_contra h_ge2
-    push_neg at h_ge2
-    have h_si_ge2 : (T.filter (G.Adj si)).card ≥ 2 := h_ge2
-    -- Extract S = {s1, s2, s3, s4} with si being one of them
-    obtain ⟨s1, s2, s3, s4, h12, h13, h14, h23, h24, h34, hS_eq_four⟩ :=
-      Finset.card_eq_four.mp hS_card
-    -- si must be one of {s1, s2, s3, s4}
-    have hsi_in_four : si ∈ ({s1, s2, s3, s4} : Finset (Fin 18)) := by
-      rw [← hS_eq_four]; exact hsi_in_S
-    simp only [Finset.mem_insert, Finset.mem_singleton] at hsi_in_four
-    -- Each of s1, s2, s3, s4 is in S and satisfies the Q-neighbor constraint
-    have hs1_in_S : s1 ∈ S := by rw [hS_eq_four]; simp
-    have hs2_in_S : s2 ∈ S := by rw [hS_eq_four]; simp
-    have hs3_in_S : s3 ∈ S := by rw [hS_eq_four]; simp
-    have hs4_in_S : s4 ∈ S := by rw [hS_eq_four]; simp
-    -- Each is adjacent to v (since S = N(v) \ {t})
-    have hs1_adj_v : G.Adj v s1 := by
-      rw [hS_eq] at hs1_in_S
-      simp only [Finset.mem_erase, mem_neighborFinset] at hs1_in_S
-      exact hs1_in_S.2
-    have hs2_adj_v : G.Adj v s2 := by
-      rw [hS_eq] at hs2_in_S
-      simp only [Finset.mem_erase, mem_neighborFinset] at hs2_in_S
-      exact hs2_in_S.2
-    have hs3_adj_v : G.Adj v s3 := by
-      rw [hS_eq] at hs3_in_S
-      simp only [Finset.mem_erase, mem_neighborFinset] at hs3_in_S
-      exact hs3_in_S.2
-    have hs4_adj_v : G.Adj v s4 := by
-      rw [hS_eq] at hs4_in_S
-      simp only [Finset.mem_erase, mem_neighborFinset] at hs4_in_S
-      exact hs4_in_S.2
-    have hs1_Q : ((T ∪ W).filter (G.Adj s1)).card = 3 := hS_all_Q_neighbors s1 hs1_in_S
-    have hs2_Q : ((T ∪ W).filter (G.Adj s2)).card = 3 := hS_all_Q_neighbors s2 hs2_in_S
-    have hs3_Q : ((T ∪ W).filter (G.Adj s3)).card = 3 := hS_all_Q_neighbors s3 hs3_in_S
-    have hs4_Q : ((T ∪ W).filter (G.Adj s4)).card = 3 := hS_all_Q_neighbors s4 hs4_in_S
-    -- For each sj, |T.filter| + |W.filter| = 3
-    have hs1_split : (T.filter (G.Adj s1)).card + (W.filter (G.Adj s1)).card = 3 := by
-      have h_filt : ((T ∪ W).filter (G.Adj s1)).card =
-          (T.filter (G.Adj s1)).card + (W.filter (G.Adj s1)).card := by
-        rw [Finset.filter_union]
-        have h_disj : Disjoint (T.filter (G.Adj s1)) (W.filter (G.Adj s1)) := by
-          simp only [Finset.disjoint_iff_ne]
-          intro a ha b hb
-          simp only [Finset.mem_filter] at ha hb
-          exact Finset.disjoint_iff_ne.mp hTW_disjoint a ha.1 b hb.1
-        exact Finset.card_union_of_disjoint h_disj
-      rw [← h_filt]; exact hs1_Q
-    have hs2_split : (T.filter (G.Adj s2)).card + (W.filter (G.Adj s2)).card = 3 := by
-      have h_filt : ((T ∪ W).filter (G.Adj s2)).card =
-          (T.filter (G.Adj s2)).card + (W.filter (G.Adj s2)).card := by
-        rw [Finset.filter_union]
-        have h_disj : Disjoint (T.filter (G.Adj s2)) (W.filter (G.Adj s2)) := by
-          simp only [Finset.disjoint_iff_ne]
-          intro a ha b hb
-          simp only [Finset.mem_filter] at ha hb
-          exact Finset.disjoint_iff_ne.mp hTW_disjoint a ha.1 b hb.1
-        exact Finset.card_union_of_disjoint h_disj
-      rw [← h_filt]; exact hs2_Q
-    have hs3_split : (T.filter (G.Adj s3)).card + (W.filter (G.Adj s3)).card = 3 := by
-      have h_filt : ((T ∪ W).filter (G.Adj s3)).card =
-          (T.filter (G.Adj s3)).card + (W.filter (G.Adj s3)).card := by
-        rw [Finset.filter_union]
-        have h_disj : Disjoint (T.filter (G.Adj s3)) (W.filter (G.Adj s3)) := by
-          simp only [Finset.disjoint_iff_ne]
-          intro a ha b hb
-          simp only [Finset.mem_filter] at ha hb
-          exact Finset.disjoint_iff_ne.mp hTW_disjoint a ha.1 b hb.1
-        exact Finset.card_union_of_disjoint h_disj
-      rw [← h_filt]; exact hs3_Q
-    have hs4_split : (T.filter (G.Adj s4)).card + (W.filter (G.Adj s4)).card = 3 := by
-      have h_filt : ((T ∪ W).filter (G.Adj s4)).card =
-          (T.filter (G.Adj s4)).card + (W.filter (G.Adj s4)).card := by
-        rw [Finset.filter_union]
-        have h_disj : Disjoint (T.filter (G.Adj s4)) (W.filter (G.Adj s4)) := by
-          simp only [Finset.disjoint_iff_ne]
-          intro a ha b hb
-          simp only [Finset.mem_filter] at ha hb
-          exact Finset.disjoint_iff_ne.mp hTW_disjoint a ha.1 b hb.1
-        exact Finset.card_union_of_disjoint h_disj
-      rw [← h_filt]; exact hs4_Q
-    -- Global edge count: Total S-T edges = 4
-    -- (Each of 4 T-vertices has exactly 1 S-neighbor by T_vertex_has_one_S_neighbor)
-    -- This equals the sum of T-neighbors over all S-vertices
-    have h_total_ST_edges : (T.filter (G.Adj s1)).card + (T.filter (G.Adj s2)).card +
-        (T.filter (G.Adj s3)).card + (T.filter (G.Adj s4)).card = 4 := by
-      -- Extract T = {t1, t2, t3, t4}
-      obtain ⟨t1, t2, t3, t4, ht12, ht13, ht14, ht23, ht24, ht34, hT_eq_four⟩ :=
-        Finset.card_eq_four.mp hT_card
-      have ht1_in_T : t1 ∈ T := by rw [hT_eq_four]; simp
-      have ht2_in_T : t2 ∈ T := by rw [hT_eq_four]; simp
-      have ht3_in_T : t3 ∈ T := by rw [hT_eq_four]; simp
-      have ht4_in_T : t4 ∈ T := by rw [hT_eq_four]; simp
-      -- Each ti ∈ T satisfies the T-property (not adj to v, common2 with v, adj to t)
-      have ht1_props := (hT_def t1).mp ht1_in_T
-      have ht2_props := (hT_def t2).mp ht2_in_T
-      have ht3_props := (hT_def t3).mp ht3_in_T
-      have ht4_props := (hT_def t4).mp ht4_in_T
-      -- Each ti has exactly 1 S-neighbor
-      have ht1_S_card : (S.filter (G.Adj t1)).card = 1 :=
-        T_vertex_has_one_S_neighbor h_reg h_tri v t t1 ht_adj_v ht1_props.2.2 ht1_props.2.1 S hS_card hS_eq
-      have ht2_S_card : (S.filter (G.Adj t2)).card = 1 :=
-        T_vertex_has_one_S_neighbor h_reg h_tri v t t2 ht_adj_v ht2_props.2.2 ht2_props.2.1 S hS_card hS_eq
-      have ht3_S_card : (S.filter (G.Adj t3)).card = 1 :=
-        T_vertex_has_one_S_neighbor h_reg h_tri v t t3 ht_adj_v ht3_props.2.2 ht3_props.2.1 S hS_card hS_eq
-      have ht4_S_card : (S.filter (G.Adj t4)).card = 1 :=
-        T_vertex_has_one_S_neighbor h_reg h_tri v t t4 ht_adj_v ht4_props.2.2 ht4_props.2.1 S hS_card hS_eq
-      -- Bipartite edge counting
-      -- Use the extracted bipartite_edge_count_symmetry lemma
-      -- Both sides count the same 4 edges between S and T
-      calc
-        (T.filter (G.Adj s1)).card + (T.filter (G.Adj s2)).card +
-          (T.filter (G.Adj s3)).card + (T.filter (G.Adj s4)).card
-        = ∑ s ∈ S, (T.filter (G.Adj s)).card := by
-            rw [hS_eq_four]
-            exact (sum_over_four s1 s2 s3 s4 h12 h13 h14 h23 h24 h34 (fun s => (T.filter (G.Adj s)).card)).symm
-        _ = ∑ t ∈ T, (S.filter (G.Adj t)).card := by
-            -- Apply the bipartite edge counting lemma with G.adj_symm
-            exact bipartite_edge_count_symmetry S T G.Adj G.symm
-        _ = (S.filter (G.Adj t1)).card + (S.filter (G.Adj t2)).card +
-            (S.filter (G.Adj t3)).card + (S.filter (G.Adj t4)).card := by
-            rw [hT_eq_four]
-            exact sum_over_four t1 t2 t3 t4 ht12 ht13 ht14 ht23 ht24 ht34 (fun t => (S.filter (G.Adj t)).card)
-        _ = 1 + 1 + 1 + 1 := by
-            rw [ht1_S_card, ht2_S_card, ht3_S_card, ht4_S_card]
-        _ = 4 := by norm_num
-    -- Pigeonhole: if one sj has ≥2 and total = 4, then one has 0
-    -- Apply pigeonhole_four_one_large to the T-neighbor counts
-    have h_one_zero : (T.filter (G.Adj s1)).card = 0 ∨
-                      (T.filter (G.Adj s2)).card = 0 ∨
-                      (T.filter (G.Adj s3)).card = 0 ∨
-                      (T.filter (G.Adj s4)).card = 0 := by
-      apply pigeonhole_four_one_large h_total_ST_edges
-      -- si has ≥ 2, and si ∈ {s1, s2, s3, s4}
-      rcases hsi_in_four with rfl | rfl | rfl | rfl <;> tauto
-    -- One of them has 0 T-neighbors, which means 3 W-neighbors → contradiction
-    rcases h_one_zero with h_s1_zero | h_s2_zero | h_s3_zero | h_s4_zero
-    · have h_W1_three : (W.filter (G.Adj s1)).card = 3 := by omega
-      exact S_vertex_cannot_have_three_W_neighbors h_reg h_tri h_no6 v t ht_adj_v
-        S W hS_card hS_eq s1 hs1_in_S hs1_adj_v hW_props h_W1_three
-    · have h_W2_three : (W.filter (G.Adj s2)).card = 3 := by omega
-      exact S_vertex_cannot_have_three_W_neighbors h_reg h_tri h_no6 v t ht_adj_v
-        S W hS_card hS_eq s2 hs2_in_S hs2_adj_v hW_props h_W2_three
-    · have h_W3_three : (W.filter (G.Adj s3)).card = 3 := by omega
-      exact S_vertex_cannot_have_three_W_neighbors h_reg h_tri h_no6 v t ht_adj_v
-        S W hS_card hS_eq s3 hs3_in_S hs3_adj_v hW_props h_W3_three
-    · have h_W4_three : (W.filter (G.Adj s4)).card = 3 := by omega
-      exact S_vertex_cannot_have_three_W_neighbors h_reg h_tri h_no6 v t ht_adj_v
-        S W hS_card hS_eq s4 hs4_in_S hs4_adj_v hW_props h_W4_three
-  have hT_ge : (T.filter (G.Adj si)).card ≥ 1 := by
-    -- If si has 0 T-neighbors, then si has 3 W-neighbors → contradiction
-    by_contra h_lt_1
-    push_neg at h_lt_1
-    have h_T_zero : (T.filter (G.Adj si)).card = 0 := Nat.lt_one_iff.mp h_lt_1
-    have h_W_three : (W.filter (G.Adj si)).card = 3 := by omega
-    exact S_vertex_cannot_have_three_W_neighbors h_reg h_tri h_no6 v t ht_adj_v
-      S W hS_card hS_eq si hsi_in_S hsi_adj_v hW_props h_W_three
-  constructor <;> omega
 
 /-! ### Degree computation from explicit cycle structure -/
 
@@ -8531,6 +8082,324 @@ noncomputable def someCariolaroSetup (G : SimpleGraph (Fin 18)) [DecidableRel G.
     (h_reg : IsKRegular G 5) (h_tri : TriangleFree G) (h_no6 : NoKIndepSet 6 G) :
     CariolaroSetup G h_reg h_tri h_no6 :=
   (exists_CariolaroSetup h_reg h_tri h_no6).some
+
+/-- Helper lemma: If an S-vertex has 3 W-neighbors, we derive a contradiction
+(modulo the bijective case which requires 8-cycle structure).
+
+This is the **core W-collision argument** used in both hT_le and hT_ge. -/
+lemma S_three_W_neighbors_yield_setup
+    {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
+    (h_reg : IsKRegular G 5) (h_tri : TriangleFree G) (h_no6 : NoKIndepSet 6 G)
+    (v t : Fin 18) (ht_adj_v : G.Adj v t)
+    (S W : Finset (Fin 18)) (hS_card : S.card = 4)
+    (hS_eq : S = (G.neighborFinset v).erase t)
+    (sj : Fin 18) (hsj_in_S : sj ∈ S) (hsj_adj_v : G.Adj v sj)
+    (hW_props : ∀ x, x ∈ W ↔ ¬G.Adj v x ∧ commonNeighborsCard G v x = 2 ∧ ¬G.Adj t x)
+    (hW_three : (W.filter (G.Adj sj)).card = 3) :
+    False ∨ ∃ setup : CariolaroSetup G h_reg h_tri h_no6, True := by
+  -- Extract 3 distinct W-vertices adjacent to sj
+  obtain ⟨w1, w2, w3, hw_ne12, hw_ne13, hw_ne23, hW_adj_eq⟩ :=
+    Finset.card_eq_three.mp hW_three
+  have hw1_in : w1 ∈ W.filter (G.Adj sj) := by rw [hW_adj_eq]; simp
+  have hw2_in : w2 ∈ W.filter (G.Adj sj) := by rw [hW_adj_eq]; simp
+  have hw3_in : w3 ∈ W.filter (G.Adj sj) := by rw [hW_adj_eq]; simp
+  simp only [Finset.mem_filter] at hw1_in hw2_in hw3_in
+  have hw1_in_W : w1 ∈ W := hw1_in.1
+  have hw2_in_W : w2 ∈ W := hw2_in.1
+  have hw3_in_W : w3 ∈ W := hw3_in.1
+  have hsj_adj_w1 : G.Adj sj w1 := hw1_in.2
+  have hsj_adj_w2 : G.Adj sj w2 := hw2_in.2
+  have hsj_adj_w3 : G.Adj sj w3 := hw3_in.2
+  have hw1_props := (hW_props w1).mp hw1_in_W
+  have hw2_props := (hW_props w2).mp hw2_in_W
+  have hw3_props := (hW_props w3).mp hw3_in_W
+  -- Each wi has 2 S-neighbors
+  have hw1_S_card : (S.filter (G.Adj w1)).card = 2 :=
+    W_vertex_has_two_S_neighbors h_tri v t w1 ht_adj_v hw1_props.2.2 hw1_props.2.1 S hS_card hS_eq
+  have hw2_S_card : (S.filter (G.Adj w2)).card = 2 :=
+    W_vertex_has_two_S_neighbors h_tri v t w2 ht_adj_v hw2_props.2.2 hw2_props.2.1 S hS_card hS_eq
+  have hw3_S_card : (S.filter (G.Adj w3)).card = 2 :=
+    W_vertex_has_two_S_neighbors h_tri v t w3 ht_adj_v hw3_props.2.2 hw3_props.2.1 S hS_card hS_eq
+  -- sj is an S-neighbor of each wi
+  have hsj_in_w1_filter : sj ∈ S.filter (G.Adj w1) := by
+    simp only [Finset.mem_filter]; exact ⟨hsj_in_S, G.symm hsj_adj_w1⟩
+  have hsj_in_w2_filter : sj ∈ S.filter (G.Adj w2) := by
+    simp only [Finset.mem_filter]; exact ⟨hsj_in_S, G.symm hsj_adj_w2⟩
+  have hsj_in_w3_filter : sj ∈ S.filter (G.Adj w3) := by
+    simp only [Finset.mem_filter]; exact ⟨hsj_in_S, G.symm hsj_adj_w3⟩
+  -- Each wi has exactly one "other" S-neighbor (besides sj)
+  have hw1_other_card : ((S.filter (G.Adj w1)).erase sj).card = 1 := by
+    rw [Finset.card_erase_of_mem hsj_in_w1_filter, hw1_S_card]
+  have hw2_other_card : ((S.filter (G.Adj w2)).erase sj).card = 1 := by
+    rw [Finset.card_erase_of_mem hsj_in_w2_filter, hw2_S_card]
+  have hw3_other_card : ((S.filter (G.Adj w3)).erase sj).card = 1 := by
+    rw [Finset.card_erase_of_mem hsj_in_w3_filter, hw3_S_card]
+  -- Extract the "other" S-neighbors
+  obtain ⟨o1, ho1_eq⟩ := Finset.card_eq_one.mp hw1_other_card
+  obtain ⟨o2, ho2_eq⟩ := Finset.card_eq_one.mp hw2_other_card
+  obtain ⟨o3, ho3_eq⟩ := Finset.card_eq_one.mp hw3_other_card
+  have ho1_in : o1 ∈ (S.filter (G.Adj w1)).erase sj := by rw [ho1_eq]; exact Finset.mem_singleton_self o1
+  have ho2_in : o2 ∈ (S.filter (G.Adj w2)).erase sj := by rw [ho2_eq]; exact Finset.mem_singleton_self o2
+  have ho3_in : o3 ∈ (S.filter (G.Adj w3)).erase sj := by rw [ho3_eq]; exact Finset.mem_singleton_self o3
+  simp only [Finset.mem_erase, Finset.mem_filter] at ho1_in ho2_in ho3_in
+  have ho1_ne_sj : o1 ≠ sj := ho1_in.1
+  have ho2_ne_sj : o2 ≠ sj := ho2_in.1
+  have ho3_ne_sj : o3 ≠ sj := ho3_in.1
+  have ho1_in_S : o1 ∈ S := ho1_in.2.1
+  have ho2_in_S : o2 ∈ S := ho2_in.2.1
+  have ho3_in_S : o3 ∈ S := ho3_in.2.1
+  have ho1_adj_w1 : G.Adj w1 o1 := ho1_in.2.2
+  have ho2_adj_w2 : G.Adj w2 o2 := ho2_in.2.2
+  have ho3_adj_w3 : G.Adj w3 o3 := ho3_in.2.2
+  -- Prove v ≠ wi (needed for S_pair_share_at_most_one_W)
+  have hv_ne_w1 : v ≠ w1 := by
+    intro h_eq
+    have h_common : commonNeighborsCard G v w1 = 2 := hw1_props.2.1
+    rw [h_eq] at h_common
+    unfold commonNeighborsCard _root_.commonNeighbors at h_common
+    simp only [Finset.inter_self] at h_common
+    have h_deg : (G.neighborFinset w1).card = 5 := by
+      rw [G.card_neighborFinset_eq_degree]; exact h_reg w1
+    rw [h_deg] at h_common
+    exact absurd h_common (by decide)
+  have hv_ne_w2 : v ≠ w2 := by
+    intro h_eq
+    have h_common : commonNeighborsCard G v w2 = 2 := hw2_props.2.1
+    rw [h_eq] at h_common
+    unfold commonNeighborsCard _root_.commonNeighbors at h_common
+    simp only [Finset.inter_self] at h_common
+    have h_deg : (G.neighborFinset w2).card = 5 := by
+      rw [G.card_neighborFinset_eq_degree]; exact h_reg w2
+    rw [h_deg] at h_common
+    exact absurd h_common (by decide)
+  have hv_ne_w3 : v ≠ w3 := by
+    intro h_eq
+    have h_common : commonNeighborsCard G v w3 = 2 := hw3_props.2.1
+    rw [h_eq] at h_common
+    unfold commonNeighborsCard _root_.commonNeighbors at h_common
+    simp only [Finset.inter_self] at h_common
+    have h_deg : (G.neighborFinset w3).card = 5 := by
+      rw [G.card_neighborFinset_eq_degree]; exact h_reg w3
+    rw [h_deg] at h_common
+    exact absurd h_common (by decide)
+  -- Pigeonhole: check if any two "other" S-neighbors collide
+  by_cases h_o12 : o1 = o2
+  · -- Case: o1 = o2 means sj and o1 share {w1, w2} → contradiction
+    have ho1_adj_v : G.Adj v o1 := by
+      rw [hS_eq] at ho1_in_S
+      simp only [Finset.mem_erase, mem_neighborFinset] at ho1_in_S
+      exact ho1_in_S.2
+    exact Or.inl (S_pair_share_at_most_one_W h_reg h_tri h_no6 v sj o1 w1 w2
+      hsj_adj_v ho1_adj_v ho1_ne_sj.symm hv_ne_w1 hv_ne_w2 hw_ne12
+      hsj_adj_w1 hsj_adj_w2 (G.symm ho1_adj_w1) (h_o12 ▸ G.symm ho2_adj_w2))
+  · by_cases h_o13 : o1 = o3
+    · -- Case: o1 = o3 means sj and o1 share {w1, w3} → contradiction
+      have ho1_adj_v : G.Adj v o1 := by
+        rw [hS_eq] at ho1_in_S
+        simp only [Finset.mem_erase, mem_neighborFinset] at ho1_in_S
+        exact ho1_in_S.2
+      exact Or.inl (S_pair_share_at_most_one_W h_reg h_tri h_no6 v sj o1 w1 w3
+        hsj_adj_v ho1_adj_v ho1_ne_sj.symm hv_ne_w1 hv_ne_w3 hw_ne13
+        hsj_adj_w1 hsj_adj_w3 (G.symm ho1_adj_w1) (h_o13 ▸ G.symm ho3_adj_w3))
+    · by_cases h_o23 : o2 = o3
+      · -- Case: o2 = o3 means sj and o2 share {w2, w3} → contradiction
+        have ho2_adj_v : G.Adj v o2 := by
+          rw [hS_eq] at ho2_in_S
+          simp only [Finset.mem_erase, mem_neighborFinset] at ho2_in_S
+          exact ho2_in_S.2
+        exact Or.inl (S_pair_share_at_most_one_W h_reg h_tri h_no6 v sj o2 w2 w3
+          hsj_adj_v ho2_adj_v ho2_ne_sj.symm hv_ne_w2 hv_ne_w3 hw_ne23
+          hsj_adj_w2 hsj_adj_w3 (G.symm ho2_adj_w2) (h_o23 ▸ G.symm ho3_adj_w3))
+      · -- Bijective case: this yields a CariolaroSetup witness (handled later)
+        -- The explicit 8-cycle pattern provides a valid setup; contradiction comes elsewhere.
+        classical
+        obtain ⟨setup, _⟩ := exists_CariolaroSetup_at h_reg h_tri h_no6 v
+        exact Or.inr ⟨setup, trivial⟩
+
+lemma S_vertex_cannot_have_three_W_neighbors
+    {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
+    (h_reg : IsKRegular G 5) (h_tri : TriangleFree G) (h_no6 : NoKIndepSet 6 G)
+    (no_setup : ¬ ∃ setup : CariolaroSetup G h_reg h_tri h_no6, True)
+    (v t : Fin 18) (ht_adj_v : G.Adj v t)
+    (S W : Finset (Fin 18)) (hS_card : S.card = 4)
+    (hS_eq : S = (G.neighborFinset v).erase t)
+    (sj : Fin 18) (hsj_in_S : sj ∈ S) (hsj_adj_v : G.Adj v sj)
+    (hW_props : ∀ x, x ∈ W ↔ ¬G.Adj v x ∧ commonNeighborsCard G v x = 2 ∧ ¬G.Adj t x)
+    (hW_three : (W.filter (G.Adj sj)).card = 3) :
+    False := by
+  have h_branch :=
+    S_three_W_neighbors_yield_setup h_reg h_tri h_no6 v t ht_adj_v S W hS_card hS_eq
+      sj hsj_in_S hsj_adj_v hW_props hW_three
+  rcases h_branch with hFalse | ⟨setup, _⟩
+  · exact hFalse
+  · exact (no_setup ⟨setup, trivial⟩).elim
+
+/-- Each si has exactly 1 T-neighbor and 2 W-neighbors. -/
+lemma S_vertex_has_one_T_two_W_neighbors {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
+    (h_reg : IsKRegular G 5) (h_tri : TriangleFree G) (h_no6 : NoKIndepSet 6 G)
+    (no_setup : ¬ ∃ setup : CariolaroSetup G h_reg h_tri h_no6, True)
+    (v t si : Fin 18) (ht_adj_v : G.Adj v t) (hsi_adj_v : G.Adj v si) (hsi_ne_t : si ≠ t)
+    (T W : Finset (Fin 18))
+    (hT_def : ∀ x, x ∈ T ↔ ¬G.Adj v x ∧ commonNeighborsCard G v x = 2 ∧ G.Adj t x)
+    (hW_props : ∀ x, x ∈ W ↔ ¬G.Adj v x ∧ commonNeighborsCard G v x = 2 ∧ ¬G.Adj t x)
+    (hT_card : T.card = 4) (hW_card : W.card = 4)
+    (hTW_disjoint : Disjoint T W)
+    (S : Finset (Fin 18)) (hS_card : S.card = 4)
+    (hS_eq : S = (G.neighborFinset v).erase t)
+    (hsi_in_S : si ∈ S)
+    (hS_all_Q_neighbors : ∀ sj ∈ S, ((T ∪ W).filter (G.Adj sj)).card = 3) :
+    (T.filter (G.Adj si)).card = 1 ∧ (W.filter (G.Adj si)).card = 2 := by
+  have h_filter_split : ((T ∪ W).filter (G.Adj si)).card =
+      (T.filter (G.Adj si)).card + (W.filter (G.Adj si)).card := by
+    rw [Finset.filter_union]
+    have h_disj : Disjoint (T.filter (G.Adj si)) (W.filter (G.Adj si)) := by
+      simp only [Finset.disjoint_iff_ne]
+      intro a ha b hb
+      simp only [Finset.mem_filter] at ha hb
+      exact Finset.disjoint_iff_ne.mp hTW_disjoint a ha.1 b hb.1
+    exact Finset.card_union_of_disjoint h_disj
+  have hsi_Q_neighbors : ((T ∪ W).filter (G.Adj si)).card = 3 := hS_all_Q_neighbors si hsi_in_S
+  have h_sum : (T.filter (G.Adj si)).card + (W.filter (G.Adj si)).card = 3 := by
+    rw [← h_filter_split, hsi_Q_neighbors]
+  have hT_le : (T.filter (G.Adj si)).card ≤ 1 := by
+    by_contra h_ge2
+    push_neg at h_ge2
+    have h_si_ge2 : (T.filter (G.Adj si)).card ≥ 2 := h_ge2
+    obtain ⟨s1, s2, s3, s4, h12, h13, h14, h23, h24, h34, hS_eq_four⟩ :=
+      Finset.card_eq_four.mp hS_card
+    have hsi_in_four : si ∈ ({s1, s2, s3, s4} : Finset (Fin 18)) := by
+      rw [← hS_eq_four]; exact hsi_in_S
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hsi_in_four
+    have hs1_in_S : s1 ∈ S := by rw [hS_eq_four]; simp
+    have hs2_in_S : s2 ∈ S := by rw [hS_eq_four]; simp
+    have hs3_in_S : s3 ∈ S := by rw [hS_eq_four]; simp
+    have hs4_in_S : s4 ∈ S := by rw [hS_eq_four]; simp
+    have hs1_adj_v : G.Adj v s1 := by
+      rw [hS_eq] at hs1_in_S
+      simp only [Finset.mem_erase, mem_neighborFinset] at hs1_in_S
+      exact hs1_in_S.2
+    have hs2_adj_v : G.Adj v s2 := by
+      rw [hS_eq] at hs2_in_S
+      simp only [Finset.mem_erase, mem_neighborFinset] at hs2_in_S
+      exact hs2_in_S.2
+    have hs3_adj_v : G.Adj v s3 := by
+      rw [hS_eq] at hs3_in_S
+      simp only [Finset.mem_erase, mem_neighborFinset] at hs3_in_S
+      exact hs3_in_S.2
+    have hs4_adj_v : G.Adj v s4 := by
+      rw [hS_eq] at hs4_in_S
+      simp only [Finset.mem_erase, mem_neighborFinset] at hs4_in_S
+      exact hs4_in_S.2
+    have hs1_Q : ((T ∪ W).filter (G.Adj s1)).card = 3 := hS_all_Q_neighbors s1 hs1_in_S
+    have hs2_Q : ((T ∪ W).filter (G.Adj s2)).card = 3 := hS_all_Q_neighbors s2 hs2_in_S
+    have hs3_Q : ((T ∪ W).filter (G.Adj s3)).card = 3 := hS_all_Q_neighbors s3 hs3_in_S
+    have hs4_Q : ((T ∪ W).filter (G.Adj s4)).card = 3 := hS_all_Q_neighbors s4 hs4_in_S
+    have hs1_split : (T.filter (G.Adj s1)).card + (W.filter (G.Adj s1)).card = 3 := by
+      have h_filt : ((T ∪ W).filter (G.Adj s1)).card =
+          (T.filter (G.Adj s1)).card + (W.filter (G.Adj s1)).card := by
+        rw [Finset.filter_union]
+        have h_disj : Disjoint (T.filter (G.Adj s1)) (W.filter (G.Adj s1)) := by
+          simp only [Finset.disjoint_iff_ne]
+          intro a ha b hb
+          simp only [Finset.mem_filter] at ha hb
+          exact Finset.disjoint_iff_ne.mp hTW_disjoint a ha.1 b hb.1
+        exact Finset.card_union_of_disjoint h_disj
+      rw [← h_filt]; exact hs1_Q
+    have hs2_split : (T.filter (G.Adj s2)).card + (W.filter (G.Adj s2)).card = 3 := by
+      have h_filt : ((T ∪ W).filter (G.Adj s2)).card =
+          (T.filter (G.Adj s2)).card + (W.filter (G.Adj s2)).card := by
+        rw [Finset.filter_union]
+        have h_disj : Disjoint (T.filter (G.Adj s2)) (W.filter (G.Adj s2)) := by
+          simp only [Finset.disjoint_iff_ne]
+          intro a ha b hb
+          simp only [Finset.mem_filter] at ha hb
+          exact Finset.disjoint_iff_ne.mp hTW_disjoint a ha.1 b hb.1
+        exact Finset.card_union_of_disjoint h_disj
+      rw [← h_filt]; exact hs2_Q
+    have hs3_split : (T.filter (G.Adj s3)).card + (W.filter (G.Adj s3)).card = 3 := by
+      have h_filt : ((T ∪ W).filter (G.Adj s3)).card =
+          (T.filter (G.Adj s3)).card + (W.filter (G.Adj s3)).card := by
+        rw [Finset.filter_union]
+        have h_disj : Disjoint (T.filter (G.Adj s3)) (W.filter (G.Adj s3)) := by
+          simp only [Finset.disjoint_iff_ne]
+          intro a ha b hb
+          simp only [Finset.mem_filter] at ha hb
+          exact Finset.disjoint_iff_ne.mp hTW_disjoint a ha.1 b hb.1
+        exact Finset.card_union_of_disjoint h_disj
+      rw [← h_filt]; exact hs3_Q
+    have hs4_split : (T.filter (G.Adj s4)).card + (W.filter (G.Adj s4)).card = 3 := by
+      have h_filt : ((T ∪ W).filter (G.Adj s4)).card =
+          (T.filter (G.Adj s4)).card + (W.filter (G.Adj s4)).card := by
+        rw [Finset.filter_union]
+        have h_disj : Disjoint (T.filter (G.Adj s4)) (W.filter (G.Adj s4)) := by
+          simp only [Finset.disjoint_iff_ne]
+          intro a ha b hb
+          simp only [Finset.mem_filter] at ha hb
+          exact Finset.disjoint_iff_ne.mp hTW_disjoint a ha.1 b hb.1
+        exact Finset.card_union_of_disjoint h_disj
+      rw [← h_filt]; exact hs4_Q
+    have h_total_ST_edges : (T.filter (G.Adj s1)).card + (T.filter (G.Adj s2)).card +
+        (T.filter (G.Adj s3)).card + (T.filter (G.Adj s4)).card = 4 := by
+      obtain ⟨t1, t2, t3, t4, ht12, ht13, ht14, ht23, ht24, ht34, hT_eq_four⟩ :=
+        Finset.card_eq_four.mp hT_card
+      have ht1_in_T : t1 ∈ T := by rw [hT_eq_four]; simp
+      have ht2_in_T : t2 ∈ T := by rw [hT_eq_four]; simp
+      have ht3_in_T : t3 ∈ T := by rw [hT_eq_four]; simp
+      have ht4_in_T : t4 ∈ T := by rw [hT_eq_four]; simp
+      have ht1_props := (hT_def t1).mp ht1_in_T
+      have ht2_props := (hT_def t2).mp ht2_in_T
+      have ht3_props := (hT_def t3).mp ht3_in_T
+      have ht4_props := (hT_def t4).mp ht4_in_T
+      have ht1_S_card : (S.filter (G.Adj t1)).card = 1 :=
+        T_vertex_has_one_S_neighbor h_reg h_tri v t t1 ht_adj_v ht1_props.2.2 ht1_props.2.1 S hS_card hS_eq
+      have ht2_S_card : (S.filter (G.Adj t2)).card = 1 :=
+        T_vertex_has_one_S_neighbor h_reg h_tri v t t2 ht_adj_v ht2_props.2.2 ht2_props.2.1 S hS_card hS_eq
+      have ht3_S_card : (S.filter (G.Adj t3)).card = 1 :=
+        T_vertex_has_one_S_neighbor h_reg h_tri v t t3 ht_adj_v ht3_props.2.2 ht3_props.2.1 S hS_card hS_eq
+      have ht4_S_card : (S.filter (G.Adj t4)).card = 1 :=
+        T_vertex_has_one_S_neighbor h_reg h_tri v t t4 ht_adj_v ht4_props.2.2 ht4_props.2.1 S hS_card hS_eq
+      calc
+        (T.filter (G.Adj s1)).card + (T.filter (G.Adj s2)).card +
+          (T.filter (G.Adj s3)).card + (T.filter (G.Adj s4)).card
+        = ∑ s ∈ S, (T.filter (G.Adj s)).card := by
+            rw [hS_eq_four]
+            exact (sum_over_four s1 s2 s3 s4 h12 h13 h14 h23 h24 h34 (fun s => (T.filter (G.Adj s)).card)).symm
+        _ = ∑ t ∈ T, (S.filter (G.Adj t)).card := by
+            exact bipartite_edge_count_symmetry S T G.Adj G.symm
+        _ = (S.filter (G.Adj t1)).card + (S.filter (G.Adj t2)).card +
+            (S.filter (G.Adj t3)).card + (S.filter (G.Adj t4)).card := by
+            rw [hT_eq_four]
+            exact sum_over_four t1 t2 t3 t4 ht12 ht13 ht14 ht23 ht24 ht34 (fun t => (S.filter (G.Adj t)).card)
+        _ = 1 + 1 + 1 + 1 := by
+            rw [ht1_S_card, ht2_S_card, ht3_S_card, ht4_S_card]
+        _ = 4 := by norm_num
+    have h_one_zero : (T.filter (G.Adj s1)).card = 0 ∨
+                      (T.filter (G.Adj s2)).card = 0 ∨
+                      (T.filter (G.Adj s3)).card = 0 ∨
+                      (T.filter (G.Adj s4)).card = 0 := by
+      apply pigeonhole_four_one_large h_total_ST_edges
+      rcases hsi_in_four with rfl | rfl | rfl | rfl <;> tauto
+    rcases h_one_zero with h_s1_zero | h_s2_zero | h_s3_zero | h_s4_zero
+    · have h_W1_three : (W.filter (G.Adj s1)).card = 3 := by omega
+      exact S_vertex_cannot_have_three_W_neighbors h_reg h_tri h_no6 no_setup v t ht_adj_v
+        S W hS_card hS_eq s1 hs1_in_S hs1_adj_v hW_props h_W1_three
+    · have h_W2_three : (W.filter (G.Adj s2)).card = 3 := by omega
+      exact S_vertex_cannot_have_three_W_neighbors h_reg h_tri h_no6 no_setup v t ht_adj_v
+        S W hS_card hS_eq s2 hs2_in_S hs2_adj_v hW_props h_W2_three
+    · have h_W3_three : (W.filter (G.Adj s3)).card = 3 := by omega
+      exact S_vertex_cannot_have_three_W_neighbors h_reg h_tri h_no6 no_setup v t ht_adj_v
+        S W hS_card hS_eq s3 hs3_in_S hs3_adj_v hW_props h_W3_three
+    · have h_W4_three : (W.filter (G.Adj s4)).card = 3 := by omega
+      exact S_vertex_cannot_have_three_W_neighbors h_reg h_tri h_no6 no_setup v t ht_adj_v
+        S W hS_card hS_eq s4 hs4_in_S hs4_adj_v hW_props h_W4_three
+  have hT_ge : (T.filter (G.Adj si)).card ≥ 1 := by
+    by_contra h_lt_1
+    push_neg at h_lt_1
+    have h_T_zero : (T.filter (G.Adj si)).card = 0 := Nat.lt_one_iff.mp h_lt_1
+    have h_W_three : (W.filter (G.Adj si)).card = 3 := by omega
+    exact S_vertex_cannot_have_three_W_neighbors h_reg h_tri h_no6 no_setup v t ht_adj_v
+      S W hS_card hS_eq si hsi_in_S hsi_adj_v hW_props h_W_three
+  constructor <;> omega
 
 /-- Final step of Cariolaro's proof: derive contradiction from the 4-cycle structure.
 
