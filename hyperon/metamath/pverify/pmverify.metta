@@ -134,7 +134,7 @@
      (let $level (get-state &fd)
        (progn
          (printif! (Processing d statement at level $level))
-         (add_d &mork $vars $level)))))
+         (add_d $vars $level)))))
 
 (= (process-by-tag open_frame $_)
    (progn
@@ -144,7 +144,7 @@
 (= (process-by-tag close_frame $_)
    (progn
      (printif! "Processing }")
-     (pop-frame &mork &fd)))
+     (pop-frame &fd)))
 
 ;; process-c-symbols - Process tuple of c symbols
 (= (process-c-symbols $symbols)
@@ -164,7 +164,7 @@
 
 (= (add_v_wrapper $var)
    (let $level (get-state &fd)
-     (add_v &mork $var $level)))
+     (add_v $var $level)))
 
 ;;; ==========================================================================
 ;;; Main
@@ -206,7 +206,7 @@
 
 !(printif! "")
 !(printif! "Step 4: Close outer frame...")
-!(pop-frame &mork &fd)
+!(pop-frame &fd)
 
 !(println! "")
 !(println! "=== Verification Complete ===")
