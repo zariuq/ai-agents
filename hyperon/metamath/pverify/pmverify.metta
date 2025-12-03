@@ -106,7 +106,7 @@
        (let ($math $_) (decons-atom $rest3)
          (progn
            (printif! (Processing a: $label))
-           (add_a &mork $label (cons-atom $type $math)))))))
+           (add_a $label (cons-atom $type $math)))))))
 
 ;; Helper to handle proof verification result - pattern matching instead of case
 (= (handle-proof-result (Error $info $msg))
@@ -126,7 +126,7 @@
          (let ($proof $_) (decons-atom $rest4)
            (progn
              (printif! (Processing p: $label))
-             (let $result (add_p &mork &stack &sp $label (cons-atom $type $math) $proof True)
+             (let $result (add_p &stack &sp $label (cons-atom $type $math) $proof True)
                (handle-proof-result $result))))))))
 
 (= (process-by-tag d $rest)
