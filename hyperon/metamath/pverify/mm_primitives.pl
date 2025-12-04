@@ -552,13 +552,13 @@ check_keyword_whitespace([_|Rest], inside_comment) :-
 check_keyword_whitespace([0'$, C|Rest], outside) :-
     mm_keyword_char(C),
     !,
-    % Must be followed by whitespace or EOF
+    % Must be followed by whitespace or EOF per Metamath spec
     (   Rest = []
     ->  true  % EOF is ok
     ;   Rest = [Next|_],
-        (is_whitespace(Next) ; Next = 0'$)  % $ for things like $. or $( comment
+        is_whitespace(Next)  % Strictly require whitespace (removed ; Next = 0'$)
     ->  check_keyword_whitespace(Rest, outside)
-    ;   fail  % Not followed by whitespace
+    ;   fail  % Not followed by whitespace - error per spec
     ).
 check_keyword_whitespace([_|Rest], State) :-
     check_keyword_whitespace(Rest, State).
