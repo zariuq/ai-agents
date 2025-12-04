@@ -266,10 +266,11 @@ mm_keyword_char(0'.).  % $.
 mm_keyword_char(0'[).  % $[ (include start)
 mm_keyword_char(0']).  % $] (include end)
 
-% Valid characters in tokens
+% Valid characters in tokens (excluding $ which starts keywords)
 mm_token_char(C) :-
     is_mm_printable(C),
-    \+ is_whitespace(C).
+    \+ is_whitespace(C),
+    C \= 0'$.
 
 %% ======================================================================
 %% Function Form Interface (for PeTTa interop)
@@ -395,7 +396,7 @@ process_includes(['$.'|Rest], BaseDir, Stack, Completed, Depth, _, ['$.'|Expande
 process_includes(['$['|Rest], BaseDir, Stack, Completed, Depth, InStmt, ExpandedTokens) :-
     !,
     % L105-106: Check that we're in outermost scope (depth 0)
-    (   Depth > 0
+    (   integer(Depth), Depth > 0
     ->  format(user_error, 'Error: $[ $] include directive not allowed inside block (L105-106)~n', []),
         throw(error(include_in_block, _))
     ;   true
@@ -488,11 +489,11 @@ check_nested_comments([_|Rest], State) :-
     check_nested_comments(Rest, State).
 
 % validate_no_dangling_dollar(+Codes)
-% Check that file doesn't end with a lone $
+% Check that $ is always followed by a valid keyword character
 validate_no_dangling_dollar(Codes) :-
     (   check_dangling_dollar(Codes)
     ->  true
-    ;   format(user_error, 'Error: Dangling $ at end of file~n', []),
+    ;   format(user_error, 'Error: Invalid use of $ character (must be followed by a keyword character like c, v, f, e, a, p, d, {, }, =, ., [, ])~n', []),
         throw(error(dangling_dollar, _))
     ).
 
@@ -620,6 +621,7 @@ check_frame_balance([open_frame|Rest], N, Final) :-
     check_frame_balance(Rest, N1, Final).
 check_frame_balance([close_frame|Rest], N, Final) :-
     !,  % Commit: don't try catch-all for close_frame
+    integer(N), % Ensure N is instantiated
     N > 0,
     N1 is N - 1,
     check_frame_balance(Rest, N1, Final).
@@ -630,6 +632,7 @@ check_frame_balance([[open_frame]|Rest], N, Final) :-
     check_frame_balance(Rest, N1, Final).
 check_frame_balance([[close_frame]|Rest], N, Final) :-
     !,  % Commit: don't try catch-all for [close_frame]
+    integer(N), % Ensure N is instantiated
     N > 0,
     N1 is N - 1,
     check_frame_balance(Rest, N1, Final).
