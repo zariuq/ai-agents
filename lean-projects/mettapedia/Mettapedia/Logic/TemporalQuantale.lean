@@ -1,3 +1,6 @@
+import Mathlib.Algebra.Order.Quantale
+import Mathlib.Algebra.Group.Basic
+import Mettapedia.Algebra.QuantaleWeakness
 
 /-!
 # Temporal Quantales
@@ -297,7 +300,8 @@ theorem shift_seqAnd (t s : T) (a b : Q) :
 
 theorem shift_predImpl (t s : T) (a b : Q) :
     shift s (predImpl a b t) = predImpl (shift s a) (shift s b) t := by
-  simp only [predImpl, shift_residuate]
+  unfold predImpl
+  rw [shift_residuate]
   congr 1
   -- Goal: shift s (shift t b) = shift t (shift s b)
   rw [← shift_add, ← shift_add, add_comm]

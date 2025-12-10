@@ -37,10 +37,17 @@ import Mettapedia.MeasureTheory.Integration
 -- Quantum Theory
 import Mettapedia.QuantumTheory.FromSymmetry
 
+-- Algebra
+import Mettapedia.Algebra.QuantaleWeakness
+
 -- Logic
 import Mettapedia.Logic.PLNDistributional
 import Mettapedia.Logic.PLNTemporal
 import Mettapedia.Logic.PLNDeduction
+import Mettapedia.Logic.PLNFrechetBounds
+import Mettapedia.Logic.PLNQuantaleConnection
+import Mettapedia.Logic.PLNEnrichedCategory
+import Mettapedia.Logic.PLNEvidence
 import Mettapedia.Logic.TemporalQuantale
 
 -- Bridge (connects geometry to probability/logic)
