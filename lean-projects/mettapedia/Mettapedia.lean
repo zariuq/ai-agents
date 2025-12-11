@@ -40,7 +40,18 @@ import Mettapedia.QuantumTheory.FromSymmetry
 -- Algebra
 import Mettapedia.Algebra.QuantaleWeakness
 
+-- Category Theory (Hypercube/OSLF framework for quantales)
+import Mettapedia.CategoryTheory.FuzzyFrame
+import Mettapedia.CategoryTheory.LambdaTheory
+import Mettapedia.CategoryTheory.PLNInstance
+import Mettapedia.CategoryTheory.NativeTypeTheory
+import Mettapedia.CategoryTheory.PLNTerms
+import Mettapedia.CategoryTheory.ModalTypes
+import Mettapedia.CategoryTheory.Hypercube
+import Mettapedia.CategoryTheory.PLNSemiringQuantale
+
 -- Logic
+import Mettapedia.Logic.SolomonoffPrior
 import Mettapedia.Logic.PLNDistributional
 import Mettapedia.Logic.PLNTemporal
 import Mettapedia.Logic.PLNDeduction
@@ -48,6 +59,7 @@ import Mettapedia.Logic.PLNFrechetBounds
 import Mettapedia.Logic.PLNQuantaleConnection
 import Mettapedia.Logic.PLNEnrichedCategory
 import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.PLNDeductionComposition
 import Mettapedia.Logic.TemporalQuantale
 
 -- Bridge (connects geometry to probability/logic)
