@@ -1,0 +1,11 @@
+name = "foet"
+version = "0.1.0"
+defaultTargets = ["Foet"]
+
+[[lean_lib]]
+name = "Foet"
+
+[[lean_exe]]
+name = "foet"
+root = "Main"
+
