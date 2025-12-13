@@ -51,6 +51,20 @@ theorem mem_map_of_mem {α : Type u} {β : Type v} {f : α → β} {T : Theory �
     f a ∈ map f T :=
   ⟨a, h, rfl⟩
 
+theorem map_singleton {α : Type u} {β : Type v} (f : α → β) (a : α) :
+    map f (Set.singleton a) = Set.singleton (f a) := by
+  funext b
+  apply propext
+  constructor
+  · intro hb
+    rcases hb with ⟨a', ha', hEq⟩
+    -- `ha' : a' = a` because membership in a singleton is definitional equality.
+    cases ha'
+    exact hEq.symm
+  · intro hb
+    refine ⟨a, rfl, ?_⟩
+    exact hb.symm
+
 end Theory
 
 /-- A semantics for sentences of type `S` in models of type `M`. -/
@@ -68,6 +82,15 @@ This is the bridge you want to connect “sets of sentences” to semantic evalu
 -/
 def Entails {S : Type u} {M : Type v} (sem : Semantics S M) (T : Theory S) (φ : S) : Prop :=
   ∀ m, Models sem m T → sem.Sat m φ
+
+/--
+Entailment under an additional *model-side* condition/premise `C`.
+
+For ethics, `M` is typically `World` and `C : World → Prop` is a “situation description”
+formula that we assume holds during evaluation.
+-/
+def EntailsUnder {S : Type u} {M : Type v} (sem : Semantics S M) (T : Theory S) (C : M → Prop) (φ : S) : Prop :=
+  ∀ m, C m → Models sem m T → sem.Sat m φ
 
 /--
 Generic model preservation/equivalence for a translation `f`.
@@ -120,6 +143,26 @@ theorem entails_map_iff {S₁ : Type u} {S₂ : Type v} {M : Type w} (sem₁ : S
       (models_map_iff sem₁ sem₂ f h_sat m T).1 hm
     have hSat₂ : sem₂.Sat m (f s) :=
       hEnt m hm₂
+    exact (h_sat m s).2 hSat₂
+
+/-- Contextual variant of `entails_map_iff` (threads an extra model-side premise `C`). -/
+theorem entails_map_iff_under {S₁ : Type u} {S₂ : Type v} {M : Type w} (sem₁ : Semantics S₁ M) (sem₂ : Semantics S₂ M)
+    (f : S₁ → S₂)
+    (h_sat : ∀ m s, sem₁.Sat m s ↔ sem₂.Sat m (f s))
+    (T : Theory S₁) (C : M → Prop) (s : S₁) :
+    EntailsUnder sem₁ T C s ↔ EntailsUnder sem₂ (Theory.map f T) C (f s) := by
+  constructor
+  · intro hEnt m hC hm
+    have hm₁ : Models sem₁ m T :=
+      (models_map_iff sem₁ sem₂ f h_sat m T).2 hm
+    have hSat₁ : sem₁.Sat m s :=
+      hEnt m hC hm₁
+    exact (h_sat m s).1 hSat₁
+  · intro hEnt m hC hm
+    have hm₂ : Models sem₂ m (Theory.map f T) :=
+      (models_map_iff sem₁ sem₂ f h_sat m T).1 hm
+    have hSat₂ : sem₂.Sat m (f s) :=
+      hEnt m hC hm₂
     exact (h_sat m s).2 hSat₂
 
 /-- Satisfiable = has at least one model. -/

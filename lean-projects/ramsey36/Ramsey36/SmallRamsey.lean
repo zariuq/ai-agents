@@ -648,7 +648,7 @@ theorem hasRamseyProperty_3_3_6 :
           have hv_b : G.Adj v b := by
             have : b ∈ adjacent := hS_sub hb
             exact Finset.mem_filter.mp this |>.2
-          simp [Finset.mem_insert, Finset.mem_singleton] at hx hy
+          simp at hx hy
           obtain (rfl | rfl | rfl) := hx
           <;> obtain (rfl | rfl | rfl) := hy
           · contradiction
@@ -713,7 +713,7 @@ theorem hasRamseyProperty_3_3_6 :
             use {a, b, c}
             constructor
             · intro x hx y hy hxy
-              simp [Finset.mem_insert, Finset.mem_singleton] at hx hy
+              simp at hx hy
               obtain (rfl | rfl | rfl) := hx
               <;> obtain (rfl | rfl | rfl) := hy
               · contradiction
@@ -733,7 +733,7 @@ theorem hasRamseyProperty_3_3_6 :
             use {v, b, c}
             constructor
             · intro x hx y hy hxy h_adj
-              simp [Finset.mem_insert, Finset.mem_singleton] at hx hy
+              simp at hx hy
               obtain (rfl | rfl | rfl) := hx
               <;> obtain (rfl | rfl | rfl) := hy
               · contradiction
@@ -764,7 +764,7 @@ theorem hasRamseyProperty_3_3_6 :
             use {v, a, c}
             constructor
             · intro x hx y hy hxy h_adj
-              simp [Finset.mem_insert, Finset.mem_singleton] at hx hy
+              simp at hx hy
               obtain (rfl | rfl | rfl) := hx
               <;> obtain (rfl | rfl | rfl) := hy
               · contradiction
@@ -794,7 +794,7 @@ theorem hasRamseyProperty_3_3_6 :
             use {v, a, c}
             constructor
             · intro x hx y hy hxy h_adj
-              simp [Finset.mem_insert, Finset.mem_singleton] at hx hy
+              simp at hx hy
               obtain (rfl | rfl | rfl) := hx
               <;> obtain (rfl | rfl | rfl) := hy
               · contradiction
@@ -1158,11 +1158,151 @@ theorem hasRamseyProperty_3_4_9 :
 
 theorem hasRamseyProperty_3_5_14 :
     0 < 14 ∧ ∀ (G : SimpleGraph (Fin 14)) [DecidableRel G.Adj], HasRamseyProperty 3 5 G := by
-  -- TODO: Constructive proof pending
   constructor
   · norm_num
   · intro G inst
-    sorry
+    classical
+    -- Standard proof from the upper bound R(3,5) ≤ 14:
+    -- Pick a vertex v. If v has ≥ 5 neighbors, either they contain an edge (triangle with v)
+    -- or they form an independent 5-set. Otherwise v has ≥ 9 non-neighbors; apply R(3,4)=9 to
+    -- a 9-subset of those non-neighbors.
+    let v : Fin 14 := 0
+    by_cases h_deg_ge_5 : G.degree v ≥ 5
+    · have h_nbrs_ge_5 : (G.neighborFinset v).card ≥ 5 := by
+        rw [G.card_neighborFinset_eq_degree]
+        exact h_deg_ge_5
+      obtain ⟨S, hS_sub, hS_card⟩ := Finset.exists_subset_card_eq h_nbrs_ge_5
+      by_cases h_edge : ∃ x ∈ S, ∃ y ∈ S, x ≠ y ∧ G.Adj x y
+      · rcases h_edge with ⟨x, hxS, y, hyS, hxy, hxy_adj⟩
+        have hvx : G.Adj v x := by
+          have hxN : x ∈ G.neighborFinset v := hS_sub hxS
+          simpa [mem_neighborFinset] using hxN
+        have hvy : G.Adj v y := by
+          have hyN : y ∈ G.neighborFinset v := hS_sub hyS
+          simpa [mem_neighborFinset] using hyN
+        left
+        refine ⟨{v, x, y}, (is3Clique_triple_iff).2 ?_⟩
+        exact ⟨hvx, hvy, hxy_adj⟩
+      · right
+        refine ⟨S, ?_⟩
+        rw [isNIndepSet_iff]
+        constructor
+        · intro x hx y hy hxy
+          by_contra h_adj
+          exact h_edge ⟨x, hx, y, hy, hxy, h_adj⟩
+        · exact hS_card
+    · have h_deg_le_4 : G.degree v ≤ 4 :=
+        Nat.le_of_lt_succ (Nat.lt_of_not_ge h_deg_ge_5)
+      -- Non-neighbors of v (excluding v itself).
+      let N := G.neighborFinset v
+      let M := (Finset.univ : Finset (Fin 14)) \ (insert v N)
+      have hv_notin_N : v ∉ N := G.notMem_neighborFinset_self v
+
+      have hM_card_ge : M.card ≥ 9 := by
+        have h_insert_card_le : (insert v N).card ≤ 5 := by
+          calc
+            (insert v N).card = N.card + 1 := by
+              rw [Finset.card_insert_of_notMem hv_notin_N]
+            _ = G.degree v + 1 := by rw [G.card_neighborFinset_eq_degree]
+            _ ≤ 4 + 1 := by omega
+            _ = 5 := by norm_num
+        have h_disjoint : Disjoint M (insert v N) := by
+          rw [Finset.disjoint_iff_inter_eq_empty]
+          ext w
+          simp only [M, Finset.mem_inter, Finset.mem_sdiff, Finset.mem_univ, true_and,
+                     Finset.notMem_empty, iff_false]
+          tauto
+        have h_union : M ∪ (insert v N) = (Finset.univ : Finset (Fin 14)) := by
+          ext w
+          simp only [M, Finset.mem_union, Finset.mem_sdiff, Finset.mem_univ, true_and, iff_true]
+          tauto
+        have h_card_union : M.card + (insert v N).card = 14 := by
+          have h_eq : (M ∪ (insert v N)).card = M.card + (insert v N).card :=
+            Finset.card_union_of_disjoint h_disjoint
+          rw [h_union] at h_eq
+          simp only [Finset.card_univ, Fintype.card_fin] at h_eq
+          exact h_eq.symm
+        omega
+
+      -- Extract a 9-vertex subset M9 of non-neighbors.
+      obtain ⟨M9, hM9_sub, hM9_card⟩ := Finset.exists_subset_card_eq hM_card_ge
+      have h_v_nonadj_M9 : ∀ w ∈ M9, ¬ G.Adj v w := by
+        intro w hw
+        have hw_in_M : w ∈ M := hM9_sub hw
+        simp only [M, Finset.mem_sdiff, Finset.mem_univ, true_and] at hw_in_M
+        intro h_adj
+        apply hw_in_M
+        apply Finset.mem_insert_of_mem
+        rw [mem_neighborFinset]
+        exact h_adj
+
+      -- Induce a Fin 9 graph on M9 via comap and apply R(3,4)=9.
+      have h_M9_card_type : Fintype.card (↑M9 : Set (Fin 14)) = 9 := by
+        simp [Fintype.card_coe, hM9_card]
+      have h_card_eq : Fintype.card (Fin 9) = Fintype.card (↑M9 : Set (Fin 14)) := by
+        simp only [Fintype.card_fin]
+        exact h_M9_card_type.symm
+      let e : Fin 9 ≃ (↑M9 : Set (Fin 14)) := Fintype.equivOfCardEq h_card_eq
+      let f : Fin 9 ↪ Fin 14 := e.toEmbedding.trans (Function.Embedding.subtype _)
+      let G_M9 := G.comap f
+      have h_ramsey_prop : HasRamseyProperty 3 4 G_M9 := hasRamseyProperty_3_4_9.2 G_M9
+      rcases h_ramsey_prop with ⟨S, hS⟩ | ⟨T, hT⟩
+      · left
+        refine ⟨S.map f, ?_⟩
+        constructor
+        · intro x hx y hy hxy
+          rcases Finset.mem_map.mp hx with ⟨x', hx', rfl⟩
+          rcases Finset.mem_map.mp hy with ⟨y', hy', rfl⟩
+          have hne : x' ≠ y' := by
+            intro h_eq
+            apply hxy
+            simp [h_eq]
+          exact hS.1 hx' hy' hne
+        · simp [Finset.card_map, hS.2]
+      · right
+        let T_plus_v := insert v (T.map f)
+        refine ⟨T_plus_v, ?_⟩
+        constructor
+        · intro x hx y hy hxy h_adj
+          have hx' : x = v ∨ x ∈ T.map f := Finset.mem_insert.mp hx
+          have hy' : y = v ∨ y ∈ T.map f := Finset.mem_insert.mp hy
+          rcases hx' with rfl | hx_in_T <;> rcases hy' with rfl | hy_in_T
+          · exact hxy rfl
+          · have : y ∈ (↑M9 : Set (Fin 14)) := by
+              rcases Finset.mem_map.mp hy_in_T with ⟨y', _, rfl⟩
+              change (e y').val ∈ ↑M9
+              exact (e y').property
+            exact h_v_nonadj_M9 y this h_adj
+          · have : x ∈ (↑M9 : Set (Fin 14)) := by
+              rcases Finset.mem_map.mp hx_in_T with ⟨x', _, rfl⟩
+              change (e x').val ∈ ↑M9
+              exact (e x').property
+            exact h_v_nonadj_M9 x this (G.symm h_adj)
+          · rcases Finset.mem_map.mp hx_in_T with ⟨x', hx'_in_T, rfl⟩
+            rcases Finset.mem_map.mp hy_in_T with ⟨y', hy'_in_T, rfl⟩
+            have hne : x' ≠ y' := by
+              intro h_eq
+              apply hxy
+              simp [h_eq]
+            exact hT.1 hx'_in_T hy'_in_T hne h_adj
+        · have h_v_not_in_map : v ∉ T.map f := by
+            intro h_v_in_T
+            rcases Finset.mem_map.mp h_v_in_T with ⟨t, _, h_eq⟩
+            have h_ft_in_M9 : (f t : Fin 14) ∈ M9 := by
+              have : (f t : Fin 14) ∈ (↑M9 : Set (Fin 14)) := by
+                change (e t).val ∈ ↑M9
+                exact (e t).property
+              simpa using this
+            have h_v_in_M9 : v ∈ M9 := by rwa [h_eq] at h_ft_in_M9
+            have h_v_in_M : v ∈ M := hM9_sub h_v_in_M9
+            simp only [M, Finset.mem_sdiff, Finset.mem_univ, true_and] at h_v_in_M
+            exact h_v_in_M (Finset.mem_insert_self v N)
+          calc
+            T_plus_v.card = (insert v (T.map f)).card := rfl
+            _ = (T.map f).card + 1 := Finset.card_insert_of_notMem h_v_not_in_map
+            _ = T.card + 1 := by rw [Finset.card_map]
+            _ = 4 + 1 := by rw [hT.2]
+            _ = 5 := by norm_num
 
 /-- If `ramseyNumber 3 4 = 9`, then any graph on 9 vertices has the (3,4) Ramsey property. -/
 theorem ramsey_of_ramseyNumber_eq_3_4

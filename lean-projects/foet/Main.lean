@@ -106,4 +106,51 @@ example : Entails (valueJudgmentSemantics World sem) virtAsValue virtSentence.to
 example : exampleSentence.paradigmLoop = exampleSentence :=
   ValueJudgmentSentence.paradigmLoop_id exampleSentence
 
+def cp : ChoicePoint World :=
+  Set.singleton (fun _ => True)
+
+example : UtilitarianMoralDilemma utilSem World.w cp ↔
+    ValueMoralDilemma (valueSemanticsOfUtility World utilSem) World.w cp :=
+  utilitarianMoralDilemma_iff_valueMoralDilemma (World := World) (semU := utilSem) (w := World.w) (cp := cp)
+
+def dummySig : SumoEthicsSig World :=
+  { Agent := Unit
+    Process := Unit
+    ProcessClass := Unit
+    ChoicePoint := Unit
+    Situation := Unit
+    SituationClass := Unit
+    Value := Unit
+    VirtueAttribute := Unit
+    hasAgent := fun _ _ => fun _ => True
+    situationFn := fun _ => ()
+    part := fun _ _ => fun _ => True
+    isInstance := fun _ _ => fun _ => True
+    isProcessInstance := fun _ _ => fun _ => True
+    element := fun _ _ => fun _ => True
+    choicePointAgentFn := fun _ => ()
+    choicePointSituationFn := fun _ => ()
+    describesSituation := fun _ _ => fun _ => True
+    situationFormulaFn := fun _ => ()
+    hasAttribute := fun _ _ => fun _ => True
+    desires := fun _ φ => φ
+    prefers := fun _ _ _ => fun _ => True
+    holdsObligation := fun _ _ => fun _ => True
+    realizesFormula := fun _ _ => fun _ => True
+    capableInSituation := fun _ _ _ => fun _ => True
+    holdsValue := fun _ _ => fun _ => True }
+
+def demoVirtueDesire : Formula World :=
+  dummySig.virtueDesireFormula () (fun _ => True)
+
+example : demoVirtueDesire World.w := by
+  intro a ha
+  trivial
+
+def demoInSituation : Formula World :=
+  dummySig.inSituation () ()
+
+example : demoInSituation World.w := by
+  trivial
+
 end Foet

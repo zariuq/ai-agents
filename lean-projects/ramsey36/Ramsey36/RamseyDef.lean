@@ -44,6 +44,7 @@ def commonNeighborsCard (G : SimpleGraph V) [DecidableRel G.Adj] (v w : V) : ℕ
 /-! ## Helper Lemmas -/
 
 open Finset in
+omit [Fintype V] in
 lemma neighborSet_indep_of_triangleFree {G : SimpleGraph V} (h : TriangleFree G) (v : V) :
     G.IsIndepSet (G.neighborSet v) := by
   intros x hx y hy hne
@@ -58,7 +59,7 @@ lemma neighborSet_indep_of_triangleFree {G : SimpleGraph V} (h : TriangleFree G)
     exact hne
   have h_s_card : s.card = 3 := by
     simp only [s]
-    rw [card_insert_of_not_mem h_v_not_mem, card_insert_of_not_mem h_x_not_mem, card_singleton]
+    rw [card_insert_of_notMem h_v_not_mem, card_insert_of_notMem h_x_not_mem, card_singleton]
   have h_clique_prop : G.IsClique s := by
     rw [isClique_iff]
     intros a ha b hb hab

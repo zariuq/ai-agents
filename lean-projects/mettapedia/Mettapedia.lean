@@ -29,6 +29,7 @@ import Mettapedia.GraphTheory.Basic
 -- Probability Theory
 import Mettapedia.ProbabilityTheory.Basic
 import Mettapedia.ProbabilityTheory.KnuthSkilling
+import Mettapedia.ProbabilityTheory.OptimalTransport
 
 -- Measure Theory
 import Mettapedia.MeasureTheory.FromSymmetry
@@ -50,8 +51,15 @@ import Mettapedia.CategoryTheory.ModalTypes
 import Mettapedia.CategoryTheory.Hypercube
 import Mettapedia.CategoryTheory.PLNSemiringQuantale
 
+-- Computability
+import Mettapedia.Computability.KolmogorovComplexity.Basic
+-- import Mettapedia.Computability.KolmogorovComplexity.Prefix  -- WIP (Phase 2)
+
 -- Logic
 import Mettapedia.Logic.SolomonoffPrior
+import Mettapedia.Logic.SolomonoffInduction
+-- import Mettapedia.Logic.SolomonoffMeasure  -- WIP (outer measure construction is incomplete)
+import Mettapedia.Logic.UniversalPrediction
 import Mettapedia.Logic.PLNDistributional
 import Mettapedia.Logic.PLNTemporal
 import Mettapedia.Logic.PLNDeduction
@@ -61,6 +69,10 @@ import Mettapedia.Logic.PLNEnrichedCategory
 import Mettapedia.Logic.PLNEvidence
 import Mettapedia.Logic.PLNDeductionComposition
 import Mettapedia.Logic.TemporalQuantale
+
+-- Universal AI (Hutter Chapters 4-5)
+import Mettapedia.UniversalAI.SimplicityUncertainty
+import Mettapedia.UniversalAI.BayesianAgents
 
 -- Bridge (connects geometry to probability/logic)
 import Mettapedia.Bridge.BitVectorEvidence
