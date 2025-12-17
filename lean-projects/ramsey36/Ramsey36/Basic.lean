@@ -1,6 +1,7 @@
 import Ramsey36.RamseyDef
 import Ramsey36.SmallRamsey
 import Ramsey36.FiveCycleLemma
+import Ramsey36.Helpers
 import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 import Mathlib.Data.Fin.Basic
 import Mathlib.Data.Finset.Card
@@ -834,32 +835,9 @@ lemma degree_not_four_of_triangleFree_no_6indep
 
   -- t's neighbors outside of {v, t_neighbors_in_M} are in N\{t}, but N is independent
   have ht_no_N_neighbors : ∀ u ∈ N, u ≠ t → ¬G.Adj t u := by
-    intro u hu hne h_adj
-    -- {v, t, u} would be a triangle: v-t, v-u, t-u
-    have h_v_t : G.Adj v t := ht_adj_v
+    intro u hu hne
     have h_v_u : G.Adj v u := by rw [← mem_neighborFinset]; exact hu
-    have h_clique : G.IsNClique 3 {v, t, u} := by
-      rw [SimpleGraph.isNClique_iff]
-      constructor
-      · intro x hx y hy hxy
-        simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at hx hy
-        rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl
-        · exact absurd rfl hxy
-        · exact h_v_t
-        · exact h_v_u
-        · exact G.symm h_v_t
-        · exact absurd rfl hxy
-        · exact h_adj
-        · exact G.symm h_v_u
-        · exact G.symm h_adj
-        · exact absurd rfl hxy
-      · have hvt : v ≠ t := G.ne_of_adj h_v_t
-        have hvu : v ≠ u := G.ne_of_adj h_v_u
-        rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
-        · simp only [Finset.mem_singleton]; exact hne.symm
-        · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
-          exact ⟨hvt, hvu⟩
-    exact h_tri _ h_clique
+    exact neighbors_nonadj_of_triangleFree G h_tri v t u ht_adj_v h_v_u hne.symm
 
   -- So t's neighbors are: v, plus neighbors in M
   have h_t_neighbors_card : t_neighbors_in_M.card ≥ 3 := by
@@ -953,36 +931,9 @@ lemma degree_not_four_of_triangleFree_no_6indep
   -- T_set is independent (neighbors of t in triangle-free graph)
   have hT_indep : G.IsIndepSet T_set := by
     intro x' hx' y' hy' hne' h_adj'
-    -- {t, x', y'} would be a triangle
-    -- Store the adjacency facts before case analysis
     have h_tx' : G.Adj t x' := hT_adj_t x' hx'
     have h_ty' : G.Adj t y' := hT_adj_t y' hy'
-    have h_clique : G.IsNClique 3 {t, x', y'} := by
-      rw [SimpleGraph.isNClique_iff]
-      constructor
-      · intro a ha b hb hab
-        simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at ha hb
-        rcases ha with ha_t | ha_x | ha_y <;> rcases hb with hb_t | hb_x | hb_y
-        · exact absurd (ha_t.trans hb_t.symm) hab
-        · subst ha_t; subst hb_x; exact h_tx'
-        · subst ha_t; subst hb_y; exact h_ty'
-        · subst ha_x; subst hb_t; exact G.symm h_tx'
-        · exact absurd (ha_x.trans hb_x.symm) hab
-        · subst ha_x; subst hb_y; exact h_adj'
-        · subst ha_y; subst hb_t; exact G.symm h_ty'
-        · subst ha_y; subst hb_x; exact G.symm h_adj'
-        · exact absurd (ha_y.trans hb_y.symm) hab
-      · have htx' : t ≠ x' := by
-          intro heq; subst heq
-          exact G.loopless t h_tx'
-        have hty' : t ≠ y' := by
-          intro heq; subst heq
-          exact G.loopless t h_ty'
-        rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
-        · simp only [Finset.mem_singleton]; exact hne'
-        · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
-          exact ⟨htx', hty'⟩
-    exact h_tri _ h_clique
+    exact neighbors_nonadj_of_triangleFree G h_tri t x' y' h_tx' h_ty' hne' h_adj'
 
   -- Step 4: Each element of T_set has no neighbors in N \ {t}
   -- Argument: x ∈ T_set ⊆ M has deg_M = 4 (from h_M_reg), deg_G ≤ 5.
@@ -2268,33 +2219,6 @@ structure CariolaroSetup (G : SimpleGraph (Fin 18)) [DecidableRel G.Adj]
   h_w4_nonadj_p4 : ¬G.Adj w4 p4
   h_w4_nonadj_p1 : ¬G.Adj w4 p1
 
-/-- Helper: two neighbors of v are non-adjacent in a triangle-free graph -/
-lemma neighbors_non_adj_of_triangleFree {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
-    (h_tri : TriangleFree G) (v x y : Fin 18)
-    (hx_adj : G.Adj v x) (hy_adj : G.Adj v y) (hne : x ≠ y) :
-    ¬G.Adj x y := by
-  intro h_adj
-  have h_clique : G.IsNClique 3 {v, x, y} := by
-    rw [SimpleGraph.isNClique_iff]
-    constructor
-    · intro a ha b hb hab
-      simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at ha hb
-      rcases ha with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
-      · exact absurd rfl hab
-      · exact hx_adj
-      · exact hy_adj
-      · exact G.symm hx_adj
-      · exact absurd rfl hab
-      · exact h_adj
-      · exact G.symm hy_adj
-      · exact G.symm h_adj
-      · exact absurd rfl hab
-    · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
-      · simp only [Finset.mem_singleton]; exact hne
-      · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
-        exact ⟨G.ne_of_adj hx_adj, G.ne_of_adj hy_adj⟩
-  exact h_tri _ h_clique
-
 /-- N(v) is an independent set (any two neighbors of v are non-adjacent) in a triangle-free graph. -/
 lemma CariolaroSetup.Nv_independent {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
     {h_reg : IsKRegular G 5} {h_tri : TriangleFree G} {h_no6 : NoKIndepSet 6 G}
@@ -2303,25 +2227,25 @@ lemma CariolaroSetup.Nv_independent {G : SimpleGraph (Fin 18)} [DecidableRel G.A
     ¬G.Adj setup.s1 setup.s2 ∧ ¬G.Adj setup.s1 setup.s3 ∧ ¬G.Adj setup.s1 setup.s4 ∧
     ¬G.Adj setup.s2 setup.s3 ∧ ¬G.Adj setup.s2 setup.s4 ∧ ¬G.Adj setup.s3 setup.s4 := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · exact neighbors_non_adj_of_triangleFree h_tri setup.v setup.t setup.s1
+  · exact neighbors_nonadj_of_triangleFree G h_tri setup.v setup.t setup.s1
       setup.h_t_adj_v setup.h_s1_adj_v setup.h_Nv_distinct.1
-  · exact neighbors_non_adj_of_triangleFree h_tri setup.v setup.t setup.s2
+  · exact neighbors_nonadj_of_triangleFree G h_tri setup.v setup.t setup.s2
       setup.h_t_adj_v setup.h_s2_adj_v setup.h_Nv_distinct.2.1
-  · exact neighbors_non_adj_of_triangleFree h_tri setup.v setup.t setup.s3
+  · exact neighbors_nonadj_of_triangleFree G h_tri setup.v setup.t setup.s3
       setup.h_t_adj_v setup.h_s3_adj_v setup.h_Nv_distinct.2.2.1
-  · exact neighbors_non_adj_of_triangleFree h_tri setup.v setup.t setup.s4
+  · exact neighbors_nonadj_of_triangleFree G h_tri setup.v setup.t setup.s4
       setup.h_t_adj_v setup.h_s4_adj_v setup.h_Nv_distinct.2.2.2.1
-  · exact neighbors_non_adj_of_triangleFree h_tri setup.v setup.s1 setup.s2
+  · exact neighbors_nonadj_of_triangleFree G h_tri setup.v setup.s1 setup.s2
       setup.h_s1_adj_v setup.h_s2_adj_v setup.h_Nv_distinct.2.2.2.2.1
-  · exact neighbors_non_adj_of_triangleFree h_tri setup.v setup.s1 setup.s3
+  · exact neighbors_nonadj_of_triangleFree G h_tri setup.v setup.s1 setup.s3
       setup.h_s1_adj_v setup.h_s3_adj_v setup.h_Nv_distinct.2.2.2.2.2.1
-  · exact neighbors_non_adj_of_triangleFree h_tri setup.v setup.s1 setup.s4
+  · exact neighbors_nonadj_of_triangleFree G h_tri setup.v setup.s1 setup.s4
       setup.h_s1_adj_v setup.h_s4_adj_v setup.h_Nv_distinct.2.2.2.2.2.2.1
-  · exact neighbors_non_adj_of_triangleFree h_tri setup.v setup.s2 setup.s3
+  · exact neighbors_nonadj_of_triangleFree G h_tri setup.v setup.s2 setup.s3
       setup.h_s2_adj_v setup.h_s3_adj_v setup.h_Nv_distinct.2.2.2.2.2.2.2.1
-  · exact neighbors_non_adj_of_triangleFree h_tri setup.v setup.s2 setup.s4
+  · exact neighbors_nonadj_of_triangleFree G h_tri setup.v setup.s2 setup.s4
       setup.h_s2_adj_v setup.h_s4_adj_v setup.h_Nv_distinct.2.2.2.2.2.2.2.2.1
-  · exact neighbors_non_adj_of_triangleFree h_tri setup.v setup.s3 setup.s4
+  · exact neighbors_nonadj_of_triangleFree G h_tri setup.v setup.s3 setup.s4
       setup.h_s3_adj_v setup.h_s4_adj_v setup.h_Nv_distinct.2.2.2.2.2.2.2.2.2
 
 /-- From a CariolaroSetup, derive that P forms a 4-cycle. -/
@@ -2439,52 +2363,12 @@ lemma CariolaroSetup.P_is_cycle {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
       setup.h_s3_nonadj_p4 setup.h_s3_nonadj_p1 (fun h => setup.h_w4_nonadj_s3 (G.symm h))
 
   -- Diagonal 1: p1-p3 non-adjacent (else {p1, p2, p3} triangle)
-  have h_not_p1_p3 : ¬G.Adj setup.p1 setup.p3 := by
-    intro h_adj
-    have h_clique : G.IsNClique 3 {setup.p1, setup.p2, setup.p3} := by
-      rw [SimpleGraph.isNClique_iff]
-      constructor
-      · intro x hx y hy hxy
-        simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at hx hy
-        rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl
-        · exact absurd rfl hxy
-        · exact h_p1_p2
-        · exact h_adj
-        · exact G.symm h_p1_p2
-        · exact absurd rfl hxy
-        · exact h_p2_p3
-        · exact G.symm h_adj
-        · exact G.symm h_p2_p3
-        · exact absurd rfl hxy
-      · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
-        · simp only [Finset.mem_singleton]; exact hp2_ne_p3
-        · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
-          exact ⟨hp1_ne_p2, hp1_ne_p3⟩
-    exact h_tri _ h_clique
+  have h_not_p1_p3 : ¬G.Adj setup.p1 setup.p3 :=
+    neighbors_nonadj_of_triangleFree G h_tri setup.p2 setup.p1 setup.p3 (G.symm h_p1_p2) h_p2_p3 hp1_ne_p3
 
   -- Diagonal 2: p2-p4 non-adjacent (else {p2, p3, p4} triangle)
-  have h_not_p2_p4 : ¬G.Adj setup.p2 setup.p4 := by
-    intro h_adj
-    have h_clique : G.IsNClique 3 {setup.p2, setup.p3, setup.p4} := by
-      rw [SimpleGraph.isNClique_iff]
-      constructor
-      · intro x hx y hy hxy
-        simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at hx hy
-        rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl
-        · exact absurd rfl hxy
-        · exact h_p2_p3
-        · exact h_adj
-        · exact G.symm h_p2_p3
-        · exact absurd rfl hxy
-        · exact h_p3_p4
-        · exact G.symm h_adj
-        · exact G.symm h_p3_p4
-        · exact absurd rfl hxy
-      · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
-        · simp only [Finset.mem_singleton]; exact hp3_ne_p4
-        · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
-          exact ⟨hp2_ne_p3, hp2_ne_p4⟩
-    exact h_tri _ h_clique
+  have h_not_p2_p4 : ¬G.Adj setup.p2 setup.p4 :=
+    neighbors_nonadj_of_triangleFree G h_tri setup.p3 setup.p2 setup.p4 (G.symm h_p2_p3) h_p3_p4 hp2_ne_p4
 
   exact ⟨h_p1_p2, h_p2_p3, h_p3_p4, h_p4_p1, h_not_p1_p3, h_not_p2_p4⟩
 
@@ -5279,72 +5163,12 @@ lemma P_is_two_regular {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
     have hq2_nonadj_v : ¬G.Adj v q2 := (hQ_props q2 hq2_Q).1
     have hq3_nonadj_v : ¬G.Adj v q3 := (hQ_props q3 hq3_Q).1
     -- qi are pairwise non-adjacent (otherwise triangle with p)
-    have hq12_nonadj : ¬G.Adj q1 q2 := by
-      intro h
-      have h_clique : G.IsNClique 3 {p, q1, q2} := by
-        rw [SimpleGraph.isNClique_iff]
-        constructor
-        · intro a ha b hb hab
-          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at ha hb
-          rcases ha with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
-          · exact absurd rfl hab
-          · exact hp_adj_q1
-          · exact hp_adj_q2
-          · exact G.symm hp_adj_q1
-          · exact absurd rfl hab
-          · exact h
-          · exact G.symm hp_adj_q2
-          · exact G.symm h
-          · exact absurd rfl hab
-        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
-          · simp only [Finset.mem_singleton]; exact hq_ne12
-          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
-            exact ⟨(G.ne_of_adj hp_adj_q1), (G.ne_of_adj hp_adj_q2)⟩
-      exact h_tri _ h_clique
-    have hq13_nonadj : ¬G.Adj q1 q3 := by
-      intro h
-      have h_clique : G.IsNClique 3 {p, q1, q3} := by
-        rw [SimpleGraph.isNClique_iff]
-        constructor
-        · intro a ha b hb hab
-          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at ha hb
-          rcases ha with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
-          · exact absurd rfl hab
-          · exact hp_adj_q1
-          · exact hp_adj_q3
-          · exact G.symm hp_adj_q1
-          · exact absurd rfl hab
-          · exact h
-          · exact G.symm hp_adj_q3
-          · exact G.symm h
-          · exact absurd rfl hab
-        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
-          · simp only [Finset.mem_singleton]; exact hq_ne13
-          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
-            exact ⟨(G.ne_of_adj hp_adj_q1), (G.ne_of_adj hp_adj_q3)⟩
-      exact h_tri _ h_clique
-    have hq23_nonadj : ¬G.Adj q2 q3 := by
-      intro h
-      have h_clique : G.IsNClique 3 {p, q2, q3} := by
-        rw [SimpleGraph.isNClique_iff]
-        constructor
-        · intro a ha b hb hab
-          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at ha hb
-          rcases ha with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
-          · exact absurd rfl hab
-          · exact hp_adj_q2
-          · exact hp_adj_q3
-          · exact G.symm hp_adj_q2
-          · exact absurd rfl hab
-          · exact h
-          · exact G.symm hp_adj_q3
-          · exact G.symm h
-          · exact absurd rfl hab
-        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
-          · simp only [Finset.mem_singleton]; exact hq_ne23
-          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
-            exact ⟨(G.ne_of_adj hp_adj_q2), (G.ne_of_adj hp_adj_q3)⟩
-      exact h_tri _ h_clique
+    have hq12_nonadj : ¬G.Adj q1 q2 :=
+      neighbors_nonadj_of_triangleFree G h_tri p q1 q2 hp_adj_q1 hp_adj_q2 hq_ne12
+    have hq13_nonadj : ¬G.Adj q1 q3 :=
+      neighbors_nonadj_of_triangleFree G h_tri p q1 q3 hp_adj_q1 hp_adj_q3 hq_ne13
+    have hq23_nonadj : ¬G.Adj q2 q3 :=
+      neighbors_nonadj_of_triangleFree G h_tri p q2 q3 hp_adj_q2 hp_adj_q3 hq_ne23
     -- v ≠ qi (since p ~ qi but p ≁ v)
     have hv_ne_q1 : v ≠ q1 := fun h => hp_nonadj_v (G.symm (h ▸ hp_adj_q1))
     have hv_ne_q2 : v ≠ q2 := fun h => hp_nonadj_v (G.symm (h ▸ hp_adj_q2))
@@ -5355,77 +5179,17 @@ lemma P_is_two_regular {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
     simp only [NN, mem_filter, mem_neighborFinset] at hs_in_NN
     have hs_adj_v : G.Adj v s := hs_in_NN.1
     have hs_adj_p : G.Adj s p := G.symm hs_in_NN.2
-    -- s is not adjacent to qi (would form triangle s-p-qi)
-    have hs_nonadj_q1 : ¬G.Adj s q1 := by
-      intro h
-      have h_clique : G.IsNClique 3 {s, p, q1} := by
-        rw [SimpleGraph.isNClique_iff]
-        constructor
-        · intro a ha b hb hab
-          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at ha hb
-          rcases ha with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
-          · exact absurd rfl hab
-          · exact hs_adj_p
-          · exact h
-          · exact G.symm hs_adj_p
-          · exact absurd rfl hab
-          · exact hp_adj_q1
-          · exact G.symm h
-          · exact G.symm hp_adj_q1
-          · exact absurd rfl hab
-        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
-          · simp only [Finset.mem_singleton]; exact (G.ne_of_adj hp_adj_q1)
-          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
-            exact ⟨(G.ne_of_adj hs_adj_p), (G.ne_of_adj h)⟩
-      exact h_tri _ h_clique
-    have hs_nonadj_q2 : ¬G.Adj s q2 := by
-      intro h
-      have h_clique : G.IsNClique 3 {s, p, q2} := by
-        rw [SimpleGraph.isNClique_iff]
-        constructor
-        · intro a ha b hb hab
-          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at ha hb
-          rcases ha with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
-          · exact absurd rfl hab
-          · exact hs_adj_p
-          · exact h
-          · exact G.symm hs_adj_p
-          · exact absurd rfl hab
-          · exact hp_adj_q2
-          · exact G.symm h
-          · exact G.symm hp_adj_q2
-          · exact absurd rfl hab
-        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
-          · simp only [Finset.mem_singleton]; exact (G.ne_of_adj hp_adj_q2)
-          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
-            exact ⟨(G.ne_of_adj hs_adj_p), (G.ne_of_adj h)⟩
-      exact h_tri _ h_clique
-    have hs_nonadj_q3 : ¬G.Adj s q3 := by
-      intro h
-      have h_clique : G.IsNClique 3 {s, p, q3} := by
-        rw [SimpleGraph.isNClique_iff]
-        constructor
-        · intro a ha b hb hab
-          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at ha hb
-          rcases ha with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
-          · exact absurd rfl hab
-          · exact hs_adj_p
-          · exact h
-          · exact G.symm hs_adj_p
-          · exact absurd rfl hab
-          · exact hp_adj_q3
-          · exact G.symm h
-          · exact G.symm hp_adj_q3
-          · exact absurd rfl hab
-        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
-          · simp only [Finset.mem_singleton]; exact (G.ne_of_adj hp_adj_q3)
-          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
-            exact ⟨(G.ne_of_adj hs_adj_p), (G.ne_of_adj h)⟩
-      exact h_tri _ h_clique
     -- s ≠ qi (s ∈ N(v) but qi ∉ N(v), so v ~ s but v ≁ qi)
     have hs_ne_q1 : s ≠ q1 := fun h => hq1_nonadj_v (h ▸ hs_adj_v)
     have hs_ne_q2 : s ≠ q2 := fun h => hq2_nonadj_v (h ▸ hs_adj_v)
     have hs_ne_q3 : s ≠ q3 := fun h => hq3_nonadj_v (h ▸ hs_adj_v)
+    -- s is not adjacent to qi (would form triangle s-p-qi)
+    have hs_nonadj_q1 : ¬G.Adj s q1 :=
+      neighbors_nonadj_of_triangleFree G h_tri p s q1 (G.symm hs_adj_p) hp_adj_q1 hs_ne_q1
+    have hs_nonadj_q2 : ¬G.Adj s q2 :=
+      neighbors_nonadj_of_triangleFree G h_tri p s q2 (G.symm hs_adj_p) hp_adj_q2 hs_ne_q2
+    have hs_nonadj_q3 : ¬G.Adj s q3 :=
+      neighbors_nonadj_of_triangleFree G h_tri p s q3 (G.symm hs_adj_p) hp_adj_q3 hs_ne_q3
     -- p ≠ qi
     have hp_ne_q1 : p ≠ q1 := G.ne_of_adj hp_adj_q1
     have hp_ne_q2 : p ≠ q2 := G.ne_of_adj hp_adj_q2
@@ -5512,72 +5276,12 @@ lemma P_is_two_regular {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
     have hp_adj_b : G.Adj p b := hp_adj_all b hb_P hb_ne_p
     have hp_adj_c : G.Adj p c := hp_adj_all c hc_P hc_ne_p
     -- a, b, c are pairwise non-adjacent (would form triangle with p)
-    have hab_nonadj : ¬G.Adj a b := by
-      intro h
-      have h_clique : G.IsNClique 3 {p, a, b} := by
-        rw [SimpleGraph.isNClique_iff]
-        constructor
-        · intro x hx y hy hxy
-          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at hx hy
-          rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl
-          · exact absurd rfl hxy
-          · exact hp_adj_a
-          · exact hp_adj_b
-          · exact G.symm hp_adj_a
-          · exact absurd rfl hxy
-          · exact h
-          · exact G.symm hp_adj_b
-          · exact G.symm h
-          · exact absurd rfl hxy
-        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
-          · simp only [Finset.mem_singleton]; exact hab
-          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
-            exact ⟨ha_ne_p.symm, hb_ne_p.symm⟩
-      exact h_tri _ h_clique
-    have hac_nonadj : ¬G.Adj a c := by
-      intro h
-      have h_clique : G.IsNClique 3 {p, a, c} := by
-        rw [SimpleGraph.isNClique_iff]
-        constructor
-        · intro x hx y hy hxy
-          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at hx hy
-          rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl
-          · exact absurd rfl hxy
-          · exact hp_adj_a
-          · exact hp_adj_c
-          · exact G.symm hp_adj_a
-          · exact absurd rfl hxy
-          · exact h
-          · exact G.symm hp_adj_c
-          · exact G.symm h
-          · exact absurd rfl hxy
-        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
-          · simp only [Finset.mem_singleton]; exact hac
-          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
-            exact ⟨ha_ne_p.symm, hc_ne_p.symm⟩
-      exact h_tri _ h_clique
-    have hbc_nonadj : ¬G.Adj b c := by
-      intro h
-      have h_clique : G.IsNClique 3 {p, b, c} := by
-        rw [SimpleGraph.isNClique_iff]
-        constructor
-        · intro x hx y hy hxy
-          simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at hx hy
-          rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl
-          · exact absurd rfl hxy
-          · exact hp_adj_b
-          · exact hp_adj_c
-          · exact G.symm hp_adj_b
-          · exact absurd rfl hxy
-          · exact h
-          · exact G.symm hp_adj_c
-          · exact G.symm h
-          · exact absurd rfl hxy
-        · rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_singleton]
-          · simp only [Finset.mem_singleton]; exact hbc
-          · simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
-            exact ⟨hb_ne_p.symm, hc_ne_p.symm⟩
-      exact h_tri _ h_clique
+    have hab_nonadj : ¬G.Adj a b :=
+      neighbors_nonadj_of_triangleFree G h_tri p a b hp_adj_a hp_adj_b hab
+    have hac_nonadj : ¬G.Adj a c :=
+      neighbors_nonadj_of_triangleFree G h_tri p a c hp_adj_a hp_adj_c hac
+    have hbc_nonadj : ¬G.Adj b c :=
+      neighbors_nonadj_of_triangleFree G h_tri p b c hp_adj_b hp_adj_c hbc
     -- P-properties: a, b, c not adjacent to v
     have ha_nonadj_v : ¬G.Adj v a := (hP_props a ha_P).1
     have hb_nonadj_v : ¬G.Adj v b := (hP_props b hb_P).1
@@ -6515,30 +6219,9 @@ lemma exists_CariolaroSetup_at {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
   -- ═══════════════════════════════════════════════════════════════════════════
   have hT_indep : G.IsIndepSet T := by
     intro ti hti tj htj hne h_adj
-    -- ti, tj both adjacent to t, and ti ~ tj
-    -- Then {t, ti, tj} is a triangle, contradicting h_tri
     have hti_adj_t : G.Adj t ti := (mem_filter.mp hti).2
     have htj_adj_t : G.Adj t tj := (mem_filter.mp htj).2
-    have h_clique : G.IsNClique 3 {t, ti, tj} := by
-      rw [SimpleGraph.isNClique_iff]
-      constructor
-      · intro a ha b hb hab
-        simp only [Finset.mem_coe, mem_insert, mem_singleton] at ha hb
-        rcases ha with rfl | rfl | rfl <;> rcases hb with rfl | rfl | rfl
-        · exact absurd rfl hab
-        · exact hti_adj_t
-        · exact htj_adj_t
-        · exact G.symm hti_adj_t
-        · exact absurd rfl hab
-        · exact h_adj
-        · exact G.symm htj_adj_t
-        · exact G.symm h_adj
-        · exact absurd rfl hab
-      · rw [card_insert_of_notMem, card_insert_of_notMem, card_singleton]
-        · simp only [mem_singleton]; exact hne
-        · simp only [mem_insert, mem_singleton, not_or]
-          exact ⟨G.ne_of_adj hti_adj_t, G.ne_of_adj htj_adj_t⟩
-    exact h_tri _ h_clique
+    exact neighbors_nonadj_of_triangleFree G h_tri t ti tj hti_adj_t htj_adj_t hne h_adj
 
   -- ═══════════════════════════════════════════════════════════════════════════
   -- STEP 5b: Each p ∈ P has exactly 1 T-neighbor and exactly 1 W-neighbor
@@ -11594,38 +11277,17 @@ lemma final_contradiction {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
       omega
     simpa [NQw] using this
 
-  -- Step 11 (partial): start Cariolaro’s final constraint tracking.
+  -- Step 11 (partial): start Cariolaro's final constraint tracking.
   -- `w1` cannot be adjacent to `s1` since `s1 ~ p1` and `w1 ~ p1`.
-  have hw1_nonadj_s1 : ¬G.Adj w1 s1 := by
-    intro h
-    have h_clique : G.IsNClique 3 {p1, s1, w1} := by
-      rw [SimpleGraph.isNClique_iff]
-      constructor
-      · intro x hx y hy hxy
-        simp only [Finset.mem_coe, Finset.mem_insert, Finset.mem_singleton] at hx hy
-        rcases hx with rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl
-        all_goals
-          first
-          | exact absurd rfl hxy
-          | exact G.symm hs1_adj_p1
-          | exact G.symm hp1_adj_w1
-          | exact hs1_adj_p1
-          | exact G.symm h
-          | exact hp1_adj_w1
-          | exact h
-      · classical
-        have hp1_ne_s1 : p1 ≠ s1 := G.ne_of_adj (G.symm hs1_adj_p1)
-        have hp1_ne_w1 : p1 ≠ w1 := G.ne_of_adj hp1_adj_w1
-        have hs1_ne_w1 : s1 ≠ w1 := by
-          intro h_eq
-          have hw1_adj_v : G.Adj v w1 := by
-            have : G.Adj v s1 := by
-              simpa [mem_neighborFinset] using hs1_in_N
-            simpa [h_eq] using this
-          have hw1_in_Q : w1 ∈ Q := (Finset.mem_filter.mp hw1_in_W).1
-          exact (hQ_props w1 hw1_in_Q).1 hw1_adj_v
-        simp [hp1_ne_s1, hp1_ne_w1, hs1_ne_w1]
-    exact h_tri _ h_clique
+  have hs1_ne_w1 : s1 ≠ w1 := by
+    intro h_eq
+    have hw1_adj_v : G.Adj v w1 := by
+      have : G.Adj v s1 := by simpa [mem_neighborFinset] using hs1_in_N
+      simpa [h_eq] using this
+    have hw1_in_Q : w1 ∈ Q := (Finset.mem_filter.mp hw1_in_W).1
+    exact (hQ_props w1 hw1_in_Q).1 hw1_adj_v
+  have hw1_nonadj_s1 : ¬G.Adj w1 s1 :=
+    neighbors_nonadj_of_triangleFree G h_tri p1 w1 s1 hp1_adj_w1 (G.symm hs1_adj_p1) hs1_ne_w1.symm
 
   -- Work with `S0 := N(v) \\ {t}` to reuse the existing S/T/W helper lemmas.
   let S0 : Finset (Fin 18) := (G.neighborFinset v).erase t
@@ -12748,178 +12410,18 @@ lemma final_contradiction {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
     · simp [ht2_ne_t3, ht2_ne_t4]
 
   -- Convert the "card = 2 of a 3-set" facts into concrete adjacency patterns.
+  -- Use helper lemma to reduce ~90 lines to 2 lines
   have hs_cases :
       (¬G.Adj w1 s2 ∧ G.Adj w1 s3 ∧ G.Adj w1 s4) ∨
       (G.Adj w1 s2 ∧ ¬G.Adj w1 s3 ∧ G.Adj w1 s4) ∨
-      (G.Adj w1 s2 ∧ G.Adj w1 s3 ∧ ¬G.Adj w1 s4) := by
-    have hSrest_w1_card' :
-        (({s2, s3, s4} : Finset (Fin 18)).filter (G.Adj w1)).card = 2 := by
-      simpa using hSrest_w1_card
-    by_cases hs2 : G.Adj w1 s2
-    · by_cases hs3 : G.Adj w1 s3
-      · -- then ¬(w1~s4), else the filtered set has card 3
-        have hs4 : ¬G.Adj w1 s4 := by
-          intro hs4
-          have hsub :
-              ({s2, s3, s4} : Finset (Fin 18)) ⊆
-                ({s2, s3, s4} : Finset (Fin 18)).filter (G.Adj w1) := by
-            intro x hx
-            simp only [Finset.mem_insert, Finset.mem_singleton] at hx
-            rcases hx with rfl | rfl | rfl
-            · simpa using hs2
-            · simpa using hs3
-            · simpa using hs4
-          have hge3 :
-              3 ≤ (({s2, s3, s4} : Finset (Fin 18)).filter (G.Adj w1)).card := by
-            have :
-                ({s2, s3, s4} : Finset (Fin 18)).card ≤
-                  (({s2, s3, s4} : Finset (Fin 18)).filter (G.Adj w1)).card :=
-              Finset.card_le_card hsub
-            simpa [hSrest_card3] using this
-          have : 3 ≤ 2 := by rw [hSrest_w1_card'] at hge3; exact hge3
-          exact (Nat.not_succ_le_self 2) this
-        exact Or.inr (Or.inr ⟨hs2, hs3, hs4⟩)
-      · by_cases hs4 : G.Adj w1 s4
-        · exact Or.inr (Or.inl ⟨hs2, hs3, hs4⟩)
-        · -- only s2 adjacent gives card 1, contradiction
-          exfalso
-          have hcard1 :
-              (({s2, s3, s4} : Finset (Fin 18)).filter (G.Adj w1)).card = 1 := by
-            simp [Finset.filter_insert, hs2, hs3, hs4, hs_ne24]
-          have : (1 : ℕ) = 2 := by rw [hcard1] at hSrest_w1_card'; exact hSrest_w1_card'
-          exact (by decide : (1 : ℕ) ≠ 2) this
-    · -- ¬(w1~s2), so must have w1~s3 and w1~s4
-      by_cases hs3 : G.Adj w1 s3
-      · by_cases hs4 : G.Adj w1 s4
-        · exact Or.inl ⟨hs2, hs3, hs4⟩
-        · -- only s3 adjacent gives card 1, contradiction
-          exfalso
-          have hcard1 :
-              (({s2, s3, s4} : Finset (Fin 18)).filter (G.Adj w1)).card = 1 := by
-            have : ({s2, s3, s4} : Finset (Fin 18)).filter (G.Adj w1) = {s3} := by
-              ext x
-              simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
-              constructor
-              · intro ⟨hx_mem, hx_adj⟩
-                rcases hx_mem with rfl | rfl | rfl
-                · exfalso; exact hs2 hx_adj
-                · rfl
-                · exfalso; exact hs4 hx_adj
-              · intro rfl
-                exact ⟨Or.inr (Or.inl rfl), hs3⟩
-            simp [this]
-          have : (1 : ℕ) = 2 := by rw [hcard1] at hSrest_w1_card'; exact hSrest_w1_card'
-          exact (by decide : (1 : ℕ) ≠ 2) this
-      · -- none of s2,s3 adjacent gives card ≤1, contradiction
-        exfalso
-        by_cases hs4 : G.Adj w1 s4
-        · -- If w1 adj s4, then card = 1 (only s4 adjacent)
-          have hcard1 :
-              (({s2, s3, s4} : Finset (Fin 18)).filter (G.Adj w1)).card = 1 := by
-            have : ({s2, s3, s4} : Finset (Fin 18)).filter (G.Adj w1) = {s4} := by
-              ext x
-              simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
-              constructor
-              · intro ⟨hx_mem, hx_adj⟩
-                rcases hx_mem with rfl | rfl | rfl
-                · exfalso; exact hs2 hx_adj
-                · exfalso; exact hs3 hx_adj
-                · rfl
-              · intro rfl
-                exact ⟨Or.inr (Or.inr rfl), hs4⟩
-            simp [this]
-          have : (1 : ℕ) = 2 := by rw [hcard1] at hSrest_w1_card'; exact hSrest_w1_card'
-          exact (by decide : (1 : ℕ) ≠ 2) this
-        · -- If w1 not adj s4, then card = 0 (none adjacent)
-          have hcard0 :
-              (({s2, s3, s4} : Finset (Fin 18)).filter (G.Adj w1)).card = 0 := by
-            simp [Finset.filter_insert, hs2, hs3, hs4]
-          have : (0 : ℕ) = 2 := by rw [hcard0] at hSrest_w1_card'; exact hSrest_w1_card'
-          exact (by decide : (0 : ℕ) ≠ 2) this
+      (G.Adj w1 s2 ∧ G.Adj w1 s3 ∧ ¬G.Adj w1 s4) :=
+    filter_two_of_three s2 s3 s4 hs_ne23 hs_ne24 hs_ne34 (G.Adj w1) (by simpa using hSrest_w1_card)
 
   have ht_cases :
       (¬G.Adj w1 t2 ∧ G.Adj w1 t3 ∧ G.Adj w1 t4) ∨
       (G.Adj w1 t2 ∧ ¬G.Adj w1 t3 ∧ G.Adj w1 t4) ∨
-      (G.Adj w1 t2 ∧ G.Adj w1 t3 ∧ ¬G.Adj w1 t4) := by
-    have hTrest_w1_card' :
-        (({t2, t3, t4} : Finset (Fin 18)).filter (G.Adj w1)).card = 2 := by
-      simpa using hTrest_w1_card
-    by_cases ht2 : G.Adj w1 t2
-    · by_cases ht3 : G.Adj w1 t3
-      · have ht4 : ¬G.Adj w1 t4 := by
-          intro ht4
-          have hsub :
-              ({t2, t3, t4} : Finset (Fin 18)) ⊆
-                ({t2, t3, t4} : Finset (Fin 18)).filter (G.Adj w1) := by
-            intro x hx
-            simp only [Finset.mem_insert, Finset.mem_singleton] at hx
-            rcases hx with rfl | rfl | rfl
-            · simpa using ht2
-            · simpa using ht3
-            · simpa using ht4
-          have hge3 :
-              3 ≤ (({t2, t3, t4} : Finset (Fin 18)).filter (G.Adj w1)).card := by
-            have :
-                ({t2, t3, t4} : Finset (Fin 18)).card ≤
-                  (({t2, t3, t4} : Finset (Fin 18)).filter (G.Adj w1)).card :=
-              Finset.card_le_card hsub
-            simpa [hTrest_card3] using this
-          have : 3 ≤ 2 := by rw [hTrest_w1_card'] at hge3; exact hge3
-          exact (Nat.not_succ_le_self 2) this
-        exact Or.inr (Or.inr ⟨ht2, ht3, ht4⟩)
-      · by_cases ht4 : G.Adj w1 t4
-        · exact Or.inr (Or.inl ⟨ht2, ht3, ht4⟩)
-        · exfalso
-          have hcard1 :
-              (({t2, t3, t4} : Finset (Fin 18)).filter (G.Adj w1)).card = 1 := by
-            simp [Finset.filter_insert, ht2, ht3, ht4, ht2_ne_t4]
-          have : (1 : ℕ) = 2 := by rw [hcard1] at hTrest_w1_card'; exact hTrest_w1_card'
-          exact (by decide : (1 : ℕ) ≠ 2) this
-    · by_cases ht3 : G.Adj w1 t3
-      · by_cases ht4 : G.Adj w1 t4
-        · exact Or.inl ⟨ht2, ht3, ht4⟩
-        · exfalso
-          have hcard1 :
-              (({t2, t3, t4} : Finset (Fin 18)).filter (G.Adj w1)).card = 1 := by
-            have : ({t2, t3, t4} : Finset (Fin 18)).filter (G.Adj w1) = {t3} := by
-              ext x
-              simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
-              constructor
-              · intro ⟨hx_mem, hx_adj⟩
-                rcases hx_mem with rfl | rfl | rfl
-                · exfalso; exact ht2 hx_adj
-                · rfl
-                · exfalso; exact ht4 hx_adj
-              · intro rfl
-                exact ⟨Or.inr (Or.inl rfl), ht3⟩
-            simp [this]
-          have : (1 : ℕ) = 2 := by rw [hcard1] at hTrest_w1_card'; exact hTrest_w1_card'
-          exact (by decide : (1 : ℕ) ≠ 2) this
-      · exfalso
-        by_cases ht4 : G.Adj w1 t4
-        · -- If w1 adj t4, then card = 1 (only t4 adjacent)
-          have hcard1 :
-              (({t2, t3, t4} : Finset (Fin 18)).filter (G.Adj w1)).card = 1 := by
-            have : ({t2, t3, t4} : Finset (Fin 18)).filter (G.Adj w1) = {t4} := by
-              ext x
-              simp only [Finset.mem_filter, Finset.mem_insert, Finset.mem_singleton]
-              constructor
-              · intro ⟨hx_mem, hx_adj⟩
-                rcases hx_mem with rfl | rfl | rfl
-                · exfalso; exact ht2 hx_adj
-                · exfalso; exact ht3 hx_adj
-                · rfl
-              · intro rfl
-                exact ⟨Or.inr (Or.inr rfl), ht4⟩
-            simp [this]
-          have : (1 : ℕ) = 2 := by rw [hcard1] at hTrest_w1_card'; exact hTrest_w1_card'
-          exact (by decide : (1 : ℕ) ≠ 2) this
-        · -- If w1 not adj t4, then card = 0 (none adjacent)
-          have hcard0 :
-              (({t2, t3, t4} : Finset (Fin 18)).filter (G.Adj w1)).card = 0 := by
-            simp [Finset.filter_insert, ht2, ht3, ht4]
-          have : (0 : ℕ) = 2 := by rw [hcard0] at hTrest_w1_card'; exact hTrest_w1_card'
-          exact (by decide : (0 : ℕ) ≠ 2) this
+      (G.Adj w1 t2 ∧ G.Adj w1 t3 ∧ ¬G.Adj w1 t4) :=
+    filter_two_of_three t2 t3 t4 ht2_ne_t3 ht2_ne_t4 ht3_ne_t4 (G.Adj w1) (by simpa using hTrest_w1_card)
 
   have h_exists_i :
       (G.Adj w1 s2 ∧ G.Adj w1 t2) ∨ (G.Adj w1 s3 ∧ G.Adj w1 t3) ∨ (G.Adj w1 s4 ∧ G.Adj w1 t4) := by
