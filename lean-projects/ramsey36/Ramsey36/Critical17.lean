@@ -1,7 +1,4 @@
 /-
-Copyright (c) 2025. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-
 # The 17-Vertex Critical Graph for R(3,6)
 
 This file defines the Graver-Yackel graph: one of the 7 non-isomorphic

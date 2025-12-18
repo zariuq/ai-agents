@@ -1,9 +1,3 @@
-/-
-Copyright (c) 2025 Zar Goertzel. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Zar Goertzel
--/
-
 import FourColor.Geometry.DiskTypes
 import FourColor.Geometry.NoDigons
 import FourColor.Geometry.PlanarityHelpers

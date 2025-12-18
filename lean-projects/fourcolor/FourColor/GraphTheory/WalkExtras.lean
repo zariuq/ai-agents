@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2024 Zar. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: GPT-5 Pro (OpenAI), Zar, Claude (Anthropic)
--/
 import Mathlib.Combinatorics.SimpleGraph.Basic
 import Mathlib.Combinatorics.SimpleGraph.Connectivity
 import Mathlib.Data.Rel

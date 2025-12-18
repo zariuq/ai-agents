@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2025 Claude Code. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude Code
--/
 import Mathlib.Data.Finset.Basic
 import Mathlib.Logic.Relation
 
