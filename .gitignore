@@ -80,6 +80,9 @@ megalodon/README
 megalodon/makebytecode
 megalodon/makeopt
 
+# Document Repos
+ethics/
+
 # Megalodon source/binaries (external, downloaded from tarball)
 megalodon/bin/
 megalodon/src/
@@ -101,6 +104,7 @@ Prompts/
 docs/
 .claude/prompts/
 2025_*/
+.claude-data/
 
 # 4cp (four color) project - archived/inactive
 # These large directories slow down Codex
