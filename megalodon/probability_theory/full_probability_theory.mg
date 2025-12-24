@@ -1,10 +1,19 @@
-Definition sum_nat : (set -> set) -> set := fun f => 0.
+Definition partial_sum : (set -> set) -> set -> set :=
+  fun f n => Sum 0 n f.
 
-Axiom sum_nat_clos : forall f : set -> set, (forall n :e omega, f n :e real /\ 0 <= f n) -> sum_nat f :e real.
+Definition is_upper_bound : (set -> set) -> set -> prop :=
+  fun f s => forall n :e omega, partial_sum f n <= s.
 
-Axiom sum_nat_zero : sum_nat (fun n => 0) = 0.
+Definition is_least_upper_bound : (set -> set) -> set -> prop :=
+  fun f s =>
+    is_upper_bound f s
+    /\ (forall t :e real, is_upper_bound f t -> s <= t).
 
-Axiom sum_nat_pair : forall a b :e real, sum_nat (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) = a + b.
+Definition sum_nat : (set -> set) -> set :=
+  fun f => Eps_i (fun s => s :e real /\ is_least_upper_bound f s).
+
+Definition summable : (set -> set) -> prop :=
+  fun f => exists s, s :e real /\ is_least_upper_bound f s.
 
 Definition Disjoint : set -> set -> prop :=
   fun A B => A :/\: B = Empty.
@@ -14,6 +23,9 @@ Definition pairwise_disjoint : (set -> set) -> prop :=
 
 Definition bigcup_nat : (set -> set) -> set :=
   fun f => Union {f n | n :e omega}.
+
+Definition bigcup_fin : (set -> set) -> set -> set :=
+  fun f n => Union {f i | i :e n}.
 
 Axiom real_zero_le_implies_add_le :
   forall x y, 0 <= y -> x <= x + y.
@@ -51,6 +63,369 @@ Axiom eq_refl_set : forall x:set, x = x.
 Axiom eq_sym : forall x y, x = y -> y = x.
 Axiom eq_trans : forall x y z, x = y -> y = z -> x = z.
 Axiom func_congr : forall f : set -> set, forall x y : set, x = y -> f x = f y.
+
+Theorem real_leq_antisym :
+  forall x y :e real, x <= y -> y <= x -> x = y.
+let x.
+assume Hx: x :e real.
+let y.
+assume Hy: y :e real.
+assume Hxy. assume Hyx.
+claim HxS: SNo x. { exact real_SNo x Hx. }
+claim HyS: SNo y. { exact real_SNo y Hy. }
+exact SNoLe_antisym x y HxS HyS Hxy Hyx.
+Qed.
+
+Theorem least_upper_bound_unique :
+  forall f : set -> set,
+  forall s t :e real,
+    is_least_upper_bound f s ->
+    is_least_upper_bound f t ->
+    s = t.
+let f.
+let s.
+assume Hs: s :e real.
+let t.
+assume Ht: t :e real.
+assume Hs_lub: is_least_upper_bound f s.
+assume Ht_lub: is_least_upper_bound f t.
+claim Hs_upper: is_upper_bound f s.
+  exact andEL (is_upper_bound f s)
+              (forall t0 :e real, is_upper_bound f t0 -> s <= t0)
+              Hs_lub.
+claim Hs_min: forall t0 :e real, is_upper_bound f t0 -> s <= t0.
+  exact andER (is_upper_bound f s)
+              (forall t0 :e real, is_upper_bound f t0 -> s <= t0)
+              Hs_lub.
+claim Ht_upper: is_upper_bound f t.
+  exact andEL (is_upper_bound f t)
+              (forall t0 :e real, is_upper_bound f t0 -> t <= t0)
+              Ht_lub.
+claim Ht_min: forall t0 :e real, is_upper_bound f t0 -> t <= t0.
+  exact andER (is_upper_bound f t)
+              (forall t0 :e real, is_upper_bound f t0 -> t <= t0)
+              Ht_lub.
+claim Hst: s <= t.
+  exact Hs_min t Ht Ht_upper.
+claim Hts: t <= s.
+  exact Ht_min s Hs Hs_upper.
+exact real_leq_antisym s Hs t Ht Hst Hts.
+Qed.
+
+Theorem summable_unique_lub :
+  forall f : set -> set, summable f ->
+  forall s t :e real,
+    is_least_upper_bound f s ->
+    is_least_upper_bound f t ->
+    s = t.
+let f.
+assume Hsummable.
+let s.
+assume Hs: s :e real.
+let t.
+assume Ht: t :e real.
+assume Hs_lub: is_least_upper_bound f s.
+assume Ht_lub: is_least_upper_bound f t.
+exact least_upper_bound_unique f s Hs t Ht Hs_lub Ht_lub.
+Qed.
+
+Theorem sum_nat_spec :
+  forall f : set -> set,
+    summable f ->
+    sum_nat f :e real /\ is_least_upper_bound f (sum_nat f).
+let f.
+assume Hsummable.
+exact Eps_i_ex (fun s => s :e real /\ is_least_upper_bound f s) Hsummable.
+Qed.
+
+Theorem sum_nat_real :
+  forall f : set -> set,
+    summable f ->
+    sum_nat f :e real.
+let f.
+assume Hsummable.
+exact andEL (sum_nat f :e real)
+            (is_least_upper_bound f (sum_nat f))
+            (sum_nat_spec f Hsummable).
+Qed.
+
+Theorem sum_nat_is_least_upper_bound :
+  forall f : set -> set,
+    summable f ->
+    is_least_upper_bound f (sum_nat f).
+let f.
+assume Hsummable.
+exact andER (sum_nat f :e real)
+            (is_least_upper_bound f (sum_nat f))
+            (sum_nat_spec f Hsummable).
+Qed.
+
+Theorem partial_sum_zero :
+  forall n :e omega, partial_sum (fun n => 0) n = 0.
+let n.
+assume Hn: n :e omega.
+claim Hn_nat: nat_p n.
+{ exact omega_nat_p n Hn. }
+claim Hgen: forall k, nat_p k -> partial_sum (fun n => 0) k = 0.
+{
+  apply nat_ind.
+  - prove partial_sum (fun n => 0) 0 = 0.
+    claim Hdef: partial_sum (fun n => 0) 0 =
+      nat_primrec 0 (fun k r => if k :e 0 then 0 else 0 + r) (ordsucc 0).
+    { reflexivity. }
+    rewrite Hdef.
+    rewrite (nat_primrec_S 0 (fun k r => if k :e 0 then 0 else 0 + r) 0 nat_0).
+    rewrite (nat_primrec_0 0 (fun k r => if k :e 0 then 0 else 0 + r)).
+    rewrite (If_i_0 (0 :e 0) 0 (0 + 0) nIn_0_0).
+    rewrite (real_add_zero_l 0).
+    reflexivity.
+  - let k.
+    assume Hk: nat_p k.
+    assume IH: partial_sum (fun n => 0) k = 0.
+    prove partial_sum (fun n => 0) (ordsucc k) = 0.
+    claim Hdef: partial_sum (fun n => 0) (ordsucc k) =
+      nat_primrec 0 (fun i r => if i :e 0 then 0 else 0 + r) (ordsucc (ordsucc k)).
+    { reflexivity. }
+    rewrite Hdef.
+    rewrite (nat_primrec_S 0 (fun i r => if i :e 0 then 0 else 0 + r) (ordsucc k) (nat_ordsucc k Hk)).
+    claim Hdefk: nat_primrec 0 (fun i r => if i :e 0 then 0 else 0 + r) (ordsucc k)
+      = partial_sum (fun n => 0) k.
+    { reflexivity. }
+    rewrite Hdefk.
+    rewrite IH.
+    rewrite (If_i_0 (ordsucc k :e 0) 0 (0 + 0) (EmptyE (ordsucc k))).
+    rewrite (real_add_zero_l 0).
+    reflexivity.
+}
+exact Hgen n Hn_nat.
+Qed.
+
+Theorem partial_sum_pair_zero :
+  forall a b :e real,
+    partial_sum (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) 0 = a.
+let a.
+assume Ha: a :e real.
+let b.
+assume Hb: b :e real.
+claim Hdef: partial_sum (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) 0 =
+  nat_primrec 0
+    (fun k r => if k :e 0 then 0 else (If_i (k = 0) a (If_i (k = 1) b 0)) + r)
+    (ordsucc 0).
+{ reflexivity. }
+rewrite Hdef.
+rewrite (nat_primrec_S 0 (fun k r => if k :e 0 then 0 else (If_i (k = 0) a (If_i (k = 1) b 0)) + r) 0 nat_0).
+rewrite (nat_primrec_0 0 (fun k r => if k :e 0 then 0 else (If_i (k = 0) a (If_i (k = 1) b 0)) + r)).
+rewrite (If_i_0 (0 :e 0) 0 ((If_i (0 = 0) a (If_i (0 = 1) b 0)) + 0) nIn_0_0).
+claim H00: 0 = 0. { reflexivity. }
+rewrite (If_i_1 (0 = 0) a (If_i (0 = 1) b 0) H00).
+rewrite (real_add_zero_r a).
+reflexivity.
+Qed.
+
+Theorem partial_sum_pair_succ :
+  forall a b :e real,
+    forall n :e omega,
+      partial_sum (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (ordsucc n) = a + b.
+let a.
+assume Ha: a :e real.
+let b.
+assume Hb: b :e real.
+let n.
+assume Hn: n :e omega.
+claim Hn_nat: nat_p n.
+{ exact omega_nat_p n Hn. }
+claim Hgen: forall k, nat_p k -> partial_sum (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (ordsucc k) = a + b.
+{
+  apply nat_ind.
+  - prove partial_sum (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (ordsucc 0) = a + b.
+    claim Hdef: partial_sum (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (ordsucc 0) =
+      nat_primrec 0
+        (fun k r => if k :e 0 then 0 else (If_i (k = 0) a (If_i (k = 1) b 0)) + r)
+        (ordsucc (ordsucc 0)).
+    { reflexivity. }
+    rewrite Hdef.
+    rewrite (nat_primrec_S 0 (fun k r => if k :e 0 then 0 else (If_i (k = 0) a (If_i (k = 1) b 0)) + r) 1 nat_1).
+    rewrite (nat_primrec_S 0 (fun k r => if k :e 0 then 0 else (If_i (k = 0) a (If_i (k = 1) b 0)) + r) 0 nat_0).
+    rewrite (nat_primrec_0 0 (fun k r => if k :e 0 then 0 else (If_i (k = 0) a (If_i (k = 1) b 0)) + r)).
+    rewrite (If_i_0 (0 :e 0) 0 ((If_i (0 = 0) a (If_i (0 = 1) b 0)) + 0) nIn_0_0).
+    claim H00: 0 = 0. { reflexivity. }
+    rewrite (If_i_1 (0 = 0) a (If_i (0 = 1) b 0) H00).
+    rewrite (real_add_zero_r a).
+    rewrite (If_i_0 (1 :e 0) 0 ((If_i (1 = 0) a (If_i (1 = 1) b 0)) + a) nIn_1_0).
+    rewrite (If_i_0 (1 = 0) a (If_i (1 = 1) b 0) neq_1_0).
+    claim H11: 1 = 1. { reflexivity. }
+    rewrite (If_i_1 (1 = 1) b 0 H11).
+    rewrite (real_add_comm b a).
+    reflexivity.
+  - let k.
+    assume Hk: nat_p k.
+    assume IH: partial_sum (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (ordsucc k) = a + b.
+    prove partial_sum (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (ordsucc (ordsucc k)) = a + b.
+    claim Hdef: partial_sum (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (ordsucc (ordsucc k)) =
+      nat_primrec 0
+        (fun i r => if i :e 0 then 0 else (If_i (i = 0) a (If_i (i = 1) b 0)) + r)
+        (ordsucc (ordsucc (ordsucc k))).
+    { reflexivity. }
+    rewrite Hdef.
+    rewrite (nat_primrec_S 0 (fun i r => if i :e 0 then 0 else (If_i (i = 0) a (If_i (i = 1) b 0)) + r) (ordsucc (ordsucc k)) (nat_ordsucc (ordsucc k) (nat_ordsucc k Hk))).
+    claim Hdefk: nat_primrec 0
+      (fun i r => if i :e 0 then 0 else (If_i (i = 0) a (If_i (i = 1) b 0)) + r)
+      (ordsucc (ordsucc k))
+      = partial_sum (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (ordsucc k).
+    { reflexivity. }
+    rewrite Hdefk.
+    rewrite IH.
+    rewrite (If_i_0 (ordsucc (ordsucc k) :e 0) 0 ((If_i (ordsucc (ordsucc k) = 0) a (If_i (ordsucc (ordsucc k) = 1) b 0)) + (a + b)) (EmptyE (ordsucc (ordsucc k)))).
+    claim Hneq0: ordsucc (ordsucc k) <> 0.
+    { exact neq_ordsucc_0 (ordsucc k). }
+    claim Hneq1: ordsucc (ordsucc k) <> 1.
+    {
+      claim Hneq: ordsucc k <> 0.
+      { exact neq_ordsucc_0 k. }
+      exact ordsucc_inj_contra (ordsucc k) 0 Hneq.
+    }
+    rewrite (If_i_0 (ordsucc (ordsucc k) = 0) a (If_i (ordsucc (ordsucc k) = 1) b 0) Hneq0).
+    rewrite (If_i_0 (ordsucc (ordsucc k) = 1) b 0 Hneq1).
+    rewrite (real_add_zero_l (a + b)).
+    reflexivity.
+}
+exact Hgen n Hn_nat.
+Qed.
+
+Theorem pair_is_least_upper_bound :
+  forall a b :e real,
+    0 <= b ->
+    is_least_upper_bound
+      (fun n => If_i (n = 0) a (If_i (n = 1) b 0))
+      (a + b).
+let a.
+assume Ha: a :e real.
+let b.
+assume Hb: b :e real.
+assume Hb_nonneg.
+apply andI (is_upper_bound (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (a + b))
+           (forall t :e real, is_upper_bound (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) t -> a + b <= t).
+- prove is_upper_bound (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (a + b).
+  let n.
+  assume Hn: n :e omega.
+  claim Hn_nat: nat_p n.
+  { exact omega_nat_p n Hn. }
+  apply (nat_inv n Hn_nat).
+  * assume Hn0: n = 0.
+    rewrite Hn0.
+    rewrite (partial_sum_pair_zero a Ha b Hb).
+    exact real_zero_le_implies_add_le a b Hb_nonneg.
+  * assume Hn_succ: exists k, nat_p k /\ n = ordsucc k.
+    apply (exandE_i nat_p (fun k => n = ordsucc k) Hn_succ).
+    let k.
+    assume Hk_nat: nat_p k.
+    assume Hn_eq: n = ordsucc k.
+    rewrite Hn_eq.
+    claim Hk_omega: k :e omega.
+    { exact nat_p_omega k Hk_nat. }
+    rewrite (partial_sum_pair_succ a Ha b Hb k Hk_omega).
+    exact SNoLe_ref (a + b).
+- prove forall t :e real, is_upper_bound (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) t -> a + b <= t.
+  let t.
+  assume Ht_real: t :e real.
+  assume Ht_upper: is_upper_bound (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) t.
+  claim H0_omega: 0 :e omega.
+  { exact nat_p_omega 0 nat_0. }
+  claim H1_omega: ordsucc 0 :e omega.
+  { exact omega_ordsucc 0 H0_omega. }
+  claim Hps1: partial_sum (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (ordsucc 0) <= t.
+  { exact Ht_upper (ordsucc 0) H1_omega. }
+  claim Hps1': a + b <= t.
+  {
+    rewrite <- (partial_sum_pair_succ a Ha b Hb 0 H0_omega).
+    exact Hps1.
+  }
+  exact Hps1'.
+Qed.
+
+Theorem sum_nat_zero : sum_nat (fun n => 0) = 0.
+claim Hub: is_upper_bound (fun n => 0) 0.
+{
+  let n.
+  assume Hn: n :e omega.
+  rewrite (partial_sum_zero n Hn).
+  exact SNoLe_ref 0.
+}
+claim Hlub: is_least_upper_bound (fun n => 0) 0.
+{
+  apply andI (is_upper_bound (fun n => 0) 0) (forall t :e real, is_upper_bound (fun n => 0) t -> 0 <= t).
+  - exact Hub.
+  - let t.
+    assume Ht_real: t :e real.
+    assume Ht_upper: is_upper_bound (fun n => 0) t.
+    claim H0_omega: 0 :e omega.
+    { exact nat_p_omega 0 nat_0. }
+    claim Hps0: partial_sum (fun n => 0) 0 <= t.
+    { exact Ht_upper 0 H0_omega. }
+    claim Hps0': 0 <= t.
+    {
+      rewrite <- (partial_sum_zero 0 H0_omega).
+      exact Hps0.
+    }
+    exact Hps0'.
+}
+claim Hsum_wit: 0 :e real /\ is_least_upper_bound (fun n => 0) 0.
+{
+  apply andI (0 :e real) (is_least_upper_bound (fun n => 0) 0).
+  - exact real_0.
+  - exact Hlub.
+}
+claim Hsum_nat: sum_nat (fun n => 0) :e real /\ is_least_upper_bound (fun n => 0) (sum_nat (fun n => 0)).
+{
+  exact Eps_i_ax (fun s => s :e real /\ is_least_upper_bound (fun n => 0) s) 0 Hsum_wit.
+}
+claim Hsum_real: sum_nat (fun n => 0) :e real.
+{ exact andEL (sum_nat (fun n => 0) :e real) (is_least_upper_bound (fun n => 0) (sum_nat (fun n => 0))) Hsum_nat. }
+claim Hsum_lub: is_least_upper_bound (fun n => 0) (sum_nat (fun n => 0)).
+{ exact andER (sum_nat (fun n => 0) :e real) (is_least_upper_bound (fun n => 0) (sum_nat (fun n => 0))) Hsum_nat. }
+exact least_upper_bound_unique (fun n => 0) (sum_nat (fun n => 0)) Hsum_real 0 real_0 Hsum_lub Hlub.
+Qed.
+
+Theorem sum_nat_pair :
+  forall a b :e real,
+    0 <= b ->
+    sum_nat (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) = a + b.
+let a.
+assume Ha: a :e real.
+let b.
+assume Hb: b :e real.
+assume Hb_nonneg.
+claim HaS: SNo a. { exact real_SNo a Ha. }
+claim HbS: SNo b. { exact real_SNo b Hb. }
+claim Hab_sno: add_SNo a b :e real.
+{ exact real_add_SNo a Ha b Hb. }
+claim Hab_eq: add_SNo a b = a + b.
+{ exact add_SNo_add_CSNo a b HaS HbS. }
+claim Hab_real: a + b :e real.
+{
+  rewrite <- Hab_eq.
+  exact Hab_sno.
+}
+claim Hlub: is_least_upper_bound (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (a + b).
+{ exact pair_is_least_upper_bound a Ha b Hb Hb_nonneg. }
+claim Hsum_wit: a + b :e real /\ is_least_upper_bound (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (a + b).
+{
+  apply andI (a + b :e real) (is_least_upper_bound (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (a + b)).
+  - exact Hab_real.
+  - exact Hlub.
+}
+claim Hsum_nat: sum_nat (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) :e real /\ is_least_upper_bound (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (sum_nat (fun n => If_i (n = 0) a (If_i (n = 1) b 0))).
+{
+  exact Eps_i_ax (fun s => s :e real /\ is_least_upper_bound (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) s) (a + b) Hsum_wit.
+}
+claim Hsum_real: sum_nat (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) :e real.
+{ exact andEL (sum_nat (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) :e real) (is_least_upper_bound (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (sum_nat (fun n => If_i (n = 0) a (If_i (n = 1) b 0)))) Hsum_nat. }
+claim Hsum_lub: is_least_upper_bound (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (sum_nat (fun n => If_i (n = 0) a (If_i (n = 1) b 0))).
+{ exact andER (sum_nat (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) :e real) (is_least_upper_bound (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (sum_nat (fun n => If_i (n = 0) a (If_i (n = 1) b 0)))) Hsum_nat. }
+exact least_upper_bound_unique (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (sum_nat (fun n => If_i (n = 0) a (If_i (n = 1) b 0))) Hsum_real (a + b) Hab_real Hsum_lub Hlub.
+Qed.
+
+
 
 Definition is_field : set -> set -> prop :=
   fun Omega F =>
@@ -218,8 +593,21 @@ Definition is_probability_measure : set -> set -> (set -> set) -> prop :=
          pairwise_disjoint f ->
          P (bigcup_nat f) = sum_nat (fun n => P (f n)))))).
 
-Axiom prob_value_real :
-  forall Omega F, forall P: set -> set, is_probability_measure Omega F P -> forall A :e F, P A :e real.
+Theorem prob_value_real :
+  forall Omega F, forall P: set -> set,
+    is_probability_measure Omega F P ->
+    forall A :e F, P A :e real.
+let Omega. let F. let P.
+assume H.
+claim H_rest: (forall A :e F, P A :e real /\ 0 <= P A) /\ (P Omega = 1 /\ (P Empty = 0 /\ (forall f : set -> set, (forall n :e omega, f n :e F) -> pairwise_disjoint f -> P (bigcup_nat f) = sum_nat (fun n => P (f n))))).
+  exact andER (is_sigma_field Omega F) ((forall A :e F, P A :e real /\ 0 <= P A) /\ (P Omega = 1 /\ (P Empty = 0 /\ (forall f : set -> set, (forall n :e omega, f n :e F) -> pairwise_disjoint f -> P (bigcup_nat f) = sum_nat (fun n => P (f n)))))) H.
+claim H_val: forall A :e F, P A :e real /\ 0 <= P A.
+  exact andEL (forall A :e F, P A :e real /\ 0 <= P A)
+              (P Omega = 1 /\ (P Empty = 0 /\ (forall f : set -> set, (forall n :e omega, f n :e F) -> pairwise_disjoint f -> P (bigcup_nat f) = sum_nat (fun n => P (f n))))) H_rest.
+let A.
+assume HA: A :e F.
+exact andEL (P A :e real) (0 <= P A) (H_val A HA).
+Qed.
 
 Theorem prob_measure_is_sigma_field :
   forall Omega F, forall P: set -> set,
@@ -537,6 +925,8 @@ claim HSumVal: sum_nat (fun n => P (f n)) = P A + P B.
   { exact andEL (P A :e real) (0 <= P A) (Hnonneg A HA). }
   claim HPB_real: P B :e real.
   { exact andEL (P B :e real) (0 <= P B) (Hnonneg B HB). }
+  claim HPB_nonneg: 0 <= P B.
+  { exact andER (P B :e real) (0 <= P B) (Hnonneg B HB). }
   claim HEmpty0: P Empty = 0.
   {
     claim Hrest2: P Omega = 1 /\ (P Empty = 0 /\ (forall f : set -> set, (forall n :e omega, f n :e F) -> pairwise_disjoint f -> P (bigcup_nat f) = sum_nat (fun n => P (f n)))).
@@ -589,6 +979,7 @@ claim HSumVal: sum_nat (fun n => P (f n)) = P A + P B.
   apply sum_nat_pair.
   - exact HPA_real.
   - exact HPB_real.
+  - exact HPB_nonneg.
 }
 
 rewrite HUnionSym.
@@ -1388,4 +1779,74 @@ claim Htarget: P (A :/\: (Omega :\: B)) = P A * P (Omega :\: B).
   exact Hright.
 }
 exact independent_events_intro Omega P A (Omega :\: B) Htarget.
+Qed.
+
+Theorem power_is_field :
+  forall Omega, is_field Omega (Power Omega).
+let Omega.
+set F := Power Omega.
+apply andI (((forall A :e F, A c= Omega) /\ Omega :e F) /\ Empty :e F /\ (forall A :e F, (Omega :\: A) :e F))
+           (forall A B, A :e F -> B :e F -> (A :\/: B) :e F).
+- apply andI (((forall A :e F, A c= Omega) /\ Omega :e F) /\ Empty :e F)
+             (forall A :e F, (Omega :\: A) :e F).
+  - apply andI ((forall A :e F, A c= Omega) /\ Omega :e F)
+               (Empty :e F).
+    + apply andI (forall A :e F, A c= Omega)
+                 (Omega :e F).
+      * let A.
+        assume HA: A :e F.
+        exact PowerE Omega A HA.
+      * exact PowerI Omega Omega (Subq_ref Omega).
+    + exact PowerI Omega Empty (Subq_Empty Omega).
+  - let A.
+    assume HA: A :e F.
+    exact PowerI Omega (Omega :\: A) (setminus_Subq Omega A).
+- let A. let B.
+  assume HA: A :e F.
+  assume HB: B :e F.
+  claim HAsub: A c= Omega.
+    exact PowerE Omega A HA.
+  claim HBsub: B c= Omega.
+    exact PowerE Omega B HB.
+  exact PowerI Omega (A :\/: B) (binunion_Subq_min A B Omega HAsub HBsub).
+Qed.
+
+Theorem power_is_sigma_field :
+  forall Omega, is_sigma_field Omega (Power Omega).
+let Omega.
+set F := Power Omega.
+apply andI (is_field Omega F)
+           (forall f : set -> set, (forall n :e omega, f n :e F) -> bigcup_nat f :e F).
+- exact power_is_field Omega.
+- let f.
+  assume Hf: forall n :e omega, f n :e F.
+  apply PowerI.
+  prove bigcup_nat f c= Omega.
+  let x.
+  assume Hx: x :e bigcup_nat f.
+  claim BigDef: bigcup_nat f = Union {f n|n :e omega}.
+  { reflexivity. }
+  claim HxU: x :e Union {f n|n :e omega}.
+  {
+    rewrite <- BigDef.
+    exact Hx.
+  }
+  apply (UnionE_impred {f n|n :e omega} x HxU).
+  let Y.
+  assume HxY: x :e Y.
+  assume HY: Y :e {f n|n :e omega}.
+  apply (ReplE_impred omega f Y HY).
+  let n.
+  assume Hn: n :e omega.
+  assume HYeq: Y = f n.
+  claim HfnSub: f n c= Omega.
+  {
+    exact PowerE Omega (f n) (Hf n Hn).
+  }
+  claim Hxfn: x :e f n.
+  {
+    rewrite <- HYeq.
+    exact HxY.
+  }
+  exact HfnSub x Hxfn.
 Qed.

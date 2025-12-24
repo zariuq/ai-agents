@@ -70,9 +70,11 @@ import Mettapedia.Logic.PLNEvidence
 import Mettapedia.Logic.PLNDeductionComposition
 import Mettapedia.Logic.TemporalQuantale
 
--- Universal AI (Hutter Chapters 4-5)
+-- Universal AI (Hutter Chapters 2-7)
 import Mettapedia.UniversalAI.SimplicityUncertainty
 import Mettapedia.UniversalAI.BayesianAgents
+import Mettapedia.UniversalAI.ProblemClasses
+import Mettapedia.UniversalAI.TimeBoundedAIXI
 
 -- Bridge (connects geometry to probability/logic)
 import Mettapedia.Bridge.BitVectorEvidence

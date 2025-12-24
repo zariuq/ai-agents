@@ -119,6 +119,12 @@ mizar-projects/4cp/theories/*/old_*/
 megalodon/theory/metamath/mmmg/
 megalodon/theory/mizar/mmlmg/
 
+# Large megalodon archives/experiments
+megalodon/_archive/
+
+# Large text files
+Apache_loc.txt
+
 # Block all markdown files (use git add -f for whitelisted files)
 *.md
 !README.md
