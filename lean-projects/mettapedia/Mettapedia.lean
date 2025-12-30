@@ -28,6 +28,8 @@ import Mettapedia.GraphTheory.Basic
 
 -- Probability Theory
 import Mettapedia.ProbabilityTheory.Basic
+import Mettapedia.ProbabilityTheory.Cox
+import Mettapedia.ProbabilityTheory.ImpreciseProbability
 import Mettapedia.ProbabilityTheory.KnuthSkilling
 import Mettapedia.ProbabilityTheory.OptimalTransport
 
@@ -55,6 +57,12 @@ import Mettapedia.CategoryTheory.PLNSemiringQuantale
 import Mettapedia.Computability.KolmogorovComplexity.Basic
 -- import Mettapedia.Computability.KolmogorovComplexity.Prefix  -- WIP (Phase 2)
 
+-- Arithmetical Hierarchy (Grain of Truth - Phase 1)
+import Mettapedia.Computability.ArithmeticalHierarchy.Basic
+import Mettapedia.Computability.ArithmeticalHierarchy.Closure
+import Mettapedia.Computability.ArithmeticalHierarchy.PolicyEncoding
+import Mettapedia.Computability.ArithmeticalHierarchy.PolicyClasses
+
 -- Logic
 import Mettapedia.Logic.SolomonoffPrior
 import Mettapedia.Logic.SolomonoffInduction
@@ -75,6 +83,21 @@ import Mettapedia.UniversalAI.SimplicityUncertainty
 import Mettapedia.UniversalAI.BayesianAgents
 import Mettapedia.UniversalAI.ProblemClasses
 import Mettapedia.UniversalAI.TimeBoundedAIXI
+
+-- Multi-Agent RL Framework (Grain of Truth - Phase 2)
+import Mettapedia.UniversalAI.MultiAgent.JointActions
+import Mettapedia.UniversalAI.MultiAgent.Environment
+import Mettapedia.UniversalAI.MultiAgent.Policy
+import Mettapedia.UniversalAI.MultiAgent.Value
+import Mettapedia.UniversalAI.MultiAgent.BestResponse
+import Mettapedia.UniversalAI.MultiAgent.Nash
+import Mettapedia.UniversalAI.MultiAgent.Examples
+
+-- Reflective Oracles (Grain of Truth - Core Infrastructure)
+import Mettapedia.UniversalAI.ReflectiveOracles.Basic
+
+-- Grain of Truth (Phase 4 - Infrastructure only)
+import Mettapedia.UniversalAI.GrainOfTruth.Setup
 
 -- Bridge (connects geometry to probability/logic)
 import Mettapedia.Bridge.BitVectorEvidence
