@@ -49,33 +49,38 @@ The probability hypercube is a geometric framework for understanding relationshi
 #### `NovelTheories.lean` (43 KB)
 Orthomodular lattice foundations and quantum probability structures:
 - **`OrthomodularLattice` class**: Axiomatization with orthomodular law, de Morgan laws, complementation
-- **OML Fundamental Lemma** `oml_fundamental`: Proves `(a ⊔ b) ⊓ aᶜ ≤ b` (quasi-distributivity)
-- **Orthogonality Criterion** `le_compl_iff_inf_eq_bot`: Characterizes orthogonality via complements
+- **Orthogonality → Disjointness** `inf_eq_bot_of_le_compl`: `a ≤ bᶜ → a ⊓ b = ⊥`
+- **Important Note on Disjointness vs Orthogonality**: Documents that in general OML, `a ⊓ b = ⊥` does NOT imply `a ≤ bᶜ` (with Hilbert space counterexample)
 - **Commutativity Predicate** `commutes`: Defines when elements behave classically
 - **`QuantumMassFunction`**: Mass functions on finite orthomodular lattices
 - **`QuantumState`**: Probability measures on OMLs (orthoadditive, normalized)
 
-**Novel Contributions**:
-- Complete proof of OML fundamental lemma (quasi-distributivity)
-- Full characterization of orthogonality in OMLs
-- Rigorous foundation for quantum belief functions
+**Key Mathematical Insight**:
+The "quasi-distributivity" property `(a ⊔ b) ⊓ aᶜ ≤ b` is **FALSE** in general OML!
+Counterexample in Hilbert lattice of ℂ²: `a = span{(1,0)}, b = span{(1,1)}` gives
+`(a ⊔ b) ⊓ aᶜ = span{(0,1)} ⊈ span{(1,1)} = b`. This asymmetry is fundamental to quantum logic.
 
-#### `NeighborTheories.lean` (49 KB)
+#### `NeighborTheories.lean` (52 KB)
 Commutativity theory and the classical/quantum boundary:
 - **Commutativity Lemmas**:
   - `commutes_symm`: Symmetry of commutativity
   - `commutes_compl`: Preservation under complement
   - `commutes_self`, `commutes_top`, `commutes_bot`: Basic cases
   - `commutes_of_le_compl`: Orthogonality implies commutativity
-- **Exchange Property** `exchange_of_commutes`: `a C b → a ⊓ (aᶜ ⊔ b) = a ⊓ b`
-  - Key characterization from Kalmbach (1983)
+- **Exchange Property (Bidirectional)**:
+  - `exchange_of_commutes`: `a C b → a ⊓ (aᶜ ⊔ b) = a ⊓ b`
+  - `commutes_of_exchange`: Converse direction
+  - `commutes_iff_exchange`: Full characterization
+- **Foulis-Holland Theorem (Complete!)**:
+  - `commutes_inf`: `a C b ∧ a C c → a C (b ⊓ c)`
+  - `commutes_sup`: `a C b ∧ a C c → a C (b ⊔ c)`
 - **Disjunctive Syllogism** `oml_disjunctive_syllogism`: Conditional inference in OMLs
 - **Orthocomplement Uniqueness**: Uniqueness of decompositions
 
 **Novel Contributions**:
-- First complete formalization of commutativity preservation theorems
-- Rigorous proof of exchange property without `sorry`s
-- Foundation for Foulis-Holland theorem (commuting elements → Boolean sublattice)
+- **Complete Foulis-Holland theorem**: Commuting elements are closed under ⊓ and ⊔
+- Bidirectional exchange characterization (first rigorous formalization)
+- De Morgan duality proof for `commutes_sup` via `commutes_inf`
 
 #### `Basic.lean` (46 KB)
 Classical Dempster-Shafer theory on power sets:
@@ -120,28 +125,30 @@ Minimal counterexample showing `quantaleAnd` ≠ lattice meet in general
 
 ## Key Theoretical Results
 
-### 1. OML Quasi-Distributivity (Novel)
-**Theorem** `oml_fundamental`: In any orthomodular lattice, `(a ⊔ b) ⊓ aᶜ ≤ b`
+### 1. Disjointness vs Orthogonality (Important Discovery!)
+In Boolean algebras: `a ⊓ b = ⊥ ↔ a ≤ bᶜ` (disjointness = orthogonality)
 
-This is a weakened form of distributivity that holds even in non-distributive OMLs. It's the foundation for:
-- Disjunctive syllogism
-- Orthogonality characterizations
-- Exchange property proofs
+**In general OML: `a ≤ bᶜ → a ⊓ b = ⊥` but NOT the converse!**
 
-### 2. Orthogonality Characterization (Novel)
-**Theorem** `le_compl_iff_inf_eq_bot`: `a ≤ bᶜ ↔ a ⊓ b = ⊥`
+The "quasi-distributivity" property `(a ⊔ b) ⊓ aᶜ ≤ b` is **FALSE** in general OML.
+Counterexample in ℂ²: `a = span{(1,0)}, b = span{(1,1)}` gives `(a ⊔ b) ⊓ aᶜ = span{(0,1)} ⊈ b`.
 
-Complete bidirectional proof using OML fundamental lemma. This is the rigorous definition of "orthogonal events" in quantum probability.
+This asymmetry is fundamental to quantum logic and distinguishes it from classical logic.
 
-### 3. Exchange Property
-**Theorem** `exchange_of_commutes`: If `a` commutes with `b`, then `a ⊓ (aᶜ ⊔ b) = a ⊓ b`
+### 2. Exchange Property (Bidirectional Characterization)
+**Theorem** `commutes_iff_exchange`: `a C b ↔ a ⊓ (aᶜ ⊔ b) = a ⊓ b`
 
-From Kalmbach (1983). This is THE key property distinguishing commuting (classical-like) from non-commuting (quantum) pairs of events.
+From Kalmbach (1983). This is THE key property distinguishing commuting (classical-like) from non-commuting (quantum) pairs of events. We proved both directions rigorously.
 
-### 4. Foulis-Holland Theorem (Partial)
-**Theorem** (in progress): Commuting elements generate distributive sublattices
+### 3. Foulis-Holland Theorem (Complete!)
+**Theorem** `commutes_inf`: If `a C b` and `a C c`, then `a C (b ⊓ c)`
+**Theorem** `commutes_sup`: If `a C b` and `a C c`, then `a C (b ⊔ c)`
 
-This explains why classical probability emerges from quantum probability when measuring compatible observables.
+Commuting elements are closed under lattice operations, hence generate Boolean (distributive) sublattices. This explains why classical probability emerges from quantum probability when measuring compatible observables.
+
+**Proof Strategy**:
+- For `commutes_inf`: Use exchange characterization. Since `b ⊓ c ≤ b, c`, the exchange bounds combine to give `a ⊓ (aᶜ ⊔ (b ⊓ c)) = a ⊓ b ⊓ c`.
+- For `commutes_sup`: De Morgan duality. `b ⊔ c = (bᶜ ⊓ cᶜ)ᶜ`, apply `commutes_inf` to complements, then `commutes_compl`.
 
 ## Building the Formalization
 
@@ -159,16 +166,20 @@ nice -n 19 lake build Mettapedia.ProbabilityTheory.Hypercube
 
 ### Completed (Zero Sorries)
 - ✅ Orthomodular lattice axiomatization
-- ✅ OML fundamental lemma (quasi-distributivity)
-- ✅ Orthogonality criterion (bidirectional)
+- ✅ Orthogonality → disjointness (`inf_eq_bot_of_le_compl`)
 - ✅ Commutativity basic lemmas (symmetry, complement, etc.)
-- ✅ Exchange property for commuting elements
+- ✅ Exchange property (bidirectional: `commutes_iff_exchange`)
+- ✅ **Foulis-Holland theorem** (`commutes_inf`, `commutes_sup`)
 - ✅ Disjunctive syllogism in OMLs
 - ✅ Classical Dempster-Shafer on power sets
 - ✅ Quantum mass functions (finite case)
 
+### Corrected Misconceptions
+- ❌ ~~OML fundamental lemma (quasi-distributivity)~~ - **FALSE in general OML!**
+- ❌ ~~Bidirectional orthogonality criterion~~ - Only forward direction holds
+
 ### In Progress
-- ⚠️ `commutes_inf`, `commutes_sup`: Require full Foulis-Holland proof
+- ⚠️ `commuting_distributive`: Distributivity for commuting triples (uses `commutes_sup`)
 - ⚠️ Infinite lattice case for quantum beliefs (requires measure theory)
 - ⚠️ Complete hypercube edge characterizations
 
@@ -202,11 +213,12 @@ Extended Dempster-Shafer theory:
 
 ## Future Work
 
-1. **Complete Foulis-Holland**: Prove `commutes_inf`, `commutes_sup` → distributive sublattice
-2. **Hypercube Edges**: Formalize all 12 edges (theory transformations)
-3. **Measure Theory Bridge**: Extend finite quantum beliefs to σ-algebras
-4. **Concrete Examples**: MO5 lattice, projective geometries
-5. **Decision Procedures**: Automated reasoning about commutativity
+1. ~~**Complete Foulis-Holland**~~ ✅ DONE: `commutes_inf`, `commutes_sup` proven
+2. **Distributive Sublattices**: Prove `commuting_distributive` theorem
+3. **Hypercube Edges**: Formalize all 12 edges (theory transformations)
+4. **Measure Theory Bridge**: Extend finite quantum beliefs to σ-algebras
+5. **Concrete Examples**: MO5 lattice, projective geometries
+6. **Decision Procedures**: Automated reasoning about commutativity
 
 ## Contact
 

@@ -1461,10 +1461,64 @@ def guardPrefixListNat (pref : List ℕ) (yes no : Turing.ToPartrec.Code) : Turi
   | [] => yes
   | x :: xs => dropIfHeadEqNat x (guardPrefixListNat xs yes no) no
 
-/-- Head-`headI`-based prefix check mirroring the control flow of `guardPrefixListNat`. -/
-def prefixHeadI : List ℕ → List ℕ → Bool
-  | [], _ => true
-  | x :: xs, v => if v.headI = x then prefixHeadI xs v.tail else false
+ /-- Head-`headI`-based prefix check mirroring the control flow of `guardPrefixListNat`. -/
+ def prefixHeadI : List ℕ → List ℕ → Bool
+   | [], _ => true
+   | x :: xs, v => if v.headI = x then prefixHeadI xs v.tail else false
+
+ theorem prefixHeadI_self (pref : List ℕ) : prefixHeadI pref pref = true := by
+   induction pref with
+   | nil =>
+       simp [prefixHeadI]
+   | cons x xs ih =>
+       simp [prefixHeadI, ih]
+
+ theorem prefixHeadI_encodeHistoryNat_eq (h h' : History)
+     (hp : prefixHeadI (Coding.encodeHistoryNat h) (Coding.encodeHistoryNat h') = true) : h = h' := by
+   induction h generalizing h' with
+  | nil =>
+      cases h' with
+      | nil => rfl
+      | cons e es =>
+          have : (Coding.encodeHistElemNat e).1 = 0 := by
+            simpa [Coding.encodeHistoryNat, prefixHeadI] using hp
+          cases e <;> simp [Coding.encodeHistElemNat] at this
+  | cons e es ih =>
+      cases h' with
+      | nil =>
+          have :
+              0 = (Coding.encodeHistElemNat e).1 ∧
+                0 = (Coding.encodeHistElemNat e).2 ∧ prefixHeadI (Coding.encodeHistoryNat es) [] = true := by
+            simpa [Coding.encodeHistoryNat, prefixHeadI] using hp
+          cases e <;> simp [Coding.encodeHistElemNat] at this
+      | cons e' es' =>
+          have hparts :
+              (Coding.encodeHistElemNat e').1 = (Coding.encodeHistElemNat e).1 ∧
+                (Coding.encodeHistElemNat e').2 = (Coding.encodeHistElemNat e).2 ∧
+                  prefixHeadI (Coding.encodeHistoryNat es) (Coding.encodeHistoryNat es') = true := by
+            simpa [Coding.encodeHistoryNat, prefixHeadI] using hp
+          have hes : es = es' := ih _ hparts.2.2
+          have helem' : e' = e := by
+            have hdec_e :
+                Coding.decodeHistElemNat (Coding.encodeHistElemNat e).1 (Coding.encodeHistElemNat e).2 = some e := by
+              simpa using (Coding.decodeHistElemNat_encodeHistElemNat e)
+            have hdec_e' :
+                Coding.decodeHistElemNat (Coding.encodeHistElemNat e').1 (Coding.encodeHistElemNat e').2 = some e' := by
+              simpa using (Coding.decodeHistElemNat_encodeHistElemNat e')
+            have : some e' = some e := by
+              calc
+                some e' =
+                    Coding.decodeHistElemNat (Coding.encodeHistElemNat e').1 (Coding.encodeHistElemNat e').2 := by
+                      simpa [hdec_e']
+                _ = Coding.decodeHistElemNat (Coding.encodeHistElemNat e).1 (Coding.encodeHistElemNat e).2 := by
+                      simp [hparts.1, hparts.2.1]
+                _ = some e := by
+                      simpa [hdec_e]
+            simpa using this
+          have helem : e = e' := helem'.symm
+          subst helem
+          subst hes
+          rfl
 
 theorem constNatCode_eval (n : ℕ) (v : List ℕ) : (constNatCode n).eval v = pure [n] := by
   induction n with
@@ -4092,6 +4146,740 @@ noncomputable def oneStepRewardLowerBoundSoundProofSystemToPartrec (tEnv l : ℕ
       simpa [hclaim0] using hnonneg
 
 -/
+
+/-- A certificate for a 1-step (i.e. horizon `2`) reward lower bound for `ξ^tl`.
+
+The certificate is **history-local** (it certifies a claim only for a single history code), but the
+verified raw program is **globally VA-sound** because it claims `0` on every other history. -/
+structure XiTlOneStepRewardLowerBoundCert where
+  /-- The encoded history guarded by the raw program. -/
+  historyCode : List ℕ
+  /-- The action played at the guarded history, encoded via `Coding.encodeActionNat`. -/
+  actionCode : ℕ
+  /-- The claimed numerator `num`. The decoded claim is `num / (den+1)`. -/
+  num : ℕ
+  /-- The claimed denominator offset `den`. The decoded claim is `num / (den+1)`. -/
+  den : ℕ
+  /-- Indices of environment programs provably yielding percept `(obs=false,reward=true)`. -/
+  idx_false_true : List ℕ
+  /-- Indices of environment programs provably yielding percept `(obs=true,reward=true)`. -/
+  idx_true_true : List ℕ
+deriving Encodable
+
+namespace XiTlOneStepRewardLowerBoundCert
+
+/-- The common dyadic denominator exponent used by the verifier: for `bitstringsUpTo l`,
+all prefix-free weights are of the form `2^{-k}` with `k ≤ 2*l+1`. -/
+def denomExp (l : ℕ) : ℕ :=
+  2 * l + 1
+
+def expectedDen (l : ℕ) : ℕ :=
+  2 ^ (denomExp l) - 1
+
+def bitsAt (l : ℕ) : List (List Bool) :=
+  bitstringsUpTo l
+
+def allIdxs (cert : XiTlOneStepRewardLowerBoundCert) : List ℕ :=
+  cert.idx_false_true ++ cert.idx_true_true
+
+def weightCodeLenAt (l i : ℕ) : Option ℕ :=
+  let bits := bitsAt l
+  if hi : i < bits.length then
+    some (Coding.selfDelimitingEncode (bits.get ⟨i, hi⟩)).length
+  else
+    none
+
+def numeratorTerm (l i : ℕ) : Option ℕ :=
+  (weightCodeLenAt l i).map fun k => 2 ^ (denomExp l - k)
+
+def numeratorBound (l : ℕ) : List ℕ → Option ℕ
+  | [] => some 0
+  | i :: is => do
+      let t ← numeratorTerm l i
+      let acc ← numeratorBound l is
+      pure (t + acc)
+
+lemma numeratorBound_eq_sum_getD (l : ℕ) :
+    ∀ idxs num,
+      numeratorBound l idxs = some num →
+        num = (idxs.map (fun i => (numeratorTerm l i).getD 0)).sum := by
+  intro idxs
+  induction idxs with
+  | nil =>
+      intro num h
+      simp [numeratorBound] at h
+      subst h
+      simp
+  | cons i is ih =>
+      intro num h
+      cases hTerm : numeratorTerm l i with
+      | none =>
+          simp [numeratorBound, hTerm] at h
+      | some t =>
+          cases hAcc : numeratorBound l is with
+          | none =>
+              simp [numeratorBound, hTerm, hAcc] at h
+          | some acc =>
+              have hnum : t + acc = num := by
+                simpa [numeratorBound, hTerm, hAcc] using h
+              have hacc : acc = (is.map (fun i => (numeratorTerm l i).getD 0)).sum := ih acc hAcc
+              have ht : (numeratorTerm l i).getD 0 = t := by
+                simp [hTerm]
+              simp [List.map, List.sum_cons, ht]
+              calc
+                num = t + acc := hnum.symm
+                _ = t + (is.map (fun i => (numeratorTerm l i).getD 0)).sum := by
+                    simp [hacc]
+
+lemma pow_two_zpow_neg_eq_div (D k : ℕ) (hk : k ≤ D) :
+    (2 : ℝ) ^ (-(k : ℤ)) = (2 : ℝ) ^ (D - k) / (2 : ℝ) ^ D := by
+  have h2 : (2 : ℝ) ≠ 0 := by norm_num
+  have hexp : ((D - k : ℕ) : ℤ) - (D : ℤ) = -(k : ℤ) := by
+    have : ((D - k : ℕ) : ℤ) = (D : ℤ) - (k : ℤ) := by
+      simpa using (Int.ofNat_sub hk)
+    omega
+  calc
+    (2 : ℝ) ^ (-(k : ℤ)) = (2 : ℝ) ^ (((D - k : ℕ) : ℤ) - (D : ℤ)) := by
+      simp [hexp]
+    _ = (2 : ℝ) ^ ((D - k : ℕ) : ℤ) / (2 : ℝ) ^ (D : ℤ) := by
+      simpa using (zpow_sub₀ (a := (2 : ℝ)) h2 ((D - k : ℕ) : ℤ) (D : ℤ))
+    _ = (2 : ℝ) ^ (D - k) / (2 : ℝ) ^ D := by
+      simp [zpow_natCast]
+
+lemma selfDelimitingEncode_length_le_denomExp (l i : ℕ) (hi : i < (bitsAt l).length) :
+    (Coding.selfDelimitingEncode ((bitsAt l).get ⟨i, hi⟩)).length ≤ denomExp l := by
+  have hmem : (bitsAt l).get ⟨i, hi⟩ ∈ bitsAt l := List.get_mem _ _
+  have hmemUpTo : (bitsAt l).get ⟨i, hi⟩ ∈ bitstringsUpTo l := by
+    simp [bitsAt]
+  have hlen : ((bitsAt l).get ⟨i, hi⟩).length ≤ l :=
+    length_le_of_mem_bitstringsUpTo hmemUpTo
+  calc
+    (Coding.selfDelimitingEncode ((bitsAt l).get ⟨i, hi⟩)).length
+        = 2 * ((bitsAt l).get ⟨i, hi⟩).length + 1 := by
+            simpa using Coding.length_selfDelimitingEncode ((bitsAt l).get ⟨i, hi⟩)
+    _ ≤ 2 * l + 1 := by
+          exact Nat.add_le_add_right (Nat.mul_le_mul_left 2 hlen) 1
+    _ = denomExp l := by
+          simp [denomExp]
+
+lemma prefixFreeWeightAt_toReal_eq_numeratorTerm_div (l i : ℕ) :
+    (xi_tlPrefixFreeWeightAt (bitsAt l) i).toReal =
+      ((numeratorTerm l i).getD 0 : ℝ) / (2 ^ denomExp l : ℝ) := by
+  classical
+  by_cases hi : i < (bitsAt l).length
+  ·
+      let D : ℕ := denomExp l
+      let k : ℕ := (Coding.selfDelimitingEncode ((bitsAt l).get ⟨i, hi⟩)).length
+      have hk : k ≤ D := by
+        simpa [k, D] using selfDelimitingEncode_length_le_denomExp (l := l) (i := i) hi
+      have hterm : numeratorTerm l i = some (2 ^ (D - k)) := by
+        simp [numeratorTerm, weightCodeLenAt, hi, D, k]
+      have hweight : (xi_tlPrefixFreeWeightAt (bitsAt l) i).toReal = (2 : ℝ) ^ (-(k : ℤ)) := by
+        simp [xi_tlPrefixFreeWeightAt, xi_tlPrefixWeight, hi, k]
+      calc
+        (xi_tlPrefixFreeWeightAt (bitsAt l) i).toReal = (2 : ℝ) ^ (-(k : ℤ)) := hweight
+        _ = (2 : ℝ) ^ (D - k) / (2 : ℝ) ^ D := pow_two_zpow_neg_eq_div D k hk
+        _ = ((2 ^ (D - k) : ℕ) : ℝ) / (2 ^ D : ℝ) := by
+              simp [Nat.cast_pow]
+        _ = ((numeratorTerm l i).getD 0 : ℝ) / (2 ^ denomExp l : ℝ) := by
+              simp [hterm, D]
+  ·
+      have hterm : numeratorTerm l i = none := by
+        simp [numeratorTerm, weightCodeLenAt, hi]
+      simp [xi_tlPrefixFreeWeightAt, hi, hterm]
+
+def checkIdxOutputs (tEnv l : ℕ) (ha : History) (target : Percept) (idxs : List ℕ) : Bool :=
+  let bits := bitsAt l
+  idxs.all fun i =>
+    if hi : i < bits.length then
+      match Coding.decodeEncodableBits (α := Turing.ToPartrec.Code) (bits.get ⟨i, hi⟩) with
+      | some tm =>
+          decide
+            (RawToPartrecEnvironmentProgram.computeWithin tEnv { code := { code := bits.get ⟨i, hi⟩ }, tm := tm } ha =
+              some target)
+      | none => false
+    else
+      false
+
+def ok (tEnv l : ℕ) (p : RawToPartrecProgram) (cert : XiTlOneStepRewardLowerBoundCert) : Prop :=
+  match Coding.decodeHistoryNat cert.historyCode, Coding.decodeActionNat cert.actionCode with
+  | some h, some a =>
+      let ha : History := h ++ [HistElem.act a]
+      Coding.encodeHistoryNat h = cert.historyCode ∧
+        p.tm = RawToPartrecProgram.guardedValueActionCode cert.historyCode cert.num cert.den a ∧
+          cert.den = expectedDen l ∧
+            ha.wellFormed ∧
+              cert.allIdxs.Nodup ∧
+                checkIdxOutputs tEnv l ha (Percept.mk false true) cert.idx_false_true = true ∧
+                  checkIdxOutputs tEnv l ha (Percept.mk true true) cert.idx_true_true = true ∧
+                    numeratorBound l cert.allIdxs = some cert.num
+  | _, _ => False
+
+end XiTlOneStepRewardLowerBoundCert
+
+/-- A nontrivial “actual verifier” for horizon `2` (i.e. `n = 1`): certificates describe a dyadic
+lower bound on the **immediate expected reward** under `ξ^tl`, and the accepted raw programs claim
+that bound only at a single guarded history (claiming `0` everywhere else). -/
+noncomputable def xi_tlOneStepRewardLowerBoundSoundProofSystemToPartrec (tEnv l : ℕ) (γ : DiscountFactor) :
+    EncodableSoundProofSystemFamily (α := RawToPartrecProgram)
+      (fun tProg p => ValidValueLowerBound (xi_tlEnvironment tEnv l) γ 2 (p.toExtended tProg)) := by
+  classical
+  refine
+    { Proof := XiTlOneStepRewardLowerBoundCert
+      verify := fun _tProg p cert => decide (XiTlOneStepRewardLowerBoundCert.ok (tEnv := tEnv) (l := l) p cert)
+      sound := ?_ }
+  intro tProg p cert hverify
+  have hok : XiTlOneStepRewardLowerBoundCert.ok (tEnv := tEnv) (l := l) p cert := of_decide_eq_true hverify
+  -- Decode the guarded history and action from the certificate.
+  cases hdecH : Coding.decodeHistoryNat cert.historyCode with
+  | none =>
+      have : False := by
+        simpa [XiTlOneStepRewardLowerBoundCert.ok, hdecH] using hok
+      cases this
+  | some h =>
+      cases hdecA : Coding.decodeActionNat cert.actionCode with
+      | none =>
+          have : False := by
+            simpa [XiTlOneStepRewardLowerBoundCert.ok, hdecH, hdecA] using hok
+          cases this
+      | some a =>
+          have hok' :
+              let ha : History := h ++ [HistElem.act a]
+              Coding.encodeHistoryNat h = cert.historyCode ∧
+                p.tm = RawToPartrecProgram.guardedValueActionCode cert.historyCode cert.num cert.den a ∧
+                  cert.den = XiTlOneStepRewardLowerBoundCert.expectedDen l ∧
+                    ha.wellFormed ∧
+                      cert.allIdxs.Nodup ∧
+                        XiTlOneStepRewardLowerBoundCert.checkIdxOutputs tEnv l ha (Percept.mk false true) cert.idx_false_true =
+                            true ∧
+                          XiTlOneStepRewardLowerBoundCert.checkIdxOutputs tEnv l ha (Percept.mk true true) cert.idx_true_true =
+                              true ∧
+                            XiTlOneStepRewardLowerBoundCert.numeratorBound l cert.allIdxs = some cert.num := by
+            simpa [XiTlOneStepRewardLowerBoundCert.ok, hdecH, hdecA] using hok
+          rcases hok' with ⟨hhEnc, hpTm, hden, hhaWf, hnodup, hIdxFT, hIdxTT, hnum⟩
+          -- Prove global `ValidValueLowerBound` for the time-bounded wrapper.
+          intro h' hwf
+          let μ : Environment := xi_tlEnvironment tEnv l
+          let ha : History := h ++ [HistElem.act a]
+          let xFT : Percept := Percept.mk false true
+          let xTT : Percept := Percept.mk true true
+          have hμ : μ = mixtureEnvironment (xi_tlBayesianMixture tEnv l) := rfl
+          -- Split on whether the history-guard triggers.
+          cases hguard : RawToPartrecProgram.prefixHeadI cert.historyCode (Coding.encodeHistoryNat h') with
+          | true =>
+              -- The guard can only fire on the intended history encoding.
+              have hh' : h = h' := by
+                have :
+                    RawToPartrecProgram.prefixHeadI (Coding.encodeHistoryNat h) (Coding.encodeHistoryNat h') = true := by
+                  simpa [hhEnc] using hguard
+                exact RawToPartrecProgram.prefixHeadI_encodeHistoryNat_eq (h := h) (h' := h') this
+              subst hh'
+              -- Unfold the program wrapper and evaluate the claim.
+              unfold RawToPartrecProgram.toExtended RawToPartrecProgram.computeWithin
+              cases hEval : StepCounting.ToPartrec.evalWithin tProg p.tm (Coding.encodeHistoryNat h) with
+              | none =>
+                  -- Timeout: the wrapper defaults to `(0, stay)`, which is always sound.
+                  have hnonneg : 0 ≤ value μ (p.toExtended tProg).toAgent γ h 2 :=
+                    value_nonneg (μ := μ) (π := (p.toExtended tProg).toAgent) (γ := γ) (h := h) (n := 2)
+                  simpa [hEval]
+                    using hnonneg
+              | some out =>
+                  -- Successful evaluation: use the code template to identify the output.
+                  have houtMem : out ∈ p.tm.eval (Coding.encodeHistoryNat h) :=
+                    StepCounting.ToPartrec.evalWithin_sound (c := p.tm) (v := Coding.encodeHistoryNat h) (out := out) hEval
+                  have hpTm' :
+                      p.tm = RawToPartrecProgram.guardedValueActionCode (Coding.encodeHistoryNat h) cert.num cert.den a := by
+                    simpa [hhEnc] using hpTm
+                  have houtMem' :
+                      out ∈
+                        (RawToPartrecProgram.guardedValueActionCode (Coding.encodeHistoryNat h) cert.num cert.den a).eval
+                          (Coding.encodeHistoryNat h) := by
+                    simpa [hpTm'] using houtMem
+                  -- The guard is true, hence evaluation is `outYes`.
+                  let outYes : List ℕ := [cert.num, cert.den, Coding.encodeActionNat a]
+                  have hEvalTemplate :
+                      (RawToPartrecProgram.guardedValueActionCode (Coding.encodeHistoryNat h) cert.num cert.den a).eval
+                          (Coding.encodeHistoryNat h) =
+                        pure outYes := by
+                    -- `prefixHeadI pref pref = true`.
+                    have : RawToPartrecProgram.prefixHeadI (Coding.encodeHistoryNat h) (Coding.encodeHistoryNat h) = true := by
+                      simpa using RawToPartrecProgram.prefixHeadI_self (Coding.encodeHistoryNat h)
+                    simp [RawToPartrecProgram.guardedValueActionCode, RawToPartrecProgram.guardPrefixListNat_eval_const, this, outYes]
+                  have houtEq : out = outYes := by
+                    simpa [hEvalTemplate] using houtMem'
+                  -- Decode the claim and action from `outYes`.
+                  have hcompute :
+                      ((Coding.decodeValueActionOutput out).getD (0, Action.stay)).1 =
+                        Coding.decodeValueNat cert.num cert.den := by
+                    subst houtEq
+                    simp [outYes, Coding.decodeValueActionOutput, Coding.decodeValueNat]
+                  have hact : ((p.toExtended tProg).compute h).2 = a := by
+                    simp [RawToPartrecProgram.toExtended, RawToPartrecProgram.computeWithin, hEval, houtEq, outYes,
+                      Coding.decodeValueActionOutput]
+                  -- Reduce the value at horizon `2` to a `qValue` at horizon `1`.
+                  have hval :
+                      value μ (p.toExtended tProg).toAgent γ h 2 =
+                        qValue μ (p.toExtended tProg).toAgent γ h a 1 := by
+                    have hwf' : h.wellFormed := hwf
+                    have hval' :
+                        value μ (p.toExtended tProg).toAgent γ h 2 =
+                          qValue μ (p.toExtended tProg).toAgent γ h ((p.toExtended tProg).compute h).2 1 := by
+                      simpa [ExtendedChronologicalProgram.toAgent, deterministicAgent] using
+                        (value_deterministicAgent_succ (μ := μ) (γ := γ)
+                          (act := fun h0 => ((p.toExtended tProg).compute h0).2) (h := h) (n := 1) hwf')
+                    simpa [hact] using hval'
+                  -- Expand `qValue` at horizon `1`: only reward-1 percepts contribute.
+                  have hq :
+                      qValue μ (p.toExtended tProg).toAgent γ h a 1 =
+                        (μ.prob ha xFT).toReal + (μ.prob ha xTT).toReal := by
+                    have hhaWf' : ha.wellFormed := hhaWf
+                    simp [qValue_succ, value_zero, Percept.reward, ha, xFT, xTT, hhaWf', List.foldl_cons, List.foldl_nil]
+                  -- Bound the claim by the verified reward mass.
+                  have hxFT_le : (∑ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt (bitstringsUpTo l) i) ≤ μ.prob ha xFT := by
+                    -- Finite sum ≤ `tsum` by nonnegativity.
+                    have hle :=
+                      ENNReal.sum_le_tsum
+                        (s := cert.idx_false_true.toFinset)
+                        (f := fun i =>
+                          (xi_tlBayesianMixture tEnv l).weights i * ((xi_tlBayesianMixture tEnv l).envs i).prob ha xFT)
+                    -- Rewrite each term in the finite sum to the corresponding prefix-free weight.
+                    have hterm :
+                        (∑ i ∈ cert.idx_false_true.toFinset,
+                            (xi_tlBayesianMixture tEnv l).weights i * ((xi_tlBayesianMixture tEnv l).envs i).prob ha xFT) =
+                          ∑ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt (bitstringsUpTo l) i := by
+                      classical
+                      refine Finset.sum_congr rfl ?_
+                      intro i hi
+                      have hiList : i ∈ cert.idx_false_true := (List.mem_toFinset).1 hi
+                      have hall :=
+                        List.all_eq_true.mp
+                          (by
+                            simpa [XiTlOneStepRewardLowerBoundCert.checkIdxOutputs, XiTlOneStepRewardLowerBoundCert.bitsAt, ha, xFT]
+                              using hIdxFT)
+                      have hpred := hall i hiList
+                      by_cases hiBits : i < (bitstringsUpTo l).length
+                      ·
+                          have hpredHi :
+                              (match
+                                    Coding.decodeEncodableBits (α := Turing.ToPartrec.Code)
+                                      ((bitstringsUpTo l).get ⟨i, hiBits⟩)
+                                  with
+                                  | some tm =>
+                                      decide
+                                        (RawToPartrecEnvironmentProgram.computeWithin tEnv
+                                              { code := { code := (bitstringsUpTo l).get ⟨i, hiBits⟩ }, tm := tm } ha =
+                                            some xFT)
+                                  | none => false) =
+                                  true := by
+                            simpa [hiBits] using hpred
+                          cases htm :
+                              Coding.decodeEncodableBits (α := Turing.ToPartrec.Code) ((bitstringsUpTo l).get ⟨i, hiBits⟩) with
+                          | none =>
+                              have : False := by
+                                have hpredHi' := hpredHi
+                                rw [htm] at hpredHi'
+                                simpa using hpredHi'
+                              cases this
+                          | some tm =>
+                              have hdecide :
+                                  decide
+                                      (RawToPartrecEnvironmentProgram.computeWithin tEnv
+                                            { code := { code := (bitstringsUpTo l).get ⟨i, hiBits⟩ }, tm := tm } ha =
+                                          some xFT) =
+                                    true := by
+                                have hpredHi' := hpredHi
+                                rw [htm] at hpredHi'
+                                simpa using hpredHi'
+                              have hcomp :
+                                  RawToPartrecEnvironmentProgram.computeWithin tEnv
+                                        { code := { code := (bitstringsUpTo l).get ⟨i, hiBits⟩ }, tm := tm } ha =
+                                      some xFT :=
+                                of_decide_eq_true hdecide
+                              have hdec :
+                                  RawToPartrecEnvironmentProgram.decodeCanonical ((bitstringsUpTo l).get ⟨i, hiBits⟩) =
+                                    some
+                                      (RawToPartrecEnvironmentProgram.ofToPartrec ((bitstringsUpTo l).get ⟨i, hiBits⟩) tm) := by
+                                simpa [RawToPartrecEnvironmentProgram.decodeCanonical, RawToPartrecProgram.decodeToPartrec, htm,
+                                  RawToPartrecEnvironmentProgram.ofToPartrec]
+                              have hdec' :
+                                  RawToPartrecEnvironmentProgram.decodeCanonical (bitstringsUpTo l)[i] =
+                                    some (RawToPartrecEnvironmentProgram.ofToPartrec (bitstringsUpTo l)[i] tm) := by
+                                simpa [List.get_eq_getElem] using hdec
+                              have hprob1 :
+                                  ((xi_tlBayesianMixture tEnv l).envs i).prob ha xFT = 1 := by
+                                -- Inside the enumerated window, the decoded program yields `xFT`.
+                                simp [xi_tlBayesianMixture, xi_tlBayesianMixturePrefixFree,
+                                  XiTlOneStepRewardLowerBoundCert.bitsAt, hiBits, hdec',
+                                  RawToPartrecEnvironmentProgram.toEnvironmentWithin, hcomp, xFT]
+                              have htermEq :
+                                  (xi_tlBayesianMixture tEnv l).weights i * ((xi_tlBayesianMixture tEnv l).envs i).prob ha xFT =
+                                    (xi_tlBayesianMixture tEnv l).weights i := by
+                                simp [hprob1]
+                              simpa [xi_tlBayesianMixture, xi_tlBayesianMixturePrefixFree, XiTlOneStepRewardLowerBoundCert.bitsAt]
+                                using htermEq
+                      ·
+                          have : False := by
+                            have : (false : Bool) = true := by simpa [hiBits] using hpred
+                            simpa using this
+                          cases this
+                    have hμprob : (∑' i : ℕ,
+                          (xi_tlBayesianMixture tEnv l).weights i * ((xi_tlBayesianMixture tEnv l).envs i).prob ha xFT) = μ.prob ha xFT := by
+                      rfl
+                    simpa [hterm, hμprob] using hle
+                  have hxTT_le : (∑ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt (bitstringsUpTo l) i) ≤ μ.prob ha xTT := by
+                    have hle :=
+                      ENNReal.sum_le_tsum
+                        (s := cert.idx_true_true.toFinset)
+                        (f := fun i =>
+                          (xi_tlBayesianMixture tEnv l).weights i * ((xi_tlBayesianMixture tEnv l).envs i).prob ha xTT)
+                    have hterm :
+                        (∑ i ∈ cert.idx_true_true.toFinset,
+                            (xi_tlBayesianMixture tEnv l).weights i * ((xi_tlBayesianMixture tEnv l).envs i).prob ha xTT) =
+                          ∑ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt (bitstringsUpTo l) i := by
+                      classical
+                      refine Finset.sum_congr rfl ?_
+                      intro i hi
+                      have hiList : i ∈ cert.idx_true_true := (List.mem_toFinset).1 hi
+                      have hall :=
+                        List.all_eq_true.mp
+                          (by
+                            simpa [XiTlOneStepRewardLowerBoundCert.checkIdxOutputs, XiTlOneStepRewardLowerBoundCert.bitsAt, ha, xTT]
+                              using hIdxTT)
+                      have hpred := hall i hiList
+                      by_cases hiBits : i < (bitstringsUpTo l).length
+                      ·
+                          have hpredHi :
+                              (match
+                                    Coding.decodeEncodableBits (α := Turing.ToPartrec.Code)
+                                      ((bitstringsUpTo l).get ⟨i, hiBits⟩)
+                                  with
+                                  | some tm =>
+                                      decide
+                                        (RawToPartrecEnvironmentProgram.computeWithin tEnv
+                                              { code := { code := (bitstringsUpTo l).get ⟨i, hiBits⟩ }, tm := tm } ha =
+                                            some xTT)
+                                  | none => false) =
+                                  true := by
+                            simpa [hiBits] using hpred
+                          cases htm :
+                              Coding.decodeEncodableBits (α := Turing.ToPartrec.Code) ((bitstringsUpTo l).get ⟨i, hiBits⟩) with
+                          | none =>
+                              have : False := by
+                                have hpredHi' := hpredHi
+                                rw [htm] at hpredHi'
+                                simpa using hpredHi'
+                              cases this
+                          | some tm =>
+                              have hdecide :
+                                  decide
+                                      (RawToPartrecEnvironmentProgram.computeWithin tEnv
+                                            { code := { code := (bitstringsUpTo l).get ⟨i, hiBits⟩ }, tm := tm } ha =
+                                          some xTT) =
+                                    true := by
+                                have hpredHi' := hpredHi
+                                rw [htm] at hpredHi'
+                                simpa using hpredHi'
+                              have hcomp :
+                                  RawToPartrecEnvironmentProgram.computeWithin tEnv
+                                        { code := { code := (bitstringsUpTo l).get ⟨i, hiBits⟩ }, tm := tm } ha =
+                                      some xTT :=
+                                of_decide_eq_true hdecide
+                              have hdec :
+                                  RawToPartrecEnvironmentProgram.decodeCanonical ((bitstringsUpTo l).get ⟨i, hiBits⟩) =
+                                    some
+                                      (RawToPartrecEnvironmentProgram.ofToPartrec ((bitstringsUpTo l).get ⟨i, hiBits⟩) tm) := by
+                                simpa [RawToPartrecEnvironmentProgram.decodeCanonical, RawToPartrecProgram.decodeToPartrec, htm,
+                                  RawToPartrecEnvironmentProgram.ofToPartrec]
+                              have hdec' :
+                                  RawToPartrecEnvironmentProgram.decodeCanonical (bitstringsUpTo l)[i] =
+                                    some (RawToPartrecEnvironmentProgram.ofToPartrec (bitstringsUpTo l)[i] tm) := by
+                                simpa [List.get_eq_getElem] using hdec
+                              have hprob1 :
+                                  ((xi_tlBayesianMixture tEnv l).envs i).prob ha xTT = 1 := by
+                                simp [xi_tlBayesianMixture, xi_tlBayesianMixturePrefixFree,
+                                  XiTlOneStepRewardLowerBoundCert.bitsAt, hiBits, hdec',
+                                  RawToPartrecEnvironmentProgram.toEnvironmentWithin, hcomp, xTT]
+                              have htermEq :
+                                  (xi_tlBayesianMixture tEnv l).weights i * ((xi_tlBayesianMixture tEnv l).envs i).prob ha xTT =
+                                    (xi_tlBayesianMixture tEnv l).weights i := by
+                                simp [hprob1]
+                              simpa [xi_tlBayesianMixture, xi_tlBayesianMixturePrefixFree, XiTlOneStepRewardLowerBoundCert.bitsAt]
+                                using htermEq
+                      ·
+                          have : False := by
+                            have : (false : Bool) = true := by simpa [hiBits] using hpred
+                            simpa using this
+                          cases this
+                    have hμprob : (∑' i : ℕ,
+                          (xi_tlBayesianMixture tEnv l).weights i * ((xi_tlBayesianMixture tEnv l).envs i).prob ha xTT) = μ.prob ha xTT := by
+                      rfl
+                    simpa [hterm, hμprob] using hle
+                  have hsumENN :
+                      (∑ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt (bitstringsUpTo l) i) +
+                          (∑ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt (bitstringsUpTo l) i) ≤
+                        μ.prob ha xFT + μ.prob ha xTT := by
+                    exact add_le_add hxFT_le hxTT_le
+                  have hxFT_ne_top : μ.prob ha xFT ≠ (⊤ : ENNReal) :=
+                    ne_of_lt (lt_of_le_of_lt (by
+                      have hle := μ.prob_le_one ha (by simpa using hhaWf)
+                      have hterm := ENNReal.le_tsum (f := fun x : Percept => μ.prob ha x) xFT
+                      exact le_trans hterm hle) (by simp))
+                  have hxTT_ne_top : μ.prob ha xTT ≠ (⊤ : ENNReal) :=
+                    ne_of_lt (lt_of_le_of_lt (by
+                      have hle := μ.prob_le_one ha (by simpa using hhaWf)
+                      have hterm := ENNReal.le_tsum (f := fun x : Percept => μ.prob ha x) xTT
+                      exact le_trans hterm hle) (by simp))
+                  have hsumENN_ne_top : (μ.prob ha xFT + μ.prob ha xTT) ≠ (⊤ : ENNReal) := by
+                    -- `a + b ≠ ⊤` when both summands are finite.
+                    exact by
+                      intro htop
+                      have : (μ.prob ha xFT) = ⊤ := by
+                        -- `a ≤ a+b`, so if `a+b = ⊤` then `a = ⊤`.
+                        have : μ.prob ha xFT ≤ μ.prob ha xFT + μ.prob ha xTT := le_add_of_nonneg_right (by simp)
+                        simpa [htop] using top_le_iff.1 (le_trans this (le_rfl))
+                      exact hxFT_ne_top this
+                  have hsumReal :
+                      ((∑ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt (bitstringsUpTo l) i) +
+                          (∑ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt (bitstringsUpTo l) i)).toReal ≤
+                        (μ.prob ha xFT).toReal + (μ.prob ha xTT).toReal := by
+                    have hleft_ne_top :
+                        (∑ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt (bitstringsUpTo l) i) +
+                            (∑ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt (bitstringsUpTo l) i) ≠
+                          (⊤ : ENNReal) := by
+                      -- bounded by the finite RHS
+                      exact ne_of_lt (lt_of_le_of_lt hsumENN (by simpa using (lt_top_iff_ne_top.2 hsumENN_ne_top)))
+                    have hleReal :=
+                      (ENNReal.toReal_le_toReal hleft_ne_top hsumENN_ne_top).2 hsumENN
+                    simpa [ENNReal.toReal_add hxFT_ne_top hxTT_ne_top] using hleReal
+                  -- Relate the claim `decodeValueNat num den` to the dyadic weight sum.
+                  have hden' : (cert.den : ℝ) + 1 = (2 ^ XiTlOneStepRewardLowerBoundCert.denomExp l : ℝ) := by
+                    -- `den = 2^D - 1`, so `den + 1 = 2^D`.
+                    have hpow : 1 ≤ 2 ^ XiTlOneStepRewardLowerBoundCert.denomExp l := Nat.one_le_pow _ _ (by norm_num)
+                    have : XiTlOneStepRewardLowerBoundCert.expectedDen l + 1 = 2 ^ XiTlOneStepRewardLowerBoundCert.denomExp l := by
+                      simpa [XiTlOneStepRewardLowerBoundCert.expectedDen] using
+                        (Nat.sub_add_cancel hpow).symm
+                    -- Convert to reals.
+                    have : (cert.den + 1 : ℕ) = 2 ^ XiTlOneStepRewardLowerBoundCert.denomExp l := by
+                      simpa [hden, XiTlOneStepRewardLowerBoundCert.expectedDen] using
+                        (Nat.sub_add_cancel hpow)
+                    norm_cast at this
+                    simpa [this, add_comm, add_left_comm, add_assoc]
+                    have hclaim_le :
+                        (Coding.decodeValueNat cert.num cert.den : ℝ) ≤
+                          ((∑ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt (bitstringsUpTo l) i) +
+                              (∑ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt (bitstringsUpTo l) i)).toReal := by
+                      let bits : List (List Bool) := XiTlOneStepRewardLowerBoundCert.bitsAt l
+                      let D : ℕ := XiTlOneStepRewardLowerBoundCert.denomExp l
+                      let den : ℝ := (2 ^ D : ℝ)
+                      have hclaimEq :
+                          (Coding.decodeValueNat cert.num cert.den : ℝ) = (cert.num : ℝ) / den := by
+                        simp [Coding.decodeValueNat, hden', den, D]
+                      have hnumSum :
+                          cert.num =
+                            (cert.allIdxs.map (fun i => (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0)).sum :=
+                        XiTlOneStepRewardLowerBoundCert.numeratorBound_eq_sum_getD (l := l) cert.allIdxs cert.num hnum
+                      have hnumSplit :
+                          cert.num =
+                            (cert.idx_false_true.map (fun i => (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0)).sum +
+                              (cert.idx_true_true.map (fun i => (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0)).sum := by
+                        simpa [XiTlOneStepRewardLowerBoundCert.allIdxs, List.map_append, List.sum_append] using hnumSum
+                      have hnodupAppend : (cert.idx_false_true ++ cert.idx_true_true).Nodup := by
+                        simpa [XiTlOneStepRewardLowerBoundCert.allIdxs] using hnodup
+                      have hnodupF : cert.idx_false_true.Nodup := (List.nodup_append.1 hnodupAppend).1
+                      have hnodupT : cert.idx_true_true.Nodup := (List.nodup_append.1 hnodupAppend).2.1
+                      have hFinsetF :
+                          (∑ i ∈ cert.idx_false_true.toFinset,
+                              (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0) =
+                            (cert.idx_false_true.map (fun i => (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0)).sum := by
+                        classical
+                        simpa using
+                          (List.sum_toFinset (f := fun i => (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0) hnodupF)
+                      have hFinsetT :
+                          (∑ i ∈ cert.idx_true_true.toFinset,
+                              (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0) =
+                            (cert.idx_true_true.map (fun i => (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0)).sum := by
+                        classical
+                        simpa using
+                          (List.sum_toFinset (f := fun i => (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0) hnodupT)
+                      have hnumFinset :
+                          cert.num =
+                            (∑ i ∈ cert.idx_false_true.toFinset,
+                                  (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0) +
+                              (∑ i ∈ cert.idx_true_true.toFinset,
+                                  (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0) := by
+                        simpa [hFinsetF, hFinsetT] using hnumSplit
+                      have hnumFinsetReal :
+                          (cert.num : ℝ) =
+                            ((∑ i ∈ cert.idx_false_true.toFinset,
+                                    (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0 : ℕ) : ℝ) +
+                              ((∑ i ∈ cert.idx_true_true.toFinset,
+                                    (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0 : ℕ) : ℝ) := by
+                        exact_mod_cast hnumFinset
+                      have hsumF_ne_top :
+                          (∑ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt bits i) ≠ (⊤ : ENNReal) := by
+                        classical
+                        refine (ENNReal.sum_ne_top).2 ?_
+                        intro i hi
+                        by_cases hlt : i < bits.length
+                        · simp [xi_tlPrefixFreeWeightAt, xi_tlPrefixWeight, hlt]
+                        · simp [xi_tlPrefixFreeWeightAt, hlt]
+                      have hsumT_ne_top :
+                          (∑ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt bits i) ≠ (⊤ : ENNReal) := by
+                        classical
+                        refine (ENNReal.sum_ne_top).2 ?_
+                        intro i hi
+                        by_cases hlt : i < bits.length
+                        · simp [xi_tlPrefixFreeWeightAt, xi_tlPrefixWeight, hlt]
+                        · simp [xi_tlPrefixFreeWeightAt, hlt]
+                      have htoRealF :
+                          (∑ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt bits i).toReal =
+                            ((∑ i ∈ cert.idx_false_true.toFinset,
+                                    (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0 : ℕ) : ℝ) / den := by
+                        have hnotTop :
+                            ∀ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt bits i ≠ (⊤ : ENNReal) := by
+                          intro i hi
+                          by_cases hlt : i < bits.length
+                          · simp [xi_tlPrefixFreeWeightAt, xi_tlPrefixWeight, hlt]
+                          · simp [xi_tlPrefixFreeWeightAt, hlt]
+                        calc
+                          (∑ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt bits i).toReal =
+                              ∑ i ∈ cert.idx_false_true.toFinset, (xi_tlPrefixFreeWeightAt bits i).toReal :=
+                            ENNReal.toReal_sum (s := cert.idx_false_true.toFinset)
+                              (f := fun i => xi_tlPrefixFreeWeightAt bits i) hnotTop
+                          _ = ∑ i ∈ cert.idx_false_true.toFinset,
+                                ((XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0 : ℝ) / den := by
+                            refine Finset.sum_congr rfl ?_
+                            intro i hi
+                            simpa [bits, den, D] using
+                              (XiTlOneStepRewardLowerBoundCert.prefixFreeWeightAt_toReal_eq_numeratorTerm_div (l := l) (i := i))
+                          _ = (∑ i ∈ cert.idx_false_true.toFinset,
+                                ((XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0 : ℝ)) / den := by
+                            classical
+                            simp [div_eq_mul_inv, Finset.sum_mul]
+                          _ = ((∑ i ∈ cert.idx_false_true.toFinset,
+                                  (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0 : ℕ) : ℝ) / den := by
+                            classical
+                            simp [Nat.cast_sum (R := ℝ) (cert.idx_false_true.toFinset)
+                              (fun i => (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0)]
+                      have htoRealT :
+                          (∑ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt bits i).toReal =
+                            ((∑ i ∈ cert.idx_true_true.toFinset,
+                                    (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0 : ℕ) : ℝ) / den := by
+                        have hnotTop :
+                            ∀ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt bits i ≠ (⊤ : ENNReal) := by
+                          intro i hi
+                          by_cases hlt : i < bits.length
+                          · simp [xi_tlPrefixFreeWeightAt, xi_tlPrefixWeight, hlt]
+                          · simp [xi_tlPrefixFreeWeightAt, hlt]
+                        calc
+                          (∑ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt bits i).toReal =
+                              ∑ i ∈ cert.idx_true_true.toFinset, (xi_tlPrefixFreeWeightAt bits i).toReal :=
+                            ENNReal.toReal_sum (s := cert.idx_true_true.toFinset)
+                              (f := fun i => xi_tlPrefixFreeWeightAt bits i) hnotTop
+                          _ = ∑ i ∈ cert.idx_true_true.toFinset,
+                                ((XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0 : ℝ) / den := by
+                            refine Finset.sum_congr rfl ?_
+                            intro i hi
+                            simpa [bits, den, D] using
+                              (XiTlOneStepRewardLowerBoundCert.prefixFreeWeightAt_toReal_eq_numeratorTerm_div (l := l) (i := i))
+                          _ = (∑ i ∈ cert.idx_true_true.toFinset,
+                                ((XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0 : ℝ)) / den := by
+                            classical
+                            simp [div_eq_mul_inv, Finset.sum_mul]
+                          _ = ((∑ i ∈ cert.idx_true_true.toFinset,
+                                  (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0 : ℕ) : ℝ) / den := by
+                            classical
+                            simp [Nat.cast_sum (R := ℝ) (cert.idx_true_true.toFinset)
+                              (fun i => (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0)]
+                      have hsumEq :
+                          (cert.num : ℝ) / den =
+                            ((∑ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt bits i) +
+                                  (∑ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt bits i)).toReal := by
+                        have htoRealAdd :
+                            ((∑ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt bits i) +
+                                    (∑ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt bits i)).toReal =
+                                  (∑ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt bits i).toReal +
+                                    (∑ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt bits i).toReal := by
+                          simpa using ENNReal.toReal_add hsumF_ne_top hsumT_ne_top
+                        have hsumToReal :
+                            ((∑ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt bits i) +
+                                  (∑ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt bits i)).toReal =
+                                (cert.num : ℝ) / den := by
+                          calc
+                            ((∑ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt bits i) +
+                                  (∑ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt bits i)).toReal =
+                                (∑ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt bits i).toReal +
+                                  (∑ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt bits i).toReal := htoRealAdd
+                            _ =
+                                ((∑ i ∈ cert.idx_false_true.toFinset,
+                                        (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0 : ℕ) : ℝ) / den +
+                                  ((∑ i ∈ cert.idx_true_true.toFinset,
+                                        (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0 : ℕ) : ℝ) / den := by
+                              simp [htoRealF, htoRealT]
+                            _ =
+                                (((∑ i ∈ cert.idx_false_true.toFinset,
+                                          (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0 : ℕ) : ℝ) +
+                                    ((∑ i ∈ cert.idx_true_true.toFinset,
+                                          (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0 : ℕ) : ℝ)) / den := by
+                              simpa using
+                                (add_div
+                                    ((∑ i ∈ cert.idx_false_true.toFinset,
+                                          (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0 : ℕ) : ℝ)
+                                    ((∑ i ∈ cert.idx_true_true.toFinset,
+                                          (XiTlOneStepRewardLowerBoundCert.numeratorTerm l i).getD 0 : ℕ) : ℝ)
+                                    den).symm
+                            _ = (cert.num : ℝ) / den := by
+                              simp [hnumFinsetReal]
+                        exact hsumToReal.symm
+                      have hEq :
+                          (Coding.decodeValueNat cert.num cert.den : ℝ) =
+                            ((∑ i ∈ cert.idx_false_true.toFinset, xi_tlPrefixFreeWeightAt bits i) +
+                                  (∑ i ∈ cert.idx_true_true.toFinset, xi_tlPrefixFreeWeightAt bits i)).toReal := by
+                        trans (cert.num : ℝ) / den
+                        · exact hclaimEq
+                        · exact hsumEq
+                      exact le_of_eq hEq
+                    have hclaim_le_q :
+                        (Coding.decodeValueNat cert.num cert.den : ℝ) ≤ qValue μ (p.toExtended tProg).toAgent γ h a 1 := by
+                      exact le_trans hclaim_le (by simpa [hq] using hsumReal)
+                  have hclaim_le_value :
+                      (Coding.decodeValueNat cert.num cert.den : ℝ) ≤ value μ (p.toExtended tProg).toAgent γ h 2 := by
+                    simpa [hval] using hclaim_le_q
+                  -- Assemble the `ValidValueLowerBound` conclusion for the `some out` case.
+                  -- The computed claim is exactly `decodeValueNat`.
+                  -- We have already shown `decodeValueNat ≤ value`.
+                  -- Finally rewrite the LHS.
+                  have hclaimEq : ((Coding.decodeValueActionOutput out).getD (0, Action.stay)).1 = Coding.decodeValueNat cert.num cert.den := hcompute
+                  simpa [hclaimEq, RawToPartrecProgram.computeWithin, hEval, hpTm', hEvalTemplate] using hclaim_le_value
+          | false =>
+              -- Guard does not fire: the claimed value is `0` (or times out and defaults to `0`).
+              have hclaim0 : ((p.toExtended tProg).compute h').1 = 0 := by
+                unfold RawToPartrecProgram.toExtended RawToPartrecProgram.computeWithin
+                cases hEval : StepCounting.ToPartrec.evalWithin tProg p.tm (Coding.encodeHistoryNat h') with
+                | none =>
+                    simp [hEval]
+                | some out =>
+                    have houtMem : out ∈ p.tm.eval (Coding.encodeHistoryNat h') :=
+                      StepCounting.ToPartrec.evalWithin_sound (c := p.tm) (v := Coding.encodeHistoryNat h') (out := out) hEval
+                    have hpTm' : p.tm = RawToPartrecProgram.guardedValueActionCode cert.historyCode cert.num cert.den a := hpTm
+                    have houtMem' :
+                        out ∈
+                          (RawToPartrecProgram.guardedValueActionCode cert.historyCode cert.num cert.den a).eval
+                            (Coding.encodeHistoryNat h') := by
+                      simpa [hpTm'] using houtMem
+                    let outNo : List ℕ := [0, 0, Coding.encodeActionNat Action.stay]
+                    have hEvalTemplate :
+                        (RawToPartrecProgram.guardedValueActionCode cert.historyCode cert.num cert.den a).eval
+                            (Coding.encodeHistoryNat h') =
+                          pure outNo := by
+                      simp [RawToPartrecProgram.guardedValueActionCode, RawToPartrecProgram.guardPrefixListNat_eval_const, hguard,
+                        outNo]
+                    have houtEq : out = outNo := by
+                      simpa [hEvalTemplate] using houtMem'
+                    simp [RawToPartrecProgram.computeWithin, hEval, houtEq, outNo, Coding.decodeValueActionOutput, Coding.decodeValueNat]
+              have hnonneg : 0 ≤ value μ (p.toExtended tProg).toAgent γ h' 2 :=
+                value_nonneg (μ := μ) (π := (p.toExtended tProg).toAgent) (γ := γ) (h := h') (n := 2)
+              simpa [hclaim0] using hnonneg
 
 /-- Lift a sound proof system for `ValidValueLowerBound` from `μ₁` to `μ₂` when `μ₁` is pointwise bounded above by `μ₂`.
 
