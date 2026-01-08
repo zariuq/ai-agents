@@ -8133,6 +8133,33 @@ theorem nearOptimal_stabilized_xi_tlTwoStepRewardLowerBound (l : ℕ) :
             XiTlTwoStepRewardLowerBoundCert.claimNumerator, XiTlTwoStepRewardLowerBoundCert.denomPow2,
             XiTlTwoStepRewardLowerBoundCert.denomPow1, den1, XiTlTwoStepRewardLowerBoundCert.denomExp] at *
           ring_nf
+          -- `reward1 * den1` terms normalize as `2⁻¹ ^ k * n1FT/TT`.
+          let k : ℕ := XiTlOneStepRewardLowerBoundCert.denomExp l
+          have hpow_cancel :
+              (2 : ℝ)⁻¹ ^ (k * 2) * (2 : ℝ) ^ k = (2 : ℝ)⁻¹ ^ k := by
+            have hinv : ((2 : ℝ)⁻¹) ^ k * (2 : ℝ) ^ k = 1 := by
+              simpa [mul_pow] using (by simp : (((2 : ℝ)⁻¹ * (2 : ℝ)) ^ k) = 1)
+            calc
+              (2 : ℝ)⁻¹ ^ (k * 2) * (2 : ℝ) ^ k
+                  = (2 : ℝ)⁻¹ ^ (k + k) * (2 : ℝ) ^ k := by simp [Nat.mul_two]
+              _ = ((2 : ℝ)⁻¹ ^ k * (2 : ℝ)⁻¹ ^ k) * (2 : ℝ) ^ k := by
+                  simp [pow_add, mul_assoc]
+              _ = (2 : ℝ)⁻¹ ^ k * ((2 : ℝ)⁻¹ ^ k * (2 : ℝ) ^ k) := by
+                  simp [mul_assoc]
+              _ = (2 : ℝ)⁻¹ ^ k := by simp [hinv]
+          have hFTterm :
+              (2 : ℝ)⁻¹ ^ (k * 2) * (↑cert.nums.n1FT) * (2 : ℝ) ^ k = (2 : ℝ)⁻¹ ^ k * (↑cert.nums.n1FT) := by
+            calc
+              (2 : ℝ)⁻¹ ^ (k * 2) * (↑cert.nums.n1FT) * (2 : ℝ) ^ k =
+                  ((2 : ℝ)⁻¹ ^ (k * 2) * (2 : ℝ) ^ k) * (↑cert.nums.n1FT) := by ring_nf
+              _ = (2 : ℝ)⁻¹ ^ k * (↑cert.nums.n1FT) := by simp [hpow_cancel]
+          have hTTterm :
+              (2 : ℝ)⁻¹ ^ (k * 2) * (↑cert.nums.n1TT) * (2 : ℝ) ^ k = (2 : ℝ)⁻¹ ^ k * (↑cert.nums.n1TT) := by
+            calc
+              (2 : ℝ)⁻¹ ^ (k * 2) * (↑cert.nums.n1TT) * (2 : ℝ) ^ k =
+                  ((2 : ℝ)⁻¹ ^ (k * 2) * (2 : ℝ) ^ k) * (↑cert.nums.n1TT) := by ring_nf
+              _ = (2 : ℝ)⁻¹ ^ k * (↑cert.nums.n1TT) := by simp [hpow_cancel]
+          simp [hFTterm, hTTterm]
 
       -- Combine: claim = optimalValue.
       have hclaimOpt : Coding.decodeValueNat cert.num cert.den = optimalValue μ gammaOne h 4 := by
