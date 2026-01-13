@@ -84,8 +84,7 @@ def encodeHistory : History → ℕ
 /-- Theorem: Action encoding is a bijection for valid actions -/
 theorem encodeAction_injective : Function.Injective encodeAction := by
   intro a1 a2 h
-  cases a1 <;> cases a2 <;> simp [encodeAction] at h <;> try rfl
-  all_goals contradiction
+  cases a1 <;> cases a2 <;> cases h <;> rfl
 
 /-- Theorem: Decode inverts encode for actions -/
 theorem decodeAction_encodeAction (a : Action) :

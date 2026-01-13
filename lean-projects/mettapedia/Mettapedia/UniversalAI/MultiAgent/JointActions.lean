@@ -69,7 +69,7 @@ instance {n : ℕ} : Fintype (JointAction n) := Pi.instFintype
 /-- The number of possible joint actions is |Action|^n. -/
 theorem JointAction.card {n : ℕ} :
     Fintype.card (JointAction n) = (Fintype.card Action) ^ n := by
-  simp [JointAction, Fintype.card_fun]
+  simp [JointAction]
 
 /-! ## Joint Percepts -/
 
@@ -102,7 +102,7 @@ instance {n : ℕ} : Fintype (JointPercept n) := Pi.instFintype
 /-- The number of possible joint percepts is |Percept|^n. -/
 theorem JointPercept.card {n : ℕ} :
     Fintype.card (JointPercept n) = (Fintype.card Percept) ^ n := by
-  simp [JointPercept, Fintype.card_fun]
+  simp [JointPercept]
 
 /-! ## Joint History Elements -/
 
@@ -241,7 +241,7 @@ theorem wellFormed_append_act {n : ℕ} (h : MultiAgentHistory n) (ja : JointAct
   | JointHistElem.act _ :: JointHistElem.per _ :: rest =>
     simp only [wellFormed] at hw
     simp only [endsWithPercept] at hep
-    simp only [List.cons_append, List.nil_append, wellFormed]
+    simp only [List.cons_append, wellFormed]
     exact wellFormed_append_act rest ja hw hep
   | JointHistElem.per _ :: _ =>
     simp only [wellFormed] at hw; cases hw
@@ -263,7 +263,7 @@ theorem wellFormed_append_act_per {n : ℕ} (h : MultiAgentHistory n)
   | JointHistElem.act _ :: JointHistElem.per _ :: rest =>
     simp only [wellFormed] at hw
     simp only [endsWithPercept] at hep
-    simp only [List.cons_append, List.nil_append, wellFormed, endsWithPercept]
+    simp only [List.cons_append, wellFormed, endsWithPercept]
     exact wellFormed_append_act_per rest ja jp hw hep
   | JointHistElem.per _ :: _ =>
     simp only [wellFormed] at hw; cases hw

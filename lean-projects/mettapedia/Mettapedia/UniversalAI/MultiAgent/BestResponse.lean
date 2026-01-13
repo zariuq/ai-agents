@@ -153,7 +153,7 @@ theorem playerValue_deterministic {n : ℕ}
     (γ : DiscountFactor)
     (i : Fin n)
     (h : MultiAgentHistory n)
-    (hw : h.wellFormed = true)
+    (_hw : h.wellFormed = true)
     (action : Action)
     (hdet : ∀ a : Action, ((π.agents i).policy (h.playerView i) a).toReal =
                           if a = action then 1 else 0) :
@@ -287,9 +287,9 @@ theorem othersProb_updateAgent_eq {n : ℕ}
 /-- playerView is the same for player i regardless of player i's policy.
     This is because playerView only depends on the history structure, not the policy. -/
 theorem playerView_updateAgent_eq {n : ℕ}
-    (π : MultiAgentPolicy n)
+    (_π : MultiAgentPolicy n)
     (i : Fin n)
-    (agent : Agent)
+    (_agent : Agent)
     (h : MultiAgentHistory n) :
     (h.playerView i) = (h.playerView i) := rfl
 
@@ -490,7 +490,7 @@ theorem bestResponse_le_bestResponseValue
     (hep : h.endsWithPercept = true)
     (horizon : ℕ) :
     let π' := π.updateAgent i (bestResponseAgent μ i
-      (fun j hj => π.agents j) γ horizon)
+      (fun j _ => π.agents j) γ horizon)
     playerValue μ π' γ i h horizon ≤
     bestResponseValue μ π γ i h horizon := by
   intro π'
@@ -743,15 +743,15 @@ theorem bestResponse_achieves_value_aux
       h.wellFormed = true →
       h.endsWithPercept = true →
       let π' := π.updateAgent i (bestResponseAgent μ i
-        (fun j hj => π.agents j) γ horizon)
+        (fun j _ => π.agents j) γ horizon)
       playerValue μ π' γ i h horizon ≥ bestResponseValue μ π γ i h horizon := by
   intro h hw hep
-  let π'_i := bestResponseAgent μ i (fun j hj => π.agents j) γ horizon
+  let π'_i := bestResponseAgent μ i (fun j _ => π.agents j) γ horizon
   -- We use playerValue_eq_bestResponseValue_of_supAchieving to get equality (hence ≥)
   -- Key: bestResponseAgent plays deterministically and achieves sup at all k ≤ horizon
   -- First, show the multiAgentPolicyFromOthers matches π for j ≠ i
   have hπ_eq_others : ∀ j : Fin n, j ≠ i →
-      (multiAgentPolicyFromOthers i (fun j hj => π.agents j)).agents j = π.agents j := by
+      (multiAgentPolicyFromOthers i (fun j _ => π.agents j)).agents j = π.agents j := by
     intro j hj_ne
     simp only [multiAgentPolicyFromOthers, hj_ne, ↓reduceDIte]
   -- Show π'_i is deterministic and plays sup-achieving actions at all k ≤ horizon
@@ -762,7 +762,7 @@ theorem bestResponse_achieves_value_aux
       isSupAchievingAt μ π γ i h' a_chosen k := by
     intro h' hw' hep' k hk
     -- The action chosen by bestResponseAgent
-    let π_others_ma := multiAgentPolicyFromOthers i (fun j hj => π.agents j)
+    let π_others_ma := multiAgentPolicyFromOthers i (fun j _ => π.agents j)
     let a_star := bestResponsePolicy μ π_others_ma γ i horizon (h'.playerView i)
     use a_star
     constructor
@@ -985,7 +985,7 @@ theorem bestResponse_maximizes_value
     (hcons : allHorizonsConsistent μ π γ i)
     (hcons_any : ∀ agent, allHorizonsConsistent μ (π.updateAgent i agent) γ i) :
     let π' := π.updateAgent i (bestResponseAgent μ i
-      (fun j hj => π.agents j) γ horizon)
+      (fun j _ => π.agents j) γ horizon)
     playerValue μ π' γ i h horizon =
     bestResponseValue μ π γ i h horizon := by
   intro π'
@@ -1020,7 +1020,7 @@ theorem bestResponse_improves_value
     (hcons : allHorizonsConsistent μ π γ i)
     (hcons_any : ∀ agent, allHorizonsConsistent μ (π.updateAgent i agent) γ i) :
     let π' := π.updateAgent i (bestResponseAgent μ i
-      (fun j hj => π.agents j) γ horizon)
+      (fun j _ => π.agents j) γ horizon)
     playerValue μ π' γ i h horizon ≥
     playerValue μ π γ i h horizon := by
   intro π'

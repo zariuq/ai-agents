@@ -47,7 +47,7 @@ lake exe cache get
 lake build
 ```
 
-Note: `lake build` currently fails for some parts of the repo; see **Build Status** below for
+Note: this repository contains multiple subprojects; see **Build Status** below for
 known-good targets.
 
 ## Development Workflow
@@ -67,15 +67,15 @@ cd lean-projects/mettapedia
 export LAKE_JOBS=3
 ulimit -Sv 6291456
 
-nice -n 19 lake build Mettapedia.ProbabilityTheory.KnuthSkilling.AppendixA
+nice -n 19 lake build Mettapedia.ProbabilityTheory.KnuthSkilling.RepresentationTheorem
 nice -n 19 lake build Mettapedia.ProbabilityTheory.Hypercube
 ```
 
-## Build Status (last checked 2026-01-06)
+## Build Status (last checked 2026-01-13)
 
-- ✅ `lake build Mettapedia.ProbabilityTheory.KnuthSkilling.AppendixA` (0 sorries; linter warnings in `Mettapedia/ProbabilityTheory/KnuthSkilling/Algebra.lean`)
-- ✅ `lake build Mettapedia.ProbabilityTheory.Hypercube` (0 sorries; see `Mettapedia/ProbabilityTheory/Hypercube/README.md`)
-- ❌ `lake build` (full) currently fails in `Mettapedia/UniversalAI/TimeBoundedAIXI.lean`
+- ✅ `lake build Mettapedia.ProbabilityTheory.KnuthSkilling.RepresentationTheorem` (0 sorries, 0 warnings)
+- ✅ `lake build Mettapedia.ProbabilityTheory.Hypercube` (0 sorries, 0 warnings; see `Mettapedia/ProbabilityTheory/Hypercube/README.md`)
+- ✅ `lake build Mettapedia` (build succeeds, but there are `sorry`-warnings in non-probability modules, e.g. `Mettapedia/GraphTheory/Basic.lean` and `Mettapedia/UniversalAI/ValueUnderIgnorance.lean`)
 
 ### Using LeanHammer
 
@@ -131,9 +131,8 @@ du -sh ~/.cache/mathlib
 
 ### Probability Theory Subprojects
 
-- Knuth–Skilling Appendix A: `Mettapedia/ProbabilityTheory/KnuthSkilling/AppendixA.lean` (see also `reports/ks_appendixA_formalization/ks_appendixA_formalization.pdf`)
+- Knuth–Skilling representation theorem: `Mettapedia/ProbabilityTheory/KnuthSkilling/README.md` (main development under `Mettapedia/ProbabilityTheory/KnuthSkilling/RepresentationTheorem/README.md`)
 - Probability Hypercube: `Mettapedia/ProbabilityTheory/Hypercube/README.md`
-- Reflective Oracles (archived axiomatic attempt): `Mettapedia/UniversalAI/ReflectiveOracles/_archive/2025-12-29_axiom_based/README.md`
 
 ## References
 
@@ -165,10 +164,10 @@ The goal is to compare formalization approaches and determine which system is mo
 
 When adding new definitions or theorems:
 
-1. **No sorries**: Prefer `admit` or `axiom` with clear TODO comments
-2. **Document sources**: Include references to textbooks and page numbers
-3. **Test compilation**: Run `lake build` frequently
-4. **Use hammer**: Try LeanHammer before writing manual proofs
+1. **Avoid `sorry`**: When unavoidable, use an explicit `sorry` with a detailed TODO/proof strategy (do not replace proofs with “Prop-as-proof” placeholders)
+2. **No axioms**: Do not introduce `axiom`/unjustified assumptions; keep foundations explicit
+3. **Document sources**: Include references to textbooks and page numbers
+4. **Test compilation**: Run `lake build` frequently
 5. **Follow style**: Match existing patterns in the codebase
 
 ## License

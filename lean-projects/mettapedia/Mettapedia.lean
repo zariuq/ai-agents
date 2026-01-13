@@ -84,6 +84,9 @@ import Mettapedia.UniversalAI.BayesianAgents
 import Mettapedia.UniversalAI.ProblemClasses
 import Mettapedia.UniversalAI.TimeBoundedAIXI
 
+-- Value Under Ignorance (Wyeth & Hutter 2025)
+import Mettapedia.UniversalAI.ValueUnderIgnorance
+
 -- Multi-Agent RL Framework (Grain of Truth - Phase 2)
 import Mettapedia.UniversalAI.MultiAgent.JointActions
 import Mettapedia.UniversalAI.MultiAgent.Environment

@@ -1,16 +1,19 @@
 /-
 # Probability Theory Hypercube
 
-A 5-axis hypercube framework for classifying probability theories based on their
-operational semantics and structural properties.
+A multi-axis hypercube framework for classifying probability theories based on their
+operational semantics, algebraic structure, and choice of value space.
 
-## Axes
+## Axes (high level)
 
-1. **Commutativity**: commutative vs non-commutative operations
-2. **Distributivity**: Boolean vs orthomodular vs general lattices
-3. **Precision**: precise vs imprecise (interval) valuations
-4. **Ordering**: linear vs partial order
-5. **Additivity**: additive vs subadditive measures
+The master list of axes is defined in `Mettapedia/ProbabilityTheory/Hypercube/Basic.lean`
+and currently includes, among others:
+
+- commutativity, distributivity, precision, orderAxis
+- density, completeness, separation
+- additivity, invertibility
+- determinism, support, regularity
+- independence
 
 ## Key Theories as Vertices
 
@@ -29,9 +32,14 @@ Three unexplored vertices with potential applications:
 
 import Mettapedia.ProbabilityTheory.Hypercube.Basic
 import Mettapedia.ProbabilityTheory.Hypercube.CentralQuestionCounterexample
+import Mettapedia.ProbabilityTheory.Hypercube.DensityAxisStory
 import Mettapedia.ProbabilityTheory.Hypercube.NeighborTheories
 import Mettapedia.ProbabilityTheory.Hypercube.NovelTheories
 import Mettapedia.ProbabilityTheory.Hypercube.OperationalSemantics
+import Mettapedia.ProbabilityTheory.Hypercube.QuantaleSemantics
+import Mettapedia.ProbabilityTheory.Hypercube.ScaleDichotomy
 import Mettapedia.ProbabilityTheory.Hypercube.StayWellsConstruction
 import Mettapedia.ProbabilityTheory.Hypercube.Taxonomy
+import Mettapedia.ProbabilityTheory.Hypercube.ThetaSemantics
 import Mettapedia.ProbabilityTheory.Hypercube.UnifiedTheory
+import Mettapedia.ProbabilityTheory.Hypercube.WeaknessOrder

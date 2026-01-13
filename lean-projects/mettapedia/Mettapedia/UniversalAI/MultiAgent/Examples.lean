@@ -56,11 +56,11 @@ def pdPayoff1 (a₁ a₂ : Action) : ℕ :=
 def pdPayoff2 (a₁ a₂ : Action) : ℕ := pdPayoff1 a₂ a₁
 
 /-- The "mutual defect" joint action. -/
-def mutualDefect : JointAction 2 := fun i =>
+def mutualDefect : JointAction 2 := fun _ =>
   Action.right  -- Both players defect
 
 /-- The "mutual cooperate" joint action. -/
-def mutualCooperate : JointAction 2 := fun i =>
+def mutualCooperate : JointAction 2 := fun _ =>
   Action.left  -- Both players cooperate
 
 /-- Key property: Defecting is a dominant strategy in PD.

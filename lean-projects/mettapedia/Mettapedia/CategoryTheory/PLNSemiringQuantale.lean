@@ -110,14 +110,26 @@ theorem twoEdge_ge_oneEdge (e : Evidence) :
   · -- neg component: e.neg * e.neg ≤ e.neg * e.neg + e.neg * e.neg
     exact le_add_of_nonneg_right (zero_le _)
 
-/-- Two edges have strictly more weakness when evidence is positive -/
-theorem twoEdge_gt_oneEdge (e : Evidence) (hpos : 0 < e.pos) :
+/-- Two edges have strictly more weakness when evidence is positive and finite (`pos ≠ ⊤`). -/
+theorem twoEdge_gt_oneEdge (e : Evidence) (hpos : 0 < e.pos) (hfinite : e.pos ≠ ⊤) :
     oneEdgeUniform e < twoEdgeUniform e := by
-  -- TODO(pln): This proof used `mul_pos` / `lt_add_of_pos_right`, which require strict-mono
-  -- typeclasses that are not available for `ENNReal` (they fail at `∞`).
-  -- A correct statement likely needs an additional finiteness assumption, e.g. `e.pos ≠ ∞`.
-  -- For now we keep the theorem as a placeholder so the module builds.
-  sorry
+  refine ⟨twoEdge_ge_oneEdge e, ?_⟩
+  intro hle
+  have hpos_le : (twoEdgeUniform e).pos ≤ (oneEdgeUniform e).pos := hle.1
+  have hpos_le' : e.pos * e.pos + e.pos * e.pos ≤ e.pos * e.pos := by
+    simpa [twoEdgeUniform, oneEdgeUniform, twoEdgeWeakness, edgeWeakness, par, tensor] using hpos_le
+
+  have hmul_ne_top : e.pos * e.pos ≠ ⊤ := by
+    exact ENNReal.mul_ne_top hfinite hfinite
+  have hmul_ne_zero : e.pos * e.pos ≠ 0 := by
+    have hpos0 : e.pos ≠ 0 := ne_of_gt hpos
+    intro hmul0
+    rcases (mul_eq_zero.mp hmul0) with h0 | h0 <;> exact hpos0 h0
+
+  have hgt : e.pos * e.pos + e.pos * e.pos > e.pos * e.pos :=
+    (ENNReal.lt_add_right hmul_ne_top hmul_ne_zero)
+
+  exact (not_le_of_gt hgt) hpos_le'
 
 /-! ## Deduction Formula as Semiring Expression
 
@@ -139,7 +151,7 @@ Proven:
 1. ⊗ and ⊕ are associative and commutative
 2. ⊗ distributes over ⊕ (both sides)
 3. `twoEdge_ge_oneEdge`: Two-edge weakness ≥ one-edge weakness (uniform valuations)
-4. `twoEdge_gt_oneEdge`: Two-edge weakness > one-edge weakness (when pos evidence > 0)
+4. `twoEdge_gt_oneEdge`: Two-edge weakness > one-edge weakness (when pos evidence is positive and finite)
 5. `deduction_as_semiring`: Deduction formula = direct_path ⊕ indirect_path
 
 **Key Result**: Inference rules with more parallel paths have higher weakness.

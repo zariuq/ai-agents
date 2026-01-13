@@ -71,18 +71,29 @@ theorem bayes_mixture_in_class (O : Oracle) (M : ReflectiveEnvironmentClass O)
 If all agents are asymptotically optimal in mean, they converge to ε-Nash.
 -/
 
-/-- If all agents are asymptotically optimal, they converge to ε-Nash.
-    This is the main result from Setup.lean. -/
+/-- Re-export of the Leike-style “convergence in probability” equilibrium theorem
+from `Mettapedia.UniversalAI.GrainOfTruth.Setup`. -/
 theorem convergence_to_nash {n : ℕ} (O : Oracle)
     (M : ReflectiveEnvironmentClass O) (σ : MultiAgentEnvironment n)
     (policies : Fin n → StochasticPolicy)
-    (h_asymp_opt : ∀ i, isAsymptoticallyOptimalInMean (policies i) O M)
-    (ε : ℝ) (hε : ε > 0) :
-    ∀ i : Fin n, ∃ t₀ : ℕ, ∀ t ≥ t₀,
-      ∃ σ_i : SubjectiveEnvironment n i,
-        isEpsilonBestResponse σ_i (policies i)
-          ⟨1/2, by norm_num, by norm_num⟩ ε [] t :=
-  convergence_to_equilibrium O M σ policies h_asymp_opt ε hε
+    (γ : DiscountFactor) (horizon : ℕ)
+    (h_stoch :
+      ∀ i : Fin n,
+        Mettapedia.UniversalAI.GrainOfTruth.MeasureTheory.HistoryFiltration.isStochastic
+          (SubjectiveEnvironment.of i σ policies).asEnvironment)
+    (h_aoim : ∀ i : Fin n,
+      LeikeStyle.AsymptoticallyOptimalInMean
+        ((SubjectiveEnvironment.of i σ policies).asEnvironment) (policies i) γ horizon (h_stoch i))
+    (ε : ℝ) (hε : 0 < ε) :
+    ∀ i : Fin n,
+      Filter.Tendsto
+        (fun t =>
+          (Mettapedia.UniversalAI.GrainOfTruth.MeasureTheory.HistoryFiltration.environmentMeasureWithPolicy
+            ((SubjectiveEnvironment.of i σ policies).asEnvironment) (policies i) (h_stoch i)).real
+            {traj | isEpsilonBestResponse (SubjectiveEnvironment.of i σ policies) (policies i) γ ε
+              (Mettapedia.UniversalAI.GrainOfTruth.MeasureTheory.HistoryFiltration.trajectoryToHistory traj t) horizon})
+        Filter.atTop (nhds 1) := by
+  simpa using convergence_to_equilibrium O M σ policies γ horizon h_stoch h_aoim ε hε
 
 /-! ## Theorem 7.6 (planned): Thompson Sampling is Optimal
 

@@ -76,29 +76,60 @@ Commutativity theory and the classical/quantum boundary:
   - `commutes_sup`: `a C b ∧ a C c → a C (b ⊔ c)`
 - **Quantum Logic Note**: Disjunctive syllogism does *not* hold in general OMLs; `NeighborTheories.lean`
   deliberately avoids an unconditional `oml_disjunctive_syllogism` lemma.
-- **Orthocomplement Uniqueness**: recorded as a statement `oml_orthocomplement_unique_statement`
-  (no proof yet; needs the correct compatibility hypotheses).
+- **Orthocomplement Uniqueness (Safe Form)**:
+  - `orthocomplement_unique_of_commutes`: complements are unique *among commuting candidates*
 
 **Novel Contributions**:
 - **Complete Foulis-Holland theorem**: Commuting elements are closed under ⊓ and ⊔
 - Bidirectional exchange characterization (first rigorous formalization)
 - De Morgan duality proof for `commutes_sup` via `commutes_inf`
 
-#### `Basic.lean` (46 KB)
-Classical Dempster-Shafer theory on power sets:
-- **`MassFunction`**: Basic mass assignment on `Finset Ω`
-- **Belief Functions**: `belief`, `plausibility`, `commonality`
-- **Dempster's Rule**: `dempsterCombine` with normalization
-- **Key Theorems**:
-  - Belief/plausibility duality
-  - Möbius inversion formulas
-  - Dempster's rule properties
+#### `Basic.lean` (54 KB)
+The **master probability hypercube**:
+- Defines all hypercube axes (e.g. `CommutativityAxis`, `DistributivityAxis`, …)
+- Defines `ProbabilityVertex` (one record holding all axes)
+- Defines named theories as vertices (`kolmogorov`, `cox`, `knuthSkilling`, `dempsterShafer`, `quantum`, …)
+- Defines basic navigation (`isNaturalEdge`, `hammingDistance`, `isMoreGeneral`, …)
+
+Note: this file classifies Dempster–Shafer/quantum/etc as vertices, but it does *not* implement
+full belief-function combination rules; those belong in separate developments.
+
+#### `KnuthSkilling.lean` + `KnuthSkilling/` (slice modules)
+K&S-focused modules that situate the Appendix A development inside the master hypercube:
+- `KnuthSkilling/Connection.lean`: conceptual bridge to the master `ProbabilityVertex` view
+- `KnuthSkilling/Neighbors.lean`: local neighbor analysis around the `knuthSkilling` vertex
+- `KnuthSkilling/Proofs.lean`: small fully-checked “shape lemmas” (toy derivation graph)
+- `KnuthSkilling/Theory.lean`: K&S-centered theory notes (interval/ℚ/ℝ viewpoints)
 
 #### `Taxonomy.lean` (17 KB)
-Classification of probability theories by lattice axioms:
-- Defines `ProbabilityTheoryClass` structure
-- Classifies Kolmogorov, Dempster-Shafer, Quantum, Fuzzy theories
-- Documents which axioms each theory satisfies
+**Weakness / generality ordering** for the full hypercube:
+- Defines `≤` on each axis (as a `PartialOrder`), with `⊥` = most constrained and `⊤` = most permissive
+- Gives the product `PartialOrder` on `ProbabilityVertex` (so the hypercube becomes a genuine poset)
+- Proves equivalence to `Basic.lean`’s manual `isMoreGeneral` predicate (`le_iff_isMoreGeneral`)
+- Provides “thin-category” perspective: vertices + weakening maps form a preorder/poset
+
+#### `WeaknessOrder.lean` (3 KB)
+Goertzel-style weakness preorder (as an opposite category):
+- Defines `V ≼ W` as `isMoreGeneral V W`
+- Packages the weakness relation as `ProbabilityVertexᵒᵈ` (a preorder-category)
+- Provides `Nonempty (V ⟶ W) ↔ (V ≼ W)` in the preorder-category
+
+#### `QuantaleSemantics.lean` (25 KB)
+Uniform **quantale semantics** and morphisms for all `QuantaleType` cases:
+- Concrete carriers for commutative / interval / noncommutative / free / boolean / monotone cases
+- A `semanticsOfQuantaleType` “picker” (avoids global instance clashes)
+- Canonical `QuantaleHom`s into `BoolQuantale` / `CommQuantale`
+- `QuantaleHom.map_weakness` can transport Goertzel’s weakness measure along these maps
+
+#### `ThetaSemantics.lean` (5 KB)
+Abstract “Θ-family ⇒ credal/interval semantics” API:
+- `intervalOfFamily` builds lower/upper envelopes from a set of completions
+- `Subsingleton` families collapse to point semantics (`lower = upper`)
+
+#### `ScaleDichotomy.lean` and `DensityAxisStory.lean` (5 KB total)
+Formal bridge from “density axis” to the subgroup dichotomy:
+- Additive subgroups in archimedean ordered groups are either dense or `ℤ•g`
+- Packages `AddSubgroup.dense_or_cyclic` into hypercube-friendly lemmas
 
 #### `UnifiedTheory.lean` (10 KB)
 Abstract framework for lattice-based probability:
@@ -147,7 +178,7 @@ From Kalmbach (1983). This is THE key property distinguishing commuting (classic
 **Theorem** `commutes_sup`: If `a C b` and `a C c`, then `a C (b ⊔ c)`
 
 Commuting elements are closed under lattice operations. Distributivity for commuting triples is
-recorded as `commuting_distributive` (statement; proof TODO). This is part of the standard story
+recorded as `commuting_distributive` (proved). This is part of the standard story
 of why classical probability emerges from quantum probability when measuring compatible observables.
 
 **Proof Strategy**:
@@ -169,22 +200,25 @@ nice -n 19 lake build Mettapedia.ProbabilityTheory.Hypercube
 
 ## Current Status
 
-### Build (last checked 2026-01-06)
+### Build (last checked 2026-01-11)
 
 `lake build Mettapedia.ProbabilityTheory.Hypercube` succeeds with **0** `sorry`s.
 
 ### Completed (sorry-free)
 - ✅ Orthomodular lattice axiomatization + basic quantum structures (`NovelTheories.lean`)
 - ✅ Classical Dempster–Shafer on `Finset Ω` (`Basic.lean`)
-- ✅ Neighbor investigations (`NeighborTheories.lean`) are `sorry`-free (open items are explicit `Prop` statements)
+- ✅ Neighbor investigations (`NeighborTheories.lean`) are `sorry`-free
 - ✅ Hypercube taxonomy order (`Taxonomy.lean`) is `sorry`-free
+- ✅ Weakness preorder as a category (`WeaknessOrder.lean`)
+- ✅ Quantale semantics + morphisms (`QuantaleSemantics.lean`)
+- ✅ Θ-family ⇒ interval semantics API (`ThetaSemantics.lean`)
+- ✅ Dense-vs-cyclic scale dichotomy bridge (`ScaleDichotomy.lean`, `DensityAxisStory.lean`)
 
 ### Corrected Misconceptions
 - ❌ ~~OML fundamental lemma (quasi-distributivity)~~ - **FALSE in general OML!**
 - ❌ ~~Bidirectional orthogonality criterion~~ - Only forward direction holds
 
 ### In Progress
-- ⚠️ `commuting_distributive`: distributivity for commuting triples (Kalmbach/Beran; statement recorded, proof TODO)
 - ⚠️ Infinite lattice case for quantum beliefs (requires measure theory)
 
 ## Relationship to Other Formalizations
@@ -209,7 +243,7 @@ Extended Dempster-Shafer theory:
 
 ## Design Philosophy
 
-1. **No `sorry`**: open research lemmas are explicitly recorded as `Prop` statements (not placeholder proofs)
+1. **No `sorry`**: files in this directory build without `sorry`; open directions live in comments/README, not as “Prop-as-proof” placeholders
 2. **Source Attribution**: Every theorem cites original papers
 3. **Modular Structure**: Each theory in separate file
 4. **Computational Content**: Definitions executable on finite lattices
@@ -218,11 +252,12 @@ Extended Dempster-Shafer theory:
 ## Future Work
 
 1. ~~**Complete Foulis-Holland**~~ ✅ DONE: `commutes_inf`, `commutes_sup` proven
-2. **Distributive Sublattices**: Prove `commuting_distributive`
-3. **Hypercube Edges**: Formalize all 12 edges (theory transformations)
-4. **Measure Theory Bridge**: Extend finite quantum beliefs to σ-algebras
-5. **Concrete Examples**: MO5 lattice, projective geometries
-6. **Decision Procedures**: Automated reasoning about commutativity
+2. ~~**Distributive Sublattices**~~ ✅ DONE: `commuting_distributive` proven
+3. **Weakness via Semantics**: connect `WeaknessOrder.lean` to `QuantaleSemantics.lean` morphisms
+4. **Hypercube Edges**: formalize more edges (theory transformations) as explicit morphisms
+5. **Measure Theory Bridge**: extend finite quantum beliefs to σ-algebras
+6. **Concrete Examples**: MO5 lattice, projective geometries
+7. **Decision Procedures**: automated reasoning about commutativity
 
 ## Contact
 

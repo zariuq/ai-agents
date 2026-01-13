@@ -7943,7 +7943,7 @@ theorem nearOptimal_stabilized_xi_tlTwoStepRewardLowerBound (l : ℕ) :
             simp [den1, XiTlTwoStepRewardLowerBoundCert.denomPow1, XiTlTwoStepRewardLowerBoundCert.denomExp]
           have hden2 : (XiTlTwoStepRewardLowerBoundCert.denomPow2 l : ℝ) = den1 * den1 := by
             simp [XiTlTwoStepRewardLowerBoundCert.denomPow2, XiTlTwoStepRewardLowerBoundCert.denomPow1, den1,
-              XiTlTwoStepRewardLowerBoundCert.denomExp, mul_assoc]
+              XiTlTwoStepRewardLowerBoundCert.denomExp]
 
           -- First-step probabilities as dyadics.
           have hprob1FF :
@@ -8069,7 +8069,8 @@ theorem nearOptimal_stabilized_xi_tlTwoStepRewardLowerBound (l : ℕ) :
               simpa [aFF] using
                 (optimalValue_eq_optimalQValue_optimalAction (μ := μ) (γ := gammaOne) (h := hFF) (n := 1) hFFWf)
             rw [hoptFF]
-            simp [optimalQValue, haFFWf', List.foldl_cons, List.foldl_nil, Percept.reward, gammaOne]
+            simp [optimalQValue, optimalValue_zero, haFFWf', xFT, xTT, List.foldl_cons, List.foldl_nil,
+              Percept.reward, gammaOne]
 
           have hVFT : optimalValue μ gammaOne hFT 2 =
               (μ.prob (hFT ++ [HistElem.act aFT]) xFT).toReal +
@@ -8079,7 +8080,8 @@ theorem nearOptimal_stabilized_xi_tlTwoStepRewardLowerBound (l : ℕ) :
               simpa [aFT] using
                 (optimalValue_eq_optimalQValue_optimalAction (μ := μ) (γ := gammaOne) (h := hFT) (n := 1) hFTWf)
             rw [hoptFT]
-            simp [optimalQValue, haFTWf', List.foldl_cons, List.foldl_nil, Percept.reward, gammaOne]
+            simp [optimalQValue, optimalValue_zero, haFTWf', xFT, xTT, List.foldl_cons, List.foldl_nil,
+              Percept.reward, gammaOne]
 
           have hVTF : optimalValue μ gammaOne hTF 2 =
               (μ.prob (hTF ++ [HistElem.act aTF]) xFT).toReal +
@@ -8089,7 +8091,8 @@ theorem nearOptimal_stabilized_xi_tlTwoStepRewardLowerBound (l : ℕ) :
               simpa [aTF] using
                 (optimalValue_eq_optimalQValue_optimalAction (μ := μ) (γ := gammaOne) (h := hTF) (n := 1) hTFWf)
             rw [hoptTF]
-            simp [optimalQValue, haTFWf', List.foldl_cons, List.foldl_nil, Percept.reward, gammaOne]
+            simp [optimalQValue, optimalValue_zero, haTFWf', xFT, xTT, List.foldl_cons, List.foldl_nil,
+              Percept.reward, gammaOne]
 
           have hVTT : optimalValue μ gammaOne hTT 2 =
               (μ.prob (hTT ++ [HistElem.act aTT]) xFT).toReal +
@@ -8099,10 +8102,17 @@ theorem nearOptimal_stabilized_xi_tlTwoStepRewardLowerBound (l : ℕ) :
               simpa [aTT] using
                 (optimalValue_eq_optimalQValue_optimalAction (μ := μ) (γ := gammaOne) (h := hTT) (n := 1) hTTWf)
             rw [hoptTT]
-            simp [optimalQValue, haTTWf', List.foldl_cons, List.foldl_nil, Percept.reward, gammaOne]
+            simp [optimalQValue, optimalValue_zero, haTTWf', xFT, xTT, List.foldl_cons, List.foldl_nil,
+              Percept.reward, gammaOne]
+
+          -- The goal uses `gammaOne` unfolded; prepare unfolded versions of the branch-value equalities.
+          have hVFF' := (by simpa [gammaOne] using hVFF)
+          have hVFT' := (by simpa [gammaOne] using hVFT)
+          have hVTF' := (by simpa [gammaOne] using hVTF)
+          have hVTT' := (by simpa [gammaOne] using hVTT)
 
           -- Expand `optimalQValue` at horizon 3 and rewrite all probabilities/branch values to dyadics.
-          simp [optimalQValue, hha0Wf', List.foldl_cons, List.foldl_nil, Percept.reward, gammaOne] at *
+          simp [optimalQValue, hha0Wf', List.foldl_cons, List.foldl_nil, Percept.reward, gammaOne] at ⊢
           -- Rewrite the percept/history literals to our local names, so the dyadic lemmas match.
           have hxFF' : (Percept.mk false false) = xFF := by
             have : xFF = Percept.mk false false := by simp [xFF]
@@ -8126,40 +8136,40 @@ theorem nearOptimal_stabilized_xi_tlTwoStepRewardLowerBound (l : ℕ) :
           have hhTT : (h ++ [HistElem.act a0, HistElem.per xTT]) = hTT := by
             simp [hTT]
 
-          simp [hxFF', hxFT', hxTF', hxTT', hhFF, hhFT, hhTF, hhTT] at *
-          -- Goal is now pure arithmetic in dyadics.
+          simp [hxFF', hxFT', hxTF', hxTT', hhFF, hhFT, hhTF, hhTT] at ⊢
+          -- Rewrite the RHS into a sum of dyadic products (as in the soundness proof).
+          let reward1 : ℕ := cert.nums.n1FT + cert.nums.n1TT
+          let reward2FF : ℕ := cert.nums.n2FFFT + cert.nums.n2FFTT
+          let reward2FT : ℕ := cert.nums.n2FTFT + cert.nums.n2FTTT
+          let reward2TF : ℕ := cert.nums.n2TFFT + cert.nums.n2TFTT
+          let reward2TT : ℕ := cert.nums.n2TTFT + cert.nums.n2TTTT
+
+          have hden1_ne0 : den1 ≠ 0 := by
+            dsimp [den1]
+            exact pow_ne_zero _ (by norm_num : (2 : ℝ) ≠ 0)
+
+          have hclaimDecomp :
+              ((XiTlTwoStepRewardLowerBoundCert.claimNumerator l cert.nums : ℕ) : ℝ) /
+                  (XiTlTwoStepRewardLowerBoundCert.denomPow2 l : ℝ) =
+                (reward1 : ℝ) / den1 +
+                    ((cert.nums.n1FF : ℝ) / den1) * ((reward2FF : ℝ) / den1) +
+                  ((cert.nums.n1FT : ℝ) / den1) * ((reward2FT : ℝ) / den1) +
+                    ((cert.nums.n1TF : ℝ) / den1) * ((reward2TF : ℝ) / den1) +
+                  ((cert.nums.n1TT : ℝ) / den1) * ((reward2TT : ℝ) / den1) := by
+            rw [hden2]
+            field_simp [hden1_ne0]
+            simp [XiTlTwoStepRewardLowerBoundCert.claimNumerator, reward1, reward2FF, reward2FT, reward2TF, reward2TT,
+              XiTlTwoStepRewardLowerBoundCert.denomPow1, XiTlTwoStepRewardLowerBoundCert.denomExp, den1, Nat.cast_add,
+              Nat.cast_mul, Nat.cast_pow]
+            ring
+
+          -- Reduce to the same dyadic decomposition of `optimalQValue`.
+          rw [hclaimDecomp]
           simp [hprob1FF, hprob1FT, hprob1TF, hprob1TT, hprob2FFFT, hprob2FFTT, hprob2FTFT, hprob2FTTT, hprob2TFFT,
-            hprob2TFTT, hprob2TTFT, hprob2TTTT, hVFF, hVFT, hVTF, hVTT,
-            XiTlTwoStepRewardLowerBoundCert.claimNumerator, XiTlTwoStepRewardLowerBoundCert.denomPow2,
-            XiTlTwoStepRewardLowerBoundCert.denomPow1, den1, XiTlTwoStepRewardLowerBoundCert.denomExp] at *
-          ring_nf
-          -- `reward1 * den1` terms normalize as `2⁻¹ ^ k * n1FT/TT`.
-          let k : ℕ := XiTlOneStepRewardLowerBoundCert.denomExp l
-          have hpow_cancel :
-              (2 : ℝ)⁻¹ ^ (k * 2) * (2 : ℝ) ^ k = (2 : ℝ)⁻¹ ^ k := by
-            have hinv : ((2 : ℝ)⁻¹) ^ k * (2 : ℝ) ^ k = 1 := by
-              simpa [mul_pow] using (by simp : (((2 : ℝ)⁻¹ * (2 : ℝ)) ^ k) = 1)
-            calc
-              (2 : ℝ)⁻¹ ^ (k * 2) * (2 : ℝ) ^ k
-                  = (2 : ℝ)⁻¹ ^ (k + k) * (2 : ℝ) ^ k := by simp [Nat.mul_two]
-              _ = ((2 : ℝ)⁻¹ ^ k * (2 : ℝ)⁻¹ ^ k) * (2 : ℝ) ^ k := by
-                  simp [pow_add, mul_assoc]
-              _ = (2 : ℝ)⁻¹ ^ k * ((2 : ℝ)⁻¹ ^ k * (2 : ℝ) ^ k) := by
-                  simp [mul_assoc]
-              _ = (2 : ℝ)⁻¹ ^ k := by simp [hinv]
-          have hFTterm :
-              (2 : ℝ)⁻¹ ^ (k * 2) * (↑cert.nums.n1FT) * (2 : ℝ) ^ k = (2 : ℝ)⁻¹ ^ k * (↑cert.nums.n1FT) := by
-            calc
-              (2 : ℝ)⁻¹ ^ (k * 2) * (↑cert.nums.n1FT) * (2 : ℝ) ^ k =
-                  ((2 : ℝ)⁻¹ ^ (k * 2) * (2 : ℝ) ^ k) * (↑cert.nums.n1FT) := by ring_nf
-              _ = (2 : ℝ)⁻¹ ^ k * (↑cert.nums.n1FT) := by simp [hpow_cancel]
-          have hTTterm :
-              (2 : ℝ)⁻¹ ^ (k * 2) * (↑cert.nums.n1TT) * (2 : ℝ) ^ k = (2 : ℝ)⁻¹ ^ k * (↑cert.nums.n1TT) := by
-            calc
-              (2 : ℝ)⁻¹ ^ (k * 2) * (↑cert.nums.n1TT) * (2 : ℝ) ^ k =
-                  ((2 : ℝ)⁻¹ ^ (k * 2) * (2 : ℝ) ^ k) * (↑cert.nums.n1TT) := by ring_nf
-              _ = (2 : ℝ)⁻¹ ^ k * (↑cert.nums.n1TT) := by simp [hpow_cancel]
-          simp [hFTterm, hTTterm]
+            hprob2TFTT, hprob2TTFT, hprob2TTTT, hVFF', hVFT', hVTF', hVTT', reward1, reward2FF, reward2FT, reward2TF,
+            reward2TT] at ⊢
+          field_simp [hden1_ne0]
+          ring
 
       -- Combine: claim = optimalValue.
       have hclaimOpt : Coding.decodeValueNat cert.num cert.den = optimalValue μ gammaOne h 4 := by
@@ -8167,8 +8177,8 @@ theorem nearOptimal_stabilized_xi_tlTwoStepRewardLowerBound (l : ℕ) :
           Coding.decodeValueNat cert.num cert.den =
               ((XiTlTwoStepRewardLowerBoundCert.claimNumerator l cert.nums : ℕ) : ℝ) /
                 (XiTlTwoStepRewardLowerBoundCert.denomPow2 l : ℝ) := hclaimDyadic
-          _ = optimalQValue μ gammaOne h a0 3 := by simpa [hq]
-          _ = optimalValue μ gammaOne h 4 := by simpa [hopt]
+          _ = optimalQValue μ gammaOne h a0 3 := by simp [hq]
+          _ = optimalValue μ gammaOne h 4 := by simp [hopt]
 
       -- Finally, `compute` returns the decoded certificate value at the guarded root history.
       have : ((p.toExtended tProg).compute h).1 = Coding.decodeValueNat cert.num cert.den := by
@@ -8212,7 +8222,7 @@ theorem nearOptimal_stabilized_xi_tlTwoStepRewardLowerBound (l : ℕ) :
         simp [hEvalRoot, Coding.decodeValueActionOutput, Coding.decodeActionNat_encodeActionNat, Coding.decodeValueNat]
 
       -- Conclude.
-      simpa [this, hclaimOpt]
+      simp [this, hclaimOpt]
 
     refine ⟨tProg, p, cert, hverify, ?_⟩
     -- `optimalValue - ε ≤ claim` since `claim = optimalValue`.
@@ -8503,6 +8513,26 @@ theorem aixitlFromAIXItlSoundProofSystemConvergenceAssumptions_cycle_eps_optimal
     optimalValue_eq_optimalQValue_optimalAction (μ := μ) (γ := γ) (h := h) (n := n) hwf
   simpa [hopt] using hε'
 
+noncomputable section
+
+/-- Abbreviation: packaged convergence assumptions for the unbounded `ξ^tl` environment, built from
+sound proof systems for `xi_tlEnvironment tEnv l` plus near-optimality at stabilization time. -/
+abbrev xi_tlUnbounded_assumptions_of_stabilized
+    (l : ℕ) (γ : DiscountFactor) (n : ℕ) (sys) (nearOptimal_stabilized) :=
+  soundProofSystemConvergenceAssumptions_xi_tlUnbounded_of_stabilized (l := l) (γ := γ) (n := n)
+    (sys := sys) (nearOptimal_stabilized := nearOptimal_stabilized)
+
+/-- Abbreviation: the time-indexed proof checker used by unbounded `ξ^tl` convergence statements,
+so theorem statements do not duplicate large `soundProofSystemCheckerFamilyToPartrec ...` terms. -/
+abbrev xi_tlUnbounded_checker_of_stabilized
+    (l : ℕ) (γ : DiscountFactor) (n : ℕ) (sys) (nearOptimal_stabilized) (t : ℕ) :=
+  ((soundProofSystemCheckerFamilyToPartrec
+          (μ := xi_tlEnvironmentUnbounded l) (γ := γ) n
+          (xi_tlUnbounded_assumptions_of_stabilized (l := l) (γ := γ) (n := n)
+                (sys := sys) (nearOptimal_stabilized := nearOptimal_stabilized)).proofSystem).checker t)
+
+end
+
 /-- Convergence schema specialized to the unbounded `ξ^tl` environment, using:
 
 - a family of sound proof systems for the time-bounded approximations `xi_tlEnvironment tEnv l`, and
@@ -8537,10 +8567,8 @@ theorem aixitl_xi_tlUnbounded_cycle_eps_optimal_eventually_of_stabilized
                 optimalQValue (xi_tlEnvironmentUnbounded l) γ h
                   (aixitl_cycle
                     (aixitlFromProofCheckerToPartrec (xi_tlEnvironmentUnbounded l) γ (n + 1) t
-                      ((soundProofSystemCheckerFamilyToPartrec
-                            (μ := xi_tlEnvironmentUnbounded l) (γ := γ) n
-                            (soundProofSystemConvergenceAssumptions_xi_tlUnbounded_of_stabilized (l := l) (γ := γ) (n := n)
-                                  (sys := sys) (nearOptimal_stabilized := nearOptimal_stabilized)).proofSystem).checker t)
+                      (xi_tlUnbounded_checker_of_stabilized (l := l) (γ := γ) (n := n)
+                        (sys := sys) (nearOptimal_stabilized := nearOptimal_stabilized) t)
                       l' l_p) h)
                   n := by
   intro h hwf ε hε
@@ -8578,14 +8606,13 @@ theorem aixitl_xi_tlUnbounded_twoStep_cycle_eps_optimal_eventually_of_stabilized
           0 < ε →
             ∃ t l' N, ∀ l_p ≥ N,
               optimalQValue (xi_tlEnvironmentUnbounded l) gammaOne h
-                    (optimalAction (xi_tlEnvironmentUnbounded l) gammaOne h 3) 3 - ε ≤
+                  (optimalAction (xi_tlEnvironmentUnbounded l) gammaOne h 3) 3 - ε ≤
                 optimalQValue (xi_tlEnvironmentUnbounded l) gammaOne h
                   (aixitl_cycle
                     (aixitlFromProofCheckerToPartrec (xi_tlEnvironmentUnbounded l) gammaOne 4 t
-                      ((soundProofSystemCheckerFamilyToPartrec (μ := xi_tlEnvironmentUnbounded l) (γ := gammaOne) 3
-                            (soundProofSystemConvergenceAssumptions_xi_tlUnbounded_of_stabilized (l := l) (γ := gammaOne)
-                                  (n := 3) (sys := xi_tlTwoStepRewardLowerBoundSoundProofSystemFamily (l := l)
-                                  ) (nearOptimal_stabilized := nearOptimal_stabilized)).proofSystem).checker t)
+                      (xi_tlUnbounded_checker_of_stabilized (l := l) (γ := gammaOne) (n := 3)
+                        (sys := xi_tlTwoStepRewardLowerBoundSoundProofSystemFamily (l := l))
+                        (nearOptimal_stabilized := nearOptimal_stabilized) t)
                       l' l_p) h)
                   3 := by
   intro h hwf ε hε

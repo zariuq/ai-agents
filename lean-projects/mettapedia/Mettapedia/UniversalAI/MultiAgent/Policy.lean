@@ -74,7 +74,7 @@ def constantAgent (a : Action) : Agent where
   policy_sum_one := by
     intro h _hw
     rw [tsum_fintype]
-    simp [Finset.sum_ite_eq]
+    simp
 
 /-- Constant agent is in any agent class containing it. -/
 theorem constantAgent_in_class {AgentSet : AgentClass} {a : Action} :

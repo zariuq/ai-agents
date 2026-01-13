@@ -240,8 +240,7 @@ def not (hP : Delta02Predicate P) :
             · rfl
             · contradiction
           simp [this]
-      · intro h
-        intro hp
+      · intro h hp
         have : b = true := hb_iff.mp hp
         rw [this] at h
         simp at h
