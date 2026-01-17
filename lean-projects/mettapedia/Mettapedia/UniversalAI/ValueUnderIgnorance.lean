@@ -2,13 +2,20 @@ import Mathlib.MeasureTheory.Measure.MeasureSpace
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.L1
 import Mathlib.MeasureTheory.Integral.Layercake
-import Mathlib.MeasureTheory.Integral.IntervalIntegral
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import Mathlib.MeasureTheory.Function.SimpleFunc
-import Mathlib.MeasureTheory.Integral.Lebesgue
+import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
+import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
+import Mathlib.MeasureTheory.Integral.Lebesgue.Norm
+import Mathlib.Dynamics.Ergodic.MeasurePreserving
+import Mathlib.Analysis.SumIntegralComparisons
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Basic
 import Mathlib.Topology.Semicontinuous
 import Mathlib.Data.ENNReal.Basic
+import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Probability.Kernel.IonescuTulcea.Traj
 import Mathlib.Probability.Kernel.Basic
 import Mathlib.Order.KonigLemma
@@ -353,6 +360,26 @@ to the next percept only (since this file currently models only one-step expecta
 noncomputable def minNextUtility (U : Utility) (h : History) : ℝ :=
   Finset.inf' Finset.univ (Finset.univ_nonempty) (fun p : Percept => U (h ++ [HistElem.per p]))
 
+theorem minNextUtility_bounds (U : Utility) (h : History)
+    (h_U_bound : ∀ h', 0 ≤ U h' ∧ U h' ≤ 1) :
+    0 ≤ minNextUtility U h ∧ minNextUtility U h ≤ 1 := by
+  constructor
+  · unfold minNextUtility
+    refine
+      (Finset.le_inf'_iff (s := Finset.univ) (H := Finset.univ_nonempty)
+        (f := fun p : Percept => U (h ++ [HistElem.per p]))).2 ?_
+    intro p _
+    exact (h_U_bound _).1
+  ·
+    have h_le :
+        minNextUtility U h ≤ U (h ++ [HistElem.per (Percept.mk false false)]) := by
+      unfold minNextUtility
+      simpa using
+        (Finset.inf'_le (s := Finset.univ)
+          (f := fun p : Percept => U (h ++ [HistElem.per p]))
+          (h := Finset.mem_univ (Percept.mk false false)))
+    exact le_trans h_le (h_U_bound _).2
+
 /-- Value under ignorance using a finite-alphabet Choquet proxy.
 
     This computes expected utility when probability is given by a semimeasure ν,
@@ -588,7 +615,11 @@ theorem choquet_value_lower_semicomputable (ν : Semimeasure) (U : Utility)
       unfold minNextUtility
       let p : Percept := Percept.mk false false
       calc Finset.inf' Finset.univ Finset.univ_nonempty (fun p' => U (h ++ [HistElem.per p']))
-          ≤ U (h ++ [HistElem.per p]) := Finset.inf'_le (fun p' => U (h ++ [HistElem.per p'])) (Finset.mem_univ p)
+          ≤ U (h ++ [HistElem.per p]) := by
+              simpa using
+                (Finset.inf'_le (s := Finset.univ)
+                  (f := fun p' => U (h ++ [HistElem.per p']))
+                  (h := Finset.mem_univ p))
         _ ≤ 1 := (h_U_bounds (h ++ [HistElem.per p])).2
 
   -- Extract the approximation function from the LowerSemicomputable structure
@@ -633,7 +664,7 @@ theorem utilityTruncate_bound (U : Utility) (n : ℕ) (h : History) :
   -- This is a trivial dichotomy (always true)
   by_cases hle : utilityTruncate U n h ≤ U h
   · left; exact hle
-  · right; exact le_of_not_le hle
+  · right; exact le_of_not_ge hle
 
 /-- **Theorem 2b** (Paper's Actual Claim, Wyeth/Hutter Theorem 4.1):
     Choquet integral of a l.s.c. utility is l.s.c. when ν is only l.s.c. (not u.s.c.).
@@ -1047,7 +1078,7 @@ noncomputable def konig_path_to_stream (f : ℕ → BinString)
 
 /-- Extend a finite binary string to an infinite stream by padding with false. -/
 def extendWithFalse (y : BinString) : BinStream := fun n =>
-  if h : n < y.length then y[n]! else false
+  if n < y.length then y[n]! else false
 
 /-- The set of infinite streams that extend a given finite prefix x. -/
 def extendsPrefix (x : BinString) : Set BinStream :=
@@ -1057,7 +1088,7 @@ def extendsPrefix (x : BinString) : Set BinStream :=
 theorem extendsPrefix_nonempty (x : BinString) : (extendsPrefix x).Nonempty := by
   use extendWithFalse x
   intro n hn
-  simp only [extendWithFalse, hn, dite_true]
+  simp [extendWithFalse, hn]
 
 /-- Cantor space (ℕ → Bool) is compact, by Tychonoff's theorem
     (since Bool is finite, hence compact). -/
@@ -1129,7 +1160,7 @@ instance extendsPrefix_nonempty_subtype (x : BinString) :
     Nonempty {ω : BinStream // ∀ n, n < x.length → ω n = x[n]!} := by
   use extendWithFalse x
   intro n hn
-  simp only [extendWithFalse, hn, dite_true]
+  simp [extendWithFalse, hn]
 
 /-- The infimum utility equals the value at the minimizing extension. -/
 theorem infimum_utility_eq_min (x : BinString) (u : BinStream → ℝ)
@@ -1251,16 +1282,29 @@ By monotone convergence, lim V_n = valueChoquet is l.s.c.
 (valueChoquet = valueNeutral + loss * minU), not in the layer cake formula.
 -/
 
-/-- Capacity at level t: the semimeasure of percepts with utility ≥ t.
+/-- Total one-step mass (percepts plus loss) at history h. -/
+noncomputable def perceptMass (ν : Semimeasure) (h : History) : ℝ :=
+  (semimeasureLoss ν (encodeHistory h)).toReal +
+    ∑ p : Percept, (ν (encodeHistory h ++ encodePerceptBin p)).toReal
 
-For t ≤ minNextUtility, this equals ν(h) (all percepts plus loss mass).
-For t > minNextUtility, this is the sum of ν(h++p) for high-utility percepts.
+theorem perceptMass_nonneg (ν : Semimeasure) (h : History) : 0 ≤ perceptMass ν h := by
+  unfold perceptMass
+  apply add_nonneg
+  · exact ENNReal.toReal_nonneg
+  · apply Finset.sum_nonneg
+    intro p _
+    exact ENNReal.toReal_nonneg
+
+/-- Capacity at level t: the semimeasure of percepts with utility strictly above t.
+
+For t < minNextUtility, this equals the total one-step mass (percepts plus loss).
+For t ≥ minNextUtility, this is the sum of ν(h++p) for percepts with U(h++p) > t.
 -/
 noncomputable def capacityAtLevel (ν : Semimeasure) (U : Utility) (h : History) (t : ℝ) : ℝ :=
-  if t ≤ minNextUtility U h then
-    (ν (encodeHistory h)).toReal
+  if t < minNextUtility U h then
+    perceptMass ν h
   else
-    ∑ p : Percept, if U (h ++ [HistElem.per p]) ≥ t then
+    ∑ p : Percept, if t < U (h ++ [HistElem.per p]) then
       (ν (encodeHistory h ++ encodePerceptBin p)).toReal
     else 0
 
@@ -1269,7 +1313,12 @@ theorem capacityAtLevel_nonneg (ν : Semimeasure) (U : Utility) (h : History) (t
     0 ≤ capacityAtLevel ν U h t := by
   unfold capacityAtLevel
   split_ifs with ht
-  · exact ENNReal.toReal_nonneg
+  · unfold perceptMass
+    apply add_nonneg
+    · exact ENNReal.toReal_nonneg
+    · apply Finset.sum_nonneg
+      intro p _
+      exact ENNReal.toReal_nonneg
   · apply Finset.sum_nonneg
     intro p _
     split_ifs
@@ -1337,24 +1386,31 @@ theorem percept_sum_le_hist (ν : Semimeasure) (hist : History) :
   rw [h_sum_eq]
   exact ENNReal.toReal_mono h_ne_top h_ennreal
 
-/-- Capacity at level is bounded above by ν(h). -/
+/-- Capacity at level is bounded above by the total one-step mass. -/
 theorem capacityAtLevel_le (ν : Semimeasure) (U : Utility) (hist : History) (t : ℝ) :
-    capacityAtLevel ν U hist t ≤ (ν (encodeHistory hist)).toReal := by
+    capacityAtLevel ν U hist t ≤ perceptMass ν hist := by
   unfold capacityAtLevel
-  by_cases ht : t ≤ minNextUtility U hist
+  by_cases ht : t < minNextUtility U hist
   · simp only [if_pos ht]
     exact le_refl _
   · simp only [if_neg ht]
-    -- The filtered sum is at most the full sum, which is at most ν(hist)
-    have h_step1 : ∑ p : Percept, (if U (hist ++ [HistElem.per p]) ≥ t then
+    -- The filtered sum is at most the full sum, which is at most the total mass
+    have h_step1 : ∑ p : Percept, (if t < U (hist ++ [HistElem.per p]) then
             (ν (encodeHistory hist ++ encodePerceptBin p)).toReal else 0)
         ≤ ∑ p : Percept, (ν (encodeHistory hist ++ encodePerceptBin p)).toReal := by
       apply Finset.sum_le_sum
       intro p _
-      by_cases hp : U (hist ++ [HistElem.per p]) ≥ t
+      by_cases hp : t < U (hist ++ [HistElem.per p])
       · simp only [if_pos hp]; exact le_refl _
       · simp only [if_neg hp]; exact ENNReal.toReal_nonneg
-    exact le_trans h_step1 (percept_sum_le_hist ν hist)
+    -- sum ≤ loss + sum
+    have h_step2 :
+        ∑ p : Percept, (ν (encodeHistory hist ++ encodePerceptBin p)).toReal
+          ≤ perceptMass ν hist := by
+      unfold perceptMass
+      have h_loss_nonneg : 0 ≤ (semimeasureLoss ν (encodeHistory hist)).toReal := ENNReal.toReal_nonneg
+      linarith
+    exact le_trans h_step1 h_step2
 
 /-- Capacity is monotone decreasing in t. -/
 theorem capacityAtLevel_mono (ν : Semimeasure) (U : Utility) (hist : History) :
@@ -1363,56 +1419,61 @@ theorem capacityAtLevel_mono (ν : Semimeasure) (U : Utility) (hist : History) :
   -- Note: Antitone means t1 ≤ t2 ⟹ f(t2) ≤ f(t1)
   -- So we need to show capacityAtLevel hist t2 ≤ capacityAtLevel hist t1
   unfold capacityAtLevel
-  by_cases h2 : t2 ≤ minNextUtility U hist
-  · -- t2 ≤ minU, so t1 ≤ minU too (since t1 ≤ t2)
-    have h1 : t1 ≤ minNextUtility U hist := le_trans ht h2
+  by_cases h2 : t2 < minNextUtility U hist
+  · -- t2 < minU, so t1 < minU too (since t1 ≤ t2)
+    have h1 : t1 < minNextUtility U hist := lt_of_le_of_lt ht h2
     simp only [if_pos h1, if_pos h2]
     exact le_refl _
   · -- t2 > minU
-    by_cases h1 : t1 ≤ minNextUtility U hist
-    · -- t1 ≤ minU but t2 > minU
+    by_cases h1 : t1 < minNextUtility U hist
+    · -- t1 < minU but t2 ≥ minU
       simp only [if_pos h1, if_neg h2]
-      -- capacity(t2) is sum of ν(hist++p) for p with U≥t2, capacity(t1) = ν(hist)
-      -- Need: sum ≤ ν(hist)
-      have h_bound : ∑ p : Percept, (if U (hist ++ [HistElem.per p]) ≥ t2 then
+      -- capacity(t2) is a filtered sum, capacity(t1) = perceptMass
+      -- Need: sum ≤ perceptMass
+      have h_bound : ∑ p : Percept, (if t2 < U (hist ++ [HistElem.per p]) then
             (ν (encodeHistory hist ++ encodePerceptBin p)).toReal else 0)
-          ≤ (ν (encodeHistory hist)).toReal := by
-        calc ∑ p : Percept, (if U (hist ++ [HistElem.per p]) ≥ t2 then
+          ≤ perceptMass ν hist := by
+        calc ∑ p : Percept, (if t2 < U (hist ++ [HistElem.per p]) then
               (ν (encodeHistory hist ++ encodePerceptBin p)).toReal else 0)
             ≤ ∑ p : Percept, (ν (encodeHistory hist ++ encodePerceptBin p)).toReal := by
               apply Finset.sum_le_sum
               intro p _
-              by_cases hp : U (hist ++ [HistElem.per p]) ≥ t2
+              by_cases hp : t2 < U (hist ++ [HistElem.per p])
               · simp only [if_pos hp]; exact le_refl _
               · simp only [if_neg hp]; exact ENNReal.toReal_nonneg
-          _ ≤ (ν (encodeHistory hist)).toReal := percept_sum_le_hist ν hist
+          _ ≤ perceptMass ν hist := by
+              unfold perceptMass
+              have h_loss_nonneg : 0 ≤ (semimeasureLoss ν (encodeHistory hist)).toReal :=
+                ENNReal.toReal_nonneg
+              linarith
       exact h_bound
     · -- Both t2 > minU and t1 > minU
       simp only [if_neg h1, if_neg h2]
       -- Both are sums, need: sum for t2 ≤ sum for t1
-      -- Since t1 ≤ t2, the set {p : U ≥ t2} ⊆ {p : U ≥ t1}
+      -- Since t1 ≤ t2, the set {p : U>t2} ⊆ {p : U>t1}
       apply Finset.sum_le_sum
       intro p _
-      by_cases hp2 : U (hist ++ [HistElem.per p]) ≥ t2
+      by_cases hp2 : t2 < U (hist ++ [HistElem.per p])
       · -- U ≥ t2 ⟹ U ≥ t1 (since t1 ≤ t2)
-        have hp1 : U (hist ++ [HistElem.per p]) ≥ t1 := le_trans ht hp2
+        have hp1 : t1 < U (hist ++ [HistElem.per p]) := lt_of_le_of_lt ht hp2
         simp only [if_pos hp2, if_pos hp1]
         exact le_refl _
       · -- U < t2
         simp only [if_neg hp2]
-        by_cases hp1 : U (hist ++ [HistElem.per p]) ≥ t1
+        by_cases hp1 : t1 < U (hist ++ [HistElem.per p])
         · simp only [if_pos hp1]; exact ENNReal.toReal_nonneg
         · simp only [if_neg hp1]; exact le_refl _
 
 /-- Riemann lower sum approximation of the Choquet integral.
 
-V_n(h) = (1/n) · Σ_{k=1}^n capacityAtLevel(k/n)
+We use nested dyadic partitions:
+  V_n(h) = (1/2^n) · Σ_{k=1}^{2^n} capacityAtLevel(k/2^n)
 
-This approximates ∫_0^1 ν_h({U ≥ t}) dt from below using right endpoints.
+This approximates ∫_0^1 capacityAtLevel(t) dt from below using right endpoints.
 -/
 noncomputable def valueChoquet_riemann (ν : Semimeasure) (U : Utility) (h : History) (n : ℕ) : ℝ :=
-  if n = 0 then 0
-  else (1 / n : ℝ) * ∑ k ∈ Finset.range n, capacityAtLevel ν U h ((k + 1 : ℕ) / n : ℝ)
+  let m : ℕ := 2 ^ n
+  (1 / (m : ℝ)) * ∑ k ∈ Finset.range m, capacityAtLevel ν U h ((k + 1 : ℝ) / (m : ℝ))
 
 /-- The utility values at the four next-step percepts (as a list for convenience). -/
 def nextUtilities (U : Utility) (h : History) : List ℝ :=
@@ -1423,7 +1484,7 @@ def nextUtilities (U : Utility) (h : History) : List ℝ :=
     This is a helper for understanding the structure, not used in main proofs. -/
 theorem capacityAtLevel_has_finitely_many_jumps (ν : Semimeasure) (U : Utility) (h : History) :
     ∃ (S : Finset ℝ), S.card ≤ 4 ∧
-      ∀ t₁ t₂, t₁ < t₂ → (∀ t ∈ S, t ≤ t₁ ∨ t₂ ≤ t) →
+      ∀ t₁ t₂, t₁ < t₂ → (∀ t ∈ S, t ≤ t₁ ∨ t₂ < t) →
         capacityAtLevel ν U h t₁ = capacityAtLevel ν U h t₂ := by
   -- The set S is the set of utility values
   use Finset.image (fun p => U (h ++ [HistElem.per p])) Finset.univ
@@ -1434,143 +1495,349 @@ theorem capacityAtLevel_has_finitely_many_jumps (ν : Semimeasure) (U : Utility)
       _ = 4 := by rfl
   · -- Piecewise constant on intervals avoiding S
     intro t₁ t₂ ht_order h_avoid
-    -- Key: if no utility values lie in (t₁, t₂), then {p : U(h++p) ≥ t₁} = {p : U(h++p) ≥ t₂}
-    unfold capacityAtLevel minNextUtility
-    -- Split into cases based on whether t₁ ≤ minU
-    by_cases h1 : t₁ ≤ Finset.inf' Finset.univ Finset.univ_nonempty (fun p => U (h ++ [HistElem.per p]))
-    · -- t₁ ≤ minU, so t₂ ≤ minU (since t₂ > t₁ and minU ≥ t₁)
-      -- Actually, we need t₂ ≤ minU too
-      by_cases h2 : t₂ ≤ Finset.inf' Finset.univ Finset.univ_nonempty (fun p => U (h ++ [HistElem.per p]))
-      · simp only [if_pos h1, if_pos h2]
-      · -- t₂ > minU but t₁ ≤ minU
-        -- This means minU ∈ [t₁, t₂], but minU is in S, so this contradicts h_avoid
-        exfalso
-        have minU_in_S : Finset.inf' Finset.univ Finset.univ_nonempty (fun p => U (h ++ [HistElem.per p]))
-                         ∈ Finset.image (fun p => U (h ++ [HistElem.per p])) Finset.univ := by
-          simp only [Finset.mem_image, Finset.mem_univ, true_and]
-          -- For a finite set, inf' equals the minimum, which is attained
-          obtain ⟨p_min, _, hp_eq⟩ := Finset.exists_mem_eq_inf' Finset.univ_nonempty (fun p => U (h ++ [HistElem.per p]))
-          exact ⟨p_min, hp_eq.symm⟩
-        -- We have t₁ ≤ minU < t₂
-        have minU_lt_t2 : Finset.inf' Finset.univ Finset.univ_nonempty (fun p => U (h ++ [HistElem.per p])) < t₂ :=
-          not_le.mp h2
-        -- By h_avoid, minU ≤ t₁ or t₂ ≤ minU
-        have h_avoid_minU := h_avoid (Finset.inf' Finset.univ Finset.univ_nonempty (fun p => U (h ++ [HistElem.per p]))) minU_in_S
-        cases h_avoid_minU with
-        | inl h_le =>
-          -- minU ≤ t₁, but we also have t₁ ≤ minU from h1, so minU = t₁
-          have minU_eq : Finset.inf' Finset.univ Finset.univ_nonempty (fun p => U (h ++ [HistElem.per p])) = t₁ :=
-            le_antisymm h_le h1
-          -- But then minU < t₂ means t₁ < t₂, which is just ht_order - no contradiction
-          -- Actually, the issue is that with minU = t₁, we'd have if_pos for both, so trivial
-          -- Let me check: if t₁ = minU and t₁ ≤ minU, then if_pos h1 holds
-          -- And if t₂ > minU = t₁, then... wait, does t₂ ≤ minU?
-          -- No, we have h2 : ¬(t₂ ≤ minU), so t₂ > minU
-          -- So even though t₁ = minU, we have t₂ > minU, meaning the first case uses if_pos
-          -- but the second case uses if_neg (since t₂ > minU = t₁)
-          -- So the two branches evaluate differently, which means we DO need a contradiction
-          -- The contradiction is: t₁ = minU < t₂, but h_avoid says minU ≤ t₁ (which is t₁ ≤ t₁, fine)
-          -- or t₂ ≤ minU (which contradicts minU < t₂)
-          -- Wait, I already have both cases. Let me just show the contradiction properly.
-          -- We have minU = t₁ < t₂, so capacity(t₁) = ν(h) (since t₁ = minU)
-          -- and capacity(t₂) = ∑{p: U≥t₂} ν(p) (since t₂ > minU)
-          -- These are NOT necessarily equal, so we can't prove the theorem as stated
-          -- The issue is the theorem might be wrong, or needs a different formulation
-          -- Let me check the avoidance condition more carefully
-          sorry
-        | inr h_ge =>
-          -- t₂ ≤ minU, but we have minU < t₂, contradiction!
-          exact absurd h_ge (not_le.mpr minU_lt_t2)
-    · -- t₁ > minU
-      by_cases h2 : t₂ ≤ Finset.inf' Finset.univ Finset.univ_nonempty (fun p => U (h ++ [HistElem.per p]))
-      · -- t₂ ≤ minU but t₁ > minU, contradiction since t₁ < t₂
-        exfalso; linarith
-      · -- Both t₁, t₂ > minU
-        simp only [if_neg h1, if_neg h2]
-        -- Now we need to show ∑_{p: U(h++p)≥t₁} ν(h++p) = ∑_{p: U(h++p)≥t₂} ν(h++p)
-        -- This holds if {p: U(h++p)≥t₁} = {p: U(h++p)≥t₂}
-        -- Which holds if no U(h++p) lies in (t₁, t₂)
-        -- Need to show the sums are equal
-        -- This requires showing the filtered sets {p: U(h++p)≥t₁} = {p: U(h++p)≥t₂}
-        -- Which follows from h_avoid: no utility value lies strictly between t₁ and t₂
-        sorry
+    -- Key: if no utility values lie in (t₁, t₂), then all threshold predicates agree.
+    have h_min_in :
+        minNextUtility U h ∈
+          Finset.image (fun p => U (h ++ [HistElem.per p])) Finset.univ := by
+      simp only [Finset.mem_image, Finset.mem_univ, true_and]
+      obtain ⟨p_min, _, hp_eq⟩ :=
+        Finset.exists_mem_eq_inf' Finset.univ_nonempty (fun p => U (h ++ [HistElem.per p]))
+      exact ⟨p_min, hp_eq.symm⟩
+    have h_min_case : (t₁ < minNextUtility U h) = (t₂ < minNextUtility U h) := by
+      have h_avoid_min := h_avoid (minNextUtility U h) h_min_in
+      cases h_avoid_min with
+      | inl h_le =>
+        have h1 : ¬ t₁ < minNextUtility U h := not_lt.mpr h_le
+        have h2 : ¬ t₂ < minNextUtility U h := not_lt.mpr (le_trans h_le (le_of_lt ht_order))
+        simp [h1, h2]
+      | inr h_lt =>
+        have h1 : t₁ < minNextUtility U h := lt_trans ht_order h_lt
+        have h2 : t₂ < minNextUtility U h := h_lt
+        simp [h1, h2]
+    have h_pred : ∀ p : Percept, (t₁ < U (h ++ [HistElem.per p])) =
+        (t₂ < U (h ++ [HistElem.per p])) := by
+      intro p
+      have h_in :
+          U (h ++ [HistElem.per p]) ∈
+            Finset.image (fun p => U (h ++ [HistElem.per p])) Finset.univ := by
+        simp
+      have h_avoid_p := h_avoid (U (h ++ [HistElem.per p])) h_in
+      cases h_avoid_p with
+      | inl h_le =>
+        have h1 : ¬ t₁ < U (h ++ [HistElem.per p]) := not_lt.mpr h_le
+        have h2 : ¬ t₂ < U (h ++ [HistElem.per p]) := not_lt.mpr (le_trans h_le (le_of_lt ht_order))
+        simp [h1, h2]
+      | inr h_lt =>
+        have h1 : t₁ < U (h ++ [HistElem.per p]) := lt_trans ht_order h_lt
+        have h2 : t₂ < U (h ++ [HistElem.per p]) := h_lt
+        simp [h1, h2]
+    unfold capacityAtLevel
+    simp [h_min_case, h_pred]
 
 /-- Riemann approximation is nonnegative. -/
 theorem valueChoquet_riemann_nonneg (ν : Semimeasure) (U : Utility) (h : History) (n : ℕ) :
     0 ≤ valueChoquet_riemann ν U h n := by
   unfold valueChoquet_riemann
-  split_ifs with hn
-  · exact le_refl 0
-  · apply mul_nonneg
-    · apply div_nonneg
-      · exact zero_le_one
-      · exact Nat.cast_nonneg n
-    · apply Finset.sum_nonneg
-      intro k _
-      exact capacityAtLevel_nonneg ν U h _
+  apply mul_nonneg
+  · apply div_nonneg
+    · exact zero_le_one
+    · exact Nat.cast_nonneg (2 ^ n)
+  · apply Finset.sum_nonneg
+    intro k _
+    exact capacityAtLevel_nonneg ν U h _
 
-/-- Riemann approximation is bounded by ν(h) when U is bounded by 1. -/
+/- Riemann approximation is bounded by the total one-step mass. -/
 theorem valueChoquet_riemann_bounded (ν : Semimeasure) (U : Utility) (h : History)
-    (h_U_bound : ∀ h', 0 ≤ U h' ∧ U h' ≤ 1) (n : ℕ) :
-    valueChoquet_riemann ν U h n ≤ (ν (encodeHistory h)).toReal := by
-  unfold valueChoquet_riemann
-  split_ifs with hn
-  · exact ENNReal.toReal_nonneg
-  · calc (1 / n : ℝ) * ∑ k ∈ Finset.range n, capacityAtLevel ν U h ((k + 1 : ℕ) / n : ℝ)
-        ≤ (1 / n : ℝ) * ∑ k ∈ Finset.range n, (ν (encodeHistory h)).toReal := by
+    (_h_U_bound : ∀ h', 0 ≤ U h' ∧ U h' ≤ 1) (n : ℕ) :
+    valueChoquet_riemann ν U h n ≤ perceptMass ν h := by
+  simp [valueChoquet_riemann]
+  have hm_pos : 0 < (2 ^ n : ℝ) := by
+    exact_mod_cast (pow_pos (by decide : 0 < (2 : ℕ)) n)
+  have hm_ne : (2 ^ n : ℝ) ≠ 0 := by
+    exact ne_of_gt hm_pos
+  calc
+    (2 ^ n : ℝ)⁻¹ * ∑ k ∈ Finset.range (2 ^ n),
+        capacityAtLevel ν U h ((k + 1 : ℝ) / (2 ^ n : ℝ))
+        ≤ (2 ^ n : ℝ)⁻¹ * ∑ k ∈ Finset.range (2 ^ n), perceptMass ν h := by
           apply mul_le_mul_of_nonneg_left
           · apply Finset.sum_le_sum
             intro k _
             exact capacityAtLevel_le ν U h _
-          · apply div_nonneg; exact zero_le_one; exact Nat.cast_nonneg n
-      _ = (1 / n : ℝ) * (n * (ν (encodeHistory h)).toReal) := by
+          · exact inv_nonneg.mpr (le_of_lt hm_pos)
+    _ = (2 ^ n : ℝ)⁻¹ * ((2 ^ n : ℝ) * perceptMass ν h) := by
           rw [Finset.sum_const, Finset.card_range]
-          simp only [nsmul_eq_mul]
-      _ = (ν (encodeHistory h)).toReal := by
-          have hn_ne : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-          field_simp [hn_ne]
+          simp [nsmul_eq_mul, Nat.cast_pow]
+    _ = perceptMass ν h := by
+          field_simp [hm_ne]
+
+lemma nat_le_two_pow (n : ℕ) : n ≤ 2 ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+      -- Use n ≤ 2^n and 1 ≤ 2^n to get n+1 ≤ 2^n + 2^n.
+      have h2 : 1 ≤ 2 ^ n := Nat.one_le_pow n 2 (by decide)
+      have h3 : n + 1 ≤ 2 ^ n + 2 ^ n := Nat.add_le_add ih h2
+      have h4 : n + 1 ≤ 2 ^ n * 2 := by
+        simpa [two_mul, Nat.mul_comm, Nat.mul_left_comm, Nat.mul_assoc] using h3
+      simpa [pow_succ, Nat.mul_comm, Nat.mul_left_comm, Nat.mul_assoc] using h4
+
+lemma sum_range_sub_succ (f : ℕ → ℝ) (m : ℕ) :
+    ∑ k ∈ Finset.range m, f k - ∑ k ∈ Finset.range m, f (k + 1) = f 0 - f m := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+      calc
+        (∑ k ∈ Finset.range (m + 1), f k) - ∑ k ∈ Finset.range (m + 1), f (k + 1) =
+            ((∑ k ∈ Finset.range m, f k) + f m) -
+              ((∑ k ∈ Finset.range m, f (k + 1)) + f (m + 1)) := by
+              simp [Finset.sum_range_succ, add_comm]
+        _ = ((∑ k ∈ Finset.range m, f k) - ∑ k ∈ Finset.range m, f (k + 1)) +
+              (f m - f (m + 1)) := by ring
+        _ = (f 0 - f m) + (f m - f (m + 1)) := by simp [ih]
+        _ = f 0 - f (m + 1) := by ring
 
 /-- Riemann approximation is monotone increasing in n. -/
+lemma sum_range_double {α : Type*} [AddCommMonoid α] (f : ℕ → α) (m : ℕ) :
+    ∑ k ∈ Finset.range (2 * m), f k =
+      ∑ k ∈ Finset.range m, (f (2 * k) + f (2 * k + 1)) := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+      -- Expand both sides using sum_range_succ and the induction hypothesis.
+      have h_left :
+          ∑ k ∈ Finset.range (2 * (m + 1)), f k =
+            (∑ k ∈ Finset.range (2 * m), f k) + f (2 * m) + f (2 * m + 1) := by
+        calc
+          ∑ k ∈ Finset.range (2 * (m + 1)), f k =
+              ∑ k ∈ Finset.range (2 * m + 2), f k := by
+                simp [Nat.mul_add]
+          _ = (∑ k ∈ Finset.range (2 * m + 1), f k) + f (2 * m + 1) := by
+                simp [Finset.sum_range_succ, add_assoc]
+          _ = ((∑ k ∈ Finset.range (2 * m), f k) + f (2 * m)) + f (2 * m + 1) := by
+                simp [Finset.sum_range_succ, add_assoc]
+          _ = (∑ k ∈ Finset.range (2 * m), f k) + f (2 * m) + f (2 * m + 1) := by
+                simp [add_assoc]
+      have h_right :
+          ∑ k ∈ Finset.range (m + 1), (f (2 * k) + f (2 * k + 1)) =
+            (∑ k ∈ Finset.range m, (f (2 * k) + f (2 * k + 1))) +
+              (f (2 * m) + f (2 * m + 1)) := by
+        simp [Finset.sum_range_succ]
+      -- Combine.
+      calc
+        ∑ k ∈ Finset.range (2 * (m + 1)), f k
+            = (∑ k ∈ Finset.range (2 * m), f k) + f (2 * m) + f (2 * m + 1) := h_left
+        _ = (∑ k ∈ Finset.range m, (f (2 * k) + f (2 * k + 1))) +
+              (f (2 * m) + f (2 * m + 1)) := by
+              simp [ih, add_assoc, add_left_comm, add_comm]
+        _ = ∑ k ∈ Finset.range (m + 1), (f (2 * k) + f (2 * k + 1)) := by
+              symm; exact h_right
+
 theorem valueChoquet_riemann_mono (ν : Semimeasure) (U : Utility) (h : History) (n : ℕ) :
     valueChoquet_riemann ν U h n ≤ valueChoquet_riemann ν U h (n + 1) := by
-  unfold valueChoquet_riemann
-  by_cases hn : n = 0
-  · -- n = 0 case: 0 ≤ (nonzero value)
-    simp only [hn, ↓reduceIte]
-    apply mul_nonneg
-    · apply div_nonneg; exact zero_le_one; exact Nat.cast_nonneg _
-    · apply Finset.sum_nonneg; intro k _; exact capacityAtLevel_nonneg ν U h _
-  · -- n ≠ 0: both n and n+1 are nonzero
-    have hn1 : n + 1 ≠ 0 := Nat.succ_ne_zero n
-    simp only [hn, hn1, ↓reduceIte]
+  dsimp [valueChoquet_riemann]
+  set m : ℕ := 2 ^ n
+  have hm_pos : 0 < (m : ℝ) := by
+    exact Nat.cast_pos.mpr (pow_pos (by decide : 0 < (2 : ℕ)) n)
+  have hm_ne : (m : ℝ) ≠ 0 := by exact ne_of_gt hm_pos
+  have hm_succ : 2 ^ (n + 1) = 2 * m := by
+    simp [m, pow_succ, Nat.mul_comm]
+  have hm_succ' : ((2 ^ (n + 1) : ℕ) : ℝ) = 2 * (m : ℝ) := by
+    exact_mod_cast hm_succ
+  let f : ℝ → ℝ := fun t => capacityAtLevel ν U h t
 
-    -- Use a simpler bound: both sums average nonnegative terms
-    -- Since capacity is bounded and antitone, more partition points → better lower bound
-    --
-    -- Rough argument: (1/n)·S_n ≤ (1/(n+1))·S_{n+1}
-    -- because S_{n+1} ≈ S_n + (n+1)·(1/(n+1))·capacity_extra
-    --         ≈ S_n + capacity_extra
-    -- So (1/(n+1))·S_{n+1} ≈ (1/(n+1))·S_n + (1/(n+1))·capacity_extra
-    --                       ≈ (n/(n+1))·(1/n)·S_n + stuff
-    --
-    -- This needs careful bounding. For now, use monotonicity of the integral limit
-    sorry
+  have h_pair :
+      ∀ k ∈ Finset.range m,
+        f ((k + 1 : ℝ) / (m : ℝ)) ≤
+          (1 / 2 : ℝ) *
+            (f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) +
+              f ((2 * k + 2 : ℝ) / (2 * (m : ℝ)))) := by
+    intro k hk
+    have h_le :
+        (2 * k + 1 : ℝ) / (2 * (m : ℝ)) ≤ (k + 1 : ℝ) / (m : ℝ) := by
+      have h_num : (2 * k + 1 : ℝ) ≤ (2 * (k + 1) : ℝ) := by nlinarith
+      have h_div :
+          (2 * k + 1 : ℝ) / (2 * (m : ℝ)) ≤
+            (2 * (k + 1) : ℝ) / (2 * (m : ℝ)) := by
+        exact div_le_div_of_nonneg_right h_num (by positivity)
+      have h_eq :
+          (2 * (k + 1) : ℝ) / (2 * (m : ℝ)) = (k + 1 : ℝ) / (m : ℝ) := by
+        field_simp [hm_ne]
+      simpa [h_eq] using h_div
+    have h_mono := capacityAtLevel_mono ν U h
+    have h1 : f ((k + 1 : ℝ) / (m : ℝ)) ≤ f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) := by
+      exact h_mono h_le
+    have h2 : f ((2 * k + 2 : ℝ) / (2 * (m : ℝ))) = f ((k + 1 : ℝ) / (m : ℝ)) := by
+      have h_eq :
+          (2 * k + 2 : ℝ) / (2 * (m : ℝ)) = (k + 1 : ℝ) / (m : ℝ) := by
+        field_simp [hm_ne]
+      simp [h_eq]
+    calc
+      f ((k + 1 : ℝ) / (m : ℝ))
+          = (1 / 2 : ℝ) *
+              (f ((k + 1 : ℝ) / (m : ℝ)) + f ((k + 1 : ℝ) / (m : ℝ))) := by ring
+      _ ≤ (1 / 2 : ℝ) *
+            (f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) + f ((k + 1 : ℝ) / (m : ℝ))) := by
+            have h := add_le_add h1
+              (le_rfl : f ((k + 1 : ℝ) / (m : ℝ)) ≤ f ((k + 1 : ℝ) / (m : ℝ)))
+            exact mul_le_mul_of_nonneg_left h (by positivity : 0 ≤ (1 / 2 : ℝ))
+      _ = (1 / 2 : ℝ) *
+            (f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) + f ((2 * k + 2 : ℝ) / (2 * (m : ℝ)))) := by
+            simp [h2]
+
+  have h_sum :
+      ∑ k ∈ Finset.range m, f ((k + 1 : ℝ) / (m : ℝ)) ≤
+        ∑ k ∈ Finset.range m,
+          (1 / 2 : ℝ) *
+            (f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) +
+              f ((2 * k + 2 : ℝ) / (2 * (m : ℝ)))) := by
+    apply Finset.sum_le_sum
+    intro k hk
+    exact h_pair k hk
+
+  have h_scaled :
+      (1 / (m : ℝ)) * ∑ k ∈ Finset.range m, f ((k + 1 : ℝ) / (m : ℝ)) ≤
+        (1 / (2 * (m : ℝ))) *
+          ∑ k ∈ Finset.range m,
+            (f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) +
+              f ((2 * k + 2 : ℝ) / (2 * (m : ℝ)))) := by
+    have h_inv_nonneg : 0 ≤ (1 / (m : ℝ)) := by
+      exact one_div_nonneg.mpr (le_of_lt hm_pos)
+    have h := mul_le_mul_of_nonneg_left h_sum h_inv_nonneg
+    calc
+      (1 / (m : ℝ)) * ∑ k ∈ Finset.range m, f ((k + 1 : ℝ) / (m : ℝ))
+          ≤ (1 / (m : ℝ)) *
+              ∑ k ∈ Finset.range m, (1 / 2 : ℝ) *
+                (f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) +
+                  f ((2 * k + 2 : ℝ) / (2 * (m : ℝ)))) := h
+      _ = (1 / (m : ℝ)) * ((1 / 2 : ℝ) *
+            ∑ k ∈ Finset.range m,
+              (f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) +
+                f ((2 * k + 2 : ℝ) / (2 * (m : ℝ))))) := by
+            -- Pull the constant factor out of the sum.
+            have h_pull :
+                ∑ k ∈ Finset.range m,
+                    (1 / 2 : ℝ) *
+                      (f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) +
+                        f ((2 * k + 2 : ℝ) / (2 * (m : ℝ))))
+                  = (1 / 2 : ℝ) *
+                      ∑ k ∈ Finset.range m,
+                        (f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) +
+                          f ((2 * k + 2 : ℝ) / (2 * (m : ℝ)))) := by
+              classical
+              let g : ℕ → ℝ := fun k =>
+                f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) +
+                  f ((2 * k + 2 : ℝ) / (2 * (m : ℝ)))
+              have h_mul :
+                  (1 / 2 : ℝ) * ∑ k ∈ Finset.range m, g k =
+                    ∑ k ∈ Finset.range m, (1 / 2 : ℝ) * g k := by
+                simpa using (Finset.mul_sum (s := Finset.range m) (f := g) (a := (1 / 2 : ℝ)))
+              simpa [g, mul_comm, mul_left_comm, mul_assoc] using h_mul.symm
+            rw [h_pull]
+      _ = (1 / (2 * (m : ℝ))) *
+            ∑ k ∈ Finset.range m,
+              (f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) +
+                f ((2 * k + 2 : ℝ) / (2 * (m : ℝ)))) := by
+            have h_scale : (1 / (m : ℝ)) * (1 / 2 : ℝ) = 1 / (2 * (m : ℝ)) := by
+              field_simp [hm_ne]
+            calc
+              (1 / (m : ℝ)) *
+                  ((1 / 2 : ℝ) *
+                    ∑ k ∈ Finset.range m,
+                      (f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) +
+                        f ((2 * k + 2 : ℝ) / (2 * (m : ℝ))))) =
+                  ((1 / (m : ℝ)) * (1 / 2 : ℝ)) *
+                    ∑ k ∈ Finset.range m,
+                      (f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) +
+                        f ((2 * k + 2 : ℝ) / (2 * (m : ℝ)))) := by
+                simp [mul_assoc]
+              _ = (1 / (2 * (m : ℝ))) *
+                    ∑ k ∈ Finset.range m,
+                      (f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) +
+                        f ((2 * k + 2 : ℝ) / (2 * (m : ℝ)))) := by
+                rw [h_scale]
+
+  calc
+    (1 / (m : ℝ)) * ∑ k ∈ Finset.range m, f ((k + 1 : ℝ) / (m : ℝ))
+        ≤ (1 / (2 * (m : ℝ))) *
+            ∑ k ∈ Finset.range m,
+              (f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) +
+                f ((2 * k + 2 : ℝ) / (2 * (m : ℝ)))) := h_scaled
+    _ = (1 / ((2 ^ (n + 1) : ℕ) : ℝ)) *
+          ∑ k ∈ Finset.range (2 ^ (n + 1)),
+            f ((k + 1 : ℝ) / ((2 ^ (n + 1) : ℕ) : ℝ)) := by
+          have h_sum :
+              ∑ k ∈ Finset.range (2 * m), f ((k + 1 : ℝ) / (2 * (m : ℝ))) =
+                ∑ k ∈ Finset.range m,
+                  (f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) +
+                    f ((2 * k + 2 : ℝ) / (2 * (m : ℝ)))) := by
+            have h_sum' :=
+              sum_range_double (fun k => f ((k + 1 : ℝ) / (2 * (m : ℝ)))) m
+            refine h_sum'.trans ?_
+            refine Finset.sum_congr rfl ?_
+            intro k hk
+            have h_eq : (2 * (k : ℝ) + 1 + 1) = (2 * (k : ℝ) + 2) := by
+              ring
+            simp [h_eq]
+          calc
+            (1 / (2 * (m : ℝ))) *
+                ∑ k ∈ Finset.range m,
+                  (f ((2 * k + 1 : ℝ) / (2 * (m : ℝ))) +
+                    f ((2 * k + 2 : ℝ) / (2 * (m : ℝ)))) =
+                (1 / (2 * (m : ℝ))) *
+                  ∑ k ∈ Finset.range (2 * m), f ((k + 1 : ℝ) / (2 * (m : ℝ))) := by
+              rw [h_sum.symm]
+            _ = (1 / ((2 ^ (n + 1) : ℕ) : ℝ)) *
+                  ∑ k ∈ Finset.range (2 ^ (n + 1)),
+                    f ((k + 1 : ℝ) / ((2 ^ (n + 1) : ℕ) : ℝ)) := by
+              have hm_succ'' : 2 * (m : ℝ) = ((2 ^ (n + 1) : ℕ) : ℝ) := by
+                simpa using hm_succ'.symm
+              rw [← hm_succ]
+              simp [hm_succ'']
 
 /-- For finite types, every set is measurable (discrete σ-algebra). -/
 instance : MeasurableSpace Percept := ⊤
+
+/-- Percept type extended with a loss outcome. -/
+abbrev PerceptWithLoss := Option Percept
+
+instance : MeasurableSpace PerceptWithLoss := ⊤
+
+instance : MeasurableSingletonClass PerceptWithLoss := by
+  classical
+  refine ⟨?_⟩
+  intro x
+  simp
 
 /-- Define a discrete measure on percepts weighted by the semimeasure ν.
     This measure assigns mass ν(h++p) to each percept p. -/
 noncomputable def perceptMeasure (ν : Semimeasure) (h : History) : MeasureTheory.Measure Percept :=
   ∑ p : Percept, (ENNReal.ofReal (ν (encodeHistory h ++ encodePerceptBin p)).toReal) • MeasureTheory.Measure.dirac p
 
+/-- Percept weight including loss mass. -/
+noncomputable def perceptWeightWithLoss (ν : Semimeasure) (h : History) : PerceptWithLoss → ℝ
+  | none => (semimeasureLoss ν (encodeHistory h)).toReal
+  | some p => (ν (encodeHistory h ++ encodePerceptBin p)).toReal
+
+/-- Discrete measure on percepts plus a loss outcome. -/
+noncomputable def perceptMeasureWithLoss (ν : Semimeasure) (h : History) :
+    MeasureTheory.Measure PerceptWithLoss :=
+  (ENNReal.ofReal (semimeasureLoss ν (encodeHistory h)).toReal) • MeasureTheory.Measure.dirac none +
+    ∑ p : Percept,
+      (ENNReal.ofReal (ν (encodeHistory h ++ encodePerceptBin p)).toReal) •
+        MeasureTheory.Measure.dirac (some p)
+
 /-- The utility function on histories starting from h, viewed as a function on percepts. -/
 def utilityOnPercepts (U : Utility) (h : History) (p : Percept) : ℝ :=
   U (h ++ [HistElem.per p])
 
+/-- Utility on percepts plus a loss outcome. -/
+noncomputable def utilityOnPerceptsWithLoss (U : Utility) (h : History) : PerceptWithLoss → ℝ
+  | none => minNextUtility U h
+  | some p => U (h ++ [HistElem.per p])
+
 /-- The integral of utilityOnPercepts w.r.t. perceptMeasure equals the weighted sum appearing in valueNeutral. -/
 lemma integral_utilityOnPercepts_eq_valueNeutral (ν : Semimeasure) (U : Utility) (h : History)
-    (h_U_bound : ∀ h', 0 ≤ U h' ∧ U h' ≤ 1) :
+    (_h_U_bound : ∀ h', 0 ≤ U h' ∧ U h' ≤ 1) :
     ∫ p, utilityOnPercepts U h p ∂(perceptMeasure ν h) =
       ∑ p : Percept, (ν (encodeHistory h ++ encodePerceptBin p)).toReal * U (h ++ [HistElem.per p]) := by
   unfold perceptMeasure utilityOnPercepts
@@ -1584,18 +1851,281 @@ lemma integral_utilityOnPercepts_eq_valueNeutral (ν : Semimeasure) (U : Utility
   -- The technical issue is showing f is integrable w.r.t. each scaled Dirac.
   -- For bounded functions on finite spaces, this is straightforward but requires
   -- finding the right Mathlib lemmas for measurability on discrete spaces.
-  sorry
+  classical
+  have h_integrable :
+      ∀ p ∈ (Finset.univ : Finset Percept),
+        Integrable (fun q : Percept => U (h ++ [HistElem.per q]))
+          ((ENNReal.ofReal (ν (encodeHistory h ++ encodePerceptBin p)).toReal) • Measure.dirac p) := by
+    intro p _
+    have h_dirac :
+        Integrable (fun q : Percept => U (h ++ [HistElem.per q])) (Measure.dirac p) := by
+      apply integrable_dirac
+      simp
+    simpa using h_dirac.smul_measure ENNReal.ofReal_ne_top
+  have h_sum :=
+      (integral_finset_sum_measure
+        (s := (Finset.univ : Finset Percept))
+        (f := fun q : Percept => U (h ++ [HistElem.per q]))
+        (μ := fun p =>
+          (ENNReal.ofReal (ν (encodeHistory h ++ encodePerceptBin p)).toReal) • Measure.dirac p)
+        h_integrable)
+  simpa [integral_smul_measure, integral_dirac, smul_eq_mul, ENNReal.toReal_ofReal,
+    ENNReal.toReal_nonneg] using h_sum
+
+/-- The integral of utilityOnPerceptsWithLoss w.r.t. perceptMeasureWithLoss equals valueChoquet. -/
+lemma integral_utilityOnPerceptsWithLoss_eq_valueChoquet (ν : Semimeasure) (U : Utility) (h : History)
+    (_h_U_bound : ∀ h', 0 ≤ U h' ∧ U h' ≤ 1) :
+    ∫ q, utilityOnPerceptsWithLoss U h q ∂(perceptMeasureWithLoss ν h) = valueChoquet ν U h := by
+  classical
+  unfold perceptMeasureWithLoss valueChoquet
+  have h_integrable_loss :
+      Integrable (utilityOnPerceptsWithLoss U h)
+        ((ENNReal.ofReal (semimeasureLoss ν (encodeHistory h)).toReal) •
+          Measure.dirac (none : PerceptWithLoss)) := by
+    have h_dirac :
+        Integrable (utilityOnPerceptsWithLoss U h) (Measure.dirac (none : PerceptWithLoss)) := by
+      apply integrable_dirac
+      simp
+    simpa using h_dirac.smul_measure ENNReal.ofReal_ne_top
+  have h_integrable_percept :
+      ∀ p ∈ (Finset.univ : Finset Percept),
+        Integrable (utilityOnPerceptsWithLoss U h)
+          ((ENNReal.ofReal (ν (encodeHistory h ++ encodePerceptBin p)).toReal) •
+            Measure.dirac (some p)) := by
+    intro p _
+    have h_dirac :
+        Integrable (utilityOnPerceptsWithLoss U h) (Measure.dirac (some p)) := by
+      apply integrable_dirac
+      simp
+    simpa using h_dirac.smul_measure ENNReal.ofReal_ne_top
+  have h_integrable_sum :
+      Integrable (utilityOnPerceptsWithLoss U h)
+        (∑ p : Percept,
+          (ENNReal.ofReal (ν (encodeHistory h ++ encodePerceptBin p)).toReal) •
+            Measure.dirac (some p)) :=
+    (integrable_finset_sum_measure
+      (s := (Finset.univ : Finset Percept))
+      (f := utilityOnPerceptsWithLoss U h)
+      (μ := fun p =>
+        (ENNReal.ofReal (ν (encodeHistory h ++ encodePerceptBin p)).toReal) •
+          Measure.dirac (some p))).2 h_integrable_percept
+  have h_sum :=
+    (integral_finset_sum_measure
+      (s := (Finset.univ : Finset Percept))
+      (f := utilityOnPerceptsWithLoss U h)
+      (μ := fun p =>
+        (ENNReal.ofReal (ν (encodeHistory h ++ encodePerceptBin p)).toReal) •
+          Measure.dirac (some p))
+      h_integrable_percept)
+  have h_add := integral_add_measure h_integrable_loss h_integrable_sum
+  have h_sum_eval :
+      ∫ q, utilityOnPerceptsWithLoss U h q ∂(
+        ∑ p : Percept,
+          (ENNReal.ofReal (ν (encodeHistory h ++ encodePerceptBin p)).toReal) •
+            Measure.dirac (some p)) =
+        ∑ p : Percept, (ν (encodeHistory h ++ encodePerceptBin p)).toReal * U (h ++ [HistElem.per p]) := by
+    simpa [integral_smul_measure, integral_dirac, utilityOnPerceptsWithLoss, smul_eq_mul,
+      ENNReal.toReal_ofReal, ENNReal.toReal_nonneg] using h_sum
+  have h_loss_eval :
+      ∫ q, utilityOnPerceptsWithLoss U h q ∂(
+        (ENNReal.ofReal (semimeasureLoss ν (encodeHistory h)).toReal) •
+          Measure.dirac (none : PerceptWithLoss)) =
+        (semimeasureLoss ν (encodeHistory h)).toReal * minNextUtility U h := by
+    simp [integral_smul_measure, integral_dirac, utilityOnPerceptsWithLoss, smul_eq_mul,
+      ENNReal.toReal_ofReal, ENNReal.toReal_nonneg]
+  -- Simplify the loss term and the percept sum term separately.
+  calc
+    ∫ q, utilityOnPerceptsWithLoss U h q ∂(
+          (ENNReal.ofReal (semimeasureLoss ν (encodeHistory h)).toReal) •
+            Measure.dirac (none : PerceptWithLoss) +
+          ∑ p : Percept,
+            (ENNReal.ofReal (ν (encodeHistory h ++ encodePerceptBin p)).toReal) •
+              Measure.dirac (some p)) =
+        ∫ q, utilityOnPerceptsWithLoss U h q ∂(
+          (ENNReal.ofReal (semimeasureLoss ν (encodeHistory h)).toReal) •
+            Measure.dirac (none : PerceptWithLoss)) +
+        ∫ q, utilityOnPerceptsWithLoss U h q ∂(
+          ∑ p : Percept,
+            (ENNReal.ofReal (ν (encodeHistory h ++ encodePerceptBin p)).toReal) •
+              Measure.dirac (some p)) := by
+        simpa using h_add
+    _ = (semimeasureLoss ν (encodeHistory h)).toReal * minNextUtility U h +
+        ∑ p : Percept, (ν (encodeHistory h ++ encodePerceptBin p)).toReal * U (h ++ [HistElem.per p]) := by
+        simp [h_loss_eval, h_sum_eval]
+    _ = valueNeutral ν U h + (semimeasureLoss ν (encodeHistory h)).toReal * minNextUtility U h := by
+        unfold valueNeutral
+        ring
+
+/-- Choquet value equals the layer-cake integral of capacityAtLevel. -/
+lemma valueChoquet_eq_integral_capacity (ν : Semimeasure) (U : Utility) (h : History)
+    (h_U_bound : ∀ h', 0 ≤ U h' ∧ U h' ≤ 1) :
+    valueChoquet ν U h = ∫ t in Set.Ioc 0 1, capacityAtLevel ν U h t := by
+  -- Part A: ∫ U dμ = valueChoquet where μ = perceptMeasureWithLoss ν h.
+  have integral_eq_value :
+      ∫ q, utilityOnPerceptsWithLoss U h q ∂(perceptMeasureWithLoss ν h) = valueChoquet ν U h := by
+    exact integral_utilityOnPerceptsWithLoss_eq_valueChoquet ν U h h_U_bound
+
+  -- Part B: measure of level sets equals capacityAtLevel.
+  have measure_eq_capacity : ∀ t,
+      (perceptMeasureWithLoss ν h) {q | t < utilityOnPerceptsWithLoss U h q} =
+        ENNReal.ofReal (capacityAtLevel ν U h t) := by
+    intro t
+    unfold perceptMeasureWithLoss utilityOnPerceptsWithLoss capacityAtLevel perceptMass
+    by_cases ht : t < minNextUtility U h
+    · -- All outcomes are above t, so we get total one-step mass.
+      have h_all : ∀ p : Percept, t < U (h ++ [HistElem.per p]) := by
+        intro p
+        have h_min_le : minNextUtility U h ≤ U (h ++ [HistElem.per p]) := by
+          unfold minNextUtility
+          simpa using
+            (Finset.inf'_le (s := Finset.univ)
+              (f := fun p : Percept => U (h ++ [HistElem.per p]))
+              (h := Finset.mem_univ p))
+        exact lt_of_lt_of_le ht h_min_le
+      have h_nonneg : ∀ p, 0 ≤ (ν (encodeHistory h ++ encodePerceptBin p)).toReal := by
+        intro p; exact ENNReal.toReal_nonneg
+      have h_sum_nonneg :
+          0 ≤ ∑ p : Percept, (ν (encodeHistory h ++ encodePerceptBin p)).toReal := by
+        apply Finset.sum_nonneg
+        intro p _
+        exact h_nonneg p
+      simp [ht, h_all, ENNReal.ofReal_add, ENNReal.ofReal_sum_of_nonneg, h_sum_nonneg, h_nonneg,
+        ENNReal.toReal_nonneg, Measure.add_apply, Measure.smul_apply, Set.indicator]
+    · -- Loss outcome excluded; only percepts with U>t contribute.
+      have h_nonneg : ∀ p, 0 ≤ (if t < U (h ++ [HistElem.per p]) then
+          (ν (encodeHistory h ++ encodePerceptBin p)).toReal else 0) := by
+        intro p
+        by_cases hp : t < U (h ++ [HistElem.per p])
+        · simp [hp, ENNReal.toReal_nonneg]
+        · simp [hp]
+      have h_sum_nonneg :
+          0 ≤ ∑ p : Percept, if t < U (h ++ [HistElem.per p]) then
+              (ν (encodeHistory h ++ encodePerceptBin p)).toReal else 0 := by
+        apply Finset.sum_nonneg
+        intro p _
+        exact h_nonneg p
+      have h_ofReal_if :
+          ∀ p : Percept,
+            (if t < U (h ++ [HistElem.per p]) then
+              ENNReal.ofReal (ν (encodeHistory h ++ encodePerceptBin p)).toReal else 0) =
+              ENNReal.ofReal
+                (if t < U (h ++ [HistElem.per p]) then
+                  (ν (encodeHistory h ++ encodePerceptBin p)).toReal else 0) := by
+        intro p
+        by_cases hp : t < U (h ++ [HistElem.per p])
+        · simp [hp]
+        · simp [hp]
+      simp [ht, ENNReal.ofReal_sum_of_nonneg, h_nonneg, h_ofReal_if,
+        Measure.add_apply, Measure.smul_apply, Set.indicator]
+
+  have h_capacity_eq :
+      ∀ t, (perceptMeasureWithLoss ν h).real {q | t < utilityOnPerceptsWithLoss U h q} =
+        capacityAtLevel ν U h t := by
+    intro t
+    have h_meas := measure_eq_capacity t
+    have h_nonneg : 0 ≤ capacityAtLevel ν U h t := capacityAtLevel_nonneg ν U h t
+    calc
+      (perceptMeasureWithLoss ν h).real {q | t < utilityOnPerceptsWithLoss U h q} =
+          ENNReal.toReal ((perceptMeasureWithLoss ν h) {q | t < utilityOnPerceptsWithLoss U h q}) := by
+            simp [measureReal_def]
+      _ = ENNReal.toReal (ENNReal.ofReal (capacityAtLevel ν U h t)) := by
+            simp [h_meas]
+      _ = capacityAtLevel ν U h t := by
+            simp [ENNReal.toReal_ofReal, h_nonneg]
+
+  -- Part C: layer cake formula for utilityOnPerceptsWithLoss.
+  have layer_cake :
+      ∫ q, utilityOnPerceptsWithLoss U h q ∂(perceptMeasureWithLoss ν h) =
+        ∫ t in Set.Ioc 0 1,
+          (perceptMeasureWithLoss ν h).real {q | t ≤ utilityOnPerceptsWithLoss U h q} := by
+    -- Integrability comes from finiteness of the discrete measure.
+    have h_integrable_loss :
+        Integrable (utilityOnPerceptsWithLoss U h)
+          ((ENNReal.ofReal (semimeasureLoss ν (encodeHistory h)).toReal) •
+            Measure.dirac (none : PerceptWithLoss)) := by
+      have h_dirac :
+          Integrable (utilityOnPerceptsWithLoss U h) (Measure.dirac (none : PerceptWithLoss)) := by
+        apply integrable_dirac
+        simp
+      simpa using h_dirac.smul_measure ENNReal.ofReal_ne_top
+    have h_integrable_percept :
+        ∀ p ∈ (Finset.univ : Finset Percept),
+          Integrable (utilityOnPerceptsWithLoss U h)
+            ((ENNReal.ofReal (ν (encodeHistory h ++ encodePerceptBin p)).toReal) •
+              Measure.dirac (some p)) := by
+      intro p _
+      have h_dirac :
+          Integrable (utilityOnPerceptsWithLoss U h) (Measure.dirac (some p)) := by
+        apply integrable_dirac
+        simp
+      simpa using h_dirac.smul_measure ENNReal.ofReal_ne_top
+    have h_integrable_sum :
+        Integrable (utilityOnPerceptsWithLoss U h)
+          (∑ p : Percept,
+            (ENNReal.ofReal (ν (encodeHistory h ++ encodePerceptBin p)).toReal) •
+              Measure.dirac (some p)) :=
+      (integrable_finset_sum_measure
+        (s := (Finset.univ : Finset Percept))
+        (f := utilityOnPerceptsWithLoss U h)
+        (μ := fun p =>
+          (ENNReal.ofReal (ν (encodeHistory h ++ encodePerceptBin p)).toReal) •
+            Measure.dirac (some p))).2 h_integrable_percept
+    have h_integrable :
+        Integrable (utilityOnPerceptsWithLoss U h) (perceptMeasureWithLoss ν h) := by
+      simpa [perceptMeasureWithLoss] using h_integrable_loss.add_measure h_integrable_sum
+    apply Integrable.integral_eq_integral_Ioc_meas_le
+    · exact h_integrable
+    · -- nonneg a.e.
+      have h_min_bounds := minNextUtility_bounds U h h_U_bound
+      apply ae_of_all
+      intro q
+      cases q with
+      | none => exact h_min_bounds.1
+      | some p => exact (h_U_bound _).1
+    · -- bounded by 1 a.e.
+      have h_min_bounds := minNextUtility_bounds U h h_U_bound
+      apply ae_of_all
+      intro q
+      cases q with
+      | none => exact h_min_bounds.2
+      | some p => exact (h_U_bound _).2
+
+  -- Combine.
+  calc
+    valueChoquet ν U h =
+        ∫ q, utilityOnPerceptsWithLoss U h q ∂(perceptMeasureWithLoss ν h) := by
+          symm; exact integral_eq_value
+    _ = ∫ t in Set.Ioc 0 1,
+          (perceptMeasureWithLoss ν h).real {q | t ≤ utilityOnPerceptsWithLoss U h q} := layer_cake
+    _ = ∫ t in Set.Ioc 0 1,
+          (perceptMeasureWithLoss ν h).real {q | t < utilityOnPerceptsWithLoss U h q} := by
+          -- Switch from `t ≤ f` to `t < f` a.e.
+          apply integral_congr_ae
+          filter_upwards
+            [meas_le_ae_eq_meas_lt (μ := perceptMeasureWithLoss ν h)
+              (ν := volume.restrict (Set.Ioc 0 1))
+              (g := utilityOnPerceptsWithLoss U h)] with t ht
+          simp [measureReal_def, ht]
+    _ = ∫ t in Set.Ioc 0 1, capacityAtLevel ν U h t := by
+          refine integral_congr_ae ?_
+          have h_ae :
+              ∀ᵐ t ∂(volume.restrict (Set.Ioc 0 1)),
+                (perceptMeasureWithLoss ν h).real {q | t < utilityOnPerceptsWithLoss U h q} =
+                  capacityAtLevel ν U h t := by
+            simpa using
+              (ae_of_all (μ := volume.restrict (Set.Ioc 0 1)) (fun t => h_capacity_eq t))
+          exact h_ae
 
 /-- **Layer Cake Equivalence**: The integral of capacityAtLevel equals valueChoquet.
 
 This uses the layer cake formula from Mathlib: for bounded integrable f,
-  ∫ f dμ = ∫₀^M μ({x : f(x) ≥ t}) dt
+  ∫ f dμ = ∫₀^M μ({x : t < f(x)}) dt
 
 In our case:
-- μ = discrete measure on 4 percepts weighted by ν
+- μ = discrete measure on percepts plus loss mass
 - f = utility function U
 - M = 1 (since U ≤ 1)
-- μ({p : U(p) ≥ t}) = capacityAtLevel when t > minU
+- μ({p : t < U(p)}) = capacityAtLevel
 
 The layer cake formula directly gives:
   ∫ U dμ = ∫₀¹ capacityAtLevel(t) dt
@@ -1603,153 +2133,492 @@ The layer cake formula directly gives:
 And ∫ U dμ = ∑_p ν(h++p)·U(h++p) which appears in valueChoquet.
 
 **Formal Proof Strategy**:
-1. Apply `Integrable.integral_eq_integral_Ioc_meas_le` from Mathlib
-2. Show μ({p : U(p) ≥ t}) = capacityAtLevel(t) for t > minU
-3. Handle the t ≤ minU case separately
+1. Apply `Integrable.integral_eq_integral_Ioc_meas_le` and switch to `t < f` a.e.
+2. Show μ({p : t < U(p)}) = capacityAtLevel(t)
 4. Show the integral equals valueChoquet by expanding definitions
 -/
 theorem layer_cake_equivalence (ν : Semimeasure) (U : Utility) (h : History)
     (h_U_bound : ∀ h', 0 ≤ U h' ∧ U h' ≤ 1) (n : ℕ) (hn : 0 < n) :
-    (1 / n : ℝ) * ∑ k ∈ Finset.range n, capacityAtLevel ν U h ((k + 1 : ℕ) / n : ℝ)
+    (1 / n : ℝ) * ∑ k ∈ Finset.range n, capacityAtLevel ν U h ((k + 1 : ℝ) / (n : ℝ))
               ≤ valueChoquet ν U h := by
-  -- The complete proof chain:
-  -- 1. Riemann sum → ∫₀¹ capacity(t) dt  (by Riemann convergence)
-  -- 2. ∫₀¹ capacity(t) dt = ∫ U dμ       (by layer cake formula)
-  -- 3. ∫ U dμ = ∑ ν(h++p)·U(p)            (by integral_utilityOnPercepts_eq_valueNeutral)
-  -- 4. With loss term: = valueChoquet    (by algebraic rearrangement)
-  -- Therefore: Riemann sum ≤ valueChoquet for all n
+  have h_integral_eq :
+      ∫ t in Set.Ioc 0 1, capacityAtLevel ν U h t = valueChoquet ν U h := by
+    simpa using (valueChoquet_eq_integral_capacity ν U h h_U_bound).symm
 
-  -- Part A: Show ∫ U dμ = valueChoquet where μ = perceptMeasure ν h
-  have integral_eq_value : ∫ p, utilityOnPercepts U h p ∂(perceptMeasure ν h) = valueChoquet ν U h := by
-    rw [integral_utilityOnPercepts_eq_valueNeutral ν U h h_U_bound]
-    unfold valueChoquet valueNeutral semimeasureLoss minNextUtility
-    -- Need to show: ∑_p ν(h++p)·U(p) = ∑_p ν(h++p)·U(p) + loss·minU
-    -- This requires showing the loss term equals 0 OR rearranging
-    -- Actually, valueChoquet = valueNeutral + loss·minU, so we need to show
-    -- the integral accounts for both terms via the layer cake structure
-    sorry
+  have h_riemann :
+      (1 / n : ℝ) * ∑ k ∈ Finset.range n, capacityAtLevel ν U h ((k + 1 : ℝ) / (n : ℝ))
+        ≤ ∫ t in Set.Ioc 0 1, capacityAtLevel ν U h t := by
+    have hn_pos : 0 < (n : ℝ) := by exact_mod_cast hn
+    have hn_ne : (n : ℝ) ≠ 0 := by exact ne_of_gt hn_pos
+    let f : ℝ → ℝ := fun t => capacityAtLevel ν U h t
+    have h_monotone : Monotone (fun x : ℝ => x / (n : ℝ)) := by
+      intro x y hxy
+      exact div_le_div_of_nonneg_right hxy (le_of_lt hn_pos)
+    have h_antitone : Antitone (fun x : ℝ => f (x / (n : ℝ))) :=
+      Antitone.comp_monotone (g := f) (f := fun x => x / (n : ℝ))
+        (capacityAtLevel_mono ν U h) h_monotone
+    have h_antitone_on :
+        AntitoneOn (fun x : ℝ => f (x / (n : ℝ))) (Set.Icc (0 : ℝ) (0 + (n : ℝ))) := by
+      simpa using (h_antitone.antitoneOn (s := Set.Icc (0 : ℝ) (0 + (n : ℝ))))
+    have h_sum_le :
+        ∑ k ∈ Finset.range n, f ((k + 1 : ℝ) / (n : ℝ))
+          ≤ ∫ x in (0 : ℝ)..(n : ℝ), f (x / (n : ℝ)) := by
+      simpa [f] using
+        (AntitoneOn.sum_le_integral (f := fun x : ℝ => f (x / (n : ℝ)))
+          (x₀ := (0 : ℝ)) (a := n) h_antitone_on)
+    have h_integral :
+        ∫ x in (0 : ℝ)..(n : ℝ), f (x / (n : ℝ)) =
+          (n : ℝ) * ∫ t in Set.Ioc 0 1, f t := by
+      calc
+        ∫ x in (0 : ℝ)..(n : ℝ), f (x / (n : ℝ)) =
+            (n : ℝ) * ∫ x in (0 : ℝ) / (n : ℝ)..(n : ℝ) / (n : ℝ), f x := by
+              simpa using
+                (intervalIntegral.integral_comp_div (f := f)
+                  (a := (0 : ℝ)) (b := (n : ℝ)) (c := (n : ℝ)) hn_ne)
+        _ = (n : ℝ) * ∫ x in (0 : ℝ)..(1 : ℝ), f x := by
+              simp [hn_ne]
+        _ = (n : ℝ) * ∫ x in Set.Ioc 0 1, f x := by
+              simp [intervalIntegral.integral_of_le]
+    have h_scaled :
+        (1 / n : ℝ) * ∑ k ∈ Finset.range n, f ((k + 1 : ℝ) / (n : ℝ))
+          ≤ (1 / n : ℝ) * ((n : ℝ) * ∫ t in Set.Ioc 0 1, f t) := by
+      have h_inv_nonneg : 0 ≤ (1 / (n : ℝ)) := by
+        exact one_div_nonneg.mpr (le_of_lt hn_pos)
+      have h := mul_le_mul_of_nonneg_left h_sum_le h_inv_nonneg
+      simpa [h_integral] using h
+    have h_simpl :
+        (1 / n : ℝ) * ((n : ℝ) * ∫ t in Set.Ioc 0 1, f t) =
+          ∫ t in Set.Ioc 0 1, f t := by
+      calc
+        (1 / n : ℝ) * ((n : ℝ) * ∫ t in Set.Ioc 0 1, f t)
+            = ((1 / n : ℝ) * (n : ℝ)) * ∫ t in Set.Ioc 0 1, f t := by ring
+        _ = (1 : ℝ) * ∫ t in Set.Ioc 0 1, f t := by
+              simp [hn_ne]
+        _ = ∫ t in Set.Ioc 0 1, f t := by simp
+    have h_scaled' :
+        (1 / n : ℝ) * ∑ k ∈ Finset.range n, f ((k + 1 : ℝ) / (n : ℝ))
+          ≤ ∫ t in Set.Ioc 0 1, f t := by
+      calc
+        (1 / n : ℝ) * ∑ k ∈ Finset.range n, f ((k + 1 : ℝ) / (n : ℝ))
+            ≤ (1 / n : ℝ) * ((n : ℝ) * ∫ t in Set.Ioc 0 1, f t) := h_scaled
+        _ = ∫ t in Set.Ioc 0 1, f t := h_simpl
+    simpa [f] using h_scaled'
 
-  -- Part B: Show the measure μ({p : U(p) ≥ t}) equals capacityAtLevel structure
-  have measure_eq_capacity : ∀ t, (perceptMeasure ν h) {q | utilityOnPercepts U h q ≥ t} =
-        ENNReal.ofReal (capacityAtLevel ν U h t) := by
-    intro t
-    unfold perceptMeasure utilityOnPercepts capacityAtLevel
-    -- When t ≤ minU: all percepts contribute, so measure = ν(h)
-    -- When t > minU: only percepts with U(p) ≥ t contribute
-    -- This matches the definition of capacityAtLevel
-    sorry
-
-  -- Part C: Apply layer cake formula: ∫ U dμ = ∫₀¹ μ({p : U(p) ≥ t}) dt
-  have layer_cake : ∫ q, utilityOnPercepts U h q ∂(perceptMeasure ν h) =
-        ∫ t in Set.Ioc 0 1, (perceptMeasure ν h).real {q | utilityOnPercepts U h q ≥ t} := by
-    apply MeasureTheory.Integrable.integral_eq_integral_Ioc_meas_le
-    · -- U is integrable w.r.t. the finite discrete measure
-      unfold perceptMeasure utilityOnPercepts
-      rw [integrable_finset_sum_measure]
-      intro p _
-      by_cases hc : ENNReal.ofReal (ν (encodeHistory h ++ encodePerceptBin p)).toReal = 0
-      · -- Case: coefficient is 0, any function is integrable w.r.t. zero measure
-        rw [hc, zero_smul]
-        exact integrable_zero_measure
-      · -- Case: coefficient is non-zero
-        rw [integrable_smul_measure hc ENNReal.ofReal_ne_top]
-        apply integrable_dirac
-        exact enorm_lt_top
-    · -- U is nonnegative a.e.
-      apply ae_of_all
-      intro p
-      exact (h_U_bound (h ++ [HistElem.per p])).1
-    · -- U is bounded by 1 a.e.
-      apply ae_of_all
-      intro p
-      exact (h_U_bound (h ++ [HistElem.per p])).2
-
-  -- Part D: Show Riemann sum ≤ integral
-  calc (1 / n : ℝ) * ∑ k ∈ Finset.range n, capacityAtLevel ν U h ((k + 1 : ℕ) / n : ℝ)
-      ≤ ∫ t in Set.Ioc 0 1, capacityAtLevel ν U h t := by
-        -- Riemann sums with right endpoints converge to integral from below
-        -- for antitone functions (capacityAtLevel is antitone by capacityAtLevel_mono)
-        sorry
-    _ = ∫ t in Set.Ioc 0 1, (perceptMeasure ν h).real {q | utilityOnPercepts U h q ≥ t} := by
-        -- The capacity function equals the measure of the level set
-        -- This follows from measure_eq_capacity after unwrapping definitions
-        sorry
-    _ = ∫ q, utilityOnPercepts U h q ∂(perceptMeasure ν h) := layer_cake.symm
-    _ = valueChoquet ν U h := integral_eq_value
+  exact h_riemann.trans_eq h_integral_eq
 
 /-- Riemann approximation is bounded above by valueChoquet. -/
 theorem valueChoquet_riemann_le (ν : Semimeasure) (U : Utility) (h : History)
     (h_U_bound : ∀ h', 0 ≤ U h' ∧ U h' ≤ 1) (n : ℕ) :
     valueChoquet_riemann ν U h n ≤ valueChoquet ν U h := by
-  unfold valueChoquet_riemann
-  split_ifs with hn
-  · -- n = 0 case
-    -- valueChoquet is nonnegative (since it's a weighted sum of nonnegative terms)
-    -- Actually, valueChoquet can be negative if minNextUtility is negative
-    -- But we have h_U_bound which says U ≥ 0, so minNextUtility ≥ 0
-    have h_minU_nonneg : 0 ≤ minNextUtility U h := by
-      unfold minNextUtility
-      apply Finset.le_inf'
-      intro p _
-      exact (h_U_bound (h ++ [HistElem.per p])).1
-    unfold valueChoquet valueNeutral semimeasureLoss
-    apply add_nonneg
-    · apply Finset.sum_nonneg
-      intro p _
-      apply mul_nonneg
-      · exact ENNReal.toReal_nonneg
-      · exact (h_U_bound (h ++ [HistElem.per p])).1
-    · apply mul_nonneg
-      · exact ENNReal.toReal_nonneg
-      · exact h_minU_nonneg
-  · -- n ≠ 0: use layer cake equivalence
-    have hn_pos : 0 < n := Nat.pos_of_ne_zero hn
-    exact layer_cake_equivalence ν U h h_U_bound n hn_pos
+  have hn_pos : 0 < 2 ^ n := pow_pos (by decide : 0 < (2 : ℕ)) n
+  -- Use the layer cake bound for the dyadic partition size.
+  simpa [valueChoquet_riemann] using
+    (layer_cake_equivalence ν U h h_U_bound (2 ^ n) hn_pos)
 
 /-- Riemann approximation converges to valueChoquet. -/
 theorem valueChoquet_riemann_converges (ν : Semimeasure) (U : Utility) (h : History)
     (h_U_bound : ∀ h', 0 ≤ U h' ∧ U h' ≤ 1) (ε : ℝ) (hε : 0 < ε) :
     ∃ N, ∀ n ≥ N, valueChoquet ν U h - valueChoquet_riemann ν U h n < ε := by
-  -- Capacity is piecewise constant with at most 4 jump points (at the utility values)
-  -- The error in a Riemann sum for a piecewise constant function is bounded by:
-  --   error ≤ (max value) * (mesh size) * (number of discontinuities)
-  --        ≤ ν(h) * (1/n) * 4 = 4·ν(h)/n
-  -- So for n > 4·ν(h)/ε, we have error < ε
+  let f : ℝ → ℝ := fun t => capacityAtLevel ν U h t
+  have h_value_eq :
+      valueChoquet ν U h = ∫ t in Set.Ioc 0 1, f t := by
+    simpa [f] using valueChoquet_eq_integral_capacity ν U h h_U_bound
 
-  -- For simplicity, we use N = ⌈4/ε⌉ + 1, which works when ν(h) ≤ 1
-  -- A more precise bound would use the actual value of ν(h)
-  use Nat.ceil (4 / ε) + 1
+  have hmass_pos : 0 < perceptMass ν h + 1 := by
+    have hmass_nonneg := perceptMass_nonneg ν h
+    linarith
+  have hδ_pos : 0 < ε / (perceptMass ν h + 1) := by
+    exact div_pos hε hmass_pos
+  obtain ⟨N, hN_pos, hN_inv⟩ := Real.exists_nat_pos_inv_lt hδ_pos
+  refine ⟨N, ?_⟩
   intro n hn
+  set m : ℕ := 2 ^ n
+  have hm_pos : 0 < (m : ℝ) := by
+    have hm_nat : 0 < m := pow_pos (by decide : 0 < (2 : ℕ)) n
+    exact Nat.cast_pos.mpr hm_nat
+  have hm_ne : (m : ℝ) ≠ 0 := by exact ne_of_gt hm_pos
 
-  -- The key steps are:
-  -- 1. valueChoquet = limit of valueChoquet_riemann n (by layer cake equivalence)
-  -- 2. The convergence is monotone (Riemann sums increase)
-  -- 3. The rate is bounded by the piecewise structure
+  let rightSum : ℝ :=
+    (1 / (m : ℝ)) * ∑ k ∈ Finset.range m, f ((k + 1 : ℝ) / (m : ℝ))
+  let leftSum : ℝ :=
+    (1 / (m : ℝ)) * ∑ k ∈ Finset.range m, f ((k : ℝ) / (m : ℝ))
 
-  -- For now, we rely on the fundamental theorem that Riemann sums
-  -- converge to integrals for piecewise constant functions
-  sorry
+  have h_right_eq : rightSum = valueChoquet_riemann ν U h n := by
+    simp [rightSum, valueChoquet_riemann, m, f]
 
-/-- Capacity at level is lower semicomputable (key lemma for the paper's approach).
+  have h_monotone : Monotone (fun x : ℝ => x / (m : ℝ)) := by
+    intro x y hxy
+    exact div_le_div_of_nonneg_right hxy (le_of_lt hm_pos)
+  have h_antitone : Antitone (fun x : ℝ => f (x / (m : ℝ))) :=
+    Antitone.comp_monotone (g := f) (f := fun x => x / (m : ℝ))
+      (capacityAtLevel_mono ν U h) h_monotone
+  have h_antitone_on :
+      AntitoneOn (fun x : ℝ => f (x / (m : ℝ))) (Set.Icc (0 : ℝ) (0 + (m : ℝ))) := by
+    simpa using (h_antitone.antitoneOn (s := Set.Icc (0 : ℝ) (0 + (m : ℝ))))
 
-This is the crucial step: each capacityAtLevel is a sum of l.s.c. ν values,
-hence l.s.c. without any subtraction.
--/
+  have h_int_le_sum :
+      ∫ x in (0 : ℝ)..(m : ℝ), f (x / (m : ℝ))
+        ≤ ∑ k ∈ Finset.range m, f ((k : ℝ) / (m : ℝ)) := by
+    simpa [f] using
+      (AntitoneOn.integral_le_sum (f := fun x : ℝ => f (x / (m : ℝ)))
+        (x₀ := (0 : ℝ)) (a := m) h_antitone_on)
+
+  have h_sum_le_int :
+      ∑ k ∈ Finset.range m, f ((k + 1 : ℝ) / (m : ℝ))
+        ≤ ∫ x in (0 : ℝ)..(m : ℝ), f (x / (m : ℝ)) := by
+    simpa [f] using
+      (AntitoneOn.sum_le_integral (f := fun x : ℝ => f (x / (m : ℝ)))
+        (x₀ := (0 : ℝ)) (a := m) h_antitone_on)
+
+  have h_integral :
+      ∫ x in (0 : ℝ)..(m : ℝ), f (x / (m : ℝ)) =
+        (m : ℝ) * ∫ t in Set.Ioc 0 1, f t := by
+    calc
+      ∫ x in (0 : ℝ)..(m : ℝ), f (x / (m : ℝ)) =
+          (m : ℝ) * ∫ x in (0 : ℝ) / (m : ℝ)..(m : ℝ) / (m : ℝ), f x := by
+            simpa using
+              (intervalIntegral.integral_comp_div (f := f)
+                (a := (0 : ℝ)) (b := (m : ℝ)) (c := (m : ℝ)) hm_ne)
+      _ = (m : ℝ) * ∫ x in (0 : ℝ)..(1 : ℝ), f x := by
+            simp [hm_ne]
+      _ = (m : ℝ) * ∫ x in Set.Ioc 0 1, f x := by
+            simp [intervalIntegral.integral_of_le]
+
+  have h_left_ge :
+      ∫ t in Set.Ioc 0 1, f t ≤ leftSum := by
+    have h_scaled :
+        (1 / (m : ℝ)) * ∫ x in (0 : ℝ)..(m : ℝ), f (x / (m : ℝ))
+          ≤ leftSum := by
+      have h_inv_nonneg : 0 ≤ (1 / (m : ℝ)) := by
+        exact one_div_nonneg.mpr (le_of_lt hm_pos)
+      have h := mul_le_mul_of_nonneg_left h_int_le_sum h_inv_nonneg
+      simpa [leftSum] using h
+    have h_simpl :
+        (1 / (m : ℝ)) * ∫ x in (0 : ℝ)..(m : ℝ), f (x / (m : ℝ)) =
+          ∫ t in Set.Ioc 0 1, f t := by
+      calc
+        (1 / (m : ℝ)) * ∫ x in (0 : ℝ)..(m : ℝ), f (x / (m : ℝ))
+            = (1 / (m : ℝ)) * ((m : ℝ) * ∫ t in Set.Ioc 0 1, f t) := by
+                simp [h_integral]
+        _ = ((1 / (m : ℝ)) * (m : ℝ)) * ∫ t in Set.Ioc 0 1, f t := by ring
+        _ = (1 : ℝ) * ∫ t in Set.Ioc 0 1, f t := by simp [hm_ne]
+        _ = ∫ t in Set.Ioc 0 1, f t := by simp
+    have h_scaled' : ∫ t in Set.Ioc 0 1, f t ≤ leftSum := by
+      calc
+        ∫ t in Set.Ioc 0 1, f t
+            = (1 / (m : ℝ)) * ∫ x in (0 : ℝ)..(m : ℝ), f (x / (m : ℝ)) := by
+                symm; exact h_simpl
+        _ ≤ leftSum := h_scaled
+    simpa using h_scaled'
+
+  have h_right_le :
+      rightSum ≤ ∫ t in Set.Ioc 0 1, f t := by
+    have h_scaled :
+        rightSum ≤ (1 / (m : ℝ)) * ∫ x in (0 : ℝ)..(m : ℝ), f (x / (m : ℝ)) := by
+      have h_inv_nonneg : 0 ≤ (1 / (m : ℝ)) := by
+        exact one_div_nonneg.mpr (le_of_lt hm_pos)
+      have h := mul_le_mul_of_nonneg_left h_sum_le_int h_inv_nonneg
+      simpa [rightSum] using h
+    have h_simpl :
+        (1 / (m : ℝ)) * ∫ x in (0 : ℝ)..(m : ℝ), f (x / (m : ℝ)) =
+          ∫ t in Set.Ioc 0 1, f t := by
+      calc
+        (1 / (m : ℝ)) * ∫ x in (0 : ℝ)..(m : ℝ), f (x / (m : ℝ))
+            = (1 / (m : ℝ)) * ((m : ℝ) * ∫ t in Set.Ioc 0 1, f t) := by
+                simp [h_integral]
+        _ = ((1 / (m : ℝ)) * (m : ℝ)) * ∫ t in Set.Ioc 0 1, f t := by ring
+        _ = (1 : ℝ) * ∫ t in Set.Ioc 0 1, f t := by simp [hm_ne]
+        _ = ∫ t in Set.Ioc 0 1, f t := by simp
+    calc
+      rightSum ≤ (1 / (m : ℝ)) * ∫ x in (0 : ℝ)..(m : ℝ), f (x / (m : ℝ)) := h_scaled
+      _ = ∫ t in Set.Ioc 0 1, f t := h_simpl
+
+  have h_left_right_diff :
+      leftSum - rightSum = (1 / (m : ℝ)) * (f 0 - f 1) := by
+    have h_sum_diff :
+        (∑ k ∈ Finset.range m, f ((k : ℝ) / (m : ℝ))) -
+          ∑ k ∈ Finset.range m, f ((k + 1 : ℝ) / (m : ℝ))
+          = f (0 / (m : ℝ)) - f ((m : ℝ) / (m : ℝ)) := by
+      simpa using (sum_range_sub_succ (fun k => f ((k : ℝ) / (m : ℝ))) m)
+    calc
+      leftSum - rightSum
+          = (1 / (m : ℝ)) *
+              ((∑ k ∈ Finset.range m, f ((k : ℝ) / (m : ℝ))) -
+                ∑ k ∈ Finset.range m, f ((k + 1 : ℝ) / (m : ℝ))) := by
+              ring
+      _ = (1 / (m : ℝ)) * (f (0 / (m : ℝ)) - f ((m : ℝ) / (m : ℝ))) := by
+              simp [h_sum_diff]
+      _ = (1 / (m : ℝ)) * (f 0 - f 1) := by
+              have hm_ne' : (m : ℝ) ≠ 0 := hm_ne
+              simp [hm_ne']
+
+  have h_bound :
+      valueChoquet ν U h - rightSum ≤ (1 / (m : ℝ)) * perceptMass ν h := by
+    have h_le : valueChoquet ν U h ≤ leftSum := by
+      -- Rewrite valueChoquet as the integral and use the left sum bound.
+      simpa [h_value_eq] using h_left_ge
+    have h_sub :
+        valueChoquet ν U h - rightSum ≤ leftSum - rightSum :=
+      sub_le_sub_right h_le _
+    have h_mass0 : 0 ≤ f 1 := by
+      simpa [f] using capacityAtLevel_nonneg ν U h 1
+    have h_mass1 : f 0 ≤ perceptMass ν h := by
+      simpa [f] using capacityAtLevel_le ν U h 0
+    calc
+      valueChoquet ν U h - rightSum
+          ≤ leftSum - rightSum := h_sub
+      _ = (1 / (m : ℝ)) * (f 0 - f 1) := h_left_right_diff
+      _ ≤ (1 / (m : ℝ)) * f 0 := by
+            have : f 0 - f 1 ≤ f 0 := by linarith
+            exact mul_le_mul_of_nonneg_left this (by positivity)
+      _ ≤ (1 / (m : ℝ)) * perceptMass ν h := by
+            exact mul_le_mul_of_nonneg_left h_mass1 (by positivity : 0 ≤ (1 / (m : ℝ)))
+
+  have h_final :
+      (1 / (m : ℝ)) * perceptMass ν h < ε := by
+    have h1 :
+        (1 / (m : ℝ)) * perceptMass ν h ≤ (1 / (m : ℝ)) * (perceptMass ν h + 1) := by
+      have h_nonneg : 0 ≤ (1 / (m : ℝ)) := by
+        exact one_div_nonneg.mpr (le_of_lt hm_pos)
+      have h_le : perceptMass ν h ≤ perceptMass ν h + 1 := by linarith
+      exact mul_le_mul_of_nonneg_left h_le h_nonneg
+    have hn_pos_nat : 0 < n := lt_of_lt_of_le hN_pos hn
+    have hn_pos : 0 < (n : ℝ) := by exact_mod_cast hn_pos_nat
+    have hN_pos_real : 0 < (N : ℝ) := by exact_mod_cast hN_pos
+    have h_n_le_m : (n : ℝ) ≤ (m : ℝ) := by
+      exact_mod_cast (nat_le_two_pow n)
+    have h_one_div_m_le_n : (1 / (m : ℝ)) ≤ (1 / (n : ℝ)) :=
+      one_div_le_one_div_of_le hn_pos h_n_le_m
+    have h_one_div_n_le_N : (1 / (n : ℝ)) ≤ (1 / (N : ℝ)) :=
+      one_div_le_one_div_of_le hN_pos_real (by exact_mod_cast hn)
+    have h_one_div_m_le : (1 / (m : ℝ)) ≤ (1 / (N : ℝ)) :=
+      le_trans h_one_div_m_le_n h_one_div_n_le_N
+    have h2 :
+        (1 / (m : ℝ)) * (perceptMass ν h + 1)
+          ≤ (1 / (N : ℝ)) * (perceptMass ν h + 1) := by
+      exact mul_le_mul_of_nonneg_right h_one_div_m_le (by linarith)
+    have hN_inv' : (1 / (N : ℝ)) < ε / (perceptMass ν h + 1) := by
+      simpa using hN_inv
+    have h3 :
+        (1 / (N : ℝ)) * (perceptMass ν h + 1) < ε := by
+      have h_mul := mul_lt_mul_of_pos_right hN_inv' hmass_pos
+      have hcancel :
+          (ε / (perceptMass ν h + 1)) * (perceptMass ν h + 1) = ε := by
+        field_simp [ne_of_gt hmass_pos]
+      simpa [hcancel] using h_mul
+    exact lt_of_le_of_lt (le_trans h1 h2) h3
+
+  have h_right_val :
+      valueChoquet_riemann ν U h n = rightSum := by
+    symm; exact h_right_eq
+  calc
+    valueChoquet ν U h - valueChoquet_riemann ν U h n
+        = valueChoquet ν U h - rightSum := by simp [h_right_val]
+    _ ≤ (1 / (m : ℝ)) * perceptMass ν h := h_bound
+    _ < ε := h_final
+
+/-- Capacity at level is lower semicomputable (requires l.s.c. U and computable ν). -/
 noncomputable def capacityAtLevel_lower_semicomputable (ν : Semimeasure) (U : Utility) (t : ℝ)
+    (h_U_lsc : Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable U)
     (h_ν_lsc : Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable
+                (fun x => (ν x).toReal))
+    (h_ν_usc : Mettapedia.Computability.ArithmeticalHierarchy.UpperSemicomputable
                 (fun x => (ν x).toReal)) :
     Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable
       (fun h => capacityAtLevel ν U h t) := by
-  unfold capacityAtLevel
-  -- Case split on whether t ≤ minNextUtility U h
-  -- The issue is that this condition depends on h
-  -- We need to handle this carefully using piecewise l.s.c. structure
-  sorry
+  classical
 
-/-- **Theorem 4.1 (Wyeth & Hutter 2025)**: Choquet value is l.s.c. with only ν l.s.c.
+  -- l.s.c. for minNextUtility
+  have h_min_lsc :
+      Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable
+        (fun h => minNextUtility U h) := by
+    apply Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable.finset_inf
+    · intro p
+      exact h_U_lsc.comp (fun h => h ++ [HistElem.per p])
+    · exact ⟨Percept.mk false false⟩
 
-This is the paper's main computability result. Unlike `choquet_value_lower_semicomputable`,
-this theorem does NOT require `h_ν_usc`.
+  -- l.s.c. for semimeasureLoss (requires ν u.s.c.)
+  have h_loss_lsc :
+      Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable
+        (fun h => (semimeasureLoss ν (encodeHistory h)).toReal) := by
+    have heq : (fun h => (semimeasureLoss ν (encodeHistory h)).toReal) =
+               (fun h => (ν (encodeHistory h)).toReal -
+                        ((ν (encodeHistory h ++ [false])).toReal +
+                         (ν (encodeHistory h ++ [true])).toReal)) := by
+      ext h
+      unfold semimeasureLoss
+      have h1 :
+          ν (encodeHistory h) ≥ ν (encodeHistory h ++ [false]) + ν (encodeHistory h ++ [true]) :=
+        ν.superadditive' (encodeHistory h)
+      have h_ne_top : ν (encodeHistory h) ≠ ⊤ := by
+        have h2 : ν (encodeHistory h) ≤ ν [] := ν.mono_append [] _
+        have h3 : ν [] ≤ 1 := ν.root_le_one'
+        exact ne_of_lt (lt_of_le_of_lt (le_trans h2 h3) ENNReal.one_lt_top)
+      rw [ENNReal.toReal_sub_of_le h1 h_ne_top, ENNReal.toReal_add]
+      · exact ne_of_lt (lt_of_le_of_lt (le_trans (ν.mono_append [] _) ν.root_le_one') ENNReal.one_lt_top)
+      · exact ne_of_lt (lt_of_le_of_lt (le_trans (ν.mono_append [] _) ν.root_le_one') ENNReal.one_lt_top)
+    rw [heq]
+    apply Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable.sub
+    · exact h_ν_lsc.comp (fun h => encodeHistory h)
+    · have h_add :
+          Mettapedia.Computability.ArithmeticalHierarchy.UpperSemicomputable
+            (fun h => (ν (encodeHistory h ++ [false])).toReal +
+                      (ν (encodeHistory h ++ [true])).toReal) := by
+        apply Mettapedia.Computability.ArithmeticalHierarchy.UpperSemicomputable.add
+        · exact h_ν_usc.comp (fun h => encodeHistory h ++ [false])
+        · exact h_ν_usc.comp (fun h => encodeHistory h ++ [true])
+      exact h_add
+
+  -- Helper: indicator {t < f} is l.s.c. if f is l.s.c.
+  have indicator_lt :
+      ∀ {f : History → ℝ},
+        Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable f →
+        Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable
+          (fun h => if t < f h then (1 : ℝ) else 0) := by
+    intro f hf
+    refine
+      { approx := fun h n => if t < (hf.approx h n : ℝ) then (1 : ℚ) else 0
+        approx_mono := ?_
+        approx_le := ?_
+        approx_converges := ?_ }
+    · intro h n
+      by_cases ht : t < (hf.approx h n : ℝ)
+      · have hmono :
+            (hf.approx h n : ℝ) ≤ (hf.approx h (n + 1) : ℝ) := by
+              exact_mod_cast (hf.approx_mono h n)
+        have ht' : t < (hf.approx h (n + 1) : ℝ) := lt_of_lt_of_le ht hmono
+        simp [ht, ht']
+      · by_cases ht' : t < (hf.approx h (n + 1) : ℝ)
+        · simp [ht, ht', zero_le_one]
+        · simp [ht, ht']
+    · intro h n
+      by_cases ht : t < (hf.approx h n : ℝ)
+      · have ht' : t < f h := lt_of_lt_of_le ht (hf.approx_le h n)
+        simp [ht, ht']
+      · by_cases ht' : t < f h
+        · simp [ht, ht', zero_le_one]
+        · simp [ht, ht']
+    · intro h ε hε
+      by_cases ht : t < f h
+      · have hδ : 0 < (f h - t) / 2 := by linarith
+        obtain ⟨N, hN⟩ := hf.approx_converges h ((f h - t) / 2) hδ
+        refine ⟨N, ?_⟩
+        intro n hn
+        have h_lt : t < (hf.approx h n : ℝ) := by
+          have h_close := hN n hn
+          linarith
+        simp [ht, h_lt, hε]
+      · refine ⟨0, ?_⟩
+        intro n hn
+        have h_not : ¬ t < (hf.approx h n : ℝ) := by
+          have h_le : (hf.approx h n : ℝ) ≤ f h := hf.approx_le h n
+          exact not_lt.mpr (le_trans h_le (not_lt.mp ht))
+        simp [ht, h_not, hε]
+
+  have h_ind_min :
+      Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable
+        (fun h => if t < minNextUtility U h then (1 : ℝ) else 0) := by
+    exact indicator_lt h_min_lsc
+
+  have h_ind_percept :
+      ∀ p : Percept,
+        Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable
+          (fun h => if t < U (h ++ [HistElem.per p]) then (1 : ℝ) else 0) := by
+    intro p
+    exact indicator_lt (h_U_lsc.comp (fun h => h ++ [HistElem.per p]))
+
+  have h_nu_term :
+      ∀ p : Percept,
+        Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable
+          (fun h => (ν (encodeHistory h ++ encodePerceptBin p)).toReal) := by
+    intro p
+    exact h_ν_lsc.comp (fun h => encodeHistory h ++ encodePerceptBin p)
+
+  have h_loss_term :
+      Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable
+        (fun h =>
+          (if t < minNextUtility U h then (1 : ℝ) else 0) *
+            (semimeasureLoss ν (encodeHistory h)).toReal) := by
+    apply Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable.mul (M := 1)
+    · exact h_ind_min
+    · exact h_loss_lsc
+    · intro h; by_cases ht : t < minNextUtility U h <;> simp [ht]
+    · intro h; exact semimeasureLoss_toReal_nonneg ν (encodeHistory h)
+    · intro h; by_cases ht : t < minNextUtility U h <;> simp [ht]
+    · intro h; exact semimeasureLoss_toReal_le_one ν (encodeHistory h)
+
+  have h_term :
+      ∀ p : Percept,
+        Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable
+          (fun h =>
+            (if t < U (h ++ [HistElem.per p]) then (1 : ℝ) else 0) *
+              (ν (encodeHistory h ++ encodePerceptBin p)).toReal) := by
+    intro p
+    apply Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable.mul (M := 1)
+    · exact h_ind_percept p
+    · exact h_nu_term p
+    · intro h; by_cases ht : t < U (h ++ [HistElem.per p]) <;> simp [ht]
+    · intro h; exact ENNReal.toReal_nonneg
+    · intro h; by_cases ht : t < U (h ++ [HistElem.per p]) <;> simp [ht]
+    · intro h
+      have h1 : ν (encodeHistory h ++ encodePerceptBin p) ≤ ν [] := ν.mono_append [] _
+      have h2 : ν [] ≤ 1 := ν.root_le_one'
+      have h_ne_top : ν (encodeHistory h ++ encodePerceptBin p) ≠ ⊤ :=
+        ne_of_lt (lt_of_le_of_lt (le_trans h1 h2) ENNReal.one_lt_top)
+      have h_root_ne_top : (ν []) ≠ ⊤ := ne_of_lt (lt_of_le_of_lt h2 ENNReal.one_lt_top)
+      calc (ν (encodeHistory h ++ encodePerceptBin p)).toReal
+          ≤ (ν []).toReal := ENNReal.toReal_mono h_root_ne_top h1
+        _ ≤ (1 : ENNReal).toReal := ENNReal.toReal_mono ENNReal.one_ne_top h2
+        _ = (1 : ℝ) := by simp
+
+  have h_sum_terms :
+      Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable
+        (fun h =>
+          ∑ p : Percept,
+            (if t < U (h ++ [HistElem.per p]) then (1 : ℝ) else 0) *
+              (ν (encodeHistory h ++ encodePerceptBin p)).toReal) := by
+    apply Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable.finset_sum
+    intro p
+    exact h_term p
+
+  have h_total :
+      Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable
+        (fun h =>
+          (if t < minNextUtility U h then (1 : ℝ) else 0) *
+            (semimeasureLoss ν (encodeHistory h)).toReal +
+          ∑ p : Percept,
+            (if t < U (h ++ [HistElem.per p]) then (1 : ℝ) else 0) *
+              (ν (encodeHistory h ++ encodePerceptBin p)).toReal) := by
+    exact Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable.add h_loss_term h_sum_terms
+
+  have h_capacity_eq :
+      (fun h => capacityAtLevel ν U h t) =
+        (fun h =>
+          (if t < minNextUtility U h then (1 : ℝ) else 0) *
+            (semimeasureLoss ν (encodeHistory h)).toReal +
+          ∑ p : Percept,
+            (if t < U (h ++ [HistElem.per p]) then (1 : ℝ) else 0) *
+              (ν (encodeHistory h ++ encodePerceptBin p)).toReal) := by
+    ext h
+    by_cases ht : t < minNextUtility U h
+    · have h_all : ∀ p : Percept, t < U (h ++ [HistElem.per p]) := by
+        intro p
+        have h_min_le : minNextUtility U h ≤ U (h ++ [HistElem.per p]) := by
+          unfold minNextUtility
+          simpa using
+            (Finset.inf'_le (s := Finset.univ)
+              (f := fun p : Percept => U (h ++ [HistElem.per p]))
+              (h := Finset.mem_univ p))
+        exact lt_of_lt_of_le ht h_min_le
+      simp [capacityAtLevel, perceptMass, ht, h_all]
+    · simp [capacityAtLevel, ht]
+
+  simpa [h_capacity_eq] using h_total
+
+/-- **Theorem 4.1 (Wyeth & Hutter 2025)**: Choquet value is l.s.c. using the layer-cake formula.
+
+Note: In this encoding, `capacityAtLevel` still depends on `semimeasureLoss`, so we require ν
+to be computable (l.s.c. + u.s.c.) to avoid subtraction.
 
 **Proof approach**: Use the Riemann sum (layer cake) formulation:
 1. Each capacityAtLevel is l.s.c. (sum of l.s.c. ν values)
@@ -1763,7 +2632,8 @@ noncomputable def choquet_value_lower_semicomputable_paper (ν : Semimeasure) (U
     (h_U_lsc : Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable U)
     (h_ν_lsc : Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable
                 (fun x => (ν x).toReal))
-    -- NO h_ν_usc needed!
+    (h_ν_usc : Mettapedia.Computability.ArithmeticalHierarchy.UpperSemicomputable
+                (fun x => (ν x).toReal))
     (h_U_bounds : ∀ h, 0 ≤ U h ∧ U h ≤ 1) :
     Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable
       (fun h => valueChoquet ν U h) := by
@@ -1772,9 +2642,29 @@ noncomputable def choquet_value_lower_semicomputable_paper (ν : Semimeasure) (U
     (f_n := fun n h => valueChoquet_riemann ν U h n)
   · -- Each V_n is l.s.c.
     intro n
-    -- valueChoquet_riemann is constant × sum of capacityAtLevel
-    -- Each capacityAtLevel is l.s.c. by capacityAtLevel_lower_semicomputable
-    sorry
+    classical
+    let m : ℕ := 2 ^ n
+    have h_sum :
+        Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable
+          (fun h =>
+            ∑ k ∈ Finset.range m, capacityAtLevel ν U h ((k + 1 : ℝ) / (m : ℝ))) := by
+      apply Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable.finset_sum_finset
+      intro k
+      exact capacityAtLevel_lower_semicomputable ν U ((k + 1 : ℝ) / (m : ℝ)) h_U_lsc h_ν_lsc h_ν_usc
+    have h_nonneg :
+        ∀ h, 0 ≤ ∑ k ∈ Finset.range m, capacityAtLevel ν U h ((k + 1 : ℝ) / (m : ℝ)) := by
+      intro h
+      apply Finset.sum_nonneg
+      intro k _
+      exact capacityAtLevel_nonneg ν U h _
+    have h_scaled :
+        Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable
+          (fun h =>
+            (1 / (m : ℝ)) *
+              ∑ k ∈ Finset.range m, capacityAtLevel ν U h ((k + 1 : ℝ) / (m : ℝ))) := by
+      apply Mettapedia.Computability.ArithmeticalHierarchy.LowerSemicomputable.const_smul
+        (c := (1 / (m : ℝ))) (hc := by positivity) h_sum h_nonneg
+    simpa [valueChoquet_riemann, m] using h_scaled
   · -- Monotonicity
     intro n h
     exact valueChoquet_riemann_mono ν U h n

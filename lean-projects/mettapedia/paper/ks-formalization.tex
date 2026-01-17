@@ -83,8 +83,9 @@
 \begin{abstract}
 We present a complete formalization in Lean 4 of Knuth \& Skilling's axiomatic foundations for inference (2012).
 Their approach derives the probability calculus, measure theory, and information theory from elementary symmetries, without assuming continuity or differentiability.
-Our formalization makes explicit the implicit assumptions in their derivation, provides constructive proofs of their main theorems, and extends their framework to handle independence and product measures.
+Our formalization makes explicit the implicit assumptions in their derivation, provides \textbf{three independent proof paths} for the main representation theorem (grid-based induction, Dedekind cuts, and H\"older embedding), and extends their framework to handle independence and product measures.
 We demonstrate K\&S's claim that the framework applies to non-Boolean distributive lattices (chains, open sets of $\mathbb{R}$).
+A key finding: the \textbf{NoAnomalousPairs} condition (from classical ordered semigroup theory) is the weakest assumption sufficient for the representation theorem, via Eric Luap's formalized H\"older embedding.
 \end{abstract}
 
 \tableofcontents
@@ -117,8 +118,14 @@ K\&S emphasize:
 We formalize K\&S Appendices A and B in Lean 4, providing:
 \begin{itemize}
 \item Precise statement of axioms and symmetries
-\item Complete proofs of the representation theorems
+\item \textbf{Three independent proof paths} for the representation theorem:
+  \begin{enumerate}
+  \item Grid-based induction (following K\&S's paper structure)
+  \item Dedekind cuts (classical Hölder-style construction)
+  \item H\"older embedding via Eric Luap's OrderedSemigroups library
+  \end{enumerate}
 \item Explicit treatment of implicit assumptions (linear order, separation property)
+\item Discovery of the \textbf{NoAnomalousPairs} condition as the weakest sufficient assumption
 \item Non-Boolean examples demonstrating genuine generality
 \item Extensions to handle independence and products
 \item Counterexamples showing necessity of assumptions
@@ -126,6 +133,9 @@ We formalize K\&S Appendices A and B in Lean 4, providing:
 
 The formalization reveals that K\&S's informal proofs are essentially correct, but rely on several implicit assumptions that become apparent only when formalizing.
 These details are documented in Appendix~\ref{app:corrections}.
+
+A key finding of this formalization is that the \textbf{NoAnomalousPairs} condition from classical ordered semigroup theory (Alimov 1950, Fuchs 1963) is sufficient for the representation theorem, and is \emph{weaker} than K\&S's separation property.
+This connects K\&S's work to the century-old H\"older embedding theorem for ordered groups.
 
 \section{The Knuth-Skilling Axioms}
 \label{sec:axioms}
@@ -232,39 +242,162 @@ These are proven in \texttt{Separation/SandwichSeparation.lean} and \texttt{Repr
 
 \begin{theorem}[K\&S Appendix A]
 \label{thm:representation}
-Let $\alpha$ be a type with \texttt{KnuthSkillingAlgebra} and \texttt{KSSeparation}.
-Then there exists an order embedding $\Theta : \alpha \to \mathbb{R}$ such that:
+Let $\alpha$ be a type with \texttt{KnuthSkillingAlgebraBase}.
+Under appropriate regularity conditions (see below), there exists an order embedding $\Theta : \alpha \to \mathbb{R}$ such that:
 \begin{enumerate}
 \item $\Theta(\text{ident}) = 0$
 \item $\forall x, y : \alpha,\; \Theta(\text{op}\, x\, y) = \Theta(x) + \Theta(y)$
 \end{enumerate}
 \end{theorem}
 
-This is K\&S's main result: Axioms 1--2 plus separation uniquely determine that $\oplus$ corresponds to addition in $\mathbb{R}$ (up to order-preserving regrade).
+This is K\&S's main result: Axioms 1--2 plus regularity uniquely determine that $\oplus$ corresponds to addition in $\mathbb{R}$ (up to order-preserving regrade).
 
-\subsection{Proof Sketch}
+\subsection{Three Proof Approaches}
 
-K\&S's constructive proof proceeds by:
+Our formalization provides \textbf{three independent proof paths}, each with different assumptions and characteristics:
+
+\subsubsection{Approach 1: Grid-Based Induction (K\&S Style)}
+
+\textbf{Assumptions}: \texttt{KSSeparation} + \texttt{RepresentationGlobalization}
+
+\textbf{Technique}: K\&S's constructive proof proceeds by:
 \begin{enumerate}
 \item \textbf{One type}: For a single atom $a$, assign $\text{iterate\_op}\, a\, n \mapsto n \cdot \Theta(a)$.
 \item \textbf{Induction}: For a new atom $d$, use separation to find $(u, v)$ such that $a^u < d^v \leq a^{u+1}$.
    Define $\Theta(d) = (u + \delta) / v$ for appropriate $\delta \in [0, 1]$.
-\item \textbf{Globalization}: Show this extends to all combinations consistently.
+\item \textbf{Globalization}: Show this extends to all combinations consistently (the ``triple family trick'').
 \end{enumerate}
 
-Our formalization in \texttt{RepresentationTheorem/} provides complete Lean proofs of each step.
+\textbf{Files}: \texttt{RepresentationTheorem/Core/Induction/ThetaPrime.lean} ($\sim$2500 lines), \\
+\hspace*{2em} \texttt{RepresentationTheorem/Core/MultiGrid.lean} ($\sim$800 lines)
 
-\subsection{Formal Statement}
+\textbf{Pros}: Follows K\&S paper closely; self-contained \\
+\textbf{Cons}: Complex grid management; hard to maintain
 
-\begin{lstlisting}[caption={Representation theorem in Lean}]
+\begin{lstlisting}[caption={Grid-based representation theorem}]
 theorem associativity_representation
     (α : Type*) [KnuthSkillingAlgebra α] [KSSeparation α]
-    [DenselyOrdered α] :
+    [RepresentationGlobalization α] :
     ∃ Θ : α → ℝ,
       (∀ a b : α, a ≤ b ↔ Θ a ≤ Θ b) ∧
       Θ ident = 0 ∧
       ∀ x y : α, Θ (op x y) = Θ x + Θ y
 \end{lstlisting}
+
+\subsubsection{Approach 2: Dedekind Cuts (Classical Style)}
+
+\textbf{Assumptions}: \texttt{KSSeparation} + \texttt{KSSeparationStrict}
+
+\textbf{Technique}: Construct $\Theta$ directly via Dedekind cuts:
+\begin{enumerate}
+\item For a base element $a > \text{ident}$, define the \emph{cut set}:
+  \[\text{cutSet}(a, x) = \{q \in \mathbb{Q} : q \geq 0 \land \exists m,n.\; a^m \leq x^n \land q = m/n\}\]
+\item Define $\Theta(x) = \sup(\text{cutSet}(a, x))$
+\item Prove this is well-defined, order-preserving, and additive
+\end{enumerate}
+
+\textbf{Files}: \texttt{RepresentationTheorem/Alternative/DirectCuts.lean} ($\sim$900 lines)
+
+\textbf{Pros}: Classical approach; more direct than grid method \\
+\textbf{Cons}: Requires strict separation; still substantial code
+
+\begin{lstlisting}[caption={Cuts-based representation theorem}]
+theorem associativity_representation_cuts
+    (α : Type*) [KnuthSkillingAlgebra α] [KSSeparation α]
+    [KSSeparationStrict α] :
+    ∃ Θ : α → ℝ,
+      (∀ a b : α, a ≤ b ↔ Θ a ≤ Θ b) ∧
+      Θ ident = 0 ∧
+      ∀ x y : α, Θ (op x y) = Θ x + Θ y
+\end{lstlisting}
+
+\subsubsection{Approach 3: H\"older Embedding (Weakest Assumptions)}
+
+\textbf{Assumptions}: \texttt{NoAnomalousPairs} only!
+
+\textbf{Technique}: Leverage Eric Luap's formalized H\"older theorem for ordered semigroups:
+\begin{enumerate}
+\item Show \texttt{KnuthSkillingAlgebraBase} provides an \texttt{IsOrderedCancelSemigroup} instance
+\item Translate our \texttt{AnomalousPair} definition to Eric's \texttt{anomalous\_pair}
+\item Apply Eric's \texttt{holder\_not\_anom}: $\neg\text{has\_anomalous\_pair} \Rightarrow \alpha \hookrightarrow (\mathbb{R}, +)$
+\item Extract $\Theta$ from the multiplicative order isomorphism
+\end{enumerate}
+
+\textbf{Files}: \texttt{Separation/HolderEmbedding.lean} ($\sim$320 lines) + Eric's library ($\sim$1500 lines)
+
+\textbf{Pros}: \textbf{Weakest assumptions}; shortest local code; most elegant \\
+\textbf{Cons}: Depends on external library
+
+\begin{lstlisting}[caption={H\"older-based representation theorem (weakest assumptions)}]
+theorem representation_from_noAnomalousPairs
+    (α : Type*) [KnuthSkillingAlgebraBase α] [NoAnomalousPairs α] :
+    ∃ Θ : α → ℝ,
+      (∀ a b : α, a ≤ b ↔ Θ a ≤ Θ b) ∧
+      Θ ident = 0 ∧
+      ∀ x y : α, Θ (op x y) = Θ x + Θ y
+\end{lstlisting}
+
+\subsection{The NoAnomalousPairs Condition}
+
+\begin{definition}[Anomalous Pair]
+Elements $a, b$ form an \emph{anomalous pair} if for every $n > 0$:
+\[(a^n < b^n < a^{n+1}) \quad\text{or}\quad (a^n > b^n > a^{n+1})\]
+i.e., the iterates stay ``squeezed'' forever.
+\end{definition}
+
+\begin{definition}[NoAnomalousPairs]
+A K\&S algebra has \emph{no anomalous pairs} if no such pair exists:
+\[\forall a\, b,\; \neg\text{AnomalousPair}(a, b)\]
+\end{definition}
+
+This condition is from classical ordered semigroup theory (Alimov 1950, Fuchs 1963).
+It is \textbf{weaker} than \texttt{KSSeparation}:
+
+\begin{lstlisting}[caption={KSSeparation implies NoAnomalousPairs (under IdentIsMinimum)}]
+theorem noAnomalousPairs_of_KSSeparation_with_IdentMin
+    [KSSeparation α] [IdentIsMinimum α] : NoAnomalousPairs α
+\end{lstlisting}
+
+\textbf{Note}: \texttt{IdentIsMinimum} ($\forall a,\; \text{ident} \leq a$) is natural for the K\&S probability setting where \texttt{ident} represents the certain event.
+
+\subsection{Comparison of Approaches}
+
+\begin{center}
+\begin{tabular}{lccc}
+\textbf{Metric} & \textbf{Grid} & \textbf{Cuts} & \textbf{H\"older} \\
+\hline
+Local lines of code & $\sim$4000 & $\sim$1100 & $\sim$420 \\
+Total lines (incl.\ deps) & $\sim$4000 & $\sim$1100 & $\sim$1900 \\
+Assumptions & Medium & Medium+ & \textbf{Weakest} \\
+Self-contained & \checkmark & \checkmark & -- \\
+Follows K\&S paper & \checkmark & partial & -- \\
+Conceptual clarity & Low & Medium & \textbf{High} \\
+Maintainability & Low & Medium & \textbf{High} \\
+\end{tabular}
+\end{center}
+
+\textbf{Recommendation}: For practical use, the H\"older approach is preferred due to its minimal assumptions and elegant proof structure.
+For pedagogical purposes or K\&S paper alignment, the cuts approach provides a good balance.
+
+\subsection{Unified Interface}
+
+All three approaches provide instances of a common interface:
+
+\begin{lstlisting}[caption={Unified representation theorem interface}]
+class HasRepresentationTheorem (α : Type*) [KnuthSkillingAlgebraBase α] : Prop where
+  exists_representation :
+    ∃ Θ : α → ℝ,
+      (∀ a b : α, a ≤ b ↔ Θ a ≤ Θ b) ∧
+      Θ ident = 0 ∧
+      ∀ x y : α, Θ (op x y) = Θ x + Θ y
+
+-- Instances from each approach:
+instance holder_hasRepresentationTheorem [NoAnomalousPairs α]
+instance grid_hasRepresentationTheorem [KSSeparation α] [RepresentationGlobalization α]
+instance cuts_hasRepresentationTheorem [KSSeparation α] [KSSeparationStrict α]
+\end{lstlisting}
+
+\textbf{File}: \texttt{RepresentationTheorem/Comparison.lean}
 
 \section{The Product Theorem (Appendix B)}
 \label{sec:product}
@@ -364,6 +497,116 @@ theorem ks_appendix_b_fibonacci_strictMono
   the order isomorphism representation.
 \end{itemize}
 
+\section{The Variational Theorem (Appendix C)}
+\label{sec:variational}
+
+K\&S's Appendix C addresses entropy and divergence via a \emph{variational approach}.
+This section contains a subtle but important error in the original paper that our formalization corrects.
+
+\subsection{The Variational Functional Equation}
+
+K\&S consider a potential function $H(m)$ satisfying the functional equation:
+\begin{equation}
+H'(m_x \cdot m_y) = \lambda(m_x) + \mu(m_y) \label{eq:variational}
+\end{equation}
+where $H' = dH/dm$ and $m_x, m_y > 0$.
+
+\subsection{K\&S's Differentiability Claim (and Why It's Wrong)}
+
+K\&S assert that ``\emph{any variational potential must \ldots be differentiable at least once}'' because it applies to arbitrarily small perturbations.
+\textbf{This claim is false.}
+
+\begin{example}[Variational minimum without differentiability]
+Consider $H(x) = |x|$ on $\mathbb{R}$.
+The point $x_\star = 0$ is a global minimizer: for every small perturbation $h$,
+\[H(0 + h) - H(0) = |h| \geq 0.\]
+This is exactly the variational inequality ``no small perturbation decreases $H$''.
+But $H$ is \emph{not differentiable} at $0$: the one-sided derivatives are $-1$ and $+1$.
+\end{example}
+
+\begin{example}[K\&S-shaped example on $(0,\infty)$]
+Consider $H(m) = |\log m|$ on $(0, \infty)$.
+It has a unique minimum at $m_\star = 1$, but is not differentiable there.
+This directly refutes K\&S's claim in their specific modeling domain.
+\end{example}
+
+Nonsmooth variational problems are not exotic: absolute value, max functions, and $\ell_1$ penalties are core tools in modern optimization.
+Rockafellar--Wets~\cite{RockafellarWets} explicitly stress that max/min operations often fail to preserve smoothness.
+
+\subsection{The Correct Approach: Measurability}
+
+Our formalization makes the regularity assumption \emph{explicit}.
+The key insight is that the functional equation~\eqref{eq:variational}, after the log-coordinate change $u = \log m$, reduces to \textbf{Cauchy's additive functional equation}:
+\[f(u + v) = f(u) + f(v)\]
+
+Without regularity, Cauchy's equation has pathological non-linear solutions (via Hamel basis constructions, assuming the Axiom of Choice).
+To obtain the unique linear solution $f(t) = Ct$, \emph{some} regularity is required.
+
+The standard hierarchy of sufficient conditions includes:
+\begin{itemize}
+\item Measurable (weakest commonly used)
+\item Continuous at one point
+\item Bounded on any interval
+\item Monotone on any interval
+\end{itemize}
+
+\textbf{Our choice}: We use \textbf{Borel measurability} as the regularity assumption because:
+\begin{enumerate}
+\item It is among the weakest standard conditions
+\item It is \textbf{automatic} for derivatives: if $H$ is differentiable, then $H' = \text{deriv}\, H$ is Borel measurable (via \texttt{measurable\_deriv} in mathlib)
+\item It matches what K\&S's convolution ``blurring'' argument implicitly requires
+\end{enumerate}
+
+\begin{lstlisting}[caption={Main Variational Theorem (measurable version)}]
+theorem variationalEquation_solution_measurable
+    (H' : ℝ → ℝ) (lam mu : ℝ → ℝ)
+    (hMeas : Measurable H')
+    (hV : VariationalEquation H' lam mu) :
+    ∃ B C : ℝ, ∀ m : ℝ, 0 < m →
+      H' m = B + C * log m
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Corollary for actual derivatives (regularity automatic)}]
+theorem variationalEquation_solution
+    (H : ℝ → ℝ) (lam mu : ℝ → ℝ)
+    (hV : VariationalEquation (deriv H) lam mu) :
+    ∃ B C : ℝ, ∀ m : ℝ, 0 < m →
+      deriv H m = B + C * log m
+\end{lstlisting}
+
+\subsection{Alternative: Monotonicity (K\&S-Spirited)}
+
+An alternative regularity assumption that mirrors Appendix A's order-theoretic style is \textbf{monotonicity}:
+
+\begin{itemize}
+\item Monotone $\Rightarrow$ Measurable $\Rightarrow$ log form
+\item Monotonicity is physically motivated: entropy has decreasing marginal value
+\item This parallels Appendix A where order-preservation is central
+\end{itemize}
+
+However, monotonicity is \emph{stronger} than measurability (not all measurable functions are monotone).
+Our core theorem uses the weaker assumption; monotonicity can be stated as a corollary.
+
+\subsection{The Entropy/Divergence Form}
+
+From the variational theorem, integrating $H'(m) = B + C \log m$ yields:
+\[H(m) = A + Bm + C(m \log m - m)\]
+
+With appropriate choices of constants ($C = 1$, $B = -\log u$, $A = u$), this specializes to the \textbf{Kullback--Leibler divergence}:
+\[D(w \| u) = \sum_i \left( u_i - w_i + w_i \log \frac{w_i}{u_i} \right)\]
+
+This is formalized in \texttt{Divergence.lean} with proofs of non-negativity, zero iff equal, and asymmetry.
+
+\subsection{Summary: What K\&S Should Have Said}
+
+K\&S informally assert that a variational potential must be $C^1$ because it applies to arbitrarily small perturbations.
+This is not a logical consequence of local optimality.
+Standard nonsmooth variational analysis replaces gradients with subgradients (Rockafellar--Wets; Clarke).
+
+In our formalization, we \textbf{state measurability explicitly} as an analytic assumption.
+This is also exactly what is needed to rule out pathological Cauchy solutions and obtain the unique logarithmic form.
+No circularity: we assume (functional equation + measurability), and \emph{derive} the log form.
+
 \section{Probability and Conditional Inference}
 
 K\&S's Axiom 5 (chaining associativity) extends the framework to conditional probability.
@@ -377,10 +620,31 @@ Our formalization confirms their approach is sound, while making explicit:
 \item Linear order (implicit in their trichotomy arguments)
 \item Separation property (implicit in rational approximation)
 \item Archimedean property (derivable from separation)
-\item Commutativity (derivable from separation + order)
+\item Commutativity (derivable from NoAnomalousPairs)
 \end{itemize}
 
-The formalized representation theorem provides a constructive, computationally meaningful foundation for inference.
+\textbf{Key contributions of this formalization:}
+
+\begin{enumerate}
+\item \textbf{Three independent proof paths}: Grid-based (K\&S style), Dedekind cuts (classical), and H\"older embedding (via Eric Luap's library).
+
+\item \textbf{Discovery of minimal assumptions}: The \texttt{NoAnomalousPairs} condition from classical ordered semigroup theory (Alimov 1950) is \emph{sufficient} for the representation theorem and is \emph{weaker} than K\&S's separation property.
+
+\item \textbf{Connection to classical mathematics}: K\&S's work fits within the century-old tradition of H\"older embedding theorems for ordered algebraic structures.
+Eric Luap's Lean 4 formalization of this classical theory provides a clean, minimal proof path.
+
+\item \textbf{Unified interface}: All three proof approaches provide instances of a common \texttt{HasRepresentationTheorem} typeclass, enabling modular use.
+\end{enumerate}
+
+\textbf{Practical recommendation}: For new formalizations building on K\&S, the H\"older approach is preferred:
+\begin{itemize}
+\item Uses the weakest assumptions (\texttt{NoAnomalousPairs} only)
+\item Shortest local codebase ($\sim$420 lines vs.\ $\sim$4000 for grid approach)
+\item Most mathematically elegant
+\item Leverages Eric Luap's battle-tested library
+\end{itemize}
+
+The formalized representation theorem provides a constructive, computationally meaningful foundation for inference, now available via multiple independent proof paths.
 
 \appendix
 
@@ -443,21 +707,36 @@ We make this explicit as \texttt{KSSeparation}.
 \textbf{Evidence:} K\&S's ``induction to more than one type of atom'' (Appendix A, starting line 1437) constructs rationals $u/v$ to approximate new atom values.
 This requires separation.
 
-\subsection{Summary of Necessary Assumptions}
+\subsection{Summary of Assumptions (Three Tiers)}
 
-For the representation theorem, we require:
+For the representation theorem, we have three tiers of assumptions:
+
+\textbf{Tier 1 (Base axioms---always required):}
 \begin{enumerate}
 \item \textbf{LinearOrder} (implicit in K\&S)
 \item \textbf{Associativity, Identity, Strict Monotonicity} (K\&S Axioms 1--2)
-\item \textbf{Separation} (implicit in K\&S's rational approximation)
 \end{enumerate}
 
-From these, we \emph{derive}:
+\textbf{Tier 2 (Regularity---one of the following):}
 \begin{itemize}
-\item Archimedean property
-\item Commutativity
-\item Additive representation
+\item \textbf{NoAnomalousPairs} (weakest, used by H\"older approach)
+\item \textbf{KSSeparation} (K\&S's implicit assumption, used by grid/cuts approaches)
+\item \textbf{KSSeparation + KSSeparationStrict} (strongest, used by cuts approach)
 \end{itemize}
+
+\textbf{Relationship:}
+\[
+\text{KSSeparation} + \text{IdentIsMinimum} \;\Rightarrow\; \text{NoAnomalousPairs}
+\]
+
+From \texttt{NoAnomalousPairs} alone, we \emph{derive}:
+\begin{itemize}
+\item Commutativity (via Eric Luap's \texttt{not\_anomalous\_pair\_commutative})
+\item H\"older embedding into $(\mathbb{R}, +)$ (via Eric's \texttt{holder\_not\_anom})
+\item Additive representation $\Theta : \alpha \to \mathbb{R}$
+\end{itemize}
+
+\textbf{Key finding}: \texttt{NoAnomalousPairs} is sufficient and is the \emph{weakest} known condition for the representation theorem.
 
 \section{Philosophical Context: Cox, Kolmogorov, and K\&S}
 \label{app:philosophy}
@@ -612,22 +891,47 @@ Both prove the same theorem; the cuts version is more concise.
 
 \subsection{Connection to Hölder and Alimov}
 
-The direct cuts construction is modeled on classical embedding theorems for ordered algebraic structures:
+The representation theorem fits within a classical tradition of embedding theorems for ordered algebraic structures:
 
 \begin{center}
 \begin{tabular}{lll}
 \textbf{Theorem} & \textbf{Structure} & \textbf{Result} \\
 \hline
-Hölder (1901) & Archimedean ordered abelian groups & Embed in $(\mathbb{R}, +)$ \\
+H\"older (1901) & Archimedean ordered abelian groups & Embed in $(\mathbb{R}, +)$ \\
 Alimov (1950) & Cancellative ordered semigroups & Embed in $(\mathbb{R}, +)$ \\
+Fuchs (1963) & No anomalous pairs $\Rightarrow$ commutative & Classical text \\
+\textbf{Luap (2024)} & \textbf{Lean 4 formalization of the above} & \textbf{OrderedSemigroups} \\
 K\&S + Separation & Ordered monoids with separation & Embed in $(\mathbb{R}, +)$ \\
 \end{tabular}
 \end{center}
 
-Our cuts construction adapts Hölder's technique to the K\&S monoid setting, bypassing the need for group completion.
-The separation axiom (Section~\ref{sec:separation}) provides the density condition that makes this construction work.
+\textbf{Key insight}: Eric Luap's OrderedSemigroups library (github.com/ericluap/OrderedSemigroups) provides a \textbf{complete Lean 4 formalization} of the Alimov-H\"older embedding theorem:
 
-\textbf{Formalization}: See \texttt{Literature/SemigroupRepresentations.lean} for the connection to Hölder's theorem via Mathlib's \texttt{Archimedean.exists\_orderAddMonoidHom\_real\_injective}.
+\begin{lstlisting}[caption={Eric Luap's H\"older theorem (from OrderedSemigroups)}]
+theorem holder_not_anom [LinearOrder α] [Semigroup α]
+    [IsOrderedCancelSemigroup α] [Pow α ℕ+] [PNatPowAssoc α]
+    (h : ¬has_anomalous_pair (α := α)) :
+    ∃ G : Subsemigroup (Multiplicative ℝ), Nonempty (α ≃*o G)
+\end{lstlisting}
+
+This theorem states: if a linearly ordered cancellative semigroup has no anomalous pairs, it embeds (as an ordered multiplicative isomorphism) into $(\mathbb{R}, +)$.
+
+\textbf{Our contribution}: We show that \texttt{KnuthSkillingAlgebraBase} satisfies all the hypotheses of Eric's theorem:
+\begin{itemize}
+\item \texttt{Semigroup}: $\text{mul} := \text{op}$, $\text{mul\_assoc} := \text{op\_assoc}$
+\item \texttt{IsOrderedCancelSemigroup}: From \texttt{op\_strictMono\_left/right}
+\item \texttt{Pow ℕ+}: $x^n := \text{iterate\_op}\, x\, n$
+\item \texttt{PNatPowAssoc}: Requires commutativity, which Eric proves follows from $\neg\text{has\_anomalous\_pair}$!
+\end{itemize}
+
+Thus, \texttt{NoAnomalousPairs} alone suffices for the representation theorem---no \texttt{KSSeparation} needed!
+
+\textbf{Files}:
+\begin{itemize}
+\item \texttt{Separation/HolderEmbedding.lean}: Bridge to Eric's library
+\item \texttt{Separation/AnomalousPairs.lean}: NoAnomalousPairs definition
+\item \texttt{RepresentationTheorem/Comparison.lean}: Unified interface
+\end{itemize}
 
 \subsection{The A/B/C Partition}
 
@@ -829,6 +1133,42 @@ See \texttt{Mettapedia/ProbabilityTheory/KnuthSkilling/Examples/} for:
 Kevin H. Knuth and John Skilling.
 \textit{Foundations of Inference}.
 Axioms, 1(1):38--73, 2012.
+
+\bibitem{Luap2024}
+Eric Luap.
+\textit{OrderedSemigroups: Formalization in Lean 4}.
+GitHub repository, 2024.
+\url{https://github.com/ericluap/OrderedSemigroups}
+
+\bibitem{Alimov1950}
+N.~G. Alimov.
+On ordered semigroups.
+\textit{Izv. Akad. Nauk SSSR Ser. Mat.}, 14:569--576, 1950.
+
+\bibitem{Fuchs1963}
+L.~Fuchs.
+\textit{Partially Ordered Algebraic Systems}.
+Pergamon Press, 1963.
+
+\bibitem{Holder1901}
+O.~H\"older.
+Die Axiome der Quantit\"at und die Lehre vom Mass.
+\textit{Berichte \"uber die Verhandlungen der K\"oniglich S\"achsischen Gesellschaft der Wissenschaften zu Leipzig, Mathematisch-Physische Classe}, 53:1--64, 1901.
+
+\bibitem{Binder2016}
+D.~Binder.
+Non-Anomalous Semigroups and Real Numbers.
+arXiv:1607.05997, 2016.
+
+\bibitem{RockafellarWets}
+R.~T. Rockafellar and R.~J.-B. Wets.
+\textit{Variational Analysis}.
+Springer, 1998.
+
+\bibitem{Clarke1990}
+F.~H. Clarke.
+\textit{Optimization and Nonsmooth Analysis}.
+SIAM, 1990.
 
 \end{thebibliography}
 

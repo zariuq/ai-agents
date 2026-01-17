@@ -9,6 +9,8 @@ import Mettapedia.UniversalAI.SimplicityUncertainty
 import Mettapedia.UniversalAI.BadUniversalPriors
 import Mettapedia.UniversalAI.BayesianAgents
 import Mettapedia.UniversalAI.BayesianAgents.CoreCompat
+import Mettapedia.UniversalAI.BayesianAgents.InfiniteHistoryCompat
+import Mettapedia.UniversalAI.InfiniteHistory
 import Mettapedia.UniversalAI.ProblemClasses
 import Mettapedia.UniversalAI.TimeBoundedAIXI
 import Mettapedia.UniversalAI.TimeBoundedAIXI.Core
