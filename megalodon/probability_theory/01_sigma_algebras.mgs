@@ -1,0 +1,13 @@
+Definition bigcup_nat : (set -> set) -> set := fun f => Union {f n|n :e omega}.
+Axiom eq_subst_set : forall X Y z : set , X = Y -> z :e X -> z :e Y.
+Axiom setminus_inter_compl : forall Omega A B , A c= Omega -> A :\: B = A :/\: (Omega :\: B).
+Definition bigcap_nat : set -> (set -> set) -> set := fun Omega f => Omega :\: bigcup_nat (fun n => Omega :\: f n).
+Definition is_sigma_algebra : set -> set -> prop := fun Omega F => (forall A :e F , A c= Omega) /\ (Empty :e F /\ (Omega :e F /\ ((forall A :e F , (Omega :\: A) :e F) /\ (forall f : set -> set , (forall n :e omega , f n :e F) -> bigcup_nat f :e F)))).
+Definition is_field : set -> set -> prop := fun Omega F => (forall A :e F , A c= Omega) /\ (Omega :e F /\ (Empty :e F /\ ((forall A :e F , (Omega :\: A) :e F) /\ (forall A B , A :e F -> B :e F -> (A :\/: B) :e F)))).
+Axiom field_closed_under_intersection : forall Omega F A B , is_field Omega F -> A :e F -> B :e F -> A :/\: B :e F.
+Axiom sigma_algebra_is_field : forall Omega F , is_sigma_algebra Omega F -> is_field Omega F.
+Axiom sigma_algebra_countable_intersection : forall Omega F , forall f : set -> set , is_sigma_algebra Omega F -> (forall n :e omega , f n :e F) -> bigcap_nat Omega f :e F.
+Axiom power_set_is_sigma_algebra : forall Omega , is_sigma_algebra Omega (Power Omega).
+Axiom sigma_algebra_finite_union : forall Omega F A B , is_sigma_algebra Omega F -> A :e F -> B :e F -> A :\/: B :e F.
+Axiom sigma_algebra_finite_intersection : forall Omega F A B , is_sigma_algebra Omega F -> A :e F -> B :e F -> A :/\: B :e F.
+Axiom sigma_algebra_setminus : forall Omega F A B , is_sigma_algebra Omega F -> A :e F -> B :e F -> A :\: B :e F.

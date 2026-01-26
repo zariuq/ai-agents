@@ -1,0 +1,3 @@
+Definition rect_image : set -> set -> set := fun F G => {(proj0 w) :*: (proj1 w)|w :e F :*: G}.
+Definition product_sigma : set -> set -> set -> set -> set := fun Omega1 F Omega2 G => sigma_generated (Omega1 :*: Omega2) (rect_image F G).
+Definition is_product_measure : set -> set -> (set -> set) -> set -> set -> (set -> set) -> (set -> set) -> prop := fun Omega1 F mu1 Omega2 G mu2 mu => is_probability_measure Omega1 F mu1 /\ is_probability_measure Omega2 G mu2 /\ is_probability_measure (Omega1 :*: Omega2) (product_sigma Omega1 F Omega2 G) mu /\ (forall A :e F , forall B :e G , mu (A :*: B) = mu1 A * mu2 B).

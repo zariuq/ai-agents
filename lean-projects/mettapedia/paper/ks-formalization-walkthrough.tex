@@ -41,6 +41,8 @@
     {!=}{$\neq$}1
     {Real}{$\mathbb{R}$}1
     {Nat}{$\mathbb{N}$}1
+    {¬}{$\neg$}1
+    {≃}{$\simeq$}1
     {⊓}{$\sqcap$}1
     {⊔}{$\sqcup$}1
 }
@@ -65,7 +67,7 @@
 This document provides a systematic walkthrough of the Lean 4 formalization of Knuth \& Skilling's ``Foundations of Inference'' (2012).
 Each section lists the main theorem statements with their Lean proofs and file locations, organized by the corresponding K\&S paper sections.
 The reviewer entrypoint \texttt{.../KnuthSkilling/FoundationsOfInference.lean} is \textbf{complete with zero sorries}.
-Paused/WIP material (e.g.\ Cox and Shore--Johnson) is intentionally not imported by default and may contain gaps.
+Supplementary modules (Cox, Shore--Johnson, Shannon/Faddeev) are present but intentionally not imported by default by the FOI reviewer entrypoint; they provide alternative derivation paths and may assume additional regularity gates.
 \end{abstract}
 
 \section*{Quickstart for Reviewers}
@@ -1112,6 +1114,14 @@ theorem tensor_mul_rule_normalized
 
 \textbf{File}: \texttt{Mettapedia/ProbabilityTheory/KnuthSkilling/Variational/Main.lean}
 
+\subsection{Two Logical Steps: Path A and Path B}
+
+Appendix C separates cleanly into two steps.
+
+\textbf{Path A (rigidity / solution)}: assume the functional equation holds globally and add an explicit regularity gate (we use measurability of $H'$). Then the only solutions are logarithmic (see \texttt{variationalEquation\_solution\_measurable}, lines 312--378 in \texttt{Variational/Main.lean}).
+
+\textbf{Path B (derivation / motivation)}: compute the coordinate derivative of a separable product Lagrangian at a stationary point and obtain the separated equation that motivates the functional equation (see \texttt{section PathB} starting at line 622 and \texttt{lagrange\_coordinate\_deriv\_eq} at line 696 in \texttt{Variational/Main.lean}). Upgrading ``holds at a stationary point'' to a global equation is an explicit universality/richness premise (Gate~G).
+
 \subsection{Variational Functional Equation}
 
 \textbf{What this is about}: K\&S derive the entropy form $H(m) = A + Bm + C(m \log m - m)$ (the negative of Shannon/Boltzmann entropy) from a variational principle. The key functional equation comes from maximizing $H$ subject to constraints.
@@ -1597,6 +1607,8 @@ For a bridge to mathlib's \texttt{Measure} / \texttt{ProbabilityMeasure} APIs, s
 
 \textbf{Key point}: Shannon entropy is \textbf{derived}, not just defined. It emerges as an ``inevitable consequence of seeking a variational quantity'' (K\&S, Section 8.2).
 
+\textbf{Unified view (project-wide, optional)}: The repo also includes axiomatic entropy (Faddeev / Shannon--Khinchin) and bridges to mathlib's measure-theoretic KL; the curated entrypoint \texttt{Mettapedia/InformationTheory/EntropyKL.lean} imports the unified finite-discrete story and records the main equivalence theorems (see Appendix: Supplementary Derivation Paths).
+
 \subsection{From Atom Divergence to KL Divergence}
 
 \textbf{The key step}: Now that we have probability distributions from Section 9, we can specialize the atom divergence from Section 8 to normalized measures.
@@ -1977,6 +1989,22 @@ allows switching implementations without changing dependent code.
 \end{center}
 
 All core theorems are fully proven. The formalization is complete and ready for review.
+
+%==============================================================================
+\section*{Appendix: Supplementary Derivation Paths (References)}
+\addcontentsline{toc}{section}{Appendix: Supplementary Derivation Paths (References)}
+%==============================================================================
+
+These modules are not needed to audit K\&S FOI itself, but they provide additional derivation routes
+and equivalence theorems that cross-check the entropy/KL story:
+
+\begin{itemize}
+\item \textbf{Unified finite entropy/KL entrypoint}: \texttt{Mettapedia/InformationTheory/EntropyKL.lean}
+\item \textbf{Axiomatic entropy (Faddeev, Shannon, Shannon--Khinchin)}: \texttt{Mettapedia/InformationTheory/ShannonEntropy/Main.lean}
+\item \textbf{Shore--Johnson $\to$ KL (derivation glue)}: \texttt{Mettapedia/ProbabilityTheory/KnuthSkilling/ShoreJohnson/KLDerivation.lean} (full import surface: \texttt{.../ShoreJohnson/Main.lean})
+\item \textbf{Cox probability calculus derivation}: \texttt{Mettapedia/ProbabilityTheory/Cox.lean}
+\item \textbf{Algorithmic probability (Solomonoff) $\leftrightarrow$ K\&S KL gate}: \texttt{Mettapedia/ProbabilityTheory/KnuthSkilling/Bridges/AlgorithmicProbabilityBridge.lean}
+\end{itemize}
 
 %==============================================================================
 \section{Build Instructions}

@@ -1,0 +1,27 @@
+Definition seq_real : (set -> set) -> prop := fun f => forall n :e omega , f n :e real.
+Definition seq_le : (set -> set) -> (set -> set) -> prop := fun f g => forall n :e omega , f n <= g n.
+Definition monotone_nondec : (set -> set) -> prop := fun f => forall m n :e omega , m :e n -> f m <= f n.
+Definition monotone_noninc : (set -> set) -> prop := fun f => forall m n :e omega , m :e n -> f n <= f m.
+Definition is_upper_bound_seq : (set -> set) -> set -> prop := fun f s => forall n :e omega , f n <= s.
+Definition is_lower_bound_seq : (set -> set) -> set -> prop := fun f s => forall n :e omega , s <= f n.
+Definition is_least_upper_bound_seq : (set -> set) -> set -> prop := fun f s => is_upper_bound_seq f s /\ (forall t :e real , is_upper_bound_seq f t -> s <= t).
+Definition is_greatest_lower_bound_seq : (set -> set) -> set -> prop := fun f s => is_lower_bound_seq f s /\ (forall t :e real , is_lower_bound_seq f t -> t <= s).
+Definition bounded_above : (set -> set) -> prop := fun f => exists s :e real , is_upper_bound_seq f s.
+Definition bounded_below : (set -> set) -> prop := fun f => exists s :e real , is_lower_bound_seq f s.
+Definition converges_to : (set -> set) -> set -> prop := fun f l => forall k :e omega , exists N :e omega , forall n :e omega , N :e n -> abs_SNo (f n + - l) < eps_ k.
+Definition convergent : (set -> set) -> prop := fun f => exists l :e real , converges_to f l.
+Definition limit : (set -> set) -> set := fun f => Eps_i (fun l => l :e real /\ converges_to f l).
+Definition series_partial_sum : (set -> set) -> set -> set := partial_sum.
+Definition series_sum : (set -> set) -> set := sum_nat.
+Axiom partial_sum_0 : forall f : set -> set , partial_sum f 0 = f 0.
+Axiom partial_sum_succ : forall f : set -> set , forall n :e omega , partial_sum f (ordsucc n) = f (ordsucc n) + partial_sum f n.
+Axiom lub_seq_is_upper_bound : forall f : set -> set , forall s , is_least_upper_bound_seq f s -> is_upper_bound_seq f s.
+Axiom glb_seq_is_lower_bound : forall f : set -> set , forall s , is_greatest_lower_bound_seq f s -> is_lower_bound_seq f s.
+Axiom least_upper_bound_seq_unique : forall f : set -> set , forall s t :e real , is_least_upper_bound_seq f s -> is_least_upper_bound_seq f t -> s = t.
+Axiom converges_to_const : forall c :e real , converges_to (fun n : set => c) c.
+Axiom convergent_const : forall c :e real , exists l :e real , converges_to (fun n : set => c) l.
+Axiom seq_real_const : forall c :e real , seq_real (fun n : set => c).
+Axiom monotone_nondec_lower_bound0 : forall f : set -> set , seq_real f -> monotone_nondec f -> is_lower_bound_seq f (f 0).
+Axiom monotone_noninc_upper_bound0 : forall f : set -> set , seq_real f -> monotone_noninc f -> is_upper_bound_seq f (f 0).
+Axiom bounded_below_of_monotone_nondec : forall f : set -> set , seq_real f -> monotone_nondec f -> bounded_below f.
+Axiom bounded_above_of_monotone_noninc : forall f : set -> set , seq_real f -> monotone_noninc f -> bounded_above f.

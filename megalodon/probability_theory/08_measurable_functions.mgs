@@ -1,0 +1,16 @@
+Definition preimage : set -> (set -> set) -> set -> set := fun Omega f A => {x :e Omega|f x :e A}.
+Axiom preimage_subset : forall Omega , forall f : set -> set , forall A , preimage Omega f A c= Omega.
+Axiom preimage_in_power : forall Omega , forall f : set -> set , forall A , preimage Omega f A :e Power Omega.
+Axiom preimage_empty : forall Omega , forall f : set -> set , preimage Omega f Empty = Empty.
+Axiom preimage_binunion : forall Omega , forall f : set -> set , forall A B , preimage Omega f (A :\/: B) = preimage Omega f A :\/: preimage Omega f B.
+Axiom preimage_binintersect : forall Omega , forall f : set -> set , forall A B , preimage Omega f (A :/\: B) = preimage Omega f A :/\: preimage Omega f B.
+Axiom preimage_setminus : forall Omega , forall f : set -> set , forall A B , preimage Omega f (A :\: B) = preimage Omega f A :\: preimage Omega f B.
+Axiom preimage_bigcup_nat : forall Omega , forall f : set -> set , forall A : set -> set , preimage Omega f (bigcup_nat A) = bigcup_nat (fun n => preimage Omega f (A n)).
+Definition is_measurable : set -> set -> set -> set -> (set -> set) -> prop := fun Omega F X G f => (forall A :e G , preimage Omega f A :e F).
+Definition indicator : set -> set -> set -> set := fun Omega A x => If_i (x :e A) 1 0.
+Axiom preimage_indicator_one : forall Omega A , preimage Omega (indicator Omega A) {1} = {x :e Omega|x :e A}.
+Axiom preimage_indicator_zero : forall Omega A , preimage Omega (indicator Omega A) {0} = {x :e Omega|x /:e A}.
+Axiom preimage_bigcup_fin : forall Omega , forall f : set -> set , forall A : set -> set , forall n , preimage Omega f (bigcup_fin A n) = bigcup_fin (fun i => preimage Omega f (A i)) n.
+Definition pairwise_disjoint_n : (set -> set) -> set -> prop := fun f n => forall i j :e n , i <> j -> Disjoint (f i) (f j).
+Definition simple_partition : set -> set -> (set -> set) -> set -> prop := fun Omega F A n => (forall i :e n , A i :e F) /\ pairwise_disjoint_n A n /\ bigcup_fin A n = Omega.
+Definition simple_function_repr : set -> set -> (set -> set) -> (set -> set) -> (set -> set) -> set -> prop := fun Omega F f v A n => simple_partition Omega F A n /\ (forall x :e Omega , exists i :e n , x :e A i /\ f x = v i).

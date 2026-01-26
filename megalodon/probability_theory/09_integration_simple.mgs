@@ -1,0 +1,2 @@
+Definition simple_integral_rep : set -> (set -> set) -> (set -> set) -> (set -> set) -> set -> set := fun Omega mu v A n => Sum 0 n (fun i => v i * mu (A i)).
+Definition simple_integral : set -> set -> (set -> set) -> (set -> set) -> set := fun Omega F mu f => Eps_i (fun s => s :e real /\ exists v : set -> set , exists A : set -> set , exists n :e omega , simple_function_repr Omega F f v A n /\ s = simple_integral_rep Omega mu v A n).

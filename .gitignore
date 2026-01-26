@@ -98,6 +98,7 @@ megalodon/makeopt
 tmp/
 .lake-backup*/
 *.tgz
+_test/
 
 # Misc junk
 Prompts/
@@ -121,6 +122,9 @@ megalodon/theory/mizar/mmlmg/
 
 # Large megalodon archives/experiments
 megalodon/_archive/
+
+# Megalodon prover (separate git repo - external tool)
+megalodon/Megalodon/
 
 # Large text files
 Apache_loc.txt

@@ -1,0 +1,77 @@
+Definition partial_sum : (set -> set) -> set -> set := fun f n => Sum 0 n f.
+Definition is_upper_bound : (set -> set) -> set -> prop := fun f s => forall n :e omega , partial_sum f n <= s.
+Definition is_least_upper_bound : (set -> set) -> set -> prop := fun f s => is_upper_bound f s /\ (forall t :e real , is_upper_bound f t -> s <= t).
+Definition sum_nat : (set -> set) -> set := fun f => Eps_i (fun s => s :e real /\ is_least_upper_bound f s).
+Definition summable : (set -> set) -> prop := fun f => exists s , s :e real /\ is_least_upper_bound f s.
+Definition Disjoint : set -> set -> prop := fun A B => A :/\: B = Empty.
+Definition pairwise_disjoint : (set -> set) -> prop := fun f => forall m n :e omega , m <> n -> Disjoint (f m) (f n).
+Definition bigcup_nat : (set -> set) -> set := fun f => Union {f n|n :e omega}.
+Definition bigcup_fin : (set -> set) -> set -> set := fun f n => Union {f i|i :e n}.
+Axiom real_zero_le_implies_add_le : forall x y , 0 <= y -> x <= x + y.
+Axiom real_le_add_r : forall x y z , x <= y -> x + z <= y + z.
+Axiom real_le_add_cancel : forall x y z , x + z <= y + z -> x <= y.
+Axiom real_add_comm : forall x y , x + y = y + x.
+Axiom real_add_assoc : forall x y z , x + (y + z) = (x + y) + z.
+Axiom real_add_zero_l : forall x , 0 + x = x.
+Axiom real_add_zero_r : forall x , x + 0 = x.
+Axiom real_add_left_inv : forall x , x + - x = 0.
+Axiom real_one_real : 1 :e real.
+Axiom real_add_left_cancel : forall x y z , x = y + z -> x + - y = z.
+Axiom real_mul_comm : forall x y , x * y = y * x.
+Axiom real_mul_assoc : forall x y z , x * (y * z) = (x * y) * z.
+Axiom real_mul_one_l : forall x , 1 * x = x.
+Axiom real_mul_one_r : forall x , x * 1 = x.
+Axiom real_mul_zero_l : forall x , 0 * x = 0.
+Axiom real_mul_zero_r : forall x , x * 0 = 0.
+Axiom real_mul_add_distr : forall x y z , x * (y + z) = x * y + x * z.
+Axiom real_mul_neg : forall x y , x * (- y) = - (x * y).
+Axiom real_mul_div_left : forall x y :e real , y <> 0 -> y * (x :/: y) = x.
+Axiom real_mul_div_cancel_right : forall x y :e real , y <> 0 -> (x * y) :/: y = x.
+Axiom real_mul_real : forall x y :e real , x * y :e real.
+Axiom real_pos_neq0 : forall x , 0 < x -> x <> 0.
+Axiom eq_refl_set : forall x : set , x = x.
+Axiom eq_sym : forall x y , x = y -> y = x.
+Axiom eq_trans : forall x y z , x = y -> y = z -> x = z.
+Axiom func_congr : forall f : set -> set , forall x y : set , x = y -> f x = f y.
+Axiom real_leq_antisym : forall x y :e real , x <= y -> y <= x -> x = y.
+Axiom least_upper_bound_unique : forall f : set -> set , forall s t :e real , is_least_upper_bound f s -> is_least_upper_bound f t -> s = t.
+Axiom summable_unique_lub : forall f : set -> set , summable f -> forall s t :e real , is_least_upper_bound f s -> is_least_upper_bound f t -> s = t.
+Axiom sum_nat_spec : forall f : set -> set , summable f -> sum_nat f :e real /\ is_least_upper_bound f (sum_nat f).
+Axiom sum_nat_real : forall f : set -> set , summable f -> sum_nat f :e real.
+Axiom sum_nat_is_least_upper_bound : forall f : set -> set , summable f -> is_least_upper_bound f (sum_nat f).
+Axiom partial_sum_zero : forall n :e omega , partial_sum (fun n => 0) n = 0.
+Axiom partial_sum_pair_zero : forall a b :e real , partial_sum (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) 0 = a.
+Axiom partial_sum_pair_succ : forall a b :e real , forall n :e omega , partial_sum (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (ordsucc n) = a + b.
+Axiom pair_is_least_upper_bound : forall a b :e real , 0 <= b -> is_least_upper_bound (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) (a + b).
+Axiom sum_nat_zero : sum_nat (fun n => 0) = 0.
+Axiom sum_nat_pair : forall a b :e real , 0 <= b -> sum_nat (fun n => If_i (n = 0) a (If_i (n = 1) b 0)) = a + b.
+Definition is_field : set -> set -> prop := fun Omega F => (forall A :e F , A c= Omega) /\ Omega :e F /\ Empty :e F /\ (forall A :e F , (Omega :\: A) :e F) /\ (forall A B , A :e F -> B :e F -> (A :\/: B) :e F).
+Axiom field_has_omega : forall Omega F , is_field Omega F -> Omega :e F.
+Axiom field_complement_closed : forall Omega F A , is_field Omega F -> A :e F -> (Omega :\: A) :e F.
+Axiom field_subset : forall Omega F A , is_field Omega F -> A :e F -> A c= Omega.
+Axiom field_closed_under_intersection : forall Omega F A B , is_field Omega F -> A :e F -> B :e F -> (A :/\: B) :e F.
+Definition is_sigma_field : set -> set -> prop := fun Omega F => is_field Omega F /\ (forall f : set -> set , (forall n :e omega , f n :e F) -> bigcup_nat f :e F).
+Axiom sigma_field_is_field : forall Omega F , is_sigma_field Omega F -> is_field Omega F.
+Definition is_probability_measure : set -> set -> (set -> set) -> prop := fun Omega F P => is_sigma_field Omega F /\ ((forall A :e F , P A :e real /\ 0 <= P A) /\ (P Omega = 1 /\ (P Empty = 0 /\ (forall f : set -> set , (forall n :e omega , f n :e F) -> pairwise_disjoint f -> P (bigcup_nat f) = sum_nat (fun n => P (f n)))))).
+Axiom prob_value_real : forall Omega F , forall P : set -> set , is_probability_measure Omega F P -> forall A :e F , P A :e real.
+Axiom prob_measure_is_sigma_field : forall Omega F , forall P : set -> set , is_probability_measure Omega F P -> is_sigma_field Omega F.
+Axiom prob_empty_zero : forall Omega F , forall P : set -> set , is_probability_measure Omega F P -> P Empty = 0.
+Axiom prob_finite_additivity : forall Omega F , forall P : set -> set , forall A B , is_probability_measure Omega F P -> A :e F -> B :e F -> Disjoint A B -> P (A :\/: B) = P A + P B.
+Axiom prob_monotone : forall Omega F , forall P : set -> set , forall A B , is_probability_measure Omega F P -> A :e F -> B :e F -> A c= B -> P A <= P B.
+Axiom prob_complement : forall Omega F , forall P : set -> set , forall A , is_probability_measure Omega F P -> A :e F -> P (Omega :\: A) = 1 + - P A.
+Axiom prob_union_bound : forall Omega F , forall P : set -> set , forall A B , is_probability_measure Omega F P -> A :e F -> B :e F -> P (A :\/: B) <= P A + P B.
+Definition conditional_prob : set -> (set -> set) -> set -> set -> set := fun Omega P A B => If_i (0 < P B) (P (A :/\: B) :/: P B) 0.
+Axiom conditional_prob_real : forall Omega , forall P : set -> set , forall A B , conditional_prob Omega P A B :e real.
+Axiom product_rule : forall Omega F , forall P : set -> set , forall A B , is_probability_measure Omega F P -> A :e F -> B :e F -> 0 < P B -> P (A :/\: B) = P B * conditional_prob Omega P A B.
+Axiom bayes_theorem : forall Omega F , forall P : set -> set , forall A B , is_probability_measure Omega F P -> A :e F -> B :e F -> 0 < P A -> 0 < P B -> conditional_prob Omega P A B = (conditional_prob Omega P B A * P A) :/: (P B).
+Axiom total_probability_binary : forall Omega F , forall P : set -> set , forall A B , is_probability_measure Omega F P -> A :e F -> B :e F -> 0 < P B -> 0 < P (Omega :\: B) -> P A = P (A :/\: B) + P (A :/\: (Omega :\: B)).
+Axiom total_probability_binary_conditional : forall Omega F , forall P : set -> set , forall A B , is_probability_measure Omega F P -> A :e F -> B :e F -> 0 < P B -> 0 < P (Omega :\: B) -> P A = conditional_prob Omega P A B * P B + conditional_prob Omega P A (Omega :\: B) * P (Omega :\: B).
+Definition independent_events : set -> (set -> set) -> set -> set -> prop := fun Omega P A B => P (A :/\: B) = P A * P B.
+Axiom independent_events_elim : forall Omega , forall P : set -> set , forall A B , independent_events Omega P A B -> P (A :/\: B) = P A * P B.
+Axiom independent_events_intro : forall Omega , forall P : set -> set , forall A B , P (A :/\: B) = P A * P B -> independent_events Omega P A B.
+Definition independent_events_3 : set -> (set -> set) -> set -> set -> set -> prop := fun Omega P A B C => independent_events Omega P A B /\ independent_events Omega P A C /\ independent_events Omega P B C /\ P (A :/\: B :/\: C) = P A * P B * P C.
+Axiom independence_sym : forall Omega , forall P : set -> set , forall A B , independent_events Omega P A B -> independent_events Omega P B A.
+Axiom independent_implies_conditional : forall Omega F , forall P : set -> set , forall A B , is_probability_measure Omega F P -> A :e F -> B :e F -> 0 < P B -> independent_events Omega P A B -> conditional_prob Omega P A B = P A.
+Axiom independent_complement : forall Omega F , forall P : set -> set , forall A B , is_probability_measure Omega F P -> A :e F -> B :e F -> independent_events Omega P A B -> independent_events Omega P A (Omega :\: B).
+Axiom power_is_field : forall Omega , is_field Omega (Power Omega).
+Axiom power_is_sigma_field : forall Omega , is_sigma_field Omega (Power Omega).

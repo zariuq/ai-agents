@@ -129,7 +129,8 @@ to all positive $(m_x, m_y)$.
 When does an algebraic functional equation have a unique ``nice'' solution?
 Cauchy-type equations $f(x+y)=f(x)+f(y)$ and their multiplicative variants admit
 pathological solutions (Hamel bases) unless a regularity hypothesis is imposed:
-measurability, monotonicity, or continuity at a point suffice.
+measurability, monotonicity, or continuity at a point suffice; see standard references such as
+\cite{Aczel1966,Kuczma2009}.
 
 \textbf{Where it applies:}
 \begin{itemize}
@@ -164,7 +165,8 @@ A recurring subtlety in algebraic foundations is that \emph{functional equations
 unless one imposes a ``regularity gate''.
 For example, the additive Cauchy equation admits wildly discontinuous solutions (via Hamel bases).
 However, once one requires \emph{order preservation} (fidelity/monotonicity), these pathologies disappear:
-any monotone additive map on $\mathbb{R}$ is necessarily linear, hence continuous.
+any monotone additive map on $\mathbb{R}$ is necessarily linear, hence continuous
+(see e.g.\ \cite{Aczel1966,Kuczma2009}).
 In other words: once the sum rule has been regraded to real addition, the only coordinate changes that
 preserve both the sum rule and order are affine transformations.
 \end{remark}
@@ -515,6 +517,8 @@ condition to a global functional equation.
 
 \subsection{Regularity gates for Cauchy-type equations}
 
+See \cite{Aczel1966,Kuczma2009} for classical proofs that the gates below exclude Hamel-basis solutions.
+
 \begin{table}[h]
 \centering
 \begin{tabular}{|l|l|l|}
@@ -531,6 +535,31 @@ Continuous at one point & smoothing / convolution heuristics & implies measurabi
 \caption{Standard ``regularity gates'' that make Cauchy's equation rigid.}
 \end{table}
 
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{3.0cm}|p{3.0cm}|p{4.2cm}|p{4.6cm}|}
+\hline
+\textbf{Route} & \textbf{Gate~G (Globality)} & \textbf{Gate~R (Regularity)} & \textbf{Forced normal form} \\
+\hline
+K\&S Appendix C (Path B $\to$ Path A) &
+Universality / richness premise upgrades stationarity to a global equation &
+Measurability of $H'$ (e.g.\ $H'=\mathrm{deriv}\,H$) excludes Hamel solutions &
+$H'(m)=B+C\log m$ and thus $H(m)=A+Bm+C(m\log m - m)$ \\
+\hline
+Shore--Johnson (Path C) &
+System-independence tests extract a multiplicative Cauchy equation for $g(q)=d(1,q)$ &
+Measurability/continuity/monotonicity of $g$ yields $g(q)=C\log q$ &
+$d(p,q)=C\,p\log(p/q)$ (KL atom) and hence KL divergence \\
+\hline
+Faddeev / Shannon--Khinchin (axioms on finite distributions) &
+N/A (global axioms) &
+Continuity / expansibility-type axioms exclude exotic solutions &
+$H(p)=-K\sum_i p_i \log p_i$ (up to constant/log base) \\
+\hline
+\end{tabular}
+\caption{Entropy/KL derivations share the same two logical gates: a globality premise (Gate~G) and a regularity gate (Gate~R).}
+\end{table}
+
 \begin{remark}[What Gate~R excludes---necessity witness]
 Without a regularity gate, Cauchy's equation $f(x+y)=f(x)+f(y)$ admits uncountably many solutions.
 \textbf{Example (pathological solutions):} Let $\mathcal{B}$ be a Hamel basis for $\mathbb{R}$ over $\mathbb{Q}$.
@@ -542,7 +571,8 @@ on every interval, and non-measurable.  Any regularity gate kills these patholog
 
 \subsection{Solving the variational functional equation}
 
-The classification step is a standard rigidity phenomenon for Cauchy-type functional equations.
+The classification step is a standard rigidity phenomenon for Cauchy-type functional equations; see
+\cite{Aczel1966,Kuczma2009}.
 
 \begin{theorem}[Variational representation]
 \textbf{Assumptions:}
@@ -741,6 +771,17 @@ Each foundation makes different choices about what to assume and what to derive:
   procedures, given a measurability hypothesis. \cite{ShoreJohnson1980}
 \end{itemize}
 
+Algorithmic probability (Solomonoff induction) is complementary in a different sense: it does not
+aim to derive the probability calculus, but rather to provide a canonical \emph{assignment} of prior
+weight by summing $2^{-|p|}$ over programs whose output has a given prefix.  The resulting universal
+object is naturally a \emph{semimeasure} on prefixes, satisfying $M(x) \ge M(x0)+M(x1)$; the ``missing
+mass'' corresponds to non-continuation/halting after $x$.  Nonetheless it induces honest predictive
+distributions (either by conditioning on continuation or by adjoining a third ``halt'' outcome), and
+its universality/dominance theorem under standard computability hypotheses yields convergence and regret
+bounds in log-loss, placing
+Kullback--Leibler divergence at the shared information-theoretic ``gate'' between algebraic
+structure and algorithmic assignment. \cite{Solomonoff1964,Hutter2005}
+
 The approaches that \emph{derive} the calculus (Cox, K\&S, Shore--Johnson) all face the same
 mathematical issue: functional equations admit pathological Hamel-basis solutions unless a
 regularity hypothesis excludes them.  A careful foundation keeps this gate visible.
@@ -845,6 +886,17 @@ D. K. Faddeev.
 \textit{On the concept of entropy of a finite probabilistic scheme}.
 Uspekhi Mat. Nauk, 11(1):227--231, 1956.
 
+\bibitem{Aczel1966}
+J.~Acz\'el.
+\textit{Lectures on Functional Equations and Their Applications}.
+Academic Press, New York, 1966.
+
+\bibitem{Kuczma2009}
+M.~Kuczma.
+\textit{An Introduction to the Theory of Functional Equations and Inequalities: Cauchy's Equation and Jensen's Inequality}.
+2nd ed., edited by A.~Gil\'anyi.
+Birkh\"auser, Basel, 2009.
+
 \bibitem{Alimov1950}
 N.~G. Alimov.
 On ordered semigroups.
@@ -885,6 +937,16 @@ Chapman \& Hall, 1991.
 Bruno de~Finetti.
 \textit{Theory of Probability} (2 vols).
 Wiley, 1974--1975.
+
+\bibitem{Solomonoff1964}
+Ray~J. Solomonoff.
+\textit{A Formal Theory of Inductive Inference. Part I and Part II}.
+Information and Control, 7(1):1--22 and 7(2):224--254, 1964.
+
+\bibitem{Hutter2005}
+Marcus Hutter.
+\textit{Universal Artificial Intelligence: Sequential Decisions Based on Algorithmic Probability}.
+Springer, 2005.
 
 \end{thebibliography}
 

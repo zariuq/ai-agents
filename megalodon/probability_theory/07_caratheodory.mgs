@@ -1,0 +1,36 @@
+Definition sigma_generated : set -> set -> set := fun Omega F => Eps_i (fun G => is_sigma_field Omega G /\ F c= G /\ (forall H , is_sigma_field Omega H -> F c= H -> G c= H)).
+Definition is_premeasure : set -> set -> (set -> set) -> prop := fun Omega F mu => is_field Omega F /\ ((forall A :e F , mu A :e real /\ 0 <= mu A) /\ (mu Empty = 0 /\ (forall f : set -> set , (forall n :e omega , f n :e F) -> pairwise_disjoint f -> bigcup_nat f :e F -> mu (bigcup_nat f) = series_sum (fun n => mu (f n))))).
+Definition is_measure_extension : set -> set -> (set -> set) -> (set -> set) -> prop := fun Omega F mu mu_ext => is_premeasure Omega F mu /\ is_probability_measure Omega (sigma_generated Omega F) mu_ext /\ (forall A :e F , mu_ext A = mu A).
+Axiom premeasure_is_field : forall Omega F , forall mu : set -> set , is_premeasure Omega F mu -> is_field Omega F.
+Axiom premeasure_empty : forall Omega F , forall mu : set -> set , is_premeasure Omega F mu -> mu Empty = 0.
+Axiom premeasure_value_real : forall Omega F , forall mu : set -> set , is_premeasure Omega F mu -> forall A :e F , mu A :e real.
+Axiom premeasure_nonneg : forall Omega F , forall mu : set -> set , is_premeasure Omega F mu -> forall A :e F , 0 <= mu A.
+Axiom premeasure_countable_additivity : forall Omega F , forall mu : set -> set , is_premeasure Omega F mu -> forall f : set -> set , (forall n :e omega , f n :e F) -> pairwise_disjoint f -> bigcup_nat f :e F -> mu (bigcup_nat f) = series_sum (fun n => mu (f n)).
+Axiom caratheodory_measurable_complement : forall Omega , forall mu : set -> set , forall A , caratheodory_measurable Omega mu A -> caratheodory_measurable Omega mu (Omega :\: A).
+Axiom measurable_set_complement : forall Omega , forall mu : set -> set , forall A , measurable_set Omega mu A -> measurable_set Omega mu (Omega :\: A).
+Axiom caratheodory_measurable_empty : forall Omega , forall mu : set -> set , is_outer_measure Omega mu -> caratheodory_measurable Omega mu Empty.
+Axiom caratheodory_measurable_omega : forall Omega , forall mu : set -> set , is_outer_measure Omega mu -> caratheodory_measurable Omega mu Omega.
+Axiom measurable_set_empty : forall Omega , forall mu : set -> set , is_outer_measure Omega mu -> measurable_set Omega mu Empty.
+Axiom measurable_set_omega : forall Omega , forall mu : set -> set , is_outer_measure Omega mu -> measurable_set Omega mu Omega.
+Axiom caratheodory_measurable_intersection : forall Omega , forall mu : set -> set , forall A B , caratheodory_measurable Omega mu A -> caratheodory_measurable Omega mu B -> caratheodory_measurable Omega mu (A :/\: B).
+Axiom measurable_set_intersection : forall Omega , forall mu : set -> set , forall A B , measurable_set Omega mu A -> measurable_set Omega mu B -> measurable_set Omega mu (A :/\: B).
+Axiom caratheodory_measurable_union : forall Omega , forall mu : set -> set , forall A B , caratheodory_measurable Omega mu A -> caratheodory_measurable Omega mu B -> caratheodory_measurable Omega mu (A :\/: B).
+Axiom measurable_set_union : forall Omega , forall mu : set -> set , forall A B , measurable_set Omega mu A -> measurable_set Omega mu B -> measurable_set Omega mu (A :\/: B).
+Axiom measurable_family_is_field : forall Omega , forall mu : set -> set , is_outer_measure Omega mu -> is_field Omega (measurable_family Omega mu).
+Axiom caratheodory_measurable_setminus : forall Omega , forall mu : set -> set , forall A B , caratheodory_measurable Omega mu A -> caratheodory_measurable Omega mu B -> caratheodory_measurable Omega mu (A :\: B).
+Axiom measurable_set_setminus : forall Omega , forall mu : set -> set , forall A B , measurable_set Omega mu A -> measurable_set Omega mu B -> measurable_set Omega mu (A :\: B).
+Axiom caratheodory_measurable_disjoint_add : forall Omega , forall mu : set -> set , forall A B , caratheodory_measurable Omega mu A -> B c= Omega -> Disjoint A B -> mu (A :\/: B) = mu A + mu B.
+Axiom measurable_set_disjoint_add : forall Omega , forall mu : set -> set , forall A B , measurable_set Omega mu A -> measurable_set Omega mu B -> Disjoint A B -> mu (A :\/: B) = mu A + mu B.
+Axiom measurable_set_monotone : forall Omega , forall mu : set -> set , forall A B , is_outer_measure Omega mu -> measurable_set Omega mu A -> B c= Omega -> A c= B -> mu A <= mu B.
+Axiom caratheodory_measurable_union_add_intersection : forall Omega , forall mu : set -> set , forall A B , caratheodory_measurable Omega mu A -> B c= Omega -> mu (A :\/: B) + mu (A :/\: B) = mu A + mu B.
+Axiom measurable_set_union_add_intersection : forall Omega , forall mu : set -> set , forall A B , measurable_set Omega mu A -> measurable_set Omega mu B -> mu (A :\/: B) + mu (A :/\: B) = mu A + mu B.
+Axiom bigcup_nat_subset : forall Omega , forall f : set -> set , (forall n :e omega , f n c= Omega) -> bigcup_nat f c= Omega.
+Axiom bigcup_fin_subset : forall Omega , forall f : set -> set , forall n , (forall i :e n , f i c= Omega) -> bigcup_fin f n c= Omega.
+Axiom bigcup_fin_1 : forall f : set -> set , bigcup_fin f 1 = f 0.
+Axiom bigcup_fin_succ : forall f : set -> set , forall n , bigcup_fin f (ordsucc n) = bigcup_fin f n :\/: f n.
+Axiom bigcup_fin_subset_bigcup_nat : forall f : set -> set , forall n :e omega , bigcup_fin f n c= bigcup_nat f.
+Axiom bigcup_fin_measurable : forall Omega , forall mu : set -> set , is_outer_measure Omega mu -> forall f : set -> set , (forall n :e omega , measurable_set Omega mu (f n)) -> forall n :e omega , measurable_set Omega mu (bigcup_fin f n).
+Axiom pairwise_disjoint_bigcup_fin_disjoint_succ : forall f : set -> set , forall n :e omega , pairwise_disjoint f -> Disjoint (bigcup_fin f (ordsucc n)) (f (ordsucc n)).
+Axiom measurable_set_bigcup_fin_disjoint_sum : forall Omega , forall mu : set -> set , is_outer_measure Omega mu -> forall f : set -> set , (forall n :e omega , measurable_set Omega mu (f n)) -> pairwise_disjoint f -> forall n :e omega , mu (bigcup_fin f (ordsucc n)) = partial_sum (fun k => mu (f k)) n.
+Axiom measurable_set_bigcup_fin_le_bigcup_nat : forall Omega , forall mu : set -> set , is_outer_measure Omega mu -> forall f : set -> set , (forall n :e omega , measurable_set Omega mu (f n)) -> pairwise_disjoint f -> forall n :e omega , partial_sum (fun k => mu (f k)) n <= mu (bigcup_nat f).
+Axiom measurable_set_countable_additivity_disjoint : forall Omega , forall mu : set -> set , is_outer_measure Omega mu -> forall f : set -> set , (forall n :e omega , measurable_set Omega mu (f n)) -> pairwise_disjoint f -> summable (fun n => mu (f n)) -> mu (bigcup_nat f) = series_sum (fun n => mu (f n)).
