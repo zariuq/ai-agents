@@ -75,6 +75,7 @@ import Mettapedia.Logic.PLNFrechetBounds
 import Mettapedia.Logic.PLNQuantaleConnection
 import Mettapedia.Logic.PLNEnrichedCategory
 import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.PLN_KS_Bridge
 import Mettapedia.Logic.PLNDeductionComposition
 import Mettapedia.Logic.TemporalQuantale
 

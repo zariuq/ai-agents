@@ -293,5 +293,4 @@ convergence theorems - we just need to instantiate them for our specific case.
 
 -/
 
--- Placeholder to make this a valid Lean file
-example : True := trivial
+-- NOTE: This file is currently a prose roadmap; it intentionally contains no Lean declarations.

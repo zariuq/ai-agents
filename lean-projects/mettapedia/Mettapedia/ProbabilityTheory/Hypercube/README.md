@@ -14,6 +14,53 @@ The probability hypercube is a geometric framework for understanding relationshi
 
 **Key Insight**: The presence or absence of **commutativity** in orthomodular lattices determines the classical/quantum boundary. Commuting elements generate Boolean (classical) sublattices within the quantum structure.
 
+## Domains: Knowing Which Reasoning Applies
+
+The hypercube is not just a taxonomy of "probability theories"; it is a way to keep track of which
+*properties of your domain* are required for which styles of reasoning.
+
+### The Totality / Linear-Order Gate (Why Point-Valued Probability Needs Comparability)
+
+If you want a **faithful point-valued representation** (a map `Θ : α → ℝ` that preserves *and
+reflects* `≤`), then your plausibility order must already be **total**: every pair must be
+comparable. Otherwise, no such `Θ` can exist, because `ℝ` is linearly ordered.
+
+This is formalized in:
+- `Mettapedia/ProbabilityTheory/KnuthSkilling/Core/TotalityImprecision.lean`:
+  - `totality_of_faithfulPointRepresentation` (faithful point reps force totality)
+  - `no_pointRepresentation_with_incomparables` (incomparables rule out any faithful `Θ : α → ℝ`)
+
+Interpretation: **Linear order is not cosmetic** in the K&S-style representation theorems; it is
+exactly the condition that makes point-valued (precise) semantics possible.
+
+### Evidence/Quantale Semantics (PLN) Lives on the "Partial-Order" Face
+
+PLN’s evidence-count carrier `Evidence := (n⁺, n⁻)` has a natural **partial order**
+(coordinatewise `≤`). It contains incomparable elements (e.g. "more positive evidence but less
+negative evidence"), so it cannot admit a faithful point-valued embedding into `ℝ`.
+
+In this setting:
+- you should *not* expect a point-valued Kolmogorov calculus to be valid "for free";
+- projections like `toStrength : Evidence → [0,1]` are intentionally **non-faithful** (they collapse
+  distinct evidence states), so they should be treated as a *view* or *forgetful map*, not an
+  identification of theories.
+
+See:
+- `Mettapedia/Logic/PLNEvidence.lean` (evidence counts, Heyting/Frame structure, `toStrength`)
+
+### Practical Takeaway
+
+When you choose a reasoning calculus, you are choosing (often implicitly) what structure you
+assume about the domain:
+
+- Domains with **total comparability** support **precise point-valued** probability (and hence the
+  usual Bayes/product/sum calculus).
+- Domains with **incomparability** naturally lead to **imprecise / interval** semantics (credal
+  sets) or **evidence-valued** semantics (PLN-style), rather than point probabilities.
+
+This is exactly what the `orderAxis` / `precision` axes in `Basic.lean` are for: they make the
+"domain gate" explicit and machine-checkable.
+
 ## Primary References
 
 ### Knuth-Skilling Framework

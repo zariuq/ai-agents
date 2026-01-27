@@ -11,8 +11,9 @@ This file implements the **canonical quantale carrier** for PLN: evidence counts
 
 ## The Key Insight (from GPT-5 Pro review)
 
-Instead of trying to make `[0,1]` a quantale (which fails because sup might exceed 1),
-we use **evidence counts** `(n⁺, n⁻) ∈ ℝ≥0∞ × ℝ≥0∞` as the carrier:
+Instead of trying to use `[0,1]` as the foundational carrier (where aggregating independent
+evidence additively can exceed 1), we use **evidence counts**
+`(n⁺, n⁻) ∈ ℝ≥0∞ × ℝ≥0∞` as the carrier:
 
 - `n⁺` = positive evidence (supports the proposition)
 - `n⁻` = negative evidence (refutes the proposition)

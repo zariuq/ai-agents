@@ -26,7 +26,7 @@
 \newcommand{\LeanFile}[1]{\footnote{\textbf{Lean}: \path{#1}.}}
 
 \title{Algebraic Foundations of Inference:\\From Order and Symmetry to Probability and Entropy}
-\author{Codex 5.2, Claude 4.5, Zar Goertzel\thanks{This document was drafted collaboratively by humans and AI systems (GPT/Codex, Claude). While formal claims are machine-checked in Lean 4, prose descriptions may contain human or AI hallucinations. Caveat lector.}}
+\author{Codex 5.2, Claude 4.5, Zar Goertzel\thanks{This document was drafted collaboratively by humans and AI systems (GPT/Codex, Claude). While formal claims are machine-checked in Lean 4, prose descriptions may contain human or AI hallucinations. Caveat lector. Thanks to Eray \"Ozkural for engaging in discussions about the interesting progress of these foundational explorations with me.}}
 \date{\today}
 
 \begin{document}
@@ -263,12 +263,12 @@ x^{(0)} := 0,\qquad x^{(n+1)} := x \oplus x^{(n)}.
 When $\oplus$ is (regraded to) real addition, $x^{(n)}$ is just $n\cdot x$.
 \end{definition}
 
-\subsection{The density axiom: no anomalous pairs (Alimov--H\"older)}
+\subsection{The density axiom: no anomalous pairs (Alimov)}
 
 Associativity and monotonicity are not enough to force an additive real representation.
 One also needs an \emph{Archimedean/density} condition ruling out infinitesimal gaps.
 
-The classical formulation, due to Alimov~\cite{Alimov1950} building on H\"older~\cite{Holder1901},
+The classical formulation, due to Alimov~\cite{Alimov1950},
 is the \emph{no anomalous pairs} condition.
 
 \begin{definition}[Anomalous pair]
@@ -324,30 +324,32 @@ In a linearly ordered monoid where the identity $0$ is the minimum:
 
 \begin{theorem}[Bilateral Separation $\Leftrightarrow$ NAP]
 \label{thm:sep-nap-general}
-In a linearly ordered monoid with strict monotonicity (without assuming identity is minimum),
-define \emph{bilateral separation}:
+In a linearly ordered semigroup with strict monotonicity, call an element $a$ \emph{positive}
+if $x < a \oplus x$ for all $x$ (i.e., left-multiplying by $a$ increases everything), and
+\emph{negative} if $a \oplus x < x$ for all $x$. Define \emph{bilateral separation}:
 \begin{itemize}
-\item \textbf{(Positive)} For $0 < a$ and $0 < x < y$: $\exists\, m>0,\, n\ge 0$ with $x^{(m)} < a^{(n)} \le y^{(m)}$.
-\item \textbf{(Negative)} For $a < 0$ and $x < y < 0$: $\exists\, m>0,\, n\ge 0$ with $x^{(m)} < a^{(n)} \le y^{(m)}$.
+\item \textbf{(Positive cone)} For positive $a, x, y$ with $x < y$: $\exists\, m, n > 0$ with $x^{(m)} < a^{(n)} \le y^{(m)}$.
+\item \textbf{(Negative cone)} For negative $a, x, y$ with $x < y$: $\exists\, m, n > 0$ with $x^{(m)} < a^{(n)} \le y^{(m)}$.
 \end{itemize}
 Then: \textbf{NAP $\Leftrightarrow$ Bilateral Separation.}
 
-The key constraint is that $a$, $x$, $y$ must lie on the \emph{same side} of identity;
-cross-sign sandwiching is impossible since rationals cannot approximate sign-mismatched ratios.
+The key constraint is that $a$, $x$, $y$ must lie in the \emph{same cone};
+cross-cone sandwiching is impossible since rationals cannot approximate sign-mismatched ratios.
 \end{theorem}
 
 \begin{theorem}[Separation forces commutativity]
 \label{thm:separation-commutativity}
-In a linearly ordered scale with strict monotonicity, separation implies:
+In a linearly ordered semigroup with strict monotonicity, separation implies:
 \begin{enumerate}
-\item \textbf{Archimedean growth:} for any $0<a$ and any $x$, some iterate $a^{(n)}$ exceeds $x$;
+\item \textbf{Archimedean growth:} for any positive $a$ and any $x$, some iterate $a^{(n)}$ exceeds $x$;
 \item \textbf{Commutativity:} $x\oplus y = y\oplus x$ (so commutativity need not be assumed).
 \end{enumerate}
 \end{theorem}
 
 \begin{remark}
-In probability applications, identity represents impossibility ($\bot$) and is the minimum of the order,
-so the negative branch of bilateral separation is vacuously satisfied.
+In probability applications, identity exists and is the minimum of the order. Then ``positive''
+coincides with ``above identity,'' and no negative elements exist---so the negative cone is empty
+and bilateral separation reduces to standard (one-sided) separation.
 \end{remark}
 
 \subsection{Representation theorem: the additive coordinate}

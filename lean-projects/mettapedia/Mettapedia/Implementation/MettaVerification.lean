@@ -75,7 +75,7 @@ exact mathematical formula derived in `PLNDerivation`.
 -/
 
 theorem metta_deduction_correct (env : Env)
-    (hB : env "sB" ≠ 1) :
+    (_hB : env "sB" ≠ 1) :
     eval env deductionCode =
       plnDeductionStrength (env "sAB") (env "sBC") (env "sB") (env "sC") := by
   -- Unfold the evaluation of the AST
@@ -95,7 +95,7 @@ def smallestInterCode : MettaExpr :=
   .Div (.Sub (.Add (.Var "sA") (.Var "sB")) (.Const 1)) (.Var "sA")
   -- Note: We verify the inner math; clamp is a separate logic
 
-theorem smallest_intersection_correct (env : Env) (hA : env "sA" ≠ 0) :
+theorem smallest_intersection_correct (env : Env) (_hA : env "sA" ≠ 0) :
     eval env smallestInterCode = (env "sA" + env "sB" - 1) / env "sA" := by
   simp [smallestInterCode, eval]
 

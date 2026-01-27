@@ -93,7 +93,7 @@ We present a complete formalization in Lean 4 of Knuth \& Skilling's axiomatic f
 Their approach derives the probability calculus, measure theory, and information theory from elementary symmetries, without assuming continuity or differentiability.
 Our formalization makes explicit the implicit assumptions in their derivation, provides \textbf{three independent proof paths} for the main representation theorem (grid-based induction, Dedekind cuts, and H\"older embedding), and extends their framework to handle independence and product measures.
 We demonstrate K\&S's claim that the framework applies to non-Boolean distributive lattices (chains, open sets of $\mathbb{R}$).
-A key finding: the \textbf{NoAnomalousPairs} condition (from classical ordered semigroup theory) is the weakest assumption sufficient for the representation theorem, via Eric Luap's formalized H\"older embedding.
+A key finding: the \textbf{NoAnomalousPairs} condition (from classical ordered semigroup theory) is sufficient for the representation theorem, via Eric Luap's formalized H\"older embedding.
 \end{abstract}
 
 \tableofcontents
@@ -133,7 +133,7 @@ We formalize K\&S Appendices A and B in Lean 4, providing:
   \item H\"older embedding via Eric Luap's OrderedSemigroups library
   \end{enumerate}
 \item Explicit treatment of implicit assumptions (linear order, separation property)
-\item Discovery of the \textbf{NoAnomalousPairs} condition as the weakest sufficient assumption
+\item Connection to the classical \textbf{NoAnomalousPairs} condition (Alimov 1950)
 \item Non-Boolean examples demonstrating genuine generality
 \item Extensions to handle independence and products
 \item Counterexamples showing necessity of assumptions
@@ -319,7 +319,7 @@ theorem associativity_representation_cuts
       ∀ x y : α, Θ (op x y) = Θ x + Θ y
 \end{lstlisting}
 
-\subsubsection{Approach 3: H\"older Embedding (Weakest Assumptions)}
+\subsubsection{Approach 3: H\"older Embedding (Classical Route)}
 
 \textbf{Assumptions}: \texttt{NoAnomalousPairs} only!
 
@@ -333,10 +333,10 @@ theorem associativity_representation_cuts
 
 \textbf{Files}: \texttt{Separation/HolderEmbedding.lean} ($\sim$320 lines) + Eric's library ($\sim$1500 lines)
 
-\textbf{Pros}: \textbf{Weakest assumptions}; shortest local code; most elegant \\
+\textbf{Pros}: Classical assumptions; shortest local code; most elegant \\
 \textbf{Cons}: Depends on external library
 
-\begin{lstlisting}[caption={H\"older-based representation theorem (weakest assumptions)}]
+\begin{lstlisting}[caption={H\"older-based representation theorem (classical route)}]
 theorem representation_from_noAnomalousPairs
     (α : Type*) [KnuthSkillingAlgebraBase α] [NoAnomalousPairs α] :
     ∃ Θ : α → ℝ,
@@ -376,7 +376,7 @@ theorem noAnomalousPairs_of_KSSeparation_with_IdentMin
 \hline
 Local lines of code & $\sim$4000 & $\sim$1100 & $\sim$420 \\
 Total lines (incl.\ deps) & $\sim$4000 & $\sim$1100 & $\sim$1900 \\
-Assumptions & Medium & Medium+ & \textbf{Weakest} \\
+Assumptions & Medium & Medium+ & \textbf{Classical} \\
 Self-contained & \checkmark & \checkmark & -- \\
 Follows K\&S paper & \checkmark & partial & -- \\
 Conceptual clarity & Low & Medium & \textbf{High} \\
@@ -826,7 +826,7 @@ Eric Luap's Lean 4 formalization of this classical theory provides a clean, mini
 
 \textbf{Practical recommendation}: For new formalizations building on K\&S, the H\"older approach is preferred:
 \begin{itemize}
-\item Uses the weakest assumptions (\texttt{NoAnomalousPairs} only)
+\item Uses classical assumptions (\texttt{NoAnomalousPairs} only)
 \item Shortest local codebase ($\sim$420 lines vs.\ $\sim$4000 for grid approach)
 \item Most mathematically elegant
 \item Leverages Eric Luap's battle-tested library
@@ -907,7 +907,7 @@ For the representation theorem, we have three tiers of assumptions:
 
 \textbf{Tier 2 (Regularity---one of the following):}
 \begin{itemize}
-\item \textbf{NoAnomalousPairs} (weakest, used by H\"older approach)
+\item \textbf{NoAnomalousPairs} (classical, used by H\"older approach)
 \item \textbf{KSSeparation} (K\&S's implicit assumption, used by grid/cuts approaches)
 \item \textbf{KSSeparation + KSSeparationStrict} (strongest, used by cuts approach)
 \end{itemize}
@@ -924,7 +924,7 @@ From \texttt{NoAnomalousPairs} alone, we \emph{derive}:
 \item Additive representation $\Theta : \alpha \to \mathbb{R}$
 \end{itemize}
 
-\textbf{Key finding}: \texttt{NoAnomalousPairs} is sufficient and is the \emph{weakest} known condition for the representation theorem.
+\textbf{Key finding}: \texttt{NoAnomalousPairs} is sufficient for the representation theorem and connects to classical ordered semigroup theory.
 
 \section{Philosophical Context: Cox, Kolmogorov, and K\&S}
 \label{app:philosophy}
@@ -1086,8 +1086,8 @@ The representation theorem fits within a classical tradition of embedding theore
 \textbf{Theorem} & \textbf{Structure} & \textbf{Result} \\
 \hline
 H\"older (1901) & Archimedean ordered abelian groups & Embed in $(\mathbb{R}, +)$ \\
-Alimov (1950) & Cancellative ordered semigroups & Embed in $(\mathbb{R}, +)$ \\
-Fuchs (1963) & No anomalous pairs $\Rightarrow$ commutative & Classical text \\
+Alimov (1950) & Cancellative ordered semigroups with NAP & Commutative + embed in $(\mathbb{R}, +)$ \\
+Fuchs (1963) & Textbook treatment of the above & Classical reference \\
 \textbf{Luap (2024)} & \textbf{Lean 4 formalization of the above} & \textbf{OrderedSemigroups} \\
 K\&S + Separation & Ordered monoids with separation & Embed in $(\mathbb{R}, +)$ \\
 \end{tabular}

@@ -465,9 +465,12 @@ theorem inference_triad_unified (s1 s2 s_A s_B s_C : ℝ) :
 
 /-! ## §6: Quantale Connection
 
-The deduction formula is quantale composition in the [0,1] quantale!
-
-See `PLNQuantaleConnection.lean` for the formal development.
+Consistent story:
+- The foundational carrier in this repo is `Evidence := (n⁺, n⁻)` with a partial order and tensor
+  (see `Mettapedia.Logic.PLNEvidence` and `Mettapedia.Logic.PLN_KS_Bridge`).
+- Strength-level `[0,1]` formulas are views/projections of that richer semantics.
+- `PLNQuantaleConnection.lean` is an exploratory strength-level packaging; it is not the canonical
+  foundation.
 
 Key insight: PLN inference rules form a **category enriched over [0,1]**:
 - Objects: Terms/concepts
@@ -475,15 +478,14 @@ Key insight: PLN inference rules form a **category enriched over [0,1]**:
 - Composition: PLN deduction formula
 - Identity: s_AA = 1
 
-This is NOT ad-hoc - it's the probabilistic instance of quantale theory!
+This is not ad-hoc: it is a systematic way to package the compositional structure of the rules,
+with explicit hypotheses controlling when point-valued reasoning is valid.
 -/
 
 /-- PLN forms a category: composition is associative (up to independence assumptions) -/
-theorem pln_composition_assoc (_s_AB _s_BC _s_CD _s_B _s_C _s_D : ℝ)
-    (_h_B : 0 < _s_B ∧ _s_B < 1)
-    (_h_C : 0 < _s_C ∧ _s_C < 1) :
-    -- (A→B ; B→C) ; C→D vs A→B ; (B→C ; C→D)
-    -- These are approximately equal under independence assumptions
-    True := trivial  -- Placeholder; see PLNQuantaleConnection for full proof
+theorem plnDeductionSimplified_assoc (s_AB s_BC s_CD : ℝ) :
+    plnDeductionSimplified (plnDeductionSimplified s_AB s_BC) s_CD =
+      plnDeductionSimplified s_AB (plnDeductionSimplified s_BC s_CD) := by
+  simp [plnDeductionSimplified, mul_assoc]
 
 end Mettapedia.Logic.PLNInferenceRules

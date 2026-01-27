@@ -231,15 +231,19 @@ theorem quantum_at_noncomm_vertex :
 These theorems show when additional axioms collapse a weaker theory to a stronger one.
 -/
 
-/-- Adding K&S separation to imprecise probability gives additivity. -/
-theorem separation_collapses_imprecision :
-    ∀ (v : HypercubeVertex),
-      v.commutative = true → v.precise = false →
-      -- With K&S separation axiom...
-      -- the theory collapses to additive
-      True := by
-  intros
-  trivial
+/- TODO: Collapse theorem (Separation ⇒ collapse of imprecision).
+
+The intended content here is a bridge from:
+- an imprecise/credal semantics (PartialOrder / interval-valued representation),
+- plus a K&S-style separation/totality hypothesis,
+to a point-valued additive representation.
+
+This should eventually be backed by the concrete Lean results in:
+- `Mettapedia/ProbabilityTheory/KnuthSkilling/Core/TotalityImprecision.lean`
+- and the KS representation pipeline.
+
+We intentionally do not leave a placeholder theorem of type `True`.
+-/
 
 /-- Commutativity assumption collapses quantum to classical. -/
 theorem commutativity_collapses_quantum :

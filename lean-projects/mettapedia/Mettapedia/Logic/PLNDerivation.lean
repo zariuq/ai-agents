@@ -168,23 +168,34 @@ The PLN independence-based formula is derived under two key assumptions:
 These are the "hidden axioms" that justify the PLN formula.
 -/
 
-/-- Structure capturing the PLN independence assumptions for deduction.
-    This makes explicit what's needed to derive the formula. -/
-structure PLNDeductionContext (s_AB s_BC s_A s_B s_C : ℝ) : Prop where
-  /-- A is not impossible -/
-  hA_pos : 0 < s_A
-  /-- B is not impossible -/
-  hB_pos : 0 < s_B
-  /-- B is not certain -/
-  hB_lt1 : s_B < 1
-  /-- Valid probability bounds -/
-  hAB_valid : 0 ≤ s_AB ∧ s_AB ≤ 1
-  hBC_valid : 0 ≤ s_BC ∧ s_BC ≤ 1
-  hC_valid : 0 ≤ s_C ∧ s_C ≤ 1
-  /-- Positive independence holds -/
-  pos_indep : True  -- Placeholder for the actual condition
-  /-- Negative independence holds -/
-  neg_indep : True  -- Placeholder for the actual condition
+/-- Positive (screening-off) independence used by the PLN deduction derivation:
+`P(C | A ∩ B) = P(C | B)` (in real-valued conditional-probability form). -/
+def posIndep {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ]
+    (A B C : Set Ω) : Prop :=
+  μ.real (C ∩ (A ∩ B)) / μ.real (A ∩ B) = μ.real (C ∩ B) / μ.real B
+
+/-- Negative (screening-off) independence used by the PLN deduction derivation:
+`P(C | A ∩ Bᶜ) = P(C | Bᶜ)` (in real-valued conditional-probability form). -/
+def negIndep {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ]
+    (A B C : Set Ω) : Prop :=
+  μ.real (C ∩ (A ∩ Bᶜ)) / μ.real (A ∩ Bᶜ) = μ.real (C ∩ Bᶜ) / μ.real Bᶜ
+
+/-- A compact “assumption bundle” for the main measure-theoretic deduction theorem.
+
+This packages measurability, nondegeneracy (so the conditional probabilities are meaningful), and
+the two conditional-independence hypotheses used by PLN’s derivation. -/
+structure PLNDeductionMeasureContext {Ω : Type*} [MeasurableSpace Ω]
+    (μ : Measure Ω) [IsProbabilityMeasure μ] (A B C : Set Ω) : Prop where
+  hA : MeasurableSet A
+  hB : MeasurableSet B
+  hC : MeasurableSet C
+  hA_pos : μ A ≠ 0
+  hB_pos : μ B ≠ 0
+  hB_lt1 : μ B < 1
+  hAB_pos : μ (A ∩ B) ≠ 0
+  hABc_pos : μ (A ∩ Bᶜ) ≠ 0
+  pos_indep : posIndep μ A B C
+  neg_indep : negIndep μ A B C
 
 /-! ## Measure-Theoretic Helper Lemmas
 
@@ -298,8 +309,6 @@ The proof strategy is:
 3. Use negative independence: P(C|A,¬B) = P(C|¬B)
 4. Compute P(C|¬B) from total probability: = (s_C - s_B · s_BC) / (1 - s_B)
 5. Substitute and simplify to get the formula.
-
-TODO: Requires proper measure-theoretic setup with conditional probability.
 -/
 theorem pln_deduction_from_total_probability
     {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ]
@@ -523,6 +532,21 @@ theorem pln_deduction_from_total_probability
   -- field_simp will clear denominators and ring will handle the polynomial equality
   field_simp [hA_ne, hB_ne, hBc_ne, h1B_ne]
 
+/-! ### Packaged form
+
+The same theorem, but with hypotheses bundled into `PLNDeductionMeasureContext`. -/
+
+theorem pln_deduction_from_total_probability_ctx
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {A B C : Set Ω} (ctx : PLNDeductionMeasureContext μ A B C) :
+    μ.real (C ∩ A) / μ.real A =
+      plnDeductionStrength (μ.real (B ∩ A) / μ.real A) (μ.real (C ∩ B) / μ.real B)
+                           (μ.real B) (μ.real C) := by
+  simpa [posIndep, negIndep] using
+    (pln_deduction_from_total_probability (μ := μ) (A := A) (B := B) (C := C)
+      ctx.hA ctx.hB ctx.hC ctx.hA_pos ctx.hB_pos ctx.hB_lt1 ctx.hAB_pos ctx.hABc_pos
+      ctx.pos_indep ctx.neg_indep)
+
 /-! ## Bayes Inversion
 
 The key to deriving Induction and Abduction is Bayes' Rule:
@@ -556,10 +580,14 @@ theorem bayesInversion_bounded (s_BA s_A s_B : ℝ)
   rw [div_le_one hA]
   exact h_constraint
 
-/-! ## PLN Induction
+/-! ## PLN Induction (a.k.a. SourceRule, Cospan Completion)
 
 **Induction** infers A → C from B → A and B → C.
 The strategy is: use Bayes to get A → B, then apply deduction.
+
+**Alternative names**:
+- `SourceRule`: B is the common *source* (arrows fan out from B)
+- `CospanCompletion`: B → A, B → C forms a cospan; we complete to A → C
 
 Given:
 - B → A with strength s_{BA}
@@ -671,10 +699,26 @@ theorem plnInduction_nonneg
   · exact h_sB
   · exact h_constraint
 
-/-! ## PLN Abduction
+/-! ### SourceRule Aliases (for Induction)
+
+B is the common *source* - arrows fan out: B → A, B → C.
+Completing the cospan to A → C.
+-/
+
+/-- SourceRule = Induction: B → A, B → C ⊢ A → C (B is the common source) -/
+abbrev plnSourceRuleStrength := plnInductionStrength
+
+/-- SourceRule simplified formula -/
+abbrev plnSourceRuleSimplified := plnInductionSimplified
+
+/-! ## PLN Abduction (a.k.a. SinkRule, Span Completion)
 
 **Abduction** infers A → C from A → B and C → B.
 The strategy is: use Bayes to get B → C, then apply deduction.
+
+**Alternative names**:
+- `SinkRule`: B is the common *sink* (arrows fan in to B)
+- `SpanCompletion`: A → B, C → B forms a span; we complete to A → C
 
 Given:
 - A → B with strength s_{AB}
@@ -782,15 +826,50 @@ theorem plnAbduction_nonneg
   · exact h_sB
   · exact h_constraint
 
+/-- **Abduction is symmetric under uniform priors**: swapping s_AB ↔ s_CB gives the same result
+    when s_A = s_C = s (uniform term probabilities for the non-hub nodes).
+
+    This is because the formula under uniform priors is:
+      s_AB * s_CB + (1 - s_AB) * s * (1 - s_CB) / (1 - s)
+    which is manifestly symmetric in s_AB and s_CB.
+
+    Note: Induction is NOT symmetric even under uniform priors (unless additionally s_BA = s_BC).
+-/
+theorem plnAbduction_symmetric_uniform (s_AB s_CB s s_B : ℝ)
+    (_hs : s ≠ 0) (_hs1 : s < 1) (hsB : s_B ≠ 0) (hsB1 : s_B < 1) :
+    plnAbductionStrength s_AB s_CB s s_B s = plnAbductionStrength s_CB s_AB s s_B s := by
+  -- Both sides reduce to the same symmetric formula under uniform priors
+  unfold plnAbductionStrength plnDeductionStrength bayesInversion
+  have h1sB : 1 - s_B ≠ 0 := by linarith
+  -- Clear denominators and prove algebraically - field_simp + ring closes the goal
+  field_simp [hsB, h1sB]
+
+/-! ### SinkRule Aliases (for Abduction)
+
+B is the common *sink* - arrows fan in: A → B, C → B.
+Completing the span to A → C.
+-/
+
+/-- SinkRule = Abduction: A → B, C → B ⊢ A → C (B is the common sink) -/
+abbrev plnSinkRuleStrength := plnAbductionStrength
+
+/-- SinkRule simplified formula -/
+abbrev plnSinkRuleSimplified := plnAbductionSimplified
+
 /-! ## The PLN Inference Triad
 
 The three fundamental PLN inference rules are:
 
-1. **Deduction**: A → B, B → C ⊢ A → C
-2. **Induction**: B → A, B → C ⊢ A → C  (uses Bayes on first premise)
-3. **Abduction**: A → B, C → B ⊢ A → C  (uses Bayes on second premise)
+1. **Deduction** (Composition): A → B, B → C ⊢ A → C
+2. **Induction** (SourceRule): B → A, B → C ⊢ A → C  (B is common source, cospan completion)
+3. **Abduction** (SinkRule): A → B, C → B ⊢ A → C  (B is common sink, span completion)
 
 All three are compositions of Bayes inversion and the core deduction formula.
+
+The category-theoretic perspective:
+- Deduction = sequential composition (transitive closure)
+- SourceRule = cospan completion (common source B fans out)
+- SinkRule = span completion (common sink B collects)
 -/
 
 /-- The PLN inference triad: all reduce to deduction via Bayes inversion.

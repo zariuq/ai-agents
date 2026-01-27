@@ -64,9 +64,16 @@ structure EnumerableAgentClass extends AgentClass where
   /-- Enumeration only returns agents in the class. -/
   enum_in_class : ∀ n π, enum n = some π → π ∈ toAgentClass.agents
 
-/-- An agent class closed under Bayes-optimal response. -/
-structure isClosedUnderBayesOptimal (AgentSet : AgentClass) (br : Type) : Prop where
-  closure : True  -- Placeholder until BayesOptimalResponse is defined
+/-- A (placeholder) best-response operator on agents.
+
+This is a self-map on `Agent` for now; when the multi-agent best-response operator is
+fully defined, this should be refined to the intended type. -/
+abbrev BayesOptimalResponse : Type := Agent → Agent
+
+/-- An agent class is closed under Bayes-optimal response if:
+whenever π is in the class, the best response to π is also in the class. -/
+def isClosedUnderBayesOptimal (AgentSet : AgentClass) (br : BayesOptimalResponse) : Prop :=
+  ∀ π ∈ AgentSet.agents, br π ∈ AgentSet.agents
 
 /-- The constant agent that always chooses the same action (deterministic). -/
 def constantAgent (a : Action) : Agent where

@@ -989,18 +989,23 @@ theorem freeCumulant_additive (Ω : NCProbabilitySpace) [HasMultilinearCumulants
 /-- Scaling property: kₙ(cX) = cⁿ kₙ(X) -/
 theorem freeCumulant_scaling (Ω : NCProbabilitySpace) (X : Ω.Algebra)
     [Module ℝ Ω.Algebra] (c : ℝ) (n : ℕ) :
-    -- freeCumulant Ω (c • X) n = c ^ n * freeCumulant Ω X n
-    True := trivial -- Requires scalar multiplication in algebra
+    -- The intended scaling law requires the state to be ℝ-linear.
+    (∀ (r : ℝ) (a : Ω.Algebra), Ω.state (r • a) = r * Ω.state a) →
+      freeCumulant Ω (c • X) n = c ^ n * freeCumulant Ω X n := by
+  intro _hstate_smul
+  -- TODO: prove by induction on `n`, using the explicit formulas for cumulants and the assumed
+  -- scalar-linearity of the state.
+  sorry
 
-/-- Free CLT: Sum of n freely i.i.d. (mean 0, var 1) divided by √n → Semicircle.
-    More precisely: the free cumulants converge to those of the semicircle. -/
-theorem free_CLT (Ω : NCProbabilitySpace) (X : ℕ → Ω.Algebra)
-    (hFree : ∀ i j, i ≠ j → FreelyIndependent Ω (X i) (X j))
-    (hMean : ∀ i, moment Ω (X i) 1 = 0)
-    (hVar : ∀ i, moment Ω (X i) 2 = 1) :
-    -- For Sₙ = (X₁ + ... + Xₙ) / √n:
-    -- k₂(Sₙ) → 1 and kₘ(Sₙ) → 0 for m ≠ 2
-    True := trivial -- Convergence proof requires analysis machinery
+/- TODO: Free CLT.
+
+Intended statement: for `Sₙ = (X 0 + ... + X (n-1)) / √n`, the free cumulants of `Sₙ` converge to
+those of the semicircle law (equivalently: moments converge).
+
+This requires:
+- a definition of normalized sums `Sₙ`, and
+- analytic infrastructure for moment convergence / weak convergence.
+-/
 
 /-!
 ## §7: Connection to Random Matrices (Wigner's Semicircle Law)
@@ -1017,12 +1022,10 @@ Voiculescu later realized: random matrices are FREELY independent in the large-n
 structure WignerEnsemble (n : ℕ) where
   -- Would need matrix library for full formalization
 
-/-- Wigner semicircle law: eigenvalue distribution of random symmetric matrices
-    converges to the semicircle distribution. -/
-theorem wigner_semicircle_law (n : ℕ) :
-    -- For Wigner matrices (symmetric, i.i.d. entries with mean 0, var 1/n),
-    -- the empirical spectral measure converges weakly to the semicircle.
-    True := trivial -- Requires random matrix formalization
+/- TODO: Wigner semicircle law.
+
+Requires substantial random-matrix infrastructure (spectral measures + concentration).
+-/
 
 /-!
 ## §8: Marchenko-Pastur Law
@@ -1047,12 +1050,10 @@ noncomputable def marchenkoPasturDensity (γ : ℝ) (x : ℝ) : ℝ :=
   else
     0
 
-/-- Marchenko-Pastur law: eigenvalue distribution of sample covariance matrices. -/
-theorem marchenko_pastur_law (γ : ℝ) (hγ : 0 < γ ∧ γ ≤ 1) :
-    -- For X an n×p matrix with i.i.d. entries (mean 0, var 1/n),
-    -- where p/n → γ, the empirical spectral measure of X^T X
-    -- converges weakly to the Marchenko-Pastur distribution.
-    True := trivial -- Requires random matrix formalization
+/- TODO: Marchenko-Pastur law.
+
+Requires random-matrix infrastructure (sample covariance matrices + spectral convergence).
+-/
 
 /-!
 ## §9: Application to Deep Learning
@@ -1070,29 +1071,29 @@ Key paper: Pennington, Schoenholz, Ganguli, "Resurrecting the sigmoid" (2017)
 - Showed how activation functions affect the spectrum
 -/
 
-/-- In the infinite-width limit, neural network weight matrices are freely independent.
-    This is Voiculescu's asymptotic freeness theorem applied to random matrices.
+/- In the infinite-width limit, neural network weight matrices are freely independent.
+   This is Voiculescu's asymptotic freeness theorem applied to random matrices.
 
-    **Note**: This is a deep theorem that requires:
-    1. Concentration of trace for random matrices
-    2. Asymptotic freeness (as matrix size → ∞)
-    3. Universality results
+   **Note**: This is a deep theorem that requires:
+   1. Concentration of trace for random matrices
+   2. Asymptotic freeness (as matrix size → ∞)
+   3. Universality results
 
-    It is provable from more basic results but requires substantial
-    random matrix theory infrastructure. -/
-theorem neural_network_free_independence :
-    -- For weight matrices W₁, ..., Wₖ of a wide neural network,
-    -- they become freely independent as width → ∞
-    -- This follows from Voiculescu's asymptotic freeness theorem
-    True := trivial -- Marked as research direction
+   It is provable from more basic results but requires substantial
+   random matrix theory infrastructure. -/
+/- TODO: Neural network asymptotic freeness.
 
-/-- The product of freely independent matrices has a predictable spectrum.
-    The S-transform (free analog of characteristic function for products)
-    allows computing the spectral distribution of W₁W₂...Wₖ. -/
-theorem free_multiplicative_convolution :
-    -- The eigenvalue distribution of W₁W₂...Wₖ can be computed
-    -- using the S-transform (free analog of characteristic function for products)
-    True := trivial
+Research direction: connect wide-network random matrices to Voiculescu's asymptotic freeness and
+derive spectral predictions.
+-/
+
+/- The product of freely independent matrices has a predictable spectrum.
+   The S-transform (free analog of characteristic function for products)
+   allows computing the spectral distribution of W₁W₂...Wₖ. -/
+/- TODO: Multiplicative free convolution (S-transform).
+
+Would require formalizing the S-transform and proving the multiplicative convolution laws.
+-/
 
 /-!
 ## §10: Summary and Research Directions

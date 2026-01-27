@@ -51,6 +51,7 @@ namespace Mettapedia.ProbabilityTheory.Hypercube.KnuthSkilling.Neighbors
 open Classical
 open Mettapedia.ProbabilityTheory.KnuthSkilling
 open Mettapedia.ProbabilityTheory.KnuthSkilling.Additive
+open Mettapedia.ProbabilityTheory.KnuthSkilling.Additive.Proofs.GridInduction
 open KnuthSkillingAlgebra
 
 /-!
@@ -76,10 +77,14 @@ open KnuthSkillingAlgebra
 | 15 | + | + | + | + | EXISTS | Classical K&S (ℝ) |
 -/
 
-/-- Vertices 2,3,6,7 are empty: KSSeparation implies commutativity.
-See `Mettapedia.ProbabilityTheory.KnuthSkilling.Additive.Proofs.GridInduction.Core.op_comm_of_KSSeparation`
-for the proof. -/
-theorem sep_implies_comm_collapse_doc : True := trivial
+/- TODO: "Separation implies commutativity" collapse lemma in hypercube form.
+
+We already have the core commutativity result in the KS development:
+`Mettapedia.ProbabilityTheory.KnuthSkilling.Additive.Proofs.GridInduction.Core.op_comm_of_KSSeparation`.
+
+This file should eventually restate it as a clean emptiness/collapse result for the relevant
+hypercube vertices (2,3,6,7).
+-/
 
 /-!
 ## §2: Non-Commutative Vertices (V₀, V₁, V₄, V₅)
@@ -87,14 +92,11 @@ theorem sep_implies_comm_collapse_doc : True := trivial
 These have NO additive ℝ-representation.
 -/
 
-/-- Non-commutative algebras have no additive ℝ-representation.
+/- TODO: "No ℝ-additive representation for noncommutative ⊕" lemma.
 
-**Proof sketch**: If Θ(x ⊕ y) = Θ(x) + Θ(y) and Θ is injective (from order embedding),
-then commutativity of + forces x ⊕ y = y ⊕ x.
-
-This is a fundamental obstruction: the real numbers are commutative,
-so any additive representation must preserve commutativity. -/
-theorem no_real_rep_of_noncomm_doc : True := trivial
+Intended formal statement: if `Θ : α → ℝ` is injective and `Θ (x ⊕ y) = Θ x + Θ y`, then `⊕` is
+commutative. Hence genuinely noncommutative vertices cannot admit such a representation.
+-/
 
 /-!
 Even though these vertices have no commutative/additive real semantics, they are not “nothing”:
@@ -109,8 +111,10 @@ See `Mettapedia/ProbabilityTheory/Hypercube/KnuthSkilling/SequentialSemantics.le
 If α is densely ordered and has KSSeparation, then KSSeparationStrict holds.
 -/
 
-/-- Density + KSSeparation implies KSSeparationStrict -/
-theorem dense_sep_implies_strict_sep_doc : True := trivial
+/- TODO: Dense order + KSSeparation ⇒ strict separation.
+
+Either point to (or restate) the existing lemma in the KS development once it has a stable name.
+-/
 
 /-!
 ## §3.1: Discrete-vs-Dense Scale Dichotomy (inside ℝ)

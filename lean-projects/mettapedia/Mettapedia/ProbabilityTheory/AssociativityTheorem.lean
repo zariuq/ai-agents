@@ -601,12 +601,12 @@ theorem exists_linearizer_for_addition :
       order_right := fun _ _ _ h => add_lt_add_left h _
       assoc := fun x y z => add_assoc x y z
     }
-    ∃ _ : Linearizer A_add, True := by
-  exact ⟨{
+    Nonempty (Linearizer A_add) := by
+  refine ⟨{
     φ := id
     strictMono := strictMono_id
     additive := fun _ _ => rfl
-  }, trivial⟩
+  }⟩
 
 /-- The associativity theorem produces an iterate linearizer.
     The full Linearizer (on all of ℝ) requires the K&S extension argument. -/

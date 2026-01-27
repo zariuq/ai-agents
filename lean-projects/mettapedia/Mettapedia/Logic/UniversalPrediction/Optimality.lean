@@ -580,16 +580,18 @@ theorem balanced_pareto_optimal (ξ : Semimeasure)
 
 /-! ## Theorem 3.70: Optimality of Universal Weights -/
 
-/-- **Theorem 3.70 (Optimality of Universal Weights)**:
-    The Solomonoff prior weights (2^{-K(μ)}) are optimal for prediction.
+/- TODO: Theorem 3.70 (Optimality of Universal Weights)
 
-    Using any other weights w' can be strictly worse on some environments,
-    while using Solomonoff weights is never much worse than w' on any environment.
+The intended statement is an AIT-style optimality/dominance claim for Solomonoff-style weights
+`2^{-K(μ)}`. Formalizing it likely requires:
 
-    **TODO**: This requires connecting to algorithmic information theory. -/
-theorem solomonoff_weights_optimal :
-    True := by -- Placeholder: full statement requires AIT setup
-  trivial
+- a concrete Kolmogorov complexity `K` for environments,
+- a universal semimeasure/universal mixture definition,
+- and a regret / loss bound comparing against arbitrary computable priors.
+
+This file keeps the surrounding infrastructure, but we do not state a placeholder theorem of
+type `True`.
+-/
 
 end Optimality
 

@@ -209,10 +209,10 @@ theorem chvatal_erdos_hamiltonian [Fintype V] (G : SimpleGraph V) [DecidableRel 
 ## Section 5: Other Classical Results (Placeholders)
 -/
 
-omit [DecidableEq V] in
-/-- Bondy-Chvátal closure preserves Hamiltonicity -/
-theorem closure_preserves_hamiltonian (_G : SimpleGraph V) :
-    True := trivial
+/- TODO: Bondy-Chvátal closure preserves Hamiltonicity.
+
+   This should be stated using Mathlib's closure construction and proved as in Bondy–Murty.
+-/
 
 omit [DecidableEq V] in
 /-- Vertex chromatic number (placeholder) -/
@@ -230,15 +230,21 @@ theorem brooks_chromatic_bound [Fintype V] (G : SimpleGraph V) :
 
 omit [DecidableEq V] in
 /-- Matching predicate (placeholder) -/
-def Matching (_G : SimpleGraph V) : Prop := True
+def Matching (_G : SimpleGraph V) : Prop := by
+  -- TODO: give the standard definition of a matching as a set of pairwise-disjoint edges.
+  sorry
 
 omit [DecidableEq V] in
 /-- Perfect matching (placeholder) -/
-def PerfectMatching (_G : SimpleGraph V) : Prop := True
+def PerfectMatching (_G : SimpleGraph V) : Prop := by
+  -- TODO: perfect matching = matching that covers every vertex.
+  sorry
 
 omit [DecidableEq V] in
 /-- Planarity predicate (placeholder) -/
-def IsPlanar (_G : SimpleGraph V) : Prop := True
+def IsPlanar (_G : SimpleGraph V) : Prop := by
+  -- TODO: connect to Mathlib's planar graph notions (or add a definition).
+  sorry
 
 omit [DecidableEq V] in
 /-- Handshaking lemma -/
@@ -287,53 +293,38 @@ theorem bipartite_iff_no_odd_cycle (G : SimpleGraph V) :
 ## Additional placeholders for future development
 -/
 
-omit [DecidableEq V] in
-theorem turan_extremal [Fintype V] (_G : SimpleGraph V) (_k : ℕ) : True := trivial
+/- TODO: actual Turan extremal theorem. -/
 
-omit [DecidableEq V] in
-theorem ramsey_existence (_r _s : ℕ) : True := trivial
+/- TODO: actual Ramsey existence statement. -/
 
 omit [DecidableEq V] in
 theorem vizing_edge_chromatic (G : SimpleGraph V) :
     EdgeChromaticNumber G ≤ ChromaticNumber G + 1 := by simp [EdgeChromaticNumber, ChromaticNumber]
 
-omit [DecidableEq V] in
-theorem bipartite_edge_coloring (_G : SimpleGraph V) : True := trivial
+/- TODO: actual statement (Kőnig line coloring theorem). -/
 
-omit [DecidableEq V] in
-theorem hall_marriage (G : SimpleGraph V) : Matching G → True := fun _ => trivial
+/- TODO: Hall's marriage theorem. -/
 
-omit [DecidableEq V] in
-theorem tutte_one_factor (_G : SimpleGraph V) : True := trivial
+/- TODO: Tutte's 1-factor theorem. -/
 
-omit [DecidableEq V] in
-theorem max_flow_min_cut (_G : SimpleGraph V) : True := trivial
+/- TODO: max-flow min-cut theorem. -/
 
-omit [DecidableEq V] in
-theorem ford_fulkerson_terminates (_G : SimpleGraph V) : True := trivial
+/- TODO: termination of Ford–Fulkerson for integral capacities. -/
 
-omit [DecidableEq V] in
-theorem menger_vertex_connectivity (_G : SimpleGraph V) : True := trivial
+/- TODO: Menger's theorem (vertex connectivity form). -/
 
-omit [DecidableEq V] in
-theorem whitney_connectivity (_G : SimpleGraph V) : True := trivial
+/- TODO: Whitney connectivity results. -/
 
-omit [DecidableEq V] in
-theorem planar_euler_formula (_G : SimpleGraph V) : True := trivial
+/- TODO: Euler's formula for planar graphs. -/
 
-omit [DecidableEq V] in
-theorem kuratowski_planar_characterization (_G : SimpleGraph V) : True := trivial
+/- TODO: Kuratowski's theorem. -/
 
-omit [DecidableEq V] in
-theorem five_color_theorem (_G : SimpleGraph V) : True := trivial
+/- TODO: five color theorem. -/
 
-omit [DecidableEq V] in
-theorem six_color_theorem (_G : SimpleGraph V) : True := trivial
+/- TODO: six color theorem. -/
 
-omit [DecidableEq V] in
-theorem strong_perfect_graph (_G : SimpleGraph V) : True := trivial
+/- TODO: strong perfect graph theorem. -/
 
-omit [DecidableEq V] in
-theorem lovasz_local_lemma_coloring (_G : SimpleGraph V) : True := trivial
+/- TODO: Lovász local lemma based coloring bounds. -/
 
 end Mettapedia.GraphTheory

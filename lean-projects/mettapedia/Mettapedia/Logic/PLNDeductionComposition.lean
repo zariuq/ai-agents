@@ -147,35 +147,21 @@ theorem deduction_is_evidence_composition
 
 /-! ## Step 5: Connection to Modal Composition
 
-Once we have evidence composition working, we can connect it to
-the categorical modal composition from ModalTypes.lean.
+The fully categorical "modal composition = evidence composition" statement lives in the
+OSLF/ModalTypes layer and is intentionally not re-proved here.
 
-The key insight:
-- modalCompose (in Frame) = meet (⊓) = min or product
-- Evidence tensor (*) = coordinatewise product
-- These should be related!
-
-But we need to be more careful about what the fiber actually is.
+What we *do* record in this file is the algebraic core: Evidence's tensor is associative,
+so sequential evidence composition is well-defined.
 -/
 
-/-- Placeholder: Connection to modal composition
-
-    This would show that modalCompose (when properly defined with
-    the right fiber) equals evidence tensor.
-
-    For now, we note that both:
-    - Are associative
-    - Distribute over joins/suprema
-    - Have an identity element
-
-    So they're both quantale multiplications!
--/
-theorem modal_is_tensor : True := by
-  trivial  -- Now that Evidence fiber is set up, the connection is in ModalTypes.lean
+/-- Evidence tensor is associative (algebraic core of sequential composition). -/
+theorem evidence_tensor_assoc (x y z : Evidence) :
+    (x * y) * z = x * (y * z) := by
+  simp [mul_assoc]
 
 /-! ## Summary
 
-**Phase 5E: COMPLETE!** ✅
+Main theorem proved (deduction = evidence composition)
 
 We've proved the direct connection between PLN deduction and evidence composition:
 

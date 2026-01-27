@@ -4,6 +4,7 @@ import Mettapedia.Logic.UniversalPrediction
 import Mettapedia.Logic.UniversalPrediction.LossBounds
 import Mettapedia.Logic.UniversalPrediction.ErrorBounds
 import Mettapedia.Logic.UniversalPrediction.Convergence
+import Mettapedia.Logic.UniversalPrediction.FiniteHorizon
 
 /-!
 # Solomonoff Bridge: Connecting Chapter 2 to Chapter 3
@@ -55,6 +56,7 @@ open scoped Classical BigOperators ENNReal
 open Mettapedia.Logic.SolomonoffPrior
 open Mettapedia.Logic.SolomonoffInduction
 open Mettapedia.Logic.UniversalPrediction
+open FiniteHorizon
 
 /-! ## Part 1: Computable Measures and Their Encodings
 
@@ -145,6 +147,64 @@ theorem dominance_constant_ne_zero (U : PrefixFreeMachine) [UniversalPFM U]
     (μ : ComputableSemimeasure U) :
     (2 : ENNReal)^(-(μ.K : ℤ)) ≠ 0 := by
   exact ne_of_gt (dominance_constant_pos U μ)
+
+/-! ## Part 2b: Log-loss / regret from dominance
+
+The key “universal prediction” consequence of dominance is a **log-loss regret** bound.
+
+At the level of finite prefixes, dominance gives:
+
+`log (μ(x) / ξ(x)) ≤ log (1/c)`.
+
+When the dominance constant is `c = 2^{-K}`, this becomes `≤ K * log 2`.
+-/
+
+theorem log_inv_two_zpow_neg (K : ℕ) :
+    Real.log (1 / ((2 : ENNReal) ^ (-(K : ℤ))).toReal) = (K : ℝ) * Real.log 2 := by
+  -- This is the standard identity: `log(1 / 2^{-K}) = log(2^K) = K * log 2`.
+  simp only [one_div]
+  rw [Real.log_inv]
+  -- Rewrite `2^{-K}` as `(2^K)⁻¹`, and cancel the double inverse.
+  conv_lhs =>
+    rw [ENNReal.zpow_neg]
+  rw [ENNReal.toReal_inv, Real.log_inv, neg_neg]
+  -- Now `2^K` is a natural power.
+  rw [zpow_natCast, ENNReal.toReal_pow]
+  simp [Real.log_pow]
+
+/-- Pointwise log-likelihood ratio bound specialized to `c = 2^{-K}`. -/
+theorem log_ratio_le_K_log2_of_dominates_pow_two
+    (μ : PrefixMeasure) (ξ : Semimeasure) (K : ℕ)
+    (hdom : Dominates ξ μ ((2 : ENNReal) ^ (-(K : ℤ)))) (x : BinString) :
+    Real.log ((μ x).toReal / (ξ x).toReal) ≤ (K : ℝ) * Real.log 2 := by
+  have hc0 : ((2 : ENNReal) ^ (-(K : ℤ))) ≠ 0 := by
+    apply ne_of_gt
+    exact ENNReal.zpow_pos (a := (2 : ENNReal)) (n := -(K : ℤ)) (by norm_num) (by simp)
+  have h :=
+    log_ratio_le_log_inv_of_dominates (μ := μ) (ξ := ξ) (hdom := hdom) (hc0 := hc0) (x := x)
+  -- `simp` tends to normalize the RHS into `-log(c)`; convert our closed form accordingly.
+  have hRHS : Real.log (1 / ((2 : ENNReal) ^ (-(K : ℤ))).toReal) = (K : ℝ) * Real.log 2 :=
+    log_inv_two_zpow_neg K
+  have hRHS' : -Real.log (((2 : ENNReal) ^ (-(K : ℤ))).toReal) = (K : ℝ) * Real.log 2 := by
+    simpa [one_div] using hRHS
+  simpa [hRHS'] using h
+
+/-- Expected (finite-horizon) log-loss regret bound specialized to `c = 2^{-K}`.
+
+This is the “constant regret” statement in log-loss, since it is uniform in `n`. -/
+theorem relEntropy_le_K_log2_of_dominates_pow_two
+    (μ : PrefixMeasure) (ξ : Semimeasure) (K : ℕ)
+    (hdom : Dominates ξ μ ((2 : ENNReal) ^ (-(K : ℤ)))) (n : ℕ) :
+    relEntropy μ ξ n ≤ (K : ℝ) * Real.log 2 := by
+  have hc0 : ((2 : ENNReal) ^ (-(K : ℤ))) ≠ 0 := by
+    apply ne_of_gt
+    exact ENNReal.zpow_pos (a := (2 : ENNReal)) (n := -(K : ℤ)) (by norm_num) (by simp)
+  have h := relEntropy_le_log_inv_of_dominates (μ := μ) (ξ := ξ) (hdom := hdom) (hc0 := hc0) n
+  have hRHS : Real.log (1 / ((2 : ENNReal) ^ (-(K : ℤ))).toReal) = (K : ℝ) * Real.log 2 :=
+    log_inv_two_zpow_neg K
+  have hRHS' : -Real.log (((2 : ENNReal) ^ (-(K : ℤ))).toReal) = (K : ℝ) * Real.log 2 := by
+    simpa [one_div] using hRHS
+  simpa [hRHS'] using h
 
 /-! ## Part 3: Levin's Coding Theorem
 

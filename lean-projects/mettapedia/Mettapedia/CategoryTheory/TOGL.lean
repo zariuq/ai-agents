@@ -530,15 +530,14 @@ This is why you cannot jump directly from V₀ to V₃!
 and then using completeness to collapse them.
 -/
 
-theorem no_shortcut_V0_to_V3_via_sorts :
-    -- To get Box-sorted types (V₃), you need:
-    -- 1. Star-sorted types first (V₂)
-    -- 2. Completeness to collapse intervals
-    ∀ (_ts : KSTypeSystem PrecisionSort.box),
-      -- There exists a V₂ stage before V₃
-      ∃ (_ts₂ : KSTypeSystem PrecisionSort.star), True := by
-  intro _ts
-  exact ⟨V2TypeSystem, trivial⟩
+/- TODO: "No shortcut" lemma (V₀ → V₃ requires passing through V₂).
+
+This section should eventually contain a *precise* statement formalizing the Σ-gating argument:
+you cannot obtain □-sorted (precise) types without first constructing ∗-sorted (imprecise)
+interval semantics and then using a completeness axiom to collapse intervals.
+
+We intentionally avoid a placeholder theorem of type `True` here.
+-/
 
 /-! ## Alternative Foundations: Cox and de Finetti
 
@@ -670,7 +669,7 @@ theorem deFinetti_finitely_additive (Ω : Type*) (prev : DeFinettiPrevision Ω) 
     ∀ f g : Ω → ℝ, prev.P (f + g) = prev.P f + prev.P g :=
   prev.additive
 
-/-- de Finetti does NOT require σ-additivity (countable sums).
+/- de Finetti does NOT require σ-additivity (countable sums).
 
 This is a key distinction from Kolmogorov. de Finetti was a finitist
 who rejected infinite additivity as philosophically unjustified.
@@ -679,10 +678,14 @@ In the hypercube framework:
 - Finite additivity → can stay at V₂ (intervals possible)
 - σ-additivity → forced to V₃ (completeness required)
 -/
-theorem deFinetti_no_sigma_additivity :
-    -- de Finetti's coherence does NOT imply σ-additivity
-    -- (This is a philosophical claim, formalized as a documentation marker)
-    True := trivial
+/- TODO: de Finetti coherence vs σ-additivity.
+
+This section should eventually contain a *precise* Lean statement separating:
+- finite additivity (coherent previsions), and
+- σ-additivity (countable additivity).
+
+At present we keep this as prose, not as a placeholder theorem of type `True`.
+-/
 
 /-! ### The Foundational Landscape
 

@@ -4,24 +4,28 @@ import Mettapedia.Logic.PLNDeduction
 import Mettapedia.Algebra.QuantaleWeakness
 
 /-!
-# PLN as Quantale Composition
+# PLN as Quantale Composition (Strength-Level, Exploratory)
 
-This file proves that PLN (Probabilistic Logic Networks) inference rules
-are instances of quantale composition operations.
+This file explores a **strength-level** (point-valued) quantale-like story for PLN.
+
+Important: the canonical foundational carrier for PLN in this repo is **evidence counts**
+`(n⁺, n⁻)` in `Mettapedia.Logic.PLNEvidence`, which naturally admits incomparability and therefore
+cannot have a faithful point-valued representation into `ℝ` (see `Mettapedia.Logic.PLN_KS_Bridge`).
+The `[0,1]` strength view is a lossy projection of that richer semantics.
 
 ## Main Results
 
-- `deduction_is_weakness_composition` - The PLN deduction formula equals quantale weakness composition
-- `pln_implies_as_residuation` - PLN conditional strength is a quantale residuation
-- `pln_is_commutative_quantale` - PLN truth values form a commutative quantale
+- Defines a `SimpleTruthValue` type (strength, confidence) with a pointwise lattice order.
+- Defines an **exploratory** multiplication using a simplified deduction-inspired operation and
+  proves basic algebraic properties (associativity for the chosen operation).
 
 ## Key Insight
 
-PLN isn't an ad-hoc uncertain logic - it's the **probabilistic instance** of
-quantale weakness theory! This explains:
-1. Why the deduction formula works (it's quantale transitivity)
-2. Where confidence comes from (it's logical entropy)
-3. How to generalize PLN (other quantale instances)
+PLN formulas admit a useful “quantale/weakness-theory” reading once you choose a value space.
+This file records one such strength-level packaging; the project’s more robust foundations are:
+- evidence semantics (`Mettapedia.Logic.PLNEvidence`)
+- the totality gate vs point semantics (`Mettapedia.Logic.PLN_KS_Bridge`)
+- the measure-theoretic deduction derivation (`Mettapedia.Logic.PLNDerivation`)
 
 ## References
 
@@ -36,10 +40,10 @@ open Mettapedia.Logic.PLNDeduction
 open Mettapedia.Algebra.QuantaleWeakness
 open Classical
 
-/-! ## PLN Truth Values as a Quantale
+/-! ## Strength-Level Packaging
 
-The key observation: Simple Truth Values (strength, confidence) form
-a commutative quantale under the right operations.
+We equip simple truth values with a pointwise lattice order and then define an exploratory
+multiplication inspired by the deduction formula.
 -/
 
 /-- A Simple Truth Value in PLN: (strength, confidence) ∈ [0,1]² -/

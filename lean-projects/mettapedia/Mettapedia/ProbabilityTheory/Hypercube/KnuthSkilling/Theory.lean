@@ -51,7 +51,7 @@ namespace Mettapedia.ProbabilityTheory.Hypercube.KnuthSkilling.Theory
 
 open Classical
 open Mettapedia.ProbabilityTheory.KnuthSkilling
-open KnuthSkillingAlgebra
+open KnuthSkillingAlgebraBase
 
 /-!
 ## §1: V₁₁ - Imprecise Probability (The "Honest" Theory)
@@ -340,8 +340,14 @@ The supremum of {x ∈ ℚ : x² < 2} does not exist in ℚ (it would be √2).
 This shows that completeness is a genuinely independent axiom.
 -/
 
-/-- Documentation theorem: ℚ>0 demonstrates independence of completeness -/
-theorem rational_model_doc : True := trivial
+/- TODO: ℚ>0 model (independence of completeness).
+
+This section should eventually contain a concrete Lean development showing:
+- ℚ>0 satisfies the relevant K&S separation/density-style axioms, but
+- ℚ>0 is not Dedekind complete (e.g. the √2 cut).
+
+We keep this as prose for now (no placeholder theorem of type `True`).
+-/
 
 /-!
 ## §4: The Refinement Path V₁₁ → V₁₅
@@ -482,7 +488,7 @@ section CollapseTheorems
 theorem sep_implies_comm_collapse
     (α : Type*) [KnuthSkillingAlgebra α] [KSSeparation α] :
     ∀ x y : α, op x y = op y x := by
-  simpa using (Mettapedia.ProbabilityTheory.KnuthSkilling.ksSeparation_implies_commutative (α := α))
+  simpa using (SandwichSeparation.ksSeparation_implies_commutative (α := α))
 
 /-- Theorem: Density + KSSeparation implies KSSeparationStrict.
     This shows V₁₁ automatically has strict separation. -/
@@ -616,23 +622,30 @@ structure TropicalCost where
     | .infinity => True
     | .finite c => 0 ≤ c
 
-/-- Operations on tropical costs (documented, proofs omitted for simplicity):
+/- Operations on tropical costs (documented, proofs omitted for simplicity):
 
 - **combine**: Independent events have costs that add (like multiplying probabilities)
 - **best**: Choosing between alternatives picks the minimum cost (like max probability)
 
 These satisfy the tropical semiring axioms (with nonnegativity). -/
-theorem tropical_operations_doc : True := trivial
+/- TODO: tropical semiring laws for the documented operations (`min`/`+`).
+
+If we keep tropical probability as a real development, this should become a proper `Semiring`
+structure with proofs.
+-/
 
 end TropicalReal
 
-/-- Tropical probability interpretation:
+/- Tropical probability interpretation:
     - Events have "costs" (negative log-probabilities)
     - Combining independent events: add costs (= multiply probabilities)
     - Choosing best alternative: minimum cost (= maximum probability)
 
-    This is the Viterbi algorithm's foundation! -/
-theorem tropical_is_viterbi : True := trivial
+   This is the Viterbi algorithm's foundation! -/
+/- TODO: Viterbi interpretation.
+
+Formalize the connection between tropical "cost" semantics and max-product / Viterbi decoding.
+-/
 
 end TropicalProbability
 
@@ -650,10 +663,14 @@ This section documents the conceptual connection.
 
 section QuantumConnection
 
-/-- Non-commutative algebras model quantum-like phenomena -/
-theorem noncomm_is_quantum_like_doc : True := trivial
+/- Non-commutative algebras model quantum-like phenomena. -/
+/- TODO: noncommutative vertices vs quantum structures.
 
-/-- Properties of quantum probability systems:
+This should eventually become a concrete model/theorem showing a noncommutative probability-like
+structure inhabits the noncommutative hypercube vertices.
+-/
+
+/- Properties of quantum probability systems:
     1. Non-commutative: AB ≠ BA for observables A, B
     2. Context-dependent: measurement order matters
     3. No joint distribution: incompatible observables
@@ -661,8 +678,11 @@ theorem noncomm_is_quantum_like_doc : True := trivial
 
     These correspond to vertices V₀-V₇ in the hypercube.
     KSSeparation is INCOMPATIBLE with non-commutativity,
-    so these vertices cannot support standard probability. -/
-theorem quantum_properties_doc : True := trivial
+   so these vertices cannot support standard probability. -/
+/- TODO: concrete quantum probability model.
+
+Add at least one precise statement/model witnessing the listed quantum properties.
+-/
 
 end QuantumConnection
 
@@ -691,11 +711,12 @@ The "default" probability theory should arguably be V₁₁ (imprecise),
 not V₁₅ (classical), because it makes fewer foundational assumptions.
 -/
 
-/-- The main philosophical insight -/
-theorem probability_landscape_summary :
-    -- The 16 vertices of the hypercube form a lattice of probability theories,
-    -- with V₁₅ (classical) at the top and V₀ (non-commutative) at the bottom.
-    -- Moving up requires additional axioms; moving down loses capabilities.
-    True := trivial
+/- TODO: Structured "probability landscape" summary lemma.
+
+If we decide to keep this as a formal statement, it should be expressed in terms of the project’s
+actual hypercube definitions (vertices + reachability/collapse results).
+
+For now, keep it as prose (no placeholder theorem of type `True`).
+-/
 
 end Mettapedia.ProbabilityTheory.Hypercube.KnuthSkilling.Theory
