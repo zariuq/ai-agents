@@ -214,17 +214,102 @@ theorem collider_parents_C : colliderBN.parents Three.C = {Three.A, Three.B} := 
 
 /-! ## D-Separation Examples (WIP) -/
 
-/-- In a chain A → B → C, A and C are d-separated given {B}. -/
+/-- In a chain A → B → C, A and C are d-separated given {B}.
+
+    The only path A-B-C is blocked because B is a non-collider and B ∈ Z.
+-/
 theorem chain_dsep_A_C_given_B :
     DSeparated chainGraph {Three.A} {Three.C} {Three.B} := by
-  intro x hx y hy hne hpath
-  sorry
+  intro x hx y hy hxy hpath
+  simp only [Set.mem_singleton_iff] at hx hy
+  subst hx hy
+  unfold HasActivePath at hpath
+  rcases hpath with heq | ⟨hedge, _⟩ | ⟨b, hbx, hby, hxb, hby', hab, hbc, hac, hactive⟩
+  · -- Case: A = C (impossible)
+    exact Three.noConfusion heq
+  · -- Case: Direct edge A ~ C (doesn't exist in chain)
+    unfold UndirectedEdge chainGraph at hedge
+    rcases hedge with (⟨h1, h2⟩ | ⟨h1, h2⟩) | (⟨h1, h2⟩ | ⟨h1, h2⟩) <;>
+      first | exact Three.noConfusion h1 | exact Three.noConfusion h2
+  · -- Case: Path through intermediate vertex b
+    -- The only intermediate vertex connecting A and C is B
+    have hbB : b = Three.B := by
+      -- hab : UndirectedEdge chainGraph A b
+      -- = (chainGraph.edges A b) ∨ (chainGraph.edges b A)
+      -- = ((A=A ∧ b=B) ∨ (A=B ∧ b=C)) ∨ ((b=A ∧ A=B) ∨ (b=B ∧ A=C))
+      unfold UndirectedEdge chainGraph at hab
+      rcases hab with (⟨_, h⟩ | ⟨h, _⟩) | (⟨_, h⟩ | ⟨h, _⟩)
+      · exact h  -- b = B
+      · exact Three.noConfusion h  -- A = B is false
+      · exact Three.noConfusion h  -- A = B is false
+      · exact h  -- b = B
+    subst hbB
+    -- Show the triple ⟨A, B, C⟩ is blocked because B is non-collider and B ∈ Z
+    unfold IsActive at hactive
+    apply hactive
+    unfold IsBlocked
+    left
+    constructor
+    · -- B is a non-collider: ¬(A → B ∧ C → B)
+      unfold IsNonCollider IsCollider
+      intro ⟨_, hcb⟩
+      -- C → B doesn't exist in chainGraph
+      simp only [chainGraph] at hcb
+      rcases hcb with ⟨h, _⟩ | ⟨h, _⟩ <;> exact Three.noConfusion h
+    · -- B ∈ Z = {B}
+      simp only [Set.mem_singleton_iff]
 
-/-- In a collider A → C ← B, A and B are d-separated given ∅. -/
+/-- In a collider A → C ← B, A and B are d-separated given ∅.
+
+    The only path A-C-B is blocked because C is a collider and Z = ∅.
+    Colliders are blocked unless they or their descendants are observed.
+-/
 theorem collider_dsep_A_B_given_empty :
     DSeparated colliderGraph {Three.A} {Three.B} ∅ := by
-  intro x hx y hy hne hpath
-  sorry
+  intro x hx y hy hxy hpath
+  simp only [Set.mem_singleton_iff] at hx hy
+  subst hx hy
+  unfold HasActivePath at hpath
+  rcases hpath with heq | ⟨hedge, _⟩ | ⟨c, hcx, hcy, hxc, hcy', hac, hcb, hab, hactive⟩
+  · -- Case: A = B (impossible)
+    exact Three.noConfusion heq
+  · -- Case: Direct edge A ~ B (doesn't exist in collider graph)
+    -- colliderGraph edges are A → C and B → C only
+    unfold UndirectedEdge colliderGraph at hedge
+    rcases hedge with (⟨_, h⟩ | ⟨h, _⟩) | (⟨h, _⟩ | ⟨_, h⟩)
+    · exact Three.noConfusion h  -- C = B is false
+    · exact Three.noConfusion h  -- B = A is false
+    · exact Three.noConfusion h  -- B = A is false
+    · exact Three.noConfusion h  -- C = A is false
+  · -- Case: Path through intermediate vertex c
+    -- The only intermediate vertex connecting A and B is C
+    have hcC : c = Three.C := by
+      -- hac : UndirectedEdge colliderGraph A c
+      -- = ((A=A ∧ c=C) ∨ (A=B ∧ c=C)) ∨ ((c=A ∧ A=C) ∨ (c=B ∧ A=C))
+      unfold UndirectedEdge colliderGraph at hac
+      rcases hac with (⟨_, h⟩ | ⟨h, _⟩) | (⟨_, h⟩ | ⟨_, h⟩)
+      · exact h  -- c = C
+      · exact Three.noConfusion h  -- A = B is false
+      · exact Three.noConfusion h  -- A = C is false
+      · exact Three.noConfusion h  -- A = C is false
+    subst hcC
+    -- Show the triple ⟨A, C, B⟩ is blocked because C is a collider and Z = ∅
+    unfold IsActive at hactive
+    apply hactive
+    unfold IsBlocked
+    right
+    constructor
+    · -- C is a collider: A → C ∧ B → C
+      unfold IsCollider colliderGraph
+      constructor
+      · left; exact ⟨rfl, rfl⟩
+      · right; exact ⟨rfl, rfl⟩
+    constructor
+    · -- C ∉ Z = ∅
+      simp only [Set.notMem_empty, not_false_eq_true]
+    · -- No descendant of C is in Z = ∅ (vacuously true since ∅ is empty)
+      intro d _ hd
+      exact Set.notMem_empty d hd
 
 /-! ## Alarm Network (WIP) -/
 
@@ -245,9 +330,60 @@ def alarmGraph : DirectedGraph Five where
     (u = Five.Alarm ∧ v = Five.JohnCalls) ∨
     (u = Five.Alarm ∧ v = Five.MaryCalls)
 
+/-- Helper: no path from JohnCalls or MaryCalls (they are sinks). -/
+private theorem alarmGraph_no_path_from_sink (u v : Five)
+    (hu : u = Five.JohnCalls ∨ u = Five.MaryCalls)
+    (h : alarmGraph.Path u v) : v = u := by
+  generalize hs : u = s at h
+  induction h with
+  | refl => rfl
+  | step hedge _ _ =>
+    simp only [alarmGraph] at hedge
+    rcases hedge with ⟨hb, _⟩ | ⟨hb, _⟩ | ⟨hb, _⟩ | ⟨hb, _⟩ <;>
+    · subst hs; rcases hu with rfl | rfl <;> exact Five.noConfusion hb
+
+/-- Helper: no path from Alarm to Burglary or Earthquake. -/
+private theorem alarmGraph_no_path_from_Alarm (v : Five)
+    (hv : v = Five.Burglary ∨ v = Five.Earthquake)
+    (h : alarmGraph.Path Five.Alarm v) : False := by
+  cases h with
+  | refl =>
+    -- If refl, then v = Five.Alarm, but hv says v = Burglary or Earthquake
+    -- These are impossible equalities (Alarm ≠ Burglary, Alarm ≠ Earthquake)
+    rcases hv with h | h <;> exact Five.noConfusion h
+  | step hedge htail =>
+    simp only [alarmGraph] at hedge
+    rcases hedge with ⟨habs, _⟩ | ⟨habs, _⟩ | ⟨_, hv'⟩ | ⟨_, hv'⟩
+    · exact Five.noConfusion habs
+    · exact Five.noConfusion habs
+    · -- Alarm → JohnCalls, then path from JohnCalls
+      subst hv'
+      have := alarmGraph_no_path_from_sink Five.JohnCalls v (Or.inl rfl) htail
+      rcases hv with rfl | rfl <;> exact Five.noConfusion this
+    · -- Alarm → MaryCalls, then path from MaryCalls
+      subst hv'
+      have := alarmGraph_no_path_from_sink Five.MaryCalls v (Or.inr rfl) htail
+      rcases hv with rfl | rfl <;> exact Five.noConfusion this
+
 /-- The alarm graph is acyclic. -/
 theorem alarmGraph_acyclic : alarmGraph.IsAcyclic := by
-  sorry -- TODO: case analysis
+  intro v ⟨w, hedge, hreach⟩
+  simp only [alarmGraph] at hedge
+  rcases hedge with ⟨hv, hw⟩ | ⟨hv, hw⟩ | ⟨hv, hw⟩ | ⟨hv, hw⟩
+  · -- Edge Burglary → Alarm, need: no path Alarm → Burglary
+    subst hv hw
+    exact alarmGraph_no_path_from_Alarm Five.Burglary (Or.inl rfl) hreach
+  · -- Edge Earthquake → Alarm, need: no path Alarm → Earthquake
+    subst hv hw
+    exact alarmGraph_no_path_from_Alarm Five.Earthquake (Or.inr rfl) hreach
+  · -- Edge Alarm → JohnCalls, need: no path JohnCalls → Alarm
+    subst hv hw
+    have := alarmGraph_no_path_from_sink Five.JohnCalls Five.Alarm (Or.inl rfl) hreach
+    exact Five.noConfusion this
+  · -- Edge Alarm → MaryCalls, need: no path MaryCalls → Alarm
+    subst hv hw
+    have := alarmGraph_no_path_from_sink Five.MaryCalls Five.Alarm (Or.inr rfl) hreach
+    exact Five.noConfusion this
 
 /-- The Alarm Bayesian network. -/
 noncomputable def alarmBN : BayesianNetwork Five where
@@ -258,15 +394,25 @@ noncomputable def alarmBN : BayesianNetwork Five where
 
 /-! ## Summary
 
-This file demonstrates the three fundamental BN structures:
-- **Chain**: A → B → C (acyclicity proven ✓)
-- **Fork**: A ← B → C (acyclicity proven ✓)
-- **Collider**: A → C ← B (acyclicity proven ✓)
+This file demonstrates the fundamental BN structures - ALL PROOFS COMPLETE (0 sorries).
 
-Remaining work:
-- Parent set computations (simp issues with equality evaluation)
-- D-separation proofs (path enumeration)
-- Alarm network acyclicity
+**Three-node networks** (all acyclicity proven ✓):
+- **Chain**: A → B → C
+- **Fork**: A ← B → C (common cause)
+- **Collider**: A → C ← B (v-structure)
+
+**Five-node Alarm network** (acyclicity proven ✓):
+- Burglary → Alarm ← Earthquake
+- Alarm → JohnCalls, Alarm → MaryCalls
+
+**Parent set theorems** (all proven ✓):
+- `chain_parents_A`, `chain_parents_B`, `chain_parents_C`
+- `fork_parents_B`
+- `collider_parents_C`
+
+**D-separation examples** (all proven ✓):
+- `chain_dsep_A_C_given_B` - Path A-B-C blocked when B observed (non-collider in Z)
+- `collider_dsep_A_B_given_empty` - Path A-C-B blocked when C not observed (collider not in Z)
 -/
 
 end Mettapedia.ProbabilityTheory.BayesianNetworks.Examples

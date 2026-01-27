@@ -378,6 +378,143 @@ lemma countTrue_zerosThenOnesThenZero (n k : ℕ) :
     countTrue (zerosThenOnesThenZero n k) = k := by
   simp [zerosThenOnesThenZero, countTrue_append_fin]
 
+/-- `countTrue` is invariant under reindexing by `Fin.cast`. -/
+theorem countTrue_comp_cast {m n : ℕ} (h : m = n) (xs : Fin n → Bool) :
+    countTrue (xs ∘ Fin.cast h) = countTrue xs := by
+  classical
+  unfold countTrue
+  -- Compare the filtered finsets via the bijection `Fin.cast h`.
+  have hcard :
+      (Finset.univ.filter (fun i : Fin m => xs (Fin.cast h i) = true)).card =
+        (Finset.univ.filter (fun j : Fin n => xs j = true)).card := by
+    refine Finset.card_bij (fun i _ => Fin.cast h i) ?_ ?_ ?_
+    · intro i hi
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢
+      exact hi
+    · intro i₁ _ i₂ _ hij
+      exact (Fin.cast_injective h) hij
+    · intro j hj
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj
+      refine ⟨Fin.cast h.symm j, ?_, ?_⟩
+      · simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+        simpa using hj
+      · simp
+  simpa [Function.comp_apply] using hcard
+
+/-! ### Cylinder Decomposition Lemmas
+
+These lemmas are the combinatorial heart of the "complete monotonicity" argument:
+they let us express Hausdorff forward differences of the moment sequence as measures
+of canonical cylinder events of the form `0^n 1^k`.
+-/
+
+/-- Reindexing a pattern by `Fin.cast` does not change the associated cylinder event. -/
+lemma cyl_comp_cast (X : ℕ → Ω → Bool) {m n : ℕ} (h : m = n) (xs : Fin n → Bool) :
+    cyl X (xs ∘ Fin.cast h) = cyl X xs := by
+  ext ω
+  constructor
+  · intro hx j
+    have hj := hx (Fin.cast h.symm j)
+    -- `Fin.cast` preserves `.val`, and `Fin.cast h (Fin.cast h.symm j) = j`.
+    simpa [cyl, Fin.coe_cast] using hj
+  · intro hx i
+    have hi := hx (Fin.cast h i)
+    simpa [cyl, Fin.coe_cast] using hi
+
+/-- Restricting `zerosThenOnes n (k+1)` to its first `n+k` indices recovers `zerosThenOnes n k`. -/
+lemma zerosThenOnes_castAdd (n k : ℕ) (i : Fin (n + k)) :
+    zerosThenOnes n (k + 1) (Fin.castAdd 1 i) = zerosThenOnes n k i := by
+  classical
+  induction i using Fin.addCases with
+  | left i0 =>
+      simp [zerosThenOnes, Fin.append, Fin.castAdd_castAdd]
+  | right j0 =>
+      simp [zerosThenOnes, Fin.append, Fin.castAdd_natAdd]
+
+/-- The last entry of `zerosThenOnes n (k+1)` is `true`. -/
+lemma zerosThenOnes_last (n k : ℕ) :
+    zerosThenOnes n (k + 1) (Fin.last (n + k)) = true := by
+  have hidx : (Fin.last (n + k) : Fin (n + k + 1)) = Fin.natAdd n (Fin.last k) := by
+    ext
+    simp
+  unfold zerosThenOnes
+  rw [hidx]
+  simpa using
+    (Fin.append_right (u := fun _ : Fin n => false)
+      (v := fun _ : Fin (k + 1) => true) (i := Fin.last k))
+
+/-- `cyl` for `0^n 1^(k+1)` is `cyl` for `0^n 1^k` plus the final-bit constraint. -/
+lemma cyl_zerosThenOnes_succ (X : ℕ → Ω → Bool) (n k : ℕ) :
+    cyl X (zerosThenOnes n (k + 1)) = cyl X (zerosThenOnes n k) ∩ {ω | X (n + k) ω = true} := by
+  ext ω
+  constructor
+  · intro h
+    refine And.intro ?_ ?_
+    · intro i
+      have hi := h (Fin.castAdd 1 i)
+      simpa [cyl, zerosThenOnes_castAdd] using hi
+    · have hlast := h (Fin.last (n + k))
+      simpa [cyl, zerosThenOnes_last] using hlast
+  · rintro ⟨hpre, hlast⟩
+    intro i
+    refine Fin.addCases (m := n + k) (n := 1) ?_ ?_ i
+    · intro i0
+      have hi0 := hpre i0
+      simpa [cyl, zerosThenOnes_castAdd] using hi0
+    · intro j0
+      have hj0 : j0 = 0 := Fin.eq_zero j0
+      subst hj0
+      have : (Fin.natAdd (n + k) (0 : Fin 1) : Fin (n + k + 1)) = Fin.last (n + k) := by
+        ext
+        simp
+      simpa [cyl, this, zerosThenOnes_last] using hlast
+
+/-- Restricting `zerosThenOnesThenZero n k` to its first `n+k` indices recovers `zerosThenOnes n k`. -/
+lemma zerosThenOnesThenZero_castAdd (n k : ℕ) (i : Fin (n + k)) :
+    zerosThenOnesThenZero n k (Fin.castAdd 1 i) = zerosThenOnes n k i := by
+  simp [zerosThenOnesThenZero]
+
+/-- The last entry of `zerosThenOnesThenZero n k` is `false`. -/
+lemma zerosThenOnesThenZero_last (n k : ℕ) :
+    zerosThenOnesThenZero n k (Fin.last (n + k)) = false := by
+  have hidx : (Fin.last (n + k) : Fin (n + k + 1)) = Fin.natAdd (n + k) (0 : Fin 1) := by
+    ext
+    simp
+  unfold zerosThenOnesThenZero
+  rw [hidx]
+  simpa using
+    (Fin.append_right (u := zerosThenOnes n k) (v := fun _ : Fin 1 => false) (i := (0 : Fin 1)))
+
+/-- Subtracting the final-bit-true event from `cyl (0^n 1^k)` yields `cyl (0^n 1^k 0)`. -/
+lemma cyl_zerosThenOnes_diff (X : ℕ → Ω → Bool) (n k : ℕ) :
+    cyl X (zerosThenOnes n k) \ {ω | X (n + k) ω = true} = cyl X (zerosThenOnesThenZero n k) := by
+  ext ω
+  constructor
+  · rintro ⟨hpre, hnot⟩
+    intro i
+    refine Fin.addCases (m := n + k) (n := 1) ?_ ?_ i
+    · intro i0
+      have hi0 := hpre i0
+      simpa [cyl, zerosThenOnesThenZero_castAdd] using hi0
+    · intro j0
+      have hj0 : j0 = 0 := Fin.eq_zero j0
+      subst hj0
+      have hxfalse : X (n + k) ω = false := by
+        cases hx : X (n + k) ω <;> simp [hx] at hnot ⊢
+      have : X (n + k) ω = zerosThenOnesThenZero n k (Fin.last (n + k)) := by
+        simpa [zerosThenOnesThenZero_last] using hxfalse
+      simpa [cyl] using this
+  · intro h
+    refine And.intro ?_ ?_
+    · intro i
+      have hi := h (Fin.castAdd 1 i)
+      simpa [cyl, zerosThenOnesThenZero_castAdd] using hi
+    · intro htrue
+      have hlast := h (Fin.last (n + k))
+      have hxfalse : X (n + k) ω = false := by
+        simpa [cyl, zerosThenOnesThenZero_last] using hlast
+      cases hx : X (n + k) ω <;> simp [hx] at htrue hxfalse
+
 /-! ### De Finetti Moment Sequence
  
 For {0,1}-valued exchangeable X, define the moment sequence:
@@ -527,6 +664,120 @@ theorem deFinettiMoment_diff_nonneg (X : ℕ → Ω → Bool) (μ : Measure Ω)
     deFinettiMoment X μ (k + 1) ≤ deFinettiMoment X μ k :=
   deFinettiMoment_antitone X μ (Nat.le_succ k)
 
+/-! ### Forward Differences as Cylinder Probabilities
+
+For an exchangeable binary process, the Hausdorff forward differences of the moment sequence
+have a direct probabilistic meaning:
+
+`Δⁿ mₖ = P(0^n 1^k)`,
+
+where `0^n 1^k` denotes the canonical pattern of `n` falses followed by `k` trues.
+
+This yields complete monotonicity immediately, since it is the real-valued measure of a set.
+-/
+
+/-- For an exchangeable binary sequence, Hausdorff forward differences of the de Finetti moments
+are cylinder probabilities of the canonical patterns `0^n 1^k`. -/
+theorem deFinettiMoment_fwdDiffIter_eq_cyl (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    [IsProbabilityMeasure μ] (hX : ∀ i : ℕ, Measurable (X i))
+    (hexch : InfiniteExchangeable X μ) :
+    ∀ n k, fwdDiffIter n (deFinettiMoment X μ) k = μ.real (cyl X (zerosThenOnes n k)) := by
+  classical
+  intro n k
+  induction n generalizing k with
+  | zero =>
+      -- `Δ^0 m_k = m_k`, and `0^0 1^k` is just the all-`true` pattern.
+      have hSet :
+          cyl X (zerosThenOnes 0 k) = {ω | ∀ i : Fin k, X i.val ω = true} := by
+        -- `zerosThenOnes 0 k` is constant-`true`; the only mismatch is the `Fin (0+k)` index type.
+        have hPattern : ∀ i : Fin (0 + k), zerosThenOnes 0 k i = true := by
+          intro i
+          unfold zerosThenOnes
+          have : (fun _ : Fin 0 => false) = (Fin.elim0 : Fin 0 → Bool) := by
+            ext x
+            exact (Fin.elim0 x)
+          -- `simp` uses `Fin.elim0_append` to remove the empty left part.
+          simp [this]
+        ext ω
+        constructor
+        · intro h i
+          have hi := h (Fin.cast (Nat.zero_add k).symm i)
+          simpa [cyl, hPattern] using hi
+        · intro h i
+          have hi := h (Fin.cast (Nat.zero_add k) i)
+          simpa [cyl, hPattern] using hi
+      -- Compute both sides.
+      simp [fwdDiffIter, deFinettiMoment, Measure.real, hSet]
+  | succ n ih =>
+      have ht : MeasurableSet ({ω | X (n + k) ω = true} : Set Ω) :=
+        measurableSet_preimage (hX (n + k)) (measurableSet_singleton true)
+      calc
+        fwdDiffIter (n + 1) (deFinettiMoment X μ) k
+            = fwdDiffIter n (deFinettiMoment X μ) k - fwdDiffIter n (deFinettiMoment X μ) (k + 1) := by
+                simpa using (fwdDiffIter_succ (m := deFinettiMoment X μ) n k)
+        _ = μ.real (cyl X (zerosThenOnes n k)) - μ.real (cyl X (zerosThenOnes n (k + 1))) := by
+              simp [ih k, ih (k + 1)]
+        _ = μ.real (cyl X (zerosThenOnes (n + 1) k)) := by
+              -- Split `P(0^n 1^k)` by the next bit, then use exchangeability to move the trailing `0`.
+              have hsplit :
+                  μ.real (cyl X (zerosThenOnes n (k + 1))) +
+                      μ.real (cyl X (zerosThenOnes n k) \ {ω | X (n + k) ω = true})
+                    = μ.real (cyl X (zerosThenOnes n k)) := by
+                have hmi :=
+                  measureReal_inter_add_diff (μ := μ) (s := cyl X (zerosThenOnes n k))
+                    (t := ({ω | X (n + k) ω = true} : Set Ω)) ht
+                simpa [cyl_zerosThenOnes_succ (X := X) n k] using hmi
+              have hdiff :
+                  μ.real (cyl X (zerosThenOnes n k) \ {ω | X (n + k) ω = true}) =
+                      μ.real (cyl X (zerosThenOnes n k)) - μ.real (cyl X (zerosThenOnes n (k + 1))) := by
+                -- Solve `a + b = c` for `b`.
+                exact eq_sub_of_add_eq' hsplit
+              have hsub :
+                  μ.real (cyl X (zerosThenOnes n k)) - μ.real (cyl X (zerosThenOnes n (k + 1))) =
+                      μ.real (cyl X (zerosThenOnesThenZero n k)) := by
+                calc
+                  μ.real (cyl X (zerosThenOnes n k)) - μ.real (cyl X (zerosThenOnes n (k + 1)))
+                      = μ.real (cyl X (zerosThenOnes n k) \ {ω | X (n + k) ω = true}) := by
+                          simpa [hdiff] using hdiff.symm
+                  _ = μ.real (cyl X (zerosThenOnesThenZero n k)) := by
+                        simp [cyl_zerosThenOnes_diff (X := X) n k]
+              have hμ :
+                  μ (cyl X (zerosThenOnesThenZero n k)) = μ (cyl X (zerosThenOnes (n + 1) k)) := by
+                have hlen : n + k + 1 = (n + 1) + k := by
+                  calc
+                    n + k + 1 = n + (k + 1) := by simp [Nat.add_assoc]
+                    _ = n + (1 + k) := by simp [Nat.add_comm]
+                    _ = (n + 1) + k := by simp [Nat.add_assoc]
+                -- Cast `zerosThenOnes (n+1) k` to a pattern on `Fin (n+k+1)` so we can apply exchangeability.
+                let xs₂ : Fin (n + k + 1) → Bool := zerosThenOnes (n + 1) k ∘ Fin.cast hlen
+                have hcount :
+                    countTrue (zerosThenOnesThenZero n k) = countTrue xs₂ := by
+                  -- Both sides count to `k`; the cast does not change `countTrue`.
+                  simp [xs₂, countTrue_comp_cast]
+                have hμ' :
+                    μ (cyl X (zerosThenOnesThenZero n k)) = μ (cyl X xs₂) := by
+                  simpa [cyl] using
+                    (infiniteExchangeable_same_counts_same_prob (X := X) (μ := μ) hexch
+                      (xs₁ := zerosThenOnesThenZero n k) (xs₂ := xs₂) hcount)
+                -- `cyl` is also invariant under the same cast.
+                have hcyl : cyl X xs₂ = cyl X (zerosThenOnes (n + 1) k) := by
+                  simpa [xs₂] using (cyl_comp_cast (X := X) (h := hlen) (xs := zerosThenOnes (n + 1) k))
+                simpa [hcyl] using hμ'
+              have hμreal :
+                  μ.real (cyl X (zerosThenOnesThenZero n k)) = μ.real (cyl X (zerosThenOnes (n + 1) k)) := by
+                simpa [Measure.real] using congrArg ENNReal.toReal hμ
+              simpa [hμreal] using hsub
+
+/-- The de Finetti moment sequence is completely monotone: all Hausdorff forward differences are nonnegative. -/
+theorem deFinettiMoment_completelyMonotone (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    [IsProbabilityMeasure μ] (hX : ∀ i : ℕ, Measurable (X i))
+    (hexch : InfiniteExchangeable X μ) :
+    CompletelyMonotone (deFinettiMoment X μ) := by
+  intro n k
+  have h := deFinettiMoment_fwdDiffIter_eq_cyl (X := X) (μ := μ) hX hexch n k
+  -- Now it's a real-valued measure of a set.
+  simpa [h] using (MeasureTheory.measureReal_nonneg (μ := μ) (s := cyl X (zerosThenOnes n k)))
+
 /-! ### Hausdorff Moment Theorem (Statement)
 
 The following is the **Hausdorff moment theorem** restricted to our use case:
@@ -583,16 +834,14 @@ theorem hausdorff_moment_exists (m : ℕ → ℝ)
     **Proof**: Uses `hausdorff_moment_exists` to construct the mixing measure from
     the de Finetti moment sequence. -/
 theorem deFinetti_infinite (X : ℕ → Ω → Bool) (μ : Measure Ω)
-    [IsProbabilityMeasure μ] (hexch : InfiniteExchangeable X μ) :
+    [IsProbabilityMeasure μ] (hX : ∀ i : ℕ, Measurable (X i)) (hexch : InfiniteExchangeable X μ) :
     ∃ (M : BernoulliMixture), ∀ (n : ℕ) (xs : Fin n → Bool),
       μ {ω | ∀ i : Fin n, X i.val ω = xs i} = ENNReal.ofReal (M.prob xs) := by
   -- Step 1: Get the mixing measure from Hausdorff
   have hbnd := fun k => deFinettiMoment_mem_unit_interval X μ k
   have hzero := deFinettiMoment_zero X μ
   have hcm : CompletelyMonotone (deFinettiMoment X μ) := by
-    -- TODO: prove using exchangeability (finite-difference = canonical pattern probability).
-    -- This should not require Hausdorff; it is a purely probabilistic/combinatorial lemma.
-    sorry
+    exact deFinettiMoment_completelyMonotone (X := X) (μ := μ) hX hexch
   obtain ⟨ν, hprob, hsupp, hmoments⟩ := hausdorff_moment_exists (deFinettiMoment X μ) hbnd hcm hzero
   -- Step 2: Construct the BernoulliMixture
   refine ⟨⟨ν, hprob, ?_⟩, ?_⟩
@@ -643,11 +892,12 @@ def Represents {Ω : Type*} [MeasurableSpace Ω] (M : BernoulliMixture) (X : ℕ
 
 /-- Characterization (stubbed via `deFinetti_infinite`): infinite exchangeability
     iff there exists a Bernoulli-mixture representation of all finite prefixes. -/
-theorem exchangeable_iff_bernoulliMixture (X : ℕ → Ω → Bool) (μ : Measure Ω) [IsProbabilityMeasure μ] :
+theorem exchangeable_iff_bernoulliMixture (X : ℕ → Ω → Bool) (μ : Measure Ω) [IsProbabilityMeasure μ]
+    (hX : ∀ i : ℕ, Measurable (X i)) :
     InfiniteExchangeable X μ ↔ ∃ (M : BernoulliMixture), Represents M X μ := by
   constructor
   · intro hexch
-    rcases deFinetti_infinite X μ hexch with ⟨M, hM⟩
+    rcases deFinetti_infinite X μ hX hexch with ⟨M, hM⟩
     exact ⟨M, hM⟩
   · rintro ⟨M, hrep⟩
     refine ⟨?_⟩
