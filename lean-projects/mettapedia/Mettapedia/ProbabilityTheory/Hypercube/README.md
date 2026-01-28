@@ -126,9 +126,9 @@ Commutativity theory and the classical/quantum boundary:
 - **Orthocomplement Uniqueness (Safe Form)**:
   - `orthocomplement_unique_of_commutes`: complements are unique *among commuting candidates*
 
-**Novel Contributions**:
-- **Complete Foulis-Holland theorem**: Commuting elements are closed under ⊓ and ⊔
-- Bidirectional exchange characterization (first rigorous formalization)
+**Results in this file**:
+- Foulis-Holland theorem: Commuting elements are closed under ⊓ and ⊔
+- Bidirectional exchange characterization
 - De Morgan duality proof for `commutes_sup` via `commutes_inf`
 
 #### `Basic.lean` (54 KB)
@@ -252,21 +252,21 @@ nice -n 19 lake build Mettapedia.ProbabilityTheory.Hypercube
 `lake build Mettapedia.ProbabilityTheory.Hypercube` succeeds with **0** `sorry`s.
 
 ### Completed (sorry-free)
-- ✅ Orthomodular lattice axiomatization + basic quantum structures (`NovelTheories.lean`)
-- ✅ Classical Dempster–Shafer on `Finset Ω` (`Basic.lean`)
-- ✅ Neighbor investigations (`NeighborTheories.lean`) are `sorry`-free
-- ✅ Hypercube taxonomy order (`Taxonomy.lean`) is `sorry`-free
-- ✅ Weakness preorder as a category (`WeaknessOrder.lean`)
-- ✅ Quantale semantics + morphisms (`QuantaleSemantics.lean`)
-- ✅ Θ-family ⇒ interval semantics API (`ThetaSemantics.lean`)
-- ✅ Dense-vs-cyclic scale dichotomy bridge (`ScaleDichotomy.lean`, `DensityAxisStory.lean`)
+- Orthomodular lattice axiomatization (`NovelTheories.lean`)
+- Classical Dempster-Shafer on `Finset Ω` (`Basic.lean`)
+- Neighbor investigations (`NeighborTheories.lean`)
+- Hypercube taxonomy order (`Taxonomy.lean`)
+- Weakness preorder as a category (`WeaknessOrder.lean`)
+- Quantale semantics + morphisms (`QuantaleSemantics.lean`)
+- Θ-family interval semantics API (`ThetaSemantics.lean`)
+- Dense-vs-cyclic scale dichotomy (`ScaleDichotomy.lean`, `DensityAxisStory.lean`)
 
 ### Corrected Misconceptions
-- ❌ ~~OML fundamental lemma (quasi-distributivity)~~ - **FALSE in general OML!**
-- ❌ ~~Bidirectional orthogonality criterion~~ - Only forward direction holds
+- OML "quasi-distributivity" is FALSE in general (counterexample in code)
+- Bidirectional orthogonality criterion: only forward direction holds
 
-### In Progress
-- ⚠️ Infinite lattice case for quantum beliefs (requires measure theory)
+### Open
+- Infinite lattice case for quantum beliefs (requires measure theory)
 
 ## Relationship to Other Formalizations
 
@@ -298,13 +298,11 @@ Extended Dempster-Shafer theory:
 
 ## Future Work
 
-1. ~~**Complete Foulis-Holland**~~ ✅ DONE: `commutes_inf`, `commutes_sup` proven
-2. ~~**Distributive Sublattices**~~ ✅ DONE: `commuting_distributive` proven
-3. **Weakness via Semantics**: connect `WeaknessOrder.lean` to `QuantaleSemantics.lean` morphisms
-4. **Hypercube Edges**: formalize more edges (theory transformations) as explicit morphisms
-5. **Measure Theory Bridge**: extend finite quantum beliefs to σ-algebras
-6. **Concrete Examples**: MO5 lattice, projective geometries
-7. **Decision Procedures**: automated reasoning about commutativity
+- Connect `WeaknessOrder.lean` to `QuantaleSemantics.lean` morphisms
+- Formalize more hypercube edges (theory transformations) as explicit morphisms
+- Extend finite quantum beliefs to σ-algebras (measure theory)
+- Concrete examples: MO5 lattice, projective geometries
+- Automated reasoning about commutativity
 
 ## Contact
 

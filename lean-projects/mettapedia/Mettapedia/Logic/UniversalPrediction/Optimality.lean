@@ -562,21 +562,28 @@ theorem universal_pareto_optimal (ξ : Semimeasure)
     B(p) = ∑_μ w(μ) · perf(p, μ, ∞) where w is the prior over environments. -/
 def BalancedPerformance (_w : PrefixMeasure → ENNReal)
     (_perf : PerformanceMeasure) (_p : Predictor) : ℝ :=
-  0 -- Placeholder: would need infinite-horizon limit
+  by
+    classical
+    -- TODO: Define the intended infinite-horizon limit:
+    --   B(p) = ∑_μ w(μ) * perf(p, μ, ∞)
+    -- and prove existence of the limit / convergence.
+    --
+    -- We use an explicit `sorry` instead of a dummy constant to avoid
+    -- "proving" downstream optimality results by definitional reduction.
+    sorry
 
 /-- **Theorem 3.69 (Balanced Pareto Optimality)**:
     The universal predictor minimizes balanced performance.
 
-    Note: With the current placeholder definition of BalancedPerformance as 0,
-    this is trivially true. A full proof would require defining the infinite-horizon
-    limit and showing the universal predictor achieves the minimum. -/
+    Note: This theorem is currently a `sorry` placeholder until
+    `BalancedPerformance` is defined and its analytic properties are proven. -/
 theorem balanced_pareto_optimal (ξ : Semimeasure)
     (w : PrefixMeasure → ENNReal) :
     ∀ p, BalancedPerformance w errorPerformance (universalPredictor ξ) ≤
          BalancedPerformance w errorPerformance p := by
-  intro p
-  -- Both sides are 0 by definition of BalancedPerformance
-  simp only [BalancedPerformance, le_refl]
+  classical
+  -- TODO: Prove Hutter (2005), Theorem 3.69 once `BalancedPerformance` is defined.
+  sorry
 
 /-! ## Theorem 3.70: Optimality of Universal Weights -/
 

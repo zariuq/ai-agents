@@ -68,13 +68,12 @@ the 2nd dimension (total count) enables proper evidence aggregation.
 - `strength_fiber_infinite`: For any s ∈ (0,1), infinitely many Evidence values have strength s
 - `evidence_confidence_distinguishes`: Confidence distinguishes what intervals cannot
 
-### Why This Matters
+### Summary
 
-1. **Unifies** PLN evidence theory with imprecise probability (Walley 1991)
-2. **Explains** why PLN needs 2D evidence: the partial order captures incomparability
-3. **Connects** to Heyting/intuitionistic logic: non-Boolean = uncertain
-4. **Provides** interval bounds from the quantale structure
-5. **Reveals** Evidence as richer than intervals: includes confidence/weight
+- PLN evidence and imprecise probability (Walley 1991) share the same interval structure
+- PLN's 2D evidence captures incomparability via partial order
+- Non-Boolean elements in Heyting algebras correspond to epistemic uncertainty
+- Evidence is strictly richer than intervals: total count enables proper aggregation
 
 ## Files
 
@@ -86,6 +85,17 @@ the 2nd dimension (total count) enables proper evidence aggregation.
 | `EvidenceIntervalBounds.lean` | Strength function, incomparability, Fréchet bounds |
 | `HeytingValuationOnEvidence.lean` | Credal sets, PLN↔Heyting connection |
 | `EvidenceBeta.lean` | Bridge to Beta distribution (conjugate prior) |
+
+## Build
+
+```bash
+cd lean-projects/mettapedia
+lake build Mettapedia.Logic
+```
+
+## Status
+
+Experimental. Some files have `sorry` placeholders.
 
 ## References
 

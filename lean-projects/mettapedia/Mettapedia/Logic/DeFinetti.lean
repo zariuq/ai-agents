@@ -2,6 +2,7 @@ import Mettapedia.Logic.Exchangeability
 import Mettapedia.Logic.EvidenceBeta
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.Probability.ProbabilityMassFunction.Basic
 import Mathlib.Data.Fin.Tuple.Basic
@@ -849,14 +850,151 @@ theorem deFinetti_infinite (X : ℕ → Ω → Bool) (μ : Measure Ω)
     exact hsupp
   · -- Step 3: Show the representation holds
     intro n xs
-    -- Need to show: μ {ω | ∀ i, X i ω = xs i} = ∫ θ, ∏ᵢ Bernoulli(θ)(xs i) dν(θ)
-    -- This follows from:
-    -- 1. By exchangeability, the probability depends only on countTrue xs
-    -- 2. The moment hmoments k gives us ∫ θ^k dν = E[X₁·...·Xₖ]
-    -- 3. These combine to give the Bernoulli mixture formula
-    --
-    -- Technical gap: proving the integral representation matches
-    sorry
+    classical
+    -- Abbreviate counts.
+    let k : ℕ := countTrue xs
+    let l : ℕ := countFalse xs
+
+    -- Align the canonical pattern `0^l 1^k` to length `n`.
+    have hlen : l + k = n := by
+      -- `k + l = n` is `count_partition`; we just swap the summands.
+      have hk : k + l = n := by
+        simpa [k, l] using (count_partition (n := n) xs)
+      simpa [Nat.add_comm, k, l] using hk
+    let xsCanon : Fin n → Bool := zerosThenOnes l k ∘ Fin.cast hlen.symm
+
+    have hcount : countTrue xs = countTrue xsCanon := by
+      -- `xsCanon` is a casted version of `zerosThenOnes l k`, whose count is `k`.
+      have hkCanon : countTrue xsCanon = k := by
+        have := countTrue_comp_cast (h := hlen.symm) (xs := zerosThenOnes l k)
+        simpa [xsCanon, k, countTrue_zerosThenOnes] using this
+      simpa [k, hkCanon]
+
+    -- Exchangeability reduces everything to the canonical pattern.
+    have hμexch : μ (cyl X xs) = μ (cyl X xsCanon) := by
+      simpa [cyl] using
+        (infiniteExchangeable_same_counts_same_prob (X := X) (μ := μ) hexch xs xsCanon hcount)
+    have hcylCanon : cyl X xsCanon = cyl X (zerosThenOnes l k) := by
+      simpa [xsCanon] using (cyl_comp_cast (X := X) (h := hlen.symm) (xs := zerosThenOnes l k))
+    have hμcanon : μ (cyl X xs) = μ (cyl X (zerosThenOnes l k)) := by
+      simpa [hcylCanon] using hμexch
+    have hRealCanon : μ.real (cyl X xs) = μ.real (cyl X (zerosThenOnes l k)) := by
+      simpa [Measure.real] using congrArg ENNReal.toReal hμcanon
+
+    -- A helper integral family matching the forward-difference recursion.
+    let g : ℕ → ℕ → ℝ :=
+      fun n0 k0 => ∫ θ in Set.Icc (0 : ℝ) 1, θ ^ k0 * (1 - θ) ^ n0 ∂ν
+
+    have integrable_g (n0 k0 : ℕ) :
+        Integrable (fun θ : ℝ => θ ^ k0 * (1 - θ) ^ n0) (ν.restrict (Set.Icc (0 : ℝ) 1)) := by
+      -- Bounded by `1` on `[0,1]`, hence integrable w.r.t. a finite measure.
+      haveI : IsFiniteMeasure (ν.restrict (Set.Icc (0 : ℝ) 1)) := by infer_instance
+      have hmeas : AEStronglyMeasurable (fun θ : ℝ => θ ^ k0 * (1 - θ) ^ n0)
+          (ν.restrict (Set.Icc (0 : ℝ) 1)) := by
+        have hmeas' : Measurable (fun θ : ℝ => θ ^ k0 * (1 - θ) ^ n0) := by
+          have h1 : Measurable (fun θ : ℝ => θ ^ k0) :=
+            Measurable.pow_const measurable_id k0
+          have h2 : Measurable (fun θ : ℝ => (1 - θ) ^ n0) :=
+            Measurable.pow_const (measurable_const.sub measurable_id) n0
+          exact h1.mul h2
+        exact hmeas'.aestronglyMeasurable
+      have hbound :
+          ∀ᵐ θ ∂ν.restrict (Set.Icc (0 : ℝ) 1), ‖θ ^ k0 * (1 - θ) ^ n0‖ ≤ (1 : ℝ) := by
+        filter_upwards [ae_restrict_mem measurableSet_Icc] with θ hθ
+        have hθ0 : 0 ≤ θ := hθ.1
+        have hθ1 : θ ≤ 1 := hθ.2
+        have h1θ0 : 0 ≤ 1 - θ := sub_nonneg.mpr hθ1
+        have h1θ1 : 1 - θ ≤ 1 := sub_le_self 1 hθ0
+        have hk0 : θ ^ k0 ≤ 1 := pow_le_one₀ hθ0 hθ1
+        have hn0 : (1 - θ) ^ n0 ≤ 1 := pow_le_one₀ h1θ0 h1θ1
+        have hnonneg : 0 ≤ θ ^ k0 * (1 - θ) ^ n0 :=
+          mul_nonneg (pow_nonneg hθ0 k0) (pow_nonneg h1θ0 n0)
+        have hprod : θ ^ k0 * (1 - θ) ^ n0 ≤ (1 : ℝ) := by
+          have hmul : θ ^ k0 * (1 - θ) ^ n0 ≤ (1 : ℝ) * (1 : ℝ) :=
+            mul_le_mul hk0 hn0 (pow_nonneg h1θ0 n0) (by positivity)
+          simpa using hmul
+        -- Avoid rewriting `abs` into a product of `abs` terms; we want the simple `abs_of_nonneg`.
+        have hnorm : ‖θ ^ k0 * (1 - θ) ^ n0‖ = θ ^ k0 * (1 - θ) ^ n0 := by
+          exact Real.norm_of_nonneg hnonneg
+        simpa [hnorm] using hprod
+      exact Integrable.of_bound hmeas 1 hbound
+
+    have g_succ (n0 k0 : ℕ) :
+        g (n0 + 1) k0 = g n0 k0 - g n0 (k0 + 1) := by
+      have hf0 : Integrable (fun θ : ℝ => θ ^ k0 * (1 - θ) ^ n0) (ν.restrict (Set.Icc (0 : ℝ) 1)) :=
+        integrable_g n0 k0
+      have hf1 : Integrable (fun θ : ℝ => θ ^ (k0 + 1) * (1 - θ) ^ n0) (ν.restrict (Set.Icc (0 : ℝ) 1)) :=
+        integrable_g n0 (k0 + 1)
+      -- Compute using `a*(1-θ) = a - a*θ`.
+      have hfun :
+          (fun θ : ℝ => θ ^ k0 * (1 - θ) ^ (n0 + 1)) =
+            fun θ : ℝ => θ ^ k0 * (1 - θ) ^ n0 - θ ^ (k0 + 1) * (1 - θ) ^ n0 := by
+        funext θ
+        calc
+          θ ^ k0 * (1 - θ) ^ (n0 + 1)
+              = (θ ^ k0 * (1 - θ) ^ n0) * (1 - θ) := by
+                  simp [pow_succ, mul_assoc]
+          _ = (θ ^ k0 * (1 - θ) ^ n0) * 1 - (θ ^ k0 * (1 - θ) ^ n0) * θ := by
+                  simpa [mul_sub]
+          _ = θ ^ k0 * (1 - θ) ^ n0 - θ ^ (k0 + 1) * (1 - θ) ^ n0 := by
+                  simp [pow_succ, mul_assoc, mul_left_comm, mul_comm]
+      -- Integrate both sides.
+      unfold g
+      -- Rewrite the integrand, then apply linearity.
+      simpa [hfun] using
+        (integral_sub (μ := ν.restrict (Set.Icc (0 : ℝ) 1)) hf0 hf1)
+
+    have g_eq_fwdDiffIter :
+        ∀ n0 k0, g n0 k0 = fwdDiffIter n0 (deFinettiMoment X μ) k0 := by
+      intro n0 k0
+      induction n0 generalizing k0 with
+      | zero =>
+          -- Base: `∫ θ^k0 = m_k0`.
+          simp [g, hmoments, fwdDiffIter]
+      | succ n0 ih =>
+          calc
+            g (n0 + 1) k0 = g n0 k0 - g n0 (k0 + 1) := g_succ n0 k0
+            _ = fwdDiffIter n0 (deFinettiMoment X μ) k0 - fwdDiffIter n0 (deFinettiMoment X μ) (k0 + 1) := by
+                  simp [ih k0, ih (k0 + 1)]
+            _ = fwdDiffIter (n0 + 1) (deFinettiMoment X μ) k0 := by
+                  -- Match the Hausdorff recurrence.
+                  symm
+                  simpa using (fwdDiffIter_succ (m := deFinettiMoment X μ) n0 k0)
+
+    -- Compare `μ.real` of the canonical cylinder to the corresponding integral.
+    have hcanon :
+        μ.real (cyl X (zerosThenOnes l k)) = g l k := by
+      have hfwd := deFinettiMoment_fwdDiffIter_eq_cyl (X := X) (μ := μ) hX hexch l k
+      have hg : g l k = fwdDiffIter l (deFinettiMoment X μ) k := g_eq_fwdDiffIter l k
+      -- `hfwd` gives `Δ^l m_k = μ.real(cyl ...)`.
+      -- `hg` gives `g l k = Δ^l m_k`.
+      simpa [hg] using hfwd.symm
+
+    -- Now relate `μ.real(cyl X xs)` to the Bernoulli-mixture integral defining `M.prob xs`.
+    have hReal : μ.real (cyl X xs) = BernoulliMixture.prob ⟨ν, hprob, hsupp⟩ xs := by
+      have hprob' : BernoulliMixture.prob ⟨ν, hprob, hsupp⟩ xs = g l k := by
+        simp [BernoulliMixture.prob, g, k, l, bernoulliProductPMF_eq_power]
+      calc
+        μ.real (cyl X xs) = μ.real (cyl X (zerosThenOnes l k)) := hRealCanon
+        _ = g l k := hcanon
+        _ = BernoulliMixture.prob ⟨ν, hprob, hsupp⟩ xs := by simpa [hprob'] using hprob'.symm
+
+    have hNonneg : 0 ≤ BernoulliMixture.prob ⟨ν, hprob, hsupp⟩ xs := by
+      -- `μ.real` is always nonnegative.
+      have : 0 ≤ μ.real (cyl X xs) := MeasureTheory.measureReal_nonneg
+      simpa [hReal] using this
+
+    -- Convert the real equality into an `ENNReal.ofReal` equality.
+    have hx : μ (cyl X xs) ≠ ⊤ := by finiteness
+    have hy : (ENNReal.ofReal (BernoulliMixture.prob ⟨ν, hprob, hsupp⟩ xs)) ≠ ⊤ := by simp
+    have hToReal :
+        (μ (cyl X xs)).toReal = (ENNReal.ofReal (BernoulliMixture.prob ⟨ν, hprob, hsupp⟩ xs)).toReal := by
+      simpa [Measure.real, ENNReal.toReal_ofReal hNonneg] using hReal
+    have hENN :
+        μ (cyl X xs) = ENNReal.ofReal (BernoulliMixture.prob ⟨ν, hprob, hsupp⟩ xs) := by
+      exact (ENNReal.toReal_eq_toReal_iff' hx hy).1 hToReal
+
+    simpa [cyl] using hENN
 
 /-- **Practical νPLN Theorem (Direct)**: Exchangeability implies counts are sufficient.
 

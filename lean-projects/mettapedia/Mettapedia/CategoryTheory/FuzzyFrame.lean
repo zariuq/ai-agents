@@ -115,20 +115,25 @@ We define Inf and Sup for arbitrary sets.
 /-- Infimum of a set: greatest lower bound
     For now we axiomatize this - proving completeness requires more work with ℝ. -/
 noncomputable def sInf' (S : Set 𝕀) : 𝕀 :=
-  if h : S.Nonempty then
-    -- Use glb clamped to [0,1]
-    -- The actual definition requires conditionally complete lattice machinery
-    ⟨0, le_refl 0, by norm_num⟩  -- Placeholder: returns 0
-  else
-    one  -- Empty set has Inf = ⊤
+  by
+    classical
+    by_cases h : S.Nonempty
+    · -- TODO: Define the real glb of `S` and clamp to [0,1].
+      -- This will likely use `sInf` on ℝ together with proofs that the result
+      -- stays in the interval.
+      sorry
+    · -- Empty set has Inf = ⊤.
+      exact one
 
 /-- Supremum of a set: least upper bound -/
 noncomputable def sSup' (S : Set 𝕀) : 𝕀 :=
-  if h : S.Nonempty then
-    -- Use lub clamped to [0,1]
-    ⟨1, by norm_num, le_refl 1⟩  -- Placeholder: returns 1
-  else
-    zero  -- Empty set has Sup = ⊥
+  by
+    classical
+    by_cases h : S.Nonempty
+    · -- TODO: Define the real lub of `S` and clamp to [0,1].
+      sorry
+    · -- Empty set has Sup = ⊥.
+      exact zero
 
 noncomputable instance : InfSet 𝕀 := ⟨sInf'⟩
 noncomputable instance : SupSet 𝕀 := ⟨sSup'⟩

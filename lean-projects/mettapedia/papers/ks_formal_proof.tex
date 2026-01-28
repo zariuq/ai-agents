@@ -1,0 +1,142 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{listings}
+\usepackage{listingsutf8}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Knuth-Skilling Formalization}
+\lhead{\leftmark}
+\rfoot{Page \thepage}
+
+\titleformat{\section}{\Large\bfseries}{}{0pt}{}
+\titleformat{\subsection}{\large\bfseries}{}{0pt}{}
+
+\lstdefinelanguage{Lean}{
+  keywords={theorem, lemma, def, structure, class, instance, where, by, have, let, exact, apply, intro, simp, rfl, calc, induction, cases, constructor, refine, use, obtain, rcases, ext, funext, congr, linarith, omega, ring, norm_num, decide, trivial, sorry, axiom, variable, namespace, end, open, import, section, noncomputable, deriving, if, then, else, match, with, fun, return, do, for, in, private, protected, abbrev, inductive, example, attribute, scoped, notation, macro, syntax, elab, partial, unsafe, mutual},
+  sensitive=true,
+  morecomment=[l]{--},
+  morecomment=[s]{/-}{-/},
+  morestring=[b]",
+  literate={α}{$\alpha$}1 {β}{$\beta$}1 {γ}{$\gamma$}1 {δ}{$\delta$}1
+           {ε}{$\varepsilon$}1 {Θ}{$\Theta$}1 {θ}{$\theta$}1
+           {→}{$\to$}1 {←}{$\leftarrow$}1 {↔}{$\leftrightarrow$}1
+           {∀}{$\forall$}1 {∃}{$\exists$}1 {∧}{$\land$}1 {∨}{$\lor$}1
+           {¬}{$\neg$}1 {≤}{$\le$}1 {≥}{$\ge$}1 {≠}{$\neq$}1
+           {⊕}{$\oplus$}1 {ℕ}{$\mathbb{N}$}1 {ℤ}{$\mathbb{Z}$}1
+           {ℚ}{$\mathbb{Q}$}1 {ℝ}{$\mathbb{R}$}1
+           {⟨}{$\langle$}1 {⟩}{$\rangle$}1 {λ}{$\lambda$}1
+           {₀}{$_0$}1 {₁}{$_1$}1 {₂}{$_2$}1 {ₙ}{$_n$}1 {ₖ}{$_k$}1
+           {⁰}{$^0$}1 {¹}{$^1$}1 {²}{$^2$}1 {ⁿ}{$^n$}1 {ᵏ}{$^k$}1
+           {ω}{$\omega$}1 {Ω}{$\Omega$}1 {μ}{$\mu$}1 {π}{$\pi$}1
+           {σ}{$\sigma$}1 {τ}{$\tau$}1 {ρ}{$\rho$}1 {φ}{$\varphi$}1
+           {∑}{$\sum$}1 {∏}{$\prod$}1 {∈}{$\in$}1 {∉}{$\notin$}1
+           {⊆}{$\subseteq$}1 {⊇}{$\supseteq$}1 {⊂}{$\subset$}1
+           {∩}{$\cap$}1 {∪}{$\cup$}1 {∅}{$\emptyset$}1
+           {⊤}{$\top$}1 {⊥}{$\bot$}1 {×}{$\times$}1
+           {∘}{$\circ$}1 {·}{$\cdot$}1 {′}{$'$}1 {↑}{$\uparrow$}1 {≃}{$\simeq$}1
+           {⇒}{$\Rightarrow$}1 {⟹}{$\Longrightarrow$}1 {ℕ⁺}{$\mathbb{N}^{+}$}2
+           {“}{``}1 {”}{''}1 {–}{--}1 {⁺}{+}1
+           {‹}{<}1 {›}{>}1 {ₗ}{$_l$}1
+           {ᶜ}{${}^c$}1 {⊓}{$\sqcap$}1 {⊔}{$\sqcup$}1
+           {⨆}{$\bigsqcup$}1 {⊗}{$\otimes$}1,
+}
+\lstset{
+  language=Lean,
+  inputencoding=utf8,
+  basicstyle=\footnotesize\ttfamily,
+  keywordstyle=\color{blue}\bfseries,
+  commentstyle=\color{green!50!black}\itshape,
+  stringstyle=\color{red},
+  showstringspaces=false,
+  breaklines=true,
+  breakatwhitespace=true,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=5pt,
+  frame=single,
+  framesep=2pt,
+  xleftmargin=15pt,
+  framexleftmargin=15pt,
+}
+
+\title{\textbf{Knuth-Skilling Probability Foundations}\\[0.5em]
+\Large Complete Lean 4 Formalization\\[0.3em]
+\normalsize ``Symmetrical Foundation'' and ``Foundations of Inference''}
+\author{Formalization in Lean 4 with Mathlib}
+\date{January 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document contains the complete Lean 4 formalization of the Knuth-Skilling
+axiomatic foundations of probability theory. The formalization covers:
+\begin{itemize}
+\item \textbf{Basic.lean}: Core KnuthSkillingAlgebra class and axioms
+\item \textbf{Separation}: KSSeparation, KSSeparationStrict, and derivations
+\item \textbf{RepresentationTheorem}: The full Appendix A proof that associativity implies additivity
+\item \textbf{Commutativity}: Proof that separation implies commutativity
+\item \textbf{Counterexamples}: Models showing necessity of separation
+\end{itemize}
+Total: approximately 30,000 lines of Lean 4 code.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% The actual Lean files (preprocessed to ASCII)
+\newcommand{\leandir}{lean_src}
+
+\section{Basic Definitions (Basic.lean)}
+\lstinputlisting{\leandir/Basic.lean}
+
+\section{Separation Axioms}
+\subsection{SandwichSeparation.lean}
+\lstinputlisting{\leandir/SandwichSeparation.lean}
+
+\section{Representation Theorem}
+
+\subsection{Main.lean (Public API)}
+\lstinputlisting{\leandir/Main.lean}
+
+\subsection{Core/Prelude.lean}
+\lstinputlisting{\leandir/Prelude.lean}
+
+\subsection{Core/MultiGrid.lean}
+\lstinputlisting{\leandir/MultiGrid.lean}
+
+\subsection{Core/Induction/Construction.lean}
+\lstinputlisting{\leandir/Construction.lean}
+
+\subsection{Core/Induction/DeltaShift.lean}
+\lstinputlisting{\leandir/DeltaShift.lean}
+
+\subsection{Core/Induction/ThetaPrime.lean}
+\lstinputlisting{\leandir/ThetaPrime.lean}
+
+\subsection{Core/Induction/Goertzel.lean}
+\lstinputlisting{\leandir/Goertzel.lean}
+
+\subsection{Globalization.lean}
+\lstinputlisting{\leandir/Globalization.lean}
+
+\section{Counterexamples}
+
+\subsection{SemidirectNoSeparation.lean}
+\lstinputlisting{\leandir/SemidirectNoSeparation.lean}
+
+\subsection{ProductFailsSeparation.lean}
+\lstinputlisting{\leandir/ProductFailsSeparation.lean}
+
+\section{Axiom-Bundle Equivalence}
+\lstinputlisting{\leandir/AxiomSystemEquivalence.lean}
+
+\end{document}

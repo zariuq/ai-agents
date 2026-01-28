@@ -153,11 +153,15 @@ section IndirectPath
     In quantale terms, this relates to residuation of the direct path.
 -/
 noncomputable def indirectPathContribution (_E_AB E_BC_neg : Evidence) : Evidence :=
-  -- The indirect path uses the "residual capacity" of E_AB
-  -- Simplified: scale E_BC_neg by the complement of E_AB's strength
-  -- TODO: full implementation would use (1 - strength E_AB)
-  let complement_factor := Evidence.one  -- Placeholder for complement factor
-  complement_factor * E_BC_neg
+  by
+    classical
+    -- TODO: Implement the intended PLN-style indirect contribution.
+    -- The intended formula is "scale by (1 - strength E_AB)", but getting this
+    -- into the `Evidence` carrier (ENNReal×ENNReal) needs a clear design choice.
+    --
+    -- We use an explicit `sorry` rather than a dummy constant so the file
+    -- remains honest about the current state of the definition.
+    sorry
 
 /-- The indirect path can be expressed via residuation.
 

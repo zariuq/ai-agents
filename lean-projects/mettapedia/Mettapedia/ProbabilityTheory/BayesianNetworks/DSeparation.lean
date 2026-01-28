@@ -231,19 +231,33 @@ This requires:
 For now, we state this as a class/specification.
 -/
 
+/-- Placeholder for the (measure-theoretic) conditional independence statement.
+
+This is intentionally left as a `sorry`-stub until we connect:
+- a concrete joint probability space for a Bayesian network, and
+- Mathlib's conditional independence definitions.
+
+We use a named predicate (instead of `True`) so callers cannot accidentally
+"prove" conditional independence by `trivial`. -/
+def CondIndepSpec (_G : DirectedGraph V) (_X _Y _Z : Set V) : Prop := by
+  classical
+  -- TODO: Use Mathlib's conditional independence:
+  --   `CondIndepSets` / `iIndep` / conditional independence for measurable functions/sets.
+  -- This will require choosing the ambient probability space (sample space + measure)
+  -- and interpreting `X Y Z : Set V` as collections of random variables or sigma-algebras.
+  sorry
+
 /-- The soundness property: d-separation implies conditional independence.
     This is stated as a specification class; instances require measure theory. -/
 class DSepImpliesCondIndep (G : DirectedGraph V) : Prop where
   sound : ∀ X Y Z : Set V, DSeparated G X Y Z →
-    True  -- Placeholder for: μ-conditional independence X ⊥ Y | Z
-  -- TODO: Replace with actual conditional independence:
-  -- import Mathlib.Probability.Independence.Conditional
-  -- (μ.cond Z).IndependentSet X Y
+    CondIndepSpec G X Y Z
 
 /-- When d-separation holds, the conditional independence property follows
     (assuming the soundness instance exists). -/
 theorem dsep_cond_indep [h : DSepImpliesCondIndep G] (X Y Z : Set V)
-    (hdsep : DSeparated G X Y Z) : True := h.sound X Y Z hdsep
+    (hdsep : DSeparated G X Y Z) : CondIndepSpec G X Y Z :=
+  h.sound X Y Z hdsep
 
 /-! ## Special Cases -/
 

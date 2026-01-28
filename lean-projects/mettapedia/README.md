@@ -6,16 +6,13 @@ A comprehensive formalization of mathematics across multiple domains, inspired b
 
 ```
 Mettapedia/
-├── ProbabilityTheory/   # Probability theory (Knuth-Skilling, Cox, Kolmogorov foundations)
+├── ProbabilityTheory/   # K&S, Cox, Kolmogorov, Hypercube
 ├── InformationTheory/   # Shannon entropy, Faddeev axioms, KL divergence
-├── GraphTheory/         # Graph theory (Bondy & Murty, Diestel) [skeleton]
-├── SetTheory/           # Set theory foundations [skeleton]
-├── Combinatorics/       # Combinatorial mathematics [skeleton]
-├── NumberTheory/        # Number theory [skeleton]
-├── Topology/            # Topological spaces [skeleton]
-├── Algebra/             # Algebraic structures (ordered semigroups)
-├── Logic/               # Mathematical logic (Solomonoff prior)
-└── Analysis/            # Real and complex analysis [skeleton]
+├── Logic/               # PLN evidence theory, Solomonoff induction
+├── UniversalAI/         # AIXI, Grain of Truth, multi-agent systems
+├── Algebra/             # Ordered semigroups (Hölder/Alimov)
+├── GraphTheory/         # [skeleton]
+└── ...                  # Other domains [skeleton]
 ```
 
 ## Tools
@@ -40,16 +37,16 @@ nice -n 19 lake build Mettapedia.ProbabilityTheory.KnuthSkilling.FoundationsOfIn
 The **Knuth-Skilling Foundations of Inference** formalization is the most developed subproject,
 with the core theorems (Appendices A, B, C) fully verified in Lean 4.
 
-> **Note**: Main theorem statements and definitions have been reviewed by humans.
+> **Note**: Main theorem statements and definitions have been reviewed by human; may still contain errors.
 > Prose in accompanying papers may contain human or AI errors; formal claims are machine-checked.
 
 ### Papers
 
 | Paper | Description |
 |-------|-------------|
-| `paper/ks-formalization-walkthrough.pdf` | Step-by-step guide through the Lean code |
-| `paper/ks-math-foundations.pdf` | Math-first exposition comparing K&S with Cox, Kolmogorov, de Finetti |
-| `paper/ks-foi-review.pdf` | Constructive review of K&S (2012) |
+| `papers/ks-lean-overview.pdf` | Lean code walkthrough with line numbers |
+| `papers/ks-math-foundations.pdf` | Mathematical foundations of the K&S representation theorem |
+| `papers/ks-foi-review.pdf` | Review of K&S (2012) for Foundations of Information |
 
 ### Quick Start
 
@@ -71,9 +68,10 @@ For detailed K&S documentation, directory structure, and import rules, see:
 
 | Subproject | Status | Location |
 |------------|--------|----------|
-| **Knuth-Skilling FOI** | ✅ Verified | `ProbabilityTheory/KnuthSkilling/` |
 | **Cox Theorem** | ✅ Verified | `ProbabilityTheory/Cox/` |
 | **Shannon/Faddeev Entropy** | ✅ Verified | `InformationTheory/ShannonEntropy/` |
+| **PLN Evidence Theory** | 🔬 Experimental | `Logic/` |
+| **Universal AI (AIXI)** | 🔬 Experimental | `UniversalAI/` |
 | Probability Hypercube | 🔬 Experimental | `ProbabilityTheory/Hypercube/` |
 | Graph Theory | 📝 Skeleton | `GraphTheory/` |
 
@@ -93,8 +91,13 @@ Both interactive theorem provers are used for different formalization experiment
 - Shannon, "A Mathematical Theory of Communication" (1948)
 - Faddeev, "On the concept of entropy" (1956)
 
-### Graph Theory
-- Bondy & Murty, "Graph Theory" (GTM 244, 2007)
+### Probabilistic Logic
+- Goertzel et al., "Probabilistic Logic Networks" (2008)
+- Walley, "Statistical Reasoning with Imprecise Probabilities" (1991)
+
+### Universal AI
+- Hutter, "Universal Artificial Intelligence" (2005)
+- Legg & Hutter, "Universal Intelligence" (2007)
 
 ## Contributing
 
