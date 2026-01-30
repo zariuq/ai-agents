@@ -32,8 +32,6 @@ import Mathlib.Combinatorics.SimpleGraph.Bipartite
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Fintype.Card
 import Mathlib.Data.Finset.Card
-import Hammer
-
 set_option checkBinderAnnotations false
 
 open Classical

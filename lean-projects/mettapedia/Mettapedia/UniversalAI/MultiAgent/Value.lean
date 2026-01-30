@@ -192,7 +192,7 @@ private theorem playerValue_inner_bound {n : ℕ} (μ : MultiAgentEnvironment n)
         apply add_le_add hrew
         apply mul_le_mul_of_nonneg_left hfuture γ.nonneg
     _ ≤ 1 + 1 * k := by
-        apply add_le_add_left
+        apply add_le_add_right
         exact mul_le_mul_of_nonneg_right hγ hk_nonneg
     _ = k + 1 := by ring
 
@@ -249,11 +249,10 @@ theorem playerValue_le_horizon {n : ℕ} (μ : MultiAgentEnvironment n)
             · intro j _
               -- Agent policy probability ≤ 1 (since policies sum to 1)
               have hpview := MultiAgentHistory.playerView_wellFormed j h hw
-              have hsum : (∑' a : Action, (π.agents j).policy (h.playerView j) a) = 1 :=
-                (π.agents j).policy_sum_one (h.playerView j) hpview
+              have hsum : (∑ a : Action, (π.agents j).policy (h.playerView j) a) = 1 := by
+                simpa [tsum_fintype] using (π.agents j).policy_sum_one (h.playerView j) hpview
               have hle : (π.agents j).policy (h.playerView j) (ja j) ≤
-                         ∑' a : Action, (π.agents j).policy (h.playerView j) a := by
-                simp only [tsum_fintype]
+                         ∑ a : Action, (π.agents j).policy (h.playerView j) a := by
                 apply Finset.single_le_sum (fun _ _ => zero_le _) (Finset.mem_univ _)
               simpa [hsum] using hle
           have hja_ne_top : jointActionProb π h ja ≠ ⊤ :=
@@ -281,7 +280,7 @@ theorem playerValue_le_horizon {n : ℕ} (μ : MultiAgentEnvironment n)
                   apply add_le_add hrew
                   apply mul_le_mul_of_nonneg_left hfuture γ.nonneg
               _ ≤ 1 + 1 * k := by
-                  apply add_le_add_left
+                  apply add_le_add_right
                   exact mul_le_mul_of_nonneg_right hγ hk_nonneg
               _ = k + 1 := by ring
           -- Weights sum to ≤ 1 after converting to Real
@@ -479,11 +478,10 @@ theorem othersProb_le_one {n : ℕ} (π : MultiAgentPolicy n)
   · intro j _; exact zero_le _
   · intro j _hj
     have hpview := MultiAgentHistory.playerView_wellFormed j h hw
-    have hsum : (∑' a : Action, (π.agents j).policy (h.playerView j) a) = 1 :=
-      (π.agents j).policy_sum_one (h.playerView j) hpview
+    have hsum : (∑ a : Action, (π.agents j).policy (h.playerView j) a) = 1 := by
+      simpa [tsum_fintype] using (π.agents j).policy_sum_one (h.playerView j) hpview
     have hle : (π.agents j).policy (h.playerView j) (ja j) ≤
-               ∑' a : Action, (π.agents j).policy (h.playerView j) a := by
-      simp only [tsum_fintype]
+               ∑ a : Action, (π.agents j).policy (h.playerView j) a := by
       apply Finset.single_le_sum (fun _ _ => zero_le _) (Finset.mem_univ _)
     simpa [hsum] using hle
 
@@ -664,7 +662,7 @@ theorem playerQValue_le_bestResponseQValue {n : ℕ}
       -- playerQValue uses γ * playerValue ... k
       -- bestResponseQValue uses γ * bestResponseValue ... k
       apply mul_le_mul_of_nonneg_left _ ENNReal.toReal_nonneg
-      apply add_le_add_left
+      apply add_le_add_right
       apply mul_le_mul_of_nonneg_left _ γ.nonneg
       -- Need: playerValue μ π γ i h' k ≤ bestResponseValue μ π γ i h' k
       -- where h' = h ++ [act ja, per jp]

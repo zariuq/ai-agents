@@ -2526,7 +2526,7 @@ theorem optimalValue_optimalQValue_mono_of_prob_mono (μ₁ μ₂ : Environment)
                 x.reward + γ.val * optimalValue μ₂ γ (ha ++ [HistElem.per x]) n := by
             have hv : optimalValue μ₁ γ (ha ++ [HistElem.per x]) n ≤ optimalValue μ₂ γ (ha ++ [HistElem.per x]) n :=
               ihV (ha ++ [HistElem.per x])
-            exact add_le_add_left (mul_le_mul_of_nonneg_left hv γ.nonneg) _
+            exact add_le_add_right (mul_le_mul_of_nonneg_left hv γ.nonneg) _
           have hterm (x : Percept) :
               (μ₁.prob ha x).toReal * (x.reward + γ.val * optimalValue μ₁ γ (ha ++ [HistElem.per x]) n) ≤
                 (μ₂.prob ha x).toReal * (x.reward + γ.val * optimalValue μ₂ γ (ha ++ [HistElem.per x]) n) := by
@@ -2639,7 +2639,7 @@ theorem value_qValue_mono_of_prob_mono (μ₁ μ₂ : Environment) (π : Agent) 
                 x.reward + γ.val * value μ₂ π γ (ha ++ [HistElem.per x]) n := by
             have hv : value μ₁ π γ (ha ++ [HistElem.per x]) n ≤ value μ₂ π γ (ha ++ [HistElem.per x]) n :=
               ihV (ha ++ [HistElem.per x])
-            exact add_le_add_left (mul_le_mul_of_nonneg_left hv γ.nonneg) _
+            exact add_le_add_right (mul_le_mul_of_nonneg_left hv γ.nonneg) _
           have hterm (x : Percept) :
               (μ₁.prob ha x).toReal * (x.reward + γ.val * value μ₁ π γ (ha ++ [HistElem.per x]) n) ≤
                 (μ₂.prob ha x).toReal * (x.reward + γ.val * value μ₂ π γ (ha ++ [HistElem.per x]) n) := by

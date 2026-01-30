@@ -323,9 +323,9 @@ private theorem historyProbability_tsum_append_per_le {n : ℕ} (σ : MultiAgent
             intro jp
             simpa using historyProbability_append_per (σ := σ) (π := π) (h := h) (jp := jp) hw hlast
     _ = historyProbability σ π h * (∑' jp : JointPercept n, σ.prob h jp) := by
-          simp [ENNReal.tsum_mul_left]
+          simpa using (ENNReal.tsum_mul_left (a := historyProbability σ π h) (f := fun jp => σ.prob h jp))
     _ ≤ historyProbability σ π h * 1 := by
-          exact mul_le_mul_left' (σ.prob_le_one h hw) (historyProbability σ π h)
+          exact mul_le_mul_right (σ.prob_le_one h hw) (historyProbability σ π h)
     _ = historyProbability σ π h := by simp
 
 private def splitLastFunEquiv {α : Type*} (m : ℕ) : (Fin (m + 1) → α) ≃ (Fin m → α) × α where
@@ -849,7 +849,10 @@ noncomputable def SubjectiveEnvironment.of {n : ℕ} (i : Fin n)
           (∑' x : Percept, SubjectiveEnvironment.prob (n := n) i σ π h x)
               = (∑' x : Percept,
                     SubjectiveEnvironment.playerViewProbability (n := n) i σ π (h ++ [HistElem.per x])) / denom := by
-                  simp [SubjectiveEnvironment.prob, hw', hlast, denom, hden, div_eq_mul_inv, ENNReal.tsum_mul_right]
+                  simp [SubjectiveEnvironment.prob, hw', hlast, denom, hden, div_eq_mul_inv]
+                  simpa using
+                    (ENNReal.tsum_mul_right (a := denom⁻¹)
+                      (f := fun x => SubjectiveEnvironment.playerViewProbability (n := n) i σ π (h ++ [HistElem.per x])))
           _ ≤ denom / denom := ENNReal.div_le_div_right hsum_le denom
           _ ≤ 1 := ENNReal.div_self_le_one
 
