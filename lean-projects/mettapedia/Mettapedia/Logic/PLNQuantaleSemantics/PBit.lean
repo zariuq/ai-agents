@@ -1,4 +1,4 @@
-import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.EvidenceQuantale
 
 /-!
 # P-Bits: Goertzel's Paraconsistent Truth Values

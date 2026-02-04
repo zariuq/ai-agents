@@ -1,0 +1,418 @@
+%% Towards a complete formalization of PLN
+%%
+%% Render with: ./render.sh
+
+\documentclass[]{article}
+\usepackage{url}
+\usepackage{minted}
+\usepackage[hyperindex,breaklinks]{hyperref}
+\usepackage{breakurl}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\footnotesize,breaklines=false,frame=single}
+\usepackage{float}
+\restylefloat{table}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage[skip=0pt]{subcaption}
+\usepackage{circledsteps}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+
+% For ≞ (requires the LuaLaTeX engine)
+\usepackage{unicode-math}
+\setmathfont{Stix Two Math}
+
+\begin{document}
+
+\newcommand{\nuPLN}{\nu\textup{PLN}}
+%% \newcommand{\Bool}{\mathbb{B}}
+\newcommand{\Bool}{\textup{Bool}}
+%% \newcommand{\Bool}{B}
+\newcommand{\T}{\texttt{True}}
+\newcommand{\F}{\texttt{False}}
+\newcommand{\Domain}{\mathcal{D}}
+\newcommand{\Subsetdom}{\mathcal{S}}
+\newcommand{\Predicate}{\mathcal{P}}
+\newcommand{\Language}{\mathcal{L}}
+\newcommand{\Bernouilli}{\mathcal{B}}
+\newcommand{\Bernouillip}{\mathcal{B}_p}
+\newcommand{\Field}{\mathcal{F}}
+\newcommand{\Model}{M}
+\newcommand{\Datax}{D_x}
+\newcommand{\DataxD}{D_{x\in\Domain}}
+\newcommand{\DataS}{D_{\Subsetdom}}
+\newcommand{\STV}[2]{<\!#1, #2\!>}
+\newcommand{\limp}{\Rightarrow}
+\newcommand{\Nat}{\mathbb{N}}
+\newcommand{\anymu}{\hat{\mu}}
+\newcommand{\anyomega}{\hat{\omega}}
+
+\title{Towards a Complete Formalization of PLN\\
+  \texttt{(DRAFT)}} \author{Nil Geisweiller}
+\maketitle
+
+\section{Introduction}
+The goal is similar to Solomonoff Universal Induction~\cite{TODO},
+that is we want to approach a first order (unknown but computable)
+distribution $\mu$ given observations, using a second order
+(uncomputable but known) distribution $\nu$, called the Universal
+Distribution.  In Solomonoff Induction, observations are bit strings
+produced by a Turing machine\footnote{Note that even though the sample
+space of $\nu$ is made of deterministic Turing machines, $\nu$ can
+approximate any computable distribution $\mu$ (thus non-deterministic)
+by maintaining an ensemble of such Turing machines.}.  In PLN however,
+observations are outcomes from an indexed boolean random variable,
+representing the outputs of evaluating a predicate on some inputs.
+Such predicate is called the \emph{observable predicate}.  In practice
+PLN allows multiple observable predicates however one can assume one
+predicate without loss of generality.  Indeed, to emulate multiple
+predicates, one can introduce an extra component in the predicate's
+domain to ``select'' the predicate of interest.  Also, since it is
+observed by a random variable, such predicate is not necessarily
+deterministic (though it could be).  As such, one may think of the
+observable predicate as being a program drawn from a certain
+Probabilistic Programming Language.  In the following section we
+formally define the above.
+
+Because this reformulation of PLN departs somewhat from the definition
+of PLN in the PLN book~\cite{TODO}, we give it a new name, $\nuPLN$.
+
+\section{Definitions}
+In its original form, PLN purposely avoids relying on an underlying
+global probability distribution.  I am not against this in principle.
+I will simply admit that I cannot conceive a complete definition of
+PLN that does not rely on such global probability distribution.  I
+would also point out that a publication released after the PLN book by
+the principal authors of the PLN book, Ben Goertzel and Matt Ikle,
+very much aligns with the idea of a global probability
+distribution~\cite{TODO}, and was in fact a great source of
+inspiration for writing this very document.  The next subsection is
+dedicated to define the global probability distribution which $\nuPLN$
+is intended to derive from.
+
+\subsection{Global Probability Distribution}
+\label{sec:globalprob}
+Let $(\Omega, \Field, \nu)$ be a probability space such that
+\begin{itemize}
+\item $\Field$ is the event space, a $\sigma$-algebra on $\Omega$.
+\item $\nu : \Field \to [0, 1]$ is a universal distribution, further
+  defined below.
+\item $\Omega$, the set of possible worlds, is the sample space
+  associated to $\nu$, such that each element $\anyomega \in \Omega$
+  contains
+  \begin{enumerate}
+  \item a probabilistic predicate $\anymu \in \Language$ over a domain
+    $\Domain$, described in a probabilistic programming language
+    $\Language$,
+  \item a mapping of $\anymu$ from $\Domain$ to Boolean.  For instance
+    if $\Domain$ is $\Nat$, then a possible mapping could be
+    $(\anymu\ 0) = \T,\ (\anymu\ 1) = \F, \ (\anymu\ 2) = \T, \dots$,
+    corresponding so far to a predicate indicating the evenness of a
+    natural number.  Note that the world $\anyomega$ contains
+    the entire, potentially infinite, mapping, even though in reality
+    an observer can only have access to a finite subset of it.
+  \end{enumerate}
+\end{itemize}
+An observer lives in a particular world $\omega \in \Omega$, called
+the \emph{true world}, which includes the \emph{true generator} or
+\emph{true predicate}, $\mu$, and the \emph{true history}, which is
+the complete mapping of evaluations of $\mu$ over the domain
+$\Domain$.  Note that since $\mu$ is probabilistic, it does not
+deterministically determine the history, thus the true history is just
+one possible history among an infinity of histories compatible with
+$\mu$.  Note that throughout the document $\omega$ and $\mu$ refer to
+the true world and true generator respectively, which is to be
+contrasted with $\anyomega$ and $\anymu$ which refer to arbitrary
+elements of $\Omega$ and $\Language$ respectively.  Although when it
+is clear that the definitions are generic and apply to any arbitrary
+world and the true world alike, we will use $\omega$ and $\mu$ as
+well.  Since $\mu$ is a probabilistic predicate, its type signature
+cannot merely be
+$$\mu : \Domain \to \Bool$$ where $\Bool = \{\F, \T\}$.  To capture
+its probabilistic nature we give it the following type signature
+$$\mu : \Domain \to \Omega \to \Bool$$ in a curried fashion.  Meaning
+that given its argument, it produces a boolean random variable.
+Therefore the observable predicate can be viewed as an indexed boolean
+random variable.  Of course, $\mu$ never gets to be evaluated on a
+different world than the one it belongs to, thus we can write
+$(\mu\ a)$ while meaning $(\mu\ a\ \omega)$, but we still need to keep
+the $\Omega$ argument in order to reason about possible worlds since
+the true world is unknown.  Also, in cases where the domain $\Domain$
+can be decomposed into multiple components, a curried notation will be
+used interchangeably.  So instead of
+$$\mu : (\Domain_1 \times \dots \times \Domain_n) \to \Omega \to \Bool$$
+the following
+$$\mu : \Domain_1 \to \dots \to \Domain_n \to \Omega \to \Bool$$ will
+be used.  This will be convenient to express inheritance relationships
+between partially applied predicates.  As already hinted, the
+application of $\mu$ to an input $x$ is denoted with the traditional
+functional programming style
+$$(\mu\ x)$$ Thus if the domain is decomposed into subdomains
+$\Domain_1$ to $\Domain_n$, applying $\mu$ to all its inputs $x_1$ to
+$x_n$ will be denoted
+$$(\mu\ x_1\ \dots\ x_n)$$ Likewise for the $\omega$ argument
+$$(\mu\ x_1\ \dots\ x_n\ \omega)$$ Such functional programming
+notation is used for $\mu$ because it is currying-friendly.  For the
+rest, we keep using the traditional mathematical function application
+style, such as
+$$\nu(E)$$ denoting the application of the probability distribution
+$\nu$ to the event $E$.  In case $\mu$ is known to be deterministic,
+$\Omega$ could potentially be dropped, but that is not going to be our
+working assumption for now.  Additionally to the functional
+programming style, we may use parametric notation, so for instance
+instead of
+$$(\mu\ x_1\ x_2)$$ we may write
+$$(\mu_{x_1}\ x_2)$$ where $x_1$ is viewed as a parameter and $x_2$ is
+viewed as the argument of $\mu_{x_1}$.\\
+With that, let us now define key random variables to access $\Omega$:
+\begin{itemize}
+\item $\Model : \Omega \to \Language$ with measurable space
+  $(\Language, \Field_{\Language})$, where $\Language$ is a certain
+  probabilistic programming language and $\Field_{\Language}$ is a
+  $\sigma$-algebra on $\Language$.  Thus, $\Model$ takes a world
+  $\anyomega \in \Omega$ and outputs the probabilistic program $\anymu
+  \in \Language$ generating that world.  Note that this random
+  variable is inaccessible from an observer within that world.  An
+  observer within that world only has access to a finite record of
+  evaluations of $\anymu$.  However, this random variable is important
+  to reason about multiple worlds, we suspect it is particularly
+  important for higher order reasoning.
+\item $\DataxD : \Omega \to \Bool$, a Boolean random variable indexed
+  by values in $\Domain$.  Unlike $\Model$, $\DataxD$ is at least
+  partially accessible from an observer within that world.  Meaning,
+  such observer can gather data for a finite subset $\Subsetdom$ of
+  $\Domain$.  In this case $\DataS$ represents a finite family of
+  Boolean random variables, corresponding the set of accessible
+  observations.  $\Model$ and $\DataxD$ are related by the following
+  equality
+  $$(\anymu\ x\ \anyomega) = (\Datax\ \anyomega)$$ where $\anyomega
+  \in \Omega$ such that $(M\ \anyomega) = \anymu$.  Or simply, in
+  curried fashion
+  $$(\anymu\ x) = \Datax$$
+\end{itemize}
+Due to the equality above, the distribution of observations is
+entirely determined by a model $\anymu$.  In other words, it suffices
+to define a distribution over $\Language$, the prior distribution over
+possible models, to define $\nu$ (as far as $M$ and $\Datax$ are
+concerned anyway).  Then, relating observations to models can be done
+using regular Bayesian inference.  The prior is defined by
+$$\nu(M \in L)$$ where $L \in \Field_{\Language}$.  Note how it is
+expressed in terms of elements of $\Field_{\Language}$, instead of
+elements of $\Language$.  It is because, for the purpose of recovering
+PLN with the Bayesian approach, $\Language$ needs to be continuous.  I
+will explain this in detail, but for now let us use this notation to
+formulate Bayes' theorem
+$$\nu(M \in L | \DataS) = \frac{\nu(M \in L) \times \nu(\DataS | M \in
+  L)}{\nu(\DataS)}$$ where $\Subsetdom$ is a finite subset of
+$\Domain$.  For the sake of simplicity, we may drop $M$ since it is
+the only random variable that ranges over $\Language$, and simply
+write
+$$\nu(L | \DataS) = \frac{\nu(L) \times \nu(\DataS |
+  L)}{\nu(\DataS)}$$
+An example of prior will be given in~\ref{TODO},
+but in general it can be viewed as a parameter of $\nuPLN$.  That is,
+given a certain prior of $\nu$ over $\Language$, one can derive a
+certain flavor of $\nuPLN$.  Since $(\mu\ x) = \Datax$, a history data
+point will be represented as $(\mu\ x) = \T$ or $(\mu\ x) = \F$, and
+the usage of the random variable $\Datax$, and especially $\DataS$,
+will be reserved in the formulation of $\nu$ to refer to the observed
+history.
+
+\subsection{PLN Global Distribution vs Solomonoff Induction}
+Note that unlike with Solomonoff Universal Induction, $\anymu$
+represents a probabilistic predicate rather than a computable
+probability function calculating the probability of any event,
+although the latter can be derived from the former.
+
+The \emph{true distribution} in Solomonoff Induction corresponds to
+the \emph{real predicate} here.  We prefer to use the word \emph{real}
+when denoting objective reality, rather than \emph{true} because
+\emph{true predicate} could be understood as a predicate that always
+outputs true.
+
+\section{PLN and the Global Distribution}
+In Section~\ref{sec:derules} will proceed to derive PLN rules from the
+global probability distribution introduced in
+Section~\ref{sec:globalprob}, but for now let us recall important
+notions of PLN and how to relate them to the global distribution
+defined in Section~\ref{sec:globalprob}.
+
+\subsection{Concepts vs Predicates}
+The PLN book describes respectively the notions of \emph{concepts} and
+\emph{predicates}, and their respective associated relationships
+\emph{inheritance} and \emph{implication}.  As explain in Section 2.6
+\emph{Higher-Order Logical Relationships} of the PLN book, there is a
+perfect isomorphism between concepts and inheritance on one side and
+predicates and implication on the other side.  Concerned with
+conciseness, we will pick a side, the predicate side, and essentially
+forget about the other side, the concept side, for the rest of this
+document.  But before we do so let us recall what is a concept, the
+inheritance between two concepts, and the isomorphism between concepts
+and predicates.
+
+\subsubsection{Concepts and Inheritance}
+A concept is a fuzzy (or, as I prefer to say, probabilistic, for
+reasons I will explain in Section~\ref{TODO}) set, and the
+\emph{extensional} inheritance between two concepts is a
+probabilitized subset relationship.  Originally, in the PLN book, the
+inheritance relationship is defined as an explicit mixture of
+extensional and intensional inheritances. We will show however that
+they are in fact both the same thing, the extensional inheritance is a
+way to approach inheritance solely via \emph{induction}, and
+intensional inheritance is a way to approach inheritance solely via
+\emph{abduction}.  Any one side, extensional or intensional, is good
+enough to define the other, so let us pick one, the extensional side,
+and define inheritance with it.  The extensional inheritance between
+two concepts can be viewed as a probabilitized subset relationship.
+It allows to express things like ``most members of a set are also
+members of another set''.  For instance one could express in PLN that
+90\% of birds fly, with
+$$(\texttt{Inheritance}\ \texttt{Bird}\ \texttt{Fly}) \measeq 0.9$$
+Such knowledge might have been obtained by observing a finite sample
+of birds and whether or not they fly.  Meaning there could be an
+uncertainty on the 90\% itself.  To represent such uncertainty PLN
+uses a second order distribution, in this case a Beta distribution as
+it is an ideal choice to represent the posterior of the parameter of a
+Bernouilli distribution given observations.  Under this assumption
+only two numbers are required to determine the parameters, $\alpha$
+and $\beta$, of the associated Beta distribution.  A \emph{truth
+value} called \emph{simple truth value} was created for this purpose
+and is thus described by two numbers: a strength (a proxy for a
+probability estimate) and a confidence over this strength from which
+the $\alpha$ and $\beta$ parameters of the Beta distribution can be
+recovered.  For instance, given a simple truth value one may express
+that 90\% of birds fly with a confidence of 0.99
+$$(\texttt{Inheritance}\ \texttt{Bird}\ \texttt{Fly})\ \measeq\ \STV{0.9}{0.99}$$
+where 0.9 is the strength and 0.99 is the confidence.  The confidence
+is a value between 0 and 1 that actually encodes the sample size that
+was used to obtained the strength.  The higher the sample size, the
+higher the confidence.  More information about that will be provided
+in Section~\ref{TODO} but for now let us just leave it at that as it
+is enough for what we are concerned with in this Section which is the
+isomorphism between concepts and predicates.
+
+\subsubsection{Isomorphism between Concepts and Predicates}
+To every concept one can associate a predicate and vice versa.  To go
+from concept to predicate one can use the \emph{indicator function},
+and to go from predicate to concept one can use the \emph{satisfying
+set}.  These notions are well known for crisp predicates and sets and
+thus will not be detailed any further here.  The only difference in
+PLN is that concepts are probabilistic, meaning that a probability (or
+potentially a second order probability) can be attached to the
+membership of an element to a concept.  Likewise, predicates are
+probabilistic in the sense that a (second order) probability can be
+attached to the evaluation of an argument to a predicate.  As one
+would expect the isomorphism also applies between the inheritance
+relationship on the concept side and the implication relationship on
+the predicate side.  So for instance, on the predicate side one can
+express the same inheritance relationship between birds and fly as
+follows
+$$(\texttt{Implication}\ \texttt{IsBird}\ \texttt{DoesFly})\ \measeq\ \STV{0.9}{0.99}$$
+where $\texttt{IsBird}$ and $\texttt{DoesFly}$ have been obtained by
+taking the indicator functions of $\texttt{Bird}$ and $\texttt{Fly}$.
+As mentioned earlier, we will drop the concept side and only focus on
+the predicate side for the remaining of the document.
+
+\subsection{Relating Predicates to \texorpdfstring{$\mu$}{𝜇}}
+As explained in Section~\ref{sec:globalprob} there is only one global
+predicate, $\mu$.  To manipulate multiple predicates we can simply
+introduce a additional parameter in the domain of $\mu$ indicating
+predicates.  Let us call this subdomain $\Predicate$ which ranges over
+symbols representing predicates, in this case $\mu$ may have the type
+signature
+$$\mu : \Predicate \to \Domain \to \Omega \to \Bool$$ So for instance
+to express that a cat is a mammal, traditionally represented as
+$$\textit{Cat} \limp \textit{Mammal}$$ one may use the following
+parametric notation of $\mu$
+$$\mu_{\textit{Cat}} \limp \mu_{\textit{Mammal}}$$ Likewise, to
+represent the evaluation of the predicate \textit{Cat} over a certain
+cat instance, $\textit{cat}_{123}$, one may use
+$$(\mu_{\textit{Cat}}\ \textit{cat}_{123})$$ corresponding to
+the traditional representation
+$$(\textit{Cat}\ \textit{cat}_{123})$$ where $\textit{cat}_{123} \in
+\Domain$.
+
+\subsection{Truth Value as Posterior Distribution}
+\label{sec:truthvalue}
+
+\subsection{Statement versus Judgement}
+\label{sec:statjudge}
+Like in NAL, a PLN \emph{statement} designates a logical statement
+without truth value, such as
+$$P \limp Q$$ While a PLN \emph{judgment} designates a PLN statement
+with a truth value attached to it, such as
+$$P \limp Q\ \measeq\ \STV{0.9}{0.8}$$
+
+\section{Deriving PLN Rules}
+\label{sec:derules}
+Our goal here is to derive every PLN rules in the PLN book from the
+global distribution that has been defined in
+Section~\ref{sec:globalprob}.  By doing so we hope not only to
+provide a clear unambiguous definition for each rule, but also an
+ideal to approach as using a global distribution should give us the
+means to derive a convergence theorem a la Solomonoff.
+
+\subsection{Predicate Direct Introduction}
+This rule is meant to calculate the truth value corresponding to a
+Predicate from direct observations.  Its truth value can be understood
+as the marginal probability of a predicate to be true, irrespective of
+the inputs.  It is a subcase of the Implication Direct Introduction
+presented in Section~\ref{sec:impldirect} where the implicant is the
+\emph{Universal Predicate} (a predicate that is always true), but is
+described here as its own rule to simplify the presentation.  Indeed,
+it should be easier to understand the Implication Direct Introduction
+rule after understanding the Predicate Direct Introduction rule.
+
+To derive the predicate direct introduction rule we consider the
+posterior probability of a Bernouilli process with parameter $p$ given
+all available observations of the predicate in question.  Let us begin
+with $\mu$ itself.  In order to formulate this posterior we need to
+assume that $\Language$ has a Bernouilli sampler in its set of
+operators.  Let $\Bernouilli$ be the subset of programs of $\Language$
+consisting of a single Bernouilli call, thus comprised of the
+following programs
+\begin{minted}{scheme}
+  (Bernouilli p)
+\end{minted}
+where \mintinline{scheme}{p} is the parameter of the Bernouilli
+distribution ranging over $[0, 1]$.  Such probabilistic program, when
+executed, outputs $\T$ with a probability of \mintinline{scheme}{p} or
+$\F$ with a probability of 1 - \mintinline{scheme}{p}.  Let
+$\Field_{\Bernouilli}$ be a Borel $\sigma$-algebra on $\Bernouilli$.
+Let us assume that $\Field_{\Bernouilli}$ is a subfield of
+$\Field_{\Language}$.  We claim that that if $\mu$ is restricted to
+the programs in $\Bernouilli$ then the posterior of
+\mintinline{scheme}{p} corresponds to the truth value of $\mu$,
+expressed as follows
+$$\nu(L_{\Bernouilli} | \DataS) = \frac{\nu(L_{\Bernouilli}) \times
+  \nu(\DataS | L_{\Bernouilli})}{\nu(\DataS)}$$ where $L_{\Bernouilli}
+\in \Field_{\Bernouilli}$.  NEXT
+
+\subsection{Implication Direct Introduction}
+\label{sec:impldirect}
+This rule is not explicitly stated as such in the PLN book but can be
+derived from iteratively applying induction and revision, and reflects
+the formula of extensional inheritance/implication given in Section
+2.4.1 \emph{The Semantics of Inheritance} of the PLN book, at least
+the strength part.  To obtain the confidence part we assume that the
+second order distribution is a Beta distribution, like in the Section
+4.2 \emph{From Imprecise Probabilities to Indefinite Probabilities} of
+the PLN book.  In order to derive a Beta distribution as second order
+distribution we can assume an underlying Bernouilli process with
+parameter $p$ with a Beta distribution as prior.  The Jeffreys prior
+where $\alpha=\beta=\frac{1}{2}$ is often the default choice.  Given
+the PLN statement
+$$P \limp Q$$ Let us express its truth value as the posterior
+probability of the parameter $p$ of the underlying Bernouilli process.
+In order to map a Bernouilli process onto an implication we zoom-in to
+the data points where $P$ is true.
+
+NEXT
+
+\section{conclusion}
+
+\bibliographystyle{splncs04}
+\bibliography{local}
+
+\end{document}

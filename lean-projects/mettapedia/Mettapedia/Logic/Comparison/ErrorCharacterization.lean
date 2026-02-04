@@ -1,6 +1,6 @@
 import Mettapedia.Logic.CompletePLN
 import Mettapedia.Logic.PLNDerivation
-import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.EvidenceQuantale
 
 /-!
 # Error Characterization: Fast PLN vs Complete PLN

@@ -1,4 +1,4 @@
-import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.EvidenceQuantale
 import Mettapedia.ProbabilityTheory.KnuthSkilling.Core.TotalityImprecision
 
 /-!

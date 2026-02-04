@@ -1,8 +1,3 @@
-/-
-Copyright (c) 2025 Mettapedia Authors. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mettapedia Contributors
--/
 import Mathlib.MeasureTheory.Measure.MeasureSpace
 import Mathlib.Topology.MetricSpace.Basic
 import Mathlib.Data.Fintype.Card

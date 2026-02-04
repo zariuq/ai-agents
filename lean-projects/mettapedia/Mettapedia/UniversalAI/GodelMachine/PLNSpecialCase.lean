@@ -1,7 +1,7 @@
 import Mettapedia.UniversalAI.GodelMachine.SolomonoffBridge
 import Mettapedia.Logic.SolomonoffExchangeable
 import Mettapedia.Logic.EvidenceBeta
-import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.EvidenceQuantale
 
 /-!
 # PLN as the Exchangeable Special Case of Solomonoff-Gödel Machines

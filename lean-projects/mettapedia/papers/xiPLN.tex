@@ -1,0 +1,301 @@
+%% xiPLN: Correct, Complete PLN Foundations
+%%
+%% Render with:
+%%   lualatex -shell-escape xiPLN.tex && bibtex xiPLN && lualatex -shell-escape xiPLN.tex && lualatex -shell-escape xiPLN.tex
+
+\documentclass[]{article}
+\usepackage{url}
+\usepackage[hyperindex,breaklinks]{hyperref}
+\usepackage{breakurl}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\footnotesize,breaklines=true,frame=single}
+\usepackage{float}
+\restylefloat{table}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage[skip=0pt]{subcaption}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{unicode-math}
+\setmathfont{Stix Two Math}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}[theorem]{Definition}
+
+\newcommand{\nuPLN}{\texorpdfstring{$\nu$}{nu}\textup{PLN}}
+\newcommand{\xiPLN}{\texorpdfstring{$\xi$}{xi}\textup{PLN}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\ty}[1]{\ensuremath{\mathtt{#1}}}
+\newcommand{\Evidence}{\ty{Evidence}}
+\newcommand{\JointEvidence}{\ty{JointEvidence}}
+\newcommand{\WorldModel}{\ty{WorldModel}}
+\newcommand{\hplus}{\ensuremath{\oplus}}
+
+\title{\xiPLN: A Correct and Complete Foundation for Probabilistic Logic Networks\\
+  \texttt{(DRAFT)}}
+\author{Zar \and Codex CLI (OpenAI GPT-5.2)}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Probabilistic Logic Networks (PLN) couples logical structure with uncertain inference.
+In practice, however, many PLN presentations mix distinct layers: (i) a probabilistic
+semantic model, (ii) an evidence/weight plumbing model, and (iii) operational truth-value
+views (strength, confidence, interval bounds).
+This leads to ``semantic drift'': algebraic operators are treated as if they were the
+logic itself, and link-level inference attempts to propagate correlation-sensitive
+quantities without carrying the information required to do so correctly.
+
+We present \xiPLN{}, a complete PLN foundation designed to be (a) mathematically correct
+and (b) extensible to tractable sublayers.  The core move is to make the complete layer a
+\emph{posterior-state calculus}: the proof object is a revisable world-model posterior
+state, and all link/event truth values are obtained by querying that state.
+We give a reference complete instance as a Dirichlet posterior over complete worlds
+(\JointEvidence{}), prove that evidence extraction commutes with revision, and formalize a
+no-go theorem showing that complete link evidence cannot, in general, be computed from local
+per-link evidence alone.  We then explain how Bayesian-network-style sublayers arise as
+restricted but tractable world-model classes, keeping PLN's operational rules as compiled
+tactics with explicit assumptions.
+\end{abstract}
+
+\section{Motivation and Context}
+
+PLN, as described by Goertzel, Ikl\'{e} et al.~\cite{goertzel2009pln}, represents uncertain
+judgments using truth values such as
+\emph{strength} (a probability-like estimate) and \emph{confidence} (a reliability-like
+quantity).  Modern \emph{nuPLN} work (Nil Geisweiller, draft and v1) makes the key step
+explicit: a complete grounding requires a global probabilistic semantics---a world model
+with a joint distribution over possible worlds and a Bayesian update story.
+
+Our experience formalizing PLN in Lean is that correctness failures almost always come from
+mixing layers:
+\begin{itemize}
+\item treating operational truth-value operators (interval bounds, confidence heuristics) as if
+  they were the logic; or
+\item trying to compute complete posteriors for derived links from local link truth values
+  without carrying the correlation information needed to do so.
+\end{itemize}
+
+\xiPLN{} is a response: it isolates a \emph{complete} core calculus and makes all fast PLN
+rules live as derived/compiled approximations relative to declared model classes.
+
+\section{Three Semantic Layers (and Why They Must Not Be Conflated)}
+
+We distinguish three layers.
+
+\subsection{Layer 1: World-model posterior states (complete semantics)}
+
+The complete layer carries a posterior state in some explicit class of world models.
+Conceptually: \emph{a distribution or structured distribution} that can answer any query by
+conditioning/marginalization (or by exact inference within the chosen model class).
+
+In the Lean prototype, this layer is represented by \JointEvidence{}:
+\[
+  \JointEvidence(n) := \texttt{Fin}(2^n) \to \mathbb{R}_{\ge 0}^{\infty}
+\]
+interpreted as Dirichlet pseudo-counts over the $2^n$ complete worlds for $n$ propositional
+atoms.  Revision is pointwise addition of pseudo-counts.
+
+\subsection{Layer 2: Evidence algebra (quantale / Heyting structure)}
+
+PLN uses an evidence carrier \Evidence{} as a compositional algebra of observations.
+In our formalization, \Evidence{} is the 2D count object $(n^+,n^-)$ with:
+\begin{itemize}
+\item parallel aggregation \hplus{} (``revision''): add counts componentwise;
+\item order (information ordering): coordinatewise $\le$;
+\item rich lattice structure (complete lattice; Heyting operators exist).
+\end{itemize}
+
+This layer is \emph{not} itself the complete probabilistic semantics; it is an algebraic
+semantics for evidence aggregation and logical structure.
+It is particularly important for FO/HO extensions, where truth values are naturally
+Heyting-valued (cf. the SatisfyingSet construction in the codebase).
+
+\subsection{Layer 3: Operational views (strength, weight, confidence, bounds)}
+
+Strength/weight/confidence/intervals are \emph{views} extracted from evidence.
+They are indispensable operationally, but they should not be used as if they were complete
+semantic state.  \xiPLN{} adopts the mantra:
+
+\begin{quote}
+Probability is what you query; evidence is what you carry.
+\end{quote}
+
+\section{\xiPLN{} Core: World-model Revision + Query}
+
+The complete core calculus is intentionally simple: it is the calculus of revising posterior
+states plus a query interface.
+
+\subsection{World-model interface}
+
+In Lean, we isolate a minimal interface \WorldModel{} (posterior state + query projections):
+
+\begin{lstlisting}
+inductive PLNQuery (Atom : Type*) where
+  | prop : Atom → PLNQuery Atom
+  | link : Atom → Atom → PLNQuery Atom
+
+class WorldModel (State : Type*) (Query : Type*) [EvidenceType State] where
+  evidence : State → Query → Evidence
+  evidence_add : ∀ W₁ W₂ q, evidence (W₁ + W₂) q = evidence W₁ q + evidence W₂ q
+\end{lstlisting}
+
+Here \code{EvidenceType} means: revision is an additive commutative monoid on \code{State}.
+Standard PLN event/link queries are represented by \code{PLNQuery Atom}; all truth-value
+quantities are derived by mapping extracted \Evidence{} to strengths/weights.
+See \code{Mettapedia/Logic/PLNWorldModel.lean}.
+
+\subsection{Reference complete instance: Dirichlet over worlds}
+
+For finite propositional scope (atoms \code{Fin n}), we instantiate \WorldModel{} with the
+Dirichlet world-table \JointEvidence{}:
+\begin{itemize}
+\item \code{evidence(E, prop(A))} sums world counts where an atom is \code{true} vs \code{false};
+\item \code{evidence(E, link(A,B))} sums world counts where \code{A} is true and \code{B} true vs false.
+\end{itemize}
+
+Crucially, extraction commutes with revision:
+\begin{quote}
+revising joint evidence and then extracting a query is equal to extracting and revising at the
+query-evidence level.
+\end{quote}
+Formally, the Lean prototype proves:
+\[
+  \mathrm{evidence}(E_1+E_2, q) = \mathrm{evidence}(E_1,q) \hplus \mathrm{evidence}(E_2,q)
+\]
+for all queries $q$.  See \code{Mettapedia/Logic/PLNJointEvidence.lean}.
+
+\subsection{Probability views}
+
+From \Evidence{} we obtain posterior-mean probabilities (improper-prior strength):
+\[
+  P(A) = \frac{\#(A)}{\#(\top)},\qquad
+  P(B\mid A) = \frac{\#(A\wedge B)}{\#(A)}
+\]
+where $\#(\cdot)$ is a world-count sum in \JointEvidence{}.
+The Lean file \code{Mettapedia/Logic/PLNJointEvidenceProbability.lean} proves the exact ratio
+forms for these views.
+
+\section{A No-Go Theorem: ``Complete'' Link Inference Cannot Be Local}
+
+One might hope for a sequent-calculus-like system that takes local per-link evidence
+(\Evidence{} for $A$, $B$, $C$, $A\!\Rightarrow\!B$, $B\!\Rightarrow\!C$) and computes complete
+evidence for $A\!\Rightarrow\!C$.  \xiPLN{} asserts that this is impossible in general without
+extra assumptions: correlations live in the joint state.
+
+\begin{theorem}[No local complete deduction rule]
+There is no function
+\[
+  f : \Evidence^5 \to \Evidence
+\]
+that, for all joint evidence states $E$, computes the exact link evidence for $A\!\Rightarrow\!C$
+from only the local premises $\Evidence(A),\Evidence(B),\Evidence(C),\Evidence(A\!\Rightarrow\!B),
+\Evidence(B\!\Rightarrow\!C)$.
+\end{theorem}
+
+The Lean proof constructs two different joint evidence states on three atoms that agree on all
+these premises but disagree on the conclusion \code{linkEvidence(A,C)}.
+See \code{Mettapedia/Logic/PLNJointEvidenceNoGo.lean}.
+
+\paragraph{Interpretation.}
+This theorem is the formal core of ``you must carry correlations''.
+It does not make fast PLN useless; it tells us exactly what fast PLN \emph{cannot} claim:
+completeness for arbitrary world models without structural assumptions.
+
+\section{Tractable Sublayers: Bayesian Networks as Restricted World Models}
+
+The complete world-table \JointEvidence{} is exponential in $n$.  To scale, we restrict the
+world-model class while preserving correctness \emph{relative to that class}.
+
+The next natural step is a Bayesian-network-style world model:
+\begin{itemize}
+\item a DAG structure specifying factorization;
+\item local conditional tables with Dirichlet evidence (counts) per CPT row;
+\item revision = add local Dirichlet counts (conjugate update);
+\item query = exact inference by variable elimination / junction tree, with complexity
+  controlled by treewidth.
+\end{itemize}
+
+\paragraph{Lean status.}
+We have implemented the \emph{evidence plumbing} part of this sublayer:
+\begin{itemize}
+\item a Boolean BN CPT query type \code{CPTQuery} (node + parent configuration),
+\item a CPT posterior state \code{CPTState} storing \Evidence{} per CPT entry, and
+\item an additive projection from \JointEvidence{} to CPT evidence by marginalization
+  (summing compatible worlds), which commutes with revision.
+\end{itemize}
+See \code{Mettapedia/Logic/PLNBayesNetWorldModel.lean}.
+
+We have also begun the ``fast rule exactness'' bridge in the simplest nontrivial case:
+\code{Mettapedia/Logic/PLNBayesNetFastRules.lean} sets up the chain BN $A \to B \to C$,
+proves the required sink-factorization lemmas, and starts deriving the screening-off
+hypotheses needed to apply \code{PLNDerivation.pln\_deduction\_from\_total\_probability}.
+
+Exact BN query answering (variable elimination / junction tree) is the next step: it will provide
+tractable evaluation of probabilities for larger query languages, while preserving correctness
+relative to the declared BN model class.
+
+\paragraph{PLN spirit preserved.}
+Classic PLN link rules (deduction/abduction/induction) become:
+\begin{itemize}
+\item compiled tactics that propose BN queries, or
+\item conditionally-sound lemmas under explicit assumptions (e.g. conditional independence),
+\end{itemize}
+rather than pretending to be globally complete link-level operators.
+
+\section{Knuth--Skilling and Heyting Foundations}
+
+Knuth--Skilling foundations of inference~\cite{KnuthSkilling2012} provide axioms for valuation
+schemes on logical lattices, extending Cox-style plausibility calculi.
+In \xiPLN{}, this plays two roles:
+
+\begin{enumerate}
+\item \emph{Probability as a valuation/view.}  At the world-model layer, probabilities arise as
+  valuations on the Boolean algebra of subsets of worlds.  This is the classical Kolmogorov story
+  \cite{Kolmogorov1933} instantiated for finite spaces, and it underwrites the ratio theorems
+  proved in \code{PLNJointEvidenceProbability}.
+\item \emph{Evidence as Heyting-valued semantics.} At the evidence/algebraic layer, \Evidence{}
+  forms a rich (non-Boolean) lattice.  K\&S-style valuation rules persist but Boolean equalities
+  can weaken to inequalities; see \code{Mettapedia/Logic/EvidenceIntuitionisticProbability.lean}.
+\end{enumerate}
+
+An important cautionary fact---the ``totality gate''---is already formalized:
+because \Evidence{} has incomparable elements, it admits no faithful order-embedding into the
+reals.  Thus one should not expect a single real-valued map to capture all evidence information.
+See \code{Mettapedia/Logic/PLN\_KS\_Bridge.lean}.
+
+\section{Roadmap and Deliverables}
+
+The core Lean artifacts supporting \xiPLN{} are:
+\begin{itemize}
+\item \code{Mettapedia/Logic/PLNWorldModel.lean}: the world-model interface and derived views;
+\item \code{Mettapedia/Logic/PLNJointEvidence.lean}: the reference complete instance and revision-commutes-with-extraction;
+\item \code{Mettapedia/Logic/PLNBayesNetWorldModel.lean}: BN-style CPT evidence states and the additive projection from \JointEvidence{};
+\item \code{Mettapedia/Logic/PLNBayesNetFastRules.lean}: chain BN infrastructure for proving fast-rule exactness under BN assumptions;
+\item \code{Mettapedia/Logic/PLNJointEvidenceProbability.lean}: posterior-mean probability views (ratio theorems);
+\item \code{Mettapedia/Logic/PLNJointEvidenceNoGo.lean}: the local-completeness no-go theorem.
+\end{itemize}
+
+Next implementation milestones:
+\begin{enumerate}
+\item extend the Bayesian-network sublayer with exact query answering (variable elimination / junction tree);
+\item connect fast PLN rules as compiled tactics/lemmas relative to that BN class;
+\item extend query language beyond atoms to formulas/events, enabling FO/HO semantics via
+  SatisfyingSets while keeping probability views as world-model queries.
+\end{enumerate}
+
+\section{Conclusion}
+
+\xiPLN{} formalizes the slogan ``pass distributions, not just truth values'' in a way that is
+precise enough to support soundness/completeness claims and flexible enough to support tractable
+sublayers.  The complete layer is not a competing ``second PLN''; it is the reference semantics
+that operational PLN rules approximate, under explicit assumptions, within declared model classes.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

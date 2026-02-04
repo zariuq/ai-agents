@@ -1,5 +1,5 @@
 import Mettapedia.ProbabilityTheory.Hypercube.Basic
-import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.EvidenceQuantale
 import Mettapedia.Logic.PLN_KS_Bridge
 
 namespace Mettapedia.ProbabilityTheory.Hypercube.PLNEvidencePointer

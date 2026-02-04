@@ -17,9 +17,9 @@ Mettapedia/
 
 ## Tools
 
-- **Lean 4.25.0**: Theorem prover
+- **Lean 4.27.0**: Theorem prover
 - **LeanHammer**: ATP integration with Zipperposition prover
-- **Mathlib v4.25.0**: Lean's standard math library
+- **Mathlib v4.27.0**: Lean's standard math library
 
 ## Build
 

@@ -242,8 +242,8 @@ nice -n 19 lake build Mettapedia.ProbabilityTheory.Hypercube
 ```
 
 **Dependencies**:
-- Lean 4.25.0
-- Mathlib v4.25.0
+- Lean 4.27.0
+- Mathlib v4.27.0
 
 ## Current Status
 

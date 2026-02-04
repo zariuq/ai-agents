@@ -10,7 +10,7 @@ This module contains the formalization of ordered semigroups and the Hölder emb
 This code is adapted from Eric Luap's OrderedSemigroups formalization:
 - **Source**: github.com/ericluap/OrderedSemigroups
 - **License**: Apache 2.0
-- **Adapted for**: Mettapedia project, Lean 4.25.0 / Mathlib v4.25.0
+- **Adapted for**: Mettapedia project, Lean 4.27.0 / Mathlib v4.27.0
 
 ## Main Results
 

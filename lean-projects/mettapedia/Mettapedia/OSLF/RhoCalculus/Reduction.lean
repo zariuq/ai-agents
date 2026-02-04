@@ -89,6 +89,39 @@ inductive Reduces : Pattern → Pattern → Prop where
       Reduces (.collection .hashBag (before ++ [p] ++ after) none)
               (.collection .hashBag (before ++ [q] ++ after) none)
 
+  /-- PAR_SET: structural reduction inside set collections (spice calculus variant)
+
+      This enables the SET variant of the spice calculus as described in Meredith (2026).
+
+      Sets (.hashSet) are used for future states in the spice rule to represent distinct
+      reachable states without duplicates. This rule treats .hashSet as a transparent
+      container: reductions inside propagate through the container.
+
+      For singletons, .hashSet [p] behaves identically to .hashBag [p] (proven in
+      Bisimulation.lean via singleton_bag_set_equiv theorem).
+
+      **Design choice**: This is a CONSERVATIVE EXTENSION. The original ρ-calculus
+      uses .hashBag (multisets), and that remains the primary semantics. This rule
+      adds support for the set variant without changing existing bag semantics.
+
+      **Idempotence**: Handled at construction time (Set → List conversion), not here.
+      The reduction rule only propagates reductions through the container.
+  -/
+  | par_set {p q : Pattern} {rest : List Pattern} :
+      Reduces p q →
+      Reduces (.collection .hashSet (p :: rest) none)
+              (.collection .hashSet (q :: rest) none)
+
+  /-- PAR_SET_ANY: structural congruence for sets at any position
+
+      Parallel to PAR_ANY but for .hashSet collections.
+      Enables reduction at any position in the set collection.
+  -/
+  | par_set_any {p q : Pattern} {before after : List Pattern} :
+      Reduces p q →
+      Reduces (.collection .hashSet (before ++ [p] ++ after) none)
+              (.collection .hashSet (before ++ [q] ++ after) none)
+
 infix:50 " ⇝ " => Reduces
 
 /-! ## Modal Operators via Reduction

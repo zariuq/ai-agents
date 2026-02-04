@@ -1,4 +1,4 @@
-import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.EvidenceQuantale
 import Mettapedia.Logic.PLNNegation
 import Mettapedia.Logic.PLNConjunction
 import Mettapedia.ProbabilityTheory.Basic

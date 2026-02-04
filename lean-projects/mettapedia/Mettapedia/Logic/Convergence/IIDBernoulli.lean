@@ -1,4 +1,4 @@
-import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.EvidenceQuantale
 import Mettapedia.Logic.MeasureTheoreticPLN.Basic
 import Mathlib.Probability.Independence.Basic
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure

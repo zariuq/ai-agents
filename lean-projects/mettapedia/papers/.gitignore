@@ -1,0 +1,22 @@
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.bbl
+*.blg
+*.synctex.gz
+
+# Keep only source and output
+# !*.tex
+# !*.pdf
+# !*.bib
+# !*.md
+
+# Build logs
+build_logs/
+
+# Archive (old versions)
+_archive/

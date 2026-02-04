@@ -3,7 +3,7 @@ import Mathlib.Order.CompleteLattice.Basic
 import Mathlib.Order.CompleteBooleanAlgebra
 import Mathlib.Data.ENNReal.Basic
 import Mettapedia.CategoryTheory.LambdaTheory
-import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.EvidenceQuantale
 
 open scoped ENNReal
 open Mettapedia.Logic.PLNEvidence (Evidence)

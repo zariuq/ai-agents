@@ -5,6 +5,8 @@ import Mathlib.Data.ENNReal.Inv
 import Mathlib.Data.NNReal.Defs
 import Mettapedia.Logic.PLNDeduction
 import Mettapedia.Logic.EvidenceClass
+import Mettapedia.Logic.PLNWeightTV
+import Mettapedia.Algebra.QuantaleWeakness
 
 open scoped NNReal
 
@@ -183,6 +185,32 @@ theorem zero_hplus (x : Evidence) : zero + x = x := by
   simp only [hplus_def, zero, zero_add]
 
 instance : Zero Evidence := ⟨zero⟩
+
+/-! ### EvidenceType / AddCommMonoid (Revision Algebra)
+
+PLN revision combines independent evidence additively:
+`(n⁺₁,n⁻₁) ⊕ (n⁺₂,n⁻₂) = (n⁺₁+n⁺₂, n⁻₁+n⁻₂)`.
+
+Register this as an `AddCommMonoid` instance so it can be used uniformly via
+`EvidenceClass.EvidenceType`.
+-/
+
+noncomputable instance : AddCommMonoid Evidence where
+  add := (· + ·)
+  add_assoc := hplus_assoc
+  zero := (0 : Evidence)
+  zero_add := zero_hplus
+  add_zero := hplus_zero
+  nsmul := nsmulRec
+  nsmul_zero := by
+    intro x
+    rfl
+  nsmul_succ := by
+    intro n x
+    rfl
+  add_comm := hplus_comm
+
+noncomputable instance : Mettapedia.Logic.EvidenceClass.EvidenceType Evidence where
 
 /-! ### Division (Quotient Operation)
 
@@ -416,6 +444,166 @@ The proofs above (`le_himp_iff`, `himp_bot`) establish that Evidence satisfies
 the Frame axioms; after the instance, general Frame/Heyting theory applies.
 -/
 
+/-! ### Quantale Structure
+
+Evidence forms a commutative quantale under tensor product.
+The tensor distributes over suprema coordinatewise.
+-/
+
+lemma iSup_pos {ι} (f : ι → Evidence) :
+    (⨆ i, f i).pos = ⨆ i, (f i).pos := by
+  -- `iSup` is `sSup` of `Set.range`; project the positive coordinate.
+  change (evidenceSSup (Set.range f)).pos = sSup (Set.range fun i => (f i).pos)
+  have hset : Set.range (fun i => (f i).pos) = Evidence.pos '' Set.range f := by
+    ext x
+    constructor
+    · rintro ⟨i, rfl⟩
+      exact ⟨f i, ⟨i, rfl⟩, rfl⟩
+    · rintro ⟨e, ⟨i, rfl⟩, rfl⟩
+      exact ⟨i, rfl⟩
+  -- use `hset` to rewrite the range to an image
+  simp [evidenceSSup, hset]
+
+lemma iSup_neg {ι} (f : ι → Evidence) :
+    (⨆ i, f i).neg = ⨆ i, (f i).neg := by
+  change (evidenceSSup (Set.range f)).neg = sSup (Set.range fun i => (f i).neg)
+  have hset : Set.range (fun i => (f i).neg) = Evidence.neg '' Set.range f := by
+    ext x
+    constructor
+    · rintro ⟨i, rfl⟩
+      exact ⟨f i, ⟨i, rfl⟩, rfl⟩
+    · rintro ⟨e, ⟨i, rfl⟩, rfl⟩
+      exact ⟨i, rfl⟩
+  simp [evidenceSSup, hset]
+
+lemma iSup_image_ennreal {α β} (s : Set α) (f : α → β) (g : β → ℝ≥0∞) :
+    (⨆ b ∈ f '' s, g b) = ⨆ a ∈ s, g (f a) := by
+  classical
+  refine le_antisymm ?h1 ?h2
+  · refine iSup₂_le ?_
+    intro b hb
+    rcases hb with ⟨a, ha, rfl⟩
+    exact le_iSup_of_le a (le_iSup_of_le ha (le_rfl))
+  · refine iSup₂_le ?_
+    intro a ha
+    have hfa : f a ∈ f '' s := ⟨a, ha, rfl⟩
+    exact le_iSup_of_le (f a) (le_iSup_of_le hfa (le_rfl))
+
+lemma iSup_pos_mul_right (a : Evidence) (s : Set Evidence) :
+    (⨆ b ∈ s, a * b).pos = ⨆ b ∈ s, a.pos * b.pos := by
+  classical
+  have h1 : (⨆ b : {b // b ∈ s}, a * b.1) = ⨆ b ∈ s, a * b := by
+    simpa using (iSup_subtype'' s (fun b => a * b))
+  calc
+    (⨆ b ∈ s, a * b).pos
+        = (⨆ b : {b // b ∈ s}, a * b.1).pos := by
+            simpa using congrArg Evidence.pos h1.symm
+    _ = ⨆ b : {b // b ∈ s}, (a * b.1).pos := by
+            simpa using (iSup_pos (fun b : {b // b ∈ s} => a * b.1))
+    _ = ⨆ b : {b // b ∈ s}, a.pos * b.1.pos := by
+            simp [tensor_def]
+    _ = ⨆ b ∈ s, a.pos * b.pos := by
+            exact (iSup_subtype'' s (fun b => a.pos * b.pos))
+
+lemma iSup_neg_mul_right (a : Evidence) (s : Set Evidence) :
+    (⨆ b ∈ s, a * b).neg = ⨆ b ∈ s, a.neg * b.neg := by
+  classical
+  have h1 : (⨆ b : {b // b ∈ s}, a * b.1) = ⨆ b ∈ s, a * b := by
+    simpa using (iSup_subtype'' s (fun b => a * b))
+  calc
+    (⨆ b ∈ s, a * b).neg
+        = (⨆ b : {b // b ∈ s}, a * b.1).neg := by
+            simpa using congrArg Evidence.neg h1.symm
+    _ = ⨆ b : {b // b ∈ s}, (a * b.1).neg := by
+            simpa using (iSup_neg (fun b : {b // b ∈ s} => a * b.1))
+    _ = ⨆ b : {b // b ∈ s}, a.neg * b.1.neg := by
+            simp [tensor_def]
+    _ = ⨆ b ∈ s, a.neg * b.neg := by
+            exact (iSup_subtype'' s (fun b => a.neg * b.neg))
+
+lemma iSup_pos_mul_left (s : Set Evidence) (b : Evidence) :
+    (⨆ a ∈ s, a * b).pos = ⨆ a ∈ s, a.pos * b.pos := by
+  classical
+  have h1 : (⨆ a : {a // a ∈ s}, a.1 * b) = ⨆ a ∈ s, a * b := by
+    simpa using (iSup_subtype'' s (fun a => a * b))
+  calc
+    (⨆ a ∈ s, a * b).pos
+        = (⨆ a : {a // a ∈ s}, a.1 * b).pos := by
+            simpa using congrArg Evidence.pos h1.symm
+    _ = ⨆ a : {a // a ∈ s}, (a.1 * b).pos := by
+            simpa using (iSup_pos (fun a : {a // a ∈ s} => a.1 * b))
+    _ = ⨆ a : {a // a ∈ s}, a.1.pos * b.pos := by
+            simp [tensor_def]
+    _ = ⨆ a ∈ s, a.pos * b.pos := by
+            exact (iSup_subtype'' s (fun a => a.pos * b.pos))
+
+lemma iSup_neg_mul_left (s : Set Evidence) (b : Evidence) :
+    (⨆ a ∈ s, a * b).neg = ⨆ a ∈ s, a.neg * b.neg := by
+  classical
+  have h1 : (⨆ a : {a // a ∈ s}, a.1 * b) = ⨆ a ∈ s, a * b := by
+    simpa using (iSup_subtype'' s (fun a => a * b))
+  calc
+    (⨆ a ∈ s, a * b).neg
+        = (⨆ a : {a // a ∈ s}, a.1 * b).neg := by
+            simpa using congrArg Evidence.neg h1.symm
+    _ = ⨆ a : {a // a ∈ s}, (a.1 * b).neg := by
+            simpa using (iSup_neg (fun a : {a // a ∈ s} => a.1 * b))
+    _ = ⨆ a : {a // a ∈ s}, a.1.neg * b.neg := by
+            simp [tensor_def]
+    _ = ⨆ a ∈ s, a.neg * b.neg := by
+            exact (iSup_subtype'' s (fun a => a.neg * b.neg))
+
+/-- Tensor distributes over suprema from the right. -/
+theorem tensor_sSup_right (a : Evidence) (s : Set Evidence) :
+    a * sSup s = ⨆ b ∈ s, (a * b) := by
+  ext
+  · -- pos coordinate
+    show a.pos * (sSup s).pos = (⨆ b ∈ s, a * b).pos
+    change a.pos * (evidenceSSup s).pos = _
+    have h_rhs : (⨆ b ∈ s, a * b).pos = ⨆ b ∈ s, a.pos * b.pos := by
+      simpa using (iSup_pos_mul_right (a:=a) (s:=s))
+    rw [h_rhs]
+    simp only [evidenceSSup, ENNReal.mul_sSup]
+    -- rewrite the index set for the supremum
+    simpa using (iSup_image_ennreal (s:=s) (f:=Evidence.pos) (g:=fun p => a.pos * p))
+  · -- neg coordinate
+    show a.neg * (sSup s).neg = (⨆ b ∈ s, a * b).neg
+    change a.neg * (evidenceSSup s).neg = _
+    have h_rhs : (⨆ b ∈ s, a * b).neg = ⨆ b ∈ s, a.neg * b.neg := by
+      simpa using (iSup_neg_mul_right (a:=a) (s:=s))
+    rw [h_rhs]
+    simp only [evidenceSSup, ENNReal.mul_sSup]
+    simpa using (iSup_image_ennreal (s:=s) (f:=Evidence.neg) (g:=fun p => a.neg * p))
+
+/-- Tensor distributes over suprema from the left. -/
+theorem tensor_sSup_left (s : Set Evidence) (b : Evidence) :
+    sSup s * b = ⨆ a ∈ s, (a * b) := by
+  ext
+  · -- pos coordinate
+    show (sSup s).pos * b.pos = (⨆ a ∈ s, a * b).pos
+    change (evidenceSSup s).pos * b.pos = _
+    have h_rhs : (⨆ a ∈ s, a * b).pos = ⨆ a ∈ s, a.pos * b.pos := by
+      simpa using (iSup_pos_mul_left (s:=s) (b:=b))
+    rw [h_rhs]
+    simp only [evidenceSSup, ENNReal.sSup_mul]
+    simpa using (iSup_image_ennreal (s:=s) (f:=Evidence.pos) (g:=fun p => p * b.pos))
+  · -- neg coordinate
+    show (sSup s).neg * b.neg = (⨆ a ∈ s, a * b).neg
+    change (evidenceSSup s).neg * b.neg = _
+    have h_rhs : (⨆ a ∈ s, a * b).neg = ⨆ a ∈ s, a.neg * b.neg := by
+      simpa using (iSup_neg_mul_left (s:=s) (b:=b))
+    rw [h_rhs]
+    simp only [evidenceSSup, ENNReal.sSup_mul]
+    simpa using (iSup_image_ennreal (s:=s) (f:=Evidence.neg) (g:=fun p => p * b.neg))
+
+/-- Evidence is a quantale under tensor product -/
+instance : IsQuantale Evidence where
+  mul_sSup_distrib := tensor_sSup_right
+  sSup_mul_distrib := tensor_sSup_left
+
+/-- Evidence is a commutative quantale -/
+instance : Mettapedia.Algebra.QuantaleWeakness.IsCommQuantale Evidence where
+
 /-! ### View to SimpleTruthValue
 
 Evidence now has FULL Frame structure (complete Heyting algebra)!
@@ -511,6 +699,74 @@ noncomputable def toSTV (e : Evidence) : ℝ × ℝ :=
 noncomputable def ofSTV (s c : ℝ) (_hc : c < 1) : Evidence :=
   let total : ℝ≥0∞ := κ * ENNReal.ofReal c / ENNReal.ofReal (1 - c)
   ⟨ENNReal.ofReal s * total, ENNReal.ofReal (1 - s) * total⟩
+
+/-! ### Weight-Primary Truth Value Bridge -/
+
+open Mettapedia.Logic.PLNWeightTV
+
+/-- Diagnostic: odds-style ratio `n⁺/n⁻` (extended to `⊤` when `n⁻ = 0`).
+
+This is **not** the PLN "weight" used for confidence plumbing (`w2c/w2c`).
+It is occasionally useful for intuition/debugging, but it should not be fed to
+`PLNWeightTV.w2c`, since `w2c (n⁺/n⁻) = n⁺/(n⁺+n⁻)` would collapse confidence to strength. -/
+noncomputable def toOdds (e : Evidence) : ℝ≥0∞ :=
+  if e.neg = 0 then ⊤ else e.pos / e.neg
+
+/-- Evidence weight corresponding to the standard confidence↔weight transform.
+
+For a prior size `κ`, PLN confidence is:
+`c = total / (total + κ)`.
+
+Define the (dimensionless) weight:
+`w = c/(1-c) = total/κ` (for `κ > 0`).
+
+Then `w2c w = w/(w+1) = total/(total+κ) = c`.
+-/
+noncomputable def toWeight (κ : ℝ≥0∞) (e : Evidence) : ℝ≥0∞ :=
+  e.total / κ
+
+/-- toStrength is always ≤ 1 -/
+lemma toStrength_le_one (e : Evidence) : toStrength e ≤ 1 := by
+  unfold toStrength
+  split_ifs
+  · norm_num
+  · -- pos / (pos + neg) ≤ 1 since pos ≤ pos + neg
+    trans ((e.pos + e.neg) / (e.pos + e.neg))
+    · apply ENNReal.div_le_div_right
+      exact le_self_add
+    · simp
+
+/-- Convert evidence to weight-primary truth value.
+This is the natural representation: strength from `toStrength`, and weight computed
+so that `WTV.confidence` matches `toConfidence κ` (up to the `c2w` saturation at `c = 1`). -/
+noncomputable def toWTV (κ : ℝ≥0∞) (e : Evidence) : WTV where
+  strength := (toStrength e).toReal
+  weight := c2w (toConfidence κ e).toReal
+  strength_nonneg := by
+    apply ENNReal.toReal_nonneg
+  strength_le_one := by
+    have h := toStrength_le_one e
+    have : (1 : ℝ≥0∞) = ENNReal.ofReal 1 := by simp
+    rw [this] at h
+    exact ENNReal.toReal_le_of_le_ofReal (by norm_num) h
+  weight_nonneg := by
+    by_cases hconf : (toConfidence κ e).toReal < 1
+    · -- Main case: use the `c/(1-c)` branch.
+      exact Mettapedia.Logic.PLNWeightTV.WTV.c2w_nonneg _ (by
+        exact ENNReal.toReal_nonneg) hconf
+    · -- Saturation branch (`c ≥ 1`) returns a positive constant.
+      unfold c2w
+      simp [hconf]
+
+theorem toWTV_confidence_eq_toConfidence (κ : ℝ≥0∞) (e : Evidence)
+    (hconf : (toConfidence κ e).toReal < 1) :
+    (toWTV κ e).confidence = (toConfidence κ e).toReal := by
+  -- Expand the definitions: confidence = w2c(weight) and weight = c2w(confidence).
+  simp [toWTV, WTV.confidence, w2c, c2w, hconf]
+  -- Goal is the standard identity: w2c(c2w(c)) = c for c < 1.
+  have h1 : (1 - (toConfidence κ e).toReal) ≠ 0 := by linarith
+  field_simp [h1]
+  ring
 
 /-! ### Key Lemmas for the View
 

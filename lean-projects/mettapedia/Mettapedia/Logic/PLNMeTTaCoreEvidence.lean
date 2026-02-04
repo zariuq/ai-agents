@@ -1,9 +1,4 @@
-/-
-Copyright (c) 2026 Mettapedia Contributors. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
--/
-import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.EvidenceQuantale
 import Mettapedia.Logic.PLNMeTTaCore
 
 /-!

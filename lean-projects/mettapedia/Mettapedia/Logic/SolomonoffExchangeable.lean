@@ -1,5 +1,5 @@
 import Mettapedia.Logic.Exchangeability
-import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.EvidenceQuantale
 import Mettapedia.Logic.SolomonoffPrior
 import Mathlib.Data.List.OfFn
 

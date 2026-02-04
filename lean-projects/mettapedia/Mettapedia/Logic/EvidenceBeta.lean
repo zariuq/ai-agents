@@ -1,4 +1,4 @@
-import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.EvidenceQuantale
 import Mettapedia.Logic.Exchangeability
 import Mettapedia.ProbabilityTheory.Distributions.BetaBernoulli
 import Mathlib.Algebra.Order.Floor.Semiring
@@ -685,5 +685,126 @@ theorem nupln_main_theorem :
   simpa using pln_is_bayes_optimal_for_exchangeable
 
 end DeFinettiConnection
+
+/-! ## Beta Credible Intervals
+
+For IndefiniteTruthValue construction, we need credible intervals from Beta distributions.
+These give probability bounds [L, U] from Evidence counts (n⁺, n⁻).
+
+**Normal Approximation**: For large sample sizes (α+β > 10), the Beta distribution
+is well-approximated by a Normal distribution with:
+- μ = α/(α+β)
+- σ² = αβ/[(α+β)²(α+β+1)]
+
+This allows fast computation of credible intervals without numerical integration.
+-/
+
+section BetaCredibleIntervals
+
+/-- A credible interval [lower, upper] at a given confidence level. -/
+structure CredibleInterval where
+  lower : ℝ
+  upper : ℝ
+  level : ℝ  -- e.g., 0.95 for 95% credible interval
+  lower_le_upper : lower ≤ upper
+  lower_nonneg : 0 ≤ lower
+  upper_le_one : upper ≤ 1
+  level_in_unit : level ∈ Set.Ioo 0 1  -- (0, 1) open interval
+
+/-- Standard Normal quantiles for common confidence levels.
+    For 95% interval: z = 1.96 (actually 1.959964...)
+    For 90% interval: z = 1.645 -/
+noncomputable def normalQuantile (level : ℝ) : ℝ :=
+  if level ≥ 0.95 then 1.96
+  else if level ≥ 0.90 then 1.645
+  else if level ≥ 0.80 then 1.28
+  else 1.0  -- Fallback for lower levels
+
+/-- Normal approximation for Beta credible interval.
+
+For large α+β (typically > 10), Beta(α,β) is approximately Normal:
+- Mean: μ = α/(α+β)
+- Variance: σ² = αβ/[(α+β)²(α+β+1)]
+
+The credible interval is approximately [μ - z·σ, μ + z·σ] where z is the
+Normal quantile for the desired level (e.g., 1.96 for 95%).
+
+**Accuracy**: Excellent for α, β > 5. Degrades for extreme parameters (α or β < 1).
+-/
+noncomputable def betaCredibleInterval_normal_approx
+    (α β level : ℝ) (hα : 0 < α) (hβ : 0 < β) (hlevel : 0 < level ∧ level < 1) :
+    CredibleInterval :=
+  let mean := α / (α + β)
+  let sum := α + β
+  let variance := (α * β) / (sum^2 * (sum + 1))
+  let std_dev := Real.sqrt variance
+  let z := normalQuantile level
+  let raw_lower := mean - z * std_dev
+  let raw_upper := mean + z * std_dev
+  { lower := max 0 raw_lower
+    upper := min 1 raw_upper
+    level := level
+    lower_le_upper := by
+      have h_mean_in : 0 ≤ mean ∧ mean ≤ 1 := by
+        constructor
+        · apply div_nonneg; linarith; linarith
+        · rw [div_le_one]; linarith; linarith
+      have h_std_nonneg : 0 ≤ std_dev := Real.sqrt_nonneg _
+      have h_z_nonneg : 0 ≤ z := by
+        show 0 ≤ normalQuantile level
+        dsimp [normalQuantile]
+        split_ifs <;> norm_num
+      have h_margin : 0 ≤ z * std_dev := mul_nonneg h_z_nonneg h_std_nonneg
+      -- Prove: mean - z·σ ≤ mean + z·σ
+      have h_raw : raw_lower ≤ raw_upper := by linarith
+      -- raw_upper ≥ mean ≥ 0, so min 1 raw_upper ≥ 0
+      have h_upper_nonneg : 0 ≤ raw_upper := by linarith
+      -- raw_lower ≤ mean ≤ 1
+      have h_lower_le_one : raw_lower ≤ 1 := by linarith
+      -- Now prove: max 0 raw_lower ≤ min 1 raw_upper
+      by_cases h : 0 ≤ raw_lower
+      · -- Case: raw_lower ≥ 0, so max 0 raw_lower = raw_lower
+        rw [max_eq_right h]
+        exact le_min h_lower_le_one h_raw
+      · -- Case: raw_lower < 0, so max 0 raw_lower = 0
+        push_neg at h
+        rw [max_eq_left (le_of_lt h)]
+        exact le_min (by norm_num : (0 : ℝ) ≤ 1) h_upper_nonneg
+    lower_nonneg := by exact le_max_left 0 _
+    upper_le_one := by exact min_le_left 1 _
+    level_in_unit := by
+      simp only [Set.mem_Ioo]
+      exact hlevel }
+
+/-- Convenience function: Beta credible interval at 95% level. -/
+noncomputable def betaCredibleInterval95
+    (α β : ℝ) (hα : 0 < α) (hβ : 0 < β) : CredibleInterval :=
+  betaCredibleInterval_normal_approx α β 0.95 hα hβ ⟨by norm_num, by norm_num⟩
+
+/-- Convenience function: Beta credible interval at 90% level. -/
+noncomputable def betaCredibleInterval90
+    (α β : ℝ) (hα : 0 < α) (hβ : 0 < β) : CredibleInterval :=
+  betaCredibleInterval_normal_approx α β 0.90 hα hβ ⟨by norm_num, by norm_num⟩
+
+/-- Credible interval from Evidence counts and prior.
+
+Given Evidence (n⁺, n⁻) with prior (α₀, β₀), compute the credible interval
+for the underlying Bernoulli parameter θ.
+-/
+noncomputable def credibleIntervalFromEvidence
+    (n_pos n_neg : ℕ) (α₀ β₀ level : ℝ)
+    (hα₀ : 0 < α₀) (hβ₀ : 0 < β₀) (hlevel : 0 < level ∧ level < 1) :
+    CredibleInterval :=
+  let α := α₀ + (n_pos : ℝ)
+  let β := β₀ + (n_neg : ℝ)
+  have hα : 0 < α := by
+    have h_nonneg : 0 ≤ (n_pos : ℝ) := Nat.cast_nonneg n_pos
+    linarith
+  have hβ : 0 < β := by
+    have h_nonneg : 0 ≤ (n_neg : ℝ) := Nat.cast_nonneg n_neg
+    linarith
+  betaCredibleInterval_normal_approx α β level hα hβ hlevel
+
+end BetaCredibleIntervals
 
 end Mettapedia.Logic.EvidenceBeta

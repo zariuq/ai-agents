@@ -1,4 +1,4 @@
-import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.EvidenceQuantale
 import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Data.Finset.Basic
 

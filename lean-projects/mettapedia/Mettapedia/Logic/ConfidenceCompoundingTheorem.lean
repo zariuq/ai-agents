@@ -1,4 +1,4 @@
-import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.EvidenceQuantale
 import Mettapedia.Logic.EvidenceBeta
 import Mettapedia.Logic.HeytingValuationOnEvidence
 

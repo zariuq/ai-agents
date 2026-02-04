@@ -33,7 +33,7 @@ import Mathlib.Data.ENNReal.Operations
 import Mathlib.Data.Set.Basic
 import Mathlib.Data.Real.Basic
 import Mathlib.Order.Lattice
-import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.EvidenceQuantale
 import Mettapedia.ProbabilityTheory.KnuthSkilling.Core.HeytingIntervalRepresentation
 
 namespace Mettapedia.Logic.EvidenceIntervalBounds

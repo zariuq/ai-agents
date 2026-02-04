@@ -1,4 +1,4 @@
-import Mettapedia.Logic.PLNEvidence
+import Mettapedia.Logic.EvidenceQuantale
 import Mettapedia.Logic.PLNDerivation
 import Mettapedia.Logic.PLNQuantaleSemantics.Soundness
 import Mettapedia.Logic.PLNQuantaleSemantics.CDLogic
