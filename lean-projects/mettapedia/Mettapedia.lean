@@ -73,6 +73,7 @@ import Mettapedia.Logic.PLNTemporal
 import Mettapedia.Logic.PLNDeduction
 import Mettapedia.Logic.PLNFrechetBounds
 import Mettapedia.Logic.PLNQuantaleConnection
+import Mettapedia.Logic.PLNQuantaleDivergence
 import Mettapedia.Logic.PLNEnrichedCategory
 import Mettapedia.Logic.PLNEvidence
 import Mettapedia.Logic.PLN_KS_Bridge
