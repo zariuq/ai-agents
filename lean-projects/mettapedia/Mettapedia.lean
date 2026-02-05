@@ -63,6 +63,10 @@ import Mettapedia.Computability.ArithmeticalHierarchy.Closure
 import Mettapedia.Computability.ArithmeticalHierarchy.PolicyEncoding
 import Mettapedia.Computability.ArithmeticalHierarchy.PolicyClasses
 
+-- OSLF (Operational Semantics of Lambda-based Formalisms)
+import Mettapedia.OSLF.RhoCalculus.Context
+import Mettapedia.OSLF.RhoCalculus.PresentMoment
+
 -- Logic
 import Mettapedia.Logic.SolomonoffPrior
 import Mettapedia.Logic.SolomonoffInduction
