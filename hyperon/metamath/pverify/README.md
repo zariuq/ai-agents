@@ -1,104 +1,41 @@
-# pverify - Hybrid Prolog+PeTTa Metamath Verifier
+# pverify — Prolog + PeTTa Metamath Verifier
 
-Integrated Metamath verifier combining Prolog parsing with PeTTa verification.
+Hybrid verifier: Prolog parses `.mm` files into structured terms, and PeTTa executes
+verification rules over those terms.
 
-## Architecture
+## Architecture (high‑level)
 
-1. **Prolog** parses `.mm` files into structured lists (using DCG parser)
-2. **PeTTa** processes statements and calls verification functions
-3. No file generation - pure in-memory integration
+1. **Prolog** parses `.mm` into structured statements (DCG in `mm_primitives.pl`)
+2. **PeTTa** processes statements and checks proofs (various `pverify*.metta` files)
+3. End‑to‑end wrapper: `verify_mm.sh`
 
-## Verifier Variants
+## Main entrypoints
 
-### pmverify (MORK-optimized) - **Recommended**
+- `pmverify.metta` — MORK‑optimized verifier
+- `pverify_hybrid.metta` — baseline implementation
 
-Uses MORK (256-radix trie) spaces for O(log N) pattern matching on frame-scoped data:
-- All frame-scoped data (Constants, Variables, DVars, FHyps, EHyps, FLists, ELists) in `&mork`
-- Non-frame-scoped data (Assertions, Theorems, markers) in `$kb`
+See `STATUS.md` for current integration notes and `CANONICAL_TEST_RESULTS.md` for test results.
 
-**Performance:** 24.85 seconds on hol.mm (87KB), slightly faster than pverify_hybrid (25.32s)
-
-**Files:**
-- `pmverify.metta` - MORK-optimized main verifier
-- `../mmverify/mmverify-utils_pmork.metta` - MORK-optimized utilities
-
-### pverify_hybrid (baseline)
-
-Original implementation using standard MeTTa spaces with O(N) linear scans.
-
-**Files:**
-- `pverify_hybrid.metta` - Original main verifier
-- `../mmverify/mmverify-utils_petta.metta` - Standard utilities
-
-## Common Files
-
-- `mm_primitives.pl` - Prolog DCG parser for Metamath
-- `env_utils.pl` - Environment variable access for PeTTa
-- `verify_mm.sh` - Wrapper script for command-line usage
-- `pverify_codegen.metta` - Code generator for debugging
-
-## Usage
-
-### pmverify (MORK-optimized)
+## Usage (PeTTa runner)
 
 ```bash
-# From PeTTa directory
 cd ../../PeTTa
 ./run.sh ../metamath/pverify/pmverify.metta /path/to/file.mm --silent
-```
-
-### pverify_hybrid (baseline)
-
-```bash
-# From PeTTa directory
-cd ../../PeTTa
+# or
 ./run.sh ../metamath/pverify/pverify_hybrid.metta /path/to/file.mm --silent
 ```
 
-### Using the wrapper script
-
+Wrapper:
 ```bash
-./verify_mm.sh path/to/file.mm
+./verify_mm.sh /path/to/file.mm
 ```
 
-### Using environment variable
+## Review checklist
 
 ```bash
-export MM_INPUT_FILE="/path/to/file.mm"
-cd ../../PeTTa
-./run.sh ../metamath/pverify/pmverify.metta --silent
+# Status notes
+cat STATUS.md
+
+# Canonical test results
+cat CANONICAL_TEST_RESULTS.md
 ```
-
-## Testing
-
-Comprehensive test suite in `../metamath-test/`:
-
-```bash
-cd ../metamath-test
-
-# Test pmverify (MORK-optimized)
-./run-testsuite-all ./test-pmverify --small-only
-
-# Test pverify_hybrid (baseline)
-./run-testsuite-all ./test-pverify --small-only
-```
-
-**Test Results:** 138/138 tests passing (100%) for both verifiers
-
-## Performance
-
-| File | Size | pmverify (MORK) | pverify_hybrid |
-|------|------|----------------|----------------|
-| demo0.mm | 1.3 KB | 0.64s | 0.65s |
-| hol.mm | 87 KB | 24.85s | 25.32s |
-
-**Memory:** ~349 MB RSS for hol.mm
-
-## MORK Optimization Strategy
-
-The MORK optimization focuses on frame-scoped data because:
-- Frame-scoped data has FSDepth tags for O(log N) trie lookups
-- Frequent pattern matching during proof verification benefits from trie structure
-- Non-frame-scoped data (Theorems/Assertions) accessed less frequently
-
-This provides a foundation for future optimizations using MORK exec rules.

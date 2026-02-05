@@ -1,26 +1,23 @@
-# AI-Assisted Formal Mathematics Projects
+# AI‑Assisted Formal Mathematics Projects
 
-Formal verification projects developed with AI assistance (Claude, Gemini, etc.).
+Workspace of Lean, Metamath, and ATP tooling developed with AI assistance.
 
-## Projects
+## Primary Lean repos (most active)
 
-### Four Color Theorem (4CP)
+- **`lean-projects/mettapedia/`** — broad Lean 4 formalization library; see its README for build/status.
+- **`lean-projects/fourcolor/`** — Four‑color theorem work in Lean.
+- **`lean-projects/ramsey36/`** — Ramsey R(3,6) formalization in Lean.
 
-Novel proof approach via Kempe chain algebra and XOR parity.
+## Metamath verification / tooling
 
-- **[lean-projects/fourcolor/](lean-projects/fourcolor/)** - Lean 4 formalization
-- **[isabelle/4CP/](isabelle/4CP/)** - Isabelle/HOL formalization
-- **[mizar-projects/4cp/](mizar-projects/4cp/)** - Mizar formalization
+- **`hyperon/metamath/mm-lean4/`** — Lean 4 soundness proof of a Metamath verifier (see `CURRENT_STATUS.md`).
+- **`hyperon/metamath/pverify/`** — Prolog + PeTTa Metamath verifier (see `STATUS.md` and `CANONICAL_TEST_RESULTS.md`).
 
-### Ramsey Theory
+## Resolution / TPTP tools
 
-- **[lean-projects/ramsey36/](lean-projects/ramsey36/)** - R(3,6) = 18 formalization in Lean 4
-- **[megalodon/ramsey36/](megalodon/ramsey36/)** - Adj17 edge theorem proofs
+- **`tools/tptp-metta/`** — TPTP ↔ S‑expression ↔ MeTTa converters and a propositional resolution prototype.
 
-### Tools
+## Status & review
 
-- **[tools/tptp-metta/](tools/tptp-metta/)** - TPTP ↔ S-expression ↔ MeTTa converters, propositional resolution prover
-
-## Status
-
-Work in progress. See individual project READMEs for details.
+Project status varies by subdirectory. Check the local README/CURRENT_STATUS, and run
+`rg "sorry"` in the relevant code folders to see proof gaps.

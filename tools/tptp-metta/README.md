@@ -18,11 +18,13 @@ TPTP (.p) → S-expression → MeTTa
 - `sexp_to_metta.py` - S-expression → MeTTa format
 - `test_tptp_bijection.py` - Round-trip bijection tests
 
-## Resolution Prover
+## Resolution Prover (propositional)
 
 - `prop_resolution.metta` - Propositional resolution prover in MeTTa
 - `tptp_to_resolution.py` - Convert TPTP to resolution format
 - `trace_resolution.py` - Resolution proof tracing
+
+Test cases live under `metta-tools/test_cases/` and `tools/tptp-metta/`.
 
 ## Usage
 
