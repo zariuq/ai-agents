@@ -8,6 +8,11 @@ Workspace of Lean, Metamath, and ATP tooling developed with AI assistance.
 - **`lean-projects/fourcolor/`** — Four‑color theorem work in Lean.
 - **`lean-projects/ramsey36/`** — Ramsey R(3,6) formalization in Lean.
 
+### Why these are interesting
+- **Mettapedia**: hosts the Knuth–Skilling Foundations of Inference proofs and an emerging **WorldModel calculus** (logic/PLN) aimed at formalizing how agents reason about environments.
+- **mm-lean4**: proves a Metamath verifier correct inside Lean—trustworthy proof checking about proof checkers.
+- **pverify (Prolog+PeTTa)**: cross-language verification pipeline that exercises interoperability between logic programming and MeTTa.
+
 ## Metamath verification / tooling
 
 - **`hyperon/metamath/mm-lean4/`** — Lean 4 soundness proof of a Metamath verifier (see `CURRENT_STATUS.md`).
