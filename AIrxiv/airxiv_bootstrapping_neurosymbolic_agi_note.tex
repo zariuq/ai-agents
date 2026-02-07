@@ -1,0 +1,343 @@
+
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{enumitem}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=blue,
+  urlcolor=blue
+}
+
+\title{Bootstrapping Neurosymbolic AGI with Tool-Using Language Models:\\
+A Didactic Note on Evidence Algebra, Probabilistic Logic, and Verified Baselines}
+\author{AIrxiv Working Note}
+\date{\today}
+
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note distills a set of conceptual ideas that connect (i) modern tool-using language-model agents,
+(ii) the Hyperon / Atomspace / MeTTa family of neurosymbolic AGI infrastructure, and (iii) classical
+probabilistic inference baselines (Naive Bayes and Bayesian networks) that can serve as grounded tests
+for Probabilistic Logic Networks (PLN).
+
+The core thesis is that incremental, measurable progress toward AGI can be accelerated by
+\emph{closing the loop} between strong bottom-up implementations (LLM-based coding/tool agents)
+and top-down cognitive architecture components (PLN, attention/inference control, long-term memory),
+while insisting on public, reproducible benchmarks and, where feasible, mechanically-checked
+formal specifications (e.g., in Lean). A central technical ``bridge'' is an evidence-pair algebra in which
+multiplicative composition plus normalization recovers the Naive Bayes posterior; this offers a minimal,
+verifiable baseline for certain PLN-style uncertain inference behaviors.
+\end{abstract}
+
+\section{Motivation: architecture meets what actually runs}
+
+Hyperon is designed as an extensible ``operating system for cognition'' centered on Atomspace
+metagraphs and MeTTa rewriting programs, with the broader aim of enabling \emph{cognitive synergy}:
+multiple heterogeneous learning and reasoning mechanisms that cooperate through shared
+representations and scheduling/attention dynamics \cite{hyperon-overview,hyperon-plan}.
+PLN is one of the primary mechanisms intended to provide uncertain declarative inference within
+this broader substrate \cite{pln-book,hyperon-overview}.
+
+At the same time, the current generation of tool-using LLM agents (especially coding agents)
+exhibit striking practical competence: rapid implementation, iterative debugging, and multi-step
+workflow execution in real software environments.
+This creates a near-term opportunity:
+
+\begin{quote}
+\emph{Use strong LLM agents as ``hands'' (rapid construction and experimentation) to bring more of
+the neurosymbolic ``brain'' online in small, testable increments, with each increment delivering a
+measurable functional improvement.}
+\end{quote}
+
+A crucial constraint is \textbf{grounded evaluation}.
+If a component cannot convincingly outperform (or at least match) simple, well-understood
+baselines on a well-defined task, then architectural ambition risks drifting into non-falsifiable
+``hand-wavy'' territory. This note emphasizes several grounded baselines that align naturally with
+PLN's internal mathematics and with existing literature.
+
+\section{PLN in practice: what historically mattered}
+
+Two historical lessons recur across practical PLN deployments:
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{The premise bottleneck.}
+In early biomedical text-mining work, once the relevant semantic premises were present,
+PLN inference itself was described as relatively straightforward; the weak link was reliably
+creating the \emph{right premises} via semantic mapping and background knowledge integration
+\cite{bioliterate-2006}.
+This suggests a modern synergy point: LLMs can assist premise generation (semantic parsing,
+entity/relation extraction, schema grounding), while PLN provides structured uncertain inference
+over the resulting Atomspace content.
+
+\item \textbf{Synergy with inductive pattern discovery.}
+In OpenCogPrime-era work, PLN was explicitly positioned as complementary to inductive
+procedural learning (e.g., MOSES): PLN helps generalize and connect learned procedural patterns,
+while inductive learners help scan large datasets for candidate patterns that would be hard to find
+by reasoning alone \cite{agi15-synergy}.
+\end{enumerate}
+
+Both lessons point toward an incremental bootstrapping strategy: begin by pairing
+LLM-powered extraction/engineering with minimal, well-defined PLN reasoning kernels, then
+increase sophistication as performance evidence justifies it.
+
+\section{Inference control is the real problem}
+
+Any logic-based system faces combinatorial explosion. The PLN monograph emphasizes that large-scale
+inference strategies and pruning/inference-control mechanisms are central challenges
+\cite{pln-book}. Hyperon inherits this reality and explicitly allocates research effort to inference
+control and attention allocation (ECAN), including hybridization with learned models
+(e.g., transformer-based estimation of short-term importance) \cite{hyperon-plan,hyperon-overview}.
+
+A useful conceptual framing is:
+
+\begin{quote}
+\textbf{Inference control as decision-making under uncertainty.}
+Selecting which inference steps (or which atoms/premises) to expand next can be treated as a
+bandit/RL-like problem where ``usefulness'' is a latent variable and progress signals provide evidence.
+\end{quote}
+
+This framing supports a principled spectrum:
+
+\begin{itemize}[leftmargin=*]
+\item lightweight baselines (Naive Bayes, kNN retrieval, logistic regression) for premise relevance;
+\item graph-based propagation (activation spreading / message passing) as approximate inference;
+\item hybrid schemes where learned models propose candidates and symbolic/probabilistic kernels verify,
+refine, or compose them.
+\end{itemize}
+
+\section{A minimal technical bridge: evidence pairs and Naive Bayes}
+
+To make ``PLN-like uncertainty'' concrete, it is useful to isolate a tiny piece of mathematics that can be
+specified, implemented, and tested with high confidence.
+One such bridge is an \emph{evidence-pair} representation of uncertainty, closely aligned with unnormalized
+Bayesian posteriors.
+
+\subsection{Evidence algebra}
+
+\begin{definition}[Evidence pair]
+Let an \emph{evidence pair} be a tuple $e=\langle e^{+}, e^{-}\rangle$ with $e^{+}\ge 0$ and $e^{-}\ge 0$.
+Define its \emph{strength} (a probability-like quantity) by
+\[
+\mathrm{str}(e) \;=\; \frac{e^{+}}{e^{+}+e^{-}}
+\]
+with the convention $\mathrm{str}(\langle 0,0\rangle)=0$.
+Define \emph{multiplicative composition} of evidence by coordinatewise multiplication:
+\[
+\langle a^{+},a^{-}\rangle \otimes \langle b^{+},b^{-}\rangle
+\;=\;
+\langle a^{+}b^{+},\,a^{-}b^{-}\rangle.
+\]
+\end{definition}
+
+This is an intentionally small algebra: it does not yet encode higher-order structure (dependencies,
+graphical models, or quantales), but it is enough to recover the Naive Bayes factorization.
+
+\subsection{Naive Bayes as normalized product of evidence factors}
+
+Consider a binary hypothesis $H$ vs.\ $\neg H$ and observed features $x_1,\ldots,x_n$.
+Naive Bayes computes
+\[
+P(H\mid x_1,\ldots,x_n)=\frac{P(H)\prod_i P(x_i\mid H)}
+{P(H)\prod_i P(x_i\mid H)+P(\neg H)\prod_i P(x_i\mid \neg H)}.
+\]
+
+Encode:
+\[
+e_{\mathrm{prior}}=\langle P(H),\,P(\neg H)\rangle,\qquad
+e_i=\langle P(x_i\mid H),\,P(x_i\mid \neg H)\rangle.
+\]
+Then the unnormalized posterior masses are exactly the evidence product:
+\[
+e_{\mathrm{post}}
+=
+e_{\mathrm{prior}} \otimes e_1 \otimes \cdots \otimes e_n
+=
+\left\langle
+P(H)\prod_i P(x_i\mid H),\;
+P(\neg H)\prod_i P(x_i\mid \neg H)
+\right\rangle.
+\]
+
+\begin{proposition}[Naive Bayes posterior via evidence normalization]
+With the encoding above,
+\[
+P(H\mid x_1,\ldots,x_n)=\mathrm{str}(e_{\mathrm{post}}).
+\]
+\end{proposition}
+
+\begin{remark}
+This proposition is mathematically trivial---but strategically important.
+It gives a \emph{verifiable baseline} for uncertain inference: if a PLN-style mechanism cannot at least
+emulate this behavior on controlled tasks, something is wrong. Conversely, once the baseline is matched,
+extensions beyond Naive Bayes can be described as explicit relaxations of independence assumptions
+(e.g., moving to factor graphs / Bayesian networks / Markov networks).
+\end{remark}
+
+\section{From implications to Bayesian networks: a bridge inside the PLN monograph}
+
+The PLN monograph explicitly discusses using Bayesian networks to augment PLN inference in
+relatively static rule-bases: a set of implications is converted into a data table, which is then used
+to learn a Bayes net structure and parameters using standard methods \cite{pln-book}.
+The motivation is pragmatic: Bayes net inference can be fast once a model is learned, though structure
+learning is expensive and must be revisited if the implication set changes substantially.
+
+Conceptually, this suggests a modern workflow:
+
+\begin{enumerate}[leftmargin=*]
+\item Use symbolic/linguistic/LLM-driven processes to produce a set of uncertain implications.
+\item Compile those implications into a batch probabilistic model (e.g., Bayes net / factor graph).
+\item Run fast probabilistic inference for repeated queries.
+\item Feed resulting beliefs back into the symbolic substrate (Atomspace) with provenance.
+\end{enumerate}
+
+This is not ``PLN versus Bayes nets'' but rather a concrete synergy pattern: use each method where
+it is computationally advantageous.
+
+\section{Unification, substitution, and ``premise generation'' as a first-class problem}
+
+One recurring confusion in probabilistic-logic discussions is the division of labor between:
+
+\begin{itemize}[leftmargin=*]
+\item \textbf{Logical structure expansion:} generating new candidate terms/conclusions via unification,
+substitution, and rule application (a combinatorial process).
+\item \textbf{Uncertainty propagation:} assigning and revising numeric/interval uncertainties for those
+candidates (a statistical process).
+\end{itemize}
+
+The PLN monograph includes inference trails in which steps such as \emph{Substitution} appear as explicit
+operations in the chain \cite{pln-book}. Practical systems (e.g., biomedical text inference) highlight that
+obtaining suitable premises via semantic mapping can be the dominant difficulty \cite{bioliterate-2006}.
+Taken together, these points motivate a modern integration viewpoint:
+
+\begin{quote}
+\textbf{Treat premise generation as its own pipeline.}
+LLMs (and other learners) can propose candidate atoms/rules and alignments; probabilistic logic then
+serves to select, compose, and revise these candidates under uncertainty.
+\end{quote}
+
+This also clarifies why ``starting crisp'' (e.g., assigning high confidence to certain hand-coded rules)
+is not intrinsically ``GOFAI''; it is simply a choice of priors.
+The key question is whether such priors are (i) made explicit, (ii) revisable by evidence, and (iii)
+evaluated against baselines.
+
+\section{LLMs are not ``just natural language'': a more realistic role decomposition}
+
+Some architectures propose a sharp division: LLMs handle natural language and propose candidates,
+while symbolic systems handle reasoning and execution.
+In practice, modern LLM agents perform nontrivial planning, debugging, and meta-revision in
+tool-using loops, and may remain valuable even as other cognitive mechanisms mature.
+
+A more realistic decomposition is \emph{capability-based} rather than \emph{modality-based}:
+
+\begin{itemize}[leftmargin=*]
+\item LLMs as \textbf{generators} of hypotheses, plans, code, and semantic parses---especially where
+search spaces are large and structured priors are hard to specify.
+\item Symbolic/probabilistic kernels as \textbf{verifiers and compositors}---to enforce consistency,
+track provenance, do explicit multi-step inference, and maintain reusable abstractions.
+\item Long-term memory substrates (graphs + embeddings/hypervectors) as \textbf{persistent state}
+whose update rules are governed by explicit policies and evidence.
+\end{itemize}
+
+Hyperon explicitly anticipates hybridization with neural methods, including transformer integration
+for attention estimation and experiments with predictive/causal-coding networks \cite{hyperon-plan,hyperon-overview}.
+The high-level takeaway is: plan for \emph{progressive integration and specialization} of neural and symbolic
+components, not necessarily phasing out any particular family of methods.
+
+\section{Toward formal, verifiable baselines in Lean}
+
+A practical way to reduce ambiguity around ``probability-like'' truth values is to
+build minimal formal specifications and prove small correctness theorems.
+Two examples are especially tractable:
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Evidence algebra \texorpdfstring{$\Rightarrow$}{=>} Naive Bayes.}
+Formalize the evidence-pair operations and prove the Naive Bayes proposition above.
+
+\item \textbf{Bayes net star \texorpdfstring{$\Rightarrow$}{=>} Naive Bayes as a special case.}
+Define a Bayesian network with a single class node pointing to independent feature nodes;
+prove that variable elimination yields the Naive Bayes posterior for the class variable.
+\end{enumerate}
+
+These are ``small wins'' but strategically potent:
+they provide a crisp target for PLN implementations (including factor-graph/message-passing variants)
+and a sanity-checked foundation for more ambitious inference-control machinery.
+
+\section{A suggested incremental research program}
+
+The Hyperon development plan emphasizes incremental demonstrations across domains (math, Minecraft,
+bio, finance) alongside infrastructure work \cite{hyperon-plan}.
+The conceptual synthesis in this note suggests a cross-cutting program:
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Pick a grounded task with an uncontroversial baseline.}
+Examples: Naive Bayes premise relevance; Bayes net inference on a fixed graph; simple factor-graph reasoning.
+\item \textbf{Specify the task formally and implement it twice.}
+Once using the baseline (NB / BN), and once using the PLN-style mechanism.
+\item \textbf{Require equivalence in the restricted case.}
+Show that the PLN mechanism reproduces the baseline behavior when given the same assumptions.
+\item \textbf{Then relax assumptions and measure improvements.}
+Add dependencies, richer relational structure, or better inference control; quantify gains.
+\item \textbf{Use LLM agents to accelerate engineering while preserving auditability.}
+The code-generation advantage is real; the research risk is silent drift. Guard against drift using:
+tests, provenance logs, and small formally-specified kernels.
+\end{enumerate}
+
+\section{Conclusion}
+
+The practical path to neurosymbolic AGI likely runs through a disciplined loop:
+\emph{use strong bottom-up agentic systems to build and test top-down cognitive components},
+while insisting on grounded baselines and, when feasible, formal specifications.
+A key technical bridge is the evidence-pair algebra that makes Naive Bayes (and by extension certain
+Bayes net special cases) transparent. This provides a low-friction target for PLN-style uncertain inference
+and a concrete place to begin integrating inference control, premise generation, and long-term
+memory under explicit semantics.
+
+\bibliographystyle{plain}
+\begin{thebibliography}{10}
+
+\bibitem{hyperon-overview}
+B.~Goertzel et~al.
+\newblock \emph{OpenCog Hyperon: A Framework for AGI at the Human Level and Beyond -- High-Level Background \& Introduction}.
+\newblock Preprint (arXiv:2310.18318), 2026.
+
+\bibitem{hyperon-plan}
+B.~Goertzel.
+\newblock \emph{A Two-Year Development Plan Toward AGI, via Hyperon + PRIMUS with Predictive / Causal-Coding NNs}.
+\newblock Preliminary rough draft, Nov.~25, 2025.
+
+\bibitem{pln-book}
+B.~Goertzel, M.~Ikl{\'e}, I.~F. Goertzel, and A.~Heljakka.
+\newblock \emph{Probabilistic Logic Networks: A New Conceptual, Mathematical and Computational Framework for Uncertain Inference}.
+\newblock Technical monograph (draft).
+
+\bibitem{bioliterate-2006}
+B.~Goertzel, H.~Pinto, A.~Heljakka, I.~F. Goertzel, M.~Ross, and C.~Pennachin.
+\newblock Using dependency parsing and probabilistic inference to extract relationships between genes, proteins and malignancies implicit among multiple biomedical research abstracts.
+\newblock In \emph{Proceedings of the BioNLP Workshop on Linking Natural Language Processing and Biology at HLT-NAACL}, pages 104--111, 2006.
+
+\bibitem{agi15-synergy}
+B.~Goertzel et~al.
+\newblock Speculative scientific inference via synergetic combination of probabilistic logic and evolutionary pattern recognition.
+\newblock 2015. (Preprint in AGI'15 context.)
+
+\bibitem{pattern-mining-2013}
+B.~Goertzel, T.~Sanders, and J.~O'Neill.
+\newblock Integrating deep learning based perception with probabilistic logic via frequent pattern mining.
+\newblock 2013.
+
+\end{thebibliography}
+
+\end{document}

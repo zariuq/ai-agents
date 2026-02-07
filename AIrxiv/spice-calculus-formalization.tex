@@ -1,0 +1,665 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{stmaryrd}       % \llbracket, \rrbracket
+\usepackage{mathpartir}      % inference rules and mathpar environment
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage[margin=1in]{geometry}
+\usepackage{xcolor}
+\usepackage{listings}
+
+% Lean 4 listing style
+\lstdefinelanguage{Lean4}{
+  morekeywords={theorem, def, lemma, instance, class, structure, inductive, where,
+    abbrev, noncomputable, open, namespace, end, import, section, variable,
+    by, intro, exact, apply, simp, rfl, rw, cases, induction, with, fun,
+    match, if, then, else, let, have, show, constructor, notation,
+    Type, Prop, Sort, Set, List, Option, Bool, Nat, String, true, false},
+  sensitive=true,
+  morecomment=[l]{--},
+  morecomment=[n]{/-}{-/},
+  morestring=[b]",
+  literate={→}{$\to$}1 {←}{$\leftarrow$}1 {⇝}{$\rightsquigarrow$}1
+           {≡}{$\equiv$}1 {≤}{$\le$}1 {≥}{$\ge$}1
+           {∀}{$\forall$}1 {∃}{$\exists$}1 {∧}{$\wedge$}1 {∨}{$\vee$}1
+           {¬}{$\neg$}1 {⊤}{$\top$}1 {⊥}{$\bot$}1
+           {⊔}{$\sqcup$}1 {⊓}{$\sqcap$}1
+           {ℕ}{$\mathbb{N}$}1 {ℤ}{$\mathbb{Z}$}1
+           {α}{$\alpha$}1 {β}{$\beta$}1 {γ}{$\gamma$}1
+           {φ}{$\varphi$}1 {ψ}{$\psi$}1 {σ}{$\sigma$}1 {τ}{$\tau$}1
+           {Σ}{$\Sigma$}1
+           {⟨}{$\langle$}1 {⟩}{$\rangle$}1
+           {:=}{$\coloneqq$}1,
+}
+
+\lstset{
+  language=Lean4,
+  basicstyle=\small\ttfamily,
+  keywordstyle=\bfseries\color{blue!70!black},
+  commentstyle=\itshape\color{gray},
+  stringstyle=\color{red!60!black},
+  breaklines=true,
+  columns=flexible,
+  keepspaces=true,
+  xleftmargin=1em,
+  frame=single,
+  framesep=3pt,
+  rulecolor=\color{gray!40},
+}
+
+% Theorem environments
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% Custom commands
+\renewcommand{\rho}{\varrho}
+\newcommand{\Proc}{\mathsf{Proc}}
+\newcommand{\Name}{\mathsf{Name}}
+\newcommand{\pquote}[1]{@(#1)}
+\newcommand{\pdrop}[1]{*(#1)}
+\newcommand{\pout}[2]{#1\mathbin{!}(#2)}
+\newcommand{\pin}[3]{\mathsf{for}(#1 \leftarrow #2)\{#3\}}
+\newcommand{\ppar}[2]{\{#1 \mid #2\}}
+\newcommand{\pnil}{\mathbf{0}}
+\newcommand{\reduces}{\rightsquigarrow}
+\newcommand{\reducesN}[1]{\rightsquigarrow^{#1}}
+\newcommand{\reducesStar}{\rightsquigarrow^{*}}
+\newcommand{\SC}{\equiv}
+\newcommand{\alphaEq}{\equiv_\alpha}
+\newcommand{\nameEq}{\equiv_N}
+\newcommand{\commSubst}[3]{#1[@(#3)/#2]}
+\newcommand{\spiceEval}[2]{\mathsf{spice}(#1, #2)}
+\newcommand{\PM}{\mathsf{PM}}
+\newcommand{\surf}{\mathsf{surf}}
+\newcommand{\internalC}{\mathsf{int}}
+\newcommand{\FN}{\mathsf{FN}}
+\newcommand{\allN}{\mathsf{N}}
+\newcommand{\lean}[1]{\lstinline[language=Lean4]{#1}}
+
+\title{%
+  \textbf{A Mechanized Formalization of the $\rho$-Calculus\\
+  and the Spice Calculus in Lean~4}
+}
+\author{%
+  Zar Goertzel and Claude Opus \\
+  {\small \textit{Mettapedia Project}} \\
+  {\small \textit{February 2026}}
+}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We present a mechanized formalization in Lean~4 of the $\rho$-calculus (reflective
+higher-order calculus) and its temporal extension, the \emph{spice calculus}, as
+described by Meredith and collaborators.
+All theorems are \textbf{fully verified} with zero sorries and zero axioms.
+Key results include:
+structural congruence and reduction semantics for the $\rho$-calculus;
+semantic characterization of values as normal forms, with the equivalence
+$\mathsf{Value}(p) \iff \mathsf{presentMoment}(p) = \emptyset$;
+the correctness of the spice calculus reduction---proving that the standard
+$\rho$-calculus is recovered at horizon $n = 0$;
+and the formalization of the agent's \emph{present moment} including surface
+channels, internal channels, and the connection between irreducibility
+and empty interaction sets.
+\end{abstract}
+
+%% =========================================================================
+\section{Introduction}
+\label{sec:intro}
+
+The $\rho$-calculus, introduced by Meredith and Radestock~\cite{meredith2005},
+is a reflective higher-order process calculus that extends the $\pi$-calculus
+with a quote-dereference mechanism: any \emph{process} can be quoted to produce
+a \emph{name}, and any name can be dereferenced back into a process. This
+reflexive structure---names are codes for processes---gives the calculus a
+remarkable economy of concepts while retaining the full expressiveness of
+higher-order process calculi.
+
+Meredith's recent work on the \emph{spice calculus}~\cite{meredith2026spice}
+extends this framework with $n$-step lookahead, giving agents temporal
+structure: a past (trace of reductions), a present (1-step reachability),
+and a future ($n$-step lookahead). When $n = 0$, the spice calculus recovers
+the standard $\rho$-calculus exactly.
+
+This paper reports on a mechanized formalization of these ideas in Lean~4
+with Mathlib, resulting in a library that is:
+\begin{itemize}[nosep]
+  \item \textbf{Fully verified}: all theorems machine-checked with no axioms or gaps.
+  \item \textbf{Constructive where possible}: the reduction relation \lean{Reduces}
+    is \lean{Type}-valued, enabling extraction of reduction witnesses.
+  \item \textbf{Built on MeTTaIL syntax}: the process term language is formalized
+    as MeTTaIL \lean{Pattern}s, matching the Rust implementation of RChain/MeTTa.
+\end{itemize}
+
+%% =========================================================================
+\section{The $\rho$-Calculus}
+\label{sec:rho}
+
+\subsection{Syntax}
+
+The $\rho$-calculus has two mutually defined syntactic categories:
+
+\begin{definition}[$\rho$-Calculus Syntax]
+\label{def:syntax}
+\begin{align*}
+  P, Q ::= &\quad \pnil                          && \text{(nil process)} \\
+    \mid &\quad \pout{n}{Q}                       && \text{(output)} \\
+    \mid &\quad \pin{x}{n}{P}                     && \text{(input)} \\
+    \mid &\quad \ppar{P}{Q}                       && \text{(parallel)} \\
+    \mid &\quad \pdrop{n}                          && \text{(dereference)} \\
+  n, m ::= &\quad \pquote{P}                       && \text{(quote)}
+\end{align*}
+\end{definition}
+
+In our formalization, these are represented as MeTTaIL \lean{Pattern} constructors:
+\lean{.apply "PZero" []}, \lean{.apply "POutput" [n, q]},
+\lean{.apply "PInput" [n, .lambda x p]}, \lean{.collection .hashBag ps none},
+\lean{.apply "PDrop" [n]}, and \lean{.apply "NQuote" [p]}, respectively.
+
+\subsection{Structural Congruence}
+
+\begin{definition}[Structural Congruence]
+\label{def:sc}
+The structural congruence $\SC$ is the least congruence containing $\alphaEq$
+and satisfying:
+\begin{gather*}
+  P \mid \pnil \SC P \SC \pnil \mid P \\
+  P \mid Q \SC Q \mid P \\
+  (P \mid Q) \mid R \SC P \mid (Q \mid R) \\
+  \pquote{\pdrop{n}} = n \quad \text{(quote-drop)}
+\end{gather*}
+\end{definition}
+
+Our Lean formalization includes:
+\begin{itemize}[nosep]
+  \item \lean{AlphaEquiv}: $\alpha$-equivalence with bound variable renaming,
+    congruence under all constructors, and explicit symmetry/transitivity.
+  \item \lean{StructuralCongruence}: 20 constructors covering $\alpha$-equivalence,
+    parallel composition laws, list permutation, flattening, congruence under
+    all term formers, and quote-drop.
+  \item \lean{NameEquiv}: Name equivalence respecting structural congruence,
+    formalizing the STRUCT-EQUIV rule from~\cite{meredith2005}.
+\end{itemize}
+
+A key formalization insight: quote \emph{respects} structural congruence
+(including $\alpha$-equivalence). If $P \SC Q$ then $\pquote{P} \nameEq \pquote{Q}$.
+This is the STRUCT-EQUIV rule on page~7 of~\cite{meredith2005}.
+
+\subsection{Reduction Semantics}
+\label{sec:reduction}
+
+\begin{definition}[Reduction]
+\label{def:reduces}
+The one-step reduction $\reduces$ is defined by:
+\begin{mathpar}
+\inferrule*[Right=\textsc{Comm}]
+  { }
+  {\ppar{\pout{n}{Q}}{\pin{x}{n}{P}, \ldots \text{rest}}
+   \reduces
+   \ppar{\commSubst{P}{x}{Q}, \ldots \text{rest}}}
+\and
+\inferrule*[Right=\textsc{Drop}]
+  { }
+  {\pdrop{\pquote{P}} \reduces P}
+\\
+\inferrule*[Right=\textsc{Equiv}]
+  {P \SC P' \\ P' \reduces Q' \\ Q' \SC Q}
+  {P \reduces Q}
+\and
+\inferrule*[Right=\textsc{Par}]
+  {P \reduces Q}
+  {\ppar{P}{\text{rest}} \reduces \ppar{Q}{\text{rest}}}
+\end{mathpar}
+\end{definition}
+
+A crucial design decision: \lean{Reduces} is \lean{Type}-valued rather than
+\lean{Prop}-valued. This means reduction derivations are computational objects
+encoding \emph{how} a reduction happens, not just \emph{that} it happens.
+Wrapping in \lean{Nonempty} recovers the propositional version where needed.
+
+The Lean formalization includes 7 constructors: \lean{comm}, \lean{drop},
+\lean{equiv}, \lean{par}, \lean{par\_any}, \lean{par\_set}, and
+\lean{par\_set\_any}.  Parallel composition is encoded as ordered lists
+(\lean{.collection .hashBag}) with permutation congruence in structural
+congruence; \lean{par\_set} and \lean{par\_set\_any} are the analogous rules
+for set collections used in the spice calculus.
+
+%% =========================================================================
+\section{Values, Normal Forms, and Progress}
+\label{sec:values}
+
+A \emph{value} (or \emph{normal form}) is a pattern from which no
+reduction step is possible---the semantic notion of irreducibility:
+
+\begin{definition}[Value / Normal Form]
+\label{def:value}
+\begin{align*}
+  \mathsf{CanStep}(p) &\;\iff\; \exists q.\; p \reduces q \\
+  \mathsf{NormalForm}(p) &\;\iff\; \lnot\,\mathsf{CanStep}(p) \\
+  \mathsf{Value} &\;=\; \mathsf{NormalForm}
+\end{align*}
+\end{definition}
+
+This is the correct semantic definition: it automatically respects all reduction
+rules (COMM, DROP, PAR, EQUIV) without needing to track syntax.
+Following the standard $\rho$-calculus semantics~\cite{meredith2005},
+reduction does \emph{not} propagate under input or output guards---guarded
+processes are blocking until synchronization.
+The formalization also provides a decidable syntactic approximation
+\lean{isInertSyntax} that accepts a superset of normal forms---it does not
+check for COMM-redexes in parallel bags, so some reducible patterns pass the
+check. The useful direction is the contrapositive: failing the check implies
+the pattern genuinely reduces (proven as \lean{non\_inert\_proc\_reduces}).
+
+\begin{theorem}[Progress]
+\label{thm:progress}
+Every pattern is either reducible or a value:
+$\mathsf{CanStep}(p) \lor \mathsf{Value}(p)$.
+\end{theorem}
+
+This is an instance of excluded middle (proven as \lean{step\_or\_normalForm}).
+The real content lies in canonical-forms lemmas that characterize what normal forms
+look like:
+
+\begin{lemma}[Canonical Forms]
+\label{lem:canonical}
+\begin{enumerate}[nosep]
+  \item $\mathsf{NormalForm}(\pdrop{\pquote{P}})$ is false for any $P$
+    (\lean{normalForm\_no\_drop}).
+  \item In empty context, all names are quotes (\lean{empty\_context\_name\_is\_quote}).
+  \item If $p$ is syntactically non-inert and well-typed, then $p$ reduces
+    (\lean{non\_inert\_proc\_reduces}).
+\end{enumerate}
+\end{lemma}
+
+%% =========================================================================
+\section{The Spice Calculus}
+\label{sec:spice}
+
+\subsection{Temporal Structure}
+
+The spice calculus~\cite{meredith2026spice} extends the $\rho$-calculus with
+$n$-step lookahead, giving agents temporal structure.
+
+\begin{definition}[Future States and Present Moment]
+\label{def:future}
+\begin{align*}
+  \mathsf{futureStates}(p, n) &= \{ q \mid p \reducesN{n} q \} \\
+  \mathsf{presentMoment}(p) &= \mathsf{futureStates}(p, 1) \\
+  \mathsf{reachableStates}(p, n) &= \{ q \mid \exists k \le n.\; p \reducesN{k} q \} \\
+  \spiceEval{p}{n} &= \mathsf{reachableStates}(p, n)
+\end{align*}
+\end{definition}
+
+\begin{theorem}[Star = Union of Futures]
+\label{thm:star-future}
+$\{ q \mid p \reducesStar q \} = \bigcup_n \mathsf{futureStates}(p, n)$
+\end{theorem}
+
+This fundamental theorem connects the reflexive-transitive closure to
+$n$-step reachability: every reachable state is reachable in exactly $n$ steps
+for some finite $n$.
+
+\subsection{Spice COMM Rule}
+
+\begin{definition}[Spice COMM]
+\label{def:spice-comm}
+Given horizon $n$ and a finiteness proof for $\spiceEval{Q}{n}$:
+\begin{mathpar}
+\inferrule*[Right=\textsc{Spice-Comm}]
+  { }
+  {\ppar{\pout{x}{Q}}{\pin{y}{x}{P}, \ldots\text{rest}}
+   \reduces_n
+   \ppar{P[@(\spiceEval{Q}{n})/y], \ldots\text{rest}}}
+\end{mathpar}
+\end{definition}
+
+The key design: \lean{spiceCommSubst} is parameterized by a finiteness proof
+\lean{h\_fin : (spiceEval q n).Finite}. For $n = 0$, this is provided by
+\lean{spiceEval\_zero\_finite} (the singleton $\{q\}$ is trivially finite).
+For $n > 0$, finiteness requires finite branching modulo structural congruence---a
+standard assumption in process calculus, but not provable without quotienting
+by SC.
+
+\begin{theorem}[Recovery at Horizon 0]
+\label{thm:recovery}
+When $n = 0$, the spice COMM rule exactly recovers the standard $\rho$-calculus
+COMM rule.
+\end{theorem}
+
+\begin{proof}
+Three key lemmas compose:
+\begin{enumerate}[nosep]
+  \item $\spiceEval{q}{0} = \{q\}$ \quad (\lean{spice\_zero\_is\_current})
+  \item $\mathsf{futureSetAsPattern}(\{q\}, h) = q$ \quad
+    (\lean{futureSetAsPattern\_singleton}, singleton unwrapping)
+  \item $\mathsf{spiceCommSubst}(p, x, q, 0, h) = \mathsf{commSubst}(p, x, q)$ \quad
+    (\lean{spiceCommSubst\_zero})
+\end{enumerate}
+Together, \lean{reactive\_is\_standard} proves that every
+\lean{SpiceCommReduction 0} derivation produces a standard
+\lean{Reduces} derivation, by induction on the spice reduction structure.
+\end{proof}
+
+\subsection{The Present Moment}
+\label{sec:present}
+
+Following~\cite{meredith2026spice}, Section~4.4.1, an agent's \emph{present
+moment} comprises all interactions it can have immediately:
+
+\begin{definition}[Present Moment]
+\label{def:pm}
+\begin{align*}
+  \surf(a, e) &= \{ x \in \FN(a) \cap \FN(e) \mid a \mid e \downarrow_x \} \\
+  \internalC(a, e) &= \{ x \in \allN(a) \setminus \FN(e) \mid a \downarrow_x \} \\
+  \PM(a, e) &= \PM_{\mathsf{ext}}(a, e) \cup \PM_{\mathsf{int}}(a, e)
+\end{align*}
+where $\PM_{\mathsf{ext}}$ collects external interactions (agent with environment)
+and $\PM_{\mathsf{int}}$ collects internal self-interactions.
+\end{definition}
+
+\noindent\textbf{Notation.}
+We use $\mathsf{presentMoment}(p)$ (Definition~\ref{def:future}) for the
+\emph{successor set}---all 1-step reducts of a state~$p$---and $\PM(a, e)$
+(Definition~\ref{def:pm}) for the \emph{interaction-context} present moment
+of an agent~$a$ in an environment~$e$.
+
+Our formalization proves:
+\begin{itemize}[nosep]
+  \item \lean{surf\_comm}: Surface channels are symmetric in agent/environment.
+  \item \lean{presentMoment\_nonempty\_iff}: The present moment is nonempty iff
+    there is some interaction channel.
+  \item \lean{presentMoment\_subset\_futureStates}: The present moment is a
+    subset of 1-step future states.
+\end{itemize}
+
+\begin{theorem}[Value $\iff$ Empty Present Moment]
+\label{thm:value-pm}
+$\mathsf{Value}(p) \;\iff\; \lnot\,(\mathsf{presentMoment}(p) \neq \emptyset)$
+\end{theorem}
+
+This connects the semantic notion of value (irreducibility) directly to the
+paper's temporal structure: an agent whose present moment is empty has no
+available interactions---it is stuck, i.e., a value. The proof follows
+immediately from \lean{presentMoment\_nonempty\_iff\_reduces}.
+
+\subsection{The Past: Temporal Duality}
+\label{sec:past}
+
+The past is the temporal dual of the future (Section~4.4.3
+of~\cite{meredith2026spice}).  Where $\mathsf{futureStates}$ asks ``where can I
+go?'', past states ask ``where could I have come from?'':
+
+\begin{definition}[Past States]
+\begin{align*}
+  \mathsf{pastStates}(p, n) &= \{ q \mid q \reducesN{n} p \} \\
+  \mathsf{predecessors}(p) &= \{ q \mid q \reducesStar p \}
+\end{align*}
+\end{definition}
+
+The central theorem is past--future duality:
+
+\begin{theorem}[Past--Future Duality]
+$q \in \mathsf{pastStates}(p, n) \;\iff\; p \in \mathsf{futureStates}(q, n)$
+\end{theorem}
+
+As an immediate corollary, the present moment bridges past and future:
+$q$ is an immediate predecessor of $p$ iff $p$ is in the present moment of $q$
+(\lean{immediatePast\_iff\_presentMoment}).  Together with
+\lean{predecessors\_eq\_union\_past} (the dual of \lean{star\_eq\_union\_future}),
+this shows the temporal structure is fully symmetric.
+
+A fundamental asymmetry remains: values have no future
+(\lean{value\_no\_future}: $\mathsf{Value}(p) \Rightarrow \mathsf{presentMoment}(p) = \emptyset$)
+but always have a past---every pattern $p$ has $\pdrop{\pquote{p}}$ as an
+immediate predecessor via DROP (\lean{drop\_in\_immediatePast}).
+
+\subsection{Race Conditions}
+\label{sec:races}
+
+Section~4.3.1 of~\cite{meredith2026spice} discusses \emph{races}: situations where
+multiple inputs compete for the same output on a channel.  We formalize this:
+
+\begin{definition}[Race Condition]
+$\mathsf{hasRace}(P, x)$ holds when $P$ is a parallel composition containing
+an output $\pout{x}{Q}$ and at least two distinct inputs
+$\pin{y_1}{x}{P_1}$, $\pin{y_2}{x}{P_2}$.
+\end{definition}
+
+Our formalization proves:
+\begin{itemize}[nosep]
+  \item \lean{hasRace\_implies\_canInteract}: a race on $x$ implies interaction.
+  \item \lean{hasRace\_implies\_canStep}: a racing process can step (not a value).
+  \item \lean{value\_no\_race}: values have no race conditions.
+  \item \lean{race\_nondeterminism}: under \lean{List.Nodup} (processes are
+    resources), a race on $x$ implies $\geq\!2$ distinct (non-equal) reducts,
+    witnessing genuine non-determinism.  The proof constructs two COMM
+    reductions pairing the output with each competing input, then shows the
+    results differ because each retains the input the other consumed.
+\end{itemize}
+
+\subsection{Episodic Memory}
+\label{sec:memory}
+
+Section~4.4.4 of~\cite{meredith2026spice} decomposes an agent into \emph{recipes}
+(input guards) and \emph{facts} (output guards).  We formalize this via
+\lean{AgentMemory} and prove soundness and completeness:
+
+\begin{itemize}[nosep]
+  \item \textbf{Soundness}: \lean{extractMemory\_recipes\_sound} and
+    \lean{extractMemory\_facts\_sound}---every extracted recipe/fact
+    corresponds to a real \lean{PInput}/\lean{POutput} in the original bag.
+  \item \textbf{Completeness}: \lean{extractMemory\_recipes\_complete} and
+    \lean{extractMemory\_facts\_complete}---every top-level
+    \lean{PInput}/\lean{POutput} in the bag appears in the extracted memory.
+  \item \textbf{Self-interaction}: \lean{memory\_self\_interaction}---if an
+    agent has both a recipe and a fact on the same channel, COMM can fire.
+\end{itemize}
+
+\subsection{Logged COMM and Reversibility}
+\label{sec:logged}
+
+Section~4.4.3 of~\cite{meredith2026spice} states that ``the past only comes into
+being if there is some record or trace'' and connects this to reversibility.
+We formalize a \emph{logged COMM} that records exactly what was consumed:
+
+\begin{definition}[COMM Record]
+A \lean{CommRecord} stores the channel, consumed input guard (variable and body),
+consumed output payload, and remaining parallel siblings.
+\end{definition}
+
+From a COMM record, we prove:
+\begin{itemize}[nosep]
+  \item \textbf{Forward}: \lean{CommRecord.forward}---the record witnesses
+    a genuine reduction \lean{preState} $\reduces$ \lean{postState}.
+  \item \textbf{Backward}: \lean{CommRecord.reconstruct}---from the record,
+    the pre-state is exactly recoverable.
+  \item \textbf{Linearity}: \lean{CommRecord.recipe\_consumed} and
+    \lean{CommRecord.fact\_consumed}---the consumed recipe and fact are
+    absent from the post-state (under non-duplication hypotheses),
+    formalizing the ``linear and destructive'' interaction from Section~4.4.4.
+\end{itemize}
+
+This demonstrates the core reversibility idea: each COMM step is undoable
+when the record is available, without requiring the full continuation-saturated
+form transformation.
+
+%% =========================================================================
+\section{Formalization Architecture}
+\label{sec:architecture}
+
+The core formalization spans the following Lean files:
+
+\smallskip
+\begin{center}
+\begin{tabular}{ll}
+  \hline
+  \textbf{File} & \textbf{Content} \\
+  \hline
+  \texttt{MeTTaIL/Syntax.lean} & Pattern AST, language definitions \\
+  \texttt{MeTTaIL/Substitution.lean} & Substitution, free variables \\
+  \texttt{RhoCalculus/StructuralCongruence.lean} & $\alphaEq$, $\SC$, $\nameEq$ \\
+  \texttt{RhoCalculus/Types.lean} & Typing judgments, barbs, ProcEquiv \\
+  \texttt{RhoCalculus/Reduction.lean} & $\reduces$, Value, normal forms \\
+  \texttt{RhoCalculus/Soundness.lean} & Substitutability, syntactic progress \\
+  \texttt{RhoCalculus/Context.lean} & Eval contexts, labeled transitions \\
+  \texttt{RhoCalculus/MultiStep.lean} & $\reducesStar$, $\reducesN{n}$ \\
+  \texttt{RhoCalculus/SpiceRule.lean} & Future states, spice evaluation \\
+  \texttt{RhoCalculus/CommRule.lean} & Spice COMM, $n=0$ recovery \\
+  \texttt{RhoCalculus/PresentMoment.lean} & Agent's present moment, $\surf$, $\internalC$ \\
+  \hline
+\end{tabular}
+\end{center}
+
+\smallskip
+The formalization builds on Lean~4.27.0 with Mathlib~v4.27.0.
+All files compile with zero warnings, zero sorries, and zero axioms.
+
+\subsection{Design Decisions}
+
+\paragraph{Type-valued reduction.}
+The \lean{Reduces} inductive is \lean{Type}-valued rather than \lean{Prop}-valued.
+This captures reduction derivations as computational witnesses, enabling
+proof complexity analysis and extraction. The cost is that some lemmas require
+\lean{Nonempty} wrapping, but this is a minor syntactic overhead.
+
+\paragraph{MeTTaIL as base syntax.}
+Rather than defining a bespoke process calculus AST, we use the MeTTaIL
+\lean{Pattern} type---the same AST used in the Rust implementation of RChain.
+This grounds the formalization in the actual implementation language and
+enables future verification of the Rust code against the Lean specification.
+
+\paragraph{Finiteness parameterization.}
+The spice calculus substitution \lean{spiceCommSubst} takes an explicit
+finiteness proof as a parameter rather than relying on a global axiom.
+This is because finiteness of future states is \emph{false} in general
+(alpha-equivalence produces infinitely many syntactic variants); it becomes
+true only after quotienting by structural congruence. The parameterized
+design keeps the formalization sound while enabling use wherever finiteness
+can be established.
+
+%% =========================================================================
+\section{Related Work}
+\label{sec:related}
+
+Formal mechanization of process calculi has a substantial history.
+Gay and Hole~\cite{gay-hole-2005} formalized the $\pi$-calculus in Isabelle/HOL.
+Hirschkoff~\cite{hirschkoff1997} verified the $\pi$-calculus metatheory in Coq.
+More recently, Bengtson et al.~\cite{bengtson2009} developed the Psi-calculi
+framework in Isabelle, parametric in the data and channel structure.
+
+Our work differs in three respects:
+\begin{enumerate}[nosep]
+  \item We formalize the $\rho$-calculus specifically, including the
+    quote/dereference mechanism that is absent from $\pi$-calculus formalizations.
+  \item We formalize the spice calculus, a temporal extension not present in
+    any prior mechanized work, including the $n=0$ recovery theorem.
+  \item We formalize the agent's \emph{present moment}---the set of immediately
+    available interactions---and prove its connection to semantic values.
+\end{enumerate}
+
+%% =========================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+We have presented a fully mechanized formalization of the $\rho$-calculus
+and spice calculus in Lean~4, establishing:
+
+\begin{enumerate}[nosep]
+  \item \textbf{Structural congruence and reduction}: 20 structural congruence
+    constructors covering $\alpha$-equivalence, parallel composition laws, and
+    congruence; reduction via COMM, DROP, PAR, and EQUIV
+    (Section~\ref{sec:rho}).
+  \item \textbf{Semantic values}: $\mathsf{Value} = \mathsf{NormalForm}$ with
+    canonical forms and the equivalence to empty present moment
+    (Theorems~\ref{thm:progress},~\ref{thm:value-pm}).
+  \item The \textbf{spice calculus recovery} theorem: horizon $n = 0$ exactly
+    recovers the standard $\rho$-calculus (Theorem~\ref{thm:recovery}).
+  \item The \textbf{present moment} formalization: surface channels, internal
+    channels, and the connection between irreducibility and empty interaction
+    sets (Section~\ref{sec:present}).
+  \item \textbf{Past--future duality}: the temporal structure is symmetric,
+    with the present moment bridging the two directions
+    (Section~\ref{sec:past}).
+  \item \textbf{Race conditions and episodic memory}: races imply
+    non-stuck processes and, under non-duplication, at least two distinct
+    reducts; agent memory decomposition is sound and complete
+    (Sections~\ref{sec:races},~\ref{sec:memory}).
+\end{enumerate}
+
+All results are fully machine-checked with zero sorries and zero axioms.
+
+\paragraph{Future work.}
+Several directions remain:
+\begin{itemize}[nosep]
+  \item Quotienting by structural congruence to enable finiteness proofs
+    for $n > 0$ spice evaluation.
+  \item Formalizing the full continuation-saturated form (CSF) as a
+    source-to-source transformation, beyond the logged-step POC.
+  \item Connecting to typed communication via MeTTaIL/GSLT: the present
+    formalization uses MeTTaIL \lean{Pattern}s as base syntax and includes
+    mechanized substitution infrastructure, but does not yet formalize
+    channels carrying terms in a graph-structured $\lambda$-theory as
+    described in Section~5 of~\cite{meredith2026spice}.
+    A companion Lean library already provides the categorical scaffolding
+    needed for this step: a \lean{SubobjectFibration} with frame-valued
+    fibers and a \lean{ChangeOfBase} construction that equips each
+    morphism $f$ with the adjoint triple $\exists_f \dashv f^* \dashv \forall_f$.
+    Instantiating this infrastructure over the $\rho$-calculus reduction
+    graph would yield the modal operators ($\Diamond$, $\Box$) and their
+    Galois connection from the OSLF algorithm of~\cite{meredith2005}.
+    This bridge is not yet established in the present development.
+\end{itemize}
+
+\paragraph{Acknowledgments.}
+This work was inspired by and formalized from the mathematical ideas of
+L. Gregory Meredith.
+
+%% =========================================================================
+\begin{thebibliography}{99}
+
+\bibitem{meredith2005}
+L.G.~Meredith and M.~Radestock,
+``A Reflective Higher-Order Calculus,''
+\textit{Electronic Notes in Theoretical Computer Science}, vol.~141, no.~5,
+pp.~49--67, 2005.
+
+\bibitem{meredith2026spice}
+L.G.~Meredith,
+``How the Agents Got Their Present Moment,''
+Preprint, 2026.
+
+\bibitem{gay-hole-2005}
+S.~Gay and M.~Hole,
+``Subtyping for Session Types in the Pi Calculus,''
+\textit{Acta Informatica}, vol.~42, pp.~191--225, 2005.
+
+\bibitem{hirschkoff1997}
+D.~Hirschkoff,
+``A Full Formalisation of Pi-Calculus Theory in the Calculus of Constructions,''
+\textit{Proceedings of TPHOLs}, Springer LNCS, 1997.
+
+\bibitem{bengtson2009}
+J.~Bengtson, M.~Johansson, J.~Parrow, and B.~Victor,
+``Psi-Calculi: A Framework for Mobile Processes with Nominal Data and Logic,''
+\textit{Proceedings of LICS}, IEEE, 2009.
+
+\end{thebibliography}
+
+\end{document}

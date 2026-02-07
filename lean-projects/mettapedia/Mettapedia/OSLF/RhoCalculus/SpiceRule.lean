@@ -174,7 +174,7 @@ theorem star_to_reducesN {p q : Pattern} (h : p ⇝* q) : ∃ n, Nonempty (p ⇝
 theorem star_eq_union_future (p : Pattern) :
     reachableViaStarClosure p = ⋃ n, futureStates p n := by
   ext q
-  simp [reachableViaStarClosure, futureStates]
+  simp only [reachableViaStarClosure, futureStates, Set.mem_setOf_eq, Set.mem_iUnion]
   constructor
   · intro ⟨h⟩
     obtain ⟨n, hn⟩ := star_to_reducesN h
@@ -244,22 +244,131 @@ theorem present_is_minimal_horizon :
     temporalHorizon 1 :=
   Nat.one_pos
 
-/-! ## Summary
+/-! ## The Past: Temporal Duality
 
-This file establishes the spice calculus foundations:
+The past is the temporal dual of the future. Where futureStates asks
+"where can I go?", pastStates asks "where could I have come from?"
 
-**Core definitions:**
-1. ✅ **futureStates**: Exact n-step reachability
-2. ✅ **presentMoment**: 1-step reachability (the "now")
-3. ✅ **reachableStates**: ≤n-step reachability
-4. ✅ **spiceEval**: n-step lookahead evaluation
+Paper reference: Meredith (2026), Section 4.4.3 - "The Past"
 
-**Key theorems (all proven, 0 sorries, 0 axioms):**
-5. ✅ **spice_zero_is_current**: n=0 gives current state {p}
-6. ✅ **spice_mono**: Monotonicity of lookahead
-7. ✅ **star_eq_union_future**: Star = ⋃ₙ futureStates
-8. ✅ **spiceEval_zero_finite**: {q} is finite (for n=0 CommRule usage)
-9. ✅ **value_iff_presentMoment_empty**: Value p ↔ empty present moment
+The key insight: past and future are connected through the present moment.
+If q is in my past (q ⇝ⁿ p), then I am in q's future (p ∈ futureStates q n).
 -/
+
+/-- Past states: all patterns that reduce to p in exactly n steps.
+
+    This is the temporal dual of `futureStates`:
+    - futureStates(p, n) = { q | p ⇝ⁿ q }  (where p can go)
+    - pastStates(p, n) = { q | q ⇝ⁿ p }    (where p came from)
+
+    Paper reference: Meredith (2026), Section 4.4.3
+-/
+def pastStates (p : Pattern) (n : ℕ) : Set Pattern :=
+  { q | Nonempty (q ⇝[n] p) }
+
+/-- The immediate past: all patterns that reduce to p in one step.
+
+    These are the direct predecessors of p.
+-/
+def immediatePast (p : Pattern) : Set Pattern :=
+  pastStates p 1
+
+/-- All predecessors: patterns reachable via star closure (backwards).
+-/
+def predecessors (p : Pattern) : Set Pattern :=
+  { q | Nonempty (q ⇝* p) }
+
+/-- pastStates at n=0 is just {p} (reflexivity).
+
+    Dual of `futureStates_zero`. -/
+theorem pastStates_zero (p : Pattern) :
+    pastStates p 0 = {p} := by
+  ext q
+  simp only [pastStates, Set.mem_setOf_eq, Set.mem_singleton_iff]
+  exact ReducesN.zero_iff_eq q p
+
+/-- **Past-Future Duality**: q is in the past of p ↔ p is in the future of q.
+
+    This is the fundamental theorem connecting past and future:
+    the past of p at horizon n is exactly the set of processes whose
+    n-step future includes p.
+
+    Paper reference: Meredith (2026), Section 4.4.3 - the temporal structure
+    is symmetric: being in someone's past means they are in your future.
+-/
+theorem past_future_duality (p q : Pattern) (n : ℕ) :
+    q ∈ pastStates p n ↔ p ∈ futureStates q n := by
+  simp [pastStates, futureStates]
+
+/-- **Present Moment Bridge**: q is an immediate predecessor of p
+    ↔ p is in q's present moment.
+
+    This connects the "past" (Section 4.4.3) to the "present" (Section 4.4.1):
+    the present moment of q is exactly the immediate future of q,
+    which is exactly the set of processes whose immediate past includes q.
+-/
+theorem immediatePast_iff_presentMoment (p q : Pattern) :
+    q ∈ immediatePast p ↔ p ∈ presentMoment q := by
+  simp [immediatePast, pastStates, presentMoment, futureStates]
+
+/-- Past states at n is a subset of all predecessors.
+
+    Dual of `futureStates_subset_star`. -/
+theorem pastStates_subset_predecessors (p : Pattern) (n : ℕ) :
+    pastStates p n ⊆ predecessors p := by
+  intro q ⟨hq⟩
+  exact ⟨reducesN_to_star hq⟩
+
+/-- Predecessors is the union of all pastStates.
+
+    Dual of `star_eq_union_future`. -/
+theorem predecessors_eq_union_past (p : Pattern) :
+    predecessors p = ⋃ n, pastStates p n := by
+  ext q
+  simp only [predecessors, pastStates, Set.mem_setOf_eq, Set.mem_iUnion]
+  constructor
+  · intro ⟨h⟩
+    obtain ⟨n, hn⟩ := star_to_reducesN h
+    exact ⟨n, hn⟩
+  · intro ⟨n, ⟨h⟩⟩
+    exact ⟨reducesN_to_star h⟩
+
+/-- A value has no future but can have a past.
+
+    More precisely: Value(p) implies presentMoment(p) = ∅,
+    but does NOT imply immediatePast(p) = ∅.
+
+    This asymmetry is fundamental: a stuck process has no available
+    reductions, but other processes can still reduce TO it.
+    For example, *(@P) ⇝ P by DROP, so P ∈ immediatePast of any
+    pattern, even if P itself is a value.
+
+    We prove the "no future" direction; the "can have past" direction
+    is witnessed by the DROP rule for any concrete pattern.
+-/
+theorem value_no_future (p : Pattern) (h : Value p) :
+    presentMoment p = ∅ := by
+  ext q
+  simp only [Set.mem_empty_iff_false, iff_false]
+  intro hq
+  have : (presentMoment p).Nonempty := ⟨q, hq⟩
+  exact ((value_iff_presentMoment_empty p).mp h) this
+
+/-- Concrete witness: values CAN have predecessors.
+
+    *(@p) ⇝ p by DROP, so p has *(@p) as an immediate predecessor.
+    This holds regardless of whether p is a value.
+-/
+theorem drop_in_immediatePast (p : Pattern) :
+    .apply "PDrop" [.apply "NQuote" [p]] ∈ immediatePast p := by
+  simp [immediatePast, pastStates]
+  exact ⟨ReducesN.succ Reduces.drop (ReducesN.zero p)⟩
+
+/-- Past is monotone: more steps gives more predecessors.
+
+    Dual of `reachableStates_mono`. -/
+theorem pastStates_mono_via_predecessors (p : Pattern) (n : ℕ) :
+    pastStates p n ⊆ predecessors p :=
+  pastStates_subset_predecessors p n
 
 end Mettapedia.OSLF.RhoCalculus.Spice

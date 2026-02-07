@@ -1,0 +1,299 @@
+
+% !TEX TS-program = pdflatex
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue
+}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+
+\newcommand{\Fin}{\mathrm{Fin}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\EE}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\1}{\mathbf{1}}
+
+\title{Notes on Formalizing PLN Evidence Algebra and the Markov de Finetti Theorem\\
+\large (Lean/Mettapedia technical summary)}
+\author{AIrxiv note (compiled from a collaborative formalization thread)}
+\date{February 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+These notes summarize two intertwined formalization threads inside the \texttt{Mettapedia} Lean project:
+
+\begin{enumerate}[leftmargin=2em]
+\item A clean algebraic and categorical packaging of \emph{probabilistic logic network} (PLN) ``evidence'' and deduction rules via an \emph{evidence quantale}, with a bridge to enriched-category style composition.
+\item A near-complete Lean formalization of a \emph{Markov de Finetti} / \emph{Diaconis--Freedman} theorem on finite state spaces: Markov-exchangeable prefix measures satisfying a recurrence hypothesis are mixtures of Markov chains.
+\end{enumerate}
+
+The purpose of the note is didactic: it records the core mathematical ideas, the engineering decomposition used in Lean, and the remaining ``last-mile'' lemma needed to close the hard direction proof.
+\end{abstract}
+
+\tableofcontents
+
+\section{Motivation and the ``Solomonoff $\leftrightarrow$ probability theory'' theme}
+
+Solomonoff induction is usually presented as a universal Bayesian mixture over computable hypotheses.
+In practice, one often \emph{restricts} to structured hypothesis classes (e.g.\ i.i.d.\ models, finite-state Markov models, hidden Markov models) both for tractability and for interpretability.
+The conceptual bridge in this project is:
+
+\begin{quote}
+\emph{Exchangeability (or partial exchangeability) assumptions identify when a rich family of distributions can be represented as a mixture over a simpler parametric family.}
+\end{quote}
+
+For i.i.d.\ sequences, de Finetti says exchangeability $\Rightarrow$ mixture of i.i.d.\ laws.
+For Markov sequences, Diaconis--Freedman show a corresponding result for Markov-exchangeability (partial exchangeability of trajectories), but with a crucial additional structural hypothesis (recurrence).
+
+Once such structure theorems are formalized, they can be used to justify \emph{structured universal mixtures}:
+Solomonoff-like prediction can be instantiated by mixing over the parametric space of Markov models, with hyperpriors that retain universal dominance-style guarantees in restricted environments.
+
+\section{Prefix measures and (partial) exchangeability}
+
+\subsection{Prefix measures on a finite alphabet}
+
+Let $A$ be a finite alphabet (in the Lean development, $A = \Fin(k)$).
+A \emph{prefix measure} is a function
+\[
+\mu : A^\ast \to [0,1]
+\]
+satisfying the cylinder-consistency equations (informally: $\mu(xs)=\sum_a \mu(xs\cdot[a])$ and $\mu([])=1$).
+Such a $\mu$ can be viewed as the finite-dimensional marginals of a probability measure on infinite trajectories, when an extension exists.
+
+\subsection{Markov exchangeability}
+
+For Markov chains, a finite trajectory $x_0,x_1,\dots,x_n$ has natural sufficient statistics:
+\begin{itemize}[leftmargin=2em]
+\item the starting state $x_0$,
+\item the transition-count matrix $N(i,j)=\#\{t<n : x_t=i, x_{t+1}=j\}$,
+\item (optionally) the last state $x_n$.
+\end{itemize}
+
+A prefix measure is \emph{Markov-exchangeable} when $\mu(xs)$ depends only on these statistics, not on the detailed order in which transitions occur.
+This is a form of partial exchangeability: permutations that preserve the transition counts preserve probability.
+
+\section{Markov parameter space and word probabilities}
+
+\subsection{Parameter space}
+
+For a finite state space $\Fin(k)$, a Markov model can be parameterized by:
+\begin{itemize}[leftmargin=2em]
+\item an initial distribution $\pi_0$ on $\Fin(k)$;
+\item a row-stochastic transition kernel $P(i,\cdot)$ for each $i\in \Fin(k)$.
+\end{itemize}
+
+The Lean development packages this as a compact topological space
+\[
+\Theta = \mathrm{MarkovParam}(k),
+\]
+essentially a finite product of simplices.
+Compactness is important: it enables the use of Stone--Weierstrass density and the Riesz--Markov--Kakutani representation theorem.
+
+\subsection{Word probability as a continuous function}
+
+Given $\theta=(\pi_0,P)\in \Theta$ and a finite word $xs=[x_0,\dots,x_n]$, define
+\[
+\mathrm{wordProb}_\theta(xs)=\pi_0(x_0)\cdot \prod_{t=0}^{n-1} P(x_t,x_{t+1}).
+\]
+In Lean this is implemented as a measurable/continuous kernel
+\[
+\theta \mapsto \mathrm{wordProb}\; \theta\; xs,
+\]
+with a real-valued continuous coercion \texttt{wordProbReal}.
+This function lies in the coordinate-generated subalgebra of $C(\Theta,\RR)$.
+
+\section{Evidence partitions as a Markov analogue of Bernstein bases}
+
+A key engineering move is to avoid reasoning about individual words directly, and instead regroup words by their Markov sufficient statistics.
+
+Fix a horizon $n$.
+There are finitely many trajectories of length $n+1$ over $\Fin(k)$.
+Each trajectory has an evidence summary $e$ (start, counts, last).
+
+\subsection{Two parallel families indexed by evidence}
+
+For each $n$ and evidence class $e$:
+\begin{itemize}[leftmargin=2em]
+\item $w_\mu(n,e)$ is the total mass assigned by $\mu$ to trajectories with evidence $e$.
+\item $W(n,e):\Theta\to[0,1]$ is the total probability under $\theta$ of all words in that evidence class:
+\[
+W(n,e)(\theta)=\sum_{\text{traj } xs:\ \mathrm{evidence}(xs)=e}\mathrm{wordProb}_\theta(xs).
+\]
+\end{itemize}
+
+Crucially, for each fixed $n$, the finite family $\{W(n,e)\}_e$ forms a \emph{partition of unity} on $\Theta$:
+\[
+\forall\theta,\quad \sum_e W(n,e)(\theta)=1,
+\]
+and $\{w_\mu(n,e)\}_e$ is a probability vector.
+
+This is the Markov counterpart of the role Bernstein basis polynomials play in one-dimensional Hausdorff moment proofs: they turn global approximation/representation questions into finite-dimensional simplex constraints at each $n$.
+
+\section{Recurrence as an identifiability hypothesis}
+
+\subsection{Definition (prefix-measure recurrence)}
+
+The Diaconis--Freedman recurrence condition can be phrased on an extension $P$ to infinite trajectories:
+\[
+P\{ X_n = X_0\ \text{i.o.}\}=1.
+\]
+In the Lean development, recurrence for a prefix measure $\mu$ is defined as: there exists an extension measure $P$ to $(\NN\to \Fin(k))$ whose cylinder sets agree with $\mu$ and for which the recurrence event holds almost surely.
+
+\subsection{Why recurrence is necessary}
+
+Markov exchangeability alone does \emph{not} imply mixture-of-Markov-chains.
+A fully formal counterexample is constructed: a deterministic chain that leaves its start state once and never returns.
+It is Markov-exchangeable as a prefix measure, but violates recurrence, and therefore cannot be represented as a mixture over Markov parameters.
+
+Interpretation:
+recurrence is an \emph{identifiability anchor}: it guarantees the trajectory keeps resampling transitions from a reference state, allowing long-run transition statistics to stabilize.
+Without it, transient drift can preserve partial exchangeability on finite prefixes while breaking any global mixture interpretation.
+
+\section{The Markov de Finetti theorem and the Lean proof architecture}
+
+\subsection{Target statement (informal)}
+
+Let $\mu$ be a Markov-exchangeable prefix measure on $\Fin(k)$ satisfying recurrence.
+Then there exists a probability measure $\Pi$ on $\Theta=\mathrm{MarkovParam}(k)$ such that for every word $xs$,
+\[
+\mu(xs) \;=\; \int_{\Theta} \mathrm{wordProb}_\theta(xs)\, d\Pi(\theta).
+\]
+Equivalently: $\mu$ is a mixture of Markov chains.
+
+\subsection{Functional-analytic wrapper}
+
+The formalization follows a compactness/functional-analysis template:
+\begin{enumerate}[leftmargin=2em]
+\item Define the map $\Pi \mapsto \left(\int W(n,e)\, d\Pi\right)_{(n,e)\in u}$ for a finite set $u$ of constraints.
+\item Show this map is continuous, and that the space of probability measures on $\Theta$ is compact.
+\item Define the \emph{moment polytope} as the image of this compact set; it is compact and hence closed.
+\item Reduce the hard direction to a \emph{finite satisfiability} statement: for each finite $u$, the constraint vector defined from $\mu$ lies in the moment polytope.
+\end{enumerate}
+
+Intuitively, the hard work is proving that the finite-dimensional constraints implied by Markov exchangeability + recurrence are consistent with some mixing measure.
+
+\section{The remaining ``Diaconis--Freedman core'' approximation lemma}
+
+\subsection{What remains}
+
+At the time of writing, the Lean development has reduced the entire hard direction to a single approximation lemma (referred to as \texttt{good\_state\_bound} in the code).
+Conceptually, it compares:
+
+\begin{itemize}[leftmargin=2em]
+\item a \emph{without-replacement} distribution arising from uniform sampling over trajectories in a fiber determined by a Markov state summary, and
+\item a \emph{with-replacement} product distribution induced by the empirical Markov parameter of that state summary.
+\end{itemize}
+
+The desired inequality has the form
+\[
+\left| W(\mathrm{empiricalParam}(s)) - \mathrm{prefixCoeff}(s)\right|
+\;\le\; \frac{C}{M},
+\]
+where $M$ is the number of returns to the anchor state (or a lower bound thereof), and $C$ is a constant depending only on $(k,n)$ (and the chosen evidence granularity), not on $s$.
+
+\subsection{Excursion decomposition strategy}
+
+The main combinatorial device is an \emph{excursion decomposition}:
+a trajectory is cut into segments between consecutive returns to the start state.
+The project formalizes:
+
+\begin{itemize}[leftmargin=2em]
+\item return positions and counts,
+\item the resulting list of excursions,
+\item the induced ``uniform-on-fiber'' measure as a \emph{sampling without replacement} model on excursion lists.
+\end{itemize}
+
+The bound is then obtained by:
+\begin{enumerate}[leftmargin=2em]
+\item proving a one-step (per-excursion-prefix) deviation bound between without-replacement and with-replacement probabilities (already formalized in the excursion model files),
+\item lifting to a length-$m$ prefix bound using a generic product perturbation inequality:
+\[
+\left|\prod_{i=1}^m p_i - \prod_{i=1}^m q_i\right|
+\;\le\; \sum_{i=1}^m |p_i-q_i|,
+\]
+\item summing over all excursion-prefix events compatible with the evidence partition.
+\end{enumerate}
+
+The only remaining engineering step is a clean decomposition lemma expressing both \texttt{prefixCoeff} and \texttt{W(empiricalParam s)} as finite sums over excursion-prefix events, so the already-proven excursion bounds can be applied termwise.
+
+\section{PLN evidence as an algebraic/categorical object}
+
+Separately from the Markov de Finetti work, the project develops a robust algebraic view of ``evidence'' used in probabilistic logic networks.
+
+\subsection{Evidence counts and projections}
+
+Evidence is represented as a pair of nonnegative counts $(e^+,e^-)$.
+Two common projections are:
+\begin{itemize}[leftmargin=2em]
+\item strength, typically $e^+/(e^++e^-)$ (when total evidence is nonzero),
+\item confidence, typically a monotone function of total evidence $e^++e^-$.
+\end{itemize}
+
+These projections connect to the more traditional PLN truth value representation (strength, confidence), but the evidence-pair view is often algebraically cleaner.
+
+\subsection{Quantale structure and residuation}
+
+A central insight is that evidence pairs form a commutative monoid under a tensor-like operation (roughly: coordinatewise multiplication in a suitable semiring/complete-lattice setting), and this can be upgraded to a \emph{quantale} with a right adjoint (residuation).
+This structure supports:
+
+\begin{itemize}[leftmargin=2em]
+\item a compositional view of implication chaining,
+\item a ``direct path'' vs ``indirect path'' decomposition of deduction (via complements and residuation),
+\item a bridge to enriched-category composition laws.
+\end{itemize}
+
+The Lean development contains a theorem explicitly connecting the PLN deduction lower bound to an enriched composition law.
+
+\section{Measure-theory curriculum (minimal toolkit that repeatedly mattered)}
+
+For an assistant (human or agent) joining the formalization effort, the following results tend to be the practical ``spine'':
+
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{Cylinder sets and Kolmogorov-style consistency:} how prefix measures relate to measures on infinite products.
+\item \textbf{Tonelli/Fubini for nonnegative integrals:} commuting $\int$ with finite sums.
+\item \textbf{Continuity of integration:} $\Pi\mapsto \int f\,d\Pi$ is continuous for continuous bounded $f$ on compact spaces.
+\item \textbf{Compactness of probability measures on compact spaces:} enabling finite intersection arguments and closed-image (moment polytope) arguments.
+\item \textbf{Stone--Weierstrass:} density of coordinate-generated subalgebras inside $C(\Theta)$.
+\item \textbf{Riesz--Markov--Kakutani:} turning positive linear functionals on $C(\Theta)$ into measures (when that route is used explicitly).
+\end{enumerate}
+
+Notably, the current Markov hard-direction path leans more on finite-dimensional compactness + continuity + closed-image reasoning than on a full Daniell--Stone extension, reserving RMK for the final measure extraction step.
+
+\section{Roadmap for closing the last lemma}
+
+To finish the hard direction in Lean (and thereby close the Solomonoff--Markov exchangeability bridge in this thread), the remaining work is sharply focused:
+
+\begin{enumerate}[leftmargin=2em]
+\item Introduce a small refactor to avoid an import cycle: move the statement of the remaining bound into a file that can import both the excursion model and the approximation wrapper.
+\item Prove two decomposition lemmas:
+  \begin{itemize}
+  \item \texttt{prefixCoeff} is a finite sum over excursion-prefix coefficients.
+  \item \texttt{W(empiricalParam s)} is the matching finite sum over with-replacement excursion probabilities.
+  \end{itemize}
+\item Apply the already-proven excursion prefix bound termwise, then aggregate using the generic product-difference inequality.
+\end{enumerate}
+
+\section*{Acknowledgments / provenance}
+
+This note is extracted from a collaborative formalization thread and the corresponding Lean source files in the \texttt{Mettapedia} project.
+It is intended as a technical memory aid for future contributors.
+
+\end{document}

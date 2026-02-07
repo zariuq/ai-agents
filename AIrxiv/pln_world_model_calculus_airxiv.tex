@@ -1,0 +1,610 @@
+% AIrxiv note compiled by Oruži for Zar
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{stmaryrd} % for \llbracket \rrbracket
+\usepackage{bbm}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=blue,
+  urlcolor=blue
+}
+
+% --- Theorem environments
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+
+% --- Macros
+\newcommand{\Evidence}{\mathsf{Evidence}}
+\newcommand{\State}{\mathsf{State}}
+\newcommand{\Query}{\mathsf{Query}}
+\newcommand{\WM}{\mathsf{WM}}
+\newcommand{\revise}{\mathbin{\oplus}}   % revision (evidence addition)
+\newcommand{\tensor}{\mathbin{\otimes}}  % combination in valuation algebra / quantale
+\newcommand{\Strength}{\mathsf{strength}}
+\newcommand{\ev}{\mathsf{evidence}}
+\newcommand{\side}{\Sigma}
+\newcommand{\bn}{\mathsf{BN}}
+\newcommand{\fg}{\mathsf{FG}}
+\newcommand{\KS}{\mathsf{KS}}
+
+\title{\vspace{-1.5em}
+World-Model Calculus for Probabilistic Logic Networks:\\
+Evidence, Views, and $\Sigma$-Guarded Compiled Inference
+\vspace{-0.5em}}
+\author{Zar (project direction) \and Oru\v{z}i (compiled notes)}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note distills the core ideas developed while formalizing a \emph{World-Model (WM) calculus}
+for Probabilistic Logic Networks (PLN) inside Lean (the \texttt{Mettapedia} repository).
+
+The guiding principle is: \emph{PLN inference is stateful posterior revision plus evidence extraction},
+and ``fast PLN rules'' are \emph{compiled, $\Sigma$-guarded rewrites} whose soundness is discharged
+relative to a declared \emph{world-model class} (Bayesian network, factor graph, joint evidence, etc.).
+
+We separate:
+(i) \textbf{evidence} as a rich algebraic object (often Heyting/quantale-valued),
+(ii) \textbf{views} (probabilities, STVs/WTVs, typicalities) as explicit projections from evidence,
+and
+(iii) \textbf{tractable sublayers} where inference is exact relative to assumptions (e.g.\ d-separation).
+We explain how this architecture supports message passing / activation spreading (MORK-style),
+how to make approximation risk explicit (ledgers, hypothesis weights, projection operators),
+and how to integrate \textbf{quantifiers} via satisfying-set semantics and Goertzel-style weakness.
+Finally we outline a proof-calculus agenda: soundness and (fragmented) completeness results
+relative to chosen semantics (propositional/FO/Henkin-HO, finite vs quasi-Borel, etc.).
+\end{abstract}
+
+\tableofcontents
+
+\section{Motivation and the ``council direction''}
+
+PLN aims to support \emph{probabilistic reasoning in open-ended domains}: uncertain facts,
+imperfect independence, and large-scale inference control (message passing, GNN-like spreading,
+positive feedback loops). The historical friction is well-known:
+
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Local truth-value rules are not globally complete.}
+Even if you have local evidence for $A,B,C$ and for links $A\Rightarrow B$, $B\Rightarrow C$,
+you cannot in general compute the \emph{exact} evidence for $A\Rightarrow C$
+without carrying joint correlation information.
+\item \textbf{Independence assumptions are the real price.}
+In practice you need to ask: when is a Markov/d-separation assumption justified, what do you do
+when it is violated, and how do you quantify drift?
+\item \textbf{Operational factor graphs are not automatically semantics.}
+A message-passing graph whose factors are ``deduction'' or ``induction'' update formulas is
+useful for search, but it is only semantically correct when those factors are \emph{compiled}
+from a true world-model factorization (or guarded by explicit assumptions).
+\end{itemize}
+
+The emerging design answer is:
+
+\begin{quote}
+\textbf{Keep the semantic kernel small and honest.}
+World-model states revise under evidence, and queries extract evidence.
+Everything else---truth values, probabilities, ``fast rules'', message passing---are
+\emph{explicit views and $\Sigma$-guarded tactics} whose validity is proved
+\emph{relative to a declared model class}.
+\end{quote}
+
+This aligns the ``council'' instincts: Kolmogorov/Cox/Knuth--Skilling give valuation axioms,
+Kohlas--Shenoy give algebraic computation, Tao wants hypotheses stated cleanly,
+and Meredith/Stay want the categorical/process structure to stay compositional.
+
+\section{The WM kernel: states, revision, and queries}
+
+\subsection{World-model interface}
+
+At the semantic core we posit:
+\begin{itemize}[leftmargin=2em]
+\item a type of world-model states $W:\State$ (posterior states, knowledge states, factorized models, etc.),
+\item a type of queries $q:\Query$ (propositions, links, quantified claims, etc.),
+\item an evidence type $\Evidence$, and
+\item operations \emph{revision} and \emph{evidence extraction}.
+\end{itemize}
+
+Conceptually:
+\[
+  W \revise \Delta \;\;\text{is revision of state $W$ by new evidence $\Delta$} \qquad
+  \ev(W,q)\in \Evidence \;\;\text{is evidence supporting query $q$ in state $W$.}
+\]
+
+In Lean this is packaged as a \texttt{WorldModel} typeclass with an \texttt{EvidenceType} for states.
+The essential law is \textbf{additivity of evidence extraction under revision}:
+\[
+  \ev(W_1 \revise W_2, q) = \ev(W_1,q) \revise \ev(W_2,q).
+\]
+This is the ``semantic spine'' that makes revision and querying behave like a calculus.
+
+\subsection{Judgments as a proof-calculus skeleton}
+
+The WM kernel naturally yields sequent-style judgments:
+
+\begin{itemize}[leftmargin=2em]
+\item $\vdash_{\WM} W$ --- \emph{$W$ is a derivable/valid WM state} (a posterior produced from priors and updates),
+\item $\vdash_q\, W \Downarrow q \mapsto e$ --- \emph{from state $W$, query $q$ yields evidence $e$},
+\item optionally $\vdash_s\, W \Downarrow q \mapsto s$ --- a scalar \emph{strength view} of the query.
+\end{itemize}
+
+This is already a \emph{proof calculus}, but it is a \emph{stateful} one:
+proof objects are states and evidence terms, not only formulas.
+To avoid re-introducing ``hidden semantics'' through convenience truth-values,
+we treat STVs/WTVs/probabilities as \textbf{views} computed from evidence.
+
+\subsection{Query equivalence and $\Sigma$-guarded rewrites}
+
+We isolate a key metatheoretic concept:
+
+\begin{definition}[Query equivalence]
+Two queries $q_1,q_2\in\Query$ are \emph{evidence-equivalent} if
+\[
+  \forall W\in\State.\;\; \ev(W,q_1)=\ev(W,q_2).
+\]
+\end{definition}
+
+A ``PLN inference rule'' is then packaged as a \emph{sound rewrite}:
+
+\begin{definition}[$\Sigma$-guarded rewrite rule]
+A rewrite rule consists of:
+\begin{itemize}[leftmargin=2em]
+\item a side condition $\side$ (a proposition or a structured context),
+\item a conclusion query $q$,
+\item a derived evidence term $\mathrm{derive}(W)$, and
+\item a proof that if $\side$ holds then $\mathrm{derive}(W)=\ev(W,q)$ for all $W$.
+\end{itemize}
+\end{definition}
+
+In practice, many PLN rules rewrite only the \emph{strength view} of a query:
+they prove an identity about $\Strength(\ev(W,q))$ rather than about full evidence.
+
+\section{Evidence vs views: keep approximations explicit}
+
+\subsection{Evidence as an algebraic object}
+
+PLN needs an evidence object that can encode:
+\begin{itemize}[leftmargin=2em]
+\item positive and negative support,
+\item partial truth / paraconsistency,
+\item monotone aggregation of evidence, and
+\item (in some sublayers) probabilistic conjugacy (e.g.\ Beta/Dirichlet counts).
+\end{itemize}
+
+A useful abstraction is that $\Evidence$ forms (at least) a \emph{commutative quantale}:
+a complete lattice with a monoidal product $\tensor$ distributing over joins.
+In several PLN developments, $\Evidence$ is also (or instead) treated as a Heyting algebra
+(so negation is intuitionistic/paraconsistent rather than Boolean).
+
+\subsection{Views as projections}
+
+A \textbf{view} is a function $v:\Evidence\to X$ (often $X=[0,1]$ or $\mathbb{R}_{\ge 0}^\infty$),
+chosen for operational convenience:
+\[
+  \text{probability view}\quad p(e) \in [0,1], \qquad
+  \text{STV/WTV view}\quad \mathrm{stv}(e)\in [0,1]\times[0,1], \quad \text{etc.}
+\]
+Views \emph{must be explicit}, because they necessarily forget information.
+This is not ``annoying monadic programming'' for its own sake---it is the enforcement
+mechanism that prevents silent unsoundness.
+
+\begin{remark}[The totality gate]
+If $\Evidence$ has incomparable elements, there is no faithful order-embedding into $\mathbb{R}$.
+So a single real-valued view cannot be globally complete.
+This is not a bug; it is a statement about what information you are discarding.
+\end{remark}
+
+\section{A key no-go: why completeness cannot be purely local}
+
+A foundational result proved in the Lean development can be phrased as:
+
+\begin{theorem}[No local complete link-deduction rule (informal)]
+There is no function
+\[
+  f:\Evidence^5\to \Evidence
+\]
+that takes only \emph{local} link/proposition evidence (for $A,B,C$ and $A\Rightarrow B$, $B\Rightarrow C$)
+and returns the \emph{exact} evidence for $A\Rightarrow C$ for \emph{all} world-model states.
+\end{theorem}
+
+Interpretation: \textbf{correlations live in the joint state}.
+So ``fast PLN rules'' must be framed as \emph{admissible rewrites under assumptions}:
+they are not globally complete inference rules in the sequent-calculus sense.
+
+This no-go result is the reason the WM calculus is \emph{state-first}:
+the state carries whatever correlation structure is needed for truth of queries.
+
+\section{Tractable sublayers: Bayesian networks and factor graphs}
+
+\subsection{World-model classes and $\Sigma$ side conditions}
+
+To scale, we restrict the class of admissible states:
+\[
+  \mathcal{C} \subseteq \State \quad \text{(e.g.\ DAG-factorizing BNs, Markov random fields, etc.)}.
+\]
+Inside such a class, we can prove additional theorems (screening-off, d-separation),
+and compile them into admissible rewrite rules.
+
+We write $\side$ for explicit side conditions:
+\begin{itemize}[leftmargin=2em]
+\item structural hypotheses (a particular DAG/factorization),
+\item conditional independence facts (from d-separation),
+\item positivity/nondegeneracy assumptions (to avoid division by $0$),
+\item approximation/error ledger invariants (if using heuristics).
+\end{itemize}
+
+\subsection{Variable elimination as the exact query engine}
+
+Given a discrete factor graph (or a BN compiled to a factor graph), we can compute
+unnormalized weights for constraints by variable elimination (VE):
+\[
+  Z(\text{constraints}) \;=\; \sum_{\text{assignments consistent with constraints}} \prod_f \phi_f.
+\]
+In Lean, a generic VE engine is implemented for factor graphs parameterized by a semiring $K$,
+with specializations to $\mathbb{R}_{\ge 0}^\infty$ (ENNReal) for probabilities.
+
+\begin{remark}
+A \texttt{CommSemiring} assumption is \emph{stronger} than separate \texttt{AddCommMonoid}+\texttt{Mul},
+but it is not ``making it a ring''. Rings add additive inverses; semirings do not.
+We use semirings because VE is ``sum of products'' and needs distributivity.
+\end{remark}
+
+\subsection{Fast PLN rules as compiled tactics}
+
+A PLN rule (e.g.\ deduction) becomes:
+
+\begin{quote}
+\textbf{A $\Sigma$-guarded rewrite of a hard query into smaller queries}, together with a proof
+that the \emph{strength view} of the conclusion equals the rule formula applied to
+the strength views of the premises.
+\end{quote}
+
+Crucially: this is a \emph{strength-level} rewrite unless the model class supplies a law of
+evidence flow itself. The evidence for the conclusion is still obtained by querying the WM state,
+unless we can prove more.
+
+\section{Knuth--Skilling bridges: valuations and regraduation}
+
+Knuth--Skilling (K\&S) ``foundations of inference'' axiomatize valuation schemes on lattices.
+In our setting, K\&S plays two roles:
+
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{Probability as a valuation/view.}
+Within Boolean world sets, probabilities arise as valuations and can be handled in standard ways.
+\item \textbf{Regraduation bridges for computation.}
+K\&S representation theorems justify mapping an abstract valuation to a real scale where
+combination becomes addition or scaled multiplication, enabling efficient computation.
+\end{enumerate}
+
+In the Lean development, a regraduation map
+\[
+  \Theta : \alpha \to \mathbb{R}
+\]
+turns an abstract additive valuation algebra into real addition:
+\[
+  \Theta(x \star y) = \Theta(x) + \Theta(y).
+\]
+This is explicitly a \textbf{scale change}, not probability normalization.
+
+This matters for PLN because:
+\begin{itemize}[leftmargin=2em]
+\item it provides a principled bridge between abstract evidence/valuation objects and numerical algorithms,
+\item it lets the VE engine operate over K\&S-valued factor graphs after regrading,
+\item it keeps ``probability'' as a \emph{view} rather than the foundational type.
+\end{itemize}
+
+\section{Factor graphs in two roles: semantics vs control (MORK alignment)}
+
+A key conceptual cleanup:
+
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{Semantic factor graphs:} factors \emph{are the model}.
+They represent a genuine factorization (BN/MRF), and VE / junction tree is exact
+relative to that model class.
+\item \textbf{Operational factor graphs:} factors are \emph{rule schemas} or \emph{control edges}.
+Message passing is a heuristic that schedules which queries to ask / which rewrites to attempt.
+It becomes \emph{semantics} only after compilation: each operational factor is justified by
+a semantic factor (or by a proven admissible rewrite under $\Sigma$).
+\end{enumerate}
+
+\subsection{Evidence ledgers and positive feedback loops}
+
+Message passing, activation spreading, and positive feedback loops are not disallowed.
+They just need accountability:
+
+\begin{itemize}[leftmargin=2em]
+\item Track provenance and overlap to avoid double-counting evidence.
+\item Track $\Sigma$ hypotheses explicitly (e.g.\ ``this subgraph is Markov'').
+\item Maintain a ledger of approximation error / drift estimates.
+\end{itemize}
+
+This viewpoint matches the ``geodesic inference control'' intuition:
+control can be decentralized, but evidence must not be silently duplicated.
+
+\subsection{Anchor states and recurrence}
+
+Practical systems often revisit certain ``anchor'' situations (daily routines, infrastructure states,
+public transit modes). If the agent revisits anchor-like regimes infinitely often, the system can
+calibrate its approximation ledgers. This suggests an empirical condition:
+
+\begin{quote}
+\emph{We need enough recurrence in the experienced state space to re-estimate which simplifying
+assumptions are valid in the domains where we rely on them.}
+\end{quote}
+
+When recurrence is weak, the model-class validity itself must be treated as uncertain
+(and updated like any other hypothesis).
+
+\section{Gluing logics: projection operators and probabilistic model-class uncertainty}
+
+The ``complete logic + tractable bubbles'' dream is achievable if we resist one temptation:
+\emph{never silently treat a simplifying assumption as if it were true}.
+
+\subsection{Model class as a hypothesis}
+
+Let $M$ range over model classes (Markov, Beta--Bernoulli, Gaussian, etc.).
+Treat ``the domain is Markov'' as a hypothesis with probability (or evidence) mass.
+Then:
+\[
+  P(q) \;=\; \sum_M P(M)\, P(q \mid M),
+\]
+where $P(q\mid M)$ can be computed in a tractable ``bubble'' (factor graph, linear model, etc.),
+and $P(M)$ is estimated in the general world-model layer.
+
+\subsection{Projections (forgetful maps) as approximation interfaces}
+
+Let $\pi_M : \State \to \State_M$ be a projection from a rich state to a restricted state
+appropriate for model class $M$. Soundness questions become:
+\begin{itemize}[leftmargin=2em]
+\item What queries commute with projection? (exactness of compiled tactics)
+\item What inequalities or bounds hold? (safe approximations)
+\item How do we revise $P(M)$ when projections fail diagnostic tests?
+\end{itemize}
+
+This is the correct place for ``topological gluing'' intuitions:
+projections are like restriction maps, and consistency conditions correspond to commuting diagrams.
+
+\subsection{Provenance and overlap: partial revision instead of wrong addition}
+
+Evidence sources can overlap (shared observations, shared causal channels, ``data incest'').
+If overlap is unknown, revision should not be a total operation. A principled fix is:
+
+\begin{itemize}[leftmargin=2em]
+\item Use a \textbf{partial} commutative monoid (separation algebra):
+$W_1 \revise W_2$ is defined only when the fragments are known independent/disjoint.
+\item If disjointness is uncertain, either keep fragments separate (delayed fusion),
+or fuse conservatively using bounds (credal sets / Fr\'echet bounds / covariance intersection analogues).
+\item Track provenance IDs so ``additivity'' is never applied to overlapping sources.
+\end{itemize}
+
+This is the clean mathematical home of ``approximation ledgers''.
+
+\section{Quantifiers in the WM calculus}
+
+PLN must support probabilistic reasoning over quantified claims:
+\[
+  P(\exists x.\,\mathrm{BlackSwan}(x)),\qquad
+  P(\forall x.\,\mathrm{Human}(x)\Rightarrow \mathrm{Mortal}(x)).
+\]
+
+\subsection{Satisfying sets and weakness: a usable semantics}
+
+A clean PLN-compatible semantics treats a predicate as a \emph{frame-valued satisfying set}:
+\[
+  \chi_P : U \to \Evidence,
+\]
+analogous to a subobject classifier in a topos.
+Then universal quantification is evaluated via Goertzel's \emph{weakness} on the diagonal relation:
+\[
+  \forall x.\,P(x)
+  \quad\leadsto\quad
+  \mathrm{weakness}_\mu\big(\{(u,v)\mid P(u)\wedge P(v)\}\big)
+\]
+for an explicit weight function $\mu$.
+Existential quantification can be defined by De Morgan using Heyting negation:
+\[
+  \exists x.\,P(x) := \neg \forall x.\,\neg P(x).
+\]
+
+Two distinct quantifier views are worth keeping separate:
+
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Extensional (classical-ish) quantifiers:} ``all individuals satisfy''.
+\item \textbf{Typicality quantifiers:} ``generality'' measured by weakness/diagonal mass.
+\end{itemize}
+
+The separation prevents subtle category mistakes: typicality is not classical $\forall$,
+but it is exactly what many PLN uses want.
+
+\subsection{How quantifiers live in the WM calculus}
+
+In the WM architecture, quantified statements are simply queries $q$:
+the world model state decides how to compute $\ev(W,q)$.
+Different world-model classes yield different quantifier semantics:
+finite-domain exact, sampled approximate, or quasi-Borel/infinite.
+
+Fast quantified rules are again $\Sigma$-guarded rewrites (e.g.\ Skolemization,
+instantiation heuristics), with explicit approximation tracking.
+
+\subsection{Higher-order quantification and higher-order probability}
+
+Quantifying over predicates (HO) is hard in crisp logics because the domain is huge.
+But probabilistic semantics changes the game:
+
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Higher-order probabilities can be flattened.}
+Kyburg argues that ``second-order probabilities'' add no conceptual power:
+they can be represented as ordinary joint distributions over expanded spaces.
+So hyperpriors/hyperparameters are \emph{first-order} variables in a larger model.
+\item \textbf{Henkin semantics as a pragmatic HO target.}
+Instead of full set-theoretic HO semantics, quantify only over a chosen collection of predicates.
+This yields completeness theorems similar to first-order logic, and matches ``representable concept''
+quantification.
+\item \textbf{Quasi-Borel / measurable HO as the long game.}
+If the WM state is a probabilistic object on a QBS-like domain, HO quantification can be interpreted
+as integration over function spaces---still difficult, but at least mathematically well-defined.
+\end{itemize}
+
+\section{Temporal/fixpoint reasoning: modal $\mu$-calculus as a PLN bridge (optional)}
+
+Once reasoning becomes stateful (WM revision) and iterative (message passing), temporal/fixpoint
+logics become natural. One promising bridge is the modal $\mu$-calculus:
+
+\begin{itemize}[leftmargin=2em]
+\item temporal operators (``eventually'', ``always'') can often be presented as least/greatest fixpoints;
+\item PLN temporal operators can be embedded into $\mu$-calculus under a suitable semantics;
+\item fixpoint structure also aligns with recurrent ``anchor states'' and invariant tracking.
+\end{itemize}
+
+In practice: keep temporal/fixpoint reasoning as an additional query language and add rewrite rules
+that are sound relative to the chosen transition-model WM class.
+
+\section{Process calculi, linear logic, and graph-structured semantics}
+
+MeTTa is implemented in Rholang (a $\rho$-calculus descendant), and the project involves
+experts in higher-order process calculi and categorical semantics.
+This suggests a productive alignment:
+
+\begin{itemize}[leftmargin=2em]
+\item WM states can be treated as \emph{resources} (linear logic flavor).
+\item Revision is a commutative monoidal ``addition'' of evidence/resources.
+\item Query answering is a form of \emph{observation} (a morphism out of state).
+\item Operational factor graphs become explicit \emph{process networks} that schedule observations
+and rewrites, while the WM semantics provides correctness conditions.
+\end{itemize}
+
+This is a plausible bridge to OSLF / type-theoretic presentations and graph-structured lambda theories:
+quantifiers become binders, and factor-graph compilation becomes a typed elaboration step.
+
+\section{What ``sound and complete'' should mean here}
+
+You want a proof calculus, not only a semantic kernel.
+The WM calculus is already a proof calculus skeleton; the missing pieces are \emph{fragment-specific}
+soundness/completeness theorems.
+
+A clean framing:
+
+\subsection{Soundness}
+
+For a fragment $\mathcal{L}$ and semantics $\llbracket\cdot\rrbracket$:
+\begin{quote}
+\textbf{Soundness:} every derivable judgment corresponds to a true semantic statement
+about evidence/strength in the target model class.
+\end{quote}
+
+In practice:
+\begin{itemize}[leftmargin=2em]
+\item Kernel soundness: revision/query laws (commutation, additivity).
+\item Rewrite soundness: each $\Sigma$-guarded compiled rule preserves the chosen view (e.g.\ strength).
+\item Approximate soundness: rules preserve \emph{bounds} or carry explicit error budget.
+\end{itemize}
+
+\subsection{Completeness (fragmented, but meaningful)}
+
+Completeness should be stated relative to a declared semantics and fragment:
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Propositional fragment:} evidence-quantale semantics vs IPL/intermediate logics.
+\item \textbf{First-order fragment:} satisfying-set/weakness quantifiers (finite or Henkin FO).
+\item \textbf{BN fragment:} completeness relative to BN query answering (VE/junction tree).
+\item \textbf{Higher-order fragment:} Henkin completeness; QBS semantics as aspirational.
+\end{itemize}
+
+This is not a retreat. It is how serious proof theory works: different fragments have different theorems.
+
+\section{Lean artifact map (for posterity)}
+
+These are the main artifacts referenced by the architecture (names may evolve, but the roles should not):
+
+\begin{itemize}[leftmargin=2em]
+\item \texttt{Mettapedia/Logic/PLNWorldModel.lean}: WM kernel (states, revision, query extraction).
+\item \texttt{Mettapedia/Logic/PLNWorldModelCalculus.lean}: $\Sigma$-guarded rewrite-rule schema
+and explicit strength-view judgments.
+\item \texttt{Mettapedia/Logic/PLNJointEvidence.lean}: complete joint-evidence (Dirichlet-over-worlds) WM instance.
+\item \texttt{Mettapedia/Logic/PLNJointEvidenceNoGo.lean}: formal no-go theorem for local link-evidence propagation.
+\item \texttt{Mettapedia/Logic/EvidenceQuantale.lean}: algebraic evidence layer (quantale/Heyting structure).
+\item \texttt{Mettapedia/Logic/PLNBNCompilation.lean}: $\Sigma$-guarded screening-off rewrites for BN sublayer.
+\item \texttt{Mettapedia/ProbabilityTheory/BayesianNetworks/FactorGraph.lean}: factor graph semantics.
+\item \texttt{Mettapedia/ProbabilityTheory/BayesianNetworks/VariableElimination.lean}: VE query engine (sum-of-products).
+\item \texttt{Mettapedia/ProbabilityTheory/KnuthSkilling/Bridges/ValuationAlgebra.lean}: K\&S regraduation bridge.
+\item \texttt{Mettapedia/Logic/PLNFirstOrder/QuantifierSemantics.lean}: extensional vs typicality quantifier views.
+\end{itemize}
+
+\section{Roadmap: ``final steps'' that actually matter}
+
+The most valuable next theorems (because they make PLN usable and honest):
+
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{Independence-to-screening-off bridge.}
+Prove that d-separation / conditional independence implies the screening-off equalities required by
+PLN deduction rules (including both $B$ and $\neg B$ branches), under explicit positivity.
+\item \textbf{VE correctness as a WM-strength rule.}
+Show that VE computes the same strength view as querying the BN world model,
+so compiled fast rules can target $\vdash_s$ judgments.
+\item \textbf{Quantifier rewrite rules with explicit approximation ledgers.}
+Hook satisfying-set quantifiers into the rewrite layer, with soundness under stated domain hypotheses
+(finite, sampled, exchangeable, etc.).
+\item \textbf{Fragment completeness statements.}
+Prove completeness for the propositional and (selected) FO/Henkin fragments relative to the semantics
+used in code. Treat QBS HO as a separate long-horizon milestone.
+\item \textbf{Operational integration (MORK).}
+Implement message passing / activation spreading as inference control that proposes $\Sigma$-guarded rewrites,
+while the WM layer remains the single source of semantic truth.
+\end{enumerate}
+
+\section*{Acknowledgments / provenance}
+
+This note compiles ideas emerging from ongoing collaboration around PLN, MeTTa, and the Lean formalization
+in \texttt{Mettapedia}, with conceptual inspiration from:
+Knuth--Skilling foundations of inference, valuation algebras, belief propagation / junction trees,
+topos semantics of quantifiers, and higher-order process calculi.
+
+\begin{thebibliography}{99}\small
+
+\bibitem{KnuthSkilling}
+K.\ H.\ Knuth and J.\ Skilling.
+\newblock \emph{Foundations of Inference}.
+\newblock (K\&S representation theorems for valuations on lattices.)
+
+\bibitem{KohlasShenoy}
+J.\ Kohlas and P.\ Shenoy.
+\newblock Computation in valuation algebras.
+\newblock (Axioms: combination $\tensor$ and marginalization $\downarrow$; local computation.)
+
+\bibitem{Dechter}
+R.\ Dechter.
+\newblock Bucket elimination: A unifying framework for probabilistic inference.
+\newblock (Variable elimination; complexity via treewidth.)
+
+\bibitem{Pearl}
+J.\ Pearl.
+\newblock \emph{Probabilistic Reasoning in Intelligent Systems}.
+\newblock (Bayesian networks, d-separation.)
+
+\bibitem{Kyburg}
+H.\ E.\ Kyburg.
+\newblock Higher order probabilities and interval probabilities.
+\newblock (Flattening higher-order probabilities into joint distributions.)
+
+\bibitem{MacLaneMoerdijk}
+S.\ Mac~Lane and I.\ Moerdijk.
+\newblock \emph{Sheaves in Geometry and Logic}.
+\newblock (Subobject classifiers, semantics for quantifiers.)
+
+\end{thebibliography}
+
+\end{document}

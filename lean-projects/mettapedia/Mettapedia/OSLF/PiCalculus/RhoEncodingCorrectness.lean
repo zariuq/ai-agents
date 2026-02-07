@@ -364,6 +364,43 @@ lemma applySubst_cons_fresh (k : String) (val : Pattern) (env : SubstEnv) (p : P
           simp
     _ = applySubst env p := (subst_fresh env k p h hno).symm
 
+/-! ### Compositional applySubst lemmas -/
+
+/-- Looking up a key that matches the head of env. -/
+lemma SubstEnv.find_cons_eq (k : String) (val : Pattern) (env : SubstEnv) :
+    SubstEnv.find ((k, val) :: env) k = some val := by
+  simp [SubstEnv.find]
+
+/-- Looking up a key that doesn't match the head of env. -/
+lemma SubstEnv.find_cons_ne (k : String) (val : Pattern) (env : SubstEnv)
+    (name : String) (h : name ≠ k) :
+    SubstEnv.find ((k, val) :: env) name = SubstEnv.find env name := by
+  simp [SubstEnv.find, h.symm]
+
+/-- Substitution on a variable that is found in the env. -/
+lemma applySubst_var_found (env : SubstEnv) (name : String) (val : Pattern)
+    (h : SubstEnv.find env name = some val) :
+    applySubst env (.var name) = val := by
+  simp [applySubst, h]
+
+/-- Substitution on a variable not found in the env. -/
+lemma applySubst_var_not_found (env : SubstEnv) (name : String)
+    (h : SubstEnv.find env name = none) :
+    applySubst env (.var name) = .var name := by
+  simp [applySubst, h]
+
+/-- Substitution distributes through rhoOutput. -/
+lemma applySubst_rhoOutput (env : SubstEnv) (ch msg : Pattern) :
+    applySubst env (rhoOutput ch msg) =
+    rhoOutput (applySubst env ch) (applySubst env msg) := by
+  simp [rhoOutput, applySubst, List.map]
+
+/-- Substitution distributes through rhoInput, filtering the binder. -/
+lemma applySubst_rhoInput (env : SubstEnv) (ch : Pattern) (x : String) (body : Pattern) :
+    applySubst env (rhoInput ch x body) =
+    rhoInput (applySubst env ch) x (applySubst (env.filter (·.1 != x)) body) := by
+  simp [rhoInput, applySubst, List.map]
+
 /-! ### String prefix disjointness -/
 
 /-- Left-cancellation for string append. -/
@@ -670,7 +707,7 @@ private theorem applySubst_rhoPar' (env : SubstEnv) (A B : Pattern)
     | apply _ _ | lambda _ _ | multiLambda _ _ =>
       simp [rhoPar, applySubst, List.map]
     | collection ct qs g =>
-      cases ct <;> cases g <;> simp [rhoPar, applySubst, List.map, List.map_append]
+      cases ct <;> cases g <;> simp [rhoPar, applySubst, List.map]
   | lambda ax abody =>
     cases B with
     | var name => exact absurd rfl (hBv name)
@@ -678,7 +715,7 @@ private theorem applySubst_rhoPar' (env : SubstEnv) (A B : Pattern)
     | apply _ _ | lambda _ _ | multiLambda _ _ =>
       simp [rhoPar, applySubst, List.map]
     | collection ct qs g =>
-      cases ct <;> cases g <;> simp [rhoPar, applySubst, List.map, List.map_append]
+      cases ct <;> cases g <;> simp [rhoPar, applySubst, List.map]
   | multiLambda axs abody =>
     cases B with
     | var name => exact absurd rfl (hBv name)
@@ -686,7 +723,7 @@ private theorem applySubst_rhoPar' (env : SubstEnv) (A B : Pattern)
     | apply _ _ | lambda _ _ | multiLambda _ _ =>
       simp [rhoPar, applySubst, List.map]
     | collection ct qs g =>
-      cases ct <;> cases g <;> simp [rhoPar, applySubst, List.map, List.map_append]
+      cases ct <;> cases g <;> simp [rhoPar, applySubst, List.map]
   | collection ct_a ps g_a =>
     cases B with
     | var name => exact absurd rfl (hBv name)
@@ -763,24 +800,89 @@ theorem applySubst_nsEnv_encode (P : Process) (n n' v : String)
         (encode_not_var Q (n ++ "_R") v) hQ_nosubst,
       hfreshR, ihP', hfreshL, ihQ']
   | nu x P ih =>
+    -- Introduce derived namespace names and freeze the encoding body
+    let ns  := n  ++ "_" ++ n
+    let ns' := n' ++ "_" ++ n'
+    let env := (n, Pattern.var n') :: nsEnv P ns ns'
+    -- Derive disjointness facts
+    have h_v_ne_n : v ≠ n := fun h => h_v_ndisj "" (by rw [h, String.append_empty])
+    have hx_disj := h_ndisj x (by
+      simp [Process.names, Process.freeNames, Process.boundNames,
+            Finset.mem_union, Finset.mem_insert])
+    have hx_ne_n : x ≠ n := fun h => hx_disj "" (by rw [h, String.append_empty])
+    have h_v_ndisj_sub : NamespaceDisjoint v ns := by
+      show NamespaceDisjoint v (n ++ "_" ++ n)
+      rw [String.append_assoc]; exact NamespaceDisjoint_append v n ("_" ++ n) h_v_ndisj
+    have hx_ndisj_sub : NamespaceDisjoint x ns := by
+      show NamespaceDisjoint x (n ++ "_" ++ n)
+      rw [String.append_assoc]; exact NamespaceDisjoint_append x n ("_" ++ n) hx_disj
+    have h_ndisj_sub : ∀ u ∈ Process.names P, NamespaceDisjoint u ns :=
+      fun u hu => by
+        show NamespaceDisjoint u (n ++ "_" ++ n)
+        rw [String.append_assoc]
+        exact NamespaceDisjoint_append u n ("_" ++ n)
+          (h_ndisj u (Process.names_sub_nu x P u hu))
+    -- Step 1: Unfold encode and nsEnv (but NOT applySubst)
     simp only [encode, nsEnv]
-    -- nsEnv = (n, .var n') :: nsEnv P (n++"_"++n) (n'++"_"++n')
-    -- encode = rhoPar (rhoOutput (.var v) (.var n)) (rhoInput (.var n) x (encode P (n++"_"++n) v))
-    sorry -- TODO
+    -- Goal: applySubst env (rhoPar (rhoOutput (.var v) (.var n))
+    --                               (rhoInput (.var n) x (encode P ns v)))
+    --     = rhoPar (rhoOutput (.var v) (.var n')) (rhoInput (.var n') x (encode P ns' v))
+    -- Step 2: Distribute applySubst through rhoPar
+    have hout_nv : ∀ name, rhoOutput (.var v) (.var n) ≠ .var name := by
+      intro name; simp [rhoOutput]
+    have hout_ns : noExplicitSubst (rhoOutput (.var v) (.var n)) := by
+      simp [rhoOutput, noExplicitSubst, allNoExplicitSubst]
+    have hin_nv : ∀ name, rhoInput (.var n) x (encode P ns v) ≠ .var name := by
+      intro name; simp [rhoInput]
+    have hin_ns : noExplicitSubst (rhoInput (.var n) x (encode P ns v)) := by
+      simp [rhoInput, noExplicitSubst, allNoExplicitSubst, encode_noExplicitSubst' P ns v]
+    rw [applySubst_rhoPar' env _ _ hout_nv hout_ns hin_nv hin_ns]
+    -- Step 3: Distribute through rhoOutput and rhoInput
+    rw [applySubst_rhoOutput, applySubst_rhoInput]
+    -- Step 4: Resolve var lookups
+    -- v ≠ n, and v not in nsEnv → applySubst env (.var v) = .var v
+    have hfind_v : SubstEnv.find env v = none := by
+      show SubstEnv.find ((n, Pattern.var n') :: nsEnv P ns ns') v = none
+      rw [SubstEnv.find_cons_ne n (.var n') _ v h_v_ne_n]
+      exact nsEnv_find_disjoint P ns ns' v h_v_ndisj_sub
+    rw [applySubst_var_not_found env v hfind_v]
+    -- n = n, first entry matches → applySubst env (.var n) = .var n'
+    have hfind_n : SubstEnv.find env n = some (.var n') := by
+      show SubstEnv.find ((n, Pattern.var n') :: nsEnv P ns ns') n = some (.var n')
+      exact SubstEnv.find_cons_eq n (.var n') _
+    rw [applySubst_var_found env n (.var n') hfind_n]
+    -- Step 5: Resolve filter (·.1 != x): n ≠ x so (n, .var n') preserved
+    have hfilter_env : env.filter (·.1 != x) =
+        (n, Pattern.var n') :: (nsEnv P ns ns').filter (·.1 != x) := by
+      show ((n, Pattern.var n') :: nsEnv P ns ns').filter (·.1 != x) = _
+      simp only [List.filter_cons]
+      have : (n != x) = true := bne_iff_ne.mpr hx_ne_n.symm
+      simp [this]
+    rw [hfilter_env, nsEnv_filter_disjoint P ns ns' x hx_ndisj_sub]
+    -- Step 6: Skip (n, .var n') entry by freshness of n in encode P ns v
+    rw [applySubst_cons_fresh n (.var n') _ _
+        (nsEnv_key_fresh_nu P n v
+          (fun u hu => h_ndisj u (Process.names_sub_nu x P u hu))
+          h_v_ndisj)
+        (encode_noExplicitSubst' P ns v)]
+    -- Step 7: IH closes the remaining goal (drill into rhoPar/rhoInput)
+    show rhoPar _ (rhoInput (.var n') x (applySubst (nsEnv P ns ns') (encode P ns v)))
+       = rhoPar _ (rhoInput (.var n') x (encode P ns' v))
+    rw [ih ns ns' h_ndisj_sub h_v_ndisj_sub]
   | replicate x y P ih =>
-    -- encode = rhoReplicate (rhoInput (.var x) y (encode P (n++"_rep") v))
-    -- nsEnv = nsEnv P (n++"_rep") (n'++"_rep")
-    -- Similar to input case: x, y are π-names (disjoint), IH applies.
+    -- nsEnv (.replicate x y P) n n' = nsEnv P (n++"_rep") (n'++"_rep")
     simp only [encode, nsEnv, rhoReplicate, piNameToRhoName]
     simp only [applySubst, List.map, rhoInput, applySubst, List.map]
     have hx_disj := h_ndisj x (by
       simp [Process.names, Process.freeNames, Process.boundNames,
             Finset.mem_union, Finset.mem_insert])
-    rw [nsEnv_find_disjoint P n n' x hx_disj]
+    rw [nsEnv_find_disjoint P (n ++ "_rep") (n' ++ "_rep") x
+        (NamespaceDisjoint_append x n "_rep" hx_disj)]
     have hy_disj := h_ndisj y (by
       simp [Process.names, Process.freeNames, Process.boundNames,
             Finset.mem_union, Finset.mem_insert])
-    rw [nsEnv_filter_disjoint P n n' y hy_disj]
+    rw [nsEnv_filter_disjoint P (n ++ "_rep") (n' ++ "_rep") y
+        (NamespaceDisjoint_append y n "_rep" hy_disj)]
     have := ih (n ++ "_rep") (n' ++ "_rep")
       (fun u hu => NamespaceDisjoint_append u n "_rep"
         (h_ndisj u (Process.names_sub_replicate x y P u hu)))
