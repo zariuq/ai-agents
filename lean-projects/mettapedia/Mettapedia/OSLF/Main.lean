@@ -1,13 +1,21 @@
 import Mettapedia.OSLF.MeTTaIL.Syntax
 import Mettapedia.OSLF.MeTTaIL.Semantics
 import Mettapedia.OSLF.MeTTaIL.Substitution
+import Mettapedia.OSLF.MeTTaIL.Match
+import Mettapedia.OSLF.MeTTaIL.Engine
 import Mettapedia.OSLF.RhoCalculus.Types
 import Mettapedia.OSLF.RhoCalculus.Soundness
 import Mettapedia.OSLF.RhoCalculus.Reduction
+import Mettapedia.OSLF.RhoCalculus.Engine
 import Mettapedia.OSLF.PiCalculus.Main
 import Mettapedia.OSLF.Framework.RewriteSystem
 import Mettapedia.OSLF.Framework.RhoInstance
+import Mettapedia.OSLF.Framework.DerivedModalities
 import Mettapedia.OSLF.Framework.CategoryBridge
+import Mettapedia.OSLF.Framework.TypeSynthesis
+import Mettapedia.OSLF.Framework.GeneratedTyping
+import Mettapedia.OSLF.Framework.SynthesisBridge
+import Mettapedia.OSLF.Formula
 
 /-!
 # Operational Semantics in Logical Form (OSLF)
@@ -21,13 +29,19 @@ to categorical semantics via the OSLF algorithm.
 OSLF/
 ├── Main.lean                -- This file (re-exports)
 ├── Framework/
-│   ├── RewriteSystem.lean   -- Abstract OSLF: RewriteSystem -> OSLFTypeSystem
-│   ├── RhoInstance.lean     -- ρ-calculus instance (proven Galois connection)
-│   └── CategoryBridge.lean  -- Bridge to GSLT categorical infrastructure
+│   ├── RewriteSystem.lean      -- Abstract OSLF: RewriteSystem -> OSLFTypeSystem
+│   ├── RhoInstance.lean        -- ρ-calculus instance (proven Galois connection)
+│   ├── DerivedModalities.lean  -- Derived ◇/□ from adjoint triple (0 sorries)
+│   ├── CategoryBridge.lean     -- Bridge to GSLT categorical infrastructure
+│   ├── TypeSynthesis.lean      -- LanguageDef → OSLFTypeSystem (auto Galois)
+│   ├── GeneratedTyping.lean    -- Generated typing rules from grammar
+│   └── SynthesisBridge.lean    -- Bridge: generated ↔ hand-written types
 ├── MeTTaIL/
 │   ├── Syntax.lean          -- LanguageDef AST (types, terms, equations, rewrites)
 │   ├── Semantics.lean       -- InterpObj, pattern interpretation
-│   └── Substitution.lean    -- Capture-avoiding substitution
+│   ├── Substitution.lean    -- Capture-avoiding substitution
+│   ├── Match.lean           -- Generic pattern matching (multiset, alpha-rename)
+│   └── Engine.lean          -- Generic rewrite engine for any LanguageDef
 ├── RhoCalculus/
 │   ├── Types.lean           -- Namespaces, codespaces, bisimulation
 │   ├── Reduction.lean       -- COMM/DROP/PAR, modal operators, Galois connection
@@ -35,7 +49,9 @@ OSLF/
 │   ├── StructuralCongruence.lean
 │   ├── CommRule.lean
 │   ├── SpiceRule.lean
-│   └── PresentMoment.lean
+│   ├── PresentMoment.lean
+│   └── Engine.lean         -- Executable rewrite engine (reduceStep, proven sound)
+├── Formula.lean             -- Formula AST + bounded model checker (proven sound)
 ├── PiCalculus/              -- π-calculus and ρ-encoding
 └── NativeType/
     └── Construction.lean    -- NT as (sort, pred) pairs, type formation rules
@@ -97,6 +113,20 @@ export Mettapedia.OSLF.MeTTaIL.Substitution (
   commSubst
 )
 
+export Mettapedia.OSLF.MeTTaIL.Match (
+  matchPattern
+  matchBag
+  matchArgs
+  applyBindings
+  applyRule
+  rewriteStep
+)
+
+export Mettapedia.OSLF.MeTTaIL.Engine (
+  rewriteWithContext
+  fullRewriteToNormalForm
+)
+
 -- Re-export RhoCalculus modules
 export Mettapedia.OSLF.RhoCalculus (
   ProcObj
@@ -123,6 +153,14 @@ export Mettapedia.OSLF.RhoCalculus.Reduction (
   galois_connection
 )
 
+-- Re-export Engine module
+export Mettapedia.OSLF.RhoCalculus.Engine (
+  reduceStep
+  reduceToNormalForm
+  reduceAll
+  reduceStep_sound
+)
+
 -- Re-export Framework modules
 export Mettapedia.OSLF.Framework (
   RewriteSystem
@@ -136,6 +174,57 @@ export Mettapedia.OSLF.Framework.RhoInstance (
   rhoRewriteSystem
   rhoOSLF
   rho_mathlib_galois
+)
+
+export Mettapedia.OSLF.Framework.DerivedModalities (
+  ReductionSpan
+  derivedDiamond
+  derivedBox
+  derived_galois
+  rhoSpan
+  derived_diamond_eq_possiblyProp
+  derived_box_eq_relyProp
+  rho_galois_from_span
+)
+
+export Mettapedia.OSLF.Framework.TypeSynthesis (
+  langReduces
+  langRewriteSystem
+  langSpan
+  langDiamond
+  langBox
+  langGalois
+  langOSLF
+  langNativeType
+)
+
+export Mettapedia.OSLF.Framework.GeneratedTyping (
+  GenNativeType
+  GenTypingContext
+  GenHasType
+  topPred
+)
+
+export Mettapedia.OSLF.Framework.SynthesisBridge (
+  langDiamond_implies_possibly_at
+  possibly_implies_langDiamond_at
+  nativeToGen
+  ctxToGen
+)
+
+-- Re-export Formula module (OSLF output artifact)
+export Mettapedia.OSLF.Formula (
+  OSLFFormula
+  sem
+  sem_dia_eq_langDiamond
+  sem_box_eq_langBox
+  formula_galois
+  CheckResult
+  check
+  check_sat_sound
+  rhoAtoms
+  rhoAtomSem
+  rhoAtoms_sound
 )
 
 end Mettapedia.OSLF

@@ -437,6 +437,76 @@ theorem eulerTrailFinset_card_eq {N : ℕ} (s : MarkovState k) (hs : s ∈ state
         (canonicalOnGraph_isEulerTrail xs hxs_state) hf hvs
       exact ⟨(xs, σ), Finset.mem_product.mpr ⟨hxs_fiber, Finset.mem_univ _⟩, hσ.symm⟩)
 
+/-- Subset version of `eulerTrailFinset_card_eq`:
+for any trajectory subset `A` inside the fiber, the number of Euler trails whose
+vertex sequence lands in `A` is `|A| * |CopyPerm|`. -/
+theorem eulerTrailFinset_card_filter_trajSubset
+    (s : MarkovState k)
+    (A : Finset (Traj k (totalEdgeTokens (graphOfState (k := k) s))))
+    (hA : A ⊆ fiber k (totalEdgeTokens (graphOfState (k := k) s)) s) :
+    ((eulerTrailFinset (graphOfState s) s.start s.last).filter
+      (fun f => trailVertexSeq (graphOfState s) s.start f ∈ A)).card =
+      A.card * ∏ a : Fin k, ∏ b : Fin k, (graphOfState s a b).factorial := by
+  rw [← card_copyPerm (graphOfState (k := k) s),
+      ← Finset.card_univ (α := CopyPerm (graphOfState (k := k) s)),
+      ← Finset.card_product]
+  -- count `A × CopyPerm` by a bijection into filtered Euler trails
+  symm
+  apply Finset.card_bij
+    (fun p hp =>
+      applyCopyPerm p.2 (canonicalOnGraph p.1
+        ((Finset.mem_filter.mp (hA (Finset.mem_product.mp hp).1)).2)))
+    (fun p hp => by
+      rw [Finset.mem_filter]
+      constructor
+      · rw [mem_eulerTrailFinset]
+        exact applyCopyPerm_isEulerTrail p.2
+          (canonicalOnGraph_isEulerTrail p.1
+            ((Finset.mem_filter.mp (hA (Finset.mem_product.mp hp).1)).2))
+      · -- vertex sequence of the mapped trail is exactly `p.1`
+        have hstate : stateOfTraj (k := k) p.1 = s :=
+          (Finset.mem_filter.mp (hA (Finset.mem_product.mp hp).1)).2
+        have hvs :
+            trailVertexSeq (graphOfState s) s.start
+              (applyCopyPerm p.2 (canonicalOnGraph p.1 hstate)) =
+              trailVertexSeq (graphOfState s) s.start (canonicalOnGraph p.1 hstate) := by
+          simpa using trailVertexSeq_applyCopyPerm p.2 s.start (canonicalOnGraph p.1 hstate)
+        rw [hvs, trailVertexSeq_canonicalOnGraph_eq]
+        exact (Finset.mem_product.mp hp).1)
+    (fun p hp₁ q hp₂ heq => by
+      rcases p with ⟨xs₁, σ₁⟩
+      rcases q with ⟨xs₂, σ₂⟩
+      dsimp only at heq
+      have h₁ := (Finset.mem_filter.mp (hA (Finset.mem_product.mp hp₁).1)).2
+      have h₂ := (Finset.mem_filter.mp (hA (Finset.mem_product.mp hp₂).1)).2
+      have hvs : xs₁ = xs₂ := by
+        have := congr_arg (trailVertexSeq (graphOfState s) s.start) heq
+        rw [trailVertexSeq_applyCopyPerm, trailVertexSeq_applyCopyPerm,
+            trailVertexSeq_canonicalOnGraph_eq, trailVertexSeq_canonicalOnGraph_eq] at this
+        exact this
+      subst hvs
+      have hσ : σ₁ = σ₂ :=
+        applyCopyPerm_injective_of_isEulerTrail (canonicalOnGraph_isEulerTrail xs₁ h₁) heq
+      exact Prod.ext rfl hσ)
+    (fun f hf => by
+      have hfTrail : IsEulerTrail (graphOfState s) s.start s.last f := by
+        rw [Finset.mem_filter] at hf
+        rw [mem_eulerTrailFinset] at hf
+        exact hf.1
+      have hxsA : trailVertexSeq (graphOfState s) s.start f ∈ A := by
+        rw [Finset.mem_filter] at hf
+        exact hf.2
+      let xs := trailVertexSeq (graphOfState s) s.start f
+      have hxsState : stateOfTraj (k := k) xs = s :=
+        (Finset.mem_filter.mp (hA hxsA)).2
+      have hvs : trailVertexSeq (graphOfState s) s.start (canonicalOnGraph xs hxsState) =
+                 trailVertexSeq (graphOfState s) s.start f := by
+        rw [trailVertexSeq_canonicalOnGraph_eq]
+      obtain ⟨σ, hσ⟩ := exists_copyPerm_of_same_vertexSeq
+        (canonicalOnGraph_isEulerTrail xs hxsState) hfTrail hvs
+      refine ⟨(xs, σ), ?_, hσ.symm⟩
+      exact Finset.mem_product.mpr ⟨hxsA, Finset.mem_univ _⟩)
+
 end MarkovDeFinettiHardCopyPerm
 
 end Mettapedia.Logic

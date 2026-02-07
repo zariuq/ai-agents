@@ -106,6 +106,96 @@ inductive Pattern where
   | collection : CollType → List Pattern → Option String → Pattern
 deriving Repr
 
+/-! ## DecidableEq for Pattern
+
+Pattern is a nested inductive (contains `List Pattern`), so `deriving DecidableEq`
+fails. We define it manually via mutual recursion on Pattern and List Pattern.
+-/
+
+mutual
+  private def decEqPattern : (a b : Pattern) → Decidable (a = b)
+    | .var n₁, .var n₂ =>
+      if h : n₁ = n₂ then isTrue (by subst h; rfl)
+      else isFalse (by intro h'; cases h'; exact h rfl)
+    | .apply c₁ args₁, .apply c₂ args₂ =>
+      if hc : c₁ = c₂ then
+        match decEqPatternList args₁ args₂ with
+        | isTrue ha => isTrue (by subst hc; subst ha; rfl)
+        | isFalse ha => isFalse (by intro h; cases h; exact ha rfl)
+      else isFalse (by intro h; cases h; exact hc rfl)
+    | .lambda x₁ b₁, .lambda x₂ b₂ =>
+      if hx : x₁ = x₂ then
+        match decEqPattern b₁ b₂ with
+        | isTrue hb => isTrue (by subst hx; subst hb; rfl)
+        | isFalse hb => isFalse (by intro h; cases h; exact hb rfl)
+      else isFalse (by intro h; cases h; exact hx rfl)
+    | .multiLambda xs₁ b₁, .multiLambda xs₂ b₂ =>
+      if hxs : xs₁ = xs₂ then
+        match decEqPattern b₁ b₂ with
+        | isTrue hb => isTrue (by subst hxs; subst hb; rfl)
+        | isFalse hb => isFalse (by intro h; cases h; exact hb rfl)
+      else isFalse (by intro h; cases h; exact hxs rfl)
+    | .subst b₁ x₁ r₁, .subst b₂ x₂ r₂ =>
+      if hx : x₁ = x₂ then
+        match decEqPattern b₁ b₂, decEqPattern r₁ r₂ with
+        | isTrue hb, isTrue hr => isTrue (by subst hx; subst hb; subst hr; rfl)
+        | isFalse hb, _ => isFalse (by intro h; cases h; exact hb rfl)
+        | _, isFalse hr => isFalse (by intro h; cases h; exact hr rfl)
+      else isFalse (by intro h; cases h; exact hx rfl)
+    | .collection ct₁ es₁ r₁, .collection ct₂ es₂ r₂ =>
+      if hct : ct₁ = ct₂ then
+        match decEqPatternList es₁ es₂ with
+        | isTrue he =>
+          if hr : r₁ = r₂ then isTrue (by subst hct; subst he; subst hr; rfl)
+          else isFalse (by intro h; cases h; exact hr rfl)
+        | isFalse he => isFalse (by intro h; cases h; exact he rfl)
+      else isFalse (by intro h; cases h; exact hct rfl)
+    -- Cross-constructor cases
+    | .var _, .apply _ _ => isFalse Pattern.noConfusion
+    | .var _, .lambda _ _ => isFalse Pattern.noConfusion
+    | .var _, .multiLambda _ _ => isFalse Pattern.noConfusion
+    | .var _, .subst _ _ _ => isFalse Pattern.noConfusion
+    | .var _, .collection _ _ _ => isFalse Pattern.noConfusion
+    | .apply _ _, .var _ => isFalse Pattern.noConfusion
+    | .apply _ _, .lambda _ _ => isFalse Pattern.noConfusion
+    | .apply _ _, .multiLambda _ _ => isFalse Pattern.noConfusion
+    | .apply _ _, .subst _ _ _ => isFalse Pattern.noConfusion
+    | .apply _ _, .collection _ _ _ => isFalse Pattern.noConfusion
+    | .lambda _ _, .var _ => isFalse Pattern.noConfusion
+    | .lambda _ _, .apply _ _ => isFalse Pattern.noConfusion
+    | .lambda _ _, .multiLambda _ _ => isFalse Pattern.noConfusion
+    | .lambda _ _, .subst _ _ _ => isFalse Pattern.noConfusion
+    | .lambda _ _, .collection _ _ _ => isFalse Pattern.noConfusion
+    | .multiLambda _ _, .var _ => isFalse Pattern.noConfusion
+    | .multiLambda _ _, .apply _ _ => isFalse Pattern.noConfusion
+    | .multiLambda _ _, .lambda _ _ => isFalse Pattern.noConfusion
+    | .multiLambda _ _, .subst _ _ _ => isFalse Pattern.noConfusion
+    | .multiLambda _ _, .collection _ _ _ => isFalse Pattern.noConfusion
+    | .subst _ _ _, .var _ => isFalse Pattern.noConfusion
+    | .subst _ _ _, .apply _ _ => isFalse Pattern.noConfusion
+    | .subst _ _ _, .lambda _ _ => isFalse Pattern.noConfusion
+    | .subst _ _ _, .multiLambda _ _ => isFalse Pattern.noConfusion
+    | .subst _ _ _, .collection _ _ _ => isFalse Pattern.noConfusion
+    | .collection _ _ _, .var _ => isFalse Pattern.noConfusion
+    | .collection _ _ _, .apply _ _ => isFalse Pattern.noConfusion
+    | .collection _ _ _, .lambda _ _ => isFalse Pattern.noConfusion
+    | .collection _ _ _, .multiLambda _ _ => isFalse Pattern.noConfusion
+    | .collection _ _ _, .subst _ _ _ => isFalse Pattern.noConfusion
+
+  private def decEqPatternList : (a b : List Pattern) → Decidable (a = b)
+    | [], [] => isTrue rfl
+    | [], _ :: _ => isFalse (fun h => by cases h)
+    | _ :: _, [] => isFalse (fun h => by cases h)
+    | x :: xs, y :: ys =>
+      match decEqPattern x y, decEqPatternList xs ys with
+      | isTrue hx, isTrue hxs => isTrue (by subst hx; subst hxs; rfl)
+      | isFalse hx, _ => isFalse (by intro h; cases h; exact hx rfl)
+      | _, isFalse hxs => isFalse (by intro h; cases h; exact hxs rfl)
+end
+
+instance : DecidableEq Pattern := decEqPattern
+instance : BEq Pattern := ⟨fun a b => decide (a = b)⟩
+
 namespace Pattern
 
 def mkVar (name : String) : Pattern := .var name
@@ -297,6 +387,13 @@ def rhoCalc : LanguageDef := {
       right := .collection .hashBag [
         .subst (.var "p") "x" (.apply "NQuote" [.var "q"])
       ] (some "rest") },
+
+    -- Drop: *(@p) ~> p
+    { name := "Drop",
+      typeContext := [("p", TypeExpr.proc)],
+      premises := [],
+      left := .apply "PDrop" [.apply "NQuote" [.var "p"]],
+      right := .var "p" },
 
     -- ParCong: | S ~> T |- {S, ...rest} ~> {T, ...rest}
     { name := "ParCong",

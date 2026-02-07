@@ -2,17 +2,12 @@ import Mettapedia.Logic.MarkovDeFinettiHardExcursionModel
 import Mettapedia.Logic.MarkovDeFinettiHardCopyPerm
 
 /-! LLM primer:
-- `returnPositions xs : Finset (Fin (n+1))` = {i : xs i = xs 0}
-- `returnPositionsList xs : List (Fin (n+1))` = sorted return positions
-- `numExcursions xs = |returnPositions| - 1 = returnsToStart(stateOfTraj xs)`
-- `excursionPairs xs = zip returnPositionsList returnPositionsList.tail`
-- `trajSegment xs i j` = trajectory values between positions i and j
-- `excursionListOfTraj xs = excursionsOfTraj xs`
+- Traj k N = Fin (N+1) → Fin k
+- Parameterized by (a, L1, L2) where b = a + L1, c = a + L1 + L2
+- segmentSwap uses dependent `if h :` so branch conditions are available to omega
+- swapRemap uses < boundaries matching transition index semantics
 
 # Excursion Bridge (Phase B, Step 4)
-
-The excursion swap bijection: swapping two adjacent excursion segments
-on fiber trajectories preserves fiber membership and the excursion multiset.
 -/
 
 noncomputable section
@@ -37,372 +32,798 @@ open MarkovDeFinettiHard
 
 variable {k : ℕ}
 
-/-! ## Segment swap on trajectories
+/-! ## Segment swap -/
 
-Given three return positions `a < b < c` in a trajectory, we construct
-a new trajectory that swaps the segments `(a, b]` and `(b, c]`.
-
-Both segments start at `xs 0` (the start state, since a, b, c are return
-positions), so the swapped trajectory is still a valid path. -/
-
-/-- Swap the segments `(a, b]` and `(b, c]` in a trajectory.
-The new trajectory maps:
-- `t ≤ a`       →  `xs t`                    (unchanged prefix)
-- `a < t ≤ a+L₂` → `xs (t + (b - a))`       (segment 2 moved first)
-- `a+L₂ < t ≤ c` → `xs (t - (c - b))`       (segment 1 moved second)
-- `t > c`       →  `xs t`                    (unchanged suffix)
-where `L₂ = c - b`. -/
-def segmentSwap {N : ℕ} (xs : Traj k N) (a b c : ℕ)
-    (hab : a < b) (hbc : b < c) (hcN : c ≤ N) : Traj k N :=
+/-- Swap segments of lengths L1 and L2 starting after position a.
+Uses dependent `if h :` so branch conditions are available in proofs. -/
+def segmentSwap {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (_hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N) : Traj k N :=
   fun ⟨t, ht⟩ =>
-    if t ≤ a then xs ⟨t, ht⟩
-    else if t ≤ a + (c - b) then
-      xs ⟨t + (b - a), by omega⟩
-    else if t ≤ c then
-      xs ⟨t - (c - b), by omega⟩
+    if _h1 : t ≤ a then xs ⟨t, ht⟩
+    else if _h2 : t ≤ a + L2 then
+      xs ⟨t + L1, by omega⟩
+    else if _h3 : t ≤ a + L1 + L2 then
+      xs ⟨t - L2, by omega⟩
     else xs ⟨t, ht⟩
 
-/-! ### Basic properties of segmentSwap -/
+/-! ## Position remap -/
 
-/-- segmentSwap preserves values in the prefix (t ≤ a). -/
-lemma segmentSwap_prefix {N : ℕ} (xs : Traj k N) (a b c : ℕ)
-    (hab : a < b) (hbc : b < c) (hcN : c ≤ N)
-    (t : Fin (N + 1)) (ht : t.1 ≤ a) :
-    segmentSwap xs a b c hab hbc hcN t = xs t := by
-  simp [segmentSwap, ht]
-
-/-- segmentSwap preserves values in the suffix (t > c). -/
-lemma segmentSwap_suffix {N : ℕ} (xs : Traj k N) (a b c : ℕ)
-    (hab : a < b) (hbc : b < c) (hcN : c ≤ N)
-    (t : Fin (N + 1)) (ht : c < t.1) :
-    segmentSwap xs a b c hab hbc hcN t = xs t := by
-  simp [segmentSwap, show ¬(t.1 ≤ a) by omega, show ¬(t.1 ≤ a + (c - b)) by omega,
-        show ¬(t.1 ≤ c) by omega]
-
-/-- The value at position `a` is unchanged. -/
-lemma segmentSwap_at_a {N : ℕ} (xs : Traj k N) (a b c : ℕ)
-    (hab : a < b) (hbc : b < c) (hcN : c ≤ N) (ha : a ≤ N) :
-    segmentSwap xs a b c hab hbc hcN ⟨a, by omega⟩ = xs ⟨a, by omega⟩ := by
-  simp [segmentSwap]
-
-/-- The value at position `c` after swap equals `xs b`. -/
-lemma segmentSwap_at_c {N : ℕ} (xs : Traj k N) (a b c : ℕ)
-    (hab : a < b) (hbc : b < c) (hcN : c ≤ N) :
-    segmentSwap xs a b c hab hbc hcN ⟨c, by omega⟩ = xs ⟨b, by omega⟩ := by
-  simp only [segmentSwap]
-  have : ¬(c ≤ a) := by omega
-  have : ¬(c ≤ a + (c - b)) := by omega
-  have : c ≤ c := le_refl c
-  simp [*]
-  congr 1; ext; simp; omega
-
-/-! ### Involution property
-
-Applying segmentSwap twice (with adjusted middle point) gives the identity. -/
-
-/-- The "swapped" middle point: after swapping segments of lengths L₁ and L₂,
-the new middle return position is at `a + L₂` instead of `b = a + L₁`. -/
-lemma segmentSwap_middle {N : ℕ} (xs : Traj k N) (a b c : ℕ)
-    (hab : a < b) (hbc : b < c) (hcN : c ≤ N) :
-    a + (c - b) < c := by omega
-
-/-- segmentSwap is an involution: applying it twice with the updated middle
-point gives back the original trajectory. -/
-theorem segmentSwap_involutive {N : ℕ} (xs : Traj k N) (a b c : ℕ)
-    (hab : a < b) (hbc : b < c) (hcN : c ≤ N) :
-    segmentSwap (segmentSwap xs a b c hab hbc hcN)
-      a (a + (c - b)) c (by omega) (by omega) hcN = xs := by
-  funext ⟨t, ht⟩
-  simp only [segmentSwap]
-  by_cases h1 : t ≤ a
-  · -- prefix: unchanged both times
-    simp [h1]
-  · push_neg at h1
-    by_cases h2 : t ≤ a + (b - a)  -- i.e., t ≤ b
-    · -- was in segment 1 originally
-      -- first swap maps t to t + (c-b) which is in [a + (c-b) + 1, c]
-      have ht1 : ¬(t ≤ a) := by omega
-      have : b - a = t - a + (b - t) := by omega
-      -- after first swap: t maps to... let's compute
-      -- t > a, so first branch fails.
-      -- Is t ≤ a + (c - b)? We have t ≤ b, so t ≤ a + (b - a) ≤ a + (c - b) iff b - a ≤ c - b
-      -- Not necessarily true! The segments can have different lengths.
-      -- So we need to split further.
-      by_cases h2' : t ≤ a + (c - b)
-      · -- t in the "segment 2 moved first" region
-        -- first swap: t ↦ t + (b - a), which is in (b, c]
-        have htgt1 : t + (b - a) > a + (c - b) := by omega
-        have htgt2 : t + (b - a) ≤ c := by omega
-        -- second swap with middle a+(c-b):
-        -- t' = t + (b - a), t' > a, t' > a + (c - (a + (c-b))) = a + (b - a) = b
-        -- actually the new L₂' = c - (a + (c - b)) = b - a
-        -- so a + L₂' = a + (b - a) = b
-        -- t' ≤ a + L₂'? t + (b-a) ≤ b? only if t ≤ a, contradiction.
-        -- So t' > a + L₂' = b.
-        -- t' ≤ c? Yes.
-        -- So second swap maps t' ↦ t' - L₂' = t + (b-a) - (b-a) = t ✓
-        simp [ht1, h2']
-        -- now inner: ¬(t + (b-a) ≤ a)
-        have : ¬(t + (b - a) ≤ a) := by omega
-        -- ¬(t + (b-a) ≤ a + (c - (a + (c - b))))
-        have hL2' : c - (a + (c - b)) = b - a := by omega
-        have : ¬(t + (b - a) ≤ a + (c - (a + (c - b)))) := by omega
-        -- t + (b-a) ≤ c
-        have : t + (b - a) ≤ c := by omega
-        simp [*]
-        congr 1; ext; simp; omega
-      · -- t > a + (c - b), t ≤ b, so we're in the "segment 1 moved second" region
-        push_neg at h2'
-        have : t ≤ c := by omega
-        simp [ht1, show ¬(t ≤ a + (c - b)) by omega, this]
-        -- first swap: t ↦ t - (c - b)
-        -- t - (c - b) is in range [a + (c - b) + 1 - (c - b), b - (c - b)]
-        -- = [a + 1, b - c + b]... hmm this gets messy
-        -- Let's just compute: t - (c - b) > a (since t > a + (c - b))
-        -- t - (c - b) ≤ a + (c - (a + (c - b)))? = a + (b - a)? = b?
-        -- t - (c - b) ≤ b iff t ≤ b + (c - b) = c. True since t ≤ c.
-        -- Actually t - (c-b) ≤ a + L₂' where L₂' = c - (a+(c-b)) = b - a
-        -- t - (c-b) ≤ a + (b-a) = b. t ≤ b + (c-b) = c. True.
-        have h_inner1 : ¬(t - (c - b) ≤ a) := by omega
-        have h_inner2 : t - (c - b) ≤ a + (c - (a + (c - b))) := by omega
-        simp [h_inner1, h_inner2]
-        congr 1; ext; simp; omega
-    · push_neg at h2
-      -- t > b
-      by_cases h3 : t ≤ c
-      · -- t in segment 2 originally (b < t ≤ c)
-        by_cases h3' : t ≤ a + (c - b)
-        · -- t ≤ a + (c - b), so first swap maps t ↦ t + (b - a)
-          -- t + (b - a) > a + (c - b) + (b - a) - 1? Let's see.
-          -- t + (b-a) range: (b + (b-a), a + (c-b) + (b-a)] = (2b-a, c]
-          -- Hmm let me just compute directly.
-          simp [show ¬(t ≤ a) by omega, h3']
-          -- inner value is t + (b - a)
-          have : ¬(t + (b - a) ≤ a) := by omega
-          -- Is t + (b-a) ≤ a + (c - (a + (c - b)))?
-          -- c - (a + (c - b)) = b - a
-          -- t + (b-a) ≤ a + (b - a) = b? Only if t ≤ a, contradiction.
-          have : ¬(t + (b - a) ≤ a + (c - (a + (c - b)))) := by omega
-          -- t + (b-a) ≤ c?
-          have : t + (b - a) ≤ c := by omega
-          simp [*]
-          congr 1; ext; simp; omega
-        · push_neg at h3'
-          -- t > a + (c - b), first swap maps t ↦ t - (c - b)
-          simp [show ¬(t ≤ a) by omega, show ¬(t ≤ a + (c - b)) by omega, h3]
-          -- inner value is t - (c - b), which is in (a, b]
-          have : ¬(t - (c - b) ≤ a) := by omega
-          -- t - (c-b) ≤ a + (c - (a + (c-b)))? = a + (b-a) = b
-          have : t - (c - b) ≤ a + (c - (a + (c - b))) := by omega
-          simp [*]
-          congr 1; ext; simp; omega
-      · -- t > c: unchanged both times
-        push_neg at h3
-        simp [show ¬(t ≤ a) by omega, show ¬(t ≤ a + (c - b)) by omega,
-              show ¬(t ≤ c) by omega]
-
-/-! ### Transition count preservation
-
-The segmentSwap preserves `stateOfTraj` because the multiset of transitions
-(consecutive pairs) is preserved by swapping segments that both start and end
-at the same state. -/
-
-/-- The transition from position `t` to `t+1` in the swapped trajectory equals
-a transition in the original trajectory. This is the key observation for
-count preservation. -/
-lemma segmentSwap_transition {N : ℕ} (xs : Traj k N) (a b c : ℕ)
-    (hab : a < b) (hbc : b < c) (hcN : c ≤ N)
-    (t : Fin N) :
-    (segmentSwap xs a b c hab hbc hcN (Fin.castSucc t),
-     segmentSwap xs a b c hab hbc hcN (Fin.succ t)) ∈
-      Finset.image (fun j : Fin N => (xs (Fin.castSucc j), xs (Fin.succ j))) Finset.univ := by
-  simp only [Finset.mem_image, Finset.mem_univ, true_and]
-  -- The swapped trajectory at consecutive positions (t, t+1) corresponds to
-  -- consecutive positions in the original trajectory under the segment permutation.
-  simp only [segmentSwap]
-  -- Case split on which region t falls into
-  by_cases h1 : t.1 ≤ a
-  · -- prefix region, t and t+1 both ≤ a+1
-    by_cases h1' : t.1 + 1 ≤ a
-    · -- both in prefix
-      refine ⟨t, ?_⟩
-      constructor <;> (simp [h1, h1']; congr 1; ext; simp)
-    · push_neg at h1'
-      -- t = a, t+1 = a+1 which enters the second segment
-      have hta : t.1 = a := by omega
-      -- t+1 > a, t+1 ≤ a + (c - b)? depends on c > b (which is true)
-      have ht1 : t.1 + 1 ≤ a + (c - b) := by omega
-      -- xs at position a maps to xs(a), xs at position a+1 maps to xs(a+1 + (b-a)) = xs(b+1)
-      -- We need a transition in the original: xs(b), xs(b+1) works since xs(a) = xs(b) (both return positions)
-      -- But we haven't proven xs(a) = xs(b) yet as a hypothesis. We'll need return position info.
-      -- For now, just show the IMAGE membership.
-      -- The pair is (xs ⟨a, _⟩, xs ⟨a + 1 + (b - a), _⟩) = (xs ⟨a, _⟩, xs ⟨b + 1, _⟩)
-      -- This corresponds to... we need to find j such that xs(j) = xs(a) and xs(j+1) = xs(b+1).
-      -- j = b works IF xs(b) = xs(a). But we can't assume this without return position info.
-      -- Actually, the transition (xs(a), xs(b+1)) might not exist in the original trajectory at all!
-      -- UNLESS xs(a) = xs(b) (both are return positions, i.e., both equal xs(0)).
-      -- So this lemma needs additional hypotheses about a, b, c being return positions.
-      sorry
-  · sorry
-
--- The above approach is getting too complex with the transition-level argument.
--- Let me instead take a HIGHER-LEVEL approach: prove that the multiset of
--- transitions is preserved by using a bijection on the transition positions.
-
-/-! ### Multiset of transitions preserved
-
-We show that `segmentSwap` preserves `stateOfTraj` by constructing an explicit
-bijection on transition positions that maps each transition to the same
-transition in the swapped trajectory. -/
-
-/-- The position remap induced by segment swap: maps each transition position
-to the position in the original trajectory that has the same transition. -/
-def swapRemap (a b c : ℕ) (t : ℕ) : ℕ :=
+def swapRemap (a L1 L2 : ℕ) (t : ℕ) : ℕ :=
   if t < a then t
-  else if t < a + (c - b) then t + (b - a)
-  else if t < c then t - (c - b)
+  else if t < a + L2 then t + L1
+  else if t < a + L1 + L2 then t - L2
   else t
 
-/-- swapRemap maps [0, N) to [0, N) when a < b < c ≤ N. -/
-lemma swapRemap_lt {N : ℕ} (a b c : ℕ) (hab : a < b) (hbc : b < c) (hcN : c ≤ N)
-    (t : ℕ) (ht : t < N) : swapRemap a b c t < N := by
-  simp only [swapRemap]
-  split_ifs <;> omega
+lemma swapRemap_lt {N : ℕ} (a L1 L2 : ℕ)
+    (_hL1 : 0 < L1) (_hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (t : ℕ) (ht : t < N) : swapRemap a L1 L2 t < N := by
+  simp only [swapRemap]; split_ifs <;> omega
 
-/-- The segmentSwap transition at position t corresponds to the original
-transition at position `swapRemap a b c t`. -/
-lemma segmentSwap_eq_at_remap {N : ℕ} (xs : Traj k N) (a b c : ℕ)
-    (hab : a < b) (hbc : b < c) (hcN : c ≤ N)
-    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
-    (hb_ret : xs ⟨b, by omega⟩ = xs 0)
-    (hc_ret : xs ⟨c, by omega⟩ = xs 0)
-    (t : Fin N) :
-    segmentSwap xs a b c hab hbc hcN (Fin.castSucc t) =
-      xs ⟨swapRemap a b c t.1, by
-        exact Fin.val_lt_of_lt (show (⟨swapRemap a b c t.1,
-          swapRemap_lt a b c hab hbc hcN t.1 (by omega)⟩ : Fin N) < ⟨N, by omega⟩
-          from by simp [swapRemap_lt a b c hab hbc hcN t.1 (by omega)])⟩ := by
-  sorry
-
--- Let me take an even cleaner approach. Rather than trying to prove things
--- about individual positions, I'll directly show that the countsOfFn is preserved.
-
-/-! ## Direct proof that segmentSwap preserves stateOfTraj
-
-Strategy: We show that `transCount (segmentSwap xs ...) a b = transCount xs a b`
-for all `a b : Fin k`. This follows because the swap is a bijection on
-transition positions that preserves the transition type at each position. -/
-
-/-- The swap permutation on `Fin N` (transition positions). -/
-def swapPermFin {N : ℕ} (a b c : ℕ) (hab : a < b) (hbc : b < c) (hcN : c ≤ N) :
+def swapPermFin {N : ℕ} (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N) :
     Fin N → Fin N :=
-  fun ⟨t, ht⟩ => ⟨swapRemap a b c t, swapRemap_lt a b c hab hbc hcN t ht⟩
+  fun ⟨t, ht⟩ => ⟨swapRemap a L1 L2 t, swapRemap_lt a L1 L2 hL1 hL2 hcN t ht⟩
 
-/-- The swap permutation is injective. -/
-lemma swapPermFin_injective {N : ℕ} (a b c : ℕ) (hab : a < b) (hbc : b < c) (hcN : c ≤ N) :
-    Function.Injective (swapPermFin (N := N) a b c hab hbc hcN) := by
+lemma swapPermFin_injective {N : ℕ} (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N) :
+    Function.Injective (swapPermFin (N := N) a L1 L2 hL1 hL2 hcN) := by
   intro ⟨t₁, ht₁⟩ ⟨t₂, ht₂⟩ h
-  simp only [swapPermFin, Fin.mk.injEq] at h
-  simp only [swapRemap] at h
-  -- Case split on regions of t₁ and t₂
-  ext
-  split_ifs at h <;> omega
+  have h' : swapRemap a L1 L2 t₁ = swapRemap a L1 L2 t₂ := by
+    simp only [swapPermFin, Fin.mk.injEq] at h; exact h
+  apply Fin.ext; show t₁ = t₂
+  simp only [swapRemap] at h'
+  split_ifs at h' with h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12
+  all_goals omega
 
-/-- The swap permutation is a bijection (injective + same cardinality). -/
-lemma swapPermFin_bijective {N : ℕ} (a b c : ℕ) (hab : a < b) (hbc : b < c) (hcN : c ≤ N) :
-    Function.Bijective (swapPermFin (N := N) a b c hab hbc hcN) := by
+lemma swapPermFin_bijective {N : ℕ} (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N) :
+    Function.Bijective (swapPermFin (N := N) a L1 L2 hL1 hL2 hcN) := by
   rw [Fintype.bijective_iff_injective_and_card]
-  exact ⟨swapPermFin_injective a b c hab hbc hcN, by simp⟩
+  exact ⟨swapPermFin_injective a L1 L2 hL1 hL2 hcN, by simp⟩
 
-/-- The key property: at each transition position, the swapped trajectory has the
-same source and target as the original trajectory at the remapped position.
+/-! ## Transition pair correspondence -/
 
-Requires that a, b, c are return positions (xs returns to xs 0 there). -/
-theorem segmentSwap_transition_eq {N : ℕ} (xs : Traj k N) (a b c : ℕ)
-    (hab : a < b) (hbc : b < c) (hcN : c ≤ N)
+theorem segmentSwap_transition_pair {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
     (ha_ret : xs ⟨a, by omega⟩ = xs 0)
-    (hb_ret : xs ⟨b, by omega⟩ = xs 0)
-    (hc_ret : xs ⟨c, by omega⟩ = xs 0)
-    (t : Fin N) :
-    -- Source at position t in swapped traj = source at swapRemap t in original
-    segmentSwap xs a b c hab hbc hcN (Fin.castSucc t) =
-      xs (Fin.castSucc (swapPermFin a b c hab hbc hcN t)) ∧
-    -- Target at position t in swapped traj = target at swapRemap t in original
-    segmentSwap xs a b c hab hbc hcN (Fin.succ t) =
-      xs (Fin.succ (swapPermFin a b c hab hbc hcN t)) := by
-  constructor
-  · -- Source
-    simp only [segmentSwap, swapPermFin, swapRemap, Fin.castSucc, Fin.succ]
-    split_ifs <;> (try (congr 1; ext; simp; omega))
-    all_goals omega
-  · -- Target
-    simp only [segmentSwap, swapPermFin, swapRemap, Fin.castSucc, Fin.succ]
-    -- The target is at position t+1.
-    -- Case analysis based on region of t (not t+1)
-    -- Key subtlety: t might be at the boundary (t = a-1, t = a+(c-b)-1, t = c-1)
-    -- At boundaries, the transition crosses from one region to another.
-    -- This is where the return position conditions are crucial:
-    -- at boundaries, xs(a) = xs(b) = xs(c) = xs(0), so the source agrees.
-    by_cases h1 : t.1 < a
-    · -- t < a, so castSucc t ≤ a
-      by_cases h1' : t.1 + 1 ≤ a
-      · -- t+1 ≤ a: both in prefix, remap is identity
-        simp [show t.1 ≤ a by omega, h1', h1, show ¬(t.1 ≥ a) by omega]
-        congr 1; ext; simp
-      · -- t = a-1, t+1 = a: still in prefix for castSucc, but succ enters boundary
-        push_neg at h1'
-        have hta : t.1 + 1 = a := by omega
-        -- succ t = a, which is ≤ a
-        simp [show t.1 ≤ a by omega, show t.1 + 1 ≤ a by omega, h1]
-        congr 1; ext; simp
-    · push_neg at h1
-      sorry -- Remaining cases require careful boundary analysis with return conditions
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0)
+    (j : Fin N) :
+    let σj := swapPermFin a L1 L2 hL1 hL2 hcN j
+    (segmentSwap xs a L1 L2 hL1 hL2 hcN (Fin.castSucc j),
+     segmentSwap xs a L1 L2 hL1 hL2 hcN (Fin.succ j)) =
+    (xs (Fin.castSucc σj), xs (Fin.succ σj)) := by
+  rcases j with ⟨t, ht⟩
+  simp only [swapPermFin, swapRemap]
+  rw [Prod.mk.injEq]
+  simp only [segmentSwap, Fin.castSucc_mk, Fin.succ_mk]
+  -- After simp, both source and target are nested dite/ite expressions.
+  -- split_ifs resolves all branching; boundary cases need return conditions.
+  -- Helper: any Fin position whose val equals a return position index gives xs 0
+  have to_xs0 : ∀ (i : Fin (N + 1)),
+      i.val = a ∨ i.val = a + L1 ∨ i.val = a + L1 + L2 → xs i = xs 0 := by
+    intro i h
+    rcases h with h | h | h
+    · exact (congrArg xs (Fin.ext h)).trans ha_ret
+    · exact (congrArg xs (Fin.ext h)).trans hb_ret
+    · exact (congrArg xs (Fin.ext h)).trans hc_ret
+  constructor <;> split_ifs <;>
+    first
+    | rfl
+    | (congr 1; ext; simp only [Fin.val_mk]; omega)
+    | (exfalso; omega)
+    | (refine (to_xs0 _ ?_).trans (to_xs0 _ ?_).symm <;> simp only [Fin.val_mk] <;> omega)
 
-/-- segmentSwap preserves transCount when a, b, c are return positions. -/
-theorem segmentSwap_transCount {N : ℕ} (xs : Traj k N) (a b c : ℕ)
-    (hab : a < b) (hbc : b < c) (hcN : c ≤ N)
+/-! ## Transition count preservation -/
+
+theorem segmentSwap_transCount {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
     (ha_ret : xs ⟨a, by omega⟩ = xs 0)
-    (hb_ret : xs ⟨b, by omega⟩ = xs 0)
-    (hc_ret : xs ⟨c, by omega⟩ = xs 0)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0)
     (α β : Fin k) :
-    transCount (n := N) (segmentSwap xs a b c hab hbc hcN) α β =
+    transCount (n := N) (segmentSwap xs a L1 L2 hL1 hL2 hcN) α β =
       transCount (n := N) xs α β := by
-  sorry
+  simp only [transCount]
+  let σ := swapPermFin (N := N) a L1 L2 hL1 hL2 hcN
+  have hσ := swapPermFin_bijective (N := N) a L1 L2 hL1 hL2 hcN
+  have hfilt_eq : (Finset.univ.filter (fun j : Fin N =>
+      segmentSwap xs a L1 L2 hL1 hL2 hcN (Fin.castSucc j) = α ∧
+      segmentSwap xs a L1 L2 hL1 hL2 hcN (Fin.succ j) = β)) =
+    (Finset.univ.filter (fun j : Fin N =>
+      xs (Fin.castSucc (σ j)) = α ∧ xs (Fin.succ (σ j)) = β)) := by
+    ext j
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+    have h := segmentSwap_transition_pair xs a L1 L2 hL1 hL2 hcN ha_ret hb_ret hc_ret j
+    simp only at h; rw [Prod.mk.injEq] at h; rw [h.1, h.2]
+  rw [hfilt_eq]
+  apply Finset.card_bij (fun j _ => σ j)
+  · intro j hj; simpa using hj
+  · intro j₁ _ j₂ _ h; exact hσ.1 h
+  · intro j hj
+    obtain ⟨j', rfl⟩ := hσ.2 j
+    exact ⟨j', by simpa using hj, rfl⟩
 
-/-- segmentSwap preserves stateOfTraj when a, b, c are return positions. -/
-theorem segmentSwap_stateOfTraj {N : ℕ} (xs : Traj k N) (a b c : ℕ)
-    (hab : a < b) (hbc : b < c) (hcN : c ≤ N)
+/-! ## Derived properties -/
+
+lemma segmentSwap_start {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N) :
+    segmentSwap xs a L1 L2 hL1 hL2 hcN 0 = xs 0 := by
+  simp [segmentSwap]
+
+lemma segmentSwap_last {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0) :
+    segmentSwap xs a L1 L2 hL1 hL2 hcN (Fin.last N) = xs (Fin.last N) := by
+  simp only [segmentSwap, Fin.last]
+  split_ifs with h1 h2 h3
+  · -- N ≤ a: impossible
+    omega
+  · -- N ≤ a + L2: impossible (since a + L1 + L2 ≤ N and L1 > 0)
+    omega
+  · -- N ≤ a + L1 + L2: boundary case, xs(N - L2) = xs(N) via returns
+    have : xs ⟨N - L2, by omega⟩ = xs ⟨a + L1, by omega⟩ := by
+      congr 1; ext; simp; omega
+    rw [this, hb_ret, ← hc_ret]; congr 1; ext; simp; omega
+  · -- N > a + L1 + L2: suffix, identity
+    rfl
+
+theorem segmentSwap_stateOfTraj {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
     (ha_ret : xs ⟨a, by omega⟩ = xs 0)
-    (hb_ret : xs ⟨b, by omega⟩ = xs 0)
-    (hc_ret : xs ⟨c, by omega⟩ = xs 0) :
-    stateOfTraj (k := k) (segmentSwap xs a b c hab hbc hcN) =
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0) :
+    stateOfTraj (k := k) (segmentSwap xs a L1 L2 hL1 hL2 hcN) =
       stateOfTraj (k := k) xs := by
-  ext
-  · -- start
-    simp [stateOfTraj, segmentSwap]
-  · -- counts
-    ext α β
-    simp only [stateOfTraj]
-    exact segmentSwap_transCount xs a b c hab hbc hcN ha_ret hb_ret hc_ret α β
-  · -- last
-    simp only [stateOfTraj, segmentSwap]
-    have : ¬((Fin.last N).1 ≤ a) := by simp [Fin.last]; omega
-    have : ¬((Fin.last N).1 ≤ a + (c - b)) := by simp [Fin.last]; omega
-    have : ¬((Fin.last N).1 ≤ c) := by simp [Fin.last]; omega
-    simp [*]
+  refine MarkovState.ext ?_ ?_ ?_
+  · simp [stateOfTraj, segmentSwap_start]
+  · ext α β
+    simp only [stateOfTraj, countsOfFn_apply]
+    exact segmentSwap_transCount xs a L1 L2 hL1 hL2 hcN ha_ret hb_ret hc_ret α β
+  · simp [stateOfTraj, segmentSwap_last xs a L1 L2 hL1 hL2 hcN hb_ret hc_ret]
 
-/-- segmentSwap preserves fiber membership. -/
 theorem segmentSwap_mem_fiber {N : ℕ} (s : MarkovState k)
     (xs : Traj k N) (hxs : xs ∈ fiber k N s)
-    (a b c : ℕ) (hab : a < b) (hbc : b < c) (hcN : c ≤ N)
+    (a L1 L2 : ℕ) (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
     (ha_ret : xs ⟨a, by omega⟩ = xs 0)
-    (hb_ret : xs ⟨b, by omega⟩ = xs 0)
-    (hc_ret : xs ⟨c, by omega⟩ = xs 0) :
-    segmentSwap xs a b c hab hbc hcN ∈ fiber k N s := by
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0) :
+    segmentSwap xs a L1 L2 hL1 hL2 hcN ∈ fiber k N s := by
   rw [fiber, Finset.mem_filter]
   exact ⟨Finset.mem_univ _,
-    (segmentSwap_stateOfTraj xs a b c hab hbc hcN ha_ret hb_ret hc_ret).trans
+    (segmentSwap_stateOfTraj xs a L1 L2 hL1 hL2 hcN ha_ret hb_ret hc_ret).trans
       (Finset.mem_filter.1 hxs).2⟩
+
+/-! ## Prefix/suffix invariance -/
+
+lemma segmentSwap_eq_of_le_a {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (i : Fin (N + 1)) (hi : (i : ℕ) ≤ a) :
+    segmentSwap xs a L1 L2 hL1 hL2 hcN i = xs i := by
+  have h1 : (i : ℕ) ≤ a := hi
+  simp [segmentSwap, h1]
+
+/-- Variant of `segmentSwap_eq_of_le_a` with plain ℕ position argument. -/
+lemma segmentSwap_eq_of_le_a' {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (p : ℕ) (hp : p < N + 1) (hle : p ≤ a) :
+    segmentSwap xs a L1 L2 hL1 hL2 hcN ⟨p, hp⟩ = xs ⟨p, hp⟩ :=
+  segmentSwap_eq_of_le_a xs a L1 L2 hL1 hL2 hcN ⟨p, hp⟩ hle
+
+lemma segmentSwap_eq_of_gt_range {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (i : Fin (N + 1)) (hi : a + L1 + L2 < (i : ℕ)) :
+    segmentSwap xs a L1 L2 hL1 hL2 hcN i = xs i := by
+  have h1 : ¬((i : ℕ) ≤ a) := by omega
+  have h2 : ¬((i : ℕ) ≤ a + L2) := by omega
+  have h3 : ¬((i : ℕ) ≤ a + L1 + L2) := by omega
+  simp [segmentSwap, h1, h2, h3]
+
+/-- Variant of `segmentSwap_eq_of_gt_range` with plain ℕ position argument
+(avoids Fin coercion opacity in omega). -/
+lemma segmentSwap_eq_of_gt_range' {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (p : ℕ) (hp : p < N + 1) (hgt : a + L1 + L2 < p) :
+    segmentSwap xs a L1 L2 hL1 hL2 hcN ⟨p, hp⟩ = xs ⟨p, hp⟩ :=
+  segmentSwap_eq_of_gt_range xs a L1 L2 hL1 hL2 hcN ⟨p, hp⟩ hgt
+
+lemma trajPrefix_segmentSwap_eq_of_prefix_before_swap
+    {n N : ℕ} (h : n ≤ N)
+    (xs : Traj k N) (a L1 L2 : ℕ) (hna : n ≤ a)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N) :
+    trajPrefix (k := k) h (segmentSwap xs a L1 L2 hL1 hL2 hcN) =
+      trajPrefix (k := k) h xs := by
+  funext i
+  dsimp [trajPrefix]
+  have hi_le_a : ((Fin.castLE (Nat.succ_le_succ h) i : Fin (N + 1)) : ℕ) ≤ a := by
+    have hi_le_n : (i : ℕ) ≤ n := Nat.lt_succ_iff.mp i.is_lt
+    have hi_cast_eq : ((Fin.castLE (Nat.succ_le_succ h) i : Fin (N + 1)) : ℕ) = (i : ℕ) := rfl
+    exact hi_cast_eq ▸ le_trans hi_le_n hna
+  exact segmentSwap_eq_of_le_a xs a L1 L2 hL1 hL2 hcN
+    (Fin.castLE (Nat.succ_le_succ h) i) hi_le_a
+
+lemma prefixState_segmentSwap_eq_of_prefix_before_swap
+    {n N : ℕ} (h : n ≤ N)
+    (xs : Traj k N) (a L1 L2 : ℕ) (hna : n ≤ a)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N) :
+    prefixState (k := k) h (segmentSwap xs a L1 L2 hL1 hL2 hcN) =
+      prefixState (k := k) h xs := by
+  simp [prefixState, trajPrefix_segmentSwap_eq_of_prefix_before_swap (k := k) h xs a L1 L2 hna hL1 hL2 hcN]
+
+lemma segmentSwap_mem_prefixFiber_of_prefix_before_swap
+    {n N : ℕ} (h : n ≤ N)
+    (e eN : MarkovState k) (xs : Traj k N)
+    (a L1 L2 : ℕ) (hna : n ≤ a)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0)
+    (hxs : xs ∈ prefixFiber (k := k) h e eN) :
+    segmentSwap xs a L1 L2 hL1 hL2 hcN ∈ prefixFiber (k := k) h e eN := by
+  have hxsFiber : xs ∈ fiber k N eN := (Finset.mem_filter.1 hxs).1
+  have hmemFiber :
+      segmentSwap xs a L1 L2 hL1 hL2 hcN ∈ fiber k N eN :=
+    segmentSwap_mem_fiber eN xs hxsFiber a L1 L2 hL1 hL2 hcN ha_ret hb_ret hc_ret
+  refine Finset.mem_filter.2 ?_
+  refine ⟨hmemFiber, ?_⟩
+  have hprefix : prefixState (k := k) h xs = e := (Finset.mem_filter.1 hxs).2
+  simpa [hprefix] using
+    prefixState_segmentSwap_eq_of_prefix_before_swap (k := k) h xs a L1 L2 hna hL1 hL2 hcN
+
+/-! ## Segment swap involutivity
+
+Swapping with `(a, L2, L1)` undoes a swap with `(a, L1, L2)`. -/
+
+theorem segmentSwap_involutive {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N) :
+    segmentSwap (segmentSwap xs a L1 L2 hL1 hL2 hcN) a L2 L1 hL2 hL1
+      (by omega) = xs := by
+  funext ⟨t, ht⟩
+  simp only [segmentSwap]
+  split_ifs <;> first | rfl | (congr 1; ext; dsimp only; omega)
+
+/-! ## Segment swap is injective on trajectories -/
+
+theorem segmentSwap_injective {N : ℕ} (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    {xs ys : Traj k N}
+    (h : segmentSwap xs a L1 L2 hL1 hL2 hcN =
+         segmentSwap ys a L1 L2 hL1 hL2 hcN) :
+    xs = ys := by
+  rw [← segmentSwap_involutive xs a L1 L2 hL1 hL2 hcN,
+      ← segmentSwap_involutive ys a L1 L2 hL1 hL2 hcN, h]
+
+/-! ## Equicardinality of prefixFiber under segment swap
+
+The segment swap is a bijection from `prefixFiber(h, e, s)` to itself
+(when the swap happens after the prefix horizon). This is the key to
+the excursion ordering uniformity argument. -/
+
+/-- The segment swap is a self-inverse bijection on `Traj k N`. -/
+def segmentSwapEquiv {N : ℕ} (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N) :
+    Equiv.Perm (Traj k N) where
+  toFun xs := segmentSwap xs a L1 L2 hL1 hL2 hcN
+  invFun xs := segmentSwap xs a L2 L1 hL2 hL1 (by omega)
+  left_inv xs := segmentSwap_involutive xs a L1 L2 hL1 hL2 hcN
+  right_inv xs := segmentSwap_involutive xs a L2 L1 hL2 hL1 (by omega)
+
+/-! ## Return position characterization under segment swap
+
+When the swap region `[a, a+L1+L2]` bounds two excursions (no intermediate
+returns), the return positions of `segmentSwap xs` are obtained from those
+of `xs` by replacing the midpoint `a+L1` with `a+L2`. -/
+
+/-- In the identity prefix (i ≤ a), segmentSwap preserves return status. -/
+lemma segmentSwap_return_prefix {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (i : Fin (N + 1)) (hi : (i : ℕ) ≤ a) :
+    segmentSwap xs a L1 L2 hL1 hL2 hcN i = xs 0 ↔ xs i = xs 0 := by
+  rw [segmentSwap_eq_of_le_a xs a L1 L2 hL1 hL2 hcN i hi]
+
+/-- In the identity suffix (i > a+L1+L2), segmentSwap preserves return status. -/
+lemma segmentSwap_return_suffix {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (i : Fin (N + 1)) (hi : a + L1 + L2 < (i : ℕ)) :
+    segmentSwap xs a L1 L2 hL1 hL2 hcN i = xs 0 ↔ xs i = xs 0 := by
+  simp only [segmentSwap]
+  split_ifs with h1 h2 h3
+  · exact absurd hi (by omega)
+  · exact absurd hi (by omega)
+  · exact absurd hi (by omega)
+  · exact Iff.rfl
+
+/-- Full return position characterization: within the excursion swap range,
+the return positions are exactly `{a, a+L2, a+L1+L2}` (replacing old `{a, a+L1, a+L1+L2}`). -/
+theorem segmentSwap_return_in_range {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0)
+    -- No returns in excursion interiors (quantified over Fin to avoid omega-in-∀ issue)
+    (hnoret1 : ∀ (j : Fin (N + 1)), a < j.val → j.val < a + L1 → xs j ≠ xs 0)
+    (hnoret2 : ∀ (j : Fin (N + 1)), a + L1 < j.val → j.val < a + L1 + L2 → xs j ≠ xs 0)
+    (i : Fin (N + 1)) (hi_lo : a < (i : ℕ)) (hi_hi : (i : ℕ) ≤ a + L1 + L2) :
+    segmentSwap xs a L1 L2 hL1 hL2 hcN i = xs 0 ↔
+      ((i : ℕ) = a + L2 ∨ (i : ℕ) = a + L1 + L2) := by
+  constructor
+  · -- Forward: if swapped position returns, must be at a+L2 or a+L1+L2
+    intro hret
+    simp only [segmentSwap] at hret
+    split_ifs at hret with h1 h2 h3
+    · omega
+    · -- i ≤ a+L2: maps to xs(i+L1). If xs(i+L1) = xs 0, i+L1 must be a return.
+      -- No returns in (a+L1, a+L1+L2), so i+L1 = a+L1+L2, giving i = a+L2.
+      left
+      by_contra hne
+      exact hnoret2 ⟨↑i + L1, by omega⟩ (by simp [Fin.val_mk]; omega) (by simp [Fin.val_mk]; omega)
+        (by rwa [show (⟨↑i + L1, _⟩ : Fin (N + 1)) = ⟨↑i + L1, by omega⟩ from rfl])
+    · -- a+L2 < i ≤ a+L1+L2: maps to xs(i-L2). i-L2 must be a return.
+      -- No returns in (a, a+L1), so i-L2 = a+L1, giving i = a+L1+L2.
+      right
+      by_contra hne
+      exact hnoret1 ⟨↑i - L2, by omega⟩ (by simp [Fin.val_mk]; omega) (by simp [Fin.val_mk]; omega)
+        (by rwa [show (⟨↑i - L2, _⟩ : Fin (N + 1)) = ⟨↑i - L2, by omega⟩ from rfl])
+  · -- Backward: if i = a+L2 or i = a+L1+L2, show return
+    intro h
+    simp only [segmentSwap]
+    rcases h with hi_eq | hi_eq
+    · -- i.val = a + L2
+      split_ifs with h1 h2
+      · omega
+      · -- maps to xs(i+L1) = xs(a+L1+L2)
+        rw [show (⟨↑i + L1, _⟩ : Fin (N + 1)) = ⟨a + L1 + L2, by omega⟩ from
+              Fin.ext (by simp [Fin.val_mk]; omega)]
+        exact hc_ret
+      · omega
+    · -- i.val = a + L1 + L2
+      split_ifs with h1 h2 h3
+      · omega
+      · omega
+      · -- maps to xs(i-L2) = xs(a+L1)
+        rw [show (⟨↑i - L2, _⟩ : Fin (N + 1)) = ⟨a + L1, by omega⟩ from
+              Fin.ext (by simp [Fin.val_mk]; omega)]
+        exact hb_ret
+
+/-! ## Segment value correspondence under swap
+
+When segmentSwap is applied at adjacent excursion boundaries (a, a+L1, a+L1+L2),
+the segment [a, a+L2] of the swapped trajectory reproduces the values of
+the original segment [a+L1, a+L1+L2], and vice versa. -/
+
+/-- In the second block (a < t ≤ a + L2), segmentSwap maps to xs(t + L1). -/
+lemma segmentSwap_val_second_block {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (t : ℕ) (ht : t < N + 1) (ht_lo : a < t) (ht_hi : t ≤ a + L2) :
+    segmentSwap xs a L1 L2 hL1 hL2 hcN ⟨t, ht⟩ = xs ⟨t + L1, by omega⟩ := by
+  simp only [segmentSwap]
+  split_ifs <;> omega
+
+/-- In the third block (a + L2 < t ≤ a + L1 + L2), segmentSwap maps to xs(t - L2). -/
+lemma segmentSwap_val_third_block {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (t : ℕ) (ht : t < N + 1) (ht_lo : a + L2 < t) (ht_hi : t ≤ a + L1 + L2) :
+    segmentSwap xs a L1 L2 hL1 hL2 hcN ⟨t, ht⟩ = xs ⟨t - L2, by omega⟩ := by
+  simp only [segmentSwap]
+  split_ifs <;> omega
+
+/-- The swapped trajectory segment [a, a+L2] pointwise matches the original
+segment [a+L1, a+L1+L2] (adjacent excursion transposition, forward direction). -/
+theorem segmentSwap_excursion_transpose_fwd {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (j : ℕ) (hj : j ≤ L2) :
+    segmentSwap xs a L1 L2 hL1 hL2 hcN ⟨a + j, by omega⟩ =
+      xs ⟨a + L1 + j, by omega⟩ := by
+  rcases Nat.eq_zero_or_pos j with rfl | hj_pos
+  · -- j = 0: both sides are xs 0 (return positions)
+    show segmentSwap xs a L1 L2 hL1 hL2 hcN ⟨a, by omega⟩ = xs ⟨a + L1, by omega⟩
+    rw [segmentSwap_eq_of_le_a xs a L1 L2 hL1 hL2 hcN ⟨a, by omega⟩ (by simp)]
+    rw [ha_ret, hb_ret]
+  · -- j > 0: second block
+    rw [segmentSwap_val_second_block xs a L1 L2 hL1 hL2 hcN (a + j) (by omega)
+        (by omega) (by omega)]
+    congr 1; ext; dsimp only; omega
+
+/-- The swapped trajectory segment [a+L2, a+L1+L2] pointwise matches the original
+segment [a, a+L1] (adjacent excursion transposition, backward direction). -/
+theorem segmentSwap_excursion_transpose_bwd {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0)
+    (j : ℕ) (hj : j ≤ L1) :
+    segmentSwap xs a L1 L2 hL1 hL2 hcN ⟨a + L2 + j, by omega⟩ =
+      xs ⟨a + j, by omega⟩ := by
+  rcases Nat.eq_zero_or_pos j with rfl | hj_pos
+  · -- j = 0: boundary point (a+L2 is in second block boundary)
+    -- segmentSwap(xs, a+L2) = xs(a+L2+L1) = xs(a+L1+L2) = xs 0 = xs(a)
+    show segmentSwap xs a L1 L2 hL1 hL2 hcN ⟨a + L2, by omega⟩ = xs ⟨a, by omega⟩
+    rw [segmentSwap_val_second_block xs a L1 L2 hL1 hL2 hcN (a + L2) (by omega)
+        (by omega) (by omega)]
+    have : (⟨a + L2 + L1, by omega⟩ : Fin (N + 1)) = ⟨a + L1 + L2, by omega⟩ :=
+      Fin.ext (by dsimp only; omega)
+    rw [this, hc_ret, ha_ret]
+  · -- j > 0: third block
+    rw [segmentSwap_val_third_block xs a L1 L2 hL1 hL2 hcN (a + L2 + j) (by omega)
+        (by omega) (by omega)]
+    congr 1; ext; dsimp only; omega
+
+/-! ## Return position set under segment swap
+
+The return positions (as a Finset) of the swapped trajectory are obtained from
+those of the original by replacing `a + L1` with `a + L2`, preserving cardinality. -/
+
+/-- Full return-position characterization for segmentSwap: `i` is a return position
+of `segmentSwap xs` iff `i` is in the "adjusted" return set. -/
+theorem segmentSwap_isReturn_iff {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0)
+    (hnoret1 : ∀ (j : Fin (N + 1)), a < j.val → j.val < a + L1 → xs j ≠ xs 0)
+    (hnoret2 : ∀ (j : Fin (N + 1)), a + L1 < j.val → j.val < a + L1 + L2 → xs j ≠ xs 0)
+    (i : Fin (N + 1)) :
+    segmentSwap xs a L1 L2 hL1 hL2 hcN i = xs 0 ↔
+      (((i : ℕ) ≤ a ∧ xs i = xs 0) ∨
+       ((i : ℕ) = a + L2) ∨
+       ((i : ℕ) = a + L1 + L2) ∨
+       (a + L1 + L2 < (i : ℕ) ∧ xs i = xs 0)) := by
+  by_cases hi_le : (i : ℕ) ≤ a
+  · -- prefix: identity
+    rw [segmentSwap_return_prefix xs a L1 L2 hL1 hL2 hcN i hi_le]
+    constructor
+    · intro h; exact Or.inl ⟨hi_le, h⟩
+    · intro h; rcases h with ⟨_, h⟩ | h | h | ⟨h, _⟩ <;> [exact h; omega; omega; omega]
+  · by_cases hi_le2 : (i : ℕ) ≤ a + L1 + L2
+    · -- swap range: use segmentSwap_return_in_range
+      rw [segmentSwap_return_in_range xs a L1 L2 hL1 hL2 hcN
+          ha_ret hb_ret hc_ret hnoret1 hnoret2 i (by omega) hi_le2]
+      constructor
+      · intro h; rcases h with h | h <;> [exact Or.inr (Or.inl h); exact Or.inr (Or.inr (Or.inl h))]
+      · intro h
+        rcases h with ⟨h, _⟩ | h | h | ⟨h, _⟩ <;> [omega; exact Or.inl h; exact Or.inr h; omega]
+    · -- suffix: identity
+      rw [segmentSwap_return_suffix xs a L1 L2 hL1 hL2 hcN i (by omega)]
+      constructor
+      · intro h; exact Or.inr (Or.inr (Or.inr ⟨by omega, h⟩))
+      · intro h; rcases h with ⟨h, _⟩ | h | h | ⟨_, h⟩ <;> [omega; omega; omega; exact h]
+
+/-- The return-position Finset cardinality is preserved by segmentSwap
+(because the bijection replaces exactly one return position with another). -/
+theorem returnPositions_segmentSwap_card {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0) :
+    (returnPositions (k := k) (segmentSwap xs a L1 L2 hL1 hL2 hcN)).card =
+      (returnPositions (k := k) xs).card := by
+  -- stateOfTraj determines returnsToStart, which determines return position count
+  have hstate := segmentSwap_stateOfTraj xs a L1 L2 hL1 hL2 hcN ha_ret hb_ret hc_ret
+  rw [card_returnPositions_eq_returnsToStart_add_one,
+      card_returnPositions_eq_returnsToStart_add_one, hstate]
+
+/-- numExcursions is preserved by segmentSwap. -/
+theorem numExcursions_segmentSwap {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0) :
+    numExcursions (k := k) (segmentSwap xs a L1 L2 hL1 hL2 hcN) =
+      numExcursions (k := k) xs := by
+  unfold numExcursions
+  rw [returnPositions_segmentSwap_card xs a L1 L2 hL1 hL2 hcN ha_ret hb_ret hc_ret]
+
+/-! ## trajSegment pointwise characterization
+
+All lemmas use plain ℕ positions to avoid Fin coercion opacity in omega. -/
+
+/-- `trajSegment xs ⟨p, _⟩ ⟨q, _⟩` has length `q - p + 1` when `p ≤ q`. -/
+lemma trajSegment_length {N : ℕ} (xs : Traj k N)
+    (p q : ℕ) (hp : p < N + 1) (hq : q < N + 1) (hpq : p ≤ q) :
+    (trajSegment (k := k) xs ⟨p, hp⟩ ⟨q, hq⟩).length = q - p + 1 := by
+  simp only [trajSegment, Nat.min_eq_left hpq, Nat.max_eq_right hpq, trajToList]
+  rw [List.length_take, List.length_drop, List.length_ofFn]
+  omega
+
+/-- The `t`-th element of `trajSegment xs ⟨p, _⟩ ⟨q, _⟩` (for `p ≤ q`) is `xs(p + t)`. -/
+lemma trajSegment_getElem {N : ℕ} (xs : Traj k N)
+    (p q : ℕ) (hp : p < N + 1) (hq : q < N + 1) (hpq : p ≤ q) (t : ℕ)
+    (ht : t < (trajSegment (k := k) xs ⟨p, hp⟩ ⟨q, hq⟩).length) :
+    (trajSegment (k := k) xs ⟨p, hp⟩ ⟨q, hq⟩)[t] = xs ⟨p + t, by
+      have := trajSegment_length (k := k) xs p q hp hq hpq; omega⟩ := by
+  simp only [trajSegment, Nat.min_eq_left hpq, Nat.max_eq_right hpq, trajToList]
+  rw [List.getElem_take, List.getElem_drop, List.getElem_ofFn]
+
+/-- Two `trajSegment`s of the same length are equal iff they agree pointwise. -/
+lemma trajSegment_ext {N : ℕ} (xs ys : Traj k N)
+    (p₁ q₁ p₂ q₂ : ℕ) (hp₁ : p₁ < N + 1) (hq₁ : q₁ < N + 1)
+    (hp₂ : p₂ < N + 1) (hq₂ : q₂ < N + 1)
+    (h₁ : p₁ ≤ q₁) (h₂ : p₂ ≤ q₂)
+    (hlen : q₁ - p₁ = q₂ - p₂)
+    (hpw : ∀ (t : ℕ) (_ht : t ≤ q₁ - p₁),
+      xs ⟨p₁ + t, by omega⟩ = ys ⟨p₂ + t, by omega⟩) :
+    trajSegment (k := k) xs ⟨p₁, hp₁⟩ ⟨q₁, hq₁⟩ =
+      trajSegment (k := k) ys ⟨p₂, hp₂⟩ ⟨q₂, hq₂⟩ := by
+  apply List.ext_getElem
+  · rw [trajSegment_length _ _ _ _ _ h₁, trajSegment_length _ _ _ _ _ h₂, hlen]
+  · intro t ht₁ ht₂
+    rw [trajSegment_getElem _ _ _ _ _ h₁, trajSegment_getElem _ _ _ _ _ h₂]
+    exact hpw t (by rw [trajSegment_length _ _ _ _ _ h₁] at ht₁; omega)
+
+/-- The forward excursion transposition: segment `[a, a+L2]` of the swapped
+trajectory matches segment `[a+L1, a+L1+L2]` of the original. -/
+theorem trajSegment_segmentSwap_fwd {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0) :
+    trajSegment (k := k)
+      (segmentSwap xs a L1 L2 hL1 hL2 hcN) ⟨a, by omega⟩ ⟨a + L2, by omega⟩ =
+    trajSegment (k := k) xs ⟨a + L1, by omega⟩ ⟨a + L1 + L2, by omega⟩ := by
+  exact trajSegment_ext _ _ a (a + L2) (a + L1) (a + L1 + L2)
+    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+    (fun t ht => segmentSwap_excursion_transpose_fwd xs a L1 L2 hL1 hL2 hcN
+      ha_ret hb_ret t (by omega))
+
+/-- The backward excursion transposition: segment `[a+L2, a+L1+L2]` of the swapped
+trajectory matches segment `[a, a+L1]` of the original. -/
+theorem trajSegment_segmentSwap_bwd {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0) :
+    trajSegment (k := k)
+      (segmentSwap xs a L1 L2 hL1 hL2 hcN) ⟨a + L2, by omega⟩ ⟨a + L1 + L2, by omega⟩ =
+    trajSegment (k := k) xs ⟨a, by omega⟩ ⟨a + L1, by omega⟩ := by
+  exact trajSegment_ext _ _ (a + L2) (a + L1 + L2) a (a + L1)
+    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+    (fun t ht => segmentSwap_excursion_transpose_bwd xs a L1 L2 hL1 hL2 hcN
+      ha_ret hc_ret t (by omega))
+
+/-- Segments outside the swap range are unchanged. -/
+theorem trajSegment_segmentSwap_outside {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (i j : Fin (N + 1)) (hij : i.val ≤ j.val)
+    (hout : j.val ≤ a ∨ a + L1 + L2 < i.val) :
+    trajSegment (k := k) (segmentSwap xs a L1 L2 hL1 hL2 hcN) i j =
+      trajSegment (k := k) xs i j := by
+  exact trajSegment_ext _ _ i.val j.val i.val j.val i.isLt j.isLt i.isLt j.isLt
+    hij hij rfl (fun t ht => by
+      rcases hout with hle | hge
+      · exact segmentSwap_eq_of_le_a' xs a L1 L2 hL1 hL2 hcN (i.val + t) (by omega) (by omega)
+      · exact segmentSwap_eq_of_gt_range' xs a L1 L2 hL1 hL2 hcN (i.val + t) (by omega) (by omega))
+
+/-! ## Return position Finset equality under segmentSwap
+
+The return positions of `segmentSwap xs` differ from those of `xs` by
+replacing `a + L1` with `a + L2` (when L1 ≠ L2). -/
+
+/-- Characterization: `i` is a return of the swapped trajectory iff
+it satisfies the adjusted condition. Wraps `segmentSwap_isReturn_iff`
+as a Finset membership statement. -/
+theorem mem_returnPositions_segmentSwap {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0)
+    (hnoret1 : ∀ (j : Fin (N + 1)), a < j.val → j.val < a + L1 → xs j ≠ xs 0)
+    (hnoret2 : ∀ (j : Fin (N + 1)), a + L1 < j.val → j.val < a + L1 + L2 → xs j ≠ xs 0)
+    (i : Fin (N + 1)) :
+    i ∈ returnPositions (k := k) (segmentSwap xs a L1 L2 hL1 hL2 hcN) ↔
+      ((i.val ≤ a ∧ xs i = xs 0) ∨
+       i.val = a + L2 ∨
+       i.val = a + L1 + L2 ∨
+       (a + L1 + L2 < i.val ∧ xs i = xs 0)) := by
+  simp only [returnPositions, Finset.mem_filter, Finset.mem_univ, true_and]
+  have := segmentSwap_isReturn_iff xs a L1 L2 hL1 hL2 hcN
+    ha_ret hb_ret hc_ret hnoret1 hnoret2 i
+  -- segmentSwap_isReturn_iff uses `segmentSwap ... i = xs 0`
+  -- but returnPositions uses `(segmentSwap ...) i = (segmentSwap ...) 0`
+  -- Since 0 ≤ a, segmentSwap at 0 = xs 0
+  have h0 : segmentSwap xs a L1 L2 hL1 hL2 hcN 0 = xs 0 :=
+    segmentSwap_eq_of_le_a' xs a L1 L2 hL1 hL2 hcN 0 (by omega) (by omega)
+  rw [h0]
+  exact this
+
+/-- The return positions of the swapped trajectory, expressed as a Finset
+in terms of the original return positions. Under the excursion swap that
+replaces `a + L1` with `a + L2`, the Finset changes by exactly this
+one-element replacement. -/
+theorem returnPositions_segmentSwap_eq {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0)
+    (hnoret1 : ∀ (j : Fin (N + 1)), a < j.val → j.val < a + L1 → xs j ≠ xs 0)
+    (hnoret2 : ∀ (j : Fin (N + 1)), a + L1 < j.val → j.val < a + L1 + L2 → xs j ≠ xs 0) :
+    returnPositions (k := k) (segmentSwap xs a L1 L2 hL1 hL2 hcN) =
+      ((returnPositions (k := k) xs).erase ⟨a + L1, by omega⟩) ∪
+        {⟨a + L2, by omega⟩} := by
+  ext i
+  rw [mem_returnPositions_segmentSwap xs a L1 L2 hL1 hL2 hcN
+    ha_ret hb_ret hc_ret hnoret1 hnoret2]
+  simp only [Finset.mem_union, Finset.mem_erase, Finset.mem_singleton,
+    returnPositions, Finset.mem_filter, Finset.mem_univ, true_and]
+  constructor
+  · -- forward: swapped return → erased ∪ singleton
+    intro h
+    rcases h with ⟨hle, hret⟩ | hval | hval | ⟨hgt, hret⟩
+    · -- prefix case
+      left
+      refine ⟨?_, hret⟩
+      intro heq
+      rw [Fin.ext_iff] at heq
+      simp at heq
+      omega
+    · -- i = a + L2
+      right
+      exact Fin.ext (by simp; exact hval)
+    · -- i = a + L1 + L2
+      left
+      refine ⟨?_, hc_ret ▸ (by congr 1; exact Fin.ext (by simp; exact hval))⟩
+      intro heq
+      rw [Fin.ext_iff] at heq
+      simp at heq
+      omega
+    · -- suffix case
+      left
+      refine ⟨?_, hret⟩
+      intro heq
+      rw [Fin.ext_iff] at heq
+      simp at heq
+      omega
+  · -- backward: erased ∪ singleton → swapped return
+    intro h
+    rcases h with ⟨hne, hret⟩ | heq
+    · -- i ∈ erase: i is an original return, i ≠ a + L1
+      have hne_val : i.val ≠ a + L1 := by
+        intro h; apply hne; exact Fin.ext (by simp; exact h)
+      by_cases h1 : i.val ≤ a
+      · exact Or.inl ⟨h1, hret⟩
+      · by_cases h2 : i.val < a + L1
+        · -- a < i < a + L1: original return → contradiction with hnoret1
+          exact absurd hret (hnoret1 i (by omega) h2)
+        · by_cases h3 : i.val = a + L1 + L2
+          · exact Or.inr (Or.inr (Or.inl h3))
+          · by_cases h4 : i.val < a + L1 + L2
+            · -- a + L1 < i < a + L1 + L2: contradiction with hnoret2
+              exact absurd hret (hnoret2 i (by omega) h4)
+            · exact Or.inr (Or.inr (Or.inr ⟨by omega, hret⟩))
+    · -- i = ⟨a + L2, _⟩
+      have : i.val = a + L2 := by
+        rw [heq]
+      exact Or.inr (Or.inl this)
+
+/-! ## Consecutive pair characterization
+
+A pair `(a, b)` in a Finset is **consecutive** if `a < b` and no Finset element
+lies strictly between them.  This characterizes excursion boundaries without
+needing `Finset.sort`. -/
+
+/-- `a` and `b` are consecutive in `S` if `a < b` and no element of `S` lies
+strictly between them. -/
+def IsConsecutivePair (S : Finset (Fin (N + 1))) (a b : Fin (N + 1)) : Prop :=
+  a ∈ S ∧ b ∈ S ∧ a < b ∧ ∀ c ∈ S, ¬(a < c ∧ c < b)
+
+/-- Consecutive return positions appear as adjacent entries in `excursionPairs`. -/
+lemma mem_excursionPairs_of_IsConsecutivePair {N : ℕ} (xs : Traj k N)
+    {a b : Fin (N + 1)}
+    (h : IsConsecutivePair (returnPositions (k := k) xs) a b) :
+    (a, b) ∈ excursionPairs (k := k) xs := by
+  rcases h with ⟨ha, hb, hab, hgap⟩
+  exact mem_excursionPairs_of_return_consecutive (k := k) xs a b ha hb hab hgap
+
+/-- No-return hypotheses exactly say that `(a, a+L1)` and `(a+L1, a+L1+L2)` are
+consecutive pairs in the return positions. -/
+lemma isConsecutivePair_of_excursion_boundary {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0)
+    (hnoret1 : ∀ (j : Fin (N + 1)), a < j.val → j.val < a + L1 → xs j ≠ xs 0)
+    (hnoret2 : ∀ (j : Fin (N + 1)), a + L1 < j.val → j.val < a + L1 + L2 → xs j ≠ xs 0) :
+    IsConsecutivePair (returnPositions (k := k) xs)
+      ⟨a, by omega⟩ ⟨a + L1, by omega⟩ ∧
+    IsConsecutivePair (returnPositions (k := k) xs)
+      ⟨a + L1, by omega⟩ ⟨a + L1 + L2, by omega⟩ := by
+  constructor
+  · refine ⟨?_, ?_, ?_, ?_⟩
+    · simp [returnPositions, ha_ret]
+    · simp [returnPositions, hb_ret]
+    · simp only [Fin.lt_def]; omega
+    · intro c hc ⟨hac, hcb⟩
+      simp [returnPositions] at hc
+      have := hnoret1 c (by exact_mod_cast hac) (by exact_mod_cast hcb)
+      exact this hc
+  · refine ⟨?_, ?_, ?_, ?_⟩
+    · simp [returnPositions, hb_ret]
+    · simp [returnPositions, hc_ret]
+    · simp only [Fin.lt_def]; omega
+    · intro c hc ⟨hbc, hcc⟩
+      simp [returnPositions] at hc
+      have := hnoret2 c (by exact_mod_cast hbc) (by exact_mod_cast hcc)
+      exact this hc
+
+/-- Segment boundaries for an excursion decomposition are members of `excursionPairs`. -/
+lemma mem_excursionPairs_of_excursion_boundary {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0)
+    (hnoret1 : ∀ (j : Fin (N + 1)), a < j.val → j.val < a + L1 → xs j ≠ xs 0)
+    (hnoret2 : ∀ (j : Fin (N + 1)), a + L1 < j.val → j.val < a + L1 + L2 → xs j ≠ xs 0) :
+    (⟨a, by omega⟩, ⟨a + L1, by omega⟩) ∈ excursionPairs (k := k) xs ∧
+    (⟨a + L1, by omega⟩, ⟨a + L1 + L2, by omega⟩) ∈ excursionPairs (k := k) xs := by
+  rcases isConsecutivePair_of_excursion_boundary (k := k) xs a L1 L2 hL1 hL2 hcN
+      ha_ret hb_ret hc_ret hnoret1 hnoret2 with ⟨h1, h2⟩
+  exact ⟨mem_excursionPairs_of_IsConsecutivePair (k := k) xs h1,
+    mem_excursionPairs_of_IsConsecutivePair (k := k) xs h2⟩
+
+/-- After segment swap, `(a, a+L2)` and `(a+L2, a+L1+L2)` are consecutive in the
+new return positions. -/
+lemma isConsecutivePair_swap {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0)
+    (hnoret1 : ∀ (j : Fin (N + 1)), a < j.val → j.val < a + L1 → xs j ≠ xs 0)
+    (hnoret2 : ∀ (j : Fin (N + 1)), a + L1 < j.val → j.val < a + L1 + L2 → xs j ≠ xs 0) :
+    let xs' := segmentSwap xs a L1 L2 hL1 hL2 hcN
+    IsConsecutivePair (returnPositions (k := k) xs')
+      ⟨a, by omega⟩ ⟨a + L2, by omega⟩ ∧
+    IsConsecutivePair (returnPositions (k := k) xs')
+      ⟨a + L2, by omega⟩ ⟨a + L1 + L2, by omega⟩ := by
+  intro xs'
+  -- Membership characterization for return positions of the swapped trajectory
+  have hmem : ∀ i, i ∈ returnPositions (k := k) xs' ↔
+      ((i.val ≤ a ∧ xs i = xs 0) ∨
+       i.val = a + L2 ∨
+       i.val = a + L1 + L2 ∨
+       (a + L1 + L2 < i.val ∧ xs i = xs 0)) :=
+    mem_returnPositions_segmentSwap xs a L1 L2 hL1 hL2 hcN
+      ha_ret hb_ret hc_ret hnoret1 hnoret2
+  constructor
+  · refine ⟨?_, ?_, ?_, ?_⟩
+    · -- a ∈ returnPositions xs'
+      exact (hmem _).mpr (Or.inl ⟨Nat.le_refl a, ha_ret⟩)
+    · -- a+L2 ∈ returnPositions xs'
+      exact (hmem _).mpr (Or.inr (Or.inl rfl))
+    · -- a < a+L2
+      simp only [Fin.lt_def]; omega
+    · -- No return of xs' strictly between a and a+L2
+      intro c hc ⟨hac, hcL2⟩
+      have hac' : a < c.val := by exact_mod_cast hac
+      have hcL2' : c.val < a + L2 := by exact_mod_cast hcL2
+      rcases (hmem c).mp hc with ⟨hle, _⟩ | heq | heq | ⟨hgt, _⟩ <;> omega
+  · refine ⟨?_, ?_, ?_, ?_⟩
+    · -- a+L2 ∈ returnPositions xs'
+      exact (hmem _).mpr (Or.inr (Or.inl rfl))
+    · -- a+L1+L2 ∈ returnPositions xs'
+      exact (hmem _).mpr (Or.inr (Or.inr (Or.inl rfl)))
+    · -- a+L2 < a+L1+L2
+      simp only [Fin.lt_def]; omega
+    · -- No return of xs' strictly between a+L2 and a+L1+L2
+      intro c hc ⟨hL2c, hcC⟩
+      have hL2c' : a + L2 < c.val := by exact_mod_cast hL2c
+      have hcC' : c.val < a + L1 + L2 := by exact_mod_cast hcC
+      rcases (hmem c).mp hc with ⟨hle, _⟩ | heq | heq | ⟨hgt, _⟩ <;> omega
+
+/-- Swapped segment boundaries are members of `excursionPairs` for the swapped trajectory. -/
+lemma mem_excursionPairs_swap {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0)
+    (hnoret1 : ∀ (j : Fin (N + 1)), a < j.val → j.val < a + L1 → xs j ≠ xs 0)
+    (hnoret2 : ∀ (j : Fin (N + 1)), a + L1 < j.val → j.val < a + L1 + L2 → xs j ≠ xs 0) :
+    let xs' := segmentSwap xs a L1 L2 hL1 hL2 hcN
+    (⟨a, by omega⟩, ⟨a + L2, by omega⟩) ∈ excursionPairs (k := k) xs' ∧
+    (⟨a + L2, by omega⟩, ⟨a + L1 + L2, by omega⟩) ∈ excursionPairs (k := k) xs' := by
+  intro xs'
+  rcases isConsecutivePair_swap (k := k) xs a L1 L2 hL1 hL2 hcN
+      ha_ret hb_ret hc_ret hnoret1 hnoret2 with ⟨h1, h2⟩
+  exact ⟨mem_excursionPairs_of_IsConsecutivePair (k := k) xs' h1,
+    mem_excursionPairs_of_IsConsecutivePair (k := k) xs' h2⟩
 
 end MarkovDeFinettiHardExcursionBridge
 

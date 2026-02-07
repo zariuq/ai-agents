@@ -1,6 +1,7 @@
 import Mettapedia.Logic.MarkovDeFinettiHardEuler
 import Mettapedia.Logic.MarkovDeFinettiHardApprox
 import Mathlib.Data.Finset.Sort
+import Mathlib.Data.List.Sort
 import Mathlib.Data.List.Zip
 
 /-!
@@ -56,6 +57,112 @@ def numExcursions {n : ℕ} (xs : Traj k n) : ℕ :=
 def excursionPairs {n : ℕ} (xs : Traj k n) :
     List (Fin (n + 1) × Fin (n + 1)) :=
   (returnPositionsList (k := k) xs).zip (returnPositionsList (k := k) xs).tail
+
+/-! ## Adjacent-pair order facts -/
+
+private lemma mem_zip_tail_fst_lt_snd_of_sorted
+    {α : Type*} [LinearOrder α] {l : List α}
+    (hs : l.SortedLT) {p : α × α} (hp : p ∈ l.zip l.tail) :
+    p.1 < p.2 := by
+  induction l with
+  | nil =>
+      simp at hp
+  | cons a tl ih =>
+      cases tl with
+      | nil =>
+          simp at hp
+      | cons b tl2 =>
+          simp [List.tail] at hp
+          rcases hp with hhead | htail
+          · rcases hhead with ⟨rfl, rfl⟩
+            have hsPair : List.Pairwise (· < ·) (a :: b :: tl2) :=
+              (List.sortedLT_iff_pairwise.mp hs)
+            cases hsPair with
+            | cons hrel _ =>
+                exact hrel b (by simp)
+          · have hsTail : (b :: tl2).SortedLT := by
+              have hsPair : List.Pairwise (· < ·) (a :: b :: tl2) :=
+                (List.sortedLT_iff_pairwise.mp hs)
+              cases hsPair with
+              | cons _ htailPair =>
+                  exact (List.sortedLT_iff_pairwise.mpr htailPair)
+            exact ih hsTail htail
+
+lemma fst_lt_snd_of_mem_excursionPairs {n : ℕ} (xs : Traj k n)
+    {p : Fin (n + 1) × Fin (n + 1)} (hp : p ∈ excursionPairs (k := k) xs) :
+    p.1 < p.2 := by
+  exact mem_zip_tail_fst_lt_snd_of_sorted
+    (hs := Finset.sortedLT_sort (returnPositions (k := k) xs))
+    (hp := by simpa [excursionPairs] using hp)
+
+private lemma mem_zip_tail_of_succ_lt_length
+    {α : Type*} (l : List α) (i : ℕ) (hi : i + 1 < l.length) :
+    (l[i], l[i + 1]) ∈ l.zip l.tail := by
+  apply List.mem_iff_getElem.mpr
+  refine ⟨i, ?_, ?_⟩
+  · have hiZip : i < l.length - 1 := by
+      omega
+    simpa [List.length_zip, List.length_tail,
+      Nat.min_eq_right (Nat.sub_le _ _)] using hiZip
+  · simp [List.getElem_tail]
+
+/-- If `a` and `b` are return positions with no return strictly between them,
+then `(a,b)` appears in `excursionPairs`. -/
+lemma mem_excursionPairs_of_return_consecutive
+    {n : ℕ} (xs : Traj k n) (a b : Fin (n + 1))
+    (ha : a ∈ returnPositions (k := k) xs)
+    (hb : b ∈ returnPositions (k := k) xs)
+    (hab : a < b)
+    (hgap : ∀ c ∈ returnPositions (k := k) xs, ¬ (a < c ∧ c < b)) :
+    (a, b) ∈ excursionPairs (k := k) xs := by
+  classical
+  let l : List (Fin (n + 1)) := returnPositionsList (k := k) xs
+  have hs : l.SortedLT := by
+    simpa [l, returnPositionsList] using
+      (Finset.sortedLT_sort (returnPositions (k := k) xs))
+  have haL : a ∈ l := by
+    simpa [l, returnPositionsList] using
+      (Finset.mem_sort (s := returnPositions (k := k) xs) (r := (· ≤ ·))).2 ha
+  have hbL : b ∈ l := by
+    simpa [l, returnPositionsList] using
+      (Finset.mem_sort (s := returnPositions (k := k) xs) (r := (· ≤ ·))).2 hb
+  rcases (List.mem_iff_getElem.mp haL) with ⟨ia, hia_lt, hia⟩
+  rcases (List.mem_iff_getElem.mp hbL) with ⟨ib, hib_lt, hib⟩
+  have hab_lt : ia < ib := by
+    have hlt_ab : l[ia] < l[ib] := by
+      simpa [hia, hib] using hab
+    exact (List.SortedLT.getElem_lt_getElem_iff
+      (l := l) hs (i := ia) (j := ib) (hi := hia_lt) (hj := hib_lt)).1 hlt_ab
+  have hnot_skip : ¬ (ia + 1 < ib) := by
+    intro hskip
+    have hic_lt : ia + 1 < l.length := by
+      exact lt_trans hskip hib_lt
+    let c : Fin (n + 1) := l[ia + 1]
+    have hcMemL : c ∈ l := by
+      exact List.getElem_mem hic_lt
+    have hcMemS : c ∈ returnPositions (k := k) xs := by
+      simpa [l, returnPositionsList] using
+        (Finset.mem_sort (s := returnPositions (k := k) xs) (r := (· ≤ ·))).1 hcMemL
+    have hac : a < c := by
+      have hidx : ia < ia + 1 := by omega
+      have hlt := (List.SortedLT.getElem_lt_getElem_iff
+        (l := l) hs (i := ia) (j := ia + 1) (hi := hia_lt) (hj := hic_lt)).2 hidx
+      simpa [hia] using hlt
+    have hcb : c < b := by
+      have hidx : ia + 1 < ib := hskip
+      have hlt := (List.SortedLT.getElem_lt_getElem_iff
+        (l := l) hs (i := ia + 1) (j := ib) (hi := hic_lt) (hj := hib_lt)).2 hidx
+      simpa [hib] using hlt
+    exact (hgap c hcMemS) ⟨hac, hcb⟩
+  have hib_eq : ib = ia + 1 := by
+    omega
+  have hia1 : l[ia + 1] = b := by
+    simpa [hib_eq] using hib
+  have hi : ia + 1 < l.length := by
+    simpa [hib_eq] using hib_lt
+  have hmem_zip : (l[ia], l[ia + 1]) ∈ l.zip l.tail :=
+    mem_zip_tail_of_succ_lt_length l ia hi
+  simpa [excursionPairs, l, hia, hia1] using hmem_zip
 
 @[simp] lemma length_excursionPairs {n : ℕ} (xs : Traj k n) :
     (excursionPairs (k := k) xs).length = numExcursions (k := k) xs := by

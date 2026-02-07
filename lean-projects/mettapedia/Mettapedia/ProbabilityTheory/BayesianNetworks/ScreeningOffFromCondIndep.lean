@@ -18,7 +18,6 @@ abbrev CondIndepOn (A B C : V) : Prop :=
     (hm' := measurableSpaceOfVertices_le (bn := bn) ({B} : Set V))
     μ
 
-omit [Fintype V] [DecidableEq V] [∀ v : V, StandardBorelSpace (bn.stateSpace v)] in
 lemma screening_const_eq_of_ae_chain
     {sB : Set bn.JointSpace}
     {condA condC condAC : bn.JointSpace → ℝ}
@@ -44,7 +43,6 @@ lemma screening_const_eq_of_ae_chain
       _ =ᵐ[μ.restrict sB] (fun _ => condA ω0 * condC ω0) := hProdConst
   exact ae_const_eq_of_restrict_ne_zero (bn := bn) (μ := μ) (s := sB) hB0 hConstEqAE
 
-omit [Fintype V] [DecidableEq V] [∀ v : V, StandardBorelSpace (bn.stateSpace v)] in
 lemma real_inter_eq_const_mul_of_setIntegral
     (sX sB : Set bn.JointSpace)
     (hsX : @MeasurableSet bn.JointSpace (MeasurableSpace.pi) sX)
@@ -83,7 +81,6 @@ lemma real_inter_eq_const_mul_of_setIntegral
           exact hset
     _ = condX ω0 * μ.real sB := hconst_int
 
-omit [Fintype V] [DecidableEq V] [∀ v : V, StandardBorelSpace (bn.stateSpace v)] in
 lemma real_inter_eq_condExp_const
     (m' : MeasurableSpace bn.JointSpace)
     (hm' : m' ≤ (MeasurableSpace.pi : MeasurableSpace bn.JointSpace))
@@ -120,7 +117,6 @@ lemma ennreal_mul_eq_of_real_mul_eq
     simpa [ENNReal.toReal_mul, ha, hb, hc, hd] using hreal
   exact (ENNReal.toReal_eq_toReal_iff' (ENNReal.mul_ne_top ha hb) (ENNReal.mul_ne_top hc hd)).1 htoReal
 
-omit [Fintype V] [DecidableEq V] [∀ v : V, StandardBorelSpace (bn.stateSpace v)] in
 lemma real_screening_mul_eq
     (sA sB sC : Set bn.JointSpace)
     {condA condC condAC : bn.JointSpace → ℝ}
@@ -154,7 +150,6 @@ lemma real_screening_mul_eq
       _ = μ.real (sA ∩ sB) * μ.real (sC ∩ sB) := by
             simp [hAint, hCint, mul_comm, mul_left_comm, mul_assoc]
 
-omit [Fintype V] [DecidableEq V] [∀ v : V, StandardBorelSpace (bn.stateSpace v)] in
 lemma condIndep_mul_cond_core
     [IsProbabilityMeasure μ]
     (m' : MeasurableSpace bn.JointSpace)
@@ -168,35 +163,35 @@ lemma condIndep_mul_cond_core
       μ⟦sA ∩ sC | m'⟧ =ᵐ[μ] (μ⟦sA | m'⟧) * (μ⟦sC | m'⟧))
     (ω0 : bn.JointSpace)
     (hAconst_ae :
-      (fun ω => μ⟦sA | m'⟧ ω) =ᵐ[μ.restrict sB] fun _ => μ⟦sA | m'⟧ ω0)
+      (fun ω => (μ⟦sA | m'⟧) ω) =ᵐ[μ.restrict sB] fun _ => (μ⟦sA | m'⟧) ω0)
     (hCconst_ae :
-      (fun ω => μ⟦sC | m'⟧ ω) =ᵐ[μ.restrict sB] fun _ => μ⟦sC | m'⟧ ω0)
+      (fun ω => (μ⟦sC | m'⟧) ω) =ᵐ[μ.restrict sB] fun _ => (μ⟦sC | m'⟧) ω0)
     (hACconst_ae :
-      (fun ω => μ⟦sA ∩ sC | m'⟧ ω) =ᵐ[μ.restrict sB] fun _ => μ⟦sA ∩ sC | m'⟧ ω0) :
+      (fun ω => (μ⟦sA ∩ sC | m'⟧) ω) =ᵐ[μ.restrict sB] fun _ => (μ⟦sA ∩ sC | m'⟧) ω0) :
     μ ((sA ∩ sC) ∩ sB) * μ sB = μ (sA ∩ sB) * μ (sC ∩ sB) := by
   have hcondR :
-      (fun ω => μ⟦sA ∩ sC | m'⟧ ω) =ᵐ[μ.restrict sB]
-        fun ω => μ⟦sA | m'⟧ ω * μ⟦sC | m'⟧ ω := by
+      (fun ω => (μ⟦sA ∩ sC | m'⟧) ω) =ᵐ[μ.restrict sB]
+        (fun ω => (μ⟦sA | m'⟧) ω * (μ⟦sC | m'⟧) ω) := by
     exact ae_restrict_of_ae hcond'
   have hconst_eq (hB0 : μ sB ≠ 0) :
-      μ⟦sA ∩ sC | m'⟧ ω0 = μ⟦sA | m'⟧ ω0 * μ⟦sC | m'⟧ ω0 := by
+      (μ⟦sA ∩ sC | m'⟧) ω0 = (μ⟦sA | m'⟧) ω0 * (μ⟦sC | m'⟧) ω0 := by
     exact screening_const_eq_of_ae_chain (bn := bn) (μ := μ)
       (hACconst_ae := hACconst_ae) (hcondR := hcondR)
       (hAconst_ae := hAconst_ae) (hCconst_ae := hCconst_ae) hB0
   haveI : SigmaFinite (μ.trim hm') :=
     sigmaFinite_trim_of_le (bn := bn) (μ := μ) (m' := m') hm'
   have hAint :
-      μ.real (sA ∩ sB) = μ⟦sA | m'⟧ ω0 * μ.real sB := by
+      μ.real (sA ∩ sB) = (μ⟦sA | m'⟧) ω0 * μ.real sB := by
     exact real_inter_eq_condExp_const (bn := bn) (μ := μ) (m' := m')
       (hm' := hm') (sX := sA) (sB := sB) hsA hsB_meas_m' hsB_meas
       (ω0 := ω0) hAconst_ae
   have hCint :
-      μ.real (sC ∩ sB) = μ⟦sC | m'⟧ ω0 * μ.real sB := by
+      μ.real (sC ∩ sB) = (μ⟦sC | m'⟧) ω0 * μ.real sB := by
     exact real_inter_eq_condExp_const (bn := bn) (μ := μ) (m' := m')
       (hm' := hm') (sX := sC) (sB := sB) hsC hsB_meas_m' hsB_meas
       (ω0 := ω0) hCconst_ae
   have hACint :
-      μ.real ((sA ∩ sC) ∩ sB) = μ⟦sA ∩ sC | m'⟧ ω0 * μ.real sB := by
+      μ.real ((sA ∩ sC) ∩ sB) = (μ⟦sA ∩ sC | m'⟧) ω0 * μ.real sB := by
     exact real_inter_eq_condExp_const (bn := bn) (μ := μ) (m' := m')
       (hm' := hm') (sX := sA ∩ sC) (sB := sB) (hsA.inter hsC) hsB_meas_m' hsB_meas
       (ω0 := ω0) hACconst_ae
@@ -217,7 +212,6 @@ lemma condIndep_mul_cond_core
     (MeasureTheory.measure_ne_top (μ := μ) (s := sA ∩ sB))
     (MeasureTheory.measure_ne_top (μ := μ) (s := sC ∩ sB))
 
-set_option maxHeartbeats 10000000 in
 theorem condIndep_eventEq_mul_cond
     [IsProbabilityMeasure μ]
     [∀ v, Inhabited (bn.stateSpace v)]
@@ -234,62 +228,74 @@ theorem condIndep_eventEq_mul_cond
       μ (eventEq (bn := bn) C valC ∩
         eventEq (bn := bn) B valB) := by
   classical
-  let sA : Set bn.JointSpace := eventEq (bn := bn) A valA
-  let sB : Set bn.JointSpace := eventEq (bn := bn) B valB
-  let sC : Set bn.JointSpace := eventEq (bn := bn) C valC
   let m' := bn.measurableSpaceOfVertices ({B} : Set V)
-  have hm' : m' ≤ (MeasurableSpace.pi : MeasurableSpace bn.JointSpace) :=
-    measurableSpaceOfVertices_le (bn := bn) ({B} : Set V)
-  have hsB_meas_m' : MeasurableSet[m'] sB := by
-    simpa [m'] using measurable_eventEq_vertices (bn := bn) B valB
-  have hsB_meas : @MeasurableSet bn.JointSpace (MeasurableSpace.pi) sB := by
-    simpa [sB] using measurable_eventEq (bn := bn) B valB
-  have hcond :=
-    (condIndep_iff
-      (m' := m')
-      (m₁ := bn.measurableSpaceOfVertices ({A} : Set V))
-      (m₂ := bn.measurableSpaceOfVertices ({C} : Set V))
-      (mΩ := (by infer_instance : MeasurableSpace bn.JointSpace))
-      (hm' := hm')
-      (hm₁ := measurableSpaceOfVertices_le (bn := bn) ({A} : Set V))
-      (hm₂ := measurableSpaceOfVertices_le (bn := bn) ({C} : Set V))
-      (μ := μ)).1 hci
-  have hAmeas :
-      MeasurableSet[bn.measurableSpaceOfVertices ({A} : Set V)] sA := by
-    simpa using measurable_eventEq_vertices (bn := bn) A valA
-  have hCmeas :
-      MeasurableSet[bn.measurableSpaceOfVertices ({C} : Set V)] sC := by
-    simpa using measurable_eventEq_vertices (bn := bn) C valC
-  have hcond' :
-      μ⟦sA ∩ sC | m'⟧ =ᵐ[μ] (μ⟦sA | m'⟧) * (μ⟦sC | m'⟧) := by
-    simpa [sA, sC, m'] using hcond sA sC hAmeas hCmeas
-  let omega0 : bn.JointSpace :=
-    fun v => if h : v = B then (by cases h; exact valB) else default
-  have hAconst_ae :
-      (fun ω => μ⟦sA | m'⟧ ω) =ᵐ[μ.restrict sB] fun _ => μ⟦sA | m'⟧ omega0 := by
-    simpa [sA, sB, m', omega0] using
-      (condExp_ae_eq_const_on_eventEq (bn := bn) (μ := μ)
-        (B := B) (valB := valB) (s := sA) (ω0 := omega0))
-  have hCconst_ae :
-      (fun ω => μ⟦sC | m'⟧ ω) =ᵐ[μ.restrict sB] fun _ => μ⟦sC | m'⟧ omega0 := by
-    simpa [sC, sB, m', omega0] using
-      (condExp_ae_eq_const_on_eventEq (bn := bn) (μ := μ)
-        (B := B) (valB := valB) (s := sC) (ω0 := omega0))
-  have hACconst_ae :
-      (fun ω => μ⟦sA ∩ sC | m'⟧ ω) =ᵐ[μ.restrict sB] fun _ => μ⟦sA ∩ sC | m'⟧ omega0 := by
-    simpa [sA, sC, sB, m', omega0] using
-      (condExp_ae_eq_const_on_eventEq (bn := bn) (μ := μ)
-        (B := B) (valB := valB) (s := sA ∩ sC) (ω0 := omega0))
-  have hmul :=
-    condIndep_mul_cond_core (bn := bn) (μ := μ)
+  let hm' := measurableSpaceOfVertices_le (bn := bn) ({B} : Set V)
+  -- Step 1: CondIndep → CondIndepSet (cheap: stays in kernel layer, no condExp reduction)
+  have hIndepSet := hci.condIndepSet_of_measurableSet
+    (measurable_eventEq_vertices (bn := bn) A valA)
+    (measurable_eventEq_vertices (bn := bn) C valC)
+  -- Step 2: CondIndepSet → condExp AE equality (cheap: set-level, direct)
+  have hcond' : μ⟦eventEq (bn := bn) A valA ∩ eventEq (bn := bn) C valC | m'⟧ =ᵐ[μ]
+      (μ⟦eventEq (bn := bn) A valA | m'⟧) *
+        (μ⟦eventEq (bn := bn) C valC | m'⟧) :=
+    (condIndepSet_iff (mΩ := (MeasurableSpace.pi : MeasurableSpace bn.JointSpace))
       (m' := m') (hm' := hm')
-      (sA := sA) (sB := sB) (sC := sC)
-      (hsA := measurable_eventEq (bn := bn) A valA)
-      (hsC := measurable_eventEq (bn := bn) C valC)
-      (hsB_meas_m' := hsB_meas_m') (hsB_meas := hsB_meas)
-      (hcond' := hcond') (ω0 := omega0)
-      (hAconst_ae := hAconst_ae) (hCconst_ae := hCconst_ae)
-      (hACconst_ae := hACconst_ae)
-  simpa [sA, sB, sC, Set.inter_assoc] using hmul
+      (eventEq (bn := bn) A valA) (eventEq (bn := bn) C valC)
+      (measurable_eventEq (bn := bn) A valA)
+      (measurable_eventEq (bn := bn) C valC) μ).mp hIndepSet
+  -- Witness point on B-fiber
+  let omega0 : bn.JointSpace := Function.update (fun _ => default) B valB
+  have hupdate : Function.update omega0 B valB = omega0 := by
+    simp [omega0]
+  -- Constancy of condExp on B-fiber
+  have hAconst :
+      (fun ω => (μ⟦eventEq (bn := bn) A valA | m'⟧) ω) =ᵐ[μ.restrict (eventEq (bn := bn) B valB)]
+        (fun _ => (μ⟦eventEq (bn := bn) A valA | m'⟧) omega0) := by
+    refine (MeasureTheory.ae_restrict_iff' ?_).2 ?_
+    · simpa using measurable_eventEq (bn := bn) B valB
+    refine Filter.Eventually.of_forall ?_
+    intro ω hω
+    apply measurable_const_on_fiber (bn := bn) B
+    · exact (stronglyMeasurable_condExp (μ := μ) (m := m')
+        (f := (eventEq (bn := bn) A valA).indicator fun _ => (1 : ℝ))).measurable
+    · have hB : ω B = valB := by simpa [eventEq] using hω
+      simpa [hB, omega0]
+  have hCconst :
+      (fun ω => (μ⟦eventEq (bn := bn) C valC | m'⟧) ω) =ᵐ[μ.restrict (eventEq (bn := bn) B valB)]
+        (fun _ => (μ⟦eventEq (bn := bn) C valC | m'⟧) omega0) := by
+    refine (MeasureTheory.ae_restrict_iff' ?_).2 ?_
+    · simpa using measurable_eventEq (bn := bn) B valB
+    refine Filter.Eventually.of_forall ?_
+    intro ω hω
+    apply measurable_const_on_fiber (bn := bn) B
+    · exact (stronglyMeasurable_condExp (μ := μ) (m := m')
+        (f := (eventEq (bn := bn) C valC).indicator fun _ => (1 : ℝ))).measurable
+    · have hB : ω B = valB := by simpa [eventEq] using hω
+      simpa [hB, omega0]
+  have hACconst :
+      (fun ω => (μ⟦eventEq (bn := bn) A valA ∩ eventEq (bn := bn) C valC | m'⟧) ω)
+        =ᵐ[μ.restrict (eventEq (bn := bn) B valB)]
+          (fun _ => (μ⟦eventEq (bn := bn) A valA ∩ eventEq (bn := bn) C valC | m'⟧) omega0) := by
+    refine (MeasureTheory.ae_restrict_iff' ?_).2 ?_
+    · simpa using measurable_eventEq (bn := bn) B valB
+    refine Filter.Eventually.of_forall ?_
+    intro ω hω
+    apply measurable_const_on_fiber (bn := bn) B
+    · exact (stronglyMeasurable_condExp (μ := μ) (m := m')
+        (f := (eventEq (bn := bn) A valA ∩ eventEq (bn := bn) C valC).indicator fun _ => (1 : ℝ))).measurable
+    · have hB : ω B = valB := by simpa [eventEq] using hω
+      simpa [hB, omega0]
+  -- Assembly
+  exact condIndep_mul_cond_core (bn := bn) (μ := μ)
+    (m' := m') (hm' := hm')
+    (sA := eventEq (bn := bn) A valA)
+    (sB := eventEq (bn := bn) B valB)
+    (sC := eventEq (bn := bn) C valC)
+    (hsA := measurable_eventEq (bn := bn) A valA)
+    (hsC := measurable_eventEq (bn := bn) C valC)
+    (hsB_meas_m' := measurable_eventEq_vertices (bn := bn) B valB)
+    (hsB_meas := measurable_eventEq (bn := bn) B valB)
+    (hcond' := hcond') (ω0 := omega0)
+    (hAconst_ae := hAconst) (hCconst_ae := hCconst) (hACconst_ae := hACconst)
 
 end Mettapedia.ProbabilityTheory.BayesianNetworks.BayesianNetwork

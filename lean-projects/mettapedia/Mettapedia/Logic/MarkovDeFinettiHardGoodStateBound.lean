@@ -76,10 +76,10 @@ private lemma excursion_wor_wr_bound
     (hk : 0 < k) (n : ℕ) (e : MarkovState k)
     {N : ℕ} (hN : Nat.succ n ≤ N) (s : MarkovState k)
     (hs : s ∈ stateFinset k N)
-    (hRlarge : 4 * n * n < returnsToStart (k := k) s) :
+    (hRlarge : 4 * (Nat.succ n) * (Nat.succ n) < returnsToStart (k := k) s) :
     |(W (k := k) (Nat.succ n) e (empiricalParam (k := k) hk s)).toReal
         - (prefixCoeff (k := k) (h := hN) e s).toReal| ≤
-      (4 * (n : ℝ) * (n : ℝ)) /
+      (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) /
         (returnsToStart (k := k) s : ℝ) := by
   exact excursion_bound_from_decomposition hk n e hN s hs hRlarge
 
@@ -96,20 +96,21 @@ private lemma excursion_decomposition_bound
     (hRpos : 0 < returnsToStart (k := k) s) :
     |(W (k := k) (Nat.succ n) e (empiricalParam (k := k) hk s)).toReal
         - (prefixCoeff (k := k) (h := hN) e s).toReal| ≤
-      (4 * (n : ℝ) * (n : ℝ)) /
+      (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) /
         (returnsToStart (k := k) s : ℝ) := by
-  by_cases hsmall : returnsToStart (k := k) s ≤ 4 * n * n
-  · -- Trivial case: R ≤ 4n², so 4n²/R ≥ 1 ≥ |diff|.
+  by_cases hsmall : returnsToStart (k := k) s ≤ 4 * (Nat.succ n) * (Nat.succ n)
+  · -- Trivial case: R ≤ 4(n+1)², so 4(n+1)²/R ≥ 1 ≥ |diff|.
     have hdiff := abs_diffTerm_le_one (k := k) (hk := hk) (hN := hN) (e := e) (s := s) hs
     have hRreal : (0 : ℝ) < (returnsToStart (k := k) s : ℝ) :=
       Nat.cast_pos.mpr hRpos
-    have hbound : (1 : ℝ) ≤ (4 * (n : ℝ) * (n : ℝ)) / (returnsToStart (k := k) s : ℝ) := by
+    have hbound : (1 : ℝ) ≤ (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) /
+        (returnsToStart (k := k) s : ℝ) := by
       rw [le_div_iff₀ hRreal]
       simp only [one_mul]
       exact_mod_cast hsmall
     linarith
-  · -- Real case: R > 4n², use the excursion WOR/WR correspondence.
-    have hRlarge : 4 * n * n < returnsToStart (k := k) s := by omega
+  · -- Real case: R > 4(n+1)², use the excursion WOR/WR correspondence.
+    have hRlarge : 4 * (Nat.succ n) * (Nat.succ n) < returnsToStart (k := k) s := by omega
     exact excursion_wor_wr_bound (k := k) hk n e hN s hs hRlarge
 
 /-- The per‑state excursion bound: the difference between the empirical
@@ -124,14 +125,15 @@ private lemma perState_excursion_bound
     (M : ℕ) (hM : 0 < M) (hMret : M ≤ returnsToStart (k := k) s) :
     |(W (k := k) (Nat.succ n) e (empiricalParam (k := k) hk s)).toReal
         - (prefixCoeff (k := k) (h := hN) e s).toReal| ≤
-      (4 * (n : ℝ) * (n : ℝ)) / (M : ℝ) := by
+      (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) / (M : ℝ) := by
   have hRpos : 0 < returnsToStart (k := k) s := Nat.lt_of_lt_of_le hM hMret
   have hR := excursion_decomposition_bound (k := k) hk n e hN s hs hRpos
-  have hnum : (0 : ℝ) ≤ 4 * (n : ℝ) * (n : ℝ) := by positivity
+  have hnum : (0 : ℝ) ≤ 4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ) := by positivity
   calc |(W (k := k) (Nat.succ n) e (empiricalParam (k := k) hk s)).toReal
           - (prefixCoeff (k := k) (h := hN) e s).toReal|
-      ≤ (4 * (n : ℝ) * (n : ℝ)) / (returnsToStart (k := k) s : ℝ) := hR
-    _ ≤ (4 * (n : ℝ) * (n : ℝ)) / (M : ℝ) := by
+      ≤ (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) /
+          (returnsToStart (k := k) s : ℝ) := hR
+    _ ≤ (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) / (M : ℝ) := by
         apply div_le_div_of_nonneg_left hnum
         · exact Nat.cast_pos.mpr hM
         · exact Nat.cast_le.mpr hMret
@@ -146,8 +148,8 @@ theorem good_state_bound
             ∀ (M : ℕ), 0 < M → M ≤ returnsToStart (k := k) s →
               |(W (k := k) (Nat.succ n) e (empiricalParam (k := k) hk s)).toReal
                   - (prefixCoeff (k := k) (h := hN) e s).toReal| ≤ C / (M : ℝ) := by
-  -- The constant C = 4 * n * n works universally.
-  refine ⟨4 * (n : ℝ) * (n : ℝ), by positivity, ?_⟩
+  -- The constant C = 4 * (n+1)² works universally.
+  refine ⟨4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ), by positivity, ?_⟩
   intro N hN s hs M hM hMret
   exact perState_excursion_bound (k := k) hk n e hN s hs M hM hMret
 

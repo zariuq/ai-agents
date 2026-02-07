@@ -187,8 +187,15 @@ lemma condExp_ae_eq_const_on_eventEq
     [∀ v, MeasurableSingletonClass (bn.stateSpace v)]
     (B : V) (valB : bn.stateSpace B)
     (s : Set bn.JointSpace) (ω0 : bn.JointSpace) :
-    (fun ω => μ⟦s | bn.measurableSpaceOfVertices ({B} : Set V)⟧ ω) =ᵐ[μ.restrict (eventEq (bn := bn) B valB)]
-      fun _ => μ⟦s | bn.measurableSpaceOfVertices ({B} : Set V)⟧ (Function.update ω0 B valB) := by
+    MeasureTheory.condExp
+      (bn.measurableSpaceOfVertices ({B} : Set V)) μ
+      (s.indicator fun _ : bn.JointSpace => (1 : ℝ))
+      =ᵐ[μ.restrict (eventEq (bn := bn) B valB)]
+      fun _ : bn.JointSpace =>
+        MeasureTheory.condExp
+          (bn.measurableSpaceOfVertices ({B} : Set V)) μ
+          (s.indicator fun _ : bn.JointSpace => (1 : ℝ))
+          (Function.update ω0 B valB) := by
   classical
   -- `μ⟦s | m'⟧` is measurable with respect to `m'`, hence constant on the fiber `B = valB`.
   refine (MeasureTheory.ae_restrict_iff' ?_).2 ?_

@@ -167,6 +167,131 @@ def RhoObservableOutput (P : Pattern) (n : Pattern) : Prop :=
 
 notation:50 P " ↓ρ " n => RhoObservableOutput P n
 
+/-- SC-closed observable output: P has a barb modulo structural congruence.
+    In the ρ-calculus, barbs are defined on SC-equivalence classes because
+    par_singleton ({P} ≡ P) can strip the hashBag structure that
+    RhoObservableOutput requires. This closure ensures barb preservation under SC. -/
+def RhoObservableSC (P : Pattern) (n : Pattern) : Prop :=
+  ∃ P', (P ≡ P') ∧ RhoObservableOutput P' n
+
+/-- Immediate barbs imply SC-closed barbs (via SC.refl). -/
+theorem RhoObservableSC.of_obs {P n : Pattern} (h : RhoObservableOutput P n) :
+    RhoObservableSC P n :=
+  ⟨P, .refl _, h⟩
+
+/-! ## Weak N-Restricted Barbed Bisimilarity (Lybech 2022, p. 99)
+
+Following Lybech: observations restricted to channels in N ⊆ fn(P).
+Namespace machinery names (n++"_L", n++"_R") are NOT in fn(P),
+so different namespace assignments preserve this bisimilarity.
+-/
+
+/-- Weak N-restricted barbed bisimilarity.
+    Two ρ-patterns are weakly bisimilar restricted to names in N if there exists
+    a symmetric relation R such that:
+    - R relates the two patterns
+    - One-step reductions are matched by zero-or-more steps (weak)
+    - Barbs on channels `.var x` for `x ∈ N` are preserved
+    Reference: Lybech (2022), Definition of ≈N, page 99. -/
+def WeakRestrictedBisim (N : Finset String) (p q : Pattern) : Prop :=
+  ∃ R : Pattern → Pattern → Prop,
+    (∀ p₁ q₁, R p₁ q₁ → R q₁ p₁) ∧
+    (∀ p₁ q₁, R p₁ q₁ → ∀ p₂, Nonempty (Reduction.Reduces p₁ p₂) →
+     ∃ q₂, Nonempty (ReducesStar q₁ q₂) ∧ R p₂ q₂) ∧
+    (∀ p₁ q₁, R p₁ q₁ → ∀ x ∈ N,
+     RhoObservableSC p₁ (.var x) → RhoObservableSC q₁ (.var x)) ∧
+    R p q
+
+notation:50 p " ≈{" N "}" q => WeakRestrictedBisim N p q
+
+/-- WeakRestrictedBisim is reflexive. -/
+theorem WeakRestrictedBisim.refl (N : Finset String) (p : Pattern) : p ≈{N} p := by
+  refine ⟨Eq, fun _ _ h => h.symm, ?_, ?_, rfl⟩
+  · intro p₁ q₁ h p₂ hp₂
+    subst h; exact ⟨p₂, ⟨ReducesStar.step (Classical.choice hp₂) (.refl _)⟩, rfl⟩
+  · intro p₁ q₁ h x _ hobs; subst h; exact hobs
+
+/-- WeakRestrictedBisim is symmetric. -/
+theorem WeakRestrictedBisim.symm {N : Finset String} {p q : Pattern}
+    (h : p ≈{N} q) : q ≈{N} p := by
+  obtain ⟨R, hR_sym, hR_fwd, hR_barb, hR_pq⟩ := h
+  exact ⟨R, hR_sym, hR_fwd, hR_barb, hR_sym _ _ hR_pq⟩
+
+/-- Lift one-step weak forward simulation to multi-step.
+    If R has the weak forward property and R(p, q) and p ⇝* p',
+    then ∃ q', q ⇝* q' ∧ R(p', q'). -/
+private theorem lift_star_forward
+    {R : Pattern → Pattern → Prop}
+    (hfwd : ∀ p₁ q₁, R p₁ q₁ → ∀ p₂, Nonempty (Reduction.Reduces p₁ p₂) →
+            ∃ q₂, Nonempty (ReducesStar q₁ q₂) ∧ R p₂ q₂)
+    {p q p' : Pattern} (h : R p q) (hstar : Nonempty (ReducesStar p p')) :
+    ∃ q', Nonempty (ReducesStar q q') ∧ R p' q' := by
+  obtain ⟨star⟩ := hstar
+  induction star generalizing q with
+  | refl => exact ⟨q, ⟨.refl _⟩, h⟩
+  | @step _ pmid _ hred rest ih =>
+    obtain ⟨qmid, hqmid_star, hR_mid⟩ := hfwd _ _ h _ ⟨hred⟩
+    obtain ⟨q', hq'_star, hR'⟩ := ih hR_mid
+    exact ⟨q', ⟨(Classical.choice hqmid_star).trans (Classical.choice hq'_star)⟩, hR'⟩
+
+/-- WeakRestrictedBisim is transitive. Uses symmetric closure of R₁ ∘ R₂. -/
+theorem WeakRestrictedBisim.trans {N : Finset String} {p q r : Pattern}
+    (hpq : p ≈{N} q) (hqr : q ≈{N} r) : p ≈{N} r := by
+  obtain ⟨R₁, hR₁_sym, hR₁_fwd, hR₁_barb, hR₁_pq⟩ := hpq
+  obtain ⟨R₂, hR₂_sym, hR₂_fwd, hR₂_barb, hR₂_qr⟩ := hqr
+  -- S = R₁;R₂ ∪ R₂;R₁ (symmetric closure of composition)
+  let S := fun a c => (∃ b, R₁ a b ∧ R₂ b c) ∨ (∃ b, R₂ a b ∧ R₁ b c)
+  refine ⟨S, ?_, ?_, ?_, Or.inl ⟨q, hR₁_pq, hR₂_qr⟩⟩
+  · -- Symmetry: swap disjuncts + use individual symmetries
+    intro a c hac
+    rcases hac with ⟨b, hab, hbc⟩ | ⟨b, hab, hbc⟩
+    · exact Or.inr ⟨b, hR₂_sym _ _ hbc, hR₁_sym _ _ hab⟩
+    · exact Or.inl ⟨b, hR₁_sym _ _ hbc, hR₂_sym _ _ hab⟩
+  · -- Forward: one step matched by star, composed via lift_star_forward
+    intro a c hac a' ha'
+    rcases hac with ⟨b, hab, hbc⟩ | ⟨b, hab, hbc⟩
+    · -- R₁(a,b) ∧ R₂(b,c): chain R₁_fwd then lift R₂ over star
+      obtain ⟨b', hb'_star, hR₁'⟩ := hR₁_fwd _ _ hab _ ha'
+      obtain ⟨c', hc'_star, hR₂'⟩ := lift_star_forward hR₂_fwd hbc hb'_star
+      exact ⟨c', hc'_star, Or.inl ⟨b', hR₁', hR₂'⟩⟩
+    · -- R₂(a,b) ∧ R₁(b,c): chain R₂_fwd then lift R₁ over star
+      obtain ⟨b', hb'_star, hR₂'⟩ := hR₂_fwd _ _ hab _ ha'
+      obtain ⟨c', hc'_star, hR₁'⟩ := lift_star_forward hR₁_fwd hbc hb'_star
+      exact ⟨c', hc'_star, Or.inr ⟨b', hR₂', hR₁'⟩⟩
+  · -- Barb preservation: compose barb transfer through intermediate
+    intro a c hac x hx hobs
+    rcases hac with ⟨b, hab, hbc⟩ | ⟨b, hab, hbc⟩
+    · exact hR₂_barb _ _ hbc x hx (hR₁_barb _ _ hab x hx hobs)
+    · exact hR₁_barb _ _ hbc x hx (hR₂_barb _ _ hab x hx hobs)
+
+/-- Monotonicity: restricting to fewer names preserves bisimilarity. -/
+theorem WeakRestrictedBisim.mono {N N' : Finset String} {p q : Pattern}
+    (h : p ≈{N} q) (hsub : N' ⊆ N) : p ≈{N'} q := by
+  obtain ⟨R, hR_sym, hR_fwd, hR_barb, hR_pq⟩ := h
+  exact ⟨R, hR_sym, hR_fwd, fun p₁ q₁ hr x hx => hR_barb p₁ q₁ hr x (hsub hx), hR_pq⟩
+
+/-- ρ-SC implies weak restricted bisimilarity (for any N).
+    SC processes have identical reduction behavior. Barbs use SC-closed
+    observation (RhoObservableSC), so SC-equivalence transfers them directly. -/
+theorem WeakRestrictedBisim.of_SC {N : Finset String} {p q : Pattern}
+    (h : p ≡ q) : p ≈{N} q := by
+  -- Use Nonempty(SC) as the bisimulation relation
+  refine ⟨fun a b => Nonempty (a ≡ b), ?_, ?_, ?_, ⟨h⟩⟩
+  · -- Symmetry
+    intro p₁ q₁ ⟨hsc⟩; exact ⟨.symm _ _ hsc⟩
+  · -- Forward (weak): q₁ matches p₁'s step via EQUIV, wrapped in ReducesStar
+    intro p₁ q₁ ⟨hsc⟩ p₂ ⟨hred⟩
+    exact ⟨p₂, ⟨.step (Reduces.equiv (.symm _ _ hsc) hred (.refl _)) (.refl _)⟩, ⟨.refl _⟩⟩
+  · -- Barb preservation: SC-closed barbs transfer via SC transitivity
+    intro p₁ q₁ ⟨hsc⟩ x _hx ⟨p₁', hsc_p, hobs⟩
+    exact ⟨p₁', .trans _ _ _ (.symm _ _ hsc) hsc_p, hobs⟩
+
+/-- Empty restriction: any two processes are bisimilar when nothing is observed. -/
+theorem WeakRestrictedBisim.empty (p q : Pattern) : p ≈{∅} q := by
+  refine ⟨fun _ _ => True, fun _ _ _ => trivial, ?_, ?_, trivial⟩
+  · intro p₁ q₁ _ p₂ hp₂; exact ⟨q₁, ⟨.refl _⟩, trivial⟩
+  · intro _ _ _ x hx; simp at hx
+
 /-! ## Divergence
 
 A process diverges if it can reduce infinitely many times.
@@ -458,6 +583,7 @@ theorem applySubst_prepend_allFresh (env1 env2 : SubstEnv) (p : Pattern)
     simp only [List.nil_append]
     exact ih (fun k' val' hm => hfresh k' val' (List.mem_cons_of_mem _ hm))
 
+
 /-! ### noExplicitSubst for encodings (early version for use in nsEnv proofs) -/
 
 private lemma allNoExplicitSubst_append' {ps qs : List Pattern}
@@ -621,6 +747,98 @@ theorem encode_freeVars_subset (P : Process) (n v k : String)
           obtain ⟨s, hs⟩ := hs
           right; right; exact ⟨"_rep" ++ s, by rw [hs, String.append_assoc]⟩
 
+/-- Tighter: freeVars of encode use only freeNames (not boundNames).
+    Bound variables become lambda-bound in the encoding, so they're filtered out. -/
+theorem encode_freeVars_subset_fn (P : Process) (n v k : String)
+    (hk : k ∈ freeVars (encode P n v)) :
+    k ∈ P.freeNames ∨ k = v ∨ ∃ suffix, k = n ++ suffix := by
+  induction P generalizing n k with
+  | nil => simp [encode, rhoNil, freeVars] at hk
+  | output x z =>
+    simp [encode, rhoOutput, rhoDrop, piNameToRhoName] at hk
+    unfold freeVars at hk; simp [freeVars] at hk
+    cases hk with
+    | inl h => left; subst h; simp [Process.freeNames]
+    | inr h => left; subst h; simp [Process.freeNames]
+  | input x y P' ih =>
+    simp only [encode, rhoInput, piNameToRhoName] at hk
+    unfold freeVars at hk; simp [freeVars] at hk
+    cases hk with
+    | inl h => left; subst h; simp [Process.freeNames]
+    | inr h =>
+      have hk_ne_y := h.2
+      cases ih n k h.1 with
+      | inl hp =>
+        left; simp only [Process.freeNames, Finset.mem_insert, Finset.mem_sdiff,
+          Finset.mem_singleton]
+        right; exact ⟨hp, by simpa using hk_ne_y⟩
+      | inr hv => exact Or.inr hv
+  | par P' Q' ihP ihQ =>
+    simp only [encode] at hk
+    cases freeVars_rhoPar _ _ k hk with
+    | inl hL =>
+      cases ihP (n ++ "_L") k hL with
+      | inl hp =>
+        left; simp only [Process.freeNames, Finset.mem_union]; left; exact hp
+      | inr h =>
+        cases h with
+        | inl hv => right; left; exact hv
+        | inr hs =>
+          obtain ⟨s, hs⟩ := hs
+          right; right; exact ⟨"_L" ++ s, by rw [hs, String.append_assoc]⟩
+    | inr hR =>
+      cases ihQ (n ++ "_R") k hR with
+      | inl hq =>
+        left; simp only [Process.freeNames, Finset.mem_union]; right; exact hq
+      | inr h =>
+        cases h with
+        | inl hv => right; left; exact hv
+        | inr hs =>
+          obtain ⟨s, hs⟩ := hs
+          right; right; exact ⟨"_R" ++ s, by rw [hs, String.append_assoc]⟩
+  | nu x P' ih =>
+    simp only [encode] at hk
+    cases freeVars_rhoPar _ _ k hk with
+    | inl hOut =>
+      simp [rhoOutput, freeVars] at hOut
+      cases hOut with
+      | inl hv => right; left; exact hv
+      | inr hn => right; right; exact ⟨"", by rw [hn, String.append_empty]⟩
+    | inr hIn =>
+      simp only [rhoInput] at hIn; unfold freeVars at hIn; simp [freeVars] at hIn
+      cases hIn with
+      | inl hn => right; right; exact ⟨"", by rw [hn, String.append_empty]⟩
+      | inr h =>
+        have hk_ne_x := h.2
+        cases ih (n ++ "_" ++ n) k h.1 with
+        | inl hp =>
+          left; simp only [Process.freeNames, Finset.mem_sdiff, Finset.mem_singleton]
+          exact ⟨hp, by simpa using hk_ne_x⟩
+        | inr h' =>
+          cases h' with
+          | inl hv => right; left; exact hv
+          | inr hs =>
+            obtain ⟨s, hs⟩ := hs
+            right; right; exact ⟨"_" ++ n ++ s, by rw [hs]; simp [String.append_assoc]⟩
+  | replicate x y P' ih =>
+    simp only [encode, rhoReplicate] at hk
+    unfold freeVars at hk; simp [freeVars, rhoInput, piNameToRhoName] at hk
+    cases hk with
+    | inl hx => left; subst hx; simp [Process.freeNames]
+    | inr h =>
+      have hk_ne_y := h.2
+      cases ih (n ++ "_rep") k h.1 with
+      | inl hp =>
+        left; simp only [Process.freeNames, Finset.mem_insert, Finset.mem_sdiff,
+          Finset.mem_singleton]
+        right; exact ⟨hp, by simpa using hk_ne_y⟩
+      | inr h' =>
+        cases h' with
+        | inl hv => right; left; exact hv
+        | inr hs =>
+          obtain ⟨s, hs⟩ := hs
+          right; right; exact ⟨"_rep" ++ s, by rw [hs, String.append_assoc]⟩
+
 /-- Keys of `nsEnv Q (n++"_R")` are fresh in `encode P (n++"_L") v`
     (cross-branch disjointness for par). -/
 theorem nsEnv_keys_fresh_cross_LR (P Q : Process) (n n' v : String) (k : String) (val : Pattern)
@@ -645,6 +863,42 @@ theorem nsEnv_keys_fresh_cross_RL (P Q : Process) (n n' v : String) (k : String)
     (hk_mem : (k, val) ∈ nsEnv P (n ++ "_L") (n' ++ "_L")) :
     isFresh k (encode Q (n ++ "_R") v) := by
   obtain ⟨suffix, hk_eq⟩ := nsEnv_keys_are_prefixed P (n ++ "_L") (n' ++ "_L") k val hk_mem
+  simp only [isFresh, Bool.not_eq_true']
+  rw [Bool.eq_false_iff]
+  intro hk_in
+  have hk_mem' : k ∈ freeVars (encode Q (n ++ "_R") v) := list_mem_of_contains hk_in
+  rcases encode_freeVars_subset Q (n ++ "_R") v k hk_mem' with hq | hv | ⟨s, hs⟩
+  · exact (h_ndisj_Q k hq) ("_L" ++ suffix) (by rw [hk_eq, String.append_assoc])
+  · exact h_v_ndisj ("_L" ++ suffix) (by rw [← hv, hk_eq, String.append_assoc])
+  · exact string_LR_ne n suffix s (by rw [← hk_eq, ← hs])
+
+/-- Generalized: keys of `nsEnv Q (n++"_R") target` are fresh in `encode P (n++"_L") v`
+    for ANY target (since freshness depends only on keys, not values). -/
+theorem nsEnv_keys_fresh_cross_LR_gen (P Q : Process) (n v target : String)
+    (k : String) (val : Pattern)
+    (h_ndisj_P : ∀ u ∈ Process.names P, NamespaceDisjoint u n)
+    (h_v_ndisj : NamespaceDisjoint v n)
+    (hk_mem : (k, val) ∈ nsEnv Q (n ++ "_R") target) :
+    isFresh k (encode P (n ++ "_L") v) := by
+  obtain ⟨suffix, hk_eq⟩ := nsEnv_keys_are_prefixed Q (n ++ "_R") target k val hk_mem
+  simp only [isFresh, Bool.not_eq_true']
+  rw [Bool.eq_false_iff]
+  intro hk_in
+  have hk_mem' : k ∈ freeVars (encode P (n ++ "_L") v) := list_mem_of_contains hk_in
+  rcases encode_freeVars_subset P (n ++ "_L") v k hk_mem' with hp | hv | ⟨s, hs⟩
+  · exact (h_ndisj_P k hp) ("_R" ++ suffix) (by rw [hk_eq, String.append_assoc])
+  · exact h_v_ndisj ("_R" ++ suffix) (by rw [← hv, hk_eq, String.append_assoc])
+  · exact string_LR_ne n s suffix (by rw [← hs, ← hk_eq])
+
+/-- Generalized: keys of `nsEnv P (n++"_L") target` are fresh in `encode Q (n++"_R") v`
+    for ANY target (since freshness depends only on keys, not values). -/
+theorem nsEnv_keys_fresh_cross_RL_gen (P Q : Process) (n v target : String)
+    (k : String) (val : Pattern)
+    (h_ndisj_Q : ∀ u ∈ Process.names Q, NamespaceDisjoint u n)
+    (h_v_ndisj : NamespaceDisjoint v n)
+    (hk_mem : (k, val) ∈ nsEnv P (n ++ "_L") target) :
+    isFresh k (encode Q (n ++ "_R") v) := by
+  obtain ⟨suffix, hk_eq⟩ := nsEnv_keys_are_prefixed P (n ++ "_L") target k val hk_mem
   simp only [isFresh, Bool.not_eq_true']
   rw [Bool.eq_false_iff]
   intro hk_in
@@ -680,6 +934,110 @@ theorem nsEnv_key_fresh_nu (P : Process) (n v : String)
     simp only [String.toList_append] at h2
     have h3 := List.append_cancel_left h2
     simp at h3
+
+/-- General cross-freshness: nsEnv keys from one namespace subtree are fresh in
+    encodings from a DIFFERENT namespace subtree.
+
+    The three conditions ensure:
+    1. Process variables don't overlap with nsEnv keys (from NamespaceDisjoint)
+    2. v doesn't overlap with nsEnv keys (from NamespaceDisjoint)
+    3. The two namespace prefixes generate disjoint key/var sets -/
+theorem nsEnv_encode_cross_fresh (P_ns P_enc : Process) (base_ns base_enc v target : String)
+    (h_enc_not_ns : ∀ u ∈ Process.names P_enc, ∀ s, u ≠ base_ns ++ s)
+    (h_v_not_ns : ∀ s, v ≠ base_ns ++ s)
+    (h_prefix_disj : ∀ s1 s2, base_ns ++ s1 ≠ base_enc ++ s2)
+    {k : String} {val : Pattern}
+    (hk_mem : (k, val) ∈ nsEnv P_ns base_ns target) :
+    isFresh k (encode P_enc base_enc v) := by
+  obtain ⟨suffix, hk_eq⟩ := nsEnv_keys_are_prefixed P_ns base_ns target k val hk_mem
+  simp only [isFresh, Bool.not_eq_true']
+  rw [Bool.eq_false_iff]
+  intro hk_in
+  have hk_mem' : k ∈ freeVars (encode P_enc base_enc v) := list_mem_of_contains hk_in
+  rcases encode_freeVars_subset P_enc base_enc v k hk_mem' with hp | hv | ⟨s, hs⟩
+  · exact h_enc_not_ns k hp suffix hk_eq
+  · exact h_v_not_ns suffix (by rw [← hv]; exact hk_eq)
+  · exact h_prefix_disj suffix s (by rw [← hk_eq, ← hs])
+
+/-- Cross-freshness for namespace prefixes that diverge at the L/R split.
+    If nsEnv keys come from `n ++ "_R" ++ suf_ns` and encoding uses `n ++ "_L" ++ suf_enc`,
+    the keys are fresh in the encoding (regardless of suffix depth). -/
+theorem nsEnv_cross_fresh_LR (P_ns P_enc : Process) (n v suf_ns suf_enc target : String)
+    (h_ndisj : ∀ u ∈ Process.names P_enc, NamespaceDisjoint u n)
+    (h_v_ndisj : NamespaceDisjoint v n)
+    {k : String} {val : Pattern}
+    (hk_mem : (k, val) ∈ nsEnv P_ns (n ++ "_R" ++ suf_ns) target) :
+    isFresh k (encode P_enc (n ++ "_L" ++ suf_enc) v) := by
+  obtain ⟨suffix, hk_eq⟩ := nsEnv_keys_are_prefixed P_ns (n ++ "_R" ++ suf_ns) target k val hk_mem
+  simp only [isFresh, Bool.not_eq_true']
+  rw [Bool.eq_false_iff]
+  intro hk_in
+  have hk_mem' := list_mem_of_contains hk_in
+  -- k = (n ++ "_R" ++ suf_ns) ++ suffix, normalize to n ++ ("_R" ++ ...)
+  have hk_n : k = n ++ ("_R" ++ (suf_ns ++ suffix)) := by
+    rw [hk_eq]; simp only [String.append_assoc]
+  rcases encode_freeVars_subset P_enc (n ++ "_L" ++ suf_enc) v k hk_mem' with hp | hv | ⟨s, hs⟩
+  · exact absurd hk_n (h_ndisj k hp _)
+  · exact absurd (hv ▸ hk_n) (h_v_ndisj _)
+  · -- k from L-encoding: contradicts k from R-nsEnv
+    have h1 := hk_eq.symm.trans hs
+    have h2 := string_LR_ne n (suf_enc ++ s) (suf_ns ++ suffix)
+    simp only [String.append_assoc] at h1 h2
+    exact absurd h1.symm h2
+
+/-- Symmetric version: nsEnv from L-prefix, encoding at R-prefix. -/
+theorem nsEnv_cross_fresh_RL (P_ns P_enc : Process) (n v suf_ns suf_enc target : String)
+    (h_ndisj : ∀ u ∈ Process.names P_enc, NamespaceDisjoint u n)
+    (h_v_ndisj : NamespaceDisjoint v n)
+    {k : String} {val : Pattern}
+    (hk_mem : (k, val) ∈ nsEnv P_ns (n ++ "_L" ++ suf_ns) target) :
+    isFresh k (encode P_enc (n ++ "_R" ++ suf_enc) v) := by
+  obtain ⟨suffix, hk_eq⟩ := nsEnv_keys_are_prefixed P_ns (n ++ "_L" ++ suf_ns) target k val hk_mem
+  simp only [isFresh, Bool.not_eq_true']
+  rw [Bool.eq_false_iff]
+  intro hk_in
+  have hk_mem' := list_mem_of_contains hk_in
+  have hk_n : k = n ++ ("_L" ++ (suf_ns ++ suffix)) := by
+    rw [hk_eq]; simp only [String.append_assoc]
+  rcases encode_freeVars_subset P_enc (n ++ "_R" ++ suf_enc) v k hk_mem' with hp | hv | ⟨s, hs⟩
+  · exact absurd hk_n (h_ndisj k hp _)
+  · exact absurd (hv ▸ hk_n) (h_v_ndisj _)
+  · have h1 := hk_eq.symm.trans hs
+    have h2 := string_LR_ne n (suf_ns ++ suffix) (suf_enc ++ s)
+    simp only [String.append_assoc] at h1 h2
+    exact absurd h1 h2
+
+/-- General cross-freshness: any key in the nR-namespace is fresh in encode P nL v. -/
+theorem domainInNamespace_key_fresh_LR (P : Process) (n v k : String)
+    (h_ndisj : ∀ u ∈ Process.names P, NamespaceDisjoint u n)
+    (h_v_ndisj : NamespaceDisjoint v n)
+    (hk : ∃ sfx, k = (n ++ "_R") ++ sfx) :
+    isFresh k (encode P (n ++ "_L") v) := by
+  obtain ⟨sfx, hk_eq⟩ := hk
+  simp only [isFresh, Bool.not_eq_true']
+  rw [Bool.eq_false_iff]
+  intro hk_in
+  have hk_mem := list_mem_of_contains hk_in
+  rcases encode_freeVars_subset P (n ++ "_L") v k hk_mem with hp | hv | ⟨s, hs⟩
+  · exact (h_ndisj k hp) ("_R" ++ sfx) (by rw [hk_eq, String.append_assoc])
+  · exact h_v_ndisj ("_R" ++ sfx) (by rw [← hv, hk_eq, String.append_assoc])
+  · exact string_LR_ne n s sfx (by rw [← hs, ← hk_eq])
+
+/-- Symmetric: any key in the nL-namespace is fresh in encode Q nR v. -/
+theorem domainInNamespace_key_fresh_RL (Q : Process) (n v k : String)
+    (h_ndisj : ∀ u ∈ Process.names Q, NamespaceDisjoint u n)
+    (h_v_ndisj : NamespaceDisjoint v n)
+    (hk : ∃ sfx, k = (n ++ "_L") ++ sfx) :
+    isFresh k (encode Q (n ++ "_R") v) := by
+  obtain ⟨sfx, hk_eq⟩ := hk
+  simp only [isFresh, Bool.not_eq_true']
+  rw [Bool.eq_false_iff]
+  intro hk_in
+  have hk_mem := list_mem_of_contains hk_in
+  rcases encode_freeVars_subset Q (n ++ "_R") v k hk_mem with hq | hv | ⟨s, hs⟩
+  · exact (h_ndisj k hq) ("_L" ++ sfx) (by rw [hk_eq, String.append_assoc])
+  · exact h_v_ndisj ("_L" ++ sfx) (by rw [← hv, hk_eq, String.append_assoc])
+  · exact string_LR_ne n sfx s (by rw [← hk_eq, ← hs])
 
 /-! ### applySubst distributes through rhoPar (for non-var, non-subst patterns) -/
 
@@ -888,6 +1246,966 @@ theorem applySubst_nsEnv_encode (P : Process) (n n' v : String)
         (h_ndisj u (Process.names_sub_replicate x y P u hu)))
       (NamespaceDisjoint_append v n "_rep" h_v_ndisj)
     simp only [this]
+
+/-! ## Encoding Equivalence (EncEquiv)
+
+Since π-SC does NOT lift to ρ-SC for namespace-dependent SC cases
+(par_comm, par_assoc, nu_par, etc.), we define a combined equivalence that composes
+ρ-structural congruence with namespace variable renaming.
+
+The 11 namespace-dependent cases combine two effects:
+1. ρ-SC (e.g., par_perm for commutativity, par_nil for identity)
+2. Namespace renaming (e.g., swapping _L/_R namespace trees)
+
+`EncEquiv P Q` means: P is SC to some P', and P' can be renamed to Q.
+-/
+
+/-- A substitution environment is a renaming if every mapped value is a variable. -/
+def isRenamingEnv (σ : SubstEnv) : Prop :=
+  ∀ entry ∈ σ, ∃ name : String, entry.2 = Pattern.var name
+
+/-- Concatenation of renaming envs is a renaming. -/
+theorem isRenamingEnv_append {σ₁ σ₂ : SubstEnv}
+    (h₁ : isRenamingEnv σ₁) (h₂ : isRenamingEnv σ₂) :
+    isRenamingEnv (σ₁ ++ σ₂) :=
+  fun entry hm => by
+    rcases List.mem_append.mp hm with h | h
+    · exact h₁ entry h
+    · exact h₂ entry h
+
+/-- Two ρ-patterns are encoding-equivalent if one is ρ-SC to a namespace renaming
+    of the other: P ≡ P' and applySubst σ P' = Q for some renaming σ.
+
+    This relation combines structural congruence with namespace renaming,
+    capturing exactly what happens when π-SC rearranges sub-processes
+    (changing which sub-process gets which namespace parameter). -/
+def EncEquiv (P Q : Pattern) : Prop :=
+  ∃ (P' : Pattern) (σ : SubstEnv),
+    (P ≡ P') ∧ isRenamingEnv σ ∧ applySubst σ P' = Q
+
+scoped notation:50 P " ≃enc " Q => EncEquiv P Q
+
+/-- EncEquiv embeds ρ-SC (take σ = [], need noExplicitSubst for identity). -/
+theorem EncEquiv.of_SC {P Q : Pattern} (h : P ≡ Q) (hne : noExplicitSubst Q) :
+    P ≃enc Q :=
+  ⟨Q, [], h, fun _ hm => by simp at hm, subst_empty Q hne⟩
+
+/-- EncEquiv embeds namespace renaming (take P' = P, SC = refl). -/
+theorem EncEquiv.of_renaming {P Q : Pattern} (σ : SubstEnv)
+    (hren : isRenamingEnv σ) (heq : applySubst σ P = Q) : P ≃enc Q :=
+  ⟨P, σ, .refl _, hren, heq⟩
+
+/-- EncEquiv is reflexive (for noExplicitSubst patterns). -/
+theorem EncEquiv.rfl (P : Pattern) (h : noExplicitSubst P) : P ≃enc P :=
+  ⟨P, [], .refl _, fun _ hm => by simp at hm, subst_empty P h⟩
+
+/-- EncEquiv is transitive: compose SC + renaming chains.
+    P ≡ P', σ₁(P') = Q, Q ≡ Q', σ₂(Q') = R ⟹ P ≡ ??, σ(??) = R
+    Requires: SC_applySubst (renaming preserves SC) and applySubst composition. -/
+theorem EncEquiv.trans {P Q R : Pattern} (h1 : P ≃enc Q) (h2 : Q ≃enc R) : P ≃enc R := by
+  obtain ⟨P', σ₁, hsc₁, hren₁, heq₁⟩ := h1
+  obtain ⟨Q', σ₂, hsc₂, hren₂, heq₂⟩ := h2
+  subst heq₁; subst heq₂
+  sorry -- TODO: needs SC_applySubst + applySubst_compose
+
+/-! ### Infrastructure: Renaming Preserves Reduction and SC
+
+These theorems establish that applying a renaming substitution preserves
+the key relations (ρ-SC and ρ-reduction). They are the bridge between
+EncEquiv and operational semantics.
+-/
+
+/-- Renaming preserves ρ-structural congruence.
+    If P ≡ Q and σ is a renaming, then applySubst σ P ≡ applySubst σ Q.
+
+    Proof strategy: induction on SC, distributing applySubst through each constructor.
+    Key cases: par_perm (needs List.map_perm), alpha (needs substitution commutativity),
+    apply_cong/lambda_cong (distribute through args/body). -/
+theorem SC_applySubst :
+    ∀ (σ : SubstEnv) {P Q : Pattern},
+    RhoCalculus.StructuralCongruence P Q →
+    RhoCalculus.StructuralCongruence (applySubst σ P) (applySubst σ Q) := by
+  intro σ P Q h
+  induction h generalizing σ with
+  | refl p => exact .refl _
+  | symm p q _ ih => exact .symm _ _ (ih σ)
+  | trans p q r _ _ ih1 ih2 => exact .trans _ _ _ (ih1 σ) (ih2 σ)
+  | par_singleton p =>
+    simp only [applySubst, List.map]
+    exact .par_singleton _
+  | par_nil_left p =>
+    simp only [applySubst, List.map]
+    exact .par_nil_left _
+  | par_nil_right p =>
+    simp only [applySubst, List.map]
+    exact .par_nil_right _
+  | par_comm p q =>
+    simp only [applySubst, List.map]
+    exact .par_comm _ _
+  | par_assoc p q r =>
+    simp only [applySubst, List.map]
+    exact .par_assoc _ _ _
+  | par_cong ps qs hlen hsc ih =>
+    simp only [applySubst]
+    refine .par_cong _ _ (by simp [hlen]) ?_
+    intro i h₁ h₂
+    have h₁' : i < ps.length := by rwa [List.length_map] at h₁
+    have h₂' : i < qs.length := by rwa [List.length_map] at h₂
+    rw [List.get_eq_getElem, List.getElem_map, List.get_eq_getElem, List.getElem_map]
+    exact ih i h₁' h₂' σ
+  | par_flatten ps qs =>
+    simp only [applySubst, List.map_append, List.map_cons, List.map_nil]
+    exact .par_flatten _ _
+  | par_perm elems₁ elems₂ hperm =>
+    simp only [applySubst]
+    exact .par_perm _ _ (hperm.map _)
+  | set_perm elems₁ elems₂ hperm =>
+    simp only [applySubst]
+    exact .set_perm _ _ (hperm.map _)
+  | set_cong elems₁ elems₂ hlen hsc ih =>
+    simp only [applySubst]
+    refine .set_cong _ _ (by simp [hlen]) ?_
+    intro i h₁ h₂
+    have h₁' : i < elems₁.length := by rwa [List.length_map] at h₁
+    have h₂' : i < elems₂.length := by rwa [List.length_map] at h₂
+    rw [List.get_eq_getElem, List.getElem_map, List.get_eq_getElem, List.getElem_map]
+    exact ih i h₁' h₂' σ
+  | lambda_cong x p q _ ih =>
+    simp only [applySubst]
+    exact .lambda_cong x _ _ (ih (σ.filter (fun p => p.1 != x)))
+  | apply_cong f args₁ args₂ hlen hsc ih =>
+    simp only [applySubst]
+    refine .apply_cong f _ _ (by simp [hlen]) ?_
+    intro i h₁ h₂
+    have h₁' : i < args₁.length := by rwa [List.length_map] at h₁
+    have h₂' : i < args₂.length := by rwa [List.length_map] at h₂
+    rw [List.get_eq_getElem, List.getElem_map, List.get_eq_getElem, List.getElem_map]
+    exact ih i h₁' h₂' σ
+  | collection_general_cong ct elems₁ elems₂ g hlen hsc ih =>
+    simp only [applySubst]
+    refine .collection_general_cong ct _ _ g (by simp [hlen]) ?_
+    intro i h₁ h₂
+    have h₁' : i < elems₁.length := by rwa [List.length_map] at h₁
+    have h₂' : i < elems₂.length := by rwa [List.length_map] at h₂
+    rw [List.get_eq_getElem, List.getElem_map, List.get_eq_getElem, List.getElem_map]
+    exact ih i h₁' h₂' σ
+  | multiLambda_cong xs p q _ ih =>
+    simp only [applySubst]
+    exact .multiLambda_cong xs _ _ (ih (σ.filter (fun p => !xs.contains p.1)))
+  | quote_drop n =>
+    simp only [applySubst, List.map]
+    exact .quote_drop _
+  | alpha p q halpha =>
+    -- Alpha-equivalence preserved under substitution
+    sorry -- TODO: needs AlphaEquiv_applySubst (false for arbitrary σ due to capture)
+  | subst_cong p₁ p₂ x a₁ a₂ _ _ ih₁ ih₂ =>
+    -- applySubst fully evaluates .subst nodes, so the goal becomes
+    -- SC (applySubst ((x, σ a₁) :: σ) p₁) (applySubst ((x, σ a₂) :: σ) p₂)
+    -- This requires environment-pointwise SC propagation (not needed for noExplicitSubst patterns)
+    sorry
+
+/-! ### Bound Variables and Substitution Disjointness -/
+
+/-- All bound variables in a pattern (from lambda/multiLambda binders). -/
+def boundVars : Pattern → List String
+  | .var _ => []
+  | .apply _ args => args.flatMap boundVars
+  | .lambda x body => x :: boundVars body
+  | .multiLambda xs body => xs ++ boundVars body
+  | .subst body _ repl => boundVars body ++ boundVars repl
+  | .collection _ elems _ => elems.flatMap boundVars
+termination_by p => sizeOf p
+
+/-- σ is disjoint from a set of bound variables: no key maps them, no value is them. -/
+def substBVDisjoint (σ : SubstEnv) (bvs : List String) : Prop :=
+  (∀ v ∈ bvs, SubstEnv.find σ v = none) ∧
+  (∀ entry ∈ σ, ∀ v ∈ bvs, entry.2 ≠ .var v)
+
+/-- If p ∈ elems, then boundVars p ⊆ boundVars (.collection ct elems rest). -/
+private theorem boundVars_collection_mem {ct : CollType} {elems : List Pattern}
+    {rest : Option String} {v : String} {p : Pattern}
+    (hp : p ∈ elems) (hv : v ∈ boundVars p) :
+    v ∈ boundVars (.collection ct elems rest) := by
+  unfold boundVars
+  exact List.mem_flatMap.mpr ⟨p, hp, hv⟩
+
+/-- noExplicitSubst for a collection element follows from the collection. -/
+private theorem noExplicitSubst_of_collection_mem {ct : CollType} {elems : List Pattern}
+    {rest : Option String} {p : Pattern}
+    (hne : noExplicitSubst (.collection ct elems rest)) (hp : p ∈ elems) :
+    noExplicitSubst p := by
+  unfold noExplicitSubst at hne
+  exact allNoExplicitSubst_mem hne hp
+
+/-- substBVDisjoint is monotone: subset of bound vars preserves it. -/
+private theorem substBVDisjoint_mono {σ : SubstEnv} {bvs bvs' : List String}
+    (h : substBVDisjoint σ bvs) (hsub : ∀ v ∈ bvs', v ∈ bvs) :
+    substBVDisjoint σ bvs' :=
+  ⟨fun v hv => h.1 v (hsub v hv), fun e he v hv => h.2 e he v (hsub v hv)⟩
+
+/-- Helper: applySubst on a var when find returns none -/
+private theorem applySubst_var_none {σ : SubstEnv} {v : String}
+    (h : SubstEnv.find σ v = none) :
+    applySubst σ (.var v) = .var v := by
+  simp [applySubst, h]
+
+/-- Helper: applySubst on a var when find returns some -/
+private theorem applySubst_var_some {σ : SubstEnv} {v : String} {r : Pattern}
+    (h : SubstEnv.find σ v = some r) :
+    applySubst σ (.var v) = r := by
+  simp [applySubst, h]
+
+/-- applySubst on singleton env when key matches -/
+private theorem applySubst_singleton_hit (x : String) (t : Pattern) :
+    applySubst [(x, t)] (.var x) = t := by
+  simp [applySubst, SubstEnv.find, List.find?]
+
+/-- applySubst on singleton env when key doesn't match -/
+private theorem applySubst_singleton_miss {v x : String} {t : Pattern} (h : v ≠ x) :
+    applySubst [(x, t)] (.var v) = .var v := by
+  have : (x == v) = false := beq_eq_false_iff_ne.mpr (Ne.symm h)
+  simp [applySubst, SubstEnv.find, List.find?, this]
+
+/-- SubstEnv.find = none ↔ no entry has that key -/
+theorem SubstEnv.find_eq_none_iff (σ : SubstEnv) (x : String) :
+    SubstEnv.find σ x = none ↔ ∀ entry ∈ σ, entry.1 ≠ x := by
+  constructor
+  · intro h entry hmem heq
+    unfold SubstEnv.find at h
+    have hfind : σ.find? (fun p => p.1 == x) = none := by
+      cases hf : σ.find? (fun p => p.1 == x) <;> simp_all
+    rw [List.find?_eq_none] at hfind
+    exact hfind entry hmem (by simp [heq])
+  · intro h
+    unfold SubstEnv.find
+    have : σ.find? (fun p => p.1 == x) = none := by
+      rw [List.find?_eq_none]
+      intro entry hmem hbeq
+      exact h entry hmem (by simpa using hbeq)
+    rw [this]
+
+/-- Filtering can only remove entries, so find=none is preserved. -/
+private theorem SubstEnv.find_filter_of_find_none {σ : SubstEnv} {x : String}
+    {f : String × Pattern → Bool} (h : SubstEnv.find σ x = none) :
+    SubstEnv.find (σ.filter f) x = none := by
+  rw [SubstEnv.find_eq_none_iff] at h ⊢
+  intro entry hmem
+  exact h entry (List.mem_of_mem_filter hmem)
+
+/-- Filtering by (·.1 != x) is identity when x ∉ dom(σ). -/
+theorem filter_not_key_of_find_none (σ : SubstEnv) (x : String)
+    (h : SubstEnv.find σ x = none) :
+    σ.filter (fun p => p.1 != x) = σ := by
+  apply List.filter_eq_self.mpr
+  intro entry hmem
+  exact bne_iff_ne.mpr ((SubstEnv.find_eq_none_iff σ x).mp h entry hmem)
+
+/-- Extract the entry from SubstEnv.find returning some. -/
+theorem SubstEnv.find_some_entry_mem (σ : SubstEnv) (x : String) (r : Pattern)
+    (h : SubstEnv.find σ x = some r) :
+    ∃ entry ∈ σ, entry.1 = x ∧ entry.2 = r := by
+  induction σ with
+  | nil => simp [SubstEnv.find, List.find?] at h
+  | cons hd tl ih =>
+    unfold SubstEnv.find at h
+    simp only [List.find?_cons] at h
+    by_cases hhd : hd.1 == x
+    · have hhd_eq := beq_iff_eq.mp hhd
+      simp only [hhd] at h
+      have hr : hd.2 = r := by simpa using h
+      exact ⟨hd, by simp, hhd_eq, hr⟩
+    · simp only [hhd] at h
+      have h' : SubstEnv.find tl x = some r := by unfold SubstEnv.find; exact h
+      obtain ⟨entry, hmem, hkey, hval⟩ := ih h'
+      exact ⟨entry, by simp [hmem], hkey, hval⟩
+
+/-- If SubstEnv.find returns some r and σ is a renaming, then r is a variable. -/
+private theorem find_isVar_of_renaming (σ : SubstEnv) (x : String) (r : Pattern)
+    (hfind : SubstEnv.find σ x = some r) (hren : isRenamingEnv σ) :
+    ∃ y : String, r = .var y := by
+  obtain ⟨entry, hmem, _, hval⟩ := SubstEnv.find_some_entry_mem σ x r hfind
+  obtain ⟨y, hy⟩ := hren entry hmem
+  exact ⟨y, by rw [← hval]; exact hy⟩
+
+-- Renaming substitution preserves noExplicitSubst.
+mutual
+  theorem applySubst_noExplicitSubst (σ : SubstEnv) (p : Pattern)
+      (hren : isRenamingEnv σ) (hne : noExplicitSubst p) :
+      noExplicitSubst (applySubst σ p) :=
+    match p with
+    | .var name => by
+      simp only [applySubst]
+      cases hf : SubstEnv.find σ name with
+      | none => simp [noExplicitSubst]
+      | some r =>
+        obtain ⟨y, hy⟩ := find_isVar_of_renaming σ name r hf hren
+        rw [hy]; simp [noExplicitSubst]
+    | .apply c args => by
+      unfold noExplicitSubst at hne
+      simp only [applySubst, noExplicitSubst]
+      exact applySubst_allNoExplicitSubst σ args hren hne
+    | .lambda x body => by
+      unfold noExplicitSubst at hne
+      simp only [applySubst, noExplicitSubst]
+      exact applySubst_noExplicitSubst (σ.filter (·.1 != x)) body
+        (fun entry hmem => hren entry (List.mem_of_mem_filter hmem)) hne
+    | .multiLambda xs body => by
+      unfold noExplicitSubst at hne
+      simp only [applySubst, noExplicitSubst]
+      exact applySubst_noExplicitSubst (σ.filter (fun p => !xs.contains p.1)) body
+        (fun entry hmem => hren entry (List.mem_of_mem_filter hmem)) hne
+    | .subst _ _ _ => by simp [noExplicitSubst] at hne
+    | .collection ct elems rest => by
+      unfold noExplicitSubst at hne
+      simp only [applySubst, noExplicitSubst]
+      exact applySubst_allNoExplicitSubst σ elems hren hne
+
+  theorem applySubst_allNoExplicitSubst (σ : SubstEnv) (ps : List Pattern)
+      (hren : isRenamingEnv σ) (hall : allNoExplicitSubst ps) :
+      allNoExplicitSubst (ps.map (applySubst σ)) :=
+    match ps with
+    | [] => by simp [allNoExplicitSubst]
+    | p :: ps' => by
+      unfold allNoExplicitSubst at hall
+      simp only [Bool.and_eq_true] at hall
+      simp only [List.map_cons, allNoExplicitSubst, Bool.and_eq_true]
+      exact ⟨applySubst_noExplicitSubst σ p hren hall.1,
+             applySubst_allNoExplicitSubst σ ps' hren hall.2⟩
+end
+
+-- Generalized: applySubst preserves noExplicitSubst when ALL values are noExplicitSubst
+-- (strictly weaker than isRenamingEnv, which implies values are .var)
+mutual
+  theorem applySubst_noExplicitSubst_gen (σ : SubstEnv) (p : Pattern)
+      (hvals : ∀ entry ∈ σ, noExplicitSubst entry.2) (hne : noExplicitSubst p) :
+      noExplicitSubst (applySubst σ p) :=
+    match p with
+    | .var name => by
+      simp only [applySubst]
+      cases hf : SubstEnv.find σ name with
+      | none => simp [noExplicitSubst]
+      | some r =>
+        simp only
+        obtain ⟨entry, hmem, _, hval⟩ := SubstEnv.find_some_entry_mem σ name r hf
+        rw [← hval]; exact hvals entry hmem
+    | .apply c args => by
+      unfold noExplicitSubst at hne
+      simp only [applySubst, noExplicitSubst]
+      exact applySubst_allNoExplicitSubst_gen σ args hvals hne
+    | .lambda x body => by
+      unfold noExplicitSubst at hne
+      simp only [applySubst, noExplicitSubst]
+      exact applySubst_noExplicitSubst_gen (σ.filter (·.1 != x)) body
+        (fun entry hmem => hvals entry (List.mem_of_mem_filter hmem)) hne
+    | .multiLambda xs body => by
+      unfold noExplicitSubst at hne
+      simp only [applySubst, noExplicitSubst]
+      exact applySubst_noExplicitSubst_gen (σ.filter (fun p => !xs.contains p.1)) body
+        (fun entry hmem => hvals entry (List.mem_of_mem_filter hmem)) hne
+    | .subst _ _ _ => by simp [noExplicitSubst] at hne
+    | .collection ct elems rest => by
+      unfold noExplicitSubst at hne
+      simp only [applySubst, noExplicitSubst]
+      exact applySubst_allNoExplicitSubst_gen σ elems hvals hne
+
+  theorem applySubst_allNoExplicitSubst_gen (σ : SubstEnv) (ps : List Pattern)
+      (hvals : ∀ entry ∈ σ, noExplicitSubst entry.2) (hall : allNoExplicitSubst ps) :
+      allNoExplicitSubst (ps.map (applySubst σ)) :=
+    match ps with
+    | [] => by simp [allNoExplicitSubst]
+    | p :: ps' => by
+      unfold allNoExplicitSubst at hall
+      simp only [Bool.and_eq_true] at hall
+      simp only [List.map_cons, allNoExplicitSubst, Bool.and_eq_true]
+      exact ⟨applySubst_noExplicitSubst_gen σ p hvals hall.1,
+             applySubst_allNoExplicitSubst_gen σ ps' hvals hall.2⟩
+end
+
+/-- Thin wrapper: `subst_empty` uses `SubstEnv.empty`, goals often have `[]`. -/
+private theorem subst_nil (p : Pattern) (hne : noExplicitSubst p) :
+    applySubst ([] : SubstEnv) p = p := subst_empty p hne
+
+/-! ### Substitution Commutativity
+
+The key lemma for the COMM case of `reduces_applySubst`:
+`applySubst σ (applySubst [(x, t)] p) = applySubst [(x, applySubst σ t)] (applySubst σ p)`
+when σ is a renaming disjoint from x and the bound variables of p.
+-/
+
+mutual
+  /-- Substitution commutativity: disjoint substitutions can be swapped.
+      When σ is a renaming, x ∉ dom(σ) ∪ image(σ), and bound vars of p ∉ dom(σ),
+      we can push σ through a single-variable substitution. -/
+  theorem applySubst_swap (σ : SubstEnv) (p : Pattern) (x : String) (t : Pattern)
+      (hren : isRenamingEnv σ)
+      (hx_dom : SubstEnv.find σ x = none)
+      (hx_img : ∀ entry ∈ σ, entry.2 ≠ .var x)
+      (hbv_dom : ∀ y ∈ boundVars p, SubstEnv.find σ y = none)
+      (hne : noExplicitSubst p) :
+      applySubst σ (applySubst [(x, t)] p) =
+      applySubst [(x, applySubst σ t)] (applySubst σ p) :=
+    match p with
+    | .var v => by
+      by_cases hvx : v = x
+      · subst hvx
+        rw [applySubst_singleton_hit, applySubst_var_none hx_dom, applySubst_singleton_hit]
+      · rw [applySubst_singleton_miss hvx]
+        cases hfv : SubstEnv.find σ v with
+        | none =>
+          rw [applySubst_var_none hfv]
+          exact (applySubst_singleton_miss hvx).symm
+        | some r =>
+          rw [applySubst_var_some hfv]
+          obtain ⟨y, hy⟩ := find_isVar_of_renaming σ v r hfv hren
+          rw [hy]
+          obtain ⟨entry, hmem, _, hval⟩ := SubstEnv.find_some_entry_mem σ v r hfv
+          have hyx : y ≠ x := by
+            intro heq; subst heq; exact hx_img entry hmem (by rw [hval, hy])
+          exact (applySubst_singleton_miss hyx).symm
+    | .apply c args => by
+      simp only [applySubst, List.map_map]
+      congr 1
+      unfold noExplicitSubst at hne
+      exact applySubst_swap_list σ args x t hren hx_dom hx_img
+        (fun y hy => hbv_dom y (by simp only [boundVars]; exact List.mem_flatMap.mpr hy))
+        hne
+    | .lambda y body => by
+      by_cases hyx : y = x
+      · -- y = x: inner [(x, t)] filtered out under lambda x
+        simp only [applySubst]
+        have hfi : ([(x, t)] : SubstEnv).filter (fun p => p.1 != y) = [] := by
+          subst hyx; simp
+        rw [hfi]
+        unfold noExplicitSubst at hne
+        rw [subst_nil body hne]
+        have hy_dom : SubstEnv.find σ y = none := by rw [hyx]; exact hx_dom
+        rw [filter_not_key_of_find_none σ y hy_dom]
+        have hfi2 : ([(x, applySubst σ t)] : SubstEnv).filter (fun p => p.1 != y) = [] := by
+          subst hyx; simp
+        rw [hfi2]
+        rw [subst_nil _ (applySubst_noExplicitSubst σ body hren hne)]
+      · -- y ≠ x: IH
+        simp only [applySubst]
+        have hfi : ([(x, t)] : SubstEnv).filter (fun p => p.1 != y) = [(x, t)] := by
+          simp [bne_iff_ne, Ne.symm hyx]
+        rw [hfi]
+        have hy_dom : SubstEnv.find σ y = none := by
+          apply hbv_dom y; simp [boundVars]
+        rw [filter_not_key_of_find_none σ y hy_dom]
+        have hfo : ([(x, applySubst σ t)] : SubstEnv).filter (fun p => p.1 != y) =
+                   [(x, applySubst σ t)] := by
+          simp [bne_iff_ne, Ne.symm hyx]
+        simp only [hfo]
+        unfold noExplicitSubst at hne
+        congr 1
+        exact applySubst_swap σ body x t hren hx_dom hx_img
+          (fun z hz => hbv_dom z (by simp [boundVars, hz])) hne
+    | .multiLambda ys body => by
+      -- Helper: filter singleton by !ys.contains when x ∈ ys gives []
+      have filter_singleton_mem (r : Pattern) (hm : x ∈ ys) :
+          ([(x, r)] : SubstEnv).filter (fun p => !ys.contains p.1) = [] := by
+        simp only [List.filter_cons, List.filter_nil]
+        have hc : ys.contains x = true := contains_of_elem hm
+        rw [hc]; rfl
+      -- Helper: filter singleton by !ys.contains when x ∉ ys gives [(x, r)]
+      have filter_singleton_nmem (r : Pattern) (hnm : x ∉ ys) :
+          ([(x, r)] : SubstEnv).filter (fun p => !ys.contains p.1) = [(x, r)] := by
+        simp only [List.filter_cons, List.filter_nil]
+        have hc : ys.contains x = false := by
+          rw [Bool.eq_false_iff]; intro hc; exact hnm (elem_of_contains hc)
+        rw [hc]; rfl
+      -- Helper: σ.filter (!ys.contains) = σ when all ys are outside dom(σ)
+      have filter_sigma_id (h : ∀ y ∈ ys, SubstEnv.find σ y = none) :
+          σ.filter (fun p => !ys.contains p.1) = σ := by
+        apply List.filter_eq_self.mpr
+        intro entry hmem
+        suffices ys.contains entry.1 = false by rw [this]; rfl
+        rw [Bool.eq_false_iff]
+        intro hc
+        exact (SubstEnv.find_eq_none_iff σ entry.1).mp
+          (h entry.1 (elem_of_contains hc)) entry hmem rfl
+      by_cases hxy : x ∈ ys
+      · -- x ∈ ys: inner [(x, t)] filtered out under multiLambda
+        simp only [applySubst]
+        rw [filter_singleton_mem t hxy]
+        unfold noExplicitSubst at hne
+        rw [subst_nil body hne]
+        rw [filter_singleton_mem (applySubst σ t) hxy]
+        rw [subst_nil _ (applySubst_noExplicitSubst
+          (σ.filter (fun p => !ys.contains p.1)) body
+          (fun entry hmem => hren entry (List.mem_of_mem_filter hmem)) hne)]
+      · -- x ∉ ys: IH
+        simp only [applySubst]
+        rw [filter_singleton_nmem t hxy, filter_singleton_nmem (applySubst σ t) hxy]
+        -- All ys have SubstEnv.find σ = none (from hbv_dom)
+        have hys_dom : ∀ y ∈ ys, SubstEnv.find σ y = none :=
+          fun y hy => hbv_dom y (by unfold boundVars; exact List.mem_append_left _ hy)
+        rw [filter_sigma_id hys_dom]
+        unfold noExplicitSubst at hne
+        congr 1
+        exact applySubst_swap σ body x t hren hx_dom hx_img
+          (fun z hz => hbv_dom z (by unfold boundVars; exact List.mem_append_right _ hz))
+          hne
+    | .subst _ _ _ => by simp [noExplicitSubst] at hne
+    | .collection ct elems rest => by
+      simp only [applySubst, List.map_map]
+      congr 1
+      unfold noExplicitSubst at hne
+      exact applySubst_swap_list σ elems x t hren hx_dom hx_img
+        (fun y hy => hbv_dom y (by simp only [boundVars]; exact List.mem_flatMap.mpr hy))
+        hne
+
+  /-- List version of applySubst_swap -/
+  theorem applySubst_swap_list (σ : SubstEnv) (ps : List Pattern) (x : String) (t : Pattern)
+      (hren : isRenamingEnv σ)
+      (hx_dom : SubstEnv.find σ x = none)
+      (hx_img : ∀ entry ∈ σ, entry.2 ≠ .var x)
+      (hbv_dom : ∀ y, (∃ p ∈ ps, y ∈ boundVars p) → SubstEnv.find σ y = none)
+      (hall : allNoExplicitSubst ps) :
+      ps.map (fun p => applySubst σ (applySubst [(x, t)] p)) =
+      ps.map (fun p => applySubst [(x, applySubst σ t)] (applySubst σ p)) :=
+    match ps with
+    | [] => by simp
+    | p :: ps' => by
+      simp only [List.map_cons]
+      unfold allNoExplicitSubst at hall
+      simp only [Bool.and_eq_true] at hall
+      congr 1
+      · exact applySubst_swap σ p x t hren hx_dom hx_img
+          (fun y hy => hbv_dom y ⟨p, by simp, hy⟩) hall.1
+      · exact applySubst_swap_list σ ps' x t hren hx_dom hx_img
+          (fun y ⟨q, hq, hy⟩ => hbv_dom y ⟨q, by simp [hq], hy⟩) hall.2
+end
+
+/-- Wrap applySubst_swap for commSubst specifically. -/
+theorem commSubst_applySubst_swap (σ : SubstEnv) (p q : Pattern) (x : String)
+    (hren : isRenamingEnv σ)
+    (hx_dom : SubstEnv.find σ x = none)
+    (hx_img : ∀ entry ∈ σ, entry.2 ≠ .var x)
+    (hbv_dom : ∀ y ∈ boundVars p, SubstEnv.find σ y = none)
+    (hne : noExplicitSubst p) :
+    applySubst σ (commSubst p x q) =
+    commSubst (applySubst σ p) x (applySubst σ q) := by
+  simp only [commSubst, SubstEnv.extend, SubstEnv.empty]
+  have hsigma : applySubst σ (.apply "NQuote" [q]) = .apply "NQuote" [applySubst σ q] := by
+    simp only [applySubst, List.map]
+  rw [← hsigma]
+  exact applySubst_swap σ p x (.apply "NQuote" [q]) hren hx_dom hx_img hbv_dom hne
+
+/-! ### SC Preserves noExplicitSubst
+
+Key chain: alphaRename preserves → AlphaEquiv preserves → SC preserves.
+This is needed for the EQUIV case of reduces_applySubst.
+-/
+
+/-- Reverse of allNoExplicitSubst_mem: membership-based characterization. -/
+private theorem allNoExplicitSubst_of_forall {ps : List Pattern}
+    (h : ∀ p ∈ ps, noExplicitSubst p = true) : allNoExplicitSubst ps = true := by
+  induction ps with
+  | nil => simp [allNoExplicitSubst]
+  | cons p ps' ih =>
+    simp only [allNoExplicitSubst, Bool.and_eq_true]
+    exact ⟨h p (by simp), ih (fun q hq => h q (List.mem_cons.mpr (Or.inr hq)))⟩
+
+/-- allNoExplicitSubst distributes over append (equality version). -/
+private theorem allNoExplicitSubst_append_eq (ps qs : List Pattern) :
+    allNoExplicitSubst (ps ++ qs) = (allNoExplicitSubst ps && allNoExplicitSubst qs) := by
+  induction ps with
+  | nil => simp [allNoExplicitSubst]
+  | cons p ps' ih =>
+    simp only [List.cons_append, allNoExplicitSubst, ih, Bool.and_assoc]
+
+/-- Permutation preserves allNoExplicitSubst. -/
+private theorem allNoExplicitSubst_perm {ps qs : List Pattern}
+    (h : ps.Perm qs) : allNoExplicitSubst ps = allNoExplicitSubst qs := by
+  cases hps : allNoExplicitSubst ps <;> cases hqs : allNoExplicitSubst qs <;> try rfl
+  · -- false, true
+    exact absurd (allNoExplicitSubst_of_forall
+      (fun p hp => allNoExplicitSubst_mem hqs (h.mem_iff.mp hp))) (by simp [hps])
+  · -- true, false
+    exact absurd (allNoExplicitSubst_of_forall
+      (fun q hq => allNoExplicitSubst_mem hps (h.symm.mem_iff.mp hq))) (by simp [hqs])
+
+/-- Element-wise equality of noExplicitSubst implies allNoExplicitSubst equality. -/
+private theorem allNoExplicitSubst_eq_of_pointwise {ps qs : List Pattern}
+    (hlen : ps.length = qs.length)
+    (h : ∀ (i : Nat) (h₁ : i < ps.length) (h₂ : i < qs.length),
+      noExplicitSubst (ps.get ⟨i, h₁⟩) = noExplicitSubst (qs.get ⟨i, h₂⟩)) :
+    allNoExplicitSubst ps = allNoExplicitSubst qs := by
+  induction ps generalizing qs with
+  | nil => cases qs with | nil => rfl | cons _ _ => simp at hlen
+  | cons p ps' ih =>
+    match qs with
+    | [] => simp at hlen
+    | q :: qs' =>
+      simp only [allNoExplicitSubst]
+      have h0 := h 0 (by simp [List.length]) (by simp [List.length])
+      simp only [List.get_eq_getElem, List.getElem_cons_zero] at h0
+      rw [h0]
+      congr 1
+      have hlen' : ps'.length = qs'.length := by simpa [List.length] using hlen
+      exact ih hlen' fun i h₁ h₂ => by
+        have := h (i + 1) (by simp [List.length]; omega) (by simp [List.length]; omega)
+        simp only [List.get_eq_getElem, List.getElem_cons_succ] at this
+        exact this
+
+-- alphaRename preserves noExplicitSubst (equality version)
+mutual
+  private theorem alphaRename_noExplicitSubst_eq (x y : String) (p : Pattern) :
+      noExplicitSubst (alphaRename x y p) = noExplicitSubst p :=
+    match p with
+    | .var z => by
+      simp only [alphaRename]
+      split <;> simp [noExplicitSubst]
+    | .apply f args => by
+      simp only [alphaRename, noExplicitSubst]
+      exact alphaRename_allNoExplicitSubst_eq x y args
+    | .lambda z body => by
+      simp only [alphaRename]
+      split
+      · rfl
+      · simp only [noExplicitSubst]
+        exact alphaRename_noExplicitSubst_eq x y body
+    | .multiLambda xs body => by
+      simp only [alphaRename]
+      split
+      · rfl
+      · simp only [noExplicitSubst]
+        exact alphaRename_noExplicitSubst_eq x y body
+    | .subst body z arg => by
+      simp only [alphaRename, noExplicitSubst]
+    | .collection k elems g => by
+      simp only [alphaRename, noExplicitSubst]
+      exact alphaRename_allNoExplicitSubst_eq x y elems
+
+  private theorem alphaRename_allNoExplicitSubst_eq (x y : String) (ps : List Pattern) :
+      allNoExplicitSubst (ps.map (alphaRename x y)) = allNoExplicitSubst ps :=
+    match ps with
+    | [] => by simp [allNoExplicitSubst]
+    | p :: ps' => by
+      simp only [List.map_cons, allNoExplicitSubst]
+      rw [alphaRename_noExplicitSubst_eq x y p, alphaRename_allNoExplicitSubst_eq x y ps']
+end
+
+/-- AlphaEquiv preserves noExplicitSubst (equality). -/
+private theorem AlphaEquiv_noExplicitSubst_eq {P Q : Pattern}
+    (h : AlphaEquiv P Q) : noExplicitSubst P = noExplicitSubst Q := by
+  induction h with
+  | refl _ => rfl
+  | symm _ _ _ ih => exact ih.symm
+  | trans _ _ _ _ _ ih1 ih2 => exact ih1.trans ih2
+  | var_eq _ => rfl
+  | lambda_rename x y p _ =>
+    simp only [noExplicitSubst]
+    exact (alphaRename_noExplicitSubst_eq x y p).symm
+  | lambda_cong _ _ _ _ ih =>
+    simp only [noExplicitSubst]; exact ih
+  | apply_cong _ _ _ hlen _ ih =>
+    simp only [noExplicitSubst]
+    exact allNoExplicitSubst_eq_of_pointwise hlen ih
+  | subst_cong _ _ _ _ _ _ _ => simp [noExplicitSubst]
+  | collection_cong _ _ _ _ hlen _ ih =>
+    simp only [noExplicitSubst]
+    exact allNoExplicitSubst_eq_of_pointwise hlen ih
+
+/-- Structural congruence preserves noExplicitSubst (equality). -/
+theorem SC_noExplicitSubst_eq {P Q : Pattern}
+    (h : RhoCalculus.StructuralCongruence P Q) : noExplicitSubst P = noExplicitSubst Q := by
+  induction h with
+  | alpha _ _ halpha => exact AlphaEquiv_noExplicitSubst_eq halpha
+  | refl _ => rfl
+  | symm _ _ _ ih => exact ih.symm
+  | trans _ _ _ _ _ ih1 ih2 => exact ih1.trans ih2
+  | par_singleton p =>
+    simp only [noExplicitSubst, allNoExplicitSubst, Bool.and_true]
+  | par_nil_left p =>
+    simp only [noExplicitSubst, allNoExplicitSubst, Bool.and_true, Bool.true_and]
+  | par_nil_right p =>
+    simp only [noExplicitSubst, allNoExplicitSubst, Bool.and_true]
+  | par_comm p q =>
+    simp only [noExplicitSubst, allNoExplicitSubst, Bool.and_true]
+    exact Bool.and_comm _ _
+  | par_assoc p q r =>
+    simp only [noExplicitSubst, allNoExplicitSubst, Bool.and_true, Bool.and_assoc]
+  | par_cong _ _ hlen _ ih =>
+    simp only [noExplicitSubst]
+    exact allNoExplicitSubst_eq_of_pointwise hlen ih
+  | par_flatten ps qs =>
+    simp only [noExplicitSubst]
+    rw [allNoExplicitSubst_append_eq, allNoExplicitSubst_append_eq]
+    congr 1
+    simp only [allNoExplicitSubst, noExplicitSubst, Bool.and_true]
+  | par_perm _ _ hperm =>
+    simp only [noExplicitSubst]
+    exact allNoExplicitSubst_perm hperm
+  | set_perm _ _ hperm =>
+    simp only [noExplicitSubst]
+    exact allNoExplicitSubst_perm hperm
+  | set_cong _ _ hlen _ ih =>
+    simp only [noExplicitSubst]
+    exact allNoExplicitSubst_eq_of_pointwise hlen ih
+  | lambda_cong _ _ _ _ ih =>
+    simp only [noExplicitSubst]; exact ih
+  | apply_cong _ _ _ hlen _ ih =>
+    simp only [noExplicitSubst]
+    exact allNoExplicitSubst_eq_of_pointwise hlen ih
+  | collection_general_cong _ _ _ _ hlen _ ih =>
+    simp only [noExplicitSubst]
+    exact allNoExplicitSubst_eq_of_pointwise hlen ih
+  | multiLambda_cong _ _ _ _ ih =>
+    simp only [noExplicitSubst]; exact ih
+  | subst_cong _ _ _ _ _ _ _ => simp [noExplicitSubst]
+  | quote_drop n =>
+    simp only [noExplicitSubst, allNoExplicitSubst, Bool.and_true]
+
+/-! ### allNoExplicitSubst list helpers -/
+
+/-- allNoExplicitSubst for a cons list: extract head. -/
+private theorem allNoExplicitSubst_head {p : Pattern} {ps : List Pattern}
+    (h : allNoExplicitSubst (p :: ps)) : noExplicitSubst p := by
+  simp only [allNoExplicitSubst, Bool.and_eq_true] at h; exact h.1
+
+/-- allNoExplicitSubst for a cons list: extract tail. -/
+private theorem allNoExplicitSubst_tail {p : Pattern} {ps : List Pattern}
+    (h : allNoExplicitSubst (p :: ps)) : allNoExplicitSubst ps := by
+  simp only [allNoExplicitSubst, Bool.and_eq_true] at h; exact h.2
+
+/-- Construct allNoExplicitSubst for a cons list from head and tail. -/
+private theorem allNoExplicitSubst_cons_iff {p : Pattern} {ps : List Pattern} :
+    allNoExplicitSubst (p :: ps) ↔ (noExplicitSubst p ∧ allNoExplicitSubst ps) := by
+  simp only [allNoExplicitSubst, Bool.and_eq_true]
+
+/-- allNoExplicitSubst distributes over append (iff version). -/
+private theorem allNoExplicitSubst_append_iff {ps qs : List Pattern} :
+    allNoExplicitSubst (ps ++ qs) ↔
+    (allNoExplicitSubst ps ∧ allNoExplicitSubst qs) := by
+  rw [allNoExplicitSubst_append_eq]; simp only [Bool.and_eq_true]
+
+/-- Right projection of allNoExplicitSubst over append. -/
+private theorem allNoExplicitSubst_of_append_right {ps qs : List Pattern}
+    (h : allNoExplicitSubst (ps ++ qs)) : allNoExplicitSubst qs :=
+  (allNoExplicitSubst_append_iff.mp h).2
+
+/-- Left projection of allNoExplicitSubst over append. -/
+private theorem allNoExplicitSubst_of_append_left {ps qs : List Pattern}
+    (h : allNoExplicitSubst (ps ++ qs)) : allNoExplicitSubst ps :=
+  (allNoExplicitSubst_append_iff.mp h).1
+
+/-- Replace one element in a list, preserving allNoExplicitSubst. -/
+private theorem allNoExplicitSubst_replace_elem {before after : List Pattern}
+    {p q : Pattern}
+    (h : allNoExplicitSubst (before ++ [p] ++ after))
+    (hq : noExplicitSubst q) :
+    allNoExplicitSubst (before ++ [q] ++ after) := by
+  -- before ++ [p] ++ after is parsed as (before ++ [p]) ++ after
+  have hbp := allNoExplicitSubst_of_append_left h
+  have ha := allNoExplicitSubst_of_append_right h
+  have hb := allNoExplicitSubst_of_append_left hbp
+  have hbq : allNoExplicitSubst (before ++ [q]) :=
+    allNoExplicitSubst_append_iff.mpr ⟨hb, allNoExplicitSubst_cons_iff.mpr ⟨hq, rfl⟩⟩
+  exact allNoExplicitSubst_append_iff.mpr ⟨hbq, ha⟩
+
+/-- Reduction preserves noExplicitSubst. -/
+theorem Reduces_noExplicitSubst {P Q : Pattern} (h : Reduction.Reduces P Q)
+    (hne : noExplicitSubst P) : noExplicitSubst Q := by
+  induction h with
+  | @comm n q p x rest =>
+    unfold noExplicitSubst at hne
+    simp only [noExplicitSubst]
+    have h_all := hne
+    have h_pinput : noExplicitSubst (.apply "PInput" [n, .lambda x p]) :=
+      allNoExplicitSubst_mem h_all (by simp)
+    have h_poutput : noExplicitSubst (.apply "POutput" [n, q]) :=
+      allNoExplicitSubst_mem h_all (by simp)
+    unfold noExplicitSubst at h_pinput h_poutput
+    have h_p : noExplicitSubst p := by
+      have := allNoExplicitSubst_mem h_pinput (show (.lambda x p) ∈ [n, .lambda x p] by simp)
+      unfold noExplicitSubst at this; exact this
+    have h_q : noExplicitSubst q := by
+      exact allNoExplicitSubst_mem h_poutput (show q ∈ [n, q] by simp)
+    have h_vals : ∀ entry ∈ ([(x, Pattern.apply "NQuote" [q])] : SubstEnv),
+        noExplicitSubst entry.2 := by
+      intro entry hmem
+      simp at hmem; subst hmem
+      simp [noExplicitSubst, allNoExplicitSubst, h_q]
+    have h_comm : noExplicitSubst (commSubst p x q) := by
+      unfold commSubst; unfold SubstEnv.extend; unfold SubstEnv.empty
+      exact applySubst_noExplicitSubst_gen _ p h_vals h_p
+    exact allNoExplicitSubst_append_iff.mpr
+      ⟨allNoExplicitSubst_cons_iff.mpr ⟨h_comm, rfl⟩,
+       allNoExplicitSubst_of_append_right h_all⟩
+  | drop =>
+    -- P = PDrop[NQuote[p]], Q = p
+    unfold noExplicitSubst at hne
+    -- hne : allNoExplicitSubst [NQuote[p]]
+    have h1 := allNoExplicitSubst_head hne
+    unfold noExplicitSubst at h1
+    -- h1 : allNoExplicitSubst [p]
+    exact allNoExplicitSubst_head h1
+  | equiv hsc₁ _ hsc₂ ih =>
+    have hne' := (SC_noExplicitSubst_eq hsc₁) ▸ hne
+    exact (SC_noExplicitSubst_eq hsc₂) ▸ (ih hne')
+  | par _ ih =>
+    unfold noExplicitSubst at hne ⊢
+    exact allNoExplicitSubst_cons_iff.mpr
+      ⟨ih (allNoExplicitSubst_head hne), allNoExplicitSubst_tail hne⟩
+  | par_any _ ih =>
+    unfold noExplicitSubst at hne ⊢
+    exact allNoExplicitSubst_replace_elem hne (ih (allNoExplicitSubst_mem hne (by simp)))
+  | par_set _ ih =>
+    unfold noExplicitSubst at hne ⊢
+    exact allNoExplicitSubst_cons_iff.mpr
+      ⟨ih (allNoExplicitSubst_head hne), allNoExplicitSubst_tail hne⟩
+  | par_set_any _ ih =>
+    unfold noExplicitSubst at hne ⊢
+    exact allNoExplicitSubst_replace_elem hne (ih (allNoExplicitSubst_mem hne (by simp)))
+
+/-- Renaming preserves ρ-reduction.
+    If P ⇝ Q and σ is a renaming disjoint from bound variables of P and Q,
+    then applySubst σ P ⇝ applySubst σ Q.
+
+    The disjointness condition ensures that σ doesn't interfere with the
+    COMM rule's bound variable substitution. For namespace renamings (nsEnv),
+    this holds because π-bound variables are disjoint from namespace variables.
+
+    Proof: induction on Reduces.
+    - COMM: uses commSubst_applySubst_swap to commute σ past commSubst.
+    - DROP: applySubst distributes through PDrop/NQuote.
+    - EQUIV: uses SC_applySubst (sorry for bound var condition propagation through SC).
+    - PAR/PAR_ANY: applySubst distributes through hashBag. -/
+noncomputable def reduces_applySubst (σ : SubstEnv) (hren : isRenamingEnv σ)
+    {P Q : Pattern} (h : Reduction.Reduces P Q)
+    (hbv : substBVDisjoint σ (boundVars P ++ boundVars Q))
+    (hne : noExplicitSubst P) :
+    Reduction.Reduces (applySubst σ P) (applySubst σ Q) := by
+  induction h with
+  | @comm n q p x rest =>
+    -- COMM: hashBag [POutput[n,q], PInput[n, λx.p]] ++ rest ⇝ hashBag [commSubst p x q] ++ rest
+    simp only [applySubst, List.map, List.map_append]
+    -- Helper: x is a bound variable in the LHS (from λx in PInput)
+    -- boundVars(.collection .hashBag (POutput :: PInput :: rest) none)
+    -- = (POutput :: PInput :: rest).flatMap boundVars
+    -- and x ∈ boundVars(PInput) because PInput = apply "PInput" [n, λx.p]
+    have hx_in_bv : x ∈ boundVars (.collection .hashBag
+        ([.apply "POutput" [n, q], .apply "PInput" [n, .lambda x p]] ++ rest) none) := by
+      unfold boundVars
+      apply List.mem_flatMap.mpr
+      exact ⟨.apply "PInput" [n, .lambda x p], by simp, by
+        unfold boundVars; apply List.mem_flatMap.mpr
+        exact ⟨.lambda x p, by simp, by unfold boundVars; simp⟩⟩
+    have hx_dom : SubstEnv.find σ x = none :=
+      hbv.1 x (List.mem_append_left _ hx_in_bv)
+    have hx_img : ∀ entry ∈ σ, entry.2 ≠ .var x := fun e he =>
+      hbv.2 e he x (List.mem_append_left _ hx_in_bv)
+    -- σ.filter(·.1 != x) = σ since x ∉ dom(σ)
+    rw [filter_not_key_of_find_none σ x hx_dom]
+    -- Bound vars of p are all in boundVars P
+    have hbv_p : ∀ y ∈ boundVars p, SubstEnv.find σ y = none := by
+      intro y hy
+      apply hbv.1 y; apply List.mem_append_left
+      unfold boundVars
+      apply List.mem_flatMap.mpr
+      exact ⟨.apply "PInput" [n, .lambda x p], by simp, by
+        unfold boundVars; apply List.mem_flatMap.mpr
+        exact ⟨.lambda x p, by simp, by
+          unfold boundVars; exact List.mem_cons.mpr (Or.inr hy)⟩⟩
+    -- Extract noExplicitSubst p from hne
+    have hne_p : noExplicitSubst p := by
+      -- Extract via allNoExplicitSubst_mem: PInput ∈ elems, then λx.p ∈ PInput's args
+      unfold noExplicitSubst at hne
+      have h1 := allNoExplicitSubst_mem hne
+        (show (.apply "PInput" [n, .lambda x p]) ∈
+              ([.apply "POutput" [n, q], .apply "PInput" [n, .lambda x p]] ++ rest) by simp)
+      unfold noExplicitSubst at h1
+      have h2 := allNoExplicitSubst_mem h1
+        (show (.lambda x p) ∈ [n, .lambda x p] by simp)
+      unfold noExplicitSubst at h2
+      exact h2
+    have heq := commSubst_applySubst_swap σ p q x hren hx_dom hx_img hbv_p hne_p
+    rw [heq]
+    exact .comm
+  | drop =>
+    simp only [applySubst, List.map]
+    exact .drop
+  | equiv hsc₁ _ hsc₂ ih =>
+    refine .equiv (SC_applySubst σ hsc₁) (ih ?_ ?_) (SC_applySubst σ hsc₂)
+    · sorry -- substBVDisjoint propagation through SC (alpha-renaming changes bound vars)
+    · exact (SC_noExplicitSubst_eq hsc₁) ▸ hne
+  | @par Pi Pi' resti _ ih =>
+    simp only [applySubst, List.map]
+    refine .par (ih ?_ ?_)
+    · apply substBVDisjoint_mono hbv; intro v hv
+      rcases List.mem_append.mp hv with hvl | hvr
+      · exact List.mem_append_left _ (boundVars_collection_mem (by simp) hvl)
+      · exact List.mem_append_right _ (boundVars_collection_mem (by simp) hvr)
+    · exact noExplicitSubst_of_collection_mem hne (by simp)
+  | @par_any Pi Pi' pre suf _ ih =>
+    simp only [applySubst, List.map_append, List.map_cons]
+    refine .par_any (ih ?_ ?_)
+    · apply substBVDisjoint_mono hbv; intro v hv
+      rcases List.mem_append.mp hv with hvl | hvr
+      · exact List.mem_append_left _
+          (boundVars_collection_mem (show Pi ∈ pre ++ [Pi] ++ suf by simp) hvl)
+      · exact List.mem_append_right _
+          (boundVars_collection_mem (show Pi' ∈ pre ++ [Pi'] ++ suf by simp) hvr)
+    · exact noExplicitSubst_of_collection_mem hne (show Pi ∈ pre ++ [Pi] ++ suf by simp)
+  | @par_set Pi Pi' resti _ ih =>
+    simp only [applySubst, List.map_cons]
+    refine .par_set (ih ?_ ?_)
+    · apply substBVDisjoint_mono hbv; intro v hv
+      rcases List.mem_append.mp hv with hvl | hvr
+      · exact List.mem_append_left _ (boundVars_collection_mem (by simp) hvl)
+      · exact List.mem_append_right _ (boundVars_collection_mem (by simp) hvr)
+    · exact noExplicitSubst_of_collection_mem hne (by simp)
+  | @par_set_any Pi Pi' pre suf _ ih =>
+    simp only [applySubst, List.map_append, List.map_cons]
+    refine .par_set_any (ih ?_ ?_)
+    · apply substBVDisjoint_mono hbv; intro v hv
+      rcases List.mem_append.mp hv with hvl | hvr
+      · exact List.mem_append_left _
+          (boundVars_collection_mem (show Pi ∈ pre ++ [Pi] ++ suf by simp) hvl)
+      · exact List.mem_append_right _
+          (boundVars_collection_mem (show Pi' ∈ pre ++ [Pi'] ++ suf by simp) hvr)
+    · exact noExplicitSubst_of_collection_mem hne (show Pi ∈ pre ++ [Pi] ++ suf by simp)
+
+/-- If P ≃enc Q and Q ⇝* T, then ∃ T', P ⇝* T' ∧ T' ≃enc T.
+    Uses reduces_applySubst to push the renaming through the reduction chain. -/
+theorem EncEquiv_reduces_bridge {P Q : Pattern}
+    (henc : P ≃enc Q) {T : Pattern} (hred : ReducesStar Q T) :
+    ∃ T', Nonempty (ReducesStar P T') ∧ (T' ≃enc T) := by
+  obtain ⟨P', σ, hsc, hren, heq⟩ := henc
+  subst heq
+  sorry -- TODO: Use Reduces.equiv with SC, then reduces_applySubst on the chain
+
+/-- nsEnv always produces a renaming substitution. -/
+theorem nsEnv_isRenaming : ∀ (P : Process) (n n' : String),
+    isRenamingEnv (nsEnv P n n') := by
+  intro P; induction P with
+  | nil => intro n n'; simp [nsEnv, isRenamingEnv]
+  | output _ _ => intro n n'; simp [nsEnv, isRenamingEnv]
+  | input _ _ P ih => intro n n'; exact ih n n'
+  | par P Q ihP ihQ =>
+    intro n n' entry h_mem
+    simp only [nsEnv] at h_mem
+    rcases List.mem_append.mp h_mem with h | h
+    · exact ihP (n ++ "_L") (n' ++ "_L") entry h
+    · exact ihQ (n ++ "_R") (n' ++ "_R") entry h
+  | nu x P ih =>
+    intro n n' entry h_mem
+    simp only [nsEnv] at h_mem
+    rcases List.mem_cons.mp h_mem with h | h
+    · subst h; exact ⟨n', rfl⟩
+    · exact ih (n ++ "_" ++ n) (n' ++ "_" ++ n') entry h
+  | replicate x y P ih => intro n n'; exact ih (n ++ "_rep") (n' ++ "_rep")
+
+/-- Encoding equivalence via nsEnv: encode P n v ≃enc encode P n' v.
+    Uses SC.refl (no structural rearrangement needed, pure renaming). -/
+theorem encode_encEquiv_nsEnv (P : Process) (n n' v : String)
+    (h_ndisj : ∀ u ∈ Process.names P, NamespaceDisjoint u n)
+    (h_v_ndisj : NamespaceDisjoint v n) :
+    encode P n v ≃enc encode P n' v :=
+  EncEquiv.of_renaming (nsEnv P n n') (nsEnv_isRenaming P n n')
+    (applySubst_nsEnv_encode P n n' v h_ndisj h_v_ndisj)
 
 /-- Proposition 1: Independence of parameters (Lybech page 106) — CORRECTED VERSION
 
@@ -2473,72 +3791,747 @@ lemma rhoPar_SC_cong {A A' B B' : Pattern}
     (SC_toListRepr_left (toListRepr B) hA)
     (SC_toListRepr_right (toListRepr A') hB)
 
-/-- Multi-step reduction lifts through input congruence.
+/-- `rhoPar A B ≡ rhoPar B A` — parallel composition is commutative up to SC.
+    Uses par_perm with List.perm_append_comm. -/
+lemma rhoPar_SC_comm (A B : Pattern) :
+    RhoCalculus.StructuralCongruence (rhoPar A B) (rhoPar B A) := by
+  rw [rhoPar_eq_fromListRepr_append, rhoPar_eq_fromListRepr_append]
+  simp only [fromListRepr]
+  exact .par_perm _ _ List.perm_append_comm
 
-    If p ⇝* q, then PInput[chan, λy.p] ⇝* PInput[chan, λy.q].
+/-- `rhoPar (rhoPar A B) C = rhoPar A (rhoPar B C)` — parallel composition is
+    associative (exact equality via list append associativity). -/
+lemma rhoPar_assoc (A B C : Pattern) :
+    rhoPar (rhoPar A B) C = rhoPar A (rhoPar B C) := by
+  rw [rhoPar_eq_fromListRepr_append (rhoPar A B) C,
+      rhoPar_eq_fromListRepr_append A (rhoPar B C),
+      toListRepr_rhoPar A B,
+      toListRepr_rhoPar B C,
+      List.append_assoc]
+
+/-- `fromListRepr (toListRepr X) ≡ X` — round-trip through list representation preserves SC.
+    For hashBag: identity. For non-hashBag: wrapping in singleton hashBag, then par_singleton. -/
+lemma fromListRepr_toListRepr_SC (X : Pattern) :
+    RhoCalculus.StructuralCongruence (fromListRepr (toListRepr X)) X := by
+  unfold fromListRepr toListRepr
+  split
+  · exact .refl _
+  · exact .par_singleton _
+
+/-- `rhoPar rhoNil X ≡ X` — nil is left identity for parallel composition up to SC. -/
+lemma rhoPar_rhoNil_left_SC (X : Pattern) :
+    RhoCalculus.StructuralCongruence (rhoPar rhoNil X) X := by
+  rw [rhoPar_eq_fromListRepr_append]
+  simp only [toListRepr, rhoNil, List.nil_append]
+  exact fromListRepr_toListRepr_SC X
+
+/-- `rhoPar X rhoNil ≡ X` — nil is right identity for parallel composition up to SC. -/
+lemma rhoPar_rhoNil_right_SC (X : Pattern) :
+    RhoCalculus.StructuralCongruence (rhoPar X rhoNil) X := by
+  rw [rhoPar_eq_fromListRepr_append]
+  simp only [toListRepr, rhoNil, List.append_nil]
+  exact fromListRepr_toListRepr_SC X
+
+/-- All entries of σ have keys that are extensions of namespace n. -/
+def domainInNamespace (σ : SubstEnv) (n : String) : Prop :=
+  ∀ entry ∈ σ, ∃ suffix, entry.1 = n ++ suffix
+
+/-- If NamespaceDisjoint u n and σ has domain in n-namespace, then u ∉ dom(σ). -/
+private theorem find_none_of_nsDisjoint {σ : SubstEnv} {u n : String}
+    (hdom : domainInNamespace σ n) (hndisj : NamespaceDisjoint u n) :
+    SubstEnv.find σ u = none := by
+  rw [SubstEnv.find_eq_none_iff]
+  intro entry hmem heq
+  obtain ⟨suffix, hsuf⟩ := hdom entry hmem
+  exact hndisj suffix (heq ▸ hsuf)
+
+/-- If σ has domain in n-namespace and u is NamespaceDisjoint from n,
+    then applySubst σ (.var u) = .var u. -/
+private theorem applySubst_var_nsDisjoint {σ : SubstEnv} {u n : String}
+    (hdom : domainInNamespace σ n) (hndisj : NamespaceDisjoint u n) :
+    applySubst σ (.var u) = .var u := by
+  simp [applySubst, find_none_of_nsDisjoint hdom hndisj]
+
+/-- If σ has domain in n-namespace and x is NamespaceDisjoint from n,
+    then σ.filter (·.1 != x) = σ (x is not a key, so nothing is filtered). -/
+private theorem filter_not_key_of_nsDisjoint {σ : SubstEnv} {x n : String}
+    (hdom : domainInNamespace σ n) (hndisj : NamespaceDisjoint x n) :
+    σ.filter (fun p => p.1 != x) = σ :=
+  filter_not_key_of_find_none σ x (find_none_of_nsDisjoint hdom hndisj)
+
+/-- domainInNamespace for empty env. -/
+private theorem domainInNamespace_nil (n : String) : domainInNamespace ([] : SubstEnv) n :=
+  fun _ h => by simp at h
+
+/-- domainInNamespace for append. -/
+private theorem domainInNamespace_append {σ₁ σ₂ : SubstEnv} {n : String}
+    (h₁ : domainInNamespace σ₁ n) (h₂ : domainInNamespace σ₂ n) :
+    domainInNamespace (σ₁ ++ σ₂) n := by
+  intro entry hmem
+  rcases List.mem_append.mp hmem with h | h
+  · exact h₁ entry h
+  · exact h₂ entry h
+
+/-- nsEnv has domain in the source namespace. -/
+private theorem nsEnv_domainInNamespace (P : Process) (n n' : String) :
+    domainInNamespace (nsEnv P n n') n := by
+  induction P generalizing n n' with
+  | nil => exact domainInNamespace_nil n
+  | output _ _ => exact domainInNamespace_nil n
+  | input _ _ P ih => exact ih n n'
+  | par P Q ihP ihQ =>
+    exact domainInNamespace_append
+      (fun entry hmem => by
+        obtain ⟨sfx, hsfx⟩ := ihP (n ++ "_L") (n' ++ "_L") entry hmem
+        exact ⟨"_L" ++ sfx, by rw [hsfx, String.append_assoc]⟩)
+      (fun entry hmem => by
+        obtain ⟨sfx, hsfx⟩ := ihQ (n ++ "_R") (n' ++ "_R") entry hmem
+        exact ⟨"_R" ++ sfx, by rw [hsfx, String.append_assoc]⟩)
+  | nu x P ih =>
+    intro entry hmem
+    simp only [nsEnv] at hmem
+    rcases List.mem_cons.mp hmem with h | h
+    · exact ⟨"", by rw [h]; simp [String.append_empty]⟩
+    · obtain ⟨sfx, hsfx⟩ := ih (n ++ "_" ++ n) (n' ++ "_" ++ n') entry h
+      exact ⟨"_" ++ n ++ sfx, by rw [hsfx]; simp [String.append_assoc]⟩
+  | replicate _ _ P ih =>
+    intro entry hmem
+    obtain ⟨sfx, hsfx⟩ := ih (n ++ "_rep") (n' ++ "_rep") entry hmem
+    exact ⟨"_rep" ++ sfx, by rw [hsfx]; simp [String.append_assoc]⟩
+
+/-! ## Backward Freshness Infrastructure
+
+Key lemma: if k is fresh in σ(M) and k ∉ dom(σ), then k was already fresh in M.
+This enables cross-freshness proofs for par_cong without modifying the EncEquiv theorem. -/
+
+-- Forward freeVars through substitution: if k ∈ freeVars(M) and σ.find k = none,
+-- then k ∈ freeVars(applySubst σ M).
+mutual
+  theorem freeVars_forward_subst (σ : SubstEnv) (M : Pattern) (k : String)
+      (hne : noExplicitSubst M) (hk_mem : k ∈ freeVars M) (hk_none : SubstEnv.find σ k = none) :
+      k ∈ freeVars (applySubst σ M) :=
+    match M with
+    | .var name => by
+      simp [freeVars] at hk_mem; subst hk_mem
+      simp [applySubst, hk_none, freeVars]
+    | .apply f args => by
+      unfold noExplicitSubst at hne
+      simp only [freeVars] at hk_mem
+      simp only [applySubst, freeVars]
+      exact freeVars_forward_subst_list σ args k hne hk_mem hk_none
+    | .lambda x body => by
+      unfold noExplicitSubst at hne
+      simp only [freeVars] at hk_mem
+      have ⟨hk_body, hk_ne_x⟩ := List.mem_filter.mp hk_mem
+      have hk_filt : SubstEnv.find (σ.filter (fun p => p.1 != x)) k = none := by
+        rw [SubstEnv.find_eq_none_iff]; intro entry hmem heq_key
+        exact (SubstEnv.find_eq_none_iff σ k).mp hk_none entry (List.mem_of_mem_filter hmem) heq_key
+      simp only [applySubst, freeVars]
+      exact List.mem_filter.mpr ⟨freeVars_forward_subst (σ.filter (·.1 != x)) body k hne hk_body hk_filt, hk_ne_x⟩
+    | .multiLambda xs body => by
+      unfold noExplicitSubst at hne
+      simp only [freeVars] at hk_mem
+      have ⟨hk_body, hk_not_xs⟩ := List.mem_filter.mp hk_mem
+      have hk_filt : SubstEnv.find (σ.filter (fun p => !xs.contains p.1)) k = none := by
+        rw [SubstEnv.find_eq_none_iff]; intro entry hmem heq_key
+        exact (SubstEnv.find_eq_none_iff σ k).mp hk_none entry (List.mem_of_mem_filter hmem) heq_key
+      simp only [applySubst, freeVars]
+      exact List.mem_filter.mpr ⟨freeVars_forward_subst (σ.filter (fun p => !xs.contains p.1)) body k hne hk_body hk_filt, hk_not_xs⟩
+    | .subst _ _ _ => by simp [noExplicitSubst] at hne
+    | .collection ct elems rest => by
+      unfold noExplicitSubst at hne
+      simp only [freeVars] at hk_mem
+      simp only [applySubst, freeVars]
+      exact freeVars_forward_subst_list σ elems k hne hk_mem hk_none
+
+  theorem freeVars_forward_subst_list (σ : SubstEnv) (ps : List Pattern) (k : String)
+      (hall : allNoExplicitSubst ps) (hk_mem : k ∈ ps.flatMap freeVars)
+      (hk_none : SubstEnv.find σ k = none) :
+      k ∈ (ps.map (applySubst σ)).flatMap freeVars :=
+    match ps with
+    | [] => by simp at hk_mem
+    | p :: ps' => by
+      unfold allNoExplicitSubst at hall
+      simp only [Bool.and_eq_true] at hall
+      simp only [List.flatMap_cons, List.map_cons] at hk_mem ⊢
+      rcases List.mem_append.mp hk_mem with h | h
+      · exact List.mem_append.mpr (Or.inl (freeVars_forward_subst σ p k hall.1 h hk_none))
+      · exact List.mem_append.mpr (Or.inr (freeVars_forward_subst_list σ ps' k hall.2 h hk_none))
+end
+
+/-- Backward freshness: if k is fresh in σ(M) and k ∉ dom(σ), then k is fresh in M. -/
+theorem isFresh_of_isFresh_applySubst {σ : SubstEnv} {M : Pattern} {k : String}
+    (hne : noExplicitSubst M) (hfresh : isFresh k (applySubst σ M))
+    (hk_none : SubstEnv.find σ k = none) :
+    isFresh k M := by
+  simp only [isFresh, Bool.not_eq_true'] at hfresh ⊢
+  rw [Bool.eq_false_iff] at hfresh ⊢
+  intro hk_in
+  exact hfresh (List.contains_iff_exists_mem_beq.mpr (by
+    have hk_fwd := freeVars_forward_subst σ M k hne (list_mem_of_contains hk_in) hk_none
+    exact ⟨k, hk_fwd, beq_self_eq_true k⟩))
+
+/-- Keys from domainInNamespace σ₂ (n++"_R") are fresh in M₁ when
+    σ₁(M₁) = encode P' (n++"_L") v and domainInNamespace σ₁ (n++"_L"). -/
+theorem domainInNamespace_cross_fresh {σ₁ σ₂ : SubstEnv} {M₁ : Pattern}
+    (P' : Process) (n v : String)
+    (hne_M₁ : noExplicitSubst M₁)
+    (heq₁ : applySubst σ₁ M₁ = encode P' (n ++ "_L") v)
+    (hdom₁ : domainInNamespace σ₁ (n ++ "_L"))
+    (hdom₂ : domainInNamespace σ₂ (n ++ "_R"))
+    (h_ndisj_P' : ∀ u ∈ Process.names P', NamespaceDisjoint u n)
+    (h_v_ndisj : NamespaceDisjoint v n) :
+    ∀ k val, (k, val) ∈ σ₂ → isFresh k M₁ := by
+  intro k val hk_mem
+  obtain ⟨sfx, hk_eq⟩ := hdom₂ (k, val) hk_mem
+  have hk_fresh_img : isFresh k (applySubst σ₁ M₁) := by
+    rw [heq₁]
+    exact domainInNamespace_key_fresh_LR P' n v k h_ndisj_P' h_v_ndisj ⟨sfx, hk_eq⟩
+  have hk_not_dom₁ : SubstEnv.find σ₁ k = none := by
+    rw [SubstEnv.find_eq_none_iff]
+    intro entry hmem heq_key
+    obtain ⟨sfx₁, hsfx₁⟩ := hdom₁ entry hmem
+    rw [heq_key] at hsfx₁
+    exact string_LR_ne n sfx₁ sfx (by rw [← hsfx₁, ← hk_eq])
+  exact isFresh_of_isFresh_applySubst hne_M₁ hk_fresh_img hk_not_dom₁
+
+/-- Symmetric: keys from domainInNamespace σ₁ (n++"_L") are fresh in M₂. -/
+theorem domainInNamespace_cross_fresh_sym {σ₁ σ₂ : SubstEnv} {M₂ : Pattern}
+    (Q' : Process) (n v : String)
+    (hne_M₂ : noExplicitSubst M₂)
+    (heq₂ : applySubst σ₂ M₂ = encode Q' (n ++ "_R") v)
+    (hdom₁ : domainInNamespace σ₁ (n ++ "_L"))
+    (hdom₂ : domainInNamespace σ₂ (n ++ "_R"))
+    (h_ndisj_Q' : ∀ u ∈ Process.names Q', NamespaceDisjoint u n)
+    (h_v_ndisj : NamespaceDisjoint v n) :
+    ∀ k val, (k, val) ∈ σ₁ → isFresh k M₂ := by
+  intro k val hk_mem
+  obtain ⟨sfx, hk_eq⟩ := hdom₁ (k, val) hk_mem
+  have hk_fresh_img : isFresh k (applySubst σ₂ M₂) := by
+    rw [heq₂]
+    exact domainInNamespace_key_fresh_RL Q' n v k h_ndisj_Q' h_v_ndisj ⟨sfx, hk_eq⟩
+  have hk_not_dom₂ : SubstEnv.find σ₂ k = none := by
+    rw [SubstEnv.find_eq_none_iff]
+    intro entry hmem heq_key
+    obtain ⟨sfx₂, hsfx₂⟩ := hdom₂ entry hmem
+    rw [heq_key] at hsfx₂
+    exact string_LR_ne n sfx sfx₂ (by rw [← hk_eq, ← hsfx₂])
+  exact isFresh_of_isFresh_applySubst hne_M₂ hk_fresh_img hk_not_dom₂
+
+/-- π-SC lifts to EncEquiv on encodings, with domain constraint on σ.
+
+    Returns: ∃ M σ, (encode P n v ≡ M) ∧ isRenamingEnv σ ∧ σ(M) = encode Q n v
+                     ∧ domainInNamespace σ n
+
+    The domain constraint enables congruence case proofs: since process names
+    are NamespaceDisjoint from n, they can't be in dom(σ), so σ passes through
+    PInput/POutput/lambda wrappers without interference.
 -/
-noncomputable def ReducesStar_input_cong {chan : Pattern} {y : String} {p q : Pattern}
-    (h : ReducesStar p q) :
-    ReducesStar (.apply "PInput" [chan, .lambda y p])
-                (.apply "PInput" [chan, .lambda y q]) := by
-  -- NOTE: input_cong was removed from core ρ-calculus as non-standard.
-  -- This needs restructuring: either (a) define ReducesExt with input_cong,
-  -- or (b) restructure the RES case to use COMM-first approach (Option B).
-  sorry
-
-/-- π-structural congruence lifts to ρ-SC on encodings.
-
-    **Proven cases**: refl, symm, trans, par_cong, input_cong, nu_cong, replicate_cong
-    **Sorry cases**: par_comm, par_assoc, par_nil_*, nu_nil, nu_par, nu_swap,
-      alpha_*, replicate_unfold — these all require Prop 1 (namespace independence)
-      because the encoding assigns different namespace parameters (n_L, n_R) to
-      sub-processes, and swapping/restructuring changes which sub-process gets which
-      namespace.
--/
-theorem encode_preserves_pi_SC {P Q : Process}
+theorem encode_preserves_pi_SC_enc {P Q : Process}
     (h : PiCalculus.StructuralCongruence P Q) :
-    ∀ n v : String,
-    RhoCalculus.StructuralCongruence (encode P n v) (encode Q n v) := by
+    ∀ (n v : String),
+    (∀ u ∈ Process.names P, NamespaceDisjoint u n) →
+    NamespaceDisjoint v n →
+    ∃ (M : Pattern) (σ : SubstEnv),
+      (encode P n v ≡ M) ∧ isRenamingEnv σ ∧ applySubst σ M = encode Q n v ∧
+      domainInNamespace σ n := by
   induction h with
-  | refl _ => intro n v; exact .refl _
-  | symm _ _ _ ih => intro n v; exact .symm _ _ (ih n v)
-  | trans _ _ _ _ _ ih1 ih2 => intro n v; exact .trans _ _ _ (ih1 n v) (ih2 n v)
-  | par_cong _ _ _ _ _ _ ih1 ih2 =>
-    intro n v; simp only [encode]
-    exact rhoPar_SC_cong (ih1 (n ++ "_L") v) (ih2 (n ++ "_R") v)
-  | input_cong x y _ _ _ ih =>
-    intro n v; simp only [encode, rhoInput]
-    exact .apply_cong "PInput" _ _ (by simp) fun i h₁ h₂ => by
-      match i with
-      | 0 => exact .refl _
-      | 1 => exact .lambda_cong y _ _ (ih n v)
-  | nu_cong x _ _ _ ih =>
-    intro n v; simp only [encode]
-    exact rhoPar_SC_cong (.refl _)
-      (.apply_cong "PInput" _ _ (by simp) fun i h₁ h₂ => by
-        match i with
-        | 0 => exact .refl _
-        | 1 => exact .lambda_cong x _ _ (ih (n ++ "_" ++ n) v))
-  | replicate_cong x y _ _ _ ih =>
-    intro n v; simp only [encode, rhoReplicate, rhoInput]
-    exact .apply_cong "PReplicate" _ _ (by simp) fun i h₁ h₂ => by
-      match i with
-      | 0 => exact .apply_cong "PInput" _ _ (by simp) fun j h₃ h₄ => by
-              match j with
-              | 0 => exact .refl _
-              | 1 => exact .lambda_cong y _ _ (ih (n ++ "_rep") v)
-  -- Namespace-dependent cases (need Prop 1):
-  | par_comm _ _ => intro n v; sorry
-  | par_assoc _ _ _ => intro n v; sorry
-  | par_nil_left _ => intro n v; sorry
-  | par_nil_right _ => intro n v; sorry
-  | nu_nil _ => intro n v; sorry
-  | nu_par _ _ _ _ => intro n v; sorry
-  | nu_swap _ _ _ => intro n v; sorry
-  | alpha_input _ _ _ _ _ _ => intro n v; sorry
-  | alpha_nu _ _ _ _ => intro n v; sorry
-  | alpha_replicate _ _ _ _ _ _ => intro n v; sorry
-  | replicate_unfold _ _ _ => intro n v; sorry
+  | refl _ =>
+    intro n v _ _
+    refine ⟨_, [], .refl _, fun _ h => by simp at h, ?_, domainInNamespace_nil _⟩
+    exact subst_empty _ (encode_noExplicitSubst' _ _ _)
+  | symm _ _ _ ih =>
+    intro n v h_ndisj h_v_ndisj
+    sorry -- needs renaming invertibility + SC_applySubst
+  | trans _ _ _ _ _ ih1 ih2 =>
+    intro n v h_ndisj h_v_ndisj
+    sorry -- needs EncEquiv.trans with domain + Process.names through π-SC
+  | par_cong P P' Q Q' _ _ ih1 ih2 =>
+    intro n v h_ndisj h_v_ndisj
+    -- Split namespace disjointness for P and Q
+    have h_ndisj_P : ∀ u ∈ Process.names P, NamespaceDisjoint u n :=
+      fun u hu => h_ndisj u (Process.names_sub_par_left P Q u hu)
+    have h_ndisj_Q : ∀ u ∈ Process.names Q, NamespaceDisjoint u n :=
+      fun u hu => h_ndisj u (Process.names_sub_par_right P Q u hu)
+    let nL := n ++ "_L"
+    let nR := n ++ "_R"
+    -- IH for P at nL
+    have h_ndisj_P_L : ∀ u ∈ Process.names P, NamespaceDisjoint u nL :=
+      fun u hu => NamespaceDisjoint_append u n "_L" (h_ndisj_P u hu)
+    have h_v_L : NamespaceDisjoint v nL := NamespaceDisjoint_append v n "_L" h_v_ndisj
+    obtain ⟨M₁, σ₁, hsc₁, hren₁, heq₁, hdom₁⟩ := ih1 nL v h_ndisj_P_L h_v_L
+    -- IH for Q at nR
+    have h_ndisj_Q_R : ∀ u ∈ Process.names Q, NamespaceDisjoint u nR :=
+      fun u hu => NamespaceDisjoint_append u n "_R" (h_ndisj_Q u hu)
+    have h_v_R : NamespaceDisjoint v nR := NamespaceDisjoint_append v n "_R" h_v_ndisj
+    obtain ⟨M₂, σ₂, hsc₂, hren₂, heq₂, hdom₂⟩ := ih2 nR v h_ndisj_Q_R h_v_R
+    -- Witness: M = rhoPar M₁ M₂, σ = σ₁ ++ σ₂
+    refine ⟨rhoPar M₁ M₂, σ₁ ++ σ₂, ?_, ?_, ?_, ?_⟩
+    · -- SC: encode(P|Q) n v ≡ rhoPar M₁ M₂
+      simp only [encode]
+      exact rhoPar_SC_cong hsc₁ hsc₂
+    · -- isRenamingEnv (σ₁ ++ σ₂)
+      exact isRenamingEnv_append hren₁ hren₂
+    · -- applySubst (σ₁ ++ σ₂) (rhoPar M₁ M₂) = encode(P'|Q') n v
+      -- M₁ and M₂ have noExplicitSubst (from SC of encode results)
+      have hne_M₁ : noExplicitSubst M₁ :=
+        (SC_noExplicitSubst_eq hsc₁).symm ▸ encode_noExplicitSubst' P nL v
+      have hne_M₂ : noExplicitSubst M₂ :=
+        (SC_noExplicitSubst_eq hsc₂).symm ▸ encode_noExplicitSubst' Q nR v
+      -- M₁ and M₂ are not vars (renaming subst of a var is a var, but encode is not)
+      have hM₁_nv : ∀ name, M₁ ≠ .var name := by
+        intro name h_abs; subst h_abs
+        simp only [applySubst] at heq₁
+        cases hf : SubstEnv.find σ₁ name with
+        | none => simp [hf] at heq₁; exact encode_not_var P' nL v name heq₁.symm
+        | some r =>
+          simp [hf] at heq₁
+          obtain ⟨y, hy⟩ := find_isVar_of_renaming σ₁ name r hf hren₁
+          rw [hy] at heq₁; exact encode_not_var P' nL v y heq₁.symm
+      have hM₂_nv : ∀ name, M₂ ≠ .var name := by
+        intro name h_abs; subst h_abs
+        simp only [applySubst] at heq₂
+        cases hf : SubstEnv.find σ₂ name with
+        | none => simp [hf] at heq₂; exact encode_not_var Q' nR v name heq₂.symm
+        | some r =>
+          simp [hf] at heq₂
+          obtain ⟨y, hy⟩ := find_isVar_of_renaming σ₂ name r hf hren₂
+          rw [hy] at heq₂; exact encode_not_var Q' nR v y heq₂.symm
+      -- Distribute applySubst through rhoPar
+      rw [applySubst_rhoPar' (σ₁ ++ σ₂) M₁ M₂ hM₁_nv hne_M₁ hM₂_nv hne_M₂]
+      /-
+      TODO: Cross-freshness (σ₂ keys fresh in M₁, σ₁ keys fresh in M₂)
+
+      Blocker: Need backward freshness for freeVars through applySubst with renaming.
+      We have:
+      - k ∈ freeVars M₁ (for contradiction)
+      - M₁ ≡ encode P nL v  (from hsc₁)
+      - applySubst σ₁ M₁ = encode P' nL v  (from heq₁)
+      - k = nR ++ sfx (σ₂ domain)
+      - σ₁ has nL domain (σ₁.find k = none by string_LR_ne)
+
+      Need: k ∈ freeVars (applySubst σ₁ M₁) → k ∈ freeVars M₁ ∨ k ∈ im(σ₁)
+      But we only have the forward direction (freeVars_forward_subst).
+
+      Alternative: Prove freeVars_applySubst_renaming or SC_freeVars_subset.
+      -/
+      have hfresh₂ : ∀ k val, (k, val) ∈ σ₂ → isFresh k M₁ := by sorry
+      have hfresh₁ : ∀ k val, (k, val) ∈ σ₁ → isFresh k M₂ := by sorry
+      rw [applySubst_append_allFresh σ₁ σ₂ M₁ hne_M₁ hfresh₂, heq₁]
+      rw [applySubst_prepend_allFresh σ₁ σ₂ M₂ hne_M₂ hfresh₁, heq₂]
+      rfl
+    · -- domainInNamespace (σ₁ ++ σ₂) n
+      exact domainInNamespace_append
+        (fun entry hmem => by
+          obtain ⟨sfx, hsfx⟩ := hdom₁ entry hmem
+          exact ⟨"_L" ++ sfx, by rw [hsfx, String.append_assoc]⟩)
+        (fun entry hmem => by
+          obtain ⟨sfx, hsfx⟩ := hdom₂ entry hmem
+          exact ⟨"_R" ++ sfx, by rw [hsfx, String.append_assoc]⟩)
+  | input_cong x y P P' hsc_pi ih =>
+    intro n v h_ndisj h_v_ndisj
+    -- IH: encode P n v has NsEncEquiv to encode P' n v
+    have h_ndisj_P : ∀ u ∈ Process.names P, NamespaceDisjoint u n := by
+      intro u hu
+      apply h_ndisj u
+      simp only [Process.names, Finset.mem_union] at hu ⊢
+      simp only [Process.freeNames, Process.boundNames]
+      rcases hu with hf | hb
+      · by_cases huy : u = y
+        · right; subst huy; simp
+        · left; simp [Finset.mem_sdiff, hf, huy]
+      · right; simp [hb]
+    obtain ⟨M, σ, hsc, hren, heq, hdom⟩ := ih n v h_ndisj_P h_v_ndisj
+    -- Witness: wrap M in PInput shell
+    refine ⟨.apply "PInput" [piNameToRhoName x, .lambda y M], σ, ?_, hren, ?_, hdom⟩
+    · -- SC: encode(input x y P) n v ≡ PInput[piNameToRhoName x, λy.M]
+      simp only [encode, piNameToRhoName]
+      exact .apply_cong _ _ _ (by simp) (fun i h₁ h₂ => by
+        simp only [List.length_cons, List.length_nil] at h₁ h₂
+        have : i = 0 ∨ i = 1 := by omega
+        rcases this with rfl | rfl
+        · simp [List.getElem_cons_zero]; exact .refl _
+        · simp [List.getElem_cons_succ, List.getElem_cons_zero]
+          exact .lambda_cong y _ _ hsc)
+    · -- σ(PInput[piNameToRhoName x, λy.M]) = encode(input x y P') n v
+      -- Unfold applySubst on .apply to get map, then piNameToRhoName to get .var
+      simp only [applySubst, piNameToRhoName, List.map]
+      have hx_ndisj : NamespaceDisjoint x n := h_ndisj x (by
+        show x ∈ Process.names (Process.input x y P)
+        simp [Process.names, Process.freeNames, Finset.mem_union, Finset.mem_insert])
+      rw [find_none_of_nsDisjoint hdom hx_ndisj]
+      have hy_ndisj : NamespaceDisjoint y n := h_ndisj y (by
+        show y ∈ Process.names (Process.input x y P)
+        simp [Process.names, Process.boundNames, Finset.mem_union, Finset.mem_insert])
+      rw [filter_not_key_of_nsDisjoint hdom hy_ndisj, heq]
+      simp only [encode, piNameToRhoName, rhoInput]
+  | nu_cong x P P' _ ih =>
+    intro n v h_ndisj h_v_ndisj
+    -- encode(νx.P) n v = rhoPar(rhoOutput(.var v)(.var n))(rhoInput(.var n) x (encode P (n++"_"++n) v))
+    -- The IH namespace is n ++ "_" ++ n (left-associated)
+    have h_ndisj_P : ∀ u ∈ Process.names P, NamespaceDisjoint u (n ++ "_" ++ n) := by
+      intro u hu
+      have hund : NamespaceDisjoint u n := h_ndisj u (by
+        simp only [Process.names, Finset.mem_union] at hu ⊢
+        simp only [Process.freeNames, Process.boundNames]
+        rcases hu with hf | hb
+        · by_cases hux : u = x
+          · right; subst hux; simp
+          · left; simp [Finset.mem_sdiff, hf, hux]
+        · right; simp [hb])
+      rw [String.append_assoc]; exact NamespaceDisjoint_append u n ("_" ++ n) hund
+    have h_v_ns : NamespaceDisjoint v (n ++ "_" ++ n) := by
+      rw [String.append_assoc]; exact NamespaceDisjoint_append v n ("_" ++ n) h_v_ndisj
+    obtain ⟨M, σ, hsc, hren, heq, hdom⟩ := ih (n ++ "_" ++ n) v h_ndisj_P h_v_ns
+    -- Witness: wrap M in the νx encoding shell
+    refine ⟨rhoPar (rhoOutput (.var v) (.var n)) (rhoInput (.var n) x M), σ, ?_, hren, ?_, ?_⟩
+    · -- SC: encode(νx.P) n v ≡ rhoPar(v<n>, n(x).M)
+      simp only [encode]
+      exact rhoPar_SC_cong (.refl _) (.apply_cong _ _ _ (by simp) (fun i h₁ h₂ => by
+        simp only [List.length_cons, List.length_nil] at h₁ h₂
+        have : i = 0 ∨ i = 1 := by omega
+        rcases this with rfl | rfl
+        · simp [List.getElem_cons_zero]; exact .refl _
+        · simp [List.getElem_cons_succ, List.getElem_cons_zero]
+          exact .lambda_cong x _ _ hsc))
+    · -- σ(rhoPar(v<n>, n(x).M)) = encode(νx.P') n v
+      -- Need: v, n, x are NamespaceDisjoint from (n ++ "_" ++ n) so σ passes through
+      have hv_nd : NamespaceDisjoint v (n ++ "_" ++ n) := h_v_ns
+      have hn_nd : NamespaceDisjoint n (n ++ "_" ++ n) := by
+        intro suffix heq_ns
+        have hlen := congrArg String.length heq_ns
+        rw [String.length_append, String.length_append, String.length_append] at hlen
+        have : ("_" : String).length ≥ 1 := by native_decide
+        omega
+      have hx_nd : NamespaceDisjoint x (n ++ "_" ++ n) := by
+        have : NamespaceDisjoint x n := h_ndisj x (by
+          show x ∈ Process.names (Process.nu x P)
+          simp [Process.names, Process.boundNames, Finset.mem_union, Finset.mem_insert])
+        rw [String.append_assoc]; exact NamespaceDisjoint_append x n ("_" ++ n) this
+      -- Distribute σ through the shell
+      rw [applySubst_rhoPar' σ _ _
+          (fun name => by simp [rhoOutput])
+          (by simp [rhoOutput, noExplicitSubst, allNoExplicitSubst])
+          (fun name => by simp [rhoInput])
+          (by simp [rhoInput, noExplicitSubst, allNoExplicitSubst,
+              SC_noExplicitSubst_eq hsc ▸ encode_noExplicitSubst' P (n ++ "_" ++ n) v])]
+      -- rhoOutput(.var v)(.var n): σ doesn't touch v or n
+      simp only [rhoOutput, applySubst, List.map,
+        find_none_of_nsDisjoint hdom hv_nd, find_none_of_nsDisjoint hdom hn_nd]
+      -- rhoInput(.var n) x M: σ(.var n) = .var n, filter x = σ, σ(M) = encode P'
+      simp only [rhoInput, applySubst, List.map,
+        find_none_of_nsDisjoint hdom hn_nd,
+        filter_not_key_of_nsDisjoint hdom hx_nd, heq,
+        encode, rhoOutput]
+    · -- domainInNamespace σ n: keys of σ ⊆ (n++"_"++n) ++ * ⊆ n ++ *
+      intro entry hmem
+      obtain ⟨sfx, hsfx⟩ := hdom entry hmem
+      exact ⟨"_" ++ n ++ sfx, by rw [hsfx]; simp only [String.append_assoc]⟩
+  | replicate_cong x y P P' _ ih =>
+    intro n v h_ndisj h_v_ndisj
+    -- encode(replicate x y P) n v = rhoReplicate(rhoInput(.var x) y (encode P n_rep v))
+    let n_rep := n ++ "_rep"
+    have h_ndisj_P : ∀ u ∈ Process.names P, NamespaceDisjoint u n_rep := by
+      intro u hu
+      exact NamespaceDisjoint_append u n "_rep" (h_ndisj u (by
+        simp only [Process.names, Finset.mem_union] at hu ⊢
+        simp only [Process.freeNames, Process.boundNames]
+        rcases hu with hf | hb
+        · by_cases huy : u = y
+          · right; subst huy; simp
+          · left; simp [Finset.mem_sdiff, hf, huy]
+        · right; simp [hb]))
+    have h_v_rep : NamespaceDisjoint v n_rep :=
+      NamespaceDisjoint_append v n "_rep" h_v_ndisj
+    obtain ⟨M, σ, hsc, hren, heq, hdom⟩ := ih n_rep v h_ndisj_P h_v_rep
+    -- Witness: wrap M in PReplicate(PInput[.var x, λy.M])
+    refine ⟨.apply "PReplicate" [.apply "PInput" [.var x, .lambda y M]], σ, ?_, hren, ?_, ?_⟩
+    · -- SC: encode(replicate x y P) n v ≡ PReplicate[PInput[.var x, λy.M]]
+      simp only [encode, rhoReplicate, rhoInput, piNameToRhoName]
+      exact .apply_cong _ _ _ (by simp) (fun i h₁ h₂ => by
+        simp only [List.length_cons, List.length_nil] at h₁ h₂
+        have : i = 0 := by omega
+        subst this
+        simp [List.getElem_cons_zero]
+        exact .apply_cong _ _ _ (by simp) (fun j h₃ h₄ => by
+          simp only [List.length_cons, List.length_nil] at h₃ h₄
+          have : j = 0 ∨ j = 1 := by omega
+          rcases this with rfl | rfl
+          · simp [List.getElem_cons_zero]; exact .refl _
+          · simp [List.getElem_cons_succ, List.getElem_cons_zero]
+            exact .lambda_cong y _ _ hsc))
+    · -- σ(PReplicate[PInput[.var x, λy.M]]) = encode(replicate x y P') n v
+      have hx_ndisj : NamespaceDisjoint x n_rep := by
+        exact NamespaceDisjoint_append x n "_rep" (h_ndisj x (by
+          show x ∈ Process.names (Process.replicate x y P)
+          simp [Process.names, Process.freeNames, Finset.mem_union, Finset.mem_insert]))
+      have hy_ndisj : NamespaceDisjoint y n_rep := by
+        exact NamespaceDisjoint_append y n "_rep" (h_ndisj y (by
+          show y ∈ Process.names (Process.replicate x y P)
+          simp [Process.names, Process.boundNames, Finset.mem_union, Finset.mem_insert]))
+      -- Compute applySubst step by step, using nsDisjoint to simplify
+      simp only [applySubst, List.map,
+        find_none_of_nsDisjoint hdom hx_ndisj,
+        filter_not_key_of_nsDisjoint hdom hy_ndisj, heq,
+        encode, rhoReplicate, rhoInput, piNameToRhoName]
+      -- n_rep is let-bound to n ++ "_rep", which simp doesn't unfold
+      rfl
+    · -- domainInNamespace σ n
+      intro entry hmem
+      obtain ⟨sfx, hsfx⟩ := hdom entry hmem
+      exact ⟨"_rep" ++ sfx, by rw [hsfx, String.append_assoc]⟩
+  -- Namespace-dependent cases:
+  | par_comm P Q =>
+    intro n v h_ndisj h_v_ndisj
+    -- encode(P|Q) = rhoPar(encode P n_L v)(encode Q n_R v)
+    -- encode(Q|P) = rhoPar(encode Q n_L v)(encode P n_R v)
+    -- Step 1: SC via par_perm: rhoPar(encP_L)(encQ_R) ≡ rhoPar(encQ_R)(encP_L)
+    -- Step 2: Rename L↔R: σ maps Q's nR-namespace → nL and P's nL-namespace → nR
+    let nL := n ++ "_L"
+    let nR := n ++ "_R"
+    let encP_L := encode P nL v
+    let encQ_R := encode Q nR v
+    -- Derive namespace disjointness for sub-processes
+    have h_ndisj_P : ∀ u ∈ Process.names P, NamespaceDisjoint u n :=
+      fun u hu => h_ndisj u (Process.names_sub_par_left P Q u hu)
+    have h_ndisj_Q : ∀ u ∈ Process.names Q, NamespaceDisjoint u n :=
+      fun u hu => h_ndisj u (Process.names_sub_par_right P Q u hu)
+    have h_ndisj_P_L : ∀ u ∈ Process.names P, NamespaceDisjoint u nL :=
+      fun u hu => NamespaceDisjoint_append u n "_L" (h_ndisj_P u hu)
+    have h_ndisj_P_R : ∀ u ∈ Process.names P, NamespaceDisjoint u nR :=
+      fun u hu => NamespaceDisjoint_append u n "_R" (h_ndisj_P u hu)
+    have h_ndisj_Q_L : ∀ u ∈ Process.names Q, NamespaceDisjoint u nL :=
+      fun u hu => NamespaceDisjoint_append u n "_L" (h_ndisj_Q u hu)
+    have h_ndisj_Q_R : ∀ u ∈ Process.names Q, NamespaceDisjoint u nR :=
+      fun u hu => NamespaceDisjoint_append u n "_R" (h_ndisj_Q u hu)
+    have h_v_L : NamespaceDisjoint v nL := NamespaceDisjoint_append v n "_L" h_v_ndisj
+    have h_v_R : NamespaceDisjoint v nR := NamespaceDisjoint_append v n "_R" h_v_ndisj
+    -- The combined renaming: swap L↔R namespace trees
+    let σ := nsEnv P nL nR ++ nsEnv Q nR nL
+    -- EncEquiv witness: P' = rhoPar encQ_R encP_L (swapped), σ = above
+    refine ⟨rhoPar encQ_R encP_L, σ, ?_, ?_, ?_, ?_⟩
+    · -- SC: rhoPar(encP_L)(encQ_R) ≡ rhoPar(encQ_R)(encP_L)
+      simp only [encode]
+      exact rhoPar_SC_comm encP_L encQ_R
+    · -- isRenamingEnv σ
+      exact isRenamingEnv_append (nsEnv_isRenaming P nL nR) (nsEnv_isRenaming Q nR nL)
+    · -- applySubst σ (rhoPar encQ_R encP_L) = rhoPar (encode Q nL v) (encode P nR v)
+      -- = encode (Q ||| P) n v
+      have hP_nosubst := encode_noExplicitSubst' P nL v
+      have hQ_nosubst := encode_noExplicitSubst' Q nR v
+      -- Step 1: applySubst distributes through rhoPar
+      rw [applySubst_rhoPar' σ encQ_R encP_L
+          (encode_not_var Q nR v) hQ_nosubst
+          (encode_not_var P nL v) hP_nosubst]
+      -- Step 2: On encQ_R, nsEnv P nL nR keys are fresh → only nsEnv Q nR nL acts
+      have hfresh_PL_in_QR : ∀ k val, (k, val) ∈ nsEnv P nL nR →
+          isFresh k encQ_R :=
+        fun k val hm => nsEnv_keys_fresh_cross_RL_gen P Q n v nR k val h_ndisj_Q h_v_ndisj hm
+      rw [applySubst_prepend_allFresh (nsEnv P nL nR) (nsEnv Q nR nL) encQ_R
+          hQ_nosubst hfresh_PL_in_QR]
+      -- Step 3: On encP_L, nsEnv Q nR nL keys are fresh → only nsEnv P nL nR acts
+      have hfresh_QR_in_PL : ∀ k val, (k, val) ∈ nsEnv Q nR nL →
+          isFresh k encP_L :=
+        fun k val hm => nsEnv_keys_fresh_cross_LR_gen P Q n v nL k val h_ndisj_P h_v_ndisj hm
+      rw [applySubst_append_allFresh (nsEnv P nL nR) (nsEnv Q nR nL) encP_L
+          hP_nosubst hfresh_QR_in_PL]
+      -- Step 4: Apply nsEnv to each sub-encoding
+      rw [applySubst_nsEnv_encode Q nR nL v h_ndisj_Q_R h_v_R]
+      rw [applySubst_nsEnv_encode P nL nR v h_ndisj_P_L h_v_L]
+      -- nL/nR are let-bound to n++"_L"/n++"_R"; unfold them
+      rfl
+    · -- domainInNamespace σ n
+      exact domainInNamespace_append
+        (fun entry hmem => by
+          obtain ⟨sfx, hsfx⟩ := nsEnv_domainInNamespace P nL nR entry hmem
+          exact ⟨"_L" ++ sfx, by rw [hsfx, String.append_assoc]⟩)
+        (fun entry hmem => by
+          obtain ⟨sfx, hsfx⟩ := nsEnv_domainInNamespace Q nR nL entry hmem
+          exact ⟨"_R" ++ sfx, by rw [hsfx, String.append_assoc]⟩)
+  | par_assoc P Q R =>
+    intro n v h_ndisj h_v_ndisj
+    -- encode((P|Q)|R) = rhoPar(rhoPar(encP_LL)(encQ_LR))(encR_R)
+    -- encode(P|(Q|R)) = rhoPar(encP_L)(rhoPar(encQ_RL)(encR_RR))
+    -- rhoPar_assoc gives exact equality, then rename LL→L, LR→RL, R→RR
+    let nLL := n ++ "_L" ++ "_L"
+    let nLR := n ++ "_L" ++ "_R"
+    let nR  := n ++ "_R"
+    let nL  := n ++ "_L"
+    let nRL := n ++ "_R" ++ "_L"
+    let nRR := n ++ "_R" ++ "_R"
+    -- Per-process namespace disjointness from n
+    have h_ndisj_P : ∀ u ∈ Process.names P, NamespaceDisjoint u n :=
+      fun u hu => h_ndisj u (Process.names_sub_par_left _ R u
+        (Process.names_sub_par_left P Q u hu))
+    have h_ndisj_Q : ∀ u ∈ Process.names Q, NamespaceDisjoint u n :=
+      fun u hu => h_ndisj u (Process.names_sub_par_left _ R u
+        (Process.names_sub_par_right P Q u hu))
+    have h_ndisj_R : ∀ u ∈ Process.names R, NamespaceDisjoint u n :=
+      fun u hu => h_ndisj u (Process.names_sub_par_right _ R u hu)
+    -- Derived disjointness for each namespace param
+    have h_ndisj_P_LL : ∀ u ∈ Process.names P, NamespaceDisjoint u nLL :=
+      fun u hu => NamespaceDisjoint_append u (n ++ "_L") "_L"
+        (NamespaceDisjoint_append u n "_L" (h_ndisj_P u hu))
+    have h_ndisj_Q_LR : ∀ u ∈ Process.names Q, NamespaceDisjoint u nLR :=
+      fun u hu => NamespaceDisjoint_append u (n ++ "_L") "_R"
+        (NamespaceDisjoint_append u n "_L" (h_ndisj_Q u hu))
+    have h_ndisj_R_R : ∀ u ∈ Process.names R, NamespaceDisjoint u nR :=
+      fun u hu => NamespaceDisjoint_append u n "_R" (h_ndisj_R u hu)
+    have h_v_LL : NamespaceDisjoint v nLL :=
+      NamespaceDisjoint_append v (n ++ "_L") "_L" (NamespaceDisjoint_append v n "_L" h_v_ndisj)
+    have h_v_LR : NamespaceDisjoint v nLR :=
+      NamespaceDisjoint_append v (n ++ "_L") "_R" (NamespaceDisjoint_append v n "_L" h_v_ndisj)
+    have h_v_R : NamespaceDisjoint v nR := NamespaceDisjoint_append v n "_R" h_v_ndisj
+    -- The combined renaming: LL→L, LR→RL, R→RR
+    let σ := nsEnv P nLL nL ++ nsEnv Q nLR nRL ++ nsEnv R nR nRR
+    refine ⟨rhoPar (encode P nLL v) (rhoPar (encode Q nLR v) (encode R nR v)), σ, ?_, ?_, ?_, ?_⟩
+    · -- SC: rhoPar_assoc gives exact equality → SC.refl
+      simp only [encode]; rw [rhoPar_assoc]; exact .refl _
+    · -- isRenamingEnv σ
+      exact isRenamingEnv_append
+        (isRenamingEnv_append (nsEnv_isRenaming P nLL nL) (nsEnv_isRenaming Q nLR nRL))
+        (nsEnv_isRenaming R nR nRR)
+    · -- applySubst σ (rhoPar encP_LL (rhoPar encQ_LR encR_R)) = encode(P|(Q|R)) n v
+      have hP_ns := encode_noExplicitSubst' P nLL v
+      have hQ_ns := encode_noExplicitSubst' Q nLR v
+      have hR_ns := encode_noExplicitSubst' R nR v
+      -- Cross-freshness via nsEnv_cross_fresh_LR/RL (all at base n)
+      -- Q(LR) keys fresh in P(LL): both under "_L", use nsEnv_keys_fresh_cross_LR_gen at base n++"_L"
+      have hfQ_P : ∀ k val, (k, val) ∈ nsEnv Q nLR nRL → isFresh k (encode P nLL v) :=
+        fun k val hm => nsEnv_keys_fresh_cross_LR_gen P Q (n ++ "_L") v nRL k val
+          (fun u hu => NamespaceDisjoint_append u n "_L" (h_ndisj_P u hu))
+          (NamespaceDisjoint_append v n "_L" h_v_ndisj) hm
+      -- R(R) keys fresh in P(LL): R→L divergence at base n
+      have hfR_P : ∀ k val, (k, val) ∈ nsEnv R nR nRR → isFresh k (encode P nLL v) :=
+        fun k val hm => by
+          have h : nR = n ++ "_R" ++ "" := String.append_empty.symm
+          rw [h] at hm
+          exact nsEnv_cross_fresh_LR R P n v "" "_L" nRR h_ndisj_P h_v_ndisj hm
+      -- P(LL) keys fresh in Q(LR): both under "_L", use nsEnv_keys_fresh_cross_RL_gen at base n++"_L"
+      have hfP_Q : ∀ k val, (k, val) ∈ nsEnv P nLL nL → isFresh k (encode Q nLR v) :=
+        fun k val hm => nsEnv_keys_fresh_cross_RL_gen P Q (n ++ "_L") v nL k val
+          (fun u hu => NamespaceDisjoint_append u n "_L" (h_ndisj_Q u hu))
+          (NamespaceDisjoint_append v n "_L" h_v_ndisj) hm
+      -- R(R) keys fresh in Q(LR): R→L divergence at base n
+      have hfR_Q : ∀ k val, (k, val) ∈ nsEnv R nR nRR → isFresh k (encode Q nLR v) :=
+        fun k val hm => by
+          have h : nR = n ++ "_R" ++ "" := String.append_empty.symm
+          rw [h] at hm
+          exact nsEnv_cross_fresh_LR R Q n v "" "_R" nRR h_ndisj_Q h_v_ndisj hm
+      -- P(LL) keys fresh in R(R): L→R divergence at base n
+      have hfP_R : ∀ k val, (k, val) ∈ nsEnv P nLL nL → isFresh k (encode R nR v) :=
+        fun k val hm => by
+          have h : nR = n ++ "_R" ++ "" := String.append_empty.symm
+          rw [h]
+          exact nsEnv_cross_fresh_RL P R n v "_L" "" nL h_ndisj_R h_v_ndisj hm
+      -- Q(LR) keys fresh in R(R): L→R divergence at base n
+      have hfQ_R : ∀ k val, (k, val) ∈ nsEnv Q nLR nRL → isFresh k (encode R nR v) :=
+        fun k val hm => by
+          have h : nR = n ++ "_R" ++ "" := String.append_empty.symm
+          rw [h]
+          exact nsEnv_cross_fresh_RL Q R n v "_R" "" nRL h_ndisj_R h_v_ndisj hm
+      -- Distribute applySubst through outer rhoPar
+      rw [applySubst_rhoPar' σ _ _
+          (encode_not_var P nLL v) hP_ns
+          (fun name => by simp [rhoPar]; split <;> simp)
+          (by rw [rhoPar_eq_fromListRepr_append]; simp [fromListRepr, noExplicitSubst,
+              allNoExplicitSubst_append (allNoExplicitSubst_toListRepr hQ_ns)
+              (allNoExplicitSubst_toListRepr hR_ns)])]
+      -- Split σ for encode P nLL v: only nsEnv P acts
+      rw [show σ = (nsEnv P nLL nL ++ nsEnv Q nLR nRL) ++ nsEnv R nR nRR from rfl]
+      rw [applySubst_append_allFresh _ _ (encode P nLL v) hP_ns
+          (fun k val hm => hfR_P k val hm)]
+      rw [applySubst_append_allFresh _ _ (encode P nLL v) hP_ns
+          (fun k val hm => hfQ_P k val hm)]
+      rw [applySubst_nsEnv_encode P nLL nL v h_ndisj_P_LL h_v_LL]
+      -- Distribute through inner rhoPar
+      rw [applySubst_rhoPar'
+          ((nsEnv P nLL nL ++ nsEnv Q nLR nRL) ++ nsEnv R nR nRR) _ _
+          (encode_not_var Q nLR v) hQ_ns
+          (encode_not_var R nR v) hR_ns]
+      -- Split σ for encode Q nLR v: only nsEnv Q acts
+      rw [applySubst_append_allFresh _ _ (encode Q nLR v) hQ_ns
+          (fun k val hm => hfR_Q k val hm)]
+      rw [applySubst_prepend_allFresh _ _ (encode Q nLR v) hQ_ns
+          (fun k val hm => hfP_Q k val hm)]
+      rw [applySubst_nsEnv_encode Q nLR nRL v h_ndisj_Q_LR h_v_LR]
+      -- Split σ for encode R nR v: only nsEnv R acts
+      rw [applySubst_prepend_allFresh _ _ (encode R nR v) hR_ns
+          (fun k val hm => by
+            rcases List.mem_append.mp hm with h | h
+            · exact hfP_R k val h
+            · exact hfQ_R k val h)]
+      rw [applySubst_nsEnv_encode R nR nRR v h_ndisj_R_R h_v_R]
+      -- Final: let bindings match (nL, nRL, nRR are let-bound to n++"_L", etc.)
+      simp only [encode]; rfl
+    · -- domainInNamespace σ n
+      exact domainInNamespace_append
+        (domainInNamespace_append
+          (fun entry hmem => by
+            obtain ⟨sfx, hsfx⟩ := nsEnv_domainInNamespace P nLL nL entry hmem
+            exact ⟨"_L_L" ++ sfx, by
+              rw [hsfx, String.append_assoc, String.append_assoc]; congr 1⟩)
+          (fun entry hmem => by
+            obtain ⟨sfx, hsfx⟩ := nsEnv_domainInNamespace Q nLR nRL entry hmem
+            exact ⟨"_L_R" ++ sfx, by
+              rw [hsfx, String.append_assoc, String.append_assoc]; congr 1⟩))
+        (fun entry hmem => by
+          obtain ⟨sfx, hsfx⟩ := nsEnv_domainInNamespace R nR nRR entry hmem
+          exact ⟨"_R" ++ sfx, by rw [hsfx, String.append_assoc]⟩)
+  | par_nil_left P =>
+    intro n v h_ndisj h_v_ndisj
+    -- encode(nil|P) n v = rhoPar rhoNil (encode P (n++"_R") v)
+    -- Step 1: SC: rhoPar rhoNil (encode P (n++"_R") v) ≡ encode P (n++"_R") v
+    -- Step 2: Renaming: nsEnv maps (n++"_R") vars → n vars
+    have h_ndisj_R : ∀ u ∈ Process.names P, NamespaceDisjoint u (n ++ "_R") :=
+      fun u hu => NamespaceDisjoint_append u n "_R"
+        (h_ndisj u (Process.names_sub_par_right .nil P u hu))
+    have h_v_R : NamespaceDisjoint v (n ++ "_R") :=
+      NamespaceDisjoint_append v n "_R" h_v_ndisj
+    exact ⟨encode P (n ++ "_R") v,
+           nsEnv P (n ++ "_R") n,
+           by simp only [encode]; exact rhoPar_rhoNil_left_SC _,
+           nsEnv_isRenaming P (n ++ "_R") n,
+           applySubst_nsEnv_encode P (n ++ "_R") n v h_ndisj_R h_v_R,
+           fun entry hmem => by
+             obtain ⟨sfx, hsfx⟩ := nsEnv_domainInNamespace P (n ++ "_R") n entry hmem
+             exact ⟨"_R" ++ sfx, by rw [hsfx]; simp [String.append_assoc]⟩⟩
+  | par_nil_right P =>
+    intro n v h_ndisj h_v_ndisj
+    have h_ndisj_L : ∀ u ∈ Process.names P, NamespaceDisjoint u (n ++ "_L") :=
+      fun u hu => NamespaceDisjoint_append u n "_L"
+        (h_ndisj u (Process.names_sub_par_left P .nil u hu))
+    have h_v_L : NamespaceDisjoint v (n ++ "_L") :=
+      NamespaceDisjoint_append v n "_L" h_v_ndisj
+    exact ⟨encode P (n ++ "_L") v,
+           nsEnv P (n ++ "_L") n,
+           by simp only [encode]; exact rhoPar_rhoNil_right_SC _,
+           nsEnv_isRenaming P (n ++ "_L") n,
+           applySubst_nsEnv_encode P (n ++ "_L") n v h_ndisj_L h_v_L,
+           fun entry hmem => by
+             obtain ⟨sfx, hsfx⟩ := nsEnv_domainInNamespace P (n ++ "_L") n entry hmem
+             exact ⟨"_L" ++ sfx, by rw [hsfx]; simp [String.append_assoc]⟩⟩
+  | nu_nil _ =>
+    intro n v h_ndisj h_v_ndisj
+    sorry
+  | nu_par _ _ _ _ =>
+    intro n v h_ndisj h_v_ndisj
+    sorry
+  | nu_swap _ _ _ =>
+    intro n v h_ndisj h_v_ndisj
+    sorry
+  | alpha_input _ _ _ _ _ _ =>
+    intro n v h_ndisj h_v_ndisj
+    sorry
+  | alpha_nu _ _ _ _ =>
+    intro n v h_ndisj h_v_ndisj
+    sorry
+  | alpha_replicate _ _ _ _ _ _ =>
+    intro n v h_ndisj h_v_ndisj
+    sorry
+  | replicate_unfold _ _ _ =>
+    intro n v h_ndisj h_v_ndisj
+    sorry
 
 /-! ## Forward Direction: Single π-Step Lifts to ρ-Steps + SC -/
 
@@ -2574,9 +4567,9 @@ theorem forward_comm_simple (x y : Name) (Q : Process) (z : Name) (n v : String)
     encode P ⇝* T and T ≡ encode P'. The ρ-steps correspond to the
     COMM rule(s) in the encoding, and the SC absorbs encoding structure.
 
-    **Proven cases**: par_left, par_right, res (input_cong + PAR lift), struct (encode_preserves_pi_SC)
+    **Proven cases**: par_left, par_right
     **Standalone proven**: forward_comm_simple (COMM for simple processes + Barendregt)
-    **Sorry case**: comm (general, needs Prop 1 for namespace bridge n_L → n)
+    **Sorry cases**: comm (needs Prop 1), res (needs COMM-first), struct (needs EncEquiv infra)
 -/
 theorem forward_single_step {P P' : Process} (h : Reduces P P') :
     ∀ (n v : String),
@@ -2644,45 +4637,22 @@ theorem forward_single_step {P P' : Process} (h : Reduces P P') :
   | res x P_i P_i' _ ih =>
     intro n v
     -- encode(νx P_i) n v = rhoPar(rhoOutput(var v, var n), rhoInput(var n, x, encode P_i ns v))
-    let ns := n ++ "_" ++ n
-    obtain ⟨T₁, ⟨h_star⟩, h_sc⟩ := ih ns v
-    -- Lift body reduction through input_cong: PInput[n, λx.encode P_i] ⇝* PInput[n, λx.T₁]
-    have h_input := ReducesStar_input_cong (chan := .var n) (y := x) h_star
-    -- Lift through PAR context: hashBag [rhoOutput, PInput old] ⇝* hashBag [rhoOutput, PInput new]
-    have h_full : Nonempty (ReducesStar (encode (Process.nu x P_i) n v)
-        (.collection .hashBag [.apply "POutput" [.var v, .var n],
-                               .apply "PInput" [.var n, .lambda x T₁]] none)) := by
-      simp only [encode, rhoPar_eq_fromListRepr_append, fromListRepr, toListRepr,
-        rhoOutput, rhoInput]
-      exact ⟨ReducesStar_par_right [.apply "POutput" [.var v, .var n]] h_input⟩
-    refine ⟨_, h_full, ?_⟩
-    -- SC: hashBag [rhoOutput, PInput[n, λx.T₁]] ≡ encode(νx P_i') n v
-    simp only [encode, rhoPar_eq_fromListRepr_append, fromListRepr, toListRepr,
-      rhoOutput, rhoInput]
-    exact .par_cong _ _ (by simp) fun i h₁ h₂ => by
-      match i with
-      | 0 => exact .refl _
-      | 1 => exact .apply_cong "PInput" _ _ (by simp) fun j h₃ h₄ => by
-              match j with
-              | 0 => exact .refl _
-              | 1 => exact .lambda_cong x _ _ h_sc
+    -- In standard ρ-calculus, reduction does NOT go under input guards (input_cong removed).
+    -- The correct approach (Option B): fire name server COMM first, then reduce body.
+    -- This requires restructuring to use COMM-first approach.
+    -- For now, the proof follows the same strategy as comm (needs Prop 1 for namespace).
+    sorry
   | struct _ _ _ _ h₁ _ h₂ ih =>
     intro n v
     -- h₁ : π-SC P P_mid, h₂ : π-SC Q_mid Q
     -- IH: ∀ n v, ∃ T, encode P_mid ⇝* T ∧ T ≡ encode Q_mid
-    have hsc₁ := encode_preserves_pi_SC h₁ n v  -- encode P ≡ encode P_mid
-    have hsc₂ := encode_preserves_pi_SC h₂ n v  -- encode Q_mid ≡ encode Q
-    obtain ⟨T, ⟨h_star⟩, h_sc⟩ := ih n v
-    -- h_star : encode P_mid ⇝* T, h_sc : T ≡ encode Q_mid
-    match h_star with
-    | .refl _ =>
-      -- Zero ρ-steps: T = encode P_mid. Take witness = encode P.
-      -- SC: encode P ≡ encode P_mid (= T) ≡ encode Q_mid ≡ encode Q
-      refine ⟨_, ⟨.refl _⟩, .trans _ _ _ hsc₁ (.trans _ _ _ h_sc hsc₂)⟩
-    | .step h_red h_rest =>
-      -- encode P_mid ⇝ mid ⇝* T: fold SC into first step via equiv
-      exact ⟨T, ⟨.step (.equiv hsc₁ h_red (.refl _)) h_rest⟩,
-             .trans _ _ _ h_sc hsc₂⟩
+    -- Needs: encode P n v ≡ encode P_mid n v (and similarly for Q_mid ≡ Q).
+    -- This is FALSE as ρ-SC for namespace-dependent π-SC rules (par_comm, etc.)
+    -- because the encoding assigns different namespace params (n_L, n_R) to sub-processes.
+    -- The correct approach uses EncEquiv (SC + namespace renaming) via
+    -- encode_preserves_pi_SC_enc, but folding EncEquiv gaps into the reduction
+    -- chain requires EncEquiv_reduces_bridge (which needs reduces_applySubst).
+    sorry
 
 /-- Multi-step forward: compose single-step results across a MultiStep chain.
 
@@ -2790,18 +4760,17 @@ Status of Gorla's quality criteria (adapted for parametric encodings):
    - **Forward direction — `forward_single_step` cases**:
      - par_left: PROVEN (0 sorries)
      - par_right: PROVEN (0 sorries)
-     - res: PROVEN via `ReducesStar_input_cong` + `ReducesStar_par_right` (0 sorries)
-     - struct: PROVEN via `encode_preserves_pi_SC` + SC-gap folding (0 local sorries)
+     - res: sorry — needs COMM-first approach (input_cong removed from standard ρ-calc)
+     - struct: sorry — needs EncEquiv infrastructure (encode_preserves_pi_SC_enc +
+       EncEquiv_reduces_bridge). The old `encode_preserves_pi_SC` (claiming ρ-SC)
+       was FALSE for 11 namespace-dependent π-SC rules and has been DELETED.
      - comm: sorry — needs Prop 1 for namespace bridge n_L → n
    - **`forward_comm_simple`**: COMM for simple processes under Barendregt (0 sorries)
    - **`forward_multi_step`**: Composes single steps via SC-gap folding (0 local sorries)
-   - **`encode_preserves_pi_SC`**: π-SC lifts to ρ-SC on encodings
-     - PROVEN: refl, symm, trans, par_cong, input_cong, nu_cong, replicate_cong
-     - sorry: par_comm, par_assoc, par_nil_*, nu_nil/par/swap, alpha_*, replicate_unfold
-       (all need Prop 1 for namespace independence)
+   - **`encode_preserves_pi_SC_enc`**: π-SC lifts to EncEquiv on encodings
+     (replaces the deleted FALSE `encode_preserves_pi_SC`)
    - **Infrastructure PROVEN** (0 sorries):
      - `rhoPar_SC_cong`: SC congruence for rhoPar
-     - `ReducesStar_input_cong`: Multi-step lift through input congruence
      - `ReducesStar_par`, `ReducesStar_par_right`: Multi-step PAR context lifting
      - `SC_hashBag_cons`, `SC_toListRepr_left`, `SC_toListRepr_right`: SC congruence
      - `encode_par_left/right_reduces`, `encode_comm_SC`, `encode_comm_step_with_rest`
@@ -2815,12 +4784,13 @@ Status of Gorla's quality criteria (adapted for parametric encodings):
 5. sorry **Prop 5** (divergence reflection): Needs backward direction of Prop 4
 
 **Dependency chain**: Prop 5 ← Prop 4 backward ← ρ-inversion on encode structure
-                      Prop 4 forward (par/res/struct) ← PROVEN
+                      Prop 4 forward (par_left/par_right) ← PROVEN
                       Prop 4 forward (comm, simple) ← PROVEN
+                      Prop 4 forward (struct) ← EncEquiv infrastructure
                       Prop 3 (full) ← Prop 4 for reduction cases
                       Prop 1 ← name server isolation analysis
                       Prop 4 general COMM ← Prop 1 (namespace independence)
-                      encode_preserves_pi_SC (namespace cases) ← Prop 1
+                      encode_preserves_pi_SC_enc ← NamespaceDisjoint conditions + EncEquiv congruence
 -/
 
 end Mettapedia.OSLF.PiCalculus

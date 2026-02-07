@@ -1,11 +1,11 @@
-import Mettapedia.OSLF.Framework.RewriteSystem
+import Mettapedia.OSLF.Framework.DerivedModalities
 
 /-!
 # OSLF Category-Theoretic Bridge
 
-This file documents the categorical interpretation of the OSLF construction,
-connecting the abstract framework (RewriteSystem.lean) to the GSLT categorical
-infrastructure (GSLT/Core/).
+This file documents the categorical interpretation of the OSLF construction
+and how the concrete Set-level derivation (DerivedModalities.lean) relates to
+the full categorical picture (GSLT/Core/).
 
 ## The Categorical Picture
 
@@ -20,7 +20,7 @@ In the topos-theoretic setting (Williams & Stay, "Native Type Theory"):
 
 Per OSLF section 4 + section 6:
 
-The reduction relation R ⊆ Proc x Proc gives a span:
+The reduction relation R ⊆ Proc × Proc gives a span:
 
 ```
         E (reduction graph)
@@ -33,46 +33,53 @@ The reduction relation R ⊆ Proc x Proc gives a span:
 
 The modal operators arise from change-of-base along this span:
 
-  diamond(phi) = directImage_tgt (pullback_src phi)  = exists_tgt . src*
-  box(phi)     = universalImage_src (pullback_tgt phi) = forall_src . tgt*
+  diamond(phi) = exists_src (pullback_tgt phi)  = exists_src . tgt*
+  box(phi)     = forall_tgt (pullback_src phi)  = forall_tgt . src*
 
-These use the adjoint triple exists_f -| f* -| forall_f from GSLT/Core/ChangeOfBase.lean.
+The Galois connection diamond -| box follows from composing adjunctions:
+  diamond(phi) <= psi  <->  tgt*(phi) <= src*(psi)  <->  phi <= box(psi)
 
-The Galois connection diamond -| box follows from the composition of adjunctions:
-  exists_tgt . src* -| src_* . forall_tgt   (not quite, need careful composition)
+## What IS Proven (in DerivedModalities.lean)
 
-In practice, for the rho-calculus instance (Framework/RhoInstance.lean):
-  diamond = possiblyProp, box = relyProp
-and the Galois connection is proven directly from the definitions.
+The Set-level realization of this construction:
+
+1. `di_pb_adj` / `pb_ui_adj`: The adjoint triple `exists_f -| f* -| forall_f`
+   on `(X -> Prop)` fibers, for any function `f : E -> X`
+
+2. `derived_galois`: For ANY `ReductionSpan`, the derived diamond/box form
+   a Galois connection by composing the two adjunctions
+
+3. `derived_diamond_eq_possiblyProp` / `derived_box_eq_relyProp`:
+   For the rho-calculus span, the derived operators equal the hand-written ones
+
+4. `rho_galois_from_span`: The rho-calculus Galois connection as a corollary
 
 ## Connection Points
 
 - **GSLT/Core/LambdaTheoryCategory.lean**: Proper Mathlib-based SubobjectFibration with
   categories, CartesianMonoidalCategory, MonoidalClosed, HasFiniteLimits
 
-- **GSLT/Core/ChangeOfBase.lean**: The adjoint triple exists_f -| f* -| forall_f with
-  `stepForward` = exists_tgt . src* and `secureStepForward` = forall_tgt . src*
+- **GSLT/Core/ChangeOfBase.lean**: The adjoint triple exists_f -| f* -| forall_f
+  at the categorical level, with `stepForward` and `secureStepForward`
 
-- **Framework/RewriteSystem.lean**: Abstract OSLFTypeSystem with diamond/box/galois
+- **Framework/DerivedModalities.lean**: The same adjoint triple at the Set level,
+  with proven equivalence to possiblyProp/relyProp for the rho-calculus
 
-- **Framework/RhoInstance.lean**: Concrete rho-calculus instance with proven Galois connection
+## What Remains (Categorical Lifting)
 
-## What Remains to Connect
-
-To fully bridge the abstract and categorical layers, one would need:
+To lift from Set-level (DerivedModalities) to full categorical (GSLT):
 
 1. **Categorical RewriteSystem**: Embed RewriteSystem into a category with
-   proper products (not the placeholder `prod := fun X _ => X`)
+   proper products, so the reduction span lives in the topos
 
 2. **Reduction as morphism**: Express the reduction relation R as a
-   morphism or subobject in the topos, giving the span E -> Proc x Proc
+   subobject in the presheaf topos, giving the span `E -> Proc x Proc`
 
-3. **Change-of-base diamond = OSLFTypeSystem.diamond**: Show that
-   stepForward src tgt from ChangeOfBase agrees with diamond from OSLFTypeSystem
-   when both are specialized to the rho-calculus
+3. **Lifting theorem**: Show that the categorical `ChangeOfBase.stepForward`
+   from GSLT/Core/ restricts to the Set-level `derivedDiamond` on fibers
 
-4. **Beck-Chevalley**: The GSLT ChangeOfBase includes a Beck-Chevalley condition;
-   show it holds for the OSLF span
+4. **Beck-Chevalley**: Show the GSLT `BeckChevalley` condition holds for
+   the OSLF span (enables substitution-commutes-with-modality)
 
 ## References
 
@@ -83,57 +90,25 @@ To fully bridge the abstract and categorical layers, one would need:
 
 namespace Mettapedia.OSLF.Framework.CategoryBridge
 
-open Mettapedia.OSLF.Framework
+open Mettapedia.OSLF.Framework.DerivedModalities
 
-/-! ## The Categorical Correspondence (Specification)
+/-! ## Re-export Key Results
 
-These theorems specify what it MEANS for the categorical and abstract
-constructions to agree. They require a full categorical model to prove.
+The concrete derivation is in `DerivedModalities.lean`. We re-export
+the key theorem here for visibility.
 -/
 
-/-- Specification: For any OSLFTypeSystem whose diamond arises from
-    change-of-base along a span, the Galois connection holds.
+/-- The generic Galois connection for any reduction span,
+    proven by composing the adjoint triple `∃_f ⊣ f* ⊣ ∀_f`.
+    See `DerivedModalities.derived_galois` for the proof. -/
+example (span : ReductionSpan X) : GaloisConnection (derivedDiamond span) (derivedBox span) :=
+  derived_galois span
 
-    This is the categorical EXPLANATION of why diamond -| box:
-    it follows from exists_f -| f* -| forall_f applied to the reduction span.
-
-    For the rho-calculus, this is proven constructively in RhoInstance.lean
-    without needing the categorical machinery.
--/
-theorem galois_from_adjoint_triple_spec :
-    ∀ (R : RewriteSystem) (ts : OSLFTypeSystem R),
-    -- If the type system has the Galois property (which it does by definition)...
-    (∀ φ ψ, (∀ p, ts.satisfies p (ts.diamond φ) → ts.satisfies p ψ) ↔
-             (∀ p, ts.satisfies p φ → ts.satisfies p (ts.box ψ))) →
-    -- ...then the categorical interpretation (change-of-base) would also yield it.
-    -- This is trivially true since we're just restating the hypothesis,
-    -- but it documents WHERE the categorical proof would go.
-    True := by
-  intros
-  trivial
-
-/-! ## Summary
-
-This file serves as a **specification document** for the categorical bridge.
-
-**What IS proven:**
-- The abstract OSLF framework (RewriteSystem.lean) correctly captures the paper
-- The rho-calculus instance (RhoInstance.lean) has a proven Galois connection
-- The GSLT infrastructure (GSLT/Core/) has the right categorical primitives
-
-**What REMAINS to prove (future work):**
-- Embed RewriteSystem into a proper category
-- Express reduction as a span in the category
-- Show categorical diamond = abstract diamond for concrete instances
-- Derive the Galois connection from change-of-base adjunctions
-
-**Key insight:** The abstract framework is CORRECT even without the categorical bridge.
-The Galois connection is provable directly from the definitions (as done in
-RhoInstance.lean). The categorical bridge would provide a SECOND proof via
-general topos-theoretic machinery, which would:
-1. Apply to any calculus, not just rho-calculus
-2. Give additional structure (Beck-Chevalley, etc.)
-3. Connect to the full presheaf topos picture
--/
+/-- The rho-calculus Galois connection as a corollary of the generic construction.
+    See `DerivedModalities.rho_galois_from_span` for the proof. -/
+example : GaloisConnection
+    Mettapedia.OSLF.RhoCalculus.Reduction.possiblyProp
+    Mettapedia.OSLF.RhoCalculus.Reduction.relyProp :=
+  rho_galois_from_span
 
 end Mettapedia.OSLF.Framework.CategoryBridge
