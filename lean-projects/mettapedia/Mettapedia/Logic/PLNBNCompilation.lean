@@ -5,6 +5,7 @@ import Mettapedia.ProbabilityTheory.BayesianNetworks.VEBridge
 import Mettapedia.ProbabilityTheory.BayesianNetworks.DSeparation
 import Mettapedia.ProbabilityTheory.BayesianNetworks.DSeparationSoundness
 import Mettapedia.ProbabilityTheory.BayesianNetworks.ScreeningOffFromCondIndep
+import Mettapedia.ProbabilityTheory.BayesianNetworks.Examples
 
 /-!
 # PLN → BN Compilation (Query Plans + Structural Side Conditions)
@@ -83,7 +84,11 @@ variable (bn : BayesianNetwork V)
 
 /-- Interpretation: the condition holds in `bn` when `X ⟂ Y | Z` by d-separation. -/
 def holds (cond : DSeparationCond V) : Prop :=
-  DSeparated bn.graph cond.X cond.Y cond.Z
+  DSeparatedFull bn.graph cond.X cond.Y cond.Z
+
+/-- Full trail-based side condition. -/
+def holdsFull (cond : DSeparationCond V) : Prop :=
+  cond.holds (bn := bn)
 
 end DSeparationCond
 
@@ -165,6 +170,18 @@ lemma wmqueryeq_of_dsep
     (h : cond.holds (bn := bn) → ∀ cpt : bn.DiscreteCPT,
       queryProb (bn := bn) cpt q₁ = queryProb (bn := bn) cpt q₂) :
     cond.holds (bn := bn) →
+      WMQueryEq (State := State (bn := bn))
+        (Query := PLNQuery (BNQuery.Atom (bn := bn))) q₁ q₂ := by
+  intro hcond
+  exact wmqueryeq_of_prob_eq (bn := bn) q₁ q₂ (h hcond)
+
+lemma wmqueryeq_of_dsepFull
+    [Fintype V] [DecidableEq V]
+    (cond : DSeparationCond V)
+    (q₁ q₂ : PLNQuery (BNQuery.Atom (bn := bn)))
+    (h : cond.holdsFull (bn := bn) → ∀ cpt : bn.DiscreteCPT,
+      queryProb (bn := bn) cpt q₁ = queryProb (bn := bn) cpt q₂) :
+    cond.holdsFull (bn := bn) →
       WMQueryEq (State := State (bn := bn))
         (Query := PLNQuery (BNQuery.Atom (bn := bn))) q₁ q₂ := by
   intro hcond
@@ -335,7 +352,14 @@ theorem discharge
     (cond : DSeparationCond V)
     (hcond : cond.holds (bn := bn)) :
     CondIndepVertices bn μ cond.X cond.Y cond.Z :=
-  dsep_implies_condIndepVertices (bn := bn) (μ := μ) hcond
+  dsepFull_implies_condIndepVertices (bn := bn) (μ := μ) hcond
+
+/-- Full trail-based discharge. -/
+theorem dischargeFull
+    (cond : DSeparationCond V)
+    (hcond : cond.holdsFull (bn := bn)) :
+    CondIndepVertices bn μ cond.X cond.Y cond.Z :=
+  dsepFull_implies_condIndepVertices (bn := bn) (μ := μ) hcond
 
 /-- d-separation discharge specialized to a BN CPT's joint measure. -/
 theorem discharge_cpt
@@ -345,7 +369,7 @@ theorem discharge_cpt
     [DSeparationSoundness bn cpt.jointMeasure]
     (hcond : cond.holds (bn := bn)) :
     CondIndepVertices bn cpt.jointMeasure cond.X cond.Y cond.Z :=
-  dsep_implies_condIndepVertices (bn := bn) (μ := cpt.jointMeasure) hcond
+  dsepFull_implies_condIndepVertices (bn := bn) (μ := cpt.jointMeasure) hcond
 
 end DSeparationCond
 
@@ -436,6 +460,24 @@ theorem wmqueryeq_of_dsep_discharge
         cond.holds (bn := bn) →
           CondIndepVertices bn cpt.jointMeasure cond.X cond.Y cond.Z) :
     cond.holds (bn := bn) →
+      WMQueryEq (State := State (bn := bn))
+        (Query := PLNQuery (BNQuery.Atom (bn := bn))) q₁ q₂ := by
+  intro hcond
+  exact wmqueryeq_of_prob_eq (bn := bn) q₁ q₂ (fun cpt =>
+    hprob cpt (hci cpt hcond))
+
+theorem wmqueryeq_of_dsepFull_discharge
+    (cond : DSeparationCond V)
+    (q₁ q₂ : PLNQuery (BNQuery.Atom (bn := bn)))
+    (hprob :
+      ∀ cpt : bn.DiscreteCPT,
+        CondIndepVertices bn cpt.jointMeasure cond.X cond.Y cond.Z →
+          queryProb (bn := bn) cpt q₁ = queryProb (bn := bn) cpt q₂)
+    (hci :
+      ∀ cpt : bn.DiscreteCPT,
+        cond.holdsFull (bn := bn) →
+          CondIndepVertices bn cpt.jointMeasure cond.X cond.Y cond.Z) :
+    cond.holdsFull (bn := bn) →
       WMQueryEq (State := State (bn := bn))
         (Query := PLNQuery (BNQuery.Atom (bn := bn))) q₁ q₂ := by
   intro hcond
@@ -716,6 +758,53 @@ lemma linkProbVECond_eq_linkProbVE_of_eventEq_mul
     (valA := valA) (valB := valB) (valC := valC)
     (cpt := cpt) hmul
 
+lemma linkProbVECond_eq_linkProbVE_of_condIndepVertices
+    [∀ v : V, Inhabited (bn.stateSpace v)]
+    [∀ v : V, MeasurableSingletonClass (bn.stateSpace v)]
+    (A B C : V) (valA : bn.stateSpace A) (valB : bn.stateSpace B) (valC : bn.stateSpace C)
+    (cpt : bn.DiscreteCPT)
+    [EventPos (bn := bn) B valB]
+    [EventPosConstraints (bn := bn) [⟨A, valA⟩, ⟨B, valB⟩]]
+    (hci : CondIndepVertices bn cpt.jointMeasure ({A} : Set V) ({C} : Set V) ({B} : Set V)) :
+    queryProb (bn := bn) cpt
+      (PLNQuery.linkCond [⟨A, valA⟩, ⟨B, valB⟩] ⟨C, valC⟩) =
+    queryProb (bn := bn) cpt
+      (PLNQuery.link ⟨B, valB⟩ ⟨C, valC⟩) := by
+  have hcond :
+      Mettapedia.ProbabilityTheory.BayesianNetworks.BayesianNetwork.CondIndepOn
+        (bn := bn) (μ := cpt.jointMeasure) A B C := by
+    simpa [Mettapedia.ProbabilityTheory.BayesianNetworks.BayesianNetwork.CondIndepOn,
+      Mettapedia.ProbabilityTheory.BayesianNetworks.BayesianNetwork.CondIndepVertices] using hci
+  have hmul :=
+    Mettapedia.ProbabilityTheory.BayesianNetworks.BayesianNetwork.condIndep_eventEq_mul_cond
+      (bn := bn) (μ := cpt.jointMeasure)
+      (A := A) (B := B) (C := C)
+      (valA := valA) (valB := valB) (valC := valC) hcond
+  exact linkProbVECond_eq_linkProbVE_of_mul_eq (bn := bn)
+    (A := A) (B := B) (C := C)
+    (valA := valA) (valB := valB) (valC := valC)
+    (cpt := cpt) hmul
+
+lemma linkProbVECond_eq_linkProbVE_of_condIndepVertices_CA
+    [∀ v : V, Inhabited (bn.stateSpace v)]
+    [∀ v : V, MeasurableSingletonClass (bn.stateSpace v)]
+    (A B C : V) (valA : bn.stateSpace A) (valB : bn.stateSpace B) (valC : bn.stateSpace C)
+    (cpt : bn.DiscreteCPT)
+    [EventPos (bn := bn) B valB]
+    [EventPosConstraints (bn := bn) [⟨A, valA⟩, ⟨B, valB⟩]]
+    (hciCA : CondIndepVertices bn cpt.jointMeasure ({C} : Set V) ({A} : Set V) ({B} : Set V)) :
+    queryProb (bn := bn) cpt
+      (PLNQuery.linkCond [⟨A, valA⟩, ⟨B, valB⟩] ⟨C, valC⟩) =
+    queryProb (bn := bn) cpt
+      (PLNQuery.link ⟨B, valB⟩ ⟨C, valC⟩) := by
+  have hci :
+      CondIndepVertices bn cpt.jointMeasure ({A} : Set V) ({C} : Set V) ({B} : Set V) :=
+    condIndepVertices_symm (bn := bn) (μ := cpt.jointMeasure) hciCA
+  exact linkProbVECond_eq_linkProbVE_of_condIndepVertices (bn := bn)
+    (A := A) (B := B) (C := C)
+    (valA := valA) (valB := valB) (valC := valC)
+    (cpt := cpt) hci
+
 instance screeningOffProbEq_of_eventEq_mul
     [∀ v : V, MeasurableSingletonClass (bn.stateSpace v)]
     (A B C : V) (valA : bn.stateSpace A) (valB : bn.stateSpace B) (valC : bn.stateSpace C)
@@ -848,6 +937,31 @@ theorem wmqueryeq_screeningOff_of_dsep_with
     (PLNQuery.linkCond [⟨A, valA⟩, ⟨B, valB⟩] ⟨C, valC⟩)
     (PLNQuery.link ⟨B, valB⟩ ⟨C, valC⟩)
     (fun cpt => hprob cpt (hci cpt hcond))
+
+theorem wmqueryeq_screeningOff_of_dsep_CA
+    [∀ v : V, Inhabited (bn.stateSpace v)]
+    [∀ v : V, MeasurableSingletonClass (bn.stateSpace v)]
+    (A B C : V) (valA : bn.stateSpace A) (valB : bn.stateSpace B) (valC : bn.stateSpace C)
+    [EventPos (bn := bn) B valB]
+    [EventPosConstraints (bn := bn) [⟨A, valA⟩, ⟨B, valB⟩]]
+    (hciCA :
+      ∀ cpt : bn.DiscreteCPT,
+        (CompiledPlan.deductionSide A B C).holds (bn := bn) →
+          CondIndepVertices bn cpt.jointMeasure ({C} : Set V) ({A} : Set V) ({B} : Set V)) :
+    (CompiledPlan.deductionSide A B C).holds (bn := bn) →
+      WMQueryEq (State := State (bn := bn))
+        (Query := PLNQuery (BNQuery.Atom (bn := bn)))
+        (PLNQuery.linkCond [⟨A, valA⟩, ⟨B, valB⟩] ⟨C, valC⟩)
+        (PLNQuery.link ⟨B, valB⟩ ⟨C, valC⟩) := by
+  intro hcond
+  exact wmqueryeq_of_prob_eq (bn := bn)
+    (PLNQuery.linkCond [⟨A, valA⟩, ⟨B, valB⟩] ⟨C, valC⟩)
+    (PLNQuery.link ⟨B, valB⟩ ⟨C, valC⟩)
+    (fun cpt =>
+      linkProbVECond_eq_linkProbVE_of_condIndepVertices_CA (bn := bn)
+        (A := A) (B := B) (C := C)
+        (valA := valA) (valB := valB) (valC := valC)
+        (cpt := cpt) (hciCA cpt hcond))
 
 /-! ## Screening-off WMQueryEq (d-sep discharge + ScreeningOffProbEq instance) -/
 
@@ -1042,5 +1156,96 @@ theorem compiled_abduction_side
       rfl
 
 end LinkCalculusBN
+
+/-! ## Concrete chain example: structural discharge (no ad-hoc `hci`) -/
+
+namespace ChainExample
+
+open Mettapedia.ProbabilityTheory.BayesianNetworks.Examples
+open BNWorldModel
+
+theorem chain_hciCA_of_dsep
+    (cpt : chainBN.DiscreteCPT)
+    [∀ v : Three, Fintype (chainBN.stateSpace v)]
+    [∀ v : Three, DecidableEq (chainBN.stateSpace v)]
+    [∀ v : Three, Inhabited (chainBN.stateSpace v)]
+    [∀ v : Three, StandardBorelSpace (chainBN.stateSpace v)]
+    [StandardBorelSpace chainBN.JointSpace]
+    [HasLocalMarkovProperty chainBN cpt.jointMeasure]
+    (hcond :
+      (CompiledPlan.deductionSide Three.A Three.B Three.C).holds (bn := chainBN)) :
+    CondIndepVertices chainBN cpt.jointMeasure
+      ({Three.C} : Set Three) ({Three.A} : Set Three) ({Three.B} : Set Three) := by
+  exact Mettapedia.ProbabilityTheory.BayesianNetworks.Examples.chain_dsepFull_to_condIndep_CA_given_B
+    (μ := cpt.jointMeasure) hcond
+
+theorem chain_hciCA_of_dsepFull
+    (cpt : chainBN.DiscreteCPT)
+    [∀ v : Three, Fintype (chainBN.stateSpace v)]
+    [∀ v : Three, DecidableEq (chainBN.stateSpace v)]
+    [∀ v : Three, Inhabited (chainBN.stateSpace v)]
+    [∀ v : Three, StandardBorelSpace (chainBN.stateSpace v)]
+    [StandardBorelSpace chainBN.JointSpace]
+    [HasLocalMarkovProperty chainBN cpt.jointMeasure]
+    (hcondFull :
+      Mettapedia.ProbabilityTheory.BayesianNetworks.DSeparation.DSeparatedFull
+        chainGraph ({Three.A} : Set Three) ({Three.C} : Set Three) ({Three.B} : Set Three)) :
+    CondIndepVertices chainBN cpt.jointMeasure
+      ({Three.C} : Set Three) ({Three.A} : Set Three) ({Three.B} : Set Three) := by
+  exact Mettapedia.ProbabilityTheory.BayesianNetworks.Examples.chain_dsepFull_to_condIndep_CA_given_B
+    (μ := cpt.jointMeasure) hcondFull
+
+theorem chain_screeningOff_wmqueryeq_of_dsep
+    (valA valB valC : Bool)
+    [∀ v : Three, Fintype (chainBN.stateSpace v)]
+    [∀ v : Three, DecidableEq (chainBN.stateSpace v)]
+    [∀ v : Three, Inhabited (chainBN.stateSpace v)]
+    [∀ v : Three, StandardBorelSpace (chainBN.stateSpace v)]
+    [StandardBorelSpace chainBN.JointSpace]
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLM : ∀ cpt : chainBN.DiscreteCPT, HasLocalMarkovProperty chainBN cpt.jointMeasure) :
+    (CompiledPlan.deductionSide Three.A Three.B Three.C).holds (bn := chainBN) →
+      WMQueryEq (State := State (bn := chainBN))
+        (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+        (PLNQuery.linkCond [⟨Three.A, valA⟩, ⟨Three.B, valB⟩] ⟨Three.C, valC⟩)
+        (PLNQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩) := by
+  intro hcond
+  exact wmqueryeq_screeningOff_of_dsep_CA (bn := chainBN)
+    (A := Three.A) (B := Three.B) (C := Three.C)
+    (valA := valA) (valB := valB) (valC := valC)
+    (hciCA := fun cpt hc =>
+      by
+        letI : HasLocalMarkovProperty chainBN cpt.jointMeasure := hLM cpt
+        exact chain_hciCA_of_dsep (cpt := cpt) hc)
+    hcond
+
+theorem chain_screeningOff_wmqueryeq_of_dsepFull
+    (valA valB valC : Bool)
+    [∀ v : Three, Fintype (chainBN.stateSpace v)]
+    [∀ v : Three, DecidableEq (chainBN.stateSpace v)]
+    [∀ v : Three, Inhabited (chainBN.stateSpace v)]
+    [∀ v : Three, StandardBorelSpace (chainBN.stateSpace v)]
+    [StandardBorelSpace chainBN.JointSpace]
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLM : ∀ cpt : chainBN.DiscreteCPT, HasLocalMarkovProperty chainBN cpt.jointMeasure) :
+    Mettapedia.ProbabilityTheory.BayesianNetworks.DSeparation.DSeparatedFull
+      chainGraph ({Three.A} : Set Three) ({Three.C} : Set Three) ({Three.B} : Set Three) →
+      WMQueryEq (State := State (bn := chainBN))
+        (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+        (PLNQuery.linkCond [⟨Three.A, valA⟩, ⟨Three.B, valB⟩] ⟨Three.C, valC⟩)
+        (PLNQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩) := by
+  intro hcondFull
+  exact wmqueryeq_screeningOff_of_dsep_CA (bn := chainBN)
+    (A := Three.A) (B := Three.B) (C := Three.C)
+    (valA := valA) (valB := valB) (valC := valC)
+    (hciCA := fun cpt _hc =>
+      by
+        letI : HasLocalMarkovProperty chainBN cpt.jointMeasure := hLM cpt
+        exact chain_hciCA_of_dsepFull (cpt := cpt) hcondFull)
+    (Mettapedia.ProbabilityTheory.BayesianNetworks.Examples.chain_dsepFull_A_C_given_B)
+
+end ChainExample
 
 end Mettapedia.Logic.PLNBNCompilation

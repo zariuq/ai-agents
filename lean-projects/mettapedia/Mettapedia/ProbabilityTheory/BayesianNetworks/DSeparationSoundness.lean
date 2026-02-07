@@ -186,16 +186,18 @@ lemma setIntegral_const_on
 lemma condExp_ae_eq_const_on_eventEq
     [∀ v, MeasurableSingletonClass (bn.stateSpace v)]
     (B : V) (valB : bn.stateSpace B)
-    (s : Set bn.JointSpace) (ω0 : bn.JointSpace) :
-    MeasureTheory.condExp
-      (bn.measurableSpaceOfVertices ({B} : Set V)) μ
-      (s.indicator fun _ : bn.JointSpace => (1 : ℝ))
+    (s : Set bn.JointSpace) (omega0 : bn.JointSpace) :
+    (fun ω : bn.JointSpace =>
+      MeasureTheory.condExp
+        (bn.measurableSpaceOfVertices ({B} : Set V)) μ
+        (s.indicator fun _ : bn.JointSpace => (1 : ℝ))
+        ω)
       =ᵐ[μ.restrict (eventEq (bn := bn) B valB)]
-      fun _ : bn.JointSpace =>
-        MeasureTheory.condExp
-          (bn.measurableSpaceOfVertices ({B} : Set V)) μ
-          (s.indicator fun _ : bn.JointSpace => (1 : ℝ))
-          (Function.update ω0 B valB) := by
+    (fun _ : bn.JointSpace =>
+      MeasureTheory.condExp
+        (bn.measurableSpaceOfVertices ({B} : Set V)) μ
+        (s.indicator fun _ : bn.JointSpace => (1 : ℝ))
+        (Function.update omega0 B valB)) := by
   classical
   -- `μ⟦s | m'⟧` is measurable with respect to `m'`, hence constant on the fiber `B = valB`.
   refine (MeasureTheory.ae_restrict_iff' ?_).2 ?_
@@ -208,8 +210,8 @@ lemma condExp_ae_eq_const_on_eventEq
       (m := bn.measurableSpaceOfVertices ({B} : Set V))
       (f := (s.indicator fun _ => (1 : ℝ)))).measurable
   · have hB : ω B = valB := by
-        simpa [eventEq] using hω
-    have h0 : (Function.update ω0 B valB) B = valB := by
+      simpa [eventEq] using hω
+    have h0 : (Function.update omega0 B valB) B = valB := by
       simp
     simpa [hB, h0]
 
@@ -418,7 +420,7 @@ class DSeparationSoundness {V : Type*} [Fintype V] [DecidableEq V]
   /-- Soundness: d-separation ⇒ conditional independence. -/
   dsep_condIndep :
     ∀ {X Y Z : Set V},
-      Mettapedia.ProbabilityTheory.BayesianNetworks.DSeparation.DSeparated bn.graph X Y Z →
+      Mettapedia.ProbabilityTheory.BayesianNetworks.DSeparation.DSeparatedFull bn.graph X Y Z →
         CondIndepVertices bn μ X Y Z
 
 /-- Use d-separation soundness to discharge a conditional-independence obligation. -/
@@ -428,8 +430,30 @@ theorem dsep_implies_condIndepVertices
     (μ : Measure bn.JointSpace) [IsFiniteMeasure μ]
     [HasLocalMarkovProperty bn μ] [DSeparationSoundness bn μ]
     {X Y Z : Set V}
-    (h : Mettapedia.ProbabilityTheory.BayesianNetworks.DSeparation.DSeparated bn.graph X Y Z) :
+    (h : Mettapedia.ProbabilityTheory.BayesianNetworks.DSeparation.DSeparatedFull bn.graph X Y Z) :
     CondIndepVertices bn μ X Y Z :=
   DSeparationSoundness.dsep_condIndep (bn := bn) (μ := μ) h
+
+/-- Bridge: full trail-based d-separation discharges CI via legacy soundness. -/
+theorem dsepFull_implies_condIndepVertices
+    {V : Type*} [Fintype V] [DecidableEq V]
+    (bn : BayesianNetwork V) [∀ v : V, StandardBorelSpace (bn.stateSpace v)]
+    (μ : Measure bn.JointSpace) [IsFiniteMeasure μ]
+    [HasLocalMarkovProperty bn μ] [DSeparationSoundness bn μ]
+    {X Y Z : Set V}
+    (h : Mettapedia.ProbabilityTheory.BayesianNetworks.DSeparation.DSeparatedFull bn.graph X Y Z) :
+    CondIndepVertices bn μ X Y Z :=
+  dsep_implies_condIndepVertices (bn := bn) (μ := μ) h
+
+/-- Direct full-dsep discharge via the full soundness interface. -/
+theorem dsepFull_implies_condIndepVertices_full
+    {V : Type*} [Fintype V] [DecidableEq V]
+    (bn : BayesianNetwork V) [∀ v : V, StandardBorelSpace (bn.stateSpace v)]
+    (μ : Measure bn.JointSpace) [IsFiniteMeasure μ]
+    [HasLocalMarkovProperty bn μ] [DSeparationSoundness bn μ]
+    {X Y Z : Set V}
+    (h : Mettapedia.ProbabilityTheory.BayesianNetworks.DSeparation.DSeparatedFull bn.graph X Y Z) :
+    CondIndepVertices bn μ X Y Z :=
+  dsep_implies_condIndepVertices (bn := bn) (μ := μ) h
 
 end Mettapedia.ProbabilityTheory.BayesianNetworks.BayesianNetwork

@@ -248,43 +248,26 @@ theorem condIndep_eventEq_mul_cond
   have hupdate : Function.update omega0 B valB = omega0 := by
     simp [omega0]
   -- Constancy of condExp on B-fiber
+  have hAconst0 := condExp_ae_eq_const_on_eventEq (bn := bn) (μ := μ)
+    (B := B) (valB := valB) (s := eventEq (bn := bn) A valA) (omega0 := omega0)
   have hAconst :
       (fun ω => (μ⟦eventEq (bn := bn) A valA | m'⟧) ω) =ᵐ[μ.restrict (eventEq (bn := bn) B valB)]
         (fun _ => (μ⟦eventEq (bn := bn) A valA | m'⟧) omega0) := by
-    refine (MeasureTheory.ae_restrict_iff' ?_).2 ?_
-    · simpa using measurable_eventEq (bn := bn) B valB
-    refine Filter.Eventually.of_forall ?_
-    intro ω hω
-    apply measurable_const_on_fiber (bn := bn) B
-    · exact (stronglyMeasurable_condExp (μ := μ) (m := m')
-        (f := (eventEq (bn := bn) A valA).indicator fun _ => (1 : ℝ))).measurable
-    · have hB : ω B = valB := by simpa [eventEq] using hω
-      simpa [hB, omega0]
+    simpa [m', hupdate] using hAconst0
+  have hCconst0 := condExp_ae_eq_const_on_eventEq (bn := bn) (μ := μ)
+    (B := B) (valB := valB) (s := eventEq (bn := bn) C valC) (omega0 := omega0)
   have hCconst :
       (fun ω => (μ⟦eventEq (bn := bn) C valC | m'⟧) ω) =ᵐ[μ.restrict (eventEq (bn := bn) B valB)]
         (fun _ => (μ⟦eventEq (bn := bn) C valC | m'⟧) omega0) := by
-    refine (MeasureTheory.ae_restrict_iff' ?_).2 ?_
-    · simpa using measurable_eventEq (bn := bn) B valB
-    refine Filter.Eventually.of_forall ?_
-    intro ω hω
-    apply measurable_const_on_fiber (bn := bn) B
-    · exact (stronglyMeasurable_condExp (μ := μ) (m := m')
-        (f := (eventEq (bn := bn) C valC).indicator fun _ => (1 : ℝ))).measurable
-    · have hB : ω B = valB := by simpa [eventEq] using hω
-      simpa [hB, omega0]
+    simpa [m', hupdate] using hCconst0
+  have hACconst0 := condExp_ae_eq_const_on_eventEq (bn := bn) (μ := μ)
+    (B := B) (valB := valB)
+    (s := eventEq (bn := bn) A valA ∩ eventEq (bn := bn) C valC) (omega0 := omega0)
   have hACconst :
       (fun ω => (μ⟦eventEq (bn := bn) A valA ∩ eventEq (bn := bn) C valC | m'⟧) ω)
         =ᵐ[μ.restrict (eventEq (bn := bn) B valB)]
           (fun _ => (μ⟦eventEq (bn := bn) A valA ∩ eventEq (bn := bn) C valC | m'⟧) omega0) := by
-    refine (MeasureTheory.ae_restrict_iff' ?_).2 ?_
-    · simpa using measurable_eventEq (bn := bn) B valB
-    refine Filter.Eventually.of_forall ?_
-    intro ω hω
-    apply measurable_const_on_fiber (bn := bn) B
-    · exact (stronglyMeasurable_condExp (μ := μ) (m := m')
-        (f := (eventEq (bn := bn) A valA ∩ eventEq (bn := bn) C valC).indicator fun _ => (1 : ℝ))).measurable
-    · have hB : ω B = valB := by simpa [eventEq] using hω
-      simpa [hB, omega0]
+    simpa [m', hupdate] using hACconst0
   -- Assembly
   exact condIndep_mul_cond_core (bn := bn) (μ := μ)
     (m' := m') (hm' := hm')

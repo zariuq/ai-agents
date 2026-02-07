@@ -357,13 +357,13 @@ theorem segmentSwap_return_in_range {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
       -- No returns in (a+L1, a+L1+L2), so i+L1 = a+L1+L2, giving i = a+L2.
       left
       by_contra hne
-      exact hnoret2 ⟨↑i + L1, by omega⟩ (by simp [Fin.val_mk]; omega) (by simp [Fin.val_mk]; omega)
+      exact hnoret2 ⟨↑i + L1, by omega⟩ (by simp; omega) (by simp; omega)
         (by rwa [show (⟨↑i + L1, _⟩ : Fin (N + 1)) = ⟨↑i + L1, by omega⟩ from rfl])
     · -- a+L2 < i ≤ a+L1+L2: maps to xs(i-L2). i-L2 must be a return.
       -- No returns in (a, a+L1), so i-L2 = a+L1, giving i = a+L1+L2.
       right
       by_contra hne
-      exact hnoret1 ⟨↑i - L2, by omega⟩ (by simp [Fin.val_mk]; omega) (by simp [Fin.val_mk]; omega)
+      exact hnoret1 ⟨↑i - L2, by omega⟩ (by simp; omega) (by simp; omega)
         (by rwa [show (⟨↑i - L2, _⟩ : Fin (N + 1)) = ⟨↑i - L2, by omega⟩ from rfl])
   · -- Backward: if i = a+L2 or i = a+L1+L2, show return
     intro h
@@ -374,7 +374,7 @@ theorem segmentSwap_return_in_range {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
       · omega
       · -- maps to xs(i+L1) = xs(a+L1+L2)
         rw [show (⟨↑i + L1, _⟩ : Fin (N + 1)) = ⟨a + L1 + L2, by omega⟩ from
-              Fin.ext (by simp [Fin.val_mk]; omega)]
+              Fin.ext (by simp; omega)]
         exact hc_ret
       · omega
     · -- i.val = a + L1 + L2
@@ -383,7 +383,7 @@ theorem segmentSwap_return_in_range {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
       · omega
       · -- maps to xs(i-L2) = xs(a+L1)
         rw [show (⟨↑i - L2, _⟩ : Fin (N + 1)) = ⟨a + L1, by omega⟩ from
-              Fin.ext (by simp [Fin.val_mk]; omega)]
+              Fin.ext (by simp; omega)]
         exact hb_ret
 
 /-! ## Segment value correspondence under swap
@@ -824,6 +824,48 @@ lemma mem_excursionPairs_swap {N : ℕ} (xs : Traj k N) (a L1 L2 : ℕ)
       ha_ret hb_ret hc_ret hnoret1 hnoret2 with ⟨h1, h2⟩
   exact ⟨mem_excursionPairs_of_IsConsecutivePair (k := k) xs' h1,
     mem_excursionPairs_of_IsConsecutivePair (k := k) xs' h2⟩
+
+lemma mem_excursionsOfTraj_of_mem_excursionPairs {N : ℕ} (xs : Traj k N)
+    {p : Fin (N + 1) × Fin (N + 1)} (hp : p ∈ excursionPairs (k := k) xs) :
+    trajSegment (k := k) xs p.1 p.2 ∈ excursionsOfTraj (k := k) xs := by
+  unfold excursionsOfTraj
+  exact List.mem_map.mpr ⟨p, hp, rfl⟩
+
+lemma swapped_middle_excursions_mem_excursionsOfTraj {N : ℕ}
+    (xs : Traj k N) (a L1 L2 : ℕ)
+    (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (ha_ret : xs ⟨a, by omega⟩ = xs 0)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0)
+    (hnoret1 : ∀ (j : Fin (N + 1)), a < j.val → j.val < a + L1 → xs j ≠ xs 0)
+    (hnoret2 : ∀ (j : Fin (N + 1)), a + L1 < j.val → j.val < a + L1 + L2 → xs j ≠ xs 0) :
+    let xs' := segmentSwap xs a L1 L2 hL1 hL2 hcN
+    trajSegment (k := k) xs ⟨a + L1, by omega⟩ ⟨a + L1 + L2, by omega⟩ ∈
+      excursionsOfTraj (k := k) xs' ∧
+    trajSegment (k := k) xs ⟨a, by omega⟩ ⟨a + L1, by omega⟩ ∈
+      excursionsOfTraj (k := k) xs' := by
+  intro xs'
+  rcases mem_excursionPairs_swap (k := k) xs a L1 L2 hL1 hL2 hcN
+      ha_ret hb_ret hc_ret hnoret1 hnoret2 with ⟨hpair1, hpair2⟩
+  constructor
+  · have hmem :
+      trajSegment (k := k) xs' ⟨a, by omega⟩ ⟨a + L2, by omega⟩ ∈
+        excursionsOfTraj (k := k) xs' :=
+      mem_excursionsOfTraj_of_mem_excursionPairs (k := k) xs' hpair1
+    have hseg :
+        trajSegment (k := k) xs' ⟨a, by omega⟩ ⟨a + L2, by omega⟩ =
+          trajSegment (k := k) xs ⟨a + L1, by omega⟩ ⟨a + L1 + L2, by omega⟩ :=
+      trajSegment_segmentSwap_fwd (k := k) xs a L1 L2 hL1 hL2 hcN ha_ret hb_ret
+    exact hseg ▸ hmem
+  · have hmem :
+      trajSegment (k := k) xs' ⟨a + L2, by omega⟩ ⟨a + L1 + L2, by omega⟩ ∈
+        excursionsOfTraj (k := k) xs' :=
+      mem_excursionsOfTraj_of_mem_excursionPairs (k := k) xs' hpair2
+    have hseg :
+        trajSegment (k := k) xs' ⟨a + L2, by omega⟩ ⟨a + L1 + L2, by omega⟩ =
+          trajSegment (k := k) xs ⟨a, by omega⟩ ⟨a + L1, by omega⟩ :=
+      trajSegment_segmentSwap_bwd (k := k) xs a L1 L2 hL1 hL2 hcN ha_ret hc_ret
+    exact hseg ▸ hmem
 
 end MarkovDeFinettiHardExcursionBridge
 

@@ -17,6 +17,7 @@ We demonstrate the three fundamental structures:
 import Mettapedia.ProbabilityTheory.BayesianNetworks.DirectedGraph
 import Mettapedia.ProbabilityTheory.BayesianNetworks.BayesianNetwork
 import Mettapedia.ProbabilityTheory.BayesianNetworks.DSeparation
+import Mettapedia.ProbabilityTheory.BayesianNetworks.DSeparationSoundness
 
 namespace Mettapedia.ProbabilityTheory.BayesianNetworks.Examples
 
@@ -84,6 +85,16 @@ noncomputable def chainBN : BayesianNetwork Three where
   acyclic := chainGraph_acyclic
   stateSpace := fun _ => Bool
   measurableSpace := fun _ => ⊤
+
+instance chainBN_stateSpace_standardBorel (v : Three) :
+    StandardBorelSpace (chainBN.stateSpace v) := by
+  dsimp [chainBN]
+  infer_instance
+
+instance chainBN_jointSpace_standardBorel :
+    StandardBorelSpace chainBN.JointSpace := by
+  dsimp [BayesianNetwork.JointSpace]
+  infer_instance
 
 /-! ### Fork: A ← B → C -/
 
@@ -258,6 +269,162 @@ theorem chain_dsep_A_C_given_B :
       rcases hcb with ⟨h, _⟩ | ⟨h, _⟩ <;> exact Three.noConfusion h
     · -- B ∈ Z = {B}
       simp only [Set.mem_singleton_iff]
+
+private theorem chain_hasActivePath_of_hasActiveTrail_A_C_given_B
+    (htrail :
+      HasActiveTrail chainGraph ({Three.B} : Set Three) Three.A Three.C) :
+    HasActivePath chainGraph ({Three.B} : Set Three) Three.A Three.C := by
+  rcases htrail with ⟨p, hpne, hEnds, hAct⟩
+  cases hAct with
+  | single v =>
+      -- Endpoints [v] = (A,C) is impossible.
+      exfalso
+      simp [PathEndpoints] at hEnds
+      have hAC : Three.A = Three.C := hEnds.1.symm.trans hEnds.2
+      exact Three.noConfusion hAC
+  | two hedge =>
+      -- Endpoints [u,v] = (A,C), so edge A~C would be required (false in chain).
+      exfalso
+      simp [PathEndpoints] at hEnds
+      rcases hEnds with ⟨hu, hv⟩
+      subst hu
+      subst hv
+      have hAC : UndirectedEdge chainGraph Three.A Three.C := hedge
+      unfold UndirectedEdge chainGraph at hAC
+      rcases hAC with (⟨h1, h2⟩ | ⟨h1, h2⟩) | (⟨h1, h2⟩ | ⟨h1, h2⟩) <;>
+        first | exact Three.noConfusion h1 | exact Three.noConfusion h2
+  | @cons a b c rest hab hbc hac hActive _hTail =>
+      -- Use the first active triple. Endpoints force `a = A` and final endpoint `C`.
+      have ha : a = Three.A := by
+        -- PathEndpoints for length >= 3 stores head as first endpoint.
+        cases rest with
+        | nil =>
+            have hpair : (a, c) = (Three.A, Three.C) := by
+              simpa [PathEndpoints] using Option.some.inj hEnds
+            exact congrArg Prod.fst hpair
+        | cons h t =>
+            have hpair : (a, (h :: t).getLast (by simp)) = (Three.A, Three.C) := by
+              simpa [PathEndpoints] using Option.some.inj hEnds
+            exact congrArg Prod.fst hpair
+      subst ha
+      have hb : b = Three.B := by
+        -- In chain graph, the only undirected neighbor of A is B.
+        unfold UndirectedEdge chainGraph at hab
+        rcases hab with (⟨_, hb⟩ | ⟨hb, _⟩) | (⟨_, hb⟩ | ⟨hb, _⟩)
+        · exact hb
+        · exact Three.noConfusion hb
+        · exact Three.noConfusion hb
+        · exact hb
+      subst hb
+      have hc : c = Three.C := by
+        -- B has undirected neighbors A and C; `c ≠ A` from hac, so c = C.
+        have hc_ne_A : c ≠ Three.A := by
+          intro h
+          exact hac h.symm
+        cases c with
+        | A => exact (hc_ne_A rfl).elim
+        | B =>
+            exfalso
+            -- B~B impossible in chain graph.
+            unfold UndirectedEdge chainGraph at hbc
+            rcases hbc with h | h <;> simp [chainGraph] at h
+        | C => rfl
+      subst hc
+      -- Build the legacy short active-path witness via the active triple A-B-C.
+      right; right
+      refine ⟨Three.B, by decide, by decide, ?_, ?_, ?_⟩
+      · -- A ~ B
+        unfold UndirectedEdge chainGraph
+        left; left; exact ⟨rfl, rfl⟩
+      · -- B ~ C
+        unfold UndirectedEdge chainGraph
+        left; right; exact ⟨rfl, rfl⟩
+      · refine ⟨?_, ?_, by decide, hActive⟩
+        · unfold UndirectedEdge chainGraph
+          left; left; exact ⟨rfl, rfl⟩
+        · unfold UndirectedEdge chainGraph
+          left; right; exact ⟨rfl, rfl⟩
+
+theorem chain_dsepFull_A_C_given_B :
+    DSeparatedFull chainGraph ({Three.A} : Set Three) ({Three.C} : Set Three) ({Three.B} : Set Three) := by
+  intro x hx y hy hxy htrail
+  simp only [Set.mem_singleton_iff] at hx hy
+  subst hx; subst hy
+  have hlegacy : ¬ HasActivePath chainGraph ({Three.B} : Set Three) Three.A Three.C :=
+    chain_dsep_A_C_given_B Three.A (by simp) Three.C (by simp) (by decide)
+  exact hlegacy (chain_hasActivePath_of_hasActiveTrail_A_C_given_B htrail)
+
+/-! ## Restricted d-sep ⇒ CondIndep bridge for the chain -/
+
+theorem chain_descendants_C_empty :
+    chainBN.descendants Three.C = (∅ : Set Three) := by
+  ext u
+  constructor
+  · intro hu
+    unfold BayesianNetwork.descendants DirectedGraph.descendants at hu
+    rcases hu with ⟨hreach, hne⟩
+    have huC : u = Three.C := chainGraph_no_path_from_C u hreach
+    exact (hne huC).elim
+  · intro hu
+    exact False.elim (Set.notMem_empty _ hu)
+
+theorem chain_graph_descendants_C_empty :
+    chainBN.graph.descendants Three.C = (∅ : Set Three) := by
+  simpa [BayesianNetwork.descendants] using chain_descendants_C_empty
+
+theorem chain_graph_parents_C :
+    chainBN.graph.parents Three.C = ({Three.B} : Set Three) := by
+  simpa [BayesianNetwork.parents] using chain_parents_C
+
+theorem chain_nonDescExceptParentsSelf_C :
+    chainBN.nonDescendantsExceptParentsAndSelf Three.C = ({Three.A} : Set Three) := by
+  ext u
+  cases u <;>
+    simp [BayesianNetwork.nonDescendantsExceptParentsAndSelf,
+      chain_graph_descendants_C_empty, chain_graph_parents_C]
+
+theorem chain_condIndep_CA_given_B_of_localMarkov
+    [StandardBorelSpace chainBN.JointSpace]
+    (μ : MeasureTheory.Measure chainBN.JointSpace) [MeasureTheory.IsFiniteMeasure μ]
+    [HasLocalMarkovProperty chainBN μ] :
+    CondIndepVertices chainBN μ ({Three.C} : Set Three) ({Three.A} : Set Three) ({Three.B} : Set Three) := by
+  have hmarkovC :=
+    HasLocalMarkovProperty.markov_condition (bn := chainBN) (μ := μ) Three.C
+  simpa [BayesianNetwork.LocalMarkovCondition,
+    chain_nonDescExceptParentsSelf_C, chain_graph_parents_C] using hmarkovC
+
+theorem chain_dsep_to_condIndep_CA_given_B
+    [StandardBorelSpace chainBN.JointSpace]
+    (μ : MeasureTheory.Measure chainBN.JointSpace) [MeasureTheory.IsFiniteMeasure μ]
+    [HasLocalMarkovProperty chainBN μ] :
+    DSeparated chainGraph ({Three.A} : Set Three) ({Three.C} : Set Three) ({Three.B} : Set Three) →
+      CondIndepVertices chainBN μ ({Three.C} : Set Three) ({Three.A} : Set Three) ({Three.B} : Set Three) := by
+  intro _hdsep
+  exact chain_condIndep_CA_given_B_of_localMarkov (μ := μ)
+
+theorem chain_dsep_to_condIndep_AC_given_B
+    [StandardBorelSpace chainBN.JointSpace]
+    (μ : MeasureTheory.Measure chainBN.JointSpace) [MeasureTheory.IsFiniteMeasure μ]
+    [HasLocalMarkovProperty chainBN μ] :
+    DSeparated chainGraph ({Three.A} : Set Three) ({Three.C} : Set Three) ({Three.B} : Set Three) →
+      CondIndepVertices chainBN μ ({Three.A} : Set Three) ({Three.C} : Set Three) ({Three.B} : Set Three) := by
+  intro hdsep
+  exact condIndepVertices_symm (bn := chainBN) (μ := μ)
+    (chain_dsep_to_condIndep_CA_given_B (μ := μ) hdsep)
+
+/-- Restricted full-definition bridge for the chain:
+`DSeparatedFull` implies `CondIndepVertices` for `C ⟂ A | B`. -/
+theorem chain_dsepFull_to_condIndep_CA_given_B
+    [StandardBorelSpace chainBN.JointSpace]
+    (μ : MeasureTheory.Measure chainBN.JointSpace) [MeasureTheory.IsFiniteMeasure μ]
+    [HasLocalMarkovProperty chainBN μ] :
+    Mettapedia.ProbabilityTheory.BayesianNetworks.DSeparation.DSeparatedFull
+      chainGraph ({Three.A} : Set Three) ({Three.C} : Set Three) ({Three.B} : Set Three) →
+      CondIndepVertices chainBN μ ({Three.C} : Set Three) ({Three.A} : Set Three) ({Three.B} : Set Three) := by
+  intro hdsepFull
+  exact chain_dsep_to_condIndep_CA_given_B (μ := μ)
+    (Mettapedia.ProbabilityTheory.BayesianNetworks.DSeparation.dsep_of_dsepFull
+      chainGraph ({Three.A} : Set Three) ({Three.C} : Set Three) ({Three.B} : Set Three) hdsepFull)
 
 /-- In a collider A → C ← B, A and B are d-separated given ∅.
 

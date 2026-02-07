@@ -3,6 +3,7 @@ import Mettapedia.OSLF.MeTTaIL.Semantics
 import Mettapedia.OSLF.MeTTaIL.Substitution
 import Mettapedia.OSLF.MeTTaIL.Match
 import Mettapedia.OSLF.MeTTaIL.Engine
+import Mettapedia.OSLF.MeTTaIL.DeclReduces
 import Mettapedia.OSLF.RhoCalculus.Types
 import Mettapedia.OSLF.RhoCalculus.Soundness
 import Mettapedia.OSLF.RhoCalculus.Reduction
@@ -15,6 +16,7 @@ import Mettapedia.OSLF.Framework.CategoryBridge
 import Mettapedia.OSLF.Framework.TypeSynthesis
 import Mettapedia.OSLF.Framework.GeneratedTyping
 import Mettapedia.OSLF.Framework.SynthesisBridge
+import Mettapedia.OSLF.Framework.LambdaInstance
 import Mettapedia.OSLF.Formula
 
 /-!
@@ -32,16 +34,18 @@ OSLF/
 │   ├── RewriteSystem.lean      -- Abstract OSLF: RewriteSystem -> OSLFTypeSystem
 │   ├── RhoInstance.lean        -- ρ-calculus instance (proven Galois connection)
 │   ├── DerivedModalities.lean  -- Derived ◇/□ from adjoint triple (0 sorries)
-│   ├── CategoryBridge.lean     -- Bridge to GSLT categorical infrastructure
+│   ├── CategoryBridge.lean     -- Categorical lift: GaloisConnection → Adjunction, SubobjectFibration
 │   ├── TypeSynthesis.lean      -- LanguageDef → OSLFTypeSystem (auto Galois)
 │   ├── GeneratedTyping.lean    -- Generated typing rules from grammar
-│   └── SynthesisBridge.lean    -- Bridge: generated ↔ hand-written types
+│   ├── SynthesisBridge.lean    -- Bridge: generated ↔ hand-written types
+│   └── LambdaInstance.lean     -- Lambda calculus OSLF instance (2nd example)
 ├── MeTTaIL/
 │   ├── Syntax.lean          -- LanguageDef AST (types, terms, equations, rewrites)
 │   ├── Semantics.lean       -- InterpObj, pattern interpretation
 │   ├── Substitution.lean    -- Capture-avoiding substitution
 │   ├── Match.lean           -- Generic pattern matching (multiset, alpha-rename)
-│   └── Engine.lean          -- Generic rewrite engine for any LanguageDef
+│   ├── Engine.lean          -- Generic rewrite engine for any LanguageDef
+│   └── DeclReduces.lean     -- Declarative reduction (proven ↔ engine)
 ├── RhoCalculus/
 │   ├── Types.lean           -- Namespaces, codespaces, bisimulation
 │   ├── Reduction.lean       -- COMM/DROP/PAR, modal operators, Galois connection
@@ -127,6 +131,13 @@ export Mettapedia.OSLF.MeTTaIL.Engine (
   fullRewriteToNormalForm
 )
 
+export Mettapedia.OSLF.MeTTaIL.DeclReduces (
+  DeclReduces
+  engine_sound
+  engine_complete
+  declReduces_iff_langReduces
+)
+
 -- Re-export RhoCalculus modules
 export Mettapedia.OSLF.RhoCalculus (
   ProcObj
@@ -208,8 +219,29 @@ export Mettapedia.OSLF.Framework.GeneratedTyping (
 export Mettapedia.OSLF.Framework.SynthesisBridge (
   langDiamond_implies_possibly_at
   possibly_implies_langDiamond_at
+  specialized_possibly
+  specialized_rely_check
+  specialized_can_reduce
   nativeToGen
   ctxToGen
+)
+
+export Mettapedia.OSLF.Framework.CategoryBridge (
+  langDiamond_monotone
+  langBox_monotone
+  PredLattice
+  langGaloisL
+  langModalAdjunction
+  rhoModalAdjunction
+  SortCategory
+  predFibration
+  oslf_fibration
+)
+
+export Mettapedia.OSLF.Framework.LambdaInstance (
+  lambdaCalc
+  lambdaOSLF
+  lambdaGalois
 )
 
 -- Re-export Formula module (OSLF output artifact)
@@ -222,6 +254,10 @@ export Mettapedia.OSLF.Formula (
   CheckResult
   check
   check_sat_sound
+  aggregateBox
+  aggregateBox_sat
+  checkWithPred
+  checkWithPred_sat_sound
   rhoAtoms
   rhoAtomSem
   rhoAtoms_sound

@@ -156,6 +156,145 @@ def HasActivePath (G : DirectedGraph V) (Z : Set V) (x y : V) : Prop :=
 def DSeparated (G : DirectedGraph V) (X Y Z : Set V) : Prop :=
   ∀ x ∈ X, ∀ y ∈ Y, x ≠ y → ¬HasActivePath G Z x y
 
+/-! ## D-Separation (Full Trail-Based Definition)
+
+The placeholder `HasActivePath` above only inspects very short paths.
+The definitions in this section are the proper arbitrary-length notion:
+
+- `IsTrail` tracks undirected adjacency along a vertex list.
+- `HasActiveTrail` packages endpoints + trail + activation.
+- `DSeparatedFull` quantifies over all endpoints in X,Y.
+-/
+
+/-- A vertex list is an undirected trail if each consecutive pair is adjacent. -/
+inductive IsTrail (G : DirectedGraph V) : List V → Prop
+  | single (v : V) : IsTrail G [v]
+  | cons {u v : V} {rest : List V}
+      (hEdge : UndirectedEdge G u v)
+      (hTail : IsTrail G (v :: rest)) :
+      IsTrail G (u :: v :: rest)
+
+/--
+`ActiveTrail G Z p` is the proof-relevant trail predicate:
+each extension step carries an undirected edge witness, and each internal node
+carries a proof that the corresponding triple is active.
+-/
+inductive ActiveTrail (G : DirectedGraph V) (Z : Set V) : List V → Prop
+  | single (v : V) : ActiveTrail G Z [v]
+  | two {u v : V} (hEdge : UndirectedEdge G u v) : ActiveTrail G Z [u, v]
+  | cons {a b c : V} {rest : List V}
+      (hab : UndirectedEdge G a b)
+      (hbc : UndirectedEdge G b c)
+      (hac : a ≠ c)
+      (hAct : IsActive G Z ⟨a, b, c, hab, hbc, hac⟩)
+      (hTail : ActiveTrail G Z (b :: c :: rest)) :
+      ActiveTrail G Z (a :: b :: c :: rest)
+
+/-- Endpoints of a non-empty path list. -/
+def PathEndpoints : List V → Option (V × V)
+  | [] => none
+  | [v] => some (v, v)
+  | v :: rest =>
+      match rest with
+      | [] => some (v, v)
+      | h :: t => some (v, (h :: t).getLast (by simp))
+
+/-- Existence of an arbitrary-length active trail from `x` to `y` given `Z`. -/
+def HasActiveTrail (G : DirectedGraph V) (Z : Set V) (x y : V) : Prop :=
+  ∃ p : List V, p ≠ [] ∧
+    PathEndpoints p = some (x, y) ∧
+    ActiveTrail G Z p
+
+/-- Full d-separation: no active trails between X and Y given Z. -/
+def DSeparatedFull (G : DirectedGraph V) (X Y Z : Set V) : Prop :=
+  ∀ x ∈ X, ∀ y ∈ Y, x ≠ y → ¬HasActiveTrail G Z x y
+
+/-- Any legacy short active path is a full active trail. -/
+theorem hasActiveTrail_of_hasActivePath
+    (G : DirectedGraph V) (Z : Set V) (x y : V) :
+    HasActivePath G Z x y → HasActiveTrail G Z x y := by
+  intro h
+  unfold HasActivePath at h
+  rcases h with rfl | ⟨hedge, _hne⟩ | ⟨b, hbx, hby, hxb, hby', hab, hbc, hxy, hAct⟩
+  · refine ⟨[x], by simp, ?_, ActiveTrail.single x⟩
+    simp [PathEndpoints]
+  · refine ⟨[x, y], by simp, ?_, ActiveTrail.two hedge⟩
+    simp [PathEndpoints]
+  · refine ⟨[x, b, y], by simp, ?_, ?_⟩
+    · simp [PathEndpoints]
+    · exact ActiveTrail.cons hab hbc hxy hAct (ActiveTrail.two hby')
+
+/-- Full d-separation implies legacy d-separation. -/
+theorem dsep_of_dsepFull (G : DirectedGraph V) (X Y Z : Set V) :
+    DSeparatedFull G X Y Z → DSeparated G X Y Z := by
+  intro hfull x hx y hy hxy hshort
+  exact hfull x hx y hy hxy (hasActiveTrail_of_hasActivePath G Z x y hshort)
+
+/-! ## Moralized-Ancestral Graph (bridge scaffolding)
+
+This section provides the graph objects used by the standard d-separation
+equivalence proof:
+
+1. Restrict to ancestors of `X ∪ Y ∪ Z`.
+2. Moralize (drop direction + connect co-parents).
+3. Reduce d-separation to ordinary graph separation in the moralized graph.
+-/
+
+/-- Ancestor closure of a vertex set. -/
+def ancestorClosure (G : DirectedGraph V) (S : Set V) : Set V :=
+  {v | v ∈ S ∨ ∃ s ∈ S, G.Reachable v s}
+
+/-- Directed induced subgraph on a vertex set `W`. -/
+def inducedSubgraph (G : DirectedGraph V) (W : Set V) : DirectedGraph V where
+  edges u v := W u ∧ W v ∧ G.edges u v
+
+/-- Moralized undirected edge relation for a DAG (on a fixed vertex universe). -/
+def moralUndirectedEdge (G : DirectedGraph V) (u v : V) : Prop :=
+  UndirectedEdge G u v ∨ ∃ c : V, G.edges u c ∧ G.edges v c
+
+/-- Moralized graph represented as a symmetric directed graph. -/
+def moralGraph (G : DirectedGraph V) : DirectedGraph V where
+  edges u v := moralUndirectedEdge G u v
+
+/-- A path avoids `Z` internally if all interior vertices are outside `Z`. -/
+def PathAvoidsInternals (Z : Set V) : List V → Prop
+  | [] => True
+  | [_] => True
+  | [_, _] => True
+  | _ :: b :: rest => b ∉ Z ∧ PathAvoidsInternals Z (b :: rest)
+
+/-- Separation in the moralized graph (scaffold definition). -/
+def SeparatedInMoral (G : DirectedGraph V) (X Y Z : Set V) : Prop :=
+  ∀ x ∈ X, ∀ y ∈ Y, x ≠ y →
+    ¬∃ p : List V, p ≠ [] ∧ PathEndpoints p = some (x, y) ∧
+      IsTrail (moralGraph G) p ∧ PathAvoidsInternals Z p
+
+theorem moralUndirectedEdge_symm (G : DirectedGraph V) (u v : V) :
+    moralUndirectedEdge G u v ↔ moralUndirectedEdge G v u := by
+  constructor <;> intro h
+  · rcases h with huv | ⟨c, huc, hvc⟩
+    · left
+      exact (undirectedEdge_symm G u v).1 huv
+    · right
+      exact ⟨c, hvc, huc⟩
+  · rcases h with huv | ⟨c, hvc, huc⟩
+    · left
+      exact (undirectedEdge_symm G v u).1 huv
+    · right
+      exact ⟨c, huc, hvc⟩
+
+theorem ancestorClosure_mono (G : DirectedGraph V) {S T : Set V}
+    (hST : S ⊆ T) : ancestorClosure G S ⊆ ancestorClosure G T := by
+  intro v hv
+  rcases hv with hs | ⟨s, hs, hreach⟩
+  · exact Or.inl (hST hs)
+  · exact Or.inr ⟨s, hST hs, hreach⟩
+
+theorem inducedSubgraph_edge_of_edge (G : DirectedGraph V) (W : Set V) {u v : V}
+    (hu : W u) (hv : W v) (h : G.edges u v) :
+    (inducedSubgraph G W).edges u v := by
+  exact ⟨hu, hv, h⟩
+
 /-! ## Basic Properties of D-Separation -/
 
 /-- Empty X means trivial d-separation. -/

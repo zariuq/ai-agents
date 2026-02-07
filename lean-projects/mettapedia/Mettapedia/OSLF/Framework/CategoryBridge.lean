@@ -1,27 +1,34 @@
 import Mettapedia.OSLF.Framework.DerivedModalities
+import Mettapedia.OSLF.Framework.TypeSynthesis
+import Mettapedia.OSLF.Framework.RewriteSystem
+import Mettapedia.GSLT.Core.LambdaTheoryCategory
+import Mathlib.CategoryTheory.Category.GaloisConnection
+import Mathlib.CategoryTheory.Discrete.Basic
 
 /-!
 # OSLF Category-Theoretic Bridge
 
-This file documents the categorical interpretation of the OSLF construction
-and how the concrete Set-level derivation (DerivedModalities.lean) relates to
-the full categorical picture (GSLT/Core/).
+Lifts the Set-level OSLF construction to categorical infrastructure
+using Mathlib's `CategoryTheory` library.
+
+## Main Results
+
+1. **Monotonicity**: `langDiamond` and `langBox` are monotone (as
+   left/right adjoints of a Galois connection).
+
+2. **Modal adjunction**: The Galois connection `langDiamond ⊣ langBox`
+   lifts to a categorical `Adjunction` between monotone functors on the
+   predicate preorder category (via `GaloisConnection.adjunction`).
+
+3. **Sort category**: For any `RewriteSystem`, the sorts form a discrete
+   category `Discrete R.Sorts`.
+
+4. **Predicate fibration**: Each sort `s` is assigned the fiber
+   `R.Term s → Prop`, forming a `SubobjectFibration` over the sort category.
 
 ## The Categorical Picture
 
-In the topos-theoretic setting (Williams & Stay, "Native Type Theory"):
-
-1. A lambda-theory T gives a presheaf topos T-hat = Set^{T^op}
-2. The Yoneda embedding y : T -> T-hat sends each sort to its representable presheaf
-3. The subobject functor Sub : T-hat -> Set sends each presheaf to its set of subobjects
-4. The Native Type functor NT = integral (Sub . y) is the Grothendieck construction
-
-## Modal Operators via Change-of-Base
-
-Per OSLF section 4 + section 6:
-
-The reduction relation R ⊆ Proc × Proc gives a span:
-
+The reduction relation R gives a span:
 ```
         E (reduction graph)
        / \
@@ -31,84 +38,210 @@ The reduction relation R ⊆ Proc × Proc gives a span:
    Proc    Proc
 ```
 
-The modal operators arise from change-of-base along this span:
+Modal operators arise from change-of-base along this span:
+  diamond(phi) = exists_src . tgt*,  box(phi) = forall_tgt . src*
 
-  diamond(phi) = exists_src (pullback_tgt phi)  = exists_src . tgt*
-  box(phi)     = forall_tgt (pullback_src phi)  = forall_tgt . src*
-
-The Galois connection diamond -| box follows from composing adjunctions:
-  diamond(phi) <= psi  <->  tgt*(phi) <= src*(psi)  <->  phi <= box(psi)
-
-## What IS Proven (in DerivedModalities.lean)
-
-The Set-level realization of this construction:
-
-1. `di_pb_adj` / `pb_ui_adj`: The adjoint triple `exists_f -| f* -| forall_f`
-   on `(X -> Prop)` fibers, for any function `f : E -> X`
-
-2. `derived_galois`: For ANY `ReductionSpan`, the derived diamond/box form
-   a Galois connection by composing the two adjunctions
-
-3. `derived_diamond_eq_possiblyProp` / `derived_box_eq_relyProp`:
-   For the rho-calculus span, the derived operators equal the hand-written ones
-
-4. `rho_galois_from_span`: The rho-calculus Galois connection as a corollary
-
-## Connection Points
-
-- **GSLT/Core/LambdaTheoryCategory.lean**: Proper Mathlib-based SubobjectFibration with
-  categories, CartesianMonoidalCategory, MonoidalClosed, HasFiniteLimits
-
-- **GSLT/Core/ChangeOfBase.lean**: The adjoint triple exists_f -| f* -| forall_f
-  at the categorical level, with `stepForward` and `secureStepForward`
-
-- **Framework/DerivedModalities.lean**: The same adjoint triple at the Set level,
-  with proven equivalence to possiblyProp/relyProp for the rho-calculus
-
-## What Remains (Categorical Lifting)
-
-To lift from Set-level (DerivedModalities) to full categorical (GSLT):
-
-1. **Categorical RewriteSystem**: Embed RewriteSystem into a category with
-   proper products, so the reduction span lives in the topos
-
-2. **Reduction as morphism**: Express the reduction relation R as a
-   subobject in the presheaf topos, giving the span `E -> Proc x Proc`
-
-3. **Lifting theorem**: Show that the categorical `ChangeOfBase.stepForward`
-   from GSLT/Core/ restricts to the Set-level `derivedDiamond` on fibers
-
-4. **Beck-Chevalley**: Show the GSLT `BeckChevalley` condition holds for
-   the OSLF span (enables substitution-commutes-with-modality)
+The Galois connection diamond -| box follows from composing adjunctions.
+In a preorder category, this IS a categorical adjunction (Mathlib's
+`GaloisConnection.adjunction`).
 
 ## References
 
 - Meredith & Stay, "Operational Semantics in Logical Form" sections 4, 6
 - Williams & Stay, "Native Type Theory" (ACT 2021) section 3
-- Johnstone, "Sketches of an Elephant" Vol 1, section 1.1
 -/
 
 namespace Mettapedia.OSLF.Framework.CategoryBridge
 
+open CategoryTheory
+open Mettapedia.OSLF.MeTTaIL.Syntax
+open Mettapedia.OSLF.Framework
 open Mettapedia.OSLF.Framework.DerivedModalities
+open Mettapedia.OSLF.Framework.TypeSynthesis
 
-/-! ## Re-export Key Results
+/-! ## Set-Level Results (from DerivedModalities.lean) -/
 
-The concrete derivation is in `DerivedModalities.lean`. We re-export
-the key theorem here for visibility.
--/
-
-/-- The generic Galois connection for any reduction span,
-    proven by composing the adjoint triple `∃_f ⊣ f* ⊣ ∀_f`.
-    See `DerivedModalities.derived_galois` for the proof. -/
-example (span : ReductionSpan X) : GaloisConnection (derivedDiamond span) (derivedBox span) :=
+/-- The generic Galois connection for any reduction span. -/
+example (span : ReductionSpan X) :
+    GaloisConnection (derivedDiamond span) (derivedBox span) :=
   derived_galois span
 
-/-- The rho-calculus Galois connection as a corollary of the generic construction.
-    See `DerivedModalities.rho_galois_from_span` for the proof. -/
+/-- The rho-calculus Galois connection as a corollary. -/
 example : GaloisConnection
     Mettapedia.OSLF.RhoCalculus.Reduction.possiblyProp
     Mettapedia.OSLF.RhoCalculus.Reduction.relyProp :=
   rho_galois_from_span
+
+/-! ## Monotonicity of Modal Operators
+
+A `GaloisConnection l u` implies `Monotone l` and `Monotone u`.
+This is the first step toward viewing the modal operators as functors.
+-/
+
+/-- `langDiamond` is monotone: if φ ≤ ψ then ◇φ ≤ ◇ψ. -/
+theorem langDiamond_monotone (lang : LanguageDef) :
+    Monotone (langDiamond lang) :=
+  (langGalois lang).monotone_l
+
+/-- `langBox` is monotone: if φ ≤ ψ then □φ ≤ □ψ. -/
+theorem langBox_monotone (lang : LanguageDef) :
+    Monotone (langBox lang) :=
+  (langGalois lang).monotone_u
+
+/-- `possiblyProp` is monotone. -/
+theorem possiblyProp_monotone :
+    Monotone Mettapedia.OSLF.RhoCalculus.Reduction.possiblyProp :=
+  rho_galois_from_span.monotone_l
+
+/-- `relyProp` is monotone. -/
+theorem relyProp_monotone :
+    Monotone Mettapedia.OSLF.RhoCalculus.Reduction.relyProp :=
+  rho_galois_from_span.monotone_u
+
+/-! ## Categorical Lift: Galois Connection → Adjunction
+
+A `GaloisConnection` between preorders lifts to a categorical `Adjunction`
+between the associated preorder categories. Mathlib provides this via:
+- `Monotone.functor`: monotone map → functor on preorder category
+- `GaloisConnection.adjunction`: Galois connection → adjunction
+- `Adjunction.gc`: adjunction → Galois connection (inverse direction)
+
+The predicate type `(Pattern → Prop)` has a `CompleteLattice` structure
+(hence `Preorder`), which gives it a thin category via
+`Preorder.smallCategory`. However, `Pattern → Prop` also inherits a
+`CategoryTheory.Pi` instance, creating an instance diamond.
+
+To avoid this ambiguity, we use a dedicated type wrapper `PredLattice`
+for the predicate preorder category.
+-/
+
+/-- The predicate lattice over Pattern, viewed as a preorder.
+
+    Using `def` (not `abbrev`) prevents instance diamonds between
+    `Preorder.smallCategory` and `CategoryTheory.Pi` on `Pattern → Prop`. -/
+def PredLattice : Type := Pattern → Prop
+
+noncomputable instance : CompleteLattice PredLattice := Pi.instCompleteLattice
+
+/-- Wrap a predicate as a `PredLattice` element. -/
+def PredLattice.mk (φ : Pattern → Prop) : PredLattice := φ
+
+/-- Unwrap a `PredLattice` element to a predicate. -/
+def PredLattice.get (φ : PredLattice) : Pattern → Prop := φ
+
+/-- Lift `langDiamond` to operate on `PredLattice`. -/
+def langDiamondL (lang : LanguageDef) : PredLattice → PredLattice :=
+  fun φ => langDiamond lang φ.get
+
+/-- Lift `langBox` to operate on `PredLattice`. -/
+def langBoxL (lang : LanguageDef) : PredLattice → PredLattice :=
+  fun φ => langBox lang φ.get
+
+/-- The lifted langDiamond is monotone. -/
+theorem langDiamondL_monotone (lang : LanguageDef) :
+    Monotone (langDiamondL lang) := by
+  intro φ ψ h
+  exact (langGalois lang).monotone_l h
+
+/-- The lifted langBox is monotone. -/
+theorem langBoxL_monotone (lang : LanguageDef) :
+    Monotone (langBoxL lang) := by
+  intro φ ψ h
+  exact (langGalois lang).monotone_u h
+
+/-- The Galois connection lifts to `PredLattice`. -/
+theorem langGaloisL (lang : LanguageDef) :
+    GaloisConnection (langDiamondL lang) (langBoxL lang) := by
+  intro φ ψ
+  exact langGalois lang φ.get ψ.get
+
+/-- The modal adjunction ◇ ⊣ □ for any `LanguageDef`, as a categorical
+    `Adjunction` between endofunctors on the predicate preorder category.
+
+    This lifts the order-theoretic Galois connection to category theory. -/
+noncomputable def langModalAdjunction (lang : LanguageDef) :
+    (langGaloisL lang).monotone_l.functor ⊣
+    (langGaloisL lang).monotone_u.functor :=
+  (langGaloisL lang).adjunction
+
+/-- The rho-calculus modal adjunction: instantiate the generic one for `rhoCalc`. -/
+noncomputable def rhoModalAdjunction :=
+  langModalAdjunction rhoCalc
+
+/-! ## Sort Category and Predicate Fibration
+
+For any `RewriteSystem R`, we build:
+1. A discrete category on `R.Sorts`
+2. A `SubobjectFibration` assigning `(R.Term s → Prop)` to each sort `s`
+-/
+
+/-- The sort category: the discrete category on the sorts of a rewrite system.
+
+    In the full topos-theoretic picture, this would be replaced by the
+    lambda-theory category. The discrete category is the minimal categorical
+    structure that assigns an object to each sort. -/
+abbrev SortCategory (R : RewriteSystem) := CategoryTheory.Discrete R.Sorts
+
+/-- The predicate fibration for a rewrite system.
+
+    Each sort `s` is assigned the fiber `R.Term s → Prop` (predicates on
+    terms at sort `s`), which is a `Frame` (complete Heyting algebra).
+
+    This is the discrete approximation to the full subobject fibration
+    `Sub : Set^{T^op} → Set` from Native Type Theory. -/
+noncomputable def predFibration (R : RewriteSystem) :
+    Mettapedia.GSLT.Core.SubobjectFibration (SortCategory R) where
+  Sub := fun ⟨s⟩ => R.Term s → Prop
+  frame := fun ⟨_⟩ => Pi.instFrame
+
+/-- Construct a `SubobjectFibration` over the sort category from an
+    `OSLFTypeSystem`, using the predicate types `sys.Pred s` as fibers. -/
+def oslf_fibration (R : RewriteSystem) (sys : OSLFTypeSystem R) :
+    Mettapedia.GSLT.Core.SubobjectFibration (SortCategory R) where
+  Sub := fun ⟨s⟩ => sys.Pred s
+  frame := fun ⟨s⟩ => sys.frame s
+
+/-- The predicate fibration for the rho-calculus. -/
+noncomputable def rhoPredFibration :
+    Mettapedia.GSLT.Core.SubobjectFibration
+      (SortCategory (langRewriteSystem rhoCalc "Proc")) :=
+  predFibration (langRewriteSystem rhoCalc "Proc")
+
+-- Verify the key constructions type-check
+#check @langModalAdjunction
+#check @rhoModalAdjunction
+#check @predFibration
+#check @oslf_fibration
+
+/-! ## Summary
+
+**0 sorries. 0 axioms.**
+
+### Proven Results
+
+1. **Monotonicity**: `langDiamond_monotone`, `langBox_monotone`,
+   `possiblyProp_monotone`, `relyProp_monotone`
+2. **Modal adjunction**: `langModalAdjunction` (for any `LanguageDef`),
+   `rhoModalAdjunction` (for rho-calculus)
+3. **Sort category**: `SortCategory R = Discrete R.Sorts`
+4. **Predicate fibration**: `predFibration` and `oslf_fibration` construct
+   `SubobjectFibration` instances over the sort category
+
+### Connection to GSLT
+
+The `SubobjectFibration` structure bridges to `GSLT/Core/`:
+- `LambdaTheoryCategory.lean`: Defines `SubobjectFibration` with
+  CartesianMonoidalCategory, MonoidalClosed, HasFiniteLimits
+- `ChangeOfBase.lean`: The adjoint triple `∃_f ⊣ f* ⊣ ∀_f` at the
+  categorical level
+
+### What Remains (Full Topos Lift)
+
+To go from discrete-category fibers to the full topos-theoretic picture:
+1. Replace `Discrete R.Sorts` with a proper lambda-theory category
+2. Express the reduction relation as a subobject in the presheaf topos
+3. Show `ChangeOfBase.stepForward` restricts to `derivedDiamond` on fibers
+4. Prove the Beck-Chevalley condition for substitution commutativity
+-/
 
 end Mettapedia.OSLF.Framework.CategoryBridge
