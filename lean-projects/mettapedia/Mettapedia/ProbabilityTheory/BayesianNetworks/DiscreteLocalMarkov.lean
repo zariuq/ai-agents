@@ -401,6 +401,48 @@ private lemma condExp_indicator_norm_le_one
   simp only [Pi.zero_apply] at hge
   exact ⟨by linarith, hle⟩
 
+/-! ### Parent-fiber decomposition helpers
+
+These lemmas let us treat any `m_pa`-measurable set as the preimage of a set of
+parent assignments via the restriction map. They will be used to decompose
+integrals over parent fibers in the BN CI proof below.
+-/
+
+omit [Fintype V] [DecidableEq V] in
+noncomputable def parentsRestrict (v : V) :
+    bn.JointSpace → (∀ p : {x // x ∈ (bn.graph.parents v : Set V)}, bn.stateSpace p.1) :=
+  restrictToSet (bn := bn) (bn.graph.parents v)
+
+omit [Fintype V] [DecidableEq V] in
+lemma measurableSet_parents_preimage
+    (v : V) {s : Set bn.JointSpace}
+    (hs : MeasurableSet[bn.measurableSpaceOfVertices (bn.graph.parents v)] s) :
+    ∃ S : Set (∀ p : {x // x ∈ (bn.graph.parents v : Set V)}, bn.stateSpace p.1),
+      MeasurableSet S ∧ s = (parentsRestrict (bn := bn) v) ⁻¹' S := by
+  classical
+  -- Rewrite the parent sigma-algebra as a comap, then use measurableSet_comap.
+  have hs' :
+      MeasurableSet[
+        MeasurableSpace.comap (parentsRestrict (bn := bn) v) (by infer_instance)] s := by
+    simpa [parentsRestrict,
+      measurableSpaceOfVertices_eq_comap_restrict (bn := bn) (bn.graph.parents v)] using hs
+  rcases (MeasurableSpace.measurableSet_comap).1 hs' with ⟨S, hS, hpre⟩
+  exact ⟨S, hS, hpre.symm⟩
+
+omit [Fintype V] [DecidableEq V] in
+abbrev ParentAssign (v : V) :=
+  ∀ p : {x // x ∈ (bn.graph.parents v : Set V)}, bn.stateSpace p.1
+
+omit [Fintype V] [DecidableEq V] in
+def parentFiber (v : V) (c : ParentAssign (bn := bn) v) : Set bn.JointSpace :=
+  (parentsRestrict (bn := bn) v) ⁻¹' {c}
+
+omit [Fintype V] [DecidableEq V] in
+lemma mem_parentFiber_iff
+    (v : V) (c : ParentAssign (bn := bn) v) (ω : bn.JointSpace) :
+    ω ∈ parentFiber (bn := bn) v c ↔ (parentsRestrict (bn := bn) v ω) = c := by
+  rfl
+
 /-- BN factorization CI on parent fibers: for B ∈ m_v and f = t₂.indicator 1 with t₂ ∈ m_{ND'},
     on each parent fiber F_c the joint weight factors as nodeProb(v,x_v,c) · Ψ(x_{ND'},c)
     after marginalizing descendants (telescoping_sum). This product structure gives:

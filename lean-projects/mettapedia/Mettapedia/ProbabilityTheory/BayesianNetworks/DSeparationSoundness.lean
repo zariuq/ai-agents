@@ -168,6 +168,78 @@ lemma measurable_const_on_fiber
     simpa [hpre_eq] using h₂
   simpa using h₂'.symm
 
+/-! ### Multi-vertex fiber constancy
+
+These lemmas generalize `measurable_const_on_fiber` from single vertices to an
+arbitrary vertex set `S`. They are used to show that any `S`-measurable function
+is constant on fibers that fix the coordinates in `S`.
+-/
+
+omit [Fintype V] [DecidableEq V] [∀ v, StandardBorelSpace (bn.stateSpace v)] in
+noncomputable def restrictToSet (S : Set V) : bn.JointSpace → (∀ v : S, bn.stateSpace v) :=
+  fun ω v => ω v
+
+omit [Fintype V] [DecidableEq V] [∀ v, StandardBorelSpace (bn.stateSpace v)] in
+lemma measurableSpaceOfVertices_eq_comap_restrict (S : Set V) :
+    bn.measurableSpaceOfVertices S =
+      MeasurableSpace.comap (restrictToSet (bn := bn) S) (by infer_instance) := by
+  classical
+  apply le_antisymm
+  · -- Each coordinate projection factors through `restrictToSet`.
+    refine iSup_le ?_
+    intro v
+    -- `ω ↦ ω v` is the composition of `restrictToSet` with the Pi-evaluation map.
+    have hmeas :
+        Measurable[MeasurableSpace.comap (restrictToSet (bn := bn) S) (by infer_instance)]
+          (fun ω : bn.JointSpace => (restrictToSet (bn := bn) S ω) v) := by
+      exact (measurable_pi_apply v).comp (comap_measurable (restrictToSet (bn := bn) S))
+    exact Measurable.comap_le hmeas
+  · -- `restrictToSet` is measurable from `measurableSpaceOfVertices S`.
+    have hmeas :
+        Measurable[bn.measurableSpaceOfVertices S] (restrictToSet (bn := bn) S) := by
+      -- Use a local instance to apply `measurable_pi_iff` on the domain `m := measurableSpaceOfVertices S`.
+      let _ : MeasurableSpace bn.JointSpace := bn.measurableSpaceOfVertices S
+      have hmeas' : Measurable (restrictToSet (bn := bn) S) := by
+        refine measurable_pi_iff.mpr ?_
+        intro v
+        -- Each coordinate `ω ↦ ω v` is measurable because its comap is one of the iSup terms.
+        have hle :
+            MeasurableSpace.comap (fun ω : bn.JointSpace => ω v)
+              (by infer_instance) ≤ bn.measurableSpaceOfVertices S := by
+          exact le_iSup_of_le v (by rfl)
+        exact Measurable.of_comap_le hle
+      simpa using hmeas'
+    exact Measurable.comap_le hmeas
+
+omit [Fintype V] [DecidableEq V] [∀ v, StandardBorelSpace (bn.stateSpace v)] in
+lemma measurable_const_on_fiber_set
+    (S : Set V) {f : bn.JointSpace → ℝ}
+    (hf : Measurable[bn.measurableSpaceOfVertices S] f)
+    {ω₁ ω₂ : bn.JointSpace}
+    (h : (restrictToSet (bn := bn) S ω₁) = (restrictToSet (bn := bn) S ω₂)) :
+    f ω₁ = f ω₂ := by
+  classical
+  -- Reduce to the comap-measurable formulation and reuse the singleton proof idea.
+  have hf' :
+      Measurable[
+        MeasurableSpace.comap (restrictToSet (bn := bn) S) (by infer_instance)] f := by
+    simpa [measurableSpaceOfVertices_eq_comap_restrict (bn := bn) S] using hf
+  have hpre :
+      MeasurableSet[
+        MeasurableSpace.comap (restrictToSet (bn := bn) S) (by infer_instance)]
+        (f ⁻¹' ({f ω₁} : Set ℝ)) := by
+    exact hf' (by simp)
+  rcases (MeasurableSpace.measurableSet_comap).1 hpre with ⟨s, hs, hpre_eq⟩
+  have h₁ : ω₁ ∈ (restrictToSet (bn := bn) S) ⁻¹' s := by
+    have : ω₁ ∈ f ⁻¹' ({f ω₁} : Set ℝ) := by simp
+    simpa [hpre_eq] using this
+  have h₂ : ω₂ ∈ (restrictToSet (bn := bn) S) ⁻¹' s := by
+    have : (restrictToSet (bn := bn) S ω₁) ∈ s := by simpa using h₁
+    simpa [h] using this
+  have h₂' : ω₂ ∈ f ⁻¹' ({f ω₁} : Set ℝ) := by
+    simpa [hpre_eq] using h₂
+  simpa using h₂'.symm
+
 /-! ## Constant-on-event integrals -/
 
 omit [Fintype V] [DecidableEq V] [∀ v, StandardBorelSpace (bn.stateSpace v)] in

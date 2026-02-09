@@ -4596,6 +4596,528 @@ lemma sum_abs_ratio_partition_by_excursionMultiset
     sum_ratioTerm_partition_by_excursionMultiset
       (k := k) (hN := hN) (hk := hk) (e := e) (s := s)
 
+/-! ## Subgoal A: multiset-fiber constancy of |wr - wor|
+
+The absolute discrepancy `|wrPatternMass(p) - worPatternMass(p)|` depends only
+on the multiset of excursion types in `p`, not on their ordering. This is proved
+by induction on `List.Perm` using the adjacent-transposition invariance machinery
+(`abs_wr_wor_patternMass_toReal_eq_of_adjacent_swap_of_decomps`).
+
+Key technique: strengthen the induction hypothesis to work with arbitrary prefixes,
+so that the `cons` case of `List.Perm.rec` reduces to the IH applied to a
+longer prefix. -/
+
+/-- No-return condition from `IsConsecutivePair`: between consecutive return
+positions, the trajectory does not return to start. -/
+private lemma noret_of_IsConsecutivePair {N : ℕ} (xs : Traj k N)
+    {a b : Fin (N + 1)}
+    (h : IsConsecutivePair (returnPositions (k := k) xs) a b) :
+    ∀ (j : Fin (N + 1)), a.val < j.val → j.val < b.val → xs j ≠ xs 0 := by
+  intro j haj hjb hret
+  rcases h with ⟨_, _, _, hgap⟩
+  have hj_mem : j ∈ returnPositions (k := k) xs := by
+    simp [returnPositions, Finset.mem_filter]
+    exact hret
+  have haj' : a < j := by exact_mod_cast haj
+  have hjb' : j < b := by exact_mod_cast hjb
+  exact hgap j hj_mem ⟨haj', hjb'⟩
+
+/-- Segment preservation under `segmentSwap` when the segment starts at or beyond
+the swap boundary `a + L1 + L2`, using return conditions at the boundary. -/
+private lemma trajSegment_segmentSwap_outside_ge {N : ℕ} (xs : Traj k N)
+    (a L1 L2 : ℕ) (hL1 : 0 < L1) (hL2 : 0 < L2) (hcN : a + L1 + L2 ≤ N)
+    (i j : Fin (N + 1)) (hij : i.val ≤ j.val)
+    (hge : a + L1 + L2 ≤ i.val)
+    (hb_ret : xs ⟨a + L1, by omega⟩ = xs 0)
+    (hc_ret : xs ⟨a + L1 + L2, by omega⟩ = xs 0) :
+    trajSegment (k := k) (segmentSwap xs a L1 L2 hL1 hL2 hcN) i j =
+      trajSegment (k := k) xs i j := by
+  apply trajSegment_ext _ _ i.val j.val i.val j.val i.isLt j.isLt i.isLt j.isLt
+    hij hij rfl
+  intro t ht
+  have ht_le : i.val + t ≤ j.val := by omega
+  have hp : i.val + t < N + 1 := by omega
+  have hge' : a + L1 + L2 ≤ i.val + t := by omega
+  by_cases hgt : a + L1 + L2 < i.val + t
+  · exact segmentSwap_eq_of_gt_range' xs a L1 L2 hL1 hL2 hcN
+      (i.val + t) hp hgt
+  · have hEq : i.val + t = a + L1 + L2 := by omega
+    -- At the boundary, segmentSwap reads from `a + L1`, which equals the start state.
+    have hbc : xs ⟨a + L1, by omega⟩ = xs ⟨a + L1 + L2, by omega⟩ := by
+      exact hb_ret.trans hc_ret.symm
+    -- Use the definition of segmentSwap at the boundary index.
+    have hswap :
+        segmentSwap xs a L1 L2 hL1 hL2 hcN ⟨i.val + t, hp⟩ =
+          xs ⟨i.val + t - L2, by omega⟩ := by
+      have hnot1 : ¬(i.val + t ≤ a) := by omega
+      have hnot2 : ¬(i.val + t ≤ a + L2) := by omega
+      have hle3 : i.val + t ≤ a + L1 + L2 := by omega
+      simp [segmentSwap, hnot1, hnot2, hle3]
+    -- Rewrite the RHS to the boundary value and use return equality.
+    have hrew : xs ⟨i.val + t - L2, by omega⟩ = xs ⟨i.val + t, hp⟩ := by
+      -- i.val + t = a + L1 + L2
+      -- so i.val + t - L2 = a + L1
+      have : i.val + t - L2 = a + L1 := by omega
+      -- Use the return conditions to identify the two positions.
+      have hbc' : xs ⟨a + L1, by omega⟩ = xs ⟨a + L1 + L2, by omega⟩ := hbc
+      simpa [hEq, this] using hbc'
+    simpa [hswap] using hrew
+
+/-- The excursion pairs list satisfies a pairwise property: for any two pairs
+where the first comes before the second, the snd of the first is ≤ the fst of the second.
+This follows from the sorted structure of the underlying return positions list. -/
+private lemma excursionPairs_pairwise_snd_le_fst {n : ℕ} (ys : Traj k n) :
+    List.Pairwise (fun a b : Fin (n + 1) × Fin (n + 1) => a.2 ≤ b.1)
+      (excursionPairs (k := k) ys) := by
+  classical
+  let l := returnPositionsList (k := k) ys
+  have hs : l.SortedLT := Finset.sortedLT_sort (returnPositions (k := k) ys)
+  have hzip : excursionPairs (k := k) ys = l.zip l.tail := by
+    simp [excursionPairs, l]
+  rw [hzip]
+  rw [List.pairwise_iff_getElem]
+  intro i j hi hj hij
+  -- (l.zip l.tail)[i] = (l[i], l[i+1]) and [j] = (l[j], l[j+1])
+  -- Need l[i+1] ≤ l[j], which follows from i+1 ≤ j and l sorted
+  have hlen_zip : (l.zip l.tail).length = l.length - 1 := by
+    simp [List.length_zip, List.length_tail]
+  have hli1 : i + 1 < l.length := by omega
+  have hlj : j < l.length := by omega
+  simp only [List.getElem_zip, List.getElem_tail]
+  show l[i + 1] ≤ l[j]
+  rcases eq_or_lt_of_le (show i + 1 ≤ j by omega) with h | h
+  · exact le_of_eq (by congr 1)
+  · exact le_of_lt ((List.SortedLT.getElem_lt_getElem_iff hs).2 h)
+
+/-- In a sorted zip-tail decomposition `excursionPairs ys = pre ++ p1 :: p2 :: suf`,
+the snd of every pre-element is `≤ p1.fst`. -/
+private lemma snd_le_fst_of_mem_pre_excursionPairs {n : ℕ} (ys : Traj k n)
+    {pre suf : List (Fin (n + 1) × Fin (n + 1))}
+    {p1 p2 : Fin (n + 1) × Fin (n + 1)}
+    (hpairs : excursionPairs (k := k) ys = pre ++ p1 :: p2 :: suf)
+    {pr : Fin (n + 1) × Fin (n + 1)} (hpr : pr ∈ pre) :
+    pr.2 ≤ p1.1 := by
+  have hpw := excursionPairs_pairwise_snd_le_fst (k := k) ys
+  rw [hpairs] at hpw
+  have ⟨_, _, hcross⟩ := List.pairwise_append.mp hpw
+  have hmem : p1 ∈ p1 :: p2 :: suf := List.mem_cons_self ..
+  exact @hcross _ hpr _ hmem
+
+/-- In a sorted zip-tail decomposition, `p2.snd ≤ pr.fst` for every suf-element. -/
+private lemma fst_ge_snd_of_mem_suf_excursionPairs {n : ℕ} (ys : Traj k n)
+    {pre suf : List (Fin (n + 1) × Fin (n + 1))}
+    {p1 p2 : Fin (n + 1) × Fin (n + 1)}
+    (hpairs : excursionPairs (k := k) ys = pre ++ p1 :: p2 :: suf)
+    {pr : Fin (n + 1) × Fin (n + 1)} (hpr : pr ∈ suf) :
+    p2.2 ≤ pr.1 := by
+  have hpw := excursionPairs_pairwise_snd_le_fst (k := k) ys
+  rw [hpairs] at hpw
+  -- Decompose: pre ++ (p1 :: p2 :: suf) = pre ++ ([p1] ++ (p2 :: suf))
+  -- First split on pre vs rest
+  have hpw1 := (List.pairwise_append.mp hpw).2.1
+  -- hpw1 : Pairwise R (p1 :: p2 :: suf)
+  -- Now split p1 :: (p2 :: suf)
+  have hpw2 := (List.pairwise_cons.mp hpw1).2
+  -- hpw2 : Pairwise R (p2 :: suf)
+  have hcross := (List.pairwise_cons.mp hpw2).1
+  -- hcross : ∀ b ∈ suf, p2.2 ≤ b.1
+  exact hcross pr hpr
+
+/-- For a trajectory in the short-pattern fiber of `preSeg ++ [e1, e2] ++ sufSeg`,
+extract the full `ShortSwapMiddleDecomp` witness data. This is the core glue
+connecting pattern-level adjacent swaps to the trajectory-level decomposition. -/
+private lemma shortSwapMiddleDecomp_of_patternDecomp
+    (n : ℕ) (e : MarkovState k) (preSeg sufSeg : ExcursionList k)
+    (e1 e2 : ExcursionType k)
+    (hL1 : 0 < excLen (k := k) e1) (hL2 : 0 < excLen (k := k) e2)
+    (hcN : excSteps (k := k) preSeg + excLen (k := k) e1 +
+      excLen (k := k) e2 ≤ Nat.succ n) :
+    ShortSwapMiddleDecomp (k := k) n e
+      (preSeg ++ [e1, e2] ++ sufSeg)
+      (preSeg ++ [e2, e1] ++ sufSeg)
+      (excSteps (k := k) preSeg) (excLen (k := k) e1)
+      (excLen (k := k) e2) hL1 hL2 hcN := by
+  -- Abbreviations for readability
+  set a := excSteps (k := k) preSeg with ha_def
+  set L1 := excLen (k := k) e1 with hL1_def
+  set L2 := excLen (k := k) e2 with hL2_def
+  set p := preSeg ++ [e1, e2] ++ sufSeg with hp_def
+  set q := preSeg ++ [e2, e1] ++ sufSeg with hq_def
+  -- Unfold ShortSwapMiddleDecomp
+  intro ys hys
+  -- Extract excursionListOfTraj ys = p from membership
+  have hys_filt := Finset.mem_filter.1 hys
+  have hys_fib : ys ∈ fiber k (Nat.succ n) e := hys_filt.1
+  have hys_pat : excursionListOfTraj (k := k) ys = p := hys_filt.2
+  -- Apply excursionPairs_decomp_of_excursionList_decomp
+  rcases excursionPairs_decomp_of_excursionList_decomp (k := k) ys
+    preSeg sufSeg e1 e2 hys_pat with
+    ⟨pre, suf, p1, p2, hpairs, hpre, he1, he2, hsuf, hp12⟩
+  -- Convert cons form to append form for helper lemmas
+  have hpairs_app : excursionPairs (k := k) ys = pre ++ [p1, p2] ++ suf := by
+    simp only [List.append_assoc, List.cons_append, List.nil_append]; exact hpairs
+  -- Membership facts
+  have hp1_mem : p1 ∈ excursionPairs (k := k) ys := by
+    rw [hpairs]; exact List.mem_append_right _ (List.mem_cons_self ..)
+  have hp2_mem : p2 ∈ excursionPairs (k := k) ys := by
+    rw [hpairs]
+    exact List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
+  have hpre_mem : ∀ pr ∈ pre, pr ∈ excursionPairs (k := k) ys := by
+    intro pr hpr; rw [hpairs]; exact List.mem_append_left _ hpr
+  have hsuf_mem : ∀ pr ∈ suf, pr ∈ excursionPairs (k := k) ys := by
+    intro pr hpr; rw [hpairs]
+    exact List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hpr))
+  -- Strict ordering
+  have hp1_lt := fst_lt_snd_of_mem_excursionPairs (k := k) ys hp1_mem
+  have hp2_lt := fst_lt_snd_of_mem_excursionPairs (k := k) ys hp2_mem
+  -- Step 1: Identify p1.1.val = a
+  have hsteps := excSteps_preSeg_eq_sum_diffs (k := k) ys pre preSeg hpre hpre_mem
+  have hsum := sum_diffs_pre_eq_fst_of_excursionPairs_decomp (k := k) ys pre suf p1 p2 hpairs
+  have hsteps_val : a = p1.1.1 := by omega
+  -- Step 2: Identify p1.2.val - p1.1.val = L1
+  have hexL1 := excLen_trajSegment_of_excursionPair (k := k) ys hp1_mem
+  rw [← he1] at hexL1
+  -- So p1.2.val = p1.1.val + L1 = a + L1
+  have hp12_val : p1.2.1 = p2.1.1 := congrArg Fin.val hp12
+  have hp1_snd_val : p1.2.1 = a + L1 := by omega
+  -- Step 3: Identify p2.2.val = a + L1 + L2
+  have hexL2 := excLen_trajSegment_of_excursionPair (k := k) ys hp2_mem
+  rw [← he2] at hexL2
+  have hp2_snd_val : p2.2.1 = a + L1 + L2 := by omega
+  -- Step 4: Construct the concrete Fin-valued pair identifications
+  have hp1_eq : p1 = (⟨a, by omega⟩, ⟨a + L1, by omega⟩) := by
+    ext <;> simp <;> omega
+  have hp2_eq : p2 = (⟨a + L1, by omega⟩, ⟨a + L1 + L2, by omega⟩) := by
+    ext <;> simp <;> omega
+  -- Step 5: Rewrite hpairs with concrete Fin values
+  have hpairs' : excursionPairs (k := k) ys =
+      pre ++ [(⟨a, by omega⟩, ⟨a + L1, by omega⟩),
+              (⟨a + L1, by omega⟩, ⟨a + L1 + L2, by omega⟩)] ++ suf := by
+    rw [hpairs_app]; congr 1; congr 1; simp [hp1_eq, hp2_eq]
+  -- Step 6: Return conditions from returnPositions membership
+  have hp1_fst_ret : ys ⟨a, by omega⟩ = ys 0 := by
+    have h := mem_returnPositions_of_mem_excursionPairs_fst (k := k) ys hp1_mem
+    rw [hp1_eq] at h; simp [returnPositions, Finset.mem_filter] at h; exact h
+  have hp1_snd_ret : ys ⟨a + L1, by omega⟩ = ys 0 := by
+    have h := mem_returnPositions_of_mem_excursionPairs_snd (k := k) ys hp1_mem
+    rw [hp1_eq] at h; simp [returnPositions, Finset.mem_filter] at h; exact h
+  have hp2_snd_ret : ys ⟨a + L1 + L2, by omega⟩ = ys 0 := by
+    have h := mem_returnPositions_of_mem_excursionPairs_snd (k := k) ys hp2_mem
+    rw [hp2_eq] at h; simp [returnPositions, Finset.mem_filter] at h; exact h
+  -- Step 7: No-return conditions
+  have hcp1 := IsConsecutivePair_of_mem_excursionPairs (k := k) ys
+    (show (⟨a, by omega⟩, ⟨a + L1, by omega⟩) ∈ excursionPairs (k := k) ys by
+      rw [← hp1_eq]; exact hp1_mem)
+  have hnoret1 := noret_of_IsConsecutivePair (k := k) ys hcp1
+  have hcp2 := IsConsecutivePair_of_mem_excursionPairs (k := k) ys
+    (show (⟨a + L1, by omega⟩, ⟨a + L1 + L2, by omega⟩) ∈ excursionPairs (k := k) ys by
+      rw [← hp2_eq]; exact hp2_mem)
+  have hnoret2 := noret_of_IsConsecutivePair (k := k) ys hcp2
+  -- Step 8: excursionPairs of segmentSwap
+  have hpairs_swap := excursionPairs_segmentSwap_eq_swap_middle (k := k) ys a L1 L2
+    hL1 hL2 hcN pre suf hpairs' hp1_fst_ret hp1_snd_ret hp2_snd_ret hnoret1 hnoret2
+  -- Step 9: Pre-segment preservation
+  have hpre_seg : pre.map (fun pr =>
+      trajSegment (k := k) (segmentSwap ys a L1 L2 hL1 hL2 hcN) pr.1 pr.2) =
+    pre.map (fun pr => trajSegment (k := k) ys pr.1 pr.2) := by
+    apply List.map_congr_left
+    intro pr hpr
+    have hpr_lt := fst_lt_snd_of_mem_excursionPairs (k := k) ys (hpre_mem pr hpr)
+    have hpr_bound := snd_le_fst_of_mem_pre_excursionPairs (k := k) ys hpairs hpr
+    rw [hp1_eq] at hpr_bound; simp at hpr_bound
+    exact trajSegment_segmentSwap_outside (k := k) ys a L1 L2 hL1 hL2 hcN pr.1 pr.2
+      (le_of_lt hpr_lt) (Or.inl (by omega))
+  -- Step 10: Suf-segment preservation
+  have hsuf_seg : suf.map (fun pr =>
+      trajSegment (k := k) (segmentSwap ys a L1 L2 hL1 hL2 hcN) pr.1 pr.2) =
+    suf.map (fun pr => trajSegment (k := k) ys pr.1 pr.2) := by
+    apply List.map_congr_left
+    intro pr hpr
+    have hpr_lt := fst_lt_snd_of_mem_excursionPairs (k := k) ys (hsuf_mem pr hpr)
+    have hpr_bound := fst_ge_snd_of_mem_suf_excursionPairs (k := k) ys hpairs hpr
+    rw [hp2_eq] at hpr_bound; simp at hpr_bound
+    exact trajSegment_segmentSwap_outside_ge (k := k) ys a L1 L2 hL1 hL2 hcN pr.1 pr.2
+      (le_of_lt hpr_lt) hpr_bound hp1_snd_ret hp2_snd_ret
+  -- Step 11: Rewrite e1, e2, preSeg, sufSeg identifications
+  have he1' : e1 = trajSegment (k := k) ys ⟨a, by omega⟩ ⟨a + L1, by omega⟩ := by
+    have h1 : (⟨a, by omega⟩ : Fin _) = p1.1 := by ext; simp [hp1_eq]
+    have h2 : (⟨a + L1, by omega⟩ : Fin _) = p1.2 := by ext; simp [hp1_eq]
+    conv_rhs => rw [h1, h2]
+    exact he1
+  have he2' : e2 = trajSegment (k := k) ys ⟨a + L1, by omega⟩ ⟨a + L1 + L2, by omega⟩ := by
+    have h1 : (⟨a + L1, by omega⟩ : Fin _) = p2.1 := by
+      ext; simp [hp2_eq]
+    have h2 : (⟨a + L1 + L2, by omega⟩ : Fin _) = p2.2 := by
+      ext; simp [hp2_eq]
+    conv_rhs => rw [h1, h2]
+    exact he2
+  have hpre' : preSeg = pre.map (fun pr => trajSegment (k := k) ys pr.1 pr.2) := hpre
+  have hsuf' : sufSeg = suf.map (fun pr => trajSegment (k := k) ys pr.1 pr.2) := hsuf
+  -- Assemble all 13 conditions
+  exact ⟨pre, suf, preSeg, sufSeg, e1, e2,
+    hpairs', hpairs_swap, hpre_seg, hsuf_seg,
+    hp1_fst_ret, hp1_snd_ret, hp2_snd_ret,
+    hys_pat, hpre', hsuf', he1', he2', rfl⟩
+
+/-- Prefix-level counterpart of `shortSwapMiddleDecomp_of_patternDecomp`. -/
+private lemma prefixSwapMiddleDecomp_of_patternDecomp
+    {N : ℕ} (hN : Nat.succ n ≤ N) (e s : MarkovState k)
+    (preSeg sufSeg : ExcursionList k)
+    (e1 e2 : ExcursionType k)
+    (hL1 : 0 < excLen (k := k) e1) (hL2 : 0 < excLen (k := k) e2)
+    (hcN : excSteps (k := k) preSeg + excLen (k := k) e1 +
+      excLen (k := k) e2 ≤ Nat.succ n) :
+    PrefixSwapMiddleDecomp (k := k)
+      (hN := hN) e s
+      (preSeg ++ [e1, e2] ++ sufSeg)
+      (preSeg ++ [e2, e1] ++ sufSeg)
+      (excSteps (k := k) preSeg) (excLen (k := k) e1)
+      (excLen (k := k) e2) hL1 hL2 hcN := by
+  -- Reduce to the already-proved short-fiber version by extracting trajPrefix.
+  have hshort := shortSwapMiddleDecomp_of_patternDecomp
+    (k := k) n e preSeg sufSeg e1 e2 hL1 hL2 hcN
+  intro xs hxs
+  -- xs ∈ prefixPatternFiber means xs ∈ prefixFiber ∧ excursionListOfTraj (trajPrefix xs) = p
+  have hxs_pf : xs ∈ prefixFiber (k := k) (h := hN) e s := (Finset.mem_filter.1 hxs).1
+  have hxs_pat : excursionListOfTraj (k := k) (trajPrefix (k := k) hN xs) =
+      preSeg ++ [e1, e2] ++ sufSeg := (Finset.mem_filter.1 hxs).2
+  -- Show trajPrefix hN xs ∈ shortPatternFiber n e p
+  have hstate : prefixState (k := k) hN xs = e := (Finset.mem_filter.1 hxs_pf).2
+  have htp_fiber : trajPrefix (k := k) hN xs ∈ fiber k (Nat.succ n) e :=
+    Finset.mem_filter.2 ⟨Finset.mem_univ _, by simpa [prefixState] using hstate⟩
+  have htp_short : trajPrefix (k := k) hN xs ∈
+      shortPatternFiber (k := k) n e (preSeg ++ [e1, e2] ++ sufSeg) :=
+    Finset.mem_filter.2 ⟨htp_fiber, hxs_pat⟩
+  -- Apply the short version
+  exact hshort (trajPrefix (k := k) hN xs) htp_short
+
+/-- The excursion length bound: for any pattern in the excursion pattern set,
+the sum of excursion lengths of any two adjacent excursions in the list
+fits within the trajectory length. -/
+private lemma excSteps_add_excLen_le_of_mem_excursionPatternSet
+    {n N : ℕ} (hN : Nat.succ n ≤ N) (e s : MarkovState k)
+    (preSeg sufSeg : ExcursionList k) (e1 e2 : ExcursionType k)
+    (hp : preSeg ++ [e1, e2] ++ sufSeg ∈ excursionPatternSet (k := k) (hN := hN) e s) :
+    excSteps (k := k) preSeg + excLen (k := k) e1 +
+      excLen (k := k) e2 ≤ Nat.succ n := by
+  -- Extract a witness trajectory from EPS membership
+  rw [excursionPatternSet_eq_shortImage (k := k) (hN := hN)] at hp
+  rcases Finset.mem_image.1 hp with ⟨ys, hys_fib, hys_pat⟩
+  -- Decompose excursion pairs
+  rcases excursionPairs_decomp_of_excursionList_decomp (k := k) ys
+    preSeg sufSeg e1 e2 hys_pat with
+    ⟨pre, suf, p1, p2, hpairs, hpre, he1, he2, _, hp12⟩
+  -- Membership facts
+  have hp1_mem : p1 ∈ excursionPairs (k := k) ys := by
+    rw [hpairs]; exact List.mem_append_right _ (List.mem_cons_self ..)
+  have hp2_mem : p2 ∈ excursionPairs (k := k) ys := by
+    rw [hpairs]
+    exact List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
+  have hpre_mem : ∀ pr ∈ pre, pr ∈ excursionPairs (k := k) ys := by
+    intro pr hpr; rw [hpairs]; exact List.mem_append_left _ hpr
+  -- Strict ordering
+  have hp1_lt := fst_lt_snd_of_mem_excursionPairs (k := k) ys hp1_mem
+  have hp2_lt := fst_lt_snd_of_mem_excursionPairs (k := k) ys hp2_mem
+  -- excSteps preSeg = p1.1.val
+  have hsteps := excSteps_preSeg_eq_sum_diffs (k := k) ys pre preSeg hpre hpre_mem
+  have hsum := sum_diffs_pre_eq_fst_of_excursionPairs_decomp (k := k) ys pre suf p1 p2 hpairs
+  have hsteps_val : excSteps (k := k) preSeg = p1.1.1 := by omega
+  -- excLen values
+  have hL1 := excLen_trajSegment_of_excursionPair (k := k) ys hp1_mem
+  have hL2 := excLen_trajSegment_of_excursionPair (k := k) ys hp2_mem
+  rw [← he1] at hL1; rw [← he2] at hL2
+  -- Consecutive: p1.2 = p2.1
+  have hp12_val : p1.2.1 = p2.1.1 := by exact congrArg Fin.val hp12
+  -- p2.2 is a Fin (Nat.succ n + 1), so p2.2.val ≤ Nat.succ n
+  have hbound : p2.2.1 ≤ Nat.succ n := Nat.lt_succ_iff.mp p2.2.2
+  -- Combine: excSteps + excLen e1 + excLen e2 = p2.2.val
+  omega
+
+/-- Excursion types from actual trajectories have positive length. -/
+private lemma excLen_pos_of_mem_excursionPatternSet
+    {n N : ℕ} (hN : Nat.succ n ≤ N) (e s : MarkovState k)
+    (preSeg sufSeg : ExcursionList k) (e1 e2 : ExcursionType k)
+    (hp : preSeg ++ [e1, e2] ++ sufSeg ∈ excursionPatternSet (k := k) (hN := hN) e s) :
+    0 < excLen (k := k) e1 ∧ 0 < excLen (k := k) e2 := by
+  -- Extract a witness trajectory from EPS membership
+  rw [excursionPatternSet_eq_shortImage (k := k) (hN := hN)] at hp
+  rcases Finset.mem_image.1 hp with ⟨ys, hys_fib, hys_pat⟩
+  -- Decompose excursion pairs using the pattern decomposition
+  rcases excursionPairs_decomp_of_excursionList_decomp (k := k) ys
+    preSeg sufSeg e1 e2 hys_pat with
+    ⟨pre, suf, p1, p2, hpairs, _, he1, he2, _, _⟩
+  -- Both p1 and p2 are in excursionPairs ys
+  have hp1_mem : p1 ∈ excursionPairs (k := k) ys := by
+    rw [hpairs]; exact List.mem_append_right _ (List.mem_cons_self ..)
+  have hp2_mem : p2 ∈ excursionPairs (k := k) ys := by
+    rw [hpairs]
+    exact List.mem_append_right _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))
+  -- Strict ordering gives positive differences
+  have hp1_lt := fst_lt_snd_of_mem_excursionPairs (k := k) ys hp1_mem
+  have hp2_lt := fst_lt_snd_of_mem_excursionPairs (k := k) ys hp2_mem
+  -- excLen = p.2.val - p.1.val for excursion pairs
+  have hL1 := excLen_trajSegment_of_excursionPair (k := k) ys hp1_mem
+  have hL2 := excLen_trajSegment_of_excursionPair (k := k) ys hp2_mem
+  rw [← he1] at hL1; rw [← he2] at hL2
+  constructor
+  · omega
+  · omega
+
+private lemma abs_wr_wor_eq_of_list_adjacent_swap
+    {n N : ℕ} (hN : Nat.succ n ≤ N) (hk : 0 < k) (e s : MarkovState k)
+    (hs : s ∈ stateFinset k N)
+    (preSeg sufSeg : ExcursionList k) (e1 e2 : ExcursionType k)
+    (hp : preSeg ++ [e1, e2] ++ sufSeg ∈ excursionPatternSet (k := k) (hN := hN) e s)
+    (hq : preSeg ++ [e2, e1] ++ sufSeg ∈ excursionPatternSet (k := k) (hN := hN) e s) :
+    |(wrPatternMass (k := k) hk n e s (preSeg ++ [e1, e2] ++ sufSeg)).toReal -
+      (worPatternMass (k := k) (hN := hN) e s (preSeg ++ [e1, e2] ++ sufSeg)).toReal| =
+    |(wrPatternMass (k := k) hk n e s (preSeg ++ [e2, e1] ++ sufSeg)).toReal -
+      (worPatternMass (k := k) (hN := hN) e s (preSeg ++ [e2, e1] ++ sufSeg)).toReal| := by
+  have ⟨hL1, hL2⟩ := excLen_pos_of_mem_excursionPatternSet (k := k)
+    (hN := hN) (e := e) (s := s) preSeg sufSeg e1 e2 hp
+  have hcN := excSteps_add_excLen_le_of_mem_excursionPatternSet (k := k)
+    (hN := hN) (e := e) (s := s) preSeg sufSeg e1 e2 hp
+  have hcN_swap : excSteps (k := k) preSeg + excLen (k := k) e2 +
+      excLen (k := k) e1 ≤ Nat.succ n := by omega
+  have hdecompShort := shortSwapMiddleDecomp_of_patternDecomp
+    (k := k) n e preSeg sufSeg e1 e2 hL1 hL2 hcN
+  have hdecompShortInv := shortSwapMiddleDecomp_of_patternDecomp
+    (k := k) n e preSeg sufSeg e2 e1 hL2 hL1 hcN_swap
+  have hdecompPrefix := prefixSwapMiddleDecomp_of_patternDecomp
+    (k := k) (hN := hN) e s preSeg sufSeg e1 e2 hL1 hL2 hcN
+  have hdecompPrefixInv := prefixSwapMiddleDecomp_of_patternDecomp
+    (k := k) (hN := hN) e s preSeg sufSeg e2 e1 hL2 hL1 hcN_swap
+  exact abs_wr_wor_patternMass_toReal_eq_of_adjacent_swap_of_decomps
+    (k := k) (hN := hN) (hk := hk) (e := e) (s := s) (hs := hs)
+    (p := preSeg ++ [e1, e2] ++ sufSeg) (q := preSeg ++ [e2, e1] ++ sufSeg)
+    (a := excSteps (k := k) preSeg) (L1 := excLen (k := k) e1)
+    (L2 := excLen (k := k) e2) hL1 hL2 hcN
+    hdecompShort
+    (by simpa [Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using hdecompShortInv)
+    hdecompPrefix
+    (by simpa [Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using hdecompPrefixInv)
+
+/-- `|wr - wor|` is invariant under permutation of the excursion pattern list,
+for patterns in the excursion pattern set.
+
+Proved by `List.Perm.recOn` with strengthened hypothesis:
+the motive is `∀ prefix, |wr(prefix ++ l₁) - wor(...)| = |wr(prefix ++ l₂) - wor(...)|`,
+so that the `cons` case reduces to the IH with a longer prefix. -/
+private lemma abs_wr_wor_patternMass_toReal_eq_of_perm
+    {n N : ℕ} (hN : Nat.succ n ≤ N) (hk : 0 < k) (e s : MarkovState k)
+    (hs : s ∈ stateFinset k N)
+    (p q : ExcursionList k)
+    (hp : p ∈ excursionPatternSet (k := k) (hN := hN) e s)
+    (hq : q ∈ excursionPatternSet (k := k) (hN := hN) e s)
+    (hperm : Multiset.ofList p = Multiset.ofList q) :
+    |(wrPatternMass (k := k) hk n e s p).toReal -
+      (worPatternMass (k := k) (hN := hN) e s p).toReal| =
+    |(wrPatternMass (k := k) hk n e s q).toReal -
+      (worPatternMass (k := k) (hN := hN) e s q).toReal| := by
+  classical
+  -- Convert multiset equality to a list permutation.
+  have hperm' : List.Perm p q := by
+    classical
+    -- Use the `BEq` instance induced by `DecidableEq` so counts align.
+    let _ : BEq (ExcursionType k) := instBEqOfDecidableEq
+    apply (List.perm_iff_count).2
+    intro a
+    have hcount := congrArg (fun m => Multiset.count a m) hperm
+    simpa using hcount
+  -- Helper: membership in the shared pattern set is preserved by permutation,
+  -- proved by adjacent swaps with explicit segment-swap witnesses.
+  have mem_of_perm :
+      ∀ {l₁ l₂ : ExcursionList k}, List.Perm l₁ l₂ →
+        ∀ pre, pre ++ l₁ ∈ excursionPatternSet (k := k) (hN := hN) e s →
+          pre ++ l₂ ∈ excursionPatternSet (k := k) (hN := hN) e s := by
+    intro l₁ l₂ hperm''
+    refine List.Perm.recOn hperm'' ?nil ?cons ?swap ?trans
+    · intro pre hp'; simpa using hp'
+    · intro a l₁ l₂ hperm ih pre hp'
+      have hp'' : (pre ++ [a]) ++ l₁ ∈ excursionPatternSet (k := k) (hN := hN) e s := by
+        simpa [List.append_assoc] using hp'
+      have hq'' := ih (pre ++ [a]) hp''
+      simpa [List.append_assoc] using hq''
+    · intro a b l pre hp'
+      -- In this swap case, the permutation is `b::a::l ~ a::b::l`.
+      have hp'' : pre ++ [b, a] ++ l ∈ excursionPatternSet (k := k) (hN := hN) e s := by
+        simpa [List.append_assoc] using hp'
+      -- Build the swap witnesses from the pattern decomposition.
+      have hL := excLen_pos_of_mem_excursionPatternSet (k := k)
+        (hN := hN) (e := e) (s := s) pre l b a hp''
+      have hL1 : 0 < excLen (k := k) b := hL.1
+      have hL2 : 0 < excLen (k := k) a := hL.2
+      have hcN :=
+        excSteps_add_excLen_le_of_mem_excursionPatternSet (k := k)
+          (hN := hN) (e := e) (s := s) pre l b a hp''
+      have hdecompShort :=
+        shortSwapMiddleDecomp_of_patternDecomp (k := k) n e pre l b a hL1 hL2 hcN
+      have hmapFiber :=
+        hmapShortFiber_of_shortSwapMiddleDecomp
+          (k := k) (n := n) (e := e) (p := pre ++ [b, a] ++ l)
+          (q := pre ++ [a, b] ++ l)
+          (a := excSteps (k := k) pre) (L1 := excLen (k := k) b)
+          (L2 := excLen (k := k) a) hL1 hL2 hcN hdecompShort
+      have hmapShort :=
+        hmapShort_of_swap_middle_of_excursionPairs_decomp
+          (k := k) (n := n) (e := e) (p := pre ++ [b, a] ++ l)
+          (q := pre ++ [a, b] ++ l)
+          (a := excSteps (k := k) pre) (L1 := excLen (k := k) b)
+          (L2 := excLen (k := k) a) hL1 hL2 hcN hmapFiber hdecompShort
+      -- Extract a witness trajectory and apply the swap map.
+      have hp'img := hp''
+      rw [excursionPatternSet_eq_shortImage (k := k) (hN := hN) (e := e) (s := s)] at hp'img
+      rcases Finset.mem_image.1 hp'img with ⟨ys, hys_fib, hys_eq⟩
+      have hys : ys ∈ shortPatternFiber (k := k) n e (pre ++ [b, a] ++ l) := by
+        exact Finset.mem_filter.2 ⟨hys_fib, hys_eq⟩
+      have hswap : segmentSwap ys (excSteps (k := k) pre) (excLen (k := k) b)
+          (excLen (k := k) a) hL1 hL2 hcN ∈
+          shortPatternFiber (k := k) n e (pre ++ [a, b] ++ l) :=
+        hmapShort ys hys
+      have hswap' :
+          segmentSwap ys (excSteps (k := k) pre) (excLen (k := k) b)
+            (excLen (k := k) a) hL1 hL2 hcN ∈
+            shortPatternFiber (k := k) n e (pre ++ a :: b :: l) := by
+        simpa [List.append_assoc] using hswap
+      exact mem_excursionPatternSet_of_mem_shortPatternFiber
+        (k := k) (hN := hN) (e := e) (s := s) (p := pre ++ a :: b :: l) hswap'
+    · intro l₁ l₂ l₃ h₁ h₂ ih₁ ih₂ pre hp'
+      have hmid := ih₁ pre hp'
+      exact ih₂ pre hmid
+  -- Prove the strengthened statement for all permutations.
+  have hP :
+      ∀ pre,
+        pre ++ p ∈ excursionPatternSet (k := k) (hN := hN) e s →
+        pre ++ q ∈ excursionPatternSet (k := k) (hN := hN) e s →
+        |(wrPatternMass (k := k) hk n e s (pre ++ p)).toReal -
+          (worPatternMass (k := k) (hN := hN) e s (pre ++ p)).toReal| =
+        |(wrPatternMass (k := k) hk n e s (pre ++ q)).toReal -
+          (worPatternMass (k := k) (hN := hN) e s (pre ++ q)).toReal| := by
+    refine List.Perm.recOn hperm' ?_ ?_ ?_ ?_
+    · intro pre hp' hq'
+      simpa using rfl
+    · intro a l₁ l₂ hperm ih pre hp' hq'
+      have hp'' : (pre ++ [a]) ++ l₁ ∈ excursionPatternSet (k := k) (hN := hN) e s := by
+        simpa [List.append_assoc] using hp'
+      have hq'' : (pre ++ [a]) ++ l₂ ∈ excursionPatternSet (k := k) (hN := hN) e s := by
+        simpa [List.append_assoc] using hq'
+      have h := ih (pre := pre ++ [a]) hp'' hq''
+      simpa [List.append_assoc] using h
+    · intro a b l pre hp' hq'
+      simpa [List.append_assoc] using
+        (abs_wr_wor_eq_of_list_adjacent_swap
+          (k := k) (hN := hN) (hk := hk) (e := e) (s := s) (hs := hs)
+          (preSeg := pre) (sufSeg := l) (e1 := b) (e2 := a)
+          (by simpa [List.append_assoc] using hp')
+          (by simpa [List.append_assoc] using hq'))
+    · intro l₁ l₂ l₃ h₁ h₂ ih₁ ih₂ pre hp' hq'
+      have hmid := mem_of_perm h₁ (pre := pre) hp'
+      have h₁' := ih₁ (pre := pre) hp' hmid
+      have h₂' := ih₂ (pre := pre) hmid hq'
+      exact Eq.trans h₁' h₂'
+  have h := hP [] (by simpa using hp) (by simpa using hq)
+  simpa using h
+
 /-! ## Diaconis-Freedman core lemma
 
 The key bound connecting `W(empiricalParam)` and `prefixCoeff` via the
@@ -4646,20 +5168,46 @@ private lemma excursion_wor_wr_core
   -- Remaining core obligation (Diaconis-Freedman/BEST):
   -- bound each multiset fiber by adjacent-transposition uniformity + orbit
   -- averaging, then sum those fiber bounds.
-  have hpartBound :
-      (∑ mset ∈ (excursionPatternSet (k := k) (hN := hN) e s).image Multiset.ofList,
-        ∑ p ∈ excursionPatternSet (k := k) (hN := hN) e s with Multiset.ofList p = mset,
-          |(wrPatternMass (k := k) hk n e s p).toReal -
-            (worPatternMass (k := k) (hN := hN) e s p).toReal|) ≤
-      (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) /
-        (returnsToStart (k := k) s : ℝ) := by
-    -- TODO (BEST core): finite-pattern uniformity under adjacent transpositions,
-    -- then orbit/cardinality averaging on each multiset fiber.
-    -- `hs` and `hRlarge` are the hypotheses needed in this remaining step.
+  -- Subgoal A: multiset-fiber constancy
+  -- Patterns with the same multiset have the same |wr - wor| value.
+  have hconst :
+      ∀ mset,
+        mset ∈ (excursionPatternSet (k := k) (hN := hN) e s).image Multiset.ofList →
+          ∀ p q,
+            p ∈ excursionPatternSet (k := k) (hN := hN) e s →
+              q ∈ excursionPatternSet (k := k) (hN := hN) e s →
+                Multiset.ofList p = mset →
+                  Multiset.ofList q = mset →
+                    |(wrPatternMass (k := k) hk n e s p).toReal -
+                      (worPatternMass (k := k) (hN := hN) e s p).toReal| =
+                    |(wrPatternMass (k := k) hk n e s q).toReal -
+                      (worPatternMass (k := k) (hN := hN) e s q).toReal| := by
+    intro mset _ p q hp hq hpm hqm
+    exact abs_wr_wor_patternMass_toReal_eq_of_perm
+      (k := k) (hN := hN) (hk := hk) (e := e) (s := s) (hs := hs)
+      (p := p) (q := q) hp hq (by rw [hpm, ← hqm])
+  -- Subgoal B: representative-weighted bound
+  -- The collapsed sum (one representative per multiset) is ≤ 4n²/R.
+  have hbound_repr :
+      let P := excursionPatternSet (k := k) (hN := hN) e s
+      let repr : Multiset (ExcursionType k) → ExcursionList k := fun mset =>
+        if hm : ∃ p ∈ P, Multiset.ofList p = mset then (Classical.choose hm) else []
+      (∑ mset ∈ P.image Multiset.ofList,
+        (((P.filter (fun p => Multiset.ofList p = mset)).card : ℝ) *
+          |(wrPatternMass (k := k) hk n e s (repr mset)).toReal -
+            (worPatternMass (k := k) (hN := hN) e s (repr mset)).toReal|)) ≤
+        (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) /
+          (returnsToStart (k := k) s : ℝ) := by
+    -- TODO (Subgoal B): quantitative bound via DF collision lemma.
+    -- This is the exact remaining mathematical core.
     have _ := hs
     have _ := hRlarge
     sorry
-  exact hpartBound
+  exact sum_abs_wr_wor_partition_by_excursionMultiset_le_of_const
+    (k := k) (hN := hN) (hk := hk) (e := e) (s := s)
+    ((4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) /
+      (returnsToStart (k := k) s : ℝ))
+    hconst hbound_repr
 
 private lemma excursion_bound_from_pattern_abs_sum
     (hk : 0 < k) (n : ℕ) (e : MarkovState k)
