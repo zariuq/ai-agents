@@ -5514,6 +5514,109 @@ private lemma inj_fiber_count_le_fiber_count
     (fun ω : Ω => lift ω = γ)
     (fun ω hω => hω.1)
 
+private lemma counts_from_lift_with_pred
+    {Γ Ω : Type*} [Fintype Γ] [Fintype Ω] [DecidableEq Γ]
+    (I : Ω → Prop) [DecidablePred I]
+    (lift : Ω → Γ) :
+    let A : Γ → Nat := fun γ => Fintype.card {ω : Ω // lift ω = γ}
+    let B : Γ → Nat := fun γ => Fintype.card {ω : Ω // lift ω = γ ∧ I ω}
+    (∑ γ : Γ, A γ) = Fintype.card Ω ∧
+    (∑ γ : Γ, B γ) = Fintype.card {ω : Ω // I ω} ∧
+    (∀ γ : Γ, B γ ≤ A γ) := by
+  intro A B
+  refine ⟨?_, ?_, ?_⟩
+  · simpa [A] using
+      (sum_fiber_counts_eq_card (Γ := Γ) (Ω := Ω) lift)
+  · simpa [B] using
+      (sum_inj_fiber_counts_eq_card
+        (Γ := Γ) (Ω := Ω) (I := I) lift)
+  · intro γ
+    simpa [A, B] using
+      (inj_fiber_count_le_fiber_count
+        (Γ := Γ) (Ω := Ω) (I := I) lift γ)
+
+private lemma exists_pushforward_repr_of_counts
+    {m R : ℕ} {Γ : Type*} [Fintype Γ] [DecidableEq Γ]
+    (classTerm : Γ → ℝ)
+    (A B : Γ → Nat)
+    (hA : (∑ γ : Γ, A γ) = Fintype.card (Fin m → Fin R))
+    (hB : (∑ γ : Γ, B γ) = Fintype.card {f : Fin m → Fin R // Function.Injective f})
+    (hBA : ∀ γ : Γ, B γ ≤ A γ)
+    (cInj : ℝ)
+    (hcInj :
+      (1 : ℝ) / (R : ℝ) ^ m /
+        (∑ g : Fin m → Fin R,
+          if Function.Injective g then (1 : ℝ) / (R : ℝ) ^ m else 0) = cInj)
+    (hreprAB : ∀ γ : Γ,
+      classTerm γ =
+        abs (((A γ : ℝ) / (R : ℝ) ^ m) - ((B γ : ℝ) * cInj))) :
+    let Ω := Fin m → Fin R
+    let μ0 : Ω → ℝ := fun _ => (1 : ℝ) / (R : ℝ) ^ m
+    let μinj : Ω → ℝ := fun f =>
+      if Function.Injective f then
+        (1 : ℝ) / (R : ℝ) ^ m /
+          (∑ g : Ω, if Function.Injective g then
+            (1 : ℝ) / (R : ℝ) ^ m else 0)
+      else 0
+    ∃ lift : Ω → Γ,
+      ∀ γ : Γ,
+        classTerm γ =
+          abs ((∑ f : Ω, if lift f = γ then μ0 f else 0) -
+            (∑ f : Ω, if lift f = γ then μinj f else 0)) := by
+  classical
+  intro Ω μ0 μinj
+  rcases exists_lift_with_pred_counts
+      (Γ := Γ) (Ω := Ω) (I := Function.Injective)
+      (A := A) (B := B) hA hB hBA with ⟨lift, hliftA, hliftB⟩
+  refine ⟨lift, ?_⟩
+  intro γ
+  have hsum0 :
+      (∑ f : Ω, if lift f = γ then μ0 f else 0) =
+        (A γ : ℝ) / (R : ℝ) ^ m := by
+    calc
+      (∑ f : Ω, if lift f = γ then μ0 f else 0)
+          = (Fintype.card {f : Ω // lift f = γ} : ℝ) /
+              (R : ℝ) ^ m := by
+                simpa [μ0] using
+                  (mu0_push_eq_card
+                    (m := m)
+                    (R := R)
+                    (Γ := Γ)
+                    (lift := lift)
+                    (γ := γ))
+      _ = (A γ : ℝ) / (R : ℝ) ^ m := by
+            simp [hliftA γ]
+  have hsumInj :
+      (∑ f : Ω, if lift f = γ then μinj f else 0) =
+        (B γ : ℝ) * cInj := by
+    calc
+      (∑ f : Ω, if lift f = γ then μinj f else 0)
+          = (Fintype.card {f : Ω // lift f = γ ∧ Function.Injective f} : ℝ) *
+              ((1 : ℝ) / (R : ℝ) ^ m /
+                (∑ g : Fin m → Fin R,
+                  if Function.Injective g then (1 : ℝ) / (R : ℝ) ^ m else 0)) := by
+                simpa [μinj] using
+                  (muinj_push_eq_card_scaled
+                    (m := m)
+                    (R := R)
+                    (Γ := Γ)
+                    (lift := lift)
+                    (γ := γ))
+      _ = (B γ : ℝ) *
+            ((1 : ℝ) / (R : ℝ) ^ m /
+              (∑ g : Fin m → Fin R,
+                if Function.Injective g then (1 : ℝ) / (R : ℝ) ^ m else 0)) := by
+            simp [hliftB γ]
+      _ = (B γ : ℝ) * cInj := by
+            rw [hcInj]
+  calc
+    classTerm γ =
+      abs (((A γ : ℝ) / (R : ℝ) ^ m) - ((B γ : ℝ) * cInj)) := hreprAB γ
+    _ =
+      abs ((∑ f : Ω, if lift f = γ then μ0 f else 0) -
+        (∑ f : Ω, if lift f = γ then μinj f else 0)) := by
+          rw [hsum0, hsumInj]
+
 private lemma exists_wr_push_counts
     {m R : ℕ} {Γ : Type*} [Fintype Γ] [DecidableEq Γ]
     (hΓ : Nonempty Γ) :
@@ -5624,77 +5727,90 @@ private lemma exists_pattern_pushforward_repr
           classTerm γ.1 =
             abs (((A γ : ℝ) / (returnsToStart (k := k) s : ℝ) ^ (Nat.succ n)) -
               ((B γ : ℝ) * cInj))) := by
-    have hΓnonempty : Nonempty Γ := by
-      rcases hPnonempty with ⟨mset, hmset⟩
-      exact ⟨⟨mset, hmset⟩⟩
-    -- Step 1 (completed): extract WR-side counts `A` with `∑ A = card Ω`.
-    have hAonly : ∃ A : Γ → Nat, (∑ γ : Γ, A γ) = Fintype.card Ω := by
-      rcases (show
-        ∃ liftA : Ω → Γ, ∃ A : Γ → Nat,
-          (∑ γ : Γ, A γ) = Fintype.card Ω ∧
-          (∀ γ : Γ,
-            (∑ f : Ω, if liftA f = γ then μ0 f else 0) =
-              (A γ : ℝ) / (returnsToStart (k := k) s : ℝ) ^ (Nat.succ n))
-        from by
-          simpa [Ω, μ0] using
-            (exists_wr_push_counts
-              (m := Nat.succ n)
-              (R := returnsToStart (k := k) s)
-              (Γ := Γ) hΓnonempty))
-        with ⟨liftA, A, hA, hAwr⟩
-      exact ⟨A, hA⟩
-    -- Remaining BEST bridge (Steps 2-3):
-    -- - produce `B` (WOR/injective class counts),
-    -- - couple with suitable `A` via `B ≤ A`,
-    -- - prove `classTerm = |A/R^m - B*cInj|`.
-    -- Temporary sorry: remove once the explicit BEST count bridge is formalized.
-    sorry
+    -- Step 3 (core BEST bridge): represent classTerm as pushforward discrepancy.
+    have hreprLift :
+        ∃ lift : Ω → Γ,
+          ∀ γ : Γ,
+            classTerm γ.1 =
+              abs ((∑ f : Ω, if lift f = γ then μ0 f else 0) -
+                (∑ f : Ω, if lift f = γ then μinj f else 0)) := by
+      -- Temporary sorry: remove once the explicit BEST count bridge is formalized.
+      sorry
+    rcases hreprLift with ⟨lift0, hrepr0⟩
+    let A : Γ → Nat := fun γ => Fintype.card {f : Ω // lift0 f = γ}
+    let B : Γ → Nat := fun γ => Fintype.card {f : Ω // lift0 f = γ ∧ Function.Injective f}
+    have hAB :
+        (∑ γ : Γ, A γ) = Fintype.card Ω ∧
+        (∑ γ : Γ, B γ) = Fintype.card {f : Ω // Function.Injective f} ∧
+        (∀ γ : Γ, B γ ≤ A γ) := by
+      simpa [A, B] using
+        (counts_from_lift_with_pred
+          (Γ := Γ) (Ω := Ω) (I := Function.Injective) lift0)
+    have hA : (∑ γ : Γ, A γ) = Fintype.card Ω := hAB.1
+    have hB : (∑ γ : Γ, B γ) = Fintype.card {f : Ω // Function.Injective f} := hAB.2.1
+    have hBA : ∀ γ : Γ, B γ ≤ A γ := hAB.2.2
+    have hreprAB :
+        ∀ γ : Γ,
+          classTerm γ.1 =
+            abs (((A γ : ℝ) / (returnsToStart (k := k) s : ℝ) ^ (Nat.succ n)) -
+              ((B γ : ℝ) * cInj)) := by
+      intro γ
+      calc
+        classTerm γ.1 =
+            abs ((∑ f : Ω, if lift0 f = γ then μ0 f else 0) -
+              (∑ f : Ω, if lift0 f = γ then μinj f else 0)) := hrepr0 γ
+        _ =
+            abs (((A γ : ℝ) / (returnsToStart (k := k) s : ℝ) ^ (Nat.succ n)) -
+              ((B γ : ℝ) * cInj)) := by
+              rw [show (∑ f : Ω, if lift0 f = γ then μ0 f else 0) =
+                  (A γ : ℝ) / (returnsToStart (k := k) s : ℝ) ^ (Nat.succ n) by
+                    simpa [Ω, Γ, μ0, A] using
+                      (mu0_push_eq_card
+                        (m := Nat.succ n)
+                        (R := returnsToStart (k := k) s)
+                        (Γ := Γ) (lift := lift0) (γ := γ))]
+              rw [show (∑ f : Ω, if lift0 f = γ then μinj f else 0) =
+                  (B γ : ℝ) * cInj by
+                    simpa [Ω, Γ, μinj, cInj, B] using
+                      (muinj_push_eq_card_scaled
+                        (m := Nat.succ n)
+                        (R := returnsToStart (k := k) s)
+                        (Γ := Γ) (lift := lift0) (γ := γ))]
+    exact ⟨A, B, hA, hB, hBA, hreprAB⟩
   rcases hcounts with ⟨A, B, hA, hB, hBA, hreprAB⟩
-  rcases exists_lift_with_pred_counts
-      (Γ := Γ) (Ω := Ω) (I := Function.Injective)
-      (A := A) (B := B) hA hB hBA with ⟨lift, hliftA, hliftB⟩
+  have hcInj :
+      (1 : ℝ) / (returnsToStart (k := k) s : ℝ) ^ (Nat.succ n) /
+        (∑ g : Ω, if Function.Injective g then
+          (1 : ℝ) / (returnsToStart (k := k) s : ℝ) ^ (Nat.succ n) else 0) = cInj := by
+    rfl
+  have hpush :
+      ∃ lift : Ω → Γ,
+        ∀ γ : Γ,
+          (fun γ : Γ => classTerm γ.1) γ =
+            abs ((∑ f : Ω, if lift f = γ then μ0 f else 0) -
+              (∑ f : Ω, if lift f = γ then μinj f else 0)) := by
+    exact
+      (exists_pushforward_repr_of_counts
+      (m := Nat.succ n)
+      (R := returnsToStart (k := k) s)
+      (Γ := Γ)
+      (classTerm := fun γ : Γ => classTerm γ.1)
+      (A := A) (B := B)
+      (hA := by simpa [Ω] using hA)
+      (hB := by simpa [Ω] using hB)
+      (hBA := hBA)
+      (cInj := cInj)
+      (hcInj := by simpa [Ω, cInj] using hcInj)
+      (hreprAB := by
+        intro γ
+        simpa using hreprAB γ))
+  rcases hpush with ⟨lift, hlift⟩
   refine ⟨lift, ?_⟩
   intro γ
-  have hsum0 :
-      (∑ f : Ω, if lift f = γ then μ0 f else 0) =
-        (A γ : ℝ) / (returnsToStart (k := k) s : ℝ) ^ (Nat.succ n) := by
-    calc
-      (∑ f : Ω, if lift f = γ then μ0 f else 0)
-          = (Fintype.card {f : Ω // lift f = γ} : ℝ) /
-              (returnsToStart (k := k) s : ℝ) ^ (Nat.succ n) := by
-                simpa [Ω, Γ, μ0] using
-                  (mu0_push_eq_card
-                    (m := Nat.succ n)
-                    (R := returnsToStart (k := k) s)
-                    (Γ := Γ)
-                    (lift := lift)
-                    (γ := γ))
-      _ = (A γ : ℝ) / (returnsToStart (k := k) s : ℝ) ^ (Nat.succ n) := by
-            simp [hliftA γ]
-  have hsumInj :
-      (∑ f : Ω, if lift f = γ then μinj f else 0) =
-        (B γ : ℝ) * cInj := by
-    calc
-      (∑ f : Ω, if lift f = γ then μinj f else 0)
-          = (Fintype.card {f : Ω // lift f = γ ∧ Function.Injective f} : ℝ) *
-              cInj := by
-                simpa [Ω, Γ, μinj, cInj] using
-                  (muinj_push_eq_card_scaled
-                    (m := Nat.succ n)
-                    (R := returnsToStart (k := k) s)
-                    (Γ := Γ)
-                    (lift := lift)
-                    (γ := γ))
-      _ = (B γ : ℝ) * cInj := by
-            simp [hliftB γ]
-  calc
-    classTerm γ.1 =
-      abs (((A γ : ℝ) / (returnsToStart (k := k) s : ℝ) ^ (Nat.succ n)) -
-        ((B γ : ℝ) * cInj)) := hreprAB γ
-    _ =
+  change (fun γ : Γ => classTerm γ.1) γ =
       abs ((∑ f : Ω, if lift f = γ then μ0 f else 0) -
-        (∑ f : Ω, if lift f = γ then μinj f else 0)) := by
-          rw [hsum0, hsumInj]
+        (∑ f : Ω, if lift f = γ then μinj f else 0))
+  exact hlift γ
 
 private lemma excursion_wor_wr_core
     (hk : 0 < k) (n : ℕ) (e : MarkovState k)
