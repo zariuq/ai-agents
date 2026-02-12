@@ -62,7 +62,7 @@ with open('$PFILE') as f, open('$TMPFILE', 'w') as out:
 
     # Run E prover
     timeout $((TIMEOUT + 10)) nice -n 19 "$EPROVER" \
-        --free-numbers --auto-schedule --cpu-limit="$TIMEOUT" \
+        --free-numbers --auto-schedule -p --cpu-limit="$TIMEOUT" \
         "$TMPFILE" > "$OUTFILE" 2>&1 || true
 
     rm -f "$TMPFILE"

@@ -16,6 +16,7 @@ context-dependent interpretation over sufficient statistics.
 import argparse
 import json
 import math
+import os
 import re
 import subprocess
 import sys
@@ -274,7 +275,7 @@ def build_normal_batch_files(pname, batch_idx, batch_axioms, nb_stvs, args, work
 
 def score_one_problem(pname, candidate_axioms, goal_features, nb_state, args):
     """Score all candidates for one problem via PLN-NB -> PLN-Normal."""
-    work_dir = TEMP_ROOT / "pln_normal" / pname
+    work_dir = args.run_temp_root / pname
     work_dir.mkdir(parents=True, exist_ok=True)
 
     nb_stvs = compute_pln_nb_stvs(
@@ -381,7 +382,13 @@ def main():
 
     parser.add_argument("--keep-tsv", action="store_true")
     parser.add_argument("--problems", nargs="*", help="Specific problem names to process")
+    parser.add_argument("--run-id", default=None,
+                        help="Optional run id for temp dir isolation")
     args = parser.parse_args()
+
+    run_id = args.run_id or f"{int(time.time())}_{os.getpid()}"
+    args.run_temp_root = TEMP_ROOT / f"pln_normal_{run_id}"
+    args.run_temp_root.mkdir(parents=True, exist_ok=True)
 
     if not PETTA_RUN.exists():
         raise FileNotFoundError(f"PeTTa runner not found: {PETTA_RUN}")
@@ -395,7 +402,7 @@ def main():
         val_problems = sorted(p.name for p in CHAINY_VAL_DIR.iterdir() if p.is_file())
     if args.max_problems:
         val_problems = val_problems[:args.max_problems]
-    print(f"Problems: {len(val_problems)}, top-k: {args.top_k}")
+    print(f"Problems: {len(val_problems)}, top-k: {args.top_k}, run_id: {run_id}")
 
     selections = {}
     no_features = 0

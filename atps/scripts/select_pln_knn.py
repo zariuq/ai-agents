@@ -22,6 +22,7 @@ Usage:
 
 import argparse
 import json
+import os
 import re
 import resource
 import subprocess
@@ -247,7 +248,7 @@ def run_petta(data_path, query_path, timeout_sec):
 def score_one_problem(pname, candidate_axioms, goal_features,
                       training_data, nb_state, args):
     """Score one problem — ONE PeTTa call for kNN + NB + merge."""
-    work_dir = TEMP_ROOT / "pln_knn" / pname
+    work_dir = args.run_temp_root / pname
     work_dir.mkdir(parents=True, exist_ok=True)
 
     # Data retrieval: find neighbors by shared feature count
@@ -343,7 +344,13 @@ def main():
     parser.add_argument("--smoke-test", action="store_true",
                         help="Only process first 20 problems")
     parser.add_argument("--problems", nargs="*")
+    parser.add_argument("--run-id", default=None,
+                        help="Optional run id for temp dir isolation")
     args = parser.parse_args()
+
+    run_id = args.run_id or f"{int(time.time())}_{os.getpid()}"
+    args.run_temp_root = TEMP_ROOT / f"pln_knn_{run_id}"
+    args.run_temp_root.mkdir(parents=True, exist_ok=True)
 
     if args.smoke_test and args.max_problems is None:
         args.max_problems = 20
@@ -367,7 +374,8 @@ def main():
 
     mode = "PLN-kNN+NB-v2" if args.merge_nb else "PLN-kNN-v2"
     print(f"Mode: {mode}, problems: {len(val_problems)}, top-k: {args.top_k}, "
-          f"knn_k: {args.knn_k}, kappa: {args.kappa}, sim_kappa: {args.sim_kappa}")
+          f"knn_k: {args.knn_k}, kappa: {args.kappa}, sim_kappa: {args.sim_kappa}, "
+          f"run_id: {run_id}")
 
     selections = {}
     no_features = 0

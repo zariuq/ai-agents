@@ -18,11 +18,13 @@ Output: one .out file per problem in --output-dir.
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
 import tempfile
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 EPROVER = "/home/zar/claude/atps/eprover-standard/PROVER/eprover"
@@ -38,6 +40,7 @@ def run_one(problem_file, timeout, out_file):
                 EPROVER,
                 "--free-numbers",
                 "--auto-schedule",
+                "-p",
                 f"--cpu-limit={timeout}",
                 str(problem_file),
             ],
@@ -84,12 +87,35 @@ def create_filtered_problem(problem_file, selected_axioms, output_file):
         f.writelines(out_lines)
 
 
+def _run_problem(args_tuple):
+    """Worker function for parallel execution."""
+    pname, problems_dir, selections, timeout, output_dir, tmpdir = args_tuple
+    pfile = Path(problems_dir) / pname
+    out_file = Path(output_dir) / f"{pname}.out"
+
+    if selections is not None:
+        if pname not in selections or not selections[pname]:
+            Path(out_file).write_text("% No selections for this problem\n")
+            return pname, False
+        filtered = Path(tmpdir) / f"{os.getpid()}_{pname}"
+        create_filtered_problem(pfile, selections[pname], filtered)
+        pfile = filtered
+
+    proved = run_one(pfile, timeout, out_file)
+
+    if selections is not None and filtered.exists():
+        filtered.unlink(missing_ok=True)
+
+    return pname, proved
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run E prover, save .out files")
     parser.add_argument("--problems-dir", required=True, help="Directory with .p problem files")
     parser.add_argument("--output-dir", required=True, help="Directory for .out files")
     parser.add_argument("--selections", default=None, help="Selections JSON (filtered mode)")
     parser.add_argument("--timeout", type=int, default=5)
+    parser.add_argument("--jobs", "-j", type=int, default=1, help="Parallel E prover jobs")
     parser.add_argument("--max-problems", type=int, default=None)
     parser.add_argument("--save-results", default=None,
                         help="Save result JSON (timeout appended to name if not present)")
@@ -114,45 +140,51 @@ def main():
     if args.max_problems:
         problems = problems[: args.max_problems]
 
-    print(f"Running E on {len(problems)} problems, timeout={args.timeout}s")
+    print(f"Running E on {len(problems)} problems, timeout={args.timeout}s, jobs={args.jobs}")
     if selections:
         print(f"Mode: filtered (premise selection)")
     else:
         print(f"Mode: full (all axioms)")
 
     solved = 0
-    total = 0
+    total = len(problems)
     t0 = time.time()
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        for i, pname in enumerate(problems):
-            if i == 0 or (i + 1) % 50 == 0:
-                elapsed = time.time() - t0
-                print(f"  {i+1}/{len(problems)} (solved: {solved}, {elapsed:.0f}s)", flush=True)
-
-            pfile = problems_dir / pname
-            out_file = output_dir / f"{pname}.out"
-            total += 1
-
-            if selections is not None:
-                if pname not in selections or not selections[pname]:
-                    Path(out_file).write_text("% No selections for this problem\n")
-                    continue
-                filtered = Path(tmpdir) / pname
-                create_filtered_problem(pfile, selections[pname], filtered)
-                pfile = filtered
-
-            if run_one(pfile, args.timeout, out_file):
-                solved += 1
+        if args.jobs <= 1:
+            # Sequential
+            for i, pname in enumerate(problems):
+                if i == 0 or (i + 1) % 50 == 0:
+                    elapsed = time.time() - t0
+                    print(f"  {i+1}/{total} (solved: {solved}, {elapsed:.0f}s)", flush=True)
+                _, proved = _run_problem(
+                    (pname, str(problems_dir), selections, args.timeout, str(output_dir), tmpdir))
+                if proved:
+                    solved += 1
+        else:
+            # Parallel
+            work_items = [
+                (pname, str(problems_dir), selections, args.timeout, str(output_dir), tmpdir)
+                for pname in problems
+            ]
+            done_count = 0
+            with ProcessPoolExecutor(max_workers=args.jobs) as pool:
+                futures = {pool.submit(_run_problem, item): item[0] for item in work_items}
+                for future in as_completed(futures):
+                    pname, proved = future.result()
+                    done_count += 1
+                    if proved:
+                        solved += 1
+                    if done_count == 1 or done_count % 50 == 0:
+                        elapsed = time.time() - t0
+                        print(f"  {done_count}/{total} (solved: {solved}, {elapsed:.0f}s)", flush=True)
 
     elapsed = time.time() - t0
     print(f"\nDone: {solved}/{total} solved in {elapsed:.0f}s ({100*solved/total:.1f}%)")
     print(f"Output: {output_dir}")
 
-    # Save result JSON with timeout in metadata
     if args.save_results:
         result_path = Path(args.save_results)
-        # Ensure timeout is in the filename
         if f"_{args.timeout}s" not in result_path.stem:
             result_path = result_path.with_stem(f"{result_path.stem}_{args.timeout}s")
         solved_list = []

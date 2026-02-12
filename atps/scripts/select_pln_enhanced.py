@@ -18,6 +18,7 @@ Output format:
 import argparse
 import json
 import math
+import os
 import re
 import subprocess
 import sys
@@ -285,7 +286,7 @@ def build_phase2_files(pname, candidate_axioms, phase1_stvs, cooc_table,
 def score_one_problem(pname, candidate_axioms, goal_features, sfreq, tfreq,
                       idf, extended_features, cooc_table, args):
     """Two-phase scoring for one problem."""
-    work_dir = TEMP_ROOT / "pln_enhanced" / pname
+    work_dir = args.run_temp_root / pname
     work_dir.mkdir(parents=True, exist_ok=True)
 
     # === Phase 1: IDF-NB scoring ===
@@ -426,7 +427,13 @@ def main():
     parser.add_argument("--keep-tsv", action="store_true")
     parser.add_argument("--problems", nargs="*",
                         help="Specific problem names to process (default: all)")
+    parser.add_argument("--run-id", default=None,
+                        help="Optional run id for temp dir isolation")
     args = parser.parse_args()
+
+    run_id = args.run_id or f"{int(time.time())}_{os.getpid()}"
+    args.run_temp_root = TEMP_ROOT / f"pln_enhanced_{run_id}"
+    args.run_temp_root.mkdir(parents=True, exist_ok=True)
 
     if not PETTA_RUN.exists():
         raise FileNotFoundError(f"PeTTa runner not found: {PETTA_RUN}")
@@ -446,7 +453,7 @@ def main():
         val_problems = sorted(p.name for p in CHAINY_VAL_DIR.iterdir() if p.is_file())
     if args.max_problems:
         val_problems = val_problems[:args.max_problems]
-    print(f"Problems: {len(val_problems)}, top-k: {args.top_k}")
+    print(f"Problems: {len(val_problems)}, top-k: {args.top_k}, run_id: {run_id}")
 
     selections = {}
     no_features = 0
