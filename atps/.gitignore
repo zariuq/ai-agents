@@ -1,0 +1,59 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Data files (too large, can regenerate)
+datasets/*/bushy/
+datasets/*/chainy/
+datasets/*/baselines/
+datasets/*/train/*.jsonl
+datasets/*/deps/
+datasets/*/models/*.pkl
+datasets/*/premise_selection/*/knn_val/
+datasets/*/premise_selection/*/nb_val/
+
+# Keep only JSON results, not full outputs
+datasets/*/premise_selection/*/*.out
+
+# Temporary files
+*.log
+*.tmp
+.scratch_*
+tmp_*
+
+# Private/one-off scripts (not part of core pipeline)
+scripts/_private/
+scripts/_archive/
+
+# Proof output directories (large, regeneratable)
+datasets/*/proofs_*/
+
+# Feature extraction output
+datasets/*/features_*/
+
+# PeTTa temp directories
+datasets/*/pln_eval_temp/
+
+# System
+.DS_Store
+.cache/
+
+# E prover builds (large)
+oldzar/
+eprover-standard/
+
+# LightGBM (large)
+LightGBM/
+
+# Enigmatic (if installed elsewhere)
+enigmatic/bin/
+enigmatic/lib/
