@@ -22,19 +22,20 @@ import json
 import math
 import pickle
 import re
+import argparse
 from collections import Counter, defaultdict
 from pathlib import Path
 
 DATASET_DIR = Path("/home/zar/claude/atps/datasets/extended_mptp5k")
 CHAINY_TRAIN_DIR = DATASET_DIR / "chainy" / "train"
 FEATURES_DIR = DATASET_DIR / "features_chainy"
-DEPS_FILES = [
+DEFAULT_DEPS_FILES = [
     DATASET_DIR / "deps" / "bushy_train_deps.jsonl",
     DATASET_DIR / "deps" / "chainy_train_deps.jsonl",
 ]
 MODELS_DIR = DATASET_DIR / "models"
-OUT_TABLES = MODELS_DIR / "mash_nb_tables.pkl"
-OUT_META = MODELS_DIR / "mash_nb_tables_meta.json"
+DEFAULT_OUT_TABLES = MODELS_DIR / "mash_nb_tables.pkl"
+DEFAULT_OUT_META = MODELS_DIR / "mash_nb_tables_meta.json"
 
 FORMULA_RE = re.compile(r"^(fof|cnf)\(([^,]+),\s*([^,]+),")
 AXIOM_ROLES = {"axiom", "hypothesis", "definition"}
@@ -135,7 +136,7 @@ def parse_training_features():
     return fact_features, problem_conj_features, problem_conj_name, len(problem_files), n_skipped
 
 
-def load_dependency_events(problem_conj_features, problem_conj_name):
+def load_dependency_events(problem_conj_features, problem_conj_name, deps_files):
     """
     Load dependency events from both bushy and chainy deps files.
 
@@ -149,7 +150,7 @@ def load_dependency_events(problem_conj_features, problem_conj_name):
     n_proved = 0
     n_matched = 0
 
-    for dep_file in DEPS_FILES:
+    for dep_file in deps_files:
         file_events = 0
         with open(dep_file) as f:
             for line in f:
@@ -183,6 +184,34 @@ def load_dependency_events(problem_conj_features, problem_conj_name):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Build source-faithful MaSh NB tables")
+    parser.add_argument(
+        "--deps-files",
+        nargs="+",
+        default=[str(p) for p in DEFAULT_DEPS_FILES],
+        help="Dependency JSONL files (duplicates across files are preserved)",
+    )
+    parser.add_argument(
+        "--out-tables",
+        default=str(DEFAULT_OUT_TABLES),
+        help="Output pickle path for NB tables",
+    )
+    parser.add_argument(
+        "--out-meta",
+        default=str(DEFAULT_OUT_META),
+        help="Output JSON path for NB metadata",
+    )
+    args = parser.parse_args()
+
+    deps_files = [Path(p) for p in args.deps_files]
+    missing = [str(p) for p in deps_files if not p.exists()]
+    if missing:
+        raise FileNotFoundError(f"Missing deps files: {missing}")
+
+    out_tables = Path(args.out_tables)
+    out_meta = Path(args.out_meta)
+    out_tables.parent.mkdir(parents=True, exist_ok=True)
+    out_meta.parent.mkdir(parents=True, exist_ok=True)
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
     print("=" * 70)
@@ -202,7 +231,11 @@ def main():
     print(f"  problems with conjecture features: {len(problem_conj_features)}")
 
     print("\nStep 2: Load bushy+chainy dependency events...", flush=True)
-    events, event_meta = load_dependency_events(problem_conj_features, problem_conj_name)
+    events, event_meta = load_dependency_events(
+        problem_conj_features,
+        problem_conj_name,
+        deps_files,
+    )
     print(f"  events total: {event_meta['events_total']}")
     print(f"  unique problems with events: {event_meta['unique_problems']}")
     print(f"  duplicate problem events: {event_meta['duplicate_problem_events']}")
@@ -304,7 +337,7 @@ def main():
     meta = {
         "builder": "mash_nb_build_tables.py",
         "source_style": "isabelle_internal_nb",
-        "deps_files": [p.name for p in DEPS_FILES],
+        "deps_files": [str(p) for p in deps_files],
         "event_meta": event_meta,
         "training_problems_total": n_problem_files,
         "training_problems_skipped": n_skipped,
@@ -321,13 +354,13 @@ def main():
         },
     }
 
-    with open(OUT_TABLES, "wb") as f:
+    with open(out_tables, "wb") as f:
         pickle.dump(tables, f)
-    with open(OUT_META, "w") as f:
+    with open(out_meta, "w") as f:
         json.dump(meta, f, indent=2, sort_keys=True)
 
-    print(f"  tables: {OUT_TABLES} ({OUT_TABLES.stat().st_size / (1024 * 1024):.1f} MB)")
-    print(f"  meta:   {OUT_META}")
+    print(f"  tables: {out_tables} ({out_tables.stat().st_size / (1024 * 1024):.1f} MB)")
+    print(f"  meta:   {out_meta}")
 
     print("\n" + "=" * 70)
     print("MASH NB TABLE BUILD COMPLETE")

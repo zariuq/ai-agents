@@ -65,9 +65,9 @@ def as_weighted_features(features):
     return [(f, 1.0) for f in features]
 
 
-def load_tables():
+def load_tables(path=None):
     """Load k-NN tables from pickle."""
-    path = MODELS_DIR / "mash_knn_tables.pkl"
+    path = Path(path) if path else (MODELS_DIR / "mash_knn_tables.pkl")
     if not path.exists():
         raise FileNotFoundError(f"{path} not found. Run mash_knn_build_tables.py first.")
     with open(path, "rb") as f:

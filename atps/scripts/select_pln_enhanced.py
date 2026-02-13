@@ -26,7 +26,9 @@ import time
 from collections import Counter, defaultdict
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+SCRIPT_DIR = Path(__file__).parent
+sys.path.insert(0, str(SCRIPT_DIR))
+sys.path.insert(0, str(SCRIPT_DIR / "_private"))
 from mash_nb_scorer import (
     load_tables as load_nb_tables,
     normalize_axiom_name,
@@ -37,7 +39,9 @@ from mash_nb_scorer import (
 from pln_phase_batching import run_petta_jobs
 
 DATASET_DIR = Path("/home/zar/claude/atps/datasets/extended_mptp5k")
+CHAINY_TRAIN_DIR = DATASET_DIR / "chainy" / "train"
 CHAINY_VAL_DIR = DATASET_DIR / "chainy" / "val"
+FEATURES_TRAIN_DIR = DATASET_DIR / "features_chainy"
 FEATURES_VAL_DIR = DATASET_DIR / "features_chainy_val"
 DEPS_FILE = DATASET_DIR / "deps" / "bushy_train_deps.jsonl"
 TEMP_ROOT = DATASET_DIR / "pln_eval_temp"
@@ -56,9 +60,9 @@ def _fmt(x):
     return f"{float(x):.10g}"
 
 
-def load_val_problem_features(problem_name, problem_file):
-    """Load conjecture features and normalized axiom map from one val problem."""
-    vec_file = FEATURES_VAL_DIR / f"{problem_name}.vec"
+def load_problem_features(problem_name, problem_file, features_dir):
+    """Load conjecture features and normalized axiom map from one problem."""
+    vec_file = features_dir / f"{problem_name}.vec"
     if not vec_file.exists():
         return None, None
 
@@ -97,7 +101,7 @@ def prefilter_with_mash_nb(candidates, gamma_features, nb_state, prefilter_k):
     return [ax for ax, _ in scored[:prefilter_k]]
 
 
-def build_cooccurrence_table(min_count=2):
+def build_cooccurrence_table(deps_file, min_count=2):
     """Build axiom co-occurrence table from training proof dependencies.
 
     Returns dict: (axiom_a, axiom_b) → (pos, neg, idf_a, idf_b)
@@ -107,7 +111,7 @@ def build_cooccurrence_table(min_count=2):
     axiom_total = Counter()
     partners = defaultdict(set)
 
-    with open(DEPS_FILE) as f:
+    with open(deps_file) as f:
         for line in f:
             rec = json.loads(line)
             used = rec.get("used_axioms", [])
@@ -400,7 +404,12 @@ def score_one_problem(pname, candidate_axioms, goal_features, sfreq, tfreq,
 def main():
     parser = argparse.ArgumentParser(description="PLN Enhanced two-phase premise selection")
     parser.add_argument("--top-k", type=int, default=256)
+    parser.add_argument("--split", choices=["train", "val"], default="val")
     parser.add_argument("--max-problems", type=int, default=None)
+    parser.add_argument("--nb-tables", type=str, default=None,
+                        help="Optional path to MaSh NB tables pickle")
+    parser.add_argument("--deps-file", type=str, default=str(DEPS_FILE),
+                        help="Dependencies JSONL for co-occurrence table")
     parser.add_argument("--output", required=True, help="Output selections JSON")
     parser.add_argument("--prefilter-k", type=int, default=512,
                         help="MaSh NB prefilter to reduce candidates before PLN scoring")
@@ -439,18 +448,25 @@ def main():
         raise FileNotFoundError(f"PeTTa runner not found: {PETTA_RUN}")
 
     print("Loading MaSh NB tables...", flush=True)
-    sfreq, tfreq, idf, extended_features, sigma = load_nb_tables()
+    sfreq, tfreq, idf, extended_features, sigma = load_nb_tables(args.nb_tables)
     nb_state = (sfreq, tfreq, idf, extended_features, sigma)
     print(f"  {len(tfreq)} axioms, {len(idf)} features")
 
     print("Building co-occurrence table...", flush=True)
-    cooc_table = build_cooccurrence_table(min_count=args.min_cooc_count)
+    cooc_table = build_cooccurrence_table(args.deps_file, min_count=args.min_cooc_count)
     print(f"  {len(cooc_table)} co-occurrence pairs (min_count={args.min_cooc_count})")
+
+    if args.split == "train":
+        problems_dir = CHAINY_TRAIN_DIR
+        features_dir = FEATURES_TRAIN_DIR
+    else:
+        problems_dir = CHAINY_VAL_DIR
+        features_dir = FEATURES_VAL_DIR
 
     if args.problems:
         val_problems = sorted(args.problems)
     else:
-        val_problems = sorted(p.name for p in CHAINY_VAL_DIR.iterdir() if p.is_file())
+        val_problems = sorted(p.name for p in problems_dir.iterdir() if p.is_file())
     if args.max_problems:
         val_problems = val_problems[:args.max_problems]
     print(f"Problems: {len(val_problems)}, top-k: {args.top_k}, run_id: {run_id}")
@@ -465,8 +481,8 @@ def main():
             print(f"  {i+1}/{len(val_problems)} ({time.time()-t0:.0f}s, failures: {failures})",
                   flush=True)
 
-        pfile = CHAINY_VAL_DIR / pname
-        gamma_features, axiom_map = load_val_problem_features(pname, pfile)
+        pfile = problems_dir / pname
+        gamma_features, axiom_map = load_problem_features(pname, pfile, features_dir)
         if gamma_features is None or not axiom_map:
             no_features += 1
             selections[pname] = []

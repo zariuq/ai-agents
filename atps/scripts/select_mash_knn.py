@@ -29,13 +29,15 @@ from mash_knn_scorer import (
 )
 
 DATASET_DIR = Path("/home/zar/claude/atps/datasets/extended_mptp5k")
+CHAINY_TRAIN_DIR = DATASET_DIR / "chainy" / "train"
 CHAINY_VAL_DIR = DATASET_DIR / "chainy" / "val"
+FEATURES_TRAIN_DIR = DATASET_DIR / "features_chainy"
 FEATURES_VAL_DIR = DATASET_DIR / "features_chainy_val"
 
 
-def load_val_problem_features(problem_name, problem_file):
-    """Load conjecture features and normalized axiom map from one val problem."""
-    vec_file = FEATURES_VAL_DIR / f"{problem_name}.vec"
+def load_problem_features(problem_name, problem_file, features_dir):
+    """Load conjecture features and normalized axiom map from one problem."""
+    vec_file = features_dir / f"{problem_name}.vec"
     if not vec_file.exists():
         return None, None
 
@@ -65,28 +67,38 @@ def load_val_problem_features(problem_name, problem_file):
 def main():
     parser = argparse.ArgumentParser(description="MaSh k-NN premise selection")
     parser.add_argument("--top-k", type=int, default=256)
+    parser.add_argument("--split", choices=["train", "val"], default="val")
     parser.add_argument("--max-problems", type=int, default=None)
+    parser.add_argument("--tables", type=str, default=None,
+                        help="Optional path to MaSh kNN tables pickle")
     parser.add_argument("--output", required=True, help="Output selections JSON")
     args = parser.parse_args()
 
-    tables = load_tables()
+    tables = load_tables(args.tables)
     print(f"Loaded MaSh k-NN tables: {len(tables['fact_names'])} facts")
 
-    val_problems = sorted(p.name for p in CHAINY_VAL_DIR.iterdir() if p.is_file())
+    if args.split == "train":
+        problems_dir = CHAINY_TRAIN_DIR
+        features_dir = FEATURES_TRAIN_DIR
+    else:
+        problems_dir = CHAINY_VAL_DIR
+        features_dir = FEATURES_VAL_DIR
+
+    problems = sorted(p.name for p in problems_dir.iterdir() if p.is_file())
     if args.max_problems:
-        val_problems = val_problems[: args.max_problems]
-    print(f"Problems: {len(val_problems)}, top-k: {args.top_k}")
+        problems = problems[: args.max_problems]
+    print(f"Split: {args.split}, problems: {len(problems)}, top-k: {args.top_k}")
 
     selections = {}
     no_features = 0
     t0 = time.time()
 
-    for i, pname in enumerate(val_problems):
+    for i, pname in enumerate(problems):
         if i == 0 or (i + 1) % 100 == 0:
-            print(f"  {i+1}/{len(val_problems)} ({time.time()-t0:.0f}s)", flush=True)
+            print(f"  {i+1}/{len(problems)} ({time.time()-t0:.0f}s)", flush=True)
 
-        pfile = CHAINY_VAL_DIR / pname
-        gamma_features, axiom_map = load_val_problem_features(pname, pfile)
+        pfile = problems_dir / pname
+        gamma_features, axiom_map = load_problem_features(pname, pfile, features_dir)
         if gamma_features is None or not axiom_map:
             no_features += 1
             selections[pname] = []

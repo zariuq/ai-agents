@@ -190,9 +190,9 @@ def score_all_axioms(
     return scored
 
 
-def load_tables():
+def load_tables(path=None):
     """Load MaSh tables from pickle."""
-    path = MODELS_DIR / "mash_nb_tables.pkl"
+    path = Path(path) if path else (MODELS_DIR / "mash_nb_tables.pkl")
     if not path.exists():
         raise FileNotFoundError(f"{path} not found. Run mash_nb_build_tables.py first.")
     with open(path, "rb") as f:

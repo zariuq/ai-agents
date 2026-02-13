@@ -23,7 +23,9 @@ import sys
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+SCRIPT_DIR = Path(__file__).parent
+sys.path.insert(0, str(SCRIPT_DIR))
+sys.path.insert(0, str(SCRIPT_DIR / "_private"))
 from mash_nb_scorer import (
     load_tables as load_nb_tables,
     normalize_axiom_name,
@@ -33,7 +35,9 @@ from mash_nb_scorer import (
 from pln_phase_batching import run_petta_jobs
 
 DATASET_DIR = Path("/home/zar/claude/atps/datasets/extended_mptp5k")
+CHAINY_TRAIN_DIR = DATASET_DIR / "chainy" / "train"
 CHAINY_VAL_DIR = DATASET_DIR / "chainy" / "val"
+FEATURES_TRAIN_DIR = DATASET_DIR / "features_chainy"
 FEATURES_VAL_DIR = DATASET_DIR / "features_chainy_val"
 TEMP_ROOT = DATASET_DIR / "pln_eval_temp"
 
@@ -51,9 +55,9 @@ def _fmt(x):
     return f"{float(x):.10g}"
 
 
-def load_val_problem_features(problem_name, problem_file):
-    """Load conjecture features and normalized axiom map from one val problem."""
-    vec_file = FEATURES_VAL_DIR / f"{problem_name}.vec"
+def load_problem_features(problem_name, problem_file, features_dir):
+    """Load conjecture features and normalized axiom map from one problem."""
+    vec_file = features_dir / f"{problem_name}.vec"
     if not vec_file.exists():
         return None, None
 
@@ -351,7 +355,10 @@ def main():
         description="PLN Normal premise selection via PLN-NB observations + PeTTa Normal carrier"
     )
     parser.add_argument("--top-k", type=int, default=256)
+    parser.add_argument("--split", choices=["train", "val"], default="val")
     parser.add_argument("--max-problems", type=int, default=None)
+    parser.add_argument("--nb-tables", type=str, default=None,
+                        help="Optional path to MaSh NB tables pickle")
     parser.add_argument("--output", required=True, help="Output selections JSON")
     parser.add_argument(
         "--prefilter-k",
@@ -393,13 +400,20 @@ def main():
     if not PETTA_RUN.exists():
         raise FileNotFoundError(f"PeTTa runner not found: {PETTA_RUN}")
 
-    nb_state = load_nb_tables()
+    nb_state = load_nb_tables(args.nb_tables)
     print(f"Loaded tables: {len(nb_state[1])} axioms, {len(nb_state[2])} features")
+
+    if args.split == "train":
+        problems_dir = CHAINY_TRAIN_DIR
+        features_dir = FEATURES_TRAIN_DIR
+    else:
+        problems_dir = CHAINY_VAL_DIR
+        features_dir = FEATURES_VAL_DIR
 
     if args.problems:
         val_problems = sorted(args.problems)
     else:
-        val_problems = sorted(p.name for p in CHAINY_VAL_DIR.iterdir() if p.is_file())
+        val_problems = sorted(p.name for p in problems_dir.iterdir() if p.is_file())
     if args.max_problems:
         val_problems = val_problems[:args.max_problems]
     print(f"Problems: {len(val_problems)}, top-k: {args.top_k}, run_id: {run_id}")
@@ -414,8 +428,8 @@ def main():
             print(f"  {i+1}/{len(val_problems)} ({time.time()-t0:.0f}s, failures: {failures})",
                   flush=True)
 
-        pfile = CHAINY_VAL_DIR / pname
-        gamma_features, axiom_map = load_val_problem_features(pname, pfile)
+        pfile = problems_dir / pname
+        gamma_features, axiom_map = load_problem_features(pname, pfile, features_dir)
         if gamma_features is None or not axiom_map:
             no_features += 1
             selections[pname] = []
