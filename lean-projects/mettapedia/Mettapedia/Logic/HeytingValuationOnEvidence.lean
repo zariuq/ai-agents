@@ -3,27 +3,23 @@
 
 ## Overview
 
-This file connects the Evidence structure to Heyting K&S probability theory.
+This file connects Evidence to Heyting/KS probability theory via strength
+valuations and credal sets.
 
-While Evidence itself is NOT a Heyting algebra (it's a product of linear orders),
-we can:
-1. Define a "strength valuation" that maps Evidence to [0,1]
-2. Show this valuation has nice properties
-3. Connect Evidence uncertainty (incomparability) to interval-valued probability
+Evidence IS a Frame (complete Heyting algebra) — see `Order.Frame Evidence` in
+`EvidenceQuantale.lean`. It has a natural Heyting implication (`himp`) satisfying
+the residuation law `a ≤ b ⇨ c ↔ a ⊓ b ≤ c`.
 
-## Key Insight
-
-Evidence (ℝ≥0∞ × ℝ≥0∞) forms a distributive lattice with coordinatewise operations.
-On this lattice, the strength function s(e) = e.pos / (e.pos + e.neg) maps to [0,1],
-but is NOT a modular valuation (it doesn't satisfy inclusion-exclusion).
-
-Instead, the connection to Heyting K&S is through:
+However, Evidence is NOT Boolean (no complement satisfying excluded middle),
+and the strength function s(e) = e.pos / (e.pos + e.neg) is NOT a modular
+valuation. The connection to KS probability is instead through:
 - Incomparable Evidence values represent epistemic uncertainty
-- This uncertainty maps to interval-valued probability
-- The interval width measures the "non-Boolean-ness" analogous to the excluded middle gap
+- This uncertainty maps to interval-valued probability (credal sets)
+- The interval width measures non-Boolean-ness (excluded middle gap)
 
 ## References
 
+- See EvidenceQuantale.lean for the canonical Frame instance
 - See EvidenceIntervalBounds.lean for interval construction
 - See HeytingBounds.lean for the Heyting probability bounds construction
 -/
@@ -44,11 +40,12 @@ open Mettapedia.Logic.EvidenceQuantale
 open Mettapedia.Logic.EvidenceIntervalBounds
 open Evidence
 
-/-! ## Evidence is a Distributive Lattice (but NOT Heyting)
+/-! ## Evidence is a Frame (Complete Heyting Algebra)
 
 Evidence = ℝ≥0∞ × ℝ≥0∞ with coordinatewise lattice operations.
-This is a distributive lattice (product of linear orders is distributive),
-but NOT a Heyting algebra (no natural implication operator).
+This is a Frame (`Order.Frame Evidence` in EvidenceQuantale.lean), hence
+a complete Heyting algebra with Heyting implication ⇨ satisfying residuation.
+It is NOT Boolean (no complement satisfying excluded middle for all elements).
 -/
 
 /-- Verify Evidence has DistribLattice structure (from EvidenceQuantale.lean) -/
@@ -142,8 +139,9 @@ def BoundedEvidence.bot (M : ℝ≥0∞) : BoundedEvidence M where
 
 /-! ## Connecting to Heyting Bounds Through Uncertainty
 
-The key connection to Heyting K&S is NOT through Evidence being a Heyting algebra
-(it's not), but through the epistemic interpretation:
+Evidence IS a Heyting algebra (Frame), but its Heyting implication alone doesn't
+give us scalar probability. The connection to KS probability is through the
+epistemic interpretation:
 
 1. When we have a SET of possible Evidence values (representing uncertainty),
    this induces an interval of possible strengths.
@@ -367,7 +365,7 @@ theorem evidence_confidence_distinguishes :
 
 This file establishes:
 
-1. Evidence is a distributive lattice but NOT a Heyting algebra
+1. Evidence is a Frame (complete Heyting algebra) — see `EvidenceQuantale.lean`
 2. Strength is NOT a modular valuation (it's a ratio, not additive)
 3. Credal sets of Evidence values induce strength intervals
 4. The credal gap is analogous to the Heyting excluded middle gap
@@ -375,8 +373,8 @@ This file establishes:
 6. **Evidence is richer than intervals**: multiple Evidence values map to the
    same strength, distinguished by total evidence (confidence)
 
-The key insight: While Evidence doesn't fit directly into the Heyting K&S framework
-(as a Heyting algebra with modular valuation), the EPISTEMIC interpretation carries over:
+The key insight: Evidence IS a Heyting algebra but strength is not a modular
+valuation on it. The epistemic interpretation provides the probability connection:
 - Uncertainty about Evidence → interval-valued probability
 - Point probability ↔ singleton credal set
 - Non-Boolean behavior ↔ non-trivial credal sets

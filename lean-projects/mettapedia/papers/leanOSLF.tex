@@ -54,17 +54,21 @@ and modal type system;
 (iii) the abstract \OSLF{} framework instantiated for \emph{four} languages
 (\rhocalc{}-calculus, lambda calculus, Petri nets, and TinyML), each with
 \emph{fully proven} Galois connections $\Dia \dashv \Bx$;
-(iv) executable rewrite engines (specialized and generic) proven sound with respect
-to a declarative reduction specification;
+(iv) executable rewrite engines (specialized and generic), including
+premise-aware rewriting with pluggable relation environments, proven sound with
+respect to declarative reduction specifications;
 (v) a \emph{constructor category} built from sort-crossing constructors with a
 \code{SubobjectFibration} and \code{ChangeOfBase}, connecting to the GSLT
 categorical infrastructure;
 (vi) \emph{derived typing rules} where the modal operator ($\Dia$ or $\Bx$)
 assigned to each constructor is determined automatically by its position in the
 constructor category;
-(vii) a \emph{Beck--Chevalley analysis} of substitution as change-of-base, with a
-proven counterexample showing the strong condition fails; and
-(viii) a MeTTa Core interpreter specification with confluence and progress.
+(vii) a \emph{presheaf-primary categorical lift} with interface-selected base
+categories, representable-fiber bridges, and graph-object reduction semantics;
+(viii) a \emph{Beck--Chevalley analysis} of substitution as change-of-base, with a
+proven counterexample showing the strong condition fails and concrete
+representable/graph square theorems; and
+(ix) a MeTTa Core interpreter specification with confluence and progress.
 All Galois connections, the type soundness theorem, the engine soundness theorem,
 the constructor fibration, the derived typing rules, and the Beck--Chevalley
 analysis carry zero sorries.
@@ -113,14 +117,18 @@ formalization, connecting:
   \rhocalc{}-calculus.
 \item A \emph{Beck--Chevalley analysis} of the COMM rule as change-of-base along the
   substitution map, with a proven counterexample showing the GSLT strong
-  Beck--Chevalley condition does not hold for the constructor fibration.
-\item An executable reduction engine (\code{reduceStep}) handling COMM, DROP, and PAR
-  rules, with a machine-checked soundness theorem.
-\item A declarative reduction relation (\code{DeclReduces}) independent of the engine,
-  with proven soundness and completeness of the generic engine.
-\item \emph{Four} \OSLF{} instantiations validating generality:
+  Beck--Chevalley condition does not hold for the constructor fibration, plus
+  representable-fiber and graph-object square theorems consumed by checker-facing
+  corollaries.
+\item Executable reduction engines handling COMM, DROP, and context descent, with
+  machine-checked soundness theorems.
+\item Premise-aware declarative reduction relations
+  (\code{DeclReducesWithPremises}) independent of the engine, with proven
+  soundness and completeness of the generic premise-aware engine.
+\item \emph{Six} \OSLF{} instantiations validating generality:
   \rhocalc{}-calculus, lambda calculus, Petri nets, and TinyML (a multi-sort CBV
-  $\lambda$-calculus with booleans, pairs, and thunks).
+  $\lambda$-calculus with booleans, pairs, and thunks), plus MeTTaMinimal and
+  MeTTaFull state-machine clients.
 \item \MeTTaIL{}: a meta-language for defining process calculi, with totalized pattern
   matching, 29 proven theorems about capture-avoiding substitution, and a complete
   \rhocalc{}-calculus language definition.
@@ -128,6 +136,8 @@ formalization, connecting:
   predecessor-based $\Bx$ checking and proven soundness.
 \item A MeTTa Core interpreter specification with progress, confluence, and barbed
   bisimulation properties (97 proven theorems, 0 sorries).
+\item A dedicated sorry-free core entrypoint (\code{CoreMain.lean}) and
+  machine-readable FULL tracker (\code{Framework/FULLStatus.lean}) for review.
 \end{enumerate}
 
 \section{Background: The \rhocalc{}-Calculus}
@@ -554,17 +564,20 @@ and rewrite rules), the generic engine automatically:
 \item iterates under congruence (subterm rewriting inside parallel compositions).
 \end{enumerate}
 
-\begin{lstlisting}[caption={Generic rewrite step (Match.lean)}]
-def applyRule (rule : RewriteRule) (term : Pattern)
-    : List Pattern :=
-  if rule.premises.isEmpty then
-    (matchPattern rule.left term).map
-      fun b => applyBindings b rule.right
-  else []
+\begin{lstlisting}[caption={Premise-aware generic rewrite step (Engine.lean)}]
+structure RelationEnv where
+  tuples : String -> List Pattern -> List (List Pattern)
 
-def rewriteStep (lang : LanguageDef) (term : Pattern)
-    : List Pattern :=
-  lang.rewrites.flatMap fun rule => applyRule rule term
+def applyRuleWithPremisesUsing
+    (relEnv : RelationEnv) (lang : LanguageDef)
+    (rule : RewriteRule) (term : Pattern) : List Pattern :=
+  (matchPattern rule.left term).flatMap fun bs =>
+    (applyPremisesWithEnv relEnv lang rule.premises bs).map fun bs' =>
+      applyBindings bs' rule.right
+
+def rewriteStepWithPremisesUsing
+    (relEnv : RelationEnv) (lang : LanguageDef) (term : Pattern) : List Pattern :=
+  lang.rewrites.flatMap fun rule => applyRuleWithPremisesUsing relEnv lang rule term
 \end{lstlisting}
 
 \paragraph{Multiset matching.}
@@ -574,9 +587,11 @@ pattern elements against term elements (backtracking search over permutations),
 binding unmatched elements to the rest variable.
 
 \paragraph{Declarative reduction.}
-The file \codepath{MeTTaIL/DeclReduces.lean} provides a declarative inductive reduction
-relation independent of the executable engine.  The engine is proven both \emph{sound}
-and \emph{complete} with respect to this specification (0~sorries).
+The files \codepath{MeTTaIL/DeclReduces.lean} and
+\codepath{MeTTaIL/DeclReducesWithPremises.lean} provide declarative inductive
+reduction relations independent of the executable engine.  The generic
+premise-aware engine is proven both \emph{sound} and \emph{complete} with respect
+to the premise-aware specification (0~sorries).
 
 \section{MeTTaIL and MeTTa Core}
 
@@ -822,19 +837,21 @@ endofunctors on the predicate preorder category, for any \code{LanguageDef}.
   Four languages---lambda calculus, Petri nets, \rhocalc{}-calculus, TinyML---each
   with auto-generated \code{OSLFTypeSystem} and Galois connection.
 
-\item[\checkmark] \textbf{Milestone 6}: Categorical lift.
-  \code{langModalAdjunction}: Galois connection $\to$ Mathlib \code{Adjunction}.
-  \code{predFibration}: \code{SubobjectFibration} over \code{Discrete R.Sorts}.
-  Unconditional specialized engine bridges (\code{specialized\_possibly}, etc.).
+\item[\checkmark] \textbf{Milestone 6}: Presheaf-primary categorical lift.
+  Interface-selected bases (\code{SortCategoryInterface}) and presheaf-primary
+  predicate fibrations are wired via \code{CategoryBridge}, including
+  representable-fiber characteristic equivalences and checker-to-fiber soundness.
 
-\item[\checkmark] \textbf{Milestone 7}: Constructor category and GSLT bridge.
+\item[\checkmark] \textbf{Milestone 7}: Graph-object BC path and end-to-end clients.
   \code{ConstructorCategory}: free category on sort-crossing constructors.
   \code{ConstructorFibration}: \code{SubobjectFibration} + \code{ChangeOfBase}
   with proven adjunctions.
-  \code{ModalEquivalence}: constructor change-of-base $\leftrightarrow$ modalities.
-  \code{DerivedTyping}: typing rules derived from constructor classification.
-  \code{BeckChevalleyOSLF}: substitution as change-of-base, with counterexample.
-  All 0~sorries.
+  \code{ModalEquivalence} and \code{DerivedTyping}: modal/typing synthesis from
+  constructor structure.
+  \code{ToposReduction}/\code{BeckChevalleyOSLF}: reduction graph objects, explicit
+  substitution squares, and graph-level $\Dia$/$\Bx$ compatibility consumed by
+  TinyML, MeTTaMinimal, and MeTTaFull checker-to-semantics theorems.
+  All 0~sorries in this core track.
 \end{enumerate}
 
 \section{Conclusion}

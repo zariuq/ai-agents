@@ -58,3 +58,6 @@ import Mettapedia.Languages.GF.English.Properties
 import Mettapedia.Languages.GF.English.Linearization
 import Mettapedia.Languages.GF.English.Examples
 import Mettapedia.Languages.GF.OSLFBridge
+import Mettapedia.Languages.GF.Typing
+import Mettapedia.Languages.GF.LinguisticInvariance
+import Mettapedia.Languages.GF.WorldModelSemantics
