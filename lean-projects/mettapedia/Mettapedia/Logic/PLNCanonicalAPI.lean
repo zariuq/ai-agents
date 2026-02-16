@@ -126,15 +126,50 @@ links B→A and B→C via the same conditional independence A ⊥ C | B. The
 screening-off WMQueryEq has the same form as the chain BN deduction case;
 the structural difference is the BN graph topology.
 
-Tier A→B composition for the fork BN (connecting to `plnInductionStrength`)
-requires a fork-specific FastRules decomposition, which is not yet in scope.
+**Tier A→B Composition** (end-to-end queryStrength → plnInductionStrength)
+- `xi_source_queryStrength_eq_plnInduction_of_forkBN` — for singleton CPT state:
+  `(queryStrength {cpt} (link A C)).toReal = plnInductionStrength(P(A|B), P(C|B), P(A), P(B), P(C))`
+  Uses `bayesInversion(P(A|B), P(A), P(B)) = P(B|A)` + fork screening-off + PLN deduction formula.
+  Consumes: `forkBN_plnDeductionStrength_exact` (PLNBayesNetFastRules).
 
-### Sink Rule (Abduction): Not Yet Derived
+**Tier B**: Bernoulli-PLN (measure → formula bridge)
+- `forkBN_plnDeductionStrength_exact` — P(C|A) = plnDeductionStrength(P(B|A), P(C|B), P(B), P(C))
+  from CondIndepVertices (local Markov at C). ~30 lines vs ~900 for chain case.
+- `forkBN_pos_screeningOff` / `forkBN_neg_screeningOff` — screening-off from CondIndepVertices
+  via `condIndep_eventEq_mul_cond` + `real_ratio_of_ennreal_mul_eq`
 
-The collider BN side condition needs investigation (see §5 in PLNXiDerivedBNRules).
+### Sink Rule (Abduction): Collider BN (A→C←B) — §5
+
+**Tier A**: BN-PLN (structural, d-sep + local Markov → admissible rewrite)
+- `ColliderBNLocalMarkovAll` — type alias for the local Markov hypothesis
+- `xi_sinkRule_rewrite_of_colliderBN` — WMRewriteRule (NO free hSO)
+- `xi_sinkRule_admissible_of_colliderBN` — query judgment from derivable WM state
+- `xi_sinkRule_semE_atom_of_colliderBN` — OSLF evidence = derived evidence
+- `xi_sinkRule_threshold_of_colliderBN` — threshold Prop from strength bound
+- `xi_sinkRule_strength_eq_of_colliderBN` — link strength = prop strength
+
+The collider BN has edges A→C and B→C. The sink rule derives link A→B from
+links A→C and B→C. The side condition is marginal independence A ⊥ B | ∅,
+which holds because A and B have no active path when C is not conditioned on.
+
+Variable mapping: (A_rule, B_rule, C_rule) = (Three.A, Three.C, Three.B).
+Sink center = Three.C. The WMQueryEq rewrites `link ⟨A,valA⟩ ⟨B,valB⟩`
+to `prop ⟨B,valB⟩` (marginal independence: P(B|A) = P(B)).
 
 These require BN instances (Fintype, DecidableEq, etc.) which are
-provided by `open Mettapedia.ProbabilityTheory.BayesianNetworks.Examples`. -/
+provided by `open Mettapedia.ProbabilityTheory.BayesianNetworks.Examples`.
+
+**Tier A→B Composition: NOT EXACT (approximation)**
+- `plnAbductionStrength_not_exact_collider` — counterexample showing PLN abduction
+  formula gives 2/3 ≠ 1/2 for an OR-gate collider. The PLN abduction formula
+  requires B ⊥ A | C, but conditioning on the collider C *opens* the explaining-away
+  path, making A and B dependent given C.
+
+### Generic tools (§6)
+
+- `real_ratio_of_ennreal_mul_eq` — convert ENNReal multiplicative screening-off
+  `a * d = b * c` to `.real` ratio form `a/b = c/d` (PLNBayesNetFastRules)
+- `eventEq_false_eq_compl_true_of_bool` — Bool complement bridge for event sets (EventSets) -/
 
 /-! ## Schema namespace
 
@@ -175,5 +210,35 @@ abbrev CarrierFamily {Atom State : Type*}
   PLNXiCarrierScreening.CarrierFamily (Atom := Atom) (State := State)
 
 end Schema
+
+/-! ## Exactness Matrix
+
+Summary of formula-level exactness across BN topologies:
+
+| Rule | BN Topology | Tier A (WM/OSLF) | Tier A→B (formula) | Notes |
+|------|-------------|-------------------|---------------------|-------|
+| Deduction | Chain A→B→C | exact | exact | `plnDeductionStrength` via total probability + C ⊥ A given B |
+| Source/Induction | Fork A←B→C | exact | exact | `plnInductionStrength` = Bayes inversion + deduction; C ⊥ A given B holds |
+| Sink/Abduction | Collider A→C←B | exact (marginal) | **NOT exact** | Structural: P(B given A) = P(B); formula: explaining-away violates B ⊥ A given C |
+
+### Key theorems
+
+- Chain exact: `chainBN_plnDeductionStrength_exact` (`PLNBayesNetFastRules`)
+- Fork exact (measure): `forkBN_plnDeductionStrength_exact` (`PLNBayesNetFastRules`)
+- Fork exact (queryStrength): `xi_source_queryStrength_eq_plnInduction_of_forkBN` (`PLNXiDerivedBNRules`)
+- Collider structural exact: `xi_sinkRule_strength_eq_of_colliderBN` (`PLNXiDerivedBNRules`)
+- Collider .toReal exact: `xi_sink_queryStrength_toReal_eq_of_colliderBN` (`PLNXiDerivedBNRules`)
+- Collider formula counterexample: `plnAbductionStrength_not_exact_collider` (`PLNXiDerivedBNRules`)
+- Error framework: `Comparison/ErrorCharacterization.lean` (decomposition + bounds + decision criteria)
+
+### When is a PLN rule exact?
+
+A PLN rule is exact when its internal screening-off assumption holds:
+- **Deduction/Source**: requires C ⊥ A | B (holds in chain and fork by d-separation)
+- **Abduction**: requires B ⊥ A | C (FAILS in collider: conditioning on C opens the explaining-away path)
+
+The `ErrorCharacterization` module provides quantitative bounds on the error when
+screening-off is violated (`error_bound_by_max_violation`, `conservative_estimate_is_bound`).
+-/
 
 end Mettapedia.Logic.PLNCanonical

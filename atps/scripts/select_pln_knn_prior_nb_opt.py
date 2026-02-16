@@ -22,6 +22,7 @@ Usage:
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
 import re
@@ -384,6 +385,8 @@ def main():
                         help="Problems per PeTTa process (default 20)")
     parser.add_argument("--petta-job-batch-size", type=int, default=None,
                         help="Alias for --petta-batch-size")
+    parser.add_argument("--petta-parallel-batches", type=int, default=1,
+                        help="Concurrent PeTTa batch invocations (default 1)")
     parser.add_argument("--petta-timeout", type=int, default=240)
     parser.add_argument("--batch-metrics-out", type=str, default=None,
                         help="Optional JSON path for per-batch timing metrics")
@@ -481,13 +484,11 @@ def main():
           f"avg={avg_ms:.1f}ms/job", flush=True)
 
     batches = list(batched(jobs, args.petta_batch_size))
-    for bidx, batch in enumerate(batches):
-        elapsed = time.time() - t0
-        print(f"  Batch {bidx+1}/{len(batches)} size={len(batch)} ({elapsed:.0f}s)",
-              flush=True)
+
+    def run_batch(bidx: int, batch):
         jobs_path = run_temp_root / f"jobs_batch_{bidx:05d}.tsv"
-        batch_failed = False
         batch_t0 = time.time()
+        batch_failed = False
         try:
             petta_t0 = time.time()
             stv_by_job_qid = run_petta_batch_jobs(
@@ -495,11 +496,42 @@ def main():
             )
             petta_elapsed = time.time() - petta_t0
         except Exception as exc:
-            failures += len(batch)
-            print(f"  WARN batch {bidx+1}: {exc}", flush=True)
             stv_by_job_qid = {}
             batch_failed = True
             petta_elapsed = time.time() - batch_t0
+            return {
+                "batch_index": bidx,
+                "batch": batch,
+                "jobs_path": jobs_path,
+                "failed": batch_failed,
+                "error": str(exc),
+                "stv_by_job_qid": stv_by_job_qid,
+                "petta_seconds": petta_elapsed,
+                "batch_seconds": time.time() - batch_t0,
+            }
+        return {
+            "batch_index": bidx,
+            "batch": batch,
+            "jobs_path": jobs_path,
+            "failed": batch_failed,
+            "error": None,
+            "stv_by_job_qid": stv_by_job_qid,
+            "petta_seconds": petta_elapsed,
+            "batch_seconds": time.time() - batch_t0,
+        }
+
+    def consume_batch_result(res):
+        nonlocal failures
+        bidx = res["batch_index"]
+        batch = res["batch"]
+        jobs_path = res["jobs_path"]
+        batch_failed = res["failed"]
+        stv_by_job_qid = res["stv_by_job_qid"]
+        petta_elapsed = res["petta_seconds"]
+        batch_elapsed = res["batch_seconds"]
+        if batch_failed:
+            failures += len(batch)
+            print(f"  WARN batch {bidx+1}: {res['error']}", flush=True)
 
         post_t0 = time.time()
         for job in batch:
@@ -517,8 +549,8 @@ def main():
                 cleanup_job_files(job)
         if not args.keep_tsv:
             jobs_path.unlink(missing_ok=True)
+
         post_elapsed = time.time() - post_t0
-        batch_elapsed = time.time() - batch_t0
         jobs_scored = 0 if batch_failed else len(batch)
         results_returned = len(stv_by_job_qid)
         throughput = 0.0 if batch_elapsed <= 0 else (len(batch) / batch_elapsed)
@@ -535,11 +567,37 @@ def main():
         }
         batch_metrics.append(batch_metric)
         print(
-            f"    batch_time={batch_elapsed:.2f}s "
+            f"    batch {bidx+1}/{len(batches)} "
+            f"batch_time={batch_elapsed:.2f}s "
             f"petta={petta_elapsed:.2f}s post={post_elapsed:.2f}s "
             f"results={results_returned} throughput={throughput:.2f} jobs/s",
             flush=True,
         )
+
+    workers = max(1, int(args.petta_parallel_batches))
+    if workers <= 1 or len(batches) <= 1:
+        for bidx, batch in enumerate(batches):
+            elapsed = time.time() - t0
+            print(f"  Batch {bidx+1}/{len(batches)} size={len(batch)} ({elapsed:.0f}s)",
+                  flush=True)
+            res = run_batch(bidx, batch)
+            consume_batch_result(res)
+    else:
+        print(f"  Running PeTTa batches in parallel: workers={workers}", flush=True)
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            future_to_idx = {
+                pool.submit(run_batch, bidx, batch): bidx
+                for bidx, batch in enumerate(batches)
+            }
+            done = 0
+            for fut in as_completed(future_to_idx):
+                done += 1
+                bidx = future_to_idx[fut]
+                elapsed = time.time() - t0
+                print(f"  Batch done {done}/{len(batches)} (batch {bidx+1}, {elapsed:.0f}s)",
+                      flush=True)
+                res = fut.result()
+                consume_batch_result(res)
 
     out_path = Path(args.output)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -558,6 +616,7 @@ def main():
     if args.batch_metrics_out:
         metrics_path = Path(args.batch_metrics_out)
         metrics_path.parent.mkdir(parents=True, exist_ok=True)
+        batch_metrics.sort(key=lambda m: m["batch_index"])
         summary = {
             "mode": mode,
             "run_id": run_id,

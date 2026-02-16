@@ -25,6 +25,21 @@ probability theory, imprecise probability, Heyting algebras, quantales, and Solo
 
 ---
 
+## Semantics Decision Tree
+
+For a compact, theorem-linked guide to choosing between:
+- scalar probability semantics,
+- evidence/Heyting semantics,
+- interval/imprecise semantics (weaker-than-KS),
+- NARS mirror semantics,
+
+see:
+- `Mettapedia/Logic/SemanticsDecisionTree.lean`
+
+This note includes concrete gate theorems and symbol pointers (PLN/BN/NARS/Hypercube).
+
+---
+
 ## The Unification Thesis
 
 PLN Evidence `(n+, n-)` unifies multiple mathematical frameworks:
@@ -117,6 +132,17 @@ The core theorem-level bridges are here:
       `theorem plnStrength_lt_one`
     - `Mettapedia/Logic/PLNXiDerivedBNRules.lean:530`
       `theorem plnDeductionStrength_denom_pos`
+
+- Abduction exactness caveat (collider BN):
+  - `Mettapedia/Logic/PLNXiDerivedBNRules.lean:1172`
+    `theorem plnAbductionStrength_not_exact_collider`
+  - `Mettapedia/Logic/PLNXiDerivedBNRules.lean:1130`
+    `theorem xi_sinkRule_strength_eq_of_colliderBN`
+  - Meaning: in collider topology (`A → C ← B`), the structural exact result is
+    `P(B|A) = P(B)` under the d-separation side condition (`A ⟂ B | ∅`), while
+    the algebraic PLN abduction formula can overestimate (formal OR-gate witness:
+    `2/3 ≠ 1/2`). This should be treated as an approximation regime, not a global
+    exactness claim.
 
 MeTTa formula parity anchors:
 

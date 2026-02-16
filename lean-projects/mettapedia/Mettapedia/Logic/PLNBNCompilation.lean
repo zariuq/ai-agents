@@ -188,6 +188,8 @@ theorem queryStrength_singleton_eq_queryProb [Fintype V] [DecidableEq V]
 These work for *any* BN and any state values, using `eventEq` throughout.
 They connect `queryProb` (VE-based) to `cpt.jointMeasure` (measure-based). -/
 
+-- These lemmas provide their own type-class params to be maximally generic
+set_option linter.unusedSectionVars false in
 /-- `queryProb` for prop at any `val` = marginal measure. -/
 lemma queryProb_prop_eq_jointMeasure [Fintype V] [DecidableEq V]
     [∀ v, Fintype (bn.stateSpace v)] [∀ v, DecidableEq (bn.stateSpace v)]
@@ -199,6 +201,7 @@ lemma queryProb_prop_eq_jointMeasure [Fintype V] [DecidableEq V]
   simp only [queryProb]
   rw [propProbVE_eq_jointMeasure_eventEq]
 
+set_option linter.unusedSectionVars false in
 /-- `queryProb` for link at any `valA`, `valB` = conditional probability ratio. -/
 lemma queryProb_link_eq_jointMeasure [Fintype V] [DecidableEq V]
     [∀ v, Fintype (bn.stateSpace v)] [∀ v, DecidableEq (bn.stateSpace v)]
@@ -215,6 +218,7 @@ lemma queryProb_link_eq_jointMeasure [Fintype V] [DecidableEq V]
   · exact absurd h ha
   · rfl
 
+set_option linter.unusedSectionVars false in
 /-- `queryProb` for prop is at most 1. -/
 lemma queryProb_prop_le_one [Fintype V] [DecidableEq V]
     [∀ v, Fintype (bn.stateSpace v)] [∀ v, DecidableEq (bn.stateSpace v)]
@@ -225,6 +229,7 @@ lemma queryProb_prop_le_one [Fintype V] [DecidableEq V]
     queryProb (bn := bn) cpt (PLNQuery.prop ⟨v, val⟩) ≤ 1 := by
   rw [queryProb_prop_eq_jointMeasure]; exact prob_le_one
 
+set_option linter.unusedSectionVars false in
 /-- `queryProb` for link is at most 1. -/
 lemma queryProb_link_le_one [Fintype V] [DecidableEq V]
     [∀ v, Fintype (bn.stateSpace v)] [∀ v, DecidableEq (bn.stateSpace v)]
@@ -239,6 +244,7 @@ lemma queryProb_link_le_one [Fintype V] [DecidableEq V]
   · exact le_trans (ENNReal.div_le_div_right (measure_mono Set.inter_subset_left) _)
       ENNReal.div_self_le_one
 
+set_option linter.unusedSectionVars false in
 /-- Singleton prop `queryStrength.toReal` = `μ.real(eventEq v val)`. -/
 lemma queryStrength_singleton_prop_toReal [Fintype V] [DecidableEq V]
     [∀ v, Fintype (bn.stateSpace v)] [∀ v, DecidableEq (bn.stateSpace v)]
@@ -254,6 +260,7 @@ lemma queryStrength_singleton_prop_toReal [Fintype V] [DecidableEq V]
   rw [queryProb_prop_eq_jointMeasure]
   simp [Measure.real]
 
+set_option linter.unusedSectionVars false in
 /-- Singleton link `queryStrength.toReal` = μ.real ratio.
 Note: intersection order is `eventEq b valB ∩ eventEq a valA` to match
 the convention where the numerator event is listed first. -/
@@ -965,6 +972,7 @@ instance screeningOffProbEq_of_eventEq_mul
       (bn := bn) (A := A) (B := B) (C := C)
       (valA := valA) (valB := valB) (valC := valC) (cpt := cpt)⟩
 
+set_option linter.unusedSectionVars false in
 theorem screeningOffMulEq_of_condIndepVertices_CA
     [∀ v : V, Inhabited (bn.stateSpace v)]
     [∀ v : V, MeasurableSingletonClass (bn.stateSpace v)]
@@ -1626,5 +1634,87 @@ theorem fork_screeningOff_strength_eq_of_dsep
   simpa [WorldModel.queryStrength] using congrArg Evidence.toStrength (hEq W)
 
 end ForkExample
+
+/-! ## Collider BN Example (A → C ← B) — Sink Rule / Abduction
+
+Variable mapping: (A_rule, B_rule, C_rule) = (Three.A, Three.C, Three.B).
+Sink center = Three.C (the collider node, receives edges from A and B).
+
+Side condition: `abductionSide Three.A Three.C Three.B = ⟨{Three.A}, {Three.B}, ∅⟩`
+requires marginal independence A ⊥ B | ∅, which holds in collider BNs because A and B
+have no active path when the common effect C is not conditioned on. -/
+
+namespace ColliderExample
+
+open Mettapedia.ProbabilityTheory.BayesianNetworks.Examples
+open BNWorldModel
+
+theorem collider_hciAB_from_hLM
+    [∀ v : Three, Fintype (colliderBN.stateSpace v)]
+    [∀ v : Three, DecidableEq (colliderBN.stateSpace v)]
+    [∀ v : Three, Inhabited (colliderBN.stateSpace v)]
+    [∀ v : Three, StandardBorelSpace (colliderBN.stateSpace v)]
+    [StandardBorelSpace colliderBN.JointSpace]
+    (hLM : ∀ cpt : colliderBN.DiscreteCPT, HasLocalMarkovProperty colliderBN cpt.jointMeasure) :
+    ∀ cpt : colliderBN.DiscreteCPT,
+      (CompiledPlan.abductionSide Three.A Three.C Three.B).holds (bn := colliderBN) →
+        CondIndepVertices colliderBN cpt.jointMeasure
+          ({Three.A} : Set Three) ({Three.B} : Set Three) ∅ := by
+  intro cpt _hcond
+  letI : HasLocalMarkovProperty colliderBN cpt.jointMeasure := hLM cpt
+  exact collider_condIndep_AB_given_empty_of_localMarkov (μ := cpt.jointMeasure)
+
+theorem collider_screeningOff_wmqueryeq_of_dsep
+    (valA valB : Bool)
+    [∀ v : Three, Fintype (colliderBN.stateSpace v)]
+    [∀ v : Three, DecidableEq (colliderBN.stateSpace v)]
+    [∀ v : Three, Inhabited (colliderBN.stateSpace v)]
+    [∀ v : Three, StandardBorelSpace (colliderBN.stateSpace v)]
+    [StandardBorelSpace colliderBN.JointSpace]
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLM : ∀ cpt : colliderBN.DiscreteCPT, HasLocalMarkovProperty colliderBN cpt.jointMeasure) :
+    (CompiledPlan.abductionSide Three.A Three.C Three.B).holds (bn := colliderBN) →
+      WMQueryEq (State := State (bn := colliderBN))
+        (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+        (PLNQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
+        (PLNQuery.prop ⟨Three.B, valB⟩) := by
+  intro hcond
+  exact wmqueryeq_of_prob_eq (bn := colliderBN)
+    (PLNQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
+    (PLNQuery.prop ⟨Three.B, valB⟩)
+    (fun cpt =>
+      linkProbVE_eq_propProbVE_of_condIndep (bn := colliderBN)
+        (A := Three.A) (C := Three.B) (valA := valA) (valC := valB)
+        (cpt := cpt)
+        (collider_hciAB_from_hLM hLM cpt hcond)
+        (EventPos.pos (bn := colliderBN) (A := Three.A) (valA := valA) cpt))
+
+theorem collider_screeningOff_strength_eq_of_dsep
+    (valA valB : Bool)
+    [∀ v : Three, Fintype (colliderBN.stateSpace v)]
+    [∀ v : Three, DecidableEq (colliderBN.stateSpace v)]
+    [∀ v : Three, Inhabited (colliderBN.stateSpace v)]
+    [∀ v : Three, StandardBorelSpace (colliderBN.stateSpace v)]
+    [StandardBorelSpace colliderBN.JointSpace]
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLM : ∀ cpt : colliderBN.DiscreteCPT, HasLocalMarkovProperty colliderBN cpt.jointMeasure) :
+    (CompiledPlan.abductionSide Three.A Three.C Three.B).holds (bn := colliderBN) →
+      ∀ W : State (bn := colliderBN),
+        WorldModel.queryStrength
+          (State := State (bn := colliderBN))
+          (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+          W (PLNQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
+          =
+        WorldModel.queryStrength
+          (State := State (bn := colliderBN))
+          (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+          W (PLNQuery.prop ⟨Three.B, valB⟩) := by
+  intro hcond W
+  have hEq :=
+    collider_screeningOff_wmqueryeq_of_dsep
+      (valA := valA) (valB := valB) hLM hcond
+  simpa [WorldModel.queryStrength] using congrArg Evidence.toStrength (hEq W)
+
+end ColliderExample
 
 end Mettapedia.Logic.PLNBNCompilation

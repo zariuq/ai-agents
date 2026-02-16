@@ -230,6 +230,61 @@ def HasPatternWRWORRate
             (worPatternMass (k := k) (hN := hN) e s p).toReal|) ≤
           Cdf / (returnsToStart (k := k) s : ℝ)
 
+/-- Family-level positive-return pattern-collision obligation. -/
+def HasPatternCollisionPosAll : Prop :=
+  ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+    ∀ {N : ℕ} (hN : Nat.succ n ≤ N) (s : MarkovState k),
+      s ∈ stateFinset k N →
+        0 < returnsToStart (k := k) s →
+          (∑ p ∈ excursionPatternSet (k := k) (hN := hN) e s,
+            |(wrPatternMass (k := k) hk n e s p).toReal -
+              (worPatternMass (k := k) (hN := hN) e s p).toReal|) ≤
+            (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) /
+              (returnsToStart (k := k) s : ℝ)
+
+/-- Family-level zero-return pattern discrepancy obligation. -/
+def HasPatternCollisionZeroAll : Prop :=
+  ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+    ∀ {N : ℕ} (hN : Nat.succ n ≤ N) (s : MarkovState k),
+      s ∈ stateFinset k N →
+        returnsToStart (k := k) s = 0 →
+          (∑ p ∈ excursionPatternSet (k := k) (hN := hN) e s,
+            |(wrPatternMass (k := k) hk n e s p).toReal -
+              (worPatternMass (k := k) (hN := hN) e s p).toReal|) = 0
+
+/-- BEST-side representative-multiset bound for fixed `(hk,n,e)`. -/
+def HasBestReprBound
+    (hk : 0 < k) (n : ℕ) (e : MarkovState k) : Prop :=
+  ∀ {N : ℕ} (hN : Nat.succ n ≤ N) (s : MarkovState k),
+    s ∈ stateFinset k N →
+      let P := excursionPatternSet (k := k) (hN := hN) e s
+      let repr : Multiset (ExcursionType k) → ExcursionList k := fun mset =>
+        if hm : ∃ p ∈ P, Multiset.ofList p = mset then (Classical.choose hm) else []
+      (∑ mset ∈ P.image Multiset.ofList,
+        (((P.filter (fun p => Multiset.ofList p = mset)).card : ℝ) *
+          |(wrPatternMass (k := k) hk n e s (repr mset)).toReal -
+            (worPatternMass (k := k) (hN := hN) e s (repr mset)).toReal|))
+        ≤
+          (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) /
+            (returnsToStart (k := k) s : ℝ)
+
+/-- BEST-side representative-multiset bound family used to build the strict
+core package. -/
+def HasBestReprBoundAll : Prop :=
+  ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+    ∀ {N : ℕ} (hN : Nat.succ n ≤ N) (s : MarkovState k),
+      s ∈ stateFinset k N →
+        let P := excursionPatternSet (k := k) (hN := hN) e s
+        let repr : Multiset (ExcursionType k) → ExcursionList k := fun mset =>
+          if hm : ∃ p ∈ P, Multiset.ofList p = mset then (Classical.choose hm) else []
+        (∑ mset ∈ P.image Multiset.ofList,
+          (((P.filter (fun p => Multiset.ofList p = mset)).card : ℝ) *
+            |(wrPatternMass (k := k) hk n e s (repr mset)).toReal -
+              (worPatternMass (k := k) (hN := hN) e s (repr mset)).toReal|))
+          ≤
+            (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) /
+              (returnsToStart (k := k) s : ℝ)
+
 /--
 Statewise WR representation-rate witness via a concrete long-fiber trajectory family.
 
@@ -1241,6 +1296,14 @@ theorem hasExcursionBiapproxCore_of_best_repr_bound
       (hbound_repr := hreprBound hN s hs)
       (hbound_le_collision := le_rfl)
 
+/-- Alias-wrapper version of `hasExcursionBiapproxCore_of_best_repr_bound`. -/
+theorem hasExcursionBiapproxCore_of_bestReprBound
+    (hk : 0 < k) (n : ℕ) (e : MarkovState k)
+    (hreprBound : HasBestReprBound (k := k) hk n e) :
+    HasExcursionBiapproxCore (k := k) hk n e := by
+  exact hasExcursionBiapproxCore_of_best_repr_bound
+    (k := k) (hk := hk) (n := n) (e := e) hreprBound
+
 /-- Family-level version of `hasExcursionBiapproxCore_of_best_repr_bound`. -/
 theorem hasExcursionBiapproxCoreAll_of_best_repr_boundAll
     (hreprBoundAll :
@@ -1264,6 +1327,140 @@ theorem hasExcursionBiapproxCoreAll_of_best_repr_boundAll
     hasExcursionBiapproxCore_of_best_repr_bound
       (k := k) (hk := hk) (n := n) (e := e)
       (hreprBound := hreprBoundAll hk n e)
+
+/-- Alias-wrapper version of `hasExcursionBiapproxCoreAll_of_best_repr_boundAll`. -/
+theorem hasExcursionBiapproxCoreAll_of_bestReprBoundAll
+    (hreprBoundAll : HasBestReprBoundAll (k := k)) :
+    ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+      HasExcursionBiapproxCore (k := k) hk n e := by
+  exact hasExcursionBiapproxCoreAll_of_best_repr_boundAll
+    (k := k) hreprBoundAll
+
+/-- Build the strict core package from a direct pattern-sum collision bound
+on positive-return states, plus an explicit zero-return case.
+
+This isolates the last semantic/combinatorial obligations into two concrete
+statewise statements while keeping the downstream hard-direction pipeline
+unchanged. -/
+theorem hasExcursionBiapproxCore_of_patternCollision_and_zeroCase
+    (hk : 0 < k) (n : ℕ) (e : MarkovState k)
+    (hpos :
+      ∀ {N : ℕ} (hN : Nat.succ n ≤ N) (s : MarkovState k),
+        s ∈ stateFinset k N →
+          0 < returnsToStart (k := k) s →
+            (∑ p ∈ excursionPatternSet (k := k) (hN := hN) e s,
+              |(wrPatternMass (k := k) hk n e s p).toReal -
+                (worPatternMass (k := k) (hN := hN) e s p).toReal|) ≤
+              (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) /
+                (returnsToStart (k := k) s : ℝ))
+    (hzero :
+      ∀ {N : ℕ} (hN : Nat.succ n ≤ N) (s : MarkovState k),
+        s ∈ stateFinset k N →
+          returnsToStart (k := k) s = 0 →
+            (∑ p ∈ excursionPatternSet (k := k) (hN := hN) e s,
+              |(wrPatternMass (k := k) hk n e s p).toReal -
+                (worPatternMass (k := k) (hN := hN) e s p).toReal|) = 0) :
+    HasExcursionBiapproxCore (k := k) hk n e := by
+  intro N hN s hs
+  let P := excursionPatternSet (k := k) (hN := hN) e s
+  let collision : ℝ :=
+    (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) /
+      (returnsToStart (k := k) s : ℝ)
+  have hpart :
+      (∑ p ∈ P,
+        |(wrPatternMass (k := k) hk n e s p).toReal -
+          (worPatternMass (k := k) (hN := hN) e s p).toReal|) =
+      (∑ mset ∈ P.image Multiset.ofList,
+        ∑ p ∈ P with Multiset.ofList p = mset,
+          |(wrPatternMass (k := k) hk n e s p).toReal -
+            (worPatternMass (k := k) (hN := hN) e s p).toReal|) := by
+    simpa [P] using
+      (sum_abs_wr_wor_patternMass_partition_by_excursionMultiset
+        (k := k) (hN := hN) (hk := hk) (e := e) (s := s))
+  have hsum_part_le_collision :
+      (∑ mset ∈ P.image Multiset.ofList,
+        ∑ p ∈ P with Multiset.ofList p = mset,
+          |(wrPatternMass (k := k) hk n e s p).toReal -
+            (worPatternMass (k := k) (hN := hN) e s p).toReal|) ≤
+      collision := by
+    by_cases hRpos : 0 < returnsToStart (k := k) s
+    · have hsum_pos :
+        (∑ p ∈ P,
+          |(wrPatternMass (k := k) hk n e s p).toReal -
+            (worPatternMass (k := k) (hN := hN) e s p).toReal|) ≤
+          collision := by
+        simpa [P, collision] using hpos hN s hs hRpos
+      calc
+        (∑ mset ∈ P.image Multiset.ofList,
+          ∑ p ∈ P with Multiset.ofList p = mset,
+            |(wrPatternMass (k := k) hk n e s p).toReal -
+              (worPatternMass (k := k) (hN := hN) e s p).toReal|) =
+          (∑ p ∈ P,
+            |(wrPatternMass (k := k) hk n e s p).toReal -
+              (worPatternMass (k := k) (hN := hN) e s p).toReal|) := by
+                simpa using hpart.symm
+        _ ≤ collision := hsum_pos
+    · have hRzero : returnsToStart (k := k) s = 0 := Nat.eq_zero_of_not_pos hRpos
+      have hsum_zero :
+          (∑ p ∈ P,
+            |(wrPatternMass (k := k) hk n e s p).toReal -
+              (worPatternMass (k := k) (hN := hN) e s p).toReal|) = 0 := by
+        simpa [P] using hzero hN s hs hRzero
+      have hcollision_zero : collision = 0 := by
+        simp [collision, hRzero]
+      have hsum_part_zero :
+          (∑ mset ∈ P.image Multiset.ofList,
+            ∑ p ∈ P with Multiset.ofList p = mset,
+              |(wrPatternMass (k := k) hk n e s p).toReal -
+                (worPatternMass (k := k) (hN := hN) e s p).toReal|) = 0 := by
+        calc
+          (∑ mset ∈ P.image Multiset.ofList,
+            ∑ p ∈ P with Multiset.ofList p = mset,
+              |(wrPatternMass (k := k) hk n e s p).toReal -
+                (worPatternMass (k := k) (hN := hN) e s p).toReal|) =
+            (∑ p ∈ P,
+              |(wrPatternMass (k := k) hk n e s p).toReal -
+                (worPatternMass (k := k) (hN := hN) e s p).toReal|) := by
+                  simpa using hpart.symm
+          _ = 0 := hsum_zero
+      calc
+        (∑ mset ∈ P.image Multiset.ofList,
+          ∑ p ∈ P with Multiset.ofList p = mset,
+            |(wrPatternMass (k := k) hk n e s p).toReal -
+              (worPatternMass (k := k) (hN := hN) e s p).toReal|) = 0 := hsum_part_zero
+        _ ≤ collision := by simpa [hcollision_zero]
+  refine ⟨0, 0, ?_, by simp⟩
+  simpa [collision] using hsum_part_le_collision
+
+/-- Family-level version of
+`hasExcursionBiapproxCore_of_patternCollision_and_zeroCase`. -/
+theorem hasExcursionBiapproxCoreAll_of_patternCollision_and_zeroCaseAll
+    (hposAll :
+      ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+        ∀ {N : ℕ} (hN : Nat.succ n ≤ N) (s : MarkovState k),
+          s ∈ stateFinset k N →
+            0 < returnsToStart (k := k) s →
+              (∑ p ∈ excursionPatternSet (k := k) (hN := hN) e s,
+                |(wrPatternMass (k := k) hk n e s p).toReal -
+                  (worPatternMass (k := k) (hN := hN) e s p).toReal|) ≤
+                (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) /
+                  (returnsToStart (k := k) s : ℝ))
+    (hzeroAll :
+      ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+        ∀ {N : ℕ} (hN : Nat.succ n ≤ N) (s : MarkovState k),
+          s ∈ stateFinset k N →
+            returnsToStart (k := k) s = 0 →
+              (∑ p ∈ excursionPatternSet (k := k) (hN := hN) e s,
+                |(wrPatternMass (k := k) hk n e s p).toReal -
+                  (worPatternMass (k := k) (hN := hN) e s p).toReal|) = 0) :
+    ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+      HasExcursionBiapproxCore (k := k) hk n e := by
+  intro hk n e
+  exact
+    hasExcursionBiapproxCore_of_patternCollision_and_zeroCase
+      (k := k) (hk := hk) (n := n) (e := e)
+      (hpos := hposAll hk n e)
+      (hzero := hzeroAll hk n e)
 
 lemma hasPatternSurrogateResidualAlignment_of_canonicalResidual
     (hk : 0 < k) (n : ℕ) (e : MarkovState k)
@@ -1894,6 +2091,44 @@ lemma hasCanonicalWORTransportRate_of_patternWRWORRate
           Cdf / (returnsToStart (k := k) s : ℝ) := add_le_add hwr_canonical hwr_wor
     _ = (Cw + Cdf) / (returnsToStart (k := k) s : ℝ) := by ring
 
+/-- Build a direct WR/WOR pattern discrepancy rate from split-rate assumptions. -/
+lemma hasPatternWRWORRate_of_splitRates
+    (hk : 0 < k) (n : ℕ) (e : MarkovState k) (Cw Cpc : ℝ)
+    (hWR : HasCanonicalWRSmoothingRate (k := k) hk n e Cw)
+    (hWOR : HasCanonicalWORTransportRate (k := k) hk n e Cw Cpc) :
+    HasPatternWRWORRate (k := k) hk n e (Cw + Cpc) := by
+  intro N hN s hs hRpos
+  rcases hWR hN s hs hRpos with ⟨wSurrogate, εW, hWclose, hεW⟩
+  have hWcloseCw :
+      |(W (k := k) (Nat.succ n) e (empiricalParam (k := k) hk s)).toReal -
+        wSurrogate| ≤ Cw / (returnsToStart (k := k) s : ℝ) :=
+    le_trans hWclose hεW
+  rcases hWOR hN s hs hRpos wSurrogate hWcloseCw with ⟨εPC, hq_wor, hεPC⟩
+  let q : ExcursionList k → ℝ := canonicalWRSurrogateMass (k := k) n e wSurrogate
+  have hwr_q :
+      ∑ p ∈ excursionPatternSet (k := k) (hN := hN) e s,
+        |(wrPatternMass (k := k) hk n e s p).toReal - q p| ≤ εW := by
+    simpa [q] using
+      (sum_abs_wrPatternMass_toReal_sub_canonicalWRSurrogateMass_le
+        (k := k) (hk := hk) (n := n) (hN := hN) (e := e) (s := s)
+        (wSurrogate := wSurrogate) (εW := εW) hWclose)
+  have hsum :
+      (∑ p ∈ excursionPatternSet (k := k) (hN := hN) e s,
+        |(wrPatternMass (k := k) hk n e s p).toReal -
+          (worPatternMass (k := k) (hN := hN) e s p).toReal|) ≤
+        εW + εPC := by
+    exact
+      sum_abs_wr_wor_patternMass_toReal_le_of_surrogate
+        (k := k) (hk := hk) (n := n) (e := e) (hN := hN) (s := s)
+        (q := q) (εW := εW) (εPC := εPC) hwr_q (by simpa [q] using hq_wor)
+  calc
+    (∑ p ∈ excursionPatternSet (k := k) (hN := hN) e s,
+      |(wrPatternMass (k := k) hk n e s p).toReal -
+        (worPatternMass (k := k) (hN := hN) e s p).toReal|) ≤ εW + εPC := hsum
+    _ ≤ Cw / (returnsToStart (k := k) s : ℝ) +
+          Cpc / (returnsToStart (k := k) s : ℝ) := add_le_add hεW hεPC
+    _ = (Cw + Cpc) / (returnsToStart (k := k) s : ℝ) := by ring
+
 lemma hasCanonicalWORTransportRate_of_biapproxCore
     (hk : 0 < k) (n : ℕ) (e : MarkovState k) (Cw : ℝ)
     (hcore : HasExcursionBiapproxCore (k := k) hk n e) :
@@ -1946,6 +2181,36 @@ lemma hasPatternWRWORRate_of_biapproxCore
         (returnsToStart (k := k) s : ℝ))
       hwr_q hq_wor
   simpa using hsum
+
+/-- Fixed-parameter BEST representative bound implies a direct WR/WOR
+pattern discrepancy rate witness. -/
+lemma hasPatternWRWORRate_of_bestReprBound
+    (hk : 0 < k) (n : ℕ) (e : MarkovState k)
+    (hreprBound : HasBestReprBound (k := k) hk n e) :
+    HasPatternWRWORRate (k := k) hk n e
+      (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) := by
+  exact
+    hasPatternWRWORRate_of_biapproxCore
+      (k := k) (hk := hk) (n := n) (e := e)
+      (hcore := hasExcursionBiapproxCore_of_bestReprBound
+        (k := k) (hk := hk) (n := n) (e := e) hreprBound)
+
+/-- Fixed-parameter positive-return pattern-collision consequence of a BEST
+representative bound witness. -/
+lemma hasPatternCollisionPos_of_bestReprBound
+    (hk : 0 < k) (n : ℕ) (e : MarkovState k)
+    (hreprBound : HasBestReprBound (k := k) hk n e) :
+    ∀ {N : ℕ} (hN : Nat.succ n ≤ N) (s : MarkovState k),
+      s ∈ stateFinset k N →
+        0 < returnsToStart (k := k) s →
+          (∑ p ∈ excursionPatternSet (k := k) (hN := hN) e s,
+            |(wrPatternMass (k := k) hk n e s p).toReal -
+              (worPatternMass (k := k) (hN := hN) e s p).toReal|) ≤
+            (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) /
+              (returnsToStart (k := k) s : ℝ) := by
+  exact
+    hasPatternWRWORRate_of_bestReprBound
+      (k := k) (hk := hk) (n := n) (e := e) hreprBound
 
 lemma hasExcursionResidualBoundRate_of_worTransportRate
     (hk : 0 < k) (n : ℕ) (e : MarkovState k) (Cpc : ℝ)
@@ -2039,6 +2304,111 @@ theorem hasPatternWRWORRateAll_of_biapproxCoreAll
     hasPatternWRWORRate_of_biapproxCore
       (k := k) (hk := hk) (n := n) (e := e) (hcore := hcoreAll hk n e)
 
+/-- Convert the BEST representative-counting bound family directly into a
+family-level WR/WOR pattern discrepancy rate witness. -/
+theorem hasPatternWRWORRateAll_of_best_repr_boundAll
+    (hreprBoundAll :
+      ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+        ∀ {N : ℕ} (hN : Nat.succ n ≤ N) (s : MarkovState k),
+          s ∈ stateFinset k N →
+            let P := excursionPatternSet (k := k) (hN := hN) e s
+            let repr : Multiset (ExcursionType k) → ExcursionList k := fun mset =>
+              if hm : ∃ p ∈ P, Multiset.ofList p = mset then (Classical.choose hm) else []
+            (∑ mset ∈ P.image Multiset.ofList,
+              (((P.filter (fun p => Multiset.ofList p = mset)).card : ℝ) *
+                |(wrPatternMass (k := k) hk n e s (repr mset)).toReal -
+                  (worPatternMass (k := k) (hN := hN) e s (repr mset)).toReal|))
+              ≤
+                (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) /
+                  (returnsToStart (k := k) s : ℝ)) :
+    ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+      ∃ Cdf : ℝ, 0 ≤ Cdf ∧ HasPatternWRWORRate (k := k) hk n e Cdf := by
+  have hcoreAll :
+      ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+        HasExcursionBiapproxCore (k := k) hk n e :=
+    hasExcursionBiapproxCoreAll_of_best_repr_boundAll
+      (k := k) hreprBoundAll
+  exact hasPatternWRWORRateAll_of_biapproxCoreAll (k := k) hcoreAll
+
+/-- Alias-wrapper version of `hasPatternWRWORRateAll_of_best_repr_boundAll`. -/
+theorem hasPatternWRWORRateAll_of_bestReprBoundAll
+    (hreprBoundAll : HasBestReprBoundAll (k := k)) :
+    ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+      ∃ Cdf : ℝ, 0 ≤ Cdf ∧ HasPatternWRWORRate (k := k) hk n e Cdf := by
+  exact hasPatternWRWORRateAll_of_best_repr_boundAll
+    (k := k) hreprBoundAll
+
+/-- Convert direct pattern-collision + zero-return obligations into a
+family-level WR/WOR pattern discrepancy rate witness. -/
+theorem hasPatternWRWORRateAll_of_patternCollision_and_zeroCaseAll
+    (hposAll : HasPatternCollisionPosAll (k := k))
+    (hzeroAll : HasPatternCollisionZeroAll (k := k)) :
+    ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+      ∃ Cdf : ℝ, 0 ≤ Cdf ∧ HasPatternWRWORRate (k := k) hk n e Cdf := by
+  have hcoreAll :
+      ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+        HasExcursionBiapproxCore (k := k) hk n e :=
+    hasExcursionBiapproxCoreAll_of_patternCollision_and_zeroCaseAll
+      (k := k) hposAll hzeroAll
+  exact hasPatternWRWORRateAll_of_biapproxCoreAll (k := k) hcoreAll
+
+/-- Convert the positive-return pattern-collision family directly into
+`HasPatternWRWORRate` witnesses (no zero-return branch needed). -/
+theorem hasPatternWRWORRateAll_of_patternCollisionPosAll
+    (hposAll : HasPatternCollisionPosAll (k := k)) :
+    ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+      ∃ Cdf : ℝ, 0 ≤ Cdf ∧ HasPatternWRWORRate (k := k) hk n e Cdf := by
+  intro hk n e
+  refine ⟨4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ), by positivity, ?_⟩
+  intro N hN s hs hRpos
+  simpa using hposAll hk n e hN s hs hRpos
+
+/-- Extract positive-return pattern-collision obligations from a BEST-side
+core package family. -/
+theorem hasPatternCollisionPosAll_of_biapproxCoreAll
+    (hcoreAll : ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+      HasExcursionBiapproxCore (k := k) hk n e) :
+    HasPatternCollisionPosAll (k := k) := by
+  intro hk n e N hN s hs hRpos
+  have hwrwor :
+      HasPatternWRWORRate (k := k) hk n e
+        (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) :=
+    hasPatternWRWORRate_of_biapproxCore
+      (k := k) (hk := hk) (n := n) (e := e) (hcore := hcoreAll hk n e)
+  simpa using hwrwor hN s hs hRpos
+
+/-- Extract positive-return pattern-collision obligations directly from the
+BEST representative bound family. -/
+theorem hasPatternCollisionPosAll_of_best_repr_boundAll
+    (hreprBoundAll :
+      ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+        ∀ {N : ℕ} (hN : Nat.succ n ≤ N) (s : MarkovState k),
+          s ∈ stateFinset k N →
+            let P := excursionPatternSet (k := k) (hN := hN) e s
+            let repr : Multiset (ExcursionType k) → ExcursionList k := fun mset =>
+              if hm : ∃ p ∈ P, Multiset.ofList p = mset then (Classical.choose hm) else []
+            (∑ mset ∈ P.image Multiset.ofList,
+              (((P.filter (fun p => Multiset.ofList p = mset)).card : ℝ) *
+                |(wrPatternMass (k := k) hk n e s (repr mset)).toReal -
+                  (worPatternMass (k := k) (hN := hN) e s (repr mset)).toReal|))
+              ≤
+                (4 * ((Nat.succ n : ℕ) : ℝ) * ((Nat.succ n : ℕ) : ℝ)) /
+                  (returnsToStart (k := k) s : ℝ)) :
+    HasPatternCollisionPosAll (k := k) := by
+  have hcoreAll :
+      ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+        HasExcursionBiapproxCore (k := k) hk n e :=
+    hasExcursionBiapproxCoreAll_of_best_repr_boundAll
+      (k := k) hreprBoundAll
+  exact hasPatternCollisionPosAll_of_biapproxCoreAll (k := k) hcoreAll
+
+/-- Alias-wrapper version of `hasPatternCollisionPosAll_of_best_repr_boundAll`. -/
+theorem hasPatternCollisionPosAll_of_bestReprBoundAll
+    (hreprBoundAll : HasBestReprBoundAll (k := k)) :
+    HasPatternCollisionPosAll (k := k) := by
+  exact hasPatternCollisionPosAll_of_best_repr_boundAll
+    (k := k) hreprBoundAll
+
 theorem hasExcursionResidualBoundRateAll_of_splitRatesAll
     (hsplitAll : ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
       ∃ Cw Cpc : ℝ,
@@ -2053,6 +2423,24 @@ theorem hasExcursionResidualBoundRateAll_of_splitRatesAll
   exact hasExcursionResidualBoundRate_of_splitRates
     (k := k) (hk := hk) (n := n) (e := e) (Cw := Cw) (Cpc := Cpc)
     hWR hWOR
+
+/-- Family-level direct pattern WR/WOR discrepancy rates from split-rate
+assumptions. -/
+theorem hasPatternWRWORRateAll_of_splitRatesAll
+    (hsplitAll : ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+      ∃ Cw Cpc : ℝ,
+        0 ≤ Cw ∧ 0 ≤ Cpc ∧
+        HasCanonicalWRSmoothingRate (k := k) hk n e Cw ∧
+        HasCanonicalWORTransportRate (k := k) hk n e Cw Cpc) :
+    ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+      ∃ Cdf : ℝ, 0 ≤ Cdf ∧ HasPatternWRWORRate (k := k) hk n e Cdf := by
+  intro hk n e
+  rcases hsplitAll hk n e with ⟨Cw, Cpc, hCw, hCpc, hWR, hWOR⟩
+  refine ⟨Cw + Cpc, add_nonneg hCw hCpc, ?_⟩
+  exact
+    hasPatternWRWORRate_of_splitRates
+      (k := k) (hk := hk) (n := n) (e := e)
+      (Cw := Cw) (Cpc := Cpc) hWR hWOR
 
 theorem hasExcursionResidualBoundRateAll_of_statewiseCloseSplitRatesAll
     (hsplitCloseAll : ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
@@ -2121,6 +2509,37 @@ theorem hasExcursionResidualBoundRateAll_of_rowL1StartTarget_and_patternWRWORRat
         (((Nat.succ n : ℝ) * ((k : ℝ) * (k : ℝ))) + Cdf),
       add_nonneg (by positivity) (add_nonneg (by positivity) hCdf),
       hres⟩
+
+/-- Robust all-states constructor from:
+`rowL1` WR smoothing + direct pattern-collision/zero-case obligations. -/
+theorem hasExcursionResidualBoundRateAll_of_rowL1StartTarget_and_patternCollision_zeroCaseAll
+    (hposAll : HasPatternCollisionPosAll (k := k))
+    (hzeroAll : HasPatternCollisionZeroAll (k := k)) :
+    ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+      ∃ C : ℝ, 0 ≤ C ∧ HasExcursionResidualBoundRate (k := k) hk n e C := by
+  have hwrworAll :
+      ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+        ∃ Cdf : ℝ, 0 ≤ Cdf ∧ HasPatternWRWORRate (k := k) hk n e Cdf :=
+    hasPatternWRWORRateAll_of_patternCollision_and_zeroCaseAll
+      (k := k) hposAll hzeroAll
+  exact
+    hasExcursionResidualBoundRateAll_of_rowL1StartTarget_and_patternWRWORRateAll
+      (k := k) hwrworAll
+
+/-- Robust all-states constructor from:
+`rowL1` WR smoothing + positive-return pattern-collision obligations. -/
+theorem hasExcursionResidualBoundRateAll_of_rowL1StartTarget_and_patternCollisionPosAll
+    (hposAll : HasPatternCollisionPosAll (k := k)) :
+    ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+      ∃ C : ℝ, 0 ≤ C ∧ HasExcursionResidualBoundRate (k := k) hk n e C := by
+  have hwrworAll :
+      ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+        ∃ Cdf : ℝ, 0 ≤ Cdf ∧ HasPatternWRWORRate (k := k) hk n e Cdf :=
+    hasPatternWRWORRateAll_of_patternCollisionPosAll
+      (k := k) hposAll
+  exact
+    hasExcursionResidualBoundRateAll_of_rowL1StartTarget_and_patternWRWORRateAll
+      (k := k) hwrworAll
 
 theorem hasExcursionResidualBoundRateAll_of_excursionTargetSplitRatesAll
     (hsplitTargetAll : ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,

@@ -20,6 +20,7 @@ NB_TABLES="$DATA/models/mash_nb_tables_round2_pooled.pkl"
 POOLED_DEPS="$DATA/deps/pooled_train_deps_allruns.jsonl"
 PLN_NB_TAG="pln_nb_round2_pooled"
 PLN_KNN_PRIOR_TAG="pln_knn_prior_nb_opt_mash_round2_pooled"
+PETTA_PARALLEL_BATCHES="${PETTA_PARALLEL_BATCHES:-2}"
 
 log() { echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"; }
 
@@ -108,6 +109,7 @@ main() {
       --prefilter-k 512 \
       --petta-batch-size 32 \
       --petta-job-batch-size 20 \
+      --petta-parallel-batches "$PETTA_PARALLEL_BATCHES" \
       --output "$BASE/selections_${PLN_NB_TAG}_top512_train.json"
   else
     log "exists: $BASE/selections_${PLN_NB_TAG}_top512_train.json (skip selection)"
@@ -129,6 +131,7 @@ main() {
       --nb-tables "$NB_TABLES" \
       --deps-file "$POOLED_DEPS" \
       --petta-batch-size 20 \
+      --petta-parallel-batches "$PETTA_PARALLEL_BATCHES" \
       --petta-timeout 300 \
       --output "$BASE/selections_${PLN_KNN_PRIOR_TAG}_top512_train.json"
   else

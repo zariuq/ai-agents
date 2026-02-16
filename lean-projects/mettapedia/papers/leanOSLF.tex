@@ -176,7 +176,7 @@ The formalization is organized in seven directories plus standalone files:
 \code{PiCalculus/}     & 6{,}582 & 29 & $\pi$-calculus + \rhocalc{}-encoding \\
 \code{NativeType/}     &   263   & 0  & Native type construction \\
 \code{Formula.lean}    &   582   & 0  & Verified bounded model checker \\
-\code{Main.lean}       &   387   & 0  & Re-exports \\
+\code{Main.lean}       &   387   & 0  & Focused OSLF re-exports \\
 \hline
 \textbf{Total}         & \textbf{22{,}320} & \textbf{29} & \textbf{Core: 0 sorries}
 \end{tabular}
@@ -187,6 +187,9 @@ All 29 remaining sorries are in the $\pi$-to-\rhocalc{} encoding correctness pro
 substitution invariance) already fully proven.
 The entire core \OSLF{} pipeline---\MeTTaIL{}, Framework, RhoCalculus, Formula,
 and MeTTa Core---carries \textbf{0 sorries and 0 axioms}.
+Operational entrypoints (\code{CoreMain.lean} and \code{Main.lean}) are kept on this
+core boundary; process-calculus facades are exposed separately under
+\code{Mettapedia/Languages/ProcessCalculi*.lean}.
 
 The \code{Framework/} directory (4{,}400 lines, 15~files) is the largest component,
 containing:

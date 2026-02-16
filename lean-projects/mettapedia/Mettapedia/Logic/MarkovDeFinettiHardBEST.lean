@@ -5138,6 +5138,128 @@ lemma abs_toReal_sum_wr_sub_toReal_sum_wor_le_sum_abs
       abs_sum_wrPatternMass_toReal_sub_sum_worPatternMass_toReal_le
         (k := k) (hk := hk) (hN := hN) (e := e) (s := s)
 
+/-- Coarse universal bound on total WR/WOR pattern discrepancy.
+
+This bound is independent of `returnsToStart`; it is useful as a fallback
+for small-`R` regimes. -/
+lemma sum_abs_wr_wor_patternMass_toReal_le_two
+    {n N : ℕ} (hk : 0 < k) (hN : Nat.succ n ≤ N) (e s : MarkovState k)
+    (hs : s ∈ stateFinset k N) :
+    ∑ p ∈ excursionPatternSet (k := k) (hN := hN) e s,
+      |(wrPatternMass (k := k) hk n e s p).toReal -
+        (worPatternMass (k := k) (hN := hN) e s p).toReal| ≤ 2 := by
+  let P := excursionPatternSet (k := k) (hN := hN) e s
+  have hpoint :
+      ∀ p : ExcursionList k,
+        p ∈ P →
+          |(wrPatternMass (k := k) hk n e s p).toReal -
+            (worPatternMass (k := k) (hN := hN) e s p).toReal| ≤
+          (wrPatternMass (k := k) hk n e s p).toReal +
+            (worPatternMass (k := k) (hN := hN) e s p).toReal := by
+    intro p hp
+    have hwr_nonneg :
+        0 ≤ (wrPatternMass (k := k) hk n e s p).toReal :=
+      wrPatternMass_toReal_nonneg (k := k) (hk := hk) (n := n) (e := e) (s := s) p
+    have hwor_nonneg :
+        0 ≤ (worPatternMass (k := k) (hN := hN) e s p).toReal :=
+      worPatternMass_toReal_nonneg (k := k) (hN := hN) (e := e) (s := s) p
+    calc
+      |(wrPatternMass (k := k) hk n e s p).toReal -
+          (worPatternMass (k := k) (hN := hN) e s p).toReal|
+          ≤
+        |(wrPatternMass (k := k) hk n e s p).toReal - 0| +
+          |0 - (worPatternMass (k := k) (hN := hN) e s p).toReal| := by
+            simpa using
+              (abs_sub_le
+                ((wrPatternMass (k := k) hk n e s p).toReal)
+                (0 : ℝ)
+                ((worPatternMass (k := k) (hN := hN) e s p).toReal))
+      _ =
+        (wrPatternMass (k := k) hk n e s p).toReal +
+          (worPatternMass (k := k) (hN := hN) e s p).toReal := by
+            simp [abs_of_nonneg hwr_nonneg, abs_of_nonneg hwor_nonneg]
+  have hsum_point :
+      (∑ p ∈ P,
+        |(wrPatternMass (k := k) hk n e s p).toReal -
+          (worPatternMass (k := k) (hN := hN) e s p).toReal|) ≤
+      ∑ p ∈ P,
+        ((wrPatternMass (k := k) hk n e s p).toReal +
+          (worPatternMass (k := k) (hN := hN) e s p).toReal) := by
+    refine Finset.sum_le_sum ?_
+    intro p hp
+    exact hpoint p hp
+  have hsum_split :
+      (∑ p ∈ P,
+        ((wrPatternMass (k := k) hk n e s p).toReal +
+          (worPatternMass (k := k) (hN := hN) e s p).toReal)) =
+      (∑ p ∈ P, (wrPatternMass (k := k) hk n e s p).toReal) +
+        (∑ p ∈ P, (worPatternMass (k := k) (hN := hN) e s p).toReal) := by
+    simp [Finset.sum_add_distrib]
+  have hsum_wr_toReal :
+      (∑ p ∈ P, (wrPatternMass (k := k) hk n e s p).toReal) =
+        (W (k := k) (Nat.succ n) e (empiricalParam (k := k) hk s)).toReal := by
+    have hsum_enn :
+        ∑ p ∈ P, wrPatternMass (k := k) hk n e s p =
+          W (k := k) (Nat.succ n) e (empiricalParam (k := k) hk s) := by
+      simpa [P] using
+        (sum_wrPatternMass_eq_W
+          (k := k) (hk := hk) (n := n) (hN := hN) (e := e) (s := s))
+    have hsum_real := congrArg ENNReal.toReal hsum_enn
+    calc
+      (∑ p ∈ P, (wrPatternMass (k := k) hk n e s p).toReal) =
+          (∑ p ∈ P, wrPatternMass (k := k) hk n e s p).toReal := by
+            symm
+            simpa [P] using
+              (toReal_sum_wrPatternMass
+                (k := k) (hk := hk) (hN := hN) (e := e) (s := s))
+      _ =
+        (W (k := k) (Nat.succ n) e (empiricalParam (k := k) hk s)).toReal := hsum_real
+  have hsum_wor_toReal :
+      (∑ p ∈ P, (worPatternMass (k := k) (hN := hN) e s p).toReal) =
+        (prefixCoeff (k := k) (h := hN) e s).toReal := by
+    have hsum_enn :
+        ∑ p ∈ P, worPatternMass (k := k) (hN := hN) e s p =
+          prefixCoeff (k := k) (h := hN) e s := by
+      simpa [P] using
+        (sum_worPatternMass_eq_prefixCoeff
+          (k := k) (hN := hN) (e := e) (s := s) hs)
+    have hsum_real := congrArg ENNReal.toReal hsum_enn
+    calc
+      (∑ p ∈ P, (worPatternMass (k := k) (hN := hN) e s p).toReal) =
+          (∑ p ∈ P, worPatternMass (k := k) (hN := hN) e s p).toReal := by
+            symm
+            simpa [P] using
+              (toReal_sum_worPatternMass
+                (k := k) (hN := hN) (e := e) (s := s) hs)
+      _ = (prefixCoeff (k := k) (h := hN) e s).toReal := hsum_real
+  have hW_le_one :
+      (W (k := k) (Nat.succ n) e (empiricalParam (k := k) hk s)).toReal ≤ 1 :=
+    W_toReal_le_one
+      (k := k) (n := Nat.succ n) (e := e)
+      (θ := empiricalParam (k := k) hk s)
+  have hPC_le_one :
+      (prefixCoeff (k := k) (h := hN) e s).toReal ≤ 1 :=
+    prefixCoeff_toReal_le_one (k := k) (h := hN) (e := e) (eN := s) hs
+  calc
+    ∑ p ∈ excursionPatternSet (k := k) (hN := hN) e s,
+      |(wrPatternMass (k := k) hk n e s p).toReal -
+        (worPatternMass (k := k) (hN := hN) e s p).toReal|
+        = ∑ p ∈ P,
+            |(wrPatternMass (k := k) hk n e s p).toReal -
+              (worPatternMass (k := k) (hN := hN) e s p).toReal| := by
+                simp [P]
+    _ ≤ ∑ p ∈ P,
+          ((wrPatternMass (k := k) hk n e s p).toReal +
+            (worPatternMass (k := k) (hN := hN) e s p).toReal) := hsum_point
+    _ =
+      (∑ p ∈ P, (wrPatternMass (k := k) hk n e s p).toReal) +
+        (∑ p ∈ P, (worPatternMass (k := k) (hN := hN) e s p).toReal) := hsum_split
+    _ =
+      (W (k := k) (Nat.succ n) e (empiricalParam (k := k) hk s)).toReal +
+        (prefixCoeff (k := k) (h := hN) e s).toReal := by
+          rw [hsum_wr_toReal, hsum_wor_toReal]
+    _ ≤ 2 := by linarith
+
 /-! ## BEST-side transport for WOR pattern masses
 
 These lemmas move WOR masses from trajectory fibers to Euler-trail filters
@@ -7462,6 +7584,30 @@ lemma tiny_wr_pattern_smoothing_rate_numeric :
   have h := tiny_wr_pattern_smoothing_rate
   rw [hdiv] at h
   exact h
+
+/-- Tiny-model sanity check: direct WR/WOR pattern discrepancy is bounded by the
+collision RHS at `(k,n,N)=(2,1,3)`. -/
+lemma tiny_pattern_wr_wor_collision_bound :
+    ∑ p' ∈ excursionPatternSet (k := k0) (hN := hN0) e s,
+      |(wrPatternMass (k := k0) hk0 n0 e s p').toReal -
+        (worPatternMass (k := k0) (hN := hN0) e s p').toReal| ≤
+      (4 * ((Nat.succ n0 : ℕ) : ℝ) * ((Nat.succ n0 : ℕ) : ℝ)) /
+        (returnsToStart (k := k0) s : ℝ) := by
+  have hs : s ∈ stateFinset k0 N0 := by
+    simpa [s] using stateOfTraj_mem_stateFinset (k := k0) traj0000
+  have hcoarse :
+      ∑ p' ∈ excursionPatternSet (k := k0) (hN := hN0) e s,
+        |(wrPatternMass (k := k0) hk0 n0 e s p').toReal -
+          (worPatternMass (k := k0) (hN := hN0) e s p').toReal| ≤ 2 :=
+    sum_abs_wr_wor_patternMass_toReal_le_two
+      (k := k0) (hk := hk0) (hN := hN0) (e := e) (s := s) hs
+  have hcollision_ge_two :
+      (2 : ℝ) ≤
+        (4 * ((Nat.succ n0 : ℕ) : ℝ) * ((Nat.succ n0 : ℕ) : ℝ)) /
+          (returnsToStart (k := k0) s : ℝ) := by
+    rw [returnsToStart_s]
+    norm_num
+  exact le_trans hcoarse hcollision_ge_two
 
 /--
 Counterexample to the WR half of `hwr_hwor_bridge_counts` at

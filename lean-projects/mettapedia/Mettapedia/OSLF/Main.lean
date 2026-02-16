@@ -10,7 +10,6 @@ import Mettapedia.OSLF.RhoCalculus.Types
 import Mettapedia.OSLF.RhoCalculus.Soundness
 import Mettapedia.OSLF.RhoCalculus.Reduction
 import Mettapedia.OSLF.RhoCalculus.Engine
-import Mettapedia.OSLF.PiCalculus.Main
 import Mettapedia.OSLF.Framework.RewriteSystem
 import Mettapedia.OSLF.Framework.RhoInstance
 import Mettapedia.OSLF.Framework.DerivedModalities
@@ -34,6 +33,7 @@ import Mettapedia.OSLF.Framework.BeckChevalleyOSLF
 import Mettapedia.OSLF.MeTTaCore.Premises
 import Mettapedia.OSLF.MeTTaCore.FullLanguageDef
 import Mettapedia.OSLF.Framework.MeTTaFullInstance
+import Mettapedia.OSLF.Framework.MeTTaToNTT
 import Mettapedia.OSLF.Formula
 import Mettapedia.OSLF.Decidability
 import Mettapedia.OSLF.QuantifiedFormula
@@ -93,7 +93,6 @@ OSLF/
 │   ├── PresentMoment.lean
 │   └── Engine.lean         -- Executable rewrite engine (reduceStep, proven sound)
 ├── Formula.lean             -- Formula AST + bounded model checker (proven sound)
-├── PiCalculus/              -- π-calculus and ρ-encoding
 └── NativeType/
     └── Construction.lean    -- NT as (sort, pred) pairs, type formation rules
 ```
@@ -530,6 +529,18 @@ export Mettapedia.OSLF.Framework.MeTTaFullInstance (
   mettaFullSpecAtomSem
   mettaFull_checkLangUsing_sat_sound_specAtoms
   mettaFull_checkLang_sat_sound_specAtoms
+)
+
+export Mettapedia.OSLF.Framework.MeTTaToNTT (
+  mettaEvidenceToNT
+  mettaEvidenceToNT_hom
+  mettaSemE
+  mettaSemE_atom
+  mettaSemE_atom_revision
+  mettaFormulaToNT
+  mettaFormulaToNT_snd
+  mettaFormulaToNT_atom
+  mettaFormulaToNT_hom
 )
 
 export Mettapedia.OSLF.Framework.ConstructorCategory (

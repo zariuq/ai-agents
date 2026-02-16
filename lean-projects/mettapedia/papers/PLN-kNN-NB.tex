@@ -1,6 +1,7 @@
 \documentclass[11pt]{article}
 
 \usepackage{amsmath,amssymb}
+\usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning}
@@ -24,9 +25,10 @@ optimality-transfer lemmas that let PLN inherit NB/k-NN guarantees under explici
 assumptions. We prove that PLN revision (hplus) is the \emph{unique}
 evidence-level pooling operator satisfying external Bayesianity and total
 additivity, correcting a gap in the classical axiomatization via an explicit
-counterexample. Experimentally, PLN-based selectors match classical MaSh baselines
-on the extended MPTP 5k dataset (291/800 at top-512), with three independent
-selectors converging to the same solve count.
+counterexample. Experimentally, on round-2 pooled-data validation runs
+(E prover, 5s, no \texttt{-p}), the best top-256 result is 290/800 (MaSh NB)
+and the best PLN result is 288/800 (mixture-local Prior$\otimes$NB); at top-512,
+MaSh k-NN and PLN mixture-local Prior$\otimes$NB tie at 286/800.
 \end{abstract}
 
 \section{High-level picture}
@@ -49,6 +51,7 @@ NB and k-NN both arise as instances of these primitives:
 
 \begin{figure}[h]
 \centering
+\resizebox{\linewidth}{!}{
 \begin{tikzpicture}[node distance=16mm,>=Stealth]
   \node (feat) [draw,rounded corners,align=center] {Goal + Facts\\Feature extraction};
   \node (knn) [draw,rounded corners,align=center,right=of feat] {k-NN neighbors\\(IDF, $\tau_1$)};
@@ -60,6 +63,7 @@ NB and k-NN both arise as instances of these primitives:
   \draw[->] (deps) -- (pln);
   \draw[->] (pln) -- (rank);
 \end{tikzpicture}
+}
 \caption{k-NN scoring as PLN evidence aggregation.}
 \end{figure}
 
@@ -266,139 +270,141 @@ ranking transfer), which is the right formal objective for premise selection.
 They do not claim direct guarantees on ATP wall-clock solve rates, which remain
 an empirical systems-level outcome.
 
-\section{Experimental validation on extended MPTP 5k}
-We implemented the PLN-unified selectors in PeTTa (Prolog-based MeTTa) and evaluated
-them on the extended MPTP 5k dataset (4200 training problems, 800 validation problems)
-using the E prover with 5-second timeout per problem.
-
-\subsection{Dataset and evaluation setup}
+\section{Round-2 experimental validation on extended MPTP 5k}
+\subsection{Protocol and data integrity}
+We evaluate seven selectors under one canonical protocol:
 \begin{itemize}
-\item \textbf{Training data}: 4200 first-order problems (chainy format), 988 proved
-      problems with complete dependency information (bushy format).
-\item \textbf{Validation set}: 800 unseen first-order problems.
-\item \textbf{Features}: Sparse binary vectors extracted from problem syntax (symbols,
-      function applications, quantifier patterns).
-\item \textbf{Prover}: E 3.0.1-ho with 5-second timeout (matching training data).
-\item \textbf{Selection budgets}: top-256 and top-512 premises per problem.
+\item Dataset: 4200 train problems, 800 validation problems.
+\item Model-generation data source: pooled dependency events
+      (\texttt{pooled\_train\_deps\_allruns.jsonl}), built from base train deps
+      plus prior train proof runs; final pool size is 9045 events over 1649 unique
+      training problems.
+\item Selection budgets: top-256 and top-512.
+\item Prover route: E 3.0.1-ho, timeout 5s, jobs=4, \emph{without} E's \texttt{-p}.
+\item Integrity policy: generate top-512 selections first, derive top-256 by prefix
+      truncation, then run E on both budgets.
 \end{itemize}
 
-The baseline (``Chainy baseline'') runs E on full problems with no selection,
-using all available premises.
+\subsection{Methods in PLN rule style}
+In the PLN book spirit, we keep evidence as the primary object and use only:
+revision (\(\oplus\), evidence accumulation), tensor (\(\otimes\), sequential
+composition), and normalization (fix evidence mass while preserving strength).
 
-\subsection{Validation results (top-256)}
-\begin{center}
-\begin{tabular}{lrl}
-\hline
-Selector & Solved/800 & Notes \\
-\hline
-MaSh NB & 283 (35.4\%) & Blanchette et al.\ 2016 reimplementation \\
-PLN-kNN-Prior-NB & 282 (35.2\%) & kNN local prior $\to$ revise $\to$ tensor NB \\
-PLN-NB & 281 (35.1\%) & IDF-weighted NB via PLN tensor \\
-PLN-Normal-NB & 279 (34.9\%) & xiPLN continuous Normal--Normal conjugate \\
-Chainy baseline & 278 (34.8\%) & No selection (all premises) \\
-PLN-kNN+NB & 276 (34.5\%) & Fusion via pln-revision ($\oplus$) \\
-PLN-Enhanced & 276 (34.5\%) & NB + co-occurrence boost \\
-PLN-Rule & 275 (34.4\%) & Modus ponens + revision \\
-PLN-kNN & 272 (34.0\%) & All-PLN kNN (atomspace overlap) \\
-MaSh kNN & 272 (34.0\%) & Blanchette et al.\ 2016 reimplementation \\
-\hline
-\end{tabular}
-\end{center}
+For the new mixture-local selector (\texttt{select\_pln\_mixture\_local\_nb.py}),
+the staged construction is:
+\[
+  E_{\text{post}}(g,a) =
+  \Big(
+    \bigoplus_i \mathrm{Normalize}_{t_i(g)}(E_i^{\text{local}}(g,a))
+    \oplus \mathrm{Normalize}_{t_G}(E^{\text{global}}(a))
+  \Big)\otimes
+  \mathrm{Normalize}_{t_L}(E^{\text{NB-like}}(g,a)).
+\]
+Here each local expert \(i\) is built from a k-NN bin:
+\[
+  n_i^+(g,a)=\sum_{\chi\in B_i(g)} \mathrm{sim}(g,\chi)\,\mathbf{1}[a\in deps(\chi)],
+\]
+\[
+  n_i^-(g,a)=\eta\sum_{\chi\in B_i(g)} \mathrm{sim}(g,\chi)\,\mathbf{1}[a\notin deps(\chi)].
+\]
+We use \(E_i^{\text{local}}=(n_i^++\alpha,\;n_i^-+\beta)\), with weak-negative
+factor \(\eta=0.08\), bins \([4,16,64,256]\), and similarity
+\(\mathrm{sim}=\mathrm{overlap}/(\mathrm{overlap}+\kappa)\).
+Likelihood evidence is \emph{NB-likelihood only} (prior removed by setting
+\(\sigma_1=0\)), then robustly scaled per problem (IQR target) before conversion
+to odds evidence and normalization.
 
-\subsection{Validation results (top-512)}
-Increasing the selection budget to 512 premises yields notable improvements:
-\begin{center}
-\begin{tabular}{lrl}
-\hline
-Selector & Solved/800 & Notes \\
-\hline
-PLN-kNN-Prior-NB & 291 (36.4\%) & kNN local prior $\to$ revise $\to$ tensor NB \\
-MaSh NB & 291 (36.4\%) & Blanchette et al.\ 2016 reimplementation \\
-MaSh kNN & 291 (36.4\%) & Blanchette et al.\ 2016 reimplementation \\
-Chainy baseline & 278 (34.8\%) & No selection (all premises) \\
-\hline
-\end{tabular}
-\end{center}
-
-All three top-512 selectors converge to exactly 291/800 (36.4\%), a striking result
-discussed below.
-
-\subsection{Training results (E prover, 5s, with proofs)}
-We also evaluated on the 4200 training problems to generate proof data for round-2
-training:
-\begin{center}
-\begin{tabular}{lrl}
-\hline
-Selector & Solved/4200 & Rate \\
-\hline
-MaSh NB (top-512) & 1493 (35.5\%) & \\
-MaSh kNN (top-512) & 1486 (35.4\%) & \\
-PLN-Enhanced (top-256) & 1426 (34.0\%) & \\
-PLN-kNN+NB (top-256) & 1368 (32.6\%) & \\
-\hline
-\end{tabular}
-\end{center}
-
-\subsection{Key observations}
+This gives a non-alias architecture:
 \begin{itemize}
-\item \textbf{PLN-NB matches MaSh NB}: The PLN evidence-tensor implementation
-      achieves 281/800 (35.1\%), nearly matching the classical MaSh NB baseline
-      at 283/800 (35.4\%). This validates the PLN bridge for Naive Bayes.
-
-\item \textbf{PLN-kNN-Prior-NB}: This selector composes all three PLN operations:
-      kNN evidence aggregation produces a local prior, which is revised with the
-      global prior via hplus, then tensored with NB feature likelihood. It achieves
-      282/800 (35.2\%) at top-256, second only to MaSh NB, demonstrating that the
-      full PLN composition pipeline is competitive.
-
-\item \textbf{xiPLN continuous carrier}: PLN-Normal-NB uses Normal--Normal conjugate
-      inference with continuous sufficient statistics $(n, \Sigma x, \Sigma x^2)$
-      instead of discrete counts. It achieves 279/800 (34.9\%), demonstrating that
-      the continuous PLN carrier preserves NB effectiveness while enabling richer
-      evidence representations.
-
-\item \textbf{Top-512 convergence}: At top-512, three different selectors (PLN-kNN-Prior-NB,
-      MaSh NB, MaSh kNN) all converge to exactly 291/800 (36.4\%). This suggests a
-      ``coverage ceiling'' for this dataset at 5-second timeout: once enough relevant
-      premises are included, the limiting factor shifts from premise selection to prover
-      strength. The greedy cover analysis shows a union of 299/800 across all selectors,
-      so 8 additional problems remain selector-unique.
-
-\item \textbf{Premise selection helps}: The no-selection baseline (278/800, 34.8\%)
-      is beaten by all NB variants and by all top-512 selectors (+13 problems),
-      confirming that focused premise selection improves ATP success rates.
-
-\item \textbf{Fusion effectiveness}: PLN-kNN+NB (276/800, 34.5\%) fuses k-NN and
-      NB scores via PLN revision ($\oplus$ / hplus). While it underperforms the
-      individual NB methods at top-256, it demonstrates the practical use of PLN's
-      revision operation for multi-method ensembles.
-
-\item \textbf{k-NN improves with budget}: MaSh kNN jumps from 272/800 (34.0\%) at
-      top-256 to 291/800 (36.4\%) at top-512, a gain of 19 problems (+7.0\%).
-      This is the largest improvement from budget increase, suggesting that kNN
-      ranking quality improves when more premises are available.
+\item Stage A: multiple local priors from neighbor bins.
+\item Stage B: normalized pooling via revision (\(\oplus\)).
+\item Stage C: normalized tensor with likelihood-only NB evidence.
 \end{itemize}
 
-\subsection{Implementation}
-All PLN selectors are implemented in PeTTa (Prolog-based MeTTa runtime) using
-the PLN operations defined in \texttt{lib\_pln\_xi.metta} and
-\texttt{pln\_inference/} modules:
+\subsection{Round-1 reference results}
+To keep the chronology explicit, Table~\ref{tab:r1val} lists the pre-pooled
+round-1 validation runs used before the round-2 pooled-data refresh.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrr}
+\hline
+Model (round1 reference) & Top-256 & Top-512 \\
+\hline
+MaSh NB & 283/800 (35.38\%) & 291/800 (36.38\%) \\
+PLN kNN-prior-NB (opt, merge-NB) & 282/800 (35.25\%) & 291/800 (36.38\%) \\
+PLN NB & 281/800 (35.12\%) & n/a \\
+PLN Normal-NB & 279/800 (34.88\%) & n/a \\
+PLN Enhanced & 276/800 (34.50\%) & n/a \\
+MaSh k-NN & 272/800 (34.00\%) & 291/800 (36.38\%) \\
+\hline
+\end{tabular}
+\caption{Round-1 validation reference results (legacy pre-pooled run set).}
+\label{tab:r1val}
+\end{table}
+
+\subsection{Validation results (canonical 14 runs)}
+Table~\ref{tab:r2val} reports all seven models at top-256 and top-512.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrr}
+\hline
+Model (round2\_pooled) & Top-256 & Top-512 \\
+\hline
+MaSh NB & 290/800 (36.25\%) & 285/800 (35.63\%) \\
+PLN mixture-local Prior$\otimes$NB & 288/800 (36.00\%) & 286/800 (35.75\%) \\
+PLN kNN-prior-NB (opt, merge-NB) & 281/800 (35.12\%) & 285/800 (35.63\%) \\
+MaSh k-NN & 280/800 (35.00\%) & 286/800 (35.75\%) \\
+PLN Normal-NB & 280/800 (35.00\%) & 282/800 (35.25\%) \\
+PLN NB & 276/800 (34.50\%) & 285/800 (35.63\%) \\
+PLN Enhanced & 272/800 (34.00\%) & 283/800 (35.38\%) \\
+\hline
+\end{tabular}
+\caption{Round-2 validation results (E5s, no-\texttt{-p}, jobs=4).}
+\label{tab:r2val}
+\end{table}
+
+\subsection{Discussion}
 \begin{itemize}
-\item \texttt{evidence-tensor}: multiplies feature evidence (PLN-NB)
-\item \texttt{evidence-hplus}: adds independent evidence (PLN-kNN, fusion)
-\item \texttt{pln-revision}: merges evidence via PLN revision rule (fusion)
-\item \texttt{xiPLN.Rule.*} aliases in \texttt{hyperon/PeTTa/lib/lib\_pln\_xi.metta}:
-      \texttt{ContextualPriorRevision}, \texttt{PriorLikelihoodTensorSTV},
-      \texttt{NormalizedPriorLikelihoodTensor}, \texttt{WeakNegativeSafeUpdate},
-      \texttt{RegraduatedEvidence}, plus non-breaking semantic aliases
-      \texttt{LocalEvidenceRevision}, \texttt{NormalizedSequentialComposition},
-      \texttt{EvidenceRegraduation}, and
-      \texttt{Bridge.TensorStrengthEqNBPosterior}
-\item \texttt{normal-normal-conjugate}: continuous Normal-Normal inference (PLN-Normal-NB)
+\item \textbf{Top-256 precision regime}: MaSh NB is best (290), but the new
+      PLN mixture-local model is very close (288). The margin is 2/800.
+
+\item \textbf{Top-512 recall regime}: MaSh k-NN and PLN mixture-local tie for best
+      (286), with MaSh NB and two PLN variants at 285. At this budget, differences
+      are effectively tie-level.
+
+\item \textbf{Overlap is high}: at top-256, MaSh NB and PLN mixture-local share
+      287 solved problems, with only 3 NB-unique and 1 mixture-unique. At top-512,
+      MaSh NB vs MaSh k-NN differs on just 5 problems total.
+
+\item \textbf{Greedy-cover complementarity remains small but real}: top-5 greedy
+      union is 297 solved with all runs, and 296 without MaSh runs. So MaSh adds
+      one extra unique solve in this top-5 cover view.
+
+\item \textbf{PLN interpretation}: these results match the formal story. Revision
+      and tensor composition are structurally correct, but empirical gains depend on
+      calibration quality of local priors and gating, not on operator choice.
 \end{itemize}
 
-Python drivers (\texttt{select\_pln\_*.py}) handle feature extraction, call PeTTa
-selectors, and format results for E prover evaluation.
+\subsection{Implementation notes}
+\begin{itemize}
+\item PeTTa-backed selectors:
+      \texttt{select\_pln\_nb.py},
+      \texttt{select\_pln\_normal\_nb.py},
+      \texttt{select\_pln\_enhanced.py},
+      \texttt{select\_pln\_knn\_prior\_nb\_opt.py}
+      (using \texttt{hyperon/PeTTa/demos/pln\_*\_selector*.metta} and
+      \texttt{hyperon/PeTTa/lib/lib\_pln\_xi.metta}).
+\item Pure-Python selector:
+      \texttt{select\_pln\_mixture\_local\_nb.py}
+      (same evidence algebra, staged explicitly for auditability/performance).
+\item Round-2 queue/orchestration:
+      \texttt{atps/scripts/queue\_round2\_val\_e5\_nop.sh}.
+\item Compact scoreboard and greedy cover artifacts:
+      \texttt{results\_round2\_val\_5s\_nop\_compact\_14runs.csv},
+      \texttt{results\_round2\_val\_5s\_nop\_greedy\_cover\_top5.json}.
+\end{itemize}
 
 \section{Lean map}
 \begin{itemize}

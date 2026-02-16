@@ -27,6 +27,7 @@ import Mettapedia.Logic.PremiseSelectionPartitionedPriorNB
 import Mettapedia.Logic.PremiseSelectionBestPLNDraft
 import Mettapedia.Logic.SoundnessCompleteness
 import Mettapedia.Logic.PLNCanonicalAPI
+import Mettapedia.Logic.SemanticsDecisionTree
 
 /-!
 # PLN Core (Curated, theorem-complete entrypoint)
@@ -36,9 +37,11 @@ This module is a curated import surface for the currently theorem-complete PLN s
 - Core derivation formulas (`PLNDerivation`)
 - Complete/joint evidence world-model semantics (`CompletePLN`, `PLNJointEvidence*`)
 - WM rewrite layer and BN compilation bridge (`PLNWorldModel*`, `PLNBNCompilation`)
-- BN fast-rule exactness results (`PLNBayesNetFastRules`)
-- Derived BN rules: deduction (chain) + source/induction (fork) 5-shape blocks
-  (`PLNXiDerivedBNRules` — 0 sorry, no free screening-off hypotheses)
+- BN fast-rule exactness results: chain + fork measure-level exact (`PLNBayesNetFastRules`)
+- Derived BN rules: deduction (chain) + source/induction (fork) + sink/abduction (collider)
+  5-shape blocks (`PLNXiDerivedBNRules` — 0 sorry, no free screening-off hypotheses)
+- Tier A→B composition: chain + fork (exact), collider (counterexample: approximate)
+  (`xi_source_queryStrength_eq_plnInduction_of_forkBN`, `plnAbductionStrength_not_exact_collider`)
 - Premise-selection bridges and optimality transfer (`PremiseSelection*`)
 - Premise-selection coverage/submodularity surrogate (`PremiseSelectionCoverage`)
 - Premise-selection external-Bayesian commutation (`PremiseSelectionExternalBayesianity`)
@@ -71,6 +74,8 @@ This module is a curated import surface for the currently theorem-complete PLN s
   (`PremiseSelectionBestPLNDraft`)
 - Soundness/completeness tradeoff characterization (`SoundnessCompleteness`)
 - Canonical API with 3-tier theorem index (`PLNCanonicalAPI`)
+- Semantics decision gate (probability vs evidence/interval/NARS mirror)
+  with weaker-than-KS references (`SemanticsDecisionTree`)
 
 ## Where are the Lean proofs that PLN covers NB and k-NN?
 

@@ -15,6 +15,7 @@ TRAIN_PROBLEMS="$DATA/chainy/train"
 NB_TABLES="$DATA/models/mash_nb_tables_round2_pooled.pkl"
 KNN_TABLES="$DATA/models/mash_knn_tables_round2_pooled.pkl"
 POOLED_DEPS="$DATA/deps/pooled_train_deps_allruns.jsonl"
+PETTA_PARALLEL_BATCHES="${PETTA_PARALLEL_BATCHES:-2}"
 
 log() { echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"; }
 
@@ -97,6 +98,7 @@ main() {
   log "NB tables: $NB_TABLES"
   log "kNN tables: $KNN_TABLES"
   log "Pooled deps: $POOLED_DEPS"
+  log "PeTTa parallel batches: $PETTA_PARALLEL_BATCHES"
 
   # Baselines
   run_selection_top512_if_missing "mash_nb_round2_pooled" \
@@ -119,6 +121,7 @@ main() {
       --prefilter-k 512 \
       --petta-batch-size 32 \
       --petta-job-batch-size 20 \
+      --petta-parallel-batches "$PETTA_PARALLEL_BATCHES" \
       --nb-tables "$NB_TABLES"
 
   run_selection_top512_if_missing "pln_normal_nb_round2_pooled" \
@@ -128,6 +131,7 @@ main() {
       --prefilter-k 512 \
       --petta-batch-size 32 \
       --petta-job-batch-size 20 \
+      --petta-parallel-batches "$PETTA_PARALLEL_BATCHES" \
       --nb-batch-size 32 \
       --nb-tables "$NB_TABLES"
 
@@ -138,6 +142,7 @@ main() {
       --prefilter-k 512 \
       --petta-batch-size 32 \
       --petta-job-batch-size 20 \
+      --petta-parallel-batches "$PETTA_PARALLEL_BATCHES" \
       --nb-tables "$NB_TABLES" \
       --deps-file "$POOLED_DEPS"
 
@@ -147,6 +152,7 @@ main() {
       --merge-nb \
       --top-k 512 \
       --petta-batch-size 20 \
+      --petta-parallel-batches "$PETTA_PARALLEL_BATCHES" \
       --petta-timeout 300 \
       --nb-tables "$NB_TABLES" \
       --deps-file "$POOLED_DEPS"

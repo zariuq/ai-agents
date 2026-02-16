@@ -32,6 +32,7 @@ import Mettapedia.OSLF.Framework.BeckChevalleyOSLF
 import Mettapedia.OSLF.MeTTaCore.Premises
 import Mettapedia.OSLF.MeTTaCore.FullLanguageDef
 import Mettapedia.OSLF.Framework.MeTTaFullInstance
+import Mettapedia.OSLF.Framework.MeTTaToNTT
 import Mettapedia.OSLF.Formula
 import Mettapedia.OSLF.Decidability
 import Mettapedia.OSLF.QuantifiedFormula
@@ -89,6 +90,18 @@ export Mettapedia.OSLF.Framework.MeTTaFullInstance (
   mettaFullSpecAtomSem
   mettaFull_checkLangUsing_sat_sound_specAtoms
   mettaFull_checkLang_sat_sound_specAtoms
+)
+
+export Mettapedia.OSLF.Framework.MeTTaToNTT (
+  mettaEvidenceToNT
+  mettaEvidenceToNT_hom
+  mettaSemE
+  mettaSemE_atom
+  mettaSemE_atom_revision
+  mettaFormulaToNT
+  mettaFormulaToNT_snd
+  mettaFormulaToNT_atom
+  mettaFormulaToNT_hom
 )
 
 #check Mettapedia.OSLF.Framework.FULLStatus.remaining_eq_nil

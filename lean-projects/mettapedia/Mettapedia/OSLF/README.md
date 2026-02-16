@@ -6,10 +6,12 @@ with premise-aware execution, checker soundness, and presheaf-topos bridge layer
 ## Current Entry Points
 
 - `Mettapedia/OSLF/CoreMain.lean`
-  - Core-first entrypoint (intended for review of the current OSLF/GSLT stack).
-  - Excludes `PiCalculus.Main` on purpose.
+  - Core-first entrypoint for the current OSLF/GSLT stack.
 - `Mettapedia/OSLF/Main.lean`
-  - Kitchen-sink entrypoint including π-calculus modules (still WIP in places).
+  - Public OSLF surface (`CoreMain` plus framework/client exports), kept focused on OSLF.
+- `Mettapedia/Languages/ProcessCalculi.lean`
+  - Process-calculi facade (`PiCalculus`, `RhoCalculus`) under `Mettapedia/Languages/`.
+  - Use this for language-specific process-calculus exploration without coupling it to OSLF entrypoints.
 
 ## What Is Implemented
 
@@ -80,8 +82,10 @@ lake build Mettapedia.OSLF.Main
 ## Notes
 
 - `CoreMain` is the recommended target for core OSLF/GSLT validation.
-- `Main` includes additional modules that may still carry WIP proof obligations
-  (especially in π-calculus layers).
+- `Main` is now aligned with the same focused OSLF boundary.
+- Process-calculus modules are available via:
+  - `Mettapedia/Languages/ProcessCalculi/PiCalculus.lean`
+  - `Mettapedia/Languages/ProcessCalculi/RhoCalculus.lean`
 - For exact completion claims, rely on `FULLStatus.lean` and concrete theorem names,
   not static line-count snapshots.
 

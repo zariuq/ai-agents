@@ -40,7 +40,8 @@ nice -n 19 lake build
 - `InformationTheory/ShannonEntropy/`
 - `Logic/` — PLN and related logical formalisms, including a **WorldModel calculus** for agent/environment reasoning
 - `SetTheory/BorelDeterminacy/`
-- `OSLF/` — ρ‑calculus / OSLF formalizations
+- `OSLF/` — core OSLF/GSLT formalizations (focused entrypoints)
+- `Languages/ProcessCalculi.lean` — process-calculus facades (`PiCalculus`, `RhoCalculus`)
 - `Algebra/OrderedSemigroups/`
 
 ## Status & review

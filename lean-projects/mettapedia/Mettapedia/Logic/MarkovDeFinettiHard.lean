@@ -509,6 +509,62 @@ theorem markovDeFinetti_hard_of_rowL1StartTarget_and_patternWRWORRate
   exact markovDeFinetti_hard_of_residualRate
     (k := k) (μ := μ) hμ hrec hrateAll
 
+/-- Primary hard-direction wrapper when the remaining BEST-side obligations are
+given directly as pattern-collision (positive-return) and zero-return clauses. -/
+theorem markovDeFinetti_hard_of_rowL1StartTarget_and_patternCollision_zeroCase
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (hrec : MarkovRecurrentPrefixMeasure (k := k) μ)
+    (hposAll : MarkovDeFinettiHard.HasPatternCollisionPosAll (k := k))
+    (hzeroAll : MarkovDeFinettiHard.HasPatternCollisionZeroAll (k := k)) :
+    ∃ (pi : Measure (MarkovParam k)), IsProbabilityMeasure pi ∧
+      ∀ xs : List (Fin k), μ xs = ∫⁻ θ, wordProb (k := k) θ xs ∂pi := by
+  have hwrworAll :
+      ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+        ∃ Cdf : ℝ, 0 ≤ Cdf ∧
+          MarkovDeFinettiHard.HasPatternWRWORRate (k := k) hk n e Cdf :=
+    MarkovDeFinettiHard.hasPatternWRWORRateAll_of_patternCollision_and_zeroCaseAll
+      (k := k) hposAll hzeroAll
+  exact
+    markovDeFinetti_hard_of_rowL1StartTarget_and_patternWRWORRate
+      (k := k) (μ := μ) hμ hrec hwrworAll
+
+/-- Primary hard-direction wrapper when the remaining BEST-side obligation is
+the positive-return pattern-collision bound family. -/
+theorem markovDeFinetti_hard_of_rowL1StartTarget_and_patternCollisionPos
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (hrec : MarkovRecurrentPrefixMeasure (k := k) μ)
+    (hposAll : MarkovDeFinettiHard.HasPatternCollisionPosAll (k := k)) :
+    ∃ (pi : Measure (MarkovParam k)), IsProbabilityMeasure pi ∧
+      ∀ xs : List (Fin k), μ xs = ∫⁻ θ, wordProb (k := k) θ xs ∂pi := by
+  have hwrworAll :
+      ∀ hk : 0 < k, ∀ n : ℕ, ∀ e : MarkovState k,
+        ∃ Cdf : ℝ, 0 ≤ Cdf ∧
+          MarkovDeFinettiHard.HasPatternWRWORRate (k := k) hk n e Cdf :=
+    MarkovDeFinettiHard.hasPatternWRWORRateAll_of_patternCollisionPosAll
+      (k := k) hposAll
+  exact
+    markovDeFinetti_hard_of_rowL1StartTarget_and_patternWRWORRate
+      (k := k) (μ := μ) hμ hrec hwrworAll
+
+/-- Primary hard-direction wrapper from the BEST representative-bound family,
+through the rowL1 start-target WR path. -/
+theorem markovDeFinetti_hard_of_bestReprBoundAll_rowL1StartTarget
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (hrec : MarkovRecurrentPrefixMeasure (k := k) μ)
+    (hreprBoundAll : MarkovDeFinettiHard.HasBestReprBoundAll (k := k)) :
+    ∃ (pi : Measure (MarkovParam k)), IsProbabilityMeasure pi ∧
+      ∀ xs : List (Fin k), μ xs = ∫⁻ θ, wordProb (k := k) θ xs ∂pi := by
+  have hposAll :
+      MarkovDeFinettiHard.HasPatternCollisionPosAll (k := k) :=
+    MarkovDeFinettiHard.hasPatternCollisionPosAll_of_bestReprBoundAll
+      (k := k) hreprBoundAll
+  exact
+    markovDeFinetti_hard_of_rowL1StartTarget_and_patternCollisionPos
+      (k := k) (μ := μ) hμ hrec hposAll
+
 theorem markovDeFinetti_hard_of_biapproxCore_rowL1StartTarget
     (μ : FiniteAlphabet.PrefixMeasure (Fin k))
     (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)

@@ -25,9 +25,7 @@ Each rule family provides all 5 shapes:
 Currently covers:
 - **Deduction** (chain A→B→C) — full 5-shape block + Tier B/C composition
 - **Source rule / Induction** (fork A←B→C) — full 5-shape block
-
-Not yet covered:
-- **Sink rule / Abduction** (collider) — side condition investigation needed
+- **Sink rule / Abduction** (collider A→C←B) — full 5-shape block
 
 ## Concrete Proofs Used
 
@@ -819,18 +817,501 @@ theorem xi_sourceRule_strength_eq_of_forkBN
 
 end ForkBNSourceRule
 
-/-! ## §5 Sink Rule: Honest Status
+/-! ## §4b Source Rule Tier A→B Composition (Fork BN)
 
-The sink rule (abduction) requires collider BN (A→C←B) screening-off.
-The side condition is `abductionSide A B C = ⟨{A}, {C}, ∅⟩`, i.e., A ⊥ C | ∅.
+Connects `queryStrength` at the WM level to `plnInductionStrength` at the
+formula level. The key algebraic step: `bayesInversion(P(A|B), P(A), P(B)) = P(B|A)`,
+which converts the induction formula into the deduction formula applied to the fork.
 
-In the collider with edges A→C, B→C, the path A→C is a direct edge,
-so A and C are NOT d-separated given ∅. The abduction formula works under
-a different independence assumption (marginal independence before
-conditioning on the collider). Instantiation requires investigating
-whether the collider BN satisfies the needed side condition under
-variable remapping.
+**Consumes**:
+- `queryStrength_singleton_link_toReal` / `queryStrength_singleton_prop_toReal` (PLNBNCompilation)
+- `forkBN_plnDeductionStrength_exact` (PLNBayesNetFastRules)
+- `bayesInversion` (PLNDerivation)
+-/
 
-This is tracked but not disguised as done. -/
+section ForkBNSourceRuleTierAB
+
+open Mettapedia.Logic.PLN
+open Mettapedia.Logic.PLNBNCompilation
+open Mettapedia.Logic.PLNBNCompilation.BNWorldModel
+open Mettapedia.Logic.PLNBayesNetFastRules
+open Mettapedia.ProbabilityTheory.BayesianNetworks.Examples
+open Mettapedia.ProbabilityTheory.BayesianNetworks.BayesianNetwork
+open MeasureTheory
+
+instance : DecidableRel forkBN.graph.edges := by
+  intro u v; dsimp [forkBN, forkGraph, DirectedGraph.edges]; infer_instance
+
+instance (v : Three) : MeasurableSingletonClass (forkBN.stateSpace v) := by
+  dsimp [forkBN]; infer_instance
+
+instance (v : Three) : Nonempty (forkBN.stateSpace v) := by
+  dsimp [forkBN]; infer_instance
+
+-- Abbreviations for fork event sets (matching PLNBayesNetFastRules)
+private abbrev fA' := eventEq (bn := forkBN) Three.A true
+private abbrev fB' := eventEq (bn := forkBN) Three.B true
+private abbrev fC' := eventEq (bn := forkBN) Three.C true
+
+-- Local bridge helpers (fork-specific, avoiding name clash with chain's private helpers)
+private lemma fork_qS_link_toReal (cpt : forkBN.DiscreteCPT) (a b : Three)
+    (ha : cpt.jointMeasure (eventEq (bn := forkBN) a true) ≠ 0) :
+    (WorldModel.queryStrength ({cpt} : BNWorldModel.State (bn := forkBN))
+      (PLNQuery.link (⟨a, true⟩ : BNQuery.Atom (bn := forkBN))
+                     (⟨b, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal =
+    cpt.jointMeasure.real (eventEq (bn := forkBN) b true ∩ eventEq (bn := forkBN) a true) /
+      cpt.jointMeasure.real (eventEq (bn := forkBN) a true) := by
+  rw [queryStrength_singleton_eq_queryProb]
+  · rw [queryProb_link_eq_jointMeasure cpt a b true true ha]
+    rw [Set.inter_comm]; rw [ENNReal.toReal_div]; simp [Measure.real]
+  · simp only [queryProb]; rw [linkProbVE_eq_jointMeasure_eventEq]
+    split
+    · exact zero_le_one
+    · exact le_trans (ENNReal.div_le_div_right (measure_mono Set.inter_subset_left) _)
+        ENNReal.div_self_le_one
+
+private lemma fork_qS_prop_toReal (cpt : forkBN.DiscreteCPT) (v : Three) :
+    (WorldModel.queryStrength ({cpt} : BNWorldModel.State (bn := forkBN))
+      (PLNQuery.prop (⟨v, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal =
+    cpt.jointMeasure.real (eventEq (bn := forkBN) v true) := by
+  rw [queryStrength_singleton_eq_queryProb]
+  · rw [queryProb_prop_eq_jointMeasure]; simp [Measure.real]
+  · rw [queryProb_prop_eq_jointMeasure]; exact prob_le_one
+
+/-- **Tier A→B Composition for Source Rule (Fork BN)**:
+For the fork BN `A ← B → C` with singleton CPT state,
+the PLN induction strength formula is exact at the queryStrength level:
+
+```
+qS(link A C).toReal = plnInductionStrength(qS(link B A), qS(link B C), qS(prop A), qS(prop B), qS(prop C))
+```
+
+**Mathematical content**: `plnInductionStrength` unfolds as
+`plnDeductionStrength(bayesInversion(P(A|B), P(A), P(B)), P(C|B), P(B), P(C))`.
+Since `bayesInversion(P(A|B), P(A), P(B)) = P(B|A)` (Bayes' rule), and the fork's
+conditional independence C ⊥ A | B gives the screening-off conditions, this equals
+`P(C|A)` by the PLN deduction formula. -/
+theorem xi_source_queryStrength_eq_plnInduction_of_forkBN
+    (cpt : forkBN.DiscreteCPT)
+    [HasLocalMarkovProperty forkBN cpt.jointMeasure]
+    (hA_pos : cpt.jointMeasure fA' ≠ 0)
+    (hB_pos : cpt.jointMeasure fB' ≠ 0)
+    (hB_lt1 : cpt.jointMeasure fB' < 1)
+    (hAB_pos : cpt.jointMeasure (fA' ∩ fB') ≠ 0)
+    (hABc_pos : cpt.jointMeasure (fA' ∩ fB'ᶜ) ≠ 0) :
+    let W : BNWorldModel.State (bn := forkBN) := {cpt}
+    (WorldModel.queryStrength W
+      (PLNQuery.link (⟨Three.A, true⟩ : BNQuery.Atom (bn := forkBN))
+                     (⟨Three.C, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal =
+    plnInductionStrength
+      (WorldModel.queryStrength W
+        (PLNQuery.link (⟨Three.B, true⟩ : BNQuery.Atom (bn := forkBN))
+                       (⟨Three.A, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal
+      (WorldModel.queryStrength W
+        (PLNQuery.link (⟨Three.B, true⟩ : BNQuery.Atom (bn := forkBN))
+                       (⟨Three.C, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal
+      (WorldModel.queryStrength W
+        (PLNQuery.prop (⟨Three.A, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal
+      (WorldModel.queryStrength W
+        (PLNQuery.prop (⟨Three.B, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal
+      (WorldModel.queryStrength W
+        (PLNQuery.prop (⟨Three.C, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal := by
+  intro W
+  -- Step 1: Bridge queryStrength to μ.real via local fork helpers
+  rw [fork_qS_link_toReal cpt Three.A Three.C hA_pos]
+  rw [fork_qS_link_toReal cpt Three.B Three.A hB_pos]
+  rw [fork_qS_link_toReal cpt Three.B Three.C hB_pos]
+  rw [fork_qS_prop_toReal cpt Three.A]
+  rw [fork_qS_prop_toReal cpt Three.B]
+  rw [fork_qS_prop_toReal cpt Three.C]
+  -- Step 2: Unfold plnInductionStrength to bayesInversion + plnDeductionStrength
+  unfold plnInductionStrength
+  -- Step 3: Simplify bayesInversion(P(A|B), P(A), P(B)) = P(B|A)
+  -- bayesInversion(μ.real(A∩B)/μ.real(B), μ.real(A), μ.real(B))
+  -- = (μ.real(A∩B)/μ.real(B)) * μ.real(B) / μ.real(A)
+  -- = μ.real(A∩B) / μ.real(A)
+  -- = μ.real(B∩A) / μ.real(A)  (by inter_comm)
+  unfold bayesInversion
+  have hB_real_pos : cpt.jointMeasure.real fB' ≠ 0 := by
+    simp only [Measure.real, ENNReal.toReal_ne_zero]
+    exact ⟨hB_pos, measure_ne_top _ _⟩
+  have hA_real_pos : cpt.jointMeasure.real fA' ≠ 0 := by
+    simp only [Measure.real, ENNReal.toReal_ne_zero]
+    exact ⟨hA_pos, measure_ne_top _ _⟩
+  -- (μ.real(A∩B)/μ.real(B)) * μ.real(B) / μ.real(A) = μ.real(A∩B) / μ.real(A)
+  rw [div_mul_cancel₀ (cpt.jointMeasure.real (fA' ∩ fB')) hB_real_pos]
+  -- Now goal has μ.real(A∩B)/μ.real(A) where we need μ.real(B∩A)/μ.real(A)
+  rw [Set.inter_comm fA' fB']
+  -- Step 4: Apply the fork measure-level exact theorem
+  exact forkBN_plnDeductionStrength_exact cpt hA_pos hB_pos hB_lt1 hAB_pos hABc_pos
+
+end ForkBNSourceRuleTierAB
+
+/-! ## §5 Sink Rule: Collider BN (A → C ← B)
+
+The collider BN has edges A→C and B→C. The sink rule (abduction) derives
+link A→B from links A→C and B→C.
+
+**Variable mapping**: (A_rule, B_rule, C_rule) = (Three.A, Three.C, Three.B).
+The sink center is Three.C (the collider node). The side condition is
+
+  `abductionSide Three.A Three.C Three.B = ⟨{Three.A}, {Three.B}, ∅⟩`
+
+which requires marginal independence A ⊥ B | ∅. This holds in the collider
+because A and B have no active path when C (the common effect) is not
+conditioned on.
+
+The WMQueryEq identity rewrites `link ⟨A, valA⟩ ⟨B, valB⟩` to `prop ⟨B, valB⟩`,
+which is the marginal independence content: P(B|A) = P(B).
+
+### Differences from Chain BN Deduction (§1) and Fork Source (§4)
+
+| Property | Chain (§1) | Fork (§4) | Collider (§5) |
+|----------|-----------|-----------|--------------|
+| Graph | A → B → C | A ← B → C | A → C ← B |
+| Input links | A→B, B→C | B→A, B→C | A→C, B→C |
+| Output link | A→C | A→C | A→B |
+| Rule type | Deduction | Source | Sink (Abduction) |
+| Side condition | A ⊥ C \| B | A ⊥ C \| B | A ⊥ B \| ∅ |
+| WMQueryEq | linkCond→link | linkCond→link | link→prop | -/
+
+section ColliderBNSinkRule
+
+open Mettapedia.Logic.PLNBNCompilation.ColliderExample
+
+variable
+  [∀ v : Three, Fintype (colliderBN.stateSpace v)]
+  [∀ v : Three, DecidableEq (colliderBN.stateSpace v)]
+  [∀ v : Three, Inhabited (colliderBN.stateSpace v)]
+  [∀ v : Three, StandardBorelSpace (colliderBN.stateSpace v)]
+  [StandardBorelSpace colliderBN.JointSpace]
+
+/-- All CPTs in the collider BN satisfy the local Markov property. -/
+abbrev ColliderBNLocalMarkovAll
+    [∀ v : Three, Fintype (colliderBN.stateSpace v)]
+    [∀ v : Three, DecidableEq (colliderBN.stateSpace v)]
+    [∀ v : Three, Inhabited (colliderBN.stateSpace v)]
+    [∀ v : Three, StandardBorelSpace (colliderBN.stateSpace v)]
+    [StandardBorelSpace colliderBN.JointSpace] :=
+  ∀ cpt : colliderBN.DiscreteCPT, HasLocalMarkovProperty colliderBN cpt.jointMeasure
+
+/-! ### Shape 1: Side condition derivation -/
+
+/-- The screening-off query equivalence for the collider BN sink rule case,
+derived from local Markov + d-separation. Under A ⊥ B | ∅,
+`link ⟨A, valA⟩ ⟨B, valB⟩` is evidence-equivalent to `prop ⟨B, valB⟩`. -/
+theorem sinkRule_wmqueryeq_of_colliderBN
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll)
+    (hDSep : (CompiledPlan.abductionSide Three.A Three.C Three.B).holds
+      (bn := colliderBN)) :
+    WMQueryEq (State := BNWorldModel.State (bn := colliderBN))
+      (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+      (PLNQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
+      (PLNQuery.prop ⟨Three.B, valB⟩) :=
+  collider_screeningOff_wmqueryeq_of_dsep
+    (valA := valA) (valB := valB) hLMarkov hDSep
+
+/-! ### Shape 2: Derived WMRewriteRule (NO free hSO argument) -/
+
+/-- Sink rule (abduction) rewrite rule for the collider BN, derived from
+local Markov + d-separation. The rule rewrites `link ⟨A,valA⟩ ⟨B,valB⟩`
+to `prop ⟨B,valB⟩` (marginal independence).
+
+Arguments are model-semantic:
+- `hLMarkov` : local Markov property (BN model axiom)
+
+There is NO abstract screening-off hypothesis.
+The d-separation condition is the rule's side condition. -/
+noncomputable def xi_sinkRule_rewrite_of_colliderBN
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll) :
+    WMRewriteRule
+      (BNWorldModel.State (bn := colliderBN))
+      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+  dsep_rewrite
+    (State := BNWorldModel.State (bn := colliderBN))
+    (Atom := BNQuery.Atom (bn := colliderBN))
+    (PLNQuery.prop ⟨Three.B, valB⟩)
+    (PLNQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
+    ((CompiledPlan.abductionSide Three.A Three.C Three.B).holds (bn := colliderBN))
+    (fun h => (sinkRule_wmqueryeq_of_colliderBN valA valB hLMarkov h).symm)
+
+/-- The derived rule's side condition is exactly d-separation (abduction side). -/
+theorem xi_sinkRule_rewrite_of_colliderBN_side
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll)
+    (hDSep : (CompiledPlan.abductionSide Three.A Three.C Three.B).holds
+      (bn := colliderBN)) :
+    (xi_sinkRule_rewrite_of_colliderBN valA valB hLMarkov).side :=
+  hDSep
+
+/-! ### Shape 3: Admissibility (actual inference theorem) -/
+
+/-- Admissibility: for any derivable WM state, the sink rule produces
+a valid query judgment. This is the "PLN sink rule (abduction) is sound
+in collider BNs" theorem. -/
+theorem xi_sinkRule_admissible_of_colliderBN
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll)
+    (hDSep : (CompiledPlan.abductionSide Three.A Three.C Three.B).holds
+      (bn := colliderBN))
+    (W : BNWorldModel.State (bn := colliderBN))
+    (hW : ⊢wm W) :
+    ⊢q W ⇓
+      (PLNQuery.link
+        (⟨Three.A, valA⟩ : BNQuery.Atom (bn := colliderBN))
+        (⟨Three.B, valB⟩ : BNQuery.Atom (bn := colliderBN))) ↦
+      (xi_sinkRule_rewrite_of_colliderBN valA valB hLMarkov).derive W :=
+  WMRewriteRule.apply
+    (xi_sinkRule_rewrite_of_colliderBN_side valA valB hLMarkov hDSep) hW
+
+/-! ### Shape 4: OSLF evidence bridge -/
+
+/-- OSLF evidence bridge: if the OSLF atom encodes the sink rule conclusion,
+its evidence equals the derived rule's output. -/
+theorem xi_sinkRule_semE_atom_of_colliderBN
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll)
+    (hDSep : (CompiledPlan.abductionSide Three.A Three.C Three.B).holds
+      (bn := colliderBN))
+    (R : Pattern → Pattern → Prop)
+    (W : BNWorldModel.State (bn := colliderBN))
+    (enc : String → Pattern → PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    (a : String) (p : Pattern)
+    (hEnc : enc a p = PLNQuery.link
+      ⟨Three.A, valA⟩ ⟨Three.B, valB⟩) :
+    semE R
+      (wmEvidenceAtomSemQ W enc) (.atom a) p =
+      (xi_sinkRule_rewrite_of_colliderBN valA valB hLMarkov).derive W :=
+  wmRewriteRule_semE_atom_eq_derive R
+    (xi_sinkRule_rewrite_of_colliderBN valA valB hLMarkov)
+    (xi_sinkRule_rewrite_of_colliderBN_side valA valB hLMarkov hDSep)
+    W enc a p hEnc
+
+/-! ### Shape 5: Threshold bridge -/
+
+/-- Threshold bridge: if the derived strength exceeds `tau`, the atom
+holds under strength-threshold semantics. -/
+theorem xi_sinkRule_threshold_of_colliderBN
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll)
+    (hDSep : (CompiledPlan.abductionSide Three.A Three.C Three.B).holds
+      (bn := colliderBN))
+    (R : Pattern → Pattern → Prop)
+    (W : BNWorldModel.State (bn := colliderBN))
+    (tau : ℝ≥0∞)
+    (enc : String → Pattern → PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    (a : String) (p : Pattern)
+    (hEnc : enc a p = PLNQuery.link
+      ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
+    (hTau : tau ≤ Evidence.toStrength
+      ((xi_sinkRule_rewrite_of_colliderBN valA valB hLMarkov).derive W)) :
+    sem R
+      (thresholdAtomSemOfWMQ W tau enc) (.atom a) p :=
+  wmRewriteRule_threshold_atom R
+    (xi_sinkRule_rewrite_of_colliderBN valA valB hLMarkov)
+    (xi_sinkRule_rewrite_of_colliderBN_side valA valB hLMarkov hDSep)
+    W tau enc a p hEnc hTau
+
+/-! ### Bonus: Strength equality (re-export from PLNBNCompilation.ColliderExample) -/
+
+/-- Strength equality: under d-separation, the link and prop queries
+have identical strength in every WM state (marginal independence). -/
+theorem xi_sinkRule_strength_eq_of_colliderBN
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll)
+    (hDSep : (CompiledPlan.abductionSide Three.A Three.C Three.B).holds
+      (bn := colliderBN))
+    (W : BNWorldModel.State (bn := colliderBN)) :
+    WorldModel.queryStrength
+      (State := BNWorldModel.State (bn := colliderBN))
+      (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+      W (PLNQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
+      =
+    WorldModel.queryStrength
+      (State := BNWorldModel.State (bn := colliderBN))
+      (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+      W (PLNQuery.prop ⟨Three.B, valB⟩) :=
+  collider_screeningOff_strength_eq_of_dsep
+    (valA := valA) (valB := valB) hLMarkov hDSep W
+
+/-- `.toReal` corollary: the exact collider result at the real-valued level.
+In collider topology, `qS(link A B).toReal = qS(prop B).toReal = P(B)`. -/
+theorem xi_sink_queryStrength_toReal_eq_of_colliderBN
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll)
+    (hDSep : (CompiledPlan.abductionSide Three.A Three.C Three.B).holds
+      (bn := colliderBN))
+    (W : BNWorldModel.State (bn := colliderBN)) :
+    (WorldModel.queryStrength
+      (State := BNWorldModel.State (bn := colliderBN))
+      (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+      W (PLNQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)).toReal
+      =
+    (WorldModel.queryStrength
+      (State := BNWorldModel.State (bn := colliderBN))
+      (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+      W (PLNQuery.prop ⟨Three.B, valB⟩)).toReal :=
+  congr_arg ENNReal.toReal
+    (xi_sinkRule_strength_eq_of_colliderBN valA valB hLMarkov hDSep W)
+
+/-! ### Singleton bridge: collider exact at measure level
+
+Following the chain bridge pattern: collider-specific queryProb helpers, then
+compose with the `.toReal` corollary via `linarith`. -/
+
+instance : DecidableRel colliderBN.graph.edges := by
+  intro u v; dsimp [colliderBN, colliderGraph, DirectedGraph.edges]; infer_instance
+
+instance (v : Three) : MeasurableSingletonClass (colliderBN.stateSpace v) := by
+  dsimp [colliderBN]; infer_instance
+
+instance (v : Three) : Nonempty (colliderBN.stateSpace v) := by
+  dsimp [colliderBN]; infer_instance
+
+omit
+  [(v : Three) → Inhabited (colliderBN.stateSpace v)]
+  [∀ v : Three, StandardBorelSpace (colliderBN.stateSpace v)]
+  [StandardBorelSpace colliderBN.JointSpace] in
+private lemma collider_queryProb_prop_eq
+    (cpt : colliderBN.DiscreteCPT) (v : Three) (val : Bool) :
+    queryProb (bn := colliderBN) cpt (PLNQuery.prop ⟨v, val⟩) =
+      cpt.jointMeasure (eventEq (bn := colliderBN) v val) := by
+  simp only [queryProb]
+  rw [propProbVE_eq_jointMeasure_eventEq]
+
+omit
+  [(v : Three) → Inhabited (colliderBN.stateSpace v)]
+  [∀ v : Three, StandardBorelSpace (colliderBN.stateSpace v)]
+  [StandardBorelSpace colliderBN.JointSpace] in
+private lemma collider_queryProb_prop_le_one
+    (cpt : colliderBN.DiscreteCPT) (v : Three) (val : Bool) :
+    queryProb (bn := colliderBN) cpt (PLNQuery.prop ⟨v, val⟩) ≤ 1 := by
+  rw [collider_queryProb_prop_eq]; exact MeasureTheory.prob_le_one
+
+omit
+  [(v : Three) → Inhabited (colliderBN.stateSpace v)]
+  [∀ v : Three, StandardBorelSpace (colliderBN.stateSpace v)]
+  [StandardBorelSpace colliderBN.JointSpace] in
+private lemma collider_queryStrength_singleton_prop_toReal
+    (cpt : colliderBN.DiscreteCPT) (v : Three) (val : Bool) :
+    (WorldModel.queryStrength
+      ({cpt} : BNWorldModel.State (bn := colliderBN))
+      (PLNQuery.prop (⟨v, val⟩ : BNQuery.Atom (bn := colliderBN)))).toReal =
+    cpt.jointMeasure.real (eventEq (bn := colliderBN) v val) := by
+  rw [queryStrength_singleton_eq_queryProb _ _ (collider_queryProb_prop_le_one cpt v val)]
+  rw [collider_queryProb_prop_eq]
+  simp [MeasureTheory.Measure.real]
+
+/-
+Singleton-collider marginal corollary is obtained by transitivity from:
+1) `xi_sink_queryStrength_toReal_eq_of_colliderBN`
+2) `collider_queryStrength_singleton_prop_toReal`.
+
+We intentionally keep it as a two-lemma composition in this module: a direct
+single theorem statement triggers deterministic `whnf` heartbeat timeouts in the
+full `ColliderBNSinkRule` section despite the two component lemmas being proved.
+-/
+
+end ColliderBNSinkRule
+
+/-! ## §6 Collider Abduction: Approximation, Not Exact
+
+The PLN abduction formula `plnAbductionStrength` is NOT in general equal to the
+true conditional probability P(B|A) in a collider BN. This is because abduction
+internally applies the deduction formula (via Bayes inversion), but the deduction
+formula requires B ⊥ A | C (conditional independence given the middle variable).
+In a collider A→C←B, conditioning on C **opens** the path (explaining away),
+making A and B dependent given C. Therefore the screening-off assumption fails.
+
+This does **not** contradict the PLN book's high-level framing: induction/abduction
+there are presented as heuristic/fallible inference patterns derived via inversion +
+deduction and expected to be used in combination with other rules and context.
+Formally here, we pin down one concrete regime where the algebraic abduction
+formula is approximate rather than exact.
+
+This section provides a formal counterexample. -/
+
+/-- The PLN abduction formula does not in general compute the correct conditional
+probability for collider BNs.
+
+Counterexample (OR-gate collider): P(A=1) = P(B=1) = 1/2, C = A OR B.
+- True: P(B=1|A=1) = 1/2 (marginal independence)
+- Formula: plnAbductionStrength 1 1 (1/2) (3/4) (1/2) = 2/3
+- The formula overestimates by 1/6. -/
+theorem plnAbductionStrength_not_exact_collider :
+    PLN.plnAbductionStrength 1 1 (1/2 : ℝ) (3/4 : ℝ) (1/2 : ℝ) ≠ (1/2 : ℝ) := by
+  unfold PLN.plnAbductionStrength PLN.bayesInversion PLN.plnDeductionStrength
+  norm_num
+
+/-! ## §7 Abduction Exactness Envelope
+
+The abduction formula IS exact when the screening-off it internally requires holds.
+Since `plnAbductionStrength` = Bayes inversion + `plnDeductionStrength`, and deduction
+is exact under total-probability screening-off (C ⊥ A | B), abduction is exact when
+we can supply those conditions with the appropriate variable mapping.
+
+This theorem characterizes the **exactness envelope**: the set of distributions for
+which the algebraic abduction formula correctly computes the conditional probability.
+Combined with the counterexample above, we get:
+- Abduction exact ← screening-off holds (this theorem)
+- Abduction not exact ← collider topology violates screening-off (counterexample)
+-/
+
+open MeasureTheory in
+/-- The PLN abduction formula IS exact when the required screening-off holds.
+
+Given premises P(B|A) and P(B|C), and screening-off C ⊥ A | B (positive and negative),
+`plnAbductionStrength` correctly computes P(C|A).
+
+This is `pln_deduction_from_total_probability` composed with Bayes inversion:
+the abduction formula internally does `deduction(P(B|A), bayesInversion(P(B|C)) = P(C|B), P(B), P(C))`,
+which is exact when C ⊥ A | B. -/
+theorem plnAbductionStrength_exact_of_screeningOff
+    {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ]
+    {A B C : Set Ω} (hA : MeasurableSet A) (hB : MeasurableSet B) (hC : MeasurableSet C)
+    (hA_pos : μ A ≠ 0) (hB_pos : μ B ≠ 0) (hB_lt1 : μ B < 1)
+    (hAB_pos : μ (A ∩ B) ≠ 0) (hABc_pos : μ (A ∩ Bᶜ) ≠ 0)
+    (hC_pos : μ C ≠ 0)
+    -- Screening-off: C ⊥ A | B (positive and negative)
+    (h_pos_indep : μ.real (C ∩ (A ∩ B)) / μ.real (A ∩ B) = μ.real (C ∩ B) / μ.real B)
+    (h_neg_indep : μ.real (C ∩ (A ∩ Bᶜ)) / μ.real (A ∩ Bᶜ) = μ.real (C ∩ Bᶜ) / μ.real Bᶜ) :
+    μ.real (C ∩ A) / μ.real A =
+      PLN.plnAbductionStrength
+        (μ.real (B ∩ A) / μ.real A)       -- s_AB = P(B|A)
+        (μ.real (B ∩ C) / μ.real C)       -- s_CB = P(B|C)
+        (μ.real A)                          -- s_A (unused by formula)
+        (μ.real B)                          -- s_B
+        (μ.real C) := by                    -- s_C
+  -- Step 1: Unfold abduction to deduction + Bayes inversion
+  unfold PLN.plnAbductionStrength PLN.bayesInversion
+  -- Step 2: Show the Bayes-inverted premise equals P(C|B)
+  -- bayesInversion(P(B|C), P(B), P(C)) = P(B|C) * P(C) / P(B) = P(C|B)
+  have hC_real_pos : (0 : ℝ) < μ.real C := by
+    rw [Measure.real, ENNReal.toReal_pos_iff]
+    exact ⟨pos_iff_ne_zero.mpr hC_pos,
+           lt_top_iff_ne_top.mpr (measure_ne_top μ C)⟩
+  have hB_real_pos : (0 : ℝ) < μ.real B := by
+    rw [Measure.real, ENNReal.toReal_pos_iff]
+    exact ⟨pos_iff_ne_zero.mpr hB_pos,
+           lt_top_iff_ne_top.mpr (measure_ne_top μ B)⟩
+  -- P(B|C) * P(C) / P(B) = P(B∩C) / P(B) = P(C∩B) / P(B)
+  have hBayes : μ.real (B ∩ C) / μ.real C * μ.real C / μ.real B =
+      μ.real (C ∩ B) / μ.real B := by
+    rw [div_mul_cancel₀ (μ.real (B ∩ C)) (ne_of_gt hC_real_pos)]
+    rw [Set.inter_comm B C]
+  rw [hBayes]
+  -- Step 3: Apply the deduction exactness theorem
+  exact PLN.pln_deduction_from_total_probability μ hA hB hC
+    hA_pos hB_pos hB_lt1 hAB_pos hABc_pos h_pos_indep h_neg_indep
 
 end Mettapedia.Logic.PLNXiDerivedBNRules

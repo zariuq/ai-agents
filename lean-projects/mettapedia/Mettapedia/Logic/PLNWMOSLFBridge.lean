@@ -248,6 +248,67 @@ theorem xiDerivesAtomEvidence_to_wmQueryJudgment
 
 end XiPLN
 
+/-! ## §2b ξPLN Context-Aware Layer
+
+Lifts ξPLN derivation judgments to context-indexed WM judgments (`WMJudgmentCtx`,
+`WMQueryJudgmentCtx`). This tracks which evidence sources contributed to a derivation
+while preserving all OSLF soundness properties. -/
+
+section XiPLNCtx
+
+variable {State Query : Type*}
+variable [EvidenceType State] [WorldModel State Query]
+
+/-- ξPLN evidence derivations lift to `WMQueryJudgmentCtx` when the WM state is
+derivable from context Γ. Preserves provenance: the conclusion is only as
+trustworthy as the sources in Γ. -/
+theorem xiDerivesAtomEvidence_to_wmQueryJudgmentCtx
+    (Ξ : XiPLN (State := State) (Query := Query))
+    {Γ : Set State} {W : State} {a : String} {p : Pattern} {e : Evidence}
+    (hDer : XiDerivesAtomEvidence Ξ W a p e)
+    (hW : WMJudgmentCtx Γ W) :
+    WMQueryJudgmentCtx Γ W (Ξ.queryOfAtom a p) e := by
+  obtain ⟨r, _, hside, henc, rfl⟩ := hDer
+  exact ⟨hW, by rw [henc]; exact r.sound hside W⟩
+
+/-- ξPLN evidence derivations are OSLF-semantically sound under context-indexing.
+Soundness is purely about the WM semantics (not about contexts), so this follows
+directly from the context-free version. -/
+theorem xiDerivesAtomEvidence_sound_ctx
+    (Ξ : XiPLN (State := State) (Query := Query))
+    (R : Pattern → Pattern → Prop)
+    {Γ : Set State} {W : State} {a : String} {p : Pattern} {e : Evidence}
+    (hDer : XiDerivesAtomEvidence Ξ W a p e)
+    (_hW : WMJudgmentCtx Γ W) :
+    semE R (wmEvidenceAtomSemQ W Ξ.queryOfAtom) (.atom a) p = e :=
+  xiDerivesAtomEvidence_sound Ξ R hDer
+
+/-- ξPLN strength derivations yield threshold truth under context-indexing. -/
+theorem xiDerivesAtomStrength_threshold_sound_ctx
+    (Ξ : XiPLN (State := State) (Query := Query))
+    (R : Pattern → Pattern → Prop)
+    {Γ : Set State} {W : State} {a : String} {p : Pattern} {s tau : ℝ≥0∞}
+    (hDer : XiDerivesAtomStrength Ξ W a p s)
+    (hTau : tau ≤ s)
+    (_hW : WMJudgmentCtx Γ W) :
+    sem R (thresholdAtomSemOfWMQ W tau Ξ.queryOfAtom) (.atom a) p :=
+  xiDerivesAtomStrength_threshold_sound Ξ R hDer hTau
+
+/-- ξPLN revision under context: combining two context-derivable states yields
+a state derivable from the union of contexts, with evidence additivity. -/
+theorem xi_atom_revision_ctx
+    (Ξ : XiPLN (State := State) (Query := Query))
+    (R : Pattern → Pattern → Prop)
+    {Γ₁ Γ₂ : Set State} {W₁ W₂ : State}
+    (_hW₁ : WMJudgmentCtx Γ₁ W₁) (_hW₂ : WMJudgmentCtx Γ₂ W₂)
+    (a : String) (p : Pattern) :
+    semE R (wmEvidenceAtomSemQ (W₁ + W₂) Ξ.queryOfAtom) (.atom a) p =
+      semE R (wmEvidenceAtomSemQ W₁ Ξ.queryOfAtom) (.atom a) p +
+      semE R (wmEvidenceAtomSemQ W₂ Ξ.queryOfAtom) (.atom a) p :=
+  xi_atom_revision Ξ R W₁ W₂ a p
+
+end XiPLNCtx
+
 /-! ## §3 Concrete Example: d-separation rewrite through ξPLN
 
 Instantiates ξPLN with a single `dsep_rewrite` rule and proves the full chain:

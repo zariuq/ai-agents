@@ -74,6 +74,91 @@ instance mixingMeasureTheta_isProbability (M : BernoulliMixture) :
   refine ⟨?_⟩
   simp [hIcc, hIcc_one]
 
+/-- If two Bernoulli mixtures induce the same pulled-back measure on
+`Theta = [0,1]`, then their original mixing measures on `ℝ` are equal. -/
+theorem mixingMeasure_eq_of_mixingMeasureTheta_eq
+    (M1 M2 : BernoulliMixture)
+    (hΘ : mixingMeasureTheta M1 = mixingMeasureTheta M2) :
+    M1.mixingMeasure = M2.mixingMeasure := by
+  ext t ht
+  have hμ1_diff0 : M1.mixingMeasure (t \ Set.Icc (0 : ℝ) 1) = 0 := by
+    refine le_antisymm ?_ (zero_le _)
+    calc
+      M1.mixingMeasure (t \ Set.Icc (0 : ℝ) 1) ≤ M1.mixingMeasure (Set.Icc (0 : ℝ) 1)ᶜ := by
+        refine measure_mono ?_
+        intro x hx
+        exact hx.2
+      _ = 0 := M1.support_unit
+  have hμ2_diff0 : M2.mixingMeasure (t \ Set.Icc (0 : ℝ) 1) = 0 := by
+    refine le_antisymm ?_ (zero_le _)
+    calc
+      M2.mixingMeasure (t \ Set.Icc (0 : ℝ) 1) ≤ M2.mixingMeasure (Set.Icc (0 : ℝ) 1)ᶜ := by
+        refine measure_mono ?_
+        intro x hx
+        exact hx.2
+      _ = 0 := M2.support_unit
+  have hμ1_inter : M1.mixingMeasure t = M1.mixingMeasure (t ∩ Set.Icc (0 : ℝ) 1) := by
+    have hsplit :
+        M1.mixingMeasure (t ∩ Set.Icc (0 : ℝ) 1) +
+          M1.mixingMeasure (t \ Set.Icc (0 : ℝ) 1) =
+        M1.mixingMeasure t :=
+      measure_inter_add_diff t measurableSet_Icc
+    simpa [hμ1_diff0] using hsplit.symm
+  have hμ2_inter : M2.mixingMeasure t = M2.mixingMeasure (t ∩ Set.Icc (0 : ℝ) 1) := by
+    have hsplit :
+        M2.mixingMeasure (t ∩ Set.Icc (0 : ℝ) 1) +
+          M2.mixingMeasure (t \ Set.Icc (0 : ℝ) 1) =
+        M2.mixingMeasure t :=
+      measure_inter_add_diff t measurableSet_Icc
+    simpa [hμ2_diff0] using hsplit.symm
+  have hμ1_comap :
+      M1.mixingMeasure (t ∩ Set.Icc (0 : ℝ) 1) =
+        mixingMeasureTheta M1 ((Subtype.val) ⁻¹' t) := by
+    symm
+    calc
+      mixingMeasureTheta M1 ((Subtype.val) ⁻¹' t)
+          = M1.mixingMeasure ((Subtype.val) '' (((Subtype.val) ⁻¹' t) : Set Theta)) := by
+              simpa [mixingMeasureTheta, Theta, measurableSet_Icc] using
+                (comap_subtype_coe_apply (s := Set.Icc (0 : ℝ) 1) measurableSet_Icc
+                  (μ := M1.mixingMeasure) (t := ((Subtype.val) ⁻¹' t)))
+      _ = M1.mixingMeasure (t ∩ Set.Icc (0 : ℝ) 1) := by
+            simp [Set.image_preimage_eq_inter_range, Set.Icc]
+  have hμ2_comap :
+      M2.mixingMeasure (t ∩ Set.Icc (0 : ℝ) 1) =
+        mixingMeasureTheta M2 ((Subtype.val) ⁻¹' t) := by
+    symm
+    calc
+      mixingMeasureTheta M2 ((Subtype.val) ⁻¹' t)
+          = M2.mixingMeasure ((Subtype.val) '' (((Subtype.val) ⁻¹' t) : Set Theta)) := by
+              simpa [mixingMeasureTheta, Theta, measurableSet_Icc] using
+                (comap_subtype_coe_apply (s := Set.Icc (0 : ℝ) 1) measurableSet_Icc
+                  (μ := M2.mixingMeasure) (t := ((Subtype.val) ⁻¹' t)))
+      _ = M2.mixingMeasure (t ∩ Set.Icc (0 : ℝ) 1) := by
+            simp [Set.image_preimage_eq_inter_range, Set.Icc]
+  calc
+    M1.mixingMeasure t = M1.mixingMeasure (t ∩ Set.Icc (0 : ℝ) 1) := hμ1_inter
+    _ = mixingMeasureTheta M1 ((Subtype.val) ⁻¹' t) := hμ1_comap
+    _ = mixingMeasureTheta M2 ((Subtype.val) ⁻¹' t) := by simp [hΘ]
+    _ = M2.mixingMeasure (t ∩ Set.Icc (0 : ℝ) 1) := hμ2_comap.symm
+    _ = M2.mixingMeasure t := hμ2_inter.symm
+
+/-- A Bernoulli mixture is determined by its pulled-back mixing measure on
+`Theta = [0,1]`. -/
+theorem bernoulliMixture_ext_of_mixingMeasureTheta_eq
+    (M1 M2 : BernoulliMixture)
+    (hΘ : mixingMeasureTheta M1 = mixingMeasureTheta M2) :
+    M1 = M2 := by
+  have hmix : M1.mixingMeasure = M2.mixingMeasure :=
+    mixingMeasure_eq_of_mixingMeasureTheta_eq M1 M2 hΘ
+  cases M1 with
+  | mk μ1 p1 s1 =>
+    cases M2 with
+    | mk μ2 p2 s2 =>
+      change (BernoulliMixture.mk μ1 p1 s1 = BernoulliMixture.mk μ2 p2 s2)
+      have hμ : μ1 = μ2 := by simpa using hmix
+      cases hμ
+      simp
+
 /-! ## Bernoulli product kernel as a Markov kernel -/
 
 section Kernel

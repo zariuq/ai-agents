@@ -3,7 +3,9 @@ import Mathlib.RingTheory.Polynomial.Bernstein
 import Mathlib.Analysis.SpecialFunctions.Bernstein
 import Mathlib.Topology.ContinuousMap.Polynomial
 import Mathlib.Topology.ContinuousMap.CompactlySupported
+import Mathlib.Topology.ContinuousMap.Weierstrass
 import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
+import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 import Mathlib.Combinatorics.Enumerative.Stirling
 import Mathlib.Data.Nat.Factorial.BigOperators
 import Mathlib.Data.Nat.Choose.Basic
@@ -1679,6 +1681,158 @@ theorem hausdorff_moment_exists (m : ℕ → ℝ)
     _ = ∫ θ, (θ : ℝ) ^ k ∂μ := by simp [hrestrict]
     _ = ∫ x, (x : ℝ) ^ k ∂μI := hmap
     _ = m k := hmomentI k
+
+/-- Polynomial test functions on `I` are integrable for finite measures. -/
+lemma integrable_eval_poly_on_unitInterval
+    (ρ : Measure I) [IsFiniteMeasure ρ] (p : ℝ[X]) :
+    Integrable (fun x : I => p.eval (x : ℝ)) ρ := by
+  have hcont : Continuous (fun x : I => p.eval (x : ℝ)) := by fun_prop
+  exact hcont.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+
+/-- If two probability measures on `I` have equal moments, then they agree on polynomial integrals. -/
+lemma integral_eval_poly_eq_of_moments_eq_on_unitInterval
+    (μ ν : Measure I) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    (hmom : ∀ k : ℕ, ∫ x : I, (x : ℝ) ^ k ∂μ = ∫ x : I, (x : ℝ) ^ k ∂ν)
+    (p : ℝ[X]) :
+    ∫ x : I, p.eval (x : ℝ) ∂μ = ∫ x : I, p.eval (x : ℝ) ∂ν := by
+  classical
+  refine Polynomial.induction_on' p ?hadd ?hmono
+  · intro p q hp hq
+    have hpμ : Integrable (fun x : I => p.eval (x : ℝ)) μ :=
+      integrable_eval_poly_on_unitInterval μ p
+    have hqμ : Integrable (fun x : I => q.eval (x : ℝ)) μ :=
+      integrable_eval_poly_on_unitInterval μ q
+    have hpν : Integrable (fun x : I => p.eval (x : ℝ)) ν :=
+      integrable_eval_poly_on_unitInterval ν p
+    have hqν : Integrable (fun x : I => q.eval (x : ℝ)) ν :=
+      integrable_eval_poly_on_unitInterval ν q
+    calc
+      ∫ x : I, (p + q).eval (x : ℝ) ∂μ
+          = ∫ x : I, (p.eval (x : ℝ) + q.eval (x : ℝ)) ∂μ := by
+              refine integral_congr_ae (Filter.Eventually.of_forall ?_)
+              intro x
+              simp [Polynomial.eval_add]
+      _ = ∫ x : I, p.eval (x : ℝ) ∂μ + ∫ x : I, q.eval (x : ℝ) ∂μ := by
+              simpa using (integral_add hpμ hqμ)
+      _ = ∫ x : I, p.eval (x : ℝ) ∂ν + ∫ x : I, q.eval (x : ℝ) ∂ν := by rw [hp, hq]
+      _ = ∫ x : I, (p.eval (x : ℝ) + q.eval (x : ℝ)) ∂ν := by
+              simpa using (integral_add hpν hqν).symm
+      _ = ∫ x : I, (p + q).eval (x : ℝ) ∂ν := by
+              refine integral_congr_ae (Filter.Eventually.of_forall ?_)
+              intro x
+              simp [Polynomial.eval_add]
+  · intro n a
+    calc
+      ∫ x : I, (Polynomial.monomial n a).eval (x : ℝ) ∂μ
+          = ∫ x : I, a * (x : ℝ) ^ n ∂μ := by
+              refine integral_congr_ae (Filter.Eventually.of_forall ?_)
+              intro x
+              simp [Polynomial.eval_monomial]
+      _ = a * ∫ x : I, (x : ℝ) ^ n ∂μ := by
+            simpa [smul_eq_mul] using
+              (integral_const_mul (μ := μ) (r := a) (f := fun x : I => (x : ℝ) ^ n))
+      _ = a * ∫ x : I, (x : ℝ) ^ n ∂ν := by rw [hmom n]
+      _ = ∫ x : I, a * (x : ℝ) ^ n ∂ν := by
+            simpa [smul_eq_mul] using
+              (integral_const_mul (μ := ν) (r := a) (f := fun x : I => (x : ℝ) ^ n)).symm
+      _ = ∫ x : I, (Polynomial.monomial n a).eval (x : ℝ) ∂ν := by
+              refine integral_congr_ae (Filter.Eventually.of_forall ?_)
+              intro x
+              simp [Polynomial.eval_monomial]
+
+/-- Uniform absolute pointwise bounds control integrals under probability measures on `I`. -/
+lemma abs_integral_le_const_of_forall_abs_le_on_unitInterval
+    (ρ : Measure I) [IsProbabilityMeasure ρ]
+    {g : I → ℝ} {C : ℝ}
+    (hC : ∀ x : I, |g x| ≤ C) :
+    |∫ x, g x ∂ρ| ≤ C := by
+  have hnorm_ae : ∀ᵐ x ∂ρ, ‖g x‖ ≤ C :=
+    Filter.Eventually.of_forall (fun x => by simpa [Real.norm_eq_abs] using hC x)
+  have hle : ‖∫ x, g x ∂ρ‖ ≤ C * ρ.real Set.univ :=
+    norm_integral_le_of_norm_le_const (μ := ρ) (f := g) (C := C) hnorm_ae
+  have hconst : C * ρ.real Set.univ = C := by simp
+  simpa [Real.norm_eq_abs, hconst] using hle
+
+/-- Hausdorff uniqueness on `[0,1]`:
+probability measures on `I = [0,1]` are determined by their moments. -/
+theorem probMeasure_unitInterval_eq_of_moments_eq
+    (μ ν : Measure I) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    (hmom : ∀ k : ℕ, ∫ x : I, (x : ℝ) ^ k ∂μ = ∫ x : I, (x : ℝ) ^ k ∂ν) :
+    μ = ν := by
+  apply MeasureTheory.ext_of_forall_integral_eq_of_IsFiniteMeasure
+  intro f
+  by_contra hneq
+  let D : ℝ := ∫ x : I, f x ∂μ - ∫ x : I, f x ∂ν
+  have hD_ne : D ≠ 0 := by
+    intro hD
+    apply hneq
+    exact sub_eq_zero.mp hD
+  have hD_pos : 0 < |D| := abs_pos.mpr hD_ne
+  let δ : ℝ := |D| / 4
+  have hδ : 0 < δ := by
+    dsimp [δ]
+    linarith
+  obtain ⟨p, hpapprox⟩ := exists_polynomial_near_continuousMap 0 1 f.toContinuousMap δ hδ
+
+  have hpt : ∀ x : I, |p.eval (x : ℝ) - f x| ≤ δ := by
+    intro x
+    have hxnorm : ‖(p.toContinuousMapOn I - f.toContinuousMap) x‖
+        ≤ ‖p.toContinuousMapOn I - f.toContinuousMap‖ :=
+      ContinuousMap.norm_coe_le_norm (p.toContinuousMapOn I - f.toContinuousMap) x
+    have : |(p.toContinuousMapOn I - f.toContinuousMap) x| ≤ δ := by
+      exact le_trans (by simpa [Real.norm_eq_abs] using hxnorm) hpapprox.le
+    simpa using this
+
+  have hfμ : Integrable (fun x : I => f x) μ := by
+    exact f.continuous.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+  have hpμ : Integrable (fun x : I => p.eval (x : ℝ)) μ :=
+    integrable_eval_poly_on_unitInterval μ p
+  have hfν : Integrable (fun x : I => f x) ν := by
+    exact f.continuous.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+  have hpν : Integrable (fun x : I => p.eval (x : ℝ)) ν :=
+    integrable_eval_poly_on_unitInterval ν p
+
+  have hμ_close : |∫ x : I, f x ∂μ - ∫ x : I, p.eval (x : ℝ) ∂μ| ≤ δ := by
+    have hbound : ∀ x : I, |f x - p.eval (x : ℝ)| ≤ δ := by
+      intro x
+      simpa [abs_sub_comm] using hpt x
+    have hA : |∫ x : I, (f x - p.eval (x : ℝ)) ∂μ| ≤ δ :=
+      abs_integral_le_const_of_forall_abs_le_on_unitInterval μ hbound
+    simpa [integral_sub hfμ hpμ] using hA
+
+  have hν_close : |∫ x : I, p.eval (x : ℝ) ∂ν - ∫ x : I, f x ∂ν| ≤ δ := by
+    have hbound : ∀ x : I, |p.eval (x : ℝ) - f x| ≤ δ := by
+      intro x
+      exact hpt x
+    have hA : |∫ x : I, (p.eval (x : ℝ) - f x) ∂ν| ≤ δ :=
+      abs_integral_le_const_of_forall_abs_le_on_unitInterval ν hbound
+    simpa [integral_sub hpν hfν] using hA
+
+  have hpint : ∫ x : I, p.eval (x : ℝ) ∂μ = ∫ x : I, p.eval (x : ℝ) ∂ν :=
+    integral_eval_poly_eq_of_moments_eq_on_unitInterval μ ν hmom p
+
+  have hD_le : |D| ≤ 2 * δ := by
+    dsimp [D]
+    calc
+      |∫ x : I, f x ∂μ - ∫ x : I, f x ∂ν|
+          = |(∫ x : I, f x ∂μ - ∫ x : I, p.eval (x : ℝ) ∂μ)
+            + (∫ x : I, p.eval (x : ℝ) ∂ν - ∫ x : I, f x ∂ν)| := by
+              rw [← hpint]
+              ring_nf
+      _ ≤ |∫ x : I, f x ∂μ - ∫ x : I, p.eval (x : ℝ) ∂μ|
+          + |∫ x : I, p.eval (x : ℝ) ∂ν - ∫ x : I, f x ∂ν| := by
+              simpa [Real.norm_eq_abs] using
+                (norm_add_le (∫ x : I, f x ∂μ - ∫ x : I, p.eval (x : ℝ) ∂μ)
+                  (∫ x : I, p.eval (x : ℝ) ∂ν - ∫ x : I, f x ∂ν))
+      _ ≤ δ + δ := add_le_add hμ_close hν_close
+      _ = 2 * δ := by ring
+
+  have hcontra : ¬ |D| ≤ 2 * δ := by
+    dsimp [δ]
+    intro h
+    linarith
+
+  exact hcontra hD_le
 
 end HausdorffTheorem
 

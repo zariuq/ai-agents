@@ -2,6 +2,7 @@ import Mettapedia.Logic.PLNDerivation
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mettapedia.ProbabilityTheory.BayesianNetworks.DiscreteSemantics
 import Mettapedia.ProbabilityTheory.BayesianNetworks.Examples
+import Mettapedia.ProbabilityTheory.BayesianNetworks.ScreeningOffFromCondIndep
 
 /-!
 # Bayesian Networks as a Tractable Sublayer: Exactness Conditions for Fast PLN Deduction
@@ -971,5 +972,170 @@ theorem chainBN_plnDeductionStrength_exact
 end Deduction
 
 end ChainBN
+
+/-! ## Generic Screening-Off Ratio Bridge
+
+Convert the ENNReal multiplicative equality `μ(A∩C∩B) * μ(B) = μ(A∩B) * μ(C∩B)`
+(from `screeningOffMulEq_of_condIndepVertices_CA`) to the `.real` ratio form
+`μ.real(C∩A∩B) / μ.real(A∩B) = μ.real(C∩B) / μ.real(B)` used by
+`pln_deduction_from_total_probability`. -/
+
+/-- Convert ENNReal multiplicative screening-off `a * d = b * c`
+    to `.real` ratio form `a.toReal / b.toReal = c.toReal / d.toReal`. -/
+lemma real_ratio_of_ennreal_mul_eq {a b c d : ℝ≥0∞}
+    (hmul : a * d = b * c)
+    (hb : b ≠ 0) (hb_fin : b ≠ ⊤)
+    (hd : d ≠ 0) (hd_fin : d ≠ ⊤)
+    (_ha_fin : a ≠ ⊤) (_hc_fin : c ≠ ⊤) :
+    a.toReal / b.toReal = c.toReal / d.toReal := by
+  have hb_real : (0 : ℝ) < b.toReal := by
+    rw [ENNReal.toReal_pos_iff]; exact ⟨pos_iff_ne_zero.mpr hb, lt_top_iff_ne_top.mpr hb_fin⟩
+  have hd_real : (0 : ℝ) < d.toReal := by
+    rw [ENNReal.toReal_pos_iff]; exact ⟨pos_iff_ne_zero.mpr hd, lt_top_iff_ne_top.mpr hd_fin⟩
+  rw [div_eq_div_iff (ne_of_gt hb_real) (ne_of_gt hd_real)]
+  have := congr_arg ENNReal.toReal hmul
+  rw [ENNReal.toReal_mul, ENNReal.toReal_mul] at this
+  linarith
+
+/-! ## Fork BN Deduction-Strength Exactness (A ← B → C)
+
+For the fork BN `A ← B → C`, the screening-off condition `C ⊥ A | B`
+follows directly from the local Markov property at C. This gives both
+positive and negative screening-off via `screeningOffMulEq_of_condIndepVertices_CA`
+instantiated at `valB = true` and `valB = false` respectively.
+
+Key advantage: This proof uses `CondIndepVertices` from the abstract local Markov
+property, not chain-specific product decompositions. -/
+
+section ForkBN
+
+open Mettapedia.ProbabilityTheory.BayesianNetworks.Examples
+
+instance forkBN_fintype (v : Three) : Fintype (forkBN.stateSpace v) := by
+  dsimp [forkBN]; infer_instance
+
+instance forkBN_nonempty (v : Three) : Nonempty (forkBN.stateSpace v) := by
+  dsimp [forkBN]; infer_instance
+
+instance forkBN_inhabited (v : Three) : Inhabited (forkBN.stateSpace v) := by
+  dsimp [forkBN]; infer_instance
+
+instance forkBN_decidableEq (v : Three) : DecidableEq (forkBN.stateSpace v) := by
+  dsimp [forkBN]; infer_instance
+
+instance forkBN_measurableSingletonClass (v : Three) :
+    MeasurableSingletonClass (forkBN.stateSpace v) := by
+  dsimp [forkBN]; infer_instance
+
+variable (cpt : forkBN.DiscreteCPT)
+
+instance : IsProbabilityMeasure cpt.jointMeasure :=
+  jointMeasure_isProbabilityMeasure (bn := forkBN) cpt
+
+-- Abbreviations for event sets
+private abbrev fA := eventEq (bn := forkBN) Three.A true
+private abbrev fB := eventEq (bn := forkBN) Three.B true
+private abbrev fC := eventEq (bn := forkBN) Three.C true
+
+-- Measurability lemmas
+private lemma measurable_fA : MeasurableSet fA := measurable_eventEq forkBN Three.A true
+private lemma measurable_fB : MeasurableSet fB := measurable_eventEq forkBN Three.B true
+private lemma measurable_fC : MeasurableSet fC := measurable_eventEq forkBN Three.C true
+
+-- Finiteness lemmas (probability measures on finite spaces)
+private lemma fin_forkBN (S : Set forkBN.JointSpace) : cpt.jointMeasure S ≠ ⊤ :=
+  measure_ne_top cpt.jointMeasure S
+
+/-- Get the ENNReal multiplicative screening-off from CondIndepVertices for fork. -/
+private lemma forkBN_screeningOff_mul
+    [HasLocalMarkovProperty forkBN cpt.jointMeasure]
+    (valA valB valC : Bool) :
+    cpt.jointMeasure
+        (eventEq (bn := forkBN) Three.A valA ∩
+          eventEq (bn := forkBN) Three.C valC ∩
+          eventEq (bn := forkBN) Three.B valB) *
+      cpt.jointMeasure (eventEq (bn := forkBN) Three.B valB) =
+    cpt.jointMeasure
+        (eventEq (bn := forkBN) Three.A valA ∩
+          eventEq (bn := forkBN) Three.B valB) *
+      cpt.jointMeasure
+        (eventEq (bn := forkBN) Three.C valC ∩
+          eventEq (bn := forkBN) Three.B valB) := by
+  have hci := fork_condIndep_CA_given_B_of_localMarkov (μ := cpt.jointMeasure)
+  -- CondIndepVertices {C} {A} {B} → CondIndepOn C B A → CondIndepOn A B C (by symmetry)
+  have hciOn : CondIndepOn (bn := forkBN) (μ := cpt.jointMeasure) Three.A Three.B Three.C := by
+    have : CondIndepOn (bn := forkBN) (μ := cpt.jointMeasure) Three.C Three.B Three.A := by
+      simpa [CondIndepOn] using hci
+    exact this.symm
+  exact condIndep_eventEq_mul_cond (bn := forkBN) (μ := cpt.jointMeasure)
+    Three.A Three.B Three.C valA valB valC hciOn
+
+theorem forkBN_pos_screeningOff
+    [HasLocalMarkovProperty forkBN cpt.jointMeasure]
+    (hAB_pos : cpt.jointMeasure (fA ∩ fB) ≠ 0)
+    (hB_pos : cpt.jointMeasure fB ≠ 0) :
+    cpt.jointMeasure.real (fC ∩ (fA ∩ fB)) / cpt.jointMeasure.real (fA ∩ fB) =
+      cpt.jointMeasure.real (fC ∩ fB) / cpt.jointMeasure.real fB := by
+  have hmul := forkBN_screeningOff_mul cpt true true true
+  have h := real_ratio_of_ennreal_mul_eq hmul hAB_pos (fin_forkBN cpt _) hB_pos (fin_forkBN cpt _)
+    (fin_forkBN cpt _) (fin_forkBN cpt _)
+  simp only [Set.inter_comm, Set.inter_left_comm] at h ⊢
+  exact h
+
+/-- Negative screening-off for fork BN: μ.real(C ∩ (A ∩ Bᶜ)) / μ.real(A ∩ Bᶜ) = μ.real(C ∩ Bᶜ) / μ.real(Bᶜ).
+    Uses Bool complement + CondIndepVertices with valB = false. -/
+theorem forkBN_neg_screeningOff
+    [HasLocalMarkovProperty forkBN cpt.jointMeasure]
+    (hABc_pos : cpt.jointMeasure (fA ∩ fBᶜ) ≠ 0)
+    (hBc_pos : cpt.jointMeasure fBᶜ ≠ 0) :
+    cpt.jointMeasure.real (fC ∩ (fA ∩ fBᶜ)) / cpt.jointMeasure.real (fA ∩ fBᶜ) =
+      cpt.jointMeasure.real (fC ∩ fBᶜ) / cpt.jointMeasure.real fBᶜ := by
+  have hmul := forkBN_screeningOff_mul cpt true false true
+  -- Rewrite eventEq B false → (eventEq B true)ᶜ = fBᶜ
+  have hBool : eventEq (bn := forkBN) Three.B false = fBᶜ := by
+    ext ω; simp only [eventEq, Set.mem_setOf_eq, Set.mem_compl_iff]
+    show ω Three.B = false ↔ ¬ω Three.B = true
+    exact ⟨fun h => h ▸ Bool.false_ne_true, Bool.eq_false_iff.mpr⟩
+  simp only [hBool] at hmul
+  have h := real_ratio_of_ennreal_mul_eq hmul hABc_pos (fin_forkBN cpt _)
+    hBc_pos (fin_forkBN cpt _) (fin_forkBN cpt _) (fin_forkBN cpt _)
+  simp only [Set.inter_comm, Set.inter_left_comm] at h ⊢
+  exact h
+
+/-- For fork BN `A ← B → C`, the PLN deduction formula is exact:
+    P(C|A) = plnDeductionStrength(P(B|A), P(C|B), P(B), P(C)).
+
+    This is the fork analog of `chainBN_plnDeductionStrength_exact`.
+    The proof is dramatically shorter because it uses `CondIndepVertices` from the
+    abstract local Markov property rather than chain-specific product decompositions. -/
+theorem forkBN_plnDeductionStrength_exact
+    [HasLocalMarkovProperty forkBN cpt.jointMeasure]
+    (hA_pos : cpt.jointMeasure fA ≠ 0)
+    (hB_pos : cpt.jointMeasure fB ≠ 0)
+    (hB_lt1 : cpt.jointMeasure fB < 1)
+    (hAB_pos : cpt.jointMeasure (fA ∩ fB) ≠ 0)
+    (hABc_pos : cpt.jointMeasure (fA ∩ fBᶜ) ≠ 0) :
+    cpt.jointMeasure.real (fC ∩ fA) / cpt.jointMeasure.real fA =
+      plnDeductionStrength
+        (cpt.jointMeasure.real (fB ∩ fA) / cpt.jointMeasure.real fA)
+        (cpt.jointMeasure.real (fC ∩ fB) / cpt.jointMeasure.real fB)
+        (cpt.jointMeasure.real fB)
+        (cpt.jointMeasure.real fC) := by
+  -- P(Bᶜ) ≠ 0 from P(B) < 1
+  have hBc_pos : cpt.jointMeasure fBᶜ ≠ 0 := by
+    intro h
+    have huniv := IsProbabilityMeasure.measure_univ (μ := cpt.jointMeasure)
+    rw [← Set.union_compl_self fB] at huniv
+    rw [measure_union disjoint_compl_right measurable_fB.compl, h, add_zero] at huniv
+    rw [huniv] at hB_lt1; exact lt_irrefl 1 hB_lt1
+  have h_pos := forkBN_pos_screeningOff cpt hAB_pos hB_pos
+  have h_neg := forkBN_neg_screeningOff cpt hABc_pos hBc_pos
+  simpa [Set.inter_assoc, Set.inter_left_comm, Set.inter_comm] using
+    pln_deduction_from_total_probability
+      (μ := cpt.jointMeasure) (A := fA) (B := fB) (C := fC)
+      measurable_fA measurable_fB measurable_fC
+      hA_pos hB_pos hB_lt1 hAB_pos hABc_pos h_pos h_neg
+
+end ForkBN
 
 end Mettapedia.Logic.PLNBayesNetFastRules

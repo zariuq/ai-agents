@@ -2,6 +2,11 @@ import Mettapedia.OSLF.Framework.DerivedModalities
 import Mettapedia.OSLF.Framework.TypeSynthesis
 import Mettapedia.OSLF.Framework.RewriteSystem
 import Mettapedia.OSLF.Framework.ConstructorCategory
+import Mettapedia.CategoryTheory.DeFinettiCategoricalInterface
+import Mettapedia.CategoryTheory.DeFinettiPermutationCone
+import Mettapedia.CategoryTheory.DeFinettiKernelInterface
+import Mettapedia.CategoryTheory.DeFinettiSequenceKernelCone
+import Mettapedia.CategoryTheory.DeFinettiHausdorffBridge
 import Mettapedia.GSLT.Core.LambdaTheoryCategory
 import Mettapedia.GSLT.Topos.PredicateFibration
 import Mathlib.CategoryTheory.Category.GaloisConnection
@@ -67,6 +72,156 @@ open Mettapedia.OSLF.Framework.TypeSynthesis
 open Mettapedia.OSLF.Framework.ConstructorCategory
 
 universe u v
+
+/-! ## De Finetti Bridge (Qualitative)
+
+Category-facing re-export: exchangeability is equivalent to the qualitative
+categorical de Finetti factorization interface.
+-/
+
+section DeFinettiBridge
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+
+/-- Bridge theorem to the category-theory de Finetti interface. -/
+theorem exchangeable_iff_categoricalDeFinettiFactorization_bridge
+    (X : ℕ → Ω → Bool) (μ : MeasureTheory.Measure Ω)
+    [MeasureTheory.IsProbabilityMeasure μ]
+    (hX : ∀ i : ℕ, Measurable (X i)) :
+    Mettapedia.Logic.Exchangeability.InfiniteExchangeable X μ ↔
+      Mettapedia.CategoryTheory.CategoricalDeFinettiFactorization X μ := by
+  simpa using
+    (Mettapedia.CategoryTheory.exchangeable_iff_categoricalDeFinettiFactorization
+      (X := X) (μ := μ) (hX := hX))
+
+/-- Bridge theorem: cone-style prefix invariance is equivalent to
+categorical de Finetti factorization. -/
+theorem exchangeablePrefixCone_iff_categoricalDeFinettiFactorization_bridge
+    (X : ℕ → Ω → Bool) (μ : MeasureTheory.Measure Ω)
+    [MeasureTheory.IsProbabilityMeasure μ]
+    (hX : ∀ i : ℕ, Measurable (X i)) :
+    Mettapedia.CategoryTheory.ExchangeablePrefixCone X μ ↔
+      Mettapedia.CategoryTheory.CategoricalDeFinettiFactorization X μ := by
+  simpa using
+    (Mettapedia.CategoryTheory.exchangeablePrefixCone_iff_categoricalDeFinettiFactorization
+      (X := X) (μ := μ) (hX := hX))
+
+/-- Bridge theorem with limit-cone naming:
+the finite-prefix permutation cone is equivalent to categorical de Finetti factorization. -/
+theorem deFinettiLimitCone_iff_categoricalFactorization_bridge
+    (X : ℕ → Ω → Bool) (μ : MeasureTheory.Measure Ω)
+    [MeasureTheory.IsProbabilityMeasure μ]
+    (hX : ∀ i : ℕ, Measurable (X i)) :
+    Mettapedia.CategoryTheory.DeFinettiLimitCone X μ ↔
+      Mettapedia.CategoryTheory.CategoricalDeFinettiFactorization X μ := by
+  simpa using
+    (Mettapedia.CategoryTheory.deFinetti_limitCone_iff_categoricalFactorization
+      (X := X) (μ := μ) (hX := hX))
+
+/-- Bridge theorem for kernel-indexed laws:
+pointwise exchangeability is equivalent to pointwise iid-factorization. -/
+theorem kernelExchangeable_iff_kernelIIDFactorization_bridge
+    {Y : Type*} [MeasurableSpace Y]
+    (X : ℕ → Ω → Bool) (κ : ProbabilityTheory.Kernel Y Ω)
+    [ProbabilityTheory.IsMarkovKernel κ]
+    (hX : ∀ i : ℕ, Measurable (X i)) :
+    Mettapedia.CategoryTheory.KernelExchangeable X κ ↔
+      Mettapedia.CategoryTheory.KernelIIDFactorization X κ := by
+  simpa using
+    (Mettapedia.CategoryTheory.kernelExchangeable_iff_kernelIIDFactorization
+      (X := X) (κ := κ) (hX := hX))
+
+/-- Bridge theorem for kernel-indexed laws:
+pointwise prefix-cone laws are equivalent to pointwise iid-factorization. -/
+theorem kernelPrefixCone_iff_kernelIIDFactorization_bridge
+    {Y : Type*} [MeasurableSpace Y]
+    (X : ℕ → Ω → Bool) (κ : ProbabilityTheory.Kernel Y Ω)
+    [ProbabilityTheory.IsMarkovKernel κ]
+    (hX : ∀ i : ℕ, Measurable (X i)) :
+    Mettapedia.CategoryTheory.KernelPrefixCone X κ ↔
+      Mettapedia.CategoryTheory.KernelIIDFactorization X κ := by
+  calc
+    Mettapedia.CategoryTheory.KernelPrefixCone X κ
+        ↔ Mettapedia.CategoryTheory.KernelExchangeable X κ := by
+          simpa using
+            (Mettapedia.CategoryTheory.kernelExchangeable_iff_kernelPrefixCone
+              (X := X) (κ := κ)).symm
+    _ ↔ Mettapedia.CategoryTheory.KernelIIDFactorization X κ := by
+          simpa using
+            (Mettapedia.CategoryTheory.kernelExchangeable_iff_kernelIIDFactorization
+              (X := X) (κ := κ) (hX := hX))
+
+/-- Bridge theorem for conditional uniqueness:
+given kernel iid-factorization and fiberwise identifiability, the latent
+Bernoulli-mixture kernel family exists uniquely. -/
+theorem existsUnique_latentBernoulliMixtureKernel_of_identifiable_bridge
+    {Y : Type*} [MeasurableSpace Y]
+    (X : ℕ → Ω → Bool) (κ : ProbabilityTheory.Kernel Y Ω)
+    [ProbabilityTheory.IsMarkovKernel κ]
+    (hfac : Mettapedia.CategoryTheory.KernelIIDFactorization X κ)
+    (hident : Mettapedia.CategoryTheory.KernelMixtureIdentifiable X κ) :
+    ∃! L : Y → Mettapedia.Logic.DeFinetti.BernoulliMixture,
+      ∀ y : Y, Mettapedia.Logic.DeFinetti.Represents (L y) X (κ y) := by
+  simpa using
+    (Mettapedia.CategoryTheory.existsUnique_latentBernoulliMixtureKernel_of_identifiable
+      (hfac := hfac) (hident := hident))
+
+/-- Bridge theorem for sequence-valued kernels:
+the direct sequence-kernel permutation cone is equivalent to pointwise
+exchangeability of coordinate processes. -/
+theorem kernelSequencePrefixCone_iff_kernelExchangeableCoord_bridge
+    {Y : Type*} [MeasurableSpace Y]
+    (κ : ProbabilityTheory.Kernel Y (ℕ → Bool))
+    [ProbabilityTheory.IsMarkovKernel κ] :
+    Mettapedia.CategoryTheory.KernelSequencePrefixCone κ ↔
+      Mettapedia.CategoryTheory.KernelExchangeable
+        (X := Mettapedia.CategoryTheory.coordProcess) κ := by
+  simpa using
+    (Mettapedia.CategoryTheory.kernelSequencePrefixCone_iff_kernelExchangeable_coord
+      (κ := κ))
+
+/-- Bridge theorem for the explicit iid prefix-kernel family:
+singleton prefix events commute with finite-coordinate permutations. -/
+theorem iidPrefixKernel_cone_commutes_bridge
+    (n : ℕ) :
+    ∀ (θ : Mettapedia.CategoryTheory.Theta) (σ : Equiv.Perm (Fin n)) (xs : Fin n → Bool),
+      (Mettapedia.CategoryTheory.iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)) =
+        (Mettapedia.CategoryTheory.iidPrefixKernel n θ) ({xs ∘ σ.symm} : Set (Fin n → Bool)) := by
+  simpa using Mettapedia.CategoryTheory.iidPrefixKernel_cone_commutes (n := n)
+
+/-- Hausdorff uniqueness bridge:
+equality of all moments on the latent parameter space `Theta = [0,1]`
+implies equality of the latent mixing measures on `Theta`. -/
+theorem mixingMeasureTheta_eq_of_moments_eq_bridge
+    (M1 M2 : Mettapedia.Logic.DeFinetti.BernoulliMixture)
+    (hmom :
+      ∀ k : ℕ,
+        ∫ θ : Mettapedia.ProbabilityTheory.HigherOrderProbability.DeFinettiConnection.Theta,
+            (θ : ℝ) ^ k ∂Mettapedia.ProbabilityTheory.HigherOrderProbability.DeFinettiConnection.mixingMeasureTheta M1
+          = ∫ θ : Mettapedia.ProbabilityTheory.HigherOrderProbability.DeFinettiConnection.Theta,
+              (θ : ℝ) ^ k ∂Mettapedia.ProbabilityTheory.HigherOrderProbability.DeFinettiConnection.mixingMeasureTheta M2) :
+    Mettapedia.ProbabilityTheory.HigherOrderProbability.DeFinettiConnection.mixingMeasureTheta M1 =
+      Mettapedia.ProbabilityTheory.HigherOrderProbability.DeFinettiConnection.mixingMeasureTheta M2 := by
+  simpa using
+    (Mettapedia.CategoryTheory.mixingMeasureTheta_eq_of_moments_eq
+      (M1 := M1) (M2 := M2) hmom)
+
+/-- Representation-level Hausdorff bridge:
+if two Bernoulli-mixture objects represent the same process law, then their latent
+`Theta = [0,1]` mixing measures are equal. -/
+theorem mixingMeasureTheta_eq_of_represents_bridge
+    {Ω : Type*} [MeasurableSpace Ω]
+    (X : ℕ → Ω → Bool) (μ : MeasureTheory.Measure Ω)
+    (M1 M2 : Mettapedia.Logic.DeFinetti.BernoulliMixture)
+    (hrep1 : Mettapedia.Logic.DeFinetti.Represents M1 X μ)
+    (hrep2 : Mettapedia.Logic.DeFinetti.Represents M2 X μ) :
+    Mettapedia.ProbabilityTheory.HigherOrderProbability.DeFinettiConnection.mixingMeasureTheta M1 =
+      Mettapedia.ProbabilityTheory.HigherOrderProbability.DeFinettiConnection.mixingMeasureTheta M2 := by
+  simpa using
+    (Mettapedia.CategoryTheory.mixingMeasureTheta_eq_of_represents
+      (X := X) (μ := μ) (M1 := M1) (M2 := M2) hrep1 hrep2)
+
+end DeFinettiBridge
 
 /-! ## Set-Level Results (from DerivedModalities.lean) -/
 

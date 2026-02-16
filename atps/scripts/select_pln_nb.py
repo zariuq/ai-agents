@@ -190,6 +190,7 @@ def score_one_problem(pname, candidate_axioms, goal_features, sfreq, tfreq,
         batch_size=args.petta_job_batch_size,
         batch_prefix=f"{pname}_nb",
         keep_jobs_tsv=args.keep_tsv,
+        parallel_batches=args.petta_parallel_batches,
     )
 
     for task in batch_tasks:
@@ -229,6 +230,8 @@ def main():
                         help="MaSh NB prefilter to reduce candidates before PLN scoring")
     parser.add_argument("--petta-batch-size", type=int, default=32)
     parser.add_argument("--petta-job-batch-size", type=int, default=20)
+    parser.add_argument("--petta-parallel-batches", type=int, default=1,
+                        help="Number of concurrent PeTTa batch invocations (default 1)")
     parser.add_argument("--petta-timeout", type=int, default=240)
     parser.add_argument("--nb-def-prior-weight", type=float, default=1000.0)
     parser.add_argument("--nb-global-weight", type=float, default=1.0,

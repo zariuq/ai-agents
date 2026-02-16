@@ -802,6 +802,143 @@ theorem collider_dsep_A_B_given_empty :
       intro d _ hd
       exact Set.notMem_empty d hd
 
+/-! ### Collider DSeparatedFull (trail-based) -/
+
+/-- The triple ⟨A, C, B⟩ is blocked in the collider given Z = ∅ because C is
+a collider and C ∉ ∅. -/
+private theorem collider_triple_ACB_blocked (hab : UndirectedEdge colliderGraph Three.A Three.C)
+    (hbc : UndirectedEdge colliderGraph Three.C Three.B)
+    (hac : Three.A ≠ Three.B) :
+    IsBlocked colliderGraph ∅ ⟨Three.A, Three.C, Three.B, hab, hbc, hac⟩ := by
+  right
+  refine ⟨?_, Set.notMem_empty _, fun d _ hd => Set.notMem_empty d hd⟩
+  unfold IsCollider colliderGraph
+  constructor
+  · left; exact ⟨rfl, rfl⟩
+  · right; exact ⟨rfl, rfl⟩
+
+/-- Full trail-based d-separation: A ⊥ B | ∅ in the collider.
+
+Any active trail from A to B must contain the triple ⟨A, C, B⟩ which is blocked
+(C is a collider with C ∉ ∅). Direct proof by case analysis on the trail. -/
+theorem collider_dsepFull_A_B_given_empty :
+    DSeparatedFull colliderGraph ({Three.A} : Set Three) ({Three.B} : Set Three) ∅ := by
+  intro x hx y hy hxy htrail
+  simp only [Set.mem_singleton_iff] at hx hy
+  subst hx hy
+  rcases htrail with ⟨p, hne, hend, hactive⟩
+  -- Case analysis on the active trail p with endpoints A, B
+  cases hactive with
+  | single v =>
+    -- Trail [v]: endpoints = (v, v). But we need A ≠ B.
+    simp [PathEndpoints] at hend
+    exact hxy (hend.1 ▸ hend.2)
+  | two hEdge =>
+    -- Trail [u, v]: endpoints give u = A, v = B
+    simp [PathEndpoints] at hend
+    obtain ⟨rfl, rfl⟩ := hend
+    -- Now hEdge : UndirectedEdge colliderGraph A B, which doesn't exist
+    unfold UndirectedEdge colliderGraph at hEdge
+    rcases hEdge with (⟨_, h⟩ | ⟨h, _⟩) | (⟨h, _⟩ | ⟨_, h⟩) <;> exact Three.noConfusion h
+  | cons hab hbc hac hAct hTail =>
+    -- Trail [a, b, c, ...] with endpoints giving a = A
+    simp [PathEndpoints] at hend
+    obtain ⟨rfl, _⟩ := hend
+    -- hab : UndirectedEdge colliderGraph A b
+    -- b must be C (only undirected neighbor of A)
+    unfold UndirectedEdge colliderGraph at hab
+    rcases hab with (⟨_, rfl⟩ | ⟨habs, _⟩) | (⟨_, habs⟩ | ⟨_, habs⟩)
+    · -- b = C. Now hbc : UndirectedEdge colliderGraph C c
+      unfold UndirectedEdge colliderGraph at hbc
+      rcases hbc with (⟨habs, _⟩ | ⟨habs, _⟩) | (⟨rfl, _⟩ | ⟨rfl, _⟩)
+      · exact Three.noConfusion habs  -- C = A
+      · exact Three.noConfusion habs  -- C = B
+      · -- c = A, but hac : A ≠ A, contradiction
+        exact absurd rfl hac
+      · -- c = B. Triple is ⟨A, C, B⟩. It's blocked → contradicts IsActive.
+        exact hAct (collider_triple_ACB_blocked
+          (show UndirectedEdge colliderGraph Three.A Three.C from
+            Or.inl (Or.inl ⟨rfl, rfl⟩))
+          (show UndirectedEdge colliderGraph Three.C Three.B from
+            Or.inr (Or.inr ⟨rfl, rfl⟩))
+          (by decide))
+    · exact Three.noConfusion habs  -- A = B
+    · exact Three.noConfusion habs  -- A = C
+    · exact Three.noConfusion habs  -- A = C
+
+/-! ### Collider StandardBorelSpace instances -/
+
+instance colliderBN_stateSpace_standardBorel (v : Three) :
+    StandardBorelSpace (colliderBN.stateSpace v) := by
+  dsimp [colliderBN]; infer_instance
+
+instance colliderBN_jointSpace_standardBorel :
+    StandardBorelSpace colliderBN.JointSpace := by
+  dsimp [BayesianNetwork.JointSpace]; infer_instance
+
+/-! ### Collider graph-structural helpers -/
+
+/-- In the collider A → C ← B, node A has no parents. -/
+theorem collider_parents_A : colliderBN.parents Three.A = ∅ := by
+  ext u
+  unfold BayesianNetwork.parents DirectedGraph.parents colliderBN colliderGraph
+  simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+  intro h
+  rcases h with ⟨rfl, h⟩ | ⟨rfl, h⟩ <;> exact Three.noConfusion h
+
+theorem collider_graph_parents_A :
+    colliderBN.graph.parents Three.A = (∅ : Set Three) := by
+  simpa [BayesianNetwork.parents] using collider_parents_A
+
+/-- In the collider, the only descendant of A is C (via BN.descendants). -/
+private theorem collider_descendants_A :
+    colliderBN.descendants Three.A = {Three.C} := by
+  ext v
+  unfold BayesianNetwork.descendants DirectedGraph.descendants
+  simp only [Set.mem_setOf_eq, Set.mem_singleton_iff]
+  constructor
+  · intro ⟨hreach, hne⟩
+    cases hreach with
+    | refl => exact absurd rfl hne
+    | step hedge htail =>
+      unfold colliderGraph at hedge
+      rcases hedge with ⟨_, rfl⟩ | ⟨habs, _⟩
+      · cases htail with
+        | refl => rfl
+        | step hedge' _ =>
+          unfold colliderGraph at hedge'
+          rcases hedge' with ⟨habs, _⟩ | ⟨habs, _⟩ <;> exact Three.noConfusion habs
+      · exact Three.noConfusion habs
+  · intro hv; subst hv
+    exact ⟨DirectedGraph.Path.step
+      (show colliderGraph.edges Three.A Three.C from Or.inl ⟨rfl, rfl⟩)
+      (DirectedGraph.Path.refl _), by decide⟩
+
+private theorem collider_graph_descendants_A :
+    colliderBN.graph.descendants Three.A = {Three.C} := by
+  simpa [BayesianNetwork.descendants] using collider_descendants_A
+
+/-- In the collider, nonDescendantsExceptParentsAndSelf(A) = {B}. -/
+theorem collider_nonDescExceptParentsAndSelf_A :
+    colliderBN.nonDescendantsExceptParentsAndSelf Three.A = ({Three.B} : Set Three) := by
+  ext u
+  cases u <;>
+    simp [BayesianNetwork.nonDescendantsExceptParentsAndSelf,
+      collider_graph_descendants_A, collider_graph_parents_A]
+
+/-- Local Markov condition at A in colliderBN gives A ⊥ {B} | ∅.
+Since parents(A) = ∅ and nonDescExceptParentsAndSelf(A) = {B}. -/
+theorem collider_condIndep_AB_given_empty_of_localMarkov
+    [StandardBorelSpace colliderBN.JointSpace]
+    (μ : MeasureTheory.Measure colliderBN.JointSpace)
+    [MeasureTheory.IsFiniteMeasure μ]
+    [HasLocalMarkovProperty colliderBN μ] :
+    CondIndepVertices colliderBN μ ({Three.A} : Set Three) ({Three.B} : Set Three) ∅ := by
+  have hmarkovA :=
+    HasLocalMarkovProperty.markov_condition (bn := colliderBN) (μ := μ) Three.A
+  simpa [BayesianNetwork.LocalMarkovCondition,
+    collider_nonDescExceptParentsAndSelf_A, collider_graph_parents_A] using hmarkovA
+
 /-! ## Alarm Network (WIP) -/
 
 /-- Five-node type for the Alarm network. -/

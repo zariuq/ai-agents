@@ -110,6 +110,154 @@ theorem query_revise {W₁ W₂ : State} {q : Query} {e₁ e₂ : Evidence} :
 
 end WMJudgment
 
+/-! ## Context-indexed WM judgments -/
+
+/-- Context-indexed WM judgment: a posterior state is derivable from a set of axiom states.
+
+Unlike `WMJudgment` (where any state is derivable via `axiom`), `WMJudgmentCtx Γ W`
+asserts that `W` is built only from states in `Γ` (via revision). This tightens the
+trust boundary: only evidence from approved sources contributes to conclusions.
+
+Use cases:
+- **Provenance**: track which data sources contributed to a posterior
+- **Trust boundaries**: restrict inferences to trusted evidence pools
+- **Composition**: combine independently derived posteriors with `revise` -/
+inductive WMJudgmentCtx {State : Type*} [EvidenceType State]
+    (Γ : Set State) : State → Prop
+  | base (W : State) (hW : W ∈ Γ) : WMJudgmentCtx Γ W
+  | revise {W₁ W₂ : State} :
+      WMJudgmentCtx Γ W₁ → WMJudgmentCtx Γ W₂ → WMJudgmentCtx Γ (W₁ + W₂)
+
+notation:50 "⊢wm[" Γ "] " W => WMJudgmentCtx Γ W
+
+/-- Query judgment under a context: extracted evidence from a state derivable in Γ. -/
+def WMQueryJudgmentCtx {State Query : Type*} [EvidenceType State] [WorldModel State Query]
+    (Γ : Set State) (W : State) (q : Query) (e : Evidence) : Prop :=
+  WMJudgmentCtx Γ W ∧ e = WorldModel.evidence (State := State) (Query := Query) W q
+
+notation:50 "⊢q[" Γ "] " W " ⇓ " q " ↦ " e => WMQueryJudgmentCtx Γ W q e
+
+namespace WMJudgmentCtx
+
+variable {State : Type*} [EvidenceType State]
+
+/-- Monotonicity: enlarging the context preserves derivability. -/
+theorem mono {Γ Δ : Set State} {W : State} (hSub : Γ ⊆ Δ)
+    (h : ⊢wm[Γ] W) : ⊢wm[Δ] W := by
+  induction h with
+  | base W hW => exact .base W (hSub hW)
+  | revise _ _ ih₁ ih₂ => exact .revise ih₁ ih₂
+
+/-- The universal context recovers the original (context-free) judgment. -/
+theorem of_univ {W : State} (h : ⊢wm W) : ⊢wm[Set.univ] W := by
+  induction h with
+  | «axiom» W => exact .base W (Set.mem_univ W)
+  | revise _ _ ih₁ ih₂ => exact .revise ih₁ ih₂
+
+/-- Every context-indexed derivation is also a context-free derivation. -/
+theorem toWMJudgment {Γ : Set State} {W : State} (h : ⊢wm[Γ] W) : ⊢wm W := by
+  induction h with
+  | base W _ => exact .axiom W
+  | revise _ _ ih₁ ih₂ => exact .revise ih₁ ih₂
+
+/-- Context composition: revising states from different contexts yields a state
+derivable from the union of contexts. -/
+theorem union_revise {Γ₁ Γ₂ : Set State} {W₁ W₂ : State}
+    (h₁ : ⊢wm[Γ₁] W₁) (h₂ : ⊢wm[Γ₂] W₂) :
+    ⊢wm[Γ₁ ∪ Γ₂] (W₁ + W₂) :=
+  .revise (mono Set.subset_union_left h₁) (mono Set.subset_union_right h₂)
+
+variable {Query : Type*} [WorldModel State Query]
+
+/-- Query from a context-indexed base state. -/
+theorem query_of_base (Γ : Set State) (W : State) (hW : W ∈ Γ) (q : Query) :
+    ⊢q[Γ] W ⇓ q ↦ (WorldModel.evidence (State := State) (Query := Query) W q) :=
+  ⟨.base W hW, rfl⟩
+
+/-- Query revision under contexts. -/
+theorem query_revise {Γ : Set State} {W₁ W₂ : State} {q : Query} {e₁ e₂ : Evidence}
+    (h₁ : ⊢q[Γ] W₁ ⇓ q ↦ e₁) (h₂ : ⊢q[Γ] W₂ ⇓ q ↦ e₂) :
+    ⊢q[Γ] (W₁ + W₂) ⇓ q ↦ (e₁ + e₂) := by
+  rcases h₁ with ⟨hW₁, rfl⟩
+  rcases h₂ with ⟨hW₂, rfl⟩
+  refine ⟨.revise hW₁ hW₂, ?_⟩
+  simpa using
+    (WorldModel.evidence_add' (State := State) (Query := Query) W₁ W₂ q).symm
+
+end WMJudgmentCtx
+
+/-! ## Multiset-indexed WM judgments (provenance-multiplicity-aware)
+
+`WMJudgmentMulti` parallels `WMJudgmentCtx` but uses `Multiset State` instead of
+`Set State`. This preserves provenance multiplicity: if the same CPT observation
+is used twice (independently), the multiset `{|cpt, cpt|}` records both uses,
+whereas `Set` would collapse to `{cpt}`.
+
+Key design choices:
+- `base` checks `W ∈ Γ` where `∈` is multiset membership
+- `≤` (submultiset) replaces `⊆` for monotonicity
+- `+` (multiset sum) replaces `∪` for composition
+-/
+
+/-- Multiset-indexed WM judgment: tracks provenance with multiplicity. -/
+inductive WMJudgmentMulti {State : Type*} [EvidenceType State]
+    (Γ : Multiset State) : State → Prop
+  | base (W : State) (hW : W ∈ Γ) : WMJudgmentMulti Γ W
+  | revise {W₁ W₂ : State} :
+      WMJudgmentMulti Γ W₁ → WMJudgmentMulti Γ W₂ → WMJudgmentMulti Γ (W₁ + W₂)
+
+notation:50 "⊢wmm[" Γ "] " W => WMJudgmentMulti Γ W
+
+namespace WMJudgmentMulti
+
+variable {State : Type*} [EvidenceType State]
+
+/-- Monotonicity: enlarging the multiset (submultiset) preserves derivability. -/
+theorem mono {Γ Δ : Multiset State} {W : State} (hSub : Γ ≤ Δ)
+    (h : ⊢wmm[Γ] W) : ⊢wmm[Δ] W := by
+  induction h with
+  | base W hW => exact .base W (Multiset.mem_of_le hSub hW)
+  | revise _ _ ih₁ ih₂ => exact .revise ih₁ ih₂
+
+/-- Bridge to Set-based context: forget multiplicity. -/
+theorem toCtx {Γ : Multiset State} {W : State} (h : ⊢wmm[Γ] W) :
+    ⊢wm[{x | x ∈ Γ}] W := by
+  induction h with
+  | base W hW => exact .base W hW
+  | revise _ _ ih₁ ih₂ => exact .revise ih₁ ih₂
+
+/-- Every context-indexed (Multiset) derivation is also context-free. -/
+theorem toWMJudgment {Γ : Multiset State} {W : State} (h : ⊢wmm[Γ] W) : ⊢wm W := by
+  induction h with
+  | base W _ => exact .axiom W
+  | revise _ _ ih₁ ih₂ => exact .revise ih₁ ih₂
+
+/-- Composition: revising states from different multiset contexts yields a state
+derivable from the combined multiset. -/
+theorem add_revise {Γ₁ Γ₂ : Multiset State} {W₁ W₂ : State}
+    (h₁ : ⊢wmm[Γ₁] W₁) (h₂ : ⊢wmm[Γ₂] W₂) :
+    ⊢wmm[Γ₁ + Γ₂] (W₁ + W₂) :=
+  .revise (mono (Multiset.le_add_right Γ₁ Γ₂) h₁)
+    (mono (Multiset.le_add_left Γ₂ Γ₁) h₂)
+
+/-- A singleton multiset derives its sole element. -/
+theorem singleton_derivable (W : State) : ⊢wmm[{W}] W :=
+  .base W (Multiset.mem_singleton_self W)
+
+/-- The sum of a nonempty multiset is derivable from it. -/
+theorem sum_derivable (Γ : Multiset State) (hne : Γ ≠ 0) :
+    ⊢wmm[Γ] Γ.sum := by
+  induction Γ using Multiset.induction_on with
+  | empty => exact absurd rfl hne
+  | cons a s ih =>
+    rw [Multiset.sum_cons]
+    by_cases hs : s = 0
+    · subst hs; simp; exact singleton_derivable a
+    · exact .revise (.base a (Multiset.mem_cons_self a s))
+        (mono (Multiset.le_cons_self s a) (ih hs))
+
+end WMJudgmentMulti
+
 /-! ## Standard prop/link wrappers (when `Query = PLNQuery Atom`) -/
 
 namespace PLNQuery

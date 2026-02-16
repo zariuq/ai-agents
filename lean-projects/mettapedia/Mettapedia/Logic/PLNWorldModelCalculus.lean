@@ -83,6 +83,13 @@ theorem apply {r : WMRewriteRule State Query} {W : State} :
   refine ⟨hW, ?_⟩
   exact r.sound hside W
 
+/-- Apply a rewrite rule to a context-derivable WM state. -/
+theorem applyCtx {r : WMRewriteRule State Query} {Γ : Set State} {W : State} :
+    r.side → (⊢wm[Γ] W) → (⊢q[Γ] W ⇓ r.conclusion ↦ r.derive W) := by
+  intro hside hW
+  refine ⟨hW, ?_⟩
+  exact r.sound hside W
+
 end WMRewriteRule
 
 /-! ## Example templates: Σ-guarded rewrites -/
@@ -151,6 +158,16 @@ def dsep_rewrite
 
   end RewriteExamples
 
+/-! ## Strength judgments (context-indexed) -/
+
+/-- Context-indexed strength judgment: a scalar view of a query from a Γ-derivable state. -/
+def WMStrengthJudgmentCtx {State Query : Type*} [EvidenceType State] [WorldModel State Query]
+    (Γ : Set State) (W : State) (q : Query) (s : ℝ≥0∞) : Prop :=
+  WMJudgmentCtx Γ W ∧
+    s = WorldModel.queryStrength (State := State) (Query := Query) W q
+
+notation:50 "⊢s[" Γ "] " W " ⇓ " q " ↦ " s => WMStrengthJudgmentCtx Γ W q s
+
 /-! ## Strength-rewrite rules (Σ-guarded) -/
 
 structure WMStrengthRule (State Query : Type*) [EvidenceType State] [WorldModel State Query] where
@@ -168,6 +185,13 @@ variable {State Query : Type*} [EvidenceType State] [WorldModel State Query]
 
 theorem apply {r : WMStrengthRule State Query} {W : State} :
     r.side → (⊢wm W) → (⊢s W ⇓ r.conclusion ↦ r.derive W) := by
+  intro hside hW
+  refine ⟨hW, ?_⟩
+  exact r.sound hside W
+
+/-- Apply a strength rule to a context-derivable WM state. -/
+theorem applyCtx {r : WMStrengthRule State Query} {Γ : Set State} {W : State} :
+    r.side → (⊢wm[Γ] W) → (⊢s[Γ] W ⇓ r.conclusion ↦ r.derive W) := by
   intro hside hW
   refine ⟨hW, ?_⟩
   exact r.sound hside W
