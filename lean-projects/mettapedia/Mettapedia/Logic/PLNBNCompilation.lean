@@ -144,6 +144,45 @@ noncomputable instance [Fintype V] [DecidableEq V] :
     dsimp [evidence]
     exact h
 
+/-! ### Singleton-CPT bridge -/
+
+/-- For a singleton-CPT state, evidence reduces to the single CPT's evidence. -/
+lemma evidence_singleton [Fintype V] [DecidableEq V]
+    (cpt : bn.DiscreteCPT)
+    (q : PLNQuery (BNQuery.Atom (bn := bn))) :
+    evidence (bn := bn) ({cpt} : Multiset (bn.DiscreteCPT)) q =
+      queryEvidence (bn := bn) cpt q := by
+  unfold evidence
+  simp [Multiset.map_singleton, Multiset.sum_singleton]
+
+/-- For a singleton-CPT state, `queryStrength` equals `queryProb`.
+This bridges the WM evidence layer to the probability layer.
+Requires `queryProb cpt q ≤ 1` (a probability bound). -/
+theorem queryStrength_singleton_eq_queryProb [Fintype V] [DecidableEq V]
+    (cpt : bn.DiscreteCPT) (q : PLNQuery (BNQuery.Atom (bn := bn)))
+    (hq : queryProb (bn := bn) cpt q ≤ 1) :
+    WorldModel.queryStrength
+      ({cpt} : Multiset (bn.DiscreteCPT)) q =
+      queryProb (bn := bn) cpt q := by
+  unfold WorldModel.queryStrength
+  have hev : WorldModel.evidence ({cpt} : Multiset (bn.DiscreteCPT)) q =
+      queryEvidence (bn := bn) cpt q := by
+    show evidence (bn := bn) ({cpt} : Multiset (bn.DiscreteCPT)) q = _
+    exact evidence_singleton cpt q
+  rw [hev]
+  show Evidence.toStrength (evidenceOfProb (queryProb (bn := bn) cpt q)) = _
+  -- toStrength (evidenceOfProb p) = p when p ≤ 1
+  unfold Evidence.toStrength evidenceOfProb Evidence.total
+  simp only
+  split
+  · rename_i h
+    have : queryProb (bn := bn) cpt q + (1 - queryProb (bn := bn) cpt q) = 1 := by
+      rw [add_comm]; exact tsub_add_cancel_of_le hq
+    rw [this] at h; exact absurd h one_ne_zero
+  · have : queryProb (bn := bn) cpt q + (1 - queryProb (bn := bn) cpt q) = 1 := by
+      rw [add_comm]; exact tsub_add_cancel_of_le hq
+    rw [this]; exact div_one _
+
 lemma wmqueryeq_of_prob_eq
     [Fintype V] [DecidableEq V]
     (q₁ q₂ : PLNQuery (BNQuery.Atom (bn := bn)))

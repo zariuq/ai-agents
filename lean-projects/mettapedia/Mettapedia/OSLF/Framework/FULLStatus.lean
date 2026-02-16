@@ -6,9 +6,12 @@ import Mettapedia.GSLT.Topos.PredicateFibration
 import Mettapedia.OSLF.Framework.ToposReduction
 import Mettapedia.OSLF.Framework.BeckChevalleyOSLF
 import Mettapedia.OSLF.Formula
+import Mettapedia.OSLF.Decidability
 import Mettapedia.OSLF.Framework.TinyMLInstance
 import Mettapedia.OSLF.Framework.MeTTaMinimalInstance
 import Mettapedia.OSLF.Framework.MeTTaFullInstance
+import Mettapedia.Languages.GF.WorldModelSemantics
+import Mettapedia.OSLF.QuantifiedFormula
 
 /-!
 # OSLF FULL Status Tracker
@@ -89,6 +92,31 @@ def tracker : List Milestone :=
       status := .done
       codeRef := "Mettapedia/OSLF/Framework/BeckChevalleyOSLF.lean: presheaf_beckChevalley_square_direct / representable_patternPred_beckChevalley / representable_commDi_patternPred_beckChevalley / representable_commDi_patternPred_beckChevalley_of_pathSemLiftPkg / representable_commDi_bc_and_graphDiamond_of_pathSemLiftPkg / commDi_diamond_graphObj_square_direct; Mettapedia/OSLF/Framework/TinyMLInstance.lean: tinyML_checker_sat_to_pathSemClosed_commDi_bc_graph / tinyML_checker_sat_to_pathSemClosed_commDi_bc_graph_of_liftEq; Mettapedia/OSLF/Framework/MeTTaMinimalInstance.lean: mettaMinimal_checker_sat_to_pathSemClosed_commDi_bc_graph / mettaMinimal_checker_sat_to_pathSemClosed_commDi_bc_graph_of_liftEq / mettaMinimal_checker_sat_to_pathSemClosed_commDi_bc_graph_auto; Mettapedia/OSLF/Framework/MeTTaFullInstance.lean: mettaFull_checker_sat_to_pathSemClosed_commDi_bc_graph / mettaFull_checker_sat_to_pathSemClosed_commDi_bc_graph_auto / mettaFull_checkLangUsing_sat_sound_specAtoms"
       note := "Lifted-base substitution square is consumed end-to-end through package-based COMM/path-semantics transport with concrete non-rho checker→fiber→PathSemClosed BC+graph theorems for TinyML, MeTTaMinimal, and MeTTaFull." }
+  , { area := "GF Evidence Semantics"
+      title := "GF → OSLF → Evidence pipeline with canonical interface"
+      status := .done
+      codeRef := "Mettapedia/Languages/GF/WorldModelSemantics.lean: GFSemantics / gfRGLSemantics / gfWMFormulaSemE"
+      note := "Canonical GFSemantics record bundles atomQuery + lang + injective proof. Evidence and threshold semantics derived. Active-passive evidence transparency proved." }
+  , { area := "GF Evidence Semantics"
+      title := "Temporal tense bridge (past/present/future)"
+      status := .done
+      codeRef := "Mettapedia/Languages/GF/WorldModelSemantics.lean: langReduces_pastTense / gfWMFormulaSemE_pastTense_transparent / past_present_patterns_differ / temporal_irreducible / present_does_not_entail_past_sem"
+      note := "Tense rewrites TPast→⊛temporal(cl,-1), TPres→⊛temporal(cl,0), TFut→⊛temporal(cl,1). Evidence transparency and structural separation proved." }
+  , { area := "GF Evidence Semantics"
+      title := "Presupposition as evidence tensor-gating"
+      status := .done
+      codeRef := "Mettapedia/Logic/OSLFEvidenceSemantics.lean: presupGatedSemE / presupGated_one_presup / presupGated_bot_presup; Mettapedia/Languages/GF/WorldModelSemantics.lean: definiteDescriptionEvidence / negation_preserves_definite_presup / conditional_filters_definite_presup"
+      note := "Presupposition = tensor gating. Projection laws: negation preserves, conditional filters. Definite description bridge with existence presupposition." }
+  , { area := "GF Evidence Semantics"
+      title := "Quantified formulas with scope ambiguity"
+      status := .done
+      codeRef := "Mettapedia/OSLF/QuantifiedFormula.lean: QFormula / qsemE / iSup_iInf_le_iInf_iSup; Mettapedia/Languages/GF/WorldModelSemantics.lean: surfaceScopeReading / inverseScopeReading / inverse_scope_le_surface_scope_evidence"
+      note := "QFormula extends OSLFFormula with ∀/∃. Environment-based semantics. Scope ordering: inverse (specific) ≤ surface (non-specific)." }
+  , { area := "GF Evidence Semantics"
+      title := "Anaphora as variable binding"
+      status := .done
+      codeRef := "Mettapedia/Languages/GF/WorldModelSemantics.lean: anaphoricDiscourse / nonAnaphoricDiscourse / iSup_inf_le_inf_iSup"
+      note := "Coreference modeled via shared variable binding in QFormula. Anaphoric reading ≤ non-anaphoric (same entity is stronger than different entities)." }
   ]
 
 /-- Count milestones with a given status. -/
@@ -101,7 +129,7 @@ def remaining : List Milestone :=
 
 /-- Quick sanity check: current tracked FULL-OSLF milestones are all done. -/
 theorem remaining_eq_nil : remaining = [] := by
-  simp [remaining, tracker]
+  decide
 
 /-! ## Code-Reference Anchors
 
@@ -204,5 +232,45 @@ These checks tie tracker statements to concrete constants in the codebase.
 #check @Mettapedia.OSLF.Framework.MeTTaFullInstance.mettaFull_checker_sat_to_pathSemClosed_commDi_bc_graph
 #check @Mettapedia.OSLF.Framework.MeTTaFullInstance.mettaFull_checker_sat_to_pathSemClosed_commDi_bc_graph_auto
 #check @Mettapedia.OSLF.Framework.MeTTaFullInstance.mettaFull_checkLangUsing_sat_sound_specAtoms
+
+-- GF Evidence Semantics pipeline
+#check @Mettapedia.Languages.GF.WorldModelSemantics.GFSemantics
+#check @Mettapedia.Languages.GF.WorldModelSemantics.gfRGLSemantics
+#check @Mettapedia.Languages.GF.WorldModelSemantics.gfWMFormulaSemE
+#check @Mettapedia.Languages.GF.WorldModelSemantics.gfWMFormulaSemE_activePassive_transparent
+#check @Mettapedia.Languages.GF.WorldModelSemantics.langReduces_pastTense
+#check @Mettapedia.Languages.GF.WorldModelSemantics.gfWMFormulaSemE_pastTense_transparent
+#check @Mettapedia.Languages.GF.WorldModelSemantics.past_present_patterns_differ
+#check @Mettapedia.Languages.GF.WorldModelSemantics.temporal_irreducible
+#check @Mettapedia.Languages.GF.WorldModelSemantics.present_does_not_entail_past_sem
+#check @Mettapedia.Languages.GF.WorldModelSemantics.definiteDescriptionEvidence
+#check @Mettapedia.Languages.GF.WorldModelSemantics.negation_preserves_definite_presup
+#check @Mettapedia.Languages.GF.WorldModelSemantics.conditional_filters_definite_presup
+#check @Mettapedia.Languages.GF.WorldModelSemantics.inverse_scope_le_surface_scope_evidence
+#check @Mettapedia.Languages.GF.WorldModelSemantics.iSup_inf_le_inf_iSup
+-- Quantified formulas
+#check @Mettapedia.OSLF.QuantifiedFormula.QFormula
+#check @Mettapedia.OSLF.QuantifiedFormula.qsemE
+#check @Mettapedia.OSLF.QuantifiedFormula.qsemE_forall_le
+#check @Mettapedia.OSLF.QuantifiedFormula.qsemE_exists_le
+#check @Mettapedia.OSLF.QuantifiedFormula.qsemE_forall_le_exists
+#check @Mettapedia.OSLF.QuantifiedFormula.iSup_iInf_le_iInf_iSup
+-- Presupposition layer
+#check @Mettapedia.Logic.OSLFEvidenceSemantics.presupGatedSemE
+#check @Mettapedia.Logic.OSLFEvidenceSemantics.presupGated_one_presup
+#check @Mettapedia.Logic.OSLFEvidenceSemantics.presupGated_bot_presup
+#check @Mettapedia.Logic.OSLFEvidenceSemantics.negation_preserves_presup
+-- Temporal semantics
+#check @Mettapedia.Logic.OSLFEvidenceSemantics.temporalPattern
+#check @Mettapedia.Logic.OSLFEvidenceSemantics.lagLeadIdentity
+#check @Mettapedia.Logic.OSLFEvidenceSemantics.predictiveImplication_mp
+#check @Mettapedia.Logic.OSLFEvidenceSemantics.sequentialAnd_le_left
+
+-- Decidability & reflection
+#check @Mettapedia.OSLF.Formula.semFuel
+#check @Mettapedia.OSLF.Formula.check_sat_iff_semFuel
+#check @Mettapedia.OSLF.Formula.semFuel_implies_sem
+#check @Mettapedia.OSLF.Formula.checker_not_complete_global
+#check @Mettapedia.OSLF.Formula.checker_incomplete_box
 
 end Mettapedia.OSLF.Framework.FULLStatus

@@ -71,6 +71,62 @@ collapses to PLN Evidence counts!
 
 ---
 
+## Where are the Lean proofs for PLN covering NB and k-NN?
+
+The core theorem-level bridges are here:
+
+- Naive Bayes bridge:
+  - `Mettapedia/Logic/PLNBayesNetInference.lean:296`
+  - `theorem PLN_tensorStrength_eq_nbPosterior`
+  - Meaning: PLN tensor-composed evidence strength equals textbook NB posterior.
+
+- k-NN bridge:
+  - `Mettapedia/Logic/PremiseSelectionKNN_PLNBridge.lean:111`
+  - `theorem PLN_hplusPos_eq_knnRelevance`
+  - Meaning: PLN revision-style evidence aggregation (`hplus` positive component)
+    exactly matches the k-NN relevance score (ENNReal form).
+
+- Ranking-transfer/equality links:
+  - `Mettapedia/Logic/PremiseSelectionOptimality.lean:333`
+    `lemma pln_inherits_nb_optimal`
+  - `Mettapedia/Logic/PremiseSelectionOptimality.lean:343`
+    `lemma pln_inherits_nb_ranking`
+  - `Mettapedia/Logic/PremiseSelectionOptimality.lean:350`
+    `lemma pln_inherits_knn_ranking`
+  - `Mettapedia/Logic/PremiseSelectionOptimality.lean:359`
+    `lemma pln_knn_ranking_eq`
+
+- Tier A→B composition spine (BN/WM/queryStrength → PLN deduction formula):
+  - `Mettapedia/Logic/PLNBNCompilation.lean:161`
+    `theorem queryStrength_singleton_eq_queryProb`
+  - `Mettapedia/Logic/PLNXiDerivedBNRules.lean:464`
+    `theorem xi_deduction_queryStrength_eq_plnDeduction_of_chainBN`
+  - Denominator safety:
+    - `Mettapedia/Logic/PLNXiDerivedBNRules.lean:518`
+      `theorem plnStrength_lt_one`
+    - `Mettapedia/Logic/PLNXiDerivedBNRules.lean:530`
+      `theorem plnDeductionStrength_denom_pos`
+
+MeTTa formula parity anchors:
+
+- `Mettapedia/Implementation/MettaVerification.lean:77`
+  `theorem metta_deduction_correct`
+- `Mettapedia/Implementation/MettaVerification.lean:98`
+  `theorem smallest_intersection_correct`
+
+Scope note (important): this does **not** claim full semantic parity for every
+`lib_pln.metta` rule. See:
+
+- `Mettapedia/Implementation/PLNParityChecklist.lean:66` (WIP/heuristic entries)
+- `Mettapedia/Implementation/PLNParityChecklist.lean:91` (remaining derivation TODO)
+- `Mettapedia/Logic/PLNLinkCalculusSoundness.lean:17`
+  (current soundness focus is strength-level; full weight/evidence soundness is separate).
+- The current end-to-end Tier A→B composition theorem in
+  `Mettapedia/Logic/PLNXiDerivedBNRules.lean:464` is specialized to `val = true`
+  events in the chain-BN instantiation.
+
+---
+
 ## Subdirectories
 
 ### Comparison/ (3 files)

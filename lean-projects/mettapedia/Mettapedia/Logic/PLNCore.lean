@@ -68,6 +68,19 @@ This module is a curated import surface for the currently theorem-complete PLN s
   normalized sequential tensor update) with role/ranking wrappers
   (`PremiseSelectionBestPLNDraft`)
 - Soundness/completeness tradeoff characterization (`SoundnessCompleteness`)
+- Canonical API with 3-tier theorem index (`PLNCanonicalAPI`)
+
+## Where are the Lean proofs that PLN covers NB and k-NN?
+
+See `Mettapedia/Logic/README.md` § "Where are the Lean proofs for PLN covering NB and k-NN?"
+for exact file/line references. The key theorems are:
+
+- **NB bridge**: `PLN_tensorStrength_eq_nbPosterior` (`PLNBayesNetInference:296`)
+- **k-NN bridge**: `PLN_hplusPos_eq_knnRelevance` (`PremiseSelectionKNN_PLNBridge:111`)
+- **Ranking transfer**: `pln_inherits_nb_optimal`, `pln_inherits_nb_ranking`,
+  `pln_inherits_knn_ranking`, `pln_knn_ranking_eq` (`PremiseSelectionOptimality:333–369`)
+
+All are fully proved (0 sorry).
 
 Files with active proof debt are intentionally *not* re-exported here; those are grouped in
 `PLNExperimental`.

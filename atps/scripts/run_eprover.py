@@ -31,19 +31,23 @@ EPROVER = "/home/zar/claude/atps/eprover-standard/PROVER/eprover"
 FORMULA_RE = re.compile(r"^(fof|cnf)\(([^,]+),\s*([^,]+),")
 
 
-def run_one(problem_file, timeout, out_file):
+def run_one(problem_file, timeout, out_file, use_p=True):
     """Run E prover on one problem, save output to out_file."""
     try:
+        cmd = [
+            "nice", "-n", "19",
+            EPROVER,
+            "--free-numbers",
+            "--auto-schedule",
+        ]
+        if use_p:
+            cmd.append("-p")
+        cmd.extend([
+            f"--cpu-limit={timeout}",
+            str(problem_file),
+        ])
         result = subprocess.run(
-            [
-                "nice", "-n", "19",
-                EPROVER,
-                "--free-numbers",
-                "--auto-schedule",
-                "-p",
-                f"--cpu-limit={timeout}",
-                str(problem_file),
-            ],
+            cmd,
             capture_output=True,
             text=True,
             timeout=timeout + 10,
@@ -89,7 +93,7 @@ def create_filtered_problem(problem_file, selected_axioms, output_file):
 
 def _run_problem(args_tuple):
     """Worker function for parallel execution."""
-    pname, problems_dir, selections, timeout, output_dir, tmpdir = args_tuple
+    pname, problems_dir, selections, timeout, output_dir, tmpdir, use_p = args_tuple
     pfile = Path(problems_dir) / pname
     out_file = Path(output_dir) / f"{pname}.out"
 
@@ -101,7 +105,7 @@ def _run_problem(args_tuple):
         create_filtered_problem(pfile, selections[pname], filtered)
         pfile = filtered
 
-    proved = run_one(pfile, timeout, out_file)
+    proved = run_one(pfile, timeout, out_file, use_p=use_p)
 
     if selections is not None and filtered.exists():
         filtered.unlink(missing_ok=True)
@@ -116,6 +120,8 @@ def main():
     parser.add_argument("--selections", default=None, help="Selections JSON (filtered mode)")
     parser.add_argument("--timeout", type=int, default=5)
     parser.add_argument("--jobs", "-j", type=int, default=1, help="Parallel E prover jobs")
+    parser.add_argument("--no-p", action="store_true",
+                        help="Do not pass E's -p option")
     parser.add_argument("--max-problems", type=int, default=None)
     parser.add_argument("--save-results", default=None,
                         help="Save result JSON (timeout appended to name if not present)")
@@ -158,13 +164,13 @@ def main():
                     elapsed = time.time() - t0
                     print(f"  {i+1}/{total} (solved: {solved}, {elapsed:.0f}s)", flush=True)
                 _, proved = _run_problem(
-                    (pname, str(problems_dir), selections, args.timeout, str(output_dir), tmpdir))
+                    (pname, str(problems_dir), selections, args.timeout, str(output_dir), tmpdir, not args.no_p))
                 if proved:
                     solved += 1
         else:
             # Parallel
             work_items = [
-                (pname, str(problems_dir), selections, args.timeout, str(output_dir), tmpdir)
+                (pname, str(problems_dir), selections, args.timeout, str(output_dir), tmpdir, not args.no_p)
                 for pname in problems
             ]
             done_count = 0

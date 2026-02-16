@@ -206,6 +206,71 @@ def allIdentityRewrites : List RewriteRule :=
   [ useNElimRewrite, positAElimRewrite, useCompElimRewrite
   , useVElimRewrite, useN2ElimRewrite, useA2ElimRewrite ]
 
+/-! ### Semantic Rewrites
+
+Beyond identity-wrapper eliminations, some GF constructor combinations have
+genuine semantic entailment relationships captured as directional rewrites. -/
+
+/-- Active-passive rewrite: PredVP(np₁, ComplSlash(SlashV2a(v), np₂)) ⇝ PredVP(np₂, PassV2(v)).
+
+    "np₁ verbs np₂" reduces to "np₂ is verbed" — the agentless passive is a
+    semantic consequence of the active clause (the agent np₁ is dropped).
+
+    Direction: active → passive.  The converse does NOT hold in general:
+    "Mary is loved" does not entail "John loves Mary" for any specific John. -/
+def activePassiveRewrite : RewriteRule :=
+  { name := "ActivePassive"
+  , typeContext := [("v", TypeExpr.base "V2"), ("np1", TypeExpr.base "NP"),
+                    ("np2", TypeExpr.base "NP")]
+  , premises := []
+  , left := .apply "PredVP" [.fvar "np1",
+              .apply "ComplSlash" [.apply "SlashV2a" [.fvar "v"], .fvar "np2"]]
+  , right := .apply "PredVP" [.fvar "np2", .apply "PassV2" [.fvar "v"]] }
+
+/-! ### Tense Rewrites
+
+GF tense constructors `UseCl(TTAnt(Tense, Ant), Pol, cl)` reduce to
+temporally-tagged patterns `⊛temporal(cl, T)` where T encodes the
+tense offset.  This connects GF abstract tense markers to the temporal
+evidence semantics from `OSLFEvidenceSemantics.lean`.
+
+Convention: present = 0, past = -1, future = 1. -/
+
+/-- Present tense: UseCl(TTAnt(TPres, ASimul), PPos, cl) ⇝ ⊛temporal(cl, 0).
+    Present tense with positive polarity is the identity — the clause holds now. -/
+def presentTenseRewrite : RewriteRule :=
+  { name := "PresentTense"
+  , typeContext := [("cl", TypeExpr.base "Cl")]
+  , premises := []
+  , left := .apply "UseCl" [.apply "TTAnt" [.apply "TPres" [], .apply "ASimul" []], .apply "PPos" [], .fvar "cl"]
+  , right := .apply "⊛temporal" [.fvar "cl", .apply "0" []] }
+
+/-- Past tense: UseCl(TTAnt(TPast, ASimul), PPos, cl) ⇝ ⊛temporal(cl, -1).
+    The clause held at some past time (offset -1). -/
+def pastTenseRewrite : RewriteRule :=
+  { name := "PastTense"
+  , typeContext := [("cl", TypeExpr.base "Cl")]
+  , premises := []
+  , left := .apply "UseCl" [.apply "TTAnt" [.apply "TPast" [], .apply "ASimul" []], .apply "PPos" [], .fvar "cl"]
+  , right := .apply "⊛temporal" [.fvar "cl", .apply "-1" []] }
+
+/-- Future tense: UseCl(TTAnt(TFut, ASimul), PPos, cl) ⇝ ⊛temporal(cl, 1).
+    The clause will hold at some future time (offset +1). -/
+def futureTenseRewrite : RewriteRule :=
+  { name := "FutureTense"
+  , typeContext := [("cl", TypeExpr.base "Cl")]
+  , premises := []
+  , left := .apply "UseCl" [.apply "TTAnt" [.apply "TFut" [], .apply "ASimul" []], .apply "PPos" [], .fvar "cl"]
+  , right := .apply "⊛temporal" [.fvar "cl", .apply "1" []] }
+
+/-- All tense rewrites. -/
+def allTenseRewrites : List RewriteRule :=
+  [ presentTenseRewrite, pastTenseRewrite, futureTenseRewrite ]
+
+/-- All semantic entailment rewrites (active-passive + tense). -/
+def allSemanticRewrites : List RewriteRule :=
+  [ activePassiveRewrite ] ++ allTenseRewrites
+
 /-- The full GF RGL grammar as an OSLF LanguageDef.
 
     Includes all 169 core grammar functions and identity-wrapper
@@ -217,7 +282,7 @@ def gfRGLLanguageDef : LanguageDef :=
   , types := Category.allCategoryNames
   , terms := allGFGrammarRules
   , equations := [useNIdentityEquation]
-  , rewrites := allIdentityRewrites
+  , rewrites := allIdentityRewrites ++ allSemanticRewrites
   , congruenceCollections := [] }
 
 /-- Czech GF grammar — same abstract syntax as full RGL but named for Czech. -/
@@ -300,6 +365,42 @@ open Mettapedia.OSLF.MeTTaIL.Engine
   let term := Pattern.fvar "house"
   let reducts := rewriteWithContextWithPremises gfRGLLanguageDef term
   IO.println s!"house reducts ({reducts.length}): irreducible = {reducts.isEmpty}"
+
+-- Test: Active-passive rewrite.
+-- PredVP(john, ComplSlash(SlashV2a(love), mary)) ⇝ PredVP(mary, PassV2(love))
+#eval! do
+  let term := Pattern.apply "PredVP" [.fvar "john",
+    .apply "ComplSlash" [.apply "SlashV2a" [.fvar "love"], .fvar "mary"]]
+  let reducts := rewriteWithContextWithPremises gfRGLLanguageDef term
+  IO.println s!"Active->Passive reducts ({reducts.length}):"
+  for r in reducts do
+    IO.println s!"  -> {r}"
+  -- Expected: PredVP(mary, PassV2(love))
+
+-- Test: Past tense rewrite.
+-- UseCl(TTAnt(TPast, ASimul), PPos, walk_cl) ⇝ ⊛temporal(walk_cl, -1)
+#eval! do
+  let term := Pattern.apply "UseCl" [
+    .apply "TTAnt" [.apply "TPast" [], .apply "ASimul" []],
+    .apply "PPos" [],
+    .fvar "walk_cl"]
+  let reducts := rewriteWithContextWithPremises gfRGLLanguageDef term
+  IO.println s!"PastTense reducts ({reducts.length}):"
+  for r in reducts do
+    IO.println s!"  -> {r}"
+  -- Expected: ⊛temporal(walk_cl, -1)
+
+-- Test: Present tense rewrite.
+#eval! do
+  let term := Pattern.apply "UseCl" [
+    .apply "TTAnt" [.apply "TPres" [], .apply "ASimul" []],
+    .apply "PPos" [],
+    .fvar "walk_cl"]
+  let reducts := rewriteWithContextWithPremises gfRGLLanguageDef term
+  IO.println s!"PresTense reducts ({reducts.length}):"
+  for r in reducts do
+    IO.println s!"  -> {r}"
+  -- Expected: ⊛temporal(walk_cl, 0)
 
 end ModalTests
 
