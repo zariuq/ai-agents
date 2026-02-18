@@ -57,8 +57,16 @@ def evidenceToNT_hom (X : PLNObj) (e₁ e₂ : Evidence) (h : e₁ ≤ e₂) :
 /-- Evaluate a quantified formula to an NT object. -/
 noncomputable def formulaToNT (R : Pattern → Pattern → Prop) (I : QEvidenceAtomSem)
     (Dom : Domain2) (env : VarEnv2) (φ : QFormula2) (p : Pattern)
-    (X : PLNObj) : NativeTypeTheory :=
+    (X : PLNObj) : NativeTypeBundle :=
   evidenceToNT X (qsemE2 R I Dom env φ p)
+
+/-- Signature canary for `formulaToNT`.
+    If `formulaToNT` changes shape, this definition fails to typecheck. -/
+abbrev FormulaToNTSig : Type :=
+  (Pattern → Pattern → Prop) → QEvidenceAtomSem →
+  Domain2 → VarEnv2 → QFormula2 → Pattern → PLNObj → NativeTypeBundle
+
+noncomputable def formulaToNT_signature_canary : FormulaToNTSig := formulaToNT
 
 /-- Formula entailment lifts to NT morphisms. -/
 noncomputable def formulaToNT_hom (R : Pattern → Pattern → Prop) (I : QEvidenceAtomSem)
@@ -73,8 +81,16 @@ noncomputable def formulaToNT_hom (R : Pattern → Pattern → Prop) (I : QEvide
 /-- Evaluate a grammar state to an NT object via the full combined semantics. -/
 noncomputable def grammarStateToNT (cfg : VisibleCfg) (π : WorldModelSemantics.TemporalPolicy)
     (I : QEvidenceAtomSem) (Dom : Domain2) (φ : QFormula2)
-    (s : GrammarState) (X : PLNObj) : NativeTypeTheory :=
+    (s : GrammarState) (X : PLNObj) : NativeTypeBundle :=
   evidenceToNT X (gsemE2Full cfg π I Dom φ s)
+
+/-- Signature canary for `grammarStateToNT`.
+    If `grammarStateToNT` changes shape, this definition fails to typecheck. -/
+abbrev GrammarStateToNTSig : Type :=
+  VisibleCfg → WorldModelSemantics.TemporalPolicy →
+  QEvidenceAtomSem → Domain2 → QFormula2 → GrammarState → PLNObj → NativeTypeBundle
+
+noncomputable def grammarStateToNT_signature_canary : GrammarStateToNTSig := grammarStateToNT
 
 theorem grammarStateToNT_snd (cfg : VisibleCfg) (π : WorldModelSemantics.TemporalPolicy)
     (I : QEvidenceAtomSem) (Dom : Domain2) (φ : QFormula2)

@@ -1250,6 +1250,68 @@ def ConeIsMarkov
     (s : CategoryTheory.Limits.Cone kleisliGiryGlobalDiagramFunctor) : Prop :=
   KleisliIsMarkov (s.π.app globalFinSuppPermStar)
 
+/-- View a kernel as a Kleisli(Giry) morphism. -/
+def kernelToKleisliHom
+    {A B : KleisliGiry}
+    (κ : ProbabilityTheory.Kernel A.1 B.1) :
+    A ⟶ B :=
+  ⟨fun a => κ a, κ.measurable⟩
+
+/-- View a Kleisli(Giry) morphism as a kernel. -/
+def kleisliHomToKernel
+    {A B : KleisliGiry} (f : A ⟶ B) :
+    ProbabilityTheory.Kernel A.1 B.1 where
+  toFun := f.1
+  measurable' := f.2
+
+/-- All-sources kernel-level mediator property with measurable latent mediator
+kernel output. -/
+def KernelLatentThetaUniversalMediator_allSourcesKernel : Prop :=
+  ∀ (Y : Type) [MeasurableSpace Y],
+    ∀ (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq)
+      [ProbabilityTheory.IsMarkovKernel κ],
+      KernelExchangeable (X := coordProcess) κ →
+        ∃! L : ProbabilityTheory.Kernel Y LatentTheta,
+          KernelRepresentsLatentTheta (X := coordProcess) (κ := κ) (fun y => L y)
+
+/-- All-sources kernel-level mediator property in categorical factorization
+form. -/
+def KernelLatentThetaUniversalMediator_allSourcesFactorization : Prop :=
+  ∀ (Y : Type) [MeasurableSpace Y],
+    ∀ (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq)
+      [ProbabilityTheory.IsMarkovKernel κ],
+      KernelExchangeable (X := coordProcess) κ →
+        ∃! L : ProbabilityTheory.Kernel Y LatentTheta,
+          CategoryTheory.CategoryStruct.comp
+              (kernelToKleisliHom
+                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliLatentThetaObj) L)
+              iidSequenceKleisliHomTheta =
+            kernelToKleisliHom
+              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ
+
+/-- Unrestricted all-sources kernel-level universal mediator property in
+factorization form:
+for every source type and every kernel whose Kleisli leg commutes with all
+global finitary permutation arrows, there is a unique latent kernel whose
+composition with `iidSequenceKleisliHomTheta` recovers the original leg. -/
+def KernelLatentThetaUniversalMediator_allSourcesKernelFactorization_unrestricted : Prop :=
+  ∀ (Y : Type) [MeasurableSpace Y],
+    ∀ (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
+      (∀ τ : FinSuppPermNat,
+        CategoryTheory.CategoryStruct.comp
+            (kernelToKleisliHom
+              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
+            (finSuppPermKleisliHom τ) =
+          kernelToKleisliHom
+            (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
+        ∃! L : ProbabilityTheory.Kernel Y LatentTheta,
+          CategoryTheory.CategoryStruct.comp
+              (kernelToKleisliHom
+                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliLatentThetaObj) L)
+              iidSequenceKleisliHomTheta =
+            kernelToKleisliHom
+              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ
+
 /-- Markov-only universal mediator property for a global iid-cone skeleton. -/
 def GlobalIIDConeMediatorUnique_markovOnly
     (cone : KleisliGiryIIDConeSkeleton) : Prop :=
@@ -1257,6 +1319,213 @@ def GlobalIIDConeMediatorUnique_markovOnly
     ConeIsMarkov s →
       ∃! m : s.pt ⟶ cone.apexObj,
         CategoryTheory.CategoryStruct.comp m cone.iidHom = s.π.app globalFinSuppPermStar
+
+/-- All-sources Kleisli mediator property (Markov-only):
+for every source object and every Markov cone-leg into `Bool^ℕ` that commutes
+with all finitary permutation arrows, there exists a unique Kleisli mediator
+through `iidSequenceKleisliHomTheta`. -/
+def KernelLatentThetaUniversalMediator_allSourcesKleisli_markovOnly : Prop :=
+  ∀ (A : KleisliGiry),
+    ∀ (κhom : A ⟶ KleisliBinarySeqObj),
+      KleisliIsMarkov κhom →
+      (∀ τ : FinSuppPermNat,
+        CategoryTheory.CategoryStruct.comp κhom (finSuppPermKleisliHom τ) = κhom) →
+      ∃! m : A ⟶ KleisliLatentThetaObj,
+        CategoryTheory.CategoryStruct.comp m iidSequenceKleisliHomTheta = κhom
+
+/-- All-sources Kleisli mediator property (unrestricted):
+for every source object and every commuting cone-leg into `Bool^ℕ`, there exists
+a unique Kleisli mediator through `iidSequenceKleisliHomTheta`.
+
+This is exactly the shape needed to derive full `GlobalIIDConeMediatorUnique`
+and hence `Nonempty IsLimit` for the iid cone skeleton. -/
+def KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted : Prop :=
+  ∀ (A : KleisliGiry),
+    ∀ (κhom : A ⟶ KleisliBinarySeqObj),
+      (∀ τ : FinSuppPermNat,
+        CategoryTheory.CategoryStruct.comp κhom (finSuppPermKleisliHom τ) = κhom) →
+      ∃! m : A ⟶ KleisliLatentThetaObj,
+        CategoryTheory.CategoryStruct.comp m iidSequenceKleisliHomTheta = κhom
+
+/-- Canonical measurable latent-kernel constructor from unrestricted
+all-sources kernel-level factorization witnesses. -/
+noncomputable def latentKernelOf_allSourcesKernelFactorization_unrestricted
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKernelFactorization_unrestricted)
+    {Y : Type} [MeasurableSpace Y]
+    (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq)
+    (hcomm : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp
+          (kernelToKleisliHom
+            (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
+          (finSuppPermKleisliHom τ) =
+        kernelToKleisliHom
+          (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) :
+    ProbabilityTheory.Kernel Y LatentTheta :=
+  Classical.choose (huniv Y κ hcomm)
+
+/-- Factorization equation satisfied by the canonical latent-kernel constructor. -/
+theorem latentKernelOf_allSourcesKernelFactorization_unrestricted_factorizes
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKernelFactorization_unrestricted)
+    {Y : Type} [MeasurableSpace Y]
+    (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq)
+    (hcomm : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp
+          (kernelToKleisliHom
+            (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
+          (finSuppPermKleisliHom τ) =
+        kernelToKleisliHom
+          (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) :
+    CategoryTheory.CategoryStruct.comp
+        (kernelToKleisliHom
+          (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliLatentThetaObj)
+          (latentKernelOf_allSourcesKernelFactorization_unrestricted
+            (huniv := huniv) (κ := κ) hcomm))
+        iidSequenceKleisliHomTheta =
+      kernelToKleisliHom
+        (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ :=
+  (Classical.choose_spec (huniv Y κ hcomm)).1
+
+/-- Uniqueness of the canonical latent-kernel constructor among kernels with the
+same Kleisli factorization equation. -/
+theorem latentKernelOf_allSourcesKernelFactorization_unrestricted_unique
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKernelFactorization_unrestricted)
+    {Y : Type} [MeasurableSpace Y]
+    (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq)
+    (hcomm : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp
+          (kernelToKleisliHom
+            (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
+          (finSuppPermKleisliHom τ) =
+        kernelToKleisliHom
+          (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
+    (L : ProbabilityTheory.Kernel Y LatentTheta)
+    (hL :
+      CategoryTheory.CategoryStruct.comp
+          (kernelToKleisliHom
+            (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliLatentThetaObj) L)
+          iidSequenceKleisliHomTheta =
+        kernelToKleisliHom
+          (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) :
+    L =
+      latentKernelOf_allSourcesKernelFactorization_unrestricted
+        (huniv := huniv) (κ := κ) hcomm :=
+  (Classical.choose_spec (huniv Y κ hcomm)).2 L hL
+
+/-- Bridge: unrestricted all-sources kernel-level factorization implies
+unrestricted all-sources Kleisli universality. -/
+theorem allSourcesKleisli_unrestricted_of_allSourcesKernelFactorization_unrestricted
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKernelFactorization_unrestricted) :
+    KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted := by
+  intro A κhom hκcomm
+  let κ : ProbabilityTheory.Kernel A.1 GlobalBinarySeq := kleisliHomToKernel κhom
+  have hκcomm' :
+      ∀ τ : FinSuppPermNat,
+        CategoryTheory.CategoryStruct.comp
+            (kernelToKleisliHom (A := A) (B := KleisliBinarySeqObj) κ)
+            (finSuppPermKleisliHom τ) =
+          kernelToKleisliHom (A := A) (B := KleisliBinarySeqObj) κ := by
+    intro τ
+    simpa [κ, kleisliHomToKernel, kernelToKleisliHom] using hκcomm τ
+  let L : ProbabilityTheory.Kernel A.1 LatentTheta :=
+    latentKernelOf_allSourcesKernelFactorization_unrestricted
+      (huniv := huniv) (Y := A.1) (κ := κ) hκcomm'
+  refine ⟨kernelToKleisliHom (A := A) (B := KleisliLatentThetaObj) L, ?_, ?_⟩
+  · have hfac :
+      CategoryTheory.CategoryStruct.comp
+          (kernelToKleisliHom (A := A) (B := KleisliLatentThetaObj) L)
+          iidSequenceKleisliHomTheta =
+        kernelToKleisliHom (A := A) (B := KleisliBinarySeqObj) κ := by
+      simpa [L] using
+        latentKernelOf_allSourcesKernelFactorization_unrestricted_factorizes
+          (huniv := huniv) (Y := A.1) (κ := κ) hκcomm'
+    simpa [κ, kleisliHomToKernel, kernelToKleisliHom] using hfac
+  · intro m hm
+    let K : ProbabilityTheory.Kernel A.1 LatentTheta := kleisliHomToKernel m
+    have hfacK :
+        CategoryTheory.CategoryStruct.comp
+            (kernelToKleisliHom (A := A) (B := KleisliLatentThetaObj) K)
+            iidSequenceKleisliHomTheta =
+          kernelToKleisliHom (A := A) (B := KleisliBinarySeqObj) κ := by
+      simpa [K, κ, kleisliHomToKernel, kernelToKleisliHom] using hm
+    have hKL : K = L := by
+      exact
+        latentKernelOf_allSourcesKernelFactorization_unrestricted_unique
+          (huniv := huniv) (Y := A.1) (κ := κ) hκcomm' K hfacK
+    apply Subtype.ext
+    funext y
+    simpa [K, L, kleisliHomToKernel, kernelToKleisliHom] using
+      congrArg (fun K' => K' y) hKL
+
+/-- A commuting Kleisli arrow into `Bool^ℕ` induces a kernel-level coordinate
+exchangeability witness. -/
+theorem kernelExchangeable_coord_of_kleisliCommutes
+    {Y : Type} [MeasurableSpace Y]
+    (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq)
+    [ProbabilityTheory.IsMarkovKernel κ]
+    (hcomm : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp
+          (kernelToKleisliHom
+            (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
+          (finSuppPermKleisliHom τ) =
+        kernelToKleisliHom
+          (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) :
+    KernelExchangeable (X := coordProcess) κ := by
+  have hglob : KernelGlobalFinitarySeqConeCommutes (Y := Y) κ := by
+    intro y τ
+    have hbind :
+        Measure.bind (κ y) (fun x => Measure.dirac (finSuppPermuteSeq τ x)) = κ y := by
+      have hcomp := hcomm τ
+      have hcomp' := congrArg (fun f => f.1 y) hcomp
+      simpa [kernelToKleisliHom] using hcomp'
+    calc
+      (κ y).map (finSuppPermuteSeq τ) =
+          Measure.bind (κ y) (fun x => Measure.dirac (finSuppPermuteSeq τ x)) := by
+            simpa using
+              (Measure.bind_dirac_eq_map
+                (m := κ y)
+                (hf := measurable_finSuppPermuteSeq τ)).symm
+      _ = κ y := hbind
+  have hprefix : KernelPrefixCone (X := coordProcess) κ :=
+    kernelGlobalFinitarySeqConeCommutes_imp_kernelPrefixCone_coord (κ := κ) hglob
+  exact (kernelExchangeable_iff_kernelPrefixCone (X := coordProcess) (κ := κ)).2 hprefix
+
+/-- Bridge: all-sources kernel-level factorization implies all-sources
+Markov-only Kleisli mediation. -/
+theorem allSourcesKleisli_markovOnly_of_allSourcesKernelFactorization
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesFactorization) :
+    KernelLatentThetaUniversalMediator_allSourcesKleisli_markovOnly := by
+  intro A κhom hmarkov hcomm
+  let κ : ProbabilityTheory.Kernel A.1 GlobalBinarySeq :=
+    kleisliHomToKernel κhom
+  haveI : ProbabilityTheory.IsMarkovKernel κ := by
+    refine ⟨?_⟩
+    intro y
+    simpa [KleisliIsMarkov, κ, kleisliHomToKernel] using hmarkov y
+  have hκcomm :
+      ∀ τ : FinSuppPermNat,
+        CategoryTheory.CategoryStruct.comp
+            (kernelToKleisliHom (A := A) (B := KleisliBinarySeqObj) κ)
+            (finSuppPermKleisliHom τ) =
+          kernelToKleisliHom (A := A) (B := KleisliBinarySeqObj) κ := by
+    intro τ
+    simpa [κ, kleisliHomToKernel, kernelToKleisliHom] using hcomm τ
+  have hκexch : KernelExchangeable (X := coordProcess) κ :=
+    kernelExchangeable_coord_of_kleisliCommutes (κ := κ) hκcomm
+  rcases huniv A.1 κ hκexch with ⟨L, hfacL, huniqL⟩
+  refine ⟨kernelToKleisliHom (A := A) (B := KleisliLatentThetaObj) L, ?_, ?_⟩
+  · simpa [κ, kleisliHomToKernel, kernelToKleisliHom] using hfacL
+  · intro m hm
+    let K : ProbabilityTheory.Kernel A.1 LatentTheta := kleisliHomToKernel m
+    have hfacK :
+        CategoryTheory.CategoryStruct.comp
+            (kernelToKleisliHom (A := A) (B := KleisliLatentThetaObj) K)
+            iidSequenceKleisliHomTheta =
+          kernelToKleisliHom (A := A) (B := KleisliBinarySeqObj) κ := by
+      simpa [K, κ, kleisliHomToKernel, kernelToKleisliHom] using hm
+    have hKL : K = L := huniqL K hfacK
+    apply Subtype.ext
+    funext y
+    simpa [K, kleisliHomToKernel, kernelToKleisliHom] using congrArg (fun K' => K' y) hKL
 
 /-- Convert the universal mediator property into a true `IsLimit` witness. -/
 noncomputable def KleisliGiryIIDConeSkeleton.isLimitOfMediatorUnique
@@ -1306,6 +1575,109 @@ theorem isLimit_implies_globalIIDConeMediatorUnique_markovOnly
   globalIIDConeMediatorUnique_markovOnly_of_globalIIDConeMediatorUnique
     cone (globalIIDConeMediatorUnique_of_isLimit cone hlim)
 
+/-- Bridge: all-sources Markov-only Kleisli mediation implies Markov-only global
+mediator uniqueness for the `iidSequenceKernelTheta` cone skeleton. -/
+theorem globalIIDConeMediatorUnique_markovOnly_of_allSourcesKleisli
+    (hcommutes : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp iidSequenceKleisliHomTheta (finSuppPermKleisliHom τ) =
+        iidSequenceKleisliHomTheta)
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_markovOnly) :
+    GlobalIIDConeMediatorUnique_markovOnly
+      (⟨KleisliLatentThetaObj, iidSequenceKleisliHomTheta, hcommutes⟩ : KleisliGiryIIDConeSkeleton) := by
+  intro s hsMarkov
+  let κhom : s.pt ⟶ KleisliBinarySeqObj := s.π.app globalFinSuppPermStar
+  have hκcomm :
+      ∀ τ : FinSuppPermNat,
+        CategoryTheory.CategoryStruct.comp κhom (finSuppPermKleisliHom τ) = κhom := by
+    intro τ
+    simpa [kleisliGiryGlobalDiagramFunctor_map] using
+      (s.π.naturality (X := globalFinSuppPermStar) (Y := globalFinSuppPermStar) τ).symm
+  have hκmarkov : KleisliIsMarkov κhom := by
+    simpa [ConeIsMarkov, κhom] using hsMarkov
+  simpa [κhom] using huniv s.pt κhom hκmarkov hκcomm
+
+/-- Bridge: unrestricted all-sources Kleisli mediation implies full global
+mediator uniqueness for the `iidSequenceKernelTheta` cone skeleton. -/
+theorem globalIIDConeMediatorUnique_of_allSourcesKleisli_unrestricted
+    (hcommutes : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp iidSequenceKleisliHomTheta (finSuppPermKleisliHom τ) =
+        iidSequenceKleisliHomTheta)
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted) :
+    GlobalIIDConeMediatorUnique
+      (⟨KleisliLatentThetaObj, iidSequenceKleisliHomTheta, hcommutes⟩ : KleisliGiryIIDConeSkeleton) := by
+  intro s
+  let κhom : s.pt ⟶ KleisliBinarySeqObj := s.π.app globalFinSuppPermStar
+  have hκcomm :
+      ∀ τ : FinSuppPermNat,
+        CategoryTheory.CategoryStruct.comp κhom (finSuppPermKleisliHom τ) = κhom := by
+    intro τ
+    simpa [kleisliGiryGlobalDiagramFunctor_map] using
+      (s.π.naturality (X := globalFinSuppPermStar) (Y := globalFinSuppPermStar) τ).symm
+  simpa [κhom] using huniv s.pt κhom hκcomm
+
+/-- Converse bridge: full global mediator uniqueness for the canonical
+`iidSequenceKernelTheta` cone implies unrestricted all-sources Kleisli
+universality. -/
+theorem allSourcesKleisli_unrestricted_of_globalIIDConeMediatorUnique
+    (hcommutes : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp iidSequenceKleisliHomTheta (finSuppPermKleisliHom τ) =
+        iidSequenceKleisliHomTheta)
+    (hmed :
+      GlobalIIDConeMediatorUnique
+        (⟨KleisliLatentThetaObj, iidSequenceKleisliHomTheta, hcommutes⟩ :
+          KleisliGiryIIDConeSkeleton)) :
+    KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted := by
+  intro A κhom hκcomm
+  let s : CategoryTheory.Limits.Cone kleisliGiryGlobalDiagramFunctor :=
+    { pt := A
+      π :=
+        { app := fun _ => κhom
+          naturality := by
+            intro j j' τ
+            cases j
+            cases j'
+            simpa [kleisliGiryGlobalDiagramFunctor_map] using (hκcomm τ).symm } }
+  rcases hmed s with ⟨m, hm, huniq⟩
+  refine ⟨m, ?_, ?_⟩
+  · simpa [s] using hm
+  · intro m' hm'
+    exact huniq m' (by simpa [s] using hm')
+
+/-- Equivalent packaging: unrestricted all-sources Kleisli universality is
+exactly full global mediator uniqueness for the canonical
+`iidSequenceKernelTheta` cone. -/
+theorem allSourcesKleisli_unrestricted_iff_globalIIDConeMediatorUnique
+    (hcommutes : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp iidSequenceKleisliHomTheta (finSuppPermKleisliHom τ) =
+        iidSequenceKleisliHomTheta) :
+    KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted ↔
+      GlobalIIDConeMediatorUnique
+        (⟨KleisliLatentThetaObj, iidSequenceKleisliHomTheta, hcommutes⟩ :
+          KleisliGiryIIDConeSkeleton) := by
+  constructor
+  · exact globalIIDConeMediatorUnique_of_allSourcesKleisli_unrestricted
+      (hcommutes := hcommutes)
+  · exact allSourcesKleisli_unrestricted_of_globalIIDConeMediatorUnique
+      (hcommutes := hcommutes)
+
+/-- Full target packaging: under unrestricted all-sources Kleisli mediation,
+the `iidSequenceKernelTheta` cone skeleton has a concrete `IsLimit` witness. -/
+theorem deFinetti_iidSequenceKleisliCone_isLimit_of_allSourcesKleisli_unrestricted
+    (hcommutes : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp iidSequenceKleisliHomTheta (finSuppPermKleisliHom τ) =
+        iidSequenceKleisliHomTheta)
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted) :
+    Nonempty
+      (CategoryTheory.Limits.IsLimit
+        ((⟨KleisliLatentThetaObj, iidSequenceKleisliHomTheta, hcommutes⟩ : KleisliGiryIIDConeSkeleton).toCone)) := by
+  have hmed :
+      GlobalIIDConeMediatorUnique
+        (⟨KleisliLatentThetaObj, iidSequenceKleisliHomTheta, hcommutes⟩ : KleisliGiryIIDConeSkeleton) :=
+    globalIIDConeMediatorUnique_of_allSourcesKleisli_unrestricted
+      (hcommutes := hcommutes) huniv
+  exact ⟨(⟨KleisliLatentThetaObj, iidSequenceKleisliHomTheta, hcommutes⟩ :
+      KleisliGiryIIDConeSkeleton).isLimitOfMediatorUnique hmed⟩
+
 /-- True equivalence: global mediator uniqueness is exactly `IsLimit` for the
 global Kleisli(Giry) iid-cone skeleton. -/
 theorem isLimit_iff_globalIIDConeMediatorUnique
@@ -1352,6 +1724,43 @@ theorem isLimit_iff_globalIIDConeMediatorUnique_iidSequenceKernelTheta
           ((iidSequenceKleisliConeSkeleton hcommutes).toCone)) ↔
       GlobalIIDConeMediatorUnique (iidSequenceKleisliConeSkeleton hcommutes) :=
   isLimit_iff_globalIIDConeMediatorUnique (iidSequenceKleisliConeSkeleton hcommutes)
+
+/-- One-hop bridge: global finitary invariance plus all-sources Markov-only
+Kleisli universality yields Markov-only global mediator uniqueness for the
+canonical `iidSequenceKernelTheta` cone. -/
+theorem globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_allSourcesKleisli
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_markovOnly) :
+    GlobalIIDConeMediatorUnique_markovOnly
+      (iidSequenceKleisliConeSkeleton
+        (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)) := by
+  exact globalIIDConeMediatorUnique_markovOnly_of_allSourcesKleisli
+    (hcommutes := iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal) huniv
+
+/-- One-hop bridge: global finitary invariance plus unrestricted all-sources
+Kleisli universality yields full global mediator uniqueness for the canonical
+`iidSequenceKernelTheta` cone. -/
+theorem globalIIDConeMediatorUnique_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted) :
+    GlobalIIDConeMediatorUnique
+      (iidSequenceKleisliConeSkeleton
+        (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)) := by
+  exact globalIIDConeMediatorUnique_of_allSourcesKleisli_unrestricted
+    (hcommutes := iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal) huniv
+
+/-- One-hop full-target packaging: global finitary invariance plus unrestricted
+all-sources Kleisli universality yields a concrete `IsLimit` witness for the
+canonical `iidSequenceKernelTheta` cone. -/
+theorem deFinetti_iidSequenceKleisliCone_isLimit_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted) :
+    Nonempty
+      (CategoryTheory.Limits.IsLimit
+        ((iidSequenceKleisliConeSkeleton
+          (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  exact deFinetti_iidSequenceKleisliCone_isLimit_of_allSourcesKleisli_unrestricted
+    (hcommutes := iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal) huniv
 
 /-- No-extra-hypothesis (beyond global finitary invariance) IsLimit-ready entry:
 it bundles

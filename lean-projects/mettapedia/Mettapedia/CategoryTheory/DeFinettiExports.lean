@@ -24,20 +24,33 @@ It re-exports the stable theorem chain needed by downstream users.
 12. `deFinettiExport_markovCore_to_kleisliRoute`
 13. `deFinettiExport_iidSequenceKernelTheta_hasIsLimit_of_globalFinitaryInvariance_and_mediatorUnique`
 14. `deFinettiExport_markovCore_to_kleisliIsLimit`
-15. `deFinettiExport_isLimit_implies_globalIIDConeMediatorUnique_markovOnly`
-16. `deFinettiExport_kernelUniversalMediator_allSources_default`
-17. `deFinettiExport_restrictedSolomonoff_prefixLaw_implies_unique_latentThetaMediator`
-18. `deFinettiExport_restrictedSolomonoff_totalOutput_implies_nupln_master_chain_and_unique_latentThetaMediator`
-19. `deFinettiExport_restrictedSolomonoff_totalOutput_and_programMassComplete_implies_nupln_master_chain_and_unique_latentThetaMediator`
+15. `deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted`
+16. `deFinettiExport_isLimit_implies_globalIIDConeMediatorUnique_markovOnly`
+17. `deFinettiExport_kernelUniversalMediator_allSources_default`
+18. `deFinettiExport_globalIIDConeMediatorUnique_markovOnly_of_allSourcesKleisli`
+19. `deFinettiExport_globalIIDConeMediatorUnique_of_allSourcesKleisli_unrestricted`
+20. `deFinettiExport_allSourcesKleisli_unrestricted_of_allSourcesKernelFactorization_unrestricted`
+21. `deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernelFactorization_unrestricted`
+22. `deFinettiExport_allSourcesKleisli_unrestricted_of_globalIIDConeMediatorUnique`
+23. `deFinettiExport_allSourcesKleisli_unrestricted_iff_globalIIDConeMediatorUnique`
+24. `deFinettiExport_iidSequenceKleisliCone_isLimit_of_allSourcesKleisli_unrestricted`
+25. `deFinettiExport_restrictedSolomonoff_prefixLaw_implies_unique_latentThetaMediator`
+26. `deFinettiExport_restrictedSolomonoff_totalOutput_implies_nupln_master_chain_and_unique_latentThetaMediator`
+27. `deFinettiExport_restrictedSolomonoff_totalOutput_and_programMassComplete_implies_nupln_master_chain_and_unique_latentThetaMediator`
 
 ## Markov-Core Route (Recommended)
 1. Use `deFinettiExport_markovCoreUniversal_iff_crossNPackageFamily` to align
    Markov-core universality with the cross-`n` package family.
 2. Use `deFinettiExport_markovCore_to_kleisliRoute` to obtain the concrete
    Kleisli(Giry) `IsLimit`-ready witness bundle.
-3. When global mediator uniqueness is available, use
-   `deFinettiExport_markovCore_to_kleisliIsLimit` for a concrete
-   `Nonempty IsLimit` witness.
+3. Prefer
+   `deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted`
+   when unrestricted all-sources Kleisli universality is available.
+4. If you have unrestricted all-sources kernel-level factorization (rather than
+   Kleisli universality directly), use
+   `deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernelFactorization_unrestricted`.
+5. Otherwise, when global mediator uniqueness is available, use
+   `deFinettiExport_markovCore_to_kleisliIsLimit`.
 -/
 
 set_option autoImplicit false
@@ -366,6 +379,41 @@ theorem deFinettiExport_markovCore_to_kleisliIsLimit
   exact deFinettiStable_markovCore_to_kleisliIsLimit
     (Y := Y) (Ω := Ω) X hcore hglobal hmed
 
+/-- Recommended alias theorem (full-target route): Markov-core universal
+mediation plus global finitary invariance and unrestricted all-sources Kleisli
+universality yield a concrete global Kleisli(Giry) `IsLimit` witness for
+`iidSequenceKernelTheta`, without a separate mediator-uniqueness hypothesis. -/
+theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  exact
+    deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+      (Y := Y) (Ω := Ω) X hcore hglobal huniv
+
+/-- Recommended alias theorem (full-target route): same as above but taking an
+unrestricted all-sources kernel-level factorization witness directly. -/
+theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernelFactorization_unrestricted
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (huniv :
+      KernelLatentThetaUniversalMediator_allSourcesKernelFactorization_unrestricted) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  exact
+    deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernelFactorization_unrestricted
+      (Y := Y) (Ω := Ω) X hcore hglobal huniv
+
 /-- Recommended export: any concrete `IsLimit` witness yields the Markov-only
 global mediator-uniqueness property for the same Kleisli cone. -/
 theorem deFinettiExport_isLimit_implies_globalIIDConeMediatorUnique_markovOnly
@@ -381,6 +429,127 @@ theorem deFinettiExport_kernelUniversalMediator_allSources_default
     (X : ℕ → Ω → Bool) :
     KernelLatentThetaUniversalMediator_allSources (Ω := Ω) X :=
   deFinettiStable_kernelUniversalMediator_allSources_default (Ω := Ω) X
+
+/-- Recommended export: all-sources Markov-only Kleisli mediator property
+implies Markov-only global mediator uniqueness for `iidSequenceKernelTheta`. -/
+theorem deFinettiExport_globalIIDConeMediatorUnique_markovOnly_of_allSourcesKleisli
+    (hcommutes : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp iidSequenceKleisliHomTheta (finSuppPermKleisliHom τ) =
+        iidSequenceKleisliHomTheta)
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_markovOnly) :
+    GlobalIIDConeMediatorUnique_markovOnly (iidSequenceKleisliConeSkeleton hcommutes) :=
+  deFinettiStable_globalIIDConeMediatorUnique_markovOnly_of_allSourcesKleisli
+    (hcommutes := hcommutes) huniv
+
+/-- Recommended export: unrestricted all-sources Kleisli mediator property
+implies full global mediator uniqueness for `iidSequenceKernelTheta`. -/
+theorem deFinettiExport_globalIIDConeMediatorUnique_of_allSourcesKleisli_unrestricted
+    (hcommutes : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp iidSequenceKleisliHomTheta (finSuppPermKleisliHom τ) =
+        iidSequenceKleisliHomTheta)
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted) :
+    GlobalIIDConeMediatorUnique (iidSequenceKleisliConeSkeleton hcommutes) :=
+  deFinettiStable_globalIIDConeMediatorUnique_of_allSourcesKleisli_unrestricted
+    (hcommutes := hcommutes) huniv
+
+/-- Recommended export: unrestricted all-sources kernel-level factorization
+implies unrestricted all-sources Kleisli universality. -/
+theorem deFinettiExport_allSourcesKleisli_unrestricted_of_allSourcesKernelFactorization_unrestricted
+    (huniv :
+      KernelLatentThetaUniversalMediator_allSourcesKernelFactorization_unrestricted) :
+    KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted :=
+  deFinettiStable_allSourcesKleisli_unrestricted_of_allSourcesKernelFactorization_unrestricted
+    huniv
+
+/-- Recommended export (converse direction): full global mediator uniqueness
+for `iidSequenceKernelTheta` implies unrestricted all-sources Kleisli
+universality. -/
+theorem deFinettiExport_allSourcesKleisli_unrestricted_of_globalIIDConeMediatorUnique
+    (hcommutes : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp iidSequenceKleisliHomTheta (finSuppPermKleisliHom τ) =
+        iidSequenceKleisliHomTheta)
+    (hmed : GlobalIIDConeMediatorUnique (iidSequenceKleisliConeSkeleton hcommutes)) :
+    KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted :=
+  deFinettiStable_allSourcesKleisli_unrestricted_of_globalIIDConeMediatorUnique
+    (hcommutes := hcommutes) hmed
+
+/-- Recommended export: unrestricted all-sources Kleisli universality is
+equivalent to full global mediator uniqueness for `iidSequenceKernelTheta`. -/
+theorem deFinettiExport_allSourcesKleisli_unrestricted_iff_globalIIDConeMediatorUnique
+    (hcommutes : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp iidSequenceKleisliHomTheta (finSuppPermKleisliHom τ) =
+        iidSequenceKleisliHomTheta) :
+    KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted ↔
+      GlobalIIDConeMediatorUnique (iidSequenceKleisliConeSkeleton hcommutes) :=
+  deFinettiStable_allSourcesKleisli_unrestricted_iff_globalIIDConeMediatorUnique
+    (hcommutes := hcommutes)
+
+/-- Recommended export (full target shape): unrestricted all-sources Kleisli
+mediator property yields a concrete `IsLimit` witness for the
+`iidSequenceKernelTheta` cone. -/
+theorem deFinettiExport_iidSequenceKleisliCone_isLimit_of_allSourcesKleisli_unrestricted
+    (hcommutes : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp iidSequenceKleisliHomTheta (finSuppPermKleisliHom τ) =
+        iidSequenceKleisliHomTheta)
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted) :
+    Nonempty
+      (CategoryTheory.Limits.IsLimit
+        ((iidSequenceKleisliConeSkeleton hcommutes).toCone)) :=
+  deFinettiStable_iidSequenceKleisliCone_isLimit_of_allSourcesKleisli_unrestricted
+    (hcommutes := hcommutes) huniv
+
+/-- Recommended export: one-hop Markov-only route for the canonical
+`iidSequenceKernelTheta` cone. -/
+theorem deFinettiExport_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_allSourcesKleisli
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_markovOnly) :
+    GlobalIIDConeMediatorUnique_markovOnly
+      (iidSequenceKleisliConeSkeleton
+        (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)) :=
+  deFinettiStable_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_allSourcesKleisli
+    (hglobal := hglobal) huniv
+
+/-- Recommended export: one-hop unrestricted mediator-uniqueness route for the
+canonical `iidSequenceKernelTheta` cone. -/
+theorem deFinettiExport_globalIIDConeMediatorUnique_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted) :
+    GlobalIIDConeMediatorUnique
+      (iidSequenceKleisliConeSkeleton
+        (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)) :=
+  deFinettiStable_globalIIDConeMediatorUnique_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+    (hglobal := hglobal) huniv
+
+/-- Recommended export (full target shape, one-hop form): global finitary
+invariance plus unrestricted all-sources Kleisli universality yields a concrete
+`IsLimit` witness for the canonical `iidSequenceKernelTheta` cone. -/
+theorem deFinettiExport_iidSequenceKleisliCone_isLimit_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted) :
+    Nonempty
+      (CategoryTheory.Limits.IsLimit
+        ((iidSequenceKleisliConeSkeleton
+          (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) :=
+  deFinettiStable_iidSequenceKleisliCone_isLimit_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+    (hglobal := hglobal) huniv
+
+/-- Recommended export: all-sources kernel-level factorization implies
+all-sources Markov-only Kleisli universality. -/
+theorem deFinettiExport_allSourcesKleisli_markovOnly_of_allSourcesKernelFactorization
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesFactorization) :
+    KernelLatentThetaUniversalMediator_allSourcesKleisli_markovOnly :=
+  deFinettiStable_allSourcesKleisli_markovOnly_of_allSourcesKernelFactorization huniv
+
+/-- Recommended export: one-hop Markov-only route from all-sources kernel-level
+factorization and global finitary invariance. -/
+theorem deFinettiExport_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_allSourcesKernelFactorization
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesFactorization) :
+    GlobalIIDConeMediatorUnique_markovOnly
+      (iidSequenceKleisliConeSkeleton
+        (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)) :=
+  deFinettiStable_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_allSourcesKernelFactorization
+    (hglobal := hglobal) huniv
 
 /-- Recommended export: true `HasLimit` packaging for each per-`n` diagram. -/
 theorem deFinettiExport_hasLimit_perN (n : ℕ) :
