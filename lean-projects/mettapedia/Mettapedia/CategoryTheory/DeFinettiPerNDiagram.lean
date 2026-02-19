@@ -383,17 +383,6 @@ theorem exchangeablePerNLimitMediatorUnique_iff_crossNPackageFamily
           (exchangeablePerNLimitMediator (Ω := Ω) X μ n hcone)
           (exchangeablePerNLimitMediator_fac (Ω := Ω) X μ n hcone)
 
-/-- Backward-compatible alias for the previous theorem name.
-Prefer `exchangeablePerNLimitMediatorUnique_iff_crossNPackageFamily`. -/
-@[deprecated exchangeablePerNLimitMediatorUnique_iff_crossNPackageFamily
-  (since := "2026-02-17")]
-theorem exchangeablePerNLimitMediatorUnique_iff_crossNLimitPackageFamily
-    (X : ℕ → Ω → Bool) :
-    ExchangeablePerNLimitMediatorUnique (Ω := Ω) X ↔
-      ∀ μ : Measure Ω, IsPrefixLawCone (Ω := Ω) X μ →
-        Nonempty (ExchangeableCrossNLimitPackage (Ω := Ω) X μ) :=
-  exchangeablePerNLimitMediatorUnique_iff_crossNPackageFamily (Ω := Ω) X
-
 /-- Non-essential but useful check theorem:
 under the cross-`n` package, any mediator satisfying cone equations at level `n`
 coincides with the canonical mediator at level `n`. -/
@@ -440,17 +429,6 @@ theorem kernelLatentThetaUniversalMediator_iff_crossNPackageFamily
       (Ω := Ω) X μ hcone⟩
   · intro _
     exact deFinettiPerNIsLimit_default (Y := Y) (Ω := Ω) X
-
-/-- Backward-compatible alias for the previous theorem name.
-Prefer `kernelLatentThetaUniversalMediator_iff_crossNPackageFamily`. -/
-@[deprecated kernelLatentThetaUniversalMediator_iff_crossNPackageFamily
-  (since := "2026-02-17")]
-theorem kernelLatentThetaUniversalMediator_iff_crossNLimitPackageFamily
-    (X : ℕ → Ω → Bool) :
-    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ↔
-      ∀ μ : Measure Ω, IsPrefixLawCone (Ω := Ω) X μ →
-        Nonempty (ExchangeableCrossNLimitPackage (Ω := Ω) X μ) :=
-  kernelLatentThetaUniversalMediator_iff_crossNPackageFamily (Y := Y) (Ω := Ω) X
 
 /-- Step 3 (rewrite bridge): connect the uniqueness theorem to the kernel-level
 universal mediator API as a substantive equivalence. -/

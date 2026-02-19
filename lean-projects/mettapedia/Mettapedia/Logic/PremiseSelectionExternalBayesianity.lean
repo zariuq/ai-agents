@@ -77,6 +77,24 @@ noncomputable def scaleScorer {Goal Fact : Type*}
     (w : ℝ≥0∞) (s : Scorer Goal Fact) (g : Goal) (f : Fact) :
     (scaleScorer w s).score g f = scaleEvidence w (s.score g f) := rfl
 
+/-- Regrade all outputs of a scorer via evidence power. -/
+noncomputable def regradeScorer {Goal Fact : Type*}
+    (w : ℝ) (s : Scorer Goal Fact) : Scorer Goal Fact :=
+  ⟨fun g f => Evidence.power (s.score g f) w⟩
+
+@[simp] lemma regradeScorer_score {Goal Fact : Type*}
+    (w : ℝ) (s : Scorer Goal Fact) (g : Goal) (f : Fact) :
+    (regradeScorer w s).score g f = Evidence.power (s.score g f) w := rfl
+
+/-- Regrade then inverse-regrade is identity on scorer outputs (nonzero exponent). -/
+@[simp] theorem regradeScorer_power_inv {Goal Fact : Type*}
+    (w : ℝ) (hw : w ≠ 0) (s : Scorer Goal Fact) :
+    regradeScorer w⁻¹ (regradeScorer w s) = s := by
+  apply Scorer.ext
+  intro g f
+  change Evidence.power (Evidence.power (s.score g f) w) w⁻¹ = s.score g f
+  simpa using (Evidence.power_power_inv (e := s.score g f) (w := w) hw)
+
 /-- Weighted pooling family (linear pool in evidence space). -/
 noncomputable def weightedFuse {Goal Fact : Type*}
     (w₁ w₂ : ℝ≥0∞) (s₁ s₂ : Scorer Goal Fact) : Scorer Goal Fact :=
@@ -169,6 +187,41 @@ theorem externalBayesianity_weighted_hplus_tensor {Goal Fact : Type*}
   · simp [weightedFuse, update, scaleScorer, scaleEvidence, Evidence.hplus_def, Evidence.tensor_def,
       add_mul, mul_assoc]
 
+/-- Staged two-expert posterior map used in selector pipelines:
+normalize each expert branch, weighted-fuse, then update with shared likelihood. -/
+noncomputable def stagedWeightedPosterior {Goal Fact : Type*}
+    (w₁ w₂ t₁ t₂ : ℝ≥0∞)
+    (s₁ s₂ likelihood : Scorer Goal Fact) : Scorer Goal Fact :=
+  update (weightedFuse w₁ w₂ (normalizeScorer t₁ s₁) (normalizeScorer t₂ s₂)) likelihood
+
+/-- Pipeline canary: staged weighted posterior commutes with push-through update. -/
+theorem stagedWeightedPosterior_commute {Goal Fact : Type*}
+    (w₁ w₂ t₁ t₂ : ℝ≥0∞)
+    (s₁ s₂ likelihood : Scorer Goal Fact) :
+    stagedWeightedPosterior w₁ w₂ t₁ t₂ s₁ s₂ likelihood =
+      weightedFuse w₁ w₂
+        (update (normalizeScorer t₁ s₁) likelihood)
+        (update (normalizeScorer t₂ s₂) likelihood) := by
+  symm
+  exact externalBayesianity_weighted_hplus_tensor
+    w₁ w₂ (normalizeScorer t₁ s₁) (normalizeScorer t₂ s₂) likelihood
+
+/-- Two-expert staged round-trip canary:
+regrade then inverse-regrade of the staged weighted posterior returns exactly the
+commuted weighted-updates form. -/
+theorem stagedWeightedPosterior_regrade_roundtrip_commute
+    {Goal Fact : Type*}
+    (w : ℝ) (hw : w ≠ 0)
+    (w₁ w₂ t₁ t₂ : ℝ≥0∞)
+    (s₁ s₂ likelihood : Scorer Goal Fact) :
+    regradeScorer w⁻¹ (regradeScorer w (stagedWeightedPosterior w₁ w₂ t₁ t₂ s₁ s₂ likelihood)) =
+      weightedFuse w₁ w₂
+        (update (normalizeScorer t₁ s₁) likelihood)
+        (update (normalizeScorer t₂ s₂) likelihood) := by
+  simp [stagedWeightedPosterior_commute (w₁ := w₁) (w₂ := w₂) (t₁ := t₁) (t₂ := t₂)
+    (s₁ := s₁) (s₂ := s₂) (likelihood := likelihood),
+    regradeScorer_power_inv (w := w) (hw := hw)]
+
 /-- Updating after finite-family pooling equals pooling updated experts. -/
 theorem update_fuseFamily_commute_left {Goal Fact ι : Type*} [Fintype ι]
     (s : ι → Scorer Goal Fact) (likelihood : Scorer Goal Fact) :
@@ -194,6 +247,36 @@ theorem externalBayesianity_fuseFamily_tensor {Goal Fact ι : Type*} [Fintype ι
     (s : ι → Scorer Goal Fact) (likelihood : Scorer Goal Fact) :
     fuseFamily (fun i => update (s i) likelihood) = update (fuseFamily s) likelihood := by
   simp [update_fuseFamily_commute_left (s := s) (likelihood := likelihood)]
+
+/-- Staged finite-family posterior map:
+normalize each expert branch, fuse family, then update with shared likelihood. -/
+noncomputable def stagedFamilyPosterior {Goal Fact ι : Type*} [Fintype ι]
+    (t : ι → ℝ≥0∞) (s : ι → Scorer Goal Fact) (likelihood : Scorer Goal Fact) :
+    Scorer Goal Fact :=
+  update (fuseFamily (fun i => normalizeScorer (t i) (s i))) likelihood
+
+/-- Pipeline canary for finite families:
+pool-then-update equals update-each-then-pool on normalized expert families. -/
+theorem stagedFamilyPosterior_commute {Goal Fact ι : Type*} [Fintype ι]
+    (t : ι → ℝ≥0∞) (s : ι → Scorer Goal Fact) (likelihood : Scorer Goal Fact) :
+    stagedFamilyPosterior t s likelihood =
+      fuseFamily (fun i => update (normalizeScorer (t i) (s i)) likelihood) := by
+  symm
+  exact externalBayesianity_fuseFamily_tensor
+    (s := fun i => normalizeScorer (t i) (s i))
+    (likelihood := likelihood)
+
+/-- Strong pipeline round-trip canary:
+after normalize/pool/update staging, regrade then inverse-regrade returns exactly
+the staged posterior and therefore commutes with the staged family map. -/
+theorem stagedFamilyPosterior_regrade_roundtrip_commute
+    {Goal Fact ι : Type*} [Fintype ι]
+    (w : ℝ) (hw : w ≠ 0)
+    (t : ι → ℝ≥0∞) (s : ι → Scorer Goal Fact) (likelihood : Scorer Goal Fact) :
+    regradeScorer w⁻¹ (regradeScorer w (stagedFamilyPosterior t s likelihood)) =
+      fuseFamily (fun i => update (normalizeScorer (t i) (s i)) likelihood) := by
+  simp [stagedFamilyPosterior_commute (t := t) (s := s) (likelihood := likelihood),
+    regradeScorer_power_inv (w := w) (hw := hw)]
 
 /-- Restricted characterization: in the weighted-linear family, two-sided neutrality forces
 `w₁ = w₂ = 1`, hence the pool is exactly `fuse`. -/

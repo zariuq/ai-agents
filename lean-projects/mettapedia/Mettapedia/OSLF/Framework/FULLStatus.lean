@@ -138,8 +138,8 @@ These checks tie tracker statements to concrete constants in the codebase.
 
 #check @Mettapedia.OSLF.Framework.TypeSynthesis.langOSLF
 #check @Mettapedia.OSLF.Framework.TypeSynthesis.rhoSetDropWitness_canonical_vs_setExt
-#check @Mettapedia.OSLF.MeTTaIL.DeclReducesWithPremises.engineWithPremisesUsing_sound
-#check @Mettapedia.OSLF.MeTTaIL.DeclReducesWithPremises.engineWithPremisesUsing_complete
+#check @Mettapedia.OSLF.MeTTaIL.DeclReducesPremises.engineWithPremisesUsing_sound
+#check @Mettapedia.OSLF.MeTTaIL.DeclReducesPremises.engineWithPremisesUsing_complete
 #check @Mettapedia.OSLF.Framework.CategoryBridge.SortCategoryInterface
 #check @Mettapedia.OSLF.Framework.CategoryBridge.SortPresheafCategory
 #check @Mettapedia.OSLF.Framework.CategoryBridge.lambdaTheorySortInterface

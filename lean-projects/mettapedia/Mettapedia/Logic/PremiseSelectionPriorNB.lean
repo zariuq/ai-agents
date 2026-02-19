@@ -182,10 +182,11 @@ theorem PLN_PriorNBRankingTransfer
             (priorNBPosteriorTwoStage globalPrior localPrior likelihood)).score g x)).toReal) := by
   exact priorNB_ranking_commutation_normalization_iff η globalPrior localPrior likelihood g t
 
-/-! ### Deprecated alias names (kept for backwards compatibility, prefer canonical names above) -/
+/-! ### Alias policy
 
--- PLN_LocalEvidenceRevision, PLN_NormalizedSequentialComposition removed in alias cleanup.
--- Use PLN_ContextualPriorRevision, PLN_NormalizedPriorLikelihoodTensor,
--- PLN_PriorNBRankingTransfer directly.
+Deprecated aliases were removed during cleanup. Use canonical names:
+`PLN_ContextualPriorRevision`, `PLN_NormalizedPriorLikelihoodTensor`,
+`PLN_PriorNBRankingTransfer`.
+-/
 
 end Mettapedia.Logic.PremiseSelection

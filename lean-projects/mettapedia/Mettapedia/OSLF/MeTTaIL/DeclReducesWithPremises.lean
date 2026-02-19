@@ -12,7 +12,7 @@ This sits alongside `DeclReduces.lean` (which intentionally models the legacy
 no-premise engine path for backward compatibility).
 -/
 
-namespace Mettapedia.OSLF.MeTTaIL.DeclReducesWithPremises
+namespace Mettapedia.OSLF.MeTTaIL.DeclReducesPremises
 
 
 open Mettapedia.OSLF.MeTTaIL.Syntax
@@ -227,4 +227,4 @@ theorem declReducesWithPremises_iff_langReducesWithPremises
       q ∈ rewriteWithContextWithPremises lang p :=
   ⟨engineWithPremises_complete, engineWithPremises_sound⟩
 
-end Mettapedia.OSLF.MeTTaIL.DeclReducesWithPremises
+end Mettapedia.OSLF.MeTTaIL.DeclReducesPremises

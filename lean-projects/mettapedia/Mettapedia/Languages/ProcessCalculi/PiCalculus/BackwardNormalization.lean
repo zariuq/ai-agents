@@ -28,86 +28,127 @@ theorem parComponents_nonbag_example (p : Pattern) :
       (.apply "PDrop" [p]) = [.apply "PDrop" [p]] := by
   rfl
 
-/-- Canonical COMM redex bag shape from normalized components. -/
-def commRedexShape (n q p : Pattern) (rest : List Pattern) : Pattern :=
-  .collection .hashBag (rhoOutput n q :: .apply "PInput" [n, .lambda p] :: rest) none
-
-/-- Canonical COMM target bag shape from normalized components. -/
-def commTargetShape (q p : Pattern) (rest : List Pattern) : Pattern :=
-  .collection .hashBag (Mettapedia.OSLF.MeTTaIL.Substitution.commSubst p q :: rest) none
-
-/-- Reusable SC normalization bridge:
-any source that normalizes to a bag permutation of a COMM redex
-is SC-equivalent to that COMM redex shape. -/
-theorem source_sc_commRedex_of_eq_bag_perm
-    {src : Pattern} {elems rest : List Pattern} {n q p : Pattern}
-    (hsrc : src = .collection .hashBag elems none)
-    (hperm : elems.Perm (rhoOutput n q :: .apply "PInput" [n, .lambda p] :: rest)) :
-    Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence
-      src (commRedexShape n q p rest) := by
-  calc
-    src = .collection .hashBag elems none := hsrc
-    _ ≡ commRedexShape n q p rest := by
-          simpa [commRedexShape] using
-            (Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence.par_perm
-              elems (rhoOutput n q :: .apply "PInput" [n, .lambda p] :: rest) hperm)
-
-/-- Candidate COMM reduction from the canonical normalized redex shape. -/
-def commRedexShape_reduces (n q p : Pattern) (rest : List Pattern) :
-    Mettapedia.Languages.ProcessCalculi.RhoCalculus.Reduction.Reduces
-      (commRedexShape n q p rest)
-      (commTargetShape q p rest) := by
-  simpa [commRedexShape, commTargetShape] using
-    (Mettapedia.Languages.ProcessCalculi.RhoCalculus.Reduction.Reduces.comm
-      (n := n) (q := q) (p := p) (rest := rest))
-
-/-- Reusable COMM decomposition endpoint from normalized bags:
-SC normalization into COMM redex + candidate COMM step. -/
-theorem comm_decompose_from_normalized_bag
-    {src : Pattern} {elems rest : List Pattern} {n q p : Pattern}
-    (hsrc : src = .collection .hashBag elems none)
-    (hperm : elems.Perm (rhoOutput n q :: .apply "PInput" [n, .lambda p] :: rest)) :
-    Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence
-      src (commRedexShape n q p rest) ∧
-    Nonempty (Mettapedia.Languages.ProcessCalculi.RhoCalculus.Reduction.Reduces
-      (commRedexShape n q p rest)
-      (commTargetShape q p rest)) := by
-  exact ⟨source_sc_commRedex_of_eq_bag_perm hsrc hperm, ⟨commRedexShape_reduces n q p rest⟩⟩
-
-/-- Specialized COMM decomposition for encoded-image bags:
-an encoded top-level input and output on the same channel form a COMM candidate
-after a single head permutation. -/
-theorem comm_decompose_encoded_source
+/-- Alternative encoded-source COMM decomposition through `canInteract`:
+proves existence of a core COMM step without committing to a fixed
+permutation-normalized redex/target shape. -/
+theorem comm_exists_from_encoded_source_via_canInteract
     (x y z : Name) (P : Process) (n v : String) (rest : List Pattern) :
     let inp : Pattern := rhoInput (.fvar x) y (encode P n v)
     let out : Pattern := rhoOutput (.fvar x) (rhoDrop (.fvar z))
     let src : Pattern := .collection .hashBag (inp :: out :: rest) none
-    let redex : Pattern :=
-      commRedexShape (.fvar x) (.apply "PDrop" [.fvar z])
-        (Mettapedia.OSLF.MeTTaIL.Substitution.closeFVar 0 y (encode P n v)) rest
-    let tgt : Pattern :=
-      commTargetShape (.apply "PDrop" [.fvar z])
-        (Mettapedia.OSLF.MeTTaIL.Substitution.closeFVar 0 y (encode P n v)) rest
-    Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence src redex ∧
-      Nonempty (Mettapedia.Languages.ProcessCalculi.RhoCalculus.Reduction.Reduces redex tgt) := by
-  intro inp out src redex tgt
-  have hperm :
-      (inp :: out :: rest).Perm
-        (rhoOutput (.fvar x) (.apply "PDrop" [.fvar z]) ::
-          .apply "PInput" [.fvar x,
-            .lambda
-              (Mettapedia.OSLF.MeTTaIL.Substitution.closeFVar 0 y (encode P n v))] :: rest) := by
-    simpa [inp, out, rhoInput, rhoOutput, rhoDrop] using
-      (List.Perm.swap inp out rest).symm
-  simpa [src, redex, tgt] using
-    (comm_decompose_from_normalized_bag
-      (src := src)
-      (elems := inp :: out :: rest)
-      (rest := rest)
-      (n := .fvar x)
-      (q := .apply "PDrop" [.fvar z])
-      (p := Mettapedia.OSLF.MeTTaIL.Substitution.closeFVar 0 y (encode P n v))
-      rfl hperm)
+    ∃ tgt, Nonempty (Mettapedia.Languages.ProcessCalculi.RhoCalculus.Reduction.Reduces src tgt) := by
+  intro inp out src
+  have hcan :
+      Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.canInteract
+        (.collection .hashBag (inp :: out :: rest) none) (.fvar x) := by
+    unfold Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.canInteract
+    constructor
+    · refine ⟨Mettapedia.OSLF.MeTTaIL.Substitution.closeFVar 0 y (encode P n v), ?_⟩
+      simp [inp, rhoInput]
+    · refine ⟨rhoDrop (.fvar z), ?_⟩
+      simp [out, rhoOutput, rhoDrop]
+  simpa [src] using
+    (Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.reduces_of_canInteract
+      (elems := inp :: out :: rest) (x := .fvar x) hcan)
+
+/-- General COMM existence from `parComponents` membership: if a source has
+both a matching input and output at top-level parallel components, it can
+perform a COMM step. -/
+theorem comm_exists_from_parComponents_src
+    {src : Pattern} {x body q : Pattern}
+    (hmemIn :
+      Pattern.apply "PInput" [x, .lambda body] ∈
+        Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents src)
+    (hmemOut :
+      Pattern.apply "POutput" [x, q] ∈
+        Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents src) :
+    ∃ tgt, Nonempty (Mettapedia.Languages.ProcessCalculi.RhoCalculus.Reduction.Reduces src tgt) := by
+  rcases Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponentsSpec src with
+    hpc | ⟨elems, hsrc, hpc⟩
+  · have hmemIn' :
+        Pattern.apply "PInput" [x, .lambda body] ∈ [src] := by
+        simpa [hpc] using hmemIn
+    have hmemOut' :
+        Pattern.apply "POutput" [x, q] ∈ [src] := by
+        simpa [hpc] using hmemOut
+    have hinEq : Pattern.apply "PInput" [x, .lambda body] = src := by
+      simpa using hmemIn'
+    have houtEq : Pattern.apply "POutput" [x, q] = src := by
+      simpa using hmemOut'
+    have hneq :
+        Pattern.apply "PInput" [x, .lambda body] ≠
+          Pattern.apply "POutput" [x, q] := by
+      intro h
+      injection h with hname _hargs
+      have hname' : ("PInput" : String) ≠ "POutput" := by decide
+      exact hname' hname
+    have : False := by
+      apply hneq
+      calc
+        Pattern.apply "PInput" [x, .lambda body] = src := hinEq
+        _ = Pattern.apply "POutput" [x, q] := by
+          simp [houtEq]
+    exact this.elim
+  · have hmemIn' :
+        Pattern.apply "PInput" [x, .lambda body] ∈ elems := by
+        simpa [hpc] using hmemIn
+    have hmemOut' :
+        Pattern.apply "POutput" [x, q] ∈ elems := by
+        simpa [hpc] using hmemOut
+    have hcan :
+        Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.canInteract
+          (.collection .hashBag elems none) x := by
+      unfold Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.canInteract
+      exact ⟨⟨body, hmemIn'⟩, ⟨q, hmemOut'⟩⟩
+    simpa [hsrc] using
+      (Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.reduces_of_canInteract
+        (elems := elems) (x := x) hcan)
+
+/-- Every source is SC-equivalent to the bag built from its top-level
+parallel components. -/
+theorem sc_to_parComponents_bag (src : Pattern) :
+    Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence
+      src
+      (.collection .hashBag
+        (Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents src) none) := by
+  rcases Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponentsSpec src with
+    hsingle | ⟨elems, hbag, hpc⟩
+  · rw [hsingle]
+    exact Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence.symm _ _
+      (Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence.par_singleton src)
+  · subst hbag
+    simpa [hpc] using
+      (Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence.refl
+        (.collection .hashBag elems none))
+
+/-- Any parallel-component witness of a matching input/output channel yields
+a COMM step on the original source (via `canInteract` + SC transport). -/
+theorem comm_exists_from_parComponents
+    {src : Pattern} {x body q : Pattern}
+    (hin :
+      .apply "PInput" [x, .lambda body] ∈
+        Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents src)
+    (hout :
+      .apply "POutput" [x, q] ∈
+        Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents src) :
+    ∃ tgt, Nonempty (Mettapedia.Languages.ProcessCalculi.RhoCalculus.Reduction.Reduces src tgt) := by
+  let bag : Pattern :=
+    .collection .hashBag
+      (Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents src) none
+  have hsc :
+      Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence src bag :=
+    sc_to_parComponents_bag src
+  have hcan :
+      Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.canInteract bag x := by
+    unfold Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.canInteract
+    exact ⟨⟨body, by simpa using hin⟩, ⟨q, by simpa using hout⟩⟩
+  rcases Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.reduces_of_canInteract
+      (elems := Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents src)
+      (x := x) hcan with ⟨tgt, hred⟩
+  exact ⟨tgt,
+    ⟨Mettapedia.Languages.ProcessCalculi.RhoCalculus.Reduction.Reduces.equiv
+      hsc (Classical.choice hred)
+      (Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence.refl _)⟩⟩
 
 /-- Canonical ν-listener source bag used for COMM decomposition. -/
 def nuListenerSource (x : Name) (P : Process) (n v : String) (listenerBody : Pattern) : Pattern :=

@@ -219,6 +219,123 @@ def fullEncode (P : Process) : Pattern :=
   let s := "ns_seed"
   rhoPar (encode P n v) (nameServer x z v s)
 
+/-- Reserved seed/channel names used by `fullEncode`. -/
+def fullEncodeReservedNames : Finset Name :=
+  ({ "n_init", "v_init", "ns_x", "ns_z", "ns_seed" } : Finset Name)
+
+/-- Seed-freshness for parameterized encodings: process free names are disjoint
+from the chosen namespace/value seed names. -/
+def EncodingFreshAt (P : Process) (n v : String) : Prop :=
+  Disjoint P.freeNames ({ n, v } : Finset Name)
+
+/-- Seed-freshness invariant for the concrete `fullEncode` constants. -/
+def EncodingFresh (P : Process) : Prop :=
+  Disjoint P.freeNames fullEncodeReservedNames
+
+/-- `EncodingFresh` implies seed freshness for the concrete `fullEncode` pair. -/
+theorem encodingFreshAt_of_encodingFresh
+    {P : Process} (hfresh : EncodingFresh P) :
+    EncodingFreshAt P "n_init" "v_init" := by
+  refine Finset.disjoint_left.mpr ?_
+  intro x hxP hxSeed
+  have hxReserved : x ∈ fullEncodeReservedNames := by
+    have hxSeed' : x = "n_init" ∨ x = "v_init" := by
+      simpa using hxSeed
+    rcases hxSeed' with rfl | rfl <;> simp [fullEncodeReservedNames]
+  exact (Finset.disjoint_left.mp hfresh) hxP hxReserved
+
+/-- Positive example: `nil` is always fresh w.r.t. all encoding seeds. -/
+theorem encodingFresh_nil : EncodingFresh .nil := by
+  simp [EncodingFresh, fullEncodeReservedNames, Process.freeNames]
+
+/-- Positive example: `nil` is fresh for any parameterized seed pair. -/
+theorem encodingFreshAt_nil (n v : String) : EncodingFreshAt .nil n v := by
+  simp [EncodingFreshAt, Process.freeNames]
+
+/-- Negative example: output on `n` is not fresh at seed `n` (for any `v`). -/
+theorem not_encodingFreshAt_output_left (n v z : String) :
+    ¬ EncodingFreshAt (.output n z) n v := by
+  intro h
+  have hn : n ∈ (Process.output n z).freeNames := by
+    simp [Process.freeNames]
+  have hseed : n ∈ ({ n, v } : Finset Name) := by
+    simp
+  exact (Finset.disjoint_left.mp h) hn hseed
+
+/-- Observation-set consequence of parameterized freshness:
+if observed names are a subset of process free names, then they are disjoint
+from the reserved parameter seeds `{n, v}`. -/
+theorem obs_disjoint_seedPair_of_subset_freeNames
+    {P : Process} {N : Finset Name} {n v : String}
+    (hobs : N ⊆ P.freeNames)
+    (hfresh : EncodingFreshAt P n v) :
+    Disjoint N ({ n, v } : Finset Name) := by
+  refine Finset.disjoint_left.mpr ?_
+  intro x hxN hxSeed
+  exact (Finset.disjoint_left.mp hfresh) (hobs hxN) hxSeed
+
+/-- Observation-set consequence of concrete full-encode freshness:
+if observed names are a subset of process free names, then they are disjoint
+from all full-encode reserved channels/seeds. -/
+theorem obs_disjoint_reserved_of_subset_freeNames
+    {P : Process} {N : Finset Name}
+    (hobs : N ⊆ P.freeNames)
+    (hfresh : EncodingFresh P) :
+    Disjoint N fullEncodeReservedNames := by
+  refine Finset.disjoint_left.mpr ?_
+  intro x hxN hxReserved
+  exact (Finset.disjoint_left.mp hfresh) (hobs hxN) hxReserved
+
+/-- Under user-observation discipline (`N ⊆ fn(P)`) and `EncodingFresh`,
+every full-encode reserved channel/seed name is excluded from observations. -/
+theorem reserved_notin_obs_of_subset_freeNames
+    {P : Process} {N : Finset Name} {r : Name}
+    (hobs : N ⊆ P.freeNames)
+    (hfresh : EncodingFresh P)
+    (hr : r ∈ fullEncodeReservedNames) :
+    r ∉ N := by
+  intro hrN
+  have hdisj : Disjoint N fullEncodeReservedNames :=
+    obs_disjoint_reserved_of_subset_freeNames (P := P) (N := N) hobs hfresh
+  exact (Finset.disjoint_left.mp hdisj) hrN hr
+
+/-- Under user-observation discipline (`N ⊆ fn(P)`) and `EncodingFresh`,
+the name-server listener channel is excluded from observations. -/
+theorem ns_z_notin_obs_of_subset_freeNames
+    {P : Process} {N : Finset Name}
+    (hobs : N ⊆ P.freeNames)
+    (hfresh : EncodingFresh P) :
+    "ns_z" ∉ N := by
+  have hnszReserved : "ns_z" ∈ fullEncodeReservedNames := by
+    simp [fullEncodeReservedNames]
+  exact reserved_notin_obs_of_subset_freeNames
+    (P := P) (N := N) (r := "ns_z") hobs hfresh hnszReserved
+
+/-- Negative canary: assuming user observations are restricted to `fn(P)`,
+`EncodingFresh` rules out the singleton observation set `{ns_z}`. -/
+theorem not_obs_subset_singleton_ns_z_of_encodingFresh
+    {P : Process}
+    (hfresh : EncodingFresh P) :
+    ¬ (({ "ns_z" } : Finset Name) ⊆ P.freeNames) := by
+  intro hobs
+  have hnot : "ns_z" ∉ ({ "ns_z" } : Finset Name) :=
+    ns_z_notin_obs_of_subset_freeNames (P := P) (N := ({ "ns_z" } : Finset Name)) hobs hfresh
+  exact hnot (by simp)
+
+/-- General singleton reserved-name boundary:
+for any reserved name `r`, user-observation discipline on `{r}` fails under
+`EncodingFresh`. -/
+theorem not_obs_subset_singleton_reserved_of_encodingFresh
+    {P : Process} {r : Name}
+    (hfresh : EncodingFresh P)
+    (hr : r ∈ fullEncodeReservedNames) :
+    ¬ (({ r } : Finset Name) ⊆ P.freeNames) := by
+  intro hobs
+  have hnot : r ∉ ({ r } : Finset Name) :=
+    reserved_notin_obs_of_subset_freeNames
+      (P := P) (N := ({ r } : Finset Name)) (r := r) hobs hfresh hr
+  exact hnot (by simp)
+
 /-! ## Namespace Renaming Environment
 
 For proving parameter independence (Prop 1), we need a finite substitution

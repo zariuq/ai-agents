@@ -182,14 +182,14 @@ export Mettapedia.OSLF.MeTTaIL.Engine (
   fullRewriteToNormalFormWithPremises
 )
 
-export Mettapedia.OSLF.MeTTaIL.DeclReduces (
+export Mettapedia.OSLF.MeTTaIL.DeclReductions (
   DeclReduces
   engine_sound
   engine_complete
   declReduces_iff_langReduces
 )
 
-export Mettapedia.OSLF.MeTTaIL.DeclReducesWithPremises (
+export Mettapedia.OSLF.MeTTaIL.DeclReducesPremises (
   DeclReducesWithPremises
   engineWithPremisesUsing_sound
   engineWithPremisesUsing_complete
@@ -596,6 +596,8 @@ export Mettapedia.OSLF.Framework.PLNSelectorGSLT (
   plnSelectorOSLF
   oslf_diamond_extBayes2
   oslf_diamond_extBayesFamily
+  oslf_diamond_stagedFamily_roundtrip
+  oslf_box_stagedFamily_roundtrip
 )
 
 export Mettapedia.OSLF.Framework.PLNSelectorLanguageDef (

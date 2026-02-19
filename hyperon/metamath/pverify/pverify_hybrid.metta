@@ -10,6 +10,15 @@
 
 !(import! &self ../mmverify/mmverify-utils_petta)
 
+;; Compatibility override for upstream lib_he: ensure unify evaluates branches.
+;; This matches the atps behavior used by existing mmverify/pverify scripts.
+(= (unify $space $pattern $then $else)
+   (if (is-space $space)
+       (let $temp (cut)
+            (case (match $space $pattern $pattern)
+                  (($pattern (eval $then))
+                   (Empty (eval $else))))) (empty)))
+
 ;;; get-first-non-flag-arg - Get the first command line argument that doesn't start with --
 ;;; Returns Empty if no non-flag arguments found
 (= (get-first-non-flag-arg $idx)
@@ -108,16 +117,30 @@
            (printif! (Processing a: $label))
            (add_a &kb $label (cons-atom $type $math)))))))
 
-;; Helper to handle proof verification result - pattern matching instead of case
-(= (handle-proof-result (Error $info $msg))
-   (progn
-     (println! "")
-     (println! "=== VERIFICATION FAILED ===")
-     (println! ("Error:" $info $msg))
-     (halt_with_code 1)))
+;; Helper to handle proof verification result.
+;; Use case dispatch to remain parser-compatible across PeTTa variants.
+(= (unwrap-singletons3 $x)
+   (if (== (size-atom $x) 1)
+       (let $x1 (car-atom $x)
+         (if (== (size-atom $x1) 1)
+             (let $x2 (car-atom $x1)
+               (if (== (size-atom $x2) 1)
+                   (car-atom $x2)
+                   $x2))
+             $x1))
+       $x))
 
-(= (handle-proof-result ())
-   ())
+(= (handle-proof-result $res)
+   (let $norm (unwrap-singletons3 $res)
+     (case $norm
+       (((Error $info $msg)
+          (progn
+            (println! "")
+            (println! "=== VERIFICATION FAILED ===")
+            (println! ("Error" $info $msg))
+            (halt_with_code 1)))
+        (() ())
+        ($_ ())))))
 
 (= (process-by-tag p $rest)
    (let ($label $rest2) (decons-atom $rest)
@@ -166,6 +189,19 @@
    (let $level (get-state &fd)
      (add_v $kb $var $level)))
 
+;; normalize-parse-output - Handle runtime-dependent nesting depth from parse bridge.
+;; Expected final shape: list of statements.
+(= (normalize-parse-output $x)
+   (if (== (size-atom $x) 1)
+       (let $inner (car-atom $x)
+         (if (== (size-atom $inner) 0)
+             $x
+             (let $head (car-atom $inner)
+               (if (> (size-atom $head) 1)
+                   (normalize-parse-output $inner)
+                   $x))))
+       $x))
+
 ;;; ==========================================================================
 ;;; Main
 ;;; ==========================================================================
@@ -185,12 +221,12 @@
          (let true (printif! (concat "  File: " $input_file))
            (let true (printif! "Step 2: Parse file using Prolog...")
              (let $stmts_raw (collapse (parse_mm_file $input_file))
-              (if (== (size-atom $stmts_raw) 0)
+             (if (== (size-atom $stmts_raw) 0)
                   (progn
                     (println! "")
                     (println! "=== PARSE FAILED ===")
                     (failed))
-                  (let $stmts (car-atom $stmts_raw)
+                  (let $stmts (normalize-parse-output $stmts_raw)
                     (let true (printif! (Got (size-atom $stmts) statements))
                       (let true (printif! "")
                         (let true (printif! "Step 3: Process statements in PeTTa...")

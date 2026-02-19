@@ -32,11 +32,13 @@ fragment using:
 - `forward_single_step` (RF single-step)
 - `forward_multi_step` (RF multi-step)
 
-## Backward Direction (TODO)
+## Backward Direction
 
-Not attempted here. The backward direction (showing every ρ-reduction of an
-encoded term corresponds to a π-reduction) requires SC inversion, which is
-hard due to the EQUIV rule allowing arbitrary SC rearrangement.
+Backward reflection is developed separately in
+`PiCalculus/BackwardAdminReflection.lean`, including:
+- Encoded-image inversion lemmas
+- SC-normalized COMM decomposition via `parComponents`/`canInteract`
+- Branch-sensitive one-step and star-level reflection outcomes
 
 ## References
 
@@ -119,6 +121,17 @@ private theorem apply_tag_ne (f g : String) (hf : f ≠ g) (as bs : List Pattern
       | _ => "") hEq
   exact hf htag
 
+private theorem rhoPar_eq_parComponents_append (p q : Pattern) :
+    rhoPar p q = .collection .hashBag
+      (Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents p ++
+       Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents q) none := by
+  cases p <;> cases q
+  all_goals
+    first
+    | rfl
+    | cases ‹CollType› <;> cases ‹Option String› <;> rfl
+    | cases ‹CollType› <;> cases ‹Option String› <;> cases ‹CollType› <;> cases ‹Option String› <;> rfl
+
 /-- Inversion on encoded top-level inputs:
 if the encoded image has a `PInput` head, it is exactly an input-encoding form. -/
 theorem encoded_input_forms {n v : String} {p ch body : Pattern}
@@ -152,6 +165,64 @@ theorem encoded_input_forms {n v : String} {p ch body : Pattern}
         ((apply_tag_ne "PReplicate" "PInput" (by decide)
           [rhoInput (.fvar x) y bodyRep] [ch, .lambda body]) hp)
 
+/-- RF membership inversion for encoded inputs:
+if a `PInput` component appears in the parallel components of an RF encoding,
+it must be an encoded input with an RF body. -/
+theorem encode_rf_parComponents_input
+    {P : Process} (hrf : ForwardSimulation.RestrictionFree P)
+    {n v : String} {ch body : Pattern}
+    (hmem :
+      .apply "PInput" [ch, .lambda body] ∈
+        Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents
+          (encode P n v)) :
+    ∃ x y P' n',
+      ch = .fvar x ∧
+      body = Mettapedia.OSLF.MeTTaIL.Substitution.closeFVar 0 y (encode P' n' v) ∧
+      ForwardSimulation.RestrictionFree P' := by
+  induction P generalizing n with
+  | nil =>
+      simp [encode, rhoNil, Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents]
+        at hmem
+  | par P Q ihP ihQ =>
+      have hmem' :
+          .apply "PInput" [ch, .lambda body] ∈
+            (Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents
+                (encode P (n ++ "_L") v) ++
+             Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents
+                (encode Q (n ++ "_R") v)) := by
+        simpa [encode, rhoPar_eq_parComponents_append,
+          Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents] using hmem
+      rcases List.mem_append.mp hmem' with hmemL | hmemR
+      · rcases ihP hrf.1 hmemL with ⟨x, y, P', n', hch, hbody, hrf'⟩
+        exact ⟨x, y, P', n', hch, hbody, hrf'⟩
+      · rcases ihQ hrf.2 hmemR with ⟨x, y, P', n', hch, hbody, hrf'⟩
+        exact ⟨x, y, P', n', hch, hbody, hrf'⟩
+  | input x y P ih =>
+      have hmem' :
+          .apply "PInput" [ch, .lambda body] =
+            rhoInput (.fvar x) y (encode P n v) := by
+        simpa [encode, rhoInput,
+          Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents] using hmem
+      have hch : ch = .fvar x := by
+        simpa [rhoInput] using congrArg (fun p =>
+          match p with
+          | .apply _ [a, _] => a
+          | _ => .bvar 0) hmem'
+      have hbody :
+          body = Mettapedia.OSLF.MeTTaIL.Substitution.closeFVar 0 y (encode P n v) := by
+        simpa [rhoInput] using congrArg (fun p =>
+          match p with
+          | .apply _ [_, .lambda b] => b
+          | _ => .bvar 0) hmem'
+      exact ⟨x, y, P, n, hch, hbody, hrf⟩
+  | output x z =>
+      simp [encode, rhoOutput,
+        Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents] at hmem
+  | nu x P =>
+      exact (False.elim (hrf))
+  | replicate x y P =>
+      exact (False.elim (hrf))
+
 /-- Inversion on encoded top-level outputs:
 if the encoded image has a `POutput` head, it is exactly an output-encoding form. -/
 theorem encoded_output_forms {n v : String} {p ch payload : Pattern}
@@ -179,6 +250,59 @@ theorem encoded_output_forms {n v : String} {p ch payload : Pattern}
       exact False.elim
         ((apply_tag_ne "PReplicate" "POutput" (by decide)
           [rhoInput (.fvar x) y bodyRep] [ch, payload]) hp)
+
+/-- RF membership inversion for encoded outputs:
+if a `POutput` component appears in the parallel components of an RF encoding,
+it must be an encoded output on some channel and drop payload. -/
+theorem encode_rf_parComponents_output
+    {P : Process} (hrf : ForwardSimulation.RestrictionFree P)
+    {n v : String} {ch payload : Pattern}
+    (hmem :
+      .apply "POutput" [ch, payload] ∈
+        Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents
+          (encode P n v)) :
+    ∃ x z,
+      ch = .fvar x ∧ payload = rhoDrop (.fvar z) := by
+  induction P generalizing n with
+  | nil =>
+      simp [encode, rhoNil, Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents]
+        at hmem
+  | par P Q ihP ihQ =>
+      have hmem' :
+          .apply "POutput" [ch, payload] ∈
+            (Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents
+                (encode P (n ++ "_L") v) ++
+             Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents
+                (encode Q (n ++ "_R") v)) := by
+        simpa [encode, rhoPar_eq_parComponents_append,
+          Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents] using hmem
+      rcases List.mem_append.mp hmem' with hmemL | hmemR
+      · exact ihP hrf.1 hmemL
+      · exact ihQ hrf.2 hmemR
+  | input x y P ih =>
+      simp [encode, rhoInput,
+        Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents] at hmem
+  | output x z =>
+      have hmem' :
+          .apply "POutput" [ch, payload] =
+            rhoOutput (.fvar x) (rhoDrop (.fvar z)) := by
+        simpa [encode, rhoOutput,
+          Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context.parComponents] using hmem
+      have hch : ch = .fvar x := by
+        simpa [rhoOutput] using congrArg (fun p =>
+          match p with
+          | .apply _ [a, _] => a
+          | _ => .bvar 0) hmem'
+      have hpayload : payload = rhoDrop (.fvar z) := by
+        simpa [rhoOutput] using congrArg (fun p =>
+          match p with
+          | .apply _ [_, b] => b
+          | _ => .bvar 0) hmem'
+      exact ⟨x, z, hch, hpayload⟩
+  | nu x P =>
+      exact (False.elim (hrf))
+  | replicate x y P =>
+      exact (False.elim (hrf))
 
 /-! ## Forward Direction
 
@@ -286,6 +410,19 @@ theorem forward_single_step_nameServer_listener_derived {N : Finset String}
         x z v s body)
   · simpa [tgt] using (WeakRestrictedBisimD.refl N tgt)
 
+/-- Seed-freshness-threaded wrapper for name-server listener progress.
+The hypothesis is explicit API contract for downstream non-interference layers. -/
+theorem forward_single_step_nameServer_listener_derived_fresh {N : Finset String}
+    (x z v s : String) (body : Pattern)
+    (_hfresh : EncodingFreshAt .nil z v) :
+    ∃ T, Nonempty ((rhoPar (nameServer x z v s) (.apply "PInput" [.fvar z, .lambda body])) ⇝ᵈ* T) ∧
+      T ≈ᵈ{N}
+        (.collection .hashBag
+          [Mettapedia.OSLF.MeTTaIL.Substitution.commSubst body (.apply "PDrop" [.fvar s]),
+           rhoReplicate (Mettapedia.Languages.ProcessCalculi.PiCalculus.nameServerBody x z v),
+           dropOperation x] none) := by
+  exact forward_single_step_nameServer_listener_derived (N := N) x z v s body
+
 /-- Independent administrative traces (ν-listener and seed-listener) commute
 up to bag permutation on their combined targets. -/
 private theorem commute_nu_seed_admin_steps_under_bag_perm
@@ -351,6 +488,17 @@ theorem forward_single_step_nu_listener_derived {N : Finset String}
   · exact ⟨ReducesDerivedStar.single (.core hcore)⟩
   · simpa [tgt] using (WeakRestrictedBisimD.refl N tgt)
 
+/-- Seed-freshness-threaded wrapper for ν-listener administrative progress. -/
+theorem forward_single_step_nu_listener_derived_fresh {N : Finset String}
+    (x : Name) (P : Process) (n v : String) (listenerBody : Pattern)
+    (_hfresh : EncodingFreshAt P n v) :
+    ∃ T, Nonempty ((rhoPar (encode (.nu x P) n v) (.apply "PInput" [.fvar v, .lambda listenerBody])) ⇝ᵈ* T) ∧
+      T ≈ᵈ{N}
+        (.collection .hashBag
+          [Mettapedia.OSLF.MeTTaIL.Substitution.commSubst listenerBody (.fvar n),
+           rhoInput (.fvar n) x (encode P (n ++ "_" ++ n) v)] none) := by
+  exact forward_single_step_nu_listener_derived (N := N) x P n v listenerBody
+
 /-- Fixed-string canary for ν-listener administrative progress. -/
 theorem forward_single_step_nu_listener_derived_canary :
     ∃ T, Nonempty
@@ -402,6 +550,37 @@ theorem fullEncode_nu_admin_progress_derived {N : Finset String}
   · simpa using
       (forward_single_step_replicate_derived
         (N := N) "ns_x" "_drop" .nil "n_init" "v_init")
+
+/-- Freshness-threaded wrapper for packaged non-RF administrative ν progress. -/
+theorem fullEncode_nu_admin_progress_derived_fresh {N : Finset String}
+    (x : Name) (P : Process) (nuListenerBody seedListenerBody : Pattern)
+    (_hfresh : EncodingFresh P) :
+    fullEncode (.nu x P) =
+      rhoPar (encode (.nu x P) "n_init" "v_init")
+        (nameServer "ns_x" "ns_z" "v_init" "ns_seed") ∧
+    (∃ Tnu, Nonempty
+      ((rhoPar (encode (.nu x P) "n_init" "v_init")
+        (.apply "PInput" [.fvar "v_init", .lambda nuListenerBody])) ⇝ᵈ* Tnu) ∧
+      Tnu ≈ᵈ{N}
+        (.collection .hashBag
+          [Mettapedia.OSLF.MeTTaIL.Substitution.commSubst nuListenerBody (.fvar "n_init"),
+           rhoInput (.fvar "n_init") x (encode P ("n_init" ++ "_" ++ "n_init") "v_init")] none)) ∧
+    (∃ Tseed, Nonempty
+      ((rhoPar (nameServer "ns_x" "ns_z" "v_init" "ns_seed")
+        (.apply "PInput" [.fvar "ns_z", .lambda seedListenerBody])) ⇝ᵈ* Tseed) ∧
+      Tseed ≈ᵈ{N}
+        (.collection .hashBag
+          [Mettapedia.OSLF.MeTTaIL.Substitution.commSubst seedListenerBody (.apply "PDrop" [.fvar "ns_seed"]),
+           rhoReplicate (Mettapedia.Languages.ProcessCalculi.PiCalculus.nameServerBody "ns_x" "ns_z" "v_init"),
+           dropOperation "ns_x"] none)) ∧
+    (∃ Trep, Nonempty
+      ((encode (.replicate "ns_x" "_drop" .nil) "n_init" "v_init") ⇝ᵈ* Trep) ∧
+      Trep ≈ᵈ{N}
+        (rhoPar
+          (rhoInput (piNameToRhoName "ns_x") "_drop" (encode .nil ("n_init" ++ "_rep") "v_init"))
+          (encode (.replicate "ns_x" "_drop" .nil) "n_init" "v_init"))) := by
+  exact fullEncode_nu_admin_progress_derived
+    (N := N) x P nuListenerBody seedListenerBody
 
 /-- Combined non-RF administrative closure:
 ν-listener, seed-listener, and replicate-unfold endpoints composed into one
@@ -524,6 +703,46 @@ theorem full_nonRF_forward_correspondence_derived {N : Finset String}
   · simpa using
       (fullEncode_nu_admin_progress_combined_derived
         (N := N) x P nuListenerBody seedListenerBody)
+
+/-- Freshness-threaded full non-RF forward correspondence wrapper. -/
+theorem full_nonRF_forward_correspondence_derived_fresh {N : Finset String}
+    (x : Name) (P : Process) (nuListenerBody seedListenerBody : Pattern)
+    (xr yr : Name) (Pr : Process) (n v : String)
+    (_hfresh : EncodingFresh P) :
+    (∃ Trep, Nonempty ((encode (.replicate xr yr Pr) n v) ⇝ᵈ* Trep) ∧
+      Trep ≈ᵈ{N}
+        (rhoPar
+          (rhoInput (piNameToRhoName xr) yr (encode Pr (n ++ "_rep") v))
+          (encode (.replicate xr yr Pr) n v))) ∧
+    (∃ Tnu Tseed TrepNu,
+      fullEncode (.nu x P) =
+        rhoPar (encode (.nu x P) "n_init" "v_init")
+          (nameServer "ns_x" "ns_z" "v_init" "ns_seed") ∧
+      Nonempty
+        ((.collection .hashBag
+          [rhoPar (encode (.nu x P) "n_init" "v_init")
+             (.apply "PInput" [.fvar "v_init", .lambda nuListenerBody]),
+           rhoPar (nameServer "ns_x" "ns_z" "v_init" "ns_seed")
+             (.apply "PInput" [.fvar "ns_z", .lambda seedListenerBody]),
+           encode (.replicate "ns_x" "_drop" .nil) "n_init" "v_init"] none) ⇝ᵈ*
+          (.collection .hashBag [Tnu, Tseed, TrepNu] none)) ∧
+      (.collection .hashBag [Tnu, Tseed] none ≡
+        .collection .hashBag [Tseed, Tnu] none) ∧
+      WeakRestrictedBisimD N Tnu
+        (.collection .hashBag
+          [Mettapedia.OSLF.MeTTaIL.Substitution.commSubst nuListenerBody (.fvar "n_init"),
+           rhoInput (.fvar "n_init") x (encode P ("n_init" ++ "_" ++ "n_init") "v_init")] none) ∧
+      WeakRestrictedBisimD N Tseed
+        (.collection .hashBag
+          [Mettapedia.OSLF.MeTTaIL.Substitution.commSubst seedListenerBody (.apply "PDrop" [.fvar "ns_seed"]),
+           rhoReplicate (Mettapedia.Languages.ProcessCalculi.PiCalculus.nameServerBody "ns_x" "ns_z" "v_init"),
+           dropOperation "ns_x"] none) ∧
+      WeakRestrictedBisimD N TrepNu
+        (rhoPar
+          (rhoInput (piNameToRhoName "ns_x") "_drop" (encode .nil ("n_init" ++ "_rep") "v_init"))
+          (encode (.replicate "ns_x" "_drop" .nil) "n_init" "v_init"))) := by
+  exact full_nonRF_forward_correspondence_derived
+    (N := N) x P nuListenerBody seedListenerBody xr yr Pr n v
 
 /-- Concrete canary for packaged full-encode ν administrative progress. -/
 theorem fullEncode_nu_admin_progress_derived_canary :

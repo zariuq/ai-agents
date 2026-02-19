@@ -42,7 +42,7 @@ namespace Mettapedia.OSLF.Framework.TypeSynthesis
 open Mettapedia.OSLF.MeTTaIL.Syntax
 open Mettapedia.OSLF.MeTTaIL.Match
 open Mettapedia.OSLF.MeTTaIL.Engine
-open Mettapedia.OSLF.MeTTaIL.DeclReducesWithPremises
+open Mettapedia.OSLF.MeTTaIL.DeclReducesPremises
 open Mettapedia.OSLF.Framework
 open Mettapedia.OSLF.Framework.DerivedModalities
 open Mettapedia.Languages.ProcessCalculi.RhoCalculus.Reduction

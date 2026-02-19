@@ -13,7 +13,7 @@ then proves the executable engine is both sound and complete w.r.t. it.
 - Meredith & Stay, "Operational Semantics in Logical Form"
 -/
 
-namespace Mettapedia.OSLF.MeTTaIL.DeclReduces
+namespace Mettapedia.OSLF.MeTTaIL.DeclReductions
 
 
 open Mettapedia.OSLF.MeTTaIL.Syntax
@@ -208,4 +208,4 @@ theorem declReduces_iff_langReduces {lang : LanguageDef} {p q : Pattern} :
 - `declReduces_iff_langReduces`: full equivalence
 -/
 
-end Mettapedia.OSLF.MeTTaIL.DeclReduces
+end Mettapedia.OSLF.MeTTaIL.DeclReductions

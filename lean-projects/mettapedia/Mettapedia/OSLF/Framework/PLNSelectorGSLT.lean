@@ -277,4 +277,97 @@ theorem oslf_diamond_extBayesFamily
   refine ⟨.fuseFamily (xs.map (fun x => PLNSelectorExpr.update x l)), ?_, rfl⟩
   exact PLNSelectorExpr.Reduces.extBayesFamily xs l
 
+/-- OSLF-diamond corollary for staged-family round-trip coherence:
+normalizing a regrade→unregrade staged posterior has a one-step successor whose
+atom is exactly the externally-Bayesian pooled-updates scorer. -/
+theorem oslf_diamond_stagedFamily_roundtrip
+    {ι : Type*} [Fintype ι]
+    (w : ℝ) (hw : w ≠ 0)
+    (t : ι → ℝ≥0∞) (s : ι → Scorer Goal Fact) (likelihood : Scorer Goal Fact)
+    (tnorm : ℝ≥0∞) (htnorm : tnorm ≠ 0) (htnormTop : tnorm ≠ ⊤) :
+    (plnSelectorOSLF (Goal := Goal) (Fact := Fact)).satisfies
+      (.normalize tnorm
+        (.atom (regradeScorer w⁻¹ (regradeScorer w (stagedFamilyPosterior t s likelihood)))))
+      ((plnSelectorOSLF (Goal := Goal) (Fact := Fact)).diamond
+        (fun e =>
+          e = .atom (fuseFamily (fun i => update (normalizeScorer (t i) (s i)) likelihood)))) := by
+  refine ⟨
+      .atom (regradeScorer w⁻¹ (regradeScorer w (stagedFamilyPosterior t s likelihood))),
+      ?_,
+      ?_⟩
+  · exact PLNSelectorExpr.Reduces.normalizeStrength tnorm htnorm htnormTop
+      (.atom (regradeScorer w⁻¹ (regradeScorer w (stagedFamilyPosterior t s likelihood))))
+  · have hRound :
+        regradeScorer w⁻¹ (regradeScorer w (stagedFamilyPosterior t s likelihood)) =
+          fuseFamily (fun i => update (normalizeScorer (t i) (s i)) likelihood) :=
+      stagedFamilyPosterior_regrade_roundtrip_commute
+        (w := w) (hw := hw) (t := t) (s := s) (likelihood := likelihood)
+    simpa using congrArg PLNSelectorExpr.atom hRound
+
+/-- OSLF-box companion for staged-family round-trip coherence:
+every one-step predecessor of the round-trip target has the same pointwise
+strength as the normalized staged source term. -/
+theorem oslf_box_stagedFamily_roundtrip
+    {ι : Type*} [Fintype ι]
+    (w : ℝ) (hw : w ≠ 0)
+    (t : ι → ℝ≥0∞) (s : ι → Scorer Goal Fact) (likelihood : Scorer Goal Fact)
+    (tnorm : ℝ≥0∞) (htnorm : tnorm ≠ 0) (htnormTop : tnorm ≠ ⊤)
+    (g : Goal) (f : Fact) :
+    (plnSelectorOSLF (Goal := Goal) (Fact := Fact)).satisfies
+      (.atom (fuseFamily (fun i => update (normalizeScorer (t i) (s i)) likelihood)))
+      ((plnSelectorOSLF (Goal := Goal) (Fact := Fact)).box
+        (fun q =>
+          PLNSelectorExpr.strengthAt q g f =
+            PLNSelectorExpr.strengthAt
+              (.normalize tnorm
+                (.atom (regradeScorer w⁻¹ (regradeScorer w (stagedFamilyPosterior t s likelihood)))))
+              g f)) := by
+  intro q hq
+  have hqEq :
+      PLNSelectorExpr.strengthAt q g f =
+        PLNSelectorExpr.strengthAt
+          (.atom (fuseFamily (fun i => update (normalizeScorer (t i) (s i)) likelihood))) g f :=
+    PLNSelectorExpr.reduces_sound_strength (h := hq) g f
+  have hNormEq :
+      PLNSelectorExpr.strengthAt
+          (.normalize tnorm
+            (.atom (regradeScorer w⁻¹ (regradeScorer w (stagedFamilyPosterior t s likelihood))))
+          ) g f
+        =
+      PLNSelectorExpr.strengthAt
+          (.atom (regradeScorer w⁻¹ (regradeScorer w (stagedFamilyPosterior t s likelihood)))) g f :=
+    PLNSelectorExpr.reduces_sound_strength
+      (h := PLNSelectorExpr.Reduces.normalizeStrength tnorm htnorm htnormTop
+        (.atom (regradeScorer w⁻¹ (regradeScorer w (stagedFamilyPosterior t s likelihood))))
+      ) g f
+  have hRound :
+      regradeScorer w⁻¹ (regradeScorer w (stagedFamilyPosterior t s likelihood)) =
+        fuseFamily (fun i => update (normalizeScorer (t i) (s i)) likelihood) :=
+    stagedFamilyPosterior_regrade_roundtrip_commute
+      (w := w) (hw := hw) (t := t) (s := s) (likelihood := likelihood)
+  have hAtomEq :
+      PLNSelectorExpr.strengthAt
+          (.atom (regradeScorer w⁻¹ (regradeScorer w (stagedFamilyPosterior t s likelihood)))) g f
+        =
+      PLNSelectorExpr.strengthAt
+          (.atom (fuseFamily (fun i => update (normalizeScorer (t i) (s i)) likelihood))) g f := by
+    have hExpr :
+        PLNSelectorExpr.atom (regradeScorer w⁻¹ (regradeScorer w (stagedFamilyPosterior t s likelihood))) =
+          PLNSelectorExpr.atom (fuseFamily (fun i => update (normalizeScorer (t i) (s i)) likelihood)) := by
+      simpa using congrArg PLNSelectorExpr.atom hRound
+    simpa [PLNSelectorExpr.strengthAt] using congrArg (fun e => PLNSelectorExpr.strengthAt e g f) hExpr
+  calc
+    PLNSelectorExpr.strengthAt q g f
+        =
+      PLNSelectorExpr.strengthAt
+        (.atom (fuseFamily (fun i => update (normalizeScorer (t i) (s i)) likelihood))) g f := hqEq
+    _ =
+      PLNSelectorExpr.strengthAt
+        (.atom (regradeScorer w⁻¹ (regradeScorer w (stagedFamilyPosterior t s likelihood)))) g f := hAtomEq.symm
+    _ =
+      PLNSelectorExpr.strengthAt
+        (.normalize tnorm
+          (.atom (regradeScorer w⁻¹ (regradeScorer w (stagedFamilyPosterior t s likelihood))))
+        ) g f := hNormEq.symm
+
 end Mettapedia.OSLF.Framework.PLNSelectorGSLT

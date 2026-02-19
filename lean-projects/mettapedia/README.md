@@ -2,18 +2,35 @@
 
 Lean 4 library of formalizations across probability, information theory, logic, set theory, and related areas.
 
-## Layout (high‑level)
+## Layout (high-level)
 
 ```
 Mettapedia/
-├── ProbabilityTheory/
-├── InformationTheory/
-├── Logic/
-├── UniversalAI/
-├── Algebra/
-├── SetTheory/
-├── OSLF/
-└── ...
+├── Algebra/              Ordered semigroups, algebraic structures
+├── Analysis/             (placeholder)
+├── Bridge/               Cross-module bridges (bit-vector evidence geometry)
+├── CategoricalLogic/     Categorical logic (external port, lean-catLogic)
+├── CategoryTheory/       NativeTypeTheory, PLN instance, de Finetti categorical
+├── CognitiveArchitecture/  MetaMo, OpenPsi, MicroPsi, value systems
+├── Combinatorics/        (placeholder)
+├── Computability/        Arithmetical hierarchy (Σ⁰₂, Π⁰₂, Δ⁰₂)
+├── Examples/             Concrete instances (KS symmetry framework)
+├── GraphTheory/          Basic graph theory (Bondy & Murty, Diestel)
+├── GSLT/                 Graph-Structured Lambda Theories (OSLF spec layer)
+├── Implementation/       MeTTa PLN formula verification
+├── InformationTheory/    Shannon entropy, information measures
+├── Languages/            GF (Czech + English), π-calculus, ρ-calculus
+├── Lists/                List-Set bridge lemmas
+├── Logic/                PLN, evidence quantales, Solomonoff, exchangeability
+├── MeasureTheory/        Measure theory from KS symmetry foundations
+├── Metatheory/           Metalogic (model theory, proof theory)
+├── NumberTheory/         (placeholder)
+├── OSLF/                 Operational Semantics in Logical Form
+├── ProbabilityTheory/    Knuth-Skilling, Cox, Bayesian networks, hypercube
+├── QuantumTheory/        Quantum from symmetry (Skilling & Knuth 2018)
+├── SetTheory/            Borel determinacy
+├── UniversalAI/          AIXI, Solomonoff, reflective oracles, grain of truth
+└── external/             Vendored sub-packages (exchangeability)
 ```
 
 ## Toolchain
@@ -35,13 +52,17 @@ nice -n 19 lake build
 
 ## Notable subprojects (see their READMEs for status)
 
-- `ProbabilityTheory/KnuthSkilling/` — Knuth–Skilling Foundations of Inference
+- `ProbabilityTheory/KnuthSkilling/` — Knuth-Skilling Foundations of Inference
 - `ProbabilityTheory/Cox/` — Cox-style probability calculus
 - `InformationTheory/ShannonEntropy/`
-- `Logic/` — PLN and related logical formalisms, including a **WorldModel calculus** for agent/environment reasoning
+- `Logic/` — PLN, evidence quantales, Solomonoff, exchangeability, WorldModel calculus
 - `SetTheory/BorelDeterminacy/`
-- `OSLF/` — core OSLF/GSLT formalizations (focused entrypoints)
-- `Languages/ProcessCalculi.lean` — process-calculus facades (`PiCalculus`, `RhoCalculus`)
+- `OSLF/` — core OSLF/GSLT formalizations
+- `GSLT/` — Graph-Structured Lambda Theories (categorical spec layer for OSLF)
+- `Languages/GF/` — GF abstract syntax + Czech morphology + English clause construction + semantic bridge to NTT
+- `Languages/ProcessCalculi/` — pi-calculus, rho-calculus, spice calculus, pi-to-rho encoding
+- `CategoryTheory/` — NativeTypeTheory (Grothendieck construction), PLN categorical instance, de Finetti categorical
+- `CognitiveArchitecture/` — MetaMo motivational framework, OpenPsi, MicroPsi, value systems
 - `Algebra/OrderedSemigroups/`
 
 ## Lean -> mettail-rust example

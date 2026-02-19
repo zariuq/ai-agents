@@ -9,6 +9,7 @@
 ;;; mmverify-utils_petta imports lib_he and lib_prolog, so we don't import them here
 
 !(import! &self ../mmverify/mmverify-utils_pmork)
+!(import_prolog_function consult)
 
 ;;; get-first-non-flag-arg - Get the first command line argument that doesn't start with --
 ;;; Returns Empty if no non-flag arguments found
@@ -22,10 +23,11 @@
                (get-first-non-flag-arg (+ $idx 1))
                $arg)))))
 
-!(import_prolog_functions_from_file "../metamath/pverify/mm_primitives.pl"
-  (parse_mm_file halt_with_code))
-!(import_prolog_functions_from_file "../metamath/pverify/env_utils.pl"
-  (get_env_var_or_default is_flag_arg))
+!(consult "env_utils.pl")
+!(import_prolog_function parse_mm_file)
+!(import_prolog_function halt_with_code)
+!(import_prolog_function get_env_var_or_default)
+!(import_prolog_function is_flag_arg)
 
 ;;; Initialize State
 !(bind! &sp (new-state -1))  ; Stack pointer starts at -1 (increments to 0 on first push)
@@ -108,16 +110,17 @@
            (printif! (Processing a: $label))
            (add_a $label (cons-atom $type $math)))))))
 
-;; Helper to handle proof verification result - pattern matching instead of case
-(= (handle-proof-result (Error $info $msg))
-   (progn
-     (println! "")
-     (println! "=== VERIFICATION FAILED ===")
-     (println! ("Error:" $info $msg))
-     (halt_with_code 1)))
-
-(= (handle-proof-result ())
-   ())
+;; Helper to handle proof verification result.
+;; Use case dispatch to remain parser-compatible across PeTTa variants.
+(= (handle-proof-result $res)
+   (case $res
+     (((Error $info $msg)
+        (progn
+          (println! "")
+          (println! "=== VERIFICATION FAILED ===")
+          (println! ("Error" $info $msg))
+          (halt_with_code 1)))
+      (() ()))))
 
 (= (process-by-tag p $rest)
    (let ($label $rest2) (decons-atom $rest)

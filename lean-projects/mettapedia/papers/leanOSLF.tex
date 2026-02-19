@@ -182,13 +182,16 @@ The formalization is organized in seven directories plus standalone files:
 \end{tabular}
 \end{center}
 
-All 29 remaining sorries are in the $\pi$-to-\rhocalc{} encoding correctness proofs
-(\code{PiCalculus/RhoEncodingCorrectness.lean}), with one major theorem (Proposition~2:
-substitution invariance) already fully proven.
-The entire core \OSLF{} pipeline---\MeTTaIL{}, Framework, RhoCalculus, Formula,
-and MeTTa Core---carries \textbf{0 sorries and 0 axioms}.
-Operational entrypoints (\code{CoreMain.lean} and \code{Main.lean}) are kept on this
-core boundary; process-calculus facades are exposed separately under
+This table is a historical snapshot.  The process-calculus branch has evolved
+substantially since this draft (including derived non-RF forward/admin endpoints,
+branch-sensitive backward reflection infrastructure, and canonical pre-OSLF
+package exports).  For the current theorem-level status of the
+$\pi \to \rhocalc$ embedding, see:
+\begin{quote}
+\code{AIrxiv/airxiv\_2026-02-19\_pi\_rho\_embedding\_status.tex}
+\end{quote}
+Operational entrypoints (\code{CoreMain.lean} and \code{Main.lean}) remain on
+the core boundary, with process-calculus facades exposed under
 \code{Mettapedia/Languages/ProcessCalculi*.lean}.
 
 The \code{Framework/} directory (4{,}400 lines, 15~files) is the largest component,

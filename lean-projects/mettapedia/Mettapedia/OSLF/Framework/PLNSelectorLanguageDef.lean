@@ -28,7 +28,7 @@ namespace Mettapedia.OSLF.Framework.PLNSelectorLanguageDef
 open Mettapedia.OSLF.MeTTaIL.Syntax
 open Mettapedia.OSLF.MeTTaIL.Match
 open Mettapedia.OSLF.MeTTaIL.Engine
-open Mettapedia.OSLF.MeTTaIL.DeclReducesWithPremises
+open Mettapedia.OSLF.MeTTaIL.DeclReducesPremises
 open Mettapedia.OSLF.Framework.TypeSynthesis
 open Mettapedia.OSLF.Framework.PLNSelectorGSLT
 open Mettapedia.OSLF.Framework.PLNSelectorGSLT.PLNSelectorExpr

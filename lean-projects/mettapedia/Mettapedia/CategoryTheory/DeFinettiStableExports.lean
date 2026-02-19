@@ -25,15 +25,6 @@ open Mettapedia.ProbabilityTheory.HigherOrderProbability
 
 variable {Y Ω : Type*} [MeasurableSpace Y] [MeasurableSpace Ω]
 
-/-- Stable alias: exchangeability iff latent-`Theta` factorization (measure level). -/
-theorem deFinettiStable_exchangeable_iff_latentThetaFactorization
-    (X : ℕ → Ω → Bool) (μ : Measure Ω)
-    [IsProbabilityMeasure μ]
-    (hX : ∀ i : ℕ, Measurable (X i)) :
-    Mettapedia.Logic.Exchangeability.InfiniteExchangeable X μ ↔
-      LatentThetaFactorization X μ :=
-  exchangeable_iff_latentThetaFactorization X μ hX
-
 /-- Stable alias: unique latent mediator at measure level. -/
 theorem deFinettiStable_existsUnique_latentThetaMeasure_of_exchangeable
     (X : ℕ → Ω → Bool) (μ : Measure Ω)
@@ -42,110 +33,6 @@ theorem deFinettiStable_existsUnique_latentThetaMeasure_of_exchangeable
     (hexch : Mettapedia.Logic.Exchangeability.InfiniteExchangeable X μ) :
     ∃! ν : Measure DeFinettiConnection.Theta, RepresentsLatentTheta X μ ν :=
   deFinetti_limitCone_universalMediator_latentTheta X μ hX hexch
-
-/-- Stable alias: canonical mediator object at measure level. -/
-noncomputable def deFinettiStable_canonicalLatentThetaMediatorOfExchangeable
-    (X : ℕ → Ω → Bool) (μ : Measure Ω)
-    [IsProbabilityMeasure μ]
-    (hX : ∀ i : ℕ, Measurable (X i))
-    (hexch : Mettapedia.Logic.Exchangeability.InfiniteExchangeable X μ) :
-    Measure DeFinettiConnection.Theta :=
-  canonicalLatentThetaMediatorOfExchangeable X μ hX hexch
-
-/-- Stable alias: kernel exchangeability iff kernel latent-`Theta` factorization. -/
-theorem deFinettiStable_kernelExchangeable_iff_kernelLatentThetaFactorization
-    (X : ℕ → Ω → Bool) (κ : ProbabilityTheory.Kernel Y Ω)
-    [ProbabilityTheory.IsMarkovKernel κ]
-    (hX : ∀ i : ℕ, Measurable (X i)) :
-    KernelExchangeable X κ ↔ KernelLatentThetaFactorization X κ :=
-  kernelExchangeable_iff_kernelLatentThetaFactorization X κ hX
-
-/-- Stable alias: unique latent mediator at kernel level. -/
-theorem deFinettiStable_existsUnique_latentThetaKernel_of_kernelExchangeable
-    (X : ℕ → Ω → Bool) (κ : ProbabilityTheory.Kernel Y Ω)
-    [ProbabilityTheory.IsMarkovKernel κ]
-    (hX : ∀ i : ℕ, Measurable (X i))
-    (hexch : KernelExchangeable X κ) :
-    ∃! L : Y → Measure DeFinettiConnection.Theta, KernelRepresentsLatentTheta X κ L :=
-  existsUnique_latentThetaKernel_of_kernelExchangeable (X := X) (κ := κ) hX hexch
-
-/-- Stable alias: cone-morphism packaging unique mediator theorem. -/
-theorem deFinettiStable_existsUnique_kernelLatentThetaConeMorphism_of_kernelExchangeable
-    (X : ℕ → Ω → Bool) (κ : ProbabilityTheory.Kernel Y Ω)
-    [ProbabilityTheory.IsMarkovKernel κ]
-    (hX : ∀ i : ℕ, Measurable (X i))
-    (hexch : KernelExchangeable X κ) :
-    ∃! Φ : KernelLatentThetaConeMorphism X κ,
-      Φ.mediator =
-        latentThetaKernelOf
-          (kernelIIDFactorization_of_kernelExchangeable (X := X) (κ := κ) hX hexch) :=
-  existsUnique_kernelLatentThetaConeMorphism_of_kernelExchangeable (X := X) (κ := κ) hX hexch
-
-/-- Stable alias: package bridge theorem for the lightweight limit-cone API. -/
-theorem deFinettiStable_limitConePackage_bridge
-    (X : ℕ → Ω → Bool) :
-    Nonempty (DeFinettiLimitConePackage (Y := Y) (Ω := Ω) X) ↔
-      KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X :=
-  deFinettiLimitConePackage_iff_kernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X
-
-/-- Stable alias: sequence-kernel cone round-trip theorem. -/
-theorem deFinettiStable_sequenceKernelCone_roundTrip
-    (κ : ProbabilityTheory.Kernel Y (ℕ → Bool))
-    [ProbabilityTheory.IsMarkovKernel κ] :
-    SequenceKernelConeObj κ ↔
-      (KernelLatentThetaFactorization (X := coordProcess) κ ∧
-        ∃! L :
-          Y →
-            Measure
-              Mettapedia.ProbabilityTheory.HigherOrderProbability.DeFinettiConnection.Theta,
-          KernelRepresentsLatentTheta (X := coordProcess) κ L) :=
-  sequenceKernelConeObj_roundTrip_latentThetaMediator (κ := κ)
-
-/-- Stable alias: explicit iid-prefix factorization form at kernel level.
-From a sequence-kernel cone object, obtain a unique latent `Theta` family with
-both representation and finite-prefix iid-mixture equations. -/
-theorem deFinettiStable_existsUnique_latentThetaKernel_with_iidPrefixFactorization_coord
-    (κ : ProbabilityTheory.Kernel Y (ℕ → Bool))
-    [ProbabilityTheory.IsMarkovKernel κ] :
-    SequenceKernelConeObj κ →
-      ∃! L :
-        Y →
-          Measure
-            Mettapedia.ProbabilityTheory.HigherOrderProbability.DeFinettiConnection.Theta,
-        KernelRepresentsLatentTheta (X := coordProcess) κ L ∧
-          (∀ (y : Y) (n : ℕ) (xs : Fin n → Bool),
-            (κ y) (seqPrefixEvent n xs) =
-              ∫⁻ θ :
-                  Mettapedia.ProbabilityTheory.HigherOrderProbability.DeFinettiConnection.Theta,
-                (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)) ∂(L y)) :=
-  existsUnique_latentThetaKernel_with_iidPrefixFactorization_of_sequenceKernelConeObj
-    (κ := κ)
-
-/-- Stable alias: unique sequence-level mediator record packaging finite-prefix
-iid factorization equations. -/
-theorem deFinettiStable_existsUnique_kernelIIDPrefixMediator_of_sequenceKernelConeObj
-    (κ : ProbabilityTheory.Kernel Y (ℕ → Bool))
-    [ProbabilityTheory.IsMarkovKernel κ] :
-    SequenceKernelConeObj κ →
-      ∃! M : KernelIIDPrefixMediator (κ := κ),
-        KernelRepresentsLatentTheta (X := coordProcess) κ M.latent :=
-  existsUnique_kernelIIDPrefixMediator_of_sequenceKernelConeObj (κ := κ)
-
-/-- Stable export: forward bridge from lightweight package witnesses to
-per-`n` `IsLimit`-style witnesses. -/
-theorem deFinettiStable_limitConePackage_to_perNIsLimit
-    (X : ℕ → Ω → Bool)
-    (pkg : DeFinettiLimitConePackage (Y := Y) (Ω := Ω) X) :
-    DeFinettiPerNIsLimit (Y := Y) (Ω := Ω) X :=
-  deFinettiLimitConePackage_to_perNIsLimit (Y := Y) (Ω := Ω) (X := X) pkg
-
-/-- Stable export: true per-`n` cone-commutativity family is equivalent to
-the existing `IsPrefixLawCone` predicate. -/
-theorem deFinettiStable_isPrefixLawCone_iff_perNPrefixLawConeCommutes
-    (X : ℕ → Ω → Bool) (μ : Measure Ω) :
-    IsPrefixLawCone (Ω := Ω) X μ ↔
-      ∀ n : ℕ, PerNPrefixLawConeCommutes (Ω := Ω) X μ n :=
-  isPrefixLawCone_iff_perNPrefixLawConeCommutes (Ω := Ω) X μ
 
 /-- Stable export: global finitary-permutation lifted commutation is equivalent
 to `IsPrefixLawCone`. -/
@@ -208,6 +95,21 @@ theorem deFinettiStable_kernelUniversalMediator_allSources_default
     (X : ℕ → Ω → Bool) :
     KernelLatentThetaUniversalMediator_allSources (Ω := Ω) X :=
   kernelLatentThetaUniversalMediator_allSources_default (Ω := Ω) X
+
+/-- Stable export: on discrete source measurable spaces, the default qualitative
+all-sources witness upgrades to a measurable latent kernel mediator. -/
+theorem deFinettiStable_allSourcesKernel_discrete_of_allSourcesDefault
+    (hunivDefault :
+      ∀ (Y' : Type) [MeasurableSpace Y'],
+        KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess)
+    (Y : Type) [MeasurableSpace Y] [DiscreteMeasurableSpace Y]
+    (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq)
+    [ProbabilityTheory.IsMarkovKernel κ]
+    (hκexch : KernelExchangeable (X := coordProcess) κ) :
+    ∃! L : ProbabilityTheory.Kernel Y LatentTheta,
+      KernelRepresentsLatentTheta (X := coordProcess) (κ := κ) (fun y => L y) :=
+  allSourcesKernel_discrete_of_allSourcesDefault
+    (hunivDefault := hunivDefault) Y κ hκexch
 
 /-- Stable export: all-sources Markov-only Kleisli mediator property implies
 Markov-only global mediator uniqueness for the `iidSequenceKernelTheta` cone. -/
@@ -321,6 +223,42 @@ theorem deFinettiStable_allSourcesKleisli_markovOnly_of_allSourcesKernelFactoriz
     KernelLatentThetaUniversalMediator_allSourcesKleisli_markovOnly :=
   allSourcesKleisli_markovOnly_of_allSourcesKernelFactorization huniv
 
+/-- Stable bridge: strict iid prefix law + all-sources kernel-level latent
+mediation imply all-sources Markov-only Kleisli universality directly. -/
+theorem deFinettiStable_allSourcesKleisli_markovOnly_of_allSourcesKernel_and_prefixLaw
+    (hprefix :
+      ∀ (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool),
+        iidSequenceKernelTheta θ (seqPrefixEvent n xs) =
+          (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKernel) :
+    KernelLatentThetaUniversalMediator_allSourcesKleisli_markovOnly :=
+  allSourcesKleisli_markovOnly_of_allSourcesKernel_and_prefixLaw
+    (hprefix := hprefix) huniv
+
+/-- Stable canonical Markov-only one-hop route (no commutes⇒Markov adapter):
+global finitary invariance + Dirac latent witness + default all-sources
+qualitative de Finetti imply Markov-only global mediator uniqueness for the
+canonical `iidSequenceKernelTheta` cone. -/
+theorem deFinettiStable_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_latentDirac
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (hrepDirac :
+      KernelRepresentsLatentTheta
+        (Y := LatentTheta) (Ω := GlobalBinarySeq) (X := coordProcess)
+        (κ := iidSequenceKernelTheta)
+        (fun θ : LatentTheta => (Measure.dirac θ : Measure LatentTheta)))
+    (hunivDefault :
+      ∀ (Y' : Type) [MeasurableSpace Y'],
+        KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess) :
+    GlobalIIDConeMediatorUnique_markovOnly
+      (iidSequenceKleisliConeSkeleton
+        (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)) :=
+  deFinettiStable_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_allSourcesKleisli
+    (hglobal := hglobal)
+    (allSourcesKleisli_markovOnly_of_defaultAllSourcesKernel_and_globalFinitaryInvariance_and_latentDirac_of_canonicalMomentEmbedding
+      (hglobal := hglobal)
+      (hrepDirac := hrepDirac)
+      (hunivDefault := hunivDefault))
+
 /-- Stable one-hop route from all-sources kernel-level factorization:
 combined with global finitary invariance of `iidSequenceKernelTheta`, it yields
 Markov-only global mediator uniqueness for the canonical cone. -/
@@ -366,26 +304,6 @@ theorem deFinettiStable_isLimit_iff_globalIIDConeMediatorUnique_iidSequenceKerne
           ((iidSequenceKleisliConeSkeleton hcommutes).toCone)) ↔
       GlobalIIDConeMediatorUnique (iidSequenceKleisliConeSkeleton hcommutes) :=
   isLimit_iff_globalIIDConeMediatorUnique_iidSequenceKernelTheta hcommutes
-
-/-- Stable export: derive the `iidSequenceKleisliHomTheta` commutation witness
-from global finitary invariance of `iidSequenceKernelTheta`. -/
-theorem deFinettiStable_iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance
-    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ)) :
-    ∀ τ : FinSuppPermNat,
-      CategoryTheory.CategoryStruct.comp iidSequenceKleisliHomTheta (finSuppPermKleisliHom τ) =
-        iidSequenceKleisliHomTheta :=
-  iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal
-
-/-- Stable export: unconditional horizon-`n` prefix evaluation for
-`iidSequenceKernelTheta` from global finitary invariance, via the canonical
-latent-kernel extracted by the mediator chain. -/
-theorem deFinettiStable_iidSequenceKernelTheta_prefix_apply_of_globalFinitaryInvariance
-    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
-    (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool) :
-    iidSequenceKernelTheta θ (seqPrefixEvent n xs) =
-      ∫⁻ θ' : LatentTheta, (iidPrefixKernel n θ') ({xs} : Set (Fin n → Bool)) ∂
-        (iidSequenceKernelTheta_canonicalLatentKernel_of_globalFinitaryInvariance hglobal θ) :=
-  iidSequenceKernelTheta_prefix_apply_of_globalFinitaryInvariance hglobal θ n xs
 
 /-- Stable export: no-extra-hypothesis (beyond global finitary invariance)
 IsLimit-ready bundle for `iidSequenceKernelTheta`. -/
@@ -447,43 +365,10 @@ def deFinettiStable_perNPrefixDiagramLimitCone (n : ℕ) :
     CategoryTheory.Limits.LimitCone (perNPrefixDiagramFunctor n) :=
   perNPrefixDiagramLimitCone n
 
-/-- Stable export: lightweight `DeFinettiPerNIsLimit` naming implies the true
-per-`n` `LimitCone` packaging. -/
-theorem deFinettiStable_perNIsLimit_to_trueLimitCone
-    (X : ℕ → Ω → Bool) (n : ℕ)
-    (h : DeFinettiPerNIsLimit (Y := Y) (Ω := Ω) X) :
-    Nonempty (CategoryTheory.Limits.LimitCone (perNPrefixDiagramFunctor n)) :=
-  deFinettiPerNIsLimit_to_trueLimitCone (Y := Y) (Ω := Ω) (X := X) (n := n) h
-
 /-- Stable export: `HasLimit` packaging for the true per-`n` diagram. -/
 theorem deFinettiStable_hasLimit_perNPrefixDiagramFunctor (n : ℕ) :
     CategoryTheory.Limits.HasLimit (perNPrefixDiagramFunctor n) :=
   hasLimit_perNPrefixDiagramFunctor n
-
-/-- Stable export: exchangeability-induced per-`n` cone factorization through
-the fixed-point limit object. -/
-theorem deFinettiStable_exchangeablePerNLimitMediator_fac
-    (X : ℕ → Ω → Bool) (μ : Measure Ω) (n : ℕ)
-    (hcone : IsPrefixLawCone (Ω := Ω) X μ)
-    (j : PerNPermIndex n) :
-    CategoryTheory.CategoryStruct.comp
-      (exchangeablePerNLimitMediator (Ω := Ω) X μ n hcone)
-      ((perNPrefixFixedPointsCone n).π.app j) =
-    (exchangeablePerNSourceCone (Ω := Ω) X μ n hcone).π.app j :=
-  exchangeablePerNLimitMediator_fac (Ω := Ω) X μ n hcone j
-
-/-- Stable export: uniqueness of the exchangeability-induced mediator via
-`IsLimit.lift` uniqueness. -/
-theorem deFinettiStable_exchangeablePerNLimitMediator_unique
-    (X : ℕ → Ω → Bool) (μ : Measure Ω) (n : ℕ)
-    (hcone : IsPrefixLawCone (Ω := Ω) X μ)
-    (m : PUnit ⟶ PerNPrefixFixedPoints n)
-    (hm :
-      ∀ j : PerNPermIndex n,
-        CategoryTheory.CategoryStruct.comp m ((perNPrefixFixedPointsCone n).π.app j) =
-          (exchangeablePerNSourceCone (Ω := Ω) X μ n hcone).π.app j) :
-    m = exchangeablePerNLimitMediator (Ω := Ω) X μ n hcone :=
-  exchangeablePerNLimitMediator_unique (Ω := Ω) X μ n hcone m hm
 
 /-- Stable export: single rewrite bridge connecting kernel-level universal
 mediator API to per-`n` limit-mediator uniqueness packaging. -/
@@ -616,6 +501,124 @@ theorem deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance
       (deFinettiStable_allSourcesKleisli_unrestricted_of_allSourcesKernelFactorization_unrestricted
         huniv)
 
+/-- Stable export: full-target route composed from kernel-level ingredients.
+Given global finitary invariance, iid-prefix cylinder law for
+`iidSequenceKernelTheta`, all-sources kernel-level mediator witnesses, and a
+commutation-to-Markov bridge for source kernels, derive the concrete global
+Kleisli(Giry) `IsLimit` witness with no separate mediator-uniqueness input. -/
+theorem deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernel_and_prefixLaw
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (hprefix :
+      ∀ (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool),
+        iidSequenceKernelTheta θ (seqPrefixEvent n xs) =
+          (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKernel)
+    (hmarkov_of_commutes :
+      ∀ (Y : Type) [MeasurableSpace Y]
+        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
+        (∀ τ : FinSuppPermNat,
+          CategoryTheory.CategoryStruct.comp
+              (kernelToKleisliHom
+                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
+              (finSuppPermKleisliHom τ) =
+            kernelToKleisliHom
+              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
+          ProbabilityTheory.IsMarkovKernel κ) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  exact
+    deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+      (Y := Y) (Ω := Ω) X hcore hglobal
+      (allSourcesKleisli_unrestricted_of_allSourcesKernel_and_prefixLaw
+        (hprefix := hprefix) (huniv := huniv)
+        (hmarkov_of_commutes := hmarkov_of_commutes))
+
+/-- Stable export: canonical one-hop route from default all-sources qualitative
+de Finetti to the full Kleisli(Giry) `IsLimit` endpoint, using the built-in
+latent-moment measurable embedding infrastructure (no extra Borel/embedding
+assumptions at call sites). -/
+theorem deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_latentDirac
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (hrepDirac :
+      KernelRepresentsLatentTheta
+        (Y := LatentTheta) (Ω := GlobalBinarySeq) (X := coordProcess)
+        (κ := iidSequenceKernelTheta)
+        (fun θ : LatentTheta => (Measure.dirac θ : Measure LatentTheta)))
+    (hunivDefault :
+      ∀ (Y' : Type) [MeasurableSpace Y'],
+        KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess)
+    (hmarkov_of_commutes :
+      ∀ (Y : Type) [MeasurableSpace Y]
+        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
+        (∀ τ : FinSuppPermNat,
+          CategoryTheory.CategoryStruct.comp
+              (kernelToKleisliHom
+                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
+              (finSuppPermKleisliHom τ) =
+            kernelToKleisliHom
+              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
+          ProbabilityTheory.IsMarkovKernel κ) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  exact
+    deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+      (Y := Y) (Ω := Ω) X hcore hglobal
+      (allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_globalFinitaryInvariance_and_latentDirac_of_canonicalMomentEmbedding
+        (hglobal := hglobal)
+        (hrepDirac := hrepDirac)
+        (hunivDefault := hunivDefault)
+        (hmarkov_of_commutes := hmarkov_of_commutes))
+
+/-- Stable export: compatibility wrapper retaining the explicit strict prefix-law
+input. Prefer the latent-Dirac route above. -/
+theorem deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_prefixLaw
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (hprefix :
+      ∀ (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool),
+        iidSequenceKernelTheta θ (seqPrefixEvent n xs) =
+          (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)))
+    (hunivDefault :
+      ∀ (Y' : Type) [MeasurableSpace Y'],
+        KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess)
+    (hmarkov_of_commutes :
+      ∀ (Y : Type) [MeasurableSpace Y]
+        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
+        (∀ τ : FinSuppPermNat,
+          CategoryTheory.CategoryStruct.comp
+              (kernelToKleisliHom
+                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
+              (finSuppPermKleisliHom τ) =
+            kernelToKleisliHom
+              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
+          ProbabilityTheory.IsMarkovKernel κ) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  have hrepDirac :
+      KernelRepresentsLatentTheta
+        (Y := LatentTheta) (Ω := GlobalBinarySeq) (X := coordProcess)
+        (κ := iidSequenceKernelTheta)
+        (fun θ : LatentTheta => (Measure.dirac θ : Measure LatentTheta)) :=
+    iidSequenceKernelTheta_represents_latentDirac (hprefix := hprefix)
+  exact
+    deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_latentDirac
+      (Y := Y) (Ω := Ω) (X := X)
+      hcore hglobal hrepDirac hunivDefault hmarkov_of_commutes
+
 /-- Stable export: global cross-`n` categorical package from prefix-law
 exchangeability. -/
 def deFinettiStable_exchangeableCrossNLimitPackage_of_isPrefixLawCone
@@ -632,18 +635,6 @@ theorem deFinettiStable_perNUnique_iff_crossNPackageFamily
       ∀ μ : Measure Ω, IsPrefixLawCone (Ω := Ω) X μ →
         Nonempty (ExchangeableCrossNLimitPackage (Ω := Ω) X μ) :=
   exchangeablePerNLimitMediatorUnique_iff_crossNPackageFamily (Ω := Ω) X
-
-/-- Stable export: non-essential check theorem using cross-`n` uniqueness. -/
-theorem deFinettiStable_exchangeableCrossNLimitPackage_mediator_eq_of_fac
-    (X : ℕ → Ω → Bool) (μ : Measure Ω)
-    (pkg : ExchangeableCrossNLimitPackage (Ω := Ω) X μ)
-    (n : ℕ) (m : PUnit ⟶ PerNPrefixFixedPoints n)
-    (hm :
-      ∀ j : PerNPermIndex n,
-        CategoryTheory.CategoryStruct.comp m ((perNPrefixFixedPointsCone n).π.app j) =
-          (exchangeablePerNSourceCone (Ω := Ω) X μ n pkg.hcone).π.app j) :
-    m = pkg.mediator n :=
-  exchangeableCrossNLimitPackage_mediator_eq_of_fac (Ω := Ω) X μ pkg n m hm
 
 /-- Stable export: uniqueness check between any two mediators satisfying the same
 cross-`n` factorization equations. -/

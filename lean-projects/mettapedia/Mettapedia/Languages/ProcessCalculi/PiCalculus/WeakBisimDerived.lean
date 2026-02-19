@@ -90,6 +90,54 @@ theorem WeakRestrictedBisimD.mono {N N' : Finset String} {p q : Pattern}
   obtain ⟨R, hR_sym, hR_fwd, hR_barb, hR_pq⟩ := h
   exact ⟨R, hR_sym, hR_fwd, fun p₁ q₁ hr x hx => hR_barb p₁ q₁ hr x (hsub hx), hR_pq⟩
 
+/-- Derived SC bridge on the core-canonical fragment:
+SC-equivalent core-canonical terms are derived-weakly bisimilar. -/
+theorem WeakRestrictedBisimD.of_SC_coreCanonical {N : Finset String} {p q : Pattern}
+    (hsc : p ≡ q) (hp : CoreCanonical p) : p ≈ᵈ{N} q := by
+  have hq : CoreCanonical q := coreCanonical_of_SC hp hsc
+  refine ⟨fun a b => Nonempty (a ≡ b) ∧ CoreCanonical a ∧ CoreCanonical b, ?_, ?_, ?_, ?_⟩
+  · intro a b hab
+    rcases hab with ⟨⟨hab⟩, hca, hcb⟩
+    exact ⟨⟨Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence.symm _ _ hab⟩, hcb, hca⟩
+  · intro p₁ q₁ hab p₂ hp₂
+    rcases hab with ⟨⟨hsc₁₂⟩, hc₁, _hc₂⟩
+    rcases hp₂ with ⟨hstep⟩
+    have hcore : Mettapedia.Languages.ProcessCalculi.RhoCalculus.Reduction.Reduces p₁ p₂ :=
+      ReducesDerived.toCore_of_coreCanonical hc₁ hstep
+    have hc₂ : CoreCanonical p₂ := coreCanonical_of_derived_step hc₁ hstep
+    have hqcore : Mettapedia.Languages.ProcessCalculi.RhoCalculus.Reduction.Reduces q₁ p₂ :=
+      Mettapedia.Languages.ProcessCalculi.RhoCalculus.Reduction.Reduces.equiv
+        (Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence.symm _ _ hsc₁₂)
+        hcore
+        (Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence.refl _)
+    exact ⟨p₂, ⟨ReducesDerivedStar.step (.core hqcore) (.refl p₂)⟩,
+      ⟨⟨Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence.refl _⟩, hc₂, hc₂⟩⟩
+  · intro p₁ q₁ hab x _hx hobs
+    rcases hab with ⟨⟨hsc₁₂⟩, _hc₁, _hc₂⟩
+    rcases hobs with ⟨p₁', hsc_p, hobs'⟩
+    exact ⟨p₁',
+      Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence.trans _ _ _
+        (Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence.symm _ _ hsc₁₂) hsc_p,
+      hobs'⟩
+  · exact ⟨⟨hsc⟩, hp, hq⟩
+
+/-- Derived SC bridge (API alias):
+SC-equivalent core-canonical terms are derived-weakly bisimilar. -/
+theorem WeakRestrictedBisimD.of_SC {N : Finset String} {p q : Pattern}
+    (hsc : p ≡ q) (hp : CoreCanonical p) : p ≈ᵈ{N} q :=
+  WeakRestrictedBisimD.of_SC_coreCanonical hsc hp
+
+/-- Right-side core-canonical variant of the derived SC bridge. -/
+theorem WeakRestrictedBisimD.of_SC_rightCoreCanonical {N : Finset String} {p q : Pattern}
+    (hsc : p ≡ q) (hq : CoreCanonical q) : p ≈ᵈ{N} q := by
+  have hqp : q ≈ᵈ{N} p :=
+    WeakRestrictedBisimD.of_SC
+      (N := N)
+      (p := q) (q := p)
+      (Mettapedia.Languages.ProcessCalculi.RhoCalculus.StructuralCongruence.symm _ _ hsc)
+      hq
+  exact WeakRestrictedBisimD.symm hqp
+
 /-- Empty observation set: all patterns are derived-weakly bisimilar. -/
 theorem WeakRestrictedBisimD.empty (p q : Pattern) : p ≈ᵈ{∅} q := by
   refine ⟨fun _ _ => True, fun _ _ _ => trivial, ?_, ?_, trivial⟩

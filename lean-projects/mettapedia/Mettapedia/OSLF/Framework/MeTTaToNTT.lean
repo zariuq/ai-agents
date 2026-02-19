@@ -90,7 +90,7 @@ noncomputable def mettaFormulaToNT
     (relEnv : RelationEnv)
     (W : State)
     (queryOfAtom : String → Pattern → Pattern)
-    (φ : OSLFFormula) (p : Pattern) (X : PLNObj) : NativeTypeTheory :=
+    (φ : OSLFFormula) (p : Pattern) (X : PLNObj) : NativeTypeBundle :=
   mettaEvidenceToNT X (mettaSemE relEnv W queryOfAtom φ p)
 
 @[simp] theorem mettaFormulaToNT_snd

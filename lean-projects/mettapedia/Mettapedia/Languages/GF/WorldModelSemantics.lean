@@ -443,7 +443,7 @@ equalities exposing the query shape; algebraic composition laws over Evidence
 would require additional WM axioms (e.g. subadditivity). -/
 
 open Mettapedia.OSLF.MeTTaIL.Match
-open Mettapedia.OSLF.MeTTaIL.DeclReducesWithPremises
+open Mettapedia.OSLF.MeTTaIL.DeclReducesPremises
 open Mettapedia.OSLF.MeTTaIL.Engine
 
 /-- Generic identity-wrapper reduction: a rewrite rule with pattern

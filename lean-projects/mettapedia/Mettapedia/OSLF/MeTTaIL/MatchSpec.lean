@@ -39,7 +39,7 @@ open Mettapedia.OSLF.MeTTaIL.Syntax
 open Mettapedia.OSLF.MeTTaIL.Substitution
 open Mettapedia.OSLF.MeTTaIL.Match
 open Mettapedia.OSLF.MeTTaIL.Engine
-open Mettapedia.OSLF.MeTTaIL.DeclReduces
+open Mettapedia.OSLF.MeTTaIL.DeclReductions
 
 /-! ## Relational Matching Specification -/
 

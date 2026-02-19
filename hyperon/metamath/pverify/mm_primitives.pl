@@ -55,6 +55,7 @@ is_whitespace(32).  % Space
 is_whitespace(9).   % Tab
 is_whitespace(10).  % LF
 is_whitespace(13).  % CR
+is_whitespace(12).  % Form feed
 
 % Metamath printable: ASCII 33-126 (printable non-whitespace)
 is_mm_printable(C) :-
