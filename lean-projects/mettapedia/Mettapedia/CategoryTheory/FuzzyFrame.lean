@@ -1,7 +1,11 @@
 import Mathlib.Order.Heyting.Basic
 import Mathlib.Order.CompleteLattice.Basic
+import Mathlib.Order.CompleteLatticeIntervals
+import Mathlib.Order.ConditionallyCompleteLattice.Basic
 import Mathlib.Data.Real.Basic
+import Mathlib.Data.Real.Archimedean
 import Mathlib.Topology.Order.Basic
+import Mettapedia.ProbabilityTheory.KnuthSkilling.Literature.Residuated
 
 /-!
 # The Unit Interval [0,1] as a Frame
@@ -112,31 +116,75 @@ instance : BoundedOrder 𝕀 where
 We define Inf and Sup for arbitrary sets.
 -/
 
-/-- Infimum of a set: greatest lower bound
-    For now we axiomatize this - proving completeness requires more work with ℝ. -/
+/-- Infimum of a set in `[0,1]`, computed via `sInf` on the real image. -/
 noncomputable def sInf' (S : Set 𝕀) : 𝕀 :=
   by
     classical
     by_cases h : S.Nonempty
-    · -- TODO: Define the real glb of `S` and clamp to [0,1].
-      -- This will likely use `sInf` on ℝ together with proofs that the result
-      -- stays in the interval.
-      sorry
+    · let T : Set ℝ := Subtype.val '' S
+      have hTnonempty : T.Nonempty := by
+        rcases h with ⟨x, hx⟩
+        exact ⟨x.val, ⟨x, hx, rfl⟩⟩
+      have hTbdd : BddBelow T := by
+        refine ⟨0, ?_⟩
+        intro y hy
+        rcases hy with ⟨x, hx, rfl⟩
+        exact x.prop.1
+      have h0 : 0 ≤ sInf T := by
+        exact le_csInf hTnonempty (by
+          intro y hy
+          rcases hy with ⟨x, hx, rfl⟩
+          exact x.prop.1)
+      have h1 : sInf T ≤ 1 := by
+        rcases hTnonempty with ⟨y, hy⟩
+        exact (csInf_le hTbdd hy).trans (by
+          rcases hy with ⟨x, hx, rfl⟩
+          exact x.prop.2)
+      exact ⟨sInf T, ⟨h0, h1⟩⟩
     · -- Empty set has Inf = ⊤.
       exact one
 
-/-- Supremum of a set: least upper bound -/
+/-- Supremum of a set in `[0,1]`, computed via `sSup` on the real image. -/
 noncomputable def sSup' (S : Set 𝕀) : 𝕀 :=
   by
     classical
     by_cases h : S.Nonempty
-    · -- TODO: Define the real lub of `S` and clamp to [0,1].
-      sorry
+    · let T : Set ℝ := Subtype.val '' S
+      have hTnonempty : T.Nonempty := by
+        rcases h with ⟨x, hx⟩
+        exact ⟨x.val, ⟨x, hx, rfl⟩⟩
+      have hTbdd : BddAbove T := by
+        refine ⟨1, ?_⟩
+        intro y hy
+        rcases hy with ⟨x, hx, rfl⟩
+        exact x.prop.2
+      have h0 : 0 ≤ sSup T := by
+        rcases hTnonempty with ⟨y, hy⟩
+        have hy0 : 0 ≤ y := by
+          rcases hy with ⟨x, hx, rfl⟩
+          exact x.prop.1
+        exact hy0.trans (le_csSup hTbdd hy)
+      have h1 : sSup T ≤ 1 := by
+        exact csSup_le hTnonempty (by
+          intro y hy
+          rcases hy with ⟨x, hx, rfl⟩
+          exact x.prop.2)
+      exact ⟨sSup T, ⟨h0, h1⟩⟩
     · -- Empty set has Sup = ⊥.
       exact zero
 
 noncomputable instance : InfSet 𝕀 := ⟨sInf'⟩
 noncomputable instance : SupSet 𝕀 := ⟨sSup'⟩
+
+/-- `[0,1]` inherits a complete lattice structure from interval subtypes. -/
+noncomputable instance : CompleteLattice 𝕀 := by
+  change CompleteLattice (Set.Icc (0 : ℝ) 1)
+  infer_instance
+
+/-- `[0,1]` is a frame (finite meets distribute over arbitrary joins). -/
+noncomputable instance : Order.Frame 𝕀 := by
+  change Order.Frame (Set.Icc (0 : ℝ) 1)
+  infer_instance
 
 /-! ## Step 4: Product T-Norm (Meet for Fuzzy Logic)
 
@@ -155,6 +203,8 @@ def product (a b : 𝕀) : 𝕀 :=
 
 instance : Mul 𝕀 := ⟨product⟩
 
+@[simp] theorem product_val (a b : 𝕀) : (a * b).val = a.val * b.val := rfl
+
 /-- Product is commutative -/
 theorem product_comm (a b : 𝕀) : a * b = b * a := by
   ext
@@ -169,6 +219,19 @@ theorem product_assoc (a b c : 𝕀) : a * b * c = a * (b * c) := by
 theorem product_one (a : 𝕀) : a * 1 = a := by
   ext
   exact mul_one a.val
+
+/-- One is the left unit for product. -/
+theorem one_product (a : 𝕀) : (1 : 𝕀) * a = a := by
+  ext
+  exact one_mul a.val
+
+instance : CommMonoid 𝕀 where
+  mul := (· * ·)
+  one := 1
+  mul_assoc := product_assoc
+  one_mul := one_product
+  mul_one := product_one
+  mul_comm := product_comm
 
 /-! ## Step 5: Heyting Implication
 
@@ -193,6 +256,14 @@ noncomputable def productImp (a b : 𝕀) : 𝕀 :=
       · exact le_min (by norm_num) (div_nonneg b.prop.1 a.prop.1)
       · exact min_le_left 1 _⟩
 
+@[simp] theorem productImp_val_of_eq (a b : 𝕀) (ha : a.val = 0) :
+    (productImp a b).val = 1 := by
+  simp [productImp, ha, one]
+
+@[simp] theorem productImp_val_of_ne (a b : 𝕀) (ha : a.val ≠ 0) :
+    (productImp a b).val = min 1 (b.val / a.val) := by
+  simp [productImp, ha]
+
 /-! ## Step 6: Frame Laws
 
 We need to prove that the unit interval satisfies the Frame axioms.
@@ -202,28 +273,62 @@ require these structures, we use section variables (explicit hypotheses)
 rather than global axioms.
 -/
 
-section FrameStructure
-
--- These are mathematically true but require non-trivial proofs from ℝ properties.
--- We use section variables to make the assumptions explicit rather than global axioms.
-variable (unitInterval_completeLattice : CompleteLattice 𝕀)
-variable (unitInterval_frame : Order.Frame 𝕀)
-
 /-! ## Step 7: Residuation for Product T-Norm
 
-The key property: a * b ≤ c ↔ b ≤ a ⇨ c (where ⇨ is productImp)
+The key property: a * b ≤ c ↔ b ≤ a ⇨ c (where ⇨ is productImp).
 -/
 
-variable (product_residuation : ∀ a b c : 𝕀, a * b ≤ c ↔ b ≤ productImp a c)
+theorem product_residuation (a b c : 𝕀) :
+    a * b ≤ c ↔ b ≤ productImp a c := by
+  by_cases ha : a.val = 0
+  · constructor
+    · intro _
+      change b.val ≤ (productImp a c).val
+      simpa [productImp, ha] using b.prop.2
+    · intro _
+      change a.val * b.val ≤ c.val
+      simpa [ha] using c.prop.1
+  · have ha0 : 0 < a.val := lt_of_le_of_ne a.prop.1 (Ne.symm ha)
+    constructor
+    · intro hab
+      change b.val ≤ (productImp a c).val
+      rw [productImp_val_of_ne _ _ ha]
+      refine le_min b.prop.2 ?_
+      exact (le_div_iff₀ ha0).2 (by simpa [mul_comm] using hab)
+    · intro hbc
+      change a.val * b.val ≤ c.val
+      have hbc' : b.val ≤ c.val / a.val := by
+        have hmin : b.val ≤ min 1 (c.val / a.val) := by
+          have hbval : b.val ≤ (productImp a c).val := hbc
+          simpa [productImp, ha] using hbval
+        exact (le_min_iff.mp hmin).2
+      have hmul : b.val * a.val ≤ c.val := (le_div_iff₀ ha0).1 hbc'
+      simpa [mul_comm] using hmul
 
-/-- Under the residuation assumption, product implication is the right adjoint. -/
-theorem productImp_adjoint
-    (product_residuation : ∀ a b c : 𝕀, a * b ≤ c ↔ b ≤ productImp a c)
-    (a b c : 𝕀) :
+/-- Product implication is right adjoint to product t-norm. -/
+theorem productImp_adjoint (a b c : 𝕀) :
     a * b ≤ c ↔ b ≤ productImp a c :=
   product_residuation a b c
 
-end FrameStructure
+/-- Product t-norm is bounded by meet on `[0,1]`. -/
+theorem product_le_inf (a b : 𝕀) : a * b ≤ a ⊓ b := by
+  refine le_inf ?_ ?_
+  · change a.val * b.val ≤ a.val
+    exact mul_le_of_le_one_right a.prop.1 b.prop.2
+  · change a.val * b.val ≤ b.val
+    simpa [mul_comm] using (mul_le_of_le_one_right b.prop.1 a.prop.2)
+
+noncomputable instance : Mettapedia.ProbabilityTheory.KnuthSkilling.Literature.ResiduatedMonoid 𝕀 where
+  res := productImp
+  adj := product_residuation
+
+/-- Exchange law for product residuation:
+`(a * b) ⇒ c = a ⇒ (b ⇒ c)`. -/
+theorem productImp_exchange (a b c : 𝕀) :
+    productImp (a * b) c = productImp a (productImp b c) := by
+  simpa using
+    (Mettapedia.ProbabilityTheory.KnuthSkilling.Literature.ResiduatedMonoidLemmas.exchange
+      (α := 𝕀) a b c)
 
 end UnitInterval
 
@@ -232,15 +337,10 @@ end UnitInterval
 We've defined the unit interval [0,1] with:
 1. ✅ Basic structure (0, 1, min, max)
 2. ✅ Product t-norm (multiplication)
-3. ✅ Product implication (residuation)
-4. ⚠️ Complete lattice structure (axiomatized)
-5. ⚠️ Frame structure (axiomatized)
-6. ⚠️ Residuation law (axiomatized)
-
-**TODO**: Replace axioms with actual proofs!
-
-The axioms are mathematically true (well-known in fuzzy logic literature),
-but should be proved from ℝ properties for a complete formalization.
+3. ✅ Product implication operation
+4. ✅ Complete lattice structure (via interval instance)
+5. ✅ Frame structure (via interval instance)
+6. ✅ Product-residuation law (`product_residuation`)
 
 For now, this gives us enough structure to use [0,1] as the fiber
 for PLN truth values in the lambda theory framework.

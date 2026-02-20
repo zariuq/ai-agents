@@ -1,4 +1,7 @@
 import Mettapedia.OSLF.Main
+import Mettapedia.Logic.OSLFImageFinite
+import Mettapedia.OSLF.Framework.PiRhoCanonicalBridge
+import Mettapedia.OSLF.Framework.AssumptionNecessity
 
 /-!
 # OSLF Specification Index
@@ -252,7 +255,8 @@ formalization. Serves as a traceability matrix for review.
 - Canonical-vs-extension policy is theorem-checked by
   `rhoSetDropWitness_canonical_vs_setExt`
 
-Outside this scope, experimental Pi-calculus layers still contain open `sorry`s.
+Outside this scope, the π→ρ correspondence layer is tracked separately from this
+core OSLF index.
 
 The formalization otherwise relies only on:
 - Lean 4 core axioms (propext, Quot, Classical.choice)
@@ -285,6 +289,34 @@ open Mettapedia.OSLF
 #check @langGalois
 #check @langDiamond
 #check @langBox
+#check @Mettapedia.Logic.OSLFImageFinite.imageFinite_langReducesExecUsing
+#check @Mettapedia.Logic.OSLFImageFinite.imageFinite_langReducesUsing
+#check @Mettapedia.Logic.OSLFImageFinite.imageFinite_langReduces
+#check @Mettapedia.Logic.OSLFImageFinite.hm_converse_langReducesUsing
+#check @Mettapedia.Logic.OSLFImageFinite.hm_converse_langReduces
+#check @Mettapedia.OSLF.Framework.LangMorphism.sem_transfer_of_broadFragment
+#check @Mettapedia.OSLF.Framework.LangMorphism.sem_transfer_of_diaBoxFragment
+#check @Mettapedia.OSLF.Framework.LangMorphism.sem_of_diaBoxFragment_on_domain
+#check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.sem_iff_of_endpointBroadFragment
+#check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.FiniteSubrelation
+#check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.hm_converse_of_finiteSubrelation
+#check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.reachableCoreStarFiniteSubrelation
+#check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.reachableDerivedStarFiniteSubrelation
+#check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.piRho_coreMain_predDomain_endpoint
+#check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.piRho_coreMain_canonical_contract_end_to_end
+#check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.CalcPreludeDomainIndexedSemanticMorphism.transfer_domain_star_reachable_fragment_paramAtom_predDomainPair
+#check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.CalcPreludeLanguageMorphismSemanticTransferParamAtomPredDomain.transfer_fragment_bundle_predDomainPair
+#check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.piRho_coreMain_predDomain_transfer_bundle_end_to_end
+#check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.predDomain_rf_fragment_canary_nontrivial
+#check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.predDomain_rf_fragment_canary_nontrivial_progress
+#check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.predDomain_derivedStar_fragment_canary_nontrivial
+#check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.predDomain_derivedStar_fragment_canary_nontrivial_progress
+#check @Mettapedia.OSLF.Framework.AssumptionNecessity.rhoCoreStarRel_not_imageFinite
+#check @Mettapedia.OSLF.Framework.AssumptionNecessity.rhoDerivedStarRel_not_imageFinite
+#check @Mettapedia.OSLF.Framework.AssumptionNecessity.not_global_hImageFinite_rhoCoreStarRel
+#check @Mettapedia.OSLF.Framework.AssumptionNecessity.not_global_hImageFinite_rhoDerivedStarRel
+#check @Mettapedia.OSLF.Framework.AssumptionNecessity.counterexample_hAtomAll_for_global_diaBox_transfer
+#check @Mettapedia.OSLF.Framework.AssumptionNecessity.counterexample_hDiaTopAll_for_global_diaBox_transfer
 #check @SortPresheafCategory
 #check @predFibration
 #check @oslf_fibration

@@ -427,17 +427,66 @@ For PLN, the key equation is associativity of conjunction:
 This constrains which sort assignments survive.
 -/
 
-/-- Check if a sort assignment is equationally admissible.
+/-- Equations in the PLN presentation used by hypercube admissibility. -/
+structure TheoryEquation where
+  lhs : PLNTerm
+  rhs : PLNTerm
 
-    For PLN, we need the sort of (P ∧ Q) ∧ R to equal P ∧ (Q ∧ R).
-    This forces the conjunction sort to be symmetric.
+/-- PLN conjunction associativity equation. -/
+def conjAssocEquation : TheoryEquation where
+  lhs := PLNTerm.conj (PLNTerm.conj (PLNTerm.atom "P") (PLNTerm.atom "Q")) (PLNTerm.atom "R")
+  rhs := PLNTerm.conj (PLNTerm.atom "P") (PLNTerm.conj (PLNTerm.atom "Q") (PLNTerm.atom "R"))
+
+/-- PLN conjunction commutativity equation. -/
+def conjCommEquation : TheoryEquation where
+  lhs := PLNTerm.conj (PLNTerm.atom "P") (PLNTerm.atom "Q")
+  rhs := PLNTerm.conj (PLNTerm.atom "Q") (PLNTerm.atom "P")
+
+/-- The equation family tracked in this hypercube file. -/
+def plnEquations : List TheoryEquation :=
+  [conjAssocEquation, conjCommEquation]
+
+/-- Variables occurring in a PLN term. -/
+def termVars : PLNTerm → Finset String
+  | .atom v => {v}
+  | .impl a b => termVars a ∪ termVars b
+  | .conj a b => termVars a ∪ termVars b
+  | .disj a b => termVars a ∪ termVars b
+  | .neg a => termVars a
+  | .truth _ => ∅
+
+/-- Variables shared between both sides of an equation. -/
+def sharedVars (eq : TheoryEquation) : Finset String :=
+  termVars eq.lhs ∩ termVars eq.rhs
+
+/-- A sort assignment respects an equation when each shared variable slot
+is typed at the term level (`∗`). -/
+def respectsEquation (σ : Slot → HSort) (eq : TheoryEquation) : Prop :=
+  ∀ v, v ∈ sharedVars eq → σ (Slot.param v (PLNObj.Concept v)) = HSort.star
+
+/-- Equational admissibility for PLN hypercube slots.
+
+`σ` is admissible when:
+1. the rewrite result slot is term-level (`∗`), and
+2. each tracked PLN equation is respected on shared variable slots.
 -/
-def isEquationallyAdmissible (_σ : Slot → HSort) : Prop :=
-  -- TODO: implement equational admissibility (check each equation t = u is preserved by σ).
-  -- This was previously `True`, which silently made later "admissibility" claims vacuous.
-  -- Keep this as an explicit `sorry` until the equation-checking machinery is in place.
-  by
-    exact sorry
+def isEquationallyAdmissible (σ : Slot → HSort) : Prop :=
+  σ Slot.result = HSort.star ∧
+  ∀ eq ∈ plnEquations, respectsEquation σ eq
+
+/-- Any admissible assignment classifies the rewrite result as a term (`∗`). -/
+theorem isEquationallyAdmissible_result_star
+    {σ : Slot → HSort} (hσ : isEquationallyAdmissible σ) :
+    σ Slot.result = HSort.star :=
+  hσ.1
+
+/-- The all-`∗` assignment is admissible for the tracked PLN equations. -/
+theorem allStar_isEquationallyAdmissible :
+    isEquationallyAdmissible (fun _ => HSort.star) := by
+  constructor
+  · rfl
+  · intro eq heq v hv
+    rfl
 
 /-! ## The Full H_Σ Construction
 

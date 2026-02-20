@@ -105,5 +105,23 @@ theorem MarkovRowRecurrentPrefixMeasure.ae_infinite_visits
       (∀ i : Fin k, ∀ᵐ ω ∂P, Set.Infinite {t : ℕ | ω t = i}) := by
   exact hrow
 
+theorem MarkovRowRecurrentPrefixMeasure.to_MarkovRecurrentPrefixMeasure
+    (μ : Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure (Fin k))
+    (hrow : MarkovRowRecurrentPrefixMeasure (k := k) μ) :
+    MarkovRecurrentPrefixMeasure (k := k) μ := by
+  rcases hrow with ⟨P, hP, hrep, hrows⟩
+  letI : IsProbabilityMeasure P := hP
+  have hallRows : ∀ᵐ ω ∂P, ∀ i : Fin k, Set.Infinite {t : ℕ | ω t = i} :=
+    ae_all_iff.2 hrows
+  have hstartInf : ∀ᵐ ω ∂P, Set.Infinite {t : ℕ | ω t = ω 0} := by
+    filter_upwards [hallRows] with ω hω
+    exact hω (ω 0)
+  have hrecAe : ∀ᵐ ω ∂P, ω ∈ recurrentEvent (k := k) := by
+    filter_upwards [hstartInf] with ω hω
+    exact (mem_recurrentEvent_iff_infinite_returns_to_start (k := k) ω).2 hω
+  have hrec : P (recurrentEvent (k := k)) = 1 :=
+    (mem_ae_iff_prob_eq_one (μ := P) (measurableSet_recurrentEvent (k := k))).1 hrecAe
+  exact ⟨P, hP, hrep, hrec⟩
+
 end MarkovDeFinettiRecurrence
 end Mettapedia.Logic

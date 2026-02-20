@@ -441,6 +441,7 @@ export Mettapedia.OSLF.Framework.FULLStatus (
   tracker
   countBy
   remaining
+  remainingCount
 )
 
 export Mettapedia.OSLF.Framework.LambdaInstance (

@@ -1,5 +1,6 @@
 import Mettapedia.OSLF.Framework.TypeSynthesis
 import Mettapedia.OSLF.Framework.DerivedModalities
+import Mettapedia.OSLF.Formula
 
 /-!
 # Language Morphisms between OSLF Instances
@@ -36,6 +37,7 @@ open Mettapedia.OSLF.MeTTaIL.Syntax
 open Mettapedia.OSLF.MeTTaIL.Engine
 open Mettapedia.OSLF.Framework.TypeSynthesis
 open Mettapedia.OSLF.Framework.DerivedModalities
+open Mettapedia.OSLF.Formula
 
 /-! ## Multi-Step Reduction for Generic Languages
 
@@ -260,6 +262,226 @@ theorem LanguageMorphism.operational_correspondence_forward
     {p q : Pattern} (h : LangReducesStar L₁ p q) :
     ∃ T, LangReducesStar L₂ (m.mapTerm p) T ∧ sc T (m.mapTerm q) :=
   m.forward_multi_strong sc_refl sc_trans sc_star h
+
+/-! ## Framework-Level Formula Transfer Fragments
+
+Generic fragment-level transfer lemmas that are independent of any
+process-calculus internals. These are reused by endpoint wrappers that need
+uniform dia/box induction and atom-preservation transport.
+-/
+
+/-- Dia/box fragment (`⊤`, atoms, `∧`, `∨`, `→`, `◇`, `□`) without `⊥`.
+This is the strongest fragment for which domain-based "all states satisfy"
+transfer is generally derivable from atom/domain hypotheses. -/
+inductive DiaBoxFragment : OSLFFormula → Prop where
+  | top : DiaBoxFragment .top
+  | atom (a : String) : DiaBoxFragment (.atom a)
+  | and {φ ψ} :
+      DiaBoxFragment φ →
+      DiaBoxFragment ψ →
+      DiaBoxFragment (.and φ ψ)
+  | or {φ ψ} :
+      DiaBoxFragment φ →
+      DiaBoxFragment ψ →
+      DiaBoxFragment (.or φ ψ)
+  | imp {φ ψ} :
+      DiaBoxFragment φ →
+      DiaBoxFragment ψ →
+      DiaBoxFragment (.imp φ ψ)
+  | dia {φ} :
+      DiaBoxFragment φ →
+      DiaBoxFragment (.dia φ)
+  | box {φ} :
+      DiaBoxFragment φ →
+      DiaBoxFragment (.box φ)
+
+/-- Broad boolean/modal fragment (`⊤`, `⊥`, atoms, `∧`, `∨`, `→`, `◇`, `□`).
+Used for atom-preservation transport equivalences. -/
+inductive BroadFragment : OSLFFormula → Prop where
+  | top : BroadFragment .top
+  | bot : BroadFragment .bot
+  | atom (a : String) : BroadFragment (.atom a)
+  | and {φ ψ} :
+      BroadFragment φ →
+      BroadFragment ψ →
+      BroadFragment (.and φ ψ)
+  | or {φ ψ} :
+      BroadFragment φ →
+      BroadFragment ψ →
+      BroadFragment (.or φ ψ)
+  | imp {φ ψ} :
+      BroadFragment φ →
+      BroadFragment ψ →
+      BroadFragment (.imp φ ψ)
+  | dia {φ} :
+      BroadFragment φ →
+      BroadFragment (.dia φ)
+  | box {φ} :
+      BroadFragment φ →
+      BroadFragment (.box φ)
+
+/-- Dia/box fragment embeds into the broader fragment. -/
+theorem DiaBoxFragment.to_broad
+    {φ : OSLFFormula}
+    (h : DiaBoxFragment φ) :
+    BroadFragment φ := by
+  induction h with
+  | top => exact BroadFragment.top
+  | atom a => exact BroadFragment.atom a
+  | and hφ hψ ihφ ihψ => exact BroadFragment.and ihφ ihψ
+  | or hφ hψ ihφ ihψ => exact BroadFragment.or ihφ ihψ
+  | imp hφ hψ ihφ ihψ => exact BroadFragment.imp ihφ ihψ
+  | dia hφ ihφ => exact BroadFragment.dia ihφ
+  | box hφ ihφ => exact BroadFragment.box ihφ
+
+/-- Semantic invariance on the broad fragment under atom-preservation
+equivalence (`I` and `J` agree on atoms). -/
+theorem sem_iff_of_broadFragment
+    {R : Pattern → Pattern → Prop}
+    {I J : AtomSem}
+    {φ : OSLFFormula}
+    (hfrag : BroadFragment φ)
+    (hAtomIff : ∀ a p, I a p ↔ J a p) :
+    ∀ p, sem R I φ p ↔ sem R J φ p := by
+  induction hfrag with
+  | top =>
+      intro p
+      simp [sem]
+  | bot =>
+      intro p
+      simp [sem]
+  | atom a =>
+      intro p
+      simpa [sem] using hAtomIff a p
+  | and hφ hψ ihφ ihψ =>
+      intro p
+      simp [sem, ihφ p, ihψ p]
+  | or hφ hψ ihφ ihψ =>
+      intro p
+      simp [sem, ihφ p, ihψ p]
+  | imp hφ hψ ihφ ihψ =>
+      intro p
+      constructor
+      · intro h hJφ
+        have hIφ : sem R I _ p := (ihφ p).2 hJφ
+        have hIψ : sem R I _ p := h hIφ
+        exact (ihψ p).1 hIψ
+      · intro h hIφ
+        have hJφ : sem R J _ p := (ihφ p).1 hIφ
+        have hJψ : sem R J _ p := h hJφ
+        exact (ihψ p).2 hJψ
+  | dia hφ ihφ =>
+      intro p
+      constructor
+      · intro h
+        rcases h with ⟨q, hpq, hI⟩
+        exact ⟨q, hpq, (ihφ q).1 hI⟩
+      · intro h
+        rcases h with ⟨q, hpq, hJ⟩
+        exact ⟨q, hpq, (ihφ q).2 hJ⟩
+  | box hφ ihφ =>
+      intro p
+      constructor
+      · intro h q hqp
+        exact (ihφ q).1 (h q hqp)
+      · intro h q hqp
+        exact (ihφ q).2 (h q hqp)
+
+/-- Dia/box fragment inherits broad-fragment atom-preservation invariance. -/
+theorem sem_iff_of_diaBoxFragment
+    {R : Pattern → Pattern → Prop}
+    {I J : AtomSem}
+    {φ : OSLFFormula}
+    (hfrag : DiaBoxFragment φ)
+    (hAtomIff : ∀ a p, I a p ↔ J a p) :
+    ∀ p, sem R I φ p ↔ sem R J φ p := by
+  exact sem_iff_of_broadFragment hfrag.to_broad hAtomIff
+
+/-- One-way transfer on the broad fragment under atom-preservation
+equivalence assumptions. -/
+theorem sem_transfer_of_broadFragment
+    {R : Pattern → Pattern → Prop}
+    {I J : AtomSem}
+    {φ : OSLFFormula}
+    (hfrag : BroadFragment φ)
+    (hAtomIff : ∀ a p, I a p ↔ J a p)
+    {p : Pattern}
+    (hsem : sem R I φ p) :
+    sem R J φ p :=
+  (sem_iff_of_broadFragment hfrag hAtomIff p).1 hsem
+
+/-- One-way transfer on the dia/box fragment under atom-preservation
+equivalence assumptions. -/
+theorem sem_transfer_of_diaBoxFragment
+    {R : Pattern → Pattern → Prop}
+    {I J : AtomSem}
+    {φ : OSLFFormula}
+    (hfrag : DiaBoxFragment φ)
+    (hAtomIff : ∀ a p, I a p ↔ J a p)
+    {p : Pattern}
+    (hsem : sem R I φ p) :
+    sem R J φ p :=
+  (sem_iff_of_diaBoxFragment hfrag hAtomIff p).1 hsem
+
+/-- Formula-induction transfer principle on a backward-closed domain for the
+dia/box fragment. -/
+theorem sem_of_diaBoxFragment_on_domain
+    {R : Pattern → Pattern → Prop}
+    {D : Pattern → Prop}
+    {I : AtomSem}
+    {φ : OSLFFormula}
+    (hfrag : DiaBoxFragment φ)
+    (hAtomDomain : ∀ a p, D p → I a p)
+    (hDomainBackward : ∀ {p q}, D p → R q p → D q)
+    (hDiaDomain : ∀ p, D p → ∃ q, R p q ∧ D q) :
+    ∀ p, D p → sem R I φ p := by
+  induction hfrag with
+  | top =>
+      intro _p _hD
+      trivial
+  | atom a =>
+      intro p hD
+      exact hAtomDomain a p hD
+  | and hφ hψ ihφ ihψ =>
+      intro p hD
+      exact ⟨ihφ p hD, ihψ p hD⟩
+  | or hφ _hψ ihφ _ihψ =>
+      intro p hD
+      exact Or.inl (ihφ p hD)
+  | imp _hφ _hψ _ihφ ihψ =>
+      intro p hD _hPrem
+      exact ihψ p hD
+  | dia _hφ ih =>
+      intro p hD
+      rcases hDiaDomain p hD with ⟨q, hRq, hDq⟩
+      exact ⟨q, hRq, ih q hDq⟩
+  | box _hφ ih =>
+      intro p hD q hqp
+      exact ih q (hDomainBackward hD hqp)
+
+/-- Global dia/box-fragment transfer principle from universal atoms and
+universal `◇⊤`. -/
+theorem sem_of_diaBoxFragment
+    {R : Pattern → Pattern → Prop}
+    {I : AtomSem}
+    {φ : OSLFFormula}
+    (hfrag : DiaBoxFragment φ)
+    (hAtomAll : ∀ a p, I a p)
+    (hDiaTopAll : ∀ p, sem R I (.dia .top) p) :
+    ∀ p, sem R I φ p := by
+  intro p
+  exact sem_of_diaBoxFragment_on_domain
+    (R := R) (D := fun _ => True) hfrag
+    (hAtomDomain := fun a p _ => hAtomAll a p)
+    (hDomainBackward := by
+      intro _ _ _ _
+      trivial)
+    (hDiaDomain := by
+      intro p _
+      rcases hDiaTopAll p with ⟨q, hpq, _⟩
+      exact ⟨q, hpq, trivial⟩)
+    p
+    trivial
 
 /-! ## Barb Preservation -/
 

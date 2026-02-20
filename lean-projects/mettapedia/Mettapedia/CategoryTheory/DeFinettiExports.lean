@@ -22,27 +22,42 @@ It re-exports the stable theorem chain needed by downstream users.
 10. `deFinettiExport_iidSequenceKernelTheta_isLimitReady_of_prefix_pi_marginals`
 11. `deFinettiExport_markovCoreUniversal_iff_crossNPackageFamily`
 12. `deFinettiExport_markovCore_to_kleisliRoute`
-13. `deFinettiExport_markovCore_to_kleisliIsLimit`
-14. `deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted`
-15. `deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernelFactorization_unrestricted`
-16. `deFinettiExport_iidSequenceKleisliCone_isLimit_of_allSourcesKleisli_unrestricted`
-17. `deFinettiExport_restrictedSolomonoff_prefixLaw_implies_unique_latentThetaMediator`
-18. `deFinettiExport_restrictedSolomonoff_totalOutput_implies_nupln_master_chain_and_unique_latentThetaMediator`
-19. `deFinettiExport_restrictedSolomonoff_totalOutput_and_programMassComplete_implies_nupln_master_chain_and_unique_latentThetaMediator`
+13. `deFinettiExport_markovCore_to_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel` (canonical)
+14. `deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted` (adapter)
+15. `deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKernelFactorization_unrestricted` (adapter)
+16. `deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKernel` (adapter)
+17. `deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_prefixPiMarginals` (adapter)
+18. `deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_strengthening` (hard-step target hook)
+19. `deFinettiExport_iidSequenceKleisliCone_isLimit_of_allSourcesKleisli_unrestricted`
+20. `deFinettiExport_restrictedSolomonoff_prefixLaw_implies_unique_latentThetaMediator`
+21. `deFinettiExport_restrictedSolomonoff_totalOutput_implies_nupln_master_chain_and_unique_latentThetaMediator`
+22. `deFinettiExport_restrictedSolomonoff_totalOutput_and_programMassComplete_implies_nupln_master_chain_and_unique_latentThetaMediator`
 
 ## Markov-Core Route (Recommended)
 1. Use `deFinettiExport_markovCoreUniversal_iff_crossNPackageFamily` to align
    Markov-core universality with the cross-`n` package family.
 2. Use `deFinettiExport_markovCore_to_kleisliRoute` to obtain the concrete
    Kleisli(Giry) `IsLimit`-ready witness bundle.
-3. Prefer
-   `deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted`
-   when unrestricted all-sources Kleisli universality is available.
-4. If you have unrestricted all-sources kernel-level factorization (rather than
-   Kleisli universality directly), use
-   `deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernelFactorization_unrestricted`.
-5. Otherwise, when global mediator uniqueness is available, use
-   `deFinettiExport_markovCore_to_kleisliIsLimit`.
+3. Canonical endpoint:
+   `deFinettiExport_markovCore_to_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel`.
+4. Use unrestricted/full-`IsLimit` theorems only as adapters when you have an
+   explicit commutes-to-Markov bridge (`CommutesToMarkovBridge`).
+5. Structural boundary:
+   `deFinettiExport_not_commutesToMarkovBridge_unrestricted` shows this bridge
+   is not derivable in unrestricted `Kleisli(MeasCat.Giry)`.
+
+## Migration Map (Legacy -> Canonical/Adapter)
+- `deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted`
+  -> `deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted`
+- `deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernelFactorization_unrestricted`
+  -> `deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKernelFactorization_unrestricted`
+- `deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernel`
+  -> `deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKernel`
+- `deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_prefixPiMarginals`
+  -> `deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_prefixPiMarginals`
+- Legacy full-target route names:
+  -> `deFinettiExport_markovCore_to_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel`
+     when the markov-only endpoint is sufficient.
 -/
 
 set_option autoImplicit false
@@ -254,6 +269,23 @@ theorem deFinettiExport_markovCore_to_kleisliRoute
     (Y := Y) (Ω := Ω) X hcore hglobal
 
 /-- Recommended alias theorem: Markov-core universal mediation plus global
+finitary invariance imply canonical Markov-only Kleisli(Giry)
+mediator-uniqueness for `iidSequenceKernelTheta`, using the default all-sources
+kernel witness internally. This route avoids the unrestricted
+commutes-to-Markov bridge assumption. -/
+theorem deFinettiExport_markovCore_to_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ)) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      GlobalIIDConeMediatorUnique_markovOnly
+        (iidSequenceKleisliConeSkeleton
+          (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)) := by
+  exact
+    deFinettiStable_markovCore_to_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+      (Y := Y) (Ω := Ω) X hcore hglobal
+
+/-- Recommended alias theorem: Markov-core universal mediation plus global
 finitary invariance and mediator uniqueness yield a concrete global
 Kleisli(Giry) `IsLimit` witness for `iidSequenceKernelTheta`. -/
 theorem deFinettiExport_markovCore_to_kleisliIsLimit
@@ -287,7 +319,26 @@ theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance
           ((iidSequenceKleisliConeSkeleton
             (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
   exact
-    deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+    deFinettiStable_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+      (Y := Y) (Ω := Ω) X hcore hglobal huniv
+
+/-- Explicit adapter alias for the unrestricted all-sources Kleisli full-target
+route.
+
+Prefer the canonical Markov-only endpoint
+`deFinettiExport_markovCore_to_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel`. -/
+theorem deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  exact
+    deFinettiStable_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
       (Y := Y) (Ω := Ω) X hcore hglobal huniv
 
 /-- Recommended alias theorem (full-target route): same as above but taking an
@@ -304,40 +355,100 @@ theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance
           ((iidSequenceKleisliConeSkeleton
             (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
   exact
-    deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernelFactorization_unrestricted
+    deFinettiStable_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKernelFactorization_unrestricted
       (Y := Y) (Ω := Ω) X hcore hglobal huniv
 
-/-- Recommended alias theorem (full-target route): compose the kernel-level
-prefix-law bridge with all-sources kernel mediation and the commutation-to-Markov
-bridge, then discharge the final global Kleisli(Giry) `IsLimit` goal in one hop. -/
-theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernel_and_prefixLaw
+/-- Explicit adapter alias for the unrestricted all-sources
+kernel-factorization full-target route.
+
+Prefer the canonical Markov-only endpoint
+`deFinettiExport_markovCore_to_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel`. -/
+theorem deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKernelFactorization_unrestricted
     (X : ℕ → Ω → Bool)
     (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
     (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
-    (hprefix :
-      ∀ (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool),
-        iidSequenceKernelTheta θ (seqPrefixEvent n xs) =
-          (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)))
-    (huniv : KernelLatentThetaUniversalMediator_allSourcesKernel)
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
+    (huniv :
+      KernelLatentThetaUniversalMediator_allSourcesKernelFactorization_unrestricted) :
     KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
       Nonempty
         (CategoryTheory.Limits.IsLimit
           ((iidSequenceKleisliConeSkeleton
             (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
   exact
-    deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernel_and_prefixLaw
-      (Y := Y) (Ω := Ω) X hcore hglobal hprefix huniv hmarkov_of_commutes
+    deFinettiStable_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKernelFactorization_unrestricted
+      (Y := Y) (Ω := Ω) X hcore hglobal huniv
+
+/-- Assumption-bearing adapter (full-target route): compose all-sources
+kernel mediation with an explicit commutes-to-Markov bridge, then discharge the
+global Kleisli(Giry) `IsLimit` goal in one hop.
+
+Canonical endpoint remains the Markov-only theorem
+`deFinettiExport_markovCore_to_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel`.
+The bridge assumption is not derivable in unrestricted `Kleisli(MeasCat.Giry)`;
+see `deFinettiExport_not_commutesToMarkovBridge_unrestricted`. -/
+theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernel
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKernel)
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  exact
+    deFinettiStable_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKernel
+      (Y := Y) (Ω := Ω) X hcore hglobal huniv hmarkov_of_commutes
+
+/-- Explicit adapter alias for the all-sources-kernel full-target route.
+
+Prefer the canonical Markov-only endpoint
+`deFinettiExport_markovCore_to_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel`. -/
+theorem deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKernel
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKernel)
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  exact
+    deFinettiStable_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKernel
+      (Y := Y) (Ω := Ω) X hcore hglobal huniv hmarkov_of_commutes
+
+/-- Compatibility wrapper retaining an explicit iid-prefix-law input.
+Prefer
+`deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKernel`.
+-/
+theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernel_and_prefixLaw
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (_hprefix :
+      ∀ (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool),
+        iidSequenceKernelTheta θ (seqPrefixEvent n xs) =
+          (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKernel)
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  exact
+    deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKernel
+      (Y := Y) (Ω := Ω) (X := X)
+      hcore hglobal huniv hmarkov_of_commutes
+
+/-- Structural boundary: in unrestricted `Kleisli(MeasCat.Giry)`, raw
+permutation-commutation does not imply Markovness of source kernels. -/
+theorem deFinettiExport_not_commutesToMarkovBridge_unrestricted :
+    ¬ CommutesToMarkovBridge :=
+  not_commutesToMarkovBridge_unrestricted
 
 /-- Canonical export theorem (full-target route, crux-isolated):
 compose
@@ -354,32 +465,30 @@ theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance
       ∀ (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool),
         iidSequenceKernelTheta θ (seqPrefixEvent n xs) =
           (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)))
-    (hEmb : MeasurableEmbedding latentThetaMomentSeq)
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
+    (_hEmb : MeasurableEmbedding latentThetaMomentSeq)
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
     KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
       Nonempty
         (CategoryTheory.Limits.IsLimit
           ((iidSequenceKleisliConeSkeleton
             (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  have hrepDirac :
+      KernelRepresentsLatentTheta
+        (Y := LatentTheta) (Ω := GlobalBinarySeq) (X := coordProcess)
+        (κ := iidSequenceKernelTheta)
+        (fun θ : LatentTheta => (Measure.dirac θ : Measure LatentTheta)) :=
+    iidSequenceKernelTheta_represents_latentDirac (hprefix := hprefix)
+  have huniv :
+      KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted :=
+    allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_globalFinitaryInvariance_and_latentDirac_of_canonicalMomentEmbedding
+      (hglobal := hglobal)
+      (hrepDirac := hrepDirac)
+      (hunivDefault := fun (Y' : Type) _ =>
+        kernelLatentThetaUniversalMediator_default_typeFamily (Y' := Y'))
+      (hmarkov_of_commutes := hmarkov_of_commutes)
   exact
-    deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
-      (Y := Y) (Ω := Ω) X hcore hglobal
-      (allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_of_latentThetaMomentEmbedding
-        (hprefix := hprefix)
-        (hunivDefault := fun (Y' : Type) _ =>
-          kernelLatentThetaUniversalMediator_default_typeFamily (Y' := Y'))
-        (hEmb := hEmb)
-        (hmarkov_of_commutes := hmarkov_of_commutes))
+    deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+      (Y := Y) (Ω := Ω) (X := X) hcore hglobal huniv
 
 /-- Compatibility alias of the embedding-driven prefix-law endpoint.
 Prefer the latent-Dirac canonical theorem
@@ -393,130 +502,8 @@ theorem deFinettiExport_markovCore_to_kleisliIsLimit_canonical_of_prefixLaw_and_
       ∀ (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool),
         iidSequenceKernelTheta θ (seqPrefixEvent n xs) =
           (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)))
-    (hEmb : MeasurableEmbedding latentThetaMomentSeq)
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
-    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
-      Nonempty
-        (CategoryTheory.Limits.IsLimit
-          ((iidSequenceKleisliConeSkeleton
-            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
-  exact
-    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_prefixLaw_of_thetaMomentEmbedding
-      (Y := Y) (Ω := Ω) (X := X)
-      hcore hglobal hprefix hEmb hmarkov_of_commutes
-
-/-- Canonical full-route export theorem:
-compose
-1. default all-sources qualitative de Finetti,
-2. canonical latent-moment measurable embedding infrastructure,
-3. global finitary invariance plus a Dirac latent representation witness for
-   `iidSequenceKernelTheta`, and
-4. a commutes⇒Markov bridge for source kernels,
-to discharge the global Kleisli(Giry) `IsLimit` goal in one hop. -/
-theorem deFinettiExport_markovCore_to_kleisliIsLimit_canonical
-    (X : ℕ → Ω → Bool)
-    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
-    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
-    (hrepDirac :
-      KernelRepresentsLatentTheta
-        (Y := LatentTheta) (Ω := GlobalBinarySeq) (X := coordProcess)
-        (κ := iidSequenceKernelTheta)
-        (fun θ : LatentTheta => (Measure.dirac θ : Measure LatentTheta)))
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
-    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
-      Nonempty
-        (CategoryTheory.Limits.IsLimit
-          ((iidSequenceKleisliConeSkeleton
-            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
-  exact
-    deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_latentDirac
-      (Y := Y) (Ω := Ω) (X := X)
-      hcore hglobal hrepDirac
-      (hunivDefault := fun (Y' : Type) _ =>
-        kernelLatentThetaUniversalMediator_default_typeFamily (Y' := Y'))
-      hmarkov_of_commutes
-
-/-- Convenience wrapper (full-target route, no explicit all-sources mediator
-input): compose
-1. default all-sources qualitative de Finetti,
-2. canonical latent-moment measurable embedding infrastructure,
-3. global finitary invariance plus Dirac latent representation for
-   `iidSequenceKernelTheta`, and
-4. a commutes⇒Markov bridge for source kernels,
-then discharge the global Kleisli(Giry) `IsLimit` goal in one hop. -/
-theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_latentDirac
-    (X : ℕ → Ω → Bool)
-    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
-    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
-    (hrepDirac :
-      KernelRepresentsLatentTheta
-        (Y := LatentTheta) (Ω := GlobalBinarySeq) (X := coordProcess)
-        (κ := iidSequenceKernelTheta)
-        (fun θ : LatentTheta => (Measure.dirac θ : Measure LatentTheta)))
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
-    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
-      Nonempty
-        (CategoryTheory.Limits.IsLimit
-          ((iidSequenceKleisliConeSkeleton
-            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
-  exact
-    deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_latentDirac
-      (Y := Y) (Ω := Ω) (X := X)
-      hcore hglobal hrepDirac
-      (hunivDefault := fun (Y' : Type) _ =>
-        kernelLatentThetaUniversalMediator_default_typeFamily (Y' := Y'))
-      hmarkov_of_commutes
-
-/-- Compatibility wrapper retaining explicit strict iid-prefix equations. -/
-theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_prefixLaw
-    (X : ℕ → Ω → Bool)
-    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
-    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
-    (hprefix :
-      ∀ (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool),
-        iidSequenceKernelTheta θ (seqPrefixEvent n xs) =
-          (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)))
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
+    (_hEmb : MeasurableEmbedding latentThetaMomentSeq)
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
     KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
       Nonempty
         (CategoryTheory.Limits.IsLimit
@@ -528,10 +515,238 @@ theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance
         (κ := iidSequenceKernelTheta)
         (fun θ : LatentTheta => (Measure.dirac θ : Measure LatentTheta)) :=
     iidSequenceKernelTheta_represents_latentDirac (hprefix := hprefix)
+  have huniv :
+      KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted :=
+    allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_globalFinitaryInvariance_and_latentDirac_of_canonicalMomentEmbedding
+      (hglobal := hglobal)
+      (hrepDirac := hrepDirac)
+      (hunivDefault := fun (Y' : Type) _ =>
+        kernelLatentThetaUniversalMediator_default_typeFamily (Y' := Y'))
+      (hmarkov_of_commutes := hmarkov_of_commutes)
   exact
-    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_latentDirac
+    deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+      (Y := Y) (Ω := Ω) (X := X) hcore hglobal huniv
+
+/-- Preferred export theorem from an explicit latent-Dirac witness.
+
+This canonical route avoids an external strict-prefix-law hypothesis and
+dispatches through the latent-Dirac all-sources bridge.
+-/
+theorem deFinettiExport_markovCore_to_kleisliIsLimit_canonical
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (hrepDirac :
+      KernelRepresentsLatentTheta
+        (Y := LatentTheta) (Ω := GlobalBinarySeq) (X := coordProcess)
+        (κ := iidSequenceKernelTheta)
+        (fun θ : LatentTheta => (Measure.dirac θ : Measure LatentTheta)))
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  have huniv :
+      KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted :=
+    allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_globalFinitaryInvariance_and_latentDirac_of_canonicalMomentEmbedding
+      (hglobal := hglobal)
+      (hrepDirac := hrepDirac)
+      (hunivDefault := fun (Y' : Type) _ =>
+        kernelLatentThetaUniversalMediator_default_typeFamily (Y' := Y'))
+      (hmarkov_of_commutes := hmarkov_of_commutes)
+  exact
+    deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+      (Y := Y) (Ω := Ω) (X := X) hcore hglobal huniv
+
+/-- Compatibility wrapper (full-target route, no explicit all-sources mediator
+input) from an explicit latent-Dirac witness. -/
+theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_latentDirac
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (hrepDirac :
+      KernelRepresentsLatentTheta
+        (Y := LatentTheta) (Ω := GlobalBinarySeq) (X := coordProcess)
+        (κ := iidSequenceKernelTheta)
+        (fun θ : LatentTheta => (Measure.dirac θ : Measure LatentTheta)))
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  exact
+    deFinettiExport_markovCore_to_kleisliIsLimit_canonical
       (Y := Y) (Ω := Ω) (X := X)
       hcore hglobal hrepDirac hmarkov_of_commutes
+
+/-- Preferred wrapper from default all-sources qualitative de Finetti with no
+external strict-prefix-law hypothesis. -/
+theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  exact
+    deFinettiExport_markovCore_to_kleisliIsLimit_canonical
+      (Y := Y) (Ω := Ω) (X := X)
+      hcore hglobal
+      iidSequenceKernelTheta_represents_latentDirac_unconditional
+      hmarkov_of_commutes
+
+/-- Hard-step target hook:
+if the no-bridge strengthening is available, derive the full default-all-sources
+Kleisli `IsLimit` endpoint without an explicit `CommutesToMarkovBridge`
+assumption. -/
+theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_strengthening
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (hstrength : DefaultAllSourcesKernel_to_allSourcesKleisli_unrestricted_strengthening) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  exact
+    deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_strengthening
+      (Y := Y) (Ω := Ω) (X := X)
+      hcore hglobal
+      (hunivDefault := fun (Y' : Type) _ =>
+        kernelLatentThetaUniversalMediator_default_typeFamily (Y' := Y'))
+      hstrength
+
+/-- Compatibility wrapper retaining explicit strict iid-prefix equations. Prefer
+`deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel`.
+-/
+theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_prefixLaw
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (_hprefix :
+      ∀ (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool),
+        iidSequenceKernelTheta θ (seqPrefixEvent n xs) =
+          (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)))
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  exact
+    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+      (Y := Y) (Ω := Ω) (X := X)
+      hcore hglobal hmarkov_of_commutes
+
+/-- Preferred compatibility wrapper if your local context already carries
+`StandardBorelSpace (ProbabilityMeasure LatentTheta)`, without requiring an
+explicit strict-prefix-law hypothesis. -/
+theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_standardBorelProbabilityMeasure
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (_hrepDirac :
+      KernelRepresentsLatentTheta
+        (Y := LatentTheta) (Ω := GlobalBinarySeq) (X := coordProcess)
+        (κ := iidSequenceKernelTheta)
+        (fun θ : LatentTheta => (Measure.dirac θ : Measure LatentTheta)))
+    [StandardBorelSpace (ProbabilityMeasure LatentTheta)]
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  exact
+    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+      (Y := Y) (Ω := Ω) (X := X)
+      hcore hglobal hmarkov_of_commutes
+
+/-- Preferred compatibility fallback when only `BorelSpace (FiniteMeasure LatentTheta)`
+is available, without requiring an explicit strict-prefix-law hypothesis. -/
+theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_finiteMeasureBorel
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (_hrepDirac :
+      KernelRepresentsLatentTheta
+        (Y := LatentTheta) (Ω := GlobalBinarySeq) (X := coordProcess)
+        (κ := iidSequenceKernelTheta)
+        (fun θ : LatentTheta => (Measure.dirac θ : Measure LatentTheta)))
+    [BorelSpace (FiniteMeasure LatentTheta)]
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  letI : BorelSpace (FiniteMeasure LatentTheta) := inferInstance
+  exact
+    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+      (Y := Y) (Ω := Ω) (X := X)
+      hcore hglobal hmarkov_of_commutes
+
+/-- Compatibility middle-strength wrapper:
+if finite-prefix marginals of `iidSequenceKernelTheta` are Bernoulli product
+measures, derive the latent-Dirac witness internally and dispatch to the
+canonical no-explicit-prefix-law endpoint.
+
+Prefer
+`deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_prefixPiMarginals`
+or the canonical markov-only endpoint
+`deFinettiExport_markovCore_to_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel`. -/
+theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_prefixPiMarginals
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (hprefixPi :
+      ∀ (θ : LatentTheta) (n : ℕ),
+        (iidSequenceKernelTheta θ).map (seqPrefixProj n) =
+          Measure.pi (fun _ : Fin n => thetaBernoulliKernel θ))
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  exact
+    deFinettiStable_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_prefixPiMarginals
+      (Y := Y) (Ω := Ω) (X := X) hcore hglobal hprefixPi
+      (hunivDefault := fun (Y' : Type) _ =>
+        kernelLatentThetaUniversalMediator_default_typeFamily (Y' := Y'))
+      hmarkov_of_commutes
+
+/-- Explicit adapter alias for the default-all-sources prefix-`π`
+middle-strength route.
+
+Prefer the canonical Markov-only endpoint
+`deFinettiExport_markovCore_to_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel`. -/
+theorem deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_prefixPiMarginals
+    (X : ℕ → Ω → Bool)
+    (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (hprefixPi :
+      ∀ (θ : LatentTheta) (n : ℕ),
+        (iidSequenceKernelTheta θ).map (seqPrefixProj n) =
+          Measure.pi (fun _ : Fin n => thetaBernoulliKernel θ))
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
+    KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
+      Nonempty
+        (CategoryTheory.Limits.IsLimit
+          ((iidSequenceKleisliConeSkeleton
+            (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
+  exact
+    deFinettiStable_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_prefixPiMarginals
+      (Y := Y) (Ω := Ω) (X := X) hcore hglobal hprefixPi
+      (hunivDefault := fun (Y' : Type) _ =>
+        kernelLatentThetaUniversalMediator_default_typeFamily (Y' := Y'))
+      hmarkov_of_commutes
 
 /-- Deprecated compatibility wrapper (full-target route, standard-Borel probability-measure
 upgrade): use when you want to thread an explicit
@@ -540,32 +755,21 @@ theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance
     (X : ℕ → Ω → Bool)
     (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
     (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
-    (hprefix :
+    (_hprefix :
       ∀ (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool),
         iidSequenceKernelTheta θ (seqPrefixEvent n xs) =
           (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)))
     [StandardBorelSpace (ProbabilityMeasure LatentTheta)]
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
     KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
       Nonempty
         (CategoryTheory.Limits.IsLimit
           ((iidSequenceKleisliConeSkeleton
             (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
   exact
-    deFinettiExport_markovCore_to_kleisliIsLimit_canonical_of_prefixLaw_and_thetaMomentEmbedding
+    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_standardBorelProbabilityMeasure
       (Y := Y) (Ω := Ω) (X := X)
-      hcore hglobal hprefix
-      measurableEmbedding_latentThetaMomentSeq_of_standardBorel
+      hcore hglobal iidSequenceKernelTheta_represents_latentDirac_unconditional
       hmarkov_of_commutes
 
 /-- Deprecated convenience fallback wrapper (full-target route, finite-measure bridge path):
@@ -580,22 +784,12 @@ theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance
     (X : ℕ → Ω → Bool)
     (hcore : KernelLatentThetaUniversalMediatorInMarkovCore (Y := Y) (Ω := Ω) X)
     (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
-    (hprefix :
+    (_hprefix :
       ∀ (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool),
         iidSequenceKernelTheta θ (seqPrefixEvent n xs) =
           (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)))
     [BorelSpace (FiniteMeasure LatentTheta)]
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
     KernelLatentThetaUniversalMediator (Y := Y) (Ω := Ω) X ∧
       Nonempty
         (CategoryTheory.Limits.IsLimit
@@ -603,27 +797,80 @@ theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance
             (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
   letI : BorelSpace (FiniteMeasure LatentTheta) := inferInstance
   exact
-    deFinettiExport_markovCore_to_kleisliIsLimit_canonical_of_prefixLaw_and_thetaMomentEmbedding
+    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_finiteMeasureBorel
       (Y := Y) (Ω := Ω) (X := X)
-      hcore hglobal hprefix
-      measurableEmbedding_latentThetaMomentSeq
+      hcore hglobal iidSequenceKernelTheta_represents_latentDirac_unconditional
       hmarkov_of_commutes
 
 attribute
   [deprecated
-    deFinettiExport_markovCore_to_kleisliIsLimit_canonical
+    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernel
+    (since := "2026-02-20")]
+  deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernel_and_prefixLaw
+
+attribute
+  [deprecated
+    deFinettiExport_markovCore_to_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+    (since := "2026-02-20")]
+  deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
+
+attribute
+  [deprecated
+    deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKernelFactorization_unrestricted
+    (since := "2026-02-20")]
+  deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernelFactorization_unrestricted
+
+attribute
+  [deprecated
+    deFinettiExport_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_prefixPiMarginals
+    (since := "2026-02-20")]
+  deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_prefixPiMarginals
+
+attribute
+  [deprecated
+    deFinettiExport_markovCore_to_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+    (since := "2026-02-20")]
+  deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKernel
+
+attribute
+  [deprecated
+    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_prefixLaw
+    (since := "2026-02-19")]
+  deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_prefixLaw_of_thetaMomentEmbedding
+
+attribute
+  [deprecated
+    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_prefixLaw
     (since := "2026-02-19")]
   deFinettiExport_markovCore_to_kleisliIsLimit_canonical_of_prefixLaw_and_thetaMomentEmbedding
 
 attribute
   [deprecated
-    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_prefixLaw
+    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+    (since := "2026-02-19")]
+  deFinettiExport_markovCore_to_kleisliIsLimit_canonical
+
+attribute
+  [deprecated
+    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+    (since := "2026-02-19")]
+  deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_latentDirac
+
+attribute
+  [deprecated
+    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+    (since := "2026-02-19")]
+  deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_prefixLaw
+
+attribute
+  [deprecated
+    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_standardBorelProbabilityMeasure
     (since := "2026-02-19")]
   deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_prefixLaw_of_standardBorelProbabilityMeasure
 
 attribute
   [deprecated
-    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_prefixLaw
+    deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_finiteMeasureBorel
     (since := "2026-02-19")]
   deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_prefixLaw_of_finiteMeasureBorel
 
@@ -671,13 +918,30 @@ theorem deFinettiExport_globalIIDConeMediatorUnique_markovOnly_of_allSourcesKlei
     (hcommutes := hcommutes) huniv
 
 /-- Recommended canonical Markov-only one-hop route (no commutes⇒Markov
-adapter): global finitary invariance + Dirac latent witness imply Markov-only
-global mediator uniqueness for the canonical `iidSequenceKernelTheta` cone,
-using the default all-sources qualitative de Finetti witness and the canonical
-moment-embedding bridge. -/
+adapter): global finitary invariance implies Markov-only global mediator
+uniqueness for the canonical `iidSequenceKernelTheta` cone, using the default
+all-sources qualitative de Finetti witness and the canonical moment-embedding
+bridge. The latent-Dirac witness is supplied internally. -/
+theorem deFinettiExport_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ)) :
+    GlobalIIDConeMediatorUnique_markovOnly
+      (iidSequenceKleisliConeSkeleton
+        (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)) :=
+  deFinettiStable_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+    (hglobal := hglobal)
+    (hunivDefault := fun (Y' : Type) _ =>
+      kernelLatentThetaUniversalMediator_default_typeFamily (Y' := Y'))
+
+/-- Compatibility wrapper retaining an explicit latent-Dirac witness.
+Prefer
+`deFinettiExport_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel`.
+-/
+@[deprecated
+  deFinettiExport_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+  (since := "2026-02-20")]
 theorem deFinettiExport_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_latentDirac
     (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
-    (hrepDirac :
+    (_hrepDirac :
       KernelRepresentsLatentTheta
         (Y := LatentTheta) (Ω := GlobalBinarySeq) (X := coordProcess)
         (κ := iidSequenceKernelTheta)
@@ -685,11 +949,8 @@ theorem deFinettiExport_globalIIDConeMediatorUnique_markovOnly_of_globalFinitary
     GlobalIIDConeMediatorUnique_markovOnly
       (iidSequenceKleisliConeSkeleton
         (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)) :=
-  deFinettiStable_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_and_latentDirac
+  deFinettiExport_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
     (hglobal := hglobal)
-    (hrepDirac := hrepDirac)
-    (hunivDefault := fun (Y' : Type) _ =>
-      kernelLatentThetaUniversalMediator_default_typeFamily (Y' := Y'))
 
 /-- Recommended export: strict iid prefix law + all-sources kernel-level latent
 mediation imply all-sources Markov-only Kleisli universality directly. -/

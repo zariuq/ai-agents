@@ -5,6 +5,25 @@
 !(import_prolog_functions_from_file_pred "lib/lib_zar.pl"
   (get_cmdline_args get_cmdline_arg cmdline_arg_count has_cmdline_args))
 
+;;; Global states for pure mode (avoid new-space/new-state inside function bodies)
+!(bind! &subst_alist (new-state ()))
+!(bind! &error_list (new-state ()))
+
+;;; Association list helpers (pure, no new-space needed)
+;; alist-lookup: find value for key in association list of ($key $val) pairs
+(= (alist-lookup () $key) Empty)
+(= (alist-lookup $alist $key)
+   (let ($first $rest) (decons-atom $alist)
+     (let ($k $v) $first
+       (if (== $k $key) $v (alist-lookup $rest $key)))))
+
+;; alist-lookup-all: non-deterministically return all values matching key
+;; (used by check_dvs which needs match-like behavior over substitution pairs)
+(= (alist-lookup-all $alist $key)
+   (let $pair (superpose $alist)
+     (let ($k $v) $pair
+       (if (== $k $key) $v (empty)))))
+
 ;;; Check for --log flag in command line args (verbose logging)
 ;;; By default, logging is OFF. Use --log to enable verbose output.
 (= (has-log-flag $args)
@@ -393,7 +412,8 @@
 
 ;; ============ Substitution Functions ============
 
-;; add-subst - add substitution from stack entry (new-space version)
+;; add-subst - add substitution from stack entry (pure list version)
+;; $subst is a state holding an association list
 (= (add-subst $stack $sp $subst ($typecode $var))
   (let*
     (
@@ -405,15 +425,18 @@
     ) (if (== $entry0 $typecode)
         (let*
           (
-            (true (add-atom $subst ($var $entry1:)))
+            ($old_alist (get-state $subst))
+            (true (change-state! $subst (cons-atom ($var $entry1:) $old_alist)))
             ($_2 (adjust-state-additive $sp 1))
-            ; (true (println! ("added to subst:" $entry1:)))
           ) ($var $entry1:))
         (Error ((sp $sp_val) (entry $entry) (typecode $typecode) (var $var)) "Proof stack entry does not match floating hypothesis."))))
 
-;; apply_subst_tok - apply substitution to single token
+;; apply_subst_tok - apply substitution to single token (pure list version)
+;; $subst is a state holding an association list
 (= (apply_subst_tok $subst $tok)
-  (let $res (unify $subst ($tok $sub) $sub $tok) $res))
+  (let $alist (get-state $subst)
+    (let $res (alist-lookup $alist $tok)
+      (if (== $res Empty) $tok $res))))
 
 ;; apply_subst - apply substitution to statement
 (= (apply_subst $subst $stmt)
@@ -473,14 +496,15 @@
 (= (check_dvs $kb $subst $dvs0)
   (if (== $dvs0 ())
       true  ; empty list = no constraints to check
-      (let $results (collapse
-                      (let $d (superpose $dvs0)
-                        (let* (
-                          (($d1 $d2) $d)
-                          ($x_vars (match $subst ($d1 $sub1) (find_vars $kb $sub1)))
-                          ($y_vars (match $subst ($d2 $sub2) (find_vars $kb $sub2)))
-                        ) (check_dv_pairs $kb $x_vars $y_vars))))
-        (check_dv_results $results))))
+      (let $alist (get-state $subst)
+        (let $results (collapse
+                        (let $d (superpose $dvs0)
+                          (let* (
+                            (($d1 $d2) $d)
+                            ($x_vars (let $sub1 (alist-lookup-all $alist $d1) (find_vars $kb $sub1)))
+                            ($y_vars (let $sub2 (alist-lookup-all $alist $d2) (find_vars $kb $sub2)))
+                          ) (check_dv_pairs $kb $x_vars $y_vars))))
+          (check_dv_results $results)))))
 
 
 ;; NOTE: verify_dvs, has-dv-error, find-error-in-cons removed
@@ -511,7 +535,8 @@
           (let*
             (
               ($_1 (change-state! $sp $sp_val))
-              ($subst (new-space))
+              (true (change-state! &subst_alist ()))
+              ($subst &subst_alist)
             )
             ; Process fhyps - check for type mismatch errors
             (case (process_fhyps $stack $sp $subst $fhyps)
@@ -533,10 +558,9 @@
                                  ;; Update stack tracking states after pushing conclusion
                                  ($_sl_update (change-state! &sl (+ $sp_val 1)))
                                  ($_top_update (change-state! &top $new_conclusion))
-                                 ($_cleanup (delete-space $subst))
                                ) ()))))))))))))))
 
-;; treat_hypothesis - process hypothesis during proof verification (new-space version)
+;; treat_hypothesis - process hypothesis during proof verification
 ;; Pushes FHyp or EHyp onto the stack if the label is an active hypothesis
 ;; Updates &sl (stack length) and &top (top of stack) states
 (= (treat_hypothesis $kb $stack $label $Type $Data $stack_len)
@@ -594,14 +618,14 @@
             (let true (printif! (stack ($label): (collapse (match $stack $s $s))))
               $result)))))
 
-;; treat_step_with_errors - treat step and record errors/incomplete markers in error space
+;; treat_step_with_errors - treat step and record errors/incomplete markers in error list state
 (= (treat_step_with_errors $kb $stack $sp $errors $label)
     (let $result (treat_step $kb $stack $sp $label)
       (case $result
         (((Error $info $msg)
-           (add-atom $errors (Error $info $msg)))
+           (change-state! $errors (cons-atom (Error $info $msg) (get-state $errors))))
          ((incomplete)
-           (add-atom $errors (incomplete)))
+           (change-state! $errors (cons-atom (incomplete) (get-state $errors))))
          ($_ ())))))
 
 ;; process_proof_steps - tail-recursive proof step processing
@@ -621,10 +645,11 @@
        (collapse (treat_step_with_errors $kb $stack $sp $errors $label))
        (process_proof_steps_tail $kb $stack $sp $errors $rest))))  ;; tail call
 
-;; treat_normal_proof - process a proof sequence (new-space version)
+;; treat_normal_proof - process a proof sequence (pure list version)
 ;; Returns first (Error ...) if any step fails, (incomplete) if ? found, () on success
 (= (treat_normal_proof $kb $stack $sp $proof)
-    (let $errors (new-space)
+    (let true (change-state! &error_list ())
+    (let $errors &error_list
       (let*
         (
           (true (printif! (Got Proof: $proof)))
@@ -636,15 +661,15 @@
           ($_3 (collapse (match $kb ((Label $label) EHyp $FSDepth $Data) (add-atom $kb (ActiveHyp $label)))))
           ($_4 (process_proof_steps $kb $stack $sp $errors $proof))
           ($_5 (remove-patternc $kb (ActiveHyp $_)))
-          ;; Query errors space directly instead of using filter-atom
-          ($real_errors (collapse (match $errors (Error $i $m) (Error $i $m))))
-          ($incomplete_markers (collapse (match $errors (incomplete) (incomplete))))
-          ($_cleanup (delete-space $errors))
+          ;; Filter errors from the list state
+          ($errs (get-state $errors))
+          ($real_errors (filter-atom $errs $e (case $e (((Error $_ $_) True) ($_ False)))))
+          ($incomplete_markers (filter-atom $errs $e (== $e (incomplete))))
         )
         ;; Return first real error if any, else (incomplete) if present, else ()
         (if (> (size-atom $real_errors) 0)
             (car-atom $real_errors)
-            (if (> (size-atom $incomplete_markers) 0) (incomplete) ())))))
+            (if (> (size-atom $incomplete_markers) 0) (incomplete) ()))))))
 
 ;; ============ Compressed Proof Support ============
 
@@ -784,7 +809,8 @@
 ;; treat_compressed_proof - process a compressed proof
 ;; Returns () on success, (Error ...) on failure, (incomplete) if ? found
 (= (treat_compressed_proof $kb $stack $sp $labels $steps $stmt)
-   (let $errors (new-space)
+   (let true (change-state! &error_list ())
+   (let $errors &error_list
      (let*
        (
          (true (printif! (Got Compressed Proof: labels $labels steps $steps)))
@@ -820,21 +846,17 @@
          ($mand_hyps (from-list (mappend (to-list $fhyp_labels) (to-list $ehyp_labels))))
          ($num_mand (size-atom $mand_hyps))
          ($num_labels (size-atom $labels))
-         ;; DEBUG: uncomment to debug mandatory hypothesis computation
-         ;; (true (println! (DEBUG syl: fhyp_labels: $fhyp_labels)))
-         ;; (true (println! (DEBUG syl: ehyp_labels: $ehyp_labels)))
-         ;; (true (println! (DEBUG syl: mand_hyps: $mand_hyps num: $num_mand)))
-         ;; (true (println! (DEBUG syl: labels: $labels num: $num_labels)))
          ;; Process each step
          ($_4 (process-compressed-steps $kb $stack $sp $errors $steps $mand_hyps $labels () $num_mand $num_labels))
          ($_5 (remove-patternc $kb (ActiveHyp $_)))
-         ($real_errors (collapse (match $errors (Error $i $m) (Error $i $m))))
-         ($incomplete_markers (collapse (match $errors (incomplete) (incomplete))))
-         ($_cleanup (delete-space $errors))
+         ;; Filter errors from the list state
+         ($error_list (get-state $errors))
+         ($real_errors (filter-atom $error_list $e (case $e (((Error $_ $_) True) ($_ False)))))
+         ($incomplete_markers (filter-atom $error_list $e (== $e (incomplete))))
        )
        (if (> (size-atom $real_errors) 0)
            (car-atom $real_errors)
-           (if (> (size-atom $incomplete_markers) 0) (incomplete) ())))))
+           (if (> (size-atom $incomplete_markers) 0) (incomplete) ()))))))
 
 ;; process-compressed-steps - process compressed proof steps iteratively
 (= (process-compressed-steps $kb $stack $sp $errors () $mand $labels $saved $nm $nl) ())
@@ -842,12 +864,12 @@
    (let ($idx $rest) (decons-atom $steps)
      (let $expanded (expand-compressed-step $idx $mand $labels $saved $nm $nl)
        (case $expanded
-         (((Error $i $m) (add-atom $errors (Error $i $m)))
+         (((Error $i $m) (change-state! $errors (cons-atom (Error $i $m) (get-state $errors))))
           ((save $saved2)
             ;; Z: save current stack top - use &top state (O(1) instead of O(stack_size))
             (let $top_stmt (get-state &top)
               (if (== $top_stmt Empty)
-                  (add-atom $errors (Error (Z-save) "Cannot save: empty stack"))
+                  (change-state! $errors (cons-atom (Error (Z-save) "Cannot save: empty stack") (get-state $errors)))
                   ;; CRITICAL: Python appends to saved list, we must do the same!
                   ;; Using cons-atom would prepend, breaking index-atom access
                   (let $new_saved (append-element $saved $top_stmt)
@@ -855,7 +877,7 @@
           ((incomplete-marker $saved2)
             ;; ? mark - incomplete proof
             (progn
-              (add-atom $errors (incomplete))
+              (change-state! $errors (cons-atom (incomplete) (get-state $errors)))
               (process-compressed-steps $kb $stack $sp $errors $rest $mand $labels $saved2 $nm $nl)))
           (((push-saved $stmt) $saved2)
             ;; Push saved statement onto stack - treat as a hypothesis-free axiom (like Python)

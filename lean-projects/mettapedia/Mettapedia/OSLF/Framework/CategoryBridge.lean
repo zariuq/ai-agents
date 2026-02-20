@@ -8,6 +8,8 @@ import Mettapedia.CategoryTheory.DeFinettiKernelInterface
 import Mettapedia.CategoryTheory.DeFinettiSequenceKernelCone
 import Mettapedia.CategoryTheory.DeFinettiHausdorffBridge
 import Mettapedia.CategoryTheory.DeFinettiExports
+import Mettapedia.CategoryTheory.FuzzyFrame
+import Mettapedia.CategoryTheory.Hypercube
 import Mettapedia.GSLT.Core.LambdaTheoryCategory
 import Mettapedia.GSLT.Topos.PredicateFibration
 import Mathlib.CategoryTheory.Category.GaloisConnection
@@ -1306,6 +1308,64 @@ noncomputable def rhoProcSortFiber_characteristicEquiv :
 noncomputable def rhoSortPredicateFibration :
     Mettapedia.GSLT.Core.SubobjectFibration (CategoryTheory.Discrete (LangSort rhoCalc)) :=
   languageSortPredicateFibration rhoCalc
+
+/-! ## Hypercube/FuzzyFrame Bridge
+
+Small canonical endpoints exposing category-facing facts from the
+PLN hypercube and `[0,1]` fuzzy fiber developments.
+-/
+
+/-- Bridge endpoint: product residuation on `[0,1]` in the fuzzy fiber. -/
+theorem fuzzy_product_residuation_bridge
+    (a b c : Mettapedia.CategoryTheory.FuzzyFrame.UnitInterval) :
+    a * b ≤ c ↔ b ≤ Mettapedia.CategoryTheory.FuzzyFrame.UnitInterval.productImp a c := by
+  simpa using Mettapedia.CategoryTheory.FuzzyFrame.UnitInterval.product_residuation a b c
+
+/-- Bridge endpoint: product tensor refines meet in the fuzzy fiber. -/
+theorem fuzzy_product_refines_meet_bridge
+    (a b : Mettapedia.CategoryTheory.FuzzyFrame.UnitInterval) :
+    a * b ≤ a ⊓ b := by
+  simpa using Mettapedia.CategoryTheory.FuzzyFrame.UnitInterval.product_le_inf a b
+
+/-- Bridge endpoint: admissible PLN hypercube sort assignments force a
+term-level result slot (`∗`). -/
+theorem hypercube_admissible_result_star_bridge
+    {σ : Mettapedia.CategoryTheory.Hypercube.Slot →
+        Mettapedia.CategoryTheory.Hypercube.HSort}
+    (hσ : Mettapedia.CategoryTheory.Hypercube.isEquationallyAdmissible σ) :
+    σ Mettapedia.CategoryTheory.Hypercube.Slot.result =
+      Mettapedia.CategoryTheory.Hypercube.HSort.star := by
+  exact Mettapedia.CategoryTheory.Hypercube.isEquationallyAdmissible_result_star hσ
+
+/-- Canonical bundled bridge endpoint used by CoreMain:
+admissible PLN sort assignments force a term-level result slot, and the
+fuzzy `[0,1]` tensor remains both residuated and meet-refining. -/
+theorem hypercube_fuzzy_canonical_bridge
+    {σ : Mettapedia.CategoryTheory.Hypercube.Slot →
+        Mettapedia.CategoryTheory.Hypercube.HSort}
+    (hσ : Mettapedia.CategoryTheory.Hypercube.isEquationallyAdmissible σ)
+    (a b c : Mettapedia.CategoryTheory.FuzzyFrame.UnitInterval) :
+    σ Mettapedia.CategoryTheory.Hypercube.Slot.result =
+      Mettapedia.CategoryTheory.Hypercube.HSort.star ∧
+      (a * b ≤ c ↔ b ≤ Mettapedia.CategoryTheory.FuzzyFrame.UnitInterval.productImp a c) ∧
+      a * b ≤ a ⊓ b := by
+  refine ⟨hypercube_admissible_result_star_bridge hσ, ?_⟩
+  exact ⟨fuzzy_product_residuation_bridge a b c, fuzzy_product_refines_meet_bridge a b⟩
+
+/-- Typed modal-composition bridge endpoint:
+under an admissible hypercube assignment, a composed tensor judgment `a * b ≤ c`
+immediately yields the residual judgment `b ≤ a ⇨ c`. -/
+theorem hypercube_fuzzy_typed_modal_composition_bridge
+    {σ : Mettapedia.CategoryTheory.Hypercube.Slot →
+        Mettapedia.CategoryTheory.Hypercube.HSort}
+    (hσ : Mettapedia.CategoryTheory.Hypercube.isEquationallyAdmissible σ)
+    (a b c : Mettapedia.CategoryTheory.FuzzyFrame.UnitInterval)
+    (hcomp : a * b ≤ c) :
+    σ Mettapedia.CategoryTheory.Hypercube.Slot.result =
+      Mettapedia.CategoryTheory.Hypercube.HSort.star ∧
+      b ≤ Mettapedia.CategoryTheory.FuzzyFrame.UnitInterval.productImp a c := by
+  rcases hypercube_fuzzy_canonical_bridge (hσ := hσ) a b c with ⟨hstar, hres, _⟩
+  exact ⟨hstar, hres.mp hcomp⟩
 
 -- Verify the key constructions type-check
 #check @langModalAdjunction

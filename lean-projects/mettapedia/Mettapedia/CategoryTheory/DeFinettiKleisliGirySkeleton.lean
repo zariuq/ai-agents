@@ -422,6 +422,368 @@ theorem iidPrefixKernel_eq_pi_thetaBernoulli
   intro xs
   exact (iidPrefixKernel_singleton_eq_pi_thetaBernoulli θ n xs).symm
 
+/-- Prefix-event decomposition for a tuple built with `Fin.snoc`: horizon `n+1`
+splits into the first `n` coordinates and the final coordinate. -/
+theorem seqPrefixEvent_snoc
+    (n : ℕ) (xs : Fin n → Bool) (b : Bool) :
+    seqPrefixEvent (n + 1) (Fin.snoc xs b) =
+      {ω : GlobalBinarySeq | (∀ i : Fin n, ω i = xs i) ∧ ω n = b} := by
+  ext ω
+  constructor
+  · intro h
+    refine ⟨?_, ?_⟩
+    · intro i
+      simpa [Fin.snoc_castSucc] using h i.castSucc
+    · simpa [Fin.snoc_last] using h (Fin.last n)
+  · intro h i
+    cases i using Fin.lastCases with
+    | last =>
+        simpa [Fin.snoc_last] using h.2
+    | cast j =>
+        simpa [Fin.snoc_castSucc] using h.1 j
+
+private theorem seqPrefixEvent_eq_preimage_seqPrefixProj_singleton
+    (n : ℕ) (xs : Fin n → Bool) :
+    seqPrefixEvent n xs = (seqPrefixProj n) ⁻¹' ({xs} : Set (Fin n → Bool)) := by
+  ext ω
+  constructor
+  · intro h
+    funext i
+    exact h i
+  · intro h i
+    exact congrArg (fun f : Fin n → Bool => f i) h
+
+/-- Pullback of a singleton `Fin.snoc` prefix through the `IicProdIoc`-split of
+`dropThetaPrefix` at horizon `n+1`. -/
+private theorem dropThetaPrefix_IicProdIoc_preimage_snoc
+    (n : ℕ) (xs : Fin n → Bool) (b : Bool) :
+    (fun z : ThetaBoolPrefix n × ((i : Finset.Ioc n (n + 1)) → ThetaBoolTimeline i) =>
+      dropThetaPrefix (n + 1) (IicProdIoc n (n + 1) z)) ⁻¹'
+        ({Fin.snoc xs b} : Set (Fin (n + 1) → Bool))
+      =
+    {z : ThetaBoolPrefix n × ((i : Finset.Ioc n (n + 1)) → ThetaBoolTimeline i) |
+      dropThetaPrefix n z.1 = xs ∧
+        cast (by simp [ThetaBoolTimeline]) (z.2 ⟨n + 1, by simp⟩) = b} := by
+  ext z
+  constructor
+  · intro hz
+    have hz0 :
+        dropThetaPrefix (n + 1) (IicProdIoc n (n + 1) z) = Fin.snoc xs b := by
+      simpa using hz
+    refine ⟨?_, ?_⟩
+    · funext i
+      have hcomp := congrArg (fun f : Fin (n + 1) → Bool => f i.castSucc) hz0
+      simpa [dropThetaPrefix, IicProdIoc, Fin.snoc_castSucc] using hcomp
+    · have hlast := congrArg (fun f : Fin (n + 1) → Bool => f (Fin.last n)) hz0
+      simpa [dropThetaPrefix, IicProdIoc, Fin.snoc_last] using hlast
+  · intro hz
+    have hinit :
+        ∀ i : Fin n,
+          dropThetaPrefix (n + 1) (IicProdIoc n (n + 1) z) i.castSucc = xs i := by
+      intro i
+      have hi := congrArg (fun f : Fin n → Bool => f i) hz.1
+      simpa [dropThetaPrefix, IicProdIoc] using hi
+    have hlast :
+        dropThetaPrefix (n + 1) (IicProdIoc n (n + 1) z) (Fin.last n) = b := by
+      simpa [dropThetaPrefix, IicProdIoc] using hz.2
+    have hfun :
+        dropThetaPrefix (n + 1) (IicProdIoc n (n + 1) z) = Fin.snoc xs b := by
+      funext i
+      cases i using Fin.lastCases with
+      | last =>
+          simpa [Fin.snoc_last] using hlast
+      | cast j =>
+          simpa [Fin.snoc_castSucc] using hinit j
+    simp [hfun]
+
+/-- Measurability of `dropThetaPrefix (n+1)` after splitting `Iic (n+1)` into
+`Iic n × Ioc n (n+1)`. -/
+private theorem measurable_dropThetaPrefix_IicProdIoc (n : ℕ) :
+    Measurable (fun z : ThetaBoolPrefix n ×
+      ((i : Finset.Ioc n (n + 1)) → ThetaBoolTimeline i) =>
+      dropThetaPrefix (n + 1) (IicProdIoc n (n + 1) z)) := by
+  exact (measurable_dropThetaPrefix (n + 1)).comp (measurable_IicProdIoc (m := n) (n := n + 1))
+
+/-- The singleton `Fin.snoc` pullback set through the split map is measurable. -/
+private theorem measurableSet_dropThetaPrefix_IicProdIoc_preimage_snoc
+    (n : ℕ) (xs : Fin n → Bool) (b : Bool) :
+    MeasurableSet
+      ((fun z : ThetaBoolPrefix n ×
+        ((i : Finset.Ioc n (n + 1)) → ThetaBoolTimeline i) =>
+        dropThetaPrefix (n + 1) (IicProdIoc n (n + 1) z)) ⁻¹'
+          ({Fin.snoc xs b} : Set (Fin (n + 1) → Bool))) := by
+  simpa using
+    (measurable_dropThetaPrefix_IicProdIoc n)
+      (MeasurableSet.singleton (Fin.snoc xs b))
+
+/-- The one-step tail event selecting value `b` on the unique coordinate in
+`Ioc n (n+1)`. -/
+private def snocTailEvent (n : ℕ) (b : Bool) :
+    Set ((i : Finset.Ioc n (n + 1)) → ThetaBoolTimeline i) :=
+  (fun y : ((i : Finset.Ioc n (n + 1)) → ThetaBoolTimeline i) =>
+      y ⟨n + 1, by simp⟩) ⁻¹'
+    ({cast (by simp [ThetaBoolTimeline]) b} :
+      Set (ThetaBoolTimeline (⟨n + 1, by simp⟩ : Finset.Ioc n (n + 1))))
+
+private theorem snocTailEvent_eq_singleton (n : ℕ) (b : Bool) :
+    snocTailEvent n b =
+      ({MeasurableEquiv.piSingleton n (cast (by simp [ThetaBoolTimeline]) b)} :
+        Set ((i : Finset.Ioc n (n + 1)) → ThetaBoolTimeline i)) := by
+  let b' : ThetaBoolTimeline (n + 1) := cast (by simp [ThetaBoolTimeline]) b
+  ext y
+  constructor
+  · intro hy
+    apply Set.mem_singleton_iff.2
+    funext i
+    rcases Nat.mem_Ioc_succ' i with rfl
+    have hy' :
+        cast (by simp [ThetaBoolTimeline])
+          (y ⟨n + 1, by simp⟩) = b := by
+      simpa [snocTailEvent] using hy
+    have hy'' : y ⟨n + 1, by simp⟩ = b' := by
+      simpa [b'] using hy'
+    simpa [MeasurableEquiv.piSingleton, ThetaBoolTimeline, b'] using hy''
+  · intro hy
+    rcases Set.mem_singleton_iff.1 hy with rfl
+    simp [snocTailEvent, MeasurableEquiv.piSingleton, ThetaBoolTimeline]
+
+private theorem measurableSet_snocTailEvent (n : ℕ) (b : Bool) :
+    MeasurableSet (snocTailEvent n b) := by
+  let b' : ThetaBoolTimeline (n + 1) := cast (by simp [ThetaBoolTimeline]) b
+  have hpre :
+      snocTailEvent n b =
+        ((MeasurableEquiv.piSingleton n).symm ⁻¹' ({b'} : Set (ThetaBoolTimeline (n + 1)))) := by
+    ext y
+    simp [snocTailEvent, MeasurableEquiv.piSingleton, ThetaBoolTimeline, b']
+  rw [hpre]
+  exact (MeasurableEquiv.piSingleton n).symm.measurable (MeasurableSet.singleton b')
+
+private theorem snocTailEvent_preimage_piSingleton
+    (n : ℕ) (b : Bool) :
+    (MeasurableEquiv.piSingleton n) ⁻¹' (snocTailEvent n b) = ({b} : Set Bool) := by
+  let b' : ThetaBoolTimeline (n + 1) := cast (by simp [ThetaBoolTimeline]) b
+  rw [snocTailEvent_eq_singleton]
+  ext t
+  constructor
+  · intro ht
+    have hEq : MeasurableEquiv.piSingleton n t = MeasurableEquiv.piSingleton n b' := by
+      simpa [b'] using ht
+    have ht' : t = b' := (MeasurableEquiv.piSingleton n).injective hEq
+    simpa [b'] using ht'
+  · intro ht
+    have ht' : t = b' := by simpa [b'] using ht
+    simp [ht', b']
+
+private theorem thetaIidStep_map_piSingleton_snocTailEvent
+    (n : ℕ) (x : ThetaBoolPrefix n) (b : Bool) :
+    (((thetaIidStep n).map (MeasurableEquiv.piSingleton n)) x) (snocTailEvent n b) =
+      thetaIidStep n x ({b} : Set Bool) := by
+  calc
+    (((thetaIidStep n).map (MeasurableEquiv.piSingleton n)) x) (snocTailEvent n b)
+        = (Measure.map (MeasurableEquiv.piSingleton n) ((thetaIidStep n) x))
+            (snocTailEvent n b) := by
+              exact congrArg (fun μ => μ (snocTailEvent n b))
+                (ProbabilityTheory.Kernel.map_apply (thetaIidStep n)
+                  ((MeasurableEquiv.piSingleton n).measurable) x)
+    _ = thetaIidStep n x ({b} : Set Bool) := by
+          rw [Measure.map_apply
+            (MeasurableEquiv.piSingleton n).measurable (measurableSet_snocTailEvent n b)]
+          simp [snocTailEvent_preimage_piSingleton]
+
+private theorem dropThetaPrefix_IicProdIoc_preimage_snoc_tail
+    (n : ℕ) (xs : Fin n → Bool) (b : Bool) :
+    (fun z : ThetaBoolPrefix n × ((i : Finset.Ioc n (n + 1)) → ThetaBoolTimeline i) =>
+      dropThetaPrefix (n + 1) (IicProdIoc n (n + 1) z)) ⁻¹'
+        ({Fin.snoc xs b} : Set (Fin (n + 1) → Bool))
+      =
+    {z : ThetaBoolPrefix n × ((i : Finset.Ioc n (n + 1)) → ThetaBoolTimeline i) |
+      dropThetaPrefix n z.1 = xs ∧ z.2 ∈ snocTailEvent n b} := by
+  ext z
+  simp [dropThetaPrefix_IicProdIoc_preimage_snoc, snocTailEvent]
+
+private theorem snocTailCarrier_preimage_prodMk
+    (n : ℕ) (xs : Fin n → Bool) (b : Bool) (x : ThetaBoolPrefix n) :
+    Prod.mk x ⁻¹'
+        ({z : ThetaBoolPrefix n × ((i : Finset.Ioc n (n + 1)) → ThetaBoolTimeline i) |
+          dropThetaPrefix n z.1 = xs ∧ z.2 ∈ snocTailEvent n b})
+      = if dropThetaPrefix n x = xs then snocTailEvent n b else ∅ := by
+  ext y
+  by_cases hx : dropThetaPrefix n x = xs
+  · simp [hx]
+  · simp [hx]
+
+private theorem partialTraj_dropThetaPrefix_map_snoc_integral
+    (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool) (b : Bool) :
+    (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 (n + 1)) (thetaToPrefix0 θ)).map
+      (dropThetaPrefix (n + 1))) ({Fin.snoc xs b} : Set (Fin (n + 1) → Bool))
+      =
+    ∫⁻ x : ThetaBoolPrefix n,
+      (if dropThetaPrefix n x = xs then thetaIidStep n x ({b} : Set Bool) else 0)
+      ∂((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)) := by
+  let sn : Fin (n + 1) → Bool := Fin.snoc xs b
+  let A : Set (ThetaBoolPrefix n × ((i : Finset.Ioc n (n + 1)) → ThetaBoolTimeline i)) :=
+    {z | dropThetaPrefix n z.1 = xs ∧ z.2 ∈ snocTailEvent n b}
+  let Kstep : ProbabilityTheory.Kernel (ThetaBoolPrefix n)
+      (ThetaBoolPrefix n × ((i : Finset.Ioc n (n + 1)) → ThetaBoolTimeline i)) :=
+    ProbabilityTheory.Kernel.prod ProbabilityTheory.Kernel.id
+      ((thetaIidStep n).map (MeasurableEquiv.piSingleton n))
+  let Kcomp : ProbabilityTheory.Kernel (ThetaBoolPrefix 0)
+      (ThetaBoolPrefix n × ((i : Finset.Ioc n (n + 1)) → ThetaBoolTimeline i)) :=
+    ProbabilityTheory.Kernel.comp Kstep (ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n)
+  have hAeq :
+      (fun z : ThetaBoolPrefix n × ((i : Finset.Ioc n (n + 1)) → ThetaBoolTimeline i) =>
+        dropThetaPrefix (n + 1) (IicProdIoc n (n + 1) z)) ⁻¹'
+          ({sn} : Set (Fin (n + 1) → Bool))
+        = A := by
+    simpa [A] using dropThetaPrefix_IicProdIoc_preimage_snoc_tail n xs b
+  have hAmeas : MeasurableSet A := by
+    rw [← hAeq]
+    exact measurableSet_dropThetaPrefix_IicProdIoc_preimage_snoc n xs b
+  have hsucc :
+      ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 (n + 1)
+        =
+      Kcomp.map
+          (IicProdIoc n (n + 1)) := by
+    simpa [Kcomp, Kstep, ProbabilityTheory.Kernel.comp] using
+      (ProbabilityTheory.Kernel.partialTraj_succ_of_le
+        (κ := thetaIidStep) (a := 0) (b := n) (hab := Nat.zero_le n))
+  have hsuccθ :
+      (ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 (n + 1)) (thetaToPrefix0 θ)
+        =
+      (Kcomp.map (IicProdIoc n (n + 1)) (thetaToPrefix0 θ)) := by
+    simpa using congrArg
+      (fun κ : ProbabilityTheory.Kernel (ThetaBoolPrefix 0) (ThetaBoolPrefix (n + 1)) =>
+        κ (thetaToPrefix0 θ)) hsucc
+  have hSmeas :
+      MeasurableSet
+        ((dropThetaPrefix (n + 1)) ⁻¹' ({sn} : Set (Fin (n + 1) → Bool))) := by
+    exact (measurable_dropThetaPrefix (n + 1)) (MeasurableSet.singleton sn)
+  have hprecomp :
+      ((IicProdIoc n (n + 1)) ⁻¹' ((dropThetaPrefix (n + 1)) ⁻¹' ({sn} : Set (Fin (n + 1) → Bool)))
+        = A) := by
+    simpa [Function.comp] using hAeq
+  calc
+    (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 (n + 1)) (thetaToPrefix0 θ)).map
+      (dropThetaPrefix (n + 1))) ({sn} : Set (Fin (n + 1) → Bool))
+        = (ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 (n + 1) (thetaToPrefix0 θ))
+            ((dropThetaPrefix (n + 1)) ⁻¹' ({sn} : Set (Fin (n + 1) → Bool))) := by
+              exact Measure.map_apply (measurable_dropThetaPrefix (n + 1))
+                (MeasurableSet.singleton sn)
+    _ = (Kcomp.map (IicProdIoc n (n + 1)) (thetaToPrefix0 θ))
+          ((dropThetaPrefix (n + 1)) ⁻¹' ({sn} : Set (Fin (n + 1) → Bool))) := by
+            simp [hsuccθ]
+    _ = (Measure.map (IicProdIoc n (n + 1)) (Kcomp (thetaToPrefix0 θ)))
+          ((dropThetaPrefix (n + 1)) ⁻¹' ({sn} : Set (Fin (n + 1) → Bool))) := by
+            exact congrArg (fun μ => μ ((dropThetaPrefix (n + 1)) ⁻¹' ({sn} : Set (Fin (n + 1) → Bool))))
+              (ProbabilityTheory.Kernel.map_apply Kcomp
+                (measurable_IicProdIoc (m := n) (n := n + 1)) (thetaToPrefix0 θ))
+    _ = (Kcomp (thetaToPrefix0 θ))
+          ((IicProdIoc n (n + 1)) ⁻¹'
+            ((dropThetaPrefix (n + 1)) ⁻¹' ({sn} : Set (Fin (n + 1) → Bool)))) := by
+            exact
+              (Measure.map_apply (measurable_IicProdIoc (m := n) (n := n + 1)) hSmeas)
+    _ = (Kcomp (thetaToPrefix0 θ)) A := by
+            simp [hprecomp]
+    _ = ∫⁻ x : ThetaBoolPrefix n,
+          (Kstep x) A
+            ∂((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)) := by
+            exact
+              (ProbabilityTheory.Kernel.comp_apply'
+                Kstep
+                (ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n)
+                (thetaToPrefix0 θ) hAmeas)
+    _ = ∫⁻ x : ThetaBoolPrefix n,
+          (if dropThetaPrefix n x = xs then thetaIidStep n x ({b} : Set Bool) else 0)
+            ∂((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)) := by
+            refine lintegral_congr_ae (Filter.Eventually.of_forall ?_)
+            intro x
+            by_cases hx : dropThetaPrefix n x = xs
+            · have hpre :
+                Prod.mk x ⁻¹' A = snocTailEvent n b := by
+                  ext y
+                  simp [A, hx]
+              calc
+                (Kstep x) A
+                    = ((thetaIidStep n).map (MeasurableEquiv.piSingleton n)) x
+                        (Prod.mk x ⁻¹' A) := by
+                          simpa [Kstep] using
+                            (ProbabilityTheory.Kernel.id_prod_apply'
+                              ((thetaIidStep n).map (MeasurableEquiv.piSingleton n)) x hAmeas)
+                _ = ((thetaIidStep n).map (MeasurableEquiv.piSingleton n)) x
+                      (snocTailEvent n b) := by simp [hpre]
+                _ = thetaIidStep n x ({b} : Set Bool) := by
+                      exact thetaIidStep_map_piSingleton_snocTailEvent n x b
+                _ = (if dropThetaPrefix n x = xs then thetaIidStep n x ({b} : Set Bool) else 0) := by
+                      simp [hx]
+            · have hpre :
+                Prod.mk x ⁻¹' A = ∅ := by
+                  ext y
+                  simp [A, hx]
+              calc
+                (Kstep x) A
+                    = ((thetaIidStep n).map (MeasurableEquiv.piSingleton n)) x
+                        (Prod.mk x ⁻¹' A) := by
+                          simpa [Kstep] using
+                            (ProbabilityTheory.Kernel.id_prod_apply'
+                              ((thetaIidStep n).map (MeasurableEquiv.piSingleton n)) x hAmeas)
+                _ = ((thetaIidStep n).map (MeasurableEquiv.piSingleton n)) x ∅ := by simp [hpre]
+                _ = 0 := by simp
+                _ = (if dropThetaPrefix n x = xs then thetaIidStep n x ({b} : Set Bool) else 0) := by
+                      simp [hx]
+
+/-- Singleton recursion for `iidPrefixKernel`: appending one final bit multiplies
+the singleton mass by the one-step Bernoulli factor. -/
+theorem iidPrefixKernel_singleton_snoc
+    (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool) (b : Bool) :
+    (iidPrefixKernel (n + 1) θ) ({Fin.snoc xs b} : Set (Fin (n + 1) → Bool)) =
+      (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)) *
+        thetaBernoulliKernel θ ({b} : Set Bool) := by
+  let fs : Fin (n + 1) → Bool := Fin.snoc xs b
+  have hprod_snoc :
+      (∏ i : Fin (n + 1), Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) (fs i)) =
+        (∏ i : Fin n, Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) (xs i)) *
+          Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) b := by
+    calc
+      (∏ i : Fin (n + 1), Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) (fs i))
+          = (∏ i : Fin n, Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) (fs i.castSucc)) *
+              Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) (fs (Fin.last n)) := by
+                simpa using (Fin.prod_univ_castSucc
+                  (f := fun i : Fin (n + 1) =>
+                    Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) (fs i)))
+      _ = (∏ i : Fin n, Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) (xs i)) *
+            Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) b := by
+              simp [fs, Fin.snoc_castSucc, Fin.snoc_last]
+  have hnonnegProd :
+      0 ≤ (∏ i : Fin n, Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) (xs i)) := by
+    exact Finset.prod_nonneg (fun i _ => by
+      cases xs i <;>
+        simp [Mettapedia.Logic.DeFinetti.bernoulliPMF, sub_nonneg.2 θ.2.2, θ.2.1])
+  calc
+    (iidPrefixKernel (n + 1) θ) ({Fin.snoc xs b} : Set (Fin (n + 1) → Bool))
+        = ENNReal.ofReal
+            (∏ i : Fin (n + 1), Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) (fs i)) := by
+              simp [iidPrefixKernel,
+                Mettapedia.ProbabilityTheory.HigherOrderProbability.DeFinettiConnection.kernel,
+                Mettapedia.ProbabilityTheory.HigherOrderProbability.DeFinettiConnection.weight,
+                Mettapedia.Logic.DeFinetti.bernoulliProductPMF, fs]
+    _ = ENNReal.ofReal
+          ((∏ i : Fin n, Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) (xs i)) *
+            Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) b) := by
+              simp [hprod_snoc]
+    _ = ENNReal.ofReal
+          (∏ i : Fin n, Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) (xs i)) *
+        ENNReal.ofReal (Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) b) := by
+          simpa using (ENNReal.ofReal_mul
+            (p := (∏ i : Fin n, Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) (xs i)))
+            (q := Mettapedia.Logic.DeFinetti.bernoulliPMF (θ : ℝ) b) hnonnegProd)
+    _ = (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)) *
+          thetaBernoulliKernel θ ({b} : Set Bool) := by
+            simp [iidPrefixKernel,
+              Mettapedia.ProbabilityTheory.HigherOrderProbability.DeFinettiConnection.kernel,
+              Mettapedia.ProbabilityTheory.HigherOrderProbability.DeFinettiConnection.weight,
+              Mettapedia.Logic.DeFinetti.bernoulliProductPMF,
+              thetaBernoulliKernel_singleton_apply, mul_comm]
+
 /-- Path-B reduction lemma:
 to identify `iidSequenceKernelTheta` with `iidProduct`, it suffices to show that
 all finite-prefix marginals are the expected finite products. -/
@@ -575,6 +937,280 @@ lemma thetaFromPrefix_thetaToPrefix0 (θ : LatentTheta) :
   unfold thetaToPrefix0 thetaPrefixZeroIdx
   simp [ThetaBoolTimeline]
 
+/-- Along the partial trajectory started from `thetaToPrefix0 θ`, the extracted
+latent coordinate is deterministic and equal to `θ`. -/
+lemma partialTraj_thetaIidStep_map_thetaFromPrefix_eq_dirac
+    (θ : LatentTheta) (n : ℕ) :
+    (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).map
+      (fun x : ThetaBoolPrefix n => thetaFromPrefix x)) = Measure.dirac θ := by
+  have hmap0 :
+      (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).map
+        (Preorder.frestrictLe₂ (Nat.zero_le n))) =
+      (ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 0 (thetaToPrefix0 θ)) := by
+    simpa using
+      (ProbabilityTheory.Kernel.partialTraj_map_frestrictLe₂_apply
+        (κ := thetaIidStep) (a := 0) (b := 0) (c := n)
+        (x₀ := thetaToPrefix0 θ) (hbc := Nat.zero_le n))
+  have hmapTheta :
+      (fun x : ThetaBoolPrefix n => thetaFromPrefix x) =
+        (fun x0 : ThetaBoolPrefix 0 => thetaFromPrefix x0) ∘
+          (Preorder.frestrictLe₂ (Nat.zero_le n)) := by
+    funext x
+    unfold thetaFromPrefix
+    simp [thetaPrefixZeroIdx]
+  have hmapmap :
+      (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).map
+        (fun x : ThetaBoolPrefix n => thetaFromPrefix x)) =
+      ((((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).map
+          (Preorder.frestrictLe₂ (Nat.zero_le n))).map
+        (fun x0 : ThetaBoolPrefix 0 => thetaFromPrefix x0)) := by
+    rw [hmapTheta]
+    have htmp :=
+      (Measure.map_map
+        (μ := (ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ))
+        (g := (fun x0 : ThetaBoolPrefix 0 => thetaFromPrefix x0))
+        (f := (Preorder.frestrictLe₂ (Nat.zero_le n)))
+        (hg := by
+          simpa using (Mettapedia.CategoryTheory.measurable_thetaFromPrefix (n := 0)))
+        (hf := by fun_prop))
+    simpa using htmp.symm
+  calc
+    (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).map
+      (fun x : ThetaBoolPrefix n => thetaFromPrefix x))
+        = ((((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).map
+            (Preorder.frestrictLe₂ (Nat.zero_le n))).map
+            (fun x0 : ThetaBoolPrefix 0 => thetaFromPrefix x0)) := hmapmap
+    _ = ((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 0 (thetaToPrefix0 θ)).map
+          (fun x0 : ThetaBoolPrefix 0 => thetaFromPrefix x0)) := by
+            simp [hmap0]
+    _ = Measure.dirac (thetaFromPrefix (thetaToPrefix0 θ)) := by
+          simp [ProbabilityTheory.Kernel.partialTraj_self, ProbabilityTheory.Kernel.id_apply,
+            Measure.map_dirac, Mettapedia.CategoryTheory.measurable_thetaFromPrefix]
+    _ = Measure.dirac θ := by
+          simp [thetaFromPrefix_thetaToPrefix0]
+
+/-- One-step composition of `partialTraj thetaIidStep 0 n` with `thetaIidStep n`
+evaluated at `thetaToPrefix0 θ` equals the Bernoulli kernel at `θ`. -/
+lemma partialTraj_thetaIidStep_comp_eval_eq_thetaBernoulli
+    (θ : LatentTheta) (n : ℕ) (s : Set Bool) (hs : MeasurableSet s) :
+    (ProbabilityTheory.Kernel.comp (thetaIidStep n)
+      (ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)) s
+      = thetaBernoulliKernel θ s := by
+  have hmap :
+      (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).map
+        (fun x : ThetaBoolPrefix n => thetaFromPrefix x)) = Measure.dirac θ :=
+    partialTraj_thetaIidStep_map_thetaFromPrefix_eq_dirac θ n
+  have hlin :
+      ∫⁻ t : LatentTheta, (thetaBernoulliKernel t) s
+          ∂((((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).map
+            (fun x : ThetaBoolPrefix n => thetaFromPrefix x)))
+        =
+      ∫⁻ x : ThetaBoolPrefix n, (thetaBernoulliKernel (thetaFromPrefix x)) s
+        ∂((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)) := by
+    simpa using
+      (MeasureTheory.lintegral_map
+        (μ := ((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)))
+        (f := fun t : LatentTheta => (thetaBernoulliKernel t) s)
+        (g := fun x : ThetaBoolPrefix n => thetaFromPrefix x)
+        (hf := (thetaBernoulliKernel.measurable_coe (s := s) hs))
+        (hg := Mettapedia.CategoryTheory.measurable_thetaFromPrefix (n := n)))
+  calc
+    (ProbabilityTheory.Kernel.comp (thetaIidStep n)
+      (ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)) s
+        = ∫⁻ x : ThetaBoolPrefix n, (thetaIidStep n x) s
+            ∂((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)) := by
+              simpa using (ProbabilityTheory.Kernel.comp_apply' (thetaIidStep n)
+                (ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n)
+                (thetaToPrefix0 θ) hs)
+    _ = ∫⁻ x : ThetaBoolPrefix n, (thetaBernoulliKernel (thetaFromPrefix x)) s
+          ∂((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)) := by
+            simp [thetaIidStep, ThetaBoolTimeline]
+    _ = ∫⁻ t : LatentTheta, (thetaBernoulliKernel t) s
+          ∂((((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).map
+            (fun x : ThetaBoolPrefix n => thetaFromPrefix x))) := by
+            exact hlin.symm
+    _ = ∫⁻ t : LatentTheta, (thetaBernoulliKernel t) s ∂(Measure.dirac θ) := by
+          simp [hmap]
+    _ = thetaBernoulliKernel θ s := by
+          simp [lintegral_dirac'
+            (a := θ)
+            (f := fun t : LatentTheta => (thetaBernoulliKernel t) s)
+            ((thetaBernoulliKernel.measurable_coe (s := s) hs))]
+
+/-- Under the partial trajectory started from `thetaToPrefix0 θ`, the latent
+coordinate extracted by `thetaFromPrefix` is almost surely equal to `θ`. -/
+lemma ae_thetaFromPrefix_eq_of_partialTraj_thetaIidStep
+    (θ : LatentTheta) (n : ℕ) :
+    ∀ᵐ x ∂((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)),
+      thetaFromPrefix x = θ := by
+  let μ : Measure (ThetaBoolPrefix n) :=
+    (ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)
+  have hmap :
+      μ.map (fun x : ThetaBoolPrefix n => thetaFromPrefix x) = Measure.dirac θ := by
+    simpa [μ] using partialTraj_thetaIidStep_map_thetaFromPrefix_eq_dirac θ n
+  have hpre :
+      (fun x : ThetaBoolPrefix n => thetaFromPrefix x) ⁻¹' ({θ} : Set LatentTheta) =
+        {x : ThetaBoolPrefix n | thetaFromPrefix x = θ} := by
+    ext x
+    simp
+  have hone : μ {x : ThetaBoolPrefix n | thetaFromPrefix x = θ} = 1 := by
+    calc
+      μ {x : ThetaBoolPrefix n | thetaFromPrefix x = θ}
+          = μ ((fun x : ThetaBoolPrefix n => thetaFromPrefix x) ⁻¹' ({θ} : Set LatentTheta)) := by
+              simp [hpre]
+      _ = (μ.map (fun x : ThetaBoolPrefix n => thetaFromPrefix x)) ({θ} : Set LatentTheta) := by
+            symm
+            exact Measure.map_apply (Mettapedia.CategoryTheory.measurable_thetaFromPrefix (n := n))
+              (MeasurableSet.singleton θ)
+      _ = (Measure.dirac θ) ({θ} : Set LatentTheta) := by
+            simp [hmap]
+      _ = 1 := by
+            simp
+  have hmeasEq : MeasurableSet {x : ThetaBoolPrefix n | thetaFromPrefix x = θ} := by
+    simpa [hpre] using
+      (Mettapedia.CategoryTheory.measurable_thetaFromPrefix (n := n)) (MeasurableSet.singleton θ)
+  have hzero : μ {x : ThetaBoolPrefix n | thetaFromPrefix x ≠ θ} = 0 := by
+    have hcompl :
+        {x : ThetaBoolPrefix n | thetaFromPrefix x ≠ θ} =
+          ({x : ThetaBoolPrefix n | thetaFromPrefix x = θ})ᶜ := by
+      ext x
+      simp
+    have hadd :
+        μ {x : ThetaBoolPrefix n | thetaFromPrefix x = θ} +
+          μ ({x : ThetaBoolPrefix n | thetaFromPrefix x = θ})ᶜ =
+        μ Set.univ := MeasureTheory.measure_add_measure_compl hmeasEq
+    have hprob : μ Set.univ = 1 := by
+      have hprobI : IsProbabilityMeasure μ := by
+        change IsProbabilityMeasure
+          ((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ))
+        infer_instance
+      exact (measure_univ : μ Set.univ = 1)
+    have hcomp0 : μ ({x : ThetaBoolPrefix n | thetaFromPrefix x = θ})ᶜ = 0 := by
+      simpa [hone, hprob] using hadd
+    simpa [hcompl] using hcomp0
+  have haeμ : ∀ᵐ x ∂μ, thetaFromPrefix x = θ := by
+    refine (ae_iff).2 ?_
+    simpa using hzero
+  simpa [μ] using haeμ
+
+/-- Along the partial trajectory started from `thetaToPrefix0 θ`, the one-step
+kernel `thetaIidStep n` agrees almost surely with the constant Bernoulli kernel
+at parameter `θ`. -/
+lemma ae_thetaIidStep_eq_thetaBernoulli_under_partialTraj
+    (θ : LatentTheta) (n : ℕ) :
+    ∀ᵐ x ∂((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)),
+      thetaIidStep n x = thetaBernoulliKernel θ := by
+  filter_upwards [ae_thetaFromPrefix_eq_of_partialTraj_thetaIidStep θ n] with x hx
+  ext s hs
+  simp [thetaIidStep, ThetaBoolTimeline, hx]
+
+/-- Composing the one-step kernel `thetaIidStep n` with the partial trajectory
+started from `thetaToPrefix0 θ` yields exactly the Bernoulli law at `θ`. -/
+lemma partialTraj_thetaIidStep_nextLaw_eq_thetaBernoulli
+    (θ : LatentTheta) (n : ℕ) :
+    ((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).bind
+        (thetaIidStep n) =
+      thetaBernoulliKernel θ := by
+  let μ : Measure (ThetaBoolPrefix n) :=
+    (ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)
+  have hcongr :
+      μ.bind (thetaIidStep n) =
+        μ.bind (ProbabilityTheory.Kernel.const (ThetaBoolPrefix n) (thetaBernoulliKernel θ)) := by
+    exact MeasureTheory.Measure.comp_congr
+      (ae_thetaIidStep_eq_thetaBernoulli_under_partialTraj θ n)
+  have hprob : IsProbabilityMeasure μ := by
+    change IsProbabilityMeasure
+      ((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ))
+    infer_instance
+  calc
+    ((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).bind
+        (thetaIidStep n)
+        = μ.bind (thetaIidStep n) := by
+            rfl
+    _ = μ.bind (ProbabilityTheory.Kernel.const (ThetaBoolPrefix n) (thetaBernoulliKernel θ)) := hcongr
+    _ = μ Set.univ • (thetaBernoulliKernel θ) := by
+          exact (MeasureTheory.Measure.const_comp (μ := μ) (ν := (thetaBernoulliKernel θ)))
+    _ = thetaBernoulliKernel θ := by
+          simp [measure_univ]
+
+private theorem partialTraj_dropThetaPrefix_map_snoc
+    (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool) (b : Bool) :
+    (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 (n + 1)) (thetaToPrefix0 θ)).map
+      (dropThetaPrefix (n + 1))) ({Fin.snoc xs b} : Set (Fin (n + 1) → Bool)) =
+      (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).map
+        (dropThetaPrefix n)) ({xs} : Set (Fin n → Bool)) *
+        thetaBernoulliKernel θ ({b} : Set Bool) := by
+  let μn : Measure (ThetaBoolPrefix n) :=
+    (ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)
+  let S : Set (ThetaBoolPrefix n) := {x | dropThetaPrefix n x = xs}
+  let c : ENNReal := thetaBernoulliKernel θ ({b} : Set Bool)
+  have hmain :=
+    partialTraj_dropThetaPrefix_map_snoc_integral θ n xs b
+  have hstepKernel :
+      ∀ᵐ x ∂μn, thetaIidStep n x = thetaBernoulliKernel θ := by
+    simpa [μn] using ae_thetaIidStep_eq_thetaBernoulli_under_partialTraj θ n
+  have hstep :
+      ∀ᵐ x ∂μn, thetaIidStep n x ({b} : Set Bool) = c := by
+    filter_upwards [hstepKernel] with x hx
+    simpa [c] using congrArg (fun ν : Measure Bool => ν ({b} : Set Bool)) hx
+  have hcongr :
+      (∫⁻ x : ThetaBoolPrefix n,
+          (if dropThetaPrefix n x = xs then thetaIidStep n x ({b} : Set Bool) else 0) ∂μn)
+        =
+      (∫⁻ x : ThetaBoolPrefix n,
+          (if dropThetaPrefix n x = xs then c else 0) ∂μn) := by
+    refine lintegral_congr_ae ?_
+    filter_upwards [hstep] with x hx
+    by_cases hxs : dropThetaPrefix n x = xs
+    · simp [hxs, hx]
+    · simp [hxs]
+  have hSmeas : MeasurableSet S := by
+    exact (measurable_dropThetaPrefix n) (MeasurableSet.singleton xs)
+  have hindicator :
+      (fun x : ThetaBoolPrefix n => if dropThetaPrefix n x = xs then c else 0)
+        = Set.indicator S (fun _ : ThetaBoolPrefix n => c) := by
+    funext x
+    by_cases hxs : dropThetaPrefix n x = xs
+    · simp [S, hxs]
+    · simp [S, hxs]
+  have hind :
+      (∫⁻ x : ThetaBoolPrefix n, (if dropThetaPrefix n x = xs then c else 0) ∂μn)
+        = c * μn S := by
+    rw [hindicator, lintegral_indicator hSmeas]
+    simp [S, lintegral_const]
+  have hmapS :
+      (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).map
+        (dropThetaPrefix n)) ({xs} : Set (Fin n → Bool)) = μn S := by
+    have hpreS :
+        (dropThetaPrefix n) ⁻¹' ({xs} : Set (Fin n → Bool)) = S := by
+      ext x
+      simp [S]
+    calc
+      (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).map
+        (dropThetaPrefix n)) ({xs} : Set (Fin n → Bool))
+          = μn ((dropThetaPrefix n) ⁻¹' ({xs} : Set (Fin n → Bool))) := by
+              change Measure.map (dropThetaPrefix n) μn ({xs} : Set (Fin n → Bool)) =
+                  μn ((dropThetaPrefix n) ⁻¹' ({xs} : Set (Fin n → Bool))
+                )
+              exact Measure.map_apply (measurable_dropThetaPrefix n) (MeasurableSet.singleton xs)
+      _ = μn S := by
+            simp [hpreS]
+  calc
+    (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 (n + 1)) (thetaToPrefix0 θ)).map
+      (dropThetaPrefix (n + 1))) ({Fin.snoc xs b} : Set (Fin (n + 1) → Bool))
+        = (∫⁻ x : ThetaBoolPrefix n,
+            (if dropThetaPrefix n x = xs then thetaIidStep n x ({b} : Set Bool) else 0) ∂μn) := by
+              simpa [μn] using hmain
+    _ = (∫⁻ x : ThetaBoolPrefix n, (if dropThetaPrefix n x = xs then c else 0) ∂μn) := hcongr
+    _ = c * μn S := hind
+    _ = μn S * c := by simp [mul_comm]
+    _ = (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).map
+          (dropThetaPrefix n)) ({xs} : Set (Fin n → Bool)) * c := by
+            simp [hmapS]
+    _ = (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).map
+          (dropThetaPrefix n)) ({xs} : Set (Fin n → Bool)) * thetaBernoulliKernel θ ({b} : Set Bool) := by
+            rfl
+
 /-- Cylinder-evaluation bridge at horizon `1`: pushing `iidSequenceKernelTheta`
 through the first coordinate recovers the one-step Bernoulli kernel. -/
 theorem iidSequenceKernelTheta_map_firstCoord :
@@ -609,6 +1245,229 @@ theorem iidSequenceKernelTheta_firstCoord_singleton
     iidSequenceKernelTheta θ {ω | ω 0 = b} = thetaBernoulliKernel θ ({b} : Set Bool) := by
   simpa [firstCoord] using
     iidSequenceKernelTheta_firstCoord_apply θ ({b} : Set Bool) (by simp)
+
+/-- Unconditional horizon-`0` prefix singleton law for `iidSequenceKernelTheta`. -/
+theorem iidSequenceKernelTheta_prefix_apply_zero
+    (θ : LatentTheta) (xs : Fin 0 → Bool) :
+    iidSequenceKernelTheta θ (seqPrefixEvent 0 xs) =
+      (iidPrefixKernel 0 θ) ({xs} : Set (Fin 0 → Bool)) := by
+  have hleft : iidSequenceKernelTheta θ (seqPrefixEvent 0 xs) = 1 := by
+    simp [seqPrefixEvent]
+  have huniv : ({xs} : Set (Fin 0 → Bool)) = Set.univ := by
+    ext f
+    constructor
+    · intro _
+      simp
+    · intro _
+      have hf : f = xs := by
+        funext i
+        exact Fin.elim0 i
+      simp [hf]
+  have hright : (iidPrefixKernel 0 θ) ({xs} : Set (Fin 0 → Bool)) = 1 := by
+    rw [huniv]
+    simp
+  exact hleft.trans hright.symm
+
+/-- Unconditional horizon-`1` prefix singleton law for `iidSequenceKernelTheta`. -/
+theorem iidSequenceKernelTheta_prefix_apply_one
+    (θ : LatentTheta) (xs : Fin 1 → Bool) :
+    iidSequenceKernelTheta θ (seqPrefixEvent 1 xs) =
+      (iidPrefixKernel 1 θ) ({xs} : Set (Fin 1 → Bool)) := by
+  have hset :
+      seqPrefixEvent 1 xs = {ω : GlobalBinarySeq | ω 0 = xs 0} := by
+    ext ω
+    constructor
+    · intro h
+      exact h 0
+    · intro h i
+      have hi : i = 0 := Fin.eq_zero i
+      simpa [hi] using h
+  have hleft :
+      iidSequenceKernelTheta θ (seqPrefixEvent 1 xs) =
+        thetaBernoulliKernel θ ({xs 0} : Set Bool) := by
+    rw [hset]
+    simpa using iidSequenceKernelTheta_firstCoord_singleton θ (xs 0)
+  have hright :
+      (iidPrefixKernel 1 θ) ({xs} : Set (Fin 1 → Bool)) =
+        thetaBernoulliKernel θ ({xs 0} : Set Bool) := by
+    calc
+      (iidPrefixKernel 1 θ) ({xs} : Set (Fin 1 → Bool))
+          = (Measure.pi (fun _ : Fin 1 => thetaBernoulliKernel θ))
+              ({xs} : Set (Fin 1 → Bool)) := by
+                exact (iidPrefixKernel_singleton_eq_pi_thetaBernoulli θ 1 xs).symm
+      _ = thetaBernoulliKernel θ ({xs 0} : Set Bool) := by
+            simp
+  exact hleft.trans hright.symm
+
+/-- Recursion step for `iidSequenceKernelTheta` on singleton prefix cylinders:
+appending one bit multiplies by the one-step Bernoulli factor. -/
+theorem iidSequenceKernelTheta_prefix_apply_snoc
+    (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool) (b : Bool) :
+    iidSequenceKernelTheta θ (seqPrefixEvent (n + 1) (Fin.snoc xs b)) =
+      iidSequenceKernelTheta θ (seqPrefixEvent n xs) *
+        thetaBernoulliKernel θ ({b} : Set Bool) := by
+  let sn : Fin (n + 1) → Bool := Fin.snoc xs b
+  have hsSucc : MeasurableSet ({sn} : Set (Fin (n + 1) → Bool)) :=
+    MeasurableSet.singleton sn
+  have hsPrev : MeasurableSet ({xs} : Set (Fin n → Bool)) :=
+    MeasurableSet.singleton xs
+  have hsetSucc :
+      seqPrefixEvent (n + 1) (Fin.snoc xs b) =
+        (seqPrefixProj (n + 1)) ⁻¹' ({sn} : Set (Fin (n + 1) → Bool)) := by
+    simpa [sn] using seqPrefixEvent_eq_preimage_seqPrefixProj_singleton (n + 1) (Fin.snoc xs b)
+  have hsetPrev :
+      seqPrefixEvent n xs = (seqPrefixProj n) ⁻¹' ({xs} : Set (Fin n → Bool)) :=
+    seqPrefixEvent_eq_preimage_seqPrefixProj_singleton n xs
+  have hmapSucc :
+      ((iidSequenceKernelTheta θ).map (seqPrefixProj (n + 1)))
+          ({sn} : Set (Fin (n + 1) → Bool)) =
+        (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 (n + 1)) (thetaToPrefix0 θ)).map
+          (dropThetaPrefix (n + 1))) ({sn} : Set (Fin (n + 1) → Bool)) := by
+    exact congrArg (fun μ : Measure (Fin (n + 1) → Bool) =>
+      μ ({sn} : Set (Fin (n + 1) → Bool)))
+      (iidSequenceKernelTheta_map_seqPrefixProj θ (n + 1))
+  have hmapPrev :
+      ((iidSequenceKernelTheta θ).map (seqPrefixProj n)) ({xs} : Set (Fin n → Bool)) =
+        (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).map
+          (dropThetaPrefix n)) ({xs} : Set (Fin n → Bool)) := by
+    exact congrArg (fun μ : Measure (Fin n → Bool) => μ ({xs} : Set (Fin n → Bool)))
+      (iidSequenceKernelTheta_map_seqPrefixProj θ n)
+  have hprevMapApply :
+      ((iidSequenceKernelTheta θ).map (seqPrefixProj n)) ({xs} : Set (Fin n → Bool)) =
+        iidSequenceKernelTheta θ (seqPrefixEvent n xs) := by
+    calc
+      ((iidSequenceKernelTheta θ).map (seqPrefixProj n)) ({xs} : Set (Fin n → Bool))
+          = iidSequenceKernelTheta θ ((seqPrefixProj n) ⁻¹' ({xs} : Set (Fin n → Bool))) := by
+              exact Measure.map_apply (measurable_seqPrefixProj n) hsPrev
+      _ = iidSequenceKernelTheta θ (seqPrefixEvent n xs) := by
+            simp [hsetPrev]
+  calc
+    iidSequenceKernelTheta θ (seqPrefixEvent (n + 1) (Fin.snoc xs b))
+        = iidSequenceKernelTheta θ
+            ((seqPrefixProj (n + 1)) ⁻¹' ({sn} : Set (Fin (n + 1) → Bool))) := by
+              simp [hsetSucc]
+    _ = ((iidSequenceKernelTheta θ).map (seqPrefixProj (n + 1)))
+          ({sn} : Set (Fin (n + 1) → Bool)) := by
+            symm
+            exact Measure.map_apply (measurable_seqPrefixProj (n + 1)) hsSucc
+    _ = (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 (n + 1)) (thetaToPrefix0 θ)).map
+          (dropThetaPrefix (n + 1))) ({sn} : Set (Fin (n + 1) → Bool)) := hmapSucc
+    _ = (((ProbabilityTheory.Kernel.partialTraj thetaIidStep 0 n) (thetaToPrefix0 θ)).map
+          (dropThetaPrefix n)) ({xs} : Set (Fin n → Bool)) *
+            thetaBernoulliKernel θ ({b} : Set Bool) := by
+          simpa [sn] using partialTraj_dropThetaPrefix_map_snoc θ n xs b
+    _ = ((iidSequenceKernelTheta θ).map (seqPrefixProj n)) ({xs} : Set (Fin n → Bool)) *
+          thetaBernoulliKernel θ ({b} : Set Bool) := by
+            rw [hmapPrev]
+    _ = iidSequenceKernelTheta θ (seqPrefixEvent n xs) *
+          thetaBernoulliKernel θ ({b} : Set Bool) := by
+            simp [hprevMapApply]
+
+/-- Unconditional strict prefix singleton law for `iidSequenceKernelTheta` at all
+horizons. -/
+theorem iidSequenceKernelTheta_prefix_apply_unconditional
+    (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool) :
+    iidSequenceKernelTheta θ (seqPrefixEvent n xs) =
+      (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)) := by
+  induction n with
+  | zero =>
+      exact iidSequenceKernelTheta_prefix_apply_zero θ xs
+  | succ n ih =>
+      let xsInit : Fin n → Bool := fun i => xs i.castSucc
+      let bLast : Bool := xs (Fin.last n)
+      have hsnoc : Fin.snoc xsInit bLast = xs := by
+        ext i
+        cases i using Fin.lastCases with
+        | last =>
+            simp [xsInit, bLast, Fin.snoc_last]
+        | cast j =>
+            simp [xsInit, bLast, Fin.snoc_castSucc]
+      calc
+        iidSequenceKernelTheta θ (seqPrefixEvent (n + 1) xs)
+            = iidSequenceKernelTheta θ (seqPrefixEvent (n + 1) (Fin.snoc xsInit bLast)) := by
+                simp [hsnoc]
+        _ = iidSequenceKernelTheta θ (seqPrefixEvent n xsInit) *
+              thetaBernoulliKernel θ ({bLast} : Set Bool) := by
+                exact iidSequenceKernelTheta_prefix_apply_snoc θ n xsInit bLast
+        _ = (iidPrefixKernel n θ) ({xsInit} : Set (Fin n → Bool)) *
+              thetaBernoulliKernel θ ({bLast} : Set Bool) := by
+                simpa using
+                  congrArg
+                    (fun t : ENNReal => t * thetaBernoulliKernel θ ({bLast} : Set Bool))
+                    (ih xsInit)
+        _ = (iidPrefixKernel (n + 1) θ) ({Fin.snoc xsInit bLast} : Set (Fin (n + 1) → Bool)) := by
+              symm
+              exact iidPrefixKernel_singleton_snoc θ n xsInit bLast
+        _ = (iidPrefixKernel (n + 1) θ) ({xs} : Set (Fin (n + 1) → Bool)) := by
+              simp [hsnoc]
+
+/-- Unconditional horizon-`0` finite-prefix marginal identity. -/
+theorem iidSequenceKernelTheta_map_seqPrefixProj_eq_iidPrefixKernel_zero
+    (θ : LatentTheta) :
+    (iidSequenceKernelTheta θ).map (seqPrefixProj 0) = iidPrefixKernel 0 θ := by
+  apply Measure.ext_of_singleton
+  intro xs
+  have hs : MeasurableSet ({xs} : Set (Fin 0 → Bool)) := MeasurableSet.singleton xs
+  have hset : seqPrefixEvent 0 xs = (seqPrefixProj 0) ⁻¹' ({xs} : Set (Fin 0 → Bool)) := by
+    ext ω
+    constructor
+    · intro h
+      funext i
+      exact h i
+    · intro h i
+      exact congrArg (fun f : Fin 0 → Bool => f i) h
+  calc
+    ((iidSequenceKernelTheta θ).map (seqPrefixProj 0)) ({xs} : Set (Fin 0 → Bool))
+        = iidSequenceKernelTheta θ ((seqPrefixProj 0) ⁻¹' ({xs} : Set (Fin 0 → Bool))) := by
+            exact Measure.map_apply (measurable_seqPrefixProj 0) hs
+    _ = iidSequenceKernelTheta θ (seqPrefixEvent 0 xs) := by simp [hset]
+    _ = iidPrefixKernel 0 θ ({xs} : Set (Fin 0 → Bool)) :=
+          iidSequenceKernelTheta_prefix_apply_zero θ xs
+
+/-- Unconditional horizon-`1` finite-prefix marginal identity. -/
+theorem iidSequenceKernelTheta_map_seqPrefixProj_eq_iidPrefixKernel_one
+    (θ : LatentTheta) :
+    (iidSequenceKernelTheta θ).map (seqPrefixProj 1) = iidPrefixKernel 1 θ := by
+  apply Measure.ext_of_singleton
+  intro xs
+  have hs : MeasurableSet ({xs} : Set (Fin 1 → Bool)) := MeasurableSet.singleton xs
+  have hset : seqPrefixEvent 1 xs = (seqPrefixProj 1) ⁻¹' ({xs} : Set (Fin 1 → Bool)) := by
+    ext ω
+    constructor
+    · intro h
+      funext i
+      exact h i
+    · intro h i
+      exact congrArg (fun f : Fin 1 → Bool => f i) h
+  calc
+    ((iidSequenceKernelTheta θ).map (seqPrefixProj 1)) ({xs} : Set (Fin 1 → Bool))
+        = iidSequenceKernelTheta θ ((seqPrefixProj 1) ⁻¹' ({xs} : Set (Fin 1 → Bool))) := by
+            exact Measure.map_apply (measurable_seqPrefixProj 1) hs
+    _ = iidSequenceKernelTheta θ (seqPrefixEvent 1 xs) := by simp [hset]
+    _ = iidPrefixKernel 1 θ ({xs} : Set (Fin 1 → Bool)) :=
+          iidSequenceKernelTheta_prefix_apply_one θ xs
+
+/-- Unconditional horizon-`0` prefix-`π` marginal identity. -/
+theorem iidSequenceKernelTheta_prefix_pi_marginals_zero
+    (θ : LatentTheta) :
+    (iidSequenceKernelTheta θ).map (seqPrefixProj 0) =
+      Measure.pi (fun _ : Fin 0 => thetaBernoulliKernel θ) := by
+  calc
+    (iidSequenceKernelTheta θ).map (seqPrefixProj 0) = iidPrefixKernel 0 θ :=
+      iidSequenceKernelTheta_map_seqPrefixProj_eq_iidPrefixKernel_zero θ
+    _ = Measure.pi (fun _ : Fin 0 => thetaBernoulliKernel θ) :=
+      iidPrefixKernel_eq_pi_thetaBernoulli θ 0
+
+/-- Unconditional horizon-`1` prefix-`π` marginal identity. -/
+theorem iidSequenceKernelTheta_prefix_pi_marginals_one
+    (θ : LatentTheta) :
+    (iidSequenceKernelTheta θ).map (seqPrefixProj 1) =
+      Measure.pi (fun _ : Fin 1 => thetaBernoulliKernel θ) := by
+  calc
+    (iidSequenceKernelTheta θ).map (seqPrefixProj 1) = iidPrefixKernel 1 θ :=
+      iidSequenceKernelTheta_map_seqPrefixProj_eq_iidPrefixKernel_one θ
+    _ = Measure.pi (fun _ : Fin 1 => thetaBernoulliKernel θ) :=
+      iidPrefixKernel_eq_pi_thetaBernoulli θ 1
 
 /-- Horizon-`n` cylinder evaluation for `iidSequenceKernelTheta`, assuming the
 canonical latent-`Theta` mediator is the Dirac family. -/
@@ -1529,6 +2388,54 @@ theorem iidSequenceKernelTheta_represents_latentDirac
       (mixingMeasureTheta_bernoulliMixtureOfThetaMeasure
         (ν := (Measure.dirac θ : Measure LatentTheta))).symm
 
+/-- Unconditional latent-Dirac representation witness for `iidSequenceKernelTheta`
+from the internally proved strict prefix law. -/
+theorem iidSequenceKernelTheta_represents_latentDirac_unconditional :
+    KernelRepresentsLatentTheta
+      (Y := LatentTheta) (Ω := GlobalBinarySeq) (X := coordProcess)
+      (κ := iidSequenceKernelTheta)
+      (fun θ : LatentTheta => (Measure.dirac θ : Measure LatentTheta)) := by
+  exact
+    iidSequenceKernelTheta_represents_latentDirac
+      (hprefix := iidSequenceKernelTheta_prefix_apply_unconditional)
+
+/-- If `iidSequenceKernelTheta` is identified pointwise with the external
+`iidProduct` Bernoulli law, then the latent-Dirac family is a valid
+`KernelRepresentsLatentTheta` witness. -/
+theorem iidSequenceKernelTheta_represents_latentDirac_of_iidProduct_bridge
+    (hbridge :
+      ∀ θ : LatentTheta,
+        iidSequenceKernelTheta θ =
+          Exchangeability.Probability.iidProduct (thetaBernoulliKernel θ)) :
+    KernelRepresentsLatentTheta
+      (Y := LatentTheta) (Ω := GlobalBinarySeq) (X := coordProcess)
+      (κ := iidSequenceKernelTheta)
+      (fun θ : LatentTheta => (Measure.dirac θ : Measure LatentTheta)) := by
+  have hprefix :
+      ∀ (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool),
+        iidSequenceKernelTheta θ (seqPrefixEvent n xs) =
+          (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)) := by
+    intro θ n xs
+    exact iidSequenceKernelTheta_prefix_apply_of_iidProduct_bridge hbridge θ n xs
+  exact iidSequenceKernelTheta_represents_latentDirac (hprefix := hprefix)
+
+/-- If all finite-prefix marginals of `iidSequenceKernelTheta` are Bernoulli
+product measures, then the latent-Dirac family is a valid
+`KernelRepresentsLatentTheta` witness. -/
+theorem iidSequenceKernelTheta_represents_latentDirac_of_prefix_pi_marginals
+    (hprefixPi :
+      ∀ (θ : LatentTheta) (n : ℕ),
+        (iidSequenceKernelTheta θ).map (seqPrefixProj n) =
+          Measure.pi (fun _ : Fin n => thetaBernoulliKernel θ)) :
+    KernelRepresentsLatentTheta
+      (Y := LatentTheta) (Ω := GlobalBinarySeq) (X := coordProcess)
+      (κ := iidSequenceKernelTheta)
+      (fun θ : LatentTheta => (Measure.dirac θ : Measure LatentTheta)) := by
+  exact
+    iidSequenceKernelTheta_represents_latentDirac_of_iidProduct_bridge
+      (iidSequenceKernelTheta_eq_iidProduct_of_prefix_pi_marginals
+        (hprefix := hprefixPi))
+
 /-- Prefix iid-mixture equations at all horizons induce a
 `KernelRepresentsLatentTheta` witness. -/
 theorem kernelRepresentsLatentTheta_of_kernelPrefixLaw_iidPrefix
@@ -1765,6 +2672,28 @@ theorem not_commutes_implies_isMarkovKernel_for_all_sources :
   have hmk : ProbabilityTheory.IsMarkovKernel κ0 := hall PUnit κ0 hcomm
   exact not_isMarkovKernel_zeroKernel_punit (by simpa [κ0] using hmk)
 
+/-- Explicit strengthening used by unrestricted Giry/Kleisli export routes:
+every source kernel whose Kleisli leg commutes with all global finitary
+permutation arrows is required to be Markov. -/
+def CommutesToMarkovBridge : Prop :=
+  ∀ (Y : Type) [MeasurableSpace Y]
+    (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
+    (∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp
+          (kernelToKleisliHom
+            (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
+          (finSuppPermKleisliHom τ) =
+        kernelToKleisliHom
+          (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
+      ProbabilityTheory.IsMarkovKernel κ
+
+/-- The unrestricted commutation-to-Markov bridge is refuted in
+`Kleisli(MeasCat.Giry)` by the zero-kernel counterexample. -/
+theorem not_commutesToMarkovBridge_unrestricted :
+    ¬ CommutesToMarkovBridge := by
+  simpa [CommutesToMarkovBridge] using
+    not_commutes_implies_isMarkovKernel_for_all_sources
+
 /-- Measurability-upgrade crux:
 upgrade a pointwise latent mediator family `Y → Measure Theta` satisfying
 `KernelRepresentsLatentTheta` to a genuine measurable kernel `Y →ₖ Theta`. -/
@@ -1883,7 +2812,7 @@ private theorem thetaMomentSeq_injective : Function.Injective thetaMomentSeq := 
 `borel_le_of_continuous_injective_compact_t2_measurable`: the weak Borel
 σ-algebra on `ProbabilityMeasure LatentTheta` is contained in the Giry
 measurable structure via the countable moment embedding. -/
-private theorem borel_le_inst_probabilityMeasureLatentTheta_of_moments :
+theorem borel_le_inst_probabilityMeasureLatentTheta_of_moments :
     borel (ProbabilityMeasure LatentTheta) ≤
       (inferInstance : MeasurableSpace (ProbabilityMeasure LatentTheta)) := by
   exact
@@ -2208,6 +3137,17 @@ def KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted : Prop :=
       ∃! m : A ⟶ KleisliLatentThetaObj,
         CategoryTheory.CategoryStruct.comp m iidSequenceKleisliHomTheta = κhom
 
+/-- Hard-step target strengthening candidate:
+derive unrestricted all-sources Kleisli universality directly from global
+finitary invariance and the default all-sources qualitative witness, without an
+explicit `CommutesToMarkovBridge` assumption. -/
+def DefaultAllSourcesKernel_to_allSourcesKleisli_unrestricted_strengthening : Prop :=
+  ∀ (_hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (_hunivDefault :
+      ∀ (Y' : Type) [MeasurableSpace Y'],
+        KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess),
+    KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted
+
 /-- Canonical measurable latent-kernel constructor from unrestricted
 all-sources kernel-level factorization witnesses. -/
 noncomputable def latentKernelOf_allSourcesKernelFactorization_unrestricted
@@ -2361,17 +3301,7 @@ theorem allSourcesKernelFactorization_unrestricted_of_allSourcesKernel_and_prefi
         iidSequenceKernelTheta θ (seqPrefixEvent n xs) =
           (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)))
     (huniv : KernelLatentThetaUniversalMediator_allSourcesKernel)
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
     KernelLatentThetaUniversalMediator_allSourcesKernelFactorization_unrestricted := by
   intro Y _ κ hcomm
   letI : ProbabilityTheory.IsMarkovKernel κ := hmarkov_of_commutes Y κ hcomm
@@ -2409,6 +3339,19 @@ theorem allSourcesKernelFactorization_unrestricted_of_allSourcesKernel_and_prefi
         (κ := κ) (L := L') hL'prefix
     exact hLuniqRep L' hL'rep
 
+/-- Unconditional all-sources kernel factorization bridge:
+the strict iid prefix law is supplied internally by
+`iidSequenceKernelTheta_prefix_apply_unconditional`. -/
+theorem allSourcesKernelFactorization_unrestricted_of_allSourcesKernel
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKernel)
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
+    KernelLatentThetaUniversalMediator_allSourcesKernelFactorization_unrestricted := by
+  exact
+    allSourcesKernelFactorization_unrestricted_of_allSourcesKernel_and_prefixLaw
+      (hprefix := iidSequenceKernelTheta_prefix_apply_unconditional)
+      (huniv := huniv)
+      (hmarkov_of_commutes := hmarkov_of_commutes)
+
 /-- Corollary: the previous theorem immediately yields unrestricted all-sources
 Kleisli mediation. -/
 theorem allSourcesKleisli_unrestricted_of_allSourcesKernel_and_prefixLaw
@@ -2417,23 +3360,25 @@ theorem allSourcesKleisli_unrestricted_of_allSourcesKernel_and_prefixLaw
         iidSequenceKernelTheta θ (seqPrefixEvent n xs) =
           (iidPrefixKernel n θ) ({xs} : Set (Fin n → Bool)))
     (huniv : KernelLatentThetaUniversalMediator_allSourcesKernel)
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
     KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted := by
   exact
     allSourcesKleisli_unrestricted_of_allSourcesKernelFactorization_unrestricted
       (allSourcesKernelFactorization_unrestricted_of_allSourcesKernel_and_prefixLaw
         (hprefix := hprefix) (huniv := huniv)
         (hmarkov_of_commutes := hmarkov_of_commutes))
+
+/-- Unconditional all-sources Kleisli mediation bridge:
+strict iid prefix laws are supplied internally. -/
+theorem allSourcesKleisli_unrestricted_of_allSourcesKernel
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKernel)
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
+    KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted := by
+  exact
+    allSourcesKleisli_unrestricted_of_allSourcesKernel_and_prefixLaw
+      (hprefix := iidSequenceKernelTheta_prefix_apply_unconditional)
+      (huniv := huniv)
+      (hmarkov_of_commutes := hmarkov_of_commutes)
 
 /-- One-hop unrestricted bridge from:
 1. strict IID prefix-law equations for `iidSequenceKernelTheta`,
@@ -2449,17 +3394,7 @@ theorem allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw
       ∀ (Y' : Type) [MeasurableSpace Y'],
         KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess)
     (hupgrade : KernelLatentThetaMediatorMeasurabilityUpgrade)
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
     KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted := by
   have hunivKernel : KernelLatentThetaUniversalMediator_allSourcesKernel :=
     allSourcesKernel_of_allSourcesDefault_and_measurabilityUpgrade
@@ -2469,6 +3404,22 @@ theorem allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw
     allSourcesKleisli_unrestricted_of_allSourcesKernel_and_prefixLaw
       (hprefix := hprefix)
       (huniv := hunivKernel)
+      (hmarkov_of_commutes := hmarkov_of_commutes)
+
+/-- Unconditional one-hop unrestricted bridge from default all-sources witness:
+strict iid prefix laws are supplied internally. -/
+theorem allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel
+    (hunivDefault :
+      ∀ (Y' : Type) [MeasurableSpace Y'],
+        KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess)
+    (hupgrade : KernelLatentThetaMediatorMeasurabilityUpgrade)
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
+    KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted := by
+  exact
+    allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw
+      (hprefix := iidSequenceKernelTheta_prefix_apply_unconditional)
+      (hunivDefault := hunivDefault)
+      (hupgrade := hupgrade)
       (hmarkov_of_commutes := hmarkov_of_commutes)
 
 /-- Same one-hop unrestricted bridge as above, but replacing the explicit
@@ -2483,17 +3434,7 @@ theorem allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_
       ∀ (Y' : Type) [MeasurableSpace Y'],
         KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess)
     (hEmb : MeasurableEmbedding thetaMomentSeq)
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
     KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted := by
   exact
     allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw
@@ -2514,17 +3455,7 @@ theorem allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_
       ∀ (Y' : Type) [MeasurableSpace Y'],
         KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess)
     (hEmb : MeasurableEmbedding latentThetaMomentSeq)
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
     KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted := by
   simpa [latentThetaMomentSeq] using
     (allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_of_thetaMomentEmbedding
@@ -2545,17 +3476,7 @@ theorem allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_
     (hunivDefault :
       ∀ (Y' : Type) [MeasurableSpace Y'],
         KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess)
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
     KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted := by
   exact
     allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_of_latentThetaMomentEmbedding
@@ -2578,17 +3499,7 @@ theorem allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_globalFini
     (hunivDefault :
       ∀ (Y' : Type) [MeasurableSpace Y'],
         KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess)
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
     KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted := by
   have hprefix :
       ∀ (θ : LatentTheta) (n : ℕ) (xs : Fin n → Bool),
@@ -2600,6 +3511,48 @@ theorem allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_globalFini
   exact
     allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_of_canonicalMomentEmbedding
       (hprefix := hprefix)
+      (hunivDefault := hunivDefault)
+      (hmarkov_of_commutes := hmarkov_of_commutes)
+
+/-- Canonical one-hop unrestricted bridge from finite-prefix product marginals:
+if finite-prefix marginals of `iidSequenceKernelTheta` are Bernoulli product
+measures, derive the latent-Dirac representation witness internally and dispatch
+to the global-finitary-invariance canonical route. -/
+theorem allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_globalFinitaryInvariance_and_prefixPiMarginals_of_canonicalMomentEmbedding
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (hprefixPi :
+      ∀ (θ : LatentTheta) (n : ℕ),
+        (iidSequenceKernelTheta θ).map (seqPrefixProj n) =
+          Measure.pi (fun _ : Fin n => thetaBernoulliKernel θ))
+    (hunivDefault :
+      ∀ (Y' : Type) [MeasurableSpace Y'],
+        KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess)
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
+    KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted := by
+  have hrepDirac :
+      KernelRepresentsLatentTheta
+        (Y := LatentTheta) (Ω := GlobalBinarySeq) (X := coordProcess)
+        (κ := iidSequenceKernelTheta)
+        (fun θ : LatentTheta => (Measure.dirac θ : Measure LatentTheta)) :=
+    iidSequenceKernelTheta_represents_latentDirac_of_prefix_pi_marginals
+      (hprefixPi := hprefixPi)
+  exact
+    allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_globalFinitaryInvariance_and_latentDirac_of_canonicalMomentEmbedding
+      (hglobal := hglobal)
+      (hrepDirac := hrepDirac)
+      (hunivDefault := hunivDefault)
+      (hmarkov_of_commutes := hmarkov_of_commutes)
+
+/-- The hard-step strengthening target follows from the explicit unrestricted
+commutes-to-Markov bridge plus the canonical latent-Dirac route. -/
+theorem defaultAllSourcesKernel_to_allSourcesKleisli_unrestricted_strengthening_of_commutesToMarkovBridge
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
+    DefaultAllSourcesKernel_to_allSourcesKleisli_unrestricted_strengthening := by
+  intro hglobal hunivDefault
+  exact
+    allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_globalFinitaryInvariance_and_latentDirac_of_canonicalMomentEmbedding
+      (hglobal := hglobal)
+      (hrepDirac := iidSequenceKernelTheta_represents_latentDirac_unconditional)
       (hunivDefault := hunivDefault)
       (hmarkov_of_commutes := hmarkov_of_commutes)
 
@@ -2618,17 +3571,7 @@ theorem allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_
     (hunivDefault :
       ∀ (Y' : Type) [MeasurableSpace Y'],
         KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess)
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
     KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted := by
   exact
     allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_of_canonicalMomentEmbedding
@@ -2649,17 +3592,7 @@ theorem allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_
     (hunivDefault :
       ∀ (Y' : Type) [MeasurableSpace Y'],
         KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess)
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
     KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted := by
   exact
     allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_of_canonicalMomentEmbedding
@@ -2699,17 +3632,7 @@ theorem allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_
     (hunivDefault :
       ∀ (Y' : Type) [MeasurableSpace Y'],
         KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess)
-    (hmarkov_of_commutes :
-      ∀ (Y : Type) [MeasurableSpace Y]
-        (κ : ProbabilityTheory.Kernel Y GlobalBinarySeq),
-        (∀ τ : FinSuppPermNat,
-          CategoryTheory.CategoryStruct.comp
-              (kernelToKleisliHom
-                (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ)
-              (finSuppPermKleisliHom τ) =
-            kernelToKleisliHom
-              (A := (MeasCat.of Y : KleisliGiry)) (B := KleisliBinarySeqObj) κ) →
-          ProbabilityTheory.IsMarkovKernel κ) :
+    (hmarkov_of_commutes : CommutesToMarkovBridge) :
     KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted := by
   exact
     allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_of_canonicalMomentEmbedding
@@ -2729,6 +3652,18 @@ attribute
   [deprecated
     allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_of_canonicalMomentEmbedding
     (since := "2026-02-19")]
+  allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_of_thetaMomentEmbedding
+
+attribute
+  [deprecated
+    allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_of_canonicalMomentEmbedding
+    (since := "2026-02-19")]
+  allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_of_latentThetaMomentEmbedding
+
+attribute
+  [deprecated
+    allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_of_canonicalMomentEmbedding
+    (since := "2026-02-19")]
   allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_of_standardBorel
 
 attribute
@@ -2742,6 +3677,10 @@ attribute
     allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_of_canonicalMomentEmbedding
     (since := "2026-02-19")]
   allSourcesKleisli_unrestricted_of_defaultAllSourcesKernel_and_prefixLaw_of_probabilityMeasureBorel
+
+attribute
+  [deprecated iidSequenceKernelTheta_prefix_apply_of_globalFinitaryInvariance (since := "2026-02-19")]
+  iidSequenceKernelTheta_prefix_apply_of_globalFinitaryInvariance_dirac
 
 /-- Bridge: all-sources kernel-level factorization implies all-sources
 Markov-only Kleisli mediation. -/
@@ -2882,6 +3821,22 @@ theorem allSourcesKleisli_markovOnly_of_defaultAllSourcesKernel_and_globalFinita
   exact
     allSourcesKleisli_markovOnly_of_defaultAllSourcesKernel_and_prefixLaw_of_canonicalMomentEmbedding
       (hprefix := hprefix)
+      (hunivDefault := hunivDefault)
+
+/-- Canonical Markov-only bridge with no explicit strict prefix-law or latent-Dirac
+input:
+derive the latent-Dirac witness internally from the unconditional iid-prefix
+law, then dispatch to the global-finitary-invariance Markov-only bridge. -/
+theorem allSourcesKleisli_markovOnly_of_defaultAllSourcesKernel_and_globalFinitaryInvariance_of_canonicalMomentEmbedding
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (hunivDefault :
+      ∀ (Y' : Type) [MeasurableSpace Y'],
+        KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess) :
+    KernelLatentThetaUniversalMediator_allSourcesKleisli_markovOnly := by
+  exact
+    allSourcesKleisli_markovOnly_of_defaultAllSourcesKernel_and_globalFinitaryInvariance_and_latentDirac_of_canonicalMomentEmbedding
+      (hglobal := hglobal)
+      (hrepDirac := iidSequenceKernelTheta_represents_latentDirac_unconditional)
       (hunivDefault := hunivDefault)
 
 /-- Convert the universal mediator property into a true `IsLimit` witness. -/
