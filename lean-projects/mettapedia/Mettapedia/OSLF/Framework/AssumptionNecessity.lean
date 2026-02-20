@@ -180,12 +180,22 @@ def commLiftPred : Pattern → Prop := fun u => u = commLiftBody
 theorem commLift_body_subst_eq_pathSem_h :
     Mettapedia.OSLF.MeTTaIL.Substitution.commSubst commLiftBody basePat =
       pathSem rhoCalc pdropArrow.toPath commLiftSeed := by
-  native_decide
+  simp [commLiftBody, commLiftSeed,
+    Mettapedia.OSLF.MeTTaIL.Substitution.commSubst,
+    Mettapedia.OSLF.MeTTaIL.Substitution.openBVar,
+    pathSem, SortArrow.toPath, arrowSem, pdropArrow]
 
 theorem commLift_body_subst_ne_pathSem_gcomp_h :
     Mettapedia.OSLF.MeTTaIL.Substitution.commSubst commLiftBody basePat ≠
       pathSem rhoCalc (nquoteArrow.toPath.comp pdropArrow.toPath) commLiftSeed := by
-  native_decide
+  intro h
+  have hcontra : basePat = Pattern.apply "NQuote" [basePat] := by
+    simpa [commLiftBody, commLiftSeed,
+      Mettapedia.OSLF.MeTTaIL.Substitution.commSubst,
+      Mettapedia.OSLF.MeTTaIL.Substitution.openBVar,
+      pathSem, SortArrow.toPath, SortPath.comp, arrowSem,
+      pdropArrow, nquoteArrow] using h
+  cases hcontra
 
 /-- Concrete necessity witness: `commDiWitnessLifting` is not derivable in full
 generality from syntax alone (without an explicit lifting/package assumption). -/

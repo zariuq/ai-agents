@@ -30,6 +30,7 @@ import Mettapedia.OSLF.Framework.ObservationalQuotient
 import Mettapedia.OSLF.Framework.DerivedTyping
 import Mettapedia.OSLF.Framework.PLNSelectorGSLT
 import Mettapedia.OSLF.Framework.BeckChevalleyOSLF
+import Mettapedia.OSLF.NativeType.Construction
 import Mettapedia.OSLF.MeTTaCore.Premises
 import Mettapedia.OSLF.MeTTaCore.FullLanguageDef
 import Mettapedia.OSLF.Framework.MeTTaFullInstance
@@ -169,6 +170,37 @@ theorem coreMain_piRho_contract_projection_api
 abbrev coreMain_hypercube_fuzzy_bridge :=
   @Mettapedia.OSLF.Framework.CategoryBridge.hypercube_fuzzy_canonical_bridge
 
+/-- CoreMain-facing canonical Native Type translation endpoint for Π/Ω
+preservation across theory morphisms. -/
+theorem coreMain_nativeType_piOmega_translation_endpoint
+    {L₁ L₂ : Mettapedia.CategoryTheory.LambdaTheories.LambdaTheory}
+    (F : Mettapedia.OSLF.NativeType.TheoryMorphism L₁ L₂)
+    (S : L₁.Obj)
+    (types : Set (L₁.fibration.Sub S)) :
+    F.mapPred (Mettapedia.OSLF.NativeType.piType L₁ S types) =
+      Mettapedia.OSLF.NativeType.piType L₂ (F.mapSort S) (F.mapPred '' types)
+    ∧
+    (F.mapNatType (Mettapedia.OSLF.NativeType.NatType.full (L := L₁) S)).pred =
+      (Mettapedia.OSLF.NativeType.NatType.full (L := L₂) (F.mapSort S)).pred := by
+  exact F.piOmega_translation_endpoint S types
+
+/-- CoreMain-facing identity-canary for the Native Type Π/Ω endpoint. -/
+theorem coreMain_nativeType_id_piOmega_canary
+    (L : Mettapedia.CategoryTheory.LambdaTheories.LambdaTheory)
+    (S : L.Obj)
+    (types : Set (L.fibration.Sub S)) :
+    ((Mettapedia.OSLF.NativeType.TheoryMorphism.id L).mapPred
+      (Mettapedia.OSLF.NativeType.piType L S types) =
+        Mettapedia.OSLF.NativeType.piType L
+          ((Mettapedia.OSLF.NativeType.TheoryMorphism.id L).mapSort S)
+          ((Mettapedia.OSLF.NativeType.TheoryMorphism.id L).mapPred '' types))
+    ∧
+    (((Mettapedia.OSLF.NativeType.TheoryMorphism.id L).mapNatType
+      (Mettapedia.OSLF.NativeType.NatType.full (L := L) S)).pred =
+      (Mettapedia.OSLF.NativeType.NatType.full (L := L)
+        ((Mettapedia.OSLF.NativeType.TheoryMorphism.id L).mapSort S)).pred) := by
+  simpa using Mettapedia.OSLF.NativeType.TheoryMorphism.id_piOmega_translation_endpoint L S types
+
 /-- CoreMain-facing canonical category/topos package endpoint. -/
 theorem coreMain_category_topos_package
     {σ : Mettapedia.CategoryTheory.Hypercube.Slot →
@@ -197,8 +229,8 @@ abbrev coreMain_hypercube_admissible_result_star_bridge :=
 abbrev coreMain_hypercube_fuzzy_typed_modal_composition_bridge :=
   @Mettapedia.OSLF.Framework.CategoryBridge.hypercube_fuzzy_typed_modal_composition_bridge
 
-#check Mettapedia.OSLF.Framework.FULLStatus.remaining_ne_nil
-#check Mettapedia.OSLF.Framework.FULLStatus.remainingCount_pos
+#check Mettapedia.OSLF.Framework.FULLStatus.remaining_eq_nil
+#check Mettapedia.OSLF.Framework.FULLStatus.remainingCount_eq_zero
 #check Mettapedia.OSLF.MeTTaCore.FullLanguageDef.mettaFull
 #check Mettapedia.OSLF.MeTTaCore.FullLanguageDef.mettaFullOSLF
 #check Mettapedia.Logic.OSLFImageFinite.imageFinite_langReduces
@@ -207,6 +239,8 @@ abbrev coreMain_hypercube_fuzzy_typed_modal_composition_bridge :=
 #check @coreMain_piRho_canonical_contract
 #check @coreMain_piRho_contract_projection_api
 #check @coreMain_hypercube_fuzzy_bridge
+#check @coreMain_nativeType_piOmega_translation_endpoint
+#check @coreMain_nativeType_id_piOmega_canary
 #check @coreMain_hypercube_fuzzy_typed_modal_composition_bridge
 #check @coreMain_category_topos_package
 

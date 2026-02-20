@@ -1,4 +1,5 @@
 import Mettapedia.OSLF.Main
+import Mettapedia.OSLF.CoreMain
 import Mettapedia.Logic.OSLFImageFinite
 import Mettapedia.OSLF.Framework.PiRhoCanonicalBridge
 import Mettapedia.OSLF.Framework.AssumptionNecessity
@@ -304,6 +305,8 @@ open Mettapedia.OSLF
 #check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.reachableDerivedStarFiniteSubrelation
 #check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.piRho_coreMain_predDomain_endpoint
 #check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.piRho_coreMain_canonical_contract_end_to_end
+#check @Mettapedia.OSLF.coreMain_nativeType_piOmega_translation_endpoint
+#check @Mettapedia.OSLF.coreMain_nativeType_id_piOmega_canary
 #check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.CalcPreludeDomainIndexedSemanticMorphism.transfer_domain_star_reachable_fragment_paramAtom_predDomainPair
 #check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.CalcPreludeLanguageMorphismSemanticTransferParamAtomPredDomain.transfer_fragment_bundle_predDomainPair
 #check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.piRho_coreMain_predDomain_transfer_bundle_end_to_end
@@ -317,6 +320,13 @@ open Mettapedia.OSLF
 #check @Mettapedia.OSLF.Framework.AssumptionNecessity.not_global_hImageFinite_rhoDerivedStarRel
 #check @Mettapedia.OSLF.Framework.AssumptionNecessity.counterexample_hAtomAll_for_global_diaBox_transfer
 #check @Mettapedia.OSLF.Framework.AssumptionNecessity.counterexample_hDiaTopAll_for_global_diaBox_transfer
+#check @Mettapedia.OSLF.Framework.AssumptionNecessity.not_commDiWitnessLifting_rho_example
+#check @Mettapedia.OSLF.Framework.AssumptionNecessity.commDiWitnessLifting_not_derivable_globally
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.preserves_piType
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.preserves_omegaTop
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.piOmega_translation_endpoint
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.id_piOmega_translation_endpoint
 #check @SortPresheafCategory
 #check @predFibration
 #check @oslf_fibration

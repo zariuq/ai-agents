@@ -1252,39 +1252,6 @@ theorem calcPreludeDomainIndexedSemanticMorphism_to_langMorphismSemanticTransfer
   · intro I φ hfrag src tgt hsrc hreach hAtomPredSrc hAtomPredTgt
     exact hDomPred I hfrag hsrc hreach hAtomPredSrc hAtomPredTgt
 
-/-- Canonical default parameterized-atom theorem family for downstream
-OSLF/Framework consumers: predecessor-domain atom assumptions are explicit and
-global-atom assumptions are not required. -/
-theorem calculus_canonical_paramAtom_fragment_claim_of_endpoint
-    {N : Finset String}
-    {x : Name} {P : Process}
-    {nuListenerBody seedListenerBody : Pattern}
-    {xr yr : Name} {Pr : Process} {n v : String}
-    {hfresh : EncodingFresh P}
-    (hend : CalcPreludeDomainIndexedSemanticMorphism
-      N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh) :
-    (∀ (I : Mettapedia.OSLF.Formula.AtomSem) {φ : Mettapedia.OSLF.Formula.OSLFFormula},
-      (hfrag : EndpointDiaBoxFragment φ) →
-      ∀ {P0 P1 : Process},
-        (hstep : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiStepRF P0 P1) →
-        (hrf : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.RestrictionFree P0) →
-        (hsafe : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiCommSafe hstep) →
-        (hAtomPred : ∀ a p, rhoCoreStarRel p (encode P0 n v) → I a p) →
-        Mettapedia.OSLF.Formula.sem rhoCoreStarRel I φ (encode P0 n v))
-    ∧
-    (∀ (I : Mettapedia.OSLF.Formula.AtomSem) {φ : Mettapedia.OSLF.Formula.OSLFFormula},
-      (hfrag : EndpointDiaBoxFragment φ) →
-      ∀ {src tgt : Pattern},
-        EncodedFreshDomain N src →
-        Nonempty
-          (Mettapedia.Languages.ProcessCalculi.RhoCalculus.DerivedRepNu.ReducesDerivedStar src tgt) →
-        (hAtomPredSrc : ∀ a p, rhoDerivedStarRel p src → I a p) →
-        (hAtomPredTgt : ∀ a p, rhoDerivedStarRel p tgt → I a p) →
-        (∃ seeds, BackwardAdminReflection.WeakBackwardOutcomeFreshAt N src seeds)
-        ∧ Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I φ src
-        ∧ Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I φ tgt) :=
-  calculus_canonical_paramAtom_fragment_predDomain_claim_of_endpoint hend
-
 /-- Canonical full semantic-claim package, consuming only the
 domain-indexed endpoint. This is the OSLF-facing theorem to import. -/
 theorem calculus_canonical_full_semantic_claim_of_endpoint
@@ -1354,20 +1321,6 @@ theorem calcPrelude_langMorphism_semantic_transfer_paramAtom_predDomain_of_endpo
     CalcPreludeLanguageMorphismSemanticTransferParamAtomPredDomain
       N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh :=
   calcPreludeDomainIndexedSemanticMorphism_to_langMorphismSemanticTransferParamAtomPredDomain hend
-
-/-- Canonical default endpoint for parameterized-atom transfer:
-predecessor-domain atom assumptions are first-class. -/
-theorem calcPrelude_langMorphism_semantic_transfer_paramAtom_of_endpoint
-    {N : Finset String}
-    {x : Name} {P : Process}
-    {nuListenerBody seedListenerBody : Pattern}
-    {xr yr : Name} {Pr : Process} {n v : String}
-    {hfresh : EncodingFresh P}
-    (hend : CalcPreludeDomainIndexedSemanticMorphism
-      N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh) :
-    CalcPreludeLanguageMorphismSemanticTransferParamAtomPredDomain
-      N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh :=
-  calcPrelude_langMorphism_semantic_transfer_paramAtom_predDomain_of_endpoint hend
 
 /-- Generic framework-level transfer bundle consumed from the predecessor-domain
 wrapper: one RF fragment judgment plus one derived-star reachable-domain
@@ -2123,38 +2076,6 @@ theorem predDomain_derivedStar_fragment_canary_nontrivial_progress :
   rcases hout with ⟨seeds, hout⟩
   exact ⟨tgt, seeds, by simpa [src] using hreach, by simpa [src] using hout,
     by simpa [src] using hsemSrc, hsemTgt⟩
-
-/-- End-to-end canonical default parameterized-atom theorem family for
-downstream OSLF/Framework users (predecessor-domain atom assumptions). -/
-theorem piRho_canonical_paramAtom_fragment_claim_end_to_end
-    {N : Finset String}
-    (x : Name) (P : Process)
-    (nuListenerBody seedListenerBody : Pattern)
-    (xr yr : Name) (Pr : Process) (n v : String)
-    (hobs : N ⊆ P.freeNames)
-    (hfresh : EncodingFresh P) :
-    (∀ (I : Mettapedia.OSLF.Formula.AtomSem) {φ : Mettapedia.OSLF.Formula.OSLFFormula},
-      (hfrag : EndpointDiaBoxFragment φ) →
-      ∀ {P0 P1 : Process},
-        (hstep : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiStepRF P0 P1) →
-        (hrf : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.RestrictionFree P0) →
-        (hsafe : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiCommSafe hstep) →
-        (hAtomPred : ∀ a p, rhoCoreStarRel p (encode P0 n v) → I a p) →
-        Mettapedia.OSLF.Formula.sem rhoCoreStarRel I φ (encode P0 n v))
-    ∧
-    (∀ (I : Mettapedia.OSLF.Formula.AtomSem) {φ : Mettapedia.OSLF.Formula.OSLFFormula},
-      (hfrag : EndpointDiaBoxFragment φ) →
-      ∀ {src tgt : Pattern},
-        EncodedFreshDomain N src →
-        Nonempty
-          (Mettapedia.Languages.ProcessCalculi.RhoCalculus.DerivedRepNu.ReducesDerivedStar src tgt) →
-        (hAtomPredSrc : ∀ a p, rhoDerivedStarRel p src → I a p) →
-        (hAtomPredTgt : ∀ a p, rhoDerivedStarRel p tgt → I a p) →
-        (∃ seeds, BackwardAdminReflection.WeakBackwardOutcomeFreshAt N src seeds)
-        ∧ Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I φ src
-        ∧ Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I φ tgt) := by
-  exact piRho_canonical_paramAtom_fragment_predDomain_claim_end_to_end
-    (N := N) x P nuListenerBody seedListenerBody xr yr Pr n v hobs hfresh
 
 /-- Foundation-modal connection for the canonical `◇⊤` claim:
 the OSLF endpoint is translated into Foundation Kripke satisfaction via the

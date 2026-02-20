@@ -6,6 +6,7 @@ import Mettapedia.GSLT.Topos.PredicateFibration
 import Mettapedia.OSLF.Framework.ToposReduction
 import Mettapedia.OSLF.Framework.BeckChevalleyOSLF
 import Mettapedia.OSLF.Framework.AssumptionNecessity
+import Mettapedia.OSLF.NativeType.Construction
 import Mettapedia.OSLF.Formula
 import Mettapedia.OSLF.Decidability
 import Mettapedia.OSLF.Framework.TinyMLInstance
@@ -130,9 +131,9 @@ def tracker : List Milestone :=
       note := "Pred-domain atom wrappers are the canonical default; retained global wrappers are now explicitly justified by concrete counterexamples showing `hAtomAll`/`hDiaTopAll` cannot be dropped in full generality." }
   , { area := "Assumption Audit"
       title := "COMM/pathSem lifting assumptions (`commDiWitnessLifting`) in generic BC transfer lemmas"
-      status := .inProgress
-      codeRef := "Mettapedia/OSLF/Framework/CategoryBridge.lean: commDiWitnessLifting* family; Mettapedia/OSLF/Framework/BeckChevalleyOSLF.lean: representable_commDi_*"
-      note := "Package-based routes (`CommDiPathSemLiftPkg`) are available, but generic assumption-level lemmas remain exported without tracked necessity counterexamples proving these assumptions cannot be removed in full generality." }
+      status := .done
+      codeRef := "Mettapedia/OSLF/Framework/CategoryBridge.lean: commDiWitnessLifting* family; Mettapedia/OSLF/Framework/BeckChevalleyOSLF.lean: representable_commDi_*; Mettapedia/OSLF/Framework/AssumptionNecessity.lean: not_commDiWitnessLifting_rho_example / commDiWitnessLifting_not_derivable_globally"
+      note := "Generic package routes (`CommDiPathSemLiftPkg`) are available and full-generality removal is now necessity-audited by concrete counterexample theorems." }
   , { area := "Assumption Audit"
       title := "Assumption-necessity counterexample library for retained global hypotheses"
       status := .done
@@ -140,14 +141,14 @@ def tracker : List Milestone :=
       note := "Dedicated necessity/counterexample theorem family is now formalized for retained global assumptions (`hImageFinite`, `hAtomAll`, `hDiaTopAll`) used by broad wrappers." }
   , { area := "Literature Alignment"
       title := "Internal conjunction/disjunction completion in paper-level topos route"
-      status := .missing
-      codeRef := "/home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/oslf.pdf (\"Conjunction. TBD\" / \"Disjunction. TBD\")"
-      note := "Source OSLF paper marks these as TBD. FULL tracker now records them explicitly as open rather than implicitly complete." }
+      status := .done
+      codeRef := "Mettapedia/OSLF/Framework/CategoryBridge.lean: languageSortPredNaturality_and / languageSortPredNaturality_or / languageSortFiber_ofPatternPred_mem_iff_and / languageSortFiber_ofPatternPred_mem_iff_or / languageSort_conj_disj_topos_package; /home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/oslf.pdf (\"Conjunction. TBD\" / \"Disjunction. TBD\")"
+      note := "Conjunction/disjunction are now packaged as a canonical presheaf-topos endpoint: naturality closure, Ω-characteristic-map round-trip, and representable-membership semantics are proved together." }
   , { area := "Literature Alignment"
       title := "Theory-translation preservation of Π/Ω in Native Type route"
-      status := .missing
-      codeRef := "/home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/Native_Type_Theory.pdf (future-work discussion on preserving Π and Ω)"
-      note := "No canonical endpoint theorem yet certifies translation conditions preserving Π/Ω across the theory-morphism layer." }
+      status := .done
+      codeRef := "Mettapedia/OSLF/NativeType/Construction.lean: TheoryMorphism, TheoryMorphism.preserves_piType, TheoryMorphism.preserves_omegaTop, TheoryMorphism.piOmega_translation_endpoint, TheoryMorphism.id_piOmega_translation_endpoint; /home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/Native_Type_Theory.pdf (future-work discussion on preserving Π and Ω)"
+      note := "Native Type translation conditions are now explicit and theorem-level: a sort-indexed `TheoryMorphism` contract certifies Π (`sInf`) and Ω-top preservation, with a canonical endpoint theorem and identity-canary instance." }
   ]
 
 /-- Count milestones with a given status. -/
@@ -162,12 +163,12 @@ def remaining : List Milestone :=
 def remainingCount : Nat :=
   remaining.length
 
-/-- Sanity check: FULL tracker currently includes unresolved milestones. -/
-theorem remaining_ne_nil : remaining ≠ [] := by
+/-- Sanity check: FULL tracker is now complete. -/
+theorem remaining_eq_nil : remaining = [] := by
   decide
 
-/-- Sanity check: the unresolved-milestone count is strictly positive. -/
-theorem remainingCount_pos : 0 < remainingCount := by
+/-- Sanity check: unresolved-milestone count is zero. -/
+theorem remainingCount_eq_zero : remainingCount = 0 := by
   decide
 
 /-! ## Code-Reference Anchors
@@ -315,5 +316,12 @@ These checks tie tracker statements to concrete constants in the codebase.
 #check @Mettapedia.OSLF.Framework.AssumptionNecessity.rhoDerivedStarRel_not_imageFinite
 #check @Mettapedia.OSLF.Framework.AssumptionNecessity.counterexample_hAtomAll_for_global_diaBox_transfer
 #check @Mettapedia.OSLF.Framework.AssumptionNecessity.counterexample_hDiaTopAll_for_global_diaBox_transfer
+#check @Mettapedia.OSLF.Framework.AssumptionNecessity.not_commDiWitnessLifting_rho_example
+#check @Mettapedia.OSLF.Framework.AssumptionNecessity.commDiWitnessLifting_not_derivable_globally
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.preserves_piType
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.preserves_omegaTop
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.piOmega_translation_endpoint
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.id_piOmega_translation_endpoint
 
 end Mettapedia.OSLF.Framework.FULLStatus

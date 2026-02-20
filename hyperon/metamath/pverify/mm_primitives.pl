@@ -11,6 +11,7 @@
 
     % High-level parsing (complete file -> structured statements)
     parse_mm_file/2,
+    parse_mm_file_compounds/2,
 
     % Streaming interface (parse and yield statements one-by-one)
     next_statement/2,  % next_statement(+Tokens, -Result) where Result = [Stmt, Rest] | [end] | [error]

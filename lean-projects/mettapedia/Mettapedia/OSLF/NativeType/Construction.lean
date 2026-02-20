@@ -214,6 +214,113 @@ theorem impl_adjoint (S : L.Obj) (φ ψ χ : L.fibration.Sub S) :
 
 end TypeFormation
 
+/-! ## Theory Translation Contracts (Π/Ω Preservation)
+
+This section makes the Native Type route explicit about what it means for a
+theory translation to preserve:
+- `Π` (fiber meets / `sInf`)
+- `Ω`-truth (fiber top / `⊤`)
+
+The contract is intentionally structural and sort-indexed so downstream
+consumers can depend on a single endpoint theorem instead of ad-hoc wrappers.
+-/
+
+section TheoryMorphism
+
+variable {L₁ L₂ : LambdaTheory}
+
+/-- Native Type translation contract between lambda theories.
+
+`mapPred` is sort-indexed and must preserve the key fiber operations used by
+Native Type formation: arbitrary joins (`Σ`), arbitrary meets (`Π`), and top
+(`Ω`-truth object in the fiber logic view). -/
+structure TheoryMorphism (L₁ L₂ : LambdaTheory) where
+  mapSort : L₁.Obj → L₂.Obj
+  mapPred : ∀ {S : L₁.Obj}, L₁.fibration.Sub S → L₂.fibration.Sub (mapSort S)
+  map_sSup :
+    ∀ {S : L₁.Obj} (types : Set (L₁.fibration.Sub S)),
+      mapPred (sSup types) = sSup (mapPred '' types)
+  map_sInf :
+    ∀ {S : L₁.Obj} (types : Set (L₁.fibration.Sub S)),
+      mapPred (sInf types) = sInf (mapPred '' types)
+  map_top :
+    ∀ {S : L₁.Obj},
+      mapPred (⊤ : L₁.fibration.Sub S) = (⊤ : L₂.fibration.Sub (mapSort S))
+
+namespace TheoryMorphism
+
+variable (F : TheoryMorphism L₁ L₂)
+
+/-- Action on native types. -/
+def mapNatType (A : NatType L₁) : NatType L₂ where
+  sort := F.mapSort A.sort
+  pred := F.mapPred A.pred
+
+/-- Translation preserves Σ-types (`sSup`). -/
+theorem preserves_sigmaType
+    (S : L₁.Obj) (types : Set (L₁.fibration.Sub S)) :
+    F.mapPred (sigmaType L₁ S types) =
+      sigmaType L₂ (F.mapSort S) (F.mapPred '' types) := by
+  simpa [sigmaType] using (F.map_sSup (S := S) types)
+
+/-- Translation preserves Π-types (`sInf`). -/
+theorem preserves_piType
+    (S : L₁.Obj) (types : Set (L₁.fibration.Sub S)) :
+    F.mapPred (piType L₁ S types) =
+      piType L₂ (F.mapSort S) (F.mapPred '' types) := by
+  simpa [piType] using (F.map_sInf (S := S) types)
+
+/-- Translation preserves Ω-truth (`⊤`) at every sort. -/
+theorem preserves_omegaTop (S : L₁.Obj) :
+    F.mapPred (⊤ : L₁.fibration.Sub S) =
+      (⊤ : L₂.fibration.Sub (F.mapSort S)) := by
+  simpa using (F.map_top (S := S))
+
+/-- Equivalent Ω-preservation phrasing at the `NatType.full` level. -/
+theorem preserves_fullNatType_pred (S : L₁.Obj) :
+    (F.mapNatType (NatType.full (L := L₁) S)).pred =
+      (NatType.full (L := L₂) (F.mapSort S)).pred := by
+  simpa [mapNatType, NatType.full] using F.preserves_omegaTop S
+
+/-- Canonical Native Type translation endpoint for Π/Ω preservation.
+
+This is the theorem-level contract consumed by FULLStatus/CoreMain: once a
+translation satisfies `TheoryMorphism`, Π and Ω preservation are immediate. -/
+theorem piOmega_translation_endpoint
+    (S : L₁.Obj) (types : Set (L₁.fibration.Sub S)) :
+    F.mapPred (piType L₁ S types) =
+      piType L₂ (F.mapSort S) (F.mapPred '' types)
+    ∧
+    (F.mapNatType (NatType.full (L := L₁) S)).pred =
+      (NatType.full (L := L₂) (F.mapSort S)).pred := by
+  exact ⟨F.preserves_piType S types, F.preserves_fullNatType_pred S⟩
+
+/-- Identity translation on a lambda theory satisfies the Π/Ω contract. -/
+def id (L : LambdaTheory) : TheoryMorphism L L where
+  mapSort := fun S => S
+  mapPred := fun {_S} φ => φ
+  map_sSup := by
+    intro S types
+    simp
+  map_sInf := by
+    intro S types
+    simp
+  map_top := by intro S; rfl
+
+/-- Concrete sanity canary: the identity translation preserves Π/Ω by
+definition. -/
+theorem id_piOmega_translation_endpoint
+    (L : LambdaTheory) (S : L.Obj) (types : Set (L.fibration.Sub S)) :
+    (id L).mapPred (piType L S types) =
+      piType L ((id L).mapSort S) ((id L).mapPred '' types)
+    ∧
+    ((id L).mapNatType (NatType.full (L := L) S)).pred =
+      (NatType.full (L := L) ((id L).mapSort S)).pred := by
+  simpa using (TheoryMorphism.piOmega_translation_endpoint (F := id L) S types)
+
+end TheoryMorphism
+end TheoryMorphism
+
 /-! ## Modal Types (Placeholder)
 
 Modal types ⟨Cj⟩_{xk::Ak} B from OSLF are constructed via comprehension.

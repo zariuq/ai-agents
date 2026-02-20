@@ -833,6 +833,28 @@ def languageSortPredNaturality
       φ (pathSem lang h seed) →
       φ (pathSem lang (g.comp h) seed)
 
+/-- Naturality is closed under conjunction of predicates. -/
+theorem languageSortPredNaturality_and
+    (lang : LanguageDef) (s : LangSort lang)
+    (seed : Pattern) (φ ψ : Pattern → Prop)
+    (hφ : languageSortPredNaturality lang s seed φ)
+    (hψ : languageSortPredNaturality lang s seed ψ) :
+    languageSortPredNaturality lang s seed (fun p => φ p ∧ ψ p) := by
+  intro a b g h hp
+  exact ⟨hφ g h hp.1, hψ g h hp.2⟩
+
+/-- Naturality is closed under disjunction of predicates. -/
+theorem languageSortPredNaturality_or
+    (lang : LanguageDef) (s : LangSort lang)
+    (seed : Pattern) (φ ψ : Pattern → Prop)
+    (hφ : languageSortPredNaturality lang s seed φ)
+    (hψ : languageSortPredNaturality lang s seed ψ) :
+    languageSortPredNaturality lang s seed (fun p => φ p ∨ ψ p) := by
+  intro a b g h hp
+  cases hp with
+  | inl hleft => exact Or.inl (hφ g h hleft)
+  | inr hright => exact Or.inr (hψ g h hright)
+
 /-- `commSubst`-image predicate over `Pattern`.
 
 This matches the direct-image shape used by COMM:
@@ -1185,6 +1207,86 @@ theorem languageSortFiber_ofPatternPred_mem_iff
     φ (pathSem lang h seed) := by
   rfl
 
+/-- Conjunction specialization of `languageSortFiber_ofPatternPred_mem_iff`. -/
+theorem languageSortFiber_ofPatternPred_mem_iff_and
+    (lang : LanguageDef) (s : LangSort lang)
+    (seed : Pattern) (φ ψ : Pattern → Prop)
+    (hNat : languageSortPredNaturality lang s seed (fun p => φ p ∧ ψ p))
+    {X : Opposite (ConstructorObj lang)}
+    (h : (languageSortRepresentableObj lang s).obj X) :
+    h ∈ (languageSortFiber_ofPatternPred lang s seed (fun p => φ p ∧ ψ p) hNat).obj X
+      ↔
+    (φ (pathSem lang h seed) ∧ ψ (pathSem lang h seed)) := by
+  rfl
+
+/-- Disjunction specialization of `languageSortFiber_ofPatternPred_mem_iff`. -/
+theorem languageSortFiber_ofPatternPred_mem_iff_or
+    (lang : LanguageDef) (s : LangSort lang)
+    (seed : Pattern) (φ ψ : Pattern → Prop)
+    (hNat : languageSortPredNaturality lang s seed (fun p => φ p ∨ ψ p))
+    {X : Opposite (ConstructorObj lang)}
+    (h : (languageSortRepresentableObj lang s).obj X) :
+    h ∈ (languageSortFiber_ofPatternPred lang s seed (fun p => φ p ∨ ψ p) hNat).obj X
+      ↔
+    (φ (pathSem lang h seed) ∨ ψ (pathSem lang h seed)) := by
+  rfl
+
+/-- Canonical conjunction/disjunction package for the presheaf-topos route:
+naturality closure, Ω-characteristic-map round-trip, and pointwise membership
+specification on representables. -/
+theorem languageSort_conj_disj_topos_package
+    (lang : LanguageDef) (s : LangSort lang)
+    (seed : Pattern) (φ ψ : Pattern → Prop)
+    (hφ : languageSortPredNaturality lang s seed φ)
+    (hψ : languageSortPredNaturality lang s seed ψ) :
+    ∃ hAnd hOr,
+      (languageSortFiber_characteristicEquiv (lang := lang) (s := s))
+          (languageSortFiber_ofPatternPred_characteristicMap
+            lang s seed (fun p => φ p ∧ ψ p) hAnd)
+        =
+      languageSortFiber_ofPatternPred lang s seed (fun p => φ p ∧ ψ p) hAnd
+      ∧
+      (languageSortFiber_characteristicEquiv (lang := lang) (s := s))
+          (languageSortFiber_ofPatternPred_characteristicMap
+            lang s seed (fun p => φ p ∨ ψ p) hOr)
+        =
+      languageSortFiber_ofPatternPred lang s seed (fun p => φ p ∨ ψ p) hOr
+      ∧
+      (∀ {X : Opposite (ConstructorObj lang)}
+          (h : (languageSortRepresentableObj lang s).obj X),
+          h ∈ (languageSortFiber_ofPatternPred
+            lang s seed (fun p => φ p ∧ ψ p) hAnd).obj X
+            ↔
+            (φ (pathSem lang h seed) ∧ ψ (pathSem lang h seed)))
+      ∧
+      (∀ {X : Opposite (ConstructorObj lang)}
+          (h : (languageSortRepresentableObj lang s).obj X),
+          h ∈ (languageSortFiber_ofPatternPred
+            lang s seed (fun p => φ p ∨ ψ p) hOr).obj X
+            ↔
+            (φ (pathSem lang h seed) ∨ ψ (pathSem lang h seed))) := by
+  refine ⟨languageSortPredNaturality_and lang s seed φ ψ hφ hψ,
+    languageSortPredNaturality_or lang s seed φ ψ hφ hψ, ?_⟩
+  constructor
+  · simpa using languageSortFiber_ofPatternPred_characteristicMap_spec
+      lang s seed (fun p => φ p ∧ ψ p)
+      (languageSortPredNaturality_and lang s seed φ ψ hφ hψ)
+  constructor
+  · simpa using languageSortFiber_ofPatternPred_characteristicMap_spec
+      lang s seed (fun p => φ p ∨ ψ p)
+      (languageSortPredNaturality_or lang s seed φ ψ hφ hψ)
+  constructor
+  · intro X h
+    simpa using languageSortFiber_ofPatternPred_mem_iff_and
+      lang s seed φ ψ
+      (languageSortPredNaturality_and lang s seed φ ψ hφ hψ)
+      (X := X) h
+  · intro X h
+    simpa using languageSortFiber_ofPatternPred_mem_iff_or
+      lang s seed φ ψ
+      (languageSortPredNaturality_or lang s seed φ ψ hφ hψ)
+      (X := X) h
+
 /-- OSLF `satisfies` form of `languageSortFiber_ofPatternPred_mem_iff`. -/
 theorem languageSortFiber_ofPatternPred_mem_iff_satisfies
     (lang : LanguageDef) (procSort : String := "Proc")
@@ -1404,6 +1506,9 @@ theorem hypercube_fuzzy_typed_modal_composition_bridge
 #check @languageSortRepresentableObj
 #check @languageSortFiber
 #check @languageSortPredNaturality
+#check @languageSortPredNaturality_and
+#check @languageSortPredNaturality_or
+#check @languageSort_conj_disj_topos_package
 #check @commDiPred
 #check @pathSem_commSubst
 #check @languageSortPredNaturality_commDi
@@ -1422,6 +1527,8 @@ theorem hypercube_fuzzy_typed_modal_composition_bridge
 #check @languageSortFiber_ofPatternPred_characteristicMap
 #check @languageSortFiber_ofPatternPred_characteristicMap_spec
 #check @languageSortFiber_ofPatternPred_mem_iff
+#check @languageSortFiber_ofPatternPred_mem_iff_and
+#check @languageSortFiber_ofPatternPred_mem_iff_or
 #check @languageSortFiber_ofPatternPred_mem_iff_satisfies
 #check @rhoProc_langOSLF_predicate_to_fiber_mem_iff
 #check @rhoProcOSLFUsingPred
