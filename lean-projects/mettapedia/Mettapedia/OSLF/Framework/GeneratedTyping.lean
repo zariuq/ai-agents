@@ -291,4 +291,184 @@ def toAbstractType (lang : LanguageDef) (procSort : String)
   sort := τ.sort
   pred := τ.predicate
 
+/-! ## Dependent/Parametric Generated-Type Extension
+
+Section 13.1 of the OSLF paper lists dependent and parametric generated typing
+as future work.  The definitions and theorem package below make this extension
+explicit at the generated typing layer.
+-/
+
+/-- Dependent predicate family: an index term selects a behavioral predicate. -/
+abbrev DepPred := Pattern → Pattern → Prop
+
+/-- Parametric predicate family: an external parameter selects a predicate. -/
+abbrev ParamPred (ι : Type) := ι → Pattern → Prop
+
+/-- Dependent diamond operator induced by `langDiamond`. -/
+def depDiamond (lang : LanguageDef) (φ : DepPred) : DepPred :=
+  fun i q => langDiamond lang (fun r => φ i r) q
+
+/-- Dependent box operator induced by `langBox`. -/
+def depBox (lang : LanguageDef) (φ : DepPred) : DepPred :=
+  fun i q => langBox lang (fun r => φ i r) q
+
+/-- Parametric diamond operator induced by `langDiamond`. -/
+def paramDiamond (lang : LanguageDef) {ι : Type} (φ : ParamPred ι) : ParamPred ι :=
+  fun a q => langDiamond lang (fun r => φ a r) q
+
+/-- Parametric box operator induced by `langBox`. -/
+def paramBox (lang : LanguageDef) {ι : Type} (φ : ParamPred ι) : ParamPred ι :=
+  fun a q => langBox lang (fun r => φ a r) q
+
+/-- Operational meaning of dependent diamond types. -/
+theorem depDiamond_spec (lang : LanguageDef) (φ : DepPred) (i q : Pattern) :
+    depDiamond lang φ i q ↔ ∃ r, langReduces lang q r ∧ φ i r := by
+  simpa [depDiamond] using (langDiamond_spec lang (fun r => φ i r) q)
+
+/-- Operational meaning of dependent box types. -/
+theorem depBox_spec (lang : LanguageDef) (φ : DepPred) (i p : Pattern) :
+    depBox lang φ i p ↔ ∀ q, langReduces lang q p → φ i q := by
+  simpa [depBox] using (langBox_spec lang (fun r => φ i r) p)
+
+/-- Operational meaning of parametric diamond types. -/
+theorem paramDiamond_spec (lang : LanguageDef) {ι : Type}
+    (φ : ParamPred ι) (a : ι) (q : Pattern) :
+    paramDiamond lang φ a q ↔ ∃ r, langReduces lang q r ∧ φ a r := by
+  simpa [paramDiamond] using (langDiamond_spec lang (fun r => φ a r) q)
+
+/-- Operational meaning of parametric box types. -/
+theorem paramBox_spec (lang : LanguageDef) {ι : Type}
+    (φ : ParamPred ι) (a : ι) (p : Pattern) :
+    paramBox lang φ a p ↔ ∀ q, langReduces lang q p → φ a q := by
+  simpa [paramBox] using (langBox_spec lang (fun r => φ a r) p)
+
+/-- Dependent quote typing rule derived from `GenHasType.quote`. -/
+theorem dep_quote {lang : LanguageDef}
+    {Γ : GenTypingContext lang} {p : Pattern}
+    {procSort nameSort : String}
+    (hproc : procSort ∈ lang.types) (hname : nameSort ∈ lang.types)
+    (hgrammar : ∃ g ∈ lang.terms, g.label = "NQuote" ∧ g.category = nameSort)
+    (φ : DepPred) (i : Pattern) :
+    GenHasType lang Γ p ⟨procSort, φ i, hproc⟩ →
+    GenHasType lang Γ (.apply "NQuote" [p]) ⟨nameSort, depDiamond lang φ i, hname⟩ := by
+  intro hp
+  simpa [depDiamond] using (GenHasType.quote (lang := lang) hproc hname hgrammar hp)
+
+/-- Dependent drop typing rule derived from `GenHasType.drop`. -/
+theorem dep_drop {lang : LanguageDef}
+    {Γ : GenTypingContext lang} {n : Pattern}
+    {procSort nameSort : String}
+    (hproc : procSort ∈ lang.types) (hname : nameSort ∈ lang.types)
+    (hgrammar : ∃ g ∈ lang.terms, g.label = "PDrop" ∧ g.category = procSort)
+    (φ : DepPred) (i : Pattern) :
+    GenHasType lang Γ n ⟨nameSort, φ i, hname⟩ →
+    GenHasType lang Γ (.apply "PDrop" [n]) ⟨procSort, depBox lang φ i, hproc⟩ := by
+  intro hn
+  simpa [depBox] using (GenHasType.drop (lang := lang) hproc hname hgrammar hn)
+
+/-- Parametric quote typing rule derived from `GenHasType.quote`. -/
+theorem param_quote {lang : LanguageDef} {ι : Type}
+    {Γ : GenTypingContext lang} {p : Pattern}
+    {procSort nameSort : String}
+    (hproc : procSort ∈ lang.types) (hname : nameSort ∈ lang.types)
+    (hgrammar : ∃ g ∈ lang.terms, g.label = "NQuote" ∧ g.category = nameSort)
+    (φ : ParamPred ι) (a : ι) :
+    GenHasType lang Γ p ⟨procSort, φ a, hproc⟩ →
+    GenHasType lang Γ (.apply "NQuote" [p]) ⟨nameSort, paramDiamond lang φ a, hname⟩ := by
+  intro hp
+  simpa [paramDiamond] using (GenHasType.quote (lang := lang) hproc hname hgrammar hp)
+
+/-- Parametric drop typing rule derived from `GenHasType.drop`. -/
+theorem param_drop {lang : LanguageDef} {ι : Type}
+    {Γ : GenTypingContext lang} {n : Pattern}
+    {procSort nameSort : String}
+    (hproc : procSort ∈ lang.types) (hname : nameSort ∈ lang.types)
+    (hgrammar : ∃ g ∈ lang.terms, g.label = "PDrop" ∧ g.category = procSort)
+    (φ : ParamPred ι) (a : ι) :
+    GenHasType lang Γ n ⟨nameSort, φ a, hname⟩ →
+    GenHasType lang Γ (.apply "PDrop" [n]) ⟨procSort, paramBox lang φ a, hproc⟩ := by
+  intro hn
+  simpa [paramBox] using (GenHasType.drop (lang := lang) hproc hname hgrammar hn)
+
+/-- Bundled endpoint for the dependent/parametric generated typing extension. -/
+structure DepParamGeneratedTypingExtension (lang : LanguageDef) : Prop where
+  depDiamond_spec :
+    ∀ (φ : DepPred) (i q : Pattern),
+      depDiamond lang φ i q ↔ ∃ r, langReduces lang q r ∧ φ i r
+  depBox_spec :
+    ∀ (φ : DepPred) (i p : Pattern),
+      depBox lang φ i p ↔ ∀ q, langReduces lang q p → φ i q
+  paramDiamond_spec :
+    ∀ {ι : Type} (φ : ParamPred ι) (a : ι) (q : Pattern),
+      paramDiamond lang φ a q ↔ ∃ r, langReduces lang q r ∧ φ a r
+  paramBox_spec :
+    ∀ {ι : Type} (φ : ParamPred ι) (a : ι) (p : Pattern),
+      paramBox lang φ a p ↔ ∀ q, langReduces lang q p → φ a q
+  dep_quote :
+    ∀ {Γ : GenTypingContext lang} {p : Pattern}
+      {procSort nameSort : String}
+      (hproc : procSort ∈ lang.types) (hname : nameSort ∈ lang.types)
+      (_ : ∃ g ∈ lang.terms, g.label = "NQuote" ∧ g.category = nameSort)
+      (φ : DepPred) (i : Pattern),
+      GenHasType lang Γ p ⟨procSort, φ i, hproc⟩ →
+      GenHasType lang Γ (.apply "NQuote" [p]) ⟨nameSort, depDiamond lang φ i, hname⟩
+  dep_drop :
+    ∀ {Γ : GenTypingContext lang} {n : Pattern}
+      {procSort nameSort : String}
+      (hproc : procSort ∈ lang.types) (hname : nameSort ∈ lang.types)
+      (_ : ∃ g ∈ lang.terms, g.label = "PDrop" ∧ g.category = procSort)
+      (φ : DepPred) (i : Pattern),
+      GenHasType lang Γ n ⟨nameSort, φ i, hname⟩ →
+      GenHasType lang Γ (.apply "PDrop" [n]) ⟨procSort, depBox lang φ i, hproc⟩
+  param_quote :
+    ∀ {ι : Type} {Γ : GenTypingContext lang} {p : Pattern}
+      {procSort nameSort : String}
+      (hproc : procSort ∈ lang.types) (hname : nameSort ∈ lang.types)
+      (_ : ∃ g ∈ lang.terms, g.label = "NQuote" ∧ g.category = nameSort)
+      (φ : ParamPred ι) (a : ι),
+      GenHasType lang Γ p ⟨procSort, φ a, hproc⟩ →
+      GenHasType lang Γ (.apply "NQuote" [p]) ⟨nameSort, paramDiamond lang φ a, hname⟩
+  param_drop :
+    ∀ {ι : Type} {Γ : GenTypingContext lang} {n : Pattern}
+      {procSort nameSort : String}
+      (hproc : procSort ∈ lang.types) (hname : nameSort ∈ lang.types)
+      (_ : ∃ g ∈ lang.terms, g.label = "PDrop" ∧ g.category = procSort)
+      (φ : ParamPred ι) (a : ι),
+      GenHasType lang Γ n ⟨nameSort, φ a, hname⟩ →
+      GenHasType lang Γ (.apply "PDrop" [n]) ⟨procSort, paramBox lang φ a, hproc⟩
+
+/-- Canonical theorem-level endpoint for dependent/parametric generated typing. -/
+theorem dependent_parametric_generated_type_system_extension (lang : LanguageDef) :
+    DepParamGeneratedTypingExtension lang := by
+  refine
+    { depDiamond_spec := ?_
+      depBox_spec := ?_
+      paramDiamond_spec := ?_
+      paramBox_spec := ?_
+      dep_quote := ?_
+      dep_drop := ?_
+      param_quote := ?_
+      param_drop := ?_ }
+  · intro φ i q
+    exact depDiamond_spec (lang := lang) φ i q
+  · intro φ i p
+    exact depBox_spec (lang := lang) φ i p
+  · intro ι φ a q
+    exact paramDiamond_spec (lang := lang) φ a q
+  · intro ι φ a p
+    exact paramBox_spec (lang := lang) φ a p
+  · intro Γ p procSort nameSort hproc hname hgrammar φ i hp
+    exact dep_quote (hproc := hproc) (hname := hname) (hgrammar := hgrammar) φ i hp
+  · intro Γ n procSort nameSort hproc hname hgrammar φ i hn
+    exact dep_drop (hproc := hproc) (hname := hname) (hgrammar := hgrammar) φ i hn
+  · intro ι Γ p procSort nameSort hproc hname hgrammar φ a hp
+    exact param_quote (hproc := hproc) (hname := hname) (hgrammar := hgrammar) φ a hp
+  · intro ι Γ n procSort nameSort hproc hname hgrammar φ a hn
+    exact param_drop (hproc := hproc) (hname := hname) (hgrammar := hgrammar) φ a hn
+
+/-- Concrete canary: rhoCalc instantiates the dependent/parametric extension. -/
+theorem rhoCalc_dependent_parametric_generated_type_system_extension :
+    DepParamGeneratedTypingExtension rhoCalc :=
+  dependent_parametric_generated_type_system_extension rhoCalc
+
 end Mettapedia.OSLF.Framework.GeneratedTyping

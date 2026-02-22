@@ -1,5 +1,6 @@
 import Mettapedia.OSLF.Framework.ConstructorFibration
 import Mettapedia.OSLF.Framework.TypeSynthesis
+import Mettapedia.OSLF.Framework.ToposReduction
 
 /-!
 # Modal Equivalence: Constructor Change-of-Base ↔ OSLF Modalities
@@ -47,6 +48,7 @@ open Mettapedia.OSLF.Framework.ConstructorCategory
 open Mettapedia.OSLF.Framework.ConstructorFibration
 open Mettapedia.OSLF.Framework.DerivedModalities
 open Mettapedia.OSLF.Framework.TypeSynthesis
+open Mettapedia.OSLF.Framework.ToposReduction
 open CategoryTheory
 
 /-! ## Set-Level Modal Operators as Change-of-Base
@@ -267,6 +269,46 @@ def boxAction (lang : LanguageDef) : (Pattern → Prop) → (Pattern → Prop) :
 theorem action_galois (lang : LanguageDef) :
     GaloisConnection (diamondAction lang) (boxAction lang) :=
   langGalois lang
+
+/-! ## Constructor-Category Step-Forward Restriction
+
+Theorems in this section expose the precise constructor-category formulation of
+the modal actions using the internal reduction-graph object. This is the
+concrete restriction route from the generic GSLT step-forward intuition to the
+OSLF modal endpoint.
+-/
+
+/-- Constructor-category restriction of the `◇` action (`stepForward`-style):
+at any constructor object, `diamondAction` is exactly existence of an internal
+reduction-graph edge whose target satisfies `φ`. -/
+theorem diamondAction_iff_constructor_graphStepForward
+    (lang : LanguageDef)
+    (s : ConstructorObj lang)
+    (φ : Pattern → Prop) (p : Pattern) :
+    diamondAction lang φ p ↔
+      ∃ e :
+        (reductionGraph (C := ConstructorObj lang) lang).Edge.obj (Opposite.op s),
+        ((reductionGraph (C := ConstructorObj lang) lang).source.app (Opposite.op s) e).down = p ∧
+        φ (((reductionGraph (C := ConstructorObj lang) lang).target.app (Opposite.op s) e).down) := by
+  simpa [diamondAction] using
+    (langDiamond_iff_exists_graphStep
+      (C := ConstructorObj lang) (lang := lang) (X := Opposite.op s) (φ := φ) (p := p))
+
+/-- Constructor-category restriction of the `□` action (`secureStepForward`-style):
+at any constructor object, `boxAction` is exactly incoming-edge universal
+validation against `φ`. -/
+theorem boxAction_iff_constructor_graphIncoming
+    (lang : LanguageDef)
+    (s : ConstructorObj lang)
+    (φ : Pattern → Prop) (p : Pattern) :
+    boxAction lang φ p ↔
+      ∀ e :
+        (reductionGraph (C := ConstructorObj lang) lang).Edge.obj (Opposite.op s),
+        ((reductionGraph (C := ConstructorObj lang) lang).target.app (Opposite.op s) e).down = p →
+        φ (((reductionGraph (C := ConstructorObj lang) lang).source.app (Opposite.op s) e).down) := by
+  simpa [boxAction] using
+    (langBox_iff_forall_graphIncoming
+      (C := ConstructorObj lang) (lang := lang) (X := Opposite.op s) (φ := φ) (p := p))
 
 /-! ## Summary
 

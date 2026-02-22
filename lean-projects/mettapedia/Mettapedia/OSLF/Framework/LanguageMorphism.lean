@@ -459,8 +459,12 @@ theorem sem_of_diaBoxFragment_on_domain
       intro p hD q hqp
       exact ih q (hDomainBackward hD hqp)
 
-/-- Global dia/box-fragment transfer principle from universal atoms and
-universal `◇⊤`. -/
+/-- Compatibility wrapper for global dia/box-fragment transfer from universal
+atoms and universal `◇⊤`.
+
+Canonical consumers should prefer `sem_of_diaBoxFragment_on_domain` with a
+scoped domain hypothesis. This global shape is retained as a broad corollary
+for compatibility. -/
 theorem sem_of_diaBoxFragment
     {R : Pattern → Pattern → Prop}
     {I : AtomSem}

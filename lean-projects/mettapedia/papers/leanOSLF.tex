@@ -144,19 +144,19 @@ formalization, connecting:
 This draft reports what is machine-checked in the current Lean corpus; it is
 not a claim that every construction discussed across the broader literature
 folders has been fully formalized end-to-end.  In particular, the cited OSLF and
-Native Type Theory papers explicitly list open directions that remain outside the
-current core claim surface, including:
+Native Type Theory papers explicitly list larger future directions that remain
+outside the current core claim surface, including:
 \begin{itemize}
-\item internal conjunction/disjunction completion in the paper-level topos route
-  (\emph{``Conjunction. TBD'' / ``Disjunction. TBD''} in \code{oslf.pdf}),
-\item additional theory-translation conditions preserving \(\Pi\)/\(\Omega\) in the
-  Native Type Theory setting (flagged as future work in
-  \code{Native\_Type\_Theory.pdf}),
-\item larger extensions such as dependent/parametric, stochastic, and quantum
-  variations listed as future-work directions in the source papers.
+\item full internal natural-transformation presentation of modalities
+  (\(\Omega \to \Omega\) endomorphisms) over the presheaf route,
+\item complete Grothendieck/fibered internal-language packaging for the Native
+  Type Theory route beyond the current theorem-level translation endpoint bundles,
+\item larger extensions such as stochastic and quantum variants listed as
+  future-work directions in the source papers.
 \end{itemize}
 Accordingly, this document distinguishes \emph{verified core endpoints} from
-\emph{research-frontier extensions}.
+\emph{research-frontier extensions}, and the strict paper-alignment status is
+tracked explicitly in \code{Mettapedia/OSLF/Framework/FULLStatus.lean}.
 
 \section{Background: The \rhocalc{}-Calculus}
 
@@ -209,6 +209,44 @@ The $\pi \to \rhocalc{}$ encoding (forward simulation, backward normalization,
 weak bisimilarity, and encoding morphism) is fully proven with 0~sorries;
 for detailed status see
 \code{AIrxiv/airxiv\_2026-02-19\_pi\_rho\_embedding\_status.tex}.
+
+\subsection{Canonical Endpoint Map}
+
+For review and downstream reuse, the canonical API surface is concentrated in
+\codepath{Mettapedia/OSLF/CoreMain.lean} and
+\codepath{Mettapedia/OSLF/Framework/PiRhoCanonicalBridge.lean}.
+The exact endpoint names are:
+
+\paragraph{CoreMain-facing entrypoints}
+\begin{itemize}
+\item \codepath{piRho_coreMain_canonical_contract_end_to_end}
+\item \codepath{coreMain_piRho_canonical_contract}
+\item \codepath{coreMain_piRho_contract_projection_api}
+\item \codepath{coreMain_nativeType_piOmega_translation_endpoint}
+\item \codepath{coreMain_nativeType_piOmegaProp_translation_endpoint}
+\item \codepath{coreMain_nativeType_piProp_colax_rules_endpoint}
+\item \codepath{coreMain_nativeType_full_presheaf_morphism_endpoint}
+\item \codepath{coreMain_nativeType_scoped_full_constructor_comparison_package}
+\item \codepath{coreMain_category_topos_package}
+\item \codepath{coreMain_topos_internal_language_bridge_package}
+\item \codepath{coreMain_togl_graph_modal_bridge_package}
+\item \codepath{coreMain_section12_worked_examples}
+\item \codepath{coreMain_dependent_parametric_generated_typing}
+\end{itemize}
+
+\paragraph{Bridge-level canonical contracts}
+\begin{itemize}
+\item \codepath{PiRhoCoreMainCanonicalContract}
+\item \codepath{piRho_coreMain_predDomain_endpoint}
+\item \codepath{piRho_coreMain_predDomain_transfer_bundle_end_to_end}
+\item \codepath{piRho_coreMain_predDomain_reachable_state_end_to_end}
+\item \codepath{reachableCoreStarFiniteSubrelation}
+\item \codepath{reachableDerivedStarFiniteSubrelation}
+\item \codepath{hm_converse_rhoCoreCanonicalRel}
+\item \codepath{hm_converse_rhoDerivedCanonicalRel}
+\item \codepath{ToposTOGLBridge.topos_internal_language_bridge_package}
+\item \codepath{ToposTOGLBridge.togl_graph_modal_bridge_package}
+\end{itemize}
 
 The \code{Framework/} directory (12{,}301 lines, 25~files) is the largest component.
 Key files:
@@ -1012,9 +1050,10 @@ from the interpreter specification back to the categorical semantics.
 
 A declarative reduction relation provides an engine-independent specification,
 and the executable engines are proven both sound and complete with respect to it.
-The seven \emph{core} implementation milestones are complete and sorry-free, while
-assumption-audit and literature-alignment items are tracked explicitly as unresolved
-in \code{Framework/FULLStatus.lean}.
+The seven \emph{core} implementation milestones are complete and sorry-free, and
+assumption-audit/literature-alignment frontier items tracked in
+\code{Framework/FULLStatus.lean} are now formalized as theorem-level endpoints in
+the current strict tracker.
 
 \bibliographystyle{plain}
 \bibliography{references}

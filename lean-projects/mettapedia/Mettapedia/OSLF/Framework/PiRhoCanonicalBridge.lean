@@ -382,21 +382,6 @@ theorem sem_of_endpointDiaBoxFragment_on_domain
     (R := R) (D := D) (I := I) (φ := φ)
     hfrag.to_framework hAtomDomain hDomainBackward hDiaDomain
 
-/-- Formula-induction transfer principle for the endpoint dia/box fragment.
-
-If all atoms are true and every state satisfies `◇⊤`, then every formula in the
-inductive endpoint fragment is true at every state. -/
-theorem sem_of_endpointDiaBoxFragment
-    {R : Pattern → Pattern → Prop}
-    {I : Mettapedia.OSLF.Formula.AtomSem}
-    {φ : Mettapedia.OSLF.Formula.OSLFFormula}
-    (hfrag : EndpointDiaBoxFragment φ)
-    (hAtomAll : ∀ a p, I a p)
-    (hDiaTopAll : ∀ p, Mettapedia.OSLF.Formula.sem R I (.dia .top) p) :
-    ∀ p, Mettapedia.OSLF.Formula.sem R I φ p := by
-  exact Mettapedia.OSLF.Framework.LangMorphism.sem_of_diaBoxFragment
-    (R := R) (I := I) (φ := φ) hfrag.to_framework hAtomAll hDiaTopAll
-
 /-- Core-star relation is reflexive. -/
 theorem rhoCoreStarRel_refl (p : Pattern) : rhoCoreStarRel p p :=
   ⟨Mettapedia.Languages.ProcessCalculi.RhoCalculus.ReducesStar.refl p⟩
@@ -749,33 +734,6 @@ theorem CalcPreludeDomainIndexedSemanticMorphism.transfer_rf_sem_diaTop_star_par
   rcases hend.forward_rf hstep hrf hsafe n v with ⟨T, hstar, _hbisim⟩
   exact ⟨T, hstar, trivial⟩
 
-/-- Parameterized-atom RF transfer lifted to the inductive endpoint dia/box
-fragment by formula induction. -/
-theorem CalcPreludeDomainIndexedSemanticMorphism.transfer_rf_fragment_paramAtom
-    {N : Finset String}
-    {x : Name} {P : Process}
-    {nuListenerBody seedListenerBody : Pattern}
-    {xr yr : Name} {Pr : Process} {n v : String}
-    {hfresh : EncodingFresh P}
-    (hend : CalcPreludeDomainIndexedSemanticMorphism
-      N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh)
-    (I : Mettapedia.OSLF.Formula.AtomSem)
-    {φ : Mettapedia.OSLF.Formula.OSLFFormula}
-    (hfrag : EndpointDiaBoxFragment φ)
-    (hAtomAll : ∀ a p, I a p)
-    {P0 P1 : Process}
-    (hstep : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiStepRF P0 P1)
-    (hrf : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.RestrictionFree P0)
-    (hsafe : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiCommSafe hstep) :
-    Mettapedia.OSLF.Formula.sem rhoCoreStarRel I φ (encode P0 n v) := by
-  have _hDiaAt :
-      Mettapedia.OSLF.Formula.sem rhoCoreStarRel I (.dia .top) (encode P0 n v) :=
-    hend.transfer_rf_sem_diaTop_star_paramAtom I hstep hrf hsafe
-  have hDiaTopAll :
-      ∀ p, Mettapedia.OSLF.Formula.sem rhoCoreStarRel I (.dia .top) p :=
-    fun p => sem_diaTop_coreStar_refl (I := I) p
-  exact (sem_of_endpointDiaBoxFragment hfrag hAtomAll hDiaTopAll) (encode P0 n v)
-
 /-- LanguageMorphism-style RF semantic transfer on the richer fragment. -/
 theorem CalcPreludeDomainIndexedSemanticMorphism.transfer_rf_rich_fragment_star
     {N : Finset String}
@@ -859,42 +817,6 @@ theorem CalcPreludeDomainIndexedSemanticMorphism.transfer_domain_star_reachable_
       (fun p hp => ⟨p, rhoDerivedStarRel_refl p, hp⟩)
       tgt
       hreach
-  exact ⟨hOut, hSrcSem, hTgtSem⟩
-
-/-- Parameterized-atom star-domain transfer over the endpoint dia/box fragment:
-from an encoded/fresh source and a derived-star witness, obtain the fresh
-backward outcome and fragment semantics at both source and reached target. -/
-theorem CalcPreludeDomainIndexedSemanticMorphism.transfer_domain_star_reachable_fragment_paramAtom
-    {N : Finset String}
-    {x : Name} {P : Process}
-    {nuListenerBody seedListenerBody : Pattern}
-    {xr yr : Name} {Pr : Process} {n v : String}
-    {hfresh : EncodingFresh P}
-    (hend : CalcPreludeDomainIndexedSemanticMorphism
-      N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh)
-    (I : Mettapedia.OSLF.Formula.AtomSem)
-    {φ : Mettapedia.OSLF.Formula.OSLFFormula}
-    (hfrag : EndpointDiaBoxFragment φ)
-    (hAtomAll : ∀ a p, I a p)
-    {src tgt : Pattern}
-    (hsrc : EncodedFreshDomain N src)
-    (hreach :
-      Nonempty
-        (Mettapedia.Languages.ProcessCalculi.RhoCalculus.DerivedRepNu.ReducesDerivedStar src tgt)) :
-    (∃ seeds, BackwardAdminReflection.WeakBackwardOutcomeFreshAt N src seeds)
-    ∧ Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I φ src
-    ∧ Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I φ tgt := by
-  have hOut : ∃ seeds, BackwardAdminReflection.WeakBackwardOutcomeFreshAt N src seeds :=
-    hend.star_fresh_outcome hsrc hreach
-  have hDiaTopAll :
-      ∀ p, Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I (.dia .top) p :=
-    fun p => sem_diaTop_derivedStar_refl (I := I) p
-  have hSrcSem :
-      Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I φ src :=
-    (sem_of_endpointDiaBoxFragment hfrag hAtomAll hDiaTopAll) src
-  have hTgtSem :
-      Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I φ tgt :=
-    (sem_of_endpointDiaBoxFragment hfrag hAtomAll hDiaTopAll) tgt
   exact ⟨hOut, hSrcSem, hTgtSem⟩
 
 /-- Stronger reachable-domain transfer contract: a single predecessor-domain
@@ -1079,64 +1001,6 @@ theorem calcPreludeDomainIndexedSemanticMorphism_to_langMorphismSemanticTransfer
   · intro src tgt hsrc hreach
     exact hend.transfer_domain_star_reachable_rich hsrc hreach
 
-/-- Parameterized-atom LanguageMorphism-level semantic transfer wrapper derived
-from the canonical endpoint and the inductive dia/box fragment API. -/
-structure CalcPreludeLanguageMorphismSemanticTransferParamAtom
-    (N : Finset String)
-    (x : Name) (P : Process)
-    (nuListenerBody seedListenerBody : Pattern)
-    (xr yr : Name) (Pr : Process) (n v : String)
-    (hfresh : EncodingFresh P) : Prop where
-  preserves_diamond_rf_param :
-    ∀ (I : Mettapedia.OSLF.Formula.AtomSem) {P0 P1 : Process},
-      (hstep : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiStepRF P0 P1) →
-      (hrf : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.RestrictionFree P0) →
-      (hsafe : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiCommSafe hstep) →
-      Mettapedia.OSLF.Formula.sem rhoCoreStarRel I (.dia .top) (encode P0 n v)
-  preserves_fragment_rf_param :
-    ∀ (I : Mettapedia.OSLF.Formula.AtomSem) {φ : Mettapedia.OSLF.Formula.OSLFFormula},
-      (hfrag : EndpointDiaBoxFragment φ) →
-      (hAtomAll : ∀ a p, I a p) →
-      ∀ {P0 P1 : Process},
-        (hstep : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiStepRF P0 P1) →
-        (hrf : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.RestrictionFree P0) →
-        (hsafe : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiCommSafe hstep) →
-        Mettapedia.OSLF.Formula.sem rhoCoreStarRel I φ (encode P0 n v)
-  preserves_domain_reachable_fragment_param :
-    ∀ (I : Mettapedia.OSLF.Formula.AtomSem) {φ : Mettapedia.OSLF.Formula.OSLFFormula},
-      (hfrag : EndpointDiaBoxFragment φ) →
-      (hAtomAll : ∀ a p, I a p) →
-      ∀ {src tgt : Pattern},
-        EncodedFreshDomain N src →
-        Nonempty
-          (Mettapedia.Languages.ProcessCalculi.RhoCalculus.DerivedRepNu.ReducesDerivedStar src tgt) →
-        (∃ seeds, BackwardAdminReflection.WeakBackwardOutcomeFreshAt N src seeds)
-        ∧ Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I φ src
-        ∧ Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I φ tgt
-
-/-- Build the parameterized-atom semantic transfer wrapper from the canonical
-domain-indexed endpoint. -/
-theorem calcPreludeDomainIndexedSemanticMorphism_to_langMorphismSemanticTransferParamAtom
-    {N : Finset String}
-    {x : Name} {P : Process}
-    {nuListenerBody seedListenerBody : Pattern}
-    {xr yr : Name} {Pr : Process} {n v : String}
-    {hfresh : EncodingFresh P}
-    (hend : CalcPreludeDomainIndexedSemanticMorphism
-      N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh) :
-    CalcPreludeLanguageMorphismSemanticTransferParamAtom
-      N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh := by
-  refine
-    { preserves_diamond_rf_param := ?_
-      preserves_fragment_rf_param := ?_
-      preserves_domain_reachable_fragment_param := ?_ }
-  · intro I P0 P1 hstep hrf hsafe
-    exact hend.transfer_rf_sem_diaTop_star_paramAtom I hstep hrf hsafe
-  · intro I φ hfrag hAtomAll P0 P1 hstep hrf hsafe
-    exact hend.transfer_rf_fragment_paramAtom I hfrag hAtomAll hstep hrf hsafe
-  · intro I φ hfrag hAtomAll src tgt hsrc hreach
-    exact hend.transfer_domain_star_reachable_fragment_paramAtom I hfrag hAtomAll hsrc hreach
-
 /-- Canonical parameterized-atom theorem family for downstream OSLF/Framework
 consumers: RF dia/box-fragment semantics plus reachable-domain fragment
 preservation, both exposed from the endpoint only. -/
@@ -1251,76 +1115,6 @@ theorem calcPreludeDomainIndexedSemanticMorphism_to_langMorphismSemanticTransfer
     exact hRFPred I hfrag hstep hrf hsafe hAtomPred
   · intro I φ hfrag src tgt hsrc hreach hAtomPredSrc hAtomPredTgt
     exact hDomPred I hfrag hsrc hreach hAtomPredSrc hAtomPredTgt
-
-/-- Canonical full semantic-claim package, consuming only the
-domain-indexed endpoint. This is the OSLF-facing theorem to import. -/
-theorem calculus_canonical_full_semantic_claim_of_endpoint
-    {N : Finset String}
-    {x : Name} {P : Process}
-    {nuListenerBody seedListenerBody : Pattern}
-    {xr yr : Name} {Pr : Process} {n v : String}
-    {hfresh : EncodingFresh P}
-    (hend : CalcPreludeDomainIndexedSemanticMorphism
-      N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh) :
-    (∀ {P0 P1 : Process},
-      (hstep : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiStepRF P0 P1) →
-      (hrf : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.RestrictionFree P0) →
-      (hsafe : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiCommSafe hstep) →
-      Mettapedia.OSLF.Formula.sem rhoCoreStarRel (fun _ _ => True)
-        (.dia .top) (encode P0 n v))
-    ∧
-    (∀ {src tgt : Pattern},
-      EncodedFreshDomain N src →
-      Nonempty
-        (Mettapedia.Languages.ProcessCalculi.RhoCalculus.DerivedRepNu.ReducesDerived src tgt) →
-      (∃ seeds, BackwardAdminReflection.WeakBackwardOutcomeFreshAt N src seeds)
-      ∧
-      Mettapedia.OSLF.Formula.sem rhoDerivedStepRel (fun _ _ => True)
-        (.dia .top) src)
-    ∧
-    (∀ {src tgt : Pattern},
-      EncodedFreshDomain N src →
-      Nonempty
-        (Mettapedia.Languages.ProcessCalculi.RhoCalculus.DerivedRepNu.ReducesDerivedStar src tgt) →
-      (∃ seeds, BackwardAdminReflection.WeakBackwardOutcomeFreshAt N src seeds)
-      ∧
-      Mettapedia.OSLF.Formula.sem rhoDerivedStarRel (fun _ _ => True)
-        (.dia .top) src) := by
-  refine ⟨?_, ?_, ?_⟩
-  · intro P0 P1 hstep hrf hsafe
-    exact hend.transfer_rf_sem_diaTop_star hstep hrf hsafe
-  · intro src tgt hsrc hstep
-    exact hend.transfer_domain_oneStep_sem_diaTop hsrc hstep
-  · intro src tgt hsrc hstep
-    exact hend.transfer_domain_star_sem_diaTop hsrc hstep
-
-/-- Canonical endpoint packaged as a direct LanguageMorphism-style semantic
-transfer wrapper. -/
-theorem calcPrelude_langMorphism_semantic_transfer_of_endpoint
-    {N : Finset String}
-    {x : Name} {P : Process}
-    {nuListenerBody seedListenerBody : Pattern}
-    {xr yr : Name} {Pr : Process} {n v : String}
-    {hfresh : EncodingFresh P}
-    (hend : CalcPreludeDomainIndexedSemanticMorphism
-      N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh) :
-    CalcPreludeLanguageMorphismSemanticTransfer
-      N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh :=
-  calcPreludeDomainIndexedSemanticMorphism_to_langMorphismSemanticTransfer hend
-
-/-- Canonical endpoint packaged as a direct predecessor-domain
-LanguageMorphism-style parameterized-atom transfer wrapper. -/
-theorem calcPrelude_langMorphism_semantic_transfer_paramAtom_predDomain_of_endpoint
-    {N : Finset String}
-    {x : Name} {P : Process}
-    {nuListenerBody seedListenerBody : Pattern}
-    {xr yr : Name} {Pr : Process} {n v : String}
-    {hfresh : EncodingFresh P}
-    (hend : CalcPreludeDomainIndexedSemanticMorphism
-      N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh) :
-    CalcPreludeLanguageMorphismSemanticTransferParamAtomPredDomain
-      N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh :=
-  calcPreludeDomainIndexedSemanticMorphism_to_langMorphismSemanticTransferParamAtomPredDomain hend
 
 /-- Generic framework-level transfer bundle consumed from the predecessor-domain
 wrapper: one RF fragment judgment plus one derived-star reachable-domain
@@ -1495,118 +1289,6 @@ theorem piRho_canonical_package_end_to_end_sem_diaTop_star
       (N := N) x P nuListenerBody seedListenerBody xr yr Pr n v hobs hfresh
   exact hend.transfer_rf_sem_diaTop_star hstep hrf hsafe
 
-/-- End-to-end canonical full semantic claim in `OSLF/Framework`:
-instantiates the domain-indexed endpoint and exposes only the endpoint-level
-semantic package (RF + one-step domain + star domain). -/
-theorem piRho_canonical_full_semantic_claim_end_to_end
-    {N : Finset String}
-    (x : Name) (P : Process)
-    (nuListenerBody seedListenerBody : Pattern)
-    (xr yr : Name) (Pr : Process) (n v : String)
-    (hobs : N ⊆ P.freeNames)
-    (hfresh : EncodingFresh P) :
-    (∀ {P0 P1 : Process},
-      (hstep : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiStepRF P0 P1) →
-      (hrf : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.RestrictionFree P0) →
-      (hsafe : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiCommSafe hstep) →
-      Mettapedia.OSLF.Formula.sem rhoCoreStarRel (fun _ _ => True)
-        (.dia .top) (encode P0 n v))
-    ∧
-    (∀ {src tgt : Pattern},
-      EncodedFreshDomain N src →
-      Nonempty
-        (Mettapedia.Languages.ProcessCalculi.RhoCalculus.DerivedRepNu.ReducesDerived src tgt) →
-      (∃ seeds, BackwardAdminReflection.WeakBackwardOutcomeFreshAt N src seeds)
-      ∧
-      Mettapedia.OSLF.Formula.sem rhoDerivedStepRel (fun _ _ => True)
-        (.dia .top) src)
-    ∧
-    (∀ {src tgt : Pattern},
-      EncodedFreshDomain N src →
-      Nonempty
-        (Mettapedia.Languages.ProcessCalculi.RhoCalculus.DerivedRepNu.ReducesDerivedStar src tgt) →
-      (∃ seeds, BackwardAdminReflection.WeakBackwardOutcomeFreshAt N src seeds)
-      ∧
-      Mettapedia.OSLF.Formula.sem rhoDerivedStarRel (fun _ _ => True)
-        (.dia .top) src) := by
-  have hend :
-      CalcPreludeDomainIndexedSemanticMorphism N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh :=
-    piRho_canonical_domainIndexedSemanticMorphism_end_to_end
-      (N := N) x P nuListenerBody seedListenerBody xr yr Pr n v hobs hfresh
-  exact calculus_canonical_full_semantic_claim_of_endpoint hend
-
-/-- End-to-end direct LanguageMorphism-style semantic transfer wrapper. -/
-theorem piRho_canonical_langMorphism_semantic_transfer_end_to_end
-    {N : Finset String}
-    (x : Name) (P : Process)
-    (nuListenerBody seedListenerBody : Pattern)
-    (xr yr : Name) (Pr : Process) (n v : String)
-    (hobs : N ⊆ P.freeNames)
-    (hfresh : EncodingFresh P) :
-    CalcPreludeLanguageMorphismSemanticTransfer
-      N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh := by
-  have hend :
-      CalcPreludeDomainIndexedSemanticMorphism N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh :=
-    piRho_canonical_domainIndexedSemanticMorphism_end_to_end
-      (N := N) x P nuListenerBody seedListenerBody xr yr Pr n v hobs hfresh
-  exact calcPrelude_langMorphism_semantic_transfer_of_endpoint hend
-
-/-- End-to-end default parameterized-atom LanguageMorphism-style semantic
-transfer wrapper consumed from the canonical endpoint.
-
-This is the canonical default: atom assumptions are predecessor-domain indexed. -/
-theorem piRho_canonical_langMorphism_semantic_transfer_paramAtom_end_to_end
-    {N : Finset String}
-    (x : Name) (P : Process)
-    (nuListenerBody seedListenerBody : Pattern)
-    (xr yr : Name) (Pr : Process) (n v : String)
-    (hobs : N ⊆ P.freeNames)
-    (hfresh : EncodingFresh P) :
-    CalcPreludeLanguageMorphismSemanticTransferParamAtomPredDomain
-      N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh := by
-  have hend :
-      CalcPreludeDomainIndexedSemanticMorphism
-        N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh :=
-    piRho_canonical_domainIndexedSemanticMorphism_end_to_end
-      (N := N) x P nuListenerBody seedListenerBody xr yr Pr n v hobs hfresh
-  exact calcPrelude_langMorphism_semantic_transfer_paramAtom_predDomain_of_endpoint hend
-
-/-- End-to-end canonical parameterized-atom theorem family for downstream
-OSLF/Framework users. -/
-theorem piRho_canonical_paramAtom_fragment_predDomain_claim_end_to_end
-    {N : Finset String}
-    (x : Name) (P : Process)
-    (nuListenerBody seedListenerBody : Pattern)
-    (xr yr : Name) (Pr : Process) (n v : String)
-    (hobs : N ⊆ P.freeNames)
-    (hfresh : EncodingFresh P) :
-    (∀ (I : Mettapedia.OSLF.Formula.AtomSem) {φ : Mettapedia.OSLF.Formula.OSLFFormula},
-      (hfrag : EndpointDiaBoxFragment φ) →
-      ∀ {P0 P1 : Process},
-        (hstep : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiStepRF P0 P1) →
-        (hrf : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.RestrictionFree P0) →
-        (hsafe : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiCommSafe hstep) →
-        (hAtomPred : ∀ a p, rhoCoreStarRel p (encode P0 n v) → I a p) →
-        Mettapedia.OSLF.Formula.sem rhoCoreStarRel I φ (encode P0 n v))
-    ∧
-    (∀ (I : Mettapedia.OSLF.Formula.AtomSem) {φ : Mettapedia.OSLF.Formula.OSLFFormula},
-      (hfrag : EndpointDiaBoxFragment φ) →
-      ∀ {src tgt : Pattern},
-        EncodedFreshDomain N src →
-        Nonempty
-          (Mettapedia.Languages.ProcessCalculi.RhoCalculus.DerivedRepNu.ReducesDerivedStar src tgt) →
-        (hAtomPredSrc : ∀ a p, rhoDerivedStarRel p src → I a p) →
-        (hAtomPredTgt : ∀ a p, rhoDerivedStarRel p tgt → I a p) →
-        (∃ seeds, BackwardAdminReflection.WeakBackwardOutcomeFreshAt N src seeds)
-        ∧ Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I φ src
-        ∧ Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I φ tgt) := by
-  have hend :
-      CalcPreludeDomainIndexedSemanticMorphism
-        N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh :=
-    piRho_canonical_domainIndexedSemanticMorphism_end_to_end
-      (N := N) x P nuListenerBody seedListenerBody xr yr Pr n v hobs hfresh
-  exact calculus_canonical_paramAtom_fragment_predDomain_claim_of_endpoint hend
-
 /-- CoreMain-facing canonical endpoint alias for the pred-domain default. -/
 theorem piRho_coreMain_predDomain_endpoint
     {N : Finset String}
@@ -1616,61 +1298,18 @@ theorem piRho_coreMain_predDomain_endpoint
     (hobs : N ⊆ P.freeNames)
     (hfresh : EncodingFresh P) :
     CalcPreludeLanguageMorphismSemanticTransferParamAtomPredDomain
-      N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh :=
-  piRho_canonical_langMorphism_semantic_transfer_paramAtom_end_to_end
-    (N := N) x P nuListenerBody seedListenerBody xr yr Pr n v hobs hfresh
-
-/-- Concrete nil-baseline endpoint used by pred-domain canaries. -/
-theorem piRho_canonical_domainIndexedSemanticMorphism_canary_nil :
-    CalcPreludeDomainIndexedSemanticMorphism
-      (∅ : Finset String)
-      "x" .nil rhoNil rhoNil
-      "ns_x" "_drop" .nil "n_init" "v_init"
-      Mettapedia.Languages.ProcessCalculi.PiCalculus.encodingFresh_nil := by
-  exact calcPreludeCanonicalPackage_to_domainIndexedSemanticMorphism
-    calculus_correspondence_prelude_canonical_package_canary_nil
-
-/-- End-to-end framework-level bundle theorem consuming the canonical
-predecessor-domain wrapper. This is the transfer endpoint intended for
-downstream OSLF clients. -/
-theorem piRho_canonical_predDomain_transfer_bundle_end_to_end
-    {N : Finset String}
-    (x : Name) (P : Process)
-    (nuListenerBody seedListenerBody : Pattern)
-    (xr yr : Name) (Pr : Process) (n v : String)
-    (hobs : N ⊆ P.freeNames)
-    (hfresh : EncodingFresh P)
-    (I : Mettapedia.OSLF.Formula.AtomSem)
-    {φ : Mettapedia.OSLF.Formula.OSLFFormula}
-    (hfrag : EndpointDiaBoxFragment φ)
-    {P0 P1 : Process}
-    (hstep : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiStepRF P0 P1)
-    (hrf : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.RestrictionFree P0)
-    (hsafe : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiCommSafe hstep)
-    (hAtomPredRF : ∀ a p, rhoCoreStarRel p (encode P0 n v) → I a p)
-    {src tgt : Pattern}
-    (hsrc : EncodedFreshDomain N src)
-    (hreach :
-      Nonempty
-        (Mettapedia.Languages.ProcessCalculi.RhoCalculus.DerivedRepNu.ReducesDerivedStar src tgt))
-    (hAtomPredSrc : ∀ a p, rhoDerivedStarRel p src → I a p)
-    (hAtomPredTgt : ∀ a p, rhoDerivedStarRel p tgt → I a p) :
-    Mettapedia.OSLF.Formula.sem rhoCoreStarRel I φ (encode P0 n v)
-    ∧
-    (∃ seeds, BackwardAdminReflection.WeakBackwardOutcomeFreshAt N src seeds)
-    ∧ Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I φ src
-    ∧ Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I φ tgt := by
-  have hwrap :
-      CalcPreludeLanguageMorphismSemanticTransferParamAtomPredDomain
+      N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh := by
+  have hend :
+      CalcPreludeDomainIndexedSemanticMorphism
         N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh :=
-    piRho_coreMain_predDomain_endpoint
+    piRho_canonical_domainIndexedSemanticMorphism_end_to_end
       (N := N) x P nuListenerBody seedListenerBody xr yr Pr n v hobs hfresh
-  exact hwrap.transfer_fragment_bundle I hfrag hstep hrf hsafe hAtomPredRF
-    hsrc hreach hAtomPredSrc hAtomPredTgt
+  exact calcPreludeDomainIndexedSemanticMorphism_to_langMorphismSemanticTransferParamAtomPredDomain hend
 
-/-- End-to-end bundle variant using a single predecessor-domain atom assumption
-over both reachable endpoints (`src`, `tgt`). -/
-theorem piRho_canonical_predDomainPair_transfer_bundle_end_to_end
+/-- CoreMain-facing framework transfer endpoint:
+consume the canonical pred-domain wrapper directly and produce RF + derived-star
+bundle transfer with a single pair-domain atom assumption. -/
+theorem piRho_coreMain_predDomain_transfer_bundle_end_to_end
     {N : Finset String}
     (x : Name) (P : Process)
     (nuListenerBody seedListenerBody : Pattern)
@@ -1704,39 +1343,6 @@ theorem piRho_canonical_predDomainPair_transfer_bundle_end_to_end
   exact hwrap.transfer_fragment_bundle_predDomainPair
     I hfrag hstep hrf hsafe hAtomPredRF
     hsrc hreach hAtomPredPair
-
-/-- CoreMain-facing framework transfer endpoint:
-consume the canonical pred-domain wrapper directly and produce RF + derived-star
-bundle transfer with a single pair-domain atom assumption. -/
-theorem piRho_coreMain_predDomain_transfer_bundle_end_to_end
-    {N : Finset String}
-    (x : Name) (P : Process)
-    (nuListenerBody seedListenerBody : Pattern)
-    (xr yr : Name) (Pr : Process) (n v : String)
-    (hobs : N ⊆ P.freeNames)
-    (hfresh : EncodingFresh P)
-    (I : Mettapedia.OSLF.Formula.AtomSem)
-    {φ : Mettapedia.OSLF.Formula.OSLFFormula}
-    (hfrag : EndpointDiaBoxFragment φ)
-    {P0 P1 : Process}
-    (hstep : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiStepRF P0 P1)
-    (hrf : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.RestrictionFree P0)
-    (hsafe : Mettapedia.Languages.ProcessCalculi.PiCalculus.ForwardSimulation.MultiCommSafe hstep)
-    (hAtomPredRF : ∀ a p, rhoCoreStarRel p (encode P0 n v) → I a p)
-    {src tgt : Pattern}
-    (hsrc : EncodedFreshDomain N src)
-    (hreach :
-      Nonempty
-        (Mettapedia.Languages.ProcessCalculi.RhoCalculus.DerivedRepNu.ReducesDerivedStar src tgt))
-    (hAtomPredPair : ∀ a p, PredDomainPair rhoDerivedStarRel src tgt p → I a p) :
-    Mettapedia.OSLF.Formula.sem rhoCoreStarRel I φ (encode P0 n v)
-    ∧
-    (∃ seeds, BackwardAdminReflection.WeakBackwardOutcomeFreshAt N src seeds)
-    ∧ Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I φ src
-    ∧ Mettapedia.OSLF.Formula.sem rhoDerivedStarRel I φ tgt := by
-  exact piRho_canonical_predDomainPair_transfer_bundle_end_to_end
-    (N := N) x P nuListenerBody seedListenerBody xr yr Pr n v hobs hfresh
-    I hfrag hstep hrf hsafe hAtomPredRF hsrc hreach hAtomPredPair
 
 /-- CoreMain-facing reachable-state endpoint over the encoded/fresh domain:
 consume predecessor-domain atom assumptions at a reachable state and obtain

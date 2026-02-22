@@ -3,6 +3,7 @@ import Mettapedia.OSLF.CoreMain
 import Mettapedia.Logic.OSLFImageFinite
 import Mettapedia.OSLF.Framework.PiRhoCanonicalBridge
 import Mettapedia.OSLF.Framework.AssumptionNecessity
+import Mettapedia.OSLF.Framework.ToposTOGLBridge
 
 /-!
 # OSLF Specification Index
@@ -170,6 +171,14 @@ formalization. Serves as a traceability matrix for review.
   `languagePresheafLambdaTheory`, `languageSortRepresentableObj`,
   `languageSortFiber`, `languageSortFiber_characteristicEquiv`,
   `languageSortPredicateFibration`
+- Canonical packaged topos/internal-language + TOGL graph bridge endpoints:
+  `ToposTOGLBridge.topos_internal_language_bridge_package`,
+  `ToposTOGLBridge.topos_internal_language_full_route_family`,
+  `ToposTOGLBridge.togl_graph_modal_bridge_package`,
+  `ToposTOGLBridge.togl_internal_graph_correspondence_layer`,
+  `ToposTOGLBridge.graphChain2`,
+  `ToposTOGLBridge.togl_graph_composition_reductionGraphObj_family`,
+  `ToposTOGLBridge.togl_graph_composition_diamond_family`
 - Pattern-predicate bridge into representable fibers:
   `languageSortPredNaturality`, `commDiPred`,
   `commDiWitnessLifting`, `pathSem_commSubst`,
@@ -306,7 +315,18 @@ open Mettapedia.OSLF
 #check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.piRho_coreMain_predDomain_endpoint
 #check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.piRho_coreMain_canonical_contract_end_to_end
 #check @Mettapedia.OSLF.coreMain_nativeType_piOmega_translation_endpoint
+#check @Mettapedia.OSLF.coreMain_nativeType_piOmegaProp_translation_endpoint
+#check @Mettapedia.OSLF.coreMain_nativeType_piOmegaProp_constructor_transport_bundle
+#check @Mettapedia.OSLF.coreMain_nativeType_comp_piOmegaProp_constructor_transport_bundle
+#check @Mettapedia.OSLF.coreMain_nativeType_piProp_colax_rules_endpoint
+#check @Mettapedia.OSLF.coreMain_nativeType_constructor_grothendieck_endpoint
+#check @Mettapedia.OSLF.coreMain_nativeType_constructor_groth_roundtrip
+#check @Mettapedia.OSLF.coreMain_nativeType_piOmegaProp_grothendieck_package
 #check @Mettapedia.OSLF.coreMain_nativeType_id_piOmega_canary
+#check @Mettapedia.OSLF.coreMain_section12_worked_examples
+#check @Mettapedia.OSLF.coreMain_dependent_parametric_generated_typing
+#check @Mettapedia.OSLF.Framework.GeneratedTyping.dependent_parametric_generated_type_system_extension
+#check @Mettapedia.OSLF.Framework.GeneratedTyping.rhoCalc_dependent_parametric_generated_type_system_extension
 #check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.CalcPreludeDomainIndexedSemanticMorphism.transfer_domain_star_reachable_fragment_paramAtom_predDomainPair
 #check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.CalcPreludeLanguageMorphismSemanticTransferParamAtomPredDomain.transfer_fragment_bundle_predDomainPair
 #check @Mettapedia.OSLF.Framework.PiRhoCanonicalBridge.piRho_coreMain_predDomain_transfer_bundle_end_to_end
@@ -325,8 +345,44 @@ open Mettapedia.OSLF
 #check @Mettapedia.OSLF.NativeType.TheoryMorphism
 #check @Mettapedia.OSLF.NativeType.TheoryMorphism.preserves_piType
 #check @Mettapedia.OSLF.NativeType.TheoryMorphism.preserves_omegaTop
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.preserves_propImp
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.colax_piType
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.lax_piType
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.colax_propImp
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.lax_propImp
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.colax_pi_elim
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.colax_pi_intro
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.colax_prop_mp
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.colax_prop_intro
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.PiPropColaxRuleSet
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.piProp_colax_rules
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.comp
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.comp_piProp_colax_rules
 #check @Mettapedia.OSLF.NativeType.TheoryMorphism.piOmega_translation_endpoint
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.piOmegaProp_translation_endpoint
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.piOmegaProp_with_constructor_transport_bundle
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.comp_piOmegaProp_with_constructor_transport_bundle
 #check @Mettapedia.OSLF.NativeType.TheoryMorphism.id_piOmega_translation_endpoint
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.id_piOmegaProp_translation_endpoint
+#check @Mettapedia.OSLF.NativeType.constructorPredFiberFunctorDual
+#check @Mettapedia.OSLF.NativeType.ConstructorGrothendieckDual
+#check @Mettapedia.OSLF.NativeType.constructorNatType_toGrothObj
+#check @Mettapedia.OSLF.NativeType.grothObj_to_constructorNatType
+#check @Mettapedia.OSLF.NativeType.constructorNatType_obj_roundtrip
+#check @Mettapedia.OSLF.NativeType.constructorNatTypeHom_to_grothHom
+#check @Mettapedia.OSLF.NativeType.grothHom_to_constructorNatTypeHom
+#check @Mettapedia.OSLF.NativeType.constructorNatTypeHom_groth_roundtrip
+#check @Mettapedia.OSLF.NativeType.fullPredFiberFunctorDual
+#check @Mettapedia.OSLF.NativeType.FullPresheafGrothendieckObj
+#check @Mettapedia.OSLF.NativeType.FullPresheafGrothendieckHom
+#check @Mettapedia.OSLF.NativeType.ScopedConstructorPred
+#check @Mettapedia.OSLF.NativeType.ScopedConstructorPred.toFullGrothObj
+#check @Mettapedia.OSLF.NativeType.ScopedConstructorPredHom
+#check @Mettapedia.OSLF.NativeType.ScopedConstructorPredHom.toFullGrothHom
+#check @Mettapedia.OSLF.NativeType.ScopedConstructorPredHom.toFullGrothHom_comp
+#check @Mettapedia.OSLF.NativeType.scoped_full_constructor_comparison_package
+#check @Mettapedia.OSLF.NativeType.scoped_full_constructor_obj_comparison
+#check @Mettapedia.OSLF.NativeType.scoped_fullGroth_base_eq_representable
 #check @SortPresheafCategory
 #check @predFibration
 #check @oslf_fibration
@@ -352,6 +408,18 @@ open Mettapedia.OSLF
 #check @Mettapedia.OSLF.Framework.CategoryBridge.languageSortPredNaturality_commDi_pathSemClosed
 #check @Mettapedia.OSLF.Framework.CategoryBridge.languageSortFiber_ofPatternPred_mem_iff
 #check @Mettapedia.OSLF.Framework.CategoryBridge.languageSortFiber_ofPatternPred_mem_iff_satisfies
+#check @Mettapedia.OSLF.Framework.ToposTOGLBridge.topos_internal_language_bridge_package
+#check @Mettapedia.OSLF.Framework.ToposTOGLBridge.topos_internal_language_full_route_family
+#check @Mettapedia.OSLF.Framework.ToposTOGLBridge.togl_graph_modal_bridge_package
+#check @Mettapedia.OSLF.Framework.ToposTOGLBridge.togl_internal_graph_correspondence_layer
+#check @Mettapedia.OSLF.Framework.ToposTOGLBridge.togl_graph_algebra_reductionGraphObj_family
+#check @Mettapedia.OSLF.Framework.ToposTOGLBridge.graphChain2
+#check @Mettapedia.OSLF.Framework.ToposTOGLBridge.togl_graph_composition_reductionGraphObj_family
+#check @Mettapedia.OSLF.Framework.ToposTOGLBridge.togl_graph_composition_diamond_family
+#check @Mettapedia.OSLF.NativeType.full_presheaf_comparison_bundle
+#check @Mettapedia.OSLF.NativeType.ScopedReachable
+#check @Mettapedia.OSLF.NativeType.full_presheaf_comparison_bundle_reachable
+#check @Mettapedia.OSLF.NativeType.full_presheaf_comparison_bundle_reachable_fragment
 #check @languageSortFiber_ofPatternPred_characteristicMap
 #check @languageSortFiber_ofPatternPred_characteristicMap_spec
 #check @rhoProc_langOSLF_predicate_to_fiber_mem_iff
@@ -401,6 +469,17 @@ open Mettapedia.OSLF
 #check @sem_box_eq_langBox
 #check @HasType
 #check @substitutability
+#check @Mettapedia.OSLF.Framework.Theorem1SubstitutabilityEquiv
+#check @Mettapedia.OSLF.Framework.theorem1_substitutability_forward
+#check @Mettapedia.OSLF.Framework.theorem1_substitutability_imageFinite
+#check @Mettapedia.OSLF.coreMain_theorem1_canonical_contract
+#check @Mettapedia.OSLF.coreMain_theorem1_substitutability_forward
+#check @Mettapedia.OSLF.coreMain_theorem1_substitutability_imageFinite
+#check @Mettapedia.OSLF.coreMain_theorem1_langReduces_imageFinite
+#check @Mettapedia.OSLF.coreMain_paper_parity_theorem_package
+#check @Mettapedia.OSLF.coreMain_paper_parity_theorem_package_langReduces
+#check @Mettapedia.OSLF.CoreMainPaperParityCanonicalPackage
+#check @Mettapedia.OSLF.coreMain_paper_parity_canonical_package
 #check @Mettapedia.Languages.ProcessCalculi.RhoCalculus.Soundness.progress
 #check @langModalAdjunction
 #check @rhoModalAdjunction

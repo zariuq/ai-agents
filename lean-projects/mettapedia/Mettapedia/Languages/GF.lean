@@ -66,6 +66,7 @@ import Mettapedia.Languages.GF.LinguisticInvariance
 import Mettapedia.Languages.GF.KernelConfluence
 import Mettapedia.Languages.GF.SemanticKernelConfluence
 import Mettapedia.Languages.GF.WorldModelSemantics
+import Mettapedia.Languages.GF.IdentityEvidenceSemantics
 import Mettapedia.Languages.GF.VisibleLayer
 import Mettapedia.Languages.GF.VisibleLayerGFInstance
 import Mettapedia.Languages.GF.WorldModelVisibleBridge

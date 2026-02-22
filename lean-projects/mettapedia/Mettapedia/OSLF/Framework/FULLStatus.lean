@@ -1,11 +1,17 @@
 import Mettapedia.OSLF.Framework.CategoryBridge
 import Mettapedia.OSLF.Framework.TypeSynthesis
+import Mettapedia.OSLF.Framework.GeneratedTyping
 import Mettapedia.OSLF.Framework.ConstructorCategory
 import Mettapedia.OSLF.MeTTaIL.DeclReducesWithPremises
 import Mettapedia.GSLT.Topos.PredicateFibration
 import Mettapedia.OSLF.Framework.ToposReduction
 import Mettapedia.OSLF.Framework.BeckChevalleyOSLF
+import Mettapedia.OSLF.Framework.ToposTOGLBridge
 import Mettapedia.OSLF.Framework.AssumptionNecessity
+import Mettapedia.OSLF.Framework.PaperSection12Examples
+import Mettapedia.OSLF.Framework.IdentityEvidenceTransfer
+import Mettapedia.OSLF.Framework.ModalEquivalence
+import Mettapedia.OSLF.Framework.SubstitutabilityTheorem1
 import Mettapedia.OSLF.NativeType.Construction
 import Mettapedia.OSLF.Formula
 import Mettapedia.OSLF.Decidability
@@ -13,6 +19,8 @@ import Mettapedia.OSLF.Framework.TinyMLInstance
 import Mettapedia.OSLF.Framework.MeTTaMinimalInstance
 import Mettapedia.OSLF.Framework.MeTTaFullInstance
 import Mettapedia.Languages.GF.WorldModelSemantics
+import Mettapedia.Languages.GF.IdentityEvidenceSemantics
+import Mettapedia.Logic.IdentityEvidence
 import Mettapedia.OSLF.QuantifiedFormula
 
 /-!
@@ -119,6 +127,11 @@ def tracker : List Milestone :=
       status := .done
       codeRef := "Mettapedia/Languages/GF/WorldModelSemantics.lean: anaphoricDiscourse / nonAnaphoricDiscourse / iSup_inf_le_inf_iSup"
       note := "Coreference modeled via shared variable binding in QFormula. Anaphoric reading ≤ non-anaphoric (same entity is stronger than different entities)." }
+  , { area := "Identity Evidence Semantics"
+      title := "Guarded identity transport extension with conservative fallback and framework transfer wrapper"
+      status := .done
+      codeRef := "Mettapedia/Logic/IdentityEvidence.lean: transport_enabled_canary_guard_pass / transport_enabled_canary_guard_fail / transport_enabled_path_canary / competing_identities_retained_canary; Mettapedia/Languages/GF/IdentityEvidenceSemantics.lean: gfWMFormulaSem_withIdentity_disabled / oslf_sat_implies_wm_semantics_withIdentity_unused; Mettapedia/OSLF/Framework/IdentityEvidenceTransfer.lean: sem_withIdentity_disabled_iff / checkLangUsing_sat_sound_withIdentity_unused / identity_semantic_transfer_endpoint"
+      note := "Identity layer is guarded (assurance/contradiction thresholds), preserves conservative behavior when disabled, and is consumable through a framework-level transfer endpoint independent of process-calculus internals." }
   , { area := "Assumption Audit"
       title := "HM converse star wrappers are necessity-audited (global image-finite cannot be discharged)"
       status := .done
@@ -147,8 +160,8 @@ def tracker : List Milestone :=
   , { area := "Literature Alignment"
       title := "Theory-translation preservation of Π/Ω in Native Type route"
       status := .done
-      codeRef := "Mettapedia/OSLF/NativeType/Construction.lean: TheoryMorphism, TheoryMorphism.preserves_piType, TheoryMorphism.preserves_omegaTop, TheoryMorphism.piOmega_translation_endpoint, TheoryMorphism.id_piOmega_translation_endpoint; /home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/Native_Type_Theory.pdf (future-work discussion on preserving Π and Ω)"
-      note := "Native Type translation conditions are now explicit and theorem-level: a sort-indexed `TheoryMorphism` contract certifies Π (`sInf`) and Ω-top preservation, with a canonical endpoint theorem and identity-canary instance." }
+      codeRef := "Mettapedia/OSLF/NativeType/Construction.lean: TheoryMorphism, TheoryMorphism.preserves_piType, TheoryMorphism.preserves_omegaTop, TheoryMorphism.preserves_propImp, TheoryMorphism.piOmega_translation_endpoint, TheoryMorphism.piOmegaProp_translation_endpoint, TheoryMorphism.id_piOmega_translation_endpoint, TheoryMorphism.id_piOmegaProp_translation_endpoint; /home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/Native_Type_Theory.pdf (future-work discussion on preserving Π and Ω)"
+      note := "Native Type translation conditions are now explicit and theorem-level: a sort-indexed `TheoryMorphism` contract certifies Π (`sInf`), Ω-top, and fiber implication (`Prop` constructor), with canonical bundled endpoints and identity-canary instances." }
   ]
 
 /-- Count milestones with a given status. -/
@@ -169,6 +182,127 @@ theorem remaining_eq_nil : remaining = [] := by
 
 /-- Sanity check: unresolved-milestone count is zero. -/
 theorem remainingCount_eq_zero : remainingCount = 0 := by
+  decide
+
+/-!
+## Strict Literature-Alignment Tracker
+
+`tracker` above tracks the currently completed CoreMain-facing OSLF endpoint
+surface.  The strict tracker below appends paper-level frontier items that are
+still open in the source literature.
+-/
+
+/-- Strict tracker = core-complete tracker + still-open paper-level milestones. -/
+def strictTracker : List Milestone :=
+  tracker ++
+  [ { area := "OSLF Paper Section 12"
+      title := "Compile-time firewall worked example"
+      status := .done
+      codeRef := "Mettapedia/OSLF/Framework/PaperSection12Examples.lean: compile_time_firewall_worked_example; /home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/oslf.pdf §12.1 (TBD)"
+      note := "Concrete theorem-level policy-firewall bundle is formalized: canonical policy blocks set-context descent while extension policy admits it." }
+  , { area := "OSLF Paper Section 12"
+      title := "Race detection worked example"
+      status := .done
+      codeRef := "Mettapedia/OSLF/Framework/PaperSection12Examples.lean: race_detection_worked_example; /home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/oslf.pdf §12.2 (TBD)"
+      note := "Concrete race theorem proves two distinct one-step reducts from a single source, witnessing non-deterministic branching." }
+  , { area := "OSLF Paper Section 12"
+      title := "Secrecy worked example"
+      status := .done
+      codeRef := "Mettapedia/OSLF/Framework/PaperSection12Examples.lean: secrecy_worked_example; /home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/oslf.pdf §12.3 (TBD)"
+      note := "Concrete secrecy theorem proves a private channel is internal, absent from environment free names, and absent from surface/external channels." }
+  , { area := "OSLF Paper Future Work"
+      title := "Dependent and parametric types in the generated type system"
+      status := .done
+      codeRef := "Mettapedia/OSLF/Framework/GeneratedTyping.lean: depDiamond/depBox/paramDiamond/paramBox, dep_quote/dep_drop/param_quote/param_drop, dependent_parametric_generated_type_system_extension, rhoCalc_dependent_parametric_generated_type_system_extension; /home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/oslf.pdf §13.1"
+      note := "Generated typing now includes theorem-level dependent and parametric extension endpoints: modal semantics (`◇`,`□`) lifted over index families and quote/drop typing transport rules, bundled as a canonical extension package." }
+  , { area := "Native Type Theory Future Work"
+      title := "Colax preservation rules for Π/Prop under theory translation"
+      status := .done
+      codeRef := "Mettapedia/OSLF/NativeType/Construction.lean: TheoryMorphism.colax_piType/lax_piType, TheoryMorphism.colax_propImp/lax_propImp, TheoryMorphism.colax_pi_elim/colax_pi_intro, TheoryMorphism.colax_prop_mp/colax_prop_intro, TheoryMorphism.PiPropColaxRuleSet, TheoryMorphism.piProp_colax_rules, TheoryMorphism.comp, TheoryMorphism.comp_piProp_colax_rules; /home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/Native_Type_Theory.pdf lines ~514, ~676"
+      note := "Full theorem-level colax/lax rule-set is formalized for Π/Prop translation: directional preservation, intro/elim rules, and composition stability are packaged as a canonical endpoint." }
+  , { area := "OSLF/GSLT Future Work"
+      title := "Internal constructor-category restriction of `stepForward` to modal fiber action"
+      status := .done
+      codeRef := "Mettapedia/GSLT/Core/ChangeOfBase.lean: LambdaTheoryWithFibration.stepForward; Mettapedia/OSLF/Framework/ModalEquivalence.lean: diamondAction_iff_constructor_graphStepForward / boxAction_iff_constructor_graphIncoming"
+      note := "The constructor-category restriction is now theorem-level: the modal actions (`diamondAction`,`boxAction`) are identified with internal reduction-graph edge/external-incoming formulations at each constructor object, giving the concrete OSLF-side `stepForward` restriction endpoint." }
+  , { area := "Native Type Theory Future Work"
+      title := "Concrete Mathlib Grothendieck native-type category endpoint (cross-sort morphisms)"
+      status := .done
+      codeRef := "Mettapedia/OSLF/NativeType/Construction.lean: constructorPredFiberFunctorDual / ConstructorGrothendieckDual / constructorNatType_toGrothObj / grothObj_to_constructorNatType / constructorNatTypeHom_to_grothHom / grothHom_to_constructorNatTypeHom / constructorNatTypeHom_groth_roundtrip; plus ConstructorNatType / constructorReindex_* / ConstructorNatTypeHom / constructorNatTypeTransport_* / rho_roundtrip_constructorNatTypeHom"
+      note := "Concrete Mathlib `CategoryTheory.Grothendieck` endpoint is now theorem-level over constructor sorts, with explicit conversion maps and a scoped constructor→Grothendieck→constructor roundtrip theorem, in addition to the prior nontrivial constructor transport layer." }
+  ]
+
+/-- Remaining strict milestones (in-progress + missing). -/
+def strictRemaining : List Milestone :=
+  strictTracker.filter (fun m => m.status ≠ .done)
+
+/-- Number of remaining strict milestones. -/
+def strictRemainingCount : Nat :=
+  strictRemaining.length
+
+/-- Strict tracker is fully discharged. -/
+theorem strictRemaining_eq_nil : strictRemaining = [] := by
+  decide
+
+/-- Strict unresolved-milestone count baseline. -/
+theorem strictRemainingCount_eq_zero : strictRemainingCount = 0 := by
+  decide
+
+/-!
+## Paper-Parity Tracker (No Overclaim Surface)
+
+This tracker encodes parity targets against the core claims in:
+- `/home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/oslf.pdf`
+- `/home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/Native_Type_Theory.pdf`
+- `/home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/togl.pdf`
+
+Unlike `tracker`/`strictTracker`, this list is intentionally conservative:
+entries remain non-`done` until their theorem-level endpoints are fully formalized.
+-/
+
+/-- Paper-level parity milestones relative to OSLF/NTT claims. -/
+def paperParityTracker : List Milestone :=
+  [ { area := "OSLF Paper Core"
+      title := "Theorem-1-style substitutability equivalence endpoint (bisim <-> same native types)"
+      status := .done
+      codeRef := "Mettapedia/OSLF/Framework/SubstitutabilityTheorem1.lean: Theorem1SubstitutabilityEquiv / theorem1_substitutability_forward / theorem1_substitutability_imageFinite; Mettapedia/OSLF/CoreMain.lean: CoreMainTheorem1CanonicalContract / coreMain_theorem1_canonical_contract / coreMain_theorem1_langReduces_imageFinite / coreMain_paper_parity_theorem_package / coreMain_paper_parity_theorem_package_langReduces; plus Mettapedia/OSLF/Framework/RewriteSystem.lean: Substitutability; /home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/oslf.pdf §11"
+      note := "Theorem-1 has both a generic CoreMain contract and a canonical `langReduces` endpoint with explicit predecessor-finiteness assumptions; this closes the paper-facing endpoint selection without masking assumptions." }
+  , { area := "Native Type Theory Core"
+      title := "Full NT route over presheaf/base-fibration construction (beyond constructor-scoped endpoint)"
+      status := .inProgress
+      codeRef := "Mettapedia/OSLF/Framework/CategoryBridge.lean: languagePresheafLambdaTheory/languageSortFiber_ofPatternPred; Mettapedia/OSLF/NativeType/Construction.lean: fullPredFiberFunctorDual / FullPresheafGrothendieckObj / ScopedConstructorPred.toFullGrothObj; Mettapedia/OSLF/CoreMain.lean: CoreMainPaperParityCanonicalPackage / coreMain_paper_parity_canonical_package; /home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/Native_Type_Theory.pdf"
+      note := "The full presheaf/SubFunctor object layer is explicit, theorem-level, and now projected via a CoreMain canonical package endpoint. Remaining work is stronger equivalence families at full paper claim strength." }
+  , { area := "Native Type Theory Core"
+      title := "Comparison theorem: full presheaf-native Grothendieck endpoint restricts to constructor endpoint"
+      status := .inProgress
+      codeRef := "Mettapedia/OSLF/NativeType/Construction.lean: scoped_full_constructor_obj_comparison / scoped_fullGroth_base_eq_representable / FullPresheafGrothendieckHom / ScopedConstructorPredHom.toFullGrothHom / ScopedConstructorPredHom.toFullGrothHom_comp / scoped_full_constructor_comparison_package / full_route_restriction_equivalence_package / full_presheaf_comparison_bundle / ScopedReachable / full_presheaf_comparison_bundle_reachable / full_presheaf_comparison_bundle_reachable_fragment; /home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/Native_Type_Theory.pdf"
+      note := "Scoped object+morphism comparison, bundled full-presheaf comparison, and fragment-parametric reachable-domain family are formalized. Remaining work is broader paper-claim-strength equivalence families over larger fragments." }
+  , { area := "Native Type Theory Core"
+      title := "Topos -> internal-language bridge theorem family at paper claim strength"
+      status := .inProgress
+      codeRef := "Mettapedia/OSLF/Framework/ToposTOGLBridge.lean: topos_internal_language_bridge_package / topos_internal_language_full_route_family; Mettapedia/OSLF/NativeType/Construction.lean: FullRouteRestrictionEquivalence / full_route_restriction_equivalence_package; Mettapedia/OSLF/CoreMain.lean: CoreMainPaperParityCanonicalPackage / coreMain_paper_parity_canonical_package; plus CategoryBridge/ToposReduction endpoints; /home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/Native_Type_Theory.pdf"
+      note := "Canonical package and stronger full-route theorem family are theorem-level and surfaced through a single CoreMain record endpoint. Remaining work is broader paper-strength consolidation over larger presheaf-native fragments." }
+  , { area := "TOGL/Graph Foundations"
+      title := "Explicit formal bridge from graph-theoretic foundations to OSLF canonical endpoint"
+      status := .inProgress
+      codeRef := "Mettapedia/OSLF/Framework/ToposTOGLBridge.lean: togl_graph_modal_bridge_package / togl_internal_graph_correspondence_layer / togl_graph_algebra_reductionGraphObj_family / graphChain2 / togl_graph_composition_reductionGraphObj_family / togl_graph_composition_diamond_family; plus Mettapedia/OSLF/Framework/ToposReduction.lean graph/internal-step theorems; /home/zar/claude/literature/Hyperon Study Materials/Rho and OSLF/togl.pdf"
+      note := "Graph-edge formulations are tied to OSLF `◇`/`□`, lifted to internal-subfunctor ↔ graph-object correspondence, and extended with graph-composition laws over `reductionGraphObjUsing`. Remaining work is broader TOGL-paper alignment beyond these canonical endpoints." }
+  ]
+
+/-- Remaining paper-parity milestones (in-progress + missing). -/
+def paperParityRemaining : List Milestone :=
+  paperParityTracker.filter (fun m => m.status ≠ .done)
+
+/-- Number of unresolved paper-parity milestones. -/
+def paperParityRemainingCount : Nat :=
+  paperParityRemaining.length
+
+/-- Sanity check: paper-parity tracker is intentionally non-empty until full parity is proven. -/
+theorem paperParityRemaining_ne_nil : paperParityRemaining ≠ [] := by
+  decide
+
+/-- Sanity check: unresolved paper-parity count is strictly positive at present. -/
+theorem paperParityRemainingCount_pos : 0 < paperParityRemainingCount := by
   decide
 
 /-! ## Code-Reference Anchors
@@ -207,6 +341,14 @@ These checks tie tracker statements to concrete constants in the codebase.
 #check @Mettapedia.OSLF.Framework.CategoryBridge.languageSortPredNaturality_commDi_pathSemClosed_of_pkg
 #check @Mettapedia.OSLF.Framework.CategoryBridge.rho_proc_pathSemLift_pkg
 #check @Mettapedia.OSLF.Framework.CategoryBridge.rho_proc_commDiWitnessLifting_of_pkg
+#check @Mettapedia.OSLF.Framework.ToposTOGLBridge.topos_internal_language_bridge_package
+#check @Mettapedia.OSLF.Framework.ToposTOGLBridge.topos_internal_language_full_route_family
+#check @Mettapedia.OSLF.Framework.ToposTOGLBridge.togl_graph_modal_bridge_package
+#check @Mettapedia.OSLF.Framework.ToposTOGLBridge.togl_internal_graph_correspondence_layer
+#check @Mettapedia.OSLF.Framework.ToposTOGLBridge.togl_graph_algebra_reductionGraphObj_family
+#check @Mettapedia.OSLF.Framework.ToposTOGLBridge.graphChain2
+#check @Mettapedia.OSLF.Framework.ToposTOGLBridge.togl_graph_composition_reductionGraphObj_family
+#check @Mettapedia.OSLF.Framework.ToposTOGLBridge.togl_graph_composition_diamond_family
 #check @Mettapedia.OSLF.Framework.CategoryBridge.pathSem_commSubst
 #check @Mettapedia.OSLF.Framework.CategoryBridge.pathSemClosedPred_closed
 #check @Mettapedia.OSLF.Framework.CategoryBridge.languageSortPredNaturality_commDi
@@ -288,6 +430,16 @@ These checks tie tracker statements to concrete constants in the codebase.
 #check @Mettapedia.Languages.GF.WorldModelSemantics.conditional_filters_definite_presup
 #check @Mettapedia.Languages.GF.WorldModelSemantics.inverse_scope_le_surface_scope_evidence
 #check @Mettapedia.Languages.GF.WorldModelSemantics.iSup_inf_le_inf_iSup
+#check @Mettapedia.Logic.IdentityEvidence.transport_enabled_canary_guard_pass
+#check @Mettapedia.Logic.IdentityEvidence.transport_enabled_canary_guard_fail
+#check @Mettapedia.Logic.IdentityEvidence.transport_enabled_path_canary
+#check @Mettapedia.Logic.IdentityEvidence.competing_identities_retained_canary
+#check @Mettapedia.Languages.GF.IdentityEvidenceSemantics.gfWMFormulaSem_withIdentity_disabled
+#check @Mettapedia.Languages.GF.IdentityEvidenceSemantics.oslf_sat_implies_wm_semantics_withIdentity_unused
+#check @Mettapedia.OSLF.Framework.IdentityEvidenceTransfer.IdentityAtomLayerConfig
+#check @Mettapedia.OSLF.Framework.IdentityEvidenceTransfer.sem_withIdentity_disabled_iff
+#check @Mettapedia.OSLF.Framework.IdentityEvidenceTransfer.checkLangUsing_sat_sound_withIdentity_unused
+#check @Mettapedia.OSLF.Framework.IdentityEvidenceTransfer.identity_semantic_transfer_endpoint
 -- Quantified formulas
 #check @Mettapedia.OSLF.QuantifiedFormula.QFormula
 #check @Mettapedia.OSLF.QuantifiedFormula.qsemE
@@ -318,10 +470,85 @@ These checks tie tracker statements to concrete constants in the codebase.
 #check @Mettapedia.OSLF.Framework.AssumptionNecessity.counterexample_hDiaTopAll_for_global_diaBox_transfer
 #check @Mettapedia.OSLF.Framework.AssumptionNecessity.not_commDiWitnessLifting_rho_example
 #check @Mettapedia.OSLF.Framework.AssumptionNecessity.commDiWitnessLifting_not_derivable_globally
+#check @Mettapedia.OSLF.Framework.PaperSection12Examples.compile_time_firewall_worked_example
+#check @Mettapedia.OSLF.Framework.PaperSection12Examples.race_detection_worked_example
+#check @Mettapedia.OSLF.Framework.PaperSection12Examples.secrecy_worked_example
+#check @Mettapedia.OSLF.Framework.PaperSection12Examples.section12_worked_examples_bundle
+#check @Mettapedia.OSLF.Framework.GeneratedTyping.dependent_parametric_generated_type_system_extension
+#check @Mettapedia.OSLF.Framework.GeneratedTyping.rhoCalc_dependent_parametric_generated_type_system_extension
 #check @Mettapedia.OSLF.NativeType.TheoryMorphism
 #check @Mettapedia.OSLF.NativeType.TheoryMorphism.preserves_piType
 #check @Mettapedia.OSLF.NativeType.TheoryMorphism.preserves_omegaTop
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.preserves_propImp
 #check @Mettapedia.OSLF.NativeType.TheoryMorphism.piOmega_translation_endpoint
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.piOmegaProp_translation_endpoint
 #check @Mettapedia.OSLF.NativeType.TheoryMorphism.id_piOmega_translation_endpoint
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.id_piOmegaProp_translation_endpoint
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.colax_piType
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.lax_piType
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.colax_propImp
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.lax_propImp
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.colax_pi_elim
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.colax_pi_intro
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.colax_prop_mp
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.colax_prop_intro
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.PiPropColaxRuleSet
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.piProp_colax_rules
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.comp
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.comp_piProp_colax_rules
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.comp_piOmegaProp_with_constructor_transport_bundle
+#check @Mettapedia.OSLF.Framework.ModalEquivalence.action_galois
+#check @Mettapedia.OSLF.Framework.ModalEquivalence.diamondAction_iff_constructor_graphStepForward
+#check @Mettapedia.OSLF.Framework.ModalEquivalence.boxAction_iff_constructor_graphIncoming
+#check @Mettapedia.GSLT.Core.LambdaTheoryWithFibration.stepForward
+#check @Mettapedia.OSLF.NativeType.NatType
+#check @Mettapedia.OSLF.NativeType.NatTypeFiber
+#check @Mettapedia.OSLF.NativeType.NatTypeTransport
+#check @Mettapedia.OSLF.NativeType.NatTypeHom
+#check @Mettapedia.OSLF.NativeType.equalityNatTypeTransport
+#check @Mettapedia.OSLF.NativeType.equalityNatTypeTransport_crossSort_comp
+#check @Mettapedia.OSLF.NativeType.equalityNatTypeTransport_endpoint
+#check @Mettapedia.OSLF.NativeType.ConstructorNatType
+#check @Mettapedia.OSLF.NativeType.constructorReindex_id
+#check @Mettapedia.OSLF.NativeType.constructorReindex_comp
+#check @Mettapedia.OSLF.NativeType.ConstructorNatTypeHom
+#check @Mettapedia.OSLF.NativeType.constructorNatTypeTransport_crossSort_comp
+#check @Mettapedia.OSLF.NativeType.constructorNatTypeTransport_endpoint
+#check @Mettapedia.OSLF.NativeType.rho_roundtrip_constructorNatTypeHom
+#check @Mettapedia.OSLF.NativeType.constructorPredFiberFunctorDual
+#check @Mettapedia.OSLF.NativeType.ConstructorGrothendieckDual
+#check @Mettapedia.OSLF.NativeType.constructorNatType_toGrothObj
+#check @Mettapedia.OSLF.NativeType.grothObj_to_constructorNatType
+#check @Mettapedia.OSLF.NativeType.constructorNatTypeHom_to_grothHom
+#check @Mettapedia.OSLF.NativeType.grothHom_to_constructorNatTypeHom
+#check @Mettapedia.OSLF.NativeType.constructorNatTypeHom_groth_roundtrip
+#check @Mettapedia.OSLF.NativeType.fullPredFiberFunctorDual
+#check @Mettapedia.OSLF.NativeType.FullPresheafGrothendieckObj
+#check @Mettapedia.OSLF.NativeType.FullPresheafGrothendieckHom
+#check @Mettapedia.OSLF.NativeType.ScopedConstructorPred
+#check @Mettapedia.OSLF.NativeType.ScopedConstructorPred.toFullGrothObj
+#check @Mettapedia.OSLF.NativeType.ScopedConstructorPredHom
+#check @Mettapedia.OSLF.NativeType.ScopedConstructorPredHom.toFullGrothHom
+#check @Mettapedia.OSLF.NativeType.ScopedConstructorPredHom.toFullGrothHom_comp
+#check @Mettapedia.OSLF.NativeType.scoped_full_constructor_comparison_package
+#check @Mettapedia.OSLF.NativeType.scoped_full_constructor_obj_comparison
+#check @Mettapedia.OSLF.NativeType.scoped_fullGroth_base_eq_representable
+#check @Mettapedia.OSLF.NativeType.FullRouteRestrictionEquivalence
+#check @Mettapedia.OSLF.NativeType.full_route_restriction_equivalence_package
+#check @Mettapedia.OSLF.NativeType.full_presheaf_comparison_bundle
+#check @Mettapedia.OSLF.NativeType.ScopedReachable
+#check @Mettapedia.OSLF.NativeType.full_presheaf_comparison_bundle_reachable
+#check @Mettapedia.OSLF.NativeType.full_presheaf_comparison_bundle_reachable_fragment
+#check @Mettapedia.OSLF.Framework.Theorem1SubstitutabilityEquiv
+#check @Mettapedia.OSLF.Framework.theorem1_substitutability_forward
+#check @Mettapedia.OSLF.Framework.theorem1_substitutability_imageFinite
+#check @strictTracker
+#check @strictRemaining
+#check strictRemaining_eq_nil
+#check strictRemainingCount_eq_zero
+#check @paperParityTracker
+#check @paperParityRemaining
+#check paperParityRemaining_ne_nil
+#check paperParityRemainingCount_pos
 
 end Mettapedia.OSLF.Framework.FULLStatus
