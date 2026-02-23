@@ -148,3 +148,4 @@ all_mm*.txt
 all_mm4*.txt
 verifier_unit_run_*.log
 **/_scratch/
+!lean-projects/mettapedia/EXTERNAL_REPOS.md

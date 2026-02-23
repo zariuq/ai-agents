@@ -419,9 +419,7 @@ process_statement(p(Label, Type, Math, Proof), State0, State) :-
     % Store the assertion
     State0 = state(C, FS, Labels),
     put_assoc(Label, Labels, Assertion, Labels1),
-    State = state(C, FS, Labels1),
-    format('~w ', [Label]),
-    flush_output.
+    State = state(C, FS, Labels1).
 
 process_statement(d(Vars), State0, State) :-
     add_d(Vars, State0, State).
