@@ -43,8 +43,8 @@
 \begin{abstract}
 We present a comprehensive Lean~4 formalization of Operational Semantics in Logical
 Form (\OSLF{}), the algorithm that mechanically derives spatial-behavioral type systems
-from rewrite rules.  Our formalization spans 37{,}300+ lines across 111 Lean files
-(82 in the core \OSLF{} tree, 29 in the process-calculi layer),
+from rewrite rules.  Our formalization spans 41{,}700+ lines across 118 Lean files
+(89 in the core \OSLF{} tree, 29 in the process-calculi layer),
 with 0~sorries and 0~custom axioms across the entire pipeline.
 The formalization covers:
 (i) \MeTTaIL{}, a meta-language for defining process calculi with capture-avoiding
@@ -67,8 +67,12 @@ constructor category;
 categories, representable-fiber bridges, and graph-object reduction semantics;
 (viii) a \emph{Beck--Chevalley analysis} of substitution as change-of-base, with a
 proven counterexample showing the strong condition fails and concrete
-representable/graph square theorems; and
-(ix) a MeTTa Core interpreter specification with confluence and progress.
+representable/graph square theorems;
+(ix) a MeTTa Core interpreter specification with confluence and progress; and
+(x) \emph{paper-parity endpoints} providing a unified canonical package
+(\code{coreMain\_paper\_parity\_full\_package}) that bundles Theorem~1 forward
+substitutability, full presheaf Grothendieck category, scoped/full comparison,
+TOGL graph-modal bridge, and internal-language bridge for any language instance.
 All Galois connections, the type soundness theorem, the engine soundness theorem,
 the constructor fibration, the derived typing rules, the Beck--Chevalley
 analysis, and the $\pi$-to-\rhocalc{} encoding all carry zero sorries.
@@ -138,6 +142,22 @@ formalization, connecting:
   bisimulation properties (97 proven theorems, 0 sorries).
 \item A dedicated sorry-free core entrypoint (\code{CoreMain.lean}) and
   machine-readable FULL tracker (\code{Framework/FULLStatus.lean}) for review.
+\item A \emph{paper-parity canonical package}
+  (\code{coreMain\_paper\_parity\_full\_package}) unifying Theorem~1
+  (substitutability), the full presheaf Grothendieck category, scoped/full
+  comparison, TOGL graph-modal bridge, and internal-language bridge into a
+  single endpoint.
+\item A \emph{strict paper-claim tracker}
+  (\code{Framework/PaperClaimTracker.lean}) mapping 27 verifiable claims from
+  three source papers to concrete Lean theorem names, with 25 fully proven and
+  2 assumption-scoped.
+\item \emph{Assumption-necessity counterexamples}
+  (\code{Framework/AssumptionNecessity.lean}) proving that the
+  \code{types.Nonempty} guard on $\Pi/\Sigma$ formation and the
+  \code{hClosed} fragment-closure hypothesis cannot be discharged in general.
+\item \emph{Robustness canaries} (\code{Framework/PaperParityCanaries.lean})
+  instantiating the canonical package on \rhocalc{}-calculus and $\lambda$-calculus,
+  plus a negative canary showing \code{hClosed} does real work.
 \end{enumerate}
 
 \paragraph{Scope Boundary and Non-Claims.}
@@ -149,11 +169,14 @@ outside the current core claim surface, including:
 \begin{itemize}
 \item full internal natural-transformation presentation of modalities
   (\(\Omega \to \Omega\) endomorphisms) over the presheaf route,
-\item complete Grothendieck/fibered internal-language packaging for the Native
-  Type Theory route beyond the current theorem-level translation endpoint bundles,
 \item larger extensions such as stochastic and quantum variants listed as
   future-work directions in the source papers.
 \end{itemize}
+Note: the Grothendieck construction for Native Type Theory, the internal
+language (frame-derived $\to$/$\lnot$, $\top$/$\bot$/$\land$/$\lor$), and the
+TOGL graph-modal bridge are now formalized as theorem-level endpoints bundled
+in \code{coreMain\_paper\_parity\_full\_package}; the $\Pi/\Sigma$ type formation
+is assumption-scoped (\code{types.Nonempty} guard, proven necessary).
 Accordingly, this document distinguishes \emph{verified core endpoints} from
 \emph{research-frontier extensions}, and the strict paper-alignment status is
 tracked explicitly in \code{Mettapedia/OSLF/Framework/FULLStatus.lean}.
@@ -189,16 +212,16 @@ The formalization is organized in seven directories plus standalone files:
 \hline
 \code{MeTTaIL/}        & 3{,}592 & 0  & Meta-language AST, substitution, matching, declarative reduction \\
 \code{MeTTaCore/}      & 3{,}839 & 0  & Interpreter specification \\
-\code{Framework/}      & 12{,}301 & 0  & Abstract \OSLF{} + categorical bridge + 6 instances \\
+\code{Framework/}      & 14{,}708 & 0  & Abstract \OSLF{} + categorical bridge + 6 instances \\
 \code{OSLF/RhoCalculus/} &    60 & 0  & \OSLF{} \rhocalc{}-calculus facades \\
-\code{NativeType/}     &   263   & 0  & Native type construction \\
+\code{NativeType/}     & 1{,}444 & 0  & Native type construction + Grothendieck \\
 \code{Formula.lean}    & 1{,}204 & 0  & Verified bounded model checker \\
-\code{Main/CoreMain}   &   824   & 0  & Focused \OSLF{} re-exports \\
+\code{Main/CoreMain/SpecIndex} & 2{,}001 & 0 & Focused \OSLF{} re-exports + spec index \\
 \hline
 \code{Languages/PiCalculus/}  & 8{,}768 & 0  & $\pi$-calculus + \rhocalc{}-encoding \\
 \code{Languages/RhoCalculus/} & 4{,}848 & 0  & Concrete \rhocalc{}-calculus + engine \\
 \hline
-\textbf{Total}         & \textbf{37{,}353} & \textbf{0} & \textbf{0 sorries, 0 axioms}
+\textbf{Total}         & \textbf{41{,}729} & \textbf{0} & \textbf{0 sorries, 0 axioms}
 \end{tabular}
 \end{center}
 
@@ -232,6 +255,8 @@ The exact endpoint names are:
 \item \codepath{coreMain_togl_graph_modal_bridge_package}
 \item \codepath{coreMain_section12_worked_examples}
 \item \codepath{coreMain_dependent_parametric_generated_typing}
+\item \codepath{coreMain_paper_parity_full_package}
+\item \codepath{coreMain_paper_parity_canonical_package}
 \end{itemize}
 
 \paragraph{Bridge-level canonical contracts}
@@ -246,17 +271,25 @@ The exact endpoint names are:
 \item \codepath{hm_converse_rhoDerivedCanonicalRel}
 \item \codepath{ToposTOGLBridge.topos_internal_language_bridge_package}
 \item \codepath{ToposTOGLBridge.togl_graph_modal_bridge_package}
+\item \codepath{ToposTOGLBridge.graphChainN_iff_relCompN}
+\item \codepath{ToposTOGLBridge.diamondIterN_iff_graphChainN}
+\item \codepath{ToposTOGLBridge.togl_internal_graph_correspondence_layer}
+\item \codepath{NativeType.fullPresheafGrothendieckCategory}
+\item \codepath{NativeType.scoped_full_scoped_obj_roundtrip}
+\item \codepath{AssumptionNecessity.types_nonempty_necessary_for_piSigma}
+\item \codepath{AssumptionNecessity.hClosed_necessary_for_fragment}
+\item \codepath{AssumptionNecessity.not_global_hImageFinite_rhoCoreStarRel}
 \end{itemize}
 
-The \code{Framework/} directory (12{,}301 lines, 25~files) is the largest component.
+The \code{Framework/} directory (14{,}708 lines, 32~files) is the largest component.
 Key files:
 
 \begin{center}
 \begin{tabular}{lrl}
 \textbf{File} & \textbf{Lines} & \textbf{Content} \\
 \hline
-\code{PiRhoCanonicalBridge.lean}  & 2{,}081 & $\pi \to \rhocalc{}$ canonical bridge \\
-\code{CategoryBridge.lean}        & 1{,}436 & Presheaf topos, Yoneda, $\Omega$ classifier \\
+\code{PiRhoCanonicalBridge.lean}  & 1{,}876 & $\pi \to \rhocalc{}$ canonical bridge \\
+\code{CategoryBridge.lean}        & 1{,}603 & Presheaf topos, Yoneda, $\Omega$ classifier \\
 \code{BeckChevalleyOSLF.lean}     & 1{,}233 & Substitution as change-of-base \\
 \code{TinyMLInstance.lean}        &   758 & CBV $\lambda$-calculus with booleans/pairs/thunks \\
 \code{PLNSelectorLanguageDef.lean}&   723 & PLN selector as \code{LanguageDef} \\
@@ -266,16 +299,22 @@ Key files:
 \code{PLNSelectorGSLT.lean}      &   373 & PLN selector rules as \OSLF{}/\GSLT{} \\
 \code{DerivedTyping.lean}         &   346 & Generic typing rules from constructor category \\
 \code{MeTTaFullInstance.lean}     &   346 & Full MeTTa language definition \\
-\code{ModalEquivalence.lean}      &   311 & Constructor change-of-base $\leftrightarrow$ modalities \\
-\code{GeneratedTyping.lean}       &   294 & \code{GenHasType} typing rules \\
+\code{ModalEquivalence.lean}      &   353 & Constructor change-of-base $\leftrightarrow$ modalities \\
+\code{GeneratedTyping.lean}       &   474 & \code{GenHasType} typing rules \\
 \code{SynthesisBridge.lean}       &   294 & Three-layer bridge \\
-\code{LanguageMorphism.lean}      &   280 & Language translation infrastructure \\
+\code{LanguageMorphism.lean}      &   506 & Language translation infrastructure \\
 \code{ConstructorFibration.lean}  &   251 & \code{SubobjectFibration} + \code{ChangeOfBase} \\
 \code{DerivedModalities.lean}     &   250 & Adjoint triple derivation \\
 \code{PetriNetInstance.lean}      &   233 & Petri net \OSLF{} instance \\
 \code{LambdaInstance.lean}        &   218 & Lambda calculus \OSLF{} instance \\
 \code{RewriteSystem.lean}         &   196 & Abstract \OSLF{} input/output \\
 \code{RhoInstance.lean}           &   134 & \rhocalc{}-calculus instance \\
+\code{ToposTOGLBridge.lean}      &   767 & TOGL graph-modal + internal language \\
+\code{ToposReduction.lean}       &   401 & Graph-object reduction semantics \\
+\code{FULLStatus.lean}           &   554 & Machine-readable paper-parity tracker \\
+\code{AssumptionNecessity.lean}  &   279 & Assumption-necessity counterexamples \\
+\code{PaperClaimTracker.lean}    &   156 & Strict 27-claim paper-claim tracker \\
+\code{PaperParityCanaries.lean}  &   104 & Robustness canaries (positive + negative) \\
 \end{tabular}
 \end{center}
 
@@ -455,7 +494,7 @@ Key proven properties:
 
 \subsection{Modal Equivalence}
 
-The file \codepath{Framework/ModalEquivalence.lean} (311 lines) connects
+The file \codepath{Framework/ModalEquivalence.lean} (353 lines) connects
 the constructor change-of-base to the \OSLF{} modalities:
 
 \begin{theorem}[Modal = Change-of-Base, 0 sorries]
@@ -788,7 +827,7 @@ type soundness proof, specialized engine, and Beck--Chevalley analysis
 
 \subsection{TinyML (2 sorts, 2 crossings, 6 rules)}
 
-\emph{New:} A call-by-value $\lambda$-calculus with booleans, pairs, and thunks
+A call-by-value $\lambda$-calculus with booleans, pairs, and thunks
 (\codepath{Framework/TinyMLInstance.lean}, 758 lines, 0~sorries).
 
 \begin{lstlisting}[caption={TinyML language definition (TinyMLInstance.lean)}]
@@ -857,7 +896,7 @@ categorical agreement as with MeTTaMinimal.
 \section{Verified Formula Checker}
 
 The file \codepath{Formula.lean} provides a verified bounded model checker for
-\OSLF{} formulas (582 lines, 0~sorries).  The formula type \code{OSLFFormula}
+\OSLF{} formulas (1{,}204 lines, 0~sorries).  The formula type \code{OSLFFormula}
 supports $\Dia$, $\Bx$, $\wedge$, $\vee$, $\implies$, $\top$, $\bot$,
 and atomic predicates.
 
@@ -877,7 +916,7 @@ The checker supports:
 \section{Categorical Lift and Presheaf Topos}
 \label{sec:topos}
 
-The file \codepath{Framework/CategoryBridge.lean} (1{,}436 lines, 0~sorries)
+The file \codepath{Framework/CategoryBridge.lean} (1{,}603 lines, 0~sorries)
 lifts the Set-level \OSLF{} construction into Mathlib's categorical
 infrastructure, culminating in the presheaf topos $P(T) = \mathbf{Set}^{T^{\mathrm{op}}}$
 over the constructor category.
@@ -961,6 +1000,94 @@ which could be instantiated with the subobject fibration.
 Kripke--Joyal forcing semantics, not currently in Mathlib, would be needed
 to fully connect the internal language of $P(T)$ to \OSLF{} typing judgments.
 
+\section{Paper-Parity Endpoints}
+\label{sec:paper-parity}
+
+We provide a \emph{paper-parity canonical package} that bundles the core claims
+of the three OSLF source papers into a single Lean record type, instantiable on
+any \code{LanguageDef}.
+
+\begin{lstlisting}[caption={Unified paper-parity package (CoreMain.lean)}]
+-- The unified endpoint for review:
+#check @Mettapedia.OSLF.coreMain_paper_parity_full_package
+-- Type: (lang : LanguageDef) -> AtomSem
+--     -> ScopedConstructorPred lang -> ...
+--     -> CoreMainPaperParityCanonicalPackage lang ...
+\end{lstlisting}
+
+The package contains four milestone bundles:
+\begin{description}
+\item[M1] \textbf{Full presheaf Grothendieck category} for any language
+  (\code{fullPresheafGrothendieckCategory}).
+\item[M2] \textbf{Scoped/full comparison}: roundtrip between
+  \code{ScopedConstructorPred} and \code{FullPresheafGrothendieckObj}
+  (\code{scoped\_full\_scoped\_obj\_roundtrip}).
+\item[M3] \textbf{Internal language}: frame-derived $\to$/$\lnot$,
+  $\top$/$\bot$/$\land$/$\lor$, and assumption-guarded $\Pi$/$\Sigma$ via
+  \code{topos\_full\_internal\_logic\_bridge\_package}.
+\item[M4] \textbf{TOGL graph-modal bridge}: $n$-step graph paths $\leftrightarrow$
+  $n$-fold relational composition (\code{graphChainN\_iff\_relCompN}), modal
+  iteration $\Dia^n \leftrightarrow$ graph chains
+  (\code{diamondIterN\_iff\_graphChainN}), and internal subfunctor correspondence
+  (\code{togl\_internal\_graph\_correspondence\_layer}).
+\end{description}
+
+\subsection{Traceability: Paper Claims to Lean Theorems}
+
+A machine-checked paper-claim tracker (\code{Framework/PaperClaimTracker.lean})
+maps 27 verifiable claims from three source papers to Lean theorem names:
+
+\begin{longtable}{llll}
+\textbf{Paper} & \textbf{Loc} & \textbf{Claim} & \textbf{Status} \\
+\hline
+\endhead
+oslf.pdf & Def 1 & Rewrite system & proven \\
+oslf.pdf & \S 3 & Step-future $\Dia$ & proven \\
+oslf.pdf & \S 3 & Step-past $\Bx$ & proven \\
+oslf.pdf & \S 4 & Galois $\Dia \dashv \Bx$ & proven \\
+oslf.pdf & \S 6 & OSLF type system output & proven \\
+oslf.pdf & Thm 1 & Behavioral $\Rightarrow$ same types (fwd) & proven \\
+oslf.pdf & Thm 1 & Full substitutability (image-finite) & assumption-scoped \\
+oslf.pdf & \S 11 & $\varrho$-calculus instance & proven \\
+oslf.pdf & \S 11 & $\lambda$-calculus instance & proven \\
+oslf.pdf & \S 11 & Petri net instance & proven \\
+oslf.pdf & \S 12.1 & Compile-time firewall & proven \\
+oslf.pdf & \S 12.2 & Race detection & proven \\
+oslf.pdf & \S 12.3 & Secrecy & proven \\
+oslf.pdf & \S 13.1 & Dependent/parametric extension & proven \\
+\hline
+NTT.pdf & \S 3 & Native type = (sort, predicate) pair & proven \\
+NTT.pdf & Thm 23 & Full presheaf Grothendieck category & proven \\
+NTT.pdf & Prop 12 & Scoped $\leftrightarrow$ full comparison & proven \\
+NTT.pdf & \S 4 & Internal language: $\top/\bot/\land/\lor$ & proven \\
+NTT.pdf & \S 4 & Frame-derived $\to$/$\lnot$ & proven \\
+NTT.pdf & Prop 19 & $\Pi$/$\Sigma$ type formation & assumption-scoped \\
+NTT.pdf & \S 5 & Theory morphism $\Pi$/$\Omega$ & proven \\
+NTT.pdf & \S 5 & Colax $\Pi$/Prop rules & proven \\
+\hline
+togl.pdf & \S 2 & Graph reduction structure & proven \\
+togl.pdf & \S 3 & Graph-modal bridge & proven \\
+togl.pdf & \S 4 & $N$-step paths $=$ relational composition & proven \\
+togl.pdf & \S 4 & Modal iteration $\Dia^n =$ graph chains & proven \\
+togl.pdf & \S 5 & Internal subfunctor correspondence & proven \\
+\end{longtable}
+
+25 claims are fully proven; 2 are assumption-scoped with necessity
+counterexamples showing the assumptions cannot be discharged:
+\begin{itemize}
+\item \code{types\_nonempty\_necessary\_for\_piSigma}: for empty families,
+  $\bigsqcap \emptyset = \top$ and $\bigsqcup \emptyset = \bot$, so
+  $\top \le \bot$ fails in any nontrivial Frame.
+\item \code{hClosed\_necessary\_for\_fragment}: a seed-restricted fragment
+  is not closed under \code{ScopedReachable}.
+\item \code{not\_global\_hImageFinite\_rhoCoreStarRel}: the core-star endpoint
+  relation is not globally image-finite (via \code{addRightZeroNest} injection).
+\end{itemize}
+
+Robustness canaries (\code{Framework/PaperParityCanaries.lean}) instantiate the
+full package on $\varrho$-calculus and $\lambda$-calculus (positive), plus a
+negative canary demonstrating that the \code{hClosed} assumption does real work.
+
 \section{Status and Roadmap}
 
 \subsection{Milestones}
@@ -1005,12 +1132,20 @@ to fully connect the internal language of $P(T)$ to \OSLF{} typing judgments.
   substitution squares, and graph-level $\Dia$/$\Bx$ compatibility consumed by
   TinyML, MeTTaMinimal, and MeTTaFull checker-to-semantics theorems.
   All 0~sorries in this core track.
+
+\item[\checkmark] \textbf{Milestone 8}: Paper-parity canonical package.
+  \code{coreMain\_paper\_parity\_full\_package} bundles M1 (Grothendieck
+  category), M2 (scoped/full comparison), M3 (internal language), and M4
+  (TOGL graph-modal bridge) into one endpoint for any \code{LanguageDef}.
+  27 paper claims tracked; 25 fully proven, 2 assumption-scoped with proven
+  necessity counterexamples.  Robustness canaries on \rhocalc{}-calculus and
+  $\lambda$-calculus (Section~\ref{sec:paper-parity}).
 \end{enumerate}
 
 \section{Conclusion}
 
 We have presented the first machine-checked formalization of the \OSLF{} algorithm,
-spanning 37{,}300+ lines of Lean~4 across 111 files with 0~sorries and 0~custom axioms.
+spanning 41{,}700+ lines of Lean~4 across 118 files with 0~sorries and 0~custom axioms.
 The formalization demonstrates that the entire pipeline from rewrite rules to
 spatial-behavioral types can be made rigorous in a modern proof assistant.
 
@@ -1034,10 +1169,12 @@ interesting negative result proven by explicit counterexample.
 
 The presheaf topos $P(T) = \mathbf{Set}^{T^{\mathrm{op}}}$ over the constructor
 category is constructed with Yoneda representables, subobject classifier, and
-fiber characterization (Section~\ref{sec:topos}).  The remaining gap---lifting
-the Set-level modalities into genuine internal operations of $P(T)$ and
-instantiating the full Grothendieck construction of
-Native Type Theory~\cite{WilliamsStay2021}---is precisely characterized in
+fiber characterization (Section~\ref{sec:topos}).  The full presheaf Grothendieck
+category for Native Type Theory~\cite{WilliamsStay2021} is now formalized with
+proven associativity and identity laws, scoped/full comparison roundtrip, and
+internal-language bridge (Section~\ref{sec:paper-parity}).  The remaining
+frontier item---lifting Set-level modalities into genuine internal $\Omega \to
+\Omega$ natural transformations in $P(T)$---is precisely characterized in
 Section~\ref{sec:topos-scope}.
 
 The full type synthesis pipeline is validated by six language instances
@@ -1050,10 +1187,14 @@ from the interpreter specification back to the categorical semantics.
 
 A declarative reduction relation provides an engine-independent specification,
 and the executable engines are proven both sound and complete with respect to it.
-The seven \emph{core} implementation milestones are complete and sorry-free, and
-assumption-audit/literature-alignment frontier items tracked in
-\code{Framework/FULLStatus.lean} are now formalized as theorem-level endpoints in
-the current strict tracker.
+All eight \emph{core} implementation milestones are complete and sorry-free.
+The paper-parity canonical package (Section~\ref{sec:paper-parity}) bundles
+27 verifiable claims from three source papers---25 fully proven, 2
+assumption-scoped with proven necessity counterexamples---into a single
+machine-checked endpoint.  The strict paper-claim tracker
+(\code{Framework/PaperClaimTracker.lean}) and robustness canaries
+(\code{Framework/PaperParityCanaries.lean}) provide ongoing regression
+coverage for the formalization's alignment with the mathematical literature.
 
 \bibliographystyle{plain}
 \bibliography{references}

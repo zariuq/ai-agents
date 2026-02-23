@@ -1,4 +1,5 @@
 import Mettapedia.OSLF.Framework.PiRhoCanonicalBridge
+import Mettapedia.OSLF.NativeType.Construction
 
 /-!
 # Assumption-Necessity Counterexamples
@@ -222,5 +223,57 @@ theorem commDiWitnessLifting_not_derivable_globally :
       ¬ commDiWitnessLifting lang s seed q φ := by
   exact ⟨rhoCalc, rhoProc, commLiftSeed, basePat, commLiftPred,
     not_commDiWitnessLifting_rho_example⟩
+
+/-! ## M1–M4 Paper-Parity Assumption Necessity
+
+These counterexamples justify the explicit assumptions introduced in the
+paper-parity endpoints (M1–M4). -/
+
+section PaperParityAssumptions
+
+open Mettapedia.CategoryTheory.LambdaTheories in
+/-- The `types.Nonempty` guard on Π/Σ type formation (M3) is necessary:
+for empty type families, `sInf ∅ = ⊤` and `sSup ∅ = ⊥`, so `⊤ ≤ ⊥` fails
+in any nontrivial Frame. -/
+theorem types_nonempty_necessary_for_piSigma :
+    ∃ (α : Type) (_ : Order.Frame α) (_ : Nontrivial α),
+      ¬ (sInf (∅ : Set α) ≤ sSup (∅ : Set α)) := by
+  refine ⟨Prop, inferInstance, ⟨⟨True, False, by simp⟩⟩, ?_⟩
+  simp [sInf_empty, sSup_empty]
+
+/-- Two distinct `ScopedConstructorPred`s witnessing that not all fragments are
+closed under `ScopedReachable`. -/
+theorem hClosed_necessary_for_fragment :
+    ∃ (Frag : Mettapedia.OSLF.NativeType.ScopedConstructorPred rhoCalc → Prop),
+      ∃ (A B : Mettapedia.OSLF.NativeType.ScopedConstructorPred rhoCalc),
+        Frag A ∧
+        Mettapedia.OSLF.NativeType.ScopedReachable A B ∧
+        ¬ Frag B := by
+  -- Define Frag that accepts only predicates with seed = basePat
+  refine ⟨fun X => X.seed = basePat, ?_⟩
+  -- Construct two ScopedConstructorPreds with different seeds but a morphism between them
+  -- A: seed = basePat, pred = fun _ => True, sort = rhoProc
+  -- B: seed = zeroPat, pred = fun _ => True, sort = rhoProc
+  have hNat : ∀ seed, Mettapedia.OSLF.Framework.CategoryBridge.languageSortPredNaturality
+      rhoCalc rhoProc seed (fun _ => True) := by
+    intro seed _ _ g h _; trivial
+  let A : Mettapedia.OSLF.NativeType.ScopedConstructorPred rhoCalc :=
+    ⟨rhoProc, basePat, fun _ => True, hNat basePat⟩
+  let B : Mettapedia.OSLF.NativeType.ScopedConstructorPred rhoCalc :=
+    ⟨rhoProc, zeroPat, fun _ => True, hNat zeroPat⟩
+  refine ⟨A, B, rfl, ?_, ?_⟩
+  · -- ScopedReachable A B: need Nonempty (ScopedConstructorPredHom rhoCalc A B)
+    exact ⟨{
+      base := CategoryTheory.CategoryStruct.id _
+      fiberLe := by
+        intro U x _
+        simp [Mettapedia.OSLF.NativeType.ScopedConstructorPred.toFullGrothObj,
+              CategoryTheory.Subfunctor.preimage]
+        trivial
+    }⟩
+  · -- ¬ Frag B: B.seed = zeroPat ≠ basePat
+    simp [B, basePat, zeroPat]
+
+end PaperParityAssumptions
 
 end Mettapedia.OSLF.Framework.AssumptionNecessity

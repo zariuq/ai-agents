@@ -1193,6 +1193,86 @@ state-to-state transition occurred.  This suggests a ``Markov-PLN''
 where evidence consists of a transition count matrix rather than
 simple $(n^+, n^-)$ counts.
 
+\subsection{Categorical de Finetti in Kleisli(Giry)}
+\label{sec:categorical-definetti}
+
+The measure-theoretic de~Finetti theorem of Section~\ref{sec:wip} operates at
+the level of individual probability measures.  A natural categorical question is
+whether the mixing representation extends to a \emph{universal property}: does
+the i.i.d.\ sequence kernel $\theta \mapsto \text{iid}(\theta)$ define a limit
+cone in the Kleisli category of the Giry monad?
+
+We formalize this question in \texttt{Kleisli(MeasCat.Giry)} and obtain a
+complete answer comprising both positive and negative results.
+
+\paragraph{Setup.}
+The \emph{global finitary diagram} is the diagram of finitary permutation
+automorphisms of $\text{Bool}^{\mathbb{N}}$ in $\text{Kleisli}(\text{Giry})$.
+A \emph{cone} over this diagram is a Kleisli morphism $\kappa : A \to
+\text{Bool}^{\mathbb{N}}$ that commutes with all finitary permutations.  The
+i.i.d.\ sequence kernel $\text{iid} : [0,1] \to \text{Bool}^{\mathbb{N}}$
+forms such a cone.
+
+\paragraph{Markov-only universal property (proven).}
+For any cone $\kappa$ whose underlying kernel is \emph{Markov} (i.e.\ a
+probability kernel), there exists a unique mediating Kleisli morphism through
+$\text{iid}$.  This follows from the injectivity of the moment embedding
+$\theta \mapsto (\theta^n)_{n \geq 1}$ on probability measures on $[0,1]$,
+established via the Hausdorff moment theorem.
+
+\begin{lstlisting}[basicstyle=\scriptsize\ttfamily,frame=single,numbers=none]
+theorem globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance
+    (hglobal : forall theta, GlobalFinitarySeqConeCommutes (iid theta)) :
+    GlobalIIDConeMediatorUnique_markovOnly
+      (iidSequenceKleisliConeSkeleton (commutes_of hglobal))
+\end{lstlisting}
+
+\paragraph{Unrestricted universal property (refuted).}
+The fully unrestricted all-sources Kleisli mediator property---requiring a
+unique mediator for \emph{every} commuting Kleisli morphism, including
+non-probability measures---is \textbf{false}.  The counting measure on
+$\text{Bool}^{\mathbb{N}}$ (from $\text{PUnit}$) commutes with all finitary
+permutations, but every singleton $\{\omega\}$ has $\text{iid}(\theta)$-measure
+zero for all $\theta \in [0,1]$ while the counting measure assigns mass~1.
+Therefore no mediator through $\text{iid}$ can exist.
+
+\begin{lstlisting}[basicstyle=\scriptsize\ttfamily,frame=single,numbers=none]
+theorem not_allSourcesKleisli_unrestricted :
+    ¬ KernelLatentThetaUniversalMediator_allSourcesKleisli_unrestricted
+\end{lstlisting}
+
+\paragraph{Finite-mass equivalence (the maximal correct strengthening).}
+Restricting the source cones to \emph{finite measures} (not necessarily
+probability measures) recovers equivalence with the Markov-only version:
+every finite-mass commuting kernel is a scalar multiple of a probability
+kernel, and the moment-embedding injectivity argument applies after
+normalization.
+
+\begin{lstlisting}[basicstyle=\scriptsize\ttfamily,frame=single,numbers=none]
+theorem allSourcesKleisli_finiteMass_iff_markovOnly
+    (hglobal : forall theta, GlobalFinitarySeqConeCommutes (iid theta)) :
+    KernelLatentThetaUniversalMediator_allSourcesKleisli_finiteMass <->
+    KernelLatentThetaUniversalMediator_allSourcesKleisli_markovOnly
+\end{lstlisting}
+
+\paragraph{Solomonoff connection.}
+The categorical endpoint connects directly to the Solomonoff--de~Finetti
+bridge of Section~\ref{sec:wip}: for a restricted Solomonoff prior $M$ with
+total-output programs and normalized root mass, the induced measure is
+exchangeable, and the categorical de~Finetti machinery yields both the
+\texttt{nupln\_master\_chain} conclusion and a unique latent-$\theta$ mediator.
+
+\begin{lstlisting}[basicstyle=\scriptsize\ttfamily,frame=single,numbers=none]
+theorem restrictedSolomonoff_totalOutput_implies_nupln_and_mediator
+    (M : RestrictedSolomonoffPrior) (htot : TotalOutputOnPrograms M.programs)
+    (hroot : M.mu [] = 1) :
+    nupln_master_chain /\ exists! nu, RepresentsLatentTheta nu
+\end{lstlisting}
+
+All theorems above are fully mechanized in Lean~4 with zero sorries and zero
+axioms.  The formalization spans approximately 4500 lines in
+\texttt{DeFinettiKleisliGirySkeleton.lean} plus export/counterexample files.
+
 \subsection{Lean Statements of Main Theorems}
 
 \paragraph{Theorem~\ref{thm:pln_optimal} (Predictor Collapse):}

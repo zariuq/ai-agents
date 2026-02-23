@@ -54,6 +54,11 @@ It re-exports the stable theorem chain needed by downstream users.
    finite-mass universality is equivalent to Markov-only universality.
    The fully unrestricted version is false (counting-measure counterexample),
    but the finite-mass restriction is the maximal correct strengthening.
+7. Cone-level finite-mass API (recommended for new code):
+   `deFinettiExport_globalIIDConeMediatorUnique_finiteMass_of_globalFinitaryInvariance_and_defaultAllSourcesKernel`
+   is the strongest correct universal property for the `iidSequenceKernelTheta` cone.
+   It subsumes the Markov-only endpoint via
+   `deFinettiExport_globalIIDConeMediatorUnique_markovOnly_of_finiteMass`.
 
 ## Migration Map (Legacy -> Canonical/Adapter)
 - `deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted`
@@ -480,6 +485,13 @@ theorem deFinettiExport_not_defaultAllSourcesKernel_to_allSourcesKleisli_unrestr
   deFinettiStable_not_defaultAllSourcesKernel_to_allSourcesKleisli_unrestricted_strengthening
     hglobal hunivDefault
 
+/-- Structural boundary (assumption-free): the unrestricted strengthening is
+false, using the unconditional latent-Dirac witness and default all-sources
+mediator internally. No external hypotheses required. -/
+theorem deFinettiExport_not_defaultAllSourcesKernel_to_allSourcesKleisli_unrestricted_strengthening' :
+    ¬ DefaultAllSourcesKernel_to_allSourcesKleisli_unrestricted_strengthening :=
+  deFinettiStable_not_defaultAllSourcesKernel_to_allSourcesKleisli_unrestricted_strengthening'
+
 /-- Canonical export theorem (full-target route, crux-isolated):
 compose
 1. default all-sources qualitative de Finetti,
@@ -652,13 +664,8 @@ theorem deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance
         (CategoryTheory.Limits.IsLimit
           ((iidSequenceKleisliConeSkeleton
             (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
-  exact
-    deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel_of_strengthening
-      (Y := Y) (Ω := Ω) (X := X)
-      hcore hglobal
-      (hunivDefault := fun (Y' : Type) _ =>
-        kernelLatentThetaUniversalMediator_default_typeFamily (Y' := Y'))
-      hstrength
+  exact False.elim
+    (not_defaultAllSourcesKernel_to_allSourcesKleisli_unrestricted_strengthening' hstrength)
 
 /-- Compatibility wrapper retaining explicit strict iid-prefix equations. Prefer
 `deFinettiExport_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance_and_defaultAllSourcesKernel`.
@@ -1208,5 +1215,57 @@ theorem deFinettiExport_allSourcesKleisli_finiteMass_of_globalFinitaryInvariance
     KernelLatentThetaUniversalMediator_allSourcesKleisli_finiteMass :=
   deFinettiStable_allSourcesKleisli_finiteMass_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
     hglobal hunivDefault
+
+-- ============================================================
+-- Cone-level finite-mass API (recommended for new downstream code)
+-- ============================================================
+
+/-- Public API: finite-mass cone universality for `iidSequenceKernelTheta`
+from all-sources finite-mass Kleisli universality. -/
+theorem deFinettiExport_globalIIDConeMediatorUnique_finiteMass_of_allSourcesKleisli_finiteMass
+    (hcommutes : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp iidSequenceKleisliHomTheta (finSuppPermKleisliHom τ) =
+        iidSequenceKleisliHomTheta)
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_finiteMass) :
+    GlobalIIDConeMediatorUnique_finiteMass (iidSequenceKleisliConeSkeleton hcommutes) :=
+  deFinettiStable_globalIIDConeMediatorUnique_finiteMass_of_allSourcesKleisli_finiteMass
+    (hcommutes := hcommutes) huniv
+
+/-- Public API: finite-mass cone universality from global finitary invariance
+and all-sources Markov-only Kleisli universality. -/
+theorem deFinettiExport_globalIIDConeMediatorUnique_finiteMass_of_allSourcesKleisli_markovOnly
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_markovOnly) :
+    GlobalIIDConeMediatorUnique_finiteMass
+      (iidSequenceKleisliConeSkeleton
+        (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)) :=
+  deFinettiStable_globalIIDConeMediatorUnique_finiteMass_of_allSourcesKleisli_markovOnly
+    (hglobal := hglobal) huniv
+
+/-- Public API (canonical finite-mass endpoint): finite-mass cone universality
+from global finitary invariance and default all-sources qualitative de Finetti.
+This is the maximal correct strengthening of the canonical Markov-only endpoint.
+
+The fully unrestricted version (`GlobalIIDConeMediatorUnique`) is false — see
+`deFinettiExport_not_allSourcesKleisli_unrestricted`. The finite-mass version
+is the strongest correct universal property provable for the `iidSequenceKernelTheta`
+cone. -/
+theorem deFinettiExport_globalIIDConeMediatorUnique_finiteMass_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ)) :
+    GlobalIIDConeMediatorUnique_finiteMass
+      (iidSequenceKleisliConeSkeleton
+        (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)) :=
+  deFinettiStable_globalIIDConeMediatorUnique_finiteMass_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+    (hglobal := hglobal)
+    (hunivDefault := fun (Y' : Type) _ =>
+      kernelLatentThetaUniversalMediator_default_typeFamily (Y' := Y'))
+
+/-- Public API: finite-mass cone universality implies Markov-only cone
+universality (subsumption). -/
+theorem deFinettiExport_globalIIDConeMediatorUnique_markovOnly_of_finiteMass
+    (cone : KleisliGiryIIDConeSkeleton)
+    (hfm : GlobalIIDConeMediatorUnique_finiteMass cone) :
+    GlobalIIDConeMediatorUnique_markovOnly cone :=
+  deFinettiStable_globalIIDConeMediatorUnique_markovOnly_of_finiteMass cone hfm
 
 end Mettapedia.CategoryTheory

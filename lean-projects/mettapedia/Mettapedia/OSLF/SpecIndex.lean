@@ -4,6 +4,8 @@ import Mettapedia.Logic.OSLFImageFinite
 import Mettapedia.OSLF.Framework.PiRhoCanonicalBridge
 import Mettapedia.OSLF.Framework.AssumptionNecessity
 import Mettapedia.OSLF.Framework.ToposTOGLBridge
+import Mettapedia.OSLF.Framework.PaperClaimTracker
+import Mettapedia.OSLF.Framework.PaperParityCanaries
 
 /-!
 # OSLF Specification Index
@@ -501,5 +503,13 @@ open Mettapedia.OSLF
 #check @Mettapedia.Languages.ProcessCalculi.RhoCalculus.Soundness.progress
 #check @langModalAdjunction
 #check @rhoModalAdjunction
+-- Paper-parity canaries
+#check @Mettapedia.OSLF.Framework.PaperParityCanaries.rhoCalc_paper_parity_canary
+#check @Mettapedia.OSLF.Framework.PaperParityCanaries.lambdaCalc_paper_parity_canary
+#check @Mettapedia.OSLF.Framework.PaperParityCanaries.negative_canary_nonclosed_fragment
+-- Paper-claim tracker
+#check @Mettapedia.OSLF.Framework.PaperClaimTracker.paperClaimList_all_resolved
+#check @Mettapedia.OSLF.Framework.PaperClaimTracker.provenCount_eq
+#check @Mettapedia.OSLF.Framework.PaperClaimTracker.assumptionScopedCount_eq
 
 end Mettapedia.OSLF.SpecIndex

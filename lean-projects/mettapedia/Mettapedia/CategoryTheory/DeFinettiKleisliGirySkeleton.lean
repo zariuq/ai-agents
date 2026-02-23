@@ -3410,6 +3410,39 @@ theorem allSourcesKleisli_finiteMass_iff_markovOnly
   ⟨allSourcesKleisli_markovOnly_of_finiteMass,
    fun h => allSourcesKleisli_finiteMass_of_allSourcesKleisli_markovOnly h hglobal⟩
 
+/-- A cone in the global finitary diagram has finite mass when its canonical
+leg into `Bool^ℕ` is a finite-mass Kleisli morphism. -/
+def ConeIsFiniteMass
+    (s : CategoryTheory.Limits.Cone kleisliGiryGlobalDiagramFunctor) : Prop :=
+  KleisliIsFiniteMass (s.π.app globalFinSuppPermStar)
+
+/-- Markov cones have finite mass. -/
+theorem coneIsFiniteMass_of_coneIsMarkov
+    (s : CategoryTheory.Limits.Cone kleisliGiryGlobalDiagramFunctor)
+    (hm : ConeIsMarkov s) : ConeIsFiniteMass s :=
+  kleisliIsFiniteMass_of_kleisliIsMarkov _ hm
+
+/-- Finite-mass cone-level mediator uniqueness for a global iid-cone skeleton. -/
+def GlobalIIDConeMediatorUnique_finiteMass
+    (cone : KleisliGiryIIDConeSkeleton) : Prop :=
+  ∀ s : CategoryTheory.Limits.Cone kleisliGiryGlobalDiagramFunctor,
+    ConeIsFiniteMass s →
+      ∃! m : s.pt ⟶ cone.apexObj,
+        CategoryTheory.CategoryStruct.comp m cone.iidHom = s.π.app globalFinSuppPermStar
+
+/-- Markov-only cone universality implies finite-mass cone universality. -/
+theorem globalIIDConeMediatorUnique_markovOnly_of_finiteMass
+    (cone : KleisliGiryIIDConeSkeleton)
+    (hfm : GlobalIIDConeMediatorUnique_finiteMass cone) :
+    GlobalIIDConeMediatorUnique_markovOnly cone := by
+  intro s hs
+  exact hfm s (coneIsFiniteMass_of_coneIsMarkov s hs)
+
+-- Specialized cone-level finite-mass ↔ Markov-only theorems are defined later
+-- (after `iidSequenceKleisliConeSkeleton`) as:
+-- `globalIIDConeMediatorUnique_finiteMass_of_allSourcesKleisli_finiteMass`
+-- `globalIIDConeMediatorUnique_finiteMass_iff_markovOnly`
+
 /-- Canonical measurable latent-kernel constructor from unrestricted
 all-sources kernel-level factorization witnesses. -/
 noncomputable def latentKernelOf_allSourcesKernelFactorization_unrestricted
@@ -4322,6 +4355,34 @@ theorem globalIIDConeMediatorUnique_of_globalFinitaryInvariance_and_allSourcesKl
         (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)) := by
   exact globalIIDConeMediatorUnique_of_allSourcesKleisli_unrestricted
     (hcommutes := iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal) huniv
+
+/-- Finite-mass all-sources Kleisli universality implies finite-mass cone
+universality for the canonical `iidSequenceKernelTheta` cone. -/
+theorem globalIIDConeMediatorUnique_finiteMass_of_allSourcesKleisli_finiteMass
+    (hcommutes : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp iidSequenceKleisliHomTheta (finSuppPermKleisliHom τ) =
+        iidSequenceKleisliHomTheta)
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_finiteMass) :
+    GlobalIIDConeMediatorUnique_finiteMass (iidSequenceKleisliConeSkeleton hcommutes) := by
+  intro s hsfm
+  let κhom := s.π.app globalFinSuppPermStar
+  have hκcomm : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp κhom (finSuppPermKleisliHom τ) = κhom := by
+    intro τ
+    simpa [kleisliGiryGlobalDiagramFunctor_map] using
+      (s.π.naturality (X := globalFinSuppPermStar) (Y := globalFinSuppPermStar) τ).symm
+  exact huniv s.pt κhom hsfm hκcomm
+
+/-- Finite-mass cone universality follows from the all-sources Markov-only
+Kleisli universality (via the finite-mass ↔ Markov-only Kleisli equivalence). -/
+theorem globalIIDConeMediatorUnique_finiteMass_of_allSourcesKleisli_markovOnly
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_markovOnly) :
+    GlobalIIDConeMediatorUnique_finiteMass
+      (iidSequenceKleisliConeSkeleton
+        (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)) :=
+  globalIIDConeMediatorUnique_finiteMass_of_allSourcesKleisli_finiteMass _
+    ((allSourcesKleisli_finiteMass_iff_markovOnly hglobal).mpr huniv)
 
 /-- One-hop full-target packaging: global finitary invariance plus unrestricted
 all-sources Kleisli universality yields a concrete `IsLimit` witness for the

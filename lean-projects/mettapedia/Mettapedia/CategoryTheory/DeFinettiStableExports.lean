@@ -759,9 +759,8 @@ theorem deFinettiStable_markovCore_to_kleisliIsLimit_of_globalFinitaryInvariance
         (CategoryTheory.Limits.IsLimit
           ((iidSequenceKleisliConeSkeleton
             (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)).toCone)) := by
-  exact
-    deFinettiStable_markovCore_to_kleisliIsLimit_adapter_of_globalFinitaryInvariance_and_allSourcesKleisli_unrestricted
-      (Y := Y) (Ω := Ω) X hcore hglobal (hstrength hglobal hunivDefault)
+  exact False.elim
+    (not_defaultAllSourcesKernel_to_allSourcesKleisli_unrestricted_strengthening' hstrength)
 
 /-- Stable export: compatibility middle-strength route.
 If finite-prefix marginals of `iidSequenceKernelTheta` are Bernoulli product
@@ -971,5 +970,66 @@ theorem deFinettiStable_not_defaultAllSourcesKernel_to_allSourcesKleisli_unrestr
         KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess) :
     ¬ DefaultAllSourcesKernel_to_allSourcesKleisli_unrestricted_strengthening :=
   not_defaultAllSourcesKernel_to_allSourcesKleisli_unrestricted_strengthening hglobal hunivDefault
+
+/-- Stable export (assumption-free): the unrestricted strengthening is false
+using the unconditional latent-Dirac witness and default all-sources mediator
+internally. No external hypotheses required. -/
+theorem deFinettiStable_not_defaultAllSourcesKernel_to_allSourcesKleisli_unrestricted_strengthening' :
+    ¬ DefaultAllSourcesKernel_to_allSourcesKleisli_unrestricted_strengthening :=
+  not_defaultAllSourcesKernel_to_allSourcesKleisli_unrestricted_strengthening'
+
+-- ============================================================
+-- Cone-level finite-mass API
+-- ============================================================
+
+/-- Stable export: finite-mass cone universality for `iidSequenceKernelTheta`
+from all-sources finite-mass Kleisli universality. -/
+theorem deFinettiStable_globalIIDConeMediatorUnique_finiteMass_of_allSourcesKleisli_finiteMass
+    (hcommutes : ∀ τ : FinSuppPermNat,
+      CategoryTheory.CategoryStruct.comp iidSequenceKleisliHomTheta (finSuppPermKleisliHom τ) =
+        iidSequenceKleisliHomTheta)
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_finiteMass) :
+    GlobalIIDConeMediatorUnique_finiteMass (iidSequenceKleisliConeSkeleton hcommutes) :=
+  globalIIDConeMediatorUnique_finiteMass_of_allSourcesKleisli_finiteMass
+    (hcommutes := hcommutes) huniv
+
+/-- Stable export: finite-mass cone universality from global finitary invariance
+and all-sources Markov-only Kleisli universality. This bridges the Markov-only
+proven route to the cone-level finite-mass API. -/
+theorem deFinettiStable_globalIIDConeMediatorUnique_finiteMass_of_allSourcesKleisli_markovOnly
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (huniv : KernelLatentThetaUniversalMediator_allSourcesKleisli_markovOnly) :
+    GlobalIIDConeMediatorUnique_finiteMass
+      (iidSequenceKleisliConeSkeleton
+        (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)) :=
+  globalIIDConeMediatorUnique_finiteMass_of_allSourcesKleisli_markovOnly
+    (hglobal := hglobal) huniv
+
+/-- Stable export: canonical finite-mass cone universality from global finitary
+invariance and default all-sources qualitative de Finetti. This is the
+finite-mass analog of the canonical Markov-only endpoint
+`deFinettiStable_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel`. -/
+theorem deFinettiStable_globalIIDConeMediatorUnique_finiteMass_of_globalFinitaryInvariance_and_defaultAllSourcesKernel
+    (hglobal : ∀ θ : LatentTheta, GlobalFinitarySeqConeCommutes (iidSequenceKernelTheta θ))
+    (hunivDefault :
+      ∀ (Y' : Type) [MeasurableSpace Y'],
+        KernelLatentThetaUniversalMediator (Y := Y') (Ω := GlobalBinarySeq) coordProcess) :
+    GlobalIIDConeMediatorUnique_finiteMass
+      (iidSequenceKleisliConeSkeleton
+        (iidSequenceKleisliHomTheta_commutes_of_globalFinitaryInvariance hglobal)) :=
+  deFinettiStable_globalIIDConeMediatorUnique_finiteMass_of_allSourcesKleisli_markovOnly
+    (hglobal := hglobal)
+    (allSourcesKleisli_markovOnly_of_defaultAllSourcesKernel_and_globalFinitaryInvariance_of_canonicalMomentEmbedding
+      (hglobal := hglobal)
+      (hunivDefault := hunivDefault))
+
+/-- Stable export: finite-mass cone universality implies Markov-only cone
+universality (the forward direction of the ConeIsFiniteMass ⊇ ConeIsMarkov
+subsumption). -/
+theorem deFinettiStable_globalIIDConeMediatorUnique_markovOnly_of_finiteMass
+    (cone : KleisliGiryIIDConeSkeleton)
+    (hfm : GlobalIIDConeMediatorUnique_finiteMass cone) :
+    GlobalIIDConeMediatorUnique_markovOnly cone :=
+  globalIIDConeMediatorUnique_markovOnly_of_finiteMass cone hfm
 
 end Mettapedia.CategoryTheory
