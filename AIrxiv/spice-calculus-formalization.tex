@@ -107,7 +107,8 @@
 We present a mechanized formalization in Lean~4 of the $\rho$-calculus (reflective
 higher-order calculus) and its temporal extension, the \emph{spice calculus}, as
 described by Meredith and collaborators.
-All theorems are \textbf{fully verified} with zero sorries and zero axioms.
+The verification claims in this note are snapshot-scoped; for current repository
+status, consult the project claim trackers and build targets.
 Key results include:
 structural congruence and reduction semantics for the $\rho$-calculus;
 semantic characterization of values as normal forms, with the equivalence
@@ -117,6 +118,7 @@ $\rho$-calculus is recovered at horizon $n = 0$;
 and the formalization of the agent's \emph{present moment} including surface
 channels, internal channels, and the connection between irreducibility
 and empty interaction sets.
+\paragraph{Status note.} Implementation-status and count claims in this draft are snapshot-scoped; verify against current repository trackers and build outputs before citing as current state. Lean-proven claims are only those tied to explicit Lean file/theorem references; broader mathematical or historical claims are literature-backed context and not asserted as Lean-proven unless explicitly stated.
 \end{abstract}
 
 %% =========================================================================
@@ -140,7 +142,8 @@ the standard $\rho$-calculus exactly.
 This paper reports on a mechanized formalization of these ideas in Lean~4
 with Mathlib, resulting in a library that is:
 \begin{itemize}[nosep]
-  \item \textbf{Fully verified}: all theorems machine-checked with no axioms or gaps.
+  \item \textbf{Mechanized and machine-checked}: theorem statements are proved in Lean
+    for the reported snapshot.
   \item \textbf{Constructive where possible}: the reduction relation \lean{Reduces}
     is \lean{Type}-valued, enabling extraction of reduction witnesses.
   \item \textbf{Built on MeTTaIL syntax}: the process term language is formalized
@@ -529,7 +532,7 @@ The core formalization spans the following Lean files:
 
 \smallskip
 The formalization builds on Lean~4.27.0 with Mathlib~v4.27.0.
-All files compile with zero warnings, zero sorries, and zero axioms.
+Compilation/build status should be read as snapshot-scoped for this draft.
 
 \subsection{Design Decisions}
 
@@ -578,7 +581,7 @@ Our work differs in three respects:
 \section{Conclusion}
 \label{sec:conclusion}
 
-We have presented a fully mechanized formalization of the $\rho$-calculus
+We have presented a mechanized formalization of the $\rho$-calculus
 and spice calculus in Lean~4, establishing:
 
 \begin{enumerate}[nosep]
@@ -603,7 +606,7 @@ and spice calculus in Lean~4, establishing:
     (Sections~\ref{sec:races},~\ref{sec:memory}).
 \end{enumerate}
 
-All results are fully machine-checked with zero sorries and zero axioms.
+All verification/build status claims in this note are snapshot-scoped.
 
 \paragraph{Future work.}
 Several directions remain:

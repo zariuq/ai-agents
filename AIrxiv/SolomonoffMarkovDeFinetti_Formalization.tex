@@ -30,7 +30,7 @@
 \newcommand{\1}{\mathbf{1}}
 
 \title{Notes on Formalizing PLN Evidence Algebra and the Markov de Finetti Theorem\\
-\large (Lean/Mettapedia technical summary)}
+\large (Lean/Mettapedia technical summary; archived failed-attempt record)}
 \author{AIrxiv note (compiled from a collaborative formalization thread)}
 \date{February 2026}
 
@@ -38,21 +38,27 @@
 \maketitle
 
 \begin{abstract}
+This note is archived as a record of a formalization direction that was not completed
+to a final accepted proof package.
+
 These notes summarize two intertwined formalization threads inside the \texttt{Mettapedia} Lean project:
 
 \begin{enumerate}[leftmargin=2em]
 \item A clean algebraic and categorical packaging of \emph{probabilistic logic network} (PLN) ``evidence'' and deduction rules via an \emph{evidence quantale}, with a bridge to enriched-category style composition.
-\item A near-complete Lean formalization of a \emph{Markov de Finetti} / \emph{Diaconis--Freedman} theorem on finite state spaces: Markov-exchangeable prefix measures satisfying a recurrence hypothesis are mixtures of Markov chains.
+\item An attempted Lean formalization of a \emph{Markov de Finetti} / \emph{Diaconis--Freedman} theorem on finite state spaces: Markov-exchangeable prefix measures satisfying a recurrence hypothesis are mixtures of Markov chains.
 \end{enumerate}
 
-The purpose of the note is didactic: it records the core mathematical ideas, the engineering decomposition used in Lean, and the remaining ``last-mile'' lemma needed to close the hard direction proof.
+The purpose of the note is didactic: it records the core mathematical ideas,
+the engineering decomposition used in Lean, and the blocker that caused archival
+before completion of the hard-direction proof.
+\paragraph{Status note.} Implementation-status and count claims in this draft are snapshot-scoped; verify against current repository trackers and build outputs before citing as current state. Lean-proven claims are only those tied to explicit Lean file/theorem references; broader mathematical or historical claims are literature-backed context and not asserted as Lean-proven unless explicitly stated.
 \end{abstract}
 
 \tableofcontents
 
 \section{Motivation and the ``Solomonoff $\leftrightarrow$ probability theory'' theme}
 
-Solomonoff induction is usually presented as a universal Bayesian mixture over computable hypotheses.
+Solomonoff induction is usually presented as a universal Bayesian mixture over computable hypotheses (Solomonoff 1964).
 In practice, one often \emph{restricts} to structured hypothesis classes (e.g.\ i.i.d.\ models, finite-state Markov models, hidden Markov models) both for tractability and for interpretability.
 The conceptual bridge in this project is:
 
@@ -60,11 +66,11 @@ The conceptual bridge in this project is:
 \emph{Exchangeability (or partial exchangeability) assumptions identify when a rich family of distributions can be represented as a mixture over a simpler parametric family.}
 \end{quote}
 
-For i.i.d.\ sequences, de Finetti says exchangeability $\Rightarrow$ mixture of i.i.d.\ laws.
-For Markov sequences, Diaconis--Freedman show a corresponding result for Markov-exchangeability (partial exchangeability of trajectories), but with a crucial additional structural hypothesis (recurrence).
+For i.i.d.\ sequences, de Finetti gives exchangeability $\Rightarrow$ mixture of i.i.d.\ laws (de Finetti 1931/1937).
+For Markov sequences, Diaconis--Freedman show a corresponding representation for Markov-exchangeability (partial exchangeability of trajectories), with an additional structural recurrence hypothesis (Diaconis \& Freedman 1980).
 
 Once such structure theorems are formalized, they can be used to justify \emph{structured universal mixtures}:
-Solomonoff-like prediction can be instantiated by mixing over the parametric space of Markov models, with hyperpriors that retain universal dominance-style guarantees in restricted environments.
+Solomonoff-like prediction can be instantiated by mixing over the parametric space of Markov models, with hyperpriors that retain dominance-style guarantees in the restricted model class.
 
 \section{Prefix measures and (partial) exchangeability}
 

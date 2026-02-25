@@ -70,6 +70,8 @@ how to make approximation risk explicit (ledgers, hypothesis weights, projection
 and how to integrate \textbf{quantifiers} via satisfying-set semantics and Goertzel-style weakness.
 Finally we outline a proof-calculus agenda: soundness and (fragmented) completeness results
 relative to chosen semantics (propositional/FO/Henkin-HO, finite vs quasi-Borel, etc.).
+\paragraph{Status note.} Implementation-status and count claims in this draft are snapshot-scoped; verify against current repository trackers and build outputs before citing as current state. Lean-proven claims are only those tied to explicit Lean file/theorem references; broader mathematical or historical claims are literature-backed context and not asserted as Lean-proven unless explicitly stated.
+\paragraph{Proof-scope note.} In this draft, Lean-proven statements are those mapped to explicit modules in \S10 (e.g., WM kernel/no-go/BN compilation artifacts). Other sections are research synthesis, design rationale, or roadmap.
 \end{abstract}
 
 \tableofcontents
@@ -87,7 +89,7 @@ you cannot in general compute the \emph{exact} evidence for $A\Rightarrow C$
 without carrying joint correlation information.
 \item \textbf{Independence assumptions are the real price.}
 In practice you need to ask: when is a Markov/d-separation assumption justified, what do you do
-when it is violated, and how do you quantify drift?
+when it is violated, and how do you quantify drift~\cite{Pearl}?
 \item \textbf{Operational factor graphs are not automatically semantics.}
 A message-passing graph whose factors are ``deduction'' or ``induction'' update formulas is
 useful for search, but it is only semantically correct when those factors are \emph{compiled}
@@ -104,8 +106,10 @@ Everything else---truth values, probabilities, ``fast rules'', message passing--
 \emph{relative to a declared model class}.
 \end{quote}
 
-This aligns the ``council'' instincts: Kolmogorov/Cox/Knuth--Skilling give valuation axioms,
-Kohlas--Shenoy give algebraic computation, Tao wants hypotheses stated cleanly,
+This aligns the ``council'' instincts: Kolmogorov/Cox/Knuth--Skilling give valuation axioms
+and regraduation principles~\cite{KnuthSkilling},
+Kohlas--Shenoy give algebraic local computation~\cite{KohlasShenoy},
+Tao-style methodology emphasizes hypotheses stated cleanly,
 and Meredith/Stay want the categorical/process structure to stay compositional.
 
 \section{The WM kernel: states, revision, and queries}
@@ -211,7 +215,8 @@ This is not a bug; it is a statement about what information you are discarding.
 
 \section{A key no-go: why completeness cannot be purely local}
 
-A foundational result proved in the Lean development can be phrased as:
+A foundational result proved in the Lean development can be phrased as
+(see the no-go artifact listed in \S10):
 
 \begin{theorem}[No local complete link-deduction rule (informal)]
 There is no function
@@ -238,7 +243,7 @@ To scale, we restrict the class of admissible states:
   \mathcal{C} \subseteq \State \quad \text{(e.g.\ DAG-factorizing BNs, Markov random fields, etc.)}.
 \]
 Inside such a class, we can prove additional theorems (screening-off, d-separation),
-and compile them into admissible rewrite rules.
+and compile them into admissible rewrite rules~\cite{Pearl}.
 
 We write $\side$ for explicit side conditions:
 \begin{itemize}[leftmargin=2em]
@@ -257,6 +262,7 @@ unnormalized weights for constraints by variable elimination (VE):
 \]
 In Lean, a generic VE engine is implemented for factor graphs parameterized by a semiring $K$,
 with specializations to $\mathbb{R}_{\ge 0}^\infty$ (ENNReal) for probabilities.
+(Classical VE background:~\cite{Dechter}.)
 
 \begin{remark}
 A \texttt{CommSemiring} assumption is \emph{stronger} than separate \texttt{AddCommMonoid}+\texttt{Mul},
@@ -280,7 +286,7 @@ unless we can prove more.
 
 \section{Knuth--Skilling bridges: valuations and regraduation}
 
-Knuth--Skilling (K\&S) ``foundations of inference'' axiomatize valuation schemes on lattices.
+Knuth--Skilling (K\&S) ``foundations of inference'' axiomatize valuation schemes on lattices~\cite{KnuthSkilling}.
 In our setting, K\&S plays two roles:
 
 \begin{enumerate}[leftmargin=2em]
@@ -408,7 +414,7 @@ A clean PLN-compatible semantics treats a predicate as a \emph{frame-valued sati
 \[
   \chi_P : U \to \Evidence,
 \]
-analogous to a subobject classifier in a topos.
+analogous to a subobject classifier in a topos~\cite{MacLaneMoerdijk}.
 Then universal quantification is evaluated via Goertzel's \emph{weakness} on the diagonal relation:
 \[
   \forall x.\,P(x)
@@ -448,13 +454,13 @@ But probabilistic semantics changes the game:
 
 \begin{itemize}[leftmargin=2em]
 \item \textbf{Higher-order probabilities can be flattened.}
-Kyburg argues that ``second-order probabilities'' add no conceptual power:
+Kyburg argues that ``second-order probabilities'' add no conceptual power~\cite{Kyburg}:
 they can be represented as ordinary joint distributions over expanded spaces.
 So hyperpriors/hyperparameters are \emph{first-order} variables in a larger model.
 \item \textbf{Henkin semantics as a pragmatic HO target.}
 Instead of full set-theoretic HO semantics, quantify only over a chosen collection of predicates.
-This yields completeness theorems similar to first-order logic, and matches ``representable concept''
-quantification.
+This can yield completeness metatheorems analogous in spirit to first-order settings,
+and matches ``representable concept'' quantification under explicit model assumptions.
 \item \textbf{Quasi-Borel / measurable HO as the long game.}
 If the WM state is a probabilistic object on a QBS-like domain, HO quantification can be interpreted
 as integration over function spaces---still difficult, but at least mathematically well-defined.
