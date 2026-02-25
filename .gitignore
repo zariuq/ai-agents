@@ -135,6 +135,16 @@ Apache_loc.txt
 !megalodon/how-to-megalodon.md
 !megalodon/PNP_crux/RIGOROUS_ANALYSIS_REPORT.md
 
+# LaTeX build artifacts
+*.aux
+*.fdb_latexmk
+*.fls
+*.toc
+*.synctex.gz
+*.xdv
+*.bbl
+*.blg
+
 # Agent scratch/archive artifacts
 _archive/
 _archive_logs/
