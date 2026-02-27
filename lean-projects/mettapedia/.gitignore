@@ -3,7 +3,11 @@
 
 # Scratch / tmp workspace (root and nested)
 .scratch_*
+_scratch_*
 .tmp_*
+_tmp_check_*
+_tmp_iid_*
+_mcp_snippet_*
 /Mettapedia/.tmp/
 Mettapedia/**/.tmp_*
 Mettapedia/**/_scratch_*

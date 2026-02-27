@@ -153,6 +153,9 @@ _archive_scripts/
 _archive_test_files/
 codex_scratch/
 atps/_archive/
+atps/enigma/
+atps/enigmatic/
+atps/pyprove/
 */_scratch/
 all_mm*.txt
 all_mm4*.txt

@@ -43,17 +43,17 @@
 \begin{abstract}
 We present a comprehensive Lean~4 formalization of Operational Semantics in Logical
 Form (\OSLF{}), the algorithm that mechanically derives spatial-behavioral type systems
-from rewrite rules.  Our formalization spans 42{,}200+ lines across 120 Lean files
-(91 in the core \OSLF{} tree, 29 in the process-calculi layer),
+from rewrite rules.  Our formalization spans 44{,}000+ lines across 124 Lean files
+(95 in the core \OSLF{} tree, 29 in the process-calculi layer),
 with 0~sorries and 0~custom axioms across the entire pipeline.
 The formalization covers:
 (i) \MeTTaIL{}, a meta-language for defining process calculi with capture-avoiding
 substitution and a totalized pattern matcher;
 (ii) the \rhocalc{}-calculus with full reduction semantics, structural congruence,
 and modal type system;
-(iii) the abstract \OSLF{} framework instantiated for \emph{six} languages
-(\rhocalc{}-calculus, lambda calculus, Petri nets, TinyML, MeTTaMinimal, and
-MeTTaFull), each with \emph{fully proven} Galois connections $\Dia \dashv \Bx$;
+(iii) the abstract \OSLF{} framework instantiated for \emph{seven} languages
+(\rhocalc{}-calculus, lambda calculus, Petri nets, TinyML, MeTTaMinimal,
+MeTTaFull, and PathMap), each with \emph{fully proven} Galois connections $\Dia \dashv \Bx$;
 (iv) executable rewrite engines (specialized and generic), including
 premise-aware rewriting with pluggable relation environments, proven sound with
 respect to declarative reduction specifications;
@@ -219,6 +219,7 @@ The formalization is organized in seven directories plus standalone files:
 \code{MeTTaIL/}        & 3{,}592 & 0  & Meta-language AST, substitution, matching, declarative reduction \\
 \code{MeTTaCore/}      & 3{,}839 & 0  & Interpreter specification \\
 \code{Framework/}      & 14{,}860 & 0  & Abstract \OSLF{} + categorical bridge + 6 instances \\
+\code{PathMap/}        & 1{,}890 & 0  & Quantale interface + \code{Finset} instance + complete NTT \\
 \code{OSLF/RhoCalculus/} &    60 & 0  & \OSLF{} \rhocalc{}-calculus facades \\
 \code{NativeType/}     & 1{,}775 & 0  & Native type construction + Grothendieck + strengthened endpoints \\
 \code{Formula.lean}    & 1{,}204 & 0  & Verified bounded model checker \\
@@ -809,7 +810,7 @@ are derived from the reduction span.  No manual proof is needed per language.
 \section{Language Instances}
 \label{sec:instances}
 
-The pipeline is validated by six language instances of increasing complexity:
+The pipeline is validated by seven language instances of increasing complexity:
 
 \subsection{Lambda Calculus (1 sort, 0 crossings)}
 
@@ -907,6 +908,114 @@ Three sorts (Atom, State, Result), sort-crossing constructors
 Four rewrite rules model the interpret--match--rewrite--output cycle.
 The end-to-end theorem \code{mettaFull\_checker\_to\_BC\_graph} verifies
 categorical agreement as with MeTTaMinimal.
+
+\subsection{PathMap (1 sort, 0 crossings, condition-gated rules)}
+\label{sec:pathmap}
+
+PathMap is an algebraic interface for associative path data structures,
+originating in the Hyperon/MeTTa runtime~\cite{Goertzel2021}.
+The formalization (\codepath{PathMap/}, 1{,}890 lines, 0~sorries)
+is the first \OSLF{} instance where (a)~rewrite rules carry
+\emph{premise guards} tested against a pluggable \code{RelationEnv},
+and (b)~the NTT diamond theorem is a \emph{complete biconditional}
+rather than a one-sided soundness statement.
+
+\paragraph{Algebraic structure.}
+The core type is
+\begin{lstlisting}
+inductive AlgebraicResult (V : Type*) where
+  | none                                  -- empty / absorbing
+  | identity (self_ident counter_ident : Bool)  -- structural identity
+  | element  (v : V)                      -- genuinely new value
+\end{lstlisting}
+Four operations on a value type \code{V} return \code{AlgebraicResult V}:
+\begin{center}
+\begin{tabular}{lll}
+\textbf{Operation} & \textbf{Intuition} & \textbf{Rust trait} \\
+\hline
+\code{pjoin a b}    & union (paths in either)    & \code{Lattice::pjoin} \\
+\code{pmeet a b}    & intersection (paths in both) & \code{Lattice::pmeet} \\
+\code{psubtract a b} & difference ($a \setminus b$) & \code{DistributiveLattice} \\
+\code{prestrict a b} & prefix-filter of $a$ by $b$ & \code{Quantale} \\
+\end{tabular}
+\end{center}
+Typeclasses \code{PathMapLattice}, \code{PathMapDistributiveLattice},
+and \code{PathMapQuantale} axiomatise commutativity, idempotency,
+absorption, and the \code{SubtractLeftBiased} invariant (psubtract
+never returns \code{counter\_ident}).
+A concrete \code{Finset~\(\alpha\)} instance is fully proven.
+
+\paragraph{Condition-gated rewrite rules.}
+The \code{LanguageDef} \code{pathMapLang} has ten rewrite rules,
+each with a list of \code{RelationQuery} premises
+(\code{"sub"}, \code{"nsub"}, \code{"disj"}, \code{"ndisj"}).
+The full table for \code{pjoin} is:
+\begin{center}
+\begin{tabular}{lll}
+\textbf{Rule} & \textbf{Condition} & \textbf{Reduct} \\
+\hline
+\code{PJoin\_self}    & $b \subseteq a$             & $a$ \quad (Identity SELF) \\
+\code{PJoin\_other}   & $a \subseteq b$             & $b$ \quad (Identity COUNTER) \\
+\code{PJoin\_element} & $\neg(b{\subseteq}a) \wedge \neg(a{\subseteq}b)$ & \code{PUnion}$(a,b)$ \quad (Element) \\
+\end{tabular}
+\end{center}
+Analogous tables govern \code{pmeet} (three rules),
+\code{psubtract} (two rules, \code{None} when $a \subseteq b$),
+and \code{prestrict} (two rules, \code{None} when disjoint).
+
+\paragraph{Complete NTT biconditionals.}
+Let \code{relEnv~: RelationEnv} encode which conditions hold for the
+current token pair, and write
+$\mathsf{cond\_sub}_{ba}$ for
+$\mathtt{applyPremisesWithEnv}\ \mathit{relEnv}\ \mathtt{pathMapLang}
+  \ [\mathtt{sub}(b,a)]\ \mathit{seed} \ne []$.
+The main theorem for \code{pjoin} is:
+
+\begin{theorem}[\code{pathMap\_pjoin\_complete}, 0 sorries]
+\label{thm:pathmap-pjoin}
+\[
+  \langle\!\langle \Dia\varphi \rangle\!\rangle_{\mathit{relEnv}}(\mathtt{PJoin}(a,b))
+  \;\iff\;
+  \bigl(\mathsf{cond\_sub}_{ba} \wedge \varphi(a)\bigr)
+  \;\vee\;
+  \bigl(\mathsf{cond\_sub}_{ab} \wedge \varphi(b)\bigr)
+  \;\vee\;
+  \bigl(\mathsf{cond\_nsub\_both} \wedge \varphi(\mathtt{PUnion}(a,b))\bigr)
+\]
+\end{theorem}
+
+\noindent
+Each disjunct corresponds to exactly one \code{AlgebraicResult} case:
+Identity SELF, Identity COUNTER, and Element respectively.
+Analogous complete biconditionals are proven for \code{pmeet},
+\code{psubtract}, and \code{prestrict}
+(\code{pathMap\_pmeet\_complete}, \code{pathMap\_psubtract\_complete},
+\code{pathMap\_prestrict\_complete}).
+
+The proofs use two infrastructure lemmas added to
+\codepath{MeTTaIL/Engine.lean}:
+\code{premiseStepWithEnv\_relationQuery\_mem} and
+\code{premiseStepWithEnv\_congruence\_mem}, which expose the
+(previously private) premise-step semantics as a public API.
+Binding preservation across premise chains is certified by
+\code{premisesEval\_preserves\_a/b}.
+
+Key results summary:
+\begin{itemize}
+\item \code{pathMapGalois}: the auto-generated Galois connection
+  $\Dia \dashv \Bx$ for \code{pathMapLang} (0 sorries).
+\item \code{pathMap\_pjoin\_complete}: exact biconditional, all
+  three \code{AlgebraicResult} outcomes, no case dropped.
+\item \code{pathMap\_pmeet\_complete}, \code{pathMap\_psubtract\_complete},
+  \code{pathMap\_prestrict\_complete}: same for the other three operations.
+\item \code{SubtractLeftBiased} instance: \code{psubtract} never returns
+  \code{counter\_ident}, proven for \code{Bool} and \code{Finset~\(\alpha\)}.
+\end{itemize}
+
+\noindent
+PathMap is the only \OSLF{} instance in the formalization where the
+diamond theorem is complete in the sense that every reachable outcome
+is characterised: the biconditional leaves no case unaddressed.
 
 \section{Verified Formula Checker}
 
@@ -1141,8 +1250,8 @@ negative canary demonstrating that the \code{hClosed} assumption does real work.
   Enhanced formula checker with predecessor-based $\Bx$ checking.
 
 \item[\checkmark] \textbf{Milestone 5}: Language instances.
-  Six languages---lambda calculus, Petri nets, \rhocalc{}-calculus, TinyML,
-  MeTTaMinimal, and MeTTaFull---each with auto-generated \code{OSLFTypeSystem}
+  Seven languages---lambda calculus, Petri nets, \rhocalc{}-calculus, TinyML,
+  MeTTaMinimal, MeTTaFull, and PathMap---each with auto-generated \code{OSLFTypeSystem}
   and Galois connection.
 
 \item[\checkmark] \textbf{Milestone 6}: Presheaf-primary categorical lift.
@@ -1182,7 +1291,7 @@ negative canary demonstrating that the \code{hClosed} assumption does real work.
 \section{Conclusion}
 
 We have presented the first machine-checked formalization of the \OSLF{} algorithm,
-spanning 42{,}200+ lines of Lean~4 across 120 files with 0~sorries and 0~custom axioms.
+spanning 44{,}000+ lines of Lean~4 across 124 files with 0~sorries and 0~custom axioms.
 The formalization demonstrates that the entire pipeline from rewrite rules to
 spatial-behavioral types can be made rigorous in a modern proof assistant.
 
@@ -1217,13 +1326,17 @@ composition laws.  The remaining frontier item---lifting Set-level modalities
 into genuine internal $\Omega \to \Omega$ natural transformations in
 $P(T)$---is precisely characterized in Section~\ref{sec:topos-scope}.
 
-The full type synthesis pipeline is validated by six language instances
-(\rhocalc{}-calculus, lambda calculus, Petri nets, TinyML, MeTTaMinimal, and
-MeTTaFull), each with auto-proven Galois connections.  TinyML demonstrates the
+The full type synthesis pipeline is validated by seven language instances
+(\rhocalc{}-calculus, lambda calculus, Petri nets, TinyML, MeTTaMinimal,
+MeTTaFull, and PathMap), each with auto-proven Galois connections.
+TinyML demonstrates the
 framework's ability to handle multi-sort CBV languages with binders, conditionals,
 and sort-crossing constructors, mirroring the \rhocalc{}-calculus's
 NQuote/PDrop structure with Thunk/Inject.  The MeTTa instances close the loop
 from the interpreter specification back to the categorical semantics.
+PathMap extends the framework to \emph{condition-gated} rewriting with a ternary
+result type, and is the first instance where the NTT diamond is proven as a
+complete biconditional across all \code{AlgebraicResult} outcomes (Section~\ref{sec:pathmap}).
 
 A declarative reduction relation provides an engine-independent specification,
 and the executable engines are proven both sound and complete with respect to it.

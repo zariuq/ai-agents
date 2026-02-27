@@ -26,3 +26,6 @@ theorem ramsey_three_six : ramseyNumber 3 6 = 18 := by
     apply ramsey_three_six_ge_18_of_nonempty
     -- Nonemptiness is provided by the upper bound (18 has the property)
     exact ramseySet_3_6_nonempty
+
+-- Axiom footprint: should only show propext, Classical.choice, Quot.sound
+#print axioms ramsey_three_six

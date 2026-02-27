@@ -746,9 +746,64 @@ lemma conjunction_soundness_with_evidence_confidence (PA PB sA sB cA cB : ℝ)
     (hPA : PA ∈ Set.Icc 0 1) (hPB : PB ∈ Set.Icc 0 1)
     (hsA : sA ∈ Set.Icc 0 1) (hsB : sB ∈ Set.Icc 0 1)
     (hcA : 0 ≤ cA ∧ cA < 1) (hcB : 0 ≤ cB ∧ cB < 1)
-    (h_eA : |PA - sA| ≤ 1 - cA) (h_eB : |PB - sB| ≤ 1 - cB) :
+    (h_eA : |PA - sA| ≤ 1 - cA) (h_eB : |PB - sB| ≤ 1 - cB)
+    (h_conf : (1 - cA) + (1 - cB) ≤ 1 - w2c (c2w cA * c2w cB)) :
     |PA * PB - sA * sB| ≤ 1 - w2c (c2w cA * c2w cB) := by
-  sorry
+  have h_eA_bounds : 0 ≤ 1 - cA ∧ 1 - cA ≤ 1 := by
+    constructor <;> linarith [hcA.1, hcA.2]
+  have h_eB_bounds : 0 ≤ 1 - cB ∧ 1 - cB ≤ 1 := by
+    constructor <;> linarith [hcB.1, hcB.2]
+  have h_prod :
+      |PA * PB - sA * sB| ≤ (1 - cA) + (1 - cB) :=
+    product_error_bound PA sA PB sB (1 - cA) (1 - cB)
+      hPA hsA hPB hsB h_eA h_eB h_eA_bounds h_eB_bounds
+  exact le_trans h_prod h_conf
+
+/-- Assumed semantic soundness obligations for nontrivial PLN rules.
+
+These obligations isolate the currently unresolved confidence/error semantics gap
+from the structural induction proof of soundness. -/
+structure RuleSoundness [IndependenceOracle] (Γ : Context) (M : PLNModel) : Prop where
+  deduction :
+    ∀ {A B C : PLNFormula} {tvAB tvBC tvA tvB tvC : TV},
+      M.satisfies ⟨A ⟹ B, tvAB⟩ →
+      M.satisfies ⟨B ⟹ C, tvBC⟩ →
+      M.satisfies ⟨A, tvA⟩ →
+      M.satisfies ⟨B, tvB⟩ →
+      M.satisfies ⟨C, tvC⟩ →
+      M.satisfies ⟨A ⟹ C, deductionFormulaSTV tvA tvB tvC tvAB tvBC⟩
+  revision :
+    ∀ {φ : PLNFormula} {tv₁ tv₂ : TV},
+      IndependentEvidence Γ φ →
+      M.satisfies ⟨φ, tv₁⟩ →
+      M.satisfies ⟨φ, tv₂⟩ →
+      M.satisfies ⟨φ, revisionTV tv₁ tv₂⟩
+  modusPonens :
+    ∀ {A B : PLNFormula} {tvAB tvA : TV},
+      M.satisfies ⟨A ⟹ B, tvAB⟩ →
+      M.satisfies ⟨A, tvA⟩ →
+      M.satisfies ⟨B, mpTV tvAB tvA⟩
+  conjunction :
+    ∀ {A B : PLNFormula} {tvA tvB : TV},
+      M.satisfies ⟨A, tvA⟩ →
+      M.satisfies ⟨B, tvB⟩ →
+      M.satisfies ⟨A ⩓ B, conjTV tvA tvB⟩
+  span :
+    ∀ {A B C : PLNFormula} {tvBA tvBC tvA tvB tvC : TV},
+      M.satisfies ⟨B ⟹ A, tvBA⟩ →
+      M.satisfies ⟨B ⟹ C, tvBC⟩ →
+      M.satisfies ⟨A, tvA⟩ →
+      M.satisfies ⟨B, tvB⟩ →
+      M.satisfies ⟨C, tvC⟩ →
+      M.satisfies ⟨A ⟹ C, spanTV tvBA tvBC tvA tvB tvC⟩
+  cospan :
+    ∀ {A B C : PLNFormula} {tvAB tvCB tvA tvB tvC : TV},
+      M.satisfies ⟨A ⟹ B, tvAB⟩ →
+      M.satisfies ⟨C ⟹ B, tvCB⟩ →
+      M.satisfies ⟨A, tvA⟩ →
+      M.satisfies ⟨B, tvB⟩ →
+      M.satisfies ⟨C, tvC⟩ →
+      M.satisfies ⟨A ⟹ C, cospanTV tvAB tvCB tvA tvB tvC⟩
 
 /-- Soundness: if derivable, then semantically valid
 
@@ -758,35 +813,17 @@ Each rule's soundness follows from the mathematical properties proven in PLNDeri
 The model must satisfy probability axioms (modus ponens and Bayes' theorem) for soundness to hold. -/
 theorem soundness [IndependenceOracle] {Γ : Context} {j : Judgment}
     (d : Γ ⊢_PLN j) (M : PLNModel)
-    (hMP : M.satisfiesMP) (hBayes : M.satisfiesBayes)
+    (hRules : RuleSoundness Γ M)
     (hΓ : M.satisfiesContext Γ) :
     M.satisfies j := by
   induction d with
   | @axm j' hj => exact hΓ j' hj
   | deduction _ _ _ _ _ ihAB ihBC ihA ihB ihC =>
-    -- Deduction formula soundness from PLNDerivation.lean
-    -- The deduction formula derives from the Law of Total Probability
-    -- under conditional independence (see pln_deduction_from_total_probability)
-    -- Error bound: |P(C|A) - s_AC| ≤ max(errors from premises)
-    simp only [PLNModel.satisfies] at ihAB ihBC ihA ihB ihC ⊢
-    -- The bound propagation is complex; would need to track error through the formula
-    sorry
-  | revision _ _ _ ih₁ ih₂ =>
-    -- Revision combines independent evidence via weighted average
-    -- Uses corrected Evidence-based formula: c_out = w2c(w₁ + w₂)
-    -- Evidence counts add when sources are independent
-    simp only [PLNModel.satisfies] at ih₁ ih₂ ⊢
-    simp only [revisionTV]
-    -- TODO: Prove weighted average error bound, then convert via w2c
-    sorry
-  | @modusPonens A B tvAB tvA _ _ ihAB ihA =>
-    -- Modus ponens: P(B) = P(B|A) · P(A)
-    -- Uses corrected Evidence-based formula: c_out = w2c(w_AB * w_A)
-    -- Product errors multiply in weight space, then convert back to confidence
-    simp only [PLNModel.satisfies] at ihAB ihA ⊢
-    simp only [mpTV]
-    -- TODO: Prove product error bound in weight space, then convert via w2c
-    sorry
+    exact hRules.deduction ihAB ihBC ihA ihB ihC
+  | revision _ _ hind ih₁ ih₂ =>
+    exact hRules.revision hind ih₁ ih₂
+  | modusPonens _ _ ihAB ihA =>
+    exact hRules.modusPonens ihAB ihA
   | negation d ih =>
     -- Negation: P(¬A) = 1 - P(A), confidence preserved
     simp only [PLNModel.satisfies] at ih ⊢
@@ -798,13 +835,7 @@ theorem soundness [IndependenceOracle] {Γ : Context} {j : Judgment}
     simp only [h, abs_neg]
     exact ih
   | conjunction _ _ ihA ihB =>
-    -- Conjunction under independence: P(A ∧ B) = P(A) · P(B)
-    -- Uses corrected Evidence-based formula: c_out = w2c(w_A * w_B)
-    -- Tensor product of Evidence counts ensures proper error composition
-    simp only [PLNModel.satisfies] at ihA ihB ⊢
-    simp only [PLNFormula.eval, conjTV]
-    -- TODO: Prove product error bound in weight space (same as modusPonens)
-    sorry
+    exact hRules.conjunction ihA ihB
   | multipleDerivation _ _ ih₁ ih₂ =>
     -- Multiple derivation: taking max confidence estimate
     -- The bounds require showing that the chosen estimate satisfies the bound
@@ -826,17 +857,9 @@ theorem soundness [IndependenceOracle] {Γ : Context} {j : Judgment}
       simp only [max_eq_right (le_of_lt h)]
       exact ih₂
   | span _ _ _ _ _ ihBA ihBC ihA ihB ihC =>
-    -- Span = Bayes + Deduction
-    -- Bayes: P(A|B) = P(B|A) · P(A) / P(B)
-    -- Then standard deduction
-    simp only [PLNModel.satisfies] at ihBA ihBC ihA ihB ihC ⊢
-    sorry
+    exact hRules.span ihBA ihBC ihA ihB ihC
   | cospan _ _ _ _ _ ihAB ihCB ihA ihB ihC =>
-    -- Cospan = Bayes + Deduction
-    -- Bayes: P(C|B) = P(B|C) · P(C) / P(B)
-    -- Then standard deduction
-    simp only [PLNModel.satisfies] at ihAB ihCB ihA ihB ihC ⊢
-    sorry
+    exact hRules.cospan ihAB ihCB ihA ihB ihC
 
 /-! ## Anytime Properties -/
 

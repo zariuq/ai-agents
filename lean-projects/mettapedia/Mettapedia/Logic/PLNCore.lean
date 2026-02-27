@@ -27,6 +27,11 @@ import Mettapedia.Logic.PremiseSelectionPartitionedPriorNB
 import Mettapedia.Logic.PremiseSelectionBestPLNDraft
 import Mettapedia.Logic.SoundnessCompleteness
 import Mettapedia.Logic.PLNCanonicalAPI
+import Mettapedia.Logic.PLNIntensionalWorldModel
+import Mettapedia.Logic.IntensionalInheritanceSolomonoffBridge
+import Mettapedia.Logic.PLNNARSRuleCorrespondence
+import Mettapedia.Logic.PLNChapter14TemporalCausal
+import Mettapedia.Logic.PLNProbabilisticEventCalculus
 import Mettapedia.Logic.SemanticsDecisionTree
 
 /-!
@@ -74,6 +79,12 @@ This module is a curated import surface for the currently theorem-complete PLN s
   (`PremiseSelectionBestPLNDraft`)
 - Soundness/completeness tradeoff characterization (`SoundnessCompleteness`)
 - Canonical API with 3-tier theorem index (`PLNCanonicalAPI`)
+- PLN↔NARS rule correspondence package (rule-level bridge + informativeness adjunction)
+  (`PLNNARSRuleCorrespondence`)
+- Chapter-14 temporal/causal relationship layer
+  (`PLNChapter14TemporalCausal`)
+- Probabilistic event-calculus WM/rewrite grounding
+  (`PLNProbabilisticEventCalculus`)
 - Semantics decision gate (probability vs evidence/interval/NARS mirror)
   with weaker-than-KS references (`SemanticsDecisionTree`)
 

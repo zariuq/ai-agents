@@ -86,6 +86,18 @@ noncomputable def thereExistsEvalTypical
     (μ : WeightFunction U Evidence) : Evidence :=
   thereExistsEval S μ
 
+@[simp] theorem forAllEvalTypical_eq
+    (S : SatisfyingSet U) (μ : WeightFunction U Evidence) :
+    forAllEvalTypical S μ = forAllEval S μ := rfl
+
+@[simp] theorem thereExistsEvalTypical_eq
+    (S : SatisfyingSet U) (μ : WeightFunction U Evidence) :
+    thereExistsEvalTypical S μ = thereExistsEval S μ := rfl
+
+@[simp] theorem thereExistsEval_deMorgan
+    (S : SatisfyingSet U) (μ : WeightFunction U Evidence) :
+    thereExistsEval S μ = Evidence.compl (forAllEval (SatisfyingSet.neg S) μ) := rfl
+
 /-! ## Extensional (Meet/Join) Quantifier Views -/
 
 /-- **Extensional ∀**: meet (inf) of all pointwise evidences.
@@ -105,6 +117,45 @@ inside the Evidence lattice. -/
 noncomputable def thereExistsEvalExt
     (S : SatisfyingSet U) : Evidence :=
   sSup { e | ∃ u : U, e = S.pred u }
+
+theorem forAllEvalExt_le_thereExistsEvalExt
+    [Nonempty U] (S : SatisfyingSet U) :
+    forAllEvalExt S ≤ thereExistsEvalExt S := by
+  let u0 : U := Classical.choice ‹Nonempty U›
+  let A : Set Evidence := { e | ∃ u : U, e = S.pred u }
+  have hu0 : S.pred u0 ∈ A := by
+    exact ⟨u0, rfl⟩
+  have hInf : sInf A ≤ S.pred u0 := sInf_le hu0
+  have hSup : S.pred u0 ≤ sSup A := le_sSup hu0
+  exact le_trans hInf hSup
+
+theorem forAllEvalExt_eq_top_of_isEmpty
+    [IsEmpty U] (S : SatisfyingSet U) :
+    forAllEvalExt S = ⊤ := by
+  unfold forAllEvalExt
+  have hset : ({ e : Evidence | ∃ u : U, e = S.pred u } : Set Evidence) = ∅ := by
+    ext e
+    constructor
+    · intro h
+      rcases h with ⟨u, _⟩
+      exact isEmptyElim u
+    · intro h
+      simp at h
+  rw [hset, sInf_empty]
+
+theorem thereExistsEvalExt_eq_bot_of_isEmpty
+    [IsEmpty U] (S : SatisfyingSet U) :
+    thereExistsEvalExt S = ⊥ := by
+  unfold thereExistsEvalExt
+  have hset : ({ e : Evidence | ∃ u : U, e = S.pred u } : Set Evidence) = ∅ := by
+    ext e
+    constructor
+    · intro h
+      rcases h with ⟨u, _⟩
+      exact isEmptyElim u
+    · intro h
+      simp at h
+  rw [hset, sSup_empty]
 
 /-! ## Basic Properties -/
 

@@ -165,6 +165,46 @@ def premiseStepWithEnv (relEnv : RelationEnv) (lang : LanguageDef) (bindings : B
 def premiseStep (lang : LanguageDef) (bindings : Bindings) : Premise → List Bindings :=
   premiseStepWithEnv RelationEnv.empty lang bindings
 
+/-- Any binding set produced by `premiseStepWithEnv` for a `relationQuery` premise
+    arises from merging the original bindings with some auxiliary binding `bPrem`.
+    This is the public key property of the otherwise-private `relationQueryStep`. -/
+theorem premiseStepWithEnv_relationQuery_mem {relEnv : RelationEnv} {lang : LanguageDef}
+    {bindings bs : Bindings} {rel : String} {args : List Pattern}
+    (h : bs ∈ premiseStepWithEnv relEnv lang bindings (.relationQuery rel args)) :
+    ∃ bPrem : Bindings, mergeBindings bindings bPrem = some bs := by
+  simp only [premiseStepWithEnv, relationQueryStep] at h
+  simp only [List.mem_flatMap] at h
+  obtain ⟨tuple, _, h'⟩ := h
+  simp only [List.mem_filterMap] at h'
+  obtain ⟨bPrem, _, hmerge⟩ := h'
+  exact ⟨bPrem, hmerge⟩
+
+/-- Any binding set produced by `premiseStepWithEnv` for a `congruence` premise
+    arises from merging the original bindings with some auxiliary binding `bPrem`. -/
+theorem premiseStepWithEnv_congruence_mem {relEnv : RelationEnv} {lang : LanguageDef}
+    {bindings bs : Bindings} {src tgt : Pattern}
+    (h : bs ∈ premiseStepWithEnv relEnv lang bindings (.congruence src tgt)) :
+    ∃ bPrem : Bindings, mergeBindings bindings bPrem = some bs := by
+  simp only [premiseStepWithEnv] at h
+  simp only [List.mem_flatMap] at h
+  obtain ⟨cand, _, h'⟩ := h
+  simp only [List.mem_filterMap] at h'
+  obtain ⟨bPrem, _, hmerge⟩ := h'
+  exact ⟨bPrem, hmerge⟩
+
+/-- Any binding set produced by `premiseStepWithEnv` for a `freshness` premise
+    is exactly the original bindings (unchanged). -/
+theorem premiseStepWithEnv_freshness_mem {relEnv : RelationEnv} {lang : LanguageDef}
+    {bindings bs : Bindings} {fc : FreshnessCondition}
+    (h : bs ∈ premiseStepWithEnv relEnv lang bindings (.freshness fc)) :
+    bs = bindings := by
+  simp only [premiseStepWithEnv] at h
+  split at h
+  · split_ifs at h with hc
+    · simp only [List.mem_singleton] at h; exact h
+    · cases h
+  · cases h
+
 /-- Apply all premises left-to-right, carrying all possible binding extensions. -/
 def applyPremisesWithEnv (relEnv : RelationEnv) (lang : LanguageDef)
     (premises : List Premise) (seed : Bindings) : List Bindings :=

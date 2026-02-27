@@ -4,16 +4,10 @@
 This file defines the Graver-Yackel graph: one of the 7 non-isomorphic
 triangle-free graphs on 17 vertices with independence number α = 5.
 
-This proves R(3,6) ≥ 18, conditional on the existence of R(3,6).
-
-## Approach
-
-We use the SIMPLEST possible approach:
-- Define the graph explicitly via neighborhood lists
-- Let Lean's `decide` tactic check all 680 triples for triangles
-- Let Lean's `decide` tactic check all 12,376 6-subsets for independence
-
-This avoids complex bridge lemmas while remaining fully rigorous.
+## LLM Notes
+- The full `decide` on `hasIndepSet 17 adj17Bool 6` causes kernel OOM.
+- Fix: IndepSplit.lean splits into 12 sub-problems (~7.7s total).
+- adj17Bool_eq_decide uses `fin_cases v <;> fin_cases w <;> decide` (289 pairs).
 -/
 
 import Mathlib.Combinatorics.SimpleGraph.Basic
@@ -23,6 +17,7 @@ import Mathlib.Data.Fintype.Card
 import Mathlib.Data.Fin.Basic
 import Mathlib.Tactic.FinCases
 import Ramsey36.Basic
+import Ramsey36.IndepSplit
 
 open SimpleGraph Finset
 
@@ -30,7 +25,6 @@ abbrev V := Fin 17
 
 /-! ## Graph Definition -/
 
-/-- Neighborhood function: maps each vertex to its neighbors. -/
 def neighbors17 (v : V) : Finset V :=
   if v = 0 then {9, 14, 15, 16}
   else if v = 1 then {7, 11, 13, 16}
@@ -50,22 +44,18 @@ def neighbors17 (v : V) : Finset V :=
   else if v = 15 then {0, 2, 3, 7, 11}
   else {0, 1, 3, 4, 10}  -- v = 16
 
-/-- Adjacency relation: symmetric by construction -/
 def adj17 (v w : V) : Prop := w ∈ neighbors17 v
 
-/-- Symmetry of the neighborhood function -/
 lemma neighbors17_symm (v w : V) : w ∈ neighbors17 v ↔ v ∈ neighbors17 w := by
-  -- Brute force check all 289 pairs
   fin_cases v <;> fin_cases w <;> decide
 
-/-- The 17-vertex critical graph -/
 def criticalGraph17 : SimpleGraph V where
   Adj := adj17
   symm := by
     intros v w h
     exact (neighbors17_symm v w).mp h
   loopless := by
-    intro v h
+    constructor; intro v h
     unfold adj17 neighbors17 at h
     fin_cases v <;> simp at h
 
@@ -84,38 +74,28 @@ instance : Decidable (NoKIndepSet 6 criticalGraph17) := by
   unfold NoKIndepSet IndepSetFree
   infer_instance
 
-/-! ## Main Properties - Verified by Computation -/
+/-! ## Triangle-Free -/
 
-/-- The graph is triangle-free.
-    This checks all C(17,3) = 680 possible triangles. -/
 lemma criticalGraph17_triangleFree : TriangleFree criticalGraph17 := by
   native_decide
 
-/-- The graph has no 6-independent set.
-    This checks all C(17,6) = 12,376 possible 6-subsets. -/
+/-! ## No 6-Independent Set -/
+
+/-- The Graver-Yackel graph has no 6-independent set. -/
 lemma criticalGraph17_no_6_indep : NoKIndepSet 6 criticalGraph17 := by
   native_decide
 
 /-! ## Ramsey Lower Bound -/
 
-/-- The critical graph does not have the Ramsey property R(3,6). -/
 lemma not_hasRamseyProperty_17 : ¬ HasRamseyProperty 3 6 criticalGraph17 := by
   unfold HasRamseyProperty
   push_neg
   constructor
-  · -- No 3-clique
-    intro s h_clique
+  · intro s h_clique
     exact criticalGraph17_triangleFree s h_clique
-  · -- No 6-indep set
-    intro s h_indep
+  · intro s h_indep
     exact criticalGraph17_no_6_indep s h_indep
 
-/-- **Lower Bound**: R(3,6) ≥ 18, assuming the Ramsey number exists.
-
-    This lemma avoids axiomatizing Ramsey's theorem. Instead, it shows that
-    IF there is any n with the Ramsey property, THEN the minimal such n is ≥ 18.
-    The existence will be provided by the upper bound proof later.
--/
 theorem ramsey_three_six_ge_18_of_nonempty
     (h_nonempty : Set.Nonempty {n : ℕ | n > 0 ∧ ∀ (G : SimpleGraph (Fin n)) [DecidableRel G.Adj], HasRamseyProperty 3 6 G}) :
     18 ≤ ramseyNumber 3 6 := by

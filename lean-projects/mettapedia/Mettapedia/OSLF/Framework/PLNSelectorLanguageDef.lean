@@ -701,23 +701,29 @@ theorem plnSelector_checkLangUsing_sat_sound_graph
 def demoExtBayes2Src : Pattern := pUpdate (pFuse pAtom pAtom) pAtom
 def demoIrreducible : Pattern := pAtom
 
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 800000 in
 example :
     checkLangUsing RelationEnv.empty plnSelectorLanguageDef selectorAtomCheck
       3 demoExtBayes2Src (.dia (.atom "isExtBayes2RHS")) = .sat := by
-  decide
+  decide +kernel
 
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 800000 in
 example :
     checkLangUsing RelationEnv.empty plnSelectorLanguageDef selectorAtomCheck
       3 demoIrreducible (.dia .top) = .unsat := by
-  decide
+  decide +kernel
 
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 800000 in
 theorem demoExtBayes2_sat_sem :
     sem (langReducesUsing RelationEnv.empty plnSelectorLanguageDef)
       selectorAtomSem (.dia (.atom "isExtBayes2RHS")) demoExtBayes2Src := by
   have hSat :
       checkLangUsing RelationEnv.empty plnSelectorLanguageDef selectorAtomCheck
         3 demoExtBayes2Src (.dia (.atom "isExtBayes2RHS")) = .sat := by
-    decide
+    decide +kernel
   exact plnSelector_checkLangUsing_sat_sound hSat
 
 end Mettapedia.OSLF.Framework.PLNSelectorLanguageDef

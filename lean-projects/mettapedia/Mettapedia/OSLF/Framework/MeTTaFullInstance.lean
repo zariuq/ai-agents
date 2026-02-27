@@ -316,11 +316,13 @@ private def codedConcatSpacesState : Pattern :=
     , .apply "AFalse" []
     ]
 
+set_option maxRecDepth 8192 in
+set_option maxHeartbeats 1600000 in
 /-- Checker-level guarantee: coded-string concat with whitespace reaches a done state in two steps. -/
 theorem mettaFull_checkLangUsing_sat_coded_concat_spaces_done :
     checkLangUsing Mettapedia.OSLF.MeTTaCore.FullLanguageDef.mettaFullRelEnv
       mettaFull mettaFullSpecAtomCheck 8 codedConcatSpacesState (.dia (.dia (.atom "isDoneState"))) = .sat := by
-  decide
+  decide +kernel
 
 /-- Semantic corollary for coded-string concat checker result. -/
 theorem mettaFull_sem_coded_concat_spaces_done :

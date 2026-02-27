@@ -219,12 +219,18 @@ theorem A_ne_B : tokA ≠ tokB := by decide
 theorem A_ne_C : tokA ≠ tokC := by decide
 theorem C_ne_D : tokC ≠ tokD := by decide
 
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 800000 in
 /-- {D} is a dead marking: no transition matches (proven via negation). -/
-theorem D_is_dead : rewriteWithContext petriNet (marking [tokD]) = [] := by decide
+theorem D_is_dead : rewriteWithContext petriNet (marking [tokD]) = [] := by
+  decide +kernel
 
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 800000 in
 /-- {A, B} has exactly one reduct via T1. -/
 theorem AB_has_one_reduct :
-    (rewriteWithContext petriNet (marking [tokA, tokB])).length = 1 := by decide
+    (rewriteWithContext petriNet (marking [tokA, tokB])).length = 1 := by
+  decide +kernel
 
 -- Verification: OSLF pipeline type-checks
 #check petriOSLF

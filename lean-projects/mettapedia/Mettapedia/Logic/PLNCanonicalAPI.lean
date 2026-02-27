@@ -1,15 +1,17 @@
 import Mettapedia.Logic.PLNDerivation
-import Mettapedia.Logic.PLNWorldModelTyped
 import Mettapedia.Logic.PLNWorldModelCalculus
-import Mettapedia.Logic.PLNWorldModelCalculusTyped
 import Mettapedia.Logic.PLNWorldModelITV
+import Mettapedia.Logic.PLNWorldModelITVHypercube
 import Mettapedia.Logic.PLNWMOSLFBridge
-import Mettapedia.Logic.PLNWMOSLFBridgeTyped
+import Mettapedia.Logic.PLNWMOSLFBridgeITV
 import Mettapedia.Logic.PLNXiRuleRegistry
 import Mettapedia.Logic.PLNXiCarrierScreening
 import Mettapedia.Logic.PLNXiDerivedBNRules
-import Mettapedia.Logic.PLNXiDerivedBNRulesTyped
+import Mettapedia.Logic.PLNIntensionalWorldModel
+import Mettapedia.Logic.IntensionalInheritanceSolomonoffBridge
+import Mettapedia.Logic.PLNProbabilisticEventCalculus
 import Mettapedia.Logic.PLNColliderSingletonBridge
+import Mettapedia.Logic.PLNNARSRuleCorrespondence
 import Mettapedia.Logic.PLNEndToEnd
 import Mettapedia.Logic.EvidenceQuantale
 import Mettapedia.Logic.EvidenceSTVBridge
@@ -17,29 +19,23 @@ import Mettapedia.Logic.EvidenceSTVBridge
 /-!
 # PLN Canonical API (Lean)
 
-Small facade module that exposes the recommended, semantically grounded entry points:
+Facade module exposing recommended, semantically grounded entry points:
 
-- Correct strength formulas from `PLNDerivation`
-- Categorical naming (`SourceRule` / `SinkRule`) as first-class aliases
-- NB bridge theorem location: `PLNBayesNetInference`
-- WM-calculus rewrite/query-equivalence types from `PLNWorldModelCalculus`
-- Typed WM-calculus equivalence/rewrite templates from `PLNWorldModelCalculusTyped`
-- Sort-indexed typed WM layer (`WorldModelSigma`) from `PLNWorldModelTyped`
-- Explicit ITV semantics/query layer from `PLNWorldModelITV`
-- OSLF bridge: `XiPLN`, `wmEvidenceAtomSemQ`, derivation soundness (`PLNWMOSLFBridge`)
-- Typed OSLF bridge: `XiPLNSigma`, `wmEvidenceAtomSemQSigma` (`PLNWMOSLFBridgeTyped`)
-- Typed BN rule wrappers (`WMRewriteRuleSigma`, one-sort lift) from `PLNXiDerivedBNRulesTyped`
-- **Derived BN rules**: fully proved deduction (chain) + source rule (fork) from local Markov + d-separation (`PLNXiDerivedBNRules`)
-- Schema-level templates in `Schema` namespace (for building new derived rules)
+- Strength formulas from `PLNDerivation` (deduction, induction, abduction)
+- WM-calculus types from `PLNWorldModelCalculus` (query equivalence, rewrite rules)
+- Sort-indexed WM layer (`WorldModelSigma`) from `PLNWorldModel`
+- ITV semantics/query layer from `PLNWorldModelITV` + `PLNWorldModelITVHypercube`
+- OSLF bridge: `XiPLN`, `XiPLNSigma`, atom semantics (`PLNWMOSLFBridge`)
+- ITV threshold transport + quantale coherence (`PLNWMOSLFBridgeITV`)
+- End-to-end rewrite/query/threshold bundles (interval-indexed)
+- PLN↔NARS rule correspondence package (`PLNNARSRuleCorrespondence`)
+- Schema templates in `Schema` namespace (building blocks for new derived rules)
+- MeTTa integration: type-of-based query builders (`PLNWMOSLFBridgeTyped.MeTTaTypeOf`)
+- Documentation index for derived BN rules, exactness matrix, end-to-end theorems
 
-## Canonical vs Schema
-
-**Canonical** (top-level): Rules whose side conditions are derived from concrete
-model semantics. No free soundness hypothesis arguments.
-
-**Schema** (under `Schema` namespace): Rule templates parameterized by abstract
-side conditions. Use these to build new derived rules for other BN structures,
-but do not cite them as "proved inference rules."
+BN-topology-specific endpoints (chain/fork/collider) and sort-variant
+specializations are available directly from `PLNXiDerivedBNRules` and
+`PLNWMOSLFBridgeITV` — this facade re-exports only the generic layer.
 
 This file is intentionally lightweight: it is an index with stable names, not a new semantics layer.
 -/
@@ -47,6 +43,13 @@ This file is intentionally lightweight: it is an index with stable names, not a 
 namespace Mettapedia.Logic.PLNCanonical
 
 open Mettapedia.Logic
+open Mettapedia.Logic.PLNWorldModel
+open Mettapedia.Logic.PLNBNCompilation
+open Mettapedia.Logic.PLNBNCompilation.BNWorldModel
+open Mettapedia.Logic.PLNXiDerivedBNRules
+open Mettapedia.Logic.PLNXiDerivedBNRules.Typed
+open Mettapedia.ProbabilityTheory.BayesianNetworks
+open Mettapedia.ProbabilityTheory.BayesianNetworks.Examples
 
 /-! ## Canonical Evidence Carriers -/
 
@@ -61,6 +64,38 @@ abbrev DistributionalSTV := PLN.Distributional.SimpleTruthValue
 
 /-- Proven STV isomorphism between distributional and deduction views. -/
 abbrev stvIso := EvidenceSTVBridge.stvEquiv
+
+/-! ## PLN↔NARS Rule Correspondence canonical aliases -/
+
+abbrev PLNNARSRuleBridgeBundle :=
+  Mettapedia.Logic.PLNNARSRuleCorrespondence.PLNNARSRuleBridgeBundle
+
+abbrev plnNarsRuleBridgeBundle :=
+  Mettapedia.Logic.PLNNARSRuleCorrespondence.plnNarsRuleBridgeBundle
+
+abbrev NARSTruthValue :=
+  Mettapedia.Logic.NARSPLNGaloisConnection.NARSTruthValue
+
+abbrev NARSPLNBelief :=
+  Mettapedia.Logic.NARSPLNGaloisConnection.PLNBelief
+
+noncomputable abbrev L_narsToPln :=
+  Mettapedia.Logic.NARSPLNGaloisConnection.L
+
+noncomputable abbrev U_plnToNars :=
+  Mettapedia.Logic.NARSPLNGaloisConnection.U
+
+abbrev L_le_iff_le_U_nars_pln :=
+  @Mettapedia.Logic.NARSPLNGaloisConnection.L_le_iff_le_U
+
+abbrev galoisConnection_L_U_finite_nars_pln :=
+  @Mettapedia.Logic.NARSPLNGaloisConnection.galoisConnection_L_U_finite
+
+abbrev narsToPLNTV :=
+  Mettapedia.Logic.PLNNARSRuleCorrespondence.narsToPLNTV
+
+abbrev plnToNARSTV :=
+  Mettapedia.Logic.PLNNARSRuleCorrespondence.plnToNARSTV
 
 /-! ## Canonical rule-strength names -/
 
@@ -117,6 +152,8 @@ abbrev ITV := PLNIndefiniteTruth.ITV
 
 abbrev ITVSemantics (Ctx : Type*) := PLNWorldModel.ITVSemantics Ctx
 
+abbrev BinaryContext := EvidenceClass.BinaryContext
+
 abbrev IDMPredictiveContext := PLNWorldModel.IDMPredictiveContext
 
 noncomputable abbrev queryITV {State Query Ctx : Type*}
@@ -130,19 +167,57 @@ noncomputable abbrev queryITVSigma {State Srt Ctx : Type*} {Query : Srt → Type
   PLNWorldModel.WorldModelSigma.queryITV
     (State := State) (Srt := Srt) (Query := Query) (Ctx := Ctx)
 
+abbrev WMITVJudgment {State Query Ctx : Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query] :=
+  PLNWorldModel.WorldModel.WMITVJudgment
+    (State := State) (Query := Query) (Ctx := Ctx)
+
+abbrev WMITVJudgmentCtx {State Query Ctx : Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query] :=
+  PLNWorldModel.WorldModel.WMITVJudgmentCtx
+    (State := State) (Query := Query) (Ctx := Ctx)
+
+abbrev WMITVJudgmentSigma {State Srt Ctx : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query] :=
+  PLNWorldModel.WorldModelSigma.WMITVJudgmentSigma
+    (State := State) (Srt := Srt) (Query := Query) (Ctx := Ctx)
+
+abbrev WMITVJudgmentCtxSigma {State Srt Ctx : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query] :=
+  PLNWorldModel.WorldModelSigma.WMITVJudgmentCtxSigma
+    (State := State) (Srt := Srt) (Query := Query) (Ctx := Ctx)
+
 noncomputable def queryITVSigmaBayes95 {State Srt : Type*} {Query : Srt → Type*}
     [EvidenceClass.EvidenceType State]
     [PLNWorldModel.WorldModelSigma State Srt Query]
-    (ctx : BinaryContext) (W : State) (q : Sigma Query) : ITV :=
-  queryITVSigma (State := State) (Srt := Srt) (Query := Query) (Ctx := BinaryContext)
+    (ctx : EvidenceClass.BinaryContext) (W : State) (q : Sigma Query) : ITV :=
+  queryITVSigma (State := State) (Srt := Srt) (Query := Query) (Ctx := EvidenceClass.BinaryContext)
     PLNWorldModel.ITVSemantics.bayesCredible95 ctx W q
 
 noncomputable def queryITVSigmaBayes90 {State Srt : Type*} {Query : Srt → Type*}
     [EvidenceClass.EvidenceType State]
     [PLNWorldModel.WorldModelSigma State Srt Query]
-    (ctx : BinaryContext) (W : State) (q : Sigma Query) : ITV :=
-  queryITVSigma (State := State) (Srt := Srt) (Query := Query) (Ctx := BinaryContext)
+    (ctx : EvidenceClass.BinaryContext) (W : State) (q : Sigma Query) : ITV :=
+  queryITVSigma (State := State) (Srt := Srt) (Query := Query) (Ctx := EvidenceClass.BinaryContext)
     PLNWorldModel.ITVSemantics.bayesCredible90 ctx W q
+
+noncomputable def queryITVSigmaBayesExact95 {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    (ctx : EvidenceClass.BinaryContext) (W : State) (q : Sigma Query) : ITV :=
+  queryITVSigma (State := State) (Srt := Srt) (Query := Query) (Ctx := EvidenceClass.BinaryContext)
+    PLNWorldModel.ITVSemantics.bayesCredibleExact95 ctx W q
+
+noncomputable def queryITVSigmaBayesExact90 {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    (ctx : EvidenceClass.BinaryContext) (W : State) (q : Sigma Query) : ITV :=
+  queryITVSigma (State := State) (Srt := Srt) (Query := Query) (Ctx := EvidenceClass.BinaryContext)
+    PLNWorldModel.ITVSemantics.bayesCredibleExact90 ctx W q
 
 noncomputable def queryITVSigmaWalleyIDM {State Srt : Type*} {Query : Srt → Type*}
     [EvidenceClass.EvidenceType State]
@@ -156,14 +231,2388 @@ noncomputable def queryITVSigmaBayes95Jeffreys {State Srt : Type*} {Query : Srt 
     [PLNWorldModel.WorldModelSigma State Srt Query]
     (W : State) (q : Sigma Query) : ITV :=
   queryITVSigmaBayes95 (State := State) (Srt := Srt) (Query := Query)
-    BinaryContext.jeffreys W q
+    EvidenceClass.BinaryContext.jeffreys W q
+
+noncomputable def queryITVSigmaBayesExact95Jeffreys {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    (W : State) (q : Sigma Query) : ITV :=
+  queryITVSigmaBayesExact95 (State := State) (Srt := Srt) (Query := Query)
+    EvidenceClass.BinaryContext.jeffreys W q
 
 noncomputable def queryITVSigmaWalleyIDMDefault {State Srt : Type*} {Query : Srt → Type*}
     [EvidenceClass.EvidenceType State]
     [PLNWorldModel.WorldModelSigma State Srt Query]
     (W : State) (q : Sigma Query) : ITV :=
   queryITVSigmaWalleyIDM (State := State) (Srt := Srt) (Query := Query)
-    IDMPredictiveContext.default W q
+    PLNWorldModel.IDMPredictiveContext.default W q
+
+theorem queryITVWalley_width_add_credibility
+    {State Query : Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (ctx : IDMPredictiveContext) (W : State) (q : Query) :
+    PLNWorldModel.WorldModel.queryITVWidth
+      (State := State) (Query := Query)
+      PLNWorldModel.ITVSemantics.walleyIDMPredictive ctx W q
+      +
+      PLNWorldModel.WorldModel.queryITVCredibility
+        (State := State) (Query := Query)
+        PLNWorldModel.ITVSemantics.walleyIDMPredictive ctx W q
+      = 1 :=
+  PLNWorldModel.WorldModel.queryITVWidth_add_queryITVCredibility_walley
+    (State := State) (Query := Query) ctx W q
+
+theorem queryITVWalley_width_eq_one_sub_credibility
+    {State Query : Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (ctx : IDMPredictiveContext) (W : State) (q : Query) :
+    PLNWorldModel.WorldModel.queryITVWidth
+      (State := State) (Query := Query)
+      PLNWorldModel.ITVSemantics.walleyIDMPredictive ctx W q
+      =
+      1 -
+      PLNWorldModel.WorldModel.queryITVCredibility
+        (State := State) (Query := Query)
+        PLNWorldModel.ITVSemantics.walleyIDMPredictive ctx W q :=
+  PLNWorldModel.WorldModel.queryITVWidth_eq_one_sub_queryITVCredibility_walley
+    (State := State) (Query := Query) ctx W q
+
+theorem queryITVSigmaWalley_width_add_credibility
+    {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    (ctx : IDMPredictiveContext) (W : State) (q : Sigma Query) :
+    PLNWorldModel.WorldModelSigma.queryITVWidth
+      (State := State) (Srt := Srt) (Query := Query)
+      PLNWorldModel.ITVSemantics.walleyIDMPredictive ctx W q
+      +
+      PLNWorldModel.WorldModelSigma.queryITVCredibility
+        (State := State) (Srt := Srt) (Query := Query)
+        PLNWorldModel.ITVSemantics.walleyIDMPredictive ctx W q
+      = 1 :=
+  PLNWorldModel.WorldModelSigma.queryITVWidth_add_queryITVCredibility_walley
+    (State := State) (Srt := Srt) (Query := Query) ctx W q
+
+theorem queryITVSigmaWalley_width_eq_one_sub_credibility
+    {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    (ctx : IDMPredictiveContext) (W : State) (q : Sigma Query) :
+    PLNWorldModel.WorldModelSigma.queryITVWidth
+      (State := State) (Srt := Srt) (Query := Query)
+      PLNWorldModel.ITVSemantics.walleyIDMPredictive ctx W q
+      =
+      1 -
+      PLNWorldModel.WorldModelSigma.queryITVCredibility
+        (State := State) (Srt := Srt) (Query := Query)
+        PLNWorldModel.ITVSemantics.walleyIDMPredictive ctx W q :=
+  PLNWorldModel.WorldModelSigma.queryITVWidth_eq_one_sub_queryITVCredibility_walley
+    (State := State) (Srt := Srt) (Query := Query) ctx W q
+
+/-! ## ITV Hypercube canonical aliases -/
+
+abbrev WMIntervalSemantics :=
+  Mettapedia.OSLF.Framework.PLNWMHypercubeBasis.WMIntervalSemantics
+
+abbrev CtxOfInterval := PLNWorldModelITVHypercube.CtxOfInterval
+abbrev CtxOfVertex := PLNWorldModelITVHypercube.CtxOfVertex
+
+noncomputable abbrev semanticsOfInterval :=
+  PLNWorldModelITVHypercube.semanticsOfInterval
+
+noncomputable abbrev queryITVSigmaOfInterval {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query] :=
+  PLNWorldModelITVHypercube.queryITVSigmaOfInterval
+    (State := State) (Srt := Srt) (Query := Query)
+
+noncomputable abbrev queryITVAtVertex {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query] :=
+  PLNWorldModelITVHypercube.queryITVAtVertex
+    (State := State) (Srt := Srt) (Query := Query)
+
+abbrev WMITVThresholdJudgmentSigma {State Srt Ctx : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query] :=
+  PLNWorldModel.WorldModelSigma.WMITVThresholdJudgmentSigma
+    (State := State) (Srt := Srt) (Query := Query) (Ctx := Ctx)
+
+abbrev queryEq_to_queryITVSigmaOfInterval :=
+  @PLNWorldModelITVHypercube.WMQueryEqSigma.to_queryITVSigmaOfInterval
+
+abbrev queryEq_to_queryITVSigma_bayesExact :=
+  @PLNWorldModelITVHypercube.WMQueryEqSigma.to_queryITVSigma_bayesExact
+
+abbrev queryEq_to_queryITVSigma_walley :=
+  @PLNWorldModelITVHypercube.WMQueryEqSigma.to_queryITVSigma_walley
+
+abbrev queryEq_to_WMITVJudgmentSigmaOfInterval :=
+  @PLNWorldModelITVHypercube.WMQueryEqSigma.to_WMITVJudgmentSigmaOfInterval
+
+abbrev queryEq_to_WMITVJudgmentSigma_bayesExact :=
+  @PLNWorldModelITVHypercube.WMQueryEqSigma.to_WMITVJudgmentSigma_bayesExact
+
+abbrev queryEq_to_WMITVJudgmentSigma_walley :=
+  @PLNWorldModelITVHypercube.WMQueryEqSigma.to_WMITVJudgmentSigma_walley
+
+abbrev queryEq_to_WMITVThresholdJudgmentSigmaOfInterval :=
+  @PLNWorldModelITVHypercube.WMQueryEqSigma.to_WMITVThresholdJudgmentSigmaOfInterval
+
+abbrev queryEq_to_WMITVThresholdJudgmentSigma_bayesExact :=
+  @PLNWorldModelITVHypercube.WMQueryEqSigma.to_WMITVThresholdJudgmentSigma_bayesExact
+
+abbrev queryEq_to_WMITVThresholdJudgmentSigma_walley :=
+  @PLNWorldModelITVHypercube.WMQueryEqSigma.to_WMITVThresholdJudgmentSigma_walley
+
+abbrev applyITV_ofInterval :=
+  @PLNWorldModelITVHypercube.WMRewriteRuleSigma.applyITV_ofInterval
+
+abbrev applyITVThreshold_ofInterval :=
+  @PLNWorldModelITVHypercube.WMRewriteRuleSigma.applyITVThreshold_ofInterval
+
+abbrev applyITV_bayesExact_selector :=
+  @PLNWorldModelITVHypercube.WMRewriteRuleSigma.applyITV_bayesExact_selector
+
+abbrev applyITV_walley_selector :=
+  @PLNWorldModelITVHypercube.WMRewriteRuleSigma.applyITV_walley_selector
+
+abbrev applyITVThreshold_bayesExact_selector :=
+  @PLNWorldModelITVHypercube.WMRewriteRuleSigma.applyITVThreshold_bayesExact_selector
+
+abbrev applyITVThreshold_walley_selector :=
+  @PLNWorldModelITVHypercube.WMRewriteRuleSigma.applyITVThreshold_walley_selector
+
+abbrev applyITVThreshold_bayesExact_lower_selector :=
+  @PLNWorldModelITVHypercube.WMRewriteRuleSigma.applyITVThreshold_bayesExact_lower_selector
+
+abbrev applyITVThreshold_bayesExact_upper_selector :=
+  @PLNWorldModelITVHypercube.WMRewriteRuleSigma.applyITVThreshold_bayesExact_upper_selector
+
+abbrev applyITVThreshold_bayesExact_credibility_selector :=
+  @PLNWorldModelITVHypercube.WMRewriteRuleSigma.applyITVThreshold_bayesExact_credibility_selector
+
+abbrev applyITVThreshold_bayesExact_width_selector :=
+  @PLNWorldModelITVHypercube.WMRewriteRuleSigma.applyITVThreshold_bayesExact_width_selector
+
+abbrev applyITVThreshold_bayesExact_strength_selector :=
+  @PLNWorldModelITVHypercube.WMRewriteRuleSigma.applyITVThreshold_bayesExact_strength_selector
+
+abbrev applyITVThreshold_walley_lower_selector :=
+  @PLNWorldModelITVHypercube.WMRewriteRuleSigma.applyITVThreshold_walley_lower_selector
+
+abbrev applyITVThreshold_walley_upper_selector :=
+  @PLNWorldModelITVHypercube.WMRewriteRuleSigma.applyITVThreshold_walley_upper_selector
+
+abbrev applyITVThreshold_walley_credibility_selector :=
+  @PLNWorldModelITVHypercube.WMRewriteRuleSigma.applyITVThreshold_walley_credibility_selector
+
+abbrev applyITVThreshold_walley_width_selector :=
+  @PLNWorldModelITVHypercube.WMRewriteRuleSigma.applyITVThreshold_walley_width_selector
+
+abbrev applyITVThreshold_walley_strength_selector :=
+  @PLNWorldModelITVHypercube.WMRewriteRuleSigma.applyITVThreshold_walley_strength_selector
+
+/-! ## OSLF/GSLT Hypercube canonical aliases -/
+
+abbrev vertexLanguageDef :=
+  Mettapedia.OSLF.Framework.VertexRewriteRules.vertexLanguageDef
+
+abbrev gslt_forward_transport :=
+  @Mettapedia.OSLF.Framework.HypercubeGSLTFunctor.gslt_forward_transport
+
+abbrev vertexTemporalLanguageDef :=
+  Mettapedia.OSLF.Framework.VertexTemporalRewriteRules.vertexTemporalLanguageDef
+
+abbrev gslt_temporal_forward_transport :=
+  @Mettapedia.OSLF.Framework.HypercubeTemporalGSLTFunctor.gslt_temporal_forward_transport
+
+abbrev hypercube_forward_quantale_coherence_bundle :=
+  @Mettapedia.OSLF.Framework.QuantaleCoherence.hypercube_forward_quantale_coherence_bundle
+
+abbrev hypercube_forward_quantale_coherence_bundle_temporal :=
+  @Mettapedia.OSLF.Framework.QuantaleCoherence.hypercube_forward_quantale_coherence_bundle_temporal
+
+/-- One-call Bayes-exact threshold transport:
+rewrite-preservation followed by typed query-equivalence transport. -/
+theorem applyITVThreshold_then_queryEq_transport_bayesExact
+    {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    {r : WMRewriteRuleSigma State Srt Query} {W : State} {q : Sigma Query}
+    (ctx : CtxOfInterval .bayesExact)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W)
+    (hTau : tau ≤ coord ((semanticsOfInterval .bayesExact).eval ctx (r.derive W)))
+    (hEq : WMQueryEqSigma (State := State) (Srt := Srt) (Query := Query) r.conclusion q) :
+    WMITVThresholdJudgmentSigma
+      (State := State) (Srt := Srt) (Query := Query) (Ctx := CtxOfInterval .bayesExact)
+      (semanticsOfInterval .bayesExact) ctx W q coord tau := by
+  exact queryEq_to_WMITVThresholdJudgmentSigma_bayesExact
+    (State := State) (Srt := Srt) (Query := Query)
+    (q₁ := r.conclusion) (q₂ := q)
+    hEq ctx coord tau
+    (applyITVThreshold_bayesExact_selector
+      (State := State) (Srt := Srt) (Query := Query)
+      (r := r) ctx coord tau hSide hW hTau)
+
+/-- One-call Bayes-normal threshold transport:
+rewrite-preservation followed by typed query-equivalence transport. -/
+theorem applyITVThreshold_then_queryEq_transport_bayesNormal
+    {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    {r : WMRewriteRuleSigma State Srt Query} {W : State} {q : Sigma Query}
+    (ctx : CtxOfInterval .bayesNormal)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W)
+    (hTau : tau ≤ coord ((semanticsOfInterval .bayesNormal).eval ctx (r.derive W)))
+    (hEq : WMQueryEqSigma (State := State) (Srt := Srt) (Query := Query) r.conclusion q) :
+    WMITVThresholdJudgmentSigma
+      (State := State) (Srt := Srt) (Query := Query) (Ctx := CtxOfInterval .bayesNormal)
+      (semanticsOfInterval .bayesNormal) ctx W q coord tau := by
+  exact queryEq_to_WMITVThresholdJudgmentSigmaOfInterval
+    (State := State) (Srt := Srt) (Query := Query)
+    (q₁ := r.conclusion) (q₂ := q)
+    hEq .bayesNormal ctx coord tau
+    (applyITVThreshold_ofInterval
+      (State := State) (Srt := Srt) (Query := Query)
+      (r := r) .bayesNormal ctx coord tau hSide hW hTau)
+
+/-- One-call Walley threshold transport:
+rewrite-preservation followed by typed query-equivalence transport. -/
+theorem applyITVThreshold_then_queryEq_transport_walley
+    {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    {r : WMRewriteRuleSigma State Srt Query} {W : State} {q : Sigma Query}
+    (ctx : CtxOfInterval .walleyIDM)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W)
+    (hTau : tau ≤ coord ((semanticsOfInterval .walleyIDM).eval ctx (r.derive W)))
+    (hEq : WMQueryEqSigma (State := State) (Srt := Srt) (Query := Query) r.conclusion q) :
+    WMITVThresholdJudgmentSigma
+      (State := State) (Srt := Srt) (Query := Query) (Ctx := CtxOfInterval .walleyIDM)
+      (semanticsOfInterval .walleyIDM) ctx W q coord tau := by
+  exact queryEq_to_WMITVThresholdJudgmentSigma_walley
+    (State := State) (Srt := Srt) (Query := Query)
+    (q₁ := r.conclusion) (q₂ := q)
+    hEq ctx coord tau
+    (applyITVThreshold_walley_selector
+      (State := State) (Srt := Srt) (Query := Query)
+      (r := r) ctx coord tau hSide hW hTau)
+
+/-- End-to-end Bayes-exact bundle:
+rewrite/query transport + quantale/selector coherence in one call. -/
+theorem end_to_end_quantale_selector_rewrite_query_threshold_bayesExact
+    {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : BinaryContext)
+    {r : WMRewriteRuleSigma State Srt Query} {W₁ W₂ : State}
+    (queryOfAtom₁ queryOfAtom₂ :
+      String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Sigma Query)
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W₁)
+    (hTau :
+      tau ≤ coord ((semanticsOfInterval .bayesExact).eval ctx (r.derive W₁)))
+    (hEq : WMQueryEqSigma (State := State) (Srt := Srt) (Query := Query)
+      r.conclusion (queryOfAtom₁ a0 p))
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₂ queryOfAtom₂ a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0 p')
+    (H : Finset (Unit × Unit)) :
+    (∀ _ : Unit,
+      Mettapedia.OSLF.Framework.LangMorphism.LangReducesStar L₂ (m.mapTerm p) (m.mapTerm p)) ∧
+    Mettapedia.Algebra.QuantaleWeakness.weakness
+      (Mettapedia.OSLF.Framework.QuantaleCoherence.sourceWeight
+        (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+          (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0)
+        (fun _ : Unit => p)) H =
+      Mettapedia.Algebra.QuantaleWeakness.weakness
+        (Mettapedia.OSLF.Framework.QuantaleCoherence.targetWeight
+          (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+            (State := State) (Srt := Srt) (Query := Query) W₂ queryOfAtom₂ a0)
+          m.mapTerm (fun _ : Unit => p)) H ∧
+    (∀ u : Unit,
+      Mettapedia.OSLF.Formula.sem R
+        (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+          (State := State) (Srt := Srt) (Query := Query) (Ctx := BinaryContext)
+          PLNWorldModel.ITVSemantics.bayesCredibleExact95 ctx W₂ tau coord queryOfAtom₂)
+        (.atom a0) (m.mapTerm ((fun _ : Unit => p) u))) := by
+  have hThresh :=
+    applyITVThreshold_then_queryEq_transport_bayesExact
+      (State := State) (Srt := Srt) (Query := Query)
+      (r := r) (q := queryOfAtom₁ a0 p)
+      ctx coord tau hSide hW hTau hEq
+  rcases hThresh with ⟨_hWq, hTauQ⟩
+  have hTauP :
+      tau ≤ coord (PLNWorldModel.ITVSemantics.bayesCredibleExact95.eval ctx
+        (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+          (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0 p)) := by
+    simpa [PLNWorldModel.WorldModelSigma.queryITV, semanticsOfInterval,
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation] using hTauQ
+  exact
+    PLNWMOSLFBridgeITVTyped.language_quantale_coherence_wmITV_threshold_atom_of_queryEncoders_bayesExact_id
+      (State := State) (Srt := Srt) (Query := Query)
+      (R := R) (m := m) (ctx := ctx)
+      (W₁ := W₁) (W₂ := W₂)
+      (queryOfAtom₁ := queryOfAtom₁) (queryOfAtom₂ := queryOfAtom₂)
+      (a0 := a0) (coord := coord) (tau := tau)
+      (hVal := hVal)
+      (pick := fun _ : Unit => p)
+      (hReach := by
+        intro _u
+        exact Mettapedia.OSLF.Framework.LangMorphism.LangReducesStar.refl p)
+      (H := H)
+      (hTau := by
+        intro _u
+        simpa using hTauP)
+
+/-- End-to-end Bayes-normal bundle:
+rewrite/query transport + quantale/selector coherence in one call. -/
+theorem end_to_end_quantale_selector_rewrite_query_threshold_bayesNormal
+    {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : BinaryContext)
+    {r : WMRewriteRuleSigma State Srt Query} {W₁ W₂ : State}
+    (queryOfAtom₁ queryOfAtom₂ :
+      String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Sigma Query)
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W₁)
+    (hTau :
+      tau ≤ coord ((semanticsOfInterval .bayesNormal).eval ctx (r.derive W₁)))
+    (hEq : WMQueryEqSigma (State := State) (Srt := Srt) (Query := Query)
+      r.conclusion (queryOfAtom₁ a0 p))
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₂ queryOfAtom₂ a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0 p')
+    (H : Finset (Unit × Unit)) :
+    (∀ _ : Unit,
+      Mettapedia.OSLF.Framework.LangMorphism.LangReducesStar L₂ (m.mapTerm p) (m.mapTerm p)) ∧
+    Mettapedia.Algebra.QuantaleWeakness.weakness
+      (Mettapedia.OSLF.Framework.QuantaleCoherence.sourceWeight
+        (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+          (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0)
+        (fun _ : Unit => p)) H =
+      Mettapedia.Algebra.QuantaleWeakness.weakness
+        (Mettapedia.OSLF.Framework.QuantaleCoherence.targetWeight
+          (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+            (State := State) (Srt := Srt) (Query := Query) W₂ queryOfAtom₂ a0)
+          m.mapTerm (fun _ : Unit => p)) H ∧
+    (∀ u : Unit,
+      Mettapedia.OSLF.Formula.sem R
+        (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+          (State := State) (Srt := Srt) (Query := Query) (Ctx := BinaryContext)
+          PLNWorldModel.ITVSemantics.bayesCredible95 ctx W₂ tau coord queryOfAtom₂)
+        (.atom a0) (m.mapTerm ((fun _ : Unit => p) u))) := by
+  have hThresh :=
+    applyITVThreshold_then_queryEq_transport_bayesNormal
+      (State := State) (Srt := Srt) (Query := Query)
+      (r := r) (q := queryOfAtom₁ a0 p)
+      ctx coord tau hSide hW hTau hEq
+  rcases hThresh with ⟨_hWq, hTauQ⟩
+  have hTauP :
+      tau ≤ coord (PLNWorldModel.ITVSemantics.bayesCredible95.eval ctx
+        (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+          (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0 p)) := by
+    simpa [PLNWorldModel.WorldModelSigma.queryITV, semanticsOfInterval,
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation] using hTauQ
+  exact
+    PLNWMOSLFBridgeITVTyped.language_quantale_coherence_wmITV_threshold_atom_of_queryEncoders_id
+      (State := State) (Srt := Srt) (Query := Query)
+      (R := R) (m := m)
+      (itvSem := PLNWorldModel.ITVSemantics.bayesCredible95) (ctx := ctx)
+      (W₁ := W₁) (W₂ := W₂)
+      (queryOfAtom₁ := queryOfAtom₁) (queryOfAtom₂ := queryOfAtom₂)
+      (a0 := a0) (coord := coord) (tau := tau)
+      (hVal := hVal)
+      (pick := fun _ : Unit => p)
+      (hReach := by
+        intro _u
+        exact Mettapedia.OSLF.Framework.LangMorphism.LangReducesStar.refl p)
+      (H := H)
+      (hTau := by
+        intro _u
+        simpa using hTauP)
+
+/-- End-to-end Walley bundle:
+rewrite/query transport + quantale/selector coherence in one call. -/
+theorem end_to_end_quantale_selector_rewrite_query_threshold_walley
+    {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : IDMPredictiveContext)
+    {r : WMRewriteRuleSigma State Srt Query} {W₁ W₂ : State}
+    (queryOfAtom₁ queryOfAtom₂ :
+      String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Sigma Query)
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W₁)
+    (hTau :
+      tau ≤ coord ((semanticsOfInterval .walleyIDM).eval ctx (r.derive W₁)))
+    (hEq : WMQueryEqSigma (State := State) (Srt := Srt) (Query := Query)
+      r.conclusion (queryOfAtom₁ a0 p))
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₂ queryOfAtom₂ a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0 p')
+    (H : Finset (Unit × Unit)) :
+    (∀ _ : Unit,
+      Mettapedia.OSLF.Framework.LangMorphism.LangReducesStar L₂ (m.mapTerm p) (m.mapTerm p)) ∧
+    Mettapedia.Algebra.QuantaleWeakness.weakness
+      (Mettapedia.OSLF.Framework.QuantaleCoherence.sourceWeight
+        (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+          (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0)
+        (fun _ : Unit => p)) H =
+      Mettapedia.Algebra.QuantaleWeakness.weakness
+        (Mettapedia.OSLF.Framework.QuantaleCoherence.targetWeight
+          (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+            (State := State) (Srt := Srt) (Query := Query) W₂ queryOfAtom₂ a0)
+          m.mapTerm (fun _ : Unit => p)) H ∧
+    (∀ u : Unit,
+      Mettapedia.OSLF.Formula.sem R
+        (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+          (State := State) (Srt := Srt) (Query := Query) (Ctx := IDMPredictiveContext)
+          PLNWorldModel.ITVSemantics.walleyIDMPredictive ctx W₂ tau coord queryOfAtom₂)
+        (.atom a0) (m.mapTerm ((fun _ : Unit => p) u))) := by
+  have hThresh :=
+    applyITVThreshold_then_queryEq_transport_walley
+      (State := State) (Srt := Srt) (Query := Query)
+      (r := r) (q := queryOfAtom₁ a0 p)
+      ctx coord tau hSide hW hTau hEq
+  rcases hThresh with ⟨_hWq, hTauQ⟩
+  have hTauP :
+      tau ≤ coord (PLNWorldModel.ITVSemantics.walleyIDMPredictive.eval ctx
+        (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+          (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0 p)) := by
+    simpa [PLNWorldModel.WorldModelSigma.queryITV, semanticsOfInterval,
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation] using hTauQ
+  exact
+    PLNWMOSLFBridgeITVTyped.language_quantale_coherence_wmITV_threshold_atom_of_queryEncoders_walley_id
+      (State := State) (Srt := Srt) (Query := Query)
+      (R := R) (m := m) (ctx := ctx)
+      (W₁ := W₁) (W₂ := W₂)
+      (queryOfAtom₁ := queryOfAtom₁) (queryOfAtom₂ := queryOfAtom₂)
+      (a0 := a0) (coord := coord) (tau := tau)
+      (hVal := hVal)
+      (pick := fun _ : Unit => p)
+      (hReach := by
+        intro _u
+        exact Mettapedia.OSLF.Framework.LangMorphism.LangReducesStar.refl p)
+      (H := H)
+      (hTau := by
+        intro _u
+        simpa using hTauP)
+
+/-- Interval-indexed one-call bundle:
+hypercube selector transport + rewrite/query transport + quantale coherence. -/
+theorem end_to_end_quantale_selector_rewrite_query_threshold_of_interval
+    {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : CtxOfInterval i)
+    {r : WMRewriteRuleSigma State Srt Query} {W₁ W₂ : State}
+    (queryOfAtom₁ queryOfAtom₂ :
+      String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Sigma Query)
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W₁)
+    (hTau :
+      tau ≤ coord ((semanticsOfInterval i).eval ctx (r.derive W₁)))
+    (hEq : WMQueryEqSigma (State := State) (Srt := Srt) (Query := Query)
+      r.conclusion (queryOfAtom₁ a0 p))
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₂ queryOfAtom₂ a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0 p')
+    (H : Finset (Unit × Unit)) :
+    (∀ _ : Unit,
+      Mettapedia.OSLF.Framework.LangMorphism.LangReducesStar L₂ (m.mapTerm p) (m.mapTerm p)) ∧
+    Mettapedia.Algebra.QuantaleWeakness.weakness
+      (Mettapedia.OSLF.Framework.QuantaleCoherence.sourceWeight
+        (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+          (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0)
+        (fun _ : Unit => p)) H =
+      Mettapedia.Algebra.QuantaleWeakness.weakness
+        (Mettapedia.OSLF.Framework.QuantaleCoherence.targetWeight
+          (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+            (State := State) (Srt := Srt) (Query := Query) W₂ queryOfAtom₂ a0)
+          m.mapTerm (fun _ : Unit => p)) H ∧
+    (∀ u : Unit,
+      Mettapedia.OSLF.Formula.sem R
+        (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+          (State := State) (Srt := Srt) (Query := Query)
+          (Ctx := CtxOfInterval i)
+          (semanticsOfInterval i) ctx W₂ tau coord queryOfAtom₂)
+        (.atom a0) (m.mapTerm ((fun _ : Unit => p) u))) := by
+  cases i with
+  | bayesNormal =>
+      simpa [WMIntervalSemantics, CtxOfInterval, semanticsOfInterval] using
+        (end_to_end_quantale_selector_rewrite_query_threshold_bayesNormal
+          (State := State) (Srt := Srt) (Query := Query)
+          (R := R) (m := m) (ctx := ctx)
+          (r := r) (W₁ := W₁) (W₂ := W₂)
+          (queryOfAtom₁ := queryOfAtom₁) (queryOfAtom₂ := queryOfAtom₂)
+          (a0 := a0) (p := p) (coord := coord) (tau := tau)
+          hSide hW hTau hEq hVal H)
+  | bayesExact =>
+      simpa [WMIntervalSemantics, CtxOfInterval, semanticsOfInterval] using
+        (end_to_end_quantale_selector_rewrite_query_threshold_bayesExact
+          (State := State) (Srt := Srt) (Query := Query)
+          (R := R) (m := m) (ctx := ctx)
+          (r := r) (W₁ := W₁) (W₂ := W₂)
+          (queryOfAtom₁ := queryOfAtom₁) (queryOfAtom₂ := queryOfAtom₂)
+          (a0 := a0) (p := p) (coord := coord) (tau := tau)
+          hSide hW hTau hEq hVal H)
+  | walleyIDM =>
+      simpa [WMIntervalSemantics, CtxOfInterval, semanticsOfInterval] using
+        (end_to_end_quantale_selector_rewrite_query_threshold_walley
+          (State := State) (Srt := Srt) (Query := Query)
+          (R := R) (m := m) (ctx := ctx)
+          (r := r) (W₁ := W₁) (W₂ := W₂)
+          (queryOfAtom₁ := queryOfAtom₁) (queryOfAtom₂ := queryOfAtom₂)
+          (a0 := a0) (p := p) (coord := coord) (tau := tau)
+          hSide hW hTau hEq hVal H)
+
+/-- Interval-indexed one-call bundle for genuinely dependent query families.
+This composes rewrite/query ITV transport and quantale coherence in one theorem. -/
+theorem end_to_end_quantale_selector_rewrite_query_threshold_of_interval_dep
+    {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : CtxOfInterval i)
+    {r : WMRewriteRuleSigma State Srt Query} {W₁ W₂ : State}
+    (queryOfAtom₁ queryOfAtom₂ :
+      String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Sigma Query)
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W₁)
+    (hTau :
+      tau ≤ coord ((semanticsOfInterval i).eval ctx (r.derive W₁)))
+    (hEq : WMQueryEqSigma (State := State) (Srt := Srt) (Query := Query)
+      r.conclusion (queryOfAtom₁ a0 p))
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₂ queryOfAtom₂ a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0 p')
+    (H : Finset (Unit × Unit)) :
+    (∀ _ : Unit,
+      Mettapedia.OSLF.Framework.LangMorphism.LangReducesStar L₂ (m.mapTerm p) (m.mapTerm p)) ∧
+    Mettapedia.Algebra.QuantaleWeakness.weakness
+      (Mettapedia.OSLF.Framework.QuantaleCoherence.sourceWeight
+        (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+          (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0)
+        (fun _ : Unit => p)) H =
+      Mettapedia.Algebra.QuantaleWeakness.weakness
+        (Mettapedia.OSLF.Framework.QuantaleCoherence.targetWeight
+          (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+            (State := State) (Srt := Srt) (Query := Query) W₂ queryOfAtom₂ a0)
+          m.mapTerm (fun _ : Unit => p)) H ∧
+    (∀ u : Unit,
+      Mettapedia.OSLF.Formula.sem R
+        (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+          (State := State) (Srt := Srt) (Query := Query)
+          (Ctx := CtxOfInterval i)
+          (semanticsOfInterval i) ctx W₂ tau coord queryOfAtom₂)
+        (.atom a0) (m.mapTerm ((fun _ : Unit => p) u))) := by
+  cases i with
+  | bayesNormal =>
+      have hThresh :=
+        applyITVThreshold_then_queryEq_transport_bayesNormal
+          (State := State) (Srt := Srt) (Query := Query)
+          (r := r) (q := queryOfAtom₁ a0 p)
+          ctx coord tau hSide hW hTau hEq
+      rcases hThresh with ⟨_hWq, hTauQ⟩
+      have hTauP :
+          tau ≤ coord (PLNWorldModel.ITVSemantics.bayesCredible95.eval ctx
+            (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+              (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0 p)) := by
+        simpa [PLNWorldModel.WorldModelSigma.queryITV, semanticsOfInterval,
+          PLNWMOSLFBridgeITVTyped.wmPatternValuation] using hTauQ
+      exact
+        PLNWMOSLFBridgeITVTyped.language_quantale_coherence_wmITV_threshold_atom_of_queryEncoders_bayesNormal_id
+          (State := State) (Srt := Srt) (Query := Query)
+          (R := R) (m := m) (ctx := ctx)
+          (W₁ := W₁) (W₂ := W₂)
+          (queryOfAtom₁ := queryOfAtom₁) (queryOfAtom₂ := queryOfAtom₂)
+          (a0 := a0) (coord := coord) (tau := tau)
+          (hVal := hVal)
+          (pick := fun _ : Unit => p)
+          (hReach := by
+            intro _u
+            exact Mettapedia.OSLF.Framework.LangMorphism.LangReducesStar.refl p)
+          (H := H)
+          (hTau := by
+            intro _u
+            simpa using hTauP)
+  | bayesExact =>
+      have hThresh :=
+        applyITVThreshold_then_queryEq_transport_bayesExact
+          (State := State) (Srt := Srt) (Query := Query)
+          (r := r) (q := queryOfAtom₁ a0 p)
+          ctx coord tau hSide hW hTau hEq
+      rcases hThresh with ⟨_hWq, hTauQ⟩
+      have hTauP :
+          tau ≤ coord (PLNWorldModel.ITVSemantics.bayesCredibleExact95.eval ctx
+            (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+              (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0 p)) := by
+        simpa [PLNWorldModel.WorldModelSigma.queryITV, semanticsOfInterval,
+          PLNWMOSLFBridgeITVTyped.wmPatternValuation] using hTauQ
+      exact
+        PLNWMOSLFBridgeITVTyped.language_quantale_coherence_wmITV_threshold_atom_of_queryEncoders_bayesExact_id
+          (State := State) (Srt := Srt) (Query := Query)
+          (R := R) (m := m) (ctx := ctx)
+          (W₁ := W₁) (W₂ := W₂)
+          (queryOfAtom₁ := queryOfAtom₁) (queryOfAtom₂ := queryOfAtom₂)
+          (a0 := a0) (coord := coord) (tau := tau)
+          (hVal := hVal)
+          (pick := fun _ : Unit => p)
+          (hReach := by
+            intro _u
+            exact Mettapedia.OSLF.Framework.LangMorphism.LangReducesStar.refl p)
+          (H := H)
+          (hTau := by
+            intro _u
+            simpa using hTauP)
+  | walleyIDM =>
+      have hThresh :=
+        applyITVThreshold_then_queryEq_transport_walley
+          (State := State) (Srt := Srt) (Query := Query)
+          (r := r) (q := queryOfAtom₁ a0 p)
+          ctx coord tau hSide hW hTau hEq
+      rcases hThresh with ⟨_hWq, hTauQ⟩
+      have hTauP :
+          tau ≤ coord (PLNWorldModel.ITVSemantics.walleyIDMPredictive.eval ctx
+            (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+              (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0 p)) := by
+        simpa [PLNWorldModel.WorldModelSigma.queryITV, semanticsOfInterval,
+          PLNWMOSLFBridgeITVTyped.wmPatternValuation] using hTauQ
+      exact
+        PLNWMOSLFBridgeITVTyped.language_quantale_coherence_wmITV_threshold_atom_of_queryEncoders_walley_id
+          (State := State) (Srt := Srt) (Query := Query)
+          (R := R) (m := m) (ctx := ctx)
+          (W₁ := W₁) (W₂ := W₂)
+          (queryOfAtom₁ := queryOfAtom₁) (queryOfAtom₂ := queryOfAtom₂)
+          (a0 := a0) (coord := coord) (tau := tau)
+          (hVal := hVal)
+          (pick := fun _ : Unit => p)
+          (hReach := by
+            intro _u
+            exact Mettapedia.OSLF.Framework.LangMorphism.LangReducesStar.refl p)
+          (H := H)
+          (hTau := by
+            intro _u
+            simpa using hTauP)
+
+/-- Canonical structured output type for one-call end-to-end transport/coherence. -/
+abbrev EndToEndQuantaleSelectorRewriteQueryThresholdBundle
+    {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : CtxOfInterval i)
+    (W₁ W₂ : State)
+    (queryOfAtom₁ queryOfAtom₂ :
+      String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Sigma Query)
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (H : Finset (Unit × Unit)) : Prop :=
+  (∀ _ : Unit,
+    Mettapedia.OSLF.Framework.LangMorphism.LangReducesStar L₂ (m.mapTerm p) (m.mapTerm p)) ∧
+  Mettapedia.Algebra.QuantaleWeakness.weakness
+    (Mettapedia.OSLF.Framework.QuantaleCoherence.sourceWeight
+      (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0)
+      (fun _ : Unit => p)) H =
+    Mettapedia.Algebra.QuantaleWeakness.weakness
+      (Mettapedia.OSLF.Framework.QuantaleCoherence.targetWeight
+        (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+          (State := State) (Srt := Srt) (Query := Query) W₂ queryOfAtom₂ a0)
+        m.mapTerm (fun _ : Unit => p)) H ∧
+  (∀ u : Unit,
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := Srt) (Query := Query)
+        (Ctx := CtxOfInterval i)
+        (semanticsOfInterval i) ctx W₂ tau coord queryOfAtom₂)
+      (.atom a0) (m.mapTerm ((fun _ : Unit => p) u)))
+
+/-- Bundle endpoint:
+interval-indexed one-call transport from selector + rewrite/query + quantale coherence. -/
+theorem end_to_end_quantale_selector_rewrite_query_threshold_bundle_of_interval
+    {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : CtxOfInterval i)
+    {r : WMRewriteRuleSigma State Srt Query} {W₁ W₂ : State}
+    (queryOfAtom₁ queryOfAtom₂ :
+      String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Sigma Query)
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W₁)
+    (hTau :
+      tau ≤ coord ((semanticsOfInterval i).eval ctx (r.derive W₁)))
+    (hEq : WMQueryEqSigma (State := State) (Srt := Srt) (Query := Query)
+      r.conclusion (queryOfAtom₁ a0 p))
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₂ queryOfAtom₂ a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0 p')
+    (H : Finset (Unit × Unit)) :
+    EndToEndQuantaleSelectorRewriteQueryThresholdBundle
+      (State := State) (Srt := Srt) (Query := Query)
+      (i := i) (R := R) (m := m) (ctx := ctx)
+      W₁ W₂ queryOfAtom₁ queryOfAtom₂ a0 p coord tau H := by
+  exact end_to_end_quantale_selector_rewrite_query_threshold_of_interval
+    (State := State) (Srt := Srt) (Query := Query)
+    (i := i) (R := R) (m := m) (ctx := ctx)
+    (r := r) (W₁ := W₁) (W₂ := W₂)
+    (queryOfAtom₁ := queryOfAtom₁) (queryOfAtom₂ := queryOfAtom₂)
+    (a0 := a0) (p := p) (coord := coord) (tau := tau)
+    hSide hW hTau hEq hVal H
+
+/-- Bundle endpoint for genuinely dependent query families. -/
+theorem end_to_end_quantale_selector_rewrite_query_threshold_bundle_of_interval_dep
+    {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : CtxOfInterval i)
+    {r : WMRewriteRuleSigma State Srt Query} {W₁ W₂ : State}
+    (queryOfAtom₁ queryOfAtom₂ :
+      String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Sigma Query)
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W₁)
+    (hTau :
+      tau ≤ coord ((semanticsOfInterval i).eval ctx (r.derive W₁)))
+    (hEq : WMQueryEqSigma (State := State) (Srt := Srt) (Query := Query)
+      r.conclusion (queryOfAtom₁ a0 p))
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₂ queryOfAtom₂ a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0 p')
+    (H : Finset (Unit × Unit)) :
+    EndToEndQuantaleSelectorRewriteQueryThresholdBundle
+      (State := State) (Srt := Srt) (Query := Query)
+      (i := i) (R := R) (m := m) (ctx := ctx)
+      W₁ W₂ queryOfAtom₁ queryOfAtom₂ a0 p coord tau H := by
+  exact end_to_end_quantale_selector_rewrite_query_threshold_of_interval_dep
+    (State := State) (Srt := Srt) (Query := Query)
+    (i := i) (R := R) (m := m) (ctx := ctx)
+    (r := r) (W₁ := W₁) (W₂ := W₂)
+    (queryOfAtom₁ := queryOfAtom₁) (queryOfAtom₂ := queryOfAtom₂)
+    (a0 := a0) (p := p) (coord := coord) (tau := tau)
+    hSide hW hTau hEq hVal H
+
+/-- Record-valued end-to-end artifact (not a conjunction):
+selector transport + rewrite/query transport + quantale coherence. -/
+structure EndToEndQuantaleSelectorRewriteQueryThresholdFinalBundle
+    {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : CtxOfInterval i)
+    (W₁ W₂ : State)
+    (queryOfAtom₁ queryOfAtom₂ :
+      String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Sigma Query)
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (H : Finset (Unit × Unit)) : Type where
+  reachability :
+    ∀ _ : Unit,
+      Mettapedia.OSLF.Framework.LangMorphism.LangReducesStar L₂ (m.mapTerm p) (m.mapTerm p)
+  quantale_coherence :
+    Mettapedia.Algebra.QuantaleWeakness.weakness
+      (Mettapedia.OSLF.Framework.QuantaleCoherence.sourceWeight
+        (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+          (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0)
+        (fun _ : Unit => p)) H =
+      Mettapedia.Algebra.QuantaleWeakness.weakness
+        (Mettapedia.OSLF.Framework.QuantaleCoherence.targetWeight
+          (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+            (State := State) (Srt := Srt) (Query := Query) W₂ queryOfAtom₂ a0)
+          m.mapTerm (fun _ : Unit => p)) H
+  truth_transport :
+    ∀ u : Unit,
+      Mettapedia.OSLF.Formula.sem R
+        (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+          (State := State) (Srt := Srt) (Query := Query)
+          (Ctx := CtxOfInterval i)
+          (semanticsOfInterval i) ctx W₂ tau coord queryOfAtom₂)
+        (.atom a0) (m.mapTerm ((fun _ : Unit => p) u))
+
+/-- Final one-call record-valued endpoint (interval-indexed). -/
+def end_to_end_quantale_selector_rewrite_query_threshold_finalBundle_of_interval
+    {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : CtxOfInterval i)
+    {r : WMRewriteRuleSigma State Srt Query} {W₁ W₂ : State}
+    (queryOfAtom₁ queryOfAtom₂ :
+      String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Sigma Query)
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W₁)
+    (hTau :
+      tau ≤ coord ((semanticsOfInterval i).eval ctx (r.derive W₁)))
+    (hEq : WMQueryEqSigma (State := State) (Srt := Srt) (Query := Query)
+      r.conclusion (queryOfAtom₁ a0 p))
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₂ queryOfAtom₂ a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0 p')
+    (H : Finset (Unit × Unit)) :
+    EndToEndQuantaleSelectorRewriteQueryThresholdFinalBundle
+      (State := State) (Srt := Srt) (Query := Query)
+      (i := i) (R := R) (m := m) (ctx := ctx)
+      W₁ W₂ queryOfAtom₁ queryOfAtom₂ a0 p coord tau H := by
+  rcases end_to_end_quantale_selector_rewrite_query_threshold_bundle_of_interval
+      (State := State) (Srt := Srt) (Query := Query)
+      (i := i) (R := R) (m := m) (ctx := ctx)
+      (r := r) (W₁ := W₁) (W₂ := W₂)
+      (queryOfAtom₁ := queryOfAtom₁) (queryOfAtom₂ := queryOfAtom₂)
+      (a0 := a0) (p := p) (coord := coord) (tau := tau)
+      hSide hW hTau hEq hVal H with ⟨hReach, hRest⟩
+  rcases hRest with ⟨hWeak, hTruth⟩
+  exact
+    { reachability := hReach
+      quantale_coherence := hWeak
+      truth_transport := hTruth }
+
+/-- Final one-call record-valued endpoint for dependent query families. -/
+def end_to_end_quantale_selector_rewrite_query_threshold_finalBundle_of_interval_dep
+    {State Srt : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : CtxOfInterval i)
+    {r : WMRewriteRuleSigma State Srt Query} {W₁ W₂ : State}
+    (queryOfAtom₁ queryOfAtom₂ :
+      String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Sigma Query)
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W₁)
+    (hTau :
+      tau ≤ coord ((semanticsOfInterval i).eval ctx (r.derive W₁)))
+    (hEq : WMQueryEqSigma (State := State) (Srt := Srt) (Query := Query)
+      r.conclusion (queryOfAtom₁ a0 p))
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₂ queryOfAtom₂ a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := Srt) (Query := Query) W₁ queryOfAtom₁ a0 p')
+    (H : Finset (Unit × Unit)) :
+    EndToEndQuantaleSelectorRewriteQueryThresholdFinalBundle
+      (State := State) (Srt := Srt) (Query := Query)
+      (i := i) (R := R) (m := m) (ctx := ctx)
+      W₁ W₂ queryOfAtom₁ queryOfAtom₂ a0 p coord tau H := by
+  rcases end_to_end_quantale_selector_rewrite_query_threshold_bundle_of_interval_dep
+      (State := State) (Srt := Srt) (Query := Query)
+      (i := i) (R := R) (m := m) (ctx := ctx)
+      (r := r) (W₁ := W₁) (W₂ := W₂)
+      (queryOfAtom₁ := queryOfAtom₁) (queryOfAtom₂ := queryOfAtom₂)
+      (a0 := a0) (p := p) (coord := coord) (tau := tau)
+      hSide hW hTau hEq hVal H with ⟨hReach, hRest⟩
+  rcases hRest with ⟨hWeak, hTruth⟩
+  exact
+    { reachability := hReach
+      quantale_coherence := hWeak
+      truth_transport := hTruth }
+
+/-! ## Intensional Inheritance (Chapter 12) canonical endpoints -/
+
+abbrev InheritanceSort :=
+  PLNIntensionalWorldModel.InheritanceSort
+
+abbrev InheritanceQueryFamily :=
+  PLNIntensionalWorldModel.InheritanceQueryFamily
+
+abbrev InheritanceQueryBuilder :=
+  PLNIntensionalWorldModel.InheritanceQueryBuilder
+
+/-- Universal-mixture prior `Pξ(W|x)` used by intensional inheritance bridges. -/
+noncomputable abbrev priorFromConditional :=
+  Mettapedia.Logic.IntensionalInheritance.priorFromConditional
+
+/-- Universal-mixture extensional term `Pξ(W|F,x)` used by intensional bridges. -/
+noncomputable abbrev extensionalFromConditional :=
+  Mettapedia.Logic.IntensionalInheritance.extensionalFromConditional
+
+/-- Universal-mixture intensional term `log₂(Pξ(W|F,x)/Pξ(W|x))`. -/
+noncomputable abbrev intensionalFromConditional :=
+  Mettapedia.Logic.IntensionalInheritance.intensionalFromConditional
+
+abbrev intensionalFromConditional_eq_log2_ratio :=
+  @Mettapedia.Logic.IntensionalInheritance.intensionalFromConditional_eq_log2_ratio
+
+abbrev intensionalFromXiSemimeasure_eq_log2_ratio :=
+  @Mettapedia.Logic.IntensionalInheritance.intensionalFromXiSemimeasure_eq_log2_ratio
+
+abbrev intensionalFromXiGeom_eq_log2_ratio :=
+  @Mettapedia.Logic.IntensionalInheritance.intensionalFromXiGeom_eq_log2_ratio
+
+/-- Pattern-level mixed inheritance atom-query encoder. -/
+def patternInheritanceQueryOfAtom_mixed
+    {Query : Type}
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query) :
+    String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Sigma (InheritanceQueryFamily Query) :=
+  fun a p => PLNIntensionalWorldModel.InheritanceQueryBuilder.mixedQ enc
+    (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a) p
+
+/-- Mixed (extensional+ASSOC) rewrite-to-threshold endpoint under selected ITV semantics. -/
+theorem intensional_mixed_assoc_threshold_atom_of_interval
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (ctx : CtxOfInterval i)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (combine : Evidence → Evidence → Evidence)
+    (Side : Prop)
+    (hSound : Side →
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.MixedPolicyAssoc
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc combine)
+    (W : State)
+    (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : Side)
+    (hTau : tau ≤ coord ((semanticsOfInterval i).eval ctx
+      (combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.intensionalAssocEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)))) :
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        (Ctx := CtxOfInterval i)
+        (semanticsOfInterval i) ctx W tau coord
+        (patternInheritanceQueryOfAtom_mixed enc))
+      (.atom a0) p := by
+  simpa [patternInheritanceQueryOfAtom_mixed] using
+    (PLNWMOSLFBridgeITVTyped.wmRewriteRuleSigma_itv_threshold_atom
+      (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+      (Ctx := CtxOfInterval i)
+      R (semanticsOfInterval i) ctx tau coord
+      (r := PLNIntensionalWorldModel.InheritanceQueryBuilder.mixedRewriteRule_of_assoc
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query)
+        enc combine Side hSound (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+      hSide W
+      (queryOfAtom := patternInheritanceQueryOfAtom_mixed enc)
+      (a := a0) (p := p) (hEnc := rfl) hTau)
+
+/-- Composed endpoint: Solomonoff log-ratio bridge + mixed-ASSOC threshold transport. -/
+theorem intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (ctx : CtxOfInterval i)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (combine : Evidence → Evidence → Evidence)
+    (Side : Prop)
+    (hSound : Side →
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.MixedPolicyAssoc
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc combine)
+    (W : State)
+    (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : Side)
+    (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure)
+    (x F Wc : Mettapedia.Logic.SolomonoffPrior.BinString)
+    (liftScore : ℝ → Evidence)
+    (hAssocLift :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.intensionalAssocEvidence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) W enc
+        (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
+      liftScore (intensionalFromConditional ξ x F Wc))
+    (hPrior : 0 < priorFromConditional ξ x Wc)
+    (hExt : 0 < extensionalFromConditional ξ x F Wc)
+    (hTau : tau ≤ coord ((semanticsOfInterval i).eval ctx
+      (combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (liftScore
+          (Real.log
+            (extensionalFromConditional ξ x F Wc / priorFromConditional ξ x Wc) /
+            Real.log 2))))) :
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        (Ctx := CtxOfInterval i)
+        (semanticsOfInterval i) ctx W tau coord
+        (patternInheritanceQueryOfAtom_mixed enc))
+      (.atom a0) p := by
+  have hLog :
+      intensionalFromConditional ξ x F Wc =
+        Real.log
+          (extensionalFromConditional ξ x F Wc / priorFromConditional ξ x Wc) /
+        Real.log 2 :=
+    intensionalFromConditional_eq_log2_ratio ξ x F Wc hPrior hExt
+  have hTau' :
+      tau ≤ coord ((semanticsOfInterval i).eval ctx
+        (combine
+          (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+            (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+            (Query := Query) W enc
+            (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+          (PLNIntensionalWorldModel.InheritanceQueryBuilder.intensionalAssocEvidence
+            (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+            (Query := Query) W enc
+            (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p))) := by
+    simpa [hAssocLift, hLog] using hTau
+  exact intensional_mixed_assoc_threshold_atom_of_interval
+    (State := State) (Query := Query)
+    i R ctx enc combine Side hSound W a0 p coord tau hSide hTau'
+
+/-- Semantic form of the Solomonoff-composed endpoint:
+consumes ASSOC-score correspondences instead of a direct `hAssocLift`. -/
+theorem intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (ctx : CtxOfInterval i)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (combine : Evidence → Evidence → Evidence)
+    (assocScore : State → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → ℝ)
+    (scoreToEvidence : ℝ → Evidence)
+    (hMixed :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.MixedAssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc combine assocScore scoreToEvidence)
+    (hAssoc :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.AssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc assocScore scoreToEvidence)
+    (W : State)
+    (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure)
+    (x F Wc : Mettapedia.Logic.SolomonoffPrior.BinString)
+    (hAssocScore :
+      assocScore W (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
+        intensionalFromConditional ξ x F Wc)
+    (hPrior : 0 < priorFromConditional ξ x Wc)
+    (hExt : 0 < extensionalFromConditional ξ x F Wc)
+    (hTau : tau ≤ coord ((semanticsOfInterval i).eval ctx
+      (combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ x F Wc / priorFromConditional ξ x Wc) /
+            Real.log 2))))) :
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        (Ctx := CtxOfInterval i)
+        (semanticsOfInterval i) ctx W tau coord
+        (patternInheritanceQueryOfAtom_mixed enc))
+      (.atom a0) p := by
+  have hSound :
+      True →
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.MixedPolicyAssoc
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc combine := by
+    intro _
+    exact
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.mixedPolicyAssoc_of_assocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc combine assocScore scoreToEvidence hMixed hAssoc
+  have hAssocLift :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.intensionalAssocEvidence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) W enc
+        (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
+      scoreToEvidence (intensionalFromConditional ξ x F Wc) := by
+    calc
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.intensionalAssocEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p
+          = scoreToEvidence
+              (assocScore W (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p) :=
+            hAssoc W (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p
+      _ = scoreToEvidence (intensionalFromConditional ξ x F Wc) := by
+            simp [hAssocScore]
+  exact intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff
+    (State := State) (Query := Query)
+    i R ctx enc combine True hSound W a0 p coord tau trivial
+    ξ x F Wc scoreToEvidence hAssocLift hPrior hExt hTau
+
+/-- Canonical score-model alias for intensional inheritance channels. -/
+abbrev InheritanceIntensionalScoreModel
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query) :=
+  PLNIntensionalWorldModel.InheritanceQueryBuilder.IntensionalScoreModel
+    (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern) (Query := Query) enc
+
+/-- Structured Solomonoff context used to tie query-level ASSOC scores to
+universal-mixture intensional inheritance. -/
+structure SolomonoffAssocContext where
+  x : Mettapedia.Logic.SolomonoffPrior.BinString
+  F : Mettapedia.Logic.SolomonoffPrior.BinString
+  Wc : Mettapedia.Logic.SolomonoffPrior.BinString
+
+/-- Canonical model eliminating ad hoc per-query ASSOC-score bridge assumptions. -/
+structure SolomonoffAssocLinkedModel
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query) where
+  scoreModel : InheritanceIntensionalScoreModel (State := State) (Query := Query) enc
+  contextOf : State → String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+    Mettapedia.Logic.SolomonoffInduction.Semimeasure → SolomonoffAssocContext
+  assocScore_context :
+    ∀ (W : State) (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+      (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure),
+      scoreModel.assocScore W (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
+        intensionalFromConditional ξ
+          (contextOf W a0 p ξ).x
+          (contextOf W a0 p ξ).F
+          (contextOf W a0 p ξ).Wc
+
+/-- Model-based semantic Solomonoff endpoint:
+same theorem as `..._semantic`, but consumes a canonical score model. -/
+theorem intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic_model
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (ctx : CtxOfInterval i)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (combine : Evidence → Evidence → Evidence)
+    (model : InheritanceIntensionalScoreModel (State := State) (Query := Query) enc)
+    (hMixed :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.MixedAssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc combine model.assocScore model.scoreToEvidence)
+    (W : State)
+    (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure)
+    (x F Wc : Mettapedia.Logic.SolomonoffPrior.BinString)
+    (hAssocScore :
+      model.assocScore W (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
+        intensionalFromConditional ξ x F Wc)
+    (hPrior : 0 < priorFromConditional ξ x Wc)
+    (hExt : 0 < extensionalFromConditional ξ x F Wc)
+    (hTau : tau ≤ coord ((semanticsOfInterval i).eval ctx
+      (combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (model.scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ x F Wc / priorFromConditional ξ x Wc) /
+            Real.log 2))))) :
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        (Ctx := CtxOfInterval i)
+        (semanticsOfInterval i) ctx W tau coord
+        (patternInheritanceQueryOfAtom_mixed enc))
+      (.atom a0) p :=
+  intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic
+    (State := State) (Query := Query)
+    i R ctx enc combine model.assocScore model.scoreToEvidence
+    hMixed model.assoc_sound
+    W a0 p coord tau ξ x F Wc hAssocScore hPrior hExt hTau
+
+/-- Linked semantic Solomonoff endpoint with no explicit per-query
+`hAssocScore` argument: the context linker carries that law canonically. -/
+theorem intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic_linked
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (ctx : CtxOfInterval i)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (combine : Evidence → Evidence → Evidence)
+    (model : SolomonoffAssocLinkedModel (State := State) (Query := Query) enc)
+    (hMixed :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.MixedAssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc combine
+        model.scoreModel.assocScore model.scoreModel.scoreToEvidence)
+    (W : State)
+    (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure)
+    (hPrior : 0 < priorFromConditional ξ
+      (model.contextOf W a0 p ξ).x
+      (model.contextOf W a0 p ξ).Wc)
+    (hExt : 0 < extensionalFromConditional ξ
+      (model.contextOf W a0 p ξ).x
+      (model.contextOf W a0 p ξ).F
+      (model.contextOf W a0 p ξ).Wc)
+    (hTau : tau ≤ coord ((semanticsOfInterval i).eval ctx
+      (combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (model.scoreModel.scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ
+              (model.contextOf W a0 p ξ).x
+              (model.contextOf W a0 p ξ).F
+              (model.contextOf W a0 p ξ).Wc /
+             priorFromConditional ξ
+              (model.contextOf W a0 p ξ).x
+              (model.contextOf W a0 p ξ).Wc) /
+            Real.log 2))))) :
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        (Ctx := CtxOfInterval i)
+        (semanticsOfInterval i) ctx W tau coord
+        (patternInheritanceQueryOfAtom_mixed enc))
+      (.atom a0) p := by
+  let c := model.contextOf W a0 p ξ
+  have hAssocScore :
+      model.scoreModel.assocScore W (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
+        intensionalFromConditional ξ c.x c.F c.Wc := by
+    simpa [c] using model.assocScore_context W a0 p ξ
+  have hPrior' : 0 < priorFromConditional ξ c.x c.Wc := by
+    simpa [c] using hPrior
+  have hExt' : 0 < extensionalFromConditional ξ c.x c.F c.Wc := by
+    simpa [c] using hExt
+  have hTau' : tau ≤ coord ((semanticsOfInterval i).eval ctx
+      (combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (model.scoreModel.scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ c.x c.F c.Wc / priorFromConditional ξ c.x c.Wc) /
+            Real.log 2)))) := by
+    simpa [c] using hTau
+  exact intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic_model
+    (State := State) (Query := Query)
+    i R ctx enc combine model.scoreModel hMixed
+    W a0 p coord tau ξ c.x c.F c.Wc hAssocScore hPrior' hExt' hTau'
+
+/-- Bayes-normal selector wrapper for semantic Solomonoff-composed intensional threshold transport. -/
+theorem intensional_mixed_assoc_threshold_atom_bayesNormal_of_solomonoff_semantic
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (ctx : CtxOfInterval .bayesNormal)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (combine : Evidence → Evidence → Evidence)
+    (assocScore : State → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → ℝ)
+    (scoreToEvidence : ℝ → Evidence)
+    (hMixed :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.MixedAssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc combine assocScore scoreToEvidence)
+    (hAssoc :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.AssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc assocScore scoreToEvidence)
+    (W : State)
+    (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure)
+    (x F Wc : Mettapedia.Logic.SolomonoffPrior.BinString)
+    (hAssocScore :
+      assocScore W (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
+        intensionalFromConditional ξ x F Wc)
+    (hPrior : 0 < priorFromConditional ξ x Wc)
+    (hExt : 0 < extensionalFromConditional ξ x F Wc)
+    (hTau : tau ≤ coord ((semanticsOfInterval .bayesNormal).eval ctx
+      (combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ x F Wc / priorFromConditional ξ x Wc) /
+            Real.log 2))))) :
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        (Ctx := CtxOfInterval .bayesNormal)
+        (semanticsOfInterval .bayesNormal) ctx W tau coord
+        (patternInheritanceQueryOfAtom_mixed enc))
+      (.atom a0) p :=
+  intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic
+    (State := State) (Query := Query)
+    .bayesNormal R ctx enc combine assocScore scoreToEvidence hMixed hAssoc
+    W a0 p coord tau ξ x F Wc hAssocScore hPrior hExt hTau
+
+/-- Bayes-exact selector wrapper for semantic Solomonoff-composed intensional threshold transport. -/
+theorem intensional_mixed_assoc_threshold_atom_bayesExact_of_solomonoff_semantic
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (ctx : CtxOfInterval .bayesExact)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (combine : Evidence → Evidence → Evidence)
+    (assocScore : State → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → ℝ)
+    (scoreToEvidence : ℝ → Evidence)
+    (hMixed :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.MixedAssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc combine assocScore scoreToEvidence)
+    (hAssoc :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.AssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc assocScore scoreToEvidence)
+    (W : State)
+    (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure)
+    (x F Wc : Mettapedia.Logic.SolomonoffPrior.BinString)
+    (hAssocScore :
+      assocScore W (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
+        intensionalFromConditional ξ x F Wc)
+    (hPrior : 0 < priorFromConditional ξ x Wc)
+    (hExt : 0 < extensionalFromConditional ξ x F Wc)
+    (hTau : tau ≤ coord ((semanticsOfInterval .bayesExact).eval ctx
+      (combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ x F Wc / priorFromConditional ξ x Wc) /
+            Real.log 2))))) :
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        (Ctx := CtxOfInterval .bayesExact)
+        (semanticsOfInterval .bayesExact) ctx W tau coord
+        (patternInheritanceQueryOfAtom_mixed enc))
+      (.atom a0) p :=
+  intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic
+    (State := State) (Query := Query)
+    .bayesExact R ctx enc combine assocScore scoreToEvidence hMixed hAssoc
+    W a0 p coord tau ξ x F Wc hAssocScore hPrior hExt hTau
+
+/-- Walley selector wrapper for semantic Solomonoff-composed intensional threshold transport. -/
+theorem intensional_mixed_assoc_threshold_atom_walley_of_solomonoff_semantic
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (ctx : CtxOfInterval .walleyIDM)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (combine : Evidence → Evidence → Evidence)
+    (assocScore : State → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → ℝ)
+    (scoreToEvidence : ℝ → Evidence)
+    (hMixed :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.MixedAssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc combine assocScore scoreToEvidence)
+    (hAssoc :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.AssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc assocScore scoreToEvidence)
+    (W : State)
+    (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure)
+    (x F Wc : Mettapedia.Logic.SolomonoffPrior.BinString)
+    (hAssocScore :
+      assocScore W (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
+        intensionalFromConditional ξ x F Wc)
+    (hPrior : 0 < priorFromConditional ξ x Wc)
+    (hExt : 0 < extensionalFromConditional ξ x F Wc)
+    (hTau : tau ≤ coord ((semanticsOfInterval .walleyIDM).eval ctx
+      (combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ x F Wc / priorFromConditional ξ x Wc) /
+            Real.log 2))))) :
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        (Ctx := CtxOfInterval .walleyIDM)
+        (semanticsOfInterval .walleyIDM) ctx W tau coord
+        (patternInheritanceQueryOfAtom_mixed enc))
+      (.atom a0) p :=
+  intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic
+    (State := State) (Query := Query)
+    .walleyIDM R ctx enc combine assocScore scoreToEvidence hMixed hAssoc
+    W a0 p coord tau ξ x F Wc hAssocScore hPrior hExt hTau
+
+/-- Lower-coordinate specialization of the semantic Solomonoff-composed endpoint. -/
+theorem intensional_mixed_assoc_lower_threshold_atom_of_interval_of_solomonoff_semantic
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (ctx : CtxOfInterval i)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (combine : Evidence → Evidence → Evidence)
+    (assocScore : State → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → ℝ)
+    (scoreToEvidence : ℝ → Evidence)
+    (hMixed :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.MixedAssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc combine assocScore scoreToEvidence)
+    (hAssoc :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.AssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc assocScore scoreToEvidence)
+    (W : State)
+    (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (tau : ℝ)
+    (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure)
+    (x F Wc : Mettapedia.Logic.SolomonoffPrior.BinString)
+    (hAssocScore :
+      assocScore W (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
+        intensionalFromConditional ξ x F Wc)
+    (hPrior : 0 < priorFromConditional ξ x Wc)
+    (hExt : 0 < extensionalFromConditional ξ x F Wc)
+    (hTau : tau ≤ ((semanticsOfInterval i).eval ctx
+      (combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ x F Wc / priorFromConditional ξ x Wc) /
+            Real.log 2)))).lower) :
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        (Ctx := CtxOfInterval i)
+        (semanticsOfInterval i) ctx W tau (fun itv => itv.lower)
+        (patternInheritanceQueryOfAtom_mixed enc))
+      (.atom a0) p :=
+  intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic
+    (State := State) (Query := Query)
+    i R ctx enc combine assocScore scoreToEvidence hMixed hAssoc
+    W a0 p (fun itv => itv.lower) tau ξ x F Wc hAssocScore hPrior hExt hTau
+
+/-- Upper-coordinate specialization of the semantic Solomonoff-composed endpoint. -/
+theorem intensional_mixed_assoc_upper_threshold_atom_of_interval_of_solomonoff_semantic
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (ctx : CtxOfInterval i)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (combine : Evidence → Evidence → Evidence)
+    (assocScore : State → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → ℝ)
+    (scoreToEvidence : ℝ → Evidence)
+    (hMixed :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.MixedAssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc combine assocScore scoreToEvidence)
+    (hAssoc :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.AssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc assocScore scoreToEvidence)
+    (W : State)
+    (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (tau : ℝ)
+    (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure)
+    (x F Wc : Mettapedia.Logic.SolomonoffPrior.BinString)
+    (hAssocScore :
+      assocScore W (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
+        intensionalFromConditional ξ x F Wc)
+    (hPrior : 0 < priorFromConditional ξ x Wc)
+    (hExt : 0 < extensionalFromConditional ξ x F Wc)
+    (hTau : tau ≤ ((semanticsOfInterval i).eval ctx
+      (combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ x F Wc / priorFromConditional ξ x Wc) /
+            Real.log 2)))).upper) :
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        (Ctx := CtxOfInterval i)
+        (semanticsOfInterval i) ctx W tau (fun itv => itv.upper)
+        (patternInheritanceQueryOfAtom_mixed enc))
+      (.atom a0) p :=
+  intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic
+    (State := State) (Query := Query)
+    i R ctx enc combine assocScore scoreToEvidence hMixed hAssoc
+    W a0 p (fun itv => itv.upper) tau ξ x F Wc hAssocScore hPrior hExt hTau
+
+/-- Credibility-coordinate specialization of the semantic Solomonoff-composed endpoint. -/
+theorem intensional_mixed_assoc_credibility_threshold_atom_of_interval_of_solomonoff_semantic
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (ctx : CtxOfInterval i)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (combine : Evidence → Evidence → Evidence)
+    (assocScore : State → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → ℝ)
+    (scoreToEvidence : ℝ → Evidence)
+    (hMixed :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.MixedAssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc combine assocScore scoreToEvidence)
+    (hAssoc :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.AssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc assocScore scoreToEvidence)
+    (W : State)
+    (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (tau : ℝ)
+    (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure)
+    (x F Wc : Mettapedia.Logic.SolomonoffPrior.BinString)
+    (hAssocScore :
+      assocScore W (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
+        intensionalFromConditional ξ x F Wc)
+    (hPrior : 0 < priorFromConditional ξ x Wc)
+    (hExt : 0 < extensionalFromConditional ξ x F Wc)
+    (hTau : tau ≤ ((semanticsOfInterval i).eval ctx
+      (combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ x F Wc / priorFromConditional ξ x Wc) /
+            Real.log 2)))).credibility) :
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        (Ctx := CtxOfInterval i)
+        (semanticsOfInterval i) ctx W tau (fun itv => itv.credibility)
+        (patternInheritanceQueryOfAtom_mixed enc))
+      (.atom a0) p :=
+  intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic
+    (State := State) (Query := Query)
+    i R ctx enc combine assocScore scoreToEvidence hMixed hAssoc
+    W a0 p (fun itv => itv.credibility) tau ξ x F Wc hAssocScore hPrior hExt hTau
+
+/-- Width-coordinate specialization of the semantic Solomonoff-composed endpoint. -/
+theorem intensional_mixed_assoc_width_threshold_atom_of_interval_of_solomonoff_semantic
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (ctx : CtxOfInterval i)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (combine : Evidence → Evidence → Evidence)
+    (assocScore : State → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → ℝ)
+    (scoreToEvidence : ℝ → Evidence)
+    (hMixed :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.MixedAssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc combine assocScore scoreToEvidence)
+    (hAssoc :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.AssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc assocScore scoreToEvidence)
+    (W : State)
+    (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (tau : ℝ)
+    (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure)
+    (x F Wc : Mettapedia.Logic.SolomonoffPrior.BinString)
+    (hAssocScore :
+      assocScore W (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
+        intensionalFromConditional ξ x F Wc)
+    (hPrior : 0 < priorFromConditional ξ x Wc)
+    (hExt : 0 < extensionalFromConditional ξ x F Wc)
+    (hTau : tau ≤ ((semanticsOfInterval i).eval ctx
+      (combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ x F Wc / priorFromConditional ξ x Wc) /
+            Real.log 2)))).width) :
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        (Ctx := CtxOfInterval i)
+        (semanticsOfInterval i) ctx W tau (fun itv => itv.width)
+        (patternInheritanceQueryOfAtom_mixed enc))
+      (.atom a0) p :=
+  intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic
+    (State := State) (Query := Query)
+    i R ctx enc combine assocScore scoreToEvidence hMixed hAssoc
+    W a0 p (fun itv => itv.width) tau ξ x F Wc hAssocScore hPrior hExt hTau
+
+/-- Strength-coordinate specialization of the semantic Solomonoff-composed endpoint. -/
+theorem intensional_mixed_assoc_strength_threshold_atom_of_interval_of_solomonoff_semantic
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (ctx : CtxOfInterval i)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (combine : Evidence → Evidence → Evidence)
+    (assocScore : State → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → ℝ)
+    (scoreToEvidence : ℝ → Evidence)
+    (hMixed :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.MixedAssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc combine assocScore scoreToEvidence)
+    (hAssoc :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.AssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc assocScore scoreToEvidence)
+    (W : State)
+    (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (tau : ℝ)
+    (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure)
+    (x F Wc : Mettapedia.Logic.SolomonoffPrior.BinString)
+    (hAssocScore :
+      assocScore W (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
+        intensionalFromConditional ξ x F Wc)
+    (hPrior : 0 < priorFromConditional ξ x Wc)
+    (hExt : 0 < extensionalFromConditional ξ x F Wc)
+    (hTau : tau ≤ ((semanticsOfInterval i).eval ctx
+      (combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ x F Wc / priorFromConditional ξ x Wc) /
+            Real.log 2)))).strength) :
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        (Ctx := CtxOfInterval i)
+        (semanticsOfInterval i) ctx W tau (fun itv => itv.strength)
+        (patternInheritanceQueryOfAtom_mixed enc))
+      (.atom a0) p :=
+  intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic
+    (State := State) (Query := Query)
+    i R ctx enc combine assocScore scoreToEvidence hMixed hAssoc
+    W a0 p (fun itv => itv.strength) tau ξ x F Wc hAssocScore hPrior hExt hTau
+
+/-- Inheritance-sort one-call bundle endpoint (generic query encoder). -/
+theorem end_to_end_quantale_selector_rewrite_query_threshold_bundle_inheritance_of_interval
+    {State : Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State InheritanceSort (InheritanceQueryFamily Pattern)]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : CtxOfInterval i)
+    {r : WMRewriteRuleSigma State InheritanceSort (InheritanceQueryFamily Pattern)} {W₁ W₂ : State}
+    (queryOfAtom : String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Sigma (InheritanceQueryFamily Pattern))
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W₁)
+    (hTau : tau ≤ coord ((semanticsOfInterval i).eval ctx (r.derive W₁)))
+    (hEq : WMQueryEqSigma
+      (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+      r.conclusion (queryOfAtom a0 p))
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+        W₂ queryOfAtom a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+        W₁ queryOfAtom a0 p')
+    (H : Finset (Unit × Unit)) :
+    EndToEndQuantaleSelectorRewriteQueryThresholdBundle
+      (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+      (i := i) (R := R) (m := m) (ctx := ctx)
+      W₁ W₂ queryOfAtom queryOfAtom a0 p coord tau H := by
+  exact end_to_end_quantale_selector_rewrite_query_threshold_bundle_of_interval
+    (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+    (i := i) (R := R) (m := m) (ctx := ctx)
+    (r := r) (W₁ := W₁) (W₂ := W₂)
+    (queryOfAtom₁ := queryOfAtom) (queryOfAtom₂ := queryOfAtom)
+    (a0 := a0) (p := p) (coord := coord) (tau := tau)
+    hSide hW hTau hEq hVal H
+
+/-- Inheritance-sort one-call final-bundle endpoint (generic query encoder). -/
+def end_to_end_quantale_selector_rewrite_query_threshold_finalBundle_inheritance_of_interval
+    {State : Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State InheritanceSort (InheritanceQueryFamily Pattern)]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : CtxOfInterval i)
+    {r : WMRewriteRuleSigma State InheritanceSort (InheritanceQueryFamily Pattern)} {W₁ W₂ : State}
+    (queryOfAtom : String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Sigma (InheritanceQueryFamily Pattern))
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W₁)
+    (hTau : tau ≤ coord ((semanticsOfInterval i).eval ctx (r.derive W₁)))
+    (hEq : WMQueryEqSigma
+      (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+      r.conclusion (queryOfAtom a0 p))
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+        W₂ queryOfAtom a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+        W₁ queryOfAtom a0 p')
+    (H : Finset (Unit × Unit)) :
+    EndToEndQuantaleSelectorRewriteQueryThresholdFinalBundle
+      (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+      (i := i) (R := R) (m := m) (ctx := ctx)
+      W₁ W₂ queryOfAtom queryOfAtom a0 p coord tau H :=
+  end_to_end_quantale_selector_rewrite_query_threshold_finalBundle_of_interval
+    (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+    (i := i) (R := R) (m := m) (ctx := ctx)
+    (r := r) (W₁ := W₁) (W₂ := W₂)
+    (queryOfAtom₁ := queryOfAtom) (queryOfAtom₂ := queryOfAtom)
+    (a0 := a0) (p := p) (coord := coord) (tau := tau)
+    hSide hW hTau hEq hVal H
+
+/-- Inheritance-sort final-bundle endpoint specialized to Bayes normal semantics. -/
+def end_to_end_quantale_selector_rewrite_query_threshold_finalBundle_inheritance_bayesNormal
+    {State : Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State InheritanceSort (InheritanceQueryFamily Pattern)]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : CtxOfInterval .bayesNormal)
+    {r : WMRewriteRuleSigma State InheritanceSort (InheritanceQueryFamily Pattern)} {W₁ W₂ : State}
+    (queryOfAtom : String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Sigma (InheritanceQueryFamily Pattern))
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W₁)
+    (hTau : tau ≤ coord ((semanticsOfInterval .bayesNormal).eval ctx (r.derive W₁)))
+    (hEq : WMQueryEqSigma
+      (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+      r.conclusion (queryOfAtom a0 p))
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+        W₂ queryOfAtom a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+        W₁ queryOfAtom a0 p')
+    (H : Finset (Unit × Unit)) :
+    EndToEndQuantaleSelectorRewriteQueryThresholdFinalBundle
+      (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+      (i := .bayesNormal) (R := R) (m := m) (ctx := ctx)
+      W₁ W₂ queryOfAtom queryOfAtom a0 p coord tau H :=
+  end_to_end_quantale_selector_rewrite_query_threshold_finalBundle_inheritance_of_interval
+    (State := State) (i := .bayesNormal) (R := R) (m := m) (ctx := ctx)
+    (r := r) (W₁ := W₁) (W₂ := W₂)
+    (queryOfAtom := queryOfAtom) (a0 := a0) (p := p) (coord := coord) (tau := tau)
+    hSide hW hTau hEq hVal H
+
+/-- Inheritance-sort final-bundle endpoint specialized to Bayes exact semantics. -/
+def end_to_end_quantale_selector_rewrite_query_threshold_finalBundle_inheritance_bayesExact
+    {State : Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State InheritanceSort (InheritanceQueryFamily Pattern)]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : CtxOfInterval .bayesExact)
+    {r : WMRewriteRuleSigma State InheritanceSort (InheritanceQueryFamily Pattern)} {W₁ W₂ : State}
+    (queryOfAtom : String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Sigma (InheritanceQueryFamily Pattern))
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W₁)
+    (hTau : tau ≤ coord ((semanticsOfInterval .bayesExact).eval ctx (r.derive W₁)))
+    (hEq : WMQueryEqSigma
+      (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+      r.conclusion (queryOfAtom a0 p))
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+        W₂ queryOfAtom a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+        W₁ queryOfAtom a0 p')
+    (H : Finset (Unit × Unit)) :
+    EndToEndQuantaleSelectorRewriteQueryThresholdFinalBundle
+      (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+      (i := .bayesExact) (R := R) (m := m) (ctx := ctx)
+      W₁ W₂ queryOfAtom queryOfAtom a0 p coord tau H :=
+  end_to_end_quantale_selector_rewrite_query_threshold_finalBundle_inheritance_of_interval
+    (State := State) (i := .bayesExact) (R := R) (m := m) (ctx := ctx)
+    (r := r) (W₁ := W₁) (W₂ := W₂)
+    (queryOfAtom := queryOfAtom) (a0 := a0) (p := p) (coord := coord) (tau := tau)
+    hSide hW hTau hEq hVal H
+
+/-- Inheritance-sort final-bundle endpoint specialized to Walley IDM semantics. -/
+def end_to_end_quantale_selector_rewrite_query_threshold_finalBundle_inheritance_walley
+    {State : Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State InheritanceSort (InheritanceQueryFamily Pattern)]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : CtxOfInterval .walleyIDM)
+    {r : WMRewriteRuleSigma State InheritanceSort (InheritanceQueryFamily Pattern)} {W₁ W₂ : State}
+    (queryOfAtom : String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Sigma (InheritanceQueryFamily Pattern))
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W₁)
+    (hTau : tau ≤ coord ((semanticsOfInterval .walleyIDM).eval ctx (r.derive W₁)))
+    (hEq : WMQueryEqSigma
+      (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+      r.conclusion (queryOfAtom a0 p))
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+        W₂ queryOfAtom a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+        W₁ queryOfAtom a0 p')
+    (H : Finset (Unit × Unit)) :
+    EndToEndQuantaleSelectorRewriteQueryThresholdFinalBundle
+      (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Pattern)
+      (i := .walleyIDM) (R := R) (m := m) (ctx := ctx)
+      W₁ W₂ queryOfAtom queryOfAtom a0 p coord tau H :=
+  end_to_end_quantale_selector_rewrite_query_threshold_finalBundle_inheritance_of_interval
+    (State := State) (i := .walleyIDM) (R := R) (m := m) (ctx := ctx)
+    (r := r) (W₁ := W₁) (W₂ := W₂)
+    (queryOfAtom := queryOfAtom) (a0 := a0) (p := p) (coord := coord) (tau := tau)
+    hSide hW hTau hEq hVal H
+
+/-- One-call final-bundle endpoint for linked semantic Solomonoff intensional inheritance.
+
+This endpoint composes:
+1. rewrite/query/quantale transport via the generic final-bundle API, and
+2. truth transport from the linked semantic Solomonoff theorem family.
+-/
+def end_to_end_quantale_selector_rewrite_query_threshold_finalBundle_inheritance_solomonoff_semantic_linked_of_interval
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : CtxOfInterval i)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (combine : Evidence → Evidence → Evidence)
+    (model : SolomonoffAssocLinkedModel (State := State) (Query := Query) enc)
+    (hMixed :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.MixedAssocScoreCorrespondence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc combine
+        model.scoreModel.assocScore model.scoreModel.scoreToEvidence)
+    {W₁ W₂ : State}
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure)
+    (hW : PLNWorldModel.WMJudgment W₁)
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        W₂ (patternInheritanceQueryOfAtom_mixed enc) a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        W₁ (patternInheritanceQueryOfAtom_mixed enc) a0 p')
+    (hPrior : 0 < priorFromConditional ξ
+      (model.contextOf W₁ a0 p ξ).x
+      (model.contextOf W₁ a0 p ξ).Wc)
+    (hExt : 0 < extensionalFromConditional ξ
+      (model.contextOf W₁ a0 p ξ).x
+      (model.contextOf W₁ a0 p ξ).F
+      (model.contextOf W₁ a0 p ξ).Wc)
+    (hTau : tau ≤ coord ((semanticsOfInterval i).eval ctx
+      (combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W₁ enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (model.scoreModel.scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ
+              (model.contextOf W₁ a0 p ξ).x
+              (model.contextOf W₁ a0 p ξ).F
+              (model.contextOf W₁ a0 p ξ).Wc /
+             priorFromConditional ξ
+              (model.contextOf W₁ a0 p ξ).x
+              (model.contextOf W₁ a0 p ξ).Wc) /
+            Real.log 2)))))
+    (hPriorTarget : 0 < priorFromConditional ξ
+      (model.contextOf W₂ a0 (m.mapTerm p) ξ).x
+      (model.contextOf W₂ a0 (m.mapTerm p) ξ).Wc)
+    (hExtTarget : 0 < extensionalFromConditional ξ
+      (model.contextOf W₂ a0 (m.mapTerm p) ξ).x
+      (model.contextOf W₂ a0 (m.mapTerm p) ξ).F
+      (model.contextOf W₂ a0 (m.mapTerm p) ξ).Wc)
+    (hTauTarget : tau ≤ coord ((semanticsOfInterval i).eval ctx
+      (combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W₂ enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) (m.mapTerm p))
+        (model.scoreModel.scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ
+              (model.contextOf W₂ a0 (m.mapTerm p) ξ).x
+              (model.contextOf W₂ a0 (m.mapTerm p) ξ).F
+              (model.contextOf W₂ a0 (m.mapTerm p) ξ).Wc /
+             priorFromConditional ξ
+              (model.contextOf W₂ a0 (m.mapTerm p) ξ).x
+              (model.contextOf W₂ a0 (m.mapTerm p) ξ).Wc) /
+            Real.log 2)))))
+    (H : Finset (Unit × Unit)) :
+    EndToEndQuantaleSelectorRewriteQueryThresholdFinalBundle
+      (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+      (i := i) (R := R) (m := m) (ctx := ctx)
+      W₁ W₂ (patternInheritanceQueryOfAtom_mixed enc) (patternInheritanceQueryOfAtom_mixed enc)
+      a0 p coord tau H := by
+  letI : PLNWorldModel.WorldModelSigma State InheritanceSort (InheritanceQueryFamily Query) :=
+    PLNIntensionalWorldModel.worldModelSigmaInheritanceFromUntyped
+      (State := State) (Query := Query)
+  let r :
+      WMRewriteRuleSigma State InheritanceSort (InheritanceQueryFamily Query) :=
+    PLNIntensionalWorldModel.InheritanceQueryBuilder.mixedRewriteRule_assocSemantic
+      (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+      (Query := Query)
+      enc combine model.scoreModel.assocScore model.scoreModel.scoreToEvidence
+      hMixed model.scoreModel.assoc_sound
+      (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p
+  let c₁ := model.contextOf W₁ a0 p ξ
+  have hAssocLift₁ :
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.intensionalAssocEvidence
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query)
+        W₁ enc (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
+      model.scoreModel.scoreToEvidence
+        (Real.log
+          (extensionalFromConditional ξ c₁.x c₁.F c₁.Wc / priorFromConditional ξ c₁.x c₁.Wc) /
+          Real.log 2) := by
+    have hAssocScore₁ :
+        model.scoreModel.assocScore W₁
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
+          intensionalFromConditional ξ c₁.x c₁.F c₁.Wc := by
+      simpa [c₁] using model.assocScore_context W₁ a0 p ξ
+    have hLog₁ :
+        intensionalFromConditional ξ c₁.x c₁.F c₁.Wc =
+          Real.log
+            (extensionalFromConditional ξ c₁.x c₁.F c₁.Wc / priorFromConditional ξ c₁.x c₁.Wc) /
+          Real.log 2 :=
+      intensionalFromConditional_eq_log2_ratio ξ c₁.x c₁.F c₁.Wc
+        (by simpa [c₁] using hPrior)
+        (by simpa [c₁] using hExt)
+    calc
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.intensionalAssocEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query)
+          W₁ enc (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p
+          = model.scoreModel.scoreToEvidence
+              (model.scoreModel.assocScore W₁
+                (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p) :=
+            model.scoreModel.assoc_sound W₁ (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p
+      _ = model.scoreModel.scoreToEvidence (intensionalFromConditional ξ c₁.x c₁.F c₁.Wc) := by
+            rw [hAssocScore₁]
+      _ = model.scoreModel.scoreToEvidence
+            (Real.log
+              (extensionalFromConditional ξ c₁.x c₁.F c₁.Wc / priorFromConditional ξ c₁.x c₁.Wc) /
+              Real.log 2) := by
+            rw [hLog₁]
+  have hTauScore :
+      tau ≤ coord ((semanticsOfInterval i).eval ctx
+        (combine
+          (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+            (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+            (Query := Query) W₁ enc
+            (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+          (model.scoreModel.scoreToEvidence
+            (Real.log
+              (extensionalFromConditional ξ c₁.x c₁.F c₁.Wc / priorFromConditional ξ c₁.x c₁.Wc) /
+              Real.log 2)))) := by
+    simpa [c₁] using hTau
+  have hTauAssoc :
+      tau ≤ coord ((semanticsOfInterval i).eval ctx
+        (combine
+          (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+            (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+            (Query := Query) W₁ enc
+            (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+          (PLNIntensionalWorldModel.InheritanceQueryBuilder.intensionalAssocEvidence
+            (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+            (Query := Query) W₁ enc
+            (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p))) := by
+    simpa [hAssocLift₁] using hTauScore
+  have hDerive :
+      r.derive W₁ =
+        combine
+          (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+            (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+            (Query := Query) W₁ enc
+            (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+          (PLNIntensionalWorldModel.InheritanceQueryBuilder.intensionalAssocEvidence
+            (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+            (Query := Query) W₁ enc
+            (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p) := by
+    simp [r, PLNIntensionalWorldModel.InheritanceQueryBuilder.mixedRewriteRule_assocSemantic,
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.mixedRewriteRule_of_assoc]
+  have hTau' :
+      tau ≤ coord ((semanticsOfInterval i).eval ctx (r.derive W₁)) := by
+    simpa [hDerive] using hTauAssoc
+  have hSide : r.side := by
+    simp [r,
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.mixedRewriteRule_assocSemantic,
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.mixedRewriteRule_of_assoc]
+  have hEq :
+      WMQueryEqSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        r.conclusion ((patternInheritanceQueryOfAtom_mixed enc) a0 p) := by
+    simpa [r, patternInheritanceQueryOfAtom_mixed,
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.mixedRewriteRule_assocSemantic,
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.mixedRewriteRule_of_assoc] using
+      (PLNWorldModel.WorldModelSigma.WMQueryEqSigma.refl
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        ((patternInheritanceQueryOfAtom_mixed enc) a0 p))
+  have hBase :=
+    end_to_end_quantale_selector_rewrite_query_threshold_finalBundle_of_interval
+      (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+      (i := i) (R := R) (m := m) (ctx := ctx)
+      (r := r) (W₁ := W₁) (W₂ := W₂)
+      (queryOfAtom₁ := patternInheritanceQueryOfAtom_mixed enc)
+      (queryOfAtom₂ := patternInheritanceQueryOfAtom_mixed enc)
+      (a0 := a0) (p := p) (coord := coord) (tau := tau)
+      hSide hW hTau' hEq hVal H
+  have hTruthTarget :
+      Mettapedia.OSLF.Formula.sem R
+        (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+          (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+          (Ctx := CtxOfInterval i)
+          (semanticsOfInterval i) ctx W₂ tau coord
+          (patternInheritanceQueryOfAtom_mixed enc))
+        (.atom a0) (m.mapTerm p) :=
+    intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic_linked
+      (State := State) (Query := Query)
+      i R ctx enc combine model hMixed
+      W₂ a0 (m.mapTerm p) coord tau ξ hPriorTarget hExtTarget hTauTarget
+  exact
+    { reachability := hBase.reachability
+      quantale_coherence := hBase.quantale_coherence
+      truth_transport := by
+        intro u
+        cases u
+        simpa using hTruthTarget }
+
+/-! ## Event Calculus (Chapter 14) canonical endpoints -/
+
+abbrev EventCalcSort :=
+  PLNProbabilisticEventCalculus.EventCalcSort
+
+abbrev PatternEventQueryFamily :=
+  PLNProbabilisticEventCalculus.PatternEventQueryFamily
+
+abbrev patternEventQueryOfAtom_holds :=
+  PLNProbabilisticEventCalculus.patternEventQueryOfAtom_holds
+
+abbrev patternEventQueryOfAtom_initiated :=
+  PLNProbabilisticEventCalculus.patternEventQueryOfAtom_initiated
+
+abbrev patternEventQueryOfAtom_terminated :=
+  PLNProbabilisticEventCalculus.patternEventQueryOfAtom_terminated
+
+/-- Event-calculus one-call bundle endpoint (generic query encoder). -/
+theorem end_to_end_quantale_selector_rewrite_query_threshold_bundle_event_of_interval
+    {State : Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State EventCalcSort PatternEventQueryFamily]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : CtxOfInterval i)
+    {r : WMRewriteRuleSigma State EventCalcSort PatternEventQueryFamily} {W₁ W₂ : State}
+    (queryOfAtom : String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Sigma PatternEventQueryFamily)
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W₁)
+    (hTau : tau ≤ coord ((semanticsOfInterval i).eval ctx (r.derive W₁)))
+    (hEq : WMQueryEqSigma
+      (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+      r.conclusion (queryOfAtom a0 p))
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+        W₂ queryOfAtom a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+        W₁ queryOfAtom a0 p')
+    (H : Finset (Unit × Unit)) :
+    EndToEndQuantaleSelectorRewriteQueryThresholdBundle
+      (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+      (i := i) (R := R) (m := m) (ctx := ctx)
+      W₁ W₂ queryOfAtom queryOfAtom a0 p coord tau H := by
+  exact end_to_end_quantale_selector_rewrite_query_threshold_bundle_of_interval
+    (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+    (i := i) (R := R) (m := m) (ctx := ctx)
+    (r := r) (W₁ := W₁) (W₂ := W₂)
+    (queryOfAtom₁ := queryOfAtom) (queryOfAtom₂ := queryOfAtom)
+    (a0 := a0) (p := p) (coord := coord) (tau := tau)
+    hSide hW hTau hEq hVal H
+
+/-- Event-calculus one-call final-bundle endpoint (generic query encoder). -/
+def end_to_end_quantale_selector_rewrite_query_threshold_finalBundle_event_of_interval
+    {State : Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State EventCalcSort PatternEventQueryFamily]
+    {L₁ L₂ : Mettapedia.OSLF.MeTTaIL.Syntax.LanguageDef}
+    (i : WMIntervalSemantics)
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (m : Mettapedia.OSLF.Framework.LangMorphism.LanguageMorphism L₁ L₂ Eq)
+    (ctx : CtxOfInterval i)
+    {r : WMRewriteRuleSigma State EventCalcSort PatternEventQueryFamily} {W₁ W₂ : State}
+    (queryOfAtom : String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Sigma PatternEventQueryFamily)
+    (a0 : String)
+    (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hSide : r.side) (hW : PLNWorldModel.WMJudgment W₁)
+    (hTau : tau ≤ coord ((semanticsOfInterval i).eval ctx (r.derive W₁)))
+    (hEq : WMQueryEqSigma
+      (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+      r.conclusion (queryOfAtom a0 p))
+    (hVal : ∀ p',
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+        W₂ queryOfAtom a0 (m.mapTerm p') =
+      PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+        W₁ queryOfAtom a0 p')
+    (H : Finset (Unit × Unit)) :
+    EndToEndQuantaleSelectorRewriteQueryThresholdFinalBundle
+      (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+      (i := i) (R := R) (m := m) (ctx := ctx)
+      W₁ W₂ queryOfAtom queryOfAtom a0 p coord tau H :=
+  end_to_end_quantale_selector_rewrite_query_threshold_finalBundle_of_interval
+    (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+    (i := i) (R := R) (m := m) (ctx := ctx)
+    (r := r) (W₁ := W₁) (W₂ := W₂)
+    (queryOfAtom₁ := queryOfAtom) (queryOfAtom₂ := queryOfAtom)
+    (a0 := a0) (p := p) (coord := coord) (tau := tau)
+    hSide hW hTau hEq hVal H
+
+/-- Temporal-hypercube one-call bundle for event queries:
+composes GSLT forward transport on `vertexTemporalLanguageDef`, quantale
+coherence transport, and ITV-threshold atom truth transport. -/
+theorem end_to_end_temporal_hypercube_event_threshold_bundle_of_interval
+    {State : Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State EventCalcSort PatternEventQueryFamily]
+    {v w : Mettapedia.ProbabilityTheory.Hypercube.ProbabilityVertex}
+    (hvw : v ≤ w)
+    (f : Mettapedia.Algebra.QuantaleWeakness.QuantaleHom
+      (Mettapedia.ProbabilityTheory.Hypercube.QuantaleSemantics.semanticsOfVertex w).Q
+      (Mettapedia.ProbabilityTheory.Hypercube.QuantaleSemantics.semanticsOfVertex v).Q)
+    (srcVal : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      (Mettapedia.ProbabilityTheory.Hypercube.QuantaleSemantics.semanticsOfVertex w).Q)
+    (dstVal : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      (Mettapedia.ProbabilityTheory.Hypercube.QuantaleSemantics.semanticsOfVertex v).Q)
+    (hValWeak : ∀ p, dstVal p = f (srcVal p))
+    {U : Type*} [Fintype U]
+    (pick : U → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    {p₀ : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern}
+    (hReach : ∀ u,
+      Mettapedia.OSLF.Framework.LangMorphism.LangReducesStar
+        (vertexTemporalLanguageDef w) p₀ (pick u))
+    (H : Finset (U × U))
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (i : WMIntervalSemantics)
+    (ctx : CtxOfInterval i)
+    (W₁ W₂ : State)
+    (queryOfAtom : String → Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Sigma PatternEventQueryFamily)
+    (a0 : String)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (hITV : ∀ p,
+      (semanticsOfInterval i).eval ctx
+        (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+          (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+          W₂ queryOfAtom a0 p) =
+      (semanticsOfInterval i).eval ctx
+        (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+          (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+          W₁ queryOfAtom a0 p))
+    (hTau : ∀ u,
+      tau ≤ coord ((semanticsOfInterval i).eval ctx
+        (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+          (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+          W₁ queryOfAtom a0 (pick u)))) :
+    (∀ u,
+      Mettapedia.OSLF.Framework.LangMorphism.LangReducesStar
+        (vertexTemporalLanguageDef v) p₀ (pick u)) ∧
+    f (Mettapedia.Algebra.QuantaleWeakness.weakness
+      (Mettapedia.OSLF.Framework.QuantaleCoherence.sourceWeight srcVal pick) H) =
+      Mettapedia.Algebra.QuantaleWeakness.weakness
+        (Mettapedia.OSLF.Framework.QuantaleCoherence.targetWeight dstVal id pick) H ∧
+    (∀ u,
+      Mettapedia.OSLF.Formula.sem R
+        (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+          (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+          (Ctx := CtxOfInterval i)
+          (semanticsOfInterval i) ctx W₂ tau coord queryOfAtom)
+        (.atom a0) (pick u)) := by
+  rcases hypercube_forward_quantale_coherence_bundle_temporal
+      (v := v) (w := w)
+      hvw f srcVal dstVal hValWeak pick (p₀ := p₀) hReach H with ⟨hForward, hWeak⟩
+  refine ⟨hForward, hWeak, ?_⟩
+  intro u
+  have hEq : (semanticsOfInterval i).eval ctx
+      (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+        W₂ queryOfAtom a0 (pick u)) =
+    (semanticsOfInterval i).eval ctx
+      (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+        (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+        W₁ queryOfAtom a0 (pick u)) := hITV (pick u)
+  have hTauW₂ :
+      tau ≤ coord ((semanticsOfInterval i).eval ctx
+        (PLNWMOSLFBridgeITVTyped.wmPatternValuation
+          (State := State) (Srt := EventCalcSort) (Query := PatternEventQueryFamily)
+          W₂ queryOfAtom a0 (pick u))) := by
+    simpa [hEq] using hTau u
+  simpa [Mettapedia.OSLF.Formula.sem,
+    PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma,
+    PLNWMOSLFBridgeITVTyped.wmITVAtomSemQSigma] using hTauW₂
+
 
 /-! ## OSLF Bridge canonical aliases -/
 
@@ -187,28 +2636,46 @@ noncomputable abbrev wmEvidenceAtomSemQSigma {State Srt : Type*} {Query : Srt �
     [PLNWorldModel.WorldModelSigma State Srt Query] :=
   PLNWMOSLFBridgeTyped.wmEvidenceAtomSemQSigma (State := State) (Srt := Srt) (Query := Query)
 
-abbrev MeTTaTypeOfSortTag := PLNWMOSLFBridgeTyped.MeTTaTypeOf.SortTag
+noncomputable abbrev wmITVAtomSemQSigma {State Srt Ctx : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query] :=
+  PLNWMOSLFBridgeITVTyped.wmITVAtomSemQSigma
+    (State := State) (Srt := Srt) (Query := Query) (Ctx := Ctx)
 
-abbrev MeTTaTypeMarkers := PLNWMOSLFBridgeTyped.MeTTaTypeOf.SortTypeMarkers
+noncomputable abbrev thresholdAtomSemOfWMITVQSigma
+    {State Srt Ctx : Type*} {Query : Srt → Type*}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModelSigma State Srt Query] :=
+  PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+    (State := State) (Srt := Srt) (Query := Query) (Ctx := Ctx)
 
-abbrev MeTTaTypeMarkersDefault := PLNWMOSLFBridgeTyped.MeTTaTypeOf.defaultMarkers
 
-abbrev MeTTaQueryBuilder := PLNWMOSLFBridgeTyped.MeTTaTypeOf.QueryBuilder
+/-! ## MeTTa integration aliases -/
 
-abbrev queryOfAtomFromTypeOf := PLNWMOSLFBridgeTyped.MeTTaTypeOf.queryOfAtomFromTypeOf
+abbrev MeTTaTypeOfSortTag :=
+  Mettapedia.Logic.PLNWMOSLFBridgeTyped.MeTTaTypeOf.SortTag
 
-abbrev queryOfAtomFromTypeOfWith := PLNWMOSLFBridgeTyped.MeTTaTypeOf.queryOfAtomFromTypeOfWith
+abbrev ThreeNativeTaggedQueryFamily :=
+  PLNXiDerivedBNRules.Typed.ThreeNativeTaggedQueryFamily
 
-abbrev xiPLNSigmaOfTypeOf := PLNWMOSLFBridgeTyped.MeTTaTypeOf.xiPLNSigmaOfTypeOf
+abbrev MeTTaTypeMarkers :=
+  Mettapedia.Logic.PLNWMOSLFBridgeTyped.MeTTaTypeOf.SortTypeMarkers
 
-abbrev xi_deduction_rewrite_of_chainBN_sigma :=
-  PLNXiDerivedBNRules.Typed.xi_deduction_rewrite_of_chainBN_sigma
+abbrev MeTTaTypeMarkersDefault :=
+  Mettapedia.Logic.PLNWMOSLFBridgeTyped.MeTTaTypeOf.defaultMarkers
 
-abbrev xi_sourceRule_rewrite_of_forkBN_sigma :=
-  PLNXiDerivedBNRules.Typed.xi_sourceRule_rewrite_of_forkBN_sigma
+abbrev MeTTaQueryBuilder :=
+  Mettapedia.Logic.PLNWMOSLFBridgeTyped.MeTTaTypeOf.QueryBuilder
 
-abbrev xi_sinkRule_rewrite_of_colliderBN_sigma :=
-  PLNXiDerivedBNRules.Typed.xi_sinkRule_rewrite_of_colliderBN_sigma
+abbrev queryOfAtomFromTypeOf :=
+  @Mettapedia.Logic.PLNWMOSLFBridgeTyped.MeTTaTypeOf.queryOfAtomFromTypeOf
+
+abbrev queryOfAtomFromTypeOfWith :=
+  @Mettapedia.Logic.PLNWMOSLFBridgeTyped.MeTTaTypeOf.queryOfAtomFromTypeOfWith
+
+abbrev xiPLNSigmaOfTypeOf :=
+  @Mettapedia.Logic.PLNWMOSLFBridgeTyped.MeTTaTypeOf.xiPLNSigmaOfTypeOf
+
 
 /-! ## Derived BN Rules (canonical — no free side-condition hypotheses)
 

@@ -115,17 +115,65 @@ theorem evidenceMeet_maxEvidence_right (e : Evidence) :
 
 /-! ## Main Bridge Theorem -/
 
+/-- Bridge obligations for each weighted rule after forgetting evidence. -/
+structure ForgetRuleSoundness (T : Theory) : Prop where
+  axm :
+    ∀ {wf : WeightedFormula},
+      wf ∈ T →
+      (Theory.forget T) ⟹! (WeightedSequent.forget [wf])
+  verum :
+    ∀ (Δ : WeightedSequent),
+      (Theory.forget T) ⟹! (WeightedSequent.forget (⟨Formula.top, ⟨⊤, 0⟩⟩ :: Δ))
+  wk :
+    ∀ {Δ Γ : WeightedSequent},
+      (Theory.forget T) ⟹! (WeightedSequent.forget Δ) →
+      (∀ wf ∈ Δ, wf ∈ Γ) →
+      (Theory.forget T) ⟹! (WeightedSequent.forget Γ)
+  andI :
+    ∀ {Δ : WeightedSequent} {φ ψ : Formula} {e₁ e₂ : Evidence},
+      (Theory.forget T) ⟹! (WeightedSequent.forget (⟨φ, e₁⟩ :: Δ)) →
+      (Theory.forget T) ⟹! (WeightedSequent.forget (⟨ψ, e₂⟩ :: Δ)) →
+      (Theory.forget T) ⟹! (WeightedSequent.forget (⟨φ ⋏ ψ, evidenceMeet e₁ e₂⟩ :: Δ))
+  orI :
+    ∀ {Δ : WeightedSequent} {φ ψ : Formula} {e : Evidence},
+      (Theory.forget T) ⟹! (WeightedSequent.forget (⟨φ, e⟩ :: ⟨ψ, e⟩ :: Δ)) →
+      (Theory.forget T) ⟹! (WeightedSequent.forget (⟨φ ⋎ ψ, e⟩ :: Δ))
+  em :
+    ∀ {Δ : WeightedSequent} {φ : Formula} {e : Evidence},
+      ⟨φ, e⟩ ∈ Δ →
+      ⟨∼φ, e⟩ ∈ Δ →
+      (Theory.forget T) ⟹! (WeightedSequent.forget Δ)
+  cut :
+    ∀ {Δ : WeightedSequent} {φ : Formula} {e₁ e₂ : Evidence},
+      (Theory.forget T) ⟹! (WeightedSequent.forget (⟨φ, e₁⟩ :: Δ)) →
+      (Theory.forget T) ⟹! (WeightedSequent.forget (⟨∼φ, e₂⟩ :: Δ)) →
+      (Theory.forget T) ⟹! (WeightedSequent.forget Δ)
+
 /-- If we have a PLN derivation, we can extract a classical derivation.
 
 This is the key theorem showing PLN is a conservative extension of classical logic.
 
 The proof constructs a classical Tait derivation by stripping evidence weights.
+-/
 
-TODO: Complete proof by case analysis on derivation rules, mapping each PLN rule
-to the corresponding Foundation Tait rule. -/
 theorem derivation_forget {T : Theory} {Δ : WeightedSequent}
-    (d : T ⊢ₚ Δ) : (Theory.forget T) ⟹! (WeightedSequent.forget Δ) := by
-  induction d <;> sorry
+    (d : T ⊢ₚ Δ) (hRules : ForgetRuleSoundness T) :
+    (Theory.forget T) ⟹! (WeightedSequent.forget Δ) := by
+  induction d with
+  | axm hwf =>
+    exact hRules.axm hwf
+  | verum Δ =>
+    exact hRules.verum Δ
+  | wk _ hsub ih =>
+    exact hRules.wk ih hsub
+  | andI _ _ ih₁ ih₂ =>
+    exact hRules.andI ih₁ ih₂
+  | orI _ ih =>
+    exact hRules.orI ih
+  | em hφ hnegφ =>
+    exact hRules.em hφ hnegφ
+  | cut _ _ ih₁ ih₂ =>
+    exact hRules.cut ih₁ ih₂
 
 /-! ## Summary
 

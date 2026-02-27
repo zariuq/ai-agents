@@ -1,10 +1,11 @@
 import Ramsey36.RamseyDef
+import Ramsey36.IndepSetChecker
+import Ramsey36.IndepSmall
 import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 import Mathlib.Data.Fin.Basic
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Finset.Image
 import Mathlib.Tactic
-import Hammer
 
 open SimpleGraph
 open Finset
@@ -42,8 +43,12 @@ def critical34 : SimpleGraph V34 where
     intro v w h
     exact (neighbors34_symm v w).mp h
   loopless := by
-    intro v hv
+    constructor; intro v hv
     fin_cases v <;> simp [adj34, neighbors34] at hv
+
+instance (v w : V34) : Decidable (adj34 v w) := Finset.decidableMem w (neighbors34 v)
+
+@[simp] lemma critical34_adj_def (v w : V34) : critical34.Adj v w = adj34 v w := rfl
 
 instance : DecidableRel critical34.Adj := by
   intro v w
@@ -58,11 +63,21 @@ instance : Decidable (NoKIndepSet 4 critical34) := by
   unfold NoKIndepSet IndepSetFree
   infer_instance
 
+set_option maxHeartbeats 400000 in
+private lemma adj8Bool_eq_decide :
+    adj8Bool = fun v w => decide (critical34.Adj v w) := by
+  ext v w; fin_cases v <;> fin_cases w <;> decide
+
 lemma critical34_triangleFree : TriangleFree critical34 := by
-  native_decide
+  have h := hasIndepSet_8_adj8NotBool_3_false
+  rw [show adj8NotBool = fun v w => !decide (critical34.Adj v w) from
+      by ext v w; simp [adj8NotBool, adj8Bool_eq_decide]] at h
+  exact triangleFree_of_checker_false h
 
 lemma critical34_no_4_indep : NoKIndepSet 4 critical34 := by
-  native_decide
+  have h := hasIndepSet_8_adj8Bool_4_false
+  rw [adj8Bool_eq_decide] at h
+  exact noKIndepSet_of_checker_false h
 
 lemma not_hasRamseyProperty_34 : ¬ HasRamseyProperty 3 4 critical34 := by
   unfold HasRamseyProperty
@@ -96,7 +111,7 @@ def critical33 : SimpleGraph V33 where
     intro v w h
     exact (neighbors33_symm v w).mp h
   loopless := by
-    intro v hv
+    constructor; intro v hv
     fin_cases v <;> simp [adj33, neighbors33] at hv
 
 instance : DecidableRel critical33.Adj := by
@@ -112,11 +127,20 @@ instance : Decidable (NoKIndepSet 3 critical33) := by
   unfold NoKIndepSet IndepSetFree
   infer_instance
 
+private lemma adj5Bool_eq_decide :
+    adj5Bool = fun v w => decide (critical33.Adj v w) := by
+  ext v w; fin_cases v <;> fin_cases w <;> decide
+
 lemma critical33_triangleFree : TriangleFree critical33 := by
-  native_decide
+  have h := hasIndepSet_5_adj5NotBool_3_false
+  rw [show adj5NotBool = fun v w => !decide (critical33.Adj v w) from
+      by ext v w; simp [adj5NotBool, adj5Bool_eq_decide]] at h
+  exact triangleFree_of_checker_false h
 
 lemma critical33_no_3_indep : NoKIndepSet 3 critical33 := by
-  native_decide
+  have h := hasIndepSet_5_adj5Bool_3_false
+  rw [adj5Bool_eq_decide] at h
+  exact noKIndepSet_of_checker_false h
 
 lemma not_hasRamseyProperty_33 : ¬ HasRamseyProperty 3 3 critical33 := by
   unfold HasRamseyProperty
@@ -160,8 +184,10 @@ def critical35 : SimpleGraph V35 where
     intro v w h
     exact (neighbors35_symm v w).mp h
   loopless := by
-    intro v hv
+    constructor; intro v hv
     fin_cases v <;> simp [adj35, neighbors35] at hv
+
+@[simp] lemma critical35_adj_def (v w : V35) : critical35.Adj v w = adj35 v w := rfl
 
 instance : DecidableRel critical35.Adj := by
   intro v w
@@ -176,11 +202,21 @@ instance : Decidable (NoKIndepSet 5 critical35) := by
   unfold NoKIndepSet IndepSetFree
   infer_instance
 
+set_option maxHeartbeats 4000000 in
+private lemma adj13Bool_eq_decide :
+    adj13Bool = fun v w => decide (critical35.Adj v w) := by
+  ext v w; fin_cases v <;> fin_cases w <;> decide
+
 lemma critical35_triangleFree : TriangleFree critical35 := by
-  native_decide
+  have h := hasIndepSet_13_adj13NotBool_3_false
+  rw [show adj13NotBool = fun v w => !decide (critical35.Adj v w) from
+      by ext v w; simp [adj13NotBool, adj13Bool_eq_decide]] at h
+  exact triangleFree_of_checker_false h
 
 lemma critical35_no_5_indep : NoKIndepSet 5 critical35 := by
-  native_decide
+  have h := hasIndepSet_13_adj13Bool_5_false
+  rw [adj13Bool_eq_decide] at h
+  exact noKIndepSet_of_checker_false h
 
 /-- The critical 13-vertex graph does not have the Ramsey property (3,5). -/
 lemma not_hasRamseyProperty_35 : ¬ HasRamseyProperty 3 5 critical35 := by
@@ -592,6 +628,19 @@ theorem ramsey_recursion {r s : ℕ} (hr : r ≥ 2) (hs : s ≥ 2)
             _ = s := by have : 1 ≤ s := le_trans (by decide : 1 ≤ 2) hs; omega
 
       exact Or.inr ⟨T_plus_v, h_indep_T_plus_v⟩
+
+/-- The classical Ramsey recursion inequality: R(r,s) ≤ R(r-1,s) + R(r,s-1).
+    This is the numeric form of `ramsey_recursion`. -/
+theorem ramsey_recursion_bound {r s : ℕ} (hr : r ≥ 2) (hs : s ≥ 2)
+    (h_r : 0 < ramseyNumber (r-1) s ∧
+           ∀ (G : SimpleGraph (Fin (ramseyNumber (r-1) s))) [DecidableRel G.Adj],
+           HasRamseyProperty (r-1) s G)
+    (h_s : 0 < ramseyNumber r (s-1) ∧
+           ∀ (G : SimpleGraph (Fin (ramseyNumber r (s-1)))) [DecidableRel G.Adj],
+           HasRamseyProperty r (s-1) G) :
+    ramseyNumber r s ≤ ramseyNumber (r-1) s + ramseyNumber r (s-1) := by
+  apply Nat.sInf_le
+  exact ⟨by linarith [h_r.1], ramsey_recursion hr hs h_r h_s⟩
 
 /-
 # Upper bounds (placeholders)

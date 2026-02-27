@@ -1,5 +1,7 @@
 import Mettapedia.OSLF.Main
 import Mettapedia.OSLF.CoreMain
+import Mettapedia.Logic.Datalog
+import Mettapedia.OSLF.PathMap
 import Mettapedia.Logic.OSLFImageFinite
 import Mettapedia.OSLF.Framework.PiRhoCanonicalBridge
 import Mettapedia.OSLF.Framework.AssumptionNecessity
@@ -527,5 +529,143 @@ open Mettapedia.OSLF
 #check @Mettapedia.OSLF.NativeType.imageComprehension_iff
 #check @Mettapedia.OSLF.NativeType.thm23_internalLanguagePackage
 #check @Mettapedia.OSLF.NativeType.thm23_functorialLaws
+
+-- X. PathMap algebraic interface (ring.rs formalization)
+-- AlgebraicResult carries the structural-sharing result tag from ring.rs
+#check @Mettapedia.PathMap.AlgebraicResult
+-- Lattice / DistributiveLattice / Quantale typeclass hierarchy
+#check @Mettapedia.PathMap.PathMapLattice
+#check @Mettapedia.PathMap.PathMapDistributiveLattice
+#check @Mettapedia.PathMap.PathMapQuantale
+-- Algebraic law typeclasses (proved at the resolve/value level)
+#check @Mettapedia.PathMap.JoinComm
+#check @Mettapedia.PathMap.MeetComm
+#check @Mettapedia.PathMap.JoinIdem
+#check @Mettapedia.PathMap.MeetIdem
+#check @Mettapedia.PathMap.Absorption
+-- Zipper typeclass hierarchy (ZipperMoving → ZipperValues → ZipperWriting → ZipperIteration)
+#check @Mettapedia.PathMap.ZipperMoving
+#check @Mettapedia.PathMap.ZipperBounded
+#check @Mettapedia.PathMap.ZipperValues
+#check @Mettapedia.PathMap.ZipperWriting
+#check @Mettapedia.PathMap.ZipperIteration
+#check @Mettapedia.PathMap.ZipperIterationRooted
+#check @Mettapedia.PathMap.ZipperAbsolutePath
+#check @Mettapedia.PathMap.ZipperForking
+-- Extended Zipper trait families
+#check @Mettapedia.PathMap.ZipperSubtries
+#check @Mettapedia.PathMap.ZipperSubtriesNonEmpty
+#check @Mettapedia.PathMap.ZipperProduct
+#check @Mettapedia.PathMap.ZipperProductSpec
+#check @Mettapedia.PathMap.ZipperPathBuffer
+#check @Mettapedia.PathMap.ZipperPathBufferSpec
+#check @Mettapedia.PathMap.ZipperReadOnlyIteration
+#check @Mettapedia.PathMap.ZipperReadOnlyIterationSpec
+#check @Mettapedia.PathMap.ZipperCreateResult
+#check @Mettapedia.PathMap.ZipperCreation
+#check @Mettapedia.PathMap.ZipperCreationSpec
+-- AlgebraicStatus (in-place ops) + derived combinators
+#check @Mettapedia.PathMap.AlgebraicStatus
+#check @Mettapedia.PathMap.joinAll
+-- Invariants from ring.rs documentation
+#check @Mettapedia.PathMap.NonePrecedesIdentity
+#check @Mettapedia.PathMap.SubtractLeftBiased
+-- RelationalSpace: abstract interface over RelationEnv / PathMap-backed stores
+#check @Mettapedia.OSLF.PathMap.RelationalSpace
+#check @Mettapedia.OSLF.PathMap.toRelationEnv
+#check @Mettapedia.OSLF.PathMap.toRelationEnv_query
+#check @Mettapedia.OSLF.PathMap.query_comm_bridge
+
+-- XI. PathMap Council additions (Math Council review)
+-- AlgebraicResult.WellFormed — representation soundness predicate
+#check @Mettapedia.PathMap.AlgebraicResult.WellFormed
+-- WellFormed theorems for all four operations on Finset α
+#check @Mettapedia.PathMap.pjoin_wellFormed
+#check @Mettapedia.PathMap.pmeet_wellFormed
+#check @Mettapedia.PathMap.psubtract_wellFormed
+#check @Mettapedia.PathMap.prestrict_wellFormed
+-- PathMapQuantale (Finset α) instance + associativity
+#check @Mettapedia.PathMap.prestrict_assoc
+-- ZipperLiveness — ascend succeeds when not at root (dual of ZipperBounded)
+#check @Mettapedia.PathMap.ZipperLiveness
+-- ZipperIterationComplete — completeness dual of ZipperIterationRooted
+#check @Mettapedia.PathMap.ZipperIterationComplete
+-- ZipperFunctorDerivative — zipper as ∂PathMap/∂V (McBride 2001)
+#check @Mettapedia.PathMap.ZipperFunctorDerivative
+#check @Mettapedia.PathMap.ZipperFunctorDerivativeSpec
+-- PathMap OSLF instance
+#check @Mettapedia.OSLF.PathMap.OSLFInstance.pathMapLang
+#check @Mettapedia.OSLF.PathMap.OSLFInstance.pathMapOSLF
+#check @Mettapedia.OSLF.PathMap.OSLFInstance.pathMapGalois
+-- NTT soundness theorems (pathMap_pjoin_diamond / pathMap_pmeet_diamond pending)
+
+-- PathMap ↔ PLN Evidence bridge (K&S / WorldModel grounded)
+#check @Mettapedia.OSLF.PathMap.PLNBridge.finsetPathEvidence
+#check @Mettapedia.OSLF.PathMap.PLNBridge.pjoin_evidence_additive
+#check @Mettapedia.OSLF.PathMap.PLNBridge.prestrict_evidence_partition
+#check @Mettapedia.OSLF.PathMap.PLNBridge.PathMapWorldModel
+
+-- Weighted & Solomonoff evidence bridge
+#check @Mettapedia.OSLF.PathMap.SolomonoffBridge.weightedPathEvidence
+#check @Mettapedia.OSLF.PathMap.SolomonoffBridge.weightedPathEvidence_additive
+#check @Mettapedia.OSLF.PathMap.SolomonoffBridge.weightedPathEvidence_partition
+#check @Mettapedia.OSLF.PathMap.SolomonoffBridge.solomonoffPathEvidence
+#check @Mettapedia.OSLF.PathMap.SolomonoffBridge.solomonoffPathEvidence_additive
+#check @Mettapedia.OSLF.PathMap.SolomonoffBridge.solomonoffPathEvidence_strength
+#check @Mettapedia.OSLF.PathMap.SolomonoffBridge.weightedPathMapWorldModel
+#check @Mettapedia.OSLF.PathMap.SolomonoffBridge.finsetPathEvidence_eq_uniform
+
+-- PathMapValuation (K&S-style valuation on stores)
+#check @Mettapedia.OSLF.PathMap.Measure.PathMapValuation
+#check @Mettapedia.OSLF.PathMap.Measure.countingPathMapValuation
+#check @Mettapedia.OSLF.PathMap.Measure.mkWeightedValuation
+#check @Mettapedia.OSLF.PathMap.Measure.solomonoffValuation
+#check @Mettapedia.OSLF.PathMap.Measure.pathMapValuation_evidence_split
+#check @Mettapedia.OSLF.PathMap.Measure.counting_valuation_eq_evidence_total
+
+-- ZipperComplexity — formal O(k) / O(depth) depth-bound contracts
+#check @Mettapedia.PathMap.ZipperComplexity
+
+-- WorldModel bridge: Multiset α is the free commutative monoid solution
+#check @Mettapedia.OSLF.PathMap.WorldModelBridge.multisetPathWorldModel
+#check @Mettapedia.OSLF.PathMap.WorldModelBridge.multisetPathEvidence_additive
+#check @Mettapedia.OSLF.PathMap.WorldModelBridge.finset_multiset_evidence_agree
+#check @Mettapedia.OSLF.PathMap.WorldModelBridge.multisetWorldModel_finset_eq
+
+-- Datalog formalization (M1-M8)
+-- M1: Core syntax
+#check @Mettapedia.Logic.Datalog.Signature
+#check @Mettapedia.Logic.Datalog.GroundAtom
+#check @Mettapedia.Logic.Datalog.KnowledgeBase
+-- M2: Substitution/grounding
+#check @Mettapedia.Logic.Datalog.Grounding.applyAtom
+#check @Mettapedia.Logic.Datalog.groundBodySatisfied
+-- M3: Semantics
+#check @Mettapedia.Logic.Datalog.T_P
+#check @Mettapedia.Logic.Datalog.leastModel
+#check @Mettapedia.Logic.Datalog.leastModel_fixpoint
+#check @Mettapedia.Logic.Datalog.leastModel_least
+-- M4: Evaluation
+#check @Mettapedia.Logic.Datalog.HerbrandBase
+#check @Mettapedia.Logic.Datalog.leastModel_finite
+#check @Mettapedia.Logic.Datalog.leastModel_eq_iter_sup
+-- M5: Provenance
+#check @Mettapedia.Logic.Datalog.SemiringWithMonus
+#check @Mettapedia.Logic.Datalog.T_P_K
+#check @Mettapedia.Logic.Datalog.T_P_K_hom
+-- M6: PathMapBridge
+#check @Mettapedia.Logic.Datalog.DatalogQuery
+#check @Mettapedia.Logic.Datalog.positiveEvidence
+#check @Mettapedia.Logic.Datalog.evidence_total
+#check @Mettapedia.Logic.Datalog.leastModel_monotone_in_rules
+-- M7: OSLFBridge
+#check @Mettapedia.Logic.Datalog.datalogToRelEnv
+#check @Mettapedia.Logic.Datalog.mem_datalogToRelEnv
+#check @Mettapedia.Logic.Datalog.leastModelRelEnv
+-- M8: WorldModelBridge
+#check @Mettapedia.Logic.Datalog.datalogModelEvidence
+#check @Mettapedia.Logic.Datalog.datalogLeastModelEvidence
+#check @Mettapedia.Logic.Datalog.datalogEvidence_monotone
+#check @Mettapedia.Logic.Datalog.datalogEDB_posEvidence
 
 end Mettapedia.OSLF.SpecIndex

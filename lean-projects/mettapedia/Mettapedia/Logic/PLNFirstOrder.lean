@@ -1,9 +1,14 @@
 import Mettapedia.Logic.PLNFirstOrder.Basic
 import Mettapedia.Logic.PLNFirstOrder.SatisfyingSet
 import Mettapedia.Logic.PLNFirstOrder.QuantifierSemantics
+import Mettapedia.Logic.PLNFirstOrder.FuzzyQuantifierSemantics
+import Mettapedia.Logic.PLNFirstOrder.FuzzyITVBridge
 import Mettapedia.Logic.PLNFirstOrder.WeaknessConnection
 import Mettapedia.Logic.PLNFirstOrder.FoundationBridge
 import Mettapedia.Logic.PLNFirstOrder.Soundness
+import Mettapedia.Logic.PLNFirstOrder.QuantifierCanary
+import Mettapedia.Logic.PLNFirstOrder.Chapter11Examples
+import Mettapedia.Logic.PLNFirstOrder.Chapter11Regression
 
 /-!
 # PLN First-Order Quantifiers
@@ -17,23 +22,27 @@ Complete formalization of PLN first-order quantifiers via:
 
 - `SatisfyingSet` - Frame-valued predicates (characteristic morphisms)
 - `forAllEval` - Universal quantifier evaluation via weakness
-- `thereExistsEval` - Existential quantifier evaluation (TODO: via De Morgan)
+- `thereExistsEval` - Existential quantifier evaluation via De Morgan dual
 - Key theorems:
   - `forAll_is_weakness_of_diagonal` - Goertzel's insight (✅ proven)
   - `forAllEval_mono_weights` - Monotonicity (✅ proven)
+  - `main_theorem_3_de_morgan` - Existential/universal duality (✅ proven)
   - `main_theorem_5_functoriality` - Functoriality (✅ proven)
+  - `canary_ch11_exists_deMorgan` / `canary_ch11_existential_generalization_ext` /
+    `canary_ch11_universal_specification_ext` - literature-aligned quantifier canaries
 
 ## Status
 
 **Proven (no sorries)**:
 - Core connection to weakness theory ✅
 - Monotonicity properties ✅
+- De Morgan existential duality ✅
 - Functoriality ✅
 - Basic properties (constantTrue, constantFalse) ✅
+- Empty-domain vacuity for extensional quantifiers ✅
 
-**TODO** (requires PBit negation infrastructure):
-- De Morgan laws (Theorem 3)
-- Frame distributivity (Theorem 4)
+**Open direction**:
+- Frame-distributivity formulation for the `isTrue`-filtered weakness quantifier semantics
 
 ## Build
 

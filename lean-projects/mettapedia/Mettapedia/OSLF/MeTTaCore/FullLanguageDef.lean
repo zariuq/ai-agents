@@ -44,6 +44,10 @@ def mettaFull : LanguageDef := {
       params := [.simple "lhs" (.base "Atom"), .simple "rhs" (.base "Atom")],
       syntaxPattern := [.terminal "unify", .terminal "(", .nonTerminal "lhs", .terminal ",",
                         .nonTerminal "rhs", .terminal ")"] },
+    { label := "Match", category := "Instr",
+      params := [.simple "lhs" (.base "Atom"), .simple "rhs" (.base "Atom")],
+      syntaxPattern := [.terminal "match", .terminal "(", .nonTerminal "lhs", .terminal ",",
+                        .nonTerminal "rhs", .terminal ")"] },
     { label := "Chain", category := "Instr",
       params := [.simple "src" (.base "Atom"), .simple "tmpl" (.base "Atom")],
       syntaxPattern := [.terminal "chain", .terminal "(", .nonTerminal "src", .terminal ",",
@@ -195,6 +199,19 @@ def mettaFull : LanguageDef := {
       premises := [.relationQuery "neq" [.fvar "lhs", .fvar "rhs"]],
       left := .apply "State" [.apply "Unify" [.fvar "lhs", .fvar "rhs"], .fvar "space", .fvar "out"],
       right := .apply "State" [.apply "Return" [.apply "AFalse" []], .fvar "space", .apply "AFalse" []] },
+    -- match hit/miss branches (first-class instruction, reusing structural eq/neq premises)
+    { name := "StepMatchHit",
+      typeContext := [("lhs", .base "Atom"), ("rhs", .base "Atom"),
+                      ("space", .base "Space"), ("out", .base "Atom")],
+      premises := [.relationQuery "eq" [.fvar "lhs", .fvar "rhs"]],
+      left := .apply "State" [.apply "Match" [.fvar "lhs", .fvar "rhs"], .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Return" [.apply "ATrue" []], .fvar "space", .apply "ATrue" []] },
+    { name := "StepMatchMiss",
+      typeContext := [("lhs", .base "Atom"), ("rhs", .base "Atom"),
+                      ("space", .base "Space"), ("out", .base "Atom")],
+      premises := [.relationQuery "neq" [.fvar "lhs", .fvar "rhs"]],
+      left := .apply "State" [.apply "Match" [.fvar "lhs", .fvar "rhs"], .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Return" [.apply "AFalse" []], .fvar "space", .apply "AFalse" []] },
     -- chain hit branch via equation lookup on source atom
     { name := "StepChainHit",
       typeContext := [("src", .base "Atom"), ("tmpl", .base "Atom"), ("dst", .base "Atom"),
@@ -307,6 +324,7 @@ private def mkState (instr : Pattern) (space : Pattern := space0) (out : Pattern
 
 private def iEval (a : Pattern) : Pattern := .apply "Eval" [a]
 private def iUnify (lhs rhs : Pattern) : Pattern := .apply "Unify" [lhs, rhs]
+private def iMatch (lhs rhs : Pattern) : Pattern := .apply "Match" [lhs, rhs]
 private def iChain (src tmpl : Pattern) : Pattern := .apply "Chain" [src, tmpl]
 private def iTypeCheck (atom ty : Pattern) : Pattern := .apply "TypeCheck" [atom, ty]
 private def iCast (atom ty : Pattern) : Pattern := .apply "Cast" [atom, ty]
@@ -341,6 +359,15 @@ def mettaFullRelEnv : RelationEnv := Mettapedia.OSLF.MeTTaCore.Premises.mettaFul
   let missNF := fullRewriteToNormalFormWithPremisesUsing mettaFullRelEnv mettaFull miss 8
   IO.println s!"MeTTaFull unify hit normal form: {hitNF}"
   IO.println s!"MeTTaFull unify miss normal form: {missNF}"
+
+-- Smoke check: match hit and miss branches.
+#eval! do
+  let hit := mkState (iMatch aTrue aTrue) space0 aFalse
+  let miss := mkState (iMatch aTrue aFalse) space0 aFalse
+  let hitNF := fullRewriteToNormalFormWithPremisesUsing mettaFullRelEnv mettaFull hit 8
+  let missNF := fullRewriteToNormalFormWithPremisesUsing mettaFullRelEnv mettaFull miss 8
+  IO.println s!"MeTTaFull match hit normal form: {hitNF}"
+  IO.println s!"MeTTaFull match miss normal form: {missNF}"
 
 -- Smoke check: chain hit and fallback branches.
 #eval! do

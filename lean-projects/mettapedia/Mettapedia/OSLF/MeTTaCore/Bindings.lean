@@ -186,14 +186,13 @@ example : (Bindings.single "x" (.symbol "a")).lookup "y" = none := rfl
 -- Extension
 example : (Bindings.empty.extend "x" (.symbol "a")).lookup "x" = some (.symbol "a") := rfl
 
--- Apply to variable (partial function, so not rfl - use decide)
-example : (Bindings.single "x" (.symbol "a")).apply (.var "x") = .symbol "a" := by decide
-example : Bindings.empty.apply (.var "x") = .var "x" := by decide
-
--- Apply to expression (partial function)
-example : (Bindings.single "x" (.grounded (.int 1))).apply
-            (.expression [.symbol "+", .var "x", .grounded (.int 2)]) =
-          .expression [.symbol "+", .grounded (.int 1), .grounded (.int 2)] := by decide
+-- Apply tests use `partial def`, so kernel-checked proofs are unavailable within
+-- the same file. We use `#guard` for runtime verification instead.
+#guard (Bindings.single "x" (Atom.symbol "a")).apply (Atom.var "x") == Atom.symbol "a"
+#guard Bindings.empty.apply (Atom.var "x") == Atom.var "x"
+#guard (Bindings.single "x" (Atom.grounded (.int 1))).apply
+    (Atom.expression [Atom.symbol "+", Atom.var "x", Atom.grounded (.int 2)]) ==
+  Atom.expression [Atom.symbol "+", Atom.grounded (.int 1), Atom.grounded (.int 2)]
 
 end Tests
 

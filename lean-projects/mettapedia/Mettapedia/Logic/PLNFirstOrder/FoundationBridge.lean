@@ -91,13 +91,14 @@ This is the ARCHITECTURE we're building toward. The key achievement so far:
 2. ✅ forAllEval via weakness of diagonal
 3. ✅ Explicit connection to QuantaleWeakness (forAll_is_weakness_of_diagonal)
 4. ✅ Monotonicity theorems (forAllEval_mono_weights, weakness_mono_subset)
+5. ✅ SatisfyingSet negation + existential dual quantifier (`thereExistsEval`)
+6. ✅ De Morgan theorem (definitionally, in Soundness.lean)
+7. ✅ Functoriality theorem (QuantaleHom transport, in Soundness.lean)
+8. ✅ FO Dummett pointwise + quantifier-level theorems (finite-domain setting)
 
-**TODO (Soundness.lean)**:
-1. ⏳ Implement negation on SatisfyingSet
-2. ⏳ Define thereExistsEval properly via De Morgan
-3. ⏳ Prove De Morgan laws
-4. ⏳ Prove Frame distributivity (∀(φ ⊓ ψ) = ∀φ ⊓ ∀ψ)
-5. ⏳ Prove Functoriality (f(∀φ) = ∀(f∘φ) for QuantaleHom f)
+**Open (Soundness/semantics refinement)**:
+1. ⏳ Final formulation for frame-distributivity in `isTrue`-filtered semantics
+2. ⏳ Extend bridge from finite-domain FO layer to stronger infinitary/measure-theoretic semantics
 
 **FUTURE**:
 - Define PLNSemiformula : ℕ → Type graded syntax tree

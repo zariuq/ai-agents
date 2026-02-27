@@ -283,14 +283,12 @@ example : consAtom (.symbol "a") (.expression [.symbol "b"]) =
 example : deconsAtom (.expression [.symbol "a", .symbol "b"]) =
           some (.symbol "a", .expression [.symbol "b"]) := rfl
 
--- unifyOp
-example : (unifyOp Atomspace.empty (.symbol "x") (.symbol "x")
-            (.symbol "yes") (.symbol "no") Bindings.empty).card = 1 := by
-  decide
+-- unifyOp (uses `partial def unify`, so kernel-checked proofs unavailable in-file)
+#guard (unifyOp Atomspace.empty (.symbol "x") (.symbol "x")
+          (.symbol "yes") (.symbol "no") Bindings.empty).card == 1
 
 -- superposeBind
-example : (superposeBind (.expression [.symbol "a", .symbol "b"]) Bindings.empty).card = 2 := by
-  decide
+#guard (superposeBind (.expression [.symbol "a", .symbol "b"]) Bindings.empty).card == 2
 
 -- grounded operations
 example : executeGroundedOp (.symbol "+")

@@ -40,6 +40,43 @@ This note includes concrete gate theorems and symbol pointers (PLN/BN/NARS/Hyper
 
 ---
 
+## Chapter 11 Quantifier Regression
+
+One-command regression target (finite quantifier semantics + fuzzy quantifier layer + worked canaries):
+
+```bash
+cd /home/zar/claude/lean-projects/mettapedia
+ulimit -Sv 6291456 && export LAKE_JOBS=3 && nice -n 19 \
+  lake build Mettapedia.Logic.PLNFirstOrder.Chapter11Regression
+```
+
+Reusable check script:
+
+```bash
+cd /home/zar/claude/lean-projects/mettapedia
+./scripts/check_ch11_quantifiers.sh
+```
+
+Primary Chapter-11 modules:
+
+- `Mettapedia/Logic/PLNFirstOrder/QuantifierSemantics.lean`
+- `Mettapedia/Logic/PLNFirstOrder/FuzzyQuantifierSemantics.lean`
+- `Mettapedia/Logic/PLNFirstOrder/FuzzyITVBridge.lean`
+- `Mettapedia/Logic/PLNFirstOrder/QuantifierCanary.lean`
+- `Mettapedia/Logic/PLNFirstOrder/Chapter11Examples.lean`
+
+Key canaries:
+
+- `canary_ch11_rule_family_end_to_end_ext` (exchange + existential generalization + universal specification)
+- `canary_ch11_crookedLottery_afew_not_forall`
+- `canary_ch11_fuzzySyllogism_many`
+- `canary_ch11_allHigh_forall`
+- `canary_ch11_allLow_not_thereExists`
+- `canary_ch11_rule4_not_equivalent_itvPath`
+- `canary_ch11_itv_strength_interval_of_lower_upper`
+
+---
+
 ## The Unification Thesis
 
 PLN Evidence `(n+, n-)` unifies multiple mathematical frameworks:
@@ -164,6 +201,40 @@ Scope note (important): this does **not** claim full semantic parity for every
 
 ---
 
+## Where are the Lean proofs for PLN↔NARS rule comparison?
+
+The consolidated package is:
+
+- `Mettapedia/Logic/PLNNARSRuleCorrespondence.lean`
+
+It bundles four coherent theorem families:
+
+1. Confidence/weight transform laws
+  - `weightTransformBundle`
+  - Includes: `nars_c2w_eq`, `nars_w2c_eq`, `w2c_c2w_id`, `c2w_w2c_id`
+2. Rule correspondence laws
+  - `ruleCorrespondenceBundle`
+  - Includes: source/sink aliases, induction/abduction symmetry, PLN strength-level formulas
+3. Revision/evidence coherence
+  - `revisionCoherenceBundle`
+  - Includes: weighted-average revision frequency, confidence-from-total-weight, aggregation theorem
+4. Informativeness adjunction
+  - `informativenessAdjunctionBundle`
+  - Includes: `L_le_iff_le_U`, `galoisConnection_L_U_finite`, `U ∘ L` round-trips
+
+Master package theorem:
+
+- `plnNarsRuleBridgeBundle`
+
+Primary source files used by this package:
+
+- `Mettapedia/Logic/PLNMettaTruthFunctions.lean`
+- `Mettapedia/Logic/NARSMettaTruthFunctions.lean`
+- `Mettapedia/Logic/NARSEvidenceBridge.lean`
+- `Mettapedia/Logic/NARSPLNGaloisConnection.lean`
+
+---
+
 ## Subdirectories
 
 ### Comparison/ (3 files)
@@ -274,6 +345,7 @@ Largest subdirectory (~420 KB). Includes:
 |------|-------------|---------|
 | `NuEvidenceQuantaleBridge.lean` | nuPLN <-> Evidence quantale | 0 |
 | `NARSEvidenceBridge.lean` | NARS <-> Evidence bridge | 0 |
+| `PLNNARSRuleCorrespondence.lean` | Consolidated PLN↔NARS rule/adjunction package | 0 |
 | `PLN_KS_Bridge.lean` | PLN <-> Knuth-Skilling bridge | 0 |
 | `EvidenceKSBridge.lean` | Evidence as PlausibilitySpace | 0 |
 
@@ -291,6 +363,8 @@ Largest subdirectory (~420 KB). Includes:
 |------|-------------|---------|
 | `PLNDistributional.lean` | Distributional properties | -- |
 | `PLNTemporal.lean` | Temporal PLN (skeleton) | -- |
+| `PLNChapter14TemporalCausal.lean` | PLN book chapter-14 temporal/causal layer | 0 |
+| `PLNProbabilisticEventCalculus.lean` | Evidence-valued event calculus + WM rewrite grounding | 0 |
 | `PLNEnrichedCategory.lean` | Enriched category structure | -- |
 | `PLNQuantaleConnection.lean` | Quantale connection | -- |
 | `PLNQuantaleSemantics.lean` | Semantic re-export | -- |
@@ -299,6 +373,7 @@ Largest subdirectory (~420 KB). Includes:
 | `PLNDerivedFromEvidence.lean` | Derivation from Evidence | -- |
 | `PLNMettaTruthFunctions.lean` | MeTTa truth formulas | -- |
 | `NARSMettaTruthFunctions.lean` | NARS truth formulas | -- |
+| `PLNNARSRuleCorrespondence.lean` | Unified PLN↔NARS comparison package | 0 |
 | `TemporalQuantale.lean` | Temporal quantale structures | -- |
 | `MarkovExchangeability.lean` | Markov chain exchangeability | -- |
 | `MomentSequences.lean` | Completely monotone sequences | -- |
@@ -380,6 +455,12 @@ This is formalized in `PLNConfidenceWeight.lean`.
 
 ```bash
 cd lean-projects/mettapedia
+
+# Quantifier regression canary suite (one command)
+ulimit -Sv 6291456 && export LAKE_JOBS=3 && nice -n 19 lake build \
+  Mettapedia.Logic.PLNFirstOrder.QuantifierCanary \
+  Mettapedia.Logic.PLNFirstOrder.Soundness \
+  Mettapedia.Logic.PLNFirstOrder
 
 # Core files
 lake build Mettapedia.Logic.EvidenceQuantale

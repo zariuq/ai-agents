@@ -467,37 +467,49 @@ private instance : ToString Pattern := ⟨exprToString⟩
 /-- Boolean values are distinct. -/
 theorem boolT_ne_boolF : boolT ≠ boolF := by decide
 
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 800000 in
 /-- inject(true) is a normal form: no reductions apply. -/
 theorem inject_boolT_is_nf :
-    rewriteWithContext tinyML (inject boolT) = [] := by decide
+    rewriteWithContext tinyML (inject boolT) = [] := by decide +kernel
 
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 800000 in
 /-- inject(false) is a normal form. -/
 theorem inject_boolF_is_nf :
-    rewriteWithContext tinyML (inject boolF) = [] := by decide
+    rewriteWithContext tinyML (inject boolF) = [] := by decide +kernel
 
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 800000 in
 /-- β-reduction fires on `(λ.#0) true`. -/
 theorem beta_fires :
     (rewriteWithContext tinyML
       (app (inject (lam (.bvar 0))) (inject boolT))).length = 1 := by
-  decide
+  decide +kernel
 
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 800000 in
 /-- Force fires on `inject(thunk(inject(true)))`. -/
 theorem force_fires :
     (rewriteWithContext tinyML
       (inject (thunk (inject boolT)))).length = 1 := by
-  decide
+  decide +kernel
 
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 800000 in
 /-- IfTrue fires when condition is inject(BoolT). -/
 theorem ifTrue_fires :
     (rewriteWithContext tinyML
       (ite (inject boolT) (inject boolT) (inject boolF))).length = 1 := by
-  decide
+  decide +kernel
 
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 800000 in
 /-- FstPair fires on fst(inject(pairV(true, false))). -/
 theorem fstPair_fires :
     (rewriteWithContext tinyML
       (fst (inject (pairV boolT boolF)))).length = 1 := by
-  decide
+  decide +kernel
 
 /-! ## End-to-End Bridge (Checker → Fiber → PathSemClosed BC+Graph) -/
 

@@ -209,6 +209,19 @@ def swim_V : EnglishVerb := irreg4V "swim" "swam" "swum" "swimming"
 def give_V : EnglishVerb := irregV "give" "gave" "given"
 def take_V : EnglishVerb := irregV "take" "took" "taken"
 def sleep_V : EnglishVerb := irregV "sleep" "slept" "slept"
+def say_V : EnglishVerb := irregV "say" "said" "said"
+def hear_V : EnglishVerb := irregV "hear" "heard" "heard"
+def write_V : EnglishVerb := mk5V "write" "writes" "wrote" "written" "writing"
+def read_V : EnglishVerb := mk5V "read" "reads" "read" "read" "reading"
+def add_V : EnglishVerb := regV "add"
+def subtract_V : EnglishVerb := regV "subtract"
+def multiply_V : EnglishVerb := regV "multiply"
+def divide_V : EnglishVerb := regV "divide"
+def compile_V : EnglishVerb := regV "compile"
+def import_V : EnglishVerb := regV "import"
+def download_V : EnglishVerb := regV "download"
+def translate_V : EnglishVerb := regV "translate"
+def toggle_V : EnglishVerb := regV "toggle"
 
 -- Particle verbs
 def giveUp_V : EnglishVerb := partV (irregV "give" "gave" "given") "up"
@@ -241,11 +254,23 @@ def give_V2 : EnglishV2 := mkV2 give_V
 def take_V2 : EnglishV2 := mkV2 take_V
 def drink_V2 : EnglishV2 := mkV2 drink_V
 def kill_V2 : EnglishV2 := regV2 "kill"
-def read_V2 : EnglishV2 := mkV2 (irregV "read" "read" "read")
+def read_V2 : EnglishV2 := mkV2 read_V
 def man_V2 : EnglishV2 := regV2 "man"           -- "man the boats"
 def lookAt_V2 : EnglishV2 := mkV2 (regV "look") "at"
 def waitFor_V2 : EnglishV2 := mkV2 (regV "wait") "for"
 def listenTo_V2 : EnglishV2 := mkV2 (regV "listen") "to"
+def write_V2 : EnglishV2 := mkV2 write_V
+def say_V2 : EnglishV2 := mkV2 say_V
+def hear_V2 : EnglishV2 := mkV2 hear_V
+def add_V2 : EnglishV2 := mkV2 add_V
+def subtract_V2 : EnglishV2 := mkV2 subtract_V
+def multiply_V2 : EnglishV2 := mkV2 multiply_V
+def divide_V2 : EnglishV2 := mkV2 divide_V
+def compile_V2 : EnglishV2 := mkV2 compile_V
+def import_V2 : EnglishV2 := mkV2 import_V
+def download_V2 : EnglishV2 := mkV2 download_V
+def translate_V2 : EnglishV2 := mkV2 translate_V
+def toggle_V2 : EnglishV2 := mkV2 toggle_V
 
 /-! ## Tests -/
 

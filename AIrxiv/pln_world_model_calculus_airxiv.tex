@@ -135,7 +135,16 @@ The essential law is \textbf{additivity of evidence extraction under revision}:
 \[
   \ev(W_1 \revise W_2, q) = \ev(W_1,q) \revise \ev(W_2,q).
 \]
-This is the ``semantic spine'' that makes revision and querying behave like a calculus.
+This is the ``semantic spine'' that makes revision and querying behave like a calculus.%
+\footnote{For the concrete PathMap/\texttt{Finset}$\,\alpha$ instance, this law is now Lean-proven as
+\texttt{pjoin\_evidence\_additive} in
+\texttt{Mettapedia/OSLF/PathMap/PLNBridge.lean}: for disjoint stores $W_1 \perp W_2$,
+$\ev(W_1 \cup W_2, q) = \ev(W_1,q) \oplus \ev(W_2,q)$, where
+$\ev(W,q) = (|W \cap q|,\, |W \setminus q|) \in \mathbb{R}_{\geq 0}^\infty \times \mathbb{R}_{\geq 0}^\infty$
+is the K\&S-grounded evidence extraction function.
+The proof also establishes: K\&S sum rule ($n^+ + n^- = |W|$), monotonicity, the Bayesian conditioning
+partition ($\ev(W,q) = \ev(W\cap\mathit{ctx},q) \oplus \ev(W\setminus\mathit{ctx},q)$), and the
+STV connection ($\mathrm{strength} = |W\cap q|/|W|$). Axioms: standard Lean kernel only.}
 
 \subsection{Judgments as a proof-calculus skeleton}
 
@@ -544,13 +553,32 @@ and explicit strength-view judgments.
 \item \texttt{Mettapedia/Logic/PLNJointEvidenceNoGo.lean}: formal no-go theorem for local link-evidence propagation.
 \item \texttt{Mettapedia/Logic/EvidenceQuantale.lean}: algebraic evidence layer (quantale/Heyting structure).
 \item \texttt{Mettapedia/Logic/PLNBNCompilation.lean}: $\Sigma$-guarded screening-off rewrites for BN sublayer.
+\item \texttt{Mettapedia/Logic/PLNWorldModelITV.lean}: explicit ITV semantics (Bayes-normal, Bayes-exact, Walley-IDM).
+\item \texttt{Mettapedia/Logic/PLNWorldModelITVHypercube.lean}: interval-selector layer and typed ITV transport.
+\item \texttt{Mettapedia/Logic/PLNWMOSLFBridgeITVTyped.lean}: typed OSLF ITV bridge + selector-specialized quantale coherence theorems.
+\item \texttt{Mettapedia/Logic/PLNXiDerivedBNRulesTyped.lean}: typed BN constructor lifts (including native tagged/sort-tagged families).
+\item \texttt{Mettapedia/Logic/PLNCanonicalAPI.lean}: one-call end-to-end bundle/finalBundle endpoints.
+\item \texttt{Mettapedia/OSLF/Framework/QuantaleCoherence.lean}: quantale transport/coherence infrastructure used by one-call endpoints.
 \item \texttt{Mettapedia/ProbabilityTheory/BayesianNetworks/FactorGraph.lean}: factor graph semantics.
 \item \texttt{Mettapedia/ProbabilityTheory/BayesianNetworks/VariableElimination.lean}: VE query engine (sum-of-products).
 \item \texttt{Mettapedia/ProbabilityTheory/KnuthSkilling/Bridges/ValuationAlgebra.lean}: K\&S regraduation bridge.
 \item \texttt{Mettapedia/Logic/PLNFirstOrder/QuantifierSemantics.lean}: extensional vs typicality quantifier views.
+\item \texttt{Mettapedia/OSLF/PathMap/PLNBridge.lean}: PathMap $\leftrightarrow$ PLN evidence bridge.
+  Proves $\ev(W_1\cup W_2,q)=\ev(W_1,q)\oplus\ev(W_2,q)$ for disjoint \texttt{Finset}\,$\alpha$ stores
+  (the WM kernel additivity spine), K\&S sum rule, Bayesian conditioning partition,
+  STV strength connection, and registers the \texttt{PathMapWorldModel} typeclass instance.
+  Zero axioms beyond standard Lean kernel (\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}).
 \end{itemize}
 
 \section{Roadmap: ``final steps'' that actually matter}
+
+Current status update: the Lean stack now includes explicit Bayes-vs-Walley ITV semantics,
+typed WM/OSLF ITV bridges, and one-call composed endpoints that chain selector transport,
+rewrite/query transport, and quantale coherence for chain/fork/collider BN paths.
+On the Walley side, the interval branch follows IDM predictive semantics in the
+``bag of marbles'' lineage~\cite{Walley1996BagOfMarbles}; on the Bayesian side,
+the interval branch uses Beta-posterior credible-interval semantics, with robust
+multinomial design links to MLE-dominance analyses~\cite{BenavoliDeCampos2009MLEDominance}.
 
 The most valuable next theorems (because they make PLN usable and honest):
 
@@ -605,6 +633,17 @@ J.\ Pearl.
 H.\ E.\ Kyburg.
 \newblock Higher order probabilities and interval probabilities.
 \newblock (Flattening higher-order probabilities into joint distributions.)
+
+\bibitem{Walley1996BagOfMarbles}
+P.\ Walley.
+\newblock Inferences from multinomial data: Learning about a bag of marbles.
+\newblock \emph{Journal of the Royal Statistical Society: Series B (Methodological)},
+58(1):3--34, 1996. (With discussion pages 34--57.)
+
+\bibitem{BenavoliDeCampos2009MLEDominance}
+A.\ Benavoli and C.\ P.\ de Campos.
+\newblock Inference from multinomial data based on a MLE-dominance criterion.
+\newblock In \emph{ECSQARU 2009}, LNCS 5590, pages 22--33. Springer, 2009.
 
 \bibitem{MacLaneMoerdijk}
 S.\ Mac~Lane and I.\ Moerdijk.

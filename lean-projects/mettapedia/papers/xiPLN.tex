@@ -123,6 +123,9 @@ Heyting-valued (cf. the SatisfyingSet construction in the codebase).
 \subsection{Layer 3: Operational views (strength, weight, confidence, bounds)}
 
 Strength/weight/confidence/intervals are \emph{views} extracted from evidence.
+In particular, Walley-style predictive IDM intervals and Bayesian Beta-posterior
+credible intervals are distinct semantics and must remain explicit selector choices
+rather than being conflated into one operator~\cite{Walley1991,Walley1996BagOfMarbles,BenavoliDeCampos2009MLEDominance}.
 They are indispensable operationally, but they should not be used as if they were complete
 semantic state.  \xiPLN{} adopts the mantra:
 
@@ -467,12 +470,31 @@ The core Lean artifacts supporting \xiPLN{} are:
 \item \codepath{Mettapedia/Logic/PLNBayesNetFastRules.lean}: chain BN proof that the PLN deduction strength formula is exact in $A\to B\to C$;
 \item \codepath{Mettapedia/Logic/PLNJointEvidenceProbability.lean}: posterior-mean probability views (ratio theorems);
 \item \codepath{Mettapedia/Logic/PLNBNCompilation.lean}: BN query compilation, \code{linkCond} queries, and Σ-guarded screening-off rewrites;
+\item \codepath{Mettapedia/Logic/PLNWorldModelITV.lean}: explicit ITV semantics layer (Bayes-normal, Bayes-exact, Walley-IDM);
+\item \codepath{Mettapedia/Logic/PLNWorldModelITVHypercube.lean}: interval-selector transport and typed ITV judgment plumbing;
+\item \codepath{Mettapedia/Logic/PLNWMOSLFBridgeITV.lean}: typed OSLF ITV bridge and selector-specialized coherence theorems;
+\item \codepath{Mettapedia/Logic/PLNXiDerivedBNRules.lean}: typed BN constructor lifts (unit/constant/dependent/native/sort-tagged);
+\item \codepath{Mettapedia/Logic/PLNCanonicalAPI.lean}: canonical one-call end-to-end endpoints and final bundle APIs;
+\item \codepath{Mettapedia/OSLF/Framework/QuantaleCoherence.lean}: reusable quantale transport/coherence bundle;
 \item \codepath{Mettapedia/ProbabilityTheory/BayesianNetworks/VariableElimination.lean}: exact VE engine;
 \item \codepath{Mettapedia/ProbabilityTheory/BayesianNetworks/ValuationAlgebra.lean}: valuation-algebra semantics + VE correctness spine;
 \item \codepath{Mettapedia/ProbabilityTheory/BayesianNetworks/VEBridge.lean}: joint-measure ↔ VE probability bridge;
 \item \codepath{Mettapedia/ProbabilityTheory/KnuthSkilling/Bridges/ValuationAlgebra.lean}: KS → valuation-algebra bridge;
 \item \codepath{Mettapedia/Logic/PLNJointEvidenceNoGo.lean}: the local-completeness no-go theorem.
 \end{itemize}
+
+Recent ITV/typed-bridge deliverables now in the Lean stack:
+\begin{enumerate}
+\item explicit separation of Walley predictive intervals~\cite{Walley1996BagOfMarbles}
+  from Bayesian credible intervals at the semantics layer;
+\item typed WM-to-OSLF bridge theorems that expose coordinate-wise threshold transport (lower/upper/credibility/width/strength);
+\item one-call composed endpoints that chain selector transport, rewrite/query transport, and quantale coherence for chain/fork/collider BN constructors.
+\item intensional inheritance now has a typed WM/query layer and Solomonoff-linked semantic transport:
+  \codepath{Mettapedia/Logic/PLNIntensionalWorldModel.lean},
+  \codepath{Mettapedia/Logic/IntensionalInheritanceSolomonoffBridge.lean},
+  and linked one-call final-bundle endpoints in
+  \codepath{Mettapedia/Logic/PLNCanonicalAPI.lean}.
+\end{enumerate}
 
 Next implementation milestones:
 \begin{enumerate}
@@ -484,6 +506,10 @@ Next implementation milestones:
   $\Sigma$ side-conditions.
 \item extend query language beyond atoms to formulas/events, enabling FO/HO semantics via
   SatisfyingSets while keeping probability views as world-model queries.
+\item stabilize sort-tagged native-path coordinate-specialized final-bundle aliases
+  (chain/fork/collider for lower/upper/credibility/width/strength);
+\item close remaining proof debt in confidence-space soundness layers so all downstream
+  one-call APIs rest on fully discharged theorem dependencies.
 \end{enumerate}
 
 \section{Conclusion}
@@ -492,6 +518,226 @@ Next implementation milestones:
 precise enough to support soundness/completeness claims and flexible enough to support tractable
 sublayers.  The complete layer is not a competing ``second PLN''; it is the reference semantics
 that operational PLN rules approximate, under explicit assumptions, within declared model classes.
+
+\appendix
+\section{PLN Book Coverage Map}
+\label{app:pln-book-coverage}
+
+This appendix maps the core units of the PLN book (\cite{goertzel2009pln}) to
+the current Lean formalization and indicates how each unit is represented.
+Coverage labels are:
+\begin{itemize}
+\item \textbf{Formalized}: theorem-level core is present in the main stack.
+\item \textbf{Partial}: substantial core is formalized, but some book-era variants remain open.
+\item \textbf{POC}: exploratory/prototype formalization, not yet integrated as a complete layer.
+\end{itemize}
+
+\begin{longtable}{p{0.09\textwidth}p{0.25\textwidth}p{0.44\textwidth}p{0.14\textwidth}}
+\textbf{Book unit} & \textbf{Core content} & \textbf{Lean coverage (where/how)} & \textbf{Status} \\
+\hline
+Ch.\ 1 & Introduction & Conceptual framing is encoded as an explicit semantic stack split:
+world-model posterior semantics vs evidence algebra vs operational truth-value views
+(this paper; \codepath{Mettapedia/Logic/PLNCore.lean},
+\codepath{Mettapedia/Logic/SemanticsDecisionTree.lean}). & Formalized \\
+\hline
+Ch.\ 2 & Knowledge representation & Query-level KR via \code{PLNQuery}, \code{WorldModel},
+\code{WorldModelSigma}, and WM rewrite judgments:
+\codepath{Mettapedia/Logic/PLNWorldModel.lean},
+\codepath{Mettapedia/Logic/PLNWorldModelCalculus.lean},
+\codepath{Mettapedia/Logic/PLNBNCompilation.lean}. & Formalized \\
+\hline
+Ch.\ 3 & Experiential semantics & Evidence-as-counts carrier and revision algebra:
+\codepath{Mettapedia/Logic/EvidenceClass.lean},
+\codepath{Mettapedia/Logic/EvidenceQuantale.lean}; complete posterior state semantics via
+\codepath{Mettapedia/Logic/PLNJointEvidence.lean}. & Formalized \\
+\hline
+Ch.\ 4 & Indefinite truth values & ITV core plus explicit semantics split:
+\codepath{Mettapedia/Logic/PLNIndefiniteTruth.lean}
+(including Walley IDM predictive interval constructors),
+\codepath{Mettapedia/Logic/PLNWorldModelITV.lean},
+\codepath{Mettapedia/Logic/PLNWorldModelITVHypercube.lean}. & Formalized \\
+\hline
+Ch.\ 5 & FO extensional inference (rules/strength formulas) & Core deduction/induction/abduction
+formulas and derived rules:
+\codepath{Mettapedia/Logic/PLNDeduction.lean},
+\codepath{Mettapedia/Logic/PLNDerivation.lean},
+\codepath{Mettapedia/Logic/PLNInferenceRules.lean},
+\codepath{Mettapedia/Logic/PLNMettaTruthFunctions.lean}; BN exactness anchors:
+\code{chainBN\_plnDeductionStrength\_exact},
+\code{forkBN\_plnDeductionStrength\_exact} in
+\codepath{Mettapedia/Logic/PLNBayesNetFastRules.lean}. & Formalized \\
+\hline
+Ch.\ 6 & FO extensional inference with ITV & ITV semantics are transported through WM rewrites,
+typed OSLF bridge, and one-call API bundles:
+\codepath{Mettapedia/Logic/PLNWMOSLFBridgeITV.lean},
+\codepath{Mettapedia/Logic/PLNCanonicalAPI.lean}. & Formalized \\
+\hline
+Ch.\ 7 & Distributional truth values & Beta/Dirichlet distributional layer:
+\codepath{Mettapedia/Logic/PLNDistributional.lean},
+\codepath{Mettapedia/Logic/EvidenceBeta.lean},
+\codepath{Mettapedia/Logic/EvidenceDirichlet.lean}; deeper Kyburg-style reduction track remains
+separate (\codepath{Mettapedia/Logic/HigherOrder/PLNKyburgReduction.lean}). & Partial \\
+\hline
+Ch.\ 8 & Error magnification & Error characterization and soundness diagnostics:
+\codepath{Mettapedia/Logic/PLNBugAnalysis.lean},
+\codepath{Mettapedia/Logic/Comparison/ErrorCharacterization.lean},
+\codepath{Mettapedia/Logic/SoundnessCompleteness.lean}. & Partial \\
+\hline
+Ch.\ 9 & Large-scale inference strategies & Two tracks:
+(i) structural BN compilation/rewrite pipeline
+(\codepath{Mettapedia/Logic/PLNBNCompilation.lean},
+\codepath{Mettapedia/Logic/PLNXiDerivedBNRules.lean});
+(ii) premise-selection/inference-control theory
+(\codepath{Mettapedia/Logic/PremiseSelectionSelectorSpec.lean},
+\codepath{Mettapedia/Logic/PremiseSelectionOptimality.lean},
+\codepath{Mettapedia/Logic/PremiseSelectionRankingStability.lean},
+\codepath{Mettapedia/Logic/PremiseSelectionCoverage.lean}). & Partial \\
+\hline
+Ch.\ 10 & Higher-order extensional inference & HOI$\to$FOI reduction formalized:
+\codepath{Mettapedia/Logic/HigherOrder/Basic.lean},
+\codepath{Mettapedia/Logic/HigherOrder/HigherOrderReduction.lean},
+\codepath{Mettapedia/Logic/HigherOrder.lean}. & Formalized (core) \\
+\hline
+Ch.\ 11 & Crisp/fuzzy quantifiers with indefinite TVs & Quantifier semantics and weakness connection:
+\codepath{Mettapedia/Logic/PLNFirstOrder.lean},
+\codepath{Mettapedia/Logic/PLNFirstOrder/WeaknessConnection.lean},
+\codepath{Mettapedia/Logic/PLNFirstOrder/Soundness.lean}; fuzzy quantifier algebra and ITV-coordinate
+bridge:
+\codepath{Mettapedia/Logic/PLNFirstOrder/FuzzyQuantifierSemantics.lean},
+\codepath{Mettapedia/Logic/PLNFirstOrder/FuzzyITVBridge.lean}; theorem pointers:
+\code{canary\_ch11\_rule\_family\_end\_to\_end\_ext},
+\code{canary\_ch11\_rule4\_not\_equivalent\_itvPath},
+\code{fuzzyIntervalHolds\_strength\_of\_lower\_upper},
+\code{canary\_ch11\_itv\_strength\_interval\_of\_lower\_upper}; crisp operators:
+\codepath{Mettapedia/Logic/PLNCrispEvidence.lean},
+\codepath{Mettapedia/Logic/PLNNoisyOr.lean}; regression target:
+\codepath{Mettapedia/Logic/PLNFirstOrder/Chapter11Regression.lean},
+\codepath{scripts/check\_ch11\_quantifiers.sh}. & Partial \\
+\hline
+Ch.\ 12 & Intensional inference & Information-theoretic bridge and typed WM grounding:
+\codepath{Mettapedia/Logic/IntensionalInheritance.lean},
+\codepath{Mettapedia/Logic/IntensionalInheritanceSolomonoffBridge.lean},
+\codepath{Mettapedia/Logic/PLNIntensionalWorldModel.lean},
+semantic and linked one-call endpoints in
+\codepath{Mettapedia/Logic/PLNCanonicalAPI.lean}. & Partial \\
+\hline
+Ch.\ 13 & Aspects of inference control & Formal inference-control components via selector
+specification, ranking transfer/stability, and aggregation-role theorems:
+\codepath{Mettapedia/Logic/PremiseSelectionSelectorSpec.lean},
+\codepath{Mettapedia/Logic/PremiseSelectionOptimality.lean},
+\codepath{Mettapedia/Logic/PremiseSelectionRankingStability.lean},
+\codepath{Mettapedia/Logic/PremiseSelectionCoverage.lean}. & Partial \\
+\hline
+Ch.\ 14 & Temporal and causal inference & Temporal operator layer and causal profile:
+\codepath{Mettapedia/Logic/PLNChapter14TemporalCausal.lean}; event-calculus WM grounding:
+\codepath{Mettapedia/Logic/PLNProbabilisticEventCalculus.lean}; temporal OSLF/GSLT and one-call
+event endpoints:
+\codepath{Mettapedia/Logic/PLNCanonicalAPI.lean} (event bundle/final-bundle endpoints). & Formalized (core) \\
+\hline
+App.\ A & Comparison of PLN and NARS rules & Consolidated theorem bundle:
+\codepath{Mettapedia/Logic/PLNNARSRuleCorrespondence.lean}, with source bridges
+\codepath{Mettapedia/Logic/NARSEvidenceBridge.lean} and
+\codepath{Mettapedia/Logic/NARSPLNGaloisConnection.lean}. & Formalized \\
+\hline
+\end{longtable}
+
+The table is intentionally conservative: rows marked \emph{Partial} indicate that the core
+semantic/theorem spine is present, while some book-era variants (or full-scale operational
+integration) are still being extended.
+
+\paragraph{Coverage delta (current).}
+Relative to earlier drafts, Ch.\ 12 has moved from prototype-only status to
+\emph{partial formalization}: the ASSOC-channel path is now wired through typed WM semantics,
+Solomonoff log-ratio correspondence, and one-call canonical API transport. Remaining work is
+mainly PAT/mixed-policy parity and assumption-minimal packaging.
+
+\subsection{Module-Level Coverage Index (Legacy + Recent)}
+\label{app:pln-book-coverage-modules}
+
+To make explicit that coverage is not limited to recent additions, this index lists
+the principal \emph{legacy and current} modules in Mettapedia that track PLN-book content.
+
+\paragraph{Ch.\ 3--4 (experiential semantics, indefinite truth values).}
+\codepath{Mettapedia/Logic/EvidenceClass.lean},
+\codepath{Mettapedia/Logic/EvidenceQuantale.lean},
+\codepath{Mettapedia/Logic/PLNIndefiniteTruth.lean},
+\codepath{Mettapedia/Logic/PLNWorldModelITV.lean},
+\codepath{Mettapedia/Logic/PLNWorldModelITVHypercube.lean}.
+
+\paragraph{Ch.\ 5 (FO extensional inference: rules and formulas).}
+\codepath{Mettapedia/Logic/PLNDeduction.lean},
+\codepath{Mettapedia/Logic/PLNDerivation.lean},
+\codepath{Mettapedia/Logic/PLNInferenceRules.lean},
+\codepath{Mettapedia/Logic/PLNConjunction.lean},
+\codepath{Mettapedia/Logic/PLNRevision.lean},
+\codepath{Mettapedia/Logic/PLNImplicantConjunction.lean},
+\codepath{Mettapedia/Logic/PLNMettaTruthFunctions.lean},
+\codepath{Mettapedia/Logic/PLNBayesNetFastRules.lean},
+\codepath{Mettapedia/Logic/PLNBNCompilation.lean},
+\codepath{Mettapedia/Logic/PLNXiDerivedBNRules.lean}.
+
+\paragraph{Ch.\ 6--7 (ITV/distributional truth-value layers).}
+\codepath{Mettapedia/Logic/PLNDistributional.lean},
+\codepath{Mettapedia/Logic/EvidenceBeta.lean},
+\codepath{Mettapedia/Logic/EvidenceDirichlet.lean},
+\codepath{Mettapedia/Logic/EvidenceNormalGamma.lean},
+\codepath{Mettapedia/Logic/PLNWMOSLFBridgeITV.lean},
+\codepath{Mettapedia/Logic/PLNCanonicalAPI.lean}.
+
+\paragraph{Ch.\ 8 (error magnification / diagnostics).}
+\codepath{Mettapedia/Logic/PLNBugAnalysis.lean},
+\codepath{Mettapedia/Logic/Comparison/ErrorCharacterization.lean},
+\codepath{Mettapedia/Logic/SoundnessCompleteness.lean},
+\codepath{Mettapedia/Logic/PLNSoundnessCounterexample.lean},
+\codepath{Mettapedia/Logic/PLNSoundnessDiagnosis.lean}.
+
+\paragraph{Ch.\ 9 and Ch.\ 13 (large-scale inference + inference control).}
+\codepath{Mettapedia/Logic/PremiseSelectionKNN.lean},
+\codepath{Mettapedia/Logic/PremiseSelectionKNN_PLNBridge.lean},
+\codepath{Mettapedia/Logic/PremiseSelectionOptimality.lean},
+\codepath{Mettapedia/Logic/PremiseSelectionCoverage.lean},
+\codepath{Mettapedia/Logic/PremiseSelectionRankingStability.lean},
+\codepath{Mettapedia/Logic/PremiseSelectionSelectorSpec.lean},
+\codepath{Mettapedia/Logic/PremiseSelectionBestPLNDraft.lean}.
+
+\paragraph{Ch.\ 10--11 (higher-order, quantifiers, crisp/fuzzy operators).}
+\codepath{Mettapedia/Logic/HigherOrder.lean},
+\codepath{Mettapedia/Logic/HigherOrder/Basic.lean},
+\codepath{Mettapedia/Logic/HigherOrder/HigherOrderReduction.lean},
+\codepath{Mettapedia/Logic/PLNFirstOrder.lean},
+\codepath{Mettapedia/Logic/PLNFirstOrder/FuzzyQuantifierSemantics.lean},
+\codepath{Mettapedia/Logic/PLNFirstOrder/FuzzyITVBridge.lean},
+\codepath{Mettapedia/Logic/PLNFirstOrder/QuantifierCanary.lean},
+\codepath{Mettapedia/Logic/PLNFirstOrder/Chapter11Examples.lean},
+\codepath{Mettapedia/Logic/PLNFirstOrder/Chapter11Regression.lean},
+\codepath{Mettapedia/Logic/PLNFirstOrder/Soundness.lean},
+\codepath{Mettapedia/Logic/PLNCrispEvidence.lean},
+\codepath{Mettapedia/Logic/PLNNoisyOr.lean},
+\codepath{Mettapedia/Logic/PLNNegation.lean},
+\codepath{Mettapedia/Logic/PLNDisjunction.lean},
+\codepath{scripts/check\_ch11\_quantifiers.sh}.
+
+\paragraph{Ch.\ 12 (intensional inference).}
+\codepath{Mettapedia/Logic/IntensionalInheritance.lean},
+\codepath{Mettapedia/Logic/IntensionalInheritanceSolomonoffBridge.lean},
+\codepath{Mettapedia/Logic/PLNIntensionalWorldModel.lean},
+\codepath{Mettapedia/Logic/PLNCanonicalAPI.lean}.
+
+\paragraph{Ch.\ 14 (temporal/causal; event calculus; OSLF/GSLT grounding).}
+\codepath{Mettapedia/Logic/PLNTemporal.lean},
+\codepath{Mettapedia/Logic/TemporalQuantale.lean},
+\codepath{Mettapedia/Logic/PLNChapter14TemporalCausal.lean},
+\codepath{Mettapedia/Logic/PLNProbabilisticEventCalculus.lean},
+\codepath{Mettapedia/OSLF/Framework/VertexTemporalRewriteRules.lean},
+\codepath{Mettapedia/OSLF/Framework/HypercubeTemporalGSLTFunctor.lean},
+\codepath{Mettapedia/OSLF/Framework/QuantaleCoherence.lean}.
+
+\paragraph{Appendix A (PLN/NARS comparison).}
+\codepath{Mettapedia/Logic/PLNNARSRuleCorrespondence.lean},
+\codepath{Mettapedia/Logic/NARSEvidenceBridge.lean},
+\codepath{Mettapedia/Logic/NARSPLNGaloisConnection.lean}.
+
+This module-level index is intended as the explicit ``not just the new files'' map.
 
 \bibliographystyle{plain}
 \bibliography{references}

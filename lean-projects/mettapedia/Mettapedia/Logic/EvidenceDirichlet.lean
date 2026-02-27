@@ -312,6 +312,151 @@ theorem posterior_mean_converges_to_frequency {k : ℕ} (hk : 0 < k)
         apply div_le_div_of_nonneg_left (le_of_lt hαsum_pos) hn_pos
         linarith
 
+/-! ## Walley IDM Predictive Intervals (Multinomial) -/
+
+section IDMPredictiveIntervals
+
+/-- Context for multinomial IDM predictive intervals (`s > 0` is prior strength). -/
+structure IDMPredictiveContext where
+  s : ℝ
+  s_pos : 0 < s
+
+namespace IDMPredictiveContext
+
+/-- Common IDM default (`s = 2`). -/
+def default : IDMPredictiveContext := ⟨2, by norm_num⟩
+
+end IDMPredictiveContext
+
+variable {k : ℕ}
+
+/-- Category count is bounded by total count. -/
+theorem count_le_total (e : MultiEvidence k) (i : Fin k) :
+    e.counts i ≤ e.total :=
+  Finset.single_le_sum (fun _ _ => Nat.zero_le _) (Finset.mem_univ i)
+
+/-- Denominator shared by all IDM predictive bounds. -/
+noncomputable def idmDenom (ctx : IDMPredictiveContext) (e : MultiEvidence k) : ℝ :=
+  (e.total : ℝ) + ctx.s
+
+/-- Walley IDM predictive lower bound for category `i`. -/
+noncomputable def idmLower
+    (ctx : IDMPredictiveContext) (e : MultiEvidence k) (i : Fin k) : ℝ :=
+  (e.counts i : ℝ) / idmDenom ctx e
+
+/-- Walley IDM predictive upper bound for category `i`. -/
+noncomputable def idmUpper
+    (ctx : IDMPredictiveContext) (e : MultiEvidence k) (i : Fin k) : ℝ :=
+  ((e.counts i : ℝ) + ctx.s) / idmDenom ctx e
+
+/-- Width of each category interval under IDM (independent of `i`). -/
+noncomputable def idmWidth (ctx : IDMPredictiveContext) (e : MultiEvidence k) : ℝ :=
+  ctx.s / idmDenom ctx e
+
+theorem idmDenom_pos (ctx : IDMPredictiveContext) (e : MultiEvidence k) :
+    0 < idmDenom ctx e := by
+  unfold idmDenom
+  have hTotalNonneg : 0 ≤ (e.total : ℝ) := by exact_mod_cast (Nat.zero_le e.total)
+  linarith [ctx.s_pos]
+
+theorem idmLower_nonneg (ctx : IDMPredictiveContext) (e : MultiEvidence k) (i : Fin k) :
+    0 ≤ idmLower ctx e i := by
+  unfold idmLower
+  apply div_nonneg
+  · exact Nat.cast_nonneg (e.counts i)
+  · exact le_of_lt (idmDenom_pos ctx e)
+
+theorem idmUpper_nonneg (ctx : IDMPredictiveContext) (e : MultiEvidence k) (i : Fin k) :
+    0 ≤ idmUpper ctx e i := by
+  unfold idmUpper
+  apply div_nonneg
+  · have hCountNonneg : 0 ≤ (e.counts i : ℝ) := Nat.cast_nonneg (e.counts i)
+    linarith [ctx.s_pos.le, hCountNonneg]
+  · exact le_of_lt (idmDenom_pos ctx e)
+
+theorem idmLower_le_idmUpper (ctx : IDMPredictiveContext) (e : MultiEvidence k) (i : Fin k) :
+    idmLower ctx e i ≤ idmUpper ctx e i := by
+  unfold idmLower idmUpper
+  apply div_le_div_of_nonneg_right
+  · linarith [ctx.s_pos.le]
+  · exact le_of_lt (idmDenom_pos ctx e)
+
+theorem idmUpper_le_one (ctx : IDMPredictiveContext) (e : MultiEvidence k) (i : Fin k) :
+    idmUpper ctx e i ≤ 1 := by
+  unfold idmUpper
+  apply (div_le_one (idmDenom_pos ctx e)).2
+  have hCountLe : (e.counts i : ℝ) ≤ (e.total : ℝ) := by
+    exact_mod_cast (count_le_total e i)
+  unfold idmDenom
+  linarith [hCountLe]
+
+theorem idmWidth_eq_upper_sub_lower
+    (ctx : IDMPredictiveContext) (e : MultiEvidence k) (i : Fin k) :
+    idmWidth ctx e = idmUpper ctx e i - idmLower ctx e i := by
+  unfold idmWidth idmUpper idmLower idmDenom
+  field_simp [ne_of_gt (idmDenom_pos ctx e)]
+  ring
+
+theorem idmWidth_nonneg (ctx : IDMPredictiveContext) (e : MultiEvidence k) :
+    0 ≤ idmWidth ctx e := by
+  unfold idmWidth
+  exact div_nonneg (le_of_lt ctx.s_pos) (le_of_lt (idmDenom_pos ctx e))
+
+theorem idmWidth_le_one (ctx : IDMPredictiveContext) (e : MultiEvidence k) :
+    idmWidth ctx e ≤ 1 := by
+  unfold idmWidth
+  apply (div_le_one (idmDenom_pos ctx e)).2
+  unfold idmDenom
+  have hTotalNonneg : 0 ≤ (e.total : ℝ) := by exact_mod_cast (Nat.zero_le e.total)
+  linarith [hTotalNonneg]
+
+theorem sum_idmLower_eq
+    (ctx : IDMPredictiveContext) (e : MultiEvidence k) :
+    (∑ i : Fin k, idmLower ctx e i) = (e.total : ℝ) / idmDenom ctx e := by
+  unfold idmLower idmDenom
+  calc
+    (∑ i : Fin k, (e.counts i : ℝ) / ((e.total : ℝ) + ctx.s))
+        = (∑ i : Fin k, (e.counts i : ℝ)) / ((e.total : ℝ) + ctx.s) := by
+          simp [div_eq_mul_inv, Finset.sum_mul]
+    _ = (e.total : ℝ) / ((e.total : ℝ) + ctx.s) := by
+          simp [MultiEvidence.total, Nat.cast_sum]
+
+theorem sum_idmUpper_eq
+    (ctx : IDMPredictiveContext) (e : MultiEvidence k) :
+    (∑ i : Fin k, idmUpper ctx e i) =
+      ((e.total : ℝ) + (k : ℝ) * ctx.s) / idmDenom ctx e := by
+  unfold idmUpper idmDenom
+  calc
+    (∑ i : Fin k, ((e.counts i : ℝ) + ctx.s) / ((e.total : ℝ) + ctx.s))
+        = (∑ i : Fin k, ((e.counts i : ℝ) + ctx.s)) / ((e.total : ℝ) + ctx.s) := by
+          simp [div_eq_mul_inv, Finset.sum_mul]
+    _ = ((∑ i : Fin k, (e.counts i : ℝ)) + (∑ _i : Fin k, ctx.s)) / ((e.total : ℝ) + ctx.s) := by
+          simp [Finset.sum_add_distrib]
+    _ = ((e.total : ℝ) + (k : ℝ) * ctx.s) / ((e.total : ℝ) + ctx.s) := by
+          simp [MultiEvidence.total, Nat.cast_sum]
+
+theorem sum_idmLower_le_one (ctx : IDMPredictiveContext) (e : MultiEvidence k) :
+    (∑ i : Fin k, idmLower ctx e i) ≤ 1 := by
+  rw [sum_idmLower_eq]
+  apply (div_le_one (idmDenom_pos ctx e)).2
+  unfold idmDenom
+  linarith [ctx.s_pos.le]
+
+theorem one_le_sum_idmUpper (ctx : IDMPredictiveContext) {k : ℕ} (hk : 0 < k)
+    (e : MultiEvidence k) :
+    1 ≤ (∑ i : Fin k, idmUpper ctx e i) := by
+  rw [sum_idmUpper_eq]
+  have hDenPos : 0 < idmDenom ctx e := idmDenom_pos ctx e
+  have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast (Nat.succ_le_of_lt hk)
+  have hs_le : ctx.s ≤ (k : ℝ) * ctx.s := by
+    simpa using (mul_le_mul_of_nonneg_right hk1 (le_of_lt ctx.s_pos))
+  have hNumGe : idmDenom ctx e ≤ (e.total : ℝ) + (k : ℝ) * ctx.s := by
+    unfold idmDenom
+    linarith [hs_le]
+  exact (one_le_div hDenPos).2 hNumGe
+
+end IDMPredictiveIntervals
+
 /-! ## Connection to Binary Evidence (k=2 case) -/
 
 /-- For k=2, MultiEvidence reduces to binary Evidence. -/

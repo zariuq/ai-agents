@@ -2,6 +2,7 @@ import Mettapedia.Logic.EvidenceQuantale
 import Mettapedia.Logic.Exchangeability
 import Mettapedia.Logic.EvidenceCounts
 import Mettapedia.ProbabilityTheory.Distributions.BetaBernoulli
+import Mathlib.Probability.CDF
 import Mathlib.Algebra.Order.Floor.Semiring
 
 /-!
@@ -713,6 +714,23 @@ structure CredibleInterval where
   upper_le_one : upper ≤ 1
   level_in_unit : level ∈ Set.Ioo 0 1  -- (0, 1) open interval
 
+/-- Backend selection for Beta credible intervals. -/
+inductive CredibleIntervalBackend where
+  | normalApprox
+  | exactInvCDF
+  deriving DecidableEq, Repr
+
+/-- Clip a real to the probability simplex `[0,1]`. -/
+noncomputable def clamp01 (x : ℝ) : ℝ := min 1 (max 0 x)
+
+theorem clamp01_nonneg (x : ℝ) : 0 ≤ clamp01 x := by
+  unfold clamp01
+  exact le_min (by norm_num) (le_max_left 0 x)
+
+theorem clamp01_le_one (x : ℝ) : clamp01 x ≤ 1 := by
+  unfold clamp01
+  exact min_le_left 1 (max 0 x)
+
 /-- Standard Normal quantiles for common confidence levels.
     For 95% interval: z = 1.96 (actually 1.959964...)
     For 90% interval: z = 1.645 -/
@@ -778,6 +796,65 @@ noncomputable def betaCredibleInterval_normal_approx
       simp only [Set.mem_Ioo]
       exact hlevel }
 
+/-- Exact Beta quantile via inverse CDF, with `[0,1]` clipping for totality. -/
+noncomputable def betaQuantile_exactInvCDF
+    (α β : ℝ) (_hα : 0 < α) (_hβ : 0 < β) (p : ℝ) : ℝ :=
+  clamp01 (Function.invFun (ProbabilityTheory.cdf (ProbabilityTheory.betaMeasure α β)) p)
+
+theorem betaQuantile_exactInvCDF_nonneg
+    (α β : ℝ) (hα : 0 < α) (hβ : 0 < β) (p : ℝ) :
+    0 ≤ betaQuantile_exactInvCDF α β hα hβ p := by
+  simpa [betaQuantile_exactInvCDF] using
+    (clamp01_nonneg
+      (Function.invFun (ProbabilityTheory.cdf (ProbabilityTheory.betaMeasure α β)) p))
+
+theorem betaQuantile_exactInvCDF_le_one
+    (α β : ℝ) (hα : 0 < α) (hβ : 0 < β) (p : ℝ) :
+    betaQuantile_exactInvCDF α β hα hβ p ≤ 1 := by
+  simpa [betaQuantile_exactInvCDF] using
+    (clamp01_le_one
+      (Function.invFun (ProbabilityTheory.cdf (ProbabilityTheory.betaMeasure α β)) p))
+
+/-- Equal-tailed Beta interval using inverse CDF quantiles.
+
+This backend keeps a total implementation in Lean by clipping inverse-CDF values
+to `[0,1]`. It is intended as the exact semantics backend, with numerical behavior
+delegated to `invFun` and the CDF representation.
+-/
+noncomputable def betaCredibleInterval_exactInvCDF
+    (α β level : ℝ) (hα : 0 < α) (hβ : 0 < β) (hlevel : 0 < level ∧ level < 1) :
+    CredibleInterval :=
+  let tail := (1 - level) / 2
+  let qL := betaQuantile_exactInvCDF α β hα hβ tail
+  let qU := betaQuantile_exactInvCDF α β hα hβ (1 - tail)
+  { lower := min qL qU
+    upper := max qL qU
+    level := level
+    lower_le_upper := by
+      exact le_trans (min_le_left qL qU) (le_max_left qL qU)
+    lower_nonneg := by
+      apply le_min
+      · exact betaQuantile_exactInvCDF_nonneg α β hα hβ tail
+      · exact betaQuantile_exactInvCDF_nonneg α β hα hβ (1 - tail)
+    upper_le_one := by
+      apply max_le
+      · exact betaQuantile_exactInvCDF_le_one α β hα hβ tail
+      · exact betaQuantile_exactInvCDF_le_one α β hα hβ (1 - tail)
+    level_in_unit := by
+      simp only [Set.mem_Ioo]
+      exact hlevel }
+
+/-- Generic Beta credible interval API with explicit backend selection. -/
+noncomputable def betaCredibleInterval
+    (backend : CredibleIntervalBackend)
+    (α β level : ℝ) (hα : 0 < α) (hβ : 0 < β) (hlevel : 0 < level ∧ level < 1) :
+    CredibleInterval :=
+  match backend with
+  | .normalApprox =>
+      betaCredibleInterval_normal_approx α β level hα hβ hlevel
+  | .exactInvCDF =>
+      betaCredibleInterval_exactInvCDF α β level hα hβ hlevel
+
 /-- Convenience function: Beta credible interval at 95% level. -/
 noncomputable def betaCredibleInterval95
     (α β : ℝ) (hα : 0 < α) (hβ : 0 < β) : CredibleInterval :=
@@ -788,12 +865,23 @@ noncomputable def betaCredibleInterval90
     (α β : ℝ) (hα : 0 < α) (hβ : 0 < β) : CredibleInterval :=
   betaCredibleInterval_normal_approx α β 0.90 hα hβ ⟨by norm_num, by norm_num⟩
 
+/-- Convenience function: exact-invCDF Beta credible interval at 95% level. -/
+noncomputable def betaCredibleInterval95_exactInvCDF
+    (α β : ℝ) (hα : 0 < α) (hβ : 0 < β) : CredibleInterval :=
+  betaCredibleInterval_exactInvCDF α β 0.95 hα hβ ⟨by norm_num, by norm_num⟩
+
+/-- Convenience function: exact-invCDF Beta credible interval at 90% level. -/
+noncomputable def betaCredibleInterval90_exactInvCDF
+    (α β : ℝ) (hα : 0 < α) (hβ : 0 < β) : CredibleInterval :=
+  betaCredibleInterval_exactInvCDF α β 0.90 hα hβ ⟨by norm_num, by norm_num⟩
+
 /-- Credible interval from Evidence counts and prior.
 
 Given Evidence (n⁺, n⁻) with prior (α₀, β₀), compute the credible interval
 for the underlying Bernoulli parameter θ.
 -/
-noncomputable def credibleIntervalFromEvidence
+noncomputable def credibleIntervalFromEvidenceWith
+    (backend : CredibleIntervalBackend)
     (n_pos n_neg : ℕ) (α₀ β₀ level : ℝ)
     (hα₀ : 0 < α₀) (hβ₀ : 0 < β₀) (hlevel : 0 < level ∧ level < 1) :
     CredibleInterval :=
@@ -805,7 +893,15 @@ noncomputable def credibleIntervalFromEvidence
   have hβ : 0 < β := by
     have h_nonneg : 0 ≤ (n_neg : ℝ) := Nat.cast_nonneg n_neg
     linarith
-  betaCredibleInterval_normal_approx α β level hα hβ hlevel
+  betaCredibleInterval backend α β level hα hβ hlevel
+
+/-- Backward-compatible default: normal-approximation backend. -/
+noncomputable def credibleIntervalFromEvidence
+    (n_pos n_neg : ℕ) (α₀ β₀ level : ℝ)
+    (hα₀ : 0 < α₀) (hβ₀ : 0 < β₀) (hlevel : 0 < level ∧ level < 1) :
+    CredibleInterval :=
+  credibleIntervalFromEvidenceWith
+    .normalApprox n_pos n_neg α₀ β₀ level hα₀ hβ₀ hlevel
 
 end BetaCredibleIntervals
 

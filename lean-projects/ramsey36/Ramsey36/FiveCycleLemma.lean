@@ -82,7 +82,7 @@ theorem five_cycle_structure
 
       rw [h_partition_eq, card_union_of_disjoint] at h_others_card
       · omega
-      · rw [disjoint_left]
+      · rw [Finset.disjoint_left]
         intro w hw h_nonadj
         simp only [mem_filter] at hw h_nonadj
         exact h_nonadj.2.2 hw.2.2

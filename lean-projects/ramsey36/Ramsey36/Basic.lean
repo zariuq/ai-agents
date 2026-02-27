@@ -866,7 +866,7 @@ lemma degree_not_four_of_triangleFree_no_6indep
           constructor
           · intro heq
             subst heq
-            exact G.loopless x hx
+            exact G.loopless.irrefl x hx
           · -- x ∈ N: since x is neighbor of t and not v and not in M
             by_contra h_not_in_N
             have : x ∈ insert v N := by
@@ -1575,8 +1575,8 @@ lemma claim2_neighbor_structure {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
             · exact absurd rfl hab
           · -- card = 3
             simp only [T]
-            have hv_ne_n : v ≠ n := fun h => G.loopless v (h ▸ h_adj_nv)
-            have hv_ne_m : v ≠ m := fun h => G.loopless v (h ▸ h_adj_mv)
+            have hv_ne_n : v ≠ n := fun h => G.loopless.irrefl v (h ▸ h_adj_nv)
+            have hv_ne_m : v ≠ m := fun h => G.loopless.irrefl v (h ▸ h_adj_mv)
             rw [card_insert_of_notMem, card_insert_of_notMem, card_singleton]
             · simp [hne.symm]
             · simp [hv_ne_n, hv_ne_m]
@@ -1595,7 +1595,7 @@ lemma claim2_neighbor_structure {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
               simp only [M, mem_sdiff, mem_univ, mem_insert, true_and, not_or]
               exact ⟨hw_eq_v, fun hw_in_N =>
                 -- If w ∈ N, then n-w edge contradicts triangle-free (since both n,w ∈ N)
-                have : w ≠ n := fun heq => G.loopless n (heq ▸ hw_adj)
+                have : w ≠ n := fun heq => G.loopless.irrefl n (heq ▸ hw_adj)
                 h_no_nbr_in_N w hw_in_N this hw_adj⟩
             · exact hw_adj
         · intro h
@@ -1776,7 +1776,7 @@ lemma p_adjacent_of_shared_w {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
   -- Show |X| = 5 (need all elements distinct)
   have h1 : p1 ≠ s1 := by
     intro h; subst h
-    exact G.loopless p1 hs1_adj_p1
+    exact G.loopless.irrefl p1 hs1_adj_p1
   have h2 : p1 ≠ s2 := by
     intro h; subst h
     -- If p1 = s2, then s2 adj p1 = s2 adj s2, contradiction with loopless
@@ -1808,17 +1808,17 @@ lemma p_adjacent_of_shared_w {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
     exact hp2_nonadj hs1_adj_v
   have h5 : p2 ≠ s2 := by
     intro h; subst h
-    exact G.loopless p2 hs2_adj_p2
+    exact G.loopless.irrefl p2 hs2_adj_p2
   have h6 : p2 ≠ w := by
     intro h; subst h
     -- Similar to h3: if p2 = w, then w adj s1 and w adj s2, but hs1_nonadj_p2 says ¬G.Adj s1 p2
     exact hs1_nonadj_p2 (G.symm hw_adj_s1)
   have h7 : s1 ≠ w := by
     intro h; subst h
-    exact G.loopless s1 hw_adj_s1
+    exact G.loopless.irrefl s1 hw_adj_s1
   have h8 : s2 ≠ w := by
     intro h; subst h
-    exact G.loopless s2 hw_adj_s2
+    exact G.loopless.irrefl s2 hw_adj_s2
 
   have hX_card : X.card = 5 := by
     simp only [X]
@@ -2012,7 +2012,7 @@ lemma p_adjacent_of_shared_w {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
     rcases hxX with hx_eq | hx_eq | hx_eq | hx_eq | hx_eq
     · -- x = p1: not possible since G.loopless
       subst hx_eq
-      exact (G.loopless _ hx_adj).elim
+      exact (G.loopless.irrefl _ hx_adj).elim
     · -- x = p2
       subst hx_eq; left; rfl
     · -- x = s1
@@ -2427,7 +2427,7 @@ lemma t_has_four_Q_neighbors {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
       -- x and t are both in N(v), x ≠ t (since x is adjacent to t, not a self-loop)
       have hx_ne_t : x ≠ t := fun h_eq => by
         subst h_eq
-        exact G.loopless x hx_adj_t
+        exact G.loopless.irrefl x hx_adj_t
       -- So x and t should not be adjacent
       exact hNv_indep h_adj_vx ht_adj_v hx_ne_t (G.symm hx_adj_t)
     -- x is a non-neighbor of v, so x ∈ P ∪ Q
@@ -3399,7 +3399,7 @@ lemma P_is_two_regular {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
           have hx_ne_s : x ≠ s := by
             intro h
             subst x
-            exact G.loopless s hx_adj
+            exact G.loopless.irrefl s hx_adj
           have h_ind := neighborSet_indep_of_triangleFree h_tri v
           exact h_ind hs_adj_v hx_adj_v hx_ne_s.symm hx_adj
         have h_pos := commonNeighborsCard_pos h_tri h_no6 h_reg v x hx_ne_v hx_nonadj_v
@@ -4228,7 +4228,7 @@ lemma P_is_two_regular {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
       exact ⟨hx_Nv, hx⟩
     · have h_pos := commonNeighborsCard_pos h_tri h_no6 h_reg v x hxv hx_Nv
       have h_le := commonNeighborsCard_le_two h_tri h_no6 h_reg v x hxv hx_Nv
-      have hx_ne_p : x ≠ p := fun h => G.loopless p (h ▸ hx)
+      have hx_ne_p : x ≠ p := fun h => G.loopless.irrefl p (h ▸ hx)
       cases Nat.lt_or_eq_of_le h_le with
       | inl h_lt =>
         have hx_common1 : commonNeighborsCard G v x = 1 := by omega
@@ -5907,7 +5907,7 @@ lemma claim3_four_cycle {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
   -- A 2-regular graph on 4 vertices is a 4-cycle
   have h_cycle := two_regular_four_vertices_is_cycle P hP_card G.Adj
     (fun _ _ h => G.symm h)
-    G.loopless
+    G.loopless.irrefl
     hP_2reg
 
   -- The cycle structure gives us the result directly
@@ -10704,7 +10704,7 @@ lemma final_contradiction {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
       -- Use completeness lemma
       have ⟨hP_complete, hQ_complete⟩ := PQ_partition_completeness h_reg h_tri h_no6 v P Q
           hP_card hQ_card hP_props hQ_props
-      have hx_ne_p1 : x ≠ p1 := fun h => G.loopless p1 (h ▸ hx)
+      have hx_ne_p1 : x ≠ p1 := fun h => G.loopless.irrefl p1 (h ▸ hx)
       -- commonNeighborsCard is 1 or 2
       cases Nat.lt_or_eq_of_le h_le with
       | inl h_lt =>
@@ -10785,7 +10785,7 @@ lemma final_contradiction {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
     intro s hs hts
     by_cases hst : s = t
     · subst hst
-      exact G.loopless _ hts
+      exact G.loopless.irrefl _ hts
     have htS : t ∈ G.neighborSet v := by
       rw [SimpleGraph.mem_neighborSet, ← SimpleGraph.mem_neighborFinset]
       exact ht_in_N
@@ -11338,7 +11338,7 @@ lemma final_contradiction {G : SimpleGraph (Fin 18)} [DecidableRel G.Adj]
       have hNv_indep := neighborSet_indep_of_triangleFree h_tri v
       have hx_ne_t : x ≠ t := fun h_eq => by
         subst h_eq
-        exact G.loopless x htx
+        exact G.loopless.irrefl x htx
       exact hNv_indep hvx ht_adj_v hx_ne_t (G.symm htx)
     have h_pos := commonNeighborsCard_pos h_tri h_no6 h_reg v x hx_ne_v hx_nonadj_v
     have h_le := commonNeighborsCard_le_two h_tri h_no6 h_reg v x hx_ne_v hx_nonadj_v
@@ -12877,7 +12877,7 @@ theorem ramsey_three_six_upper_bound_property :
     intro x hx y hy hxy
     exact hxy
   · -- card = 3
-    native_decide
+    simp [Finset.card_insert_of_notMem, Finset.card_singleton]
 
 /-- Upper bound primitive: 18 has the Ramsey property.
     (This is the goal of the combinatorial proof in this file) -/

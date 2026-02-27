@@ -2,6 +2,7 @@ import Mettapedia.Logic.PLNBNCompilation
 import Mettapedia.Logic.PLNWMOSLFBridge
 import Mettapedia.Logic.PLNBayesNetFastRules
 import Mettapedia.Logic.EvidenceBeta
+import Mettapedia.Logic.PLNWorldModelITV
 
 /-!
 # PLN Xi Derived BN Rules (No-Sly Admissibility)
@@ -1319,3 +1320,1857 @@ theorem plnAbductionStrength_exact_of_screeningOff
     hA_pos hB_pos hB_lt1 hAB_pos hABc_pos h_pos_indep h_neg_indep
 
 end Mettapedia.Logic.PLNXiDerivedBNRules
+
+
+namespace Mettapedia.Logic.PLNXiDerivedBNRules.Typed
+
+open Mettapedia.Logic.EvidenceClass
+open Mettapedia.Logic.PLNWorldModel
+open Mettapedia.Logic.PLNBNCompilation
+open Mettapedia.Logic.PLNBNCompilation.BNWorldModel
+open Mettapedia.ProbabilityTheory.BayesianNetworks
+open Mettapedia.ProbabilityTheory.BayesianNetworks.Examples
+
+noncomputable section
+
+/-! ## Generic Unit-Sort Lift -/
+
+instance instWorldModelSigmaUnit
+    (State Query : Type*)
+    [EvidenceType State] [WorldModel State Query] :
+    WorldModelSigma State PUnit (fun _ : PUnit => Query) where
+  evidence W q := WorldModel.evidence W q.2
+  evidence_add W₁ W₂ q := WorldModel.evidence_add W₁ W₂ q.2
+
+/-- Lift an untyped WM rewrite rule into the typed WM layer with one sort. -/
+noncomputable def wmRewriteRuleToSigmaUnit
+    {State Query : Type*}
+    [EvidenceType State] [WorldModel State Query]
+    (r : WMRewriteRule State Query) :
+    WorldModelSigma.WMRewriteRuleSigma State PUnit (fun _ : PUnit => Query) where
+  side := r.side
+  conclusion := ⟨PUnit.unit, r.conclusion⟩
+  derive := r.derive
+  sound := by
+    intro hSide W
+    simpa using (r.sound hSide W)
+
+@[simp] theorem wmRewriteRuleToSigmaUnit_side
+    {State Query : Type*}
+    [EvidenceType State] [WorldModel State Query]
+    (r : WMRewriteRule State Query) :
+    (wmRewriteRuleToSigmaUnit r).side = r.side := rfl
+
+/-! ## Generic Constant-Family Lift (non-`PUnit`) -/
+
+/-- Constant-family typed WM adapter from an untyped WM.
+This is kept as a non-instance to avoid global instance-coherence pressure. -/
+def worldModelSigmaConstFromUntyped
+    (State Srt Query : Type*)
+    [EvidenceType State] [WorldModel State Query] :
+    WorldModelSigma State Srt (fun _ : Srt => Query) where
+  evidence W q := WorldModel.evidence W q.2
+  evidence_add W₁ W₂ q := WorldModel.evidence_add W₁ W₂ q.2
+
+/-- Convenience type alias for non-`PUnit` constant-family typed rewrite rules. -/
+abbrev WMRewriteRuleSigmaConst
+    (State Srt Query : Type*)
+    [EvidenceType State] [WorldModel State Query] : Type _ :=
+  @WorldModelSigma.WMRewriteRuleSigma
+    State Srt (fun _ : Srt => Query)
+    (inferInstance : EvidenceType State)
+    (worldModelSigmaConstFromUntyped (State := State) (Srt := Srt) (Query := Query))
+
+/-- Lift an untyped WM rewrite rule into any fixed-sort constant-family WMΣ layer. -/
+noncomputable def wmRewriteRuleToSigmaConst
+    {State Srt Query : Type*}
+    [EvidenceType State] [WorldModel State Query]
+    (s0 : Srt)
+    (r : WMRewriteRule State Query) :
+    WMRewriteRuleSigmaConst State Srt Query := by
+  letI : WorldModelSigma State Srt (fun _ : Srt => Query) :=
+    worldModelSigmaConstFromUntyped (State := State) (Srt := Srt) (Query := Query)
+  exact
+    { side := r.side
+      conclusion := ⟨s0, r.conclusion⟩
+      derive := r.derive
+      sound := by
+        intro hSide W
+        simpa using (r.sound hSide W) }
+
+@[simp] theorem wmRewriteRuleToSigmaConst_side
+    {State Srt Query : Type*}
+    [EvidenceType State] [WorldModel State Query]
+    (s0 : Srt)
+    (r : WMRewriteRule State Query) :
+    letI : WorldModelSigma State Srt (fun _ : Srt => Query) :=
+      worldModelSigmaConstFromUntyped (State := State) (Srt := Srt) (Query := Query)
+    (wmRewriteRuleToSigmaConst (State := State) (Srt := Srt) (Query := Query) s0 r).side = r.side := rfl
+
+/-! ## Generic Indexed Dependent Lift (non-constant family) -/
+
+/-- Sort-indexed wrapper with a genuinely dependent codomain. -/
+inductive IndexedQuery (Srt Query : Type) : Srt → Type where
+  | mk : Query → IndexedQuery Srt Query s
+
+namespace IndexedQuery
+
+def erase {Srt Query : Type} : {s : Srt} → IndexedQuery Srt Query s → Query
+  | _, .mk q => q
+
+def ofIndex {Srt Query : Type} (s : Srt) (q : Query) : IndexedQuery Srt Query s :=
+  .mk q
+
+end IndexedQuery
+
+/-- Local dependent WMΣ adapter over an arbitrary sort index from an untyped WM. -/
+def worldModelSigmaIndexedFromUntyped
+    (State Srt Query : Type)
+    [EvidenceType State] [WorldModel State Query] :
+    WorldModelSigma State Srt (IndexedQuery Srt Query) where
+  evidence W q := WorldModel.evidence W (IndexedQuery.erase q.2)
+  evidence_add W₁ W₂ q := WorldModel.evidence_add W₁ W₂ (IndexedQuery.erase q.2)
+
+instance instWorldModelSigmaIndexed
+    (State Srt Query : Type)
+    [EvidenceType State] [WorldModel State Query] :
+    WorldModelSigma State Srt (IndexedQuery Srt Query) :=
+  worldModelSigmaIndexedFromUntyped (State := State) (Srt := Srt) (Query := Query)
+
+/-- Convenience type alias for indexed-dependent typed rewrite rules. -/
+abbrev WMRewriteRuleSigmaIndexed
+    (State Srt Query : Type)
+    [EvidenceType State] [WorldModel State Query] : Type _ :=
+  @WorldModelSigma.WMRewriteRuleSigma
+    State Srt (IndexedQuery Srt Query)
+    (inferInstance : EvidenceType State)
+    (worldModelSigmaIndexedFromUntyped (State := State) (Srt := Srt) (Query := Query))
+
+/-- Lift an untyped WM rewrite rule into index-dependent WMΣ form. -/
+noncomputable def wmRewriteRuleToSigmaIndexed
+    {State Srt Query : Type}
+    [EvidenceType State] [WorldModel State Query]
+    (s0 : Srt)
+    (r : WMRewriteRule State Query) :
+    WMRewriteRuleSigmaIndexed State Srt Query := by
+  letI : WorldModelSigma State Srt (IndexedQuery Srt Query) :=
+    worldModelSigmaIndexedFromUntyped (State := State) (Srt := Srt) (Query := Query)
+  exact
+    { side := r.side
+      conclusion := ⟨s0, IndexedQuery.ofIndex s0 r.conclusion⟩
+      derive := r.derive
+      sound := by
+        intro hSide W
+        simpa [IndexedQuery.ofIndex, worldModelSigmaIndexedFromUntyped,
+          IndexedQuery.erase] using (r.sound hSide W) }
+
+@[simp] theorem wmRewriteRuleToSigmaIndexed_side
+    {State Srt Query : Type}
+    [EvidenceType State] [WorldModel State Query]
+    (s0 : Srt)
+    (r : WMRewriteRule State Query) :
+    letI : WorldModelSigma State Srt (IndexedQuery Srt Query) :=
+      worldModelSigmaIndexedFromUntyped (State := State) (Srt := Srt) (Query := Query)
+    (wmRewriteRuleToSigmaIndexed (State := State) (Srt := Srt) (Query := Query) s0 r).side = r.side := rfl
+
+/-! ## Native Three-Sort Dependent Prototype (no `erase` bridge) -/
+
+/-- Native query family indexed by `Three` (prototype):
+same payload type at each sort, but with a true dependent family and no erase helper. -/
+def ThreeNativeQueryFamily (Query : Type) : Three → Type
+  | .A => Query
+  | .B => Query
+  | .C => Query
+
+namespace ThreeNativeQueryFamily
+
+def ofSort {Query : Type} (s : Three) (q : Query) : ThreeNativeQueryFamily Query s :=
+  match s with
+  | .A => q
+  | .B => q
+  | .C => q
+
+end ThreeNativeQueryFamily
+
+/-- Native `WorldModelSigma` over `ThreeNativeQueryFamily` (prototype, no erase). -/
+def worldModelSigmaThreeNativeFromUntyped
+    (State Query : Type)
+    [EvidenceType State] [WorldModel State Query] :
+    WorldModelSigma State Three (ThreeNativeQueryFamily Query) where
+  evidence W q := by
+    cases q with
+    | mk s qs =>
+        cases s <;>
+          exact WorldModel.evidence (State := State) (Query := Query) W qs
+  evidence_add W₁ W₂ q := by
+    cases q with
+    | mk s qs =>
+        cases s <;>
+          simpa using (WorldModel.evidence_add (State := State) (Query := Query) W₁ W₂ qs)
+
+/-- Global native `Three`-indexed WMΣ instance (no erase bridge). -/
+instance instWorldModelSigmaThreeNative
+    (State Query : Type)
+    [EvidenceType State] [WorldModel State Query] :
+    WorldModelSigma State Three (ThreeNativeQueryFamily Query) :=
+  worldModelSigmaThreeNativeFromUntyped (State := State) (Query := Query)
+
+/-- Native `Three`-sorted typed rewrite-rule alias (prototype, no erase). -/
+abbrev WMRewriteRuleSigmaThreeNative
+    (State Query : Type)
+    [EvidenceType State] [WorldModel State Query] : Type _ :=
+  @WorldModelSigma.WMRewriteRuleSigma
+    State Three (ThreeNativeQueryFamily Query)
+    (inferInstance : EvidenceType State)
+    (worldModelSigmaThreeNativeFromUntyped (State := State) (Query := Query))
+
+/-- Lift an untyped rewrite rule into native `Three`-sorted WMΣ form (prototype). -/
+noncomputable def wmRewriteRuleToSigmaThreeNative
+    {State Query : Type}
+    [EvidenceType State] [WorldModel State Query]
+    (s0 : Three)
+    (r : WMRewriteRule State Query) :
+    WMRewriteRuleSigmaThreeNative State Query := by
+  letI : WorldModelSigma State Three (ThreeNativeQueryFamily Query) :=
+    worldModelSigmaThreeNativeFromUntyped (State := State) (Query := Query)
+  exact
+    { side := r.side
+      conclusion := ⟨s0, ThreeNativeQueryFamily.ofSort s0 r.conclusion⟩
+      derive := r.derive
+      sound := by
+        intro hSide W
+        cases s0 <;>
+          simpa [ThreeNativeQueryFamily.ofSort, worldModelSigmaThreeNativeFromUntyped] using
+            (r.sound hSide W) }
+
+@[simp] theorem wmRewriteRuleToSigmaThreeNative_side
+    {State Query : Type}
+    [EvidenceType State] [WorldModel State Query]
+    (s0 : Three)
+    (r : WMRewriteRule State Query) :
+    letI : WorldModelSigma State Three (ThreeNativeQueryFamily Query) :=
+      worldModelSigmaThreeNativeFromUntyped (State := State) (Query := Query)
+    (wmRewriteRuleToSigmaThreeNative (State := State) (Query := Query) s0 r).side = r.side := rfl
+
+/-! ## Native Three-Sort Tagged Prototype (no adapter bridge) -/
+
+/-- Native sort-distinguished query family over `Three`:
+the codomain is genuinely dependent and constructor-distinguished by sort. -/
+inductive ThreeNativeTaggedQueryFamily (Query : Type) : Three → Type where
+  | atA : Query → ThreeNativeTaggedQueryFamily Query .A
+  | atB : Query → ThreeNativeTaggedQueryFamily Query .B
+  | atC : Query → ThreeNativeTaggedQueryFamily Query .C
+
+namespace ThreeNativeTaggedQueryFamily
+
+def ofSort {Query : Type} (s : Three) (q : Query) : ThreeNativeTaggedQueryFamily Query s :=
+  match s with
+  | .A => .atA q
+  | .B => .atB q
+  | .C => .atC q
+
+end ThreeNativeTaggedQueryFamily
+
+/-- Native `WorldModelSigma` over `ThreeNativeTaggedQueryFamily` (no erase bridge). -/
+def worldModelSigmaThreeNativeTaggedFromUntyped
+    (State Query : Type)
+    [EvidenceType State] [WorldModel State Query] :
+    WorldModelSigma State Three (ThreeNativeTaggedQueryFamily Query) where
+  evidence W q := by
+    cases q with
+    | mk _ qs =>
+        cases qs with
+        | atA qa => exact WorldModel.evidence (State := State) (Query := Query) W qa
+        | atB qb => exact WorldModel.evidence (State := State) (Query := Query) W qb
+        | atC qc => exact WorldModel.evidence (State := State) (Query := Query) W qc
+  evidence_add W₁ W₂ q := by
+    cases q with
+    | mk _ qs =>
+        cases qs with
+        | atA qa =>
+            simpa using
+              (WorldModel.evidence_add (State := State) (Query := Query) W₁ W₂ qa)
+        | atB qb =>
+            simpa using
+              (WorldModel.evidence_add (State := State) (Query := Query) W₁ W₂ qb)
+        | atC qc =>
+            simpa using
+              (WorldModel.evidence_add (State := State) (Query := Query) W₁ W₂ qc)
+
+/-- Global native `Three`-indexed WMΣ instance for `ThreeNativeTaggedQueryFamily`. -/
+instance instWorldModelSigmaThreeNativeTagged
+    (State Query : Type)
+    [EvidenceType State] [WorldModel State Query] :
+    WorldModelSigma State Three (ThreeNativeTaggedQueryFamily Query) :=
+  worldModelSigmaThreeNativeTaggedFromUntyped (State := State) (Query := Query)
+
+/-- Native `Three`-sorted typed rewrite-rule alias for `ThreeNativeTaggedQueryFamily`. -/
+abbrev WMRewriteRuleSigmaThreeNativeTagged
+    (State Query : Type)
+    [EvidenceType State] [WorldModel State Query] : Type _ :=
+  @WorldModelSigma.WMRewriteRuleSigma
+    State Three (ThreeNativeTaggedQueryFamily Query)
+    (inferInstance : EvidenceType State)
+    (worldModelSigmaThreeNativeTaggedFromUntyped (State := State) (Query := Query))
+
+/-- Lift an untyped rewrite rule into native tagged `Three`-sorted WMΣ form. -/
+noncomputable def wmRewriteRuleToSigmaThreeNativeTagged
+    {State Query : Type}
+    [EvidenceType State] [WorldModel State Query]
+    (s0 : Three)
+    (r : WMRewriteRule State Query) :
+    WMRewriteRuleSigmaThreeNativeTagged State Query := by
+  letI : WorldModelSigma State Three (ThreeNativeTaggedQueryFamily Query) :=
+    worldModelSigmaThreeNativeTaggedFromUntyped (State := State) (Query := Query)
+  exact
+    { side := r.side
+      conclusion := ⟨s0, ThreeNativeTaggedQueryFamily.ofSort s0 r.conclusion⟩
+      derive := r.derive
+      sound := by
+        intro hSide W
+        cases s0 <;>
+          simpa [ThreeNativeTaggedQueryFamily.ofSort,
+            worldModelSigmaThreeNativeTaggedFromUntyped] using
+            (r.sound hSide W) }
+
+@[simp] theorem wmRewriteRuleToSigmaThreeNativeTagged_side
+    {State Query : Type}
+    [EvidenceType State] [WorldModel State Query]
+    (s0 : Three)
+    (r : WMRewriteRule State Query) :
+    letI : WorldModelSigma State Three (ThreeNativeTaggedQueryFamily Query) :=
+      worldModelSigmaThreeNativeTaggedFromUntyped (State := State) (Query := Query)
+    (wmRewriteRuleToSigmaThreeNativeTagged (State := State) (Query := Query) s0 r).side = r.side := rfl
+
+/-! ## Generic Sort-Tagged Dependent Lift (non-constant family) -/
+
+abbrev MeTTaSortTag := Mettapedia.Logic.PLNWMOSLFBridgeTyped.MeTTaTypeOf.SortTag
+
+/-- Sort-indexed wrapper with genuinely dependent codomain (one constructor per sort). -/
+inductive SortTaggedQuery (Query : Type) : MeTTaSortTag → Type where
+  | state : Query → SortTaggedQuery Query .state
+  | instr : Query → SortTaggedQuery Query .instr
+  | atom : Query → SortTaggedQuery Query .atom
+  | space : Query → SortTaggedQuery Query .space
+
+namespace SortTaggedQuery
+
+def erase {Query : Type} : {s : MeTTaSortTag} → SortTaggedQuery Query s → Query
+  | _, .state q => q
+  | _, .instr q => q
+  | _, .atom q => q
+  | _, .space q => q
+
+def ofSort {Query : Type} (s : MeTTaSortTag) (q : Query) : SortTaggedQuery Query s :=
+  match s with
+  | .state => .state q
+  | .instr => .instr q
+  | .atom => .atom q
+  | .space => .space q
+
+end SortTaggedQuery
+
+/-- Local dependent WMΣ adapter over OSLF sort tags from an untyped WM. -/
+def worldModelSigmaSortTaggedFromUntyped
+    (State Query : Type)
+    [EvidenceType State] [WorldModel State Query] :
+    WorldModelSigma State MeTTaSortTag (SortTaggedQuery Query) where
+  evidence W q := WorldModel.evidence W (SortTaggedQuery.erase q.2)
+  evidence_add W₁ W₂ q := WorldModel.evidence_add W₁ W₂ (SortTaggedQuery.erase q.2)
+
+/-- Global OSLF sort-tagged dependent WMΣ instance from an untyped WM. -/
+instance instWorldModelSigmaSortTagged
+    (State Query : Type)
+    [EvidenceType State] [WorldModel State Query] :
+    WorldModelSigma State MeTTaSortTag (SortTaggedQuery Query) :=
+  worldModelSigmaSortTaggedFromUntyped (State := State) (Query := Query)
+
+/-- Convenience type alias for sort-tagged dependent typed rewrite rules. -/
+abbrev WMRewriteRuleSigmaSortTagged
+    (State Query : Type)
+    [EvidenceType State] [WorldModel State Query] : Type _ :=
+  @WorldModelSigma.WMRewriteRuleSigma
+    State MeTTaSortTag (SortTaggedQuery Query)
+    (inferInstance : EvidenceType State)
+    (worldModelSigmaSortTaggedFromUntyped (State := State) (Query := Query))
+
+/-- Lift an untyped WM rewrite rule into sort-tagged dependent WMΣ form. -/
+noncomputable def wmRewriteRuleToSigmaSortTagged
+    {State Query : Type}
+    [EvidenceType State] [WorldModel State Query]
+    (s0 : MeTTaSortTag)
+    (r : WMRewriteRule State Query) :
+    WMRewriteRuleSigmaSortTagged State Query := by
+  letI : WorldModelSigma State MeTTaSortTag (SortTaggedQuery Query) :=
+    worldModelSigmaSortTaggedFromUntyped (State := State) (Query := Query)
+  exact
+    { side := r.side
+      conclusion := ⟨s0, SortTaggedQuery.ofSort s0 r.conclusion⟩
+      derive := r.derive
+      sound := by
+        intro hSide W
+        cases s0 <;>
+          simpa [SortTaggedQuery.ofSort, worldModelSigmaSortTaggedFromUntyped,
+            SortTaggedQuery.erase] using (r.sound hSide W) }
+
+@[simp] theorem wmRewriteRuleToSigmaSortTagged_side
+    {State Query : Type}
+    [EvidenceType State] [WorldModel State Query]
+    (s0 : MeTTaSortTag)
+    (r : WMRewriteRule State Query) :
+    letI : WorldModelSigma State MeTTaSortTag (SortTaggedQuery Query) :=
+      worldModelSigmaSortTaggedFromUntyped (State := State) (Query := Query)
+    (wmRewriteRuleToSigmaSortTagged (State := State) (Query := Query) s0 r).side = r.side := rfl
+
+/-! ## Chain BN Deduction -/
+
+section ChainBNDeduction
+
+local instance : DecidableRel chainBN.graph.edges := fun a b =>
+  Classical.propDecidable (chainBN.graph.edges a b)
+
+variable
+  [∀ v : Three, Inhabited (chainBN.stateSpace v)]
+  [∀ v : Three, Fintype (chainBN.stateSpace v)]
+  [∀ v : Three, DecidableEq (chainBN.stateSpace v)]
+
+/-- Lift a chain-BN untyped rewrite rule into one-sort typed WM form. -/
+noncomputable def xi_deduction_rewrite_of_chainBN_sigma
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := chainBN))
+      (PLNQuery (BNQuery.Atom (bn := chainBN)))) :
+    WorldModelSigma.WMRewriteRuleSigma
+      (BNWorldModel.State (bn := chainBN))
+      PUnit
+      (fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+  wmRewriteRuleToSigmaUnit r
+
+/-- Lift a chain-BN untyped rewrite rule into direct sort-indexed WMΣ form
+(`Srt = Three`, constant query family). -/
+noncomputable def xi_deduction_rewrite_of_chainBN_sigma_three
+    (s0 : Three)
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := chainBN))
+      (PLNQuery (BNQuery.Atom (bn := chainBN)))) :
+    WMRewriteRuleSigmaConst
+      (BNWorldModel.State (bn := chainBN))
+      Three
+      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+  wmRewriteRuleToSigmaConst
+    (State := BNWorldModel.State (bn := chainBN))
+    (Srt := Three)
+    (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+    s0 r
+
+/-- Lift a chain-BN untyped rewrite rule into native `Three`-indexed WMΣ form
+(prototype, no erase bridge). -/
+noncomputable def xi_deduction_rewrite_of_chainBN_sigma_threeNative
+    (s0 : Three)
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := chainBN))
+      (PLNQuery (BNQuery.Atom (bn := chainBN)))) :
+    WMRewriteRuleSigmaThreeNative
+      (BNWorldModel.State (bn := chainBN))
+      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+  wmRewriteRuleToSigmaThreeNative
+    (State := BNWorldModel.State (bn := chainBN))
+    (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+    s0 r
+
+/-- Lift a chain-BN untyped rewrite rule into native tagged `Three`-indexed WMΣ form
+(prototype, no adapter bridge). -/
+noncomputable def xi_deduction_rewrite_of_chainBN_sigma_threeNativeTagged
+    (s0 : Three)
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := chainBN))
+      (PLNQuery (BNQuery.Atom (bn := chainBN)))) :
+    WMRewriteRuleSigmaThreeNativeTagged
+      (BNWorldModel.State (bn := chainBN))
+      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+  wmRewriteRuleToSigmaThreeNativeTagged
+    (State := BNWorldModel.State (bn := chainBN))
+    (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+    s0 r
+
+/-- Lift a chain-BN untyped rewrite rule into direct index-dependent WMΣ form
+(`Srt = Three`, dependent family via `IndexedQuery`). -/
+noncomputable def xi_deduction_rewrite_of_chainBN_sigma_dep
+    (s0 : Three)
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := chainBN))
+      (PLNQuery (BNQuery.Atom (bn := chainBN)))) :
+    WMRewriteRuleSigmaIndexed
+      (BNWorldModel.State (bn := chainBN))
+      Three
+      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+  wmRewriteRuleToSigmaIndexed
+    (State := BNWorldModel.State (bn := chainBN))
+    (Srt := Three)
+    (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+    s0 r
+
+/-- Lift a chain-BN untyped rewrite rule into OSLF sort-tagged dependent WMΣ form. -/
+noncomputable def xi_deduction_rewrite_of_chainBN_sigma_sortTag
+    (s0 : MeTTaSortTag)
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := chainBN))
+      (PLNQuery (BNQuery.Atom (bn := chainBN)))) :
+    WMRewriteRuleSigmaSortTagged
+      (BNWorldModel.State (bn := chainBN))
+      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+  wmRewriteRuleToSigmaSortTagged
+    (State := BNWorldModel.State (bn := chainBN))
+    (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+    s0 r
+
+/-- Concrete typed chain-BN deduction rewrite, obtained directly from the
+untyped BN constructor and lifted to one-sort WMΣ form. -/
+noncomputable def xi_deduction_rewrite_of_chainBN_sigma_concrete
+    (valA valB valC : Bool)
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll) :
+    WorldModelSigma.WMRewriteRuleSigma
+      (BNWorldModel.State (bn := chainBN))
+      PUnit
+      (fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+  xi_deduction_rewrite_of_chainBN_sigma
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_deduction_rewrite_of_chainBN
+      (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+
+/-- Concrete typed chain-BN deduction rewrite in direct sort-indexed WMΣ form
+(`Srt = Three`, constant query family). -/
+noncomputable def xi_deduction_rewrite_of_chainBN_sigma_concrete_three
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll) :
+    WMRewriteRuleSigmaConst
+      (BNWorldModel.State (bn := chainBN))
+      Three
+      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+  xi_deduction_rewrite_of_chainBN_sigma_three s0
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_deduction_rewrite_of_chainBN
+      (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+
+/-- Concrete typed chain-BN deduction rewrite in native `Three`-indexed WMΣ form
+(prototype, no erase bridge). -/
+noncomputable def xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll) :
+    WMRewriteRuleSigmaThreeNative
+      (BNWorldModel.State (bn := chainBN))
+      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+  xi_deduction_rewrite_of_chainBN_sigma_threeNative s0
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_deduction_rewrite_of_chainBN
+      (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+
+/-- Concrete typed chain-BN deduction rewrite in native tagged `Three`-indexed WMΣ form
+(prototype, no adapter bridge). -/
+noncomputable def xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll) :
+    WMRewriteRuleSigmaThreeNativeTagged
+      (BNWorldModel.State (bn := chainBN))
+      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+  xi_deduction_rewrite_of_chainBN_sigma_threeNativeTagged s0
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_deduction_rewrite_of_chainBN
+      (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+
+/-- Concrete typed chain-BN deduction rewrite in direct index-dependent WMΣ form
+(`Srt = Three`, dependent family via `IndexedQuery`). -/
+noncomputable def xi_deduction_rewrite_of_chainBN_sigma_concrete_dep
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll) :
+    WMRewriteRuleSigmaIndexed
+      (BNWorldModel.State (bn := chainBN))
+      Three
+      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+  xi_deduction_rewrite_of_chainBN_sigma_dep s0
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_deduction_rewrite_of_chainBN
+      (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+
+/-- Concrete typed chain-BN deduction rewrite in OSLF sort-tagged dependent WMΣ form. -/
+noncomputable def xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag
+    (s0 : MeTTaSortTag)
+    (valA valB valC : Bool)
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll) :
+    WMRewriteRuleSigmaSortTagged
+      (BNWorldModel.State (bn := chainBN))
+      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+  xi_deduction_rewrite_of_chainBN_sigma_sortTag s0
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_deduction_rewrite_of_chainBN
+      (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+
+/-- Concrete chain-BN typed rewrite admits an exact-Bayes ITV judgment lift. -/
+theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_applyITV_bayesExact95
+    (ctx : BinaryContext)
+    (valA valB valC : Bool)
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := chainBN)}
+    (hSide :
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete
+        (valA := valA) (valB := valB) (valC := valC) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := chainBN))
+      (Srt := PUnit)
+      (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := chainBN)))
+      ITVSemantics.bayesCredibleExact95 ctx
+      W
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete
+        (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.bayesCredibleExact95.eval ctx
+        ((xi_deduction_rewrite_of_chainBN_sigma_concrete
+          (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
+    (State := BNWorldModel.State (bn := chainBN))
+    (Srt := PUnit)
+    (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := chainBN)))
+    (r := xi_deduction_rewrite_of_chainBN_sigma_concrete
+      (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete chain-BN typed rewrite admits a Walley-IDM ITV judgment lift. -/
+theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_applyITV_walleyIDM
+    (ctx : IDMPredictiveContext)
+    (valA valB valC : Bool)
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := chainBN)}
+    (hSide :
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete
+        (valA := valA) (valB := valB) (valC := valC) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := chainBN))
+      (Srt := PUnit)
+      (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := chainBN)))
+      ITVSemantics.walleyIDMPredictive ctx
+      W
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete
+        (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.walleyIDMPredictive.eval ctx
+        ((xi_deduction_rewrite_of_chainBN_sigma_concrete
+          (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
+    (State := BNWorldModel.State (bn := chainBN))
+    (Srt := PUnit)
+    (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := chainBN)))
+    (r := xi_deduction_rewrite_of_chainBN_sigma_concrete
+      (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete chain-BN indexed-dependent typed rewrite admits an exact-Bayes ITV judgment lift. -/
+theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_dep_applyITV_bayesExact95
+    (ctx : BinaryContext)
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := chainBN)}
+    (hSide :
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete_dep
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := chainBN))
+      (Srt := Three)
+      (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      ITVSemantics.bayesCredibleExact95 ctx
+      W
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete_dep
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.bayesCredibleExact95.eval ctx
+        ((xi_deduction_rewrite_of_chainBN_sigma_concrete_dep
+          (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
+    (State := BNWorldModel.State (bn := chainBN))
+    (Srt := Three)
+    (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (r := xi_deduction_rewrite_of_chainBN_sigma_concrete_dep
+      (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete chain-BN indexed-dependent typed rewrite admits a Walley-IDM ITV judgment lift. -/
+theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_dep_applyITV_walleyIDM
+    (ctx : IDMPredictiveContext)
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := chainBN)}
+    (hSide :
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete_dep
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := chainBN))
+      (Srt := Three)
+      (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      ITVSemantics.walleyIDMPredictive ctx
+      W
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete_dep
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.walleyIDMPredictive.eval ctx
+        ((xi_deduction_rewrite_of_chainBN_sigma_concrete_dep
+          (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
+    (State := BNWorldModel.State (bn := chainBN))
+    (Srt := Three)
+    (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (r := xi_deduction_rewrite_of_chainBN_sigma_concrete_dep
+      (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete chain-BN native-Three typed rewrite admits an exact-Bayes ITV judgment lift. -/
+theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative_applyITV_bayesExact95
+    (ctx : BinaryContext)
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := chainBN)}
+    (hSide :
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := chainBN))
+      (Srt := Three)
+      (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      ITVSemantics.bayesCredibleExact95 ctx
+      W
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.bayesCredibleExact95.eval ctx
+        ((xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative
+          (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
+    (State := BNWorldModel.State (bn := chainBN))
+    (Srt := Three)
+    (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (r := xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative
+      (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete chain-BN native-Three typed rewrite admits a Walley-IDM ITV judgment lift. -/
+theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative_applyITV_walleyIDM
+    (ctx : IDMPredictiveContext)
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := chainBN)}
+    (hSide :
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := chainBN))
+      (Srt := Three)
+      (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      ITVSemantics.walleyIDMPredictive ctx
+      W
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.walleyIDMPredictive.eval ctx
+        ((xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative
+          (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
+    (State := BNWorldModel.State (bn := chainBN))
+    (Srt := Three)
+    (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (r := xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative
+      (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete chain-BN native-tagged-Three typed rewrite admits an exact-Bayes ITV judgment lift. -/
+theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged_applyITV_bayesExact95
+    (ctx : BinaryContext)
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := chainBN)}
+    (hSide :
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := chainBN))
+      (Srt := Three)
+      (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      ITVSemantics.bayesCredibleExact95 ctx
+      W
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.bayesCredibleExact95.eval ctx
+        ((xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged
+          (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
+    (State := BNWorldModel.State (bn := chainBN))
+    (Srt := Three)
+    (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (r := xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged
+      (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete chain-BN native-tagged-Three typed rewrite admits a Walley-IDM ITV judgment lift. -/
+theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged_applyITV_walleyIDM
+    (ctx : IDMPredictiveContext)
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := chainBN)}
+    (hSide :
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := chainBN))
+      (Srt := Three)
+      (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      ITVSemantics.walleyIDMPredictive ctx
+      W
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.walleyIDMPredictive.eval ctx
+        ((xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged
+          (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
+    (State := BNWorldModel.State (bn := chainBN))
+    (Srt := Three)
+    (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (r := xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged
+      (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete chain-BN sort-tagged typed rewrite admits an exact-Bayes ITV judgment lift. -/
+theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag_applyITV_bayesExact95
+    (ctx : BinaryContext)
+    (s0 : MeTTaSortTag)
+    (valA valB valC : Bool)
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll) :
+    letI : WorldModelSigma
+      (BNWorldModel.State (bn := chainBN))
+      MeTTaSortTag
+      (SortTaggedQuery (PLNQuery (BNQuery.Atom (bn := chainBN)))) :=
+      worldModelSigmaSortTaggedFromUntyped
+        (State := BNWorldModel.State (bn := chainBN))
+        (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+    ∀ {W : BNWorldModel.State (bn := chainBN)},
+      (hSide :
+        (xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag
+          (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).side) →
+      (hW : WMJudgment W) →
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := chainBN))
+      (Srt := MeTTaSortTag)
+      (Query := SortTaggedQuery (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      ITVSemantics.bayesCredibleExact95 ctx
+      W
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.bayesCredibleExact95.eval ctx
+        ((xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag
+          (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) := by
+  intro W hSide hW
+  letI : WorldModelSigma
+      (BNWorldModel.State (bn := chainBN))
+      MeTTaSortTag
+      (SortTaggedQuery (PLNQuery (BNQuery.Atom (bn := chainBN)))) :=
+    worldModelSigmaSortTaggedFromUntyped
+      (State := BNWorldModel.State (bn := chainBN))
+      (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+  exact WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
+    (State := BNWorldModel.State (bn := chainBN))
+    (Srt := MeTTaSortTag)
+    (Query := SortTaggedQuery (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (r := xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag
+      (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete chain-BN sort-tagged typed rewrite admits a Walley-IDM ITV judgment lift. -/
+theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag_applyITV_walleyIDM
+    (ctx : IDMPredictiveContext)
+    (s0 : MeTTaSortTag)
+    (valA valB valC : Bool)
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll) :
+    letI : WorldModelSigma
+      (BNWorldModel.State (bn := chainBN))
+      MeTTaSortTag
+      (SortTaggedQuery (PLNQuery (BNQuery.Atom (bn := chainBN)))) :=
+      worldModelSigmaSortTaggedFromUntyped
+        (State := BNWorldModel.State (bn := chainBN))
+        (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+    ∀ {W : BNWorldModel.State (bn := chainBN)},
+      (hSide :
+        (xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag
+          (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).side) →
+      (hW : WMJudgment W) →
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := chainBN))
+      (Srt := MeTTaSortTag)
+      (Query := SortTaggedQuery (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      ITVSemantics.walleyIDMPredictive ctx
+      W
+      (xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.walleyIDMPredictive.eval ctx
+        ((xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag
+          (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) := by
+  intro W hSide hW
+  letI : WorldModelSigma
+      (BNWorldModel.State (bn := chainBN))
+      MeTTaSortTag
+      (SortTaggedQuery (PLNQuery (BNQuery.Atom (bn := chainBN)))) :=
+    worldModelSigmaSortTaggedFromUntyped
+      (State := BNWorldModel.State (bn := chainBN))
+      (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+  exact WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
+    (State := BNWorldModel.State (bn := chainBN))
+    (Srt := MeTTaSortTag)
+    (Query := SortTaggedQuery (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (r := xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag
+      (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+omit [∀ v : Three, Inhabited (chainBN.stateSpace v)] in
+theorem xi_deduction_rewrite_of_chainBN_sigma_side
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := chainBN))
+      (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (hSide : r.side) :
+    (xi_deduction_rewrite_of_chainBN_sigma r).side := by
+  simpa [xi_deduction_rewrite_of_chainBN_sigma] using hSide
+
+end ChainBNDeduction
+
+/-! ## Fork BN Source Rule -/
+
+section ForkBNSourceRule
+
+local instance : DecidableRel forkBN.graph.edges := fun a b =>
+  Classical.propDecidable (forkBN.graph.edges a b)
+
+variable
+  [∀ v : Three, Fintype (forkBN.stateSpace v)]
+  [∀ v : Three, DecidableEq (forkBN.stateSpace v)]
+
+/-- Lift a fork-BN untyped rewrite rule into one-sort typed WM form. -/
+noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := forkBN))
+      (PLNQuery (BNQuery.Atom (bn := forkBN)))) :
+    WorldModelSigma.WMRewriteRuleSigma
+      (BNWorldModel.State (bn := forkBN))
+      PUnit
+      (fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+  wmRewriteRuleToSigmaUnit r
+
+/-- Lift a fork-BN untyped rewrite rule into direct sort-indexed WMΣ form
+(`Srt = Three`, constant query family). -/
+noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_three
+    (s0 : Three)
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := forkBN))
+      (PLNQuery (BNQuery.Atom (bn := forkBN)))) :
+    WMRewriteRuleSigmaConst
+      (BNWorldModel.State (bn := forkBN))
+      Three
+      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+  wmRewriteRuleToSigmaConst
+    (State := BNWorldModel.State (bn := forkBN))
+    (Srt := Three)
+    (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
+    s0 r
+
+/-- Lift a fork-BN untyped rewrite rule into native `Three`-indexed WMΣ form
+(no erase bridge). -/
+noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_threeNative
+    (s0 : Three)
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := forkBN))
+      (PLNQuery (BNQuery.Atom (bn := forkBN)))) :
+    WMRewriteRuleSigmaThreeNative
+      (BNWorldModel.State (bn := forkBN))
+      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+  wmRewriteRuleToSigmaThreeNative
+    (State := BNWorldModel.State (bn := forkBN))
+    (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
+    s0 r
+
+/-- Lift a fork-BN untyped rewrite rule into native tagged `Three`-indexed WMΣ form
+(no adapter bridge). -/
+noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_threeNativeTagged
+    (s0 : Three)
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := forkBN))
+      (PLNQuery (BNQuery.Atom (bn := forkBN)))) :
+    WMRewriteRuleSigmaThreeNativeTagged
+      (BNWorldModel.State (bn := forkBN))
+      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+  wmRewriteRuleToSigmaThreeNativeTagged
+    (State := BNWorldModel.State (bn := forkBN))
+    (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
+    s0 r
+
+/-- Lift a fork-BN untyped rewrite rule into direct index-dependent WMΣ form
+(`Srt = Three`, dependent family via `IndexedQuery`). -/
+noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_dep
+    (s0 : Three)
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := forkBN))
+      (PLNQuery (BNQuery.Atom (bn := forkBN)))) :
+    WMRewriteRuleSigmaIndexed
+      (BNWorldModel.State (bn := forkBN))
+      Three
+      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+  wmRewriteRuleToSigmaIndexed
+    (State := BNWorldModel.State (bn := forkBN))
+    (Srt := Three)
+    (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
+    s0 r
+
+/-- Lift a fork-BN untyped rewrite rule into OSLF sort-tagged dependent WMΣ form. -/
+noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_sortTag
+    (s0 : MeTTaSortTag)
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := forkBN))
+      (PLNQuery (BNQuery.Atom (bn := forkBN)))) :
+    WMRewriteRuleSigmaSortTagged
+      (BNWorldModel.State (bn := forkBN))
+      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+  wmRewriteRuleToSigmaSortTagged
+    (State := BNWorldModel.State (bn := forkBN))
+    (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
+    s0 r
+
+/-- Concrete typed fork-BN source-rule rewrite, obtained directly from the
+untyped BN constructor and lifted to one-sort WMΣ form. -/
+noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_concrete
+    (valA valB valC : Bool)
+    [EventPos (bn := forkBN) Three.B valB]
+    [EventPosConstraints (bn := forkBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ForkBNLocalMarkovAll) :
+    WorldModelSigma.WMRewriteRuleSigma
+      (BNWorldModel.State (bn := forkBN))
+      PUnit
+      (fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+  xi_sourceRule_rewrite_of_forkBN_sigma
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sourceRule_rewrite_of_forkBN
+      (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+
+/-- Concrete typed fork-BN source-rule rewrite in direct sort-indexed WMΣ form
+(`Srt = Three`, constant query family). -/
+noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_concrete_three
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := forkBN) Three.B valB]
+    [EventPosConstraints (bn := forkBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ForkBNLocalMarkovAll) :
+    WMRewriteRuleSigmaConst
+      (BNWorldModel.State (bn := forkBN))
+      Three
+      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+  xi_sourceRule_rewrite_of_forkBN_sigma_three s0
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sourceRule_rewrite_of_forkBN
+      (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+
+/-- Concrete typed fork-BN source-rule rewrite in native `Three`-indexed WMΣ form
+(no erase bridge). -/
+noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := forkBN) Three.B valB]
+    [EventPosConstraints (bn := forkBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ForkBNLocalMarkovAll) :
+    WMRewriteRuleSigmaThreeNative
+      (BNWorldModel.State (bn := forkBN))
+      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+  xi_sourceRule_rewrite_of_forkBN_sigma_threeNative s0
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sourceRule_rewrite_of_forkBN
+      (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+
+/-- Concrete typed fork-BN source-rule rewrite in native tagged `Three`-indexed WMΣ form
+(no adapter bridge). -/
+noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := forkBN) Three.B valB]
+    [EventPosConstraints (bn := forkBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ForkBNLocalMarkovAll) :
+    WMRewriteRuleSigmaThreeNativeTagged
+      (BNWorldModel.State (bn := forkBN))
+      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+  xi_sourceRule_rewrite_of_forkBN_sigma_threeNativeTagged s0
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sourceRule_rewrite_of_forkBN
+      (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+
+/-- Concrete typed fork-BN source-rule rewrite in direct index-dependent WMΣ form
+(`Srt = Three`, dependent family via `IndexedQuery`). -/
+noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := forkBN) Three.B valB]
+    [EventPosConstraints (bn := forkBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ForkBNLocalMarkovAll) :
+    WMRewriteRuleSigmaIndexed
+      (BNWorldModel.State (bn := forkBN))
+      Three
+      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+  xi_sourceRule_rewrite_of_forkBN_sigma_dep s0
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sourceRule_rewrite_of_forkBN
+      (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+
+/-- Concrete typed fork-BN source-rule rewrite in OSLF sort-tagged dependent WMΣ form. -/
+noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_concrete_sortTag
+    (s0 : MeTTaSortTag)
+    (valA valB valC : Bool)
+    [EventPos (bn := forkBN) Three.B valB]
+    [EventPosConstraints (bn := forkBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ForkBNLocalMarkovAll) :
+    WMRewriteRuleSigmaSortTagged
+      (BNWorldModel.State (bn := forkBN))
+      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+  xi_sourceRule_rewrite_of_forkBN_sigma_sortTag s0
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sourceRule_rewrite_of_forkBN
+      (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+
+/-- Concrete fork-BN typed rewrite admits an exact-Bayes ITV judgment lift. -/
+theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_applyITV_bayesExact95
+    (ctx : BinaryContext)
+    (valA valB valC : Bool)
+    [EventPos (bn := forkBN) Three.B valB]
+    [EventPosConstraints (bn := forkBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ForkBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := forkBN)}
+    (hSide :
+      (xi_sourceRule_rewrite_of_forkBN_sigma_concrete
+        (valA := valA) (valB := valB) (valC := valC) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := forkBN))
+      (Srt := PUnit)
+      (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := forkBN)))
+      ITVSemantics.bayesCredibleExact95 ctx
+      W
+      (xi_sourceRule_rewrite_of_forkBN_sigma_concrete
+        (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.bayesCredibleExact95.eval ctx
+        ((xi_sourceRule_rewrite_of_forkBN_sigma_concrete
+          (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
+    (State := BNWorldModel.State (bn := forkBN))
+    (Srt := PUnit)
+    (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := forkBN)))
+    (r := xi_sourceRule_rewrite_of_forkBN_sigma_concrete
+      (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete fork-BN typed rewrite admits a Walley-IDM ITV judgment lift. -/
+theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_applyITV_walleyIDM
+    (ctx : IDMPredictiveContext)
+    (valA valB valC : Bool)
+    [EventPos (bn := forkBN) Three.B valB]
+    [EventPosConstraints (bn := forkBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ForkBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := forkBN)}
+    (hSide :
+      (xi_sourceRule_rewrite_of_forkBN_sigma_concrete
+        (valA := valA) (valB := valB) (valC := valC) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := forkBN))
+      (Srt := PUnit)
+      (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := forkBN)))
+      ITVSemantics.walleyIDMPredictive ctx
+      W
+      (xi_sourceRule_rewrite_of_forkBN_sigma_concrete
+        (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.walleyIDMPredictive.eval ctx
+        ((xi_sourceRule_rewrite_of_forkBN_sigma_concrete
+          (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
+    (State := BNWorldModel.State (bn := forkBN))
+    (Srt := PUnit)
+    (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := forkBN)))
+    (r := xi_sourceRule_rewrite_of_forkBN_sigma_concrete
+      (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete fork-BN indexed-dependent typed rewrite admits an exact-Bayes ITV judgment lift. -/
+theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep_applyITV_bayesExact95
+    (ctx : BinaryContext)
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := forkBN) Three.B valB]
+    [EventPosConstraints (bn := forkBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ForkBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := forkBN)}
+    (hSide :
+      (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := forkBN))
+      (Srt := Three)
+      (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := forkBN))))
+      ITVSemantics.bayesCredibleExact95 ctx
+      W
+      (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.bayesCredibleExact95.eval ctx
+        ((xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep
+          (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
+    (State := BNWorldModel.State (bn := forkBN))
+    (Srt := Three)
+    (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := forkBN))))
+    (r := xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep
+      (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete fork-BN indexed-dependent typed rewrite admits a Walley-IDM ITV judgment lift. -/
+theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep_applyITV_walleyIDM
+    (ctx : IDMPredictiveContext)
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := forkBN) Three.B valB]
+    [EventPosConstraints (bn := forkBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ForkBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := forkBN)}
+    (hSide :
+      (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := forkBN))
+      (Srt := Three)
+      (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := forkBN))))
+      ITVSemantics.walleyIDMPredictive ctx
+      W
+      (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.walleyIDMPredictive.eval ctx
+        ((xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep
+          (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
+    (State := BNWorldModel.State (bn := forkBN))
+    (Srt := Three)
+    (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := forkBN))))
+    (r := xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep
+      (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete fork-BN native-Three typed rewrite admits an exact-Bayes ITV judgment lift. -/
+theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative_applyITV_bayesExact95
+    (ctx : BinaryContext)
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := forkBN) Three.B valB]
+    [EventPosConstraints (bn := forkBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ForkBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := forkBN)}
+    (hSide :
+      (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := forkBN))
+      (Srt := Three)
+      (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := forkBN))))
+      ITVSemantics.bayesCredibleExact95 ctx
+      W
+      (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.bayesCredibleExact95.eval ctx
+        ((xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative
+          (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
+    (State := BNWorldModel.State (bn := forkBN))
+    (Srt := Three)
+    (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := forkBN))))
+    (r := xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative
+      (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete fork-BN native-Three typed rewrite admits a Walley-IDM ITV judgment lift. -/
+theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative_applyITV_walleyIDM
+    (ctx : IDMPredictiveContext)
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := forkBN) Three.B valB]
+    [EventPosConstraints (bn := forkBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ForkBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := forkBN)}
+    (hSide :
+      (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := forkBN))
+      (Srt := Three)
+      (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := forkBN))))
+      ITVSemantics.walleyIDMPredictive ctx
+      W
+      (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.walleyIDMPredictive.eval ctx
+        ((xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative
+          (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
+    (State := BNWorldModel.State (bn := forkBN))
+    (Srt := Three)
+    (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := forkBN))))
+    (r := xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative
+      (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete fork-BN native-tagged-Three typed rewrite admits an exact-Bayes ITV judgment lift. -/
+theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged_applyITV_bayesExact95
+    (ctx : BinaryContext)
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := forkBN) Three.B valB]
+    [EventPosConstraints (bn := forkBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ForkBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := forkBN)}
+    (hSide :
+      (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := forkBN))
+      (Srt := Three)
+      (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := forkBN))))
+      ITVSemantics.bayesCredibleExact95 ctx
+      W
+      (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.bayesCredibleExact95.eval ctx
+        ((xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged
+          (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
+    (State := BNWorldModel.State (bn := forkBN))
+    (Srt := Three)
+    (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := forkBN))))
+    (r := xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged
+      (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete fork-BN native-tagged-Three typed rewrite admits a Walley-IDM ITV judgment lift. -/
+theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged_applyITV_walleyIDM
+    (ctx : IDMPredictiveContext)
+    (s0 : Three)
+    (valA valB valC : Bool)
+    [EventPos (bn := forkBN) Three.B valB]
+    [EventPosConstraints (bn := forkBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLMarkov : ForkBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := forkBN)}
+    (hSide :
+      (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := forkBN))
+      (Srt := Three)
+      (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := forkBN))))
+      ITVSemantics.walleyIDMPredictive ctx
+      W
+      (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged
+        (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).conclusion
+      (ITVSemantics.walleyIDMPredictive.eval ctx
+        ((xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged
+          (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
+    (State := BNWorldModel.State (bn := forkBN))
+    (Srt := Three)
+    (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := forkBN))))
+    (r := xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged
+      (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
+    ctx hSide hW
+
+theorem xi_sourceRule_rewrite_of_forkBN_sigma_side
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := forkBN))
+      (PLNQuery (BNQuery.Atom (bn := forkBN))))
+    (hSide : r.side) :
+    (xi_sourceRule_rewrite_of_forkBN_sigma r).side := by
+  simpa [xi_sourceRule_rewrite_of_forkBN_sigma] using hSide
+
+end ForkBNSourceRule
+
+/-! ## Collider BN Sink Rule -/
+
+section ColliderBNSinkRule
+
+local instance : DecidableRel colliderBN.graph.edges := fun a b =>
+  Classical.propDecidable (colliderBN.graph.edges a b)
+
+variable
+  [∀ v : Three, Inhabited (colliderBN.stateSpace v)]
+  [∀ v : Three, Fintype (colliderBN.stateSpace v)]
+  [∀ v : Three, DecidableEq (colliderBN.stateSpace v)]
+
+/-- Lift a collider-BN untyped rewrite rule into one-sort typed WM form. -/
+noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := colliderBN))
+      (PLNQuery (BNQuery.Atom (bn := colliderBN)))) :
+    WorldModelSigma.WMRewriteRuleSigma
+      (BNWorldModel.State (bn := colliderBN))
+      PUnit
+      (fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+  wmRewriteRuleToSigmaUnit r
+
+/-- Lift a collider-BN untyped rewrite rule into direct sort-indexed WMΣ form
+(`Srt = Three`, constant query family). -/
+noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_three
+    (s0 : Three)
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := colliderBN))
+      (PLNQuery (BNQuery.Atom (bn := colliderBN)))) :
+    WMRewriteRuleSigmaConst
+      (BNWorldModel.State (bn := colliderBN))
+      Three
+      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+  wmRewriteRuleToSigmaConst
+    (State := BNWorldModel.State (bn := colliderBN))
+    (Srt := Three)
+    (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    s0 r
+
+/-- Lift a collider-BN untyped rewrite rule into native `Three`-indexed WMΣ form
+(no erase bridge). -/
+noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_threeNative
+    (s0 : Three)
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := colliderBN))
+      (PLNQuery (BNQuery.Atom (bn := colliderBN)))) :
+    WMRewriteRuleSigmaThreeNative
+      (BNWorldModel.State (bn := colliderBN))
+      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+  wmRewriteRuleToSigmaThreeNative
+    (State := BNWorldModel.State (bn := colliderBN))
+    (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    s0 r
+
+/-- Lift a collider-BN untyped rewrite rule into native tagged `Three`-indexed WMΣ form
+(no adapter bridge). -/
+noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_threeNativeTagged
+    (s0 : Three)
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := colliderBN))
+      (PLNQuery (BNQuery.Atom (bn := colliderBN)))) :
+    WMRewriteRuleSigmaThreeNativeTagged
+      (BNWorldModel.State (bn := colliderBN))
+      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+  wmRewriteRuleToSigmaThreeNativeTagged
+    (State := BNWorldModel.State (bn := colliderBN))
+    (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    s0 r
+
+/-- Lift a collider-BN untyped rewrite rule into direct index-dependent WMΣ form
+(`Srt = Three`, dependent family via `IndexedQuery`). -/
+noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_dep
+    (s0 : Three)
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := colliderBN))
+      (PLNQuery (BNQuery.Atom (bn := colliderBN)))) :
+    WMRewriteRuleSigmaIndexed
+      (BNWorldModel.State (bn := colliderBN))
+      Three
+      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+  wmRewriteRuleToSigmaIndexed
+    (State := BNWorldModel.State (bn := colliderBN))
+    (Srt := Three)
+    (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    s0 r
+
+/-- Lift a collider-BN untyped rewrite rule into OSLF sort-tagged dependent WMΣ form. -/
+noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_sortTag
+    (s0 : MeTTaSortTag)
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := colliderBN))
+      (PLNQuery (BNQuery.Atom (bn := colliderBN)))) :
+    WMRewriteRuleSigmaSortTagged
+      (BNWorldModel.State (bn := colliderBN))
+      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+  wmRewriteRuleToSigmaSortTagged
+    (State := BNWorldModel.State (bn := colliderBN))
+    (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    s0 r
+
+/-- Concrete typed collider-BN sink-rule rewrite, obtained directly from the
+untyped BN constructor and lifted to one-sort WMΣ form. -/
+noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_concrete
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll) :
+    WorldModelSigma.WMRewriteRuleSigma
+      (BNWorldModel.State (bn := colliderBN))
+      PUnit
+      (fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+  xi_sinkRule_rewrite_of_colliderBN_sigma
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sinkRule_rewrite_of_colliderBN
+      (valA := valA) (valB := valB) hLMarkov)
+
+/-- Concrete typed collider-BN sink-rule rewrite in direct sort-indexed WMΣ form
+(`Srt = Three`, constant query family). -/
+noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_three
+    (s0 : Three)
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll) :
+    WMRewriteRuleSigmaConst
+      (BNWorldModel.State (bn := colliderBN))
+      Three
+      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+  xi_sinkRule_rewrite_of_colliderBN_sigma_three s0
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sinkRule_rewrite_of_colliderBN
+      (valA := valA) (valB := valB) hLMarkov)
+
+/-- Concrete typed collider-BN sink-rule rewrite in native `Three`-indexed WMΣ form
+(no erase bridge). -/
+noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative
+    (s0 : Three)
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll) :
+    WMRewriteRuleSigmaThreeNative
+      (BNWorldModel.State (bn := colliderBN))
+      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+  xi_sinkRule_rewrite_of_colliderBN_sigma_threeNative s0
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sinkRule_rewrite_of_colliderBN
+      (valA := valA) (valB := valB) hLMarkov)
+
+/-- Concrete typed collider-BN sink-rule rewrite in native tagged `Three`-indexed WMΣ form
+(no adapter bridge). -/
+noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged
+    (s0 : Three)
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll) :
+    WMRewriteRuleSigmaThreeNativeTagged
+      (BNWorldModel.State (bn := colliderBN))
+      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+  xi_sinkRule_rewrite_of_colliderBN_sigma_threeNativeTagged s0
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sinkRule_rewrite_of_colliderBN
+      (valA := valA) (valB := valB) hLMarkov)
+
+/-- Concrete typed collider-BN sink-rule rewrite in direct index-dependent WMΣ form
+(`Srt = Three`, dependent family via `IndexedQuery`). -/
+noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep
+    (s0 : Three)
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll) :
+    WMRewriteRuleSigmaIndexed
+      (BNWorldModel.State (bn := colliderBN))
+      Three
+      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+  xi_sinkRule_rewrite_of_colliderBN_sigma_dep s0
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sinkRule_rewrite_of_colliderBN
+      (valA := valA) (valB := valB) hLMarkov)
+
+/-- Concrete typed collider-BN sink-rule rewrite in OSLF sort-tagged dependent WMΣ form. -/
+noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_sortTag
+    (s0 : MeTTaSortTag)
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll) :
+    WMRewriteRuleSigmaSortTagged
+      (BNWorldModel.State (bn := colliderBN))
+      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+  xi_sinkRule_rewrite_of_colliderBN_sigma_sortTag s0
+    (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sinkRule_rewrite_of_colliderBN
+      (valA := valA) (valB := valB) hLMarkov)
+
+/-- Concrete collider-BN typed rewrite admits an exact-Bayes ITV judgment lift. -/
+theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_applyITV_bayesExact95
+    (ctx : BinaryContext)
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := colliderBN)}
+    (hSide :
+      (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete
+        (valA := valA) (valB := valB) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := colliderBN))
+      (Srt := PUnit)
+      (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := colliderBN)))
+      ITVSemantics.bayesCredibleExact95 ctx
+      W
+      (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete
+        (valA := valA) (valB := valB) hLMarkov).conclusion
+      (ITVSemantics.bayesCredibleExact95.eval ctx
+        ((xi_sinkRule_rewrite_of_colliderBN_sigma_concrete
+          (valA := valA) (valB := valB) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
+    (State := BNWorldModel.State (bn := colliderBN))
+    (Srt := PUnit)
+    (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    (r := xi_sinkRule_rewrite_of_colliderBN_sigma_concrete
+      (valA := valA) (valB := valB) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete collider-BN typed rewrite admits a Walley-IDM ITV judgment lift. -/
+theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_applyITV_walleyIDM
+    (ctx : IDMPredictiveContext)
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := colliderBN)}
+    (hSide :
+      (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete
+        (valA := valA) (valB := valB) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := colliderBN))
+      (Srt := PUnit)
+      (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := colliderBN)))
+      ITVSemantics.walleyIDMPredictive ctx
+      W
+      (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete
+        (valA := valA) (valB := valB) hLMarkov).conclusion
+      (ITVSemantics.walleyIDMPredictive.eval ctx
+        ((xi_sinkRule_rewrite_of_colliderBN_sigma_concrete
+          (valA := valA) (valB := valB) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
+    (State := BNWorldModel.State (bn := colliderBN))
+    (Srt := PUnit)
+    (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    (r := xi_sinkRule_rewrite_of_colliderBN_sigma_concrete
+      (valA := valA) (valB := valB) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete collider-BN indexed-dependent typed rewrite admits an exact-Bayes ITV judgment lift. -/
+theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep_applyITV_bayesExact95
+    (ctx : BinaryContext)
+    (s0 : Three)
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := colliderBN)}
+    (hSide :
+      (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep
+        (s0 := s0) (valA := valA) (valB := valB) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := colliderBN))
+      (Srt := Three)
+      (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+      ITVSemantics.bayesCredibleExact95 ctx
+      W
+      (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep
+        (s0 := s0) (valA := valA) (valB := valB) hLMarkov).conclusion
+      (ITVSemantics.bayesCredibleExact95.eval ctx
+        ((xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep
+          (s0 := s0) (valA := valA) (valB := valB) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
+    (State := BNWorldModel.State (bn := colliderBN))
+    (Srt := Three)
+    (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+    (r := xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep
+      (s0 := s0) (valA := valA) (valB := valB) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete collider-BN indexed-dependent typed rewrite admits a Walley-IDM ITV judgment lift. -/
+theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep_applyITV_walleyIDM
+    (ctx : IDMPredictiveContext)
+    (s0 : Three)
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := colliderBN)}
+    (hSide :
+      (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep
+        (s0 := s0) (valA := valA) (valB := valB) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := colliderBN))
+      (Srt := Three)
+      (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+      ITVSemantics.walleyIDMPredictive ctx
+      W
+      (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep
+        (s0 := s0) (valA := valA) (valB := valB) hLMarkov).conclusion
+      (ITVSemantics.walleyIDMPredictive.eval ctx
+        ((xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep
+          (s0 := s0) (valA := valA) (valB := valB) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
+    (State := BNWorldModel.State (bn := colliderBN))
+    (Srt := Three)
+    (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+    (r := xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep
+      (s0 := s0) (valA := valA) (valB := valB) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete collider-BN native-Three typed rewrite admits an exact-Bayes ITV judgment lift. -/
+theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative_applyITV_bayesExact95
+    (ctx : BinaryContext)
+    (s0 : Three)
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := colliderBN)}
+    (hSide :
+      (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative
+        (s0 := s0) (valA := valA) (valB := valB) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := colliderBN))
+      (Srt := Three)
+      (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+      ITVSemantics.bayesCredibleExact95 ctx
+      W
+      (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative
+        (s0 := s0) (valA := valA) (valB := valB) hLMarkov).conclusion
+      (ITVSemantics.bayesCredibleExact95.eval ctx
+        ((xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative
+          (s0 := s0) (valA := valA) (valB := valB) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
+    (State := BNWorldModel.State (bn := colliderBN))
+    (Srt := Three)
+    (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+    (r := xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative
+      (s0 := s0) (valA := valA) (valB := valB) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete collider-BN native-Three typed rewrite admits a Walley-IDM ITV judgment lift. -/
+theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative_applyITV_walleyIDM
+    (ctx : IDMPredictiveContext)
+    (s0 : Three)
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := colliderBN)}
+    (hSide :
+      (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative
+        (s0 := s0) (valA := valA) (valB := valB) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := colliderBN))
+      (Srt := Three)
+      (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+      ITVSemantics.walleyIDMPredictive ctx
+      W
+      (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative
+        (s0 := s0) (valA := valA) (valB := valB) hLMarkov).conclusion
+      (ITVSemantics.walleyIDMPredictive.eval ctx
+        ((xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative
+          (s0 := s0) (valA := valA) (valB := valB) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
+    (State := BNWorldModel.State (bn := colliderBN))
+    (Srt := Three)
+    (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+    (r := xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative
+      (s0 := s0) (valA := valA) (valB := valB) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete collider-BN native-tagged-Three typed rewrite admits an exact-Bayes ITV judgment lift. -/
+theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged_applyITV_bayesExact95
+    (ctx : BinaryContext)
+    (s0 : Three)
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := colliderBN)}
+    (hSide :
+      (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged
+        (s0 := s0) (valA := valA) (valB := valB) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := colliderBN))
+      (Srt := Three)
+      (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+      ITVSemantics.bayesCredibleExact95 ctx
+      W
+      (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged
+        (s0 := s0) (valA := valA) (valB := valB) hLMarkov).conclusion
+      (ITVSemantics.bayesCredibleExact95.eval ctx
+        ((xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged
+          (s0 := s0) (valA := valA) (valB := valB) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
+    (State := BNWorldModel.State (bn := colliderBN))
+    (Srt := Three)
+    (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+    (r := xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged
+      (s0 := s0) (valA := valA) (valB := valB) hLMarkov)
+    ctx hSide hW
+
+/-- Concrete collider-BN native-tagged-Three typed rewrite admits a Walley-IDM ITV judgment lift. -/
+theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged_applyITV_walleyIDM
+    (ctx : IDMPredictiveContext)
+    (s0 : Three)
+    (valA valB : Bool)
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLMarkov : ColliderBNLocalMarkovAll)
+    {W : BNWorldModel.State (bn := colliderBN)}
+    (hSide :
+      (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged
+        (s0 := s0) (valA := valA) (valB := valB) hLMarkov).side)
+    (hW : WMJudgment W) :
+    WorldModelSigma.WMITVJudgmentSigma
+      (State := BNWorldModel.State (bn := colliderBN))
+      (Srt := Three)
+      (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+      ITVSemantics.walleyIDMPredictive ctx
+      W
+      (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged
+        (s0 := s0) (valA := valA) (valB := valB) hLMarkov).conclusion
+      (ITVSemantics.walleyIDMPredictive.eval ctx
+        ((xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged
+          (s0 := s0) (valA := valA) (valB := valB) hLMarkov).derive W)) :=
+  WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
+    (State := BNWorldModel.State (bn := colliderBN))
+    (Srt := Three)
+    (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+    (r := xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged
+      (s0 := s0) (valA := valA) (valB := valB) hLMarkov)
+    ctx hSide hW
+
+omit [∀ v : Three, Inhabited (colliderBN.stateSpace v)] in
+theorem xi_sinkRule_rewrite_of_colliderBN_sigma_side
+    (r : WMRewriteRule
+      (BNWorldModel.State (bn := colliderBN))
+      (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+    (hSide : r.side) :
+    (xi_sinkRule_rewrite_of_colliderBN_sigma r).side := by
+  simpa [xi_sinkRule_rewrite_of_colliderBN_sigma] using hSide
+
+end ColliderBNSinkRule
+
+end
+
+end Mettapedia.Logic.PLNXiDerivedBNRules.Typed

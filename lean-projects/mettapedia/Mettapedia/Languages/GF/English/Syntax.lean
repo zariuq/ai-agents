@@ -323,6 +323,12 @@ def linAdjCN (ap : EnglishAP) (cn : EnglishCN) : EnglishCN :=
       else cn.s n c ++ " " ++ adjStr
     g := cn.g }
 
+/-- AdvCN: add a post-nominal adverbial modifier to a CN.
+    GF RGL: `AdvCN cn ad = {s = \\n,c => cn.s ! n ! c ++ ad.s ; g = cn.g}` -/
+def linAdvCN (cn : EnglishCN) (adv : String) : EnglishCN :=
+  { s := fun n c => cn.s n c ++ " " ++ adv
+    g := cn.g }
+
 /-- PositA: adjective in positive degree as AP -/
 def linPositA (a : EnglishAdj) : EnglishAP :=
   { s := fun _ => a.s (.AAdj .Pos .Nom)

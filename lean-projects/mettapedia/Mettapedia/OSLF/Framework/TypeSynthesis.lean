@@ -247,11 +247,13 @@ pipeline (`langReduces`/`langReducesUsing`), i.e. the premise-aware executable
 engine bridged to declarative semantics.
 -/
 
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 800000 in
 /-- Executable one-step rewrite on the empty ρ-process bag yields no reducts. -/
 theorem rhoCalc_emptyBag_rewrite_nil :
     rewriteWithContextWithPremisesUsing RelationEnv.empty rhoCalc
       (.collection .hashBag [] none) = [] := by
-  decide
+  decide +kernel
 
 /-- No one-step `langReduces` successor exists from the empty ρ-process bag. -/
 theorem rhoCalc_emptyBag_langReduces_irreducible (q : Pattern) :
@@ -341,10 +343,12 @@ def rhoSetDropWitness : Pattern :=
 def rhoSetDropWitnessNF : Pattern :=
   .collection .hashSet [.apply "PZero" []] none
 
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 800000 in
 /-- In canonical `rhoCalc`, set-context congruence descent is blocked. -/
 theorem rhoSetDropWitness_exec_nil_canonical :
     rewriteWithContextWithPremisesUsing RelationEnv.empty rhoCalc rhoSetDropWitness = [] := by
-  decide
+  decide +kernel
 
 /-- Corollary: canonical `rhoCalc` has no one-step `langReduces` successor from
     the set-context DROP witness. -/
@@ -356,11 +360,13 @@ theorem rhoSetDropWitness_no_langReduces_canonical (q : Pattern) :
     langReducesUsing_to_exec (relEnv := RelationEnv.empty) (lang := rhoCalc) hred
   simp [rhoSetDropWitness_exec_nil_canonical] at hmem
 
+set_option maxRecDepth 4096 in
+set_option maxHeartbeats 800000 in
 /-- In `rhoCalcSetExt`, the concrete set-context DROP step is executable. -/
 theorem rhoSetDropWitness_exec_mem_setExt :
     rhoSetDropWitnessNF ∈
       rewriteWithContextWithPremisesUsing RelationEnv.empty rhoCalcSetExt rhoSetDropWitness := by
-  decide
+  decide +kernel
 
 /-- Corollary: `rhoCalcSetExt` admits the corresponding one-step `langReduces`. -/
 theorem rhoSetDropWitness_langReduces_setExt :

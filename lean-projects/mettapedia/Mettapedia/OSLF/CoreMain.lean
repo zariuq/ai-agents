@@ -40,6 +40,9 @@ import Mettapedia.OSLF.MeTTaCore.FullLanguageTests
 import Mettapedia.OSLF.Framework.MeTTaFullInstance
 import Mettapedia.OSLF.Framework.MeTTaToNTT
 import Mettapedia.OSLF.Framework.IdentityEvidenceTransfer
+import Mettapedia.OSLF.Framework.QuantaleCoherence
+import Mettapedia.OSLF.Framework.WMProbabilityEmbedding
+import Mettapedia.OSLF.Framework.HypercubeTemporalGSLTFunctor
 import Mettapedia.OSLF.Formula
 import Mettapedia.OSLF.Decidability
 import Mettapedia.OSLF.QuantifiedFormula
@@ -52,6 +55,7 @@ import Mettapedia.Logic.OSLFKripkeBridge
 import Mettapedia.Logic.OSLFImageFinite
 import Mettapedia.OSLF.Framework.PiRhoCanonicalBridge
 import Mettapedia.OSLF.Framework.SubstitutabilityTheorem1
+import Mettapedia.OSLF.PathMap
 
 /-!
 # OSLF Core Entry Point
@@ -132,6 +136,17 @@ export Mettapedia.OSLF.Framework.IdentityEvidenceTransfer (
   sem_withIdentity_disabled_iff
   checkLangUsing_sat_sound_withIdentity_unused
   identity_semantic_transfer_endpoint
+)
+
+export Mettapedia.OSLF.Framework.QuantaleCoherence (
+  sourceWeight
+  targetWeight
+  map_weakness_sourceWeight
+  map_weakness_targetWeight
+  mapTerm_reachable_of_reachable
+  language_quantale_coherence_bundle
+  language_quantale_coherence_bundle_atom
+  hypercube_forward_quantale_coherence_bundle
 )
 
 /-- CoreMain-facing canonical π→ρ semantic contract endpoint. -/

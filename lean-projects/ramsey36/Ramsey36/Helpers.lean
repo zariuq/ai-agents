@@ -103,7 +103,7 @@ This pattern appears 30+ times.
 lemma ne_of_mem_disjoint {α : Type*} [DecidableEq α] {A B : Finset α}
     (h_disj : Disjoint A B) {x y : α} (hx : x ∈ A) (hy : y ∈ B) : x ≠ y := by
   intro h_eq
-  exact disjoint_left.mp h_disj hx (h_eq ▸ hy)
+  exact Finset.disjoint_left.mp h_disj hx (h_eq ▸ hy)
 
 /-! ## Pattern 5: Triangle-free neighbor independence
 
