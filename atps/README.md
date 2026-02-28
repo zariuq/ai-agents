@@ -1,61 +1,60 @@
-# PLN Premise Selection for Automated Theorem Proving
+# PLN premise automated theorem proving
 
-Premise selection experiments using Probabilistic Logic Networks (PLN) on the extended MPTP 5k dataset. PLN selectors run inference in PeTTa (Prolog-based MeTTa) and are driven by Python scripts that handle data preparation and E prover evaluation.
+premise experiments use Probabilistic Logic Networks on the extended MPTP 5k dataset.
+selectors run PeTTa inference.
+Python drivers handle preparation and evaluation.
 
-## Results (extended MPTP 5k, 800 val, top-256, E 5s)
+## Results
 
-| Selector | Solved/800 | Notes |
-|----------|-----------|-------|
-| MaSh NB | 283 (35.4%) | Blanchette et al. 2016 reimpl |
-| PLN-NB | 281 (35.1%) | IDF-weighted NB in PLN |
-| PLN-Normal-NB | 279 (34.9%) | xiPLN continuous Normal-Normal conjugate |
-| Chainy baseline | 278 (34.8%) | No selection |
-| PLN-kNN+NB | 276 (34.5%) | kNN + NB merged via pln-revision |
-| PLN-Enhanced | 276 (34.5%) | NB + co-occurrence boost |
-| PLN-Rule | 275 (34.4%) | Modus ponens + revision |
-| PLN-kNN | 272 (34.0%) | All-PLN kNN (atomspace overlap) |
-| MaSh kNN | 272 (34.0%) | Blanchette et al. 2016 reimpl |
+- MaSh NB solves 283 of 800 validation problems at top-256 with E 5s.
+- PLN-NB solves 281 of 800 validation problems at top-256 with E 5s.
+- PLN-Normal-NB solves 279 of 800 validation problems at top-256 with E 5s.
+- Chainy baseline solves 278 of 800 validation problems at top-256 with E 5s.
+- PLN-kNN+NB solves 276 of 800 validation problems at top-256 with E 5s.
+- PLN-Enhanced solves 276 of 800 validation problems at top-256 with E 5s.
+- PLN-Rule solves 275 of 800 validation problems at top-256 with E 5s.
+- PLN-kNN solves 272 of 800 validation problems at top-256 with E 5s.
+- MaSh kNN solves 272 of 800 validation problems at top-256 with E 5s.
 
-## PLN Selectors
+## Selectors
 
-| Selector | MeTTa | Python Driver | PLN Operations |
-|----------|-------|---------------|----------------|
-| PLN-NB | `pln_idf_nb_selector.metta` | `select_pln_nb.py` | evidence-power (IDF), evidence-tensor |
-| PLN-Rule | `pln_premise_selector.metta` | `select_pln_rule.py` | pln-modus-ponens, pln-revision |
-| PLN-kNN | `pln_knn_selector.metta` | `select_pln_knn.py` | atomspace overlap, modus-ponens, evidence-hplus |
-| PLN-kNN+NB | `pln_knn_selector.metta` | `select_pln_knn.py --merge-nb` | kNN + NB merged via pln-revision |
-| PLN-Enhanced | `pln_enhanced_selector.metta` | `select_pln_enhanced.py` | NB + co-occurrence boost |
-| PLN-Normal-NB | `pln_normal_nb_selector.metta` | `select_pln_normal_nb.py` | xiPLN continuous Normal-Normal conjugate |
+- PLN-NB uses `pln_idf_nb_selector.metta` with `select_pln_nb.py`.
+- PLN-Rule uses `pln_premise_selector.metta` with `select_pln_rule.py`.
+- PLN-kNN uses `pln_knn_selector.metta` with `select_pln_knn.py`.
+- PLN-kNN+NB uses `select_pln_knn.py --merge-nb`.
+- PLN-Enhanced uses `pln_enhanced_selector.metta` with `select_pln_enhanced.py`.
+- PLN-Normal-NB uses `pln_normal_nb_selector.metta` with `select_pln_normal_nb.py`.
 
-PeTTa selectors live in `../hyperon/PeTTa/demos/`, Python drivers in `scripts/`.
+PeTTa selectors live in `../hyperon/PeTTa/demos/`.
+Python drivers live in `scripts/`.
 
-## Directory Structure
+## Structure
 
 ```
 atps/
 ├── scripts/
-│   ├── select_pln_*.py        # PLN selector Python drivers
-│   ├── select_mash_*.py       # MaSh baseline selectors
-│   ├── mash_*_build_tables.py # Build MaSh training tables
-│   ├── mash_*_scorer.py       # MaSh scoring modules (shared)
-│   ├── run_eprover.py         # E prover runner (sequential)
-│   └── run_eprover_parallel.sh # E prover runner (GNU parallel)
+│   ├── select_pln_*.py
+│   ├── select_mash_*.py
+│   ├── mash_*_build_tables.py
+│   ├── mash_*_scorer.py
+│   ├── run_eprover.py
+│   └── run_eprover_parallel.sh
 ├── datasets/
 │   └── extended_mptp5k/
-│       ├── chainy/train/      # 4200 training problems (FOF)
-│       ├── chainy/val/        # 800 validation problems
-│       ├── deps/              # Proof dependencies (bushy_train_deps.jsonl)
-│       ├── features_chainy/   # Sparse feature vectors (train)
-│       ├── features_chainy_val/ # Sparse feature vectors (val)
-│       ├── models/            # MaSh tables (pickle, regeneratable)
-│       ├── baselines/         # Selection + result JSONs
-│       └── proofs_*/          # E prover output files
-└── eprover-standard/          # E 3.0.1-ho
+│       ├── chainy/train/
+│       ├── chainy/val/
+│       ├── deps/
+│       ├── features_chainy/
+│       ├── features_chainy_val/
+│       ├── models/
+│       ├── baselines/
+│       └── proofs_*/
+└── eprover-standard/
 ```
 
-## Quick Start
+## Quick start
 
-### 1. Build MaSh tables (one-time)
+### MaSh table
 
 ```bash
 source atps/venv/bin/activate
@@ -63,29 +62,25 @@ python3 scripts/mash_nb_build_tables.py
 python3 scripts/mash_knn_build_tables.py
 ```
 
-### 2. Run a PLN selector (800 val problems)
+### Selector
 
 ```bash
-# PLN-kNN+NB (best selector)
 python3 scripts/select_pln_knn.py --merge-nb \
   --output datasets/extended_mptp5k/baselines/selections_pln_knn_nb_top256.json
 
-# PLN-Normal-NB
 python3 scripts/select_pln_normal_nb.py \
   --output datasets/extended_mptp5k/baselines/selections_pln_normal_nb_top256.json
 ```
 
-### 3. Evaluate with E prover
+### E evaluation
 
 ```bash
-# Sequential
 python3 scripts/run_eprover.py \
   --selections datasets/extended_mptp5k/baselines/selections_pln_knn_nb_top256.json \
   --problems-dir datasets/extended_mptp5k/chainy/val \
   --output-dir datasets/extended_mptp5k/proofs_pln_knn_nb_top256_5s \
   --timeout 5
 
-# Parallel (GNU parallel, 6 jobs)
 bash scripts/run_eprover_parallel.sh \
   datasets/extended_mptp5k/baselines/selections_pln_knn_nb_top256.json \
   datasets/extended_mptp5k/chainy/val \
@@ -93,21 +88,21 @@ bash scripts/run_eprover_parallel.sh \
   6 5
 ```
 
-## Resource Limits
+## Resource limits
 
-- **Cores**: max 8 (machine has 14). Always `nice -n 19`.
-- **Timeout**: 5s per problem for E prover (must match training data timeout).
-- **Memory**: `ulimit -v 6291456` (6GB) for PeTTa subprocesses.
+- the limit is 8 cores with `nice -n 19` for the machine.
+- the per-problem limit is 5 seconds for E prover.
+- the limit is `ulimit -v 6291456` for PeTTa subprocesses.
 
 ## Dependencies
 
-- PeTTa: `../hyperon/PeTTa/` (Prolog-based MeTTa runtime)
-- PLN libraries: `../hyperon/PeTTa/lib/lib_pln_xi.metta`, `../hyperon/PeTTa/pln_inference/`
-- E prover: `eprover-standard/PROVER/eprover` (E 3.0.1-ho)
-- Python: numpy, scikit-learn (in venv)
+- PeTTa is `../hyperon/PeTTa/`.
+- PLN libraries are `../hyperon/PeTTa/lib/lib_pln_xi.metta` and `../hyperon/PeTTa/pln_inference/`.
+- E prover is `eprover-standard/PROVER/eprover`.
+- Python dependencies are numpy and scikit-learn in venv.
 
 ## References
 
-- Blanchette et al. (2016). "Hammering towards QED." J. Formalized Reasoning.
-- Goertzel et al. "Probabilistic Logic Networks." Springer.
-- Jakubuv & Urban (2023). "Mizar60" (premise selection benchmarks).
+- Blanchette et al. 2016 is a core reference.
+- Goertzel et al. is a core reference.
+- Jakubuv and Urban 2023 is a core reference.
