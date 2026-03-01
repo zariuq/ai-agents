@@ -121,9 +121,13 @@ inductive PureHasType : PureCtx → Pattern → Pattern → Prop where
   | u0_type (Γ : PureCtx) :
       PureHasType Γ u0 u1
 
-  /-- Free variable: `fvar x : A` when `(x, A) ∈ Γ`. -/
+  /-- Free variable: `fvar x : A` when `(x, A) ∈ Γ` and `A` is locally closed.
+      The `hA_lc` premise ensures contexts only assign locally closed types,
+      which is standard in locally nameless formalizations and is needed to
+      derive `typing_type_lc`. -/
   | fvar (Γ : PureCtx) (x : String) (A : Pattern)
-      (hmem : (x, A) ∈ Γ) :
+      (hmem : (x, A) ∈ Γ)
+      (hA_lc : lc_at 0 A = true) :
       PureHasType Γ (.fvar x) A
 
   /-- Π-formation: if `A : U` and for all fresh `x`, `B[x] : U` in
@@ -217,7 +221,7 @@ theorem identity_type : PureHasType [] (mkLam (.bvar 0)) (mkPi u0 u0) :=
     (fun x _ => by
       simp only [openBVar, u0]
       exact .fvar [(x, .apply "U0" [])] x (.apply "U0" [])
-        List.mem_cons_self)
+        List.mem_cons_self (by simp [lc_at, lc_at_list]))
 
 /-- First projection λA.λB.A : Π(U0, Π(U0, U0)).
     Takes two type arguments and returns the first. -/
@@ -235,7 +239,7 @@ theorem fst_proj_type :
   intro y _
   simp only [openBVar]
   exact .fvar _ x (.apply "U0" [])
-    (List.mem_cons_of_mem _ List.mem_cons_self)
+    (List.mem_cons_of_mem _ List.mem_cons_self) (by simp [lc_at, lc_at_list])
 
 /-! ## Summary
 

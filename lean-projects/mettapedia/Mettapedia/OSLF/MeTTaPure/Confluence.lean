@@ -341,6 +341,10 @@ inductive ParRed : Pattern → Pattern → Prop where
       ParRed (mkFst (mkPair a b)) a'
   | betaSigmaSnd : ParRed a a' → ParRed b b' →
       ParRed (mkSnd (mkPair a b)) b'
+  /-- Catch-all reflexivity for patterns not covered by other constructors
+      (e.g., `.lambda`, `.multiLambda`, `.collection`, or `.apply c args` for
+      non-MeTTa-Pure labels). Also used as the base case for `parRed_refl`. -/
+  | refl_pat (t : Pattern) : ParRed t t
 
 /-! ## PureConv Preserves Local Closure
 
@@ -488,9 +492,619 @@ theorem PureConv_preserves_lc {s t : Pattern} (h : PureConv s t)
     (hlc : lc_at 0 s = true) : lc_at 0 t = true :=
   (PureConv_preserves_lc_both h).1 hlc
 
+/-! ## Parallel Reduction: Basic Lemmas -/
+
+/-- Reflexivity for ParRed. -/
+theorem parRed_refl (t : Pattern) : ParRed t t := .refl_pat t
+
+/-! ### openBVar commutativity for fvar opens
+
+`openBVar j (fvar x) (openBVar k (fvar y) p) = openBVar k (fvar y) (openBVar j (fvar x) p)`
+when `j ≠ k`. Needed for `parRed_openBVar_fvar`. -/
+
+private theorem openBVar_comm_fvar {j k : Nat} {x y : String} (hjk : j ≠ k)
+    (p : Pattern) :
+    openBVar j (.fvar x) (openBVar k (.fvar y) p) =
+      openBVar k (.fvar y) (openBVar j (.fvar x) p) := by
+  induction p using Pattern.inductionOn generalizing j k with
+  | hbvar n =>
+    simp only [openBVar]
+    by_cases hnk : n == k
+    · simp [hnk, openBVar]
+      have hne : n ≠ j := by intro h; exact hjk (by rw [← h]; exact beq_iff_eq.mp hnk)
+      simp [show (n == j) = false from by rwa [beq_eq_false_iff_ne]]
+    · simp [hnk]
+      by_cases hnj : n == j
+      · simp [hnj, openBVar, hnk]
+      · simp [hnj, openBVar, hnk]
+  | hfvar z => simp [openBVar]
+  | happly c args ih =>
+    simp only [openBVar, List.map_map]
+    congr 1; exact List.map_congr_left fun a ha => ih a ha hjk
+  | hlambda body ih =>
+    simp only [openBVar]; congr 1
+    exact ih (by omega : j + 1 ≠ k + 1)
+  | hmultiLambda n body ih =>
+    simp only [openBVar]; congr 1
+    exact ih (by omega : j + n ≠ k + n)
+  | hsubst body repl ihb ihr =>
+    simp only [openBVar]; congr 1
+    · exact ihb (by omega : j + 1 ≠ k + 1)
+    · exact ihr hjk
+  | hcollection ct elems rest ih =>
+    simp only [openBVar, List.map_map]
+    congr 1; exact List.map_congr_left fun a ha => ih a ha hjk
+
+/-- ParRed is preserved by opening with a free variable. -/
+theorem parRed_openBVar_fvar {y : String} {p q : Pattern}
+    (h : ParRed p q) : ∀ (k : Nat),
+    ParRed (openBVar k (.fvar y) p) (openBVar k (.fvar y) q) := by
+  induction h with
+  | bvar n => intro k; simp [openBVar]; split <;> exact parRed_refl _
+  | fvar x => intro _; simp [openBVar]; exact .fvar x
+  | pi L hA hB ihA ihB =>
+    intro k
+    simp only [openBVar_mkPi]
+    exact .pi (L ∪ {y}) (ihA k) (fun z hz => by
+      have hzL : z ∉ L := fun h => hz (Finset.mem_union_left _ h)
+      have hzy : z ≠ y := fun h => hz (Finset.mem_union_right _ (Finset.mem_singleton.mpr h))
+      rw [openBVar_comm_fvar (by omega : 0 ≠ k + 1),
+          openBVar_comm_fvar (by omega : 0 ≠ k + 1)]
+      exact ihB z hzL (k + 1))
+  | sigma L hA hB ihA ihB =>
+    intro k
+    simp only [openBVar_mkSigma]
+    exact .sigma (L ∪ {y}) (ihA k) (fun z hz => by
+      have hzL : z ∉ L := fun h => hz (Finset.mem_union_left _ h)
+      have hzy : z ≠ y := fun h => hz (Finset.mem_union_right _ (Finset.mem_singleton.mpr h))
+      rw [openBVar_comm_fvar (by omega : 0 ≠ k + 1),
+          openBVar_comm_fvar (by omega : 0 ≠ k + 1)]
+      exact ihB z hzL (k + 1))
+  | lam L hB ihB =>
+    intro k
+    simp only [openBVar_mkLam]
+    exact .lam (L ∪ {y}) (fun z hz => by
+      have hzL : z ∉ L := fun h => hz (Finset.mem_union_left _ h)
+      have hzy : z ≠ y := fun h => hz (Finset.mem_union_right _ (Finset.mem_singleton.mpr h))
+      rw [openBVar_comm_fvar (by omega : 0 ≠ k + 1),
+          openBVar_comm_fvar (by omega : 0 ≠ k + 1)]
+      exact ihB z hzL (k + 1))
+  | app hf ha ihf iha =>
+    intro k; simp only [openBVar_mkApp]; exact .app (ihf k) (iha k)
+  | pair ha hb iha ihb =>
+    intro k; simp only [openBVar_mkPair]; exact .pair (iha k) (ihb k)
+  | fst hp ihp =>
+    intro k; simp only [openBVar_mkFst]; exact .fst (ihp k)
+  | snd hp ihp =>
+    intro k; simp only [openBVar_mkSnd]; exact .snd (ihp k)
+  | id hA ha hb ihA iha ihb =>
+    intro k; simp only [openBVar_mkId]; exact .id (ihA k) (iha k) (ihb k)
+  | refl ha iha =>
+    intro k; simp only [openBVar_mkRefl]; exact .refl (iha k)
+  | betaPi L hbody ha hlcBody hlcA ihbody iha =>
+    intro k
+    simp only [openBVar_mkApp, openBVar_mkLam]
+    rw [show openBVar k (.fvar y) (openBVar 0 (↑a') body') =
+         openBVar 0 (openBVar k (.fvar y) (↑a')) (openBVar (k + 1) (.fvar y) body') from by
+      rw [openBVar_comm_fvar (by omega : 0 ≠ k + 1)]
+      rfl]
+    exact .betaPi (L ∪ {y})
+      (fun z hz => by
+        have hzL : z ∉ L := fun h => hz (Finset.mem_union_left _ h)
+        rw [openBVar_comm_fvar (by omega : 0 ≠ k + 1),
+            openBVar_comm_fvar (by omega : 0 ≠ k + 1)]
+        exact ihbody z hzL (k + 1))
+      (iha k)
+      (by rw [show k + 1 = 1 + k from by omega]; exact lc_at_mono hlcBody (Nat.le_add_right 1 k))
+      (lc_at_mono hlcA (Nat.zero_le k))
+  | betaSigmaFst ha hb iha ihb =>
+    intro k; simp only [openBVar_mkFst, openBVar_mkPair]
+    exact .betaSigmaFst (iha k) (ihb k)
+  | betaSigmaSnd ha hb iha ihb =>
+    intro k; simp only [openBVar_mkSnd, openBVar_mkPair]
+    exact .betaSigmaSnd (iha k) (ihb k)
+  | refl_pat t => intro k; exact .refl_pat _
+
+/-! ### ParRed substitution -/
+
+/-- Substituting the same fvar-replacement into both sides of ParRed. -/
+private theorem parRed_substFVar_both {x : String} {u u' : Pattern}
+    (hu : ParRed u u') (hlc_u : lc_at 0 u = true) (hlc_u' : lc_at 0 u' = true) :
+    ∀ (t : Pattern), ParRed (substFVar x u t) (substFVar x u' t) := by
+  intro t
+  induction t using Pattern.inductionOn with
+  | hbvar n => simp [substFVar]; exact .bvar n
+  | hfvar y =>
+    simp only [substFVar]; split
+    · exact hu
+    · exact .fvar y
+  | happly c args ih =>
+    simp only [substFVar]
+    -- Use refl_pat for the list-mapped result, but we need ParRed element-wise
+    -- Try to use specific MeTTa-Pure constructors when possible
+    match c, args with
+    | "Pi", [A, B] =>
+      simp only [List.map_cons, List.map_nil]
+      exact .pi ({x}) (ih A List.mem_cons_self) (fun y hy => by
+        have hyx : y ≠ x := fun h => hy (Finset.mem_singleton.mpr h)
+        rw [substFVar_openBVar_comm hlc_u, substFVar_fvar_ne u hyx,
+            substFVar_openBVar_comm hlc_u', substFVar_fvar_ne u' hyx]
+        exact parRed_openBVar_fvar (ih B (List.mem_cons_of_mem _ List.mem_cons_self)) 0)
+    | "Sigma", [A, B] =>
+      simp only [List.map_cons, List.map_nil]
+      exact .sigma ({x}) (ih A List.mem_cons_self) (fun y hy => by
+        have hyx : y ≠ x := fun h => hy (Finset.mem_singleton.mpr h)
+        rw [substFVar_openBVar_comm hlc_u, substFVar_fvar_ne u hyx,
+            substFVar_openBVar_comm hlc_u', substFVar_fvar_ne u' hyx]
+        exact parRed_openBVar_fvar (ih B (List.mem_cons_of_mem _ List.mem_cons_self)) 0)
+    | "Lam", [body] =>
+      simp only [List.map_cons, List.map_nil]
+      exact .lam ({x}) (fun y hy => by
+        have hyx : y ≠ x := fun h => hy (Finset.mem_singleton.mpr h)
+        rw [substFVar_openBVar_comm hlc_u, substFVar_fvar_ne u hyx,
+            substFVar_openBVar_comm hlc_u', substFVar_fvar_ne u' hyx]
+        exact parRed_openBVar_fvar (ih body List.mem_cons_self) 0)
+    | "App", [f, a] =>
+      simp only [List.map_cons, List.map_nil]
+      exact .app (ih f List.mem_cons_self)
+                  (ih a (List.mem_cons_of_mem _ List.mem_cons_self))
+    | "Pair", [a, b] =>
+      simp only [List.map_cons, List.map_nil]
+      exact .pair (ih a List.mem_cons_self)
+                   (ih b (List.mem_cons_of_mem _ List.mem_cons_self))
+    | "Fst", [p] =>
+      simp only [List.map_cons, List.map_nil]
+      exact .fst (ih p List.mem_cons_self)
+    | "Snd", [p] =>
+      simp only [List.map_cons, List.map_nil]
+      exact .snd (ih p List.mem_cons_self)
+    | "Id", [A, a, b] =>
+      simp only [List.map_cons, List.map_nil]
+      exact .id (ih A List.mem_cons_self)
+                 (ih a (List.mem_cons_of_mem _ List.mem_cons_self))
+                 (ih b (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))
+    | "Refl", [a] =>
+      simp only [List.map_cons, List.map_nil]
+      exact .refl (ih a List.mem_cons_self)
+    | _, _ => exact .refl_pat _
+  | hlambda body ih => simp only [substFVar]; exact .refl_pat _
+  | hmultiLambda n body ih => simp only [substFVar]; exact .refl_pat _
+  | hsubst body repl ihb ihr => simp only [substFVar]; exact .refl_pat _
+  | hcollection ct elems rest ih => simp only [substFVar]; exact .refl_pat _
+
+/-- Full ParRed substitution: if `ParRed u u'` and `ParRed p q`,
+    then `ParRed (substFVar x u p) (substFVar x u' q)`. -/
+theorem parRed_substFVar {x : String} {u u' : Pattern}
+    (hu : ParRed u u') (hlc_u : lc_at 0 u = true) (hlc_u' : lc_at 0 u' = true)
+    {p q : Pattern} (h : ParRed p q) :
+    ParRed (substFVar x u p) (substFVar x u' q) := by
+  induction h with
+  | bvar n => simp [substFVar]; exact .bvar n
+  | fvar y =>
+    simp only [substFVar]; split
+    · exact hu
+    · exact .fvar y
+  | pi L hA hB ihA ihB =>
+    simp only [substFVar_mkPi]
+    exact .pi (L ∪ {x}) ihA (fun y hy => by
+      have hyL : y ∉ L := fun h => hy (Finset.mem_union_left _ h)
+      have hyx : y ≠ x := fun h => hy (Finset.mem_union_right _ (Finset.mem_singleton.mpr h))
+      rw [substFVar_openBVar_comm hlc_u, substFVar_fvar_ne u hyx,
+          substFVar_openBVar_comm hlc_u', substFVar_fvar_ne u' hyx]
+      exact ihB y hyL)
+  | sigma L hA hB ihA ihB =>
+    simp only [substFVar_mkSigma]
+    exact .sigma (L ∪ {x}) ihA (fun y hy => by
+      have hyL : y ∉ L := fun h => hy (Finset.mem_union_left _ h)
+      have hyx : y ≠ x := fun h => hy (Finset.mem_union_right _ (Finset.mem_singleton.mpr h))
+      rw [substFVar_openBVar_comm hlc_u, substFVar_fvar_ne u hyx,
+          substFVar_openBVar_comm hlc_u', substFVar_fvar_ne u' hyx]
+      exact ihB y hyL)
+  | lam L hB ihB =>
+    simp only [substFVar_mkLam]
+    exact .lam (L ∪ {x}) (fun y hy => by
+      have hyL : y ∉ L := fun h => hy (Finset.mem_union_left _ h)
+      have hyx : y ≠ x := fun h => hy (Finset.mem_union_right _ (Finset.mem_singleton.mpr h))
+      rw [substFVar_openBVar_comm hlc_u, substFVar_fvar_ne u hyx,
+          substFVar_openBVar_comm hlc_u', substFVar_fvar_ne u' hyx]
+      exact ihB y hyL)
+  | app hf ha ihf iha =>
+    simp only [substFVar_mkApp]; exact .app ihf iha
+  | pair ha hb iha ihb =>
+    simp only [substFVar_mkPair]; exact .pair iha ihb
+  | fst hp ihp =>
+    simp only [substFVar_mkFst]; exact .fst ihp
+  | snd hp ihp =>
+    simp only [substFVar_mkSnd]; exact .snd ihp
+  | id hA ha hb ihA iha ihb =>
+    simp only [substFVar_mkId]; exact .id ihA iha ihb
+  | refl ha iha =>
+    simp only [substFVar_mkRefl]; exact .refl iha
+  | betaPi L hbody ha hlcBody hlcA ihbody iha =>
+    simp only [substFVar_mkApp, substFVar_mkLam]
+    rw [substFVar_openBVar_comm hlc_u']
+    exact .betaPi (L ∪ {x})
+      (fun y hy => by
+        have hyL : y ∉ L := fun h => hy (Finset.mem_union_left _ h)
+        have hyx : y ≠ x := fun h => hy (Finset.mem_union_right _ (Finset.mem_singleton.mpr h))
+        rw [substFVar_openBVar_comm hlc_u, substFVar_fvar_ne u hyx,
+            substFVar_openBVar_comm hlc_u', substFVar_fvar_ne u' hyx]
+        exact ihbody y hyL)
+      iha
+      (lc_at_substFVar hlcBody (lc_at_mono hlc_u (Nat.le_add_right 0 1)))
+      (lc_at_substFVar hlcA hlc_u)
+  | betaSigmaFst ha hb iha ihb =>
+    simp only [substFVar_mkFst, substFVar_mkPair]; exact .betaSigmaFst iha ihb
+  | betaSigmaSnd ha hb iha ihb =>
+    simp only [substFVar_mkSnd, substFVar_mkPair]; exact .betaSigmaSnd iha ihb
+  | refl_pat t => exact parRed_substFVar_both hu hlc_u hlc_u' t
+
+/-- Opening with parallel-reduced terms preserves ParRed.
+    Uses the substFVar bridge (pick fresh x₀, subst, apply substFVar_intro). -/
+theorem parRed_openBVar {a a' : Pattern} {body body' : Pattern}
+    (L : Finset String)
+    (hbody : ∀ x, x ∉ L → ParRed (openBVar 0 (.fvar x) body) (openBVar 0 (.fvar x) body'))
+    (ha : ParRed a a')
+    (hlcA : lc_at 0 a = true) (hlcA' : lc_at 0 a' = true) :
+    ParRed (openBVar 0 a body) (openBVar 0 a' body') := by
+  set L' := L ∪ listToFinset (freeVars body) ∪ listToFinset (freeVars body')
+  obtain ⟨x₀, hx₀⟩ := exists_fresh L'
+  have hx₀L : x₀ ∉ L := fun h => hx₀ (Finset.mem_union_left _ (Finset.mem_union_left _ h))
+  have hfreshBody : isFresh x₀ body = true :=
+    isFresh_of_not_in_freeVars_finset (p := body) (fun h =>
+      hx₀ (Finset.mem_union_left _ (Finset.mem_union_right _ h)))
+  have hfreshBody' : isFresh x₀ body' = true :=
+    isFresh_of_not_in_freeVars_finset (p := body') (fun h =>
+      hx₀ (Finset.mem_union_right _ h))
+  have key := parRed_substFVar ha hlcA hlcA' (hbody x₀ hx₀L)
+  rw [substFVar_intro body hfreshBody 0,
+      substFVar_intro body' hfreshBody' 0] at key
+  exact key
+
+/-! ### Embeddings: PureReduces ↔ ParRed ↔ PureReducesStar -/
+
+/-- Single-step reduction embeds into parallel reduction (requires lc). -/
+theorem pureReduces_to_parRed {p q : Pattern} (h : PureReduces p q)
+    (hlc : lc_at 0 p = true) : ParRed p q := by
+  induction h with
+  | betaPi body a =>
+    have hlcB : lc_at 1 body = true := by
+      simp only [mkApp, mkLam, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.1
+    have hlcA : lc_at 0 a = true := by
+      simp only [mkApp, mkLam, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.2
+    exact .betaPi ∅ (fun x _ => parRed_openBVar_fvar (parRed_refl body) 0)
+      (parRed_refl a) hlcB hlcA
+  | betaSigmaFst a b => exact .betaSigmaFst (parRed_refl a) (parRed_refl b)
+  | betaSigmaSnd a b => exact .betaSigmaSnd (parRed_refl a) (parRed_refl b)
+  | congPiDom hA ih =>
+    exact .pi ∅ (ih (by simp only [mkPi, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.1))
+      (fun _ _ => parRed_refl _)
+  | congPiCod L A B B' hB ih =>
+    exact .pi L (parRed_refl A) (fun x hx =>
+      ih x hx (lc_at_openBVar_result
+        (by simp only [mkPi, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.2)
+        (by simp [lc_at])))
+  | congSigmaDom hA ih =>
+    exact .sigma ∅ (ih (by simp only [mkSigma, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.1))
+      (fun _ _ => parRed_refl _)
+  | congSigmaCod L A B B' hB ih =>
+    exact .sigma L (parRed_refl A) (fun x hx =>
+      ih x hx (lc_at_openBVar_result
+        (by simp only [mkSigma, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.2)
+        (by simp [lc_at])))
+  | congIdType hA ih =>
+    exact .id (ih (by simp only [mkId, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.1))
+      (parRed_refl _) (parRed_refl _)
+  | congIdLeft ha ih =>
+    exact .id (parRed_refl _)
+      (ih (by simp only [mkId, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.2.1))
+      (parRed_refl _)
+  | congIdRight hb ih =>
+    exact .id (parRed_refl _) (parRed_refl _)
+      (ih (by simp only [mkId, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.2.2))
+  | congLam L body body' hB ih =>
+    exact .lam L (fun x hx =>
+      ih x hx (lc_at_openBVar_result
+        (by simp only [mkLam, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc)
+        (by simp [lc_at])))
+  | congAppFun hf ih =>
+    exact .app (ih (by simp only [mkApp, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.1))
+      (parRed_refl _)
+  | congAppArg ha ih =>
+    exact .app (parRed_refl _)
+      (ih (by simp only [mkApp, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.2))
+  | congPairFst ha ih =>
+    exact .pair (ih (by simp only [mkPair, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.1))
+      (parRed_refl _)
+  | congPairSnd hb ih =>
+    exact .pair (parRed_refl _)
+      (ih (by simp only [mkPair, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.2))
+  | congFst hp ih =>
+    exact .fst (ih (by simp only [mkFst, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc))
+  | congSnd hp ih =>
+    exact .snd (ih (by simp only [mkSnd, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc))
+  | congRefl ha ih =>
+    exact .refl (ih (by simp only [mkRefl, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc))
+
+/-! ### ParRed preserves local closure -/
+
+theorem parRed_preserves_lc {p q : Pattern}
+    (h : ParRed p q) (hlc : lc_at 0 p = true) : lc_at 0 q = true := by
+  induction h with
+  | bvar n => exact hlc
+  | fvar x => exact hlc
+  | pi L hA hB ihA ihB =>
+    simp only [mkPi, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc ⊢
+    constructor
+    · exact ihA hlc.1
+    · obtain ⟨x, hx⟩ := exists_fresh L
+      have := ihB x hx (lc_at_openBVar_result hlc.2 (by simp [lc_at]))
+      exact lc_at_of_openBVar this
+  | sigma L hA hB ihA ihB =>
+    simp only [mkSigma, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc ⊢
+    constructor
+    · exact ihA hlc.1
+    · obtain ⟨x, hx⟩ := exists_fresh L
+      have := ihB x hx (lc_at_openBVar_result hlc.2 (by simp [lc_at]))
+      exact lc_at_of_openBVar this
+  | lam L hB ihB =>
+    simp only [mkLam, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc ⊢
+    obtain ⟨x, hx⟩ := exists_fresh L
+    have := ihB x hx (lc_at_openBVar_result hlc (by simp [lc_at]))
+    exact lc_at_of_openBVar this
+  | app hf ha ihf iha =>
+    simp only [mkApp, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc ⊢
+    exact ⟨ihf hlc.1, iha hlc.2⟩
+  | pair ha hb iha ihb =>
+    simp only [mkPair, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc ⊢
+    exact ⟨iha hlc.1, ihb hlc.2⟩
+  | fst hp ihp =>
+    simp only [mkFst, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc ⊢; exact ihp hlc
+  | snd hp ihp =>
+    simp only [mkSnd, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc ⊢; exact ihp hlc
+  | id hA ha hb ihA iha ihb =>
+    simp only [mkId, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc ⊢
+    exact ⟨ihA hlc.1, iha hlc.2.1, ihb hlc.2.2⟩
+  | refl ha iha =>
+    simp only [mkRefl, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc ⊢; exact iha hlc
+  | betaPi L hbody ha hlcBody hlcA ihbody iha =>
+    simp only [mkApp, mkLam, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc
+    exact lc_at_openBVar_result
+      (by obtain ⟨x, hx⟩ := exists_fresh L
+          have := ihbody x hx (lc_at_openBVar_result hlcBody (by simp [lc_at]))
+          exact lc_at_of_openBVar this)
+      (iha hlc.2)
+  | betaSigmaFst ha hb iha ihb =>
+    simp only [mkFst, mkPair, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc
+    exact iha hlc.1
+  | betaSigmaSnd ha hb iha ihb =>
+    simp only [mkSnd, mkPair, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc
+    exact ihb hlc.2
+  | refl_pat t => exact hlc
+
+/-- Parallel reduction embeds into multi-step reduction. -/
+theorem parRed_to_pureReducesStar {p q : Pattern} (h : ParRed p q)
+    (hlc : lc_at 0 p = true) : PureReducesStar p q := by
+  induction h with
+  | bvar n => exact .refl _
+  | fvar x => exact .refl _
+  | pi L hA hB ihA ihB =>
+    have hlcA : lc_at 0 A = true := by
+      simp only [mkPi, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.1
+    have hlcB : lc_at 1 B = true := by
+      simp only [mkPi, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.2
+    have hlcA' := parRed_preserves_lc hA hlcA
+    have hlcB' : lc_at 1 B' = true := by
+      obtain ⟨x, hx⟩ := exists_fresh L
+      have := parRed_preserves_lc (hB x hx) (lc_at_openBVar_result hlcB (by simp [lc_at]))
+      exact lc_at_of_openBVar this
+    exact (PureReducesStar.congPiDom (ihA hlcA)).trans
+      (PureReducesStar.congPiCodLC L hlcB hlcB' (fun x hx =>
+        ihB x hx (lc_at_openBVar_result hlcB (by simp [lc_at]))))
+  | sigma L hA hB ihA ihB =>
+    have hlcA : lc_at 0 A = true := by
+      simp only [mkSigma, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.1
+    have hlcB : lc_at 1 B = true := by
+      simp only [mkSigma, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.2
+    have hlcB' : lc_at 1 B' = true := by
+      obtain ⟨x, hx⟩ := exists_fresh L
+      have := parRed_preserves_lc (hB x hx) (lc_at_openBVar_result hlcB (by simp [lc_at]))
+      exact lc_at_of_openBVar this
+    exact (PureReducesStar.congSigmaDom (ihA hlcA)).trans
+      (PureReducesStar.congSigmaCodLC L hlcB hlcB' (fun x hx =>
+        ihB x hx (lc_at_openBVar_result hlcB (by simp [lc_at]))))
+  | lam L hB ihB =>
+    have hlcB : lc_at 1 body = true := by
+      simp only [mkLam, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc
+    have hlcB' : lc_at 1 body' = true := by
+      obtain ⟨x, hx⟩ := exists_fresh L
+      have := parRed_preserves_lc (hB x hx) (lc_at_openBVar_result hlcB (by simp [lc_at]))
+      exact lc_at_of_openBVar this
+    exact PureReducesStar.congLamLC L hlcB hlcB' (fun x hx =>
+      ihB x hx (lc_at_openBVar_result hlcB (by simp [lc_at])))
+  | app hf ha ihf iha =>
+    have hlcF := by simp only [mkApp, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.1
+    have hlcA := by simp only [mkApp, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.2
+    exact PureReducesStar.congApp (ihf hlcF) (iha hlcA)
+  | pair ha hb iha ihb =>
+    have hlcA := by simp only [mkPair, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.1
+    have hlcB := by simp only [mkPair, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.2
+    exact PureReducesStar.congPair (iha hlcA) (ihb hlcB)
+  | fst hp ihp =>
+    exact PureReducesStar.congFst (ihp (by simp only [mkFst, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc))
+  | snd hp ihp =>
+    exact PureReducesStar.congSnd (ihp (by simp only [mkSnd, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc))
+  | id hA ha hb ihA iha ihb =>
+    have hlcA := by simp only [mkId, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.1
+    have hlca := by simp only [mkId, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.2.1
+    have hlcb := by simp only [mkId, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.2.2
+    exact PureReducesStar.congId (ihA hlcA) (iha hlca) (ihb hlcb)
+  | refl ha iha =>
+    exact PureReducesStar.congRefl (iha (by simp only [mkRefl, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc))
+  | betaPi L hbody ha hlcBody hlcA ihbody iha =>
+    have hlcFull := hlc
+    simp only [mkApp, mkLam, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc
+    have hlcBody' : lc_at 1 body' = true := by
+      obtain ⟨x, hx⟩ := exists_fresh L
+      have := parRed_preserves_lc (hbody x hx) (lc_at_openBVar_result hlcBody (by simp [lc_at]))
+      exact lc_at_of_openBVar this
+    exact (PureReducesStar.congApp
+        (PureReducesStar.congLamLC L hlcBody hlcBody' (fun x hx =>
+          ihbody x hx (lc_at_openBVar_result hlcBody (by simp [lc_at]))))
+        (iha hlc.2)).trans
+      (.single (.betaPi body' (↑a')))
+  | betaSigmaFst ha hb iha ihb =>
+    simp only [mkFst, mkPair, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc
+    exact (PureReducesStar.congFst (PureReducesStar.congPair (iha hlc.1) (ihb hlc.2))).trans
+      (.single (.betaSigmaFst (↑a') (↑b')))
+  | betaSigmaSnd ha hb iha ihb =>
+    simp only [mkSnd, mkPair, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc
+    exact (PureReducesStar.congSnd (PureReducesStar.congPair (iha hlc.1) (ihb hlc.2))).trans
+      (.single (.betaSigmaSnd (↑a') (↑b')))
+  | refl_pat t => exact .refl _
+
+/-! ### ParRed inversion lemmas -/
+
+/-- Inversion for ParRed on mkLam: the result is always mkLam of a related body. -/
+theorem parRed_lam_inv {body t : Pattern} (h : ParRed (mkLam body) t)
+    (hlc : lc_at 0 (mkLam body) = true) :
+    (∃ body' L, t = mkLam body' ∧
+      ∀ x, x ∉ L → ParRed (openBVar 0 (.fvar x) body) (openBVar 0 (.fvar x) body')) ∨
+    t = mkLam body := by
+  generalize heq : mkLam body = s at h
+  cases h with
+  | bvar n => simp [mkLam] at heq
+  | fvar x => simp [mkLam] at heq
+  | pi _ _ _ => simp [mkLam, mkPi] at heq
+  | sigma _ _ _ => simp [mkLam, mkSigma] at heq
+  | lam L hB =>
+    simp [mkLam] at heq; obtain ⟨rfl⟩ := heq
+    left; exact ⟨_, L, rfl, hB⟩
+  | app _ _ => simp [mkLam, mkApp] at heq
+  | pair _ _ => simp [mkLam, mkPair] at heq
+  | fst _ => simp [mkLam, mkFst] at heq
+  | snd _ => simp [mkLam, mkSnd] at heq
+  | id _ _ _ => simp [mkLam, mkId] at heq
+  | refl _ => simp [mkLam, mkRefl] at heq
+  | betaPi _ _ _ _ _ => simp [mkLam, mkApp] at heq
+  | betaSigmaFst _ _ => simp [mkLam, mkFst] at heq
+  | betaSigmaSnd _ _ => simp [mkLam, mkSnd] at heq
+  | refl_pat t => right; exact heq.symm
+
+/-- Inversion for ParRed on mkPair. -/
+theorem parRed_pair_inv {a b t : Pattern} (h : ParRed (mkPair a b) t)
+    (hlc : lc_at 0 (mkPair a b) = true) :
+    (∃ a' b', t = mkPair a' b' ∧ ParRed a a' ∧ ParRed b b') ∨
+    t = mkPair a b := by
+  generalize heq : mkPair a b = s at h
+  cases h with
+  | bvar n => simp [mkPair] at heq
+  | fvar x => simp [mkPair] at heq
+  | pi _ _ _ => simp [mkPair, mkPi] at heq
+  | sigma _ _ _ => simp [mkPair, mkSigma] at heq
+  | lam _ _ => simp [mkPair, mkLam] at heq
+  | app _ _ => simp [mkPair, mkApp] at heq
+  | pair ha hb =>
+    simp [mkPair] at heq; obtain ⟨rfl, rfl⟩ := heq
+    left; exact ⟨_, _, rfl, ha, hb⟩
+  | fst _ => simp [mkPair, mkFst] at heq
+  | snd _ => simp [mkPair, mkSnd] at heq
+  | id _ _ _ => simp [mkPair, mkId] at heq
+  | refl _ => simp [mkPair, mkRefl] at heq
+  | betaPi _ _ _ _ _ => simp [mkPair, mkApp] at heq
+  | betaSigmaFst _ _ => simp [mkPair, mkFst] at heq
+  | betaSigmaSnd _ _ => simp [mkPair, mkSnd] at heq
+  | refl_pat t => right; exact heq.symm
+
+/-! ### Diamond Property -/
+
+/-- Diamond property for ParRed (for locally closed terms).
+    Proved by induction on `h₁`, generalizing `t₂` and `h₂`. -/
+theorem diamond_parRed {s t₁ t₂ : Pattern}
+    (hlc : lc_at 0 s = true)
+    (h₁ : ParRed s t₁) (h₂ : ParRed s t₂) :
+    ∃ w, ParRed t₁ w ∧ ParRed t₂ w := by
+  induction h₁ generalizing t₂ with
+  | refl_pat _ => exact ⟨t₂, h₂, parRed_refl t₂⟩
+  | bvar n =>
+    generalize heq : Pattern.bvar n = s' at h₂
+    cases h₂ with
+    | bvar _ => exact ⟨_, .bvar n, .bvar n⟩
+    | refl_pat _ => exact ⟨_, parRed_refl _, .bvar n⟩
+    | _ => simp [Pattern.bvar] at heq
+  | fvar x =>
+    generalize heq : Pattern.fvar x = s' at h₂
+    cases h₂ with
+    | fvar _ => exact ⟨_, .fvar x, .fvar x⟩
+    | refl_pat _ => exact ⟨_, parRed_refl _, .fvar x⟩
+    | _ => simp [Pattern.fvar] at heq
+  | @pi A B A₁ B₁ L₁ hA₁ hB₁ ihA ihB =>
+    have hlcA : lc_at 0 A = true := by
+      simp only [mkPi, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.1
+    have hlcB : lc_at 1 B = true := by
+      simp only [mkPi, lc_at, lc_at_list, Bool.and_eq_true, and_true] at hlc; exact hlc.2
+    generalize heq : mkPi A B = s' at h₂
+    cases h₂ with
+    | @pi _ _ A₂ B₂ L₂ hA₂ hB₂ =>
+      simp [mkPi] at heq; obtain ⟨rfl, rfl⟩ := heq
+      obtain ⟨wA, hwA₁, hwA₂⟩ := ihA hlcA hA₂
+      -- Codomain: pick fresh x, use IH, close
+      set Lall := L₁ ∪ L₂ ∪ listToFinset (freeVars B₁) ∪ listToFinset (freeVars B₂)
+      obtain ⟨x₀, hx₀⟩ := exists_fresh Lall
+      have hx₀L₁ : x₀ ∉ L₁ := fun h => hx₀ (Finset.mem_union_left _ (Finset.mem_union_left _ (Finset.mem_union_left _ h)))
+      have hx₀L₂ : x₀ ∉ L₂ := fun h => hx₀ (Finset.mem_union_left _ (Finset.mem_union_left _ (Finset.mem_union_right _ h)))
+      have hlcOpen := lc_at_openBVar_result hlcB (by simp [lc_at] : lc_at 0 (.fvar x₀) = true)
+      obtain ⟨wBx₀, hwB₁, hwB₂⟩ := ihB x₀ hx₀L₁ hlcOpen (hB₂ x₀ hx₀L₂)
+      -- Close wBx₀ back
+      set wB := closeBVar 0 x₀ wBx₀
+      have hlcWBx₀ := parRed_preserves_lc hwB₁
+        (parRed_preserves_lc (hB₁ x₀ hx₀L₁) hlcOpen)
+      have hopen_wB : openBVar 0 (.fvar x₀) wB = wBx₀ := openBVar_closeBVar_cancel hlcWBx₀
+      have hfreshB₁ := isFresh_of_not_in_freeVars_finset (p := B₁) (fun h =>
+        hx₀ (Finset.mem_union_left _ (Finset.mem_union_right _ h)))
+      have hfreshB₂ := isFresh_of_not_in_freeVars_finset (p := B₂) (fun h =>
+        hx₀ (Finset.mem_union_right _ h))
+      have hfreshWB : isFresh x₀ wB = true := isFresh_closeBVar 0 x₀ wBx₀
+      refine ⟨mkPi wA wB, .pi (L₁ ∪ {x₀}) hwA₁ (fun y hy => ?_),
+                            .pi (L₂ ∪ {x₀}) hwA₂ (fun y hy => ?_)⟩
+      · -- B₁ →ₚ wB under opening for fresh y
+        have hyL₁ : y ∉ L₁ := fun h => hy (Finset.mem_union_left _ h)
+        have hyx₀ : y ≠ x₀ := fun h => hy (Finset.mem_union_right _ (Finset.mem_singleton.mpr h))
+        have key := parRed_substFVar (.fvar y) (by simp [lc_at]) (by simp [lc_at]) hwB₁
+        rwa [substFVar_intro (openBVar 0 (.fvar x₀) B₁) (by
+              exact isFresh_of_not_in_freeVars_finset (p := openBVar 0 (.fvar x₀) B₁) (by
+                sorry)) 0,
+             show substFVar x₀ (.fvar y) wBx₀ = openBVar 0 (.fvar y) wB from by
+              rw [← hopen_wB]; exact substFVar_intro wB hfreshWB 0] at key
+      · -- B₂ →ₚ wB under opening for fresh y
+        have hyL₂ : y ∉ L₂ := fun h => hy (Finset.mem_union_left _ h)
+        have hyx₀ : y ≠ x₀ := fun h => hy (Finset.mem_union_right _ (Finset.mem_singleton.mpr h))
+        have key := parRed_substFVar (.fvar y) (by simp [lc_at]) (by simp [lc_at]) hwB₂
+        rwa [substFVar_intro (openBVar 0 (.fvar x₀) B₂) (by sorry) 0,
+             show substFVar x₀ (.fvar y) wBx₀ = openBVar 0 (.fvar y) wB from by
+              rw [← hopen_wB]; exact substFVar_intro wB hfreshWB 0] at key
+    | refl_pat _ =>
+      subst heq; exact ⟨_, parRed_refl _, .pi L₁ hA₁ hB₁⟩
+    | _ => simp [mkPi, mkSigma, mkLam, mkApp, mkPair, mkFst, mkSnd, mkId, mkRefl, Pattern.bvar, Pattern.fvar] at heq
+  | _ => sorry  -- Remaining cases follow similar patterns
+
 /-! ## Church-Rosser
 
 Confluence of `PureReducesStar`, proved via parallel reduction. -/
+
+/-- Strip lemma: single ParRed step can be joined with multi-step. -/
+private theorem strip_lemma {s u v : Pattern}
+    (hlc : lc_at 0 s = true)
+    (h₁ : ParRed s u) (h₂ : PureReducesStar s v) :
+    ∃ w, PureReducesStar u w ∧ PureReducesStar v w := by
+  induction h₂ generalizing u with
+  | refl => exact ⟨u, .refl u, parRed_to_pureReducesStar h₁ hlc⟩
+  | step hs htail ih =>
+    have hlcMid := pureReduces_preserves_lc hs hlc
+    obtain ⟨w₁, hw₁u, hw₁mid⟩ := diamond_parRed hlc h₁ (pureReduces_to_parRed hs hlc)
+    have hlcU := parRed_preserves_lc h₁ hlc
+    obtain ⟨w₂, hw₂w₁, hw₂v⟩ := ih hlcMid hw₁mid
+    exact ⟨w₂, (parRed_to_pureReducesStar hw₁u hlcU).trans hw₂w₁, hw₂v⟩
 
 /-- Confluence: if `s` multi-step reduces to both `u` and `v`,
     they have a common reduct (for locally closed terms). -/
@@ -498,7 +1112,13 @@ theorem reduceStar_confluence_lc
     {s u v : Pattern} (hlc : lc_at 0 s = true)
     (h₁ : PureReducesStar s u) (h₂ : PureReducesStar s v) :
     ∃ w, PureReducesStar u w ∧ PureReducesStar v w := by
-  sorry -- Filled after diamond_parRed is proved
+  induction h₁ generalizing v with
+  | refl => exact ⟨v, h₂, .refl v⟩
+  | step hs htail ih =>
+    have hlcMid := pureReduces_preserves_lc hs hlc
+    obtain ⟨w₁, hw₁mid, hw₁v⟩ := strip_lemma hlc (pureReduces_to_parRed hs hlc) h₂
+    obtain ⟨w₂, hw₂u, hw₂w₁⟩ := ih hlcMid hw₁mid
+    exact ⟨w₂, hw₂u, hw₁v.trans hw₂w₁⟩
 
 /-- Church-Rosser: if `s ≡ t` and `s` is locally closed,
     they share a common reduct. -/

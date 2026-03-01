@@ -59,18 +59,16 @@ def collTypeToSymbol : CollType → String
     - Pattern.subst body x repl → (patternToAtom body)[x := patternToAtom repl]
 -/
 def patternToAtom : Pattern → Atom
-  | .var name => .var name
+  | .bvar n => .var ("#b" ++ toString n)
+  | .fvar name => .var name
   | .apply constructor args =>
       .expression (.symbol constructor :: args.map patternToAtom)
-  | .lambda x body =>
-      .expression [.symbol "λ", .var x, patternToAtom body]
-  | .multiLambda xs body =>
-      let vars := xs.map Atom.var
-      .expression (.symbol "λ*" :: vars ++ [patternToAtom body])
-  | .subst body x repl =>
-      -- Represent substitution as an expression
-      -- In evaluation, this would be computed
-      .expression [.symbol "subst", patternToAtom body, .var x, patternToAtom repl]
+  | .lambda body =>
+      .expression [.symbol "λ", patternToAtom body]
+  | .multiLambda n body =>
+      .expression [.symbol "λ*", .symbol (toString n), patternToAtom body]
+  | .subst body repl =>
+      .expression [.symbol "subst", patternToAtom body, patternToAtom repl]
   | .collection ct elems rest =>
       let elemAtoms := elems.map patternToAtom
       let restAtom := rest.map (fun r => [.var r]) |>.getD []
@@ -79,19 +77,19 @@ def patternToAtom : Pattern → Atom
 /-- Convert a MeTTaCore Atom back to a MeTTaIL Pattern (if possible).
     This is a partial inverse of patternToAtom. -/
 def atomToPattern : Atom → Option Pattern
-  | .var name => some (.var name)
+  | .var name => some (.fvar name)
   | .symbol s => some (.apply s [])  -- Treat symbols as nullary constructors
   | .expression (.symbol constructor :: args) =>
       if constructor == "λ" then
         match args with
-        | [.var x, body] => atomToPattern body |>.map (.lambda x ·)
+        | [body] => atomToPattern body |>.map .lambda
         | _ => none
       else if constructor == "subst" then
         match args with
-        | [body, .var x, repl] => do
+        | [body, repl] => do
             let body' ← atomToPattern body
             let repl' ← atomToPattern repl
-            return .subst body' x repl'
+            return .subst body' repl'
         | _ => none
       else
         let patArgs := args.filterMap atomToPattern
@@ -152,30 +150,33 @@ def evaluatePattern (eqs : List Equation) (pat : Pattern) (fuel : Nat) : Multise
 
 /-- Pattern conversion preserves variable names (concrete example) -/
 theorem patternToAtom_var_example :
-    patternToAtom (.var "x") = .var "x" := by decide
+    patternToAtom (.fvar "x") = .var "x" := by simp [patternToAtom]
 
 /-- Pattern conversion preserves constructor applications (concrete example) -/
 theorem patternToAtom_apply_example :
-    patternToAtom (.apply "Nil" []) = .expression [.symbol "Nil"] := by decide
+    patternToAtom (.apply "Nil" []) = .expression [.symbol "Nil"] := by
+  simp [patternToAtom]
 
 /-- Pattern conversion preserves lambda abstractions (concrete example) -/
 theorem patternToAtom_lambda_example :
-    patternToAtom (.lambda "x" (.var "x")) =
-    .expression [.symbol "λ", .var "x", .var "x"] := by decide
+    patternToAtom (.lambda (.bvar 0)) =
+    .expression [.symbol "λ", .var ("#b" ++ toString 0)] := by
+  simp [patternToAtom]
 
 /-- Equation conversion creates proper equality atoms -/
 theorem equationToAtom_structure (eq : Equation) :
     ∃ lhs rhs, equationToAtom eq = .expression [.symbol "=", lhs, rhs] :=
   ⟨patternToAtom eq.left, patternToAtom eq.right, rfl⟩
 
-/-- Round-trip check for variable patterns.
-    Note: We use Option.isSome since Pattern doesn't have DecidableEq -/
+/-- Round-trip check for variable patterns. -/
 theorem roundtrip_var_succeeds :
-    (atomToPattern (patternToAtom (.var "x"))).isSome = true := by decide
+    (atomToPattern (patternToAtom (.fvar "x"))).isSome = true := by
+  simp [patternToAtom, atomToPattern]
 
 /-- Round-trip check for nullary applications -/
 theorem roundtrip_apply_nullary_succeeds :
-    (atomToPattern (patternToAtom (.apply "Nil" []))).isSome = true := by decide
+    (atomToPattern (patternToAtom (.apply "Nil" []))).isSome = true := by
+  simp [patternToAtom, atomToPattern]
 
 /-! ## Example: ρ-calculus Bridge -/
 
@@ -188,12 +189,12 @@ theorem roundtrip_apply_nullary_succeeds :
 -/
 def exampleCommLhs : Pattern :=
   .apply "PPar" [
-    .apply "POutput" [.apply "NQuote" [.var "q"], .var "n"],
-    .apply "PInput" [.var "x", .var "n", .var "p"]
+    .apply "POutput" [.apply "NQuote" [.fvar "q"], .fvar "n"],
+    .apply "PInput" [.fvar "x", .fvar "n", .fvar "p"]
   ]
 
 def exampleCommRhs : Pattern :=
-  .subst (.var "p") "x" (.apply "NQuote" [.var "q"])
+  .subst (.fvar "p") (.apply "NQuote" [.fvar "q"])
 
 def exampleCommEquation : Equation := {
   name := "COMM"
@@ -205,33 +206,37 @@ def exampleCommEquation : Equation := {
 
 /-- The COMM equation as a MeTTaCore atom -/
 example : equationToAtom exampleCommEquation =
-    .expression [
+    Atom.expression [
       .symbol "=",
       .expression [
         .symbol "PPar",
-        .expression [.symbol "POutput", .expression [.symbol "NQuote", .var "q"], .var "n"],
-        .expression [.symbol "PInput", .var "x", .var "n", .var "p"]
+        .expression [.symbol "POutput", .expression [.symbol "NQuote", Atom.var "q"], Atom.var "n"],
+        .expression [.symbol "PInput", Atom.var "x", Atom.var "n", Atom.var "p"]
       ],
-      .expression [.symbol "subst", .var "p", .var "x", .expression [.symbol "NQuote", .var "q"]]
-    ] := by decide
+      .expression [.symbol "subst", Atom.var "p", .expression [.symbol "NQuote", Atom.var "q"]]
+    ] := by simp [equationToAtom, Atom.equality, exampleCommEquation, exampleCommLhs, exampleCommRhs, patternToAtom]
 
 /-! ## Unit Tests -/
 
 section Tests
 
 -- Pattern conversion
-example : patternToAtom (.var "x") = .var "x" := by decide
-example : patternToAtom (.apply "Nil" []) = .expression [.symbol "Nil"] := by decide
-example : patternToAtom (.apply "Cons" [.var "h", .var "t"]) =
-          .expression [.symbol "Cons", .var "h", .var "t"] := by decide
+example : patternToAtom (.fvar "x") = .var "x" := by simp [patternToAtom]
+example : patternToAtom (.apply "Nil" []) = .expression [.symbol "Nil"] := by
+  simp [patternToAtom]
+example : patternToAtom (.apply "Cons" [.fvar "h", .fvar "t"]) =
+          .expression [.symbol "Cons", .var "h", .var "t"] := by
+  simp [patternToAtom]
 
--- Lambda conversion
-example : patternToAtom (.lambda "x" (.var "x")) =
-          .expression [.symbol "λ", .var "x", .var "x"] := by decide
+-- Lambda conversion (locally nameless: one arg)
+example : patternToAtom (.lambda (.bvar 0)) =
+          .expression [.symbol "λ", .var ("#b" ++ toString 0)] := by
+  simp [patternToAtom]
 
 -- Collection conversion
-example : patternToAtom (.collection .hashBag [.var "a", .var "b"] none) =
-          .expression [.symbol "Bag", .var "a", .var "b"] := by decide
+example : patternToAtom (.collection .hashBag [.fvar "a", .fvar "b"] none) =
+          .expression [.symbol "Bag", .var "a", .var "b"] := by
+  simp [patternToAtom, collTypeToSymbol]
 
 -- Type expression conversion
 example : typeExprToAtom (.base "Proc") = .symbol "Proc" := rfl

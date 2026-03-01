@@ -468,6 +468,40 @@ theorem openBVar_closeBVar_cancel {k : Nat} {x : String} {p : Pattern}
     congr 1; exact list_map_eq_self fun a ha =>
       ih a ha (lc_at_list_mem (by simpa [lc_at] using hlc) ha)
 
+/-- `substFVar` preserves `lc_at`: substituting an lc term for a free variable
+    in an lc pattern yields an lc pattern. -/
+theorem lc_at_substFVar {k : Nat} {x : String} {u p : Pattern}
+    (hp : lc_at k p = true) (hu : lc_at k u = true) :
+    lc_at k (substFVar x u p) = true := by
+  induction p using Pattern.inductionOn generalizing k with
+  | hbvar n => simp [substFVar]; exact hp
+  | hfvar y => simp [substFVar]; split <;> simp [lc_at, *]
+  | happly c args ih =>
+    simp only [substFVar, lc_at] at hp ⊢
+    induction args with
+    | nil => simp [lc_at_list]
+    | cons a as ihas =>
+      simp only [List.map_cons, lc_at_list, Bool.and_eq_true] at hp ⊢
+      exact ⟨ih a List.mem_cons_self hp.1 hu,
+             ihas (fun q hq => ih q (List.mem_cons_of_mem _ hq)) hp.2⟩
+  | hlambda body ih =>
+    simp only [substFVar, lc_at] at hp ⊢
+    exact ih hp (lc_at_mono hu (Nat.le_add_right k 1))
+  | hmultiLambda n body ih =>
+    simp only [substFVar, lc_at] at hp ⊢
+    exact ih hp (lc_at_mono hu (Nat.le_add_right k n))
+  | hsubst body repl ihb ihr =>
+    simp only [substFVar, lc_at, Bool.and_eq_true] at hp ⊢
+    exact ⟨ihb hp.1 (lc_at_mono hu (Nat.le_add_right k 1)), ihr hp.2 hu⟩
+  | hcollection ct elems rest ih =>
+    simp only [substFVar, lc_at] at hp ⊢
+    induction elems with
+    | nil => simp [lc_at_list]
+    | cons a as ihas =>
+      simp only [List.map_cons, lc_at_list, Bool.and_eq_true] at hp ⊢
+      exact ⟨ih a List.mem_cons_self hp.1 hu,
+             ihas (fun q hq => ih q (List.mem_cons_of_mem _ hq)) hp.2⟩
+
 /-! ## lc_at preservation infrastructure -/
 
 /-- Reverse of `lc_at_openBVar_result`: if `lc_at k (openBVar k u p)`, then `lc_at (k+1) p`.

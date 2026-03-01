@@ -46,6 +46,8 @@ open Mettapedia.OSLF.MeTTaPure.Core
 open Mettapedia.OSLF.MeTTaPure.Typing
 open Mettapedia.OSLF.MeTTaPure.Reduction
 open Mettapedia.OSLF.MeTTaPure.SubjectReduction
+open Mettapedia.OSLF.MeTTaPure.FVarSubst (PureReducesStar_implies_PureConv)
+open Mettapedia.OSLF.MeTTaIL.Substitution (lc_at)
 
 /-! ## TypedLangDef Structure -/
 
@@ -101,15 +103,15 @@ theorem mettaPure_intensional : mettaPure.equations = [] := rfl
 /-- MeTTa-Pure has 13 grammar rules (11 Tm + 2 Ctx constructors). -/
 theorem mettaPure_thirteen_constructors : mettaPure.terms.length = 13 := by decide
 
-/-- Every one-step reduction is a definitional equality. -/
-theorem mettaPure_reduction_sound :
-    PureReduces t t' → PureConv t t' :=
-  PureReduces_implies_PureConv
+/-- Every one-step reduction of a locally closed term is a definitional equality. -/
+theorem mettaPure_reduction_sound {t t' : Pattern}
+    (hlc : lc_at 0 t = true) (h : PureReduces t t') : PureConv t t' :=
+  PureReduces_implies_PureConv h hlc
 
-/-- Multi-step reduction is a definitional equality. -/
-theorem mettaPure_reduction_star_sound :
-    PureReducesStar t t' → PureConv t t' :=
-  PureReducesStar_implies_PureConv
+/-- Multi-step reduction of a locally closed term is a definitional equality. -/
+theorem mettaPure_reduction_star_sound {t t' : Pattern}
+    (hlc : lc_at 0 t = true) (h : PureReducesStar t t') : PureConv t t' :=
+  PureReducesStar_implies_PureConv h hlc
 
 /-! ## Milestone Status
 

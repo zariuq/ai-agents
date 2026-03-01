@@ -53,6 +53,34 @@ def substFVar (x : String) (u : Pattern) : Pattern → Pattern
   | .collection ct elems rest => .collection ct (elems.map (substFVar x u)) rest
 termination_by p => sizeOf p
 
+/-- Local `substFVar` is definitionally aligned with the shared FVarSubst version. -/
+private theorem substFVar_eq_shared (x : String) (u : Pattern) (p : Pattern) :
+    substFVar x u p = Mettapedia.OSLF.MeTTaPure.FVarSubst.substFVar x u p := by
+  induction p using Pattern.inductionOn with
+  | hbvar n =>
+      simp [substFVar, Mettapedia.OSLF.MeTTaPure.FVarSubst.substFVar]
+  | hfvar y =>
+      simp [substFVar, Mettapedia.OSLF.MeTTaPure.FVarSubst.substFVar]
+  | happly c args ih =>
+      simp [substFVar, Mettapedia.OSLF.MeTTaPure.FVarSubst.substFVar]
+      exact ih
+  | hlambda body ih =>
+      simp [substFVar, Mettapedia.OSLF.MeTTaPure.FVarSubst.substFVar, ih]
+  | hmultiLambda n body ih =>
+      simp [substFVar, Mettapedia.OSLF.MeTTaPure.FVarSubst.substFVar, ih]
+  | hsubst body repl ihb ihr =>
+      simp [substFVar, Mettapedia.OSLF.MeTTaPure.FVarSubst.substFVar, ihb, ihr]
+  | hcollection ct elems rest ih =>
+      simp [substFVar, Mettapedia.OSLF.MeTTaPure.FVarSubst.substFVar]
+      exact ih
+
+/-- `lc_at` preservation for the local `substFVar` wrapper. -/
+private theorem lc_at_substFVar_local {k : Nat} {x : String} {u p : Pattern}
+    (hp : lc_at k p = true) (hu : lc_at k u = true) :
+    lc_at k (substFVar x u p) = true := by
+  simpa [substFVar_eq_shared] using
+    (Mettapedia.OSLF.MeTTaPure.FVarSubst.lc_at_substFVar (k := k) (x := x) (u := u) (p := p) hp hu)
+
 /-! ## List helper -/
 
 private theorem list_map_eq_self {f : Pattern → Pattern} {l : List Pattern}
@@ -317,18 +345,22 @@ theorem pureConv_substFVar {x : String} {u : Pattern}
   | refl t => simpa using PureConv.refl (substFVar x u t)
   | symm _ ih => exact PureConv.symm ih
   | trans _ _ ih₁ ih₂ => exact PureConv.trans ih₁ ih₂
-  | betaPi body a =>
+  | betaPi body a hlcBody hlcA =>
       refine PureConv.trans (t₂ := openBVar 0 (substFVar x u a) (substFVar x u body)) ?_ ?_
       · simpa [mkApp, mkLam, substFVar] using
-          (PureConv.betaPi (substFVar x u body) (substFVar x u a))
+          (PureConv.betaPi (substFVar x u body) (substFVar x u a)
+            (lc_at_substFVar_local hlcBody (lc_at_mono hlc (Nat.le_add_right 0 1)))
+            (lc_at_substFVar_local hlcA hlc))
       · rw [(substFVar_openBVar_comm (x := x) (u := u) (a := a) (p := body) (k := 0) hlc).symm]
         exact PureConv.refl _
-  | betaSigmaFst a b =>
+  | betaSigmaFst a b hlcA hlcB =>
       simpa [mkFst, mkPair, substFVar] using
-        (PureConv.betaSigmaFst (substFVar x u a) (substFVar x u b))
-  | betaSigmaSnd a b =>
+        (PureConv.betaSigmaFst (substFVar x u a) (substFVar x u b)
+          (lc_at_substFVar_local hlcA hlc) (lc_at_substFVar_local hlcB hlc))
+  | betaSigmaSnd a b hlcA hlcB =>
       simpa [mkSnd, mkPair, substFVar] using
-        (PureConv.betaSigmaSnd (substFVar x u a) (substFVar x u b))
+        (PureConv.betaSigmaSnd (substFVar x u a) (substFVar x u b)
+          (lc_at_substFVar_local hlcA hlc) (lc_at_substFVar_local hlcB hlc))
   | congPi L hA hB ihA ihB =>
       simp only [substFVar_mkPi]
       refine .congPi (L ∪ {x}) ihA (fun y hy => ?_)
@@ -417,7 +449,7 @@ theorem context_monotone {Γ Γ' : PureCtx} {t A : Pattern}
     PureHasType Γ' t A := by
   induction ht generalizing Γ' with
   | u0_type Γ => exact .u0_type Γ'
-  | fvar Γ x A hmem => exact .fvar Γ' x A (hsub x A hmem)
+  | fvar Γ x A hmem hA_lc => exact .fvar Γ' x A (hsub x A hmem) hA_lc
   | pi_form Γ L A B U hA hB ihA ihB =>
       refine .pi_form Γ' L A B U (ihA hsub) ?_
       intro z hz
@@ -494,7 +526,7 @@ theorem typing_subst {x : String} {A u : Pattern} {Γ : PureCtx}
   induction ht with
   | u0_type _ =>
       intro Δ _ _; simp; exact .u0_type _
-  | fvar _ y T hmem =>
+  | fvar _ y T hmem hA_lc =>
       intro Δ hΓ hxΔ; subst hΓ
       by_cases hyx : y = x
       · subst hyx; simp only [substFVar_fvar_eq]
@@ -508,10 +540,11 @@ theorem typing_subst {x : String} {A u : Pattern} {Γ : PureCtx}
       · simp only [substFVar_fvar_ne _ hyx]
         rcases List.mem_append.mp hmem with hΔ | hrest
         · exact .fvar _ y _ (List.mem_append_left _ (mem_substCtx hΔ hyx))
+            (lc_at_substFVar_local hA_lc hlc_u)
         · rcases List.mem_cons.mp hrest with heq | hΓmem
           · exact absurd (Prod.mk.inj heq).1 hyx
           · rw [substFVar_fresh (hfreshΓ y T hΓmem)]
-            exact .fvar _ y T (List.mem_append_right _ hΓmem)
+            exact .fvar _ y T (List.mem_append_right _ hΓmem) hA_lc
   | pi_form _ L A' B' U _ _ ihA ihB =>
       intro Δ hΓ hxΔ; subst hΓ; simp only [substFVar_mkPi]
       refine .pi_form _ (L ∪ {x}) (substFVar x u A') (substFVar x u B')
@@ -653,7 +686,7 @@ private theorem app_generation_aux {Γ : PureCtx} {p C : Pattern}
       obtain ⟨A₀, B₀, U₀, L₀, hf₀, ha₀, hB₀, hconv₀⟩ := ih f a heq
       exact ⟨A₀, B₀, U₀, L₀, hf₀, ha₀, hB₀, .trans hconv₀ hconv⟩
   | u0_type _ => intro _ _ h; exact absurd h (by simp [mkApp, u0])
-  | fvar _ _ _ _ => intro _ _ h; exact absurd h (by simp [mkApp])
+  | fvar _ _ _ _ _ => intro _ _ h; exact absurd h (by simp [mkApp])
   | pi_form _ _ _ _ _ _ _ _ _ => intro _ _ h; exact absurd h (by simp [mkApp, mkPi])
   | lam_intro _ _ _ _ _ _ _ _ _ _ => intro _ _ h; exact absurd h (by simp [mkApp, mkLam, mkPi])
   | sigma_form _ _ _ _ _ _ _ _ _ => intro _ _ h; exact absurd h (by simp [mkApp, mkSigma])
@@ -694,7 +727,7 @@ private theorem lam_generation_aux {Γ : PureCtx} {p C : Pattern}
       obtain ⟨A₀, B₀, U₀, L₀, hA₀, hBody₀, hconv₀⟩ := ih body heq
       exact ⟨A₀, B₀, U₀, L₀, hA₀, hBody₀, .trans hconv₀ hconv⟩
   | u0_type _ => intro _ h; exact absurd h (by simp [mkLam, u0])
-  | fvar _ _ _ _ => intro _ h; exact absurd h (by simp [mkLam])
+  | fvar _ _ _ _ _ => intro _ h; exact absurd h (by simp [mkLam])
   | pi_form _ _ _ _ _ _ _ _ _ => intro _ h; exact absurd h (by simp [mkLam, mkPi])
   | app _ _ _ _ _ _ _ _ _ _ _ _ _ => intro _ h; exact absurd h (by simp [mkLam, mkApp])
   | sigma_form _ _ _ _ _ _ _ _ _ => intro _ h; exact absurd h (by simp [mkLam, mkSigma])
@@ -737,7 +770,7 @@ private theorem pair_generation_aux {Γ : PureCtx} {p C : Pattern}
       obtain ⟨A₀, B₀, U₀, L₀, ha₀, hb₀, hB₀, hconv₀⟩ := ih a b heq
       exact ⟨A₀, B₀, U₀, L₀, ha₀, hb₀, hB₀, .trans hconv₀ hconv⟩
   | u0_type _ => intro a b h; exact absurd h (by simp [mkPair, u0])
-  | fvar _ _ _ _ => intro a b h; exact absurd h (by simp [mkPair])
+  | fvar _ _ _ _ _ => intro a b h; exact absurd h (by simp [mkPair])
   | pi_form _ _ _ _ _ _ _ _ _ => intro a b h; exact absurd h (by simp [mkPair, mkPi])
   | lam_intro _ _ _ _ _ _ _ _ _ _ => intro a b h; exact absurd h (by simp [mkPair, mkLam, mkPi])
   | app _ _ _ _ _ _ _ _ _ _ _ _ _ => intro a b h; exact absurd h (by simp [mkPair, mkApp])
@@ -762,18 +795,20 @@ Delegated to Confluence.lean which proves these via Church-Rosser +
 head-preservation + decomposition. -/
 
 theorem pi_injectivity {A₁ B₁ A₂ B₂ : Pattern}
-    (h : PureConv (mkPi A₁ B₁) (mkPi A₂ B₂)) :
+    (h : PureConv (mkPi A₁ B₁) (mkPi A₂ B₂))
+    (hlc : lc_at 0 (mkPi A₁ B₁) = true) :
     PureConv A₁ A₂ ∧
       (∃ L : Finset String, ∀ x, x ∉ L →
         PureConv (openBVar 0 (.fvar x) B₁) (openBVar 0 (.fvar x) B₂)) :=
-  Mettapedia.OSLF.MeTTaPure.Confluence.pi_injectivity h
+  Mettapedia.OSLF.MeTTaPure.Confluence.pi_injectivity h hlc
 
 theorem sigma_injectivity {A₁ B₁ A₂ B₂ : Pattern}
-    (h : PureConv (mkSigma A₁ B₁) (mkSigma A₂ B₂)) :
+    (h : PureConv (mkSigma A₁ B₁) (mkSigma A₂ B₂))
+    (hlc : lc_at 0 (mkSigma A₁ B₁) = true) :
     PureConv A₁ A₂ ∧
       (∃ L : Finset String, ∀ x, x ∉ L →
         PureConv (openBVar 0 (.fvar x) B₁) (openBVar 0 (.fvar x) B₂)) :=
-  Mettapedia.OSLF.MeTTaPure.Confluence.sigma_injectivity h
+  Mettapedia.OSLF.MeTTaPure.Confluence.sigma_injectivity h hlc
 
 /-! ## Freshness: picking fresh strings -/
 
@@ -905,7 +940,7 @@ theorem typing_lc {Γ : PureCtx} {t A : Pattern}
     (ht : PureHasType Γ t A) : lc_at 0 t = true := by
   induction ht with
   | u0_type _ => simp [u0, lc_at, lc_at_list]
-  | fvar _ _ _ _ => simp [lc_at]
+  | fvar _ _ _ _ _ => simp [lc_at]
   | pi_form _ L A B U hA hB ihA ihB =>
       simp only [mkPi, lc_at, lc_at_list, Bool.and_eq_true]
       refine ⟨ihA, ?_, trivial⟩
@@ -941,6 +976,63 @@ theorem typing_lc {Γ : PureCtx} {t A : Pattern}
       exact ⟨iha, trivial⟩
   | conv _ _ _ _ _ _ ih => exact ih
 
+/-- The type of a well-typed term is locally closed. -/
+theorem typing_type_lc {Γ : PureCtx} {t A : Pattern}
+    (ht : PureHasType Γ t A) : lc_at 0 A = true := by
+  induction ht with
+  | u0_type _ => simp [u1, lc_at, lc_at_list]
+  | fvar _ _ _ _ hA_lc => exact hA_lc
+  | pi_form _ L A B U hA hB ihA ihB =>
+      -- Type is U; ihA : lc_at 0 U = true
+      exact ihA
+  | lam_intro _ L A body B U hA hBody ihA ihBody =>
+      -- Type is mkPi A B
+      simp only [mkPi, lc_at, lc_at_list, Bool.and_eq_true]
+      refine ⟨typing_lc hA, ?_, trivial⟩
+      obtain ⟨x, hx⟩ := exists_fresh L
+      -- ihBody x hx : lc_at 0 (openBVar 0 (.fvar x) B) = true
+      exact lc_at_of_openBVar (ihBody x hx)
+  | app _ _ _ _ _ B _ hf ha hB ihf iha ihB =>
+      -- Type is openBVar 0 a B; ihf : lc_at 0 (mkPi A B) = true
+      have hlcB : lc_at 1 B = true := by
+        simp only [mkPi, lc_at, lc_at_list, Bool.and_eq_true] at ihf; exact ihf.2.1
+      exact lc_at_openBVar_result hlcB (typing_lc ha)
+  | sigma_form _ L A B U hA hB ihA ihB => exact ihA
+  | pair_intro _ L a b A B U ha hb hB iha ihb ihB =>
+      -- Type is mkSigma A B
+      simp only [mkSigma, lc_at, lc_at_list, Bool.and_eq_true]
+      constructor
+      · -- lc_at 0 A: iha gives lc_at 0 A (the type of a is A, not the result type)
+        -- Actually iha : lc_at 0 (type of a) where the type of a in ha is A
+        -- Since ha : PureHasType Γ a A, typing_lc ha gives lc_at 0 a
+        -- We need lc_at 0 A. From typing_type_lc ha = iha? No.
+        -- iha is the IH for ha, which gives typing_type_lc of ha = lc_at 0 A. ✓
+        exact iha
+      constructor
+      · obtain ⟨x, hx⟩ := exists_fresh L
+        exact lc_at_of_openBVar (typing_lc (hB x hx))
+      · trivial
+  | fst_elim _ _ _ _ _ _ hp hB ihp ihB =>
+      -- Type is A; ihp : lc_at 0 (mkSigma A B) = true
+      simp only [mkSigma, lc_at, lc_at_list, Bool.and_eq_true] at ihp
+      exact ihp.1
+  | snd_elim _ L p _ B _ hp hB ihp ihB =>
+      -- Type is openBVar 0 (mkFst p) B; ihp : lc_at 0 (mkSigma _ B) = true
+      have hlcB : lc_at 1 B = true := by
+        simp only [mkSigma, lc_at, lc_at_list, Bool.and_eq_true] at ihp; exact ihp.2.1
+      have hlcFstP : lc_at 0 (mkFst p) = true := by
+        simp only [mkFst, lc_at, lc_at_list, Bool.and_eq_true]
+        exact ⟨typing_lc hp, trivial⟩
+      exact lc_at_openBVar_result hlcB hlcFstP
+  | id_form _ _ _ _ _ _ _ _ ihA _ _ => exact ihA
+  | refl_intro _ a A ha iha =>
+      -- Type is mkId A a a; iha : lc_at 0 A = true
+      simp only [mkId, lc_at, lc_at_list, Bool.and_eq_true]
+      exact ⟨iha, typing_lc ha, typing_lc ha, trivial⟩
+  | conv _ _ _ _ _ hconv ih =>
+      -- ih : lc_at 0 A; hconv : PureConv A B; need lc_at 0 B
+      exact (Mettapedia.OSLF.MeTTaPure.Confluence.PureConv_preserves_lc_both hconv).1 ih
+
 /-! ## Context conversion -/
 
 /-- Helper: extend a context conversion proof under a binder with same type. -/
@@ -963,9 +1055,10 @@ private theorem context_conv_any {Γ₁ Γ₂ : PureCtx} {t T : Pattern}
     PureHasType Γ₂ t T := by
   induction ht generalizing Γ₂ with
   | u0_type _ => exact .u0_type _
-  | fvar _ y B hmem =>
+  | fvar _ y B hmem hA_lc =>
       obtain ⟨B', hmem', hconv⟩ := hctx y B hmem
-      exact .conv _ _ _ _ (.fvar _ y B' hmem') hconv
+      have hB'_lc := (Mettapedia.OSLF.MeTTaPure.Confluence.PureConv_preserves_lc_both hconv).2 hA_lc
+      exact .conv _ _ _ _ (.fvar _ y B' hmem' hB'_lc) hconv
   | pi_form _ L _ _ _ _ _ ihA ihB =>
       exact .pi_form _ L _ _ _ (ihA hctx) (fun z hz => ihB z hz (ctxConv_cons_same hctx))
   | lam_intro _ L _ _ _ _ _ _ ihA ihBody =>
@@ -1027,7 +1120,7 @@ private theorem pi_generation_aux {Γ : PureCtx} {p C : Pattern}
       obtain ⟨U₀, L₀, hA₀, hB₀, hconv₀⟩ := ih A B heq
       exact ⟨U₀, L₀, hA₀, hB₀, .trans hconv₀ hconv⟩
   | u0_type _ => intro _ _ h; exact absurd h (by simp [mkPi, u0])
-  | fvar _ _ _ _ => intro _ _ h; exact absurd h (by simp [mkPi])
+  | fvar _ _ _ _ _ => intro _ _ h; exact absurd h (by simp [mkPi])
   | lam_intro _ _ _ _ _ _ _ _ _ _ => intro _ _ h; exact absurd h (by simp [mkPi, mkLam])
   | app _ _ _ _ _ _ _ _ _ _ _ _ _ => intro _ _ h; exact absurd h (by simp [mkPi, mkApp])
   | sigma_form _ _ _ _ _ _ _ _ _ => intro _ _ h; exact absurd h (by simp [mkPi, mkSigma])
@@ -1064,7 +1157,7 @@ private theorem sigma_generation_aux {Γ : PureCtx} {p C : Pattern}
       obtain ⟨U₀, L₀, hA₀, hB₀, hconv₀⟩ := ih A B heq
       exact ⟨U₀, L₀, hA₀, hB₀, .trans hconv₀ hconv⟩
   | u0_type _ => intro _ _ h; exact absurd h (by simp [mkSigma, u0])
-  | fvar _ _ _ _ => intro _ _ h; exact absurd h (by simp [mkSigma])
+  | fvar _ _ _ _ _ => intro _ _ h; exact absurd h (by simp [mkSigma])
   | pi_form _ _ _ _ _ _ _ _ _ => intro _ _ h; exact absurd h (by simp [mkSigma, mkPi])
   | lam_intro _ _ _ _ _ _ _ _ _ _ => intro _ _ h; exact absurd h (by simp [mkSigma, mkLam, mkPi])
   | app _ _ _ _ _ _ _ _ _ _ _ _ _ => intro _ _ h; exact absurd h (by simp [mkSigma, mkApp])
@@ -1099,7 +1192,7 @@ private theorem id_generation_aux {Γ : PureCtx} {p C : Pattern}
       obtain ⟨U₀, hA₀, ha₀, hb₀, hconv₀⟩ := ih A a b heq
       exact ⟨U₀, hA₀, ha₀, hb₀, .trans hconv₀ hconv⟩
   | u0_type _ => intro _ _ _ h; exact absurd h (by simp [mkId, u0])
-  | fvar _ _ _ _ => intro _ _ _ h; exact absurd h (by simp [mkId])
+  | fvar _ _ _ _ _ => intro _ _ _ h; exact absurd h (by simp [mkId])
   | pi_form _ _ _ _ _ _ _ _ _ => intro _ _ _ h; exact absurd h (by simp [mkId, mkPi])
   | lam_intro _ _ _ _ _ _ _ _ _ _ => intro _ _ _ h; exact absurd h (by simp [mkId, mkLam, mkPi])
   | app _ _ _ _ _ _ _ _ _ _ _ _ _ => intro _ _ _ h; exact absurd h (by simp [mkId, mkApp])
@@ -1133,7 +1226,7 @@ private theorem fst_generation_aux {Γ : PureCtx} {p C : Pattern}
       obtain ⟨A₀, B₀, U₀, L₀, hp₀, hB₀, hconv₀⟩ := ih q heq
       exact ⟨A₀, B₀, U₀, L₀, hp₀, hB₀, .trans hconv₀ hconv⟩
   | u0_type _ => intro _ h; exact absurd h (by simp [mkFst, u0])
-  | fvar _ _ _ _ => intro _ h; exact absurd h (by simp [mkFst])
+  | fvar _ _ _ _ _ => intro _ h; exact absurd h (by simp [mkFst])
   | pi_form _ _ _ _ _ _ _ _ _ => intro _ h; exact absurd h (by simp [mkFst, mkPi])
   | lam_intro _ _ _ _ _ _ _ _ _ _ => intro _ h; exact absurd h (by simp [mkFst, mkLam, mkPi])
   | app _ _ _ _ _ _ _ _ _ _ _ _ _ => intro _ h; exact absurd h (by simp [mkFst, mkApp])
@@ -1169,7 +1262,7 @@ private theorem snd_generation_aux {Γ : PureCtx} {p C : Pattern}
       obtain ⟨A₀, B₀, U₀, L₀, hp₀, hB₀, hconv₀⟩ := ih q heq
       exact ⟨A₀, B₀, U₀, L₀, hp₀, hB₀, .trans hconv₀ hconv⟩
   | u0_type _ => intro _ h; exact absurd h (by simp [mkSnd, u0])
-  | fvar _ _ _ _ => intro _ h; exact absurd h (by simp [mkSnd])
+  | fvar _ _ _ _ _ => intro _ h; exact absurd h (by simp [mkSnd])
   | pi_form _ _ _ _ _ _ _ _ _ => intro _ h; exact absurd h (by simp [mkSnd, mkPi])
   | lam_intro _ _ _ _ _ _ _ _ _ _ => intro _ h; exact absurd h (by simp [mkSnd, mkLam, mkPi])
   | app _ _ _ _ _ _ _ _ _ _ _ _ _ => intro _ h; exact absurd h (by simp [mkSnd, mkApp])
@@ -1202,7 +1295,7 @@ private theorem refl_generation_aux {Γ : PureCtx} {p C : Pattern}
       obtain ⟨A₀, ha₀, hconv₀⟩ := ih a heq
       exact ⟨A₀, ha₀, .trans hconv₀ hconv⟩
   | u0_type _ => intro _ h; exact absurd h (by simp [mkRefl, u0])
-  | fvar _ _ _ _ => intro _ h; exact absurd h (by simp [mkRefl])
+  | fvar _ _ _ _ _ => intro _ h; exact absurd h (by simp [mkRefl])
   | pi_form _ _ _ _ _ _ _ _ _ => intro _ h; exact absurd h (by simp [mkRefl, mkPi])
   | lam_intro _ _ _ _ _ _ _ _ _ _ => intro _ h; exact absurd h (by simp [mkRefl, mkLam, mkPi])
   | app _ _ _ _ _ _ _ _ _ _ _ _ _ => intro _ h; exact absurd h (by simp [mkRefl, mkApp])
@@ -1269,7 +1362,10 @@ theorem mettaPure_subject_reduction
   | betaPi body a =>
       obtain ⟨A₀, B₀, U₀, L₀, hf, ha₀, hB₀, hConvType⟩ := app_generation ht
       obtain ⟨A₁, B₁, U₁, L₁, hA₁, hBody₁, hConvPi⟩ := lam_generation hf
-      obtain ⟨hAconv, L₂, hBconv⟩ := pi_injectivity hConvPi
+      have hlcPi₀ := typing_type_lc hf  -- lc_at 0 (mkPi A₀ B₀)
+      have hlcPi₁ :=
+        (Mettapedia.OSLF.MeTTaPure.Confluence.PureConv_preserves_lc_both hConvPi).2 hlcPi₀
+      obtain ⟨hAconv, L₂, hBconv⟩ := pi_injectivity hConvPi hlcPi₁
       -- Transport argument to domain A₁
       have ha₁ : PureHasType Γ a A₁ := .conv _ _ _ _ ha₀ (.symm hAconv)
       -- Pick fresh z for substitution
@@ -1318,15 +1414,21 @@ theorem mettaPure_subject_reduction
   -- β-Σ-fst: fst (a, b) ⟶ a
   | betaSigmaFst a b =>
       obtain ⟨A₀, B₀, U₀, L₀, hp₀, hB₀, hConvA⟩ := fst_generation ht
+      have hlcSigma₀ := typing_type_lc hp₀  -- lc_at 0 (mkSigma A₀ B₀)
       obtain ⟨A₁, B₁, U₁, L₁, ha₁, _, _, hConvSigma⟩ := pair_generation hp₀
-      obtain ⟨hAconv₁₀, _⟩ := sigma_injectivity hConvSigma
+      have hlcSigma₁ :=
+        (Mettapedia.OSLF.MeTTaPure.Confluence.PureConv_preserves_lc_both hConvSigma).2 hlcSigma₀
+      obtain ⟨hAconv₁₀, _⟩ := sigma_injectivity hConvSigma hlcSigma₁
       exact .conv _ _ _ _ ha₁ (.trans hAconv₁₀ hConvA)
 
   -- β-Σ-snd: snd (a, b) ⟶ b
   | betaSigmaSnd a b =>
       obtain ⟨A₀, B₀, U₀, L₀, hp₀, hB₀, hConvSnd⟩ := snd_generation ht
+      have hlcSigma₀ := typing_type_lc hp₀  -- lc_at 0 (mkSigma A₀ B₀)
       obtain ⟨A₁, B₁, U₁, L₁, ha₁, hb₁, hB₁, hConvSigma⟩ := pair_generation hp₀
-      obtain ⟨hAconv, L₂, hBconv⟩ := sigma_injectivity hConvSigma
+      have hlcSigma₁ :=
+        (Mettapedia.OSLF.MeTTaPure.Confluence.PureConv_preserves_lc_both hConvSigma).2 hlcSigma₀
+      obtain ⟨hAconv, L₂, hBconv⟩ := sigma_injectivity hConvSigma hlcSigma₁
       -- hb₁ : Γ ⊢ b : openBVar 0 a B₁
       -- Need: Γ ⊢ b : A  (where A is the overall type)
       -- Chain: openBVar 0 a B₁ ≡ openBVar 0 a B₀ ≡ openBVar 0 (mkFst (mkPair a b)) B₀ ≡ A
@@ -1338,15 +1440,16 @@ theorem mettaPure_subject_reduction
         simp [mkFst, mkPair, lc_at, lc_at_list, Bool.and_eq_true]
         exact ⟨hlc_a, hlc_b⟩
       have hconv₂ : PureConv (openBVar 0 a B₀) (openBVar 0 (mkFst (mkPair a b)) B₀) :=
-        conv_openBVar_of_conv (.symm (.betaSigmaFst a b)) hlc_a hlc_fstpair hB₀
+        conv_openBVar_of_conv (.symm (.betaSigmaFst a b hlc_a hlc_b)) hlc_a hlc_fstpair hB₀
       exact .conv _ _ _ _ hb₁ (.trans hconv₁ (.trans hconv₂ hConvSnd))
 
   -- Congruence: Pi domain
   | congPiDom hred ih =>
       obtain ⟨U, L, hA, hB, hConvU⟩ := pi_generation ht
       have hA' := ih hA
+      have hconvA : PureConv _ _ := PureReduces_implies_PureConv hred (typing_lc hA)
       exact .conv _ _ _ _ (.pi_form _ L _ _ U hA'
-        (fun z hz => context_conv_head (PureReduces_implies_PureConv hred) (hB z hz))) hConvU
+        (fun z hz => context_conv_head hconvA (hB z hz))) hConvU
 
   -- Congruence: Pi codomain (under binder)
   | congPiCod L' A₀ B₀ B₀' hred ih =>
@@ -1360,8 +1463,9 @@ theorem mettaPure_subject_reduction
   | congSigmaDom hred ih =>
       obtain ⟨U, L, hA, hB, hConvU⟩ := sigma_generation ht
       have hA' := ih hA
+      have hconvA : PureConv _ _ := PureReduces_implies_PureConv hred (typing_lc hA)
       exact .conv _ _ _ _ (.sigma_form _ L _ _ U hA'
-        (fun z hz => context_conv_head (PureReduces_implies_PureConv hred) (hB z hz))) hConvU
+        (fun z hz => context_conv_head hconvA (hB z hz))) hConvU
 
   -- Congruence: Sigma codomain (under binder)
   | congSigmaCod L' A₀ B₀ B₀' hred ih =>
@@ -1375,7 +1479,7 @@ theorem mettaPure_subject_reduction
   | congIdType hred ih =>
       obtain ⟨U, hA, ha, hb, hConvU⟩ := id_generation ht
       have hA' := ih hA
-      have hconv_aa := PureReduces_implies_PureConv hred
+      have hconv_aa : PureConv _ _ := PureReduces_implies_PureConv hred (typing_lc hA)
       exact .conv _ _ _ _ (.id_form _ _ _ _ U hA'
         (.conv _ _ _ _ ha hconv_aa)
         (.conv _ _ _ _ hb hconv_aa)) hConvU
@@ -1407,7 +1511,7 @@ theorem mettaPure_subject_reduction
   | congAppArg hred ih =>
       obtain ⟨A₀, B₀, U₀, L₀, hf, ha, hB, hConvType⟩ := app_generation ht
       have ha' := ih ha
-      have hconv_aa := PureReduces_implies_PureConv hred
+      have hconv_aa : PureConv _ _ := PureReduces_implies_PureConv hred (typing_lc ha)
       have hlc_a := typing_lc ha
       have hlc_a' := typing_lc ha'
       -- openBVar 0 a' B₀ ≡ openBVar 0 a B₀ via conv_openBVar_of_conv
@@ -1420,7 +1524,7 @@ theorem mettaPure_subject_reduction
   | congPairFst hred ih =>
       obtain ⟨A₀, B₀, U₀, L₀, ha, hb, hB₀, hConvSigma⟩ := pair_generation ht
       have ha' := ih ha
-      have hconv_aa := PureReduces_implies_PureConv hred
+      have hconv_aa : PureConv _ _ := PureReduces_implies_PureConv hred (typing_lc ha)
       have hlc_a := typing_lc ha
       have hlc_a' := typing_lc ha'
       -- hconvOpen : PureConv (openBVar 0 a' B₀) (openBVar 0 a B₀)
@@ -1445,7 +1549,7 @@ theorem mettaPure_subject_reduction
   | congSnd hred ih =>
       obtain ⟨A₀, B₀, U₀, L₀, hp, hB₀, hConvSnd⟩ := snd_generation ht
       have hp' := ih hp
-      have hconv_pp := PureReduces_implies_PureConv hred
+      have hconv_pp : PureConv _ _ := PureReduces_implies_PureConv hred (typing_lc hp)
       have hlc_fp := typing_lc (.fst_elim _ L₀ _ A₀ B₀ U₀ hp hB₀)
       have hlc_fp' := typing_lc (.fst_elim _ L₀ _ A₀ B₀ U₀ hp' hB₀)
       have hconvFst : PureConv (mkFst _) (mkFst _) := .congFst hconv_pp
@@ -1458,7 +1562,7 @@ theorem mettaPure_subject_reduction
   | congRefl hred ih =>
       obtain ⟨A₀, ha, hConvId⟩ := refl_generation ht
       have ha' := ih ha
-      have hconv_aa := PureReduces_implies_PureConv hred
+      have hconv_aa : PureConv _ _ := PureReduces_implies_PureConv hred (typing_lc ha)
       exact .conv _ _ _ _
         (.refl_intro _ _ A₀ ha')
         (.trans (.congId (.refl _) (.symm hconv_aa) (.symm hconv_aa)) hConvId)

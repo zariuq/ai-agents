@@ -41,7 +41,6 @@
 \newcommand{\OP}{\ensuremath{\mathbf{Opt}}}
 \newcommand{\DDL}{\textup{DDL+}}
 \newcommand{\DTS}{\textup{DTS}}
-% \GSLT macro removed — GSLT section deleted (not relevant to governance)
 \newcommand{\PLN}{\textup{PLN}}
 \newcommand{\PGC}{\textup{PGC}}
 
@@ -73,9 +72,13 @@ seriality-closed accessibility context;
 and a causal-normative prohibition theorem ruling out spurious causal candidates from
 obligation;
 (vii)~an abstract \code{ModalQueryEncoder} unifying event-calculus and deontic encoders
-via a shared interface; and
+via a shared interface;
 (viii)~an application to Gewirth's Principle of Generic
-Consistency (\PGC{}).
+Consistency (\PGC{}); and
+(ix)~formal refinement theorems connecting MeTTa governance rule implementations
+to the Lean \DTS{} semantics, via a shared \code{MeTTaLike} evaluator abstraction
+covering both PeTTa and HE~MeTTa evaluation, with proven \code{let*} unfolding
+equivalences and kernel-checked canonical HE interpreter conformance tests.
 \end{abstract}
 
 \tableofcontents
@@ -128,14 +131,22 @@ The primary contributions are:
 \item \textbf{A temporal-deontic bridge} formalizing obligation persistence
       under time translation and a causal-normative prohibition theorem
       connecting \PLN{} causal profiles to \DTS{} (§\ref{sec:temporal}).
+\item \textbf{Formal MeTTa-to-Lean refinement theorems} proving that MeTTa
+      governance rule implementations, when interpreted through a deontic
+      pattern decoder, correspond to the proven \DTS{} theorems ---
+      covering PeTTa and HE~MeTTa evaluators via a shared typeclass,
+      with kernel-checked canonical HE interpreter conformance
+      (§\ref{sec:refinement}).
 \end{enumerate}
 
 \noindent
 Supporting contributions include: a \DTS{} algebra with derived permission
 and optionality (§\ref{sec:dts}); a governance reasoning layer with Hobbs
 eventuality reification, ISO~24617-4 thematic roles, and a three-level
-verdict pipeline (§\ref{sec:govlayer}); and an abstract \code{ModalQueryEncoder}
-unifying event-calculus and deontic query dispatch (§\ref{sec:mqe}).
+verdict pipeline (§\ref{sec:govlayer}); an abstract \code{ModalQueryEncoder}
+unifying event-calculus and deontic query dispatch (§\ref{sec:mqe}); and
+a shared \code{MeTTaLike} evaluator typeclass with proven \code{let*}
+unfolding equivalences (§\ref{sec:refinement}).
 
 %% ============================================================
 \section{Shallow Embedding of DDL+}
@@ -796,6 +807,226 @@ ensure that the logical structure of the PGC proof is sound regardless of which
 representation is chosen.
 
 %% ============================================================
+\section{MeTTa-to-Lean Refinement Theorems}
+\label{sec:refinement}
+%% ============================================================
+
+The \code{governance-reasoning-engine} \cite{GovReasoningEngine} implements
+\DTS{} rules as MeTTa rewrite rules.  A natural question is whether these
+operational rules \emph{correctly encode} the \DTS{} theorems proven
+semantically in Lean.  This section presents formal refinement theorems
+answering this question for three evaluator levels: PeTTa (type-free),
+HE~MeTTa (with type and binding threading), and an answer-level projection
+that abstracts over both.
+
+\subsection{Architecture}
+
+The refinement bridge has four layers:
+
+\begin{enumerate}
+\item \textbf{Rule encoding.} Each MeTTa governance rule (e.g.,
+      \code{(= (ct-triple-for-add \$e type permitted) (ct-triple \$e type obligatory))})
+      is encoded as a concrete Lean \code{RewriteRule} value with
+      \code{premises = []}.
+\item \textbf{Deontic interpretation.} A function
+      \code{interpretDeontic : Pattern -> DeonticInterp}
+      classifies ground patterns into deontic assertions:
+      \code{ct-triple} patterns map to \code{.modalAssertion e .obligatory},
+      \code{ct-triple-for-add} patterns to \code{.modalAssertion e .permitted},
+      and so on for \code{.forbidden} and \code{.optional}.
+\item \textbf{Interpretation correctness.} For each rule, we prove that
+      the left-hand side and right-hand side, after binding substitution,
+      interpret to the expected deontic modalities.
+\item \textbf{Semantic refinement.} We bundle the interpretation correctness
+      proofs with the corresponding \DTS{} theorem, showing that the rule
+      structure matches the proven algebraic property.
+\end{enumerate}
+
+\subsection{PeTTa Refinement}
+
+PeTTa is the type-free, binding-free evaluator: \code{PeTTaEval s p [q]} states
+that pattern \code{p} evaluates to \code{[q]} in space \code{s} via rewrite
+rule application.
+
+\begin{theorem}[PeTTa OB$\Rightarrow$PE refinement]
+\label{thm:petta-ob-pe}
+For any string \code{e}:
+\begin{enumerate}
+\item $\mathit{interpretDeontic}(\mathit{applyBindings}\;[(\text{``e''}, e)]\;\mathit{rule.right})
+       = \mathit{modalAssertion}\; e\; \mathit{obligatory}$,
+\item $\mathit{interpretDeontic}(\mathit{applyBindings}\;[(\text{``e''}, e)]\;\mathit{rule.left})
+       = \mathit{modalAssertion}\; e\; \mathit{permitted}$, and
+\item $\forall\, (d : \DTS{}\;P)\;(p : P),\; d.\mathit{ob}\;p \to d.\mathit{pe}\;p$.
+\end{enumerate}
+\end{theorem}
+
+\noindent
+Parts~1 and~2 are proved by \code{simp} on the concrete rule encoding and
+binding substitution.  Part~3 is the already-proven \DTS{} theorem
+\code{ob\_implies\_pe}.  The three-part conjunction bundles rule-level
+pattern interpretation with the semantic theorem it encodes.
+
+Analogous refinement theorems are proven for $\OB(\neg p) \Rightarrow \neg\PE(p)$
+(\code{dts\_ob\_neg\_not\_pe\_refinement}), $\neg\PE(p) \Rightarrow \OB(\neg p)$,
+$\OP(p) \Leftrightarrow \neg\OB(p) \wedge \neg\OB(\neg p)$,
+$\OB(p) \Rightarrow \neg\OP(p)$, and the \DTS{} trichotomy --- all 7 core
+interdefinability relations from Table~\ref{tab:dts}.
+
+\subsection{Shared MeTTaLike Interface and Let* Equivalence}
+
+The MeTTa \code{let*} construct is not a built-in primitive but a pair of
+rewrite rules (\code{letStarBaseRule}, \code{letStarRecRule}) that unfold
+\code{let*} to nested \code{let} expressions.  To prove these unfoldings
+generically, we introduce a typeclass:
+
+\begin{lstlisting}
+class MeTTaLike (Eval : PeTTaSpace -> Pattern -> List Pattern -> Prop) where
+  ruleApp : forall {s r bs p},
+    r in s.rules -> r.premises = [] -> bs in matchPattern r.left p ->
+    Eval s p [applyBindings bs r.right]
+\end{lstlisting}
+
+\noindent
+Both \code{PeTTaEval} (the type-free evaluator) and \code{HEEvalAnswers}
+(the answer-level projection of HE~MeTTa) are instances.
+With this abstraction, unfolding theorems hold for \emph{any} MeTTaLike evaluator:
+
+\begin{theorem}[Let* unfolding]
+For any MeTTaLike evaluator \code{Eval} and space \code{s} containing the
+\code{let*} rules:
+\begin{align*}
+  &\mathit{Eval}\;s\;(\mathit{let*}\;[(v_1, e_1), (v_2, e_2)]\;\mathit{body})
+    \;[\mathit{let}\;v_1\;e_1\;(\mathit{let*}\;[(v_2, e_2)]\;\mathit{body})] \\
+  &\mathit{Eval}\;s\;(\mathit{let*}\;[(v_2, e_2)]\;\mathit{body})
+    \;[\mathit{let}\;v_2\;e_2\;(\mathit{let*}\;[]\;\mathit{body})] \\
+  &\mathit{Eval}\;s\;(\mathit{let*}\;[]\;\mathit{body})\;[\mathit{body}]
+\end{align*}
+\end{theorem}
+
+\noindent
+The match proofs use \code{simp} on the concrete \code{matchBag} semantics
+for bag patterns with rest variables.  The full unfolding sequence for
+2-binding and 3-binding \code{let*} chains is bundled as
+\code{letStar\_full\_2} and \code{letStar\_full\_3}.
+This is significant because the DTS governance rules in
+\code{DTS.metta} (lines 14--135) use \code{let*} chains extensively;
+the unfolding theorems ensure these chains reduce correctly under
+any compliant evaluator.
+
+\subsection{HE MeTTa Refinement}
+
+The HE (Hyperon Experimental) MeTTa evaluator extends PeTTa with explicit
+type annotations and binding threading:
+\code{MeTTaEval s p ty inputBindings results} produces result pairs
+\code{(pattern, bindings)}.  The answer-level projection erases
+types and bindings:
+
+\begin{lstlisting}
+def HEEvalAnswers (s : PeTTaSpace) (p : Pattern)
+    (answers : List Pattern) : Prop :=
+  exists ty inputBs results,
+    MeTTaEval s p ty inputBs results
+    /\ results.map Prod.fst = answers
+\end{lstlisting}
+
+\noindent
+All PeTTa refinement theorems lift automatically to \code{HEEvalAnswers}
+via the shared \code{MeTTaLike} instance.  Additionally, full
+\code{MeTTaEval}-level theorems are proven with explicit binding tracking:
+
+\begin{theorem}[HE binding threading for OB$\Rightarrow$PE]
+If \code{dtsRule\_ob\_implies\_pe} is in a PeTTa space, the HE~MeTTa evaluator
+fires it with match bindings \code{[("e", .apply e [])]} prepended to the
+input bindings, and the interpretation/semantic refinement hold as before.
+\end{theorem}
+
+\subsection{Canonical HE Spec Architecture}
+
+The Lean formalization contains two representations of HE~MeTTa semantics:
+
+\begin{itemize}
+\item \textbf{Computable interpreter}: \code{Languages/MeTTa/HE/Interpreter.lean}
+      defines 6 mutually recursive functions (\code{metta},
+      \code{interpretExpression}, \code{interpretFunction},
+      \code{interpretArgs}, \code{interpretTuple}, \code{mettaCall})
+      with fuel-bounded execution, matching the Rust reference implementation.
+      A suite of 37 conformance theorems
+      (\code{HE/Conformance.lean}) verifies this interpreter against the spec.
+\item \textbf{Inductive relation}: \code{OSLF/PeTTa/MeTTaEval.lean} provides
+      the same semantics as an inductive proposition, amenable to
+      proof-theoretic reasoning.  The refinement theorems in this section
+      use this representation.
+\end{itemize}
+
+\noindent
+Bridging the computable interpreter to the inductive relation requires
+reconciling different type representations (\code{Atom} with 4~constructors
+vs.\ \code{Pattern} with 7~constructors) and different binding models
+(\code{HE.Bindings} with assignments and equalities vs.\ simple association
+lists).  A lossy bridge (\code{patternToAtom}/\code{atomToPattern}) exists
+in \code{MeTTaCore/Bridge.lean}; a full general equivalence proof remains
+future work, but the DTS rule subset is \emph{exact}: governance rules
+use only \code{apply} and \code{fvar} pattern constructors, which map
+cleanly to \code{expression} and \code{var} atoms.
+
+For this exact subset, \code{HECanonicalConformance.lean} proves that the
+canonical HE interpreter produces the correct results via kernel-checked
+\code{rfl} proofs:
+
+\begin{lstlisting}
+theorem he_canonical_ob_pe_soaMoor :
+    eval (expression [symbol "ct-triple-for-add",
+            expression [symbol "soaMoor"], ...])
+         dtsHESpace =
+    [(expression [symbol "ct-triple",
+            expression [symbol "soaMoor"], ...],
+      { assignments := [("e", ...)], equalities := [] })] := rfl
+\end{lstlisting}
+
+\noindent
+The Lean kernel itself performs the full HE evaluation (through \code{metta}
+$\to$ \code{interpretExpression} $\to$ \code{mettaCall} $\to$
+\code{queryEquations} $\to$ \code{simpleMatch} $\to$ \code{Bindings.apply})
+and verifies the output.  End-to-end conformance bundles eval, decode
+(\code{atomToPattern}), deontic interpretation, and the DTS theorem into
+a single conjunction --- all kernel-checked.
+
+\subsection{What the Refinement Proves}
+
+The refinement theorems establish:
+
+\begin{quote}
+\emph{If the governance-reasoning-engine DTS rules are encoded as PeTTa rewrite
+rules, then evaluating them produces results that, under deontic interpretation,
+satisfy the corresponding \DTS{} theorems proven in Lean.}
+\end{quote}
+
+\noindent
+This is a soundness result at three levels:
+
+\begin{enumerate}
+\item \textbf{Inductive semantics}: The \code{PeTTaEval} and
+      \code{MeTTaEval} relations fire the DTS rules with correct
+      binding substitution and deontic interpretation (7 rules each).
+\item \textbf{Shared evaluator abstraction}: The \code{MeTTaLike}
+      typeclass ensures \code{let*} unfolding works identically for
+      both evaluators (2- and 3-binding chains proven).
+\item \textbf{Canonical interpreter}: The computable HE \code{eval}
+      function produces the correct results for all three DTS rules,
+      verified by \code{rfl} (the Lean kernel performs the computation).
+\end{enumerate}
+
+\noindent
+The verification does not cover the full MeTTa codebase, but it does
+verify that the core deontic rewrite rules faithfully encode the
+algebraic properties they claim to implement, and that the canonical
+interpreter agrees with the inductive semantics on the DTS rule subset.
+
+All refinement proofs are kernel-checked with zero \code{sorry} placeholders
+and use only the standard axioms (\code{propext}, \code{Classical.choice},
+\code{Quot.sound}).
+
+%% ============================================================
 \section{Related Work}
 \label{sec:related}
 %% ============================================================
@@ -822,10 +1053,11 @@ present formalization does not develop this connection explicitly.
 The \code{governance-reasoning-engine} \cite{GovReasoningEngine} implements
 a three-level inference pipeline (eventuality, statement, verdict) in MeTTa,
 using non-deterministic evaluation for governance verdict computation.
-Our formalization verifies several algebraic properties (\DTS{}
+Our formalization verifies the algebraic properties (\DTS{}
 interdefinability, evidence monotonicity) that correspond to structures
-used in their implementation.  No formal refinement theorem connecting
-the MeTTa rules to the Lean semantics has been established.
+used in their implementation, and the refinement theorems of
+\S\ref{sec:refinement} formally connect the MeTTa rule encodings to the
+Lean semantics for all 7 core \DTS{} interdefinability relations.
 
 \paragraph{Event calculus in Lean.}
 The \PLN{} Probabilistic Event Calculus formalized in
@@ -835,18 +1067,41 @@ presentations.  The \code{ModalQueryEncoder} of §\ref{sec:mqe} unifies this
 with the deontic layer.
 
 %% ============================================================
-\section{Conclusion}
-\label{sec:conclusion}
+\section{Limitations}
+\label{sec:limitations}
 %% ============================================================
 
-We have presented a Lean~4 formalization of the full governance deontic logic
-stack: from \DDL{} semantic embedding to \DTS{} algebra, Hobbs eventuality
-reification, constructive reactive accessibility, temporal-deontic bridges,
-abstract modal query unification, and the Gewirth \PGC{}.
-
-The formalization is compositional (each layer is independently usable)
-and grounded in published sources (Carmo \& Jones 2002, von Wright 1951,
-Hobbs 1985, ISO~24617-4).
+\begin{itemize}
+\item \textbf{No end-to-end regulatory corpus.}
+      The formalization provides verified logical primitives but has not been
+      tested against any regulatory corpus (GDPR, SEC rules, etc.).
+\item \textbf{No natural language parser.}
+      There is no automated pipeline from regulatory text to \DDL{} frame
+      instances; all examples are hand-encoded.
+\item \textbf{No benchmark suite.}
+      We do not provide a test suite of governance scenarios with expected
+      verdicts against which implementations could be evaluated.
+\item \textbf{Rule-level (not full-program) refinement.}
+      The refinement theorems (\S\ref{sec:refinement}) verify that individual
+      DTS rewrite rules correctly encode the corresponding \DTS{} theorems,
+      but they do not verify the full MeTTa governance-reasoning-engine
+      codebase.  The three-level inference pipeline (eventuality, statement,
+      verdict) is verified at the rule-firing level, not end-to-end.
+      The canonical HE interpreter and the inductive \code{MeTTaEval}
+      relation agree on the DTS rule subset (proven via \code{rfl}
+      conformance tests), but a general equivalence has not been established.
+\item \textbf{No deployed case study.}
+      The system has not been deployed in any real governance or compliance
+      setting.
+\item \textbf{DTS consistency requires external hypothesis.}
+      The \DTS{} consistency axiom ($\OB(p) \to \neg\OB(\neg p)$) is not
+      derivable from \DDL{} frame conditions alone; the bridge
+      \code{frameToDTS} requires an explicit \code{hcons} parameter
+      (see Remark in §\ref{sec:dts}).
+\item \textbf{Minimal accessibility model.}
+      The \code{GovNormCycle} is a 2-state proof of satisfiability, not a
+      practical governance state machine.
+\end{itemize}
 
 %% ============================================================
 \section{Future Developments: Toward Practical Governance}
@@ -916,37 +1171,26 @@ allow governance verdicts to carry calibrated confidence levels,
 enabling graded compliance rather than binary pass/fail.
 
 %% ============================================================
-\section{Limitations}
-\label{sec:limitations}
+\section{Conclusion}
+\label{sec:conclusion}
 %% ============================================================
 
-\begin{itemize}
-\item \textbf{No end-to-end regulatory corpus.}
-      The formalization provides verified logical primitives but has not been
-      tested against any regulatory corpus (GDPR, SEC rules, etc.).
-\item \textbf{No natural language parser.}
-      There is no automated pipeline from regulatory text to \DDL{} frame
-      instances; all examples are hand-encoded.
-\item \textbf{No benchmark suite.}
-      We do not provide a test suite of governance scenarios with expected
-      verdicts against which implementations could be evaluated.
-\item \textbf{No executable refinement proof.}
-      The MeTTa \code{governance-reasoning-engine} and the Lean semantics
-      encode corresponding structures, but no formal refinement theorem
-      connects them.  The Lean formalization verifies properties that the
-      MeTTa code asserts, but does not prove the MeTTa code correct.
-\item \textbf{No deployed case study.}
-      The system has not been deployed in any real governance or compliance
-      setting.
-\item \textbf{DTS consistency requires external hypothesis.}
-      The \DTS{} consistency axiom ($\OB(p) \to \neg\OB(\neg p)$) is not
-      derivable from \DDL{} frame conditions alone; the bridge
-      \code{frameToDTS} requires an explicit \code{hcons} parameter
-      (see Remark in §\ref{sec:dts}).
-\item \textbf{Minimal accessibility model.}
-      The \code{GovNormCycle} is a 2-state proof of satisfiability, not a
-      practical governance state machine.
-\end{itemize}
+We have presented a Lean~4 formalization of governance deontic logic
+spanning six layers: \DDL{} semantic embedding, \DTS{} algebra, Hobbs
+eventuality reification with governance judgments, constructive reactive
+accessibility, temporal-deontic and causal-normative bridges, the
+Gewirth \PGC{}, and formal MeTTa-to-Lean refinement theorems.
+
+The refinement chain is the deepest contribution: it connects
+operational MeTTa governance rules to proven \DTS{} theorems at three
+levels --- inductive semantics (PeTTa and HE~MeTTa), a shared evaluator
+abstraction with \code{let*} unfolding, and kernel-checked canonical
+interpreter conformance.  For the DTS rule subset, the Lean kernel
+itself performs the HE evaluation and verifies the output.
+
+The formalization is compositional (each layer is independently usable)
+and grounded in published sources (Carmo \& Jones 2002, von Wright 1951,
+Hobbs 1985, ISO~24617-4).
 
 %% ============================================================
 \bibliographystyle{plain}
