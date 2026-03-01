@@ -1,0 +1,349 @@
+
+% !TEX TS-program = pdflatex
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{microtype}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=blue,
+  urlcolor=blue
+}
+
+\title{A Conceptual Primer on Giry--Kleisli de Finetti,\\ Measurability Bottlenecks, and Markov/Fortini Bridges\\(2026--02--27)}
+\author{(AIrxiv note; conceptual summary for formalization work)}
+\date{}
+
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{remark}{Remark}
+
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\ENN}{\mathbb{R}_{\ge 0}^{\infty}}
+\newcommand{\PMeas}{\mathsf{P}}
+\newcommand{\FinMeas}{\mathsf{M}_{<\infty}}
+\newcommand{\ProbMeas}{\mathsf{PMeas}}
+\newcommand{\Kern}{\mathsf{Kern}}
+\newcommand{\Giry}{\mathsf{Giry}}
+\newcommand{\id}{\mathrm{id}}
+\newcommand{\Law}{\mathrm{Law}}
+\newcommand{\E}{\mathbb{E}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note explains, at a strictly conceptual level, a formalization pipeline for
+de Finetti-type representation theorems in the \emph{Giry monad} and its Kleisli category,
+with a focus on a recurring bottleneck: upgrading \emph{pointwise} constructions of mediating
+measure-valued maps into \emph{measurable kernels}. We also summarize how these ideas connect
+to universal prediction perspectives (``Solomonoff-style'') and to Markov de Finetti
+(Fortini/Diaconis--Freedman--type) proofs, highlighting the single crux that must be isolated:
+\emph{cross-anchor conditional independence} of row-successor processes.
+\end{abstract}
+
+\tableofcontents
+
+\section{Orientation: what is being proved?}
+
+There are two parallel stories:
+
+\begin{enumerate}[label=(\alph*)]
+\item \textbf{Giry/Kleisli de Finetti.}
+One models probabilistic programs as morphisms in the Kleisli category of the Giry monad:
+objects are measurable spaces, and morphisms are \emph{Markov kernels} (measurable maps into
+spaces of probability measures). The goal is to express ``exchangeable sources'' as mixtures
+over latent parameters via a universal property: a \emph{limit cone} (or equivalently, a
+universal mediator/factorization statement) in a suitable Kleisli setting.
+
+\item \textbf{Markov/Fortini de Finetti for finite-state paths.}
+One starts with a prefix law $\mu$ on finite words over $\mathrm{Fin}\;k$,
+assumes Markov exchangeability (probability depends only on start state + transition counts),
+extends $\mu$ to a path measure $P$ on $(\NN \to \mathrm{Fin}\;k)$, and aims to represent
+cylinder probabilities as a mixture over Markov parameters (initial distribution + transition matrix),
+\[
+\mu(x_0\ldots x_n)=\int \mathrm{wordProb}(\theta, x_0\ldots x_n)\,d\pi(\theta).
+\]
+\end{enumerate}
+
+In both stories, one wants to construct a \emph{latent object} (a parameter space, or a space of
+directing measures/kernels) and show that all observed laws factor uniquely through it.
+
+\section{Background: exchangeability and de Finetti in kernel language}
+
+\begin{definition}[Exchangeability (informal)]
+A stochastic process $(X_n)_{n\in\NN}$ is \emph{exchangeable} if its joint law is invariant under
+finite permutations of indices. For Markov exchangeability (finite-state), invariance is weaker:
+probabilities depend only on initial state and transition counts.
+\end{definition}
+
+Classically, de Finetti's theorem states: an exchangeable sequence is a mixture of i.i.d.\ sequences.
+In \emph{kernel form}, ``mixture'' is a pushforward/integration over a latent parameter $\Theta$:
+given a \emph{directing measure} $\pi$ on $\Theta$ and a kernel $K : \Theta \leadsto \Omega$,
+the observed law is $\int K(\theta,\cdot)\,d\pi(\theta)$.
+
+This suggests a categorical formulation: observed sources are induced from a universal latent object.
+The formalization challenge is not the algebra of integrals---it is the measurability needed for the
+kernels that implement the factorization.
+
+\section{The Giry monad and its Kleisli category}
+
+Let $\mathcal{M}$ be a category of measurable spaces and measurable maps. The Giry monad $\Giry$
+maps a space $X$ to the space $\ProbMeas(X)$ of probability measures on $X$, equipped with the
+\emph{evaluation $\sigma$-algebra} (the smallest $\sigma$-algebra making $\mu\mapsto \mu(A)$ measurable
+for all measurable $A\subseteq X$).
+
+\begin{definition}[Kleisli morphisms]
+A Kleisli morphism $X \to_{\mathrm{Kl}(\Giry)} Y$ is a measurable map
+$f : X \to \ProbMeas(Y)$.
+Equivalently, this is a Markov kernel $f(x,\cdot)$ from $X$ to $Y$.
+\end{definition}
+
+Composition is given by integration (bind):
+$(g \star f)(x, B) \;=\; \int g(y,B)\,df(x)(y)$.
+The \emph{unit} sends $x$ to the Dirac measure $\delta_x$.
+
+\section{Categorical de Finetti: the universal mediator picture}
+
+A recurring template is:
+
+\begin{enumerate}[label=\arabic*.]
+\item Define an object $\Theta$ of latent parameters.
+\item Define a kernel $K : \Theta \leadsto \Omega$ that generates i.i.d.\ sequences given $\theta$.
+\item For an exchangeable source $P$ on $\Omega^\NN$, construct a directing measure $\pi$ on $\Theta$.
+\item Prove the \emph{representation} $P = \int K(\theta,\cdot)\,d\pi(\theta)$ and a universal property:
+any other latent representation factors uniquely through $\Theta$.
+\end{enumerate}
+
+In categorical terms, one expresses a cone from $P$ to a diagram of finite-marginal objects, and shows
+it factors uniquely through a universal cone induced by $\Theta$.
+
+\subsection{Why kernels (not just functions to measures) matter}
+
+A frequent trap is:
+
+\begin{quote}
+``For each $y$, define a measure on $\Theta$ pointwise by some formula, so we have a mediator
+$y \mapsto \pi_y$.'' \\
+\emph{But} to be a Kleisli arrow, $y \mapsto \pi_y$ must be measurable into $\ProbMeas(\Theta).
+$
+\end{quote}
+
+This is exactly where many proof attempts get stuck: \emph{measurability upgrades} from pointwise
+definitions to genuine kernels.
+
+\section{The measurability bottleneck: what usually goes wrong}
+
+\subsection{Two $\sigma$-algebras on spaces of measures}
+
+There are (at least) two natural measurable structures on spaces of measures:
+
+\begin{enumerate}[label=(\alph*)]
+\item The \textbf{Giry/evaluation} $\sigma$-algebra (generated by $\mu\mapsto \mu(A)$).
+\item The \textbf{Borel} $\sigma$-algebra of a topology on measures (weak, weak-$*$, Prokhorov, \dots).
+\end{enumerate}
+
+When a proof uses topological continuity (e.g.\ continuity of a ``directing measure map'' in a metric
+like L\'evy--Prokhorov), it naturally yields Borel measurability. But the Giry monad uses the
+evaluation $\sigma$-algebra. To move between these worlds, one needs an inclusion/equality:
+\[
+\mathsf{borel}(\ProbMeas(X)) \;\le\; \mathsf{instMeasurableSpace}(\ProbMeas(X))
+\quad\text{or}\quad
+\mathsf{instMeasurableSpace}(\ProbMeas(X)) \;\le\; \mathsf{borel}(\ProbMeas(X)),
+\]
+depending on how each side is defined in the formalization.
+
+\subsection{Why this is nontrivial in formalization}
+
+Even if mathematicians ``know'' the relevant equalities under standard hypotheses
+(Polish/standard Borel/Prokhorov theorems), the library may not contain the lemma in the needed form,
+or it may require extra topological assumptions that are not currently available on your parameter
+space.
+
+\begin{remark}[A reliable separation principle]
+It helps to isolate the exact missing implication as a \emph{single hypothesis} (e.g.\
+$\mathsf{borel}\le \mathsf{instMeasurable}$), prove everything downstream from it, and then work
+locally on proving the hypothesis under minimal standard conditions.
+\end{remark}
+
+\subsection{When measurable selection/disintegration is genuinely needed}
+
+A frequent pattern is:
+
+\begin{quote}
+``We have existence and uniqueness of a conditional/directing object pointwise; therefore we can
+choose it and proceed.''
+\end{quote}
+
+But \emph{classical choice} does not preserve measurability. If you need $y\mapsto \pi_y$ measurable,
+you typically need either:
+\begin{enumerate}[label=(\roman*)]
+\item a measurable selection theorem (for set-valued maps),
+\item a disintegration theorem (regular conditional probabilities),
+\item or a proof that your pointwise definition is generated by countably many measurable coordinates.
+\end{enumerate}
+
+In practice, the weakest standard assumptions are those guaranteeing \emph{standard Borel} structure
+on the spaces involved and existence of regular conditional probabilities.
+
+\section{A workable design pattern: generated $\sigma$-algebras for parameter spaces}
+
+One robust approach is to define the measurable structure on a parameter type $\Theta$ as the
+\emph{least} $\sigma$-algebra that makes the evaluation maps you actually integrate against
+measurable.
+
+For a Markov parameter $\theta$ (initial distribution + transitions), one can generate a
+$\sigma$-algebra by the \emph{word probability} maps
+$\theta \mapsto \mathrm{wordProb}(\theta, xs)$ for all finite words $xs$.
+This yields two benefits:
+
+\begin{enumerate}[label=(\alph*)]
+\item Every integrand $\mathrm{wordProb}(\theta, xs)$ is measurable \emph{by construction}.
+\item To prove a map $g : \Omega^\NN \to \Theta$ is (AE-)measurable, it suffices to prove that all
+compositions $\mathrm{wordProb}(\,g(\cdot)\,, xs)$ are (AE-)measurable.
+\end{enumerate}
+
+This is a powerful ``measurability-by-generators'' strategy: instead of fighting the library's
+topological instances, you align the measurable structure with your proof needs.
+
+\section{Markov/Fortini de Finetti: where the crux really lives}
+
+For finite-state paths, a clean formalization often splits into:
+
+\begin{enumerate}[label=\arabic*.]
+\item \textbf{Row processes.} For each anchor state $i$, define a row-successor process that records
+the successor state at the $n$th visit to $i$.
+\item \textbf{Per-row de Finetti.} Show each row process is exchangeable (under suitable invariance),
+therefore a mixture of i.i.d.\ sequences, giving a \emph{row kernel} $K_i(r)$.
+\item \textbf{Lift to a Markov parameter.} Combine row kernels (and an initial kernel, often Dirac at
+the start state) into a Markov parameter $\theta(\omega)$.
+\item \textbf{Reconstruction.} Prove cylinder probabilities equal the integral of $\mathrm{wordProb}$
+under the pushforward law of $\theta(\omega)$.
+\end{enumerate}
+
+Steps 1--3 are ``local'' and largely measurable-algebraic. Step 4 contains the true difficulty.
+
+\subsection{The crux: cross-anchor conditional independence}
+
+Per-row conditional i.i.d.\ gives, for each fixed $i$, a decomposition of the \emph{row marginal} law.
+But reconstructing a full path cylinder typically needs a \emph{joint} statement tying together the
+different anchors $i$ appearing in a word.
+
+Conceptually, you need something like:
+
+\begin{quote}
+Conditional on the directing objects for each row, the row processes for different anchors behave
+independently in the way required to factor a word probability into a product of row contributions.
+\end{quote}
+
+This is \emph{not} implied by ``each row is conditionally i.i.d.'' as a separate statement for each
+$i$. One must either:
+\begin{enumerate}[label=(\alph*)]
+\item derive a joint law from stronger invariance/exchangeability hypotheses,
+\item or assume an explicit joint law hypothesis (and label the theorem accordingly),
+\item or redesign the proof to avoid needing a full joint independence statement (rare, but possible in
+some finite-state combinatorial approaches).
+\end{enumerate}
+
+\subsection{A conceptual ``identity to aim for''}
+
+For a word $a::b::xs$, a typical target identity is:
+\[
+P(\mathrm{cyl}(a::b::xs)) \;=\; \int \mathbf{1}\{ \omega_0=a\}\cdot
+\prod_{t\ \text{transitions in }a::b::xs} K_{\text{row}(t)}(\omega)\big(\{\text{next}(t)\}\big)\; dP(\omega),
+\]
+i.e.\ cylinder probability equals the integral of a product of row-kernel singleton evaluations.
+This is exactly the kind of statement often packaged as a \emph{cross-anchor product identity}.
+
+\section{How the Giry story helps the Fortini story (and vice versa)}
+
+The Giry/Kleisli development suggests two guiding principles that directly help the Fortini bridge:
+
+\begin{enumerate}[label=\arabic*.]
+\item \textbf{Isolate measurability from probability identities.}
+Make the map $\omega \mapsto \theta(\omega)$ AE-measurable first (using generator-based
+measurable spaces where possible), then reduce reconstruction to a purely measure-theoretic identity.
+
+\item \textbf{Name the missing hypothesis honestly.}
+If the formal library does not provide a theorem turning ``per-row conditional i.i.d.'' into the
+needed cross-anchor product identity, the proof is stuck for a real mathematical reason, not an
+automation failure. The remedy is to either strengthen assumptions or prove the missing theorem from
+existing invariances (e.g.\ from Markov exchangeability of the original prefix law, plus a combinatorial
+transport argument).
+\end{enumerate}
+
+Conversely, Fortini-style combinatorial transport lemmas are a template for proving ``hard'' equalities
+of $\sigma$-algebras or probability expressions: reduce to finite approximants, prove invariance at
+finite horizon, then pass to a limit (e.g.\ via monotone convergence).
+
+\section{Recommended proof DAG (lemma-by-lemma) for a clean development}
+
+A robust module DAG typically looks like:
+
+\begin{enumerate}[label=\textbf{L\arabic*.}]
+\item \textbf{(Base)} Definitions of cylinders, row processes, Markov parameters, and
+generator-based measurable spaces on parameter types.
+\item \textbf{(Measurability)} Lemmas proving measurability/AE-measurability of:
+\begin{itemize}
+\item row-process maps,
+\item singleton evaluation maps of extracted kernels,
+\item word probability compositions.
+\end{itemize}
+\item \textbf{(Row de Finetti)} Extraction of row kernels from per-row exchangeability.
+\item \textbf{(Reconstruction infrastructure)} Change-of-variables (lintegral/map) lemmas and base cases
+(nil/singleton).
+\item \textbf{(Crux)} Cross-anchor product identity (or the minimal joint-law hypothesis that implies it).
+\item \textbf{(Export)} The final representation theorem(s), plus clearly labeled variants:
+\begin{itemize}
+\item unrestricted Kleisli statement (if measurability is fully discharged),
+\item Markov-only or ``safe endpoint'' statement (if not).
+\end{itemize}
+\end{enumerate}
+
+\section{Positive and negative proof patterns}
+
+\subsection{Positive pattern: explicit kernel mediator with factorization}
+\begin{enumerate}[label=(\roman*)]
+\item Define the mediator as a measurable map $f : Y \to \ProbMeas(\Theta)$, not merely pointwise.
+\item Prove measurability by showing all coordinate maps $y \mapsto f(y)(A)$ are measurable for a
+countable generating family of $A$.
+\item Prove factorization by rewriting both sides as integrals of the same measurable integrand and
+using standard measure-theory lemmas (e.g.\ $\int \mathbf{1}_E\,dP = P(E)$, monotone convergence,
+$\mathrm{lintegral\_map}$).
+\end{enumerate}
+
+\subsection{Negative pattern: pointwise choice used as if measurable}
+\begin{enumerate}[label=(\roman*)]
+\item Use classical choice to pick $\pi_y$ from an existence statement.
+\item Proceed to integrate against $y\mapsto \pi_y$ without proving measurability into $\ProbMeas(\Theta)$.
+\item This compiles only if one silently changes the measurable structure, adds an axiom, or smuggles a
+``measurable by simp'' lemma that is false.
+\end{enumerate}
+
+\section{Open problems and next steps (conceptual checklist)}
+
+\begin{enumerate}[label=\arabic*.]
+\item \textbf{Measurability upgrade lemma(s):} prove the missing inclusion between Borel and evaluation
+$\sigma$-algebras under standard assumptions (often Polish/standard Borel).
+\item \textbf{Fortini crux:} prove the cross-anchor product identity from existing invariances; if not
+derivable, identify the minimal additional joint-law hypothesis and state it explicitly.
+\item \textbf{Connection to universal prediction:} interpret the latent object (directing measure or
+Markov parameter law) as a \emph{predictive state} that supports Bayesian updating by conditioning.
+\item \textbf{PLN interface:} identify which objects are treated as ``belief states'' (measures on
+hypotheses) and show how mixture representations support rule-based inference as measurable transformations.
+\item \textbf{API hygiene:} keep a single canonical theorem per major endpoint, and re-export lightweight
+aliases only when they remove real user friction.
+\end{enumerate}
+
+\section*{Acknowledgments}
+This note is intentionally anonymous and conceptual; it summarizes patterns and bottlenecks that arise
+when formalizing probabilistic representation theorems in proof assistants.
+
+\end{document}

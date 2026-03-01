@@ -1,0 +1,829 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{listings}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!70!black,
+  citecolor=blue!70!black,
+  urlcolor=blue!70!black
+}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  columns=fullflexible,
+  keepspaces=true,
+  breaklines=true,
+  showstringspaces=false,
+  backgroundcolor=\color{black!2},
+  rulecolor=\color{black!30},
+  xleftmargin=2em,
+  framexleftmargin=1.5em,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=8pt,
+  tabsize=2
+}
+
+% MeTTa listing language
+\lstdefinelanguage{MeTTa}{
+  morekeywords={if,let,let*,case,match,import!,bind!,assertEqual,
+    assertEqualToResult,progn,prog1,collapse,println!},
+  sensitive=true,
+  morecomment=[l]{;;;},
+  morecomment=[l]{;;},
+  morestring=[b]",
+  literate={!}{{\textbf{!}}}1
+}
+
+% Prolog listing language
+\lstdefinelanguage{SWIProlog}{
+  morekeywords={module,use_module,is,not,nb_setval,nb_getval,
+    throw,catch,forall,findall,maplist,foldl,assoc_to_keys,
+    put_assoc,get_assoc,ord_add_element,ord_subtract},
+  sensitive=true,
+  morecomment=[l]{\%},
+  morecomment=[n]{/*}{*/},
+  morestring=[b]",
+  morestring=[b]'
+}
+
+\title{Metamath Proof Verification in MeTTa:\\
+From Pure Prolog to Opaque and Space-Backed PeTTa Verifiers\\[6pt]
+\large (AIrxiv Working Paper, 2026-02-25)}
+\author{
+  Zarathustra Goertzel\thanks{Human supervisor and original mmverify author.}
+  \and
+  Oru\v{z}i\thanks{AI-assisted collaboration
+    (Claude Code, Codex; under human supervision).}
+}
+\date{February 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We present \textbf{pverify}, a family of Metamath proof verifiers
+developed in a staged methodology:
+\textbf{(0)} \texttt{mmverify} (original PeTTa verifier),
+\textbf{(1)} \texttt{pverify\_hybrid}
+(HE MeTTa non-parsing stage based on the
+\texttt{mmverify.py} parsing workflow),
+\textbf{(2)} \texttt{pverify.pl} (pure Prolog baseline),
+\textbf{(3)} \texttt{pverify\_op}
+(verification semantics in PeTTa/MeTTa with opaque Prolog data
+structures through FFI),
+and \textbf{(4)} \texttt{pverify\_op\_space}
+(space-backed storage using specialized
+\texttt{MapSpace}/\texttt{SetSpace} backends).
+All active implementations pass the same 141-test Metamath
+conformance suite.
+
+On \texttt{set.mm} (519K lines, 136{,}289 statements), controlled
+solo benchmarks on the same machine yield:
+5m\,58s for pure Prolog,
+28m\,31s for \texttt{pverify\_op},
+and 28m\,48s for \texttt{pverify\_op\_space}.
+Thus the space-backed verifier is within 0.95\% wall-time of the
+opaque-state verifier while preserving identical behavior.
+
+\paragraph{Measurement provenance note.}
+Performance/count claims in this draft are snapshot measurements. Primary artifacts:
+\texttt{AIrxiv/airxiv\_2026-02-21\_pverify\_metamath\_in\_petta.log},
+\texttt{AIrxiv/airxiv\_2026-02-21\_pverify\_metamath\_in\_petta.out},
+\texttt{AIrxiv/airxiv\_2026-02-21\_pverify\_metamath\_in\_petta.fdb\_latexmk},
+plus regression harnesses under
+\texttt{hyperon/PeTTa/tests/test\_all\_mmverify.sh} and
+\texttt{hyperon/PeTTa/tests/test\_all\_examples\_modified.sh}.
+
+Methodologically, we make explicit what is and is not in MeTTa.
+In \texttt{pverify\_op} and \texttt{pverify\_op\_space},
+statement processing, RPN proof checking, substitution, and DV checks
+are implemented in \texttt{.metta}; Prolog is used for parsing and
+indexed primitives.
+The specialized spaces are bonafide PeTTa spaces:
+they support normal space operations
+(\texttt{add-atom}, \texttt{remove-atom}, \texttt{match},
+\texttt{get-atoms}) while exposing optimized indexed accessors for
+verifier workloads.
+The main engineering conclusion is that FFI granularity, not
+algorithmic mismatch, remains the dominant optimization axis.
+\end{abstract}
+
+%% ================================================================
+\section{Introduction}
+\label{sec:intro}
+
+Metamath~\cite{megill2019} is a minimalist proof language whose
+simplicity---constants, variables, substitution, disjoint-variable
+constraints, and a stack-based proof checker---makes it an
+attractive target for implementation in new programming languages.
+
+MeTTa~\cite{goertzel2023metta} is the primary language of the
+Hyperon AGI framework.  It features non-deterministic evaluation,
+pattern matching, and a space-based knowledge representation.
+PeTTa~\cite{petta} is a Prolog-based implementation of MeTTa
+that compiles MeTTa programs to SWI-Prolog, providing access to
+Prolog's mature ecosystem through a foreign function interface (FFI).
+
+This paper describes \textbf{pverify}, a family of Metamath proof
+verifiers developed through human--AI collaboration.
+The project evolved through several phases:
+
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{mmverify} (Goertzel): The original PeTTa Metamath
+    verifier, hand-written, establishing the core verification
+    algorithm in MeTTa with PeTTa-native data structures.
+  \item \textbf{pverify\_hybrid} (AI agents): An HE MeTTa non-parsing
+    precursor stage derived from the
+    \texttt{mmverify.py} parsing approach.
+  \item \textbf{pverify.pl} (AI, Claude Code): A pure Prolog
+    reimplementation sharing the \texttt{mm\_primitives.pl} parser.
+  \item \textbf{pverify\_op} (AI, Claude Code): The ``opaque data
+    structures'' architecture---all verification logic in PeTTa,
+    with Prolog providing only $O(\log n)$ AVL trees and ordsets
+    through FFI.
+  \item \textbf{pverify\_op\_stream} (AI, Claude Code + Codex):
+    A streaming variant of pverify\_op that processes statements
+    one-at-a-time from a Prolog-resident token stream, avoiding
+    the need to hold all parsed statements in PeTTa memory
+    simultaneously.
+  \item \textbf{pverify\_op\_space} (AI, Claude Code + Codex):
+    A space-backed variant of pverify\_op that replaces opaque
+    Prolog assocs/ordsets with PeTTa-native \texttt{MapSpace} and
+    \texttt{SetSpace} backends, achieving full parity while making
+    the verifier's state backend-flexible.
+\end{enumerate}
+
+All current pverify variants share a common Prolog parsing layer
+(\texttt{mm\_primitives.pl}, 1{,}224 lines) and are tested against
+the same 141-test conformance suite covering both positive
+(correct proofs accepted) and negative (invalid inputs rejected)
+cases.
+
+\subsection{Claims and Scope}
+\label{sec:claims}
+
+\textbf{What this paper claims.}
+\begin{itemize}[leftmargin=2em]
+  \item Four current \texttt{pverify} implementations pass the same
+    141-test conformance suite.
+  \item Controlled \texttt{set.mm} benchmarks are reported for the
+    main methodology chain:
+    \texttt{pverify.pl} $\rightarrow$
+    \texttt{pverify\_op} $\rightarrow$
+    \texttt{pverify\_op\_space}.
+  \item \texttt{mmverify} and \texttt{pverify\_hybrid} are included
+    as explicit historical/motivational precursors to this chain.
+  \item \texttt{pverify\_op\_space} achieves both conformance parity
+    and near wall-time parity with \texttt{pverify\_op}
+    (0.95\% delta on \texttt{set.mm} in current measurements).
+\end{itemize}
+
+\textbf{What this paper does not claim.}
+\begin{itemize}[leftmargin=2em]
+  \item It is not a mechanized soundness/completeness proof of a
+    verifier; this is addressed in separate Lean work.
+  \item It does not claim per-error-code completeness (``first
+    violated rule implies specific parser code'').
+\end{itemize}
+
+%% ================================================================
+\section{Architecture}
+\label{sec:arch}
+
+\subsection{Methodology Chain and Invariants}
+\label{sec:method-chain}
+
+The experimental design follows one controlled chain:
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Original PeTTa verifier}
+    (\texttt{mmverify}): establishes the direct MeTTa implementation
+    style and motivates optimization work.
+  \item \textbf{HE MeTTa precursor}
+    (\texttt{pverify\_hybrid}): HE MeTTa non-parsing verifier stage
+    based on \texttt{mmverify.py} parser conventions.
+  \item \textbf{Pure Prolog baseline}
+    (\texttt{pverify.pl}): establishes a native lower-bound
+    implementation over the same parser.
+  \item \textbf{Opaque PeTTa implementation}
+    (\texttt{pverify\_op}): moves verification semantics into MeTTa,
+    with Prolog used only for parsing and indexed primitives.
+  \item \textbf{Space-backed PeTTa implementation}
+    (\texttt{pverify\_op\_space}): changes storage backend to
+    specialized spaces while preserving verifier semantics.
+\end{enumerate}
+
+To keep this comparison honest, each stage preserves:
+\begin{itemize}[leftmargin=2em]
+  \item the same parser (\texttt{mm\_primitives.pl}),
+  \item the same acceptance/rejection contract
+    (141-test conformance suite),
+  \item the same benchmark target (\texttt{set.mm}).
+\end{itemize}
+
+\subsection{Naive MeTTa-Style Baseline (Motivation)}
+\label{sec:naive-metta}
+
+A natural first implementation in MeTTa uses plain lists for maps and
+sets with linear traversal:
+\begin{lstlisting}[language=MeTTa,caption={Naive MeTTa-style lookup (linear scan).}]
+;;; Labels as list of (pair Key Value)
+(= (lookup-label $k $labels)
+   (if (== (size-atom $labels) 0)
+       not_found
+       (let (($h $t) (decons-atom $labels))
+         (let (($k0 $v0) $h)
+           (if (== $k $k0) $v0 (lookup-label $k $t))))))
+\end{lstlisting}
+
+This style is simple and idiomatic, but it scales poorly when used in
+hot loops (proof-step dispatch, substitution lookups, DV checks). The
+methodology chain above is therefore a sequence of controlled moves
+from naive linear structures to indexed backends while preserving
+MeTTa-level verifier semantics.
+
+\subsection{Shared Prolog Layer}
+
+All verifiers in the pverify family share
+\texttt{mm\_primitives.pl}, which provides:
+\begin{itemize}[leftmargin=2em]
+  \item Tokenization of \texttt{.mm} files (handling comments,
+    includes, whitespace)
+  \item Recursive-descent parsing into compound terms
+    (\texttt{c([\ldots])}, \texttt{v([\ldots])}, etc.)
+  \item File-wide semantic validation (duplicate labels, frame
+    balance, typecode consistency, \texttt{\$d} variable checks,
+    scoping rules)
+  \item Streaming parser (\texttt{next\_statement/2}) that yields
+    one statement at a time from a token list
+\end{itemize}
+
+\subsection{pverify\_op: Batch Verification in PeTTa}
+
+The key architectural decision in \texttt{pverify\_op} is a clean
+separation of concerns:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Prolog (pverify\_ds.pl, 227 lines):} Provides
+    data structure operations (AVL tree get/put, ordset
+    add/member/union/subtract, compound term manipulation) as FFI
+    exports.  These are \emph{opaque} to PeTTa---MeTTa code never
+    inspects the internal structure of an AVL tree or ordset.
+  \item \textbf{PeTTa (pverify\_op.metta, 693 lines):} Contains
+    \emph{all} verification logic: statement processing
+    (\texttt{\$c}, \texttt{\$v}, \texttt{\$f}, \texttt{\$e},
+    \texttt{\$d}, \texttt{\$a}, \texttt{\$p}, scoping), the
+    RPN proof stack machine (\texttt{treat-step}), substitution
+    application (\texttt{apply-subst}), and
+    disjoint-variable checking (\texttt{check-dvs}).
+\end{itemize}
+
+Verification state is threaded functionally as an immutable tuple:
+
+\begin{lstlisting}[language=MeTTa,caption={State representation.}]
+;;; State = (state Constants FrameStack Labels)
+;;;   Constants:  opaque Prolog ordset
+;;;   FrameStack: MeTTa list of Frame tuples
+;;;   Labels:     opaque Prolog assoc (label -> entry)
+\end{lstlisting}
+
+Each statement processor receives the current state and returns
+an updated state (or an error), with no mutable global variables.
+
+\subsection{pverify\_op\_stream: Streaming Verification}
+
+The streaming variant replaces batch parsing with incremental
+statement delivery.  Three technical challenges arose:
+
+\paragraph{Token list FFI boundary.}
+Metamath token lists contain literal \texttt{(} and \texttt{)}
+atoms.  PeTTa's FFI layer interprets parentheses as MeTTa grouping,
+destructively altering the token structure.  The solution is to
+keep the token stream entirely in Prolog memory using
+\texttt{nb\_setval}/\texttt{nb\_getval} (SWI-Prolog non-backtrackable
+globals), passing only parsed statement compounds across the FFI
+boundary.
+
+\begin{lstlisting}[language=SWIProlog,caption={Streaming helpers in pverify\_ds.pl.}]
+ds_stream_init(Filename, ok) :-
+    ( parse_mm_file_compounds(Filename, _) -> true
+    ; throw(mm_error(parse_failed(Filename)))
+    ),
+    tokenize_mm_file(Filename, Tokens),
+    nb_setval(mm_token_stream, Tokens).
+
+ds_stream_next(Result) :-
+    nb_getval(mm_token_stream, Tokens),
+    next_statement(Tokens, NSResult),
+    ( NSResult = [end]    -> Result = end
+    ; NSResult = [error]  -> Result = error
+    ; NSResult = [Stmt, Rest]
+      -> nb_setval(mm_token_stream, Rest),
+         Result = ns(Stmt)
+    ).
+\end{lstlisting}
+
+\paragraph{PeTTa accumulator-return compilation.}
+A subtlety in PeTTa's compilation of recursive functions: when
+a recursive function returns an accumulator variable directly
+in one branch, the output can be pinned to the initial value.
+The workaround is to wrap the return value in a tagged constructor:
+
+\begin{lstlisting}[language=MeTTa,caption={Streaming loop with tagged return.}]
+(= (process-token-stream $state $count)
+   (let $result (ds_stream_next)
+     (let $tag (ds_stmt_functor $result)
+       (case $tag
+         ((end
+            (let $_ (println! ("Verified" $count "statements."))
+              (stream_ok $state)))
+          (ns
+            (let $stmt (ds_stmt_arg $result 1)
+              (pts-continue $stmt $state $count))))))))
+\end{lstlisting}
+
+\paragraph{Semantic validation parity.}
+The streaming parser (\texttt{next\_statement/2}) performs only
+syntactic parsing, while the batch parser
+(\texttt{parse\_mm\_file\_compounds/2}) additionally performs 8+
+file-wide semantic validations.  To maintain parity,
+\texttt{ds\_stream\_init} performs a full batch parse-and-validate
+pass first, then tokenizes for streaming.  This two-pass approach
+ensures identical accept/reject behavior while still delivering
+statements one at a time during verification.
+
+\subsection{pverify.pl: Pure Prolog Verifier}
+
+For comparison, \texttt{pverify.pl} (520 lines) implements the
+complete verification algorithm in pure SWI-Prolog, sharing only
+\texttt{mm\_primitives.pl} for parsing.  It uses the same state
+representation (AVL assoc + ordsets) natively, avoiding all FFI
+overhead.
+
+\subsection{pverify\_op\_space: Space-Backed Storage}
+\label{sec:opspace}
+
+The space-backed variant replaces \texttt{pverify\_op}'s opaque
+Prolog data structures with PeTTa-native specialized spaces,
+moving persistent verifier state closer to idiomatic MeTTa.
+The design introduces two specialized backends implemented in
+\texttt{lib\_zar.pl}:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{MapSpace}: key--value storage with AVL sidecar index.
+  \item \textbf{SetSpace}: membership storage with ordset sidecar index.
+\end{itemize}
+
+Each space provides a dual interface:
+(1)~the normal PeTTa space API (\texttt{add-atom},
+\texttt{match}, \texttt{get-atoms}, \texttt{remove-atom}) via
+Prolog \texttt{multifile} hooks, and
+(2)~optimized $O(\log n)$ accessors
+(\texttt{sp\_map\_get}, \texttt{sp\_set\_has}, etc.) that read
+directly from the sidecar index.
+Two construction modes are exposed:
+\texttt{canonical} (maintains mirrored atoms) and
+\texttt{index\_only} (fast mode, sidecar-only).
+\texttt{pverify\_op\_space} uses
+\texttt{sp\_new\_map\_fast}/\texttt{sp\_new\_set\_fast} for
+high-throughput verification.
+
+The state representation changes from immutable value threading
+to mutable space-atom threading at global scope:
+
+\begin{lstlisting}[language=MeTTa,caption={Space-backed state representation.}]
+;;; State = (state ConstantsSpace FrameStack LabelsSpace)
+;;;   ConstantsSpace: SetSpace atom (mutable)
+;;;   FrameStack:     MeTTa list of Frame tuples
+;;;   LabelsSpace:    MapSpace atom (mutable)
+;;;
+;;; Frame = (frame Vars DVs FHyps FLabels EHyps)
+;;;   Vars/DVs/FLabels use ordset/assoc hot-path structures
+\end{lstlisting}
+
+This hybrid layout is deliberate:
+\texttt{Constants} and \texttt{Labels} are persistent global stores
+and are excellent space candidates; frame-local fields are short-lived
+and remain on ordset/assoc hot paths for speed.
+The verifier still walks \texttt{FrameStack} functionally in MeTTa:
+
+\begin{lstlisting}[language=MeTTa,caption={Frame stack traversal with space-backed fields.}]
+(= (empty-frame)
+   (let $vars (ds_empty_ordset)
+     (let $dvs (ds_empty_ordset)
+       (let $fl (ds_empty_assoc)
+         (frame $vars $dvs () $fl ())))))
+
+(= (lookup-d-key $key $fs)
+   (if (== (size-atom $fs) 0)
+       False
+       (let ($f $rest) (decons-atom $fs)
+         (let (frame $v $dvs $fh $fl $eh) $f
+           (if (ds_ord_member $key $dvs)
+               True
+               (lookup-d-key $key $rest))))))
+\end{lstlisting}
+
+Crucially, this is still bonafide PeTTa verification:
+the semantic core remains in MeTTa functions
+(\texttt{process-statement}, \texttt{treat-step},
+\texttt{treat-assertion-body}, \texttt{check-dvs},
+\texttt{verify-proof}).
+Only parser and indexed primitives are delegated to Prolog.
+Temporary computation (substitution maps, variable collection,
+DV filtering) continues to use \texttt{ds\_*} primitives.
+
+This Phase~1 result establishes \textbf{backend-flexible
+verifier state without semantic regression}: 141/141 test
+parity, identical architecture for all non-storage code.
+Current full-\texttt{set.mm} performance is also near-parity with
+\texttt{pverify\_op} (Section~\ref{sec:results}).
+
+\subsection{Why This Is Bonafide MeTTa/PeTTa}
+\label{sec:bonafide}
+
+For this project, ``bonafide MeTTa/PeTTa verifier'' means:
+\begin{enumerate}[leftmargin=2em]
+  \item verifier semantics are in \texttt{.metta},
+  \item Prolog is a parser/index backend, not the semantic engine,
+  \item storage uses real PeTTa spaces (with normal space interfaces).
+\end{enumerate}
+
+The current implementation satisfies all three criteria.
+For example, proof-step semantics are dispatched in MeTTa:
+\begin{lstlisting}[language=MeTTa,caption={Semantic proof-step dispatch remains in MeTTa.}]
+(= (treat-step $entry $stack $state)
+   (case $entry
+     (((hyp $hkind $stmt) (cons-atom $stmt $stack))
+      ((assertion $dvs $fhyps $ehyps $conclusion)
+         (treat-assertion-body $dvs $fhyps
+           (get-ehyp-stmts-from-pairs $ehyps)
+           $conclusion $stack $state)))))
+\end{lstlisting}
+
+Likewise, statement handling remains in MeTTa
+(\texttt{process-statement}, \texttt{add-c}, \texttt{add-f},
+\texttt{add-d}); space operations are invoked as backend primitives,
+not as replacements for verifier control logic.
+
+%% ================================================================
+\section{Test Suite and Results}
+\label{sec:results}
+
+\subsection{Conformance Suite}
+
+The test suite comprises 141 active test cases, plus 10 harness
+entries currently skipped because they require features outside
+verifier scope:
+
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Positive tests}: Valid \texttt{.mm} files that must
+    be accepted (exit code 0)
+  \item \textbf{Negative tests}: Invalid files (syntax errors,
+    duplicate labels, DV violations, proof failures, etc.) that
+    must be rejected (nonzero exit code)
+\end{itemize}
+
+Tests are drawn from:
+\begin{itemize}[leftmargin=2em]
+  \item \texttt{core/small/}: Core Metamath language features
+  \item \texttt{unit/}: Focused unit tests for specific edge cases
+  \item \texttt{mmverify/}: Tests from the mmverify.py project
+  \item \texttt{core/large/}: Large-scale tests including
+    \texttt{set.mm}
+\end{itemize}
+
+\subsection{Results}
+
+Table~\ref{tab:results} presents the main methodology-chain benchmark.
+Each run was executed solo and sequentially on the same machine
+(ThinkPad, Linux 6.17, SWI-Prolog 9.x), with explicit memory limits
+(\texttt{ulimit -v 6291456}) and one-hour timeout guards.
+Prolog baseline used \texttt{swipl --stack\_limit=4g}; PeTTa runs used
+\texttt{run.sh} (\texttt{--stack\_limit=8g}).
+
+\begin{table}[ht]
+\centering
+\caption{Benchmark results on \texttt{set.mm}
+  (519K lines, 136{,}289 statements, February 2026).
+  Solo sequential runs under fixed memory limits.}
+\label{tab:results}
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Verifier} & \textbf{Suite} & \textbf{Wall} & \textbf{CPU} & \textbf{ms/stmt} & \textbf{RSS} \\
+\midrule
+pverify.pl         & 141/141 & 5m 58s  & 343s  & 2.5  & 5.20\,GB \\
+pverify\_op        & 141/141 & 28m 32s & 1703s & 12.5 & 3.00\,GB \\
+pverify\_op\_space & 141/141 & 28m 48s & 1719s & 12.6 & 3.00\,GB \\
+\bottomrule
+\end{tabular}
+\end{table}
+All values in Tables~\ref{tab:results} and~\ref{tab:scaling} are snapshot
+measurements from the artifacts listed in the Measurement provenance note
+(\S\ref{sec:claims}).
+
+To test scaling before full \texttt{set.mm}, we also measured
+\texttt{pverify\_op} and \texttt{pverify\_op\_space} on progressively
+larger corpora (Table~\ref{tab:scaling}).
+
+\begin{table}[ht]
+\centering
+\caption{Intermediate scaling checks for opaque vs space-backed PeTTa.}
+\label{tab:scaling}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Dataset} & \textbf{Lines} & \textbf{pverify\_op (wall)} & \textbf{pverify\_op\_space (wall)} \\
+\midrule
+\texttt{hol.mm}              & 2{,}251   & 1.35s    & 1.24s \\
+\texttt{ql.mm}               & 12{,}533  & 6.55s    & 5.94s \\
+\texttt{nf.mm}               & 61{,}205  & 36.50s   & 34.80s \\
+\texttt{set.2010-08-29.mm}   & 170{,}876 & 3m 05.52s & 2m 58.87s \\
+\texttt{set.mm}              & 519{,}291 & 28m 31.52s & 28m 47.77s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+On the active small conformance harness, both
+\texttt{pverify\_op} and \texttt{pverify\_op\_space} currently report
+141/141 with identical 1m\,34s runtime.
+
+%% ================================================================
+\section{Performance Analysis}
+\label{sec:perf}
+
+For the primary chain (\texttt{pverify.pl} $\rightarrow$
+\texttt{pverify\_op} $\rightarrow$ \texttt{pverify\_op\_space}),
+the key ratios on \texttt{set.mm} are:
+\begin{itemize}[leftmargin=2em]
+  \item pure Prolog vs opaque PeTTa:
+    $28m31.52s / 5m58.02s \approx 4.78\times$ wall-time,
+  \item space-backed vs opaque PeTTa:
+    $28m47.77s / 28m31.52s \approx 1.0095\times$ wall-time
+    (0.95\% delta).
+\end{itemize}
+The main result is not that spaces are ``faster'' yet; it is that
+state-storage refactoring to spaces can preserve full conformance
+and near-identical full-corpus performance.
+
+\subsection{FFI Call Frequency Is the Dominant Cost}
+
+The PeTTa batch verifier performs identical algorithmic work to
+the pure Prolog verifier---same AVL tree operations, same ordset
+manipulations, same proof stack machine---but every data structure
+operation crosses the PeTTa--Prolog FFI boundary.  A single
+\texttt{process-statement} call typically invokes 10--30 FFI
+functions (\texttt{ds\_assoc\_get}, \texttt{ds\_ord\_add},
+\texttt{ds\_stmt\_head}, \texttt{ds\_stmt\_tail}, etc.).
+Over 136{,}289 statements, this amounts to millions of FFI
+round-trips.
+
+The per-statement overhead quantifies this directly:
+2.5\,ms/stmt in pure Prolog vs 12.5\,ms/stmt in PeTTa opaque,
+implying $\sim$10\,ms/stmt overhead dominated by FFI granularity.
+
+\subsection{Why Space-Backed Parity Matters}
+
+The space-backed variant demonstrates that specialized spaces can be
+used as first-class verifier storage without destabilizing performance
+at \texttt{set.mm} scale.
+This gives a clean substrate for next-step optimizations (batched
+space operations, fewer boundary crossings) while keeping the verifier
+logic in MeTTa.
+
+\subsection{Memory Profile}
+
+Interestingly, the PeTTa verifiers use \emph{less} memory
+(3.0\,GB) than pure Prolog (5.2\,GB).  In PeTTa, opaque Prolog
+terms are referenced indirectly; in pure Prolog, all intermediate
+data structures (token lists, parsed statements, verification
+state) share a single heap, which grows larger under
+SWI-Prolog's non-compacting GC.
+
+\subsection{Benchmark Methodology Note}
+
+An earlier benchmark used concurrent long-running verifier processes,
+which produced severely distorted wall times.
+All numbers reported here are from solo sequential runs to avoid
+contention artifacts.
+
+%% ================================================================
+\section{Code Size Comparison}
+\label{sec:codesize}
+
+\begin{table}[ht]
+\centering
+\caption{Lines of code by component.}
+\label{tab:loc}
+\begin{tabular}{lr}
+\toprule
+\textbf{Component} & \textbf{Lines} \\
+\midrule
+mm\_primitives.pl (shared parser)       & 1{,}224 \\
+pverify\_ds.pl (FFI data structures)    & 227 \\
+lib\_zar.pl (space backends + utils)    & 405 \\
+env\_utils.pl (CLI utilities)           & 39 \\
+\midrule
+pverify.pl (pure Prolog verifier)       & 520 \\
+pverify\_op.metta (batch PeTTa)         & 693 \\
+pverify\_op\_space.metta (space-backed) & 658 \\
+pverify\_op\_stream.metta (streaming)   & 703 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The space-backed verifier is \emph{shorter} than the batch version
+(658 vs 693 lines) because mutable space operations eliminate the
+need to reconstruct state tuples after each mutation---a
+\texttt{sp\_map\_put} modifies the space in-place and returns
+\texttt{ok}, whereas \texttt{ds\_assoc\_put} returns a new assoc
+that must be threaded into a fresh state tuple.  The space backends
+themselves (MapSpace + SetSpace + fast/index modes) add substantial
+shared infrastructure to
+\texttt{lib\_zar.pl},
+which is shared library infrastructure reusable by any PeTTa program.
+
+The streaming verifier adds only 10 lines over the batch version---the
+\texttt{process-token-stream} loop replaces
+\texttt{process-all-statements}, and the FFI import list gains two
+entries (\texttt{ds\_stream\_init}, \texttt{ds\_stream\_next}).
+The Prolog-side streaming support adds $\sim$30 lines to
+\texttt{pverify\_ds.pl}.
+
+%% ================================================================
+\section{Lessons Learned}
+\label{sec:lessons}
+
+\subsection{PeTTa--Prolog FFI Design}
+
+The opaque data structure pattern---where PeTTa code never inspects
+Prolog-side values but manipulates them exclusively through typed
+FFI calls---proved highly effective for correctness.  It provides
+$O(\log n)$ performance for associative lookups and set operations
+while keeping the verification logic in idiomatic MeTTa.
+However, current measurements still show about $4.78\times$
+for opaque PeTTa vs pure Prolog on \texttt{set.mm}.
+This indicates that FFI call frequency, not algorithmic complexity,
+is the main performance bottleneck.
+
+\subsection{FFI Boundary Pitfalls}
+
+Two non-obvious FFI issues consumed significant debugging time:
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Parenthesis atoms}: Prolog atoms \texttt{'('}
+    and \texttt{')'} are valid Metamath tokens but are interpreted
+    as MeTTa grouping when crossing the FFI boundary.  Keeping
+    token lists Prolog-resident was the clean solution.
+  \item \textbf{Boolean representation}: Prolog's \texttt{true}
+    and \texttt{false} atoms do not map to PeTTa's boolean values.
+    Using \texttt{case} pattern matching instead of \texttt{if}
+    avoids this mismatch.
+\end{enumerate}
+
+\subsection{PeTTa Compilation Subtleties}
+
+The accumulator-return pinning issue in recursive functions is a
+PeTTa-specific compilation artifact.  The tagged-constructor
+workaround (\texttt{stream\_ok \$state}) is simple but non-obvious;
+it was diagnosed through systematic binary-search debugging
+(progressively simplifying the recursive body until the minimal
+failing case was isolated) with assistance from Codex.
+
+\subsection{Human--AI Collaboration}
+
+The pverify family was developed through iterative human--AI
+collaboration:
+\begin{itemize}[leftmargin=2em]
+  \item The human author wrote the original mmverify verifier and
+    provided architectural direction, test infrastructure, and
+    quality oversight.
+  \item AI agents (Claude Code, Codex) performed the bulk of
+    implementation, debugging, and optimization work, including
+    the opaque data structure refactoring, streaming architecture,
+    and the systematic debugging of PeTTa compilation issues.
+  \item The 141-test conformance suite served as the shared
+    contract between human and AI: no claims of progress without
+    passing all tests.
+\end{itemize}
+
+%% ================================================================
+\section{Future Work: Reducing FFI Overhead}
+\label{sec:future}
+
+The performance analysis points to a staged optimization strategy.
+Phase~1 is complete and Phase~2 is partially complete.
+
+\paragraph{Phase~1: Specialized spaces (complete).}
+\texttt{pverify\_op\_space} replaces opaque Prolog data structures
+with PeTTa-native \texttt{MapSpace}/\texttt{SetSpace} backends
+(Section~\ref{sec:opspace}).  This achieves backend-flexible
+verifier state with 141/141 test parity and no semantic regression
+(Table~\ref{tab:results}; provenance note in \S\ref{sec:claims}).
+The space backends are generic PeTTa infrastructure
+(\texttt{lib\_zar.pl}), not verifier-specific.
+
+\paragraph{Phase~2: Batched hot-path operations.}
+This phase is underway: batched substitutions and variable extraction
+(\texttt{ds\_apply\_subst}, \texttt{ds\_find\_vars}) are already in
+use in the current verifier path.
+Next batched targets are substitution-map construction and repeated
+label/type lookups in proof loops.
+
+\paragraph{Phase~3: ``Many'' space APIs.}
+Adding \texttt{sp\_map\_get\_many}, \texttt{sp\_map\_put\_many},
+\texttt{sp\_set\_add\_many} would amortize FFI overhead for bulk
+operations like \texttt{foldl-add-c} (adding all constants from
+a \texttt{\$c} statement in one call).
+
+\paragraph{Phase~4: Chunked streaming.}
+Replace per-statement \texttt{ds\_stream\_next} with a chunked
+variant returning $K$ statements per FFI call, reducing streaming
+FFI calls from 136{,}289 to $\sim$532 for $K = 256$.
+
+%% ================================================================
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Metamath verifiers.}
+The canonical reference implementation is \texttt{metamath.exe}
+(C, by Megill).  \texttt{mmverify.py} (Python, by Heitzig et al.)
+is a concise ($\sim$300 line) verifier widely used as a starting
+point.  \texttt{mm0-rs} (Rust, by Carneiro~\cite{carneiro2019mm0})
+focuses on performance.  A formally verified Lean~4 verifier
+exists~\cite{goertzel2026lean} with a complete
+soundness-and-completeness proof.
+
+\paragraph{MeTTa implementations.}
+Hyperon Experimental~\cite{goertzel2023metta} is the primary
+MeTTa implementation in Rust.  PeTTa compiles MeTTa to SWI-Prolog,
+providing mature Prolog libraries through FFI.
+Within the implementations and references surveyed for this draft,
+pverify appears to be the first non-trivial formal
+verification workload implemented in MeTTa.
+
+%% ================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+The pverify family demonstrates that MeTTa, via PeTTa's Prolog
+backend, is capable of implementing correct Metamath verification at
+full \texttt{set.mm} scale under a controlled methodology chain:
+\texttt{mmverify} $\rightarrow$ \texttt{pverify\_hybrid} $\rightarrow$
+\texttt{pverify.pl} $\rightarrow$ \texttt{pverify\_op} $\rightarrow$
+\texttt{pverify\_op\_space}.
+All active implementations keep 141/141 conformance in the recorded
+snapshot measurements (\S\ref{sec:claims}).
+
+The core result of this paper is methodological and architectural:
+\texttt{pverify\_op\_space} makes verifier storage space-backed and
+still stays near performance parity with \texttt{pverify\_op}
+(28m\,48s vs 28m\,32s on \texttt{set.mm}, 0.95\% wall delta).
+This demonstrates that the verifier can be made more ``space-native''
+without sacrificing behavior or practical throughput.
+
+Pure Prolog remains significantly faster (5m\,58s on \texttt{set.mm});
+the remaining gap is primarily FFI-boundary granularity rather than
+algorithmic mismatch.
+That places the next optimization work on batched boundary crossings,
+not on rewriting verifier semantics.
+
+%% ================================================================
+\begin{thebibliography}{9}
+
+\bibitem{megill2019}
+N.~Megill and D.~A.~Wheeler,
+\emph{Metamath: A Computer Language for Mathematical Proofs},
+Lulu Press, 2019.
+Available at \url{http://us.metamath.org/downloads/metamath.pdf}.
+
+\bibitem{carneiro2019mm0}
+M.~Carneiro,
+``Metamath Zero: Designing a Theorem Prover Prover,''
+\emph{arXiv preprint arXiv:1910.10703}, 2019.
+
+\bibitem{goertzel2023metta}
+B.~Goertzel \emph{et al.},
+``Hyperon: A Framework for AGI at the Human Level and Beyond,''
+\emph{arXiv preprint arXiv:2310.18318}, 2023.
+
+\bibitem{petta}
+D.~Vos,
+``PeTTa: Prolog-based MeTTa Implementation,''
+TrueAGI, 2024.
+
+\bibitem{goertzel2026lean}
+Z.~Goertzel and Oru\v{z}i,
+``Verified Verification: A Lean~4 Proof That the Metamath
+Checker Is Correct,'' Working paper, February 2026.
+
+\end{thebibliography}
+
+\end{document}

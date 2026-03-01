@@ -1,0 +1,2817 @@
+
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{multirow}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=blue,
+  urlcolor=blue
+}
+
+\title{Behavioral Ontology Correctness:\\
+From Syntax Checking to Evidence-Valued Verification\\
+via SUMO $\to$ GF $\to$ OSLF $\to$ World Models\\[6pt]
+\large (AIrxiv Working Paper, 2026-02-20)}
+\author{}
+\date{}
+
+\newcommand{\DiamondOp}{\mathbin{\Diamond}}
+\newcommand{\BoxOp}{\mathbin{\Box}}
+\newcommand{\Red}{\;\Rightarrow\;}
+\newcommand{\RedStar}{\;\Rightarrow^{*}\;}
+\newcommand{\KIF}{\textsc{kif}}
+\newcommand{\SUMO}{\textsc{sumo}}
+\newcommand{\GF}{\textsc{gf}}
+\newcommand{\OSLF}{\textsc{oslf}}
+\newcommand{\WM}{\textsc{wm}}
+\newcommand{\PLN}{\textsc{pln}}
+\newcommand{\OWL}{\textsc{owl}}
+\newcommand{\FOL}{\textsc{fol}}
+\newcommand{\HOL}{\textsc{hol}}
+\newcommand{\ATP}{\textsc{atp}}
+\newcommand{\ev}[2]{\langle #1, #2 \rangle}
+\newcommand{\Ev}{\mathrm{Ev}}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{remark}{Remark}[section]
+\newtheorem{example}{Example}[section]
+\newtheorem{principle}{Principle}[section]
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}{Proposition}[section]
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Large formal ontologies like the Suggested Upper Merged Ontology (\SUMO{}) contain
+tens of thousands of axioms in the Knowledge Interchange Format (\KIF{}).
+Despite decades of automated-reasoning work, known bug classes persist: arity mismatches,
+type confusion, missing arguments, and---more subtly---axioms whose
+\emph{operational consequences} diverge from their intended meaning.
+Existing debugging methods (glass-box reasoner diagnostics, white-box test
+generation, black-box competency questions, OntoClean metaproperty analysis,
+design-pattern templates) each address a layer of correctness but remain
+disconnected and leave behavioral adequacy unexamined.
+
+We propose a four-stage pipeline---\SUMO{} $\to$ \SUMO{}-\GF{} $\to$ \GF{}
+$\to$ \OSLF{} $\to$ \WM{}---that provides \emph{behavioral} and
+\emph{evidential} layers of ontology verification currently absent from the
+literature.
+Stage~1 maps \KIF{} relations and classes to Grammatical Framework (\GF{})
+abstract syntax, where the grammar's type discipline catches arity and sort
+errors at parse time.
+Stage~2 synthesizes Operational Semantics in Logical Form (\OSLF{}) from the
+grammar, automatically deriving modal behavioral types ($\DiamondOp$, $\BoxOp$)
+and a Galois connection.
+Stage~3 interprets behavioral types as evidence-valued world-model queries,
+grounding ontological assertions in PLN Evidence counts $\ev{n^+}{n^-}$ and
+flagging ungroundable claims.
+
+The \GF{} $\to$ \OSLF{} $\to$ \WM{} core of this pipeline is implemented in
+Lean~4 in the referenced Mettapedia pipeline slice (not the entire repository),
+with no \texttt{sorry}/axiom placeholders in that slice.
+We further propose a \emph{convergent formalization-driven repair loop} that
+uses the pipeline's type, behavioral, and evidential signals to disambiguate
+and verify ontology corrections---going beyond detection to principled repair.
+We survey the ontology debugging literature, document \SUMO{}'s known issues,
+and argue that, in the scoped setting of this draft, the proposed pipeline can
+integrate major strengths of prior approaches while adding behavioral-correctness
+and repair layers.
+\paragraph{Status note.} Implementation-status and count claims in this draft are snapshot-scoped; verify against current repository trackers and build outputs before citing as current state. Lean-proven claims are only those tied to explicit Lean file/theorem references; broader mathematical or historical claims are literature-backed context and not asserted as Lean-proven unless explicitly stated.
+\end{abstract}
+
+%% ─────────────────────────────────────────────────────────────
+\section{Introduction}
+\label{sec:intro}
+
+The Suggested Upper Merged Ontology (\SUMO{}) is one of the largest freely available
+formal ontologies, comprising over 20\,000 axioms in the Knowledge Interchange
+Format (\KIF{}) across 113 domain files~\cite{pease2002sumo}.
+It has been the subject of sustained automated-theorem-proving (\ATP{}) effort,
+including annual prizes at the CADE ATP System Competition
+(CASC)~\cite{pease-casc-prizes,pease-sutcliffe-2007}.
+Despite this, known bugs persist: arity mismatches between relation declarations
+and their usage sites, type confusion (e.g., applying \texttt{contraryAttribute}
+to a \texttt{Process} where an \texttt{Attribute} is expected), missing arguments
+in domain-module facts, and semantically problematic axioms that pass syntactic
+checks but produce unintended inferences.
+
+The ontology engineering community has developed several debugging paradigms:
+\begin{itemize}[nosep]
+  \item \textbf{Glass-box}: Tableau-internal axiom pinpointing for unsatisfiable
+    \OWL{} classes~\cite{kalyanpur2005}.
+  \item \textbf{White-box}: Automatic test generation from axiom syntax, \ATP{}-based
+    redundancy detection~\cite{keet2017whitebox}.
+  \item \textbf{Black-box}: WordNet-based competency questions for external
+    validation~\cite{keet2017blackbox}.
+  \item \textbf{OntoClean}: Philosophical metaproperty analysis (rigidity, identity,
+    unity) for taxonomic adequacy~\cite{guarino-welty-ontoclean}.
+  \item \textbf{Design patterns}: Modular ontology templates for
+    prevention~\cite{gangemi-presutti-patterns}.
+\end{itemize}
+Each addresses a genuine layer of correctness, but they remain disconnected:
+no framework integrates syntactic well-formedness, semantic consistency,
+\emph{behavioral adequacy} (do the axioms' operational consequences match
+the intended domain dynamics?), and \emph{evidential grounding} (can the
+asserted knowledge be supported by observation?).
+
+\paragraph{Thesis.}
+We argue that the missing layers are \emph{behavioral} and \emph{evidential}
+correctness, and that operational semantics provides the bridge.
+Concretely, we propose the pipeline
+\[
+  \SUMO{} \;\xrightarrow{\text{Stage 1}}\; \SUMO\text{-}\GF{}
+  \;\xrightarrow{\text{Stage 2}}\; \OSLF{}
+  \;\xrightarrow{\text{Stage 3}}\; \WM{}
+\]
+where:
+\begin{enumerate}[nosep]
+  \item \textbf{Stage 1} (\SUMO{} $\to$ \SUMO{}-\GF{}): translates \KIF{}
+    into Grammatical Framework abstract syntax, gaining grammar-level
+    sort and arity checking.
+  \item \textbf{Stage 2} (\GF{} $\to$ \OSLF{}): synthesizes behavioral types
+    ($\DiamondOp$, $\BoxOp$, native types) from operational semantics.
+  \item \textbf{Stage 3} (\OSLF{} $\to$ \WM{}): interprets behavioral
+    properties as evidence-valued world-model queries.
+\end{enumerate}
+
+The \GF{} $\to$ \OSLF{} $\to$ \WM{} core is implemented in the referenced
+Mettapedia Lean~4 pipeline slice with no \texttt{sorry}/axiom placeholders in
+that slice (hundreds of generated grammar rules, proven Galois connection, and
+proven evidence-valued semantics in the cited modules).
+The \SUMO{} $\to$ \GF{} stage builds on our existing \texttt{sumo-lean4}
+\KIF{} checker and HOL emitter, and on Ranta et al.'s typeful ontology
+verbalization work~\cite{ranta-typeful-ontologies}.
+
+\paragraph{Contributions.}
+\begin{enumerate}[nosep]
+  \item A four-level correctness taxonomy for ontologies (\S\ref{sec:correctness}).
+  \item A survey of \SUMO{}'s structure, known bugs, and their root causes
+    (\S\ref{sec:sumo}).
+  \item A systematic review of ontology debugging methods and what each
+    misses (\S\ref{sec:debugging}).
+  \item The \SUMO{} $\to$ \GF{} $\to$ \OSLF{} $\to$ \WM{} pipeline
+    architecture (\S\ref{sec:pipeline}).
+  \item A comparison with direct \SUMO{} $\to$ Lean approaches, showing
+    the pipeline's advantages (\S\ref{sec:comparison}).
+  \item A worked example of a real \SUMO{} bug flowing through the
+    pipeline (\S\ref{sec:example}).
+  \item A formalization-driven repair methodology with canary theorems
+    and behavioral disambiguation (\S\ref{sec:repair}).
+\end{enumerate}
+
+%% ─────────────────────────────────────────────────────────────
+\section{What Makes an Ontology Correct?}
+\label{sec:correctness}
+
+We identify four levels of ontology correctness, each subsuming the
+previous:
+
+\begin{definition}[Syntactic well-formedness]
+Every axiom conforms to the language grammar: balanced parentheses,
+declared relation names, correct arity at each usage site, and
+well-sorted arguments matching \texttt{domain}/\texttt{range}
+declarations.
+\end{definition}
+
+\begin{definition}[Semantic consistency]
+The axiom set has at least one model (is satisfiable).
+No subset of axioms entails $\bot$.
+Equivalently: no class is forced to be empty by the axioms unless
+intended (unsatisfiable-class debugging in the sense
+of~\cite{kalyanpur2005}).
+\end{definition}
+
+\begin{definition}[Taxonomic adequacy]
+The subsumption hierarchy respects philosophical metaproperties:
+\begin{itemize}[nosep]
+  \item \textbf{Rigidity}: a rigid property cannot cease to hold for
+    an individual (e.g., \textit{Human} is rigid; \textit{Student}
+    is anti-rigid).
+  \item \textbf{Identity}: a sortal carries an identity criterion
+    that its subsorts inherit.
+  \item \textbf{Unity}: instances of a unitary property share the
+    same ``whole-part'' structure.
+\end{itemize}
+This is the domain of OntoClean~\cite{guarino-welty-ontoclean}.
+A taxonomy is \emph{adequate} if no anti-rigid class subsumes a rigid
+one, no class carries conflicting identity criteria, etc.
+\end{definition}
+
+\begin{definition}[Behavioral correctness]
+\label{def:behavioral}
+The operational consequences of the axioms match the intended domain
+dynamics.
+Formally: given an operational semantics $\Red$ derived from the
+ontology's axioms, for every intended domain scenario $\sigma$:
+\begin{enumerate}[nosep]
+  \item If the domain intends ``$\phi$ is possible from state $s$,''
+    then $s \models \DiamondOp\,\phi$ (the operational semantics
+    produces a reduction path to a state satisfying~$\phi$).
+  \item If the domain intends ``$\phi$ is necessary for state $s$,''
+    then $s \models \BoxOp\,\phi$ (every predecessor of~$s$ satisfies
+    $\phi$).
+  \item No axiom produces zero evidence under world-model evaluation
+    unless it is explicitly a vacuous assertion.
+\end{enumerate}
+\end{definition}
+
+The first two levels are well-served by existing tools (\ATP{} for
+consistency, \KIF{} checkers for syntax).
+Level~3 (OntoClean) is mature but manual and requires philosophical
+expertise.
+In the source set surveyed for this draft, we did not find an existing
+ontology-engineering methodology that addresses Level~4 behavioral correctness
+as an end-to-end verification layer.
+Table~\ref{tab:levels} summarizes the landscape.
+
+\begin{table}[ht]
+\centering
+\caption{Ontology correctness levels and which methods address them.}
+\label{tab:levels}
+\small
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+ & \rotatebox{70}{KIF checker} & \rotatebox{70}{ATP (E/Vampire)} & \rotatebox{70}{Glass-box} & \rotatebox{70}{OntoClean} & \rotatebox{70}{Keet testing} & \rotatebox{70}{Axiom weak.} & \rotatebox{70}{\textbf{Pipeline}} \\
+\midrule
+Syntactic well-formedness & \checkmark & & & & \checkmark & & \checkmark \\
+Semantic consistency & & \checkmark & \checkmark & & (\checkmark) & \checkmark & \checkmark \\
+Taxonomic adequacy & & & & \checkmark & & & (\checkmark) \\
+Behavioral correctness & & & & & & & \checkmark \\
+\midrule
+Repair guidance & & & (\checkmark) & & & \checkmark$^*$ & \checkmark \\
+\bottomrule
+\multicolumn{8}{@{}l}{\footnotesize $^*$\,$\mathcal{EL}$ only (Troquard et al.~2018, Baader \& Kriegel 2023).}
+\end{tabular}
+\end{table}
+
+\begin{remark}
+Level~4 (behavioral correctness) presupposes an operational reading of the
+ontology.
+This is natural for ontologies that describe processes, events,
+causation, and change---a large fraction of any upper ontology including
+\SUMO{}.
+For purely classificatory ontologies (taxonomies without process
+axioms), levels~1--3 may suffice.
+\end{remark}
+
+%% ─────────────────────────────────────────────────────────────
+\section{SUMO: Structure and Known Issues}
+\label{sec:sumo}
+
+\subsection{KIF Syntax and Semantics}
+
+The Knowledge Interchange Format~\cite{hayes-menzel-kif-2001} uses a
+LISP-compatible S-expression syntax.
+Key features distinguishing \KIF{} from standard first-order logic:
+\begin{itemize}[nosep]
+  \item \textbf{Free syntax}: no syntactic distinction between object
+    and predicate variables.
+    A variable \texttt{?R} can appear in predicate position:
+    \texttt{(?R ?X ?Y)}.
+  \item \textbf{Variadic relations}: a relation need not have a unique
+    arity.
+    \texttt{@ROW} variables allow variable-length argument lists.
+  \item \textbf{Row variables}: \texttt{@ROW} splices a sequence of
+    terms into an argument list, taking the language beyond first-order.
+  \item \textbf{Self-application}: a relation can appear as an argument
+    to itself or to \texttt{instance}/\texttt{subclass}.
+\end{itemize}
+
+Hayes and Menzel~\cite{hayes-menzel-kif-2001} gave a formal semantics
+for a cleaned-up variant called \textsc{skif}, noting that the full use
+of row variables takes the language beyond first-order expressiveness.
+
+\subsection{SUMO Architecture}
+
+\SUMO{} is organized into:
+\begin{itemize}[nosep]
+  \item \textbf{Merge.kif} (607\,KB): the upper ontology---classes like
+    \texttt{Entity}, \texttt{Physical}, \texttt{Process},
+    \texttt{Attribute}, and foundational relations
+    (\texttt{instance}, \texttt{subclass}, \texttt{domain},
+    \texttt{range}).
+  \item \textbf{Mid-level-ontology.kif} (1.1\,MB): intermediate
+    concepts (countries, organizations, artifacts, biological
+    processes).
+  \item \textbf{Domain modules} (111 files): specialized knowledge
+    (Cars, Geography, Economy, Languages, etc.).
+  \item \textbf{domainEnglishFormat.kif} (3.7\,MB): English natural
+    language generation templates for every relation.
+\end{itemize}
+
+Total: 113 \KIF{} files, approximately 1.6\,GB including
+natural-language annotations.
+
+\subsection{Known Bug Classes}
+
+We have encountered or documented the following bug classes through
+our \texttt{sumo-lean4} checker and manual
+inspection\footnote{See also \texttt{PossibleBugsInSUMO\_HopefullySolvedByNowBySomeone.kif}
+in our repository.}:
+
+\paragraph{1. Arity mismatches.}
+The predicates \texttt{classmate} and \texttt{colleague} are
+explicitly ternary (person, person, context), but were also declared as
+instances of \texttt{IrreflexiveRelation}---a class defined in
+\texttt{Merge.kif} to apply only to binary relations.
+Our checker flagged this; the fix was to remove the
+\texttt{IrreflexiveRelation} instances and add explicit ternary
+irreflexivity axioms:
+\begin{verbatim}
+  (forall (?A ?COURSE)
+    (not (classmate ?A ?A ?COURSE)))
+\end{verbatim}
+
+\paragraph{2. Missing arguments.}
+In \texttt{mondial.kif}, four Factbook-style demographics facts
+were missing the region argument:
+\texttt{beliefGroupPercentInRegion} and
+\texttt{ethnicityPercentInRegion} had two arguments instead of three.
+The checker normalized them to the correct three-argument form.
+
+\paragraph{3. Argument normalization.}
+The predicate \texttt{depth} has a three-argument signature
+(object, reference-point, measure), but \texttt{mondial.kif}
+contained hundreds of two-argument facts
+\texttt{(depth Seas\_X 1234)}.
+These were normalized to
+\texttt{(depth Seas\_X SeaLevel (MeasureFn 1234 Meter))}.
+
+\paragraph{4. Type confusion.}
+In \texttt{emotion.kif}, \texttt{(contraryAttribute Pleasure Pain)}
+treats \texttt{Pain} as an \texttt{Attribute}, but \SUMO{}'s own
+taxonomy classifies \texttt{Pain} as a \texttt{PathologicalProcess}
+(a subclass of \texttt{Process}, not \texttt{Attribute}).
+This is a genuine ontological error: the axiom is well-formed in
+\KIF{}'s free syntax but violates the intended sort discipline.
+
+\paragraph{5. Semantic ambiguity.}
+The predicate \texttt{monetaryValue} is declared with
+\texttt{(domain monetaryValue 1 Physical)}, but the axioms defining
+\texttt{WealthFn} use it for abstract financial quantities
+(\texttt{PropertyFn}) that may not be \texttt{Physical} in the
+intended sense.
+
+\subsection{ATP Experience}
+
+Pease and Sutcliffe~\cite{pease-sutcliffe-2007} reported sustained
+efforts to make \SUMO{} amenable to \ATP{} systems at CASC.
+The main challenges were:
+\begin{itemize}[nosep]
+  \item Row variable elimination (requires higher-order treatment or
+    bounded unfolding).
+  \item Self-referential axioms (\SUMO{} asserts things about its own
+    predicates).
+  \item Scale: first-order provers struggle with the full 20k-axiom
+    set; modular decomposition is essential.
+\end{itemize}
+
+Benzm\"uller~\cite{benzmuller-faithful-embeddings} later showed how to
+faithfully embed various logics (including \SUMO{}'s modal and
+higher-order fragments) into classical \HOL{}, providing both ``deep''
+(syntax-preserving) and ``shallow'' (semantics-preserving) embeddings.
+This is closer to our approach but still treats axioms as opaque
+assertions rather than extracting operational behavior.
+
+%% ─────────────────────────────────────────────────────────────
+\section{The Ontology Debugging Literature}
+\label{sec:debugging}
+
+\subsection{Glass-Box Debugging (Kalyanpur et al.~2005)}
+
+Kalyanpur et al.~\cite{kalyanpur2005} introduced glass-box debugging
+for \OWL{} ontologies, using the internals of description-logic tableaux
+reasoners (specifically Pellet) to:
+\begin{itemize}[nosep]
+  \item Distinguish \emph{root} unsatisfiable classes from \emph{derived}
+    ones (those that are unsatisfiable only because a root class is).
+  \item Extract \emph{justifications}: minimal subsets of axioms
+    responsible for an unsatisfiability.
+  \item Present structured explanations to users in the Swoop
+    ontology editor.
+\end{itemize}
+
+\textbf{Strength}: Pinpoints the \emph{root cause} of logical errors,
+not just their symptoms.
+
+\textbf{Limitation}: Restricted to description-logic (\OWL{}) ontologies.
+\SUMO{}'s full \KIF{} (with row variables, self-application, and
+unrestricted quantification) is far beyond \OWL{}'s expressiveness.
+The tableaux-based approach does not extend to full \FOL{}.
+
+\subsection{White-Box Testing (Keet \& \L{}awrynowicz 2017)}
+
+Keet and \L{}awrynowicz~\cite{keet2017whitebox} proposed automatic test
+generation from the syntactic structure of \FOL{} axioms:
+\begin{itemize}[nosep]
+  \item Each axiom pattern (universal, existential, disjunction, etc.)
+    generates a family of positive and negative test cases.
+  \item Tests are run against an \ATP{} to check whether the ontology
+    entails (or correctly rejects) each test case.
+  \item Redundant axioms are flagged when removing one does not change
+    the test outcomes.
+\end{itemize}
+
+\textbf{Strength}: Fully automatic, works with \FOL{}.
+
+\textbf{Limitation}: \FOL{} entailment is semi-decidable; the \ATP{}
+may time out on hard test cases.
+More fundamentally, the tests check \emph{what the ontology entails},
+not \emph{whether those entailments match the intended domain
+behavior}.
+
+\subsection{Black-Box Testing (Keet \& \L{}awrynowicz 2017)}
+
+The same authors proposed black-box testing using
+WordNet~\cite{keet2017blackbox} as an external oracle:
+\begin{itemize}[nosep]
+  \item WordNet's synsets and hypernymy provide expected subsumption
+    relationships.
+  \item The ontology is queried: does it entail that $A$ subsumes $B$
+    when WordNet says it should?
+  \item Discrepancies identify potential errors or modeling choices.
+\end{itemize}
+
+\textbf{Strength}: External validation---not circular.
+
+\textbf{Limitation}: Depends entirely on the quality of the
+ontology-to-WordNet mapping.  WordNet's coverage is uneven across
+domains, and mapping ambiguity introduces both false positives and
+false negatives.
+
+\subsection{OntoClean (Guarino \& Welty)}
+
+OntoClean~\cite{guarino-welty-ontoclean} is a philosophical methodology
+for evaluating taxonomic structures.
+Each class is tagged with metaproperties:
+\begin{itemize}[nosep]
+  \item \textbf{Rigidity (+R/-R/$\sim$R)}: does the property hold
+    necessarily for its instances?
+  \item \textbf{Identity (+I/-I)}: does the class carry or inherit an
+    identity criterion?
+  \item \textbf{Unity (+U/-U/$\sim$U)}: do instances share a unifying
+    whole-part relation?
+  \item \textbf{Dependence (+D/-D)}: does the class's existence depend
+    on another entity?
+\end{itemize}
+
+Constraint rules (e.g., ``an anti-rigid class must not subsume a rigid
+one'') identify taxonomic errors.
+
+\textbf{Strength}: Deep philosophical analysis of ``is this hierarchy
+right?''---catching errors that no amount of logical consistency
+checking can find.
+
+\textbf{Limitation}: Entirely manual.  The metaproperties must be
+assigned by a human expert, and there is no tool support for
+propagation or conflict detection at scale.  We argue below
+(\S\ref{sec:evidence-rigidity}) that the pipeline's evidence-valued
+semantics can \emph{automate} rigidity assessment, replacing the
+binary $\{0,1\}$ tags with graded evidence from corpus evaluation.
+
+\subsection{Ontology Design Patterns (Gangemi \& Presutti)}
+
+Gangemi and Presutti~\cite{gangemi-presutti-patterns} advocated
+reusable ontology design patterns---modular templates for common
+modeling situations (parthood, participation, classification, etc.).
+
+\textbf{Strength}: Prevents errors by providing vetted templates.
+
+\textbf{Limitation}: Post-hoc debugging is still needed for axioms
+that do not fit a known pattern, and patterns do not address
+behavioral correctness.
+
+\subsection{Summary: A Layered but Disconnected Landscape}
+
+No existing framework integrates all four correctness levels from
+\S\ref{sec:correctness}.
+Glass-box and white-box methods address levels 1--2 (syntax,
+consistency).
+OntoClean addresses level~3 (adequacy).
+\emph{Level~4 (behavioral correctness) is unaddressed.}
+
+Moreover, even where bugs are detected, the existing literature provides
+limited guidance on \emph{repair}.  Axiom weakening~\cite{troquard2018weakening}
+and optimal repair~\cite{baader2023pseudocontraction} offer principled repair
+operators, but their theory is developed only for the lightweight description
+logic $\mathcal{EL}$---far less expressive than \SUMO{}'s full \KIF{}.
+Adimen-SUMO~\cite{alvez2012adimensumo} applied \ATP{}-based diagnosis to
+re-engineer 88\% of \SUMO{}, but without behavioral or evidential signals
+to disambiguate among repair candidates.
+
+The pipeline we propose (\S\ref{sec:pipeline}) provides levels~1
+and~4, and inherits level~2 from the underlying \ATP{} and type
+system.  For level~3, the pipeline's evidence semantics can
+\emph{partially automate} OntoClean's manual metaproperty
+assignment (\S\ref{sec:evidence-rigidity}).
+Crucially, it also provides a \emph{repair} methodology
+(\S\ref{sec:repair}) that uses the pipeline's multi-level diagnostics
+to guide principled corrections.
+
+%% ─────────────────────────────────────────────────────────────
+\section{The Pipeline: SUMO $\to$ GF $\to$ OSLF $\to$ WM}
+\label{sec:pipeline}
+
+\subsection{Overview}
+
+\begin{center}
+\begin{tabular}{@{}ccccccc@{}}
+\SUMO{} & $\xrightarrow{\;\text{KIF parse}\;}$ &
+\SUMO{}-\GF{} & $\xrightarrow{\;\text{OSLF synthesis}\;}$ &
+\OSLF{} & $\xrightarrow{\;\text{evidence eval}\;}$ &
+\WM{} \\[2pt]
+\small axioms & &
+\small GF abstract syntax & &
+\small $\DiamondOp$, $\BoxOp$, native types & &
+\small $\ev{n^+}{n^-}$ \\
+\end{tabular}
+\end{center}
+
+Each stage catches a different class of errors:
+
+\begin{center}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Stage} & \textbf{Bug class caught} & \textbf{Mechanism} \\
+\midrule
+1. \SUMO{} $\to$ \GF{} & Arity, sort errors & Grammar type discipline \\
+2. \GF{} $\to$ \OSLF{} & Behavioral inconsistencies & $\DiamondOp$/$\BoxOp$ violation \\
+3. \OSLF{} $\to$ \WM{} & Ungroundable assertions & Zero-evidence detection \\
+& Scope ambiguities & Evidence ordering \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Stage 1: SUMO $\to$ SUMO-GF}
+\label{sec:stage1}
+
+The Grammatical Framework (\GF{})~\cite{ranta2004gf} is a
+grammar formalism with a type-theoretic abstract syntax and
+language-specific concrete syntaxes (linearizations).
+The key insight for ontology debugging is that \GF{}'s abstract
+syntax is a \emph{typed} term language: every function signature
+declares the sorts of its arguments and return value.
+
+\paragraph{Mapping.}
+\SUMO{} classes become \GF{} \emph{categories}, and \SUMO{} relations
+become \GF{} \emph{function signatures}:
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\SUMO{} (\KIF{}) & \GF{} Abstract Syntax \\
+\midrule
+\texttt{(subclass Dog Animal)} & \texttt{cat Dog ; cat Animal} \\
+\texttt{(domain bites 1 Animal)} & \texttt{fun bites : Animal -> Entity -> Prop ;} \\
+\texttt{(domain bites 2 Entity)} & \\
+\texttt{(instance Fido Dog)} & \texttt{fun Fido : Dog ;} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\texttt{domain} and \texttt{range} declarations in \SUMO{} provide
+the sort information; our existing \texttt{sumo-lean4} checker already
+extracts these.
+The translation is structurally identical to the HOL emitter in
+\texttt{sumo-lean4/SumoKif/HolEmit.lean}, but targets \GF{} categories
+instead of Lean types.
+
+\paragraph{What this catches.}
+An axiom like \texttt{(contraryAttribute Pleasure Pain)} requires
+\texttt{Pain} to be of category \texttt{Attribute}.  \SUMO{}'s own
+taxonomy declares \texttt{Pain} as a subclass of
+\texttt{PathologicProcess}---a \texttt{Process}, not an
+\texttt{Attribute}.  If the encoding faithfully follows \SUMO{}'s
+declarations, the \GF{} type checker rejects the abstract
+tree---\emph{before any reasoning occurs}.
+
+Interestingly, the original \SUMO{}-\GF{} grammar~\cite{enache2012sumogf}
+silently reclassifies \texttt{Pain} as \texttt{Ind~EmotionalState}
+(an \texttt{Attribute}), making the axiom type-correct.  This is an
+ontologically defensible choice---Pain is a sensation \emph{caused by}
+a pathological process, not the process itself---but it represents an
+undocumented repair.  Our pipeline
+(Appendix~\ref{app:sumo-gf-experiment}) instead follows \SUMO{}'s
+own declarations faithfully, detects the conflict, and logs the repair
+decision with evidence and canary theorems
+(\S\ref{sec:evidence-repair}).
+
+\paragraph{Multilingual verbalization.}
+As a bonus, \GF{}'s concrete syntax mechanism enables automatic
+natural-language verbalization of \SUMO{} axioms, following Ranta
+et al.~\cite{ranta-typeful-ontologies}.
+An axiom that parses correctly in the grammar can be linearized to
+English, Czech, or any other language with a concrete syntax---providing
+a human-readable sanity check.
+
+\subsection{Stage 2: GF $\to$ OSLF}
+\label{sec:stage2}
+
+Operational Semantics in Logical Form (\OSLF{}) takes a grammar
+(presented as a \texttt{LanguageDef}: sorts, constructors, equations,
+rewrite rules) and automatically synthesizes a behavioral type system.
+
+\paragraph{LanguageDef.}
+Our Mettapedia library represents a language as:
+\begin{itemize}[nosep]
+  \item \textbf{Sorts}: the categories (from \GF{}).
+  \item \textbf{Terms} (\texttt{GrammarRule}): labeled constructors
+    with typed parameters and syntax patterns.
+  \item \textbf{Equations}: structural equality/normalization rules.
+  \item \textbf{Rewrite rules}: one-step operational semantics.
+  \item \textbf{Premises}: side conditions (freshness, congruence,
+    relation queries).
+\end{itemize}
+
+The existing \GF{} $\to$ \OSLF{} bridge in Mettapedia
+(\texttt{Languages/GF/OSLFBridge.lean}) translates 170 \GF{} RGL
+function signatures into 985 grammar rules, and our pipeline
+\texttt{langOSLF} synthesizes:
+\begin{itemize}[nosep]
+  \item A reduction relation $\Red$ from the rewrite rules.
+  \item A possibility operator $\DiamondOp\,\phi$: ``a state satisfying
+    $\phi$ is reachable.''
+  \item A necessity operator $\BoxOp\,\phi$: ``all predecessors satisfy
+    $\phi$.''
+  \item A Galois connection $\DiamondOp \dashv \BoxOp$ (proven
+    automatically from a generic theorem).
+  \item Native types as (sort, predicate) pairs via the Grothendieck
+    construction.
+\end{itemize}
+
+\paragraph{What this catches.}
+Suppose \SUMO{} asserts ``every Human has a parent'' via:
+\begin{verbatim}
+  (=> (instance ?H Human)
+      (exists (?P) (parent ?H ?P)))
+\end{verbatim}
+In the operational semantics derived from \SUMO{}'s axioms, if there
+is no rewrite rule that produces a \texttt{parent} relation from a
+\texttt{Human} state, then $s \not\models \DiamondOp(\texttt{parent}(h, p))$
+for any state $s$ containing a Human~$h$.
+This is a \emph{behavioral} bug: the ontology asserts an existential
+that its own operational semantics cannot witness.
+
+\subsection{Stage 3: OSLF $\to$ WM}
+\label{sec:stage3}
+
+The final stage interprets \OSLF{} behavioral types as evidence-valued
+world-model queries.
+
+\paragraph{Evidence.}
+Following the PLN evidence quantale~\cite{goertzel2008pln},
+evidence is a pair $\ev{n^+}{n^-} \in \mathbb{R}_{\geq 0}^{\infty}
+\times \mathbb{R}_{\geq 0}^{\infty}$, where $n^+$ counts positive
+evidence and $n^-$ counts negative evidence.
+The strength (point estimate) is $s = n^+ / (n^+ + n^-)$.
+Evidence forms a complete lattice and a commutative quantale under
+coordinatewise multiplication.
+
+\paragraph{World-model evaluation.}
+Given a quantified formula $\phi$ (produced by the \GF{} $\to$ Store
+$\to$ QFormula pipeline), the world-model evaluator $\mathrm{qsemE2}$
+produces:
+\[
+  \mathrm{qsemE2}(\phi) \in \Ev
+\]
+where:
+\begin{itemize}[nosep]
+  \item Atomic formulas are evaluated by querying an evidence-atom
+    semantics $I : \text{Pred} \times \text{Args} \times \text{Point}
+    \to \Ev$.
+  \item $\forall$ is interpreted as $\bigwedge$ (infimum over domain).
+  \item $\exists$ is interpreted as $\bigvee$ (supremum over domain).
+  \item $\DiamondOp$ and $\BoxOp$ are interpreted via reduction
+    reachability.
+\end{itemize}
+
+\paragraph{What this catches.}
+
+\begin{itemize}[nosep]
+  \item \textbf{Ungroundable assertions}: if $\mathrm{qsemE2}(\phi) = \ev{0}{0}$
+    (zero evidence), the ontology asserts something it cannot ground
+    in any evidence source.
+  \item \textbf{Contradictory evidence}: if $\mathrm{qsemE2}(\phi \wedge \psi)
+    \ll \mathrm{qsemE2}(\phi) \otimes \mathrm{qsemE2}(\psi)$ (evidence
+    for the conjunction is much less than the product of evidence for
+    the conjuncts), the axioms are in tension.
+  \item \textbf{Scope ambiguities}: for quantified \SUMO{} axioms, the
+    inverse-scope reading may produce different evidence than the
+    surface reading.  Our \texttt{scope\_ordering\_NT} theorem in
+    Mettapedia proves that inverse $\leq$ surface in the evidence
+    lattice, so a significant gap flags a scope-sensitive assertion.
+\end{itemize}
+
+\subsection{Compositionality}
+
+A key advantage of the pipeline is \emph{compositionality}.
+\GF{}'s abstract syntax is Frege-compositional by construction:
+the meaning of a complex expression is determined by the meanings
+of its parts and their mode of combination.
+\OSLF{}'s type synthesis preserves this: the behavioral type of a
+compound term is determined by the behavioral types of its subterms.
+The world-model evaluator is a compositional denotational semantics.
+
+This means that if two axioms are individually well-typed and
+behaviorally correct, their combination is type-correct under the
+compositional typing theorem used in this pipeline slice.
+\emph{Compositional bugs}---where two individually valid axioms
+interact to produce an ill-typed behavior---are caught at the \OSLF{}
+level by the native type discipline, specifically by the Grothendieck
+construction over the subobject fibration
+(\texttt{CategoryTheory/NativeTypeTheory.lean}).
+
+\subsection{Automating OntoClean via Evidence-Valued Rigidity}
+\label{sec:evidence-rigidity}
+
+OntoClean's central metaproperty, \emph{rigidity}, asks: ``if $x$ is
+a $C$, must $x$ \emph{necessarily} be a $C$?''  Traditional OntoClean
+assigns a binary tag: $+\mathrm{R}$ (rigid), $-\mathrm{R}$
+(non-rigid), or ${\sim}\mathrm{R}$ (anti-rigid).  The assignment is
+manual and requires philosophical expertise.
+
+We observe that the pipeline's evidence-valued semantics provides a
+natural \emph{automation} of rigidity assessment, replacing the
+binary $\{0,1\}$ tag with a graded measure in $[0,1]$.
+
+\paragraph{Formalization.}
+For each ontology class $C$, define the \emph{rigidity evidence} as
+the world-model evaluation of the claim that some instance of $C$
+could cease to be a $C$:
+\[
+  \mathrm{rig\text{-}ev}(C) \;:=\;
+    \mathrm{qsemE2}\bigl(\exists x.\;
+      \mathrm{instanceOf}(x, C) \;\wedge\;
+      \DiamondOp(\lnot\,\mathrm{instanceOf}(x, C))\bigr)
+\]
+Here $\DiamondOp$ is the pipeline's behavioral possibility operator,
+which checks whether $\lnot\,\mathrm{instanceOf}(x, C)$ is
+reachable under the ontology's rewrite dynamics.  The result is an
+evidence pair $\ev{n^+}{n^-}$.
+
+The \emph{graded rigidity} of $C$ is then:
+\[
+  \rho(C) \;:=\; 1 - s(\mathrm{rig\text{-}ev}(C))
+  \;=\; 1 - \frac{n^+}{n^+ + n^-}
+\]
+where $s$ is the PLN strength.  When no evidence is found for
+instances losing class membership ($n^+ = 0$), $\rho(C) = 1$
+(fully rigid).  When abundant evidence exists ($n^+ \gg n^-$),
+$\rho(C) \approx 0$ (anti-rigid).
+
+\paragraph{Examples.}
+Consider three \SUMO{} classes evaluated against a commonsense
+corpus:
+
+\begin{center}
+\small
+\begin{tabular}{@{}llcl@{}}
+\toprule
+\textbf{Class} & \textbf{Evidence for change} &
+  $\boldsymbol{\rho(C)}$ & \textbf{OntoClean tag} \\
+\midrule
+\texttt{Human} & No factual examples of becoming non-Human
+  & $\approx 1.0$ & $+$R \\
+\texttt{Student} & Graduation, dropout ($n^+ \gg 0$)
+  & $\approx 0.1$ & ${\sim}$R \\
+\texttt{Physical} & No evidence of physical$\to$abstract
+  & $= 1.0$ & $+$R \\
+\texttt{President} & Term endings, impeachment ($n^+ > 0$)
+  & $\approx 0.2$ & ${\sim}$R \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Domain-relative rigidity.}
+A key advantage of the evidence-based approach is that rigidity
+becomes \emph{domain-relative}: the same class can have different
+rigidity values depending on the world model's corpus.  A medical
+ontology evaluated against clinical records will assign $\rho(\texttt{Human})
+\approx 1.0$, while a science-fiction ontology might assign a lower
+value.  This is not a defect but a feature: rigidity genuinely
+\emph{should} depend on the domain of discourse.  Traditional
+OntoClean obscures this by forcing a single universal tag.
+
+\paragraph{Constraint propagation.}
+OntoClean's constraint rules translate directly to evidence
+inequalities.  The rule ``an anti-rigid class must not subsume a
+rigid one'' becomes: if $C_1 \sqsubseteq C_2$ and
+$\rho(C_2) > \rho(C_1)$, then the subsumption is suspect---a child
+class is more changeable than its parent, violating monotonicity of
+rigidity along the taxonomy.  These inequalities can be checked
+\emph{automatically} across the entire ontology once graded rigidity
+values are computed.
+
+\paragraph{Relation to other metaproperties.}
+The same evidence-valued approach extends to OntoClean's other
+metaproperties.  \emph{Identity} can be assessed by evaluating
+evidence for identity criteria: $\mathrm{qsemE2}(\exists f.\;
+\forall x,y : C.\; f(x) = f(y) \to x = y)$.  \emph{Unity} can be
+assessed via evidence for part-whole coherence.  We leave the formal
+development of these extensions to future work, noting that the
+pipeline's evidence quantale provides the necessary algebraic
+structure in each case.
+
+%% ─────────────────────────────────────────────────────────────
+\section{From Detection to Repair: The Formalization-Driven Loop}
+\label{sec:repair}
+
+The pipeline of \S\ref{sec:pipeline} \emph{detects} bugs across four
+correctness levels.  But detection is only half the story: a principled
+\emph{repair} methodology is needed to close the loop.  This section
+surveys existing ontology repair approaches, identifies their limitations
+for full-\FOL{} ontologies like \SUMO{}, and proposes a convergent
+formalization-driven repair loop that exploits the pipeline's behavioral
+and evidential signals.
+
+\subsection{The Ontology Repair Literature}
+
+\paragraph{Justification-based repair.}
+Kalyanpur et al.~\cite{kalyanpur2005} introduced \emph{Minimal
+Unsatisfiability-Preserving Sub-TBoxes} (MUPS): the smallest subset of
+axioms sufficient for a concept to be unsatisfiable.  Horridge et
+al.~\cite{horridge2008laconic} refined this to \emph{laconic
+justifications} that eliminate redundancy within justifications.
+Repair proceeds by removing or modifying at least one axiom from each
+justification.
+
+\textbf{Limitation}: These methods require a complete reasoner (typically
+a DL tableaux); they do not extend to \SUMO{}'s full \KIF{} with row
+variables and self-application.  Moreover, deletion-based repair loses
+information.
+
+\paragraph{Axiom weakening.}
+Troquard et al.~\cite{troquard2018weakening} proposed \emph{weakening}
+axioms rather than deleting them, using refinement operators from
+inductive logic programming.  For example,
+$A \sqsubseteq B \sqcap C$ may be weakened to $A \sqsubseteq B$
+(dropping a conjunct) rather than deleted entirely.  This preserves
+significantly more of the original knowledge.
+
+Baader and Kriegel~\cite{baader2023pseudocontraction,baader2022fixedpremise}
+showed that optimal repair in $\mathcal{EL}$ TBoxes corresponds
+precisely to \emph{pseudo-contraction} in AGM belief change theory:
+the repair that removes the fewest entailments while restoring
+consistency.  They also introduced \emph{fixed-premise repairs}, where
+some axioms are trusted (``fixed'') and only the remainder is modified.
+
+\textbf{Limitation}: The theory is developed only for $\mathcal{EL}$,
+with recent extensions to Horn-DLs~\cite{baader2022fixedpremise}.
+\SUMO{}'s full first-order expressiveness (row variables, unrestricted
+quantification, self-reference) is far beyond these fragments.
+
+\paragraph{Adimen-SUMO.}
+Alvez et al.~\cite{alvez2012adimensumo} applied \ATP{}-based diagnosis
+directly to \SUMO{}: for each axiom~$\alpha$, attempt to prove
+$\neg\alpha$ from the remaining axioms.  Success indicates that $\alpha$
+contradicts the rest of the knowledge base.  This methodology
+re-engineered approximately 88\% of \SUMO{}, finding incorrectly
+defined axioms, redundancies, and non-desirable properties.
+
+\textbf{Limitation}: Catches logical inconsistency but not type errors,
+behavioral bugs, or evidential gaps.  The methodology is purely
+deductive and provides no guidance on \emph{which} repair to choose
+when multiple corrections are possible.
+
+\paragraph{SUMO-GF type checking.}
+Enache~\cite{enache2012sumogf} translated 17 \SUMO{} modules
+to \GF{} abstract syntax, using Martin-L\"of dependent types to encode
+\SUMO{}'s sort discipline.  Of the quantified axioms, \textbf{64\%
+passed} type-checking; the remaining 36\% broke down as: 12\%
+rejected by the type checker (genuine sort/arity errors), 12\%
+inexpressible because variable types are inferred from usage context,
+11\% using predicates not translated to \GF{} (\texttt{range},
+\texttt{domain}, \texttt{subclass}), and 1\% other.  This is the
+direct predecessor of our Stage~1, and the most relevant prior art.
+
+Crucially, examination of the original \SUMO{}-\GF{} source
+(\texttt{Merge.gf}, \texttt{MidLevelOntology.gf}, distributed with
+GF~3.3) reveals that the encoding contains \emph{silent repairs}:
+classification choices that differ from \SUMO{}'s own taxonomy but
+are not documented as corrections.  For example, \SUMO{} declares
+\texttt{Pain} as a subclass of \texttt{PathologicProcess} (a
+\texttt{Process}), but the \GF{} grammar declares
+\texttt{fun Pain : Ind EmotionalState} (an \texttt{Attribute}).
+This reclassification makes \texttt{contraryAttribute(Pleasure, Pain)}
+type-correct---a defensible ontological judgment (Pain is a sensation
+caused by a pathological process, not the process itself)---but it
+was made implicitly, with no audit trail or canary theorem to verify
+correctness.
+
+\textbf{Limitation}: Type errors were detected but not automatically
+repaired; where repairs were made, they were undocumented.  The project
+provides no systematic methodology for distinguishing genuine \SUMO{}
+bugs from encoding artifacts, nor for verifying that silent repairs
+preserve the intended semantics.
+
+\paragraph{The gap.}
+No existing system provides a \emph{closed-loop} repair methodology
+for full-\FOL{} ontologies that (1)~detects errors across multiple
+levels, (2)~uses structured signals to \emph{disambiguate} among repair
+candidates, (3)~verifies repairs via proven invariants, and
+(4)~converges.  Our proposal addresses this gap.
+
+\subsection{The Convergent Repair Loop}
+\label{sec:repair-loop}
+
+We propose a six-phase loop that proceeds top-down through \SUMO{}'s
+class hierarchy, starting from \texttt{Entity}:
+
+\begin{enumerate}
+  \item \textbf{Formalize.}  Translate the next layer of \SUMO{} axioms
+    to \GF{} abstract syntax (Stage~1 of the pipeline).  Proceed
+    top-down: first \texttt{Entity} and its immediate subclasses, then
+    \texttt{Physical}/\texttt{Abstract}, and so on.
+
+  \item \textbf{Detect.}  Run the pipeline diagnostics:
+    \begin{itemize}[nosep]
+      \item \GF{} type checker: arity and sort errors.
+      \item \OSLF{} synthesis: behavioral type violations
+        ($\DiamondOp/\BoxOp$ ill-formedness).
+      \item \WM{} evaluator: zero-evidence assertions, scope
+        ambiguities.
+    \end{itemize}
+
+  \item \textbf{Disambiguate.}  For each detected error, the pipeline
+    provides structured context that narrows the space of candidate
+    repairs:
+    \begin{itemize}[nosep]
+      \item \emph{GF type context}: bidirectional type inference gives
+        the expected sort at the error site (e.g., ``expected
+        \texttt{Attribute}, got \texttt{Process}''), directly suggesting
+        which argument or declaration is wrong.
+      \item \emph{OSLF behavioral types}: different repairs produce
+        different operational semantics; the one preserving intended
+        reduction behavior is preferred.
+      \item \emph{WM evidence scores}: repairs can be ranked by
+        evidential groundability---the fix best supported by evidence
+        is preferred.
+    \end{itemize}
+
+  \item \textbf{Repair.}  Propose a minimal \KIF{} patch.
+    Following the axiom-weakening
+    principle~\cite{troquard2018weakening}, weakening is preferred over
+    deletion: strengthen a sort constraint, split a concept, or add a
+    missing argument---rather than removing an axiom entirely.
+
+  \item \textbf{Verify.}  Prove a \emph{canary theorem}
+    (Definition~\ref{def:canary}) that encodes the intended consequence
+    of the repaired axiom.  If the canary fails, the repair is
+    incorrect and the loop returns to step~3.
+
+  \item \textbf{Continue.}  Add the canary to the growing regression
+    suite and proceed to the next layer.
+\end{enumerate}
+
+\begin{principle}[Convergence]
+The loop converges because: (a)~each \SUMO{} layer has finitely many
+axioms; (b)~each successful repair strictly reduces the error count at
+that layer; (c)~canary theorems prevent regression (a repair at layer
+$k$ that breaks a canary at layer $j < k$ is immediately caught).
+The canary suite grows monotonically, providing an ever-stronger
+invariant.
+\end{principle}
+
+\begin{remark}[Connection to autoformalization]
+The repair loop has the same structure as the LLM autoformalization
+loop~\cite{autoformalization-survey}: formalize $\to$ check $\to$
+error feedback $\to$ retry.  The key difference is the \emph{richness
+of the error signal}: where autoformalization typically receives only
+a type error message, our pipeline provides type context, behavioral
+diagnostics, and evidence scores---three independent disambiguation
+channels.
+\end{remark}
+
+\subsection{Canary Theorems}
+\label{sec:canary}
+
+\begin{definition}[Canary theorem]
+\label{def:canary}
+A \emph{canary theorem} for a repair $r$ applied to axiom $\alpha$ is
+a small, proven proposition $\gamma_r$ such that:
+\begin{enumerate}[nosep]
+  \item $\gamma_r$ is a direct intended consequence of the repaired
+    axiom $\alpha[r]$.
+  \item $\gamma_r$ is \emph{falsified} by any incorrect repair $r'$
+    (i.e., $\alpha[r'] \not\models \gamma_r$).
+  \item $\gamma_r$ is proven in the proof assistant (Lean), not merely
+    tested via \ATP{} query.
+\end{enumerate}
+\end{definition}
+
+\begin{example}[Classmate arity canary]
+After repairing \texttt{classmate} from
+\texttt{IrreflexiveRelation} membership to an explicit ternary
+irreflexivity axiom (\S\ref{sec:example}), the canary is:
+\[
+  \gamma_{\texttt{classmate}} :\;
+  \forall\, a\, c.\; \neg\,\texttt{classmate}(a, a, c)
+\]
+This is provable from the repaired axiom.  If a future edit
+accidentally changes the arity (e.g., to quaternary), the canary
+immediately fails.
+\end{example}
+
+\begin{example}[Pain/Attribute canary]
+\label{ex:pain-canary}
+After splitting \texttt{Pain} into \texttt{PainProcess} (a subclass
+of \texttt{Process}) and \texttt{PainSensation} (an \texttt{Attribute}),
+the canary suite includes:
+\begin{align*}
+  \gamma_1 &:\; \texttt{instance}(\texttt{PainProcess}, \texttt{Process}) \\
+  \gamma_2 &:\; \texttt{instance}(\texttt{PainSensation}, \texttt{Attribute}) \\
+  \gamma_3 &:\; \texttt{contraryAttribute}(\texttt{Pleasure},
+    \texttt{PainSensation}) \text{ is well-typed} \\
+  \gamma_4 &:\; \texttt{PainProcess} \neq \texttt{PainSensation}
+\end{align*}
+Any repair that merges them back or assigns the wrong metaclass breaks
+at least one canary.
+\end{example}
+
+Canary theorems relate to Keet and \L{}awrynowicz's white-box
+testing~\cite{keet2017whitebox}: both generate test obligations from
+axiom structure.  The key difference is that canaries are \emph{proven}
+in a proof assistant, not queried via a semi-decidable \ATP{} call.
+A canary either holds or it does not---there is no timeout ambiguity.
+
+\subsection{Disambiguation via Behavioral Evidence}
+\label{sec:disambiguation}
+
+The central advantage of the pipeline for repair---as opposed to purely
+type-directed or purely deductive approaches---is that it provides
+\emph{multiple independent signals} for choosing among repair
+candidates.  We illustrate with the Pleasure/Pain bug
+(\S\ref{sec:sumo}).
+
+\paragraph{The ambiguity.}
+The type error is clear: \texttt{contraryAttribute(Pleasure, Pain)}
+requires \texttt{Pain} to be an \texttt{Attribute}, but \SUMO{}'s
+taxonomy says \texttt{Pain} is a \texttt{Process}.
+Three repairs are possible:
+\begin{enumerate}[label=(\alph*),nosep]
+  \item Reclassify \texttt{Pain} as \texttt{Attribute} (breaking its
+    process axioms).
+  \item Generalize \texttt{contraryAttribute} to accept
+    \texttt{Process} (weakening the sort constraint).
+  \item Split: create \texttt{PainSensation} $:$ \texttt{Attribute}
+    alongside the existing \texttt{Pain} $:$ \texttt{Process}
+    (concept refinement).
+\end{enumerate}
+
+\paragraph{Type signal alone.}
+A pure type checker (like \SUMO{}-\GF{}~\cite{enache2012sumogf}) reports
+the mismatch but cannot distinguish (a), (b), and (c).  All three
+restore type-correctness.
+
+\paragraph{Behavioral signal.}
+\OSLF{} synthesis reveals that \texttt{Pain} participates in reduction
+rules (it has an operational semantics as a process: onset, duration,
+intensification, subsidence).  Repair~(a) would orphan these rules,
+producing $\BoxOp$-violations for any scenario involving pain dynamics.
+Repair~(b) would allow \texttt{contraryAttribute} to compare processes
+and attributes, producing ill-typed behavioral consequences.
+Repair~(c) preserves all existing reduction rules for
+\texttt{Pain}/\texttt{PainProcess} while creating a new, behaviorally
+inert \texttt{PainSensation} attribute.
+\emph{The behavioral signal selects~(c).}
+
+\paragraph{Evidence signal.}
+The \WM{} evaluator can further rank candidates: medical and
+neuroscience corpora provide strong evidence for Pain-as-Process
+($\ev{n^+}{n^-}$ with high $n^+$), while folk-psychological usage
+supports Pain-as-Attribute-like quality.  The split repair~(c)
+maximizes total evidence across both readings.
+
+\begin{table}[ht]
+\centering
+\caption{Repair disambiguation for the Pain/Attribute bug.}
+\label{tab:disambiguation}
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Signal} & \textbf{(a) Reclassify} & \textbf{(b) Generalize} & \textbf{(c) Split} \\
+\midrule
+Type-correct? & \checkmark & \checkmark & \checkmark \\
+Behavioral coherence & \texttimes & \texttimes & \checkmark \\
+Evidence grounding & partial & partial & maximal \\
+Canary suite passes & $\gamma_{1,3}$ fail & $\gamma_3$ fails & all pass \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This multi-signal disambiguation is what distinguishes the pipeline
+approach from all prior ontology repair methods.  Type-directed repair
+(SUMO-GF, LeanSUMO) narrows the space; behavioral types eliminate
+operationally incoherent candidates; evidence scores rank the remainder.
+
+%% ─────────────────────────────────────────────────────────────
+\section{The Evidence Model: Structured Assurance for Repair Decisions}
+\label{sec:evidence-model}
+
+Detection alone does not justify a repair.  The gap between
+``\texttt{.unsat} detected'' and ``repair safely applicable'' requires
+structured evidence, multi-agent review, and quantitative assurance
+scoring.  This section describes the \emph{Evidence Model}---a formal
+framework implemented in Lean~4 (\texttt{EvidenceModel.lean},
+282~lines)---that governs which repairs may be applied and when.
+
+\subsection{Repair Archetypes and Beta Priors}
+
+Not all repairs carry the same epistemic risk.  A syntax fix
+(\texttt{exist}$\to$\texttt{exists}) is nearly certain; reclassifying
+a concept across ontological branches requires deep judgment.
+We define six \emph{repair archetypes}, each with a Beta-distribution
+prior $(\alpha_0, \beta_0)$ encoding how much evidence is needed
+before acting:
+
+\begin{center}\small
+\begin{tabular}{@{}lccl@{}}
+\toprule
+\textbf{Archetype} & $\alpha_0$ & $\beta_0$ & \textbf{Example} \\
+\midrule
+\texttt{syntaxArity} & 12.0 & 1.0 & \texttt{exist}$\to$\texttt{exists}, missing args \\
+\texttt{argSwapTyped} & 10.0 & 1.5 & D24: agent arguments swapped \\
+\texttt{domainNarrowing} & 7.0 & 3.0 & D26: Group$\to$AutonomousAgent \\
+\texttt{hierarchyGap} & 6.0 & 3.5 & D23: Artifact bypasses SelfConnectedObject \\
+\texttt{ontologyReclassification} & 4.0 & 4.0 & D1: Pain Process$\to$Attribute \\
+\texttt{worldSemanticClaim} & 3.0 & 5.0 & Deep semantic/world-model judgment \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Higher $\alpha_0$ relative to $\beta_0$ means the archetype is
+easier to trust from less evidence.  Syntax fixes have prior mean
+$12/13 \approx 0.92$; world-semantic claims have prior mean
+$3/8 = 0.375$---starting from skepticism.
+
+\subsection{Evidence Atoms and Source Weighting}
+
+Every piece of evidence---from a proven-sound \texttt{checkLang}
+result to a literature citation to an LLM review vote---is
+normalized into a common \emph{evidence atom} schema carrying:
+claim ID, decision ID, archetype, direction (supports/contradicts),
+source type, formal expression, strength, confidence, independence
+group (to avoid double-counting correlated evidence), and a
+reproducibility hash.
+
+Source types are weighted by reliability:
+
+\begin{center}\small
+\begin{tabular}{@{}lrl@{}}
+\toprule
+\textbf{Source type} & \textbf{Weight} & \textbf{Rationale} \\
+\midrule
+\texttt{checkLang} (proven sound) & 1.00 & Verified by \texttt{checkLangUsing\_sat\_sound} \\
+\texttt{stratumScan} & 0.75 & \texttt{constraint\_check.py} output \\
+\texttt{kifCitation} & 0.65 & Direct KIF file:line reference \\
+\texttt{engGFParsed} & 0.60 & GF runtime: unique parse tree + roundtrip verified \\
+\texttt{humanReview} & 0.60 & Human expert vote \\
+\texttt{kifRendered} & 0.50 & Deterministic KIF $\to$ controlled English template \\
+\texttt{docGFParsed} & 0.50 & Doc definition: GF-parsed + KIF cross-checked \\
+\texttt{literature} & 0.45 & Encyclopedia, medical standard, etc. \\
+\texttt{llmReview} & 0.35 & Claude Code / Codex / GPT-5.2 Pro vote \\
+\texttt{englishDoc} & 0.30 & Corroborative hint from \texttt{(documentation ...)} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The \texttt{checkLang} source type has maximal weight because its
+results are \emph{proven sound}: Theorem
+\texttt{checkLangUsing\_sat\_sound} guarantees that a \texttt{.sat}
+result implies the semantic property actually holds.
+The three GF-derived sources (\texttt{kifRendered}, \texttt{engGFParsed},
+\texttt{docGFParsed}) form an ascending trust hierarchy:
+template rendering (deterministic but pattern-limited),
+GF runtime parsing (typed grammar with AST equivalence verification),
+and documentation cross-checking (GF-parsed definitions verified
+against KIF facts).
+LLM reviews have low weight due to correlation (multiple LLMs trained
+on overlapping data).  \texttt{englishDoc} is the weakest source:
+prose-level hints from SUMO documentation strings, used only as
+corroborative evidence and never as sole authority.
+
+\subsection{Assurance Scoring}
+
+Evidence atoms contribute weighted pseudo-counts to the archetype's
+Beta prior.  A supporting atom from source~$s$ with strength~$t$
+and confidence~$c$ adds $w_s \cdot t \cdot c$ to $\alpha$; a
+contradicting atom adds the same to $\beta$.  The
+\emph{assurance number} (``ass-number'') is the lower bound of
+the 95\% credible interval of $\text{Beta}(\alpha, \beta)$:
+\[
+  \text{ass} = F^{-1}_{\text{Beta}(\alpha,\beta)}(0.025)
+\]
+where $F^{-1}$ is the inverse CDF\@.  This is a conservative
+estimate: we are 97.5\% confident the true ``goodness'' of the
+repair exceeds $\text{ass}$.
+
+\paragraph{Thresholds.}
+\begin{itemize}[nosep]
+  \item $\text{ass} \geq 0.98$: eligible for auto-application
+    (if review quorum met)
+  \item $0.93 \leq \text{ass} < 0.98$: hold for additional reviewer
+  \item $\text{ass} < 0.93$: remain logged/deferred
+\end{itemize}
+
+\subsection{Multi-Agent Review Protocol}
+
+Classification decisions for full-\FOL{} ontologies benefit from
+diverse perspectives.  The Evidence Model supports a multi-agent
+review protocol where each reviewer (human or AI) submits a
+\emph{review vote}: decision ID, reviewer identity, verdict
+(approve/reject/abstain), confidence, and hashes of the rationale
+and evidence bundle reviewed.
+
+Planned reviewers for the pipeline (review votes not yet
+populated; all 26 decisions are at \texttt{pendingReview}):
+\begin{itemize}[nosep]
+  \item \textbf{Claude Code}: primary development agent, produces
+    initial evidence and repair proposals
+  \item \textbf{Codex}: independent review with deep context;
+    identified D20/D21 status corrections and evidence policy gaps
+  \item \textbf{GPT-5.2 Pro}: cross-validation with different
+    training distribution
+  \item \textbf{Human}: final authority, especially for
+    world-semantic judgments
+\end{itemize}
+
+LLM reviewers in the same independence group (e.g., all GPT-family
+models) have their evidence down-weighted to avoid inflating
+confidence from correlated sources.
+
+\paragraph{Review lifecycle.}
+Each repair decision transitions through states:
+$\texttt{pendingReview} \to \texttt{reviewApproved} \to
+\texttt{applied} \to \texttt{verified}$ (or $\to \texttt{rejected}$
+if strong contradictory evidence emerges).  No KIF or SUMO-GF
+repairs are applied until the decision reaches
+\texttt{reviewApproved}.
+
+\subsection{WM Witnesses: Persisting checkLang Results}
+
+The comprehensive audit (\S\ref{sec:ntt-extraction}) produces
+\texttt{checkLang} results at build time.  The Evidence Model
+persists these as structured \emph{WM witnesses} in the repair
+log, each recording: witness ID, query, expected result,
+observed result, pass/fail, and source reference.
+
+For decisions D22--D26, the current witness inventory is:
+
+\begin{center}\small
+\begin{tabular}{@{}llllll@{}}
+\toprule
+\textbf{ID} & \textbf{Decision} & \textbf{Query (reachabilityTest)} & \textbf{Exp.} & \textbf{Obs.} & \textbf{Pass} \\
+\midrule
+D22 & LinguisticExpression$\not\to$Object & LE $\to$ object & unsat & unsat & \checkmark \\
+D23 & Artifact$\not\to$SelfConnObj & Artifact $\to$ selfconnobj & unsat & unsat & \checkmark \\
+D24a & CogAgent$\not\to$Process (pre) & CA $\to$ process & unsat & unsat & \checkmark \\
+D24b & CogAgent$\to$Object (post) & CA $\to$ object & sat & sat & \checkmark \\
+D26a & CogAgent$\not\to$Group (pre) & CA $\to$ group & unsat & unsat & \checkmark \\
+D26b & Group$\to$Object (positive) & Group $\to$ object & sat & sat & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+All 6 witnesses pass.  Combined with the 14 existing testable
+decisions from D1--D20, the comprehensive audit now covers
+\textbf{20 passed / 0 failed / 8 N/A} across 26 decisions.
+Artifact pointers (snapshot): \texttt{Mettapedia/Languages/GF/SUMO/data/wm\_witnesses.jsonl},
+\texttt{Mettapedia/Languages/GF/SUMO/data/decision\_coverage.json},
+\texttt{Mettapedia/Languages/GF/SUMO/export\_wm\_witnesses.py}.
+
+\subsection{Evidence-Quantale Compatibility}
+\label{sec:ev-quantale}
+
+The Evidence Model's $(n^+, n^-)$ pseudo-counts align directly with
+\texttt{Mettapedia.Logic.EvidenceQuantale}, which models evidence as
+pairs in $\mathbb{R}_{\geq 0}^{\infty} \times
+\mathbb{R}_{\geq 0}^{\infty}$ forming a quantale under
+component-wise addition.  The conversions \texttt{toSTV}/\texttt{ofSTV}
+bridge to PLN's \texttt{SimpleTruthValue} (strength, confidence).
+This means the repair pipeline's evidence atoms can be consumed by
+PLN inference---e.g., to propagate evidence about a concept's
+classification to axioms that use it.
+
+\paragraph{Policy: no repairs without evidence.}
+The critical policy decision is: \texttt{autoFixable} marks a
+candidate \emph{eligible} for auto-application, not ``apply now.''
+Application requires: (1)~sufficient evidence atoms across
+required witness types (pre-fix, post-fix, regression),
+(2)~assurance number $\geq$ threshold, and (3)~review quorum met.
+This prevents premature repairs from propagating errors deeper into
+the ontology.
+
+\subsection{GF Runtime Evidence Pipeline}
+\label{sec:gf-evidence}
+
+Beyond proven-sound \texttt{checkLang} witnesses and manual KIF
+citations, we construct evidence atoms \emph{automatically} from
+SUMO's own axioms and documentation using the Grammatical
+Framework~(GF) as a typed grammar runtime.  This yields three
+additional evidence lanes, each with distinct trust characteristics.
+
+\paragraph{Lane~A: Template-rendered controlled English (\texttt{kifRendered}).}
+A deterministic template renderer converts each KIF axiom into
+controlled English matching GF linearization patterns:
+\texttt{(subclass~X~Y)} $\mapsto$ ``\texttt{X~is~a~subclass~of~Y}'',
+\texttt{(instance~X~Y)} $\mapsto$ ``\texttt{X~is~an~instance~of~Y}'',
+and so on through 22~relation patterns covering quantifiers
+(\texttt{forall}, \texttt{exists}), connectives
+(\texttt{if\ldots then}, \texttt{iff}, \texttt{and}, \texttt{or},
+\texttt{not}), and thematic roles (\texttt{agent}, \texttt{patient},
+\texttt{instrument}).  Running this over the 937 repair-relevant axioms
+produces 10{,}584~template renderings, all with 100\% AST roundtrip
+fidelity (the rendered English, when parsed back through the template
+grammar, reconstructs the original KIF AST).  This lane contributes
+805~evidence atoms at weight~0.50.
+
+\paragraph{Lane~B: GF runtime parsing (\texttt{engGFParsed}).}
+A minimal RGL-free GF grammar (\texttt{AxiomCE.gf}) encodes
+the controlled English patterns as typed abstract syntax:
+\begin{verbatim}
+  cat Stmt ; Formula ; Term ; ArgN ;
+  fun SubclassStmt  : Term -> Term -> Stmt ;
+      InstanceStmt  : Term -> Term -> Stmt ;
+      ExistsFml     : Term -> Formula -> Formula ;
+      ImplFml       : Formula -> Formula -> Formula ;
+      ...
+\end{verbatim}
+with an auto-generated closed lexicon of 17{,}718~terms
+(all identifiers appearing in SUMO axioms and documentation
+cross-references).  The grammar compiles to a PGF
+(Portable Grammar Format) file and runs as a GF subprocess.
+
+For each axiom, the pipeline: (1)~normalizes the template-rendered
+English (CamelCase $\to$ underscore, comma spacing);
+(2)~parses through GF (\texttt{p~-cat=Stmt});
+(3)~linearizes the parse tree back (\texttt{l}); and
+(4)~verifies \emph{AST equivalence}: the GF tree's top-level
+constructor must match the KIF head relation
+(e.g., \texttt{SubclassStmt} for \texttt{(subclass~\ldots)}).
+Only axioms passing all three gates---unique parse, string
+roundtrip, and AST equivalence---produce \texttt{engGFParsed}
+atoms.
+
+\medskip\noindent\textbf{Disambiguation.}
+A key engineering decision is the separation of
+\emph{canonical} (machine) English from \emph{human-friendly}
+English.  The canonical form parenthesizes every compound
+sub-formula: \texttt{if~(~A~and~(~B~and~C~)~)~,~then~(~D~)}
+--- with a grammar constructor \texttt{ParenFml} producing
+\texttt{``(''~++~f.s~++~``)''}.  $N$-ary conjunction
+right-associates: \texttt{A~and~(~B~and~C~)} rather than
+the ambiguous \texttt{A~and~B~and~C}.  This eliminates
+all parse ambiguity: the GF chart parser returns exactly
+one tree for every parenthesized axiom.
+
+\medskip\noindent\textbf{Results.}
+Of 937~repair-relevant axioms: 802~(85.6\%) parse uniquely with
+roundtrip and AST match; 0~parse ambiguously; 135~fail to parse.
+The 135~failures reflect missing grammar coverage for
+SUMO-specific constructs (checkpoint 2026-02-23):
+
+\begin{center}\small
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Gap family} & \textbf{Count} \\
+\midrule
+Complex connectives (nested if/for-all) & 47 \\
+Multi-variable existentials ($\exists$2) & 20 \\
+Multi-variable existentials ($\exists$3) & 16 \\
+Statement reification (\texttt{KappaFn}) & 16 \\
+Multi-variable existentials ($\exists$4+) & 15 \\
+Spatial verbs (\texttt{ends\_up\_at}, etc.) & 6 \\
+Row-variable predicates (\texttt{@ROW}) & 5 \\
+IFF at top level (\texttt{iff\_toplevel}) & 5 \\
+Obliged-perform constructs & 3 \\
+Other & 2 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+These are grammar coverage gaps, not GF expressiveness
+limits.  Grammar improvements between v1 and this checkpoint
+resolved: functional term equality (\texttt{equal}→``is equal
+to''), 16 new verb/relation patterns, and formula-argument
+parenthesization for higher-order relations (\texttt{holdsDuring},
+\texttt{believes}, \texttt{desires}).  The aggregate count
+reflects SUMO's large vocabulary of specialized relations.
+This lane contributes 514~evidence atoms at weight~0.60.
+Artifact pointers (snapshot): \texttt{Mettapedia/Languages/GF/SUMO/data/axioms\_gf\_parse.jsonl},
+\texttt{Mettapedia/Languages/GF/SUMO/data/gf\_parse\_provenance.json},
+\texttt{Mettapedia/Languages/GF/SUMO/data/gf\_parsed\_evidence\_atoms.jsonl},
+\texttt{Mettapedia/Languages/GF/SUMO/sumo\_axiom\_gf\_parse.py}.
+
+\paragraph{Lane~C: Documentation parsing (\texttt{docGFParsed}).}
+SUMO's \texttt{(documentation~Term~EnglishLanguage~``\ldots'')}
+entries contain encyclopedia-style definitions.  We extract
+definitional head claims using four regex patterns:
+\begin{enumerate}[nosep]
+  \item ``A~\$X is a~\$Y'' or ``\$X is a~\$Y'' $\to$ subclass claim
+  \item ``\$X is an instance of~\$Y'' $\to$ instance claim
+  \item ``Any~\$X that\ldots'' $\to$ implied subclass of~X's parent
+  \item ``A~\$X that\ldots'' $\to$ typed particular (implied subclass)
+\end{enumerate}
+
+Extracted heads are normalized and parsed through the same
+\texttt{AxiomCE} grammar.  A KIF cross-check classifies each
+parsed claim as \emph{consistent} (claim matches a KIF
+\texttt{subclass}/\texttt{instance} fact), \emph{contradicts}
+(KIF has a different superclass for the same subject), or
+\emph{no\_kif\_data} (no matching KIF fact found).
+
+\medskip\noindent\textbf{Results.}
+Of 13{,}832~documentation entries: 2{,}130~yield extractable
+head claims; 1{,}555~of these parse uniquely through GF (73\%).
+KIF cross-checking: 425~consistent, 225~contradictory,
+905~no KIF data.  This lane contributes 60~evidence atoms at
+weight~0.50, covering 8~repair decisions.  Contradictory atoms
+(where documentation disagrees with KIF) receive reduced
+strength (0.40) and confidence (0.35), reflecting the lower
+reliability of prose-level descriptions vs.\ formal axioms.
+\paragraph{Measurement provenance note.}
+All counts/percentages in this subsection come from repository-local scripts and
+logs in the reported snapshot; they are engineering measurements, not Lean theorems.
+Artifact pointers (snapshot): \texttt{Mettapedia/Languages/GF/SUMO/data/doc\_gf\_parse.jsonl},
+\texttt{Mettapedia/Languages/GF/SUMO/data/doc\_gf\_parsed\_evidence\_atoms.jsonl},
+\texttt{Mettapedia/Languages/GF/SUMO/data/doc\_evidence\_atoms.jsonl},
+\texttt{Mettapedia/Languages/GF/SUMO/sumo\_doc\_gf\_parse.py},
+\texttt{Mettapedia/Languages/GF/SUMO/sumo\_doc\_to\_evidence\_atoms.py}.
+
+\paragraph{Five-lane evidence architecture.}
+The full evidence model used in this pipeline slice draws from five operationally
+independent lanes:
+\begin{center}\small
+\begin{tabular}{@{}lrlr@{}}
+\toprule
+\textbf{Lane} & \textbf{Weight} & \textbf{Independence group}
+  & \textbf{Atoms} \\
+\midrule
+WM witnesses (\texttt{checkLang}) & 1.00 & \texttt{wm.*} & 6 \\
+KIF rendered templates (\texttt{kifRendered}) & 0.50 & \texttt{kif.*} & 805 \\
+GF runtime parsed (\texttt{engGFParsed}) & 0.60 & \texttt{gfparse.*} & 514 \\
+Doc GF parsed (\texttt{docGFParsed}) & 0.50 & \texttt{docgf.*} & 60 \\
+Doc English hints (\texttt{englishDoc}) & 0.30 & \texttt{doc.*} & 1{,}166 \\
+\midrule
+\textbf{Total} & & & \textbf{2{,}551} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Independence groups prevent double-counting within and across
+lanes: each group retains only the highest-weight atom.
+Of the 26~repair decisions, 14~now have evidence atoms from
+at least two independent lanes, enabling meaningful Beta
+aggregation.  The \texttt{SumoNTT} regression suite remains
+at 20~passed, 0~failed, 8~N/A (encoding choices and
+meta-decisions not testable as reachability queries).
+Artifact pointers (snapshot): \texttt{Mettapedia/Languages/GF/SUMO/data/pipeline\_audit.json},
+\texttt{Mettapedia/Languages/GF/SUMO/data/kif\_rendered\_evidence\_atoms.jsonl},
+\texttt{Mettapedia/Languages/GF/SUMO/data/gf\_parsed\_evidence\_atoms.jsonl},
+\texttt{Mettapedia/Languages/GF/SUMO/data/doc\_gf\_parsed\_evidence\_atoms.jsonl},
+\texttt{Mettapedia/Languages/GF/SUMO/data/doc\_evidence\_atoms.jsonl}.
+
+%% ─────────────────────────────────────────────────────────────
+\section{Comparison with Direct SUMO $\to$ Lean}
+\label{sec:comparison}
+
+We developed two direct approaches before arriving at the pipeline.
+
+\subsection{sumo-lean4: KIF Checker and HOL Emitter}
+
+In the reported snapshot, the \texttt{sumo-lean4} tool parses all 113 \KIF{} files and:
+\begin{enumerate}[nosep]
+  \item Checks arity consistency (relation usage vs.\ declaration).
+  \item Emits ``HOL-native'' Lean code with curried predicates for
+    fixed-arity relations and \texttt{List}-based application for
+    variable-arity ones.
+\end{enumerate}
+
+After one pass in that snapshot, the checker reported ``no issues found'' across all
+files (after applying the fixes in \S\ref{sec:sumo}).
+
+\textbf{Strength}: Found genuine arity and argument bugs quickly.
+
+\textbf{Limitation}: The emitted Lean code declares \SUMO{} axioms
+as Lean \texttt{axiom}s---opaque to Lean's type system.
+Once imported, bugs \emph{become trusted axioms in Lean's kernel}.
+There is no behavioral or evidential checking.
+
+\subsection{LeanSUMO: Type-Based Attributes}
+
+The LeanSUMO project encoded \SUMO{} concepts as Lean structures with
+attribute fields:
+\begin{verbatim}
+  structure Human extends Organism where
+    sex : SexAttr
+  structure Man extends Human where
+    isMale : sex = SexAttr.Male
+\end{verbatim}
+
+This enabled elegant 4-line disjointness proofs (Man $\neq$ Woman)
+and caught the Pleasure/Pain type confusion at compile time.
+
+\textbf{Strength}: Lean's type system catches sort errors as
+type mismatches.  Proofs are trivial.
+
+\textbf{Limitation}: Each \SUMO{} class requires manual encoding
+as a Lean structure.  With 20\,000+ classes, this does not scale.
+No automation exists for the \KIF{} $\to$ structure translation.
+And crucially, there is no behavioral semantics: the encoding
+captures \emph{what things are} but not \emph{how they behave}.
+
+\subsection{The Pipeline Approach}
+
+The pipeline addresses both limitations:
+\begin{itemize}[nosep]
+  \item \textbf{Automation}: the \GF{} grammar is generated from
+    \SUMO{}'s \texttt{domain}/\texttt{range}/\texttt{subclass}
+    declarations, just as the HOL emitter already does.
+    No manual per-class encoding.
+  \item \textbf{Behavioral semantics}: \OSLF{} synthesis derives
+    $\DiamondOp/\BoxOp$ types automatically from operational rules.
+  \item \textbf{Evidence grounding}: the \WM{} layer quantifies how
+    well-supported each assertion is.
+  \item \textbf{Sort safety}: \GF{} categories provide the same sort
+    discipline as LeanSUMO's typed attributes, but generated.
+\end{itemize}
+
+\begin{table}[ht]
+\centering
+\caption{Bug classes caught by each approach.}
+\label{tab:comparison}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Bug class} & \textbf{sumo-lean4} & \textbf{LeanSUMO} & \textbf{Pipeline} \\
+\midrule
+Arity mismatch & \checkmark & \checkmark & \checkmark \\
+Missing arguments & \checkmark & & \checkmark \\
+Type/sort confusion & & \checkmark & \checkmark \\
+Semantic contradiction & & & \checkmark \\
+Behavioral inconsistency & & & \checkmark \\
+Ungroundable assertion & & & \checkmark \\
+Scope ambiguity & & & \checkmark \\
+Compositional bug & & & \checkmark \\
+\midrule
+Repair disambiguation & & & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%% ─────────────────────────────────────────────────────────────
+\section{Worked Example: The Classmate Arity Bug}
+\label{sec:example}
+
+We trace a real \SUMO{} bug through the pipeline.
+
+\paragraph{The bug.}
+\SUMO{} declares:
+\begin{verbatim}
+  (instance classmate IrreflexiveRelation)
+  (domain classmate 1 Human)
+  (domain classmate 2 Human)
+  (domain classmate 3 Organization)
+\end{verbatim}
+But \texttt{IrreflexiveRelation} is defined in \texttt{Merge.kif} as
+a subclass of \texttt{BinaryRelation}.  A ternary relation cannot be
+an instance of a binary-only relation class.
+
+\paragraph{Stage 1 (\SUMO{} $\to$ \GF{}).}
+The \GF{} grammar generator creates:
+\begin{verbatim}
+  cat Human ; cat Organization ;
+  fun classmate : Human -> Human -> Organization -> Prop ;
+\end{verbatim}
+and separately:
+\begin{verbatim}
+  fun IrreflexiveRelation_inst :
+    (Entity -> Entity -> Prop) -> Prop ;
+\end{verbatim}
+The assertion \texttt{(instance classmate IrreflexiveRelation)} requires
+passing \texttt{classmate} (a ternary function) to
+\texttt{IrreflexiveRelation\_inst} (which expects a binary function).
+\emph{The \GF{} type checker rejects this: type mismatch.}
+
+\paragraph{Stage 2 (\GF{} $\to$ \OSLF{}).}
+Had the bug not been caught at Stage~1, the \OSLF{} synthesis would
+derive rewrite rules for \texttt{classmate} with three arguments.
+The irreflexivity axiom
+\texttt{(forall (?R) (=> (instance ?R IrreflexiveRelation) (not (?R ?X ?X))))}
+would apply to the binary projection of \texttt{classmate}, producing
+$\BoxOp(\neg\texttt{classmate}(a,a))$---but this is ill-formed because
+\texttt{classmate} requires three arguments.
+The $\BoxOp$ evaluation would flag an arity error in the behavioral
+type.
+
+\paragraph{Stage 3 (\OSLF{} $\to$ \WM{}).}
+The evidence evaluator would assign $\ev{0}{0}$ (zero evidence) to
+the irreflexivity claim for \texttt{classmate}, since the claim is
+about a binary usage that never occurs in the ontology's operational
+semantics.
+This zero-evidence diagnostic would flag the assertion as
+ungroundable.
+
+\paragraph{Comparison.}
+\begin{itemize}[nosep]
+  \item \textbf{KIF checker}: catches the arity mismatch directly
+    (our \texttt{sumo-lean4} found this).
+  \item \textbf{ATP}: may or may not notice, depending on how the
+    ternary/binary conflict interacts with other axioms.
+  \item \textbf{OntoClean}: irrelevant (this is a syntactic/semantic
+    bug, not a metaproperty issue).
+  \item \textbf{Keet testing}: would generate test cases for
+    irreflexivity, which might succeed or fail depending on the
+    \ATP{}'s handling of the arity conflict.
+  \item \textbf{Pipeline}: catches at Stage~1 (type error),
+    Stage~2 ($\BoxOp$ ill-formedness), and Stage~3 (zero evidence).
+    Three independent diagnostics from different layers.
+\end{itemize}
+
+%% ─────────────────────────────────────────────────────────────
+\section{Related Work and Discussion}
+\label{sec:related}
+
+\paragraph{Faithful HOL embeddings.}
+Benzm\"uller et al.~\cite{benzmuller-faithful-embeddings} embed
+various logics (modal, deontic, conditional) into classical \HOL{},
+enabling \ATP{} tools to reason about non-classical ontological
+assertions.  Brown, Pease, and Urban~\cite{brown2022sumo-set-theory}
+extended this by embedding the SUMO-K fragment into higher-order set
+theory via Isabelle/HOL, providing formal semantics for \SUMO{}'s
+higher-order features.
+Our pipeline is complementary: where these embeddings
+preserve the \emph{deductive} content of axioms, our pipeline extracts
+their \emph{operational} content.
+Combining both---deductive verification via faithful embedding plus
+behavioral verification via OSLF---would provide broader end-to-end
+coverage across deductive and behavioral checks.
+
+\paragraph{Ontology repair.}
+Troquard et al.~\cite{troquard2018weakening} introduced axiom weakening
+as an alternative to deletion-based repair, using refinement operators
+from inductive logic programming.  Baader and
+Kriegel~\cite{baader2023pseudocontraction,baader2022fixedpremise}
+established a formal correspondence between optimal repair and AGM
+belief revision (pseudo-contraction), with practical algorithms for
+$\mathcal{EL}$ TBoxes.  Alvez et al.~\cite{alvez2012adimensumo}
+applied \ATP{}-based diagnosis specifically to \SUMO{}, re-engineering
+88\% of the ontology.  Our repair loop (\S\ref{sec:repair}) extends
+this line of work to full \FOL{} with behavioral and evidential
+disambiguation signals that these approaches lack.
+
+\paragraph{Autoformalization.}
+The repair loop's structure---formalize, check, use error feedback to
+correct, retry---mirrors the LLM autoformalization
+loop~\cite{autoformalization-survey}, where a language model generates
+formal statements and a proof assistant provides verification feedback.
+The key difference is the richness of the feedback: our pipeline
+provides type context, behavioral diagnostics, and evidence scores,
+whereas autoformalization typically receives only type error messages.
+
+\paragraph{Modular ontologies.}
+Stuckenschmidt et al.~\cite{stuckenschmidt-modular-ontologies}
+develop theory and techniques for decomposing large ontologies into
+modules with well-defined interfaces.
+Our \GF{}-based approach naturally supports modularity: each \SUMO{}
+domain file becomes a \GF{} module, and the \OSLF{} synthesis respects
+module boundaries.
+
+\paragraph{Connection to Mettapedia.}
+The referenced \GF{} $\to$ \OSLF{} $\to$ \WM{} pipeline slice is formalized in
+the Mettapedia Lean~4 library and currently builds without
+\texttt{sorry}/axiom placeholders in that slice.
+The PLN evidence quantale, the Galois connection, the compositional
+semantics, and the world-model bridge are represented there by theorem-level
+endpoints.
+\SUMO{}-\GF{} is a new concrete syntax for this existing,
+verified infrastructure, and the Evidence Model
+(\texttt{EvidenceModel.lean}) extends the repair log with structured
+assurance scoring that connects directly to
+\texttt{EvidenceQuantale}'s $(n^+, n^-)$ algebra.
+
+\paragraph{Limitations.}
+\begin{itemize}[nosep]
+  \item The pipeline does not replace OntoClean-style adequacy
+    judgments.  Philosophical metaproperties (rigidity, identity)
+    require human expertise.
+  \item The behavioral-correctness layer (\S\ref{def:behavioral})
+    presupposes an operational reading of the ontology.  For purely
+    classificatory fragments without process axioms, Stages~2--3
+    add little value.
+  \item The \SUMO{} $\to$ \GF{} translation (Stage~1) is not yet
+    implemented as an automated tool; it is described as a
+    well-motivated extension of the existing \texttt{sumo-lean4}
+    HOL emitter.
+  \item Row variables in \KIF{} require special handling (bounded
+    unfolding or higher-order \GF{} categories).
+  \item The formalization-driven repair loop (\S\ref{sec:repair}) is
+    partially implemented: the detection pipeline, evidence model,
+    and multi-agent review infrastructure are in place, with 26
+    decisions logged and 20 passing formal verification.  The
+    repair-selection heuristics and the top-down traversal strategy
+    require further engineering effort and empirical validation on
+    \SUMO{}'s full 20k axioms.  The \texttt{score\_repairs.py}
+    tool to compute assurance numbers automatically per decision
+    is planned but not yet built.
+\end{itemize}
+Artifact pointers (snapshot): \texttt{Mettapedia/Languages/GF/SUMO/RepairLog.lean},
+\texttt{Mettapedia/Languages/GF/SUMO/SumoNTT.lean},
+\texttt{Mettapedia/Languages/GF/SUMO/data/decision\_coverage.json},
+\texttt{Mettapedia/Languages/GF/SUMO/data/review\_ledger\_2026-02-24.jsonl}.
+
+%% ─────────────────────────────────────────────────────────────
+\section{Conclusion}
+\label{sec:conclusion}
+
+Ontology correctness is not a single property but a hierarchy:
+syntactic well-formedness, semantic consistency, taxonomic adequacy,
+and behavioral correctness.
+Existing methods address the first three layers but leave behavioral
+adequacy---whether an ontology's axioms produce the intended
+operational consequences---unexamined.
+
+The pipeline \SUMO{} $\to$ \GF{} $\to$ \OSLF{} $\to$ \WM{} provides
+the missing layers:
+\begin{itemize}[nosep]
+  \item \GF{}'s typed abstract syntax catches sort and arity errors
+    at grammar level.
+  \item \OSLF{}'s behavioral types ($\DiamondOp$, $\BoxOp$, native
+    types) detect operational inconsistencies.
+  \item The world-model's evidence-valued semantics flags ungroundable
+    assertions, contradictory evidence flows, and scope ambiguities.
+\end{itemize}
+
+Beyond detection, the formalization-driven repair loop
+(\S\ref{sec:repair}) provides a principled methodology for
+\emph{correcting} ontology bugs: multi-level diagnostics disambiguate
+among repair candidates, canary theorems prevent regression, and the
+loop converges by construction.  The Evidence Model
+(\S\ref{sec:evidence-model}) adds quantitative assurance:
+Beta-distribution scoring with archetype-specific priors,
+multi-agent review (Claude Code, Codex, GPT-5.2 Pro, human),
+and PLN-compatible evidence atoms that integrate with the
+proven evidence quantale.  No repair is applied until structured
+evidence, assurance thresholds, and review quorum are satisfied.
+This addresses the gap left by
+SUMO-GF~\cite{enache2012sumogf}, whose type checker rejected 12\% of
+axioms outright (with a further 24\% inexpressible), and which made
+silent classification repairs with no audit trail or verification
+methodology.
+
+The \GF{} $\to$ \OSLF{} $\to$ \WM{} core is formalized in Lean~4 in the
+referenced pipeline slice, with no \texttt{sorry}/axiom placeholders in that
+slice.
+Extending the pipeline to \SUMO{}---a large, openly available formal ontology---is
+the natural next step: it inherits the benefits of both our
+\texttt{sumo-lean4} arity checker and LeanSUMO's type-based
+attributes, while adding behavioral and evidential correctness
+layers that neither provides.  As a proof of concept, we encode the
+FOET-relevant fragment of \SUMO{}-\GF{} and run it through the full
+pipeline (Appendix~\ref{app:sumo-gf-experiment}), automatically
+detecting known bugs including the Pain/Attribute type confusion.
+The repair loop transforms the pipeline from a static analysis tool
+into an interactive ontology engineering methodology.
+
+%% ─────────────────────────────────────────────────────────────
+\begin{thebibliography}{99}
+
+\bibitem{pease2002sumo}
+A.~Pease, I.~Niles, and J.~Li,
+``The Suggested Upper Merged Ontology: A Large Ontology for the Semantic
+Web and its Applications,''
+in \textit{Working Notes of the AAAI-2002 Workshop on Ontologies and the
+Semantic Web}, 2002.
+
+\bibitem{pease-casc-prizes}
+A.~Pease,
+``The Annual SUMO Reasoning Prizes at CASC,''
+\textit{CADE Workshop}, 2015.
+
+\bibitem{pease-sutcliffe-2007}
+A.~Pease and G.~Sutcliffe,
+``First Order Reasoning on a Large Ontology,''
+in \textit{Proc.\ ESARLT}, pp.~61--70, 2007.
+
+\bibitem{pease-reasoning-generation}
+A.~Pease,
+``Reasoning and Language Generation in the SUMO Ontology,''
+\textit{Technical Report}, 2019.
+
+\bibitem{hayes-menzel-kif-2001}
+P.~Hayes and C.~Menzel,
+``A Semantics for the Knowledge Interchange Format,''
+in \textit{Proc.\ IJCAI Workshop on the KIF Standard}, 2001.
+
+\bibitem{kalyanpur2005}
+A.~Kalyanpur, B.~Parsia, E.~Sirin, and J.~Hendler,
+``Debugging Unsatisfiable Classes in OWL Ontologies,''
+\textit{Journal of Web Semantics}, vol.~3, pp.~268--293, 2005.
+
+\bibitem{keet2017whitebox}
+C.~M.~Keet and A.~\L{}awrynowicz,
+``Automatic White-Box Testing of First-Order Logic Ontologies,''
+\textit{arXiv:1705.10219}, 2017.
+
+\bibitem{keet2017blackbox}
+C.~M.~Keet and A.~\L{}awrynowicz,
+``Black-Box Testing of First-Order Logic Ontologies Using WordNet,''
+\textit{arXiv:1705.10217}, 2017.
+
+\bibitem{guarino-welty-ontoclean}
+N.~Guarino and C.~A.~Welty,
+``An Overview of OntoClean,''
+in \textit{Handbook on Ontologies}, Springer, pp.~151--159, 2009.
+
+\bibitem{gangemi-presutti-patterns}
+A.~Gangemi and V.~Presutti,
+``Ontology Design Patterns,''
+in \textit{Handbook on Ontologies}, Springer, pp.~221--243, 2009.
+
+\bibitem{ranta2004gf}
+A.~Ranta,
+``Grammatical Framework: A Type-Theoretical Grammar Formalism,''
+\textit{Journal of Functional Programming}, vol.~14, no.~2, pp.~145--189,
+2004.
+
+\bibitem{ranta-typeful-ontologies}
+A.~Ranta, K.~Angelov, and R.~Enache,
+``Typeful Ontologies with Direct Multilingual Verbalization,''
+in \textit{Proc.\ Controlled Natural Language}, 2012.
+
+\bibitem{benzmuller-faithful-embeddings}
+C.~Benzm\"uller,
+``Faithful Logic Embeddings in HOL---Deep and Shallow,''
+\textit{arXiv:2502.19311}, 2025.
+
+\bibitem{stuckenschmidt-modular-ontologies}
+H.~Stuckenschmidt, C.~Parent, and S.~Spaccapietra, Eds.,
+\textit{Modular Ontologies: Concepts, Theories and Techniques for
+Knowledge Modularization},
+LNCS 5445, Springer, 2009.
+
+\bibitem{goertzel2008pln}
+B.~Goertzel, M.~Iklé, I.~F.~Goertzel, and A.~Heljakka,
+\textit{Probabilistic Logic Networks: A Comprehensive Framework for
+Uncertain Inference},
+Springer, 2008.
+
+\bibitem{bittner-formal-ontologies}
+T.~Bittner,
+``On the Computational Realization of Formal Ontologies,''
+\textit{Technical Report}, University at Buffalo, 2004.
+
+\bibitem{euzenat-shvaiko-matching}
+J.~Euzenat and P.~Shvaiko,
+\textit{Ontology Matching}, 2nd ed., Springer, 2013.
+
+\bibitem{translating-sumo-hol}
+A.~Pease, G.~Sutcliffe, N.~Siegel, and S.~Trac,
+``Translating SUMO-K to Higher-Order Set Theory,''
+2010.
+
+\bibitem{troquard2018weakening}
+N.~Troquard, R.~Confalonieri, P.~Galliani, R.~Pe\~naloza,
+D.~Porello, and O.~Kutz,
+``Repairing Ontologies via Axiom Weakening,''
+in \textit{Proc.\ AAAI}, pp.~1981--1988, 2018.
+
+\bibitem{baader2023pseudocontraction}
+F.~Baader and F.~Kriegel,
+``Optimal Repairs in Ontology Engineering as Pseudo-Contractions
+in Belief Change,''
+in \textit{Proc.\ ACM SAC}, pp.~846--855, 2023.
+
+\bibitem{baader2022fixedpremise}
+F.~Baader and F.~Kriegel,
+``Optimal Fixed-Premise Repairs of $\mathcal{EL}$ TBoxes,''
+in \textit{Proc.\ KI}, LNCS 13404, pp.~103--117, Springer, 2022.
+
+\bibitem{alvez2012adimensumo}
+J.~Alvez, P.~Lucio, and G.~Rigau,
+``Adimen-SUMO: Reengineering an Ontology for First-Order Reasoning,''
+\textit{International Journal on Semantic Web and Information Systems},
+vol.~8, no.~4, pp.~80--116, 2012.
+
+\bibitem{enache2012sumogf}
+R.~Enache and K.~Angelov,
+``Typeful Ontologies with Direct Multilingual Verbalization,''
+in \textit{Proc.\ Controlled Natural Language}, LNCS 7427,
+pp.~52--67, Springer, 2012.
+
+\bibitem{brown2022sumo-set-theory}
+C.~E.~Brown, A.~Pease, and J.~Urban,
+``Translating SUMO-K to Higher-Order Set Theory,''
+in \textit{Proc.\ FroCoS}, LNCS 14279, pp.~253--274, Springer, 2023.
+
+\bibitem{horridge2008laconic}
+M.~Horridge, B.~Parsia, and U.~Sattler,
+``Laconic and Precise Justifications in OWL,''
+in \textit{Proc.\ ISWC}, LNCS 5318, pp.~323--338, Springer, 2008.
+
+\bibitem{schlobach2003diagnosis}
+S.~Schlobach and R.~Cornet,
+``Non-Standard Reasoning Services for the Debugging of Description
+Logic Terminologies,''
+in \textit{Proc.\ IJCAI}, pp.~355--362, 2003.
+
+\bibitem{autoformalization-survey}
+Y.~Wu, Z.~Jiang, et al.,
+``Autoformalization in the Era of Large Language Models: A Survey,''
+\textit{arXiv:2505.23486}, 2025.
+
+\bibitem{foet2022}
+B.~Goertzel and Z.~Kothare,
+``The Formal Ethics Seed Ontology (FOET),''
+\textit{Garden of Minds}, 2022.
+\url{https://gardenofminds.art/ethics/formal-ethics-seed-ontology/}
+
+\bibitem{benzmuller-gewirth}
+C.~Benzm\"uller, A.~Fuenmayor, and D.~Fuenmayor,
+``Formalisation and Evaluation of Alan Gewirth's Proof for the
+Principle of Generic Consistency in Isabelle/HOL,''
+\textit{Archive of Formal Proofs}, 2018.
+
+\end{thebibliography}
+
+%% ─────────────────────────────────────────────────────────────
+\appendix
+
+\section{Case Study: SUMO Dependencies of the Formal Ethics Seed Ontology}
+\label{app:foet}
+
+To make the repair loop concrete, we identify the \emph{exact} \SUMO{}
+fragment required by a real downstream application: the Formal Ethics
+Seed Ontology (FOET)~\cite{foet2022}, a 6\,853-line \KIF{}
+formalization of four ethical paradigms (deontological, value-judgment,
+utilitarian, virtue ethics) with inter-paradigm translations and a
+Lean~4 formalization including a fully proven Gewirth PGC
+argument~\cite{benzmuller-gewirth}.
+This appendix traces FOET's \SUMO{} dependencies upward through the
+class hierarchy, producing a minimal subontology that must be fully
+debugged and repaired before the pipeline can verify FOET end-to-end.
+
+\subsection{FOET's SUMO Concept Inventory}
+
+The FOET ontology introduces domain-specific classes (left column) that
+are positioned within \SUMO{}'s existing hierarchy (right column).
+Table~\ref{tab:foet-concepts} lists the key concept groups.
+
+\begin{table}[ht]
+\centering
+\caption{FOET concepts and their \SUMO{} superclass anchors.}
+\label{tab:foet-concepts}
+\small
+\begin{tabular}{@{}p{4.2cm}p{4cm}p{4cm}@{}}
+\toprule
+\textbf{FOET concept} & \textbf{Direct superclass} & \textbf{SUMO anchor} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Ethical attributes}} \\
+\texttt{MoralValueAttribute} & \texttt{MoralAttribute} & \texttt{NormativeAttribute} \\
+\texttt{DeonticAttribute} & \texttt{ObjectiveNorm}, \texttt{MoralAttribute} & \texttt{NormativeAttribute} \\
+\texttt{VirtueAttribute} & \texttt{MoralVirtueAttribute} & \texttt{PsychologicalAttribute} \\
+\texttt{ViceAttribute} & \texttt{MoralVirtueAttribute} & \texttt{PsychologicalAttribute} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Agents and processes}} \\
+\texttt{VirtuousAgent} & \texttt{AutonomousAgent} & \texttt{Object} \\
+\texttt{AutonomousAgentProcess} & \texttt{Process} & \texttt{Physical} \\
+\texttt{VirtuousAct} & \texttt{AutonomousAgentProcess} & \texttt{Process} \\
+\texttt{ChoicePoint} & \texttt{Set}, \texttt{NonNullSet} & \texttt{SetOrClass} \\
+\texttt{Situation} & (direct) & \texttt{Physical} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Propositions and theories}} \\
+\texttt{ActionFormula} & \texttt{Formula} & \texttt{Sentence} \\
+\texttt{Conjecture} & \texttt{Sentence} & \texttt{LinguisticExpression} \\
+\texttt{EthicalTheory} & (set of \texttt{EthicalSentence}) & \texttt{Proposition} \\
+\texttt{Argument} & \texttt{Proposition} & \texttt{Abstract} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Values (Schwartz--Haidt)}} \\
+\texttt{Value} & (direct) & \texttt{Abstract} \\
+10 Schwartz values & \texttt{Value} & \texttt{Abstract} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Utility}} \\
+\texttt{UtilityFormulaFn} & \texttt{UnaryFunction} & \texttt{Function} \\
+\texttt{Consequentialism} & \texttt{Ethics} & domain module \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{SUMO Relations Used by FOET}
+
+FOET introduces 30+ relations.  The most critical (those appearing in
+axioms with inter-paradigm translations) are:
+
+\begin{center}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Relation} & \textbf{SUMO type} & \textbf{Key domains} \\
+\midrule
+\texttt{hasAttribute} & \texttt{BinaryPredicate} & Agent $\times$ Attribute \\
+\texttt{desires} & \texttt{PropositionalAttitude} & Agent $\times$ Formula \\
+\texttt{holdsValue} & \texttt{BinaryPredicate} & Agent $\times$ Value \\
+\texttt{holdsObligation} & \texttt{BinaryPredicate} & Formula $\times$ Agent \\
+\texttt{realizes\-Formula} & \texttt{BinaryPredicate} & Process $\times$ Formula \\
+\texttt{capableInSituation} & \texttt{QuaternaryPredicate} & ProcessClass $\times$ CaseRole $\times$ Object $\times$ Situation \\
+\texttt{situationFn} & \texttt{UnaryFunction} & Process $\to$ Situation \\
+\texttt{influences} & \texttt{BinaryPredicate} & (general) \\
+\texttt{conjectures} & \texttt{PropositionalAttitude} & Agent $\times$ Conjecture \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Upward Dependency Graph}
+
+Figure~\ref{fig:foet-deps} shows the \SUMO{} class hierarchy from
+\texttt{Entity} down to FOET's leaf concepts.  \emph{Every node on a
+path from \texttt{Entity} to a FOET concept must be correctly
+formalized} for the pipeline to verify FOET's axioms.
+
+\begin{figure}[ht]
+\centering
+\small
+\begin{verbatim}
+Entity
++-- Physical
+|   +-- Object
+|   |   +-- SelfConnectedObject
+|   |   |   `-- CorpuscularObject
+|   |   |       `-- ContentBearingObject
+|   |   `-- AutonomousAgent <- VirtuousAgent, ViciousAgent
+|   |       `-- SentientAgent
+|   |           `-- CognitiveAgent
+|   +-- Process <- AutonomousAgentProcess
+|   |   +-- VirtuousAct, ViciousAct
+|   |   +-- BodyMotion, Vocalizing
+|   |   `-- Change
+|   |   `-- LinguisticCommunication
+|   |       `-- Conjecturing
+|   +-- ContentBearingPhysical
+|   |   `-- LinguisticExpression
+|   |       `-- Sentence
+|   |           `-- Formula <- ActionFormula, Conjecture
+|   `-- Situation [FOET-defined]
+|
+`-- Abstract
+    +-- Attribute
+    |   +-- InternalAttribute
+    |   |   `-- BiologicalAttribute
+    |   |       `-- PsychologicalAttribute
+    |   |           +-- VirtueAttribute [FOET]
+    |   |           `-- ViceAttribute [FOET]
+    |   `-- RelationalAttribute
+    |       `-- NormativeAttribute
+    |           +-- ObjectiveNorm
+    |           |   `-- DeonticAttribute [FOET]
+    |           `-- MoralAttribute [FOET]
+    |               +-- MoralValueAttribute [FOET]
+    |               `-- MoralVirtueAttribute [FOET]
+    +-- SetOrClass
+    |   +-- Class
+    |   `-- Set <- ChoicePoint
+    +-- Relation
+    |   +-- Predicate (BinaryPredicate, TernaryPredicate, ...)
+    |   +-- Function (UnaryFunction, BinaryFunction)
+    |   |   `-- UtilityFormulaFn [FOET]
+    |   `-- InheritableRelation
+    |       `-- PropositionalAttitude (desires, conjectures)
+    +-- Proposition
+    |   `-- Argument <- ValidDeductiveArgument
+    |       `-- ConsequentialistArgument [FOET]
+    +-- List <- SentenceList [FOET]
+    `-- Value [FOET] <- 10 Schwartz values
+\end{verbatim}
+\caption{SUMO class hierarchy from \texttt{Entity} to FOET leaf
+  concepts.  Nodes marked [FOET] are introduced by the ethics ontology;
+  all others are \SUMO{} core (Merge.kif).  Every path from root to
+  leaf must be fully debugged.}
+\label{fig:foet-deps}
+\end{figure}
+
+\subsection{Repair Scope Estimate}
+
+From the dependency graph, we identify three ``repair strata'' ordered
+by priority:
+
+\begin{enumerate}
+  \item \textbf{Stratum 0 (Upper ontology core)}: \texttt{Entity},
+    \texttt{Physical}, \texttt{Abstract}, \texttt{Object},
+    \texttt{Process}, \texttt{Attribute}, \texttt{SetOrClass},
+    \texttt{Relation}, \texttt{Proposition}.
+    These 9 classes and their inter-relations (subclass, instance,
+    domain, range) form the skeleton.  Approximately 200 axioms in
+    Merge.kif.  Known bugs: minimal (heavily tested by
+    Adimen-SUMO~\cite{alvez2012adimensumo}).
+
+  \item \textbf{Stratum 1 (Mid-level anchors)}: \texttt{Agent} chain
+    (\texttt{AutonomousAgent} $\to$ \texttt{SentientAgent} $\to$
+    \texttt{CognitiveAgent}), \texttt{NormativeAttribute} $\to$
+    \texttt{ObjectiveNorm}, \texttt{PsychologicalAttribute},
+    \texttt{Formula}/\texttt{Sentence}, \texttt{Predicate}/\texttt{Function},
+    \texttt{PropositionalAttitude}.
+    Approximately 500 axioms.  Known bugs: type confusion in the
+    \texttt{Attribute} hierarchy (Pain/Pleasure,
+    \S\ref{sec:sumo}); potential arity issues in
+    \texttt{PropositionalAttitude} predicates.
+
+  \item \textbf{Stratum 2 (FOET-specific)}: \texttt{MoralAttribute},
+    \texttt{DeonticAttribute}, \texttt{VirtueAttribute},
+    \texttt{AutonomousAgentProcess}, \texttt{ChoicePoint},
+    \texttt{Situation}, \texttt{Value}, \texttt{UtilityFormulaFn},
+    and all 30+ FOET relations.
+    Approximately 300 axioms (from the FOET \KIF{} file).
+    Known bugs: the FOET \KIF{} itself documented several
+    \SUMO{} compatibility issues in
+    \texttt{ResolvedBugsInSUMO.kif}.
+\end{enumerate}
+Stratum-count provenance (snapshot): \texttt{Mettapedia/Languages/GF/SUMO/stratum\_scan.py},
+\texttt{Mettapedia/Languages/GF/SUMO/stratum0\_scan\_report.txt},
+\texttt{Mettapedia/Languages/GF/SUMO/stratum1\_scan\_with\_foet\_report.txt},
+\texttt{Mettapedia/Languages/GF/SUMO/stratum2\_scan\_with\_foet\_report.txt}.
+
+Total: approximately \textbf{1\,000 axioms} spanning 3 strata---a
+tractable target for the repair loop.  This is 5\% of \SUMO{}'s full
+20k axioms, but it covers the upward-closure slice targeted for the
+ethics-application fragment in this draft.
+
+\subsection{Why FOET Is a Good First Target}
+
+\begin{enumerate}[nosep]
+  \item \textbf{Lean formalization exists}: the FOET Lean~4 project
+    (27 modules, 4\,607 lines) already type-checks with a minimal
+    \SUMO{} kernel (\texttt{SumoCore.lean}: \texttt{Class},
+    \texttt{instanceOf}, \texttt{subclass}).  The repair loop would
+    upgrade this kernel to the full 1\,000-axiom fragment.
+  \item \textbf{Gewirth PGC is proven}: the culminating theorem
+    (Principle of Generic Consistency) is proven in both Isabelle/HOL
+    and Lean~4 without \texttt{sorry}.  Canary theorems for the
+    repair loop can be drawn directly from this proof.
+  \item \textbf{Inter-paradigm translations}: the proven loop
+    (Value $\to$ Deontic $\to$ Utilitarian $\to$ Virtue $\to$ Value
+    $=$ id) provides a rich set of canary theorems spanning multiple
+    \SUMO{} concept groups.
+  \item \textbf{Practical relevance}: formal ethics for AI alignment
+    requires certified reasoning over normative concepts---exactly the
+    use case where ontology correctness matters most.
+\end{enumerate}
+
+%% ─────────────────────────────────────────────────────────────
+\section{Experiment: SUMO-GF Through the Pipeline}
+\label{app:sumo-gf-experiment}
+
+We encode the FOET-relevant fragment of the \SUMO{}-\GF{} abstract
+syntax~\cite{enache2012sumogf} in Lean~4 and run it through the full
+\GF{} $\to$ \OSLF{} $\to$ \WM{} pipeline, using exactly the same
+infrastructure as the English and Czech grammars.
+
+\subsection{Encoding Strategy: Shallow Flattening}
+
+The \SUMO{}-\GF{} abstract syntax uses GF's dependent types:
+\begin{verbatim}
+  cat Class; El Class; Ind Class; Var Class;
+      SubClass (c1,c2 : Class); Inherits Class Class;
+      Formula; Stmt;
+\end{verbatim}
+Our pipeline uses flat string-valued sorts.  We apply a
+\emph{shallow flattening}: for each of the ${\sim}50$ FOET-relevant
+\SUMO{} classes $C$, we generate concrete sort names:
+\[
+  \texttt{El}~C \;\mapsto\; \texttt{"El\_}C\texttt{"},\qquad
+  \texttt{Ind}~C \;\mapsto\; \texttt{"Ind\_}C\texttt{"},\qquad
+  \texttt{Var}~C \;\mapsto\; \texttt{"Var\_}C\texttt{"}
+\]
+This loses GF's parametric polymorphism but preserves the
+sort-distinction structure that makes bugs visible, and it is
+compatible with the existing \texttt{gfGrammarLanguageDef}
+infrastructure without modification.
+
+The 50 classes are drawn from the FOET dependency graph
+(Appendix~\ref{app:foet}), organized into three strata:
+\begin{itemize}[nosep]
+  \item \textbf{Stratum~0} (9 classes): \texttt{Entity}, \texttt{Physical},
+    \texttt{Abstract}, \texttt{Object}, \texttt{Process},
+    \texttt{Attribute}, \texttt{SetOrClass}, \texttt{Relation},
+    \texttt{Proposition}
+  \item \textbf{Stratum~1} (18 classes): the Agent chain, normative
+    attributes, psychological attributes, linguistic expressions
+  \item \textbf{Stratum~2} (23 classes): FOET-specific concepts
+    (virtues, deontic attributes, choice points, utility functions)
+\end{itemize}
+
+\subsection{Pipeline Statistics}
+
+Table~\ref{tab:sumo-gf-stats} compares the \SUMO{}-\GF{} encoding
+with the existing RGL (English/Czech) encoding.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrr}
+\toprule
+& \textbf{RGL (Eng/Cz)} & \textbf{SUMO-GF} \\
+\midrule
+Categories (sorts) & 25 & ${\sim}200$ \\
+Grammar rules & 170 & ${\sim}350$ \\
+Rewrite rules & 14 & ${\sim}115$ \\
+Equations & 2 & 50 \\
+\midrule
+Galois connection & proven & proven \\
+Native type theory & yes & yes \\
+\bottomrule
+\end{tabular}
+\caption{Pipeline statistics: RGL vs.\ \SUMO{}-\GF{} encoding.
+  The \SUMO{}-\GF{} encoding is larger because each class generates
+  separate sort, coercion, and quantifier entries.}
+\label{tab:sumo-gf-stats}
+\end{table}
+
+The larger number of sorts and rules reflects \SUMO{}'s richer type
+structure: where the RGL has a single \texttt{NP} sort, \SUMO{}-\GF{}
+has a separate \texttt{El\_$C$} for each class $C$, with explicit
+coercion functions between them.
+
+\subsection{Rewrite Dynamics}
+
+We define four classes of rewrite rules, mirroring the GF \texttt{data}/\texttt{def} structure:
+
+\begin{enumerate}
+  \item \textbf{Reflexive coercion elimination} (${\sim}100$ rules):
+    $\texttt{el\_}C\texttt{\_}C(x) \;\Red\; x$ for each class $C$.
+    In GF, \texttt{el(C, C, inhz(C), x) = x}.
+
+  \item \textbf{Variable coercion elimination} (${\sim}50$ rules):
+    $\texttt{var\_}C\texttt{\_}C(x) \;\Red\; x$.
+
+  \item \textbf{Transitive chain collapse} (11 rules):
+    $\texttt{el\_}B\texttt{\_}C(\texttt{el\_}A\texttt{\_}B(x))
+      \;\Red\; \texttt{el\_}A\texttt{\_}C(x)$
+    for selected chains $A <: B <: C$.
+
+  \item \textbf{Double negation}: $\lnot\lnot\varphi \;\Red\; \varphi$.
+\end{enumerate}
+
+All four classes produce verified output from \texttt{\#eval!} in
+Lean~4.  The reflexive and variable coercions are particularly
+important: they ensure that $\DiamondOp$ is \emph{non-vacuous} for
+identity coercions, meaning the behavioral type system has actual
+content rather than being trivially satisfied.
+
+\subsection{Bug Detection Results}
+
+\paragraph{Pain/Attribute type confusion (detected and analyzed).}
+In \SUMO{}'s \texttt{Mid-level-ontology.kif}, \texttt{Pain} is
+declared \texttt{(subclass Pain PathologicProcess)}---a
+\texttt{Process}.  Meanwhile, \texttt{contraryAttribute} expects
+arguments of type \texttt{El\_Attribute}.  Our pipeline faithfully
+follows \SUMO{}'s taxonomy:
+\begin{itemize}[nosep]
+  \item \texttt{Pain} : \texttt{Ind\_Process}
+  \item \texttt{Pleasure} : \texttt{Ind\_Attribute}
+  \item \texttt{contraryAttribute} : \texttt{El\_Attribute} $\to$
+    \texttt{El\_Attribute} $\to$ \texttt{SumoFormula}
+\end{itemize}
+The pipeline detects that \texttt{Pain} has coercions only to
+\texttt{El\_Process} $\to$ \texttt{El\_Physical} $\to$
+\texttt{El\_Entity}, with \emph{no path} to \texttt{El\_Attribute}.
+
+\paragraph{Comparison with the original \SUMO{}-\GF{}.}
+Examination of \texttt{MidLevelOntology.gf} from the GF~3.3
+distribution reveals that Enache silently reclassified Pain:
+\begin{verbatim}
+  fun Pain : Ind EmotionalState ;   -- MidLevelOntology.gf:4402
+\end{verbatim}
+where \texttt{EmotionalState} $\sqsubseteq$ \texttt{StateOfMind}
+$\sqsubseteq$ \texttt{PsychologicalAttribute} $\sqsubseteq \cdots
+\sqsubseteq$ \texttt{Attribute}.  This makes
+\texttt{contraryAttribute(Pleasure, Pain)} type-correct by moving
+\texttt{Pain} from the Process branch to the Attribute branch---an
+\emph{undocumented repair}.
+
+This repair is defensible: in ordinary language, pain is a
+\emph{sensation} (Attribute) that is \emph{caused by} a pathological
+process, not the process itself.  But the axiom usage census tells
+a different story: 5 axioms use \texttt{Pain} in Process-like
+contexts (\texttt{instance}, \texttt{located}, \texttt{WhenFn})
+versus only 1 in an Attribute-like context
+(\texttt{contraryAttribute}).  Raw evidence-counting would automate
+to the \emph{wrong} classification.
+
+The deeper judgment requires \emph{causal analysis} (Pain is the
+effect, not the cause) and \emph{similarity-class evidence}
+(\texttt{Pain} is used like \texttt{Pleasure}, which is
+\texttt{EmotionalState}, so Pain should be too).  Our repair log
+(\S\ref{sec:evidence-repair}) records this decision with evidence,
+confidence, and canary theorems.
+
+\paragraph{Behavioral dimension.}
+Even if a permissive coercion \texttt{el\_Process\_Attribute} were
+added, $\DiamondOp$ would test whether it has non-trivial rewrite
+behavior.  A vacuous coercion (no reduction rules) would be flagged
+as behaviorally empty---a diagnostic that the original \SUMO{}-\GF{}
+cannot provide.
+
+\paragraph{Classmate arity mismatch (explained).}
+\SUMO{} declares \texttt{classmate} as a \texttt{TernaryPredicate}
+(arity 3: student, student, class) but also declares it an
+\texttt{IrreflexiveRelation}, whose axiom schema
+$\forall x.\;\lnot R(x,x)$ assumes arity~2.  In the \SUMO{}-\GF{}
+encoding, \texttt{classmate} has type:
+\[
+  \texttt{El\_Agent} \to \texttt{El\_Agent} \to \texttt{El\_Class}
+    \to \texttt{SumoFormula}
+\]
+The binary irreflexivity pattern cannot match this ternary signature.
+The repair (from \S\ref{sec:example}) is to replace the binary
+axiom with the properly quantified:
+$\forall a,c.\;\lnot\texttt{classmate}(a, a, c)$.
+
+\subsection{Comparison with the Original \SUMO{}-\GF{}}
+\label{sec:evidence-repair}
+
+We obtained the original \SUMO{}-\GF{} source files from the GF~3.3
+distribution (30\,483 lines across 18 \texttt{.gf} files, including
+1\,722 \texttt{fun} declarations in \texttt{Merge.gf} and 2\,827 in
+\texttt{MidLevelOntology.gf}; measured in our local copy of that distribution).
+Comparing the original with our
+replication reveals both \emph{silent repairs} and
+\emph{design choices} in the original encoding that were not
+discussed in the published work.
+
+\paragraph{Silent repairs.}
+The original \SUMO{}-\GF{} contains at least one undocumented
+reclassification (\texttt{Pain}: \texttt{PathologicProcess} $\to$
+\texttt{EmotionalState}).  Our pipeline, by faithfully following
+\SUMO{}'s own declarations, \emph{detects} the conflict rather than
+silently resolving it.  The repair loop (\S\ref{sec:repair}) then
+provides a principled framework for making and documenting such
+decisions.
+
+\paragraph{Variable-arity relations.}
+The original encoding correctly types \texttt{contraryAttribute}
+as \texttt{[El Attribute] -> Formula} (a GF list type), respecting
+\SUMO{}'s declaration as a \texttt{VariableArityRelation}.  Our
+initial encoding simplified this to a binary signature---a design
+choice that should be corrected.  This repair is fully automatable:
+any relation declared \texttt{(instance R VariableArityRelation)}
+should receive a list-type signature (a mechanically checkable transformation
+in this encoding pipeline).
+
+\paragraph{Unresolved inheritance proofs.}
+The axiom files (\texttt{.gft}) contain 592 lines with unresolved
+\texttt{?} metavariables (out of 1\,184 axiom lines)---these
+represent coercion proofs that GF's type inference could not
+automatically resolve.  The pattern
+\texttt{var~?~?~?~VARIABLE} indicates that the class, target class,
+and inheritance proof for a variable coercion are all unknown.
+In our pipeline, these would be flagged as incomplete behavioral
+types requiring either explicit coercion paths or evidence-based
+inference.
+
+\paragraph{Enache's actual statistics.}
+Enache's thesis reports that 64\% of quantified axioms passed
+type-checking~\cite{enache2012sumogf}.  The 36\% failure breaks down as:
+\begin{itemize}[nosep]
+  \item 12\% genuinely rejected by the type checker
+  \item 12\% inexpressible (variable types from usage context)
+  \item 11\% using untranslated predicates (\texttt{range},
+    \texttt{domain})
+  \item 1\% other
+\end{itemize}
+For the higher-order axioms (involving meta-properties like
+\texttt{AsymmetricRelation}), only 43\% translated successfully,
+largely because \texttt{AsymmetricRelation} in GF assumes same-type
+arguments while \SUMO{} applies it to cross-type relations like
+\texttt{frequency : Process $\to$ TimeDuration}~\cite{enache2012sumogf}.
+
+\paragraph{Evidence-based classification automation.}
+\label{par:evidence-classify}
+Our analysis suggests a three-tier automation strategy for
+classification judgments:
+
+\begin{enumerate}[nosep]
+  \item \textbf{Axiom usage census}: Count how a concept is used
+    across all \SUMO{} axioms.  Process-like patterns:
+    \texttt{instance}, \texttt{located}, \texttt{WhenFn},
+    \texttt{agent}, \texttt{patient}.  Attribute-like patterns:
+    \texttt{attribute}, \texttt{contraryAttribute},
+    \texttt{property}.  This is fully automatable.
+
+  \item \textbf{Similarity-class evidence}: If concept $X$ is used
+    in the same axiom patterns as concept $Y$, and $Y$ has a known
+    classification, then $X$ should likely share that classification.
+    For Pain: \texttt{Pain} appears alongside \texttt{Pleasure} in
+    \texttt{contraryAttribute}, and \texttt{Pleasure} is
+    \texttt{EmotionalState}, so Pain should be too.  This is
+    automatable via co-occurrence analysis.
+
+  \item \textbf{Causal/literature analysis}: When census and
+    similarity evidence conflict (as for Pain: 5 Process-like uses
+    vs.\ 1 Attribute-like use, but similarity says Attribute),
+    deeper judgment is needed.  An LLM or commonsense KB can
+    distinguish ``$X$ is used as $Y$'' from ``$X$ \emph{is} $Y$''
+    by identifying causal structure (Pain is \emph{caused by} a
+    process but \emph{is} a sensation).
+\end{enumerate}
+
+Each classification decision is recorded in a structured
+\emph{repair log} (implemented as a Lean~4 structure with fields
+for original classification, evidence items, confidence, automation
+method, and canary theorems).  This log serves as an audit trail
+that the original \SUMO{}-\GF{} lacks.
+
+\paragraph{What the pipeline adds.}
+Beyond reproducing Enache's sort-level detections, our pipeline
+provides:
+\begin{enumerate}[nosep]
+  \item \textbf{Rewrite dynamics}: The $\DiamondOp/\BoxOp$ operators
+    test whether coercions and axioms have non-trivial operational
+    content, not just type-correctness.
+  \item \textbf{Proven Galois connection}: The adjunction
+    $\DiamondOp \dashv \BoxOp$ is proven automatically for the
+    \SUMO{}-\GF{} language definition (via \texttt{langGalois}).
+  \item \textbf{Repair audit trail}: Every classification decision
+    is logged with evidence, confidence, and canary theorems---making
+    the encoding \emph{reproducible and auditable}, unlike the
+    original's silent repairs.
+  \item \textbf{Cross-grammar invariance}: The same logical form
+    can be expressed in both the RGL (English) grammar and
+    \SUMO{}-\GF{}.  Agreement in \OSLF{} type assignment provides a
+    grammar-invariant correctness check.
+\end{enumerate}
+
+\subsection{Implementation}
+
+The encoding is implemented in five Lean~4 files:
+\begin{itemize}[nosep]
+  \item \texttt{SumoAbstract.lean}: 57 class definitions, 54 subclass
+    edges, ${\sim}350$ function signatures (logical connectives,
+    quantifiers per class, coercions per edge, \SUMO{} relations)
+  \item \texttt{SumoOSLFBridge.lean}: Rewrites, the
+    \texttt{LanguageDef}, OSLF type system, Galois connection proof,
+    and executable pipeline tests
+  \item \texttt{SumoNTT.lean}: Class hierarchy as GSLT, NTT
+    extraction, comprehensive audit (26 decisions, 20 testable)
+  \item \texttt{EvidenceModel.lean}: Repair archetypes, evidence
+    atoms, review voting, assurance scoring (282~lines)
+  \item \texttt{RepairLog.lean}: 26 repair decisions with evidence,
+    WM witnesses, and review state tracking
+\end{itemize}
+Count provenance (snapshot): generated from these modules plus
+\texttt{Mettapedia/Languages/GF/SUMO/audit\_repair\_pipeline.py} and
+\texttt{Mettapedia/Languages/GF/SUMO/data/pipeline\_audit.json}.
+In the reported snapshot, the listed pipeline files build clean; this claim is
+scoped to those files rather than the entire repository.  The Galois connection
+$\DiamondOp \dashv \BoxOp$ for \SUMO{}-\GF{} is proven automatically
+by the same \texttt{langGalois} lemma used for English and Czech.
+
+\subsection{Class Hierarchy as GSLT: NTT Extraction}
+\label{sec:ntt-extraction}
+
+A key discovery is that the \SUMO{} class hierarchy \emph{is itself}
+a graded semantic lattice theory (GSLT).  The subclass relation
+\texttt{Human} $\sqsubseteq$ \texttt{CognitiveAgent} $\sqsubseteq$
+\texttt{SentientAgent} $\sqsubseteq \cdots \sqsubseteq$
+\texttt{Entity} is a rewrite system: each coercion
+$\texttt{el\_}c_1\texttt{\_}c_2(x) \;\Red\; x$ models subsumption as
+reduction.  With the lattice operations \texttt{both} (meet) and
+\texttt{either} (join) from GF's \texttt{Basic.gf}, this forms a GSLT.
+
+We construct a fresh \texttt{LanguageDef} (\texttt{sumoHierarchyLangDef})
+where:
+\begin{itemize}[nosep]
+  \item \textbf{Sorts} = \SUMO{} class names (33 for Layer~1)
+  \item \textbf{Terms} = lift constructors + coercion rules
+    (from the transitive closure: 153 edges from 34 direct edges)
+  \item \textbf{Rewrites} = subclass-as-reduction
+    ($\texttt{lift\_}c_1(x) \;\Red\; \texttt{lift\_}c_2(x)$
+    for each $c_1 \sqsubseteq c_2$)
+\end{itemize}
+Passing this through \texttt{langOSLF} automatically produces
+$\DiamondOp \dashv \BoxOp$ and NTT\@.  The Galois connection is proven
+by the same \texttt{langGalois} lemma.
+
+\paragraph{Behavioral types.}
+The \emph{behavioral type} of a concept $X$ is the set of sorts
+reachable via subclass coercion:
+\[
+  \mathit{BT}(X) = \{S \mid \DiamondOp(\mathit{is\_}S)(X)\}
+\]
+For example:
+\begin{align*}
+  \mathit{BT}(\texttt{CognitiveAgent}) &= \{\texttt{CognitiveAgent},
+    \texttt{SentientAgent}, \texttt{AutonomousAgent}, \texttt{Object},
+    \texttt{Physical}, \texttt{Entity}\} \\
+  \mathit{BT}(\texttt{Process}) &= \{\texttt{Process},
+    \texttt{Physical}, \texttt{Entity}\} \\
+  \mathit{BT}(\texttt{Attribute}) &= \{\texttt{Attribute},
+    \texttt{Abstract}, \texttt{Entity}\}
+\end{align*}
+
+\paragraph{Automated gap detection.}
+A \emph{type gap} occurs when a concept $X$ is used in an axiom
+context demanding sort $S$, but $S \notin \mathit{BT}(X)$.
+The NTT extraction on Layer~1 (strata 0--1) automatically
+detects four gaps:
+
+\begin{center}
+\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Concept} & \textbf{Relation} & \textbf{Demanded sort}
+  & \textbf{Fix} \\
+\midrule
+\texttt{Pain} & \texttt{contraryAttribute} & \texttt{Attribute}
+  & split/reclassify \\
+\texttt{VirtuousAgent} & \texttt{attribute} & \texttt{Attribute}
+  & FOET modeling error \\
+\texttt{(our sig)} & \texttt{capableInSituation} arg~2 & \texttt{CaseRole}
+  & encoding fixed \\
+\texttt{(our sig)} & \texttt{capableInSituation} arg~3 & \texttt{Object}
+  & encoding fixed \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Gaps 3--4 were encoding errors in our replication (wrong KIF domain
+readings); these are fully automatable and have been corrected.
+Gap~2 is a genuine modeling error in FOET: \texttt{VirtuousAgent} is
+a \emph{class} of agents ($\sqsubseteq$ \texttt{AutonomousAgent}),
+not an \texttt{Attribute} value, yet FOET uses
+\texttt{(attribute ?AGENT VirtuousAgent)} at line~4733 of the seed
+ontology.  The correct SUMO pattern is to create an individual
+attribute (cf.\ \texttt{(instance Pietas VirtueAttribute)} at the
+same file's line~4739, correctly used as
+\texttt{(attribute ?AGENT Pietas)}).
+Gap~1 (Pain) requires causal/literature evidence as discussed above.
+
+\paragraph{Variable-name type inference.}
+\SUMO{} KIF variable names carry implicit type information:
+\texttt{?AGENT} implies \texttt{AutonomousAgent},
+\texttt{?PROC} implies \texttt{Process},
+\texttt{?ATTR} implies \texttt{Attribute}, and so on.
+While imprecise, these conventions enable \emph{type-directed
+hole-filling}: given a type gap where concept $X$ fills a slot
+demanding sort $S$, we compute the \emph{inverse behavioral type}
+$\mathit{BT}^{-1}(S) = \{C \mid S \in \mathit{BT}(C)\}$---the
+set of all concepts that could type-correctly fill the slot.
+For example, the 7 inhabitants of \texttt{Attribute} in Layer~1
+are: \texttt{Attribute}, \texttt{InternalAttribute},
+\texttt{BiologicalAttribute}, \texttt{PsychologicalAttribute},
+\texttt{RelationalAttribute}, \texttt{NormativeAttribute},
+\texttt{ObjectiveNorm}.  \texttt{VirtuousAgent} is not among them,
+confirming the type gap.
+
+Combined with pattern matching against analogous correct usage
+in the same file (e.g., \texttt{(instance Pietas VirtueAttribute)}
+followed by \texttt{(attribute ?AGENT Pietas)} at FOET lines
+4739--4743), the auto-fix rule becomes:
+\begin{quote}\small
+\textbf{IF} $S \notin \mathit{BT}(X)$
+\textbf{AND} $\exists$ axiom using \texttt{(instance \_ $X$)}
+\textbf{AND} $\exists$ nearby \texttt{(instance $Y$ $S'$)} with
+$S' \sqsubseteq S$ used as \texttt{(relation \_ $Y$)},
+\textbf{THEN} propose replacing \texttt{(relation \_ $X$)} with
+\texttt{(instance \_ $X$)}.
+\end{quote}
+This rule detected the \texttt{VirtuousAgent} instance/class
+confusion in FOET and proposed the correct fix automatically.
+
+\paragraph{AsymmetricRelation and vacuous axioms.}
+Enache's GF encoding of \texttt{AsymmetricRelation} assumes
+same-type arguments: \texttt{(c:Class) $\to$ (El c $\to$ El c $\to$
+Formula) $\to$ Formula}.  This caused 57\% of higher-order axioms
+to fail translation.  However, examining the 13
+\texttt{AsymmetricRelation} instances in \texttt{Merge.kif} reveals
+that 4/13 have domains on \emph{disjoint branches} (e.g.,
+\texttt{attribute : Object $\times$ Attribute},
+\texttt{manner : Process $\times$ Attribute}).
+For cross-type relations, asymmetry is \emph{vacuously true}:
+if $R : C_1 \times C_2$ with $C_1$ and $C_2$ on disjoint branches,
+then $R(y,x)$ is ill-typed when $y : C_2$, $x : C_1$---the type
+system prevents the symmetric case.
+
+Thus Enache's ``failure'' to translate these axioms was
+\emph{accidentally correct}: omitting a vacuously true axiom is
+sound.  The proper resolution is:
+\begin{itemize}[nosep]
+  \item \textbf{Same-branch} (9/13): keep the axiom---asymmetry has
+    real content (e.g., $\texttt{properPart}(x,y) \to
+    \lnot\texttt{properPart}(y,x)$).
+  \item \textbf{Disjoint-branch} (4/13): omit the axiom; the NTT verifies
+    theorem that disjoint branch membership implies asymmetry.
+\end{itemize}
+The check is fully automatable: read \texttt{(domain R 1 C1)} and
+\texttt{(domain R 2 C2)}; if $\mathit{BT}(C_1) \cap
+\mathit{BT}(C_2) = \{\texttt{Entity}\}$, asymmetry is vacuous.
+
+\paragraph{Full FOET repair results.}
+Applying the NTT pipeline to the FOET seed ontology
+(6\,700+ lines) detected 20 repair items:
+Artifact pointers (snapshot): \texttt{Mettapedia/Languages/GF/SUMO/SumoNTT.lean},
+\texttt{Mettapedia/Languages/GF/SUMO/RepairLog.lean},
+\texttt{Mettapedia/Languages/GF/SUMO/data/decision\_coverage.json}.
+
+\begin{center}
+\small
+\begin{tabular}{@{}rlccc@{}}
+\toprule
+\textbf{\#} & \textbf{Issue} & \textbf{Fixed?} & \textbf{Conf.}
+  & \textbf{Auto?} \\
+\midrule
+ 1 & Pain classification (cross-branch) & No & 0.80 & No \\
+ 2 & \texttt{contraryAttribute} arity & Partial & 0.95 & Yes \\
+ 3 & \texttt{attribute} domain (Agent$\to$Object) & Yes & 1.00 & Yes \\
+ 4 & AutonomousAgent (14 relations demand it) & Yes & 0.95 & Yes \\
+ 5 & SentientAgent hierarchy & Yes & 0.95 & Yes \\
+ 6 & Relation hierarchy (infra sorts) & Yes & 0.85 & Yes \\
+ 7--8 & Transitive closure + domain repair & Yes & 1.00 & Yes \\
+ 9 & AsymmetricRelation (vacuous for 4/13, verified) & Yes & 0.95 & Yes \\
+10 & VirtuousAgent instance/class & Yes & 0.90 & Yes \\
+11--12 & \texttt{capableInSituation} arity + domains & Yes & 1.00 & Yes \\
+13 & \texttt{interferesWith} removed (fabricated) & Yes & 1.00 & Yes \\
+14 & Pietas args swapped (3$\checkmark$ vs 1$\times$) & Yes & 0.98 & Yes \\
+15 & Process in Object slot: \texttt{attribute}$\to$\texttt{property} & Yes & 0.92 & Yes \\
+16 & \texttt{contraryAttribute} with classes$\to$schema & Yes & 0.95 & Yes \\
+17 & Pain in FOET \texttt{attribute} & No & 0.85 & No \\
+18 & \texttt{attribute} args swapped (6361) & Yes & 0.95 & Yes \\
+19 & \texttt{holdsEthicalPhilosophy} swapped & Yes & 0.90 & Yes \\
+20 & Syntax errors (14 items batch) & Yes & 1.00 & Yes \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+In the current repair-log snapshot, 20 items are tracked; 18 are fully automatable.
+The two requiring judgment
+both involve Pain's cross-branch classification (Decisions 1 and 17).
+The dominant repair patterns are:
+\begin{enumerate}[nosep]
+  \item \textbf{Counting}: correct vs incorrect usages of the same
+    concept resolve ambiguity (Decisions 14, 18, 19).
+  \item \textbf{Definitional unfolding}: if $X$ has a well-typed
+    definitional expansion, replace the ill-typed shorthand with
+    the expansion (Decision 10: VirtuousAgent $\to$
+    $\exists V.\;\texttt{VirtueAttribute}(V) \land
+    \texttt{attribute}(A,V)$).
+  \item \textbf{Domain lookup}: read \texttt{(domain R N C)} from
+    KIF and generate signatures mechanically (Decisions 3, 7, 11, 12).
+  \item \textbf{Vacuity detection}: cross-type higher-order axioms
+    are vacuously true by type disjointness (Decision 9).
+  \item \textbf{Superrelation widening}: when $S \notin
+    \mathit{BT}(X)$ for relation $R$, check if $R$ has a
+    superrelation $R'$ via \texttt{(subrelation R R')} whose
+    domain \emph{does} cover $X$'s sort.  Decision 15: 7 FOET axioms
+    used \texttt{(attribute ?ACT ?VIRTUE)} where \texttt{?ACT} is a
+    Process.  Since \texttt{(subrelation attribute property)} and
+    \texttt{(domain property 1 Entity)}, the fix is
+    \texttt{attribute}$\to$\texttt{property}---preserving semantics
+    (every \texttt{attribute} fact entails the corresponding
+    \texttt{property} fact) while widening the domain to include
+    Processes.
+\end{enumerate}
+
+\paragraph{WM evidence evaluation.}
+For candidates requiring semantic judgment, the repair pipeline
+connects to \OSLF{} Stage~3 (world-model evidence).  For each
+candidate $\varphi_i$, we construct the evidence query
+$\mathit{qsem}(\lnot\varphi_i)$---``is there evidence against
+$\varphi_i$?''---and evaluate it against available knowledge
+(ontology axioms, encyclopedias, domain standards).  If the world
+model produces a counterexample, $\varphi_i$ is too strong.  The
+\emph{most general unifier} (weakest surviving candidate) wins.
+
+\medskip\noindent\textbf{Application: Pain classification (Decision~1).}
+Four candidates were evaluated:
+\begin{center}\small
+\begin{tabular}{@{}llcl@{}}
+\toprule
+& \textbf{Candidate} & \textbf{Refuted?} & \textbf{Key evidence} \\
+\midrule
+(a) & \texttt{PathologicProcess} (status quo) & Yes & IASP, SEP, SNOMED, SUMO's own axioms \\
+(b) & \texttt{EmotionalState} (Enache) & No & But too narrow (misses sensory) \\
+(c) & \texttt{StateOfMind} & No & IASP: ``psychological state''; broadest viable \\
+(d) & Split: Sensation + Process & No & Clean but adds complexity \\
+\bottomrule
+\end{tabular}
+\end{center}
+Candidate (a) was refuted by 7 sources (IASP~2020 definition:
+``an unpleasant sensory and emotional \emph{experience}'';
+Stanford~SEP: pain as quale/mental state; SNOMED~CT:
+``sensation quality''; SUMO's own documentation calling Pain
+``a physical \emph{sensation}''; and SUMO's internal inconsistency
+where \texttt{Medicine.kif} uses \texttt{(attribute~?P~Pain)}).
+Candidate~(c) is the MGU: \texttt{StateOfMind} $\sqsubseteq$
+\texttt{PsychologicalAttribute} $\sqsubseteq$
+\texttt{Attribute}, making \texttt{contraryAttribute} type-correct
+while being broader than \texttt{EmotionalState} to capture
+pain's sensory component.
+
+This resolves the last remaining judgment-dependent repair in the current snapshot:
+of 20~decisions in the repair log, \textbf{19 are now fully
+automatable}, with Pain resolved via WM evidence evaluation.
+Artifact pointers (snapshot): \texttt{Mettapedia/Languages/GF/SUMO/RepairLog.lean},
+\texttt{Mettapedia/Languages/GF/SUMO/DocEvidence.lean},
+\texttt{Mettapedia/Languages/GF/SUMO/stratum1\_completion\_certificate.txt},
+\texttt{Mettapedia/Languages/GF/SUMO/stratum1\_with\_foet\_completion\_certificate.txt}.
+
+\paragraph{Significance.}
+The full repair pipeline---NTT gap detection $\to$ candidate
+enumeration $\to$ WM evidence evaluation $\to$ MGU selection---is
+a closed loop connecting \OSLF{}'s three stages.  Stage~1 (GF sort
+discipline) detects type gaps.  Stage~2 (behavioral types via
+$\DiamondOp/\BoxOp$) computes reachability.  Stage~3 (world-model
+evidence) evaluates semantic candidates.  The six repair patterns
+(counting, definitional unfolding, domain lookup, vacuity detection,
+superrelation widening, WM evidence evaluation) together resolve
+95\% (19/20) of the detected issues fully automatically in the current repair-log
+snapshot, with the
+remaining 5\% (Pain) resolved semi-automatically via structured
+evidence gathering from domain standards (IASP), encyclopedias
+(Wikipedia, SEP), and clinical ontologies (SNOMED~CT).
+
+\paragraph{Formal inconsistency detection via the proven-sound checker.}
+The full pipeline---\SUMO{} KIF $\to$ GF Pattern $\to$ GSLT $\to$
+\OSLF{} $\to$ WM \texttt{checkLang}---formally detects inconsistencies
+using \SUMO{}'s own data against its own type constraints.  For each
+axiom, we encode the arguments as \texttt{Pattern} trees positioned
+at their KIF-declared sort (e.g., \texttt{lift\_Process(pain)} for Pain,
+\texttt{lift\_Attribute(pleasure)} for Pleasure), then evaluate the
+formula $\mathit{is\_S} \lor \DiamondOp(\mathit{is\_S})$ (``is on
+branch $S$ or can reach branch $S$ via coercion'') using
+\texttt{checkLang} with the hierarchy GSLT as the \texttt{LanguageDef}.
+
+For \texttt{(contraryAttribute Pleasure Pain)}, which requires both
+arguments to reach \texttt{Attribute}:
+\begin{center}\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Argument} & \textbf{Starting sort} & \textbf{Reaches Attribute?}
+  & \textbf{Result} \\
+\midrule
+Pleasure & \texttt{lift\_Attribute} & \texttt{.sat}
+  & Correct \\
+Pain & \texttt{lift\_Process} & \texttt{.unsat}
+  & \textbf{Type gap} \\
+Pain (repaired) & \texttt{lift\_Attribute} & \texttt{.sat}
+  & Fixed \\
+\bottomrule
+\end{tabular}
+\end{center}
+The checker derives: $\text{arg}_1$ \texttt{.sat} $\land$ $\text{arg}_2$
+\texttt{.unsat} $=$ axiom is \textbf{ill-typed}---an inconsistency
+in \SUMO{}'s own type system, detected formally and proven sound via
+\texttt{checkLangUsing\_sat\_sound}.  After reclassifying Pain to
+\texttt{EmotionalState} (Attribute branch), both arguments return
+\texttt{.sat} and the axiom becomes well-typed.
+
+No external evidence is needed for \emph{detection}---\SUMO{}'s own
+KIF data, run through the pipeline's proven-sound checker, produces
+the inconsistency verdict.  External evidence (IASP, similarity-class
+counting) is needed only for choosing \emph{which repair} to apply.
+
+A comprehensive audit ran \texttt{checkLang} against all 26~repair
+decisions: 20/26 are testable as reachability queries (the remaining
+6 are encoding choices, meta-decisions, or syntax fixes).
+All 20 testable decisions passed---confirming that each detected gap
+is a genuine type error and each repair resolves it.  The audit
+itself caught a test setup error (stratum~2 concept tested against a
+Layer~1 GSLT), demonstrating the value of systematic verification.
+The expanded audit (D22--D26) adds stratum-based checks for
+LinguisticExpression, Artifact, CognitiveAgent, and Group,
+with bidirectional testing (pre-fix \texttt{.unsat} $+$
+post-fix \texttt{.sat}) for typed-argument-swap and
+domain-narrowing archetypes.  Results are persisted as
+structured WM witnesses in the Evidence Model
+(\S\ref{sec:evidence-model}).
+Artifact pointers (snapshot): \texttt{Mettapedia/Languages/GF/SUMO/SumoNTT.lean},
+\texttt{Mettapedia/Languages/GF/SUMO/data/wm\_witnesses.jsonl},
+\texttt{Mettapedia/Languages/GF/SUMO/data/decision\_coverage.json}.
+
+\paragraph{Related work.}
+This approach complements existing ontology debugging work:
+\'Alvez et al.~(2019) developed white-box test generation for
+FOL ontologies (applied to Adimen-\SUMO{}); Kalyanpur et al.~(2005)
+introduced MUPS-based root cause analysis.  Our contribution is
+the connection to \OSLF{}'s behavioral type theory: the class
+hierarchy as GSLT provides a \emph{semantic} foundation for gap
+detection (not just syntactic test generation), and the WM evidence
+calculus provides a principled framework for candidate evaluation
+(not just user interaction).  The proven-sound checker provides
+a formal guarantee that ``\texttt{.sat} $\Rightarrow$ \texttt{sem}
+holds'' (Theorem~\texttt{checkLangUsing\_sat\_sound}) in this pipeline
+slice; in the cited ontology-debugging tooling above, we are not aware of
+an equivalent theorem-level checker soundness result.
+
+\end{document}

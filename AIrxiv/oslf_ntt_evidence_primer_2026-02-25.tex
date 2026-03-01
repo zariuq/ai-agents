@@ -1,0 +1,382 @@
+
+% !TEX TS-program = pdflatex
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{stmaryrd}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue
+}
+
+% --- Simple macros ---
+\newcommand{\OSLF}{\textsf{OSLF}}
+\newcommand{\NTT}{\textsf{NTT}}
+\newcommand{\NT}{\textsf{NT}}
+\newcommand{\MeTTaIL}{\textsf{MeTTaIL}}
+\newcommand{\rhocalc}{\textsf{\(\rho\)}-calculus}
+\newcommand{\picalc}{\textsf{\(\pi\)}-calculus}
+\newcommand{\GF}{\textsf{GF}}
+\newcommand{\WM}{\textsf{WM}}
+
+\newcommand{\BB}{\mathbb{B}}
+\newcommand{\Set}{\mathbf{Set}}
+\newcommand{\C}{\mathcal{C}}
+\newcommand{\D}{\mathcal{D}}
+
+\newcommand{\bx}{\Box}
+\newcommand{\dia}{\Diamond}
+
+\newcommand{\leanfile}[1]{\texttt{#1}}
+\newcommand{\leanid}[1]{\texttt{#1}}
+
+\title{Algorithmic Spatial--Behavioral Types from Rewrite Systems\\
+\large A Primer on \OSLF{}, Native Type Theory, and Evidence-Valued Extensions\\
+\small (Conceptual notes intended to accompany a Lean formalization snapshot; 2026-02-25)}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\OSLF{} (Operational Semantics in Logical Form) proposes an algorithm that takes a language
+presented as a rewrite system---syntax with binders, structural equations, and reduction rules---and
+\emph{mechanically generates} a spatial--behavioral logic and an associated type/judgment system.
+The construction is category-theoretic: starting from a category encoding syntax and dynamics,
+one passes through a presheaf topos via Yoneda, recovers internal Heyting structure from subobjects,
+and applies a Grothendieck construction to obtain a category of \emph{native types}.
+\NTT{} (Native Type Theory) describes a corresponding internal language with dependent types,
+logical connectives, and (in principle) inductive/coinductive fixed points.
+
+This note distills the conceptual picture with an eye toward formalization and executability.
+In addition to the classical ``types as predicates'' reading, we highlight a \emph{valuation layer}:
+OSLF propositions can be interpreted not only as truth values but also as evidence values
+(e.g. in a Heyting/quantale/fuzzy setting), enabling probabilistic, paraconsistent, or resource-aware
+extensions without changing the underlying operational core.
+
+The document separates: (i) claims that are standard in the literature, (ii) endpoints that are already
+formalized in the accompanying Lean snapshot, and (iii) plausible research directions that are not yet
+theorems.
+\paragraph{Status note.} Implementation-status and count claims in this draft are snapshot-scoped; verify against current repository trackers and build outputs before citing as current state. Lean-proven claims are only those tied to explicit Lean file/theorem references; broader mathematical or historical claims are literature-backed context and not asserted as Lean-proven unless explicitly stated.
+\end{abstract}
+
+\tableofcontents
+
+\section{Why ``logic from semantics''?}
+
+The usual workflow in programming languages is: define a calculus, then separately design (or port)
+a logic and type system to reason about it. \OSLF{} reverses the order of invention: given a
+machine-readable description of a model of computation as a rewrite system, it aims to
+\emph{derive} a spatial--behavioral logic and type discipline by a uniform recipe.
+
+Two guiding intuitions:
+
+\begin{enumerate}[label=(\arabic*)]
+\item \textbf{Types as queries over behavior.}
+A type is not merely a shape constraint on syntax; it is a property that can talk about
+structure (\emph{spatial} connectives) and dynamics (\emph{behavioral/modal} connectives).
+
+\item \textbf{Witnesses matter.}
+Under Curry--Howard and realizability-style readings, semantics of formulae are collections of
+witnesses. Sets are one option, but not the only option; changing the witness-collection algebra
+changes the induced logical connectives.
+\end{enumerate}
+
+For concurrency, the intended payoff is a uniform method to generate logics that can express
+liveness/safety properties and structural facts (e.g.\ parallel composition) that are invisible to
+many traditional modal logics.
+
+\section{Input data: rewrite systems as ``graph-structured theories''}
+
+\subsection{Rewrite-system presentation}
+An \OSLF{} input language can be thought of as:
+
+\begin{itemize}
+\item \textbf{Syntax with binders:} term constructors, potentially higher-order, described using
+a higher-order abstract syntax (HOAS) discipline.
+\item \textbf{Equations:} a structural congruence/definitional equality that quotients raw terms.
+\item \textbf{Reduction rules:} a (possibly labeled) transition relation generated from rules, often
+context-closed and compatible with equations.
+\end{itemize}
+
+In the \rhocalc{} and related calculi, the mutual recursion between \emph{names} and \emph{processes},
+and the associated quote/drop structure, is a canonical example: names can be built from processes,
+and processes can execute names.
+
+\subsection{From reductions to graph structure}
+A recurring theme in \OSLF{} and related work is to represent operational semantics internally
+as a \emph{graph structure} whose edges witness allowed transitions.
+This is closely aligned with the view that operational semantics correspond to GSOS-style rules and
+can be seen categorically as distributive laws.
+
+\section{The \OSLF{} construction in one diagram}
+
+\subsection{The conceptual pipeline}
+A compact high-level view is:
+
+\[
+\text{(rewrite system)} \;\leadsto\;
+\underbrace{\text{(category \(\C\) of syntax/constructors)}}_{\text{``constructor category''}}
+\;\xrightarrow{\text{Yoneda}}\;
+\widehat{\C} = \Set^{\C^{op}}
+\;\leadsto\;
+\text{(subobjects \(\Rightarrow\) Heyting structure)}
+\;\xrightarrow{\text{Grothendieck}}\;
+\text{native types } \NT(\C).
+\]
+
+In prose:
+
+\begin{enumerate}[label=(\arabic*)]
+\item Start from a category \(\C\) that encodes the language's sorts and (crucially) the
+\emph{sort-crossing constructors} that move between sorts (e.g.\ quote/drop).
+\item Apply Yoneda to move into a presheaf setting, where each object has a representable presheaf.
+\item Interpret predicates as subobjects (subfunctors) of representables; the poset of subobjects
+carries Heyting-algebra structure (internal logic).
+\item Apply the Grothendieck construction to obtain a category whose objects can be read as
+pairs \((X,U)\): a \emph{sort} \(X\) together with a \emph{predicate/filter} \(U\) on its representable,
+i.e.\ a native type.
+\end{enumerate}
+
+\subsection{What is a native type?}
+A useful operational reading is:
+
+\begin{quote}
+A \emph{native type} is a \emph{sort} together with a \emph{behavioral predicate} over terms/patterns of that sort.
+\end{quote}
+
+In the Lean snapshot, this ``type = (sort, predicate)'' idea appears explicitly in the generated-typing layer.
+
+\subsection{Modalities and a Galois connection}
+A distinctive feature of \OSLF{} is that modal operators are not bolted on: they are \emph{generated}.
+In a two-sort calculus like the \rhocalc{}, sort-crossing constructors provide canonical candidates
+for modal operators. Abstractly, one gets an adjunction (often presented as a Galois connection)
+\(\dia \dashv \bx\) linking possibility and necessity.
+
+Conceptually:
+
+\begin{itemize}
+\item \(\dia \varphi\) expresses ``there exists a behavior step (or path) after which \(\varphi\) holds''.
+\item \(\bx \varphi\) expresses ``for all behavior steps (or predecessors, depending on polarity),
+\(\varphi\) holds''.
+\end{itemize}
+
+The key point is structural: the adjunction is derived from the same categorical data used to
+describe syntax and operational edges.
+
+\section{Native Type Theory as internal language}
+
+\subsection{Internal logic and dependent types}
+\NTT{} describes the internal language of the native-type construction, including:
+
+\begin{itemize}
+\item propositional connectives (interpreted in a Heyting setting);
+\item dependent sums \(\Sigma\) and products \(\Pi\), subsuming existential and universal quantification;
+\item comprehension types \(\{x:A \mid \varphi\}\) connecting predicates and types.
+\end{itemize}
+
+The conceptual advantage is that once the presheaf/topos infrastructure is in place,
+many logical constructions come from general categorical principles rather than ad hoc encodings.
+
+\subsection{Fixed points: \(\mu/\nu\) as inductive/coinductive types}
+A longer-term goal is to connect operational modal reasoning to a \(\mu\)-calculus style
+fixed-point logic:
+
+\begin{itemize}
+\item \(\mu\) for least fixed points (inductive properties like reachability);
+\item \(\nu\) for greatest fixed points (coinductive properties like invariants/bisimulation).
+\end{itemize}
+
+This is where Knaster--Tarski style fixed-point constructions in an appropriate fibration
+meet the operational layer.
+
+\section{From truth to evidence: valuation layers}
+
+\subsection{Why evidence-valued semantics?}
+In many applications (world modeling, uncertain inference, inconsistent data), one wants a semantics
+more refined than \(\{\texttt{true},\texttt{false}\}\). One can keep the \OSLF{} operational core (the transition system)
+and change only the \emph{codomain} of formula evaluation:
+
+\[
+\llbracket \varphi \rrbracket(p) \in V
+\]
+where \(V\) is a partially ordered algebra of evidence/weights rather than \(\BB\).
+
+This makes the ``collection of witnesses'' parameter explicit.
+
+\subsection{Residuated/tensor structure}
+A common pattern is to endow \(V\) with a monoidal tensor \(\otimes\) and a residuation
+(implication-like operator) \(\Rightarrow\), yielding resource-aware entailment:
+
+\[
+a \otimes b \le c \quad\Longleftrightarrow\quad b \le (a \Rightarrow c).
+\]
+
+In a fuzzy/probabilistic instance, one can take \(V = [0,1]\) with a chosen t-norm as \(\otimes\).
+In a paraconsistent instance, \(V\) may track positive/negative support separately.
+
+\subsection{Quantifiers as infimum/supremum}
+When quantifiers are added, a clean semantics in a complete lattice is:
+
+\[
+\llbracket \forall x.\,\varphi \rrbracket = \bigwedge_{d \in \mathrm{Dom}} \llbracket \varphi[x:=d] \rrbracket,
+\qquad
+\llbracket \exists x.\,\varphi \rrbracket = \bigvee_{d \in \mathrm{Dom}} \llbracket \varphi[x:=d] \rrbracket.
+\]
+
+This mirrors the \(\Pi/\Sigma\) view in \NTT{}, and it is compatible with evidence lattices
+beyond Booleans.
+
+\section{Process calculi: \(\pi\), \(\rho\), and correspondence}
+
+\subsection{Why correspondence matters}
+Completeness and expressiveness results for modal/spatial logics are often proved
+\emph{relative to} an operational notion of equivalence, such as (weak) bisimulation or barbed congruence.
+To transfer results between calculi (e.g.\ from \picalc{} to \rhocalc{}), one typically needs a high-quality encoding
+and an operational correspondence theorem: forward simulation and some form of backward reflection.
+
+\subsection{Derived vs core semantics}
+A recurring engineering issue in formalizations is separating:
+
+\begin{itemize}
+\item \textbf{core/canonical reduction:} the intended semantics of the calculus;
+\item \textbf{derived/administrative steps:} convenience rules (e.g.\ unfolding replication, name admin)
+that should not change observable behavior.
+\end{itemize}
+
+A robust architecture proves correspondence in the derived layer (because proofs are shorter),
+then transports results back to the core via conservativity/adequacy theorems on a well-defined fragment.
+
+\subsection{Substitutability as a ``crown'' statement}
+A central claim in the \OSLF{} narrative is a substitutability theorem:
+operational equivalence (bisimilarity) coincides with logical equivalence in the generated type logic.
+Such theorems are often in the spirit of Hennessy--Milner results, but strengthened by spatial operators
+that can observe structure.
+
+\section{Linguistic and neural connections (speculative but testable)}
+
+This note also records a line of thought motivated by grammar formalisms and neural language models.
+
+\subsection{Operational cores of grammar}
+One can view a grammar formalism as a rewrite system: it generates structures and admits reductions/derivations.
+If multiple natural-language grammars are treated as instances, one can ask for a \emph{weakest operational core}
+that preserves a shared logical interface (what can be expressed/queried).
+
+This echoes ``minimalism'' intuitions in linguistics, but the formal content is:
+\emph{identify a minimal rewrite kernel that conservatively preserves the induced spatial--behavioral logic.}
+
+\subsection{Tensorization and distributional semantics}
+A separate (and still open) research direction is to compile logical/operational forms into tensorial expressions
+(using a tensor logic or related categorical semantics), thereby connecting symbolic derivations to
+distributional/statistical models.
+
+A pragmatic hypothesis for transformer-style architectures is that long-term memory need not store complete
+sequence detail; in many tasks it suffices to store a structured partial order or summary that supports the
+queries of interest. This is naturally phrased using order/enrichment (lattices/quantales) rather than raw lists.
+
+\section{Lean formalization snapshot: what is already there}
+
+The accompanying Lean snapshot (in a \texttt{mettapedia} project) contains a significant amount of
+executable and theorem-proved infrastructure. This section only lists \emph{representative} anchor points,
+without attempting to be complete.
+
+\subsection{Executable reduction and soundness scaffolding}
+A key milestone for usability is having an executable one-step reducer for a core calculus
+with a proven soundness theorem, plus regression tests.
+
+\subsection{Language-parametric generation}
+The formalization factors out a \leanid{LanguageDef} describing a user-defined language
+(constructors + rewrite rules), then mechanically builds:
+
+\begin{itemize}
+\item a generated native-type notion (\leanid{GenNativeType});
+\item a generated typing judgment (\leanid{GenHasType});
+\item a substitutability-style stability story (types preserved under substitution).
+\end{itemize}
+
+\subsection{Categorical bridge endpoints}
+The snapshot also includes explicit endpoints that tie the categorical constructions to
+concrete modal operators and internal logic packages.
+
+\subsection{Evidence/tensor endpoints}
+Finally, there are small bridge theorems for evidence/tensor structure (e.g.\ residuation on \([0,1]\))
+intended to make it easy to connect the logic layer to quantitative interpretations.
+
+\section{Claim hygiene and open problems}
+
+\subsection{What is standard}
+The following are standard (non-controversial) mathematical facts used by the program:
+
+\begin{itemize}
+\item Presheaf categories are toposes and support an internal Heyting logic.
+\item Subobjects of a fixed object form a Heyting algebra (and often a complete lattice under mild conditions).
+\item Grothendieck constructions package indexed families (fibrations) into total categories.
+\end{itemize}
+
+\subsection{What is formalized (snapshot-dependent)}
+The Lean snapshot provides concrete instantiations of:
+generated modal operators, Galois connections, internal-language bridge packages,
+and executable reduction/matching infrastructure.
+(See the module pointers in the appendix.)
+
+\subsection{What remains genuinely open}
+Some ambitious directions are not ``for free'' and should be treated as research problems:
+
+\begin{itemize}
+\item \textbf{Generic completeness of spatial logics.}
+Even if modalities are generated functorially, completeness (in the sense of
+``logical equivalence implies bisimulation'') typically demands image-finiteness or similar hypotheses.
+\item \textbf{Transport of completeness across encodings.}
+Transferring completeness from one calculus to another requires encodings that preserve
+the relevant observation structure and adequate reflection properties.
+\item \textbf{Fixed points + operational distributive laws.}
+It is plausible that distributive-law structure helps organize proofs, but a true
+``completeness-for-free'' theorem would need very careful statement and nontrivial conditions.
+\end{itemize}
+
+\appendix
+
+\section{Appendix: suggested code-map anchors}
+
+The following filenames/theorem identifiers are useful anchors when navigating the Lean snapshot:
+
+\begin{itemize}
+\item \leanfile{Mettapedia/OSLF/Framework/GeneratedTyping.lean} --- generated typing pipeline.
+\item \leanfile{Mettapedia/OSLF/Framework/CategoryBridge.lean} --- modal adjunction endpoints.
+\item \leanfile{Mettapedia/OSLF/Framework/ToposTOGLBridge.lean} --- topos/internal-language bridge packages.
+\item \leanfile{Mettapedia/OSLF/QuantifiedFormula.lean} --- quantified formula extension and inf/sup semantics.
+\item \leanfile{Mettapedia/Languages/ProcessCalculi/*} --- \(\rho\)/\(\pi\) calculi, encodings, bisimulation layers.
+\end{itemize}
+
+\section{Appendix: a minimal glossary}
+
+\begin{description}[leftmargin=!,labelwidth=3.0cm]
+\item[Rewrite system] Syntax + equations + reduction rules.
+\item[Spatial logic] Logic with connectives that observe structure (e.g.\ parallel composition).
+\item[Behavioral logic] Modal logic observing operational steps (e.g.\ possibility/necessity).
+\item[Presheaf topos] Category of contravariant set-valued functors \(\Set^{\C^{op}}\).
+\item[Heyting algebra] Lattice with implication appropriate for intuitionistic logic.
+\item[Quantale] Complete lattice with monoidal product distributing over joins (resource/evidence models).
+\item[Galois connection] Adjunction between posets; here used for \(\dia \dashv \bx\).
+\end{description}
+
+\vspace{1em}
+\noindent\textbf{Acknowledgment of sources:} This primer is a synthesis of standard category-theoretic semantics,
+the \OSLF{} and \NTT{} papers, and a Lean formalization snapshot in the \texttt{mettapedia} codebase.
+
+\end{document}

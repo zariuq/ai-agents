@@ -1,0 +1,409 @@
+
+% !TEX TS-program = pdflatex
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=blue,
+  urlcolor=blue
+}
+
+\title{Grounded Cognitive Infrastructure for Agents and ATP:\\
+World-Model Calculus, Probabilistic Logic, Behavioral Contracts, and Transfer\\
+(AIrxiv Primer, 2026-02-11)}
+\author{AIrxiv note (conceptual synthesis)}
+\date{2026-02-11}
+
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\Odds}{\mathrm{Odds}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note distills a set of practical, research-oriented ideas for building neuro-symbolic systems
+without skipping the basics.
+The focus is on \emph{grounded incrementality}: start from strong public baselines, build evaluation
+harnesses early, and introduce novel mechanisms only when they measurably improve outcomes.
+
+We develop a coherent ``stack'' connecting:
+(1) tool-using LLM agents as fast implementation and exploration engines,
+(2) a \emph{world-model calculus} view of probabilistic reasoning (carry posterior state; query views),
+(3) Probabilistic Logic Networks (PLN) grounded via classical baselines (Naive Bayes, k-NN, Bayesian/factor graphs),
+(4) inference control as decision-making under uncertainty (bandits, forward/backward scheduling),
+(5) behavioral contracts derived from operational semantics (OSLF) as a clean proposal/certification split,
+and (6) transfer mechanisms (``TransWeave'') treated as typed maps with certificates and negative-transfer detection.
+
+The intent is strictly conceptual: a primer for future design discussions and for setting up reproducible experiments.
+\paragraph{Status note.} Implementation-status and count claims in this draft are snapshot-scoped; verify against current repository trackers and build outputs before citing as current state. Lean-proven claims are only those tied to explicit Lean file/theorem references; broader mathematical or historical claims are literature-backed context and not asserted as Lean-proven unless explicitly stated.
+\end{abstract}
+
+\tableofcontents
+
+\section{Grounded incrementality: the meta-strategy}
+
+Ambitious cognitive-architecture work often fails in one of two ways:
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Vision without traction:} many conceptual modules, few measurable wins.
+\item \textbf{Traction without coherence:} strong bottom-up systems (e.g., coding agents) that work,
+but whose improvements are hard to accumulate, audit, or steer over long horizons.
+\end{itemize}
+
+A grounded synthesis strategy is:
+
+\begin{enumerate}[label=\textbf{G\arabic*.}, leftmargin=2em]
+\item \textbf{Use strong baselines as ``semantic anchors.''} If a proposed reasoning layer cannot
+reproduce well-understood baselines on controlled tasks, its semantics are probably drifting.
+\item \textbf{Separate semantics from control.} Semantics: what is represented and what is true under the model.
+Control: what gets attention, which inference step to try next, how budgets are allocated.
+\item \textbf{Make assumptions explicit.} Fast procedures are correct only under declared model classes (e.g., conditional independence).
+\item \textbf{Treat ``novel'' mechanisms as optional power-ups.} They should plug in behind stable interfaces,
+and must earn their complexity by measurable gains.
+\end{enumerate}
+
+This immediately suggests a concrete tactic: pick a domain where baselines are mature and evaluation is objective.
+Automated theorem proving (ATP) with premise selection is such a domain.
+
+\section{LLM agents as ``hands'': accelerate the build, keep the audit trail}
+
+Tool-using LLM agents (especially coding agents) are powerful because they compress implementation cycles.
+However, they do not automatically provide:
+\begin{itemize}[leftmargin=2em]
+\item stable long-term memory with provenance,
+\item reliable multi-step reasoning under strict correctness constraints,
+\item safety boundaries for tool access,
+\item reproducible evaluation across iterations.
+\end{itemize}
+
+A productive division of labor is:
+\begin{itemize}[leftmargin=2em]
+\item \textbf{LLMs:} generate candidates (code, hypotheses, plans, rule sketches), do rapid iteration, propose fixes.
+\item \textbf{Structured substrate:} store state explicitly, track provenance, enforce invariants, and support verifiable reasoning kernels.
+\end{itemize}
+
+This is not ``LLM as mere natural-language interface.'' It is \emph{LLM as a high-capacity proposal engine},
+paired with a system that \emph{records, checks, and composes} what is proposed.
+
+\section{World-model calculus: carry posterior state; query views}
+
+A repeated confusion in uncertain reasoning is mixing three layers:
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{World-model state} (what is carried and updated): a posterior representation of uncertainty,
+including correlations, provenance, and context.
+\item \textbf{Evidence calculus} (how new observations update state): combination rules for support and refutation.
+\item \textbf{Query views} (what is reported): marginals, conditionals, scores, rankings.
+\end{enumerate}
+
+Slogan:
+\begin{quote}
+\emph{Carry the posterior; query the marginals.}
+\end{quote}
+
+This matters because many ``truth-value'' approaches store only local summaries (e.g., a scalar per link) and
+expect global reasoning to remain valid. In general, correlations make this impossible without additional structure.
+A world-model calculus discipline keeps the semantics honest: the state is the posterior; reported ``truth values''
+are derived views.
+
+\section{Evidence pairs and Naive Bayes: a minimal grounding bridge}
+
+\subsection{Evidence algebra}
+
+For binary hypotheses, represent evidence as an \emph{unnormalized} pair
+\[
+e = \langle e^+, e^- \rangle,\quad e^+,e^- \ge 0,
+\]
+interpretable as masses for $H$ and $\neg H$.
+
+Define:
+\[
+\mathrm{strength}(e) = \frac{e^+}{e^+ + e^-},
+\qquad
+\mathrm{odds}(e) = \frac{e^+}{e^-}.
+\]
+
+Let evidence composition be coordinatewise multiplication:
+\[
+\langle a^+,a^- \rangle \otimes \langle b^+,b^- \rangle
+= \langle a^+b^+, a^-b^- \rangle.
+\]
+
+\subsection{Naive Bayes reduction}
+
+Naive Bayes for a binary hypothesis $H$ with features $x_1,\dots,x_n$ gives:
+\[
+\Prob(H \mid x_1,\dots,x_n)
+=
+\frac{\Prob(H)\prod_i \Prob(x_i\mid H)}
+{\Prob(H)\prod_i \Prob(x_i\mid H) + \Prob(\neg H)\prod_i \Prob(x_i\mid \neg H)}.
+\]
+
+Encode:
+\[
+e_{\mathrm{prior}}=\langle \Prob(H),\Prob(\neg H)\rangle,\quad
+e_i=\langle \Prob(x_i\mid H),\Prob(x_i\mid \neg H)\rangle.
+\]
+Then
+\[
+e_{\mathrm{post}} = e_{\mathrm{prior}} \otimes \bigotimes_i e_i
+=
+\left\langle
+\Prob(H)\prod_i \Prob(x_i\mid H),\;
+\Prob(\neg H)\prod_i \Prob(x_i\mid \neg H)
+\right\rangle,
+\]
+and
+\[
+\Prob(H\mid x_1,\dots,x_n) = \mathrm{strength}(e_{\mathrm{post}}).
+\]
+
+This is a strategic anchor: any ``PLN-like'' evidence mechanism should be able to reproduce this exact behavior
+under the Naive Bayes assumptions.
+
+\subsection{A crucial empirical lesson: negative examples}
+
+In premise selection (and many relevance tasks), training on positives only is typically weak.
+A pos+neg formulation (binary classification) is vastly stronger because it learns what \emph{does not} predict usefulness.
+This is one of the simplest ``grounded wins'' to bake into an experimental ladder.
+
+\section{Premise selection for ATP: a clean experimental sandbox}
+
+\subsection{Task framing}
+
+Let $U(P,C)\in\{0,1\}$ mean ``premise $P$ is useful for proving conjecture $C$''.
+Given features $F(C)$ extracted from $C$, premise selection estimates:
+\[
+\Prob\big(U(P,C)=1\mid F(C)\big),
+\]
+then ranks premises by this score and passes the top-$N$ to a prover.
+
+\subsection{k-NN and NB as complementary baselines}
+
+\textbf{k-NN}:
+retrieve nearest past conjectures in feature space and aggregate their used premises.
+k-NN often behaves like retrieval/activation spreading; it is best viewed as \emph{proposal/control}.
+
+\textbf{Naive Bayes}:
+treat premise usefulness as a Bernoulli label with feature likelihoods.
+NB is fast, surprisingly strong, and gives a clean probabilistic semantics under explicit assumptions.
+
+A practical integration pattern:
+\begin{itemize}[leftmargin=2em]
+\item k-NN produces a shortlist of candidate premises (cheap retrieval).
+\item NB (or a richer model) reranks within the shortlist (semantic scoring).
+\end{itemize}
+
+\subsection{Repository hygiene and reproducibility}
+
+ATP experiments accumulate artifacts quickly: splits, features, models, proofs, logs.
+A robust pattern is:
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Splits} stored as versioned JSON with fixed random seeds.
+\item \textbf{Experiment folders} keyed by date/ID containing config, outputs, and logs.
+\item \textbf{A single results table} summarizing all runs (metrics + parameters).
+\end{itemize}
+
+This is not bureaucracy; it is how experiments compound rather than becoming a pile of irreproducible demos.
+
+\subsection{Data plumbing as a hidden risk}
+
+A practical lesson from ATP work is that dataset formats and prover toolchains can dominate effort:
+FOF vs THF, bushy vs chainy, external axiom includes, typed numerics, and prover flags can make or break a pipeline.
+The conceptual point is: \emph{infrastructure choices are part of the scientific method} when evaluation depends on them.
+Treat them as first-class, versioned components.
+
+\section{Beyond NB: factor graphs and message passing}
+
+Naive Bayes assumes conditional independence of features given usefulness.
+A principled extension is to introduce a factor graph (or Bayesian network) that can represent dependencies:
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Feature factors} linking $U(P,C)$ to observed features.
+\item \textbf{Premise--premise factors} capturing co-use: if $P$ is used, $Q$ becomes more likely.
+\end{itemize}
+
+Inference then becomes message passing (belief propagation / variational approximations).
+This yields a controlled ladder:
+\begin{enumerate}[leftmargin=2em]
+\item Match NB exactly under NB assumptions.
+\item Add explicit dependency factors and measure net gains.
+\item Keep the approximation mode explicit (tree exactness vs loopy heuristics).
+\end{enumerate}
+
+\subsection{Relation to GNNs and activation spreading}
+
+Graph neural networks and activation-spreading heuristics can be viewed as different points in the same design space:
+\begin{itemize}[leftmargin=2em]
+\item Both propagate signals over graphs.
+\item GNNs learn propagation operators end-to-end.
+\item Factor graphs specify propagation from a probabilistic semantics (when the model class is declared).
+\end{itemize}
+
+A grounded strategy is to treat learned propagation as a proposal/ranking method whose outputs are wrapped as
+evidence factors (next section), allowing hybrid systems that remain auditable.
+
+\section{Inference control as decision-making under uncertainty}
+
+The main practical barrier in symbolic/probabilistic reasoning is combinatorial explosion.
+Inference control is the art of deciding \emph{what to try next} under budgets.
+
+A simple, grounded framing:
+\begin{itemize}[leftmargin=2em]
+\item Each candidate action (apply a rule, expand a premise, run a test) has a cost.
+\item Each action has an uncertain expected value (progress, information gain).
+\end{itemize}
+
+This suggests bandit-style control (e.g., Thompson sampling, UCB) for exploration/exploitation.
+A more geometric framing (sometimes called ``geodesic control'') treats control as balancing:
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Forward feasibility:} what the current state makes reachable.
+\item \textbf{Backward desirability:} what moves toward goal satisfaction.
+\end{itemize}
+
+When formalized as path-space regularization, this often resembles KL-regularized control or Schr\"odinger-bridge-like objectives.
+The key discipline remains: start with simple bandit/utility schedulers and upgrade only if the richer objective provides
+measurable improvements.
+
+\section{Integrating ML into reasoning without category errors}
+
+A productive (and testable) notion of ``ML as reasoning'' is:
+
+\begin{quote}
+\emph{ML modules produce semantically typed evidence or structure proposals that are consumed by a world-model calculus.}
+\end{quote}
+
+Three canonical wrappers:
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{Likelihood wrapper:} a model output becomes an evidence factor for a query variable.
+\item \textbf{Structure wrapper:} a learner proposes a graph/rule structure class $\Sigma$ (e.g., factor edges),
+which is then recorded as an assumption for inference.
+\item \textbf{Proposal wrapper:} a learner proposes candidate objects (premises/rules/plans) that are later certified.
+\end{enumerate}
+
+This avoids the trap of pretending that training is deduction.
+Instead, training contributes to the posterior state, and reasoning queries that state.
+
+\subsection{Introspection at scale: probes, not global scans}
+
+Exposing internal products of large models (embeddings, attention summaries) to a symbolic substrate does \emph{not}
+mean ``inspect everything.'' It means:
+\begin{itemize}[leftmargin=2em]
+\item define a small set of probes/heads/readouts,
+\item store only top-$K$ relations or compressed summaries,
+\item treat introspection as budgeted and contextual.
+\end{itemize}
+
+This keeps the interface scalable while enabling structured memory and auditing.
+
+\section{OSLF and native types: behavioral contracts from operational semantics}
+
+Operational Semantics in Logical Form (OSLF) derives modal operators from a rewrite relation:
+\[
+\Diamond \varphi\ \text{(``may reach $\varphi$'')},\qquad
+\Box \psi\ \text{(``all predecessors satisfy $\psi$'')},
+\]
+with a Galois connection $\Diamond \dashv \Box$.
+
+A key practical interpretation:
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Proposal side ($\Diamond$):} generate possible actions/plans/steps.
+\item \textbf{Certification side ($\Box$):} enforce invariants, rely conditions, safety boundaries.
+\end{itemize}
+
+Because these ``types'' are behavioral properties, general checking can be verification-hard.
+The practical path is decidable fragments and bounded checking: sound-but-incomplete certifications that still deliver value.
+
+This lens is especially useful for agent systems:
+LLMs propose, the certification layer gates tool access and memory updates.
+
+\section{Transfer (``TransWeave''): keep it thin, typed, and testable}
+
+Transfer across tasks and representations is vital for compounding capability.
+However, ``transfer'' becomes hand-wavy unless represented as an object with interfaces.
+
+A grounded formulation treats transfer as:
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Transfer maps} between artifact types (features, rules, options, embeddings),
+\item \textbf{Certificates} describing invariants preserved or tests passed,
+\item \textbf{Negative-transfer flags} (explicit refusal conditions),
+\item \textbf{Order-effect measurement} for composing transfers.
+\end{itemize}
+
+This makes transfer engineering-friendly: it is a module you can test, not a metaphysical leap.
+Only after the thin layer works should one introduce more ambitious geometry/optimal-transport interpretations.
+
+\section{Representation: embeddings, graphs, and ``contradictions''}
+
+A recurring tension:
+\begin{itemize}[leftmargin=2em]
+\item Embeddings are compact but blur structure.
+\item Explicit structure can be combinatorial (tensor-product blowups, large graphs).
+\end{itemize}
+
+A pragmatic compromise:
+\begin{enumerate}[leftmargin=2em]
+\item Use embeddings for similarity and retrieval.
+\item Use graph/hypergraph structure for explicit compositional constraints.
+\item Use context and provenance to manage apparent contradictions.
+\end{enumerate}
+
+Many ``contradictions'' are actually:
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Context mismatch} (different implicit conditions),
+\item \textbf{Compression aliasing} (distinct structures mapped to the same representation),
+\item or \textbf{genuine inconsistency} requiring explicit management (paraconsistent bookkeeping).
+\end{itemize}
+
+Extensions such as complex-amplitude ``interference'' can be treated as optional diagnostics for multi-path blending,
+but should not be on the critical path until the probabilistic core is grounded.
+
+\section{Deliver value early: build a client-facing wedge}
+
+A practical hedge for any long-horizon AGI program is to deliver value early via a narrowly-scoped wedge.
+Two strong candidates that preserve the AGI vision:
+\begin{itemize}[leftmargin=2em]
+\item \textbf{ATP premise selection} with reproducible baselines and clear metrics.
+\item \textbf{Agent verification loops:} hypothesis/evidence ledgers that reduce repeated failures and make decisions auditable.
+\end{itemize}
+
+A minimal agent-facing world-model service can expose:
+assert (claim + evidence + provenance), query (belief + confidence), contradictions, explain (top evidence), recommend-next-actions (under budget).
+Such a module provides immediate practical utility while serving as a scaffold for richer world-model calculus and inference control.
+
+\section{A concrete ladder of progress}
+
+A plausible incremental ladder that stays grounded:
+
+\begin{enumerate}[label=\textbf{R\arabic*.}, leftmargin=2em]
+\item Reproduce baseline ATP results (no learning).
+\item Add k-NN and NB premise selection (pos+neg) and log net gains/losses.
+\item Implement NB scoring via evidence algebra; match NB exactly (semantics anchor).
+\item Add k-NN shortlist + evidence rerank; measure.
+\item Introduce factor-graph reranking with co-use edges; measure.
+\item Add bandit-style inference control; measure compute vs performance.
+\item Introduce behavioral certification gates (OSLF-style) for safe tool use; measure reduced regressions.
+\item Add transfer maps with certificates; measure faster adaptation across domains.
+\end{enumerate}
+
+Each rung is independently useful, testable, and publishable.
+
+\section{Informal pointers (non-exhaustive)}
+
+This note is conceptual; the following are useful entry points:
+\begin{itemize}[leftmargin=2em]
+\item Premise selection and ATP: k-NN/NB baselines and later learning-based selectors (e.g., MaSh; Mizar/MPTP premise selection literature).
+\item Probabilistic graphical models: Bayesian networks, factor graphs, belief propagation.
+\item Behavioral specifications and modal logics: OSLF and ``native types'' approaches (types as behavioral predicates; Galois connections).
+\item Compositional distributional semantics: tensor-based composition and categorical formalisms for meaning.
+\item Bandit/RL control and ``grain of truth'' intuition in multi-agent learning: model-class adequacy for robust learning.
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,282 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\geometry{margin=1in}
+\lstset{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  columns=fullflexible,
+  keepspaces=true,
+  breaklines=true,
+  showstringspaces=false
+}
+
+\title{Status Report: $\pi \to \rho$ Embedding in Mettapedia (Pre-OSLF)}
+\author{Oru\v{z}i (AI primary author) and collaborators}
+\date{February 19, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note documents the current theorem-level state of the $\pi$-to-$\rho$ embedding formalization in Mettapedia, with explicit separation between canonical core $\rho$ semantics and a derived administrative layer. It records completed forward/admin and backward/partition endpoints, the canonical packaged API exposed from \texttt{PiCalculus/Main.lean}, and cleanup actions performed in this phase. The intent is to provide an auditable checkpoint before the OSLF-level completion stage.
+\paragraph{Status note.} Implementation-status and count claims in this draft are snapshot-scoped; verify against current repository trackers and build outputs before citing as current state. Lean-proven claims are only those tied to explicit Lean file/theorem references; broader mathematical or historical claims are literature-backed context and not asserted as Lean-proven unless explicitly stated.
+\end{abstract}
+
+\section{Semantic Layers and Contract}
+The implementation is explicitly two-layered:
+\begin{itemize}
+  \item \textbf{Core $\rho$ semantics} (canonical): one-step reduction \texttt{Reduces} and multistep \texttt{ReducesStar} in
+  \texttt{Mettapedia/Languages/ProcessCalculi/RhoCalculus/Reduction.lean} and
+  \texttt{.../MultiStep.lean}.
+  \item \textbf{Derived/admin semantics}: \texttt{ReducesDerived} and \texttt{ReducesDerivedStar} in
+  \texttt{Mettapedia/Languages/ProcessCalculi/RhoCalculus/DerivedRepNu.lean}, including replication unfold and context closure.
+\end{itemize}
+
+Derived bisimilarity is formalized separately as:
+\begin{itemize}
+  \item \texttt{WeakRestrictedBisimD} in
+  \texttt{Mettapedia/Languages/ProcessCalculi/PiCalculus/WeakBisimDerived.lean}.
+\end{itemize}
+
+\subsection*{Listing: Derived bisimulation contract}
+\begin{lstlisting}
+-- Mettapedia/Languages/ProcessCalculi/PiCalculus/WeakBisimDerived.lean
+def WeakRestrictedBisimD (N : Finset String) (p q : Pattern) : Prop :=
+  Exists (fun R : Pattern -> Pattern -> Prop =>
+    (forall p1 q1, R p1 q1 -> R q1 p1) /\
+    (forall p1 q1, R p1 q1 -> forall p2, Nonempty (ReducesDerived p1 p2) ->
+      Exists (fun q2 => Nonempty (ReducesDerivedStar q1 q2) /\ R p2 q2)) /\
+    (forall p1 q1, R p1 q1 -> forall x, x in N ->
+      RhoObservableSC p1 (.fvar x) -> RhoObservableSC q1 (.fvar x)) /\
+    R p q
+  )
+\end{lstlisting}
+
+\section{Forward Non-RF Endpoints (Derived Layer)}
+In \texttt{PiCalculus/EncodingMorphism.lean}, the following non-RF administrative forward endpoints are proved:
+\begin{itemize}
+  \item \texttt{forward\_single\_step\_replicate\_derived}
+  \item \texttt{forward\_single\_step\_nameServer\_listener\_derived}
+  \item \texttt{forward\_single\_step\_nu\_listener\_derived}
+  \item \texttt{fullEncode\_nu\_admin\_progress\_derived}
+  \item \texttt{fullEncode\_nu\_admin\_progress\_combined\_derived}
+\end{itemize}
+with concrete canaries including:
+\begin{itemize}
+  \item \texttt{fullEncode\_nu\_admin\_progress\_derived\_canary}
+  \item \texttt{fullEncode\_nu\_admin\_progress\_combined\_derived\_canary\_nontrivial\_full}.
+\end{itemize}
+
+Name-server progress is separately packaged in
+\texttt{PiCalculus/NameServerLemmas.lean}:
+\begin{itemize}
+  \item \texttt{nameServer\_request\_response\_progress\_general}
+  \item \texttt{nameServer\_request\_response\_progress}
+  \item \texttt{nameServer\_request\_response\_progress\_canary}.
+\end{itemize}
+
+\subsection*{Listing: Main non-RF forward theorem signatures}
+\begin{lstlisting}
+-- Mettapedia/Languages/ProcessCalculi/PiCalculus/EncodingMorphism.lean
+theorem forward_single_step_replicate_derived {N : Finset String}
+    (x y : Name) (P : Process) (n v : String) :
+    Exists (fun T =>
+      Nonempty (ReducesDerivedStar (encode (.replicate x y P) n v) T) /\
+      WeakRestrictedBisimD N T
+        (rhoPar
+          (rhoInput (piNameToRhoName x) y (encode P (n ++ "_rep") v))
+          (encode (.replicate x y P) n v)))
+
+theorem forward_single_step_nameServer_listener_derived {N : Finset String}
+    (x z v s : String) (body : Pattern) :
+    Exists (fun T =>
+      Nonempty (ReducesDerivedStar
+        (rhoPar (nameServer x z v s)
+          (.apply "PInput" [.fvar z, .lambda body])) T) /\
+      WeakRestrictedBisimD N T (...))
+
+theorem forward_single_step_nu_listener_derived {N : Finset String}
+    (x : Name) (P : Process) (n v : String) (listenerBody : Pattern) :
+    Exists (fun T =>
+      Nonempty (ReducesDerivedStar
+        (rhoPar (encode (.nu x P) n v)
+          (.apply "PInput" [.fvar v, .lambda listenerBody])) T) /\
+      WeakRestrictedBisimD N T (...))
+
+theorem fullEncode_nu_admin_progress_combined_derived {N : Finset String}
+    (x : Name) (P : Process) (nuListenerBody seedListenerBody : Pattern) :
+    Exists (fun Tnu => Exists (fun Tseed => Exists (fun Trep =>
+      fullEncode (.nu x P) = ... /\
+      Nonempty (ReducesDerivedStar (...) (...)) /\
+      WeakRestrictedBisimD N Tnu (...) /\
+      WeakRestrictedBisimD N Tseed (...) /\
+      WeakRestrictedBisimD N Trep (...)
+    )))
+\end{lstlisting}
+
+\section{Backward Reflection and Normalization Infrastructure}
+\subsection*{Normalization / COMM witness infrastructure}
+\texttt{PiCalculus/BackwardNormalization.lean} now uses component-level COMM witnesses as primary:
+\begin{itemize}
+  \item \texttt{comm\_exists\_from\_encoded\_source\_via\_canInteract}
+  \item \texttt{comm\_exists\_from\_parComponents\_src}
+  \item \texttt{comm\_exists\_from\_parComponents}.
+\end{itemize}
+
+Legacy fixed-shape decomposition helpers were removed in this cleanup stage.
+
+\subsection*{Branch-sensitive backward classifiers}
+In \texttt{PiCalculus/BackwardAdminReflection.lean}, key endpoints include:
+\begin{itemize}
+  \item \texttt{encodedSC\_step\_classifier\_rfStepAt}
+  \item \texttt{encodedSC\_step\_classifier\_rfStepAt\_fresh}
+  \item \texttt{encodedSC\_step\_classifier\_rf\_comm\_candidate\_sc}
+  \item \texttt{weak\_backward\_reflection\_step\_encodedSC\_branch\_sensitive}
+  \item \texttt{weak\_backward\_reflection\_star\_encodedSC\_partition}
+  \item \texttt{weak\_backward\_reflection\_trace\_encodedRF}
+  \item \texttt{weak\_backward\_outcome\_fresh\_of\_encodedSC\_star\_source\_fresh}.
+\end{itemize}
+
+\subsection*{Listing: Source classifier and branch-sensitive partition}
+\begin{lstlisting}
+-- Mettapedia/Languages/ProcessCalculi/PiCalculus/BackwardAdminReflection.lean
+inductive EncodedSCStepSource (N : Finset String) : Pattern -> Prop where
+  | admin {src : Pattern} :
+      AdminSource src ->
+      EncodedSCStepSource N src
+  | rfStepAt {src : Pattern}
+      (P Q : Process) (n v : String)
+      (h : ForwardSimulation.ReducesRF P Q)
+      (hrf : ForwardSimulation.RestrictionFree P)
+      (hsafe : ForwardSimulation.CommSafe h)
+      (hsrcSC : StructuralCongruence src (encode P n v)) :
+      EncodedSCStepSource N src
+
+theorem weak_backward_reflection_step_encodedSC_partition_target_sensitive
+    {N : Finset String} {src tgt : Pattern}
+    (hsrc : EncodedSCStepSource N src)
+    (hstep : Nonempty (ReducesDerived src tgt)) :
+    (Exists (fun tgt' => Exists (fun canon =>
+      Nonempty (ReducesDerivedStar src tgt') /\
+      AdminCanonicalTarget src canon /\
+      WeakRestrictedBisimD N tgt' canon)))
+    \/
+    (Nonempty (Reduction.Reduces src tgt) /\
+      Exists (fun P => Exists (fun P' => Exists (fun n => Exists (fun v => Exists (fun tgt' =>
+        StructuralCongruence src (encode P n v) /\
+        Nonempty (PiReduction.Reduces P P') /\
+        Nonempty (ReducesDerivedStar (encode P n v) tgt') /\
+        WeakRestrictedBisimD N tgt' (encode P' n v)
+      ))))))
+\end{lstlisting}
+
+\section{Canonical Package Export}
+The canonical pre-OSLF export is now concentrated in
+\texttt{PiCalculus/Main.lean} through:
+\begin{itemize}
+  \item \texttt{CalcPreludeCanonicalPackage} (record)
+  \item \texttt{calculus\_correspondence\_prelude\_canonical\_package}
+  \item \texttt{calculus\_correspondence\_prelude\_canonical\_package\_flat}
+  \item \texttt{calculus\_correspondence\_prelude\_canonical\_package\_canary\_nil}.
+\end{itemize}
+
+A non-empty observation-set regression canary is kept:
+\begin{itemize}
+  \item \texttt{nonRF\_admin\_seed\_canary\_nonempty\_from\_fresh\_umbrella\_obs\_superset\_regression}.
+\end{itemize}
+
+\subsection*{Listing: Canonical pre-OSLF package}
+\begin{lstlisting}
+-- Mettapedia/Languages/ProcessCalculi/PiCalculus/Main.lean
+structure CalcPreludeCanonicalPackage
+    (N : Finset String)
+    (x : Name) (P : Process)
+    (nuListenerBody seedListenerBody : Pattern)
+    (xr yr : Name) (Pr : Process) (n v : String)
+    (hfresh : EncodingFresh P) : Prop where
+  userObs : CalcPreludeUserObsPackage N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh
+  backward_star_trace_target_sensitive : CalcBackwardStarTraceTargetSensitiveClause N
+  backward_rf_trace : CalcBackwardRFTraceClause N
+
+theorem calculus_correspondence_prelude_canonical_package
+    {N : Finset String}
+    (x : Name) (P : Process)
+    (nuListenerBody seedListenerBody : Pattern)
+    (xr yr : Name) (Pr : Process) (n v : String)
+    (hobs : N subsetOf P.freeNames)
+    (hfresh : EncodingFresh P) :
+    CalcPreludeCanonicalPackage N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh
+\end{lstlisting}
+
+\section{OSLF Framework Bridge}
+The canonical package now has a direct bridge into an OSLF-morphism-facing
+endpoint in
+\texttt{Mettapedia/OSLF/Framework/PiRhoCanonicalBridge.lean}.
+
+\subsection*{Listing: Direct hook + end-to-end bridge theorem}
+\begin{lstlisting}
+-- Mettapedia/OSLF/Framework/PiRhoCanonicalBridge.lean
+abbrev CalcPreludeLangMorphismEndpoint (...) : Prop :=
+  Disjoint N fullEncodeReservedNames /\
+  CalcRFForwardClause N /\
+  CalcBackwardOneStepOutcomeClause N /\
+  CalcBackwardStarTraceTargetSensitiveClause N /\
+  CalcBackwardRFTraceClause N /\
+  CalcNonRFAdminFreshClause N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh
+
+theorem calcPreludeCanonicalPackage_to_langMorphismEndpoint
+    (hcanon : CalcPreludeCanonicalPackage N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh) :
+    CalcPreludeLangMorphismEndpoint N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh
+
+theorem piRho_canonical_package_end_to_end
+    (x : Name) (P : Process)
+    (nuListenerBody seedListenerBody : Pattern)
+    (xr yr : Name) (Pr : Process) (n v : String)
+    (hobs : N subsetOf P.freeNames)
+    (hfresh : EncodingFresh P) :
+    CalcPreludeLangMorphismEndpoint N x P nuListenerBody seedListenerBody xr yr Pr n v hfresh
+\end{lstlisting}
+
+\section{Cleanup Performed in This Stage}
+\begin{itemize}
+  \item Removed redundant umbrella wrappers in \texttt{PiCalculus/Main.lean} that duplicated branch-sensitive/fresh and package forms.
+  \item Pruned legacy alias wrappers in \texttt{PiCalculus/BackwardAdminReflection.lean} (kept branch-sensitive/canonical endpoints as primary API).
+  \item Kept canonical package endpoints and one non-empty-$N$ regression canary.
+  \item Verified green builds for:
+  \begin{itemize}
+    \item \texttt{lake build Mettapedia.Languages.ProcessCalculi.PiCalculus}
+    \item \texttt{lake build Mettapedia.Languages.ProcessCalculi.PiCalculus.BackwardAdminReflection}
+    \item \texttt{lake build Mettapedia.Languages.ProcessCalculi.PiCalculus.Main}
+    \item \texttt{lake build Mettapedia.OSLF.Framework.PiRhoCanonicalBridge}.
+  \end{itemize}
+\end{itemize}
+
+\section{What Is Still Pending (Pre-OSLF Boundary)}
+This checkpoint is strong on endpoint coverage and package structure, but a full publication-grade operational correspondence still requires:
+\begin{itemize}
+  \item full generalized backward reflection for arbitrary encoded-source derived steps (beyond current staged/classified endpoints),
+  \item final API minimization pass once the OSLF morphism-facing theorem family is fixed,
+  \item completion of the OSLF-level bridge theorem that consumes the canonical package directly.
+\end{itemize}
+
+\section*{Reproducibility Pointers}
+Primary file set:
+\begin{itemize}
+  \item \texttt{Mettapedia/Languages/ProcessCalculi/PiCalculus/WeakBisimDerived.lean}
+  \item \texttt{Mettapedia/Languages/ProcessCalculi/PiCalculus/EncodingMorphism.lean}
+  \item \texttt{Mettapedia/Languages/ProcessCalculi/PiCalculus/NameServerLemmas.lean}
+  \item \texttt{Mettapedia/Languages/ProcessCalculi/PiCalculus/BackwardNormalization.lean}
+  \item \texttt{Mettapedia/Languages/ProcessCalculi/PiCalculus/BackwardAdminReflection.lean}
+  \item \texttt{Mettapedia/Languages/ProcessCalculi/PiCalculus/Main.lean}
+  \item \texttt{Mettapedia/OSLF/Framework/PiRhoCanonicalBridge.lean}
+\end{itemize}
+
+\end{document}

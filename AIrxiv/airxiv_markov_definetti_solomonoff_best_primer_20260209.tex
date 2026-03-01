@@ -1,0 +1,419 @@
+
+% AirXiv conceptual primer
+% Generated 2026-02-09
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\newcommand{\Fin}{\mathrm{Fin}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\EE}{\mathbb{E}}
+\newcommand{\TV}{\mathrm{TV}}
+
+\title{A Conceptual Primer on the Markov de Finetti Hard Direction:\\
+Excursion Patterns, BEST Symmetry, and a Bridge to Universal Prediction\\
+{\large (notes for formalization; 2026-02-09)}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note summarizes a proof architecture for the \emph{hard direction} of the Markov de Finetti
+theorem (Diaconis--Freedman style): under Markov exchangeability (and an explicit recurrence
+assumption), a prefix measure on sequences over a finite alphabet admits a representation as a
+mixture of time-homogeneous Markov chains.
+
+The emphasis is conceptual: we describe (i) an \emph{evidence-basis} reduction that replaces
+per-word constraints by finitely many constraints on Markov transition counts; (ii) a compactness /
+moment-polytope route to construct the mixing measure; and (iii) the remaining combinatorial core,
+organized around \emph{excursion-pattern decompositions} and symmetry induced by \emph{segment swaps}.
+The BEST theorem (Euler-trail counting) supplies the decisive uniformity mechanism.
+
+The document is intended as a primer for future work sessions and tool-assisted proof development.
+\paragraph{Status note.} Implementation-status and count claims in this draft are snapshot-scoped; verify against current repository trackers and build outputs before citing as current state. Lean-proven claims are only those tied to explicit Lean file/theorem references; broader mathematical or historical claims are literature-backed context and not asserted as Lean-proven unless explicitly stated.
+\end{abstract}
+
+\section{Executive sketch}
+
+The overall structure can be read as a three-layer pipeline:
+
+\begin{enumerate}[label=\textbf{L\arabic*}.]
+\item \textbf{Analytic layer (parameter space + continuity).}
+Represent Markov chains on a finite state space $\Fin k$ via a compact parameter space
+$\Theta_k$ of initial distributions and row-stochastic transition kernels.
+Cylinder probabilities $\theta \mapsto \Pr_\theta(x_{0:n})$ are continuous functions on $\Theta_k$.
+
+\item \textbf{Evidence layer (reduce words to states).}
+For each horizon $n$, the relevant statistic for Markov exchangeability is the
+\emph{Markov state} (start state + transition count matrix + last state).
+Let $w_\mu(n,e)$ be the prefix-measure mass of the evidence class $e$,
+and $W(n,e,\theta)$ the corresponding evidence polynomial (sum of cylinder probabilities over the
+fiber of trajectories with evidence $e$). The hard direction splits into:
+\begin{itemize}
+\item \emph{Representability:} build a probability measure $\pi$ on $\Theta_k$ such that
+$w_\mu(n,e)=\int W(n,e,\theta)\,d\pi(\theta)$ for all $(n,e)$.
+\item \emph{Regrouping:} prove that evidence constraints imply the per-word mixture formula
+$\mu(x_{0:n})=\int \Pr_\theta(x_{0:n})\,d\pi(\theta)$.
+\end{itemize}
+
+\item \textbf{Combinatorial core (Diaconis--Freedman / BEST).}
+The representability step is reduced, by compactness, to finite satisfiability of finitely many
+evidence constraints. The deepest remaining ingredient is a finite-sample quantitative estimate:
+an empirical (Laplace-smoothed) parameterization, averaged over long trajectories, approximates
+prefix coefficients associated to short-horizon evidence. This estimate can be expressed as an
+$\ell^1$ (total variation) bound between two \emph{pattern distributions}:
+a with-replacement (WR) short-horizon model and a without-replacement (WOR) long-prefix model.
+\end{enumerate}
+
+The key conceptual discovery underpinning the final layer is that one should not attempt to pin a
+\emph{unique} excursion multiset to a Markov state: it is generally not determined by the state.
+Therefore, the final step must be phrased and proven at the \emph{distribution / fiber-sum} level,
+using symmetry and averaging, rather than by selecting a canonical excursion representation.
+
+\section{Objects and viewpoints}
+
+\subsection{Prefix measures and Markov exchangeability}
+
+Fix a finite alphabet (or state space) $\Fin k$.
+A \emph{prefix measure} $\mu$ assigns nonnegative mass to each finite word
+$x_{0:n} \in (\Fin k)^{n+1}$, consistently across horizons (a projective family).
+
+A measure is \emph{Markov exchangeable} if its value on a word depends only on:
+\begin{itemize}
+\item the start state $x_0$,
+\item the transition counts $N_{ab}$ for all ordered pairs $(a,b)$,
+\item the last state $x_n$,
+\end{itemize}
+i.e.\ only on the Markov evidence. This partitions trajectories into \emph{evidence fibers}.
+
+\subsection{The Markov parameter space}
+
+A time-homogeneous Markov chain on $\Fin k$ is encoded by
+\[
+\theta = (\mathrm{init}, \mathrm{trans}), \qquad
+\mathrm{init}\in \Delta(\Fin k),\quad \mathrm{trans}(a)\in \Delta(\Fin k)\ \forall a,
+\]
+where $\Delta(\Fin k)$ denotes probability measures on $\Fin k$.
+The product topology makes $\Theta_k$ compact; cylinder probabilities
+$\theta \mapsto \Pr_\theta(x_{0:n})$ are continuous.
+
+\subsection{Evidence polynomials}
+
+For a fixed horizon $n$ and evidence class $e$ (start, counts, last), define:
+\begin{itemize}
+\item $w_\mu(n,e)$: total $\mu$-mass of the evidence class $e$;
+\item $W(n,e,\theta)$: the \emph{evidence polynomial} under parameter $\theta$,
+the sum of $\Pr_\theta(x_{0:n})$ over all trajectories with evidence $e$.
+\end{itemize}
+Because $W(n,e,\theta)$ is a finite sum of continuous cylinder probabilities, it is continuous in
+$\theta$.
+
+\section{Why the hard direction can be separated into two steps}
+
+The Markov de Finetti hard direction can be profitably factored into:
+
+\subsection{(A) Representability at the evidence level}
+
+Find a mixing measure $\pi$ on $\Theta_k$ such that for all $n$ and $e$,
+\[
+w_\mu(n,e) = \int_{\Theta_k} W(n,e,\theta)\,d\pi(\theta).
+\]
+This is a \emph{moment matching} problem against a basis of continuous functions $W(n,e,\cdot)$.
+
+\subsection{(B) Regrouping from evidence constraints to word constraints}
+
+Given such a $\pi$, show that for every word $x_{0:n}$,
+\[
+\mu(x_{0:n}) = \int_{\Theta_k} \Pr_\theta(x_{0:n})\,d\pi(\theta).
+\]
+Conceptually, this uses two constant-on-fiber facts:
+\begin{itemize}
+\item $\mu$ is constant on evidence fibers by Markov exchangeability;
+\item for fixed $\theta$, $\Pr_\theta(\cdot)$ is constant on evidence fibers
+because the Markov chain probability depends only on counts.
+\end{itemize}
+Then each evidence weight is a fiber cardinality times a representative probability, and the
+multiplicative fiber factor cancels when equating $w_\mu$ and $\int W\,d\pi$.
+
+Step (B) is typically routine once the evidence objects are set up; step (A) contains the real
+mathematics.
+
+\section{Compactness and the moment polytope picture}
+
+A standard compactness argument reduces the infinite family of constraints in (A) to
+\emph{finite satisfiability}:
+
+\begin{quote}
+For every finite index set $u$ of pairs $(n,e)$, there exists a probability measure $\pi$ on
+$\Theta_k$ satisfying all constraints in $u$ simultaneously.
+\end{quote}
+
+Fix a finite $u$. Consider the map
+\[
+\pi \longmapsto \Big( \int W(n,e,\theta)\,d\pi(\theta)\Big)_{(n,e)\in u}.
+\]
+Its range is a compact subset of $\RR^{u}$ (or $\mathbb{R}_{\ge 0}^u$ in an extended setting),
+often called a \emph{moment polytope} or \emph{moment set}. The finite satisfiability goal is
+equivalent to showing the empirical constraint vector
+$\big(w_\mu(n,e)\big)_{(n,e)\in u}$ lies in this compact range.
+
+This viewpoint suggests multiple possible approaches:
+\begin{itemize}
+\item convex-analytic separation (show the constraint vector lies in the closed convex hull of
+evaluation vectors);
+\item functional-analytic extension (positive linear functionals + Riesz--Markov--Kakutani);
+\item probabilistic constructions (martingales / tail sigma-fields yielding a random transition
+matrix).
+\end{itemize}
+In the Diaconis--Freedman route, the recurrence hypothesis enables explicit empirical
+approximations that realize the constraint vector as a limit of points in the moment polytope.
+
+\section{Empirical measures, recurrence, and smoothing}
+
+A central construct is an \emph{empirical parameter map} from evidence states to Markov parameters.
+Given a Markov state $s$ (with transition counts), define a Laplace-smoothed empirical transition
+kernel
+\[
+\widehat{P}_s(b\mid a)=\frac{N_{ab}(s)+\alpha_b}{N_{a\bullet}(s)+\sum_{b'}\alpha_{b'}},
+\]
+with a symmetric prior (e.g.\ $\alpha_b=1$). This defines $\theta_s$.
+
+A long-horizon empirical mixing measure is then obtained by pushing forward the distribution of
+evidence states at horizon $N$ through $s\mapsto \theta_s$.
+The main convergence goal is:
+
+\begin{quote}
+For each fixed short horizon $n$ and evidence class $e$, the empirical integral
+$\int W(n,e,\theta)\,d\pi_N(\theta)$ converges to $w_\mu(n,e)$ as $N\to\infty$.
+\end{quote}
+
+Recurrence (returns to a start/anchor state) supplies enough regeneration to control the empirical
+approximation error. The remaining error is quantified by a bound of order
+$O((n+1)^2/R)$, where $R$ is the number of returns to the anchor state in the long-horizon evidence.
+
+\section{Excursion patterns: turning the core bound into a finite combinatorial problem}
+
+\subsection{Excursions and patterns}
+
+Fix an anchor state (often the start state).
+A long trajectory can be cut at return times to the anchor into \emph{excursions}.
+For many arguments, the key object is the \emph{excursion list} (a list of excursion segments)
+and its derived \emph{pattern} information.
+
+Two distributions over patterns are compared:
+
+\begin{itemize}
+\item \textbf{WR (with replacement):} sample short-horizon trajectories (length $n+1$) and weight
+each by its Markov chain probability under the empirical parameter $\theta_s$.
+
+\item \textbf{WOR (without replacement):} sample a long-horizon trajectory consistent with evidence
+$s$ uniformly within its evidence fiber, take its length-$n+1$ prefix, and map to an excursion
+pattern.
+\end{itemize}
+
+The difference is measured by an $\ell^1$ sum over a finite pattern index set:
+\[
+\sum_{p} \big| \mathrm{WR}(p)-\mathrm{WOR}(p)\big|.
+\]
+The goal is to bound this sum by $4(n+1)^2/R$ (up to constants).
+
+\subsection{A crucial modeling caution}
+
+A tempting shortcut is to assume the evidence state determines a unique multiset of excursions.
+In general, it does not. Evidence (transition counts + endpoints) constrains the multigraph of
+transitions, but multiple distinct collections of excursion segments may realize the same counts.
+
+Therefore, any proof step that ``fixes the excursion multiset'' must be justified as a conditioning
+argument (i.e.\ prove a uniform bound that is stable under averaging), or avoided.
+The robust alternative is to work directly with finite sums over patterns and to use symmetry
+mechanisms (segment swaps, adjacent transpositions) to show certain terms are constant on
+orbits/fibers.
+
+\section{Segment swaps and symmetry transfer}
+
+\subsection{Local symmetry operation}
+
+A \emph{segment swap} is an operation on a trajectory that exchanges two adjacent segments of
+lengths $L_1,L_2$ starting at position $a$, producing a new trajectory:
+\[
+x = \mathrm{pre} \cdot u \cdot v \cdot \mathrm{suf}
+\quad\mapsto\quad
+x'=\mathrm{pre} \cdot v \cdot u \cdot \mathrm{suf}.
+\]
+Under appropriate boundary conditions (notably, returns to the anchor at the cut points),
+a segment swap preserves the overall evidence state while permuting excursion order.
+
+\subsection{Fiber-image equalities}
+
+A recurring pattern in the formalization is:
+\begin{quote}
+If segment swap maps one pattern fiber into another and vice versa, then the two fibers have
+equal cardinality, hence equal ratio masses.
+\end{quote}
+This is packaged as a reusable lemma schema:
+\begin{itemize}
+\item image equality $\Rightarrow$ ratio invariance for WOR-side mass;
+\item image equality $\Rightarrow$ ratio invariance for short-horizon ratios;
+\item combined invariance $\Rightarrow$ invariance of the absolute discrepancy term.
+\end{itemize}
+
+Conceptually, this converts a local bijection into equality of contributions in the target $\ell^1$
+sum.
+
+\section{Orbit / fiber decompositions via multisets}
+
+\subsection{Why partition by multiset}
+
+Many invariances act only within the set of patterns that share the same multiset of excursions.
+A natural way to organize the global sum is therefore to partition the pattern index set by
+\[
+p \longmapsto \mathrm{Multiset}(p),
+\]
+i.e.\ map an excursion list to the multiset of its elements (forgetting order).
+
+This converts the global discrepancy sum into a sum of inner sums over ``multiset fibers'':
+\[
+\sum_{\mathcal{M}} \ \sum_{p:\,\mathrm{Multiset}(p)=\mathcal{M}} \big|\mathrm{WR}(p)-\mathrm{WOR}(p)\big|.
+\]
+Inside a fixed fiber, adjacent transpositions generate all permutations of the excursion list, so
+one can aim to prove that the summand is \emph{constant} on the fiber (or at least controlled by a
+simple expression).
+
+\subsection{From adjacent swaps to arbitrary permutations}
+
+A common proof pattern is:
+
+\begin{enumerate}
+\item show invariance under a single adjacent transposition (via a segment swap lemma);
+\item lift to invariance under any permutation using a permutation induction
+(e.g.\ decomposing permutations into adjacent swaps);
+\item conclude that the function is constant on each multiset fiber.
+\end{enumerate}
+
+The technical work is (1): producing the right decomposition witnesses and boundary conditions so
+that the segment swap lemma applies to the chosen adjacent transposition. Once (1) is available,
+(2)--(3) are largely algebraic.
+
+\section{Where the BEST theorem enters}
+
+The BEST theorem is a counting formula for Euler trails in a directed multigraph.
+In this setting, a Markov evidence state specifies a directed multigraph whose edge multiplicities
+are the transition counts. Trajectories in an evidence fiber correspond to Euler trails (with a
+vertex-sequence extraction map).
+
+The conceptual connection is:
+
+\begin{quote}
+Counting Euler trails supplies an explicit formula for evidence-fiber cardinalities and for
+sub-fiber cardinalities under ``fixing part of the excursion order''. This yields quantitative
+control of how the prefix distribution deviates from the idealized with-replacement model.
+\end{quote}
+
+Informally, if the long trajectory has $R$ returns to the anchor, then the first $m=n+1$ segments
+behave almost as if sampled with replacement from a large pool of $R$ excursions; the deviation is
+of order $m^2/R$. The BEST theorem makes the ``pool symmetry'' exact enough to turn this intuition
+into a bound.
+
+\section{A practical proof template (tool-friendly)}
+
+This section outlines a proof-template that is robust under refactoring and suitable for formal
+proof assistants.
+
+\subsection{Isolation of the core lemma}
+
+Treat the final quantitative bound as a single named lemma (the ``core'') and make everything else
+feed into it. The core lemma should:
+\begin{itemize}
+\item quantify over $k,n,N,e,s$ and include the recurrence/return-size hypotheses;
+\item rewrite the target discrepancy into a finite sum over a canonical pattern index set;
+\item apply a partition-by-multiset identity so the remaining goal is purely fiberwise.
+\end{itemize}
+
+\subsection{Symmetry layer}
+
+Prove reusable symmetry lemmas in the following order:
+\begin{enumerate}
+\item \textbf{Local swap:} adjacent transposition on excursion order realized as a segment swap
+on trajectories (requires bridge lemmas about return positions).
+\item \textbf{Fiber mapping:} show segment swap maps the appropriate pattern fibers to each other.
+\item \textbf{Term invariance:} package invariance of the discrepancy summand.
+\item \textbf{Permutation lift:} extend invariance from adjacent swaps to arbitrary permutations
+inside a multiset fiber.
+\end{enumerate}
+
+\subsection{Counting / bounding layer}
+
+On each multiset fiber, use Euler-trail counting (BEST) to compare:
+\begin{itemize}
+\item the distribution induced by uniform choice in a long evidence fiber (WOR),
+\item the distribution induced by Markov probabilities on short evidence (WR),
+\end{itemize}
+and establish the $O(m^2/R)$ bound, then sum over fibers.
+
+A pragmatic note: constants can often be loosened early (prove $C\cdot m^2/R$ with a generous
+$C$) and tightened later if needed.
+
+\section{Generalizations and ``better indexing''}
+
+Once the proof is established, a useful conceptual cleanup is to re-index the theorem around an
+\emph{anchor state} rather than a random initial state. In many Markov formalizations, one can
+assume an initial state is fixed almost surely; when not, one can often condition on an anchor and
+lift results back to the mixture statement. This re-indexing improves composability with other
+systems (e.g.\ prediction frameworks) because it makes the regeneration structure explicit.
+
+\section{Summary}
+
+The Markov de Finetti hard direction is best understood as:
+\begin{enumerate}
+\item a compact parameter space + continuous cylinder kernels;
+\item an evidence basis that reduces per-word constraints to moment constraints;
+\item a compactness reduction to finite satisfiability;
+\item an empirical approximation route enabled by recurrence;
+\item a final finite combinatorial inequality, naturally expressed as a discrepancy between WR and
+WOR \emph{excursion-pattern distributions}, discharged via segment-swap symmetries and BEST/Euler-trail
+counting.
+\end{enumerate}
+
+The most durable methodological lesson is to keep the last combinatorial inequality isolated and
+prove it with orbit/fiber symmetry, avoiding assumptions (such as a uniquely determined excursion
+multiset) that are not valid at the evidence-state level.
+
+\section*{Pointers for future work}
+
+\begin{itemize}
+\item Prove (or reuse) a generic ``with- vs without-replacement'' total variation lemma with an
+$O(m^2/R)$ bound, and instantiate it to the excursion-pattern distributions. This can reduce the
+dependency on bespoke orbit bookkeeping.
+\item Where the formalization uses Laplace smoothing, track the smoothing error explicitly:
+either show it cancels in the ratio form, or add it as an additive $O(m/R)$ correction.
+\item Consider modularizing the BEST/Euler-trail connection as its own component: a library lemma
+that turns Euler-trail counting into near-uniformity of prefix distributions under recurrence.
+\end{itemize}
+
+\bibliographystyle{plain}
+\begin{thebibliography}{9}
+\bibitem{DF80}
+P.~Diaconis and D.~Freedman.
+\newblock De Finetti's theorem for Markov chains.
+\newblock \emph{Annals of Probability}, 8(1):115--130, 1980.
+
+\bibitem{BEST}
+N.~de Bruijn, T.~van Aardenne-Ehrenfest, C.~A. Smith, and W.~Tutte.
+\newblock The BEST theorem (Euler trail counting) and related combinatorics.
+\newblock Standard graph theory references; see also modern expositions.
+
+\bibitem{Solomonoff}
+R.~J. Solomonoff.
+\newblock A formal theory of inductive inference.
+\newblock \emph{Information and Control}, 1964.
+
+\end{thebibliography}
+
+\end{document}

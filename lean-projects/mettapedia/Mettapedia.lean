@@ -111,5 +111,8 @@ import Mettapedia.UniversalAI.GrainOfTruth.Setup
 -- Bridge (connects geometry to probability/logic)
 import Mettapedia.Bridge.BitVectorEvidence
 
+-- Languages
+import Mettapedia.Languages.MeTTa
+
 -- Examples
 import Mettapedia.Examples.SymmetricMeasures

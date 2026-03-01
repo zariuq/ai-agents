@@ -1,0 +1,335 @@
+% AIrxiv conceptual note (repository-local)
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{stmaryrd} % \llbracket \rrbracket
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=blue,
+  urlcolor=blue
+}
+
+% --- Theorem environments
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{remark}{Remark}
+
+% --- Notation macros
+\newcommand{\State}{\mathsf{State}}
+\newcommand{\Query}{\mathsf{Query}}
+\newcommand{\Evidence}{\mathsf{Evidence}}
+\newcommand{\View}{\mathsf{View}}
+\newcommand{\side}{\ensuremath{\Sigma}}
+
+\newcommand{\revise}{\mathbin{\oplus}}
+\newcommand{\ev}{\mathsf{ev}}
+\newcommand{\dsep}{\mathsf{dSep}}
+\newcommand{\CI}{\perp\!\!\!\perp}
+
+\title{D-Separation as Certified Rewrite:\\
+Connecting Bayesian-Network Semantics to a World-Model Calculus\\
+\large (AIrxiv draft/outline; 2026-02-12)}
+\author{}
+\date{2026-02-12}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note records a conceptual and formal ``bridge'' developed while mechanizing d-separation soundness in Lean
+and integrating it with a world-model calculus (WM-calculus) for probabilistic reasoning.
+The central message is simple: \emph{d-separation is not merely a graph criterion for independence; it is a
+\textbf{certificate} that discharges side conditions of compiled probabilistic rewrites}.
+In the WM-calculus, inference rules are treated as \side-guarded equalities on query semantics
+$e=\ev(W,q)$ rather than as globally valid manipulations of low-dimensional ``truth values.'' The d-separation theorem
+becomes the canonical mechanism for turning structure into admissible rewrites.
+
+We highlight three core accomplishments/ideas:
+(i) a decomposition of d-separation soundness into small, reusable lemmas (graph layer $\Rightarrow$ semantic layer),
+(ii) a discrete proof path that avoids heavy conditional-expectation machinery by reducing key identities to finite sums
+and rank-1 factorization on parent fibers, and (iii) a proof-architecture lesson: stateful invariants are essential to
+prevent branch explosion when converting between moral-ancestral trails and active trails.
+
+A short philosophical interlude connects the ``truth object + view'' stance to empiricism and phenomenological
+interpretations of epistemic state, and notes a resonance with classical theories that treat inference rules as
+valid only under explicit preconditions. The note is intended as a primer for future work in the repository.
+\paragraph{Status note.} Implementation-status and count claims in this draft are snapshot-scoped; verify against current repository trackers and build outputs before citing as current state. Lean-proven claims are only those tied to explicit Lean file/theorem references; broader mathematical or historical claims are literature-backed context and not asserted as Lean-proven unless explicitly stated.
+\end{abstract}
+
+\tableofcontents
+
+\section{Motivation: why d-separation matters for a WM-calculus}
+
+Many neuro-symbolic systems use fast local rules that look like
+``truth-value algebra'' (e.g.\ update formulas on $(\text{strength},\text{confidence})$ pairs).
+Such rules can be useful, but they are typically \emph{not} globally valid without structural assumptions
+about independence and factorization. The WM-calculus stance is:
+
+\begin{quote}
+\emph{Make the semantic object primary: for a world-model state $W$ and query $q$, define a truth object
+$e=\ev(W,q)$. Treat classical ``truth values'' as views/projections of $e$. Compile fast rules as \side-guarded rewrites,
+where \side explicitly states the assumptions under which the rewrite is exact.}
+\end{quote}
+
+In this framing, d-separation is an unusually clean bridge:
+it turns \emph{graph structure} into \emph{semantic independence facts}, which in turn discharge \side for
+many important probabilistic rewrites.
+
+\section{The WM-calculus interface (minimal form)}
+
+\begin{definition}[World-model interface]
+A world-model class provides:
+\begin{enumerate}[leftmargin=2em]
+\item a type of states $\State$ (belief/posterior representation),
+\item a type of queries $\Query$,
+\item a truth-object type $\Evidence$,
+\item an evidence extraction map $\ev : \State \times \Query \to \Evidence$,
+\item an update/revision operation $\revise$ on states (possibly partial, to model overlap-aware fusion).
+\end{enumerate}
+\end{definition}
+
+\begin{definition}[\side-guarded rewrite]
+A compiled rule is represented as a theorem schema
+\[
+  \side \Rightarrow \ev(W,q) \equiv \ev(W,q').
+\]
+Operationally, the system may apply the rewrite only when \side is discharged (proved) in the current context.
+\end{definition}
+
+\begin{remark}[Truth objects vs.\ views]
+A view is any map $v : \Evidence \to U$ into a tractable space $U$.
+The WM-calculus encourages using multiple views---for speed, control, or interpretability---without confusing them
+with the semantics.
+\end{remark}
+
+\section{The d-separation bridge as a certified rewrite pipeline}
+
+This section records the conceptual pipeline that guided the mechanization.
+
+\subsection{Graph layer: active trails and moral-ancestral separation}
+
+Classically, d-separation is defined in terms of \emph{active trails} in a DAG.
+The standard algorithmic equivalence states that d-separation can be checked by separation in an undirected graph:
+
+\begin{theorem}[Pearl-style equivalence (informal)]
+Let $G$ be a DAG, and let $X,Y,Z$ be node sets.
+Then $X$ and $Y$ are d-separated by $Z$ in $G$ iff $X$ and $Y$ are separated by $Z$ in the \emph{moralized ancestral
+graph} of $X\cup Y\cup Z$.
+\end{theorem}
+
+In a mechanized development, this equivalence is best proven by two explicit transforms:
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{Forward transform:} an active trail $\Rightarrow$ an undirected moral-ancestral trail avoiding $Z$.
+\item \textbf{Reverse transform:} a moral-ancestral trail avoiding $Z$ $\Rightarrow$ an active trail.
+\end{enumerate}
+
+\paragraph{Mechanization lesson.}
+The reverse transform is where naive case splits tend to explode.
+A robust proof architecture uses a \emph{stateful invariant} during trail-walking:
+``there exists some anchor node in $X$ already actively connected to the current head, and the head is passable.''
+This lets the proof proceed step-by-step along the moral trail, updating the anchor when a detour yields a new $X$ node,
+and finishing immediately when a detour yields a $Y$ node.
+
+\subsection{Semantic layer: factorization \texorpdfstring{$\Rightarrow$}{->} conditional independence}
+
+The semantic half of d-separation soundness is the global Markov property:
+if $\mu$ factorizes according to $G$ (Bayesian network semantics),
+then d-separation entails conditional independence:
+\[
+  \dsep_G(X,Y\mid Z) \Rightarrow X \CI Y \mid Z \quad \text{under } \mu.
+\]
+
+For integration into a WM-calculus, the useful payload is not only the independence statement,
+but the algebraic identities it implies (``screening-off'') that match compiled rewrite rules.
+
+\subsection{From conditional independence to rewrite equalities}
+
+A typical compiled rewrite needs an identity like
+\[
+  P(A,C,B)\,P(B) = P(A,B)\,P(C,B),
+\]
+or equivalently $P(C\mid A,B)=P(C\mid B)$ under positivity assumptions.
+In the WM-calculus this becomes a certified rewrite:
+\[
+  \side_{\text{d-sep}} \Rightarrow \ev(W, q_{\text{lhs}}) = \ev(W, q_{\text{rhs}}),
+\]
+where $\side_{\text{d-sep}}$ is discharged by a d-separation proof in the graph.
+
+\section{Major formalization breakthroughs (what actually made it work)}
+
+This section collects the key proof-techniques that turned ``standard textbook math'' into Lean-checkable theorems.
+
+\subsection{Breakthrough A: replace heavy \texttt{condExp} reasoning with discrete finite-sum algebra}
+
+A recurring obstacle in measure-theoretic formalizations is conditional expectation.
+In the discrete BN setting, the same identities can be proven \emph{more robustly} by finite-sum computation:
+
+\begin{enumerate}[leftmargin=2em]
+\item Express $\mu(S)$ as a finite sum of joint weights:
+\[
+  \mu(S) = \sum_{x} \mathbf{1}_{x\in S}\,w(x)
+\]
+for measurable $S$.
+\item Reduce screening-off on a parent fiber to a rank-1 factorization:
+on $\{\mathrm{Pa}(v)=c\}$, sums over descendants collapse by normalization (a telescoping argument),
+leaving dependence on $x_v$ only through the local CPT term.
+\item Conclude the cross-multiplication identity by algebra on sums.
+\end{enumerate}
+
+\paragraph{Takeaway.}
+In a discrete mechanization, it is often better to \emph{prove the measure identity directly}
+than to force a large conditional-expectation lemma. The former is smaller, faster to elaborate,
+and aligns with the actual inference engine used operationally (variable elimination).
+
+\subsection{Breakthrough B: parent-fiber screening via rank-1 factorization}
+
+The key lemma shape is:
+for fixed parent assignment $c$ and a set $T$ measurable w.r.t.\ non-descendants excluding parents/self,
+\[
+  \mu(T \cap \{X_v=a\} \cap \{\mathrm{Pa}(v)=c\}) = \theta(a,c)\cdot K(T,c)
+\]
+for some $\theta$ determined by the local CPT at $v$ and some $K$ independent of $a$.
+Once this is established:
+\[
+  \mu(T \cap \{X_v\in A\}\cap F)\,\mu(F) = \mu(\{X_v\in A\}\cap F)\,\mu(T\cap F)
+\]
+follows by summing $\theta(a,c)$ over $a\in A$ and using $\sum_a \theta(a,c)=1$.
+
+\subsection{Breakthrough C: stop branch explosion by carrying state in the reverse transform}
+
+The difficult direction in the moral-ancestral equivalence is:
+\[
+  \text{moral trail avoiding } Z \Rightarrow \text{active trail}.
+\]
+A clean approach does \emph{not} demand that each intermediate trail head lies in $X$.
+Instead it carries an invariant such as:
+\[
+  \exists x_0\in X,\ \text{HasActiveTrail}(x_0,\text{head}) \quad \wedge \quad \text{HeadPassable}(\text{head}).
+\]
+Then each moral edge step either:
+\begin{itemize}[leftmargin=2em]
+\item extends the state across a direct moral edge,
+\item passes through an activated collider witness (if the spouse witness is in $\mathrm{Anc}(Z)$),
+\item or triggers a detour lemma: ``if the spouse witness is not in $\mathrm{Anc}(Z)$, then it reaches $X$ or $Y$,''
+which either finishes (hit $Y$) or updates the anchor (hit $X$).
+\end{itemize}
+
+\paragraph{Why this matters.}
+This state-carrying style turns a combinatorial proof into a small number of reusable ``step'' lemmas and one recursion,
+which is exactly what proof assistants reward.
+
+\section{How this connects back to WM-calculus and PLN-style inference}
+
+\subsection{D-separation as a \texorpdfstring{$\side$}{Sigma}-discharge engine}
+
+The WM-calculus encourages treating fast rules as \side-guarded rewrites.
+In practice, \side often needs to express conditional independence.
+
+Bayesian networks are the canonical class where independence is \emph{structural}:
+it can be proven from the graph. Hence:
+\[
+  \side_{\text{graph}} \Rightarrow \side_{\text{semantic}} \Rightarrow \text{rewrite correctness}.
+\]
+D-separation is the engine that supplies $\side_{\text{graph}}$.
+
+\subsection{Truth values as views: why local propagation is incomplete}
+
+A recurring formal theme is that correlations live in the joint state.
+Therefore no fixed low-dimensional truth value (e.g.\ a pair $(s,c)$) can be globally complete across all queries.
+The WM-calculus response is to:
+\begin{enumerate}[leftmargin=2em]
+\item keep a truth object $e=\ev(W,q)$ that may be structured,
+\item expose tractable views for control,
+\item use certified \side-guarded rewrites (e.g.\ from d-separation) when a view-level rule is exact.
+\end{enumerate}
+
+\subsection{Evidence overlap and partial fusion (why \side matters even outside BNs)}
+
+When evidence overlap is possible, revision should be partial unless disjointness/independence is certified.
+This can be modeled by a separation-algebra-like structure for evidence, and by treating ``combine'' steps as admissible
+only under explicit preconditions. The same design discipline applies:
+\emph{sound speed requires explicit \side.}
+
+\section{Philosophical interlude: empiricism, phenomenology, and rule admissibility}
+
+The WM-calculus is compatible with a broadly empirical reading:
+the system does not claim access to ``truth'' as a metaphysical primitive;
+it maintains an epistemic state and extracts query-specific evidence objects.
+Views (like scalar probabilities or strength/confidence) are tools for action and communication.
+
+Two resonances are worth noting:
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Phenomenological stance:} a query is an intentional act; the ``truth object'' is the structured content
+made available under a particular perspective/intent (here, the current world-model state).
+\item \textbf{Rule admissibility tradition:} many classical principles are valid only under explicit preconditions
+(e.g.\ decidability, totality, or a chosen semantics). This parallels treating probabilistic rules as admissible rewrites
+only under \side.
+\end{itemize}
+
+Classical epistemological systems that foreground \emph{conditions of valid inference} align well with the WM-calculus
+discipline: inference is licensed by explicit warrants rather than assumed universally.
+
+\section{Outline of the mechanized pipeline (as a roadmap)}
+
+For future work (or new contributors), the mechanization pipeline is:
+
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{Graph:} formalize active trails and d-separation; formalize moralization/ancestral construction.
+\item \textbf{Equivalence:} prove the moral-ancestral equivalence by forward and reverse transforms using stateful invariants.
+\item \textbf{Semantics:} define discrete CPT semantics; expose $\mu$ as a measure and $w(x)$ as joint weights.
+\item \textbf{Local Markov:} prove screening-off on parent fibers by finite sums and telescoping elimination.
+\item \textbf{Global Markov:} compose graph equivalence with semantic CI to obtain d-separation soundness.
+\item \textbf{WM integration:} expose d-separation proofs as \side certificates discharging rewrite rules.
+\end{enumerate}
+
+\section{Relationship to companion repository notes}
+
+This note intentionally focuses on the d-separation bridge and the mechanization lessons that make it tractable.
+Companion notes cover broader or orthogonal topics:
+\begin{itemize}[leftmargin=2em]
+\item a general WM-calculus primer (truth objects, views, evidence algebras),
+\item algorithmic probability and Solomonoff-style induction notes,
+\item process-calculus formalization notes,
+\item bootstrapping neurosymbolic agent execution/inference-control notes.
+\end{itemize}
+
+\section{Conclusion}
+
+The d-separation theorem is more than a classical result in graphical models:
+it is a reusable \emph{certificate generator} for \side-guarded probabilistic rewrites.
+Mechanizing it clarifies where independence assumptions enter, how they can be discharged structurally,
+and how to keep fast inference rules honest inside a world-model calculus.
+
+\bibliographystyle{plain}
+\begin{thebibliography}{9}
+
+\bibitem{Pearl}
+J.~Pearl.
+\newblock \emph{Probabilistic Reasoning in Intelligent Systems: Networks of Plausible Inference}.
+\newblock Morgan Kaufmann, 1988.
+
+\bibitem{KollerFriedman}
+D.~Koller and N.~Friedman.
+\newblock \emph{Probabilistic Graphical Models: Principles and Techniques}.
+\newblock MIT Press, 2009.
+
+\bibitem{Lauritzen}
+S.~Lauritzen.
+\newblock \emph{Graphical Models}.
+\newblock Oxford University Press, 1996.
+
+\end{thebibliography}
+
+\end{document}
