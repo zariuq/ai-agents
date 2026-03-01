@@ -666,6 +666,57 @@ open Mettapedia.OSLF
 #check @Mettapedia.OSLF.PathMap.WorldModelBridge.finset_multiset_evidence_agree
 #check @Mettapedia.OSLF.PathMap.WorldModelBridge.multisetWorldModel_finset_eq
 
+-- XII. ZAM (Zipper Abstract Machine) — execution model soundness
+-- ZipperReachableValue: inductively reachable values via toNextVal iteration
+#check @Mettapedia.OSLF.PathMap.ZipperExecution.ZipperReachableValue
+-- ZipperStoreValues: specification of all stored values
+#check @Mettapedia.OSLF.PathMap.ZipperExecution.ZipperStoreValues
+-- ZipperIterationSound: reachable ↔ stored (biconditional contract)
+#check @Mettapedia.OSLF.PathMap.ZipperExecution.ZipperIterationSound
+-- ZipperSpace: zipper-backed RelationalSpace
+#check @Mettapedia.OSLF.PathMap.ZipperExecution.ZipperSpace
+-- ZAM soundness: zipper-backed OSLF reduction = flat-env reduction
+#check @Mettapedia.OSLF.PathMap.ZipperExecution.zam_oslf_sound
+#check @Mettapedia.OSLF.PathMap.ZipperExecution.zam_diamond_sound
+#check @Mettapedia.OSLF.PathMap.ZipperExecution.zam_box_sound
+-- FlatZipper: reference ZipperIterationSound instance (list-backed)
+#check @Mettapedia.OSLF.PathMap.FlatZipperInstance.FlatZipper
+
+-- XIII. Trie stack — byte-indexed trie formalization (970 lines, 0 sorries)
+-- CTrie: coalgebraic trie (List UInt8 → Option V), canonical semantics
+#check @Mettapedia.OSLF.PathMap.Trie.CTrie
+#check @Mettapedia.OSLF.PathMap.Trie.CTrie.Bisim
+#check @Mettapedia.OSLF.PathMap.Trie.CTrie.AcceptsBisim
+-- CTrie algebraic laws (up to Bisim)
+#check @Mettapedia.OSLF.PathMap.Trie.CTrie.union_idem
+#check @Mettapedia.OSLF.PathMap.Trie.CTrie.union_assoc
+#check @Mettapedia.OSLF.PathMap.Trie.CTrie.inter_idem
+#check @Mettapedia.OSLF.PathMap.Trie.CTrie.inter_assoc
+#check @Mettapedia.OSLF.PathMap.Trie.CTrie.absorption
+#check @Mettapedia.OSLF.PathMap.Trie.CTrie.inter_union_distrib
+-- CTrie Brzozowski derivatives
+#check @Mettapedia.OSLF.PathMap.Trie.CTrie.deriv_union
+#check @Mettapedia.OSLF.PathMap.Trie.CTrie.deriv_inter
+#check @Mettapedia.OSLF.PathMap.Trie.CTrie.deriv_diff
+-- FTrie: inductive trie with sorted child lists
+#check @Mettapedia.OSLF.PathMap.Trie.FTrie
+#check @Mettapedia.OSLF.PathMap.Trie.FTrie.lookup
+#check @Mettapedia.OSLF.PathMap.Trie.FTrie.entries
+#check @Mettapedia.OSLF.PathMap.Trie.FTrie.join
+#check @Mettapedia.OSLF.PathMap.Trie.FTrie.meet
+#check @Mettapedia.OSLF.PathMap.Trie.FTrie.subtract
+#check @Mettapedia.OSLF.PathMap.Trie.FTrie.restrict
+-- FTrie → CTrie refinement homomorphism
+#check @Mettapedia.OSLF.PathMap.Trie.FTrie.toCTrie
+#check @Mettapedia.OSLF.PathMap.Trie.FTrie.Sorted
+#check @Mettapedia.OSLF.PathMap.Trie.FTrie.join_lookup
+#check @Mettapedia.OSLF.PathMap.Trie.FTrie.toCTrie_join
+-- FTrie PathMapQuantale instance (via beqFTrie identity detection)
+#check @Mettapedia.OSLF.PathMap.Trie.FTrie.beqFTrie
+#check @Mettapedia.OSLF.PathMap.Trie.FTrie.beqFTrie_refl
+-- SimpleTrieZipper: ZipperIterationSound for FTrie
+#check @Mettapedia.OSLF.PathMap.Trie.SimpleTrieZipper
+
 -- PeTTa OSLF instance (PeTTa → OSLF → mettail-rust pipeline)
 #check @Mettapedia.OSLF.PeTTa.OSLFInstance.pettaOSLF
 #check @Mettapedia.OSLF.PeTTa.OSLFInstance.pettaGalois

@@ -87,7 +87,8 @@ def singleton : List UInt8 → V → FTrie V
 mutual
   /-- Union of two tries.  Left-biased when both have values at the same path. -/
   def join : FTrie V → FTrie V → FTrie V
-    | .empty, t | t, .empty => t
+    | .empty, t => t
+    | t, .empty => t
     | .node v₁ c₁, .node v₂ c₂ =>
       .node (v₁ <|> v₂) (joinChildren c₁ c₂)
 
@@ -113,7 +114,8 @@ end
 mutual
   /-- Intersection of two tries.  Keeps the left value when both are present. -/
   def meet : FTrie V → FTrie V → FTrie V
-    | .empty, _ | _, .empty => .empty
+    | .empty, _ => .empty
+    | _, .empty => .empty
     | .node v₁ c₁, .node v₂ c₂ =>
       let val := match v₁, v₂ with | some v, some _ => some v | _, _ => none
       (FTrie.node val (meetChildren c₁ c₂)).normalize
@@ -121,7 +123,8 @@ mutual
   /-- Merge two sorted child lists for intersection. -/
   def meetChildren : List (UInt8 × FTrie V) → List (UInt8 × FTrie V) →
       List (UInt8 × FTrie V)
-    | [], _ | _, [] => []
+    | [], _ => []
+    | _, [] => []
     | (b₁, t₁) :: rest₁, (b₂, t₂) :: rest₂ =>
       if b₁ < b₂ then meetChildren rest₁ ((b₂, t₂) :: rest₂)
       else if b₂ < b₁ then meetChildren ((b₁, t₁) :: rest₁) rest₂
@@ -163,7 +166,8 @@ end
 mutual
   /-- Prefix restriction: keep paths from `t₁` whose prefix is in `t₂`. -/
   def restrict : FTrie V → FTrie V → FTrie V
-    | .empty, _ | _, .empty => .empty
+    | .empty, _ => .empty
+    | _, .empty => .empty
     | t₁, .node (some _) _ => t₁  -- prefix matched: keep entire subtree
     | .node _ c₁, .node none c₂ =>
       (FTrie.node none (restrictChildren c₁ c₂)).normalize
@@ -171,7 +175,8 @@ mutual
   /-- Merge two sorted child lists for prefix restriction. -/
   def restrictChildren : List (UInt8 × FTrie V) → List (UInt8 × FTrie V) →
       List (UInt8 × FTrie V)
-    | [], _ | _, [] => []
+    | [], _ => []
+    | _, [] => []
     | (b₁, t₁) :: rest₁, (b₂, t₂) :: rest₂ =>
       if b₁ < b₂ then restrictChildren rest₁ ((b₂, t₂) :: rest₂)
       else if b₂ < b₁ then restrictChildren ((b₁, t₁) :: rest₁) rest₂
@@ -191,15 +196,17 @@ theorem entries_empty : (FTrie.empty : FTrie V).entries = [] := rfl
 
 /-! ## §11: Join Properties -/
 
-theorem join_empty_left (t : FTrie V) : join .empty t = t := rfl
+theorem join_empty_left (t : FTrie V) : join .empty t = t := by
+  cases t <;> unfold join <;> rfl
 theorem join_empty_right (t : FTrie V) : join t .empty = t := by
-  cases t <;> rfl
+  cases t <;> unfold join <;> rfl
 
 /-! ## §12: Meet Properties -/
 
-theorem meet_empty_left (t : FTrie V) : meet .empty t = .empty := rfl
+theorem meet_empty_left (t : FTrie V) : meet .empty t = .empty := by
+  cases t <;> unfold meet <;> rfl
 theorem meet_empty_right (t : FTrie V) : meet t .empty = .empty := by
-  cases t <;> rfl
+  cases t <;> unfold meet <;> rfl
 
 /-! ## §13: Summary
 

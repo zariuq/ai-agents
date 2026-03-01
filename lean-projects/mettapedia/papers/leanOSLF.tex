@@ -68,7 +68,8 @@ categories, representable-fiber bridges, and graph-object reduction semantics;
 (viii) a \emph{Beck--Chevalley analysis} of substitution as change-of-base, with a
 proven counterexample showing the strong condition fails and concrete
 representable/graph square theorems;
-(ix) a MeTTa Core interpreter specification with confluence and progress; and
+(ix) a MeTTa Core interpreter specification with grounded-operation
+determinism and state-machine invariants; and
 (x) \emph{paper-parity endpoints} providing a unified canonical package
 (\code{coreMain\_paper\_parity\_full\_package}) that bundles Theorem~1 forward
 substitutability, full presheaf Grothendieck category, scoped/full comparison,
@@ -138,8 +139,9 @@ formalization, connecting:
   \rhocalc{}-calculus language definition.
 \item A verified bounded model checker for \OSLF{} formulas, with support for
   predecessor-based $\Bx$ checking and proven soundness.
-\item A MeTTa Core interpreter specification with progress, confluence, and barbed
-  bisimulation properties (97 proven theorems, 0 sorries).
+\item A MeTTa Core interpreter specification with grounded-operation
+  determinism, knowledge-preservation invariants, and state bisimilarity
+  (0~sorries; see caveat in Section~\ref{sec:mettacore}).
 \item A dedicated sorry-free core entrypoint (\code{CoreMain.lean}) and
   machine-readable FULL tracker (\code{Framework/FULLStatus.lean}) for review.
 \item A \emph{paper-parity canonical package}
@@ -742,9 +744,10 @@ Key proven properties of substitution (29 theorems, 0 sorries):
 \end{itemize}
 
 \subsection{MeTTa Core Interpreter}
+\label{sec:mettacore}
 
 The \code{MeTTaCore/} directory provides a complete interpreter specification for
-Hyperon Experimental MeTTa (3{,}839 lines, 0~sorries), including:
+Hyperon Experimental MeTTa (4{,}419 lines, 0~sorries), including:
 \begin{itemize}
 \item \code{Atom}: the universal term type with \code{DecidableEq};
 \item \code{Bindings}: variable resolution with merge and transitive lookup;
@@ -753,8 +756,24 @@ Hyperon Experimental MeTTa (3{,}839 lines, 0~sorries), including:
 \item \code{MinimalOps}: grounded operations ($+, -, *, /, <$, etc.);
 \item \code{RewriteRules}: equation-driven rewriting;
 \item \code{Atomspace}: multiset-based knowledge base with query operations;
-\item \code{Properties}: progress, confluence, and barbed bisimulation.
+\item \code{Properties}: grounded-operation determinism, knowledge-preservation
+  invariants, and state bisimilarity (see below).
 \end{itemize}
+
+\paragraph{Properties caveat.}
+The \code{Properties.lean} theorems are weaker than their names suggest:
+\begin{itemize}
+\item \code{progress}: every workspace term is either insensitive or has
+  matching equations---but this follows directly from the definition of
+  \code{insensitive} (which checks \code{queryEquations = $\emptyset$}),
+  so it is not progress in the type-theoretic sense.
+\item \code{grounded\_confluence}: determinism of \code{executeGroundedOp}
+  (same inputs $\Rightarrow$ same output), not confluence of the rewrite
+  system.
+\item \code{Bisimilar}: structural equality of output, knowledge, and
+  workspace fields---not barbed bisimulation in the process-calculus sense.
+\end{itemize}
+Full rewrite-system confluence and genuine barbed bisimulation remain open.
 
 \section{Type Soundness}
 
@@ -914,7 +933,7 @@ categorical agreement as with MeTTaMinimal.
 
 PathMap is an algebraic interface for associative path data structures,
 originating in the Hyperon/MeTTa runtime~\cite{Goertzel2021}.
-The formalization (\codepath{PathMap/}, 1{,}890 lines, 0~sorries)
+The formalization (\codepath{PathMap/}, 4{,}086 lines, 0~sorries)
 is the first \OSLF{} instance where (a)~rewrite rules carry
 \emph{premise guards} tested against a pluggable \code{RelationEnv},
 and (b)~the NTT diamond theorem is a \emph{complete biconditional}
@@ -1016,6 +1035,104 @@ Key results summary:
 PathMap is the only \OSLF{} instance in the formalization where the
 diamond theorem is complete in the sense that every reachable outcome
 is characterised: the biconditional leaves no case unaddressed.
+
+\subsubsection{Trie data structure (byte-indexed, coalgebraic)}
+\label{sec:pathmap-trie}
+
+The abstract \code{PathMapQuantale} typeclass is instantiated above
+for \code{Bool} and \code{Finset~$\alpha$}, but these are toy
+instances---the actual Hyperon runtime stores paths in byte-indexed
+tries.
+The formalization now includes a full trie stack
+(\codepath{PathMap/Trie/}, 970~lines, 0~sorries)
+providing the first concrete trie-backed \code{PathMapQuantale}
+instance.
+
+\paragraph{Coalgebraic semantics.}
+The canonical semantic object is a \emph{coinductive trie}
+(\codepath{Trie/CoinductiveTrie.lean}, 226~lines):
+\begin{lstlisting}
+def CTrie (V : Type*) := List UInt8 → Option V
+\end{lstlisting}
+A trie \emph{is} its lookup function---the Brzozowski-derivative
+view~\cite{Abel2017}.
+Bisimilarity is extensional:
+$t_1 \sim t_2 \;\iff\; \forall p,\; t_1(p) = t_2(p)$.
+All algebraic laws reduce to pointwise \code{Option}/\code{Bool}
+identities by induction on the path~$p$:
+\begin{center}
+\begin{tabular}{ll}
+\textbf{Law} & \textbf{Statement (up to Bisim)} \\
+\hline
+\code{union\_idem}          & $t \cup t \sim t$ \\
+\code{union\_assoc}         & $(t_1 \cup t_2) \cup t_3 \sim t_1 \cup (t_2 \cup t_3)$ \\
+\code{inter\_idem}          & $t \cap t \sim t$ \\
+\code{inter\_assoc}         & $(t_1 \cap t_2) \cap t_3 \sim t_1 \cap (t_2 \cap t_3)$ \\
+\code{absorption}           & $t \cup (t \cap s) \sim t$ \\
+\code{inter\_union\_distrib} & $t_1 \cap (t_2 \cup t_3) \sim (t_1 \cap t_2) \cup (t_1 \cap t_3)$ \\
+\end{tabular}
+\end{center}
+\noindent
+Brzozowski derivatives commute with all three operations
+(\code{deriv\_union}, \code{deriv\_inter}, \code{deriv\_diff}).
+
+\paragraph{Finite trie.}
+The executable representation is an inductive \code{FTrie~V}
+(\codepath{Trie/FiniteTrie.lean}, 224~lines)
+with sparse sorted child lists
+\code{List~(UInt8~$\times$~FTrie~V)}, matching the Rust
+\code{LineListNode} layout.
+Four operations---\code{join}, \code{meet}, \code{subtract},
+\code{restrict}---merge child lists in lock-step on sorted keys.
+
+\paragraph{Refinement homomorphism.}
+The embedding $\iota : \mathtt{FTrie} \hookrightarrow \mathtt{CTrie}$
+is simply $\iota(t) := t\mathtt{.lookup}$
+(\codepath{Trie/TrieRefinement.lean}, 243~lines).
+When both input tries are well-sorted (\code{FTrie.Sorted}),
+\code{join} commutes with the embedding:
+\begin{theorem}[\code{toCTrie\_join}, 0 sorries]
+\label{thm:toCTrie-join}
+For sorted $t_1, t_2$,\;
+$\iota(t_1 \mathbin{\code{.join}} t_2) \sim
+ \iota(t_1) \cup \iota(t_2)$.
+\end{theorem}
+\noindent
+The proof proceeds by mutual induction on the trie and child-list
+structure, with a helper lemma
+\code{lookupChild\_none\_of\_joinChildren} discharging the case where
+a key falls below all children in a merged list.
+
+\paragraph{PathMapQuantale instance.}
+\codepath{Trie/TriePathMapInstance.lean} (129~lines)
+wraps \code{FTrie} operations in \code{AlgebraicResult}
+with identity detection via structural \code{BEq}.
+Laws proven: \code{JoinIdem}, \code{MeetIdem}.
+
+\emph{Commutativity caveat.}
+\code{FTrie.join} is left-biased: when both tries have values
+at the same path, the left value is kept.
+\code{JoinComm} therefore holds only when \code{V} has at most one
+value (e.g.\ \code{V = Unit}).
+
+\paragraph{Zipper iteration soundness.}
+\codepath{Trie/TrieZipper.lean} (148~lines)
+provides \code{SimpleTrieZipper~V}, a cursor over \code{FTrie.entries}
+that satisfies \code{ZipperIterationSound}:
+iterating via \code{toNextVal} visits exactly the stored values.
+This connects to the ZAM soundness theorems in
+\codepath{PathMap/ZipperExecution.lean},
+which prove that any \code{ZipperIterationSound} implementation
+produces semantically identical results to a flat
+\code{RelationEnv}---and therefore the full \OSLF{} type system
+(Galois connection, optimisation theorems) transfers automatically.
+
+\medskip\noindent
+\emph{Summary.}
+The trie stack adds 970~lines to the PathMap formalization
+(total now 4{,}086~lines, 0~sorries), providing the first
+\code{PathMapQuantale} instance backed by the actual trie data
+structure used in the Hyperon runtime rather than a flat-set mock.
 
 \section{Verified Formula Checker}
 
