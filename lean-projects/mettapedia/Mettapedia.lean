@@ -64,8 +64,8 @@ import Mettapedia.Computability.ArithmeticalHierarchy.PolicyEncoding
 import Mettapedia.Computability.ArithmeticalHierarchy.PolicyClasses
 
 -- OSLF (Operational Semantics of Lambda-based Formalisms)
-import Mettapedia.OSLF.RhoCalculus.Context
-import Mettapedia.OSLF.RhoCalculus.PresentMoment
+import Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context
+import Mettapedia.Languages.ProcessCalculi.RhoCalculus.PresentMoment
 
 -- Logic
 import Mettapedia.Logic.SolomonoffPrior
@@ -113,6 +113,7 @@ import Mettapedia.Bridge.BitVectorEvidence
 
 -- Languages
 import Mettapedia.Languages.MeTTa
+import Mettapedia.Conformance.SimpleHE
 
 -- Examples
 import Mettapedia.Examples.SymmetricMeasures
