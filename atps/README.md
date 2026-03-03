@@ -1,23 +1,39 @@
 # PLN premise automated theorem proving
 
-premise experiments use Probabilistic Logic Networks on the extended MPTP 5k dataset.
-selectors run PeTTa inference.
-Python drivers handle preparation and evaluation.
+Premise selection experiments using Probabilistic Logic Networks on the extended MPTP 5k dataset.
+Selectors run PeTTa inference. Python drivers handle preparation and evaluation.
+
+Paper: `../lean-projects/mettapedia/papers/PLN-kNN-NB.tex`
 
 ## Results
 
-- MaSh NB solves 283 of 800 validation problems at top-256 with E 5s.
-- PLN-NB solves 281 of 800 validation problems at top-256 with E 5s.
-- PLN-Normal-NB solves 279 of 800 validation problems at top-256 with E 5s.
-- Chainy baseline solves 278 of 800 validation problems at top-256 with E 5s.
-- PLN-kNN+NB solves 276 of 800 validation problems at top-256 with E 5s.
-- PLN-Enhanced solves 276 of 800 validation problems at top-256 with E 5s.
-- PLN-Rule solves 275 of 800 validation problems at top-256 with E 5s.
-- PLN-kNN solves 272 of 800 validation problems at top-256 with E 5s.
-- MaSh kNN solves 272 of 800 validation problems at top-256 with E 5s.
+### Round-2 (E 5s, no `-p`, top-256, validation 800 problems)
+
+- MaSh NB: 290/800 (36.25%)
+- PLN mixture-local Prior*NB: 288/800 (36.00%)
+
+### Round-4 (E + Vampire, 5s, 28 runs, validation 800 problems)
+
+| Model | E@256 | E@512 | V@256 | V@512 |
+|-------|-------|-------|-------|-------|
+| PLN mixture-local Prior*NB (EV-pooled) | **288** | **288** | **174** | **173** |
+| MaSh NB (E-trained) | 284 | 277 | 171 | 172 |
+| MaSh NB (V-trained) | 281 | 280 | 170 | 169 |
+| MaSh k-NN (E-trained) | 278 | 285 | 171 | 171 |
+| MaSh k-NN (V-trained) | 277 | 283 | 170 | 170 |
+| PLN kNN-prior-NB+MaSh (E-trained) | 276 | 280 | 170 | 173 |
+| PLN kNN-prior-NB+MaSh (V-trained) | 280 | 280 | 172 | 173 |
+
+### Targeted 30s follow-up (top-256, validation 800 problems)
+
+| Model | E 30s | Vampire 30s |
+|-------|-------|-------------|
+| MaSh NB | 327/800 (40.88%) | **184/800** (23.00%) |
+| PLN mixture-local Prior*NB | 327/800 (40.88%) | 182/800 (22.75%) |
 
 ## Selectors
 
+- PLN mixture-local Prior*NB uses `select_pln_mixture_local_nb.py` (pure Python, best single model).
 - PLN-NB uses `pln_idf_nb_selector.metta` with `select_pln_nb.py`.
 - PLN-Rule uses `pln_premise_selector.metta` with `select_pln_rule.py`.
 - PLN-kNN uses `pln_knn_selector.metta` with `select_pln_knn.py`.
