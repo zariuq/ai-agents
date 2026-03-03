@@ -16,6 +16,7 @@ import Mettapedia.Logic.PLNInferenceControlExamples
 import Mettapedia.Logic.PLNProbabilisticEventCalculus
 import Mettapedia.Logic.PLNColliderSingletonBridge
 import Mettapedia.Logic.PLNErrorMagnificationGrounding
+import Mettapedia.Logic.HigherOrder.PLNKyburgReduction
 import Mettapedia.Logic.PLNNARSRuleCorrespondence
 import Mettapedia.Logic.PLNEndToEnd
 import Mettapedia.Logic.EvidenceQuantale
@@ -69,6 +70,53 @@ abbrev DistributionalSTV := PLN.Distributional.SimpleTruthValue
 
 /-- Proven STV isomorphism between distributional and deduction views. -/
 abbrev stvIso := EvidenceSTVBridge.stvEquiv
+
+/-! ## Chapter-7 Distributional / Kyburg Endpoints -/
+
+abbrev ch7_strengthWith_eq_beta_posterior_meanENN :=
+  Mettapedia.Logic.PLNKyburgReduction.strengthWith_eq_beta_posterior_meanENN
+
+abbrev ch7_evidence_encodes_beta_parameters :=
+  Mettapedia.Logic.PLNKyburgReduction.evidence_encodes_beta_parameters
+
+abbrev ch7_hplus_is_bayesian_update :=
+  Mettapedia.Logic.PLNKyburgReduction.hplus_is_bayesian_update
+
+abbrev ch7_evidence_aggregation_is_conjugate_update :=
+  Mettapedia.Logic.PLNKyburgReduction.evidence_aggregation_is_conjugate_update
+
+abbrev ch7_pln_is_bayes_optimal_for_exchangeable :=
+  Mettapedia.Logic.PLNKyburgReduction.pln_is_bayes_optimal_for_exchangeable
+
+abbrev ch7_kyburg_flattening :=
+  @Mettapedia.Logic.PLNKyburgReduction.kyburg_flattening
+
+abbrev ch7_expectation_consistency :=
+  @Mettapedia.Logic.PLNKyburgReduction.expectation_consistency
+
+abbrev ch7_kyburg_no_advantage :=
+  @Mettapedia.Logic.PLNKyburgReduction.kyburg_no_advantage
+
+abbrev ch7_flatten_is_monad_multiplication :=
+  @Mettapedia.Logic.PLNKyburgReduction.flatten_is_monad_multiplication
+
+abbrev ch7_flatten_associativity :=
+  @Mettapedia.Logic.PLNKyburgReduction.flatten_associativity
+
+abbrev ch7_flatten_associativity_kernel :=
+  @Mettapedia.Logic.PLNKyburgReduction.flatten_associativity_kernel
+
+abbrev ch7_kyburg_no_advantage_via_monad :=
+  @Mettapedia.Logic.PLNKyburgReduction.kyburg_no_advantage_via_monad
+
+abbrev ch7_deFinetti_flatten_apply_singleton :=
+  Mettapedia.Logic.PLNKyburgReduction.deFinetti_flatten_apply_singleton
+
+abbrev ch7_worked_example_strength_uniform_3_1 :=
+  Mettapedia.Logic.PLNKyburgReduction.chapter7_worked_example_strength_uniform_3_1
+
+abbrev ch7_distributional_kyburg_bridge_available :=
+  Mettapedia.Logic.PLNKyburgReduction.chapter7_distributional_kyburg_bridge_available
 
 /-! ## PLN↔NARS Rule Correspondence canonical aliases -/
 
@@ -1794,16 +1842,12 @@ theorem intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semanti
         (Query := Query) W enc
         (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p =
       scoreToEvidence (intensionalFromConditional ξ x F Wc) := by
-    calc
-      PLNIntensionalWorldModel.InheritanceQueryBuilder.intensionalAssocEvidence
-          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
-          (Query := Query) W enc
-          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p
-          = scoreToEvidence
-              (assocScore W (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p) :=
-            hAssoc W (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p
-      _ = scoreToEvidence (intensionalFromConditional ξ x F Wc) := by
-            simp [hAssocScore]
+    exact
+      PLNIntensionalWorldModel.InheritanceQueryBuilder.assocEvidence_eq_scoreToEvidence_of_assocScore_eq
+        (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+        (Query := Query) enc assocScore scoreToEvidence hAssoc
+        (W := W) (a := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) (b := p)
+        hAssocScore
   exact intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff
     (State := State) (Query := Query)
     i R ctx enc combine True hSound W a0 p coord tau trivial
@@ -2046,6 +2090,129 @@ theorem intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semanti
     (model.prior_pos W a0 p ξ)
     (model.ext_pos W a0 p ξ)
     hTau
+
+/-- Bayes-normal selector wrapper for the strong linked semantic endpoint. -/
+theorem intensional_mixed_assoc_threshold_atom_bayesNormal_of_solomonoff_semantic_linked_strong
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (ctx : CtxOfInterval .bayesNormal)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (model : SolomonoffAssocLinkedModelStrong (State := State) (Query := Query) enc)
+    (W : State)
+    (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure)
+    (hTau : tau ≤ coord ((semanticsOfInterval .bayesNormal).eval ctx
+      (model.combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (model.linked.scoreModel.scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ
+              (model.linked.contextOf W a0 p ξ).x
+              (model.linked.contextOf W a0 p ξ).F
+              (model.linked.contextOf W a0 p ξ).Wc /
+             priorFromConditional ξ
+              (model.linked.contextOf W a0 p ξ).x
+              (model.linked.contextOf W a0 p ξ).Wc) /
+            Real.log 2))))) :
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        (Ctx := CtxOfInterval .bayesNormal)
+        (semanticsOfInterval .bayesNormal) ctx W tau coord
+        (patternInheritanceQueryOfAtom_mixed enc))
+      (.atom a0) p :=
+  intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic_linked_strong
+    (State := State) (Query := Query)
+    .bayesNormal R ctx enc model W a0 p coord tau ξ hTau
+
+/-- Bayes-exact selector wrapper for the strong linked semantic endpoint. -/
+theorem intensional_mixed_assoc_threshold_atom_bayesExact_of_solomonoff_semantic_linked_strong
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (ctx : CtxOfInterval .bayesExact)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (model : SolomonoffAssocLinkedModelStrong (State := State) (Query := Query) enc)
+    (W : State)
+    (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure)
+    (hTau : tau ≤ coord ((semanticsOfInterval .bayesExact).eval ctx
+      (model.combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (model.linked.scoreModel.scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ
+              (model.linked.contextOf W a0 p ξ).x
+              (model.linked.contextOf W a0 p ξ).F
+              (model.linked.contextOf W a0 p ξ).Wc /
+             priorFromConditional ξ
+              (model.linked.contextOf W a0 p ξ).x
+              (model.linked.contextOf W a0 p ξ).Wc) /
+            Real.log 2))))) :
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        (Ctx := CtxOfInterval .bayesExact)
+        (semanticsOfInterval .bayesExact) ctx W tau coord
+        (patternInheritanceQueryOfAtom_mixed enc))
+      (.atom a0) p :=
+  intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic_linked_strong
+    (State := State) (Query := Query)
+    .bayesExact R ctx enc model W a0 p coord tau ξ hTau
+
+/-- Walley-IDM selector wrapper for the strong linked semantic endpoint. -/
+theorem intensional_mixed_assoc_threshold_atom_walley_of_solomonoff_semantic_linked_strong
+    {State Query : Type}
+    [EvidenceClass.EvidenceType State]
+    [PLNWorldModel.WorldModel State Query]
+    (R : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern →
+      Mettapedia.OSLF.MeTTaIL.Syntax.Pattern → Prop)
+    (ctx : CtxOfInterval .walleyIDM)
+    (enc : InheritanceQueryBuilder Mettapedia.OSLF.MeTTaIL.Syntax.Pattern Query)
+    (model : SolomonoffAssocLinkedModelStrong (State := State) (Query := Query) enc)
+    (W : State)
+    (a0 : String) (p : Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+    (coord : ITV → ℝ) (tau : ℝ)
+    (ξ : Mettapedia.Logic.SolomonoffInduction.Semimeasure)
+    (hTau : tau ≤ coord ((semanticsOfInterval .walleyIDM).eval ctx
+      (model.combine
+        (PLNIntensionalWorldModel.InheritanceQueryBuilder.extensionalEvidence
+          (State := State) (Atom := Mettapedia.OSLF.MeTTaIL.Syntax.Pattern)
+          (Query := Query) W enc
+          (Mettapedia.OSLF.MeTTaIL.Syntax.Pattern.fvar a0) p)
+        (model.linked.scoreModel.scoreToEvidence
+          (Real.log
+            (extensionalFromConditional ξ
+              (model.linked.contextOf W a0 p ξ).x
+              (model.linked.contextOf W a0 p ξ).F
+              (model.linked.contextOf W a0 p ξ).Wc /
+             priorFromConditional ξ
+              (model.linked.contextOf W a0 p ξ).x
+              (model.linked.contextOf W a0 p ξ).Wc) /
+            Real.log 2))))) :
+    Mettapedia.OSLF.Formula.sem R
+      (PLNWMOSLFBridgeITVTyped.thresholdAtomSemOfWMITVQSigma
+        (State := State) (Srt := InheritanceSort) (Query := InheritanceQueryFamily Query)
+        (Ctx := CtxOfInterval .walleyIDM)
+        (semanticsOfInterval .walleyIDM) ctx W tau coord
+        (patternInheritanceQueryOfAtom_mixed enc))
+      (.atom a0) p :=
+  intensional_mixed_assoc_threshold_atom_of_interval_of_solomonoff_semantic_linked_strong
+    (State := State) (Query := Query)
+    .walleyIDM R ctx enc model W a0 p coord tau ξ hTau
 
 /-- Bayes-normal selector wrapper for semantic Solomonoff-composed intensional threshold transport. -/
 theorem intensional_mixed_assoc_threshold_atom_bayesNormal_of_solomonoff_semantic

@@ -352,6 +352,18 @@ theorem canary_ch11_probably_positive_negative_split :
     rw [hHalf]
     norm_num [ch11ProbablyParams]
 
+/-- PROBABLY positive finite fixture:
+`3/4` near-one mass is accepted by `[0.66,0.85]`. -/
+theorem canary_ch11_probably_holds_on_threeQuarters :
+    fuzzyIntervalHolds ch11ProbablyParams threeHighOneLow :=
+  (canary_ch11_probably_positive_negative_split).1
+
+/-- PROBABLY negative finite fixture:
+`1/2` near-one mass is rejected by `[0.66,0.85]`. -/
+theorem canary_ch11_probably_rejects_oneHalf :
+    ¬ fuzzyIntervalHolds ch11ProbablyParams oneHighOneLow :=
+  (canary_ch11_probably_positive_negative_split).2
+
 /-- MAYBE/POSSIBLY positive + negative split:
 `1/2` is accepted, while certainty (`1`) is rejected. -/
 theorem canary_ch11_maybe_positive_negative_split :
@@ -378,6 +390,12 @@ theorem canary_ch11_maybe_positive_negative_split :
       simp [hpred, witnessFraction, witnessCount]
     rw [hAll]
     norm_num [ch11MaybeParams]
+
+/-- MAYBE/POSSIBLY positive finite fixture:
+`1/2` near-one mass is accepted by `[0.3,0.7]`. -/
+theorem canary_ch11_maybe_holds_on_oneHalf :
+    fuzzyIntervalHolds ch11MaybeParams oneHighOneLow :=
+  (canary_ch11_maybe_positive_negative_split).1
 
 /-- ALMOST-NONE fixture canary: expected near-one fraction is exactly `1/5`. -/
 theorem canary_ch11_almostNone_fraction_oneFifth :
@@ -545,5 +563,104 @@ theorem canary_ch11_itv_strength_interval_of_lower_upper :
     norm_num [ch11ManyParams]
   refine ⟨hLower, hUpper, ?_⟩
   exact fuzzyIntervalHolds_strength_of_lower_upper ch11ManyParams rule4ITVProfile hLower hUpper
+
+/-! ### ITV Rule-Family Finite Fixture Corpus (Ch.11 core rules) -/
+
+/-- MOST-style parameters with strict `PCL = 1` for universal-specification fixtures. -/
+def ch11MostPCL1Params : FuzzyQuantifierParams where
+  ε := 0.1
+  LPC := 0.7
+  UPC := 0.9
+  PCL := 1
+  hε := by norm_num
+  hLPC := by norm_num
+  hUPC := by norm_num
+  hPCL := by norm_num
+  hLPC_le_UPC := by norm_num
+
+/-- Bool ITV fixture: all-high. -/
+def itvAllHighBool : Bool → ITV := fun _ => itvHi
+
+/-- Bool ITV fixture: all-low. -/
+def itvAllLowBool : Bool → ITV := fun _ => itvLo
+
+/-- Bool ITV fixture: one high witness, one low witness. -/
+def itvMixedBool : Bool → ITV := fun b => if b then itvHi else itvLo
+
+/-- ITV existential-generalization fixture:
+one near-one witness implies strictly positive fuzzy existential score. -/
+theorem canary_ch11_itv_existential_generalization_mixed :
+    0 < fuzzyExistsScore ch11AFewParams (itvStrengthProfile itvMixedBool) := by
+  have hWitness : nearOne ch11AFewParams ((itvStrengthProfile itvMixedBool) true) := by
+    simp [nearOne, itvStrengthProfile, itvMixedBool, ch11AFewParams, ITV.strength, itvHi]
+    norm_num
+  exact
+    fuzzyExistsScore_pos_of_itvStrengthWitness
+      ch11AFewParams itvMixedBool true hWitness
+
+/-- ITV universal-specification fixture (strict threshold):
+on an all-high profile with `PCL = 1`, every instance is near-one. -/
+theorem canary_ch11_itv_universal_specification_allHigh :
+    nearOne ch11MostPCL1Params ((itvStrengthProfile itvAllHighBool) false) := by
+  have hPred :
+      (fun u : Bool => nearOne ch11MostPCL1Params ((itvStrengthProfile itvAllHighBool) u)) =
+        (fun _ => True) := by
+    funext u
+    cases u <;>
+      (simp [nearOne, itvStrengthProfile, itvAllHighBool, ch11MostPCL1Params, ITV.strength, itvHi];
+        norm_num)
+  have hFrac : nearOneFraction ch11MostPCL1Params (itvStrengthProfile itvAllHighBool) = (1 : ℝ) := by
+    unfold nearOneFraction
+    simp [hPred, witnessFraction, witnessCount]
+  have hForAll : fuzzyForAllHolds ch11MostPCL1Params (itvStrengthProfile itvAllHighBool) := by
+    unfold fuzzyForAllHolds
+    rw [hFrac]
+    norm_num [ch11MostPCL1Params]
+  exact
+    nearOne_itvStrength_of_fuzzyForAll_eq_one
+      ch11MostPCL1Params itvAllHighBool false hForAll rfl
+
+/-- ITV exchange fixture on all-low profile:
+the existential side is false, and the complemented near-one mass is exactly `1`. -/
+theorem canary_ch11_itv_exchange_allLow_false :
+    ¬ fuzzyThereExistsHolds ch11AFewParams (itvStrengthProfile itvAllLowBool) ∧
+      nearOneFraction ch11AFewParams (itvStrengthComplementProfile itvAllLowBool) = (1 : ℝ) := by
+  have hCompPred :
+      (fun u : Bool =>
+          nearOne ch11AFewParams ((itvStrengthComplementProfile itvAllLowBool) u)) =
+        (fun _ => True) := by
+    funext u
+    cases u <;>
+      (simp [nearOne, itvStrengthComplementProfile, itvStrengthProfile, itvAllLowBool,
+        ch11AFewParams, ITV.strength, itvLo];
+       norm_num)
+  have hCompFrac :
+      nearOneFraction ch11AFewParams (itvStrengthComplementProfile itvAllLowBool) = (1 : ℝ) := by
+    unfold nearOneFraction
+    simp [hCompPred, witnessFraction, witnessCount]
+  have hExch :
+      fuzzyThereExistsHolds ch11AFewParams (itvStrengthProfile itvAllLowBool) ↔
+        ch11AFewParams.PCL ≤
+          1 - nearOneFraction ch11AFewParams (itvStrengthComplementProfile itvAllLowBool) :=
+    fuzzyThereExistsHolds_itvStrength_iff_exchange ch11AFewParams itvAllLowBool
+  have hRhsFalse :
+      ¬ ch11AFewParams.PCL ≤
+          1 - nearOneFraction ch11AFewParams (itvStrengthComplementProfile itvAllLowBool) := by
+    rw [hCompFrac]
+    norm_num [ch11AFewParams]
+  constructor
+  · intro hThere
+    exact hRhsFalse (hExch.mp hThere)
+  · exact hCompFrac
+
+/-- End-to-end finite fixture bundle for Ch.11 core rule-family on ITV path:
+existential generalization, universal specification, and exchange behavior. -/
+theorem canary_ch11_itv_rule_family_bundle_bool :
+    (0 < fuzzyExistsScore ch11AFewParams (itvStrengthProfile itvMixedBool)) ∧
+      (nearOne ch11MostPCL1Params ((itvStrengthProfile itvAllHighBool) false)) ∧
+      (¬ fuzzyThereExistsHolds ch11AFewParams (itvStrengthProfile itvAllLowBool)) := by
+  refine ⟨canary_ch11_itv_existential_generalization_mixed, ?_, ?_⟩
+  · exact canary_ch11_itv_universal_specification_allHigh
+  · exact (canary_ch11_itv_exchange_allLow_false).1
 
 end Mettapedia.Logic.PLNFirstOrder

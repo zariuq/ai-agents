@@ -111,6 +111,12 @@ namespace WMJudgment
 
 variable {State Query : Type*} [EvidenceType State] [WorldModel State Query]
 
+/-- Context-free WM derivability is intentionally permissive: every posterior
+state is available as an axiom. Nontrivial source control enters in `WMJudgmentCtx`
+and `WMJudgmentMulti`. -/
+theorem trivial (W : State) : ⊢wm W :=
+  WMJudgment.axiom W
+
 theorem query_of_axiom (W : State) (q : Query) :
     ⊢q W ⇓ q ↦ (WorldModel.evidence (State := State) (Query := Query) W q) := by
   exact ⟨WMJudgment.axiom W, rfl⟩
@@ -124,6 +130,17 @@ theorem query_revise {W₁ W₂ : State} {q : Query} {e₁ e₂ : Evidence} :
   refine ⟨WMJudgment.revise hW₁ hW₂, ?_⟩
   simpa using
     (WorldModel.evidence_add' (State := State) (Query := Query) W₁ W₂ q).symm
+
+/-- Query judgments are deterministic for fixed state/query: extracted evidence
+is uniquely determined by `WorldModel.evidence`. -/
+theorem query_deterministic {W : State} {q : Query} {e₁ e₂ : Evidence}
+    (h₁ : ⊢q W ⇓ q ↦ e₁) (h₂ : ⊢q W ⇓ q ↦ e₂) :
+    e₁ = e₂ := by
+  rcases h₁ with ⟨_, he₁⟩
+  rcases h₂ with ⟨_, he₂⟩
+  calc
+    e₁ = WorldModel.evidence (State := State) (Query := Query) W q := he₁
+    _ = e₂ := he₂.symm
 
 end WMJudgment
 
@@ -200,6 +217,17 @@ theorem query_revise {Γ : Set State} {W₁ W₂ : State} {q : Query} {e₁ e₂
   refine ⟨.revise hW₁ hW₂, ?_⟩
   simpa using
     (WorldModel.evidence_add' (State := State) (Query := Query) W₁ W₂ q).symm
+
+/-- Context-indexed query judgments are deterministic for fixed state/query. -/
+theorem query_deterministic {Γ : Set State} {W : State} {q : Query}
+    {e₁ e₂ : Evidence}
+    (h₁ : ⊢q[Γ] W ⇓ q ↦ e₁) (h₂ : ⊢q[Γ] W ⇓ q ↦ e₂) :
+    e₁ = e₂ := by
+  rcases h₁ with ⟨_, he₁⟩
+  rcases h₂ with ⟨_, he₂⟩
+  calc
+    e₁ = WorldModel.evidence (State := State) (Query := Query) W q := he₁
+    _ = e₂ := he₂.symm
 
 end WMJudgmentCtx
 
@@ -440,6 +468,49 @@ def WMStrengthJudgmentCtxSigma
   WMJudgmentCtx Γ W ∧ s = queryStrength W q
 
 notation:50 "⊢sΣ[" Γ "] " W " ⇓ " q " ↦ " s => WMStrengthJudgmentCtxSigma Γ W q s
+
+/-- Typed query judgments are deterministic for fixed state/query. -/
+theorem querySigma_deterministic {W : State} {q : Sigma Query} {e₁ e₂ : Evidence}
+    (h₁ : ⊢qΣ W ⇓ q ↦ e₁) (h₂ : ⊢qΣ W ⇓ q ↦ e₂) :
+    e₁ = e₂ := by
+  rcases h₁ with ⟨_, he₁⟩
+  rcases h₂ with ⟨_, he₂⟩
+  calc
+    e₁ = WorldModelSigma.evidence W q := he₁
+    _ = e₂ := he₂.symm
+
+/-- Context-indexed typed query judgments are deterministic for fixed state/query. -/
+theorem queryCtxSigma_deterministic {Γ : Set State} {W : State} {q : Sigma Query}
+    {e₁ e₂ : Evidence}
+    (h₁ : ⊢qΣ[Γ] W ⇓ q ↦ e₁) (h₂ : ⊢qΣ[Γ] W ⇓ q ↦ e₂) :
+    e₁ = e₂ := by
+  rcases h₁ with ⟨_, he₁⟩
+  rcases h₂ with ⟨_, he₂⟩
+  calc
+    e₁ = WorldModelSigma.evidence W q := he₁
+    _ = e₂ := he₂.symm
+
+/-- Typed strength judgments are deterministic for fixed state/query. -/
+theorem strengthSigma_deterministic {W : State} {q : Sigma Query} {s₁ s₂ : ℝ≥0∞}
+    (h₁ : ⊢sΣ W ⇓ q ↦ s₁) (h₂ : ⊢sΣ W ⇓ q ↦ s₂) :
+    s₁ = s₂ := by
+  rcases h₁ with ⟨_, hs₁⟩
+  rcases h₂ with ⟨_, hs₂⟩
+  calc
+    s₁ = queryStrength W q := hs₁
+    _ = s₂ := hs₂.symm
+
+/-- Context-indexed typed strength judgments are deterministic for fixed
+state/query. -/
+theorem strengthCtxSigma_deterministic
+    {Γ : Set State} {W : State} {q : Sigma Query} {s₁ s₂ : ℝ≥0∞}
+    (h₁ : ⊢sΣ[Γ] W ⇓ q ↦ s₁) (h₂ : ⊢sΣ[Γ] W ⇓ q ↦ s₂) :
+    s₁ = s₂ := by
+  rcases h₁ with ⟨_, hs₁⟩
+  rcases h₂ with ⟨_, hs₂⟩
+  calc
+    s₁ = queryStrength W q := hs₁
+    _ = s₂ := hs₂.symm
 
 /-! ## Typed Rewrite Rules -/
 

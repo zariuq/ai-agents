@@ -31,6 +31,11 @@ def itvCredibilityProfile (itvs : U → ITV) : U → ℝ := fun u => (itvs u).cr
 /-- ITV width profile. -/
 noncomputable def itvWidthProfile (itvs : U → ITV) : U → ℝ := fun u => (itvs u).width
 
+/-- Complemented ITV strength profile (`1 - strength`), used by the Ch.11
+quantifier-exchange bridge in fuzzy semantics. -/
+noncomputable def itvStrengthComplementProfile (itvs : U → ITV) : U → ℝ :=
+  fun u => 1 - (itvStrengthProfile itvs u)
+
 theorem nearOneFraction_lower_le_strength
     (p : FuzzyQuantifierParams) (itvs : U → ITV) :
     nearOneFraction p (itvLowerProfile itvs) ≤ nearOneFraction p (itvStrengthProfile itvs) := by
@@ -117,6 +122,36 @@ theorem nearOne_itvStrength_of_fuzzyForAll_eq_one
     (hPCL : p.PCL = 1) :
     nearOne p ((itvStrengthProfile itvs) c) :=
   nearOne_of_fuzzyForAll_eq_one p (itvStrengthProfile itvs) c hForAll hPCL
+
+/-- ITV-path quantifier-exchange bridge on strength coordinate:
+`ThereExists` is equivalent to the complemented `nearOne`-mass inequality. -/
+theorem fuzzyThereExistsHolds_itvStrength_iff_exchange
+    (p : FuzzyQuantifierParams) (itvs : U → ITV) :
+    fuzzyThereExistsHolds p (itvStrengthProfile itvs) ↔
+      p.PCL ≤ 1 - nearOneFraction p (itvStrengthComplementProfile itvs) := by
+  simpa [itvStrengthComplementProfile] using
+    (fuzzyThereExistsHolds_iff_nearOneComplement
+      (p := p) (profile := itvStrengthProfile itvs))
+
+/-- Core Chapter-11 rule-family bridge in ITV form (strength coordinate):
+existential generalization + universal specification + exchange. -/
+theorem ch11_itv_rule_family_core
+    [Nonempty U]
+    (p : FuzzyQuantifierParams) (itvs : U → ITV) (c : U) :
+    (nearOne p ((itvStrengthProfile itvs) c) →
+      0 < fuzzyExistsScore p (itvStrengthProfile itvs)) ∧
+      ((fuzzyForAllHolds p (itvStrengthProfile itvs) →
+          p.PCL = 1 →
+          nearOne p ((itvStrengthProfile itvs) c)) ∧
+        (fuzzyThereExistsHolds p (itvStrengthProfile itvs) ↔
+          p.PCL ≤ 1 - nearOneFraction p (itvStrengthComplementProfile itvs))) := by
+  refine ⟨?_, ?_⟩
+  · intro hWitness
+    exact fuzzyExistsScore_pos_of_itvStrengthWitness p itvs c hWitness
+  · refine ⟨?_, ?_⟩
+    · intro hForAll hPCL
+      exact nearOne_itvStrength_of_fuzzyForAll_eq_one p itvs c hForAll hPCL
+    · exact fuzzyThereExistsHolds_itvStrength_iff_exchange p itvs
 
 end Coordinates
 

@@ -1,9 +1,9 @@
 import Mettapedia.Logic.MarkovDeFinettiFortiniBridgeCore
-import Mettapedia.Logic.MarkovDeFinettiFortiniBridgeCrux
+import Mettapedia.Logic.MarkovDeFinettiFortiniBridgeCanonical
 
 /-!
 # Markov de Finetti: Fortini-Style Bridge
 
-Compatibility wrapper that preserves the historical import path while splitting
-implementation into a stable core and a focused crux file.
+Compatibility wrapper that preserves the historical import path while exposing
+the canonical theorem surface by default.
 -/

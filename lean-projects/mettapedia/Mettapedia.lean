@@ -114,6 +114,7 @@ import Mettapedia.Bridge.BitVectorEvidence
 -- Languages
 import Mettapedia.Languages.MeTTa
 import Mettapedia.Conformance.SimpleHE
+import Mettapedia.Conformance.SimplePeTTa
 
 -- Examples
 import Mettapedia.Examples.SymmetricMeasures

@@ -43,6 +43,18 @@ def nearOne (p : FuzzyQuantifierParams) (x : ℝ) : Prop :=
 def nearZero (p : FuzzyQuantifierParams) (x : ℝ) : Prop :=
   0 ≤ x ∧ x ≤ p.ε
 
+/-- Duality at the proxy level: "near zero" in `x` is equivalent to
+"near one" in `1 - x`. -/
+theorem nearZero_iff_nearOne_one_sub
+    (p : FuzzyQuantifierParams) (x : ℝ) :
+    nearZero p x ↔ nearOne p (1 - x) := by
+  unfold nearZero nearOne
+  constructor
+  · intro hx
+    constructor <;> linarith [hx.1, hx.2]
+  · intro hx
+    constructor <;> linarith [hx.1, hx.2]
+
 /-- Number of witnesses satisfying a predicate. -/
 noncomputable def witnessCount (pred : U → Prop) [DecidablePred pred] : ℕ :=
   Fintype.card {u // pred u}
@@ -129,6 +141,18 @@ noncomputable def nearZeroFraction
     (p : FuzzyQuantifierParams) (profile : U → ℝ) : ℝ :=
   witnessFraction (fun u => nearZero p (profile u))
 
+/-- Conservativity/difficulty-preserving exchange:
+`nearZero` witness mass is exactly the `nearOne` mass of the complemented profile. -/
+theorem nearZeroFraction_eq_nearOneFraction_one_sub
+    (p : FuzzyQuantifierParams) (profile : U → ℝ) :
+    nearZeroFraction p profile = nearOneFraction p (fun u => 1 - profile u) := by
+  have hPredEq :
+      (fun u => nearZero p (profile u)) = (fun u => nearOne p (1 - profile u)) := by
+    funext u
+    exact propext (nearZero_iff_nearOne_one_sub p (profile u))
+  unfold nearZeroFraction nearOneFraction
+  simp [hPredEq]
+
 theorem nearOneFraction_in_unit
     (p : FuzzyQuantifierParams) (profile : U → ℝ) :
     nearOneFraction p profile ∈ Set.Icc 0 1 :=
@@ -186,6 +210,15 @@ noncomputable def fuzzyForAllHolds
 noncomputable def fuzzyThereExistsHolds
     (p : FuzzyQuantifierParams) (profile : U → ℝ) : Prop :=
   p.PCL ≤ 1 - nearZeroFraction p profile
+
+/-- Generic exchange schema for fuzzy existential semantics:
+`ThereExists` is controlled by `nearOne` mass of the complemented profile. -/
+theorem fuzzyThereExistsHolds_iff_nearOneComplement
+    (p : FuzzyQuantifierParams) (profile : U → ℝ) :
+    fuzzyThereExistsHolds p profile ↔
+      p.PCL ≤ 1 - nearOneFraction p (fun u => 1 - profile u) := by
+  unfold fuzzyThereExistsHolds
+  rw [nearZeroFraction_eq_nearOneFraction_one_sub (p := p) (profile := profile)]
 
 /-- Profile-level conjunction with a constant score, used in Ch.11 rule-4 canaries. -/
 def conjoinProfile (g : ℝ) (profile : U → ℝ) : U → ℝ :=
@@ -324,6 +357,73 @@ theorem qfm_compose_interval_of_fuzzyIntervals
   constructor
   · exact q.monotone_on_unit pAB.hLPC hABu pBC.hLPC hBCu hAB.1 hBC.1
   · exact q.monotone_on_unit hABu pAB.hUPC hBCu pBC.hUPC hAB.2 hBC.2
+
+/-- Generic QFM monotonicity schema on composed scores:
+pointwise profile increases on both legs induce monotone composed score increase. -/
+theorem qfm_composedScore_mono_of_pointwise
+    (q : QFMCompose)
+    (pAB pBC : FuzzyQuantifierParams)
+    (profileAB₁ profileAB₂ profileBC₁ profileBC₂ : U → ℝ)
+    (hABle : ∀ u, profileAB₁ u ≤ profileAB₂ u)
+    (hABub : ∀ u, profileAB₂ u ≤ 1)
+    (hBCle : ∀ u, profileBC₁ u ≤ profileBC₂ u)
+    (hBCub : ∀ u, profileBC₂ u ≤ 1) :
+    q.comp (nearOneFraction pAB profileAB₁) (nearOneFraction pBC profileBC₁) ≤
+      q.comp (nearOneFraction pAB profileAB₂) (nearOneFraction pBC profileBC₂) := by
+  have hABMono :
+      nearOneFraction pAB profileAB₁ ≤ nearOneFraction pAB profileAB₂ :=
+    nearOneFraction_mono_of_pointwise pAB profileAB₁ profileAB₂ hABle hABub
+  have hBCMono :
+      nearOneFraction pBC profileBC₁ ≤ nearOneFraction pBC profileBC₂ :=
+    nearOneFraction_mono_of_pointwise pBC profileBC₁ profileBC₂ hBCle hBCub
+  exact
+    q.monotone_on_unit
+      (nearOneFraction_in_unit pAB profileAB₁)
+      (nearOneFraction_in_unit pAB profileAB₂)
+      (nearOneFraction_in_unit pBC profileBC₁)
+      (nearOneFraction_in_unit pBC profileBC₂)
+      hABMono hBCMono
+
+/-- Generic QFM conservativity schema:
+if both legs preserve their `nearOne` signatures, the composed score is unchanged. -/
+theorem qfm_composedScore_eq_of_signatureEq
+    (q : QFMCompose)
+    (pAB pBC : FuzzyQuantifierParams)
+    (profileAB₁ profileAB₂ profileBC₁ profileBC₂ : U → ℝ)
+    (hSigAB : ∀ u, nearOne pAB (profileAB₁ u) ↔ nearOne pAB (profileAB₂ u))
+    (hSigBC : ∀ u, nearOne pBC (profileBC₁ u) ↔ nearOne pBC (profileBC₂ u)) :
+    q.comp (nearOneFraction pAB profileAB₁) (nearOneFraction pBC profileBC₁) =
+      q.comp (nearOneFraction pAB profileAB₂) (nearOneFraction pBC profileBC₂) := by
+  have hAB :
+      nearOneFraction pAB profileAB₁ = nearOneFraction pAB profileAB₂ :=
+    nearOneFraction_eq_of_signatureEq pAB profileAB₁ profileAB₂ hSigAB
+  have hBC :
+      nearOneFraction pBC profileBC₁ = nearOneFraction pBC profileBC₂ :=
+    nearOneFraction_eq_of_signatureEq pBC profileBC₁ profileBC₂ hSigBC
+  simp [hAB, hBC]
+
+/-- Generic QFM conservativity schema at interval level:
+under preserved `nearOne` signatures, composed interval-bound judgments are equivalent. -/
+theorem qfm_composedInterval_iff_of_signatureEq
+    (q : QFMCompose)
+    (pAB pBC : FuzzyQuantifierParams)
+    (profileAB₁ profileAB₂ profileBC₁ profileBC₂ : U → ℝ)
+    (hSigAB : ∀ u, nearOne pAB (profileAB₁ u) ↔ nearOne pAB (profileAB₂ u))
+    (hSigBC : ∀ u, nearOne pBC (profileBC₁ u) ↔ nearOne pBC (profileBC₂ u)) :
+    (q.comp pAB.LPC pBC.LPC ≤
+        q.comp (nearOneFraction pAB profileAB₁) (nearOneFraction pBC profileBC₁) ∧
+      q.comp (nearOneFraction pAB profileAB₁) (nearOneFraction pBC profileBC₁) ≤
+        q.comp pAB.UPC pBC.UPC) ↔
+    (q.comp pAB.LPC pBC.LPC ≤
+        q.comp (nearOneFraction pAB profileAB₂) (nearOneFraction pBC profileBC₂) ∧
+      q.comp (nearOneFraction pAB profileAB₂) (nearOneFraction pBC profileBC₂) ≤
+        q.comp pAB.UPC pBC.UPC) := by
+  have hEq :
+      q.comp (nearOneFraction pAB profileAB₁) (nearOneFraction pBC profileBC₁) =
+        q.comp (nearOneFraction pAB profileAB₂) (nearOneFraction pBC profileBC₂) :=
+    qfm_composedScore_eq_of_signatureEq q pAB pBC profileAB₁ profileAB₂ profileBC₁ profileBC₂
+      hSigAB hSigBC
+  constructor <;> intro h <;> simpa [hEq] using h
 
 /-- Multiplicative QFM specialization of interval transport. -/
 theorem qfmMul_interval_of_fuzzyIntervals

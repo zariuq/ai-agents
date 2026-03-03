@@ -243,6 +243,22 @@ structure IntensionalScoreModel
       (State := State) (Atom := Atom) (Query := Query)
       enc patScore scoreToEvidence
 
+/-- Canonical ASSOC score-to-evidence lift law.
+If a score model identifies `assocScore W a b` with `s`, then typed ASSOC evidence
+at `(W,a,b)` is exactly `scoreToEvidence s`. -/
+theorem assocEvidence_eq_scoreToEvidence_of_assocScore_eq
+    (enc : InheritanceQueryBuilder Atom Query)
+    (assocScore : State → Atom → Atom → ℝ)
+    (scoreToEvidence : ℝ → Evidence)
+    (hAssoc :
+      AssocScoreCorrespondence
+        (State := State) (Atom := Atom) (Query := Query)
+        enc assocScore scoreToEvidence)
+    {W : State} {a b : Atom} {s : ℝ}
+    (hScore : assocScore W a b = s) :
+    intensionalAssocEvidence W enc a b = scoreToEvidence s := by
+  simpa [hScore] using hAssoc W a b
+
 /-- Chapter-12 ASSOC subset semantics:
 whenever `subsetRel` holds between concept pairs, ASSOC score is monotone. -/
 def AssocSubsetSemantics

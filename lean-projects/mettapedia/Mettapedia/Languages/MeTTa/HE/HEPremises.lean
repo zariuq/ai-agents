@@ -15,6 +15,7 @@ type applicability, equation query, grounded dispatch, etc.
 | isError | 1 | Atom matches (Error _ _) pattern |
 | metaType | 2 | Intrinsic metatype of atom |
 | typeMatchesMetaOrAtom | 2 | type == Atom or type == metatype or metatype == Variable |
+| typeNotMatchesMetaOrAtom | 2 | explicit positive complement of typeMatchesMetaOrAtom |
 | needsTypeCast | 2 | metaType ∈ {Symbol, Grounded} and NOT typeMatchesMetaOrAtom |
 | needsInterpExpr | 2 | metaType == Expression and NOT typeMatchesMetaOrAtom |
 | atomTypes | 3 | Type annotations (: atom type) from space |
@@ -29,6 +30,9 @@ type applicability, equation query, grounded dispatch, etc.
 | notExecutable | 1 | Negation of isExecutable |
 | typeOf | 3 | Atom has type in space (via annotations) |
 | typeMismatch | 4 | Atom's actual type != expected type |
+| funcArgTypes | 2 | Extract argument type list from ArrowType |
+| changedToEmpty | 2 | New atom is Empty and changed from original |
+| changedToError | 2 | New atom is Error and changed from original |
 | interpFuncResult | (removed) | moved to explicit rewrite transitions |
 | interpTupleResult | (removed) | moved to explicit rewrite transitions |
 
@@ -60,6 +64,24 @@ private def isErrorRules : List PRule :=
       headArgs := [.var "atom"]
       body := [.deconstruct (.var "atom") "ErrorAtom" ["_source", "_code"]]
       clauseName := some "isError_check" } ]
+
+/-- `changedToEmpty(orig, new)`:
+    short-circuit guard used by interpretArgs: new == Empty and new != orig. -/
+private def changedToEmptyRules : List PRule :=
+  [ { headRel := "changedToEmpty"
+      headArgs := [.var "orig", .var "new"]
+      body := [ .relQuery "isEmpty" [.var "new"]
+              , .neq (.var "new") (.var "orig") ]
+      clauseName := some "changedToEmpty_guard" } ]
+
+/-- `changedToError(orig, new)`:
+    short-circuit guard used by interpretArgs: new is Error and new != orig. -/
+private def changedToErrorRules : List PRule :=
+  [ { headRel := "changedToError"
+      headArgs := [.var "orig", .var "new"]
+      body := [ .relQuery "isError" [.var "new"]
+              , .neq (.var "new") (.var "orig") ]
+      clauseName := some "changedToError_guard" } ]
 
 /-! ## Metatype Relations -/
 
@@ -123,6 +145,17 @@ private def typeMatchesMetaOrAtomRules : List PRule :=
       clauseName := some "typeMatch_variable" }
   ]
 
+/-- `typeNotMatchesMetaOrAtom(atom, type)`:
+    explicit positive complement for dispatch, avoiding negation cycles. -/
+private def typeNotMatchesMetaOrAtomRules : List PRule :=
+  [ { headRel := "typeNotMatchesMetaOrAtom"
+      headArgs := [.var "atom", .var "ty"]
+      body := [ .relQuery "metaType" [.var "atom", .var "mt"]
+              , .neq (.var "ty") (.ctor "AtomType" [])
+              , .neq (.var "mt") (.ctor "VariableType" [])
+              , .neq (.var "mt") (.var "ty") ]
+      clauseName := some "typeNotMatch_explicit" } ]
+
 /-- `needsTypeCast(atom, type)`:
     metatype ∈ {Symbol, Grounded} AND NOT typeMatchesMetaOrAtom.
     Ref: metta.md line 259. -/
@@ -131,38 +164,30 @@ private def needsTypeCastRules : List PRule :=
     { headRel := "needsTypeCast"
       headArgs := [.var "atom", .var "ty"]
       body := [ .relQuery "metaType" [.var "atom", .ctor "SymbolType" []]
-              , .notIn "typeMatchesMetaOrAtom" [.var "atom", .var "ty"]
-              , .notIn "isEmpty" [.var "atom"]
-              , .notIn "isError" [.var "atom"] ]
+              , .relQuery "typeNotMatchesMetaOrAtom" [.var "atom", .var "ty"] ]
       clauseName := some "needsTypeCast_symbol" }
   , -- Grounded atom, type doesn't match
     { headRel := "needsTypeCast"
       headArgs := [.var "atom", .var "ty"]
       body := [ .relQuery "metaType" [.var "atom", .ctor "GroundedType" []]
-              , .notIn "typeMatchesMetaOrAtom" [.var "atom", .var "ty"]
-              , .notIn "isEmpty" [.var "atom"]
-              , .notIn "isError" [.var "atom"] ]
+              , .relQuery "typeNotMatchesMetaOrAtom" [.var "atom", .var "ty"] ]
       clauseName := some "needsTypeCast_grounded" }
   , -- Unit expression ()
     { headRel := "needsTypeCast"
       headArgs := [.var "atom", .var "ty"]
       body := [ .eq (.var "atom") (.ctor "ExprNil" [])
-              , .notIn "typeMatchesMetaOrAtom" [.var "atom", .var "ty"]
-              , .notIn "isEmpty" [.var "atom"]
-              , .notIn "isError" [.var "atom"] ]
+              , .relQuery "typeNotMatchesMetaOrAtom" [.var "atom", .var "ty"] ]
       clauseName := some "needsTypeCast_unit" }
   ]
 
 /-- `needsInterpExpr(atom, type)`:
-    metatype == Expression AND NOT typeMatchesMetaOrAtom AND NOT empty/error.
+    metatype == Expression AND NOT typeMatchesMetaOrAtom.
     Ref: metta.md lines 261-272. -/
 private def needsInterpExprRules : List PRule :=
   [ { headRel := "needsInterpExpr"
       headArgs := [.var "atom", .var "ty"]
       body := [ .relQuery "metaType" [.var "atom", .ctor "ExpressionType" []]
-              , .notIn "typeMatchesMetaOrAtom" [.var "atom", .var "ty"]
-              , .notIn "isEmpty" [.var "atom"]
-              , .notIn "isError" [.var "atom"] ]
+              , .relQuery "typeNotMatchesMetaOrAtom" [.var "atom", .var "ty"] ]
       clauseName := some "needsInterpExpr_expression" } ]
 
 /-! ## InterpExpr Dispatch Relations -/
@@ -189,8 +214,8 @@ private def isExecutableRules : List PRule :=
 private def notExecutableRules : List PRule :=
   [ { headRel := "notExecutable"
       headArgs := [.var "op"]
-      body := [.notIn "isExecutable" [.var "op"]]
-      clauseName := some "notExecutable_neg" } ]
+      body := [.compute "checkNotExecutable" [.var "op"] "_"]
+      clauseName := some "notExecutable_check" } ]
 
 /-! ## Type System Relations -/
 
@@ -213,6 +238,14 @@ private def typeMismatchRules : List PRule :=
               , .neq (.var "actual") (.var "expected") ]
       clauseName := some "typeMismatch_check" } ]
 
+/-- `funcArgTypes(opType, argTypes)`:
+    structural extractor for ArrowType argument lists. -/
+private def funcArgTypesRules : List PRule :=
+  [ { headRel := "funcArgTypes"
+      headArgs := [.var "opType", .var "argTypes"]
+      body := [ .deconstruct (.var "opType") "ArrowType" ["argTypes", "_ret"] ]
+      clauseName := some "funcArgTypes_arrow" } ]
+
 /-! ## Equation Query Relations -/
 
 /-- `eqQueryResult(space, atom, rhs)`:
@@ -230,14 +263,14 @@ private def eqQueryResultRules : List PRule :=
 private def noEqQueryRules : List PRule :=
   [ { headRel := "noEqQuery"
       headArgs := [.var "sp", .var "atom"]
-      body := [.notIn "eqQueryResult" [.var "sp", .var "atom", .wild]]
-      clauseName := some "noEqQuery_neg" } ]
+      body := [ .deconstruct (.var "sp") "Space" ["atoms"]
+              , .compute "noEquationMatch" [.var "atoms", .var "atom"] "_" ]
+      clauseName := some "noEqQuery_check" } ]
 
-/-! ## Complex Multi-Step Relations (Builtins)
+/-! ## Complex Structural Relations (Builtins)
 
-These relations encapsulate HE's multi-step evaluation sequences.
-They are implemented as Rust builtins rather than pure datalog because
-they involve recursive evaluation (the HE interpreter's mutual recursion). -/
+These builtins are structural queries over the current space/atom data.
+Recursive evaluation is encoded in `HELanguageDef.lean` rewrite transitions. -/
 
 /-- `applicableFuncType(space, atom, expectedType, opType, retType)`:
     A function type is applicable to this expression.
@@ -256,9 +289,8 @@ private def applicableFuncTypeRules : List PRule :=
 private def needsTupleInterpRules : List PRule :=
   [ { headRel := "needsTupleInterp"
       headArgs := [.var "sp", .var "atom", .var "ty"]
-      body := [ .notIn "applicableFuncType"
-                  [.var "sp", .var "atom", .var "ty", .wild, .wild]
-              , .compute "hasNonFuncTypes" [.var "sp", .var "atom"] "_" ]
+      body := [ .compute "hasNonFuncTypes" [.var "sp", .var "atom"] "ty"
+              , .compute "noApplicableFuncType" [.var "sp", .var "atom"] "_" ]
       clauseName := some "needsTupleInterp_check" } ]
 
 /-- `groundedCallResult(space, atom, result)`:
@@ -276,26 +308,35 @@ private def groundedCallResultRules : List PRule :=
 
 private def heBuiltins : List BuiltinFn :=
   [ { name := "checkExecutable", arity := 1 }
+  , { name := "checkNotExecutable", arity := 1 }
   , { name := "findTypeAnnotation", arity := 2 }
   , { name := "queryEquationsAll", arity := 2 }
+  , { name := "noEquationMatch", arity := 2 }
   , { name := "findApplicableFuncType", arity := 3 }
   , { name := "hasNonFuncTypes", arity := 2 }
+  , { name := "noApplicableFuncType", arity := 2 }
   , { name := "evalGroundedDispatch", arity := 2 }
   ]
 
 private def heAscentHints : List BackendHint :=
   [ { builtinName := "checkExecutable", backend := "ascent"
       template := "is_executable_grounded({0})" }
+  , { builtinName := "checkNotExecutable", backend := "ascent"
+      template := "is_not_executable_grounded({0})" }
   , { builtinName := "findTypeAnnotation", backend := "ascent"
       template := "find_type_annotation({0}, {1})" }
   , { builtinName := "queryEquationsAll", backend := "ascent"
       template := "query_equations_all({0}, {1})" }
+  , { builtinName := "noEquationMatch", backend := "ascent"
+      template := "no_equation_match({0}, {1})" }
   , { builtinName := "findApplicableFuncType", backend := "ascent"
       template := "find_applicable_func_type({0}, {1}, {2})" }
   , { builtinName := "hasNonFuncTypes", backend := "ascent"
       template := "has_non_func_types({0}, {1})" }
+  , { builtinName := "noApplicableFuncType", backend := "ascent"
+      template := "no_applicable_func_type({0}, {1})" }
   , { builtinName := "evalGroundedDispatch", backend := "ascent"
-      template := "eval_grounded_dispatch({0}, {1})" }
+      template := "eval_grounded_dispatch({0}.clone(), {1}.clone())" }
   ]
 
 /-! ## Complete Premise Program -/
@@ -310,6 +351,7 @@ def mettaHEPremises : PremiseProgram where
     , { name := "isError", paramTypes := ["Atom"] }
     , { name := "metaType", paramTypes := ["Atom", "Atom"] }
     , { name := "typeMatchesMetaOrAtom", paramTypes := ["Atom", "Atom"] }
+    , { name := "typeNotMatchesMetaOrAtom", paramTypes := ["Atom", "Atom"] }
     , { name := "needsTypeCast", paramTypes := ["Atom", "Atom"] }
     , { name := "needsInterpExpr", paramTypes := ["Atom", "Atom"] }
     , { name := "notExpression", paramTypes := ["Atom"] }
@@ -317,6 +359,9 @@ def mettaHEPremises : PremiseProgram where
     , { name := "notExecutable", paramTypes := ["Atom"] }
     , { name := "typeOf", paramTypes := ["Space", "Atom", "Atom"] }
     , { name := "typeMismatch", paramTypes := ["Space", "Atom", "Atom", "Atom"] }
+    , { name := "funcArgTypes", paramTypes := ["Atom", "Atom"] }
+    , { name := "changedToEmpty", paramTypes := ["Atom", "Atom"] }
+    , { name := "changedToError", paramTypes := ["Atom", "Atom"] }
     , { name := "eqQueryResult", paramTypes := ["Space", "Atom", "Atom"]
         hasNegation := true }
     , { name := "noEqQuery", paramTypes := ["Space", "Atom"] }
@@ -328,8 +373,11 @@ def mettaHEPremises : PremiseProgram where
   rules :=
     isEmptyRules
     ++ isErrorRules
+    ++ changedToEmptyRules
+    ++ changedToErrorRules
     ++ metaTypeRules
     ++ typeMatchesMetaOrAtomRules
+    ++ typeNotMatchesMetaOrAtomRules
     ++ needsTypeCastRules
     ++ needsInterpExprRules
     ++ notExpressionRules
@@ -337,6 +385,7 @@ def mettaHEPremises : PremiseProgram where
     ++ notExecutableRules
     ++ typeOfRules
     ++ typeMismatchRules
+    ++ funcArgTypesRules
     ++ eqQueryResultRules
     ++ noEqQueryRules
     ++ groundedCallResultRules

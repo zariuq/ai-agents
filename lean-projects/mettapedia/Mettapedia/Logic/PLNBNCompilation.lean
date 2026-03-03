@@ -1473,6 +1473,26 @@ theorem chain_screeningOff_wmqueryeq_of_dsep_allLocalMarkov
     (valA := valA) (valB := valB) (valC := valC)
     (hLM := AllDiscreteCPTLocalMarkov.localMarkov (bn := chainBN))
 
+theorem chain_screeningOff_wmqueryeq_of_dsep_allLocalMarkov_of
+    (valA valB valC : Bool)
+    [∀ v : Three, Fintype (chainBN.stateSpace v)]
+    [∀ v : Three, DecidableEq (chainBN.stateSpace v)]
+    [∀ v : Three, Inhabited (chainBN.stateSpace v)]
+    [∀ v : Three, StandardBorelSpace (chainBN.stateSpace v)]
+    [StandardBorelSpace chainBN.JointSpace]
+    [EventPos (bn := chainBN) Three.B valB]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLM : ∀ cpt : chainBN.DiscreteCPT, HasLocalMarkovProperty chainBN cpt.jointMeasure) :
+    (CompiledPlan.deductionSide Three.A Three.B Three.C).holds (bn := chainBN) →
+      WMQueryEq (State := State (bn := chainBN))
+        (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+        (PLNQuery.linkCond [⟨Three.A, valA⟩, ⟨Three.B, valB⟩] ⟨Three.C, valC⟩)
+        (PLNQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩) := by
+  letI : AllDiscreteCPTLocalMarkov (bn := chainBN) :=
+    allDiscreteCPTLocalMarkov_of (bn := chainBN) hLM
+  exact chain_screeningOff_wmqueryeq_of_dsep_allLocalMarkov
+    (valA := valA) (valB := valB) (valC := valC)
+
 theorem chain_screeningOff_rewrite_applies_of_dsep
     (valA valB valC : Bool)
     [∀ v : Three, Fintype (chainBN.stateSpace v)]
@@ -1695,6 +1715,26 @@ theorem fork_screeningOff_wmqueryeq_of_dsep_allLocalMarkov
     (valA := valA) (valB := valB) (valC := valC)
     (hLM := AllDiscreteCPTLocalMarkov.localMarkov (bn := forkBN))
 
+theorem fork_screeningOff_wmqueryeq_of_dsep_allLocalMarkov_of
+    (valA valB valC : Bool)
+    [∀ v : Three, Fintype (forkBN.stateSpace v)]
+    [∀ v : Three, DecidableEq (forkBN.stateSpace v)]
+    [∀ v : Three, Inhabited (forkBN.stateSpace v)]
+    [∀ v : Three, StandardBorelSpace (forkBN.stateSpace v)]
+    [StandardBorelSpace forkBN.JointSpace]
+    [EventPos (bn := forkBN) Three.B valB]
+    [EventPosConstraints (bn := forkBN) [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]]
+    (hLM : ∀ cpt : forkBN.DiscreteCPT, HasLocalMarkovProperty forkBN cpt.jointMeasure) :
+    (CompiledPlan.deductionSide Three.A Three.B Three.C).holds (bn := forkBN) →
+      WMQueryEq (State := State (bn := forkBN))
+        (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
+        (PLNQuery.linkCond [⟨Three.A, valA⟩, ⟨Three.B, valB⟩] ⟨Three.C, valC⟩)
+        (PLNQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩) := by
+  letI : AllDiscreteCPTLocalMarkov (bn := forkBN) :=
+    allDiscreteCPTLocalMarkov_of (bn := forkBN) hLM
+  exact fork_screeningOff_wmqueryeq_of_dsep_allLocalMarkov
+    (valA := valA) (valB := valB) (valC := valC)
+
 theorem fork_screeningOff_strength_eq_of_dsep
     (valA valB valC : Bool)
     [∀ v : Three, Fintype (forkBN.stateSpace v)]
@@ -1809,6 +1849,25 @@ theorem collider_screeningOff_wmqueryeq_of_dsep_allLocalMarkov
   exact collider_screeningOff_wmqueryeq_of_dsep
     (valA := valA) (valB := valB)
     (hLM := AllDiscreteCPTLocalMarkov.localMarkov (bn := colliderBN))
+
+theorem collider_screeningOff_wmqueryeq_of_dsep_allLocalMarkov_of
+    (valA valB : Bool)
+    [∀ v : Three, Fintype (colliderBN.stateSpace v)]
+    [∀ v : Three, DecidableEq (colliderBN.stateSpace v)]
+    [∀ v : Three, Inhabited (colliderBN.stateSpace v)]
+    [∀ v : Three, StandardBorelSpace (colliderBN.stateSpace v)]
+    [StandardBorelSpace colliderBN.JointSpace]
+    [EventPos (bn := colliderBN) Three.A valA]
+    (hLM : ∀ cpt : colliderBN.DiscreteCPT, HasLocalMarkovProperty colliderBN cpt.jointMeasure) :
+    (CompiledPlan.abductionSide Three.A Three.C Three.B).holds (bn := colliderBN) →
+      WMQueryEq (State := State (bn := colliderBN))
+        (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+        (PLNQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
+        (PLNQuery.prop ⟨Three.B, valB⟩) := by
+  letI : AllDiscreteCPTLocalMarkov (bn := colliderBN) :=
+    allDiscreteCPTLocalMarkov_of (bn := colliderBN) hLM
+  exact collider_screeningOff_wmqueryeq_of_dsep_allLocalMarkov
+    (valA := valA) (valB := valB)
 
 theorem collider_screeningOff_strength_eq_of_dsep
     (valA valB : Bool)

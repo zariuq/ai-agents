@@ -238,6 +238,23 @@ lemma visitCountBefore_eq_natCount
   unfold visitCountBefore
   simp [Nat.count_eq_card_filter_range]
 
+lemma nthVisitTimeExists_of_infinite_visits
+    (ω : ℕ → Fin k) (i : Fin k) (n : ℕ)
+    (hinf : Set.Infinite {t : ℕ | ω t = i}) :
+    nthVisitTimeExists (k := k) ω i n := by
+  classical
+  let p : ℕ → Prop := fun t => ω t = i
+  have hinf' : (setOf p).Infinite := by
+    simpa [p] using hinf
+  refine ⟨Nat.nth p n, ?_⟩
+  refine ⟨?_, ?_⟩
+  · exact Nat.nth_mem_of_infinite hinf' n
+  · calc
+      visitCountBefore (k := k) ω i (Nat.nth p n)
+          = Nat.count p (Nat.nth p n) := by
+              simpa [p] using (visitCountBefore_eq_natCount (k := k) ω i (Nat.nth p n))
+      _ = n := Nat.count_nth_of_infinite hinf' n
+
 lemma visitCountBefore_strict_mono_of_visit
     (ω : ℕ → Fin k) (i : Fin k) {t u : ℕ}
     (ht : ω t = i) (htu : t < u) :
@@ -922,6 +939,90 @@ lemma sum_cylinderProb_eq_of_extension_and_evidencePreservingEquiv_start
     _ = (∑ ys : B, (if ys.1 0 = j then P (cylinder (k := k) (List.ofFn ys.1)) else 0)) := hsum
     _ = Finset.sum B (fun ys => if ys 0 = j then P (cylinder (k := k) (List.ofFn ys)) else 0) := hB.symm
 
+lemma measure_start_inter_rowVisitCylinderEventUpTo_eq_of_evidencePreservingEquiv_start
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k))
+    (hExt : ∀ xs : List (Fin k), μ xs = P (cylinder (k := k) xs))
+    (i₁ : Fin k) (S₁ : Finset ℕ) (v₁ : ℕ → Fin k)
+    (i₂ : Fin k) (S₂ : Finset ℕ) (v₂ : ℕ → Fin k)
+    (N : ℕ) (j : Fin k)
+    (e :
+      rowVisitCylinderEventUpToPrefixCarrier (k := k) i₁ S₁ v₁ N ≃
+        rowVisitCylinderEventUpToPrefixCarrier (k := k) i₂ S₂ v₂ N)
+    (he :
+      ∀ xs :
+        rowVisitCylinderEventUpToPrefixCarrier (k := k) i₁ S₁ v₁ N,
+        evidenceOf (n := N) xs.1 = evidenceOf (n := N) (e xs).1) :
+    P ({ω : ℕ → Fin k | ω 0 = j} ∩ rowVisitCylinderEventUpTo (k := k) i₁ S₁ v₁ N)
+      =
+    P ({ω : ℕ → Fin k | ω 0 = j} ∩ rowVisitCylinderEventUpTo (k := k) i₂ S₂ v₂ N) := by
+  have hleft :
+      P ({ω : ℕ → Fin k | ω 0 = j} ∩ rowVisitCylinderEventUpTo (k := k) i₁ S₁ v₁ N)
+        =
+      Finset.sum (rowVisitCylinderEventUpToPrefixCarrier (k := k) i₁ S₁ v₁ N)
+        (fun xs => if xs 0 = j then P (cylinder (k := k) (List.ofFn xs)) else 0) :=
+    measure_start_inter_rowVisitCylinderEventUpTo_eq_sum_prefixCylinders
+      (k := k) P i₁ S₁ v₁ N j
+  have hright :
+      P ({ω : ℕ → Fin k | ω 0 = j} ∩ rowVisitCylinderEventUpTo (k := k) i₂ S₂ v₂ N)
+        =
+      Finset.sum (rowVisitCylinderEventUpToPrefixCarrier (k := k) i₂ S₂ v₂ N)
+        (fun xs => if xs 0 = j then P (cylinder (k := k) (List.ofFn xs)) else 0) :=
+    measure_start_inter_rowVisitCylinderEventUpTo_eq_sum_prefixCylinders
+      (k := k) P i₂ S₂ v₂ N j
+  have hsum :
+      Finset.sum (rowVisitCylinderEventUpToPrefixCarrier (k := k) i₁ S₁ v₁ N)
+          (fun xs => if xs 0 = j then P (cylinder (k := k) (List.ofFn xs)) else 0)
+        =
+      Finset.sum (rowVisitCylinderEventUpToPrefixCarrier (k := k) i₂ S₂ v₂ N)
+          (fun ys => if ys 0 = j then P (cylinder (k := k) (List.ofFn ys)) else 0) :=
+    sum_cylinderProb_eq_of_extension_and_evidencePreservingEquiv_start
+      (k := k) μ hμ P hExt
+      (rowVisitCylinderEventUpToPrefixCarrier (k := k) i₁ S₁ v₁ N)
+      (rowVisitCylinderEventUpToPrefixCarrier (k := k) i₂ S₂ v₂ N)
+      e he j
+  calc
+    P ({ω : ℕ → Fin k | ω 0 = j} ∩ rowVisitCylinderEventUpTo (k := k) i₁ S₁ v₁ N)
+        =
+      Finset.sum (rowVisitCylinderEventUpToPrefixCarrier (k := k) i₁ S₁ v₁ N)
+        (fun xs => if xs 0 = j then P (cylinder (k := k) (List.ofFn xs)) else 0) := hleft
+    _ =
+      Finset.sum (rowVisitCylinderEventUpToPrefixCarrier (k := k) i₂ S₂ v₂ N)
+        (fun ys => if ys 0 = j then P (cylinder (k := k) (List.ofFn ys)) else 0) := hsum
+    _ =
+      P ({ω : ℕ → Fin k | ω 0 = j} ∩ rowVisitCylinderEventUpTo (k := k) i₂ S₂ v₂ N) := hright.symm
+
+lemma measure_start_inter_rowVisitSingletonUpTo_eq_of_evidencePreservingEquiv_start
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k))
+    (hExt : ∀ xs : List (Fin k), μ xs = P (cylinder (k := k) xs))
+    (i j b : Fin k) (n n' N : ℕ)
+    (e :
+      rowVisitCylinderEventUpToPrefixCarrier (k := k) i ({n} : Finset ℕ)
+        (fun m => if m = n then b else i) N ≃
+      rowVisitCylinderEventUpToPrefixCarrier (k := k) i ({n'} : Finset ℕ)
+        (fun m => if m = n' then b else i) N)
+    (he :
+      ∀ xs :
+        rowVisitCylinderEventUpToPrefixCarrier (k := k) i ({n} : Finset ℕ)
+          (fun m => if m = n then b else i) N,
+        evidenceOf (n := N) xs.1 = evidenceOf (n := N) (e xs).1) :
+    P ({ω : ℕ → Fin k | ω 0 = j} ∩
+        rowVisitCylinderEventUpTo (k := k) i ({n} : Finset ℕ)
+          (fun m => if m = n then b else i) N)
+      =
+    P ({ω : ℕ → Fin k | ω 0 = j} ∩
+        rowVisitCylinderEventUpTo (k := k) i ({n'} : Finset ℕ)
+          (fun m => if m = n' then b else i) N) := by
+  exact
+    measure_start_inter_rowVisitCylinderEventUpTo_eq_of_evidencePreservingEquiv_start
+      (k := k) μ hμ P hExt
+      i ({n} : Finset ℕ) (fun m => if m = n then b else i)
+      i ({n'} : Finset ℕ) (fun m => if m = n' then b else i)
+      N j e he
+
 /-- Finite-index version of the no-`none` branch witness extraction. -/
 lemma rowVisitCylinderEventUpTo_mono
     (i : Fin k) (S : Finset ℕ) (v : ℕ → Fin k) :
@@ -929,6 +1030,89 @@ lemma rowVisitCylinderEventUpTo_mono
   intro N M hNM ω hω n hnS
   rcases hω n hnS with ⟨t, htN, htime, hsucc⟩
   refine ⟨t, lt_of_lt_of_le htN hNM, htime, hsucc⟩
+
+lemma measure_start_inter_rowSuccessorValueEvent_eq_of_evidencePreservingEquiv_start
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k))
+    (hExt : ∀ xs : List (Fin k), μ xs = P (cylinder (k := k) xs))
+    (i j b : Fin k) (n n' : ℕ)
+    (hbi : b ≠ i)
+    (hEquiv :
+      ∀ N : ℕ,
+        ∃ e :
+          rowVisitCylinderEventUpToPrefixCarrier (k := k) i ({n} : Finset ℕ)
+            (fun m => if m = n then b else i) N ≃
+            rowVisitCylinderEventUpToPrefixCarrier (k := k) i ({n'} : Finset ℕ)
+              (fun m => if m = n' then b else i) N,
+          ∀ xs :
+            rowVisitCylinderEventUpToPrefixCarrier (k := k) i ({n} : Finset ℕ)
+              (fun m => if m = n then b else i) N,
+            evidenceOf (n := N) xs.1 = evidenceOf (n := N) (e xs).1) :
+    P ({ω : ℕ → Fin k | ω 0 = j} ∩ rowSuccessorValueEvent (k := k) i n b)
+      =
+    P ({ω : ℕ → Fin k | ω 0 = j} ∩ rowSuccessorValueEvent (k := k) i n' b) := by
+  let S0 : Set (ℕ → Fin k) := {ω : ℕ → Fin k | ω 0 = j}
+  let A : ℕ → Set (ℕ → Fin k) :=
+    fun N =>
+      rowVisitCylinderEventUpTo (k := k) i ({n} : Finset ℕ)
+        (fun m => if m = n then b else i) N
+  let B : ℕ → Set (ℕ → Fin k) :=
+    fun N =>
+      rowVisitCylinderEventUpTo (k := k) i ({n'} : Finset ℕ)
+        (fun m => if m = n' then b else i) N
+  have hrowA : rowSuccessorValueEvent (k := k) i n b = ⋃ N : ℕ, A N := by
+    simpa [A] using
+      (rowSuccessorValueEvent_eq_iUnion_upTo_of_ne (k := k) i n b hbi)
+  have hrowB : rowSuccessorValueEvent (k := k) i n' b = ⋃ N : ℕ, B N := by
+    simpa [B] using
+      (rowSuccessorValueEvent_eq_iUnion_upTo_of_ne (k := k) i n' b hbi)
+  have hintA :
+      S0 ∩ rowSuccessorValueEvent (k := k) i n b
+        =
+      ⋃ N : ℕ, S0 ∩ A N := by
+    simpa [hrowA, Set.inter_iUnion] using (rfl :
+      S0 ∩ (⋃ N : ℕ, A N) = ⋃ N : ℕ, S0 ∩ A N)
+  have hintB :
+      S0 ∩ rowSuccessorValueEvent (k := k) i n' b
+        =
+      ⋃ N : ℕ, S0 ∩ B N := by
+    simpa [hrowB, Set.inter_iUnion] using (rfl :
+      S0 ∩ (⋃ N : ℕ, B N) = ⋃ N : ℕ, S0 ∩ B N)
+  have hmonoA : Monotone (fun N : ℕ => S0 ∩ A N) := by
+    intro N M hNM ω hω
+    refine ⟨hω.1, ?_⟩
+    exact (rowVisitCylinderEventUpTo_mono (k := k) i ({n} : Finset ℕ)
+      (fun m => if m = n then b else i) hNM) hω.2
+  have hmonoB : Monotone (fun N : ℕ => S0 ∩ B N) := by
+    intro N M hNM ω hω
+    refine ⟨hω.1, ?_⟩
+    exact (rowVisitCylinderEventUpTo_mono (k := k) i ({n'} : Finset ℕ)
+      (fun m => if m = n' then b else i) hNM) hω.2
+  have hNeq : ∀ N : ℕ, P (S0 ∩ A N) = P (S0 ∩ B N) := by
+    intro N
+    rcases hEquiv N with ⟨e, he⟩
+    simpa [S0, A, B] using
+      (measure_start_inter_rowVisitSingletonUpTo_eq_of_evidencePreservingEquiv_start
+        (k := k) μ hμ P hExt i j b n n' N e he)
+  have hSupEq :
+      (⨆ N : ℕ, P (S0 ∩ A N)) = ⨆ N : ℕ, P (S0 ∩ B N) := by
+    refine le_antisymm ?_ ?_
+    · refine iSup_le ?_
+      intro N
+      exact le_iSup_of_le N (hNeq N).le
+    · refine iSup_le ?_
+      intro N
+      exact le_iSup_of_le N (hNeq N).ge
+  calc
+    P ({ω : ℕ → Fin k | ω 0 = j} ∩ rowSuccessorValueEvent (k := k) i n b)
+        = P (S0 ∩ rowSuccessorValueEvent (k := k) i n b) := by simp [S0]
+    _ = P (⋃ N : ℕ, S0 ∩ A N) := by simpa [hintA]
+    _ = ⨆ N : ℕ, P (S0 ∩ A N) := hmonoA.measure_iUnion
+    _ = ⨆ N : ℕ, P (S0 ∩ B N) := hSupEq
+    _ = P (⋃ N : ℕ, S0 ∩ B N) := (hmonoB.measure_iUnion).symm
+    _ = P (S0 ∩ rowSuccessorValueEvent (k := k) i n' b) := by simpa [hintB]
+    _ = P ({ω : ℕ → Fin k | ω 0 = j} ∩ rowSuccessorValueEvent (k := k) i n' b) := by simp [S0]
 
 def rowPermute (σ : Equiv.Perm ℕ) (r : ℕ → Fin k) : ℕ → Fin k :=
   fun n => r (σ n)

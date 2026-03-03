@@ -225,6 +225,36 @@ theorem xi_deduction_threshold_of_chainBN
     (xi_deduction_rewrite_of_chainBN_side valA valB valC hLMarkov hDSep)
     W tau enc a p hEnc hTau
 
+/-- Concrete Chapter-9 fixture (chain BN, all events `true`, fixed atom label/pattern):
+single-call WM→OSLF threshold endpoint with no generic language/query parameters. -/
+theorem xi_deduction_threshold_concrete_true_fixture
+    [EventPos (bn := chainBN) Three.B true]
+    [EventPosConstraints (bn := chainBN) [⟨Three.A, true⟩, ⟨Three.B, true⟩]]
+    (hLMarkov : ChainBNLocalMarkovAll)
+    (hDSep : (CompiledPlan.deductionSide Three.A Three.B Three.C).holds
+      (bn := chainBN))
+    (W : BNWorldModel.State (bn := chainBN))
+    (tau : ℝ≥0∞)
+    (hTau : tau ≤ Evidence.toStrength
+      ((xi_deduction_rewrite_of_chainBN true true true hLMarkov).derive W)) :
+    sem (fun _ _ => False)
+      (thresholdAtomSemOfWMQ W tau
+        (fun (_ : String) (_ : Pattern) =>
+          PLNQuery.linkCond
+            [ (⟨Three.A, true⟩ : BNQuery.Atom (bn := chainBN))
+            , (⟨Three.B, true⟩ : BNQuery.Atom (bn := chainBN)) ]
+            (⟨Three.C, true⟩ : BNQuery.Atom (bn := chainBN))))
+      (.atom "q")
+      (Pattern.fvar "x") :=
+  xi_deduction_threshold_of_chainBN true true true hLMarkov hDSep
+    (fun _ _ => False) W tau
+    (fun (_ : String) (_ : Pattern) =>
+      PLNQuery.linkCond
+        [ (⟨Three.A, true⟩ : BNQuery.Atom (bn := chainBN))
+        , (⟨Three.B, true⟩ : BNQuery.Atom (bn := chainBN)) ]
+        (⟨Three.C, true⟩ : BNQuery.Atom (bn := chainBN)))
+    "q" (Pattern.fvar "x") rfl hTau
+
 /-! ### Bonus: Strength equality (re-export from PLNBNCompilation) -/
 
 /-- Strength equality: under d-separation, the linkCond and link queries
@@ -796,6 +826,36 @@ theorem xi_sourceRule_threshold_of_forkBN
     (xi_sourceRule_rewrite_of_forkBN_side valA valB valC hLMarkov hDSep)
     W tau enc a p hEnc hTau
 
+/-- Concrete Chapter-9 fixture (fork BN, all events `true`, fixed atom label/pattern):
+single-call WM→OSLF threshold endpoint with no generic language/query parameters. -/
+theorem xi_sourceRule_threshold_concrete_true_fixture
+    [EventPos (bn := forkBN) Three.B true]
+    [EventPosConstraints (bn := forkBN) [⟨Three.A, true⟩, ⟨Three.B, true⟩]]
+    (hLMarkov : ForkBNLocalMarkovAll)
+    (hDSep : (CompiledPlan.inductionSide Three.A Three.B Three.C).holds
+      (bn := forkBN))
+    (W : BNWorldModel.State (bn := forkBN))
+    (tau : ℝ≥0∞)
+    (hTau : tau ≤ Evidence.toStrength
+      ((xi_sourceRule_rewrite_of_forkBN true true true hLMarkov).derive W)) :
+    sem (fun _ _ => False)
+      (thresholdAtomSemOfWMQ W tau
+        (fun (_ : String) (_ : Pattern) =>
+          PLNQuery.linkCond
+            [ (⟨Three.A, true⟩ : BNQuery.Atom (bn := forkBN))
+            , (⟨Three.B, true⟩ : BNQuery.Atom (bn := forkBN)) ]
+            (⟨Three.C, true⟩ : BNQuery.Atom (bn := forkBN))))
+      (.atom "q")
+      (Pattern.fvar "x") :=
+  xi_sourceRule_threshold_of_forkBN true true true hLMarkov hDSep
+    (fun _ _ => False) W tau
+    (fun (_ : String) (_ : Pattern) =>
+      PLNQuery.linkCond
+        [ (⟨Three.A, true⟩ : BNQuery.Atom (bn := forkBN))
+        , (⟨Three.B, true⟩ : BNQuery.Atom (bn := forkBN)) ]
+        (⟨Three.C, true⟩ : BNQuery.Atom (bn := forkBN)))
+    "q" (Pattern.fvar "x") rfl hTau
+
 /-! ### Bonus: Strength equality (re-export from PLNBNCompilation.ForkExample) -/
 
 /-- Strength equality: under d-separation, the linkCond and link queries
@@ -1124,6 +1184,33 @@ theorem xi_sinkRule_threshold_of_colliderBN
     (xi_sinkRule_rewrite_of_colliderBN valA valB hLMarkov)
     (xi_sinkRule_rewrite_of_colliderBN_side valA valB hLMarkov hDSep)
     W tau enc a p hEnc hTau
+
+/-- Concrete Chapter-9 fixture (collider BN, all events `true`, fixed atom label/pattern):
+single-call WM→OSLF threshold endpoint with no generic language/query parameters. -/
+theorem xi_sinkRule_threshold_concrete_true_fixture
+    [EventPos (bn := colliderBN) Three.A true]
+    (hLMarkov : ColliderBNLocalMarkovAll)
+    (hDSep : (CompiledPlan.abductionSide Three.A Three.C Three.B).holds
+      (bn := colliderBN))
+    (W : BNWorldModel.State (bn := colliderBN))
+    (tau : ℝ≥0∞)
+    (hTau : tau ≤ Evidence.toStrength
+      ((xi_sinkRule_rewrite_of_colliderBN true true hLMarkov).derive W)) :
+    sem (fun _ _ => False)
+      (thresholdAtomSemOfWMQ W tau
+        (fun (_ : String) (_ : Pattern) =>
+          PLNQuery.link
+            (⟨Three.A, true⟩ : BNQuery.Atom (bn := colliderBN))
+            (⟨Three.B, true⟩ : BNQuery.Atom (bn := colliderBN))))
+      (.atom "q")
+      (Pattern.fvar "x") :=
+  xi_sinkRule_threshold_of_colliderBN true true hLMarkov hDSep
+    (fun _ _ => False) W tau
+    (fun (_ : String) (_ : Pattern) =>
+      PLNQuery.link
+        (⟨Three.A, true⟩ : BNQuery.Atom (bn := colliderBN))
+        (⟨Three.B, true⟩ : BNQuery.Atom (bn := colliderBN)))
+    "q" (Pattern.fvar "x") rfl hTau
 
 /-! ### Bonus: Strength equality (re-export from PLNBNCompilation.ColliderExample) -/
 

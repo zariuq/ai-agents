@@ -99,6 +99,29 @@ cd /home/zar/claude/lean-projects/mettapedia
 - `Mettapedia/Logic/PLNInferenceControlCanary.lean`
 - `Mettapedia/Logic/PLNInferenceControlRegression.lean`
 
+## Chapter-9 positive regression
+
+- Chapter 9 positive regression tracks the non-counterexample path:
+  class-packaged BN side-condition discharge plus one-call selector→rewrite→threshold composition.
+
+```bash
+cd /home/zar/claude/lean-projects/mettapedia
+ulimit -Sv 6291456 && export LAKE_JOBS=3 && nice -n 19 \
+  lake build Mettapedia.Logic.PLNSelectorRewriteThresholdRegression
+```
+
+```bash
+cd /home/zar/claude/lean-projects/mettapedia
+./scripts/check_ch9_positive.sh
+```
+
+- `Mettapedia/Logic/PLNChainBNLocalMarkovPackage.lean`
+- `Mettapedia/Logic/PLNForkBNLocalMarkovPackage.lean`
+- `Mettapedia/Logic/PLNColliderBNLocalMarkovPackage.lean`
+- `Mettapedia/Logic/PLNBNLocalMarkovPackages.lean`
+- `Mettapedia/Logic/PLNSelectorRewriteThresholdExamples.lean`
+- `Mettapedia/Logic/PLNSelectorRewriteThresholdRegression.lean`
+
 ## Unification thesis
 
 - The unification thesis states PLN evidence unifies quantale, Heyting, and Bayesian views.

@@ -32,6 +32,7 @@ import Mettapedia.Logic.PLNInferenceControlExamples
 import Mettapedia.Logic.SoundnessCompleteness
 import Mettapedia.Logic.PLNErrorMagnificationGrounding
 import Mettapedia.Logic.PLNCanonicalAPI
+import Mettapedia.Logic.HigherOrder.PLNKyburgReduction
 import Mettapedia.Logic.PLNIntensionalWorldModel
 import Mettapedia.Logic.IntensionalInheritanceSolomonoffBridge
 import Mettapedia.Logic.PLNNARSRuleCorrespondence
@@ -47,6 +48,8 @@ This module is a curated import surface for the currently theorem-complete PLN s
 
 - Core derivation formulas (`PLNDerivation`)
 - Complete/joint evidence world-model semantics (`CompletePLN`, `PLNJointEvidence*`)
+- Distributional-to-Kyburg higher-order reduction bridge
+  (`HigherOrder/PLNKyburgReduction`)
 - WM rewrite layer and BN compilation bridge (`PLNWorldModel*`, `PLNBNCompilation`)
 - BN fast-rule exactness results: chain + fork measure-level exact (`PLNBayesNetFastRules`)
 - Derived BN rules: deduction (chain) + source/induction (fork) + sink/abduction (collider)

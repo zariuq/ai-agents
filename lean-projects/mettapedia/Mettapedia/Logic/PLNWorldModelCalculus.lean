@@ -176,6 +176,16 @@ def WMStrengthJudgment {State Query : Type*} [EvidenceType State] [WorldModel St
 
 notation:50 "⊢s " W " ⇓ " q " ↦ " s => WMStrengthJudgment W q s
 
+/-- Strength judgments are deterministic for fixed state/query. -/
+theorem WMStrengthJudgment.deterministic {W : State} {q : Query} {s₁ s₂ : ℝ≥0∞}
+    (h₁ : ⊢s W ⇓ q ↦ s₁) (h₂ : ⊢s W ⇓ q ↦ s₂) :
+    s₁ = s₂ := by
+  rcases h₁ with ⟨_, hs₁⟩
+  rcases h₂ with ⟨_, hs₂⟩
+  calc
+    s₁ = WorldModel.queryStrength (State := State) (Query := Query) W q := hs₁
+    _ = s₂ := hs₂.symm
+
 /-! ## Query-rewrite rules (Σ-guarded) -/
 /-! ## Query-rewrite rules (Σ-guarded) -/
 

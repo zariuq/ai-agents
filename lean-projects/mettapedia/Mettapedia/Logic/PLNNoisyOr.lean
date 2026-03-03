@@ -217,6 +217,56 @@ theorem fuzzyOrMulti_eq_noisyOrMulti (strengths : List ℝ) :
   rw [foldl_fuzzyOr2_eq_one_sub_prod 0 strengths]
   simp
 
+/-- Closed form for `n` identical independent causes:
+    `noisyOrMulti [p, ..., p] = 1 - (1 - p)^n`. -/
+theorem noisyOrMulti_replicate (n : ℕ) (p : ℝ) :
+    noisyOrMulti (List.replicate n p) = 1 - (1 - p) ^ n := by
+  unfold noisyOrMulti
+  have hfold :
+      (List.replicate n p).foldl (fun acc s => acc * (1 - s)) 1 = (1 - p) ^ n := by
+    induction n with
+    | zero =>
+        simp [List.replicate]
+    | succ n ih =>
+        simp [List.replicate]
+        rw [foldl_mul_one_sub_init (init := (1 - p)) (xs := List.replicate n p)]
+        simpa [pow_succ, mul_comm, mul_left_comm, mul_assoc] using
+          congrArg (fun x => (1 - p) * x) ih
+  simp [hfold]
+
+/-- Canonical "at least one success" probability from `n` independent Bernoulli trials. -/
+noncomputable def atLeastOneHeadProb (n : ℕ) (p : ℝ) : ℝ :=
+  1 - (1 - p) ^ n
+
+/-- Bridge theorem: the Bernoulli closed form agrees with PLN noisy-OR over replicated causes. -/
+theorem atLeastOneHeadProb_eq_noisyOr_replicate (n : ℕ) (p : ℝ) :
+    atLeastOneHeadProb n p = noisyOrMulti (List.replicate n p) := by
+  unfold atLeastOneHeadProb
+  symm
+  exact noisyOrMulti_replicate n p
+
+/-- Four biased coins with `p = 0.6`: `P(at least one head) = 609/625 = 0.9744`. -/
+theorem atLeastOneHeadProb_coin4_p06 :
+    atLeastOneHeadProb 4 (3 / 5 : ℝ) = (609 / 625 : ℝ) := by
+  norm_num [atLeastOneHeadProb]
+
+/-- Four biased coins with `p = 0.1`: `P(at least one head) = 3439/10000 = 0.3439`. -/
+theorem atLeastOneHeadProb_coin4_p01 :
+    atLeastOneHeadProb 4 (1 / 10 : ℝ) = (3439 / 10000 : ℝ) := by
+  norm_num [atLeastOneHeadProb]
+
+/-- Same `p = 0.6` result in direct noisy-OR form. -/
+theorem noisyOrMulti_coin4_p06 :
+    noisyOrMulti (List.replicate 4 (3 / 5 : ℝ)) = (609 / 625 : ℝ) := by
+  rw [noisyOrMulti_replicate]
+  norm_num
+
+/-- Same `p = 0.1` result in direct noisy-OR form. -/
+theorem noisyOrMulti_coin4_p01 :
+    noisyOrMulti (List.replicate 4 (1 / 10 : ℝ)) = (3439 / 10000 : ℝ) := by
+  rw [noisyOrMulti_replicate]
+  norm_num
+
 end MultiCause
 
 /-! ## Noisy-OR Weight Conversion -/

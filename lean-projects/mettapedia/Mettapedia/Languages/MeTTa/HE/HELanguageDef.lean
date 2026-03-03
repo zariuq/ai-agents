@@ -259,6 +259,43 @@ def mettaHE : LanguageDef := {
     { label := "ExprNil", category := "Atom", params := [],
       syntaxPattern := [.terminal "expr-nil"] },
 
+    -- Continuation frames encoded in State.out
+    { label := "KAfterOp", category := "Atom",
+      params := [simple "argsTail", simple "opType", simple "retType", simple "kont"],
+      syntaxPattern := [.terminal "k-after-op", .terminal "(",
+                        .nonTerminal "argsTail", .terminal ",",
+                        .nonTerminal "opType", .terminal ",",
+                        .nonTerminal "retType", .terminal ",",
+                        .nonTerminal "kont", .terminal ")"] },
+    { label := "KAfterArgs", category := "Atom",
+      params := [simple "head", simple "retType", simple "kont"],
+      syntaxPattern := [.terminal "k-after-args", .terminal "(",
+                        .nonTerminal "head", .terminal ",",
+                        .nonTerminal "retType", .terminal ",",
+                        .nonTerminal "kont", .terminal ")"] },
+    { label := "KTupleTail", category := "Atom",
+      params := [simple "tail", simple "kont"],
+      syntaxPattern := [.terminal "k-tuple-tail", .terminal "(",
+                        .nonTerminal "tail", .terminal ",",
+                        .nonTerminal "kont", .terminal ")"] },
+    { label := "KTupleCons", category := "Atom",
+      params := [simple "head", simple "kont"],
+      syntaxPattern := [.terminal "k-tuple-cons", .terminal "(",
+                        .nonTerminal "head", .terminal ",",
+                        .nonTerminal "kont", .terminal ")"] },
+    { label := "KArgTail", category := "Atom",
+      params := [simple "origHead", simple "rest", simple "types", simple "kont"],
+      syntaxPattern := [.terminal "k-arg-tail", .terminal "(",
+                        .nonTerminal "origHead", .terminal ",",
+                        .nonTerminal "rest", .terminal ",",
+                        .nonTerminal "types", .terminal ",",
+                        .nonTerminal "kont", .terminal ")"] },
+    { label := "KArgCons", category := "Atom",
+      params := [simple "head", simple "kont"],
+      syntaxPattern := [.terminal "k-arg-cons", .terminal "(",
+                        .nonTerminal "head", .terminal ",",
+                        .nonTerminal "kont", .terminal ")"] },
+
     -- Builtin operation symbols
     { label := "OpAdd", category := "Atom", params := [],
       syntaxPattern := [.terminal "+"] },
@@ -397,35 +434,337 @@ def mettaHE : LanguageDef := {
                                 .fvar "space", .fvar "atom"] },
 
     -- #### IF: interpretFunction rules (metta.md lines 452-478)
+    -- Explicit call/return frames encoded in State.out.
 
-    -- IF1: InterpFunc advances to MettaCall.
-    -- NOTE: This keeps the current executable behavior (pass-through InterpFunc)
-    -- while removing recursive semantic work from premise builtins.
-    -- Future continuation-style semantics should refine this into explicit
-    -- call/return frame rewrites.
-    { name := "IF_Eval",
-      typeContext := [("atom", atom), ("opType", atom), ("retType", atom),
+    -- IF1: Evaluate operator of (op args...)
+    { name := "IF_Start",
+      typeContext := [("op", atom), ("argsTail", atom), ("opType", atom),
+                      ("retType", atom), ("space", .base "Space"), ("out", atom)],
+      premises := [],
+      left  := .apply "State"
+                  [.apply "InterpFunc"
+                    [.apply "ExprCons" [.fvar "op", .fvar "argsTail"],
+                     .fvar "opType", .fvar "retType"],
+                   .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Metta" [.fvar "op", .fvar "opType"],
+                                .fvar "space",
+                                .apply "KAfterOp"
+                                  [.fvar "argsTail", .fvar "opType", .fvar "retType",
+                                   .fvar "out"]] },
+
+    -- IF2: Empty expression as function call → return unchanged
+    { name := "IF_Nil",
+      typeContext := [("opType", atom), ("retType", atom),
                       ("space", .base "Space"), ("out", atom)],
       premises := [],
+      left  := .apply "State" [.apply "InterpFunc"
+                                  [.apply "ExprNil" [], .fvar "opType", .fvar "retType"],
+                                .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Return" [.apply "ExprNil" []],
+                                .fvar "space", .fvar "out"] },
+
+    -- IF3: Non-expression function input → return unchanged
+    { name := "IF_NotExpr",
+      typeContext := [("atom", atom), ("opType", atom), ("retType", atom),
+                      ("space", .base "Space"), ("out", atom)],
+      premises := [.relationQuery "notExpression" [.fvar "atom"]],
       left  := .apply "State" [.apply "InterpFunc" [.fvar "atom", .fvar "opType",
                                                      .fvar "retType"],
                                 .fvar "space", .fvar "out"],
-      right := .apply "State" [.apply "MettaCall" [.fvar "atom", .fvar "retType"],
+      right := .apply "State" [.apply "Return" [.fvar "atom"],
                                 .fvar "space", .fvar "out"] },
 
-    -- #### IT: interpretTuple rules (metta.md lines 358-382)
+    -- IF4/5: Operator reduced to Empty/Error → short-circuit
+    { name := "IF_AfterOp_Empty",
+      typeContext := [("h", atom), ("argsTail", atom), ("opType", atom), ("retType", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "isEmpty" [.fvar "h"]],
+      left  := .apply "State" [.apply "Return" [.fvar "h"],
+                                .fvar "space",
+                                .apply "KAfterOp" [.fvar "argsTail", .fvar "opType",
+                                                    .fvar "retType", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.fvar "h"],
+                                .fvar "space", .fvar "k"] },
+    { name := "IF_AfterOp_Error",
+      typeContext := [("h", atom), ("argsTail", atom), ("opType", atom), ("retType", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "isError" [.fvar "h"]],
+      left  := .apply "State" [.apply "Return" [.fvar "h"],
+                                .fvar "space",
+                                .apply "KAfterOp" [.fvar "argsTail", .fvar "opType",
+                                                    .fvar "retType", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.fvar "h"],
+                                .fvar "space", .fvar "k"] },
 
-    -- IT1: InterpTuple returns the tuple atom unchanged.
-    -- Like IF_Eval above, this removes recursive builtin evaluation from
-    -- premises while preserving current executable behavior.
-    { name := "IT_Eval",
-      typeContext := [("atom", atom),
+    -- IF6: No args (op only) → call mettaCall directly.
+    { name := "IF_AfterOp_NoArgs",
+      typeContext := [("h", atom), ("mt", atom), ("opType", atom), ("retType", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "metaType" [.fvar "h", .fvar "mt"]],
+      left  := .apply "State" [.apply "Return" [.fvar "h"],
+                                .fvar "space",
+                                .apply "KAfterOp"
+                                  [.apply "ExprNil" [], .fvar "opType", .fvar "retType",
+                                   .fvar "k"]],
+      right := .apply "State"
+                  [.apply "MettaCall"
+                    [.apply "ExprCons" [.fvar "h", .apply "ExprNil" []], .fvar "retType"],
+                   .fvar "space", .fvar "k"] },
+
+    -- IF7: Operator reduced to a regular atom → evaluate args one by one with types.
+    { name := "IF_AfterOp_EvalArgs",
+      typeContext := [("h", atom), ("mt", atom), ("argHead", atom), ("argRest", atom),
+                      ("opType", atom), ("argTypes", atom), ("retType", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "metaType" [.fvar "h", .fvar "mt"],
+                   .relationQuery "funcArgTypes" [.fvar "opType", .fvar "argTypes"]],
+      left  := .apply "State" [.apply "Return" [.fvar "h"],
+                                .fvar "space",
+                                .apply "KAfterOp"
+                                  [.apply "ExprCons" [.fvar "argHead", .fvar "argRest"],
+                                   .fvar "opType", .fvar "retType", .fvar "k"]],
+      right := .apply "State" [.apply "InterpArgs" [.fvar "argHead", .fvar "argRest",
+                                                     .fvar "argTypes"],
+                                .fvar "space",
+                                .apply "KAfterArgs" [.fvar "h", .fvar "retType", .fvar "k"]] },
+
+    -- IF8/9: Arg tuple reduced to Empty/Error → short-circuit
+    { name := "IF_AfterArgs_Empty",
+      typeContext := [("h", atom), ("retType", atom), ("argsEval", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "isEmpty" [.fvar "argsEval"]],
+      left  := .apply "State" [.apply "Return" [.fvar "argsEval"],
+                                .fvar "space",
+                                .apply "KAfterArgs" [.fvar "h", .fvar "retType", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.fvar "argsEval"],
+                                .fvar "space", .fvar "k"] },
+    { name := "IF_AfterArgs_Error",
+      typeContext := [("h", atom), ("retType", atom), ("argsEval", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "isError" [.fvar "argsEval"]],
+      left  := .apply "State" [.apply "Return" [.fvar "argsEval"],
+                                .fvar "space",
+                                .apply "KAfterArgs" [.fvar "h", .fvar "retType", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.fvar "argsEval"],
+                                .fvar "space", .fvar "k"] },
+
+    -- IF10: Rebuild and call mettaCall on (h argsEval)
+    { name := "IF_AfterArgs_Call",
+      typeContext := [("h", atom), ("retType", atom), ("argsEval", atom),
+                      ("mt", atom), ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "metaType" [.fvar "argsEval", .fvar "mt"]],
+      left  := .apply "State" [.apply "Return" [.fvar "argsEval"],
+                                .fvar "space",
+                                .apply "KAfterArgs" [.fvar "h", .fvar "retType", .fvar "k"]],
+      right := .apply "State"
+                  [.apply "MettaCall" [.apply "ExprCons" [.fvar "h", .fvar "argsEval"],
+                                       .fvar "retType"],
+                   .fvar "space", .fvar "k"] },
+
+    -- #### IA: interpretArgs rules (metta.md lines 480-507)
+    -- Typed per-argument evaluation, one argument at a time.
+
+    -- IA1: Next arg has declared type.
+    { name := "IA_Start_Typed",
+      typeContext := [("head", atom), ("rest", atom), ("ty", atom), ("typeRest", atom),
                       ("space", .base "Space"), ("out", atom)],
       premises := [],
-      left  := .apply "State" [.apply "InterpTuple" [.fvar "atom"],
+      left  := .apply "State"
+                  [.apply "InterpArgs"
+                    [.fvar "head", .fvar "rest",
+                     .apply "ExprCons" [.fvar "ty", .fvar "typeRest"]],
+                   .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Metta" [.fvar "head", .fvar "ty"],
+                                .fvar "space",
+                                .apply "KArgTail"
+                                  [.fvar "head", .fvar "rest", .fvar "typeRest", .fvar "out"]] },
+
+    -- IA2: No declared type left; use UndefinedType.
+    { name := "IA_Start_Undef",
+      typeContext := [("head", atom), ("rest", atom),
+                      ("space", .base "Space"), ("out", atom)],
+      premises := [],
+      left  := .apply "State" [.apply "InterpArgs"
+                                  [.fvar "head", .fvar "rest", .apply "ExprNil" []],
                                 .fvar "space", .fvar "out"],
-      right := .apply "State" [.apply "Return" [.fvar "atom"],
-                                .fvar "space", .fvar "atom"] },
+      right := .apply "State" [.apply "Metta" [.fvar "head", .apply "UndefinedType" []],
+                                .fvar "space",
+                                .apply "KArgTail"
+                                  [.fvar "head", .fvar "rest", .apply "ExprNil" [], .fvar "out"]] },
+
+    -- IA3/4: Short-circuit on Empty/Error.
+    { name := "IA_Head_Empty",
+      typeContext := [("h", atom), ("origHead", atom), ("rest", atom), ("types", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "changedToEmpty" [.fvar "origHead", .fvar "h"]],
+      left  := .apply "State" [.apply "Return" [.fvar "h"],
+                                .fvar "space",
+                                .apply "KArgTail"
+                                  [.fvar "origHead", .fvar "rest", .fvar "types", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.fvar "h"], .fvar "space", .fvar "k"] },
+    { name := "IA_Head_Error",
+      typeContext := [("h", atom), ("origHead", atom), ("rest", atom), ("types", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "changedToError" [.fvar "origHead", .fvar "h"]],
+      left  := .apply "State" [.apply "Return" [.fvar "h"],
+                                .fvar "space",
+                                .apply "KArgTail"
+                                  [.fvar "origHead", .fvar "rest", .fvar "types", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.fvar "h"], .fvar "space", .fvar "k"] },
+
+    -- IA5: Tail exhausted; wrap singleton list [h].
+    { name := "IA_Head_RestNil",
+      typeContext := [("h", atom), ("mt", atom), ("origHead", atom), ("types", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "metaType" [.fvar "h", .fvar "mt"]],
+      left  := .apply "State" [.apply "Return" [.fvar "h"],
+                                .fvar "space",
+                                .apply "KArgTail"
+                                  [.fvar "origHead", .apply "ExprNil" [], .fvar "types", .fvar "k"]],
+      right := .apply "State"
+                  [.apply "Return" [.apply "ExprCons" [.fvar "h", .apply "ExprNil" []]],
+                   .fvar "space", .fvar "k"] },
+
+    -- IA6: Evaluate remaining tail args recursively.
+    { name := "IA_Head_Recurse",
+      typeContext := [("h", atom), ("mt", atom), ("origHead", atom),
+                      ("nextArg", atom), ("nextRest", atom), ("types", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "metaType" [.fvar "h", .fvar "mt"]],
+      left  := .apply "State" [.apply "Return" [.fvar "h"],
+                                .fvar "space",
+                                .apply "KArgTail"
+                                  [.fvar "origHead",
+                                   .apply "ExprCons" [.fvar "nextArg", .fvar "nextRest"],
+                                   .fvar "types", .fvar "k"]],
+      right := .apply "State" [.apply "InterpArgs" [.fvar "nextArg", .fvar "nextRest",
+                                                     .fvar "types"],
+                                .fvar "space",
+                                .apply "KArgCons" [.fvar "h", .fvar "k"]] },
+
+    -- IA7/8: Tail reduction short-circuit.
+    { name := "IA_Tail_Empty",
+      typeContext := [("h", atom), ("t", atom), ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "isEmpty" [.fvar "t"]],
+      left  := .apply "State" [.apply "Return" [.fvar "t"],
+                                .fvar "space",
+                                .apply "KArgCons" [.fvar "h", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.fvar "t"], .fvar "space", .fvar "k"] },
+    { name := "IA_Tail_Error",
+      typeContext := [("h", atom), ("t", atom), ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "isError" [.fvar "t"]],
+      left  := .apply "State" [.apply "Return" [.fvar "t"],
+                                .fvar "space",
+                                .apply "KArgCons" [.fvar "h", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.fvar "t"], .fvar "space", .fvar "k"] },
+
+    -- IA9: Rebuild argument list with evaluated head and tail.
+    { name := "IA_Tail_Cons",
+      typeContext := [("h", atom), ("t", atom), ("mt", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "metaType" [.fvar "t", .fvar "mt"]],
+      left  := .apply "State" [.apply "Return" [.fvar "t"],
+                                .fvar "space",
+                                .apply "KArgCons" [.fvar "h", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.apply "ExprCons" [.fvar "h", .fvar "t"]],
+                                .fvar "space", .fvar "k"] },
+
+    -- #### IT: interpretTuple rules (metta.md lines 358-382)
+    -- Recursive element evaluation via continuation frames.
+
+    -- IT1: Empty tuple/list
+    { name := "IT_Nil",
+      typeContext := [("space", .base "Space"), ("out", atom)],
+      premises := [],
+      left  := .apply "State" [.apply "InterpTuple" [.apply "ExprNil" []],
+                                .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Return" [.apply "ExprNil" []],
+                                .fvar "space", .fvar "out"] },
+
+    -- IT2: Evaluate tuple head under UndefinedType
+    { name := "IT_StartCons",
+      typeContext := [("head", atom), ("tail", atom),
+                      ("space", .base "Space"), ("out", atom)],
+      premises := [],
+      left  := .apply "State" [.apply "InterpTuple"
+                                  [.apply "ExprCons" [.fvar "head", .fvar "tail"]],
+                                .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Metta" [.fvar "head", .apply "UndefinedType" []],
+                                .fvar "space",
+                                .apply "KTupleTail" [.fvar "tail", .fvar "out"]] },
+
+    -- IT3/4: Head reduced to Empty/Error → short-circuit
+    { name := "IT_Head_Empty",
+      typeContext := [("h", atom), ("tail", atom), ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "isEmpty" [.fvar "h"]],
+      left  := .apply "State" [.apply "Return" [.fvar "h"],
+                                .fvar "space",
+                                .apply "KTupleTail" [.fvar "tail", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.fvar "h"],
+                                .fvar "space", .fvar "k"] },
+    { name := "IT_Head_Error",
+      typeContext := [("h", atom), ("tail", atom), ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "isError" [.fvar "h"]],
+      left  := .apply "State" [.apply "Return" [.fvar "h"],
+                                .fvar "space",
+                                .apply "KTupleTail" [.fvar "tail", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.fvar "h"],
+                                .fvar "space", .fvar "k"] },
+
+    -- IT5: Tail empty → return singleton tuple [h]
+    { name := "IT_Head_TailNil",
+      typeContext := [("h", atom), ("mt", atom), ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "metaType" [.fvar "h", .fvar "mt"]],
+      left  := .apply "State" [.apply "Return" [.fvar "h"],
+                                .fvar "space",
+                                .apply "KTupleTail" [.apply "ExprNil" [], .fvar "k"]],
+      right := .apply "State"
+                  [.apply "Return" [.apply "ExprCons" [.fvar "h", .apply "ExprNil" []]],
+                   .fvar "space", .fvar "k"] },
+
+    -- IT6: Recurse on non-empty tail
+    { name := "IT_Head_Recurse",
+      typeContext := [("h", atom), ("mt", atom), ("tHead", atom), ("tTail", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "metaType" [.fvar "h", .fvar "mt"]],
+      left  := .apply "State" [.apply "Return" [.fvar "h"],
+                                .fvar "space",
+                                .apply "KTupleTail"
+                                  [.apply "ExprCons" [.fvar "tHead", .fvar "tTail"],
+                                   .fvar "k"]],
+      right := .apply "State"
+                  [.apply "InterpTuple" [.apply "ExprCons" [.fvar "tHead", .fvar "tTail"]],
+                   .fvar "space",
+                   .apply "KTupleCons" [.fvar "h", .fvar "k"]] },
+
+    -- IT7/8: Tail reduced to Empty/Error → short-circuit
+    { name := "IT_Tail_Empty",
+      typeContext := [("h", atom), ("t", atom), ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "isEmpty" [.fvar "t"]],
+      left  := .apply "State" [.apply "Return" [.fvar "t"],
+                                .fvar "space",
+                                .apply "KTupleCons" [.fvar "h", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.fvar "t"],
+                                .fvar "space", .fvar "k"] },
+    { name := "IT_Tail_Error",
+      typeContext := [("h", atom), ("t", atom), ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "isError" [.fvar "t"]],
+      left  := .apply "State" [.apply "Return" [.fvar "t"],
+                                .fvar "space",
+                                .apply "KTupleCons" [.fvar "h", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.fvar "t"],
+                                .fvar "space", .fvar "k"] },
+
+    -- IT9: Rebuild tuple from evaluated head and tail
+    { name := "IT_Tail_Cons",
+      typeContext := [("h", atom), ("t", atom), ("mt", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "metaType" [.fvar "t", .fvar "mt"]],
+      left  := .apply "State" [.apply "Return" [.fvar "t"],
+                                .fvar "space",
+                                .apply "KTupleCons" [.fvar "h", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.apply "ExprCons" [.fvar "h", .fvar "t"]],
+                                .fvar "space", .fvar "k"] },
 
     -- #### MC: mettaCall rules (metta.md lines 509-552)
 
@@ -502,10 +841,10 @@ def mettaHE : LanguageDef := {
 
     -- #### R: Return/Done rules
 
-    -- R1: Return delivers result to Done
+    -- R1: Return delivers result to Done when continuation stack is empty
     { name := "R_Done",
       typeContext := [("result", atom), ("space", .base "Space"), ("out", atom)],
-      premises := [],
+      premises := [.relationQuery "isEmpty" [.fvar "out"]],
       left  := .apply "State" [.apply "Return" [.fvar "result"],
                                 .fvar "space", .fvar "out"],
       right := .apply "State" [.apply "Done" [],

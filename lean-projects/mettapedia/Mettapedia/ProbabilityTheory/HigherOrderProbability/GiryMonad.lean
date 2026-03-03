@@ -161,21 +161,36 @@ theorem flatten_right_identity {Θ : Type*} [MeasurableSpace Θ]
   simp only [flatten_is_bind]
   exact Measure.bind_dirac
 
-/-
-## Associativity Law (Future Work)
+/-- **Associativity Law** (Kleisli composition form).
 
-The associativity law for flatten requires additional infrastructure:
+Flattening followed by a second stochastic map `k` is equivalent to composing
+`k` into each branch of the original kernel first, then flattening once:
+```
+(flatten pd).bind k = pd.mixingMeasure.bind (fun θ => (pd.kernel θ).bind k)
+```
 
-**Statement** (informal): For nested parametrized distributions,
-  flatten(flatten(pd')) = flatten(pd' with composed kernels)
-
-**Blockers**:
-1. `Measure.bind_bind` exists in mathlib (GiryMonad.lean:278) but needs proper setup
-2. Dependent parametrized distributions (Θ₁ → ParametrizedDistribution Θ₂ X)
-3. Measurability conditions for nested structures
-
-**Next steps**: Search mathlib for kernel composition examples and adapt bind_bind
+This is exactly Giry-monad associativity specialized to `flatten pd = μ.bind κ`.
 -/
+theorem flatten_associativity {Θ X Y : Type*}
+    [MeasurableSpace Θ] [MeasurableSpace X] [MeasurableSpace Y]
+    (pd : ParametrizedDistribution Θ X)
+    (k : X → Measure Y)
+    (hk : AEMeasurable k (flatten pd)) :
+    (flatten pd).bind k = pd.mixingMeasure.bind (fun θ => (pd.kernel θ).bind k) := by
+  rw [flatten_is_bind]
+  exact Measure.bind_bind pd.kernel.aemeasurable hk
+
+/-- Typed convenience form of `flatten_associativity` for Markov kernels.
+
+This avoids explicit `AEMeasurable` plumbing at call sites because kernel
+measurability is bundled by `Kernel`.
+-/
+theorem flatten_associativity_kernel {Θ X Y : Type*}
+    [MeasurableSpace Θ] [MeasurableSpace X] [MeasurableSpace Y]
+    (pd : ParametrizedDistribution Θ X)
+    (k : ProbabilityTheory.Kernel X Y) :
+    (flatten pd).bind k = pd.mixingMeasure.bind (fun θ => (pd.kernel θ).bind k) := by
+  exact flatten_associativity (pd := pd) (k := k) k.aemeasurable
 
 /-! ## Connection to Kyburg's No-Advantage Theorem -/
 
@@ -259,10 +274,9 @@ higher-order probability + functions. Phase 4 will formalize this.
 
 ### Next Steps
 
-**Immediate**: Fill sorries in monad law proofs
-- Measurability conditions (kernel_measurable proofs)
-- IsProbabilityMeasure instances
-- Associativity proof using bind_bind
+**Immediate**: package nested/typed associativity convenience lemmas
+- specialize `flatten_associativity` to common composed-kernel patterns
+- add chapter-facing aliases in `PLNKyburgReduction` / `PLNCanonicalAPI`
 
 **Phase 4**: Quasi-Borel Spaces
 - Extend Giry monad to cartesian closed category
