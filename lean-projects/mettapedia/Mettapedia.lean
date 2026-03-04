@@ -94,11 +94,16 @@ import Mettapedia.Logic.PLNWorldModelFOLCompleteness
 import Mettapedia.Logic.PLNWorldModelPureKernelBridge
 import Mettapedia.Logic.PLNWorldModelInstitution
 import Mettapedia.Logic.PLNWorldModelHyperdoctrine
+import Mettapedia.Logic.PLNWorldModelCategoricalBridge
 import Mettapedia.Logic.PLNWorldModelNeighborhoodConsequence
 import Mettapedia.Logic.PLNWorldModelKripkeCompleteness
 import Mettapedia.Logic.PLNWorldModelKripkeNeighborhoodEmbedding
 import Mettapedia.Logic.PLNWorldModelKripkeNeighborhoodCanonical
 import Mettapedia.Logic.PLNWorldModelKripkeWeighted
+import Mettapedia.Logic.PLNWorldModelExperiment
+import Mettapedia.Logic.PLNWorldModelExperimentRegression
+import Mettapedia.Logic.PLNWorldModelExperimentStochastic
+import Mettapedia.Logic.PLNWorldModelExperimentStochasticRegression
 
 -- Universal AI (Hutter Chapters 2-7)
 import Mettapedia.UniversalAI.SimplicityUncertainty
