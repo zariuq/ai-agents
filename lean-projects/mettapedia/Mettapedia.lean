@@ -52,6 +52,7 @@ import Mettapedia.CategoryTheory.PLNTerms
 import Mettapedia.CategoryTheory.ModalTypes
 import Mettapedia.CategoryTheory.Hypercube
 import Mettapedia.CategoryTheory.PLNSemiringQuantale
+import Mettapedia.CategoryTheory.GeneralizedOpenMaps
 
 -- Computability
 import Mettapedia.Computability.KolmogorovComplexity.Basic
@@ -83,6 +84,21 @@ import Mettapedia.Logic.PLNEvidence
 import Mettapedia.Logic.PLN_KS_Bridge
 import Mettapedia.Logic.PLNDeductionComposition
 import Mettapedia.Logic.TemporalQuantale
+import Mettapedia.Logic.WeightedOpenMaps
+import Mettapedia.Logic.OSLFOpenMapBridge
+import Mettapedia.Logic.OpenMapBridgeRegression
+import Mettapedia.Logic.PLNWorldModelHOL
+import Mettapedia.Logic.PLNWorldModelFOL
+import Mettapedia.Logic.PLNWorldModelHOLCompleteness
+import Mettapedia.Logic.PLNWorldModelFOLCompleteness
+import Mettapedia.Logic.PLNWorldModelPureKernelBridge
+import Mettapedia.Logic.PLNWorldModelInstitution
+import Mettapedia.Logic.PLNWorldModelHyperdoctrine
+import Mettapedia.Logic.PLNWorldModelNeighborhoodConsequence
+import Mettapedia.Logic.PLNWorldModelKripkeCompleteness
+import Mettapedia.Logic.PLNWorldModelKripkeNeighborhoodEmbedding
+import Mettapedia.Logic.PLNWorldModelKripkeNeighborhoodCanonical
+import Mettapedia.Logic.PLNWorldModelKripkeWeighted
 
 -- Universal AI (Hutter Chapters 2-7)
 import Mettapedia.UniversalAI.SimplicityUncertainty
