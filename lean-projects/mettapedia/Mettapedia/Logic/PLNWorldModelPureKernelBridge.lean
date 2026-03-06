@@ -17,7 +17,16 @@ Layering:
 - B: kernel theory reduction (`Red`)
 - C: profile theory closure (`PureProfileTheoryStep`)
 
-This file consumes B -> C (closed quotation) to transport WM obligations.
+This file consumes the canonical A/B/C bridge surface from `CoreEmbedding` and
+lands on the same WM obligation surface that the generic formula-side closure
+modules package in:
+- `OSLFNTTWMBridge`
+- `OSLFNTTTheoryClosure`
+- `OSLFNTTWMCanonicalClosure`
+
+The two routes are intentionally parallel:
+- this file is the PureKernel/DTT-specific producer of WM obligations
+- the OSLF/NTT modules are the generic formula/evidence closure route
 -/
 
 namespace Mettapedia.Logic.PLNWorldModelPureKernelBridge
@@ -33,15 +42,25 @@ open Mettapedia.Languages.MeTTa.PureKernel.CoreEmbedding
 open Mettapedia.OSLF.MeTTaIL.Syntax
 open scoped ENNReal
 
-/-- Closed bridge contract from PureKernel one-step reduction to C1 profile theory. -/
-abbrev PureClosedTheoryBridge : Prop :=
-  ∀ {t u : PureTm 0}, Red t u →
-    PureProfileTheoryStep (quoteClosedTm t) (quoteClosedTm u)
+/-- Closed A -> C1 bridge alias from the canonical PureKernel A/B/C surface. -/
+abbrev PureClosedOperationalBridge : Prop :=
+  Mettapedia.Languages.MeTTa.PureKernel.CoreEmbedding.PureClosedOperationalBridge
 
-/-- Closed bridge contract from PureKernel star reduction to C1 profile-theory star. -/
+/-- Closed A* -> C1* bridge alias from the canonical PureKernel A/B/C surface. -/
+abbrev PureClosedOperationalBridgeStar : Prop :=
+  Mettapedia.Languages.MeTTa.PureKernel.CoreEmbedding.PureClosedOperationalBridgeStar
+
+/-- Closed B -> C1 bridge alias from the canonical PureKernel A/B/C surface. -/
+abbrev PureClosedTheoryBridge : Prop :=
+  Mettapedia.Languages.MeTTa.PureKernel.CoreEmbedding.PureClosedTheoryBridge
+
+/-- Closed B* -> C1* bridge alias from the canonical PureKernel A/B/C surface. -/
 abbrev PureClosedTheoryBridgeStar : Prop :=
-  ∀ {t u : PureTm 0}, RedStar t u →
-    PureProfileTheoryStepStar (quoteClosedTm t) (quoteClosedTm u)
+  Mettapedia.Languages.MeTTa.PureKernel.CoreEmbedding.PureClosedTheoryBridgeStar
+
+/-- Canonical bundled A/B/C bridge surface re-exported for WM adapters. -/
+abbrev PureClosedABCSurface :=
+  Mettapedia.Languages.MeTTa.PureKernel.CoreEmbedding.PureClosedABCSurface
 
 /-- Star bridge is derivable from the one-step bridge by closure induction. -/
 theorem pureClosedTheoryBridge_to_star
@@ -119,6 +138,18 @@ theorem pureTheoryStep_to_wmStrengthObligation
       (I.encode (quoteClosedTm u)) :=
   I.profileStep_sound hW (hbridge hred)
 
+/-- One-step closed PureKernel reduction transports to a WM strength obligation
+through the canonical theoremic B -> C1 bridge. -/
+theorem pureTheoryStep_to_wmStrengthObligation_default
+    (I : PureJudgmentWMInterface State Query)
+    {W : State} {t u : PureTm 0}
+    (hW : I.side W)
+    (hred : Red t u) :
+    WMStrengthObligation State Query W
+      (I.encode (quoteClosedTm t))
+      (I.encode (quoteClosedTm u)) :=
+  pureTheoryStep_to_wmStrengthObligation I pureClosedTheoryBridge_default hW hred
+
 /-- Categorical-aligned wrapper:
 same Pure one-step WM obligation transport, with explicit endpoint-surface input. -/
 theorem pureTheoryStep_to_wmStrengthObligation_categorical
@@ -134,6 +165,22 @@ theorem pureTheoryStep_to_wmStrengthObligation_categorical
       (I.encode (quoteClosedTm t))
       (I.encode (quoteClosedTm u)) :=
   pureTheoryStep_to_wmStrengthObligation I hbridge hW hred
+
+/-- Categorical-aligned default wrapper using the canonical theoremic B -> C1 bridge. -/
+theorem pureTheoryStep_to_wmStrengthObligation_categorical_default
+    (I : PureJudgmentWMInterface State Query)
+    (H : Mettapedia.Logic.PLNWorldModelHyperdoctrine.WMHyperdoctrine State)
+    (_hcat : WMCategoricalEndpointSurface (H := H))
+    {X : H.Obj} (_φc : H.query X)
+    {W : State} {t u : PureTm 0}
+    (hW : I.side W)
+    (hred : Red t u) :
+    WMStrengthObligation State Query W
+      (I.encode (quoteClosedTm t))
+      (I.encode (quoteClosedTm u)) :=
+  pureTheoryStep_to_wmStrengthObligation_categorical
+    (I := I) (H := H) (_hcat := _hcat) (_φc := _φc)
+    (hbridge := pureClosedTheoryBridge_default) (W := W) (hW := hW) hred
 
 /-- Star closed PureKernel reduction transports to a WM strength obligation,
 using the same one-step closed bridge via closure lifting. -/
@@ -151,6 +198,18 @@ theorem pureTheoryStepStar_to_wmStrengthObligation
   exact
     I.profileStepStar_sound hW (hbridgeStar hred)
 
+/-- Star closed PureKernel reduction transports to a WM strength obligation
+through the canonical theoremic B* -> C1* bridge. -/
+theorem pureTheoryStepStar_to_wmStrengthObligation_default
+    (I : PureJudgmentWMInterface State Query)
+    {W : State} {t u : PureTm 0}
+    (hW : I.side W)
+    (hred : RedStar t u) :
+    WMStrengthObligation State Query W
+      (I.encode (quoteClosedTm t))
+      (I.encode (quoteClosedTm u)) :=
+  pureTheoryStepStar_to_wmStrengthObligation I pureClosedTheoryBridge_default hW hred
+
 /-- Categorical-aligned wrapper:
 same Pure star WM obligation transport, with explicit endpoint-surface input. -/
 theorem pureTheoryStepStar_to_wmStrengthObligation_categorical
@@ -167,6 +226,22 @@ theorem pureTheoryStepStar_to_wmStrengthObligation_categorical
       (I.encode (quoteClosedTm u)) :=
   pureTheoryStepStar_to_wmStrengthObligation I hbridge hW hred
 
+/-- Categorical-aligned default wrapper using the canonical theoremic B* -> C1* bridge. -/
+theorem pureTheoryStepStar_to_wmStrengthObligation_categorical_default
+    (I : PureJudgmentWMInterface State Query)
+    (H : Mettapedia.Logic.PLNWorldModelHyperdoctrine.WMHyperdoctrine State)
+    (_hcat : WMCategoricalEndpointSurface (H := H))
+    {X : H.Obj} (_φc : H.query X)
+    {W : State} {t u : PureTm 0}
+    (hW : I.side W)
+    (hred : RedStar t u) :
+    WMStrengthObligation State Query W
+      (I.encode (quoteClosedTm t))
+      (I.encode (quoteClosedTm u)) :=
+  pureTheoryStepStar_to_wmStrengthObligation_categorical
+    (I := I) (H := H) (_hcat := _hcat) (_φc := _φc)
+    (hbridge := pureClosedTheoryBridge_default) (W := W) (hW := hW) hred
+
 /-- Package a closed PureKernel one-step as a state-indexed WM consequence rule. -/
 def wmConsequenceRuleOn_of_closed_pureTheoryStep
     (I : PureJudgmentWMInterface State Query)
@@ -181,6 +256,15 @@ def wmConsequenceRuleOn_of_closed_pureTheoryStep
     intro W hW
     exact pureTheoryStep_to_wmStrengthObligation I hbridge hW hred
 
+/-- Package a closed PureKernel one-step as a WM consequence rule using the
+canonical theoremic B -> C1 bridge. -/
+def wmConsequenceRuleOn_of_closed_pureTheoryStep_default
+    (I : PureJudgmentWMInterface State Query)
+    {t u : PureTm 0}
+    (hred : Red t u) :
+    WMConsequenceRuleOn State Query :=
+  wmConsequenceRuleOn_of_closed_pureTheoryStep I pureClosedTheoryBridge_default hred
+
 /-- Package a closed PureKernel star reduction as a state-indexed WM consequence rule. -/
 def wmConsequenceRuleOn_of_closed_pureTheoryStepStar
     (I : PureJudgmentWMInterface State Query)
@@ -194,6 +278,15 @@ def wmConsequenceRuleOn_of_closed_pureTheoryStepStar
   sound := by
     intro W hW
     exact pureTheoryStepStar_to_wmStrengthObligation I hbridge hW hred
+
+/-- Package a closed PureKernel star reduction as a WM consequence rule using
+the canonical theoremic B* -> C1* bridge. -/
+def wmConsequenceRuleOn_of_closed_pureTheoryStepStar_default
+    (I : PureJudgmentWMInterface State Query)
+    {t u : PureTm 0}
+    (hred : RedStar t u) :
+    WMConsequenceRuleOn State Query :=
+  wmConsequenceRuleOn_of_closed_pureTheoryStepStar I pureClosedTheoryBridge_default hred
 
 /-- Categorical-aligned packaging of a closed PureKernel one-step as a
 state-indexed WM consequence rule. -/

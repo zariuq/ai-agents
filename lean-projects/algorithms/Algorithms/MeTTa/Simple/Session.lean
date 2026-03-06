@@ -690,6 +690,78 @@ def enqueueNext (pending : List (Pattern × Nat)) (depth : Nat)
     (terms : List Pattern) : List (Pattern × Nat) :=
   (terms.map (fun t => (t, depth))) ++ pending
 
+private def evalTupleElemsWith
+    (evalCore : Session → Pattern → Session × List Pattern)
+    (sess : Session) :
+    List Pattern → Session × List (List Pattern)
+  | [] => (sess, [[]])
+  | e :: rest =>
+      let (sessHead, headOut0) := evalCore sess e
+      let heads := if headOut0.isEmpty then [e] else headOut0
+      let (sessTail, tails) := evalTupleElemsWith evalCore sessHead rest
+      let combos :=
+        heads.foldr
+          (fun h acc => (tails.map (fun t => h :: t)) ++ acc)
+          []
+      (sessTail, combos)
+
+private def evalTupleFallbackWith
+    (isRuleCallableHead : Session → String → Bool)
+    (sess : Session) (xs : List Pattern) : Pattern :=
+  match xs with
+  | [] => .apply "()" []
+  | h :: tl =>
+      match h with
+      | .apply ctor [] =>
+          if isRuleCallableHead sess ctor then
+            .apply ctor tl
+          else
+            .apply "Expr" xs
+      | _ => .apply "Expr" xs
+
+private def evalTupleBuildStepWith
+    (evalCallableApply : Session → Pattern → List Pattern → Session × List Pattern)
+    (isRuleCallableHead : Session → String → Bool)
+    (acc : Session × List Pattern) (xs : List Pattern) : Session × List Pattern :=
+  let sess := acc.1
+  let outAcc := acc.2
+  let fallback := evalTupleFallbackWith isRuleCallableHead sess xs
+  match xs with
+  | [] =>
+      (sess, outAcc ++ [fallback])
+  | h :: tl =>
+      let tryCallable :=
+        match h with
+        | .apply "partial" _ => true
+        | .apply "|->" _ => true
+        | .lambda _ => true
+        | .multiLambda _ _ => true
+        | .fvar _ => true
+        | .apply ctor _ => isRuleCallableHead sess ctor
+        | _ => false
+      if tryCallable then
+        let (sess', out0) := evalCallableApply sess h tl
+        if out0.isEmpty then
+          (sess', outAcc ++ [fallback])
+        else
+          (sess', outAcc ++ out0)
+      else
+        (sess, outAcc ++ [fallback])
+
+private def evalTupleBuiltWith
+    (evalCallableApply : Session → Pattern → List Pattern → Session × List Pattern)
+    (isRuleCallableHead : Session → String → Bool)
+    (s : Session) (combos : List (List Pattern)) : Session × List Pattern :=
+  combos.foldl (evalTupleBuildStepWith evalCallableApply isRuleCallableHead) (s, [])
+
+private def evalTupleIntrinsicWith
+    (evalCore : Session → Pattern → Session × List Pattern)
+    (evalCallableApply : Session → Pattern → List Pattern → Session × List Pattern)
+    (isRuleCallableHead : Session → String → Bool)
+    (s : Session) (elems : List Pattern) : Session × List Pattern :=
+  let (s1, combos) := evalTupleElemsWith evalCore s elems
+  evalTupleBuiltWith evalCallableApply isRuleCallableHead s1 combos
+
 mutual
   private partial def patternCmp (a b : Pattern) : Ordering :=
     match numericOfPattern? a, numericOfPattern? b with
@@ -815,7 +887,7 @@ mutual
   private partial def evalDeterministicCore (s : Session) (fuel : Nat)
       (term : Pattern) : Session × Pattern :=
     let iface : Algorithms.MeTTa.Simple.Semantics.DeterministicEval.Interface Session := {
-      evalTupleIntrinsic := evalTupleIntrinsic
+      evalTupleIntrinsic := evalTupleIntrinsicWith evalWithStateCore evalCallableApply isRuleCallableHead
       translateCall := fun s callRaw =>
         Algorithms.MeTTa.Simple.Semantics.TranslatorOps.translateCall
           translatorInterface s s.translatorRuleHeads callRaw
@@ -2140,7 +2212,8 @@ mutual
         some (sR, combos)
     | .apply "Expr" elems =>
         let termExpr := .apply "Expr" elems
-        let (s', out0) := evalTupleIntrinsic s elems
+        let (s', out0) :=
+          evalTupleIntrinsicWith evalWithStateCore evalCallableApply isRuleCallableHead s elems
         let out1 := out0
         let outNonRefl := out1.filter (fun p => p != termExpr)
         let heLoweredHead :=
@@ -2276,7 +2349,7 @@ def referenceRunNestedEffects (s : Session) (isRoot parentCallable : Bool)
 
 private def deterministicEvalInterface :
     Algorithms.MeTTa.Simple.Semantics.DeterministicEval.Interface Session := {
-  evalTupleIntrinsic := evalTupleIntrinsic
+  evalTupleIntrinsic := evalTupleIntrinsicWith evalWithStateCore evalCallableApply isRuleCallableHead
   translateCall := fun s callRaw =>
     Algorithms.MeTTa.Simple.Semantics.TranslatorOps.translateCall
       translatorInterface s s.translatorRuleHeads callRaw
@@ -2289,6 +2362,11 @@ private def deterministicEvalInterface :
   memoLimit := detMemoLimit
 }
 
+private def referenceEvalDeterministicCore (s : Session) (fuel : Nat)
+    (term : Pattern) : Session × Pattern :=
+  Algorithms.MeTTa.Simple.Semantics.DeterministicEval.eval
+    deterministicEvalInterface s fuel term
+
 private theorem compiledConsistent_of_evalTupleBuildStep
     (hEvalCallablePres :
       ∀ (s : Session) (fn : Pattern) (args : List Pattern) (s' : Session) (out : List Pattern),
@@ -2297,13 +2375,16 @@ private theorem compiledConsistent_of_evalTupleBuildStep
         CompiledConsistent s')
     {acc : Session × List Pattern} {xs : List Pattern}
     (hAcc : CompiledConsistent acc.1) :
-    CompiledConsistent (evalTupleBuildStep acc xs).1 := by
+    CompiledConsistent
+      (evalTupleBuildStepWith evalCallableApply isRuleCallableHead acc xs).1 := by
   cases acc with
   | mk sess outAcc =>
       cases xs with
       | nil =>
-          simpa [evalTupleBuildStep] using hAcc
+          simp [evalTupleBuildStepWith]
+          simpa using hAcc
       | cons h tl =>
+          simp [evalTupleBuildStepWith]
           by_cases hTry :
               (match h with
               | .apply "partial" _ => true
@@ -2313,15 +2394,17 @@ private theorem compiledConsistent_of_evalTupleBuildStep
               | .fvar _ => true
               | .apply ctor _ => isRuleCallableHead sess ctor
               | _ => false)
-          · simp [evalTupleBuildStep, hTry]
+          · simp [hTry]
             cases hCall : evalCallableApply sess h tl with
             | mk sess' out0 =>
                 have hSess' : CompiledConsistent sess' :=
                   hEvalCallablePres sess h tl sess' out0 hCall hAcc
-                by_cases hEmpty : out0.isEmpty
-                · simpa [hCall, hEmpty] using hSess'
-                · simpa [hCall, hEmpty] using hSess'
-          · simp [evalTupleBuildStep, hTry]
+                cases out0 with
+                | nil =>
+                    simpa using hSess'
+                | cons y ys =>
+                    simpa using hSess'
+          · simp [hTry]
             simpa using hAcc
 
 private theorem compiledConsistent_foldl_evalTupleBuildStep
@@ -2332,7 +2415,8 @@ private theorem compiledConsistent_foldl_evalTupleBuildStep
         CompiledConsistent s') :
     ∀ (combos : List (List Pattern)) (acc : Session × List Pattern),
       CompiledConsistent acc.1 →
-      CompiledConsistent ((combos.foldl evalTupleBuildStep acc).1) := by
+      CompiledConsistent
+        ((combos.foldl (evalTupleBuildStepWith evalCallableApply isRuleCallableHead) acc).1) := by
   intro combos
   induction combos with
   | nil =>
@@ -2341,9 +2425,11 @@ private theorem compiledConsistent_foldl_evalTupleBuildStep
   | cons xs rest ih =>
       intro acc hAcc
       have hStep :
-          CompiledConsistent (evalTupleBuildStep acc xs).1 :=
+          CompiledConsistent
+            (evalTupleBuildStepWith evalCallableApply isRuleCallableHead acc xs).1 :=
         compiledConsistent_of_evalTupleBuildStep hEvalCallablePres hAcc
-      simpa [List.foldl] using ih (evalTupleBuildStep acc xs) hStep
+      simpa [List.foldl] using
+        ih (evalTupleBuildStepWith evalCallableApply isRuleCallableHead acc xs) hStep
 
 private theorem compiledConsistent_of_evalTupleBuilt
     (hEvalCallablePres :
@@ -2353,8 +2439,10 @@ private theorem compiledConsistent_of_evalTupleBuilt
         CompiledConsistent s')
     (s : Session) (combos : List (List Pattern))
     (hs : CompiledConsistent s) :
-    CompiledConsistent (evalTupleBuilt s combos).1 := by
-  simpa [evalTupleBuilt] using
+    CompiledConsistent
+      (evalTupleBuiltWith evalCallableApply isRuleCallableHead s combos).1 := by
+  simp [evalTupleBuiltWith]
+  simpa using
     compiledConsistent_foldl_evalTupleBuildStep hEvalCallablePres combos (s, []) hs
 
 private theorem compiledConsistent_of_evalTupleElems
@@ -2364,11 +2452,13 @@ private theorem compiledConsistent_of_evalTupleElems
         CompiledConsistent (evalWithStateCore s term).1) :
     ∀ (s : Session) (elems : List Pattern),
       CompiledConsistent s →
-      CompiledConsistent (evalTupleElems s elems).1 := by
+      CompiledConsistent
+        (evalTupleElemsWith evalWithStateCore s elems).1 := by
   intro s elems hs
   induction elems generalizing s with
   | nil =>
-      simpa [evalTupleElems] using hs
+      simp [evalTupleElemsWith]
+      simpa using hs
   | cons e rest ih =>
       have hHead : CompiledConsistent (evalWithStateCore s e).1 :=
         hEvalCorePres s e hs
@@ -2376,13 +2466,15 @@ private theorem compiledConsistent_of_evalTupleElems
       | mk s1 headOut0 =>
           have hs1 : CompiledConsistent s1 := by
             simpa [hEvalHead] using hHead
-          have hTail : CompiledConsistent (evalTupleElems s1 rest).1 :=
+          have hTail :
+              CompiledConsistent (evalTupleElemsWith evalWithStateCore s1 rest).1 :=
             ih s1 hs1
-          cases hEvalTail : evalTupleElems s1 rest with
+          cases hEvalTail : evalTupleElemsWith evalWithStateCore s1 rest with
           | mk s2 tails =>
               have hs2 : CompiledConsistent s2 := by
                 simpa [hEvalTail] using hTail
-              simpa [evalTupleElems, hEvalHead, hEvalTail] using hs2
+              simp [evalTupleElemsWith]
+              simpa [hEvalHead, hEvalTail] using hs2
 
 private theorem compiledConsistent_of_evalTupleIntrinsic
     (hEvalCorePres :
@@ -2395,25 +2487,34 @@ private theorem compiledConsistent_of_evalTupleIntrinsic
         CompiledConsistent s →
         CompiledConsistent s')
     {s : Session} {elems : List Pattern} {s' : Session} {out : List Pattern}
-    (hTuple : evalTupleIntrinsic s elems = (s', out))
+    (hTuple :
+      evalTupleIntrinsicWith evalWithStateCore evalCallableApply isRuleCallableHead s elems = (s', out))
     (hs : CompiledConsistent s) :
     CompiledConsistent s' := by
-  have hElems : CompiledConsistent (evalTupleElems s elems).1 :=
+  have hElems :
+      CompiledConsistent (evalTupleElemsWith evalWithStateCore s elems).1 :=
     compiledConsistent_of_evalTupleElems hEvalCorePres s elems hs
-  cases hEvalElems : evalTupleElems s elems with
+  cases hEvalElems : evalTupleElemsWith evalWithStateCore s elems with
   | mk s1 combos =>
       have hs1 : CompiledConsistent s1 := by
         simpa [hEvalElems] using hElems
-      have hBuilt : CompiledConsistent (evalTupleBuilt s1 combos).1 :=
+      have hBuilt :
+          CompiledConsistent
+            (evalTupleBuiltWith evalCallableApply isRuleCallableHead s1 combos).1 :=
         compiledConsistent_of_evalTupleBuilt hEvalCallablePres s1 combos hs1
-      have hState : (evalTupleBuilt s1 combos).1 = s' := by
-        simpa [evalTupleIntrinsic, hEvalElems] using congrArg Prod.fst hTuple
+      have hState :
+          (evalTupleBuiltWith evalCallableApply isRuleCallableHead s1 combos).1 = s' := by
+        have hState0 :
+            (evalTupleIntrinsicWith evalWithStateCore evalCallableApply isRuleCallableHead s elems).1 = s' := by
+          exact congrArg Prod.fst hTuple
+        simp [evalTupleIntrinsicWith, hEvalElems] at hState0
+        exact hState0
       simpa [hState] using hBuilt
 
 private def pettaCoreInterface :
     Algorithms.MeTTa.Simple.Semantics.PeTTaCore.Interface Session := {
   eval := evalWithStateCore
-  evalDeterministic := evalDeterministicCore
+  evalDeterministic := referenceEvalDeterministicCore
   evalCallableApply := evalCallableApply
   applyBindings := applyBindingsCompat
   matchPattern := matchPatternMeTTa
@@ -2437,7 +2538,7 @@ private def deterministicSearchInterface :
   normalizePattern := normalizeDollarVars
   matchPattern := matchPatternMeTTa
   applyBindings := applyBindingsCompat
-  evalTupleIntrinsic := evalTupleIntrinsic
+  evalTupleIntrinsic := evalTupleIntrinsicWith evalWithStateCore evalCallableApply isRuleCallableHead
   translateCall := fun s callRaw =>
     Algorithms.MeTTa.Simple.Semantics.TranslatorOps.translateCall
       translatorInterface s s.translatorRuleHeads callRaw
@@ -2511,7 +2612,7 @@ private theorem compiledConsistent_of_evalDeterministicCore
         CompiledConsistent s →
         CompiledConsistent s')
     {s : Session} {fuel : Nat} {term : Pattern} {s' : Session} {out : Pattern}
-    (hEval : evalDeterministicCore s fuel term = (s', out))
+    (hEval : referenceEvalDeterministicCore s fuel term = (s', out))
     (hs : CompiledConsistent s) :
     CompiledConsistent s' := by
   have hPres :=
@@ -2519,9 +2620,270 @@ private theorem compiledConsistent_of_evalDeterministicCore
       deterministicEvalInterface CompiledConsistent
       (deterministicEvalInterface_preservation hEvalCorePres hEvalCallablePres)
       s fuel term hs
-  have hState : (evalDeterministicCore s fuel term).1 = s' := by
-    simpa [evalDeterministicCore] using congrArg Prod.fst hEval
-  simpa [hState] using hPres
+  have hPresRef : CompiledConsistent (referenceEvalDeterministicCore s fuel term).1 := by
+    simpa [referenceEvalDeterministicCore] using hPres
+  have hState : (referenceEvalDeterministicCore s fuel term).1 = s' := by
+    exact congrArg Prod.fst hEval
+  simpa [hState] using hPresRef
+
+private theorem compiledConsistent_of_referenceEvalWithStateCore
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        intrinsicStateful s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    (s : Session) (term : Pattern)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent (referenceEvalWithStateCore s term).1 := by
+  have hPres :
+      Algorithms.MeTTa.Simple.Backend.ReferenceEval.Preservation
+        referenceEvalInterface CompiledConsistent := by
+    have hIntrinsicPresRef :
+        ∀ {s : Session} {term : Pattern} {s' : Session} {out : List Pattern},
+          referenceEvalInterface.intrinsicStateful s term = some (s', out) →
+          CompiledConsistent s →
+          CompiledConsistent s' := by
+      intro s term s' out hIntr hs
+      simpa [referenceEvalInterface] using hIntrinsicPres s term s' out hIntr hs
+    exact
+      Algorithms.MeTTa.Simple.Backend.ReferenceEval.preservation_of_intrinsicStateful
+        referenceEvalInterface CompiledConsistent hIntrinsicPresRef
+  simpa [referenceEvalWithStateCore, referenceEvalInterface] using
+    Algorithms.MeTTa.Simple.Backend.ReferenceEval.evalWithStateCore_preserves
+      referenceEvalInterface CompiledConsistent hPres s term hs
+
+private def referenceEvalForRuleEnumeration (s : Session) (expr : Pattern) :
+    Session × List Pattern :=
+  match intrinsicStateful s expr with
+  | some (s1, out) =>
+      let out' := if out.isEmpty then [expr] else out
+      (s1, out')
+  | none =>
+      let (s1, out0) := referenceEvalWithStateCore s expr
+      let out := if out0.isEmpty then [expr] else out0
+      (s1, out)
+
+private theorem compiledConsistent_of_referenceEvalForRuleEnumeration
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        intrinsicStateful s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s : Session} {expr : Pattern} {s' : Session} {out : List Pattern}
+    (hEval : referenceEvalForRuleEnumeration s expr = (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceEvalForRuleEnumeration at hEval
+  cases hIntr : intrinsicStateful s expr with
+  | none =>
+      simp [hIntr] at hEval
+      have hPres : CompiledConsistent (referenceEvalWithStateCore s expr).1 :=
+        compiledConsistent_of_referenceEvalWithStateCore hIntrinsicPres s expr hs
+      have hState : (referenceEvalWithStateCore s expr).1 = s' := hEval.1
+      simpa [hState] using hPres
+  | some res =>
+      rcases res with ⟨s1, out0⟩
+      simp [hIntr] at hEval
+      have hPres : CompiledConsistent s1 :=
+        hIntrinsicPres s expr s1 out0 hIntr hs
+      have hState : s1 = s' := hEval.1
+      simpa [hState] using hPres
+
+private def proofEvalForRuleEnumeration (s : Session) (expr : Pattern) :
+    Session × List Pattern :=
+  match intrinsicStateful s expr with
+  | some (s1, out) =>
+      let out' := if out.isEmpty then [expr] else out
+      (s1, out')
+  | none =>
+      let (s1, out0) := evalWithStateCore s expr
+      let out := if out0.isEmpty then [expr] else out0
+      (s1, out)
+
+private theorem compiledConsistent_of_proofEvalForRuleEnumeration
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (evalWithStateCore s term).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        intrinsicStateful s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s : Session} {expr : Pattern} {s' : Session} {out : List Pattern}
+    (hEval : proofEvalForRuleEnumeration s expr = (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold proofEvalForRuleEnumeration at hEval
+  cases hIntr : intrinsicStateful s expr with
+  | none =>
+      simp [hIntr] at hEval
+      have hPres : CompiledConsistent (evalWithStateCore s expr).1 :=
+        hEvalCorePres s expr hs
+      have hState : (evalWithStateCore s expr).1 = s' := hEval.1
+      simpa [hState] using hPres
+  | some res =>
+      rcases res with ⟨s1, out0⟩
+      simp [hIntr] at hEval
+      have hPres : CompiledConsistent s1 :=
+        hIntrinsicPres s expr s1 out0 hIntr hs
+      have hState : s1 = s' := hEval.1
+      simpa [hState] using hPres
+
+private def dispatchInterface :
+    Algorithms.MeTTa.Simple.Semantics.Dispatch.Interface Session := {
+  rewrites := fun s => s.bundle.language.rewrites
+  premiseFreeRulesForHeadArity := premiseFreeRulesForHeadArity
+  eval := evalWithStateCore
+  evalForRuleEnumeration := proofEvalForRuleEnumeration
+  applyBindings := applyBindingsCompat
+  matchPattern := matchPatternMeTTa
+  normalizePattern := normalizeDollarVars
+  dedupBindings := dedupBindings
+}
+
+private theorem dispatchInterface_preservation
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (evalWithStateCore s term).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        intrinsicStateful s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s') :
+    Algorithms.MeTTa.Simple.Semantics.Dispatch.Preservation
+      dispatchInterface CompiledConsistent := by
+  refine {
+    eval_preserves := ?_,
+    evalForRuleEnumeration_preserves := ?_
+  }
+  · intro s term s' out hEval hs
+    have hPres : CompiledConsistent (evalWithStateCore s term).1 :=
+      hEvalCorePres s term hs
+    have hState : (evalWithStateCore s term).1 = s' := by
+      simpa [dispatchInterface] using congrArg Prod.fst hEval
+    simpa [hState] using hPres
+  · intro s expr s' out hEval hs
+    exact compiledConsistent_of_proofEvalForRuleEnumeration hEvalCorePres hIntrinsicPres hEval hs
+
+private theorem compiledConsistent_of_enumerateCallByRules
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (evalWithStateCore s term).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        intrinsicStateful s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s : Session} {expr : Pattern} {s' : Session} {out : List Pattern}
+    (hEnum :
+      Algorithms.MeTTa.Simple.Semantics.Dispatch.enumerateCallByRules
+        dispatchInterface s expr = (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hPres :=
+    Algorithms.MeTTa.Simple.Semantics.Dispatch.enumerateCallByRules_preserves
+      dispatchInterface CompiledConsistent
+      (dispatchInterface_preservation hEvalCorePres hIntrinsicPres) s expr hs
+  simpa [hEnum] using hPres
+
+private theorem compiledConsistent_of_refineCallableOut
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (evalWithStateCore s term).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        intrinsicStateful s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s : Session} {expr : Pattern} {baseOut : List Pattern} {s' : Session} {out : List Pattern}
+    (hRefine :
+      Algorithms.MeTTa.Simple.Semantics.Dispatch.refineCallableOutWithArgEnumeration
+        dispatchInterface s expr baseOut = (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hPres :=
+    Algorithms.MeTTa.Simple.Semantics.Dispatch.refineCallableOutWithArgEnumeration_preserves
+      dispatchInterface CompiledConsistent
+      (dispatchInterface_preservation hEvalCorePres hIntrinsicPres) s expr baseOut hs
+  simpa [hRefine] using hPres
+
+private def referenceDispatchInterface :
+    Algorithms.MeTTa.Simple.Semantics.Dispatch.Interface Session := {
+  rewrites := fun s => s.bundle.language.rewrites
+  premiseFreeRulesForHeadArity := premiseFreeRulesForHeadArity
+  eval := referenceEvalWithStateCore
+  evalForRuleEnumeration := referenceEvalForRuleEnumeration
+  applyBindings := applyBindingsCompat
+  matchPattern := matchPatternMeTTa
+  normalizePattern := normalizeDollarVars
+  dedupBindings := dedupBindings
+}
+
+private def referenceEvalCallableApply (s : Session)
+    (callable : Pattern) (args : List Pattern) : Session × List Pattern :=
+  Algorithms.MeTTa.Simple.Semantics.Dispatch.evalCallableApply
+    referenceDispatchInterface s callable args
+
+private theorem referenceDispatchInterface_preservation
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        intrinsicStateful s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s') :
+    Algorithms.MeTTa.Simple.Semantics.Dispatch.Preservation
+      referenceDispatchInterface CompiledConsistent := by
+  refine {
+    eval_preserves := ?_,
+    evalForRuleEnumeration_preserves := ?_
+  }
+  · intro s term s' out hEval hs
+    have hPres : CompiledConsistent (referenceEvalWithStateCore s term).1 :=
+      compiledConsistent_of_referenceEvalWithStateCore hIntrinsicPres s term hs
+    have hState : (referenceEvalWithStateCore s term).1 = s' := by
+      simpa [referenceDispatchInterface] using congrArg Prod.fst hEval
+    simpa [hState] using hPres
+  · intro s expr s' out hEval hs
+    exact compiledConsistent_of_referenceEvalForRuleEnumeration hIntrinsicPres hEval hs
+
+private theorem compiledConsistent_of_referenceEnumerateCallByRules
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        intrinsicStateful s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s : Session} {expr : Pattern} {s' : Session} {out : List Pattern}
+    (hEnum :
+      Algorithms.MeTTa.Simple.Semantics.Dispatch.enumerateCallByRules
+        referenceDispatchInterface s expr = (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hPres :=
+    Algorithms.MeTTa.Simple.Semantics.Dispatch.enumerateCallByRules_preserves
+      referenceDispatchInterface CompiledConsistent
+      (referenceDispatchInterface_preservation hIntrinsicPres) s expr hs
+  simpa [hEnum] using hPres
+
+private theorem compiledConsistent_of_referenceRefineCallableOut
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        intrinsicStateful s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s : Session} {expr : Pattern} {baseOut : List Pattern} {s' : Session} {out : List Pattern}
+    (hRefine :
+      Algorithms.MeTTa.Simple.Semantics.Dispatch.refineCallableOutWithArgEnumeration
+        referenceDispatchInterface s expr baseOut = (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hPres :=
+    Algorithms.MeTTa.Simple.Semantics.Dispatch.refineCallableOutWithArgEnumeration_preserves
+      referenceDispatchInterface CompiledConsistent
+      (referenceDispatchInterface_preservation hIntrinsicPres) s expr baseOut hs
+  simpa [hRefine] using hPres
 
 private theorem pettaCoreInterface_preservation
     (hEvalCorePres :

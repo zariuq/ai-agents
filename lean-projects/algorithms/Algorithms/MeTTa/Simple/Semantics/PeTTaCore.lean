@@ -1092,7 +1092,7 @@ theorem evalIntrinsic_preserves
                             · subst hFold
                               simpa [evalIntrinsic] using
                                 foldlAtomPattern_preserves I P H s a b c d hP
-                            · simp [evalIntrinsic, hUnify, hFold]
+                            · simp [evalIntrinsic, hUnify]
                       | cons e es =>
                           cases es with
                           | nil =>

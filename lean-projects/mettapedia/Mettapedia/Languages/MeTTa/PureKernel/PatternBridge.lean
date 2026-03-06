@@ -1521,9 +1521,8 @@ theorem quoteTmWith_inst0
         (quoteTmWith ν (k + 1) (envCons (ν k) ρ) body) := by
   exact hinst0
 
-/-- Explicit-compat specialization requested by bridge clients.
-Carries an explicit `inst0` bridge hypothesis until the unconditional theorem is proved. -/
-theorem quoteTmWith_defaultBinderName_inst0_open
+/-- Default-binder open-form specialization from an explicit apply-form bridge equality. -/
+theorem quoteTmWith_defaultBinderName_inst0_open_of_apply
     (k : Nat) (ρ : QuoteEnv n) (hcompat : QuoteCompat defaultBinderName k ρ)
     (a : PureTm n) (body : PureTm (n + 1))
     (hinst0 :
@@ -1540,7 +1539,8 @@ theorem quoteTmWith_defaultBinderName_inst0_open
   have _ := hcompat
   simpa using quoteTmWith_inst0_open defaultBinderName k ρ a body hinst0
 
-theorem quoteTmWith_defaultBinderName_inst0_open_assuming_inst0Compat
+/-- Default-binder open-form specialization from a compatibility-aware apply bridge witness. -/
+theorem quoteTmWith_defaultBinderName_inst0_open_of_applyCompat
     (hinst0 : Inst0ApplyBridgeCompat defaultBinderName)
     (k : Nat) (ρ : QuoteEnv n) (hcompat : QuoteCompat defaultBinderName k ρ)
     (a : PureTm n) (body : PureTm (n + 1)) :

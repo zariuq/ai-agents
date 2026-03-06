@@ -2,7 +2,19 @@ import Mettapedia.Languages.MeTTa.PureKernel.PatternBridge
 import Mettapedia.Languages.MeTTa.PureKernel.Substitution
 import Mettapedia.OSLF.MeTTaIL.Substitution
 
-namespace Scratch
+/-!
+# Inst0 Bridge Proof Core
+
+This module contains the internal proof core for the theoremic default-binder
+`inst0` bridge.
+
+It is not the user-facing API surface. The durable public theorems live in
+`PatternBridge` and `Inst0BridgeDerived`. This file keeps the ambient/distinct
+proof family and its support lemmas in one place so downstream modules can rely
+on a stable theoremic interface without threading bridge assumptions.
+-/
+
+namespace Mettapedia.Languages.MeTTa.PureKernel.PatternBridge.Inst0BridgeProof
 
 open Mettapedia.Languages.MeTTa.PureKernel.PatternBridge
 open Mettapedia.Languages.MeTTa.PureKernel.Renaming
@@ -10,20 +22,6 @@ open Mettapedia.Languages.MeTTa.PureKernel.Syntax
 open Mettapedia.Languages.MeTTa.PureKernel.Substitution
 open Mettapedia.OSLF.MeTTaIL.Syntax
 open Mettapedia.OSLF.MeTTaIL.Substitution
-
-/- Scratch only.
-This file records theorem shape probes for the PureKernel `inst0` bridge.
-The current seed is the codomain-closed family "under m preserved binders":
-
-* destination quote environment: `buildEnv ν k m ρ`
-* source quote environment: `buildEnv ν (k + 1) m (envCons (ν k) ρ)`
-* substitution: `liftSubN m (subst0 a)`
-* theorem target: after closing the `m` preserved binders on both sides,
-  a single substitution at key `ν k` remains
-
-This is the stacked-close analogue of the successful one-binder probe and
-avoids the failed `inst0`-only recursion route.
--/
 
 def liftSubN : (i : Nat) -> Sub n m -> Sub (n + i) (m + i)
   | 0, σ => σ
@@ -4084,61 +4082,4 @@ theorem inst0BinderTargetEq_refl_of
   simp [inst0BinderClosedLhs, inst0BinderClosedTarget, quoteTmWith, subst] at hp ⊢
   rw [hp]
 
-def rho0 : QuoteEnv 0 := emptyEnv
-
-def a0 : PureTm 0 := .lam (.var 0)
-
-def body0 : PureTm 1 := .var 0
-def body1 : PureTm 1 := .lam (.var 0)
-def body2 : PureTm 2 := .var (Fin.succ (0 : Fin 1))
-def body3 : PureTm 2 := .lam (.var (Fin.succ (0 : Fin 2)))
-def body4 : PureTm 2 := .pi (.var 0) (.var (Fin.succ (0 : Fin 2)))
-def body5 : PureTm 3 := .var (Fin.succ (Fin.succ (0 : Fin 1)))
-def body6 : PureTm 3 := .lam (.var (Fin.succ (Fin.succ (0 : Fin 2))))
-def body7 : PureTm 4 := .var (Fin.succ (0 : Fin 3))
-def body8 : PureTm 4 := .var (Fin.succ (Fin.succ (0 : Fin 2)))
-
-#eval! decide (inst0BinderClosedLhs defaultBinderName 0 0 rho0 a0 body0 =
-  inst0BinderClosedTarget defaultBinderName 0 0 rho0 a0 body0)
-#eval! decide (inst0BinderClosedLhs defaultBinderName 0 0 rho0 a0 body1 =
-  inst0BinderClosedTarget defaultBinderName 0 0 rho0 a0 body1)
-#eval! decide (inst0BinderClosedLhs defaultBinderName 1 0 rho0 a0 body2 =
-  inst0BinderClosedTarget defaultBinderName 1 0 rho0 a0 body2)
-#eval! decide (inst0BinderClosedLhs defaultBinderName 1 0 rho0 a0 body3 =
-  inst0BinderClosedTarget defaultBinderName 1 0 rho0 a0 body3)
-#eval! decide (inst0BinderClosedLhs defaultBinderName 1 0 rho0 a0 body4 =
-  inst0BinderClosedTarget defaultBinderName 1 0 rho0 a0 body4)
-#eval! decide (inst0BinderClosedLhs defaultBinderName 2 0 rho0 a0 body5 =
-  inst0BinderClosedTarget defaultBinderName 2 0 rho0 a0 body5)
-#eval! decide (inst0BinderClosedLhs defaultBinderName 2 0 rho0 a0 body6 =
-  inst0BinderClosedTarget defaultBinderName 2 0 rho0 a0 body6)
-#eval! decide (closeRange defaultBinderName 0 1
-  (quoteTmWith defaultBinderName 1 (buildEnv defaultBinderName 0 1 rho0) (renameWkN 1 a0))
-  =
-  quoteTmWith defaultBinderName 1 rho0 a0)
-#eval! decide (closeRange defaultBinderName 0 2
-  (quoteTmWith defaultBinderName 2 (buildEnv defaultBinderName 0 2 rho0) (renameWkN 2 a0))
-  =
-  quoteTmWith defaultBinderName 2 rho0 a0)
-#eval! decide (
-  closeRange defaultBinderName 0 1
-    (Mettapedia.Languages.MeTTa.Pure.Core.mkLam (.fvar (defaultBinderName 0)))
-  =
-  Mettapedia.Languages.MeTTa.Pure.Core.mkLam
-    (closeRange defaultBinderName 0 1 (.fvar (defaultBinderName 0))))
-#eval! decide (
-  closeRange defaultBinderName 0 1
-    (Mettapedia.Languages.MeTTa.Pure.Core.mkLam (.fvar (defaultBinderName 1)))
-  =
-  Mettapedia.Languages.MeTTa.Pure.Core.mkLam
-    (closeRange defaultBinderName 0 1 (.fvar (defaultBinderName 1))))
-#eval! closeRange defaultBinderName 0 1
-  (Mettapedia.Languages.MeTTa.Pure.Core.mkLam (.fvar (defaultBinderName 0)))
-#eval! closeRange defaultBinderName 0 1
-  (Mettapedia.Languages.MeTTa.Pure.Core.mkLam (.fvar (defaultBinderName 1)))
-#eval! inst0BinderBodyClosedLhs defaultBinderName 2 0 rho0 a0 body7
-#eval! inst0BinderBodyClosedLhs defaultBinderName 2 0 rho0 a0 body8
-#eval! inst0BinderBodyClosedLhsDistinct defaultBinderName 2 0 rho0 a0 body7
-#eval! inst0BinderBodyClosedLhsDistinct defaultBinderName 2 0 rho0 a0 body8
-
-end Scratch
+end Mettapedia.Languages.MeTTa.PureKernel.PatternBridge.Inst0BridgeProof

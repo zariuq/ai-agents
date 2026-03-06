@@ -464,6 +464,71 @@ theorem pureTheoryStepStar_sound_pureProfileTheoryStepStar_quoteClosed
     defaultBinderName_quoteCompat0
     h
 
+/-- Closed A -> C1 transport contract. -/
+abbrev PureClosedOperationalBridge : Prop :=
+  ∀ {t u : PureTm 0}, PureOpStep t u →
+    PureProfileTheoryStep (quoteClosedTm t) (quoteClosedTm u)
+
+/-- Closed A* -> C1* transport contract. -/
+abbrev PureClosedOperationalBridgeStar : Prop :=
+  ∀ {t u : PureTm 0}, PureOpStepStar t u →
+    PureProfileTheoryStepStar (quoteClosedTm t) (quoteClosedTm u)
+
+/-- Closed B -> C1 transport contract. -/
+abbrev PureClosedTheoryBridge : Prop :=
+  ∀ {t u : PureTm 0}, PureTheoryStep t u →
+    PureProfileTheoryStep (quoteClosedTm t) (quoteClosedTm u)
+
+/-- Closed B* -> C1* transport contract. -/
+abbrev PureClosedTheoryBridgeStar : Prop :=
+  ∀ {t u : PureTm 0}, PureTheoryStepStar t u →
+    PureProfileTheoryStepStar (quoteClosedTm t) (quoteClosedTm u)
+
+/-- Canonical closed A/B/C bridge surface for the current PureKernel profile embedding.
+
+This is the DTT-side bridge surface consumed by
+`PLNWorldModelPureKernelBridge`. The generic formula-side closure route lives in
+`OSLFNTTWMBridge`, `OSLFNTTTheoryClosure`, and
+`OSLFNTTWMCanonicalClosure`; this structure is the PureKernel-specific producer
+of the same kind of WM-facing obligations.
+-/
+structure PureClosedABCSurface where
+  a_to_b : ∀ {t u : PureTm 0}, PureOpStep t u → PureTheoryStep t u
+  a_to_c1 : PureClosedOperationalBridge
+  aStar_to_bStar : ∀ {t u : PureTm 0}, PureOpStepStar t u → PureTheoryStepStar t u
+  aStar_to_c1Star : PureClosedOperationalBridgeStar
+  b_to_c1 : PureClosedTheoryBridge
+  bStar_to_c1Star : PureClosedTheoryBridgeStar
+
+/-- Canonical theoremic A -> C1 bridge. -/
+theorem pureClosedOperationalBridge_default :
+    PureClosedOperationalBridge :=
+  pureOpStep_sound_pureProfileTheoryStep_quoteClosed
+
+/-- Canonical theoremic A* -> C1* bridge. -/
+theorem pureClosedOperationalBridgeStar_default :
+    PureClosedOperationalBridgeStar :=
+  pureOpStepStar_sound_pureProfileTheoryStep_quoteClosed
+
+/-- Canonical theoremic B -> C1 bridge. -/
+theorem pureClosedTheoryBridge_default :
+    PureClosedTheoryBridge :=
+  pureTheoryStep_sound_pureProfileTheoryStep_quoteClosed
+
+/-- Canonical theoremic B* -> C1* bridge. -/
+theorem pureClosedTheoryBridgeStar_default :
+    PureClosedTheoryBridgeStar :=
+  pureTheoryStepStar_sound_pureProfileTheoryStepStar_quoteClosed
+
+/-- Canonical bundled A/B/C bridge surface. -/
+def defaultPureClosedABCSurface : PureClosedABCSurface where
+  a_to_b := pureOpStep_to_pureTheoryStep
+  a_to_c1 := pureClosedOperationalBridge_default
+  aStar_to_bStar := pureOpStepStar_to_pureTheoryStepStar
+  aStar_to_c1Star := pureClosedOperationalBridgeStar_default
+  b_to_c1 := pureClosedTheoryBridge_default
+  bStar_to_c1Star := pureClosedTheoryBridgeStar_default
+
 private def betaPiOneNestedLamRedex : PureTm 0 :=
   .app (.lam (.lam (.var (Fin.succ (0 : Fin 1))))) .u0
 

@@ -15,6 +15,14 @@ structure Interface (σ : Type) where
   normalizePattern : Pattern → Pattern
   dedupBindings : List Bindings → List Bindings
 
+structure Preservation (I : Interface σ) (P : σ → Prop) where
+  eval_preserves :
+    ∀ {s : σ} {term : Pattern} {s' : σ} {out : List Pattern},
+      I.eval s term = (s', out) → P s → P s'
+  evalForRuleEnumeration_preserves :
+    ∀ {s : σ} {term : Pattern} {s' : σ} {out : List Pattern},
+      I.evalForRuleEnumeration s term = (s', out) → P s → P s'
+
 structure CompatRewriteInterface (σ : Type) where
   rewrites : σ → List RewriteRule
   applyBindings : Bindings → Pattern → Pattern
@@ -29,6 +37,20 @@ private partial def listConcatMapP (f : Pattern → List (List Pattern)) :
     List Pattern → List (List Pattern)
   | [] => []
   | x :: xs => f x ++ listConcatMapP f xs
+
+private theorem foldlState_preserves
+    (P : σ → Prop)
+    (step : (σ × α) → β → (σ × α))
+    (hStep : ∀ (st : σ × α) (x : β), P st.1 → P (step st x).1)
+    (xs : List β) (st : σ × α) :
+    P st.1 → P ((xs.foldl step st).1) := by
+  intro hP
+  induction xs generalizing st with
+  | nil =>
+      simpa
+  | cons x xs ih =>
+      have hStep' : P (step st x).1 := hStep st x hP
+      simpa [List.foldl] using ih (step st x) hStep'
 
 private partial def lambdaParamNames : Pattern → List String
   | .fvar x => [x]
@@ -163,7 +185,99 @@ def enumerateCallByRules (I : Interface σ) (s : σ) (expr : Pattern) :
   | _ =>
       (s, [])
 
-private partial def enumerateArgCallVariants (I : Interface σ) (s : σ)
+theorem enumerateCallByRules_preserves
+    (I : Interface σ) (P : σ → Prop) (H : Preservation I P)
+    (s : σ) (expr : Pattern) :
+    P s → P (enumerateCallByRules I s expr).1 := by
+  intro hP
+  cases expr with
+  | fvar x =>
+      simpa [enumerateCallByRules] using hP
+  | bvar n =>
+      simpa [enumerateCallByRules] using hP
+  | lambda body =>
+      simpa [enumerateCallByRules] using hP
+  | multiLambda n body =>
+      simpa [enumerateCallByRules] using hP
+  | subst body repl =>
+      simpa [enumerateCallByRules] using hP
+  | collection ct elems rest =>
+      simpa [enumerateCallByRules] using hP
+  | apply rel args =>
+      refine foldlState_preserves P
+        (step := fun (acc : σ × List Pattern) rule =>
+          let sess := acc.1
+          let outAcc := acc.2
+          match rule.left with
+          | .apply relL _ =>
+              if relL == rel then
+                let subs := I.matchPattern (.apply rel args) rule.left
+                subs.foldl
+                  (fun (accBs : σ × List Pattern) bs =>
+                    let sessBs := accBs.1
+                    let outBs := accBs.2
+                    let rhs := I.applyBindings bs rule.right
+                    let (sessRhs, rhsOut) := I.evalForRuleEnumeration sessBs rhs
+                    (sessRhs, outBs ++ rhsOut))
+                  (sess, outAcc)
+              else
+                (sess, outAcc)
+          | _ =>
+              (sess, outAcc))
+        ?_ (I.rewrites s) (s, []) hP
+      intro st rule hSt
+      cases st with
+      | mk sess outAcc =>
+          cases hLeft : rule.left with
+          | fvar x =>
+              simp [hLeft]
+              simpa using hSt
+          | bvar n =>
+              simp [hLeft]
+              simpa using hSt
+          | lambda body =>
+              simp [hLeft]
+              simpa using hSt
+          | multiLambda n body =>
+              simp [hLeft]
+              simpa using hSt
+          | subst body repl =>
+              simp [hLeft]
+              simpa using hSt
+          | collection ct elems rest =>
+              simp [hLeft]
+              simpa using hSt
+          | apply relL pArgs =>
+              by_cases hEq : relL == rel
+              · have hInner :
+                    P
+                      (((I.matchPattern (.apply rel args) (.apply relL pArgs)).foldl
+                          (fun (accBs : σ × List Pattern) bs =>
+                            let sessBs := accBs.1
+                            let outBs := accBs.2
+                            let rhs := I.applyBindings bs rule.right
+                            let (sessRhs, rhsOut) := I.evalForRuleEnumeration sessBs rhs
+                            (sessRhs, outBs ++ rhsOut))
+                          (sess, outAcc)).1) := by
+                  refine foldlState_preserves P
+                    (step := fun (accBs : σ × List Pattern) bs =>
+                      let sessBs := accBs.1
+                      let outBs := accBs.2
+                      let rhs := I.applyBindings bs rule.right
+                      let (sessRhs, rhsOut) := I.evalForRuleEnumeration sessBs rhs
+                      (sessRhs, outBs ++ rhsOut))
+                    ?_ (I.matchPattern (.apply rel args) (.apply relL pArgs)) (sess, outAcc) hSt
+                  intro stBs bs hStBs
+                  cases stBs with
+                  | mk sessBs outBs =>
+                      simpa using
+                        H.evalForRuleEnumeration_preserves
+                          (s := sessBs) (term := I.applyBindings bs rule.right) rfl hStBs
+                simpa [hLeft, hEq] using hInner
+              · simp [hLeft, hEq]
+                simpa using hSt
+
+private def enumerateArgCallVariants (I : Interface σ) (s : σ)
     (args : List Pattern) : σ × List (List Pattern) :=
   match args with
   | [] => (s, [[]])
@@ -174,6 +288,31 @@ private partial def enumerateArgCallVariants (I : Interface σ) (s : σ)
       let combos :=
         listConcatMapP (fun v => tails.map (fun t => v :: t)) aVals
       (sR, combos)
+
+private theorem enumerateArgCallVariants_preserves
+    (I : Interface σ) (P : σ → Prop) (H : Preservation I P)
+    (s : σ) (args : List Pattern) :
+    P s → P (enumerateArgCallVariants I s args).1 := by
+  intro hP
+  induction args generalizing s with
+  | nil =>
+      simp [enumerateArgCallVariants]
+      simpa using hP
+  | cons a rest ih =>
+      have hA : P (enumerateCallByRules I s a).1 :=
+        enumerateCallByRules_preserves I P H s a hP
+      cases hEnumA : enumerateCallByRules I s a with
+      | mk sA aExtra =>
+          have hsA : P sA := by
+            simpa [hEnumA] using hA
+          have hRest : P (enumerateArgCallVariants I sA rest).1 :=
+            ih sA hsA
+          cases hEnumRest : enumerateArgCallVariants I sA rest with
+          | mk sR tails =>
+              have hsR : P sR := by
+                simpa [hEnumRest] using hRest
+              simp [enumerateArgCallVariants, hEnumA, hEnumRest]
+              simpa using hsR
 
 def refineCallableOutWithArgEnumeration (I : Interface σ) (s : σ)
     (expr : Pattern) (baseOut : List Pattern) : σ × List Pattern :=
@@ -200,6 +339,75 @@ def refineCallableOutWithArgEnumeration (I : Interface σ) (s : σ)
           (sE, out)
     | _ =>
         (s, baseOut)
+
+theorem refineCallableOutWithArgEnumeration_preserves
+    (I : Interface σ) (P : σ → Prop) (H : Preservation I P)
+    (s : σ) (expr : Pattern) (baseOut : List Pattern) :
+    P s → P (refineCallableOutWithArgEnumeration I s expr baseOut).1 := by
+  intro hP
+  by_cases hFree : !(baseOut.any hasFreeVar)
+  · simp [refineCallableOutWithArgEnumeration, hFree]
+    simpa using hP
+  · simp [refineCallableOutWithArgEnumeration, hFree]
+    cases expr with
+    | fvar x =>
+        simpa using hP
+    | bvar n =>
+        simpa using hP
+    | lambda body =>
+        simpa using hP
+    | multiLambda n body =>
+        simpa using hP
+    | subst body repl =>
+        simpa using hP
+    | collection ct elems rest =>
+        simpa using hP
+    | apply ctor args =>
+        have hVariants : P (enumerateArgCallVariants I s args).1 :=
+          enumerateArgCallVariants_preserves I P H s args hP
+        cases hEnumArgs : enumerateArgCallVariants I s args with
+        | mk sV combos =>
+            have hsV : P sV := by
+              simpa [hEnumArgs] using hVariants
+            let variants := combos.map (fun xs => Pattern.apply ctor xs)
+            let folded :=
+              variants.foldl
+                (fun (acc : σ × List Pattern) v =>
+                  let sess := acc.1
+                  let outRev := acc.2
+                  let (sess', outV0) := I.eval sess v
+                  let outV := if outV0.isEmpty then [v] else outV0
+                  (sess', outV.reverse ++ outRev))
+                (sV, [])
+            have hFold :
+                P folded.1 := by
+              refine foldlState_preserves P
+                (step := fun (acc : σ × List Pattern) v =>
+                  let sess := acc.1
+                  let outRev := acc.2
+                  let (sess', outV0) := I.eval sess v
+                  let outV := if outV0.isEmpty then [v] else outV0
+                  (sess', outV.reverse ++ outRev))
+                ?_ variants (sV, []) hsV
+              intro st v hSt
+              cases st with
+              | mk sess outRev =>
+                  simpa using H.eval_preserves (s := sess) (term := v) rfl hSt
+            cases hFoldRun : folded with
+            | mk sE outAccRev =>
+                have hsE : P sE := by
+                  simpa [hFoldRun] using hFold
+                have hFinal :
+                    P ((if outAccRev = [] then (sE, baseOut) else (sE, outAccRev.reverse)).1) := by
+                  by_cases hOut : outAccRev = []
+                  · simp [hOut]
+                    simpa using hsE
+                  · simp [hOut]
+                    simpa using hsE
+                have hFinalFolded :
+                    P ((if folded.2 = [] then (folded.1, baseOut) else (folded.1, folded.2.reverse)).1) := by
+                  simpa [hFoldRun] using hFinal
+                simpa [refineCallableOutWithArgEnumeration, hFree, hEnumArgs, folded] using hFinalFolded
 
 partial def evalCallableApply (I : Interface σ) (s : σ)
     (callable : Pattern) (args : List Pattern) : σ × List Pattern :=
