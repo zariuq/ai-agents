@@ -90,7 +90,10 @@ import Mettapedia.Logic.OpenMapBridgeRegression
 import Mettapedia.Logic.PLNWorldModelHOL
 import Mettapedia.Logic.PLNWorldModelFOL
 import Mettapedia.Logic.PLNWorldModelHOLCompleteness
+import Mettapedia.Logic.PLNWorldModelHOLConsequence
 import Mettapedia.Logic.PLNWorldModelFOLCompleteness
+import Mettapedia.Logic.PLNWorldModelSetTheoryBridge
+import Mettapedia.Logic.PLNWorldModelSetTheoryBridgeRegression
 import Mettapedia.Logic.PLNWorldModelPureKernelBridge
 import Mettapedia.Logic.PLNWorldModelInstitution
 import Mettapedia.Logic.PLNWorldModelHyperdoctrine
@@ -134,6 +137,12 @@ import Mettapedia.Bridge.BitVectorEvidence
 
 -- Languages
 import Mettapedia.Languages.MeTTa
+import Mettapedia.Languages.GF.GFWMConnections
+import Mettapedia.Languages.GF.GFWMConnectionsRegression
+import Mettapedia.Languages.GF.GFWMObligationAdapter
+import Mettapedia.Languages.GF.GFWMObligationAdapterRegression
+import Mettapedia.Languages.GF.GFToFOLSetBridge
+import Mettapedia.Languages.GF.GFToFOLSetBridgeRegression
 import Mettapedia.Conformance.SimpleHE
 import Mettapedia.Conformance.SimplePeTTa
 
