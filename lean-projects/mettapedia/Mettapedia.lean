@@ -148,3 +148,6 @@ import Mettapedia.Conformance.SimplePeTTa
 
 -- Examples
 import Mettapedia.Examples.SymmetricMeasures
+
+-- 100 Creative Proofs
+import Mettapedia.HundredProofs
