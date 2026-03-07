@@ -154,3 +154,9 @@ import Mettapedia.HundredProofs
 
 -- Hyperseed exploration/closure layer
 import Mettapedia.Hyperseed
+
+-- GodelClaw: Oruži cognitive architecture formalization
+import Mettapedia.CognitiveArchitecture.GodelClaw
+
+-- Bridges: Verus ↔ Lean specification correspondence
+import Mettapedia.CognitiveArchitecture.Bridges.VerusGodelClaw
