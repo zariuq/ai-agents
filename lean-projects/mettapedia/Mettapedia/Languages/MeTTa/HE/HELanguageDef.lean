@@ -296,6 +296,21 @@ def mettaHE : LanguageDef := {
                         .nonTerminal "head", .terminal ",",
                         .nonTerminal "kont", .terminal ")"] },
 
+    -- Continuation frames for control ops (switch, assert)
+    -- KSwitch: after scrutinee eval, do switch-minimal pattern matching
+    { label := "KSwitch", category := "Atom",
+      params := [simple "rawCases", simple "ty", simple "kont"],
+      syntaxPattern := [.terminal "k-switch", .terminal "(",
+                        .nonTerminal "rawCases", .terminal ",",
+                        .nonTerminal "ty", .terminal ",",
+                        .nonTerminal "kont", .terminal ")"] },
+    -- KAssert: after assertion eval, check against True
+    { label := "KAssert", category := "Atom",
+      params := [simple "asserted", simple "kont"],
+      syntaxPattern := [.terminal "k-assert", .terminal "(",
+                        .nonTerminal "asserted", .terminal ",",
+                        .nonTerminal "kont", .terminal ")"] },
+
     -- Builtin operation symbols
     { label := "OpAdd", category := "Atom", params := [],
       syntaxPattern := [.terminal "+"] },
@@ -423,7 +438,19 @@ def mettaHE : LanguageDef := {
       right := .apply "State" [.apply "InterpTuple" [.fvar "atom"],
                                 .fvar "space", .fvar "out"] },
 
-    -- IE3: Not an expression → return unchanged
+    -- IE3: Expression head has no type info at all → fall through to mettaCall.
+    -- This matches upstream HE behavior for ordinary equation-defined heads
+    -- such as `(= (id $x) $x)` / `!(id 5)` without `(: id ...)`.
+    { name := "IE_NoType",
+      typeContext := [("atom", atom), ("ty", atom),
+                      ("space", .base "Space"), ("out", atom)],
+      premises := [.relationQuery "noTypeAtAll" [.fvar "space", .fvar "atom"]],
+      left  := .apply "State" [.apply "InterpExpr" [.fvar "atom", .fvar "ty"],
+                                .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "MettaCall" [.fvar "atom", .fvar "ty"],
+                                .fvar "space", .fvar "out"] },
+
+    -- IE4: Not an expression → return unchanged
     { name := "IE_NotExpr",
       typeContext := [("atom", atom), ("ty", atom),
                       ("space", .base "Space"), ("out", atom)],
@@ -787,6 +814,230 @@ def mettaHE : LanguageDef := {
       left  := .apply "State" [.apply "MettaCall" [.fvar "atom", .fvar "ty"],
                                 .fvar "space", .fvar "out"],
       right := .apply "State" [.apply "Metta" [.fvar "result", .fvar "ty"],
+                                .fvar "space", .fvar "out"] },
+
+    -- #### MC_Control: mettaCall control form rules
+    -- These correspond to Interpreter.lean:342-396 (switch, assert, case).
+    -- Priority: after MC_Grounded, before MC_Equation.
+
+    -- MC_SwitchMinimal_Start: (switch-minimal scrutinee rawCases) →
+    --   eval scrutinee, then pattern-match against cases.
+    -- Ref: Interpreter.lean:342-356
+    { name := "MC_SwitchMinimal_Start",
+      typeContext := [("atom", atom), ("ty", atom),
+                      ("scrutinee", atom), ("rawCases", atom),
+                      ("space", .base "Space"), ("out", atom)],
+      premises := [.relationQuery "notExecutable" [.fvar "atom"],
+                   .relationQuery "parseSwitchMinimalCall"
+                     [.fvar "atom", .fvar "scrutinee", .fvar "rawCases"]],
+      left  := .apply "State" [.apply "MettaCall" [.fvar "atom", .fvar "ty"],
+                                .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Metta" [.fvar "scrutinee",
+                                                .apply "UndefinedType" []],
+                                .fvar "space",
+                                .apply "KSwitch" [.fvar "rawCases",
+                                                   .fvar "ty", .fvar "out"]] },
+
+    -- MC_SwitchMinimal_Match: scrutinee evaluated, select matching case template.
+    -- If template is not NotReducible → metta(template, ty).
+    { name := "MC_SwitchMinimal_Match",
+      typeContext := [("scrutineeVal", atom), ("rawCases", atom),
+                      ("template", atom), ("ty", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "selectSwitchResult"
+                     [.fvar "scrutineeVal", .fvar "rawCases", .fvar "template"],
+                   .relationQuery "isReducible" [.fvar "template"]],
+      left  := .apply "State" [.apply "Return" [.fvar "scrutineeVal"],
+                                .fvar "space",
+                                .apply "KSwitch" [.fvar "rawCases",
+                                                   .fvar "ty", .fvar "k"]],
+      right := .apply "State" [.apply "Metta" [.fvar "template", .fvar "ty"],
+                                .fvar "space", .fvar "k"] },
+
+    -- MC_SwitchMinimal_NoMatch: all cases exhausted (NotReducible) → return Empty.
+    { name := "MC_SwitchMinimal_NoMatch",
+      typeContext := [("scrutineeVal", atom), ("rawCases", atom),
+                      ("template", atom), ("ty", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "selectSwitchResult"
+                     [.fvar "scrutineeVal", .fvar "rawCases", .fvar "template"],
+                   .relationQuery "isNotReducible" [.fvar "template"]],
+      left  := .apply "State" [.apply "Return" [.fvar "scrutineeVal"],
+                                .fvar "space",
+                                .apply "KSwitch" [.fvar "rawCases",
+                                                   .fvar "ty", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.apply "Empty" []],
+                                .fvar "space", .fvar "k"] },
+
+    -- MC_Assert_Start: (assert asserted) → eval asserted, then check True.
+    -- Ref: Interpreter.lean:372-384
+    { name := "MC_Assert_Start",
+      typeContext := [("atom", atom), ("ty", atom),
+                      ("asserted", atom),
+                      ("space", .base "Space"), ("out", atom)],
+      premises := [.relationQuery "notExecutable" [.fvar "atom"],
+                   .relationQuery "parseAssertCall"
+                     [.fvar "atom", .fvar "asserted"]],
+      left  := .apply "State" [.apply "MettaCall" [.fvar "atom", .fvar "ty"],
+                                .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Metta" [.fvar "asserted",
+                                                .apply "UndefinedType" []],
+                                .fvar "space",
+                                .apply "KAssert" [.fvar "asserted", .fvar "out"]] },
+
+    -- MC_Assert_True: asserted evaluates to True → return unit.
+    { name := "MC_Assert_True",
+      typeContext := [("assertedVal", atom), ("asserted", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "assertMatchesTrue" [.fvar "assertedVal"]],
+      left  := .apply "State" [.apply "Return" [.fvar "assertedVal"],
+                                .fvar "space",
+                                .apply "KAssert" [.fvar "asserted", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.apply "ExprNil" []],
+                                .fvar "space", .fvar "k"] },
+
+    -- MC_Assert_NotTrue: asserted does not match True → return Error.
+    -- Error shape: (Error (assert asserted) (assertedVal "not" "True"))
+    -- Built via `mkAssertError` builtin since it involves literal symbol names.
+    { name := "MC_Assert_NotTrue",
+      typeContext := [("assertedVal", atom), ("asserted", atom),
+                      ("errAtom", atom),
+                      ("k", atom), ("space", .base "Space")],
+      premises := [.relationQuery "assertNotTrue" [.fvar "assertedVal"],
+                   .relationQuery "mkAssertError"
+                     [.fvar "asserted", .fvar "assertedVal", .fvar "errAtom"]],
+      left  := .apply "State" [.apply "Return" [.fvar "assertedVal"],
+                                .fvar "space",
+                                .apply "KAssert" [.fvar "asserted", .fvar "k"]],
+      right := .apply "State" [.apply "Return" [.fvar "errAtom"],
+                                .fvar "space", .fvar "k"] },
+
+    -- MC_Case_Start: (case scrutinee rawCases) → eval scrutinee then switch-minimal.
+    -- Ref: Interpreter.lean:385-396
+    -- Reuses KSwitch continuation (case delegates to switch-minimal after eval).
+    { name := "MC_Case_Start",
+      typeContext := [("atom", atom), ("ty", atom),
+                      ("scrutinee", atom), ("rawCases", atom),
+                      ("space", .base "Space"), ("out", atom)],
+      premises := [.relationQuery "notExecutable" [.fvar "atom"],
+                   .relationQuery "parseCaseCall"
+                     [.fvar "atom", .fvar "scrutinee", .fvar "rawCases"]],
+      left  := .apply "State" [.apply "MettaCall" [.fvar "atom", .fvar "ty"],
+                                .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Metta" [.fvar "scrutinee",
+                                                .apply "UndefinedType" []],
+                                .fvar "space",
+                                .apply "KSwitch" [.fvar "rawCases",
+                                                   .fvar "ty", .fvar "out"]] },
+
+    -- ══ Minimal Instructions (match, unify, superpose, collapse) ══
+    -- These are NOT grounded builtins. They are language-level control/query
+    -- primitives from the minimal MeTTa instruction set (MeTTaMinimalInstance).
+    -- Ref: OpProfile.lean — category: minimalInstruction.
+
+    -- MC_Superpose: (superpose (e1 e2 ...)) → nondeterministic branch per element.
+    -- parseSuperpose is a multi-result premise: returns one binding per element.
+    { name := "MC_Superpose",
+      typeContext := [("atom", atom), ("ty", atom), ("elem", atom),
+                      ("space", .base "Space"), ("out", atom)],
+      premises := [.relationQuery "notExecutable" [.fvar "atom"],
+                   .relationQuery "parseSuperpose"
+                     [.fvar "atom", .fvar "elem"]],
+      left  := .apply "State" [.apply "MettaCall" [.fvar "atom", .fvar "ty"],
+                                .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Metta" [.fvar "elem", .fvar "ty"],
+                                .fvar "space", .fvar "out"] },
+
+    -- MC_Superpose_Empty: (superpose ()) → Return(Empty).
+    { name := "MC_Superpose_Empty",
+      typeContext := [("atom", atom), ("ty", atom),
+                      ("space", .base "Space"), ("out", atom)],
+      premises := [.relationQuery "notExecutable" [.fvar "atom"],
+                   .relationQuery "isSuperpose_empty" [.fvar "atom"]],
+      left  := .apply "State" [.apply "MettaCall" [.fvar "atom", .fvar "ty"],
+                                .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Return" [.apply "Empty" []],
+                                .fvar "space", .fvar "out"] },
+
+    -- MC_Match: (match &self pattern template) → space query, multi-result.
+    -- spaceQueryMatch is multi-result: one binding per space atom that matches.
+    { name := "MC_Match",
+      typeContext := [("atom", atom), ("ty", atom),
+                      ("pattern", atom), ("template", atom), ("result", atom),
+                      ("space", .base "Space"), ("out", atom)],
+      premises := [.relationQuery "notExecutable" [.fvar "atom"],
+                   .relationQuery "parseMatchCall"
+                     [.fvar "atom", .fvar "pattern", .fvar "template"],
+                   .relationQuery "spaceQueryMatch"
+                     [.fvar "pattern", .fvar "template", .fvar "result"]],
+      left  := .apply "State" [.apply "MettaCall" [.fvar "atom", .fvar "ty"],
+                                .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Metta" [.fvar "result", .fvar "ty"],
+                                .fvar "space", .fvar "out"] },
+
+    -- MC_Match_Empty: (match &self pattern template) → no space match → Return(Empty).
+    { name := "MC_Match_Empty",
+      typeContext := [("atom", atom), ("ty", atom),
+                      ("pattern", atom), ("template", atom),
+                      ("space", .base "Space"), ("out", atom)],
+      premises := [.relationQuery "notExecutable" [.fvar "atom"],
+                   .relationQuery "parseMatchCall"
+                     [.fvar "atom", .fvar "pattern", .fvar "template"],
+                   .relationQuery "spaceQueryNoMatch" [.fvar "pattern"]],
+      left  := .apply "State" [.apply "MettaCall" [.fvar "atom", .fvar "ty"],
+                                .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Return" [.apply "Empty" []],
+                                .fvar "space", .fvar "out"] },
+
+    -- MC_Unify_Match: (unify target pattern success failure) → match succeeds.
+    { name := "MC_Unify_Match",
+      typeContext := [("atom", atom), ("ty", atom),
+                      ("target", atom), ("pattern", atom),
+                      ("success", atom), ("failure", atom), ("result", atom),
+                      ("space", .base "Space"), ("out", atom)],
+      premises := [.relationQuery "notExecutable" [.fvar "atom"],
+                   .relationQuery "parseUnifyCall"
+                     [.fvar "atom", .fvar "target", .fvar "pattern",
+                      .fvar "success", .fvar "failure"],
+                   .relationQuery "localMatch"
+                     [.fvar "target", .fvar "pattern",
+                      .fvar "success", .fvar "result"]],
+      left  := .apply "State" [.apply "MettaCall" [.fvar "atom", .fvar "ty"],
+                                .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Metta" [.fvar "result", .fvar "ty"],
+                                .fvar "space", .fvar "out"] },
+
+    -- MC_Unify_NoMatch: (unify target pattern success failure) → match fails.
+    { name := "MC_Unify_NoMatch",
+      typeContext := [("atom", atom), ("ty", atom),
+                      ("target", atom), ("pattern", atom),
+                      ("success", atom), ("failure", atom),
+                      ("space", .base "Space"), ("out", atom)],
+      premises := [.relationQuery "notExecutable" [.fvar "atom"],
+                   .relationQuery "parseUnifyCall"
+                     [.fvar "atom", .fvar "target", .fvar "pattern",
+                      .fvar "success", .fvar "failure"],
+                   .relationQuery "localNoMatch"
+                     [.fvar "target", .fvar "pattern"]],
+      left  := .apply "State" [.apply "MettaCall" [.fvar "atom", .fvar "ty"],
+                                .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Metta" [.fvar "failure", .fvar "ty"],
+                                .fvar "space", .fvar "out"] },
+
+    -- MC_Collapse: (collapse expr) → nested sub-evaluation, collect terminal results.
+    -- collapseBind is an oracle premise: Rust runs nested transition graph.
+    { name := "MC_Collapse",
+      typeContext := [("atom", atom), ("ty", atom),
+                      ("expr", atom), ("packed", atom),
+                      ("space", .base "Space"), ("out", atom)],
+      premises := [.relationQuery "notExecutable" [.fvar "atom"],
+                   .relationQuery "parseCollapseCall"
+                     [.fvar "atom", .fvar "expr"],
+                   .relationQuery "collapseBind"
+                     [.fvar "expr", .fvar "ty", .fvar "packed"]],
+      left  := .apply "State" [.apply "MettaCall" [.fvar "atom", .fvar "ty"],
+                                .fvar "space", .fvar "out"],
+      right := .apply "State" [.apply "Return" [.fvar "packed"],
                                 .fvar "space", .fvar "out"] },
 
     -- MC3: Non-grounded → equation query → metta each resolved result

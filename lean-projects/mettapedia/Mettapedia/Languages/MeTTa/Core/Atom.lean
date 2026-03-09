@@ -154,6 +154,10 @@ instance : DecidableEq Atom := fun a b =>
   else
     isFalse (fun heq => h (heq ▸ Atom.beq_self_eq_true a))
 
+instance : LawfulBEq Atom where
+  eq_of_beq := Atom.eq_of_beq_eq_true
+  rfl := Atom.beq_self_eq_true _
+
 namespace Atom
 
 /-! ### Special Atoms (Hyperon spec) -/

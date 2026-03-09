@@ -191,14 +191,55 @@ private def catWalksIfDogSleeps :=
   linSSubjS s1 if_Subj s2
 -- #eval! catWalksIfDogSleeps  -- "the cat walks if a dog sleeps"
 
-/-! ## The Garden-Path Disambiguation
+/-! ## Contextual Ambiguity Examples -/
+
+/-- Minimal literal proper-name NP for example-level surfaces. -/
+def literalNP (txt : String) : EnglishNP :=
+  { s := fun _ => txt, agr := .AgP3Sg .Neutr }
+
+def johnNP : EnglishNP := literalNP "John"
+def annaNP : EnglishNP := literalNP "Anna"
+def theManNP : EnglishNP := linDetCN theDefArt (linUseN man_N)
+def theBabyNP : EnglishNP := linDetCN theDefArt (linUseN baby_N)
+def theTelescopeNP : EnglishNP := linDetCN theDefArt (linUseN telescope_N)
+def theCribNP : EnglishNP := linDetCN theDefArt (linUseN crib_N)
+
+/-- NP-attachment reading: John saw [the man with the telescope]. -/
+def telescopeNPAttachmentSurface : String :=
+  linUseCl .Pres .Simul .CPos
+    (linPredVP johnNP
+      (complV2 see_V2
+        (linDetCN theDefArt
+          (linAdvCN (linUseN man_N) (linPrepNP with_Prep theTelescopeNP)))))
+
+/-- VP-attachment reading: John [saw the man] [with the telescope]. -/
+def telescopeVPAttachmentSurface : String :=
+  linUseCl .Pres .Simul .CPos
+    (linPredVP johnNP
+      (advVP (complV2 see_V2 theManNP) (linPrepNP with_Prep theTelescopeNP)))
+
+/-- NP-attachment reading: Anna dressed [the baby in the crib]. -/
+def annaNPAttachmentSurface : String :=
+  linUseCl .Pres .Simul .CPos
+    (linPredVP annaNP
+      (complV2 dress_V2
+        (linDetCN theDefArt
+          (linAdvCN (linUseN baby_N) (linPrepNP in_Prep theCribNP)))))
+
+/-- VP-attachment reading: Anna [dressed the baby] [in the crib]. -/
+def annaVPAttachmentSurface : String :=
+  linUseCl .Pres .Simul .CPos
+    (linPredVP annaNP
+      (advVP (complV2 dress_V2 theBabyNP) (linPrepNP in_Prep theCribNP)))
+
+/-! ## Legacy Lexical Contrast Example
 
 "The old man the boats" — a famous garden-path sentence.
 Humans parse "old" as adjective + "man" as noun, then get stuck.
 The actual reading: "the old [people]" (noun) + "man [verb]" (V2) + "the boats".
 
-In typed English, both readings are expressible as DIFFERENT abstract trees.
-The type IS the disambiguation.
+In this examples file, we keep it only as a legacy lexical-contrast example.
+The stronger ambiguity package now lives in the telescope/Anna examples above.
 -/
 
 -- Noun for "old" as a substantivized adjective ("the old" = old people)
@@ -267,6 +308,16 @@ theorem ex_cat_that_walks :
     catThatWalks.s (.NCase .Nom) = "the cat that walks" := by decide
 theorem ex_man_she_loves :
     manSheLoves.s (.NCase .Nom) = "the man that she loves" := by decide
+
+-- Contextual ambiguity proofs
+theorem ex_telescope_np_attachment :
+    telescopeNPAttachmentSurface = "John sees the man with the telescope" := by decide
+theorem ex_telescope_vp_attachment :
+    telescopeVPAttachmentSurface = "John sees the man with the telescope" := by decide
+theorem ex_anna_np_attachment :
+    annaNPAttachmentSurface = "Anna dresses the baby in the crib" := by decide
+theorem ex_anna_vp_attachment :
+    annaVPAttachmentSurface = "Anna dresses the baby in the crib" := by decide
 
 -- Garden-path disambiguation
 theorem ex_parse1 : parse1_theOldManWalks = "the old man walks" := by decide

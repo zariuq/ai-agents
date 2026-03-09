@@ -36,6 +36,7 @@ import Mettapedia.Logic.PLNInferenceControlExamples
 import Mettapedia.Logic.SoundnessCompleteness
 import Mettapedia.Logic.PLNErrorMagnificationGrounding
 import Mettapedia.Logic.PLNCanonicalAPI
+import Mettapedia.Logic.SufficientStatisticSurface
 import Mettapedia.Logic.HigherOrder.PLNKyburgReduction
 import Mettapedia.Logic.PLNIntensionalWorldModel
 import Mettapedia.Logic.IntensionalInheritanceSolomonoffBridge

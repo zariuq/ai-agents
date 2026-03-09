@@ -115,6 +115,8 @@ def boy_N : EnglishNoun := regN "boy"
 def fly_N : EnglishNoun := regN "fly"
 def baby_N : EnglishNoun := regN "baby"
 def kiss_N : EnglishNoun := regN "kiss"
+def telescope_N : EnglishNoun := regN "telescope"
+def crib_N : EnglishNoun := regN "crib"
 
 -- Irregular nouns
 def man_N : EnglishNoun := mk2N "man" "men" .Masc

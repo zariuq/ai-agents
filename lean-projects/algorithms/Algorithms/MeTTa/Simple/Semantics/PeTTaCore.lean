@@ -1025,8 +1025,8 @@ theorem evalIntrinsic_preserves
                         (match a with
                         | .apply ctor [] => ctor.startsWith "&"
                         | _ => false)
-                    · simpa [evalIntrinsic, hSpace] using H.eval_preserves rfl hP
-                    · simpa [evalIntrinsic, hSpace] using H.eval_preserves rfl hP
+                    · simp [evalIntrinsic]
+                    · simp [evalIntrinsic]
                   · by_cases hCons : ctor = "cons-atom"
                     · subst hCons; simp [evalIntrinsic, hP]
                     · by_cases hIndex : ctor = "index-atom"
@@ -1090,8 +1090,7 @@ theorem evalIntrinsic_preserves
                             · simpa [evalIntrinsic, hSpace] using H.eval_preserves rfl hP
                           · by_cases hFold : ctor = "foldl-atom"
                             · subst hFold
-                              simpa [evalIntrinsic] using
-                                foldlAtomPattern_preserves I P H s a b c d hP
+                              simp [evalIntrinsic]
                             · simp [evalIntrinsic, hUnify]
                       | cons e es =>
                           cases es with

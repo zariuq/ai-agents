@@ -205,6 +205,28 @@ theorem premiseStepWithEnv_freshness_mem {relEnv : RelationEnv} {lang : Language
     · cases h
   · cases h
 
+/-- When a freshness premise succeeds, some resolved variable `x` satisfies
+    `isFresh x (applyBindings bindings fc.term)`. The resolution logic matches
+    `Bindings.lookup`: `.fvar y` → `y`, non-fvar → impossible, unbound → `fc.varName`. -/
+theorem premiseStepWithEnv_freshness_check {relEnv : RelationEnv} {lang : LanguageDef}
+    {bindings bs : Bindings} {fc : FreshnessCondition}
+    (h : bs ∈ premiseStepWithEnv relEnv lang bindings (.freshness fc)) :
+    ∃ x, (match bindings.lookup fc.varName with
+           | some (.fvar y) => some y
+           | some _ => none
+           | none => some fc.varName) = some x ∧
+         isFresh x (applyBindings bindings fc.term) = true := by
+  simp only [premiseStepWithEnv] at h
+  unfold resolveFreshVarName at h
+  split at h
+  · -- case some x: resolution succeeded
+    rename_i x heq
+    split_ifs at h with hc
+    · exact ⟨x, heq, by simp only [checkFreshness] at hc; exact hc⟩
+    · cases h
+  · -- case none: resolution failed, h : bs ∈ []
+    cases h
+
 /-- Apply all premises left-to-right, carrying all possible binding extensions. -/
 def applyPremisesWithEnv (relEnv : RelationEnv) (lang : LanguageDef)
     (premises : List Premise) (seed : Bindings) : List Bindings :=

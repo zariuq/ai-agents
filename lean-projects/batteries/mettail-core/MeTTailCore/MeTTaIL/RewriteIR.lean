@@ -9,10 +9,13 @@ structure RewriteIRRule where
   leftRepr : String
   rightRepr : String
   premiseRelations : List String := []
+  lhsJson : Option String := none
+  rhsJson : Option String := none
+  premisesJson : Option String := none
 deriving Repr, DecidableEq, BEq
 
 structure RewriteIRArtifact where
-  schemaVersion : Nat := 1
+  schemaVersion : Nat := 2
   dialect : String
   rules : List RewriteIRRule
 deriving Repr, DecidableEq, BEq
@@ -60,7 +63,10 @@ private def renderRule (r : RewriteIRRule) : String :=
     ++ "\"right_repr\":" ++ jsonStr r.rightRepr ++ ","
     ++ "\"premise_relations\":["
     ++ String.intercalate "," (r.premiseRelations.map jsonStr)
-    ++ "]"
+    ++ "],"
+    ++ "\"lhs\":" ++ (r.lhsJson.getD "null") ++ ","
+    ++ "\"rhs\":" ++ (r.rhsJson.getD "null") ++ ","
+    ++ "\"premises\":" ++ (r.premisesJson.getD "[]")
   ++ "}"
 
 def RewriteIRArtifact.renderJson (a : RewriteIRArtifact) : String :=

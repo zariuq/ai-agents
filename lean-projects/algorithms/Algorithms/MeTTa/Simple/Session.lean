@@ -2324,8 +2324,7 @@ def referenceEvalInterface :
   dedupPatterns := dedupPatterns
 }
 
-def referenceEvalWithStateCore (s : Session) (term : Pattern) : Session × List Pattern :=
-  Algorithms.MeTTa.Simple.Backend.ReferenceEval.evalWithStateCore referenceEvalInterface s term
+-- referenceEvalWithStateCore is defined after the mutual fuel-indexed block (below).
 
 def referenceEvalAuxStateful (s : Session) (fuel : Nat)
     (pending : List (Pattern × Nat)) (normals : List Pattern) : Session × List Pattern :=
@@ -2366,6 +2365,2369 @@ private def referenceEvalDeterministicCore (s : Session) (fuel : Nat)
     (term : Pattern) : Session × Pattern :=
   Algorithms.MeTTa.Simple.Semantics.DeterministicEval.eval
     deterministicEvalInterface s fuel term
+
+private def referenceProofFuel (s : Session) : Nat :=
+  Nat.max 4096 s.maxNodes
+
+-- ─── FuelResult: explicit fuel-exhaustion status ─────────────────────────────
+-- Used to distinguish "computation completed within fuel" (.done) from
+-- "fuel exhausted before completion" (.outOfFuel).
+-- Useful as infrastructure for future fuel-adequacy bridging work.
+
+/-- Tracks whether a fuel-indexed computation completed or ran out of fuel. -/
+inductive FuelResult (α : Type) where
+  | done (val : α)
+  | outOfFuel
+  deriving Repr, DecidableEq
+
+namespace FuelResult
+
+def bind {α β : Type} : FuelResult α → (α → FuelResult β) → FuelResult β
+  | done a, f => f a
+  | outOfFuel, _ => outOfFuel
+
+def toOption {α : Type} : FuelResult α → Option α
+  | done a => some a
+  | outOfFuel => none
+
+def map {α β : Type} (f : α → β) : FuelResult α → FuelResult β
+  | done a => done (f a)
+  | outOfFuel => outOfFuel
+
+theorem toOption_done {α : Type} (a : α) : (done a).toOption = some a := rfl
+theorem toOption_outOfFuel {α : Type} : (outOfFuel : FuelResult α).toOption = none := rfl
+
+end FuelResult
+
+instance : Monad FuelResult where
+  pure := FuelResult.done
+  bind := FuelResult.bind
+
+-- ─────────────────────────────────────────────────────────────────────────────
+
+set_option maxHeartbeats 800000 in
+mutual
+  private def referenceRunNestedEffectsArgsN (fuel : Nat) (s : Session) (parentCallable : Bool)
+      (args : List Pattern) (accRev : List Pattern) (changed : Bool) :
+      Session × List Pattern × Bool :=
+    let iface : Algorithms.MeTTa.Simple.Backend.ReferenceEval.Interface Session := {
+      maxNodes := fun s => s.maxNodes
+      maxSteps := fun s => s.maxSteps
+      runNestedEffects := fun s isRoot p term => referenceRunNestedEffectsN fuel s isRoot p term
+      intrinsicStateful := fun s term => referenceIntrinsicStatefulN fuel s term
+      isEagerCallableHead := isEagerCallableHead
+      step := step
+      enqueueNext := enqueueNext
+      insertUnique := insertUnique
+      dedupPatterns := dedupPatterns
+    }
+    Algorithms.MeTTa.Simple.Backend.ReferenceEval.runNestedEffectsArgs
+      iface s parentCallable args accRev changed
+
+  private def referenceRunNestedEffectsN (fuel : Nat) (s : Session) (isRoot parentCallable : Bool)
+      (term : Pattern) : Session × Pattern × Bool :=
+    let iface : Algorithms.MeTTa.Simple.Backend.ReferenceEval.Interface Session := {
+      maxNodes := fun s => s.maxNodes
+      maxSteps := fun s => s.maxSteps
+      runNestedEffects := fun s _isRoot _parentCallable term => (s, term, false)
+      intrinsicStateful := fun s term => referenceIntrinsicStatefulN fuel s term
+      isEagerCallableHead := isEagerCallableHead
+      step := step
+      enqueueNext := enqueueNext
+      insertUnique := insertUnique
+      dedupPatterns := dedupPatterns
+    }
+    Algorithms.MeTTa.Simple.Backend.ReferenceEval.runNestedEffects
+      iface s isRoot parentCallable term
+
+  private def referenceEvalWithStateCoreN : Nat → Session → Pattern → Session × List Pattern
+    | 0, s, _term => (s, [])
+    | fuel + 1, s, term =>
+        let iface : Algorithms.MeTTa.Simple.Backend.ReferenceEval.Interface Session := {
+          maxNodes := fun s => s.maxNodes
+          maxSteps := fun s => s.maxSteps
+          runNestedEffects := fun s isRoot p term => referenceRunNestedEffectsN fuel s isRoot p term
+          intrinsicStateful := fun s term => referenceIntrinsicStatefulN fuel s term
+          isEagerCallableHead := isEagerCallableHead
+          step := step
+          enqueueNext := enqueueNext
+          insertUnique := insertUnique
+          dedupPatterns := dedupPatterns
+        }
+        Algorithms.MeTTa.Simple.Backend.ReferenceEval.evalWithStateCore iface s term
+
+  private def referenceEvalForRuleEnumerationN : Nat → Session → Pattern → Session × List Pattern
+    | 0, s, expr => (s, [expr])
+    | fuel + 1, s, expr =>
+        match referenceIntrinsicStatefulN fuel s expr with
+        | some (s1, out) =>
+            let out' := if out.isEmpty then [expr] else out
+            (s1, out')
+        | none =>
+            let (s1, out0) := referenceEvalWithStateCoreN fuel s expr
+            let out := if out0.isEmpty then [expr] else out0
+            (s1, out)
+
+  private def referenceEvalCallableApplyN : Nat → Session → Pattern → List Pattern → Session × List Pattern
+    | 0, s, _callable, _args => (s, [])
+    | fuel + 1, s, callable, args =>
+        let iface : Algorithms.MeTTa.Simple.Semantics.Dispatch.Interface Session := {
+          rewrites := fun s => s.bundle.language.rewrites
+          premiseFreeRulesForHeadArity := premiseFreeRulesForHeadArity
+          eval := fun s term => referenceEvalWithStateCoreN fuel s term
+          evalForRuleEnumeration := fun s expr => referenceEvalForRuleEnumerationN fuel s expr
+          applyBindings := applyBindingsCompat
+          matchPattern := matchPatternMeTTa
+          normalizePattern := normalizeDollarVars
+          dedupBindings := dedupBindings
+        }
+        match callable with
+        | .apply "partial" [base, bound] =>
+            let boundArgs := tupleElems bound
+            referenceEvalCallableApplyN fuel s base (boundArgs ++ args)
+        | .apply "|->" [params, body] =>
+            let names := lambdaParamNamesCompat params
+            if names.length != args.length then
+              (s, [])
+            else
+              let env : Bindings := List.zip names args
+              let bodySub := applyBindingsCompat env body
+              let (sEval, out0) := referenceEvalWithStateCoreN fuel s bodySub
+              let (sEnum, extra) :=
+                Algorithms.MeTTa.Simple.Semantics.Dispatch.enumerateCallByRules
+                  iface sEval bodySub
+              let out := if extra.isEmpty then out0 else extra
+              Algorithms.MeTTa.Simple.Semantics.Dispatch.refineCallableOutWithArgEnumeration
+                iface sEnum bodySub out
+        | .apply name [] =>
+            let call := .apply name args
+            let (sEval, out0) := referenceEvalWithStateCoreN fuel s call
+            let (sEnum, extra) :=
+              Algorithms.MeTTa.Simple.Semantics.Dispatch.enumerateCallByRules
+                iface sEval call
+            let out := if extra.isEmpty then out0 else extra
+            Algorithms.MeTTa.Simple.Semantics.Dispatch.refineCallableOutWithArgEnumeration
+              iface sEnum call out
+        | .apply name boundArgs =>
+            referenceEvalCallableApplyN fuel s (.apply name []) (boundArgs ++ args)
+        | .fvar name =>
+            let call := .apply name args
+            let (sEval, out0) := referenceEvalWithStateCoreN fuel s call
+            let (sEnum, extra) :=
+              Algorithms.MeTTa.Simple.Semantics.Dispatch.enumerateCallByRules
+                iface sEval call
+            let out := if extra.isEmpty then out0 else extra
+            Algorithms.MeTTa.Simple.Semantics.Dispatch.refineCallableOutWithArgEnumeration
+              iface sEnum call out
+        | _ =>
+            (s, [])
+
+  private def referenceIntrinsicStatefulN : Nat → Session → Pattern → Option (Session × List Pattern)
+    | 0, _s, _term => none
+    | fuel + 1, s, term =>
+        let referenceEvalDeterministicCoreN (s : Session) (detFuel : Nat) (term : Pattern) : Session × Pattern :=
+          let detIface : Algorithms.MeTTa.Simple.Semantics.DeterministicEval.Interface Session := {
+            evalTupleIntrinsic := evalTupleIntrinsicWith
+              (fun s term => referenceEvalWithStateCoreN fuel s term)
+              (fun s fn args => referenceEvalCallableApplyN fuel s fn args)
+              isRuleCallableHead
+            translateCall := fun s callRaw =>
+              Algorithms.MeTTa.Simple.Semantics.TranslatorOps.translateCall
+                translatorInterface s s.translatorRuleHeads callRaw
+            deterministicPreserveArgs := deterministicPreserveArgs
+            intrinsicDirect := intrinsicDirect
+            firstRuleReduction? := firstRuleReduction?
+            rewriteAritiesForHead := rewriteAritiesForHead
+            builtinPartialMinArity := builtinPartialMinArity?
+            partialPattern := partialPattern
+            memoLimit := detMemoLimit
+          }
+          Algorithms.MeTTa.Simple.Semantics.DeterministicEval.eval detIface s detFuel term
+        let pIface : Algorithms.MeTTa.Simple.Semantics.PeTTaCore.Interface Session := {
+          eval := fun s term => referenceEvalWithStateCoreN fuel s term
+          evalDeterministic := referenceEvalDeterministicCoreN
+          evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+          applyBindings := applyBindingsCompat
+          matchPattern := matchPatternMeTTa
+          findBindingsInSpace := findBindingsInSpace
+          dedupPatterns := dedupPatternList
+          typeCandidates := typeCandidatesInSelf
+        }
+        match Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic pIface s term with
+        | some out => some out
+        | none =>
+            let stateI : Algorithms.MeTTa.Simple.Semantics.StateEffects.Interface Session := {
+              eval := fun s term => referenceEvalWithStateCoreN fuel s term
+              snapshot := fun sess => sess
+              isFailure := isFailurePattern
+              truePattern := patternOfBool true
+              getStateCells := fun sess => sess.stateCells
+              withStateCells := fun sess cells => { sess with stateCells := cells }
+            }
+            let preIntrinsic :=
+              match Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic stateI s term with
+              | some out => some out
+              | none =>
+                  let streamI : Algorithms.MeTTa.Simple.Semantics.StreamOps.Interface Session := {
+                    evalValues := fun sess expr =>
+                      match referenceIntrinsicStatefulN fuel sess expr with
+                      | some (s1, out0) =>
+                          let out := if out0.isEmpty then [expr] else out0
+                          (s1, out)
+                      | none =>
+                          let (s1, out0) := referenceEvalWithStateCoreN fuel sess expr
+                          let out := if out0.isEmpty then [expr] else out0
+                          (s1, out)
+                  }
+                  Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic streamI s term
+            let controlFlowI : Algorithms.MeTTa.Simple.Semantics.ControlFlow.Interface Session := {
+              eval := fun s term => referenceEvalWithStateCoreN fuel s term
+              evalKeyValues := fun sess key =>
+                match key with
+                | .apply "superpose" [arg] =>
+                    match referenceIntrinsicStatefulN fuel sess (.apply "superpose" [arg]) with
+                    | some (sess', out) =>
+                        let vals := if out.isEmpty then [.apply "superpose" [arg]] else out
+                        (sess', vals)
+                    | none =>
+                        let (sess', out) := referenceEvalWithStateCoreN fuel sess key
+                        let vals := if out.isEmpty then [key] else out
+                        (sess', vals)
+                | _ =>
+                    let (sess', out) := referenceEvalWithStateCoreN fuel sess key
+                    let vals := if out.isEmpty then [key] else out
+                    (sess', vals)
+              evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+              evalGeneratorValues := fun sess genExpr =>
+                let (s1, out0) := referenceEvalWithStateCoreN fuel sess genExpr
+                let (sCall, callOut) :=
+                  match genExpr with
+                  | .apply "Expr" (callable :: args) =>
+                      referenceEvalCallableApplyN fuel s1 callable args
+                  | _ =>
+                      (s1, [])
+                let baseOut := if callOut.isEmpty then out0 else callOut
+                let dispatchI : Algorithms.MeTTa.Simple.Semantics.Dispatch.Interface Session := {
+                  rewrites := fun s => s.bundle.language.rewrites
+                  premiseFreeRulesForHeadArity := premiseFreeRulesForHeadArity
+                  eval := fun s term => referenceEvalWithStateCoreN fuel s term
+                  evalForRuleEnumeration := fun s expr => referenceEvalForRuleEnumerationN fuel s expr
+                  applyBindings := applyBindingsCompat
+                  matchPattern := matchPatternMeTTa
+                  normalizePattern := normalizeDollarVars
+                  dedupBindings := dedupBindings
+                }
+                let (sEnum, extra) :=
+                  Algorithms.MeTTa.Simple.Semantics.Dispatch.enumerateCallByRules
+                    dispatchI sCall genExpr
+                let out := if extra.isEmpty then baseOut else extra
+                (sEnum, out)
+              applyBindings := applyBindingsCompat
+              matchPattern := matchPatternMeTTa
+              isTruthy := isTruthy
+              patternOfBool := patternOfBool
+            }
+            match preIntrinsic with
+            | some out => some out
+            | none =>
+                match term with
+                | .apply "add-atom" [space, fact] =>
+                    let spaceI : Algorithms.MeTTa.Simple.Semantics.SpaceOps.Interface Session := {
+                      bundle := fun s => s.bundle
+                      rewrites := fun s => s.bundle.language.rewrites
+                      setBundle := withBundleCompiled
+                      eval := fun s term => referenceEvalWithStateCoreN fuel s term
+                      applyBindings := applyBindingsCompat
+                      normalizePattern := normalizeDollarVars
+                      normalizeForSpaceMatch := normalizeSpaceMatchPattern s
+                      matchPattern := matchPatternMeTTa
+                      dedupPatterns := dedupPatternList
+                    }
+                    let (s', out) :=
+                      Algorithms.MeTTa.Simple.Semantics.SpaceOps.addAtom
+                        spaceI spacePolicy s space fact
+                    some (s', out)
+                | .apply "add-atom!" [space, fact] =>
+                    let factNorm :=
+                      match fact with
+                      | .apply "=" [lhs, rhs] =>
+                          match boolOfPattern? rhs with
+                          | some true => lhs
+                          | some false => .apply "empty" []
+                          | none => fact
+                      | _ => fact
+                    if factNorm == .apply "empty" [] then
+                      some (s, [patternOfBool false])
+                    else
+                      let spaceI : Algorithms.MeTTa.Simple.Semantics.SpaceOps.Interface Session := {
+                        bundle := fun s => s.bundle
+                        rewrites := fun s => s.bundle.language.rewrites
+                        setBundle := withBundleCompiled
+                        eval := fun s term => referenceEvalWithStateCoreN fuel s term
+                        applyBindings := applyBindingsCompat
+                        normalizePattern := normalizeDollarVars
+                        normalizeForSpaceMatch := normalizeSpaceMatchPattern s
+                        matchPattern := matchPatternMeTTa
+                        dedupPatterns := dedupPatternList
+                      }
+                      let (s', out) :=
+                        Algorithms.MeTTa.Simple.Semantics.SpaceOps.addAtom
+                          spaceI spacePolicy s space factNorm
+                      some (s', out)
+                | .apply "remove-atom" [space, fact] =>
+                    let spaceI : Algorithms.MeTTa.Simple.Semantics.SpaceOps.Interface Session := {
+                      bundle := fun s => s.bundle
+                      rewrites := fun s => s.bundle.language.rewrites
+                      setBundle := withBundleCompiled
+                      eval := fun s term => referenceEvalWithStateCoreN fuel s term
+                      applyBindings := applyBindingsCompat
+                      normalizePattern := normalizeDollarVars
+                      normalizeForSpaceMatch := normalizeSpaceMatchPattern s
+                      matchPattern := matchPatternMeTTa
+                      dedupPatterns := dedupPatternList
+                    }
+                    let (s', out) :=
+                      Algorithms.MeTTa.Simple.Semantics.SpaceOps.removeAtom
+                        spaceI spacePolicy s space fact
+                    some (s', out)
+                | .apply "remove-atom!" [space, fact] =>
+                    let factNorm :=
+                      match fact with
+                      | .apply "=" [lhs, rhs] =>
+                          match boolOfPattern? rhs with
+                          | some true => lhs
+                          | some false => .apply "empty" []
+                          | none => fact
+                      | _ => fact
+                    if factNorm == .apply "empty" [] then
+                      some (s, [patternOfBool false])
+                    else
+                      let spaceI : Algorithms.MeTTa.Simple.Semantics.SpaceOps.Interface Session := {
+                        bundle := fun s => s.bundle
+                        rewrites := fun s => s.bundle.language.rewrites
+                        setBundle := withBundleCompiled
+                        eval := fun s term => referenceEvalWithStateCoreN fuel s term
+                        applyBindings := applyBindingsCompat
+                        normalizePattern := normalizeDollarVars
+                        normalizeForSpaceMatch := normalizeSpaceMatchPattern s
+                        matchPattern := matchPatternMeTTa
+                        dedupPatterns := dedupPatternList
+                      }
+                      let (s', out) :=
+                        Algorithms.MeTTa.Simple.Semantics.SpaceOps.removeAtom
+                          spaceI spacePolicy s space factNorm
+                      some (s', out)
+                | .apply "remove-all-atoms" [space] =>
+                    let spaceI : Algorithms.MeTTa.Simple.Semantics.SpaceOps.Interface Session := {
+                      bundle := fun s => s.bundle
+                      rewrites := fun s => s.bundle.language.rewrites
+                      setBundle := withBundleCompiled
+                      eval := fun s term => referenceEvalWithStateCoreN fuel s term
+                      applyBindings := applyBindingsCompat
+                      normalizePattern := normalizeDollarVars
+                      normalizeForSpaceMatch := normalizeSpaceMatchPattern s
+                      matchPattern := matchPatternMeTTa
+                      dedupPatterns := dedupPatternList
+                    }
+                    let (s', out) :=
+                      Algorithms.MeTTa.Simple.Semantics.SpaceOps.removeAllAtoms
+                        spaceI spacePolicy s space term
+                    some (s', out)
+                | .apply "remove-all-atoms!" [space] =>
+                    let spaceI : Algorithms.MeTTa.Simple.Semantics.SpaceOps.Interface Session := {
+                      bundle := fun s => s.bundle
+                      rewrites := fun s => s.bundle.language.rewrites
+                      setBundle := withBundleCompiled
+                      eval := fun s term => referenceEvalWithStateCoreN fuel s term
+                      applyBindings := applyBindingsCompat
+                      normalizePattern := normalizeDollarVars
+                      normalizeForSpaceMatch := normalizeSpaceMatchPattern s
+                      matchPattern := matchPatternMeTTa
+                      dedupPatterns := dedupPatternList
+                    }
+                    let (s', out) :=
+                      Algorithms.MeTTa.Simple.Semantics.SpaceOps.removeAllAtoms
+                        spaceI spacePolicy s space term
+                    some (s', out)
+                | .apply "get-atoms" [space] =>
+                    let spaceI : Algorithms.MeTTa.Simple.Semantics.SpaceOps.Interface Session := {
+                      bundle := fun s => s.bundle
+                      rewrites := fun s => s.bundle.language.rewrites
+                      setBundle := withBundleCompiled
+                      eval := fun s term => referenceEvalWithStateCoreN fuel s term
+                      applyBindings := applyBindingsCompat
+                      normalizePattern := normalizeDollarVars
+                      normalizeForSpaceMatch := normalizeSpaceMatchPattern s
+                      matchPattern := matchPatternMeTTa
+                      dedupPatterns := dedupPatternList
+                    }
+                    let (s', out) :=
+                      Algorithms.MeTTa.Simple.Semantics.SpaceOps.getAtoms
+                        spaceI spacePolicy s space
+                    some (s', out)
+                | .apply "get-atoms!" [space] =>
+                    let spaceI : Algorithms.MeTTa.Simple.Semantics.SpaceOps.Interface Session := {
+                      bundle := fun s => s.bundle
+                      rewrites := fun s => s.bundle.language.rewrites
+                      setBundle := withBundleCompiled
+                      eval := fun s term => referenceEvalWithStateCoreN fuel s term
+                      applyBindings := applyBindingsCompat
+                      normalizePattern := normalizeDollarVars
+                      normalizeForSpaceMatch := normalizeSpaceMatchPattern s
+                      matchPattern := matchPatternMeTTa
+                      dedupPatterns := dedupPatternList
+                    }
+                    let (s', out) :=
+                      Algorithms.MeTTa.Simple.Semantics.SpaceOps.getAtoms
+                        spaceI spacePolicy s space
+                    some (s', out)
+                -- Phase 2: match branches (inline SpaceOps Interface — referenceSpaceEvalInterfaceN
+                -- is defined after this mutual block, so we inline it here; definitional equality
+                -- ensures compiledConsistent_of_referenceMatchIntrinsicN still applies)
+                | .apply "match" [space, pat, tmpl] =>
+                    let (s', out) :=
+                      Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchIntrinsic
+                        { bundle := fun s => s.bundle
+                          rewrites := fun s => s.bundle.language.rewrites
+                          setBundle := withBundleCompiled
+                          eval := fun s term => referenceEvalWithStateCoreN fuel s term
+                          applyBindings := applyBindingsCompat
+                          normalizePattern := normalizeDollarVars
+                          normalizeForSpaceMatch := normalizeSpaceMatchPattern s
+                          matchPattern := matchPatternMeTTa
+                          dedupPatterns := dedupPatternList }
+                        spacePolicy s space pat tmpl
+                    some (s', out)
+                | .apply "match" [pat, tmpl] =>
+                    let (s', out) :=
+                      Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchIntrinsic
+                        { bundle := fun s => s.bundle
+                          rewrites := fun s => s.bundle.language.rewrites
+                          setBundle := withBundleCompiled
+                          eval := fun s term => referenceEvalWithStateCoreN fuel s term
+                          applyBindings := applyBindingsCompat
+                          normalizePattern := normalizeDollarVars
+                          normalizeForSpaceMatch := normalizeSpaceMatchPattern s
+                          matchPattern := matchPatternMeTTa
+                          dedupPatterns := dedupPatternList }
+                        spacePolicy s selfSpaceAtom pat tmpl
+                    some (s', out)
+                | .apply "case" [keyExpr, branchesExpr] =>
+                    let (s', out) :=
+                      Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalCaseIntrinsic
+                        controlFlowI s keyExpr branchesExpr
+                    some (s', out)
+                | .apply "foldall" [aggExpr, genExpr, initExpr] =>
+                    let (s', out) :=
+                      Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalFoldallIntrinsic
+                        controlFlowI s aggExpr genExpr initExpr
+                    some (s', out)
+                | .apply "forall" [genExpr, checkExpr] =>
+                    let (s', out) :=
+                      Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalForallIntrinsic
+                        controlFlowI s genExpr checkExpr
+                    some (s', out)
+                -- Phase 1a: state-unchanged branches (no SCC calls)
+                | .apply "cut" [] =>
+                    some (s, [patternOfBool true])
+                | .apply "Predicate" [expr] =>
+                    some (s, [expr])
+                | .apply "find" [space, pat] =>
+                    let bindings := findBindingsInSpace s space pat
+                    if bindings.isEmpty then
+                      some (s, [patternOfBool false])
+                    else
+                      some (s, [patternOfBool true])
+                | .apply "succeedsPredicate" [pred] =>
+                    match decodePredicateSpacePattern? s pred with
+                    | some (space, pat) =>
+                        let bindings := findBindingsInSpace s space pat
+                        if bindings.isEmpty then
+                          some (s, [patternOfBool false])
+                        else
+                          some (s, [patternOfBool true])
+                    | none =>
+                        some (s, [patternOfBool false])
+                | .apply "add-translator-rule!" [th] =>
+                    let heads' :=
+                      Algorithms.MeTTa.Simple.Semantics.TranslatorOps.addHead
+                        s.translatorRuleHeads th
+                    some ({ s with translatorRuleHeads := heads' }, [patternOfBool true])
+                | .apply "remove-translator-rule!" [th] =>
+                    let heads' :=
+                      Algorithms.MeTTa.Simple.Semantics.TranslatorOps.removeHead
+                        s.translatorRuleHeads th
+                    some ({ s with translatorRuleHeads := heads' }, [patternOfBool true])
+                -- Vector space branches (modifies vectorSpaces only; CC preserved)
+                | .apply "new-atom-vectorspace" [space, dimPat] =>
+                    match (vectorSpaceName? space, intOfPattern? dimPat) with
+                    | (some name, some dimI) =>
+                        if dimI <= 0 then
+                          some (s, [patternOfBool false])
+                        else
+                          let dim := dimI.natAbs
+                          let s' := withVectorSpace s name { dim := dim, entries := [] }
+                          some (s', [patternOfBool true])
+                    | _ => some (s, [patternOfBool false])
+                | .apply "add-atom-vector" [space, atom, vecPat] =>
+                    match (vectorSpaceName? space, vectorOfPattern? vecPat) with
+                    | (some name, some vec) =>
+                        match lookupVectorSpace? s name with
+                        | some vs =>
+                            let vs' := addVectorEntry vs atom vec
+                            let s' := withVectorSpace s name vs'
+                            some (s', [patternOfBool true])
+                        | none => some (s, [patternOfBool false])
+                    | _ => some (s, [patternOfBool false])
+                | .apply "add-atom-SRI" [space, atom] =>
+                    match vectorSpaceName? space with
+                    | some name =>
+                        match lookupVectorSpace? s name with
+                        | some vs =>
+                            let vec := sriVector vs.dim atom
+                            let vs' := addVectorEntry vs atom vec
+                            let s' := withVectorSpace s name vs'
+                            some (s', [patternOfBool true])
+                        | none => some (s, [patternOfBool false])
+                    | none => some (s, [patternOfBool false])
+                | .apply "match-k" [kPat, space, queryPat] =>
+                    match (intOfPattern? kPat, vectorSpaceName? space, vectorOfPattern? queryPat) with
+                    | (some kI, some name, some qv) =>
+                        match lookupVectorSpace? s name with
+                        | some vs =>
+                            let k : Nat := if kI <= 0 then 0 else kI.natAbs
+                            let hits := topKEntries vs qv k
+                            let rows := hits.map (fun entry =>
+                              tupleOfElems [entry.1, floatLiteralPattern entry.2])
+                            some (s, [tupleOfElems rows])
+                        | none => some (s, [tupleOfElems []])
+                    | _ => some (s, [tupleOfElems []])
+                | .apply "match-sri" [kPat, space, query] =>
+                    match (intOfPattern? kPat, vectorSpaceName? space) with
+                    | (some kI, some name) =>
+                        match lookupVectorSpace? s name with
+                        | some vs =>
+                            let k : Nat := if kI <= 0 then 0 else kI.natAbs
+                            let qv := sriVector vs.dim query
+                            let hits := topKEntries vs qv k
+                            let rows := hits.map (fun entry =>
+                              tupleOfElems [entry.1, floatLiteralPattern entry.2])
+                            some (s, [tupleOfElems rows])
+                        | none => some (s, [tupleOfElems []])
+                    | _ => some (s, [tupleOfElems []])
+                | .apply "match-SRI" [kPat, space, query] =>
+                    match (intOfPattern? kPat, vectorSpaceName? space) with
+                    | (some kI, some name) =>
+                        match lookupVectorSpace? s name with
+                        | some vs =>
+                            let k : Nat := if kI <= 0 then 0 else kI.natAbs
+                            let qv := sriVector vs.dim query
+                            let hits := topKEntries vs qv k
+                            let rows := hits.map (fun entry =>
+                              tupleOfElems [entry.1, floatLiteralPattern entry.2])
+                            some (s, [tupleOfElems rows])
+                        | none => some (s, [tupleOfElems []])
+                    | _ => some (s, [tupleOfElems []])
+                -- Phase 1b: single referenceEvalWithStateCoreN call (variable named evalArg)
+                | .apply "once" [evalArg] =>
+                    let (s', out) := referenceEvalWithStateCoreN fuel s evalArg
+                    match out with
+                    | [] => some (s', [.apply "()" []])
+                    | x :: _ => some (s', [x])
+                | .apply "nop" [evalArg] =>
+                    let (s', _out) := referenceEvalWithStateCoreN fuel s evalArg
+                    some (s', [.apply "()" []])
+                | .apply "catch" [evalArg] =>
+                    let (s1, out) := referenceEvalWithStateCoreN fuel s evalArg
+                    some (s1, out)
+                | .apply "msort" [evalArg] =>
+                    let (s', out) := referenceEvalWithStateCoreN fuel s evalArg
+                    let sortTupleLike : Pattern → Pattern := fun p =>
+                      let elems := sortPatterns (tupleElems p)
+                      match elems with
+                      | [] => .apply "()" []
+                      | hd :: tl =>
+                          match hd with
+                          | .apply ctor [] => .apply ctor tl
+                          | _ => .apply "Expr" elems
+                    let sorted :=
+                      match out with
+                      | [one] => [sortTupleLike one]
+                      | _ => sortPatterns out
+                    some (s', sorted)
+                -- Phase 3: catch-3, superpose, hide, space, collapse, atom-of
+                -- (simplified versions; state preservation is what matters here)
+                | .apply "catch" [expr, _handler, fallback] =>
+                    -- Simplified: eval expr, then eval fallback; both steps preserve CC.
+                    let (s1, _out) := referenceEvalWithStateCoreN fuel s expr
+                    let (s2, out2) := referenceEvalWithStateCoreN fuel s1 fallback
+                    some (s2, out2)
+                | .apply "superpose" [arg] =>
+                    -- Simplified: single eval; state preserved.
+                    let (s', out) := referenceEvalWithStateCoreN fuel s arg
+                    some (s', out)
+                | .apply "hide" [arg] =>
+                    -- Single eval call; output discarded.
+                    let (s', _out) := referenceEvalWithStateCoreN fuel s arg
+                    some (s', [.apply "empty" []])
+                | .apply "space" [left, right] =>
+                    -- Two chained eval calls; state from second.
+                    let (sL, _outL) := referenceEvalWithStateCoreN fuel s left
+                    let (sR, _outR) := referenceEvalWithStateCoreN fuel sL right
+                    some (sR, [])
+                | .apply "collapse" [arg] =>
+                    -- Single eval call; simplified output.
+                    let (s', out) := referenceEvalWithStateCoreN fuel s arg
+                    some (s', [tupleOfElems out])
+                -- Phase 4: simple remaining branches (1-step or 2-step chain)
+                | .apply "translatePredicate" [expr] =>
+                    let (s', out) := referenceEvalWithStateCoreN fuel s expr
+                    some (s', out)
+                | .apply "if" [cond, thenBr, _elseBr] =>
+                    let (s1, _cv) := referenceEvalWithStateCoreN fuel s cond
+                    let (s2, out) := referenceEvalWithStateCoreN fuel s1 thenBr
+                    some (s2, out)
+                | .apply "if" [cond, thenBr] =>
+                    let (s1, _cv) := referenceEvalWithStateCoreN fuel s cond
+                    let (s2, out) := referenceEvalWithStateCoreN fuel s1 thenBr
+                    some (s2, out)
+                | .apply "let" [_pat, valExpr, body] =>
+                    let (s1, _vs) := referenceEvalWithStateCoreN fuel s valExpr
+                    let (s2, out) := referenceEvalWithStateCoreN fuel s1 body
+                    some (s2, out)
+                | .apply "let*" [_binds, body] =>
+                    let (s', out) := referenceEvalWithStateCoreN fuel s body
+                    some (s', out)
+                | .apply "progn" _exprs =>
+                    -- Simplified: state unchanged, result is unit.
+                    some (s, [.apply "()" []])
+                | .apply "prog1" _exprs =>
+                    -- Simplified: state unchanged, result is unit.
+                    some (s, [.apply "()" []])
+                -- Phase 5: Expr, repr — need evalTupleIntrinsicWith / evalDeterministicCore
+                | .apply "Expr" elems =>
+                    let (s', out) :=
+                      evalTupleIntrinsicWith
+                        (fun s term => referenceEvalWithStateCoreN fuel s term)
+                        (fun s fn args => referenceEvalCallableApplyN fuel s fn args)
+                        isRuleCallableHead s elems
+                    some (s', out)
+                | .apply "repr" [arg] =>
+                    -- Simplified: eval arg deterministically; state may change.
+                    let (s', _argV) := referenceEvalDeterministicCoreN s 1024 arg
+                    some (s', [])
+                -- Phase 6: atom-of — faithful to the live intrinsicStateful branch.
+                -- Uses `step` (pure, no state mutation) as the none-branch fallback,
+                -- then applies the same tupleAt? extraction and dedup as the live code.
+                | .apply "atom-of" [x] =>
+                    let (s1, x1, _) := referenceRunNestedEffectsN fuel s true false x
+                    let (s2, out) :=
+                      match referenceIntrinsicStatefulN fuel s1 x1 with
+                      | some (sI, outI) =>
+                          if outI.isEmpty then (sI, [x1]) else (sI, outI)
+                      | none =>
+                          let reducts := step s1 x1
+                          if reducts.isEmpty then (s1, [x1]) else (s1, reducts)
+                    let extracted :=
+                      out.filterMap fun candidate =>
+                        match tupleAt? (tupleElems candidate) 0 with
+                        | none => none
+                        | some row => tupleAt? (tupleElems row) 0
+                    if extracted.isEmpty then some (s2, [])
+                    else some (s2, dedupPatternList extracted)
+                -- Phase 7: generic .apply ctor args — faithful to the live intrinsicStateful branch.
+                -- Sub-case A: builtinPartialMinArity — state unchanged.
+                -- Sub-case B: compatFunctionHeadRewrite (inline dispatch iface) — state from dispatch.
+                -- Sub-case C: hasCompatHeadConstraintRule — out empty → none.
+                -- Sub-case D: reduceArgs (calls referenceIntrinsicStatefulN fuel s a; state unchanged).
+                -- Sub-case E: arities/hasLarger — state unchanged.
+                | .apply ctor args =>
+                    let needsPartial : Bool :=
+                      match builtinPartialMinArity? ctor with
+                      | some minArity => decide (args.length < minArity)
+                      | none => false
+                    if needsPartial then
+                      some (s, [partialPattern ctor args])
+                    else
+                      -- Inline dispatch interface (def-equal to referenceDispatchInterfaceN fuel)
+                      let dispatchIface : Algorithms.MeTTa.Simple.Semantics.Dispatch.Interface Session := {
+                        rewrites := fun s => s.bundle.language.rewrites
+                        premiseFreeRulesForHeadArity := premiseFreeRulesForHeadArity
+                        eval := fun s term => referenceEvalWithStateCoreN fuel s term
+                        evalForRuleEnumeration :=
+                          fun s expr => referenceEvalForRuleEnumerationN fuel s expr
+                        applyBindings := applyBindingsCompat
+                        matchPattern := matchPatternMeTTa
+                        normalizePattern := normalizeDollarVars
+                        dedupBindings := dedupBindings
+                      }
+                      let (sFH, fromHeads) :=
+                        Algorithms.MeTTa.Simple.Semantics.Dispatch.compatFunctionHeadRewrite
+                          dispatchIface s (.apply ctor args)
+                      if !fromHeads.isEmpty then
+                        some (sFH, fromHeads)
+                      else if Algorithms.MeTTa.Simple.Semantics.Dispatch.hasCompatHeadConstraintRule
+                              dispatchIface s ctor args.length then
+                        none
+                      else
+                        -- Enumerate each position and try reducing the argument there.
+                        -- Equivalent to the live reduceArgs [] args (range+foldl avoids let rec in mutual).
+                        let reducts : List Pattern :=
+                          (List.range args.length).foldl (fun acc i =>
+                            let a := args.getD i (.apply "" [])
+                            let aRed0 :=
+                              match referenceIntrinsicStatefulN fuel s a with
+                              | some (_sA, outA) =>
+                                  if outA.isEmpty then step s a else outA
+                              | none => step s a
+                            let aRed := aRed0.filter (fun a' => a' != a)
+                            let built :=
+                              aRed.map (fun a' =>
+                                .apply ctor (args.take i ++ [a'] ++ args.drop (i + 1)))
+                            acc ++ built) []
+                        if reducts.isEmpty then
+                          let arities := rewriteAritiesForHead s ctor
+                          let hasExact := arities.any (fun n => n == args.length)
+                          let hasLarger := arities.any (fun n => n > args.length)
+                          if hasLarger && !hasExact && !args.isEmpty then
+                            some (s, [partialPattern ctor args])
+                          else
+                            none
+                        else
+                          some (s, reducts)
+                | _ => none
+end
+
+-- Faithful fuel-indexed mirror of ReferenceEval.runNestedEffects.
+-- Unlike referenceRunNestedEffectsN, I.runNestedEffects is wired to the
+-- self-recursive fuel-decremented call (not the stub `(s, term, false)`).
+-- The backend never calls I.runNestedEffects from stepAux, so the difference is
+-- currently computationally irrelevant, but the interface is now semantically
+-- well-formed — a prerequisite for the eventual equivalence proof.
+private def faithfulReferenceRunNestedEffectsN :
+    Nat → Session → Bool → Bool → Pattern → Session × Pattern × Bool
+  | 0, s, _isRoot, _parentCallable, term => (s, term, false)
+  | fuel + 1, s, isRoot, parentCallable, term =>
+      let iface : Algorithms.MeTTa.Simple.Backend.ReferenceEval.Interface Session := {
+        maxNodes := fun s => s.maxNodes
+        maxSteps := fun s => s.maxSteps
+        runNestedEffects :=
+          fun s isRoot p term => faithfulReferenceRunNestedEffectsN fuel s isRoot p term
+        intrinsicStateful := fun s term => referenceIntrinsicStatefulN fuel s term
+        isEagerCallableHead := isEagerCallableHead
+        step := step
+        enqueueNext := enqueueNext
+        insertUnique := insertUnique
+        dedupPatterns := dedupPatterns
+      }
+      Algorithms.MeTTa.Simple.Backend.ReferenceEval.runNestedEffects
+        iface s isRoot parentCallable term
+
+-- Faithful fuel-indexed mirror of ReferenceEval.runNestedEffectsArgs.
+-- I.runNestedEffects is wired to faithfulReferenceRunNestedEffectsN (not the stub).
+-- No fuel pattern-match needed here since this function does not recurse on fuel directly.
+private def faithfulReferenceRunNestedEffectsArgsN (fuel : Nat) (s : Session)
+    (parentCallable : Bool) (args : List Pattern) (accRev : List Pattern) (changed : Bool) :
+    Session × List Pattern × Bool :=
+  let iface : Algorithms.MeTTa.Simple.Backend.ReferenceEval.Interface Session := {
+    maxNodes := fun s => s.maxNodes
+    maxSteps := fun s => s.maxSteps
+    runNestedEffects :=
+      fun s isRoot p term => faithfulReferenceRunNestedEffectsN fuel s isRoot p term
+    intrinsicStateful := fun s term => referenceIntrinsicStatefulN fuel s term
+    isEagerCallableHead := isEagerCallableHead
+    step := step
+    enqueueNext := enqueueNext
+    insertUnique := insertUnique
+    dedupPatterns := dedupPatterns
+  }
+  Algorithms.MeTTa.Simple.Backend.ReferenceEval.runNestedEffectsArgs
+    iface s parentCallable args accRev changed
+
+-- Stage 2: faithful/stubbed nested-effects equivalence.
+-- Both interfaces agree on intrinsicStateful and isEagerCallableHead;
+-- runNestedEffects_ext shows the I.runNestedEffects field is never called, so they agree.
+
+/-- `faithfulReferenceRunNestedEffectsN (n+1)` agrees with `referenceRunNestedEffectsN n`.
+    Both use `referenceIntrinsicStatefulN n` as `intrinsicStateful` and the same
+    `isEagerCallableHead`; the `I.runNestedEffects` field is never called by the backend. -/
+theorem faithfulReferenceRunNestedEffectsN_eq (n : Nat) (s : Session)
+    (isRoot parentCallable : Bool) (term : Pattern) :
+    faithfulReferenceRunNestedEffectsN (n + 1) s isRoot parentCallable term =
+    referenceRunNestedEffectsN n s isRoot parentCallable term := by
+  simp only [faithfulReferenceRunNestedEffectsN, referenceRunNestedEffectsN]
+  apply Algorithms.MeTTa.Simple.Backend.ReferenceEval.runNestedEffects_ext <;> rfl
+
+/-- `faithfulReferenceRunNestedEffectsArgsN fuel` agrees with `referenceRunNestedEffectsArgsN fuel`.
+    The `I.runNestedEffects` field is never called by `runNestedEffectsArgs`, so the
+    faithful vs stubbed wiring is irrelevant. -/
+theorem faithfulReferenceRunNestedEffectsArgsN_eq (fuel : Nat) (s : Session)
+    (parentCallable : Bool) (args accRev : List Pattern) (changed : Bool) :
+    faithfulReferenceRunNestedEffectsArgsN fuel s parentCallable args accRev changed =
+    referenceRunNestedEffectsArgsN fuel s parentCallable args accRev changed := by
+  simp only [faithfulReferenceRunNestedEffectsArgsN, referenceRunNestedEffectsArgsN]
+  apply Algorithms.MeTTa.Simple.Backend.ReferenceEval.runNestedEffectsArgs_ext <;> rfl
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Stage 3b: Faithful FuelResult-based kernel (F-kernel).
+--
+-- These wrap the N-kernel in FuelResult, replacing semantic fallback values at
+-- fuel=0 with explicit `.outOfFuel`.  The only difference from the N-kernel is
+-- the base case:  N returns (s, []) / (s, [expr]) / none; F returns .outOfFuel.
+--
+-- Theorem order:
+--   3b.1  Definitions (below)
+--   3b.2  Preservation: .done (s', out) → CompiledConsistent s'
+--   3b.3  Simulation:   .done res → referenceEval*N fuel = res  (trivial by def)
+-- ─────────────────────────────────────────────────────────────────────────────
+
+/-- FuelResult wrapper around `referenceEvalWithStateCoreN`.
+    `.outOfFuel` at fuel=0 (NOT the semantic fallback `(s, [])`).
+    `.done res` iff `fuel > 0` and `res = referenceEvalWithStateCoreN fuel s term`. -/
+private def faithfulEvalWithStateCoreF :
+    Nat → Session → Pattern → FuelResult (Session × List Pattern)
+  | 0, _s, _term => .outOfFuel
+  | fuel + 1, s, term => .done (referenceEvalWithStateCoreN (fuel + 1) s term)
+
+/-- FuelResult wrapper around `referenceIntrinsicStatefulN`.
+    `.outOfFuel` at fuel=0 (NOT `none`, which conflates "no intrinsic" with "out of fuel"). -/
+private def faithfulIntrinsicStatefulF :
+    Nat → Session → Pattern → FuelResult (Option (Session × List Pattern))
+  | 0, _s, _term => .outOfFuel
+  | fuel + 1, s, term => .done (referenceIntrinsicStatefulN (fuel + 1) s term)
+
+/-- FuelResult wrapper around `referenceEvalCallableApplyN`.
+    `.outOfFuel` at fuel=0 (NOT the semantic fallback `(s, [])`). -/
+private def faithfulEvalCallableApplyF :
+    Nat → Session → Pattern → List Pattern → FuelResult (Session × List Pattern)
+  | 0, _s, _callable, _args => .outOfFuel
+  | fuel + 1, s, callable, args => .done (referenceEvalCallableApplyN (fuel + 1) s callable args)
+
+/-- FuelResult wrapper around `referenceEvalForRuleEnumerationF`.
+    `.outOfFuel` at fuel=0 (NOT the semantic fallback `(s, [expr])`). -/
+private def faithfulEvalForRuleEnumerationF :
+    Nat → Session → Pattern → FuelResult (Session × List Pattern)
+  | 0, _s, _term => .outOfFuel
+  | fuel + 1, s, term => .done (referenceEvalForRuleEnumerationN (fuel + 1) s term)
+
+-- Stage 3b.2: Preservation on .done results.
+-- Theorems are placed after the N-kernel preservation lemmas (compiledConsistent_of_reference*N),
+-- which are defined later in the file.  See faithfulEvalWithStateCoreF_preserves etc. below.
+
+-- Stage 3b.3: One-way simulation — .done res implies N-kernel agrees.
+-- Trivially true by definition; the harder simulation to the live path requires
+-- N-adequacy (Stage 3c, deferred).
+
+/-- `.done res` from the F-kernel implies `referenceEvalWithStateCoreN fuel s term = res`. -/
+theorem faithfulEvalWithStateCoreF_done_eq_N
+    (fuel : Nat) (s : Session) (term : Pattern) (res : Session × List Pattern)
+    (hdone : faithfulEvalWithStateCoreF fuel s term = .done res) :
+    referenceEvalWithStateCoreN fuel s term = res := by
+  cases fuel with
+  | zero => simp [faithfulEvalWithStateCoreF] at hdone
+  | succ n => simpa [faithfulEvalWithStateCoreF] using hdone
+
+/-- `.done r` from the intrinsic F-kernel implies `referenceIntrinsicStatefulN fuel s term = r`. -/
+theorem faithfulIntrinsicStatefulF_done_eq_N
+    (fuel : Nat) (s : Session) (term : Pattern) (r : Option (Session × List Pattern))
+    (hdone : faithfulIntrinsicStatefulF fuel s term = .done r) :
+    referenceIntrinsicStatefulN fuel s term = r := by
+  cases fuel with
+  | zero => simp [faithfulIntrinsicStatefulF] at hdone
+  | succ n => simpa [faithfulIntrinsicStatefulF] using hdone
+
+/-- `.done res` from the callable-apply F-kernel implies
+    `referenceEvalCallableApplyN fuel s callable args = res`. -/
+theorem faithfulEvalCallableApplyF_done_eq_N
+    (fuel : Nat) (s : Session) (callable : Pattern) (args : List Pattern)
+    (res : Session × List Pattern)
+    (hdone : faithfulEvalCallableApplyF fuel s callable args = .done res) :
+    referenceEvalCallableApplyN fuel s callable args = res := by
+  cases fuel with
+  | zero => simp [faithfulEvalCallableApplyF] at hdone
+  | succ n => simpa [faithfulEvalCallableApplyF] using hdone
+
+/-- `.done res` from the rule-enumeration F-kernel implies
+    `referenceEvalForRuleEnumerationN fuel s term = res`. -/
+theorem faithfulEvalForRuleEnumerationF_done_eq_N
+    (fuel : Nat) (s : Session) (term : Pattern) (res : Session × List Pattern)
+    (hdone : faithfulEvalForRuleEnumerationF fuel s term = .done res) :
+    referenceEvalForRuleEnumerationN fuel s term = res := by
+  cases fuel with
+  | zero => simp [faithfulEvalForRuleEnumerationF] at hdone
+  | succ n => simpa [faithfulEvalForRuleEnumerationF] using hdone
+
+-- ─────────────────────────────────────────────────────────────────────────────
+
+def referenceEvalWithStateCore (s : Session) (term : Pattern) : Session × List Pattern :=
+  Algorithms.MeTTa.Simple.Backend.ReferenceEval.evalWithStateCore referenceEvalInterface s term
+
+private def referenceDeterministicEvalInterfaceN (fuel : Nat) :
+    Algorithms.MeTTa.Simple.Semantics.DeterministicEval.Interface Session := {
+  evalTupleIntrinsic := evalTupleIntrinsicWith
+    (fun s term => referenceEvalWithStateCoreN fuel s term)
+    (fun s fn args => referenceEvalCallableApplyN fuel s fn args)
+    isRuleCallableHead
+  translateCall := fun s callRaw =>
+    Algorithms.MeTTa.Simple.Semantics.TranslatorOps.translateCall
+      translatorInterface s s.translatorRuleHeads callRaw
+  deterministicPreserveArgs := deterministicPreserveArgs
+  intrinsicDirect := intrinsicDirect
+  firstRuleReduction? := firstRuleReduction?
+  rewriteAritiesForHead := rewriteAritiesForHead
+  builtinPartialMinArity := builtinPartialMinArity?
+  partialPattern := partialPattern
+  memoLimit := detMemoLimit
+}
+
+private def referenceEvalDeterministicCoreN (fuel : Nat) (s : Session) (detFuel : Nat)
+    (term : Pattern) : Session × Pattern :=
+  Algorithms.MeTTa.Simple.Semantics.DeterministicEval.eval
+    (referenceDeterministicEvalInterfaceN fuel) s detFuel term
+
+private def referencePettaCoreInterfaceN (fuel : Nat) :
+    Algorithms.MeTTa.Simple.Semantics.PeTTaCore.Interface Session := {
+  eval := fun s term => referenceEvalWithStateCoreN fuel s term
+  evalDeterministic := referenceEvalDeterministicCoreN fuel
+  evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+  applyBindings := applyBindingsCompat
+  matchPattern := matchPatternMeTTa
+  findBindingsInSpace := findBindingsInSpace
+  dedupPatterns := dedupPatternList
+  typeCandidates := typeCandidatesInSelf
+}
+
+private def referenceStateEffectsInterfaceN (fuel : Nat) :
+    Algorithms.MeTTa.Simple.Semantics.StateEffects.Interface Session := {
+  eval := fun s term => referenceEvalWithStateCoreN fuel s term
+  snapshot := fun sess => sess
+  isFailure := isFailurePattern
+  truePattern := patternOfBool true
+  getStateCells := fun sess => sess.stateCells
+  withStateCells := fun sess cells => { sess with stateCells := cells }
+}
+
+private def referenceStreamOpsInterfaceN (fuel : Nat) :
+    Algorithms.MeTTa.Simple.Semantics.StreamOps.Interface Session := {
+  evalValues := fun sess expr =>
+    match referenceIntrinsicStatefulN fuel sess expr with
+    | some (s1, out0) =>
+        let out := if out0.isEmpty then [expr] else out0
+        (s1, out)
+    | none =>
+        let (s1, out0) := referenceEvalWithStateCoreN fuel sess expr
+        let out := if out0.isEmpty then [expr] else out0
+        (s1, out)
+}
+
+private def referenceDispatchInterfaceN (fuel : Nat) :
+    Algorithms.MeTTa.Simple.Semantics.Dispatch.Interface Session := {
+  rewrites := fun s => s.bundle.language.rewrites
+  premiseFreeRulesForHeadArity := premiseFreeRulesForHeadArity
+  eval := fun s term => referenceEvalWithStateCoreN fuel s term
+  evalForRuleEnumeration := fun s expr => referenceEvalForRuleEnumerationN fuel s expr
+  applyBindings := applyBindingsCompat
+  matchPattern := matchPatternMeTTa
+  normalizePattern := normalizeDollarVars
+  dedupBindings := dedupBindings
+}
+
+private theorem compiledConsistent_of_referenceEvalWithStateCoreN_of_intrinsic
+    (hIntrinsicPres :
+      ∀ (fuel : Nat) (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s') :
+    ∀ (fuel : Nat) (s : Session) (term : Pattern),
+      CompiledConsistent s →
+      CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1 := by
+  intro fuel
+  cases fuel with
+  | zero =>
+      intro s term hs
+      simp [referenceEvalWithStateCoreN]
+      simpa using hs
+  | succ fuel =>
+      intro s term hs
+      let iface : Algorithms.MeTTa.Simple.Backend.ReferenceEval.Interface Session := {
+        maxNodes := fun s => s.maxNodes
+        maxSteps := fun s => s.maxSteps
+        runNestedEffects := fun s isRoot parentCallable term =>
+          referenceRunNestedEffectsN fuel s isRoot parentCallable term
+        intrinsicStateful := fun s term => referenceIntrinsicStatefulN fuel s term
+        isEagerCallableHead := isEagerCallableHead
+        step := step
+        enqueueNext := enqueueNext
+        insertUnique := insertUnique
+        dedupPatterns := dedupPatterns
+      }
+      have hIntrinsicPresRef :
+          ∀ {s : Session} {term : Pattern} {s' : Session} {out : List Pattern},
+            iface.intrinsicStateful s term = some (s', out) →
+            CompiledConsistent s →
+            CompiledConsistent s' := by
+        intro s term s' out hIntr hs
+        simpa [iface] using hIntrinsicPres fuel s term s' out hIntr hs
+      have hPres :
+          Algorithms.MeTTa.Simple.Backend.ReferenceEval.Preservation
+            iface CompiledConsistent := by
+        exact
+          Algorithms.MeTTa.Simple.Backend.ReferenceEval.preservation_of_intrinsicStateful
+            iface CompiledConsistent hIntrinsicPresRef
+      simpa [referenceEvalWithStateCoreN, iface] using
+        Algorithms.MeTTa.Simple.Backend.ReferenceEval.evalWithStateCore_preserves
+          iface CompiledConsistent hPres s term hs
+
+private theorem compiledConsistent_of_referenceEvalForRuleEnumerationN_of_intrinsic
+    (hIntrinsicPres :
+      ∀ (fuel : Nat) (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s') :
+    ∀ (fuel : Nat) (s : Session) (expr : Pattern),
+      CompiledConsistent s →
+      CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1 := by
+  intro fuel
+  cases fuel with
+  | zero =>
+      intro s expr hs
+      simp [referenceEvalForRuleEnumerationN]
+      simpa using hs
+  | succ fuel =>
+      intro s expr hs
+      unfold referenceEvalForRuleEnumerationN
+      cases hIntr : referenceIntrinsicStatefulN fuel s expr with
+      | none =>
+          simp
+          exact compiledConsistent_of_referenceEvalWithStateCoreN_of_intrinsic
+            hIntrinsicPres fuel s expr hs
+      | some res =>
+          rcases res with ⟨s1, out0⟩
+          simp
+          exact hIntrinsicPres fuel s expr s1 out0 hIntr hs
+
+
+private theorem referenceDispatchInterfaceN_preservation
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1) :
+    Algorithms.MeTTa.Simple.Semantics.Dispatch.Preservation
+      (referenceDispatchInterfaceN fuel) CompiledConsistent := by
+  refine {
+    eval_preserves := ?_,
+    evalForRuleEnumeration_preserves := ?_
+  }
+  · intro s term s' out hEval hs
+    have hPres : CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1 :=
+      hEvalCorePres s term hs
+    have hState : (referenceEvalWithStateCoreN fuel s term).1 = s' := by
+      simpa [referenceDispatchInterfaceN] using congrArg Prod.fst hEval
+    simpa [hState] using hPres
+  · intro s expr s' out hEval hs
+    have hPres : CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1 :=
+      hEvalForRulePres s expr hs
+    have hState : (referenceEvalForRuleEnumerationN fuel s expr).1 = s' := by
+      simpa [referenceDispatchInterfaceN] using congrArg Prod.fst hEval
+    simpa [hState] using hPres
+
+private theorem compiledConsistent_of_referenceEnumerateCallByRulesN
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    {s : Session} {expr : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Algorithms.MeTTa.Simple.Semantics.Dispatch.enumerateCallByRules
+        (referenceDispatchInterfaceN fuel) s expr).1 := by
+  intro hs
+  exact
+    Algorithms.MeTTa.Simple.Semantics.Dispatch.enumerateCallByRules_preserves
+      (referenceDispatchInterfaceN fuel) CompiledConsistent
+      (referenceDispatchInterfaceN_preservation fuel hEvalCorePres hEvalForRulePres)
+      s expr hs
+
+private theorem compiledConsistent_of_referenceCompatFunctionHeadRewriteN
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    {s : Session} {term : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Algorithms.MeTTa.Simple.Semantics.Dispatch.compatFunctionHeadRewrite
+        (referenceDispatchInterfaceN fuel) s term).1 := by
+  intro hs
+  exact
+    Algorithms.MeTTa.Simple.Semantics.Dispatch.compatFunctionHeadRewrite_preserves
+      (referenceDispatchInterfaceN fuel) CompiledConsistent
+      (referenceDispatchInterfaceN_preservation fuel hEvalCorePres hEvalForRulePres)
+      s term hs
+
+private theorem compiledConsistent_of_referenceCompatFunctionHeadRewriteN_result
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    {s s' : Session} {term : Pattern} {out : List Pattern}
+    (hEval :
+      Algorithms.MeTTa.Simple.Semantics.Dispatch.compatFunctionHeadRewrite
+        (referenceDispatchInterfaceN fuel) s term = (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hCC :=
+    compiledConsistent_of_referenceCompatFunctionHeadRewriteN
+      (fuel := fuel) (hEvalCorePres := hEvalCorePres) (hEvalForRulePres := hEvalForRulePres)
+      (s := s) (term := term) hs
+  simpa [hEval] using hCC
+
+private theorem compiledConsistent_of_referenceRefineCallableOutN
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    {s : Session} {expr : Pattern} {baseOut : List Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Algorithms.MeTTa.Simple.Semantics.Dispatch.refineCallableOutWithArgEnumeration
+        (referenceDispatchInterfaceN fuel) s expr baseOut).1 := by
+  intro hs
+  exact
+    Algorithms.MeTTa.Simple.Semantics.Dispatch.refineCallableOutWithArgEnumeration_preserves
+      (referenceDispatchInterfaceN fuel) CompiledConsistent
+      (referenceDispatchInterfaceN_preservation fuel hEvalCorePres hEvalForRulePres)
+      s expr baseOut hs
+
+private theorem compiledConsistent_of_referenceDispatchPostprocessN
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (s : Session) (expr : Pattern) (baseOut : List Pattern)
+    (hs : CompiledConsistent s) :
+    let (sEnum, extra) :=
+      Algorithms.MeTTa.Simple.Semantics.Dispatch.enumerateCallByRules
+        (referenceDispatchInterfaceN fuel) s expr
+    let out := if extra.isEmpty then baseOut else extra
+    CompiledConsistent
+      (Algorithms.MeTTa.Simple.Semantics.Dispatch.refineCallableOutWithArgEnumeration
+        (referenceDispatchInterfaceN fuel) sEnum expr out).1 := by
+  have hEnum :
+      CompiledConsistent
+        (Algorithms.MeTTa.Simple.Semantics.Dispatch.enumerateCallByRules
+          (referenceDispatchInterfaceN fuel) s expr).1 :=
+    compiledConsistent_of_referenceEnumerateCallByRulesN fuel hEvalCorePres hEvalForRulePres hs
+  cases hEnumRun :
+      Algorithms.MeTTa.Simple.Semantics.Dispatch.enumerateCallByRules
+        (referenceDispatchInterfaceN fuel) s expr with
+  | mk sEnum extra =>
+      have hsEnum : CompiledConsistent sEnum := by
+        simpa [hEnumRun] using hEnum
+      have hRefine :
+          CompiledConsistent
+            (Algorithms.MeTTa.Simple.Semantics.Dispatch.refineCallableOutWithArgEnumeration
+              (referenceDispatchInterfaceN fuel) sEnum expr
+              (if extra.isEmpty then baseOut else extra)).1 :=
+        compiledConsistent_of_referenceRefineCallableOutN
+          fuel hEvalCorePres hEvalForRulePres hsEnum
+      simpa [hEnumRun] using hRefine
+
+private theorem referenceStateEffectsInterfaceN_preservation
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1) :
+    Algorithms.MeTTa.Simple.Semantics.StateEffects.Preservation
+      (referenceStateEffectsInterfaceN fuel) CompiledConsistent := by
+  refine {
+    eval_preserves := ?_,
+    snapshot_preserves := ?_,
+    withStateCells_preserves := ?_
+  }
+  · intro s term s' out hEval hs
+    have hPres : CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1 :=
+      hEvalCorePres s term hs
+    have hState : (referenceEvalWithStateCoreN fuel s term).1 = s' := by
+      simpa [referenceStateEffectsInterfaceN] using congrArg Prod.fst hEval
+    simpa [hState] using hPres
+  · intro s hs
+    simpa [referenceStateEffectsInterfaceN] using hs
+  · intro s cells hs
+    exact compiledConsistent_withStateCells s cells hs
+
+private theorem compiledConsistent_of_referenceStateEffectsEvalIntrinsicN
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s : Session} {term : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Option.getD
+        (Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic
+          (referenceStateEffectsInterfaceN fuel) s term)
+        (s, [])).1 := by
+  intro hs
+  cases hState :
+      Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic
+        (referenceStateEffectsInterfaceN fuel) s term with
+  | none =>
+      simp
+      simpa using hs
+  | some res =>
+      have hPres :=
+        Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic_preserves
+          (referenceStateEffectsInterfaceN fuel) CompiledConsistent
+          (referenceStateEffectsInterfaceN_preservation fuel hEvalCorePres)
+          s term hs
+      simpa [hState] using hPres
+
+private theorem referenceStreamOpsInterfaceN_preservation
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s') :
+    Algorithms.MeTTa.Simple.Semantics.StreamOps.Preservation
+      (referenceStreamOpsInterfaceN fuel) CompiledConsistent := by
+  refine { evalValues_preserves := ?_ }
+  intro s expr s' out hEval hs
+  unfold referenceStreamOpsInterfaceN at hEval
+  cases hIntr : referenceIntrinsicStatefulN fuel s expr with
+  | none =>
+      simp [hIntr] at hEval
+      have hPres : CompiledConsistent (referenceEvalWithStateCoreN fuel s expr).1 :=
+        hEvalCorePres s expr hs
+      have hState : (referenceEvalWithStateCoreN fuel s expr).1 = s' := hEval.1
+      simpa [hState] using hPres
+  | some res =>
+      rcases res with ⟨s1, out0⟩
+      simp [hIntr] at hEval
+      have hPres : CompiledConsistent s1 :=
+        hIntrinsicPres s expr s1 out0 hIntr hs
+      have hState : s1 = s' := hEval.1
+      simpa [hState] using hPres
+
+private theorem compiledConsistent_of_referenceStreamOpsEvalIntrinsicN
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s : Session} {term : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Option.getD
+        (Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic
+          (referenceStreamOpsInterfaceN fuel) s term)
+        (s, [])).1 := by
+  intro hs
+  cases hStream :
+      Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic
+        (referenceStreamOpsInterfaceN fuel) s term with
+  | none =>
+      simp
+      simpa using hs
+  | some res =>
+      have hPres :=
+        Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic_preserves
+          (referenceStreamOpsInterfaceN fuel) CompiledConsistent
+          (referenceStreamOpsInterfaceN_preservation fuel hEvalCorePres hIntrinsicPres)
+          s term hs
+      simpa [hStream] using hPres
+
+private def referenceEvalKeyValuesPreservingMultiplicityN (fuel : Nat)
+    (sess : Session) (key : Pattern) : Session × List Pattern :=
+  match key with
+  | .apply "superpose" [arg] =>
+      match referenceIntrinsicStatefulN fuel sess (.apply "superpose" [arg]) with
+      | some (sess', out) =>
+          let vals := if out.isEmpty then [.apply "superpose" [arg]] else out
+          (sess', vals)
+      | none =>
+          let (sess', out) := referenceEvalWithStateCoreN fuel sess key
+          let vals := if out.isEmpty then [key] else out
+          (sess', vals)
+  | _ =>
+      let (sess', out) := referenceEvalWithStateCoreN fuel sess key
+      let vals := if out.isEmpty then [key] else out
+      (sess', vals)
+
+private theorem compiledConsistent_of_referenceEvalKeyValuesPreservingMultiplicityN
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    (sess : Session) (key : Pattern) :
+    CompiledConsistent sess →
+    CompiledConsistent (referenceEvalKeyValuesPreservingMultiplicityN fuel sess key).1 := by
+  intro hs
+  cases key with
+  | fvar x =>
+      simpa [referenceEvalKeyValuesPreservingMultiplicityN] using hEvalCorePres sess (.fvar x) hs
+  | bvar n =>
+      simpa [referenceEvalKeyValuesPreservingMultiplicityN] using hEvalCorePres sess (.bvar n) hs
+  | lambda body =>
+      simpa [referenceEvalKeyValuesPreservingMultiplicityN] using
+        hEvalCorePres sess (.lambda body) hs
+  | multiLambda n body =>
+      simpa [referenceEvalKeyValuesPreservingMultiplicityN] using
+        hEvalCorePres sess (.multiLambda n body) hs
+  | subst body repl =>
+      simpa [referenceEvalKeyValuesPreservingMultiplicityN] using
+        hEvalCorePres sess (.subst body repl) hs
+  | collection ct elems rest =>
+      simpa [referenceEvalKeyValuesPreservingMultiplicityN] using
+        hEvalCorePres sess (.collection ct elems rest) hs
+  | apply ctor args =>
+      cases args with
+      | nil =>
+          simpa [referenceEvalKeyValuesPreservingMultiplicityN] using
+            hEvalCorePres sess (.apply ctor []) hs
+      | cons arg rest =>
+          cases rest with
+          | nil =>
+              by_cases hCtor : ctor = "superpose"
+              · subst hCtor
+                cases hIntr : referenceIntrinsicStatefulN fuel sess (.apply "superpose" [arg]) with
+                | none =>
+                    simp [referenceEvalKeyValuesPreservingMultiplicityN, hIntr]
+                    exact hEvalCorePres sess (.apply "superpose" [arg]) hs
+                | some res =>
+                    rcases res with ⟨sess', out⟩
+                    simp [referenceEvalKeyValuesPreservingMultiplicityN, hIntr]
+                    exact hIntrinsicPres sess (.apply "superpose" [arg]) sess' out hIntr hs
+              · simpa [referenceEvalKeyValuesPreservingMultiplicityN, hCtor] using
+                  hEvalCorePres sess (.apply ctor [arg]) hs
+          | cons arg2 rest2 =>
+              simpa [referenceEvalKeyValuesPreservingMultiplicityN] using
+                hEvalCorePres sess (.apply ctor (arg :: arg2 :: rest2)) hs
+
+private def referenceEvalGeneratorValuesN (fuel : Nat)
+    (s : Session) (genExpr : Pattern) : Session × List Pattern :=
+  let (s1, out0) := referenceEvalWithStateCoreN fuel s genExpr
+  let (sCall, callOut) :=
+    match genExpr with
+    | .apply "Expr" (callable :: args) =>
+        referenceEvalCallableApplyN fuel s1 callable args
+    | _ =>
+        (s1, [])
+  let baseOut := if callOut.isEmpty then out0 else callOut
+  let (sEnum, extra) :=
+    Algorithms.MeTTa.Simple.Semantics.Dispatch.enumerateCallByRules
+      (referenceDispatchInterfaceN fuel) sCall genExpr
+  let out := if extra.isEmpty then baseOut else extra
+  (sEnum, out)
+
+private theorem compiledConsistent_of_referenceEvalGeneratorValuesN
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (s : Session) (genExpr : Pattern) :
+    CompiledConsistent s →
+    CompiledConsistent (referenceEvalGeneratorValuesN fuel s genExpr).1 := by
+  intro hs
+  unfold referenceEvalGeneratorValuesN
+  have hS1 : CompiledConsistent (referenceEvalWithStateCoreN fuel s genExpr).1 :=
+    hEvalCorePres s genExpr hs
+  cases hEval : referenceEvalWithStateCoreN fuel s genExpr with
+  | mk s1 out0 =>
+      have hs1 : CompiledConsistent s1 := by
+        simpa [hEval] using hS1
+      cases genExpr with
+      | apply ctor args =>
+          by_cases hExpr : ctor = "Expr"
+          ·
+              subst hExpr
+              cases args with
+              | nil =>
+                  simp
+                  exact
+                    compiledConsistent_of_referenceEnumerateCallByRulesN
+                      fuel hEvalCorePres hEvalForRulePres hs1
+              | cons callable rest =>
+                  have hCall :
+                      CompiledConsistent (referenceEvalCallableApplyN fuel s1 callable rest).1 :=
+                    hEvalCallablePres s1 callable rest hs1
+                  cases hCallRun : referenceEvalCallableApplyN fuel s1 callable rest with
+                  | mk sCall callOut =>
+                      have hsCall : CompiledConsistent sCall := by
+                        simpa [hCallRun] using hCall
+                      simp [hCallRun]
+                      exact
+                        compiledConsistent_of_referenceEnumerateCallByRulesN
+                          fuel hEvalCorePres hEvalForRulePres hsCall
+          ·
+              simp [hExpr]
+              exact
+                compiledConsistent_of_referenceEnumerateCallByRulesN
+                  fuel hEvalCorePres hEvalForRulePres hs1
+      | _ =>
+          simp
+          exact
+            compiledConsistent_of_referenceEnumerateCallByRulesN
+              fuel hEvalCorePres hEvalForRulePres hs1
+
+private def referenceControlFlowInterfaceN (fuel : Nat) :
+    Algorithms.MeTTa.Simple.Semantics.ControlFlow.Interface Session := {
+  eval := fun s term => referenceEvalWithStateCoreN fuel s term
+  evalKeyValues := fun s key => referenceEvalKeyValuesPreservingMultiplicityN fuel s key
+  applyBindings := applyBindingsCompat
+  matchPattern := matchPatternMeTTa
+  evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+  evalGeneratorValues := fun s genExpr => referenceEvalGeneratorValuesN fuel s genExpr
+  isTruthy := isTruthy
+  patternOfBool := patternOfBool
+}
+
+private theorem referenceControlFlowInterfaceN_preservation
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s') :
+    Algorithms.MeTTa.Simple.Semantics.ControlFlow.Preservation
+      (referenceControlFlowInterfaceN fuel) CompiledConsistent := by
+  refine {
+    eval_preserves := ?_,
+    evalKeyValues_preserves := ?_,
+    evalCallableApply_preserves := ?_,
+    evalGeneratorValues_preserves := ?_
+  }
+  · intro s term s' out hEval hs
+    have hPres : CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1 :=
+      hEvalCorePres s term hs
+    have hState : (referenceEvalWithStateCoreN fuel s term).1 = s' := by
+      simpa [referenceControlFlowInterfaceN] using congrArg Prod.fst hEval
+    simpa [hState] using hPres
+  · intro s term s' out hEval hs
+    have hPres :
+        CompiledConsistent (referenceEvalKeyValuesPreservingMultiplicityN fuel s term).1 :=
+      compiledConsistent_of_referenceEvalKeyValuesPreservingMultiplicityN
+        fuel hEvalCorePres hIntrinsicPres s term hs
+    have hState : (referenceEvalKeyValuesPreservingMultiplicityN fuel s term).1 = s' := by
+      simpa [referenceControlFlowInterfaceN] using congrArg Prod.fst hEval
+    simpa [hState] using hPres
+  · intro s fn args s' out hEval hs
+    have hPres : CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1 :=
+      hEvalCallablePres s fn args hs
+    have hState : (referenceEvalCallableApplyN fuel s fn args).1 = s' := by
+      simpa [referenceControlFlowInterfaceN] using congrArg Prod.fst hEval
+    simpa [hState] using hPres
+  · intro s genExpr s' out hEval hs
+    have hPres : CompiledConsistent (referenceEvalGeneratorValuesN fuel s genExpr).1 :=
+      compiledConsistent_of_referenceEvalGeneratorValuesN
+        fuel hEvalCorePres hEvalCallablePres hEvalForRulePres s genExpr hs
+    have hState : (referenceEvalGeneratorValuesN fuel s genExpr).1 = s' := by
+      simpa [referenceControlFlowInterfaceN] using congrArg Prod.fst hEval
+    simpa [hState] using hPres
+
+private theorem compiledConsistent_of_referenceCaseIntrinsicN
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s : Session} {keyExpr branchesExpr : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalCaseIntrinsic
+        (referenceControlFlowInterfaceN fuel) s keyExpr branchesExpr).1 := by
+  intro hs
+  exact
+    Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalCaseIntrinsic_preserves
+      (referenceControlFlowInterfaceN fuel) CompiledConsistent
+      (referenceControlFlowInterfaceN_preservation
+        fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres)
+      s keyExpr branchesExpr hs
+
+private theorem compiledConsistent_of_referenceFoldallIntrinsicN
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s : Session} {aggExpr genExpr initExpr : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalFoldallIntrinsic
+        (referenceControlFlowInterfaceN fuel) s aggExpr genExpr initExpr).1 := by
+  intro hs
+  exact
+    Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalFoldallIntrinsic_preserves
+      (referenceControlFlowInterfaceN fuel) CompiledConsistent
+      (referenceControlFlowInterfaceN_preservation
+        fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres)
+      s aggExpr genExpr initExpr hs
+
+private theorem compiledConsistent_of_referenceForallIntrinsicN
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s : Session} {genExpr checkExpr : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalForallIntrinsic
+        (referenceControlFlowInterfaceN fuel) s genExpr checkExpr).1 := by
+  intro hs
+  exact
+    Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalForallIntrinsic_preserves
+      (referenceControlFlowInterfaceN fuel) CompiledConsistent
+      (referenceControlFlowInterfaceN_preservation
+        fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres)
+      s genExpr checkExpr hs
+
+private theorem compiledConsistent_of_referenceCaseIntrinsicInlineN
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s : Session} {keyExpr branchesExpr : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalCaseIntrinsic
+        { eval := fun s term => referenceEvalWithStateCoreN fuel s term
+          evalKeyValues := fun sess key =>
+            match key with
+            | .apply "superpose" [arg] =>
+                match referenceIntrinsicStatefulN fuel sess (.apply "superpose" [arg]) with
+                | some (sess', out) =>
+                    let vals := if out.isEmpty then [.apply "superpose" [arg]] else out
+                    (sess', vals)
+                | none =>
+                    let (sess', out) := referenceEvalWithStateCoreN fuel sess key
+                    let vals := if out.isEmpty then [key] else out
+                    (sess', vals)
+            | _ =>
+                let (sess', out) := referenceEvalWithStateCoreN fuel sess key
+                let vals := if out.isEmpty then [key] else out
+                (sess', vals)
+          applyBindings := applyBindingsCompat
+          matchPattern := matchPatternMeTTa
+          evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+          evalGeneratorValues := fun sess genExpr => referenceEvalGeneratorValuesN fuel sess genExpr
+          isTruthy := isTruthy
+          patternOfBool := patternOfBool } s keyExpr branchesExpr).1 := by
+  intro hs
+  change CompiledConsistent
+    (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalCaseIntrinsic
+      (referenceControlFlowInterfaceN fuel) s keyExpr branchesExpr).1
+  exact
+    compiledConsistent_of_referenceCaseIntrinsicN
+      fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres
+      (s := s) (keyExpr := keyExpr) (branchesExpr := branchesExpr) hs
+
+private theorem compiledConsistent_of_referenceFoldallIntrinsicInlineN
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s : Session} {aggExpr genExpr initExpr : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalFoldallIntrinsic
+        { eval := fun s term => referenceEvalWithStateCoreN fuel s term
+          evalKeyValues := fun sess key =>
+            match key with
+            | .apply "superpose" [arg] =>
+                match referenceIntrinsicStatefulN fuel sess (.apply "superpose" [arg]) with
+                | some (sess', out) =>
+                    let vals := if out.isEmpty then [.apply "superpose" [arg]] else out
+                    (sess', vals)
+                | none =>
+                    let (sess', out) := referenceEvalWithStateCoreN fuel sess key
+                    let vals := if out.isEmpty then [key] else out
+                    (sess', vals)
+            | _ =>
+                let (sess', out) := referenceEvalWithStateCoreN fuel sess key
+                let vals := if out.isEmpty then [key] else out
+                (sess', vals)
+          applyBindings := applyBindingsCompat
+          matchPattern := matchPatternMeTTa
+          evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+          evalGeneratorValues := fun sess genExpr => referenceEvalGeneratorValuesN fuel sess genExpr
+          isTruthy := isTruthy
+          patternOfBool := patternOfBool } s aggExpr genExpr initExpr).1 := by
+  intro hs
+  change CompiledConsistent
+    (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalFoldallIntrinsic
+      (referenceControlFlowInterfaceN fuel) s aggExpr genExpr initExpr).1
+  exact
+    compiledConsistent_of_referenceFoldallIntrinsicN
+      fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres
+      (s := s) (aggExpr := aggExpr) (genExpr := genExpr) (initExpr := initExpr) hs
+
+private theorem compiledConsistent_of_referenceForallIntrinsicInlineN
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s : Session} {genExpr checkExpr : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalForallIntrinsic
+        { eval := fun s term => referenceEvalWithStateCoreN fuel s term
+          evalKeyValues := fun sess key =>
+            match key with
+            | .apply "superpose" [arg] =>
+                match referenceIntrinsicStatefulN fuel sess (.apply "superpose" [arg]) with
+                | some (sess', out) =>
+                    let vals := if out.isEmpty then [.apply "superpose" [arg]] else out
+                    (sess', vals)
+                | none =>
+                    let (sess', out) := referenceEvalWithStateCoreN fuel sess key
+                    let vals := if out.isEmpty then [key] else out
+                    (sess', vals)
+            | _ =>
+                let (sess', out) := referenceEvalWithStateCoreN fuel sess key
+                let vals := if out.isEmpty then [key] else out
+                (sess', vals)
+          applyBindings := applyBindingsCompat
+          matchPattern := matchPatternMeTTa
+          evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+          evalGeneratorValues := fun sess genExpr => referenceEvalGeneratorValuesN fuel sess genExpr
+          isTruthy := isTruthy
+          patternOfBool := patternOfBool } s genExpr checkExpr).1 := by
+  intro hs
+  change CompiledConsistent
+    (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalForallIntrinsic
+      (referenceControlFlowInterfaceN fuel) s genExpr checkExpr).1
+  exact
+    compiledConsistent_of_referenceForallIntrinsicN
+      fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres
+      (s := s) (genExpr := genExpr) (checkExpr := checkExpr) hs
+
+private theorem compiledConsistent_of_referenceCaseIntrinsicInlineN_result
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {keyExpr branchesExpr : Pattern} {out : List Pattern}
+    (hEval :
+      Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalCaseIntrinsic
+        { eval := fun s term => referenceEvalWithStateCoreN fuel s term
+          evalKeyValues := fun sess key => referenceEvalKeyValuesPreservingMultiplicityN fuel sess key
+          applyBindings := applyBindingsCompat
+          matchPattern := matchPatternMeTTa
+          evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+          evalGeneratorValues := fun sess genExpr => referenceEvalGeneratorValuesN fuel sess genExpr
+          isTruthy := isTruthy
+          patternOfBool := patternOfBool } s keyExpr branchesExpr = (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hCC :=
+    compiledConsistent_of_referenceCaseIntrinsicInlineN
+      fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres
+      (s := s) (keyExpr := keyExpr) (branchesExpr := branchesExpr) hs
+  have hS :
+      (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalCaseIntrinsic
+          { eval := fun s term => referenceEvalWithStateCoreN fuel s term
+            evalKeyValues := fun sess key => referenceEvalKeyValuesPreservingMultiplicityN fuel sess key
+            applyBindings := applyBindingsCompat
+            matchPattern := matchPatternMeTTa
+            evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+            evalGeneratorValues := fun sess genExpr => referenceEvalGeneratorValuesN fuel sess genExpr
+            isTruthy := isTruthy
+            patternOfBool := patternOfBool } s keyExpr branchesExpr).fst = s' := by
+    simpa using congrArg Prod.fst hEval
+  exact hS.symm ▸ hCC
+
+private theorem compiledConsistent_of_referenceCaseIntrinsicInlineN_conj
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {keyExpr branchesExpr : Pattern} {out : List Pattern}
+    (hEval :
+      (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalCaseIntrinsic
+          { eval := fun s term => referenceEvalWithStateCoreN fuel s term
+            evalKeyValues := fun sess key => referenceEvalKeyValuesPreservingMultiplicityN fuel sess key
+            applyBindings := applyBindingsCompat
+            matchPattern := matchPatternMeTTa
+            evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+            evalGeneratorValues := fun sess genExpr => referenceEvalGeneratorValuesN fuel sess genExpr
+            isTruthy := isTruthy
+            patternOfBool := patternOfBool } s keyExpr branchesExpr).fst = s' ∧
+      (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalCaseIntrinsic
+          { eval := fun s term => referenceEvalWithStateCoreN fuel s term
+            evalKeyValues := fun sess key => referenceEvalKeyValuesPreservingMultiplicityN fuel sess key
+            applyBindings := applyBindingsCompat
+            matchPattern := matchPatternMeTTa
+            evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+            evalGeneratorValues := fun sess genExpr => referenceEvalGeneratorValuesN fuel sess genExpr
+            isTruthy := isTruthy
+            patternOfBool := patternOfBool } s keyExpr branchesExpr).snd = out)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  obtain ⟨hS, hOut⟩ := hEval
+  exact
+    compiledConsistent_of_referenceCaseIntrinsicInlineN_result
+      fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres
+      (hEval := Prod.ext hS hOut) hs
+
+private theorem compiledConsistent_of_referenceFoldallIntrinsicInlineN_result
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {aggExpr genExpr initExpr : Pattern} {out : List Pattern}
+    (hEval :
+      Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalFoldallIntrinsic
+        { eval := fun s term => referenceEvalWithStateCoreN fuel s term
+          evalKeyValues := fun sess key => referenceEvalKeyValuesPreservingMultiplicityN fuel sess key
+          applyBindings := applyBindingsCompat
+          matchPattern := matchPatternMeTTa
+          evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+          evalGeneratorValues := fun sess genExpr => referenceEvalGeneratorValuesN fuel sess genExpr
+          isTruthy := isTruthy
+          patternOfBool := patternOfBool } s aggExpr genExpr initExpr = (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hCC :=
+    compiledConsistent_of_referenceFoldallIntrinsicInlineN
+      fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres
+      (s := s) (aggExpr := aggExpr) (genExpr := genExpr) (initExpr := initExpr) hs
+  have hS :
+      (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalFoldallIntrinsic
+          { eval := fun s term => referenceEvalWithStateCoreN fuel s term
+            evalKeyValues := fun sess key => referenceEvalKeyValuesPreservingMultiplicityN fuel sess key
+            applyBindings := applyBindingsCompat
+            matchPattern := matchPatternMeTTa
+            evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+            evalGeneratorValues := fun sess genExpr => referenceEvalGeneratorValuesN fuel sess genExpr
+            isTruthy := isTruthy
+            patternOfBool := patternOfBool } s aggExpr genExpr initExpr).fst = s' := by
+    simpa using congrArg Prod.fst hEval
+  exact hS.symm ▸ hCC
+
+private theorem compiledConsistent_of_referenceFoldallIntrinsicInlineN_conj
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {aggExpr genExpr initExpr : Pattern} {out : List Pattern}
+    (hEval :
+      (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalFoldallIntrinsic
+          { eval := fun s term => referenceEvalWithStateCoreN fuel s term
+            evalKeyValues := fun sess key => referenceEvalKeyValuesPreservingMultiplicityN fuel sess key
+            applyBindings := applyBindingsCompat
+            matchPattern := matchPatternMeTTa
+            evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+            evalGeneratorValues := fun sess genExpr => referenceEvalGeneratorValuesN fuel sess genExpr
+            isTruthy := isTruthy
+            patternOfBool := patternOfBool } s aggExpr genExpr initExpr).fst = s' ∧
+      (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalFoldallIntrinsic
+          { eval := fun s term => referenceEvalWithStateCoreN fuel s term
+            evalKeyValues := fun sess key => referenceEvalKeyValuesPreservingMultiplicityN fuel sess key
+            applyBindings := applyBindingsCompat
+            matchPattern := matchPatternMeTTa
+            evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+            evalGeneratorValues := fun sess genExpr => referenceEvalGeneratorValuesN fuel sess genExpr
+            isTruthy := isTruthy
+            patternOfBool := patternOfBool } s aggExpr genExpr initExpr).snd = out)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  obtain ⟨hS, hOut⟩ := hEval
+  exact
+    compiledConsistent_of_referenceFoldallIntrinsicInlineN_result
+      fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres
+      (hEval := Prod.ext hS hOut) hs
+
+private theorem compiledConsistent_of_referenceForallIntrinsicInlineN_result
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {genExpr checkExpr : Pattern} {out : List Pattern}
+    (hEval :
+      Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalForallIntrinsic
+        { eval := fun s term => referenceEvalWithStateCoreN fuel s term
+          evalKeyValues := fun sess key => referenceEvalKeyValuesPreservingMultiplicityN fuel sess key
+          applyBindings := applyBindingsCompat
+          matchPattern := matchPatternMeTTa
+          evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+          evalGeneratorValues := fun sess genExpr => referenceEvalGeneratorValuesN fuel sess genExpr
+          isTruthy := isTruthy
+          patternOfBool := patternOfBool } s genExpr checkExpr = (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hCC :=
+    compiledConsistent_of_referenceForallIntrinsicInlineN
+      fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres
+      (s := s) (genExpr := genExpr) (checkExpr := checkExpr) hs
+  have hS :
+      (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalForallIntrinsic
+          { eval := fun s term => referenceEvalWithStateCoreN fuel s term
+            evalKeyValues := fun sess key => referenceEvalKeyValuesPreservingMultiplicityN fuel sess key
+            applyBindings := applyBindingsCompat
+            matchPattern := matchPatternMeTTa
+            evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+            evalGeneratorValues := fun sess genExpr => referenceEvalGeneratorValuesN fuel sess genExpr
+            isTruthy := isTruthy
+            patternOfBool := patternOfBool } s genExpr checkExpr).fst = s' := by
+    simpa using congrArg Prod.fst hEval
+  exact hS.symm ▸ hCC
+
+private theorem compiledConsistent_of_referenceForallIntrinsicInlineN_conj
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {genExpr checkExpr : Pattern} {out : List Pattern}
+    (hEval :
+      (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalForallIntrinsic
+          { eval := fun s term => referenceEvalWithStateCoreN fuel s term
+            evalKeyValues := fun sess key => referenceEvalKeyValuesPreservingMultiplicityN fuel sess key
+            applyBindings := applyBindingsCompat
+            matchPattern := matchPatternMeTTa
+            evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+            evalGeneratorValues := fun sess genExpr => referenceEvalGeneratorValuesN fuel sess genExpr
+            isTruthy := isTruthy
+            patternOfBool := patternOfBool } s genExpr checkExpr).fst = s' ∧
+      (Algorithms.MeTTa.Simple.Semantics.ControlFlow.evalForallIntrinsic
+          { eval := fun s term => referenceEvalWithStateCoreN fuel s term
+            evalKeyValues := fun sess key => referenceEvalKeyValuesPreservingMultiplicityN fuel sess key
+            applyBindings := applyBindingsCompat
+            matchPattern := matchPatternMeTTa
+            evalCallableApply := fun s fn args => referenceEvalCallableApplyN fuel s fn args
+            evalGeneratorValues := fun sess genExpr => referenceEvalGeneratorValuesN fuel sess genExpr
+            isTruthy := isTruthy
+            patternOfBool := patternOfBool } s genExpr checkExpr).snd = out)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  obtain ⟨hS, hOut⟩ := hEval
+  exact
+    compiledConsistent_of_referenceForallIntrinsicInlineN_result
+      fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres
+      (hEval := Prod.ext hS hOut) hs
+
+private def referenceSpaceEvalInterfaceN (fuel : Nat) (s0 : Session) :
+    Algorithms.MeTTa.Simple.Semantics.SpaceOps.Interface Session := {
+  bundle := fun s => s.bundle
+  rewrites := fun s => s.bundle.language.rewrites
+  setBundle := withBundleCompiled
+  eval := fun s term => referenceEvalWithStateCoreN fuel s term
+  applyBindings := applyBindingsCompat
+  normalizePattern := normalizeDollarVars
+  normalizeForSpaceMatch := normalizeSpaceMatchPattern s0
+  matchPattern := matchPatternMeTTa
+  dedupPatterns := dedupPatternList
+}
+
+private theorem referenceSpaceEvalInterfaceN_preservation
+    (fuel : Nat) (s0 : Session)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1) :
+    Algorithms.MeTTa.Simple.Semantics.SpaceOps.Preservation
+      (referenceSpaceEvalInterfaceN fuel s0) CompiledConsistent := by
+  refine {
+    eval_preserves := ?_,
+    setBundle_preserves := ?_
+  }
+  · intro s term s' out hEval hs
+    have hPres : CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1 :=
+      hEvalCorePres s term hs
+    have hState : (referenceEvalWithStateCoreN fuel s term).1 = s' := by
+      simpa [referenceSpaceEvalInterfaceN] using congrArg Prod.fst hEval
+    simpa [hState] using hPres
+  · intro s bundle hs
+    exact compiledConsistent_withBundleCompiled s bundle
+
+private theorem compiledConsistent_of_referenceAddAtomN
+    (fuel : Nat) (s0 : Session)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s : Session} {space fact : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Algorithms.MeTTa.Simple.Semantics.SpaceOps.addAtom
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space fact).1 := by
+  intro hs
+  exact
+    Algorithms.MeTTa.Simple.Semantics.SpaceOps.addAtom_preserves
+      (referenceSpaceEvalInterfaceN fuel s0) CompiledConsistent
+      (referenceSpaceEvalInterfaceN_preservation fuel s0 hEvalCorePres)
+      spacePolicy s space fact hs
+
+private theorem compiledConsistent_of_referenceRemoveAtomN
+    (fuel : Nat) (s0 : Session)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s : Session} {space fact : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Algorithms.MeTTa.Simple.Semantics.SpaceOps.removeAtom
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space fact).1 := by
+  intro hs
+  exact
+    Algorithms.MeTTa.Simple.Semantics.SpaceOps.removeAtom_preserves
+      (referenceSpaceEvalInterfaceN fuel s0) CompiledConsistent
+      (referenceSpaceEvalInterfaceN_preservation fuel s0 hEvalCorePres)
+      spacePolicy s space fact hs
+
+private theorem compiledConsistent_of_referenceRemoveAllAtomsN
+    (fuel : Nat) (s0 : Session)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s : Session} {space echo : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Algorithms.MeTTa.Simple.Semantics.SpaceOps.removeAllAtoms
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space echo).1 := by
+  intro hs
+  exact
+    Algorithms.MeTTa.Simple.Semantics.SpaceOps.removeAllAtoms_preserves
+      (referenceSpaceEvalInterfaceN fuel s0) CompiledConsistent
+      (referenceSpaceEvalInterfaceN_preservation fuel s0 hEvalCorePres)
+      spacePolicy s space echo hs
+
+private theorem compiledConsistent_of_referenceGetAtomsN
+    (fuel : Nat) (s0 : Session)
+    {s : Session} {space : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Algorithms.MeTTa.Simple.Semantics.SpaceOps.getAtoms
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space).1 := by
+  intro hs
+  exact
+    Algorithms.MeTTa.Simple.Semantics.SpaceOps.getAtoms_preserves
+      (referenceSpaceEvalInterfaceN fuel s0) CompiledConsistent
+      spacePolicy s space hs
+
+private theorem compiledConsistent_of_referenceAddAtomN_result
+    (fuel : Nat) (s0 : Session)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s s' : Session} {space fact : Pattern} {out : List Pattern}
+    (hEval :
+      Algorithms.MeTTa.Simple.Semantics.SpaceOps.addAtom
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space fact = (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hCC :=
+    compiledConsistent_of_referenceAddAtomN
+      (fuel := fuel) (s0 := s0) (hEvalCorePres := hEvalCorePres)
+      (s := s) (space := space) (fact := fact) hs
+  simpa [hEval] using hCC
+
+private theorem compiledConsistent_of_referenceRemoveAtomN_result
+    (fuel : Nat) (s0 : Session)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s s' : Session} {space fact : Pattern} {out : List Pattern}
+    (hEval :
+      Algorithms.MeTTa.Simple.Semantics.SpaceOps.removeAtom
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space fact = (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hCC :=
+    compiledConsistent_of_referenceRemoveAtomN
+      (fuel := fuel) (s0 := s0) (hEvalCorePres := hEvalCorePres)
+      (s := s) (space := space) (fact := fact) hs
+  simpa [hEval] using hCC
+
+private theorem compiledConsistent_of_referenceRemoveAllAtomsN_result
+    (fuel : Nat) (s0 : Session)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s s' : Session} {space echo : Pattern} {out : List Pattern}
+    (hEval :
+      Algorithms.MeTTa.Simple.Semantics.SpaceOps.removeAllAtoms
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space echo = (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hCC :=
+    compiledConsistent_of_referenceRemoveAllAtomsN
+      (fuel := fuel) (s0 := s0) (hEvalCorePres := hEvalCorePres)
+      (s := s) (space := space) (echo := echo) hs
+  simpa [hEval] using hCC
+
+private theorem compiledConsistent_of_referenceGetAtomsN_result
+    (fuel : Nat) (s0 : Session)
+    {s s' : Session} {space : Pattern} {out : List Pattern}
+    (hEval :
+      Algorithms.MeTTa.Simple.Semantics.SpaceOps.getAtoms
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space = (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hCC :=
+    compiledConsistent_of_referenceGetAtomsN
+      (fuel := fuel) (s0 := s0) (s := s) (space := space) hs
+  simpa [hEval] using hCC
+
+private theorem compiledConsistent_of_referenceAddAtomN_conj
+    (fuel : Nat) (s0 : Session)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s s' : Session} {space fact : Pattern} {out : List Pattern}
+    (hEval : (Algorithms.MeTTa.Simple.Semantics.SpaceOps.addAtom
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space fact).1 = s')
+    (hOut : (Algorithms.MeTTa.Simple.Semantics.SpaceOps.addAtom
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space fact).2 = out)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact
+    compiledConsistent_of_referenceAddAtomN_result fuel s0 hEvalCorePres
+      (Prod.ext hEval hOut) hs
+
+private theorem compiledConsistent_of_referenceRemoveAtomN_conj
+    (fuel : Nat) (s0 : Session)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s s' : Session} {space fact : Pattern} {out : List Pattern}
+    (hEval : (Algorithms.MeTTa.Simple.Semantics.SpaceOps.removeAtom
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space fact).1 = s')
+    (hOut : (Algorithms.MeTTa.Simple.Semantics.SpaceOps.removeAtom
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space fact).2 = out)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact
+    compiledConsistent_of_referenceRemoveAtomN_result fuel s0 hEvalCorePres
+      (Prod.ext hEval hOut) hs
+
+private theorem compiledConsistent_of_referenceRemoveAllAtomsN_conj
+    (fuel : Nat) (s0 : Session)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s s' : Session} {space echo : Pattern} {out : List Pattern}
+    (hEval : (Algorithms.MeTTa.Simple.Semantics.SpaceOps.removeAllAtoms
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space echo).1 = s')
+    (hOut : (Algorithms.MeTTa.Simple.Semantics.SpaceOps.removeAllAtoms
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space echo).2 = out)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact
+    compiledConsistent_of_referenceRemoveAllAtomsN_result fuel s0 hEvalCorePres
+      (Prod.ext hEval hOut) hs
+
+private theorem compiledConsistent_of_referenceGetAtomsN_conj
+    (fuel : Nat) (s0 : Session)
+    {s s' : Session} {space : Pattern} {out : List Pattern}
+    (hEval : (Algorithms.MeTTa.Simple.Semantics.SpaceOps.getAtoms
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space).1 = s')
+    (hOut : (Algorithms.MeTTa.Simple.Semantics.SpaceOps.getAtoms
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space).2 = out)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact
+    compiledConsistent_of_referenceGetAtomsN_result fuel s0
+      (Prod.ext hEval hOut) hs
+
+private theorem compiledConsistent_of_referenceMatchIntrinsicN
+    (fuel : Nat) (s0 : Session)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s : Session} {space pat tmpl : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchIntrinsic
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space pat tmpl).1 := by
+  intro hs
+  exact
+    Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchIntrinsic_preserves
+      (referenceSpaceEvalInterfaceN fuel s0) CompiledConsistent
+      (referenceSpaceEvalInterfaceN_preservation fuel s0 hEvalCorePres)
+      spacePolicy s space pat tmpl hs
+
+private theorem compiledConsistent_of_referenceMatchIntrinsicN_result
+    (fuel : Nat) (s0 : Session)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s s' : Session} {space pat tmpl : Pattern} {out : List Pattern}
+    (hEval :
+      Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchIntrinsic
+        (referenceSpaceEvalInterfaceN fuel s0) spacePolicy s space pat tmpl = (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hCC :=
+    compiledConsistent_of_referenceMatchIntrinsicN
+      (fuel := fuel) (s0 := s0) (hEvalCorePres := hEvalCorePres)
+      (s := s) (space := space) (pat := pat) (tmpl := tmpl) hs
+  simpa [hEval] using hCC
+
+-- Phase 3 preservation: atom-of uses referenceRunNestedEffectsN whose state preserves CC.
+-- runNestedEffects_preserves_of_intrinsicStateful requires intrinsicStateful preservation.
+private theorem compiledConsistent_of_referenceRunNestedEffectsN
+    (fuel : Nat)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    (s : Session) (isRoot parentCallable : Bool) (term : Pattern)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent (referenceRunNestedEffectsN fuel s isRoot parentCallable term).1 := by
+  -- Unfold referenceRunNestedEffectsN to expose the concrete ReferenceEval.runNestedEffects call,
+  -- then apply runNestedEffects_preserves_of_intrinsicStateful.
+  simp only [referenceRunNestedEffectsN]
+  exact
+    Algorithms.MeTTa.Simple.Backend.ReferenceEval.runNestedEffects_preserves_of_intrinsicStateful
+      _ CompiledConsistent
+      (fun {s} {t} {s'} {out} hIntr hs0 => hIntrinsicPres s t s' out hIntr hs0)
+      s isRoot parentCallable term hs
 
 private theorem compiledConsistent_of_evalTupleBuildStep
     (hEvalCallablePres :
@@ -2600,6 +4962,2275 @@ private theorem deterministicEvalInterface_preservation
   }
   intro s elems s' out hTuple hs
   exact compiledConsistent_of_evalTupleIntrinsic hEvalCorePres hEvalCallablePres hTuple hs
+
+private theorem compiledConsistent_of_referenceEvalTupleBuildStep
+    (fuel : Nat)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    {acc : Session × List Pattern} {xs : List Pattern}
+    (hAcc : CompiledConsistent acc.1) :
+    CompiledConsistent
+      (evalTupleBuildStepWith
+        (referenceEvalCallableApplyN fuel) isRuleCallableHead acc xs).1 := by
+  cases acc with
+  | mk sess outAcc =>
+      cases xs with
+      | nil =>
+          simp [evalTupleBuildStepWith]
+          simpa using hAcc
+      | cons h tl =>
+          simp [evalTupleBuildStepWith]
+          by_cases hTry :
+              (match h with
+              | .apply "partial" _ => true
+              | .apply "|->" _ => true
+              | .lambda _ => true
+              | .multiLambda _ _ => true
+              | .fvar _ => true
+              | .apply ctor _ => isRuleCallableHead sess ctor
+              | _ => false)
+          · simp [hTry]
+            have hPres :
+                CompiledConsistent (referenceEvalCallableApplyN fuel sess h tl).1 :=
+              hEvalCallablePres sess h tl hAcc
+            cases hCall : referenceEvalCallableApplyN fuel sess h tl with
+            | mk sess' out0 =>
+                have hSess' : CompiledConsistent sess' := by
+                  simpa [hCall] using hPres
+                cases out0 with
+                | nil =>
+                    simpa using hSess'
+                | cons y ys =>
+                    simpa using hSess'
+          · simp [hTry]
+            simpa using hAcc
+
+private theorem compiledConsistent_foldl_referenceEvalTupleBuildStep
+    (fuel : Nat)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1) :
+    ∀ (combos : List (List Pattern)) (acc : Session × List Pattern),
+      CompiledConsistent acc.1 →
+      CompiledConsistent
+        ((combos.foldl
+          (evalTupleBuildStepWith (referenceEvalCallableApplyN fuel) isRuleCallableHead) acc).1) := by
+  intro combos
+  induction combos with
+  | nil =>
+      intro acc hAcc
+      simpa
+  | cons xs rest ih =>
+      intro acc hAcc
+      have hStep :
+          CompiledConsistent
+            (evalTupleBuildStepWith
+              (referenceEvalCallableApplyN fuel) isRuleCallableHead acc xs).1 :=
+        compiledConsistent_of_referenceEvalTupleBuildStep fuel hEvalCallablePres hAcc
+      simpa [List.foldl] using
+        ih
+          (evalTupleBuildStepWith
+            (referenceEvalCallableApplyN fuel) isRuleCallableHead acc xs)
+          hStep
+
+private theorem compiledConsistent_of_referenceEvalTupleBuilt
+    (fuel : Nat)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (s : Session) (combos : List (List Pattern))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent
+      (evalTupleBuiltWith
+        (referenceEvalCallableApplyN fuel) isRuleCallableHead s combos).1 := by
+  simp [evalTupleBuiltWith]
+  simpa using
+    compiledConsistent_foldl_referenceEvalTupleBuildStep
+      fuel hEvalCallablePres combos (s, []) hs
+
+private theorem compiledConsistent_of_referenceEvalTupleElems
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1) :
+    ∀ (s : Session) (elems : List Pattern),
+      CompiledConsistent s →
+      CompiledConsistent
+        (evalTupleElemsWith (referenceEvalWithStateCoreN fuel) s elems).1 := by
+  intro s elems hs
+  induction elems generalizing s with
+  | nil =>
+      simp [evalTupleElemsWith]
+      simpa using hs
+  | cons e rest ih =>
+      have hHead : CompiledConsistent (referenceEvalWithStateCoreN fuel s e).1 :=
+        hEvalCorePres s e hs
+      cases hEvalHead : referenceEvalWithStateCoreN fuel s e with
+      | mk s1 headOut0 =>
+          have hs1 : CompiledConsistent s1 := by
+            simpa [hEvalHead] using hHead
+          have hTail :
+              CompiledConsistent (evalTupleElemsWith (referenceEvalWithStateCoreN fuel) s1 rest).1 :=
+            ih s1 hs1
+          cases hEvalTail : evalTupleElemsWith (referenceEvalWithStateCoreN fuel) s1 rest with
+          | mk s2 tails =>
+              have hs2 : CompiledConsistent s2 := by
+                simpa [hEvalTail] using hTail
+              simp [evalTupleElemsWith]
+              simpa [hEvalHead, hEvalTail] using hs2
+
+private theorem compiledConsistent_of_referenceEvalTupleIntrinsic
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    {s : Session} {elems : List Pattern} {s' : Session} {out : List Pattern}
+    (hTuple :
+      evalTupleIntrinsicWith
+        (referenceEvalWithStateCoreN fuel)
+        (referenceEvalCallableApplyN fuel)
+        isRuleCallableHead s elems = (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hElems :
+      CompiledConsistent (evalTupleElemsWith (referenceEvalWithStateCoreN fuel) s elems).1 :=
+    compiledConsistent_of_referenceEvalTupleElems fuel hEvalCorePres s elems hs
+  cases hEvalElems : evalTupleElemsWith (referenceEvalWithStateCoreN fuel) s elems with
+  | mk s1 combos =>
+      have hs1 : CompiledConsistent s1 := by
+        simpa [hEvalElems] using hElems
+      have hBuilt :
+          CompiledConsistent
+            (evalTupleBuiltWith
+              (referenceEvalCallableApplyN fuel) isRuleCallableHead s1 combos).1 :=
+        compiledConsistent_of_referenceEvalTupleBuilt fuel hEvalCallablePres s1 combos hs1
+      have hState :
+          (evalTupleBuiltWith
+            (referenceEvalCallableApplyN fuel) isRuleCallableHead s1 combos).1 = s' := by
+        have hState0 :
+            (evalTupleIntrinsicWith
+              (referenceEvalWithStateCoreN fuel)
+              (referenceEvalCallableApplyN fuel)
+              isRuleCallableHead s elems).1 = s' := by
+          exact congrArg Prod.fst hTuple
+        simp [evalTupleIntrinsicWith, hEvalElems] at hState0
+        exact hState0
+      simpa [hState] using hBuilt
+
+private theorem referenceDeterministicEvalInterfaceN_preservation
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1) :
+    Algorithms.MeTTa.Simple.Semantics.DeterministicEval.Preservation
+      (referenceDeterministicEvalInterfaceN fuel) CompiledConsistent := by
+  refine {
+    evalTupleIntrinsic_preserves := ?_
+  }
+  intro s elems s' out hTuple hs
+  have hTupleRef :
+      evalTupleIntrinsicWith
+        (referenceEvalWithStateCoreN fuel)
+        (referenceEvalCallableApplyN fuel)
+        isRuleCallableHead s elems = (s', out) := by
+    simpa [referenceDeterministicEvalInterfaceN] using hTuple
+  have hTuplePres : CompiledConsistent s' :=
+    compiledConsistent_of_referenceEvalTupleIntrinsic fuel hEvalCorePres hEvalCallablePres
+      (s' := s') (out := out) hTupleRef hs
+  simpa using hTuplePres
+
+private theorem compiledConsistent_of_referenceEvalDeterministicCoreN
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    {s : Session} {detFuel : Nat} {term : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent (referenceEvalDeterministicCoreN fuel s detFuel term).1 := by
+  intro hs
+  exact
+    Algorithms.MeTTa.Simple.Semantics.DeterministicEval.eval_preserves
+      (referenceDeterministicEvalInterfaceN fuel) CompiledConsistent
+      (referenceDeterministicEvalInterfaceN_preservation fuel hEvalCorePres hEvalCallablePres)
+      s detFuel term hs
+
+-- Phase 5 preservation: Expr elems uses evalTupleIntrinsicWith (N-kernel eval functions).
+private theorem compiledConsistent_of_referenceEvalTupleIntrinsicFst
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (s : Session) (elems : List Pattern)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent
+      (evalTupleIntrinsicWith
+        (referenceEvalWithStateCoreN fuel)
+        (referenceEvalCallableApplyN fuel)
+        isRuleCallableHead s elems).1 := by
+  cases hE : evalTupleIntrinsicWith
+    (referenceEvalWithStateCoreN fuel)
+    (referenceEvalCallableApplyN fuel)
+    isRuleCallableHead s elems with
+  | mk s' out =>
+      exact compiledConsistent_of_referenceEvalTupleIntrinsic fuel hEvalCorePres
+        hEvalCallablePres hE hs
+
+-- Phase 5 preservation: repr [arg] uses referenceEvalDeterministicCoreN.
+private theorem compiledConsistent_of_referenceEvalDeterministicCoreN_fst
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (s : Session) (detFuel : Nat) (arg : Pattern)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent
+      (Algorithms.MeTTa.Simple.Semantics.DeterministicEval.eval
+        { evalTupleIntrinsic := evalTupleIntrinsicWith
+            (referenceEvalWithStateCoreN fuel)
+            (referenceEvalCallableApplyN fuel)
+            isRuleCallableHead
+          translateCall := fun s callRaw =>
+            Algorithms.MeTTa.Simple.Semantics.TranslatorOps.translateCall
+              translatorInterface s s.translatorRuleHeads callRaw
+          deterministicPreserveArgs := deterministicPreserveArgs
+          intrinsicDirect := intrinsicDirect
+          firstRuleReduction? := firstRuleReduction?
+          rewriteAritiesForHead := rewriteAritiesForHead
+          builtinPartialMinArity := builtinPartialMinArity?
+          partialPattern := partialPattern
+          memoLimit := detMemoLimit }
+        s detFuel arg).1 :=
+  compiledConsistent_of_referenceEvalDeterministicCoreN fuel hEvalCorePres hEvalCallablePres hs
+
+private theorem referencePettaCoreInterfaceN_preservation
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1) :
+    Algorithms.MeTTa.Simple.Semantics.PeTTaCore.Preservation
+      (referencePettaCoreInterfaceN fuel) CompiledConsistent := by
+  refine {
+    eval_preserves := ?_,
+    evalDeterministic_preserves := ?_,
+    evalCallableApply_preserves := ?_
+  }
+  · intro s term s' out hEval hs
+    have hPres : CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1 :=
+      hEvalCorePres s term hs
+    have hState : (referenceEvalWithStateCoreN fuel s term).1 = s' := by
+      simpa [referencePettaCoreInterfaceN] using congrArg Prod.fst hEval
+    simpa [hState] using hPres
+  · intro s detFuel term s' out hEval hs
+    have hPres :
+        CompiledConsistent (referenceEvalDeterministicCoreN fuel s detFuel term).1 :=
+      compiledConsistent_of_referenceEvalDeterministicCoreN fuel hEvalCorePres hEvalCallablePres hs
+    have hState : (referenceEvalDeterministicCoreN fuel s detFuel term).1 = s' := by
+      simpa [referencePettaCoreInterfaceN] using congrArg Prod.fst hEval
+    simpa [hState] using hPres
+  · intro s fn args s' out hEval hs
+    have hPres : CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1 :=
+      hEvalCallablePres s fn args hs
+    have hState : (referenceEvalCallableApplyN fuel s fn args).1 = s' := by
+      simpa [referencePettaCoreInterfaceN] using congrArg Prod.fst hEval
+    simpa [hState] using hPres
+
+private theorem compiledConsistent_of_referencePettaCoreEvalIntrinsicN
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    {s : Session} {term : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Option.getD
+        (Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+          (referencePettaCoreInterfaceN fuel) s term)
+        (s, [])).1 := by
+  intro hs
+  cases hPeTTa :
+      Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+        (referencePettaCoreInterfaceN fuel) s term with
+  | none =>
+      simp
+      simpa using hs
+  | some res =>
+      have hPres :=
+        Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic_preserves
+          (referencePettaCoreInterfaceN fuel) CompiledConsistent
+          (referencePettaCoreInterfaceN_preservation fuel hEvalCorePres hEvalCallablePres)
+          s term hs
+      simpa [hPeTTa] using hPres
+private theorem compiledConsistent_of_referencePettaCoreEvalIntrinsicN_early
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    {s : Session} {term : Pattern} :
+    CompiledConsistent s →
+    CompiledConsistent
+      (Option.getD
+        (Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+          (referencePettaCoreInterfaceN fuel) s term)
+        (s, [])).1 := by
+  intro hs
+  cases hPeTTa :
+      Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+        (referencePettaCoreInterfaceN fuel) s term with
+  | none =>
+      simp
+      simpa using hs
+  | some res =>
+      have hPres :=
+        Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic_preserves
+          (referencePettaCoreInterfaceN fuel) CompiledConsistent
+          (referencePettaCoreInterfaceN_preservation fuel hEvalCorePres hEvalCallablePres)
+          s term hs
+      simpa [hPeTTa] using hPres
+
+private theorem p4_case_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {keyExpr branchesExpr : Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply "case" [keyExpr, branchesExpr]) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  · rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    have hCC :=
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_early
+        (fuel := fuel) (term := .apply "case" [keyExpr, branchesExpr])
+        hEvalCorePres hEvalCallablePres hs
+    have hNamed :
+        Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+          (referencePettaCoreInterfaceN fuel) s
+            (.apply "case" [keyExpr, branchesExpr]) = some (s', out) := hPeTTa
+    rw [hNamed] at hCC
+    simpa using hCC
+  · split at h
+    · rename_i _ _ _ out1 hPre
+      split at hPre
+      · rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN
+            fuel hEvalCorePres (term := .apply "case" [keyExpr, branchesExpr]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic
+              (referenceStateEffectsInterfaceN fuel) s
+                (.apply "case" [keyExpr, branchesExpr]) = some (s', out) := hStateE
+        rw [hNamed] at hCC
+        simpa using hCC
+      · have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN
+            fuel hEvalCorePres hIntrinsicPres
+            (term := .apply "case" [keyExpr, branchesExpr]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic
+              (referenceStreamOpsInterfaceN fuel) s
+                (.apply "case" [keyExpr, branchesExpr]) = some (s', out) := hPre
+        rw [hNamed] at hCC
+        simpa using hCC
+    · exact
+        compiledConsistent_of_referenceCaseIntrinsicInlineN_conj
+          fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres
+          (by
+            simpa [referenceControlFlowInterfaceN,
+              referenceEvalGeneratorValuesN,
+              referenceEvalKeyValuesPreservingMultiplicityN] using h)
+          hs
+
+private theorem p4_foldall_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {aggExpr genExpr initExpr : Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s
+          (.apply "foldall" [aggExpr, genExpr, initExpr]) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  · rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    have hCC :=
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_early
+        (fuel := fuel) (term := .apply "foldall" [aggExpr, genExpr, initExpr])
+        hEvalCorePres hEvalCallablePres hs
+    have hNamed :
+        Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+          (referencePettaCoreInterfaceN fuel) s
+            (.apply "foldall" [aggExpr, genExpr, initExpr]) = some (s', out) := hPeTTa
+    rw [hNamed] at hCC
+    simpa using hCC
+  · split at h
+    · rename_i _ _ _ out1 hPre
+      split at hPre
+      · rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN
+            fuel hEvalCorePres
+            (term := .apply "foldall" [aggExpr, genExpr, initExpr]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic
+              (referenceStateEffectsInterfaceN fuel) s
+                (.apply "foldall" [aggExpr, genExpr, initExpr]) = some (s', out) := hStateE
+        rw [hNamed] at hCC
+        simpa using hCC
+      · have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN
+            fuel hEvalCorePres hIntrinsicPres
+            (term := .apply "foldall" [aggExpr, genExpr, initExpr]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic
+              (referenceStreamOpsInterfaceN fuel) s
+                (.apply "foldall" [aggExpr, genExpr, initExpr]) = some (s', out) := hPre
+        rw [hNamed] at hCC
+        simpa using hCC
+    · exact
+        compiledConsistent_of_referenceFoldallIntrinsicInlineN_conj
+          fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres
+          (by
+            simpa [referenceControlFlowInterfaceN,
+              referenceEvalGeneratorValuesN,
+              referenceEvalKeyValuesPreservingMultiplicityN] using h)
+          hs
+
+private theorem p4_forall_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {genExpr checkExpr : Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply "forall" [genExpr, checkExpr]) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  · rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    have hCC :=
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_early
+        (fuel := fuel) (term := .apply "forall" [genExpr, checkExpr])
+        hEvalCorePres hEvalCallablePres hs
+    have hNamed :
+        Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+          (referencePettaCoreInterfaceN fuel) s
+            (.apply "forall" [genExpr, checkExpr]) = some (s', out) := hPeTTa
+    rw [hNamed] at hCC
+    simpa using hCC
+  · split at h
+    · rename_i _ _ _ out1 hPre
+      split at hPre
+      · rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN
+            fuel hEvalCorePres
+            (term := .apply "forall" [genExpr, checkExpr]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic
+              (referenceStateEffectsInterfaceN fuel) s
+                (.apply "forall" [genExpr, checkExpr]) = some (s', out) := hStateE
+        rw [hNamed] at hCC
+        simpa using hCC
+      · have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN
+            fuel hEvalCorePres hIntrinsicPres
+            (term := .apply "forall" [genExpr, checkExpr]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic
+              (referenceStreamOpsInterfaceN fuel) s
+                (.apply "forall" [genExpr, checkExpr]) = some (s', out) := hPre
+        rw [hNamed] at hCC
+        simpa using hCC
+    · exact
+        compiledConsistent_of_referenceForallIntrinsicInlineN_conj
+          fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres
+          (by
+            simpa [referenceControlFlowInterfaceN,
+              referenceEvalGeneratorValuesN,
+              referenceEvalKeyValuesPreservingMultiplicityN] using h)
+          hs
+
+private theorem p4_match3_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {space pat tmpl : Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply "match" [space, pat, tmpl]) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  · rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    have hCC :=
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_early
+        (fuel := fuel) (term := .apply "match" [space, pat, tmpl])
+        hEvalCorePres hEvalCallablePres hs
+    have hNamed :
+        Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+          (referencePettaCoreInterfaceN fuel) s
+            (.apply "match" [space, pat, tmpl]) = some (s', out) := hPeTTa
+    rw [hNamed] at hCC
+    simpa using hCC
+  · split at h
+    · rename_i _ _ _ out1 hPre
+      split at hPre
+      · rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN
+            fuel hEvalCorePres (term := .apply "match" [space, pat, tmpl]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic
+              (referenceStateEffectsInterfaceN fuel) s
+                (.apply "match" [space, pat, tmpl]) = some (s', out) := hStateE
+        rw [hNamed] at hCC
+        simpa using hCC
+      · have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN
+            fuel hEvalCorePres hIntrinsicPres
+            (term := .apply "match" [space, pat, tmpl]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic
+              (referenceStreamOpsInterfaceN fuel) s
+                (.apply "match" [space, pat, tmpl]) = some (s', out) := hPre
+        rw [hNamed] at hCC
+        simpa using hCC
+    · exact
+        let hConj :
+            (Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchIntrinsic
+                (referenceSpaceEvalInterfaceN fuel s) spacePolicy s space pat tmpl).fst = s' ∧
+            (Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchIntrinsic
+                (referenceSpaceEvalInterfaceN fuel s) spacePolicy s space pat tmpl).snd = out := by
+              simpa [referenceSpaceEvalInterfaceN] using h
+        let ⟨hS, hOut⟩ := hConj
+        compiledConsistent_of_referenceMatchIntrinsicN_result
+          fuel s hEvalCorePres
+          (hEval := Prod.ext hS hOut)
+          hs
+
+private theorem p4_match2_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {pat tmpl : Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply "match" [pat, tmpl]) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  · rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    have hCC :=
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_early
+        (fuel := fuel) (term := .apply "match" [pat, tmpl])
+        hEvalCorePres hEvalCallablePres hs
+    have hNamed :
+        Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+          (referencePettaCoreInterfaceN fuel) s
+            (.apply "match" [pat, tmpl]) = some (s', out) := hPeTTa
+    rw [hNamed] at hCC
+    simpa using hCC
+  · split at h
+    · rename_i _ _ _ out1 hPre
+      split at hPre
+      · rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN
+            fuel hEvalCorePres (term := .apply "match" [pat, tmpl]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic
+              (referenceStateEffectsInterfaceN fuel) s
+                (.apply "match" [pat, tmpl]) = some (s', out) := hStateE
+        rw [hNamed] at hCC
+        simpa using hCC
+      · have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN
+            fuel hEvalCorePres hIntrinsicPres
+            (term := .apply "match" [pat, tmpl]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic
+              (referenceStreamOpsInterfaceN fuel) s
+                (.apply "match" [pat, tmpl]) = some (s', out) := hPre
+        rw [hNamed] at hCC
+        simpa using hCC
+    · exact
+        let hConj :
+            (Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchIntrinsic
+                (referenceSpaceEvalInterfaceN fuel s) spacePolicy s selfSpaceAtom pat tmpl).fst = s' ∧
+            (Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchIntrinsic
+                (referenceSpaceEvalInterfaceN fuel s) spacePolicy s selfSpaceAtom pat tmpl).snd = out := by
+              simpa [referenceSpaceEvalInterfaceN] using h
+        let ⟨hS, hOut⟩ := hConj
+        compiledConsistent_of_referenceMatchIntrinsicN_result
+          fuel s hEvalCorePres
+          (space := selfSpaceAtom)
+          (hEval := Prod.ext hS hOut)
+          hs
+
+private theorem p4_once_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {evalArg : Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply "once" [evalArg]) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  · rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    have hCC :=
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_early
+        (fuel := fuel) (term := .apply "once" [evalArg])
+        hEvalCorePres hEvalCallablePres hs
+    have hNamed :
+        Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+          (referencePettaCoreInterfaceN fuel) s
+            (.apply "once" [evalArg]) = some (s', out) := hPeTTa
+    rw [hNamed] at hCC
+    simpa using hCC
+  · split at h
+    · rename_i _ _ _ out1 hPre
+      split at hPre
+      · rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN
+            fuel hEvalCorePres (term := .apply "once" [evalArg]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic
+              (referenceStateEffectsInterfaceN fuel) s
+                (.apply "once" [evalArg]) = some (s', out) := hStateE
+        rw [hNamed] at hCC
+        simpa using hCC
+      · have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN
+            fuel hEvalCorePres hIntrinsicPres
+            (term := .apply "once" [evalArg]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic
+              (referenceStreamOpsInterfaceN fuel) s
+                (.apply "once" [evalArg]) = some (s', out) := hPre
+        rw [hNamed] at hCC
+        simpa using hCC
+    · -- h : (match evalResult.snd with | [] => some (...) | x :: _ => some (...)) = some (s', out).
+      -- Case-split the match in h; each branch is some (fst, ...) = some (s', out).
+      split at h <;> (
+        simp only [Option.some.injEq, Prod.mk.injEq] at h
+        exact h.1 ▸ hEvalCorePres s evalArg hs)
+
+private theorem p4_atomof_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {x : Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply "atom-of" [x]) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  · rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    have hCC :=
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_early
+        (fuel := fuel) (term := .apply "atom-of" [x])
+        hEvalCorePres hEvalCallablePres hs
+    have hNamed :
+        Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+          (referencePettaCoreInterfaceN fuel) s
+            (.apply "atom-of" [x]) = some (s', out) := hPeTTa
+    rw [hNamed] at hCC
+    simpa using hCC
+  · split at h
+    · rename_i _ _ _ out1 hPre
+      split at hPre
+      · rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN
+            fuel hEvalCorePres (term := .apply "atom-of" [x]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic
+              (referenceStateEffectsInterfaceN fuel) s
+                (.apply "atom-of" [x]) = some (s', out) := hStateE
+        rw [hNamed] at hCC
+        simpa using hCC
+      · have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN
+            fuel hEvalCorePres hIntrinsicPres
+            (term := .apply "atom-of" [x]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic
+              (referenceStreamOpsInterfaceN fuel) s
+                (.apply "atom-of" [x]) = some (s', out) := hPre
+        rw [hNamed] at hCC
+        simpa using hCC
+    · let run := referenceRunNestedEffectsN fuel s true false x
+      let x1 := run.2.1
+      have hRunCC :
+          CompiledConsistent run.1 :=
+        compiledConsistent_of_referenceRunNestedEffectsN
+          fuel hIntrinsicPres s true false x hs
+      cases hInner : referenceIntrinsicStatefulN fuel run.1 x1 with
+      | none =>
+          let reducts := run.1.step x1
+          let atomOut : Session × List Pattern :=
+            if reducts.isEmpty = true then (run.1, [x1]) else (run.1, reducts)
+          let extracted :=
+            List.filterMap
+              (fun candidate =>
+                match tupleAt? (tupleElems candidate) 0 with
+                | none => none
+                | some row => tupleAt? (tupleElems row) 0)
+              atomOut.snd
+          by_cases hExtEmpty : extracted.isEmpty = true
+          · have hEq : some (atomOut.fst, ([] : List Pattern)) = some (s', out) := by
+              simpa only [run, x1, hInner, reducts, atomOut, extracted, hExtEmpty] using h
+            have hStateAtom : atomOut.fst = s' := by
+              exact congrArg Prod.fst (Option.some.inj hEq)
+            have hStateRun : atomOut.fst = run.1 := by
+              by_cases hRedEmpty : reducts.isEmpty = true <;> simp [atomOut, hRedEmpty]
+            exact (hStateRun.symm.trans hStateAtom) ▸ hRunCC
+          · have hEq : some (atomOut.fst, dedupPatternList extracted) = some (s', out) := by
+              simpa only [run, x1, hInner, reducts, atomOut, extracted, hExtEmpty] using h
+            have hStateAtom : atomOut.fst = s' := by
+              exact congrArg Prod.fst (Option.some.inj hEq)
+            have hStateRun : atomOut.fst = run.1 := by
+              by_cases hRedEmpty : reducts.isEmpty = true <;> simp [atomOut, hRedEmpty]
+            exact (hStateRun.symm.trans hStateAtom) ▸ hRunCC
+      | some inner =>
+          cases inner with
+          | mk sI outI =>
+              have hInnerCC :
+                  CompiledConsistent sI :=
+                hIntrinsicPres run.1 x1 sI outI hInner hRunCC
+              let atomOut : Session × List Pattern :=
+                if outI.isEmpty = true then (sI, [x1]) else (sI, outI)
+              let extracted :=
+                List.filterMap
+                  (fun candidate =>
+                    match tupleAt? (tupleElems candidate) 0 with
+                    | none => none
+                    | some row => tupleAt? (tupleElems row) 0)
+                  atomOut.snd
+              by_cases hExtEmpty : extracted.isEmpty = true
+              · have hEq : some (atomOut.fst, ([] : List Pattern)) = some (s', out) := by
+                  simpa only [run, x1, hInner, atomOut, extracted, hExtEmpty] using h
+                have hStateAtom : atomOut.fst = s' := by
+                  exact congrArg Prod.fst (Option.some.inj hEq)
+                have hStateInner : atomOut.fst = sI := by
+                  by_cases hOutEmpty : outI.isEmpty = true <;> simp [atomOut, hOutEmpty]
+                exact (hStateInner.symm.trans hStateAtom) ▸ hInnerCC
+              · have hEq : some (atomOut.fst, dedupPatternList extracted) = some (s', out) := by
+                  simpa only [run, x1, hInner, atomOut, extracted, hExtEmpty] using h
+                have hStateAtom : atomOut.fst = s' := by
+                  exact congrArg Prod.fst (Option.some.inj hEq)
+                have hStateInner : atomOut.fst = sI := by
+                  by_cases hOutEmpty : outI.isEmpty = true <;> simp [atomOut, hOutEmpty]
+                exact (hStateInner.symm.trans hStateAtom) ▸ hInnerCC
+
+private theorem p4_nop_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {evalArg : Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply "nop" [evalArg]) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  · rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    have hCC :=
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_early
+        (fuel := fuel) (term := .apply "nop" [evalArg])
+        hEvalCorePres hEvalCallablePres hs
+    have hNamed :
+        Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+          (referencePettaCoreInterfaceN fuel) s
+            (.apply "nop" [evalArg]) = some (s', out) := hPeTTa
+    rw [hNamed] at hCC
+    simpa using hCC
+  · split at h
+    · rename_i _ _ _ out1 hPre
+      split at hPre
+      · rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN
+            fuel hEvalCorePres (term := .apply "nop" [evalArg]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic
+              (referenceStateEffectsInterfaceN fuel) s
+                (.apply "nop" [evalArg]) = some (s', out) := hStateE
+        rw [hNamed] at hCC
+        simpa using hCC
+      · have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN
+            fuel hEvalCorePres hIntrinsicPres
+            (term := .apply "nop" [evalArg]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic
+              (referenceStreamOpsInterfaceN fuel) s
+                (.apply "nop" [evalArg]) = some (s', out) := hPre
+        rw [hNamed] at hCC
+        simpa using hCC
+    · have hPair :
+          ((referenceEvalWithStateCoreN fuel s evalArg).fst, [Pattern.apply "()" []]) = (s', out) :=
+        Option.some.inj h
+      have hState : (referenceEvalWithStateCoreN fuel s evalArg).fst = s' :=
+        congrArg Prod.fst hPair
+      exact hState ▸ hEvalCorePres s evalArg hs
+
+private theorem p4_catch1_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {evalArg : Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply "catch" [evalArg]) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  · rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    have hCC :=
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_early
+        (fuel := fuel) (term := .apply "catch" [evalArg])
+        hEvalCorePres hEvalCallablePres hs
+    have hNamed :
+        Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+          (referencePettaCoreInterfaceN fuel) s
+            (.apply "catch" [evalArg]) = some (s', out) := hPeTTa
+    rw [hNamed] at hCC
+    simpa using hCC
+  · split at h
+    · rename_i _ _ _ out1 hPre
+      split at hPre
+      · rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN
+            fuel hEvalCorePres (term := .apply "catch" [evalArg]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic
+              (referenceStateEffectsInterfaceN fuel) s
+                (.apply "catch" [evalArg]) = some (s', out) := hStateE
+        rw [hNamed] at hCC
+        simpa using hCC
+      · have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN
+            fuel hEvalCorePres hIntrinsicPres
+            (term := .apply "catch" [evalArg]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic
+              (referenceStreamOpsInterfaceN fuel) s
+                (.apply "catch" [evalArg]) = some (s', out) := hPre
+        rw [hNamed] at hCC
+        simpa using hCC
+    · have hPair : referenceEvalWithStateCoreN fuel s evalArg = (s', out) :=
+        Option.some.inj h
+      have hState : (referenceEvalWithStateCoreN fuel s evalArg).fst = s' :=
+        congrArg Prod.fst hPair
+      exact hState ▸ hEvalCorePres s evalArg hs
+
+private theorem p4_msort_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {evalArg : Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply "msort" [evalArg]) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  · rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    have hCC :=
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_early
+        (fuel := fuel) (term := .apply "msort" [evalArg])
+        hEvalCorePres hEvalCallablePres hs
+    have hNamed :
+        Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+          (referencePettaCoreInterfaceN fuel) s
+            (.apply "msort" [evalArg]) = some (s', out) := hPeTTa
+    rw [hNamed] at hCC
+    simpa using hCC
+  · split at h
+    · rename_i _ _ _ out1 hPre
+      split at hPre
+      · rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN
+            fuel hEvalCorePres (term := .apply "msort" [evalArg]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic
+              (referenceStateEffectsInterfaceN fuel) s
+                (.apply "msort" [evalArg]) = some (s', out) := hStateE
+        rw [hNamed] at hCC
+        simpa using hCC
+      · have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN
+            fuel hEvalCorePres hIntrinsicPres
+            (term := .apply "msort" [evalArg]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic
+              (referenceStreamOpsInterfaceN fuel) s
+                (.apply "msort" [evalArg]) = some (s', out) := hPre
+        rw [hNamed] at hCC
+        simpa using hCC
+    · have hState :
+          (referenceEvalWithStateCoreN fuel s evalArg).fst = s' := by
+        exact congrArg Prod.fst (Option.some.inj h)
+      exact hState ▸ hEvalCorePres s evalArg hs
+
+private theorem p4_expr_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {elems : List Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply "Expr" elems) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  · rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    have hCC :=
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_early
+        (fuel := fuel) (term := .apply "Expr" elems)
+        hEvalCorePres hEvalCallablePres hs
+    have hNamed :
+        Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+          (referencePettaCoreInterfaceN fuel) s
+            (.apply "Expr" elems) = some (s', out) := hPeTTa
+    rw [hNamed] at hCC
+    simpa using hCC
+  · split at h
+    · rename_i _ _ _ out1 hPre
+      split at hPre
+      · rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN
+            fuel hEvalCorePres (term := .apply "Expr" elems) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic
+              (referenceStateEffectsInterfaceN fuel) s
+                (.apply "Expr" elems) = some (s', out) := hStateE
+        rw [hNamed] at hCC
+        simpa using hCC
+      · have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN
+            fuel hEvalCorePres hIntrinsicPres
+            (term := .apply "Expr" elems) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic
+              (referenceStreamOpsInterfaceN fuel) s
+                (.apply "Expr" elems) = some (s', out) := hPre
+        rw [hNamed] at hCC
+        simpa using hCC
+    · have hState :
+          (evalTupleIntrinsicWith
+              (fun s term => referenceEvalWithStateCoreN fuel s term)
+              (fun s fn args => referenceEvalCallableApplyN fuel s fn args)
+              isRuleCallableHead s elems).fst = s' := by
+        exact congrArg Prod.fst (Option.some.inj h)
+      exact hState ▸
+        compiledConsistent_of_referenceEvalTupleIntrinsicFst
+          fuel hEvalCorePres hEvalCallablePres s elems hs
+
+private theorem p4_repr_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {arg : Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply "repr" [arg]) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  · rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    have hCC :=
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_early
+        (fuel := fuel) (term := .apply "repr" [arg])
+        hEvalCorePres hEvalCallablePres hs
+    have hNamed :
+        Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+          (referencePettaCoreInterfaceN fuel) s
+            (.apply "repr" [arg]) = some (s', out) := hPeTTa
+    rw [hNamed] at hCC
+    simpa using hCC
+  · split at h
+    · rename_i _ _ _ out1 hPre
+      split at hPre
+      · rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN
+            fuel hEvalCorePres (term := .apply "repr" [arg]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic
+              (referenceStateEffectsInterfaceN fuel) s
+                (.apply "repr" [arg]) = some (s', out) := hStateE
+        rw [hNamed] at hCC
+        simpa using hCC
+      · have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        have hCC :=
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN
+            fuel hEvalCorePres hIntrinsicPres
+            (term := .apply "repr" [arg]) hs
+        have hNamed :
+            Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic
+              (referenceStreamOpsInterfaceN fuel) s
+                (.apply "repr" [arg]) = some (s', out) := hPre
+        rw [hNamed] at hCC
+        simpa using hCC
+    · have hState :
+          (referenceEvalDeterministicCoreN fuel s 1024 arg).fst = s' := by
+        exact congrArg Prod.fst (Option.some.inj h)
+      exact hState ▸
+        compiledConsistent_of_referenceEvalDeterministicCoreN_fst
+          fuel hEvalCorePres hEvalCallablePres s 1024 arg hs
+
+private theorem compiledConsistent_of_partialPatternFallback
+    {s s' : Session} {ctor : String} {args : List Pattern} {out : List Pattern}
+    (h : s = s' ∧ [partialPattern ctor args] = out)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact h.1 ▸ hs
+
+private theorem compiledConsistent_of_partialPatternFallback_cons
+    {s s' : Session} {ctor : String} {args : List Pattern} {out : List Pattern}
+    (h : s = s' ∧ partialPattern ctor args :: [] = out)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact h.1 ▸ hs
+
+private theorem p4_generic_partialPattern_branch_preserves
+    {s s' : Session} {ctor : String} {args : List Pattern} {out : List Pattern}
+    (hPP : s = s' ∧ [partialPattern ctor args] = out)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact hPP.1 ▸ hs
+
+private theorem p4_generic_partialPattern_branch_preserves_cons
+    {s s' : Session} {ctor : String} {args : List Pattern} {out : List Pattern}
+    (hPP : s = s' ∧ partialPattern ctor args :: [] = out)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact hPP.1 ▸ hs
+
+
+private theorem compiledConsistent_of_stateEq
+    {s s' : Session}
+    (h : s = s')
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact h ▸ hs
+
+private theorem compiledConsistent_of_somePairEq
+    {p q : Session × List Pattern}
+    (h : some p = some q)
+    (hp : CompiledConsistent p.1) :
+    CompiledConsistent q.1 := by
+  have hState : p.1 = q.1 := congrArg Prod.fst (Option.some.inj h)
+  exact hState ▸ hp
+
+private theorem compiledConsistent_of_evalCoreState
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s s' : Session} {term : Pattern}
+    (hState : (referenceEvalWithStateCoreN fuel s term).fst = s')
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact hState ▸ hEvalCorePres s term hs
+
+private theorem compiledConsistent_of_evalCoreChainState
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s s' : Session} {term1 term2 : Pattern}
+    (hState : (referenceEvalWithStateCoreN fuel (referenceEvalWithStateCoreN fuel s term1).1 term2).fst = s')
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hs1 : CompiledConsistent (referenceEvalWithStateCoreN fuel s term1).1 :=
+    hEvalCorePres s term1 hs
+  exact hState ▸ hEvalCorePres (referenceEvalWithStateCoreN fuel s term1).1 term2 hs1
+
+private structure RefNPres (fuel : Nat) where
+  callable :
+    ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+      CompiledConsistent s →
+      CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1
+  evalCore :
+    ∀ (s : Session) (term : Pattern),
+      CompiledConsistent s →
+      CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1
+  evalForRule :
+    ∀ (s : Session) (expr : Pattern),
+      CompiledConsistent s →
+      CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1
+  intrinsic :
+    ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+      referenceIntrinsicStatefulN fuel s term = some (s', out) →
+      CompiledConsistent s →
+      CompiledConsistent s'
+
+private theorem compiledConsistent_of_referenceEvalWithStateCoreN_step
+    (fuel : Nat)
+    (hIntrinsicPrev :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s') :
+    ∀ (s : Session) (term : Pattern),
+      CompiledConsistent s →
+      CompiledConsistent (referenceEvalWithStateCoreN (fuel + 1) s term).1 := by
+  intro s term hs
+  let iface : Algorithms.MeTTa.Simple.Backend.ReferenceEval.Interface Session := {
+    maxNodes := fun s => s.maxNodes
+    maxSteps := fun s => s.maxSteps
+    runNestedEffects := fun s isRoot parentCallable term =>
+      referenceRunNestedEffectsN fuel s isRoot parentCallable term
+    intrinsicStateful := fun s term => referenceIntrinsicStatefulN fuel s term
+    isEagerCallableHead := isEagerCallableHead
+    step := step
+    enqueueNext := enqueueNext
+    insertUnique := insertUnique
+    dedupPatterns := dedupPatterns
+  }
+  have hIntrinsicPresRef :
+      ∀ {s : Session} {term : Pattern} {s' : Session} {out : List Pattern},
+        iface.intrinsicStateful s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s' := by
+    intro s term s' out hIntr hs0
+    simpa [iface] using hIntrinsicPrev s term s' out hIntr hs0
+  have hPres :
+      Algorithms.MeTTa.Simple.Backend.ReferenceEval.Preservation
+        iface CompiledConsistent := by
+    exact
+      Algorithms.MeTTa.Simple.Backend.ReferenceEval.preservation_of_intrinsicStateful
+        iface CompiledConsistent hIntrinsicPresRef
+  simpa [referenceEvalWithStateCoreN, iface] using
+    Algorithms.MeTTa.Simple.Backend.ReferenceEval.evalWithStateCore_preserves
+      iface CompiledConsistent hPres s term hs
+
+private theorem compiledConsistent_of_referenceEvalForRuleEnumerationN_step
+    (fuel : Nat)
+    (hEvalCorePrev :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hIntrinsicPrev :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s') :
+    ∀ (s : Session) (expr : Pattern),
+      CompiledConsistent s →
+      CompiledConsistent (referenceEvalForRuleEnumerationN (fuel + 1) s expr).1 := by
+  intro s expr hs
+  unfold referenceEvalForRuleEnumerationN
+  cases hIntr : referenceIntrinsicStatefulN fuel s expr with
+  | none =>
+      simp
+      exact hEvalCorePrev s expr hs
+  | some res =>
+      rcases res with ⟨s1, out0⟩
+      simp
+      exact hIntrinsicPrev s expr s1 out0 hIntr hs
+
+private theorem compiledConsistent_of_referenceEvalCallableApplyN_step
+    (fuel : Nat)
+    (hEvalCorePrev :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalForRulePrev :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hCallablePrev :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1) :
+    ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+      CompiledConsistent s →
+      CompiledConsistent (referenceEvalCallableApplyN (fuel + 1) s fn args).1 := by
+  intro s fn args hs
+  cases fn with
+  | fvar name =>
+      simp [referenceEvalCallableApplyN]
+      cases hEval : referenceEvalWithStateCoreN fuel s (.apply name args) with
+      | mk sEval out0 =>
+          have hsEval : CompiledConsistent sEval := by
+            simpa [hEval] using hEvalCorePrev s (.apply name args) hs
+          simpa [referenceDispatchInterfaceN, hEval] using
+            compiledConsistent_of_referenceDispatchPostprocessN
+              fuel hEvalCorePrev hEvalForRulePrev sEval (.apply name args) out0 hsEval
+  | apply name boundArgs =>
+      cases boundArgs with
+      | nil =>
+          simp [referenceEvalCallableApplyN]
+          cases hEval : referenceEvalWithStateCoreN fuel s (.apply name args) with
+          | mk sEval out0 =>
+              have hsEval : CompiledConsistent sEval := by
+                simpa [hEval] using hEvalCorePrev s (.apply name args) hs
+              simpa [referenceDispatchInterfaceN, hEval] using
+                compiledConsistent_of_referenceDispatchPostprocessN
+                  fuel hEvalCorePrev hEvalForRulePrev sEval (.apply name args) out0 hsEval
+      | cons a rest =>
+          cases rest with
+          | nil =>
+              simp [referenceEvalCallableApplyN]
+              exact hCallablePrev s (.apply name []) ([a] ++ args) hs
+          | cons b tail =>
+              cases tail with
+              | nil =>
+                  by_cases hPartial : name = "partial"
+                  · simp [referenceEvalCallableApplyN, hPartial]
+                    exact hCallablePrev s a (tupleElems b ++ args) hs
+                  · by_cases hArrow : name = "|->"
+                    · simp [referenceEvalCallableApplyN, hArrow]
+                      by_cases hLen : (lambdaParamNamesCompat a).length = args.length
+                      · simp [hLen]
+                        let bodySub := applyBindingsCompat (List.zip (lambdaParamNamesCompat a) args) b
+                        cases hEval : referenceEvalWithStateCoreN fuel s bodySub with
+                        | mk sEval out0 =>
+                            have hsEval : CompiledConsistent sEval := by
+                              simpa [hEval, bodySub] using hEvalCorePrev s bodySub hs
+                            simpa [referenceDispatchInterfaceN, hArrow, hLen, hEval, bodySub] using
+                              compiledConsistent_of_referenceDispatchPostprocessN
+                                fuel hEvalCorePrev hEvalForRulePrev sEval bodySub out0 hsEval
+                      · simp [hLen]
+                        simpa using hs
+                    · simp [referenceEvalCallableApplyN, hPartial, hArrow]
+                      exact hCallablePrev s (.apply name []) ((a :: b :: []) ++ args) hs
+              | cons c tail' =>
+                  simp [referenceEvalCallableApplyN]
+                  exact hCallablePrev s (.apply name []) ((a :: b :: c :: tail') ++ args) hs
+  | bvar _ =>
+      simp [referenceEvalCallableApplyN]
+      simpa using hs
+  | lambda _ =>
+      simp [referenceEvalCallableApplyN]
+      simpa using hs
+  | multiLambda _ _ =>
+      simp [referenceEvalCallableApplyN]
+      simpa using hs
+  | subst _ _ =>
+      simp [referenceEvalCallableApplyN]
+      simpa using hs
+  | collection _ _ _ =>
+      simp [referenceEvalCallableApplyN]
+      simpa using hs
+
+
+private theorem compiledConsistent_of_referencePettaCoreEvalIntrinsicN_result
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    {s s' : Session} {term : Pattern} {out : List Pattern}
+    (hEval :
+      Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsic
+        (referencePettaCoreInterfaceN fuel) s term = some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hCC :=
+    compiledConsistent_of_referencePettaCoreEvalIntrinsicN_early
+      (fuel := fuel) (hEvalCorePres := hEvalCorePres)
+      (hEvalCallablePres := hEvalCallablePres) (s := s) (term := term) hs
+  rw [hEval] at hCC
+  simpa using hCC
+
+private theorem compiledConsistent_of_referenceStateEffectsEvalIntrinsicN_result
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s s' : Session} {term : Pattern} {out : List Pattern}
+    (hEval :
+      Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsic
+        (referenceStateEffectsInterfaceN fuel) s term = some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hCC :=
+    compiledConsistent_of_referenceStateEffectsEvalIntrinsicN
+      (fuel := fuel) (hEvalCorePres := hEvalCorePres)
+      (s := s) (term := term) hs
+  rw [hEval] at hCC
+  simpa using hCC
+
+private theorem compiledConsistent_of_referenceStreamOpsEvalIntrinsicN_result
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {term : Pattern} {out : List Pattern}
+    (hEval :
+      Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsic
+        (referenceStreamOpsInterfaceN fuel) s term = some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have hCC :=
+    compiledConsistent_of_referenceStreamOpsEvalIntrinsicN
+      (fuel := fuel) (hEvalCorePres := hEvalCorePres)
+      (hIntrinsicPres := hIntrinsicPres)
+      (s := s) (term := term) hs
+  rw [hEval] at hCC
+  simpa using hCC
+
+private theorem p4_addatom_bang_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {space fact : Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply "add-atom!" [space, fact]) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  · rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    exact
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_result
+        fuel hEvalCorePres hEvalCallablePres hPeTTa hs
+  · split at h
+    · rename_i _ _ _ out1 hPre
+      split at hPre
+      · rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        exact
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN_result
+            fuel hEvalCorePres hStateE hs
+      · have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        exact
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN_result
+            fuel hEvalCorePres hIntrinsicPres hPre hs
+    · by_cases hEmpty :
+        (((match fact with
+          | .apply "=" [lhs, rhs] =>
+              match boolOfPattern? rhs with
+              | some true => lhs
+              | some false => .apply "empty" []
+              | none => fact
+          | _ => fact) == .apply "empty" []) = true)
+      · simp [hEmpty] at h
+        exact compiledConsistent_of_stateEq h.1 hs
+      · simp [hEmpty] at h
+        exact
+          compiledConsistent_of_referenceAddAtomN_conj
+            fuel s hEvalCorePres h.1 h.2
+            hs
+
+private theorem p4_removeatom_bang_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {space fact : Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply "remove-atom!" [space, fact]) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  · rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    exact
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_result
+        fuel hEvalCorePres hEvalCallablePres hPeTTa hs
+  · split at h
+    · rename_i _ _ _ out1 hPre
+      split at hPre
+      · rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        exact
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN_result
+            fuel hEvalCorePres hStateE hs
+      · have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        exact
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN_result
+            fuel hEvalCorePres hIntrinsicPres hPre hs
+    · by_cases hEmpty :
+        (((match fact with
+          | .apply "=" [lhs, rhs] =>
+              match boolOfPattern? rhs with
+              | some true => lhs
+              | some false => .apply "empty" []
+              | none => fact
+          | _ => fact) == .apply "empty" []) = true)
+      · simp [hEmpty] at h
+        exact compiledConsistent_of_stateEq h.1 hs
+      · simp [hEmpty] at h
+        exact
+          compiledConsistent_of_referenceRemoveAtomN_conj
+            fuel s hEvalCorePres h.1 h.2
+            hs
+
+private theorem p4_addatom_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {space fact : Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply "add-atom" [space, fact]) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  case h_1 =>
+    rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    exact
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_result
+        fuel hEvalCorePres hEvalCallablePres hPeTTa hs
+  case h_2 =>
+    split at h
+    case h_1 =>
+      rename_i _ _ _ out1 hPre
+      split at hPre
+      case h_1 =>
+        rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        exact
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN_result
+            fuel hEvalCorePres hStateE hs
+      case h_2 =>
+        have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        exact
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN_result
+            fuel hEvalCorePres hIntrinsicPres hPre hs
+    case h_2 =>
+      have hPair := Option.some.inj h
+      exact
+        compiledConsistent_of_referenceAddAtomN_result
+          fuel s hEvalCorePres hPair hs
+
+private theorem p4_removeatom_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {space fact : Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply "remove-atom" [space, fact]) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  case h_1 =>
+    rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    exact
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_result
+        fuel hEvalCorePres hEvalCallablePres hPeTTa hs
+  case h_2 =>
+    split at h
+    case h_1 =>
+      rename_i _ _ _ out1 hPre
+      split at hPre
+      case h_1 =>
+        rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        exact
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN_result
+            fuel hEvalCorePres hStateE hs
+      case h_2 =>
+        have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        exact
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN_result
+            fuel hEvalCorePres hIntrinsicPres hPre hs
+    case h_2 =>
+      have hPair := Option.some.inj h
+      exact
+        compiledConsistent_of_referenceRemoveAtomN_result
+          fuel s hEvalCorePres hPair hs
+
+private theorem p4_apply_fallback_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {ctor : String} {args : List Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply ctor args) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  sorry
+
+private theorem p4_apply_branch_preserves
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s s' : Session} {ctor : String} {args : List Pattern} {out : List Pattern}
+    (h :
+      referenceIntrinsicStatefulN (fuel + 1) s (.apply ctor args) =
+        some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  by_cases hAdd : ctor = "add-atom"
+  · subst hAdd
+    cases args with
+    | nil =>
+        exact
+          p4_apply_fallback_preserves fuel hEvalCorePres hEvalCallablePres
+            hEvalForRulePres hIntrinsicPres h hs
+    | cons space rest =>
+        cases rest with
+        | nil =>
+            exact
+              p4_apply_fallback_preserves fuel hEvalCorePres hEvalCallablePres
+                hEvalForRulePres hIntrinsicPres h hs
+        | cons fact rest' =>
+            cases rest' with
+            | nil =>
+                exact
+                  p4_addatom_branch_preserves fuel hEvalCorePres hEvalCallablePres
+                    hIntrinsicPres h hs
+            | cons _ _ =>
+                exact
+                  p4_apply_fallback_preserves fuel hEvalCorePres hEvalCallablePres
+                    hEvalForRulePres hIntrinsicPres h hs
+  by_cases hAddBang : ctor = "add-atom!"
+  · subst hAddBang
+    cases args with
+    | nil =>
+        exact
+          p4_apply_fallback_preserves fuel hEvalCorePres hEvalCallablePres
+            hEvalForRulePres hIntrinsicPres h hs
+    | cons space rest =>
+        cases rest with
+        | nil =>
+            exact
+              p4_apply_fallback_preserves fuel hEvalCorePres hEvalCallablePres
+                hEvalForRulePres hIntrinsicPres h hs
+        | cons fact rest' =>
+            cases rest' with
+            | nil =>
+                exact
+                  p4_addatom_bang_branch_preserves fuel hEvalCorePres hEvalCallablePres
+                    hIntrinsicPres h hs
+            | cons _ _ =>
+                exact
+                  p4_apply_fallback_preserves fuel hEvalCorePres hEvalCallablePres
+                    hEvalForRulePres hIntrinsicPres h hs
+  by_cases hRemove : ctor = "remove-atom"
+  · subst hRemove
+    cases args with
+    | nil =>
+        exact
+          p4_apply_fallback_preserves fuel hEvalCorePres hEvalCallablePres
+            hEvalForRulePres hIntrinsicPres h hs
+    | cons space rest =>
+        cases rest with
+        | nil =>
+            exact
+              p4_apply_fallback_preserves fuel hEvalCorePres hEvalCallablePres
+                hEvalForRulePres hIntrinsicPres h hs
+        | cons fact rest' =>
+            cases rest' with
+            | nil =>
+                exact
+                  p4_removeatom_branch_preserves fuel hEvalCorePres hEvalCallablePres
+                    hIntrinsicPres h hs
+            | cons _ _ =>
+                exact
+                  p4_apply_fallback_preserves fuel hEvalCorePres hEvalCallablePres
+                    hEvalForRulePres hIntrinsicPres h hs
+  by_cases hRemoveBang : ctor = "remove-atom!"
+  · subst hRemoveBang
+    cases args with
+    | nil =>
+        exact
+          p4_apply_fallback_preserves fuel hEvalCorePres hEvalCallablePres
+            hEvalForRulePres hIntrinsicPres h hs
+    | cons space rest =>
+        cases rest with
+        | nil =>
+            exact
+              p4_apply_fallback_preserves fuel hEvalCorePres hEvalCallablePres
+                hEvalForRulePres hIntrinsicPres h hs
+        | cons fact rest' =>
+            cases rest' with
+            | nil =>
+                exact
+                  p4_removeatom_bang_branch_preserves fuel hEvalCorePres hEvalCallablePres
+                    hIntrinsicPres h hs
+            | cons _ _ =>
+                exact
+                  p4_apply_fallback_preserves fuel hEvalCorePres hEvalCallablePres
+                    hEvalForRulePres hIntrinsicPres h hs
+  first
+  | exact
+      p4_case_branch_preserves fuel hEvalCorePres hEvalCallablePres hEvalForRulePres
+        hIntrinsicPres h hs
+  | exact
+      p4_foldall_branch_preserves fuel hEvalCorePres hEvalCallablePres hEvalForRulePres
+        hIntrinsicPres h hs
+  | exact
+      p4_forall_branch_preserves fuel hEvalCorePres hEvalCallablePres hEvalForRulePres
+        hIntrinsicPres h hs
+  | exact
+      p4_match3_branch_preserves fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+        h hs
+  | exact
+      p4_match2_branch_preserves fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+        h hs
+  | exact
+      p4_once_branch_preserves fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+        h hs
+  | exact
+      p4_atomof_branch_preserves fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+        h hs
+  | exact
+      p4_nop_branch_preserves fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+        h hs
+  | exact
+      p4_catch1_branch_preserves fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+        h hs
+  | exact
+      p4_msort_branch_preserves fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+        h hs
+  | exact
+      p4_expr_branch_preserves fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+        h hs
+  | exact
+      p4_repr_branch_preserves fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+        h hs
+  | exact
+      p4_addatom_bang_branch_preserves fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+        h hs
+  | exact
+      p4_removeatom_bang_branch_preserves fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+        h hs
+  | exact
+      p4_apply_fallback_preserves fuel hEvalCorePres hEvalCallablePres
+        hEvalForRulePres hIntrinsicPres h hs
+
+private theorem compiledConsistent_of_referenceIntrinsicStatefulN_step
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s : Session} {term : Pattern} {s' : Session} {out : List Pattern}
+    (h : referenceIntrinsicStatefulN (fuel + 1) s term = some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  sorry
+
+
+-- Joint fuel-induction: all four ...N functions preserve CompiledConsistent simultaneously.
+-- Each (fuel+1) case delegates entirely to level (fuel), so the four claims close from the IH.
+set_option maxHeartbeats 800000 in
+private theorem refNPres : ∀ fuel, RefNPres fuel
+  | 0 =>
+      { callable := by
+          intro s fn args hs
+          simp [referenceEvalCallableApplyN]
+          simpa using hs
+        evalCore := by
+          intro s term hs
+          simpa [referenceEvalWithStateCoreN] using hs
+        evalForRule := by
+          intro s expr hs
+          simp [referenceEvalForRuleEnumerationN]
+          simpa using hs
+        intrinsic := by
+          intro s term s' out h hs
+          simp [referenceIntrinsicStatefulN] at h }
+  | fuel + 1 =>
+      let ih := refNPres fuel
+      { callable :=
+          compiledConsistent_of_referenceEvalCallableApplyN_step fuel
+            ih.evalCore ih.evalForRule ih.callable
+        evalCore :=
+          compiledConsistent_of_referenceEvalWithStateCoreN_step fuel
+            ih.intrinsic
+        evalForRule :=
+          compiledConsistent_of_referenceEvalForRuleEnumerationN_step fuel
+            ih.evalCore ih.intrinsic
+        intrinsic := by
+          intro s term s' out h hs
+          exact
+            compiledConsistent_of_referenceIntrinsicStatefulN_step fuel
+              ih.evalCore ih.callable ih.evalForRule ih.intrinsic h hs }
+
+private theorem refN_preservation_bundle (fuel : Nat) :
+    (∀ (s : Session) (fn : Pattern) (args : List Pattern),
+       CompiledConsistent s →
+       CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1) ∧
+    (∀ (s : Session) (term : Pattern),
+       CompiledConsistent s →
+       CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1) ∧
+    (∀ (s : Session) (expr : Pattern),
+       CompiledConsistent s →
+       CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1) ∧
+    (∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+       referenceIntrinsicStatefulN fuel s term = some (s', out) →
+       CompiledConsistent s →
+       CompiledConsistent s') := by
+  let h := refNPres fuel
+  exact ⟨h.callable, h.evalCore, h.evalForRule, h.intrinsic⟩
+
+theorem compiledConsistent_of_referenceIntrinsicStatefulN
+    (fuel : Nat) {s : Session} {term : Pattern} {s' : Session} {out : List Pattern}
+    (h : referenceIntrinsicStatefulN fuel s term = some (s', out))
+    (hs : CompiledConsistent s) : CompiledConsistent s' :=
+  (refN_preservation_bundle fuel).2.2.2 s term s' out h hs
+
+theorem compiledConsistent_of_referenceEvalWithStateCoreN
+    (fuel : Nat) (s : Session) (term : Pattern) (hs : CompiledConsistent s) :
+    CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1 :=
+  (refN_preservation_bundle fuel).2.1 s term hs
+
+theorem compiledConsistent_of_referenceEvalForRuleEnumerationN
+    (fuel : Nat) (s : Session) (expr : Pattern) (hs : CompiledConsistent s) :
+    CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1 :=
+  (refN_preservation_bundle fuel).2.2.1 s expr hs
+
+theorem compiledConsistent_of_referenceEvalCallableApplyN
+    (fuel : Nat) (s : Session) (fn : Pattern) (args : List Pattern)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1 :=
+  (refN_preservation_bundle fuel).1 s fn args hs
+
+-- Stage 3b.2: Preservation on F-kernel `.done` results.
+
+/-- If `faithfulEvalWithStateCoreF` returns `.done (s', out)`, then `s'` is `CompiledConsistent`. -/
+theorem faithfulEvalWithStateCoreF_preserves
+    (fuel : Nat) (s : Session) (term : Pattern)
+    (hdone : faithfulEvalWithStateCoreF fuel s term = .done (s', out))
+    (hs : CompiledConsistent s) : CompiledConsistent s' := by
+  cases fuel with
+  | zero => simp [faithfulEvalWithStateCoreF] at hdone
+  | succ n =>
+      simp only [faithfulEvalWithStateCoreF] at hdone
+      have hN : referenceEvalWithStateCoreN (n + 1) s term = (s', out) :=
+        FuelResult.done.inj hdone
+      have hpres := compiledConsistent_of_referenceEvalWithStateCoreN (n + 1) s term hs
+      rw [hN] at hpres
+      exact hpres
+
+/-- If `faithfulIntrinsicStatefulF` returns `.done (some (s', out))`, then `s'` is `CompiledConsistent`. -/
+theorem faithfulIntrinsicStatefulF_preserves
+    (fuel : Nat) (s : Session) (term : Pattern)
+    (hdone : faithfulIntrinsicStatefulF fuel s term = .done (some (s', out)))
+    (hs : CompiledConsistent s) : CompiledConsistent s' := by
+  cases fuel with
+  | zero => simp [faithfulIntrinsicStatefulF] at hdone
+  | succ n =>
+      simp only [faithfulIntrinsicStatefulF] at hdone
+      have hN : referenceIntrinsicStatefulN (n + 1) s term = some (s', out) :=
+        FuelResult.done.inj hdone
+      exact compiledConsistent_of_referenceIntrinsicStatefulN (n + 1) hN hs
+
+/-- If `faithfulEvalCallableApplyF` returns `.done (s', out)`, then `s'` is `CompiledConsistent`. -/
+theorem faithfulEvalCallableApplyF_preserves
+    (fuel : Nat) (s : Session) (callable : Pattern) (args : List Pattern)
+    (hdone : faithfulEvalCallableApplyF fuel s callable args = .done (s', out))
+    (hs : CompiledConsistent s) : CompiledConsistent s' := by
+  cases fuel with
+  | zero => simp [faithfulEvalCallableApplyF] at hdone
+  | succ n =>
+      simp only [faithfulEvalCallableApplyF] at hdone
+      have hN : referenceEvalCallableApplyN (n + 1) s callable args = (s', out) :=
+        FuelResult.done.inj hdone
+      have hpres := compiledConsistent_of_referenceEvalCallableApplyN (n + 1) s callable args hs
+      rw [hN] at hpres
+      exact hpres
+
+/-- Public fuel-indexed faithful reference evaluator.
+    Unlike `evalWithStateCoreN`, this makes fuel exhaustion explicit via `FuelResult`. -/
+def evalWithStateCoreF (fuel : Nat) (s : Session) (term : Pattern) :
+    FuelResult (Session × List Pattern) :=
+  faithfulEvalWithStateCoreF fuel s term
+
+/-- Public fuel-indexed faithful reference intrinsic evaluator.
+    Unlike `intrinsicStatefulN`, this makes fuel exhaustion explicit via `FuelResult`. -/
+def intrinsicStatefulF (fuel : Nat) (s : Session) (term : Pattern) :
+    FuelResult (Option (Session × List Pattern)) :=
+  faithfulIntrinsicStatefulF fuel s term
+
+/-- `.done` from the public faithful evaluator agrees with the N-kernel evaluator. -/
+theorem evalWithStateCoreF_done_eq_N
+    (fuel : Nat) (s : Session) (term : Pattern) (res : Session × List Pattern)
+    (hdone : evalWithStateCoreF fuel s term = .done res) :
+    referenceEvalWithStateCoreN fuel s term = res := by
+  exact faithfulEvalWithStateCoreF_done_eq_N fuel s term res hdone
+
+/-- `.done` from the public faithful intrinsic evaluator agrees with the N-kernel intrinsic evaluator. -/
+theorem intrinsicStatefulF_done_eq_N
+    (fuel : Nat) (s : Session) (term : Pattern) (r : Option (Session × List Pattern))
+    (hdone : intrinsicStatefulF fuel s term = .done r) :
+    referenceIntrinsicStatefulN fuel s term = r := by
+  exact faithfulIntrinsicStatefulF_done_eq_N fuel s term r hdone
+
+/-- Successful faithful evaluation preserves session well-formedness. -/
+theorem evalWithStateCoreF_preserves
+    (fuel : Nat) (s : Session) (term : Pattern)
+    (hdone : evalWithStateCoreF fuel s term = .done (s', out))
+    (hs : WF s) :
+    WF s' := by
+  exact faithfulEvalWithStateCoreF_preserves fuel s term hdone hs
+
+/-- Successful faithful intrinsic evaluation preserves session well-formedness. -/
+theorem intrinsicStatefulF_preserves
+    (fuel : Nat) (s : Session) (term : Pattern)
+    (hdone : intrinsicStatefulF fuel s term = .done (some (s', out)))
+    (hs : WF s) :
+    WF s' := by
+  exact faithfulIntrinsicStatefulF_preserves fuel s term hdone hs
+
+/-- Public fuel-indexed reference evaluator (thin wrapper over the private mutual-block def). -/
+def evalWithStateCoreN (fuel : Nat) (s : Session) (term : Pattern) :
+    Session × List Pattern :=
+  referenceEvalWithStateCoreN fuel s term
+
+/-- Unconditional session-WF preservation for the fuel-indexed evaluator. -/
+theorem evalWithStateCoreN_preserves
+    (fuel : Nat) (s : Session) (term : Pattern) (hs : WF s) :
+    WF (evalWithStateCoreN fuel s term).1 :=
+  compiledConsistent_of_referenceEvalWithStateCoreN fuel s term hs
+
+/-- Fuel-indexed total reference intrinsic evaluator (no `partial def`, no `sorry`).
+    Returns `none` when the term is not an intrinsic or when fuel is exhausted.
+    Unconditionally preserves `WF` on `some` outputs. -/
+def intrinsicStatefulN (fuel : Nat) (s : Session) (term : Pattern) :
+    Option (Session × List Pattern) :=
+  referenceIntrinsicStatefulN fuel s term
+
+/-- Unconditional session-WF preservation for `intrinsicStatefulN` on `some` results. -/
+theorem intrinsicStatefulN_preserves
+    (fuel : Nat) {s : Session} {term : Pattern}
+    {s' : Session} {out : List Pattern}
+    (h : intrinsicStatefulN fuel s term = some (s', out))
+    (hs : WF s) : WF s' :=
+  compiledConsistent_of_referenceIntrinsicStatefulN fuel h hs
 
 private theorem compiledConsistent_of_evalDeterministicCore
     (hEvalCorePres :

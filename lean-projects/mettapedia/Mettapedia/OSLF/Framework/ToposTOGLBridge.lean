@@ -517,11 +517,15 @@ rules from NativeType, closing the paper-parity gap for M3.
 
 /-- Full internal logic package for the topos bridge:
 bundles fiber ⊤/⊥/∧/∨ membership, the NatTypeFiber Frame structure
-(providing → and ¬), and Π/Σ type formation via NativeType operations,
+(providing → and ¬), and generic Π/Σ type-formation bounds via NativeType
+operations (at the abstract fiber level, under a `types.Nonempty` guard),
 together with the existing graph-object characterizations.
 
-This closes the gap between the current ∧/∨-only bridge and the paper claim
-that fibers form a "cosmic fibration" with full internal logic (NTT Proposition 19). -/
+The explicit intro/elim-style Π/Σ endpoint with concrete representable
+transport is `topos_full_internal_logic_piSigma_rule_package` (below).
+
+This closes the gap between the ∧/∨-only bridge and the paper claim
+that fibers form a "cosmic fibration" with full internal logic (NTT Prop 19). -/
 theorem topos_full_internal_logic_bridge_package
     (lang : LanguageDef) (procSort : String := "Proc")
     (s : Mettapedia.OSLF.Framework.ConstructorCategory.LangSort lang)
@@ -789,6 +793,43 @@ theorem topos_representable_patternPred_piSigma_transport_via_prop12_pack
     (hPiSigmaPack := Mettapedia.OSLF.NativeType.prop12_piSigmaPredicateRulePack
       (C := Mettapedia.OSLF.Framework.ConstructorCategory.ConstructorObj lang))
     (f := f) (χ := χ) (ψ := ψ)
+
+/-- The Prop-12 transport pack is definitionally the rule-pack transport
+instantiated with `prop12_piSigmaPredicateRulePack`. -/
+theorem topos_transport_pack_via_prop12_eq_via_rulePack
+    (lang : LanguageDef) (s : Mettapedia.OSLF.Framework.ConstructorCategory.LangSort lang)
+    (seed : Pattern) (φ : Pattern → Prop)
+    (hNat : Mettapedia.OSLF.Framework.CategoryBridge.languageSortPredNaturality
+      lang s seed φ)
+    {D : CategoryTheory.Functor
+      (Opposite (Mettapedia.OSLF.Framework.ConstructorCategory.ConstructorObj lang)) Type}
+    (f : (Mettapedia.OSLF.Framework.CategoryBridge.languageSortRepresentableObj lang s) ⟶ D) :
+    topos_representable_patternPred_piSigma_transport_pack_via_prop12
+      lang s seed φ hNat f =
+    topos_representable_patternPred_piSigma_transport_pack_via_rulePack
+      lang s seed φ hNat
+      (hPiSigmaPack := Mettapedia.OSLF.NativeType.prop12_piSigmaPredicateRulePack
+        (C := Mettapedia.OSLF.Framework.ConstructorCategory.ConstructorObj lang))
+      f := rfl
+
+/-- The Prop-12 unpacked transport is definitionally the rule-pack transport
+instantiated with `prop12_piSigmaPredicateRulePack`. -/
+theorem topos_transport_via_prop12_pack_eq_via_rulePack
+    (lang : LanguageDef) (s : Mettapedia.OSLF.Framework.ConstructorCategory.LangSort lang)
+    (seed : Pattern) (φ : Pattern → Prop)
+    (hNat : Mettapedia.OSLF.Framework.CategoryBridge.languageSortPredNaturality
+      lang s seed φ)
+    {D : CategoryTheory.Functor
+      (Opposite (Mettapedia.OSLF.Framework.ConstructorCategory.ConstructorObj lang)) Type}
+    (f : (Mettapedia.OSLF.Framework.CategoryBridge.languageSortRepresentableObj lang s) ⟶ D)
+    (χ ψ : CategoryTheory.Subfunctor D) :
+    topos_representable_patternPred_piSigma_transport_via_prop12_pack
+      lang s seed φ hNat f χ ψ =
+    topos_representable_patternPred_piSigma_transport_via_rulePack
+      lang s seed φ hNat
+      (hPiSigmaPack := Mettapedia.OSLF.NativeType.prop12_piSigmaPredicateRulePack
+        (C := Mettapedia.OSLF.Framework.ConstructorCategory.ConstructorObj lang))
+      f χ ψ := rfl
 
 /-! ## N-Step Graph Chains (TOGL Paper Alignment — M4)
 

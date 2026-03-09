@@ -197,6 +197,39 @@ theorem zero_hplus (e : NormalGammaEvidence) : zero + e = e := by
   rw [hplus_comm]
   exact hplus_zero e
 
+/-- The Cauchy-Schwarz side condition already forces the sum to vanish when the
+sample count is zero. -/
+theorem sum_eq_zero_of_n_eq_zero (e : NormalGammaEvidence) (hn : e.n = 0) :
+    e.sum = 0 := by
+  have hcs := e.cauchy_schwarz
+  simp [hn] at hcs
+  have hsq : e.sum ^ 2 = 0 := by
+    nlinarith [sq_nonneg e.sum, hcs]
+  exact sq_eq_zero_iff.mp hsq
+
+/-- Minimal realizability condition missing from `NormalGammaEvidence`: if there
+are no observations, then the sum of squares must also vanish. Combined with the
+existing Cauchy-Schwarz field, this is enough to rule out spurious zero-count
+evidence with positive variance mass. -/
+def Realizable (e : NormalGammaEvidence) : Prop :=
+  e.n = 0 → e.sumSq = 0
+
+theorem realizable_zero : Realizable zero := by
+  intro _; rfl
+
+theorem realizable_single (x : ℝ) : Realizable (single x) := by
+  intro h
+  simp [single] at h
+
+theorem realizable_hplus {e₁ e₂ : NormalGammaEvidence}
+    (h₁ : Realizable e₁) (h₂ : Realizable e₂) :
+    Realizable (e₁ + e₂) := by
+  intro hsum
+  change e₁.n + e₂.n = 0 at hsum
+  rcases Nat.add_eq_zero_iff.mp hsum with ⟨hn1, hn2⟩
+  change e₁.sumSq + e₂.sumSq = 0
+  simp [h₁ hn1, h₂ hn2]
+
 /-! ### AddCommMonoid Instance (EvidenceType) -/
 
 /-- NormalGammaEvidence forms an AddCommMonoid, making it an EvidenceType.
@@ -355,6 +388,18 @@ def jeffreys (ε : ℝ) (hε : 0 < ε) : NormalGammaPrior where
 
 end NormalGammaPrior
 
+@[ext]
+theorem NormalGammaPrior.ext {p₁ p₂ : NormalGammaPrior}
+    (hμ : p₁.μ₀ = p₂.μ₀)
+    (hκ : p₁.κ₀ = p₂.κ₀)
+    (hα : p₁.α₀ = p₂.α₀)
+    (hβ : p₁.β₀ = p₂.β₀) :
+    p₁ = p₂ := by
+  cases p₁
+  cases p₂
+  simp only [NormalGammaPrior.mk.injEq] at *
+  exact ⟨hμ, hκ, hα, hβ⟩
+
 /-! ## Conjugate Posterior Update -/
 
 /-- Posterior parameters after observing evidence.
@@ -419,6 +464,110 @@ noncomputable def posterior (prior : NormalGammaPrior) (e : NormalGammaEvidence)
       linarith
 
 /-! ## Main Theorems -/
+
+@[simp] theorem posterior_kappa (prior : NormalGammaPrior) (e : NormalGammaEvidence) :
+    (posterior prior e).κ₀ = prior.κ₀ + e.n := rfl
+
+@[simp] theorem posterior_alpha (prior : NormalGammaPrior) (e : NormalGammaEvidence) :
+    (posterior prior e).α₀ = prior.α₀ + (e.n : ℝ) / 2 := rfl
+
+/-- Under the realizability condition, the posterior mean can be written in the
+uniform affine form even when `n = 0`. -/
+theorem posterior_mu_eq_of_realizable
+    (prior : NormalGammaPrior) (e : NormalGammaEvidence) (_hreal : e.Realizable) :
+    (posterior prior e).μ₀ =
+      (prior.κ₀ * prior.μ₀ + e.sum) / (prior.κ₀ + e.n) := by
+  by_cases hn : e.n = 0
+  · have hs : e.sum = 0 := e.sum_eq_zero_of_n_eq_zero hn
+    simp [posterior, hn, hs]
+    field_simp [ne_of_gt prior.κ₀_pos]
+  · simp [posterior, hn]
+
+/-- Under the realizability condition, the posterior beta parameter has a
+uniform closed form that depends only on the additive sufficient statistics. -/
+theorem posterior_beta_eq_of_realizable
+    (prior : NormalGammaPrior) (e : NormalGammaEvidence) (hreal : e.Realizable) :
+    (posterior prior e).β₀ =
+      prior.β₀ +
+        (e.sumSq + prior.κ₀ * prior.μ₀ ^ 2
+          - (prior.κ₀ * prior.μ₀ + e.sum) ^ 2 / (prior.κ₀ + e.n)) / 2 := by
+  by_cases hn : e.n = 0
+  · have hs : e.sum = 0 := e.sum_eq_zero_of_n_eq_zero hn
+    have hss : e.sumSq = 0 := hreal hn
+    have hk : prior.κ₀ ≠ 0 := ne_of_gt prior.κ₀_pos
+    simp [posterior, hn, hs, hss]
+    field_simp [hk]
+    ring
+  · have hn_pos : 0 < (e.n : ℝ) := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)
+    have hκn_pos : 0 < prior.κ₀ + e.n := by
+      have hn_nonneg : 0 ≤ (e.n : ℝ) := Nat.cast_nonneg _
+      linarith [prior.κ₀_pos, hn_nonneg]
+    simp [posterior, hn, NormalGammaEvidence.sumSquaredDeviations]
+    field_simp [ne_of_gt hn_pos, ne_of_gt hκn_pos]
+    ring
+
+private theorem posterior_mu_comp_real
+    (κ μ s₁ s₂ n₁ n₂ : ℝ)
+    (hκ1 : κ + n₁ ≠ 0) (hκ12 : κ + n₁ + n₂ ≠ 0) :
+    (κ * μ + s₁ + s₂) / (κ + n₁ + n₂) =
+      (((κ + n₁) * ((κ * μ + s₁) / (κ + n₁))) + s₂) / ((κ + n₁) + n₂) := by
+  field_simp [hκ1, hκ12]
+
+private theorem posterior_beta_comp_real
+    (β κ μ s₁ s₂ q₁ q₂ n₁ n₂ : ℝ)
+    (hκ1 : κ + n₁ ≠ 0) (hκ12 : κ + n₁ + n₂ ≠ 0) :
+    β + (q₁ + q₂ + κ * μ ^ 2 - (κ * μ + s₁ + s₂) ^ 2 / (κ + n₁ + n₂)) / 2 =
+      (β + (q₁ + κ * μ ^ 2 - (κ * μ + s₁) ^ 2 / (κ + n₁)) / 2) +
+        (q₂ + (κ + n₁) * (((κ * μ + s₁) / (κ + n₁)) ^ 2) -
+          (((κ * μ + s₁) + s₂) ^ 2 / ((κ + n₁) + n₂))) / 2 := by
+  field_simp [hκ1, hκ12]
+  ring_nf
+
+/-- Conjugate updating by additive evidence agrees with sequential updating,
+provided both pieces of evidence satisfy the realizability side condition. -/
+theorem posterior_hplus_of_realizable
+    (prior : NormalGammaPrior)
+    (e₁ e₂ : NormalGammaEvidence)
+    (h₁ : e₁.Realizable) (h₂ : e₂.Realizable) :
+    posterior prior (e₁ + e₂) = posterior (posterior prior e₁) e₂ := by
+  have hn_add : ((e₁ + e₂).n : ℝ) = (e₁.n : ℝ) + (e₂.n : ℝ) := by
+    change ((e₁.n + e₂.n : ℕ) : ℝ) = (e₁.n : ℝ) + (e₂.n : ℝ)
+    rw [Nat.cast_add]
+  have hs_add : (e₁ + e₂).sum = e₁.sum + e₂.sum := rfl
+  have hss_add : (e₁ + e₂).sumSq = e₁.sumSq + e₂.sumSq := rfl
+  have hκ1 : prior.κ₀ + (e₁.n : ℝ) ≠ 0 := ne_of_gt <| by
+    have hn_nonneg : 0 ≤ (e₁.n : ℝ) := Nat.cast_nonneg _
+    linarith [prior.κ₀_pos, hn_nonneg]
+  have hκ12 : prior.κ₀ + (e₁.n : ℝ) + (e₂.n : ℝ) ≠ 0 := ne_of_gt <| by
+    have hn1_nonneg : 0 ≤ (e₁.n : ℝ) := Nat.cast_nonneg _
+    have hn2_nonneg : 0 ≤ (e₂.n : ℝ) := Nat.cast_nonneg _
+    linarith [prior.κ₀_pos, hn1_nonneg, hn2_nonneg]
+  ext
+  · rw [posterior_mu_eq_of_realizable prior (e₁ + e₂) (NormalGammaEvidence.realizable_hplus h₁ h₂)]
+    rw [posterior_mu_eq_of_realizable (posterior prior e₁) e₂ h₂]
+    rw [hs_add, hn_add]
+    rw [posterior_kappa, posterior_mu_eq_of_realizable prior e₁ h₁]
+    simpa [NormalGammaEvidence.hplus, Nat.cast_add, add_assoc]
+      using posterior_mu_comp_real
+        prior.κ₀ prior.μ₀ e₁.sum e₂.sum (e₁.n : ℝ) (e₂.n : ℝ) hκ1 hκ12
+  · simpa [posterior_kappa, add_assoc] using hn_add
+  · rw [posterior_alpha, posterior_alpha, posterior_alpha, hn_add]
+    ring
+  · rw [posterior_beta_eq_of_realizable prior (e₁ + e₂) (NormalGammaEvidence.realizable_hplus h₁ h₂)]
+    rw [posterior_beta_eq_of_realizable (posterior prior e₁) e₂ h₂]
+    rw [posterior_beta_eq_of_realizable prior e₁ h₁]
+    rw [posterior_kappa, posterior_mu_eq_of_realizable prior e₁ h₁]
+    rw [hs_add, hss_add, hn_add]
+    have hsum_seq :
+        (prior.κ₀ + (e₁.n : ℝ)) *
+            ((prior.κ₀ * prior.μ₀ + e₁.sum) / (prior.κ₀ + (e₁.n : ℝ))) + e₂.sum =
+          prior.κ₀ * prior.μ₀ + e₁.sum + e₂.sum := by
+      field_simp [hκ1]
+    rw [hsum_seq]
+    simpa [NormalGammaEvidence.hplus, Nat.cast_add, add_assoc]
+      using posterior_beta_comp_real
+        prior.β₀ prior.κ₀ prior.μ₀ e₁.sum e₂.sum e₁.sumSq e₂.sumSq
+        (e₁.n : ℝ) (e₂.n : ℝ) hκ1 hκ12
 
 /-- The sample mean converges to the posterior mean as n → ∞.
 

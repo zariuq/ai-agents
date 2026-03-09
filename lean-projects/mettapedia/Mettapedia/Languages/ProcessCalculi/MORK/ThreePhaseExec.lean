@@ -101,6 +101,8 @@ structure FoldStep where
   priority   : ℕ
   /-- Priority is in the fold phase band -/
   inFold     : inPhase priority .fold
+  /-- Aggregation strategy (default: selectAll = non-deterministic) -/
+  aggregator : FoldAggregator := .selectAll
   deriving Repr
 
 /-! ## Phase ordering lemmas -/
@@ -201,6 +203,179 @@ example : ¬ inPhase 80 .base   := by simp [inPhase, phaseRange]
 #check @FoldStep.subResult0
 #check @FoldStep.subResult1
 
+-- FoldAggregator and applyAggregator typecheck
+#check @FoldAggregator
+#check @applyAggregator
+
 end CanaryPhases
+
+/-! ## Fold aggregator theorems -/
+
+/-- `selectFirst` returns the first sub-result when the list is non-empty. -/
+theorem applyAggregator_selectFirst (rs : List Atom) (a : Atom) (htl : List Atom)
+    (hrs : rs = a :: htl) :
+    applyAggregator .selectFirst rs = some a := by
+  simp [applyAggregator, hrs]
+
+/-- `count` returns the list length as a grounded integer. -/
+theorem applyAggregator_count (rs : List Atom) :
+    applyAggregator .count rs = some (.grounded (.int rs.length)) := by
+  simp [applyAggregator]
+
+/-- `selectAll` returns the first sub-result (same as selectFirst at this level;
+    the non-determinism of selectAll is captured by `NaryFoldPicksSubResult`
+    in MORKCommBridge, not by `applyAggregator`). -/
+theorem applyAggregator_selectAll_eq_selectFirst (rs : List Atom) :
+    applyAggregator .selectAll rs = applyAggregator .selectFirst rs := by
+  simp [applyAggregator]
+
+/-- `sum` on an empty list returns 0. -/
+theorem applyAggregator_sum_nil :
+    applyAggregator .sum [] = some (.grounded (.int 0)) := rfl
+
+/-- `count` on an empty list returns 0. -/
+theorem applyAggregator_count_nil :
+    applyAggregator .count [] = some (.grounded (.int 0)) := rfl
+
+/-- `count` is permutation-invariant: reordering matches doesn't change the count. -/
+theorem applyAggregator_count_perm (rs rs' : List Atom) (hp : rs.Perm rs') :
+    applyAggregator .count rs = applyAggregator .count rs' := by
+  simp [applyAggregator, hp.length_eq]
+
+/-- `sum` on a cons list: unfold one step. -/
+theorem applyAggregator_sum_cons (a : Atom) (rs : List Atom) :
+    applyAggregator .sum (a :: rs) = some (.grounded (.int
+      ((a :: rs).filterMap extractInt |>.foldl (· + ·) 0))) := by
+  simp [applyAggregator]
+
+/-- `sum` is permutation-invariant: reordering matches doesn't change the sum.
+    (Int addition is commutative, and filterMap preserves permutations.) -/
+theorem applyAggregator_sum_perm (rs rs' : List Atom) (hp : rs.Perm rs') :
+    applyAggregator .sum rs = applyAggregator .sum rs' := by
+  simp only [applyAggregator]
+  congr 3
+  have hfm : (rs.filterMap extractInt).Perm (rs'.filterMap extractInt) :=
+    hp.filterMap extractInt
+  exact @List.Perm.foldl_op_eq Int (· + ·) ⟨fun a b c => by omega⟩ ⟨fun a b => by omega⟩
+    _ _ _ hfm
+
+/-- Default aggregator is `selectAll`. -/
+theorem foldStep_default_aggregator (fold : FoldStep)
+    (hdef : fold.aggregator = .selectAll) :
+    applyAggregator fold.aggregator fold.subResults =
+      fold.subResults.head? := by
+  simp [hdef, applyAggregator]
+
+/-! ## Aggregator consistency predicate -/
+
+/-- The assembled result is consistent with the aggregator function.
+    For `.selectAll`, any sub-result is valid (non-deterministic).
+    For deterministic aggregators, assembled must equal `applyAggregator`.
+
+    This is a `Prop` hypothesis, not a structure field — callers that need
+    semantic guarantees require this as a precondition.  The Rust runtime
+    enforces consistency via `finalize()` in `sinks.rs`. -/
+def AggregatorConsistent (fold : FoldStep) : Prop :=
+  match fold.aggregator with
+  | .selectAll => fold.assembled ∈ fold.subResults
+  | _ => applyAggregator fold.aggregator fold.subResults = some fold.assembled
+
+/-- `selectAll` consistency: any member of `subResults` is a valid assembled result. -/
+theorem aggregatorConsistent_selectAll (fold : FoldStep)
+    (hagg : fold.aggregator = .selectAll)
+    (hmem : fold.assembled ∈ fold.subResults) :
+    AggregatorConsistent fold := by
+  simp [AggregatorConsistent, hagg, hmem]
+
+/-- `selectFirst` consistency: assembled = head of subResults. -/
+theorem aggregatorConsistent_selectFirst (fold : FoldStep)
+    (hagg : fold.aggregator = .selectFirst)
+    (hne : fold.subResults ≠ [])
+    (hassm : fold.assembled = fold.subResults.head hne) :
+    AggregatorConsistent fold := by
+  simp [AggregatorConsistent, hagg, applyAggregator, List.head?_eq_some_head hne, hassm]
+
+/-- `count` consistency: assembled = grounded int of length. -/
+theorem aggregatorConsistent_count (fold : FoldStep)
+    (hagg : fold.aggregator = .count)
+    (hassm : fold.assembled = .grounded (.int fold.subResults.length)) :
+    AggregatorConsistent fold := by
+  simp [AggregatorConsistent, hagg, applyAggregator, hassm]
+
+/-- `sum` consistency: assembled = grounded int of sum of extractable ints. -/
+theorem aggregatorConsistent_sum (fold : FoldStep)
+    (hagg : fold.aggregator = .sum)
+    (hassm : fold.assembled = .grounded (.int
+      (fold.subResults.filterMap extractInt |>.foldl (· + ·) 0))) :
+    AggregatorConsistent fold := by
+  simp [AggregatorConsistent, hagg, applyAggregator, hassm]
+
+/-- Forward direction: if `applyAggregator` produces `assembled`, then
+    `AggregatorConsistent` holds.  For `selectAll`, this uses the fact
+    that `head?` returns a member of the list. -/
+theorem applyAggregator_implies_consistent (fold : FoldStep)
+    (h : applyAggregator fold.aggregator fold.subResults = some fold.assembled) :
+    AggregatorConsistent fold := by
+  unfold AggregatorConsistent
+  split
+  · -- selectAll: applyAggregator returns head?, which is a member
+    rename_i hagg
+    rw [hagg] at h
+    simp [applyAggregator] at h
+    exact List.mem_of_head? h
+  all_goals exact h
+
+/-- `AggregatorConsistent` is satisfiable for every aggregator when
+    `subResults` is non-empty: there always exists an `assembled` value
+    that makes the predicate hold. -/
+theorem aggregatorConsistent_exists (agg : FoldAggregator) (rs : List Atom) (hne : rs ≠ [])
+    (qid waitAtom : Atom) (priority : ℕ) (inFold : inPhase priority .fold) :
+    ∃ (a : Atom), AggregatorConsistent
+      ⟨qid, waitAtom, rs, a, priority, inFold, agg⟩ := by
+  cases agg with
+  | selectAll =>
+    exact ⟨rs.head hne, List.head_mem hne⟩
+  | selectFirst =>
+    exact ⟨rs.head hne, by simp [AggregatorConsistent, applyAggregator, List.head?_eq_some_head hne]⟩
+  | count =>
+    exact ⟨.grounded (.int rs.length), by simp [AggregatorConsistent, applyAggregator]⟩
+  | sum =>
+    exact ⟨.grounded (.int (rs.filterMap extractInt |>.foldl (· + ·) 0)),
+           by simp [AggregatorConsistent, applyAggregator]⟩
+
+/-- `AggregatorConsistent` is decidable (uses `LawfulBEq Atom`). -/
+instance instDecidableAggregatorConsistent (fold : FoldStep) :
+    Decidable (AggregatorConsistent fold) := by
+  unfold AggregatorConsistent
+  cases fold.aggregator
+  · exact decidable_of_iff (fold.subResults.contains fold.assembled) List.contains_iff_mem
+  all_goals infer_instance
+
+section AggregatorCanaries
+
+open Mettapedia.Languages.MeTTa.Core (Atom GroundedValue)
+
+-- count of 3 sub-results = 3
+example : applyAggregator .count [.symbol "a", .symbol "b", .symbol "c"] =
+    some (.grounded (.int 3)) := rfl
+
+-- selectFirst of 3 sub-results = first
+example : applyAggregator .selectFirst [.symbol "a", .symbol "b", .symbol "c"] =
+    some (.symbol "a") := rfl
+
+-- sum of integer sub-results
+example : applyAggregator .sum
+    [.grounded (.int 10), .grounded (.int 20), .grounded (.int 5)] =
+    some (.grounded (.int 35)) := rfl
+
+-- sum ignores non-integer atoms
+example : applyAggregator .sum
+    [.grounded (.int 10), .symbol "x", .grounded (.int 5)] =
+    some (.grounded (.int 15)) := rfl
+
+-- selectAll on empty = none
+example : applyAggregator .selectAll ([] : List Atom) = none := rfl
+
+end AggregatorCanaries
 
 end Mettapedia.Languages.ProcessCalculi.MORK

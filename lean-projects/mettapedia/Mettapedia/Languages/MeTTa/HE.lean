@@ -8,6 +8,8 @@ import Mettapedia.Languages.MeTTa.HE.Properties
 import Mettapedia.Languages.MeTTa.HE.LookupPlan
 import Mettapedia.Languages.MeTTa.HE.TransitionSpec
 import Mettapedia.Languages.MeTTa.HE.RewriteIR
+import Mettapedia.Languages.MeTTa.HE.RewriteIRV2
+import Mettapedia.Languages.MeTTa.HE.CoreFragment
 
 /-!
 # Hyperon Experimental MeTTa Semantics

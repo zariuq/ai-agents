@@ -495,6 +495,7 @@ def youPl_Pron : FunctionSig :=   ⟨"youPl_Pron", .Pron⟩
 def youPol_Pron : FunctionSig :=  ⟨"youPol_Pron", .Pron⟩
 
 -- Determiners
+def the_Det : FunctionSig :=    ⟨"the_Det", .Det⟩
 def every_Det : FunctionSig :=  ⟨"every_Det", .Det⟩
 def few_Det : FunctionSig :=    ⟨"few_Det", .Det⟩
 def many_Det : FunctionSig :=   ⟨"many_Det", .Det⟩
@@ -588,7 +589,7 @@ def structuralFunctions : List FunctionSig :=
   , and_Conj, both7and_DConj, either7or_DConj, if_then_Conj, or_Conj
   , he_Pron, i_Pron, it_Pron, she_Pron, they_Pron, we_Pron
   , youSg_Pron, youPl_Pron, youPol_Pron
-  , every_Det, few_Det, many_Det, much_Det, someSg_Det, somePl_Det
+  , the_Det, every_Det, few_Det, many_Det, much_Det, someSg_Det, somePl_Det
   , no_Quant, that_Quant, this_Quant
   , all_Predet, most_Predet, not_Predet, only_Predet
   , everybody_NP, everything_NP, nobody_NP, nothing_NP, somebody_NP, something_NP
@@ -1169,6 +1170,7 @@ def sun_N : FunctionSig :=      ⟨"sun_N", .N⟩
 def table_N : FunctionSig :=    ⟨"table_N", .N⟩
 def tail_N : FunctionSig :=     ⟨"tail_N", .N⟩
 def teacher_N : FunctionSig :=  ⟨"teacher_N", .N⟩
+def telescope_N : FunctionSig := ⟨"telescope_N", .N⟩
 def television_N : FunctionSig := ⟨"television_N", .N⟩
 def tongue_N : FunctionSig :=   ⟨"tongue_N", .N⟩
 def tooth_N : FunctionSig :=    ⟨"tooth_N", .N⟩
@@ -1190,9 +1192,11 @@ def year_N : FunctionSig :=     ⟨"year_N", .N⟩
 
 -- Relational nouns (N2, N3), proper names (PN)
 def brother_N2 : FunctionSig :=  ⟨"brother_N2", .N2⟩
+def crib_N : FunctionSig :=     ⟨"crib_N", .N⟩
 def father_N2 : FunctionSig :=   ⟨"father_N2", .N2⟩
 def mother_N2 : FunctionSig :=   ⟨"mother_N2", .N2⟩
 def distance_N3 : FunctionSig := ⟨"distance_N3", .N3⟩
+def anna_PN : FunctionSig :=     ⟨"anna_PN", .PN⟩
 def john_PN : FunctionSig :=     ⟨"john_PN", .PN⟩
 def paris_PN : FunctionSig :=    ⟨"paris_PN", .PN⟩
 
@@ -1292,6 +1296,7 @@ def close_V2 : FunctionSig :=     ⟨"close_V2", .V2⟩
 def count_V2 : FunctionSig :=     ⟨"count_V2", .V2⟩
 def cut_V2 : FunctionSig :=       ⟨"cut_V2", .V2⟩
 def do_V2 : FunctionSig :=        ⟨"do_V2", .V2⟩
+def dress_V2 : FunctionSig :=     ⟨"dress_V2", .V2⟩
 def drink_V2 : FunctionSig :=     ⟨"drink_V2", .V2⟩
 def eat_V2 : FunctionSig :=       ⟨"eat_V2", .V2⟩
 def fear_V2 : FunctionSig :=      ⟨"fear_V2", .V2⟩
@@ -1371,7 +1376,7 @@ def lexiconFunctions : List FunctionSig :=
   , boat_N, bone_N, book_N, boot_N, boss_N, boy_N, bread_N, breast_N
   , butter_N, camera_N, cap_N, car_N, carpet_N, cat_N, ceiling_N, chair_N
   , cheese_N, child_N, church_N, city_N, cloud_N, coat_N, computer_N
-  , country_N, cousin_N, cow_N, day_N, doctor_N, dog_N, door_N, dust_N
+  , country_N, cousin_N, cow_N, crib_N, day_N, doctor_N, dog_N, door_N, dust_N
   , ear_N, earth_N, egg_N, enemy_N, eye_N, factory_N, fat_N, feather_N
   , fingernail_N, fire_N, fish_N, floor_N, flower_N, fog_N, foot_N
   , forest_N, fridge_N, friend_N, fruit_N, garden_N, girl_N, glove_N
@@ -1387,11 +1392,11 @@ def lexiconFunctions : List FunctionSig :=
   , science_N, sea_N, seed_N, sheep_N, ship_N, shirt_N, shoe_N, shop_N
   , silver_N, sister_N, skin_N, sky_N, smoke_N, snake_N, snow_N, sock_N
   , song_N, star_N, steel_N, stick_N, stone_N, stove_N, student_N, sun_N
-  , table_N, tail_N, teacher_N, television_N, tongue_N, tooth_N, train_N
+  , table_N, tail_N, teacher_N, telescope_N, television_N, tongue_N, tooth_N, train_N
   , tree_N, university_N, village_N, war_N, water_N, wife_N, wind_N
   , window_N, wine_N, wing_N, woman_N, wood_N, worm_N, year_N
   -- N2, N3, PN
-  , brother_N2, father_N2, mother_N2, distance_N3, john_PN, paris_PN
+  , brother_N2, crib_N, father_N2, mother_N2, distance_N3, anna_PN, john_PN, paris_PN
   -- A, A2
   , bad_A, beautiful_A, big_A, black_A, blue_A, broad_A, brown_A
   , clean_A, clever_A, cold_A, correct_A, dirty_A, dry_A, dull_A
@@ -1409,7 +1414,7 @@ def lexiconFunctions : List FunctionSig :=
   , think_V, travel_V, turn_V, vomit_V, walk_V
   -- V2
   , bite_V2, break_V2, buy_V2, close_V2, count_V2, cut_V2, do_V2
-  , drink_V2, eat_V2, fear_V2, fight_V2, find_V2, forget_V2, hate_V2
+  , dress_V2, drink_V2, eat_V2, fear_V2, fight_V2, find_V2, forget_V2, hate_V2
   , hear_V2, hit_V2, hold_V2, hunt_V2, kill_V2, know_V2, learn_V2
   , leave_V2, like_V2, listen_V2, lose_V2, love_V2, open_V2, play_V2
   , pull_V2, push_V2, put_V2, read_V2, rub_V2, scratch_V2, see_V2
@@ -1423,6 +1428,51 @@ def lexiconFunctions : List FunctionSig :=
   -- Adv, Ord, Interj
   , already_Adv, far_Adv, now_Adv, today_Adv
   , left_Ord, right_Ord, alas_Interj ]
+
+/-! ### RGL Semantic Core (project target) -/
+
+/-- The RGL Semantic Core: all combinatorial and structural functions needed for
+    real-sentence parsing and world-model-grounded semantic interpretation.
+
+    Scope rationale:
+    - Core (170): combinatorial skeleton — how phrases combine
+    - Adverb (8): PP-attachment and adverbial modification combinators
+    - Tense (9): temporal, aspectual, and polarity operators
+    - Text (4): discourse-level packaging
+    - Idiom (14): existentials, clefts, progressives — common semantic patterns
+    - Numeral (51): full quantity hierarchy
+    - Structural (103): THE LEXICAL ATOMS — in_Prep, he_Pron, the_Det, can_VV, etc.
+      Without Structural, Core is combinatorial skeleton with no atomic vocabulary.
+
+    Excludes: Extend (140), Construction (129), Lexicon (open-class).
+    These layers are exception-heavy, language-specific, or open-ended. -/
+def projectCoreFunctions : List FunctionSig :=
+  allCoreFunctions ++ adverbFunctions ++ tenseFunctions ++ textFunctions ++
+  idiomFunctions ++ numeralFunctions ++ structuralFunctions
+
+/-- RGL Semantic Core plus Symbol expressions.
+    Adds 13 functions for symbolic/numeric NPs (IntPN, FloatPN, MkSymb, etc.)
+    needed for mathematical and scientific text parsing. -/
+def projectCorePlusSymbolFunctions : List FunctionSig :=
+  projectCoreFunctions ++ symbolFunctions
+
+/-- Strictly GF-native semantic core for actual `GrammarEng` / `GrammarCze`
+    exports. This removes the local convenience atom `the_Det`, which is Lean-side
+    sugar for the native `DetQuant DefArt NumSg` pattern. -/
+def projectCoreGFNativeFunctions : List FunctionSig :=
+  projectCoreFunctions.filter (fun f => f.name != "the_Det")
+
+/-- Function names in the RGL Semantic Core project target. -/
+def projectCoreFunctionNames : List String :=
+  projectCoreFunctions.map (·.name)
+
+/-- Function names in the strictly GF-native project target. -/
+def projectCoreGFNativeFunctionNames : List String :=
+  projectCoreGFNativeFunctions.map (·.name)
+
+/-- Function names in the RGL Semantic Core plus Symbol project target. -/
+def projectCorePlusSymbolFunctionNames : List String :=
+  projectCorePlusSymbolFunctions.map (·.name)
 
 /-! ### Master list: All GF RGL abstract functions -/
 
@@ -1470,6 +1520,43 @@ inductive AbstractNode where
   | leaf : String → Category → AbstractNode
   | apply : FunctionSig → List AbstractNode → AbstractNode
   deriving Repr
+
+mutual
+private def abstractNodeDecEq : (a b : AbstractNode) → Decidable (a = b)
+  | .leaf n₁ c₁, .leaf n₂ c₂ =>
+      match decEq n₁ n₂, decEq c₁ c₂ with
+      | isTrue hn, isTrue hc =>
+          isTrue (by cases hn; cases hc; rfl)
+      | isFalse hn, _ =>
+          isFalse (by intro h; cases h; exact hn rfl)
+      | _, isFalse hc =>
+          isFalse (by intro h; cases h; exact hc rfl)
+  | .apply f₁ xs₁, .apply f₂ xs₂ =>
+      match decEq f₁ f₂, abstractNodeListDecEq xs₁ xs₂ with
+      | isTrue hf, isTrue hxs =>
+          isTrue (by cases hf; cases hxs; rfl)
+      | isFalse hf, _ =>
+          isFalse (by intro h; cases h; exact hf rfl)
+      | _, isFalse hxs =>
+          isFalse (by intro h; cases h; exact hxs rfl)
+  | .leaf _ _, .apply _ _ => isFalse (by intro h; cases h)
+  | .apply _ _, .leaf _ _ => isFalse (by intro h; cases h)
+
+private def abstractNodeListDecEq : (xs ys : List AbstractNode) → Decidable (xs = ys)
+  | [], [] => isTrue rfl
+  | x :: xs, y :: ys =>
+      match abstractNodeDecEq x y, abstractNodeListDecEq xs ys with
+      | isTrue hx, isTrue hxs =>
+          isTrue (by cases hx; cases hxs; rfl)
+      | isFalse hx, _ =>
+          isFalse (by intro h; cases h; exact hx rfl)
+      | _, isFalse hxs =>
+          isFalse (by intro h; cases h; exact hxs rfl)
+  | [], _ :: _ => isFalse (by intro h; cases h)
+  | _ :: _, [] => isFalse (by intro h; cases h)
+end
+
+instance : DecidableEq AbstractNode := abstractNodeDecEq
 
 namespace AbstractNode
 

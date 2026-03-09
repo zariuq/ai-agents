@@ -74,9 +74,9 @@ binding, and anaphora; and (v)~a highlighted semantic spine of
 120+ paper-facing theorems covering scope completeness via linear
 extensions, pronoun-binding locality, store-to-environment invariance,
 evidence-valued world-model semantics, lexical compositional monotonicity,
-and garden-path disambiguation within a
-broader \GF{} Lean subtree currently containing 664 theorem/lemma declarations.
-The broader \GF{} subtree spans 43,162 lines across 91~Lean files, with
+and contextual ambiguity analysis within a
+broader \GF{} Lean subtree currently containing 704 theorem/lemma declarations.
+The broader \GF{} subtree spans 44,562 lines across 96~Lean files, with
 \textbf{zero \code{sorry} declarations} and zero axiom/opaque declarations.
 \end{abstract}
 
@@ -99,10 +99,19 @@ The grammar-to-semantics interface is correct by construction. \\
 Compositional lexical-containment monotonicity &
 \textbf{Proved (Sem)} &
 Adjectival modification preserves previously present lexical material. \\
-\code{garden\_path\_lexical\_disambiguation} &
-Ambiguous parses can differ in lexical content &
+\code{english\_czech\_telescope\_recovered\_equal} &
+Actual GF/PGF witness export agrees across English and Czech &
+\textbf{Proved (GF)} &
+The ambiguity witnesses now come from real GF parsing/export, not only a curated lookup layer. \\
+\code{telescope\_instrument\_scene\_values} &
+Same-surface PP-attachment ranked by world evidence &
 \textbf{Proved (Sem)} &
-The system distinguishes genuine lexical ambiguity, not just constructor shape. \\
+Same surface, two parses, distinct compiled patterns, world-sensitive evidence reversal. \\
+\code{anna\_scene\_rankings\_reverse} &
+Locative PP-attachment ranked by world evidence &
+\textbf{Proved (Sem)} &
+Second same-surface case: ``Anna dresses the baby in the crib'' gets reversed
+evidence rankings in baby-in-crib vs.\ dressing-in-crib scenes. \\
 \code{translation\_preserves\_evidence\_allW} &
 Evidence is translation-invariant in all world models &
 \textbf{Proved (Sem)} &
@@ -132,8 +141,8 @@ The quantified layer has genuine semantic stability theorems. \\
 \end{center}
 \noindent
 The main paper highlights a coherent theorem spine of 120+ paper-facing results.
-The broader \code{Mettapedia/Languages/GF} subtree currently contains 664
-theorem/lemma declarations across 91~Lean files.
+The broader \code{Mettapedia/Languages/GF} subtree currently contains 704
+theorem/lemma declarations across 96~Lean files.
 
 \tableofcontents
 
@@ -207,13 +216,21 @@ Galois adjunction $\Dia \dashv \Bx$.  The resulting type system lets us
 \item \textbf{Lexical compositional monotonicity}: Adding an adjective
   to a noun phrase preserves previously present lexical material
   (universally quantified, not just for concrete examples).
-\item \textbf{Garden-path disambiguation}: The two parses of ``the old man
-  the boats'' have provably different lexical profiles---not just different
-  constructors, but different \emph{words}.
+\item \textbf{Contextual ambiguity analysis}: Two independent cases of
+  same-surface PP-attachment ambiguity are formally verified end-to-end.
+  For ``John sees the man with the telescope'' (instrumental PP) and
+  ``Anna dresses the baby in the crib'' (locative PP), each sentence has
+  two distinct abstract trees, actual \GF{}/PGF witness export recovers those
+  analyses in both English and Czech, a lightweight curated roundtrip corpus
+  records the English surface forms, and appropriate world states produce
+  evidence rankings that reverse across scenes.  This is a formal existence
+  result: the three-layer pipeline (GF abstract syntax, OSLF bridge,
+  evidence-valued world semantics) can support world-model-guided
+  disambiguation; it is not a claim that disambiguation is automatic or general.
 \end{itemize}
 
 \paragraph{Scale.}  The broader \code{Mettapedia/Languages/GF} subtree currently
-comprises 43,162 lines of Lean~4 across 91~files with
+comprises 44,562 lines of Lean~4 across 96~files with
 \textbf{zero \code{sorry} declarations} and zero axiom/opaque declarations.
 The theorem spine highlighted in this paper is a 120+ result semantic slice
 inside that larger development.
@@ -234,7 +251,7 @@ inside that larger development.
 \item Evidence-valued world-model semantics with checker soundness and
   cross-linguistic evidence/strength invariance.
 \item A highlighted semantic spine of 120+ paper-facing theorems,
-  situated inside a broader \GF{} subtree with 664 theorem/lemma
+  situated inside a broader \GF{} subtree with 704 theorem/lemma
   declarations and classified by claim strength in
   Table~\ref{tab:claims}.
 \end{enumerate}
@@ -263,7 +280,8 @@ Parse disambiguation (type-level)          & S  &         & \code{simp} \\
 Lexical entailment (concrete)              & Sem &        & \code{simp} \\
 Lexical compositional monotonicity          & Sem & $\checkmark$ & \code{unfold}/\code{simp} \\
 General compositionality                   & Sem & $\checkmark$ & induction \\
-Garden-path lexical disambiguation         & Sem &        & \code{simp} \\
+Telescope PP-attachment (evidence ranking) & Sem &        & \code{simp}/\code{decide} \\
+Anna PP-attachment (evidence ranking)      & Sem &        & \code{simp}/\code{decide} \\
 Subcategorization as entailment            & Sem &        & \code{simp} \\
 Czech syncretism invariants (25+)          & S  & $\checkmark$ & \code{decide}/\code{simp} \\
 \midrule
@@ -401,7 +419,7 @@ Other     & 700+ & Numerals, Idiom, Extra, Lexicon \\
 
 \subsection{English Concrete Grammar}
 
-The English grammar (20~files, 5,890~lines) linearizes approximately 284 of
+The English grammar (21~files, 6,280~lines) linearizes approximately 284 of
 the 985~abstract functions---covering the core Noun, Verb, Adjective,
 Sentence, Question, Relative, Phrase, Conjunction, Adverb, and Tense
 modules but not yet the full Extend, Construction, or Symbol modules.
@@ -600,10 +618,11 @@ constructor check for~$l_1$, it fails for~$l_2$.
 \end{theorem}
 
 \begin{theorem}[Parse disambiguation]
-The two abstract trees for ``the old man \ldots'' satisfy different native
-type predicates: Parse~1's CN subtree satisfies \code{AdjCN}-type but not
-\code{UseN}-type; Parse~2's CN subtree satisfies \code{UseN}-type but not
-\code{AdjCN}-type.
+Competing candidate analyses for the same surface string can satisfy different
+native predicates before world-model evidence is considered.  In the current
+development, two independent PP-attachment cases (instrumental and locative)
+already separate at the OSLF compiled-pattern layer; world-model evidence
+then ranks the separated analyses differently in different world states.
 \end{theorem}
 
 \begin{theorem}[Frege compositionality]
@@ -613,12 +632,13 @@ Formally, equal argument patterns imply equal result patterns.
 \end{theorem}
 
 %% ===================================================================
-\section{Lexical and Structural Invariance Theorems}
+\section{Lexical, Structural, and Contextual Disambiguation}
 \label{sec:invariance}
 
-This section presents warm-up theorems about lexical containment and
-structural invariance (\code{LinguisticInvariance.lean},
-362~lines, 15~theorems).  These results demonstrate that the
+This section presents warm-up theorems about lexical containment,
+structural invariance, and contextual ambiguity
+(\code{LinguisticInvariance.lean} together with
+\code{English/ContextualDisambiguation.lean}).  These results demonstrate that the
 \GF{}$\to$\OSLF{} bridge carries genuine linguistic content; the deeper
 semantic results (scope completeness, pronoun-binding locality,
 store-environment invariance) follow in \S\ref{sec:visible} and
@@ -709,37 +729,133 @@ Any \GF{} constructor that keeps its arguments as subterms preserves
 their lexical content.  This is Frege's principle made formal: compound
 expressions contain their parts.
 
-\subsection{Garden-Path Disambiguation}
+\subsection{Local Ambiguity and Contextual Disambiguation}
 
-The sentence ``the old man the boats'' is structurally ambiguous:
+The current development now uses two honest ambiguity families.
+
+\paragraph{Same-surface PP attachment.}
+The sentence ``John sees the man with the telescope'' is represented by two
+distinct abstract trees:
 \begin{itemize}
-\item \textbf{Parse 1} (adjective reading): ``the [old man] walks''\\
-  \code{PredVP(DetCN(the, AdjCN(PositA(old), UseN(man))), UseV(walk))}
-\item \textbf{Parse 2} (verb reading): ``the old [man the boats]''\\
-  \code{PredVP(DetCN(the, UseN(old)), ComplSlash(SlashV2a(man), DetCN(the, UseN(boat))))}
+\item \textbf{NP attachment}: John saw [the man with the telescope].
+\item \textbf{VP attachment}: John [saw the man] [with the telescope].
 \end{itemize}
+Both trees linearize to the same string, and the curated roundtrip corpus now
+records both analyses for that same surface.  In addition, actual \GF{}/PGF
+parsing/export recovers the same two abstract trees in both English and Czech:
 
-We prove that these parses have provably different \emph{lexical content}:
+\begin{lstlisting}[language=ml,caption={Same-surface contextual ambiguity}]
+theorem telescope_np_surface :
+    telescopeNPAttachmentSurface =
+      "John sees the man with the telescope"
 
-\begin{lstlisting}[language=ml,caption={Garden-path lexical disambiguation}]
-theorem garden_path_lexical_disambiguation :
-    -- Parse 1 has "walk" but not "boat"
-    containsLexical "walk" (gfAbstractToPattern gp_parse1) = true ∧
-    containsLexical "boat" (gfAbstractToPattern gp_parse1) = false ∧
-    -- Parse 2 has "boat" but not "walk"
-    containsLexical "boat" (gfAbstractToPattern gp_parse2) = true ∧
-    containsLexical "walk" (gfAbstractToPattern gp_parse2) = false ∧
-    -- Both share the common material
-    containsLexical "old" (gfAbstractToPattern gp_parse1) = true ∧
-    containsLexical "old" (gfAbstractToPattern gp_parse2) = true ∧
-    containsLexical "man" (gfAbstractToPattern gp_parse1) = true ∧
-    containsLexical "man" (gfAbstractToPattern gp_parse2) = true
+theorem telescope_vp_surface :
+    telescopeVPAttachmentSurface =
+      "John sees the man with the telescope"
+
+theorem telescope_surface_ambiguous_in_corpus :
+    parseSurface "John sees the man with the telescope" =
+      [.telescopeNPAttachment, .telescopeVPAttachment]
+
+theorem english_telescope_instrument_scene_values :
+    gfEvidenceDenote telescopeInstrumentScene englishTelescopeAbstractNode2 = ev 1 2 ∧
+    gfEvidenceDenote telescopeInstrumentScene englishTelescopeAbstractNode1 = ev 3 0
+
+theorem telescope_patterns_differ :
+    gfAbstractToPattern telescopeNPAttachmentTree ≠
+    gfAbstractToPattern telescopeVPAttachmentTree
 \end{lstlisting}
 
-This goes beyond constructor-type disambiguation: even though both parses
-are clauses (\code{Cl}), their \emph{lexical profiles} provably differ.
-The words ``walk'' and ``boat'' serve as semantic witnesses that distinguish
-the readings.
+This is where the evidence layer adds something beyond ordinary \GF{}:
+different worlds rank the competing readings differently.
+
+\begin{lstlisting}[language=ml]
+theorem telescope_instrument_scene_values :
+    gfEvidenceDenote telescopeInstrumentScene telescopeNPAttachmentTree = ev 1 2 ∧
+    gfEvidenceDenote telescopeInstrumentScene telescopeVPAttachmentTree = ev 3 0
+
+theorem telescope_modifier_scene_values :
+    gfEvidenceDenote telescopeModifierScene telescopeNPAttachmentTree = ev 3 0 ∧
+    gfEvidenceDenote telescopeModifierScene telescopeVPAttachmentTree = ev 1 2
+\end{lstlisting}
+
+In an instrument-favoring scene, the VP-attachment reading is strongly
+supported while the NP-attachment reading is conflicted; in a modifier-favoring
+scene the ranking reverses. This is a same-surface ambiguity theorem with
+world-sensitive evidence, not merely a lexical-profile contrast.
+This gives a complete small theorem package: same surface, two analyses in the
+validated roundtrip corpus, actual \GF{}/PGF witness recovery in English and
+Czech, distinct compiled patterns, and world-sensitive evidence reversal.
+
+\paragraph{A second same-surface case: locative PP attachment.}
+The sentence ``Anna dresses the baby in the crib'' has two distinct abstract trees:
+\begin{itemize}
+\item \textbf{NP attachment}: Anna dressed [the baby in the crib] (the crib
+  modifies the noun phrase).
+\item \textbf{VP attachment}: Anna [dressed the baby] [in the crib] (the crib
+  is a locative adverbial on the verb phrase).
+\end{itemize}
+Both trees linearize to the same string, and the curated roundtrip corpus records both
+analyses.  Actual \GF{}/PGF witness export again recovers the same abstract trees in
+English and Czech:
+
+\begin{lstlisting}[language=ml]
+theorem anna_np_surface :
+    annaNPAttachmentSurface = "Anna dresses the baby in the crib"
+
+theorem anna_vp_surface :
+    annaVPAttachmentSurface = "Anna dresses the baby in the crib"
+
+theorem anna_same_surface :
+    annaNPAttachmentSurface = annaVPAttachmentSurface
+
+theorem anna_surface_ambiguous_in_corpus :
+    parseSurface "Anna dresses the baby in the crib" =
+      [.annaNPAttachment, .annaVPAttachment]
+
+theorem english_czech_anna_recovered_equal :
+    englishAnnaRecovered = czechAnnaRecovered
+
+theorem anna_patterns_differ :
+    gfAbstractToPattern annaNPAttachmentTree ≠
+    gfAbstractToPattern annaVPAttachmentTree
+\end{lstlisting}
+
+As with the telescope case, the evidence layer adds world-sensitive ranking:
+
+\begin{lstlisting}[language=ml]
+theorem anna_baby_in_crib_scene_values :
+    gfEvidenceDenote annaBabyInCribScene annaNPAttachmentTree = ev 3 0 ∧
+    gfEvidenceDenote annaBabyInCribScene annaVPAttachmentTree = ev 1 2
+
+theorem anna_dressing_in_crib_scene_values :
+    gfEvidenceDenote annaDressingInCribScene annaNPAttachmentTree = ev 1 2 ∧
+    gfEvidenceDenote annaDressingInCribScene annaVPAttachmentTree = ev 3 0
+
+theorem anna_scene_rankings_reverse :
+    gfEvidenceDenote annaBabyInCribScene annaNPAttachmentTree =
+      gfEvidenceDenote annaDressingInCribScene annaVPAttachmentTree ∧
+    gfEvidenceDenote annaBabyInCribScene annaVPAttachmentTree =
+      gfEvidenceDenote annaDressingInCribScene annaNPAttachmentTree
+\end{lstlisting}
+
+In a scene where the baby is in the crib, the NP-attachment reading is
+favored; in a scene focused on the dressing action taking place in the crib,
+the VP-attachment reading is favored.  The ranking reverses across scenes.
+
+Together, the telescope and Anna packages constitute a formal existence result
+for world-model-guided PP-attachment disambiguation: the three-layer pipeline
+(GF abstract syntax, OSLF compiled-pattern bridge, evidence-valued world
+semantics) supports disambiguation that is world-state-sensitive, formally
+verified, and compositionally grounded via the Frege compositionality theorem
+already proved for the grammar.  The current surface-side setup has two layers:
+actual \GF{}/PGF witness export recovers the English and Czech abstract trees,
+while the curated roundtrip corpus remains a lightweight English-side lookup for
+the paper examples rather than a general parser.  The proper next step is to
+replace that lightweight lookup with parsing over a compiled GF IR exported from
+actual GF/PGF.  This differs from statistical PP-attachment approaches: the
+evidence scores are not learned frequencies but formal denotations of
+world-state descriptions.
 
 \subsection{Cross-Linguistic Invariance}
 
@@ -1312,8 +1428,8 @@ scope and binding.  The formalization covers the \GF{} \RGL{}
 core abstract syntax (985~function signatures, 112~categories), substantial English and Czech
 concrete grammar subsets, evidence-valued world-model semantics (70~theorems),
 and visible scope/binding rules.
-The broader \GF{} subtree now contains 664 theorem/lemma declarations across
-91~Lean files (43,162~lines), while the main paper highlights a 120+ theorem
+The broader \GF{} subtree now contains 704 theorem/lemma declarations across
+96~Lean files (44,562~lines), while the main paper highlights a 120+ theorem
 semantic spine.  The interface refinement and UG-core quotient constructions
 that build on this foundation are developed in a companion paper~\cite{UGCores2026}.
 
@@ -1396,16 +1512,16 @@ Integrity checks:
   lake env printPaths | grep -c error  => 0
 
 GF subtree stats:
-  Files: 91    Lines: 43,162
+  Files: 96    Lines: 44,562
   Abstract functions: 985    Categories: 112
-  English files: 20 (5,890 lines)
+  English files: 21 (6,280 lines)
   Czech files: 12 (2,865 lines)
   WorldModelSemantics: 1,352 lines, 70 theorems
   VisibleLayer: 319 lines, 11 theorems
   VisibleLayerGFInstance: 97 lines
   SemanticKernelConfluence: 39 theorems
   WorldModelVisibleBridge: 34 theorems
-  Total theorem/lemma declarations: 664
+  Total theorem/lemma declarations: 704
   Paper-facing theorem spine: 120+
 \end{verbatim}
 \end{quote}
