@@ -1,20 +1,20 @@
-import Mettapedia.Languages.MeTTa.PureCheckingService
-import Mettapedia.Languages.MeTTa.PureKernel.SubjectReduction
+import Mettapedia.Languages.MeTTa.PureCertificateFragment
+import Mettapedia.Languages.MeTTa.PureKernel.Reduction
+import Mettapedia.Languages.MeTTa.PureKernel.Substitution
 import Mettapedia.Languages.MeTTa.PureKernel.ProfileTheory
 
 /-!
-# MeTTa-Pure Prototype Evaluator
+# MeTTa-Pure CLI Support
 
-A small executable evaluator for the current closed Pure kernel fragment, plus a
-tiny MeTTa-flavored parser/printer and proof-connected result packaging.
+A small executable evaluator and pretty surface parser for the current closed
+Pure kernel fragment.
 
 This module is intentionally narrow:
 
 - closed terms only
 - current Pure core only
 - beta and sigma projection reduction
-- proof-side artifact agreement always
-- proof-side typing preservation when a typing proof is already available
+- pretty syntax and parsing for a small CLI subset
 
 It does **not** claim ordinary-family or fixpoint reduction.
 -/
@@ -24,12 +24,12 @@ namespace Mettapedia.Languages.MeTTa.PurePrototypeEval
 open Mettapedia.Languages.MeTTa.ElaboratedCore
 open Mettapedia.Languages.MeTTa.PureKernel.Syntax
 open Mettapedia.Languages.MeTTa.PureKernel.Context
+open Mettapedia.Languages.MeTTa.PureKernel.Renaming
 open Mettapedia.Languages.MeTTa.PureKernel.Substitution
 open Mettapedia.Languages.MeTTa.PureKernel.Reduction
 open Mettapedia.Languages.MeTTa.PureKernel.Typing
 open Mettapedia.Languages.MeTTa.PureKernel.PatternBridge
 open Mettapedia.Languages.MeTTa.PureKernel.CoreEmbedding
-open Mettapedia.Languages.MeTTa.PureKernel.SubjectReduction
 open Mettapedia.Languages.MeTTa.PureKernel.ProfileTheory
 
 /-! ## Executable evaluator -/
@@ -110,18 +110,6 @@ def evalPureFuel : Nat -> PureTm n -> PureTm n
       | some ⟨u, _⟩ => evalPureFuel fuel u
       | none => t
 
-theorem evalPureStep?_sound {t u : PureTm n}
-    (h : evalPureStep? t = some u) :
-    Red t u := by
-  unfold evalPureStep? at h
-  cases hstep : stepCert? t with
-  | none =>
-      simp [hstep] at h
-  | some step =>
-      simp [hstep] at h
-      cases h
-      exact step.2
-
 theorem evalPureFuel_redStar :
     ∀ (fuel : Nat) (t : PureTm n), RedStar t (evalPureFuel fuel t)
   | 0, t => RedStar.refl t
@@ -135,8 +123,6 @@ theorem evalPureFuel_redStar :
             evalPureFuel_redStar fuel step.1
           have hhead : RedStar t step.1 := red_to_redStar step.2
           simpa [evalPureFuel, hstep] using RedStar.trans hhead htail
-
-/-! ## Proof-connected run packaging -/
 
 structure ExecutablePureRun where
   input : SurfacePureTm 0
@@ -162,42 +148,6 @@ theorem ExecutablePureRun.profileBridge (run : ExecutablePureRun) :
       (quoteClosedTm run.normalForm) := by
   exact pureTheoryStepStar_sound_pureProfileTheoryStepStar_quoteClosed run.theoryReduction
 
-theorem subjectReductionStar {Γ : Ctx n} {t u A : PureTm n}
-    (ht : HasType Γ t A) (hred : RedStar t u) :
-    HasType Γ u A := by
-  induction hred with
-  | refl =>
-      simpa using ht
-  | tail hxy hyz ih =>
-      exact subject_reduction ih hyz
-
-def pureCertificateOfClosed (t : PureTm 0) : PureCertificate :=
-  { term := t
-    artifact := ⟨quoteClosedTm t⟩
-    artifact_eq := rfl }
-
-structure TypedExecutablePureRun where
-  run : ExecutablePureRun
-  claimedType : PureTm 0
-  inputTyping : HasType .nil run.input.toPureTm claimedType
-
-def TypedExecutablePureRun.outputTyping (run : TypedExecutablePureRun) :
-    HasType .nil run.run.normalForm run.claimedType :=
-  subjectReductionStar run.inputTyping run.run.theoryReduction
-
-def TypedExecutablePureRun.checkedOutput (run : TypedExecutablePureRun) :
-    CheckedPureCertificate :=
-  checkImportedPureCertificate
-    (.pure (pureCertificateOfClosed run.run.normalForm))
-    run.claimedType
-    run.outputTyping
-
-theorem TypedExecutablePureRun.checkedOutput_quoteAgreement
-    (run : TypedExecutablePureRun) :
-    run.checkedOutput.artifact.pattern = quoteClosedTm run.run.normalForm := by
-  simpa [TypedExecutablePureRun.checkedOutput, CheckedPureCertificate.term]
-    using run.checkedOutput.quoteAgreement
-
 /-! ## Tiny pretty surface AST -/
 
 inductive PrettyPureTm where
@@ -214,6 +164,15 @@ inductive PrettyPureTm where
   | snd (p : PrettyPureTm)
   | refl (a : PrettyPureTm)
 deriving DecidableEq, Repr
+
+inductive PrettyPureInput where
+  | term (term : PrettyPureTm)
+  | ann (term : PrettyPureTm) (type : PrettyPureTm)
+deriving DecidableEq, Repr
+
+structure ParsedPureInput where
+  term : SurfacePureTm 0
+  expectedType? : Option (SurfacePureTm 0)
 
 def lookupName : (env : List String) -> String -> Option (Fin env.length)
   | [], _ => none
@@ -265,6 +224,16 @@ def PrettyPureTm.toSurface : (env : List String) -> PrettyPureTm -> Except Strin
 
 def parseClosedPrettyPureToSurface (term : PrettyPureTm) : Except String (SurfacePureTm 0) :=
   PrettyPureTm.toSurface [] term
+
+def PrettyPureInput.toSurface : PrettyPureInput -> Except String ParsedPureInput
+  | .term tm => do
+      pure
+        { term := <- parseClosedPrettyPureToSurface tm
+          expectedType? := none }
+  | .ann tm ty => do
+      pure
+        { term := <- parseClosedPrettyPureToSurface tm
+          expectedType? := some (<- parseClosedPrettyPureToSurface ty) }
 
 /-! ## Tiny tokenizer/parser -/
 
@@ -366,11 +335,21 @@ partial def parseBinder :
 
 end
 
-def parseClosedPrettyPure (input : String) : Except String (PrettyPureTm × SurfacePureTm 0) := do
+private def parsePrettyPureInput :
+    List Token -> Except String (PrettyPureInput × List Token)
+  | .lparen :: .ident ":" :: rest => do
+      let (term, rest) <- parsePrettyPure rest
+      let (type, rest) <- parsePrettyPure rest
+      pure (.ann term type, <- expectRParen rest)
+  | tokens => do
+      let (term, rest) <- parsePrettyPure tokens
+      pure (.term term, rest)
+
+def parseClosedPrettyPureInput (input : String) : Except String ParsedPureInput := do
   let tokens <- tokenize input
-  let (pretty, rest) <- parsePrettyPure tokens
+  let (prettyInput, rest) <- parsePrettyPureInput tokens
   if rest.isEmpty then
-    pure (pretty, <- parseClosedPrettyPureToSurface pretty)
+    prettyInput.toSurface
   else
     throw s!"unexpected trailing tokens: {reprStr rest}"
 
@@ -411,140 +390,35 @@ def prettyWith : (env : List String) -> Nat -> PureTm env.length -> String
 def prettyClosed (t : PureTm 0) : String :=
   prettyWith [] 0 t
 
-/-! ## Example runs with typing proofs -/
-
-def universeIdSurface : SurfacePureTm 0 :=
-  .app (.lam (.var 0)) .u0
-
-theorem universeIdSurface_typing :
-    HasType .nil universeIdSurface.toPureTm .u1 := by
-  exact
-    HasType.app_elim
-      (HasType.lam_intro (HasType.var (Γ := .snoc .nil .u1) (i := 0)))
-      (HasType.u0_type .nil)
-
-def pairFstSurface : SurfacePureTm 0 :=
-  .fst (.pair .u0 .u0)
-
-theorem pairFstSurface_typing :
-    HasType .nil pairFstSurface.toPureTm .u1 := by
-  exact
-    HasType.fst_elim (A := .u1) (B := .u1)
-      (HasType.pair_intro
-        (HasType.u0_type .nil)
-        (HasType.u0_type .nil))
-
-def pairSndSurface : SurfacePureTm 0 :=
-  .snd (.pair .u0 .u0)
-
-theorem pairSndSurface_typing :
-    HasType .nil pairSndSurface.toPureTm .u1 := by
-  exact
-    HasType.snd_elim (A := .u1) (B := .u1)
-      (HasType.pair_intro
-        (HasType.u0_type .nil)
-        (HasType.u0_type .nil))
-
-def nestedSurface : SurfacePureTm 0 :=
-  .fst (.pair (.app (.lam (.var 0)) .u0) .u0)
-
-theorem nestedSurface_typing :
-    HasType .nil nestedSurface.toPureTm .u1 := by
-  exact
-    HasType.fst_elim (A := .u1) (B := .u1)
-      (HasType.pair_intro
-        universeIdSurface_typing
-        (HasType.u0_type .nil))
-
-def typedUniverseIdRun : TypedExecutablePureRun :=
-  { run := runSurfacePure 8 universeIdSurface
-    claimedType := .u1
-    inputTyping := universeIdSurface_typing }
-
-def typedPairFstRun : TypedExecutablePureRun :=
-  { run := runSurfacePure 8 pairFstSurface
-    claimedType := .u1
-    inputTyping := pairFstSurface_typing }
-
-def typedPairSndRun : TypedExecutablePureRun :=
-  { run := runSurfacePure 8 pairSndSurface
-    claimedType := .u1
-    inputTyping := pairSndSurface_typing }
-
-theorem typedUniverseIdRun_normalForm :
-    typedUniverseIdRun.run.normalForm = .u0 := rfl
-
-theorem typedPairFstRun_normalForm :
-    typedPairFstRun.run.normalForm = .u0 := rfl
-
-theorem typedPairSndRun_normalForm :
-    typedPairSndRun.run.normalForm = .u0 := rfl
-
-theorem nestedSurface_normalizes_to_u0 :
-    (runSurfacePure 16 nestedSurface).normalForm = .u0 := rfl
-
 /-! ## CLI support -/
 
 def defaultFuel : Nat := 64
 
-def knownTypedRun? (fuel : Nat) (surface : SurfacePureTm 0) : Option TypedExecutablePureRun :=
-  if h : surface = universeIdSurface then
-    by
-      subst h
-      exact some
-        { run := runSurfacePure fuel universeIdSurface
-          claimedType := .u1
-          inputTyping := universeIdSurface_typing }
-  else if h : surface = pairFstSurface then
-    by
-      subst h
-      exact some
-        { run := runSurfacePure fuel pairFstSurface
-          claimedType := .u1
-          inputTyping := pairFstSurface_typing }
-  else if h : surface = pairSndSurface then
-    by
-      subst h
-      exact some
-        { run := runSurfacePure fuel pairSndSurface
-          claimedType := .u1
-          inputTyping := pairSndSurface_typing }
-  else if h : surface = nestedSurface then
-    by
-      subst h
-      exact some
-        { run := runSurfacePure fuel nestedSurface
-          claimedType := .u1
-          inputTyping := nestedSurface_typing }
-  else
-    none
+private def formatArtifactPattern (artifact : SharedArtifact) : String :=
+  s!"{repr artifact.pattern}"
 
-private def formatArtifact (run : ExecutablePureRun) : String :=
-  s!"{repr run.artifact.pattern}"
-
-private def formatProofSummary (typed? : Option TypedExecutablePureRun) : List String :=
-  let typingStatus :=
-    match typed? with
-    | some _ => "ok"
-    | none => "not-checked"
+private def formatEvalSummary : List String :=
   [ "proof: artifact-agreement=ok"
   , "proof: profile-bridge=ok"
-  , s!"proof: closed-typing={typingStatus}"
   ]
 
 def runPureEvalFile (path : System.FilePath) (fuel : Nat := defaultFuel) : IO UInt32 := do
   let input <- IO.FS.readFile path
-  match parseClosedPrettyPure input with
+  match parseClosedPrettyPureInput input with
   | .error err =>
       IO.eprintln s!"pure-eval parse error in {path}: {err}"
       pure 1
-  | .ok (_pretty, surface) =>
-      let run := runSurfacePure fuel surface
-      let typed? := knownTypedRun? fuel surface
-      IO.println s!"input: {prettyClosed surface.toPureTm}"
+  | .ok parsed =>
+      let run := runSurfacePure fuel parsed.term
+      IO.println s!"input: {prettyClosed parsed.term.toPureTm}"
+      match parsed.expectedType? with
+      | some expectedType =>
+          IO.println s!"annotation: {prettyClosed expectedType.toPureTm}"
+      | none =>
+          pure ()
       IO.println s!"normalized: {prettyClosed run.normalForm}"
-      IO.println s!"artifact: {formatArtifact run}"
-      for line in formatProofSummary typed? do
+      IO.println s!"artifact: {formatArtifactPattern run.artifact}"
+      for line in formatEvalSummary do
         IO.println line
       pure 0
 

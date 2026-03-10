@@ -8,7 +8,9 @@ import Mettapedia.Languages.MeTTa.RuntimeExec
 import Mettapedia.Languages.MeTTa.ExecutionContract
 import Mettapedia.Languages.MeTTa.PureCheckingService
 import Mettapedia.Languages.MeTTa.PureCheckingExtensions
+import Mettapedia.Languages.MeTTa.PureBidirectionalChecking
 import Mettapedia.Languages.MeTTa.PurePrototypeEval
+import Mettapedia.Languages.MeTTa.PureCheckedEval
 import Mettapedia.Languages.MeTTa.StarterCoreExample
 import Mettapedia.Languages.MeTTa.ElaboratedCore
 import Mettapedia.Languages.MeTTa.InductiveKernelBoundary

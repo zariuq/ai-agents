@@ -6430,6 +6430,13 @@ private theorem compiledConsistent_of_stateEq
     CompiledConsistent s' := by
   exact h ▸ hs
 
+private theorem compiledConsistent_of_stateEq_conj
+    {s s' : Session} {out0 out : List Pattern}
+    (h : s = s' ∧ out0 = out)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact compiledConsistent_of_stateEq h.1 hs
+
 private theorem compiledConsistent_of_somePairEq
     {p q : Session × List Pattern}
     (h : some p = some q)
@@ -6450,6 +6457,18 @@ private theorem compiledConsistent_of_evalCoreState
     CompiledConsistent s' := by
   exact hState ▸ hEvalCorePres s term hs
 
+private theorem compiledConsistent_of_evalCoreState_conj
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s s' : Session} {term : Pattern} {out0 out : List Pattern}
+    (h : (referenceEvalWithStateCoreN fuel s term).fst = s' ∧ out0 = out)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact compiledConsistent_of_evalCoreState fuel hEvalCorePres h.1 hs
+
 private theorem compiledConsistent_of_evalCoreChainState
     (fuel : Nat)
     (hEvalCorePres :
@@ -6463,6 +6482,48 @@ private theorem compiledConsistent_of_evalCoreChainState
   have hs1 : CompiledConsistent (referenceEvalWithStateCoreN fuel s term1).1 :=
     hEvalCorePres s term1 hs
   exact hState ▸ hEvalCorePres (referenceEvalWithStateCoreN fuel s term1).1 term2 hs1
+
+private theorem compiledConsistent_of_evalCoreChainState_conj
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    {s s' : Session} {term1 term2 : Pattern} {out0 out : List Pattern}
+    (h :
+      (referenceEvalWithStateCoreN fuel (referenceEvalWithStateCoreN fuel s term1).1 term2).fst = s' ∧
+        out0 = out)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact compiledConsistent_of_evalCoreChainState fuel hEvalCorePres h.1 hs
+
+private theorem compiledConsistent_of_vectorSpaceState
+    {s s' : Session} {name : String} {vs : VectorSpace}
+    (hState : withVectorSpace s name vs = s')
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact hState ▸ compiledConsistent_withVectorSpace s name vs hs
+
+private theorem compiledConsistent_of_vectorSpaceState_conj
+    {s s' : Session} {name : String} {vs : VectorSpace} {out0 out : List Pattern}
+    (h : withVectorSpace s name vs = s' ∧ out0 = out)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact compiledConsistent_of_vectorSpaceState h.1 hs
+
+private theorem compiledConsistent_of_translatorRuleHeadsState
+    {s s' : Session} {heads : List String}
+    (hState : { s with translatorRuleHeads := heads } = s')
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact hState ▸ compiledConsistent_withTranslatorRuleHeads s heads hs
+
+private theorem compiledConsistent_of_translatorRuleHeadsState_conj
+    {s s' : Session} {heads : List String} {out0 out : List Pattern}
+    (h : { s with translatorRuleHeads := heads } = s' ∧ out0 = out)
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  exact compiledConsistent_of_translatorRuleHeadsState h.1 hs
 
 private structure RefNPres (fuel : Nat) where
   callable :
@@ -6975,6 +7036,512 @@ private theorem p4_apply_branch_preserves
     p4_apply_fallback_preserves
       fuel hEvalCorePres hEvalForRulePres h hs
 
+set_option maxHeartbeats 800000 in
+private theorem compiledConsistent_of_referenceIntrinsicStatefulN_apply_step
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hEvalForRulePres :
+      ∀ (s : Session) (expr : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalForRuleEnumerationN fuel s expr).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s : Session} {ctor : String} {args : List Pattern} {s' : Session} {out : List Pattern}
+    (h : referenceIntrinsicStatefulN (fuel + 1) s (.apply ctor args) = some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  have h0 := h
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  · rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    exact
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_result
+        fuel hEvalCorePres hEvalCallablePres hPeTTa hs
+  · split at h
+    · rename_i _ _ _ out1 hPre
+      split at hPre
+      · rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        exact
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN_result
+            fuel hEvalCorePres hStateE hs
+      · have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        exact
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN_result
+            fuel hEvalCorePres hIntrinsicPres hPre hs
+    ·
+      by_cases hProgn : ctor = "progn"
+      · subst hProgn
+        simp at h
+        exact compiledConsistent_of_stateEq_conj h hs
+      · by_cases hProg1 : ctor = "prog1"
+        · subst hProg1
+          simp at h
+          exact compiledConsistent_of_stateEq_conj h hs
+        · by_cases hExpr : ctor = "Expr"
+          · subst hExpr
+            exact
+              p4_expr_branch_preserves
+                fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+                (h := by simpa using h0) hs
+          ·
+            cases args with
+            | nil =>
+                by_cases hCut : ctor = "cut"
+                · subst hCut
+                  simp at h
+                  exact compiledConsistent_of_stateEq_conj h hs
+                ·
+                  have hFallback :
+                      referenceIntrinsicApplyFallbackN fuel s ctor [] = some (s', out) := by
+                    simpa [hCut] using h
+                  exact
+                    p4_apply_branch_preserves
+                      fuel hEvalCorePres hEvalForRulePres hFallback hs
+            | cons a rest =>
+                cases rest with
+                | nil =>
+                    by_cases hRemoveAll : ctor = "remove-all-atoms"
+                    · subst hRemoveAll
+                      simp at h
+                      exact
+                        compiledConsistent_of_referenceRemoveAllAtomsN_conj
+                          fuel s hEvalCorePres h.1 h.2 hs
+                    · by_cases hRemoveAllBang : ctor = "remove-all-atoms!"
+                      · subst hRemoveAllBang
+                        simp at h
+                        exact
+                          compiledConsistent_of_referenceRemoveAllAtomsN_conj
+                            fuel s hEvalCorePres h.1 h.2 hs
+                      · by_cases hGetAtoms : ctor = "get-atoms"
+                        · subst hGetAtoms
+                          simp at h
+                          exact
+                            compiledConsistent_of_referenceGetAtomsN_conj
+                              fuel s h.1 h.2 hs
+                        · by_cases hGetAtomsBang : ctor = "get-atoms!"
+                          · subst hGetAtomsBang
+                            simp at h
+                            exact
+                              compiledConsistent_of_referenceGetAtomsN_conj
+                                fuel s h.1 h.2 hs
+                          · by_cases hPredicate : ctor = "Predicate"
+                            · subst hPredicate
+                              simp at h
+                              exact compiledConsistent_of_stateEq_conj h hs
+                            · by_cases hSucceeds : ctor = "succeedsPredicate"
+                              · subst hSucceeds
+                                cases hDec : decodePredicateSpacePattern? s a with
+                                | none =>
+                                    simp [hDec] at h
+                                    exact compiledConsistent_of_stateEq_conj h hs
+                                | some sp =>
+                                    by_cases hEmpty : (findBindingsInSpace s sp.1 sp.2).isEmpty = true
+                                    · simp [hDec, hEmpty] at h
+                                      exact compiledConsistent_of_stateEq_conj h hs
+                                    · simp [hDec, hEmpty] at h
+                                      exact compiledConsistent_of_stateEq_conj h hs
+                              · by_cases hAddTR : ctor = "add-translator-rule!"
+                                · subst hAddTR
+                                  simp at h
+                                  exact compiledConsistent_of_translatorRuleHeadsState_conj h hs
+                                · by_cases hRemoveTR : ctor = "remove-translator-rule!"
+                                  · subst hRemoveTR
+                                    simp at h
+                                    exact compiledConsistent_of_translatorRuleHeadsState_conj h hs
+                                  · by_cases hOnce : ctor = "once"
+                                    · subst hOnce
+                                      exact
+                                        p4_once_branch_preserves
+                                          fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+                                          (h := by simpa using h0) hs
+                                    · by_cases hNop : ctor = "nop"
+                                      · subst hNop
+                                        exact
+                                          p4_nop_branch_preserves
+                                            fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+                                            (h := by simpa using h0) hs
+                                      · by_cases hCatch1 : ctor = "catch"
+                                        · subst hCatch1
+                                          exact
+                                            p4_catch1_branch_preserves
+                                              fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+                                              (h := by simpa using h0) hs
+                                        · by_cases hMsort : ctor = "msort"
+                                          · subst hMsort
+                                            exact
+                                              p4_msort_branch_preserves
+                                                fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+                                                (h := by simpa using h0) hs
+                                          · by_cases hSuperpose : ctor = "superpose"
+                                            · subst hSuperpose
+                                              simp at h
+                                              exact
+                                                compiledConsistent_of_evalCoreState_conj
+                                                  fuel hEvalCorePres h hs
+                                            · by_cases hHide : ctor = "hide"
+                                              · subst hHide
+                                                simp at h
+                                                exact
+                                                  compiledConsistent_of_evalCoreState_conj
+                                                    fuel hEvalCorePres h hs
+                                              · by_cases hCollapse : ctor = "collapse"
+                                                · subst hCollapse
+                                                  simp at h
+                                                  exact
+                                                    compiledConsistent_of_evalCoreState_conj
+                                                      fuel hEvalCorePres h hs
+                                                · by_cases hTranslate : ctor = "translatePredicate"
+                                                  · subst hTranslate
+                                                    simp at h
+                                                    exact
+                                                      compiledConsistent_of_evalCoreState_conj
+                                                        fuel hEvalCorePres h hs
+                                                  · by_cases hRepr : ctor = "repr"
+                                                    · subst hRepr
+                                                      exact
+                                                        p4_repr_branch_preserves
+                                                          fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+                                                          (h := by simpa using h0) hs
+                                                    · by_cases hAtomOf : ctor = "atom-of"
+                                                      · subst hAtomOf
+                                                        exact
+                                                          p4_atomof_branch_preserves
+                                                            fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+                                                            (h := by simpa using h0) hs
+                                                      ·
+                                                        have hFallback :
+                                                            referenceIntrinsicApplyFallbackN fuel s ctor [a] =
+                                                              some (s', out) := by
+                                                          simpa [hRemoveAll, hRemoveAllBang,
+                                                            hGetAtoms, hGetAtomsBang, hPredicate,
+                                                            hSucceeds, hAddTR, hRemoveTR, hOnce,
+                                                            hNop, hCatch1, hMsort, hSuperpose,
+                                                            hHide, hCollapse, hTranslate, hRepr,
+                                                            hAtomOf] using h
+                                                        exact
+                                                          p4_apply_branch_preserves
+                                                            fuel hEvalCorePres hEvalForRulePres hFallback hs
+                | cons b rest2 =>
+                    cases rest2 with
+                    | nil =>
+                        by_cases hAddBang : ctor = "add-atom!"
+                        · subst hAddBang
+                          exact
+                            p4_addatom_bang_branch_preserves
+                              fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+                              (h := by simpa using h0) hs
+                        · by_cases hRemoveBang : ctor = "remove-atom!"
+                          · subst hRemoveBang
+                            exact
+                              p4_removeatom_bang_branch_preserves
+                                fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+                                (h := by simpa using h0) hs
+                          · by_cases hAdd : ctor = "add-atom"
+                            · subst hAdd
+                              exact
+                                p4_addatom_branch_preserves
+                                  fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+                                  (h := by simpa using h0) hs
+                            · by_cases hRemove : ctor = "remove-atom"
+                              · subst hRemove
+                                exact
+                                  p4_removeatom_branch_preserves
+                                    fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+                                    (h := by simpa using h0) hs
+                              · by_cases hMatch : ctor = "match"
+                                · subst hMatch
+                                  exact
+                                    p4_match2_branch_preserves
+                                      fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+                                      (h := by simpa using h0) hs
+                                · by_cases hCase : ctor = "case"
+                                  · subst hCase
+                                    exact
+                                      p4_case_branch_preserves
+                                        fuel hEvalCorePres hEvalCallablePres hEvalForRulePres
+                                        hIntrinsicPres (h := by simpa using h0) hs
+                                  · by_cases hForall : ctor = "forall"
+                                    · subst hForall
+                                      exact
+                                        p4_forall_branch_preserves
+                                          fuel hEvalCorePres hEvalCallablePres hEvalForRulePres
+                                          hIntrinsicPres (h := by simpa using h0) hs
+                                    · by_cases hFind : ctor = "find"
+                                      · subst hFind
+                                        by_cases hEmpty : (findBindingsInSpace s a b).isEmpty = true
+                                        · simp [hEmpty] at h
+                                          exact compiledConsistent_of_stateEq_conj h hs
+                                        · simp [hEmpty] at h
+                                          exact compiledConsistent_of_stateEq_conj h hs
+                                      · by_cases hNewVS : ctor = "new-atom-vectorspace"
+                                        · subst hNewVS
+                                          cases hName : vectorSpaceName? a with
+                                          | none =>
+                                              simp [hName] at h
+                                              exact compiledConsistent_of_stateEq_conj h hs
+                                          | some name =>
+                                              cases hDim : intOfPattern? b with
+                                              | none =>
+                                                  simp [hName, hDim] at h
+                                                  exact compiledConsistent_of_stateEq_conj h hs
+                                              | some dimI =>
+                                                  by_cases hLe : dimI <= 0
+                                                  · simp [hName, hDim, hLe] at h
+                                                    exact compiledConsistent_of_stateEq_conj h hs
+                                                  · simp [hName, hDim, hLe] at h
+                                                    exact compiledConsistent_of_vectorSpaceState_conj h hs
+                                        · by_cases hAddSRI : ctor = "add-atom-SRI"
+                                          · subst hAddSRI
+                                            cases hName : vectorSpaceName? a with
+                                            | none =>
+                                                simp [hName] at h
+                                                exact compiledConsistent_of_stateEq_conj h hs
+                                            | some name =>
+                                                cases hVS : lookupVectorSpace? s name with
+                                                | none =>
+                                                    simp [hName, hVS] at h
+                                                    exact compiledConsistent_of_stateEq_conj h hs
+                                                | some vs =>
+                                                    simp [hName, hVS] at h
+                                                    exact compiledConsistent_of_vectorSpaceState_conj h hs
+                                          · by_cases hSpace : ctor = "space"
+                                            · subst hSpace
+                                              simp at h
+                                              exact
+                                                compiledConsistent_of_evalCoreChainState_conj
+                                                  fuel hEvalCorePres h hs
+                                            · by_cases hIf2 : ctor = "if"
+                                              · subst hIf2
+                                                simp at h
+                                                exact
+                                                  compiledConsistent_of_evalCoreChainState_conj
+                                                    fuel hEvalCorePres h hs
+                                              · by_cases hLetStar : ctor = "let*"
+                                                · subst hLetStar
+                                                  simp at h
+                                                  exact
+                                                    compiledConsistent_of_evalCoreState_conj
+                                                      fuel hEvalCorePres h hs
+                                                ·
+                                                  have hFallback :
+                                                      referenceIntrinsicApplyFallbackN fuel s ctor [a, b] =
+                                                        some (s', out) := by
+                                                    simpa [hAddBang, hRemoveBang, hAdd, hRemove,
+                                                      hMatch, hCase, hForall, hFind, hNewVS,
+                                                      hAddSRI, hSpace, hIf2, hLetStar] using h
+                                                  exact
+                                                    p4_apply_branch_preserves
+                                                      fuel hEvalCorePres hEvalForRulePres hFallback hs
+                    | cons c rest3 =>
+                        cases rest3 with
+                        | nil =>
+                            by_cases hMatch : ctor = "match"
+                            · subst hMatch
+                              exact
+                                p4_match3_branch_preserves
+                                  fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+                                  (h := by simpa using h0) hs
+                            · by_cases hFoldall : ctor = "foldall"
+                              · subst hFoldall
+                                exact
+                                  p4_foldall_branch_preserves
+                                    fuel hEvalCorePres hEvalCallablePres hEvalForRulePres
+                                    hIntrinsicPres (h := by simpa using h0) hs
+                              · by_cases hAddVec : ctor = "add-atom-vector"
+                                · subst hAddVec
+                                  cases hName : vectorSpaceName? a with
+                                  | none =>
+                                      simp [hName] at h
+                                      exact compiledConsistent_of_stateEq_conj h hs
+                                  | some name =>
+                                      cases hVec : vectorOfPattern? c with
+                                      | none =>
+                                          simp [hName, hVec] at h
+                                          exact compiledConsistent_of_stateEq_conj h hs
+                                      | some vec =>
+                                          cases hVS : lookupVectorSpace? s name with
+                                          | none =>
+                                              simp [hName, hVec, hVS] at h
+                                              exact compiledConsistent_of_stateEq_conj h hs
+                                          | some vs =>
+                                              simp [hName, hVec, hVS] at h
+                                              exact compiledConsistent_of_vectorSpaceState_conj h hs
+                                · by_cases hMatchK : ctor = "match-k"
+                                  · subst hMatchK
+                                    cases hK : intOfPattern? a with
+                                    | none =>
+                                        simp [hK] at h
+                                        exact compiledConsistent_of_stateEq_conj h hs
+                                    | some kI =>
+                                        cases hName : vectorSpaceName? b with
+                                        | none =>
+                                            simp [hK, hName] at h
+                                            exact compiledConsistent_of_stateEq_conj h hs
+                                        | some name =>
+                                            cases hVec : vectorOfPattern? c with
+                                            | none =>
+                                                simp [hK, hName, hVec] at h
+                                                exact compiledConsistent_of_stateEq_conj h hs
+                                            | some qv =>
+                                                cases hVS : lookupVectorSpace? s name with
+                                                | none =>
+                                                    simp [hK, hName, hVec, hVS] at h
+                                                    exact compiledConsistent_of_stateEq_conj h hs
+                                                | some vs =>
+                                                    simp [hK, hName, hVec, hVS] at h
+                                                    exact compiledConsistent_of_stateEq_conj h hs
+                                  · by_cases hMatchSri : ctor = "match-sri"
+                                    · subst hMatchSri
+                                      cases hK : intOfPattern? a with
+                                      | none =>
+                                          simp [hK] at h
+                                          exact compiledConsistent_of_stateEq_conj h hs
+                                      | some kI =>
+                                          cases hName : vectorSpaceName? b with
+                                          | none =>
+                                              simp [hK, hName] at h
+                                              exact compiledConsistent_of_stateEq_conj h hs
+                                          | some name =>
+                                              cases hVS : lookupVectorSpace? s name with
+                                              | none =>
+                                                  simp [hK, hName, hVS] at h
+                                                  exact compiledConsistent_of_stateEq_conj h hs
+                                              | some vs =>
+                                                  simp [hK, hName, hVS] at h
+                                                  exact compiledConsistent_of_stateEq_conj h hs
+                                    · by_cases hMatchSRI : ctor = "match-SRI"
+                                      · subst hMatchSRI
+                                        cases hK : intOfPattern? a with
+                                        | none =>
+                                            simp [hK] at h
+                                            exact compiledConsistent_of_stateEq_conj h hs
+                                        | some kI =>
+                                            cases hName : vectorSpaceName? b with
+                                            | none =>
+                                                simp [hK, hName] at h
+                                                exact compiledConsistent_of_stateEq_conj h hs
+                                            | some name =>
+                                                cases hVS : lookupVectorSpace? s name with
+                                                | none =>
+                                                    simp [hK, hName, hVS] at h
+                                                    exact compiledConsistent_of_stateEq_conj h hs
+                                                | some vs =>
+                                                    simp [hK, hName, hVS] at h
+                                                    exact compiledConsistent_of_stateEq_conj h hs
+                                      · by_cases hCatch3 : ctor = "catch"
+                                        · subst hCatch3
+                                          simp at h
+                                          exact
+                                            compiledConsistent_of_evalCoreChainState_conj
+                                              fuel hEvalCorePres h hs
+                                        · by_cases hIf3 : ctor = "if"
+                                          · subst hIf3
+                                            simp at h
+                                            exact
+                                              compiledConsistent_of_evalCoreChainState_conj
+                                                fuel hEvalCorePres h hs
+                                          · by_cases hLet : ctor = "let"
+                                            · subst hLet
+                                              simp at h
+                                              exact
+                                                compiledConsistent_of_evalCoreChainState_conj
+                                                  fuel hEvalCorePres h hs
+                                            ·
+                                              have hFallback :
+                                                  referenceIntrinsicApplyFallbackN fuel s ctor [a, b, c] =
+                                                    some (s', out) := by
+                                                simpa [hMatch, hFoldall, hAddVec, hMatchK,
+                                                  hMatchSri, hMatchSRI, hCatch3, hIf3, hLet] using h
+                                              exact
+                                                p4_apply_branch_preserves
+                                                  fuel hEvalCorePres hEvalForRulePres hFallback hs
+                        | cons d rest4 =>
+                            have hFallback :
+                                referenceIntrinsicApplyFallbackN fuel s ctor (a :: b :: c :: d :: rest4) =
+                                  some (s', out) := by
+                              simpa using h
+                            exact
+                              p4_apply_branch_preserves
+                                fuel hEvalCorePres hEvalForRulePres hFallback hs
+
+private theorem compiledConsistent_of_referenceIntrinsicStatefulN_nonapply_step
+    (fuel : Nat)
+    (hEvalCorePres :
+      ∀ (s : Session) (term : Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalWithStateCoreN fuel s term).1)
+    (hEvalCallablePres :
+      ∀ (s : Session) (fn : Pattern) (args : List Pattern),
+        CompiledConsistent s →
+        CompiledConsistent (referenceEvalCallableApplyN fuel s fn args).1)
+    (hIntrinsicPres :
+      ∀ (s : Session) (term : Pattern) (s' : Session) (out : List Pattern),
+        referenceIntrinsicStatefulN fuel s term = some (s', out) →
+        CompiledConsistent s →
+        CompiledConsistent s')
+    {s : Session} {term : Pattern} {s' : Session} {out : List Pattern}
+    (hNotApply : ∀ ctor args, term ≠ .apply ctor args)
+    (h : referenceIntrinsicStatefulN (fuel + 1) s term = some (s', out))
+    (hs : CompiledConsistent s) :
+    CompiledConsistent s' := by
+  unfold referenceIntrinsicStatefulN at h
+  simp only [] at h
+  split at h
+  · rename_i _ out1 hPeTTa
+    have hout : out1 = (s', out) := Option.some.inj h
+    subst hout
+    exact
+      compiledConsistent_of_referencePettaCoreEvalIntrinsicN_result
+        fuel hEvalCorePres hEvalCallablePres hPeTTa hs
+  · split at h
+    · rename_i _ _ _ out1 hPre
+      split at hPre
+      · rename_i out2 hStateE
+        have hout : out2 = (s', out) :=
+          (Option.some.inj hPre).trans (Option.some.inj h)
+        subst hout
+        exact
+          compiledConsistent_of_referenceStateEffectsEvalIntrinsicN_result
+            fuel hEvalCorePres hStateE hs
+      · have hout : out1 = (s', out) := Option.some.inj h
+        subst hout
+        exact
+          compiledConsistent_of_referenceStreamOpsEvalIntrinsicN_result
+            fuel hEvalCorePres hIntrinsicPres hPre hs
+    ·
+      cases term with
+      | fvar x =>
+          simp at h
+      | bvar n =>
+          simp at h
+      | lambda body =>
+          simp at h
+      | multiLambda n body =>
+          simp at h
+      | subst body repl =>
+          simp at h
+      | collection ct elems rest =>
+          simp at h
+      | apply ctor args =>
+          exact False.elim (hNotApply ctor args rfl)
+
 private theorem compiledConsistent_of_referenceIntrinsicStatefulN_step
     (fuel : Nat)
     (hEvalCorePres :
@@ -6998,7 +7565,41 @@ private theorem compiledConsistent_of_referenceIntrinsicStatefulN_step
     (h : referenceIntrinsicStatefulN (fuel + 1) s term = some (s', out))
     (hs : CompiledConsistent s) :
     CompiledConsistent s' := by
-  sorry
+  cases term with
+  | fvar x =>
+      exact
+        compiledConsistent_of_referenceIntrinsicStatefulN_nonapply_step
+          fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+          (fun ctor args hEq => by cases hEq) h hs
+  | bvar n =>
+      exact
+        compiledConsistent_of_referenceIntrinsicStatefulN_nonapply_step
+          fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+          (fun ctor args hEq => by cases hEq) h hs
+  | lambda body =>
+      exact
+        compiledConsistent_of_referenceIntrinsicStatefulN_nonapply_step
+          fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+          (fun ctor args hEq => by cases hEq) h hs
+  | multiLambda n body =>
+      exact
+        compiledConsistent_of_referenceIntrinsicStatefulN_nonapply_step
+          fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+          (fun ctor args hEq => by cases hEq) h hs
+  | subst body repl =>
+      exact
+        compiledConsistent_of_referenceIntrinsicStatefulN_nonapply_step
+          fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+          (fun ctor args hEq => by cases hEq) h hs
+  | collection ct elems rest =>
+      exact
+        compiledConsistent_of_referenceIntrinsicStatefulN_nonapply_step
+          fuel hEvalCorePres hEvalCallablePres hIntrinsicPres
+          (fun ctor args hEq => by cases hEq) h hs
+  | apply ctor args =>
+      exact
+        compiledConsistent_of_referenceIntrinsicStatefulN_apply_step
+          fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres h hs
 
 
 -- Joint fuel-induction: all four ...N functions preserve CompiledConsistent simultaneously.

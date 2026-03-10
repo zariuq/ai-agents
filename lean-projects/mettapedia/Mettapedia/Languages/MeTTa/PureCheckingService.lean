@@ -237,6 +237,12 @@ theorem pureCheckingBoundary_supports_import :
 theorem pureCheckingBoundary_supports_conversion :
     pureCheckingBoundary.supportsConversion = true := rfl
 
+def closedPureImport (term : PureTm 0) : PureCertificateImport :=
+  .pure
+    { term := term
+      artifact := ⟨quoteClosedTm term⟩
+      artifact_eq := rfl }
+
 /-- Packaged import/check operation exposed by the current proof-side checking
 boundary. -/
 def PureCheckingBoundary.checkImported
@@ -246,6 +252,25 @@ def PureCheckingBoundary.checkImported
     (typing : HasType .nil imported.term claimedType) :
     CheckedPureCertificate :=
   checkImportedPureCertificate imported claimedType typing
+
+/-- Packaged check operation for a closed Pure surface term. -/
+def PureCheckingBoundary.checkSurface
+    (svc : PureCheckingBoundary)
+    (surface : SurfacePureTm 0)
+    (claimedType : PureTm 0)
+    (typing : HasType .nil surface.toPureTm claimedType) :
+    CheckedPureCertificate :=
+  svc.checkImported (importPureCertificate surface) claimedType <| by
+    simpa [importPureCertificate_term] using typing
+
+/-- Packaged check operation for an already-closed Pure kernel term. -/
+def PureCheckingBoundary.checkClosedTerm
+    (svc : PureCheckingBoundary)
+    (term : PureTm 0)
+    (claimedType : PureTm 0)
+    (typing : HasType .nil term claimedType) :
+    CheckedPureCertificate :=
+  svc.checkImported (closedPureImport term) claimedType typing
 
 /-- Packaged import/check-and-convert operation exposed by the current proof-side
 checking boundary. -/
@@ -274,6 +299,40 @@ theorem PureCheckingBoundary.checkImported_quoteAgreement
     (svc.checkImported imported claimedType typing).artifact.pattern =
       quoteClosedTm (svc.checkImported imported claimedType typing).term := by
   exact (svc.checkImported imported claimedType typing).quoteAgreement
+
+theorem PureCheckingBoundary.checkSurface_term
+    (svc : PureCheckingBoundary)
+    (surface : SurfacePureTm 0)
+    (claimedType : PureTm 0)
+    (typing : HasType .nil surface.toPureTm claimedType) :
+    (svc.checkSurface surface claimedType typing).term = surface.toPureTm := by
+  rfl
+
+theorem PureCheckingBoundary.checkSurface_quoteAgreement
+    (svc : PureCheckingBoundary)
+    (surface : SurfacePureTm 0)
+    (claimedType : PureTm 0)
+    (typing : HasType .nil surface.toPureTm claimedType) :
+    (svc.checkSurface surface claimedType typing).artifact.pattern =
+      quoteClosedTm (svc.checkSurface surface claimedType typing).term := by
+  exact (svc.checkSurface surface claimedType typing).quoteAgreement
+
+theorem PureCheckingBoundary.checkClosedTerm_term
+    (svc : PureCheckingBoundary)
+    (term : PureTm 0)
+    (claimedType : PureTm 0)
+    (typing : HasType .nil term claimedType) :
+    (svc.checkClosedTerm term claimedType typing).term = term := by
+  rfl
+
+theorem PureCheckingBoundary.checkClosedTerm_quoteAgreement
+    (svc : PureCheckingBoundary)
+    (term : PureTm 0)
+    (claimedType : PureTm 0)
+    (typing : HasType .nil term claimedType) :
+    (svc.checkClosedTerm term claimedType typing).artifact.pattern =
+      quoteClosedTm (svc.checkClosedTerm term claimedType typing).term := by
+  exact (svc.checkClosedTerm term claimedType typing).quoteAgreement
 
 theorem PureCheckingBoundary.checkImportedUpToConv_region
     (svc : PureCheckingBoundary)

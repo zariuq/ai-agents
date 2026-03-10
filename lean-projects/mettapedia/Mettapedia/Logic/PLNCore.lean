@@ -38,6 +38,7 @@ import Mettapedia.Logic.PLNErrorMagnificationGrounding
 import Mettapedia.Logic.PLNCanonicalAPI
 import Mettapedia.Logic.SufficientStatisticSurface
 import Mettapedia.Logic.GenericWorldModelForgetting
+import Mettapedia.Logic.PLNSemitopology
 import Mettapedia.Logic.PLNWorldModelPreorder
 import Mettapedia.Logic.PLNGaussianEMExtension
 import Mettapedia.Logic.HigherOrder.PLNKyburgReduction
@@ -113,6 +114,9 @@ This module is a curated import surface for the currently theorem-complete PLN s
   (`SufficientStatisticSurface`)
 - Forgetting layer with scope invariance and scoped no-go for exact inverse forgetting
   (`GenericWorldModelForgetting`)
+- Coalition/semitopology layer for quorum/actionable-coalition reasoning with
+  local-consensus/conflict lemmas and bridges into overlap/support forgetting
+  (`PLNSemitopology`)
 - Selector-induced evidence/view preorders (`PLNWorldModelPreorder`)
 - Advanced weighted Gaussian / one-step E/M extension with hard-label reduction
   (`PLNGaussianEMExtension`)

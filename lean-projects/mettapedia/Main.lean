@@ -1,11 +1,15 @@
 import Mettapedia.Languages.MeTTa.HE.LookupPlan
 import Mettapedia.Languages.MeTTa.HE.TransitionSpec
 import Mettapedia.Languages.MeTTa.HE.RewriteIR
+import Mettapedia.Languages.MeTTa.PureCheckedEval
 import Mettapedia.Languages.MeTTa.PurePrototypeEval
 
 private def usage : String :=
   String.intercalate "\n"
     [ "mettapedia commands:"
+    , "  pure-check <file>"
+    , "  pure-check-eval <file>"
+    , "  pure-check-eval <file> --fuel <n>"
     , "  pure-eval <file>"
     , "  pure-eval <file> --fuel <n>"
     , "  lookup-plan export-he <out-dir>"
@@ -33,6 +37,17 @@ private def parseFuelArg? (s : String) : Option Nat :=
 
 def main (args : List String) : IO UInt32 := do
   match args with
+  | ["pure-check", file] =>
+      Mettapedia.Languages.MeTTa.PureCheckedEval.runPureCheckFile file
+  | ["pure-check-eval", file] =>
+      Mettapedia.Languages.MeTTa.PureCheckedEval.runPureCheckEvalFile file
+  | ["pure-check-eval", file, "--fuel", fuelText] =>
+      match parseFuelArg? fuelText with
+      | some fuel =>
+          Mettapedia.Languages.MeTTa.PureCheckedEval.runPureCheckEvalFile file fuel
+      | none =>
+          IO.eprintln s!"invalid fuel: {fuelText}"
+          pure 1
   | ["pure-eval", file] =>
       Mettapedia.Languages.MeTTa.PurePrototypeEval.runPureEvalFile file
   | ["pure-eval", file, "--fuel", fuelText] =>

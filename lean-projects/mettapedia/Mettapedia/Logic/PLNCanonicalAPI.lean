@@ -23,6 +23,10 @@ import Mettapedia.Logic.EvidenceQuantale
 import Mettapedia.Logic.EvidenceSTVBridge
 import Mettapedia.Logic.SufficientStatisticSurface
 import Mettapedia.Logic.GenericWorldModelForgetting
+import Mettapedia.Logic.PLNWorldModelOverlap
+import Mettapedia.Logic.PLNWorldModelSupportForgetting
+import Mettapedia.Logic.PLNSemitopology
+import Mettapedia.Logic.PLNProvenanceWMSupportBridge
 import Mettapedia.Logic.PLNWorldModelPreorder
 import Mettapedia.Logic.PLNGaussianEMExtension
 
@@ -143,6 +147,69 @@ abbrev WMForgettingLayer :=
 
 abbrev wm_no_exactInverse_revision_of_nonzero_outside_scope :=
   @Mettapedia.Logic.ForgettingLayer.no_exactInverse_revision_of_nonzero_outside_scope
+
+/-! ## Non-Additive Perimeter Endpoints -/
+
+abbrev WMOverlapLayer :=
+  Mettapedia.Logic.OverlapLayer
+
+abbrev WMSupportTrackedForgettingLayer :=
+  Mettapedia.Logic.SupportTrackedForgettingLayer
+
+abbrev wm_overlap_additive_of_independent :=
+  @Mettapedia.Logic.OverlapLayer.additive_of_independent'
+
+abbrev wm_exactInverse_of_supported :=
+  @Mettapedia.Logic.SupportTrackedForgettingLayer.exactInverse_revision_of_support_subset
+
+abbrev wm_exactInverse_supported_outside_zero :=
+  @Mettapedia.Logic.SupportTrackedForgettingLayer.exactInverse_revision_supported_outside_zero
+
+/-! ## Coalition / Semitopology Endpoints -/
+
+abbrev WMSemitopology :=
+  Mettapedia.Logic.Semitopology
+
+abbrev WMCoalitionTopology :=
+  Mettapedia.Logic.CoalitionTopology
+
+abbrev wm_topological_of_intersection_closed :=
+  @Mettapedia.Logic.Semitopology.topological_of_intersection_closed
+
+abbrev wm_local_consensus_of_constant_on_actionable :=
+  @Mettapedia.Logic.Semitopology.local_consensus_of_constant_on_actionable
+
+abbrev wm_discontinuity_of_conflicting_actionable_values :=
+  @Mettapedia.Logic.Semitopology.discontinuity_of_conflicting_actionable_values
+
+abbrev wm_overlap_additive_of_semitopologyIndependent :=
+  @Mettapedia.Logic.Semitopology.additive_of_semitopologyIndependent
+
+abbrev wm_exactInverse_of_supportedInActionableScope :=
+  @Mettapedia.Logic.Semitopology.exactInverse_of_supportedInActionableScope
+
+/-! ## Provenance→WM Support Bridge Endpoints -/
+
+abbrev wm_whichSupport :=
+  @Mettapedia.Logic.whichSupport
+
+abbrev wm_whichSupport_add_union :=
+  @Mettapedia.Logic.whichSupport_add_union
+
+abbrev wm_exactInverse_supported_outside_zero_which :=
+  @Mettapedia.Logic.exactInverse_supported_outside_zero_of_whichSupport
+
+abbrev wm_whichSupportTagged :=
+  @Mettapedia.Logic.whichSupportTagged
+
+noncomputable abbrev wm_whichEmptyScopeForgettingLayer :=
+  @Mettapedia.Logic.whichEmptyScopeForgettingLayer
+
+abbrev wm_whichEmptyScope_exactInverse_of_supported :=
+  @Mettapedia.Logic.whichEmptyScope_exactInverse_of_supported
+
+abbrev wm_whichEmptyScope_revision_zero_of_supported :=
+  @Mettapedia.Logic.whichEmptyScope_revision_zero_of_supported
 
 /-! ## View-Induced Preorder Endpoints -/
 

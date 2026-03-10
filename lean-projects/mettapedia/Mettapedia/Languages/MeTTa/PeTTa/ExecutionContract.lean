@@ -26,12 +26,18 @@ Positive example:
   space-effect-compilable.
 - `add-atom` / `remove-atom` fact payloads expose explicit payload/sink lanes
   instead of forcing Rust to infer them from surface syntax.
-- `+`, `<`, `==`, `if`, and `append` are pure intrinsic builtins, MORK/MM2-backed,
-  and admit scalar/outcome-set memoization.
+- `add-atom` / `remove-atom` rewrite-rule payloads expose explicit
+  `source_rule_payload` lanes instead of forcing Rust to infer dynamic rule
+  updates from raw syntax.
+- `+`, `-`, `*`, `/`, `%`, `abs-math`, `and`, `or`, `not`, `xor`, `if`, and
+  structural `=` are the current pure intrinsic builtins, MORK/MM2-backed, and
+  admit scalar/outcome-set memoization.
 
 Negative example:
 - this file still does not certify premise-bearing rewrite execution or arbitrary
   grounded/FFI builtin catalogs.
+- this file intentionally does not export the full shared intrinsic catalog yet:
+  uncertified PeTTa MM2 lowerings must fail closed rather than overclaim support.
 -/
 
 namespace Mettapedia.Languages.MeTTa.PeTTa.ExecutionContract
@@ -186,6 +192,33 @@ def addAtomFactPayloadContract : SpaceEffectPayloadContract where
 def addAtomFactPayloadEntry : ExecutionContractEntry :=
   .spaceEffectPayload addAtomFactPayloadContract
 
+def addAtomRulePayloadContract : SpaceEffectPayloadContract where
+  head := "add-atom"
+  arity := 2
+  spaceArgPosition := 0
+  payloadArgPosition := 1
+  payloadKind := .sourceRulePayload
+  payloadShape := .rewriteEqRule
+  sinkKind := .insertRule
+  owner := .artifactBackend
+  kernelClass := .spaceEffect
+  effectClass := spaceEffectFragment.effectClass
+  resourceClass := spaceEffectFragment.resourceClass
+  backendName := spaceEffectFragment.backendName
+  sourceRuleCompilable := false
+  queryCompilable := false
+  spaceEffectCompilable := true
+  theoremRefs :=
+    [ "Mettapedia.Languages.MeTTa.RuntimeKernel.spaceEffect_effectClass"
+    , "Mettapedia.Languages.MeTTa.RuntimeKernel.spaceEffect_resource"
+    , "Mettapedia.Languages.MeTTa.RuntimeKernel.spaceEffect_backend"
+    , "Mettapedia.Languages.MeTTa.RuntimeKernel.spaceEffect_not_memo_outcomeSet"
+    , "Mettapedia.Languages.MeTTa.PeTTa.SpaceEffectFragment.addAtom_fireSourceRule_mem"
+    ]
+
+def addAtomRulePayloadEntry : ExecutionContractEntry :=
+  .spaceEffectPayload addAtomRulePayloadContract
+
 def removeAtomFactPayloadContract : SpaceEffectPayloadContract where
   head := "remove-atom"
   arity := 2
@@ -213,6 +246,75 @@ def removeAtomFactPayloadContract : SpaceEffectPayloadContract where
 def removeAtomFactPayloadEntry : ExecutionContractEntry :=
   .spaceEffectPayload removeAtomFactPayloadContract
 
+def removeAtomRulePayloadContract : SpaceEffectPayloadContract where
+  head := "remove-atom"
+  arity := 2
+  spaceArgPosition := 0
+  payloadArgPosition := 1
+  payloadKind := .sourceRulePayload
+  payloadShape := .rewriteEqRule
+  sinkKind := .removeRule
+  owner := .artifactBackend
+  kernelClass := .spaceEffect
+  effectClass := spaceEffectFragment.effectClass
+  resourceClass := spaceEffectFragment.resourceClass
+  backendName := spaceEffectFragment.backendName
+  sourceRuleCompilable := false
+  queryCompilable := false
+  spaceEffectCompilable := true
+  theoremRefs :=
+    [ "Mettapedia.Languages.MeTTa.RuntimeKernel.spaceEffect_effectClass"
+    , "Mettapedia.Languages.MeTTa.RuntimeKernel.spaceEffect_resource"
+    , "Mettapedia.Languages.MeTTa.RuntimeKernel.spaceEffect_backend"
+    , "Mettapedia.Languages.MeTTa.RuntimeKernel.spaceEffect_not_memo_outcomeSet"
+    , "Mettapedia.Languages.MeTTa.PeTTa.SpaceEffectFragment.removeAtom_fireSourceRule_mem"
+    ]
+
+def removeAtomRulePayloadEntry : ExecutionContractEntry :=
+  .spaceEffectPayload removeAtomRulePayloadContract
+
+/-- PeTTa-local intrinsic slice that matches the live MM2 lowering in
+`mettail-rust`.
+
+This list is intentionally narrow. A head belongs here only when the current
+MORK/MM2 backend has a concrete lowering target for it.
+
+Positive example:
+- integer numerics (`+`, `-`, `*`, `/`, `%`, `abs-math`)
+  These lower to MORK pure ops such as `sum_i32`, `product_i32`, `sub_i32`,
+  `div_i32`, `mod_i32`, and `abs_i32`.
+- booleans (`and`, `or`, `not`, `xor`)
+- `if`
+- structural `=`
+
+Negative example:
+- numeric comparisons like `<` and `>=`
+  These are excluded until there is either a real MORK comparison primitive to
+  lower to or an explicit grounded-host contract lane.
+- tuple/list operators like `append` and `cons`
+- float/transcendental intrinsics
+-/
+def pettaMm2IntrinsicSpecs : List CoreIntrinsicSpec :=
+  [ { head := "=", minArity := 2, maxArity := some 2, demand := .structuralEqArgs }
+  , { head := "if", minArity := 2, maxArity := some 3, demand := .boolThenElseArgs }
+  , { head := "and", minArity := 0, demand := .boolArgs }
+  , { head := "or", minArity := 0, demand := .boolArgs }
+  , { head := "not", minArity := 1, maxArity := some 1, demand := .boolArgs }
+  , { head := "xor", minArity := 0, demand := .boolArgs }
+  , { head := "+", minArity := 2, maxArity := none, demand := .numericArgs }
+  , { head := "-", minArity := 1, maxArity := none, demand := .numericArgs }
+  , { head := "*", minArity := 2, maxArity := none, demand := .numericArgs }
+  , { head := "/", minArity := 2, maxArity := some 2, demand := .numericArgs }
+  , { head := "%", minArity := 2, maxArity := some 2, demand := .numericArgs }
+  , { head := "abs-math", minArity := 1, maxArity := some 1, demand := .numericArgs }
+  ]
+
+def pettaMm2IntrinsicContracts : List IntrinsicBuiltinContract :=
+  pettaMm2IntrinsicSpecs.map mkCoreIntrinsicContract
+
+def pettaMm2IntrinsicEntries : List ExecutionContractEntry :=
+  pettaMm2IntrinsicContracts.map .intrinsicBuiltin
+
 def pettaExecutionContractArtifact : ExecutionContractArtifact where
   dialect := "petta"
   entries :=
@@ -222,8 +324,10 @@ def pettaExecutionContractArtifact : ExecutionContractArtifact where
     , removeAtomEntry
     , spaceMatchRelationPremiseEntry
     , addAtomFactPayloadEntry
+    , addAtomRulePayloadEntry
     , removeAtomFactPayloadEntry
-    ] ++ coreIntrinsicEntries
+    , removeAtomRulePayloadEntry
+    ] ++ pettaMm2IntrinsicEntries
 
 theorem spaceMatch_effectClass :
     spaceMatchLookupContract.effectClass = .readOnlyLookup := rfl
@@ -287,6 +391,12 @@ theorem addAtomFactPayload_sink :
 
 theorem removeAtomFactPayload_sink :
     removeAtomFactPayloadContract.sinkKind = .removeFact := rfl
+
+theorem addAtomRulePayload_sink :
+    addAtomRulePayloadContract.sinkKind = .insertRule := rfl
+
+theorem removeAtomRulePayload_sink :
+    removeAtomRulePayloadContract.sinkKind = .removeRule := rfl
 
 theorem plusIntrinsic_effectClass :
     (mkCoreIntrinsicContract { head := "+", minArity := 2, demand := .numericArgs }).effectClass = .pureStructural := rfl
