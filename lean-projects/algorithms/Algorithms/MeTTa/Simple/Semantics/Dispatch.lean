@@ -666,4 +666,83 @@ def constrainedCallBindingsAndValues (I : Interface σ) (s : σ) (expr : Pattern
   | _ =>
       (s, [])
 
+-- Helper: inner foldl step over `matchedBs` in `compatFunctionHeadRewrite` preserves P.
+private theorem compatFunctionHeadRewriteInner_preserves
+    (I : Interface σ) (P : σ → Prop) (H : Preservation I P)
+    (rightFresh : Pattern) (matchedBs : List Bindings)
+    (sess : σ) (outAcc : List Pattern) :
+    P sess →
+    P ((matchedBs.foldl
+        (fun (accBs : σ × List Pattern) bs =>
+          let sessBs := accBs.1
+          let outBs := accBs.2
+          let rhs := I.applyBindings bs rightFresh
+          let (sessRhs, vals) :=
+            if hasFreeVar rhs then
+              (sessBs, [rhs])
+            else
+              let (sessRhs, vals0) := I.evalForRuleEnumeration sessBs rhs
+              (sessRhs, if vals0.isEmpty then [rhs] else vals0)
+          let valsFiltered := vals.filter (fun v => !containsCompatTaggedVar v)
+          (sessRhs, outBs ++ valsFiltered))
+        (sess, outAcc)).1) := by
+  intro hSt
+  apply foldlState_preserves P _ _ matchedBs (sess, outAcc) hSt
+  intro stBs bs hStBs
+  cases stBs with
+  | mk sessBs outBs =>
+      simp only
+      by_cases hFree : hasFreeVar (I.applyBindings bs rightFresh)
+      · simp [hFree]
+        simpa using hStBs
+      · simp [hFree]
+        simpa using H.evalForRuleEnumeration_preserves
+          (s := sessBs) (term := I.applyBindings bs rightFresh) rfl hStBs
+
+/-- `compatFunctionHeadRewrite` preserves predicate P if the dispatch interface preserves P. -/
+theorem compatFunctionHeadRewrite_preserves
+    (I : Interface σ) (P : σ → Prop) (H : Preservation I P)
+    (s : σ) (term : Pattern) :
+    P s → P (compatFunctionHeadRewrite I s term).1 := by
+  intro hP
+  cases term with
+  | apply ctor tArgs =>
+      simp only [compatFunctionHeadRewrite]
+      apply foldlState_preserves P _ _ _ (s, []) hP
+      intro st rule hSt
+      cases st with
+      | mk sess outAcc =>
+          simp only
+          cases hLeft : renameFVarsWith (scopedRuleTag rule.name tArgs) rule.left with
+          | apply _ pArgs =>
+              by_cases hLen : pArgs.length == tArgs.length
+              · simp only [hLen, ↓reduceIte]
+                by_cases hCompat : pArgs.any (fun p =>
+                    match p with
+                    | .apply _ [] => true
+                    | .apply _ (_ :: _) => true
+                    | .collection _ (_ :: _) _ => true
+                    | _ => false)
+                · simp only [hCompat, ↓reduceIte]
+                  exact compatFunctionHeadRewriteInner_preserves I P H
+                    (renameFVarsWith (scopedRuleTag rule.name tArgs) rule.right)
+                    (matchHeadArgsWithEval I sess pArgs tArgs [[]])
+                    sess outAcc hSt
+                · simp only [hCompat, Bool.false_eq_true, ↓reduceIte]
+                  simpa using hSt
+              · simp only [hLen, Bool.false_eq_true, ↓reduceIte]
+                simpa using hSt
+          | fvar x => simpa using hSt
+          | bvar n => simpa using hSt
+          | lambda body => simpa using hSt
+          | multiLambda n body => simpa using hSt
+          | subst body repl => simpa using hSt
+          | collection ct elems rest => simpa using hSt
+  | fvar x => simpa [compatFunctionHeadRewrite] using hP
+  | bvar n => simpa [compatFunctionHeadRewrite] using hP
+  | lambda body => simpa [compatFunctionHeadRewrite] using hP
+  | multiLambda n body => simpa [compatFunctionHeadRewrite] using hP
+  | subst body repl => simpa [compatFunctionHeadRewrite] using hP
+  | collection ct elems rest => simpa [compatFunctionHeadRewrite] using hP
+
 end Algorithms.MeTTa.Simple.Semantics.Dispatch

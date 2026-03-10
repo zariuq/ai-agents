@@ -31,8 +31,10 @@ inductive ExampleSurface where
   | heLooksAtCat
   | catThatWalks
   | manSheLoves
-  | gardenPath1
-  | gardenPath2
+  | telescopeNPAttachment
+  | telescopeVPAttachment
+  | annaNPAttachment
+  | annaVPAttachment
   | heWalksWhenSheSleeps
   deriving DecidableEq, Repr
 
@@ -48,21 +50,6 @@ private def manSheLovesNP :=
   let slash := slashVP she_Pron (slashV2a love_V2)
   linDetCN theDefArt (relCN (linUseN man_N)
     (useRCl .Pres .Simul .CPos (relSlash idRP slash)))
-
-private def parse1_theOldManWalks :=
-  linUseCl .Pres .Simul .CPos
-    (linPredVP
-      (linDetCN theDefArt (linAdjCN (linPositA old_A) (linUseN man_N)))
-      (predV walk_V))
-
-private def old_N : EnglishNoun := mk2N "old" "old"
-private def boat_N : EnglishNoun := regN "boat"
-
-private def parse2_theOldManTheBoats :=
-  linUseCl .Pres .Simul .CPos
-    (linPredVP
-      (linDetCN theDefArtPl (linUseN old_N))
-      (complV2 man_V2 (linDetCN theDefArtPl (linUseN boat_N))))
 
 private def heWalksWhenSheSleeps :=
   let sheSleeps := linUseCl .Pres .Simul .CPos (linPredVP she_Pron (predV sleep_V))
@@ -86,8 +73,10 @@ def linearizeSurface : ExampleSurface → String
   | .heLooksAtCat => linUseCl .Pres .Simul .CPos (linPredVP he_Pron (complV2 lookAt_V2 catNP))
   | .catThatWalks => catThatWalksNP.s (.NCase .Nom)
   | .manSheLoves => manSheLovesNP.s (.NCase .Nom)
-  | .gardenPath1 => parse1_theOldManWalks
-  | .gardenPath2 => parse2_theOldManTheBoats
+  | .telescopeNPAttachment => Examples.telescopeNPAttachmentSurface
+  | .telescopeVPAttachment => Examples.telescopeVPAttachmentSurface
+  | .annaNPAttachment => Examples.annaNPAttachmentSurface
+  | .annaVPAttachment => Examples.annaVPAttachmentSurface
   | .heWalksWhenSheSleeps => heWalksWhenSheSleeps
 
 /-- Full curated English corpus used by the roundtrip parser. -/
@@ -107,8 +96,10 @@ def allExamples : List ExampleSurface :=
   , .heLooksAtCat
   , .catThatWalks
   , .manSheLoves
-  , .gardenPath1
-  , .gardenPath2
+  , .telescopeNPAttachment
+  , .telescopeVPAttachment
+  , .annaNPAttachment
+  , .annaVPAttachment
   , .heWalksWhenSheSleeps
   ]
 
@@ -136,11 +127,23 @@ theorem parse_sound (s : String) (e : ExampleSurface) :
 theorem parse_unknown_empty : parseSurface "nonsense input" = [] := by
   decide
 
-/-- All currently curated theorem-backed surfaces are distinct in this corpus. -/
-theorem distinct_surface_examples :
+/-- Selected surface cardinalities in the curated corpus parser. -/
+theorem selected_surface_cardinalities :
     (parseSurface "he walks").length = 1 ∧
-    (parseSurface "the old man walks").length = 1 ∧
-    (parseSurface "the old man the boats").length = 1 := by
+    (parseSurface "John sees the man with the telescope").length = 2 ∧
+    (parseSurface "Anna dresses the baby in the crib").length = 2 := by
+  decide
+
+/-- The curated corpus parser recovers both telescope-attachment analyses. -/
+theorem telescope_surface_ambiguous_in_corpus :
+    parseSurface "John sees the man with the telescope" =
+      [.telescopeNPAttachment, .telescopeVPAttachment] := by
+  decide
+
+/-- The curated corpus parser recovers both Anna attachment analyses. -/
+theorem anna_surface_ambiguous_in_corpus :
+    parseSurface "Anna dresses the baby in the crib" =
+      [.annaNPAttachment, .annaVPAttachment] := by
   decide
 
 end Mettapedia.Languages.GF.English.RoundTripCorpus

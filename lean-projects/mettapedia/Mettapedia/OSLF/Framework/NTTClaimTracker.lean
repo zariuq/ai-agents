@@ -50,7 +50,7 @@ def nttClaimList : List NTTClaim :=
       "NativeType.def21_codomainFibration / def21_cartesianLift_proj / def21_cartesianLift_universal_comp", .proven⟩
   , ⟨"Sec 4", "Image-comprehension adjunction i dashv c (full iff characterization)",
       "NativeType.imageComprehensionAdjunction (with iff_characterization) / imageComprehension_iff", .proven⟩
-  , ⟨"Thm 23", "Internal language functor L : Topos -> HDT_Sigma + functorial laws",
+  , ⟨"Thm 23", "Internal language package with functorial laws (identity/composition)",
       "NativeType.thm23_internalLanguagePackage / thm23_functorialLaws", .proven⟩
   , ⟨"Sec 5", "Theory morphism preservation for Pi/Sigma/Omega translation",
       "TheoryMorphism.piSigmaOmegaProp_translation_endpoint", .proven⟩

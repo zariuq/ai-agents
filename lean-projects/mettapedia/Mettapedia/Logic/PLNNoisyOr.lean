@@ -439,6 +439,301 @@ theorem topic_strength_converges (p : ℝ) (hp : 0 ≤ p) (hp' : p ≤ 1)
 
 end TopicInference
 
+/-! ## §5 Delta Method Variance Propagation for Noisy-OR
+
+When each mechanism strength sₘ is estimated from nₘ observations (Beta posterior),
+the delta method gives a principled propagated variance for the combined noisy-OR
+strength S = 1 - ∏(1 - sₘ):
+
+  var(S) ≈ Σₘ (∂S/∂sₘ)² · var(sₘ)
+
+where ∂S/∂sₘ = ∏_{j≠m}(1-sⱼ) and var(sₘ) = sₘ(1-sₘ)/(nₘ+2) (Beta variance
+with uniform prior).
+
+This replaces the ad-hoc `max(C)` heuristic with a Bayesian-grounded confidence. -/
+
+section DeltaMethodVariance
+
+/-- The partial derivative of the noisy-OR function with respect to the m-th input:
+    ∂S/∂sₘ = ∏_{j≠m}(1 - sⱼ).
+    This is the "survival probability of the other mechanisms." -/
+noncomputable def noisyOrPartial {n : ℕ} (s : Fin n → ℝ) (m : Fin n) : ℝ :=
+  (Finset.univ.erase m).prod (fun j => 1 - s j)
+
+/-- The partial derivative is non-negative when all strengths are in [0,1]. -/
+theorem noisyOrPartial_nonneg {n : ℕ} (s : Fin n → ℝ) (m : Fin n)
+    (_hs : ∀ i, 0 ≤ s i) (hs' : ∀ i, s i ≤ 1) :
+    0 ≤ noisyOrPartial s m := by
+  unfold noisyOrPartial
+  apply Finset.prod_nonneg
+  intro j _
+  linarith [hs' j]
+
+/-- The partial derivative is at most 1 when all strengths are in [0,1]. -/
+theorem noisyOrPartial_le_one {n : ℕ} (s : Fin n → ℝ) (m : Fin n)
+    (hs : ∀ i, 0 ≤ s i) (hs' : ∀ i, s i ≤ 1) :
+    noisyOrPartial s m ≤ 1 := by
+  unfold noisyOrPartial
+  apply Finset.prod_le_one
+  · intro j _; linarith [hs' j]
+  · intro j _; linarith [hs j]
+
+/-- Beta variance for a single mechanism: var(sₘ) = sₘ(1-sₘ)/(nₘ+2).
+    This is the posterior variance of Beta(1 + nₘ·sₘ, 1 + nₘ·(1-sₘ)) with
+    uniform Laplace prior, expressed in the simpler form using the total count. -/
+noncomputable def betaVariance (s : ℝ) (nObs : ℝ) : ℝ :=
+  s * (1 - s) / (nObs + 2)
+
+/-- Beta variance is non-negative for s ∈ [0,1] and nObs ≥ 0. -/
+theorem betaVariance_nonneg {s nObs : ℝ} (hs : 0 ≤ s) (hs' : s ≤ 1)
+    (hn : 0 ≤ nObs) : 0 ≤ betaVariance s nObs := by
+  unfold betaVariance
+  apply div_nonneg
+  · exact mul_nonneg hs (by linarith)
+  · linarith
+
+/-- Beta variance decreases with more observations (denominator grows). -/
+theorem betaVariance_anti_obs {s n₁ n₂ : ℝ} (hs : 0 ≤ s) (hs' : s ≤ 1)
+    (hn₁ : 0 ≤ n₁) (h : n₁ ≤ n₂) :
+    betaVariance s n₂ ≤ betaVariance s n₁ := by
+  unfold betaVariance
+  have hnum : 0 ≤ s * (1 - s) := mul_nonneg hs (by linarith)
+  have hd1 : 0 < n₁ + 2 := by linarith
+  have hd2 : 0 < n₂ + 2 := by linarith
+  exact div_le_div_of_nonneg_left hnum hd1 (by linarith)
+
+/-- Delta method variance for the noisy-OR:
+    var(S) ≈ Σₘ (∂S/∂sₘ)² · var(sₘ)
+
+    where ∂S/∂sₘ = ∏_{j≠m}(1-sⱼ) and var(sₘ) = sₘ(1-sₘ)/(nₘ+2). -/
+noncomputable def noisyOrDeltaVariance {n : ℕ} (s : Fin n → ℝ) (nObs : Fin n → ℝ) : ℝ :=
+  Finset.univ.sum (fun m =>
+    (noisyOrPartial s m) ^ 2 * betaVariance (s m) (nObs m))
+
+/-- The delta method variance is non-negative. -/
+theorem noisyOrDeltaVariance_nonneg {n : ℕ} (s : Fin n → ℝ) (nObs : Fin n → ℝ)
+    (hs : ∀ i, 0 ≤ s i) (hs' : ∀ i, s i ≤ 1) (hn : ∀ i, 0 ≤ nObs i) :
+    0 ≤ noisyOrDeltaVariance s nObs := by
+  unfold noisyOrDeltaVariance
+  apply Finset.sum_nonneg
+  intro m _
+  apply mul_nonneg
+  · exact sq_nonneg _
+  · exact betaVariance_nonneg (hs m) (hs' m) (hn m)
+
+/-- The effective sample size: n_eff = S(1-S) / var(S) - 2.
+    This inverts the Beta variance formula: if S came from n_eff observations with
+    uniform prior, var(S) = S(1-S)/(n_eff+2), so n_eff = S(1-S)/var(S) - 2.
+
+    The PLN confidence is then c = n_eff / (n_eff + κ). -/
+noncomputable def effectiveSampleSize {n : ℕ} (s : Fin n → ℝ) (nObs : Fin n → ℝ) : ℝ :=
+  let S := 1 - Finset.univ.prod (fun i => 1 - s i)
+  let v := noisyOrDeltaVariance s nObs
+  if v = 0 then 0 else S * (1 - S) / v - 2
+
+/-- For a single mechanism (n=1), the effective sample size equals the
+    original observation count. The delta method is exact for identity functions. -/
+theorem effectiveSampleSize_single (s₀ nObs₀ : ℝ)
+    (hs : 0 < s₀) (hs' : s₀ < 1) (hn : 0 < nObs₀) :
+    effectiveSampleSize (n := 1) (fun _ => s₀) (fun _ => nObs₀) = nObs₀ := by
+  unfold effectiveSampleSize noisyOrDeltaVariance noisyOrPartial betaVariance
+  -- For Fin 1, univ = {0}, erase 0 = ∅, prod ∅ = 1
+  have herase : (Finset.univ : Finset (Fin 1)).erase 0 = ∅ := by decide
+  simp only [Fin.prod_univ_one, Fin.sum_univ_one, herase, Finset.prod_empty]
+  have hs_ne : s₀ ≠ 0 := ne_of_gt hs
+  have hs1_ne : 1 - s₀ ≠ 0 := sub_ne_zero.mpr (ne_of_lt hs').symm
+  have hvar_ne : 1 ^ 2 * (s₀ * (1 - s₀) / (nObs₀ + 2)) ≠ 0 := by
+    rw [one_pow, one_mul]
+    exact div_ne_zero (mul_ne_zero hs_ne hs1_ne) (by linarith)
+  rw [if_neg hvar_ne]
+  field_simp
+  ring
+
+/-- The noisy-OR delta variance is at most the sum of per-mechanism variances.
+    Since (∂S/∂sₘ)² ≤ 1, each term is bounded by the corresponding Beta variance.
+    This validates that the delta method gives LOWER variance (hence HIGHER confidence)
+    than treating each mechanism independently. -/
+theorem noisyOrDeltaVariance_le_sumVariance {n : ℕ}
+    (s : Fin n → ℝ) (nObs : Fin n → ℝ)
+    (hs : ∀ i, 0 ≤ s i) (hs' : ∀ i, s i ≤ 1) (hn : ∀ i, 0 ≤ nObs i) :
+    noisyOrDeltaVariance s nObs ≤
+      Finset.univ.sum (fun m => betaVariance (s m) (nObs m)) := by
+  unfold noisyOrDeltaVariance
+  apply Finset.sum_le_sum
+  intro m _
+  have hpart := noisyOrPartial_le_one s m hs hs'
+  have hpart_nn := noisyOrPartial_nonneg s m hs hs'
+  have hvar := betaVariance_nonneg (hs m) (hs' m) (hn m)
+  calc (noisyOrPartial s m) ^ 2 * betaVariance (s m) (nObs m)
+      ≤ 1 ^ 2 * betaVariance (s m) (nObs m) := by
+        apply mul_le_mul_of_nonneg_right _ hvar
+        exact sq_le_sq' (by linarith) hpart
+    _ = betaVariance (s m) (nObs m) := by ring
+
+end DeltaMethodVariance
+
+/-! ## §6 Delta-Method Confidence Bridge
+
+Connects the delta-method variance propagation machinery (§5) to PLN confidence.
+
+The chain: Beta posterior variance → noisy-OR delta variance → effective sample size
+→ PLN confidence.  For a single mechanism (n=1), this reduces exactly to the standard
+PLN confidence formula.  For multiple mechanisms, combining via noisy-OR yields lower
+variance (§5 `noisyOrDeltaVariance_le_sumVariance`), hence higher effective sample
+size, hence higher confidence than treating any mechanism alone.
+
+This upgrades the WM noisy-OR scorer from "heuristic with theory nearby" to
+"derived operational view of PLN confidence under variance propagation." -/
+
+section DeltaConfidenceBridge
+
+/-- Real-valued PLN confidence: c = n / (n + κ).
+    Unlike `confidenceFromN` (which takes ℕ), this accepts real-valued n
+    to interface with `effectiveSampleSize` which returns ℝ. -/
+noncomputable def confidenceFromNReal (κ n : ℝ) : ℝ := n / (n + κ)
+
+theorem confidenceFromNReal_nonneg (κ n : ℝ) (hκ : 0 ≤ κ) (hn : 0 ≤ n) :
+    0 ≤ confidenceFromNReal κ n := by
+  unfold confidenceFromNReal
+  exact div_nonneg hn (by linarith)
+
+theorem confidenceFromNReal_le_one (κ n : ℝ) (hκ : 0 < κ) (hn : 0 ≤ n) :
+    confidenceFromNReal κ n ≤ 1 := by
+  unfold confidenceFromNReal
+  have hden : 0 < n + κ := by linarith
+  rw [div_le_one hden]
+  linarith
+
+theorem confidenceFromNReal_mono {κ : ℝ} (hκ : 0 < κ) {m n : ℝ}
+    (hmn : m ≤ n) (hm_den : 0 < m + κ) :
+    confidenceFromNReal κ m ≤ confidenceFromNReal κ n := by
+  unfold confidenceFromNReal
+  have hdenn : 0 < n + κ := by linarith
+  rw [div_le_div_iff₀ hm_den hdenn]
+  nlinarith
+
+/-- Delta-method confidence for noisy-OR combined strength.
+    Feeds the effective sample size (from variance propagation) into the
+    PLN confidence formula. -/
+noncomputable def deltaConfidence {n : ℕ}
+    (s : Fin n → ℝ) (nObs : Fin n → ℝ) (κ : ℝ) : ℝ :=
+  confidenceFromNReal κ (effectiveSampleSize s nObs)
+
+/-- **Single-mechanism exactness**: For n=1, delta confidence reduces exactly to
+    `confidenceFromNReal κ nObs₀`.  The delta method is exact for the identity
+    function, so no information is lost in the variance propagation step. -/
+theorem deltaConfidence_single (s₀ nObs₀ κ : ℝ)
+    (hs : 0 < s₀) (hs' : s₀ < 1) (hn : 0 < nObs₀) :
+    deltaConfidence (n := 1) (fun _ => s₀) (fun _ => nObs₀) κ =
+      confidenceFromNReal κ nObs₀ := by
+  unfold deltaConfidence
+  rw [effectiveSampleSize_single s₀ nObs₀ hs hs' hn]
+
+/-- Lower variance implies higher effective sample size (when both are well-defined).
+    This is the key monotonicity: if var₁ ≤ var₂ and both > 0, then
+    S(1-S)/var₁ - 2 ≥ S(1-S)/var₂ - 2. -/
+theorem effectiveSampleSize_anti_variance (S v₁ v₂ : ℝ)
+    (hS : 0 < S) (hS' : S < 1) (hv₁ : 0 < v₁) (_hv₂ : 0 < v₂)
+    (hle : v₁ ≤ v₂) :
+    S * (1 - S) / v₂ - 2 ≤ S * (1 - S) / v₁ - 2 := by
+  have hSS : 0 ≤ S * (1 - S) := le_of_lt (mul_pos hS (by linarith))
+  linarith [div_le_div_of_nonneg_left hSS hv₁ hle]
+
+/-- **Combining mechanisms increases confidence**: When the noisy-OR delta variance
+    is strictly less than a variance bound V, the effective sample size is at least
+    S(1-S)/V - 2, and hence confidence is at least confidenceFromNReal κ (S(1-S)/V - 2).
+
+    Combined with `noisyOrDeltaVariance_le_sumVariance`, this shows that combining
+    multiple mechanisms via noisy-OR yields at least as much effective evidence as
+    what you'd infer from the sum of individual variances. -/
+theorem deltaConfidence_ge_of_variance_bound {m : ℕ}
+    (s : Fin m → ℝ) (nObs : Fin m → ℝ) (κ V : ℝ)
+    (hκ : 0 < κ)
+    (hvar : noisyOrDeltaVariance s nObs ≤ V)
+    (hv_pos : 0 < noisyOrDeltaVariance s nObs)
+    (hS : 0 < 1 - Finset.univ.prod (fun i => 1 - s i))
+    (hS' : 1 - Finset.univ.prod (fun i => 1 - s i) < 1)
+    (hden : 0 < (1 - Finset.univ.prod (fun i => 1 - s i)) *
+        (Finset.univ.prod (fun i => 1 - s i)) / V - 2 + κ) :
+    confidenceFromNReal κ
+        ((1 - Finset.univ.prod (fun i => 1 - s i)) *
+         (Finset.univ.prod (fun i => 1 - s i)) / V - 2) ≤
+      deltaConfidence s nObs κ := by
+  unfold deltaConfidence effectiveSampleSize
+  simp only [show noisyOrDeltaVariance s nObs ≠ 0 from ne_of_gt hv_pos, ite_false]
+  set P := Finset.univ.prod (fun i => 1 - s i) with hP_def
+  have hP_eq : 1 - (1 - P) = P := by ring
+  rw [hP_eq]
+  apply confidenceFromNReal_mono hκ
+  · -- (1-P)*P/V - 2 ≤ (1-P)*P/v - 2 since v ≤ V and both positive
+    have hSS : 0 ≤ (1 - P) * P := le_of_lt (mul_pos hS (by linarith))
+    linarith [div_le_div_of_nonneg_left hSS hv_pos hvar]
+  · exact hden
+
+/-- **Bayesian posterior mean score**: convex combination of noisy-OR strength
+    and prior mean, weighted by delta-method confidence.
+
+    score = S · C + (1 - C) · μ₀
+
+    This is the proper Bayesian point estimate (evidencePosteriorMean in
+    EvidenceSemantics.lean) applied to the effective sample size from
+    delta-method variance propagation.  It replaces the ad-hoc S × C heuristic.
+
+    When C → 1 (full confidence): score → S (data-driven).
+    When C → 0 (no confidence): score → μ₀ (prior mean). -/
+noncomputable def posteriorMeanScore {n : ℕ}
+    (s : Fin n → ℝ) (nObs : Fin n → ℝ) (κ μ₀ : ℝ) : ℝ :=
+  let S := 1 - Finset.univ.prod (fun i => 1 - s i)
+  let C := deltaConfidence s nObs κ
+  S * C + (1 - C) * μ₀
+
+/-- At full confidence (C=1), the posterior mean equals the noisy-OR strength. -/
+theorem posteriorMeanScore_full_confidence {n : ℕ}
+    (s : Fin n → ℝ) (nObs : Fin n → ℝ) (κ μ₀ : ℝ)
+    (hC : deltaConfidence s nObs κ = 1) :
+    posteriorMeanScore s nObs κ μ₀ = 1 - Finset.univ.prod (fun i => 1 - s i) := by
+  unfold posteriorMeanScore
+  simp [hC]
+
+/-- At zero confidence (C=0), the posterior mean equals the prior. -/
+theorem posteriorMeanScore_zero_confidence {n : ℕ}
+    (s : Fin n → ℝ) (nObs : Fin n → ℝ) (κ μ₀ : ℝ)
+    (hC : deltaConfidence s nObs κ = 0) :
+    posteriorMeanScore s nObs κ μ₀ = μ₀ := by
+  unfold posteriorMeanScore
+  simp [hC]
+
+/-- The posterior mean is a convex combination: it lies between μ₀ and S
+    when confidence is in [0,1]. -/
+theorem posteriorMeanScore_convex {n : ℕ}
+    (s : Fin n → ℝ) (nObs : Fin n → ℝ) (κ μ₀ : ℝ)
+    (hC0 : 0 ≤ deltaConfidence s nObs κ)
+    (hC1 : deltaConfidence s nObs κ ≤ 1)
+    (hμS : μ₀ ≤ 1 - Finset.univ.prod (fun i => 1 - s i)) :
+    μ₀ ≤ posteriorMeanScore s nObs κ μ₀ ∧
+    posteriorMeanScore s nObs κ μ₀ ≤ 1 - Finset.univ.prod (fun i => 1 - s i) := by
+  set S := 1 - Finset.univ.prod (fun i => 1 - s i)
+  set C := deltaConfidence s nObs κ
+  unfold posteriorMeanScore
+  simp only
+  constructor
+  · -- μ₀ ≤ S*C + (1-C)*μ₀  iff  μ₀*C ≤ S*C  iff  μ₀ ≤ S (when C ≥ 0)
+    nlinarith
+  · -- S*C + (1-C)*μ₀ ≤ S  iff  (1-C)*μ₀ ≤ S*(1-C)  iff  μ₀ ≤ S (when C ≤ 1)
+    nlinarith
+
+/-- The posterior mean decomposes as S×C + shrinkage correction.
+    This shows that S×C (the old heuristic) equals the posterior mean minus
+    the prior pull term (1-C)×μ₀. -/
+theorem posteriorMeanScore_eq_sTimesC_plus_shrinkage {n : ℕ}
+    (s : Fin n → ℝ) (nObs : Fin n → ℝ) (κ μ₀ : ℝ) :
+    posteriorMeanScore s nObs κ μ₀ =
+      (1 - Finset.univ.prod (fun i => 1 - s i)) * deltaConfidence s nObs κ +
+      (1 - deltaConfidence s nObs κ) * μ₀ := by
+  rfl
+
+end DeltaConfidenceBridge
+
 /-! ## Summary
 
 **Main Results:**

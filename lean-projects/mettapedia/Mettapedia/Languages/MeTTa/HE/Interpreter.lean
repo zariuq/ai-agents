@@ -140,40 +140,46 @@ def interpretExpression (atom type_ : Atom) (space : Space) (b : Bindings)
     | .expression (op :: _args) =>
       -- Get types of the operator
       let opTypes := getAtomTypes space op
-      -- Separate function types from non-function types
-      let funcTypes := opTypes.filter isFunctionType
-      let nonFuncTypes := opTypes.filter fun t => !isFunctionType t
+      if opTypes.isEmpty then
+        -- Upstream HE falls through to mettaCall when the operator has no
+        -- type info at all. This is what makes ordinary equation-defined
+        -- heads like `(= (id $x) $x)` operational without `(: id ...)`.
+        mettaCall atom type_ space b dispatch evaluated n
+      else
+        -- Separate function types from non-function types
+        let funcTypes := opTypes.filter isFunctionType
+        let nonFuncTypes := opTypes.filter fun t => !isFunctionType t
 
-      -- Try function types first (metta.md lines 335-348)
-      let funcResult := funcTypes.foldl (fun acc f =>
-        match acc with
-        | .inl (prevErrors, _) =>
-          match checkIfFunctionTypeIsApplicable atom f type_ space b n with
-          | .inl errs =>
-            .inl (prevErrors ++ errs.map fun e => (e, b), false)
-          | .inr succs =>
-            let retType := match getFunctionRetType f with
-              | some (.symbol "Expression") => Atom.undefinedType
-              | some t => t
-              | none => Atom.undefinedType
-            let result := succs.flatMap fun sb =>
-              let interpd := interpretFunction atom f retType space sb dispatch evaluated n
-              interpd.flatMap fun (a, ab) =>
-                mettaCall a retType space ab dispatch evaluated n
-            .inr result
-        | .inr _ => acc  -- Already found a successful function type
-      ) (.inl ([], false) : Sum (List ResultPair × Bool) ResultSet)
+        -- Try function types first (metta.md lines 335-348)
+        let funcResult := funcTypes.foldl (fun acc f =>
+          match acc with
+          | .inl (prevErrors, _) =>
+            match checkIfFunctionTypeIsApplicable atom f type_ space b n with
+            | .inl errs =>
+              .inl (prevErrors ++ errs.map fun e => (e, b), false)
+            | .inr succs =>
+              let retType := match getFunctionRetType f with
+                | some (.symbol "Expression") => Atom.undefinedType
+                | some t => t
+                | none => Atom.undefinedType
+              let result := succs.flatMap fun sb =>
+                let interpd := interpretFunction atom f retType space sb dispatch evaluated n
+                interpd.flatMap fun (a, ab) =>
+                  mettaCall a retType space ab dispatch evaluated n
+              .inr result
+          | .inr _ => acc  -- Already found a successful function type
+        ) (.inl ([], false) : Sum (List ResultPair × Bool) ResultSet)
 
-      match funcResult with
-      | .inr result => result
-      | .inl (errors, _) =>
-        -- Try tuple interpretation if non-function types exist (metta.md lines 350-355)
-        let tuples := if !nonFuncTypes.isEmpty then
-          let tupResult := interpretTuple atom space b dispatch evaluated n
-          tupResult.flatMap fun (a, ab) =>
-            mettaCall a type_ space ab dispatch evaluated n
-        else []
-        tuples ++ errors.map fun (e, eb) => (e, eb)
+        match funcResult with
+        | .inr result => result
+        | .inl (errors, _) =>
+          -- Try tuple interpretation if non-function types exist (metta.md lines 350-355)
+          let tuples := if !nonFuncTypes.isEmpty then
+            let tupResult := interpretTuple atom space b dispatch evaluated n
+            tupResult.flatMap fun (a, ab) =>
+              mettaCall a type_ space ab dispatch evaluated n
+          else []
+          tuples ++ errors.map fun (e, eb) => (e, eb)
 
     | _ => [(atom, b)]  -- Not an expression
 

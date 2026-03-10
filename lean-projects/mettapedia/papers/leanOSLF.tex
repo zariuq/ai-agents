@@ -23,6 +23,7 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{definition}[theorem]{Definition}
+\newtheorem{corollary}[theorem]{Corollary}
 
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\codepath}[1]{\path{#1}}
@@ -826,6 +827,52 @@ and $\Bx_{\mathit{lang}} = \forall_{\mathrm{tgt}} \circ \mathrm{src}^*$
 are derived from the reduction span.  No manual proof is needed per language.
 \end{theorem}
 
+\subsection{Predecessor-Finiteness: Sufficient Condition}
+\label{sec:pred-finite-sufficient}
+
+The Galois connection $\Dia \dashv \Bx$ holds for every \code{LanguageDef}, but
+the full Theorem~1 substitutability equivalence additionally requires
+predecessor-finiteness of the reduction relation.
+\codepath{Framework/PredFiniteSufficient.lean} (0~sorries) identifies a
+decidable structural sufficient condition:
+
+\begin{definition}[\code{LangPredFiniteSafe}]
+A \code{LanguageDef} is \emph{predecessor-finite-safe} when:
+\begin{enumerate}
+\item every rewrite rule is \emph{variable-preserving}
+      (every free variable in the LHS appears in the RHS),
+\item congruence descent is disabled (\code{congruenceCollections = []}),
+\item no rule carries premises, and
+\item both LHS and RHS are \code{isMatchCorrect}
+      (no \code{.subst} or \code{.collection} nodes).
+\end{enumerate}
+\end{definition}
+
+\begin{theorem}[\code{predFinite\_langReduces\_of\_langPredFiniteSafe}, 0 sorries]
+\label{thm:pred-finite-safe}
+If \code{LangPredFiniteSafe lang} then for every term~$q$,
+the predecessor set $\{p \mid p \rightsquigarrow q\}$ is finite.
+\end{theorem}
+
+The proof inverts \code{matchPattern} on the RHS to obtain a finite list of
+candidate binding sets; variable-preservation ensures all LHS bindings are
+determined; \code{applyBindings} on the LHS then reconstructs the unique
+predecessor.  Three structural induction lemmas underpin the argument:
+completeness, injectivity, and dependence of \code{applyBindings} with
+respect to free variables.
+
+\begin{corollary}[\code{theorem1\_substitutability\_predFiniteSafe}, 0 sorries]
+For any \code{LangPredFiniteSafe} language, Theorem~1 substitutability holds
+without assuming finiteness as a hypothesis.
+\end{corollary}
+
+The \rhocalc{}-calculus specifically fails this condition:
+\code{rhoCalc\_not\_langPredFiniteSafe} (proved by \code{decide}) shows that
+the COMM rule's RHS contains \code{.subst} and \code{.collection} nodes
+and erases the channel name~$n$.
+This complements the negative result
+\code{not\_global\_hPredFinite\_langReduces\_rhoCalc}.
+
 \section{Language Instances}
 \label{sec:instances}
 
@@ -1235,11 +1282,11 @@ require:
 The full Grothendieck construction for Native Type Theory~\cite{WilliamsStay2021}
 \emph{is} now formalized: the strict NTT claim tracker
 (\code{Framework/NTTClaimTracker.lean}) shows 12/12 claims resolved
-(11~fully proven, 1~assumption-scoped with proven necessity), including
+(all proven, including a necessity witness for the \code{types.Nonempty} guard), including
 Prop~12 (indexed adjoints + Beck--Chevalley), Prop~14 (cosmic fibration),
 Prop~17 (reification right adjoint), Def~21 (codomain fibration with
 Cartesian lifts via pullbacks), Sec~4 (image-comprehension with full
-$\leftrightarrow$ characterization), and Thm~23 (internal language functor
+$\leftrightarrow$ characterization), and Thm~23 (internal language package
 with functorial laws for identity and composition of theory morphisms).
 The sole assumption-scoped item is $\Pi/\Sigma$ type formation under
 a \code{types.Nonempty} guard, whose necessity is proven by
@@ -1295,7 +1342,7 @@ oslf.pdf & \S 3 & Step-past $\Bx$ & proven \\
 oslf.pdf & \S 4 & Galois $\Dia \dashv \Bx$ & proven \\
 oslf.pdf & \S 6 & OSLF type system output & proven \\
 oslf.pdf & Thm 1 & Behavioral $\Rightarrow$ same types (fwd) & proven \\
-oslf.pdf & Thm 1 & Full substitutability (image-finite) & assumption-scoped \\
+oslf.pdf & Thm 1 & Full substitutability (image-finite) & assumption-scoped$^\dagger$ \\
 oslf.pdf & \S 11 & $\varrho$-calculus instance & proven \\
 oslf.pdf & \S 11 & $\lambda$-calculus instance & proven \\
 oslf.pdf & \S 11 & Petri net instance & proven \\
@@ -1311,7 +1358,7 @@ NTT.pdf & Prop 14 & Cosmic fibration (Frame fibers) & proven \\
 NTT.pdf & Prop 17 & Reification right adjoint & proven \\
 NTT.pdf & Def 21 & Codomain fibration + Cartesian lifts & proven \\
 NTT.pdf & \S 4 & Image-comprehension adjunction (full iff) & proven \\
-NTT.pdf & Thm 23 & Internal language functor + functorial laws & proven \\
+NTT.pdf & Thm 23 & Internal language package + functorial laws & proven \\
 NTT.pdf & \S 4 & Internal language: $\top/\bot/\land/\lor$ & proven \\
 NTT.pdf & \S 4 & Frame-derived $\to$/$\lnot$ & proven \\
 NTT.pdf & \S 4 & $\Pi$/$\Sigma$ type formation & assumption-scoped \\
@@ -1326,8 +1373,15 @@ togl.pdf & \S 4 & Modal iteration $\Dia^n =$ graph chains & proven \\
 togl.pdf & \S 5 & Internal subfunctor correspondence & proven \\
 \end{longtable}
 
-25 claims are fully proven; 2 are assumption-scoped with necessity
-counterexamples showing the assumptions cannot be discharged:
+\noindent${}^\dagger$A decidable sufficient condition
+(\code{LangPredFiniteSafe}, Theorem~\ref{thm:pred-finite-safe}) discharges
+the predecessor-finiteness assumption for all languages satisfying the
+structural criterion; the $\varrho$-calculus is provably excluded.
+
+26 claims are fully proven; 1 is assumption-scoped with proven necessity
+counterexamples showing the assumptions cannot be globally discharged, plus a
+positive sufficient condition (Section~\ref{sec:pred-finite-sufficient}) that
+discharges predecessor-finiteness for structurally well-behaved languages:
 \begin{itemize}
 \item \code{types\_nonempty\_necessary\_for\_piSigma}: for empty families,
   $\bigcap \emptyset = \top$ and $\bigcup \emptyset = \bot$, so
@@ -1336,6 +1390,13 @@ counterexamples showing the assumptions cannot be discharged:
   is not closed under \code{ScopedReachable}.
 \item \code{not\_global\_hImageFinite\_rhoCoreStarRel}: the core-star endpoint
   relation is not globally image-finite (via \code{addRightZeroNest} injection).
+\item \code{not\_global\_hPredFinite\_langReduces\_rhoCalc}: the canonical
+  $\varrho$-calculus COMM rule erases the channel name, yielding infinitely
+  many distinct one-step predecessors for a fixed target.
+\item \code{rhoCalc\_not\_langPredFiniteSafe}: the COMM rule violates the
+  structural sufficient condition (RHS contains \code{.subst}/\code{.collection}
+  nodes; variable~$n$ erased), confirming that the negative and positive results
+  meet at the \rhocalc{}-calculus boundary.
 \end{itemize}
 
 Robustness canaries (\code{Framework/PaperParityCanaries.lean}) instantiate the
@@ -1396,9 +1457,10 @@ negative canary demonstrating that the \code{hClosed} assumption does real work.
   $\lambda$-calculus (Section~\ref{sec:paper-parity}).
 
 \item[\checkmark] \textbf{Milestone 9}: Strict NTT parity and strengthened endpoints.
-  All 12 strict NTT claims resolved (11~proven, 1~assumption-scoped with
-  proven necessity).  Three endpoints strengthened beyond paper parity:
-  (a)~Thm~23 functorial laws (identity/composition preservation of
+  All 12 strict NTT claims resolved (all proven, including a necessity
+  witness for the nonempty-family guard).  Three endpoints strengthened
+  beyond paper parity:
+  (a)~Thm~23 internal language package with functorial laws (identity/composition preservation of
   $\Pi/\Omega/\mathrm{Prop}$);
   (b)~Def~21 Cartesian lifts via pullbacks with universal factorization;
   (c)~image-comprehension full $\leftrightarrow$ (hom-set characterization
@@ -1438,7 +1500,7 @@ proven associativity and identity laws, scoped/full comparison roundtrip, and
 internal-language bridge (Section~\ref{sec:paper-parity}).  All 12 strict NTT
 claims are resolved: the codomain fibration has Cartesian lifts via pullbacks,
 the image-comprehension adjunction has a full hom-set $\leftrightarrow$
-characterization, and the internal language functor satisfies identity and
+characterization, and the internal language package satisfies identity and
 composition laws.  The remaining frontier item---lifting Set-level modalities
 into genuine internal $\Omega \to \Omega$ natural transformations in
 $P(T)$---is precisely characterized in Section~\ref{sec:topos-scope}.

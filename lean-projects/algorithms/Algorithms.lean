@@ -5,6 +5,7 @@ import Algorithms.MeTTa.Simple.Relations
 import Algorithms.MeTTa.Simple.Parser
 import Algorithms.MeTTa.Simple.ParserConformance
 import Algorithms.MeTTa.Simple.Session
+import Algorithms.MeTTa.Simple.Backend.SessionReferenceTotal
 import Algorithms.MeTTa.Simple.RuntimeProfile
 import Algorithms.MeTTa.Simple.CommandDispatchRegression
 import Algorithms.MeTTa.Simple.RuntimeRegression
@@ -13,3 +14,4 @@ import Algorithms.MeTTa.HE.Lowering
 import Algorithms.MeTTa.PeTTa.Lowering
 import Algorithms.MeTTa.ProfileChecksum
 import Algorithms.MeTTa.CoreSmoke
+import Algorithms.GF

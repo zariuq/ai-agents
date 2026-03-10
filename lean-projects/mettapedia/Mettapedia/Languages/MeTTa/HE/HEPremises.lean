@@ -22,6 +22,7 @@ type applicability, equation query, grounded dispatch, etc.
 | isFuncType | 1 | Type is an arrow (-> ...) |
 | applicableFuncType | 5 | Function type is applicable to expression with expected type |
 | needsTupleInterp | 3 | No applicable func type + has non-func types |
+| noTypeAtAll | 2 | Expression head has no type annotations in space |
 | notExpression | 1 | Atom is not an Expression (metatype != Expression) |
 | eqQueryResult | 3 | Equation query: (= pattern rhs) matched, rhs resolved |
 | eqQueryHas | 2 | Witness that at least one equation matched |
@@ -160,7 +161,10 @@ private def metaTypeRules : List PRule :=
 
 /-- `typeMatchesMetaOrAtom(atom, type)`:
     type == Atom OR type == metatype(atom) OR metatype(atom) == Variable.
-    Ref: metta.md line 255. -/
+    Ref: metta.md line 255. The `%Undefined%` wildcard belongs later in the
+    `matchTypes`-style `typeOf`/`typeMismatch` path, not in early `metta`
+    dispatch, otherwise untyped expressions short-circuit before
+    `interpretExpression` / `mettaCall`. -/
 private def typeMatchesMetaOrAtomRules : List PRule :=
   [ -- type == Atom
     { headRel := "typeMatchesMetaOrAtom"
@@ -253,14 +257,21 @@ private def notExecutableRules : List PRule :=
 
 /-! ## Type System Relations -/
 
-/-- `typeOf(space, atom, type)`: atom has type annotation in space.
+/-- `typeOfRaw(space, atom, type)`: raw type annotation lookup.
     Looks for (: atom type) entries in the space's atom list. -/
-private def typeOfRules : List PRule :=
-  [ { headRel := "typeOf"
+private def typeOfRawRules : List PRule :=
+  [ { headRel := "typeOfRaw"
       headArgs := [.var "sp", .var "atom", .var "ty"]
       body := [ .deconstruct (.var "sp") "Space" ["atoms"]
               , .compute "findTypeAnnotation" [.var "atoms", .var "atom"] "ty" ]
-      clauseName := some "typeOf_annotation" } ]
+      clauseName := some "typeOfRaw_annotation" } ]
+
+/-- `typeOf(space, atom, type)`: atom has type annotation in space. -/
+private def typeOfRules : List PRule :=
+  [ { headRel := "typeOf"
+      headArgs := [.var "sp", .var "atom", .var "ty"]
+      body := [ .relQuery "typeOfRaw" [.var "sp", .var "atom", .var "ty"] ]
+      clauseName := some "typeOf_from_raw" } ]
 
 /-- `typeMismatch(space, atom, expectedType, actualType)`:
     atom has type actualType != expectedType in space.
@@ -357,6 +368,18 @@ private def needsTupleInterpRules : List PRule :=
               , .notIn "applicableFuncTypeHas" [.var "sp", .var "atom", .var "ty"] ]
       clauseName := some "needsTupleInterp_check" } ]
 
+/-- `noTypeAtAll(space, atom)`:
+    Expression head has no type annotations in the current space.
+    This is the untyped-function fallback path needed for ordinary equation-
+    defined heads like `(id 5)` to reach `mettaCall`.
+    Ref: upstream Hyperon HE evaluates `(= (id $x) $x)` / `!(id 5)` to `5`
+    without requiring `(: id ...)`. -/
+private def noTypeAtAllRules : List PRule :=
+  [ { headRel := "noTypeAtAll"
+      headArgs := [.var "sp", .var "atom"]
+      body := [ .compute "checkNoTypeAtAll" [.var "sp", .var "atom"] "_" ]
+      clauseName := some "noTypeAtAll_missing_head_type" } ]
+
 /-- `groundedCallResult(space, atom, result)`:
     Grounded dispatch result.
     Extracts op and args from expression, calls grounded dispatch. -/
@@ -368,6 +391,195 @@ private def groundedCallResultRules : List PRule :=
               , .compute "evalGroundedDispatch" [.var "op", .var "argsTail"] "result" ]
       clauseName := some "groundedCallResult_dispatch" } ]
 
+/-! ## Control Flow Relations (mettaCall control forms)
+
+These support the MC_SwitchMinimal, MC_Assert, and MC_Case rewrite rules
+in HELanguageDef.lean. Ref: Interpreter.lean:342-396. -/
+
+/-- `parseSwitchMinimalCall(atom, scrutinee, rawCases)`:
+    Recognizes (switch-minimal scrutinee rawCases) or (switch scrutinee rawCases).
+    Extracts scrutinee and rawCases from the expression. -/
+private def parseSwitchMinimalCallRules : List PRule :=
+  [ { headRel := "parseSwitchMinimalCall"
+      headArgs := [.var "atom", .var "scrutinee", .var "rawCases"]
+      body := [ .compute "parseSwitchMinimalCallArgs" [.var "atom"] "packed"
+              , .deconstruct (.var "packed") "ExprCons" ["scrutinee", "rawCases"] ]
+      clauseName := some "parseSwitchMinimalCall_check" } ]
+
+/-- `parseCaseCall(atom, scrutinee, rawCases)`:
+    Recognizes (case scrutinee rawCases). Extracts components. -/
+private def parseCaseCallRules : List PRule :=
+  [ { headRel := "parseCaseCall"
+      headArgs := [.var "atom", .var "scrutinee", .var "rawCases"]
+      body := [ .compute "parseCaseCallArgs" [.var "atom"] "packed"
+              , .deconstruct (.var "packed") "ExprCons" ["scrutinee", "rawCases"] ]
+      clauseName := some "parseCaseCall_check" } ]
+
+/-- `parseAssertCall(atom, asserted)`:
+    Recognizes (assert asserted). Extracts the asserted expression. -/
+private def parseAssertCallRules : List PRule :=
+  [ { headRel := "parseAssertCall"
+      headArgs := [.var "atom", .var "asserted"]
+      body := [ .compute "parseAssertCallArg" [.var "atom"] "asserted" ]
+      clauseName := some "parseAssertCall_check" } ]
+
+/-- `selectSwitchResult(scrutinee, rawCases, template)`:
+    Pattern-match scrutinee against case patterns in rawCases.
+    Returns first matching template (nondeterministic within a match). -/
+private def selectSwitchResultRules : List PRule :=
+  [ { headRel := "selectSwitchResult"
+      headArgs := [.var "scrutinee", .var "rawCases", .var "template"]
+      body := [ .computeMany "selectSwitchTemplate"
+                  [.var "scrutinee", .var "rawCases"] "template" ]
+      clauseName := some "selectSwitchResult_match" } ]
+
+/-- `isNotReducible(atom)`: atom is the sentinel SymAtom("NotReducible").
+    Used by switch-minimal to detect exhausted case list. -/
+private def isNotReducibleRules : List PRule :=
+  [ { headRel := "isNotReducible"
+      headArgs := [.var "atom"]
+      body := [ .compute "checkIsNotReducible" [.var "atom"] "_" ]
+      clauseName := some "isNotReducible_check" } ]
+
+/-- `isReducible(atom)`: atom is NOT the NotReducible sentinel.
+    Positive complement of isNotReducible. -/
+private def isReducibleRules : List PRule :=
+  [ { headRel := "isReducible"
+      headArgs := [.var "atom"]
+      body := [ .compute "checkIsReducible" [.var "atom"] "_" ]
+      clauseName := some "isReducible_check" } ]
+
+/-- `assertMatchesTrue(atom)`: atom matches the True atom.
+    Used by MC_Assert_True. -/
+private def assertMatchesTrueRules : List PRule :=
+  [ { headRel := "assertMatchesTrue"
+      headArgs := [.var "atom"]
+      body := [ .eq (.var "atom") (.ctor "True" []) ]
+      clauseName := some "assertMatchesTrue_check" } ]
+
+/-- `assertNotTrue(atom)`: atom does NOT match True.
+    Used by MC_Assert_NotTrue. -/
+private def assertNotTrueRules : List PRule :=
+  [ { headRel := "assertNotTrue"
+      headArgs := [.var "atom"]
+      body := [ .neq (.var "atom") (.ctor "True" []) ]
+      clauseName := some "assertNotTrue_check" } ]
+
+/-- `mkAssertError(asserted, assertedVal, errAtom)`:
+    Construct the HE assert error shape:
+    (Error (assert asserted) (assertedVal "not" "True"))
+    Ref: Interpreter.lean:74-76 -/
+private def mkAssertErrorRules : List PRule :=
+  [ { headRel := "mkAssertError"
+      headArgs := [.var "asserted", .var "assertedVal", .var "errAtom"]
+      body := [ .compute "buildAssertError"
+                  [.var "asserted", .var "assertedVal"] "errAtom" ]
+      clauseName := some "mkAssertError_build" } ]
+
+/-! ## Minimal Instruction Relations (superpose, match, unify, collapse)
+
+These support the MC_Superpose, MC_Match, MC_Unify, and MC_Collapse rewrite
+rules in HELanguageDef.lean. These are language-level primitives from the
+minimal MeTTa instruction set, NOT grounded builtins.
+Ref: OpProfile.lean — category: minimalInstruction. -/
+
+/-- `parseSuperpose(atom, elem)`:
+    Recognizes `(superpose (e1 e2 ...))`, yields one binding per element.
+    Multi-result premise: template engine gets N bindings for N elements. -/
+private def parseSuperoseRules : List PRule :=
+  [ { headRel := "parseSuperpose"
+      headArgs := [.var "atom", .var "elem"]
+      body := [ .computeMany "parseSuperposElements" [.var "atom"] "elem" ]
+      clauseName := some "parseSuperpose_elements" } ]
+
+/-- `isSuperpose_empty(atom)`:
+    Recognizes `(superpose ())` — superpose with empty argument list. -/
+private def isSuperpose_emptyRules : List PRule :=
+  [ { headRel := "isSuperpose_empty"
+      headArgs := [.var "atom"]
+      body := [ .compute "checkSuperposeEmpty" [.var "atom"] "_" ]
+      clauseName := some "isSuperpose_empty_check" } ]
+
+/-- `parseMatchCall(atom, pattern, template)`:
+    Recognizes `(match spaceRef pattern template)`.
+    Extracts pattern and template; spaceRef is checked but resolved
+    via the runtime space object (not a template variable). -/
+private def parseMatchCallRules : List PRule :=
+  [ { headRel := "parseMatchCall"
+      headArgs := [.var "atom", .var "pattern", .var "template"]
+      body := [ .compute "parseMatchCallArgs" [.var "atom"] "packed"
+              , .deconstruct (.var "packed") "ExprCons" ["pattern", "template"] ]
+      clauseName := some "parseMatchCall_check" } ]
+
+/-- `spaceQueryMatch(pattern, template, result)`:
+    Multi-result: iterates space atoms, matches pattern against each,
+    substitutes bindings into template. Yields one result per match. -/
+private def spaceQueryMatchRules : List PRule :=
+  [ { headRel := "spaceQueryMatch"
+      headArgs := [.var "pattern", .var "template", .var "result"]
+      body := [ .computeMany "spacePatternQuery"
+                  [.var "pattern", .var "template"] "result" ]
+      clauseName := some "spaceQueryMatch_query" } ]
+
+/-- `spaceQueryNoMatch(pattern)`:
+    Predicate: no space atom matches pattern. -/
+private def spaceQueryNoMatchRules : List PRule :=
+  [ { headRel := "spaceQueryNoMatch"
+      headArgs := [.var "pattern"]
+      body := [ .compute "checkSpaceNoMatch" [.var "pattern"] "_" ]
+      clauseName := some "spaceQueryNoMatch_check" } ]
+
+/-- `parseUnifyCall(atom, target, pattern, success, failure)`:
+    Recognizes `(unify target pattern success failure)`.
+    Extracts all four arguments. -/
+private def parseUnifyCallRules : List PRule :=
+  [ { headRel := "parseUnifyCall"
+      headArgs := [.var "atom", .var "target", .var "pattern",
+                   .var "success", .var "failure"]
+      body := [ .compute "parseUnifyCallArgs" [.var "atom"] "packed"
+              , .deconstruct (.var "packed") "ExprCons" ["target", "rest1"]
+              , .deconstruct (.var "rest1") "ExprCons" ["pattern", "rest2"]
+              , .deconstruct (.var "rest2") "ExprCons" ["success", "failure"] ]
+      clauseName := some "parseUnifyCall_check" } ]
+
+/-- `localMatch(target, pattern, success, result)`:
+    Single `metta_match(pattern, target)` + `metta_subst(success, bindings)`.
+    Returns substituted success template. -/
+private def localMatchRules : List PRule :=
+  [ { headRel := "localMatch"
+      headArgs := [.var "target", .var "pattern",
+                   .var "success", .var "result"]
+      body := [ .compute "localPatternMatch"
+                  [.var "target", .var "pattern", .var "success"] "result" ]
+      clauseName := some "localMatch_compute" } ]
+
+/-- `localNoMatch(target, pattern)`:
+    Predicate: `metta_match(pattern, target)` returns None. -/
+private def localNoMatchRules : List PRule :=
+  [ { headRel := "localNoMatch"
+      headArgs := [.var "target", .var "pattern"]
+      body := [ .compute "checkLocalNoMatch" [.var "target", .var "pattern"] "_" ]
+      clauseName := some "localNoMatch_check" } ]
+
+/-- `parseCollapseCall(atom, expr)`:
+    Recognizes `(collapse expr)`. Extracts the expression to evaluate. -/
+private def parseCollapseCallRules : List PRule :=
+  [ { headRel := "parseCollapseCall"
+      headArgs := [.var "atom", .var "expr"]
+      body := [ .compute "parseCollapseCallArg" [.var "atom"] "expr" ]
+      clauseName := some "parseCollapseCall_check" } ]
+
+/-- `collapseBind(expr, ty, packed)`:
+    Oracle premise: runs nested `run_transition_graph()` on expr,
+    collects all terminal Return(value) states, packs as MeTTa list.
+    The Rust evaluator handles the actual nested evaluation. -/
+private def collapseBindRules : List PRule :=
+  [ { headRel := "collapseBind"
+      headArgs := [.var "expr", .var "ty", .var "packed"]
+      body := [ .compute "evalCollapseBind"
+                  [.var "expr", .var "ty"] "packed" ]
+      clauseName := some "collapseBind_oracle" } ]
+
 /-! ## Builtin Functions -/
 
 private def heBuiltins : List BuiltinFn :=
@@ -377,7 +589,27 @@ private def heBuiltins : List BuiltinFn :=
   , { name := "queryEquationsInSpace", arity := 2 }
   , { name := "findApplicableFuncType", arity := 3 }
   , { name := "hasNonFuncTypes", arity := 2 }
+  , { name := "checkNoTypeAtAll", arity := 2 }
   , { name := "evalGroundedDispatch", arity := 2 }
+  -- Control flow builtins
+  , { name := "parseSwitchMinimalCallArgs", arity := 1 }
+  , { name := "parseCaseCallArgs", arity := 1 }
+  , { name := "parseAssertCallArg", arity := 1 }
+  , { name := "selectSwitchTemplate", arity := 2 }
+  , { name := "checkIsNotReducible", arity := 1 }
+  , { name := "checkIsReducible", arity := 1 }
+  , { name := "buildAssertError", arity := 2 }
+  -- Minimal instruction builtins
+  , { name := "parseSuperposElements", arity := 1 }
+  , { name := "checkSuperposeEmpty", arity := 1 }
+  , { name := "parseMatchCallArgs", arity := 1 }
+  , { name := "spacePatternQuery", arity := 2 }
+  , { name := "checkSpaceNoMatch", arity := 1 }
+  , { name := "parseUnifyCallArgs", arity := 1 }
+  , { name := "localPatternMatch", arity := 3 }
+  , { name := "checkLocalNoMatch", arity := 2 }
+  , { name := "parseCollapseCallArg", arity := 1 }
+  , { name := "evalCollapseBind", arity := 2 }
   ]
 
 private def heAscentHints : List BackendHint :=
@@ -393,6 +625,8 @@ private def heAscentHints : List BackendHint :=
       template := "find_applicable_func_type({0}, {1}, &{2})" }
   , { builtinName := "hasNonFuncTypes", backend := "ascent"
       template := "has_non_func_types({0}, {1})" }
+  , { builtinName := "checkNoTypeAtAll", backend := "ascent"
+      template := "check_no_type_at_all({0}, {1})" }
   , { builtinName := "evalGroundedDispatch", backend := "ascent"
       template := "eval_grounded_dispatch({0}.clone(), {1}.clone())" }
   ]
@@ -415,6 +649,7 @@ def mettaHEPremises : PremiseProgram where
     , { name := "notExpression", paramTypes := ["Atom"] }
     , { name := "isExecutable", paramTypes := ["Atom"] }
     , { name := "notExecutable", paramTypes := ["Atom"] }
+    , { name := "typeOfRaw", paramTypes := ["Space", "Atom", "Atom"] }
     , { name := "typeOf", paramTypes := ["Space", "Atom", "Atom"] }
     , { name := "typeMismatch", paramTypes := ["Space", "Atom", "Atom", "Atom"] }
     , { name := "funcArgTypes", paramTypes := ["Atom", "Atom"] }
@@ -429,6 +664,28 @@ def mettaHEPremises : PremiseProgram where
     , { name := "applicableFuncType", paramTypes := ["Space", "Atom", "Atom", "Atom", "Atom"] }
     , { name := "applicableFuncTypeHas", paramTypes := ["Space", "Atom", "Atom"] }
     , { name := "needsTupleInterp", paramTypes := ["Space", "Atom", "Atom"] }
+    , { name := "noTypeAtAll", paramTypes := ["Space", "Atom"] }
+    -- Control flow relations
+    , { name := "parseSwitchMinimalCall", paramTypes := ["Atom", "Atom", "Atom"] }
+    , { name := "parseCaseCall", paramTypes := ["Atom", "Atom", "Atom"] }
+    , { name := "parseAssertCall", paramTypes := ["Atom", "Atom"] }
+    , { name := "selectSwitchResult", paramTypes := ["Atom", "Atom", "Atom"] }
+    , { name := "isNotReducible", paramTypes := ["Atom"] }
+    , { name := "isReducible", paramTypes := ["Atom"] }
+    , { name := "assertMatchesTrue", paramTypes := ["Atom"] }
+    , { name := "assertNotTrue", paramTypes := ["Atom"] }
+    , { name := "mkAssertError", paramTypes := ["Atom", "Atom", "Atom"] }
+    -- Minimal instruction relations
+    , { name := "parseSuperpose", paramTypes := ["Atom", "Atom"] }
+    , { name := "isSuperpose_empty", paramTypes := ["Atom"] }
+    , { name := "parseMatchCall", paramTypes := ["Atom", "Atom", "Atom"] }
+    , { name := "spaceQueryMatch", paramTypes := ["Atom", "Atom", "Atom"] }
+    , { name := "spaceQueryNoMatch", paramTypes := ["Atom"] }
+    , { name := "parseUnifyCall", paramTypes := ["Atom", "Atom", "Atom", "Atom", "Atom"] }
+    , { name := "localMatch", paramTypes := ["Atom", "Atom", "Atom", "Atom"] }
+    , { name := "localNoMatch", paramTypes := ["Atom", "Atom"] }
+    , { name := "parseCollapseCall", paramTypes := ["Atom", "Atom"] }
+    , { name := "collapseBind", paramTypes := ["Atom", "Atom", "Atom"] }
     ]
   rules :=
     isEmptyRules
@@ -443,6 +700,7 @@ def mettaHEPremises : PremiseProgram where
     ++ notExpressionRules
     ++ isExecutableRules
     ++ notExecutableRules
+    ++ typeOfRawRules
     ++ typeOfRules
     ++ typeMismatchRules
     ++ funcArgTypesRules
@@ -455,6 +713,28 @@ def mettaHEPremises : PremiseProgram where
     ++ applicableFuncTypeRules
     ++ applicableFuncTypeHasRules
     ++ needsTupleInterpRules
+    ++ noTypeAtAllRules
+    -- Control flow rules
+    ++ parseSwitchMinimalCallRules
+    ++ parseCaseCallRules
+    ++ parseAssertCallRules
+    ++ selectSwitchResultRules
+    ++ isNotReducibleRules
+    ++ isReducibleRules
+    ++ assertMatchesTrueRules
+    ++ assertNotTrueRules
+    ++ mkAssertErrorRules
+    -- Minimal instruction rules
+    ++ parseSuperoseRules
+    ++ isSuperpose_emptyRules
+    ++ parseMatchCallRules
+    ++ spaceQueryMatchRules
+    ++ spaceQueryNoMatchRules
+    ++ parseUnifyCallRules
+    ++ localMatchRules
+    ++ localNoMatchRules
+    ++ parseCollapseCallRules
+    ++ collapseBindRules
   builtins := heBuiltins
   backendHints := heAscentHints
   coreGroundEvalRelation := none  -- HE does not use a fast-path evaluator

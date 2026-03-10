@@ -451,6 +451,300 @@ private theorem sizeOf_repl_lt_subst (body repl : Pattern) :
   simp_wf
   omega
 
+/-- `runNestedEffectsArgs` depends only on `I.intrinsicStateful` and `I.isEagerCallableHead`. -/
+private theorem runNestedEffectsArgs_ext_of_lt {σ : Type}
+    (I1 I2 : Interface σ)
+    (_h_intr : I1.intrinsicStateful = I2.intrinsicStateful)
+    (_h_eager : I1.isEagerCallableHead = I2.isEagerCallableHead)
+    (bound : Nat)
+    (hRunExt :
+      ∀ (s : σ) (isRoot parentCallable : Bool) (term : Pattern),
+        sizeOf term < bound →
+        runNestedEffects I1 s isRoot parentCallable term =
+        runNestedEffects I2 s isRoot parentCallable term)
+    (args : List Pattern)
+    (hSmall : ∀ a, a ∈ args → sizeOf a < bound)
+    (s : σ) (parentCallable : Bool) (accRev : List Pattern) (changed : Bool) :
+    runNestedEffectsArgs I1 s parentCallable args accRev changed =
+    runNestedEffectsArgs I2 s parentCallable args accRev changed := by
+  induction args generalizing s accRev changed with
+  | nil => simp [runNestedEffectsArgs]
+  | cons a rest ih =>
+      have hRunEq : runNestedEffects I1 s false parentCallable a =
+                    runNestedEffects I2 s false parentCallable a :=
+        hRunExt s false parentCallable a (hSmall a (by simp))
+      cases hStep : runNestedEffects I2 s false parentCallable a with
+      | mk s1 rest1 =>
+          cases rest1 with
+          | mk a' ch =>
+              have hStep1 : runNestedEffects I1 s false parentCallable a = (s1, a', ch) := by
+                rw [hRunEq]; exact hStep
+              have hSmallRest : ∀ b, b ∈ rest → sizeOf b < bound := by
+                intro b hb; exact hSmall b (by simp [hb])
+              simp only [runNestedEffectsArgs, hStep, hStep1]
+              exact ih hSmallRest s1 (a' :: accRev) (changed || ch)
+
+-- Helper for the apply-ctor case of runNestedEffects_ext.
+-- Proves equality by explicit by_cases on ctor, mirroring runNestedEffectsApply_preserves_local.
+-- This proof has many by_cases guards passed to simp where only some are needed per branch.
+set_option linter.unusedSimpArgs false in
+private theorem runNestedEffectsApply_ext_local {σ : Type}
+    (I1 I2 : Interface σ)
+    (h_intr : I1.intrinsicStateful = I2.intrinsicStateful)
+    (h_eager : I1.isEagerCallableHead = I2.isEagerCallableHead)
+    (s : σ) (isRoot parentCallable : Bool) (ctor : String) (args : List Pattern)
+    (hArgsTrue : runNestedEffectsArgs I1 s true args [] false =
+                 runNestedEffectsArgs I2 s true args [] false)
+    (hArgsFalse : runNestedEffectsArgs I1 s false args [] false =
+                  runNestedEffectsArgs I2 s false args [] false)
+    (hArgsCurrent : runNestedEffectsArgs I1 s (I2.isEagerCallableHead s ctor) args [] false =
+                    runNestedEffectsArgs I2 s (I2.isEagerCallableHead s ctor) args [] false) :
+    runNestedEffects I1 s isRoot parentCallable (.apply ctor args) =
+    runNestedEffects I2 s isRoot parentCallable (.apply ctor args) := by
+  have h_eager_ctor : I1.isEagerCallableHead s ctor = I2.isEagerCallableHead s ctor := by
+    rw [h_eager]
+  -- Close both sides at (s', term', ch) via cases on the resolved generic result
+  by_cases hCall : ctor = "call"
+  · subst hCall
+    simp only [runNestedEffects.eq_def, h_intr, hArgsTrue]
+  · by_cases hEval : ctor = "eval"
+    · subst hEval
+      simp only [runNestedEffects.eq_def, hCall, h_intr, hArgsTrue]
+    · by_cases hReduce : ctor = "reduce"
+      · subst hReduce
+        simp only [runNestedEffects.eq_def, hCall, hEval, h_intr, hArgsTrue]
+      · by_cases hChain : ctor = "chain"
+        · subst hChain
+          simp only [runNestedEffects.eq_def, hCall, hEval, hReduce, h_intr, hArgsTrue]
+        · by_cases hMatch : ctor = "match"
+          · subst hMatch
+            simp [runNestedEffects.eq_def]
+          · by_cases hCollapse : ctor = "collapse"
+            · subst hCollapse
+              simp only [runNestedEffects.eq_def, hCall, hEval, hReduce, hChain, hMatch, h_intr]
+            · by_cases hSuperpose : ctor = "superpose"
+              · subst hSuperpose
+                simp only [runNestedEffects.eq_def, hCall, hEval, hReduce, hChain, hMatch,
+                  hCollapse, hArgsFalse]
+              · by_cases hMsort : ctor = "msort"
+                · subst hMsort
+                  simp only [runNestedEffects.eq_def, hCall, hEval, hReduce, hChain, hMatch,
+                    hCollapse, hSuperpose, h_intr]
+                · cases args with
+                  | nil =>
+                      simp only [runNestedEffects.eq_def, hCall, hEval, hReduce, hChain, hMatch,
+                        hCollapse, hSuperpose, hMsort, h_eager_ctor, hArgsCurrent]
+                  | cons a as =>
+                      cases as with
+                      | nil =>
+                          by_cases hQuote : ctor = "quote"
+                          · subst hQuote; simp [runNestedEffects.eq_def]
+                          · by_cases hRemoveAll : ctor = "remove-all-atoms"
+                            · subst hRemoveAll; simp [runNestedEffects.eq_def]
+                            · by_cases hRemoveAllBang : ctor = "remove-all-atoms!"
+                              · subst hRemoveAllBang; simp [runNestedEffects.eq_def]
+                              · by_cases hGetAtoms : ctor = "get-atoms"
+                                · subst hGetAtoms; simp [runNestedEffects.eq_def]
+                                · by_cases hGetAtomsBang : ctor = "get-atoms!"
+                                  · subst hGetAtomsBang; simp [runNestedEffects.eq_def]
+                                  · by_cases hGetState : ctor = "get-state"
+                                    · subst hGetState; simp [runNestedEffects.eq_def]
+                                    · by_cases hTransaction : ctor = "transaction"
+                                      · subst ctor; simp [runNestedEffects.eq_def]
+                                      · rw [runNestedEffects.eq_def, runNestedEffects.eq_def]
+                                        simp [hCall, hEval, hReduce, hChain, hMatch, hCollapse,
+                                          hSuperpose, hMsort, hQuote, hRemoveAll, hRemoveAllBang,
+                                          hGetAtoms, hGetAtomsBang, hGetState, hTransaction,
+                                          h_eager_ctor, hArgsCurrent]
+                      | cons b bs =>
+                          cases bs with
+                          | nil =>
+                              by_cases hLetStar : ctor = "let*"
+                              · subst hLetStar; simp [runNestedEffects.eq_def]
+                              · by_cases hAddAtom : ctor = "add-atom"
+                                · subst hAddAtom; simp [runNestedEffects.eq_def]
+                                · by_cases hAddAtomBang : ctor = "add-atom!"
+                                  · subst hAddAtomBang; simp [runNestedEffects.eq_def]
+                                  · by_cases hRemoveAtom : ctor = "remove-atom"
+                                    · subst hRemoveAtom; simp [runNestedEffects.eq_def]
+                                    · by_cases hRemoveAtomBang : ctor = "remove-atom!"
+                                      · subst hRemoveAtomBang; simp [runNestedEffects.eq_def]
+                                      · by_cases hBindBang : ctor = "bind!"
+                                        · subst hBindBang; simp [runNestedEffects.eq_def]
+                                        · by_cases hChangeState : ctor = "change-state!"
+                                          · subst hChangeState; simp [runNestedEffects.eq_def]
+                                          · by_cases hWithMutex : ctor = "with_mutex"
+                                            · subst hWithMutex; simp [runNestedEffects.eq_def]
+                                            · by_cases hImport : ctor = "import!"
+                                              · subst ctor; simp [runNestedEffects.eq_def]
+                                              · rw [runNestedEffects.eq_def, runNestedEffects.eq_def]
+                                                simp [hCall, hEval,
+                                                  hReduce, hChain, hMatch, hCollapse, hSuperpose,
+                                                  hMsort, hLetStar, hAddAtom, hAddAtomBang,
+                                                  hRemoveAtom, hRemoveAtomBang, hBindBang,
+                                                  hChangeState, hWithMutex, hImport,
+                                                  h_eager_ctor, hArgsCurrent]
+                          | cons c cs =>
+                              cases cs with
+                              | nil =>
+                                  by_cases hLet : ctor = "let"
+                                  · subst hLet; simp [runNestedEffects.eq_def]
+                                  · by_cases hImport : ctor = "import!"
+                                    · subst ctor; simp [runNestedEffects.eq_def]
+                                    · rw [runNestedEffects.eq_def, runNestedEffects.eq_def]
+                                      simp [hCall, hEval, hReduce, hChain, hMatch, hCollapse,
+                                        hMsort, hLet, hImport,
+                                        h_eager_ctor, hArgsCurrent]
+                              | cons d ds =>
+                                  rw [runNestedEffects.eq_def, runNestedEffects.eq_def]
+                                  simp [hCall, hEval, hReduce, hChain,
+                                    h_eager_ctor, hArgsCurrent]
+
+/-- `runNestedEffects` depends only on `I.intrinsicStateful` and `I.isEagerCallableHead`;
+    the `I.runNestedEffects` field is never called. -/
+theorem runNestedEffects_ext {σ : Type}
+    (I1 I2 : Interface σ)
+    (h_intr : I1.intrinsicStateful = I2.intrinsicStateful)
+    (h_eager : I1.isEagerCallableHead = I2.isEagerCallableHead) :
+    ∀ (s : σ) (isRoot parentCallable : Bool) (term : Pattern),
+      runNestedEffects I1 s isRoot parentCallable term =
+      runNestedEffects I2 s isRoot parentCallable term := by
+  have hMain :
+      ∀ n, ∀ (s : σ) (isRoot parentCallable : Bool) (term : Pattern),
+        sizeOf term ≤ n →
+        runNestedEffects I1 s isRoot parentCallable term =
+        runNestedEffects I2 s isRoot parentCallable term := by
+    intro n
+    induction n using Nat.strongRecOn with
+    | _ n ih =>
+        intro s isRoot parentCallable term hSize
+        cases term with
+        | fvar x => simp [runNestedEffects.eq_def]
+        | bvar x => simp [runNestedEffects.eq_def]
+        | apply ctor args =>
+            have hRunLt :
+                ∀ (s : σ) (isRoot parentCallable : Bool) (term : Pattern),
+                  sizeOf term < sizeOf (Pattern.apply ctor args) →
+                  runNestedEffects I1 s isRoot parentCallable term =
+                  runNestedEffects I2 s isRoot parentCallable term := fun s' ir pc t hLt =>
+              ih (sizeOf t) (Nat.lt_of_lt_of_le hLt hSize) s' ir pc t (Nat.le_refl _)
+            have hArgsTrue :=
+              runNestedEffectsArgs_ext_of_lt I1 I2 h_intr h_eager
+                (sizeOf (Pattern.apply ctor args)) hRunLt
+                args (sizeOf_lt_of_mem_applyArgs ctor args) s true [] false
+            have hArgsFalse :=
+              runNestedEffectsArgs_ext_of_lt I1 I2 h_intr h_eager
+                (sizeOf (Pattern.apply ctor args)) hRunLt
+                args (sizeOf_lt_of_mem_applyArgs ctor args) s false [] false
+            have hArgsCurrent :=
+              runNestedEffectsArgs_ext_of_lt I1 I2 h_intr h_eager
+                (sizeOf (Pattern.apply ctor args)) hRunLt
+                args (sizeOf_lt_of_mem_applyArgs ctor args)
+                s (I2.isEagerCallableHead s ctor) [] false
+            exact runNestedEffectsApply_ext_local I1 I2 h_intr h_eager s isRoot parentCallable
+              ctor args hArgsTrue hArgsFalse hArgsCurrent
+        | lambda body =>
+            have hBody :=
+              ih (sizeOf body) (Nat.lt_of_lt_of_le (sizeOf_body_lt_lambda body) hSize)
+                s false false body (Nat.le_refl _)
+            cases hStep : runNestedEffects I2 s false false body with
+            | mk s1 rest1 =>
+                cases rest1 with
+                | mk body' changed =>
+                    have hStep1 : runNestedEffects I1 s false false body = (s1, body', changed) :=
+                      by rw [hBody]; exact hStep
+                    rw [show runNestedEffects I1 s isRoot parentCallable (.lambda body) =
+                              (s1, .lambda body', changed) by
+                          rw [runNestedEffects.eq_def]; simp [hStep1]]
+                    rw [show runNestedEffects I2 s isRoot parentCallable (.lambda body) =
+                              (s1, .lambda body', changed) by
+                          rw [runNestedEffects.eq_def]; simp [hStep]]
+        | multiLambda n body =>
+            have hBody :=
+              ih (sizeOf body) (Nat.lt_of_lt_of_le (sizeOf_body_lt_multiLambda n body) hSize)
+                s false false body (Nat.le_refl _)
+            cases hStep : runNestedEffects I2 s false false body with
+            | mk s1 rest1 =>
+                cases rest1 with
+                | mk body' changed =>
+                    have hStep1 : runNestedEffects I1 s false false body = (s1, body', changed) :=
+                      by rw [hBody]; exact hStep
+                    rw [show runNestedEffects I1 s isRoot parentCallable (.multiLambda n body) =
+                              (s1, .multiLambda n body', changed) by
+                          rw [runNestedEffects.eq_def]; simp [hStep1]]
+                    rw [show runNestedEffects I2 s isRoot parentCallable (.multiLambda n body) =
+                              (s1, .multiLambda n body', changed) by
+                          rw [runNestedEffects.eq_def]; simp [hStep]]
+        | subst body repl =>
+            have hBody :=
+              ih (sizeOf body) (Nat.lt_of_lt_of_le (sizeOf_body_lt_subst body repl) hSize)
+                s false false body (Nat.le_refl _)
+            cases hStep1 : runNestedEffects I2 s false false body with
+            | mk s1 rest1 =>
+                cases rest1 with
+                | mk body' c1 =>
+                    have hStep1Eq : runNestedEffects I1 s false false body = (s1, body', c1) :=
+                      by rw [hBody]; exact hStep1
+                    have hRepl :=
+                      ih (sizeOf repl) (Nat.lt_of_lt_of_le (sizeOf_repl_lt_subst body repl) hSize)
+                        s1 false false repl (Nat.le_refl _)
+                    cases hStep2 : runNestedEffects I2 s1 false false repl with
+                    | mk s2 rest2 =>
+                        cases rest2 with
+                        | mk repl' c2 =>
+                            have hStep2Eq :
+                                runNestedEffects I1 s1 false false repl = (s2, repl', c2) :=
+                              by rw [hRepl]; exact hStep2
+                            rw [show runNestedEffects I1 s isRoot parentCallable
+                                        (.subst body repl) = (s2, .subst body' repl', c1 || c2) by
+                                  rw [runNestedEffects.eq_def]; simp [hStep1Eq, hStep2Eq]]
+                            rw [show runNestedEffects I2 s isRoot parentCallable
+                                        (.subst body repl) = (s2, .subst body' repl', c1 || c2) by
+                                  rw [runNestedEffects.eq_def]; simp [hStep1, hStep2]]
+        | collection ct elems rest =>
+            have hArgsEq :=
+              runNestedEffectsArgs_ext_of_lt I1 I2 h_intr h_eager
+                (sizeOf (Pattern.collection ct elems rest))
+                (fun s' ir pc t hLt =>
+                  ih (sizeOf t) (Nat.lt_of_lt_of_le hLt hSize)
+                    s' ir pc t (Nat.le_refl _))
+                elems (sizeOf_lt_of_mem_collectionElems ct elems rest) s false [] false
+            cases hStep : runNestedEffectsArgs I2 s false elems [] false with
+            | mk s1 rest1 =>
+                cases rest1 with
+                | mk elems' changed =>
+                    have hStepEq :
+                        runNestedEffectsArgs I1 s false elems [] false = (s1, elems', changed) :=
+                      by rw [hArgsEq]; exact hStep
+                    rw [show runNestedEffects I1 s isRoot parentCallable
+                                (.collection ct elems rest) = (s1, .collection ct elems' rest, changed) by
+                          rw [runNestedEffects.eq_def]; simp [hStepEq]]
+                    rw [show runNestedEffects I2 s isRoot parentCallable
+                                (.collection ct elems rest) = (s1, .collection ct elems' rest, changed) by
+                          rw [runNestedEffects.eq_def]; simp [hStep]]
+  intro s isRoot parentCallable term
+  exact hMain (sizeOf term) s isRoot parentCallable term (Nat.le_refl _)
+
+theorem runNestedEffectsArgs_ext {σ : Type}
+    (I1 I2 : Interface σ)
+    (h_intr : I1.intrinsicStateful = I2.intrinsicStateful)
+    (h_eager : I1.isEagerCallableHead = I2.isEagerCallableHead)
+    (s : σ) (pc : Bool) (args accRev : List Pattern) (changed : Bool) :
+    runNestedEffectsArgs I1 s pc args accRev changed =
+    runNestedEffectsArgs I2 s pc args accRev changed := by
+  induction args generalizing s accRev changed with
+  | nil => simp [runNestedEffectsArgs]
+  | cons a rest ih =>
+      have hRunEq := runNestedEffects_ext I1 I2 h_intr h_eager s false pc a
+      cases hStep : runNestedEffects I2 s false pc a with
+      | mk s1 rest1 =>
+          cases rest1 with
+          | mk a' ch =>
+              have hStep1 : runNestedEffects I1 s false pc a = (s1, a', ch) := by
+                rw [hRunEq]; exact hStep
+              simp only [runNestedEffectsArgs, hStep, hStep1]
+              exact ih s1 (a' :: accRev) (changed || ch)
+
 private theorem runNestedEffectsArgs_preserves_of_lt
     (I : Interface σ) (P : σ → Prop)
     (bound : Nat)

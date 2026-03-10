@@ -1271,5 +1271,20 @@ theorem coreMain_paper_parity_full_package
 #check @coreMain_paper_parity_theorem_package_langReduces
 #check @CoreMainPaperParityCanonicalPackage
 #check @coreMain_paper_parity_canonical_package
+-- Category LambdaTheory (Thm 23 upgrade)
+#check @Mettapedia.OSLF.NativeType.lambdaTheoryCategoryStruct
+#check @Mettapedia.OSLF.NativeType.lambdaTheoryCategory
+#check @Mettapedia.OSLF.NativeType.lambdaTheory_id_eq
+#check @Mettapedia.OSLF.NativeType.lambdaTheory_comp_eq
+-- Layer 2: LambdaTheory ⥤ Cat functor
+#check @Mettapedia.OSLF.NativeType.natTypePreorder
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.mapPred_mono
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.mapNatType_monotone
+#check @Mettapedia.OSLF.NativeType.theoryMorphismNatTypeFunctor
+#check @Mettapedia.OSLF.NativeType.nativeTypeFunctor
+-- Simulation maps preserve modal semantics
+#check @Mettapedia.OSLF.Framework.SimulationPreservation.forward_sim_preserves_positive
+#check @Mettapedia.OSLF.Framework.SimulationPreservation.bisimulation_map_preserves_sem
+#check @Mettapedia.OSLF.Framework.SimulationPreservation.bisimulation_map_preserves_indistObs
 
 end Mettapedia.OSLF

@@ -141,6 +141,19 @@ def NatTypeLeq {L : LambdaTheory} (A B : NatType L) (h : A.sort = B.sort) : Prop
 theorem NatTypeLeq.refl {L : LambdaTheory} (A : NatType L) : NatTypeLeq A A rfl :=
   le_refl _
 
+/-- Grothendieck preorder on native types: `A ≤ B` iff same sort and predicate
+    inclusion.  This is the Grothendieck construction of `S ↦ Sub S` as a
+    preorder, giving `NatType L` a `SmallCategory` instance via Mathlib. -/
+instance natTypePreorder {L : LambdaTheory} : Preorder (NatType L) where
+  le A B := ∃ (h : A.sort = B.sort), h ▸ A.pred ≤ B.pred
+  le_refl A := ⟨rfl, le_refl _⟩
+  le_trans A B C := by
+    rintro ⟨h₁, p₁⟩ ⟨h₂, p₂⟩
+    exact ⟨h₁.trans h₂, by
+      cases A; cases B; cases C
+      simp only at h₁ h₂; subst h₁; subst h₂
+      exact le_trans p₁ p₂⟩
+
 /-! ## Concrete Cross-Sort Grothendieck-Style Endpoint
 
 This section adds an explicit endpoint for cross-sort native-type transport.
@@ -1591,6 +1604,81 @@ theorem id_piSigmaOmegaProp_translation_endpoint
 
 end TheoryMorphism
 end TheoryMorphism
+
+/-! ## Category of Lambda Theories
+
+`LambdaTheory` with `TheoryMorphism` forms a category.  This upgrades the
+ad hoc `id`/`comp` infrastructure to a Mathlib-compatible `Category` instance,
+enabling the use of `𝟙`, `≫`, and standard categorical combinators.
+-/
+
+instance lambdaTheoryCategoryStruct :
+    CategoryTheory.CategoryStruct LambdaTheory where
+  Hom := TheoryMorphism
+  id L := TheoryMorphism.id L
+  comp F G := TheoryMorphism.comp G F
+
+instance lambdaTheoryCategory :
+    CategoryTheory.Category LambdaTheory where
+  id_comp {_ _} F := by cases F; rfl
+  comp_id {_ _} F := by cases F; rfl
+  assoc {_ _ _ _} F G H := by cases F; cases G; cases H; rfl
+
+/-- The `Category` identity is `TheoryMorphism.id`. -/
+theorem lambdaTheory_id_eq (L : LambdaTheory) :
+    (CategoryTheory.CategoryStruct.id L : TheoryMorphism L L) =
+      TheoryMorphism.id L := rfl
+
+/-- The `Category` composition agrees with `TheoryMorphism.comp` (argument-reversed). -/
+theorem lambdaTheory_comp_eq {L₁ L₂ L₃ : LambdaTheory}
+    (F : TheoryMorphism L₁ L₂) (G : TheoryMorphism L₂ L₃) :
+    @CategoryTheory.CategoryStruct.comp LambdaTheory lambdaTheoryCategoryStruct
+      L₁ L₂ L₃ F G = G.comp F := rfl
+
+/-! ## Native Type Functor: `LambdaTheory ⥤ Cat`
+
+Each `LambdaTheory L` gives a preorder category `NatType L` (via `natTypePreorder`).
+Each `TheoryMorphism F : L₁ ⟶ L₂` induces a monotone (hence functorial) map
+`mapNatType F : NatType L₁ → NatType L₂`.  Together these define a functor
+from the category of lambda theories to `Cat`.
+-/
+
+/-- `mapPred` is monotone: it preserves `sSup`, hence preserves `≤`. -/
+theorem TheoryMorphism.mapPred_mono {L₁ L₂ : LambdaTheory}
+    (F : TheoryMorphism L₁ L₂) {S : L₁.Obj}
+    {φ ψ : L₁.fibration.Sub S} (h : φ ≤ ψ) :
+    F.mapPred φ ≤ F.mapPred ψ := by
+  have key : F.mapPred (φ ⊔ ψ) = F.mapPred φ ⊔ F.mapPred ψ := by
+    have := F.map_sSup (S := S) {φ, ψ}
+    rw [sSup_pair, Set.image_pair, sSup_pair] at this
+    exact this
+  rw [sup_eq_right.mpr h] at key
+  exact key ▸ le_sup_left
+
+/-- `mapNatType` is monotone with respect to the Grothendieck preorder. -/
+theorem TheoryMorphism.mapNatType_monotone {L₁ L₂ : LambdaTheory}
+    (F : TheoryMorphism L₁ L₂) :
+    Monotone (F.mapNatType) := by
+  intro A B ⟨hs, hp⟩
+  cases A; cases B; simp only [] at hs
+  subst hs
+  exact ⟨rfl, F.mapPred_mono hp⟩
+
+/-- A `TheoryMorphism` induces a functor between native type categories. -/
+def theoryMorphismNatTypeFunctor {L₁ L₂ : LambdaTheory}
+    (F : TheoryMorphism L₁ L₂) :
+    CategoryTheory.Functor (NatType L₁) (NatType L₂) :=
+  Monotone.functor F.mapNatType_monotone
+
+/-- The native type functor `LambdaTheory ⥤ Cat`.
+    Object map: `L ↦ NatType L` (preorder category).
+    Morphism map: `F ↦ theoryMorphismNatTypeFunctor F`. -/
+def nativeTypeFunctor :
+    CategoryTheory.Functor LambdaTheory CategoryTheory.Cat where
+  obj L := CategoryTheory.Cat.of (NatType L)
+  map F := (theoryMorphismNatTypeFunctor F).toCatHom
+  map_id L := by ext; rfl
+  map_comp {L₁ L₂ L₃} F G := by ext; rfl
 
 /-! ## Modal Types (Canonical Route)
 

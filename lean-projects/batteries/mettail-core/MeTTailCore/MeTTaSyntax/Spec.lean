@@ -399,4 +399,41 @@ def SyntaxSpec.checksum (s : SyntaxSpec) : UInt64 :=
 def SyntaxSpec.checksumString (s : SyntaxSpec) : String :=
   toString s.checksum
 
+-- ═══════════════════════════════════════════════════════════════════════
+-- Atom encoding spec: lowering surface S-expressions to core constructors
+-- ═══════════════════════════════════════════════════════════════════════
+
+/-- A surface operator mapped to a nullary core constructor. -/
+structure OperatorAlias where
+  surfaceSymbol : String
+  constructorLabel : String
+deriving Repr, DecidableEq, BEq
+
+/-- How integer literals are encoded as constructor-safe tokens. -/
+inductive IntEncoding where
+  | prefixed (prefix_ : String) (negPrefix : String)
+deriving Repr, DecidableEq, BEq
+
+/-- How string literals are encoded as constructor-safe tokens. -/
+inductive StringEncoding where
+  | prefixed (prefix_ : String)
+  | hexPrefixed (prefix_ : String)
+deriving Repr, DecidableEq, BEq
+
+/-- Lowering rules from surface S-expressions to core runtime constructors.
+    Constructor labels reference `GrammarRule.label` in the `LanguageDef`. -/
+structure AtomEncodingSpec where
+  symbolWrapper : String
+  variableWrapper : String
+  variableWrapsName : Bool
+  intWrapper : String
+  stringWrapper : String
+  exprCons : String
+  exprNil : String
+  intEncoding : IntEncoding
+  stringEncoding : StringEncoding
+  operatorAliases : List OperatorAlias
+  sugarForms : List (String × String × Nat) := []
+deriving Repr, DecidableEq, BEq
+
 end MeTTailCore.MeTTaSyntax

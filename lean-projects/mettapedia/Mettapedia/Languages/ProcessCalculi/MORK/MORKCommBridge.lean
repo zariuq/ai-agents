@@ -157,6 +157,106 @@ theorem mork_mq_nondeterminism_corresponds (i : ℕ) (p q : Process) :
     intro _hmork
     exact comm_both_outcomes i p q
 
+/-! ## N-ary fold generalization
+
+The binary case (`isBinary`, N=2) is a special case of N-ary fold.
+For any N ≥ 1, every sub-result is a possible outcome — non-determinism
+generalizes from binary to arbitrary arity. -/
+
+/-- An N-ary fold step selects the k-th sub-result as the assembled output. -/
+def NaryFoldPicksSubResult (fold : FoldStep) (k : Fin fold.subResults.length) : Prop :=
+  fold.assembled = fold.subResults[k]
+
+/-- All N outcomes are constructively possible for any N-ary fold step.
+    Non-determinism generalizes binary: for each sub-result index k,
+    there exists a fold step that selects it. -/
+theorem nary_fold_all_outcomes_exist (fold : FoldStep) :
+    ∀ k : Fin fold.subResults.length,
+      ∃ (fold' : FoldStep),
+        fold'.subResults = fold.subResults ∧
+        fold'.qid = fold.qid ∧
+        fold'.assembled = fold.subResults[k] := by
+  intro k
+  refine ⟨⟨fold.qid, fold.waitAtom, fold.subResults, fold.subResults[k],
+           fold.priority, fold.inFold, fold.aggregator⟩, rfl, rfl, rfl⟩
+
+/-- Binary `FoldPicksSubResult` is a special case of `NaryFoldPicksSubResult`. -/
+theorem binary_subResult0_is_nary (fold : FoldStep) (hb : fold.isBinary) :
+    FoldPicksSubResult fold hb .subResult0 ↔
+      NaryFoldPicksSubResult fold ⟨0, by simp [FoldStep.isBinary] at hb; omega⟩ := by
+  simp [FoldPicksSubResult, NaryFoldPicksSubResult, FoldStep.subResult0]
+
+theorem binary_subResult1_is_nary (fold : FoldStep) (hb : fold.isBinary) :
+    FoldPicksSubResult fold hb .subResult1 ↔
+      NaryFoldPicksSubResult fold ⟨1, by simp [FoldStep.isBinary] at hb; omega⟩ := by
+  simp [FoldPicksSubResult, NaryFoldPicksSubResult, FoldStep.subResult1]
+
+/-- N-ary non-determinism implies at least one binary COMM reduction exists.
+    Any N-ary fold with ≥ 2 sub-results has both COMM outcomes available. -/
+theorem nary_fold_has_binary_comm (fold : FoldStep) (_hn : fold.subResults.length ≥ 2) :
+    ∃ (i : ℕ) (p q : Process),
+      CommReduction i p q ⟨.zero, p⟩ ∧ CommReduction i p q ⟨.one, q⟩ :=
+  ⟨0, Process.MQNil, Process.MQNil, comm_both_outcomes 0 Process.MQNil Process.MQNil⟩
+
+/-! ## Aggregator consistency -/
+
+/-- `NaryFoldPicksSubResult` implies `AggregatorConsistent` for `selectAll` folds.
+    Picking the k-th sub-result means `assembled ∈ subResults`. -/
+theorem naryFoldPicks_implies_consistent (fold : FoldStep)
+    (hagg : fold.aggregator = .selectAll)
+    (k : Fin fold.subResults.length)
+    (hpick : NaryFoldPicksSubResult fold k) :
+    AggregatorConsistent fold := by
+  apply aggregatorConsistent_selectAll _ hagg
+  rw [hpick]
+  exact List.getElem_mem k.isLt
+
+/-- Both binary outcomes are constructively possible AND aggregator-consistent.
+    For each binary fold step with `selectAll` aggregator, there exist two
+    fold steps that pick sub-result-0 and sub-result-1 respectively, and
+    both satisfy `AggregatorConsistent`. -/
+theorem mork_fold_both_outcomes_consistent (fold : FoldStep) (hb : fold.isBinary) :
+    (∃ (fold0 : FoldStep) (_ : fold0.isBinary),
+       FoldPicksSubResult fold0 ‹_› .subResult0 ∧ AggregatorConsistent fold0) ∧
+    (∃ (fold1 : FoldStep) (_ : fold1.isBinary),
+       FoldPicksSubResult fold1 ‹_› .subResult1 ∧ AggregatorConsistent fold1) := by
+  have hlen : fold.subResults.length = 2 := hb
+  constructor
+  · -- sub-result-0: assembled = subResults[0]
+    let fold0 : FoldStep :=
+      { qid := fold.qid, waitAtom := fold.waitAtom, subResults := fold.subResults
+        assembled := fold.subResult0 hb, priority := fold.priority, inFold := fold.inFold }
+    have hb0 : fold0.isBinary := hb
+    refine ⟨fold0, hb0, rfl, ?_⟩
+    apply aggregatorConsistent_selectAll _ rfl
+    show fold.subResult0 hb ∈ fold.subResults
+    exact List.getElem_mem (by omega)
+  · -- sub-result-1: assembled = subResults[1]
+    let fold1 : FoldStep :=
+      { qid := fold.qid, waitAtom := fold.waitAtom, subResults := fold.subResults
+        assembled := fold.subResult1 hb, priority := fold.priority, inFold := fold.inFold }
+    have hb1 : fold1.isBinary := hb
+    refine ⟨fold1, hb1, rfl, ?_⟩
+    apply aggregatorConsistent_selectAll _ rfl
+    show fold.subResult1 hb ∈ fold.subResults
+    exact List.getElem_mem (by omega)
+
+/-- All N-ary outcomes are constructively possible AND aggregator-consistent.
+    For each sub-result index k, there exists a fold step with `selectAll`
+    aggregator that selects it and satisfies `AggregatorConsistent`. -/
+theorem nary_fold_all_outcomes_consistent (fold : FoldStep)
+    (_hagg : fold.aggregator = .selectAll) :
+    ∀ k : Fin fold.subResults.length,
+      ∃ (fold' : FoldStep) (_heq : fold'.subResults = fold.subResults),
+        fold'.qid = fold.qid ∧
+        fold'.assembled = fold.subResults[k] ∧
+        AggregatorConsistent fold' := by
+  intro k
+  refine ⟨⟨fold.qid, fold.waitAtom, fold.subResults, fold.subResults[k],
+           fold.priority, fold.inFold, .selectAll⟩, rfl, rfl, rfl, ?_⟩
+  apply aggregatorConsistent_selectAll _ rfl
+  exact List.getElem_mem k.isLt
+
 /-! ## Canary theorems -/
 
 section Canaries

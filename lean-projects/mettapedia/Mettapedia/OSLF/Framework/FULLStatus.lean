@@ -23,6 +23,7 @@ import Mettapedia.Languages.GF.WorldModelSemantics
 import Mettapedia.Languages.GF.IdentityEvidenceSemantics
 import Mettapedia.Logic.IdentityEvidence
 import Mettapedia.OSLF.QuantifiedFormula
+import Mettapedia.OSLF.Framework.SimulationPreservation
 
 /-!
 # OSLF FULL Status Tracker
@@ -153,6 +154,11 @@ def tracker : List Milestone :=
       status := .done
       codeRef := "Mettapedia/OSLF/Framework/AssumptionNecessity.lean"
       note := "Dedicated necessity/counterexample theorem family is now formalized for retained global assumptions (`hImageFinite`, `hAtomAll`, `hDiaTopAll`) used by broad wrappers." }
+  , { area := "Assumption Audit"
+      title := "Canonical one-step `langReduces rhoCalc` predecessor-finiteness is necessity-audited"
+      status := .done
+      codeRef := "Mettapedia/OSLF/Framework/AssumptionNecessity.lean: langReduces_rhoCalc_not_predFinite / not_global_hPredFinite_langReduces_rhoCalc"
+      note := "Canonical `rhoCalc` COMM erases the channel parameter, yielding a fixed one-step target with infinitely many distinct predecessors. Hence the remaining `hPredFinite` hypothesis in `coreMain_theorem1_langReduces_imageFinite` is explicit and provably necessary." }
   , { area := "Literature Alignment"
       title := "Internal conjunction/disjunction completion in paper-level topos route"
       status := .done
@@ -507,6 +513,23 @@ These checks tie tracker statements to concrete constants in the codebase.
 #check @Mettapedia.OSLF.NativeType.TheoryMorphism.comp
 #check @Mettapedia.OSLF.NativeType.TheoryMorphism.comp_piProp_colax_rules
 #check @Mettapedia.OSLF.NativeType.TheoryMorphism.comp_piOmegaProp_with_constructor_transport_bundle
+-- Category LambdaTheory instance (Thm 23 upgrade)
+#check @Mettapedia.OSLF.NativeType.lambdaTheoryCategoryStruct
+#check @Mettapedia.OSLF.NativeType.lambdaTheoryCategory
+#check @Mettapedia.OSLF.NativeType.lambdaTheory_id_eq
+#check @Mettapedia.OSLF.NativeType.lambdaTheory_comp_eq
+-- Layer 2: LambdaTheory ⥤ Cat functor
+#check @Mettapedia.OSLF.NativeType.natTypePreorder
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.mapPred_mono
+#check @Mettapedia.OSLF.NativeType.TheoryMorphism.mapNatType_monotone
+#check @Mettapedia.OSLF.NativeType.theoryMorphismNatTypeFunctor
+#check @Mettapedia.OSLF.NativeType.nativeTypeFunctor
+-- Simulation maps preserve modal semantics
+#check @Mettapedia.OSLF.Framework.SimulationPreservation.ForwardSimulationMap
+#check @Mettapedia.OSLF.Framework.SimulationPreservation.BisimulationMap
+#check @Mettapedia.OSLF.Framework.SimulationPreservation.forward_sim_preserves_positive
+#check @Mettapedia.OSLF.Framework.SimulationPreservation.bisimulation_map_preserves_sem
+#check @Mettapedia.OSLF.Framework.SimulationPreservation.bisimulation_map_preserves_indistObs
 #check @Mettapedia.OSLF.Framework.ModalEquivalence.action_galois
 #check @Mettapedia.OSLF.Framework.ModalEquivalence.diamondAction_iff_constructor_graphStepForward
 #check @Mettapedia.OSLF.Framework.ModalEquivalence.boxAction_iff_constructor_graphIncoming

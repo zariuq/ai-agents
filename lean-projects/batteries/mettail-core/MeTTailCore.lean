@@ -4,9 +4,11 @@ import MeTTailCore.MeTTaIL.Match
 import MeTTailCore.MeTTaIL.Engine
 import MeTTailCore.MeTTaIL.Profile
 import MeTTailCore.MeTTaIL.LookupPlan
+import MeTTailCore.MeTTaIL.EffectSafety
 import MeTTailCore.MeTTaIL.TransitionSpec
 import MeTTailCore.MeTTaIL.TransitionPlan
 import MeTTailCore.MeTTaIL.RewriteIR
+import MeTTailCore.MeTTaIL.RewriteIRV2
 import MeTTailCore.MeTTaSyntax.CommandIR
 import MeTTailCore.MeTTaSyntax.Spec
 import MeTTailCore.MeTTaSyntax.Pretty

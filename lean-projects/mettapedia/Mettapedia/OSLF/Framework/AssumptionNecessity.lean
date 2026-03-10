@@ -132,6 +132,145 @@ theorem not_global_hImageFinite_rhoDerivedStarRel :
   rcases rhoDerivedStarRel_not_imageFinite with ⟨p, hp⟩
   exact hp (h p)
 
+/-! ## Predecessor-Finiteness Necessity for Canonical `langReduces rhoCalc`
+
+The ρ-calculus COMM rule erases the channel name from the reduct:
+  { n!(q) | for(<-n){p} | rest } ~> { p[@q] | rest }
+Variable `n` appears in the LHS but NOT in the RHS. Therefore, for a fixed
+COMM target, infinitely many syntactically distinct sources (differing only
+in channel name) all reduce to the same target in one step. -/
+
+section PredFiniteNecessity
+
+open Mettapedia.OSLF.MeTTaIL.Match
+open Mettapedia.OSLF.MeTTaIL.Substitution (openBVar)
+open Mettapedia.OSLF.MeTTaIL.Engine
+open Mettapedia.OSLF.MeTTaIL.DeclReducesPremises
+open Mettapedia.OSLF.Framework.TypeSynthesis
+
+/-- Generic COMM source parameterized by channel. Body = `.bvar 0` (echo
+    received name), sent value = `PZero`. -/
+def commPredSourceGeneric (channel : Pattern) : Pattern :=
+  .collection .hashBag [
+    .apply "PInput" [channel, .lambda (.bvar 0)],
+    .apply "POutput" [channel, zeroPat]
+  ] none
+
+/-- Infinite family of COMM sources: channel varies via `addRightZeroNest`
+    wrapped in `NQuote`. -/
+def commPredSource (n : Nat) : Pattern :=
+  commPredSourceGeneric (.apply "NQuote" [addRightZeroNest n])
+
+/-- Fixed COMM target shared by every `commPredSource n`.
+    Result of `openBVar 0 (NQuote PZero) (BVar 0) = NQuote PZero`. -/
+def commPredTarget : Pattern :=
+  .collection .hashBag [.apply "NQuote" [zeroPat]] none
+
+/-- Extract the channel from a `commPredSourceGeneric` pattern. -/
+private def commPredExtractChannel : Pattern → Pattern
+  | .collection _ ((.apply "PInput" (ch :: _)) :: _) _ => ch
+  | p => p
+
+private theorem commPredExtractChannel_eq (n : Nat) :
+    commPredExtractChannel (commPredSource n) =
+      .apply "NQuote" [addRightZeroNest n] := by
+  simp [commPredSource, commPredSourceGeneric, commPredExtractChannel]
+
+theorem commPredSource_injective : Function.Injective commPredSource := by
+  intro n m h
+  have hch : commPredExtractChannel (commPredSource n) =
+      commPredExtractChannel (commPredSource m) :=
+    congrArg commPredExtractChannel h
+  simp [commPredExtractChannel_eq] at hch
+  exact addRightZeroNest_injective hch
+
+/-- The ρ-calculus COMM rewrite rule (extracted for proof clarity). -/
+private def commRule : RewriteRule where
+  name := "Comm"
+  typeContext := [("n", TypeExpr.name), ("p", TypeExpr.proc), ("q", TypeExpr.proc)]
+  premises := []
+  left := .collection .hashBag [
+    .apply "PInput" [.fvar "n", .lambda (.fvar "p")],
+    .apply "POutput" [.fvar "n", .fvar "q"]
+  ] (some "rest")
+  right := .collection .hashBag [
+    .subst (.fvar "p") (.apply "NQuote" [.fvar "q"])
+  ] (some "rest")
+
+private theorem commRule_mem : commRule ∈ rhoCalc.rewrites := by
+  simp [commRule, rhoCalc]
+
+/-- Every `commPredSourceGeneric channel` reduces to `commPredTarget` via COMM.
+
+    Proof strategy: construct a `DeclReducesWithPremises.topRule` witness using
+    the COMM rule, explicit matching bindings, and the fact that `applyBindings`
+    evaluates the `.subst` node via `openBVar`. -/
+theorem commPredSourceGeneric_langReduces (channel : Pattern) :
+    langReduces rhoCalc (commPredSourceGeneric channel) commPredTarget := by
+  -- langReduces unfolds to DeclReducesWithPremises
+  show DeclReducesWithPremises RelationEnv.empty rhoCalc
+    (commPredSourceGeneric channel) commPredTarget
+  -- The COMM bindings (order from matchBag: q, rest, p, n)
+  let commBindings : Bindings :=
+    [("q", zeroPat), ("rest", .collection .hashBag [] none),
+     ("p", .bvar 0), ("n", channel)]
+  apply DeclReducesWithPremises.topRule
+    (r := commRule)
+    (bs0 := commBindings)
+    (bs := commBindings)
+  -- Goal 1: commRule ∈ rhoCalc.rewrites
+  · exact commRule_mem
+  -- Goal 2: commBindings ∈ matchPattern commRule.left (commPredSourceGeneric channel)
+  · -- matchPattern: inline commBindings and simp through bag matching
+    show [("q", zeroPat), ("rest", Pattern.collection .hashBag [] none),
+          ("p", Pattern.bvar 0), ("n", channel)] ∈ matchPattern
+      (.collection .hashBag [
+        .apply "PInput" [.fvar "n", .lambda (.fvar "p")],
+        .apply "POutput" [.fvar "n", .fvar "q"]
+      ] (some "rest"))
+      (commPredSourceGeneric channel)
+    simp [commPredSourceGeneric, zeroPat,
+      matchPattern, matchBag, matchArgs, mergeBindings]
+  -- Goal 3: commBindings ∈ applyPremisesWithEnv ... commRule.premises commBindings
+  --   COMM has no premises, so foldl on [] returns [seed]
+  · show commBindings ∈ [commBindings]
+    exact List.Mem.head _
+  -- Goal 4: applyBindings commBindings commRule.right = commPredTarget
+  · show applyBindings
+      [("q", zeroPat), ("rest", Pattern.collection .hashBag [] none),
+       ("p", Pattern.bvar 0), ("n", channel)]
+      (.collection .hashBag [
+        .subst (.fvar "p") (.apply "NQuote" [.fvar "q"])
+      ] (some "rest")) = commPredTarget
+    simp [commPredTarget, zeroPat, applyBindings, openBVar]
+
+theorem commPredSource_langReduces (n : Nat) :
+    langReduces rhoCalc (commPredSource n) commPredTarget :=
+  commPredSourceGeneric_langReduces (.apply "NQuote" [addRightZeroNest n])
+
+theorem infinite_predecessors_langReduces_rhoCalc :
+    Set.Infinite {p : Pattern | langReduces rhoCalc p commPredTarget} := by
+  have hInfRange : Set.Infinite (Set.range commPredSource) :=
+    Set.infinite_range_of_injective commPredSource_injective
+  exact hInfRange.mono (fun p hp => by
+    rcases hp with ⟨n, rfl⟩
+    exact commPredSource_langReduces n)
+
+/-- Concrete witness: canonical one-step `langReduces rhoCalc` is not
+    predecessor-finite. -/
+theorem langReduces_rhoCalc_not_predFinite :
+    ∃ p : Pattern, ¬ Set.Finite {q : Pattern | langReduces rhoCalc q p} :=
+  ⟨commPredTarget, infinite_predecessors_langReduces_rhoCalc.not_finite⟩
+
+/-- Therefore the canonical Theorem-1 predecessor-finiteness assumption cannot
+    be discharged globally for `langReduces rhoCalc`. -/
+theorem not_global_hPredFinite_langReduces_rhoCalc :
+    ¬ (∀ p : Pattern, Set.Finite {q : Pattern | langReduces rhoCalc q p}) := by
+  intro h
+  exact infinite_predecessors_langReduces_rhoCalc.not_finite (h commPredTarget)
+
+end PredFiniteNecessity
+
 def relAll : Pattern → Pattern → Prop := fun _ _ => True
 def relNone : Pattern → Pattern → Prop := fun _ _ => False
 

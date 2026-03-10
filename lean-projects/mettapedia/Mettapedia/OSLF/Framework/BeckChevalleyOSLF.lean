@@ -581,6 +581,47 @@ theorem representable_patternPred_piSigma_transport_pack_via_prop12
       (C := ConstructorObj lang))
     (f := f)
 
+/-- The Prop-12 transport pack is definitionally the rule-pack transport
+instantiated with `prop12_piSigmaPredicateRulePack`. -/
+theorem transport_pack_via_prop12_eq_via_rulePack
+    (lang : LanguageDef) (s : LangSort lang)
+    (seed : Pattern) (φ : Pattern → Prop)
+    (hNat :
+      Mettapedia.OSLF.Framework.CategoryBridge.languageSortPredNaturality
+        lang s seed φ)
+    {D : CategoryTheory.Functor (Opposite (ConstructorObj lang)) Type}
+    (f :
+      (Mettapedia.OSLF.Framework.CategoryBridge.languageSortRepresentableObj
+        lang s) ⟶ D) :
+    representable_patternPred_piSigma_transport_pack_via_prop12
+      lang s seed φ hNat f =
+    representable_patternPred_piSigma_transport_pack_via_rulePack
+      lang s seed φ hNat
+      (hPiSigmaPack := Mettapedia.OSLF.NativeType.prop12_piSigmaPredicateRulePack
+        (C := ConstructorObj lang))
+      f := rfl
+
+/-- The Prop-12 unpacked transport is definitionally the rule-pack transport
+instantiated with `prop12_piSigmaPredicateRulePack`. -/
+theorem transport_via_prop12_pack_eq_via_rulePack
+    (lang : LanguageDef) (s : LangSort lang)
+    (seed : Pattern) (φ : Pattern → Prop)
+    (hNat :
+      Mettapedia.OSLF.Framework.CategoryBridge.languageSortPredNaturality
+        lang s seed φ)
+    {D : CategoryTheory.Functor (Opposite (ConstructorObj lang)) Type}
+    (f :
+      (Mettapedia.OSLF.Framework.CategoryBridge.languageSortRepresentableObj
+        lang s) ⟶ D)
+    (χ ψ : CategoryTheory.Subfunctor D) :
+    representable_patternPred_piSigma_transport_via_prop12_pack
+      lang s seed φ hNat f χ ψ =
+    representable_patternPred_piSigma_transport_via_rulePack
+      lang s seed φ hNat
+      (hPiSigmaPack := Mettapedia.OSLF.NativeType.prop12_piSigmaPredicateRulePack
+        (C := ConstructorObj lang))
+      f χ ψ := rfl
+
 /-- OSLF-layer bridge: `◇` can be read over the internal presheaf reduction
 graph (`E`,`source`,`target`) built in `ToposReduction`.
 

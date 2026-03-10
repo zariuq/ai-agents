@@ -236,6 +236,21 @@ relation:
 If \texttt{engineStep fuel p = some q} then \texttt{Reduces p q}.
 \end{theorem}
 
+\begin{remark}[COMM and Predecessor-Finiteness]
+The COMM rule erases the channel name: the variable~$n$ binding the
+communication channel appears in the LHS but not in the RHS.
+Consequently, for any fixed target~$q'$, infinitely many distinct
+predecessors exist (one per choice of~$n$), and the
+$\rho$-calculus reduction is not predecessor-finite
+(\texttt{not\_global\_hPredFinite\_langReduces\_rhoCalc}).
+A companion formalization~\cite{leanOSLF2025} identifies a decidable
+structural sufficient condition (\texttt{LangPredFiniteSafe}) under which
+predecessor-finiteness holds; the $\rho$-calculus provably fails it
+(\texttt{rhoCalc\_not\_langPredFiniteSafe}).
+This is the precise structural reason that global Hennessy--Milner
+equivalence requires additional quotienting for the $\rho$-calculus.
+\end{remark}
+
 \subsection{Spice Calculus: Present Moment and Lookahead}
 
 The Spice calculus~\cite{MeredithPresentMoment2026} extends $\rho$-calculus
@@ -1099,7 +1114,10 @@ Key results include:
     finite-carrier SC-quotiented canonical $\rho$-relations, and under
     predecessor-finiteness for the global relation.  Forward
     image-finiteness is auto-discharged for all
-    \texttt{LanguageDef}-based relations.
+    \texttt{LanguageDef}-based relations.  A structural sufficient condition
+    for predecessor-finiteness (\texttt{LangPredFiniteSafe}~\cite{leanOSLF2025})
+    identifies exactly which languages admit the global HM~iff without
+    quotienting; the $\rho$-calculus is provably excluded.
   \item MeTTa-calculus with executable COMM/REFL reduction, premise-IR
     adequacy bridge, and a shared-fragment translation into
     $\rho$-calculus with forward/backward shared-core simulation and
@@ -1118,8 +1136,12 @@ Key results include:
     single assumption-minimal weak bisimulation iff.
   \item \textbf{Global Hennessy-Milner for $\rho$-calculus}: lift the
     finite-carrier SC-quotiented HM~iff to the global unquotiented
-    $\rho$-relation by proving predecessor-finiteness or quotienting to
-    a finite-image semantics.
+    $\rho$-relation.  A decidable sufficient condition for
+    predecessor-finiteness (\texttt{LangPredFiniteSafe}~\cite{leanOSLF2025})
+    now provides the positive direction, but the $\rho$-calculus provably
+    fails it (COMM erases the channel name).  The remaining path is
+    quotienting to a finite-image semantics or proving an alternative
+    finiteness argument that accounts for name erasure.
   \item \textbf{Full MeTTa$\leftrightarrow$$\rho$ bisimulation}: extend
     the shared-core (quote/drop/parallel) forward/backward simulation to
     \textsc{Comm} and \textsc{Refl} fragments; remove the

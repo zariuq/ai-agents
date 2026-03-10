@@ -15,6 +15,9 @@ private structure DerivedRule where
   leftRepr : String
   rightRepr : String
   premiseRelations : List String
+  lhsJson : String
+  rhsJson : String
+  premisesJson : String
 deriving Repr
 
 private def rewriteSourceLabel? (rw : RewriteRule) : Option String :=
@@ -38,6 +41,7 @@ private def foldRewriteRules
         match rewriteSourceLabel? rw with
         | some lbl => pure lbl
         | none => throw s!"rewrite '{rw.name}' does not match State(<Instr>, space, out)"
+      let premJsonList := rw.premises.map Premise.renderJson
       let next := acc ++ [{ ruleId := s!"R{idx}"
                             ruleName := rw.name
                             sourceInstr := s!"C_{sourceLabel}"
@@ -45,7 +49,10 @@ private def foldRewriteRules
                             priority := idx
                             leftRepr := reprStr rw.left
                             rightRepr := reprStr rw.right
-                            premiseRelations := premiseRelations rw }]
+                            premiseRelations := premiseRelations rw
+                            lhsJson := rw.left.renderJson
+                            rhsJson := rw.right.renderJson
+                            premisesJson := "[" ++ String.intercalate "," premJsonList ++ "]" }]
       foldRewriteRules rest (idx + 1) next
 
 private def toArtifactRule (r : DerivedRule) : RewriteIRRule :=
@@ -56,7 +63,10 @@ private def toArtifactRule (r : DerivedRule) : RewriteIRRule :=
     priority := r.priority
     leftRepr := r.leftRepr
     rightRepr := r.rightRepr
-    premiseRelations := r.premiseRelations }
+    premiseRelations := r.premiseRelations
+    lhsJson := some r.lhsJson
+    rhsJson := some r.rhsJson
+    premisesJson := some r.premisesJson }
 
 def deriveHeRewriteIR? : Except String RewriteIRArtifact := do
   let derived ← foldRewriteRules
@@ -64,7 +74,7 @@ def deriveHeRewriteIR? : Except String RewriteIRArtifact := do
     0
     []
   let artifact : RewriteIRArtifact :=
-    { schemaVersion := 1
+    { schemaVersion := 2
       dialect := "he"
       rules := derived.map toArtifactRule }
   let lintErrs := artifact.lintErrors

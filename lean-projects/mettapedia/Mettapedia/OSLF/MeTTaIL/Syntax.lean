@@ -220,6 +220,63 @@ def mkBag (elements : List Pattern) (rest : Option String := none) : Pattern :=
 
 end Pattern
 
+/-! ## JSON Serialization for Artifact Export
+
+These produce JSON matching the Rust `PatternNode` / `PremiseNode` enums
+which use `#[serde(tag = "kind", rename_all = "snake_case")]`.
+The format is language-agnostic — any `LanguageDef` can use it. -/
+
+private def jsonEscapeSyntax (s : String) : String :=
+  s.foldl
+    (fun acc c =>
+      acc ++
+      match c with
+      | '"' => "\\\""
+      | '\\' => "\\\\"
+      | '\n' => "\\n"
+      | '\r' => "\\r"
+      | '\t' => "\\t"
+      | _ => String.singleton c)
+    ""
+
+private def jsonStrSyntax (s : String) : String :=
+  "\"" ++ jsonEscapeSyntax s ++ "\""
+
+private def jsonNatSyntax (n : Nat) : String :=
+  toString n
+
+mutual
+  def Pattern.renderJson : Pattern → String
+    | .bvar n => "{\"kind\":\"bvar\",\"index\":" ++ jsonNatSyntax n ++ "}"
+    | .fvar name => "{\"kind\":\"fvar\",\"name\":" ++ jsonStrSyntax name ++ "}"
+    | .apply ctor args =>
+        "{\"kind\":\"apply\",\"ctor\":" ++ jsonStrSyntax ctor
+          ++ ",\"args\":[" ++ String.intercalate "," (renderJsonPatternList args) ++ "]}"
+    | .lambda body =>
+        "{\"kind\":\"lambda\",\"body\":" ++ body.renderJson ++ "}"
+    | .multiLambda arity body =>
+        "{\"kind\":\"multi_lambda\",\"arity\":" ++ jsonNatSyntax arity
+          ++ ",\"body\":" ++ body.renderJson ++ "}"
+    | .subst body repl =>
+        "{\"kind\":\"subst\",\"body\":" ++ body.renderJson
+          ++ ",\"repl\":" ++ repl.renderJson ++ "}"
+    | .collection ct elements rest =>
+        let ctStr := match ct with
+          | .vec => "vec"
+          | .hashBag => "hash_bag"
+          | .hashSet => "hash_set"
+        let restJson := match rest with
+          | none => "null"
+          | some r => jsonStrSyntax r
+        "{\"kind\":\"collection\",\"collection_type\":"
+          ++ jsonStrSyntax ctStr
+          ++ ",\"elements\":[" ++ String.intercalate "," (renderJsonPatternList elements)
+          ++ "],\"rest\":" ++ restJson ++ "}"
+  def renderJsonPatternList : List Pattern → List String
+    | [] => []
+    | p :: ps => p.renderJson :: renderJsonPatternList ps
+end
+
 /-! ## Custom Induction Principle for Pattern
 
 Pattern is a nested inductive (contains `List Pattern`), so the standard
@@ -280,6 +337,17 @@ inductive Premise where
   | congruence : Pattern → Pattern → Premise
   | relationQuery : String → List Pattern → Premise
 deriving Repr
+
+def Premise.renderJson : Premise → String
+  | .freshness fc =>
+      "{\"kind\":\"freshness\",\"var_name\":" ++ jsonStrSyntax fc.varName
+        ++ ",\"term\":" ++ fc.term.renderJson ++ "}"
+  | .congruence lhs rhs =>
+      "{\"kind\":\"congruence\",\"lhs\":" ++ lhs.renderJson
+        ++ ",\"rhs\":" ++ rhs.renderJson ++ "}"
+  | .relationQuery rel args =>
+      "{\"kind\":\"relation_query\",\"relation\":" ++ jsonStrSyntax rel
+        ++ ",\"args\":[" ++ String.intercalate "," (args.map Pattern.renderJson) ++ "]}"
 
 /-! ## Equations -/
 

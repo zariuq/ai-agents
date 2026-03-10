@@ -89,6 +89,13 @@ private def spacePatternVar : Space :=
       (.expression [.symbol "result", .var "x"])
   ]
 
+private def spaceUntypedId : Space :=
+  Space.ofList [
+    Atom.equality
+      (.expression [.symbol "id", .var "x"])
+      (.var "x")
+  ]
+
 private def spaceDuplicate : Space :=
   Space.ofList [
     Atom.equality
@@ -172,6 +179,12 @@ def checkPatternVar : Bool :=
       runHE spacePatternVar (.expression [.symbol "f", .symbol "hello"])
   )
 
+def checkUntypedId : Bool :=
+  decide (
+    runSimple spaceUntypedId (.expression [.symbol "id", .symbol "five"]) =
+      runHE spaceUntypedId (.expression [.symbol "id", .symbol "five"])
+  )
+
 def checkDuplicate : Bool :=
   decide (
     runSimpleWithCfg cfgDuplicate (.expr [.symbol "dup"]) = expectedDuplicate
@@ -195,6 +208,7 @@ def allChecks : List (String × Bool) :=
   , ("nondet", checkNondet)
   , ("noReduction", checkNoReduction)
   , ("patternVar", checkPatternVar)
+  , ("untypedId", checkUntypedId)
   , ("duplicate", checkDuplicate)
   , ("premiseRelationLowering", checkPremiseRelationLowering)
   , ("premiseBuiltinLowering", checkPremiseBuiltinLowering)
@@ -224,6 +238,13 @@ theorem premise_relation_lowering_of_check
     runSimpleWithCfg cfgPremiseRelation (.expr [.symbol "fromRel"]) =
       expectedPremiseRelation := by
   unfold checkPremiseRelationLowering at h
+  exact (decide_eq_true_eq.mp h)
+
+theorem untyped_id_conformance_of_check
+    (h : checkUntypedId = true) :
+    runSimple spaceUntypedId (.expression [.symbol "id", .symbol "five"]) =
+      runHE spaceUntypedId (.expression [.symbol "id", .symbol "five"]) := by
+  unfold checkUntypedId at h
   exact (decide_eq_true_eq.mp h)
 
 theorem premise_builtin_lowering_of_check

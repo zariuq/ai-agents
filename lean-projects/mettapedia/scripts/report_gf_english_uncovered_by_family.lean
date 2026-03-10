@@ -1,5 +1,5 @@
 import Mettapedia.Languages.GF.Abstract
-import Mettapedia.Languages.GF.English.Linearization
+import Mettapedia.Languages.GF.English.Linearization.Coverage
 
 open Mettapedia.Languages.GF
 open Mettapedia.Languages.GF.Abstract
@@ -11,6 +11,8 @@ private def preview (xs : List String) (k : Nat) : String :=
 
 private def familyTable : List (String × List FunctionSig) :=
   [ ("core", allCoreFunctions)
+  , ("projectCore", projectCoreFunctions)
+  , ("projectCorePlusSymbol", projectCorePlusSymbolFunctions)
   , ("adverb", adverbFunctions)
   , ("tense", tenseFunctions)
   , ("text", textFunctions)
