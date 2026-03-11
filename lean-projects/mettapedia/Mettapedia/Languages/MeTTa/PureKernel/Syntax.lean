@@ -5,6 +5,14 @@ inductive PureTm : Nat → Type where
   | var : Fin n → PureTm n
   | u0 : PureTm n
   | u1 : PureTm n
+  | unitTy : PureTm n
+  | unitMk : PureTm n
+  | boolTy : PureTm n
+  | boolFalse : PureTm n
+  | boolTrue : PureTm n
+  | natTy : PureTm n
+  | natZero : PureTm n
+  | natSucc : PureTm n → PureTm n
   | pi : PureTm n → PureTm (n + 1) → PureTm n
   | sigma : PureTm n → PureTm (n + 1) → PureTm n
   | id : PureTm n → PureTm n → PureTm n → PureTm n
@@ -14,7 +22,9 @@ inductive PureTm : Nat → Type where
   | fst : PureTm n → PureTm n
   | snd : PureTm n → PureTm n
   | refl : PureTm n → PureTm n
+  | unitRec : PureTm n → PureTm n → PureTm n → PureTm n
+  | boolRec : PureTm n → PureTm n → PureTm n → PureTm n → PureTm n
+  | natRec : PureTm n → PureTm n → PureTm n → PureTm n → PureTm n
 deriving DecidableEq, Repr
 
 end Mettapedia.Languages.MeTTa.PureKernel.Syntax
-

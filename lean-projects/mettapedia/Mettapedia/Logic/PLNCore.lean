@@ -39,6 +39,7 @@ import Mettapedia.Logic.PLNCanonicalAPI
 import Mettapedia.Logic.SufficientStatisticSurface
 import Mettapedia.Logic.GenericWorldModelForgetting
 import Mettapedia.Logic.PLNSemitopology
+import Mettapedia.Logic.PLNSemitopologyProvenanceBridge
 import Mettapedia.Logic.PLNWorldModelPreorder
 import Mettapedia.Logic.PLNGaussianEMExtension
 import Mettapedia.Logic.HigherOrder.PLNKyburgReduction
@@ -117,6 +118,11 @@ This module is a curated import surface for the currently theorem-complete PLN s
 - Coalition/semitopology layer for quorum/actionable-coalition reasoning with
   local-consensus/conflict lemmas and bridges into overlap/support forgetting
   (`PLNSemitopology`)
+- Provenance-backed tracked forgetting and overlap-remainder support recovery
+  for the non-additive perimeter (`PLNSemitopologyProvenanceBridge`)
+- Scope-labelled tracked provenance state with non-empty-scope exact forgetting
+  under support containment plus clean-base hypotheses
+  (`PLNScopedTrackedWhichState`)
 - Selector-induced evidence/view preorders (`PLNWorldModelPreorder`)
 - Advanced weighted Gaussian / one-step E/M extension with hard-label reduction
   (`PLNGaussianEMExtension`)

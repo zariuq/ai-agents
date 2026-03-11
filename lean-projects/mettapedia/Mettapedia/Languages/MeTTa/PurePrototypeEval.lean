@@ -1,4 +1,5 @@
 import Mettapedia.Languages.MeTTa.PureCertificateFragment
+import Mettapedia.Languages.MeTTa.PureKernel.DefEq
 import Mettapedia.Languages.MeTTa.PureKernel.Reduction
 import Mettapedia.Languages.MeTTa.PureKernel.Substitution
 import Mettapedia.Languages.MeTTa.PureKernel.ProfileTheory
@@ -27,6 +28,7 @@ open Mettapedia.Languages.MeTTa.PureKernel.Context
 open Mettapedia.Languages.MeTTa.PureKernel.Renaming
 open Mettapedia.Languages.MeTTa.PureKernel.Substitution
 open Mettapedia.Languages.MeTTa.PureKernel.Reduction
+open Mettapedia.Languages.MeTTa.PureKernel.Confluence
 open Mettapedia.Languages.MeTTa.PureKernel.Typing
 open Mettapedia.Languages.MeTTa.PureKernel.PatternBridge
 open Mettapedia.Languages.MeTTa.PureKernel.CoreEmbedding
@@ -39,6 +41,17 @@ def stepCert? : (t : PureTm n) -> Option { u : PureTm n // Red t u }
   | .var _ => none
   | .u0 => none
   | .u1 => none
+  | .unitTy => none
+  | .unitMk => none
+  | .boolTy => none
+  | .boolFalse => none
+  | .boolTrue => none
+  | .natTy => none
+  | .natZero => none
+  | .natSucc k =>
+      match stepCert? k with
+      | some ⟨k', hk⟩ => some ⟨.natSucc k', .congNatSucc hk⟩
+      | none => none
   | .pi A B =>
       match stepCert? A with
       | some ⟨A', hA⟩ => some ⟨.pi A' B, .congPiDom hA⟩
@@ -99,6 +112,64 @@ def stepCert? : (t : PureTm n) -> Option { u : PureTm n // Red t u }
       match stepCert? a with
       | some ⟨a', ha⟩ => some ⟨.refl a', .congRefl ha⟩
       | none => none
+  | .unitRec motive unitCase .unitMk =>
+      some ⟨unitCase, .betaUnitRec motive unitCase⟩
+  | .unitRec motive unitCase scrutinee =>
+      match stepCert? motive with
+      | some ⟨motive', hmotive⟩ =>
+          some ⟨.unitRec motive' unitCase scrutinee, .congUnitRecMotive hmotive⟩
+      | none =>
+          match stepCert? unitCase with
+          | some ⟨unitCase', hcase⟩ =>
+              some ⟨.unitRec motive unitCase' scrutinee, .congUnitRecCase hcase⟩
+          | none =>
+              match stepCert? scrutinee with
+              | some ⟨scrutinee', hscrutinee⟩ =>
+                  some ⟨.unitRec motive unitCase scrutinee', .congUnitRecScrutinee hscrutinee⟩
+              | none => none
+  | .boolRec motive falseCase trueCase .boolFalse =>
+      some ⟨falseCase, .betaBoolRecFalse motive falseCase trueCase⟩
+  | .boolRec motive falseCase trueCase .boolTrue =>
+      some ⟨trueCase, .betaBoolRecTrue motive falseCase trueCase⟩
+  | .boolRec motive falseCase trueCase scrutinee =>
+      match stepCert? motive with
+      | some ⟨motive', hmotive⟩ =>
+          some ⟨.boolRec motive' falseCase trueCase scrutinee, .congBoolRecMotive hmotive⟩
+      | none =>
+          match stepCert? falseCase with
+          | some ⟨falseCase', hfalse⟩ =>
+              some ⟨.boolRec motive falseCase' trueCase scrutinee, .congBoolRecFalseCase hfalse⟩
+          | none =>
+              match stepCert? trueCase with
+              | some ⟨trueCase', htrue⟩ =>
+                  some ⟨.boolRec motive falseCase trueCase' scrutinee, .congBoolRecTrueCase htrue⟩
+              | none =>
+                  match stepCert? scrutinee with
+                  | some ⟨scrutinee', hscrutinee⟩ =>
+                      some ⟨.boolRec motive falseCase trueCase scrutinee', .congBoolRecScrutinee hscrutinee⟩
+                  | none => none
+  | .natRec motive zeroCase succCase .natZero =>
+      some ⟨zeroCase, .betaNatRecZero motive zeroCase succCase⟩
+  | .natRec motive zeroCase succCase (.natSucc k) =>
+      some ⟨.app (.app succCase k) (.natRec motive zeroCase succCase k),
+        .betaNatRecSucc motive zeroCase succCase k⟩
+  | .natRec motive zeroCase succCase scrutinee =>
+      match stepCert? motive with
+      | some ⟨motive', hmotive⟩ =>
+          some ⟨.natRec motive' zeroCase succCase scrutinee, .congNatRecMotive hmotive⟩
+      | none =>
+          match stepCert? zeroCase with
+          | some ⟨zeroCase', hzero⟩ =>
+              some ⟨.natRec motive zeroCase' succCase scrutinee, .congNatRecZeroCase hzero⟩
+          | none =>
+              match stepCert? succCase with
+              | some ⟨succCase', hsucc⟩ =>
+                  some ⟨.natRec motive zeroCase succCase' scrutinee, .congNatRecSuccCase hsucc⟩
+              | none =>
+                  match stepCert? scrutinee with
+                  | some ⟨scrutinee', hscrutinee⟩ =>
+                      some ⟨.natRec motive zeroCase succCase scrutinee', .congNatRecScrutinee hscrutinee⟩
+                  | none => none
 
 def evalPureStep? (t : PureTm n) : Option (PureTm n) :=
   (stepCert? t).map (·.1)
@@ -123,6 +194,14 @@ theorem evalPureFuel_redStar :
             evalPureFuel_redStar fuel step.1
           have hhead : RedStar t step.1 := red_to_redStar step.2
           simpa [evalPureFuel, hstep] using RedStar.trans hhead htail
+
+theorem evalPureFuel_conv_cdev (fuel : Nat) (t : PureTm n) :
+    Conv (evalPureFuel fuel t) (cdev t) := by
+  have hFuel : Conv t (evalPureFuel fuel t) :=
+    redStar_implies_conv (evalPureFuel_redStar fuel t)
+  exact Relation.EqvGen.trans _ _ _
+    (Relation.EqvGen.symm _ _ hFuel)
+    (Mettapedia.Languages.MeTTa.PureKernel.conv_to_cdev t)
 
 structure ExecutablePureRun where
   input : SurfacePureTm 0
@@ -154,6 +233,14 @@ inductive PrettyPureTm where
   | var (name : String)
   | u0
   | u1
+  | unitTy
+  | unitMk
+  | boolTy
+  | boolFalse
+  | boolTrue
+  | natTy
+  | natZero
+  | natSucc (k : PrettyPureTm)
   | pi (dom : PrettyPureTm) (binder : String) (body : PrettyPureTm)
   | sigma (dom : PrettyPureTm) (binder : String) (body : PrettyPureTm)
   | id (A : PrettyPureTm) (a : PrettyPureTm) (b : PrettyPureTm)
@@ -163,6 +250,11 @@ inductive PrettyPureTm where
   | fst (p : PrettyPureTm)
   | snd (p : PrettyPureTm)
   | refl (a : PrettyPureTm)
+  | unitRec (motive : PrettyPureTm) (unitCase : PrettyPureTm) (scrutinee : PrettyPureTm)
+  | boolRec (motive : PrettyPureTm) (falseCase : PrettyPureTm) (trueCase : PrettyPureTm)
+      (scrutinee : PrettyPureTm)
+  | natRec (motive : PrettyPureTm) (zeroCase : PrettyPureTm) (succCase : PrettyPureTm)
+      (scrutinee : PrettyPureTm)
 deriving DecidableEq, Repr
 
 inductive PrettyPureInput where
@@ -191,6 +283,15 @@ def PrettyPureTm.toSurface : (env : List String) -> PrettyPureTm -> Except Strin
       | none => throw s!"unbound variable `{name}`"
   | _, .u0 => pure .u0
   | _, .u1 => pure .u1
+  | _, .unitTy => pure .unitTy
+  | _, .unitMk => pure .unitMk
+  | _, .boolTy => pure .boolTy
+  | _, .boolFalse => pure .boolFalse
+  | _, .boolTrue => pure .boolTrue
+  | _, .natTy => pure .natTy
+  | _, .natZero => pure .natZero
+  | env, .natSucc k => do
+      pure (.natSucc (<- PrettyPureTm.toSurface env k))
   | env, .pi dom binder body => do
       let dom' <- PrettyPureTm.toSurface env dom
       let body' <- PrettyPureTm.toSurface (binder :: env) body
@@ -221,6 +322,23 @@ def PrettyPureTm.toSurface : (env : List String) -> PrettyPureTm -> Except Strin
       pure (.snd (<- PrettyPureTm.toSurface env p))
   | env, .refl a => do
       pure (.refl (<- PrettyPureTm.toSurface env a))
+  | env, .unitRec motive unitCase scrutinee => do
+      pure (.unitRec
+        (<- PrettyPureTm.toSurface env motive)
+        (<- PrettyPureTm.toSurface env unitCase)
+        (<- PrettyPureTm.toSurface env scrutinee))
+  | env, .boolRec motive falseCase trueCase scrutinee => do
+      pure (.boolRec
+        (<- PrettyPureTm.toSurface env motive)
+        (<- PrettyPureTm.toSurface env falseCase)
+        (<- PrettyPureTm.toSurface env trueCase)
+        (<- PrettyPureTm.toSurface env scrutinee))
+  | env, .natRec motive zeroCase succCase scrutinee => do
+      pure (.natRec
+        (<- PrettyPureTm.toSurface env motive)
+        (<- PrettyPureTm.toSurface env zeroCase)
+        (<- PrettyPureTm.toSurface env succCase)
+        (<- PrettyPureTm.toSurface env scrutinee))
 
 def parseClosedPrettyPureToSurface (term : PrettyPureTm) : Except String (SurfacePureTm 0) :=
   PrettyPureTm.toSurface [] term
@@ -274,8 +392,15 @@ private def tokenizeLoop :
       else
         throw s!"unexpected character `{c}`"
 
+private def stripLineComments (input : String) : String :=
+  String.intercalate "\n" <|
+    (input.splitOn "\n").map fun line =>
+      match line.splitOn "--" with
+      | [] => line
+      | head :: _ => head
+
 def tokenize (input : String) : Except String (List Token) :=
-  tokenizeLoop input.toList [] []
+  tokenizeLoop (stripLineComments input).toList [] []
 
 private def expectRParen : List Token -> Except String (List Token)
   | .rparen :: rest => pure rest
@@ -286,26 +411,54 @@ mutual
 partial def parsePrettyPure : List Token -> Except String (PrettyPureTm × List Token)
   | .ident "Type0" :: rest => pure (.u0, rest)
   | .ident "Type1" :: rest => pure (.u1, rest)
+  | .ident "UnitTy" :: rest => pure (.unitTy, rest)
+  | .ident "UnitMk" :: rest => pure (.unitMk, rest)
+  | .ident "BoolTy" :: rest => pure (.boolTy, rest)
+  | .ident "BoolFalse" :: rest => pure (.boolFalse, rest)
+  | .ident "BoolTrue" :: rest => pure (.boolTrue, rest)
+  | .ident "NatTy" :: rest => pure (.natTy, rest)
+  | .ident "NatZero" :: rest => pure (.natZero, rest)
   | .ident name :: rest => pure (.var name, rest)
   | .lparen :: .ident "Type0" :: rest => do
       pure (.u0, <- expectRParen rest)
   | .lparen :: .ident "Type1" :: rest => do
       pure (.u1, <- expectRParen rest)
+  | .lparen :: .ident "UnitTy" :: rest => do
+      pure (.unitTy, <- expectRParen rest)
+  | .lparen :: .ident "UnitMk" :: rest => do
+      pure (.unitMk, <- expectRParen rest)
+  | .lparen :: .ident "BoolTy" :: rest => do
+      pure (.boolTy, <- expectRParen rest)
+  | .lparen :: .ident "BoolFalse" :: rest => do
+      pure (.boolFalse, <- expectRParen rest)
+  | .lparen :: .ident "BoolTrue" :: rest => do
+      pure (.boolTrue, <- expectRParen rest)
+  | .lparen :: .ident "NatTy" :: rest => do
+      pure (.natTy, <- expectRParen rest)
+  | .lparen :: .ident "NatZero" :: rest => do
+      pure (.natZero, <- expectRParen rest)
+  | .lparen :: .ident "NatSucc" :: rest => do
+      let (k, rest) <- parsePrettyPure rest
+      pure (.natSucc k, <- expectRParen rest)
   | .lparen :: .ident "Pi" :: rest => do
-      let (dom, rest) <- parsePrettyPure rest
-      let (binder, body, rest) <- parseBinder rest
+      let (binder, dom, body, rest) <- parseDependentBinder rest
       pure (.pi dom binder body, <- expectRParen rest)
   | .lparen :: .ident "Sigma" :: rest => do
-      let (dom, rest) <- parsePrettyPure rest
-      let (binder, body, rest) <- parseBinder rest
+      let (binder, dom, body, rest) <- parseDependentBinder rest
       pure (.sigma dom binder body, <- expectRParen rest)
   | .lparen :: .ident "Id" :: rest => do
       let (A, rest) <- parsePrettyPure rest
       let (a, rest) <- parsePrettyPure rest
       let (b, rest) <- parsePrettyPure rest
       pure (.id A a b, <- expectRParen rest)
+  | .lparen :: .lambda :: .ident binder :: .arrow :: rest => do
+      let (body, rest) <- parsePrettyPure rest
+      pure (.lam binder body, <- expectRParen rest)
   | .lparen :: .ident "lam" :: rest => do
       let (binder, body, rest) <- parseBinder rest
+      pure (.lam binder body, <- expectRParen rest)
+  | .lparen :: .ident "lambda" :: .ident binder :: rest => do
+      let (body, rest) <- parsePrettyPure rest
       pure (.lam binder body, <- expectRParen rest)
   | .lparen :: .ident "app" :: rest => do
       let (f, rest) <- parsePrettyPure rest
@@ -324,6 +477,26 @@ partial def parsePrettyPure : List Token -> Except String (PrettyPureTm × List 
   | .lparen :: .ident "refl" :: rest => do
       let (a, rest) <- parsePrettyPure rest
       pure (.refl a, <- expectRParen rest)
+  | .lparen :: .ident "UnitRec" :: rest => do
+      let (motive, rest) <- parsePrettyPure rest
+      let (unitCase, rest) <- parsePrettyPure rest
+      let (scrutinee, rest) <- parsePrettyPure rest
+      pure (.unitRec motive unitCase scrutinee, <- expectRParen rest)
+  | .lparen :: .ident "BoolRec" :: rest => do
+      let (motive, rest) <- parsePrettyPure rest
+      let (falseCase, rest) <- parsePrettyPure rest
+      let (trueCase, rest) <- parsePrettyPure rest
+      let (scrutinee, rest) <- parsePrettyPure rest
+      pure (.boolRec motive falseCase trueCase scrutinee, <- expectRParen rest)
+  | .lparen :: .ident "NatRec" :: rest => do
+      let (motive, rest) <- parsePrettyPure rest
+      let (zeroCase, rest) <- parsePrettyPure rest
+      let (succCase, rest) <- parsePrettyPure rest
+      let (scrutinee, rest) <- parsePrettyPure rest
+      pure (.natRec motive zeroCase succCase scrutinee, <- expectRParen rest)
+  | .lparen :: rest => do
+      let (head, rest) <- parsePrettyPure rest
+      parseApplicationTail head rest
   | _ => throw "expected Pure expression"
 
 partial def parseBinder :
@@ -331,7 +504,31 @@ partial def parseBinder :
   | .lparen :: .lambda :: .ident binder :: .arrow :: rest => do
       let (body, rest) <- parsePrettyPure rest
       pure (binder, body, <- expectRParen rest)
-  | _ => throw "expected binder of the form `(\\ x => body)`"
+  | .lparen :: .ident "lambda" :: .ident binder :: rest => do
+      let (body, rest) <- parsePrettyPure rest
+      pure (binder, body, <- expectRParen rest)
+  | _ => throw "expected binder of the form `(lambda $x body)` or `(\\ x => body)`"
+
+partial def parseDependentBinder :
+    List Token -> Except String (String × PrettyPureTm × PrettyPureTm × List Token)
+  | .lparen :: .ident binder :: .ident ":" :: rest => do
+      let (dom, rest) <- parsePrettyPure rest
+      let rest <- expectRParen rest
+      let (body, rest) <- parsePrettyPure rest
+      pure (binder, dom, body, rest)
+  | rest => do
+      let (dom, rest) <- parsePrettyPure rest
+      let (binder, body, rest) <- parseBinder rest
+      pure (binder, dom, body, rest)
+
+partial def parseApplicationTail
+    (head : PrettyPureTm) :
+    List Token -> Except String (PrettyPureTm × List Token)
+  | .rparen :: rest =>
+      pure (head, rest)
+  | tokens => do
+      let (arg, rest) <- parsePrettyPure tokens
+      parseApplicationTail (.app head arg) rest
 
 end
 
@@ -356,7 +553,7 @@ def parseClosedPrettyPureInput (input : String) : Except String ParsedPureInput 
 /-! ## Pretty printer -/
 
 def binderName (depth : Nat) : String :=
-  s!"x{depth}"
+  s!"$x{depth}"
 
 def lookupBinderDisplay (env : List String) (i : Fin env.length) : String :=
   env.get i
@@ -365,19 +562,28 @@ def prettyWith : (env : List String) -> Nat -> PureTm env.length -> String
   | env, _, .var i => lookupBinderDisplay env i
   | _, _, .u0 => "(Type0)"
   | _, _, .u1 => "(Type1)"
+  | _, _, .unitTy => "(UnitTy)"
+  | _, _, .unitMk => "(UnitMk)"
+  | _, _, .boolTy => "(BoolTy)"
+  | _, _, .boolFalse => "(BoolFalse)"
+  | _, _, .boolTrue => "(BoolTrue)"
+  | _, _, .natTy => "(NatTy)"
+  | _, _, .natZero => "(NatZero)"
+  | env, depth, .natSucc k =>
+      s!"(NatSucc {prettyWith env depth k})"
   | env, depth, .pi A B =>
       let x := binderName depth
-      s!"(Pi {prettyWith env depth A} (\\ {x} => {prettyWith (x :: env) (depth + 1) B}))"
+      s!"(Pi ({x} : {prettyWith env depth A}) {prettyWith (x :: env) (depth + 1) B})"
   | env, depth, .sigma A B =>
       let x := binderName depth
-      s!"(Sigma {prettyWith env depth A} (\\ {x} => {prettyWith (x :: env) (depth + 1) B}))"
+      s!"(Sigma ({x} : {prettyWith env depth A}) {prettyWith (x :: env) (depth + 1) B})"
   | env, depth, .id A a b =>
       s!"(Id {prettyWith env depth A} {prettyWith env depth a} {prettyWith env depth b})"
   | env, depth, .lam body =>
       let x := binderName depth
-      s!"(lam (\\ {x} => {prettyWith (x :: env) (depth + 1) body}))"
+      s!"(lambda {x} {prettyWith (x :: env) (depth + 1) body})"
   | env, depth, .app f a =>
-      s!"(app {prettyWith env depth f} {prettyWith env depth a})"
+      s!"({prettyWith env depth f} {prettyWith env depth a})"
   | env, depth, .pair a b =>
       s!"(pair {prettyWith env depth a} {prettyWith env depth b})"
   | env, depth, .fst p =>
@@ -386,6 +592,12 @@ def prettyWith : (env : List String) -> Nat -> PureTm env.length -> String
       s!"(snd {prettyWith env depth p})"
   | env, depth, .refl a =>
       s!"(refl {prettyWith env depth a})"
+  | env, depth, .unitRec motive unitCase scrutinee =>
+      s!"(UnitRec {prettyWith env depth motive} {prettyWith env depth unitCase} {prettyWith env depth scrutinee})"
+  | env, depth, .boolRec motive falseCase trueCase scrutinee =>
+      s!"(BoolRec {prettyWith env depth motive} {prettyWith env depth falseCase} {prettyWith env depth trueCase} {prettyWith env depth scrutinee})"
+  | env, depth, .natRec motive zeroCase succCase scrutinee =>
+      s!"(NatRec {prettyWith env depth motive} {prettyWith env depth zeroCase} {prettyWith env depth succCase} {prettyWith env depth scrutinee})"
 
 def prettyClosed (t : PureTm 0) : String :=
   prettyWith [] 0 t

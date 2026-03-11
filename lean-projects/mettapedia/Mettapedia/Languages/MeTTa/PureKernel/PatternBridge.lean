@@ -23,6 +23,14 @@ def quoteRaw : PureTm n → Pattern
   | .var i => .bvar i.1
   | .u0 => u0
   | .u1 => u1
+  | .unitTy => mkUnitTy
+  | .unitMk => mkUnitMk
+  | .boolTy => mkBoolTy
+  | .boolFalse => mkBoolFalse
+  | .boolTrue => mkBoolTrue
+  | .natTy => mkNatTy
+  | .natZero => mkNatZero
+  | .natSucc k => mkNatSucc (quoteRaw k)
   | .pi A B => mkPi (quoteRaw A) (quoteRaw B)
   | .sigma A B => mkSigma (quoteRaw A) (quoteRaw B)
   | .id A a b => mkId (quoteRaw A) (quoteRaw a) (quoteRaw b)
@@ -32,6 +40,12 @@ def quoteRaw : PureTm n → Pattern
   | .fst p => mkFst (quoteRaw p)
   | .snd p => mkSnd (quoteRaw p)
   | .refl a => mkRefl (quoteRaw a)
+  | .unitRec motive unitCase scrutinee =>
+      mkUnitRec (quoteRaw motive) (quoteRaw unitCase) (quoteRaw scrutinee)
+  | .boolRec motive falseCase trueCase scrutinee =>
+      mkBoolRec (quoteRaw motive) (quoteRaw falseCase) (quoteRaw trueCase) (quoteRaw scrutinee)
+  | .natRec motive zeroCase succCase scrutinee =>
+      mkNatRec (quoteRaw motive) (quoteRaw zeroCase) (quoteRaw succCase) (quoteRaw scrutinee)
 
 def defaultBinderName (k : Nat) : String := String.ofList (List.replicate (k + 1) '_')
 
@@ -50,6 +64,14 @@ def quoteTmWith (ν : Nat → String) (k : Nat) (ρ : QuoteEnv n) : PureTm n →
   | .var i => .fvar (ρ i)
   | .u0 => u0
   | .u1 => u1
+  | .unitTy => mkUnitTy
+  | .unitMk => mkUnitMk
+  | .boolTy => mkBoolTy
+  | .boolFalse => mkBoolFalse
+  | .boolTrue => mkBoolTrue
+  | .natTy => mkNatTy
+  | .natZero => mkNatZero
+  | .natSucc t => mkNatSucc (quoteTmWith ν k ρ t)
   | .pi A B =>
       let x := ν k
       mkPi (quoteTmWith ν k ρ A)
@@ -67,6 +89,20 @@ def quoteTmWith (ν : Nat → String) (k : Nat) (ρ : QuoteEnv n) : PureTm n →
   | .fst p => mkFst (quoteTmWith ν k ρ p)
   | .snd p => mkSnd (quoteTmWith ν k ρ p)
   | .refl a => mkRefl (quoteTmWith ν k ρ a)
+  | .unitRec motive unitCase scrutinee =>
+      mkUnitRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ unitCase) (quoteTmWith ν k ρ scrutinee)
+  | .boolRec motive falseCase trueCase scrutinee =>
+      mkBoolRec
+        (quoteTmWith ν k ρ motive)
+        (quoteTmWith ν k ρ falseCase)
+        (quoteTmWith ν k ρ trueCase)
+        (quoteTmWith ν k ρ scrutinee)
+  | .natRec motive zeroCase succCase scrutinee =>
+      mkNatRec
+        (quoteTmWith ν k ρ motive)
+        (quoteTmWith ν k ρ zeroCase)
+        (quoteTmWith ν k ρ succCase)
+        (quoteTmWith ν k ρ scrutinee)
 
 @[simp] theorem envCons_comp_liftRen
     (x : String) (ρdst : QuoteEnv m) (ρ : Ren n m) :
@@ -91,6 +127,22 @@ theorem quoteTmWith_rename (ν : Nat → String) :
       rfl
   | u1 =>
       rfl
+  | unitTy =>
+      rfl
+  | unitMk =>
+      rfl
+  | boolTy =>
+      rfl
+  | boolFalse =>
+      rfl
+  | boolTrue =>
+      rfl
+  | natTy =>
+      rfl
+  | natZero =>
+      rfl
+  | natSucc t ih =>
+      simpa [quoteTmWith, rename] using congrArg mkNatSucc (ih (k := k) (ρdst := ρdst) (ρ := ρ))
   | pi A B ihA ihB =>
       have hB :=
         ihB (k := k + 1) (ρdst := envCons (ν k) ρdst) (ρ := liftRen ρ)
@@ -185,6 +237,23 @@ theorem quoteTmWith_rename (ν : Nat → String) :
       simpa [quoteTmWith, rename] using congrArg mkSnd (ih (k := k) (ρdst := ρdst) (ρ := ρ))
   | refl a iha =>
       simpa [quoteTmWith, rename] using congrArg mkRefl (iha (k := k) (ρdst := ρdst) (ρ := ρ))
+  | unitRec motive unitCase scrutinee ihmotive ihcase ihscrutinee =>
+      simp [quoteTmWith, rename,
+        ihmotive (k := k) (ρdst := ρdst) (ρ := ρ),
+        ihcase (k := k) (ρdst := ρdst) (ρ := ρ),
+        ihscrutinee (k := k) (ρdst := ρdst) (ρ := ρ)]
+  | boolRec motive falseCase trueCase scrutinee ihmotive ihfalse ihtrue ihscrutinee =>
+      simp [quoteTmWith, rename,
+        ihmotive (k := k) (ρdst := ρdst) (ρ := ρ),
+        ihfalse (k := k) (ρdst := ρdst) (ρ := ρ),
+        ihtrue (k := k) (ρdst := ρdst) (ρ := ρ),
+        ihscrutinee (k := k) (ρdst := ρdst) (ρ := ρ)]
+  | natRec motive zeroCase succCase scrutinee ihmotive ihzero ihsucc ihscrutinee =>
+      simp [quoteTmWith, rename,
+        ihmotive (k := k) (ρdst := ρdst) (ρ := ρ),
+        ihzero (k := k) (ρdst := ρdst) (ρ := ρ),
+        ihsucc (k := k) (ρdst := ρdst) (ρ := ρ),
+        ihscrutinee (k := k) (ρdst := ρdst) (ρ := ρ)]
 
 /-- Useful weakening corollary for bridge proofs. -/
 theorem quoteTmWith_rename_wk_envCons
@@ -1028,6 +1097,31 @@ theorem freeVars_quoteTmWith_mem_env
   | u1 =>
       intro hz
       simp [quoteTmWith, u1, freeVars] at hz
+  | unitTy =>
+      intro hz
+      simp [quoteTmWith, mkUnitTy, freeVars] at hz
+  | unitMk =>
+      intro hz
+      simp [quoteTmWith, mkUnitMk, freeVars] at hz
+  | boolTy =>
+      intro hz
+      simp [quoteTmWith, mkBoolTy, freeVars] at hz
+  | boolFalse =>
+      intro hz
+      simp [quoteTmWith, mkBoolFalse, freeVars] at hz
+  | boolTrue =>
+      intro hz
+      simp [quoteTmWith, mkBoolTrue, freeVars] at hz
+  | natTy =>
+      intro hz
+      simp [quoteTmWith, mkNatTy, freeVars] at hz
+  | natZero =>
+      intro hz
+      simp [quoteTmWith, mkNatZero, freeVars] at hz
+  | natSucc t ih =>
+      intro hz
+      simp [quoteTmWith, mkNatSucc, freeVars] at hz
+      exact ih (k := k) (ρ := ρ) hz
   | pi A B ihA ihB =>
       intro hz
       simp [quoteTmWith, mkPi, freeVars, List.mem_append] at hz
@@ -1122,6 +1216,34 @@ theorem freeVars_quoteTmWith_mem_env
       intro hz
       simp [quoteTmWith, mkRefl, freeVars] at hz
       exact iha (k := k) (ρ := ρ) hz
+  | unitRec motive unitCase scrutinee ihmotive ihcase ihscrutinee =>
+      intro hz
+      simp [quoteTmWith, mkUnitRec, freeVars, List.mem_append] at hz
+      rcases hz with hz | hz
+      · exact ihmotive (k := k) (ρ := ρ) hz
+      · rcases hz with hz | hz
+        · exact ihcase (k := k) (ρ := ρ) hz
+        · exact ihscrutinee (k := k) (ρ := ρ) hz
+  | boolRec motive falseCase trueCase scrutinee ihmotive ihfalse ihtrue ihscrutinee =>
+      intro hz
+      simp [quoteTmWith, mkBoolRec, freeVars, List.mem_append] at hz
+      rcases hz with hz | hz
+      · exact ihmotive (k := k) (ρ := ρ) hz
+      · rcases hz with hz | hz
+        · exact ihfalse (k := k) (ρ := ρ) hz
+        · rcases hz with hz | hz
+          · exact ihtrue (k := k) (ρ := ρ) hz
+          · exact ihscrutinee (k := k) (ρ := ρ) hz
+  | natRec motive zeroCase succCase scrutinee ihmotive ihzero ihsucc ihscrutinee =>
+      intro hz
+      simp [quoteTmWith, mkNatRec, freeVars, List.mem_append] at hz
+      rcases hz with hz | hz
+      · exact ihmotive (k := k) (ρ := ρ) hz
+      · rcases hz with hz | hz
+        · exact ihzero (k := k) (ρ := ρ) hz
+        · rcases hz with hz | hz
+          · exact ihsucc (k := k) (ρ := ρ) hz
+          · exact ihscrutinee (k := k) (ρ := ρ) hz
 
 /-- Any future binder name `ν j` (`j ≥ k`) is fresh in the quote under `QuoteCompat`. -/
 theorem isFresh_quoteTmWith_future
@@ -1331,6 +1453,22 @@ theorem noExplicitSubst_quoteTmWith (ν : Nat → String) (k : Nat) (ρ : QuoteE
       simp [quoteTmWith, u0, noExplicitSubst, allNoExplicitSubst]
   | u1 =>
       simp [quoteTmWith, u1, noExplicitSubst, allNoExplicitSubst]
+  | unitTy =>
+      simp [quoteTmWith, mkUnitTy, noExplicitSubst, allNoExplicitSubst]
+  | unitMk =>
+      simp [quoteTmWith, mkUnitMk, noExplicitSubst, allNoExplicitSubst]
+  | boolTy =>
+      simp [quoteTmWith, mkBoolTy, noExplicitSubst, allNoExplicitSubst]
+  | boolFalse =>
+      simp [quoteTmWith, mkBoolFalse, noExplicitSubst, allNoExplicitSubst]
+  | boolTrue =>
+      simp [quoteTmWith, mkBoolTrue, noExplicitSubst, allNoExplicitSubst]
+  | natTy =>
+      simp [quoteTmWith, mkNatTy, noExplicitSubst, allNoExplicitSubst]
+  | natZero =>
+      simp [quoteTmWith, mkNatZero, noExplicitSubst, allNoExplicitSubst]
+  | natSucc t ih =>
+      simp [quoteTmWith, mkNatSucc, noExplicitSubst, allNoExplicitSubst, ih (k := k)]
   | pi A B ihA ihB =>
       simp [quoteTmWith, mkPi, noExplicitSubst, allNoExplicitSubst,
         ihA (k := k), noExplicitSubst_closeFVar,
@@ -1357,6 +1495,15 @@ theorem noExplicitSubst_quoteTmWith (ν : Nat → String) (k : Nat) (ρ : QuoteE
       simp [quoteTmWith, mkSnd, noExplicitSubst, allNoExplicitSubst, ih (k := k)]
   | refl a iha =>
       simp [quoteTmWith, mkRefl, noExplicitSubst, allNoExplicitSubst, iha (k := k)]
+  | unitRec motive unitCase scrutinee ihmotive ihcase ihscrutinee =>
+      simp [quoteTmWith, mkUnitRec, noExplicitSubst, allNoExplicitSubst,
+        ihmotive (k := k), ihcase (k := k), ihscrutinee (k := k)]
+  | boolRec motive falseCase trueCase scrutinee ihmotive ihfalse ihtrue ihscrutinee =>
+      simp [quoteTmWith, mkBoolRec, noExplicitSubst, allNoExplicitSubst,
+        ihmotive (k := k), ihfalse (k := k), ihtrue (k := k), ihscrutinee (k := k)]
+  | natRec motive zeroCase succCase scrutinee ihmotive ihzero ihsucc ihscrutinee =>
+      simp [quoteTmWith, mkNatRec, noExplicitSubst, allNoExplicitSubst,
+        ihmotive (k := k), ihzero (k := k), ihsucc (k := k), ihscrutinee (k := k)]
 
 /-- Specialized depth-lowering transport through a quoted weakened term.
 This is the concrete `k+1 -> k` bridge used in binder recursion over lifted substitutions. -/
@@ -1406,6 +1553,22 @@ theorem lc_quoteTmWith (ν : Nat → String) (k : Nat) (ρ : QuoteEnv n) (t : Pu
       simp [quoteTmWith, u0, lc_at, lc_at_list]
   | u1 =>
       simp [quoteTmWith, u1, lc_at, lc_at_list]
+  | unitTy =>
+      simp [quoteTmWith, mkUnitTy, lc_at, lc_at_list]
+  | unitMk =>
+      simp [quoteTmWith, mkUnitMk, lc_at, lc_at_list]
+  | boolTy =>
+      simp [quoteTmWith, mkBoolTy, lc_at, lc_at_list]
+  | boolFalse =>
+      simp [quoteTmWith, mkBoolFalse, lc_at, lc_at_list]
+  | boolTrue =>
+      simp [quoteTmWith, mkBoolTrue, lc_at, lc_at_list]
+  | natTy =>
+      simp [quoteTmWith, mkNatTy, lc_at, lc_at_list]
+  | natZero =>
+      simp [quoteTmWith, mkNatZero, lc_at, lc_at_list]
+  | natSucc t ih =>
+      simp [quoteTmWith, mkNatSucc, lc_at, lc_at_list, ih (k := k)]
   | pi A B ihA ihB =>
       have hA := ihA (k := k)
       have hB0 := ihB (k := k + 1) (ρ := envCons (ν k) ρ)
@@ -1444,6 +1607,15 @@ theorem lc_quoteTmWith (ν : Nat → String) (k : Nat) (ρ : QuoteEnv n) (t : Pu
       simp [quoteTmWith, mkSnd, lc_at, lc_at_list, ih (k := k)]
   | refl a iha =>
       simp [quoteTmWith, mkRefl, lc_at, lc_at_list, iha (k := k)]
+  | unitRec motive unitCase scrutinee ihmotive ihcase ihscrutinee =>
+      simp [quoteTmWith, mkUnitRec, lc_at, lc_at_list,
+        ihmotive (k := k), ihcase (k := k), ihscrutinee (k := k)]
+  | boolRec motive falseCase trueCase scrutinee ihmotive ihfalse ihtrue ihscrutinee =>
+      simp [quoteTmWith, mkBoolRec, lc_at, lc_at_list,
+        ihmotive (k := k), ihfalse (k := k), ihtrue (k := k), ihscrutinee (k := k)]
+  | natRec motive zeroCase succCase scrutinee ihmotive ihzero ihsucc ihscrutinee =>
+      simp [quoteTmWith, mkNatRec, lc_at, lc_at_list,
+        ihmotive (k := k), ihzero (k := k), ihsucc (k := k), ihscrutinee (k := k)]
 
 /-- β-critical bridge step for contextual LN quotation:
 opening the closed quoted body by an argument equals singleton substitution on the quoted body. -/

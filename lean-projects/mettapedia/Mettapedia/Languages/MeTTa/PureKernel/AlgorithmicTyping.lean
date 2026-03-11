@@ -5,9 +5,10 @@ namespace Mettapedia.Languages.MeTTa.PureKernel
 open Syntax
 open Context
 open Renaming
+open Substitution
 open Reduction
+open Confluence
 open Typing
-open DefEq
 
 structure InferredTyping (Γ : Ctx n) (t : PureTm n) where
   type : PureTm n
@@ -23,6 +24,23 @@ def inferPureType : (Γ : Ctx n) -> (t : PureTm n) -> Except String (InferredTyp
       pure { type := lookup Γ i, typing := HasType.var (Γ := Γ) i }
   | Γ, .u0 =>
       pure { type := .u1, typing := HasType.u0_type Γ }
+  | Γ, .unitTy =>
+      pure { type := .u1, typing := HasType.unitTy_type Γ }
+  | Γ, .unitMk =>
+      pure { type := .unitTy, typing := HasType.unitMk_intro Γ }
+  | Γ, .boolTy =>
+      pure { type := .u1, typing := HasType.boolTy_type Γ }
+  | Γ, .boolFalse =>
+      pure { type := .boolTy, typing := HasType.boolFalse_intro Γ }
+  | Γ, .boolTrue =>
+      pure { type := .boolTy, typing := HasType.boolTrue_intro Γ }
+  | Γ, .natTy =>
+      pure { type := .u1, typing := HasType.natTy_type Γ }
+  | Γ, .natZero =>
+      pure { type := .natTy, typing := HasType.natZero_intro Γ }
+  | Γ, .natSucc k => do
+      let hk <- checkPureType Γ k .natTy
+      pure { type := .natTy, typing := HasType.natSucc_intro hk.typing }
   | _, .u1 =>
       throw "Type1 has no type in the current Pure kernel"
   | Γ, .pi A B => do
@@ -58,14 +76,8 @@ def inferPureType : (Γ : Ctx n) -> (t : PureTm n) -> Except String (InferredTyp
               typing := HasType.app_elim hfPi ha.typing }
       | none =>
           throw "application expects a function whose type normalizes to Pi"
-  | Γ, .pair a b => do
-      let leftTy <- inferPureType Γ a
-      let rightTy <- inferPureType Γ b
-      have hb' : HasType Γ b (inst0 a (rename wk rightTy.type)) := by
-        simpa [inst0_rename_wk_cancel a rightTy.type] using rightTy.typing
-      pure
-        { type := .sigma leftTy.type (rename wk rightTy.type)
-          typing := HasType.pair_intro leftTy.typing hb' }
+  | _, .pair _ _ =>
+      throw "cannot infer a pair without an expected Sigma type; use `(: term type)`"
   | Γ, .fst p => do
       let pairInfo <- inferPureType Γ p
       match asSigma? pairInfo.type with
@@ -91,6 +103,29 @@ def inferPureType : (Γ : Ctx n) -> (t : PureTm n) -> Except String (InferredTyp
       pure
         { type := .id info.type a a
           typing := HasType.refl_intro info.typing }
+  | Γ, .unitRec motive unitCase scrutinee => do
+      let hmotive <- checkPureType Γ motive (unitMotiveTy (n := n))
+      let hcase <- checkPureType Γ unitCase (.app motive .unitMk)
+      let hscrutinee <- checkPureType Γ scrutinee .unitTy
+      pure
+        { type := .app motive scrutinee
+          typing := HasType.unitRec_elim hmotive.typing hcase.typing hscrutinee.typing }
+  | Γ, .boolRec motive falseCase trueCase scrutinee => do
+      let hmotive <- checkPureType Γ motive (boolMotiveTy (n := n))
+      let hFalse <- checkPureType Γ falseCase (.app motive .boolFalse)
+      let hTrue <- checkPureType Γ trueCase (.app motive .boolTrue)
+      let hscrutinee <- checkPureType Γ scrutinee .boolTy
+      pure
+        { type := .app motive scrutinee
+          typing := HasType.boolRec_elim hmotive.typing hFalse.typing hTrue.typing hscrutinee.typing }
+  | Γ, .natRec motive zeroCase succCase scrutinee => do
+      let hmotive <- checkPureType Γ motive (natMotiveTy (n := n))
+      let hZero <- checkPureType Γ zeroCase (.app motive .natZero)
+      let hSucc <- checkPureType Γ succCase (natRecStepTy motive)
+      let hscrutinee <- checkPureType Γ scrutinee .natTy
+      pure
+        { type := .app motive scrutinee
+          typing := HasType.natRec_elim hmotive.typing hZero.typing hSucc.typing hscrutinee.typing }
 termination_by _ t => 2 * sizeOf t
 decreasing_by
   all_goals
@@ -114,12 +149,8 @@ def checkPureType : (Γ : Ctx n) -> (t A : PureTm n) -> Except String (CheckedTy
           have hconv : Conv (.sigma sigmaInfo.dom sigmaInfo.cod) expected :=
             Relation.EqvGen.symm _ _ sigmaInfo.conv
           pure { typing := HasType.conv (HasType.pair_intro ha.typing hb.typing) hconv }
-      | none => do
-          let inferred <- inferPureType Γ (.pair a b)
-          match defEqByNormalization? inferred.type expected with
-          | some hconv => pure { typing := HasType.conv inferred.typing hconv.conv }
-          | none =>
-              throw s!"type mismatch: inferred {reprStr (cdev inferred.type)} but expected {reprStr (cdev expected)}"
+      | none =>
+          throw "pair requires an expected Sigma type"
   | Γ, t, expected => do
       let inferred <- inferPureType Γ t
       match defEqByNormalization? inferred.type expected with

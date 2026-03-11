@@ -65,7 +65,7 @@ def trackedChunkSupport [DecidableEq (GroundAtom σ)]
 `0 = wbot`; any nonempty union yields `wset` of the payload support. -/
 def trackedEvidence (W : TrackedWhichState σ n) (q : GroundAtom σ) : Which (Fin n) :=
   let s := trackedUnionSupport W q
-  if hs : s = ∅ then 0 else Which.wset (trackedPayloadSupport W q)
+  if _ : s = ∅ then 0 else Which.wset (trackedPayloadSupport W q)
 
 theorem trackedEvidence_eq_zero_iff_support_empty
     (W : TrackedWhichState σ n) (q : GroundAtom σ) :
@@ -118,6 +118,13 @@ theorem trackedPayloadSupport_add
     · rcases h with ⟨a, ha, hi⟩
       exact ⟨a, Or.inr ha, hi⟩
 
+theorem trackedPayloadSupport_eq_empty_of_union_empty
+    (W : TrackedWhichState σ n) (q : GroundAtom σ)
+    (h : trackedUnionSupport W q = ∅) :
+    trackedPayloadSupport W q = ∅ := by
+  ext i
+  simp [trackedPayloadSupport, h]
+
 noncomputable instance : GenericWorldModel
     (TrackedWhichState σ n) (GroundAtom σ) (Which (Fin n)) where
   evidence := trackedEvidence
@@ -136,9 +143,10 @@ noncomputable instance : GenericWorldModel
         have hsum_ne : trackedUnionSupport (W₁ + W₂) q ≠ ∅ := by
           simpa [hsum] using h₂
         rw [trackedEvidence_eq_wset_of_support_ne_empty _ _ hsum_ne, hE₁]
-        change trackedPayloadSupport (W₁ + W₂) q = trackedPayloadSupport W₂ q
-        rw [trackedPayloadSupport_add, h₁]
-        simp
+        have hpayload : trackedPayloadSupport (W₁ + W₂) q = trackedPayloadSupport W₂ q := by
+          rw [trackedPayloadSupport_add, trackedPayloadSupport_eq_empty_of_union_empty _ _ h₁]
+          simp
+        simpa [(· + ·), Add.add] using congrArg Which.wset hpayload
     · by_cases h₂ : trackedUnionSupport W₂ q = ∅
       · rw [trackedEvidence_eq_wset_of_support_ne_empty _ _ h₁]
         have hE₂ : trackedEvidence W₂ q = 0 := by
@@ -150,9 +158,10 @@ noncomputable instance : GenericWorldModel
         have hsum_ne : trackedUnionSupport (W₁ + W₂) q ≠ ∅ := by
           simpa [hsum] using h₁
         rw [trackedEvidence_eq_wset_of_support_ne_empty _ _ hsum_ne, hE₂]
-        change trackedPayloadSupport (W₁ + W₂) q = trackedPayloadSupport W₁ q
-        rw [trackedPayloadSupport_add, h₂]
-        simp
+        have hpayload : trackedPayloadSupport (W₁ + W₂) q = trackedPayloadSupport W₁ q := by
+          rw [trackedPayloadSupport_add, trackedPayloadSupport_eq_empty_of_union_empty _ _ h₂]
+          simp
+        simpa [(· + ·), Add.add] using congrArg Which.wset hpayload
       · have hsum :
           trackedUnionSupport (W₁ + W₂) q ≠ ∅ := by
           rw [trackedUnionSupport_add]
@@ -171,7 +180,8 @@ theorem forgetTracked_add_right
     (W Δ : TrackedWhichState σ n) :
     forgetTracked Δ (W + Δ) = W := by
   funext q
-  simpa [forgetTracked] using add_sub_cancel_right (W q) (Δ q)
+  rw [forgetTracked]
+  exact Multiset.add_sub_cancel_right
 
 /-- Embed a `Which`-valued K-relation as one tracked chunk per nonzero query. -/
 def toTrackedWhichState (I : KRelation σ (Which (Fin n))) : TrackedWhichState σ n :=
@@ -199,15 +209,16 @@ theorem toTracked_evidence_eq
       (toTrackedWhichState I) q = I q := by
   cases hI : I q with
   | wbot =>
-      show trackedEvidence (toTrackedWhichState I) q = Which.wbot
-      simp [trackedEvidence, toTrackedWhichState, trackedUnionSupport, hI]
+      show trackedEvidence (toTrackedWhichState I) q = (0 : Which (Fin n))
+      unfold trackedEvidence trackedUnionSupport toTrackedWhichState
+      simp [hI]
   | wset s =>
       have hs : trackedUnionSupport (toTrackedWhichState I) q ≠ ∅ := by
         unfold trackedUnionSupport toTrackedWhichState
         simp [hI]
       show trackedEvidence (toTrackedWhichState I) q = Which.wset s
       rw [trackedEvidence_eq_wset_of_support_ne_empty _ _ hs]
-      simpa [toTracked_payloadSupport_eq_whichSupport, whichSupport, hI]
+      simp [toTracked_payloadSupport_eq_whichSupport, whichSupport, hI]
 
 theorem toTracked_revision_preserves_add
     (I₁ I₂ : KRelation σ (Which (Fin n))) :

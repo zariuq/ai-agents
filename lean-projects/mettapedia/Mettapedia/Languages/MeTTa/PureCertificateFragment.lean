@@ -40,6 +40,14 @@ inductive SurfacePureTm : Nat → Type where
   | var : Fin n → SurfacePureTm n
   | u0 : SurfacePureTm n
   | u1 : SurfacePureTm n
+  | unitTy : SurfacePureTm n
+  | unitMk : SurfacePureTm n
+  | boolTy : SurfacePureTm n
+  | boolFalse : SurfacePureTm n
+  | boolTrue : SurfacePureTm n
+  | natTy : SurfacePureTm n
+  | natZero : SurfacePureTm n
+  | natSucc : SurfacePureTm n → SurfacePureTm n
   | pi : SurfacePureTm n → SurfacePureTm (n + 1) → SurfacePureTm n
   | sigma : SurfacePureTm n → SurfacePureTm (n + 1) → SurfacePureTm n
   | id : SurfacePureTm n → SurfacePureTm n → SurfacePureTm n → SurfacePureTm n
@@ -49,6 +57,9 @@ inductive SurfacePureTm : Nat → Type where
   | fst : SurfacePureTm n → SurfacePureTm n
   | snd : SurfacePureTm n → SurfacePureTm n
   | refl : SurfacePureTm n → SurfacePureTm n
+  | unitRec : SurfacePureTm n → SurfacePureTm n → SurfacePureTm n → SurfacePureTm n
+  | boolRec : SurfacePureTm n → SurfacePureTm n → SurfacePureTm n → SurfacePureTm n → SurfacePureTm n
+  | natRec : SurfacePureTm n → SurfacePureTm n → SurfacePureTm n → SurfacePureTm n → SurfacePureTm n
 deriving DecidableEq, Repr
 
 namespace SurfacePureTm
@@ -57,6 +68,14 @@ def toPureTm : SurfacePureTm n → PureTm n
   | .var i => .var i
   | .u0 => .u0
   | .u1 => .u1
+  | .unitTy => .unitTy
+  | .unitMk => .unitMk
+  | .boolTy => .boolTy
+  | .boolFalse => .boolFalse
+  | .boolTrue => .boolTrue
+  | .natTy => .natTy
+  | .natZero => .natZero
+  | .natSucc k => .natSucc (toPureTm k)
   | .pi A B => .pi (toPureTm A) (toPureTm B)
   | .sigma A B => .sigma (toPureTm A) (toPureTm B)
   | .id A a b => .id (toPureTm A) (toPureTm a) (toPureTm b)
@@ -66,11 +85,26 @@ def toPureTm : SurfacePureTm n → PureTm n
   | .fst p => .fst (toPureTm p)
   | .snd p => .snd (toPureTm p)
   | .refl a => .refl (toPureTm a)
+  | .unitRec motive unitCase scrutinee =>
+      .unitRec (toPureTm motive) (toPureTm unitCase) (toPureTm scrutinee)
+  | .boolRec motive falseCase trueCase scrutinee =>
+      .boolRec (toPureTm motive) (toPureTm falseCase) (toPureTm trueCase) (toPureTm scrutinee)
+  | .natRec motive zeroCase succCase scrutinee =>
+      .natRec (toPureTm motive) (toPureTm zeroCase) (toPureTm succCase) (toPureTm scrutinee)
 
 def toPatternWith (ν : Nat → String) (k : Nat) (ρ : QuoteEnv n) : SurfacePureTm n → Pattern
   | .var i => .fvar (ρ i)
   | .u0 => Mettapedia.Languages.MeTTa.Pure.Core.u0
   | .u1 => Mettapedia.Languages.MeTTa.Pure.Core.u1
+  | .unitTy => Mettapedia.Languages.MeTTa.Pure.Core.mkUnitTy
+  | .unitMk => Mettapedia.Languages.MeTTa.Pure.Core.mkUnitMk
+  | .boolTy => Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTy
+  | .boolFalse => Mettapedia.Languages.MeTTa.Pure.Core.mkBoolFalse
+  | .boolTrue => Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTrue
+  | .natTy => Mettapedia.Languages.MeTTa.Pure.Core.mkNatTy
+  | .natZero => Mettapedia.Languages.MeTTa.Pure.Core.mkNatZero
+  | .natSucc t =>
+      Mettapedia.Languages.MeTTa.Pure.Core.mkNatSucc (toPatternWith ν k ρ t)
   | .pi A B =>
       let x := ν k
       Mettapedia.Languages.MeTTa.Pure.Core.mkPi (toPatternWith ν k ρ A)
@@ -96,6 +130,17 @@ def toPatternWith (ν : Nat → String) (k : Nat) (ρ : QuoteEnv n) : SurfacePur
   | .fst p => Mettapedia.Languages.MeTTa.Pure.Core.mkFst (toPatternWith ν k ρ p)
   | .snd p => Mettapedia.Languages.MeTTa.Pure.Core.mkSnd (toPatternWith ν k ρ p)
   | .refl a => Mettapedia.Languages.MeTTa.Pure.Core.mkRefl (toPatternWith ν k ρ a)
+  | .unitRec motive unitCase scrutinee =>
+      Mettapedia.Languages.MeTTa.Pure.Core.mkUnitRec
+        (toPatternWith ν k ρ motive) (toPatternWith ν k ρ unitCase) (toPatternWith ν k ρ scrutinee)
+  | .boolRec motive falseCase trueCase scrutinee =>
+      Mettapedia.Languages.MeTTa.Pure.Core.mkBoolRec
+        (toPatternWith ν k ρ motive) (toPatternWith ν k ρ falseCase)
+        (toPatternWith ν k ρ trueCase) (toPatternWith ν k ρ scrutinee)
+  | .natRec motive zeroCase succCase scrutinee =>
+      Mettapedia.Languages.MeTTa.Pure.Core.mkNatRec
+        (toPatternWith ν k ρ motive) (toPatternWith ν k ρ zeroCase)
+        (toPatternWith ν k ρ succCase) (toPatternWith ν k ρ scrutinee)
 
 def toPattern (ρ : QuoteEnv n) (t : SurfacePureTm n) : Pattern :=
   toPatternWith defaultBinderName 0 ρ t
@@ -109,6 +154,15 @@ theorem toPatternWith_eq_quoteTmWith
   | .var i => rfl
   | .u0 => rfl
   | .u1 => rfl
+  | .unitTy => rfl
+  | .unitMk => rfl
+  | .boolTy => rfl
+  | .boolFalse => rfl
+  | .boolTrue => rfl
+  | .natTy => rfl
+  | .natZero => rfl
+  | .natSucc k => by
+      simp [toPatternWith, toPureTm, quoteTmWith, toPatternWith_eq_quoteTmWith]
   | .pi A B => by
       simp [toPatternWith, toPureTm, quoteTmWith, toPatternWith_eq_quoteTmWith]
   | .sigma A B => by
@@ -126,6 +180,12 @@ theorem toPatternWith_eq_quoteTmWith
   | .snd p => by
       simp [toPatternWith, toPureTm, quoteTmWith, toPatternWith_eq_quoteTmWith]
   | .refl a => by
+      simp [toPatternWith, toPureTm, quoteTmWith, toPatternWith_eq_quoteTmWith]
+  | .unitRec motive unitCase scrutinee => by
+      simp [toPatternWith, toPureTm, quoteTmWith, toPatternWith_eq_quoteTmWith]
+  | .boolRec motive falseCase trueCase scrutinee => by
+      simp [toPatternWith, toPureTm, quoteTmWith, toPatternWith_eq_quoteTmWith]
+  | .natRec motive zeroCase succCase scrutinee => by
       simp [toPatternWith, toPureTm, quoteTmWith, toPatternWith_eq_quoteTmWith]
 
 theorem toPattern_eq_quoteTm (ρ : QuoteEnv n) (t : SurfacePureTm n) :

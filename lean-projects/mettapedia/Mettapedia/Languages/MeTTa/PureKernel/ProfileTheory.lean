@@ -7,7 +7,7 @@ import Mettapedia.OSLF.MeTTaIL.Substitution
 
 This file defines the profile-side theory closure for MeTTa-Pure:
 
-- a sealed base step relation with exactly the three pure β rules
+- a sealed base step relation with the current Pure kernel β rules
 - pure `Pattern` contexts (`PurePatCtx`)
 - contextual closure (`PureProfileTheoryStep`)
 - reflexive-transitive closure (`PureProfileTheoryStepStar`)
@@ -29,7 +29,7 @@ abbrev PureProfileStepStar (p q : Pattern) : Prop :=
   Relation.ReflTransGen (langReduces mettaPure) p q
 
 /-- Sealed base one-step relation for the pure profile:
-exactly βΠ, βΣ-fst, βΣ-snd at the `Pattern` level. -/
+the current Pure kernel β rules at the `Pattern` level. -/
 inductive PureProfileBaseStep : Pattern → Pattern → Prop where
   | betaPi (body a : Pattern) :
       PureProfileBaseStep (mkApp (mkLam body) a) (openBVar 0 a body)
@@ -37,6 +37,17 @@ inductive PureProfileBaseStep : Pattern → Pattern → Prop where
       PureProfileBaseStep (mkFst (mkPair a b)) a
   | betaSigmaSnd (a b : Pattern) :
       PureProfileBaseStep (mkSnd (mkPair a b)) b
+  | betaUnitRec (motive unitCase : Pattern) :
+      PureProfileBaseStep (mkUnitRec motive unitCase mkUnitMk) unitCase
+  | betaBoolRecFalse (motive falseCase trueCase : Pattern) :
+      PureProfileBaseStep (mkBoolRec motive falseCase trueCase mkBoolFalse) falseCase
+  | betaBoolRecTrue (motive falseCase trueCase : Pattern) :
+      PureProfileBaseStep (mkBoolRec motive falseCase trueCase mkBoolTrue) trueCase
+  | betaNatRecZero (motive zeroCase succCase : Pattern) :
+      PureProfileBaseStep (mkNatRec motive zeroCase succCase mkNatZero) zeroCase
+  | betaNatRecSucc (motive zeroCase succCase k : Pattern) :
+      PureProfileBaseStep (mkNatRec motive zeroCase succCase (mkNatSucc k))
+        (mkApp (mkApp succCase k) (mkNatRec motive zeroCase succCase k))
 
 private def betaPiRule : RewriteRule :=
   { name := "BetaPi",
@@ -58,6 +69,47 @@ private def betaSigmaSndRule : RewriteRule :=
     premises := [],
     left := .apply "Snd" [.apply "Pair" [.fvar "a", .fvar "b"]],
     right := .fvar "b" }
+
+private def betaUnitRecRule : RewriteRule :=
+  { name := "BetaUnitRec",
+    typeContext := [("motive", .base "Tm"), ("unitCase", .base "Tm")],
+    premises := [],
+    left := .apply "UnitRec" [.fvar "motive", .fvar "unitCase", .apply "UnitMk" []],
+    right := .fvar "unitCase" }
+
+private def betaBoolRecFalseRule : RewriteRule :=
+  { name := "BetaBoolRecFalse",
+    typeContext := [("motive", .base "Tm"), ("falseCase", .base "Tm"), ("trueCase", .base "Tm")],
+    premises := [],
+    left := .apply "BoolRec"
+      [.fvar "motive", .fvar "falseCase", .fvar "trueCase", .apply "BoolFalse" []],
+    right := .fvar "falseCase" }
+
+private def betaBoolRecTrueRule : RewriteRule :=
+  { name := "BetaBoolRecTrue",
+    typeContext := [("motive", .base "Tm"), ("falseCase", .base "Tm"), ("trueCase", .base "Tm")],
+    premises := [],
+    left := .apply "BoolRec"
+      [.fvar "motive", .fvar "falseCase", .fvar "trueCase", .apply "BoolTrue" []],
+    right := .fvar "trueCase" }
+
+private def betaNatRecZeroRule : RewriteRule :=
+  { name := "BetaNatRecZero",
+    typeContext := [("motive", .base "Tm"), ("zeroCase", .base "Tm"), ("succCase", .base "Tm")],
+    premises := [],
+    left := .apply "NatRec"
+      [.fvar "motive", .fvar "zeroCase", .fvar "succCase", .apply "NatZero" []],
+    right := .fvar "zeroCase" }
+
+private def betaNatRecSuccRule : RewriteRule :=
+  { name := "BetaNatRecSucc",
+    typeContext := [("motive", .base "Tm"), ("zeroCase", .base "Tm"), ("succCase", .base "Tm"), ("k", .base "Tm")],
+    premises := [],
+    left := .apply "NatRec"
+      [.fvar "motive", .fvar "zeroCase", .fvar "succCase", .apply "NatSucc" [.fvar "k"]],
+    right := .apply "App"
+      [.apply "App" [.fvar "succCase", .fvar "k"],
+       .apply "NatRec" [.fvar "motive", .fvar "zeroCase", .fvar "succCase", .fvar "k"]] }
 
 /-- Sealed base steps are sound for profile one-step reduction. -/
 theorem pureProfileBaseStep_sound_langReduces {s t : Pattern}
@@ -115,6 +167,91 @@ theorem pureProfileBaseStep_sound_langReduces {s t : Pattern}
           refine ⟨bs, ?_, ?_⟩
           · simp [applyPremisesWithEnv, bs, betaSigmaSndRule]
           · simp [bs, betaSigmaSndRule, applyBindings]
+  | betaUnitRec motive _ =>
+      apply exec_to_langReducesUsing (relEnv := RelationEnv.empty) (lang := mettaPure)
+      unfold langReducesExecUsing rewriteWithContextWithPremisesUsing rewriteStepWithPremisesUsing
+      apply List.mem_append.mpr
+      left
+      rw [List.mem_flatMap]
+      refine ⟨betaUnitRecRule, ?_, ?_⟩
+      · simp [betaUnitRecRule, mettaPure]
+      · unfold applyRuleWithPremisesUsing
+        rw [List.mem_flatMap]
+        let bs : Bindings := [("unitCase", t), ("motive", motive)]
+        refine ⟨bs, ?_, ?_⟩
+        · simp [bs, betaUnitRecRule, mkUnitRec, mkUnitMk, matchPattern, matchArgs, mergeBindings]
+        · rw [List.mem_map]
+          refine ⟨bs, ?_, ?_⟩
+          · simp [applyPremisesWithEnv, bs, betaUnitRecRule]
+          · simp [bs, betaUnitRecRule, applyBindings]
+  | betaBoolRecFalse motive _ trueCase =>
+      apply exec_to_langReducesUsing (relEnv := RelationEnv.empty) (lang := mettaPure)
+      unfold langReducesExecUsing rewriteWithContextWithPremisesUsing rewriteStepWithPremisesUsing
+      apply List.mem_append.mpr
+      left
+      rw [List.mem_flatMap]
+      refine ⟨betaBoolRecFalseRule, ?_, ?_⟩
+      · simp [betaBoolRecFalseRule, mettaPure]
+      · unfold applyRuleWithPremisesUsing
+        rw [List.mem_flatMap]
+        let bs : Bindings := [("falseCase", t), ("trueCase", trueCase), ("motive", motive)]
+        refine ⟨bs, ?_, ?_⟩
+        · simp [bs, betaBoolRecFalseRule, mkBoolRec, mkBoolFalse, matchPattern, matchArgs, mergeBindings]
+        · rw [List.mem_map]
+          refine ⟨bs, ?_, ?_⟩
+          · simp [applyPremisesWithEnv, bs, betaBoolRecFalseRule]
+          · simp [bs, betaBoolRecFalseRule, applyBindings]
+  | betaBoolRecTrue motive falseCase _ =>
+      apply exec_to_langReducesUsing (relEnv := RelationEnv.empty) (lang := mettaPure)
+      unfold langReducesExecUsing rewriteWithContextWithPremisesUsing rewriteStepWithPremisesUsing
+      apply List.mem_append.mpr
+      left
+      rw [List.mem_flatMap]
+      refine ⟨betaBoolRecTrueRule, ?_, ?_⟩
+      · simp [betaBoolRecTrueRule, mettaPure]
+      · unfold applyRuleWithPremisesUsing
+        rw [List.mem_flatMap]
+        let bs : Bindings := [("falseCase", falseCase), ("trueCase", t), ("motive", motive)]
+        refine ⟨bs, ?_, ?_⟩
+        · simp [bs, betaBoolRecTrueRule, mkBoolRec, mkBoolTrue, matchPattern, matchArgs, mergeBindings]
+        · rw [List.mem_map]
+          refine ⟨bs, ?_, ?_⟩
+          · simp [applyPremisesWithEnv, bs, betaBoolRecTrueRule]
+          · simp [bs, betaBoolRecTrueRule, applyBindings]
+  | betaNatRecZero motive _ succCase =>
+      apply exec_to_langReducesUsing (relEnv := RelationEnv.empty) (lang := mettaPure)
+      unfold langReducesExecUsing rewriteWithContextWithPremisesUsing rewriteStepWithPremisesUsing
+      apply List.mem_append.mpr
+      left
+      rw [List.mem_flatMap]
+      refine ⟨betaNatRecZeroRule, ?_, ?_⟩
+      · simp [betaNatRecZeroRule, mettaPure]
+      · unfold applyRuleWithPremisesUsing
+        rw [List.mem_flatMap]
+        let bs : Bindings := [("zeroCase", t), ("succCase", succCase), ("motive", motive)]
+        refine ⟨bs, ?_, ?_⟩
+        · simp [bs, betaNatRecZeroRule, mkNatRec, mkNatZero, matchPattern, matchArgs, mergeBindings]
+        · rw [List.mem_map]
+          refine ⟨bs, ?_, ?_⟩
+          · simp [applyPremisesWithEnv, bs, betaNatRecZeroRule]
+          · simp [bs, betaNatRecZeroRule, applyBindings]
+  | @betaNatRecSucc motive zeroCase succCase k =>
+      apply exec_to_langReducesUsing (relEnv := RelationEnv.empty) (lang := mettaPure)
+      unfold langReducesExecUsing rewriteWithContextWithPremisesUsing rewriteStepWithPremisesUsing
+      apply List.mem_append.mpr
+      left
+      rw [List.mem_flatMap]
+      refine ⟨betaNatRecSuccRule, ?_, ?_⟩
+      · simp [betaNatRecSuccRule, mettaPure]
+      · unfold applyRuleWithPremisesUsing
+        rw [List.mem_flatMap]
+        let bs : Bindings := [("zeroCase", zeroCase), ("k", k), ("succCase", succCase), ("motive", motive)]
+        refine ⟨bs, ?_, ?_⟩
+        · simp [bs, betaNatRecSuccRule, mkNatRec, mkNatSucc, matchPattern, matchArgs, mergeBindings]
+        · rw [List.mem_map]
+          refine ⟨bs, ?_, ?_⟩
+          · simp [applyPremisesWithEnv, bs, betaNatRecSuccRule]
+          · simp [bs, betaNatRecSuccRule, applyBindings, mkApp, mkNatRec]
 
 /-- Pure term-contexts on the `Pattern` side (C1): exactly the constructor positions
 corresponding to kernel congruence (`Red`). -/
@@ -135,6 +272,18 @@ inductive PurePatCtx : Type where
   | fst (K : PurePatCtx) : PurePatCtx
   | snd (K : PurePatCtx) : PurePatCtx
   | refl (K : PurePatCtx) : PurePatCtx
+  | natSucc (K : PurePatCtx) : PurePatCtx
+  | unitRecMotive (K : PurePatCtx) (unitCase scrutinee : Pattern) : PurePatCtx
+  | unitRecCase (motive : Pattern) (K : PurePatCtx) (scrutinee : Pattern) : PurePatCtx
+  | unitRecScrutinee (motive unitCase : Pattern) (K : PurePatCtx) : PurePatCtx
+  | boolRecMotive (K : PurePatCtx) (falseCase trueCase scrutinee : Pattern) : PurePatCtx
+  | boolRecFalseCase (motive : Pattern) (K : PurePatCtx) (trueCase scrutinee : Pattern) : PurePatCtx
+  | boolRecTrueCase (motive falseCase : Pattern) (K : PurePatCtx) (scrutinee : Pattern) : PurePatCtx
+  | boolRecScrutinee (motive falseCase trueCase : Pattern) (K : PurePatCtx) : PurePatCtx
+  | natRecMotive (K : PurePatCtx) (zeroCase succCase scrutinee : Pattern) : PurePatCtx
+  | natRecZeroCase (motive : Pattern) (K : PurePatCtx) (succCase scrutinee : Pattern) : PurePatCtx
+  | natRecSuccCase (motive zeroCase : Pattern) (K : PurePatCtx) (scrutinee : Pattern) : PurePatCtx
+  | natRecScrutinee (motive zeroCase succCase : Pattern) (K : PurePatCtx) : PurePatCtx
   | close (x : String) (K : PurePatCtx) : PurePatCtx
 
 /-- Plug a `Pattern` into a pure term-context. -/
@@ -155,6 +304,26 @@ def plugPurePatCtx : PurePatCtx → Pattern → Pattern
   | .fst K, p => mkFst (plugPurePatCtx K p)
   | .snd K, p => mkSnd (plugPurePatCtx K p)
   | .refl K, p => mkRefl (plugPurePatCtx K p)
+  | .natSucc K, p => mkNatSucc (plugPurePatCtx K p)
+  | .unitRecMotive K unitCase scrutinee, p => mkUnitRec (plugPurePatCtx K p) unitCase scrutinee
+  | .unitRecCase motive K scrutinee, p => mkUnitRec motive (plugPurePatCtx K p) scrutinee
+  | .unitRecScrutinee motive unitCase K, p => mkUnitRec motive unitCase (plugPurePatCtx K p)
+  | .boolRecMotive K falseCase trueCase scrutinee, p =>
+      mkBoolRec (plugPurePatCtx K p) falseCase trueCase scrutinee
+  | .boolRecFalseCase motive K trueCase scrutinee, p =>
+      mkBoolRec motive (plugPurePatCtx K p) trueCase scrutinee
+  | .boolRecTrueCase motive falseCase K scrutinee, p =>
+      mkBoolRec motive falseCase (plugPurePatCtx K p) scrutinee
+  | .boolRecScrutinee motive falseCase trueCase K, p =>
+      mkBoolRec motive falseCase trueCase (plugPurePatCtx K p)
+  | .natRecMotive K zeroCase succCase scrutinee, p =>
+      mkNatRec (plugPurePatCtx K p) zeroCase succCase scrutinee
+  | .natRecZeroCase motive K succCase scrutinee, p =>
+      mkNatRec motive (plugPurePatCtx K p) succCase scrutinee
+  | .natRecSuccCase motive zeroCase K scrutinee, p =>
+      mkNatRec motive zeroCase (plugPurePatCtx K p) scrutinee
+  | .natRecScrutinee motive zeroCase succCase K, p =>
+      mkNatRec motive zeroCase succCase (plugPurePatCtx K p)
   | .close x K, p => closeFVar 0 x (plugPurePatCtx K p)
 
 /-- C1 one-step profile-theory relation:

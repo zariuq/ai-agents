@@ -6,11 +6,17 @@ import Mettapedia.Languages.MeTTa.DialectProfile
 import Mettapedia.Languages.MeTTa.RuntimeSpec
 import Mettapedia.Languages.MeTTa.RuntimeExec
 import Mettapedia.Languages.MeTTa.ExecutionContract
+import Mettapedia.Languages.MeTTa.ScopeContract
 import Mettapedia.Languages.MeTTa.PureCheckingService
+import Mettapedia.Languages.MeTTa.PureNormalizationService
+import Mettapedia.Languages.MeTTa.PureSemanticWaist
 import Mettapedia.Languages.MeTTa.PureCheckingExtensions
+import Mettapedia.Languages.MeTTa.OrdinaryFamilyImplementationSeed
+import Mettapedia.Languages.MeTTa.PureKernelOrdinaryFamilyDesign
 import Mettapedia.Languages.MeTTa.PureBidirectionalChecking
 import Mettapedia.Languages.MeTTa.PurePrototypeEval
 import Mettapedia.Languages.MeTTa.PureCheckedEval
+import Mettapedia.Languages.MeTTa.PureWaistService
 import Mettapedia.Languages.MeTTa.StarterCoreExample
 import Mettapedia.Languages.MeTTa.ElaboratedCore
 import Mettapedia.Languages.MeTTa.InductiveKernelBoundary

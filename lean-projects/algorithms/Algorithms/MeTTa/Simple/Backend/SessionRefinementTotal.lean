@@ -164,6 +164,30 @@ theorem evalWithState_eq_total_reference_of_faithful_done_and_deterministic_agre
       symm
       exact hTotEq
 
+/-- Local-equality variant of the total-reference transport theorem.
+    This is the clean public surface to use once a fragment-specific adequacy theorem
+    supplies equality with the live reference backend; the faithful `.done` witness is
+    discharged automatically from the public fuel policy. -/
+theorem evalWithState_eq_total_reference_of_local_reference_agreement_and_deterministic_agreement
+    (s : Session) (term : Pattern)
+    (hRefEq :
+      SessionReference.evalWithStateCore s term =
+        SessionReferenceTotal.evalWithStateCore s term)
+    (hs : SessionWF s)
+    (hAgreeRaw :
+      ∀ (s : Session) (term : Pattern),
+        DeterministicAcceptedRaw s term →
+        Algorithms.MeTTa.Simple.Backend.OptimizedEval.evalWithState
+          Session.optimizedBackendInterface s term =
+        SessionReference.evalWithStateCore s term) :
+    Session.evalWithState s term = SessionReferenceTotal.evalWithStateCore s term := by
+  calc
+    Session.evalWithState s term = SessionReference.evalWithStateCore s term := by
+      exact
+        SessionRefinement.evalWithState_eq_reference_of_deterministic_agreement_raw_guard
+          s term hs hAgreeRaw
+    _ = SessionReferenceTotal.evalWithStateCore s term := hRefEq
+
 /-- Witnessed-faithful variant of the session-WF transport theorem. -/
 theorem wf_evalWithState_of_faithful_done_and_deterministic_agreement
     (s : Session) (term : Pattern) (s' : Session) (out : List Pattern)
@@ -198,6 +222,38 @@ theorem wf_evalWithState_of_faithful_done_and_deterministic_agreement
       SessionWF (SessionReferenceTotal.evalWithStateCore s term).1 := by
     rw [hTotEqFst]
     exact hTotPair.2
+  rw [hEqFst]
+  exact hTot
+
+/-- Local-equality variant of the session-WF transport theorem.
+    Like the equality transport above, this is the theorem to target once a small
+    adequacy lemma provides live-reference = total-reference for the current term. -/
+theorem wf_evalWithState_of_local_reference_agreement_and_deterministic_agreement
+    (s : Session) (term : Pattern)
+    (hRefEq :
+      SessionReference.evalWithStateCore s term =
+        SessionReferenceTotal.evalWithStateCore s term)
+    (hs : SessionWF s)
+    (hAgreeRaw :
+      ∀ (s : Session) (term : Pattern),
+        DeterministicAcceptedRaw s term →
+        Algorithms.MeTTa.Simple.Backend.OptimizedEval.evalWithState
+          Session.optimizedBackendInterface s term =
+        SessionReference.evalWithStateCore s term) :
+    SessionWF (Session.evalWithState s term).1 := by
+  have hEq :
+      Session.evalWithState s term =
+        SessionReferenceTotal.evalWithStateCore s term := by
+    exact
+      evalWithState_eq_total_reference_of_local_reference_agreement_and_deterministic_agreement
+        s term hRefEq hs hAgreeRaw
+  have hEqFst :
+      (Session.evalWithState s term).1 =
+        (SessionReferenceTotal.evalWithStateCore s term).1 := by
+    exact congrArg Prod.fst hEq
+  have hTot :
+      SessionWF (SessionReferenceTotal.evalWithStateCore s term).1 :=
+    SessionReferenceTotal.evalWithStateCore_preserves s term hs
   rw [hEqFst]
   exact hTot
 

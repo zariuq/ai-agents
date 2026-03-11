@@ -17,6 +17,14 @@ def rename (ρ : Ren n m) : PureTm n → PureTm m
   | .var i => .var (ρ i)
   | .u0 => .u0
   | .u1 => .u1
+  | .unitTy => .unitTy
+  | .unitMk => .unitMk
+  | .boolTy => .boolTy
+  | .boolFalse => .boolFalse
+  | .boolTrue => .boolTrue
+  | .natTy => .natTy
+  | .natZero => .natZero
+  | .natSucc k => .natSucc (rename ρ k)
   | .pi A B => .pi (rename ρ A) (rename (liftRen ρ) B)
   | .sigma A B => .sigma (rename ρ A) (rename (liftRen ρ) B)
   | .id A a b => .id (rename ρ A) (rename ρ a) (rename ρ b)
@@ -26,6 +34,12 @@ def rename (ρ : Ren n m) : PureTm n → PureTm m
   | .fst p => .fst (rename ρ p)
   | .snd p => .snd (rename ρ p)
   | .refl a => .refl (rename ρ a)
+  | .unitRec motive unitCase scrutinee =>
+      .unitRec (rename ρ motive) (rename ρ unitCase) (rename ρ scrutinee)
+  | .boolRec motive falseCase trueCase scrutinee =>
+      .boolRec (rename ρ motive) (rename ρ falseCase) (rename ρ trueCase) (rename ρ scrutinee)
+  | .natRec motive zeroCase succCase scrutinee =>
+      .natRec (rename ρ motive) (rename ρ zeroCase) (rename ρ succCase) (rename ρ scrutinee)
 
 @[simp] theorem liftRen_id : liftRen (idRen (n := n)) = idRen := by
   funext i
@@ -59,6 +73,22 @@ theorem rename_ext {ρ ξ : Ren n m} (hρ : ∀ i, ρ i = ξ i) :
     rfl
   | u1 =>
     rfl
+  | unitTy =>
+    rfl
+  | unitMk =>
+    rfl
+  | boolTy =>
+    rfl
+  | boolFalse =>
+    rfl
+  | boolTrue =>
+    rfl
+  | natTy =>
+    rfl
+  | natZero =>
+    rfl
+  | natSucc k ih =>
+    simp [rename, ih (ρ := ρ) (ξ := ξ) hρ]
   | pi A B ihA ihB =>
     simp [rename, ihA (ρ := ρ) (ξ := ξ) hρ]
     exact ihB (ρ := liftRen ρ) (ξ := liftRen ξ) (liftRen_ext hρ)
@@ -81,6 +111,15 @@ theorem rename_ext {ρ ξ : Ren n m} (hρ : ∀ i, ρ i = ξ i) :
     simpa [rename] using ih (ρ := ρ) (ξ := ξ) hρ
   | refl a iha =>
     simpa [rename] using iha (ρ := ρ) (ξ := ξ) hρ
+  | unitRec motive unitCase scrutinee ihmotive ihcase ihscrutinee =>
+    simp [rename, ihmotive (ρ := ρ) (ξ := ξ) hρ, ihcase (ρ := ρ) (ξ := ξ) hρ,
+      ihscrutinee (ρ := ρ) (ξ := ξ) hρ]
+  | boolRec motive falseCase trueCase scrutinee ihmotive ihFalse ihTrue ihscrutinee =>
+    simp [rename, ihmotive (ρ := ρ) (ξ := ξ) hρ, ihFalse (ρ := ρ) (ξ := ξ) hρ,
+      ihTrue (ρ := ρ) (ξ := ξ) hρ, ihscrutinee (ρ := ρ) (ξ := ξ) hρ]
+  | natRec motive zeroCase succCase scrutinee ihmotive ihZero ihSucc ihscrutinee =>
+    simp [rename, ihmotive (ρ := ρ) (ξ := ξ) hρ, ihZero (ρ := ρ) (ξ := ξ) hρ,
+      ihSucc (ρ := ρ) (ξ := ξ) hρ, ihscrutinee (ρ := ρ) (ξ := ξ) hρ]
 
 @[simp] theorem rename_id : ∀ t : PureTm n, rename idRen t = t := by
   intro t
@@ -91,6 +130,22 @@ theorem rename_ext {ρ ξ : Ren n m} (hρ : ∀ i, ρ i = ξ i) :
     rfl
   | u1 =>
     rfl
+  | unitTy =>
+    rfl
+  | unitMk =>
+    rfl
+  | boolTy =>
+    rfl
+  | boolFalse =>
+    rfl
+  | boolTrue =>
+    rfl
+  | natTy =>
+    rfl
+  | natZero =>
+    rfl
+  | natSucc k ih =>
+    simp [rename, ih]
   | pi A B ihA ihB =>
     simp [rename, ihA, ihB]
   | sigma A B ihA ihB =>
@@ -109,6 +164,12 @@ theorem rename_ext {ρ ξ : Ren n m} (hρ : ∀ i, ρ i = ξ i) :
     simp [rename, ih]
   | refl a iha =>
     simp [rename, iha]
+  | unitRec motive unitCase scrutinee ihmotive ihcase ihscrutinee =>
+    simp [rename, ihmotive, ihcase, ihscrutinee]
+  | boolRec motive falseCase trueCase scrutinee ihmotive ihFalse ihTrue ihscrutinee =>
+    simp [rename, ihmotive, ihFalse, ihTrue, ihscrutinee]
+  | natRec motive zeroCase succCase scrutinee ihmotive ihZero ihSucc ihscrutinee =>
+    simp [rename, ihmotive, ihZero, ihSucc, ihscrutinee]
 
 @[simp] theorem rename_comp :
     ∀ {n m k} (ρ₂ : Ren m k) (ρ₁ : Ren n m) (t : PureTm n),
@@ -121,6 +182,22 @@ theorem rename_ext {ρ ξ : Ren n m} (hρ : ∀ i, ρ i = ξ i) :
     rfl
   | u1 =>
     rfl
+  | unitTy =>
+    rfl
+  | unitMk =>
+    rfl
+  | boolTy =>
+    rfl
+  | boolFalse =>
+    rfl
+  | boolTrue =>
+    rfl
+  | natTy =>
+    rfl
+  | natZero =>
+    rfl
+  | natSucc k ih =>
+    simp [rename, ih (ρ₂ := ρ₂) (ρ₁ := ρ₁)]
   | pi A B ihA ihB =>
     simp [rename, ihA (ρ₂ := ρ₂) (ρ₁ := ρ₁)]
     calc
@@ -170,5 +247,14 @@ theorem rename_ext {ρ ξ : Ren n m} (hρ : ∀ i, ρ i = ξ i) :
     simpa [rename] using ih (ρ₂ := ρ₂) (ρ₁ := ρ₁)
   | refl a iha =>
     simpa [rename] using iha (ρ₂ := ρ₂) (ρ₁ := ρ₁)
+  | unitRec motive unitCase scrutinee ihmotive ihcase ihscrutinee =>
+    simp [rename, ihmotive (ρ₂ := ρ₂) (ρ₁ := ρ₁), ihcase (ρ₂ := ρ₂) (ρ₁ := ρ₁),
+      ihscrutinee (ρ₂ := ρ₂) (ρ₁ := ρ₁)]
+  | boolRec motive falseCase trueCase scrutinee ihmotive ihFalse ihTrue ihscrutinee =>
+    simp [rename, ihmotive (ρ₂ := ρ₂) (ρ₁ := ρ₁), ihFalse (ρ₂ := ρ₂) (ρ₁ := ρ₁),
+      ihTrue (ρ₂ := ρ₂) (ρ₁ := ρ₁), ihscrutinee (ρ₂ := ρ₂) (ρ₁ := ρ₁)]
+  | natRec motive zeroCase succCase scrutinee ihmotive ihZero ihSucc ihscrutinee =>
+    simp [rename, ihmotive (ρ₂ := ρ₂) (ρ₁ := ρ₁), ihZero (ρ₂ := ρ₂) (ρ₁ := ρ₁),
+      ihSucc (ρ₂ := ρ₂) (ρ₁ := ρ₁), ihscrutinee (ρ₂ := ρ₂) (ρ₁ := ρ₁)]
 
 end Mettapedia.Languages.MeTTa.PureKernel.Renaming

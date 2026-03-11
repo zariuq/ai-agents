@@ -171,6 +171,13 @@ private def evalSequence (I : Interface σ) (s : σ)
       let (s1, out) := I.eval s t
       evalSequence I s1 ts (acc ++ out)
 
+/-- Evaluate a substituted match template. `Expr` templates enumerate their elements in
+sequence; all other templates are evaluated directly. -/
+def evalMatchedTemplate (I : Interface σ) (s : σ) (tmplSub : Pattern) : σ × List Pattern :=
+  match tmplSub with
+  | .apply "Expr" elems => evalSequence I s elems []
+  | _ => I.eval s tmplSub
+
 private theorem evalSequence_preserves
     (I : Interface σ) (P : σ → Prop) (H : Preservation I P)
     (s : σ) (terms : List Pattern) (acc : List Pattern) :
@@ -184,6 +191,48 @@ private theorem evalSequence_preserves
       have h1 : P out.1 := H.eval_preserves rfl hP
       simpa [evalSequence, out] using ih out.1 (acc ++ out.2) h1
 
+private theorem evalSequence_eq_of_eval_agreement
+    (I₁ I₂ : Interface σ) (s : σ) (terms : List Pattern) (acc : List Pattern)
+    (hEval : ∀ (s : σ) (term : Pattern), I₁.eval s term = I₂.eval s term) :
+    evalSequence I₁ s terms acc = evalSequence I₂ s terms acc := by
+  induction terms generalizing s acc with
+  | nil =>
+      rfl
+  | cons t ts ih =>
+      cases h₁ : I₁.eval s t with
+      | mk s₁ out₁ =>
+          cases h₂ : I₂.eval s t with
+          | mk s₂ out₂ =>
+              have hEq : (s₁, out₁) = (s₂, out₂) := by
+                simpa [h₁, h₂] using hEval s t
+              cases hEq
+              simpa [evalSequence, h₁, h₂] using ih s₁ (acc ++ out₁)
+
+/-- `evalMatchedTemplate` depends on the interface only through its `eval` field. -/
+theorem evalMatchedTemplate_eq_of_eval_agreement
+    (I₁ I₂ : Interface σ) (s : σ) (tmplSub : Pattern)
+    (hEval : ∀ (s : σ) (term : Pattern), I₁.eval s term = I₂.eval s term) :
+    evalMatchedTemplate I₁ s tmplSub = evalMatchedTemplate I₂ s tmplSub := by
+  cases tmplSub with
+  | fvar x =>
+      simpa [evalMatchedTemplate] using hEval s (.fvar x)
+  | bvar n =>
+      simpa [evalMatchedTemplate] using hEval s (.bvar n)
+  | apply ctor args =>
+      by_cases hExpr : ctor = "Expr"
+      · subst hExpr
+        simpa [evalMatchedTemplate] using
+          evalSequence_eq_of_eval_agreement I₁ I₂ s args [] hEval
+      · simpa [evalMatchedTemplate, hExpr] using hEval s (.apply ctor args)
+  | lambda body =>
+      simpa [evalMatchedTemplate] using hEval s (.lambda body)
+  | multiLambda n body =>
+      simpa [evalMatchedTemplate] using hEval s (.multiLambda n body)
+  | subst body repl =>
+      simpa [evalMatchedTemplate] using hEval s (.subst body repl)
+  | collection ct elems rest =>
+      simpa [evalMatchedTemplate] using hEval s (.collection ct elems rest)
+
 def evalMatchIntrinsic (I : Interface σ) (P : Policy) (s : σ)
     (space pat tmpl : Pattern) : σ × List Pattern :=
   let bindings := findBindingsInSpace I P s space pat
@@ -193,10 +242,7 @@ def evalMatchIntrinsic (I : Interface σ) (P : Policy) (s : σ)
         let sess := acc.1
         let collected := acc.2
         let tmplSub := I.applyBindings bs tmpl
-        let (sess', out) :=
-          match tmplSub with
-          | .apply "Expr" elems => evalSequence I sess elems []
-          | _ => I.eval sess tmplSub
+        let (sess', out) := evalMatchedTemplate I sess tmplSub
         (sess', out.reverse ++ collected))
       (s, [])
   let dynamicOut := outRev.reverse
@@ -205,12 +251,7 @@ def evalMatchIntrinsic (I : Interface σ) (P : Policy) (s : σ)
       match row with
       | [_pat, _tmpl, out] => some out
       | _ => none
-  let builtinOut2 :=
-    ((I.bundle sDyn).builtins.relation "spaceMatch" [pat, tmpl]).filterMap fun row =>
-      match row with
-      | [_pat, out] => some out
-      | _ => none
-  (sDyn, dynamicOut ++ builtinOut3 ++ builtinOut2)
+  (sDyn, dynamicOut ++ builtinOut3)
 
 theorem evalMatchIntrinsic_preserves
     (I : Interface σ) (Pred : σ → Prop) (H : Preservation I Pred)
@@ -223,10 +264,7 @@ theorem evalMatchIntrinsic_preserves
     let sess := acc.1
     let collected := acc.2
     let tmplSub := I.applyBindings bs tmpl
-    let (sess', out) :=
-      match tmplSub with
-      | .apply "Expr" elems => evalSequence I sess elems []
-      | _ => I.eval sess tmplSub
+    let (sess', out) := evalMatchedTemplate I sess tmplSub
     (sess', out.reverse ++ collected)
   have hFold :
       ∀ (bsList : List Bindings) (sess : σ) (collected : List Pattern),
@@ -242,32 +280,210 @@ theorem evalMatchIntrinsic_preserves
         simp [f]
         let tmplSub := I.applyBindings bs tmpl
         have hStep :
-            Pred
-              ((match tmplSub with
-                | .apply "Expr" elems => evalSequence I sess elems []
-                | _ => I.eval sess tmplSub).1) := by
+            Pred ((evalMatchedTemplate I sess tmplSub).1) := by
           cases hT : tmplSub with
           | fvar x =>
-              simpa [hT] using H.eval_preserves (s := sess) (term := .fvar x) rfl hSess
+              simpa [evalMatchedTemplate, hT] using
+                H.eval_preserves (s := sess) (term := .fvar x) rfl hSess
           | bvar n =>
-              simpa [hT] using H.eval_preserves (s := sess) (term := .bvar n) rfl hSess
+              simpa [evalMatchedTemplate, hT] using
+                H.eval_preserves (s := sess) (term := .bvar n) rfl hSess
           | apply ctor args =>
               by_cases hCtor : ctor = "Expr"
               · subst hCtor
-                simpa [hT] using evalSequence_preserves I Pred H sess args [] hSess
-              · simpa [hT, hCtor] using
+                simpa [evalMatchedTemplate, hT] using
+                  evalSequence_preserves I Pred H sess args [] hSess
+              · simpa [evalMatchedTemplate, hT, hCtor] using
                   H.eval_preserves (s := sess) (term := .apply ctor args) rfl hSess
           | lambda body =>
-              simpa [hT] using H.eval_preserves (s := sess) (term := .lambda body) rfl hSess
+              simpa [evalMatchedTemplate, hT] using
+                H.eval_preserves (s := sess) (term := .lambda body) rfl hSess
           | multiLambda n body =>
-              simpa [hT] using H.eval_preserves (s := sess) (term := .multiLambda n body) rfl hSess
+              simpa [evalMatchedTemplate, hT] using
+                H.eval_preserves (s := sess) (term := .multiLambda n body) rfl hSess
           | subst body repl =>
-              simpa [hT] using H.eval_preserves (s := sess) (term := .subst body repl) rfl hSess
+              simpa [evalMatchedTemplate, hT] using
+                H.eval_preserves (s := sess) (term := .subst body repl) rfl hSess
           | collection ct elems restTail =>
-              simpa [hT] using H.eval_preserves
+              simpa [evalMatchedTemplate, hT] using H.eval_preserves
                 (s := sess) (term := .collection ct elems restTail) rfl hSess
         exact ih _ _ hStep
   simpa [bindings, f] using hFold bindings s [] hP
+
+private theorem evalMatchIntrinsic_predicate_fold_acc
+    (I : Interface σ) (s : σ) (bindings : List Bindings) (tmpl : Pattern)
+    (acc : List Pattern)
+    (hApplyPredicate :
+      ∀ (bs : Bindings) (expr : Pattern),
+        I.applyBindings bs (.apply "Predicate" [expr]) =
+          .apply "Predicate" [I.applyBindings bs expr])
+    (hEvalPredicate :
+      ∀ (s : σ) (expr : Pattern),
+        I.eval s (.apply "Predicate" [expr]) = (s, [expr])) :
+    bindings.foldl
+        (fun (accState : σ × List Pattern) bs =>
+        let sess := accState.1
+        let collected := accState.2
+        let tmplSub := I.applyBindings bs (.apply "Predicate" [tmpl])
+        let (sess', out) := evalMatchedTemplate I sess tmplSub
+        (sess', out.reverse ++ collected))
+        (s, acc) =
+      (s, (bindings.map (fun bs => I.applyBindings bs tmpl)).reverse ++ acc) := by
+  induction bindings generalizing acc with
+  | nil =>
+      simp
+  | cons bs rest ih =>
+      simp [List.foldl_cons, hApplyPredicate]
+      have hPredEval :
+          evalMatchedTemplate I s (.apply "Predicate" [I.applyBindings bs tmpl]) =
+            (s, [I.applyBindings bs tmpl]) := by
+        simpa [evalMatchedTemplate, hApplyPredicate] using
+          hEvalPredicate s (I.applyBindings bs tmpl)
+      simp [hPredEval]
+      simpa [hApplyPredicate] using ih (I.applyBindings bs tmpl :: acc)
+
+/-- When the template is wrapped in `Predicate`, `evalMatchIntrinsic` becomes a pure
+normal-form enumerator: each binding contributes exactly the substituted payload, with
+no recursive evaluation beyond the `Predicate` shell. -/
+theorem evalMatchIntrinsic_predicate_template
+    (I : Interface σ) (P : Policy) (s : σ) (space pat tmpl : Pattern)
+    (hApplyPredicate :
+      ∀ (bs : Bindings) (expr : Pattern),
+        I.applyBindings bs (.apply "Predicate" [expr]) =
+          .apply "Predicate" [I.applyBindings bs expr])
+    (hEvalPredicate :
+      ∀ (s : σ) (expr : Pattern),
+        I.eval s (.apply "Predicate" [expr]) = (s, [expr])) :
+    evalMatchIntrinsic I P s space pat (.apply "Predicate" [tmpl]) =
+      let bindings := findBindingsInSpace I P s space pat
+      let builtinOut3 :=
+        ((I.bundle s).builtins.relation "spaceMatch"
+          [pat, .apply "Predicate" [tmpl], .fvar "_out"]).filterMap fun row =>
+            match row with
+            | [_pat, _tmpl, out] => some out
+            | _ => none
+      (s, bindings.map (fun bs => I.applyBindings bs tmpl) ++ builtinOut3) := by
+  unfold evalMatchIntrinsic
+  let bindings := findBindingsInSpace I P s space pat
+  have hFold :=
+    evalMatchIntrinsic_predicate_fold_acc
+      I s bindings tmpl [] hApplyPredicate hEvalPredicate
+  have hState :
+      (bindings.foldl
+          (fun (accState : σ × List Pattern) bs =>
+            let sess := accState.1
+            let collected := accState.2
+            let tmplSub := I.applyBindings bs (.apply "Predicate" [tmpl])
+            let (sess', out) := evalMatchedTemplate I sess tmplSub
+            (sess', out.reverse ++ collected))
+          (s, [])).1 = s := by
+    exact congrArg Prod.fst hFold
+  have hOutRev :
+      (bindings.foldl
+          (fun (accState : σ × List Pattern) bs =>
+            let sess := accState.1
+            let collected := accState.2
+            let tmplSub := I.applyBindings bs (.apply "Predicate" [tmpl])
+            let (sess', out) := evalMatchedTemplate I sess tmplSub
+            (sess', out.reverse ++ collected))
+          (s, [])).2 =
+        (bindings.map (fun bs => I.applyBindings bs tmpl)).reverse := by
+    simpa using congrArg Prod.snd hFold
+  dsimp [bindings]
+  apply Prod.ext
+  · exact hState
+  · rw [hState, hOutRev]
+    simp [bindings]
+
+private theorem evalMatchIntrinsic_fold_eq_of_evalMatchedTemplate_agreement
+    (I₁ I₂ : Interface σ) (s : σ) (bindings : List Bindings) (tmpl : Pattern)
+    (hApply :
+      ∀ (bs : Bindings) (term : Pattern),
+        I₁.applyBindings bs term = I₂.applyBindings bs term)
+    (hEval :
+      ∀ (sess : σ) (bs : Bindings),
+        evalMatchedTemplate I₁ sess (I₁.applyBindings bs tmpl) =
+          evalMatchedTemplate I₂ sess (I₂.applyBindings bs tmpl))
+    (acc : List Pattern) :
+    bindings.foldl
+        (fun (accState : σ × List Pattern) bs =>
+          let sess := accState.1
+          let collected := accState.2
+          let tmplSub := I₁.applyBindings bs tmpl
+          let (sess', out) := evalMatchedTemplate I₁ sess tmplSub
+          (sess', out.reverse ++ collected))
+        (s, acc) =
+      bindings.foldl
+        (fun (accState : σ × List Pattern) bs =>
+          let sess := accState.1
+          let collected := accState.2
+          let tmplSub := I₂.applyBindings bs tmpl
+          let (sess', out) := evalMatchedTemplate I₂ sess tmplSub
+          (sess', out.reverse ++ collected))
+        (s, acc) := by
+  induction bindings generalizing s acc with
+  | nil =>
+      rfl
+  | cons bs rest ih =>
+      simp only [List.foldl_cons]
+      have hApplyBs : I₁.applyBindings bs tmpl = I₂.applyBindings bs tmpl :=
+        hApply bs tmpl
+      have hStep :
+          evalMatchedTemplate I₁ s (I₁.applyBindings bs tmpl) =
+            evalMatchedTemplate I₂ s (I₂.applyBindings bs tmpl) :=
+        hEval s bs
+      rw [hApplyBs] at hStep
+      cases hOut : evalMatchedTemplate I₂ s (I₂.applyBindings bs tmpl) with
+      | mk s' out =>
+          have hOut₁ :
+              evalMatchedTemplate I₁ s (I₁.applyBindings bs tmpl) = (s', out) := by
+            simpa [hApplyBs, hOut] using hStep
+          simp [hOut₁]
+          exact ih s' (out.reverse ++ acc)
+
+/-- Compositional congruence for `evalMatchIntrinsic`.
+If two interfaces discover the same bindings and agree on the evaluation of every
+substituted template produced by those bindings, they produce the same match result. -/
+theorem evalMatchIntrinsic_eq_of_evalMatchedTemplate_agreement
+    (I₁ I₂ : Interface σ) (P : Policy) (s : σ) (space pat tmpl : Pattern)
+    (hBindings :
+      findBindingsInSpace I₁ P s space pat =
+        findBindingsInSpace I₂ P s space pat)
+    (hApply :
+      ∀ (bs : Bindings) (term : Pattern),
+        I₁.applyBindings bs term = I₂.applyBindings bs term)
+    (hBundle : ∀ (sess : σ), I₁.bundle sess = I₂.bundle sess)
+    (hEval :
+      ∀ (sess : σ) (bs : Bindings),
+        evalMatchedTemplate I₁ sess (I₁.applyBindings bs tmpl) =
+          evalMatchedTemplate I₂ sess (I₂.applyBindings bs tmpl)) :
+    evalMatchIntrinsic I₁ P s space pat tmpl =
+      evalMatchIntrinsic I₂ P s space pat tmpl := by
+  unfold evalMatchIntrinsic
+  rw [hBindings]
+  let bindings := findBindingsInSpace I₂ P s space pat
+  let f₁ := fun (accState : σ × List Pattern) bs =>
+    let sess := accState.1
+    let collected := accState.2
+    let tmplSub := I₁.applyBindings bs tmpl
+    let (sess', out) := evalMatchedTemplate I₁ sess tmplSub
+    (sess', out.reverse ++ collected)
+  let f₂ := fun (accState : σ × List Pattern) bs =>
+    let sess := accState.1
+    let collected := accState.2
+    let tmplSub := I₂.applyBindings bs tmpl
+    let (sess', out) := evalMatchedTemplate I₂ sess tmplSub
+    (sess', out.reverse ++ collected)
+  have hFold :
+      bindings.foldl f₁ (s, []) = bindings.foldl f₂ (s, []) := by
+    exact
+      evalMatchIntrinsic_fold_eq_of_evalMatchedTemplate_agreement
+        I₁ I₂ s bindings tmpl hApply hEval []
+  cases hFold₂ : bindings.foldl f₂ (s, []) with
+  | mk sDyn outRev =>
+      have hFold₁ : bindings.foldl f₁ (s, []) = (sDyn, outRev) := by
+        simpa [hFold₂] using hFold
+      simp [bindings, f₁, f₂, hFold₁, hFold₂, hBundle sDyn]
 
 def addAtom (I : Interface σ) (P : Policy) (s : σ) (space fact : Pattern) : σ × List Pattern :=
   match P.relationNameOfSpace? space with

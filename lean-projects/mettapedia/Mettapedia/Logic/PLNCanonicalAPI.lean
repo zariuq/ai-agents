@@ -27,6 +27,7 @@ import Mettapedia.Logic.PLNWorldModelOverlap
 import Mettapedia.Logic.PLNWorldModelSupportForgetting
 import Mettapedia.Logic.PLNSemitopology
 import Mettapedia.Logic.PLNProvenanceWMSupportBridge
+import Mettapedia.Logic.PLNSemitopologyProvenanceBridge
 import Mettapedia.Logic.PLNWorldModelPreorder
 import Mettapedia.Logic.PLNGaussianEMExtension
 
@@ -210,6 +211,39 @@ abbrev wm_whichEmptyScope_exactInverse_of_supported :=
 
 abbrev wm_whichEmptyScope_revision_zero_of_supported :=
   @Mettapedia.Logic.whichEmptyScope_revision_zero_of_supported
+
+abbrev wm_trackedWhichState :=
+  Mettapedia.Logic.TrackedWhichState
+
+abbrev wm_tracked_exactInverse_of_trackedRevision :=
+  @Mettapedia.Logic.tracked_exactInverse_of_trackedRevision
+
+abbrev wm_forgetWhichSupportBy :=
+  @Mettapedia.Logic.forgetWhichSupportBy
+
+abbrev wm_whichSupport_forgetWhichSupportBy :=
+  @Mettapedia.Logic.whichSupport_forgetWhichSupportBy
+
+abbrev wm_whichSupport_forgetWhichOverlap_add :=
+  @Mettapedia.Logic.whichSupport_forgetWhichOverlap_add
+
+abbrev wm_semitopologyIndependent_remainders_after_forgetting_overlap :=
+  @Mettapedia.Logic.semitopologyIndependent_remainders_after_forgetting_overlap
+
+abbrev wm_scopedTrackedWhichState :=
+  Mettapedia.Logic.ScopedTrackedWhichState
+
+abbrev wm_forgetScopedByScope :=
+  @Mettapedia.Logic.forgetScopedByScope
+
+abbrev wm_scopedTracked_exactInverse_of_supported_of_clean :=
+  @Mettapedia.Logic.forgetScopedByScope_exactInverse_of_supported_of_clean
+
+abbrev wm_trackedOverlapFootprint :=
+  @Mettapedia.Logic.scopedOverlapFootprint
+
+abbrev wm_additive_recovery_after_forgetting_nonactionable_overlap :=
+  @Mettapedia.Logic.additive_recovery_after_forgetting_nonactionable_overlap
 
 /-! ## View-Induced Preorder Endpoints -/
 

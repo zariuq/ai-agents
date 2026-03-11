@@ -83,9 +83,9 @@ theorem pureProfile_wellFormed : pureProfile.wellFormed = true := by
 theorem pureProfile_stratified : pureProfile.stratified = true := by
   native_decide
 
-theorem pureProfile_three_rewrites :
-    pureProfile.lang.rewrites.length = 3 := by
-  change Mettapedia.Languages.MeTTa.Pure.Core.mettaPure.rewrites.length = 3
+theorem pureProfile_eight_rewrites :
+    pureProfile.lang.rewrites.length = 8 := by
+  change Mettapedia.Languages.MeTTa.Pure.Core.mettaPure.rewrites.length = 8
   decide
 
 theorem pureProfile_intensional :

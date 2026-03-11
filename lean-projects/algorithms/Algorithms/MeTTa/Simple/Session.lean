@@ -4548,6 +4548,19 @@ private theorem compiledConsistent_of_referenceForallIntrinsicInlineN_conj
       fuel hEvalCorePres hEvalCallablePres hEvalForRulePres hIntrinsicPres
       (hEval := Prod.ext hS hOut) hs
 
+private def referenceSpaceEvalInterface (s0 : Session) :
+    Algorithms.MeTTa.Simple.Semantics.SpaceOps.Interface Session := {
+  bundle := fun s => s.bundle
+  rewrites := fun s => s.bundle.language.rewrites
+  setBundle := withBundleCompiled
+  eval := referenceEvalWithStateCore
+  applyBindings := applyBindingsCompat
+  normalizePattern := normalizeDollarVars
+  normalizeForSpaceMatch := normalizeSpaceMatchPattern s0
+  matchPattern := matchPatternMeTTa
+  dedupPatterns := dedupPatternList
+}
+
 private def referenceSpaceEvalInterfaceN (fuel : Nat) (s0 : Session) :
     Algorithms.MeTTa.Simple.Semantics.SpaceOps.Interface Session := {
   bundle := fun s => s.bundle
@@ -4560,6 +4573,175 @@ private def referenceSpaceEvalInterfaceN (fuel : Nat) (s0 : Session) :
   matchPattern := matchPatternMeTTa
   dedupPatterns := dedupPatternList
 }
+
+/-- Evaluate a substituted `match` template through the live reference interface.
+    This is a public wrapper exposing the compositional `SpaceOps` boundary without
+    leaking the private interface record itself. -/
+def matchTemplateAfterBindings
+    (bs : Bindings) (tmpl : Pattern) : Pattern :=
+  applyBindingsCompat bs tmpl
+
+/-- Evaluate a substituted `match` template through the live reference interface.
+    This is a public wrapper exposing the compositional `SpaceOps` boundary without
+    leaking the private interface record itself. -/
+def referenceMatchEvalMatchedTemplate
+    (s0 sess : Session) (tmplSub : Pattern) : Session × List Pattern :=
+  Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchedTemplate
+    (referenceSpaceEvalInterface s0) sess tmplSub
+
+/-- Evaluate a substituted `match` template through the fuel-indexed total reference
+    interface. -/
+def totalMatchEvalMatchedTemplate
+    (fuel : Nat) (s0 sess : Session) (tmplSub : Pattern) : Session × List Pattern :=
+  Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchedTemplate
+    (referenceSpaceEvalInterfaceN fuel s0) sess tmplSub
+
+/-- Intrinsic `match` result at the live-reference boundary. -/
+def referenceMatchIntrinsicResult
+    (s : Session) (space pat tmpl : Pattern) : Session × List Pattern :=
+  Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchIntrinsic
+    (referenceSpaceEvalInterface s) spacePolicy s space pat tmpl
+
+/-- Intrinsic `match` result at the fuel-indexed total-reference boundary. -/
+def totalMatchIntrinsicResult
+    (fuel : Nat) (s : Session) (space pat tmpl : Pattern) : Session × List Pattern :=
+  Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchIntrinsic
+    (referenceSpaceEvalInterfaceN fuel s) spacePolicy s space pat tmpl
+
+/-- Binding enumeration used by the live-reference `match` intrinsic boundary. -/
+def referenceMatchBindings
+    (s : Session) (space pat : Pattern) : List Bindings :=
+  Algorithms.MeTTa.Simple.Semantics.SpaceOps.findBindingsInSpace
+    (referenceSpaceEvalInterface s) spacePolicy s space pat
+
+/-- Binding enumeration used by the fuel-indexed total-reference `match` boundary. -/
+def totalMatchBindings
+    (fuel : Nat) (s : Session) (space pat : Pattern) : List Bindings :=
+  Algorithms.MeTTa.Simple.Semantics.SpaceOps.findBindingsInSpace
+    (referenceSpaceEvalInterfaceN fuel s) spacePolicy s space pat
+
+/-- Compositional adequacy for the intrinsic `match` boundary.
+    This is the primary theorem shape to use downstream: if live-reference and
+    fuel-indexed total-reference agree on evaluating the specific substituted
+    templates that arise from the match bindings, then the intrinsic `match`
+    enumeration itself agrees. -/
+theorem referenceMatchIntrinsicResult_eq_total_of_bindingwise_evalMatchedTemplate_agreement
+    (fuel : Nat) (s : Session) (space pat tmpl : Pattern)
+    (hBindings : referenceMatchBindings s space pat = totalMatchBindings fuel s space pat)
+    (hEval :
+      ∀ (sess : Session) (bs : Bindings),
+        referenceMatchEvalMatchedTemplate s sess (matchTemplateAfterBindings bs tmpl) =
+          totalMatchEvalMatchedTemplate fuel s sess (matchTemplateAfterBindings bs tmpl)) :
+    referenceMatchIntrinsicResult s space pat tmpl =
+      totalMatchIntrinsicResult fuel s space pat tmpl := by
+  unfold referenceMatchIntrinsicResult totalMatchIntrinsicResult
+  apply Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchIntrinsic_eq_of_evalMatchedTemplate_agreement
+  · exact hBindings
+  · intro bs term
+    rfl
+  · intro sess
+    rfl
+  · intro sess bs
+    simpa [matchTemplateAfterBindings, referenceMatchEvalMatchedTemplate, totalMatchEvalMatchedTemplate] using
+      hEval sess bs
+
+/-- Stronger corollary of the bindingwise theorem: agreement on all substituted
+    templates implies intrinsic `match` agreement. -/
+theorem referenceMatchIntrinsicResult_eq_total_of_evalMatchedTemplate_agreement
+    (fuel : Nat) (s : Session) (space pat tmpl : Pattern)
+    (hBindings : referenceMatchBindings s space pat = totalMatchBindings fuel s space pat)
+    (hEval :
+      ∀ (sess : Session) (tmplSub : Pattern),
+        referenceMatchEvalMatchedTemplate s sess tmplSub =
+          totalMatchEvalMatchedTemplate fuel s sess tmplSub) :
+    referenceMatchIntrinsicResult s space pat tmpl =
+      totalMatchIntrinsicResult fuel s space pat tmpl := by
+  apply referenceMatchIntrinsicResult_eq_total_of_bindingwise_evalMatchedTemplate_agreement
+  · exact hBindings
+  intro sess bs
+  exact hEval sess (matchTemplateAfterBindings bs tmpl)
+
+/-- Corollary of the compositional `match` theorem from direct evaluator agreement.
+    This is the first theorem to target when lifting fragment-local equality from
+    template evaluation up to the intrinsic `match` boundary. -/
+theorem referenceMatchIntrinsicResult_eq_total_of_eval_agreement
+    (fuel : Nat) (s : Session) (space pat tmpl : Pattern)
+    (hBindings : referenceMatchBindings s space pat = totalMatchBindings fuel s space pat)
+    (hEval :
+      ∀ (sess : Session) (term : Pattern),
+        referenceEvalWithStateCore sess term =
+          referenceEvalWithStateCoreN fuel sess term) :
+    referenceMatchIntrinsicResult s space pat tmpl =
+      totalMatchIntrinsicResult fuel s space pat tmpl := by
+  apply referenceMatchIntrinsicResult_eq_total_of_bindingwise_evalMatchedTemplate_agreement
+  · exact hBindings
+  intro sess bs
+  exact
+    Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchedTemplate_eq_of_eval_agreement
+      (referenceSpaceEvalInterface s)
+      (referenceSpaceEvalInterfaceN fuel s)
+      sess (matchTemplateAfterBindings bs tmpl)
+      (by
+        intro sess' term
+        simpa [referenceSpaceEvalInterface, referenceSpaceEvalInterfaceN] using
+          hEval sess' term)
+
+/-- Direct matched-template equality for already-substituted `get-atoms` terms.
+    This isolates the non-`Expr` case of `evalMatchedTemplate` and is the smallest
+    reusable step toward discharging the template-equality hypothesis in the first
+    compositional `match` theorem. -/
+theorem referenceMatchEvalMatchedTemplate_getAtoms_eq_total_of_eval_agreement
+    (fuel : Nat) (s0 sess : Session) (spaceExpr : Pattern)
+    (hEval :
+      referenceEvalWithStateCore sess (.apply "get-atoms" [spaceExpr]) =
+        referenceEvalWithStateCoreN fuel sess (.apply "get-atoms" [spaceExpr])) :
+    referenceMatchEvalMatchedTemplate s0 sess (.apply "get-atoms" [spaceExpr]) =
+      totalMatchEvalMatchedTemplate fuel s0 sess (.apply "get-atoms" [spaceExpr]) := by
+  simpa [referenceMatchEvalMatchedTemplate, totalMatchEvalMatchedTemplate,
+    Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchedTemplate] using hEval
+
+/-- First template-family specialization for compositional `match` adequacy:
+    if substituted `get-atoms` templates agree at the `evalMatchedTemplate`
+    boundary, then the surrounding `match` intrinsic agrees. -/
+theorem referenceMatchIntrinsicResult_eq_total_of_getAtomsTemplate_evalMatchedTemplate_agreement
+    (fuel : Nat) (s : Session) (space pat spaceExpr : Pattern)
+    (hBindings : referenceMatchBindings s space pat = totalMatchBindings fuel s space pat)
+    (hEval :
+      ∀ (sess : Session) (bs : Bindings),
+        referenceMatchEvalMatchedTemplate s sess
+            (matchTemplateAfterBindings bs (.apply "get-atoms" [spaceExpr])) =
+          totalMatchEvalMatchedTemplate fuel s sess
+            (matchTemplateAfterBindings bs (.apply "get-atoms" [spaceExpr]))) :
+    referenceMatchIntrinsicResult s space pat (.apply "get-atoms" [spaceExpr]) =
+      totalMatchIntrinsicResult fuel s space pat (.apply "get-atoms" [spaceExpr]) := by
+  apply referenceMatchIntrinsicResult_eq_total_of_bindingwise_evalMatchedTemplate_agreement
+  · exact hBindings
+  intro sess bs
+  exact hEval sess bs
+
+/-- `get-atoms`-templated compositional `match` adequacy from direct evaluator
+    equality on the already-substituted template term. -/
+theorem referenceMatchIntrinsicResult_eq_total_of_getAtomsTemplate_eval_agreement
+    (fuel : Nat) (s : Session) (space pat spaceExpr : Pattern)
+    (hBindings : referenceMatchBindings s space pat = totalMatchBindings fuel s space pat)
+    (hSub :
+      ∀ (bs : Bindings),
+        matchTemplateAfterBindings bs (.apply "get-atoms" [spaceExpr]) =
+          .apply "get-atoms" [matchTemplateAfterBindings bs spaceExpr])
+    (hEval :
+      ∀ (sess : Session) (bs : Bindings),
+        referenceEvalWithStateCore sess
+            (.apply "get-atoms" [matchTemplateAfterBindings bs spaceExpr]) =
+          referenceEvalWithStateCoreN fuel sess
+            (.apply "get-atoms" [matchTemplateAfterBindings bs spaceExpr])) :
+    referenceMatchIntrinsicResult s space pat (.apply "get-atoms" [spaceExpr]) =
+      totalMatchIntrinsicResult fuel s space pat (.apply "get-atoms" [spaceExpr]) := by
+  apply referenceMatchIntrinsicResult_eq_total_of_getAtomsTemplate_evalMatchedTemplate_agreement
+  · exact hBindings
+  · intro sess bs
+    simpa [hSub bs] using
+      (referenceMatchEvalMatchedTemplate_getAtoms_eq_total_of_eval_agreement
+        fuel s sess (matchTemplateAfterBindings bs spaceExpr) (hEval sess bs))
 
 private theorem referenceSpaceEvalInterfaceN_preservation
     (fuel : Nat) (s0 : Session)
@@ -7789,6 +7971,30 @@ theorem intrinsicStatefulN_preserves
     (h : intrinsicStatefulN fuel s term = some (s', out))
     (hs : WF s) : WF s' :=
   compiledConsistent_of_referenceIntrinsicStatefulN fuel h hs
+
+/-- At positive fuel, the faithful evaluator is definitionally just the explicit-status
+    wrapper around the total N-kernel evaluator. -/
+theorem evalWithStateCoreF_eq_done_of_pos
+    (fuel : Nat) (s : Session) (term : Pattern)
+    (hFuel : 0 < fuel) :
+    evalWithStateCoreF fuel s term = .done (evalWithStateCoreN fuel s term) := by
+  cases fuel with
+  | zero =>
+      cases Nat.not_lt_zero 0 hFuel
+  | succ n =>
+      rfl
+
+/-- At positive fuel, the faithful intrinsic evaluator is definitionally just the
+    explicit-status wrapper around the total N-kernel intrinsic evaluator. -/
+theorem intrinsicStatefulF_eq_done_of_pos
+    (fuel : Nat) (s : Session) (term : Pattern)
+    (hFuel : 0 < fuel) :
+    intrinsicStatefulF fuel s term = .done (intrinsicStatefulN fuel s term) := by
+  cases fuel with
+  | zero =>
+      cases Nat.not_lt_zero 0 hFuel
+  | succ n =>
+      rfl
 
 private theorem compiledConsistent_of_evalDeterministicCore
     (hEvalCorePres :

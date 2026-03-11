@@ -16,6 +16,7 @@ import Mettapedia.Languages.MeTTa.PeTTa.ProfileBridge
 import Mettapedia.Languages.MeTTa.PeTTa.OSLFInstance
 import Mettapedia.Languages.MeTTa.PeTTa.GSLTVertex
 import Mettapedia.Languages.MeTTa.PeTTa.ExecutionContract
+import Mettapedia.Languages.MeTTa.PeTTa.ScopeContract
 import Mettapedia.Languages.MeTTa.PeTTa.TransitionSpec
 import Mettapedia.Languages.MeTTa.PeTTa.RewriteIR
 import Mettapedia.Languages.MeTTa.PeTTa.RewriteIRV2

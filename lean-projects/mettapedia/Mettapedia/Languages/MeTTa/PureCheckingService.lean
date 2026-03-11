@@ -375,4 +375,14 @@ theorem PureCheckingBoundary.checkImportedUpToConv_quoteAgreement
       quoteClosedTm (svc.checkImportedUpToConv imported sourceType targetType typing hconv).term := by
   exact (svc.checkImportedUpToConv imported sourceType targetType typing hconv).quoteAgreement
 
+theorem PureCheckingBoundary.checkClosedTerm_typing
+    (svc : PureCheckingBoundary)
+    (term : PureTm 0)
+    (claimedType : PureTm 0)
+    (typing : HasType .nil term claimedType) :
+    HasType .nil
+      (svc.checkClosedTerm term claimedType typing).term
+      claimedType := by
+  simpa [PureCheckingBoundary.checkClosedTerm] using typing
+
 end Mettapedia.Languages.MeTTa.ElaboratedCore

@@ -14,6 +14,17 @@ inductive Red : PureTm n → PureTm n → Prop where
       Red (.fst (.pair a b)) a
   | betaSigmaSnd (a b : PureTm n) :
       Red (.snd (.pair a b)) b
+  | betaUnitRec (motive unitCase : PureTm n) :
+      Red (.unitRec motive unitCase .unitMk) unitCase
+  | betaBoolRecFalse (motive falseCase trueCase : PureTm n) :
+      Red (.boolRec motive falseCase trueCase .boolFalse) falseCase
+  | betaBoolRecTrue (motive falseCase trueCase : PureTm n) :
+      Red (.boolRec motive falseCase trueCase .boolTrue) trueCase
+  | betaNatRecZero (motive zeroCase succCase : PureTm n) :
+      Red (.natRec motive zeroCase succCase .natZero) zeroCase
+  | betaNatRecSucc (motive zeroCase succCase k : PureTm n) :
+      Red (.natRec motive zeroCase succCase (.natSucc k))
+        (.app (.app succCase k) (.natRec motive zeroCase succCase k))
   | congPiDom {A A' : PureTm n} {B : PureTm (n + 1)} :
       Red A A' → Red (.pi A B) (.pi A' B)
   | congPiCod {A : PureTm n} {B B' : PureTm (n + 1)} :
@@ -44,6 +55,41 @@ inductive Red : PureTm n → PureTm n → Prop where
       Red p p' → Red (.snd p) (.snd p')
   | congRefl {a a' : PureTm n} :
       Red a a' → Red (.refl a) (.refl a')
+  | congNatSucc {k k' : PureTm n} :
+      Red k k' → Red (.natSucc k) (.natSucc k')
+  | congUnitRecMotive {motive motive' unitCase scrutinee : PureTm n} :
+      Red motive motive' →
+      Red (.unitRec motive unitCase scrutinee) (.unitRec motive' unitCase scrutinee)
+  | congUnitRecCase {motive unitCase unitCase' scrutinee : PureTm n} :
+      Red unitCase unitCase' →
+      Red (.unitRec motive unitCase scrutinee) (.unitRec motive unitCase' scrutinee)
+  | congUnitRecScrutinee {motive unitCase scrutinee scrutinee' : PureTm n} :
+      Red scrutinee scrutinee' →
+      Red (.unitRec motive unitCase scrutinee) (.unitRec motive unitCase scrutinee')
+  | congBoolRecMotive {motive motive' falseCase trueCase scrutinee : PureTm n} :
+      Red motive motive' →
+      Red (.boolRec motive falseCase trueCase scrutinee) (.boolRec motive' falseCase trueCase scrutinee)
+  | congBoolRecFalseCase {motive falseCase falseCase' trueCase scrutinee : PureTm n} :
+      Red falseCase falseCase' →
+      Red (.boolRec motive falseCase trueCase scrutinee) (.boolRec motive falseCase' trueCase scrutinee)
+  | congBoolRecTrueCase {motive falseCase trueCase trueCase' scrutinee : PureTm n} :
+      Red trueCase trueCase' →
+      Red (.boolRec motive falseCase trueCase scrutinee) (.boolRec motive falseCase trueCase' scrutinee)
+  | congBoolRecScrutinee {motive falseCase trueCase scrutinee scrutinee' : PureTm n} :
+      Red scrutinee scrutinee' →
+      Red (.boolRec motive falseCase trueCase scrutinee) (.boolRec motive falseCase trueCase scrutinee')
+  | congNatRecMotive {motive motive' zeroCase succCase scrutinee : PureTm n} :
+      Red motive motive' →
+      Red (.natRec motive zeroCase succCase scrutinee) (.natRec motive' zeroCase succCase scrutinee)
+  | congNatRecZeroCase {motive zeroCase zeroCase' succCase scrutinee : PureTm n} :
+      Red zeroCase zeroCase' →
+      Red (.natRec motive zeroCase succCase scrutinee) (.natRec motive zeroCase' succCase scrutinee)
+  | congNatRecSuccCase {motive zeroCase succCase succCase' scrutinee : PureTm n} :
+      Red succCase succCase' →
+      Red (.natRec motive zeroCase succCase scrutinee) (.natRec motive zeroCase succCase' scrutinee)
+  | congNatRecScrutinee {motive zeroCase succCase scrutinee scrutinee' : PureTm n} :
+      Red scrutinee scrutinee' →
+      Red (.natRec motive zeroCase succCase scrutinee) (.natRec motive zeroCase succCase scrutinee')
 
 abbrev RedStar (t u : PureTm n) : Prop := Relation.ReflTransGen Red t u
 
@@ -120,6 +166,80 @@ theorem congSnd {p p' : PureTm n} (h : RedStar p p') : RedStar (.snd p) (.snd p'
 
 theorem congRefl {a a' : PureTm n} (h : RedStar a a') : RedStar (.refl a) (.refl a') :=
   map (F := fun t => .refl t) (fun hstep => .congRefl hstep) h
+
+theorem congNatSucc {k k' : PureTm n} (h : RedStar k k') : RedStar (.natSucc k) (.natSucc k') :=
+  map (F := fun t => .natSucc t) (fun hstep => .congNatSucc hstep) h
+
+theorem congUnitRecMotive {motive motive' unitCase scrutinee : PureTm n}
+    (h : RedStar motive motive') :
+    RedStar (.unitRec motive unitCase scrutinee) (.unitRec motive' unitCase scrutinee) :=
+  map (F := fun t => .unitRec t unitCase scrutinee) (fun hstep => .congUnitRecMotive hstep) h
+
+theorem congUnitRecCase {motive unitCase unitCase' scrutinee : PureTm n}
+    (h : RedStar unitCase unitCase') :
+    RedStar (.unitRec motive unitCase scrutinee) (.unitRec motive unitCase' scrutinee) :=
+  map (F := fun t => .unitRec motive t scrutinee) (fun hstep => .congUnitRecCase hstep) h
+
+theorem congUnitRecScrutinee {motive unitCase scrutinee scrutinee' : PureTm n}
+    (h : RedStar scrutinee scrutinee') :
+    RedStar (.unitRec motive unitCase scrutinee) (.unitRec motive unitCase scrutinee') :=
+  map (F := fun t => .unitRec motive unitCase t) (fun hstep => .congUnitRecScrutinee hstep) h
+
+theorem congBoolRecMotive {motive motive' falseCase trueCase scrutinee : PureTm n}
+    (h : RedStar motive motive') :
+    RedStar (.boolRec motive falseCase trueCase scrutinee)
+      (.boolRec motive' falseCase trueCase scrutinee) :=
+  map (F := fun t => .boolRec t falseCase trueCase scrutinee)
+    (fun hstep => .congBoolRecMotive hstep) h
+
+theorem congBoolRecFalseCase {motive falseCase falseCase' trueCase scrutinee : PureTm n}
+    (h : RedStar falseCase falseCase') :
+    RedStar (.boolRec motive falseCase trueCase scrutinee)
+      (.boolRec motive falseCase' trueCase scrutinee) :=
+  map (F := fun t => .boolRec motive t trueCase scrutinee)
+    (fun hstep => .congBoolRecFalseCase hstep) h
+
+theorem congBoolRecTrueCase {motive falseCase trueCase trueCase' scrutinee : PureTm n}
+    (h : RedStar trueCase trueCase') :
+    RedStar (.boolRec motive falseCase trueCase scrutinee)
+      (.boolRec motive falseCase trueCase' scrutinee) :=
+  map (F := fun t => .boolRec motive falseCase t scrutinee)
+    (fun hstep => .congBoolRecTrueCase hstep) h
+
+theorem congBoolRecScrutinee {motive falseCase trueCase scrutinee scrutinee' : PureTm n}
+    (h : RedStar scrutinee scrutinee') :
+    RedStar (.boolRec motive falseCase trueCase scrutinee)
+      (.boolRec motive falseCase trueCase scrutinee') :=
+  map (F := fun t => .boolRec motive falseCase trueCase t)
+    (fun hstep => .congBoolRecScrutinee hstep) h
+
+theorem congNatRecMotive {motive motive' zeroCase succCase scrutinee : PureTm n}
+    (h : RedStar motive motive') :
+    RedStar (.natRec motive zeroCase succCase scrutinee)
+      (.natRec motive' zeroCase succCase scrutinee) :=
+  map (F := fun t => .natRec t zeroCase succCase scrutinee)
+    (fun hstep => .congNatRecMotive hstep) h
+
+theorem congNatRecZeroCase {motive zeroCase zeroCase' succCase scrutinee : PureTm n}
+    (h : RedStar zeroCase zeroCase') :
+    RedStar (.natRec motive zeroCase succCase scrutinee)
+      (.natRec motive zeroCase' succCase scrutinee) :=
+  map (F := fun t => .natRec motive t succCase scrutinee)
+    (fun hstep => .congNatRecZeroCase hstep) h
+
+theorem congNatRecSuccCase {motive zeroCase succCase succCase' scrutinee : PureTm n}
+    (h : RedStar succCase succCase') :
+    RedStar (.natRec motive zeroCase succCase scrutinee)
+      (.natRec motive zeroCase succCase' scrutinee) :=
+  map (F := fun t => .natRec motive zeroCase t scrutinee)
+    (fun hstep => .congNatRecSuccCase hstep) h
+
+theorem congNatRecScrutinee {motive zeroCase succCase scrutinee scrutinee' : PureTm n}
+    (h : RedStar scrutinee scrutinee') :
+    RedStar (.natRec motive zeroCase succCase scrutinee)
+      (.natRec motive zeroCase succCase scrutinee') :=
+  map (F := fun t => .natRec motive zeroCase succCase t)
+    (fun hstep => .congNatRecScrutinee hstep) h
 
 end RedStar
 

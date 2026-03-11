@@ -91,6 +91,66 @@ inductive PayloadPatternShapeKind where
   | rewriteEqRule
 deriving Repr, DecidableEq, BEq
 
+/-- Structural lowering family for grounded host builtins.
+
+This describes the kind of host-side implementation a runtime may attach after
+validating the exported contract. It is intentionally structural: it classifies
+the lowering discipline rather than embedding host code or MM2 text. -/
+inductive GroundedBuiltinHostKind where
+  | numericCompare
+  | f64Predicate
+  | isVariableTerm
+  | reprTerm
+  | metaTypeOfTerm
+  | typeOfTerm
+deriving Repr, DecidableEq, BEq
+
+/-- How an aggregation lane packages collected backend results. -/
+inductive AggregationCollectionKind where
+  | tupleExpr
+deriving Repr, DecidableEq, BEq
+
+/-- Where an aggregation lane obtains the results it packages. -/
+inductive AggregationSourceKind where
+  | subevalAllResults
+deriving Repr, DecidableEq, BEq
+
+/-- Structural eligibility conditions for executable lanes.
+
+These do not assign ownership of a surface head forever. They describe when a
+particular execution lane may fire.
+
+Positive example:
+- a grounded integer-comparison lane may require `groundNumericArgs`
+
+Negative example:
+- this is not a blanket statement that a symbol like `<` is "owned by Rust". -/
+inductive LaneEligibilityKind where
+  | always
+  | groundNumericArgs
+  | groundBoolArgs
+  | groundConditionOnly
+  | groundStructuralEqArgs
+deriving Repr, DecidableEq, BEq
+
+/-- What to do when a certified lane is present but inapplicable.
+
+Positive example:
+- grounded comparisons can say `fallbackToRules`, allowing ordinary symbolic
+  rule semantics to try when the args are not yet ground
+- `if` can say `symbolicFallback`, reserving room for a future symbolic/MM2
+  guard path instead of forcing a hard failure
+
+Negative example:
+- this is not permission to silently invent a new execution path in Rust; the
+  residual policy only governs what happens after the exported lane is found to
+  be inapplicable. -/
+inductive ResidualPolicy where
+  | failClosed
+  | fallbackToRules
+  | symbolicFallback
+deriving Repr, DecidableEq, BEq
+
 /-- Shared execution-permission envelope carried by every contract lane. -/
 structure ExecutionPermission where
   owner : ExecutionOwner
@@ -192,6 +252,64 @@ structure IntrinsicBuiltinContract where
   backendName : String
   supportedMemoShapes : List MemoShape := []
   builtinDemand : BuiltinDemandKind
+  eligibility : LaneEligibilityKind := .always
+  residualPolicy : ResidualPolicy := .failClosed
+  theoremRefs : List String := []
+deriving Repr, DecidableEq, BEq
+
+/-- Fourth contract lane: host-grounded builtins that are not currently exposed
+through the MM2 intrinsic surface.
+
+Positive example:
+- integer comparisons such as `<` can be certified here as pure, deterministic,
+  host-grounded reductions with explicit numeric demand.
+
+Negative example:
+- this lane is not a loophole for language-local evaluators: the runtime still
+  has to validate the exported contract entry and may only attach the specific
+  host-lowering family described by `hostKind`. -/
+structure GroundedBuiltinContract where
+  head : String
+  minArity : Nat
+  maxArity : Option Nat := none
+  hostKind : GroundedBuiltinHostKind
+  owner : ExecutionOwner
+  kernelClass : RuntimeKernelClass := .ruleExec
+  effectClass : EffectClass
+  resourceClass : RuntimeResourceClass
+  backendName : String
+  supportedMemoShapes : List MemoShape := []
+  builtinDemand : BuiltinDemandKind
+  eligibility : LaneEligibilityKind := .always
+  residualPolicy : ResidualPolicy := .failClosed
+  theoremRefs : List String := []
+deriving Repr, DecidableEq, BEq
+
+/-- Fifth contract lane: aggregation/control forms that collect results from a
+nested certified evaluation lane and package them structurally.
+
+Positive example:
+- `collapse` can be certified here as "run the body through the real backend,
+  collect all terminal results, and package them into one tuple-style result"
+
+Negative example:
+- this is not permission to embed MM2 text templates inside the artifact; the
+  contract describes the aggregation shape, while the runtime remains
+  responsible for honest MM2/MORK lowering. -/
+structure AggregationBuiltinContract where
+  head : String
+  minArity : Nat
+  maxArity : Option Nat := none
+  collectionKind : AggregationCollectionKind
+  sourceKind : AggregationSourceKind
+  owner : ExecutionOwner
+  kernelClass : RuntimeKernelClass := .metaPhase
+  effectClass : EffectClass
+  resourceClass : RuntimeResourceClass
+  backendName : String
+  supportedMemoShapes : List MemoShape := []
+  eligibility : LaneEligibilityKind := .always
+  residualPolicy : ResidualPolicy := .failClosed
   theoremRefs : List String := []
 deriving Repr, DecidableEq, BEq
 
@@ -247,12 +365,41 @@ def IntrinsicBuiltinContract.permission (c : IntrinsicBuiltinContract) : Executi
     supportedMemoShapes := c.supportedMemoShapes
     theoremRefs := c.theoremRefs }
 
+def GroundedBuiltinContract.permission (c : GroundedBuiltinContract) : ExecutionPermission :=
+  { owner := c.owner
+    kernelClass := c.kernelClass
+    effectClass := c.effectClass
+    resourceClass := c.resourceClass
+    backendName := c.backendName
+    supportedMemoShapes := c.supportedMemoShapes
+    theoremRefs := c.theoremRefs }
+
+def AggregationBuiltinContract.permission (c : AggregationBuiltinContract) : ExecutionPermission :=
+  { owner := c.owner
+    kernelClass := c.kernelClass
+    effectClass := c.effectClass
+    resourceClass := c.resourceClass
+    backendName := c.backendName
+    supportedMemoShapes := c.supportedMemoShapes
+    theoremRefs := c.theoremRefs }
+
 /-- Shared specification row for the core intrinsic builtin catalog. -/
 structure CoreIntrinsicSpec where
   head : String
   minArity : Nat
   maxArity : Option Nat := none
   demand : BuiltinDemandKind
+deriving Repr, DecidableEq, BEq
+
+/-- Shared specification row for grounded host builtins. -/
+structure GroundedBuiltinSpec where
+  head : String
+  minArity : Nat
+  maxArity : Option Nat := none
+  demand : BuiltinDemandKind
+  hostKind : GroundedBuiltinHostKind
+  eligibility : LaneEligibilityKind := .groundNumericArgs
+  residualPolicy : ResidualPolicy := .fallbackToRules
 deriving Repr, DecidableEq, BEq
 
 /-- The theorem anchors for the shared core intrinsic catalog itself.
@@ -349,6 +496,8 @@ inductive ExecutionContractEntry where
   | relationPremise (entry : RelationPremiseContract)
   | spaceEffectPayload (entry : SpaceEffectPayloadContract)
   | intrinsicBuiltin (entry : IntrinsicBuiltinContract)
+  | groundedBuiltin (entry : GroundedBuiltinContract)
+  | aggregationBuiltin (entry : AggregationBuiltinContract)
 deriving Repr, DecidableEq, BEq
 
 def ExecutionContractEntry.head : ExecutionContractEntry → String
@@ -357,6 +506,8 @@ def ExecutionContractEntry.head : ExecutionContractEntry → String
   | .relationPremise entry => entry.relation
   | .spaceEffectPayload entry => entry.head
   | .intrinsicBuiltin entry => entry.head
+  | .groundedBuiltin entry => entry.head
+  | .aggregationBuiltin entry => entry.head
 
 def ExecutionContractEntry.arity : ExecutionContractEntry → Nat
   | .lookupQuery entry => entry.arity
@@ -364,6 +515,8 @@ def ExecutionContractEntry.arity : ExecutionContractEntry → Nat
   | .relationPremise entry => entry.arity
   | .spaceEffectPayload entry => entry.arity
   | .intrinsicBuiltin entry => entry.minArity
+  | .groundedBuiltin entry => entry.minArity
+  | .aggregationBuiltin entry => entry.minArity
 
 def ExecutionContractEntry.lookupFamily? : ExecutionContractEntry → Option LookupFamilyPlan
   | .lookupQuery entry => some entry.lookupFamily
@@ -371,6 +524,8 @@ def ExecutionContractEntry.lookupFamily? : ExecutionContractEntry → Option Loo
   | .relationPremise _ => none
   | .spaceEffectPayload _ => none
   | .intrinsicBuiltin _ => none
+  | .groundedBuiltin _ => none
+  | .aggregationBuiltin _ => none
 
 def ExecutionContractEntry.permission : ExecutionContractEntry → ExecutionPermission
   | .lookupQuery entry => entry.permission
@@ -378,6 +533,8 @@ def ExecutionContractEntry.permission : ExecutionContractEntry → ExecutionPerm
   | .relationPremise entry => entry.permission
   | .spaceEffectPayload entry => entry.permission
   | .intrinsicBuiltin entry => entry.permission
+  | .groundedBuiltin entry => entry.permission
+  | .aggregationBuiltin entry => entry.permission
 
 def ExecutionContractEntry.sortKey : ExecutionContractEntry → String
   | .lookupQuery entry =>
@@ -400,6 +557,23 @@ def ExecutionContractEntry.sortKey : ExecutionContractEntry → String
       s!"space_effect_payload:{entry.head}:{payloadKey}:{sinkKey}:{entry.arity}"
   | .intrinsicBuiltin entry =>
       s!"intrinsic_builtin:{entry.relation}:{entry.head}:{entry.minArity}"
+  | .groundedBuiltin entry =>
+      let hostKey :=
+        match entry.hostKind with
+        | .i32Compare => "i32_compare"
+        | .isVariableTerm => "is_variable_term"
+        | .reprTerm => "repr_term"
+        | .metaTypeOfTerm => "meta_type_of_term"
+        | .typeOfTerm => "type_of_term"
+      s!"grounded_builtin:{hostKey}:{entry.head}:{entry.minArity}"
+  | .aggregationBuiltin entry =>
+      let collectionKey :=
+        match entry.collectionKind with
+        | .tupleExpr => "tuple_expr"
+      let sourceKey :=
+        match entry.sourceKind with
+        | .subevalAllResults => "subeval_all_results"
+      s!"aggregation_builtin:{sourceKey}:{collectionKey}:{entry.head}:{entry.minArity}"
 
 def coreIntrinsicEntries : List ExecutionContractEntry :=
   coreIntrinsicContracts.map ExecutionContractEntry.intrinsicBuiltin
@@ -488,6 +662,32 @@ private def renderPayloadPatternShapeKind : PayloadPatternShapeKind → String
   | .anyPattern => "any_pattern"
   | .nonRewritePattern => "non_rewrite_pattern"
   | .rewriteEqRule => "rewrite_eq_rule"
+
+private def renderGroundedBuiltinHostKind : GroundedBuiltinHostKind → String
+  | .numericCompare => "numeric_compare"
+  | .f64Predicate => "f64_predicate"
+  | .isVariableTerm => "is_variable_term"
+  | .reprTerm => "repr_term"
+  | .metaTypeOfTerm => "meta_type_of_term"
+  | .typeOfTerm => "type_of_term"
+
+private def renderAggregationCollectionKind : AggregationCollectionKind → String
+  | .tupleExpr => "tuple_expr"
+
+private def renderAggregationSourceKind : AggregationSourceKind → String
+  | .subevalAllResults => "subeval_all_results"
+
+private def renderLaneEligibilityKind : LaneEligibilityKind → String
+  | .always => "always"
+  | .groundNumericArgs => "ground_numeric_args"
+  | .groundBoolArgs => "ground_bool_args"
+  | .groundConditionOnly => "ground_condition_only"
+  | .groundStructuralEqArgs => "ground_structural_eq_args"
+
+private def renderResidualPolicy : ResidualPolicy → String
+  | .failClosed => "fail_closed"
+  | .fallbackToRules => "fallback_to_rules"
+  | .symbolicFallback => "symbolic_fallback"
 
 private def renderKernelClass : RuntimeKernelClass → String
   | .ruleExec => "rule_exec"
@@ -647,12 +847,38 @@ private def normalizeIntrinsicBuiltin (e : IntrinsicBuiltinContract) : Intrinsic
     theoremRefs := p.theoremRefs
   }
 
+private def normalizeGroundedBuiltin (e : GroundedBuiltinContract) : GroundedBuiltinContract :=
+  let p := normalizePermission e.permission
+  { e with
+    owner := p.owner
+    kernelClass := p.kernelClass
+    effectClass := p.effectClass
+    resourceClass := p.resourceClass
+    backendName := p.backendName
+    supportedMemoShapes := p.supportedMemoShapes
+    theoremRefs := p.theoremRefs
+  }
+
+private def normalizeAggregationBuiltin (e : AggregationBuiltinContract) : AggregationBuiltinContract :=
+  let p := normalizePermission e.permission
+  { e with
+    owner := p.owner
+    kernelClass := p.kernelClass
+    effectClass := p.effectClass
+    resourceClass := p.resourceClass
+    backendName := p.backendName
+    supportedMemoShapes := p.supportedMemoShapes
+    theoremRefs := p.theoremRefs
+  }
+
 private def normalizeEntry : ExecutionContractEntry → ExecutionContractEntry
   | .lookupQuery entry => .lookupQuery (normalizeLookupQuery entry)
   | .spaceEffect entry => .spaceEffect (normalizeSpaceEffect entry)
   | .relationPremise entry => .relationPremise (normalizeRelationPremise entry)
   | .spaceEffectPayload entry => .spaceEffectPayload (normalizeSpaceEffectPayload entry)
   | .intrinsicBuiltin entry => .intrinsicBuiltin (normalizeIntrinsicBuiltin entry)
+  | .groundedBuiltin entry => .groundedBuiltin (normalizeGroundedBuiltin entry)
+  | .aggregationBuiltin entry => .aggregationBuiltin (normalizeAggregationBuiltin entry)
 
 private def normalizeArtifact (a : ExecutionContractArtifact) : ExecutionContractArtifact :=
   { a with
@@ -792,6 +1018,46 @@ private def renderIntrinsicBuiltin (e : IntrinsicBuiltinContract) : String :=
     ++ renderPermissionCore p ++ ","
     ++ renderMemoShapesField p ++ ","
     ++ "\"builtin_demand\":" ++ jsonStr (renderBuiltinDemand e.builtinDemand) ++ ","
+    ++ "\"eligibility\":" ++ jsonStr (renderLaneEligibilityKind e.eligibility) ++ ","
+    ++ "\"residual_policy\":" ++ jsonStr (renderResidualPolicy e.residualPolicy) ++ ","
+    ++ renderTheoremRefsField p
+  ++ "}"
+
+private def renderGroundedBuiltin (e : GroundedBuiltinContract) : String :=
+  let p := e.permission
+  "{"
+    ++ "\"entry_kind\":\"grounded_builtin\","
+    ++ "\"head\":" ++ jsonStr e.head ++ ","
+    ++ "\"min_arity\":" ++ jsonNat e.minArity ++ ","
+    ++ "\"max_arity\":"
+      ++ (match e.maxArity with
+          | some n => jsonNat n
+          | none => "null") ++ ","
+    ++ "\"host_kind\":" ++ jsonStr (renderGroundedBuiltinHostKind e.hostKind) ++ ","
+    ++ renderPermissionCore p ++ ","
+    ++ renderMemoShapesField p ++ ","
+    ++ "\"builtin_demand\":" ++ jsonStr (renderBuiltinDemand e.builtinDemand) ++ ","
+    ++ "\"eligibility\":" ++ jsonStr (renderLaneEligibilityKind e.eligibility) ++ ","
+    ++ "\"residual_policy\":" ++ jsonStr (renderResidualPolicy e.residualPolicy) ++ ","
+    ++ renderTheoremRefsField p
+  ++ "}"
+
+private def renderAggregationBuiltin (e : AggregationBuiltinContract) : String :=
+  let p := e.permission
+  "{"
+    ++ "\"entry_kind\":\"aggregation_builtin\","
+    ++ "\"head\":" ++ jsonStr e.head ++ ","
+    ++ "\"min_arity\":" ++ jsonNat e.minArity ++ ","
+    ++ "\"max_arity\":"
+      ++ (match e.maxArity with
+          | some n => jsonNat n
+          | none => "null") ++ ","
+    ++ "\"collection_kind\":" ++ jsonStr (renderAggregationCollectionKind e.collectionKind) ++ ","
+    ++ "\"source_kind\":" ++ jsonStr (renderAggregationSourceKind e.sourceKind) ++ ","
+    ++ renderPermissionCore p ++ ","
+    ++ renderMemoShapesField p ++ ","
+    ++ "\"eligibility\":" ++ jsonStr (renderLaneEligibilityKind e.eligibility) ++ ","
+    ++ "\"residual_policy\":" ++ jsonStr (renderResidualPolicy e.residualPolicy) ++ ","
     ++ renderTheoremRefsField p
   ++ "}"
 
@@ -801,6 +1067,8 @@ private def renderEntry : ExecutionContractEntry → String
   | .relationPremise entry => renderRelationPremise entry
   | .spaceEffectPayload entry => renderSpaceEffectPayload entry
   | .intrinsicBuiltin entry => renderIntrinsicBuiltin entry
+  | .groundedBuiltin entry => renderGroundedBuiltin entry
+  | .aggregationBuiltin entry => renderAggregationBuiltin entry
 
 def ExecutionContractArtifact.renderJson (a : ExecutionContractArtifact) : String :=
   let norm := normalizeArtifact a
@@ -1002,7 +1270,76 @@ private def lintIntrinsicBuiltin (e : IntrinsicBuiltinContract) : List String :=
     if p.theoremRefs.isEmpty then
       [s!"{entryTag}: theorem_refs cannot be empty"]
     else []
-  headErrs ++ relationErrs ++ arityErrs ++ ownerErrs ++ kernelErrs ++ effectErrs ++ memoErrs ++ theoremErrs
+  let controlErrs :=
+    if e.builtinDemand = .boolThenElseArgs ∧ e.eligibility ≠ .groundConditionOnly then
+      [s!"{entryTag}: bool_then_else_args lanes should declare eligibility=ground_condition_only"]
+    else []
+  headErrs ++ relationErrs ++ arityErrs ++ ownerErrs ++ kernelErrs ++ effectErrs ++ memoErrs ++ theoremErrs ++ controlErrs
+
+private def lintGroundedBuiltin (e : GroundedBuiltinContract) : List String :=
+  let entryTag := s!"grounded_builtin/{e.head}"
+  let p := e.permission
+  let headErrs :=
+    if e.head.isEmpty then
+      ["grounded_builtin entry head must be non-empty"]
+    else []
+  let arityErrs :=
+    match e.maxArity with
+    | some maxA =>
+        if e.minArity <= maxA then [] else
+          [s!"{entryTag}: min_arity cannot exceed max_arity"]
+    | none => []
+  let ownerErrs :=
+    if p.owner = .groundedBuiltin then [] else
+      [s!"{entryTag}: grounded_builtin entries must use owner=grounded_builtin"]
+  let memoErrs :=
+    (p.supportedMemoShapes.foldl
+      (fun errs shape =>
+        if p.effectClass.supportsMemoShape shape then errs
+        else errs ++ [s!"{entryTag}: effect class {renderEffectClass p.effectClass} does not support memo shape {renderMemoShape shape}"])
+      [])
+  let theoremErrs :=
+    if p.theoremRefs.isEmpty then
+      [s!"{entryTag}: theorem_refs cannot be empty"]
+    else []
+  let hostErrs :=
+    match e.hostKind, e.eligibility with
+    | .isVariableTerm, .always => []
+    | .reprTerm, .always => []
+    | .metaTypeOfTerm, .always => []
+    | .typeOfTerm, .always => []
+    | _, .always =>
+        [s!"{entryTag}: grounded_builtin lanes should declare an explicit non-trivial eligibility condition"]
+    | _, _ => []
+  headErrs ++ arityErrs ++ ownerErrs ++ memoErrs ++ theoremErrs ++ hostErrs
+
+private def lintAggregationBuiltin (e : AggregationBuiltinContract) : List String :=
+  let entryTag := s!"aggregation_builtin/{e.head}"
+  let p := e.permission
+  let headErrs :=
+    if e.head.isEmpty then
+      ["aggregation_builtin entry head must be non-empty"]
+    else []
+  let arityErrs :=
+    match e.maxArity with
+    | some maxA =>
+        if e.minArity <= maxA then [] else
+          [s!"{entryTag}: min_arity cannot exceed max_arity"]
+    | none => []
+  let ownerErrs :=
+    if p.owner = .artifactBackend then [] else
+      [s!"{entryTag}: aggregation_builtin entries must use owner=artifact_backend"]
+  let kernelErrs :=
+    if p.kernelClass = .metaPhase then [] else
+      [s!"{entryTag}: aggregation_builtin entries must use fragment_kind=meta_phase"]
+  let effectErrs :=
+    if p.effectClass = .readOnlyLookup ∨ p.effectClass = .nondeterministicReadOnly then [] else
+      [s!"{entryTag}: aggregation_builtin entries must use a read-only effect class"]
+  let theoremErrs :=
+    if p.theoremRefs.isEmpty then
+      [s!"{entryTag}: theorem_refs cannot be empty"]
+    else []
+  headErrs ++ arityErrs ++ ownerErrs ++ kernelErrs ++ effectErrs ++ theoremErrs
 
 def ExecutionContractArtifact.lintErrors (a : ExecutionContractArtifact) : List String :=
   let norm := normalizeArtifact a
@@ -1034,7 +1371,9 @@ def ExecutionContractArtifact.lintErrors (a : ExecutionContractArtifact) : List 
         | .spaceEffect e => lintSpaceEffect e
         | .relationPremise e => lintRelationPremise e
         | .spaceEffectPayload e => lintSpaceEffectPayload e
-        | .intrinsicBuiltin e => lintIntrinsicBuiltin e)
+        | .intrinsicBuiltin e => lintIntrinsicBuiltin e
+        | .groundedBuiltin e => lintGroundedBuiltin e
+        | .aggregationBuiltin e => lintAggregationBuiltin e)
       []
   schemaErrs ++ dialectErrs ++ lookupErrs ++ dupErrs ++ entryErrs
 

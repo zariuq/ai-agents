@@ -269,6 +269,31 @@ private theorem pureTheoryStep_sound_pureProfileTheoryStep_quoteTmWith_assuming_
       simpa [quoteTmWith, mkSnd, mkPair] using
         (PureProfileTheoryStep.base
           (PureProfileBaseStep.betaSigmaSnd (quoteTmWith ν k ρ a) (quoteTmWith ν k ρ b)))
+  | @betaUnitRec n motive unitCase =>
+      simpa [quoteTmWith, mkUnitRec, mkUnitMk] using
+        (PureProfileTheoryStep.base
+          (PureProfileBaseStep.betaUnitRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ unitCase)))
+  | @betaBoolRecFalse n motive falseCase trueCase =>
+      simpa [quoteTmWith, mkBoolRec, mkBoolFalse] using
+        (PureProfileTheoryStep.base
+          (PureProfileBaseStep.betaBoolRecFalse
+            (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase) (quoteTmWith ν k ρ trueCase)))
+  | @betaBoolRecTrue n motive falseCase trueCase =>
+      simpa [quoteTmWith, mkBoolRec, mkBoolTrue] using
+        (PureProfileTheoryStep.base
+          (PureProfileBaseStep.betaBoolRecTrue
+            (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase) (quoteTmWith ν k ρ trueCase)))
+  | @betaNatRecZero n motive zeroCase succCase =>
+      simpa [quoteTmWith, mkNatRec, mkNatZero] using
+        (PureProfileTheoryStep.base
+          (PureProfileBaseStep.betaNatRecZero
+            (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase) (quoteTmWith ν k ρ succCase)))
+  | @betaNatRecSucc n motive zeroCase succCase kNat =>
+      simpa [quoteTmWith, mkNatRec, mkNatSucc, mkApp] using
+        (PureProfileTheoryStep.base
+          (PureProfileBaseStep.betaNatRecSucc
+            (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase)
+            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ kNat)))
   | @congPiDom n A A' B hAA' ih =>
       have hstep := ih (k := k) (ρ := ρ) hcompat
       have hctx :
@@ -407,6 +432,122 @@ private theorem pureTheoryStep_sound_pureProfileTheoryStep_quoteTmWith_assuming_
           (mkRefl (quoteTmWith ν k ρ a')) := by
         exact .ctx (K := .refl .hole) hstep
       simpa [quoteTmWith, mkRefl] using hctx
+  | @congNatSucc n kNat kNat' hk ih =>
+      have hstep := ih (k := k) (ρ := ρ) hcompat
+      have hctx : PureProfileTheoryStep
+          (mkNatSucc (quoteTmWith ν k ρ kNat))
+          (mkNatSucc (quoteTmWith ν k ρ kNat')) := by
+        exact .ctx (K := .natSucc .hole) hstep
+      simpa [quoteTmWith, mkNatSucc] using hctx
+  | @congUnitRecMotive n motive motive' unitCase scrutinee hm ih =>
+      have hstep := ih (k := k) (ρ := ρ) hcompat
+      have hctx : PureProfileTheoryStep
+          (mkUnitRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ unitCase) (quoteTmWith ν k ρ scrutinee))
+          (mkUnitRec (quoteTmWith ν k ρ motive') (quoteTmWith ν k ρ unitCase) (quoteTmWith ν k ρ scrutinee)) := by
+        exact .ctx (K := .unitRecMotive .hole (quoteTmWith ν k ρ unitCase) (quoteTmWith ν k ρ scrutinee)) hstep
+      simpa [quoteTmWith, mkUnitRec] using hctx
+  | @congUnitRecCase n motive unitCase unitCase' scrutinee hc ih =>
+      have hstep := ih (k := k) (ρ := ρ) hcompat
+      have hctx : PureProfileTheoryStep
+          (mkUnitRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ unitCase) (quoteTmWith ν k ρ scrutinee))
+          (mkUnitRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ unitCase') (quoteTmWith ν k ρ scrutinee)) := by
+        exact .ctx (K := .unitRecCase (quoteTmWith ν k ρ motive) .hole (quoteTmWith ν k ρ scrutinee)) hstep
+      simpa [quoteTmWith, mkUnitRec] using hctx
+  | @congUnitRecScrutinee n motive unitCase scrutinee scrutinee' hs ih =>
+      have hstep := ih (k := k) (ρ := ρ) hcompat
+      have hctx : PureProfileTheoryStep
+          (mkUnitRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ unitCase) (quoteTmWith ν k ρ scrutinee))
+          (mkUnitRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ unitCase) (quoteTmWith ν k ρ scrutinee')) := by
+        exact .ctx (K := .unitRecScrutinee (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ unitCase) .hole) hstep
+      simpa [quoteTmWith, mkUnitRec] using hctx
+  | @congBoolRecMotive n motive motive' falseCase trueCase scrutinee hm ih =>
+      have hstep := ih (k := k) (ρ := ρ) hcompat
+      have hctx : PureProfileTheoryStep
+          (mkBoolRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase)
+            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee))
+          (mkBoolRec (quoteTmWith ν k ρ motive') (quoteTmWith ν k ρ falseCase)
+            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee)) := by
+        exact .ctx
+          (K := .boolRecMotive .hole (quoteTmWith ν k ρ falseCase)
+            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee)) hstep
+      simpa [quoteTmWith, mkBoolRec] using hctx
+  | @congBoolRecFalseCase n motive falseCase falseCase' trueCase scrutinee hf ih =>
+      have hstep := ih (k := k) (ρ := ρ) hcompat
+      have hctx : PureProfileTheoryStep
+          (mkBoolRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase)
+            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee))
+          (mkBoolRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase')
+            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee)) := by
+        exact .ctx
+          (K := .boolRecFalseCase (quoteTmWith ν k ρ motive) .hole
+            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee)) hstep
+      simpa [quoteTmWith, mkBoolRec] using hctx
+  | @congBoolRecTrueCase n motive falseCase trueCase trueCase' scrutinee ht ih =>
+      have hstep := ih (k := k) (ρ := ρ) hcompat
+      have hctx : PureProfileTheoryStep
+          (mkBoolRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase)
+            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee))
+          (mkBoolRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase)
+            (quoteTmWith ν k ρ trueCase') (quoteTmWith ν k ρ scrutinee)) := by
+        exact .ctx
+          (K := .boolRecTrueCase (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase) .hole
+            (quoteTmWith ν k ρ scrutinee)) hstep
+      simpa [quoteTmWith, mkBoolRec] using hctx
+  | @congBoolRecScrutinee n motive falseCase trueCase scrutinee scrutinee' hs ih =>
+      have hstep := ih (k := k) (ρ := ρ) hcompat
+      have hctx : PureProfileTheoryStep
+          (mkBoolRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase)
+            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee))
+          (mkBoolRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase)
+            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee')) := by
+        exact .ctx
+          (K := .boolRecScrutinee (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase)
+            (quoteTmWith ν k ρ trueCase) .hole) hstep
+      simpa [quoteTmWith, mkBoolRec] using hctx
+  | @congNatRecMotive n motive motive' zeroCase succCase scrutinee hm ih =>
+      have hstep := ih (k := k) (ρ := ρ) hcompat
+      have hctx : PureProfileTheoryStep
+          (mkNatRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase)
+            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee))
+          (mkNatRec (quoteTmWith ν k ρ motive') (quoteTmWith ν k ρ zeroCase)
+            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee)) := by
+        exact .ctx
+          (K := .natRecMotive .hole (quoteTmWith ν k ρ zeroCase)
+            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee)) hstep
+      simpa [quoteTmWith, mkNatRec] using hctx
+  | @congNatRecZeroCase n motive zeroCase zeroCase' succCase scrutinee hz ih =>
+      have hstep := ih (k := k) (ρ := ρ) hcompat
+      have hctx : PureProfileTheoryStep
+          (mkNatRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase)
+            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee))
+          (mkNatRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase')
+            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee)) := by
+        exact .ctx
+          (K := .natRecZeroCase (quoteTmWith ν k ρ motive) .hole
+            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee)) hstep
+      simpa [quoteTmWith, mkNatRec] using hctx
+  | @congNatRecSuccCase n motive zeroCase succCase succCase' scrutinee hs ih =>
+      have hstep := ih (k := k) (ρ := ρ) hcompat
+      have hctx : PureProfileTheoryStep
+          (mkNatRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase)
+            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee))
+          (mkNatRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase)
+            (quoteTmWith ν k ρ succCase') (quoteTmWith ν k ρ scrutinee)) := by
+        exact .ctx
+          (K := .natRecSuccCase (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase) .hole
+            (quoteTmWith ν k ρ scrutinee)) hstep
+      simpa [quoteTmWith, mkNatRec] using hctx
+  | @congNatRecScrutinee n motive zeroCase succCase scrutinee scrutinee' hs ih =>
+      have hstep := ih (k := k) (ρ := ρ) hcompat
+      have hctx : PureProfileTheoryStep
+          (mkNatRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase)
+            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee))
+          (mkNatRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase)
+            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee')) := by
+        exact .ctx
+          (K := .natRecScrutinee (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase)
+            (quoteTmWith ν k ρ succCase) .hole) hstep
+      simpa [quoteTmWith, mkNatRec] using hctx
 
 /-- Closed specialization of `pureTheoryStep_sound_pureProfileTheoryStep_quoteTmWith_assuming_inst0`
 for the default binder naming policy. -/
@@ -635,14 +776,10 @@ theorem not_all_pureTheoryStep_sound_to_langReduces_quoteClosed :
     simp [t, quoteClosedTm, quoteTm, quoteTmWith, mkApp, mkFst, mkPair,
       rewriteWithContextWithPremisesUsing, rewriteStepWithPremisesUsing,
       applyRuleWithPremisesUsing, mettaPure, applyPremisesWithEnv]
-    constructor
-    · intro x hx
+    repeat' constructor
+    all_goals
+      intro x hx
       simp [u1, matchArgs, matchPattern] at hx
-    constructor
-    · intro x hx
-      simp [u1, matchPattern] at hx
-    · intro x hx
-      simp [u1, matchPattern] at hx
   have hfalse : False := by
     simp [langReducesExecUsing, hempty] at hexec
   exact False.elim hfalse

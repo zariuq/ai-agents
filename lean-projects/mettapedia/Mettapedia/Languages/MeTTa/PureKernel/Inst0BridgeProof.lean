@@ -409,6 +409,15 @@ theorem freeVars_quoteRaw_staging {n : Nat} (t : PureTm n) : freeVars (quoteRaw 
   | var i => simp [quoteRaw, freeVars]
   | u0 => simp [quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.u0, freeVars]
   | u1 => simp [quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.u1, freeVars]
+  | unitTy => simp [quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkUnitTy, freeVars]
+  | unitMk => simp [quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkUnitMk, freeVars]
+  | boolTy => simp [quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTy, freeVars]
+  | boolFalse => simp [quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkBoolFalse, freeVars]
+  | boolTrue => simp [quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTrue, freeVars]
+  | natTy => simp [quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkNatTy, freeVars]
+  | natZero => simp [quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkNatZero, freeVars]
+  | natSucc k ih =>
+      simp [quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkNatSucc, freeVars, List.flatMap, ih]
   | pi A B ihA ihB =>
       simp [quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkPi, freeVars, List.flatMap, ihA, ihB]
   | sigma A B ihA ihB =>
@@ -427,6 +436,15 @@ theorem freeVars_quoteRaw_staging {n : Nat} (t : PureTm n) : freeVars (quoteRaw 
       simp [quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkSnd, freeVars, List.flatMap, ih]
   | refl a ih =>
       simp [quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkRefl, freeVars, List.flatMap, ih]
+  | unitRec motive unitCase scrutinee ihmotive ihcase ihscrutinee =>
+      simp [quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkUnitRec, freeVars, List.flatMap,
+        ihmotive, ihcase, ihscrutinee]
+  | boolRec motive falseCase trueCase scrutinee ihmotive ihfalse ihtrue ihscrutinee =>
+      simp [quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkBoolRec, freeVars, List.flatMap,
+        ihmotive, ihfalse, ihtrue, ihscrutinee]
+  | natRec motive zeroCase succCase scrutinee ihmotive ihzero ihsucc ihscrutinee =>
+      simp [quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkNatRec, freeVars, List.flatMap,
+        ihmotive, ihzero, ihsucc, ihscrutinee]
 
 theorem closeFVar_multiOpenAt_envCons_staging
     {n : Nat} (d : Nat) (x : String) (ρ : QuoteEnv n) (p : Pattern)
@@ -519,6 +537,23 @@ theorem quoteTmWith_eq_multiOpenAt_quoteRaw_staging
       simp [quoteTmWith, quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.u0, multiOpenAtStaging, List.map]
   | u1 =>
       simp [quoteTmWith, quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.u1, multiOpenAtStaging, List.map]
+  | unitTy =>
+      simp [quoteTmWith, quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkUnitTy, multiOpenAtStaging, List.map]
+  | unitMk =>
+      simp [quoteTmWith, quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkUnitMk, multiOpenAtStaging, List.map]
+  | boolTy =>
+      simp [quoteTmWith, quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTy, multiOpenAtStaging, List.map]
+  | boolFalse =>
+      simp [quoteTmWith, quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkBoolFalse, multiOpenAtStaging, List.map]
+  | boolTrue =>
+      simp [quoteTmWith, quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTrue, multiOpenAtStaging, List.map]
+  | natTy =>
+      simp [quoteTmWith, quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkNatTy, multiOpenAtStaging, List.map]
+  | natZero =>
+      simp [quoteTmWith, quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkNatZero, multiOpenAtStaging, List.map]
+  | natSucc t ih =>
+      simp only [quoteTmWith, quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkNatSucc, multiOpenAtStaging, List.map]
+      rw [ih k ρ hcompat]
   | id A a b ihA iha ihb =>
       simp only [quoteTmWith, quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkId, multiOpenAtStaging, List.map]
       rw [ihA k ρ hcompat, iha k ρ hcompat, ihb k ρ hcompat]
@@ -572,6 +607,15 @@ theorem quoteTmWith_eq_multiOpenAt_quoteRaw_staging
         (closeFVar_multiOpenAt_envCons_staging 0 (ν k) ρ (quoteRaw B)
           (freeVars_quoteRaw_staging B)
           (fun i => hcompat.2 i k (by omega)))
+  | unitRec motive unitCase scrutinee ihmotive ihcase ihscrutinee =>
+      simp only [quoteTmWith, quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkUnitRec, multiOpenAtStaging, List.map]
+      rw [ihmotive k ρ hcompat, ihcase k ρ hcompat, ihscrutinee k ρ hcompat]
+  | boolRec motive falseCase trueCase scrutinee ihmotive ihfalse ihtrue ihscrutinee =>
+      simp only [quoteTmWith, quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkBoolRec, multiOpenAtStaging, List.map]
+      rw [ihmotive k ρ hcompat, ihfalse k ρ hcompat, ihtrue k ρ hcompat, ihscrutinee k ρ hcompat]
+  | natRec motive zeroCase succCase scrutinee ihmotive ihzero ihsucc ihscrutinee =>
+      simp only [quoteTmWith, quoteRaw, Mettapedia.Languages.MeTTa.Pure.Core.mkNatRec, multiOpenAtStaging, List.map]
+      rw [ihmotive k ρ hcompat, ihzero k ρ hcompat, ihsucc k ρ hcompat, ihscrutinee k ρ hcompat]
 
 theorem quoteTmWith_depth_indep_staging
     (ν : Nat → String) {n : Nat} (k k' : Nat) (ρ : QuoteEnv n) (t : PureTm n)
@@ -1423,6 +1467,70 @@ theorem inst0BinderTargetEqDistinct_var
     Mettapedia.Languages.MeTTa.Pure.Core.mkLam (applySubst env body) := by
   simp [Mettapedia.Languages.MeTTa.Pure.Core.mkLam, applySubst]
 
+@[simp] theorem applySubst_mkUnitTy (env : SubstEnv) :
+    applySubst env Mettapedia.Languages.MeTTa.Pure.Core.mkUnitTy =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkUnitTy := by
+  simp [Mettapedia.Languages.MeTTa.Pure.Core.mkUnitTy, applySubst]
+
+@[simp] theorem applySubst_mkUnitMk (env : SubstEnv) :
+    applySubst env Mettapedia.Languages.MeTTa.Pure.Core.mkUnitMk =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkUnitMk := by
+  simp [Mettapedia.Languages.MeTTa.Pure.Core.mkUnitMk, applySubst]
+
+@[simp] theorem applySubst_mkBoolTy (env : SubstEnv) :
+    applySubst env Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTy =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTy := by
+  simp [Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTy, applySubst]
+
+@[simp] theorem applySubst_mkBoolFalse (env : SubstEnv) :
+    applySubst env Mettapedia.Languages.MeTTa.Pure.Core.mkBoolFalse =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkBoolFalse := by
+  simp [Mettapedia.Languages.MeTTa.Pure.Core.mkBoolFalse, applySubst]
+
+@[simp] theorem applySubst_mkBoolTrue (env : SubstEnv) :
+    applySubst env Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTrue =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTrue := by
+  simp [Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTrue, applySubst]
+
+@[simp] theorem applySubst_mkNatTy (env : SubstEnv) :
+    applySubst env Mettapedia.Languages.MeTTa.Pure.Core.mkNatTy =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkNatTy := by
+  simp [Mettapedia.Languages.MeTTa.Pure.Core.mkNatTy, applySubst]
+
+@[simp] theorem applySubst_mkNatZero (env : SubstEnv) :
+    applySubst env Mettapedia.Languages.MeTTa.Pure.Core.mkNatZero =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkNatZero := by
+  simp [Mettapedia.Languages.MeTTa.Pure.Core.mkNatZero, applySubst]
+
+@[simp] theorem applySubst_mkNatSucc
+    (env : SubstEnv) (t : Pattern) :
+    applySubst env (Mettapedia.Languages.MeTTa.Pure.Core.mkNatSucc t) =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkNatSucc (applySubst env t) := by
+  simp [Mettapedia.Languages.MeTTa.Pure.Core.mkNatSucc, applySubst]
+
+@[simp] theorem applySubst_mkUnitRec
+    (env : SubstEnv) (motive unitCase scrutinee : Pattern) :
+    applySubst env (Mettapedia.Languages.MeTTa.Pure.Core.mkUnitRec motive unitCase scrutinee) =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkUnitRec
+        (applySubst env motive) (applySubst env unitCase) (applySubst env scrutinee) := by
+  simp [Mettapedia.Languages.MeTTa.Pure.Core.mkUnitRec, applySubst]
+
+@[simp] theorem applySubst_mkBoolRec
+    (env : SubstEnv) (motive falseCase trueCase scrutinee : Pattern) :
+    applySubst env (Mettapedia.Languages.MeTTa.Pure.Core.mkBoolRec motive falseCase trueCase scrutinee) =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkBoolRec
+        (applySubst env motive) (applySubst env falseCase) (applySubst env trueCase)
+        (applySubst env scrutinee) := by
+  simp [Mettapedia.Languages.MeTTa.Pure.Core.mkBoolRec, applySubst]
+
+@[simp] theorem applySubst_mkNatRec
+    (env : SubstEnv) (motive zeroCase succCase scrutinee : Pattern) :
+    applySubst env (Mettapedia.Languages.MeTTa.Pure.Core.mkNatRec motive zeroCase succCase scrutinee) =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkNatRec
+        (applySubst env motive) (applySubst env zeroCase) (applySubst env succCase)
+        (applySubst env scrutinee) := by
+  simp [Mettapedia.Languages.MeTTa.Pure.Core.mkNatRec, applySubst]
+
 @[simp] theorem closeRangeAt_u0
     (d : Nat) (ν : Nat → String) (k m : Nat) :
     closeRangeAt d ν k m Mettapedia.Languages.MeTTa.Pure.Core.u0 = Mettapedia.Languages.MeTTa.Pure.Core.u0 := by
@@ -1458,6 +1566,83 @@ theorem inst0BinderTargetEqDistinct_var
       simp [closeAmbient, Mettapedia.Languages.MeTTa.Pure.Core.u1]
   | succ m ih =>
       simpa [closeAmbient, closeFVar, Mettapedia.Languages.MeTTa.Pure.Core.u1] using ih (d := d + 1) (k := k)
+
+@[simp] theorem closeAmbient_unitTy
+    (d : Nat) (ν : Nat → String) (k m : Nat) :
+    closeAmbient d ν k m Mettapedia.Languages.MeTTa.Pure.Core.mkUnitTy =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkUnitTy := by
+  induction m generalizing d k with
+  | zero =>
+      simp [closeAmbient, Mettapedia.Languages.MeTTa.Pure.Core.mkUnitTy]
+  | succ m ih =>
+      simpa [closeAmbient, closeFVar, Mettapedia.Languages.MeTTa.Pure.Core.mkUnitTy] using
+        ih (d := d + 1) (k := k)
+
+@[simp] theorem closeAmbient_unitMk
+    (d : Nat) (ν : Nat → String) (k m : Nat) :
+    closeAmbient d ν k m Mettapedia.Languages.MeTTa.Pure.Core.mkUnitMk =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkUnitMk := by
+  induction m generalizing d k with
+  | zero =>
+      simp [closeAmbient, Mettapedia.Languages.MeTTa.Pure.Core.mkUnitMk]
+  | succ m ih =>
+      simpa [closeAmbient, closeFVar, Mettapedia.Languages.MeTTa.Pure.Core.mkUnitMk] using
+        ih (d := d + 1) (k := k)
+
+@[simp] theorem closeAmbient_boolTy
+    (d : Nat) (ν : Nat → String) (k m : Nat) :
+    closeAmbient d ν k m Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTy =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTy := by
+  induction m generalizing d k with
+  | zero =>
+      simp [closeAmbient, Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTy]
+  | succ m ih =>
+      simpa [closeAmbient, closeFVar, Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTy] using
+        ih (d := d + 1) (k := k)
+
+@[simp] theorem closeAmbient_boolFalse
+    (d : Nat) (ν : Nat → String) (k m : Nat) :
+    closeAmbient d ν k m Mettapedia.Languages.MeTTa.Pure.Core.mkBoolFalse =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkBoolFalse := by
+  induction m generalizing d k with
+  | zero =>
+      simp [closeAmbient, Mettapedia.Languages.MeTTa.Pure.Core.mkBoolFalse]
+  | succ m ih =>
+      simpa [closeAmbient, closeFVar, Mettapedia.Languages.MeTTa.Pure.Core.mkBoolFalse] using
+        ih (d := d + 1) (k := k)
+
+@[simp] theorem closeAmbient_boolTrue
+    (d : Nat) (ν : Nat → String) (k m : Nat) :
+    closeAmbient d ν k m Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTrue =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTrue := by
+  induction m generalizing d k with
+  | zero =>
+      simp [closeAmbient, Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTrue]
+  | succ m ih =>
+      simpa [closeAmbient, closeFVar, Mettapedia.Languages.MeTTa.Pure.Core.mkBoolTrue] using
+        ih (d := d + 1) (k := k)
+
+@[simp] theorem closeAmbient_natTy
+    (d : Nat) (ν : Nat → String) (k m : Nat) :
+    closeAmbient d ν k m Mettapedia.Languages.MeTTa.Pure.Core.mkNatTy =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkNatTy := by
+  induction m generalizing d k with
+  | zero =>
+      simp [closeAmbient, Mettapedia.Languages.MeTTa.Pure.Core.mkNatTy]
+  | succ m ih =>
+      simpa [closeAmbient, closeFVar, Mettapedia.Languages.MeTTa.Pure.Core.mkNatTy] using
+        ih (d := d + 1) (k := k)
+
+@[simp] theorem closeAmbient_natZero
+    (d : Nat) (ν : Nat → String) (k m : Nat) :
+    closeAmbient d ν k m Mettapedia.Languages.MeTTa.Pure.Core.mkNatZero =
+      Mettapedia.Languages.MeTTa.Pure.Core.mkNatZero := by
+  induction m generalizing d k with
+  | zero =>
+      simp [closeAmbient, Mettapedia.Languages.MeTTa.Pure.Core.mkNatZero]
+  | succ m ih =>
+      simpa [closeAmbient, closeFVar, Mettapedia.Languages.MeTTa.Pure.Core.mkNatZero] using
+        ih (d := d + 1) (k := k)
 
 @[simp] theorem closeAmbient_mkId
     (d : Nat) (ν : Nat → String) (k m : Nat) (A a b : Pattern) :
@@ -1538,6 +1723,79 @@ theorem inst0BinderTargetEqDistinct_var
   | succ m ih =>
       simpa [closeAmbient, closeFVar, Mettapedia.Languages.MeTTa.Pure.Core.mkRefl] using
         ih (d := d + 1) (k := k) (a := closeFVar d (ν (k + m)) a)
+
+@[simp] theorem closeAmbient_mkNatSucc
+    (d : Nat) (ν : Nat → String) (k m : Nat) (t : Pattern) :
+    closeAmbient d ν k m (Mettapedia.Languages.MeTTa.Pure.Core.mkNatSucc t)
+      =
+    Mettapedia.Languages.MeTTa.Pure.Core.mkNatSucc (closeAmbient d ν k m t) := by
+  induction m generalizing d k t with
+  | zero =>
+      simp [closeAmbient, Mettapedia.Languages.MeTTa.Pure.Core.mkNatSucc]
+  | succ m ih =>
+      simpa [closeAmbient, closeFVar, Mettapedia.Languages.MeTTa.Pure.Core.mkNatSucc] using
+        ih (d := d + 1) (k := k) (t := closeFVar d (ν (k + m)) t)
+
+@[simp] theorem closeAmbient_mkUnitRec
+    (d : Nat) (ν : Nat → String) (k m : Nat)
+    (motive unitCase scrutinee : Pattern) :
+    closeAmbient d ν k m (Mettapedia.Languages.MeTTa.Pure.Core.mkUnitRec motive unitCase scrutinee)
+      =
+    Mettapedia.Languages.MeTTa.Pure.Core.mkUnitRec
+      (closeAmbient d ν k m motive)
+      (closeAmbient d ν k m unitCase)
+      (closeAmbient d ν k m scrutinee) := by
+  induction m generalizing d k motive unitCase scrutinee with
+  | zero =>
+      simp [closeAmbient, Mettapedia.Languages.MeTTa.Pure.Core.mkUnitRec]
+  | succ m ih =>
+      simpa [closeAmbient, closeFVar, Mettapedia.Languages.MeTTa.Pure.Core.mkUnitRec] using
+        ih (d := d + 1) (k := k)
+          (motive := closeFVar d (ν (k + m)) motive)
+          (unitCase := closeFVar d (ν (k + m)) unitCase)
+          (scrutinee := closeFVar d (ν (k + m)) scrutinee)
+
+@[simp] theorem closeAmbient_mkBoolRec
+    (d : Nat) (ν : Nat → String) (k m : Nat)
+    (motive falseCase trueCase scrutinee : Pattern) :
+    closeAmbient d ν k m (Mettapedia.Languages.MeTTa.Pure.Core.mkBoolRec motive falseCase trueCase scrutinee)
+      =
+    Mettapedia.Languages.MeTTa.Pure.Core.mkBoolRec
+      (closeAmbient d ν k m motive)
+      (closeAmbient d ν k m falseCase)
+      (closeAmbient d ν k m trueCase)
+      (closeAmbient d ν k m scrutinee) := by
+  induction m generalizing d k motive falseCase trueCase scrutinee with
+  | zero =>
+      simp [closeAmbient, Mettapedia.Languages.MeTTa.Pure.Core.mkBoolRec]
+  | succ m ih =>
+      simpa [closeAmbient, closeFVar, Mettapedia.Languages.MeTTa.Pure.Core.mkBoolRec] using
+        ih (d := d + 1) (k := k)
+          (motive := closeFVar d (ν (k + m)) motive)
+          (falseCase := closeFVar d (ν (k + m)) falseCase)
+          (trueCase := closeFVar d (ν (k + m)) trueCase)
+          (scrutinee := closeFVar d (ν (k + m)) scrutinee)
+
+@[simp] theorem closeAmbient_mkNatRec
+    (d : Nat) (ν : Nat → String) (k m : Nat)
+    (motive zeroCase succCase scrutinee : Pattern) :
+    closeAmbient d ν k m (Mettapedia.Languages.MeTTa.Pure.Core.mkNatRec motive zeroCase succCase scrutinee)
+      =
+    Mettapedia.Languages.MeTTa.Pure.Core.mkNatRec
+      (closeAmbient d ν k m motive)
+      (closeAmbient d ν k m zeroCase)
+      (closeAmbient d ν k m succCase)
+      (closeAmbient d ν k m scrutinee) := by
+  induction m generalizing d k motive zeroCase succCase scrutinee with
+  | zero =>
+      simp [closeAmbient, Mettapedia.Languages.MeTTa.Pure.Core.mkNatRec]
+  | succ m ih =>
+      simpa [closeAmbient, closeFVar, Mettapedia.Languages.MeTTa.Pure.Core.mkNatRec] using
+        ih (d := d + 1) (k := k)
+          (motive := closeFVar d (ν (k + m)) motive)
+          (zeroCase := closeFVar d (ν (k + m)) zeroCase)
+          (succCase := closeFVar d (ν (k + m)) succCase)
+          (scrutinee := closeFVar d (ν (k + m)) scrutinee)
 
 @[simp] theorem closeRange_mkId
     (ν : Nat → String) (k m : Nat) (A a b : Pattern) :
@@ -3601,6 +3859,92 @@ theorem inst0BinderTargetEqDistinct_refl_of
   simp [inst0BinderClosedLhsDistinct, inst0BinderClosedTargetDistinct, quoteTmWith, subst] at hp ⊢
   rw [hp]
 
+theorem inst0BinderTargetEqDistinct_unitTy
+    (ν : Nat → String) (m k : Nat) (ρ : QuoteEnv n) (a : PureTm n) :
+    inst0BinderTargetEqDistinct ν m k ρ a .unitTy := by
+  unfold inst0BinderTargetEqDistinct inst0BinderClosedLhsDistinct inst0BinderClosedTargetDistinct
+  simp [quoteTmWith, subst]
+
+theorem inst0BinderTargetEqDistinct_unitMk
+    (ν : Nat → String) (m k : Nat) (ρ : QuoteEnv n) (a : PureTm n) :
+    inst0BinderTargetEqDistinct ν m k ρ a .unitMk := by
+  unfold inst0BinderTargetEqDistinct inst0BinderClosedLhsDistinct inst0BinderClosedTargetDistinct
+  simp [quoteTmWith, subst]
+
+theorem inst0BinderTargetEqDistinct_boolTy
+    (ν : Nat → String) (m k : Nat) (ρ : QuoteEnv n) (a : PureTm n) :
+    inst0BinderTargetEqDistinct ν m k ρ a .boolTy := by
+  unfold inst0BinderTargetEqDistinct inst0BinderClosedLhsDistinct inst0BinderClosedTargetDistinct
+  simp [quoteTmWith, subst]
+
+theorem inst0BinderTargetEqDistinct_boolFalse
+    (ν : Nat → String) (m k : Nat) (ρ : QuoteEnv n) (a : PureTm n) :
+    inst0BinderTargetEqDistinct ν m k ρ a .boolFalse := by
+  unfold inst0BinderTargetEqDistinct inst0BinderClosedLhsDistinct inst0BinderClosedTargetDistinct
+  simp [quoteTmWith, subst]
+
+theorem inst0BinderTargetEqDistinct_boolTrue
+    (ν : Nat → String) (m k : Nat) (ρ : QuoteEnv n) (a : PureTm n) :
+    inst0BinderTargetEqDistinct ν m k ρ a .boolTrue := by
+  unfold inst0BinderTargetEqDistinct inst0BinderClosedLhsDistinct inst0BinderClosedTargetDistinct
+  simp [quoteTmWith, subst]
+
+theorem inst0BinderTargetEqDistinct_natTy
+    (ν : Nat → String) (m k : Nat) (ρ : QuoteEnv n) (a : PureTm n) :
+    inst0BinderTargetEqDistinct ν m k ρ a .natTy := by
+  unfold inst0BinderTargetEqDistinct inst0BinderClosedLhsDistinct inst0BinderClosedTargetDistinct
+  simp [quoteTmWith, subst]
+
+theorem inst0BinderTargetEqDistinct_natZero
+    (ν : Nat → String) (m k : Nat) (ρ : QuoteEnv n) (a : PureTm n) :
+    inst0BinderTargetEqDistinct ν m k ρ a .natZero := by
+  unfold inst0BinderTargetEqDistinct inst0BinderClosedLhsDistinct inst0BinderClosedTargetDistinct
+  simp [quoteTmWith, subst]
+
+theorem inst0BinderTargetEqDistinct_natSucc_of
+    {ν : Nat → String} {m k : Nat} {ρ : QuoteEnv n} {a : PureTm n}
+    {t : PureTm ((n + 1) + m)}
+    (ht : inst0BinderTargetEqDistinct ν m k ρ a t) :
+    inst0BinderTargetEqDistinct ν m k ρ a (.natSucc t) := by
+  unfold inst0BinderTargetEqDistinct at ht ⊢
+  simp [inst0BinderClosedLhsDistinct, inst0BinderClosedTargetDistinct, quoteTmWith, subst] at ht ⊢
+  rw [ht]
+
+theorem inst0BinderTargetEqDistinct_unitRec_of
+    {ν : Nat → String} {m k : Nat} {ρ : QuoteEnv n} {a : PureTm n}
+    {motive unitCase scrutinee : PureTm ((n + 1) + m)}
+    (hmotive : inst0BinderTargetEqDistinct ν m k ρ a motive)
+    (hcase : inst0BinderTargetEqDistinct ν m k ρ a unitCase)
+    (hscrutinee : inst0BinderTargetEqDistinct ν m k ρ a scrutinee) :
+    inst0BinderTargetEqDistinct ν m k ρ a (.unitRec motive unitCase scrutinee) := by
+  unfold inst0BinderTargetEqDistinct at hmotive hcase hscrutinee ⊢
+  simp [inst0BinderClosedLhsDistinct, inst0BinderClosedTargetDistinct, quoteTmWith, subst] at hmotive hcase hscrutinee ⊢
+  rw [hmotive, hcase, hscrutinee]
+
+theorem inst0BinderTargetEqDistinct_boolRec_of
+    {ν : Nat → String} {m k : Nat} {ρ : QuoteEnv n} {a : PureTm n}
+    {motive falseCase trueCase scrutinee : PureTm ((n + 1) + m)}
+    (hmotive : inst0BinderTargetEqDistinct ν m k ρ a motive)
+    (hfalse : inst0BinderTargetEqDistinct ν m k ρ a falseCase)
+    (htrue : inst0BinderTargetEqDistinct ν m k ρ a trueCase)
+    (hscrutinee : inst0BinderTargetEqDistinct ν m k ρ a scrutinee) :
+    inst0BinderTargetEqDistinct ν m k ρ a (.boolRec motive falseCase trueCase scrutinee) := by
+  unfold inst0BinderTargetEqDistinct at hmotive hfalse htrue hscrutinee ⊢
+  simp [inst0BinderClosedLhsDistinct, inst0BinderClosedTargetDistinct, quoteTmWith, subst] at hmotive hfalse htrue hscrutinee ⊢
+  rw [hmotive, hfalse, htrue, hscrutinee]
+
+theorem inst0BinderTargetEqDistinct_natRec_of
+    {ν : Nat → String} {m k : Nat} {ρ : QuoteEnv n} {a : PureTm n}
+    {motive zeroCase succCase scrutinee : PureTm ((n + 1) + m)}
+    (hmotive : inst0BinderTargetEqDistinct ν m k ρ a motive)
+    (hzero : inst0BinderTargetEqDistinct ν m k ρ a zeroCase)
+    (hsucc : inst0BinderTargetEqDistinct ν m k ρ a succCase)
+    (hscrutinee : inst0BinderTargetEqDistinct ν m k ρ a scrutinee) :
+    inst0BinderTargetEqDistinct ν m k ρ a (.natRec motive zeroCase succCase scrutinee) := by
+  unfold inst0BinderTargetEqDistinct at hmotive hzero hsucc hscrutinee ⊢
+  simp [inst0BinderClosedLhsDistinct, inst0BinderClosedTargetDistinct, quoteTmWith, subst] at hmotive hzero hsucc hscrutinee ⊢
+  rw [hmotive, hzero, hsucc, hscrutinee]
+
 theorem inst0AmbientDistinctClosedLhs_lam_expand
     (ν : Nat → String) (e m k : Nat) (ρ : QuoteEnv n) (a : PureTm n)
     (b : PureTm (((n + 1) + (m + e)) + 1)) :
@@ -3889,6 +4233,35 @@ theorem inst0AmbientDistinctTargetEq_all
       inst0AmbientDistinctTargetEq_u0 ν e m k ρ a
   | _, e, m, k, ρ, a, .u1, _ =>
       inst0AmbientDistinctTargetEq_u1 ν e m k ρ a
+  | _, e, m, k, ρ, a, .unitTy, hcompat => by
+      rw [inst0AmbientDistinctTargetEq_total_iff _ _ _ _ _ _ hcompat]
+      exact inst0BinderTargetEqDistinct_unitTy ν (m + e) k ρ a
+  | _, e, m, k, ρ, a, .unitMk, hcompat => by
+      rw [inst0AmbientDistinctTargetEq_total_iff _ _ _ _ _ _ hcompat]
+      exact inst0BinderTargetEqDistinct_unitMk ν (m + e) k ρ a
+  | _, e, m, k, ρ, a, .boolTy, hcompat => by
+      rw [inst0AmbientDistinctTargetEq_total_iff _ _ _ _ _ _ hcompat]
+      exact inst0BinderTargetEqDistinct_boolTy ν (m + e) k ρ a
+  | _, e, m, k, ρ, a, .boolFalse, hcompat => by
+      rw [inst0AmbientDistinctTargetEq_total_iff _ _ _ _ _ _ hcompat]
+      exact inst0BinderTargetEqDistinct_boolFalse ν (m + e) k ρ a
+  | _, e, m, k, ρ, a, .boolTrue, hcompat => by
+      rw [inst0AmbientDistinctTargetEq_total_iff _ _ _ _ _ _ hcompat]
+      exact inst0BinderTargetEqDistinct_boolTrue ν (m + e) k ρ a
+  | _, e, m, k, ρ, a, .natTy, hcompat => by
+      rw [inst0AmbientDistinctTargetEq_total_iff _ _ _ _ _ _ hcompat]
+      exact inst0BinderTargetEqDistinct_natTy ν (m + e) k ρ a
+  | _, e, m, k, ρ, a, .natZero, hcompat => by
+      rw [inst0AmbientDistinctTargetEq_total_iff _ _ _ _ _ _ hcompat]
+      exact inst0BinderTargetEqDistinct_natZero ν (m + e) k ρ a
+  | _, e, m, k, ρ, a, .natSucc t, hcompat => by
+      rw [inst0AmbientDistinctTargetEq_total_iff _ _ _ _ _ _ hcompat]
+      have ht :
+          inst0BinderTargetEqDistinct ν (m + e) k ρ a t :=
+        (inst0AmbientDistinctTargetEq_total_iff ν e m k ρ a hcompat t).mp
+          (inst0AmbientDistinctTargetEq_all ν e m k ρ a t hcompat)
+      exact inst0BinderTargetEqDistinct_natSucc_of
+        ht
   | _, e, m, k, ρ, a, .id A a₁ b₁, hcompat =>
       inst0AmbientDistinctTargetEq_id_of hcompat
         (inst0AmbientDistinctTargetEq_all ν e m k ρ a A hcompat)
@@ -3911,6 +4284,62 @@ theorem inst0AmbientDistinctTargetEq_all
   | _, e, m, k, ρ, a, .refl p, hcompat =>
       inst0AmbientDistinctTargetEq_refl_of hcompat
         (inst0AmbientDistinctTargetEq_all ν e m k ρ a p hcompat)
+  | _, e, m, k, ρ, a, .unitRec motive unitCase scrutinee, hcompat => by
+      rw [inst0AmbientDistinctTargetEq_total_iff _ _ _ _ _ _ hcompat]
+      have hmotive :
+          inst0BinderTargetEqDistinct ν (m + e) k ρ a motive :=
+        (inst0AmbientDistinctTargetEq_total_iff ν e m k ρ a hcompat motive).mp
+          (inst0AmbientDistinctTargetEq_all ν e m k ρ a motive hcompat)
+      have hcase :
+          inst0BinderTargetEqDistinct ν (m + e) k ρ a unitCase :=
+        (inst0AmbientDistinctTargetEq_total_iff ν e m k ρ a hcompat unitCase).mp
+          (inst0AmbientDistinctTargetEq_all ν e m k ρ a unitCase hcompat)
+      have hscrutinee :
+          inst0BinderTargetEqDistinct ν (m + e) k ρ a scrutinee :=
+        (inst0AmbientDistinctTargetEq_total_iff ν e m k ρ a hcompat scrutinee).mp
+          (inst0AmbientDistinctTargetEq_all ν e m k ρ a scrutinee hcompat)
+      exact inst0BinderTargetEqDistinct_unitRec_of
+        hmotive hcase hscrutinee
+  | _, e, m, k, ρ, a, .boolRec motive falseCase trueCase scrutinee, hcompat => by
+      rw [inst0AmbientDistinctTargetEq_total_iff _ _ _ _ _ _ hcompat]
+      have hmotive :
+          inst0BinderTargetEqDistinct ν (m + e) k ρ a motive :=
+        (inst0AmbientDistinctTargetEq_total_iff ν e m k ρ a hcompat motive).mp
+          (inst0AmbientDistinctTargetEq_all ν e m k ρ a motive hcompat)
+      have hfalse :
+          inst0BinderTargetEqDistinct ν (m + e) k ρ a falseCase :=
+        (inst0AmbientDistinctTargetEq_total_iff ν e m k ρ a hcompat falseCase).mp
+          (inst0AmbientDistinctTargetEq_all ν e m k ρ a falseCase hcompat)
+      have htrue :
+          inst0BinderTargetEqDistinct ν (m + e) k ρ a trueCase :=
+        (inst0AmbientDistinctTargetEq_total_iff ν e m k ρ a hcompat trueCase).mp
+          (inst0AmbientDistinctTargetEq_all ν e m k ρ a trueCase hcompat)
+      have hscrutinee :
+          inst0BinderTargetEqDistinct ν (m + e) k ρ a scrutinee :=
+        (inst0AmbientDistinctTargetEq_total_iff ν e m k ρ a hcompat scrutinee).mp
+          (inst0AmbientDistinctTargetEq_all ν e m k ρ a scrutinee hcompat)
+      exact inst0BinderTargetEqDistinct_boolRec_of
+        hmotive hfalse htrue hscrutinee
+  | _, e, m, k, ρ, a, .natRec motive zeroCase succCase scrutinee, hcompat => by
+      rw [inst0AmbientDistinctTargetEq_total_iff _ _ _ _ _ _ hcompat]
+      have hmotive :
+          inst0BinderTargetEqDistinct ν (m + e) k ρ a motive :=
+        (inst0AmbientDistinctTargetEq_total_iff ν e m k ρ a hcompat motive).mp
+          (inst0AmbientDistinctTargetEq_all ν e m k ρ a motive hcompat)
+      have hzero :
+          inst0BinderTargetEqDistinct ν (m + e) k ρ a zeroCase :=
+        (inst0AmbientDistinctTargetEq_total_iff ν e m k ρ a hcompat zeroCase).mp
+          (inst0AmbientDistinctTargetEq_all ν e m k ρ a zeroCase hcompat)
+      have hsucc :
+          inst0BinderTargetEqDistinct ν (m + e) k ρ a succCase :=
+        (inst0AmbientDistinctTargetEq_total_iff ν e m k ρ a hcompat succCase).mp
+          (inst0AmbientDistinctTargetEq_all ν e m k ρ a succCase hcompat)
+      have hscrutinee :
+          inst0BinderTargetEqDistinct ν (m + e) k ρ a scrutinee :=
+        (inst0AmbientDistinctTargetEq_total_iff ν e m k ρ a hcompat scrutinee).mp
+          (inst0AmbientDistinctTargetEq_all ν e m k ρ a scrutinee hcompat)
+      exact inst0BinderTargetEqDistinct_natRec_of
+        hmotive hzero hsucc hscrutinee
   | _, e, m, k, ρ, a, .lam b, hcompat =>
       inst0AmbientDistinctTargetEq_lam_of
         (inst0AmbientDistinctTargetEq_all ν (e + 1) m k ρ a (castAmbientBody b) hcompat)

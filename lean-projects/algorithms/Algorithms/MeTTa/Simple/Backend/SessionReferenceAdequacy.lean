@@ -83,6 +83,28 @@ def CoveredByReferenceN : Pattern → Prop
   | .apply "repr" [_arg] => True
   | _ => False
 
+/-- First compositional public-fuel `match` adequacy handle for `get-atoms` templates.
+    This is still hypothesis-driven: it isolates the exact two lower facts still needed
+    to turn the `match` slice into a fully unconditional adequacy theorem. -/
+theorem match_getAtoms_intrinsic_eq_total_of_bindingwise_evalMatchedTemplate_agreement
+    (s : Session) (space pat spaceExpr : Pattern)
+    (hBindings :
+      Session.referenceMatchBindings s space pat =
+        Session.totalMatchBindings (SessionReferenceTotal.referenceFuel s) s space pat)
+    (hEval :
+      ∀ (sess : Session) (bs : MeTTailCore.MeTTaIL.Match.Bindings),
+        Session.referenceMatchEvalMatchedTemplate s sess
+            (Session.matchTemplateAfterBindings bs (.apply "get-atoms" [spaceExpr])) =
+          Session.totalMatchEvalMatchedTemplate
+            (SessionReferenceTotal.referenceFuel s) s sess
+            (Session.matchTemplateAfterBindings bs (.apply "get-atoms" [spaceExpr]))) :
+    Session.referenceMatchIntrinsicResult s space pat (.apply "get-atoms" [spaceExpr]) =
+      Session.totalMatchIntrinsicResult
+        (SessionReferenceTotal.referenceFuel s) s space pat (.apply "get-atoms" [spaceExpr]) := by
+  simpa using
+    Session.referenceMatchIntrinsicResult_eq_total_of_getAtomsTemplate_evalMatchedTemplate_agreement
+      (fuel := SessionReferenceTotal.referenceFuel s) s space pat spaceExpr hBindings hEval
+
 /-- Successful faithful intrinsic evaluation agrees with the public total intrinsic evaluator
     at the same fuel. This is the first adequacy bridge: faithful explicit-status kernel to
     theorem-bearing total kernel, without reopening the live partial runtime path. -/

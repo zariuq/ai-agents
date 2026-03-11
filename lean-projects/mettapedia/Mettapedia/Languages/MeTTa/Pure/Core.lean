@@ -14,7 +14,8 @@ provides:
 - **Σ-types** (dependent pair types)
 - **Id-types** (identity / propositional equality)
 - **Two Russell-style universes**: `U0 : U1`
-- **Three β-reductions**: for Π (App∘Lam), Σ-fst (Fst∘Pair), Σ-snd (Snd∘Pair)
+- **Core β-reductions**: for Π (App∘Lam), Σ-fst (Fst∘Pair), Σ-snd (Snd∘Pair),
+  and starter ordinary-family recursors for `Unit`, `Bool`, `Nat`
 - **No equations** (intensional — no extensional axioms)
 
 Being a `LanguageDef`, it automatically receives:
@@ -53,9 +54,12 @@ open Mettapedia.OSLF.Framework.ConstructorCategory
 
     - **Sorts**: `["Tm", "Ctx"]`
     - **Tm constructors**: `U0`, `U1`, `Pi`, `Sigma`, `Id`, `Lam`, `App`,
-      `Pair`, `Fst`, `Snd`, `Refl`
+      `Pair`, `Fst`, `Snd`, `Refl`, `UnitTy`, `UnitMk`, `BoolTy`,
+      `BoolFalse`, `BoolTrue`, `NatTy`, `NatZero`, `NatSucc`, `UnitRec`,
+      `BoolRec`, `NatRec`
     - **Ctx constructors**: `CtxEmpty`, `CtxExtend`
-    - **Reductions**: BetaPi, BetaSigmaFst, BetaSigmaSnd -/
+    - **Reductions**: BetaPi, BetaSigmaFst, BetaSigmaSnd, BetaUnitRec,
+      BetaBoolRecFalse, BetaBoolRecTrue, BetaNatRecZero, BetaNatRecSucc -/
 def mettaPure : LanguageDef := {
   name := "MeTTaPure",
   types := ["Tm", "Ctx"],
@@ -114,6 +118,62 @@ def mettaPure : LanguageDef := {
     { label := "Refl", category := "Tm",
       params := [.simple "a" (.base "Tm")],
       syntaxPattern := [.terminal "refl", .nonTerminal "a"] },
+    -- UnitTy : Tm
+    { label := "UnitTy", category := "Tm", params := [],
+      syntaxPattern := [.terminal "UnitTy"] },
+    -- UnitMk : Tm
+    { label := "UnitMk", category := "Tm", params := [],
+      syntaxPattern := [.terminal "UnitMk"] },
+    -- BoolTy : Tm
+    { label := "BoolTy", category := "Tm", params := [],
+      syntaxPattern := [.terminal "BoolTy"] },
+    -- BoolFalse : Tm
+    { label := "BoolFalse", category := "Tm", params := [],
+      syntaxPattern := [.terminal "BoolFalse"] },
+    -- BoolTrue : Tm
+    { label := "BoolTrue", category := "Tm", params := [],
+      syntaxPattern := [.terminal "BoolTrue"] },
+    -- NatTy : Tm
+    { label := "NatTy", category := "Tm", params := [],
+      syntaxPattern := [.terminal "NatTy"] },
+    -- NatZero : Tm
+    { label := "NatZero", category := "Tm", params := [],
+      syntaxPattern := [.terminal "NatZero"] },
+    -- NatSucc(k) : Tm
+    { label := "NatSucc", category := "Tm",
+      params := [.simple "k" (.base "Tm")],
+      syntaxPattern := [.terminal "NatSucc", .terminal "(", .nonTerminal "k", .terminal ")"] },
+    -- UnitRec(motive, unitCase, scrutinee) : Tm
+    { label := "UnitRec", category := "Tm",
+      params := [.simple "motive" (.base "Tm"),
+                 .simple "unitCase" (.base "Tm"),
+                 .simple "scrutinee" (.base "Tm")],
+      syntaxPattern := [.terminal "UnitRec", .terminal "(",
+                        .nonTerminal "motive", .terminal ",",
+                        .nonTerminal "unitCase", .terminal ",",
+                        .nonTerminal "scrutinee", .terminal ")"] },
+    -- BoolRec(motive, falseCase, trueCase, scrutinee) : Tm
+    { label := "BoolRec", category := "Tm",
+      params := [.simple "motive" (.base "Tm"),
+                 .simple "falseCase" (.base "Tm"),
+                 .simple "trueCase" (.base "Tm"),
+                 .simple "scrutinee" (.base "Tm")],
+      syntaxPattern := [.terminal "BoolRec", .terminal "(",
+                        .nonTerminal "motive", .terminal ",",
+                        .nonTerminal "falseCase", .terminal ",",
+                        .nonTerminal "trueCase", .terminal ",",
+                        .nonTerminal "scrutinee", .terminal ")"] },
+    -- NatRec(motive, zeroCase, succCase, scrutinee) : Tm
+    { label := "NatRec", category := "Tm",
+      params := [.simple "motive" (.base "Tm"),
+                 .simple "zeroCase" (.base "Tm"),
+                 .simple "succCase" (.base "Tm"),
+                 .simple "scrutinee" (.base "Tm")],
+      syntaxPattern := [.terminal "NatRec", .terminal "(",
+                        .nonTerminal "motive", .terminal ",",
+                        .nonTerminal "zeroCase", .terminal ",",
+                        .nonTerminal "succCase", .terminal ",",
+                        .nonTerminal "scrutinee", .terminal ")"] },
     -- CtxEmpty : Ctx  (empty context)
     { label := "CtxEmpty", category := "Ctx", params := [],
       syntaxPattern := [.terminal "[]"] },
@@ -141,7 +201,44 @@ def mettaPure : LanguageDef := {
       typeContext := [("a", .base "Tm"), ("b", .base "Tm")],
       premises := [],
       left := .apply "Snd" [.apply "Pair" [.fvar "a", .fvar "b"]],
-      right := .fvar "b" }
+      right := .fvar "b" },
+    -- BetaUnitRec: UnitRec(motive, unitCase, UnitMk) ~> unitCase
+    { name := "BetaUnitRec",
+      typeContext := [("motive", .base "Tm"), ("unitCase", .base "Tm")],
+      premises := [],
+      left := .apply "UnitRec" [.fvar "motive", .fvar "unitCase", .apply "UnitMk" []],
+      right := .fvar "unitCase" },
+    -- BetaBoolRecFalse: BoolRec(motive, falseCase, trueCase, BoolFalse) ~> falseCase
+    { name := "BetaBoolRecFalse",
+      typeContext := [("motive", .base "Tm"), ("falseCase", .base "Tm"), ("trueCase", .base "Tm")],
+      premises := [],
+      left := .apply "BoolRec"
+        [.fvar "motive", .fvar "falseCase", .fvar "trueCase", .apply "BoolFalse" []],
+      right := .fvar "falseCase" },
+    -- BetaBoolRecTrue: BoolRec(motive, falseCase, trueCase, BoolTrue) ~> trueCase
+    { name := "BetaBoolRecTrue",
+      typeContext := [("motive", .base "Tm"), ("falseCase", .base "Tm"), ("trueCase", .base "Tm")],
+      premises := [],
+      left := .apply "BoolRec"
+        [.fvar "motive", .fvar "falseCase", .fvar "trueCase", .apply "BoolTrue" []],
+      right := .fvar "trueCase" },
+    -- BetaNatRecZero: NatRec(motive, zeroCase, succCase, NatZero) ~> zeroCase
+    { name := "BetaNatRecZero",
+      typeContext := [("motive", .base "Tm"), ("zeroCase", .base "Tm"), ("succCase", .base "Tm")],
+      premises := [],
+      left := .apply "NatRec"
+        [.fvar "motive", .fvar "zeroCase", .fvar "succCase", .apply "NatZero" []],
+      right := .fvar "zeroCase" },
+    -- BetaNatRecSucc: NatRec(motive, zeroCase, succCase, NatSucc(k))
+    --   ~> App(App(succCase, k), NatRec(motive, zeroCase, succCase, k))
+    { name := "BetaNatRecSucc",
+      typeContext := [("motive", .base "Tm"), ("zeroCase", .base "Tm"), ("succCase", .base "Tm"), ("k", .base "Tm")],
+      premises := [],
+      left := .apply "NatRec"
+        [.fvar "motive", .fvar "zeroCase", .fvar "succCase", .apply "NatSucc" [.fvar "k"]],
+      right := .apply "App"
+        [.apply "App" [.fvar "succCase", .fvar "k"],
+         .apply "NatRec" [.fvar "motive", .fvar "zeroCase", .fvar "succCase", .fvar "k"]] }
   ]
 }
 
@@ -181,6 +278,42 @@ def mkSnd (p : Pattern) : Pattern := .apply "Snd" [p]
 /-- Reflexivity proof `refl a`. -/
 def mkRefl (a : Pattern) : Pattern := .apply "Refl" [a]
 
+/-- Unit type. -/
+def mkUnitTy : Pattern := .apply "UnitTy" []
+
+/-- Unit constructor. -/
+def mkUnitMk : Pattern := .apply "UnitMk" []
+
+/-- Bool type. -/
+def mkBoolTy : Pattern := .apply "BoolTy" []
+
+/-- False constructor. -/
+def mkBoolFalse : Pattern := .apply "BoolFalse" []
+
+/-- True constructor. -/
+def mkBoolTrue : Pattern := .apply "BoolTrue" []
+
+/-- Nat type. -/
+def mkNatTy : Pattern := .apply "NatTy" []
+
+/-- Zero constructor. -/
+def mkNatZero : Pattern := .apply "NatZero" []
+
+/-- Successor constructor. -/
+def mkNatSucc (k : Pattern) : Pattern := .apply "NatSucc" [k]
+
+/-- Unit recursor. -/
+def mkUnitRec (motive unitCase scrutinee : Pattern) : Pattern :=
+  .apply "UnitRec" [motive, unitCase, scrutinee]
+
+/-- Bool recursor. -/
+def mkBoolRec (motive falseCase trueCase scrutinee : Pattern) : Pattern :=
+  .apply "BoolRec" [motive, falseCase, trueCase, scrutinee]
+
+/-- Nat recursor. -/
+def mkNatRec (motive zeroCase succCase scrutinee : Pattern) : Pattern :=
+  .apply "NatRec" [motive, zeroCase, succCase, scrutinee]
+
 /-- Empty context. -/
 def mkCtxEmpty : Pattern := .apply "CtxEmpty" []
 
@@ -209,8 +342,8 @@ def pureCtx : LangSort mettaPure := ⟨"Ctx", by decide⟩
 /-- MeTTa-Pure has exactly 2 sorts. -/
 theorem mettaPure_types : mettaPure.types = ["Tm", "Ctx"] := rfl
 
-/-- MeTTa-Pure has exactly 3 rewrite rules. -/
-theorem mettaPure_rewrites_length : mettaPure.rewrites.length = 3 := by decide
+/-- MeTTa-Pure currently has 8 rewrite rules. -/
+theorem mettaPure_rewrites_length : mettaPure.rewrites.length = 8 := by decide
 
 /-- MeTTa-Pure has no equations (intensional). -/
 theorem mettaPure_no_equations : mettaPure.equations = [] := rfl
