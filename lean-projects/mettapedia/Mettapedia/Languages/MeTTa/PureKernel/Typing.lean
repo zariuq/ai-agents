@@ -11,98 +11,11 @@ open Mettapedia.Languages.MeTTa.PureKernel.Reduction
 
 abbrev Conv (t u : PureTm n) : Prop := Relation.EqvGen (@Red n) t u
 
-def unitMotiveTy : PureTm n :=
-  .pi .unitTy .u1
-
-def boolMotiveTy : PureTm n :=
-  .pi .boolTy .u1
-
-def natMotiveTy : PureTm n :=
-  .pi .natTy .u1
-
-def natRecStepTy (motive : PureTm n) : PureTm n :=
-  .pi .natTy
-    (.pi (.app (rename wk motive) (.var 0))
-      (.app (rename wk (rename wk motive)) (.natSucc (.var 1))))
-
-@[simp] theorem rename_liftRen_wk (ρ : Ren n m) (t : PureTm n) :
-    rename (liftRen ρ) (rename wk t) = rename wk (rename ρ t) := by
-  calc
-    rename (liftRen ρ) (rename wk t)
-        = rename (fun i => liftRen ρ (wk i)) t := by
-            exact rename_comp (ρ₂ := liftRen ρ) (ρ₁ := wk) (t := t)
-    _ = rename (fun i => wk (ρ i)) t := by
-          apply rename_ext
-          intro i
-          simp [wk, liftRen]
-    _ = rename wk (rename ρ t) := by
-          symm
-          exact rename_comp (ρ₂ := wk) (ρ₁ := ρ) (t := t)
-
-@[simp] theorem rename_liftRen_wk_twice (ρ : Ren n m) (t : PureTm n) :
-    rename (liftRen (liftRen ρ)) (rename wk (rename wk t)) =
-      rename wk (rename wk (rename ρ t)) := by
-  calc
-    rename (liftRen (liftRen ρ)) (rename wk (rename wk t))
-        = rename wk (rename (liftRen ρ) (rename wk t)) := by
-            simpa using (rename_liftRen_wk (ρ := liftRen ρ) (t := rename wk t))
-    _ = rename wk (rename wk (rename ρ t)) := by
-          congr 1
-          simpa using (rename_liftRen_wk (ρ := ρ) (t := t))
-
-@[simp] theorem rename_natRecStepTy (ρ : Ren n m) (motive : PureTm n) :
-    rename ρ (natRecStepTy motive) = natRecStepTy (rename ρ motive) := by
-  unfold natRecStepTy
-  simp [rename]
-  constructor
-  · constructor
-    · simpa using (rename_liftRen_wk (ρ := ρ) (t := motive))
-    · rfl
-  · constructor
-    · simpa using (rename_liftRen_wk_twice (ρ := ρ) (t := motive))
-    · rfl
-
-@[simp] theorem subst_liftSub_wk_twice (σ : Sub n m) (t : PureTm n) :
-    subst (liftSub (liftSub σ)) (rename wk (rename wk t)) =
-      rename wk (rename wk (subst σ t)) := by
-  calc
-    subst (liftSub (liftSub σ)) (rename wk (rename wk t))
-        = rename wk (subst (liftSub σ) (rename wk t)) := by
-            simpa using (subst_liftSub_wk (σ := liftSub σ) (t := rename wk t))
-    _ = rename wk (rename wk (subst σ t)) := by
-          congr 1
-          exact subst_liftSub_wk (σ := σ) (t := t)
-
-@[simp] theorem subst_natRecStepTy (σ : Sub n m) (motive : PureTm n) :
-    subst σ (natRecStepTy motive) = natRecStepTy (subst σ motive) := by
-  unfold natRecStepTy
-  simp [subst]
-  constructor
-  · simpa [rename_comp] using (subst_liftSub_wk_twice (σ := σ) (t := motive))
-  · rfl
-
 inductive HasType : Ctx n → PureTm n → PureTm n → Prop where
   | u0_type (Γ : Ctx n) :
       HasType Γ .u0 .u1
-  | unitTy_type (Γ : Ctx n) :
-      HasType Γ .unitTy .u1
-  | unitMk_intro (Γ : Ctx n) :
-      HasType Γ .unitMk .unitTy
-  | boolTy_type (Γ : Ctx n) :
-      HasType Γ .boolTy .u1
-  | boolFalse_intro (Γ : Ctx n) :
-      HasType Γ .boolFalse .boolTy
-  | boolTrue_intro (Γ : Ctx n) :
-      HasType Γ .boolTrue .boolTy
-  | natTy_type (Γ : Ctx n) :
-      HasType Γ .natTy .u1
-  | natZero_intro (Γ : Ctx n) :
-      HasType Γ .natZero .natTy
   | var {Γ : Ctx n} (i : Fin n) :
       HasType Γ (.var i) (lookup Γ i)
-  | natSucc_intro {Γ : Ctx n} {k : PureTm n} :
-      HasType Γ k .natTy →
-      HasType Γ (.natSucc k) .natTy
   | pi_form {Γ : Ctx n} {A : PureTm n} {B : PureTm (n + 1)} :
       HasType Γ A .u1 →
       HasType (.snoc Γ A) B .u1 →
@@ -136,23 +49,6 @@ inductive HasType : Ctx n → PureTm n → PureTm n → Prop where
   | refl_intro {Γ : Ctx n} {a A : PureTm n} :
       HasType Γ a A →
       HasType Γ (.refl a) (.id A a a)
-  | unitRec_elim {Γ : Ctx n} {motive unitCase scrutinee : PureTm n} :
-      HasType Γ motive (unitMotiveTy (n := n)) →
-      HasType Γ unitCase (.app motive .unitMk) →
-      HasType Γ scrutinee .unitTy →
-      HasType Γ (.unitRec motive unitCase scrutinee) (.app motive scrutinee)
-  | boolRec_elim {Γ : Ctx n} {motive falseCase trueCase scrutinee : PureTm n} :
-      HasType Γ motive (boolMotiveTy (n := n)) →
-      HasType Γ falseCase (.app motive .boolFalse) →
-      HasType Γ trueCase (.app motive .boolTrue) →
-      HasType Γ scrutinee .boolTy →
-      HasType Γ (.boolRec motive falseCase trueCase scrutinee) (.app motive scrutinee)
-  | natRec_elim {Γ : Ctx n} {motive zeroCase succCase scrutinee : PureTm n} :
-      HasType Γ motive (natMotiveTy (n := n)) →
-      HasType Γ zeroCase (.app motive .natZero) →
-      HasType Γ succCase (natRecStepTy motive) →
-      HasType Γ scrutinee .natTy →
-      HasType Γ (.natRec motive zeroCase succCase scrutinee) (.app motive scrutinee)
   | conv {Γ : Ctx n} {t A B : PureTm n} :
       HasType Γ t A →
       Conv A B →
@@ -179,26 +75,12 @@ def renToSub (ρ : Ren n m) : Sub n m := fun i => .var (ρ i)
   induction t generalizing m with
   | var i =>
       rfl
+  | const c =>
+      rfl
   | u0 =>
       rfl
   | u1 =>
       rfl
-  | unitTy =>
-      rfl
-  | unitMk =>
-      rfl
-  | boolTy =>
-      rfl
-  | boolFalse =>
-      rfl
-  | boolTrue =>
-      rfl
-  | natTy =>
-      rfl
-  | natZero =>
-      rfl
-  | natSucc k ih =>
-      simp [subst, rename, ih]
   | pi A B ihA ihB =>
       simp [subst, rename, ihA, ihB, liftSub_renToSub]
   | sigma A B ihA ihB =>
@@ -217,12 +99,6 @@ def renToSub (ρ : Ren n m) : Sub n m := fun i => .var (ρ i)
       simp [subst, rename, ih]
   | refl a iha =>
       simp [subst, rename, iha]
-  | unitRec motive unitCase scrutinee ihmotive ihcase ihscrutinee =>
-      simp [subst, rename, ihmotive, ihcase, ihscrutinee]
-  | boolRec motive falseCase trueCase scrutinee ihmotive ihFalse ihTrue ihscrutinee =>
-      simp [subst, rename, ihmotive, ihFalse, ihTrue, ihscrutinee]
-  | natRec motive zeroCase succCase scrutinee ihmotive ihZero ihSucc ihscrutinee =>
-      simp [subst, rename, ihmotive, ihZero, ihSucc, ihscrutinee]
 
 theorem red_rename {t u : PureTm n} (h : Red t u) :
     ∀ {m : Nat} (ρ : Ren n m), Red (rename ρ t) (rename ρ u) := by
@@ -237,25 +113,6 @@ theorem red_rename {t u : PureTm n} (h : Red t u) :
   | betaSigmaSnd a b =>
       intro m ρ
       simpa [rename] using (Red.betaSigmaSnd (rename ρ a) (rename ρ b))
-  | betaUnitRec motive unitCase =>
-      intro m ρ
-      simpa [rename] using (Red.betaUnitRec (rename ρ motive) (rename ρ unitCase))
-  | betaBoolRecFalse motive falseCase trueCase =>
-      intro m ρ
-      simpa [rename] using
-        (Red.betaBoolRecFalse (rename ρ motive) (rename ρ falseCase) (rename ρ trueCase))
-  | betaBoolRecTrue motive falseCase trueCase =>
-      intro m ρ
-      simpa [rename] using
-        (Red.betaBoolRecTrue (rename ρ motive) (rename ρ falseCase) (rename ρ trueCase))
-  | betaNatRecZero motive zeroCase succCase =>
-      intro m ρ
-      simpa [rename] using
-        (Red.betaNatRecZero (rename ρ motive) (rename ρ zeroCase) (rename ρ succCase))
-  | betaNatRecSucc motive zeroCase succCase k =>
-      intro m ρ
-      simpa [rename] using
-        (Red.betaNatRecSucc (rename ρ motive) (rename ρ zeroCase) (rename ρ succCase) (rename ρ k))
   | congPiDom hA ih =>
       intro m ρ
       exact .congPiDom (ih ρ)
@@ -301,42 +158,6 @@ theorem red_rename {t u : PureTm n} (h : Red t u) :
   | congRefl ha ih =>
       intro m ρ
       exact .congRefl (ih ρ)
-  | congNatSucc hk ih =>
-      intro m ρ
-      exact .congNatSucc (ih ρ)
-  | congUnitRecMotive hm ih =>
-      intro m ρ
-      exact .congUnitRecMotive (ih ρ)
-  | congUnitRecCase hc ih =>
-      intro m ρ
-      exact .congUnitRecCase (ih ρ)
-  | congUnitRecScrutinee hs ih =>
-      intro m ρ
-      exact .congUnitRecScrutinee (ih ρ)
-  | congBoolRecMotive hm ih =>
-      intro m ρ
-      exact .congBoolRecMotive (ih ρ)
-  | congBoolRecFalseCase hf ih =>
-      intro m ρ
-      exact .congBoolRecFalseCase (ih ρ)
-  | congBoolRecTrueCase ht ih =>
-      intro m ρ
-      exact .congBoolRecTrueCase (ih ρ)
-  | congBoolRecScrutinee hs ih =>
-      intro m ρ
-      exact .congBoolRecScrutinee (ih ρ)
-  | congNatRecMotive hm ih =>
-      intro m ρ
-      exact .congNatRecMotive (ih ρ)
-  | congNatRecZeroCase hz ih =>
-      intro m ρ
-      exact .congNatRecZeroCase (ih ρ)
-  | congNatRecSuccCase hs ih =>
-      intro m ρ
-      exact .congNatRecSuccCase (ih ρ)
-  | congNatRecScrutinee hs ih =>
-      intro m ρ
-      exact .congNatRecScrutinee (ih ρ)
 
 theorem conv_rename (ρ : Ren n m) {t u : PureTm n} (h : Conv t u) :
     Conv (rename ρ t) (rename ρ u) := by
@@ -357,33 +178,9 @@ theorem typing_rename {Γ : Ctx n} {t A : PureTm n} (ht : HasType Γ t A) :
   | u0_type Γ =>
       intro m Δ ρ hρ
       simpa [rename] using (HasType.u0_type (Γ := Δ))
-  | unitTy_type Γ =>
-      intro m Δ ρ hρ
-      simpa [rename] using (HasType.unitTy_type (Γ := Δ))
-  | unitMk_intro Γ =>
-      intro m Δ ρ hρ
-      simpa [rename] using (HasType.unitMk_intro (Γ := Δ))
-  | boolTy_type Γ =>
-      intro m Δ ρ hρ
-      simpa [rename] using (HasType.boolTy_type (Γ := Δ))
-  | boolFalse_intro Γ =>
-      intro m Δ ρ hρ
-      simpa [rename] using (HasType.boolFalse_intro (Γ := Δ))
-  | boolTrue_intro Γ =>
-      intro m Δ ρ hρ
-      simpa [rename] using (HasType.boolTrue_intro (Γ := Δ))
-  | natTy_type Γ =>
-      intro m Δ ρ hρ
-      simpa [rename] using (HasType.natTy_type (Γ := Δ))
-  | natZero_intro Γ =>
-      intro m Δ ρ hρ
-      simpa [rename] using (HasType.natZero_intro (Γ := Δ))
   | var i =>
       intro m Δ ρ hρ
       simpa [hρ i] using (HasType.var (Γ := Δ) (i := ρ i))
-  | natSucc_intro hk ihk =>
-      intro m Δ ρ hρ
-      simpa [rename] using (HasType.natSucc_intro (ihk (m := m) (Δ := Δ) (ρ := ρ) hρ))
   | @pi_form n Γ A B hA hB ihA ihB =>
       intro m Δ ρ hρ
       have hA' := ihA (m := m) (Δ := Δ) (ρ := ρ) hρ
@@ -432,33 +229,6 @@ theorem typing_rename {Γ : Ctx n} {t A : PureTm n} (ht : HasType Γ t A) :
       intro m Δ ρ hρ
       simpa [rename] using
         (HasType.refl_intro (iha (m := m) (Δ := Δ) (ρ := ρ) hρ))
-  | @unitRec_elim n Γ motive unitCase scrutinee hmotive hcase hscrutinee ihmotive ihcase ihscrutinee =>
-      intro m Δ ρ hρ
-      simpa [rename] using
-        (HasType.unitRec_elim
-          (ihmotive (m := m) (Δ := Δ) (ρ := ρ) hρ)
-          (ihcase (m := m) (Δ := Δ) (ρ := ρ) hρ)
-          (ihscrutinee (m := m) (Δ := Δ) (ρ := ρ) hρ))
-  | @boolRec_elim n Γ motive falseCase trueCase scrutinee hmotive hFalse hTrue hscrutinee
-      ihmotive ihFalse ihTrue ihscrutinee =>
-      intro m Δ ρ hρ
-      simpa [rename] using
-        (HasType.boolRec_elim
-          (ihmotive (m := m) (Δ := Δ) (ρ := ρ) hρ)
-          (ihFalse (m := m) (Δ := Δ) (ρ := ρ) hρ)
-          (ihTrue (m := m) (Δ := Δ) (ρ := ρ) hρ)
-          (ihscrutinee (m := m) (Δ := Δ) (ρ := ρ) hρ))
-  | @natRec_elim n Γ motive zeroCase succCase scrutinee hmotive hZero hSucc hscrutinee
-      ihmotive ihZero ihSucc ihscrutinee =>
-      intro m Δ ρ hρ
-      have hSucc' : HasType Δ (rename ρ succCase) (natRecStepTy (rename ρ motive)) := by
-        simpa using (ihSucc (m := m) (Δ := Δ) (ρ := ρ) hρ)
-      simpa [rename] using
-        (HasType.natRec_elim
-          (ihmotive (m := m) (Δ := Δ) (ρ := ρ) hρ)
-          (ihZero (m := m) (Δ := Δ) (ρ := ρ) hρ)
-          hSucc'
-          (ihscrutinee (m := m) (Δ := Δ) (ρ := ρ) hρ))
   | @conv n Γ t A B ht hAB iht =>
       intro m Δ ρ hρ
       exact HasType.conv
@@ -505,25 +275,6 @@ theorem red_subst {t u : PureTm n} (h : Red t u) :
   | betaSigmaSnd a b =>
       intro m σ
       simpa [subst] using (Red.betaSigmaSnd (subst σ a) (subst σ b))
-  | betaUnitRec motive unitCase =>
-      intro m σ
-      simpa [subst] using (Red.betaUnitRec (subst σ motive) (subst σ unitCase))
-  | betaBoolRecFalse motive falseCase trueCase =>
-      intro m σ
-      simpa [subst] using
-        (Red.betaBoolRecFalse (subst σ motive) (subst σ falseCase) (subst σ trueCase))
-  | betaBoolRecTrue motive falseCase trueCase =>
-      intro m σ
-      simpa [subst] using
-        (Red.betaBoolRecTrue (subst σ motive) (subst σ falseCase) (subst σ trueCase))
-  | betaNatRecZero motive zeroCase succCase =>
-      intro m σ
-      simpa [subst] using
-        (Red.betaNatRecZero (subst σ motive) (subst σ zeroCase) (subst σ succCase))
-  | betaNatRecSucc motive zeroCase succCase k =>
-      intro m σ
-      simpa [subst] using
-        (Red.betaNatRecSucc (subst σ motive) (subst σ zeroCase) (subst σ succCase) (subst σ k))
   | congPiDom hA ih =>
       intro m σ
       exact .congPiDom (ih σ)
@@ -569,42 +320,6 @@ theorem red_subst {t u : PureTm n} (h : Red t u) :
   | congRefl ha ih =>
       intro m σ
       exact .congRefl (ih σ)
-  | congNatSucc hk ih =>
-      intro m σ
-      exact .congNatSucc (ih σ)
-  | congUnitRecMotive hm ih =>
-      intro m σ
-      exact .congUnitRecMotive (ih σ)
-  | congUnitRecCase hc ih =>
-      intro m σ
-      exact .congUnitRecCase (ih σ)
-  | congUnitRecScrutinee hs ih =>
-      intro m σ
-      exact .congUnitRecScrutinee (ih σ)
-  | congBoolRecMotive hm ih =>
-      intro m σ
-      exact .congBoolRecMotive (ih σ)
-  | congBoolRecFalseCase hf ih =>
-      intro m σ
-      exact .congBoolRecFalseCase (ih σ)
-  | congBoolRecTrueCase ht ih =>
-      intro m σ
-      exact .congBoolRecTrueCase (ih σ)
-  | congBoolRecScrutinee hs ih =>
-      intro m σ
-      exact .congBoolRecScrutinee (ih σ)
-  | congNatRecMotive hm ih =>
-      intro m σ
-      exact .congNatRecMotive (ih σ)
-  | congNatRecZeroCase hz ih =>
-      intro m σ
-      exact .congNatRecZeroCase (ih σ)
-  | congNatRecSuccCase hs ih =>
-      intro m σ
-      exact .congNatRecSuccCase (ih σ)
-  | congNatRecScrutinee hs ih =>
-      intro m σ
-      exact .congNatRecScrutinee (ih σ)
 
 theorem conv_subst (σ : Sub n m) {t u : PureTm n} (h : Conv t u) :
     Conv (subst σ t) (subst σ u) := by
@@ -626,33 +341,9 @@ theorem typing_subst {Γ : Ctx n} {t A : PureTm n} (ht : HasType Γ t A) :
   | u0_type Γ =>
       intro m Δ σ hσ
       simpa [subst] using (HasType.u0_type (Γ := Δ))
-  | unitTy_type Γ =>
-      intro m Δ σ hσ
-      simpa [subst] using (HasType.unitTy_type (Γ := Δ))
-  | unitMk_intro Γ =>
-      intro m Δ σ hσ
-      simpa [subst] using (HasType.unitMk_intro (Γ := Δ))
-  | boolTy_type Γ =>
-      intro m Δ σ hσ
-      simpa [subst] using (HasType.boolTy_type (Γ := Δ))
-  | boolFalse_intro Γ =>
-      intro m Δ σ hσ
-      simpa [subst] using (HasType.boolFalse_intro (Γ := Δ))
-  | boolTrue_intro Γ =>
-      intro m Δ σ hσ
-      simpa [subst] using (HasType.boolTrue_intro (Γ := Δ))
-  | natTy_type Γ =>
-      intro m Δ σ hσ
-      simpa [subst] using (HasType.natTy_type (Γ := Δ))
-  | natZero_intro Γ =>
-      intro m Δ σ hσ
-      simpa [subst] using (HasType.natZero_intro (Γ := Δ))
   | var i =>
       intro m Δ σ hσ
       simpa [CtxMor] using hσ i
-  | natSucc_intro hk ihk =>
-      intro m Δ σ hσ
-      simpa [subst] using (HasType.natSucc_intro (ihk (m := m) (Δ := Δ) (σ := σ) hσ))
   | @pi_form n Γ A B hA hB ihA ihB =>
       intro m Δ σ hσ
       have hA' := ihA (m := m) (Δ := Δ) (σ := σ) hσ
@@ -701,33 +392,6 @@ theorem typing_subst {Γ : Ctx n} {t A : PureTm n} (ht : HasType Γ t A) :
       intro m Δ σ hσ
       simpa [subst] using
         (HasType.refl_intro (iha (m := m) (Δ := Δ) (σ := σ) hσ))
-  | @unitRec_elim n Γ motive unitCase scrutinee hmotive hcase hscrutinee ihmotive ihcase ihscrutinee =>
-      intro m Δ σ hσ
-      simpa [subst] using
-        (HasType.unitRec_elim
-          (ihmotive (m := m) (Δ := Δ) (σ := σ) hσ)
-          (ihcase (m := m) (Δ := Δ) (σ := σ) hσ)
-          (ihscrutinee (m := m) (Δ := Δ) (σ := σ) hσ))
-  | @boolRec_elim n Γ motive falseCase trueCase scrutinee hmotive hFalse hTrue hscrutinee
-      ihmotive ihFalse ihTrue ihscrutinee =>
-      intro m Δ σ hσ
-      simpa [subst] using
-        (HasType.boolRec_elim
-          (ihmotive (m := m) (Δ := Δ) (σ := σ) hσ)
-          (ihFalse (m := m) (Δ := Δ) (σ := σ) hσ)
-          (ihTrue (m := m) (Δ := Δ) (σ := σ) hσ)
-          (ihscrutinee (m := m) (Δ := Δ) (σ := σ) hσ))
-  | @natRec_elim n Γ motive zeroCase succCase scrutinee hmotive hZero hSucc hscrutinee
-      ihmotive ihZero ihSucc ihscrutinee =>
-      intro m Δ σ hσ
-      have hSucc' : HasType Δ (subst σ succCase) (natRecStepTy (subst σ motive)) := by
-        simpa using (ihSucc (m := m) (Δ := Δ) (σ := σ) hσ)
-      simpa [subst] using
-        (HasType.natRec_elim
-          (ihmotive (m := m) (Δ := Δ) (σ := σ) hσ)
-          (ihZero (m := m) (Δ := Δ) (σ := σ) hσ)
-          hSucc'
-          (ihscrutinee (m := m) (Δ := Δ) (σ := σ) hσ))
   | @conv n Γ t A B ht hAB iht =>
       intro m Δ σ hσ
       exact HasType.conv
@@ -742,26 +406,10 @@ theorem context_conv {Γ Δ : Ctx n} {t T : PureTm n}
   induction ht with
   | u0_type Γ =>
       exact .u0_type _
-  | unitTy_type Γ =>
-      exact .unitTy_type _
-  | unitMk_intro Γ =>
-      exact .unitMk_intro _
-  | boolTy_type Γ =>
-      exact .boolTy_type _
-  | boolFalse_intro Γ =>
-      exact .boolFalse_intro _
-  | boolTrue_intro Γ =>
-      exact .boolTrue_intro _
-  | natTy_type Γ =>
-      exact .natTy_type _
-  | natZero_intro Γ =>
-      exact .natZero_intro _
   | var i =>
       exact .conv
         (HasType.var (Γ := Δ) (i := i))
         (Relation.EqvGen.symm _ _ (hctx i))
-  | natSucc_intro hk ihk =>
-      exact .natSucc_intro (ihk hctx)
   | @pi_form n Γ A B hA hB ihA ihB =>
       have hA' : HasType Δ A .u1 := ihA hctx
       have hctx' : ∀ i : Fin (n + 1), Conv (lookup (.snoc Γ A) i) (lookup (.snoc Δ A) i) := by
@@ -802,14 +450,6 @@ theorem context_conv {Γ Δ : Ctx n} {t T : PureTm n}
       exact .id_form (ihA hctx) (iha hctx) (ihb hctx)
   | @refl_intro n Γ a A ha iha =>
       exact .refl_intro (iha hctx)
-  | @unitRec_elim n Γ motive unitCase scrutinee hmotive hcase hscrutinee ihmotive ihcase ihscrutinee =>
-      exact .unitRec_elim (ihmotive hctx) (ihcase hctx) (ihscrutinee hctx)
-  | @boolRec_elim n Γ motive falseCase trueCase scrutinee hmotive hFalse hTrue hscrutinee
-      ihmotive ihFalse ihTrue ihscrutinee =>
-      exact .boolRec_elim (ihmotive hctx) (ihFalse hctx) (ihTrue hctx) (ihscrutinee hctx)
-  | @natRec_elim n Γ motive zeroCase succCase scrutinee hmotive hZero hSucc hscrutinee
-      ihmotive ihZero ihSucc ihscrutinee =>
-      exact .natRec_elim (ihmotive hctx) (ihZero hctx) (ihSucc hctx) (ihscrutinee hctx)
   | @conv n Γ t A B ht hAB iht =>
       exact .conv (iht hctx) hAB
 

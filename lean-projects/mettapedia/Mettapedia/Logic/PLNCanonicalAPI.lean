@@ -25,9 +25,22 @@ import Mettapedia.Logic.SufficientStatisticSurface
 import Mettapedia.Logic.GenericWorldModelForgetting
 import Mettapedia.Logic.PLNWorldModelOverlap
 import Mettapedia.Logic.PLNWorldModelSupportForgetting
+import Mettapedia.Logic.PLNWorldModelConservationPack
+import Mettapedia.Logic.PLNWorldModelOrderCostBounds
+import Mettapedia.Logic.PLNWorldModelOrderCostAuditCertificate
+import Mettapedia.Logic.PLNWorldModelOrderCostProvenanceDemo
+import Mettapedia.Logic.PLNWorldModelOrderCostWeightedDemo
+import Mettapedia.Logic.PLNWorldModelOrderCostGasPolicyDemo
+import Mettapedia.Logic.PLNWorldModelAudit
 import Mettapedia.Logic.PLNSemitopology
 import Mettapedia.Logic.PLNProvenanceWMSupportBridge
 import Mettapedia.Logic.PLNSemitopologyProvenanceBridge
+import Mettapedia.Logic.PLNFirstOrder.InfiniteSoundness
+import Mettapedia.Logic.PLNFirstOrder.InfiniteCanary
+import Mettapedia.Logic.PLNFirstOrder.FuzzyQuantifierSoundnessInf
+import Mettapedia.Logic.PLNFirstOrder.ChoquetQuantifierSemantics
+import Mettapedia.Logic.PLNFirstOrder.FuzzyDomainQuantifiers
+import Mettapedia.Logic.PLNFirstOrder.FuzzyQuantifierSemanticsFin
 import Mettapedia.Logic.PLNWorldModelPreorder
 import Mettapedia.Logic.PLNGaussianEMExtension
 
@@ -127,6 +140,267 @@ abbrev ch7_worked_example_strength_uniform_3_1 :=
 abbrev ch7_distributional_kyburg_bridge_available :=
   Mettapedia.Logic.PLNKyburgReduction.chapter7_distributional_kyburg_bridge_available
 
+/-! ## Arbitrary-Domain Quantifier Semantics Endpoints -/
+
+abbrev PLNWeightFunctionInf :=
+  Mettapedia.Logic.PLNFirstOrder.Infinite.WeightFunctionInf
+
+abbrev PLNSatisfyingSetInf :=
+  Mettapedia.Logic.PLNFirstOrder.Infinite.SatisfyingSetInf
+
+noncomputable abbrev pln_forAllEvalInf :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.forAllEvalInf
+
+noncomputable abbrev pln_thereExistsEvalInf :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.thereExistsEvalInf
+
+noncomputable abbrev pln_forAllEvalExtInf :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.forAllEvalExtInf
+
+noncomputable abbrev pln_thereExistsEvalExtInf :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.thereExistsEvalExtInf
+
+abbrev pln_deMorgan_inf :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.deMorgan_inf
+
+abbrev pln_weaknessInf_mono :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.weaknessInf_mono
+
+abbrev pln_weaknessInf_mono_subset :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.weaknessInf_mono_subset
+
+abbrev pln_forAllEvalInf_is_weakness :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.main_theorem_1_forAll_is_weakness_inf
+
+abbrev pln_forAllEvalInf_mono_weights :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.main_theorem_2_monotonicity_inf
+
+abbrev pln_thereExistsEvalInf_deMorgan :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.main_theorem_3_de_morgan_inf
+
+abbrev pln_forAllEvalInf_functoriality :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.main_theorem_5_functoriality_inf
+
+abbrev pln_forAllEvalInf_constantTrue_eq_sup_all :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.forAllEvalInf_constantTrue_eq_sup_all
+
+abbrev pln_forAllEvalInf_constantFalse_eq_bot :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.forAllEvalInf_constantFalse_eq_bot
+
+abbrev pln_forAllEvalExtInf_le_thereExistsEvalExtInf :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.forAllEvalExtInf_le_thereExistsEvalExtInf
+
+abbrev pln_forAllEvalExtInf_eq_top_of_isEmpty :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.forAllEvalExtInf_eq_top_of_isEmpty
+
+abbrev pln_thereExistsEvalExtInf_eq_bot_of_isEmpty :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.thereExistsEvalExtInf_eq_bot_of_isEmpty
+
+abbrev pln_SatisfyingSetInf_ofFinitary :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.SatisfyingSetInf.ofFinitary
+
+abbrev pln_WeightFunctionInf_ofFinitary :=
+  @Mettapedia.Logic.PLNFirstOrder.Infinite.WeightFunctionInf.ofFinitary
+
+/-! ## Arbitrary-Domain Fuzzy Quantifier Endpoints -/
+
+abbrev PLNFuzzyQuantifierParamsInf :=
+  Mettapedia.Logic.PLNFirstOrder.FuzzyQuantifierParamsInf
+
+abbrev PLNFuzzyProfile :=
+  Mettapedia.Logic.PLNFirstOrder.FuzzyProfile
+
+abbrev PLNFuzzyCapacity :=
+  Mettapedia.Logic.PLNFirstOrder.FuzzyCapacity
+
+abbrev pln_nearOneInf :=
+  @Mettapedia.Logic.PLNFirstOrder.nearOneInf
+
+abbrev pln_nearZeroInf :=
+  @Mettapedia.Logic.PLNFirstOrder.nearZeroInf
+
+noncomputable abbrev pln_sugenoIntegral :=
+  @Mettapedia.Logic.PLNFirstOrder.FuzzyCapacity.sugenoIntegral
+
+abbrev pln_nearOneMassInf :=
+  @Mettapedia.Logic.PLNFirstOrder.nearOneMassInf
+
+abbrev pln_nearZeroMassInf :=
+  @Mettapedia.Logic.PLNFirstOrder.nearZeroMassInf
+
+abbrev pln_fuzzyExistsScoreInf :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyExistsScoreInf
+
+abbrev pln_fuzzyIntervalHoldsInf :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyIntervalHoldsInf
+
+abbrev pln_fuzzyForAllHoldsInf :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyForAllHoldsInf
+
+abbrev pln_fuzzyThereExistsHoldsInf :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyThereExistsHoldsInf
+
+noncomputable abbrev pln_sugenoScoreInf :=
+  @Mettapedia.Logic.PLNFirstOrder.sugenoScoreInf
+
+noncomputable abbrev pln_choquetIntegral :=
+  @Mettapedia.Logic.PLNFirstOrder.FuzzyCapacity.choquetIntegral
+
+noncomputable abbrev pln_choquetScoreInf :=
+  @Mettapedia.Logic.PLNFirstOrder.choquetScoreInf
+
+abbrev pln_choquetIntervalHoldsInf :=
+  @Mettapedia.Logic.PLNFirstOrder.choquetIntervalHoldsInf
+
+abbrev pln_choquetForAllHoldsInf :=
+  @Mettapedia.Logic.PLNFirstOrder.choquetForAllHoldsInf
+
+abbrev pln_choquetThereExistsHoldsInf :=
+  @Mettapedia.Logic.PLNFirstOrder.choquetThereExistsHoldsInf
+
+abbrev pln_domainRestrict :=
+  @Mettapedia.Logic.PLNFirstOrder.domainRestrict
+
+abbrev pln_eqOnDomain :=
+  @Mettapedia.Logic.PLNFirstOrder.eqOnDomain
+
+abbrev pln_fuzzyExistsOnDomainScoreInf :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyExistsOnDomainScoreInf
+
+abbrev pln_fuzzyIntervalOnDomainHoldsInf :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyIntervalOnDomainHoldsInf
+
+abbrev pln_fuzzyForAllOnDomainHoldsInf :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyForAllOnDomainHoldsInf
+
+abbrev pln_fuzzyThereExistsOnDomainHoldsInf :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyThereExistsOnDomainHoldsInf
+
+abbrev pln_fuzzyAllOnDomainHoldsInf :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyAllOnDomainHoldsInf
+
+abbrev pln_fuzzySomeOnDomainHoldsInf :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzySomeOnDomainHoldsInf
+
+noncomputable abbrev pln_choquetOnDomainScoreInf :=
+  @Mettapedia.Logic.PLNFirstOrder.choquetOnDomainScoreInf
+
+abbrev pln_choquetIntervalOnDomainHoldsInf :=
+  @Mettapedia.Logic.PLNFirstOrder.choquetIntervalOnDomainHoldsInf
+
+abbrev pln_choquetForAllOnDomainHoldsInf :=
+  @Mettapedia.Logic.PLNFirstOrder.choquetForAllOnDomainHoldsInf
+
+abbrev pln_choquetThereExistsOnDomainHoldsInf :=
+  @Mettapedia.Logic.PLNFirstOrder.choquetThereExistsOnDomainHoldsInf
+
+abbrev pln_choquetAllOnDomainHoldsInf :=
+  @Mettapedia.Logic.PLNFirstOrder.choquetAllOnDomainHoldsInf
+
+abbrev pln_choquetSomeOnDomainHoldsInf :=
+  @Mettapedia.Logic.PLNFirstOrder.choquetSomeOnDomainHoldsInf
+
+abbrev pln_fuzzyExists_is_nearOneMassInf :=
+  @Mettapedia.Logic.PLNFirstOrder.main_theorem_1_fuzzy_exists_is_nearOneMass_inf
+
+abbrev pln_fuzzyMonotonicityInf :=
+  @Mettapedia.Logic.PLNFirstOrder.main_theorem_2_fuzzy_monotonicity_inf
+
+abbrev pln_fuzzyComplementTransportInf :=
+  @Mettapedia.Logic.PLNFirstOrder.main_theorem_3_fuzzy_complement_transport_inf
+
+abbrev pln_fuzzySignatureInvarianceInf :=
+  @Mettapedia.Logic.PLNFirstOrder.main_theorem_4_fuzzy_signature_invariance_inf
+
+abbrev pln_sugenoMonotonicityInf :=
+  @Mettapedia.Logic.PLNFirstOrder.main_theorem_5_sugeno_monotonicity_inf
+
+abbrev pln_nearOneMassInf_constantOne_eq_one :=
+  @Mettapedia.Logic.PLNFirstOrder.nearOneMassInf_constantOne_eq_one
+
+abbrev pln_sugenoScoreInf_constantOne_eq_one :=
+  @Mettapedia.Logic.PLNFirstOrder.sugenoScoreInf_constantOne_eq_one
+
+abbrev pln_choquetScoreInf_mono :=
+  @Mettapedia.Logic.PLNFirstOrder.choquetScoreInf_mono
+
+abbrev pln_choquetScoreInf_constantOne_eq_one :=
+  @Mettapedia.Logic.PLNFirstOrder.choquetScoreInf_constantOne_eq_one
+
+abbrev pln_fuzzyExistsOnDomainScoreInf_eq_of_eqOnDomain :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyExistsOnDomainScoreInf_eq_of_eqOnDomain
+
+abbrev pln_fuzzyForAllOnDomainHoldsInf_iff_of_eqOnDomain :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyForAllOnDomainHoldsInf_iff_of_eqOnDomain
+
+abbrev pln_fuzzyAllOnDomainHoldsInf_relativized :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyAllOnDomainHoldsInf_relativized
+
+abbrev pln_choquetOnDomainScoreInf_eq_of_eqOnDomain :=
+  @Mettapedia.Logic.PLNFirstOrder.choquetOnDomainScoreInf_eq_of_eqOnDomain
+
+abbrev pln_choquetForAllOnDomainHoldsInf_iff_of_eqOnDomain :=
+  @Mettapedia.Logic.PLNFirstOrder.choquetForAllOnDomainHoldsInf_iff_of_eqOnDomain
+
+abbrev pln_choquetAllOnDomainHoldsInf_relativized :=
+  @Mettapedia.Logic.PLNFirstOrder.choquetAllOnDomainHoldsInf_relativized
+
+/-! ## Finite/Counting Fuzzy Quantifier Endpoints -/
+
+abbrev PLNFuzzyQuantifierParamsFin :=
+  Mettapedia.Logic.PLNFirstOrder.FuzzyQuantifierParamsFin
+
+abbrev pln_fuzzyParamsFin_toInf :=
+  @Mettapedia.Logic.PLNFirstOrder.FuzzyQuantifierParams.toInf
+
+noncomputable abbrev pln_witnessCountFin :=
+  @Mettapedia.Logic.PLNFirstOrder.witnessCountFin
+
+noncomputable abbrev pln_witnessFractionFin :=
+  @Mettapedia.Logic.PLNFirstOrder.witnessFractionFin
+
+noncomputable abbrev pln_nearOneFractionFin :=
+  @Mettapedia.Logic.PLNFirstOrder.nearOneFractionFin
+
+noncomputable abbrev pln_nearZeroFractionFin :=
+  @Mettapedia.Logic.PLNFirstOrder.nearZeroFractionFin
+
+noncomputable abbrev pln_fuzzyExistsScoreFin :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyExistsScoreFin
+
+abbrev pln_fuzzyIntervalHoldsFin :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyIntervalHoldsFin
+
+abbrev pln_fuzzyForAllHoldsFin :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyForAllHoldsFin
+
+abbrev pln_fuzzyThereExistsHoldsFin :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyThereExistsHoldsFin
+
+noncomputable abbrev pln_countingCapacity :=
+  @Mettapedia.Logic.PLNFirstOrder.FuzzyCapacity.countingCapacity
+
+abbrev pln_boundedProfileFinToInf :=
+  @Mettapedia.Logic.PLNFirstOrder.boundedProfileFinToInf
+
+abbrev pln_nearOneMassInf_counting_eq_nearOneFractionFin :=
+  @Mettapedia.Logic.PLNFirstOrder.nearOneMassInf_counting_eq_nearOneFractionFin
+
+abbrev pln_nearZeroMassInf_counting_eq_nearZeroFractionFin :=
+  @Mettapedia.Logic.PLNFirstOrder.nearZeroMassInf_counting_eq_nearZeroFractionFin
+
+abbrev pln_fuzzyExistsScoreInf_counting_eq_fuzzyExistsScoreFin :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyExistsScoreInf_counting_eq_fuzzyExistsScoreFin
+
+abbrev pln_fuzzyIntervalHoldsInf_counting_iff_fuzzyIntervalHoldsFin :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyIntervalHoldsInf_counting_iff_fuzzyIntervalHoldsFin
+
+abbrev pln_fuzzyForAllHoldsInf_counting_iff_fuzzyForAllHoldsFin :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyForAllHoldsInf_counting_iff_fuzzyForAllHoldsFin
+
+abbrev pln_fuzzyThereExistsHoldsInf_counting_iff_fuzzyThereExistsHoldsFin :=
+  @Mettapedia.Logic.PLNFirstOrder.fuzzyThereExistsHoldsInf_counting_iff_fuzzyThereExistsHoldsFin
+
 /-! ## Additive WM Singleton-Surface Endpoints -/
 
 abbrev wm_multiset_singletonSurface :=
@@ -149,6 +423,30 @@ abbrev WMForgettingLayer :=
 abbrev wm_no_exactInverse_revision_of_nonzero_outside_scope :=
   @Mettapedia.Logic.ForgettingLayer.no_exactInverse_revision_of_nonzero_outside_scope
 
+abbrev WMOutsideLeakageBudget :=
+  @Mettapedia.Logic.OutsideLeakageBudget
+
+abbrev wm_antiHallucination_outsideScope_of_exactInverse :=
+  @Mettapedia.Logic.antiHallucination_outsideScope_of_exactInverse
+
+abbrev wm_outsideScopeEvidence_conserved_of_exactInverse :=
+  @Mettapedia.Logic.outsideScopeEvidence_conserved_of_exactInverse
+
+abbrev wm_outsideLeakageCount_zero_of_exactInverse :=
+  @Mettapedia.Logic.outsideLeakageCount_zero_of_exactInverse
+
+abbrev wm_outsideLeakageBudget_zero_of_exactInverse :=
+  @Mettapedia.Logic.outsideLeakageBudget_zero_of_exactInverse
+
+abbrev wm_outsideLeakageBudget_of_exactInverse :=
+  @Mettapedia.Logic.outsideLeakageBudget_of_exactInverse
+
+abbrev WMEvidenceConservationPack :=
+  @Mettapedia.Logic.EvidenceConservationPack
+
+abbrev wm_evidenceConservationPack_of_forgetting :=
+  @Mettapedia.Logic.evidenceConservationPack_of_forgetting
+
 /-! ## Non-Additive Perimeter Endpoints -/
 
 abbrev WMOverlapLayer :=
@@ -165,6 +463,176 @@ abbrev wm_exactInverse_of_supported :=
 
 abbrev wm_exactInverse_supported_outside_zero :=
   @Mettapedia.Logic.SupportTrackedForgettingLayer.exactInverse_revision_supported_outside_zero
+
+abbrev WMNoHallucinationOutsideScope :=
+  @Mettapedia.Logic.NoHallucinationOutsideScope
+
+abbrev wm_noHallucinationOutsideScope_of_exactInverse :=
+  @Mettapedia.Logic.noHallucinationOutsideScope_of_exactInverse
+
+abbrev wm_zeroLeakageOutsideScope_of_exactInverse :=
+  @Mettapedia.Logic.zeroLeakageOutsideScope_of_exactInverse
+
+abbrev WMSwapDefect :=
+  @Mettapedia.Logic.SwapDefect
+
+abbrev WMOrderSensitive :=
+  @Mettapedia.Logic.OrderSensitive
+
+abbrev wm_not_orderSensitive_of_commutativeMergeEvidence :=
+  @Mettapedia.Logic.not_orderSensitive_of_commutativeMergeEvidence
+
+noncomputable abbrev WMSwapAnomalyCount :=
+  @Mettapedia.Logic.SwapAnomalyCount
+
+abbrev WMSwapAnomalyBound :=
+  @Mettapedia.Logic.SwapAnomalyBound
+
+abbrev wm_swapAnomalyCount_zero_of_commutativeMergeEvidence :=
+  @Mettapedia.Logic.swapAnomalyCount_zero_of_commutativeMergeEvidence
+
+abbrev wm_swapAnomalyBound_of_pairwise_bounds :=
+  @Mettapedia.Logic.swapAnomalyBound_of_pairwise_bounds
+
+noncomputable abbrev WMScheduleErrorCount :=
+  @Mettapedia.Logic.scheduleErrorCount
+
+abbrev WMScheduleErrorBound :=
+  @Mettapedia.Logic.scheduleErrorBound
+
+abbrev wm_scheduleErrorBound_of_pairwise_bounds :=
+  @Mettapedia.Logic.scheduleErrorBound_of_pairwise_bounds
+
+noncomputable abbrev wm_swapStepAnomalyCount :=
+  @Mettapedia.Logic.swapStepAnomalyCount
+
+abbrev wm_swapStepAnomalyBound :=
+  @Mettapedia.Logic.swapStepAnomalyBound
+
+abbrev wm_scheduleError_twoStep_eq_swapStepAnomalyCount :=
+  @Mettapedia.Logic.scheduleError_twoStep_eq_swapStepAnomalyCount
+
+abbrev wm_scheduleErrorBound_twoStep_of_swapStepBound :=
+  @Mettapedia.Logic.scheduleErrorBound_twoStep_of_swapStepBound
+
+/-! ## Order-Cost Audit Certificate Endpoints -/
+
+abbrev WMRuntimePairwiseOrderCheck :=
+  @Mettapedia.Logic.RuntimePairwiseOrderCheck
+
+abbrev WMRuntimeBudgetPolicyPass :=
+  @Mettapedia.Logic.RuntimeBudgetPolicyPass
+
+abbrev wm_runtimePairwiseOrderCheck_certifies_scheduleErrorBound :=
+  @Mettapedia.Logic.runtimePairwiseOrderCheck_certifies_scheduleErrorBound
+
+abbrev wm_runtimePairwiseOrderCheck_certifies_policyThreshold :=
+  @Mettapedia.Logic.runtimePairwiseOrderCheck_certifies_policyThreshold
+
+abbrev WMRuntimeSwapStepCheck :=
+  @Mettapedia.Logic.RuntimeSwapStepCheck
+
+abbrev wm_runtimeSwapStepCheck_certifies_twoStepPolicyThreshold :=
+  @Mettapedia.Logic.runtimeSwapStepCheck_certifies_twoStepPolicyThreshold
+
+/-! ## Weighted Numeric Order-Cost Demo Endpoints -/
+
+abbrev wm_weightedRightBiasMerge :=
+  @Mettapedia.Logic.weightedRightBiasMerge
+
+noncomputable abbrev wm_weightedRightBiasOverlapLayer :=
+  @Mettapedia.Logic.weightedRightBiasOverlapLayer
+
+noncomputable abbrev wm_weightedSwapAnomalyCount :=
+  @Mettapedia.Logic.weightedSwapAnomalyCount
+
+noncomputable abbrev wm_weightedScheduleErrorCount :=
+  @Mettapedia.Logic.weightedScheduleErrorCount
+
+abbrev wm_weightedScheduleErrorBound :=
+  @Mettapedia.Logic.weightedScheduleErrorBound
+
+abbrev wm_weightedSwapAnomalyCount_eq_zero_of_query_eq :=
+  @Mettapedia.Logic.weightedSwapAnomalyCount_eq_zero_of_query_eq
+
+abbrev wm_weightedSwapAnomalyCount_eq_weight_of_zero_then_single :=
+  @Mettapedia.Logic.weightedSwapAnomalyCount_eq_weight_of_zero_then_single
+
+abbrev wm_weightedScheduleErrorCount_twoStep_eq_weight_of_zero_then_single :=
+  @Mettapedia.Logic.weightedScheduleErrorCount_twoStep_eq_weight_of_zero_then_single
+
+abbrev wm_weightedScheduleErrorBound_twoStep_weight_of_zero_then_single :=
+  @Mettapedia.Logic.weightedScheduleErrorBound_twoStep_weight_of_zero_then_single
+
+abbrev wm_weightedScheduleErrorBound_twoStep_not_zero_of_pos_weight :=
+  @Mettapedia.Logic.weightedScheduleErrorBound_twoStep_not_zero_of_pos_weight
+
+/-! ## Provenance Order-Cost Demo Endpoints -/
+
+noncomputable abbrev wm_whichTopCountConjugateEvidence :=
+  @Mettapedia.Logic.whichTopCountConjugateEvidence
+
+abbrev wm_provenanceRightBiasMerge :=
+  @Mettapedia.Logic.provenanceRightBiasMerge
+
+noncomputable abbrev wm_provenanceRightBiasOverlapLayer :=
+  @Mettapedia.Logic.provenanceRightBiasOverlapLayer
+
+noncomputable abbrev wm_provenanceSwapAnomalyCount :=
+  @Mettapedia.Logic.provenanceSwapAnomalyCount
+
+noncomputable abbrev wm_provenanceScheduleErrorCount :=
+  @Mettapedia.Logic.provenanceScheduleErrorCount
+
+abbrev wm_provenanceScheduleErrorBound :=
+  @Mettapedia.Logic.provenanceScheduleErrorBound
+
+abbrev wm_provenanceSwapAnomalyCount_eq_zero_of_query_eq :=
+  @Mettapedia.Logic.provenanceSwapAnomalyCount_eq_zero_of_query_eq
+
+abbrev wm_provenanceSwapAnomalyCount_eq_top_of_zero_then_nonzero :=
+  @Mettapedia.Logic.provenanceSwapAnomalyCount_eq_top_of_zero_then_nonzero
+
+abbrev wm_provenanceScheduleErrorCount_twoStep_eq_top_of_zero_then_nonzero :=
+  @Mettapedia.Logic.provenanceScheduleErrorCount_twoStep_eq_top_of_zero_then_nonzero
+
+abbrev wm_provenanceScheduleErrorBound_twoStep_top_of_zero_then_nonzero :=
+  @Mettapedia.Logic.provenanceScheduleErrorBound_twoStep_top_of_zero_then_nonzero
+
+abbrev wm_provenanceScheduleErrorBound_twoStep_not_zero_of_zero_then_nonzero :=
+  @Mettapedia.Logic.provenanceScheduleErrorBound_twoStep_not_zero_of_zero_then_nonzero
+
+/-! ## Gas-Lane Order-Budget Policy Endpoints -/
+
+noncomputable abbrev wm_gasAdditiveOverlapLayer :=
+  @Mettapedia.Logic.gasAdditiveOverlapLayer
+
+noncomputable abbrev wm_gasScheduleErrorCount :=
+  @Mettapedia.Logic.gasScheduleErrorCount
+
+abbrev wm_gasScheduleErrorBound :=
+  @Mettapedia.Logic.gasScheduleErrorBound
+
+abbrev wm_gasOrderBudgetPolicy :=
+  @Mettapedia.Logic.gasOrderBudgetPolicy
+
+abbrev wm_gasScheduleErrorCount_batchSwap_eq_zero :=
+  @Mettapedia.Logic.gasScheduleErrorCount_batchSwap_eq_zero
+
+abbrev wm_gasRuntimePairwiseOrderCheck_batchSwap_zero :=
+  @Mettapedia.Logic.gasRuntimePairwiseOrderCheck_batchSwap_zero
+
+abbrev wm_gasOrderBudgetPolicy_batchSwap_zero_via_runtimeCertificate :=
+  @Mettapedia.Logic.gasOrderBudgetPolicy_batchSwap_zero_via_runtimeCertificate
+
+abbrev wm_gasPolicy_zeroThreshold_ethanol :=
+  @Mettapedia.Logic.gasPolicy_zeroThreshold_ethanol
+
+abbrev wm_gasPolicy_zeroThreshold_ammonia :=
+  @Mettapedia.Logic.gasPolicy_zeroThreshold_ammonia
+
+abbrev wm_gasPolicy_zeroThreshold_toluene :=
+  @Mettapedia.Logic.gasPolicy_zeroThreshold_toluene
 
 /-! ## Coalition / Semitopology Endpoints -/
 
@@ -244,6 +712,15 @@ abbrev wm_trackedOverlapFootprint :=
 
 abbrev wm_additive_recovery_after_forgetting_nonactionable_overlap :=
   @Mettapedia.Logic.additive_recovery_after_forgetting_nonactionable_overlap
+
+abbrev WMOverlapSeparatedAudit :=
+  @Mettapedia.Logic.OverlapSeparatedAudit
+
+abbrev wm_semitopologyIndependent_of_overlapSeparatedAudit :=
+  @Mettapedia.Logic.semitopologyIndependent_of_overlapSeparatedAudit
+
+abbrev wm_additiveRecovery_of_overlapSeparatedAudit :=
+  @Mettapedia.Logic.additiveRecovery_of_overlapSeparatedAudit
 
 /-! ## View-Induced Preorder Endpoints -/
 

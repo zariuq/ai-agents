@@ -2,6 +2,7 @@ import Mettapedia.Languages.MeTTa.PeTTa.Effects
 import Mettapedia.Languages.MeTTa.PeTTa.MeTTaEval
 import Mettapedia.Languages.MeTTa.PeTTa.StdLib
 import Mettapedia.Languages.MeTTa.PeTTa.TranslateExpr
+import Mettapedia.Languages.MeTTa.ExecutionContract
 
 /-!
 # PeTTa Declarative Core Spec (Grammar-Style)
@@ -38,12 +39,72 @@ Bridge theorem index in this module:
 - `coreDecl_iff_pettaCmd`
 - `PredicateControlDeclClause.translatePredicate_query_to_pettaEval_match`
 - `PredicateControlDeclClause.catch_fallback_to_pettaEval`
+
+- There is the intention fro this file to be similar to HE MeTTa specs: https://trueagi-io.github.io/hyperon-experimental/metta/
+
 -/
 
 namespace Mettapedia.Languages.MeTTa.PeTTa
 
 open Mettapedia.OSLF.MeTTaIL.Syntax
 open Mettapedia.OSLF.MeTTaIL.Match
+open Mettapedia.Languages.MeTTa.ExecutionContract
+
+/-! ## Numeric Result Shape
+
+PeTTa inherits the observable integer-vs-float result distinction from the
+actual Prolog implementation in `hyperon/PeTTa/src/metta.pl` together with
+SWI-Prolog arithmetic behavior.
+
+This belongs in the declarative spec surface because programs can observe it.
+
+Positive examples:
+- `(+ 2 3)` returns `5`, not `5.0`
+- `(sqrt-math 9)` returns `3.0`, not `3`
+- `(round-math 5.4)` returns `5`, not `5.0`
+
+Negative example:
+- numeric result shape is not just presentation sugar; it is observable
+  evaluation behavior and therefore part of the language specification.
+-/
+
+/-- Operator-class component of PeTTa numeric result-shape semantics.
+
+This captures the fixed operator-family part. Concrete evaluation still depends
+on the dynamic numeric class of the arguments where noted. -/
+def numericResultShapeOf : String → Option NumericResultShape
+  | "+" => some .preserveIntegralIfExact
+  | "-" => some .preserveIntegralIfExact
+  | "*" => some .preserveIntegralIfExact
+  | "/" => some .preserveIntegralIfExact
+  | "pow-math" => some .preserveIntegralIfExact
+  | "%" => some .alwaysInteger
+  | "round-math" => some .alwaysInteger
+  | "trunc-math" => some .alwaysInteger
+  | "ceil-math" => some .alwaysInteger
+  | "floor-math" => some .alwaysInteger
+  | "sqrt-math" => some .alwaysFloat
+  | "log-math" => some .alwaysFloat
+  | "sin-math" => some .alwaysFloat
+  | "asin-math" => some .alwaysFloat
+  | "cos-math" => some .alwaysFloat
+  | "acos-math" => some .alwaysFloat
+  | "tan-math" => some .alwaysFloat
+  | "atan-math" => some .alwaysFloat
+  | "abs-math" => some .preserveInputNumericClass
+  | _ => none
+
+theorem numericResultShapeOf_add :
+    numericResultShapeOf "+" = some .preserveIntegralIfExact := rfl
+
+theorem numericResultShapeOf_round :
+    numericResultShapeOf "round-math" = some .alwaysInteger := rfl
+
+theorem numericResultShapeOf_sqrt :
+    numericResultShapeOf "sqrt-math" = some .alwaysFloat := rfl
+
+theorem numericResultShapeOf_abs :
+    numericResultShapeOf "abs-math" = some .preserveInputNumericClass := rfl
 
 /-! ## Pure Declarative Core -/
 

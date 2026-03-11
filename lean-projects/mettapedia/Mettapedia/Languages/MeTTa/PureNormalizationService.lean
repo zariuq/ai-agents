@@ -32,9 +32,6 @@ structure CanonicalClosedPureTerm where
 
 namespace CanonicalClosedPureTerm
 
-def normalForm (result : CanonicalClosedPureTerm) : PureTm 0 :=
-  result.canonicalDevelopment
-
 def reduction (result : CanonicalClosedPureTerm) :
     RedStar result.input result.canonicalDevelopment :=
   result.reductionToCanonicalDevelopment
@@ -42,10 +39,6 @@ def reduction (result : CanonicalClosedPureTerm) :
 def conversion (result : CanonicalClosedPureTerm) :
     Conv result.input result.canonicalDevelopment :=
   result.conversionToCanonicalDevelopment
-
-@[simp] theorem normalForm_eq_canonicalDevelopment
-    (result : CanonicalClosedPureTerm) :
-    result.normalForm = result.canonicalDevelopment := rfl
 
 @[simp] theorem reduction_eq_reductionToCanonicalDevelopment
     (result : CanonicalClosedPureTerm) :
@@ -63,16 +56,11 @@ theorem quoteAgreement (result : CanonicalClosedPureTerm) :
 
 end CanonicalClosedPureTerm
 
-abbrev NormalizedClosedPureTerm := CanonicalClosedPureTerm
-
 def canonicalizeClosedPureTerm (t : PureTm 0) : CanonicalClosedPureTerm :=
   { input := t
     canonicalDevelopment := cdev t
     reductionToCanonicalDevelopment := par_to_redStar (par_to_cdev_self t)
     conversionToCanonicalDevelopment := conv_to_cdev t }
-
-def normalizeClosedPureTerm (t : PureTm 0) : CanonicalClosedPureTerm :=
-  canonicalizeClosedPureTerm t
 
 structure ClosedDefEqWitness (A B : PureTm 0) where
   commonCanonicalDevelopment : PureTm 0
@@ -160,35 +148,16 @@ def PureCheckingBoundary.asCanonicalSigmaClosed?
     Option (ClosedSigmaView t) :=
   asSigmaClosed? t
 
-def PureCheckingBoundary.normalizeClosed
-    (svc : PureCheckingBoundary)
-    (term : PureTm 0) :
-    CanonicalClosedPureTerm :=
-  svc.canonicalizeClosed term
-
 theorem PureCheckingBoundary.canonicalizeClosed_term
     (svc : PureCheckingBoundary)
     (term : PureTm 0) :
     (svc.canonicalizeClosed term).input = term := by
   simp [PureCheckingBoundary.canonicalizeClosed, canonicalizeClosedPureTerm]
 
-theorem PureCheckingBoundary.normalizeClosed_term
-    (svc : PureCheckingBoundary)
-    (term : PureTm 0) :
-    (svc.normalizeClosed term).input = term := by
-  simpa [PureCheckingBoundary.normalizeClosed] using
-    svc.canonicalizeClosed_term term
-
 theorem PureCheckingBoundary.canonicalizeClosed_cdev
     (svc : PureCheckingBoundary)
     (term : PureTm 0) :
     (svc.canonicalizeClosed term).canonicalDevelopment = cdev term := by
-  rfl
-
-theorem PureCheckingBoundary.normalizeClosed_cdev
-    (svc : PureCheckingBoundary)
-    (term : PureTm 0) :
-    (svc.normalizeClosed term).normalForm = cdev term := by
   rfl
 
 end Mettapedia.Languages.MeTTa.ElaboratedCore

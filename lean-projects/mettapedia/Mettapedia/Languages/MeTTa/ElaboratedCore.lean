@@ -29,6 +29,11 @@ Current regions:
   an execution/query seam
 - `oracleRegion`: grounded/FFI/oracle boundary kept explicit
 - `metaRegion`: proof/elaboration-time reflection layer
+
+In the live default path, the trusted `PureKernel` is again only the small
+Pi/Sigma/Id/universe waist. Ordinary-family and fixpoint files imported here
+are staged specification/interface layers above that waist, not kernel
+implementations.
 -/
 
 namespace Mettapedia.Languages.MeTTa.ElaboratedCore
@@ -666,13 +671,6 @@ theorem elaborate_surfacePureClosed_quoteAgreement
     (ElaboratedNode.artifact (elaborate (SurfaceNode.surfacePureClosed term))).pattern =
       Mettapedia.Languages.MeTTa.PureKernel.PatternBridge.quoteClosedTm term.toPureTm := by
   simpa [elaborate, certifySurfacePure] using term.toClosedPattern_eq_quoteClosedTm
-
-theorem elaborate_surfacePureClosed_abcSurface
-    (term : SurfacePureTm 0) :
-    match elaborate (SurfaceNode.surfacePureClosed term) with
-    | ElaboratedNode.pureNode cert => cert.abcSurface = defaultPureClosedABCSurface
-    | _ => False := by
-  simp [elaborate]
 
 theorem elaborate_heRuntimeRule_backend
     (pattern : Pattern) :

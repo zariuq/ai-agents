@@ -77,6 +77,14 @@ private def eqBindingsFromRules (I : Interface σ) (lhs rhs : Pattern)
         acc)
     []
 
+private theorem eqBindingsFromRules_eval_irrelevant
+    (I : Interface σ) (eval' : σ → Pattern → σ × List Pattern)
+    (lhs rhs : Pattern) (rules : List RewriteRule) :
+    eqBindingsFromRules I lhs rhs rules =
+      eqBindingsFromRules ({ I with eval := eval' }) lhs rhs rules := by
+  cases I
+  simp [eqBindingsFromRules]
+
 private def eqFactToRule? (idx : Nat) (fact : Pattern) : Option RewriteRule :=
   match fact with
   | .apply "=" [lhs, rhs] =>
@@ -107,7 +115,21 @@ def factsForSpace (I : Interface σ) (P : Policy) (s : σ) (space : Pattern) : L
         | [fact] => some fact
         | _ => none).reverse
 
-partial def matchFactsAgainstSpace (I : Interface σ) (facts : List Pattern) : Pattern → List Bindings
+private def matchFactsAgainstSpaceDepth : Pattern → Nat
+  | .bvar _ => 1
+  | .fvar _ => 1
+  | .apply _ args =>
+      1 + args.foldl (fun h a => Nat.max h (matchFactsAgainstSpaceDepth a)) 0
+  | .lambda body =>
+      1 + matchFactsAgainstSpaceDepth body
+  | .multiLambda _ body =>
+      1 + matchFactsAgainstSpaceDepth body
+  | .subst body repl =>
+      1 + Nat.max (matchFactsAgainstSpaceDepth body) (matchFactsAgainstSpaceDepth repl)
+  | .collection _ elems _ =>
+      1 + elems.foldl (fun h a => Nat.max h (matchFactsAgainstSpaceDepth a)) 0
+
+def matchFactsAgainstSpace (I : Interface σ) (facts : List Pattern) : Pattern → List Bindings
   | .apply "," [lhs, rhs] =>
       (matchFactsAgainstSpace I facts lhs).flatMap fun bL =>
         (matchFactsAgainstSpace I facts rhs).filterMap fun bR =>
@@ -134,6 +156,116 @@ partial def matchFactsAgainstSpace (I : Interface σ) (facts : List Pattern) : P
       | _ =>
           facts.flatMap fun fact =>
             I.matchPattern patN (I.normalizeForSpaceMatch fact)
+termination_by pat => matchFactsAgainstSpaceDepth pat
+decreasing_by
+  all_goals
+    simp [matchFactsAgainstSpaceDepth]
+    first
+    | have h :
+          matchFactsAgainstSpaceDepth lhs ≤
+            (matchFactsAgainstSpaceDepth lhs).max (matchFactsAgainstSpaceDepth rhs) :=
+          Nat.le_max_left _ _
+      omega
+    | have h :
+          matchFactsAgainstSpaceDepth rhs ≤
+            (matchFactsAgainstSpaceDepth lhs).max (matchFactsAgainstSpaceDepth rhs) :=
+          Nat.le_max_right _ _
+      omega
+
+private theorem matchFactsAgainstSpace_eval_irrelevant
+    (I : Interface σ) (eval' : σ → Pattern → σ × List Pattern)
+    (facts : List Pattern) (pat : Pattern) :
+    matchFactsAgainstSpace I facts pat =
+      matchFactsAgainstSpace ({ I with eval := eval' }) facts pat := by
+  have hMain :
+      ∀ n, ∀ pat : Pattern,
+        matchFactsAgainstSpaceDepth pat ≤ n →
+        matchFactsAgainstSpace I facts pat =
+          matchFactsAgainstSpace ({ I with eval := eval' }) facts pat := by
+    intro n
+    induction n using Nat.strongRecOn with
+    | _ n ih =>
+        intro pat hDepth
+        cases pat with
+        | bvar m =>
+            cases I
+            unfold matchFactsAgainstSpace
+            simp
+        | fvar x =>
+            cases I
+            unfold matchFactsAgainstSpace
+            simp
+        | apply ctor args =>
+            cases args with
+            | nil =>
+                cases I
+                unfold matchFactsAgainstSpace
+                simp
+            | cons a rest =>
+                cases rest with
+                | nil =>
+                    cases I
+                    unfold matchFactsAgainstSpace
+                    simp
+                | cons b rest2 =>
+                    cases rest2 with
+                    | nil =>
+                        by_cases hComma : ctor = ","
+                        · subst hComma
+                          have hLtA :
+                              matchFactsAgainstSpaceDepth a <
+                                matchFactsAgainstSpaceDepth (.apply "," [a, b]) := by
+                            simp [matchFactsAgainstSpaceDepth]
+                            have hLe :
+                                matchFactsAgainstSpaceDepth a ≤
+                                  (matchFactsAgainstSpaceDepth a).max
+                                    (matchFactsAgainstSpaceDepth b) :=
+                              Nat.le_max_left _ _
+                            omega
+                          have hLtB :
+                              matchFactsAgainstSpaceDepth b <
+                                matchFactsAgainstSpaceDepth (.apply "," [a, b]) := by
+                            simp [matchFactsAgainstSpaceDepth]
+                            have hLe :
+                                matchFactsAgainstSpaceDepth b ≤
+                                  (matchFactsAgainstSpaceDepth a).max
+                                    (matchFactsAgainstSpaceDepth b) :=
+                              Nat.le_max_right _ _
+                            omega
+                          have hA :=
+                            ih (matchFactsAgainstSpaceDepth a)
+                              (Nat.lt_of_lt_of_le hLtA hDepth)
+                              a (Nat.le_refl _)
+                          have hB :=
+                            ih (matchFactsAgainstSpaceDepth b)
+                              (Nat.lt_of_lt_of_le hLtB hDepth)
+                              b (Nat.le_refl _)
+                          unfold matchFactsAgainstSpace
+                          simp [hA, hB]
+                        · cases I
+                          unfold matchFactsAgainstSpace
+                          simp [hComma]
+                    | cons c rest3 =>
+                        cases I
+                        unfold matchFactsAgainstSpace
+                        simp
+        | lambda body =>
+            cases I
+            unfold matchFactsAgainstSpace
+            simp
+        | multiLambda m body =>
+            cases I
+            unfold matchFactsAgainstSpace
+            simp
+        | subst body repl =>
+            cases I
+            unfold matchFactsAgainstSpace
+            simp
+        | collection ct elems rest =>
+            cases I
+            unfold matchFactsAgainstSpace
+            simp
+  exact hMain (matchFactsAgainstSpaceDepth pat) pat (Nat.le_refl _)
 
 def findBindingsInSpace (I : Interface σ) (P : Policy) (s : σ) (space pat : Pattern) :
     List Bindings :=
@@ -147,6 +279,92 @@ def findBindingsInSpace (I : Interface σ) (P : Policy) (s : σ) (space pat : Pa
           []
     | _, _ => []
   dedupBindings (factBs ++ ruleBs)
+
+/-- `findBindingsInSpace` depends only on the non-`eval` fields of the interface. -/
+theorem findBindingsInSpace_eval_irrelevant
+    (I : Interface σ) (eval' : σ → Pattern → σ × List Pattern)
+    (P : Policy) (s : σ) (space pat : Pattern) :
+    findBindingsInSpace I P s space pat =
+      findBindingsInSpace ({ I with eval := eval' }) P s space pat := by
+  cases I with
+  | mk bundle rewrites setBundle eval0 applyBindings normalizePattern normalizeForSpaceMatch matchPattern dedupPatterns =>
+      let I0 : Interface σ := {
+        bundle := bundle
+        rewrites := rewrites
+        setBundle := setBundle
+        eval := eval0
+        applyBindings := applyBindings
+        normalizePattern := normalizePattern
+        normalizeForSpaceMatch := normalizeForSpaceMatch
+        matchPattern := matchPattern
+        dedupPatterns := dedupPatterns
+      }
+      let I1 : Interface σ := { I0 with eval := eval' }
+      change findBindingsInSpace I0 P s space pat = findBindingsInSpace I1 P s space pat
+      unfold findBindingsInSpace
+      have hFacts :
+          factsForSpace I1 P s space = factsForSpace I0 P s space := by
+        simp [I0, I1, factsForSpace]
+      rw [hFacts]
+      rw [← matchFactsAgainstSpace_eval_irrelevant
+        (I := I0) (eval' := eval') (facts := factsForSpace I0 P s space) (pat := pat)]
+      have hRule :
+          (match P.relationNameOfSpace? space, I0.normalizePattern pat with
+            | some rel, .apply "=" [lhs, rhs] =>
+                if rel == P.selfRelationName then
+                  eqBindingsFromRules I0 lhs rhs (I0.rewrites s)
+                else
+                  []
+            | _, _ => []) =
+          (match P.relationNameOfSpace? space, I1.normalizePattern pat with
+            | some rel, .apply "=" [lhs, rhs] =>
+                if rel == P.selfRelationName then
+                  eqBindingsFromRules I1 lhs rhs (I1.rewrites s)
+                else
+                  []
+            | _, _ => []) := by
+        by_cases hRel : P.relationNameOfSpace? space = none
+        · simp [hRel]
+        · cases hSpace : P.relationNameOfSpace? space with
+          | none =>
+              contradiction
+          | some rel =>
+              cases hNorm : I0.normalizePattern pat with
+              | bvar n =>
+                  simp
+              | fvar x =>
+                  simp
+              | lambda body =>
+                  simp
+              | multiLambda n body =>
+                  simp
+              | subst body repl =>
+                  simp
+              | collection ct elems rest =>
+                  simp
+              | apply ctor args =>
+                  cases args with
+                  | nil =>
+                      simp
+                  | cons a rest =>
+                      cases rest with
+                      | nil =>
+                          simp
+                      | cons b rest2 =>
+                          cases rest2 with
+                          | nil =>
+                              by_cases hEqCtor : ctor = "="
+                              · subst hEqCtor
+                                by_cases hEq : rel == P.selfRelationName
+                                · simp [hEq]
+                                  exact eqBindingsFromRules_eval_irrelevant
+                                    (I := I0) (eval' := eval') (lhs := a) (rhs := b)
+                                    (rules := I0.rewrites s)
+                                · simp [hEq]
+                              · simp [hEqCtor]
+                          | cons c rest3 =>
+                              simp
+      rw [hRule]
 
 /-- Find bindings using an externally provided candidate fact list.
     Semantics are unchanged; only fact enumeration can differ. -/

@@ -86,8 +86,30 @@ def addAtomSourceRulePayloadScopeEntry : ScopeContractEntry where
   allowsWildcard := true
   theoremRefs := sourceRulePayloadTheoremRefs
 
+def addAtomBangSourceRulePayloadScopeEntry : ScopeContractEntry where
+  head := "add-atom!"
+  arity := 2
+  scopeKind := .sourceRulePayload
+  bodyPositions := [0]
+  scopedPayloadPositions := [1]
+  payloadShape := some .rewriteEqRule
+  sequential := false
+  allowsWildcard := true
+  theoremRefs := sourceRulePayloadTheoremRefs
+
 def removeAtomSourceRulePayloadScopeEntry : ScopeContractEntry where
   head := "remove-atom"
+  arity := 2
+  scopeKind := .sourceRulePayload
+  bodyPositions := [0]
+  scopedPayloadPositions := [1]
+  payloadShape := some .rewriteEqRule
+  sequential := false
+  allowsWildcard := true
+  theoremRefs := sourceRulePayloadTheoremRefs
+
+def removeAtomBangSourceRulePayloadScopeEntry : ScopeContractEntry where
+  head := "remove-atom!"
   arity := 2
   scopeKind := .sourceRulePayload
   bodyPositions := [0]
@@ -105,7 +127,9 @@ def pettaScopeContractArtifact : ScopeContractArtifact where
     , chainScopeEntry
     , letStarScopeEntry
     , addAtomSourceRulePayloadScopeEntry
+    , addAtomBangSourceRulePayloadScopeEntry
     , removeAtomSourceRulePayloadScopeEntry
+    , removeAtomBangSourceRulePayloadScopeEntry
     ]
 
 def exportPeTTaScopeContract (outDir : System.FilePath) : IO UInt32 := do

@@ -11,9 +11,10 @@ facing wrappers above it for:
 - ordinary strictly-positive family declarations, and
 - the first structural fixpoint interfaces staged above those families.
 
+The live trusted `PureKernel` remains the small Pi/Sigma/Id/universe waist.
 It does **not** implement inductives or fixpoints in `MeTTa-Pure`.
-It packages the current next-step contract through the existing checking
-boundary.
+This file stays above that kernel and packages only the current next-step
+contract through the existing checking boundary.
 -/
 
 namespace Mettapedia.Languages.MeTTa

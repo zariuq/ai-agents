@@ -1,18 +1,10 @@
 import Mettapedia.Languages.MeTTa.HE.LookupPlan
 import Mettapedia.Languages.MeTTa.HE.TransitionSpec
 import Mettapedia.Languages.MeTTa.HE.RewriteIR
-import Mettapedia.Languages.MeTTa.PurePrototypeEval
-import Mettapedia.Languages.MeTTa.PureWaistService
 
 private def usage : String :=
   String.intercalate "\n"
     [ "mettapedia commands:"
-    , "  pure-check <file>"
-    , "  pure-check-eval <file>"
-    , "  pure-agree <file>"
-    , "  pure-agree <file> --fuel <n>"
-    , "  pure-eval <file>"
-    , "  pure-eval <file> --fuel <n>"
     , "  lookup-plan export-he <out-dir>"
     , "  lookup-plan export-he            (default out-dir: artifacts/lookup)"
     , "  lookup-plan check-he <out-dir>"
@@ -33,33 +25,8 @@ private def defaultLookupOutDir : System.FilePath :=
 private def defaultTransitionOutDir : System.FilePath :=
   "artifacts/transition"
 
-private def parseFuelArg? (s : String) : Option Nat :=
-  s.toNat?
-
 def main (args : List String) : IO UInt32 := do
   match args with
-  | ["pure-check", file] =>
-      Mettapedia.Languages.MeTTa.ElaboratedCore.runPureCheckFile file
-  | ["pure-check-eval", file] =>
-      Mettapedia.Languages.MeTTa.ElaboratedCore.runPureCheckEvalFile file
-  | ["pure-agree", file] =>
-      Mettapedia.Languages.MeTTa.ElaboratedCore.runPureAgreeServiceFile file
-  | ["pure-agree", file, "--fuel", fuelText] =>
-      match parseFuelArg? fuelText with
-      | some fuel =>
-          Mettapedia.Languages.MeTTa.ElaboratedCore.runPureAgreeServiceFile file fuel
-      | none =>
-          IO.eprintln s!"invalid fuel: {fuelText}"
-          pure 1
-  | ["pure-eval", file] =>
-      Mettapedia.Languages.MeTTa.PurePrototypeEval.runPureEvalFile file
-  | ["pure-eval", file, "--fuel", fuelText] =>
-      match parseFuelArg? fuelText with
-      | some fuel =>
-          Mettapedia.Languages.MeTTa.PurePrototypeEval.runPureEvalFile file fuel
-      | none =>
-          IO.eprintln s!"invalid fuel: {fuelText}"
-          pure 1
   | ["lookup-plan", "export-he", outDir] =>
       Mettapedia.Languages.MeTTa.HE.LookupPlan.exportHeLookupPlan outDir
   | ["lookup-plan", "export-he"] =>

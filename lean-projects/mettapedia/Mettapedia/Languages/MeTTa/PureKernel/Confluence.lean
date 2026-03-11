@@ -14,16 +14,9 @@ open Mettapedia.Languages.MeTTa.PureKernel.Typing
 /-- Complete development for parallel reduction. -/
 def cdev : PureTm n → PureTm n
   | .var i => .var i
+  | .const c => .const c
   | .u0 => .u0
   | .u1 => .u1
-  | .unitTy => .unitTy
-  | .unitMk => .unitMk
-  | .boolTy => .boolTy
-  | .boolFalse => .boolFalse
-  | .boolTrue => .boolTrue
-  | .natTy => .natTy
-  | .natZero => .natZero
-  | .natSucc k => .natSucc (cdev k)
   | .pi A B => .pi (cdev A) (cdev B)
   | .sigma A B => .sigma (cdev A) (cdev B)
   | .id A a b => .id (cdev A) (cdev a) (cdev b)
@@ -36,19 +29,6 @@ def cdev : PureTm n → PureTm n
   | .snd (.pair _ b) => cdev b
   | .snd p => .snd (cdev p)
   | .refl a => .refl (cdev a)
-  | .unitRec _ unitCase .unitMk => cdev unitCase
-  | .unitRec motive unitCase scrutinee =>
-      .unitRec (cdev motive) (cdev unitCase) (cdev scrutinee)
-  | .boolRec _ falseCase _ .boolFalse => cdev falseCase
-  | .boolRec _ _ trueCase .boolTrue => cdev trueCase
-  | .boolRec motive falseCase trueCase scrutinee =>
-      .boolRec (cdev motive) (cdev falseCase) (cdev trueCase) (cdev scrutinee)
-  | .natRec _ zeroCase _ .natZero => cdev zeroCase
-  | .natRec motive zeroCase succCase (.natSucc k) =>
-      .app (.app (cdev succCase) (cdev k))
-        (.natRec (cdev motive) (cdev zeroCase) (cdev succCase) (cdev k))
-  | .natRec motive zeroCase succCase scrutinee =>
-      .natRec (cdev motive) (cdev zeroCase) (cdev succCase) (cdev scrutinee)
 
 /-- Parallel reduction always reaches complete development. -/
 theorem par_to_cdev : ∀ {t u : PureTm n}, ParRed t u → ParRed u (cdev t) := by
@@ -56,26 +36,12 @@ theorem par_to_cdev : ∀ {t u : PureTm n}, ParRed t u → ParRed u (cdev t) := 
   induction h with
   | var i =>
       simp [cdev]
+  | const c =>
+      simp [cdev]
   | u0 =>
       simp [cdev]
   | u1 =>
       simp [cdev]
-  | unitTy =>
-      simp [cdev]
-  | unitMk =>
-      simp [cdev]
-  | boolTy =>
-      simp [cdev]
-  | boolFalse =>
-      simp [cdev]
-  | boolTrue =>
-      simp [cdev]
-  | natTy =>
-      simp [cdev]
-  | natZero =>
-      simp [cdev]
-  | natSucc hk ih =>
-      simpa [cdev] using ParRed.natSucc ih
   | pi hA hB ihA ihB =>
       simpa [cdev] using ParRed.pi ihA ihB
   | sigma hA hB ihA ihB =>
@@ -86,91 +52,110 @@ theorem par_to_cdev : ∀ {t u : PureTm n}, ParRed t u → ParRed u (cdev t) := 
       simpa [cdev] using ParRed.lam ih
   | @app _ f f' a a' hf ha ihf iha =>
       cases f with
+      | var i =>
+          simpa [cdev] using ParRed.app ihf iha
+      | const c =>
+          simpa [cdev] using ParRed.app ihf iha
+      | u0 =>
+          simpa [cdev] using ParRed.app ihf iha
+      | u1 =>
+          simpa [cdev] using ParRed.app ihf iha
+      | pi A B =>
+          simpa [cdev] using ParRed.app ihf iha
+      | sigma A B =>
+          simpa [cdev] using ParRed.app ihf iha
+      | id A a b =>
+          simpa [cdev] using ParRed.app ihf iha
       | lam b =>
           cases hf with
           | lam hb =>
               cases ihf with
               | lam hbc =>
                   simpa [cdev] using (ParRed.betaPi hbc iha)
-      | _ =>
+      | app f a =>
+          simpa [cdev] using ParRed.app ihf iha
+      | pair a b =>
+          simpa [cdev] using ParRed.app ihf iha
+      | fst p =>
+          simpa [cdev] using ParRed.app ihf iha
+      | snd p =>
+          simpa [cdev] using ParRed.app ihf iha
+      | refl a =>
           simpa [cdev] using ParRed.app ihf iha
   | pair ha hb iha ihb =>
       simpa [cdev] using ParRed.pair iha ihb
   | @fst _ p p' hp ih =>
       cases p with
+      | var i =>
+          simpa [cdev] using ParRed.fst ih
+      | const c =>
+          simpa [cdev] using ParRed.fst ih
+      | u0 =>
+          simpa [cdev] using ParRed.fst ih
+      | u1 =>
+          simpa [cdev] using ParRed.fst ih
+      | pi A B =>
+          simpa [cdev] using ParRed.fst ih
+      | sigma A B =>
+          simpa [cdev] using ParRed.fst ih
+      | id A a b =>
+          simpa [cdev] using ParRed.fst ih
+      | lam b =>
+          simpa [cdev] using ParRed.fst ih
+      | app f a =>
+          simpa [cdev] using ParRed.fst ih
       | pair a b =>
           cases hp with
           | pair ha hb =>
               cases ih with
               | pair ha' hb' =>
                   simpa [cdev] using (ParRed.betaSigmaFst ha' hb')
-      | _ =>
+      | fst q =>
+          simpa [cdev] using ParRed.fst ih
+      | snd q =>
+          simpa [cdev] using ParRed.fst ih
+      | refl a =>
           simpa [cdev] using ParRed.fst ih
   | @snd _ p p' hp ih =>
       cases p with
+      | var i =>
+          simpa [cdev] using ParRed.snd ih
+      | const c =>
+          simpa [cdev] using ParRed.snd ih
+      | u0 =>
+          simpa [cdev] using ParRed.snd ih
+      | u1 =>
+          simpa [cdev] using ParRed.snd ih
+      | pi A B =>
+          simpa [cdev] using ParRed.snd ih
+      | sigma A B =>
+          simpa [cdev] using ParRed.snd ih
+      | id A a b =>
+          simpa [cdev] using ParRed.snd ih
+      | lam b =>
+          simpa [cdev] using ParRed.snd ih
+      | app f a =>
+          simpa [cdev] using ParRed.snd ih
       | pair a b =>
           cases hp with
           | pair ha hb =>
               cases ih with
               | pair ha' hb' =>
                   simpa [cdev] using (ParRed.betaSigmaSnd ha' hb')
-      | _ =>
+      | fst q =>
+          simpa [cdev] using ParRed.snd ih
+      | snd q =>
+          simpa [cdev] using ParRed.snd ih
+      | refl a =>
           simpa [cdev] using ParRed.snd ih
   | refl ha iha =>
       simpa [cdev] using ParRed.refl iha
-  | @unitRec _ motive motive' unitCase unitCase' scrutinee scrutinee' hm hc hs ihm ihc ihs =>
-      cases scrutinee with
-      | unitMk =>
-          cases hs with
-          | unitMk =>
-              simpa [cdev] using (ParRed.betaUnitRec ihm ihc)
-      | _ =>
-          simpa [cdev] using ParRed.unitRec ihm ihc ihs
-  | @boolRec _ motive motive' falseCase falseCase' trueCase trueCase' scrutinee scrutinee'
-      hm hf ht hs ihm ihf iht ihs =>
-      cases scrutinee with
-      | boolFalse =>
-          cases hs with
-          | boolFalse =>
-              simpa [cdev] using (ParRed.betaBoolRecFalse ihm ihf iht)
-      | boolTrue =>
-          cases hs with
-          | boolTrue =>
-              simpa [cdev] using (ParRed.betaBoolRecTrue ihm ihf iht)
-      | _ =>
-          simpa [cdev] using ParRed.boolRec ihm ihf iht ihs
-  | @natRec _ motive motive' zeroCase zeroCase' succCase succCase' scrutinee scrutinee'
-      hm hz hs hk ihm ihz ihs ihk =>
-      cases scrutinee with
-      | natZero =>
-          cases hk with
-          | natZero =>
-              simpa [cdev] using (ParRed.betaNatRecZero ihm ihz ihs)
-      | natSucc k =>
-          cases hk with
-          | natSucc hk' =>
-              cases ihk with
-              | natSucc hkCdev =>
-                  simpa [cdev] using (ParRed.betaNatRecSucc ihm ihz ihs hkCdev)
-      | _ =>
-          simpa [cdev] using ParRed.natRec ihm ihz ihs ihk
   | betaPi hbody ha ihbody iha =>
       simpa [cdev] using par_inst0 iha ihbody
   | betaSigmaFst ha hb iha ihb =>
       simpa [cdev] using iha
   | betaSigmaSnd ha hb iha ihb =>
       simpa [cdev] using ihb
-  | betaUnitRec hm hc ihm ihc =>
-      simpa [cdev] using ihc
-  | betaBoolRecFalse hm hf ht ihm ihf iht =>
-      simpa [cdev] using ihf
-  | betaBoolRecTrue hm hf ht ihm ihf iht =>
-      simpa [cdev] using iht
-  | betaNatRecZero hm hz hs ihm ihz ihs =>
-      simpa [cdev] using ihz
-  | betaNatRecSucc hm hz hs hk ihm ihz ihs ihk =>
-      simpa [cdev] using
-        (ParRed.app (ParRed.app ihs ihk) (ParRed.natRec ihm ihz ihs ihk))
 
 theorem par_to_cdev_self (t : PureTm n) : ParRed t (cdev t) :=
   par_to_cdev (par_refl t)

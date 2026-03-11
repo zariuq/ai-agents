@@ -1,7 +1,6 @@
 import Mettapedia.Languages.MeTTa.CoreProfile
 import Mettapedia.Languages.MeTTa.PureKernel.TypedLangDef
 import Mettapedia.Languages.MeTTa.PureKernel.PatternBridge
-import Mettapedia.Languages.MeTTa.PureKernel.Inst0BridgeDerived
 import Mettapedia.Languages.MeTTa.PureKernel.Reduction
 import Mettapedia.Languages.MeTTa.PureKernel.Renaming
 import Mettapedia.Languages.MeTTa.PureKernel.Substitution
@@ -242,7 +241,7 @@ theorem pureOpStepStar_sound_pureProfileTheoryStep_quoteClosed {t u : PureTm 0}
 /-- **B -> C1 (parametric)**:
 If kernel `inst0` commutes with quotation/opening for a naming policy `ν`,
 then every kernel one-step reduction is sound into C1 at that quotation. -/
-private theorem pureTheoryStep_sound_pureProfileTheoryStep_quoteTmWith_assuming_inst0
+theorem pureTheoryStep_sound_pureProfileTheoryStep_quoteTmWith_assuming_inst0
     (ν : Nat → String)
     (hinst0 : Inst0OpenBridgeCompat ν)
     {n : Nat} (k : Nat) (ρ : QuoteEnv n) {t u : PureTm n}
@@ -269,31 +268,6 @@ private theorem pureTheoryStep_sound_pureProfileTheoryStep_quoteTmWith_assuming_
       simpa [quoteTmWith, mkSnd, mkPair] using
         (PureProfileTheoryStep.base
           (PureProfileBaseStep.betaSigmaSnd (quoteTmWith ν k ρ a) (quoteTmWith ν k ρ b)))
-  | @betaUnitRec n motive unitCase =>
-      simpa [quoteTmWith, mkUnitRec, mkUnitMk] using
-        (PureProfileTheoryStep.base
-          (PureProfileBaseStep.betaUnitRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ unitCase)))
-  | @betaBoolRecFalse n motive falseCase trueCase =>
-      simpa [quoteTmWith, mkBoolRec, mkBoolFalse] using
-        (PureProfileTheoryStep.base
-          (PureProfileBaseStep.betaBoolRecFalse
-            (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase) (quoteTmWith ν k ρ trueCase)))
-  | @betaBoolRecTrue n motive falseCase trueCase =>
-      simpa [quoteTmWith, mkBoolRec, mkBoolTrue] using
-        (PureProfileTheoryStep.base
-          (PureProfileBaseStep.betaBoolRecTrue
-            (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase) (quoteTmWith ν k ρ trueCase)))
-  | @betaNatRecZero n motive zeroCase succCase =>
-      simpa [quoteTmWith, mkNatRec, mkNatZero] using
-        (PureProfileTheoryStep.base
-          (PureProfileBaseStep.betaNatRecZero
-            (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase) (quoteTmWith ν k ρ succCase)))
-  | @betaNatRecSucc n motive zeroCase succCase kNat =>
-      simpa [quoteTmWith, mkNatRec, mkNatSucc, mkApp] using
-        (PureProfileTheoryStep.base
-          (PureProfileBaseStep.betaNatRecSucc
-            (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase)
-            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ kNat)))
   | @congPiDom n A A' B hAA' ih =>
       have hstep := ih (k := k) (ρ := ρ) hcompat
       have hctx :
@@ -432,126 +406,10 @@ private theorem pureTheoryStep_sound_pureProfileTheoryStep_quoteTmWith_assuming_
           (mkRefl (quoteTmWith ν k ρ a')) := by
         exact .ctx (K := .refl .hole) hstep
       simpa [quoteTmWith, mkRefl] using hctx
-  | @congNatSucc n kNat kNat' hk ih =>
-      have hstep := ih (k := k) (ρ := ρ) hcompat
-      have hctx : PureProfileTheoryStep
-          (mkNatSucc (quoteTmWith ν k ρ kNat))
-          (mkNatSucc (quoteTmWith ν k ρ kNat')) := by
-        exact .ctx (K := .natSucc .hole) hstep
-      simpa [quoteTmWith, mkNatSucc] using hctx
-  | @congUnitRecMotive n motive motive' unitCase scrutinee hm ih =>
-      have hstep := ih (k := k) (ρ := ρ) hcompat
-      have hctx : PureProfileTheoryStep
-          (mkUnitRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ unitCase) (quoteTmWith ν k ρ scrutinee))
-          (mkUnitRec (quoteTmWith ν k ρ motive') (quoteTmWith ν k ρ unitCase) (quoteTmWith ν k ρ scrutinee)) := by
-        exact .ctx (K := .unitRecMotive .hole (quoteTmWith ν k ρ unitCase) (quoteTmWith ν k ρ scrutinee)) hstep
-      simpa [quoteTmWith, mkUnitRec] using hctx
-  | @congUnitRecCase n motive unitCase unitCase' scrutinee hc ih =>
-      have hstep := ih (k := k) (ρ := ρ) hcompat
-      have hctx : PureProfileTheoryStep
-          (mkUnitRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ unitCase) (quoteTmWith ν k ρ scrutinee))
-          (mkUnitRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ unitCase') (quoteTmWith ν k ρ scrutinee)) := by
-        exact .ctx (K := .unitRecCase (quoteTmWith ν k ρ motive) .hole (quoteTmWith ν k ρ scrutinee)) hstep
-      simpa [quoteTmWith, mkUnitRec] using hctx
-  | @congUnitRecScrutinee n motive unitCase scrutinee scrutinee' hs ih =>
-      have hstep := ih (k := k) (ρ := ρ) hcompat
-      have hctx : PureProfileTheoryStep
-          (mkUnitRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ unitCase) (quoteTmWith ν k ρ scrutinee))
-          (mkUnitRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ unitCase) (quoteTmWith ν k ρ scrutinee')) := by
-        exact .ctx (K := .unitRecScrutinee (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ unitCase) .hole) hstep
-      simpa [quoteTmWith, mkUnitRec] using hctx
-  | @congBoolRecMotive n motive motive' falseCase trueCase scrutinee hm ih =>
-      have hstep := ih (k := k) (ρ := ρ) hcompat
-      have hctx : PureProfileTheoryStep
-          (mkBoolRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase)
-            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee))
-          (mkBoolRec (quoteTmWith ν k ρ motive') (quoteTmWith ν k ρ falseCase)
-            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee)) := by
-        exact .ctx
-          (K := .boolRecMotive .hole (quoteTmWith ν k ρ falseCase)
-            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee)) hstep
-      simpa [quoteTmWith, mkBoolRec] using hctx
-  | @congBoolRecFalseCase n motive falseCase falseCase' trueCase scrutinee hf ih =>
-      have hstep := ih (k := k) (ρ := ρ) hcompat
-      have hctx : PureProfileTheoryStep
-          (mkBoolRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase)
-            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee))
-          (mkBoolRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase')
-            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee)) := by
-        exact .ctx
-          (K := .boolRecFalseCase (quoteTmWith ν k ρ motive) .hole
-            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee)) hstep
-      simpa [quoteTmWith, mkBoolRec] using hctx
-  | @congBoolRecTrueCase n motive falseCase trueCase trueCase' scrutinee ht ih =>
-      have hstep := ih (k := k) (ρ := ρ) hcompat
-      have hctx : PureProfileTheoryStep
-          (mkBoolRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase)
-            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee))
-          (mkBoolRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase)
-            (quoteTmWith ν k ρ trueCase') (quoteTmWith ν k ρ scrutinee)) := by
-        exact .ctx
-          (K := .boolRecTrueCase (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase) .hole
-            (quoteTmWith ν k ρ scrutinee)) hstep
-      simpa [quoteTmWith, mkBoolRec] using hctx
-  | @congBoolRecScrutinee n motive falseCase trueCase scrutinee scrutinee' hs ih =>
-      have hstep := ih (k := k) (ρ := ρ) hcompat
-      have hctx : PureProfileTheoryStep
-          (mkBoolRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase)
-            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee))
-          (mkBoolRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase)
-            (quoteTmWith ν k ρ trueCase) (quoteTmWith ν k ρ scrutinee')) := by
-        exact .ctx
-          (K := .boolRecScrutinee (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ falseCase)
-            (quoteTmWith ν k ρ trueCase) .hole) hstep
-      simpa [quoteTmWith, mkBoolRec] using hctx
-  | @congNatRecMotive n motive motive' zeroCase succCase scrutinee hm ih =>
-      have hstep := ih (k := k) (ρ := ρ) hcompat
-      have hctx : PureProfileTheoryStep
-          (mkNatRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase)
-            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee))
-          (mkNatRec (quoteTmWith ν k ρ motive') (quoteTmWith ν k ρ zeroCase)
-            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee)) := by
-        exact .ctx
-          (K := .natRecMotive .hole (quoteTmWith ν k ρ zeroCase)
-            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee)) hstep
-      simpa [quoteTmWith, mkNatRec] using hctx
-  | @congNatRecZeroCase n motive zeroCase zeroCase' succCase scrutinee hz ih =>
-      have hstep := ih (k := k) (ρ := ρ) hcompat
-      have hctx : PureProfileTheoryStep
-          (mkNatRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase)
-            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee))
-          (mkNatRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase')
-            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee)) := by
-        exact .ctx
-          (K := .natRecZeroCase (quoteTmWith ν k ρ motive) .hole
-            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee)) hstep
-      simpa [quoteTmWith, mkNatRec] using hctx
-  | @congNatRecSuccCase n motive zeroCase succCase succCase' scrutinee hs ih =>
-      have hstep := ih (k := k) (ρ := ρ) hcompat
-      have hctx : PureProfileTheoryStep
-          (mkNatRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase)
-            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee))
-          (mkNatRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase)
-            (quoteTmWith ν k ρ succCase') (quoteTmWith ν k ρ scrutinee)) := by
-        exact .ctx
-          (K := .natRecSuccCase (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase) .hole
-            (quoteTmWith ν k ρ scrutinee)) hstep
-      simpa [quoteTmWith, mkNatRec] using hctx
-  | @congNatRecScrutinee n motive zeroCase succCase scrutinee scrutinee' hs ih =>
-      have hstep := ih (k := k) (ρ := ρ) hcompat
-      have hctx : PureProfileTheoryStep
-          (mkNatRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase)
-            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee))
-          (mkNatRec (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase)
-            (quoteTmWith ν k ρ succCase) (quoteTmWith ν k ρ scrutinee')) := by
-        exact .ctx
-          (K := .natRecScrutinee (quoteTmWith ν k ρ motive) (quoteTmWith ν k ρ zeroCase)
-            (quoteTmWith ν k ρ succCase) .hole) hstep
-      simpa [quoteTmWith, mkNatRec] using hctx
 
 /-- Closed specialization of `pureTheoryStep_sound_pureProfileTheoryStep_quoteTmWith_assuming_inst0`
 for the default binder naming policy. -/
-private theorem pureTheoryStep_sound_pureProfileTheoryStep_quoteClosed_assuming_inst0
+theorem pureTheoryStep_sound_pureProfileTheoryStep_quoteClosed_assuming_inst0
     (hinst0 : Inst0OpenBridgeCompat defaultBinderName)
     (hcompat0 : QuoteCompat defaultBinderName 0 emptyEnv)
     {t u : PureTm 0} (h : PureTheoryStep t u) :
@@ -561,7 +419,7 @@ private theorem pureTheoryStep_sound_pureProfileTheoryStep_quoteClosed_assuming_
       (ν := defaultBinderName) hinst0 (k := 0) (ρ := emptyEnv) hcompat0 h
 
 /-- Star-closure transport for B -> C1 under the same `inst0` bridge assumption. -/
-private theorem pureTheoryStepStar_sound_pureProfileTheoryStepStar_quoteClosed_assuming_inst0
+theorem pureTheoryStepStar_sound_pureProfileTheoryStepStar_quoteClosed_assuming_inst0
     (hinst0 : Inst0OpenBridgeCompat defaultBinderName)
     (hcompat0 : QuoteCompat defaultBinderName 0 emptyEnv)
     {t u : PureTm 0} (h : PureTheoryStepStar t u) :
@@ -583,92 +441,21 @@ theorem pureTheoryStep_sound_pureProfileTheoryStep_quoteTmWith
   pureTheoryStep_sound_pureProfileTheoryStep_quoteTmWith_assuming_inst0
     (ν := ν) hinst0 (k := k) (ρ := ρ) hcompat h
 
-private theorem defaultBinderName_quoteCompat0 :
-    QuoteCompat defaultBinderName 0 emptyEnv :=
-  quoteCompat_empty defaultBinderName defaultBinderName_injective 0
-
-/-- Closed default-binder B -> C1 transport without external bridge arguments. -/
+/-- Closed B -> C1 transport (parameterized by an `inst0` bridge witness). -/
 theorem pureTheoryStep_sound_pureProfileTheoryStep_quoteClosed
+    (hinst0 : Inst0OpenBridgeCompat defaultBinderName)
+    (hcompat0 : QuoteCompat defaultBinderName 0 emptyEnv)
     {t u : PureTm 0} (h : PureTheoryStep t u) :
     PureProfileTheoryStep (quoteClosedTm t) (quoteClosedTm u) :=
-  pureTheoryStep_sound_pureProfileTheoryStep_quoteClosed_assuming_inst0
-    inst0OpenBridgeCompat_defaultBinderName
-    defaultBinderName_quoteCompat0
-    h
+  pureTheoryStep_sound_pureProfileTheoryStep_quoteClosed_assuming_inst0 hinst0 hcompat0 h
 
-/-- Closed default-binder star transport B* -> C1* without external bridge arguments. -/
+/-- Closed star transport B* -> C1* (parameterized by an `inst0` bridge witness). -/
 theorem pureTheoryStepStar_sound_pureProfileTheoryStepStar_quoteClosed
+    (hinst0 : Inst0OpenBridgeCompat defaultBinderName)
+    (hcompat0 : QuoteCompat defaultBinderName 0 emptyEnv)
     {t u : PureTm 0} (h : PureTheoryStepStar t u) :
     PureProfileTheoryStepStar (quoteClosedTm t) (quoteClosedTm u) :=
-  pureTheoryStepStar_sound_pureProfileTheoryStepStar_quoteClosed_assuming_inst0
-    inst0OpenBridgeCompat_defaultBinderName
-    defaultBinderName_quoteCompat0
-    h
-
-/-- Closed A -> C1 transport contract. -/
-abbrev PureClosedOperationalBridge : Prop :=
-  ∀ {t u : PureTm 0}, PureOpStep t u →
-    PureProfileTheoryStep (quoteClosedTm t) (quoteClosedTm u)
-
-/-- Closed A* -> C1* transport contract. -/
-abbrev PureClosedOperationalBridgeStar : Prop :=
-  ∀ {t u : PureTm 0}, PureOpStepStar t u →
-    PureProfileTheoryStepStar (quoteClosedTm t) (quoteClosedTm u)
-
-/-- Closed B -> C1 transport contract. -/
-abbrev PureClosedTheoryBridge : Prop :=
-  ∀ {t u : PureTm 0}, PureTheoryStep t u →
-    PureProfileTheoryStep (quoteClosedTm t) (quoteClosedTm u)
-
-/-- Closed B* -> C1* transport contract. -/
-abbrev PureClosedTheoryBridgeStar : Prop :=
-  ∀ {t u : PureTm 0}, PureTheoryStepStar t u →
-    PureProfileTheoryStepStar (quoteClosedTm t) (quoteClosedTm u)
-
-/-- Canonical closed A/B/C bridge surface for the current PureKernel profile embedding.
-
-This is the DTT-side bridge surface consumed by
-`PLNWorldModelPureKernelBridge`. The generic formula-side closure route lives in
-`OSLFNTTWMBridge`, `OSLFNTTTheoryClosure`, and
-`OSLFNTTWMCanonicalClosure`; this structure is the PureKernel-specific producer
-of the same kind of WM-facing obligations.
--/
-structure PureClosedABCSurface where
-  a_to_b : ∀ {t u : PureTm 0}, PureOpStep t u → PureTheoryStep t u
-  a_to_c1 : PureClosedOperationalBridge
-  aStar_to_bStar : ∀ {t u : PureTm 0}, PureOpStepStar t u → PureTheoryStepStar t u
-  aStar_to_c1Star : PureClosedOperationalBridgeStar
-  b_to_c1 : PureClosedTheoryBridge
-  bStar_to_c1Star : PureClosedTheoryBridgeStar
-
-/-- Canonical theoremic A -> C1 bridge. -/
-theorem pureClosedOperationalBridge_default :
-    PureClosedOperationalBridge :=
-  pureOpStep_sound_pureProfileTheoryStep_quoteClosed
-
-/-- Canonical theoremic A* -> C1* bridge. -/
-theorem pureClosedOperationalBridgeStar_default :
-    PureClosedOperationalBridgeStar :=
-  pureOpStepStar_sound_pureProfileTheoryStep_quoteClosed
-
-/-- Canonical theoremic B -> C1 bridge. -/
-theorem pureClosedTheoryBridge_default :
-    PureClosedTheoryBridge :=
-  pureTheoryStep_sound_pureProfileTheoryStep_quoteClosed
-
-/-- Canonical theoremic B* -> C1* bridge. -/
-theorem pureClosedTheoryBridgeStar_default :
-    PureClosedTheoryBridgeStar :=
-  pureTheoryStepStar_sound_pureProfileTheoryStepStar_quoteClosed
-
-/-- Canonical bundled A/B/C bridge surface. -/
-def defaultPureClosedABCSurface : PureClosedABCSurface where
-  a_to_b := pureOpStep_to_pureTheoryStep
-  a_to_c1 := pureClosedOperationalBridge_default
-  aStar_to_bStar := pureOpStepStar_to_pureTheoryStepStar
-  aStar_to_c1Star := pureClosedOperationalBridgeStar_default
-  b_to_c1 := pureClosedTheoryBridge_default
-  bStar_to_c1Star := pureClosedTheoryBridgeStar_default
+  pureTheoryStepStar_sound_pureProfileTheoryStepStar_quoteClosed_assuming_inst0 hinst0 hcompat0 h
 
 private def betaPiOneNestedLamRedex : PureTm 0 :=
   .app (.lam (.lam (.var (Fin.succ (0 : Fin 1))))) .u0
@@ -683,7 +470,7 @@ private def betaPiTwoNestedLamContractum : PureTm 0 :=
   .lam (.lam .u0)
 
 /-- Regression: one nested binder in βΠ body still transports to C1. -/
-private theorem betaPi_bridge_regression_one_nestedLam_assuming_inst0
+theorem betaPi_bridge_regression_one_nestedLam_assuming_inst0
     (hinst0 : Inst0OpenBridgeCompat defaultBinderName)
     (hcompat0 : QuoteCompat defaultBinderName 0 emptyEnv) :
     PureProfileTheoryStep
@@ -696,7 +483,7 @@ private theorem betaPi_bridge_regression_one_nestedLam_assuming_inst0
   exact pureTheoryStep_sound_pureProfileTheoryStep_quoteClosed_assuming_inst0 hinst0 hcompat0 hred
 
 /-- Regression: two nested binders in βΠ body still transports to C1. -/
-private theorem betaPi_bridge_regression_two_nestedLam_assuming_inst0
+theorem betaPi_bridge_regression_two_nestedLam_assuming_inst0
     (hinst0 : Inst0OpenBridgeCompat defaultBinderName)
     (hcompat0 : QuoteCompat defaultBinderName 0 emptyEnv) :
     PureProfileTheoryStep
@@ -707,24 +494,6 @@ private theorem betaPi_bridge_regression_two_nestedLam_assuming_inst0
       rename, wk] using
       (Red.betaPi (.lam (.lam (.var (Fin.succ (Fin.succ (0 : Fin 1)))))) (.u0))
   exact pureTheoryStep_sound_pureProfileTheoryStep_quoteClosed_assuming_inst0 hinst0 hcompat0 hred
-
-/-- Default-binder regression: one nested binder in βΠ body still transports to C1. -/
-theorem betaPi_bridge_regression_one_nestedLam :
-    PureProfileTheoryStep
-      (quoteClosedTm betaPiOneNestedLamRedex)
-      (quoteClosedTm betaPiOneNestedLamContractum) :=
-  betaPi_bridge_regression_one_nestedLam_assuming_inst0
-    inst0OpenBridgeCompat_defaultBinderName
-    defaultBinderName_quoteCompat0
-
-/-- Default-binder regression: two nested binders in βΠ body still transports to C1. -/
-theorem betaPi_bridge_regression_two_nestedLam :
-    PureProfileTheoryStep
-      (quoteClosedTm betaPiTwoNestedLamRedex)
-      (quoteClosedTm betaPiTwoNestedLamContractum) :=
-  betaPi_bridge_regression_two_nestedLam_assuming_inst0
-    inst0OpenBridgeCompat_defaultBinderName
-    defaultBinderName_quoteCompat0
 
 /-- Backwards-compatible name for the A-layer step relation. -/
 abbrev ClosedComputationStep : PureTm 0 → PureTm 0 → Prop := PureOpStep
@@ -776,10 +545,14 @@ theorem not_all_pureTheoryStep_sound_to_langReduces_quoteClosed :
     simp [t, quoteClosedTm, quoteTm, quoteTmWith, mkApp, mkFst, mkPair,
       rewriteWithContextWithPremisesUsing, rewriteStepWithPremisesUsing,
       applyRuleWithPremisesUsing, mettaPure, applyPremisesWithEnv]
-    repeat' constructor
-    all_goals
-      intro x hx
+    constructor
+    · intro x hx
       simp [u1, matchArgs, matchPattern] at hx
+    constructor
+    · intro x hx
+      simp [u1, matchPattern] at hx
+    · intro x hx
+      simp [u1, matchPattern] at hx
   have hfalse : False := by
     simp [langReducesExecUsing, hempty] at hexec
   exact False.elim hfalse

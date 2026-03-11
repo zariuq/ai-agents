@@ -36,10 +36,16 @@ import Mettapedia.Logic.PLNInferenceControlExamples
 import Mettapedia.Logic.SoundnessCompleteness
 import Mettapedia.Logic.PLNErrorMagnificationGrounding
 import Mettapedia.Logic.PLNCanonicalAPI
+import Mettapedia.Logic.PLNFirstOrder.InfiniteRegression
+import Mettapedia.Logic.PLNFirstOrder.FuzzyQuantifierRegressionInf
+import Mettapedia.Logic.PLNFirstOrder.ChoquetQuantifierRegression
+import Mettapedia.Logic.PLNFirstOrder.FuzzyDomainQuantifierRegression
+import Mettapedia.Logic.PLNFirstOrder.FuzzySyllogismRegressionFin
 import Mettapedia.Logic.SufficientStatisticSurface
 import Mettapedia.Logic.GenericWorldModelForgetting
 import Mettapedia.Logic.PLNSemitopology
 import Mettapedia.Logic.PLNSemitopologyProvenanceBridge
+import Mettapedia.Logic.PLNWorldModelAudit
 import Mettapedia.Logic.PLNWorldModelPreorder
 import Mettapedia.Logic.PLNGaussianEMExtension
 import Mettapedia.Logic.HigherOrder.PLNKyburgReduction
@@ -111,6 +117,16 @@ This module is a curated import surface for the currently theorem-complete PLN s
 - Error-magnification grounding across WM calculus, OSLF atom semantics, and
   evidence-derived confidence transport (`PLNErrorMagnificationGrounding`)
 - Canonical API with 3-tier theorem index (`PLNCanonicalAPI`)
+- Arbitrary-domain PLN first-order quantifier surface
+  (`PLNFirstOrder.InfiniteRegression`, plus canonical aliases in `PLNCanonicalAPI`)
+- Arbitrary-domain fuzzy first-order quantifier surface
+  (`PLNFirstOrder.FuzzyQuantifierRegressionInf`, plus canonical aliases in `PLNCanonicalAPI`)
+- Choquet-style arbitrary-domain fuzzy first-order branch
+  (`PLNFirstOrder.ChoquetQuantifierRegression`, plus canonical aliases in `PLNCanonicalAPI`)
+- Fuzzy-domain arbitrary-domain first-order branch
+  (`PLNFirstOrder.FuzzyDomainQuantifierRegression`, plus canonical aliases in `PLNCanonicalAPI`)
+- Finite/counting fuzzy Chapter-11 syllogism surface
+  (`PLNFirstOrder.FuzzySyllogismRegressionFin`)
 - Additive multiset WM singleton-surface classification / uniqueness
   (`SufficientStatisticSurface`)
 - Forgetting layer with scope invariance and scoped no-go for exact inverse forgetting
@@ -120,6 +136,8 @@ This module is a curated import surface for the currently theorem-complete PLN s
   (`PLNSemitopology`)
 - Provenance-backed tracked forgetting and overlap-remainder support recovery
   for the non-additive perimeter (`PLNSemitopologyProvenanceBridge`)
+- Runtime-audit oriented WM wrappers for conservation/order-cost/overlap-separation
+  signals (`PLNWorldModelAudit`)
 - Scope-labelled tracked provenance state with non-empty-scope exact forgetting
   under support containment plus clean-base hypotheses
   (`PLNScopedTrackedWhichState`)

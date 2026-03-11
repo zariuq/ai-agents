@@ -2,11 +2,14 @@ import Mettapedia.Languages.MeTTa.PureKernel.Syntax
 import Mettapedia.Languages.MeTTa.PureKernel.Renaming
 import Mettapedia.Languages.MeTTa.PureKernel.Substitution
 import Mettapedia.Languages.MeTTa.PureKernel.Context
+import Mettapedia.Languages.MeTTa.PureKernel.DeclarationEnv
 import Mettapedia.Languages.MeTTa.PureKernel.Reduction
 import Mettapedia.Languages.MeTTa.PureKernel.Parallel
 import Mettapedia.Languages.MeTTa.PureKernel.Confluence
 import Mettapedia.Languages.MeTTa.PureKernel.DefEq
 import Mettapedia.Languages.MeTTa.PureKernel.Typing
+import Mettapedia.Languages.MeTTa.PureKernel.DeclarationSemantics
+import Mettapedia.Languages.MeTTa.PureKernel.DeclarationUnitPilot
 import Mettapedia.Languages.MeTTa.PureKernel.AlgorithmicTyping
 import Mettapedia.Languages.MeTTa.PureKernel.SubjectReduction
 import Mettapedia.Languages.MeTTa.PureKernel.PatternBridge

@@ -326,90 +326,118 @@ private def normalizeSpaceMatchPattern (s : Session) : Pattern → Pattern :=
   else
     normalizeDollarVars
 
-private partial def applyBindingsCompat (bs : Bindings) : Pattern → Pattern :=
-  let rec go (visited : List String) : Pattern → Pattern
-    | .fvar x =>
-        if visited.contains x then
-          .fvar x
-        else
-          match bindingLookup bs x with
-          | some (.fvar y) =>
-              if y == x then
-                .fvar x
+private def patternHeight : Pattern → Nat
+  | .fvar _ => 1
+  | .bvar _ => 1
+  | .apply _ args =>
+      1 + args.foldl (fun h a => Nat.max h (patternHeight a)) 0
+  | .lambda body =>
+      1 + patternHeight body
+  | .multiLambda _ body =>
+      1 + patternHeight body
+  | .subst body repl =>
+      1 + Nat.max (patternHeight body) (patternHeight repl)
+  | .collection _ elems _ =>
+      1 + elems.foldl (fun h a => Nat.max h (patternHeight a)) 0
+
+private def bindingVarBudget (bs : Bindings) : Nat :=
+  (bs.map (·.1)).eraseDups.length
+
+private def applyBindingsCompatFuel
+    (bs : Bindings) : Nat → List String → Pattern → Pattern
+  | 0, _visited, p => p
+  | fuel + 1, visited, p =>
+      match p with
+      | .fvar x =>
+          if visited.contains x then
+            .fvar x
+          else
+            match bindingLookup bs x with
+            | some (.fvar y) =>
+                if y == x then
+                  .fvar x
+                else
+                  applyBindingsCompatFuel bs fuel (x :: visited) (.fvar y)
+            | some v =>
+                applyBindingsCompatFuel bs fuel (x :: visited) v
+            | none => .fvar x
+      | .apply ctor [] =>
+          match dollarHeadVarName? (.apply ctor []) with
+          | some x =>
+              if visited.contains x then
+                .apply ctor []
               else
-                go (x :: visited) (.fvar y)
-          | some v => go (x :: visited) v
-          | none => .fvar x
-    | .apply ctor [] =>
-        match dollarHeadVarName? (.apply ctor []) with
-        | some x =>
-            if visited.contains x then
-              .apply ctor []
-            else
-              match bindingLookup bs x with
-              | some v => go (x :: visited) v
-              | none => .apply ctor []
-        | none => .apply ctor []
-    | .apply "|->" [params, body] =>
-        let bound := lambdaParamNamesCompat params
-        let bs' := bs.filter (fun b => !(bound.contains b.1))
-        .apply "|->" [params, applyBindingsCompat bs' body]
-    | .apply ctor args =>
-        let args' := args.map (go visited)
-        match dollarHeadVarName? (.apply ctor []) with
-        | some x =>
-            if visited.contains x then
-              .apply ctor args'
-            else
-              match bindingLookup bs x with
-              | some (.apply c []) => .apply c args'
-              | some v =>
-                  let v' := go (x :: visited) v
-                  match v' with
-                  | .apply "partial" [_base, _bound] =>
-                      if args'.isEmpty then
-                        v'
-                      else
-                        .apply "Expr" (v' :: args')
-                  | .apply "|->" _ =>
-                      if args'.isEmpty then
-                        v'
-                      else
-                        .apply "Expr" (v' :: args')
-                  | .lambda _ =>
-                      if args'.isEmpty then
-                        v'
-                      else
-                        .apply "Expr" (v' :: args')
-                  | .multiLambda _ _ =>
-                      if args'.isEmpty then
-                        v'
-                      else
-                        .apply "Expr" (v' :: args')
-                  | .apply c boundArgs =>
-                      if boundArgs.isEmpty then
-                        .apply c args'
-                      else if args'.isEmpty then
-                        v'
-                      else
-                        .apply "Expr" (v' :: args')
-                  | _ =>
-                      if args'.isEmpty then
-                        v'
-                      else
-                        .apply "Expr" (v' :: args')
-              | none => .apply ctor args'
-        | none => .apply ctor args'
-    | .lambda body =>
-        .lambda (go visited body)
-    | .multiLambda n body =>
-        .multiLambda n (go visited body)
-    | .subst body repl =>
-        .subst (go visited body) (go visited repl)
-    | .collection ct elems rest =>
-        .collection ct (elems.map (go visited)) rest
-    | .bvar n => .bvar n
-  go []
+                match bindingLookup bs x with
+                | some v =>
+                    applyBindingsCompatFuel bs fuel (x :: visited) v
+                | none => .apply ctor []
+          | none => .apply ctor []
+      | .apply "|->" [params, body] =>
+          let bound := lambdaParamNamesCompat params
+          let bs' := bs.filter (fun b => !(bound.contains b.1))
+          .apply "|->" [params, applyBindingsCompatFuel bs' fuel visited body]
+      | .apply ctor args =>
+          let args' := args.map (fun a => applyBindingsCompatFuel bs fuel visited a)
+          match dollarHeadVarName? (.apply ctor []) with
+          | some x =>
+              if visited.contains x then
+                .apply ctor args'
+              else
+                match bindingLookup bs x with
+                | some (.apply c []) => .apply c args'
+                | some v =>
+                    let v' := applyBindingsCompatFuel bs fuel (x :: visited) v
+                    match v' with
+                    | .apply "partial" [_base, _bound] =>
+                        if args'.isEmpty then
+                          v'
+                        else
+                          .apply "Expr" (v' :: args')
+                    | .apply "|->" _ =>
+                        if args'.isEmpty then
+                          v'
+                        else
+                          .apply "Expr" (v' :: args')
+                    | .lambda _ =>
+                        if args'.isEmpty then
+                          v'
+                        else
+                          .apply "Expr" (v' :: args')
+                    | .multiLambda _ _ =>
+                        if args'.isEmpty then
+                          v'
+                        else
+                          .apply "Expr" (v' :: args')
+                    | .apply c boundArgs =>
+                        if boundArgs.isEmpty then
+                          .apply c args'
+                        else if args'.isEmpty then
+                          v'
+                        else
+                          .apply "Expr" (v' :: args')
+                    | _ =>
+                        if args'.isEmpty then
+                          v'
+                        else
+                          .apply "Expr" (v' :: args')
+                | none => .apply ctor args'
+          | none => .apply ctor args'
+      | .lambda body =>
+          .lambda (applyBindingsCompatFuel bs fuel visited body)
+      | .multiLambda n body =>
+          .multiLambda n (applyBindingsCompatFuel bs fuel visited body)
+      | .subst body repl =>
+          .subst
+            (applyBindingsCompatFuel bs fuel visited body)
+            (applyBindingsCompatFuel bs fuel visited repl)
+      | .collection ct elems rest =>
+          .collection ct (elems.map (fun a => applyBindingsCompatFuel bs fuel visited a)) rest
+      | .bvar n => .bvar n
+
+private def applyBindingsCompat (bs : Bindings) : Pattern → Pattern :=
+  fun p =>
+    let fuel := bindingVarBudget bs + patternHeight p + 1
+    applyBindingsCompatFuel bs fuel [] p
 
 private def insertUniquePattern (xs : List Pattern) (x : Pattern) : List Pattern :=
   if xs.contains x then xs else x :: xs
@@ -4581,6 +4609,48 @@ def matchTemplateAfterBindings
     (bs : Bindings) (tmpl : Pattern) : Pattern :=
   applyBindingsCompat bs tmpl
 
+/-- Substituting a `get-atoms` template preserves the outer head and only
+    substitutes its argument. -/
+theorem matchTemplateAfterBindings_getAtoms
+    (bs : Bindings) (spaceExpr : Pattern) :
+    matchTemplateAfterBindings bs (.apply "get-atoms" [spaceExpr]) =
+      .apply "get-atoms" [matchTemplateAfterBindings bs spaceExpr] := by
+  have hHead : dollarHeadVarName? (.apply "get-atoms" []) = none := by
+    native_decide
+  have hHeight :
+      patternHeight (.apply "get-atoms" [spaceExpr]) = 1 + patternHeight spaceExpr := by
+    simp [patternHeight, Nat.max_eq_right (Nat.zero_le _)]
+  unfold matchTemplateAfterBindings applyBindingsCompat
+  rw [hHeight]
+  simp [bindingVarBudget, Nat.add_assoc, Nat.add_comm]
+  have hFuel :
+      1 + (1 + (patternHeight spaceExpr + (List.map (fun x => x.fst) bs).eraseDups.length)) =
+        Nat.succ (1 + (patternHeight spaceExpr + (List.map (fun x => x.fst) bs).eraseDups.length)) := by
+    omega
+  rw [hFuel]
+  simp [applyBindingsCompatFuel, hHead]
+
+/-- Substituting a `get-atoms!` template preserves the outer head and only
+    substitutes its argument. -/
+theorem matchTemplateAfterBindings_getAtomsBang
+    (bs : Bindings) (spaceExpr : Pattern) :
+    matchTemplateAfterBindings bs (.apply "get-atoms!" [spaceExpr]) =
+      .apply "get-atoms!" [matchTemplateAfterBindings bs spaceExpr] := by
+  have hHead : dollarHeadVarName? (.apply "get-atoms!" []) = none := by
+    native_decide
+  have hHeight :
+      patternHeight (.apply "get-atoms!" [spaceExpr]) = 1 + patternHeight spaceExpr := by
+    simp [patternHeight, Nat.max_eq_right (Nat.zero_le _)]
+  unfold matchTemplateAfterBindings applyBindingsCompat
+  rw [hHeight]
+  simp [bindingVarBudget, Nat.add_assoc, Nat.add_comm]
+  have hFuel :
+      1 + (1 + (patternHeight spaceExpr + (List.map (fun x => x.fst) bs).eraseDups.length)) =
+        Nat.succ (1 + (patternHeight spaceExpr + (List.map (fun x => x.fst) bs).eraseDups.length)) := by
+    omega
+  rw [hFuel]
+  simp [applyBindingsCompatFuel, hHead]
+
 /-- Evaluate a substituted `match` template through the live reference interface.
     This is a public wrapper exposing the compositional `SpaceOps` boundary without
     leaking the private interface record itself. -/
@@ -4619,6 +4689,24 @@ def totalMatchBindings
     (fuel : Nat) (s : Session) (space pat : Pattern) : List Bindings :=
   Algorithms.MeTTa.Simple.Semantics.SpaceOps.findBindingsInSpace
     (referenceSpaceEvalInterfaceN fuel s) spacePolicy s space pat
+
+/-- Live-reference and fuel-indexed total-reference `match` binding enumeration agree
+    because `findBindingsInSpace` is independent of the interface `eval` field. -/
+theorem referenceMatchBindings_eq_totalMatchBindings
+    (fuel : Nat) (s : Session) (space pat : Pattern) :
+    referenceMatchBindings s space pat = totalMatchBindings fuel s space pat := by
+  unfold referenceMatchBindings totalMatchBindings
+  have hIface :
+      referenceSpaceEvalInterfaceN fuel s =
+        { referenceSpaceEvalInterface s with
+            eval := fun s term => referenceEvalWithStateCoreN fuel s term } := by
+    rfl
+  rw [hIface]
+  simpa using
+    Algorithms.MeTTa.Simple.Semantics.SpaceOps.findBindingsInSpace_eval_irrelevant
+      (I := referenceSpaceEvalInterface s)
+      (eval' := fun s term => referenceEvalWithStateCoreN fuel s term)
+      (P := spacePolicy) (s := s) (space := space) (pat := pat)
 
 /-- Compositional adequacy for the intrinsic `match` boundary.
     This is the primary theorem shape to use downstream: if live-reference and
@@ -4700,6 +4788,31 @@ theorem referenceMatchEvalMatchedTemplate_getAtoms_eq_total_of_eval_agreement
   simpa [referenceMatchEvalMatchedTemplate, totalMatchEvalMatchedTemplate,
     Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchedTemplate] using hEval
 
+/-- Unary evaluator-agreement contract for the `get-atoms` head. -/
+abbrev GetAtomsUnaryEvalAgreement (fuel : Nat) : Prop :=
+  ∀ (sess : Session) (spaceArg : Pattern),
+    referenceEvalWithStateCore sess (.apply "get-atoms" [spaceArg]) =
+      referenceEvalWithStateCoreN fuel sess (.apply "get-atoms" [spaceArg])
+
+/-- Unary evaluator-agreement contract for the `get-atoms!` head. -/
+abbrev GetAtomsBangUnaryEvalAgreement (fuel : Nat) : Prop :=
+  ∀ (sess : Session) (spaceArg : Pattern),
+    referenceEvalWithStateCore sess (.apply "get-atoms!" [spaceArg]) =
+      referenceEvalWithStateCoreN fuel sess (.apply "get-atoms!" [spaceArg])
+
+/-- Lift a unary `get-atoms` evaluator-agreement hypothesis to the exact
+    substituted-template `hEval` shape used by compositional `match` adequacy. -/
+theorem referenceMatch_getAtomsTemplate_hEval_of_unary_eval_agreement
+    (fuel : Nat) (spaceExpr : Pattern)
+    (hEvalUnary : GetAtomsUnaryEvalAgreement fuel) :
+    ∀ (sess : Session) (bs : Bindings),
+      referenceEvalWithStateCore sess
+          (.apply "get-atoms" [matchTemplateAfterBindings bs spaceExpr]) =
+        referenceEvalWithStateCoreN fuel sess
+          (.apply "get-atoms" [matchTemplateAfterBindings bs spaceExpr]) := by
+  intro sess bs
+  exact hEvalUnary sess (matchTemplateAfterBindings bs spaceExpr)
+
 /-- First template-family specialization for compositional `match` adequacy:
     if substituted `get-atoms` templates agree at the `evalMatchedTemplate`
     boundary, then the surrounding `match` intrinsic agrees. -/
@@ -4724,10 +4837,6 @@ theorem referenceMatchIntrinsicResult_eq_total_of_getAtomsTemplate_evalMatchedTe
 theorem referenceMatchIntrinsicResult_eq_total_of_getAtomsTemplate_eval_agreement
     (fuel : Nat) (s : Session) (space pat spaceExpr : Pattern)
     (hBindings : referenceMatchBindings s space pat = totalMatchBindings fuel s space pat)
-    (hSub :
-      ∀ (bs : Bindings),
-        matchTemplateAfterBindings bs (.apply "get-atoms" [spaceExpr]) =
-          .apply "get-atoms" [matchTemplateAfterBindings bs spaceExpr])
     (hEval :
       ∀ (sess : Session) (bs : Bindings),
         referenceEvalWithStateCore sess
@@ -4739,9 +4848,134 @@ theorem referenceMatchIntrinsicResult_eq_total_of_getAtomsTemplate_eval_agreemen
   apply referenceMatchIntrinsicResult_eq_total_of_getAtomsTemplate_evalMatchedTemplate_agreement
   · exact hBindings
   · intro sess bs
-    simpa [hSub bs] using
+    simpa [matchTemplateAfterBindings_getAtoms] using
       (referenceMatchEvalMatchedTemplate_getAtoms_eq_total_of_eval_agreement
         fuel s sess (matchTemplateAfterBindings bs spaceExpr) (hEval sess bs))
+
+/-- Practical `get-atoms`-template specialization: the binding-enumeration side
+    is discharged automatically from `referenceMatchBindings_eq_totalMatchBindings`. -/
+theorem referenceMatchIntrinsicResult_eq_total_of_getAtomsTemplate_eval_agreement_autoBindings
+    (fuel : Nat) (s : Session) (space pat spaceExpr : Pattern)
+    (hEval :
+      ∀ (sess : Session) (bs : Bindings),
+        referenceEvalWithStateCore sess
+            (.apply "get-atoms" [matchTemplateAfterBindings bs spaceExpr]) =
+          referenceEvalWithStateCoreN fuel sess
+            (.apply "get-atoms" [matchTemplateAfterBindings bs spaceExpr])) :
+    referenceMatchIntrinsicResult s space pat (.apply "get-atoms" [spaceExpr]) =
+      totalMatchIntrinsicResult fuel s space pat (.apply "get-atoms" [spaceExpr]) := by
+  exact
+    referenceMatchIntrinsicResult_eq_total_of_getAtomsTemplate_eval_agreement
+      (fuel := fuel) (s := s) (space := space) (pat := pat) (spaceExpr := spaceExpr)
+      (hBindings := referenceMatchBindings_eq_totalMatchBindings fuel s space pat)
+      hEval
+
+/-- Unary-entry variant for `get-atoms` templates:
+    supply evaluator agreement per substituted space argument, and the theorem
+    discharges the `bs`-indexed `hEval` plumbing automatically. -/
+theorem referenceMatchIntrinsicResult_eq_total_of_getAtomsTemplate_unary_eval_agreement_autoBindings
+    (fuel : Nat) (s : Session) (space pat spaceExpr : Pattern)
+    (hEvalUnary : GetAtomsUnaryEvalAgreement fuel) :
+    referenceMatchIntrinsicResult s space pat (.apply "get-atoms" [spaceExpr]) =
+      totalMatchIntrinsicResult fuel s space pat (.apply "get-atoms" [spaceExpr]) := by
+  exact
+    referenceMatchIntrinsicResult_eq_total_of_getAtomsTemplate_eval_agreement_autoBindings
+      (fuel := fuel) (s := s) (space := space) (pat := pat) (spaceExpr := spaceExpr)
+      (referenceMatch_getAtomsTemplate_hEval_of_unary_eval_agreement
+        (fuel := fuel) (spaceExpr := spaceExpr) hEvalUnary)
+
+/-- Direct matched-template equality for already-substituted `get-atoms!` terms. -/
+theorem referenceMatchEvalMatchedTemplate_getAtomsBang_eq_total_of_eval_agreement
+    (fuel : Nat) (s0 sess : Session) (spaceExpr : Pattern)
+    (hEval :
+      referenceEvalWithStateCore sess (.apply "get-atoms!" [spaceExpr]) =
+        referenceEvalWithStateCoreN fuel sess (.apply "get-atoms!" [spaceExpr])) :
+    referenceMatchEvalMatchedTemplate s0 sess (.apply "get-atoms!" [spaceExpr]) =
+      totalMatchEvalMatchedTemplate fuel s0 sess (.apply "get-atoms!" [spaceExpr]) := by
+  simpa [referenceMatchEvalMatchedTemplate, totalMatchEvalMatchedTemplate,
+    Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchedTemplate] using hEval
+
+/-- Lift a unary `get-atoms!` evaluator-agreement hypothesis to the exact
+    substituted-template `hEval` shape used by compositional `match` adequacy. -/
+theorem referenceMatch_getAtomsBangTemplate_hEval_of_unary_eval_agreement
+    (fuel : Nat) (spaceExpr : Pattern)
+    (hEvalUnary : GetAtomsBangUnaryEvalAgreement fuel) :
+    ∀ (sess : Session) (bs : Bindings),
+      referenceEvalWithStateCore sess
+          (.apply "get-atoms!" [matchTemplateAfterBindings bs spaceExpr]) =
+        referenceEvalWithStateCoreN fuel sess
+          (.apply "get-atoms!" [matchTemplateAfterBindings bs spaceExpr]) := by
+  intro sess bs
+  exact hEvalUnary sess (matchTemplateAfterBindings bs spaceExpr)
+
+/-- `get-atoms!` specialization for compositional `match` adequacy. -/
+theorem referenceMatchIntrinsicResult_eq_total_of_getAtomsBangTemplate_evalMatchedTemplate_agreement
+    (fuel : Nat) (s : Session) (space pat spaceExpr : Pattern)
+    (hBindings : referenceMatchBindings s space pat = totalMatchBindings fuel s space pat)
+    (hEval :
+      ∀ (sess : Session) (bs : Bindings),
+        referenceMatchEvalMatchedTemplate s sess
+            (matchTemplateAfterBindings bs (.apply "get-atoms!" [spaceExpr])) =
+          totalMatchEvalMatchedTemplate fuel s sess
+            (matchTemplateAfterBindings bs (.apply "get-atoms!" [spaceExpr]))) :
+    referenceMatchIntrinsicResult s space pat (.apply "get-atoms!" [spaceExpr]) =
+      totalMatchIntrinsicResult fuel s space pat (.apply "get-atoms!" [spaceExpr]) := by
+  apply referenceMatchIntrinsicResult_eq_total_of_bindingwise_evalMatchedTemplate_agreement
+  · exact hBindings
+  intro sess bs
+  exact hEval sess bs
+
+/-- `get-atoms!`-templated compositional `match` adequacy from direct evaluator
+    equality on the already-substituted template term. -/
+theorem referenceMatchIntrinsicResult_eq_total_of_getAtomsBangTemplate_eval_agreement
+    (fuel : Nat) (s : Session) (space pat spaceExpr : Pattern)
+    (hBindings : referenceMatchBindings s space pat = totalMatchBindings fuel s space pat)
+    (hEval :
+      ∀ (sess : Session) (bs : Bindings),
+        referenceEvalWithStateCore sess
+            (.apply "get-atoms!" [matchTemplateAfterBindings bs spaceExpr]) =
+          referenceEvalWithStateCoreN fuel sess
+            (.apply "get-atoms!" [matchTemplateAfterBindings bs spaceExpr])) :
+    referenceMatchIntrinsicResult s space pat (.apply "get-atoms!" [spaceExpr]) =
+      totalMatchIntrinsicResult fuel s space pat (.apply "get-atoms!" [spaceExpr]) := by
+  apply referenceMatchIntrinsicResult_eq_total_of_getAtomsBangTemplate_evalMatchedTemplate_agreement
+  · exact hBindings
+  · intro sess bs
+    simpa [matchTemplateAfterBindings_getAtomsBang] using
+      (referenceMatchEvalMatchedTemplate_getAtomsBang_eq_total_of_eval_agreement
+        fuel s sess (matchTemplateAfterBindings bs spaceExpr) (hEval sess bs))
+
+/-- Practical `get-atoms!`-template specialization: the binding-enumeration side
+    is discharged automatically from `referenceMatchBindings_eq_totalMatchBindings`. -/
+theorem referenceMatchIntrinsicResult_eq_total_of_getAtomsBangTemplate_eval_agreement_autoBindings
+    (fuel : Nat) (s : Session) (space pat spaceExpr : Pattern)
+    (hEval :
+      ∀ (sess : Session) (bs : Bindings),
+        referenceEvalWithStateCore sess
+            (.apply "get-atoms!" [matchTemplateAfterBindings bs spaceExpr]) =
+          referenceEvalWithStateCoreN fuel sess
+            (.apply "get-atoms!" [matchTemplateAfterBindings bs spaceExpr])) :
+    referenceMatchIntrinsicResult s space pat (.apply "get-atoms!" [spaceExpr]) =
+      totalMatchIntrinsicResult fuel s space pat (.apply "get-atoms!" [spaceExpr]) := by
+  exact
+    referenceMatchIntrinsicResult_eq_total_of_getAtomsBangTemplate_eval_agreement
+      (fuel := fuel) (s := s) (space := space) (pat := pat) (spaceExpr := spaceExpr)
+      (hBindings := referenceMatchBindings_eq_totalMatchBindings fuel s space pat)
+      hEval
+
+/-- Unary-entry variant for `get-atoms!` templates:
+    supply evaluator agreement per substituted space argument, and the theorem
+    discharges the `bs`-indexed `hEval` plumbing automatically. -/
+theorem referenceMatchIntrinsicResult_eq_total_of_getAtomsBangTemplate_unary_eval_agreement_autoBindings
+    (fuel : Nat) (s : Session) (space pat spaceExpr : Pattern)
+    (hEvalUnary : GetAtomsBangUnaryEvalAgreement fuel) :
+    referenceMatchIntrinsicResult s space pat (.apply "get-atoms!" [spaceExpr]) =
+      totalMatchIntrinsicResult fuel s space pat (.apply "get-atoms!" [spaceExpr]) := by
+  exact
+    referenceMatchIntrinsicResult_eq_total_of_getAtomsBangTemplate_eval_agreement_autoBindings
+      (fuel := fuel) (s := s) (space := space) (pat := pat) (spaceExpr := spaceExpr)
+      (referenceMatch_getAtomsBangTemplate_hEval_of_unary_eval_agreement
+        (fuel := fuel) (spaceExpr := spaceExpr) hEvalUnary)
 
 private theorem referenceSpaceEvalInterfaceN_preservation
     (fuel : Nat) (s0 : Session)

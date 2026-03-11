@@ -1,6 +1,7 @@
 import Algorithms.MeTTa.LookupPlans
 import Algorithms.MeTTa.Simple.Relations
 import Mettapedia.Languages.MeTTa.ExecutionContract
+import Mettapedia.Languages.MeTTa.PeTTa.DeclarativeSpec
 import Mettapedia.Languages.MeTTa.PeTTa.SpaceCoreFragment
 import Mettapedia.Languages.MeTTa.PeTTa.SpaceEffectFragment
 import Mettapedia.Languages.MeTTa.PeTTa.GroundedOracle
@@ -25,6 +26,9 @@ Positive example:
   result-variable invariant needed by the MM2 compiler.
 - `add-atom` and `remove-atom` are stateful space effects, MORK/MM2-backed, and
   space-effect-compilable.
+- `add-atom!` and `remove-atom!` are explicit surface aliases of the same
+  stateful space-effect lanes, rather than forcing Rust to guess that the bang
+  forms should inherit the non-bang contracts.
 - `add-atom` / `remove-atom` fact payloads expose explicit payload/sink lanes
   instead of forcing Rust to infer them from surface syntax.
 - `add-atom` / `remove-atom` rewrite-rule payloads expose explicit
@@ -40,10 +44,16 @@ Positive example:
 - `repr` and `get-metatype` are exposed as grounded host reflection lanes with
   explicit always-eligible contracts, rather than being smuggled into the MM2
   intrinsic set.
+- `parse` is exposed as a grounded host reflection/meta lane, justified by the
+  actual PeTTa Prolog clause `parse(Str, R) :- sread(Str, R).`
+- `println!` is exposed as a grounded host I/O lane, justified by the actual
+  PeTTa Prolog clause `println!(Arg, true) :- swrite(Arg, RArg), format(...)`.
 - `if` is currently exported as a control lane with a ground-condition fast
   path and symbolic fallback policy, rather than as a wholly grounded builtin.
 - `collapse` is exposed as an aggregation lane that collects all nested backend
   results into one tuple-style PeTTa value.
+- `min-atom` and `max-atom` are exposed as structural aggregation lanes over
+  nested tuple/list results, not smuggled into the numeric MM2 intrinsic set.
 
 Negative example:
 - this file still does not certify premise-bearing rewrite execution or arbitrary
@@ -131,6 +141,12 @@ def addAtomSpaceEffectContract : SpaceEffectContract where
 def addAtomEntry : ExecutionContractEntry :=
   .spaceEffect addAtomSpaceEffectContract
 
+def addAtomBangSpaceEffectContract : SpaceEffectContract :=
+  { addAtomSpaceEffectContract with head := "add-atom!" }
+
+def addAtomBangEntry : ExecutionContractEntry :=
+  .spaceEffect addAtomBangSpaceEffectContract
+
 def removeAtomSpaceEffectContract : SpaceEffectContract where
   head := "remove-atom"
   arity := 2
@@ -152,6 +168,12 @@ def removeAtomSpaceEffectContract : SpaceEffectContract where
 
 def removeAtomEntry : ExecutionContractEntry :=
   .spaceEffect removeAtomSpaceEffectContract
+
+def removeAtomBangSpaceEffectContract : SpaceEffectContract :=
+  { removeAtomSpaceEffectContract with head := "remove-atom!" }
+
+def removeAtomBangEntry : ExecutionContractEntry :=
+  .spaceEffect removeAtomBangSpaceEffectContract
 
 def spaceMatchRelationPremiseContract : RelationPremiseContract where
   relation := "spaceMatch"
@@ -204,6 +226,12 @@ def addAtomFactPayloadContract : SpaceEffectPayloadContract where
 def addAtomFactPayloadEntry : ExecutionContractEntry :=
   .spaceEffectPayload addAtomFactPayloadContract
 
+def addAtomBangFactPayloadContract : SpaceEffectPayloadContract :=
+  { addAtomFactPayloadContract with head := "add-atom!" }
+
+def addAtomBangFactPayloadEntry : ExecutionContractEntry :=
+  .spaceEffectPayload addAtomBangFactPayloadContract
+
 def addAtomRulePayloadContract : SpaceEffectPayloadContract where
   head := "add-atom"
   arity := 2
@@ -230,6 +258,12 @@ def addAtomRulePayloadContract : SpaceEffectPayloadContract where
 
 def addAtomRulePayloadEntry : ExecutionContractEntry :=
   .spaceEffectPayload addAtomRulePayloadContract
+
+def addAtomBangRulePayloadContract : SpaceEffectPayloadContract :=
+  { addAtomRulePayloadContract with head := "add-atom!" }
+
+def addAtomBangRulePayloadEntry : ExecutionContractEntry :=
+  .spaceEffectPayload addAtomBangRulePayloadContract
 
 def removeAtomFactPayloadContract : SpaceEffectPayloadContract where
   head := "remove-atom"
@@ -258,6 +292,12 @@ def removeAtomFactPayloadContract : SpaceEffectPayloadContract where
 def removeAtomFactPayloadEntry : ExecutionContractEntry :=
   .spaceEffectPayload removeAtomFactPayloadContract
 
+def removeAtomBangFactPayloadContract : SpaceEffectPayloadContract :=
+  { removeAtomFactPayloadContract with head := "remove-atom!" }
+
+def removeAtomBangFactPayloadEntry : ExecutionContractEntry :=
+  .spaceEffectPayload removeAtomBangFactPayloadContract
+
 def removeAtomRulePayloadContract : SpaceEffectPayloadContract where
   head := "remove-atom"
   arity := 2
@@ -284,6 +324,12 @@ def removeAtomRulePayloadContract : SpaceEffectPayloadContract where
 
 def removeAtomRulePayloadEntry : ExecutionContractEntry :=
   .spaceEffectPayload removeAtomRulePayloadContract
+
+def removeAtomBangRulePayloadContract : SpaceEffectPayloadContract :=
+  { removeAtomRulePayloadContract with head := "remove-atom!" }
+
+def removeAtomBangRulePayloadEntry : ExecutionContractEntry :=
+  .spaceEffectPayload removeAtomBangRulePayloadContract
 
 /-- PeTTa-local intrinsic slice that matches the live MM2 lowering in
 `mettail-rust`.
@@ -342,6 +388,9 @@ def pettaMm2IntrinsicSpecs : List CoreIntrinsicSpec :=
 
 private def tunePeTTaMm2IntrinsicContract (c : IntrinsicBuiltinContract) :
     IntrinsicBuiltinContract :=
+  let c :=
+    { c with
+      numericResultShape := Mettapedia.Languages.MeTTa.PeTTa.numericResultShapeOf c.head }
   if c.head = "if" then
     { c with
       eligibility := .groundConditionOnly
@@ -482,6 +531,10 @@ private def groundedReflectionTheoremRefs : List String :=
   , "Mettapedia.Languages.MeTTa.PeTTa.GroundedOracle.meTTaEvalG_executable_total"
   ]
 
+private def groundedIOTheoremRefs : List String :=
+  [ "Mettapedia.Languages.MeTTa.RuntimeKernel.externalOracle_effectClass"
+  ]
+
 private def groundedTypeQueryTheoremRefs : List String :=
   [ "Mettapedia.Languages.MeTTa.PeTTa.GroundedOracle.meTTaEvalG_groundedCall_mk"
   , "Mettapedia.Languages.MeTTa.PeTTa.GroundedOracle.meTTaEvalG_executable_total"
@@ -490,6 +543,8 @@ private def groundedTypeQueryTheoremRefs : List String :=
 def pettaGroundedReflectionSpecs : List GroundedBuiltinSpec :=
   [ { head := "repr", minArity := 1, maxArity := some 1, demand := .rawArgs
     , hostKind := .reprTerm, eligibility := .always, residualPolicy := .failClosed }
+  , { head := "parse", minArity := 1, maxArity := some 1, demand := .rawArgs
+    , hostKind := .parseTerm, eligibility := .always, residualPolicy := .failClosed }
   , { head := "get-metatype", minArity := 1, maxArity := some 1, demand := .rawArgs
     , hostKind := .metaTypeOfTerm, eligibility := .always, residualPolicy := .failClosed }
   ]
@@ -500,6 +555,37 @@ def pettaGroundedReflectionContracts : List GroundedBuiltinContract :=
 
 def pettaGroundedReflectionEntries : List ExecutionContractEntry :=
   pettaGroundedReflectionContracts.map .groundedBuiltin
+
+/--
+`println!` is a grounded host I/O lane.
+
+Why grounded-host:
+- upstream PeTTa defines `println!(Arg, true) :- swrite(Arg, RArg), format(...)`
+- MM2/MORK has no theorem-backed stdout/stderr primitive to certify as a native
+  backend lane
+
+Why not memoized:
+- this is observable host I/O, so it belongs to the `oracle_io` effect class
+  and must not pretend to be a pure structural reduction
+-/
+def printlnGroundedContract : GroundedBuiltinContract where
+  head := "println!"
+  minArity := 1
+  maxArity := some 1
+  hostKind := .printlnTerm
+  owner := .groundedBuiltin
+  kernelClass := .oracle
+  effectClass := .oracleIO
+  resourceClass := .externalResource
+  backendName := "grounded-host"
+  supportedMemoShapes := []
+  builtinDemand := .rawArgs
+  eligibility := .always
+  residualPolicy := .failClosed
+  theoremRefs := groundedIOTheoremRefs
+
+def printlnGroundedEntry : ExecutionContractEntry :=
+  .groundedBuiltin printlnGroundedContract
 
 /--
 `get-type` is currently a grounded host read-only query lane.
@@ -550,6 +636,24 @@ private def collapseAggregationTheoremRefs : List String :=
   , "Mettapedia.Languages.MeTTa.PeTTa.DeclarativeSpec.collapse_intro"
   ]
 
+/--
+`min-atom` / `max-atom` currently use structural aggregation contracts.
+
+Why aggregation:
+- upstream PeTTa defines them over list/tuple data via `min_list` / `max_list`
+- they are structural reductions over a nested collection value, not MM2 kernel
+  arithmetic primitives
+
+Why not MM2 intrinsic:
+- the current MORK/MM2 kernel exposes numeric arithmetic primitives, but not a
+  native tuple-extrema primitive to lower to directly
+- keeping them out of the intrinsic lane avoids overclaiming backend support
+-/
+private def atomExtremaAggregationTheoremRefs : List String :=
+  [ "Mettapedia.Languages.MeTTa.RuntimeKernel.query_effectClass"
+  , "Mettapedia.Languages.MeTTa.RuntimeKernel.query_memo_outcomeSet"
+  ]
+
 def collapseAggregationContract : AggregationBuiltinContract where
   head := "collapse"
   minArity := 1
@@ -569,20 +673,67 @@ def collapseAggregationContract : AggregationBuiltinContract where
 def collapseAggregationEntry : ExecutionContractEntry :=
   .aggregationBuiltin collapseAggregationContract
 
+def minAtomAggregationContract : AggregationBuiltinContract where
+  head := "min-atom"
+  minArity := 1
+  maxArity := some 1
+  collectionKind := .minAtom
+  sourceKind := .subevalAllResults
+  owner := .artifactBackend
+  kernelClass := .metaPhase
+  effectClass := queryFragment.effectClass
+  resourceClass := queryFragment.resourceClass
+  backendName := queryFragment.backendName
+  supportedMemoShapes := [.outcomeSet]
+  eligibility := .always
+  residualPolicy := .failClosed
+  theoremRefs := atomExtremaAggregationTheoremRefs
+
+def minAtomAggregationEntry : ExecutionContractEntry :=
+  .aggregationBuiltin minAtomAggregationContract
+
+def maxAtomAggregationContract : AggregationBuiltinContract where
+  head := "max-atom"
+  minArity := 1
+  maxArity := some 1
+  collectionKind := .maxAtom
+  sourceKind := .subevalAllResults
+  owner := .artifactBackend
+  kernelClass := .metaPhase
+  effectClass := queryFragment.effectClass
+  resourceClass := queryFragment.resourceClass
+  backendName := queryFragment.backendName
+  supportedMemoShapes := [.outcomeSet]
+  eligibility := .always
+  residualPolicy := .failClosed
+  theoremRefs := atomExtremaAggregationTheoremRefs
+
+def maxAtomAggregationEntry : ExecutionContractEntry :=
+  .aggregationBuiltin maxAtomAggregationContract
+
 def pettaExecutionContractArtifact : ExecutionContractArtifact where
   dialect := "petta"
   entries :=
     [ spaceMatchEntry
     , getAtomsEntry
     , addAtomEntry
+    , addAtomBangEntry
     , removeAtomEntry
+    , removeAtomBangEntry
     , spaceMatchRelationPremiseEntry
     , addAtomFactPayloadEntry
+    , addAtomBangFactPayloadEntry
     , addAtomRulePayloadEntry
+    , addAtomBangRulePayloadEntry
     , removeAtomFactPayloadEntry
+    , removeAtomBangFactPayloadEntry
     , removeAtomRulePayloadEntry
+    , removeAtomBangRulePayloadEntry
     , collapseAggregationEntry
+    , minAtomAggregationEntry
+    , maxAtomAggregationEntry
     , getTypeGroundedEntry
+    , printlnGroundedEntry
     ] ++ pettaMm2IntrinsicEntries ++ pettaGroundedComparisonEntries
       ++ pettaGroundedFloatPredicateEntries
       ++ pettaGroundedVarPredicateEntries

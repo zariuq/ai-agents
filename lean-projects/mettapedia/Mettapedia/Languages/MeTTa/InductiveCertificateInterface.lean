@@ -12,8 +12,9 @@ This file records the first theoremic interface from the minimal inductive
 family kernel specification to the currently implemented restricted
 `MeTTa-Pure` certificate lane.
 
-It does **not** claim that inductive families are already implemented in the
-kernel. Instead, it records two honest facts:
+The live trusted `PureKernel` remains the small Pi/Sigma/Id/universe waist.
+This file does **not** claim that inductive families are already implemented in
+that kernel. Instead, it records two honest facts:
 
 1. The current starter inductive families belong on the proof side as
    `artifactOnly` extensions of the restricted Pure certificate lane.

@@ -14,16 +14,9 @@ def liftSub (σ : Sub n m) : Sub (n + 1) (m + 1) :=
 
 def subst (σ : Sub n m) : PureTm n → PureTm m
   | .var i => σ i
+  | .const c => .const c
   | .u0 => .u0
   | .u1 => .u1
-  | .unitTy => .unitTy
-  | .unitMk => .unitMk
-  | .boolTy => .boolTy
-  | .boolFalse => .boolFalse
-  | .boolTrue => .boolTrue
-  | .natTy => .natTy
-  | .natZero => .natZero
-  | .natSucc k => .natSucc (subst σ k)
   | .pi A B => .pi (subst σ A) (subst (liftSub σ) B)
   | .sigma A B => .sigma (subst σ A) (subst (liftSub σ) B)
   | .id A a b => .id (subst σ A) (subst σ a) (subst σ b)
@@ -33,12 +26,6 @@ def subst (σ : Sub n m) : PureTm n → PureTm m
   | .fst p => .fst (subst σ p)
   | .snd p => .snd (subst σ p)
   | .refl a => .refl (subst σ a)
-  | .unitRec motive unitCase scrutinee =>
-      .unitRec (subst σ motive) (subst σ unitCase) (subst σ scrutinee)
-  | .boolRec motive falseCase trueCase scrutinee =>
-      .boolRec (subst σ motive) (subst σ falseCase) (subst σ trueCase) (subst σ scrutinee)
-  | .natRec motive zeroCase succCase scrutinee =>
-      .natRec (subst σ motive) (subst σ zeroCase) (subst σ succCase) (subst σ scrutinee)
 
 def subst0 (u : PureTm n) : Sub (n + 1) n :=
   Fin.cases u (fun i => .var i)
@@ -73,26 +60,12 @@ theorem subst_ext {σ τ : Sub n m} (hστ : ∀ i, σ i = τ i) :
   induction t generalizing m with
   | var i =>
     simp [subst, hστ i]
+  | const c =>
+    rfl
   | u0 =>
     rfl
   | u1 =>
     rfl
-  | unitTy =>
-    rfl
-  | unitMk =>
-    rfl
-  | boolTy =>
-    rfl
-  | boolFalse =>
-    rfl
-  | boolTrue =>
-    rfl
-  | natTy =>
-    rfl
-  | natZero =>
-    rfl
-  | natSucc k ih =>
-    simp [subst, ih (σ := σ) (τ := τ) hστ]
   | pi A B ihA ihB =>
     simp [subst, ihA (σ := σ) (τ := τ) hστ]
     exact ihB (σ := liftSub σ) (τ := liftSub τ) (by
@@ -130,15 +103,6 @@ theorem subst_ext {σ τ : Sub n m} (hστ : ∀ i, σ i = τ i) :
     simpa [subst] using ih (σ := σ) (τ := τ) hστ
   | refl a iha =>
     simpa [subst] using iha (σ := σ) (τ := τ) hστ
-  | unitRec motive unitCase scrutinee ihmotive ihcase ihscrutinee =>
-    simp [subst, ihmotive (σ := σ) (τ := τ) hστ, ihcase (σ := σ) (τ := τ) hστ,
-      ihscrutinee (σ := σ) (τ := τ) hστ]
-  | boolRec motive falseCase trueCase scrutinee ihmotive ihFalse ihTrue ihscrutinee =>
-    simp [subst, ihmotive (σ := σ) (τ := τ) hστ, ihFalse (σ := σ) (τ := τ) hστ,
-      ihTrue (σ := σ) (τ := τ) hστ, ihscrutinee (σ := σ) (τ := τ) hστ]
-  | natRec motive zeroCase succCase scrutinee ihmotive ihZero ihSucc ihscrutinee =>
-    simp [subst, ihmotive (σ := σ) (τ := τ) hστ, ihZero (σ := σ) (τ := τ) hστ,
-      ihSucc (σ := σ) (τ := τ) hστ, ihscrutinee (σ := σ) (τ := τ) hστ]
 
 @[simp] theorem liftSub_ids : liftSub (ids (n := n)) = ids := by
   funext i
@@ -152,26 +116,12 @@ theorem subst_ext {σ τ : Sub n m} (hστ : ∀ i, σ i = τ i) :
   induction t with
   | var i =>
     rfl
+  | const c =>
+    rfl
   | u0 =>
     rfl
   | u1 =>
     rfl
-  | unitTy =>
-    rfl
-  | unitMk =>
-    rfl
-  | boolTy =>
-    rfl
-  | boolFalse =>
-    rfl
-  | boolTrue =>
-    rfl
-  | natTy =>
-    rfl
-  | natZero =>
-    rfl
-  | natSucc k ih =>
-    simp [subst, ih]
   | pi A B ihA ihB =>
     simp [subst, ihA, ihB, liftSub_ids]
   | sigma A B ihA ihB =>
@@ -190,12 +140,6 @@ theorem subst_ext {σ τ : Sub n m} (hστ : ∀ i, σ i = τ i) :
     simp [subst, ih]
   | refl a iha =>
     simp [subst, iha]
-  | unitRec motive unitCase scrutinee ihmotive ihcase ihscrutinee =>
-    simp [subst, ihmotive, ihcase, ihscrutinee]
-  | boolRec motive falseCase trueCase scrutinee ihmotive ihFalse ihTrue ihscrutinee =>
-    simp [subst, ihmotive, ihFalse, ihTrue, ihscrutinee]
-  | natRec motive zeroCase succCase scrutinee ihmotive ihZero ihSucc ihscrutinee =>
-    simp [subst, ihmotive, ihZero, ihSucc, ihscrutinee]
 
 @[simp] theorem rename_liftSub (ρ : Ren m k) (σ : Sub n m) (i : Fin (n + 1)) :
     rename (liftRen ρ) (liftSub σ i) = liftSub (fun j => rename ρ (σ j)) i := by
@@ -224,26 +168,12 @@ theorem rename_subst :
   induction t generalizing m k ρ with
   | var i =>
     rfl
+  | const c =>
+    rfl
   | u0 =>
     rfl
   | u1 =>
     rfl
-  | unitTy =>
-    rfl
-  | unitMk =>
-    rfl
-  | boolTy =>
-    rfl
-  | boolFalse =>
-    rfl
-  | boolTrue =>
-    rfl
-  | natTy =>
-    rfl
-  | natZero =>
-    rfl
-  | natSucc k ih =>
-    simp [rename, subst, ih (ρ := ρ) (σ := σ)]
   | pi A B ihA ihB =>
     simp [rename, subst, ihA (ρ := ρ) (σ := σ)]
     calc
@@ -287,15 +217,6 @@ theorem rename_subst :
     simpa [rename, subst] using ih (ρ := ρ) (σ := σ)
   | refl a iha =>
     simpa [rename, subst] using iha (ρ := ρ) (σ := σ)
-  | unitRec motive unitCase scrutinee ihmotive ihcase ihscrutinee =>
-    simp [rename, subst, ihmotive (ρ := ρ) (σ := σ), ihcase (ρ := ρ) (σ := σ),
-      ihscrutinee (ρ := ρ) (σ := σ)]
-  | boolRec motive falseCase trueCase scrutinee ihmotive ihFalse ihTrue ihscrutinee =>
-    simp [rename, subst, ihmotive (ρ := ρ) (σ := σ), ihFalse (ρ := ρ) (σ := σ),
-      ihTrue (ρ := ρ) (σ := σ), ihscrutinee (ρ := ρ) (σ := σ)]
-  | natRec motive zeroCase succCase scrutinee ihmotive ihZero ihSucc ihscrutinee =>
-    simp [rename, subst, ihmotive (ρ := ρ) (σ := σ), ihZero (ρ := ρ) (σ := σ),
-      ihSucc (ρ := ρ) (σ := σ), ihscrutinee (ρ := ρ) (σ := σ)]
 
 @[simp] theorem liftSub_liftRen_apply (σ : Sub m k) (ρ : Ren n m) (i : Fin (n + 1)) :
     liftSub σ (liftRen ρ i) = liftSub (fun j => σ (ρ j)) i := by
@@ -311,26 +232,12 @@ theorem subst_rename :
   induction t generalizing m k σ with
   | var i =>
     rfl
+  | const c =>
+    rfl
   | u0 =>
     rfl
   | u1 =>
     rfl
-  | unitTy =>
-    rfl
-  | unitMk =>
-    rfl
-  | boolTy =>
-    rfl
-  | boolFalse =>
-    rfl
-  | boolTrue =>
-    rfl
-  | natTy =>
-    rfl
-  | natZero =>
-    rfl
-  | natSucc k ih =>
-    simp [subst, rename, ih (σ := σ) (ρ := ρ)]
   | pi A B ihA ihB =>
     simp [subst, rename, ihA (σ := σ) (ρ := ρ)]
     calc
@@ -374,15 +281,6 @@ theorem subst_rename :
     simpa [subst, rename] using ih (σ := σ) (ρ := ρ)
   | refl a iha =>
     simpa [subst, rename] using iha (σ := σ) (ρ := ρ)
-  | unitRec motive unitCase scrutinee ihmotive ihcase ihscrutinee =>
-    simp [subst, rename, ihmotive (σ := σ) (ρ := ρ), ihcase (σ := σ) (ρ := ρ),
-      ihscrutinee (σ := σ) (ρ := ρ)]
-  | boolRec motive falseCase trueCase scrutinee ihmotive ihFalse ihTrue ihscrutinee =>
-    simp [subst, rename, ihmotive (σ := σ) (ρ := ρ), ihFalse (σ := σ) (ρ := ρ),
-      ihTrue (σ := σ) (ρ := ρ), ihscrutinee (σ := σ) (ρ := ρ)]
-  | natRec motive zeroCase succCase scrutinee ihmotive ihZero ihSucc ihscrutinee =>
-    simp [subst, rename, ihmotive (σ := σ) (ρ := ρ), ihZero (σ := σ) (ρ := ρ),
-      ihSucc (σ := σ) (ρ := ρ), ihscrutinee (σ := σ) (ρ := ρ)]
 
 @[simp] theorem subst_liftSub_wk (σ : Sub n m) (t : PureTm n) :
     subst (liftSub σ) (rename wk t) = rename wk (subst σ t) := by
@@ -440,26 +338,12 @@ theorem subst_rename :
   induction t generalizing m k τ with
   | var i =>
     rfl
+  | const c =>
+    rfl
   | u0 =>
     rfl
   | u1 =>
     rfl
-  | unitTy =>
-    rfl
-  | unitMk =>
-    rfl
-  | boolTy =>
-    rfl
-  | boolFalse =>
-    rfl
-  | boolTrue =>
-    rfl
-  | natTy =>
-    rfl
-  | natZero =>
-    rfl
-  | natSucc k ih =>
-    simp [subst, ih (τ := τ) (σ := σ)]
   | pi A B ihA ihB =>
     simp [subst, ihA (τ := τ) (σ := σ)]
     calc
@@ -503,15 +387,6 @@ theorem subst_rename :
     simp [subst, ih (τ := τ) (σ := σ)]
   | refl a iha =>
     simp [subst, iha (τ := τ) (σ := σ)]
-  | unitRec motive unitCase scrutinee ihmotive ihcase ihscrutinee =>
-    simp [subst, ihmotive (τ := τ) (σ := σ), ihcase (τ := τ) (σ := σ),
-      ihscrutinee (τ := τ) (σ := σ)]
-  | boolRec motive falseCase trueCase scrutinee ihmotive ihFalse ihTrue ihscrutinee =>
-    simp [subst, ihmotive (τ := τ) (σ := σ), ihFalse (τ := τ) (σ := σ),
-      ihTrue (τ := τ) (σ := σ), ihscrutinee (τ := τ) (σ := σ)]
-  | natRec motive zeroCase succCase scrutinee ihmotive ihZero ihSucc ihscrutinee =>
-    simp [subst, ihmotive (τ := τ) (σ := σ), ihZero (τ := τ) (σ := σ),
-      ihSucc (τ := τ) (σ := σ), ihscrutinee (τ := τ) (σ := σ)]
 
 @[simp] theorem subst_inst0 (σ : Sub n m) (a : PureTm n) (b : PureTm (n + 1)) :
     subst σ (inst0 a b) = inst0 (subst σ a) (subst (liftSub σ) b) := by

@@ -84,8 +84,8 @@ theorem pureProfile_stratified : pureProfile.stratified = true := by
   native_decide
 
 theorem pureProfile_eight_rewrites :
-    pureProfile.lang.rewrites.length = 8 := by
-  change Mettapedia.Languages.MeTTa.Pure.Core.mettaPure.rewrites.length = 8
+    pureProfile.lang.rewrites.length = 3 := by
+  change Mettapedia.Languages.MeTTa.Pure.Core.mettaPure.rewrites.length = 3
   decide
 
 theorem pureProfile_intensional :

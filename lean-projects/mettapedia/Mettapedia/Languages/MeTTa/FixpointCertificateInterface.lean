@@ -14,7 +14,8 @@ fixpoint contract to:
 - the current restricted `MeTTa-Pure` certificate lane, and
 - a narrow runtime-friendly artifact/query view.
 
-It does **not** claim that fixpoints are implemented in `MeTTa-Pure`.
+The live trusted `PureKernel` remains the small Pi/Sigma/Id/universe waist.
+This file does **not** claim that fixpoints are implemented in that kernel.
 It only records the first honest overlap we can state now.
 -/
 

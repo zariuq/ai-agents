@@ -101,6 +101,8 @@ inductive GroundedBuiltinHostKind where
   | f64Predicate
   | isVariableTerm
   | reprTerm
+  | parseTerm
+  | printlnTerm
   | metaTypeOfTerm
   | typeOfTerm
 deriving Repr, DecidableEq, BEq
@@ -108,6 +110,8 @@ deriving Repr, DecidableEq, BEq
 /-- How an aggregation lane packages collected backend results. -/
 inductive AggregationCollectionKind where
   | tupleExpr
+  | minAtom
+  | maxAtom
 deriving Repr, DecidableEq, BEq
 
 /-- Where an aggregation lane obtains the results it packages. -/
@@ -149,6 +153,28 @@ inductive ResidualPolicy where
   | failClosed
   | fallbackToRules
   | symbolicFallback
+deriving Repr, DecidableEq, BEq
+
+/-- Declarative result-shape class for numeric builtins.
+
+This is part of observable evaluation semantics, not a formatting afterthought.
+It records the fixed operator-class part of SWI/PeTTa numeric result behavior,
+while the runtime may still need to inspect the actual argument classes to pick
+the concrete MM2 lowering lane.
+
+Positive example:
+- `sqrt-math` is `alwaysFloat`
+- `round-math` is `alwaysInteger`
+- `+` is `preserveIntegralIfExact`
+
+Negative example:
+- this does not say that every numeric head always returns floats, and it does
+  not collapse operator-specific behavior into one coarse "numeric" bucket. -/
+inductive NumericResultShape where
+  | preserveIntegralIfExact
+  | alwaysFloat
+  | alwaysInteger
+  | preserveInputNumericClass
 deriving Repr, DecidableEq, BEq
 
 /-- Shared execution-permission envelope carried by every contract lane. -/
@@ -252,6 +278,7 @@ structure IntrinsicBuiltinContract where
   backendName : String
   supportedMemoShapes : List MemoShape := []
   builtinDemand : BuiltinDemandKind
+  numericResultShape : Option NumericResultShape := none
   eligibility : LaneEligibilityKind := .always
   residualPolicy : ResidualPolicy := .failClosed
   theoremRefs : List String := []
@@ -560,9 +587,12 @@ def ExecutionContractEntry.sortKey : ExecutionContractEntry → String
   | .groundedBuiltin entry =>
       let hostKey :=
         match entry.hostKind with
-        | .i32Compare => "i32_compare"
+        | .numericCompare => "numeric_compare"
+        | .f64Predicate => "f64_predicate"
         | .isVariableTerm => "is_variable_term"
         | .reprTerm => "repr_term"
+        | .parseTerm => "parse_term"
+        | .printlnTerm => "println_term"
         | .metaTypeOfTerm => "meta_type_of_term"
         | .typeOfTerm => "type_of_term"
       s!"grounded_builtin:{hostKey}:{entry.head}:{entry.minArity}"
@@ -570,6 +600,8 @@ def ExecutionContractEntry.sortKey : ExecutionContractEntry → String
       let collectionKey :=
         match entry.collectionKind with
         | .tupleExpr => "tuple_expr"
+        | .minAtom => "min_atom"
+        | .maxAtom => "max_atom"
       let sourceKey :=
         match entry.sourceKind with
         | .subevalAllResults => "subeval_all_results"
@@ -578,10 +610,11 @@ def ExecutionContractEntry.sortKey : ExecutionContractEntry → String
 def coreIntrinsicEntries : List ExecutionContractEntry :=
   coreIntrinsicContracts.map ExecutionContractEntry.intrinsicBuiltin
 
-/-- Shared artifact exported for runtime consumers. Schema version 1 packages the
-current lookup, space-effect, and intrinsic-builtin certificate lanes. -/
+/-- Shared artifact exported for runtime consumers. Schema version 3 widens the
+grounded and aggregation vocabularies with `parse_term`, `min_atom`, and
+`max_atom` lanes. -/
 structure ExecutionContractArtifact where
-  schemaVersion : Nat := 1
+  schemaVersion : Nat := 3
   dialect : String
   entries : List ExecutionContractEntry
 deriving Repr, DecidableEq, BEq
@@ -668,11 +701,15 @@ private def renderGroundedBuiltinHostKind : GroundedBuiltinHostKind → String
   | .f64Predicate => "f64_predicate"
   | .isVariableTerm => "is_variable_term"
   | .reprTerm => "repr_term"
+  | .parseTerm => "parse_term"
+  | .printlnTerm => "println_term"
   | .metaTypeOfTerm => "meta_type_of_term"
   | .typeOfTerm => "type_of_term"
 
 private def renderAggregationCollectionKind : AggregationCollectionKind → String
   | .tupleExpr => "tuple_expr"
+  | .minAtom => "min_atom"
+  | .maxAtom => "max_atom"
 
 private def renderAggregationSourceKind : AggregationSourceKind → String
   | .subevalAllResults => "subeval_all_results"
@@ -688,6 +725,12 @@ private def renderResidualPolicy : ResidualPolicy → String
   | .failClosed => "fail_closed"
   | .fallbackToRules => "fallback_to_rules"
   | .symbolicFallback => "symbolic_fallback"
+
+private def renderNumericResultShape : NumericResultShape → String
+  | .preserveIntegralIfExact => "preserve_integral_if_exact"
+  | .alwaysFloat => "always_float"
+  | .alwaysInteger => "always_integer"
+  | .preserveInputNumericClass => "preserve_input_numeric_class"
 
 private def renderKernelClass : RuntimeKernelClass → String
   | .ruleExec => "rule_exec"
@@ -1018,6 +1061,10 @@ private def renderIntrinsicBuiltin (e : IntrinsicBuiltinContract) : String :=
     ++ renderPermissionCore p ++ ","
     ++ renderMemoShapesField p ++ ","
     ++ "\"builtin_demand\":" ++ jsonStr (renderBuiltinDemand e.builtinDemand) ++ ","
+    ++ "\"numeric_result_shape\":"
+      ++ (match e.numericResultShape with
+          | some shape => jsonStr (renderNumericResultShape shape)
+          | none => "null") ++ ","
     ++ "\"eligibility\":" ++ jsonStr (renderLaneEligibilityKind e.eligibility) ++ ","
     ++ "\"residual_policy\":" ++ jsonStr (renderResidualPolicy e.residualPolicy) ++ ","
     ++ renderTheoremRefsField p
@@ -1306,6 +1353,8 @@ private def lintGroundedBuiltin (e : GroundedBuiltinContract) : List String :=
     match e.hostKind, e.eligibility with
     | .isVariableTerm, .always => []
     | .reprTerm, .always => []
+    | .parseTerm, .always => []
+    | .printlnTerm, .always => []
     | .metaTypeOfTerm, .always => []
     | .typeOfTerm, .always => []
     | _, .always =>

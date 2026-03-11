@@ -1,0 +1,3712 @@
+%% wm-pln-book: WM-PLN — The World-Model Calculus
+%%
+%% Render with:
+%%   lualatex -shell-escape wm-pln-book.tex && bibtex wm-pln-book && lualatex -shell-escape wm-pln-book.tex && lualatex -shell-escape wm-pln-book.tex
+
+\documentclass[11pt,openany]{report}
+\usepackage{pln-common}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+
+\title{WM-PLN:\\[4pt]
+  The World-Model Calculus\\[12pt]
+  \large\texttt{(DRAFT --- \today)}}
+\author{Zar and Oru\v{z}i\thanks{%
+  Oru\v{z}i denotes AI-assisted collaboration using ChatGPT, Codex, and Claude Code.}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Probabilistic Logic Networks (PLN) couples logical structure with uncertain
+inference.  In practice, however, many PLN presentations mix three distinct
+layers: (i)~a probabilistic world-model posterior, (ii)~an evidence algebra
+for compositional aggregation, and (iii)~operational truth-value views
+(strength, confidence, interval bounds).  This conflation produces
+\emph{semantic drift}: algebraic operators are treated as if they were the
+logic itself, and link-level inference attempts to propagate
+correlation-sensitive quantities without carrying the information required to
+do so correctly.
+
+We present the \emph{world-model calculus}, the mathematical foundation
+underlying \xiPLN{}, designed to be (a)~correct by construction and
+(b)~extensible to tractable sublayers.  The core move is to make the
+complete layer a \emph{posterior-state calculus}: the proof object is a
+revisable world-model posterior state, and all truth values are obtained
+by querying that state.  We give a reference complete
+instance as a Dirichlet posterior over complete worlds (\JointEvidence{}),
+prove that evidence extraction commutes with revision, and formalize a no-go
+theorem showing that complete link evidence cannot, in general, be computed
+from local per-link evidence alone.  We then show how Bayesian-network-style
+sublayers, higher-order reductions, quantifier semantics, intensional
+inheritance, and inference-control theory arise as compiled tactics with
+explicit assumptions within the world-model framework.
+
+All results are formalized in Lean~4 with Mathlib, totaling over 140
+theorem-backed modules with zero \code{sorry}.
+\end{abstract}
+
+\tableofcontents
+
+%% ═══════════════════════════════════════════════════════════════════
+\part{Orientation}
+\label{part:orientation}
+%% ═══════════════════════════════════════════════════════════════════
+
+\chapter{Introduction}
+\label{ch:introduction}
+
+Probabilistic Logic Networks, as described by Ben Goertzel, Matthew Ikl\'{e},
+Izabela Freire Goertzel, and Ari Heljakka~\cite{goertzel2009pln}, represent uncertain judgments using truth
+values: a \emph{strength} (probability-like estimate) and a \emph{confidence}
+(reliability-like quantity derived from sample size).  The ambition was
+generous---to build a general-purpose uncertain reasoner capable of deduction,
+induction, abduction, and revision, all within a unified algebraic framework.
+
+That ambition produced real insights.  The evidence-count representation, the
+separation of strength from confidence, the recognition that revision must be
+compositional, and the aspiration to connect logical structure with
+probabilistic semantics---these were the right instincts.  But in the passage
+from intuition to formalization, something went wrong.
+
+\section{Where Semantic Drift Came From}
+
+The difficulty is not that PLN's rules are wrong.  Many of them are
+correct---under assumptions that were left implicit.  The difficulty is that
+the original presentation mixes three conceptually distinct layers without
+always marking where one ends and another begins:
+
+\begin{enumerate}
+\item \textbf{The world-model layer.}  A probabilistic model---a joint
+  distribution, a Bayesian network, or some structured posterior---that can
+  answer any query by conditioning.  This is the \emph{complete} semantics.
+
+\item \textbf{The evidence-algebra layer.}  An algebraic structure on
+  observation counts $(n^+, n^-)$ with revision as addition, information
+  ordering, and lattice operations.  This is a \emph{compositional bookkeeping}
+  layer.
+
+\item \textbf{The operational-view layer.}  Strength, confidence, weight,
+  interval bounds---these are \emph{extracted summaries} of evidence, useful for
+  thresholding, display, and approximate computation, but not themselves the
+  semantics.
+\end{enumerate}
+
+When these layers are conflated, several things go wrong.  Operational views
+get treated as if they \emph{were} the logic: interval bounds are composed
+with rules designed for point probabilities, confidence heuristics are chained
+without tracking what information they lost.  Link-level inference attempts to
+compute complete posteriors from local link truth values, ignoring the
+correlations that live only in the joint state.  The result is semantic drift:
+the system \emph{almost} works, but its correctness depends on assumptions
+that are neither stated nor checked.
+
+\section{What the Refoundation Changes}
+
+\xiPLN{} is a response to semantic drift.  It does three things:
+
+\begin{enumerate}
+\item It makes the \emph{world-model posterior state} the primary proof object.
+  Inference does not propagate truth values between links; it revises posterior
+  states and answers queries against the revised state.
+
+\item It isolates the \emph{evidence algebra} as a separate, well-defined
+  algebraic layer---a quantale and Heyting frame on observation counts---that
+  serves compositional aggregation but does not pretend to be the complete
+  semantics.
+
+\item It treats all classic PLN rules (deduction, induction, abduction,
+  revision) as \emph{compiled tactics}: derived rewrites that are correct
+  under explicit side conditions within declared model classes, not as
+  primitive laws of the logic.
+\end{enumerate}
+
+The result is not a ``second PLN.''  It is the reference semantics that
+operational PLN rules approximate, under explicit assumptions, within declared
+model classes.  Where the original book's rules are correct, \xiPLN{} proves
+them correct and states the conditions.  Where they are not, \xiPLN{} provides
+counterexamples and corrected, side-conditioned replacements.
+
+\section{What This Document Claims}
+
+This document is a self-contained mathematical presentation of the PLN
+refoundation.  It does not require the reader to have the PLN book open,
+though familiarity with the PLN tradition will enrich the reading.  It is
+\emph{not} a review of the PLN book---that is a separate
+document~\cite{plnReview2026}.
+
+Every theorem stated here has been formalized in Lean~4 with Mathlib.  Where
+a result is conditional on explicit assumptions, those assumptions are stated.
+Where a result establishes a boundary (a counterexample or no-go theorem),
+that boundary is stated plainly.  Where work remains operational or future,
+that status is marked.
+
+\begin{center}
+\fbox{\begin{minipage}{0.94\textwidth}
+\textbf{Trust Base \& Scope.}
+\begin{itemize}
+\item \emph{Formalized} means that the stated theorem or counterexample is checked by the Lean~4 kernel against imported Mathlib facts.
+\item \emph{Lean trust base}: the Lean kernel, Mathlib, and the standard elaboration/runtime path needed to check the proof terms.
+\item \emph{Proved in Lean}: the world-model/evidence calculi, compiled-rule theorems, and counterexamples stated here as mathematical claims.
+\item \emph{Numerically instantiated in Python}: full-dataset protocol runs (GJP, Gas, Steel, NAB) using the same closed-form update/query laws; these are auditable experiment instantiations, not kernel-checked proofs.
+\item \emph{Deferred/open}: some runtime infrastructure remains operational rather than theoremic, and the stable finite-domain quantifier bundle is not the whole quantifier story; Chapter~11's arbitrary-domain cleanup is still being integrated into the manuscript narrative.
+\end{itemize}
+\end{minipage}}
+\end{center}
+
+The mantra throughout:
+
+\begin{quote}
+\emph{Probability is what you query; evidence is what you carry.}
+\end{quote}
+
+
+\chapter{Claim Taxonomy and Reading Guide}
+\label{ch:taxonomy}
+
+Before presenting any mathematics, we fix the language of claims.  Every
+result in this document falls into one of four categories:
+
+\begin{description}
+\item[\claimCore{}] An exact theorem, proved unconditionally (or with only
+  standard mathematical hypotheses like non-negativity or finiteness).
+  These are the bedrock.
+
+\item[\claimConditional{}] A theorem that holds under explicitly stated
+  structural assumptions---a declared model class, a side condition like
+  d-separation or screening-off, a positivity hypothesis.  These are correct
+  \emph{relative to} the stated assumptions.  The assumptions are part of the
+  theorem, not an afterthought.
+
+\item[\claimBoundary{}] A counterexample or no-go theorem establishing that
+  some desirable property \emph{fails} in general.  These are as important as
+  the positive results: they tell us exactly where fast inference cannot claim
+  completeness, and they motivate the structural assumptions in conditional
+  theorems.
+
+\item[\claimOperational{}] A definition, interface, or specification that
+  exists in the formalization but whose full operational realization depends
+  on runtime infrastructure (e.g., a MeTTa execution engine) not yet
+  available.  These are honest placeholders: the mathematical specification
+  is precise, but the implementation story is future work.
+\end{description}
+
+Every chapter will mark its results with these labels.  The reader should
+always know whether a claim is proved, conditioned, bounded, or operational.
+
+\section{How to Read This Document}
+
+\begin{itemize}
+\item \textbf{Parts I--III} (Chapters~\ref{ch:introduction}--\ref{ch:distributional})
+  give the foundations: the world-model kernel, the evidence algebra, and the
+  truth-value views.  A reader wanting the core theory should read these.
+
+\item \textbf{Part IV} (Chapters~\ref{ch:sigma-rewrites}--\ref{ch:error-transport})
+  shows how fast PLN inference arises from the kernel via compiled rewrites
+  over Bayesian-network world models.  A reader interested in connecting
+  \xiPLN{} to practical PLN should focus here.
+
+\item \textbf{Part V} (Chapters~\ref{ch:higher-order}--\ref{ch:temporal})
+  presents the main extensions: higher-order reduction, quantifiers,
+  intensional inheritance, and temporal/causal inference.  Each chapter is
+  largely self-contained.
+
+\item \textbf{Part VI} (Chapters~\ref{ch:large-scale}--\ref{ch:inference-control})
+  addresses large-scale inference theory and inference control---the most
+  complex and the most honest part of the formalization.
+
+\item \textbf{Part VII} (Chapters~\ref{ch:what-proved}--\ref{ch:conclusion})
+  takes stock: what is proved, what is not, and what it means.
+\end{itemize}
+
+
+\chapter{Mathematical Desiderata for a Sound PLN}
+\label{ch:desiderata}
+
+What must any foundation for PLN preserve?  We state eight desiderata.  Not
+all of them can be satisfied simultaneously in full generality---the no-go
+theorem in Chapter~\ref{ch:no-go} shows that local completeness conflicts
+with compositionality for arbitrary world models.  But any proposed
+foundation should address each desideratum explicitly, either satisfying it
+or stating clearly why and where it fails.
+
+\begin{enumerate}
+\item \textbf{Posterior-state semantics.}  The foundational proof object is a
+  posterior state---a structured distribution over possible worlds, or a
+  sufficient statistic thereof.  Truth values for specific queries are
+  obtained by extraction from this state, not by direct algebraic manipulation
+  of link-level numbers.
+
+\item \textbf{Revisability.}  New evidence can always be incorporated.
+  Revision is the fundamental operation: it combines two posterior states
+  into a single revised state.  It must be associative and commutative
+  (evidence order should not matter for the final state).
+
+\item \textbf{Queryability.}  Any well-formed query---a proposition, a link,
+  a conditional---can be answered by projecting from the posterior state.
+  The query language is separate from the evidence representation.
+
+\item \textbf{Evidence compositionality.}  Evidence extraction commutes with
+  revision:
+  \[
+    \mathrm{evidence}(W_1 + W_2, q) = \mathrm{evidence}(W_1, q) \hplus
+    \mathrm{evidence}(W_2, q).
+  \]
+  This is the algebraic law that makes revision at the world-model level
+  compatible with revision at the evidence level.
+
+\item \textbf{Tractable compiled fragments.}  For restricted world-model
+  classes (e.g., Bayesian networks with bounded treewidth), query answering
+  is tractable.  Classic PLN rules arise as compiled rewrites within such
+  classes.
+
+\item \textbf{Explicit side conditions.}  Every compiled rewrite carries its
+  assumptions as explicit hypotheses: d-separation, screening-off, positivity,
+  finiteness.  There are no ``silent assumptions.''
+
+\item \textbf{Extracted truth-value views.}  Strength, confidence, interval
+  bounds, and distributional summaries are derived views, not primitive
+  objects.  They are indispensable for operational use, but they are not the
+  semantics.
+
+\item \textbf{Theorem-level boundaries.}  Where completeness or compositionality
+  fails, there is a formal counterexample or no-go theorem stating what
+  cannot be done.  These boundaries guide the design of tractable fragments.
+\end{enumerate}
+
+\xiPLN{} satisfies all eight desiderata, with the caveat that tractability
+(desideratum~5) always comes at the cost of restricting the model class, and
+the no-go theorem (Chapter~\ref{ch:no-go}) establishes that local
+completeness is inherently impossible for unrestricted world models.
+
+
+%% ═══════════════════════════════════════════════════════════════════
+\part{The Semantic Kernel}
+\label{part:kernel}
+%% ═══════════════════════════════════════════════════════════════════
+
+\chapter{Queries, Judgments, and World Models}
+\label{ch:queries}
+
+The first technical move in \xiPLN{} is to separate what we ask
+(\emph{queries}) from what we know (\emph{posterior states}).  This
+separation is the foundation of everything that follows.
+
+\section{The Query Language}
+
+In PLN, one may ask: ``What is the probability that $A$ is true?''
+or ``What is the probability that $B$ is true given $A$?''  These are
+queries against an uncertain knowledge base.  We represent them as a
+simple inductive type:
+
+\begin{lstlisting}
+inductive PLNQuery (Atom : Type*) where
+  | prop  : Atom -> PLNQuery Atom
+  | link  : Atom -> Atom -> PLNQuery Atom
+  | linkCond : List Atom -> Atom -> PLNQuery Atom
+\end{lstlisting}
+
+A \code{prop} query asks about a marginal event.  A \code{link} query asks
+about the conditional relationship between two atoms ($P(B \mid A)$, roughly).
+A \code{linkCond} query asks about a conditional given multiple conditioning
+atoms.  This is the minimal query language needed to express the core PLN
+inference patterns.
+
+The query language is deliberately simple.  It is not a full predicate logic;
+it is the interface through which the world model is interrogated.  Richer
+query languages (first-order, higher-order, temporal) are built on top of
+this core in later chapters.
+
+\section{World Models}
+
+A \emph{world model} is anything that can answer queries.  In Lean, we
+capture this as a typeclass:
+
+\begin{lstlisting}
+class WorldModel (State : Type*) (Query : Type*)
+    [EvidenceType State] where
+  evidence : State -> Query -> Evidence
+  evidence_add : forall W1 W2 q,
+    evidence (W1 + W2) q = evidence W1 q + evidence W2 q
+\end{lstlisting}
+
+Here \code{State} is the type of posterior states, \code{Query} is the
+query type, and \code{EvidenceType} equips the state with the structure of
+an additive commutative monoid---meaning revision ($+$) is defined and
+behaves correctly.
+
+The single method \code{evidence} extracts an \Evidence{} value (a pair of
+counts $(n^+, n^-)$) for any query from any state.  The single law
+\code{evidence\_add} says that extraction commutes with revision.  This is
+desideratum~4 from Chapter~\ref{ch:desiderata}: evidence compositionality.
+
+\paragraph{Notation.}
+We write $\mathrm{ev}(W, q)$ for $\code{evidence}(W, q)$, and $W_1 + W_2$
+for the revised state.  The evidence algebra on the extracted values uses
+$\hplus$ for pointwise addition of counts.
+
+See \codepath{Mettapedia/Logic/PLNWorldModel.lean}.
+
+\section{World Models with Side Conditions}
+
+For compiled inference, we often need structural assumptions about the world
+model: a DAG structure for a Bayesian network, conditional independence
+conditions, positivity hypotheses.  We capture this with a
+\emph{sigma-bundled world model}:
+
+\begin{lstlisting}
+structure WorldModelSigma (State : Type*) (Query : Type*)
+    [EvidenceType State] where
+  wm : WorldModel State Query
+  sigma : Prop  -- side-condition context
+\end{lstlisting}
+
+The $\Sigma$ (side-condition context) is a proposition that the world model
+satisfies additional structural properties.  Every compiled rewrite carries
+its $\Sigma$ explicitly---there are no hidden assumptions.
+
+\section{The Solomonoff Connection}
+
+The \nuPLN{} framework of Nil Geisweiller~\cite{nuPLN2026} grounds PLN in
+Solomonoff Universal Induction.  The key ideas fold naturally into the
+world-model framework:
+
+\begin{itemize}
+\item The \emph{global probability space} $(\Omega, \mathcal{F}, \nu)$
+  corresponds to a world-model state where $\Omega$ is the set of possible
+  worlds, each containing a probabilistic predicate
+  $\hat{\mu} : \mathcal{D} \to \Omega \to \mathrm{Bool}$ and its complete
+  evaluation history.
+
+\item The \emph{universal distribution} $\nu$ defines a prior over possible
+  generators $\hat{\mu} \in \mathcal{L}$, where $\mathcal{L}$ is a
+  probabilistic programming language.  Bayesian updating with observed
+  evidence produces the posterior.
+
+\item The \emph{observable predicate} $\mu$ (the true generator) lives in
+  the true world $\omega$.  An observer has access only to a finite subset
+  of evaluations---the evidence.
+
+\item \emph{Concepts and predicates} are isomorphic via satisfying sets
+  and indicator functions.  The inheritance relationship
+  $A \Rightarrow B$ on the concept side corresponds to implication on the
+  predicate side.  We work on the predicate side throughout.
+\end{itemize}
+
+The crucial insight from \nuPLN{} is that de~Finetti's representation
+theorem~\cite{definetti1937} justifies evidence counts as sufficient
+statistics.  For an infinite exchangeable sequence of binary observations,
+the counts $(n^+, n^-)$ contain all the information needed for Bayesian
+updating.  When we assume a Beta prior $\text{Beta}(\alpha, \beta)$, the
+posterior after observing $n^+$ positive and $n^-$ negative outcomes is
+$\text{Beta}(\alpha + n^+, \beta + n^-)$.
+
+This is why PLN's evidence representation $(n^+, n^-)$ is not merely a
+convenient bookkeeping device---it is the \emph{sufficient statistic} for
+the posterior under the exchangeability assumption.  Chapter~\ref{ch:evidence}
+develops this algebraic structure in detail.
+
+
+\chapter{Reference Complete Semantics: Posterior-State Calculus}
+\label{ch:posterior-state}
+
+The complete core calculus is intentionally simple.  It is the calculus of
+revising posterior states plus a query interface.  Everything else in
+\xiPLN{}---evidence algebras, truth-value views, compiled rules, tractable
+fragments---is built on top of this core.
+
+\section{The Reference Instance: Dirichlet over Worlds}
+
+For finite propositional scope (atoms indexed by $\mathrm{Fin}(n)$), we
+instantiate the \WorldModel{} interface with a Dirichlet world-table:
+\[
+  \JointEvidence(n) := \mathrm{Fin}(2^n) \to \mathbb{R}_{\ge 0}^{\infty}
+\]
+interpreted as Dirichlet pseudo-counts over the $2^n$ complete worlds.
+Each coordinate $E(w)$ records how much evidence supports world $w$.
+
+Evidence extraction works by summation:
+\begin{itemize}
+\item $\mathrm{ev}(E, \code{prop}(A))$: sum counts where atom $A$ is true
+  (positive) vs.\ false (negative).
+\item $\mathrm{ev}(E, \code{link}(A, B))$: sum counts where $A$ is true
+  and $B$ is true vs.\ $A$ is true and $B$ is false.
+\item $\mathrm{ev}(E, \code{linkCond}([A_1, \ldots, A_k], B))$: sum counts
+  where all $A_i$ hold and $B$ holds vs.\ all $A_i$ hold and $B$ fails.
+\end{itemize}
+
+Revision is pointwise addition of pseudo-counts.  The Lean prototype proves
+that this satisfies the world-model interface, including the critical
+compositionality law:
+\[
+  \mathrm{ev}(E_1 + E_2, q) = \mathrm{ev}(E_1, q) \hplus \mathrm{ev}(E_2, q)
+\]
+for all queries $q$.
+
+See \codepath{Mettapedia/Logic/PLNJointEvidence.lean}.
+
+\section{The Sequent-Calculus View}
+
+We present \xiPLN{} as a sequent-style system with two contexts:
+\begin{itemize}
+\item An \emph{evidence context} $\Gamma$, a finite multiset of posterior
+  fragments (elements of the state type).
+\item A \emph{side-condition context} $\Sigma$, containing structural
+  assumptions about the chosen world-model class (e.g., a BN DAG,
+  positivity, d-separation facts).
+\end{itemize}
+
+\subsection{Judgments}
+
+Two judgment forms suffice:
+\begin{enumerate}
+\item \textbf{World-model judgment:}
+  $\Sigma; \Gamma \vdash_{\mathrm{wm}} W$---from the evidence pieces in
+  $\Gamma$, we construct the revised posterior state $W$.
+
+\item \textbf{Query judgment:}
+  $\Sigma; \Gamma \vdash q \Downarrow e$---querying the revised posterior
+  derived from $\Gamma$ yields evidence $e$ for query $q$.
+\end{enumerate}
+
+When \code{State} is an additive commutative monoid, the world-model
+judgment is deterministic: $W := \sum \Gamma$.  The query judgment then
+extracts via the world-model interface: $e := \mathrm{ev}(W, q)$.
+
+\subsection{Core Rules}
+
+The complete core calculus consists of four rules:
+\[
+\frac{}{\Sigma; \varnothing \vdash_{\mathrm{wm}} 0}
+\;(\text{WM-Unit})
+\qquad
+\frac{}{\Sigma; \{W\} \vdash_{\mathrm{wm}} W}
+\;(\text{WM-Ev})
+\]
+\[
+\frac{\Sigma; \Gamma \vdash_{\mathrm{wm}} W \quad
+      \Sigma; \Delta \vdash_{\mathrm{wm}} W'}
+     {\Sigma; \Gamma \uplus \Delta \vdash_{\mathrm{wm}} (W + W')}
+\;(\text{WM-Rev})
+\]
+\[
+\frac{\Sigma; \Gamma \vdash_{\mathrm{wm}} W}
+     {\Sigma; \Gamma \vdash q \Downarrow \mathrm{ev}(W, q)}
+\;(\text{Q-Extract})
+\]
+
+The key algebraic law---evidence compositionality---makes the following
+\emph{query-revision} rule admissible:
+\[
+\frac{\Sigma; \Gamma \vdash q \Downarrow e \quad
+      \Sigma; \Delta \vdash q \Downarrow e'}
+     {\Sigma; \Gamma \uplus \Delta \vdash q \Downarrow (e \hplus e')}
+\;(\text{Q-Rev})
+\]
+
+\paragraph{Links are queries.}
+In this view, a PLN ``link'' $A \Rightarrow B$ is not an object-level
+connective; it is a query \code{link(A, B)} against the revised world model.
+The calculus does not propagate links directly; it revises world models and
+answers link queries.
+
+\section{Probability Views}
+
+From \Evidence{} we obtain posterior-mean probabilities:
+\[
+  P(A) = \frac{\#(A)}{\#(\top)}, \qquad
+  P(B \mid A) = \frac{\#(A \wedge B)}{\#(A)}
+\]
+where $\#(\cdot)$ denotes world-count sums in \JointEvidence{}.  The Lean
+file \codepath{Mettapedia/Logic/PLNJointEvidenceProbability.lean} proves
+the exact ratio forms for these views.
+
+\section{Derived Link Calculus: Classic PLN Rules as Admissible Rewrites}
+
+Classic PLN rules become \emph{admissible query rewrites} relative to a
+world-model class with explicit side conditions $\Sigma$.
+
+\subsection{The Deduction Formula}
+
+The PLN deduction rule computes $P(C \mid A)$ by total probability:
+\begin{align}
+  P(C \mid A) &= P(C \mid A, B)\,P(B \mid A) + P(C \mid A, \lnot B)\,P(\lnot B \mid A)
+  \label{eq:total-prob}
+\end{align}
+
+Under the \emph{screening-off} conditions
+$P(C \mid A, B) = P(C \mid B)$ and
+$P(C \mid A, \lnot B) = P(C \mid \lnot B)$, this simplifies to:
+\begin{align}
+  P(C \mid A) &= P(C \mid B)\,P(B \mid A)
+    + P(C \mid \lnot B)\,(1 - P(B \mid A))
+  \label{eq:deduction-screened}
+\end{align}
+
+Writing $s_{AB} = P(B \mid A)$, $s_{BC} = P(C \mid B)$, $s_B = P(B)$,
+$s_C = P(C)$, and eliminating $P(C \mid \lnot B)$ via
+$s_C = s_B \cdot s_{BC} + (1 - s_B) \cdot P(C \mid \lnot B)$, we obtain:
+
+\begin{definition}[PLN deduction strength]
+\label{def:deduction-strength}
+\[
+  \mathrm{plnDed}(s_{AB}, s_{BC}, s_B, s_C) \;:=\;
+  s_{AB} \cdot s_{BC} + (1 - s_{AB}) \cdot \frac{s_C - s_B \cdot s_{BC}}{1 - s_B}
+\]
+defined when $0 < s_B < 1$.
+\end{definition}
+
+\begin{theorem}[Chain BN deduction exactness (\claimConditional{})]
+\label{thm:chain-deduction}
+Let $W$ be a chain BN world model $A \to B \to C$.  Under the explicit
+hypotheses:
+\begin{enumerate}
+\item[(i)] $0 < \strength(W, \code{prop}(B)) < 1$ \quad (positivity),
+\item[(ii)] $\Sigma \vdash C \perp\!\!\!\perp A \mid B$ and
+  $C \perp\!\!\!\perp A \mid \lnot B$ \quad (screening-off),
+\end{enumerate}
+we have:
+\[
+  \strength(W, \code{link}(A, C)) = \mathrm{plnDed}\big(
+    \strength(W, \code{link}(A, B)),\;
+    \strength(W, \code{link}(B, C)),\;
+    \strength(W, \code{prop}(B)),\;
+    \strength(W, \code{prop}(C))
+  \big).
+\]
+\end{theorem}
+
+In Lean:
+\begin{lstlisting}
+theorem chainBN_plnDeductionStrength_exact
+    (hpos : 0 < queryStrength W (PLNQuery.prop B))
+    (hlt  : queryStrength W (PLNQuery.prop B) < 1)
+    (hso  : screeningOff W A B C) :
+    queryStrength W (PLNQuery.link A C) =
+    plnDeductionStrength
+      (queryStrength W (PLNQuery.link A B))
+      (queryStrength W (PLNQuery.link B C))
+      (queryStrength W (PLNQuery.prop B))
+      (queryStrength W (PLNQuery.prop C))
+\end{lstlisting}
+
+The analogous result holds for fork BNs $A \leftarrow B \to C$
+(\code{forkBN\_plnDeductionStrength\_exact}).
+
+See \codepath{Mettapedia/Logic/PLNBayesNetFastRules.lean}.
+
+\subsection{Induction and Abduction}
+
+Induction and abduction arise from the same total-probability structure
+but with different known/unknown roles:
+
+\begin{itemize}
+\item \textbf{Induction:} given $P(A \mid B)$ and $P(A \mid C)$,
+  estimate $P(C \mid B)$.  This inverts the direction of the conditional.
+\item \textbf{Abduction:} given $P(B \mid A)$ and $P(B \mid C)$,
+  estimate $P(A \mid C)$.  This inverts the conditioning.
+\end{itemize}
+
+Both require their own screening-off conditions, which are
+formally stated in the Lean proofs.
+
+See \codepath{Mettapedia/Logic/PLNDerivation.lean}.
+
+
+\chapter{The Local-Completeness No-Go Theorem}
+\label{ch:no-go}
+
+One might hope for a system that takes local per-link evidence
+($\Evidence$ for $A$, $B$, $C$, $A \Rightarrow B$, $B \Rightarrow C$)
+and computes complete evidence for $A \Rightarrow C$.  \xiPLN{} asserts
+that this is impossible in general.
+
+\begin{theorem}[No local complete deduction rule (\claimBoundary{})]
+\label{thm:no-go}
+There is no function
+\[
+  f : \Evidence^5 \to \Evidence
+\]
+that, for all joint evidence states $E$, computes the exact link evidence
+for $A \Rightarrow C$ from only the local premises
+$\mathrm{ev}(E, A)$, $\mathrm{ev}(E, B)$, $\mathrm{ev}(E, C)$,
+$\mathrm{ev}(E, A \Rightarrow B)$, $\mathrm{ev}(E, B \Rightarrow C)$.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+For three atoms $A, B, C$, there are $2^3 = 8$ possible worlds.
+We construct two joint evidence states $E_1, E_2 :
+\mathrm{Fin}(8) \to \mathbb{R}_{\ge 0}$ that agree on all five
+marginal evidence values:
+\[
+  \mathrm{ev}(E_1, A) = \mathrm{ev}(E_2, A), \quad
+  \mathrm{ev}(E_1, B) = \mathrm{ev}(E_2, B), \quad
+  \mathrm{ev}(E_1, C) = \mathrm{ev}(E_2, C),
+\]
+\[
+  \mathrm{ev}(E_1, A \!\Rightarrow\! B) = \mathrm{ev}(E_2, A \!\Rightarrow\! B), \quad
+  \mathrm{ev}(E_1, B \!\Rightarrow\! C) = \mathrm{ev}(E_2, B \!\Rightarrow\! C),
+\]
+but disagree on the conclusion:
+\[
+  \mathrm{ev}(E_1, A \!\Rightarrow\! C) \ne \mathrm{ev}(E_2, A \!\Rightarrow\! C).
+\]
+
+The key: world entries corresponding to $(A\!=\!1, B\!=\!0, C\!=\!1)$
+and $(A\!=\!1, B\!=\!1, C\!=\!0)$ can be traded off against each other
+while preserving all five marginals.  But this trade changes the
+$A \Rightarrow C$ evidence because it redistributes mass among worlds
+where $A$ is true.
+
+Since the five marginals cannot distinguish $E_1$ from $E_2$, no
+function $f : \Evidence^5 \to \Evidence$ can compute $\mathrm{ev}(E, A \!\Rightarrow\! C)$
+correctly for both states.
+\end{proof}
+
+See \codepath{Mettapedia/Logic/PLNJointEvidenceNoGo.lean}.
+
+\section{Interpretation}
+
+This theorem is the formal core of ``you must carry correlations.''
+It does \emph{not} make fast PLN useless.  It tells us exactly what fast
+PLN \emph{cannot} claim: completeness for arbitrary world models without
+structural assumptions.
+
+The constructive response is to:
+\begin{enumerate}
+\item \textbf{Restrict the model class.}  For Bayesian networks with
+  explicit DAG structure, the factorization makes local computation
+  exact (Chapter~\ref{ch:bn-models}).
+\item \textbf{State the assumptions.}  Every compiled rule carries its
+  $\Sigma$ context, so the user knows exactly when the fast rule applies.
+\item \textbf{Provide corrected alternatives.}  Where an original PLN
+  formula required an unstated assumption, provide the corrected
+  side-conditioned version alongside the boundary theorem.
+\end{enumerate}
+
+
+%% ═══════════════════════════════════════════════════════════════════
+\part{Evidence and Truth-Value Views}
+\label{part:evidence}
+%% ═══════════════════════════════════════════════════════════════════
+
+\chapter{Evidence Algebra}
+\label{ch:evidence}
+
+Evidence is the currency of PLN.  Before any inference rule fires, before
+any truth value is computed, evidence must be collected, combined, and
+compared.  This chapter develops the algebraic structure of evidence.
+
+\section{Evidence as Counts}
+
+The basic evidence type in PLN is a pair of non-negative counts:
+\[
+  \Evidence := (n^+, n^-) \in \mathbb{N} \times \mathbb{N}
+\]
+where $n^+$ counts positive observations and $n^-$ counts negative
+observations.  (In the Lean formalization, we sometimes work over
+$\mathbb{R}_{\ge 0}$ or $\mathbb{R}_{\ge 0}^\infty$ for compatibility
+with measure-theoretic constructions.)
+
+The total sample size is $n = n^+ + n^-$.  The \emph{strength} view
+(posterior mean) is $s = n^+ / n$ when $n > 0$.  But we must resist
+the temptation to conflate the evidence $(n^+, n^-)$ with its
+strength view $s$---evidence carries strictly more information.
+
+See \codepath{Mettapedia/Logic/EvidenceClass.lean}.
+
+\section{Revision as Addition}
+
+The fundamental operation on evidence is \emph{revision}: combining two
+bodies of evidence into one.  Revision is componentwise addition:
+\[
+  (n_1^+, n_1^-) \hplus (n_2^+, n_2^-) = (n_1^+ + n_2^+, n_1^- + n_2^-)
+\]
+This is associative, commutative, and has unit $(0, 0)$---the evidence
+of having observed nothing.
+
+The justification for additive revision comes from de~Finetti's
+representation theorem.  For exchangeable binary sequences, the counts
+are sufficient statistics for the posterior.  Adding counts corresponds to
+Bayesian conjugate updating with a Beta prior:
+\[
+  \text{Beta}(\alpha + n_1^+, \beta + n_1^-)
+  \;\;\xrightarrow{+\;(n_2^+, n_2^-)}\;\;
+  \text{Beta}(\alpha + n_1^+ + n_2^+, \beta + n_1^- + n_2^-)
+\]
+
+This is why evidence revision is \emph{addition}: it is the algebraic
+shadow of Bayesian conjugate updating.
+
+\section{Information Ordering}
+
+Evidence values are partially ordered by information content:
+\[
+  (n_1^+, n_1^-) \le (n_2^+, n_2^-) \iff
+  n_1^+ \le n_2^+ \;\wedge\; n_1^- \le n_2^-
+\]
+More evidence is always at least as informative.  This ordering makes
+$\Evidence$ a lattice with meet (componentwise min) and join (componentwise
+max).
+
+\section{Quantale Structure}
+
+Beyond the additive monoid and lattice, $\Evidence$ carries a
+\emph{quantale} structure.  A quantale is a complete lattice equipped
+with a monoidal operation $\htensor$ that distributes over arbitrary
+joins:
+\[
+  a \htensor \Big(\bigvee_{i \in I} b_i\Big) = \bigvee_{i \in I} (a \htensor b_i)
+\]
+
+For $\Evidence = (n^+, n^-)$, the tensor is defined as:
+\[
+  (a^+, a^-) \htensor (b^+, b^-) = (a^+ \cdot b^+,\; a^+ \cdot b^- + a^- \cdot b^+)
+\]
+with unit $(1, 0)$.  This corresponds to the compositional combination of
+dependent evidence streams: observing $a$ and then observing $b$ conditional
+on $a$ being positive.
+
+\begin{theorem}[Quantale transitivity (\claimCore{})]
+\label{thm:quantale-trans}
+For evidence values $e_{AB}$, $e_{BC}$ representing
+$A \Rightarrow B$ and $B \Rightarrow C$ respectively:
+\[
+  e_{AB} \htensor e_{BC} \;\le\; e_{AC}
+\]
+in the information ordering.  Equality holds under the screening-off
+conditions.
+\end{theorem}
+
+This inequality is the algebraic shadow of the deduction rule:
+the tensor product of premise evidence provides a lower bound on the
+conclusion evidence.
+
+See \codepath{Mettapedia/Logic/EvidenceQuantale.lean}.
+
+\section{Heyting Structure}
+
+$\Evidence$ also forms a Heyting algebra with an explicit
+pseudo-complement:
+
+\begin{definition}[Heyting implication on $\Evidence$ (\claimCore{})]
+The relative pseudo-complement is defined componentwise:
+\[
+  (a^+, a^-) \Rightarrow (b^+, b^-) =
+  \Big(\,\begin{cases} \top & \text{if } a^+ \le b^+ \\
+                        b^+ & \text{otherwise}\end{cases},\;\;
+        \begin{cases} \top & \text{if } a^- \le b^- \\
+                        b^- & \text{otherwise}\end{cases}\,\Big)
+\]
+satisfying the residuation law:
+$a \le b \Rightarrow c \iff a \wedge b \le c$.
+\end{definition}
+
+The Heyting complement (negation) is $\neg a = a \Rightarrow \bot = a \Rightarrow (0,0)$.
+
+This is important because the evidence algebra supports \emph{intuitionistic}
+logical operations.  In particular, the law of excluded middle fails:
+$a \vee \neg a \ne \top$ in general, because there may be no evidence at all.
+
+A key formalized fact---the ``totality gate''---establishes that
+$\Evidence$ has incomparable elements (e.g., $(3, 0)$ and $(0, 3)$) and
+admits no faithful order-embedding into the reals.  No single real-valued
+function captures all evidence information.
+
+See \codepath{Mettapedia/Logic/HeytingValuationOnEvidence.lean} and
+\codepath{Mettapedia/Logic/PLN\_KS\_Bridge.lean}.
+
+\section{What Evidence Algebra Is Not}
+
+Evidence algebra is \emph{not} the complete probabilistic semantics.
+It is a compositional bookkeeping layer.  The world-model posterior
+(Chapter~\ref{ch:posterior-state}) carries strictly more information
+than the extracted per-query evidence values.  The no-go theorem
+(Chapter~\ref{ch:no-go}) makes this precise: per-link evidence cannot
+reconstruct the joint state.
+
+Evidence algebra is to probability theory what bookkeeping is to
+economics: indispensable for accounting, but not a substitute for the
+underlying model of the economy.
+
+
+\chapter{Truth-Value Views: Strength, Confidence, Intervals}
+\label{ch:tv-views}
+
+Operationally, PLN works with compact summaries of evidence:
+a strength, a confidence, sometimes an interval.  These are \emph{views}---
+projections from the evidence algebra into simpler spaces that are useful
+for thresholding, display, and approximate computation.
+
+\section{Simple Truth Values}
+
+A \emph{simple truth value} (STV) is a pair $\STV{s}{c}$ where:
+\begin{itemize}
+\item $s = n^+ / (n^+ + n^-)$ is the \emph{strength}---the posterior mean
+  under a uniform prior, or equivalently the maximum-likelihood estimate
+  of the underlying probability.
+\item $c = n / (n + k)$ is the \emph{confidence}---a monotone function of
+  the total sample size $n = n^+ + n^-$, parameterized by a lookahead
+  $k > 0$.  Confidence ranges from $0$ (no evidence) to approaching $1$
+  (overwhelming evidence).
+\end{itemize}
+
+The STV is the most commonly used truth-value representation in PLN
+practice.  It is compact and intuitive.  But it is a \emph{lossy} view:
+two different evidence values can produce the same STV (when they have
+the same ratio $n^+/n$ and the same total $n$), and the STV discards
+information about the shape of the posterior distribution beyond its
+mean.
+
+\section{Confidence as a View}
+
+Confidence deserves special attention.  In the original PLN presentation,
+confidence often appears as a standalone quantity that can be manipulated
+independently of strength.  In \xiPLN{}, confidence is strictly a derived
+view:
+\[
+  \confidence(n^+, n^-) = \frac{n^+ + n^-}{n^+ + n^- + k}
+\]
+
+The parameter $k$ controls how much evidence is needed before the system
+becomes ``confident.''  For $k = 1$, a single observation gives
+confidence $0.5$; for $k = 10$, ten observations give confidence
+$0.5$.
+
+The key property: confidence is monotone in the total evidence count.
+More evidence always means higher (or equal) confidence.
+
+\section{Indefinite Truth Values}
+
+An \emph{indefinite truth value} (ITV) provides interval bounds on the
+strength:
+\[
+  \mathrm{ITV} = [s_L,\; s_U,\; b,\; w]
+\]
+where $s_L$ and $s_U$ are lower and upper bounds, $b$ is a confidence-like
+parameter, and $w = s_U - s_L$ is the interval width.
+
+There are at least three distinct semantic interpretations of such
+intervals, and they \emph{must not be conflated}:
+
+\begin{enumerate}
+\item \textbf{Bayesian credible intervals.}  An interval
+  $[s_L, s_U]$ such that the posterior probability
+  $\Pr(s_L \le p \le s_U \mid \text{data})$ exceeds some threshold.
+  These depend on the prior.
+
+\item \textbf{Walley-style predictive intervals (IDM).}  Intervals
+  derived from the Imprecise Dirichlet Model~\cite{Walley1991,Walley1996BagOfMarbles},
+  which provide robust predictions without committing to a single prior.
+  These are prior-free but give wider intervals.
+
+\item \textbf{Frequentist confidence intervals.}  Intervals constructed
+  so that the true parameter lies within them with specified coverage
+  probability over repeated sampling.
+\end{enumerate}
+
+The original PLN book sometimes uses the notation $[L, U]$ without
+specifying which semantics is intended.  \xiPLN{} insists on explicit
+selector choice: the user declares which interval semantics they want,
+and the system computes accordingly.
+
+See \codepath{Mettapedia/Logic/PLNIndefiniteTruth.lean} and
+\codepath{Mettapedia/Logic/PLNWorldModelITV.lean}.
+
+\section{Why Views Are Not Proof Objects}
+
+Views are useful.  They are indispensable for practical inference.  But
+they are \emph{not} the right objects to pass between inference steps.
+The reason: views are lossy projections.  When you chain two inferences
+using only the STV of the intermediate result, you have already lost
+information about the shape of the posterior, the correlation structure,
+and the raw evidence counts.
+
+The \xiPLN{} discipline is: carry evidence (or world-model states)
+between inference steps; extract views only at the end, for display
+or decision-making.  The slogan again:
+
+\begin{quote}
+\emph{Probability is what you query; evidence is what you carry.}
+\end{quote}
+
+
+\chapter{Distributional and Interval Semantics}
+\label{ch:distributional}
+
+Beyond point estimates and intervals, PLN supports a richer
+\emph{distributional} layer where the truth value is an entire
+posterior distribution over possible probability values.
+
+\section{Beta Distributions and Evidence}
+
+For a single binary predicate observed $n^+$ times true and $n^-$ times
+false, the posterior under a Beta prior $\text{Beta}(\alpha, \beta)$ is:
+\[
+  p \mid \text{data} \;\sim\; \text{Beta}(\alpha + n^+, \beta + n^-)
+\]
+
+Evidence counts $(n^+, n^-)$ are the natural parameters of this
+posterior.  Revision (adding counts) corresponds to Bayesian conjugate
+updating.  The posterior mean is
+\[
+  \mathbb{E}[p] = \frac{\alpha + n^+}{\alpha + \beta + n^+ + n^-}
+\]
+which, for a uniform prior ($\alpha = \beta = 1$), gives the strength
+\[
+  s = \frac{1 + n^+}{2 + n^+ + n^-}
+\]
+This is the Laplace-smoothed estimate.
+
+See \codepath{Mettapedia/Logic/EvidenceBeta.lean}.
+
+\section{Dirichlet Distributions for Multi-Valued Domains}
+
+For predicates with more than two outcomes, the Beta generalizes to the
+Dirichlet distribution.  Evidence becomes a vector of counts, and
+conjugate updating extends componentwise.
+
+See \codepath{Mettapedia/Logic/EvidenceDirichlet.lean}.
+
+\section{Normal-Gamma Evidence for Continuous Domains}
+\label{sec:normal-gamma}
+
+The Beta and Dirichlet families handle discrete observations.  For
+continuous observations---sensor readings, measurements, real-valued
+features---the appropriate conjugate family is the
+\emph{Normal-Gamma}~\cite{BernardoSmith2000}.
+
+For observations $x_1, \ldots, x_n \sim \mathcal{N}(\mu, 1/\tau)$
+with unknown mean~$\mu$ and precision~$\tau$, the evidence is the
+sufficient statistic $(n, \textstyle\sum x_i, \sum x_i^2)$.  The prior
+is $\text{Normal-Gamma}(\mu_0, \kappa_0, \alpha_0, \beta_0)$ and the
+posterior is Normal-Gamma with updated parameters:
+\[
+  \kappa_n = \kappa_0 + n, \qquad
+  \mu_n = \frac{\kappa_0 \mu_0 + \sum x_i}{\kappa_n}, \qquad
+  \alpha_n = \alpha_0 + \tfrac{n}{2}
+\]
+\[
+  \beta_n = \beta_0
+    + \tfrac{1}{2}\bigl(\textstyle\sum x_i^2 - (\sum x_i)^2/n\bigr)
+    + \frac{\kappa_0 \, n \, (\bar{x} - \mu_0)^2}{2\kappa_n}
+\]
+
+Revision is again componentwise addition of sufficient statistics:
+\[
+  (n_1, s_1, q_1) \hplus (n_2, s_2, q_2) = (n_1 + n_2,\; s_1 + s_2,\; q_1 + q_2)
+\]
+and the key compositionality theorem is:
+\begin{theorem}[Sleep Consolidation (\claimCore{})]
+\label{thm:sleep-consolidation}
+  $\text{posterior}(\pi, e_1 \hplus e_2)
+   = \text{posterior}(\text{posterior}(\pi, e_1), e_2)$
+  for any prior~$\pi$ and realizable evidence $e_1, e_2$.
+\end{theorem}
+This states that batch replay of deferred observations yields the same
+posterior as sequential Bayesian updating---the mathematical foundation
+for ``sleep as evidence consolidation.''
+
+The confidence analog carries over directly: $c = n/(n + \kappa)$,
+the same formula as binary PLN.  The pattern is uniform across all
+conjugate families:
+
+\medskip
+\begin{center}
+\begin{tabular}{lll}
+  \textbf{Domain} & \textbf{Evidence} & \textbf{Prior family} \\
+  \hline
+  Binary  & $(n^+, n^-)$ & Beta$(\alpha, \beta)$ \\
+  Categorical & count vector & Dirichlet$(\boldsymbol\alpha)$ \\
+  Continuous  & $(n, \sum x_i, \sum x_i^2)$ & Normal-Gamma$(\mu_0, \kappa_0, \alpha_0, \beta_0)$
+\end{tabular}
+\end{center}
+\medskip
+
+See \codepath{Mettapedia/Logic/EvidenceNormalGamma.lean}.
+
+\paragraph{Two-layer architecture.}
+\label{sec:two-layer}
+Each demo below has two layers.
+\emph{Lean} proves the posterior formulas correct and establishes
+structural properties (consolidation, independence, monotonicity) ---
+all with 0~\texttt{sorry}.  A companion Python script
+(\texttt{scripts/wm\_pln\_posterior.py}) instantiates the proved
+formulas on each fixture to produce concrete numerical results:
+posterior means, 95\% credible intervals, exceedance probabilities,
+and classification scores.  The Student-$t$ predictive CDF fills the
+role of the abstract \texttt{ExceedanceSpec} that Lean leaves parametric
+(Mathlib lacks a Normal CDF).  We also compare with scikit-learn's
+\texttt{GaussianNB}; the two agree on clearly separated regimes
+(e.g.\ K\_Scratch at $x=3.6$) but differ at ambiguous boundary
+points (e.g.\ $x=2.0$), since GaussianNB uses ML point estimates
+while the Normal-Gamma posterior predictive integrates over parameter
+uncertainty.  The added value of the WM-PLN formulation is:
+(a)~the Lean proofs guarantee formula correctness,
+(b)~the framework generalizes to hybrid discrete/continuous states, and
+(c)~sleep consolidation is \emph{proved}, not assumed.
+\emph{Note:} the demos below use small, traceable fixture slices
+(5--15 data points per class) drawn from real datasets---not
+full benchmark-scale evaluations.  Their purpose is to serve as
+theorem-backed empirical canaries that exercise the proved formulas
+on genuine data; larger-scale validation on the full Steel dataset
+appears in Section~\ref{sec:steel-full}.
+
+\paragraph{PLN-to-WM concept mapping.}
+\label{sec:pln-wm-map}
+Table~\ref{tab:pln-wm-map} shows how each core PLN concept maps to
+its WM-PLN formalization.  The left column uses the terminology of
+the PLN book~\cite{goertzel2009pln}; the right column gives the Lean
+module or theorem that formalizes the concept.
+
+\begin{table}[H]
+\centering
+\caption{PLN concept $\to$ WM-PLN formalization.}
+\label{tab:pln-wm-map}
+\begin{tabular}{@{}lllp{3.8cm}@{}}
+\toprule
+\textbf{PLN Concept} & \textbf{PLN Book} & \textbf{WM-PLN} & \textbf{Lean Reference} \\
+\midrule
+Evidence count
+  & $(n^+,\, n^-)$
+  & $(n,\;\Sigma x_i,\;\Sigma x_i^2)$
+  & \code{EvidenceNormalGamma} \\[3pt]
+Strength
+  & $s = \frac{n^+}{n^+ + n^-}$
+  & Posterior mean $\mu_n$
+  & \code{posterior\_mu\_eq\_of\_realizable} \\[3pt]
+Confidence
+  & $c = \frac{n}{n + k}$
+  & $c = \frac{n}{n + \kappa_0}$ (monotone)
+  & \code{confidence\_monotone} \\[3pt]
+Revision ($\oplus$)
+  & Componentwise add
+  & \code{hplus} on suff.\ stats
+  & \code{NormalGammaEvidence.hplus} \\[3pt]
+Sleep consolidation
+  & ---
+  & $\pi(e_1 \oplus e_2) = \pi(\pi(e_1), e_2)$
+  & \code{posterior\_hplus\_of\_realizable} \\[3pt]
+Exceedance query
+  & ---
+  & $P(X_{\mathrm{new}} > c)$
+  & \code{ExceedanceSpec} \\[3pt]
+Source attribution
+  & Implicit
+  & Explicit source counts
+  & \code{PLNWidgetFactoryDemo} \\[3pt]
+De~Finetti
+  & Informal
+  & Finite exchangeable model
+  & \code{DeFinetti.lean} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Measure-theoretic grounding.}
+\label{sec:measure-ground}
+The Normal-Gamma family is a joint prior \emph{measure} on
+$(\mu, \tau) \in \mathbb{R} \times \mathbb{R}_+$, where $\tau = 1/\sigma^2$
+is the precision.  The posterior update proved in
+\code{EvidenceNormalGamma.lean} is the algebraic form of Bayes'
+theorem applied to this measure: given $n$ observations $x_1, \ldots, x_n$
+drawn from $\mathcal{N}(\mu, \tau^{-1})$, the likelihood factors through
+the sufficient statistics $(n, \sum x_i, \sum x_i^2)$ by the
+Fisher--Neyman factorization theorem.  Conjugacy ensures the posterior
+remains Normal-Gamma, so the update reduces to arithmetic on the four
+hyperparameters $(\mu_0, \kappa_0, \alpha_0, \beta_0)$.
+
+The Lean formalization proves this arithmetic \emph{exactly}: the
+closed-form expressions for $\mu_n$, $\kappa_n$, $\alpha_n$, $\beta_n$
+are established in \code{posterior\_mu\_eq\_of\_realizable} and
+\code{posterior\_beta\_eq\_of\_realizable}, and per-demo bridge theorems instantiate them on each demo's
+concrete fixture data.  The integral form of the posterior (involving the
+Gamma density $\mathrm{Ga}(\alpha_0, \beta_0)$) is standard
+mathematics~\cite{BernardoSmith2000} (Ch.~5); Mathlib provides
+\code{gaussianPDFReal} and Lebesgue integration, but the Gamma
+density is not yet available in Mathlib, so the integral derivation
+is not formalized today.
+
+% [CodexTODO] Light EXPO framing for the Gaussian suite: same-model-class validation, drift/replay family, and case-study roles.
+\paragraph{Experiment-family view (EXPO / Hyperseed).}
+The Gaussian suite is best read as a family of \emph{experiment types},
+not as a single benchmark leaderboard.  The empirical spine has two
+\emph{co-flagships}: the Gas Sensor study as a \emph{drift/replay
+governance} story, and the GJP forecasting study as a
+\emph{source-reliability / recalibration} story.  Steel is a
+\emph{supporting same-model-class validation}: it asks whether the
+formally verified WM-PLN conjugate classifier behaves competitively
+against a plain GaussianNB baseline and how confidence can be used to
+abstain.  NAB is an \emph{honest negative boundary / case study}: it
+exercises a real scoring pipeline with formally verified Kalman updates,
+but it is not presented as a full-corpus leaderboard result.  This
+division is deliberate.  WM-PLN's distinctive contribution is not
+``better tabular accuracy at all costs,'' but queryable uncertainty,
+replay semantics, soft evidence, and explicit reasoning about which
+experiment channel is more informative.
+
+% [CodexTODO] Cross-dataset role-split table: Steel same-model-class validation, Gas governance, NAB case study.
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.96}
+\caption{Role split across the current real-data study slices.  The empirical
+  spine has two co-flagships (Gas and GJP), one supporting validation
+  (Steel), and one honest negative boundary (NAB).}
+\label{tab:dataset-role-split}
+\begin{tabular}{p{2.4cm}p{3.2cm}p{3.2cm}p{5.4cm}}
+\toprule
+Dataset & WM-PLN role & Key metric & Main finding \\
+\midrule
+Steel (3-class, 27 feat.) &
+supporting same-model-class validation / abstention &
+AURC &
+WM-PLN beats GaussianNB (0.0346 vs 0.1061) but not XGBoost (0.0126), so the selective-prediction win is strongest within the conjugate Bayesian model class. \\
+\addlinespace
+Gas (3-gas, 128 feat.) &
+co-flagship: drift trigger / replay governance &
+sample-weighted accuracy under label budget &
+Frozen XGBoost gives 67.9\%; a cheap confidence trigger reaches 79.9\% with one retrain and 18.8\% labels. \\
+\addlinespace
+Gas (6-gas, 128 feat.) &
+co-flagship: drift trigger / replay governance &
+sample-weighted accuracy under label budget &
+Frozen XGBoost gives 46.7\%; XGBoost confidence is the best cheap trigger (64.5\% at 23.9\% labels) while WM/XGBoost agreement is the strongest high-accuracy trigger (67.0\% at 86.8\% labels). \\
+\addlinespace
+GJP forecasting &
+co-flagship: source reliability / recalibration &
+Brier, log score, AURC, sleep invariance &
+WM reliability weighting improves over stronger top-k log/logit pooling baselines on year-4 Brier/log and selective AURC while matching accuracy; a WM-agreement gate still improves the strong top-$k$ pool on the multi-option slice; nightly batch consolidation matches online updates to machine precision, and forgetting early years improves year-4 calibration. \\
+\addlinespace
+NAB &
+negative boundary / case study &
+official corpus raw score &
+The current 1D Kalman residual detector is not competitive on the full corpus ($-116.0$ vs.\ Windowed Gaussian $-24.0$), so NAB remains a narrow protocol-semantics case study. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Applied Example: Hybrid Sensor Monitoring}
+
+The \emph{broken sensor demo} exercises continuous world models end-to-end.
+A sensor monitoring system combines:
+\begin{itemize}
+\item \textbf{Continuous temperature evidence} modeled by Normal-Gamma
+  sufficient statistics (5~normal readings, 5~elevated readings).
+\item \textbf{Boolean cooling-failure evidence} modeled by binary counts
+  (2~failures in 100~checks).
+\end{itemize}
+The hybrid state is a product type; revision operates componentwise.
+Queries are answered by extracting binary \Evidence{} from each component:
+cooling failure is read directly; temperature exceedance $P(X > c)$ is
+handled via an abstract \emph{exceedance specification}---a function
+satisfying monotonicity properties---since Mathlib lacks a Normal CDF.
+
+Key results (all zero \texttt{sorry}):
+\begin{enumerate}
+\item Sleep consolidation (Theorem~\ref{thm:sleep-consolidation}):
+  morning + night batch = sequential update.
+\item Confidence monotonicity: more observations $\Rightarrow$ higher
+  $c = n/(n + \kappa)$.
+\item Exceedance ordering: $P(X > c_\text{crit}) \le P(X > c_\text{warn})$
+  for $c_\text{crit} > c_\text{warn}$.
+\item Independence: temperature and cooling-failure evidence components
+  do not interfere.
+\end{enumerate}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{../results/figures/broken_sensor.pdf}
+\caption{Broken sensor demo: prior predictive (gray dashed), posterior
+  after morning shift (blue, concentrated around 16\textdegree{}C),
+  after night shift (red, shifted to 22\textdegree{}C), and
+  consolidated posterior (green dashed, between the two).
+  Data tick marks on the $x$-axis.}
+\label{fig:broken-sensor}
+\end{figure}
+
+\paragraph{Numerical results.}
+With prior $\mathrm{NG}(15, 1, 2, 10)$, the morning shift
+(5 readings, mean 15.92) yields posterior $\mu_n = 15.77$,
+95\% CI $[11.96, 19.57]$, $P(X > 20) = 0.017$, confidence $c = 0.83$.
+The night shift (5~readings, mean 22.72) yields $\mu_n = 21.43$,
+$P(X > 20) = 0.674$---night readings strongly indicate an overheated
+state.  Sleep consolidation is verified numerically: sequential update
+through morning then night produces the same posterior
+($\mu_n = 18.93$) as batch processing all 10 readings at once.
+
+See \codepath{Mettapedia/Logic/PLNBrokenSensorDemo.lean} (360 lines, 0~sorry).
+
+\subsection{Applied Example: Widget Factory Source-Conditional Mixtures}
+
+The \emph{widget factory demo} extends the continuous story to
+\textbf{multiple sources with per-source Gaussian evidence}.
+A factory has two machines (A,~B); each widget arrives with an observed
+source label and a real-valued feature measurement.  Each machine has
+its own Normal-Gamma prior and evidence accumulates per-source.
+
+The genuinely new theorems are the \textbf{mixture exceedance} results:
+\begin{enumerate}
+\item \emph{Mixture validity.}  For weights $w_A + w_B = 1$
+  ($w_i \ge 0$) and per-source exceedance probabilities
+  $p_A, p_B \in [0,1]$, the mixture
+  $p_{\mathrm{mix}} = w_A p_A + w_B p_B$ satisfies
+  $0 \le p_{\mathrm{mix}} \le 1$.
+
+\item \emph{Mixture bounds.}  $\min(p_A, p_B) \le p_{\mathrm{mix}}
+  \le \max(p_A, p_B)$---the mixture lies between its components.
+\end{enumerate}
+Additional results: per-machine sleep consolidation, source
+independence (machine~A observations do not affect machine~B's
+posterior), confidence monotonicity, and source weight normalization.
+
+\paragraph{Numerical results.}
+Machine~A (prior $\mu_0 = 10$, 4~readings, mean 9.90): posterior
+$\mu_n = 9.92$, 95\% CI $[7.05, 12.79]$, $P(X > 12) = 0.067$.
+Machine~B (prior $\mu_0 = 10.5$, 3~readings, mean 11.10): posterior
+$\mu_n = 10.95$, 95\% CI $[7.71, 14.19]$, $P(X > 12) = 0.234$.
+Machine~B is about $3.5\times$ more likely to produce a defect
+($>$12) than Machine~A, consistent with its higher operating mean.
+
+See \codepath{Mettapedia/Logic/PLNWidgetFactoryDemo.lean} (420 lines, 0~sorry).
+
+\subsection{Applied Example: Kalman Filter Wake/Sleep Temporal Filtering}
+
+The \emph{Kalman sleep demo} adds \textbf{temporal dynamics} to the
+continuous story.  A~1D position is tracked via a random-walk process
+model ($x_{t+1} = x_t + w_t$, $w_t \sim N(0,\sigma_w^2)$) observed
+through a noisy sensor ($z_t = x_t + v_t$, $v_t \sim N(0,\sigma_v^2)$).
+
+\paragraph{Core operations.}
+\begin{itemize}
+\item \emph{Predict}: variance inflates by $\sigma_w^2$ (mean unchanged).
+\item \emph{Update}: Kalman gain $K = \sigma^2/(\sigma^2 + \sigma_v^2)$
+  shifts the mean toward the measurement and shrinks the variance by
+  the factor $(1-K)$.
+\item \emph{Step} = predict then update.
+\end{itemize}
+
+\paragraph{Key formal results (all proved, no sorry).}
+\begin{enumerate}
+\item \emph{Kalman gain bounded:} $0 < K < 1$ and $1-K = \sigma_v^2/(\sigma^2+\sigma_v^2)$.
+\item \emph{Variance reduction:} each measurement strictly reduces
+  uncertainty: $(1-K)\sigma^2 < \sigma^2$.
+\item \emph{Closed-form updated variance:}
+  $\sigma^2_{\mathrm{new}} = \sigma^2 \sigma_v^2 / (\sigma^2 + \sigma_v^2)$.
+\item \emph{Sleep $=$ Wake} (the flagship theorem):
+  \[
+    \mathsf{filterOrbit}(b_0,\; \mathit{morning} \mathbin{+\!+} \mathit{night})
+    \;=\;
+    \mathsf{filterOrbit}\bigl(\mathsf{filterOrbit}(b_0,\;\mathit{morning}),\;
+      \mathit{night}\bigr)
+  \]
+  via \texttt{List.foldl\_append}---batch replay of deferred
+  observations yields the \emph{same} posterior as sequential online
+  filtering.  A three-shift generalization is also proved.
+\item \emph{Exceedance threshold ordering:}
+  $P(\text{pos} > c_{\mathrm{crit}}) \le P(\text{pos} > c_{\mathrm{warn}})$
+  whenever $c_{\mathrm{warn}} \le c_{\mathrm{crit}}$.
+\end{enumerate}
+
+\paragraph{Wake/sleep narrative.}
+The \emph{wake} phase is online Kalman filtering: measurements arrive
+one-by-one and each predict-update cycle refines the belief.  The
+\emph{sleep} phase replays a batch of deferred observations---and
+the central theorem guarantees the result is identical.  This gives a
+formal grounding for ``sleep consolidation'' in the PLN activation
+framework: batch replay is semantically equivalent to real-time
+processing, not an approximation.
+
+\paragraph{Numerical results.}
+Initial Kalman gain $K_0 = 0.913$ (high, reflecting large prior
+uncertainty $\sigma^2_0 = 10$).  After morning (5~readings, mean 1.94):
+posterior mean $= 1.96$, $\sigma^2 = 0.50$.  After night
+(5~more, mean 3.10): posterior mean $= 3.14$, $\sigma^2 = 0.50$.
+Sleep $=$ wake is verified to machine precision: batch replay of all
+10 readings from the initial state produces the same posterior as
+sequential morning-then-night processing.
+
+See \codepath{Mettapedia/Logic/PLNKalmanSleepDemo.lean} (353 lines, 0~sorry).
+
+\subsection{Applied Example: Gas Sensor Array Drift Classification}
+
+The \emph{gas sensor drift demo} is one of the chapter's two empirical
+\textbf{co-flagships}: the main \textbf{drift/replay governance} study
+in the Gaussian suite.  It brings \textbf{real-world data} into the
+Gaussian demo suite.  The UCI Gas Sensor Array Drift
+Dataset~\cite{Vergara2012GasSensorDrift} (DOI~10.24432/C5RP6W)
+contains 13,910 measurements from 16 chemical sensors exposed to
+6~gas types over 36~months (10~batches, January~2007 to
+February~2011).  Vergara et~al.\ achieve 80--95\% gas classification
+accuracy using SVM ensembles on all 128~features with drift
+compensation.  Our Lean demo still focuses on a single-sensor fixture
+for theorem proving, but the surrounding numerical layer now also runs
+full 128-feature drift protocols so that the same WM-PLN update laws can
+be compared against standard classification baselines.
+
+\paragraph{Setup.}
+We extract a small fixture: sensor~1 steady-state resistance ($\Delta R$)
+for three target gases---\emph{ethanol}, \emph{ammonia}, and
+\emph{toluene}---with 5 samples per gas from batch~1 (early calibration)
+and batch~10 (late drift epoch).  Each gas type has its own
+Normal-Gamma prior; the state tracks ternary source-attribution counts.
+
+\paragraph{Illustrative CANARY fixture.}
+This 5-sample single-sensor fixture is an \textbf{illustrative CANARY}
+for the proved Gaussian sleep/independence laws.  The headline empirical
+claims in this section come from the full 128-feature drift protocols
+and governance policies below, not from the hand-picked fixture.
+
+\paragraph{Key formal results (all proved, no sorry).}
+\begin{enumerate}
+\item \emph{Per-gas sleep consolidation:} for each gas type,
+  $\mathrm{posterior}(\pi, e_1 \oplus e_2)
+    = \mathrm{posterior}(\mathrm{posterior}(\pi, e_1), e_2)$.
+  Batch replay $=$ sequential update.
+\item \emph{Cross-gas independence:} ethanol observations produce
+  zero evidence in the ammonia and toluene posteriors, and vice versa
+  (6 independence theorems).
+\item \emph{Multi-batch composition:} batch~1 $+$ batch~10 $=$
+  full dataset, with associativity across gas sub-batches.
+\item \emph{3-way source weight normalization:}
+  $n_E/(n_E{+}n_A{+}n_T) + n_A/(n_E{+}n_A{+}n_T) + n_T/(n_E{+}n_A{+}n_T) = 1$.
+\item \emph{Confidence monotonicity} and \emph{exceedance anti-threshold}
+  generalize from the earlier demos.
+\end{enumerate}
+
+\paragraph{Drift narrative.}
+Batch~1 toluene responses are high ($\sim$138k $\Delta R$) while batch~10
+responses are dramatically lower ($\sim$24k), reflecting genuine sensor
+degradation over 36~months.  The Normal-Gamma posteriors from each epoch
+capture this shift: the posterior mean for toluene moves substantially
+between batches.  Sleep consolidation still holds across drifted epochs---
+the mathematical guarantee is that deferred assimilation preserves the
+posterior, regardless of whether the underlying distribution has shifted.
+Detecting \emph{whether} drift occurred requires comparing posteriors
+from different epochs, which the framework supports but does not automate.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{../results/figures/gas_sensor_drift.pdf}
+\caption{Gas sensor array drift.  Solid curves: batch~1 posterior
+  predictive (2007).  Dashed: consolidated posterior after both
+  batches.  Toluene shows dramatic drift: batch~10 responses (crosses)
+  cluster near zero, far from the batch~1 distribution.}
+\label{fig:gas-sensor-drift}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{../results/figures/gas_drift_protocols.pdf}
+\caption{Gas sensor drift protocols on the full 128-feature representation.
+  Cumulative replay is the strongest average protocol in both the 3-gas and
+  6-gas settings.  Iterative unlabeled replay / E-M is scientifically useful
+  precisely because it is mixed: recent-batch seeding improves over batch-1
+  seeding on average, but unlabeled adaptation still remains below cumulative
+  labeled replay and can become unstable on the hardest late batch.}
+\label{fig:gas-drift-protocols}
+\end{figure}
+
+\paragraph{Numerical results.}
+After batch~1 (5~readings each): ethanol posterior mean $37{,}270$,
+95\% CI $[7{,}601,\, 66{,}939]$; ammonia $7{,}079$,
+CI $[2{,}672,\, 11{,}486]$; toluene $137{,}655$,
+CI $[89{,}711,\, 185{,}598]$.
+Exceedance $P(X > 50{,}000)$: ethanol $0.179$, ammonia $<0.001$,
+toluene $0.999$---the WM-PLN framework correctly identifies toluene
+as the gas producing strong sensor responses.
+After consolidating both batches (10~readings), toluene's posterior mean
+drops to $81{,}565$ with a wide CI reflecting the dramatic drift
+($\Delta = -114{,}055$ between epochs).  Confidence for each gas
+rises from $c = 0.980$ (5~readings) to $c = 0.990$ (10~readings).
+
+% [CodexTODO] Comparative full-dataset gas-sensor results aligned with drift-compensation protocols from the literature.
+\paragraph{Full-dataset drift study.}
+Using the full 128-feature representation, we extend the fixture demo to
+the standard drift protocols used in the gas-sensor literature.  On the
+3-gas subset matching the Lean demo (ethanol/ammonia/toluene), an
+independent-feature WM-PLN classifier reaches 68.4\% in the hard
+``Setting~1'' protocol (train on batch~1, test on batches~2--10),
+72.1\% in the easier ``Setting~2'' protocol (train on batch~$k{-}1$,
+test on batch~$k$), and 73.6\% under cumulative \emph{sleep replay}
+(train on batches~1\ldots$k{-}1$, test on batch~$k$).  The corresponding
+GaussianNB baselines are 68.2\%, 75.8\%, and 71.2\%.
+
+On the full 6-gas task, the same WM-PLN classifier reaches 47.3\%
+(Setting~1), 53.0\% (Setting~2), and 53.2\% (cumulative replay), versus
+47.3\%, 51.2\%, and 52.5\% for GaussianNB on the same protocols.  This
+is substantially below domain-adaptation methods such as Balanced
+Distribution Adaptation, which reports 68.92\% for Setting~1 and
+81.06\% for Setting~2 on the same benchmark~\cite{Jiang2021BDA}, but
+it already shows the qualitative effect we want from the WM side:
+late-batch drift hurts accuracy, and replaying additional batches into
+the posterior partially recovers it without changing the underlying
+update laws.
+
+% [CodexTODO] Iterative weighted replay / E-M comparison: a real soft-evidence study, but not a blanket win.
+\paragraph{Soft replay / E-M adaptation.}
+The weighted Gaussian E/M extension can be used here as a
+\emph{soft-evidence adaptation} protocol: batch~1 supplies the anchored
+source posterior, the target batch supplies unlabeled data, the E-step
+computes responsibilities, and the M-step revises each class posterior by
+weighted sufficient statistics.  Iterating this update to a fixed point
+is scientifically informative precisely because it is \emph{not} a
+blanket win.  On the 3-gas task, iterative soft replay (mean
+5.4~iterations, replay weight $\lambda=0.2$) reaches 67.8\% on average,
+below cumulative replay's 73.5\%, but it still improves the hardest
+late-drift batch~10 from 63.6\% (batch~1 only) to 73.3\%.  Seeding the
+same iterative E/M loop from the \emph{most recent labeled batch} rather
+than batch~1 improves the \emph{average} 3-gas accuracy to 70.7\%, but
+it is not uniformly better: on the final batch~10 it collapses to
+37.3\%, showing that unlabeled replay is highly sensitive to the seed
+posterior once the recent labeled batch is itself small or unrepresentative.
+On the full 6-gas task, batch~1-seeded iterative unlabeled adaptation
+drops to 42.0\% on average, while recent-batch seeding recovers to
+50.4\%, still below cumulative replay's 53.3\%.  The lesson is useful:
+weighted soft evidence can help when the current posterior is badly out
+of date, but naive unlabeled adaptation is brittle under strong
+multi-class drift and should be treated as a policy component, not a
+drop-in replacement for labeled replay.  This is exactly the kind of
+replay-policy question the WM experiment layer is meant to express.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{../results/figures/gas_xgboost_wm_support.pdf}
+\caption{Gas drift support for a stronger base learner.  The relevant question
+  is not whether WM-PLN replaces XGBoost, but whether WM-derived agreement
+  signals can support abstention and replay decisions under drift.
+  Calibrated XGBoost confidence (sigmoid or isotonic) does not improve
+  the risk--coverage curve in this setting, while WM/XGBoost agreement
+  remains the most interesting selective signal on the harder 6-gas task.}
+\label{fig:gas-xgboost-support}
+\end{figure}
+
+% [CodexTODO] XGBoost-support framing: WM as trust/replay layer rather than replacement classifier.
+\paragraph{Supporting stronger tabular models.}
+The gas benchmark is also the right place to test WM-PLN as a
+\emph{support layer} for a stronger learner rather than as a replacement
+classifier.  Training XGBoost on batch~1 alone gives 67.9\% average
+accuracy on the 3-gas task and 46.7\% on the 6-gas task.  If we use the
+batch~1 WM posterior only as a confidence score, the result is worse:
+plain WM confidence is not a good wrapper here.  The more interesting
+signal is \emph{agreement} between XGBoost and the source WM posterior.
+We also compared against calibrated XGBoost confidence, since a machine
+learning reviewer might reasonably ask whether ordinary post-hoc
+probability calibration already solves the abstention problem.  In this
+drifted gas setting it does not: sigmoid calibration worsens AURC from
+0.1374 to 0.2114 on the 3-gas task and from 0.3847 to 0.3994 on the
+6-gas task, while isotonic calibration degrades further to 0.2135 and
+0.4639.  So the interesting comparison is not ``native versus calibrated
+XGBoost,'' but ``XGBoost's own confidence versus a second epistemic
+signal supplied by the WM.''  On the harder 6-gas task,
+agreement-gated selective prediction improves
+the area under the risk--coverage curve from 0.3847 (native XGBoost
+confidence) to 0.3737, and the agreement subset itself covers 59.7\% of
+samples at 59.7\% accuracy, versus 46.7\% overall.  On the 3-gas task,
+agreement gating is not a blanket win (AURC 0.1483 vs.\ 0.1374 for
+native XGBoost), but it still isolates a 74.8\% coverage subset at
+75.3\% accuracy.
+
+% [CodexTODO] Sequential gas-policy experiment: XGBoost confidence is the cheapest trigger, WM agreement is the stronger but more label-hungry drift signal.
+The batch-level support story is stronger still once we treat drift as a
+\emph{sequential policy problem}.  We stream batches~2\ldots10 in order,
+retain the batch~1 XGBoost model as the default predictor, and decide at
+each batch whether to acquire labels and replay all previously seen
+batches into a refreshed model.  This turns WM-PLN into a
+\emph{governance layer}: it does not replace XGBoost, but supplies a
+second epistemic signal that can trigger abstention or retraining.
+
+\begin{lstlisting}[caption={Gas drift governance protocol (shipped confidence/agreement triggers; no lookahead into batch-$k$ labels).},label={lst:gas-governance-protocol}]
+Initialize labeled_batches = {1}.
+Train XGBoost and WM on labeled_batches only.
+
+for batch k = 2..10:
+    freeze the current models before any batch-k labels are used
+    predict batch k with the frozen XGBoost model
+    compute xgboost_confidence_mean(batch k)
+    compute wm_confidence_mean(batch k)
+    compute wm_agreement_coverage(batch k)
+    decide acquire_labels_k from these shipped model-derived statistics only
+
+    record batch-k accuracy for the frozen model
+    if acquire_labels_k:
+        request labels for batch k
+        add batch k to the labeled replay buffer
+        retrain on all labeled batches seen so far
+        use the refreshed models only for future batches
+    else:
+        keep the current models unchanged
+
+Report sample-weighted accuracy, retrain_events,
+and label_budget_fraction.
+\end{lstlisting}
+
+The resulting frontier is informative rather than trivial.  On the
+3-gas task, a simple XGBoost-confidence trigger at 0.80 is the best
+low-cost policy we tested: it raises sample-weighted accuracy from
+67.9\% to 79.9\% with only one retraining event and a 18.8\% label
+budget.  A more aggressive WM-agreement trigger at 0.80 reaches a
+similar 79.1\% accuracy, but requires five retraining events and a
+53.4\% label budget.  On the harder 6-gas task, the tradeoff is more
+interesting: XGBoost-confidence gating at 0.80 reaches 64.5\% accuracy
+with four retrains and 23.9\% labels, while WM-agreement gating at 0.80
+pushes raw accuracy slightly higher to 67.0\% but consumes 86.8\% of the
+labels and seven retraining events.  The utility sweep therefore has two
+regimes: XGBoost confidence is the best \emph{cheap} trigger, while
+WM/XGBoost agreement is the best \emph{accuracy-seeking} trigger when
+label cost is low.  That is exactly the support role we want from
+WM-PLN: not ``beating XGBoost'' as another tabular learner, but
+governing when a stronger learner should be trusted, deferred, or
+replayed.
+
+% [CodexTODO] Compact gas-governance summary table tying together calibration, agreement gating, and retraining policies.
+\begin{table}[htbp]
+\centering
+\caption{Gas drift as a governance problem rather than a raw benchmark.
+  AURC compares selective prediction signals; the policy columns summarize
+  the strongest sequential retraining results at fixed label budgets.}
+\label{tab:gas-governance-summary}
+\begin{tabular}{lcccccc}
+\toprule
+Task & Native & Sigmoid & Isotonic & WM agree &
+Best $\le 25\%$ labels & Best raw accuracy \\
+\midrule
+3-gas &
+0.1374 &
+0.2114 &
+0.2135 &
+0.1483 &
+79.9\% @ 18.8\% &
+79.9\% @ 18.8\% \\
+6-gas &
+0.3847 &
+0.3994 &
+0.4639 &
+0.3737 &
+64.5\% @ 23.9\% &
+67.0\% @ 86.8\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{../results/figures/gas_policy_frontier.pdf}
+\caption{Sequential gas-drift support policies.  Each point is a batch-level
+  retraining policy over batches~2\ldots10, trading sample-weighted
+  accuracy against label budget.  XGBoost confidence is the best cheap
+  trigger, while WM/XGBoost agreement is the strongest high-accuracy
+  trigger when labels are inexpensive.}
+\label{fig:gas-policy-frontier}
+\end{figure}
+
+The order-cost layer now formalizes this governance story directly:
+\code{gasScheduleErrorCount\_batchSwap\_eq\_zero},
+\code{gasRuntimePairwiseOrderCheck\_batchSwap\_zero}, and
+\code{gasOrderBudgetPolicy\_batchSwap\_zero\_via\_runtimeCertificate}
+show that a zero-threshold policy is certifiably safe for additive
+batch-swap composition in this lane.
+The module also exposes gas-specific zero-threshold endpoints for
+ethanol, ammonia, and toluene.
+See \codepath{Mettapedia/Logic/PLNWorldModelOrderCostGasPolicyDemo.lean}.
+
+See \codepath{Mettapedia/Logic/PLNGasSensorDriftDemo.lean} (578~lines, 0~sorry).
+
+\subsection{Applied Example: Steel Plates Fault Classification}
+
+The \emph{steel plates fault demo} is a \textbf{supporting same-model-class
+validation}, not a headline benchmark.  It applies the
+source-conditional Gaussian pattern to \textbf{manufacturing quality
+control}.  The UCI
+Steel Plates Faults Dataset~\cite{Buscema2010SteelPlates}
+(current UCI DOI~10.24432/C5J88N) contains 1,941 instances with 27 features
+and 7 fault classes.  Published results using all 27~features report
+$\sim$73.6\% (SVM), $\sim$79.5\% (Random Forest), and 86.655\%
+(LMT Forest) 7-class accuracy~\cite{Ghasemkhani2023LMTForest}.  Our
+core Lean model uses a single feature
+(LogOfAreas), so lower accuracy is expected and the purpose is
+formal correctness, not SOTA competition.
+
+\paragraph{Setup.}
+We extract a small fixture: LogOfAreas measurements for three fault
+types---\emph{Pastry} (pop.\ mean~$\approx 2.4$, $\sigma \approx 0.48$),
+\emph{K\_Scratch} (pop.\ mean~$\approx 3.6$, $\sigma \approx 0.70$),
+and \emph{Bumps} (pop.\ mean~$\approx 2.1$, $\sigma \approx 0.36$)---with
+5 samples per class.  For K\_Scratch, we select samples at the 10th--90th
+percentiles to represent the distribution (the first-5 rows have mean
+$\approx 2.0$, unrepresentative of the population).
+Each fault type has its own Normal-Gamma prior.
+
+\paragraph{Illustrative CANARY fixture.}
+This 5-sample three-fault slice is an \textbf{illustrative CANARY}
+fixture for the proved Gaussian classification laws.  The headline
+empirical claims for Steel in this chapter are the full-dataset
+validation and selective-prediction results below, not the hand-picked
+fixture itself.
+
+\paragraph{Key formal results (all proved, no sorry).}
+\begin{enumerate}
+\item \emph{Per-fault sleep consolidation:} batch replay $=$ sequential
+  Bayesian update, for each of the three fault types.
+\item \emph{Cross-fault independence:} 6 theorems showing that
+  observations from one fault type produce zero evidence for the others.
+\item \emph{3-way mixture exceedance validity:} a weighted combination
+  $w_P p_P + w_K p_K + w_B p_B$ with $w_P + w_K + w_B = 1$ and
+  $w_i \ge 0$ remains a valid probability in $[0,1]$.
+\item \emph{3-way source weight normalization:}
+  $n_P/(n_P{+}n_K{+}n_B) + n_K/(\cdots) + n_B/(\cdots) = 1$.
+\item \emph{Confidence monotonicity} and \emph{exceedance anti-threshold}
+  generalize from the earlier demos.
+\end{enumerate}
+
+\paragraph{Classification narrative.}
+K\_Scratch faults have characteristically \emph{larger} defect areas
+(LogOfAreas~$\approx 3.6$) than Pastry ($\approx 2.4$) or Bumps
+($\approx 2.1$).  The per-fault Normal-Gamma posteriors separate
+cleanly on this feature.  A factory quality system using this
+Gaussian classification would apply exceedance queries: ``is
+$P(\mathrm{LogOfAreas} > 3.0 \mid \mathrm{fault} = \mathrm{K\_Scratch})$
+substantially higher than for Bumps?''---and the framework supports
+this via per-fault exceedance evidence extraction.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{../results/figures/steel_classification.pdf}
+\caption{Steel fault classification.  \emph{Left:} Student-$t$
+  predictive densities for each fault type after 5~observations;
+  K\_Scratch (red) is clearly separated rightward.  \emph{Right:}
+  exceedance probability $P(X_{\mathrm{new}} > c)$ as a function of
+  threshold; at $c = 3.0$ (dashed), K\_Scratch has $\sim$75\%
+  exceedance vs.\ $\sim$20\% for the others.}
+\label{fig:steel-classification}
+\end{figure}
+
+\paragraph{Numerical results.}
+Posterior means: Pastry $\mu_n = 2.40$, 95\% CI $[0.88, 3.92]$;
+K\_Scratch $\mu_n = 3.52$, CI $[1.82, 5.22]$;
+Bumps $\mu_n = 2.31$, CI $[0.72, 3.91]$.
+Exceedance $P(\mathrm{LogOfAreas} > 3.0)$: Pastry $0.197$,
+K\_Scratch $\mathbf{0.746}$, Bumps $0.178$.  K\_Scratch is
+$\sim$4$\times$ more likely to exceed the ``large defect'' threshold
+than either Pastry or Bumps.
+Classification via posterior predictive log-likelihood:
+at $x = 3.6$, K\_Scratch dominates ($\ell = -0.67$ vs.\ Pastry
+$-2.07$, Bumps $-2.17$); at $x = 2.0$, Bumps ($-0.71$) and Pastry
+($-0.74$) are nearly tied.  Scikit-learn's \texttt{GaussianNB} on
+the same fixture agrees on the dominant K\_Scratch regime but can
+differ at ambiguous boundary points, since it uses ML point estimates
+rather than the full posterior predictive.
+
+See \codepath{Mettapedia/Logic/PLNSteelFaultDemo.lean} (488~lines, 0~sorry).
+
+\paragraph{Full-dataset validation.}
+\label{sec:steel-full}
+To move beyond the 5-sample fixture, we evaluate the WM-PLN Gaussian
+classifier on the full Steel Plates Faults dataset (951~instances for
+the 3-class subset: Pastry~158, K\_Scratch~391, Bumps~402).
+A stratified 70/30 split yields 667~training and 284~test instances.
+The same priors as the Lean demo are used ($\mu_0 \in \{2.5, 3.0, 2.0\}$,
+$\kappa_0 = 0.5$, $\alpha_0 = 2$, $\beta_0 = 1$).
+Classification is by argmax of the Student-$t$ predictive log-likelihood.
+
+\textbf{Result:} WM-PLN achieves 74.7\% accuracy; scikit-learn's
+\texttt{GaussianNB} achieves 73.9\% on the same split.
+K\_Scratch is well separated ($\mu_n = 3.60$, recall 82.1\%);
+Pastry and Bumps overlap more (Pastry recall 27.7\%, Bumps recall 85.8\%).
+The slight WM-PLN advantage likely reflects the informative priors.
+
+This is a single-feature (LogOfAreas) conjugate Bayesian classifier
+matching the formalized model.  Multi-feature extension is straightforward
+but not yet formalized.  The 7-class evaluation (all fault types, 1,941~instances)
+gives 39.2\% (WM-PLN) vs.\ 51.5\% (GaussianNB), confirming that single-feature
+discrimination is insufficient when classes overlap in LogOfAreas.
+
+% [CodexTODO] Multi-feature Steel comparison against same-split GaussianNB and published benchmark figures.
+\paragraph{Multi-feature extension.}
+Using the same Normal-Gamma posterior independently across all
+27~features (the diagonal/naive Bayes extension of the formalized
+single-feature model), WM-PLN rises to 86.6\% on the 3-class task and
+62.7\% on the full 7-class task, versus 75.0\% and 47.7\% for
+\texttt{GaussianNB} on the same split.  This is still below stronger
+published 7-class results such as 66.7\% (Naive Bayes), 73.6\% (SVM),
+79.5\% (Random Forest), and 86.655\% (LMT Forest) compiled in the
+recent benchmark literature~\cite{Ghasemkhani2023LMTForest}.  The
+important point is not state-of-the-art performance but that the
+conjugate WM-PLN classifier scales cleanly from the 5-sample theorem
+fixture to the full 27-feature representation and decisively improves on
+the plain GaussianNB baseline under the same split.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{../results/figures/steel_selective_prediction.pdf}
+\caption{Selective prediction on Steel Plates Faults.
+  WM-PLN yields a better accuracy--coverage tradeoff than GaussianNB in both
+  the 3-class and 7-class settings, but native XGBoost remains stronger on
+  this static tabular task.  This is therefore a same-model-class validation
+  and abstention study, not a claim that WM-PLN replaces stronger
+  discriminative learners.}
+\label{fig:steel-selective}
+\end{figure}
+
+% [CodexTODO] Selective-prediction analysis: confidence/abstention is a more distinctive WM result than raw accuracy alone.
+\paragraph{Selective prediction and abstention.}
+The more distinctive Bayesian result is not raw accuracy but
+\emph{confidence-aware abstention}.  Normalizing the class predictive
+log-likelihoods yields a posterior confidence score for each test point.
+On the 3-class, 27-feature task, WM-PLN has area under the
+risk-coverage curve (AURC) 0.0346 versus 0.1061 for GaussianNB; at a
+95\% confidence threshold, WM-PLN retains 89.4\% coverage with 90.9\%
+accuracy, while GaussianNB retains 81.7\% coverage with 81.0\%
+accuracy.  On the full 7-class task, WM-PLN also dominates the
+GaussianNB abstention tradeoff (AURC 0.1957 vs.\ 0.3296).  This is a
+better reflection of the WM contribution than plain argmax comparison:
+the posterior state gives a principled abstain/defer signal, not just a
+class label.
+
+% [CodexTODO] Steel selective prediction against calibrated XGBoost: honest contrast with a stronger discriminative learner.
+Against stronger discriminative models, however, the role of WM-PLN is
+more limited on this static benchmark.  Native XGBoost reaches 92.6\%
+accuracy and AURC 0.0126 on the 3-class task, while sigmoid and isotonic
+calibration yield AURC 0.0313 and 0.0129 respectively; WM/XGBoost
+agreement gating gives AURC 0.0140.  On the 7-class task, native
+XGBoost reaches 78.9\% accuracy and AURC 0.0676, compared with 0.0851
+for WM/XGBoost agreement.  So Steel should be read as a
+\emph{same-model-class} validation and abstention study: WM-PLN
+decisively improves on GaussianNB within the conjugate Bayesian family,
+but it does not outperform a tuned XGBoost classifier on this static
+tabular task.
+
+\subsection{Applied Example: NAB Machine Temperature Anomaly Detection}
+
+The \emph{NAB anomaly demo} is the Gaussian suite's
+\textbf{honest negative boundary / time-series case study}.  It brings
+the Kalman wake/sleep story to a \textbf{real anomaly dataset}, but it
+is \emph{not} a benchmark headline.
+The Numenta Anomaly Benchmark
+(NAB, MIT~License)~\cite{Lavin2015NAB} provides 22,695 five-minute
+temperature readings from an industrial machine with 4~labeled
+anomaly windows corresponding to system failures.  Published NAB
+scores (Standard Profile) range from 70.5 (HTM) to 39.6 (Windowed
+Gaussian); our Lean demo proves the Kalman sleep-consolidation property
+on a 15-reading fixture from this dataset, and the surrounding
+numerical layer now also evaluates the full 58-series corpus with the
+official NAB scorer.  The resulting detector is scientifically useful as
+a protocol check on the Kalman residual pipeline, but not competitive as
+a general-purpose NAB detector.
+
+\paragraph{Setup.}
+We extract a 15-reading fixture spanning three operating regimes:
+\begin{itemize}
+\item \emph{Calm} ($\sim$85\textdegree{}F): stable normal operation.
+\item \emph{Hot} ($\sim$101\textdegree{}F): elevated pre-anomaly period.
+\item \emph{Anomaly} ($\sim$30\textdegree{}F): system failure---rapid
+  temperature drop.
+\end{itemize}
+A 1D Kalman filter with process noise $\sigma_w^2 = 0.5$ and measurement
+noise $\sigma_v^2 = 2$ tracks the machine state through all three regimes.
+
+\paragraph{Illustrative CANARY fixture.}
+This 15-reading three-regime slice is an \textbf{illustrative CANARY}
+for the Kalman sleep/wake and exceedance laws.  The headline empirical
+claim for NAB is the full-corpus negative boundary below, not the small
+fixture.
+
+\paragraph{Key formal results (all proved, no sorry).}
+\begin{enumerate}
+\item \emph{Sleep $=$ Wake on real data:} batch replay of calm then hot
+  readings yields the same posterior as sequential online filtering.
+\item \emph{Three-regime composition:}
+  $\mathsf{filterOrbit}(b_0,\;\mathit{calm} \mathbin{+\!+} \mathit{hot}
+  \mathbin{+\!+} \mathit{anomaly})$ equals three-phase sequential
+  processing.
+\item \emph{Exceedance threshold ordering:}
+  $P(\mathrm{temp} > 60) \le P(\mathrm{temp} > 40)$ for any belief
+  and valid exceedance spec.
+\item \emph{Variance reduction:} each measurement strictly reduces
+  uncertainty relative to the predicted state.
+\end{enumerate}
+
+\paragraph{Anomaly narrative.}
+The Kalman filter processes calm readings first, converging to a tight
+belief around 85\textdegree{}F.  Hot readings then shift the posterior
+mean upward.  When anomaly readings arrive ($\sim$30\textdegree{}F),
+the filter must pull the mean down dramatically---and sleep consolidation
+guarantees that whether these readings are processed in real-time or
+replayed in a deferred batch, the result is identical.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{../results/figures/nab_kalman_tracking.pdf}
+\caption{NAB anomaly detection.  \emph{Upper:} Kalman filter posterior
+  mean (blue) with $\pm 2\sigma$ band tracking through calm, hot, and
+  anomaly regimes.  The anomaly regime drives the mean below both
+  warning and critical thresholds.  \emph{Lower:} variance collapses
+  after the first measurement and remains small.}
+\label{fig:nab-tracking}
+\end{figure}
+
+\paragraph{Numerical results.}
+Initial Kalman gain $K_0 = 0.981$ (initial variance $100$, measurement
+noise $2$).  After calm (5~readings, mean 85.9\textdegree{}F): posterior
+mean $= 85.2$\textdegree{}F, $\sigma^2 = 0.80$.  After hot
+(5~more, mean 100.9\textdegree{}F): mean shifts to $99.5$\textdegree{}F.
+After anomaly (5~readings, mean 31.2\textdegree{}F): mean drops sharply
+to $35.5$\textdegree{}F.  Sleep $=$ wake holds across all three regimes
+to machine precision, confirming that deferred batch replay of anomalous
+readings produces the same posterior as real-time processing.
+
+\paragraph{Full-corpus scoring (minimized claim).}
+Running the same Kalman innovation detector across the full 58-series
+NAB corpus with the \emph{official detector-level threshold optimizer}
+gives a corpus raw score of $-116.0$, versus $-24.0$ for the checked-in
+Windowed Gaussian baseline.  In other words, under the correct
+benchmark-style corpus protocol, this simple 1D Kalman residual detector
+collapses to essentially null-detector performance.  We therefore keep
+NAB in this chapter only as a \emph{case study}: it shows that the
+formally verified Kalman update equations plug into a real anomaly
+scoring pipeline, but it does \emph{not} support a competitive
+leaderboard claim.  A simple support-layer hybrid that combines the
+Kalman score with the official Windowed Gaussian score also fails to
+recover the corpus benchmark (raw sums $-43.1$ on the standard profile
+and $-77.2$ on the low-FP profile), so the stronger empirical stories in
+this chapter remain the Steel selective-prediction results and the Gas
+drift/replay results.
+
+For NAB, the most defensible \emph{positive} WM role is governance and
+auditability rather than leaderboard detection score.  Concretely: keep a
+strong base detector fixed, and use WM order-cost checks as an
+audit/control layer.  The theorem-backed metrics are then:
+\begin{enumerate}
+\item certificate pass/fail rate from
+  \code{runtimePairwiseOrderCheck\_certifies\_scheduleErrorBound},
+\item policy-threshold compliance from
+  \code{runtimePairwiseOrderCheck\_certifies\_policyThreshold},
+\item downstream abstain/retrain decisions tied to certified budget
+  violations near anomaly windows.
+\end{enumerate}
+This yields an auditable \emph{when-to-trust / when-to-escalate} signal,
+which is a more realistic NAB contribution for WM-PLN than claiming a new
+state-of-the-art detector.
+
+See \codepath{Mettapedia/Logic/PLNNABSleepDemo.lean} (327~lines, 0~sorry).
+
+\subsection{Applied Example: Good Judgment Project Forecast Aggregation}
+
+The \emph{GJP forecasting study} is one of the chapter's two empirical
+\textbf{co-flagships} and its clearest example of WM-PLN as a
+\textbf{source-reliability and recalibration layer} rather than as a
+replacement learner.  The public Good Judgment Project / ACE
+release~\cite{IARPA2024GJPData}, rooted in the forecasting tournament
+studies of Mellers et al.~\cite{Mellers2014PsychologicalStrategies},
+provides exactly the kind of stream WM-PLN wants: many sources, many
+updates, eventual resolution, and natural questions about aggregation,
+abstention, and forgetting.  We normalize the survey forecasts to one
+final probability vector per forecaster and question, yielding
+426{,}325 final forecast vectors from 9{,}694 forecasters over 498
+closed questions.  The first three years are used to estimate
+forecaster-level reliability profiles; year~4 is held out for
+evaluation.
+
+\begin{center}
+\fbox{\begin{minipage}{0.94\textwidth}
+\textbf{GJP protocol block.}
+Closed questions only.  One forecast vector means the latest timestamped
+forecast for a given \texttt{(year, ifp\_id, user)} key, with the answer-option
+rows at that final timestamp renormalized to sum to~1 and then pivoted
+into a single probability vector.  Main holdout: estimate reliability on
+years~1--3 and evaluate on year~4.  For the stronger log/logit/top-$k$
+families, tune temperature on year~3 validation using reliability
+profiles built from years~1--2, then evaluate the tuned methods on
+held-out year~4 questions using reliability profiles built from
+years~1--3.  Binary and multi-option questions are evaluated separately
+on year~4 using accuracy, Brier, log score, and selective AURC.  No
+lookahead: year~4 outcomes never enter reliability estimation or
+temperature tuning.
+\end{minipage}}
+\end{center}
+
+The first result is a same-stream aggregation comparison.  Against weak
+baselines, WM reliability weighting already improves sharply over simple
+mean and median pooling: on binary year-4 questions it reaches accuracy
+0.989 and Brier 0.061, compared with 0.947 / 0.157 for mean and
+0.947 / 0.115 for median.  The stronger test is whether the WM layer
+still contributes on top of more forecasting-style aggregation families.
+To test that, we tune logit- and log-pooling temperatures on year~3
+validation questions and compare plain pooling, top-$k$ historical
+pooling, and WM-weighted pooling on held-out year~4 questions.  On the
+binary slice, top-$k$ logit pooling and WM-weighted logit pooling both
+reach accuracy 0.989, while the WM-weighted variant improves Brier from
+0.036 to 0.026 and log score from 0.070 to 0.051.  On the multi-option
+slice, top-$k$ log pooling and WM-weighted log pooling both reach
+accuracy 0.977, while the WM-weighted variant improves Brier from 0.044
+to 0.036 and log score from 0.098 to 0.088.  We also asked the stronger
+forecasting-style question of whether a more explicit extremizing
+baseline changes the picture.  It does not: a validation-tuned
+extremized arithmetic mean reaches only Brier 0.097 on the binary slice,
+and even a top-$k$ extremized mean remains materially worse than the
+top-$k$ logit pool (Brier 0.060 versus 0.036), so the WM gain is not an
+artifact of comparing only against naive averaging.
+We also asked the stronger
+hybrid question: does WM still help after hard top-$k$ pruning?  It
+does not.  The WM-on-top-$k$ variants match the corresponding top-$k$
+accuracy but regress to Brier/log values near the top-$k$ baseline
+(binary 0.036 / 0.071; multi-option 0.042 / 0.091), suggesting that the
+gain comes from \emph{continuous reliability weighting} rather than from
+hard forecaster pruning.  This is the forecasting version of the
+governance-layer claim: WM-PLN is not replacing strong aggregation
+families, but adding principled reliability tracking on top of
+them~\cite{Satopaa2014LogitAggregation,Baron2014Extremizing}.
+
+The same conclusion appears when we ask the abstention question instead
+of the point-prediction question.  On binary year-4 questions, top-$k$
+logit pooling gives AURC 0.00211, while the WM-weighted logit pool
+reduces this to 0.00046 at the same 0.989 accuracy.  On multi-option
+questions, top-$k$ log pooling gives AURC 0.001095, while the
+WM-weighted log pool reduces this to 0.000541 at the same 0.977
+accuracy.  The WM-on-top-$k$ selective variants do not improve further.
+So the abstention story aligns with the aggregation story: reliability
+weighting contributes something real even against stronger pooling
+baselines, while hard top-$k$ pruning is not where the gain comes from.
+The more interesting hybrid question is whether WM still contributes as
+a \emph{support layer} around a strong baseline rather than as a
+replacement aggregate.  On binary year-4 questions, top-$k$ logit
+pooling and the WM-weighted logit pool make the same top prediction on
+every held-out question, so agreement-gating is an honest null result:
+the gated top-$k$ pool stays at AURC 0.00211.  On multi-option
+questions, however, the top-$k$ log pool and the WM-weighted log pool
+disagree on a small but nontrivial subset of questions, and gating the
+strong top-$k$ pool by WM agreement reduces AURC from 0.001095 to
+0.000541 while preserving the same 0.977 accuracy.  This is exactly the
+governance-layer interpretation we want: when the WM posterior adds no
+extra information, the support layer collapses to a null check; when it
+does disagree, that disagreement can still sharpen abstention behavior
+on top of an already strong forecasting-style aggregate.
+
+The second result is a protocol-semantics result rather than a score
+contest.  When the same resolved survey evidence from years~1--3 is
+processed online versus in nightly batches, the resulting reliability
+states agree to machine precision:
+\[
+\max |\Delta \alpha| = 1.42 \times 10^{-12}, \quad
+\max |\Delta \beta| = 1.71 \times 10^{-13}, \quad
+\max |\Delta p_{\mathrm{true}}| = 0.
+\]
+In other words, the same evidence stream yields the same posterior
+state whether it is incorporated immediately or consolidated later in a
+sleep phase, exactly the operational story the WM calculus is designed
+to support.
+
+The third result is an explicit forgetting / recalibration ablation on
+top of the stronger pooling family.  Keeping all of years~1--3 gives the
+WM-weighted logit/log pools Brier 0.026 / 0.036 and log score
+0.051 / 0.088 on binary / multi-option year-4 questions.  Forgetting
+year~1 improves these to 0.025 / 0.035 and 0.048 / 0.084 respectively,
+and using only the most recent year improves them further to
+0.024 / 0.033 and 0.047 / 0.080, while leaving accuracy unchanged at
+0.989 / 0.977.  This is the applied face of the new forgetting layer:
+old evidence need not be discarded blindly, but it can be scoped and
+removed when the deployment regime changes, improving recalibration even
+when the underlying aggregation family is already strong.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{../results/figures/gjp_forecasting.pdf}
+\caption{Good Judgment Project forecasting as a WM-PLN application.
+  \emph{Left:} year-4 Brier scores for stronger aggregation baselines:
+  plain log/logit pooling, top-$k$ temperature-tuned pooling, and
+  WM-weighted temperature-tuned pooling on binary and multi-option
+  questions.  \emph{Middle:} the stronger forgetting/recalibration
+  ablation: even after upgrading from mean/median to top-$k$ and
+  WM-weighted log/logit pooling, dropping older years still improves
+  year-4 Brier.  \emph{Right:} nightly batch
+  consolidation matches online updates to machine precision.}
+\label{fig:gjp-forecasting}
+\end{figure}
+
+This is the clean forecasting niche for WM-PLN: not ``beat the best
+superforecaster,'' but maintain a verified evidence/update layer for
+source reliability, stronger aggregation families, batch consolidation,
+and controlled recalibration on a real forecasting stream.
+
+\subsection{Summary of Numerical Results}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.6\textwidth]{../results/figures/confidence_curves.pdf}
+\caption{PLN confidence $c = n/(n + \kappa_0)$ as a function of
+  observation count, for various prior strengths $\kappa_0$.
+  Monotonicity is proved in Lean (\texttt{confidence\_monotone}).
+  This is precisely the PLN confidence curve with its prior
+  pseudo-count $\kappa_0$ made explicit.}
+\label{fig:confidence-curves}
+\end{figure}
+
+Table~\ref{tab:gaussian-demo-results} collects the key numerical outputs
+from all six demos.  For each class or phase, the posterior mean~$\mu_n$
+and 95\% credible interval are computed from the proved Normal-Gamma
+posterior formula (for Demos~1--2, 4--5) or from the proved Kalman
+filter update (Demos~3, 6).  Sleep $=$ wake is verified to machine
+precision in every case.  These are \textbf{illustrative CANARY fixture}
+results; the headline full-dataset/protocol claims for Gas, Steel, NAB,
+and GJP are reported in their dedicated sections above.
+
+\begin{table}[htbp]
+\centering
+\caption{Gaussian Demo Suite: Numerical Results for the illustrative
+  CANARY fixtures.  Posterior parameters are computed by
+  \texttt{scripts/wm\_pln\_posterior.py} using the same formulas proved
+  correct in Lean.}
+\label{tab:gaussian-demo-results}
+\small
+\begin{tabular}{llrrrl}
+\toprule
+Demo & Class/Phase & $n$ & Post.\ $\mu_n$ & 95\% CI & Key Result \\
+\midrule
+Broken Sensor & Morning & 5 & 15.77 & $[12.0, 19.6]$ & $P(X{>}20) = 0.017$ \\
+Broken Sensor & Night & 5 & 21.43 & $[14.5, 28.4]$ & $P(X{>}20) = 0.674$ \\
+\addlinespace
+Widget Factory & Machine A & 4 & 9.92 & $[7.1, 12.8]$ & $P(X{>}12) = 0.067$ \\
+Widget Factory & Machine B & 3 & 10.95 & $[7.7, 14.2]$ & $P(X{>}12) = 0.234$ \\
+\addlinespace
+Kalman Sleep & Morning & 5 & 1.96 & $\sigma^2{=}0.50$ & Sleep $=$ Wake \\
+Kalman Sleep & Night & 5 & 3.14 & $\sigma^2{=}0.50$ & Sleep $=$ Wake \\
+\addlinespace
+Gas Sensor & Ethanol B1 & 5 & 37\,270 & $[7\mkern1mu601,\, 66\mkern1mu939]$ & drift $= +10\,448$ \\
+Gas Sensor & Ammonia B1 & 5 & 7\,079 & $[2\mkern1mu672,\, 11\mkern1mu486]$ & drift $= -1\,479$ \\
+Gas Sensor & Toluene B1 & 5 & 137\,655 & $[89\mkern1mu711,\, 185\mkern1mu598]$ & drift $= -114\,055$ \\
+\addlinespace
+Steel Faults & Pastry & 5 & 2.40 & $[0.9, 3.9]$ & $P(X{>}3) = 0.197$ \\
+Steel Faults & K\_Scratch & 5 & 3.52 & $[1.8, 5.2]$ & $P(X{>}3) = \mathbf{0.746}$ \\
+Steel Faults & Bumps & 5 & 2.31 & $[0.7, 3.9]$ & $P(X{>}3) = 0.178$ \\
+\addlinespace
+NAB Anomaly & Calm & 5 & 85.2 & $\sigma^2{=}0.80$ & Sleep $=$ Wake \\
+NAB Anomaly & Hot & 5 & 99.5 & $\sigma^2{=}0.78$ & Sleep $=$ Wake \\
+NAB Anomaly & Anomaly & 5 & 35.5 & $\sigma^2{=}0.78$ & Sleep $=$ Wake \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Walley Predictive vs.\ Bayesian Credible Intervals}
+
+A recurring source of confusion in the PLN tradition is the conflation
+of two fundamentally different interval semantics:
+
+\begin{itemize}
+\item \textbf{Bayesian credible intervals} depend on the prior and give
+  the posterior probability that the parameter lies in the interval.
+  With a Beta($\alpha, \beta$) posterior, the $95\%$ credible interval
+  is the region containing $95\%$ of the posterior mass.
+
+\item \textbf{Walley IDM predictive intervals} are derived from the
+  Imprecise Dirichlet Model~\cite{Walley1996BagOfMarbles}, which uses
+  a \emph{set} of Dirichlet priors rather than a single prior.  The
+  resulting intervals are wider but prior-free: they provide robust
+  predictions without committing to a specific prior family.
+\end{itemize}
+
+These two semantics agree in the limit of large samples (both intervals
+shrink to the true probability) but can differ substantially for small
+evidence counts.  \xiPLN{} provides both as explicit selector choices,
+with typed bridges that transport truth values through the system
+without conflation.
+
+See \codepath{Mettapedia/Logic/PLNWorldModelITV.lean} and
+\codepath{Mettapedia/Logic/PLNWorldModelITVHypercube.lean}.
+
+\section{The De Finetti Bridge}
+
+De Finetti's representation theorem~\cite{definetti1937} is the
+mathematical bedrock of PLN's evidence representation.
+
+\begin{theorem}[De Finetti (\claimCore{})]
+Let $(X_1, X_2, \ldots)$ be an infinite exchangeable sequence of
+binary random variables.  Then there exists a unique probability
+measure $\mu$ on $[0,1]$ such that for all $n$:
+\[
+  P(X_1 = x_1, \ldots, X_n = x_n) =
+  \int_0^1 p^{n^+}(1-p)^{n^-}\, d\mu(p)
+\]
+where $n^+ = |\{i : x_i = 1\}|$ and $n^- = |\{i : x_i = 0\}|$.
+\end{theorem}
+
+The consequences for PLN:
+\begin{enumerate}
+\item \textbf{Sufficiency of counts.}  The joint probability depends
+  on the observations only through the counts $(n^+, n^-)$.  Order
+  does not matter.  This justifies the evidence algebra
+  (Chapter~\ref{ch:evidence}).
+
+\item \textbf{Conjugate updating.}  With a Beta prior
+  $\mu = \mathrm{Beta}(\alpha, \beta)$, the posterior is
+  $\mathrm{Beta}(\alpha + n^+, \beta + n^-)$.  Evidence revision
+  ($\hplus$) is conjugate updating.
+
+\item \textbf{Posterior concentration.}  As $n \to \infty$, the
+  posterior concentrates on the true probability $p^*$.
+  Formally, for the posterior mean:
+  \[
+    s_n = \frac{\alpha + n^+}{\alpha + \beta + n} \;\xrightarrow{n \to \infty}\; p^*
+    \quad \text{almost surely.}
+  \]
+\end{enumerate}
+
+The \nuPLN{} convergence theorem~\cite{nuPLN2026} generalizes this
+to the Solomonoff setting: the universal posterior concentrates on the
+true generator.  This is the PLN analogue of Solomonoff's convergence
+theorem for universal induction.
+
+See \codepath{Mettapedia/Logic/SolomonoffExchangeable.lean} and
+\codepath{Mettapedia/Logic/DeFinetti.lean}.
+
+\section{Knuth--Skilling Foundations}
+
+Knuth--Skilling foundations of inference~\cite{KnuthSkilling2012} provide
+axioms for valuation schemes on logical lattices, extending Cox-style
+plausibility calculi.  In \xiPLN{}, this plays two roles:
+
+\begin{enumerate}
+\item \emph{Probability as a valuation.}  At the world-model layer,
+  probabilities arise as valuations on the Boolean algebra of subsets of
+  worlds.  This is the classical Kolmogorov story instantiated for finite
+  spaces.
+
+\item \emph{Evidence as Heyting-valued semantics.}  At the evidence
+  layer, K\&S-style rules persist but Boolean equalities can weaken to
+  inequalities, because the evidence lattice is Heyting, not Boolean.
+\end{enumerate}
+
+We bridge K\&S additive regraduations to valuation-algebra factor graphs,
+enabling variable elimination over K\&S-valued factors.
+
+See \codepath{Mettapedia/ProbabilityTheory/KnuthSkilling/Bridges/ValuationAlgebra.lean}.
+
+
+%% ═══════════════════════════════════════════════════════════════════
+\part{Compiled Inference and Tractable Fragments}
+\label{part:compiled}
+%% ═══════════════════════════════════════════════════════════════════
+
+\chapter{\texorpdfstring{$\Sigma$}{Sigma}-Guarded Rewrites}
+\label{ch:sigma-rewrites}
+
+The gap between the complete world-model semantics and practical inference
+is bridged by \emph{compiled rewrites}: derived rules that are correct
+under explicit structural assumptions.
+
+\section{The Rewrite Pattern}
+
+A $\Sigma$-guarded rewrite has the form:
+\[
+\frac{\Sigma \vdash \text{ScreenOff}(A, B, C) \quad
+      \Sigma; \Gamma \vdash \code{link}(A, B) \Downarrow e_{AB} \quad
+      \cdots}
+     {\Sigma; \Gamma \vdash \code{linkCond}([A, B], C) \Downarrow e_{AC}}
+\]
+with the side-condition that $\strength(e_{AC})$ equals the result of
+applying the appropriate PLN formula to the extracted strengths.
+
+The key features:
+\begin{enumerate}
+\item The side-condition context $\Sigma$ is \emph{explicit}---it appears
+  in the judgment, not hidden in documentation.
+\item The rewrite operates at the \emph{strength level}---it tells you
+  the correct probability answer, given the assumptions.
+\item The assumptions are \emph{checkable}---for a BN model class, they
+  reduce to d-separation queries on the DAG.
+\end{enumerate}
+
+\section{The Xi Rule Registry}
+
+The codebase maintains a registry of compiled rewrites:
+\begin{itemize}
+\item Exact-track rules: deduction, source/induction, sink/abduction, revision.
+\item Each rule carries: screening-off side conditions, OSLF atom bridges,
+  typed BN constructor lifts (chain/fork/collider), and coordinate-specialized
+  endpoints (lower/upper/credibility/width/strength).
+\end{itemize}
+
+See \codepath{Mettapedia/Logic/PLNXiRuleRegistry.lean} and
+\codepath{Mettapedia/Logic/PLNBNCompilation.lean}.
+
+\section{Compiled Tactics vs.\ Foundational Semantics}
+
+It is worth pausing to be explicit about the relationship between compiled
+rewrites and the foundational calculus.
+
+A compiled rewrite is \emph{admissible}: it can be derived from the
+foundational rules plus the structural assumptions in $\Sigma$.  It is
+not a new axiom.  It is a theorem that, under stated conditions, a certain
+query can be answered by combining the answers to simpler queries.
+
+The advantage of presenting rules as compiled tactics rather than primitive
+laws is that the assumptions become visible.  When a PLN deduction rule
+``works'' in practice, it is because the implicit BN structure satisfies
+the screening-off conditions.  When it ``fails'' (produces incorrect
+probabilities), it is because those conditions are violated.  \xiPLN{}
+makes this explicit.  These are not ad hoc patches to rescue a broken
+rule; they are the actual theoremic scope conditions under which the
+classical extensional formulas are exact.
+
+
+\chapter{Bayesian-Network World Models and Compiled BN Inference}
+\label{ch:bn-models}
+
+The complete world-table \JointEvidence{} is exponential in $n$.  To scale,
+we restrict the world-model class while preserving correctness relative
+to the restriction.
+
+\section{BN World-Model Class}
+
+A Bayesian-network world model consists of:
+\begin{itemize}
+\item A directed acyclic graph (DAG) specifying the factorization.
+\item Local conditional probability tables (CPTs) with Dirichlet evidence
+  (counts) per CPT row.
+\item Revision = addition of local Dirichlet counts (conjugate update).
+\item Query = exact inference by variable elimination or junction tree.
+\end{itemize}
+
+The DAG structure provides the structural assumptions ($\Sigma$) needed
+for compiled rewrites.  D-separation in the DAG determines which
+conditional independence assumptions hold, and these determine which
+PLN rules are applicable.
+
+See \codepath{Mettapedia/Logic/PLNBayesNetWorldModel.lean}.
+
+\section{Exact BN Query Bridge}
+
+The BN world-model layer provides an evidence plumbing stack:
+\begin{itemize}
+\item A Boolean BN CPT query type \code{CPTQuery} (node + parent
+  configuration).
+\item A CPT posterior state \code{CPTState} storing \Evidence{} per CPT entry.
+\item An additive projection from \JointEvidence{} to CPT evidence by
+  marginalization (summing compatible worlds), which commutes with revision.
+\end{itemize}
+
+\section{Chain, Fork, and Collider Exactness}
+
+The three fundamental BN motifs each yield exactness theorems for the
+corresponding PLN rule.  Recall the PLN deduction strength formula
+(Chapter~\ref{ch:posterior-state}):
+\[
+  s_{AC} = s_{AB} \cdot s_{BC} + (1 - s_{AB}) \cdot
+  \frac{s_C - s_B \cdot s_{BC}}{1 - s_B}
+\]
+
+\begin{theorem}[Chain BN deduction exactness (\claimConditional{})]
+\label{thm:chain-exact}
+In a chain BN $A \to B \to C$ with CPT-based local probabilities,
+the screening-off conditions
+\[
+  P(C \mid A \cap B) = P(C \mid B), \qquad
+  P(C \mid A \cap B^c) = P(C \mid B^c)
+\]
+hold by d-separation.  Under positivity ($P(B \mid A) > 0$, $P(B) \in (0,1)$),
+the PLN deduction formula computes the exact conditional:
+\[
+  s_{AC} = P(C \mid A) = \sum_b P(C \mid B=b) \cdot P(B=b \mid A)
+\]
+The key mechanism: the CPT row for $C$ depends only on $B$'s value
+(sink property), and the joint weight factorizes as
+$w(c, r) = P_{\mathrm{CPT}}(c \mid \mathrm{pa}(C)) \cdot
+\prod_{v \ne C} P_{\mathrm{CPT}}(v \mid \mathrm{pa}(v))$,
+where the second factor is independent of~$c$.
+\end{theorem}
+
+\begin{theorem}[Fork BN deduction exactness (\claimConditional{})]
+\label{thm:fork-exact}
+In a fork BN $A \leftarrow B \to C$, the common-cause $B$ screens off
+$A$ from $C$: $P(C \mid A, B) = P(C \mid B)$.  Under positivity, the
+PLN deduction formula again yields the exact $P(C \mid A)$.
+\end{theorem}
+
+\begin{theorem}[Collider screening-off (\claimConditional{})]
+In a collider $A \to B \leftarrow C$, $A$ and $C$ are marginally
+independent but become dependent when conditioning on $B$.  The PLN
+abduction formula applies with modified side conditions.
+\end{theorem}
+
+These ``fast rule exactness'' results show that classic PLN formulas are
+not approximations but exact computations within the declared model class.
+The screening-off and positivity hypotheses are part of the mathematical
+statement, and the local-completeness no-go theorem explains why they
+cannot be erased in the unrestricted setting.
+
+See \codepath{Mettapedia/Logic/PLNBayesNetFastRules.lean} and
+\codepath{Mettapedia/Logic/PLNXiDerivedBNRules.lean}.
+
+\section{Class-Packaged BN Discharge}
+
+For practical use, the individual screening-off and positivity conditions
+are packaged into class-level discharge:
+\begin{lstlisting}
+allDiscreteCPTLocalMarkov_of
+wmqueryeq_of_dsep_discharge_via_soundness_allLocalMarkov
+chain_screeningOff_wmqueryeq_of_dsep_allLocalMarkov
+fork_screeningOff_wmqueryeq_of_dsep_allLocalMarkov
+collider_screeningOff_wmqueryeq_of_dsep_allLocalMarkov
+\end{lstlisting}
+
+This means: given a BN model class satisfying local Markov properties,
+the screening-off conditions for chain, fork, and collider patterns are
+automatically discharged.
+
+See \codepath{Mettapedia/Logic/PLNBNLocalMarkovPackages.lean}.
+
+\section{Worked Proof-Carrying Contraction}
+
+The natural question at this point is whether anything recognizably
+PLN-like remains at the operational level.  The answer is yes, but in a
+corrected form.  By \emph{proof-carrying contraction} I mean a compiled
+rewrite together with its explicit side-condition package $\Sigma$ and
+its theorem provenance.  The semantic factor graph is still the
+truthmaker; the PLN rule is the local contraction that is allowed to fire
+only when $\Sigma$ is discharged.  What disappears is naked truth-value
+propagation without a declared model class.
+
+Our canonical worked micro-example is the binary BN
+\[
+  A \leftarrow H \to B \to C \to D
+\]
+with
+\[
+  P(H{=}1)=\tfrac15,\;
+  P(A{=}1 \mid H{=}1)=\tfrac9{10},\;
+  P(A{=}1 \mid H{=}0)=\tfrac1{10},
+\]
+\[
+  P(B{=}1 \mid H{=}1)=\tfrac45,\;
+  P(B{=}1 \mid H{=}0)=\tfrac15,\;
+  P(C{=}1 \mid B{=}1)=\tfrac{17}{20},\;
+  P(C{=}1 \mid B{=}0)=\tfrac3{20},
+\]
+\[
+  P(D{=}1 \mid C{=}1)=\tfrac9{10},\qquad
+  P(D{=}1 \mid C{=}0)=\tfrac1{10}.
+\]
+The semantic baseline is exact factor-graph elimination on this declared
+model.  The compiled PLN-style contractions then recover the same answers
+in the exact fragment:
+\begin{itemize}
+\item Fork-style contraction (`source rule'): from $A \leftarrow H \to B$,
+  the exact answer is
+  \[
+    P(B{=}1 \mid A{=}1)=\tfrac8{13}\approx 0.615.
+  \]
+\item Chain-style contraction: using the derived $A \Rightarrow C$ query
+  through the $B$-mediated exact fragment,
+  \[
+    P(C{=}1 \mid A{=}1)=\tfrac{151}{260}\approx 0.581.
+  \]
+\item Chain-style contraction again through $C$:
+  \[
+    P(D{=}1 \mid A{=}1)=\tfrac{367}{650}\approx 0.565.
+  \]
+\end{itemize}
+
+The important point is not just the numbers.  Each derived step is
+packaged as
+\[
+  (\text{query}, \text{value}, \Sigma, \text{provenance}),
+\]
+not as a bare derived edge.  In the Lean demo this provenance points back
+to the already-proved exact endpoints
+\code{PLNEndToEnd.forkFormulaExact},
+\code{PLNEndToEnd.chainFormulaExact}, and the corresponding
+$\Sigma$-guarded rewrite surfaces.  See
+\code{fork\_contraction\_matches\_exact\_semantics},
+\code{chain\_contraction\_C\_matches\_exact\_semantics},
+\code{chain\_contraction\_D\_matches\_exact\_semantics} in
+\codepath{Mettapedia/Logic/PLNProofCarryingContractionDemo.lean}.
+
+The same file also contains two negative controls, because a worked
+positive example is only convincing if it does not quietly smuggle back
+the old unrestricted semantics.
+
+First, perturb the fixture so that $C$ depends weakly on $A$ as well as
+$B$:
+\[
+  P(C{=}1 \mid A{=}0,B{=}0)=\tfrac3{20},\;
+  P(C{=}1 \mid A{=}1,B{=}0)=\tfrac14,
+\]
+\[
+  P(C{=}1 \mid A{=}0,B{=}1)=\tfrac{17}{20},\;
+  P(C{=}1 \mid A{=}1,B{=}1)=\tfrac9{10}.
+\]
+Now the exact semantic answer becomes
+\[
+  P(C{=}1 \mid A{=}1)=\tfrac{13}{20}=0.65,
+\]
+while the naive screened-off contraction gives only
+\[
+  \tfrac{133}{221}\approx 0.602.
+\]
+So the gate matters: when $\Sigma$ is not discharged, the exact compiled
+chain contraction should not fire.  See
+\code{soft\_gate\_blocks\_exact\_contraction} in
+\codepath{Mettapedia/Logic/PLNProofCarryingContractionDemo.lean}.
+
+Second, a collider negative control keeps the old abduction story honest.
+For the OR-gate collider $A \to C \leftarrow B$ with
+$P(A{=}1)=P(B{=}1)=\tfrac12$, the old naive abduction formula yields
+$\tfrac23$, while the exact semantic answer remains $\tfrac12$.  So the
+refounded system does \emph{not} license free abduction-style link
+creation merely because a local pattern ``looks like'' a classic PLN
+rule.  See \code{collider\_negative\_control\_blocks\_naive\_abduction} in
+\codepath{Mettapedia/Logic/PLNProofCarryingContractionDemo.lean}.
+
+This is the corrected operational reading of PLN rule firing.  The old
+intuition survives, but as admissible, $\Sigma$-guarded local contraction
+inside a declared world-model class, not as unconstrained link
+propagation.
+
+Figure~\ref{fig:proof-carrying-contraction-school} gives the same story in a
+simple school-grounded picture.  The left panel is the exact fragment; the
+middle panel shows the extra path that blocks the naive chain contraction; the
+right panel is the collider negative control.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[t]{0.94\textwidth}
+\centering
+\begin{tikzpicture}[
+  >=Stealth,
+  node distance=10mm and 14mm,
+  every node/.style={font=\scriptsize},
+  obs/.style={draw, rounded corners=2pt, fill=blue!6, align=center, minimum width=22mm, minimum height=8mm},
+  latent/.style={draw, rounded corners=2pt, fill=gray!18, align=center, minimum width=22mm, minimum height=8mm}
+]
+\node[latent] (H) {H\\Rain overnight};
+\node[obs, below left=of H] (A) {A\\Playground\\wet};
+\node[obs, below right=of H] (B) {B\\Shoes\\muddy};
+\node[obs, right=16mm of B] (C) {C\\Hallway\\muddy};
+\node[obs, below=12mm of C] (D) {D\\Wet-floor\\sign};
+\draw[->, thick] (H) -- (A);
+\draw[->, thick] (H) -- (B);
+\draw[->, thick] (B) -- (C);
+\draw[->, thick] (C) -- (D);
+\end{tikzpicture}
+\caption{Exact fragment: the compiled fork and chain contractions are allowed to fire.}
+\end{subfigure}
+
+\medskip
+\begin{subfigure}[t]{0.94\textwidth}
+\centering
+\begin{tikzpicture}[
+  >=Stealth,
+  node distance=10mm and 14mm,
+  every node/.style={font=\scriptsize},
+  obs/.style={draw, rounded corners=2pt, fill=blue!6, align=center, minimum width=22mm, minimum height=8mm},
+  latent/.style={draw, rounded corners=2pt, fill=gray!18, align=center, minimum width=22mm, minimum height=8mm}
+]
+\node[latent] (H) {H\\Rain overnight};
+\node[obs, below left=of H] (A) {A\\Playground\\wet};
+\node[obs, below right=of H] (B) {B\\Shoes\\muddy};
+\node[obs, right=16mm of B] (C) {C\\Hallway\\muddy};
+\node[obs, below=12mm of C] (D) {D\\Wet-floor\\sign};
+\draw[->, thick] (H) -- (A);
+\draw[->, thick] (H) -- (B);
+\draw[->, thick] (B) -- (C);
+\draw[->, thick] (C) -- (D);
+\draw[->, dashed, very thick, orange!80!black] (A) to[bend left=14] node[above, font=\tiny] {extra path} (C);
+\end{tikzpicture}
+\caption{Soft-gate perturbation: a direct playground$\to$hallway path means the chain gate is no longer discharged.}
+\end{subfigure}
+
+\medskip
+\begin{subfigure}[t]{0.68\textwidth}
+\centering
+\begin{tikzpicture}[
+  >=Stealth,
+  node distance=12mm and 14mm,
+  every node/.style={font=\scriptsize},
+  obs/.style={draw, rounded corners=2pt, fill=red!6, align=center, minimum width=23mm, minimum height=8mm}
+]
+\node[obs] (A) {A\\Class 3A\\used glitter};
+\node[obs, right=30mm of A] (C) {C\\Glitter on\\hallway floor};
+\node[obs, below=14mm of C] (B) {B\\Art club\\used glitter};
+\draw[->, thick] (A) -- (C);
+\draw[->, thick] (B) -- (C);
+\end{tikzpicture}
+\caption{Collider negative control: seeing the glitter does not license naive free abduction from one source to the other.}
+\end{subfigure}
+\caption{Elementary-school grounding of the proof-carrying contraction demo.  Left: rain explains both a wet playground and muddy shoes, so the fork/chain contractions match exact semantic inference.  Middle: if the wet playground can also muddy the hallway directly, the naive screened-off contraction is blocked.  Right: two possible glitter sources feeding one hallway clue form a collider, so the old unrestricted abduction intuition must be guarded.}
+\label{fig:proof-carrying-contraction-school}
+\end{figure}
+
+\section{Bridge Theorems: Naive Bayes and k-NN}
+
+The BN world-model framework connects PLN to two standard machine-learning
+methods.
+
+\begin{theorem}[Naive Bayes bridge (\claimCore{})]
+\label{thm:nb-bridge}
+For a Naive Bayes model (class variable $C$, features $F_1, \ldots, F_n$
+conditionally independent given $C$), the PLN tensor-strength computation
+equals the Naive Bayes posterior:
+\[
+  \strength_{\otimes}(e_{F_1 \Rightarrow C}, \ldots, e_{F_n \Rightarrow C})
+  = P(C \mid F_1, \ldots, F_n)_{\mathrm{NB}}
+\]
+\end{theorem}
+
+See \code{PLN\_tensorStrength\_eq\_nbPosterior} in
+\codepath{Mettapedia/Logic/PLNBayesNetInference.lean}.
+
+\begin{theorem}[k-NN bridge (\claimCore{})]
+\label{thm:knn-bridge}
+PLN's evidence-weighted relevance score equals the k-NN relevance
+function:
+\[
+  \hplus\text{-}\mathrm{pos}(e_1, \ldots, e_k) = \mathrm{knnRelevance}(x)
+\]
+where the $e_i$ are evidence values from the $k$ nearest neighbors.
+\end{theorem}
+
+See \code{PLN\_hplusPos\_eq\_knnRelevance} in
+\codepath{Mettapedia/Logic/PremiseSelectionKNN\_PLNBridge.lean}.
+
+These bridges show that PLN's evidence algebra is not an isolated
+formalism: it subsumes standard probabilistic classifiers as special
+cases.
+
+\section{Factor Graphs: Semantic vs.\ Operational}
+
+PLN has long used factor-graph and message-passing intuition.  \xiPLN{}
+separates two roles:
+
+\begin{itemize}
+\item \textbf{Semantic factor graphs.}  Factors \emph{are} the model:
+  the posterior state is represented by a factorization.  Variable
+  elimination gives exact answers; complexity is controlled by treewidth.
+  This is a \emph{world-model representation}.
+
+\item \textbf{Operational factor graphs.}  Factors are \emph{rule schemas}
+  (deduction, induction, etc.)\ whose local ``potentials'' are truth-value
+  update formulas.  This is \emph{inference control}: it proposes which
+  queries to ask, but does not itself constitute the semantics.
+\end{itemize}
+
+The two align when rule factors are \emph{compiled} from a world-model
+class: each factor corresponds to a conditional in the BN, and message
+passing implements the correct queries.
+
+
+\chapter{Error, Thresholds, and Transport Discipline}
+\label{ch:error-transport}
+
+When truth values are transported through chains of inference, errors can
+accumulate.  Chapter~8 of the PLN book discusses ``error magnification.''
+In \xiPLN{}, this topic becomes precise through the formalization of
+threshold transport and view transport.
+
+\section{View Transport Under Query Equivalence}
+
+\begin{definition}[Query equivalence]
+Two queries $q_1, q_2$ are \emph{equivalent in a world model $W$} when
+they yield the same evidence from every state:
+\[
+  \mathrm{evidence}(W, q_1) = \mathrm{evidence}(W, q_2)
+\]
+\end{definition}
+
+Under query equivalence, all views transport:
+
+\begin{theorem}[View transport (\claimCore{})]
+If $q_1 \equiv_W q_2$, then for any state $W$:
+\begin{align}
+  \strength(W, q_1) &= \strength(W, q_2) \\
+  \confidence(W, q_1) &= \confidence(W, q_2) \\
+  [s_L, s_U]_{q_1} &= [s_L, s_U]_{q_2}
+\end{align}
+and threshold acceptance transfers: if $\tau \le \confidence(W, q_1)$,
+then $\tau \le \confidence(W, q_2)$.
+\end{theorem}
+
+See \codepath{Mettapedia/Logic/PLNWorldModelCalculus.lean}.
+
+\section{Threshold Semantics and OSLF Bridge}
+
+The OSLF (Open Specification Language Framework) provides a typed
+truth-value bridge.  Threshold acceptance becomes a formal judgment:
+
+\begin{definition}[Threshold acceptance]
+For a threshold $\tau \in [0,1]$, a query $q$, and a world-model state $W$
+with lookahead parameter~$\kappa$:
+\[
+  \mathrm{thresholdAccepted}(\tau, q, W) \;\iff\;
+  \tau \le \frac{n^+(W, q) + n^-(W, q)}{n^+(W, q) + n^-(W, q) + \kappa}
+\]
+\end{definition}
+
+The end-to-end pipeline:
+\[
+  \text{selector} \;\to\; \text{rewrite} \;\to\; \text{query} \;\to\;
+  \text{threshold} \;\to\; \text{acceptance}
+\]
+is composed in a single theorem, ensuring that no intermediate step
+loses correctness guarantees.
+
+See \codepath{Mettapedia/Logic/PLNErrorMagnificationGrounding.lean}
+and \codepath{Mettapedia/Logic/PLNCanonicalAPI.lean}.
+
+\section{Threshold Transport Boundaries}
+
+Not all threshold operations compose freely.
+
+\begin{theorem}[Double-damping gap (\claimBoundary{})]
+When confidence passes through two damping stages (e.g., induction
+followed by threshold), the composed confidence is strictly lower than
+the correct single-stage value.  Formally, there exist
+$c_1, c_2 \in (0,1)$ such that:
+\[
+  c_{\mathrm{buggy}}(c_1, c_2) < c_{\mathrm{correct}}(c_1, c_2)
+\]
+This gap creates a threshold region where the double-damped formula
+rejects (incorrectly) while the correct formula accepts.
+\end{theorem}
+
+Further boundary results:
+\begin{itemize}
+\item \textbf{Disjunction threshold counterexample}: threshold acceptance
+  for disjunctions does not follow from acceptance of disjuncts without
+  total-order comparability of evidence values.
+\item \textbf{Diamond threshold failure}: modal diamond operators require
+  finite branching for threshold transport.
+\end{itemize}
+
+See \codepath{Mettapedia/Logic/OSLFEvidenceSemantics.lean}.
+
+\section{Categorical Transport Layer}
+
+For advanced applications (governance, modal logic, institutional
+reasoning), the formalization includes a categorical transport layer:
+institution satisfaction conditions, hyperdoctrine Beck-Chevalley
+transport, and unified endpoints that connect Kripke/neighborhood
+modal semantics to the world-model layer.
+
+See \codepath{Mettapedia/Logic/PLNWorldModelInstitution.lean} and
+\codepath{Mettapedia/Logic/PLNWorldModelCategoricalBridge.lean}.
+
+
+%% ═══════════════════════════════════════════════════════════════════
+\part{Main Extensions}
+\label{part:extensions}
+%% ═══════════════════════════════════════════════════════════════════
+
+\chapter{Higher-Order Reduction}
+\label{ch:higher-order}
+
+Higher-order extensional inference in PLN deals with relationships between
+predicates and concepts, not just between atoms.  The key question: can
+higher-order relationships be reduced to first-order ones without loss?
+
+\section{Satisfying Sets}
+
+The bridge between higher-order and first-order is the \emph{satisfying set}
+construction.
+
+\begin{definition}[Satisfying set]
+Given a predicate $P$ over a finite universe $U$, its satisfying set is
+$\mathrm{Sat}(P) = \{x \in U \mid P(x)\}$.
+\end{definition}
+
+\begin{definition}[Weakness-based inheritance]
+For satisfying sets $A, B \subseteq U$ and a weight function
+$\mu : U \to \mathbb{R}_{\ge 0}$, the inheritance (conditional probability
+proxy) is:
+\[
+  \mathrm{Inheritance}(A, B, \mu) =
+  \frac{\mathrm{weakness}(A \cap B, \mu)}{\mathrm{weakness}(A, \mu)}
+  = \frac{\sum_{u,v \in A \cap B} \mu(u) \cdot \mu(v)}
+         {\sum_{u,v \in A} \mu(u) \cdot \mu(v)}
+\]
+When $\mu$ is uniform, this reduces to
+$|A \cap B|^2 / |A|^2 = (|A \cap B| / |A|)^2$, so inheritance tracks the
+square of the conditional probability under the squared-weakness convention.
+\end{definition}
+
+\begin{definition}[Similarity]
+The Jaccard-style similarity is:
+\[
+  \mathrm{Similarity}(A, B, \mu) =
+  \frac{\mathrm{weakness}(A \cap B, \mu)}{\mathrm{weakness}(A \cup B, \mu)}
+\]
+\end{definition}
+
+\section{What Reduces Cleanly}
+
+\begin{theorem}[Pointwise implication collapse (\claimConditional{})]
+When $\forall x,\; R_1(A, x) \Rightarrow R_2(B, x)$ holds pointwise,
+the weakness numerators align:
+\[
+  \{(u,v) \mid R_1(A,u) \wedge R_1(A,v) \wedge R_2(B,u) \wedge R_2(B,v)\}
+  = \{(u,v) \mid R_1(A,u) \wedge R_1(A,v)\}
+\]
+and therefore $\mathrm{Inheritance}(A, B) = 1$.
+\end{theorem}
+
+\begin{theorem}[Perfect inheritance corner (\claimConditional{})]
+When $\mathrm{weakness}(S).{\mathrm{pos}} \ne 0$,
+$\mathrm{weakness}(S).{\mathrm{pos}} \ne \top$, and
+$\mathrm{weakness}(S).{\mathrm{neg}} = 0$, then
+$\mathrm{Inheritance}(A, B) = \mathrm{pTrue}$ (the top corner of
+the evidence lattice).
+\end{theorem}
+
+\section{What Fails: Unconditional Equalities}
+
+Some original PLN formulas for higher-order inference are stated as
+unconditional equalities.  The formalization shows that several of these
+fail without additional assumptions:
+\begin{itemize}
+\item The composition rule
+  $\mathrm{Inh}(A, C) = f(\mathrm{Inh}(A,B), \mathrm{Inh}(B,C))$
+  requires screening-off conditions analogous to those in the deduction
+  rule: $P(C \mid A, B) = P(C \mid B)$.
+\item Without these conditions, counterexamples exist where the formula
+  gives incorrect results due to untracked correlations between
+  $A$, $B$, $C$.
+\item The corrected versions carry explicit side conditions: positivity
+  ($P(B) \in (0,1)$), screening-off, and finite-model restrictions.
+\end{itemize}
+
+See \codepath{Mettapedia/Logic/HigherOrder/HigherOrderReduction.lean}
+and \codepath{Mettapedia/Logic/HigherOrder/Basic.lean}.
+
+\section{Kyburg Flattening}
+
+The Kyburg flattening operation reduces higher-order distributional
+truth values (distributions over distributions) to first-order ones.
+The key results:
+\begin{itemize}
+\item \code{kyburg\_flattening}: the flattening preserves expectation.
+\item \code{kyburg\_no\_advantage}: under the flattening, higher-order
+  distributional reasoning offers no advantage over first-order reasoning
+  for expectation-based decisions.
+\item The de~Finetti singleton bridge connects the distributional layer
+  to the Kyburg flattening.
+\end{itemize}
+
+See \codepath{Mettapedia/Logic/HigherOrder/PLNKyburgReduction.lean}.
+
+
+\chapter{Quantifiers and the Fuzzy/QFM Layer}
+\label{ch:quantifiers}
+
+PLN extends beyond propositional inference to quantified reasoning.
+This chapter covers the stable finite-domain quantifier bundle, fuzzy
+quantifier algebra, and their ITV-coordinate transport.  The codebase
+also contains an arbitrary-domain infinitary semantic layer in
+\codepath{Mettapedia/Logic/PLNFirstOrder/Infinite.lean}; what remains
+finite-domain here is the reviewed soundness/canary package for this
+chapter, not the whole WM calculus.
+
+\section{Finite-Model Quantifier Semantics}
+
+In a finite domain $U = \{u_1, \ldots, u_m\}$ with weight function
+$\mu : U \to \mathbb{R}_{\ge 0}$, quantifiers receive a
+weakness-based semantics:
+
+\begin{definition}[Universal quantifier evaluation (\claimCore{})]
+For a predicate set $S \subseteq U$:
+\[
+  \forall_\mu(S) = \mathrm{weakness}\big(\mu,\; \mathrm{diag}(S)\big)
+  = \sum_{u, v \in S} \mu(u) \cdot \mu(v)
+\]
+where $\mathrm{diag}(S) = \{(u,v) \mid u \in S \wedge v \in S\}$.
+Under uniform $\mu$, this reduces to $|S|^2/|U|^2$, the squared fraction
+of the domain satisfying~$S$.
+\end{definition}
+
+\begin{definition}[Existential quantifier evaluation (\claimCore{})]
+By de~Morgan reduction:
+\[
+  \exists_\mu(S) = \mathrm{compl}\big(\forall_\mu(\neg S)\big)
+\]
+\end{definition}
+
+\begin{theorem}[Quantifier ordering (\claimCore{})]
+For any predicate set $S$ and weight $\mu$:
+\[
+  \forall_\mu(S) \le \exists_\mu(S)
+\]
+\end{theorem}
+
+Extensional quantifiers use lattice operations: $\forall^{\mathrm{ext}}(S) = \bigwedge_u S(u)$
+and $\exists^{\mathrm{ext}}(S) = \bigvee_u S(u)$.
+
+See \codepath{Mettapedia/Logic/PLNFirstOrder/QuantifierSemantics.lean}
+and \codepath{Mettapedia/Logic/PLNFirstOrder/Soundness.lean}.
+
+\section{Fuzzy Quantifier Semantics}
+
+Beyond crisp quantifiers, PLN supports fuzzy quantifiers (``most,''
+``few,'' ``about half'') via a QFM (Quantitative Fuzzy Modifier) approach.
+
+\begin{definition}[Fuzzy quantifier parameters]
+A fuzzy quantifier specification $\mathcal{P}$ consists of:
+\begin{align}
+  \varepsilon &\in [0,1] && \text{proxy tolerance around 0/1} \\
+  L, U &\in [0,1],\; L \le U && \text{lower/upper proxy confidence} \\
+  \theta &\in [0,1] && \text{proxy confidence threshold}
+\end{align}
+The ``near-one'' and ``near-zero'' predicates are:
+\[
+  \mathrm{nearOne}_\varepsilon(x) \iff 1 - \varepsilon \le x \le 1, \qquad
+  \mathrm{nearZero}_\varepsilon(x) \iff 0 \le x \le \varepsilon
+\]
+\end{definition}
+
+\begin{definition}[Witness fraction]
+For a predicate $\phi$ on $U$:
+\[
+  \mathrm{witFrac}(\phi) = \frac{|\{u \in U \mid \phi(u)\}|}{|U|}
+\]
+The fuzzy-$\forall$ holds when the near-one witness fraction exceeds
+the threshold: $\theta \le \mathrm{witFrac}(\mathrm{nearOne}_\varepsilon \circ f)$
+where $f : U \to [0,1]$ is the membership profile.
+\end{definition}
+
+QFM composition operators: multiplicative ($x \cdot y$), minimum
+($\min(x,y)$), {\L}ukasiewicz ($\max(0, x+y-1)$), and probabilistic sum
+($x + y - xy$) provide graded conjunction/disjunction with ITV-coordinate
+transport.
+
+See \codepath{Mettapedia/Logic/PLNFirstOrder/FuzzyQuantifierSemantics.lean}
+and \codepath{Mettapedia/Logic/PLNFirstOrder/FuzzyITVBridge.lean}.
+
+\section{Scope Note: Stable Finite-Domain Bundle vs.\ Infinitary Semantics}
+
+The theorem-complete quantifier bundle emphasized in this chapter is
+established for finite domains.  However, the repository already contains
+an arbitrary-domain infinitary semantic layer with the basic definitions
+and laws
+(\code{WeightFunctionInf}, \code{SatisfyingSetInf},
+\code{forAllEvalInf}, \code{thereExistsEvalInf},
+\code{deMorgan\_inf}, \code{weaknessInf\_mono})
+in \codepath{Mettapedia/Logic/PLNFirstOrder/Infinite.lean}.
+
+So the honest limitation is narrower: the reviewed
+Chapter~\ref{ch:quantifiers} front door is finite-domain, while
+arbitrary-domain quantifier semantics already exist in Lean.  What
+remains future work is full parity between the finite-domain chapter
+bundle and the infinitary layer: stronger metatheory, canary/regression
+coverage, and any measure-theoretic extensions needed for probabilistic
+applications on genuinely infinite spaces.
+
+
+\chapter{Intensional Inheritance}
+\label{ch:intensional}
+
+Intensional inheritance is PLN's mechanism for reasoning about
+relationships based on shared properties (intension) rather than shared
+instances (extension).  This is one of the most ambitious parts of the
+PLN book, and one where the formalization required the most careful
+treatment.
+
+\section{What Intensional Inheritance Captures}
+
+Two concepts $A$ and $B$ have high intensional similarity when they share
+many properties---when things that are true of $A$ tend also to be true
+of $B$.  The original PLN book defines intensional inheritance as a
+mixture of extensional and intensional components, with the mixture
+controlled by a parameter.
+
+\section{Typed WM Grounding}
+
+The \xiPLN{} approach grounds intensional inheritance in the world-model
+framework through a typed query family:
+
+\begin{definition}[Inheritance sort]
+Queries are indexed by their semantic channel:
+\[
+  \mathrm{InheritanceSort} \;=\;
+  \mathrm{extensional} \;\mid\;
+  \mathrm{intensionalAssoc} \;\mid\;
+  \mathrm{intensionalPAT} \;\mid\;
+  \mathrm{mixed}
+\]
+Each sort has its own evidence extraction and strength computation.
+\end{definition}
+
+The ASSOC channel computes association strength via mutual information.
+Given features $F$ and a world-model state $W$:
+\[
+  P_{\mathrm{ASSOC}}(W \mid F) = P(W) \cdot 2^{I(F;\,W)}
+\]
+where $I(F; W) = \sum_{f,w} p(f,w) \log \frac{p(f,w)}{p(f) \cdot p(w)}$
+is the Shannon mutual information between the feature profile and the
+world state.  High ASSOC inheritance between $A$ and $B$ means that
+knowing which properties $A$ has gives strong predictive power for which
+properties $B$ has.
+
+The PAT (pattern) channel provides a complementary structural route based
+on property-pattern proximity: two concepts $A, B$ have high PAT similarity
+when they share structural patterns beyond what mutual-information association
+captures.
+
+See \codepath{Mettapedia/Logic/PLNIntensionalWorldModel.lean}.
+
+\section{Solomonoff Bridge}
+
+The Solomonoff bridge connects intensional inheritance to algorithmic
+information theory:
+\begin{itemize}
+\item The exact formal bridge is the universal-mixture log-ratio theorem:
+  $\mathrm{InhInt}_{\xi}(W,F,x)
+  = \log_2\!\bigl(P_{\xi}(W \mid F,x) / P_{\xi}(W \mid x)\bigr)$
+  when both conditionals are positive.
+\item Specialized \code{xiSemimeasure} and geometric-mixture versions are
+  proved as explicit theorem endpoints.
+\item This supports the algorithmic-information interpretation of
+  intensional inheritance, but the primary theorem statement is the
+  log-ratio bridge rather than a standalone normalized-information-distance
+  identity.
+\end{itemize}
+
+See \codepath{Mettapedia/Logic/IntensionalInheritanceSolomonoffBridge.lean}.
+
+\section{Mixed Semantic Packaging}
+
+The \code{AssocPatSemanticModel} packages ASSOC and PAT channels into a
+unified semantic model with selector-specialized endpoints.  The original
+PLN book proposes a simple mixture:
+\[
+  \mathrm{InhInt}(A, B) = \alpha \cdot \mathrm{Ext}(A, B)
+  + (1 - \alpha) \cdot \mathrm{IntAssoc}(A, B)
+\]
+with a single mixing parameter $\alpha$.  The formalization explicitly
+refutes this as a general law:
+
+\begin{theorem}[No binary mixed policy (\claimBoundary{})]
+\label{thm:no-mixed-policy}
+There exists a concrete state $W_{\mathrm{demo}}$ with evidence scores
+$(3, 2, 1)$ for (extensional, ASSOC, PAT) channels such that the PAT
+channel contributes nontrivially ($\mathrm{pat\_channel\_nontrivial}$) and
+the mixed result cannot be expressed as any function of only the
+extensional and ASSOC values ($\mathrm{mixed\_not\_assoc\_only}$).
+\end{theorem}
+
+This means the book's binary mixture is not merely incomplete but false
+as a general chapter-level law: the full three-channel model
+(extensional, ASSOC, PAT) is needed.
+The corrected theoremic surface is therefore a typed three-channel mixed
+rule, not a repaired version of the old binary extensional+ASSOC law.
+
+See \codepath{Mettapedia/Logic/PLNIntensionalCanary.lean},
+\codepath{Mettapedia/Logic/PLNIntensionalAssocPatClosure.lean}, and
+\codepath{Mettapedia/Logic/PLNIntensionalRegression.lean}.
+
+
+\chapter{Temporal and Causal Inference}
+\label{ch:temporal}
+
+Temporal and causal inference in PLN addresses reasoning about events
+ordered in time and about cause-effect relationships.
+
+\section{Temporal Operators}
+
+Temporal predicates live in the type
+$\mathrm{TemporalPred}(D, T) = D \to T \to \mathrm{Prop}$,
+where $D$ is the domain of entities and $T$ is the time type (typically
+$\mathbb{N}$ or $\mathbb{R}$).
+
+\begin{definition}[Simultaneous operators (\claimCore{})]
+\begin{align}
+  \mathrm{SimAND}(P, Q)(x, t) &:= P(x, t) \wedge Q(x, t) \\
+  \mathrm{SimOR}(P, Q)(x, t)  &:= P(x, t) \vee Q(x, t)
+\end{align}
+\end{definition}
+
+\begin{definition}[Sequential operators (\claimCore{})]
+\begin{align}
+  \mathrm{SeqAND}(P, Q)(x, t) &:= P(x, t) \wedge \exists \Delta > 0.\; Q(x, t + \Delta) \\
+  \mathrm{SeqAND}_f(P, Q)(x, t) &:= P(x, t) \wedge \exists \Delta.\;
+    f(\Delta) \wedge Q(x, t + \Delta)
+\end{align}
+where $f$ is a ``future'' predicate constraining the delay (e.g.,
+$\Delta \in [1, T_{\max}]$).
+\end{definition}
+
+\begin{definition}[Predictive implication (\claimCore{})]
+\[
+  \mathrm{PredImpl}(P, Q)(x, t) := P(x, t) \Rightarrow \exists \Delta > 0.\; Q(x, t + \Delta)
+\]
+The 3-node predictive chain composes: given temporal bounds $T_1, T_2$,
+\[
+  \mathrm{PredChain}_3(T_1, T_2, A, B, C)(x, t) :=
+  A(x, t) \wedge B(x, t + T_1) \Rightarrow C(x, t + T_2)
+\]
+\end{definition}
+
+\section{Causal Profile}
+
+Causal inference is grounded through a probabilistic event calculus:
+\begin{itemize}
+\item \textbf{Event predicates}: $\mathrm{Happens}(e, t)$, $\mathrm{Initiates}(e, f, t)$,
+  $\mathrm{Terminates}(e, f, t)$, $\mathrm{HoldsAt}(f, t)$.
+\item \textbf{Causal profile}: for a pair $(A, B)$, the causal profile is
+  the collection of predictive implication strengths across temporal lags:
+  $\mathrm{CausalProfile}(A, B) = \{\strength(\mathrm{PredImpl}_\Delta(A, B))
+  \mid \Delta \in [1, T_{\max}]\}$.
+\item \textbf{Distinguishing causation from correlation}: Granger-style
+  temporal precedence plus the event calculus distinguish $A \to B$
+  (causal) from $A \leftarrow C \to B$ (spurious correlation) within the
+  world-model framework.
+\end{itemize}
+
+See \codepath{Mettapedia/Logic/PLNTemporalCausalInference.lean} and
+\codepath{Mettapedia/Logic/PLNProbabilisticEventCalculus.lean}.
+
+\section{Temporal as Another WM Instance}
+
+The key design decision: temporal and causal inference is \emph{not} a
+separate ontology.  It is another instantiation of the world-model
+framework.  The world-model state includes temporal structure (event
+histories), the query language includes temporal operators (SimAND,
+SeqAND, PredImpl), and the evidence extraction/revision machinery
+operates unchanged.  This keeps the foundational theory unified:
+a single kernel, many instantiations.
+
+
+%% ═══════════════════════════════════════════════════════════════════
+\part{Large-Scale Inference, Control, and Boundaries}
+\label{part:large-scale}
+%% ═══════════════════════════════════════════════════════════════════
+
+\chapter{Large-Scale Inference at Theorem Level}
+\label{ch:large-scale}
+
+Chapter~9 of the PLN book discusses large-scale inference strategies:
+batch inference, multideduction, BN augmentation, trail-free protocols.
+This is the most complex chapter to formalize, and the most instructive
+about the gap between theoretical correctness and operational feasibility.
+
+\section{Multideduction and Identifiability}
+
+Multideduction---applying multiple deduction steps and combining
+results---runs into a fundamental identifiability problem.
+
+\begin{theorem}[Inclusion-exclusion identifiability no-go (\claimBoundary{})]
+Two-term inclusion-exclusion statistics are not sufficient to identify the
+union mass.  There exist distinct probability distributions agreeing on all
+first-two-term statistics but disagreeing on the union probability.
+\end{theorem}
+
+The corrected positive result:
+
+\begin{theorem}[Residual decomposition (\claimConditional{})]
+The union cardinality decomposes as the two-term estimate plus a residual.
+If the residual is known (or bounded), the corrected estimate agrees with
+the true value.
+\end{theorem}
+
+See \codepath{Mettapedia/Logic/PLNMultideductionResidual.lean} and
+\codepath{Mettapedia/Logic/PLNInclusionExclusionIdentifiability.lean}.
+
+\section{Trail-Free Protocol Dynamics}
+
+The trail-free deterministic update protocol can fail to stabilize:
+
+\begin{theorem}[Trail-free non-stabilization (\claimBoundary{})]
+There exists a two-state system where the trail-free deterministic update
+enters a 2-cycle and never reaches a fixed point.
+\end{theorem}
+
+The positive result under damping:
+
+\begin{theorem}[Damped convergence (\claimConditional{})]
+Under damping and eventual fresh evidence, the SP/SPN protocol eventually
+stabilizes.  Under bounded-gap fairness, stabilization occurs within an
+explicit bound.
+\end{theorem}
+
+See \codepath{Mettapedia/Logic/PLNTrailFreeDynamicsCounterexample.lean}
+and \codepath{Mettapedia/Logic/PLNTrailFreeDampedConvergence.lean}.
+
+\section{Pooling and Fusion}
+
+Evidence pooling axioms are insufficient to characterize additive fusion:
+
+\begin{theorem}[Pooling non-uniqueness (\claimBoundary{})]
+The max-pooling operator satisfies the pooling axioms but differs from
+additive fusion.
+\end{theorem}
+
+The corrected uniqueness result:
+
+\begin{theorem}[Pooling uniqueness (\claimConditional{})]
+External Bayesianity plus total additivity uniquely recovers additive
+evidence pooling.
+\end{theorem}
+
+See \codepath{Mettapedia/Logic/PremiseSelectionExternalBayesianity.lean}.
+
+\section{Evidence-Conservation and Order-Cost Governance}
+
+The non-additive perimeter is now covered by a theorem pack rather than
+ad hoc prose.  The key move is to separate three layers:
+\begin{itemize}
+\item \textbf{Conservation under forgetting}: anti-hallucination and
+  outside-scope leakage bounds when exact inverse forgetting holds.
+\item \textbf{Order-cost bounds}: schedule-level error bounded by
+  pairwise swap-anomaly budgets.
+\item \textbf{Runtime certification}: executable pairwise checks imply the
+  proved schedule/policy bounds.
+\end{itemize}
+
+\begin{theorem}[Evidence-conservation pack from forgetting (\claimConditional{})]
+If a forgetting operator is an exact inverse for a scoped revision, then
+outside that scope:
+\begin{enumerate}
+\item no new evidence can appear (anti-hallucination),
+\item query evidence is conserved,
+\item leakage count/budget is zero, hence any nonnegative leakage budget
+  threshold is satisfied.
+\end{enumerate}
+\end{theorem}
+
+\begin{theorem}[Order-cost budget bound (\claimConditional{})]
+If each adjacent swap in a schedule is bounded by a per-step anomaly budget,
+then total schedule error is bounded by the sum of those budgets.  In
+particular, commutative merge-evidence implies zero swap anomaly and zero
+schedule error.
+\end{theorem}
+
+\begin{theorem}[Runtime audit certificate soundness (\claimConditional{})]
+If runtime pairwise-order checks pass with budget vector $B$, then the
+formal schedule-error bound and budget-threshold policy conclusions follow
+in Lean.  For two-step schedules, a single swap-step check certifies the
+two-step policy threshold.
+\end{theorem}
+
+Lean endpoints:
+\begin{itemize}
+\item \code{evidenceConservationPack\_of\_forgetting} in
+  \codepath{Mettapedia/Logic/PLNWorldModelConservationPack.lean}
+\item \code{scheduleErrorBound\_of\_pairwise\_bounds} and
+  \code{scheduleErrorBound\_twoStep\_of\_swapStepBound} in
+  \codepath{Mettapedia/Logic/PLNWorldModelOrderCostBounds.lean}
+\item \code{runtimePairwiseOrderCheck\_certifies\_scheduleErrorBound} and
+  \code{runtimePairwiseOrderCheck\_certifies\_policyThreshold} in
+  \codepath{Mettapedia/Logic/PLNWorldModelOrderCostAuditCertificate.lean}
+\end{itemize}
+
+\paragraph{Concrete demos.}
+The weighted numeric lane proves nontrivial non-commutative behavior
+(\code{weightedScheduleErrorBound\_twoStep\_not\_zero\_of\_pos\_weight}),
+and the gas governance lane proves certified zero-budget pass on batch
+swap under additive merge
+(\code{gasOrderBudgetPolicy\_batchSwap\_zero\_via\_runtimeCertificate}).
+See \codepath{Mettapedia/Logic/PLNWorldModelOrderCostWeightedDemo.lean}
+and \codepath{Mettapedia/Logic/PLNWorldModelOrderCostGasPolicyDemo.lean}.
+
+\section{BRGI and Feasible Sets}
+
+The Balanced Relevance-Guided Inference (BRGI) framework provides an
+optimization-theoretic perspective:
+\begin{itemize}
+\item Finite feasible sets with policy-sensitive optimum characterization.
+\item Graph-level BRGI objects with optimality-preserving refinement.
+\end{itemize}
+
+See \codepath{Mettapedia/Logic/PremiseSelectionBRGI.lean}.
+
+\section{Stochastic Experiment Layer}
+
+Blackwell factorization, weighted source policies, and trusted-gate
+transfer provide a formal framework for reasoning about the value of
+experimental evidence:
+\begin{itemize}
+\item Expected utility equals the Blackwell factor.
+\item Optimal value is monotone under Blackwell domination.
+\item Trusted-gate transfer preserves optimality ordering.
+\end{itemize}
+
+See \codepath{Mettapedia/Logic/PLNWorldModelExperimentStochastic.lean}.
+
+
+\chapter{Inference Control}
+\label{ch:inference-control}
+
+Inference control addresses the meta-level problem: given a large knowledge
+base and many possible inference steps, which steps should be taken?
+
+\section{Selector Specifications}
+
+A \emph{selector} is a function that chooses premises for inference.
+The formalization provides:
+\begin{itemize}
+\item Formal selector specifications with typed interfaces.
+\item Ranking transfer: if a selector produces a good ranking on one
+  distribution, it produces a good ranking on similar distributions.
+\item Ranking stability: small perturbations in the knowledge base
+  produce small perturbations in the ranking.
+\end{itemize}
+
+See \codepath{Mettapedia/Logic/PremiseSelectionSelectorSpec.lean} and
+\codepath{Mettapedia/Logic/PremiseSelectionRankingStability.lean}.
+
+\section{Coverage and Submodularity}
+
+Let $D$ be the set of true dependencies and $S$ the selected premise set.
+The coverage objective is:
+\[
+  f(S) = |S \cap D|
+\]
+
+\begin{theorem}[Coverage submodularity (\claimCore{})]
+\label{thm:coverage-submod}
+The function $f$ is monotone ($S \subseteq T \Rightarrow f(S) \le f(T)$)
+and submodular: for $S \subseteq T$ and any element $x \notin T$:
+\[
+  f(T \cup \{x\}) - f(T) \;\le\; f(S \cup \{x\}) - f(S)
+\]
+\end{theorem}
+
+By the classical result of Nemhauser, Wolsey, and Fisher, the greedy
+algorithm (iteratively adding the element with maximum marginal gain)
+achieves a $(1 - 1/e) \approx 0.632$ approximation ratio for monotone
+submodular maximization under cardinality constraints.  This guarantee
+is formalized via an explicit \code{GreedyChain} inductive construction.
+
+See \codepath{Mettapedia/Logic/PremiseSelectionCoverage.lean}.
+
+\section{Coverage Surrogate Boundaries}
+
+\begin{theorem}[Coverage/cardinality surrogate no-go (\claimBoundary{})]
+Coverage and cardinality together are insufficient for risk-sensitive
+selection: there exist premise sets with identical coverage and cardinality
+but different false-positive risk.
+\end{theorem}
+
+See \codepath{Mettapedia/Logic/PremiseSelectionCoverageCounterexamples.lean}.
+
+\section{Composed Core Endpoints}
+
+The one-call selector $\to$ rewrite $\to$ threshold composition:
+\begin{lstlisting}
+ch9_selector_rewrite_threshold_end_to_end_of_interval
+\end{lstlisting}
+
+composes the entire pipeline into a single theorem: given a selector that
+produces a ranked premise set, a rewrite that applies a PLN rule under
+BN side conditions, and a threshold that accepts the result, the composed
+pipeline is correct.
+
+See \codepath{Mettapedia/Logic/PLNCanonicalAPI.lean}.
+
+
+%% ═══════════════════════════════════════════════════════════════════
+\part{Artifact, Scope, and Relation to PLN}
+\label{part:artifact}
+%% ═══════════════════════════════════════════════════════════════════
+
+\chapter{What \xiPLN{} Proves}
+\label{ch:what-proved}
+
+This chapter provides a compact, family-level summary of the formalization.
+
+\section{The Kernel}
+
+\begin{itemize}
+\item World-model interface with evidence compositionality.
+\item Dirichlet reference instance with query extraction.
+\item Sequent-style calculus with admissible query-revision.
+\item Local-completeness no-go theorem.
+\end{itemize}
+
+\section{Views and Evidence}
+
+\begin{itemize}
+\item Evidence quantale and Heyting algebra.
+\item STV, ITV, distributional views as typed projections.
+\item Explicit separation of Walley predictive from Bayesian credible
+  intervals.
+\item De~Finetti and Solomonoff convergence bridges.
+\item Knuth--Skilling valuation-algebra bridge.
+\end{itemize}
+
+\section{Compiled Inference}
+
+\begin{itemize}
+\item Corrected extensional-rule exactness for chain, fork, collider motifs
+  under screening-off / positivity conditions.
+\item Class-packaged d-separation discharge.
+\item Xi rule registry with typed BN constructor lifts.
+\item One-call selector $\to$ rewrite $\to$ threshold composition.
+\item Threshold transport with explicit boundaries.
+\end{itemize}
+
+\section{Extensions}
+
+\begin{itemize}
+\item Higher-order reduction with corrected side conditions.
+\item Finite-model quantifier and fuzzy quantifier semantics.
+\item Intensional inheritance with ASSOC/PAT typed WM grounding.
+\item Temporal/causal inference as WM instance.
+\end{itemize}
+
+\section{Large-Scale Inference and Control}
+
+\begin{itemize}
+\item Multideduction residual decomposition with identifiability no-go.
+\item Trail-free non-stabilization and damped convergence.
+\item Pooling uniqueness under external Bayesianity.
+\item BRGI optimization with feasible-set characterization.
+\item Premise-selection coverage with submodularity and greedy guarantee.
+\item Coverage surrogate no-go.
+\end{itemize}
+
+\section{Cross-Cutting}
+
+\begin{itemize}
+\item \textbf{PLN $\leftrightarrow$ NARS:} confidence transforms, rule
+  correspondences, revision coherence, informativeness adjunction.
+\item \textbf{MeTTa parity:} executable formula parity between Lean
+  theorems and MeTTa truth functions.
+\item \textbf{Naive Bayes bridge} (Theorem~\ref{thm:nb-bridge}) and
+  \textbf{k-NN bridge} (Theorem~\ref{thm:knn-bridge}).
+\item \textbf{ProbLog bridge:} the world-model infrastructure subsumes
+  ProbLog distribution semantics exactly:
+  \[
+    \strength(\mathrm{probLogToJointEvidence}(p), q) = \mathrm{probLogQueryProb}(p, q)
+  \]
+  with a critical distinction: $T_{P,K,\mathrm{LP}}$ at $K = \mathbb{R}_{\ge 0}^\infty$
+  computes \emph{bag} semantics, not distribution semantics.
+  The correct path is: total-choice $\to$ residual KB $\to$ least Herbrand model.
+\item \textbf{Noisy-OR:} $s_{\mathrm{combined}} = 1 - \prod_{i}(1 - s_i)$
+  for independent causes, with delta-method variance propagation and
+  \textbf{posterior mean scoring}:
+  $\mathrm{score} = S \cdot C + (1 - C) \cdot \mu_0$ as the Bayesian
+  point estimate (see \codepath{Mettapedia/Logic/PLNNoisyOr.lean}).
+\end{itemize}
+
+
+\chapter{What \xiPLN{} Does Not Prove}
+\label{ch:what-not-proved}
+
+Honest scope is as important as proud achievements.
+
+\section{Operational Runtimes}
+
+The formalization provides mathematical specifications and correctness
+theorems.  It does not provide:
+\begin{itemize}
+\item An executable PLN inference engine.
+\item Performance benchmarks on large knowledge bases.
+\item Integration with MeTTa or Hyperon runtimes.
+\end{itemize}
+
+These are operational concerns that depend on runtime infrastructure
+not yet available.  The theorem-level results constrain what any correct
+implementation must satisfy, but they do not constitute an implementation.
+
+\section{Infinite-Model Quantifiers}
+
+The reviewed quantifier package in Chapter~\ref{ch:quantifiers} is
+finite-domain, but this is not a global restriction on WM-PLN.  The
+codebase already exports an arbitrary-domain infinitary semantic layer
+for quantifiers; what remains future work is bringing that layer up to
+full chapter-level parity and adding any measure-theoretic strengthening
+needed for infinite probabilistic spaces.
+
+\section{Chapter~12 Settlement}
+
+The intensional inheritance formalization now settles the chapter in
+corrected typed form: typed WM grounding for extensional, ASSOC, and
+PAT channels; the Solomonoff log-ratio bridge as the semantic anchor;
+selector-specialized ASSOC/PAT endpoints; and a constructive no-go
+against collapsing the three-channel mixed rule back to the old binary
+law.  No formula/claim statement currently appearing in this chapter
+remains open: each is explicitly classifiable as proved, strengthened to
+the corrected typed statement, or ruled out.
+
+\section{Universal Prediction}
+
+The Universal Prediction module (21 files, work-in-progress) explores
+connections between PLN and algorithmic information theory but is not
+part of the stable core narrative.
+
+\section{Global PLN Reorganization}
+
+This document presents the formalization as it stands.  A comprehensive
+refactoring of the Lean codebase into a ``mathlibified'' library
+structure is a worthy future goal but is explicitly not attempted here.
+
+\section{MLN Import and Subsumption}
+
+A classical Markov Logic Network benchmark such as UW-CSE
+\cite{richardson2006markov} is a natural next canary for
+MLN-to-WM import and subsumption.  Weighted clauses translate to
+factor-graph fragments whose marginals embed as world-model
+strength obligations.  This is not the main empirical target of the
+current Gaussian/hybrid chapter, but serves as a compact interoperability
+test for the factor-graph bridge layer.
+
+\section{DeFi Hybrid Risk Monitoring}
+
+The same hybrid WM evidence machinery should extend naturally to
+DeFi protocol risk monitoring, combining continuous market and reserve
+variables (TVL, utilization, volatility) with discrete governance,
+oracle-type, and incident propositions.  The per-source
+Normal-Gamma conjugate framework already handles heterogeneous
+evidence fusion; the missing piece is an operational data pipeline
+and a curated fixture.  We leave this as future empirical work.
+
+
+\chapter{Conclusion}
+\label{ch:conclusion}
+
+\xiPLN{} is not a replacement for PLN.  It is the mathematical foundation
+that PLN always needed.
+
+The central insight is that PLN's original instincts were largely correct:
+evidence counts as the fundamental representation, revision as the primary
+operation, and link-level rules as the practical inference mechanism.  What
+was missing was the explicit separation of layers and the honest statement
+of assumptions.
+
+The refoundation gives us:
+\begin{itemize}
+\item \textbf{One kernel}: the world-model posterior-state calculus, with
+  evidence compositionality as the fundamental law.
+\item \textbf{Many views}: strength, confidence, intervals, distributions,
+  all as typed projections from the kernel.
+\item \textbf{Explicit side conditions}: every compiled rule carries its
+  assumptions, with counterexamples showing what happens when they are
+  violated.
+\item \textbf{Cleaner boundaries}: the no-go theorem, the identifiability
+  failures, the pooling non-uniqueness, the coverage surrogate limitations---
+  all stated precisely and proved formally.
+\end{itemize}
+
+The result is a PLN that knows what it knows, states what it assumes,
+and marks what it cannot do.  That is not a weakness.  That is the
+beginning of a trustworthy reasoner.
+
+\begin{quote}
+\emph{Probability is what you query.  Evidence is what you carry.
+  And the boundaries you prove are worth as much as the theorems you prove.}
+\end{quote}
+
+
+%% ═══════════════════════════════════════════════════════════════════
+\appendix
+%% ═══════════════════════════════════════════════════════════════════
+
+\chapter{Notation and Symbol Glossary}
+\label{app:notation}
+
+\begin{longtable}{p{0.15\textwidth}p{0.35\textwidth}p{0.40\textwidth}}
+\textbf{Symbol} & \textbf{Meaning} & \textbf{Lean name / location} \\
+\hline
+$\Evidence$ & Evidence type $(n^+, n^-)$ & \code{Evidence} in \code{EvidenceClass.lean} \\
+$\JointEvidence(n)$ & Dirichlet world-table & \code{JointEvidence} in \code{PLNJointEvidence.lean} \\
+$\WorldModel$ & World-model typeclass & \code{WorldModel} in \code{PLNWorldModel.lean} \\
+$\hplus$ & Evidence revision (addition) & \code{Evidence.add} \\
+$\htensor$ & Quantale tensor & \code{Evidence.tensor} in \code{EvidenceQuantale.lean} \\
+$\STV{s}{c}$ & Simple truth value & Strength/confidence pair \\
+$\Sigma$ & Side-condition context & \code{WorldModelSigma.sigma} \\
+$\strength$ & Strength view & \code{queryStrength} \\
+$\confidence$ & Confidence view & \code{queryConfidence} \\
+$\neff$ & Effective sample size & \code{effectiveSampleSize} in \code{PLNNoisyOr.lean} \\
+\hline
+\end{longtable}
+
+
+\chapter{Compact Theorem Map}
+\label{app:theorem-map}
+
+\begin{longtable}{p{0.28\textwidth}p{0.30\textwidth}p{0.20\textwidth}p{0.14\textwidth}}
+\textbf{Theorem family} & \textbf{Key result} & \textbf{Module} & \textbf{Label} \\
+\hline
+Evidence compositionality & \code{evidence\_add} & PLNWorldModel & \claimCore{} \\
+Evidence conservation pack & \code{evidenceConservationPack\_of\_forgetting} & PLNWorldModelConservationPack & \claimConditional{} \\
+Order-cost schedule bound & \code{scheduleErrorBound\_of\_pairwise\_bounds} & PLNWorldModelOrderCostBounds & \claimConditional{} \\
+Runtime audit certificate & \code{runtimePairwiseOrderCheck\_certifies\_policyThreshold} & PLNWorldModelOrderCostAuditCertificate & \claimConditional{} \\
+Weighted non-commutative witness & \code{weightedScheduleErrorBound\_twoStep\_not\_zero\_of\_pos\_weight} & PLNWorldModelOrderCostWeightedDemo & \claimConditional{} \\
+Gas policy certificate & \code{gasOrderBudgetPolicy\_batchSwap\_zero\_via\_runtimeCertificate} & PLNWorldModelOrderCostGasPolicyDemo & \claimConditional{} \\
+Local-completeness no-go & Thm~\ref{thm:no-go} & PLNJointEvidenceNoGo & \claimBoundary{} \\
+BN chain exactness & \code{chainBN\_plnDeductionStrength\_exact} & PLNBayesNetFastRules & \claimConditional{} \\
+BN fork exactness & \code{forkBN\_plnDeductionStrength\_exact} & PLNBayesNetFastRules & \claimConditional{} \\
+Quantale transitivity & tensor transitivity & EvidenceQuantale & \claimCore{} \\
+Fr\'{e}chet bounds & consistency iff & PLNFrechetBounds & \claimCore{} \\
+De~Finetti collapse & exchangeable $\to$ counts & DeFinetti & \claimCore{} \\
+Solomonoff collapse & universal $\to$ counts & SolomonoffExchangeable & \claimCore{} \\
+NB bridge & \code{PLN\_tensorStrength\_eq\_nbPosterior} & PLNBayesNetInference & \claimCore{} \\
+k-NN bridge & \code{PLN\_hplusPos\_eq\_knnRelevance} & PremiseSelectionKNN\_PLNBridge & \claimCore{} \\
+Kyburg flattening & expectation consistency & PLNKyburgReduction & \claimCore{} \\
+IE identifiability no-go & \code{same\_first\_two\_terms\_different\_union} & PLNInclusionExclusionIdentifiability & \claimBoundary{} \\
+Trail-free non-stabilization & \code{orbit\_not\_eventually\_constant} & PLNTrailFreeDynamicsCounterexample & \claimBoundary{} \\
+Damped convergence & \code{damped\_sp\_spn\_eventually\_constant} & PLNTrailFreeDampedConvergence & \claimConditional{} \\
+Pooling uniqueness & external Bayes + total add & PremiseSelectionExternalBayesianity & \claimConditional{} \\
+Coverage submodularity & greedy $(1-1/e)$ guarantee & PremiseSelectionCoverage & \claimCore{} \\
+ProbLog bridge & \code{queryStrength = probLogQueryProb} & ProbLogDistributionSemantics & \claimCore{} \\
+Noisy-OR & $1 - \prod(1-s_i)$ & PLNNoisyOr & \claimCore{} \\
+Posterior mean & $S \cdot C + (1-C) \cdot \mu_0$ & PLNNoisyOr & \claimCore{} \\
+PLN $\leftrightarrow$ NARS & correspondence bundle & PLNNARSRuleCorrespondence & \claimCore{} \\
+\hline
+\end{longtable}
+
+
+\chapter{Code Navigation Guide}
+\label{app:code-nav}
+
+\section{Entry Points}
+
+\begin{itemize}
+\item \codepath{Mettapedia/Logic/PLNCore.lean} --- umbrella module importing
+  all core PLN infrastructure (153 lines).
+\item \codepath{Mettapedia/Logic/PLNCanonicalAPI.lean} --- primary public API
+  with stable, semantically grounded endpoints (3806 lines).
+\item \codepath{Mettapedia/Logic/README.md} --- status table, dependency graph,
+  and theorem index.
+\end{itemize}
+
+\section{Applied Gaussian Demo Suite}
+
+Three end-to-end examples exercising continuous world models with
+increasing complexity:
+
+\begin{enumerate}
+\item \textbf{Broken Sensor} (\S\ref{app:code-nav}, 360~lines, 0~sorry).
+  Hybrid discrete/continuous state: Normal-Gamma temperature evidence
+  $+$ binary coolant-failure flag.  Sleep consolidation, exceedance
+  specification, component independence.\\
+  \codepath{Mettapedia/Logic/PLNBrokenSensorDemo.lean}
+
+\item \textbf{Widget Factory} (420~lines, 0~sorry).
+  Per-source Gaussian mixtures: two machines with independent
+  Normal-Gamma posteriors and source-attribution evidence.  Mixture
+  exceedance validity, mixture bounds
+  ($\min \le p_{\mathrm{mix}} \le \max$).\\
+  \codepath{Mettapedia/Logic/PLNWidgetFactoryDemo.lean}
+
+\item \textbf{Kalman Wake/Sleep} (353~lines, 0~sorry).
+  1D Kalman filter with temporal predict-update cycles.  Kalman gain
+  bounded ($0 < K < 1$), variance reduction, and the flagship
+  \emph{sleep $=$ wake} theorem: batch replay yields the same posterior
+  as sequential online filtering.\\
+  \codepath{Mettapedia/Logic/PLNKalmanSleepDemo.lean}
+
+\item \textbf{Gas Sensor Array Drift} (578~lines, 0~sorry).
+  Real UCI data (DOI~10.24432/C5RP6W): 3~gas types (ethanol, ammonia,
+  toluene) across 10 temporal batches spanning 36~months.  Ternary
+  source-conditional Gaussians, cross-gas independence, multi-batch
+  sleep consolidation, and 3-way source weight normalization.
+  Demonstrates sensor drift: posteriors from batch~1 (2007) vs.\
+  batch~10 (2011) capture genuine distributional shift.\\
+  \codepath{Mettapedia/Logic/PLNGasSensorDriftDemo.lean}
+
+\item \textbf{Steel Plates Faults} (488~lines, 0~sorry).
+  Real UCI data (current UCI DOI~10.24432/C5J88N): 3~fault types (Pastry,
+  K\_Scratch, Bumps) classified by LogOfAreas.  Per-fault
+  Normal-Gamma posteriors, 3-way mixture exceedance validity,
+  cross-fault independence, and source weight normalization.
+  Manufacturing quality-control application of the WM calculus.\\
+  \codepath{Mettapedia/Logic/PLNSteelFaultDemo.lean}
+
+\item \textbf{NAB Machine Temperature Anomaly} (327~lines, 0~sorry).
+  Real NAB benchmark data (MIT License): machine temperature sensor
+  with 22,695 readings and labeled anomaly windows.  Three operating
+  regimes (calm~$\sim$85\textdegree{}F, hot~$\sim$101\textdegree{}F,
+  anomaly~$\sim$30\textdegree{}F).  Kalman wake/sleep on real
+  time series, multi-regime composition, anomaly exceedance ordering.\\
+  \codepath{Mettapedia/Logic/PLNNABSleepDemo.lean}
+\end{enumerate}
+
+\noindent
+Build all six:
+\begin{lstlisting}
+lake build Mettapedia.Logic.PLNBrokenSensorDemo \
+           Mettapedia.Logic.PLNWidgetFactoryDemo \
+           Mettapedia.Logic.PLNKalmanSleepDemo \
+           Mettapedia.Logic.PLNGasSensorDriftDemo \
+           Mettapedia.Logic.PLNSteelFaultDemo \
+           Mettapedia.Logic.PLNNABSleepDemo
+\end{lstlisting}
+
+\section{Regression Targets}
+
+\begin{itemize}
+\item Chapter~8: \code{lake build Mettapedia.Logic.PLNWorldModelNeighborhoodConsequence Mettapedia.Logic.PLNWorldModelCategoricalRegression}
+\item Chapter~9: \code{lake build Mettapedia.Logic.PLNSelectorRewriteThresholdRegression}
+\item Chapter~11: \code{lake build Mettapedia.Logic.PLNFirstOrder.QuantifierRegression}
+\item Chapter~12: \code{lake build Mettapedia.Logic.PLNIntensionalRegression}
+\item Chapter~13: \code{lake build Mettapedia.Logic.PLNInferenceControlRegression}
+\end{itemize}
+
+\section{Build}
+
+\begin{lstlisting}
+cd ~/claude/lean-projects/mettapedia
+export LAKE_JOBS=3
+nice -n 19 lake build          # full build
+lake exe cache get             # cache after update
+\end{lstlisting}
+
+
+\chapter{PLN Book Coverage Map}
+\label{app:coverage-map}
+
+\begin{longtable}{p{0.09\textwidth}p{0.25\textwidth}p{0.50\textwidth}p{0.08\textwidth}}
+\textbf{Chapter} & \textbf{Core content} & \textbf{Lean coverage} & \textbf{Status} \\
+\hline
+Ch.\ 1 & Introduction & Semantic stack split (this document; PLNCore) & Done \\
+Ch.\ 2 & Knowledge repr. & PLNQuery, WorldModel, WorldModelSigma & Done \\
+Ch.\ 3 & Experiential sem. & EvidenceClass, EvidenceQuantale, PLNJointEvidence & Done \\
+Ch.\ 4 & Indefinite TVs & PLNIndefiniteTruth, PLNWorldModelITV, PLNWorldModelITVHypercube & Done \\
+Ch.\ 5 & FO ext.\ inference & PLNDeduction, PLNDerivation, PLNBayesNetFastRules & Done \\
+Ch.\ 6 & FO ext.\ + ITV & PLNWMOSLFBridgeITV, PLNCanonicalAPI & Done \\
+Ch.\ 7 & Distributional TVs & EvidenceBeta, PLNKyburgReduction, PLNDistributional; \emph{Demos:} BrokenSensor, WidgetFactory, KalmanSleep, GasSensorDrift, SteelFault, NABSleep & Done \\
+Ch.\ 8 & Error magnification & PLNErrorMagnificationGrounding, PLNCanonicalAPI & Done \\
+Ch.\ 9 & Large-scale inf. & Counterexample-first core; operational pending & Partial \\
+Ch.\ 10 & Higher-order ext. & HigherOrder/HigherOrderReduction & Done \\
+Ch.\ 11 & Quantifiers + ITV & PLNFirstOrder (core + fuzzy/QFM + regressions) & Done \\
+Ch.\ 12 & Intensional inf. & PLNIntensionalWorldModel, SolomonoffBridge & Done \\
+Ch.\ 13 & Inference control & PLNInferenceControlCore, PremiseSelectionCoverage & Done \\
+Ch.\ 14 & Temporal/causal & PLNTemporalCausalInference, ProbabilisticEventCalculus & Done \\
+App.\ A & PLN vs.\ NARS & PLNNARSRuleCorrespondence & Done \\
+\hline
+\end{longtable}
+
+
+\chapter{Advanced WM Wrappers}
+\label{app:advanced-wm}
+
+For readers interested in the categorical and modal-logic layers:
+
+\begin{itemize}
+\item \textbf{Kripke WM}: \codepath{Mettapedia/Logic/PLNWorldModelKripke.lean}---
+  modal Kripke semantics instantiated over PLN world models, with sound/complete
+  implication bridges for K, KT, KD, K4 logics.
+
+\item \textbf{Neighborhood WM}: \codepath{Mettapedia/Logic/PLNWorldModelNeighborhood.lean}---
+  neighborhood-frame semantics with E, EMN, EMT, ED logics and canonical
+  Kripke$\to$neighborhood representation.
+
+\item \textbf{Institutional WM}: \codepath{Mettapedia/Logic/PLNWorldModelInstitution.lean}---
+  satisfaction conditions, Beck-Chevalley transport, and governance-facing
+  mapped consequences.
+
+\item \textbf{HOL/FOL completeness wrappers}: \codepath{Mettapedia/Logic/PLNWorldModelHOLCompleteness.lean},
+  \codepath{Mettapedia/Logic/PLNWorldModelFOLCompleteness.lean}---
+  consequence-transfer/closure into WM consequence rules.
+
+\item \textbf{Governance transport}: \codepath{Mettapedia/Logic/PLNWorldModelNeighborhoodConsequence.lean}---
+  state-indexed governance formula translation preservation.
+\end{itemize}
+
+These layers are powerful but specialized.  Most readers will not need them
+for understanding the core \xiPLN{} story.
+
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

@@ -83,6 +83,14 @@ def CoveredByReferenceN : Pattern → Prop
   | .apply "repr" [_arg] => True
   | _ => False
 
+/-- Public-fuel unary evaluator-agreement contract for `get-atoms`. -/
+abbrev PublicGetAtomsUnaryEvalAgreement (s : Session) : Prop :=
+  Session.GetAtomsUnaryEvalAgreement (SessionReferenceTotal.referenceFuel s)
+
+/-- Public-fuel unary evaluator-agreement contract for `get-atoms!`. -/
+abbrev PublicGetAtomsBangUnaryEvalAgreement (s : Session) : Prop :=
+  Session.GetAtomsBangUnaryEvalAgreement (SessionReferenceTotal.referenceFuel s)
+
 /-- First compositional public-fuel `match` adequacy handle for `get-atoms` templates.
     This is still hypothesis-driven: it isolates the exact two lower facts still needed
     to turn the `match` slice into a fully unconditional adequacy theorem. -/
@@ -104,6 +112,88 @@ theorem match_getAtoms_intrinsic_eq_total_of_bindingwise_evalMatchedTemplate_agr
   simpa using
     Session.referenceMatchIntrinsicResult_eq_total_of_getAtomsTemplate_evalMatchedTemplate_agreement
       (fuel := SessionReferenceTotal.referenceFuel s) s space pat spaceExpr hBindings hEval
+
+/-- Public-fuel `get-atoms`-template `match` adequacy with binding enumeration
+    equality discharged automatically from the generic `SpaceOps` theorem. -/
+theorem match_getAtoms_intrinsic_eq_total_of_eval_agreement
+    (s : Session) (space pat spaceExpr : Pattern)
+    (hEval :
+      ∀ (sess : Session) (bs : MeTTailCore.MeTTaIL.Match.Bindings),
+        Session.referenceEvalWithStateCore sess
+            (.apply "get-atoms" [Session.matchTemplateAfterBindings bs spaceExpr]) =
+          Session.evalWithStateCoreN (SessionReferenceTotal.referenceFuel s) sess
+            (.apply "get-atoms" [Session.matchTemplateAfterBindings bs spaceExpr])) :
+    Session.referenceMatchIntrinsicResult s space pat (.apply "get-atoms" [spaceExpr]) =
+      Session.totalMatchIntrinsicResult
+        (SessionReferenceTotal.referenceFuel s) s space pat (.apply "get-atoms" [spaceExpr]) := by
+  simpa using
+    Session.referenceMatchIntrinsicResult_eq_total_of_getAtomsTemplate_eval_agreement_autoBindings
+      (fuel := SessionReferenceTotal.referenceFuel s) s space pat spaceExpr hEval
+
+/-- Public-fuel `get-atoms`-template `match` adequacy from a unary evaluator-agreement
+    contract (per substituted space argument), with binding-side plumbing discharged
+    by the Session-level auto-bindings theorem. -/
+theorem match_getAtoms_intrinsic_eq_total_of_unary_eval_agreement
+    (s : Session) (space pat spaceExpr : Pattern)
+    (hEvalUnary : PublicGetAtomsUnaryEvalAgreement s) :
+    Session.referenceMatchIntrinsicResult s space pat (.apply "get-atoms" [spaceExpr]) =
+      Session.totalMatchIntrinsicResult
+        (SessionReferenceTotal.referenceFuel s) s space pat (.apply "get-atoms" [spaceExpr]) := by
+  simpa using
+    Session.referenceMatchIntrinsicResult_eq_total_of_getAtomsTemplate_unary_eval_agreement_autoBindings
+      (fuel := SessionReferenceTotal.referenceFuel s) s space pat spaceExpr hEvalUnary
+
+/-- First compositional public-fuel `match` adequacy handle for `get-atoms!` templates.
+    This mirrors the `get-atoms` theorem and keeps the `hEval` side local to substituted
+    templates while using the generic intrinsic boundary theorem. -/
+theorem match_getAtomsBang_intrinsic_eq_total_of_bindingwise_evalMatchedTemplate_agreement
+    (s : Session) (space pat spaceExpr : Pattern)
+    (hBindings :
+      Session.referenceMatchBindings s space pat =
+        Session.totalMatchBindings (SessionReferenceTotal.referenceFuel s) s space pat)
+    (hEval :
+      ∀ (sess : Session) (bs : MeTTailCore.MeTTaIL.Match.Bindings),
+        Session.referenceMatchEvalMatchedTemplate s sess
+            (Session.matchTemplateAfterBindings bs (.apply "get-atoms!" [spaceExpr])) =
+          Session.totalMatchEvalMatchedTemplate
+            (SessionReferenceTotal.referenceFuel s) s sess
+            (Session.matchTemplateAfterBindings bs (.apply "get-atoms!" [spaceExpr]))) :
+    Session.referenceMatchIntrinsicResult s space pat (.apply "get-atoms!" [spaceExpr]) =
+      Session.totalMatchIntrinsicResult
+        (SessionReferenceTotal.referenceFuel s) s space pat (.apply "get-atoms!" [spaceExpr]) := by
+  simpa using
+    Session.referenceMatchIntrinsicResult_eq_total_of_getAtomsBangTemplate_evalMatchedTemplate_agreement
+      (fuel := SessionReferenceTotal.referenceFuel s) s space pat spaceExpr hBindings hEval
+
+/-- Public-fuel `get-atoms!`-template `match` adequacy with binding enumeration
+    equality discharged automatically from the generic `SpaceOps` theorem. -/
+theorem match_getAtomsBang_intrinsic_eq_total_of_eval_agreement
+    (s : Session) (space pat spaceExpr : Pattern)
+    (hEval :
+      ∀ (sess : Session) (bs : MeTTailCore.MeTTaIL.Match.Bindings),
+        Session.referenceEvalWithStateCore sess
+            (.apply "get-atoms!" [Session.matchTemplateAfterBindings bs spaceExpr]) =
+          Session.evalWithStateCoreN (SessionReferenceTotal.referenceFuel s) sess
+            (.apply "get-atoms!" [Session.matchTemplateAfterBindings bs spaceExpr])) :
+    Session.referenceMatchIntrinsicResult s space pat (.apply "get-atoms!" [spaceExpr]) =
+      Session.totalMatchIntrinsicResult
+        (SessionReferenceTotal.referenceFuel s) s space pat (.apply "get-atoms!" [spaceExpr]) := by
+  simpa using
+    Session.referenceMatchIntrinsicResult_eq_total_of_getAtomsBangTemplate_eval_agreement_autoBindings
+      (fuel := SessionReferenceTotal.referenceFuel s) s space pat spaceExpr hEval
+
+/-- Public-fuel `get-atoms!`-template `match` adequacy from a unary evaluator-agreement
+    contract (per substituted space argument), with binding-side plumbing discharged
+    by the Session-level auto-bindings theorem. -/
+theorem match_getAtomsBang_intrinsic_eq_total_of_unary_eval_agreement
+    (s : Session) (space pat spaceExpr : Pattern)
+    (hEvalUnary : PublicGetAtomsBangUnaryEvalAgreement s) :
+    Session.referenceMatchIntrinsicResult s space pat (.apply "get-atoms!" [spaceExpr]) =
+      Session.totalMatchIntrinsicResult
+        (SessionReferenceTotal.referenceFuel s) s space pat (.apply "get-atoms!" [spaceExpr]) := by
+  simpa using
+    Session.referenceMatchIntrinsicResult_eq_total_of_getAtomsBangTemplate_unary_eval_agreement_autoBindings
+      (fuel := SessionReferenceTotal.referenceFuel s) s space pat spaceExpr hEvalUnary
 
 /-- Successful faithful intrinsic evaluation agrees with the public total intrinsic evaluator
     at the same fuel. This is the first adequacy bridge: faithful explicit-status kernel to

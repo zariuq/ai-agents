@@ -7,8 +7,9 @@ import Mettapedia.Languages.MeTTa.PureCheckingService
 This file packages the first future-facing ordinary-family declaration object
 above the current hook/boundary stack.
 
-It does **not** implement inductive families in `MeTTa-Pure`. It makes the
-next implementation-facing contract explicit:
+The live trusted `PureKernel` remains the small Pi/Sigma/Id/universe core.
+This file does **not** implement inductive families in that kernel. It makes
+the next implementation-facing contract explicit:
 
 - what declaration data the future kernel extension should accept,
 - how that declaration refines the current ordinary-family boundary,
