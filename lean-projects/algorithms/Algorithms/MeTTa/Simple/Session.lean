@@ -876,13 +876,44 @@ private def collectPremiseFreeRulesForHeadArity
   Algorithms.MeTTa.Simple.Backend.CompiledBundle.scanPremiseFreeRulesForHeadArity
     rules ctor arity
 
+private def spaceOpsInterfaceWithEval
+    (evalFn : Session → Pattern → Session × List Pattern)
+    (s : Session) : Algorithms.MeTTa.Simple.Semantics.SpaceOps.Interface Session := {
+  bundle := fun s => s.bundle
+  rewrites := fun s => s.bundle.language.rewrites
+  setBundle := withBundleCompiled
+  eval := evalFn
+  applyBindings := applyBindingsCompat
+  normalizePattern := normalizeDollarVars
+  normalizeForSpaceMatch := normalizeSpaceMatchPattern s
+  matchPattern := matchPatternMeTTa
+  dedupPatterns := dedupPatternList
+}
+
+private def intrinsicGetAtomsResultWithEval
+    (evalFn : Session → Pattern → Session × List Pattern)
+    (s : Session) (space : Pattern) : Option (Session × List Pattern) :=
+  let (s', out) :=
+    Algorithms.MeTTa.Simple.Semantics.SpaceOps.getAtoms
+      (spaceOpsInterfaceWithEval evalFn s) spacePolicy s space
+  some (s', out)
+
+private theorem intrinsicGetAtomsResultWithEval_eval_irrelevant
+    (evalFn evalFn' : Session → Pattern → Session × List Pattern)
+    (s : Session) (space : Pattern) :
+    intrinsicGetAtomsResultWithEval evalFn s space =
+      intrinsicGetAtomsResultWithEval evalFn' s space := by
+  unfold intrinsicGetAtomsResultWithEval spaceOpsInterfaceWithEval
+  simp [Algorithms.MeTTa.Simple.Semantics.SpaceOps.getAtoms,
+    Algorithms.MeTTa.Simple.Semantics.SpaceOps.factsForSpace]
+
 mutual
   private partial def evalWithStateCore (s : Session) (term : Pattern) : Session × List Pattern :=
     let iface : Algorithms.MeTTa.Simple.Backend.ReferenceEval.Interface Session := {
       maxNodes := fun s => s.maxNodes
       maxSteps := fun s => s.maxSteps
       runNestedEffects := runNestedEffects
-      intrinsicStateful := intrinsicStateful
+      intrinsicStateful := intrinsicStatefulCore
       isEagerCallableHead := isEagerCallableHead
       step := step
       enqueueNext := enqueueNext
@@ -935,7 +966,7 @@ mutual
       maxNodes := fun s => s.maxNodes
       maxSteps := fun s => s.maxSteps
       runNestedEffects := runNestedEffects
-      intrinsicStateful := intrinsicStateful
+      intrinsicStateful := intrinsicStatefulCore
       isEagerCallableHead := isEagerCallableHead
       step := step
       enqueueNext := enqueueNext
@@ -951,7 +982,7 @@ mutual
       maxNodes := fun s => s.maxNodes
       maxSteps := fun s => s.maxSteps
       runNestedEffects := runNestedEffects
-      intrinsicStateful := intrinsicStateful
+      intrinsicStateful := intrinsicStatefulCore
       isEagerCallableHead := isEagerCallableHead
       step := step
       enqueueNext := enqueueNext
@@ -1192,7 +1223,7 @@ mutual
         let (sCond, condOut) :=
           match cond with
           | .apply "superpose" [_] =>
-              match intrinsicStateful s cond with
+              match intrinsicStatefulCore s cond with
               | some (s1, out) =>
                   let vals := if out.isEmpty then [cond] else out
                   (s1, vals)
@@ -1415,7 +1446,7 @@ mutual
       fun sess key =>
         match key with
         | .apply "superpose" [_] =>
-            match intrinsicStateful sess key with
+            match intrinsicStatefulCore sess key with
             | some (sess', out) =>
                 let vals := if out.isEmpty then [key] else out
                 (sess', vals)
@@ -1441,7 +1472,7 @@ mutual
 
   private partial def evalForRuleEnumeration (s : Session) (expr : Pattern) :
       Session × List Pattern :=
-    match intrinsicStateful s expr with
+    match intrinsicStatefulCore s expr with
     | some (s1, out) =>
         let out' := if out.isEmpty then [expr] else out
         (s1, out')
@@ -1812,7 +1843,7 @@ mutual
     | .collection _ elems _ =>
         "(" ++ String.intercalate " " (elems.map patternToSExpr) ++ ")"
 
-  partial def intrinsicStateful (s : Session)
+  partial def intrinsicStatefulCore (s : Session)
       (term : Pattern) : Option (Session × List Pattern) :=
     let pIface : Algorithms.MeTTa.Simple.Semantics.PeTTaCore.Interface Session := {
       eval := evalWithStateCore
@@ -1841,7 +1872,7 @@ mutual
           | none =>
               let streamI : Algorithms.MeTTa.Simple.Semantics.StreamOps.Interface Session := {
                 evalValues := fun sess expr =>
-                  match intrinsicStateful sess expr with
+                  match intrinsicStatefulCore sess expr with
                   | some (s1, out0) =>
                       let out := if out0.isEmpty then [expr] else out0
                       (s1, out)
@@ -1974,33 +2005,9 @@ mutual
         let (s', out) := Algorithms.MeTTa.Simple.Semantics.SpaceOps.removeAllAtoms I spacePolicy s space term
         some (s', out)
     | .apply "get-atoms" [space] =>
-        let I : Algorithms.MeTTa.Simple.Semantics.SpaceOps.Interface Session := {
-          bundle := fun s => s.bundle
-          rewrites := fun s => s.bundle.language.rewrites
-          setBundle := withBundleCompiled
-          eval := evalWithStateCore
-          applyBindings := applyBindingsCompat
-          normalizePattern := normalizeDollarVars
-          normalizeForSpaceMatch := normalizeSpaceMatchPattern s
-          matchPattern := matchPatternMeTTa
-          dedupPatterns := dedupPatternList
-        }
-        let (s', out) := Algorithms.MeTTa.Simple.Semantics.SpaceOps.getAtoms I spacePolicy s space
-        some (s', out)
+        intrinsicGetAtomsResultWithEval evalWithStateCore s space
     | .apply "get-atoms!" [space] =>
-        let I : Algorithms.MeTTa.Simple.Semantics.SpaceOps.Interface Session := {
-          bundle := fun s => s.bundle
-          rewrites := fun s => s.bundle.language.rewrites
-          setBundle := withBundleCompiled
-          eval := evalWithStateCore
-          applyBindings := applyBindingsCompat
-          normalizePattern := normalizeDollarVars
-          normalizeForSpaceMatch := normalizeSpaceMatchPattern s
-          matchPattern := matchPatternMeTTa
-          dedupPatterns := dedupPatternList
-        }
-        let (s', out) := Algorithms.MeTTa.Simple.Semantics.SpaceOps.getAtoms I spacePolicy s space
-        some (s', out)
+        intrinsicGetAtomsResultWithEval evalWithStateCore s space
     | .apply "match" [space, pat, tmpl] =>
         let (s', out) := evalMatchIntrinsic s space pat tmpl
         some (s', out)
@@ -2123,7 +2130,7 @@ mutual
     | .apply "atom-of" [x] =>
         let (s1, x1, _) := runNestedEffects s true false x
         let (s2, out) :=
-          match intrinsicStateful s1 x1 with
+          match intrinsicStatefulCore s1 x1 with
           | some (sI, outI) =>
               if outI.isEmpty then
                 (sI, [x1])
@@ -2279,7 +2286,7 @@ mutual
                 | [] => []
                 | a :: tail =>
                     let aRed0 :=
-                      match intrinsicStateful s a with
+                      match intrinsicStatefulCore s a with
                       | some (_sA, outA) =>
                           if outA.isEmpty then step s a else outA
                       | none => step s a
@@ -2309,7 +2316,7 @@ mutual
       maxNodes := fun s => s.maxNodes
       maxSteps := fun s => s.maxSteps
       runNestedEffects := runNestedEffects
-      intrinsicStateful := intrinsicStateful
+      intrinsicStateful := intrinsicStatefulCore
       isEagerCallableHead := isEagerCallableHead
       step := step
       enqueueNext := enqueueNext
@@ -2327,7 +2334,7 @@ mutual
       maxNodes := fun s => s.maxNodes
       maxSteps := fun s => s.maxSteps
       runNestedEffects := runNestedEffects
-      intrinsicStateful := intrinsicStateful
+      intrinsicStateful := intrinsicStatefulCore
       isEagerCallableHead := isEagerCallableHead
       step := step
       enqueueNext := enqueueNext
@@ -2338,6 +2345,16 @@ mutual
       iface s isRoot _parentCallable term
 
 end
+
+def intrinsicStateful (s : Session) (term : Pattern) :
+    Option (Session × List Pattern) :=
+  match term with
+  | .apply "get-atoms" [space] =>
+      intrinsicGetAtomsResultWithEval evalWithStateCore s space
+  | .apply "get-atoms!" [space] =>
+      intrinsicGetAtomsResultWithEval evalWithStateCore s space
+  | _ =>
+      intrinsicStatefulCore s term
 
 def referenceEvalInterface :
     Algorithms.MeTTa.Simple.Backend.ReferenceEval.Interface Session := {
@@ -2839,37 +2856,11 @@ mutual
                         spaceI spacePolicy s space term
                     some (s', out)
                 | .apply "get-atoms" [space] =>
-                    let spaceI : Algorithms.MeTTa.Simple.Semantics.SpaceOps.Interface Session := {
-                      bundle := fun s => s.bundle
-                      rewrites := fun s => s.bundle.language.rewrites
-                      setBundle := withBundleCompiled
-                      eval := fun s term => referenceEvalWithStateCoreN fuel s term
-                      applyBindings := applyBindingsCompat
-                      normalizePattern := normalizeDollarVars
-                      normalizeForSpaceMatch := normalizeSpaceMatchPattern s
-                      matchPattern := matchPatternMeTTa
-                      dedupPatterns := dedupPatternList
-                    }
-                    let (s', out) :=
-                      Algorithms.MeTTa.Simple.Semantics.SpaceOps.getAtoms
-                        spaceI spacePolicy s space
-                    some (s', out)
+                    intrinsicGetAtomsResultWithEval
+                      (fun s term => referenceEvalWithStateCoreN fuel s term) s space
                 | .apply "get-atoms!" [space] =>
-                    let spaceI : Algorithms.MeTTa.Simple.Semantics.SpaceOps.Interface Session := {
-                      bundle := fun s => s.bundle
-                      rewrites := fun s => s.bundle.language.rewrites
-                      setBundle := withBundleCompiled
-                      eval := fun s term => referenceEvalWithStateCoreN fuel s term
-                      applyBindings := applyBindingsCompat
-                      normalizePattern := normalizeDollarVars
-                      normalizeForSpaceMatch := normalizeSpaceMatchPattern s
-                      matchPattern := matchPatternMeTTa
-                      dedupPatterns := dedupPatternList
-                    }
-                    let (s', out) :=
-                      Algorithms.MeTTa.Simple.Semantics.SpaceOps.getAtoms
-                        spaceI spacePolicy s space
-                    some (s', out)
+                    intrinsicGetAtomsResultWithEval
+                      (fun s term => referenceEvalWithStateCoreN fuel s term) s space
                 -- Phase 2: match branches (inline SpaceOps Interface — referenceSpaceEvalInterfaceN
                 -- is defined after this mutual block, so we inline it here; definitional equality
                 -- ensures compiledConsistent_of_referenceMatchIntrinsicN still applies)
@@ -4941,6 +4932,26 @@ theorem getAtomsBangUnaryEvalAgreementOn_zeroMaxSteps
   exact referenceEvalWithStateCore_getAtomsBang_eq_N_of_maxSteps_zero
     (fuel := fuel) hFuel sess spaceArg hSteps
 
+/-- Root intrinsic agreement for `get-atoms`: once the fuel-indexed intrinsic kernel
+    is active (`fuel > 0`), the live-reference and total-reference branches reduce to
+    the same `SpaceOps.getAtoms` call. -/
+theorem intrinsicStateful_getAtoms_eq_referenceIntrinsicStatefulN_of_pos
+    (fuel : Nat) (hFuel : fuel ≠ 0)
+    (sess : Session) (spaceArg : Pattern) :
+    intrinsicStateful sess (.apply "get-atoms" [spaceArg]) =
+      referenceIntrinsicStatefulN fuel sess (.apply "get-atoms" [spaceArg]) := by
+  cases fuel with
+  | zero =>
+      contradiction
+  | succ n =>
+      unfold intrinsicStateful
+      unfold referenceIntrinsicStatefulN
+      simpa using
+        intrinsicGetAtomsResultWithEval_eval_irrelevant
+          evalWithStateCore
+          (fun s term => referenceEvalWithStateCoreN n s term)
+          sess spaceArg
+
 /-- One-step evaluator agreement for `get-atoms` at `maxNodes = 1`, factored through
     a local intrinsic-agreement hypothesis on the root term. This isolates the
     remaining hard subproof from the evaluator plumbing. -/
@@ -4972,6 +4983,37 @@ theorem referenceEvalWithStateCore_getAtoms_eq_N_of_maxNodes_one_of_intrinsic_ag
             Algorithms.MeTTa.Simple.Backend.ReferenceEval.stepAux,
             Algorithms.MeTTa.Simple.Backend.ReferenceEval.runNestedEffects.eq_def,
             hNodes, hIntr']
+
+/-- One-step evaluator agreement for `get-atoms` at `maxNodes = 1`.
+    The hard intrinsic subproof is now discharged by the transparent `get-atoms`
+    waist shared between the live reference wrapper and the total kernel. -/
+theorem referenceEvalWithStateCore_getAtoms_eq_N_of_maxNodes_one
+    (fuel : Nat) (hFuel : 1 < fuel)
+    (sess : Session) (spaceArg : Pattern)
+    (hNodes : sess.maxNodes = 1) :
+    referenceEvalWithStateCore sess (.apply "get-atoms" [spaceArg]) =
+      referenceEvalWithStateCoreN fuel sess (.apply "get-atoms" [spaceArg]) := by
+  have hFuelPredPos : 0 < fuel - 1 := by
+    omega
+  have hIntr :
+      intrinsicStateful sess (.apply "get-atoms" [spaceArg]) =
+        referenceIntrinsicStatefulN (fuel - 1) sess (.apply "get-atoms" [spaceArg]) := by
+    exact
+      intrinsicStateful_getAtoms_eq_referenceIntrinsicStatefulN_of_pos
+        (fuel := fuel - 1) (Nat.ne_of_gt hFuelPredPos) sess spaceArg
+  exact
+    referenceEvalWithStateCore_getAtoms_eq_N_of_maxNodes_one_of_intrinsic_agreement
+      fuel hFuel sess spaceArg hNodes hIntr
+
+/-- Stronger constrained fragment instance for `get-atoms` unary evaluator
+    agreement: sessions with `maxNodes = 1`. -/
+theorem getAtomsUnaryEvalAgreementOn_oneMaxNode
+    (fuel : Nat) (hFuel : 1 < fuel) :
+    GetAtomsUnaryEvalAgreementOn fuel (fun sess _spaceArg => sess.maxNodes = 1) := by
+  intro sess spaceArg hNodes
+  exact
+    referenceEvalWithStateCore_getAtoms_eq_N_of_maxNodes_one
+      (fuel := fuel) hFuel sess spaceArg hNodes
 
 /-- Lift a unary `get-atoms` evaluator-agreement hypothesis to the exact
     substituted-template `hEval` shape used by compositional `match` adequacy. -/
@@ -7720,13 +7762,13 @@ private theorem compiledConsistent_of_referenceIntrinsicStatefulN_apply_step
                             fuel s hEvalCorePres h.1 h.2 hs
                       · by_cases hGetAtoms : ctor = "get-atoms"
                         · subst hGetAtoms
-                          simp at h
+                          simp [intrinsicGetAtomsResultWithEval, spaceOpsInterfaceWithEval] at h
                           exact
                             compiledConsistent_of_referenceGetAtomsN_conj
                               fuel s h.1 h.2 hs
                         · by_cases hGetAtomsBang : ctor = "get-atoms!"
                           · subst hGetAtomsBang
-                            simp at h
+                            simp [intrinsicGetAtomsResultWithEval, spaceOpsInterfaceWithEval] at h
                             exact
                               compiledConsistent_of_referenceGetAtomsN_conj
                                 fuel s h.1 h.2 hs

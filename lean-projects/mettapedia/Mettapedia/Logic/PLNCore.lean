@@ -33,6 +33,8 @@ import Mettapedia.Logic.PLNInferenceControlCore
 import Mettapedia.Logic.PLNInferenceControlAlgorithms
 import Mettapedia.Logic.PLNInferenceControlChainer
 import Mettapedia.Logic.PLNInferenceControlExamples
+import Mettapedia.Logic.PLNGuardedHigherOrderSemantics
+import Mettapedia.Logic.PLNMixedModeChainComposition
 import Mettapedia.Logic.SoundnessCompleteness
 import Mettapedia.Logic.PLNErrorMagnificationGrounding
 import Mettapedia.Logic.PLNCanonicalAPI
@@ -135,6 +137,9 @@ This module is a curated import surface for the currently theorem-complete PLN s
   together with comparison theorems against the older FOL-routed set bridge
   (`HOL.Semantics.SetBased`, `PLNWorldModelHOLSetBridge`, plus canonical aliases in
   `PLNCanonicalAPI`)
+- Logical-induction-ready dynamic belief/process infrastructure over closed HOL
+  formulas, kept strictly separate from Henkin truth and the static HOL↔WM lens
+  (`HOL.LogicalInduction`, plus canonical aliases in `PLNCanonicalAPI`)
 - Additive multiset WM singleton-surface classification / uniqueness
   (`SufficientStatisticSurface`)
 - Forgetting layer with scope invariance and scoped no-go for exact inverse forgetting

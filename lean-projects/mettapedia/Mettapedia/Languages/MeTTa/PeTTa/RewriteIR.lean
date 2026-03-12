@@ -49,6 +49,7 @@ private structure DerivedRule where
   rhsVars : List String
   rhsFreshVars : List String
   rhsEvalRequires : List String
+  ruleMode : MeTTailCore.MeTTaIL.RewriteIR.RewriteIRRuleMode
   rootUpdate : Option MeTTailCore.MeTTaIL.RewriteIRV2.RootUpdateHint
 deriving Repr
 
@@ -98,6 +99,25 @@ private def rootUpdateHint? :
           changedArgPositions := orderedUniqNat changed }
   | _, _ => none
 
+private def hasCompatHeadConstraintArg : Pattern → Bool
+  | .apply _ _ => true
+  | .collection _ (_ :: _) _ => true
+  | _ => false
+
+private def ruleHasCompatHeadConstraint : Pattern → Bool
+  | .apply _ args => args.any hasCompatHeadConstraintArg
+  | _ => false
+
+private def ruleModeOf
+    (lhs : Pattern) (rhsFreshVars : List String) :
+    MeTTailCore.MeTTaIL.RewriteIR.RewriteIRRuleMode :=
+  if ruleHasCompatHeadConstraint lhs then
+    .compatHead
+  else if rhsFreshVars.isEmpty then
+    .ordinaryForward
+  else
+    .symbolicOutput
+
 private def foldRewriteRules
     (rules : List RewriteRule)
     (idx : Nat)
@@ -112,6 +132,11 @@ private def foldRewriteRules
       let available := orderedUniq (lhsVars ++ premiseVarFlow.flatMap (·.introducedVars))
       let rhsVars := orderedUniq (freeVars rw.right)
       let rhsEvalRequires := orderedUniq (rhsVars.filter (fun x => !(available.contains x)))
+      let rhsFreshVars :=
+        if rw.premises.isEmpty then
+          rhsEvalRequires
+        else
+          []
       let next := acc ++ [{ ruleId := s!"R{idx}"
                             ruleName := rw.name
                             sourceInstr := sourceInstrOfKey key
@@ -126,8 +151,9 @@ private def foldRewriteRules
                             lhsVars := lhsVars
                             premiseVarFlow := premiseVarFlow
                             rhsVars := rhsVars
-                            rhsFreshVars := []
-                            rhsEvalRequires := rhsEvalRequires
+                            rhsFreshVars := rhsFreshVars
+                            rhsEvalRequires := if rw.premises.isEmpty then [] else rhsEvalRequires
+                            ruleMode := ruleModeOf rw.left rhsFreshVars
                             rootUpdate := rootUpdateHint? rw.left rw.right }]
       foldRewriteRules rest (idx + 1) next
 
@@ -154,12 +180,28 @@ private theorem foldRewriteRules_length
           lhsVars := orderedUniq (freeVars rw.left)
           premiseVarFlow := derivePremiseVarFlow (orderedUniq (freeVars rw.left)) rw.premises
           rhsVars := orderedUniq (freeVars rw.right)
-          rhsFreshVars := []
+          rhsFreshVars :=
+            let lhsVars := orderedUniq (freeVars rw.left)
+            let premiseVarFlow := derivePremiseVarFlow lhsVars rw.premises
+            let available := orderedUniq (lhsVars ++ premiseVarFlow.flatMap (·.introducedVars))
+            let rhsMissing :=
+              orderedUniq ((orderedUniq (freeVars rw.right)).filter (fun x => !(available.contains x)))
+            if rw.premises.isEmpty then rhsMissing else []
           rhsEvalRequires :=
             let lhsVars := orderedUniq (freeVars rw.left)
             let premiseVarFlow := derivePremiseVarFlow lhsVars rw.premises
             let available := orderedUniq (lhsVars ++ premiseVarFlow.flatMap (·.introducedVars))
-            orderedUniq ((orderedUniq (freeVars rw.right)).filter (fun x => !(available.contains x)))
+            let rhsMissing :=
+              orderedUniq ((orderedUniq (freeVars rw.right)).filter (fun x => !(available.contains x)))
+            if rw.premises.isEmpty then [] else rhsMissing
+          ruleMode :=
+            let lhsVars := orderedUniq (freeVars rw.left)
+            let premiseVarFlow := derivePremiseVarFlow lhsVars rw.premises
+            let available := orderedUniq (lhsVars ++ premiseVarFlow.flatMap (·.introducedVars))
+            let rhsMissing :=
+              orderedUniq ((orderedUniq (freeVars rw.right)).filter (fun x => !(available.contains x)))
+            let rhsFreshVars := if rw.premises.isEmpty then rhsMissing else []
+            ruleModeOf rw.left rhsFreshVars
           rootUpdate := rootUpdateHint? rw.left rw.right
         }]
       have hnext : (foldRewriteRules rest (idx + 1) next).length = next.length + rest.length :=
@@ -189,6 +231,7 @@ private def toArtifactRule (r : DerivedRule) : RewriteIRRule :=
     rhsVars := r.rhsVars
     rhsFreshVars := r.rhsFreshVars
     rhsEvalRequires := r.rhsEvalRequires
+    ruleMode := r.ruleMode
     rootUpdate := r.rootUpdate }
 
 def derivePeTTaRewriteIR? (s : PeTTaSpace) : Except String RewriteIRArtifact := do

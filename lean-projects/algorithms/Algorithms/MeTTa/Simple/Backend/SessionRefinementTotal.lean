@@ -188,6 +188,29 @@ theorem evalWithState_eq_total_reference_of_local_reference_agreement_and_determ
           s term hs hAgreeRaw
     _ = SessionReferenceTotal.evalWithStateCore s term := hRefEq
 
+/-- First fragment-specific refinement transport theorem with the local equality
+    witness discharged automatically: `get-atoms` at `maxNodes = 1`. -/
+theorem evalWithState_getAtoms_eq_total_reference_of_oneMaxNode_and_deterministic_agreement
+    (s : Session) (spaceArg : Pattern)
+    (hNodes : s.maxNodes = 1)
+    (hs : SessionWF s)
+    (hAgreeRaw :
+      ∀ (s : Session) (term : Pattern),
+        DeterministicAcceptedRaw s term →
+        Algorithms.MeTTa.Simple.Backend.OptimizedEval.evalWithState
+          Session.optimizedBackendInterface s term =
+        SessionReference.evalWithStateCore s term) :
+    Session.evalWithState s (.apply "get-atoms" [spaceArg]) =
+      SessionReferenceTotal.evalWithStateCore s (.apply "get-atoms" [spaceArg]) := by
+  have hRefEq :
+      SessionReference.evalWithStateCore s (.apply "get-atoms" [spaceArg]) =
+        SessionReferenceTotal.evalWithStateCore s (.apply "get-atoms" [spaceArg]) := by
+    simpa [SessionReference.evalWithStateCore] using
+      SessionReferenceAdequacy.getAtoms_eval_eq_public_total_of_oneMaxNode s spaceArg hNodes
+  exact
+    evalWithState_eq_total_reference_of_local_reference_agreement_and_deterministic_agreement
+      s (.apply "get-atoms" [spaceArg]) hRefEq hs hAgreeRaw
+
 /-- Witnessed-faithful variant of the session-WF transport theorem. -/
 theorem wf_evalWithState_of_faithful_done_and_deterministic_agreement
     (s : Session) (term : Pattern) (s' : Session) (out : List Pattern)
@@ -256,5 +279,27 @@ theorem wf_evalWithState_of_local_reference_agreement_and_deterministic_agreemen
     SessionReferenceTotal.evalWithStateCore_preserves s term hs
   rw [hEqFst]
   exact hTot
+
+/-- First fragment-specific WF transport theorem with the local equality witness
+    discharged automatically: `get-atoms` at `maxNodes = 1`. -/
+theorem wf_evalWithState_getAtoms_of_oneMaxNode_and_deterministic_agreement
+    (s : Session) (spaceArg : Pattern)
+    (hNodes : s.maxNodes = 1)
+    (hs : SessionWF s)
+    (hAgreeRaw :
+      ∀ (s : Session) (term : Pattern),
+        DeterministicAcceptedRaw s term →
+        Algorithms.MeTTa.Simple.Backend.OptimizedEval.evalWithState
+          Session.optimizedBackendInterface s term =
+        SessionReference.evalWithStateCore s term) :
+    SessionWF (Session.evalWithState s (.apply "get-atoms" [spaceArg])).1 := by
+  have hRefEq :
+      SessionReference.evalWithStateCore s (.apply "get-atoms" [spaceArg]) =
+        SessionReferenceTotal.evalWithStateCore s (.apply "get-atoms" [spaceArg]) := by
+    simpa [SessionReference.evalWithStateCore] using
+      SessionReferenceAdequacy.getAtoms_eval_eq_public_total_of_oneMaxNode s spaceArg hNodes
+  exact
+    wf_evalWithState_of_local_reference_agreement_and_deterministic_agreement
+      s (.apply "get-atoms" [spaceArg]) hRefEq hs hAgreeRaw
 
 end Algorithms.MeTTa.Simple.Backend.SessionRefinementTotal

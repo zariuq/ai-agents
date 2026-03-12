@@ -125,6 +125,28 @@ theorem public_getAtoms_unary_eval_agreement_on_zeroMaxSteps
         unfold SessionReferenceTotal.referenceFuel
         exact Nat.ne_of_gt (Nat.lt_of_lt_of_le (by decide : (0 : Nat) < 4096) (Nat.le_max_left 4096 s.maxNodes)))
 
+/-- First non-degenerate constrained-fragment instance of the public-fuel
+    `get-atoms` unary evaluator-agreement contract: sessions with `maxNodes = 1`. -/
+theorem public_getAtoms_unary_eval_agreement_on_oneMaxNode
+    (s : Session) :
+    PublicGetAtomsUnaryEvalAgreementOn s (fun sess _spaceArg => sess.maxNodes = 1) := by
+  exact
+    Session.getAtomsUnaryEvalAgreementOn_oneMaxNode
+      (fuel := SessionReferenceTotal.referenceFuel s)
+      (by
+        unfold SessionReferenceTotal.referenceFuel
+        exact Nat.lt_of_lt_of_le (by decide : (1 : Nat) < 4096) (Nat.le_max_left 4096 s.maxNodes))
+
+/-- Public local-reference equality witness for `get-atoms` on the first
+    non-degenerate covered fragment, namely `maxNodes = 1`. -/
+theorem getAtoms_eval_eq_public_total_of_oneMaxNode
+    (s : Session) (spaceArg : Pattern)
+    (hNodes : s.maxNodes = 1) :
+    Session.referenceEvalWithStateCore s (.apply "get-atoms" [spaceArg]) =
+      SessionReferenceTotal.evalWithStateCore s (.apply "get-atoms" [spaceArg]) := by
+  simpa [SessionReferenceTotal.evalWithStateCore] using
+    (public_getAtoms_unary_eval_agreement_on_oneMaxNode s) s spaceArg hNodes
+
 /-- First proved constrained-fragment instance of the public-fuel `get-atoms!`
     unary evaluator-agreement contract: sessions with `maxNodes = 0`. -/
 theorem public_getAtomsBang_unary_eval_agreement_on_zeroMaxNodes

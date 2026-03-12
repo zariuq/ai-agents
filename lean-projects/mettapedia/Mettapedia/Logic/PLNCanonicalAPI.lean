@@ -13,6 +13,8 @@ import Mettapedia.Logic.PLNInferenceControlCore
 import Mettapedia.Logic.PLNInferenceControlAlgorithms
 import Mettapedia.Logic.PLNInferenceControlChainer
 import Mettapedia.Logic.PLNInferenceControlExamples
+import Mettapedia.Logic.PLNGuardedHigherOrderSemantics
+import Mettapedia.Logic.PLNMixedModeChainComposition
 import Mettapedia.Logic.PLNProbabilisticEventCalculus
 import Mettapedia.Logic.PLNColliderSingletonBridge
 import Mettapedia.Logic.PLNErrorMagnificationGrounding
@@ -68,6 +70,8 @@ Facade module exposing recommended, semantically grounded entry points:
 - Schema templates in `Schema` namespace (building blocks for new derived rules)
 - MeTTa integration: type-of-based query builders (`PLNWMOSLFBridgeTyped.MeTTaTypeOf`)
 - Documentation index for derived BN rules, exactness matrix, end-to-end theorems
+- Real HOL, direct `Set -> HOL -> WM`, higher-order PLN, and the
+  logical-induction-ready HOL belief/process layer
 
 BN-topology-specific endpoints (chain/fork/collider) and sort-variant
 specializations are available directly from `PLNXiDerivedBNRules` and
@@ -100,6 +104,35 @@ abbrev DistributionalSTV := PLN.Distributional.SimpleTruthValue
 
 /-- Proven STV isomorphism between distributional and deduction views. -/
 abbrev stvIso := EvidenceSTVBridge.stvEquiv
+
+/-! ## Guarded Admissibility Endpoints -/
+
+abbrev PLNGuardSemanticStatus :=
+  Mettapedia.Logic.PLNGuardedHigherOrderSemantics.GuardSemanticStatus
+
+abbrev PLNHigherOrderGuardPayload :=
+  Mettapedia.Logic.PLNGuardedHigherOrderSemantics.HigherOrderGuardPayload
+
+abbrev PLNGuardedSemanticQuery :=
+  Mettapedia.Logic.PLNGuardedHigherOrderSemantics.SemanticProbGuardedQuery
+
+abbrev PLNMixedModePlan :=
+  Mettapedia.Logic.PLNMixedModeChainComposition.MixedModePlan
+
+abbrev pln_guarded_startPlan :=
+  Mettapedia.Logic.PLNMixedModeChainComposition.startPlan
+
+abbrev pln_guarded_applyStep :=
+  Mettapedia.Logic.PLNMixedModeChainComposition.applyStep
+
+abbrev pln_guarded_clean_chain_demo :=
+  Mettapedia.Logic.PLNMixedModeChainComposition.cleanPlan_D
+
+abbrev pln_guarded_higher_order_demo :=
+  Mettapedia.Logic.PLNMixedModeChainComposition.leakyHigherOrderPlan_C
+
+abbrev pln_guarded_bounded_composition_demo :=
+  Mettapedia.Logic.PLNMixedModeChainComposition.boundedThenExactPlan_D
 
 /-! ## Chapter-7 Distributional / Kyburg Endpoints -/
 
@@ -447,6 +480,74 @@ abbrev pln_higherOrderHOL_holdsLinkWM_of_holProvIff_left :=
 
 abbrev pln_higherOrderHOL_holdsLinkWM_of_holProvIff_right :=
   @_root_.Mettapedia.Logic.PLNHigherOrderHOLLinkBridge.holdsLinkWM_of_holProvIff_right
+
+/-! ## Logical-Induction-Ready HOL Belief Endpoints -/
+
+abbrev PLNHOLClosedFormulaCode :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.ClosedFormulaCode
+
+abbrev PLNHOLDeductiveProcess :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.DeductiveProcess
+
+abbrev PLNHOLPrice01 :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.Price01
+
+abbrev PLNHOLBeliefDay :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.BeliefDay
+
+abbrev PLNHOLBeliefProcess :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.BeliefProcess
+
+abbrev PLNHOLTrader :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.Trader
+
+abbrev PLNHOLTheoryExtension :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.TheoryExtension
+
+abbrev pln_hol_encodeClosedFormula :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.encodeClosedFormula
+
+abbrev pln_hol_decodeClosedFormula :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.decodeClosedFormula
+
+abbrev pln_hol_eventuallyProves :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.DeductiveProcess.eventuallyProves
+
+noncomputable abbrev pln_hol_extendByAxioms :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.DeductiveProcess.extendByAxioms
+
+abbrev pln_hol_LogicalInductionCriterion :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.LogicalInductionCriterion
+
+noncomputable abbrev pln_hol_forceAxiomsAtOne :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.forceAxiomsAtOne
+
+abbrev pln_hol_RespectsTheoryExtension :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.RespectsTheoryExtension
+
+abbrev pln_hol_PreservesOutsideAxioms :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.PreservesOutsideAxioms
+
+abbrev pln_hol_TrustsVisibleTheorems :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.TrustsVisibleTheorems
+
+abbrev pln_hol_TimelyLearnsAtOne :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.TimelyLearnsAtOne
+
+abbrev pln_hol_EventuallyExactOnFiniteSample :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.EventuallyExactOnFiniteSample
+
+noncomputable abbrev pln_hol_beliefEvidence :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.beliefEvidence
+
+noncomputable abbrev pln_hol_dayQueryStrength :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.dayQueryStrength
+
+noncomputable abbrev pln_hol_empiricalBeliefDay :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.empiricalBeliefDay
+
+abbrev pln_hol_empiricalDayStrength_eq_staticQueryStrength :=
+  @_root_.Mettapedia.Logic.HOL.LogicalInduction.empiricalDayStrength_eq_staticQueryStrength
 
 /-! ## Predicate-Code Legacy Endpoints -/
 

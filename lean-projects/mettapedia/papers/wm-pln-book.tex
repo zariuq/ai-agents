@@ -1157,7 +1157,9 @@ formalized in Lean and evaluated in the main applied chapters.
 refers to \emph{Stan} in the PPLBench appendix, it means the standard
 PPLBench Stan backend under \codepath{pplbench/ppls/stan/}, not an
 ad hoc one-off script.  The same family includes PyMC, JAGS, NumPyro,
-and BeanMachine where available.
+and BeanMachine where available.  Appendix~\ref{app:pplbench-stan-pln}
+now includes a direct \codepath{normal\_normal} Stan $\leftrightarrow$
+WM-PLN run on that proper PPLBench surface.
 \item \textbf{External statistical/ML baselines.} \texttt{GaussianNB},
 \texttt{XGBoost}, and Windowed Gaussian are not WM-PLN variants; they are
 separate classical baselines used to show where WM-style semantics help,
@@ -2662,9 +2664,47 @@ right panel is the collider negative control.
 
 The toy fixture above establishes the theorem-backed exact fragment in a
 fully worked micro-example.  The next question is whether the same
-discipline helps on canonical benchmark BNs.  We therefore evaluate
-Pathfinder and Hailfinder against exact variable elimination from the BIF
+discipline helps on canonical benchmark BNs.  Pathfinder is a classic
+Bayesian expert system for diagnosing lymph-node diseases from pathology
+findings,\cite{Heckerman1992Pathfinder} and Hailfinder is a Bayesian
+severe-weather forecasting model for northeastern Colorado built from
+meteorological variables and expert judgment.\cite{Abramson1996Hailfinder}
+We use the canonical BIF encodings distributed through the bnlearn
+Bayesian Network Repository as the exact BN truthmaker for these
+experiments.\cite{ScutariBnRepository} We therefore evaluate Pathfinder
+and Hailfinder against exact variable elimination from the BIF
 truthmaker, while keeping the derived object discipline explicit:
+\smallskip
+
+Throughout this subsection, we use three plain-English labels for the
+side-condition context $\Sigma$:
+\begin{itemize}
+\item \textbf{context-complete}: the carried $\Sigma$ contains the
+  structural context needed to license the rewrite exactly;
+\item \textbf{context-missing}: some required context has been omitted,
+  so the exact rewrite is no longer licensed;
+\item \textbf{context-uncertain}: the required context is only
+  partially supported, so bounded or operational control layers become
+  relevant.
+\end{itemize}
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.04}
+\begin{tabular}{@{}p{0.14\textwidth}p{0.18\textwidth}p{0.19\textwidth}p{0.20\textwidth}p{0.21\textwidth}@{}}
+\toprule
+Benchmark & Domain & Primary artifact & What the variables mean & Why we use it here \\
+\midrule
+Pathfinder & Lymph-node pathology diagnosis & A hand-built Bayesian network with expert CPTs and a disease-class root (\code{Fault}) & One latent diagnosis plus many coded pathology findings in the benchmark release & Hidden-context stress test: can proof-carrying contractions survive when crucial diagnostic context is omitted? \\
+Hailfinder & Severe summer hail forecasting in northeastern Colorado & A hand-built Bayesian weather-forecast BN with expert CPTs; \code{hailfinder.csv} is secondary to \code{hailfinder.bif} & Meteorological conditions, scenario summaries, and forecast targets & Readable positive lane: exact local chaining still works on a real forecast network. \\
+\bottomrule
+\end{tabular}
+\renewcommand{\arraystretch}{1}
+\caption{What the two benchmark networks are about.  In both cases the primary benchmark object is the Bayesian network itself, not a generic flat table.}
+\label{tab:bn-benchmark-intro}
+\end{table}
+
 \[
   (\text{query}, \text{value}, \Sigma, \text{provenance}, g?, \delta?,
     \text{fallback}?).
@@ -2676,9 +2716,9 @@ semantics, not a replacement for that semantics.
 \fbox{\begin{minipage}{0.92\textwidth}
 \textbf{Three-mode guarded admissibility.}
 \smallskip
-Discharged $\Sigma$ gives exact firing.  Masked $\Sigma$ blocks the
-contraction.  Uncertain $\Sigma$ moves to a bounded semantic guard or to
-an explicit soft fallback layer.
+Context-complete $\Sigma$ gives exact firing.  Context-missing $\Sigma$
+blocks the contraction.  Context-uncertain $\Sigma$ moves to a bounded
+semantic guard or to an explicit soft fallback layer.
 \small
 \begin{tabular}{@{}p{0.23\textwidth}p{0.67\textwidth}@{}}
 \toprule
@@ -2703,6 +2743,33 @@ trigger logic, but it is not automatically the semantic posterior. \\
 
 \paragraph{Pathfinder.}
 Pathfinder is the stronger context-heavy benchmark.  In the selected
+motifs, \code{Fault} is the latent disease hypothesis and the
+\code{F\ldots} variables are benchmark-coded pathology findings from the
+network file.
+\par
+\begin{table}[ht]
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.03}
+\begin{tabular}{@{}p{0.17\textwidth}p{0.17\textwidth}p{0.24\textwidth}p{0.30\textwidth}@{}}
+\toprule
+Network & Variable & Reader gloss & Role in the selected motifs \\
+\midrule
+Pathfinder & \code{Fault} & Latent disease hypothesis / diagnosis class & The hidden diagnostic context that often has to stay in $\Sigma$. \\
+Pathfinder & \code{F3}, \code{F4}, \code{F103} & Benchmark-coded observed pathology clues & Upstream evidence nodes in the selected fork and long-path motifs. \\
+Pathfinder & \code{F97}, \code{F105} & Benchmark-coded intermediate pathology factors & Intermediate shared nodes through which the admissible contraction travels. \\
+Pathfinder & \code{F101}, \code{F102}, \code{F104} & Benchmark-coded downstream pathology targets & Queried consequences used to test exactness and hidden-context sensitivity. \\
+Hailfinder & \code{AMInstabMt}, \code{InsInMt}, \code{MountainFcst} & Morning mountain instability, mountain instability, mountain forecast & The clean local forecast-update chain. \\
+Hailfinder & \code{CldShadeOth}, \code{AreaMesoALS}, \code{CompPlFcst}, \code{CapChange} & Cloud shading, mesoscale-area summary, composite plains forecast, capping change & The longer readable forecast/update path. \\
+Hailfinder & \code{AMCINInScen}, \code{CapInScen} & Scenario-specific convective inhibition and cap state & The collider-style negative boundary. \\
+\bottomrule
+\end{tabular}
+\renewcommand{\arraystretch}{1}
+\caption{Mini glossary for the variables actually used in the current benchmark motifs.  Pathfinder keeps the compact benchmark coding from the released network; Hailfinder uses more readable meteorological names.}
+\label{tab:bn-benchmark-motif-glossary}
+\end{table}
+
+In the selected
 fork motif, keeping \code{Fault} explicit in $\Sigma$ yields an exact
 hard-gated contraction:
 \[
@@ -2711,9 +2778,10 @@ P(F104{=}\code{x\_50} \mid {}&F103{=}\code{Almost\_all\_poor\_def}, \\
   &\code{Fault}{=}\code{T\_immunob\_lrg}) = 0.4.
 \end{aligned}
 \]
-But if the same motif is evaluated with \code{Fault} omitted from
-$\Sigma$, the exact semantic answer drops to $0.14998\ldots$, and the
-hard gate blocks.  The bounded mode then returns the rule estimate
+But if the same motif is evaluated in the \emph{context-missing} regime,
+with \code{Fault} omitted from $\Sigma$, the exact semantic answer drops
+to $0.14998\ldots$, and the hard gate blocks.  The bounded mode then
+returns the rule estimate
 $0.31236\ldots$ together with the certified interval
 $[0.14998\ldots, 0.47474\ldots]$, while the soft-gated operational layer
 returns $0.28599\ldots$ with explicit fallback to the exact semantic
@@ -2724,6 +2792,11 @@ must be blocked or degraded gracefully.
 
 \paragraph{Hailfinder.}
 Hailfinder is the cleaner forecasting-structured benchmark.  The exact
+variables are meteorological conditions and forecast targets, so the
+benchmark reads like an actual forecast/update chain rather than an
+opaque medical codebook.
+\par
+The exact
 forecast chain
 \[
   P(\code{MountainFcst}{=}\code{SIG} \mid
@@ -2751,11 +2824,11 @@ the blocked cases preserve the ``yes, but not everywhere'' boundary.
 \toprule
 Case & Exact BN & Guarded output & Why it matters \\
 \midrule
-Pathfinder full-$\Sigma$ fork &
+Pathfinder context-complete fork &
 $0.400$ &
 Hard fires.\par Bounded $\delta = 0$.\par Soft $g = 1$. &
 When \code{Fault} stays in $\Sigma$, PLN-style contraction is exact. \\
-Pathfinder masked-$\Sigma$ fork &
+Pathfinder context-missing fork &
 $0.150$ &
 Hard blocks.\par Bounded $0.312$ in $[0.150, 0.475]$.\par Soft $0.286$. &
 Omitting \code{Fault} changes the answer sharply; carried context is
@@ -2782,7 +2855,7 @@ cross-network control layer.  The current dataset has $207$ evaluated
 rows over $142$ motif groups ($62$ Hailfinder, $145$ Pathfinder).  As a
 coverage result, Pathfinder is exactly where we expected the stress to
 appear: every Pathfinder row requires extra context support, and
-$55.2\%$ of rows are masked-$\Sigma$ cases where contraction is blocked.
+$55.2\%$ of rows are context-missing cases where contraction is blocked.
 For cross-network operation, a conformal shrink layer is now applied to
 the calibrated guard score before policy decisions; this materially
 improves calibration in the harder Hailfinder$\to$Pathfinder transfer
@@ -3256,6 +3329,90 @@ So the present higher-order chapter is already grounded in real HOL and real
 world-model semantics, while the next probabilistic strengthening is to put a
 genuine probability measure on higher-order models and show the current
 multiset WM semantics as the empirical special case.
+
+\section{Logical-Induction-Ready Dynamic Belief Infrastructure}
+
+Following Logical Induction~\cite{Garrabrant2020LogicalInduction}, the next
+higher-order uncertainty layer should not be hard-coded as one static measure
+or one specific prover.  Instead it should be parameterized by:
+\begin{itemize}
+\item a deductive process over coded closed HOL formulas,
+\item time-indexed belief states over those formulas,
+\item theory-extension/conditioning operators, and
+\item calibration and timely-learning criteria that remain distinct from
+  semantic truth in Henkin models.
+\end{itemize}
+
+This interface layer is now explicit in the codebase.  The new subtree
+\codepath{Mettapedia/Logic/HOL/LogicalInduction/} contains:
+\begin{itemize}
+\item canonical coding of closed HOL formulas in
+  \codepath{Mettapedia/Logic/HOL/LogicalInduction/Code.lean},
+\item deductive-process and theory-extension interfaces in
+  \codepath{Mettapedia/Logic/HOL/LogicalInduction/DeductiveProcess.lean} and
+  \codepath{Mettapedia/Logic/HOL/LogicalInduction/Conditioning.lean},
+\item day-indexed market/belief vocabulary plus trader and exploitation
+  criteria in
+  \codepath{Mettapedia/Logic/HOL/LogicalInduction/Market.lean} and
+  \codepath{Mettapedia/Logic/HOL/LogicalInduction/Criterion.lean},
+\item calibration and timely-learning specification hooks in
+  \codepath{Mettapedia/Logic/HOL/LogicalInduction/Calibration.lean},
+\item the current artifact-only HOL$\to$Pure compatibility layer in
+  \codepath{Mettapedia/Logic/HOL/LogicalInduction/PureBridge.lean}, and
+\item a thin WM-facing day interface together with the theorem that the
+  existing multiset-counting HOL WM semantics is its empirical special case in
+  \codepath{Mettapedia/Logic/HOL/LogicalInduction/WorldModelBridge.lean} and
+  \codepath{Mettapedia/Logic/HOL/LogicalInduction/EmpiricalSpecialCase.lean}.
+\end{itemize}
+
+The corresponding lightweight top-level wrapper is now
+\codepath{Mettapedia/Logic/ProbHOL.lean}.  It re-exports this
+logical-induction-ready layer under a shorter name, while still explicitly
+avoiding the stronger claim that the repository already contains the full fused
+theory of probability measures over Henkin models queried by HOL formulas.
+
+\[
+\begin{array}{c@{\qquad\qquad}c}
+\begin{array}{c}
+\textbf{truth side} \\
+\text{closed HOL formulas} \\
+\downarrow\scriptstyle{\text{Henkin semantics}} \\
+\text{truth in pointed Henkin models} \\
+\downarrow\scriptstyle{\text{static HOL}\leftrightarrow\text{WM lens}} \\
+\text{static WM evidence/strength}
+\end{array}
+&
+\begin{array}{c}
+\textbf{belief side} \\
+\text{coded closed HOL formulas} \\
+\downarrow\scriptstyle{\text{deductive process } D_n} \\
+\text{belief days } P_n(\varphi) \\
+\downarrow\scriptstyle{\text{day-level WM-facing strength}} \\
+\text{dynamic belief/evidence interface}
+\end{array}
+\end{array}
+\]
+
+The important architectural point is that this does \emph{not} replace the
+existing HOL truth layer.  Henkin semantics in
+\codepath{Mettapedia/Logic/HOL/Semantics/Henkin.lean} still determines semantic
+truth, and \codepath{Mettapedia/Logic/HOL/WorldModel.lean} still provides the
+static world-model lens.  The new logical-induction-ready layer is an overlay
+for future deductively limited belief dynamics about closed HOL formulas.
+
+So Chapter~\ref{ch:higher-order} now has three clearly separated higher-order
+levels:
+\begin{enumerate}
+\item semantic truth in Henkin HOL,
+\item static WM evidence/strength for HOL queries, and
+\item dynamic belief-process scaffolding for future probabilistic HOL.
+\end{enumerate}
+
+This is the right place to stop for now.  It is already enough to keep future
+ProbHOL and higher-order uncertain reasoning from being forced through a
+hard-coded prover or a single static model measure, but it does \emph{not} yet
+claim a full logical-inductor construction or the full fused layer of
+probability measures over Henkin models.
 
 
 \chapter{Quantifiers and the Fuzzy/QFM Layer}
@@ -4402,6 +4559,69 @@ on the same typed benchmark lane, while preserving the expected posterior.
 it does not yet show that PLN beats broader PPL systems on harder
 non-conjugate workloads.
 \end{description}
+
+\section{Proper Stan vs WM-PLN on Normal-Normal}
+\label{app:pplbench-stan-pln}
+
+After the bridge refresh, we also ran the first direct apples-to-apples
+\emph{Stan vs WM-PLN} comparison on the same benchmark model:
+\begin{lstlisting}
+cd ~/claude/pplbench
+ulimit -v 6291456
+python3 -m pplbench examples/normal_normal_stan_vs_pln.json
+\end{lstlisting}
+
+This comparison is important for two reasons.
+First, it uses the \emph{real} PPLBench Stan surface rather than an ad hoc
+comparison script.  In this Python~3.13 environment the Stan backend executes
+through a \code{cmdstanpy} fallback inside the PPLBench Stan inference layer,
+but the benchmark surface is still the ordinary \codepath{pplbench/ppls/stan/}
+backend family.  Second, it uses the refreshed Janus-backed WM-PLN lane from
+the same \codepath{normal\_normal} model family, so the comparison is finally
+same-model and same-harness rather than a cross-tool anecdote.
+
+The stable exported summary for the current manuscript snapshot is:
+\begin{itemize}
+\item \codepath{results/pplbench\_normal\_normal\_stan\_vs\_pln\_summary.json}
+\item \codepath{results/pplbench\_normal\_normal\_stan\_vs\_pln\_table.tex}
+\end{itemize}
+
+\begin{table}[htbp]
+\centering
+\caption{Direct Normal-Normal comparison on the proper PPLBench
+surface. On this exact conjugate case, the refreshed WM-PLN lane is slightly
+closer to the analytical posterior mean and slightly better on held-out
+predictive log-likelihood in the recorded run.}
+\label{tab:pplbench-stan-vs-pln}
+\IfFileExists{../results/pplbench_normal_normal_stan_vs_pln_table.tex}{%
+  \input{../results/pplbench_normal_normal_stan_vs_pln_table.tex}
+}{%
+  \small
+  \begin{tabular}{lcccc}
+  \toprule
+  Backend & Posterior mean & $| \mu - \mu_{\mathrm{analytic}} |$ & Final PLL & Median $n_{\mathrm{eff}}$/s \\
+  \midrule
+  (artifact missing) & n/a & n/a & n/a & n/a \\
+  \bottomrule
+  \end{tabular}
+}
+\end{table}
+
+In the current run the analytical posterior mean is approximately
+$0.8139$, Stan's sampled posterior mean is approximately $0.8329$, and the
+WM-PLN sampled posterior mean is approximately $0.8103$.  The final held-out
+predictive log-likelihood is about $-74.0794$ for Stan and $-73.8845$ for
+WM-PLN, while the median effective-sample-size-per-second reported by
+PPLBench is about $1.07\times 10^4$ for Stan and $1.32\times 10^5$ for
+WM-PLN.
+
+This is a good \emph{positive example} because it shows a real same-model,
+same-harness benchmark where WM-PLN is competitive with a mainstream PPL
+baseline and behaves as expected on an exact conjugate family.  It is also
+a good \emph{negative example} because it is still only one transparent lane.
+We should not read it as evidence that WM-PLN dominates Stan in general, and
+we should be especially careful with compile-time rhetoric here because the
+Stan compile timing in this run is warm-cache rather than cold-start.
 
 \chapter{Notation and Symbol Glossary}
 \label{app:notation}

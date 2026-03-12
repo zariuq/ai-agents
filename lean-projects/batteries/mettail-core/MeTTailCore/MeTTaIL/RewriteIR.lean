@@ -4,6 +4,12 @@ namespace MeTTailCore.MeTTaIL.RewriteIR
 
 open MeTTailCore.MeTTaIL.RewriteIRV2
 
+inductive RewriteIRRuleMode where
+  | ordinaryForward
+  | compatHead
+  | symbolicOutput
+deriving Repr, DecidableEq, BEq
+
 structure RewriteIRRule where
   ruleId : String
   ruleName : String
@@ -21,6 +27,7 @@ structure RewriteIRRule where
   rhsVars : List String := []
   rhsFreshVars : List String := []
   rhsEvalRequires : List String := []
+  ruleMode : RewriteIRRuleMode := .ordinaryForward
   rootUpdate : Option RootUpdateHint := none
 deriving Repr, DecidableEq, BEq
 
@@ -90,6 +97,11 @@ private def renderStringList (xs : List String) : String :=
 private def renderNatList (xs : List Nat) : String :=
   "[" ++ String.intercalate "," (xs.map jsonNat) ++ "]"
 
+private def renderRuleMode : RewriteIRRuleMode → String
+  | .ordinaryForward => "\"ordinary_forward\""
+  | .compatHead => "\"compat_head\""
+  | .symbolicOutput => "\"symbolic_output\""
+
 private def renderPremiseVarFlow (f : PremiseVarFlow) : String :=
   "{"
     ++ "\"premise_index\":" ++ jsonNat f.premiseIndex ++ ","
@@ -129,6 +141,7 @@ private def renderRule (r : RewriteIRRule) : String :=
     ++ "\"rhs_vars\":" ++ renderStringList r.rhsVars ++ ","
     ++ "\"rhs_fresh_vars\":" ++ renderStringList r.rhsFreshVars ++ ","
     ++ "\"rhs_eval_requires\":" ++ renderStringList r.rhsEvalRequires ++ ","
+    ++ "\"rule_mode\":" ++ renderRuleMode r.ruleMode ++ ","
     ++ "\"root_update\":"
     ++ (match r.rootUpdate with
       | some h => renderRootUpdateHint h
