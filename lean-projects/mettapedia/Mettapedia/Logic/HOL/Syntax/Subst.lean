@@ -133,6 +133,54 @@ def weaken (t : Term Const Γ τ) : Term Const (σ :: Γ) τ :=
 def instantiate (t : Term Const Γ σ) (u : Term Const (σ :: Γ) τ) : Term Const Γ τ :=
   subst (Subst.single t) u
 
+theorem subst_ext {σs τs : Subst Const Γ Δ}
+    (h : ∀ {τ}, (v : Var Γ τ) → σs v = τs v) :
+    (t : Term Const Γ ρ) → subst σs t = subst τs t
+  | .var v => by
+      simp [subst, h v]
+  | .const _ => rfl
+  | .app f t => by
+      simp [subst, subst_ext h f, subst_ext h t]
+  | .lam t => by
+      apply congrArg Term.lam
+      exact subst_ext
+        (σs := Subst.lift (Base := Base) σs)
+        (τs := Subst.lift (Base := Base) τs)
+        (fun v => by
+          cases v with
+          | vz => rfl
+          | vs v => simp [Subst.lift, h v]) t
+  | .top => rfl
+  | .bot => rfl
+  | .and φ ψ => by
+      simp [subst, subst_ext h φ, subst_ext h ψ]
+  | .or φ ψ => by
+      simp [subst, subst_ext h φ, subst_ext h ψ]
+  | .imp φ ψ => by
+      simp [subst, subst_ext h φ, subst_ext h ψ]
+  | .not φ => by
+      simp [subst, subst_ext h φ]
+  | .eq t u => by
+      simp [subst, subst_ext h t, subst_ext h u]
+  | .all φ => by
+      apply congrArg Term.all
+      exact subst_ext
+        (σs := Subst.lift (Base := Base) σs)
+        (τs := Subst.lift (Base := Base) τs)
+        (fun v => by
+          cases v with
+          | vz => rfl
+          | vs v => simp [Subst.lift, h v]) φ
+  | .ex φ => by
+      apply congrArg Term.ex
+      exact subst_ext
+        (σs := Subst.lift (Base := Base) σs)
+        (τs := Subst.lift (Base := Base) τs)
+        (fun v => by
+          cases v with
+          | vz => rfl
+          | vs v => simp [Subst.lift, h v]) φ
+
 @[simp] theorem rename_var (ρ : Rename Base Γ Δ) (v : Var Γ τ) :
     rename ρ (.var v : Term Const Γ τ) = .var (ρ v) := rfl
 

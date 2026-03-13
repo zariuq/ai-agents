@@ -38,7 +38,23 @@ import Mettapedia.Logic.PLNMixedModeChainComposition
 import Mettapedia.Logic.PLNProbHOLPlannerBridge
 import Mettapedia.Logic.PLNRegimeMixtureBenchmarkBridge
 import Mettapedia.Logic.PLNRegimeMixtureRegression
+import Mettapedia.Logic.PLNHigherOrderChainingTheorems
+import Mettapedia.Logic.PLNHigherOrderChainingRegression
+import Mettapedia.Logic.PLNHigherOrderCertifiedEstimates
+import Mettapedia.Logic.PLNUntrustedOracleAdapters
+import Mettapedia.Logic.PLNHigherOrderChainBounds
+import Mettapedia.Logic.PLNHigherOrderDecisionTheorems
+import Mettapedia.Logic.PLNGWASHigherOrderBridge
+import Mettapedia.Logic.PLNHigherOrderCertifiedChainingRegression
+import Mettapedia.Logic.PLNUntrustedOracleAdapterRegression
+import Mettapedia.Logic.PLNTopologyCPTNoGo
+import Mettapedia.Logic.PLNVarianceChainNoGo
+import Mettapedia.Logic.PLNHigherOrderNoGoBridge
 import Mettapedia.Logic.PLNMarkovLogicRegression
+import Mettapedia.Logic.PLNMarkovLogicClauseSemantics
+import Mettapedia.Logic.PLNMarkovLogicClauseFactorGraph
+import Mettapedia.Logic.PLNMarkovLogicClauseWorldModel
+import Mettapedia.Logic.PLNMarkovLogicClauseRegression
 import Mettapedia.Logic.SoundnessCompleteness
 import Mettapedia.Logic.PLNErrorMagnificationGrounding
 import Mettapedia.Logic.PLNCanonicalAPI
@@ -157,11 +173,15 @@ This module is a curated import surface for the currently theorem-complete PLN s
   reveal/value-of-information criteria in the higher-order Chapter-11 lane
   (`PLNRegimeMixtureBenchmarkBridge`, `PLNRegimeMixtureRegression`, plus
   canonical aliases in `PLNCanonicalAPI`)
-- Infinite-first Markov Logic semantics over countable worlds, with
-  finite-support restriction, factor-graph specialization, and WM
-  subsumption under locality witnesses
-  (`PLNMarkovLogic*`, regression canary in `PLNMarkovLogicRegression`, plus
-  canonical aliases in `PLNCanonicalAPI`)
+- Clause-native MLN subsumption (primary MLN result): grounded clause semantics,
+  clause-scope factor-graph compilation, ValuationWorldModel bridge, and
+  `queryStrength = queryProb` with three regression canaries (3/4, 3/5, 0)
+  (`PLNMarkovLogicClause*`, canonical aliases in `PLNCanonicalAPI`)
+- Abstract infinite-first MLN semantics over countable worlds (supporting infrastructure),
+  with finite-support restriction, extensional factor-graph specialization, and
+  abstract MassState WM bridge
+  (`PLNMarkovLogic{Abstract,Countable,FiniteRestriction,FactorGraph,WorldModel}`,
+  regression canary in `PLNMarkovLogicRegression`)
 - Additive multiset WM singleton-surface classification / uniqueness
   (`SufficientStatisticSurface`)
 - Forgetting layer with scope invariance and scoped no-go for exact inverse forgetting

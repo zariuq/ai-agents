@@ -21,7 +21,7 @@ Follows metta.md sections "Match atoms", "Merge bindings", "Add variable binding
 
 namespace Mettapedia.Languages.MeTTa.HE
 
-open Mettapedia.Languages.MeTTa.Core (Atom GroundedValue)
+open Mettapedia.Languages.MeTTa.OSLFCore (Atom GroundedValue)
 
 /-! ## Match Atoms and Bindings Operations
 

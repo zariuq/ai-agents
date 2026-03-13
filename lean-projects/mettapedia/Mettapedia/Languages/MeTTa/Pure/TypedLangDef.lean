@@ -1,5 +1,5 @@
 import Mettapedia.Languages.MeTTa.Pure.SubjectReduction
-import Mettapedia.Languages.MeTTa.Core.SubjectReduction
+import Mettapedia.Languages.MeTTa.OSLFCore.SubjectReduction
 
 /-!
 # MeTTa-Pure: Typed Language Definition Assembly
@@ -84,10 +84,10 @@ noncomputable def mettaPureTyped : TypedLangDef where
 
     This is the sorry-free theorem from `MeTTaCore/SubjectReduction.lean`. -/
 theorem metta_current_sr_fails :
-    ¬ Mettapedia.Languages.MeTTa.Core.SubjectReduction
-      Mettapedia.Languages.MeTTa.Core.HasType
-      Mettapedia.Languages.MeTTa.Core.AtomReduces :=
-  Mettapedia.Languages.MeTTa.Core.metta_not_subject_reduction
+    ¬ Mettapedia.Languages.MeTTa.OSLFCore.SubjectReduction
+      Mettapedia.Languages.MeTTa.OSLFCore.HasType
+      Mettapedia.Languages.MeTTa.OSLFCore.AtomReduces :=
+  Mettapedia.Languages.MeTTa.OSLFCore.metta_not_subject_reduction
 
 /-! ## Architectural Properties -/
 

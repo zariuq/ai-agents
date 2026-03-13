@@ -7,7 +7,7 @@
 \usepackage{pln-common}
 \usepackage{tikz}
 \usepackage{url}
-\usetikzlibrary{arrows.meta,positioning}
+\usetikzlibrary{arrows.meta,positioning,calc,decorations.pathreplacing}
 
 \title{WM-PLN:\\[4pt]
   The World-Model Calculus\\[12pt]
@@ -44,8 +44,10 @@ sublayers, higher-order reductions, quantifier semantics, intensional
 inheritance, and inference-control theory arise as compiled tactics with
 explicit assumptions within the world-model framework.
 
-All results are formalized in Lean~4 with Mathlib, totaling over 140
-theorem-backed modules with zero \code{sorry}.
+All results are formalized in Lean~4 with Mathlib, totaling over 500
+theorem-backed modules across evidence algebra, world-model calculus,
+compiled BN inference, higher-order chaining, and applied
+demonstrations.
 \end{abstract}
 
 \tableofcontents
@@ -93,6 +95,42 @@ always marking where one ends and another begins:
   thresholding, display, and approximate computation, but not themselves the
   semantics.
 \end{enumerate}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={font=\small},
+  layer/.style={draw, rounded corners=3pt, minimum width=72mm, minimum height=14mm,
+                align=center, text width=68mm},
+]
+\node[layer, fill=blue!8] (wm)
+  {{\bfseries World-Model Layer}\\[1pt]
+   {\scriptsize posterior state, joint distribution}};
+\node[layer, fill=green!8, below=12mm of wm] (ev)
+  {{\bfseries Evidence-Algebra Layer}\\[1pt]
+   {\scriptsize counts $(n^+,n^-)$, revision $\oplus$, lattice}};
+\node[layer, fill=yellow!12, below=12mm of ev] (view)
+  {{\bfseries Operational-View Layer}\\[1pt]
+   {\scriptsize strength, confidence, intervals}};
+
+% correct downward flow
+\draw[->, thick] (wm) -- node[right, font=\scriptsize] {$\mathrm{ev}(W,q)$} (ev);
+\draw[->, thick] (ev) -- node[right, font=\scriptsize] {extract views} (view);
+
+% semantic drift: red dashed arrow bypassing the middle
+\draw[->, dashed, very thick, red!70!black]
+  (view.west) to[out=180, in=180, looseness=1.6]
+  node[left, font=\scriptsize, text width=24mm, align=right]
+    {semantic drift:\\views treated\\as logic}
+  (wm.west);
+\end{tikzpicture}
+\caption{The three-layer architecture of \xiPLN{}.  Solid arrows show the
+correct information flow: query the world model for evidence, then extract
+operational views.  The dashed red arrow marks the conflation that produces
+semantic drift---treating views as if they were the complete semantics.}
+\label{fig:three-layer-architecture}
+\end{figure}
 
 When these layers are conflated, several things go wrong.  Operational views
 get treated as if they \emph{were} the logic: interval bounds are composed
@@ -349,6 +387,45 @@ $\hplus$ for pointwise addition of counts.
 
 See \codepath{Mettapedia/Logic/PLNWorldModel.lean}.
 
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={font=\small},
+  box/.style={draw, rounded corners=3pt, align=center,
+              minimum height=10mm},
+]
+\node[box, fill=blue!6, minimum width=20mm] (q) {\PLNQuery{}};
+\node[box, fill=green!8, minimum width=30mm, right=12mm of q] (wm)
+  {\code{WorldModel}\\[-1pt]{\scriptsize\code{.evidence}}};
+\node[box, fill=yellow!10, minimum width=24mm, right=12mm of wm] (ev)
+  {\Evidence{}\\[-1pt]{\scriptsize$(n^+, n^-)$}};
+\node[box, fill=gray!10, minimum width=22mm, right=12mm of ev] (view)
+  {Views\\[-1pt]{\scriptsize$s, c, [L,U]$}};
+
+\draw[->, thick] (q) -- (wm);
+\draw[->, thick] (wm) -- (ev);
+\draw[->, thick] (ev) -- (view);
+
+% revision loop beneath
+\node[box, fill=blue!6, minimum width=24mm, below=14mm of wm] (rev)
+  {$W_1 + W_2$\\[-1pt]{\scriptsize revision}};
+\draw[->, thick] (rev) -- (wm);
+
+% sigma bundle
+\node[draw, dashed, rounded corners=3pt, fill=orange!6,
+      minimum width=28mm, minimum height=10mm,
+      below=14mm of ev, align=center] (sig)
+  {\code{WorldModelSigma}\\[-1pt]{\scriptsize$\Sigma$ : side conditions}};
+\draw[->, dashed, thick, orange!70!black] (sig) -- (ev);
+\end{tikzpicture}
+\caption{The world-model query interface.  A \PLNQuery{} is answered by
+extracting \Evidence{} from the world-model state; views are lossy
+projections.  Revision ($+$) combines states.  A \code{WorldModelSigma}
+bundles structural side conditions for compiled rewrites.}
+\label{fig:query-worldmodel-flow}
+\end{figure}
+
 \section{World Models with Side Conditions}
 
 For compiled inference, we often need structural assumptions about the world
@@ -416,6 +493,33 @@ The complete core calculus is intentionally simple.  It is the calculus of
 revising posterior states plus a query interface.  Everything else in
 \xiPLN{}---evidence algebras, truth-value views, compiled rules, tractable
 fragments---is built on top of this core.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={font=\small},
+  box/.style={draw, rounded corners=3pt, fill=blue!6, align=center,
+              minimum width=38mm, minimum height=12mm},
+  op/.style={draw, rounded corners=3pt, fill=green!8, align=center,
+             minimum width=30mm, minimum height=10mm},
+]
+\node[box] (prior) {Prior\\$\mathrm{Dir}(\alpha,\beta)$};
+\node[box, right=30mm of prior] (post)
+  {Posterior\\$\mathrm{Dir}(\alpha\!+\!n^+,\;\beta\!+\!n^-)$};
+\node[op, below=14mm of post] (query) {Query $P(A \mid W)$};
+\node[op, above=14mm of post] (revise) {Revise $(+\;e')$};
+
+\draw[->, thick] (prior) -- node[above, font=\scriptsize] {observe $(n^+, n^-)$} (post);
+\draw[->, thick] (post) -- node[right, font=\scriptsize] {extract} (query);
+\draw[->, thick] (post) -- node[right, font=\scriptsize] {new evidence} (revise);
+\draw[->, thick, dashed] (revise.west) to[out=180, in=90] (prior.north);
+\end{tikzpicture}
+\caption{The posterior-state update cycle.  A Dirichlet prior is updated by
+observing evidence counts, producing a posterior.  The posterior answers
+queries (downward) and accepts further revision (upward, cycling back).}
+\label{fig:posterior-update-cycle}
+\end{figure}
 
 \section{The Reference Instance: Dirichlet over Worlds}
 
@@ -667,6 +771,49 @@ correctly for both states.
 
 See \codepath{Mettapedia/Logic/PLNJointEvidenceNoGo.lean}.
 
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={font=\scriptsize},
+  world/.style={draw, circle, minimum size=7mm, inner sep=1pt},
+  swap/.style={draw, circle, minimum size=7mm, inner sep=1pt,
+               fill=orange!25, very thick},
+]
+% A=1 slice (the critical part)
+\node[font=\small\bfseries, anchor=south] at (2.5, 3.2) {Worlds where $A=1$};
+
+\node[world] (w100) at (0, 2) {$\scriptscriptstyle 1,0,0$};
+\node[swap]  (w101) at (5, 2) {$\scriptscriptstyle 1,0,1$};
+\node[swap]  (w110) at (0, 0) {$\scriptscriptstyle 1,1,0$};
+\node[world] (w111) at (5, 0) {$\scriptscriptstyle 1,1,1$};
+
+% grid lines
+\draw[thin, gray] (w100) -- (w101);
+\draw[thin, gray] (w100) -- (w110);
+\draw[thin, gray] (w101) -- (w111);
+\draw[thin, gray] (w110) -- (w111);
+
+% swap arrow
+\draw[<->, very thick, red!70!black, dashed]
+  (w101) -- node[right=2pt, font=\scriptsize, text width=30mm, align=left]
+  {trade mass here:\\[1pt] preserves all 5 marginals,\\changes $\mathrm{ev}(A\!\Rightarrow\! C)$}
+  (w110);
+
+% axis labels
+\node[font=\tiny, anchor=east] at (-0.6, 2) {$B\!=\!0$};
+\node[font=\tiny, anchor=east] at (-0.6, 0) {$B\!=\!1$};
+\node[font=\tiny, anchor=south] at (0, 2.6) {$C\!=\!0$};
+\node[font=\tiny, anchor=south] at (5, 2.6) {$C\!=\!1$};
+\end{tikzpicture}
+\caption{The no-go witness.  Among the four worlds where $A\!=\!1$,
+redistributing mass between $(1,0,1)$ and $(1,1,0)$ (orange) preserves
+all five local marginals ($A$, $B$, $C$, $A\!\Rightarrow\! B$,
+$B\!\Rightarrow\! C$) but changes $\mathrm{ev}(A\!\Rightarrow\! C)$.
+No function of the five marginals can detect this trade.}
+\label{fig:no-go-witness}
+\end{figure}
+
 \section{Interpretation}
 
 This theorem is the formal core of ``you must carry correlations.''
@@ -818,6 +965,66 @@ function captures all evidence information.
 See \codepath{Mettapedia/Logic/HeytingValuationOnEvidence.lean} and
 \codepath{Mettapedia/Logic/PLN\_KS\_Bridge.lean}.
 
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={font=\scriptsize},
+  ev/.style={draw, circle, minimum size=9mm, inner sep=1pt, fill=blue!6},
+  inc/.style={draw, circle, minimum size=9mm, inner sep=1pt, fill=orange!20,
+              very thick},
+]
+% Row 0
+\node[ev] (00) at (3, 0) {$\scriptscriptstyle(0,0)$};
+% Row 1
+\node[ev] (10) at (1.5, 1.4) {$\scriptscriptstyle(1,0)$};
+\node[ev] (01) at (4.5, 1.4) {$\scriptscriptstyle(0,1)$};
+% Row 2
+\node[ev] (20) at (0, 2.8) {$\scriptscriptstyle(2,0)$};
+\node[ev] (11) at (3, 2.8) {$\scriptscriptstyle(1,1)$};
+\node[ev] (02) at (6, 2.8) {$\scriptscriptstyle(0,2)$};
+% Row 3
+\node[inc] (30) at (-1.5, 4.2) {$\scriptscriptstyle(3,0)$};
+\node[ev] (21) at (1.5, 4.2) {$\scriptscriptstyle(2,1)$};
+\node[ev] (12) at (4.5, 4.2) {$\scriptscriptstyle(1,2)$};
+\node[inc] (03) at (7.5, 4.2) {$\scriptscriptstyle(0,3)$};
+
+% Hasse edges
+\draw[thin, gray] (00) -- (10);
+\draw[thin, gray] (00) -- (01);
+\draw[thin, gray] (10) -- (20);
+\draw[thin, gray] (10) -- (11);
+\draw[thin, gray] (01) -- (11);
+\draw[thin, gray] (01) -- (02);
+\draw[thin, gray] (20) -- (30);
+\draw[thin, gray] (20) -- (21);
+\draw[thin, gray] (11) -- (21);
+\draw[thin, gray] (11) -- (12);
+\draw[thin, gray] (02) -- (12);
+\draw[thin, gray] (02) -- (03);
+
+% incomparable highlight
+\draw[<->, very thick, red!70!black, dashed]
+  (30) to[bend left=18]
+  node[above, font=\scriptsize, text width=32mm, align=center]
+    {incomparable:\\no faithful $\mathbb{R}$-embedding}
+  (03);
+
+% meet/join annotation
+\draw[<->, thick, green!50!black] (21) --
+  node[below right, font=\tiny, text width=22mm, align=left]
+    {$\wedge = (1,1)$\\$\vee = (2,2)$}
+  (12);
+\end{tikzpicture}
+\caption{Hasse diagram of the \Evidence{} lattice (first four levels).
+The information ordering is componentwise: $(a^+, a^-) \le (b^+, b^-)$
+iff both coordinates are $\le$.  Orange nodes $(3,0)$ and $(0,3)$ are
+incomparable---no single real-valued function preserves the full ordering
+(the ``totality gate'').  The green link shows meet and join:
+$\wedge\!\big((2,1),(1,2)\big) = (1,1)$, $\vee = (2,2)$.}
+\label{fig:evidence-lattice}
+\end{figure}
+
 \section{What Evidence Algebra Is Not}
 
 Evidence algebra is \emph{not} the complete probabilistic semantics.
@@ -839,6 +1046,39 @@ Operationally, PLN works with compact summaries of evidence:
 a strength, a confidence, sometimes an interval.  These are \emph{views}---
 projections from the evidence algebra into simpler spaces that are useful
 for thresholding, display, and approximate computation.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={font=\small},
+  src/.style={draw, rounded corners=3pt, fill=blue!8, align=center,
+              minimum width=34mm, minimum height=14mm},
+  tgt/.style={draw, rounded corners=3pt, fill=gray!10, align=center,
+              minimum width=30mm, minimum height=12mm},
+]
+\node[src] (ev) {\Evidence{}\\$(n^+, n^-)$};
+\node[tgt, above right=8mm and 28mm of ev] (str)
+  {Strength\\$s = n^+\!/\,n$};
+\node[tgt, right=28mm of ev] (conf)
+  {Confidence\\$c = n/(n\!+\!k)$};
+\node[tgt, below right=8mm and 28mm of ev] (itv)
+  {Interval\\$[L, U]$};
+
+\draw[->, thick] (ev) -- node[above, font=\tiny, sloped] {lossy} (str);
+\draw[->, thick] (ev) -- node[above, font=\tiny] {lossy} (conf);
+\draw[->, thick] (ev) -- node[below, font=\tiny, sloped] {lossy} (itv);
+
+% no-reconstruct annotation
+\node[font=\scriptsize, text width=30mm, align=center, red!70!black]
+  at ($(conf.east) + (18mm, 0)$)
+  {Cannot reconstruct\\$(n^+, n^-)$ from\\any single view};
+\end{tikzpicture}
+\caption{Truth-value views are lossy projections from \Evidence{}.
+Strength, confidence, and interval bounds each discard information.
+No single view suffices to reconstruct the original evidence counts.}
+\label{fig:tv-views-projections}
+\end{figure}
 
 \section{Simple Truth Values}
 
@@ -1031,8 +1271,8 @@ See \codepath{Mettapedia/Logic/EvidenceNormalGamma.lean}.
 \label{sec:two-layer}
 Each demo below has two layers.
 \emph{Lean} proves the posterior formulas correct and establishes
-structural properties (consolidation, independence, monotonicity) ---
-all with 0~\texttt{sorry}.  A companion Python script
+structural properties (consolidation, independence, monotonicity),
+all kernel-checked.  A companion Python script
 (\texttt{scripts/wm\_pln\_posterior.py}) instantiates the proved
 formulas on each fixture to produce concrete numerical results:
 posterior means, 95\% credible intervals, exceedance probabilities,
@@ -1129,23 +1369,23 @@ mathematics~\cite{BernardoSmith2000} (Ch.~5); Mathlib provides
 density is not yet available in Mathlib, so the integral derivation
 is not formalized today.
 
-% [CodexTODO] Light EXPO framing for the Gaussian suite: same-model-class validation, drift/replay family, and case-study roles.
-\paragraph{Experiment-family view (EXPO / Hyperseed).}
-The Gaussian suite is best read as a family of \emph{experiment types},
-not as a single benchmark leaderboard.  The empirical spine has two
-\emph{co-flagships}: the Gas Sensor study as a \emph{drift/replay
-governance} story, and the GJP forecasting study as a
-\emph{source-reliability / recalibration} story.  Steel is a
-\emph{supporting same-model-class validation}: it asks whether the
-formally verified WM-PLN conjugate classifier behaves competitively
-against a plain GaussianNB baseline and how confidence can be used to
-abstain.  NAB is an \emph{honest negative boundary / case study}: it
-exercises a real scoring pipeline with formally verified Kalman updates,
-but it is not presented as a full-corpus leaderboard result.  This
-division is deliberate.  WM-PLN's distinctive contribution is not
-``better tabular accuracy at all costs,'' but queryable uncertainty,
-replay semantics, soft evidence, and explicit reasoning about which
-experiment channel is more informative.
+\paragraph{Experiment-family view.}
+The Gaussian suite is a family of \emph{experiment types}, not a single
+benchmark leaderboard.  Each study exercises a different aspect of the
+world-model calculus:
+the Gas Sensor study tests \emph{drift governance and replay semantics};
+the GJP forecasting study tests \emph{source-reliability weighting and
+recalibration under temporal forgetting}.
+Steel serves as a \emph{same-model-class validation}---does the
+formalized conjugate classifier improve on the plain GaussianNB baseline,
+and can its posterior confidence drive principled abstention?
+NAB is an \emph{honest boundary case}: it exercises a real scoring
+pipeline with verified Kalman updates, but it is not presented as a
+full-corpus leaderboard result.
+This division is deliberate.  The distinctive contribution of a
+world-model approach is not raw tabular accuracy but queryable
+uncertainty, replay semantics, soft evidence, and explicit reasoning
+about which experiment channel is more informative.
 
 \paragraph{Comparator taxonomy.}
 To keep the empirical claims honest, the manuscript uses three
@@ -1198,7 +1438,6 @@ Used in the applied studies to distinguish same-model-class wins
 \end{tabular}
 \end{table}
 
-% [CodexTODO] Cross-dataset role-split table: Steel same-model-class validation, Gas governance, NAB case study.
 \begin{table}[htbp]
 \centering
 \footnotesize
@@ -1256,7 +1495,7 @@ cooling failure is read directly; temperature exceedance $P(X > c)$ is
 handled via an abstract \emph{exceedance specification}---a function
 satisfying monotonicity properties---since Mathlib lacks a Normal CDF.
 
-Key results (all zero \texttt{sorry}):
+Key results (all kernel-checked):
 \begin{enumerate}
 \item Sleep consolidation (Theorem~\ref{thm:sleep-consolidation}):
   morning + night batch = sequential update.
@@ -1289,7 +1528,7 @@ state.  Sleep consolidation is verified numerically: sequential update
 through morning then night produces the same posterior
 ($\mu_n = 18.93$) as batch processing all 10 readings at once.
 
-See \codepath{Mettapedia/Logic/PLNBrokenSensorDemo.lean} (360 lines, 0~sorry).
+See \codepath{Mettapedia/Logic/PLNBrokenSensorDemo.lean} (420 lines).
 
 \subsection{Applied Example: Widget Factory Source-Conditional Mixtures}
 
@@ -1322,7 +1561,7 @@ $\mu_n = 10.95$, 95\% CI $[7.71, 14.19]$, $P(X > 12) = 0.234$.
 Machine~B is about $3.5\times$ more likely to produce a defect
 ($>$12) than Machine~A, consistent with its higher operating mean.
 
-See \codepath{Mettapedia/Logic/PLNWidgetFactoryDemo.lean} (420 lines, 0~sorry).
+See \codepath{Mettapedia/Logic/PLNWidgetFactoryDemo.lean} (422 lines).
 
 \subsection{Applied Example: Kalman Filter Wake/Sleep Temporal Filtering}
 
@@ -1340,7 +1579,7 @@ through a noisy sensor ($z_t = x_t + v_t$, $v_t \sim N(0,\sigma_v^2)$).
 \item \emph{Step} = predict then update.
 \end{itemize}
 
-\paragraph{Key formal results (all proved, no sorry).}
+\paragraph{Key formal results (all kernel-checked).}
 \begin{enumerate}
 \item \emph{Kalman gain bounded:} $0 < K < 1$ and $1-K = \sigma_v^2/(\sigma^2+\sigma_v^2)$.
 \item \emph{Variance reduction:} each measurement strictly reduces
@@ -1380,7 +1619,7 @@ Sleep $=$ wake is verified to machine precision: batch replay of all
 10 readings from the initial state produces the same posterior as
 sequential morning-then-night processing.
 
-See \codepath{Mettapedia/Logic/PLNKalmanSleepDemo.lean} (353 lines, 0~sorry).
+See \codepath{Mettapedia/Logic/PLNKalmanSleepDemo.lean} (374 lines).
 
 \subsection{Applied Example: Gas Sensor Array Drift Classification}
 
@@ -1411,7 +1650,7 @@ for the proved Gaussian sleep/independence laws.  The headline empirical
 claims in this section come from the full 128-feature drift protocols
 and governance policies below, not from the hand-picked fixture.
 
-\paragraph{Key formal results (all proved, no sorry).}
+\paragraph{Key formal results (all kernel-checked).}
 \begin{enumerate}
 \item \emph{Per-gas sleep consolidation:} for each gas type,
   $\mathrm{posterior}(\pi, e_1 \oplus e_2)
@@ -1474,54 +1713,49 @@ drops to $81{,}565$ with a wide CI reflecting the dramatic drift
 ($\Delta = -114{,}055$ between epochs).  Confidence for each gas
 rises from $c = 0.980$ (5~readings) to $c = 0.990$ (10~readings).
 
-% [CodexTODO] Comparative full-dataset gas-sensor results aligned with drift-compensation protocols from the literature.
 \paragraph{Full-dataset drift study.}
-Using the full 128-feature representation, we extend the fixture demo to
-the standard drift protocols used in the gas-sensor literature.  On the
-3-gas subset matching the Lean demo (ethanol/ammonia/toluene), an
-independent-feature WM-PLN classifier reaches 68.4\% in the hard
-``Setting~1'' protocol (train on batch~1, test on batches~2--10),
-72.1\% in the easier ``Setting~2'' protocol (train on batch~$k{-}1$,
-test on batch~$k$), and 73.6\% under cumulative \emph{sleep replay}
-(train on batches~1\ldots$k{-}1$, test on batch~$k$).  The corresponding
-GaussianNB baselines are 68.2\%, 75.8\%, and 71.2\%.
+We extend the fixture demo to the full 128-feature representation under
+the standard drift protocols used in the gas-sensor
+literature~\cite{Jiang2021BDA}.  On the 3-gas subset
+(ethanol/ammonia/toluene), an independent-feature WM-PLN classifier
+reaches 68.4\% under ``Setting~1'' (train batch~1, test batches~2--10),
+72.1\% under ``Setting~2'' (train batch~$k{-}1$, test batch~$k$), and
+73.6\% under cumulative \emph{sleep replay} (train batches~1\ldots$k{-}1$,
+test batch~$k$); the GaussianNB baselines are 68.2\%, 75.8\%, and 71.2\%.
+On the full 6-gas task the numbers are 47.3\%/53.0\%/53.2\% (WM-PLN)
+versus 47.3\%/51.2\%/52.5\% (GaussianNB).
 
-On the full 6-gas task, the same WM-PLN classifier reaches 47.3\%
-(Setting~1), 53.0\% (Setting~2), and 53.2\% (cumulative replay), versus
-47.3\%, 51.2\%, and 52.5\% for GaussianNB on the same protocols.  This
-is substantially below domain-adaptation methods such as Balanced
-Distribution Adaptation, which reports 68.92\% for Setting~1 and
-81.06\% for Setting~2 on the same benchmark~\cite{Jiang2021BDA}, but
-it already shows the qualitative effect we want from the WM side:
-late-batch drift hurts accuracy, and replaying additional batches into
-the posterior partially recovers it without changing the underlying
-update laws.
+These figures are substantially below domain-adaptation methods---Balanced
+Distribution Adaptation reports 68.92\% (Setting~1) and 81.06\%
+(Setting~2) on the same benchmark~\cite{Jiang2021BDA}.  The point is not
+to compete with specialized drift-compensation algorithms, but to exhibit
+the qualitative effect of the world-model calculus: late-batch drift
+degrades accuracy, and replaying additional batches into the posterior
+partially recovers it \emph{without changing the underlying update laws}.
+The replay is a consequence of the evidence algebra, not a separate
+engineering mechanism.
 
-% [CodexTODO] Iterative weighted replay / E-M comparison: a real soft-evidence study, but not a blanket win.
 \paragraph{Soft replay / E-M adaptation.}
-The weighted Gaussian E/M extension can be used here as a
-\emph{soft-evidence adaptation} protocol: batch~1 supplies the anchored
-source posterior, the target batch supplies unlabeled data, the E-step
-computes responsibilities, and the M-step revises each class posterior by
-weighted sufficient statistics.  Iterating this update to a fixed point
-is scientifically informative precisely because it is \emph{not} a
-blanket win.  On the 3-gas task, iterative soft replay (mean
-5.4~iterations, replay weight $\lambda=0.2$) reaches 67.8\% on average,
-below cumulative replay's 73.5\%, but it still improves the hardest
-late-drift batch~10 from 63.6\% (batch~1 only) to 73.3\%.  Seeding the
-same iterative E/M loop from the \emph{most recent labeled batch} rather
-than batch~1 improves the \emph{average} 3-gas accuracy to 70.7\%, but
-it is not uniformly better: on the final batch~10 it collapses to
-37.3\%, showing that unlabeled replay is highly sensitive to the seed
-posterior once the recent labeled batch is itself small or unrepresentative.
-On the full 6-gas task, batch~1-seeded iterative unlabeled adaptation
-drops to 42.0\% on average, while recent-batch seeding recovers to
-50.4\%, still below cumulative replay's 53.3\%.  The lesson is useful:
-weighted soft evidence can help when the current posterior is badly out
-of date, but naive unlabeled adaptation is brittle under strong
-multi-class drift and should be treated as a policy component, not a
-drop-in replacement for labeled replay.  This is exactly the kind of
-replay-policy question the WM experiment layer is meant to express.
+Naive unlabeled adaptation is brittle under strong multi-class drift, and
+this matters more than the positive cases.  The weighted Gaussian E/M
+extension provides a \emph{soft-evidence adaptation} protocol: batch~1
+anchors the source posterior, unlabeled target data drives an E-step over
+responsibilities, and the M-step revises each class posterior by weighted
+sufficient statistics.  On the 3-gas task, iterative soft replay
+($\lambda=0.2$, mean 5.4~iterations) reaches 67.8\% on average---below
+cumulative labeled replay's 73.5\%---but still improves the hardest
+batch~10 from 63.6\% to 73.3\%.  Seeding from the most recent labeled
+batch instead of batch~1 raises the average to 70.7\%, but collapses to
+37.3\% on batch~10 because the recent seed is itself small and
+unrepresentative.  On the full 6-gas task, batch~1-seeded adaptation
+drops to 42.0\%, recent-batch seeding recovers to 50.4\%, and both
+remain below labeled replay's 53.3\%.
+
+The lesson: soft evidence helps when the current posterior is stale, but
+unlabeled adaptation should be treated as a policy component---to be
+invoked selectively---not as a drop-in replacement for labeled replay.
+This is exactly the kind of replay-policy question the world-model
+experiment layer is designed to express.
 
 \begin{figure}[htbp]
 \centering
@@ -1535,11 +1769,11 @@ replay-policy question the WM experiment layer is meant to express.
 \label{fig:gas-xgboost-support}
 \end{figure}
 
-% [CodexTODO] XGBoost-support framing: WM as trust/replay layer rather than replacement classifier.
 \paragraph{Supporting stronger tabular models.}
-The gas benchmark is also the right place to test WM-PLN as a
-\emph{support layer} for a stronger learner rather than as a replacement
-classifier.  Training XGBoost on batch~1 alone gives 67.9\% average
+The world-model calculus is not a replacement for strong discriminative
+classifiers; it is a governance layer that supplies a second epistemic
+signal for abstention and retraining decisions.  The gas benchmark is the
+right place to test this framing.  Training XGBoost on batch~1 alone gives 67.9\% average
 accuracy on the 3-gas task and 46.7\% on the 6-gas task.  If we use the
 batch~1 WM posterior only as a confidence score, the result is worse:
 plain WM confidence is not a good wrapper here.  The more interesting
@@ -1561,7 +1795,6 @@ agreement gating is not a blanket win (AURC 0.1483 vs.\ 0.1374 for
 native XGBoost), but it still isolates a 74.8\% coverage subset at
 75.3\% accuracy.
 
-% [CodexTODO] Sequential gas-policy experiment: XGBoost confidence is the cheapest trigger, WM agreement is the stronger but more label-hungry drift signal.
 The batch-level support story is stronger still once we treat drift as a
 \emph{sequential policy problem}.  We stream batches~2\ldots10 in order,
 retain the batch~1 XGBoost model as the default predictor, and decide at
@@ -1613,7 +1846,6 @@ WM-PLN: not ``beating XGBoost'' as another tabular learner, but
 governing when a stronger learner should be trusted, deferred, or
 replayed.
 
-% [CodexTODO] Compact gas-governance summary table tying together calibration, agreement gating, and retraining policies.
 \begin{table}[htbp]
 \centering
 \caption{Gas drift as a governance problem rather than a raw benchmark.
@@ -1664,7 +1896,7 @@ The module also exposes gas-specific zero-threshold endpoints for
 ethanol, ammonia, and toluene.
 See \codepath{Mettapedia/Logic/PLNWorldModelOrderCostGasPolicyDemo.lean}.
 
-See \codepath{Mettapedia/Logic/PLNGasSensorDriftDemo.lean} (578~lines, 0~sorry).
+See \codepath{Mettapedia/Logic/PLNGasSensorDriftDemo.lean} (652~lines).
 
 \subsection{Applied Example: Steel Plates Fault Classification}
 
@@ -1698,7 +1930,7 @@ empirical claims for Steel in this chapter are the full-dataset
 validation and selective-prediction results below, not the hand-picked
 fixture itself.
 
-\paragraph{Key formal results (all proved, no sorry).}
+\paragraph{Key formal results (all kernel-checked).}
 \begin{enumerate}
 \item \emph{Per-fault sleep consolidation:} batch replay $=$ sequential
   Bayesian update, for each of the three fault types.
@@ -1751,7 +1983,7 @@ the same fixture agrees on the dominant K\_Scratch regime but can
 differ at ambiguous boundary points, since it uses ML point estimates
 rather than the full posterior predictive.
 
-See \codepath{Mettapedia/Logic/PLNSteelFaultDemo.lean} (488~lines, 0~sorry).
+See \codepath{Mettapedia/Logic/PLNSteelFaultDemo.lean} (568~lines).
 
 \paragraph{Full-dataset validation.}
 \label{sec:steel-full}
@@ -1775,7 +2007,6 @@ but not yet formalized.  The 7-class evaluation (all fault types, 1,941~instance
 gives 39.2\% (WM-PLN) vs.\ 51.5\% (GaussianNB), confirming that single-feature
 discrimination is insufficient when classes overlap in LogOfAreas.
 
-% [CodexTODO] Multi-feature Steel comparison against same-split GaussianNB and published benchmark figures.
 \paragraph{Multi-feature extension.}
 Using the same Normal-Gamma posterior independently across all
 27~features (the diagonal/naive Bayes extension of the formalized
@@ -1802,7 +2033,6 @@ the plain GaussianNB baseline under the same split.
 \label{fig:steel-selective}
 \end{figure}
 
-% [CodexTODO] Selective-prediction analysis: confidence/abstention is a more distinctive WM result than raw accuracy alone.
 \paragraph{Selective prediction and abstention.}
 The more distinctive Bayesian result is not raw accuracy but
 \emph{confidence-aware abstention}.  Normalizing the class predictive
@@ -1817,7 +2047,6 @@ better reflection of the WM contribution than plain argmax comparison:
 the posterior state gives a principled abstain/defer signal, not just a
 class label.
 
-% [CodexTODO] Steel selective prediction against calibrated XGBoost: honest contrast with a stronger discriminative learner.
 Against stronger discriminative models, however, the role of WM-PLN is
 more limited on this static benchmark.  Native XGBoost reaches 92.6\%
 accuracy and AURC 0.0126 on the 3-class task, while sigmoid and isotonic
@@ -1865,7 +2094,7 @@ for the Kalman sleep/wake and exceedance laws.  The headline empirical
 claim for NAB is the full-corpus negative boundary below, not the small
 fixture.
 
-\paragraph{Key formal results (all proved, no sorry).}
+\paragraph{Key formal results (all kernel-checked).}
 \begin{enumerate}
 \item \emph{Sleep $=$ Wake on real data:} batch replay of calm then hot
   readings yields the same posterior as sequential online filtering.
@@ -2013,7 +2242,7 @@ contributes chiefly as audit/governance instrumentation:
   budgets are violated near anomaly windows.
 \end{enumerate}
 
-See \codepath{Mettapedia/Logic/PLNNABSleepDemo.lean} (327~lines, 0~sorry).
+See \codepath{Mettapedia/Logic/PLNNABSleepDemo.lean} (344~lines).
 
 \subsection{Applied Example: Good Judgment Project Forecast Aggregation}
 
@@ -2339,6 +2568,37 @@ The key features:
 \item The assumptions are \emph{checkable}---for a BN model class, they
   reduce to d-separation queries on the DAG.
 \end{enumerate}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={font=\small},
+  box/.style={draw, rounded corners=3pt, align=center,
+              minimum height=11mm, minimum width=28mm},
+]
+\node[box, fill=blue!6] (model) {BN Model\\Class};
+\node[box, fill=yellow!12, right=14mm of model] (dsep) {d-sep\\check};
+\node[box, fill=green!10, right=14mm of dsep] (gate) {$\Sigma$ gate\\discharged};
+\node[box, fill=green!10, right=14mm of gate] (rule) {Compiled\\rewrite};
+
+\draw[->, thick] (model) -- (dsep);
+\draw[->, thick] (dsep) -- node[above, font=\tiny] {pass} (gate);
+\draw[->, thick] (gate) -- (rule);
+
+% fail path
+\node[box, fill=red!8, below=14mm of dsep] (block) {$\Sigma$ blocked};
+\node[box, fill=gray!10, right=14mm of block] (fallback) {Complete\\WM query};
+
+\draw[->, thick] (dsep) -- node[right, font=\tiny] {fail} (block);
+\draw[->, thick] (block) -- (fallback);
+\end{tikzpicture}
+\caption{The $\Sigma$-guarded rewrite pattern.  A compiled rule fires only
+when d-separation (or other structural checks) discharge its side conditions.
+If the gate is blocked, the system falls back to a complete world-model query
+rather than applying an unsound shortcut.}
+\label{fig:sigma-guarded-flow}
+\end{figure}
 
 \section{The Xi Rule Registry}
 
@@ -2705,6 +2965,21 @@ Pathfinder & Lymph-node pathology diagnosis & A hand-built Bayesian network with
 \label{tab:bn-benchmark-intro}
 \end{table}
 
+\paragraph{v2 benchmark design.}
+The current benchmark (v2) is organized around three physically
+separated table families: a \emph{state table} listing every
+(path, context-variant) pair; an \emph{action table} enumerating legal
+decisions per state (continue-rule, continue-soft, reveal, fallback,
+abstain); and an \emph{eval table} containing exact BN ground truth
+that is hidden from policy code.  Oracle and blind decision policies
+operate on the \emph{same} master state set; the information-set
+separation is enforced by physical column projection---the blind
+decision CSV physically lacks all exact-probability and
+structural-admissibility columns, making oracle leaks impossible by
+construction.  Each state carries a \code{query\_kind} tag (broad vs
+refined) and a deterministic hash-based \code{split\_id}
+(train/val/test) for reproducible cross-validation.
+
 \[
   (\text{query}, \text{value}, \Sigma, \text{provenance}, g?, \delta?,
     \text{fallback}?).
@@ -3034,7 +3309,7 @@ $0.074$ &
 \bottomrule
 \end{tabular}
 \renewcommand{\arraystretch}{1}
-\caption{Compact topology-conditioned higher-order split in the widened benchmark sweep.  One-shot broad-query winners are often anchored regime-mixture actions, while refined-query winners still mostly come from explicit context completion or exact fallback.}
+\caption{Compact topology-conditioned higher-order split in the widened benchmark sweep (v1 prototype; v2 restructured results use the state/action/eval pipeline described below).  One-shot broad-query winners are often anchored regime-mixture actions, while refined-query winners still mostly come from explicit context completion or exact fallback.}
 \label{tab:second-third-order-query-split}
 \end{table}
 
@@ -3104,49 +3379,61 @@ the original broad query and incurs large broad-query regret. \\
 \bottomrule
 \end{tabular}
 \renewcommand{\arraystretch}{1}
-\caption{Stabilized higher-order benchmark takeaways after explicit regime-mixture continuation, PLN-style multi-support revision, reveal-as-value-of-information evaluation, and higher-order chain composition.  The two numbers in the multi-support and VOI rows correspond to the hub-dominated and loopy-dense Pathfinder slices respectively.}
+\caption{Stabilized higher-order benchmark takeaways (v1 prototype; v2 restructured results use the state/action/eval pipeline) after explicit regime-mixture continuation, PLN-style multi-support revision, reveal-as-value-of-information evaluation, and higher-order chain composition.  The two numbers in the multi-support and VOI rows correspond to the hub-dominated and loopy-dense Pathfinder slices respectively.}
 \label{tab:stabilized-higher-order-benchmark}
 \end{table}
 
-To keep the setup fully auditable, we make the protocol explicit here.
-The pipeline is:
-\code{scripts/wm\_pln\_pathfinder\_context\_regimes.py}
+To keep the setup fully auditable, we make the v2-clean protocol explicit here.
+The pipeline is a seven-script sequence, each consuming the output of
+the previous step:
+\code{wm\_pln\_v2c\_build\_master\_suite.py}
 $\rightarrow$
-\code{scripts/wm\_pln\_second\_order\_admissibility.py}
+\code{wm\_pln\_v2c\_build\_actions.py}
 $\rightarrow$
-\code{scripts/wm\_pln\_third\_order\_trust.py}
+\code{wm\_pln\_v2c\_build\_eval.py}
 $\rightarrow$
-\code{scripts/wm\_pln\_regime\_mixture\_eval.py}
+\code{wm\_pln\_v2c\_project\_views.py}
 $\rightarrow$
-\code{scripts/wm\_pln\_reveal\_voi\_eval.py}
+\code{wm\_pln\_v2c\_train\_blind\_models.py}
 $\rightarrow$
-\code{scripts/wm\_pln\_higher\_order\_chain\_composition.py}.
-The corresponding stable artifacts are written under
-\codepath{results/second\_order\_admissibility/}, including
-\code{pathfinder\_context\_regimes.csv},
-\code{second\_order\_admissibility.csv},
-\code{third\_order\_trust\_summary.csv},
-\code{regime\_mixture\_eval\_winners.csv},
-\code{reveal\_voi\_eval\_summary.csv},
-\code{multi\_support\_revision\_summary.csv}, and
-\code{higher\_order\_chain\_composition\_summary.csv}.
+\code{wm\_pln\_v2c\_run\_policies.py}
+$\rightarrow$
+\code{wm\_pln\_v2c\_evaluate.py}.
+All scripts live under \codepath{scripts/} and reuse the existing
+BN-inference backbone (\code{wm\_pln\_bn\_common.py}),
+topology utilities (\code{wm\_pln\_second\_order\_common.py}),
+and motif catalogues
+(\code{wm\_pln\_pathfinder\_motifs.py},
+\code{wm\_pln\_hailfinder\_motifs.py}).
+The v2-clean artifacts are written to \codepath{results/v2\_clean/},
+with per-dataset state, action, eval, decision-oracle, decision-blind,
+policy, and results CSVs.
+The v2 prototype is preserved under \codepath{results/v2/} and
+the v1 prototype under \codepath{results/v1\_archive/} for provenance.
 \par
-The one-shot continuation policy set in this pass is
-\code{force\_rule\_only\_continue},
-\code{force\_soft\_continue},
-\code{marginalization\_aware\_soft\_continue},
-\code{explicit\_regime\_mixture\_continue},
-\code{force\_reveal\_context},
-\code{force\_local\_exact\_fallback}, and
-\code{adaptive\_topology\_broad\_planner}.
-The full-chain policy set is
-\code{exact\_only\_chain},
-\code{rule\_only\_chain},
-\code{soft\_chain},
-\code{explicit\_regime\_mixture\_chain},
-\code{reveal\_then\_exact},
-\code{fallback\_chain}, and
-\code{adaptive\_chain}.
+Five contract-level changes distinguish v2-clean from the v2 prototype:
+(1)~\code{oracle\_context\_complete} is removed from the shared
+decision substrate---only blind-legitimate context variants appear;
+(2)~reveal is a \emph{real transition}: the controller pays the reveal
+cost and the follow-up action is evaluated on the target state's exact
+BN ground truth (with a penalty for EXTERNAL or missing targets);
+(3)~path-family--level splits guarantee nonempty train/val/test partitions,
+and headline numbers report test-only results;
+(4)~blind learning is \emph{action-conditional}: XGBoost predicts
+per (state, action) pair, not per state, so different actions from the
+same state receive different \code{g\_hat\_action\_error} predictions;
+(5)~oracle and blind decision views are \emph{physically separate}
+CSV projections---the blind view cannot contain oracle columns.
+\par
+The policy set covers both oracle and blind lanes:
+\code{adaptive\_oracle}/\code{adaptive\_blind},
+\code{force\_rule\_only},
+\code{force\_soft},
+\code{force\_reveal},
+\code{force\_fallback}, and
+\code{force\_abstain}.
+Both lanes operate on the same $50$~Pathfinder +
+$45$~Hailfinder master state set ($95$ states total).
 \par
 The scoring function used by the regime-mixture and chain benchmarks is
 \[
@@ -3157,9 +3444,8 @@ The scoring function used by the regime-mixture and chain benchmarks is
 - 0.08\cdot \text{plan-cost}
 - \lambda_{\text{reveal}}\cdot \#\text{reveals},
 \]
-with $\lambda_{\text{reveal}}=0.12$ for broad-query utility,
-$0.04$ for refined-query fidelity, and $0.08$ for the balanced
-objective.  Action-cost parameters are
+with $\lambda_{\text{reveal}}=0.05$ (a single balanced objective).
+Action-cost parameters are
 \[
 \begin{aligned}
 \text{hard} &= 0.8 + 0.6\cdot \text{edges},\\
@@ -3174,26 +3460,21 @@ statistics in the benchmark scripts:
 \emph{hub-dominated} if \code{Fault} is on-path or max node degree
 $\ge 50$; \emph{loopy-dense} if downstream multi-parent count $\ge 2$ or
 mean local branching $\ge 4$.
-The widened Pathfinder suite in this pass is $16$ path families
-($4$ anchors + $12$ discovered) and $77$ regime rows
-($16$ context-missing, $16$ hub-only, $16$ alt-support-only,
-$16$ oracle-context-complete, $13$ context-pair).  Importantly, those
-$12$ discovered paths come from a deterministic curated shortlist in
-\code{wm\_pln\_pathfinder\_context\_regimes.py}; this is substantially
-wider than the original four-path slice, but it is still not an
-exhaustive Pathfinder crawl.
-
-The guard-model sweep now adds broader motif coverage and a calibrated
-cross-network control layer.  The current dataset has $207$ evaluated
-rows over $142$ motif groups ($62$ Hailfinder, $145$ Pathfinder).  As a
-coverage result, Pathfinder is exactly where we expected the stress to
-appear: every Pathfinder row requires extra context support, and
-$55.2\%$ of rows are context-missing cases where contraction is blocked.
-For cross-network operation, a conformal shrink layer is now applied to
-the calibrated guard score before policy decisions; this materially
-improves calibration in the harder Hailfinder$\to$Pathfinder transfer
-setting while preserving the semantic contract that exact BN answers
-remain the truthmaker.
+The v2-clean Pathfinder suite has $10$ path families
+($4$ anchors + $6$ discovered) expanded into $50$ states via $5$
+blind-legitimate context variants (context-missing, hub-only,
+context-partial, alternating-partial, nonhub-only).
+The Hailfinder suite has $9$ motif families ($5$ exact chains/forks,
+$2$ long paths, $2$ collider negatives) expanded into $45$ states.
+The $95$ total states span both topology classes
+(hub-dominated and loopy-dense Pathfinder slices;
+all Hailfinder motifs are tree-like or sparse-chain-like) and all
+blind-legitimate context completeness levels.
+The blind guard model is trained via XGBoost + isotonic calibration
+on topology-derived features (path length, max node degree, sigma
+count, context completeness) \emph{plus} action-level features
+(action type, cost, reveal metadata) to predict action-conditional
+error from the blind decision view alone.
 
 \begin{table}[ht]
 \centering
@@ -3210,7 +3491,7 @@ Cross P$\to$H guard transfer & 62 & -- & 0.629 & 0.371 & 0.758 & 0.119$\to$0.110
 \bottomrule
 \end{tabular}
 \renewcommand{\arraystretch}{1}
-\caption{Motif-coverage and calibrated guard-transfer summary.
+\caption{Motif-coverage and calibrated guard-transfer summary (v1 prototype; v2 uses the state/action/eval pipeline with physical column projection).
 ``Hard'' and ``Blocked'' are structural admissibility rates;
 $\epsilon$-exact uses $\epsilon=0.02$. The conformal guard is operational
 confidence shaping, not posterior semantics.}
@@ -3227,33 +3508,55 @@ comparison against the truthmaker, and where it is merely operational.
 
 \begin{center}
 \fbox{\begin{minipage}{0.92\textwidth}
-\textbf{Reproducibility block.}
+\textbf{Reproducibility block (v2-clean pipeline).}
 \small
-\textit{Scripts.}
-\codepath{scripts/wm\_pln\_pathfinder\_prob\_guarded.py}
-\codepath{scripts/wm\_pln\_hailfinder\_prob\_guarded.py}
-\codepath{scripts/wm\_pln\_guard\_xgb\_dataset.py}
-\codepath{scripts/wm\_pln\_guard\_xgb\_train.py}
-\codepath{scripts/wm\_pln\_guard\_xgb\_eval.py}
+\textit{Scripts} (run in order):\\
+\codepath{scripts/wm\_pln\_v2c\_build\_master\_suite.py}\\
+\codepath{scripts/wm\_pln\_v2c\_build\_actions.py}\\
+\codepath{scripts/wm\_pln\_v2c\_build\_eval.py}\\
+\codepath{scripts/wm\_pln\_v2c\_project\_views.py}\\
+\codepath{scripts/wm\_pln\_v2c\_train\_blind\_models.py}\\
+\codepath{scripts/wm\_pln\_v2c\_run\_policies.py}\\
+\codepath{scripts/wm\_pln\_v2c\_evaluate.py}
 
 \smallskip
-\textit{Results.}
-\codepath{results/pathfinder/pathfinder\_prob\_guarded.csv}
-\codepath{results/hailfinder/hailfinder\_prob\_guarded.csv}
-\codepath{results/guard\_model/guard\_dataset.csv}
-\codepath{results/guard\_model/metrics.json}
-\codepath{results/guard\_model/motif\_coverage\_by\_dataset.csv}
-\codepath{results/guard\_model/motif\_coverage\_by\_dataset\_motif.csv}
+\textit{Results (test-only headlines).}
+\codepath{results/v2\_clean/pathfinder\_states.csv} (50 states)\\
+\codepath{results/v2\_clean/hailfinder\_states.csv} (45 states)\\
+\codepath{results/v2\_clean/*\_decision\_oracle.csv} (all columns)\\
+\codepath{results/v2\_clean/*\_decision\_blind.csv} (topology + action features)\\
+\codepath{results/v2\_clean/*\_results.csv} (per-state evaluation)\\
+\codepath{results/v2\_clean/*\_results\_summary\_test.csv} (test-only)\\
+\codepath{results/v2\_clean/guard\_model/} (blind XGBoost artifacts)\\
+\codepath{results/v2\_clean/benchmark\_contract\_audit.txt}
 
 \smallskip
-\textit{Lean demo.}
-\codepath{Mettapedia/Logic/PLNProbGuardedAdmissibilityDemo.lean}
-
-\smallskip
-\textit{Lean regression.}
+\textit{Lean theory.}
+\codepath{Mettapedia/Logic/PLNProbGuardedAdmissibilityDemo.lean}\\
 \codepath{Mettapedia/Logic/PLNProbGuardedAdmissibilityRegression.lean}
+
+\smallskip
+\textit{Prior versions.}
+\codepath{results/v2/} (v2 prototype baseline)\\
+\codepath{results/v1\_archive/} (v1 superseded results)
 \end{minipage}}
 \end{center}
+
+\paragraph{Related benchmark literature.}
+The Pathfinder and Hailfinder networks originate from the bnlearn
+repository~\cite{ScutariBnRepository} and have long served as test cases
+for exact BN inference algorithms.  Standard BN inference benchmarks
+(e.g.\ the UAI approximate inference competitions, ProbModelS) evaluate
+\emph{inference algorithm quality}---how accurately a solver recovers
+posterior marginals.  Our benchmark evaluates a different object:
+\emph{inference control quality}---given an inference engine that can
+already compute exact posteriors, how well does a higher-order
+controller decide when to continue, soften, reveal context, fall back,
+or abstain?  This control-level evaluation is closer in spirit to active
+learning and value-of-information frameworks than to solver benchmarks.
+The blind guard model connects to conformal prediction as the
+distribution-free bridge from learned topology features to certified
+admissibility estimates.
 
 \subsection{Hetionet / Rephetio: the next flagship benchmark}
 
@@ -3586,6 +3889,164 @@ See \codepath{Mettapedia/Logic/PLNWorldModelInstitution.lean} and
 \codepath{Mettapedia/Logic/PLNWorldModelCategoricalBridge.lean}.
 
 
+\section{Certified Chaining: Fundamental Limitations}
+\label{sec:certified-chaining-nogo}
+
+The previous sections characterize how individual inference steps are
+certified and how errors propagate.  A natural question is whether such
+per-step certificates can be \emph{composed} into chain-length-independent
+guarantees.  \xiPLN{} formalizes five theorems showing this is impossible in
+general.  Each is a clean no-go result proved without sorries.
+
+In the current theorem surface these are not merely schematic warnings.
+The no-go layer now includes a graph-parametric strengthening of the
+topology--CPT gap and a chain-with-resets strengthening of variance
+accumulation, together with a small higher-order bridge stating the design
+lesson explicitly: topology-only proxies cannot certify nontrivial residual
+bounds, and unrevealed higher-order chains spend a variance budget until an
+explicit reveal or fallback reset is taken.  Those strengthened forms live in
+\codepath{Mettapedia/Logic/PLNTopologyCPTNoGo.lean},
+\codepath{Mettapedia/Logic/PLNVarianceChainNoGo.lean}, and
+\codepath{Mettapedia/Logic/PLNHigherOrderNoGoBridge.lean}.
+
+\subsection*{Coverage Collapse}
+
+\begin{theorem}[Coverage collapse (\codepath{PLNCoverageCollapseNoGo})]
+\label{thm:coverage-collapse}
+Let $\alpha \in [0,1]$ and let $p_1,\dots,p_n \in [0, 1-\alpha]$ be
+per-step coverage probabilities.  Then the joint coverage satisfies:
+\[
+  \prod_{i=1}^{n} p_i \;\le\; (1-\alpha)^n.
+\]
+For any positive miss rate $\alpha > 0$ this bound tends to $0$ as
+$n \to \infty$.  Moreover, for any desired coverage $\varepsilon > 0$ there
+exists $N$ such that $(1-\alpha)^n < \varepsilon$ for all $n \ge N$.
+
+The bound is achieved by conformal prediction with constant miscoverage
+rate $\alpha$.
+\end{theorem}
+
+\textit{Design implication.}  Certified per-step guarantees cannot be
+composed into chain-length-independent coverage certificates.  Adaptive
+truncation is necessary.
+
+\subsection*{Sensitivity Amplification}
+
+\begin{theorem}[Lipschitz chain amplification (\codepath{PLNSensitivityNoGo})]
+\label{thm:sensitivity-amplification}
+Let $\alpha$ be a pseudo-extended-metric space.  If each step function
+$f_i : \alpha \to \alpha$ is $L_i$-Lipschitz, then the composed chain
+$f_{n-1} \circ \cdots \circ f_0$ is $\bigl(\prod_{i} L_i\bigr)$-Lipschitz.
+For a uniform chain with all $L_i = K > 1$, the amplification factor is
+$K^n$, which is unbounded.
+\end{theorem}
+
+The proof uses induction with \texttt{LipschitzWith.comp} at each step.
+The divergence corollary follows from
+\texttt{tendsto\_pow\_atTop\_atTop\_of\_one\_lt}.
+
+\textit{Design implication.}  Certified per-step sensitivity bounds cannot
+be composed into chain-length-independent error certificates when $K > 1$.
+
+\subsection*{Variance Accumulation}
+
+\begin{theorem}[Variance accumulation (\codepath{PLNVarianceChainNoGo})]
+\label{thm:variance-accumulation}
+For a non-degenerate regime mixture (two regimes with distinct query values
+and positive weights), the mixture variance is strictly positive.
+For a chain of $n$ inference steps each with mixture variance at least
+$\delta > 0$:
+\[
+  \sum_{i=1}^{n} \mathrm{Var}_i \;\ge\; n \cdot \delta.
+\]
+\end{theorem}
+
+The positivity result establishes that if $q(r_1) \ne q(r_2)$, then
+at least one of $r_1, r_2$ must deviate from the mixture mean, contributing
+a strictly positive term $w(r) \cdot (q(r) - \mu)^2$.  The accumulation bound
+then follows from \texttt{Finset.sum\_le\_sum}.
+
+\textit{Design implication.}  Long chains over unresolved regime mixtures
+accumulate irreducible uncertainty linearly in chain length.
+
+The strengthened theorem layer makes this operational rather than merely
+asymptotic.  In
+\codepath{Mettapedia/Logic/PLNVarianceChainNoGo.lean},
+\code{variance\_accumulation\_along\_unrevealed\_chain} proves linear
+accumulation on explicit continue-only chain segments, while
+\code{reveal\_resets\_variance\_accumulation} and
+\code{fallback\_resets\_variance\_accumulation} show that reveal and fallback
+act as exact reset operations.  The bridge theorem
+\code{unrevealedHigherOrderChain\_requires\_varianceBudget} exposes this
+constraint directly to the certified higher-order chaining layer.
+
+\subsection*{Topology--CPT Gap}
+
+\begin{theorem}[Topology--CPT gap (\codepath{PLNTopologyCPTNoGo})]
+\label{thm:topology-cpt-gap}
+For a fixed Bayesian-network topology, define the \emph{conditioning
+residual} of a CPT as $|P(Y{=}1 \mid X{=}1) - P(Y{=}1 \mid X{=}0)|$.
+\begin{enumerate}
+  \item The same topology $X \to Y$ admits CPTs with residual $0$ (independence)
+  and $4/5$ (strong dependence), so topology alone does not determine the
+  residual.
+  \item For any claimed topology-only bound $b < 1$, there exists a CPT
+  (namely $P(Y{=}1 \mid X{=}1) = 1$, $P(Y{=}1 \mid X{=}0) = 0$) whose
+  conditioning residual exceeds $b$.
+  \item Any function $f$ that universally upper-bounds the conditioning
+  residual must satisfy $f \ge 1$, rendering the bound trivial since all
+  residuals lie in $[0,1]$.
+\end{enumerate}
+\end{theorem}
+
+\textit{Design implication.}  Topology-based proxies for conditioning
+residuals cannot provide certified non-trivial bounds without additional
+assumptions on the CPT parameters.
+
+The strengthened parametrized form is the important one for future work.  The
+new theorem
+\code{topology\_bound\_not\_tight\_of\_binary\_edge\_fragment} says that any
+Boolean Bayesian network topology containing a binary parent--child fragment
+inherits the same obstruction: one can keep the graph fixed and vary only the
+CPT parameters to force arbitrarily different conditioning residuals.  The
+higher-order bridge theorem \code{topologyOnlyProxy\_not\_certifying} then
+states the practical corollary in the certified chaining layer: topology-only
+summaries cannot by themselves justify nontrivial continuation certificates.
+
+\subsection*{Regime Underdetermination}
+
+\begin{theorem}[Regime underdetermination (\codepath{PLNRegimeUnderdetermination})]
+\label{thm:regime-underdetermination}
+Let $R$ be a finite regime space and $f : R \to \mathrm{Fin}(k)$ a topology
+feature map with $k < |R|$.  Then by the pigeonhole principle there exist
+distinct regimes $r_1 \ne r_2$ with $f(r_1) = f(r_2)$.  Any posterior that
+depends only on the feature value assigns equal weight to $r_1$ and $r_2$;
+consequently, no topology-only posterior can concentrate to a single regime
+in the collision class.  Moreover, some feature bucket contains at least two
+regimes.
+\end{theorem}
+
+The proof applies Mathlib's \texttt{Fintype.exists\_ne\_map\_eq\_of\_card\_lt}
+directly.
+
+\textit{Design implication.}  If the number of latent regimes exceeds the
+expressive capacity of the topology feature map, Bayesian inference on
+topology features alone cannot resolve the posterior.  The residual
+uncertainty over indistinguishable regimes is irreducible.
+
+\medskip
+The five results collectively characterize the boundary of what certified
+PLN chaining can guarantee.  They are proved in:
+\begin{itemize}
+  \item \codepath{Mettapedia/Logic/PLNCoverageCollapseNoGo.lean}
+  \item \codepath{Mettapedia/Logic/PLNSensitivityNoGo.lean}
+  \item \codepath{Mettapedia/Logic/PLNVarianceChainNoGo.lean}
+  \item \codepath{Mettapedia/Logic/PLNTopologyCPTNoGo.lean}
+  \item \codepath{Mettapedia/Logic/PLNRegimeUnderdetermination.lean}
+  \item \codepath{Mettapedia/Logic/PLNHigherOrderNoGoBridge.lean}
+\end{itemize}
+
+
 %% ═══════════════════════════════════════════════════════════════════
 \part{Main Extensions}
 \label{part:extensions}
@@ -3616,6 +4077,35 @@ The key point is that these arrows mean different things:
   consequence, and rewrite structure are transported into PLN-style evidence
   extraction over world-model states.
 \end{itemize}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={font=\small},
+  box/.style={draw, rounded corners=3pt, align=center,
+              minimum height=12mm, minimum width=24mm},
+]
+\node[box, fill=gray!12] (set) {Set\\Semantics};
+\node[box, fill=blue!8, right=26mm of set] (hol) {HOL};
+\node[box, fill=green!8, right=26mm of hol] (wm) {WM};
+\node[box, fill=yellow!10, below=18mm of hol] (fol) {FOL};
+
+\draw[->, thick] (set) --
+  node[above, font=\scriptsize] {grounding} (hol);
+\draw[<->, thick] (hol) --
+  node[above, font=\scriptsize] {lens} (wm);
+\draw[->, thick] (fol) --
+  node[right, font=\scriptsize] {embedding} (hol);
+\draw[->, thick, dashed, gray] (set) to[out=-30, in=180]
+  node[below, font=\tiny, sloped] {via FOL} (fol);
+\end{tikzpicture}
+\caption{Higher-order architecture.  Set-theoretic structures \emph{ground}
+HOL via Henkin models.  FOL \emph{embeds} into HOL as a sublanguage.  HOL
+and the world model are connected by a bidirectional \emph{lens} that
+transports satisfaction and evidence extraction.}
+\label{fig:higher-order-architecture}
+\end{figure}
 
 This gives a cleaner and more faithful foundation for higher-order PLN than
 the older story in which higher-order talk was largely reduced immediately to
@@ -3936,6 +4426,138 @@ separate belief-process shadow that tracks the same benchmark query on the
 designated sample.  The paired regression surface in
 \codepath{Mettapedia/Logic/PLNProbHOLPlannerBridgeRegression.lean} then records
 both the positive tracking fixture and the negative expanded-sample guardrail.
+
+\subsection{Certified Higher-Order Chaining from Estimated Variables}
+
+The previous checkpoint still left one gap between semantic higher-order
+probability and actual higher-order chaining: we had a semantic object and a
+planner-facing shadow, but not yet a theoremic contract explaining how
+\emph{estimated} second-/third-order quantities may legitimately drive
+continue/reveal/fallback decisions.  The repository now contains that layer.
+The guiding principle is deliberately strict.  Lean does \emph{not} formalize
+XGBoost internals, softmax heuristics, or benchmark-specific coefficients.
+Instead it formalizes the certified interfaces that any empirical estimator
+must satisfy before its outputs may enter the chaining theorems.
+
+The current theorem surface is:
+\begin{itemize}
+\item \codepath{Mettapedia/Logic/PLNHigherOrderCertifiedEstimates.lean},
+  defining \texttt{CertifiedAdmissibilityEstimate},
+  \texttt{CertifiedTrustEstimate}, and
+  \texttt{CertifiedRegimePosterior};
+\item \codepath{Mettapedia/Logic/PLNHigherOrderInformationSets.lean},
+  making the blind/oracle split theorem-visible through
+  \texttt{BlindFeatures}, \texttt{OracleFeatures}, and
+  \texttt{BlindPolicy};
+\item \codepath{Mettapedia/Logic/PLNHigherOrderVarianceUpdate.lean} and
+  \codepath{Mettapedia/Logic/PLNHigherOrderPosteriorUpdate.lean},
+  formalizing enriched regime uncertainty, law-of-total-variance reveal, and
+  theorem-facing Bayesian posterior update;
+\item \codepath{Mettapedia/Logic/PLNHigherOrderCalibrationContracts.lean},
+  giving the conformal-style bridge from point predictions to certified
+  admissibility intervals;
+\item \codepath{Mettapedia/Logic/PLNHigherOrderChainBounds.lean},
+  \codepath{Mettapedia/Logic/PLNHigherOrderDecisionTheorems.lean}, and
+  \codepath{Mettapedia/Logic/PLNHigherOrderIndependentChainBounds.lean},
+  which turn those certified interfaces into compositional chain bounds,
+  continue/reveal/fallback/abstain theorems, and optional stronger
+  root-sum-of-squares bounds under explicit assumptions; and
+\item \codepath{Mettapedia/Logic/PLNGWASHigherOrderBridge.lean}, which already
+  instantiates the same abstract machinery for the upcoming
+  fine-mapping/tissue/mechanism/trust GWAS benchmark family.
+\end{itemize}
+
+The central mathematical enrichment is that a higher-order step may now carry
+both a finite regime posterior and \emph{within-regime variance}.  If $w_r$ are
+regime weights, $q_r$ branch query values, and $\sigma_r^2$ within-regime
+variances, then the theoremic step state satisfies the law of total variance:
+\[
+  \underbrace{\mathrm{Var}_{\mathrm{total}}}_{\text{before reveal}}
+  =
+  \underbrace{\sum_r w_r (q_r - m)^2}_{\text{between-regime variance}}
+  +
+  \underbrace{\sum_r w_r \sigma_r^2}_{\text{expected within-regime variance}},
+  \qquad
+  m = \sum_r w_r q_r.
+\]
+In Lean this is \texttt{lawOfTotalVariance}.  The reveal action is therefore
+no longer only a planner heuristic.  It has an exact theoremic gain:
+\[
+  \text{expected post-reveal variance}
+  =
+  \sum_r w_r \sigma_r^2,
+  \qquad
+  \text{reveal variance reduction}
+  =
+  \sum_r w_r (q_r - m)^2.
+\]
+So reveal is justified precisely when its cost is smaller than the
+\emph{between-regime} variance it can remove; see
+\texttt{revealPreferred\_if\_cost\_lt\_betweenVariance} in
+\codepath{Mettapedia/Logic/PLNHigherOrderVarianceUpdate.lean}.
+
+The post-reveal state is now theoremically modeled as well.  A reveal updates
+the regime posterior by a Bayesian rule
+\[
+  \pi(r \mid x, c)
+  =
+  \frac{\pi(r \mid x)\,P(c \mid r)}
+       {\sum_{r'} \pi(r' \mid x)\,P(c \mid r')},
+\]
+and the new theorem surface proves validity, concentration under likelihood
+gaps, and that expected post-reveal variance is no worse than prior variance.
+This matters because the higher-order controller is no longer forced to talk as
+if reveal simply ``changes the query'' by fiat; it can instead refer to an
+explicit posterior-update law on the latent regime object itself.
+
+The bridge from learned estimates to theoremic certificates is now also clean.
+A learned point prediction $\hat g$ is not inserted directly into the theory.
+Instead a conformal-style certificate $(\alpha, q)$ yields the calibrated
+interval
+\[
+  [\max(0,\hat g - q), \min(1,\hat g + q)]
+\]
+with coverage $1-\alpha$ and certified error bound $q$.  The theorem layer only
+consumes the resulting certified interval object.  That is the right separation
+of concerns: the empirical estimator may be messy, but its theorem-facing use
+is clean only after explicit calibration or some other certification procedure.
+
+Once these pieces are present, the higher-order variables really can drive
+PLN-style chaining.  Second-order quantities become certified
+admissibility/regime objects rather than ad hoc guard scores.  Third-order
+quantities become certified trust intervals and penalties that conservatively
+widen or tighten the chain certificate rather than mystical controller knobs.
+The default chain laws remain conservative---additive error accumulation and
+bottleneck-style admissibility---but the repository now also proves optional
+stronger laws such as
+\texttt{chainError\_le\_rss\_of\_quadraticCertificate} under explicit extra
+assumptions.  So the formal story is not ``always chain optimistically''; it is
+``chain as aggressively as your certified higher-order summaries justify''.
+
+Most importantly for future benchmark work, the blind/oracle separation is now
+part of the theorem layer rather than merely a CSV hygiene convention.  A blind
+policy literally has type
+\[
+  \texttt{BlindFeatures} \to \texttt{HigherOrderDecision},
+\]
+while oracle-only quantities live in \texttt{OracleFeatures}.  So the theory
+can state, by construction, that runtime-blind policies do not have semantic
+truthmaker access at action time, even though oracle information may still be
+used post hoc for evaluation.  This is the right discipline for the
+runtime-blind benchmark lane and for the upcoming GWAS chaining experiments.
+
+The net result is that the higher-order story is now much closer to a full
+``yes'' on the question that motivated this whole reconstruction.  Explicit
+second-/third-order variables can indeed unlock PLN-style chaining, but only
+when they are consumed through certified composition and decision theorems.  We
+do \emph{not} recover the old unrestricted local truth-value algebra.  We get a
+stronger replacement: semantic higher-order regime uncertainty, theoremic
+reveal/update laws, calibrated contracts for estimated inputs, typed
+information-set separation, and GWAS-ready abstract latent coordinates.  This
+is already exercised concretely in
+\codepath{Mettapedia/Logic/PLNHigherOrderCertifiedChainingRegression.lean},
+including continuation, reveal, fallback, abstain, conformal-certificate, and
+GWAS-shaped canaries.
 
 \section{Logical-Induction-Ready Dynamic Belief Infrastructure}
 
@@ -4581,6 +5203,44 @@ is formalized via an explicit \code{GreedyChain} inductive construction.
 
 See \codepath{Mettapedia/Logic/PremiseSelectionCoverage.lean}.
 
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={font=\small},
+  box/.style={draw, rounded corners=3pt, align=center,
+              minimum height=11mm},
+  stage/.style={box, fill=blue!8, minimum width=24mm},
+  data/.style={box, fill=gray!8, minimum width=20mm},
+]
+\node[data] (kb) {Knowledge\\Base};
+\node[stage, right=10mm of kb] (sel) {Selector\\{\scriptsize(greedy)}};
+\node[data, right=10mm of sel] (prem) {Ranked\\Premises};
+\node[stage, right=10mm of prem] (rew) {$\Sigma$-Rewrite\\{\scriptsize(compiled)}};
+\node[data, right=10mm of rew] (res) {Result};
+\node[stage, right=10mm of res] (thr) {Threshold\\{\scriptsize(confidence)}};
+
+\draw[->, thick] (kb) -- (sel);
+\draw[->, thick] (sel) -- (prem);
+\draw[->, thick] (prem) -- (rew);
+\draw[->, thick] (rew) -- (res);
+\draw[->, thick] (res) -- (thr);
+
+% end-to-end bracket
+\draw[decorate, decoration={brace, amplitude=5pt, mirror},
+      thick, green!50!black]
+  ($(sel.south west) + (0, -4mm)$) --
+  node[below=6pt, font=\scriptsize, green!50!black]
+    {composed end-to-end correctness theorem}
+  ($(thr.south east) + (0, -4mm)$);
+\end{tikzpicture}
+\caption{The inference-control pipeline.  A selector chooses premises from
+the knowledge base; a $\Sigma$-guarded compiled rewrite produces a result;
+a threshold accepts or rejects based on confidence.  The composed pipeline
+has a single end-to-end correctness theorem.}
+\label{fig:inference-control-pipeline}
+\end{figure}
+
 \section{Coverage Surrogate Boundaries}
 
 \begin{theorem}[Coverage/cardinality surrogate no-go (\claimBoundary{})]
@@ -4651,6 +5311,11 @@ This chapter provides a compact, family-level summary of the formalization.
 
 \begin{itemize}
 \item Higher-order reduction with corrected side conditions.
+\item Certified higher-order chaining from estimated variables:
+  information-set typing, law-of-total-variance reveal, Bayesian
+  regime update, calibration contracts, certified
+  continue/reveal/fallback/abstain rules, and stronger
+  root-sum-of-squares bounds under explicit assumptions.
 \item Finite-model quantifier and fuzzy quantifier semantics.
 \item Intensional inheritance with ASSOC/PAT typed WM grounding.
 \item Temporal/causal inference as WM instance.
@@ -4665,6 +5330,14 @@ This chapter provides a compact, family-level summary of the formalization.
 \item BRGI optimization with feasible-set characterization.
 \item Premise-selection coverage with submodularity and greedy guarantee.
 \item Coverage surrogate no-go.
+\item \textbf{Certified chaining no-go family} (five theorems):
+  coverage collapse, Lipschitz sensitivity amplification, variance
+  accumulation, topology--CPT gap, and regime underdetermination.
+  See Section~\ref{sec:certified-chaining-nogo}.  The current canonical
+  surface also includes the strengthened parametric forms and their
+  higher-order bridge: graph-parametric topology/CPT impossibility,
+  chain-with-resets variance accumulation, topology-only non-certification,
+  and unrevealed-chain variance-budget consumption.
 \end{itemize}
 
 \section{Cross-Cutting}
@@ -4684,17 +5357,19 @@ This chapter provides a compact, family-level summary of the formalization.
   with a critical distinction: $T_{P,K,\mathrm{LP}}$ at $K = \mathbb{R}_{\ge 0}^\infty$
   computes \emph{bag} semantics, not distribution semantics.
   The correct path is: total-choice $\to$ residual KB $\to$ least Herbrand model.
-\item \textbf{MLN bridge (finite-support countable fragment):} the
-  world-model infrastructure now also subsumes an infinite-first MLN
-  semantics, specialized under locality/finite-support witnesses:
+\item \textbf{MLN bridge (clause-native):} the world-model infrastructure
+  subsumes grounded Markov Logic Networks via clause-scope factor-graph
+  compilation.  For any ground MLN $M$ with finite clause support $S$:
   \[
-    \mathrm{queryStrength}(\{\mathrm{compiledMassSemantics}(M, h_s)\}, q)
+    \mathrm{queryStrength}(\mathrm{clauseWMState}(M, S), q)
       = \mathrm{queryProb}_{M}(q)
   \]
-  where the equality factors through a finite restriction theorem and an
-  exact factor-graph compilation.  This is a semantic import theorem for
-  the countable finite-support fragment, \emph{not} a claim that MLN KB
-  union is identical to WM additive revision.
+  where the factor graph has per-clause scope (only the atoms each clause
+  mentions), not full-world scope.  Three regression canaries verify
+  exact values: sigmoid $3/4$, conflicting soft clauses $3/5$, and
+  hard-zero constraint~$0$.
+  This is a semantic import theorem, \emph{not} a claim that MLN
+  knowledge-base union is identical to WM additive revision.
 \item \textbf{Noisy-OR:} $s_{\mathrm{combined}} = 1 - \prod_{i}(1 - s_i)$
   for independent causes, with delta-method variance propagation and
   \textbf{posterior mean scoring}:
@@ -4756,35 +5431,74 @@ structure is a worthy future goal but is explicitly not attempted here.
 
 \section{MLN Import and Subsumption}
 
-The Lean development now contains an \emph{infinite-first} MLN import
-layer.  The formal route is:
+The Lean development contains a \emph{clause-native} MLN subsumption
+layer as the primary result, together with supporting abstract
+infrastructure.
+
+\subsection{Clause-Native Lane (Primary)}
+
+The clause-native lane works with actual grounded clauses---finite
+disjunctions of literals over Boolean atoms---and builds a real
+clause-scope factor graph.  The formal route is:
 \begin{enumerate}
-\item abstract mass semantics for MLN-style world weights and query mass;
-\item countable semantics via $\sum$ over worlds;
-\item a finite-support restriction theorem under locality witnesses;
-\item exact specialization of that finite restriction to a factor graph;
-\item transfer of the compiled factor graph into a singleton WM state.
+\item \textbf{Grounded clause semantics:} weighted ground clauses with
+  explicit satisfied/unsatisfied potentials; world weight as the product
+  of clause evaluations over a finite active support
+  (\codepath{PLNMarkovLogicClauseSemantics.lean}).
+\item \textbf{Clause-scope factor graph:} each factor's scope is exactly
+  the atoms mentioned by its clause (not the full world state); the VE
+  constraint weight equals the MLN query mass and the partition function
+  equals the total mass
+  (\codepath{PLNMarkovLogicClauseFactorGraph.lean}).
+\item \textbf{ValuationWorldModel bridge:} the compiled factor graph
+  induces a singleton \texttt{WMState} with a \texttt{WorldModel} instance;
+  evidence extraction matches the semantic mass semantics
+  (\codepath{PLNMarkovLogicClauseWorldModel.lean}).
+\item \textbf{Terminal theorem:}
+  \[
+    \mathrm{queryStrength}(\mathrm{clauseWMState}(M, S), q)
+      = \mathrm{queryProb}_{M}(q)
+  \]
+  for any ground MLN $M$ with finite clause support $S$.
 \end{enumerate}
 
-The terminal theorem says that if a countable MLN semantics $M$ admits a
-finite-support witness $h_s$, then the compiled singleton world-model
-state satisfies
-\[
-  \mathrm{queryStrength}(\{\mathrm{compiledMassSemantics}(M, h_s)\}, q)
-    = \mathrm{queryProb}_{M}(q).
-\]
-So the finite factor graph is not the foundation; it is the first exact
-computable shadow of the general semantics.
+Three regression canaries verify the full pipeline on concrete instances:
+\begin{itemize}
+\item \textbf{Sigmoid:} single positive clause with potentials $3/1$;
+  $\mathrm{queryStrength}(\textit{true}) = 3/4$.
+\item \textbf{Conflicting soft clauses:} two opposing clauses;
+  $\mathrm{queryStrength}(\textit{true}) = 3/5$.
+\item \textbf{Hard-zero constraint:} unsatisfied potential $0$;
+  $\mathrm{queryStrength}(\textit{false}) = 0$.
+\end{itemize}
+See \codepath{PLNMarkovLogicClauseRegression.lean}.
 
-This result is intentionally scoped.  It covers the countable,
-finite-support fragment needed for a precise subsumption theorem.  It
-does \emph{not} yet claim:
+\subsection{Abstract Lane (Supporting Infrastructure)}
+
+The abstract lane provides the infinite-first generalization: abstract
+mass semantics, countable semantics via $\sum$ over worlds,
+finite-support restriction under locality witnesses, and factor-graph
+specialization.  This infrastructure remains valid and is used internally
+by the clause-native bridge via \texttt{toCountableMLNSemantics}.
+
+\subsection{MLN Theory Combination vs.\ WM Revision}
+
+An important distinction: MLN theory combination (adding weighted
+clauses to a knowledge base, changing the underlying Gibbs distribution)
+is \emph{not} the same operation as WM additive revision (combining
+independent evidence sources).  The subsumption theorem says that each
+ground MLN compiles to a \emph{single} WM evidence source; it does not
+claim that merging two MLN knowledge bases corresponds to WM revision of
+their compiled states.
+
+\subsection{Scope Limitations}
+
+The result is intentionally scoped.  It does \emph{not} yet claim:
 \begin{itemize}
 \item lifted MLN inference;
 \item approximate inference;
 \item open-universe MLNs;
-\item or that MLN knowledge-base union is the same operation as additive
-  WM revision.
+\item or first-order template grounding (in progress).
 \end{itemize}
 
 A benchmark such as UW-CSE \cite{richardson2006markov} remains the right
@@ -5161,6 +5875,171 @@ PPL victory; it is to show that the current WM-PLN stack now supports:
 \item one full typed continuous-evidence lane that runs through the real
 PPLBench interface and can be scored on held-out data.
 \end{enumerate}
+
+\noindent
+Since the initial refresh the PPLBench effort has grown to nine active lanes.
+Before presenting each lane in detail, it helps to state the organizing
+discipline that runs through all of them.  The discipline has four parts:
+
+\begin{description}
+\item[Carried state.]
+  Each lane carries an explicit evidence or message object---a sufficient
+  statistic, a count vector, an additive log-likelihood message---that is
+  revised by addition and never secretly replaced by a fitted summary.
+
+\item[Queried view.]
+  Posterior means, predictive probabilities, mixture weights, and class
+  posteriors are all \emph{views} extracted from the carried state.
+  They are what you ask; the carried state is what you hold.
+
+\item[Local semantic kernels.]
+  Each lane delegates its core probabilistic operations to named PeTTa
+  kernels.  These kernels may be exact even when the surrounding scheduler
+  is approximate.
+
+\item[Scheduler / inference control.]
+  Where a lane needs iterative updates (EM, variational coordinate ascent,
+  damped message passing), the scheduler is written in Python and explicitly
+  marked as operational.  It is not claimed as a promoted semantic rule.
+\end{description}
+
+\noindent
+We label each lane with one of two promotion tags:
+\begin{description}
+\item[\textbf{E/E}] (exact carrier, exact inference):
+  the full procedure is promotable---no operational scheduler is involved.
+\item[\textbf{E/O}] (exact carrier, operational scheduler):
+  the carrier pattern is promotable but the scheduler remains
+  benchmark-local.
+\end{description}
+All nine current lanes fall into one of these two categories.  None is
+approximate-carrier or legacy-only.
+
+Table~\ref{tab:pplbench-cross-lane} gives the cross-lane summary.
+Table~\ref{tab:pplbench-pln-surface-map} maps WM-PLN operations to
+classical PLN roles, with the caveat that these correspondences are
+approximate---WM-PLN is its own calculus, not a classical PLN tribute.
+
+\begin{table}[htbp]
+\centering
+\caption{Cross-lane PPLBench summary.  ``Carried state'' is the revisable
+evidence object; ``queried view'' is the posterior extracted from it;
+``scheduler'' is the operational layer (if any); ``status'' is the
+promotion tag.}
+\label{tab:pplbench-cross-lane}
+\scriptsize
+\begin{tabular}{p{0.13\textwidth}p{0.17\textwidth}p{0.14\textwidth}p{0.10\textwidth}p{0.04\textwidth}p{0.30\textwidth}}
+\toprule
+Lane & Carried state & Queried view & Scheduler & Status & Main limitation \\
+\midrule
+\code{normal\_normal}
+  & scalar Gaussian suff.\ stats $(n, \Sigma x, \Sigma x^2)$
+  & posterior mean/var
+  & none
+  & E/E
+  & single fixed prior variance \\[3pt]
+\code{normal\_normal\_adaptive}
+  & same suff.\ stats + Hook-B mixture weights
+  & mixture moments + component weights
+  & none
+  & E/E
+  & discrete prior-variance grid only \\[3pt]
+\code{dirichlet\_categorical}
+  & additive Dirichlet count vector
+  & simplex mean, predictive LL
+  & none
+  & E/E
+  & symmetric prior only in current config \\[3pt]
+\code{noisy\_or\_topic}
+  & additive log-likelihood messages
+  & posterior topic probability
+  & damped msg-pass
+  & E/O
+  & visible error on topic chains \\[3pt]
+\code{crowd\_sourced\_annotation}
+  & multiclass log-messages + Dirichlet counts
+  & class posteriors
+  & EM
+  & E/O
+  & full EM not yet calibrated \\[3pt]
+\code{n\_schools}
+  & weighted Normal evidence + hierarchical prior
+  & pooled posteriors
+  & coordinate residual
+  & E/O
+  & scale views deterministic, not sampled \\[3pt]
+\code{logistic\_regression}
+  & weighted Normal + Bernoulli-logit site $(\xi, \omega)$
+  & Gaussian posterior
+  & diagonal variational
+  & E/O
+  & variational scheduler lags Stan \\[3pt]
+\code{robust\_regression}
+  & weighted Gaussian evidence + residual scale
+  & robust posterior
+  & iterative reweighting
+  & E/O
+  & scheduler slow; $\nu$ fixed, not carried \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Classical PLN surface map.  For each lane we identify what plays
+the role of revision, composition, context, and inference control in
+classical PLN terms.  These correspondences are approximate: WM-PLN
+operations are defined by the world-model calculus, not by classical PLN
+rule tables.}
+\label{tab:pplbench-pln-surface-map}
+\scriptsize
+\begin{tabular}{p{0.13\textwidth}p{0.19\textwidth}p{0.19\textwidth}p{0.19\textwidth}p{0.19\textwidth}}
+\toprule
+Lane & Revision & Composition & Context & Inference control \\
+\midrule
+\code{normal\_normal}
+  & additive suff.\ stat update
+  & independent obs.\ accumulation
+  & fixed prior $(\mu_0, \sigma_0^2)$
+  & none needed \\[3pt]
+\code{normal\_normal\_adaptive}
+  & same additive update
+  & same accumulation
+  & Hook-B discrete hyperprior grid
+  & none needed (exact mixture) \\[3pt]
+\code{dirichlet\_categorical}
+  & additive count revision
+  & independent batch merging
+  & symmetric Dirichlet prior $\alpha_0$
+  & none needed \\[3pt]
+\code{noisy\_or\_topic}
+  & componentwise log-message addition
+  & cavity-style child-to-parent messages
+  & prior topic probabilities
+  & damped message-passing (operational) \\[3pt]
+\code{crowd\_sourced\_annotation}
+  & additive label-log messages
+  & independent annotator evidence combination
+  & prevalence + confusion priors
+  & EM scheduler (operational) \\[3pt]
+\code{n\_schools}
+  & weighted evidence accumulation
+  & precision-weighted hierarchical pooling
+  & zero-centered hierarchical prior
+  & coordinate residual loop (operational) \\[3pt]
+\code{logistic\_regression}
+  & weighted-Normal site evidence
+  & additive site contribution
+  & Bernoulli-logit site hyperstate
+  & diagonal variational loop (operational) \\[3pt]
+\code{robust\_regression}
+  & weighted Gaussian evidence
+  & additive weighted regression terms
+  & residual-scale hyperstate
+  & iterative reweighting (operational) \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 When this appendix says ``Stan'' or ``proper PPL baseline,'' the intended
 reference is the standard PPLBench integration under
@@ -6301,6 +7180,63 @@ promotable reusable inference engine.
 That is still good PPLBench progress.  It tells us the next optimization target
 is no longer the carrier boundary; it is the robust scheduler itself.
 
+\section{Cross-Backend NumPyro Check}
+\label{app:pplbench-numpyro-crosscheck}
+
+To go one step beyond the Stan/WM-PLN axis, we also ran the two lanes that the
+current local PPLBench checkout supports under NumPyro:
+\codepath{logistic\_regression} and \codepath{robust\_regression}.  This is a
+good \emph{positive example} because it checks the refreshed WM-PLN lanes
+against a second modern PPL family rather than only against Stan.  It is also a
+good \emph{negative example} because the comparison surface is still limited to
+the two lanes for which this repo actually has NumPyro backends.  We therefore
+do \emph{not} present this as full cross-backend coverage of the whole
+PPLBench model family.
+
+The stable exported summaries are:
+\begin{itemize}
+\item \codepath{results/pplbench\_logistic\_regression\_stan\_vs\_pln\_vs\_numpyro\_summary.json}
+\item \codepath{results/pplbench\_robust\_regression\_stan\_vs\_pln\_vs\_numpyro\_summary.json}
+\end{itemize}
+
+\begin{table}[htbp]
+\centering
+\caption{Small cross-backend check on the two currently NumPyro-supported
+lanes.  NumPyro tracks Stan closely on predictive fit, while the refreshed
+WM-PLN lanes remain much cheaper to compile and materially faster than NumPyro
+on inference in this local setup.}
+\label{tab:pplbench-numpyro-crosscheck}
+\small
+\begin{tabular}{llcccc}
+\toprule
+Lane & Backend & Final PLL & Compile (s) & Infer (s) & Median $n_{\mathrm{eff}}$/s \\
+\midrule
+Logistic & Stan & $-9.152$ & $22.819$ & $0.270$ & $1100.9$ \\
+Logistic & WM-PLN & $-10.115$ & $0.157$ & $0.335$ & $2278.7$ \\
+Logistic & NumPyro & $-9.184$ & $0.0001$ & $6.528$ & $40.6$ \\
+\midrule
+Robust & Stan & $-778.317$ & $21.339$ & $0.136$ & $4564.6$ \\
+Robust & WM-PLN & $-781.575$ & $0.0001$ & $1.411$ & $568.6$ \\
+Robust & NumPyro & $-778.557$ & $0.0001$ & $7.903$ & $84.2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The table makes the current tradeoff very clear.  On both supported lanes,
+NumPyro is much closer to Stan than WM-PLN is on final PLL: in logistic the gap
+to Stan is about $0.032$ PLL units for NumPyro versus about $0.963$ for
+WM-PLN, and in robust regression the gap is about $0.240$ PLL units for
+NumPyro versus about $3.258$ for WM-PLN.  But the runtime story cuts the other
+way.  In this setup, WM-PLN inference is about $19.5\times$ faster than
+NumPyro on logistic regression and about $5.6\times$ faster on robust
+regression, while keeping the explicit carried-state / queried-view semantics
+that the refreshed lanes were designed to expose.  So the right reading is not
+that WM-PLN has overtaken mature HMC-based PPLs on these nonconjugate models.
+It is that the refreshed lanes now occupy a clear and useful point in the
+design space: semantically explicit and fast enough to be practical, but still
+behind Stan- and NumPyro-style samplers on predictive fit when the scheduler is
+the weak link.
+
 \chapter{Notation and Symbol Glossary}
 \label{app:notation}
 
@@ -6363,9 +7299,9 @@ PLN $\leftrightarrow$ NARS & correspondence bundle & PLNNARSRuleCorrespondence &
 
 \begin{itemize}
 \item \codepath{Mettapedia/Logic/PLNCore.lean} --- umbrella module importing
-  all core PLN infrastructure (153 lines).
+  all core PLN infrastructure (246 lines).
 \item \codepath{Mettapedia/Logic/PLNCanonicalAPI.lean} --- primary public API
-  with stable, semantically grounded endpoints (3806 lines).
+  with stable, semantically grounded endpoints (5498 lines).
 \item \codepath{Mettapedia/Logic/README.md} --- status table, dependency graph,
   and theorem index.
 \end{itemize}
@@ -6376,27 +7312,27 @@ Three end-to-end examples exercising continuous world models with
 increasing complexity:
 
 \begin{enumerate}
-\item \textbf{Broken Sensor} (\S\ref{app:code-nav}, 360~lines, 0~sorry).
+\item \textbf{Broken Sensor} (\S\ref{app:code-nav}, 420~lines).
   Hybrid discrete/continuous state: Normal-Gamma temperature evidence
   $+$ binary coolant-failure flag.  Sleep consolidation, exceedance
   specification, component independence.\\
   \codepath{Mettapedia/Logic/PLNBrokenSensorDemo.lean}
 
-\item \textbf{Widget Factory} (420~lines, 0~sorry).
+\item \textbf{Widget Factory} (422~lines).
   Per-source Gaussian mixtures: two machines with independent
   Normal-Gamma posteriors and source-attribution evidence.  Mixture
   exceedance validity, mixture bounds
   ($\min \le p_{\mathrm{mix}} \le \max$).\\
   \codepath{Mettapedia/Logic/PLNWidgetFactoryDemo.lean}
 
-\item \textbf{Kalman Wake/Sleep} (353~lines, 0~sorry).
+\item \textbf{Kalman Wake/Sleep} (374~lines).
   1D Kalman filter with temporal predict-update cycles.  Kalman gain
   bounded ($0 < K < 1$), variance reduction, and the flagship
   \emph{sleep $=$ wake} theorem: batch replay yields the same posterior
   as sequential online filtering.\\
   \codepath{Mettapedia/Logic/PLNKalmanSleepDemo.lean}
 
-\item \textbf{Gas Sensor Array Drift} (578~lines, 0~sorry).
+\item \textbf{Gas Sensor Array Drift} (652~lines).
   Real UCI data (DOI~10.24432/C5RP6W): 3~gas types (ethanol, ammonia,
   toluene) across 10 temporal batches spanning 36~months.  Ternary
   source-conditional Gaussians, cross-gas independence, multi-batch
@@ -6405,7 +7341,7 @@ increasing complexity:
   batch~10 (2011) capture genuine distributional shift.\\
   \codepath{Mettapedia/Logic/PLNGasSensorDriftDemo.lean}
 
-\item \textbf{Steel Plates Faults} (488~lines, 0~sorry).
+\item \textbf{Steel Plates Faults} (568~lines).
   Real UCI data (current UCI DOI~10.24432/C5J88N): 3~fault types (Pastry,
   K\_Scratch, Bumps) classified by LogOfAreas.  Per-fault
   Normal-Gamma posteriors, 3-way mixture exceedance validity,
@@ -6413,7 +7349,7 @@ increasing complexity:
   Manufacturing quality-control application of the WM calculus.\\
   \codepath{Mettapedia/Logic/PLNSteelFaultDemo.lean}
 
-\item \textbf{NAB Machine Temperature Anomaly} (327~lines, 0~sorry).
+\item \textbf{NAB Machine Temperature Anomaly} (344~lines).
   Real NAB benchmark data (MIT License): machine temperature sensor
   with 22,695 readings and labeled anomaly windows.  Three operating
   regimes (calm~$\sim$85\textdegree{}F, hot~$\sim$101\textdegree{}F,

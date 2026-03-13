@@ -18,12 +18,28 @@ import Mettapedia.Logic.PLNMixedModeChainComposition
 import Mettapedia.Logic.PLNProbHOLPlannerBridge
 import Mettapedia.Logic.PLNRegimeMixtureBenchmarkBridge
 import Mettapedia.Logic.PLNRegimeMixtureRegression
+import Mettapedia.Logic.PLNHigherOrderChainingTheorems
+import Mettapedia.Logic.PLNHigherOrderChainingRegression
+import Mettapedia.Logic.PLNHigherOrderCertifiedEstimates
+import Mettapedia.Logic.PLNUntrustedOracleAdapters
+import Mettapedia.Logic.PLNUntrustedOracleAdapterRegression
+import Mettapedia.Logic.PLNHigherOrderChainBounds
+import Mettapedia.Logic.PLNHigherOrderDecisionTheorems
+import Mettapedia.Logic.PLNGWASHigherOrderBridge
+import Mettapedia.Logic.PLNHigherOrderCertifiedChainingRegression
+import Mettapedia.Logic.PLNTopologyCPTNoGo
+import Mettapedia.Logic.PLNVarianceChainNoGo
+import Mettapedia.Logic.PLNHigherOrderNoGoBridge
 import Mettapedia.Logic.PLNMarkovLogicAbstract
 import Mettapedia.Logic.PLNMarkovLogicCountable
 import Mettapedia.Logic.PLNMarkovLogicFiniteRestriction
 import Mettapedia.Logic.PLNMarkovLogicFactorGraph
 import Mettapedia.Logic.PLNMarkovLogicWorldModel
 import Mettapedia.Logic.PLNMarkovLogicRegression
+import Mettapedia.Logic.PLNMarkovLogicClauseSemantics
+import Mettapedia.Logic.PLNMarkovLogicClauseFactorGraph
+import Mettapedia.Logic.PLNMarkovLogicClauseWorldModel
+import Mettapedia.Logic.PLNMarkovLogicClauseRegression
 import Mettapedia.Logic.PLNProbabilisticEventCalculus
 import Mettapedia.Logic.PLNColliderSingletonBridge
 import Mettapedia.Logic.PLNErrorMagnificationGrounding
@@ -749,7 +765,337 @@ abbrev pln_regimeMixture_regression_leaky_reveal_not_preferred_at_cost_one :=
 abbrev pln_regimeMixture_regression_sameWM_differentRegimes_differentAdmissibleDiscoveries :=
   @_root_.Mettapedia.Logic.regimeMixture_regression_sameWM_differentRegimes_differentAdmissibleDiscoveries
 
-/-! ## Infinite-First MLN Endpoints -/
+/-! ## Higher-Order Chaining Endpoints -/
+
+abbrev pln_higherOrderChaining_continue_preserves_semanticStatus :=
+  @_root_.Mettapedia.Logic.higherOrder_continue_preserves_semanticStatus
+
+abbrev pln_higherOrderChaining_continue_accumulatedBound_eq_combineBounds :=
+  @_root_.Mettapedia.Logic.higherOrder_continue_accumulatedBound_eq_combineBounds
+
+abbrev pln_higherOrderChaining_continue_keeps_query_when_not_reveal :=
+  @_root_.Mettapedia.Logic.higherOrder_continue_keeps_query_when_not_reveal
+
+abbrev pln_higherOrderChaining_reveal_sets_queryChanged :=
+  @_root_.Mettapedia.Logic.higherOrder_reveal_sets_queryChanged
+
+abbrev pln_higherOrderChaining_continue_current_value_eq_benchmarkBeliefPrice :=
+  @_root_.Mettapedia.Logic.higherOrder_continue_current_value_eq_benchmarkBeliefPrice
+
+abbrev pln_higherOrderChaining_continue_current_value_eq_plannerShadow_carried_value :=
+  @_root_.Mettapedia.Logic.higherOrder_continue_current_value_eq_plannerShadow_carried_value
+
+abbrev pln_higherOrderChaining_continue_plannerShadow_process_tracks_benchmarkLatentHierarchicalProbOn :=
+  @_root_.Mettapedia.Logic.higherOrder_continue_plannerShadow_process_tracks_benchmarkLatentHierarchicalProbOn
+
+abbrev pln_higherOrderChaining_continue_broadQueryError_le_residualMass_mul_branchRadius :=
+  @_root_.Mettapedia.Logic.higherOrder_continue_broadQueryError_le_residualMass_mul_branchRadius
+
+abbrev pln_higherOrderChaining_continue_mixtureSquaredLoss_le_exactBranchRisk :=
+  @_root_.Mettapedia.Logic.higherOrder_continue_mixtureSquaredLoss_le_exactBranchRisk
+
+abbrev pln_higherOrderChaining_revealPreferred_for_refinedQuery_if_cost_lt_mixtureVariance :=
+  @_root_.Mettapedia.Logic.higherOrder_revealPreferred_for_refinedQuery_if_cost_lt_mixtureVariance
+
+abbrev pln_higherOrderChaining_decision_flattening_sound :=
+  @_root_.Mettapedia.Logic.higherOrder_decision_flattening_sound
+
+abbrev pln_higherOrderChaining_regression_leaky_continue_preserves_semanticStatus :=
+  @_root_.Mettapedia.Logic.higherOrderChaining_regression_leaky_continue_preserves_semanticStatus
+
+abbrev pln_higherOrderChaining_regression_leaky_continue_accumulatedBound_eq :=
+  @_root_.Mettapedia.Logic.higherOrderChaining_regression_leaky_continue_accumulatedBound_eq
+
+abbrev pln_higherOrderChaining_regression_leaky_continue_value_eq_benchmarkBeliefPrice :=
+  @_root_.Mettapedia.Logic.higherOrderChaining_regression_leaky_continue_value_eq_benchmarkBeliefPrice
+
+abbrev pln_higherOrderChaining_regression_leaky_broadQueryError_le_residualMass_mul_branchRadius :=
+  @_root_.Mettapedia.Logic.higherOrderChaining_regression_leaky_broadQueryError_le_residualMass_mul_branchRadius
+
+abbrev pln_higherOrderChaining_regression_leaky_reveal_preferred_at_zero_cost :=
+  @_root_.Mettapedia.Logic.higherOrderChaining_regression_leaky_reveal_preferred_at_zero_cost
+
+abbrev pln_higherOrderChaining_regression_reveal_sets_queryChanged :=
+  @_root_.Mettapedia.Logic.higherOrderChaining_regression_reveal_sets_queryChanged
+
+/-! ## Certified Higher-Order Chaining Endpoints -/
+
+abbrev PLNCertifiedAdmissibilityEstimate :=
+  @_root_.Mettapedia.Logic.CertifiedAdmissibilityEstimate
+
+abbrev PLNCertifiedTrustEstimate :=
+  @_root_.Mettapedia.Logic.CertifiedTrustEstimate
+
+abbrev PLNCertifiedRegimePosterior :=
+  @_root_.Mettapedia.Logic.CertifiedRegimePosterior
+
+abbrev PLNCertifiedChainStep :=
+  @_root_.Mettapedia.Logic.CertifiedChainStep
+
+abbrev PLNRealizedCertifiedChainStep :=
+  @_root_.Mettapedia.Logic.RealizedCertifiedChainStep
+
+abbrev PLNHigherOrderDecision :=
+  @_root_.Mettapedia.Logic.HigherOrderDecision
+
+abbrev PLNCertifiedActionSummary :=
+  @_root_.Mettapedia.Logic.CertifiedActionSummary
+
+abbrev pln_higherOrderCertified_trustAdjustedLowerBound :=
+  @_root_.Mettapedia.Logic.trustAdjustedLowerBound
+
+abbrev pln_higherOrderCertified_chainAdmissibilityIndependent :=
+  @_root_.Mettapedia.Logic.chainAdmissibilityIndependent
+
+abbrev pln_higherOrderCertified_chainAdmissibilityBottleneck :=
+  @_root_.Mettapedia.Logic.chainAdmissibilityBottleneck
+
+abbrev pln_higherOrderCertified_chainAdmissibilityTrustWeighted :=
+  @_root_.Mettapedia.Logic.chainAdmissibilityTrustWeighted
+
+abbrev pln_higherOrderCertified_chainCertifiedErrorBound :=
+  @_root_.Mettapedia.Logic.chainCertifiedErrorBound
+
+abbrev pln_higherOrderCertified_continueSound_if_chainBound_le_tolerance :=
+  @_root_.Mettapedia.Logic.continueSound_if_chainBound_le_tolerance
+
+abbrev pln_higherOrderCertified_continuePreferred_if_chainBound_le_tolerance :=
+  @_root_.Mettapedia.Logic.continuePreferred_if_chainBound_le_tolerance
+
+abbrev pln_higherOrderCertified_revealPreferred_if_cost_lt_certifiedVariance :=
+  @_root_.Mettapedia.Logic.revealPreferred_if_cost_lt_certifiedVariance
+
+abbrev pln_higherOrderCertified_fallbackPreferred_if_continueBound_gt_fallbackThreshold :=
+  @_root_.Mettapedia.Logic.fallbackPreferred_if_continueBound_gt_fallbackThreshold
+
+abbrev pln_higherOrderCertified_abstainPreferred_if_no_action_certified :=
+  @_root_.Mettapedia.Logic.abstainPreferred_if_no_action_certified
+
+abbrev pln_higherOrderCertified_higherOrder_action_flattening_sound :=
+  @_root_.Mettapedia.Logic.higherOrder_action_flattening_sound
+
+/-! ## Untrusted Oracle Adapter Endpoints -/
+
+abbrev PLNOracleAdapterStatus :=
+  @_root_.Mettapedia.Logic.OracleAdapterStatus
+
+abbrev PLNCertifiedBlindOracleAdapter :=
+  @_root_.Mettapedia.Logic.CertifiedBlindOracleAdapter
+
+abbrev PLNCalibratedBlindAdmissibilityOracle :=
+  @_root_.Mettapedia.Logic.CalibratedBlindAdmissibilityOracle
+
+abbrev pln_oracleAdapter_supportsCertifiedConsumption :=
+  @_root_.Mettapedia.Logic.OracleAdapterStatus.supportsCertifiedConsumption
+
+abbrev pln_oracleAdapter_toCertifiedChainStep :=
+  @_root_.Mettapedia.Logic.CertifiedBlindOracleAdapter.toCertifiedChainStep
+
+abbrev pln_oracleAdapter_toCertifiedActionSummary :=
+  @_root_.Mettapedia.Logic.CertifiedBlindOracleAdapter.toCertifiedActionSummary
+
+noncomputable abbrev pln_oracleAdapter_toBlindPolicy :=
+  @_root_.Mettapedia.Logic.CertifiedBlindOracleAdapter.toBlindPolicy
+
+noncomputable abbrev pln_oracleAdapter_evaluateBlindDecision :=
+  @_root_.Mettapedia.Logic.CertifiedBlindOracleAdapter.evaluateBlindDecision
+
+noncomputable abbrev pln_oracleAdapter_adapterOfCalibratedAdmissibility :=
+  @_root_.Mettapedia.Logic.adapterOfCalibratedAdmissibility
+
+abbrev pln_oracleAdapter_blindDecision_independent_of_oracle :=
+  @_root_.Mettapedia.Logic.CertifiedBlindOracleAdapter.blindDecision_independent_of_oracle
+
+abbrev pln_oracleAdapter_chainStep_trustAdjustedLower_nonneg :=
+  @_root_.Mettapedia.Logic.CertifiedBlindOracleAdapter.chainStep_trustAdjustedLower_nonneg
+
+abbrev pln_oracleAdapter_actionSummary_revealVariance_nonneg :=
+  @_root_.Mettapedia.Logic.CertifiedBlindOracleAdapter.actionSummary_revealVariance_nonneg
+
+abbrev pln_oracleAdapter_regression_status_ne_approximateOperational :=
+  @_root_.Mettapedia.Logic.uaDemoCertifiedAdapter_status_ne_approximateOperational
+
+abbrev pln_oracleAdapter_regression_blindDecision_independent_of_oracle :=
+  @_root_.Mettapedia.Logic.uaDemoCertifiedAdapter_blindDecision_independent_of_oracle
+
+abbrev pln_oracleAdapter_regression_continue_action :=
+  @_root_.Mettapedia.Logic.uaDemoCertifiedAdapter_continue_action
+
+/-! ## Certified Chaining No-Go Endpoints -/
+
+abbrev PLNBoolBNBinaryEdgeWitness :=
+  @_root_.Mettapedia.Logic.PLNTopologyCPTNoGo.BoolBNBinaryEdgeWitness
+
+abbrev PLNVarianceChainAction :=
+  @_root_.Mettapedia.Logic.PLNVarianceChainNoGo.VarianceChainAction
+
+abbrev PLNVarianceChainStep :=
+  @_root_.Mettapedia.Logic.PLNVarianceChainNoGo.VarianceChainStep
+
+abbrev pln_noGo_same_topology_different_residual_of_binary_edge_fragment :=
+  @_root_.Mettapedia.Logic.PLNTopologyCPTNoGo.same_topology_different_residual_of_binary_edge_fragment
+
+abbrev pln_noGo_topology_bound_not_tight_of_binary_edge_fragment :=
+  @_root_.Mettapedia.Logic.PLNTopologyCPTNoGo.topology_bound_not_tight_of_binary_edge_fragment
+
+abbrev pln_noGo_topology_function_bound_is_trivial_of_binary_edge_fragment :=
+  @_root_.Mettapedia.Logic.PLNTopologyCPTNoGo.topology_function_bound_is_trivial_of_binary_edge_fragment
+
+abbrev pln_noGo_residual_separation_of_binary_edge_fragment :=
+  @_root_.Mettapedia.Logic.PLNTopologyCPTNoGo.residual_separation_of_binary_edge_fragment
+
+abbrev pln_noGo_variance_accumulation_along_unrevealed_chain :=
+  @_root_.Mettapedia.Logic.PLNVarianceChainNoGo.variance_accumulation_along_unrevealed_chain
+
+abbrev pln_noGo_reveal_resets_variance_accumulation :=
+  @_root_.Mettapedia.Logic.PLNVarianceChainNoGo.reveal_resets_variance_accumulation
+
+abbrev pln_noGo_fallback_resets_variance_accumulation :=
+  @_root_.Mettapedia.Logic.PLNVarianceChainNoGo.fallback_resets_variance_accumulation
+
+abbrev pln_noGo_variance_accumulation_between_resets :=
+  @_root_.Mettapedia.Logic.PLNVarianceChainNoGo.variance_accumulation_between_resets
+
+abbrev pln_noGo_topologyOnlyProxy_not_certifying :=
+  @_root_.Mettapedia.Logic.topologyOnlyProxy_not_certifying
+
+abbrev pln_noGo_unrevealedHigherOrderChain_requires_varianceBudget :=
+  @_root_.Mettapedia.Logic.unrevealedHigherOrderChain_requires_varianceBudget
+
+abbrev PLNGWASHypothesis :=
+  @_root_.Mettapedia.Logic.GWASHypothesis
+
+abbrev PLNGWASHigherOrderProfile :=
+  @_root_.Mettapedia.Logic.GWASHigherOrderProfile
+
+abbrev pln_gwasHigherOrder_gwasBroadSupport :=
+  @_root_.Mettapedia.Logic.gwasBroadSupport
+
+abbrev pln_gwasHigherOrder_gwasCertifiedVariance :=
+  @_root_.Mettapedia.Logic.gwasCertifiedVariance
+
+abbrev pln_gwasHigherOrder_revealTissue :=
+  @_root_.Mettapedia.Logic.revealTissue
+
+abbrev pln_gwasHigherOrder_revealFineMapping :=
+  @_root_.Mettapedia.Logic.revealFineMapping
+
+abbrev pln_gwasHigherOrder_revealMechanism :=
+  @_root_.Mettapedia.Logic.revealMechanism
+
+abbrev pln_gwasHigherOrder_revealTissuePreferred_if_cost_lt_variance :=
+  @_root_.Mettapedia.Logic.gwas_revealTissuePreferred_if_cost_lt_variance
+
+abbrev pln_gwasHigherOrder_revealGain_positive_if_cost_lt_variance :=
+  @_root_.Mettapedia.Logic.gwasRevealGain_positive_if_cost_lt_variance
+
+abbrev pln_higherOrderCertified_regression_continue_sound :=
+  @_root_.Mettapedia.Logic.certifiedChaining_regression_continue_sound
+
+abbrev pln_higherOrderCertified_regression_continue_action :=
+  @_root_.Mettapedia.Logic.certifiedChaining_regression_continue_action
+
+abbrev pln_higherOrderCertified_regression_reveal_action :=
+  @_root_.Mettapedia.Logic.certifiedChaining_regression_reveal_action
+
+abbrev pln_higherOrderCertified_regression_fallback_action :=
+  @_root_.Mettapedia.Logic.certifiedChaining_regression_fallback_action
+
+abbrev pln_higherOrderCertified_regression_abstain_action :=
+  @_root_.Mettapedia.Logic.certifiedChaining_regression_abstain_action
+
+abbrev pln_higherOrderCertified_regression_gwas_broadSupport_eq :=
+  @_root_.Mettapedia.Logic.certifiedChaining_regression_gwas_broadSupport_eq
+
+abbrev pln_higherOrderCertified_regression_gwas_revealTissue_extends_context :=
+  @_root_.Mettapedia.Logic.certifiedChaining_regression_gwas_revealTissue_extends_context
+
+/-! ## Clause-Native MLN Endpoints (primary MLN→WM result)
+
+The clause-native lane is the canonical MLN subsumption result.
+Grounded clauses with explicit atom-scope factor graphs compile to
+a `ValuationWorldModel` state whose `queryStrength` equals the MLN `queryProb`.
+
+**Important distinction:** MLN theory combination (adding clauses to a
+ground MLN) is NOT the same operation as WM additive revision (adding
+evidence sources). The subsumption theorem says that *each* ground MLN
+compiles to a single WM evidence source; it does not claim that merging
+two MLN knowledge bases corresponds to WM revision of their compiled states. -/
+
+-- Types
+abbrev PLNAtomValuation :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseSemantics.AtomValuation
+
+abbrev PLNLiteral :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseSemantics.Literal
+
+abbrev PLNGroundClause :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseSemantics.GroundClause
+
+abbrev PLNWeightedGroundClause :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseSemantics.WeightedGroundClause
+
+abbrev PLNGroundMLN :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseSemantics.GroundMLN
+
+abbrev PLNClassicalGroundMLN :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseSemantics.ClassicalGroundMLN
+
+abbrev PLNConstraintQuery :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseFactorGraph.ConstraintQuery
+
+-- Core bridge
+noncomputable abbrev pln_mln_clause_compiledClauseFactorGraph :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseFactorGraph.GroundMLN.compiledClauseFactorGraph
+
+noncomputable abbrev pln_mln_clause_clauseWMState :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseWorldModel.clauseWMState
+
+noncomputable abbrev pln_mln_clause_clauseMassSemantics :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseWorldModel.clauseMassSemantics
+
+-- Main theorem
+abbrev pln_mln_clause_queryStrength_eq_queryProb :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseWorldModel.clauseWM_queryStrength_eq_queryProb
+
+-- Bridge lemmas
+abbrev pln_mln_clause_weight_eq_queryMass :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseWorldModel.clauseWM_weight_eq_queryMass
+
+abbrev pln_mln_clause_total_eq_totalMass :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseWorldModel.clauseWM_total_eq_totalMass
+
+abbrev pln_mln_clause_evidence_eq_evidenceOfMasses :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseWorldModel.clauseWM_evidence_eq_evidenceOfMasses
+
+-- Factor graph bridge
+abbrev pln_mln_clause_unnormalizedJoint_eq_worldWeight :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseFactorGraph.GroundMLN.compiledClauseFactorGraph_unnormalizedJoint_eq_worldWeight
+
+abbrev pln_mln_clause_weightOfConstraints_eq_queryMass :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseFactorGraph.GroundMLN.weightOfConstraints_eq_queryMass
+
+abbrev pln_mln_clause_partitionFunction_eq_totalMass :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseFactorGraph.GroundMLN.partitionFunction_eq_totalMass
+
+-- Classical MLN bridge
+abbrev pln_mln_clause_worldWeight_eq_gibbsProduct :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseSemantics.ClassicalGroundMLN.worldWeight_eq_gibbsProduct
+
+-- Regression canaries
+abbrev pln_mln_clause_regression_sigmoid_queryStrength_eq_three_fourths :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseRegression.sigmoid_queryStrength_true_eq_three_fourths
+
+abbrev pln_mln_clause_regression_conflicting_queryStrength_eq_three_fifths :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseRegression.conflicting_queryStrength_true_eq_three_fifths
+
+abbrev pln_mln_clause_regression_hardZero_queryStrength_eq_zero :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseRegression.hardZero_queryStrength_false_eq_zero
+
+abbrev pln_mln_clause_regression_conflicting_not_entailed :=
+  @_root_.Mettapedia.Logic.PLNMarkovLogicClauseRegression.conflicting_true_not_entailed_by_live_worlds
+
+/-! ## Abstract MLN Endpoints (infinite-first, abstract world/query types) -/
 
 abbrev PLNAbstractMLNSemantics :=
   @_root_.Mettapedia.Logic.PLNMarkovLogicAbstract.AbstractMLNSemantics

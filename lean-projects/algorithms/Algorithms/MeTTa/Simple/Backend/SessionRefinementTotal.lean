@@ -205,8 +205,9 @@ theorem evalWithState_getAtoms_eq_total_reference_of_oneMaxNode_and_deterministi
   have hRefEq :
       SessionReference.evalWithStateCore s (.apply "get-atoms" [spaceArg]) =
         SessionReferenceTotal.evalWithStateCore s (.apply "get-atoms" [spaceArg]) := by
-    simpa [SessionReference.evalWithStateCore] using
-      SessionReferenceAdequacy.getAtoms_eval_eq_public_total_of_oneMaxNode s spaceArg hNodes
+    simp [SessionReference.evalWithStateCore, SessionReferenceTotal.evalWithStateCore,
+      SessionReferenceTotal.totalEvalWithStateCore, Session.evalWithStateCoreN,
+      SessionReferenceTotal.referenceFuel]
   exact
     evalWithState_eq_total_reference_of_local_reference_agreement_and_deterministic_agreement
       s (.apply "get-atoms" [spaceArg]) hRefEq hs hAgreeRaw
@@ -228,8 +229,9 @@ theorem evalWithState_getAtomsBang_eq_total_reference_of_oneMaxNode_and_determin
   have hRefEq :
       SessionReference.evalWithStateCore s (.apply "get-atoms!" [spaceArg]) =
         SessionReferenceTotal.evalWithStateCore s (.apply "get-atoms!" [spaceArg]) := by
-    simpa [SessionReference.evalWithStateCore] using
-      SessionReferenceAdequacy.getAtomsBang_eval_eq_public_total_of_oneMaxNode s spaceArg hNodes
+    simp [SessionReference.evalWithStateCore, SessionReferenceTotal.evalWithStateCore,
+      SessionReferenceTotal.totalEvalWithStateCore, Session.evalWithStateCoreN,
+      SessionReferenceTotal.referenceFuel]
   exact
     evalWithState_eq_total_reference_of_local_reference_agreement_and_deterministic_agreement
       s (.apply "get-atoms!" [spaceArg]) hRefEq hs hAgreeRaw
@@ -240,10 +242,6 @@ theorem evalWithState_getAtomsBang_eq_total_reference_of_oneMaxNode_and_determin
 theorem evalWithState_match_getAtomsBang_eq_total_reference_of_oneMaxNode_and_deterministic_agreement
     (s : Session) (space pat spaceExpr : Pattern)
     (hNodes : s.maxNodes = 1)
-    (hIntr :
-      Session.intrinsicStateful s (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) =
-        Session.intrinsicStatefulN (SessionReferenceTotal.referenceFuel s - 1) s
-          (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]))
     (hs : SessionWF s)
     (hAgreeRaw :
       ∀ (s : Session) (term : Pattern),
@@ -257,10 +255,9 @@ theorem evalWithState_match_getAtomsBang_eq_total_reference_of_oneMaxNode_and_de
   have hRefEq :
       SessionReference.evalWithStateCore s (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) =
         SessionReferenceTotal.evalWithStateCore s
-          (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) := by
-    simpa [SessionReference.evalWithStateCore] using
-      SessionReferenceAdequacy.match_getAtomsBang_eval_eq_public_total_of_oneMaxNode
-        s space pat spaceExpr hNodes hIntr
+          (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) :=
+    SessionReferenceAdequacy.match_getAtomsBang_eval_eq_public_total_of_oneMaxNode
+      s space pat spaceExpr hNodes
   exact
     evalWithState_eq_total_reference_of_local_reference_agreement_and_deterministic_agreement
       s (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) hRefEq hs hAgreeRaw
@@ -350,8 +347,9 @@ theorem wf_evalWithState_getAtoms_of_oneMaxNode_and_deterministic_agreement
   have hRefEq :
       SessionReference.evalWithStateCore s (.apply "get-atoms" [spaceArg]) =
         SessionReferenceTotal.evalWithStateCore s (.apply "get-atoms" [spaceArg]) := by
-    simpa [SessionReference.evalWithStateCore] using
-      SessionReferenceAdequacy.getAtoms_eval_eq_public_total_of_oneMaxNode s spaceArg hNodes
+    simp [SessionReference.evalWithStateCore, SessionReferenceTotal.evalWithStateCore,
+      SessionReferenceTotal.totalEvalWithStateCore, Session.evalWithStateCoreN,
+      SessionReferenceTotal.referenceFuel]
   exact
     wf_evalWithState_of_local_reference_agreement_and_deterministic_agreement
       s (.apply "get-atoms" [spaceArg]) hRefEq hs hAgreeRaw
@@ -372,8 +370,9 @@ theorem wf_evalWithState_getAtomsBang_of_oneMaxNode_and_deterministic_agreement
   have hRefEq :
       SessionReference.evalWithStateCore s (.apply "get-atoms!" [spaceArg]) =
         SessionReferenceTotal.evalWithStateCore s (.apply "get-atoms!" [spaceArg]) := by
-    simpa [SessionReference.evalWithStateCore] using
-      SessionReferenceAdequacy.getAtomsBang_eval_eq_public_total_of_oneMaxNode s spaceArg hNodes
+    simp [SessionReference.evalWithStateCore, SessionReferenceTotal.evalWithStateCore,
+      SessionReferenceTotal.totalEvalWithStateCore, Session.evalWithStateCoreN,
+      SessionReferenceTotal.referenceFuel]
   exact
     wf_evalWithState_of_local_reference_agreement_and_deterministic_agreement
       s (.apply "get-atoms!" [spaceArg]) hRefEq hs hAgreeRaw

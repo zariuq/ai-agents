@@ -446,6 +446,41 @@ theorem functionhead3Like_ruleShape_twoWitnessBoundary_sound_of_member
   exact tupleMembership_twoWitness_residual_sound_of_member
     (workspace := workspace) horacle hargsX hmemX hargsY hmemY hmerge htrans hinst hr
 
+/-- Clean statement of the exact `Dispatch` seam the current deterministic
+`functionhead3` fragment is meant to feed.
+
+This packages three facts together:
+- the real structural classifier selects the compat-head branch
+- the selected branch really is the `hasCompatHeadConstraintArg` branch
+- on this singleton rewrite-only interface, the plain compat-head outputs are
+  exactly the projection of the binding-carrying outputs
+
+This is the precise bridge target later backend work should consume; it avoids
+restating the branch shape informally in downstream code. -/
+def Functionhead3LikeDispatchBridgeTarget
+    (ctor varX varY : String) (xs ys rhs : PeTTaPattern)
+    (tArg0 tArg1 : MeTTailCore.MeTTaIL.Syntax.Pattern) : Prop :=
+  let rule := functionhead3LikeCoreRule ctor varX varY xs ys rhs
+  let I := rewriteOnlyDispatchInterface [rule]
+  let term := MeTTailCore.MeTTaIL.Syntax.Pattern.apply ctor [tArg0, tArg1]
+  let tag := Algorithms.MeTTa.Simple.Semantics.Dispatch.scopedRuleTag rule.name [tArg0, tArg1]
+  let pArgs :=
+    [ MeTTailCore.MeTTaIL.Syntax.Pattern.apply "in"
+        [ MeTTailCore.MeTTaIL.Syntax.Pattern.fvar (tag ++ varX)
+        , specToCorePattern xs
+        ]
+    , MeTTailCore.MeTTaIL.Syntax.Pattern.apply "in"
+        [ MeTTailCore.MeTTaIL.Syntax.Pattern.fvar (tag ++ varY)
+        , specToCorePattern ys
+        ]
+    ]
+  let valsState := Algorithms.MeTTa.Simple.Semantics.Dispatch.compatFunctionHeadRewrite I () term
+  let pairState :=
+    Algorithms.MeTTa.Simple.Semantics.Dispatch.constrainedCallBindingsAndValues I () term
+  Algorithms.MeTTa.Simple.Semantics.Dispatch.hasCompatHeadConstraintRule I () ctor 2 = true ∧
+    List.any pArgs Algorithms.MeTTa.Simple.Semantics.Dispatch.hasCompatHeadConstraintArg = true ∧
+    valsState.1 = pairState.1 ∧ valsState.2 = pairState.2.map Prod.snd
+
 /-- Operational singleton compat-head seam for the minimal rewrite-only
 `functionhead3` interface: the plain compat-head outputs are exactly the
 projection of the binding-carrying outputs.
@@ -466,14 +501,18 @@ theorem functionhead3Like_singleton_projection
     valsState.1 = pairState.1 ∧ valsState.2 = pairState.2.map Prod.snd := by
   dsimp
   let rule := functionhead3LikeCoreRule ctor varX varY xs ys rhs
-  let I := rewriteOnlyDispatchInterface [rule]
+  let tag := Algorithms.MeTTa.Simple.Semantics.Dispatch.scopedRuleTag rule.name [tArg0, tArg1]
   let pArgs :=
-    match
-        MeTTailCore.MeTTaIL.Syntax.renameFVarsWith
-          (Algorithms.MeTTa.Simple.Semantics.Dispatch.scopedRuleTag rule.name [tArg0, tArg1])
-          rule.left with
-    | .apply _ pArgs => pArgs
-    | _ => []
+    [ MeTTailCore.MeTTaIL.Syntax.Pattern.apply "in"
+        [ MeTTailCore.MeTTaIL.Syntax.Pattern.fvar (tag ++ varX)
+        , specToCorePattern xs
+        ]
+    , MeTTailCore.MeTTaIL.Syntax.Pattern.apply "in"
+        [ MeTTailCore.MeTTaIL.Syntax.Pattern.fvar (tag ++ varY)
+        , specToCorePattern ys
+        ]
+    ]
+  let I := rewriteOnlyDispatchInterface [rule]
   have hEvalEq :
       ∀ (s : Unit) (rhs0 : MeTTailCore.MeTTaIL.Syntax.Pattern),
         I.evalForRuleEnumeration s rhs0 = I.eval s rhs0 := by
@@ -483,19 +522,48 @@ theorem functionhead3Like_singleton_projection
       I.premiseFreeRulesForHeadArity () ctor [tArg0, tArg1].length = [rule] := by
     simp [I, rewriteOnlyDispatchInterface, rule, functionhead3LikeCoreRule]
   have hLeft :
-      MeTTailCore.MeTTaIL.Syntax.renameFVarsWith
-          (Algorithms.MeTTa.Simple.Semantics.Dispatch.scopedRuleTag rule.name [tArg0, tArg1])
-          rule.left =
+      Algorithms.MeTTa.Simple.Semantics.Dispatch.renameFVarsWith
+          tag rule.left =
         .apply ctor pArgs := by
-    simp [pArgs, rule, functionhead3LikeCoreRule]
+    simp [tag, pArgs, rule, functionhead3LikeCoreRule,
+      Algorithms.MeTTa.Simple.Semantics.Dispatch.renameFVarsWith]
   have hLen : pArgs.length == [tArg0, tArg1].length := by
     simp [pArgs, rule, functionhead3LikeCoreRule]
   have hCompat :
-      pArgs.any Algorithms.MeTTa.Simple.Semantics.Dispatch.hasCompatHeadConstraintArg = true := by
+      List.any pArgs Algorithms.MeTTa.Simple.Semantics.Dispatch.hasCompatHeadConstraintArg = true := by
     simp [pArgs, rule, functionhead3LikeCoreRule]
   simpa [I, rule] using
     Algorithms.MeTTa.Simple.Semantics.Dispatch.compatFunctionHeadRewrite_eq_constrained_projection_singleton
       I hEvalEq () ctor [tArg0, tArg1] rule pArgs hRules hLeft hLen hCompat
+
+/-- The deterministic singleton `functionhead3` fragment lands exactly on the
+real `Dispatch` compat-head branch described by
+`Functionhead3LikeDispatchBridgeTarget`. -/
+theorem functionhead3Like_dispatchBridgeTarget
+    {ctor varX varY : String} {xs ys rhs : PeTTaPattern}
+    {tArg0 tArg1 : MeTTailCore.MeTTaIL.Syntax.Pattern} :
+    Functionhead3LikeDispatchBridgeTarget ctor varX varY xs ys rhs tArg0 tArg1 := by
+  dsimp [Functionhead3LikeDispatchBridgeTarget]
+  let rule := functionhead3LikeCoreRule ctor varX varY xs ys rhs
+  let tag := Algorithms.MeTTa.Simple.Semantics.Dispatch.scopedRuleTag rule.name [tArg0, tArg1]
+  let pArgs :=
+    [ MeTTailCore.MeTTaIL.Syntax.Pattern.apply "in"
+        [ MeTTailCore.MeTTaIL.Syntax.Pattern.fvar (tag ++ varX)
+        , specToCorePattern xs
+        ]
+    , MeTTailCore.MeTTaIL.Syntax.Pattern.apply "in"
+        [ MeTTailCore.MeTTaIL.Syntax.Pattern.fvar (tag ++ varY)
+        , specToCorePattern ys
+        ]
+    ]
+  refine ⟨?_, ?_, ?_⟩
+  · simpa [rule] using
+      functionhead3Like_ruleShape_hasCompatHeadConstraintRule
+        (ctor := ctor) (varX := varX) (varY := varY) (xs := xs) (ys := ys) (rhs := rhs)
+  · simp [pArgs, rule, functionhead3LikeCoreRule]
+  · simpa [rule] using
+      functionhead3Like_singleton_projection
+        (ctor := ctor) (varX := varX) (varY := varY) (xs := xs) (ys := ys) (rhs := rhs)
 
 section Canaries
 

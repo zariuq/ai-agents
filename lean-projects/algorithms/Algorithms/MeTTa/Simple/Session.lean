@@ -2430,7 +2430,7 @@ private def referenceEvalDeterministicCore (s : Session) (fuel : Nat)
   Algorithms.MeTTa.Simple.Semantics.DeterministicEval.eval
     deterministicEvalInterface s fuel term
 
-private def referenceProofFuel (s : Session) : Nat :=
+def referenceProofFuel (s : Session) : Nat :=
   Nat.max 4096 s.maxNodes
 
 -- ─── FuelResult: explicit fuel-exhaustion status ─────────────────────────────
@@ -5111,16 +5111,27 @@ theorem referenceEvalWithStateCoreN_getAtomsBang_state_eq_self_of_maxNodes_one
       cases n with
       | zero => omega
       | succ k =>
+          -- Precondition 2: intrinsicStatefulN returns (sess, facts)
           obtain ⟨facts, hIntrEq⟩ :=
             referenceIntrinsicStatefulN_getAtomsBang_state_eq (k + 1) (by omega) sess spaceArg
+          -- Unfold one level of referenceEvalWithStateCoreN to expose evalWithStateCore iface
           unfold referenceEvalWithStateCoreN
-          simp only [
-            Algorithms.MeTTa.Simple.Backend.ReferenceEval.evalWithStateCore,
-            Algorithms.MeTTa.Simple.Backend.ReferenceEval.evalAuxStateful,
-            Algorithms.MeTTa.Simple.Backend.ReferenceEval.stepAux,
-            Algorithms.MeTTa.Simple.Backend.ReferenceEval.runNestedEffects.eq_def,
-            hNodes, hIntrEq]
-          sorry
+          -- Precondition 1: runNestedEffects is passthrough for get-atoms!
+          have hRNE : Algorithms.MeTTa.Simple.Backend.ReferenceEval.runNestedEffects
+              { maxNodes := fun s => s.maxNodes, maxSteps := fun s => s.maxSteps,
+                runNestedEffects := fun s isRoot p term =>
+                  referenceRunNestedEffectsN (k + 1) s isRoot p term,
+                intrinsicStateful := fun s term => referenceIntrinsicStatefulN (k + 1) s term,
+                isEagerCallableHead := isEagerCallableHead, step := step,
+                enqueueNext := enqueueNext, insertUnique := insertUnique,
+                dedupPatterns := dedupPatterns }
+              sess true false (.apply "get-atoms!" [spaceArg]) =
+              (sess, .apply "get-atoms!" [spaceArg], false) := by
+            simp [Algorithms.MeTTa.Simple.Backend.ReferenceEval.runNestedEffects]
+          -- Apply the generic framework lemma
+          exact Algorithms.MeTTa.Simple.Backend.ReferenceEval.evalWithStateCore_s_eq_of_passthrough_one_step
+            _ sess (.apply "get-atoms!" [spaceArg]) hNodes
+            (.apply "get-atoms!" [spaceArg]) false facts hRNE hIntrEq
 
 /-- On the first non-degenerate fragment `maxNodes = 1`, evaluating a root
     `get-atoms!` term leaves the session unchanged.  Transfers through the
@@ -5245,28 +5256,24 @@ theorem referenceMatchEvalMatchedTemplate_getAtomsBang_eq_total_of_eval_agreemen
     first non-degenerate fragment `maxNodes = 1`. -/
 theorem referenceMatchEvalMatchedTemplate_getAtomsBang_state_eq_self_of_maxNodes_one
     (s0 sess : Session) (spaceExpr : Pattern)
-    (hNodes : sess.maxNodes = 1)
-    (hState :
-      (referenceEvalWithStateCore sess (.apply "get-atoms!" [spaceExpr])).1 = sess) :
+    (hNodes : sess.maxNodes = 1) :
     (referenceMatchEvalMatchedTemplate s0 sess (.apply "get-atoms!" [spaceExpr])).1 = sess := by
   simpa [referenceMatchEvalMatchedTemplate,
     Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchedTemplate] using
     referenceEvalWithStateCore_getAtomsBang_state_eq_self_of_maxNodes_one
-      sess spaceExpr hNodes hState
+      sess spaceExpr hNodes
 
 /-- The fuel-indexed matched-template evaluator has the same one-step state
     invariance for `get-atoms!` on `maxNodes = 1`. -/
 theorem totalMatchEvalMatchedTemplate_getAtomsBang_state_eq_self_of_maxNodes_one
     (fuel : Nat) (hFuel : 1 < fuel)
     (s0 sess : Session) (spaceExpr : Pattern)
-    (hNodes : sess.maxNodes = 1)
-    (hState :
-      (referenceEvalWithStateCore sess (.apply "get-atoms!" [spaceExpr])).1 = sess) :
+    (hNodes : sess.maxNodes = 1) :
     (totalMatchEvalMatchedTemplate fuel s0 sess (.apply "get-atoms!" [spaceExpr])).1 = sess := by
   simpa [totalMatchEvalMatchedTemplate,
     Algorithms.MeTTa.Simple.Semantics.SpaceOps.evalMatchedTemplate] using
     referenceEvalWithStateCoreN_getAtomsBang_state_eq_self_of_maxNodes_one
-      fuel hFuel sess spaceExpr hNodes hState
+      fuel hFuel sess spaceExpr hNodes
 
 /-- First non-degenerate compositional `match` adequacy theorem for `get-atoms!`
     templates. The proof is specialized to the `maxNodes = 1` fragment so the
@@ -5340,13 +5347,9 @@ theorem referenceMatchIntrinsicResult_eq_total_of_getAtomsBangTemplate_on_oneMax
         have hState₂ :
             (totalMatchEvalMatchedTemplate fuel s sess
                 (matchTemplateAfterBindings bs (.apply "get-atoms!" [spaceExpr]))).1 = sess := by
-          have hStateRef :
-              (referenceEvalWithStateCore sess
-                  (.apply "get-atoms!" [matchTemplateAfterBindings bs spaceExpr])).1 = sess := by
-            exact hStateRoot sess (matchTemplateAfterBindings bs spaceExpr) hSess
           simpa [matchTemplateAfterBindings_getAtomsBang] using
             totalMatchEvalMatchedTemplate_getAtomsBang_state_eq_self_of_maxNodes_one
-              fuel hFuel s sess (matchTemplateAfterBindings bs spaceExpr) hSess hStateRef
+              fuel hFuel s sess (matchTemplateAfterBindings bs spaceExpr) hSess
         cases hOut₂ :
             totalMatchEvalMatchedTemplate fuel s sess
               (matchTemplateAfterBindings bs (.apply "get-atoms!" [spaceExpr])) with
@@ -5394,73 +5397,6 @@ theorem referenceMatchIntrinsicResult_eq_total_of_getAtomsBangTemplate_on_oneMax
     (sDyn, dynamicOut ++ builtinOut3)
   simpa [finish, bindings, f₁, f₂, referenceSpaceEvalInterface, referenceSpaceEvalInterfaceN] using
     congrArg finish hFoldEq
-
-/-- Root intrinsic agreement for `match` with a `get-atoms!` template on the first
-    non-degenerate fragment. The outer evaluator fuel must leave room for the `match`
-    step and then the inner `get-atoms!` evaluation. -/
-theorem intrinsicStateful_match_getAtomsBang_eq_referenceIntrinsicStatefulN_of_oneMaxNode
-    (fuel : Nat) (_hFuel : 3 < fuel)
-    (s : Session) (space pat spaceExpr : Pattern)
-    (_hNodes : s.maxNodes = 1)
-    (hIntr :
-      intrinsicStateful s (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) =
-        referenceIntrinsicStatefulN (fuel - 1) s
-          (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]])) :
-    intrinsicStateful s (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) =
-      referenceIntrinsicStatefulN (fuel - 1) s
-        (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) := by
-  exact hIntr
-
-/-- Once root intrinsic agreement is known, the evaluator-level `match` agreement on
-    `maxNodes = 1` is just ReferenceEval plumbing. -/
-theorem referenceEvalWithStateCore_match_getAtomsBang_eq_N_of_maxNodes_one_of_intrinsic_agreement
-    (fuel : Nat) (hFuel : 1 < fuel)
-    (sess : Session) (space pat spaceExpr : Pattern)
-    (hNodes : sess.maxNodes = 1)
-    (hIntr :
-      intrinsicStateful sess (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) =
-        referenceIntrinsicStatefulN (fuel - 1) sess
-          (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]])) :
-    referenceEvalWithStateCore sess (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) =
-      referenceEvalWithStateCoreN fuel sess (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) := by
-  cases fuel with
-  | zero =>
-      contradiction
-  | succ n =>
-      cases n with
-      | zero =>
-          contradiction
-      | succ k =>
-          have hIntr' :
-              intrinsicStateful sess (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) =
-                referenceIntrinsicStatefulN (k + 1) sess
-                  (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) := by
-            simpa using hIntr
-          unfold referenceEvalWithStateCore referenceEvalWithStateCoreN
-          simp [referenceEvalInterface,
-            Algorithms.MeTTa.Simple.Backend.ReferenceEval.evalWithStateCore,
-            Algorithms.MeTTa.Simple.Backend.ReferenceEval.evalAuxStateful,
-            Algorithms.MeTTa.Simple.Backend.ReferenceEval.stepAux,
-            Algorithms.MeTTa.Simple.Backend.ReferenceEval.runNestedEffects.eq_def,
-            hNodes, hIntr']
-
-/-- First root evaluator equality theorem for a compositional `match` fragment with a
-    proved adequacy witness: `get-atoms!` templates on `maxNodes = 1`. -/
-theorem referenceEvalWithStateCore_match_getAtomsBang_eq_N_of_maxNodes_one
-    (fuel : Nat) (hFuel : 3 < fuel)
-    (sess : Session) (space pat spaceExpr : Pattern)
-    (hNodes : sess.maxNodes = 1)
-    (hIntr :
-      intrinsicStateful sess (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) =
-        referenceIntrinsicStatefulN (fuel - 1) sess
-          (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]])) :
-    referenceEvalWithStateCore sess (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) =
-      referenceEvalWithStateCoreN fuel sess (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) := by
-  have hFuelStep : 1 < fuel := by
-    omega
-  exact
-    referenceEvalWithStateCore_match_getAtomsBang_eq_N_of_maxNodes_one_of_intrinsic_agreement
-      (fuel := fuel) hFuelStep sess space pat spaceExpr hNodes hIntr
 
 /-- Lift a unary `get-atoms!` evaluator-agreement hypothesis to the exact
     substituted-template `hEval` shape used by compositional `match` adequacy. -/
@@ -9426,7 +9362,7 @@ def optimizedBackendInterface : Algorithms.MeTTa.Simple.Backend.OptimizedEval.In
   hasDeterministicBlockingRewriteBodies := hasDeterministicBlockingRewriteBodies
   hasMultipleRootRuleChoices := hasMultipleRootRuleChoices
   evalDeterministicCore := evalDeterministicCore
-  evalWithStateCore := referenceEvalWithStateCore
+  evalWithStateCore := fun s term => referenceEvalWithStateCoreN (referenceProofFuel s) s term
   isResolvedDeterministicResult :=
     Algorithms.MeTTa.Simple.Semantics.DeterministicStrategy.isResolvedDeterministicResult
   acceptUnchangedDeterministic := acceptUnchangedDeterministic
@@ -9442,10 +9378,10 @@ theorem evalWithState_eq_optimizedBackend
         optimizedBackendInterface s term := by
   rfl
 
-theorem optimizedBackendInterface_evalWithStateCore_eq_reference
+theorem optimizedBackendInterface_evalWithStateCore_eq_N
     (s : Session) (term : Pattern) :
     optimizedBackendInterface.evalWithStateCore s term =
-      referenceEvalWithStateCore s term := by
+      evalWithStateCoreN (referenceProofFuel s) s term := by
   rfl
 
 theorem evalWithState_eq_reference_of_guard_failure

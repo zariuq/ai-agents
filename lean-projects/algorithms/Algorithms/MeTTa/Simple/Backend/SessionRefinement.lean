@@ -24,8 +24,8 @@ private theorem optimizedCoreEq
     (s : Session) (term : Pattern) :
     Session.optimizedBackendInterface.evalWithStateCore s term =
       SessionReference.evalWithStateCore s term := by
-  simpa [SessionReference.evalWithStateCore] using
-    Session.optimizedBackendInterface_evalWithStateCore_eq_reference s term
+  simp [SessionReference.evalWithStateCore,
+    Session.optimizedBackendInterface_evalWithStateCore_eq_N]
 
 theorem evalWithState_eq_reference_of_deterministic_agreement_raw_guard
     (s : Session) (term : Pattern)
