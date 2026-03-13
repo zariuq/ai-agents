@@ -96,18 +96,18 @@ theorem matchAtoms_refl_symbol (s : String) (fuel : Nat) (h : fuel > 0) :
 
 /-- cons-atom followed by decons-atom is the identity (round-trip). -/
 theorem cons_decons_roundtrip (dispatch : GroundedDispatch) (s : Space)
-    (hd : Atom) (tl : List Atom) :
+    (hd : Atom) (tl : List Atom) (ib : Bindings) :
     MinimalStep dispatch s
-      (.expression [.symbol "cons-atom", hd, .expression tl])
-      s (.expression (hd :: tl), Bindings.empty) :=
-  .cons_atom _ _ _
+      (.expression [.symbol "cons-atom", hd, .expression tl]) ib
+      s (.expression (hd :: tl), ib) :=
+  .cons_atom _ _ _ _
 
 /-- decons-atom decomposes into head and tail. -/
 theorem decons_produces_head_tail (dispatch : GroundedDispatch) (s : Space)
-    (hd : Atom) (tl : List Atom) :
+    (hd : Atom) (tl : List Atom) (ib : Bindings) :
     MinimalStep dispatch s
-      (.expression [.symbol "decons-atom", .expression (hd :: tl)])
-      s (.expression [hd, .expression tl], Bindings.empty) :=
-  .decons_atom _ _ _
+      (.expression [.symbol "decons-atom", .expression (hd :: tl)]) ib
+      s (.expression [hd, .expression tl], ib) :=
+  .decons_atom _ _ _ _
 
 end Mettapedia.Languages.MeTTa.HE.Properties

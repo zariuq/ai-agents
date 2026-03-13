@@ -95,9 +95,13 @@ The HE spec collects types from:
 2. Intrinsic meta-type if no annotations found
 -/
 
-/-- Get all types for an atom from space annotations.
+/-- Get all types for an atom from explicit `(: atom type)` annotations in space.
     If no annotations found, returns `[%Undefined%]`.
-    Ref: `types.rs:get_atom_types`, metta.md line 287. -/
+    Ref: `types.rs:get_atom_types`, metta.md line 287.
+
+    Intentional abstraction: covers explicit `(: atom type)` annotations only.
+    Richer type inference for applications (function return types) and grounded
+    values (intrinsic types from `get_grounded_type`) is deferred. -/
 def getAtomTypes (space : Space) (a : Atom) : List Atom :=
   let annotated := space.atoms.filterMap fun atom =>
     match atom with

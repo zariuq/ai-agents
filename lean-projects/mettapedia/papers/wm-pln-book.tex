@@ -3734,6 +3734,103 @@ place: the benchmark-side regime and trust fields should become
 principled projections of that bridge, not one more layer of bespoke
 scores.
 
+\subsection{GWAS locus-to-gene: replication-first benchmark lane}
+
+The genomic lane should be staged with the same discipline.  The relevant
+benchmark object is not merely ``some SNP--gene scores,'' but a full
+locus-to-gene pipeline with at least three separable layers:
+\begin{enumerate}
+\item the \emph{scientific task} (candidate gene ranking for a variant or
+  locus, and later variant $\to$ gene $\to$ mechanism explanation);
+\item the \emph{scoring semantics} (the current ProbLog/LPAD baseline versus a
+  WM-PLN evidence-carrying strengthening); and
+\item the \emph{runtime surface} (native repo/cplint path first, Janus/PeTTa
+  parity second, any later harnesses only after that).
+\end{enumerate}
+That separation matters because the public
+\codepath{hypothesis-generation-demo} repository already contains its own
+benchmark-facing ProbLog family: a learned-rule LPAD surface in
+\codepath{pl/pl\_rules.pl}, a native cplint parameter-learning/evaluation
+driver in \codepath{pl/param\_learn.pl}, and the current fold/index artifacts
+under \codepath{pl/models/}.  So the first obligation is not to replace that
+surface with a new one.  It is to replicate their methodology with
+\emph{their} ProbLog stack as faithfully as the surviving data/runtime
+artifacts allow.
+
+\begin{table}[ht]
+\centering
+\scriptsize
+\renewcommand{\arraystretch}{1.02}
+\begin{tabular}{@{}p{0.22\textwidth}p{0.31\textwidth}p{0.31\textwidth}@{}}
+\toprule
+Surface / bundle & What we currently have locally & Role in the benchmark plan \\
+\midrule
+Native repo artifacts &
+\codepath{pl/param\_learn.pl}, \codepath{pl/pl\_rules.pl}, five
+\codepath{pl/models/fold\_\*/} partitions, and stored ROC/PR charts &
+Primary replication target: this is the original LPAD/cplint methodology we
+should reproduce before claiming any WM improvement. \\
+Public-source genomic reconstruction &
+GTEx v8 eQTL data~\cite{GTEx2020}, ABC enhancer predictions~\cite{Nasser2021ABC},
+chr16 GeneHancer/cache material, SNP/gene coordinate caches, and the narrower
+genomic note's reconstructed feature bundle &
+Methodology-replication substrate if the original compiled Prolog KB snapshot
+cannot be recovered exactly.  This is close enough for an honest
+``same-method-family on similar public data'' lane, but not for an exact-rerun
+claim. \\
+External benchmark tables &
+Local Open Targets Genetics L2G/V2D tables, genetics gold standards, full
+GTEx, SCREEN cCRE, Reactome, and BioCypher-KG derivatives &
+Stage after parity: fixed candidate-table locus-to-gene evaluation with
+per-locus ranking metrics and explicit separation between ranking and
+explanation. \\
+Missing exact-rerun ingredient &
+The compiled Prolog KB trees expected by \codepath{pl/load\_kbs.pl}
+(\code{prolog\_out\_v2}, \code{prolog\_out\_v3}) and the faithful cplint
+runtime image used to consume them &
+Current blocker to a strong ``exact poster rerun'' claim.  Until these are
+recovered, the honest label is \emph{methodology replication}, not exact
+replication. \\
+\bottomrule
+\end{tabular}
+\renewcommand{\arraystretch}{1}
+\caption{Current genomic benchmark surface and status.  The crucial distinction
+is between \emph{exact replication} of the original repo/runtime/data bundle
+and \emph{methodology replication} on close public-source reconstructions.}
+\label{tab:gwas-benchmark-surface}
+\end{table}
+
+The resulting protocol should be deliberately staged:
+\begin{enumerate}
+\item \textbf{Exact-replication salvage pass.}  Recover the native cplint
+  environment and, if possible, the original compiled KB snapshot expected by
+  \codepath{pl/load\_kbs.pl}.  If this succeeds, rerun
+  \codepath{pl/param\_learn.pl} directly and compare only against the original
+  reported ProbLog/LPAD outputs.
+\item \textbf{Methodology replication on similar public data.}  If the exact
+  snapshot cannot be recovered, preserve the same methodological shape
+  (ProbLog/LPAD rule family, fold protocol, and evaluation discipline) but
+  drive it from the closest public-source reconstruction.  This should be
+  labeled strictly as a methodology replication, not as an exact rerun.
+\item \textbf{WM-PLN strengthening parity.}  Only after the ProbLog baseline is
+  understood should we hold the candidate/evaluation surface fixed and replace
+  Boolean mechanism activations with real WM evidence objects on a PeTTa/Janus
+  path.  The scientific question here is then clean: what improves when the
+  same genomic task is given a stronger evidence semantics?
+\item \textbf{Interesting benchmark extensions.}  After parity, promote the
+  first serious external claim to a fixed-candidate Open Targets locus-to-gene
+  lane, and keep mechanism chains / hypothesis generation as a distinct
+  explanation family with its own evaluation protocol.
+\end{enumerate}
+
+Two guardrails are especially important.  First, we should not score a fresh
+replacement model on a custom harness and call that ``their baseline.''  The
+baseline must be \emph{their} methodology, driven through their own ProbLog
+family as directly as possible.  Second, the first benchmark-grade claim should
+be ranking-only: candidate set fixed, locus-wise metrics explicit, and
+mechanistic explanations evaluated separately rather than smuggled into the
+same headline number.
+
 \section{Bridge Theorems: Naive Bayes and k-NN}
 
 The BN world-model framework connects PLN to two standard machine-learning
@@ -4047,6 +4144,345 @@ PLN chaining can guarantee.  They are proved in:
 \end{itemize}
 
 
+\section{Distributional Inference: The Constructive Resolution}
+\label{sec:distributional-inference}
+
+The five no-go theorems above characterize the \emph{boundary} of what scalar
+PLN chaining can guarantee.  A natural question follows: is there a chaining
+mode that avoids the variance-accumulation obstruction entirely?  The answer
+is yes---and it is not new.  The PLN book~\cite{goertzel2009pln} (Chapter~6)
+defines \emph{distributional inference} as propagating the full posterior
+distribution through inference steps rather than collapsing to scalar truth
+values.  What is new here is the formalized dominance proof and empirical
+confirmation.
+
+\subsection*{The Problem: Scalar Collapse}
+
+Classical PLN chaining compresses each link's evidence to a scalar truth
+value $(s, c)$ and propagates through the deduction formula using the
+\emph{confidence-product heuristic}:
+\[
+  c_{AC} \;=\; c_{AB} \cdot c_{BC}.
+\]
+This heuristic is fast and intuitive---confidence decays multiplicatively
+along inference chains, as one might expect from a noisy telephone game.
+But it discards the internal structure of the deduction formula.
+
+To see why this matters, recall the deduction formula from
+Definition~\ref{def:deduction-strength}:
+\[
+  s_{AC} \;=\; s_{AB} \cdot s_{BC}
+    + (1 - s_{AB}) \cdot \frac{s_C - s_B \cdot s_{BC}}{1 - s_B}.
+\]
+Rearranging with $k = 1/(1-s_B)$, the output is an \emph{affine function
+of the product} $s_{AB} \cdot s_{BC}$:
+\begin{equation}
+\label{eq:deduction-affine}
+  s_{AC} \;=\; a \cdot s_{AB} \cdot s_{BC}
+    + b \cdot s_{AB} + c \cdot s_{BC} + d,
+\end{equation}
+where $a, b, c, d$ depend on $(s_B, s_C)$.  The true output variance is
+therefore determined by the \emph{variance of an affine product of
+independent random variables}---a formula involving cross-terms between
+input variances, input means, and the coefficients $a, b, c, d$:
+\begin{equation}
+\label{eq:true-variance}
+  \mathrm{Var}[s_{AC}]
+    = a^2 \cdot \mathrm{VarProd}(s_{AB}, s_{BC})
+      + b^2 \cdot \mathrm{Var}[s_{AB}]
+      + c^2 \cdot \mathrm{Var}[s_{BC}],
+\end{equation}
+where $\mathrm{VarProd}(X, Y)
+  = \sigma_X^2 \sigma_Y^2
+    + \sigma_X^2 \mu_Y^2
+    + \sigma_Y^2 \mu_X^2$
+for independent $X, Y$.
+
+The confidence-product heuristic knows nothing about $a, b, c, d$.  It
+treats confidence as a context-free decay factor, independent of the
+particular deduction coefficients.  When $s_B$ is close to~1, the
+coefficient $a = 1 + k = 1 + 1/(1-s_B)$ becomes large, amplifying the
+cross-term variance far beyond what the heuristic predicts.
+
+\subsection*{Distributional Inference: Carry the Full Posterior}
+
+The fix is exactly what the PLN book prescribes: carry the full Beta
+posterior $\mathrm{Beta}(\alpha, \beta)$ through each inference step instead
+of collapsing to $(s, c)$.  At each deduction step:
+
+\begin{enumerate}
+\item \textbf{Input:} two Beta posteriors $e_{AB}$ and $e_{BC}$, plus
+  marginals $(s_B, s_C)$.
+\item \textbf{Output strength:} apply the same deduction formula
+  (Eq.~\ref{eq:deduction-affine}) to the posterior means.
+\item \textbf{Output variance:} compute the exact variance using
+  Eq.~\ref{eq:true-variance}, which requires only the posterior means
+  and variances of each input (readily available from the Beta
+  parameters).
+\end{enumerate}
+
+The scalar and distributional modes produce the \emph{same output strength}
+at every step---the difference is entirely in uncertainty tracking.
+Distributional inference has \emph{zero approximation error} by definition:
+it uses the correct variance formula.  The PLN book recognized this
+advantage; what was missing was a formal proof and empirical validation
+on real BN benchmarks.
+
+\subsection*{Worked Example}
+
+Consider a two-step chain $A \to B \to C$ with symmetric evidence:
+$e_{AB} = e_{BC} = \mathrm{Beta}(3, 3)$ (i.e., 2~positive and 2~negative
+observations each, under a uniform prior).
+
+\paragraph{Scalar inference.}  Each link has $s = 1/2$, $c = 4/(4+1) = 4/5$.
+The heuristic gives $c_{AC} = (4/5)^2 = 16/25$, implying a
+``virtual'' observation count $n_{\mathrm{implied}} = c_{AC}/(1 - c_{AC})
+= 16/9 \approx 1.78$.  The implied variance is then
+$s_{AC}(1 - s_{AC}) / (n_{\mathrm{implied}} + 1)$.
+
+\paragraph{Distributional inference.}  From the Beta(3,3) posteriors, each input
+has mean $\mu = 1/2$ and variance $\sigma^2 = 1/28$.  The exact output
+variance is computed via the affine-product-of-independents formula using
+the deduction coefficients for $s_B = s_C = 1/2$.
+
+With the specific parameters above, the heuristic \emph{overestimates} the
+true variance, suggesting less precision would be needed than actually
+exists.  But this direction is not robust:
+
+\paragraph{The anti-conservative regime.}  Now set $s_B = 4/5$ (keeping the
+same evidence and $s_C = 1/2$).  The deduction coefficient becomes
+$a = 1 + 1/(1 - 4/5) = 6$, amplifying the product-variance cross-term by a
+factor of~36.  The heuristic, blind to this amplification, now
+\emph{underestimates} the true variance.  This is the anti-conservative
+regime: the system reports more certainty than it actually has.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >=Stealth,
+  every node/.style={font=\small},
+  box/.style={draw, rounded corners=3pt, align=center,
+              minimum height=14mm, minimum width=22mm},
+  evidence/.style={draw, rounded corners=3pt, align=center,
+              minimum height=14mm, minimum width=22mm, fill=blue!8},
+  stv/.style={draw, rounded corners=3pt, align=center,
+              minimum height=14mm, minimum width=22mm, fill=red!8},
+  result/.style={draw, rounded corners=3pt, align=center,
+              minimum height=14mm, minimum width=26mm},
+]
+
+% Distributional path (top)
+\node[evidence] (eAB) {$e_{AB}$\\$\mathrm{Beta}(\alpha,\beta)$};
+\node[evidence, right=12mm of eAB] (eBC) {$e_{BC}$\\$\mathrm{Beta}(\alpha',\beta')$};
+\node[box, right=18mm of eBC, fill=blue!15] (ded1) {Deduction\\(exact $\sigma^2$)};
+\node[result, right=18mm of ded1, fill=blue!8] (out1)
+  {$s_{AC},\;\sigma^2_{\mathrm{exact}}$\\approximation error $= 0$};
+
+\draw[->, thick, blue!60!black] (eAB) -- (ded1);
+\draw[->, thick, blue!60!black] (eBC) -- (ded1);
+\draw[->, thick, blue!60!black] (ded1) -- (out1);
+
+\node[above=2mm of ded1, font=\footnotesize\bfseries, blue!60!black]
+  {Distributional inference};
+
+% Scalar path (bottom)
+\node[stv, below=28mm of eAB] (sAB) {$(s_{AB}, c_{AB})$\\scalar STV};
+\node[stv, right=12mm of sAB] (sBC) {$(s_{BC}, c_{BC})$\\scalar STV};
+\node[box, right=18mm of sBC, fill=red!15] (ded2) {Deduction\\($c_{AC} = c_{AB} \cdot c_{BC}$)};
+\node[result, right=18mm of ded2, fill=red!8] (out2)
+  {$s_{AC},\;\sigma^2_{\mathrm{heuristic}}$\\error $\ne 0$ in general};
+
+\draw[->, thick, red!60!black] (sAB) -- (ded2);
+\draw[->, thick, red!60!black] (sBC) -- (ded2);
+\draw[->, thick, red!60!black] (ded2) -- (out2);
+
+\node[below=2mm of ded2, font=\footnotesize\bfseries, red!60!black]
+  {Scalar inference};
+
+% Collapse arrows
+\draw[->, dashed, gray, thick] (eAB) -- node[left, font=\scriptsize, gray]
+  {collapse} (sAB);
+\draw[->, dashed, gray, thick] (eBC) -- node[left, font=\scriptsize, gray]
+  {collapse} (sBC);
+
+% Brace for error
+\draw[decorate, decoration={brace, amplitude=5pt, mirror},
+  thick, orange!70!black]
+  ([xshift=3mm]out1.south east) -- ([xshift=3mm]out2.north east)
+  node[midway, right=6pt, font=\scriptsize, orange!70!black, align=left]
+  {variance gap:\\can be positive\\or negative};
+
+\end{tikzpicture}
+\caption{Distributional vs.\ scalar inference (PLN book Ch.~6).  Both modes
+use the same deduction formula and produce the same output strength.
+Distributional inference (top) carries full Beta posteriors and computes
+exact output variance.  Scalar inference (bottom) collapses to $(s, c)$ and
+uses the confidence-product heuristic $c_{AC} = c_{AB} \cdot c_{BC}$,
+introducing a variance approximation error that can be either positive
+(overestimate) or negative (anti-conservative underestimate).}
+\label{fig:distributional-vs-scalar}
+\end{figure}
+
+\subsection*{Formalized Theorems}
+
+The distributional inference dominance result is formalized as nine
+kernel-checked theorems (zero sorries) in
+\codepath{Mettapedia/Logic/PLNDistributionalChainDominance.lean}, organized
+in four phases.
+
+\paragraph{Phase 1: Same strength, different variance.}
+\begin{theorem}[Same strength (\claimCore{})]
+\label{thm:same-strength-one-step}
+For any distributional chain step with evidence $e_{AB}$, $e_{BC}$ and
+marginals $(s_B, s_C)$, the distributional and scalar output strengths
+are identical:
+$s^{\mathrm{dist}}_{AC} = s^{\mathrm{scalar}}_{AC}$.
+\end{theorem}
+This follows immediately from the fact that both modes apply the same
+deduction formula to the same input means (the Beta posterior mean equals
+the STV strength when derived from the same evidence).
+
+\begin{theorem}[Heuristic variance inexact (\claimCore{})]
+\label{thm:heuristic-variance-ne-exact}
+There exists a chain step where the heuristic-implied variance differs from
+the exact variance:
+$\exists\, \mathit{step},\; \sigma^2_{\mathrm{heuristic}} \ne \sigma^2_{\mathrm{exact}}$.
+\end{theorem}
+
+\paragraph{Phase 2: Directional failures.}
+\begin{theorem}[Anti-conservative heuristic (\claimCore{})]
+\label{thm:heuristic-not-conservative}
+There exists a chain step where the heuristic \emph{underestimates} the true
+variance:
+$\exists\, \mathit{step},\; \sigma^2_{\mathrm{heuristic}} < \sigma^2_{\mathrm{exact}}$.
+\end{theorem}
+
+This is the critical safety result.  When $s_B$ is large (close to 1), the
+deduction coefficient $a$ amplifies cross-term variance, but the
+confidence-product heuristic is blind to this amplification.  The system
+reports \emph{more certainty than it actually has}.
+
+\begin{theorem}[Overestimating heuristic (\claimCore{})]
+\label{thm:heuristic-can-overestimate}
+There also exists a chain step where the heuristic \emph{overestimates} the
+true variance:
+$\exists\, \mathit{step},\; \sigma^2_{\mathrm{exact}} < \sigma^2_{\mathrm{heuristic}}$.
+\end{theorem}
+
+Together, Theorems~\ref{thm:heuristic-not-conservative}
+and~\ref{thm:heuristic-can-overestimate} show that the heuristic error is
+\emph{unbiased in sign}: the confidence-product formula is not merely
+imprecise---it is wrong in both directions depending on the deduction
+coefficients.
+
+\paragraph{Phase 3: Error accumulation.}
+\begin{theorem}[Scalar error accumulates (\claimCore{})]
+\label{thm:scalar-error-accumulates}
+For a chain of $n$ steps each with absolute heuristic approximation error
+at least $\delta > 0$:
+\[
+  \sum_{i=1}^{n} |\sigma^2_{\mathrm{heuristic},i} - \sigma^2_{\mathrm{exact},i}|
+  \;\ge\; n \cdot \delta.
+\]
+\end{theorem}
+
+\begin{theorem}[Distributional dominates scalar (\claimCore{})]
+\label{thm:distributional-dominates-scalar}
+There exists a non-empty chain of steps whose total scalar approximation
+error is strictly positive, while the distributional mode's approximation
+error is zero by construction.
+\end{theorem}
+
+\paragraph{Phase 4: Impossibility.}
+\begin{theorem}[Confidence product is not variance-preserving (\claimCore{})]
+\label{thm:confidence-product-not-variance-preserving}
+The confidence-product heuristic $c_{AC} = c_{AB} \cdot c_{BC}$ does
+\emph{not} equal the true deduction variance for all inputs:
+\[
+  \neg\;\forall\, \mathit{step},\;
+    \sigma^2_{\mathrm{heuristic}}(\mathit{step})
+    = \sigma^2_{\mathrm{exact}}(\mathit{step}).
+\]
+\end{theorem}
+
+\subsection*{Empirical Validation}
+
+The formalized dominance result is confirmed by the GPT-5.4~Pro Pathfinder
+benchmark, which compares distributional inference against scalar PLN
+inference on the Pathfinder BN reasoning dataset:
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method} & \textbf{Test MAE} & \textbf{Fork-path MAE} \\
+\midrule
+Scalar PLN inference & 0.02478 & 0.02179 \\
+Distributional inference & 0.01605 & 0.00439 \\
+\midrule
+Improvement & $1.5\times$ & $5.0\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The $5\times$ improvement on fork paths is exactly what the
+anti-conservative theorem predicts: fork BNs have $A \leftarrow B \to C$
+structure where $P(B)$ is typically moderate-to-high, amplifying the
+deduction coefficients and pushing scalar inference into its
+anti-conservative regime.
+
+\subsection*{Why This Makes PLN ``Logic-Like''}
+
+From a foundational perspective, distributional inference resolves a
+tension that has persisted since PLN's inception.  Classical logics compose
+cleanly: if $\Gamma \vdash A$ and $\Gamma, A \vdash B$, then
+$\Gamma \vdash B$, with no degradation.  PLN's scalar inference, by
+contrast, introduces an approximation error at every step---a fundamental
+deviation from logical compositionality.
+
+Distributional inference restores a form of this compositionality to the
+probabilistic setting.  Each inference step carries exact uncertainty
+information, and the output variance is computed from the true structure of
+the inference rule, not from a context-free heuristic.  The approximation
+error at each step is \emph{exactly zero}.  What accumulates is genuine
+epistemic uncertainty (the irreducible posterior spread due to finite
+evidence), not artifacts of a lossy compression scheme.
+
+This distinction is precisely the one that Kolmogorov's axiomatization
+makes for deterministic probability: the chain rule of conditional
+probability is exact, not approximate.  Distributional inference
+brings PLN's computational practice into alignment with this ideal.
+The PLN book recognized this advantage and defined the concept; the
+formalization here proves the dominance rigorously, and the Pathfinder
+benchmark confirms it empirically on real Bayesian networks.
+
+As Ben Goertzel notes, the efficiency cost of distributional inference
+is real---carrying full distributions through every step is more expensive
+than propagating scalars.  But the formalization shows that the scalar
+shortcut is not merely less precise: it can be \emph{anti-conservative},
+reporting more certainty than actually exists.  For safety-critical
+reasoning chains, this makes the efficiency trade-off clear: distributional
+inference is not a luxury but a necessity when variance tracking matters.
+
+\medskip
+
+The connection to the variance-accumulation no-go
+(Theorem~\ref{thm:variance-accumulation}) is illuminating.  That theorem
+says that unrevealed regime mixtures accumulate irreducible variance
+linearly in chain length.  Distributional inference does not escape this
+bound---genuine uncertainty still grows---but it \emph{tracks that growth
+exactly}, so the system always knows how uncertain it actually is.  Scalar
+inference, by contrast, may either over- or underestimate the accumulated
+uncertainty, making it impossible to set reliable thresholds for when to
+stop, reveal, or fall back.  In cases where distributions are bimodal or
+more complex, the advantage of distributional inference becomes even
+more pronounced.
+
+\medskip
+
+See \codepath{Mettapedia/Logic/PLNDistributionalChainDominance.lean}
+and \codepath{Mettapedia/Logic/PLNDistributional.lean}.
+
+
 %% ═══════════════════════════════════════════════════════════════════
 \part{Main Extensions}
 \label{part:extensions}
@@ -4057,6 +4493,10 @@ PLN chaining can guarantee.  They are proved in:
 
 This chapter is now grounded in a real higher-order logic layer rather than
 treating higher-order PLN as only a satisfying-set reduction trick.
+The current HOL layer provides typed syntax, intuitionistic-extensional
+Heyting/Henkin semantics, an extensional proof overlay, soundness, cumulative
+Henkinization infrastructure, and world-level canonical truth machinery.
+A typed canonical model and HOL completeness theorem are still in progress.
 
 The formal architecture is:
 \[
@@ -4111,7 +4551,7 @@ This gives a cleaner and more faithful foundation for higher-order PLN than
 the older story in which higher-order talk was largely reduced immediately to
 first-order extensional set manipulations.
 
-\section{Canonical Higher-Order Layer}
+\section{Current Intuitionistic-Extensional HOL Core}
 
 The canonical higher-order object language is now Church-style simple type
 theory:
@@ -4122,15 +4562,22 @@ theory:
 \item universal and existential quantification at every type.
 \end{itemize}
 
-This layer lives in
-\codepath{Mettapedia/Logic/HOL/Syntax/Type.lean},
-\codepath{Mettapedia/Logic/HOL/Syntax/Term.lean},
-\codepath{Mettapedia/Logic/HOL/Derivation.lean}, and
-\codepath{Mettapedia/Logic/HOL/Semantics/Henkin.lean}.
+The syntax layer lives in
+\codepath{Mettapedia/Logic/HOL/Syntax/Type.lean} and
+\codepath{Mettapedia/Logic/HOL/Syntax/Term.lean}.
+The natural-deduction proof calculus is in
+\codepath{Mettapedia/Logic/HOL/Derivation.lean}, and its extensional overlay
+(argument-congruence rules needed by standard extensional HOL equality) is in
+\codepath{Mettapedia/Logic/HOL/DerivationExtensionality.lean}.
 
-The semantics are Henkin rather than full standard higher-order semantics.
-This matters because Henkin semantics are still first-order-manageable at the
-metatheoretic level, while preserving the cleaner higher-order rule language.
+The current canonical semantics are intuitionistic-extensional
+Heyting/Henkin models, formalized in
+\codepath{Mettapedia/Logic/HOL/Semantics/HeytingHenkin.lean}.
+These equip each type with an admissible carrier, a Heyting truth object,
+and explicit $\Omega$-valued equality with reflexivity, symmetry, and
+transitivity---without classical negation.  This matters because Henkin
+semantics are still first-order-manageable at the metatheoretic level,
+while preserving the cleaner higher-order rule language.
 So one can speak directly about
 \[
   \lambda x.\, t,\qquad f = g,\qquad \forall P : \iota \to o,\; \varphi(P),
@@ -4138,13 +4585,44 @@ So one can speak directly about
 instead of encoding those patterns awkwardly inside a purely first-order
 surface.
 
-\begin{theorem}[HOL soundness over Henkin models (\claimCore{})]
-If a closed HOL formula is derivable in the real HOL calculus, then it is
-satisfied by every Henkin model.
+An older classical/Boolean semantics layer remains in
+\codepath{Mettapedia/Logic/HOL/Semantics/Henkin.lean}, but the current
+completeness target is the intuitionistic-extensional path.
+
+\begin{theorem}[HOL soundness over Heyting/Henkin models (\claimCore{})]
+If a closed HOL formula is derivable in the extensional proof calculus, then
+it is satisfied by every intuitionistic-extensional Heyting/Henkin model.
 \end{theorem}
 
 This is formalized in
-\codepath{Mettapedia/Logic/HOL/Soundness.lean}.
+\codepath{Mettapedia/Logic/HOL/IntuitionisticSoundness.lean}.
+(A parallel classical soundness result lives in
+\codepath{Mettapedia/Logic/HOL/Soundness.lean}.)
+
+\paragraph{Cumulative Henkinization.}
+The completeness program requires constructing witness-rich extensions of
+the base language.  The current formalization provides:
+\begin{itemize}
+\item stage-indexed witness expansion in
+  \codepath{Mettapedia/Logic/HOL/HenkinizationStages.lean},
+\item the cumulative witness-rich language (collapsing finite stages into
+  a single canonical signature) in
+  \codepath{Mettapedia/Logic/HOL/HenkinizationInfinity.lean}, and
+\item the cumulative Henkin axiom family (existential witness axioms and
+  universal counterexample axioms) in
+  \codepath{Mettapedia/Logic/HOL/HenkinAxiomsInfinity.lean}.
+\end{itemize}
+This is the syntactic infrastructure for Henkin's completeness argument.
+The completeness theorem itself remains future work (see
+Section~\ref{sec:hol-completeness-status}).
+
+\paragraph{World-level truth machinery.}
+The formalization also provides partial truth-lemma infrastructure in
+\codepath{Mettapedia/Logic/HOL/TruthLemma.lean}: world-level converse
+forcing/membership equivalences for implication and negation under
+cumulative Henkin saturation.  This is not yet the full typed semantic
+truth lemma needed for completeness, but it establishes the key
+structural lemmas that the canonical-model construction will consume.
 
 \section{FOL Embedding into HOL}
 
@@ -4189,8 +4667,9 @@ The core bridge says:
 
 This is formalized in
 \codepath{Mettapedia/Logic/HOL/WorldModel.lean},
-\codepath{Mettapedia/Logic/HOL/WorldModelCompleteness.lean}, and publicly
-packaged in
+\codepath{Mettapedia/Logic/HOL/WorldModelCompleteness.lean}
+(WM-side consequence-closure wrappers, not an HOL completeness theorem),
+and publicly packaged in
 \codepath{Mettapedia/Logic/PLNWorldModelHOL.lean}.
 
 \section{Direct Set-Semantics Grounding of HOL}
@@ -4561,6 +5040,13 @@ GWAS-shaped canaries.
 
 \section{Logical-Induction-Ready Dynamic Belief Infrastructure}
 
+\emph{This section describes an experimental overlay on the HOL semantics, not
+part of the mature HOL metatheory.  The interfaces below are scaffolding for
+future logical-induction-aware probabilistic HOL; they do not yet contain a
+full logical-inductor construction.}
+
+\medskip
+
 Following Logical Induction~\cite{Garrabrant2020LogicalInduction}, the next
 higher-order uncertainty layer should not be hard-coded as one static measure
 or one specific prover.  Instead it should be parameterized by:
@@ -4697,6 +5183,35 @@ ProbHOL and higher-order uncertain reasoning from being forced through a
 hard-coded prover or a single empirical model sample, but it does \emph{not}
 yet claim a full logical-inductor construction or the full dynamic fusion of
 belief processes with semantic probabilities over Henkin models.
+
+\section{Current HOL Completeness Status}
+\label{sec:hol-completeness-status}
+
+For clarity, we summarize the current state of the HOL metatheory:
+
+\begin{description}
+\item[Done.] Typed Church-style syntax, natural-deduction proof calculus
+  with extensional overlay, intuitionistic-extensional Heyting/Henkin
+  semantics, and soundness.
+\item[Done.] Stage-indexed and cumulative Henkinization: witness-rich language
+  construction, cumulative signature collapse, and the Henkin axiom families
+  (existential witnesses, universal counterexamples).
+\item[Done (partial).] World-level truth machinery: converse forcing/membership
+  equivalences for implication and negation under cumulative Henkin saturation.
+\item[Future work.] Typed canonical model: carriers at each type, admissibility,
+  base equality, constant interpretation, and realizability of semantic values by
+  closed terms.
+\item[Future work.] HOL completeness theorem: if every intuitionistic-extensional
+  Henkin model satisfying a finite set of closed assumptions satisfies a closed
+  conclusion, then the proof system derives the conclusion.
+\item[Deferred.] Boolean/classical specialization of the completeness result.
+\end{description}
+
+The HOL$\leftrightarrow$WM bridge, semantic ProbHOL, hierarchical probabilistic
+HOL, certified higher-order chaining, and the inference-control theorem surface
+are all mature and do not depend on the completeness theorem.  They work over
+any collection of Henkin models, whether or not the model was constructed by the
+canonical completeness argument.
 
 
 \chapter{Quantifiers and the Fuzzy/QFM Layer}
@@ -7432,9 +7947,10 @@ For readers interested in the categorical and modal-logic layers:
   satisfaction conditions, Beck-Chevalley transport, and governance-facing
   mapped consequences.
 
-\item \textbf{HOL/FOL completeness wrappers}: \codepath{Mettapedia/Logic/PLNWorldModelHOLCompleteness.lean},
+\item \textbf{HOL/FOL consequence-closure wrappers}: \codepath{Mettapedia/Logic/PLNWorldModelHOLCompleteness.lean},
   \codepath{Mettapedia/Logic/PLNWorldModelFOLCompleteness.lean}---
-  consequence-transfer/closure into WM consequence rules.
+  consequence-transfer/closure into WM consequence rules (these are WM-side
+  transport wrappers, not HOL completeness theorems).
 
 \item \textbf{Governance transport}: \codepath{Mettapedia/Logic/PLNWorldModelNeighborhoodConsequence.lean}---
   state-indexed governance formula translation preservation.

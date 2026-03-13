@@ -2467,6 +2467,34 @@ instance : Monad FuelResult where
   pure := FuelResult.done
   bind := FuelResult.bind
 
+-- ─── Parameterized deterministic interface builder ──────────────────────────
+-- Extracted so that both the mutual N-kernel block and the public
+-- optimizedBackendInterface share the same interface construction.
+-- The only varying parts are evalCore and evalCallableApply (partial-def
+-- vs fuel-indexed).
+
+private def mkDeterministicEvalInterface
+    (evalCore : Session → Pattern → Session × List Pattern)
+    (evalCallableApply : Session → Pattern → List Pattern → Session × List Pattern) :
+    Algorithms.MeTTa.Simple.Semantics.DeterministicEval.Interface Session := {
+  evalTupleIntrinsic := evalTupleIntrinsicWith evalCore evalCallableApply isRuleCallableHead
+  translateCall := fun s callRaw =>
+    Algorithms.MeTTa.Simple.Semantics.TranslatorOps.translateCall
+      translatorInterface s s.translatorRuleHeads callRaw
+  deterministicPreserveArgs := deterministicPreserveArgs
+  intrinsicDirect := intrinsicDirect
+  firstRuleReduction? := firstRuleReduction?
+  rewriteAritiesForHead := rewriteAritiesForHead
+  builtinPartialMinArity := builtinPartialMinArity?
+  partialPattern := partialPattern
+  memoLimit := detMemoLimit
+}
+
+theorem mkDeterministicEvalInterface_eq_deterministicEvalInterface :
+    mkDeterministicEvalInterface evalWithStateCore evalCallableApply =
+      deterministicEvalInterface := by
+  rfl
+
 -- ─────────────────────────────────────────────────────────────────────────────
 
 set_option maxHeartbeats 800000 in
@@ -2651,23 +2679,11 @@ mutual
     | 0, _s, _term => none
     | fuel + 1, s, term =>
         let referenceEvalDeterministicCoreN (s : Session) (detFuel : Nat) (term : Pattern) : Session × Pattern :=
-          let detIface : Algorithms.MeTTa.Simple.Semantics.DeterministicEval.Interface Session := {
-            evalTupleIntrinsic := evalTupleIntrinsicWith
+          Algorithms.MeTTa.Simple.Semantics.DeterministicEval.eval
+            (mkDeterministicEvalInterface
               (fun s term => referenceEvalWithStateCoreN fuel s term)
-              (fun s fn args => referenceEvalCallableApplyN fuel s fn args)
-              isRuleCallableHead
-            translateCall := fun s callRaw =>
-              Algorithms.MeTTa.Simple.Semantics.TranslatorOps.translateCall
-                translatorInterface s s.translatorRuleHeads callRaw
-            deterministicPreserveArgs := deterministicPreserveArgs
-            intrinsicDirect := intrinsicDirect
-            firstRuleReduction? := firstRuleReduction?
-            rewriteAritiesForHead := rewriteAritiesForHead
-            builtinPartialMinArity := builtinPartialMinArity?
-            partialPattern := partialPattern
-            memoLimit := detMemoLimit
-          }
-          Algorithms.MeTTa.Simple.Semantics.DeterministicEval.eval detIface s detFuel term
+              (fun s fn args => referenceEvalCallableApplyN fuel s fn args))
+            s detFuel term
         let pIface : Algorithms.MeTTa.Simple.Semantics.PeTTaCore.Interface Session := {
           eval := fun s term => referenceEvalWithStateCoreN fuel s term
           evalDeterministic := referenceEvalDeterministicCoreN
@@ -3119,6 +3135,21 @@ mutual
                 | .apply ctor args => referenceIntrinsicApplyFallbackN fuel s ctor args
                 | _ => none
 end
+
+-- ─── Standalone N-kernel deterministic core ─────────────────────────────────
+-- Matches the `let referenceEvalDeterministicCoreN` inside
+-- `referenceIntrinsicStatefulN`, but is a top-level definition usable from
+-- `optimizedBackendInterface` and in proof modules.
+-- `outerFuel` controls sub-expression evaluation depth (for Expr handling);
+-- `detFuel` controls the det evaluator's own recursion depth.
+
+private def referenceEvalDeterministicCoreNStandalone
+    (outerFuel : Nat) (s : Session) (detFuel : Nat) (term : Pattern) : Session × Pattern :=
+  Algorithms.MeTTa.Simple.Semantics.DeterministicEval.eval
+    (mkDeterministicEvalInterface
+      (fun s' t => referenceEvalWithStateCoreN outerFuel s' t)
+      (fun s' fn args => referenceEvalCallableApplyN outerFuel s' fn args))
+    s detFuel term
 
 -- Faithful fuel-indexed mirror of ReferenceEval.runNestedEffects.
 -- Unlike referenceRunNestedEffectsN, I.runNestedEffects is wired to the
@@ -5282,7 +5313,7 @@ theorem referenceMatchIntrinsicResult_eq_total_of_getAtomsBangTemplate_on_oneMax
     (fuel : Nat) (hFuel : 1 < fuel)
     (s : Session) (space pat spaceExpr : Pattern)
     (hNodes : s.maxNodes = 1)
-    (hStateRoot :
+    (_hStateRoot :
       ∀ (sess : Session) (spaceArg : Pattern),
         sess.maxNodes = 1 →
           (referenceEvalWithStateCore sess (.apply "get-atoms!" [spaceArg])).1 = sess) :
@@ -9361,7 +9392,8 @@ def optimizedBackendInterface : Algorithms.MeTTa.Simple.Backend.OptimizedEval.In
     Algorithms.MeTTa.Simple.Semantics.DeterministicStrategy.shouldUseDeterministicInStrict
   hasDeterministicBlockingRewriteBodies := hasDeterministicBlockingRewriteBodies
   hasMultipleRootRuleChoices := hasMultipleRootRuleChoices
-  evalDeterministicCore := evalDeterministicCore
+  evalDeterministicCore := fun s detFuel term =>
+    referenceEvalDeterministicCoreNStandalone (referenceProofFuel s) s detFuel term
   evalWithStateCore := fun s term => referenceEvalWithStateCoreN (referenceProofFuel s) s term
   isResolvedDeterministicResult :=
     Algorithms.MeTTa.Simple.Semantics.DeterministicStrategy.isResolvedDeterministicResult

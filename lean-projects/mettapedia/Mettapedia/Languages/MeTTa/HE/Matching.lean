@@ -70,7 +70,10 @@ def matchAtoms (left right : Atom) (fuel : Nat) : List Bindings :=
           else []
         | _, _ => []
       else if ml == .symbol "Grounded" && mr == .symbol "Grounded" then
-        -- Both grounded → structural equality check
+        -- Both grounded → structural equality check.
+        -- Intentional abstraction: custom grounded matching (spec lines 426-429)
+        -- is deferred. Structural equality is sound but incomplete for grounded
+        -- atoms with custom match implementations.
         if left == right then [Bindings.empty] else []
       else
         -- All other cases → no match

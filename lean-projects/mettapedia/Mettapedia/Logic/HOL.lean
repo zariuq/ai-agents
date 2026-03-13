@@ -53,5 +53,12 @@ Public entrypoint for the real Church-style HOL layer:
 - a canonical truth-event semantics for closed formulas over those worlds,
 - first-order embedding,
 - and the world-model bridge over pointed Henkin models.
-- a logical-induction-ready dynamic belief layer over closed HOL formulas.
+
+Important status boundary:
+
+- the corrected intuitionistic-extensional HOL core, soundness layer, cumulative
+  Henkinization infrastructure, and world-level canonical truth machinery are real;
+- a typed canonical model and HOL completeness theorem are still in progress;
+- the logical-induction and planner-facing belief/process files imported here are
+  experimental overlays rather than part of the mature HOL metatheory.
 -/

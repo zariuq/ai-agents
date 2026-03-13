@@ -367,8 +367,14 @@ end LetStarDeclClause
 
 namespace PredicateControlDeclClause
 
+/-- Whether a string begins with `&` (kernel-reducible, unlike `String.startsWith`). -/
+private def startsWithAmp (s : String) : Bool :=
+  match s.data with
+  | '&' :: _ => true
+  | _ => false
+
 /-- Decode a predicate-like query into a match pattern over `&self`. -/
-partial def decodePredicateQuery? : Pattern → Option Pattern
+def decodePredicateQuery? : Pattern → Option Pattern
   | .apply "Predicate" [inner] =>
       decodePredicateQuery? inner
   | .apply "&self" (relHead :: args) =>
@@ -376,7 +382,7 @@ partial def decodePredicateQuery? : Pattern → Option Pattern
       | .apply rel [] => some (.apply rel args)
       | _ => none
   | .apply rel args =>
-      if rel.startsWith "&" then none else some (.apply rel args)
+      if startsWithAmp rel then none else some (.apply rel args)
   | _ => none
 
 /-- Executable answer policy for predicate queries:
@@ -591,11 +597,14 @@ theorem predicate_translatePredicate_positive :
   have hdecode :
       PredicateControlDeclClause.decodePredicateQuery?
         (.apply "Predicate" [.apply "p" []]) = some (.apply "p" []) := by
-    native_decide
+    simp [PredicateControlDeclClause.decodePredicateQuery?,
+          PredicateControlDeclClause.startsWithAmp]; rfl
   have hsm :
       ({ facts := [.apply "p" []], rules := [] } : PeTTaSpace).spaceMatch (.apply "p" []) (.apply "p" []) =
       [.apply "p" []] := by
-    native_decide
+    simp [PeTTaSpace.spaceMatch, PeTTaSpace.storedAtoms,
+          PeTTaSpace.storedRuleAtoms,
+          matchPattern, matchArgs, applyBindings]
   have hquery :
       PredicateControlDeclClause.PredicateControlEval
         ({ facts := [.apply "p" []], rules := [] } : PeTTaSpace)
@@ -632,7 +641,8 @@ theorem predicate_catch_positive :
         [.apply "fail" []] := by
     exact PredicateControlDeclClause.translatePredicate_noDecode_intro
       ({ facts := [], rules := [] } : PeTTaSpace) (.apply "&unknown" [])
-      (by native_decide)
+      (by simp [PredicateControlDeclClause.decodePredicateQuery?,
+                PredicateControlDeclClause.startsWithAmp]; rfl)
   have hfb :
       PeTTaEval ({ facts := [], rules := [] } : PeTTaSpace)
         (.apply "fallback" []) [.apply "fallback" []] := by

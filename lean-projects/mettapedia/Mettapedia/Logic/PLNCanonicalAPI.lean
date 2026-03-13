@@ -109,6 +109,15 @@ specializations are available directly from `PLNXiDerivedBNRules` and
 `PLNWMOSLFBridgeITV` — this facade re-exports only the generic layer.
 
 This file is intentionally lightweight: it is an index with stable names, not a new semantics layer.
+
+Important status boundary:
+
+- the mature higher-order surface here is the HOL core, the HOL/WM bridge,
+  HO-PLN consequence/rewrite transport, and the semantic `ProbHOL` layer;
+- the logical-induction-style belief/process exports and planner-shadow exports are
+  experimental overlays and should not be read as a completed higher-order
+  metatheory or a full belief-market semantics;
+- no HOL completeness claim is licensed by this file.
 -/
 
 namespace Mettapedia.Logic.PLNCanonical

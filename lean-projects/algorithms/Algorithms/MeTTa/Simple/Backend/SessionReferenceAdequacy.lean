@@ -84,6 +84,17 @@ def CoveredByReferenceN : Pattern → Prop
   | .apply "repr" [_arg] => True
   | _ => False
 
+/-- After the fuel-indexed refactoring, `SessionReference.evalWithStateCore` and
+    `SessionReferenceTotal.evalWithStateCore` use identical definitions (both delegate
+    to `Session.evalWithStateCoreN` at `Session.referenceProofFuel`).  This makes
+    reference-to-total adequacy unconditional for all terms and sessions. -/
+theorem reference_eq_total (s : Session) (term : Pattern) :
+    SessionReference.evalWithStateCore s term =
+      SessionReferenceTotal.evalWithStateCore s term := by
+  simp [SessionReference.evalWithStateCore, SessionReferenceTotal.evalWithStateCore,
+    SessionReferenceTotal.totalEvalWithStateCore, Session.evalWithStateCoreN,
+    SessionReferenceTotal.referenceFuel]
+
 /-- Public-fuel unary evaluator-agreement contract for `get-atoms`. -/
 abbrev PublicGetAtomsUnaryEvalAgreement (s : Session) : Prop :=
   Session.GetAtomsUnaryEvalAgreement (SessionReferenceTotal.referenceFuel s)
@@ -317,21 +328,24 @@ theorem match_getAtomsBang_intrinsic_eq_total_of_oneMaxNode
       (fun sess spaceArg hN =>
         Session.referenceEvalWithStateCore_getAtomsBang_state_eq_self_of_maxNodes_one sess spaceArg hN)
 
-/-- Public local-reference equality witness for the first compositional
-    `get-atoms!` fragment: a three-argument `match` whose template head is
-    `get-atoms!`, on sessions with `maxNodes = 1`.
-    After the fuel-indexed refactoring, `SessionReference.evalWithStateCore` and
-    `SessionReferenceTotal.evalWithStateCore` use the same fuel formula, so this
-    is definitional. -/
+/-- Public local-reference equality witness for the compositional
+    `get-atoms!` match fragment.  After the fuel-indexed refactoring this is
+    just an instance of `reference_eq_total`. -/
+theorem match_getAtomsBang_eval_eq_public_total
+    (s : Session) (space pat spaceExpr : Pattern) :
+    SessionReference.evalWithStateCore s (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) =
+      SessionReferenceTotal.evalWithStateCore s
+        (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) :=
+  reference_eq_total s _
+
+/-- Backward-compatible alias (maxNodes parameter is vestigial). -/
 theorem match_getAtomsBang_eval_eq_public_total_of_oneMaxNode
     (s : Session) (space pat spaceExpr : Pattern)
     (_hNodes : s.maxNodes = 1) :
     SessionReference.evalWithStateCore s (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) =
       SessionReferenceTotal.evalWithStateCore s
-        (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) := by
-  simp [SessionReference.evalWithStateCore, SessionReferenceTotal.evalWithStateCore,
-    SessionReferenceTotal.totalEvalWithStateCore, Session.evalWithStateCoreN,
-    SessionReferenceTotal.referenceFuel]
+        (.apply "match" [space, pat, .apply "get-atoms!" [spaceExpr]]) :=
+  match_getAtomsBang_eval_eq_public_total s space pat spaceExpr
 
 /-- Successful faithful intrinsic evaluation agrees with the public total intrinsic evaluator
     at the same fuel. This is the first adequacy bridge: faithful explicit-status kernel to

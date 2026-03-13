@@ -7,6 +7,7 @@ import Mettapedia.Languages.MeTTa.HE.MinimalMeTTa
 import Mettapedia.Languages.MeTTa.HE.SyntaxSpec
 import Mettapedia.Languages.MeTTa.HE.Conformance
 import Mettapedia.Languages.MeTTa.HE.Properties
+import Mettapedia.Languages.MeTTa.HE.DeclarativeSpec
 import Mettapedia.Languages.MeTTa.HE.LookupPlan
 import Mettapedia.Languages.MeTTa.HE.ExecutionContract
 import Mettapedia.Languages.MeTTa.HE.TransitionSpec
@@ -35,6 +36,7 @@ Authoritative Lean 4 formalization of the HE MeTTa evaluation specification.
 - `SyntaxSpec` — Authoritative HE syntax profiles
 - `Conformance` — Derivation-tree conformance witnesses
 - `Properties` — Universal theorems by induction on derivations
+- `DeclarativeSpec` — Unified spec surface (clause forms, examples, audit index)
 
 ## Key Design Decisions
 - Declarative inductive relations (no fuel, nondeterminism-native)
