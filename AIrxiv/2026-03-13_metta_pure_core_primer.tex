@@ -1,0 +1,765 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{longtable}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  citecolor=blue!50!black,
+  urlcolor=blue!50!black,
+  pdftitle={MeTTa Pure/Core Primer},
+  pdfauthor={OpenAI GPT-5.2 Pro},
+  pdfsubject={Semantic waist, declaration-aware extensions, and proof/execution split for MeTTa Pure/Core},
+  pdfkeywords={MeTTa, PureKernel, dependent type theory, declaration semantics, recursors, MM2, MORK}
+}
+
+\newcommand{\MeTTa}{\textup{MeTTa}}
+\newcommand{\MeTTaIL}{\textup{MeTTaIL}}
+\newcommand{\MORK}{\textup{MORK}}
+\newcommand{\MMTwo}{\textup{MM2}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\defeq}{\ensuremath{\mathrel{\equiv}}}
+\newcommand{\TypeZero}{\ensuremath{\mathsf{Type0}}}
+\newcommand{\TypeOne}{\ensuremath{\mathsf{Type1}}}
+\newcommand{\Pure}{\textsf{PureKernel}}
+\newcommand{\Core}{\textsf{ElaboratedCore}}
+\newcommand{\cdev}{\ensuremath{\mathsf{cdev}}}
+\newcommand{\deltared}{\ensuremath{\delta}}
+\newcommand{\iotared}{\ensuremath{\iota}}
+\newcommand{\Nat}{\ensuremath{\mathsf{Nat}}}
+\newcommand{\Bool}{\ensuremath{\mathsf{Bool}}}
+\newcommand{\UnitTy}{\ensuremath{\mathsf{Unit}}}
+\newcommand{\ListTy}{\ensuremath{\mathsf{List}}}
+\newcommand{\VecTy}{\ensuremath{\mathsf{Vec}}}
+
+\title{A Primer on \MeTTa{} Pure/Core\\
+\large The Semantic Waist, Declaration-Aware Families, and the Proof/Execution Split}
+\author{AI-assisted conceptual note for continuity across development sessions}
+\date{2026-03-13}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note consolidates the main architectural and mathematical ideas that emerged
+while refining the \MeTTa{} Pure/Core development. Its purpose is not to record
+commit history. Instead, it isolates the durable conceptual picture that should
+continue to guide future work.
+
+The central thesis is that the project should converge to a \emph{small trusted
+semantic waist} on the proof side, with a separate runtime execution seam on the
+operational side, both fed from a shared elaborated core. The proof-side waist
+should remain generic and theoremic; ordinary families, recursors, and
+structural recursion should arise from declaration-aware machinery above that
+waist rather than from family-specific syntax hacks. Prototype evaluators and
+surface conveniences may exist, but they must be downstream of the trusted
+kernel rather than silently shaping it.
+
+The note explains the clean architecture, the main lessons learned from drift and
+recovery, the declaration-aware route to ordinary families, the correct shape of
+generated dependent recursors, the role of positivity and substitution, the
+separation between $\delta$-unfolding and $\iota$-reduction, and the current
+status of the connection to \MeTTaIL{} and the \MMTwo{}/\MORK{} runtime seam.
+It is intended to serve as a didactic primer for future AI-assisted development
+sessions.
+\end{abstract}
+
+\tableofcontents
+
+\section{Purpose and Scope}
+
+The goal of this note is to make the Pure/Core project legible in a way that is
+stable across individual coding sessions. The emphasis is on \emph{conceptual
+architecture}, not on temporary implementation detail.
+
+The note has four jobs:
+\begin{enumerate}[leftmargin=2em]
+  \item identify the mathematically clean center of the project;
+  \item explain which extensions belong \emph{above} that center rather than
+  \emph{inside} it;
+  \item record the most important failure modes that must not be repeated;
+  \item provide a compact primer that future development sessions can use as a
+  normative reference.
+\end{enumerate}
+
+The intended reader is someone who may be new to the repository but needs to
+understand the design constraints immediately and accurately.
+
+\section{The Architectural Thesis}
+
+The working architectural thesis can be stated in one sentence:
+
+\begin{quote}
+Surface \MeTTa{} should elaborate to a shared middle layer, and that shared
+middle layer should support two distinct but connected targets: a proof-oriented
+semantic target and a runtime execution target.
+\end{quote}
+
+The three main layers are therefore:
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Surface \MeTTa.} The user-facing language, notation, parser,
+  syntax sugar, and future ergonomic layer.
+  \item \textbf{Elaborated Core.} A shared, explicit intermediate layer used to
+  mediate between syntax and semantics.
+  \item \textbf{Two honest targets.}
+  \begin{enumerate}[label=\alph*.,leftmargin=2em]
+    \item a proof-side target, centered on a small trusted dependent kernel;
+    \item an execution-side target, centered on a real operational seam such as
+    the \MMTwo{}/\MORK{} runtime stack.
+  \end{enumerate}
+\end{enumerate}
+
+This architecture matters because it prevents two opposite confusions:
+\begin{enumerate}[leftmargin=2em]
+  \item \emph{runtime reduction is not the proof kernel};
+  \item \emph{proof semantics and runtime execution are not permanently
+  unrelated silos either}.
+\end{enumerate}
+
+The shared elaborated core is the place where those worlds can meet honestly.
+
+\section{The Semantic Waist}
+
+\subsection{What the waist is}
+
+A \emph{semantic waist} is the smallest trusted layer that is still rich enough
+to support the key theoremic services of the proof side. In the present design,
+that waist is a small dependent kernel with:
+\begin{itemize}[leftmargin=2em]
+  \item universes (currently the tiny \TypeZero{}/\TypeOne{} story),
+  \item dependent function types ($\Pi$),
+  \item dependent pair types ($\Sigma$),
+  \item identity types,
+  \item ordinary variables and binders,
+  \item global constants,
+  \item a small, explicit reduction relation,
+  \item typing, confluence, subject reduction, and definitional equality.
+\end{itemize}
+
+The crucial point is that this waist should be \emph{generic}. It should not be
+polluted by family-specific constructors such as hardcoded \Nat{}, \Bool{}, or
+recursor nodes if the intended final architecture is a general family mechanism.
+
+\subsection{Why the waist must stay small}
+
+A small waist has four advantages.
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Metatheory stays local.} Confluence, subject reduction,
+  algorithmic typing, and conversion are harder to trust when the syntax grows
+  opportunistically.
+  \item \textbf{Extensions stay honest.} New user-visible features must justify
+  themselves as elaboration or declaration mechanisms above the waist rather
+  than by mutating the kernel whenever a demo is desired.
+  \item \textbf{The trust boundary is explicit.} One can say exactly what is
+  trusted and what is merely derived.
+  \item \textbf{Future automation becomes safer.} AI agents are much less
+  likely to introduce architectural drift when the kernel surface is visibly
+  narrow and well guarded.
+\end{enumerate}
+
+\subsection{What the waist is not}
+
+The semantic waist is \emph{not}:
+\begin{itemize}[leftmargin=2em]
+  \item a parser;
+  \item a convenience evaluator;
+  \item a proof explorer UI;
+  \item a staging area for temporary built-ins;
+  \item a promise that every future user-level construct already has kernel
+  computation rules.
+\end{itemize}
+
+Those can all exist, but none of them should define the trusted core.
+
+\section{The Proof-Side Reference Must Be Theoremic, Not Evaluator-Driven}
+
+One of the most important lessons is that the proof-side \emph{reference} should
+be the checked theoremic boundary, not a prototype evaluator.
+
+The conceptual center of the proof side should be:
+\begin{enumerate}[leftmargin=2em]
+  \item typed checking into the trusted kernel;
+  \item canonicalization by a theoremically sanctioned notion such as complete
+  development (written here as $\cdev$);
+  \item checked bridges between syntax, kernel terms, and shared artifacts.
+\end{enumerate}
+
+A small evaluator can still be useful, but only if it is treated as a derived
+explorer. The key rule is:
+
+\begin{quote}
+Prototype evaluation may \emph{test} the kernel, but it may not \emph{shape}
+the kernel.
+\end{quote}
+
+This distinction matters because evaluator-driven development tends to create
+exactly the wrong incentives. It rewards short-term demonstrations and can make
+non-final shortcuts look like conceptual progress. The clean alternative is to
+let theoremic checking and canonicalization remain authoritative, while any
+executable evaluator is explicitly secondary.
+
+\section{Legacy Ambient Presentations versus the Trusted Kernel}
+
+It is perfectly reasonable for a project like this to contain more than one
+presentation of ``Pure'':
+\begin{itemize}[leftmargin=2em]
+  \item a legacy or ambient presentation over a broader host language;
+  \item a smaller, more explicit kernel-level presentation used as the trusted
+  center.
+\end{itemize}
+
+The danger is not the existence of both. The danger is forgetting which one is
+trusted.
+
+The decisive lesson from the recent confluence repair is the following:
+
+\begin{quote}
+A theorem, its reduction relation, and its fragment assumptions must all live on
+exactly the same fragment.
+\end{quote}
+
+If confluence is only proved for a fragment of terms, then the conversion
+relation used by downstream typing must be fragment-safe as well. One must not
+silently claim Church--Rosser for a broader ambient relation and then sneak in
+fragment facts only at the call site. The correct move is to tighten the
+relation itself or tighten the theorem boundary, not to fabricate missing
+hypotheses.
+
+This is more than a technicality. It is a design law:
+\begin{enumerate}[leftmargin=2em]
+  \item fragment membership should be an upstream concept,
+  \item binder and purity facts should be upstream utilities,
+  \item confluence should be downstream of those facts,
+  \item subject reduction should be downstream of confluence,
+  \item no proof should quietly range over a larger syntax than its lemmas can
+  actually support.
+\end{enumerate}
+
+\section{Declaration-Aware Extensions above the Waist}
+
+\subsection{Why declarations are the right extension point}
+
+Once the small kernel includes \emph{global constants}, the clean next step is
+not to add more syntax constructors. It is to add a declaration-aware layer
+above the waist.
+
+Conceptually, this means introducing:
+\begin{itemize}[leftmargin=2em]
+  \item an environment of declarations,
+  \item a declaration-aware typing judgment,
+  \item a declaration-aware reduction relation,
+  \item well-formedness conditions on the environment.
+\end{itemize}
+
+This allows one to treat families, constructors, and recursors as ordinary named
+declarations rather than new kernel AST nodes.
+
+\subsection{The current layering idea}
+
+A principled layering for declaration-aware work is:
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Minimal operational environment well-formedness.}
+  Enough to justify lookup and basic $\deltared$-unfolding soundly.
+  \item \textbf{Ordered signatures.}
+  Enough to talk about declaration order, shadowing discipline, and prefix
+  reasoning.
+  \item \textbf{Prefix discipline.}
+  Enough to say that declaration types and unfolding values only mention names
+  from earlier entries.
+  \item \textbf{Full family-formation theory.}
+  A later layer that justifies families, constructors, generated recursors, and
+  equation schemas as a genuine semantic mechanism rather than a list of pilots.
+\end{enumerate}
+
+This is a good architecture because it does not pretend the first operational
+invariant is already the whole declaration theory. The intermediate layers make
+order semantically meaningful before the full family machinery is present.
+
+\subsection{Why prefix discipline matters}
+
+A pure ``global final environment'' view is too weak. It can hide circularity,
+self-reference, and order-dependence. Prefix discipline repairs this by making
+left-to-right growth real:
+\begin{itemize}[leftmargin=2em]
+  \item fresh names against the prefix,
+  \item values typecheck against the prefix,
+  \item declaration types mention only earlier names,
+  \item declaration values mention only earlier names,
+  \item no self-unfolding at the point of introduction.
+\end{itemize}
+
+This is not yet the final family theory. It is an honest bridge toward it.
+
+\subsection{What still needs to become first-class}
+
+The next theoremic bundling should introduce a stronger environment invariant,
+for example a conceptually named declaration-environment well-formedness record,
+rather than leaving individual obligations scattered.
+
+Such a record should eventually bundle at least:
+\begin{itemize}[leftmargin=2em]
+  \item well-formed declared types,
+  \item well-typed declared values,
+  \item closure/scoping requirements,
+  \item a stratification or acyclicity discipline if unfolding becomes more
+  central to conversion.
+\end{itemize}
+
+\section{Ordinary Families Must Be Declarations, Not Kernel Hacks}
+
+\subsection{The main principle}
+
+Ordinary inductive families such as \UnitTy{}, \Bool{}, \Nat{}, and later
+indexed families such as $\VecTy$, should be \emph{instances of a general
+family-declaration mechanism}. They should not be introduced by mutating the
+trusted syntax of the small kernel whenever a new example is desired.
+
+This principle has a direct corollary:
+
+\begin{quote}
+If a feature is meant to come from a later general mechanism, it should not be
+hardcoded now as a family-specific shortcut in the trusted lane.
+\end{quote}
+
+\subsection{What a genuine family declaration must contain}
+
+A real ordinary-family declaration layer should be able to express, at minimum:
+\begin{itemize}[leftmargin=2em]
+  \item the family name,
+  \item a \emph{parameter telescope},
+  \item an \emph{index telescope},
+  \item the resulting sort,
+  \item constructors with full \emph{typed telescopes},
+  \item a \emph{generated recursor} specification,
+  \item \emph{equation schemas} for generated computation,
+  \item \emph{positivity/admissibility} evidence.
+\end{itemize}
+
+Several important negative conclusions follow immediately:
+\begin{enumerate}[leftmargin=2em]
+  \item a list of closed types is not enough when dependency matters;
+  \item constructor arity is not constructor typing;
+  \item a closed left-hand side/right-hand side pair is not yet a generic
+  equation schema under binders;
+  \item boolean flags are not acceptable substitutes for proof obligations in
+  the trusted lane.
+\end{enumerate}
+
+\subsection{Dependent telescopes are mandatory}
+
+If telescopes are represented by closed terms only, then later binders cannot
+depend on earlier ones. That is already too weak for ordinary family work.
+
+So the family record should use a genuinely binder-aware telescope rather than a
+flat list of closed types. The family constant type should then be derived from
+that telescope by iterated $\Pi$-formation, rather than stored redundantly and
+risking divergence between two representations.
+
+\section{Dependent Recursors Are the Canonical Target}
+
+\subsection{The canonical shape}
+
+For a non-indexed family $F$ with parameters $\Gamma_p$ and constructors in
+order $c_1,\dots,c_k$, the canonical generated recursor should be the dependent
+eliminator:
+\[
+\Pi \Gamma_p.
+\Pi P : F\,\Gamma_p \to \TypeZero.
+\Pi \mathit{case}_1 : \mathit{CaseTy}_1.
+\cdots
+\Pi \mathit{case}_k : \mathit{CaseTy}_k.
+\Pi x : F\,\Gamma_p.
+P\,x.
+\]
+
+For indexed families, the parameters still come \emph{before} the motive, while
+the indices are bound \emph{inside} the motive and major premise. In other
+words, the right rule is:
+\begin{quote}
+parameters outside the motive; indices inside the motive.
+\end{quote}
+
+Case arms should appear in constructor declaration order. This keeps the
+relationship between declarations, generated types, and generated computation
+rules stable and reviewable.
+
+\subsection{The \Nat{} example}
+
+The canonical dependent eliminator for naturals is:
+\[
+\Nat.\mathsf{rec} :
+\Pi P : \Nat \to \TypeZero.
+P\,(\Nat.\mathsf{zero}) \to
+\bigl(\Pi n : \Nat.\; P\,n \to P\,(\Nat.\mathsf{succ}\;n)\bigr) \to
+\Pi n : \Nat.\; P\,n.
+\]
+
+A non-dependent programming recursor,
+\[
+\Pi R : \TypeZero.\; R \to (\Nat \to R \to R) \to \Nat \to R,
+\]
+may be a useful \emph{derived interface}, but it should not be the primary
+generator target. The dependent eliminator is the canonical source of truth.
+
+\subsection{The \ListTy{} example}
+
+For a future list family $\ListTy : \Pi A : \TypeZero.\; \TypeZero$, the
+canonical dependent eliminator is:
+\[
+\ListTy.\mathsf{rec} :
+\Pi A : \TypeZero.
+\Pi P : \ListTy\,A \to \TypeZero.
+P\,(\ListTy.\mathsf{nil}\;A) \to
+\bigl(\Pi x : A.\; \Pi xs : \ListTy\,A.\; P\,xs \to P\,(\ListTy.\mathsf{cons}\;A\;x\;xs)\bigr) \to
+\Pi xs : \ListTy\,A.\; P\,xs.
+\]
+
+This is the right conceptual template for future generated recursors.
+
+\section{Positivity and Indexed Families}
+
+Strict positivity should be checked over the \emph{full constructor type}, not
+just over the parametric part. Once indices are present, recursive occurrences
+can hide in index-bearing targets and argument positions that a parameter-only
+check would miss.
+
+However, positivity and target-shape checking should be separated into two
+orthogonal constraints:
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Uniform parameters.} The parameter prefix of every recursive
+  family occurrence must be exactly the declared parameters, in the expected
+  positions.
+  \item \textbf{Flexible indices.} Index arguments may be arbitrary well-scoped
+  terms over the constructor context.
+\end{enumerate}
+
+This matters for indexed families such as
+\[
+\VecTy : \Pi A : \TypeZero.\; \Nat \to \TypeZero,
+\]
+where a target like $\VecTy\;A\;(\Nat.\mathsf{succ}\;n)$ must be allowed.
+
+A clean implementation strategy is therefore to decompose applications into a
+head and an argument spine, check the family head, split the arguments into
+parameter and index portions, enforce exact matching on the parameter prefix,
+and permit arbitrary scoped terms for the indices.
+
+\section{Substitution and Generated Computation}
+
+\subsection{Parallel substitution is the right semantic primitive}
+
+A useful conceptual simplification is this: if the kernel already has parallel
+substitution as its basic operation, then generated recursor reduction does not
+require a new foundation. It requires a new \emph{wrapper}.
+
+In other words, a simultaneous substitution API is semantically sufficient.
+What is usually missing is only an ergonomic interface for substituting several
+constructor arguments and induction hypotheses into a case body in the right
+de Bruijn order.
+
+A thin convenience operation such as \code{substVec} or \code{instMany} is a
+good idea. But it should be understood as a thin layer over the existing
+parallel substitution theory rather than as a new primitive.
+
+\subsection{The correct design rule}
+
+The important design rule is:
+\begin{quote}
+Do not rebuild the semantics around repeated one-variable substitution if a
+clean simultaneous substitution is already available.
+\end{quote}
+
+Repeated one-variable substitution is much easier to get wrong, especially under
+binders and when constructor arguments and induction hypotheses interleave.
+
+\section{$\delta$-Unfolding versus $\iota$-Reduction}
+
+A declaration-aware kernel needs to distinguish two different mechanisms:
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{$\deltared$-unfolding.} A named constant unfolds to its stored
+  value by declaration lookup.
+  \item \textbf{$\iotared$-reduction.} A generated recursor computes on a
+  saturated application of the recursor to a constructor.
+\end{enumerate}
+
+These are not the same thing, and they should not be modeled by the same data
+field.
+
+\subsection{What should stay in a declaration specification}
+
+A declaration specification should remain focused on the ordinary environment
+layer:
+\begin{itemize}[leftmargin=2em]
+  \item name,
+  \item type,
+  \item optional value for ordinary $\deltared$-unfolding,
+  \item well-formedness conditions relative to the current signature.
+\end{itemize}
+
+\subsection{What should live above it}
+
+Generated recursor computation should live in a \emph{separate} semantic layer,
+for example a generated-recursor rule bundle or family-level computation record.
+That higher layer should package:
+\begin{itemize}[leftmargin=2em]
+  \item the generated recursor declaration,
+  \item the generated $\iotared$-rules,
+  \item typing proofs for those rules,
+  \item coverage and arity discipline,
+  \item whatever later confluence or conversion facts are needed.
+\end{itemize}
+
+This separation keeps the ordered-signature story clean. It also prevents
+constant lookup from being muddled with eliminator computation.
+
+\section{The Runtime Frontier and the Meaning of ``a Strain of \MeTTa{}''}
+
+The Pure/Core project is not aiming to replace the runtime semantics with proof
+semantics. The goal is subtler.
+
+The proof-side target should remain a mathematically isolated dependent kernel.
+The execution-side target should remain a real operational seam with genuine
+runtime behavior, currently exemplified by the \MMTwo{}/\MORK{} line.
+
+The interesting question is therefore not ``is the proof kernel literally the
+runtime?'' but rather:
+\begin{quote}
+What is the cleanest elaborated-core fragment that can lower honestly to both
+sides?
+\end{quote}
+
+This reframes the relation between Pure and execution in a productive way.
+
+\subsection{The honest current status}
+
+The current honest position is:
+\begin{itemize}[leftmargin=2em]
+  \item the proof side already has a trusted checking and canonicalization
+  center;
+  \item the runtime side already has a real execution seam;
+  \item there is not yet a theoremically established direct Pure-to-runtime
+  execution bridge for the full proof fragment;
+  \item the next mathematically meaningful connection is an \emph{intentional
+  dual-target fragment} of elaborated core.
+\end{itemize}
+
+This is a healthy status, not a deficiency. It keeps the architecture honest.
+
+\section{Lessons from Drift and Recovery}
+
+Several hard lessons emerged from the development process. They are worth
+recording explicitly.
+
+\subsection{Progress can be fake if the trust boundary moves}
+
+A project can appear to make fast progress while actually losing architectural
+integrity. Typical examples include:
+\begin{itemize}[leftmargin=2em]
+  \item adding family-specific kernel constructors because a demonstration seems
+  easier that way;
+  \item promoting a convenience evaluator to reference status;
+  \item widening a theorem statement beyond the fragment actually proved;
+  \item leaving stale examples and docs in place after a semantic reset;
+  \item putting pilot modules on the same import surface as the trusted core.
+\end{itemize}
+
+The appearance of momentum is not enough. The relevant question is always:
+\begin{quote}
+Did the new capability arise from the intended final mechanism, or from a
+shortcut that would have to be deleted later?
+\end{quote}
+
+\subsection{The right response to a bad shortcut is usually retreat, not polish}
+
+When a trusted layer has absorbed a shortcut that is not part of the intended
+final design, the correct move is usually to back it out rather than to make it
+nicer. Cosmetic polish does not convert a non-final mechanism into a final one.
+
+\subsection{A good proof failure is valuable}
+
+The confluence break in the ambient legacy layer was a useful event because it
+revealed that the theorem boundary was overclaimed. Proof failures that expose
+mismatched abstraction boundaries are healthy. They should trigger conceptual
+repair, not theorem-patching theater.
+
+\section{Development Discipline for Future AI-Assisted Sessions}
+
+The project needs explicit design rules that future sessions can enforce.
+
+\subsection{Core rules}
+
+\begin{enumerate}[leftmargin=2em,label=\textbf{R\arabic*.}]
+  \item \textbf{No temporary trusted constructors.}
+  Never add a trusted kernel constructor, eliminator, typing rule, or reduction
+  rule unless it belongs to the intended final architecture.
+
+  \item \textbf{No evaluator-driven semantics.}
+  Prototype evaluators may exist, but they may not determine the trusted kernel
+  shape.
+
+  \item \textbf{No family-specific shortcuts when a general mechanism is the
+  goal.}
+  If a feature is supposed to arise from a generic family declaration system,
+  do not hardcode a family-specific version in the trusted lane.
+
+  \item \textbf{Match theorem and fragment.}
+  The syntax fragment, conversion relation, and theorem statement must range
+  over the same object language.
+
+  \item \textbf{Keep trust labels explicit.}
+  Every new component should be classifiable as trusted kernel, declaration
+  extension, pilot/specification, or experimental tooling.
+
+  \item \textbf{Synchronize code, docs, and examples.}
+  Any semantic change must update examples and documentation in the same pass.
+
+  \item \textbf{Prefer proof objects to booleans in the trusted lane.}
+  A boolean flag may be acceptable during exploration, but the trusted theory
+  should expose propositions, structures, and theorems rather than hope encoded
+  as data.
+\end{enumerate}
+
+\subsection{Questions every future change should answer}
+
+Before accepting a kernel-adjacent change, one should be able to answer:
+\begin{enumerate}[leftmargin=2em]
+  \item Does this belong inside the small waist, or above it?
+  \item If it touches syntax, why can constants plus declarations not express it
+  instead?
+  \item Is the new semantics theoremic, or is it being inferred from a tool?
+  \item Are the fragment assumptions of all downstream theorems still honest?
+  \item Does this make future generalization easier, or does it create more
+  bespoke cases?
+\end{enumerate}
+
+\section{A Robustness Checklist}
+
+The Pure/Core project can be considered to have reached a robust kernel stage
+when the following become true.
+
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{New families are declaration instances, not syntax changes.}
+  Adding \Nat{}, \Bool{}, \ListTy{}, or an indexed family should no longer
+  require edits to the trusted kernel AST.
+
+  \item \textbf{Recursors are generated, not hand-added.}
+  The dependent recursor for a family should come from a generic generation
+  procedure justified by the family declaration mechanism.
+
+  \item \textbf{The declaration preservation stack is complete.}
+  In particular: one-step $\deltared$ preservation, one-step declaration-aware
+  preservation, and star preservation.
+
+  \item \textbf{The proof-side reference is stable.}
+  The checked kernel plus canonicalization remains the reference; evaluators and
+  UI layers remain downstream.
+
+  \item \textbf{The bridge to execution is intentional rather than accidental.}
+  There is at least one explicitly identified elaborated-core fragment that
+  lowers honestly to both the proof side and the runtime side.
+\end{enumerate}
+
+\section{A Suggested Near-Term Roadmap}
+
+The following sequence is conceptually conservative and mathematically aligned
+with the architecture.
+
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Keep the small kernel frozen.}
+  No family-specific syntax growth.
+
+  \item \textbf{Make trust boundaries visible.}
+  Separate tiny trusted-kernel umbrellas from declaration-extension umbrellas
+  and pilot/experimental umbrellas.
+
+  \item \textbf{Bundle declaration-environment well-formedness more tightly.}
+  Turn the current scattered obligations into an explicit semantic record.
+
+  \item \textbf{Complete the declaration preservation tower.}
+  Prove one-step $\deltared$ preservation, then general declaration-aware
+  one-step preservation, then star preservation.
+
+  \item \textbf{Introduce a binder-aware generic family declaration record.}
+  Use dependent telescopes, derived family types, typed constructors, generated
+  dependent recursors, equation schemas, and proof-valued admissibility fields.
+
+  \item \textbf{Realize \UnitTy{} as the first real instance.}
+  It is the simplest family and the best proving ground for the generic record.
+
+  \item \textbf{Add generated $\iotared$ semantics above the signature layer.}
+  Keep ordinary declaration lookup and generated recursor computation distinct.
+
+  \item \textbf{Then add \Bool{}, then \Nat{}.}
+  Each should become an instance of the same mechanism, not a special case.
+
+  \item \textbf{Only afterwards revisit stronger canonicalization and the proof/
+  runtime frontier.}
+  By then, the new family layer will be stable enough to connect outward.
+\end{enumerate}
+
+\section{Glossary of Key Terms}
+
+\begin{description}[leftmargin=2em,style=nextline]
+  \item[Semantic waist] The smallest trusted proof-side layer rich enough to
+  support checking, canonicalization, and later extensions.
+
+  \item[Elaborated core] The explicit shared middle layer between surface
+  \MeTTa{} and the proof/runtime targets.
+
+  \item[Canonicalization / $\cdev$] The theoremically authoritative proof-side
+  reduction or normalization anchor, distinct from any convenience evaluator.
+
+  \item[$\deltared$-unfolding] Constant unfolding by declaration lookup.
+
+  \item[$\iotared$-reduction] Generated eliminator computation on a recursor
+  applied to a constructor.
+
+  \item[Declaration-aware kernel] The small kernel together with declaration
+  environments, declaration-aware typing, and declaration-aware reduction.
+
+  \item[Prefix discipline] The requirement that declaration types and values may
+  only mention earlier names, so signature order has semantic force.
+
+  \item[Ordinary family] A strictly positive inductive family, possibly with
+  parameters and later with indices.
+
+  \item[Dependent recursor] The canonical eliminator whose motive may depend on
+  the major premise (and, for indexed families, on the indices).
+
+  \item[Dual-target fragment] A deliberately chosen fragment of elaborated core
+  that lowers honestly to both the proof side and the runtime execution side.
+\end{description}
+
+\section{Conclusion}
+
+The main conceptual picture is now clear.
+
+The Pure/Core project should be organized around a small generic trusted kernel,
+a declaration-aware extension above that kernel, a future general family
+mechanism that treats families as declarations rather than syntax hacks, and a
+separate runtime execution seam connected through a shared elaborated core.
+
+The most important design lesson is that correctness and architectural honesty
+must outrank short-term demonstrations. A project like this becomes durable only
+when each layer is justified by the intended final mechanism, not by temporary
+convenience.
+
+If future development keeps the semantic waist small, keeps declarations ordered
+and meaningful, generates families and recursors from general records, and
+connects to execution through explicit dual-target fragments rather than wishful
+identification, then the project has a credible path toward a robust and
+mathematically well-isolated version of \MeTTa{} Pure/Core.
+
+\end{document}

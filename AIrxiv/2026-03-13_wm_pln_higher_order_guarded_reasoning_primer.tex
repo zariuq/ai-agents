@@ -1,0 +1,586 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{mathtools}
+\usepackage{longtable}
+\usepackage{graphicx}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\title{A Conceptual Primer on World-Model Probabilistic Logic, Higher-Order Guarded Chaining, and Clean Benchmark Design\\\large Dated synthesis: 2026-03-13}
+\author{}
+\date{}
+
+\newtheorem{definition}{Definition}
+\newtheorem{principle}{Principle}
+\newtheorem{claim}{Claim}
+\newcommand{\wmpln}{WM-PLN}
+\newcommand{\pln}{PLN}
+\newcommand{\sigmactx}{\Sigma}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\argmax}{\mathop{\mathrm{argmax}}}
+\newcommand{\todo}[1]{\textcolor{red}{#1}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This article is a conceptual synthesis of a line of work on probabilistic logic, world-model semantics, higher-order uncertainty, guarded chaining, topology-aware inference control, and benchmark design. It is written as a compact primer for future research, implementation, and discussion. The central thesis is that a useful probabilistic logic architecture must sharply distinguish semantic query answering from higher-order uncertainty about admissibility and from operational inference control. On this view, classic probabilistic logic intuitions are not discarded, but reinterpreted through explicit world models, explicit side conditions, provenance-carrying chains, typed evidence families, and benchmark protocols that prevent oracle leakage. The document also outlines a clean research program for moving from small Bayesian-network exemplars to a large-scale GWAS-to-mechanism benchmark.\end{abstract}
+
+\tableofcontents
+
+\section{Scope and purpose}
+This note has four aims.
+\begin{enumerate}[label=\arabic*.]
+    \item To state the main conceptual lessons behind the shift from local truth-value propagation to explicit world-model semantics.
+    \item To explain how first-order, second-order, and third-order uncertainty can be used without confusion.
+    \item To describe a clean benchmark methodology for hidden-context reasoning and guarded inference control.
+    \item To provide a bridge from small didactic benchmarks to a realistic GWAS-to-mechanism benchmark built on public data and public benchmark traditions.
+\end{enumerate}
+
+The article is intentionally conceptual. It does not attempt to preserve every experimental detail of earlier prototypes. Instead, it isolates the ideas that should survive into cleaner implementations and future work.
+
+\section{Core thesis}
+The deepest lesson is simple:
+\begin{quote}
+A probabilistic logic system becomes scientifically useful only after it separates three different objects that are often conflated: semantic query answers, higher-order uncertainty over assumptions and regimes, and operational decisions about what computation to perform next.
+\end{quote}
+
+This separation matters because otherwise a system can easily slide between very different meanings of ``probability'' without noticing it. A number attached to a link may mean any of the following:
+\begin{itemize}
+    \item the probability of a query inside a declared world model;
+    \item an average over an ensemble of possible latent structures or omitted contexts;
+    \item a confidence score in a rule or step being admissible;
+    \item a search-control score for whether a step is worth taking under resource limits.
+\end{itemize}
+
+These are all legitimate objects, but they are \emph{not the same object}. Most confusion comes from treating them as interchangeable.
+
+\section{From local truth values to explicit world models}
+\subsection{The narrow reading that fails}
+A narrow reading of probabilistic logic says that local truth-value algebra on links should, by itself, be able to recover the right uncertainty over arbitrary conclusions. This reading is too strong. Local formulas can be exactly right in carefully delimited motifs or model classes, but they do not generically reconstruct all missing global dependencies, overlap terms, collider effects, or hidden contexts.
+
+In particular, one should not expect generic success from:
+\begin{itemize}
+    \item free reuse of derived links as if they were ordinary premises;
+    \item arbitrary multi-step chaining with forgotten side conditions;
+    \item undamped iterative propagation over cyclic dependency structures;
+    \item universal estimation of union masses, residual overlaps, or explanation-away effects from sparse local summaries.
+\end{itemize}
+
+\subsection{The deeper reading that survives}
+A deeper reading survives and is worth preserving:
+\begin{quote}
+A probabilistic logic can provide structured evidence views, explicit revision, higher-order uncertainty, and principled inference control, provided that its semantic content is grounded in an explicit world model and its rule uses are treated as context-sensitive compiled tactics rather than universal local laws.
+\end{quote}
+
+This yields a much cleaner picture:
+\begin{itemize}
+    \item The \emph{world model} is the truthmaker.
+    \item A \emph{query} asks for a probability or expectation relative to that world model.
+    \item A \emph{compiled rule} is a justified local rewrite under explicit side conditions.
+    \item A \emph{truth-value view} is a projection or compression of the richer posterior/evidence state.
+    \item \emph{inference control} decides which rule, reveal, fallback, or abstention step to use next.
+\end{itemize}
+
+\section{Three levels of uncertainty}
+\subsection{First-order support}
+The first-order object is the simplest one:
+\begin{equation}
+P(Q \mid E, M),
+\end{equation}
+where $Q$ is a query, $E$ is evidence, and $M$ is an explicit model family or world model instance.
+
+Examples:
+\begin{itemize}
+    \item the probability of a forecast event under a calibrated predictive model;
+    \item the probability of a diagnostic variable in a Bayesian network;
+    \item the support for a variant--gene--mechanism hypothesis under a typed evidence graph.
+\end{itemize}
+
+The crucial point is that first-order support is always relative to a declared semantics.
+
+\subsection{Second-order uncertainty}
+Second-order uncertainty concerns uncertainty \emph{about the conditions under which first-order computations are valid or informative}. This often takes the form of a latent regime or admissibility variable.
+
+Let $R$ denote a regime variable. Then a principled second-order computation has the form
+\begin{equation}
+P(Q \mid D) = \sum_r P(Q \mid D, R=r)\,P(R=r \mid D),
+\end{equation}
+where $D$ is the currently visible information.
+
+Typical examples of $R$ include:
+\begin{itemize}
+    \item whether a local screening-off condition holds;
+    \item which tissue or cell type is causally relevant;
+    \item whether a locus behaves like a single-signal or multi-signal architecture;
+    \item whether a path family is hub-dominated, sparse-chain, or loopy-dense.
+\end{itemize}
+
+The key conceptual move is that the second-order layer is \emph{not} merely ``confidence'' as a free-floating scalar. It is uncertainty over hidden structure, omitted context, or admissibility regimes.
+
+\subsection{Third-order trust}
+Third-order uncertainty is not another probability over the world directly. It is uncertainty about the \emph{quality of the second-order guide}. The natural quantities here are:
+\begin{itemize}
+    \item calibration of the second-order estimator;
+    \item disagreement between second-order channels;
+    \item topology fragility or out-of-distribution risk;
+    \item reveal pressure: whether more context should be acquired before continuing.
+\end{itemize}
+
+A convenient abstract form is
+\begin{equation}
+\tau(x) \approx 1 - \E[\text{guard error} \mid \text{bucket}(x)],
+\end{equation}
+where $x$ is the current blind state, and the bucket can depend on topology, omitted-context burden, regime entropy, or evidence sparsity.
+
+\subsection{Why not build an explicit infinite tower?}
+An explicit infinite tower of probabilities about probabilities is rarely the right practical object. In most decision problems, higher-order uncertainty should be flattened into one of the following:
+\begin{itemize}
+    \item an expected-utility computation;
+    \item an interval or credal set;
+    \item an abstention rule;
+    \item a value-of-information policy.
+\end{itemize}
+
+Thus a good working policy is:
+\begin{quote}
+Use first order for semantic support, second order for regime uncertainty, third order for trust and reveal pressure, and flatten any higher orders into decision summaries unless a further explicit layer changes a benchmarked decision.
+\end{quote}
+
+\section{Guarded chaining}
+\subsection{Compiled local exactness}
+A local rule should be viewed as a compiled contraction or rewrite whose exactness depends on explicit side conditions $\sigmactx$. In the best case,
+\begin{equation}
+\sigmactx \vdash \text{``this local rewrite is exact''}.
+\end{equation}
+
+Then the rule is not a heuristic guess; it is a compact way to answer a query that the world model itself licenses.
+
+\subsection{Why naked chaining fails}
+If one forgets $\sigmactx$ and reuses the derived edge as a free-standing semantic fact, several failure modes appear:
+\begin{itemize}
+    \item omitted hidden context creates systematic error;
+    \item colliders and explanation-away invalidate naive abduction;
+    \item overlap and residual terms become unidentified;
+    \item iterative propagation may become unstable.
+\end{itemize}
+
+Therefore the right invariant is:
+\begin{quote}
+No derived edge may be reused without carried side conditions, provenance, and mode information.
+\end{quote}
+
+\subsection{Mixed-mode chaining}
+In realistic settings one cannot stay in the exact lane forever. A chain may have to move among several modes:
+\begin{enumerate}[label=(\alph*)]
+    \item theorem-certified exact;
+    \item higher-order semantic guarded;
+    \item evaluation-certified bounded;
+    \item operational control only.
+\end{enumerate}
+
+A mixed-mode chain object should therefore carry at least:
+\begin{itemize}
+    \item current query;
+    \item current point estimate or interval;
+    \item current side-condition context $\sigmactx$;
+    \item provenance trace;
+    \item semantic status;
+    \item cumulative cost.
+\end{itemize}
+
+\section{Broad versus refined queries}
+One of the most important insights is that revealing hidden context often changes the query itself.
+
+Suppose $Z$ is hidden context. Then the broad query is
+\begin{equation}
+P(Y \mid X) = \sum_z P(Y \mid X, Z=z)P(Z=z \mid X).
+\end{equation}
+
+If one reveals $Z=z^\ast$, the refined query becomes
+\begin{equation}
+P(Y \mid X, Z=z^\ast).
+\end{equation}
+
+These are different targets. Therefore:
+\begin{claim}
+A reveal action can improve refined-query fidelity while worsening broad-query utility.
+\end{claim}
+
+This single distinction explains a surprising amount of empirical behavior. A continuation policy that looks ``wrong'' after refinement may nevertheless be good for the broad marginalized question.
+
+\section{Topology-conditioned reasoning}
+\subsection{Why topology matters}
+Topology matters because it predicts which assumptions are likely to be safe, brittle, or recoverable. In hidden-context reasoning, structural properties such as hub concentration, path length, local loopiness, or support multiplicity are not cosmetic features. They are clues about how approximation error will travel.
+
+\subsection{A useful working taxonomy}
+A practical topology taxonomy should include at least:
+\begin{itemize}
+    \item \textbf{hub-dominated}: one or a few hidden variables account for much of the unresolved mass;
+    \item \textbf{sparse-chain}: long paths with little redundancy, where local assumptions can amplify error;
+    \item \textbf{loopy-dense}: many alternative dependencies and repeated normalization, where averaging or softened continuation may be safer;
+    \item \textbf{collider-sensitive}: contexts where conditioning can sharply change dependencies.
+\end{itemize}
+
+\subsection{What topology predicts}
+The most plausible theorem-shaped claim is not that one policy always wins, but that policy preference is topology-conditioned. A useful conceptual template is:
+\begin{quote}
+When omitted-context posterior mass is highly concentrated in a hub-dominated regime, direct continuation can approximate the broad query well. When mass is distributed across several live regimes, marginalization-aware soft continuation or reveal becomes more attractive.
+\end{quote}
+
+This is the right way to think about higher-order chaining in large graphs: not as a universal local algebra, but as a family of context-dependent approximations whose quality depends on graph structure.
+
+\section{Semantic versus operational factor graphs}
+The factor-graph direction is promising only if two meanings are kept separate.
+
+\subsection{Semantic factor graphs}
+In a semantic factor graph, the factorization \emph{is} the declared model. Queries are answered exactly or approximately inside that model class. This is the clean case.
+
+\subsection{Operational factor graphs}
+In an operational factor graph, local factors or messages are used mainly for background inference or control. They can still be useful, but they are not automatically semantic truthmakers.
+
+\begin{principle}
+Operational factor-graph signals are best used as background hints for context reveal, candidate support discovery, or search prioritization, unless they are explicitly compiled from a declared semantic model class.
+\end{principle}
+
+This suggests a hybrid architecture:
+\begin{itemize}
+    \item use semantic subgraphs or model fragments as exact truthmakers where available;
+    \item use factor-graph style background inference to propose reveal targets, missing-context variables, or support clusters;
+    \item let the planner decide when to continue, soften, reveal, fall back, or abstain.
+\end{itemize}
+
+\section{Inference control as a separate object}
+Inference control should not be smuggled into semantics. It is a separate optimization problem.
+
+At each state $s$, the agent chooses an action from a menu such as:
+\begin{equation}
+\mathcal{A}(s) = \{\text{continue-rule},\text{continue-soft},\text{reveal}(c),\text{fallback},\text{abstain}\}.
+\end{equation}
+
+A generic policy score can be written as
+\begin{equation}
+U(a \mid s) = \text{expected answer gain} - \lambda\,\text{cost}(a) - \mu\,\text{risk}(a) - \nu\,\text{context-growth penalty}(a),
+\end{equation}
+with higher-order terms supplying admissibility, trust, entropy, or reveal pressure.
+
+The central point is that probabilities used here are often \emph{control utilities}, not semantic posteriors. They guide search or computation under resource limits.
+
+\section{A clean benchmark architecture}
+\subsection{Three lanes, not one}
+A good hidden-context benchmark should separate three lanes.
+
+\begin{longtable}{p{0.18\textwidth}p{0.3\textwidth}p{0.43\textwidth}}
+\toprule
+\textbf{Lane} & \textbf{Purpose} & \textbf{What claims it supports} \\
+\midrule
+Oracle simulator & Diagnose semantic structure, upper bounds, ideal reveal effects & Exactness of compiled rewrites, hidden-context stress, broad-versus-refined mismatch \\
+Blind proxy & Show that a no-leak control pipeline can run on blind features & Feasibility of blind decision-making without oracle values; exploratory policy shaping \\
+Blind learned benchmark & Evaluate held-out decision quality under fixed information restrictions & Real benchmark claims about control quality, calibration, reveal, fallback, and abstention \\
+\bottomrule
+\end{longtable}
+
+The key rule is that these lanes are not interchangeable. A simulator result should not be presented as a runtime-learned result.
+
+\subsection{One benchmark universe, two information sets, one evaluator}
+The proper blind benchmark structure is:
+\begin{enumerate}[label=\arabic*.]
+    \item Build one master benchmark universe of states, actions, successor states, and hidden oracle evaluations.
+    \item Materialize two decision views from the same root states: an oracle view and a blind view.
+    \item Evaluate both action traces against the same hidden oracle table.
+\end{enumerate}
+
+This prevents the common mistake of letting the blind benchmark shrink simply because the blind system had a harder time discovering cases.
+
+\subsection{Physically separate decision and evaluation tables}
+A runtime-blind benchmark is only trustworthy if decision-time and evaluation-time information are physically separated. A good implementation should therefore have:
+\begin{itemize}
+    \item a full state table containing everything, including oracle evaluation fields;
+    \item an oracle decision projection;
+    \item a blind decision projection containing only legal blind-time columns;
+    \item a hidden evaluation table joined only after actions are chosen.
+\end{itemize}
+
+This turns oracle leakage from a social convention into a data-interface invariant.
+
+\section{Didactic role of Hailfinder and Pathfinder}
+\subsection{Hailfinder as the readable positive lane}
+Hailfinder is a useful didactic benchmark because it gives readable exact local chains, readable longer forecast-style paths, and honest negative cases. It teaches what proof-carrying local contraction looks like in a comparatively benign setting.
+
+\subsection{Pathfinder as the hidden-context stress lane}
+Pathfinder is conceptually different. It is not valuable because it is a generic medical benchmark. It is valuable because it is a strong hidden-context stress test: many local contractions only become exact when disease context or similar latent structure is explicitly carried in $\sigmactx$.
+
+\subsection{The didactic progression}
+The clean progression is:
+\begin{enumerate}[label=\arabic*.]
+    \item Use Hailfinder to teach exact local contraction and blocked negatives.
+    \item Use Pathfinder to show that omitted context turns exact local contraction into a higher-order control problem.
+    \item Then separate broad versus refined queries, reveal versus continue, and topology-conditioned policy choice.
+\end{enumerate}
+
+\section{What higher-order chaining should mean}
+The phrase ``higher-order chaining'' can mean several different things. The useful meaning is the following.
+
+\begin{definition}[Higher-order guarded chaining]
+A higher-order guarded chain is a sequence of local steps in which each step carries:
+\begin{itemize}
+    \item a first-order semantic estimate or exact answer;
+    \item a second-order uncertainty object over admissibility or omitted context;
+    \item a third-order trust object governing how strongly to rely on that second-order guide;
+    \item a clear mode label indicating whether the current step is exact, bounded, semantic mixture, or operational only.
+\end{itemize}
+\end{definition}
+
+This is quite different from an unrestricted local truth-value algebra. The modern use of higher-order information is to control when and how one continues to reason, rather than to pretend that every conclusion already has a canonical point probability.
+
+\section{A note on theorem proving and logical search}
+In theorem proving and related symbolic search, the relevant probabilities are not usually semantic probabilities of theoremhood. They are more naturally:
+\begin{itemize}
+    \item probability that a clause or step is useful;
+    \item probability that a proof exists within a resource budget;
+    \item probability that a fallback search strategy will dominate a local chain continuation.
+\end{itemize}
+
+This means the most natural integration of probabilistic logic with automated reasoning is not a universal theoremhood oracle. It is a provenance-aware search policy in which exact semantic fragments, learned usefulness signals, and explicit fallback actions are combined under resource constraints.
+
+\section{A large-scale next benchmark: GWAS to mechanism}
+\subsection{Why this domain is a natural fit}
+GWAS-to-mechanism reasoning is a good next benchmark because it has:
+\begin{itemize}
+    \item strong upstream public benchmark traditions for locus-to-gene prediction;
+    \item rich hidden contexts such as tissue, cell type, locus architecture, and mechanism class;
+    \item many evidence families that naturally form provenance-carrying chains;
+    \item a realistic need for reveal, abstention, and value-of-information decisions.
+\end{itemize}
+
+\subsection{Do not score the explanation layer as if it were fully supervised}
+The clean benchmark object should be narrower than the explanation object.
+
+\paragraph{Primary scored object.}
+For each locus or credible set, rank candidate genes.
+
+\paragraph{Secondary explanation object.}
+For each ranked gene, produce top provenance-carrying chains of the form
+\begin{equation}
+\text{variant} \to \text{gene} \to \text{mechanism/pathway} \to \text{phenotype}.
+\end{equation}
+
+This split is important because public supervision for locus-to-gene is much stronger than supervision for full mechanistic chains.
+
+\subsection{Typed evidence families}
+A useful initial evidence graph should include the following node types:
+\begin{itemize}
+    \item study, locus, credible set, variant;
+    \item gene;
+    \item tissue or cell type;
+    \item regulatory element or chromatin contact;
+    \item QTL evidence event;
+    \item pathway or mechanism;
+    \item phenotype.
+\end{itemize}
+
+Corresponding factor families include:
+\begin{itemize}
+    \item variant membership in credible set, weighted by posterior inclusion probability;
+    \item coding or pathogenicity evidence;
+    \item QTL or colocalization evidence for a gene in a tissue;
+    \item overlap with a candidate regulatory element;
+    \item chromatin or enhancer--gene linkage;
+    \item gene participation in a pathway;
+    \item pathway relevance to phenotype.
+\end{itemize}
+
+\subsection{First, second, and third order in GWAS reasoning}
+The same hierarchy carries over naturally.
+
+\paragraph{First order.}
+Support for a hypothesis
+\begin{equation}
+H=(\text{variant},\text{gene},\text{mechanism},\text{phenotype},\text{context}).
+\end{equation}
+
+\paragraph{Second order.}
+Uncertainty over tissue, cell type, mechanism class, evidence-source family, locus architecture, or omitted evidence.
+
+\paragraph{Third order.}
+Trust in the second-order model, based on calibration, disagreement, missing-data burden, or distribution shift.
+
+\paragraph{Reveal actions.}
+Reveal tissue, reveal QTL context, reveal chromatin link, reveal credible-set refinement, reveal pathway family.
+
+This is conceptually the same problem as hidden-context reasoning in Bayesian networks, but with a richer evidence graph and a more realistic scientific meaning.
+
+\section{Data integrity and benchmark integrity}
+No large-scale benchmark should begin with model tuning. The correct order is:
+\begin{enumerate}[label=\arabic*.]
+    \item source registry and fetch manifest;
+    \item schema validation and genome-build normalization;
+    \item benchmark object and split policy;
+    \item literature review and comparator map;
+    \item baseline ladder;
+    \item only then higher-order reasoning experiments.
+\end{enumerate}
+
+The first experiment should not attempt to prove that mechanistic truth has been solved. A more honest first claim is:
+\begin{quote}
+A world-model probabilistic logic can match or improve public locus-to-gene ranking and calibration while producing provenance-carrying mechanistic chains together with explicit reveal, fallback, and abstention decisions.
+\end{quote}
+
+\section{What can honestly be claimed}
+Several kinds of claims are legitimate.
+
+\subsection*{Strong claims}
+\begin{itemize}
+    \item Local compiled rules can be exact in declared world-model fragments.
+    \item Hidden-context reasoning benefits from explicit broad-versus-refined query distinctions.
+    \item Topology is a useful predictor of which continuation or reveal policies are promising.
+    \item Runtime-blind inference control can be benchmarked cleanly by separating information sets from evaluation truthmakers.
+\end{itemize}
+
+\subsection*{Moderate claims}
+\begin{itemize}
+    \item Higher-order guarded chaining can outperform naive baselines on some benchmark families.
+    \item Factor-graph background reasoning can be useful operationally as a proposal or hint layer.
+\end{itemize}
+
+\subsection*{Claims to avoid}
+\begin{itemize}
+    \item That a small set of local truth-value formulas generically estimates the probability of anything.
+    \item That an operational soft mixture is automatically a semantic posterior.
+    \item That a mechanistic chain benchmark is as directly supervised as a locus-to-gene benchmark.
+    \item That blind policies are valid if their information interface is not physically separated from oracle evaluation columns.
+\end{itemize}
+
+\section{A checklist for future conversations and implementations}
+When resuming this work in a new context, preserve the following invariants.
+
+\subsection*{Semantic invariants}
+\begin{itemize}
+    \item Always state what the world model is.
+    \item Always state what the query is.
+    \item Always state whether a step is exact, bounded, semantic mixture, or operational only.
+    \item Never reuse a derived edge without carried side conditions and provenance.
+\end{itemize}
+
+\subsection*{Higher-order invariants}
+\begin{itemize}
+    \item Second order means regime/admissibility uncertainty, not a vague scalar confidence.
+    \item Third order means trust in the second-order layer, preferably derived from calibration and disagreement.
+    \item Do not build explicit higher-order towers beyond what changes a decision.
+\end{itemize}
+
+\subsection*{Benchmark invariants}
+\begin{itemize}
+    \item One benchmark universe; multiple information views.
+    \item Oracle and blind policies must be evaluated on the same root states.
+    \item Physically separate decision tables from evaluation tables.
+    \item Freeze split policy before tuning.
+    \item Distinguish action-quality benchmarks from case-discovery benchmarks.
+\end{itemize}
+
+\subsection*{GWAS benchmark invariants}
+\begin{itemize}
+    \item Keep the scored benchmark object narrower than the explanation object.
+    \item Use public gold standards for locus-to-gene supervision.
+    \item Treat mechanistic chains as provenance-rich explanations with uncertainty, not as perfectly labeled truth.
+    \item Make reveal actions concrete: tissue, QTL, chromatin, credible-set refinement, pathway family.
+\end{itemize}
+
+\section{Open problems}
+The following questions remain genuinely interesting.
+\begin{enumerate}[label=\arabic*.]
+    \item Can topology-conditioned admissibility statements be made theorem-level rather than only diagnostic?
+    \item How far can blind higher-order control be pushed before factor-graph or global-subgraph reasoning becomes necessary?
+    \item What is the cleanest revision-based formulation of third-order trust?
+    \item How should multi-support revision be performed when evidence families overlap but are not independent?
+    \item Which parts of large biomedical benchmarks truly supervise mechanism, and which only supervise ranking?
+\end{enumerate}
+
+These are fertile problems precisely because they combine semantics, uncertainty, computation, and benchmark design rather than reducing everything to one score.
+
+\section{Conclusion}
+The most durable insight is not a specific dataset or code path. It is a conceptual reorganization.
+
+A useful probabilistic logic architecture should be built around:
+\begin{itemize}
+    \item explicit world-model semantics;
+    \item provenance-carrying compiled local rewrites;
+    \item explicit second-order regime uncertainty;
+    \item explicit third-order trust and reveal pressure;
+    \item topology-aware inference control;
+    \item benchmark designs that cleanly separate simulator semantics from runtime-blind decisions.
+\end{itemize}
+
+On this view, the original ambition of probabilistic logic is not abandoned. It is sharpened. The goal is no longer to pretend that every local truth value already contains the probability of anything. The goal is to build systems that know when their local exactness is justified, when hidden context must be represented, when more evidence should be acquired, and when they should abstain.
+
+\begin{thebibliography}{99}
+
+\bibitem{goertzel-pln-book}
+B.~Goertzel, M.~Ikle, I.~Freire Goertzel, and A.~Heljakka.
+\newblock \emph{Probabilistic Logic Networks: A Comprehensive Framework for Uncertain Inference}.
+\newblock Springer, 2008.
+
+\bibitem{garrabrant-logical-induction}
+S.~Garrabrant, T.~Benson-Tilsen, A.~Critch, N.~Soares, and J.~Taylor.
+\newblock Logical induction.
+\newblock \emph{arXiv:1609.03543}, 2016.
+
+\bibitem{mountjoy2021}
+E.~Mountjoy et al.
+\newblock An open approach to systematically prioritize causal variants and genes at all published human GWAS trait-associated loci.
+\newblock \emph{Nature Genetics}, 53:1527--1533, 2021.
+
+\bibitem{ghoussaini2021}
+M.~Ghoussaini et al.
+\newblock Open Targets Genetics: systematic identification of trait-associated genes using large-scale genetics and functional genomics.
+\newblock \emph{Nucleic Acids Research}, 49(D1):D1311--D1320, 2021.
+
+\bibitem{zou2022susie}
+Y.~Zou, P.~Carbonetto, C.~Wang, and M.~Stephens.
+\newblock Fine-mapping from summary data with the ``sum of single effects'' model.
+\newblock \emph{PLOS Genetics}, 18(7):e1010299, 2022.
+
+\bibitem{weeks2023pops}
+E.~M.~Weeks et al.
+\newblock Leveraging polygenic enrichments of gene features to predict genes underlying complex traits and diseases.
+\newblock \emph{Nature Genetics}, 55:1072--1082, 2023.
+
+\bibitem{nasser2021}
+J.~Nasser et al.
+\newblock Genome-wide enhancer maps link risk variants to disease genes.
+\newblock \emph{Nature}, 593:238--243, 2021.
+
+\bibitem{pers2015depict}
+T.~H.~Pers et al.
+\newblock Biological interpretation of genome-wide association studies using predicted gene functions.
+\newblock \emph{Nature Communications}, 6:5890, 2015.
+
+\bibitem{deleeuw2015magma}
+C.~A.~de Leeuw, J.~M.~Mooij, T.~Heskes, and D.~Posthuma.
+\newblock MAGMA: generalized gene-set analysis of GWAS data.
+\newblock \emph{PLOS Computational Biology}, 11(4):e1004219, 2015.
+
+\bibitem{fine2019benchmarker}
+R.~S.~Fine et al.
+\newblock Benchmarker: an unbiased, association-data-driven strategy to evaluate gene prioritization algorithms.
+\newblock \emph{American Journal of Human Genetics}, 105(5):1052--1066, 2019.
+
+\bibitem{reactome}
+G.~Fabregat et al.
+\newblock The Reactome pathway knowledgebase.
+\newblock \emph{Nucleic Acids Research}, 52(D1):D672--D678, 2024.
+
+\end{thebibliography}
+
+\end{document}

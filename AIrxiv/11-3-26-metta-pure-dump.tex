@@ -1,0 +1,419 @@
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{geometry}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\geometry{margin=1in}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\title{MeTTa-Pure, Elaborated MeTTa-Core, and Runtime Integration:\\A Conceptual Primer and Architectural Roadmap}
+\author{}
+\date{2026-03-11}
+
+\newcommand{\metta}{\textsc{MeTTa}}
+\newcommand{\pure}{\textsc{MeTTa-Pure}}
+\newcommand{\purekernel}{\textsc{PureKernel}}
+\newcommand{\mettail}{\textsc{MeTTaIL}}
+\newcommand{\wm}{\textsc{WM}}
+\newcommand{\runtimeexec}{R_{\mathrm{exec0}}}
+\newcommand{\rspec}{R_{\mathrm{spec}}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note assembles the main conceptual ideas developed around a clean architecture for a homoiconic MeTTa-family language that supports proof, computation, metaprogramming, and runtime execution without collapsing these roles into one another. The central thesis is that a trustworthy system should be organized around \emph{one surface language}, \emph{one elaborated core}, and \emph{multiple checked targets}: a small trusted dependent-type-theoretic kernel on the proof side, an explicit runtime kernel on the operational side, and shared artifact and semantic interfaces between them. The note records the design invariants, the intended division of responsibilities, the role of ordinary inductive families and recursors, the status of evaluators and canonicalization services, the meaning of proof/runtime overlap classes, and a staged roadmap toward a usable language that remains theoretically clean. It is intended both as a primer for future discussions and as a compact architectural memory for future implementation work.
+\end{abstract}
+
+\tableofcontents
+
+\section{Thesis}
+The project aims to build a language family around three commitments:
+\begin{enumerate}[label=(\roman*)]
+  \item a \emph{small trusted semantic nucleus} suitable for rigorous proofs and checked certificates,
+  \item a \emph{real operational path} suitable for efficient execution, rich pattern matching, effects, spaces, and external oracles,
+  \item a \emph{single user-facing language story} in which proof-oriented and runtime-oriented programming are not two unrelated ecosystems.
+\end{enumerate}
+
+The key architectural lesson is that these goals are best served not by collapsing all semantics into one reduction relation, but by organizing the system around a \emph{shared elaborated core}. This mirrors the most successful design pattern in modern proof-oriented programming systems: a user-facing language elaborates into a smaller, trusted representation, while executable artifacts and automation are produced from adjacent but explicitly related layers.
+
+\section{The Central Architectural Picture}
+The intended architecture is best summarized as:
+\begin{quote}
+\textbf{Surface \metta{} $\to$ Elaborated \metta-Core $\to$ multiple checked targets.}
+\end{quote}
+
+A useful high-level diagram is:
+\begin{verbatim}
+Surface MeTTa
+   -> Elaborated MeTTa-Core
+      -> Pure / proof lane
+      -> inductive-family lane
+      -> structural-fixpoint lane
+      -> runtime exec lane
+      -> runtime query lane
+      -> runtime space-effect lane
+      -> oracle lane
+      -> meta lane
+      -> shared artifacts / certificates
+\end{verbatim}
+
+This should be read together with the deeper split:
+\begin{verbatim}
+Proof branch:   MeTTa-Pure -> PureKernel -> A -> B -> C1
+Runtime branch: Dialects   -> R_spec     -> R_exec0
+Shared center:  Elaborated MeTTa-Core + shared artifact substrate
+Shared semantic landing: world-model / closure interfaces
+\end{verbatim}
+
+The architecture is thus a \emph{fork with a strong middle}, not a funnel. The proof branch and the runtime branch are not the same semantics, but they are not disjoint either: they share the elaborated core, the artifact substrate, and a family of overlap and semantic-comparison interfaces.
+
+\section{The Shared Substrate}
+The system already presupposes a common representation substrate centered on patterns, language definitions, rewrite artifacts, and exportable plans. Conceptually, this substrate should remain:
+\begin{itemize}
+  \item \textbf{language-facing}: suitable for representing MeTTa-family programs and queries,
+  \item \textbf{artifact-friendly}: suitable for certificates, exported grammars, runtime plans, and traces,
+  \item \textbf{backend-neutral}: not itself the trusted proof kernel and not itself the runtime engine.
+\end{itemize}
+
+This shared substrate is the right place for serialized syntax, rewrite plans, pattern terms, and interoperability artifacts. It is not the place to define the final truth conditions of the dependent kernel.
+
+\section{The Proof Branch: \pure{} and \purekernel{}}
+\subsection{\pure{} as semantic nucleus}
+\pure{} is the intended intensional dependent core: small, typed, and trustworthy. Its purpose is not to be the full runtime language, but to be the semantic nucleus from which proof-carrying fragments and checked certificates can arise.
+
+\subsection{\purekernel{} as metatheoretic waist}
+\purekernel{} is the scoped, de Bruijn-oriented metatheory layer: renaming, substitution, reduction, confluence, typing, subject reduction, quotation, and the bridge into pattern/profile semantics. In the current design, this is the authoritative waist.
+
+The right way to think about this waist is:
+\begin{itemize}
+  \item it is the \emph{reference semantic center} for the proof side,
+  \item it must remain small enough to trust,
+  \item it should grow only by final mechanisms, never by demo-driven shortcuts.
+\end{itemize}
+
+\subsection{The A/B/C1 decomposition}
+The project already uses an important conceptual split:
+\begin{description}[leftmargin=2.2cm,style=nextline]
+  \item[A] a tiny closed executable fragment of the pure kernel,
+  \item[B] the kernel theory reduction relation,
+  \item[C1] the quoted profile-theoretic closure on the pattern side.
+\end{description}
+
+This decomposition matters because it prevents two opposite mistakes:
+\begin{enumerate}[label=(\alph*)]
+  \item weakening the kernel theory to whatever the executable fragment happens to do,
+  \item pretending that runtime semantics are already the same thing as kernel reduction.
+\end{enumerate}
+
+A is not the whole kernel, and C1 is not a runtime semantics. The point is to make the arrows between them explicit and provable.
+
+\section{The Runtime Branch}
+The runtime side should be treated just as seriously as the proof side, but with a different role.
+
+\subsection{Runtime specification}
+A runtime specification layer should describe, explicitly and auditably:
+\begin{itemize}
+  \item whether a dialect uses explicit bindings,
+  \item whether it exposes search/branching,
+  \item whether it has stateful spaces or context surfaces,
+  \item whether it allows external oracles or grounded calls,
+  \item which collection-control and effect features it exposes.
+\end{itemize}
+
+This layer should be descriptive and contractual, not a hidden evaluator.
+
+\subsection{Runtime kernel}
+The runtime kernel should not be ``everything operational'' in one undifferentiated soup. The cleanest operational core presently suggested is a small family of runtime classes:
+\begin{enumerate}[label=(\roman*)]
+  \item \textbf{rule execution} (the central rewrite primitive, often modeled around an \texttt{exec} style operation),
+  \item \textbf{query} (space lookups and search-facing operations),
+  \item \textbf{space effect} (addition/removal/update of atoms or analogous stateful changes),
+  \item \textbf{oracle} (grounded external interactions),
+  \item \textbf{meta} (operations that belong to elaboration or tooling rather than user-level runtime).
+\end{enumerate}
+
+The important point is that \texttt{exec} is central but not the whole runtime. Query and space effect are sibling operational lanes, not awkward encodings of rewrite.
+
+\subsection{MORK/MM2 as current execution seam}
+The right conceptual role for a backend such as MORK/MM2 is: \emph{execution substrate, not kernel foundation}. It may be the current implementation target for the runtime kernel classes, but it should not dictate the trusted proof kernel nor redefine the surface language.
+
+\section{The Missing Middle and Why It Matters}
+The most important architectural idea developed in this line of work is that the final integrated system should not simply be:
+\begin{quote}
+proof language over here, runtime language over there, both meeting only at some late semantic comparison layer.
+\end{quote}
+
+That arrangement is an acceptable bootstrap architecture but a poor end state.
+
+The stronger end state is:
+\begin{quote}
+\textbf{one surface language, one elaborated core, multiple checked targets.}
+\end{quote}
+
+This is the right answer to the question ``how do proofs and execution work together in practice?'' The elaborated core is the real intersection:
+\begin{itemize}
+  \item typed and total fragments elaborate to the proof kernel,
+  \item effectful and stateful fragments elaborate to runtime kernels and artifacts,
+  \item oracle forms remain explicit and contract-carrying,
+  \item meta-level constructs remain clearly separated from user-level runtime.
+\end{itemize}
+
+This is conceptually very close to the architecture of successful systems in which elaboration, checking, metaprogramming, and execution are all first-class, but the trusted kernel remains small.
+
+\section{Ordinary Inductive Families}
+\subsection{Why they matter early}
+Ordinary inductive families are the first major kernel extension that must be done by \emph{final mechanism} rather than by demo shortcuts. If the language is to become a real dependently typed programming language rather than a bare metatheoretic nucleus, it needs at least:
+\begin{itemize}
+  \item ordinary strictly positive families,
+  \item parameters and indices,
+  \item generated recursors/eliminators,
+  \item computation rules for recursors on constructors,
+  \item structural recursion discipline.
+\end{itemize}
+
+The key discipline is: \emph{Unit/Bool/Nat must be instances of the general family mechanism, not kernel hardcoded primitives.}
+
+\subsection{Starter family set}
+A minimal starter set that makes the system usable is:
+\begin{itemize}
+  \item Empty, Unit, Bool, Nat,
+  \item Option, Sum, Prod (record sugar),
+  \item List,
+  \item Fin, Vec (to exercise indexed families).
+\end{itemize}
+
+\subsection{Recursors and computation}
+Generated eliminators are kernel objects whose definitional equality rules are part of the trusted semantics. This is the right place where ``programming'' starts to feel like real DTT programming rather than metatheoretic manipulation.
+
+\section{Fixpoints and Structural Recursion}
+Fixpoints should be staged above ordinary families:
+\begin{quote}
+ordinary families $\to$ generated recursors $\to$ smallest structural fixpoint layer.
+\end{quote}
+
+General recursion is not needed early and should be deferred. A minimal structural recursion layer should be:
+\begin{itemize}
+  \item tied to the recursor contract,
+  \item explicitly total/terminating,
+  \item treated as a kernel extension only if it is part of the intended final design.
+\end{itemize}
+
+\section{Checking, Canonicalization, and the Semantic Waist}
+\subsection{The semantic waist as authority}
+A key design invariant is that the semantic waist is authoritative:
+\begin{itemize}
+  \item a checking boundary imports or constructs objects with explicit judgments,
+  \item a canonicalization/definitional-equality service provides a stable notion of conversion,
+  \item any executable evaluator is downstream tooling that must prove agreement with the waist.
+\end{itemize}
+
+This directly prevents the failure mode in which a prototype evaluator becomes a second semantics.
+
+\subsection{Canonical development and conversion}
+Canonical development (or an equivalent normalization anchor) is a principled conversion tool. It should not be misnamed as ``the strongest executable normal form'' when it is not. Naming discipline matters.
+
+\subsection{Executable agreement}
+A useful tool layer is an agreement service:
+\begin{itemize}
+  \item compute an executable result (possibly via a certified stepper),
+  \item compute canonical development,
+  \item exhibit a common reduct when possible,
+  \item return a structured witness record, not just CLI text.
+\end{itemize}
+
+Such a tool can be used for debugging and teaching without becoming a semantic oracle.
+
+\section{Honest Overlap Classes}
+A central methodological point is that overlaps between proof and runtime should be stated honestly.
+
+Useful overlap classes include:
+\begin{description}[leftmargin=2.6cm,style=nextline]
+  \item[artifact-only] the same surface form lowers to comparable artifacts, but there is no direct shared operational claim,
+  \item[query-compatible] the runtime artifact is already usable at the query seam,
+  \item[direct-exec] the same fragment is genuinely executable through the current runtime execution seam.
+\end{description}
+
+This classification matters. It prevents the project from making claims stronger than its current theorems. In particular, a fragment that is artifact-only or query-compatible must not be marketed as if it had already achieved direct operational overlap.
+
+\section{Metaprogramming and Homoiconicity}
+The language should remain homoiconic, but homoiconicity should not be confused with a lack of structure.
+
+The right design discipline is:
+\begin{itemize}
+  \item syntax remains reflectable and quotable as data,
+  \item surface sugars elaborate into a smaller core,
+  \item elaboration is where semantic classification happens,
+  \item reflection and quotation live naturally near the elaborated core and proof side,
+  \item runtime semantics are not permitted to mutate the kernel by stealth.
+\end{itemize}
+
+A good target is the combination:
+\begin{quote}
+Lisp-like reflectability + Lean-like elaboration discipline + explicit artifact boundaries.
+\end{quote}
+
+\section{Ontology, Control, and AGI-Host Friendliness}
+A further important idea is that the system should eventually include an explicit ontology/control layer \emph{above} the elaborated core, rather than smuggling such notions into the trusted kernel.
+
+Conceptually, such a layer should make explicit:
+\begin{itemize}
+  \item contexts and aspects,
+  \item ontology scaffolds (base concepts and bridge theory),
+  \item attention or budget structures,
+  \item ontology edits and bridge repairs,
+  \item inference-control metadata over programs and proofs.
+\end{itemize}
+
+This serves two roles:
+\begin{enumerate}[label=(\roman*)]
+  \item it makes the system more suitable for reflective or AGI-host-like use cases,
+  \item it preserves the small trusted kernel by locating deliberative control in a higher layer.
+\end{enumerate}
+
+\section{Alternative Foundations and Interoperability}
+The project can learn a great deal from systems outside dependent type theory without replacing its core foundation.
+
+Useful architectural lessons include:
+\begin{itemize}
+  \item from Lean 4: one surface language, elaboration as the real intersection, a small kernel, and executable/metaprogramming infrastructure around it,
+  \item from MetaRocq/MetaCoq: explicit import/checking APIs, verified checking, verified erasure, and internalization of meta-level tooling,
+  \item from F*: proof-oriented programming with extraction to practical backends,
+  \item from K: the value of executable semantics and tool generation from explicit operational rules,
+  \item from locally nameless and cofinite techniques: strong theorem-shape discipline for binder-heavy metatheory,
+  \item from set-theoretic or HOL-oriented systems: keep export/interoperability first-class, but do not abandon the main DTT path simply because another foundation also works.
+\end{itemize}
+
+The right conclusion is not ``pick one foundation forever and ignore the rest,'' but rather:
+\begin{quote}
+use DTT as the main trusted kernel path, while treating alternate logical worlds as targets or interoperability lanes when useful.
+\end{quote}
+
+\section{Extraction and Backends}
+The eventual system should support two different styles of downstream compilation:
+\begin{enumerate}[label=(\roman*)]
+  \item \textbf{proof-side extraction}: small trusted checker/validator or certificate consumers extracted to high-assurance backends,
+  \item \textbf{runtime-side lowering}: richer operational fragments lowered to efficient execution backends.
+\end{enumerate}
+
+This suggests a division of labor such as:
+\begin{itemize}
+  \item proof-side validators and small trusted consumers may eventually target formally verified compilation chains,
+  \item runtime-side kernels and resources may target Rust-like or VM-like backends with explicit oracle/resource boundaries,
+  \item neither path should be allowed to redefine the other.
+\end{itemize}
+
+\section{Anti-Patterns to Avoid}
+For future work, the following anti-patterns should be treated as hard failures:
+\begin{enumerate}[label=(\arabic*)]
+  \item \textbf{Family-specific AST growth} when the intended final design is a general family mechanism.
+  \item \textbf{Prototype tools in trusted import paths}. Prototype, seed, demo, scratch, and design modules must stay out of the trusted kernel surface.
+  \item \textbf{Evaluators steering semantics}. Fuel-bounded tools and CLI demos are consumers, not authorities.
+  \item \textbf{Misleading names}. Weaker services must not be called by stronger semantic names.
+  \item \textbf{Premature fixpoints}. Structural recursion belongs above ordinary families, never ahead of them.
+  \item \textbf{Collapsing proof and runtime semantics for convenience}. Honest overlap statements are better than false unification.
+\end{enumerate}
+
+\section{A Practical Research Roadmap}
+A clean near-term roadmap is:
+\begin{enumerate}[label=(\arabic*)]
+  \item keep the semantic waist authoritative and stable,
+  \item keep checking/conversion/canonicalization explicit,
+  \item install the general ordinary-family mechanism,
+  \item instantiate it with \texttt{Unit}, then \texttt{Bool}, then \texttt{Nat},
+  \item generate real recursors from those declarations,
+  \item add the smallest structural-fixpoint layer above them,
+  \item keep runtime execution on its own explicit operational branch,
+  \item use the elaborated core to classify and compare proof-side and runtime-side fragments,
+  \item gradually widen the overlap only where theorems justify it.
+\end{enumerate}
+
+A useful slogan for this roadmap is:
+\begin{quote}
+\textbf{First the final mechanism, then the familiar instances, then the user-friendly surface.}
+\end{quote}
+
+\section{Minimal Primer for Future Design Discussions}
+When starting a new design discussion, the following summary should be enough to avoid confusion.
+
+\subsection*{Core principles}
+\begin{itemize}
+  \item The trusted core is small and typed.
+  \item The elaborated core is the real intersection between proof and execution.
+  \item Runtime is explicit, not disguised as proof reduction.
+  \item Ordinary families come from a general declaration mechanism.
+  \item Evaluators are downstream consumers of the kernel, never the reverse.
+  \item Honest overlap classes are mandatory.
+\end{itemize}
+
+\subsection*{Short glossary}
+\begin{description}[leftmargin=2.5cm,style=nextline]
+  \item[\pure{}] the intensional dependent semantic nucleus,
+  \item[\purekernel{}] the scoped metatheoretic waist and proof kernel,
+  \item[A/B/C1] closed executable fragment / theory reduction / quoted profile closure,
+  \item[\rspec{}] audit-facing runtime specification,
+  \item[\runtimeexec{}] current theoremic runtime execution seam,
+  \item[Elaborated \metta-Core] the middle layer that classifies surface programs into proof, runtime, oracle, and meta lanes,
+  \item[artifact-only overlap] common artifact lowering without shared execution claim,
+  \item[query-compatible overlap] artifact lane already usable at the runtime query seam,
+  \item[direct-exec overlap] genuine shared execution through the current runtime execution seam.
+\end{description}
+
+\section{Conclusion}
+The central insight of the project is that a clean integration of proof, metaprogramming, and execution is possible only if the architecture keeps its layers honest. A small trusted dependent kernel, a strong elaborated middle layer, and an explicit runtime kernel can coexist fruitfully---but only if none of them is allowed to impersonate the others. The near-term priority is therefore not to broaden the demo surface, but to strengthen the final mechanisms: the semantic waist, the ordinary-family declaration mechanism, generated recursors, and only then the smallest structural recursion layer. If that discipline is maintained, the result can become both mathematically elegant and operationally powerful.
+
+\begin{thebibliography}{99}
+
+\bibitem{leanref}
+Lean 4 Reference Manual.
+\newblock \url{https://lean-lang.org/lean4/doc/reference.html}
+
+\bibitem{leanmeta}
+Lean 4 Metaprogramming Book.
+\newblock \url{https://leanprover-community.github.io/lean4-metaprogramming-book/}
+
+\bibitem{efm}
+Brian Aydemir, Arthur Chargu\'eraud, Benjamin Pierce, Randy Pollack, and Stephanie Weirich.
+\newblock Engineering Formal Metatheory.
+\newblock In \emph{POPL}, 2008.
+
+\bibitem{ln}
+Arthur Chargu\'eraud.
+\newblock The Locally Nameless Representation.
+\newblock \url{https://www.chargueraud.org/softs/ln/}
+
+\bibitem{mlttcoq}
+Beno\^it Adjedj, et al.
+\newblock Martin-L\"of Type Theory \`a la Coq.
+\newblock 2023 preprint.
+
+\bibitem{fstar}
+F* project website.
+\newblock \url{https://fstar-lang.org/}
+
+\bibitem{metarocq}
+MetaRocq project repository and documentation.
+\newblock \url{https://github.com/MetaRocq/metarocq}
+
+\bibitem{k}
+K Framework.
+\newblock \url{https://kframework.org/exports/K.html}
+
+\bibitem{beluga}
+Beluga documentation.
+\newblock \url{https://beluga-lang.readthedocs.io/}
+
+\bibitem{containers}
+Neil Ghani, Peter Hancock, and Dirk Pattinson.
+\newblock Containers and Indexed Containers.
+\newblock See related literature on strictly positive functors and container presentations.
+
+\end{thebibliography}
+
+\end{document}

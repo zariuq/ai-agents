@@ -1,0 +1,482 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+\setlist[itemize]{topsep=4pt,itemsep=2pt}
+\setlist[enumerate]{topsep=4pt,itemsep=2pt}
+
+\title{Toward a Clean MeTTa-Pure:\\
+Kernel, Profile, Bridge, and Runtime Architecture\\
+\large Conceptual Primer and Design Record}
+\author{Prepared as a technical primer for future MeTTa work}
+\date{2026-03-04}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note consolidates a design program for a clean dependent-type-theoretic core for MeTTa together with its relation to the broader MeTTa family of runtimes, profiles, and modal semantics. The central claim is that a satisfactory architecture requires a small trusted kernel, a MeTTa-IL presentation of that kernel, and an explicit bridge between the two. The note explains why a direct attempt to treat the ambient MeTTa-IL host syntax as the kernel theorem domain creates avoidable proof pathologies, why a separate scoped kernel is the right long-term foundation, why one should keep both executable and proof-theoretic semantics, and how all of this can still define a bona fide form of MeTTa rather than an unrelated theorem prover. The paper also records the recommended package structure for Lean and Lean-backed runtimes, the semantics of profiles such as HE and PeTTa, and a least-regret roadmap for the remaining bridge theorems.
+\end{abstract}
+
+\tableofcontents
+
+\section{Purpose and scope}
+
+The goal is to articulate a clean conceptual design for \emph{MeTTa-Pure}: a mathematically trustworthy dependent type theory that remains genuinely connected to the larger MeTTa ecosystem rather than drifting into an isolated proof assistant core. The emphasis here is architectural and semantic rather than historical. The note is intended to be useful in three ways:
+
+\begin{enumerate}
+  \item as a primer for future discussions about MeTTa-Pure, MeTTa-Core, and profile design,
+  \item as a conceptual reference for the ongoing Lean formalization, and
+  \item as a stable record of the design choices that should not be re-litigated without a strong mathematical reason.
+\end{enumerate}
+
+The text is intentionally didactic. It does not attempt to present polished final metatheory; instead, it organizes what has already been learned and identifies the correct abstractions for future work.
+
+\section{Diagnosis: what is wrong with the naive picture?}
+
+A first temptation is to say: current MeTTa already has a type judgment, already has rewriting, and already has a generic host syntax, so perhaps a dependent type theory can simply be layered onto the current structure. This is the wrong framing.
+
+The core diagnosis is:
+
+\begin{itemize}
+  \item The existing MeTTa runtime typing discipline is not a proof-assistant kernel. In the formalized development, the existing \texttt{HasType} behaves essentially as annotation lookup. That is useful operationally, but it is not enough for dependent type theory because it is not closed under the conversion behavior needed for kernel reasoning.
+  \item MeTTa-IL itself is not the problem. It is a strong operational and categorical substrate: it gives a shared \texttt{Pattern} syntax, \texttt{LanguageDef}-driven rewriting, executable and declarative engine relations, and the derived modal/behavioral layer used by OSLF.
+  \item The real mistake is to identify the \emph{ambient host representation} with the \emph{kernel theorem domain}. A host datatype may be excellent for interoperation, runtime lowering, and modal analysis while still being the wrong domain on which to prove confluence, injectivity, or subject reduction for a small DTT kernel.
+\end{itemize}
+
+This diagnosis yields the central design principle of the project:
+
+\begin{quote}
+\textbf{Kernel metatheory should be proved on the least syntax closed under kernel operations, not on the ambient host representation.}
+\end{quote}
+
+That principle is the hinge on which the rest of the design turns.
+
+\section{Three distinct objects: kernel, presentation, and runtime family}
+
+The clean design separates three objects that were initially blurred together.
+
+\subsection{The trusted kernel}
+
+The first object is a scoped dependent-type-theoretic kernel, here called \emph{PureKernel}. It should carry:
+
+\begin{itemize}
+  \item its own syntax (for example, \(\texttt{PureTm}\) indexed by scope depth),
+  \item renaming and substitution operations,
+  \item one-step reduction and its reflexive-transitive closure,
+  \item confluence or Church--Rosser style theorems,
+  \item conversion-sensitive typing, and
+  \item subject reduction.
+\end{itemize}
+
+This kernel is the trusted mathematical core. It is where one proves the theorems that matter for a DTT.
+
+\subsection{The MeTTa-IL presentation}
+
+The second object is a \emph{Pattern-side presentation} of the same pure fragment as a \texttt{LanguageDef}, here called \texttt{mettaPure}. This presentation is not the theorem source of truth; instead, it is the way the pure kernel appears \emph{inside the broader MeTTa world}. It has:
+
+\begin{itemize}
+  \item the same intended constructors (universes, \(\Pi\), \(\Sigma\), identity, lambda, application, pair, projections, refl),
+  \item a small set of rewrite rules corresponding to the computational core (currently the three beta rules), and
+  \item automatic access to the generic MeTTa-IL machinery such as constructor categories and OSLF synthesis.
+\end{itemize}
+
+The presentation is therefore not an arbitrary encoding. It is the \emph{MeTTa profile} of the kernel.
+
+\subsection{The runtime family}
+
+The third object is the family of runtime profiles over the shared substrate. The key abstraction here is not ``one master semantics for everything'' but a \emph{profile interface}.
+
+A good conceptual shape is:
+
+\begin{quote}
+\texttt{MeTTaCoreProfile = LanguageDef + premises + runtime policy + optional state constructor + profile metadata.}
+\end{quote}
+
+Under this view:
+
+\begin{itemize}
+  \item the pure profile is one profile,
+  \item HE is another,
+  \item PeTTa is another,
+  \item fuller stateful MeTTa profiles are yet others.
+\end{itemize}
+
+This profile notion is the right place to say what makes something a \emph{bona fide} form of MeTTa.
+
+\section{The central thesis: MeTTa-Pure is not enough by itself}
+
+A bare DTT kernel is not yet ``a form of MeTTa.'' It becomes one only if all three of the following are present:
+
+\begin{enumerate}
+  \item a trusted kernel with its own theorems,
+  \item a MeTTa-IL presentation/profile of that kernel, and
+  \item a conservative bridge theorem connecting the kernel to the profile.
+\end{enumerate}
+
+This may be summarized as:
+
+\begin{quote}
+\textbf{MeTTa-Pure is bona fide MeTTa if and only if it is a conservative core profile with a proved embedding from the trusted kernel into the shared MeTTa runtime substrate.}
+\end{quote}
+
+This is a stronger and more useful statement than saying ``the syntax looks similar'' or ``it can be encoded somehow.''
+
+\section{The A/B/C semantic stratification}
+
+One of the most important insights is that there are not two but \emph{three} semantic layers that should be kept separate.
+
+\subsection{A: operational/profile-facing reduction}
+
+Layer A is the executable or profile-facing reduction relation. It is the fragment that can be soundly interpreted directly by the current profile engine. In the present development this is a deliberately small, closed fragment: a few basic beta steps for closed pure terms.
+
+A is useful because it gives immediate execution and concrete runtime tests.
+
+\subsection{B: full kernel theory reduction}
+
+Layer B is the actual DTT kernel reduction. It includes the congruence closure needed for confluence, injectivity, and subject reduction. This is the true proof-theoretic relation of MeTTa-Pure.
+
+B is not reducible to A. If one weakens B to match A too early, the kernel loses the very structure that makes a DTT mathematically useful.
+
+\subsection{C: profile-side theory closure}
+
+Layer C is the profile-side analogue of B. It lives not on kernel terms but on quoted Pattern terms inside the pure MeTTa profile. It is needed because B does not map directly to raw top-level profile one-step reduction.
+
+The correct form of C is an \emph{intrinsic contextual closure} on the profile side, not merely a transported existence statement.
+
+In short:
+
+\begin{itemize}
+  \item A is for execution,
+  \item B is for kernel proof theory,
+  \item C is for relating B to the profile world without pretending the profile's raw one-step semantics already performs all kernel congruence steps.
+\end{itemize}
+
+The key architectural lesson is:
+
+\begin{quote}
+\textbf{Do not choose between A and B. Keep A for execution, keep B for theory, and define C so that B has a mathematically honest home on the profile side.}
+\end{quote}
+
+\section{Why the old bridge failed}
+
+The earlier bridge attempts ran into a recurring obstacle around beta reduction under binders. The root cause was not merely a difficult proof state. It was a bad bridge design.
+
+A naive quotation from scoped kernel terms into \texttt{Pattern} sent kernel variables directly to \texttt{bvar} indices in the host representation. That makes the bridge too close to the host internals and breaks exactly where beta and substitution matter most.
+
+The correct diagnosis is:
+
+\begin{quote}
+\textbf{The failure came from using the wrong quotation, not from any impossibility of a faithful bridge.}
+\end{quote}
+
+The right quotation must be a \emph{contextual locally nameless quotation}.
+
+\section{The correct bridge: contextual quotation into locally nameless syntax}
+
+The bridge should not be a raw map
+\[
+\texttt{PureTm n} \to \texttt{Pattern}
+\]
+with no environment. It should instead be parameterized by a naming environment:
+\[
+\texttt{quoteTmWith} : (\texttt{Fin n} \to \texttt{String}) \to \texttt{PureTm n} \to \texttt{Pattern}.
+\]
+
+The intended behavior is:
+
+\begin{itemize}
+  \item kernel variables become \texttt{fvar}s carrying names from the environment,
+  \item when descending under a binder, one chooses a fresh binder name,
+  \item the body is quoted with the extended environment,
+  \item and then the chosen free variable is closed using \texttt{closeFVar} to form the locally nameless host representation.
+\end{itemize}
+
+This is the standard way to bridge scoped syntax and locally nameless syntax.
+
+\subsection{Why this matters}
+
+With this quotation, the central beta bridge is no longer a raw claim about host opening. Instead, one can prove a semantic theorem in the style:
+
+\begin{quote}
+quotation commutes with kernel substitution after translating the substitution into a host-side substitution environment.
+\end{quote}
+
+That is the right theorem. The earlier approach tried to prove a special-case \texttt{inst0} statement too early and therefore kept running into binder-level weakening and lifting mismatches.
+
+\section{The bridge theorem should be about substitution, not about \texttt{inst0}}
+
+A major source of wasted effort was attempting to prove a specialized bridge theorem for the single-substitution operator \texttt{inst0} before proving the general substitution theorem.
+
+The correct order is:
+
+\begin{enumerate}
+  \item prove a generic renaming bridge,
+  \item prove a generic substitution bridge,
+  \item derive the \texttt{inst0} case as a corollary,
+  \item and only then refactor the embedding theorems so the assumption wrappers disappear.
+\end{enumerate}
+
+Conceptually, one wants a theorem of the following form:
+
+\begin{quote}
+\texttt{quoteTmWith} of a kernel substitution equals host-side application of a quoted substitution environment to the quoted term.
+\end{quote}
+
+Once that is proved, all the special cases become easy. Without it, every binder case must be re-solved by hand.
+
+\section{Why a separate kernel syntax is the right long-term route}
+
+There was a fork between:
+
+\begin{itemize}
+  \item continuing to prove confluence and substitution transport directly on ambient \texttt{Pattern}, while restricting theorem domains via predicates such as \texttt{PureTmPattern}, or
+  \item introducing a dedicated scoped kernel syntax.
+\end{itemize}
+
+The second route is the cleaner long-term choice.
+
+The reason is simple: if the kernel is meant to be trusted, then its theorems should not depend on ambient constructors that belong to the host runtime substrate but not to the kernel itself. The correct abstraction boundary is:
+
+\begin{quote}
+\textbf{kernel syntax for kernel theorems; host syntax for quotation, runtime interoperation, and profile presentation.}
+\end{quote}
+
+The earlier \texttt{PureTmPattern} restriction was an important diagnostic step, but the dedicated scoped syntax is the final answer.
+
+\section{MeTTa-IL as operational modal base}
+
+Another central insight is that the runtime/modal side and the kernel/type-theoretic side are complementary rather than competing.
+
+MeTTa-IL already behaves like an operational indexed-modal doctrine:
+
+\begin{itemize}
+  \item \texttt{LanguageDef} gives a generic operational presentation,
+  \item the MeTTa-IL engine gives declarative and executable rewriting,
+  \item OSLF synthesizes modal/behavioral types from the reduction structure,
+  \item and the resulting setup supports adjoint modal reasoning such as a derived \(\Diamond \dashv \Box\) pattern.
+\end{itemize}
+
+This does \emph{not} by itself determine the internal DTT of the pure mode. The pure mode must still be given suitable comprehension or CwF-like structure. But it does provide the right operational base on which the pure profile can live.
+
+Thus:
+
+\begin{quote}
+\textbf{MeTTa-IL supplies the operational and modal base; MeTTa-Pure supplies the trusted DTT kernel; the bridge connects them.}
+\end{quote}
+
+\section{Initiality and freeness: the right conjectures}
+
+Several universal-property conjectures naturally arise. The ones worth keeping are the restrained ones.
+
+\subsection{For the kernel}
+
+A good conjecture is:
+
+\begin{quote}
+\textbf{MeTTa-Pure is initial among admissible pure kernels with the chosen MeTTa-like signature and a faithful interpretation into the MeTTa-IL profile world.}
+\end{quote}
+
+This captures the idea that the pure kernel is not arbitrary; it is the minimal honest DTT core compatible with the intended MeTTa presentation discipline.
+
+\subsection{For MeTTa-IL}
+
+A better conjecture than ``MeTTa-IL is initial among all GSLTs'' is something like:
+
+\begin{quote}
+\textbf{MeTTa-IL is free or initial among operational GSLT presentations generated from the intended MeTTa signature, binder forms, collections, premises, and congruence policy.}
+\end{quote}
+
+The point is not to force an over-large universality claim but to find the smallest category in which the natural universal property is true.
+
+\section{Profiles, not implementations, are the right semantic comparison unit}
+
+A recurring source of confusion is the urge to define the theory in terms of today's implementation snapshots. That is the wrong way around.
+
+HE, PeTTa, and future MeTTa variants should be treated as \emph{profiles} over a shared substrate rather than as sacred operational facts.
+
+This yields several benefits:
+
+\begin{itemize}
+  \item one can freeze a profile and compare implementations against it,
+  \item one can let the pure profile remain mathematically ideal while runtime approximations evolve,
+  \item and one can compare profiles without forcing them into one monolithic semantics.
+\end{itemize}
+
+This is especially important because current HE, PeTTa, and broader MeTTa-Core profiles need not be identical and need not evolve in lockstep.
+
+\section{Pure as a bona fide MeTTa profile}
+
+The core worry is legitimate: how can one know that the new DTT kernel is really part of MeTTa rather than just some imported theorem prover?
+
+The answer is not rhetorical but formal.
+
+A pure kernel becomes a bona fide MeTTa form when:
+
+\begin{enumerate}
+  \item it is packaged as a \texttt{MeTTaCoreProfile},
+  \item its quoted closed terms are legal Pattern terms for that profile,
+  \item kernel steps soundly embed into the profile's theory-side semantics,
+  \item and the embedding is conservative on the quoted image.
+\end{enumerate}
+
+That is the right criterion. In particular, a pure kernel is not required to look operationally like HE or PeTTa in every internal detail. It is required to sit inside the same family architecture with the right bridges.
+
+\section{The right package structure}
+
+Another important insight concerns the Lean codebase itself.
+
+A single monolithic package is the wrong shape if one wants:
+
+\begin{itemize}
+  \item a lightweight runtime core with Batteries-only dependencies,
+  \item a heavier Mathlib-based proof layer,
+  \item and shared executable types and engines between the two.
+\end{itemize}
+
+The recommended layout is a monorepo with multiple Lean packages:
+
+\begin{itemize}
+  \item \texttt{mettail-core}: shared executable substrate (Pattern, LanguageDef, matching, core engine, profile data),
+  \item \texttt{algorithms}: lightweight runtime implementations and sessions,
+  \item \texttt{mettapedia}: Mathlib-heavy proof, specification, and conformance layer.
+\end{itemize}
+
+This avoids both type duplication and a transitive dependency from runtimes into Mathlib.
+
+\section{Simple runtime, staged runtime, and external kernels}
+
+The runtime story also has a clean three-stage shape.
+
+\subsection{Simple runtime}
+
+The simple runtime should be a direct interpreter over a frozen profile bundle. It should be easy to test against corpora and easy to relate to declarative semantics.
+
+\subsection{Staged runtime}
+
+A staged Lean runtime should be a refinement of the same profile bundle, not a separate semantics. The idea is to specialize matching and dispatch while preserving the reference meaning.
+
+\subsection{Optional low-level kernels}
+
+Only after profiling should one consider lower-level verified kernels (for example via C/LLVM pathways or verified external code). These should refine the same reference semantics rather than replacing it.
+
+The same principle applies throughout:
+
+\begin{quote}
+\textbf{one semantic source of truth, many execution modes.}
+\end{quote}
+
+\section{Optional DSL profiles and theorem-backed lowering}
+
+The TensorDSL work provided an important architectural template.
+
+A domain-specific notation should generally not mutate the core parser or runtime. Instead it should be handled as:
+
+\begin{enumerate}
+  \item a typed profile-specific AST,
+  \item profile-specific invariants and proofs,
+  \item a verified lowering into the shared Pattern substrate,
+  \item and a cross-runtime corpus validating the lowering against multiple backends.
+\end{enumerate}
+
+This template should be reused. It is a clean way to build rich domain-specific layers on top of a stable MeTTa core.
+
+\section{What should be considered locked in?}
+
+The following decisions are strong candidates for being treated as stable architectural commitments.
+
+\subsection*{(i) Separate kernel syntax}
+Kernel metatheory should remain on a scoped kernel syntax rather than on raw ambient Pattern terms.
+
+\subsection*{(ii) Profile architecture}
+Pure, HE, full-core, and similar variants should be treated as profiles over a common substrate.
+
+\subsection*{(iii) A/B/C semantics}
+Execution, kernel theory, and profile-side theory closure should remain distinct layers.
+
+\subsection*{(iv) Contextual quotation}
+The semantic bridge should use contextual locally nameless quotation rather than raw de Bruijn-like embedding into the host.
+
+\subsection*{(v) Substitution before \texttt{inst0}}
+The fundamental bridge theorem should be a general quotation/substitution theorem. Any \texttt{inst0} theorem should be derived from it.
+
+\subsection*{(vi) Direct lowering for kernel execution}
+Runtime execution of the kernel should go through direct lowering from the kernel AST to the pure profile, not through a generic text parser as the correctness anchor.
+
+\subsection*{(vii) \texttt{quoteRaw} is debug-only}
+A naive raw quotation is useful as a negative regression witness, not as a semantic bridge.
+
+\section{Open problems worth keeping in scope}
+
+Several major tasks remain, but they should be pursued in the order implied by the architecture above.
+
+\begin{enumerate}
+  \item Finish the generic quotation/substitution theorem.
+  \item Remove bridge assumptions and make the B\(\to\)C theorems unconditional.
+  \item Finalize the C1 profile-theory layer and relate it cleanly to profile reduction closures.
+  \item Decide the scope of algorithmic type checking for the kernel and whether to provide a complete checker or leave this explicitly as future work.
+  \item Broaden the pure profile's operational fragment A only after the semantic stratification is complete.
+  \item Continue unifying the Lean runtime and Rust runtime around frozen profile artifacts.
+\end{enumerate}
+
+\section{A concise roadmap for future implementation work}
+
+A good near-term sequence is:
+
+\begin{enumerate}
+  \item complete the generic renaming bridge,
+  \item complete the generic substitution bridge,
+  \item derive unconditional \texttt{inst0} corollaries,
+  \item remove ``assuming\_inst0'' wrappers,
+  \item prove unconditional B\(\to\)C soundness,
+  \item then, and only then, resume broader runtime/profile refinements.
+\end{enumerate}
+
+For the runtime side, the recommended order remains:
+
+\begin{enumerate}
+  \item simple reference runtime over a frozen profile bundle,
+  \item staged/specialized runtime as a refinement,
+  \item optional lower-level verified kernels only after profiling justifies them.
+\end{enumerate}
+
+\section{Conclusion}
+
+The main conceptual achievement is not merely a collection of proofs. It is a clarified architecture.
+
+The mature picture is this:
+
+\begin{itemize}
+  \item \textbf{PureKernel} is the trusted DTT core.
+  \item \textbf{\texttt{mettaPure}} is its MeTTa-IL presentation as a profile.
+  \item \textbf{PatternBridge} is the semantic embedding from kernel to profile.
+  \item \textbf{A/B/C} separate execution, proof theory, and profile-side theory semantics.
+  \item \textbf{MeTTa-IL} remains the shared operational and modal base.
+  \item \textbf{HE, PeTTa, and fuller MeTTa variants} remain comparable profiles rather than competing foundations.
+\end{itemize}
+
+This resolves the central tension. One does not need to choose between a mathematically clean kernel and a genuine MeTTa-family language. The correct design is to have both, connected by explicit profile and bridge structure.
+
+That is the scaffolding worth preserving.
+
+\section*{Appendix: minimal glossary}
+
+\begin{description}
+  \item[PureKernel] The trusted scoped DTT kernel with its own syntax, substitution, reduction, typing, and subject reduction.
+  \item[\texttt{mettaPure}] The Pattern-side \texttt{LanguageDef} presentation of the pure kernel inside MeTTa-IL.
+  \item[MeTTa-Core] The shared runtime/profile family architecture over \texttt{LanguageDef} and premise bundles.
+  \item[Profile] A frozen semantic/runtime bundle describing one MeTTa-family variant (for example Pure, HE, or full-core).
+  \item[A/B/C] The three semantic layers: executable fragment, kernel theory, and profile-side theory closure.
+  \item[C1] The intrinsic contextual closure on the profile side corresponding to the kernel theory relation.
+  \item[Contextual quotation] The environment-aware locally nameless map from kernel terms to Pattern terms.
+  \item[OSLF] The modal/behavioral layer synthesized from the operational structure of a language/profile.
+\end{description}
+
+\end{document}

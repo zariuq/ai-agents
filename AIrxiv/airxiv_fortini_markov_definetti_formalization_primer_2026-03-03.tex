@@ -1,0 +1,281 @@
+% AIrxiv Primer
+% Generated 2026-03-03
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{microtype}
+
+\title{From Markov Exchangeability to Mixtures of Markov Chains:\\
+A Conceptual Primer for a Lean Formalization (Fortini--Diaconis--Freedman Route)}
+\author{AIrxiv note (conceptual; implementation-oriented)}
+\date{2026-03-03}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Fin}{\mathrm{Fin}}
+\newcommand{\Law}{\mathcal{L}}
+\newcommand{\cyl}{\mathrm{cyl}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note is a didactic, strictly conceptual primer for a formalization of the Markov de Finetti / Fortini representation theorem in a proof assistant (Lean).
+The key idea is to state the \emph{public} theorem with classical hypotheses (Markov exchangeability plus recurrence) and to treat low-level ``constructor payloads''
+(e.g.\ measurability side-conditions, start-restricted factorization, and stepwise induction gadgets) as \emph{internal} lemmas rather than as user-facing assumptions.
+
+The central lesson is that the remaining gap in many formal developments is not ``more measure theory'': it is a \emph{joint coherence principle}
+about the whole successor-state matrix, which cannot be reconstructed from per-row statements alone.
+We summarize the canonical Fortini route (successor matrix partial exchangeability \(\Rightarrow\) mixture of Markov chains) and relate it to a second,
+more constructive route based on certified finite combinatorics (``BEST''-style quantitative bounds), clarifying where verified algorithms help and where they do not.
+\end{abstract}
+
+\tableofcontents
+
+\section{What problem is being formalized?}
+
+Fix a finite state space \(S = \Fin(k)\). A stochastic process \(X_0,X_1,\dots\) with values in \(S\) is:
+
+\begin{itemize}[leftmargin=2em]
+\item \emph{a (time-homogeneous) Markov chain} if, conditional on \(X_n\), the future depends on the past only via \(X_n\), with a transition matrix \(P\).
+\item \emph{a mixture of Markov chains} if there exists a probability measure \(\pi\) on transition parameters \(\theta\) such that the law of \(X\) is obtained by first sampling \(\theta \sim \pi\), then running the Markov chain with parameter \(\theta\).
+\end{itemize}
+
+A Markov de Finetti theorem characterizes which laws of \(X\) admit such a representation by an \emph{invariance property} on observable finite prefixes.
+
+\paragraph{Classical statement (informal).}
+Under a suitable notion of \emph{Markov exchangeability} and a recurrence condition, the law of \(X\) is a mixture of Markov chains.
+
+A major reference for the successor-matrix formulation is Fortini--Ladelli--Petris--Regazzini (2002), which proves an equivalence:
+a law is a mixture of Markov chains iff the \emph{successor-state matrix} (defined below) is invariant under finite permutations within rows,
+and under recurrence this row-wise partial exchangeability is equivalent to Markov exchangeability
+in the sense of Diaconis--Freedman. \cite{FortiniEtAl2002}
+
+\section{Two invariance principles: Markov exchangeability vs successor-matrix PE}
+
+\subsection{Markov exchangeability}
+
+Markov exchangeability is an invariance of the \emph{prefix law} under permutations of time indices that preserve the relevant Markov ``evidence'' of a finite word.
+In informal combinatorial terms: two finite paths with the same start state and the same transition counts should be assigned the same probability.
+
+Different formalizations package this differently (e.g.\ via equivalence relations on words or via ``evidence-preserving'' bijections between cylinder events).
+What matters conceptually is that Markov exchangeability is a \emph{symmetry of the observed path}.
+
+\subsection{Successor-state matrix and partial exchangeability}
+
+Define, for each \(i \in S\) and \(n \in \N\), the \emph{successor after the \(n\)-th visit to \(i\)}:
+\[
+V_{i,n} := \text{the value of \(X\) immediately after the \(n\)-th time \(X\) visits state \(i\)}.
+\]
+The array \(V = (V_{i,n})_{i \in S,\, n \in \N}\) is the \emph{successor-state matrix}.
+
+\paragraph{Row-wise partial exchangeability (PE).}
+The law of \(V\) is invariant under applying an arbitrary finite permutation \(\sigma_i\) to the indices \(n\) within each row \(i\), jointly across finitely many coordinates:
+for any finite set of queried entries, permuting visit numbers independently within each row does not change the joint distribution.
+
+This is \emph{not} a purely per-row condition. It is a statement about the \emph{joint law} of the entire matrix \(V\), allowing correlations between rows.
+Fortini et al.\ show: mixture-of-Markov-laws \(\Leftrightarrow\) row-wise PE of \(V\) (plus mild technicalities for general state spaces). \cite{FortiniEtAl2002}
+
+\subsection{Why recurrence appears (and why ``strong recurrence'' may show up in Lean)}
+
+A technical subtlety: for some sample paths, a state \(i\) may be visited only finitely many times, so \(V_{i,n}\) eventually becomes undefined.
+Fortini et al.\ handle this by adjoining a dummy value (often denoted \(\partial\)) to each row so the matrix is always total. \cite{FortiniEtAl2002}
+
+In a formalization that keeps the state space fixed as \(\Fin(k)\), one often replaces this with a hypothesis ensuring that the \(n\)-th visit time exists whenever it is needed.
+This yields a \emph{strong recurrence} (or \emph{infinite visits}) assumption:
+\[
+\text{for each \(i\), on almost every path that ever visits \(i\), all \(n\)-th visit times exist.}
+\]
+This is logically close to recurrence but can be more convenient than introducing an explicit dummy state into the type.
+
+\section{The real crux in formalization: joint coherence vs per-row data}
+
+\subsection{A useful internal factorization: row kernels}
+
+A common formal tactic is to construct, for each anchor state \(i\), a \emph{row kernel}
+\[
+K_i(r) \in \mathrm{Prob}(S),
+\]
+where \(r\) is (some encoding of) the row-process history and \(K_i(r)\) predicts successors from state \(i\).
+Row-wise PE suggests that, conditional on a latent directing object, successors within row \(i\) are i.i.d.\ with law \(K_i(r)\).
+
+This row-kernel viewpoint is powerful for building the final integral representation, but it also introduces a trap:
+
+\begin{quote}
+Per-row factorization statements (even if true for every row) do \emph{not} determine the joint law across rows.
+The missing piece is a \emph{cross-row coherence} principle ensuring that the row kernels come from a \emph{single latent transition mechanism}.
+\end{quote}
+
+\subsection{Cross-anchor identities as a coherence surrogate}
+
+A pragmatic way to express cross-row coherence in code is via a \emph{cross-anchor product identity}:
+an identity equating the probability of a cylinder event with an integral of a product of row-kernel evaluations,
+uniformly across choices of the ``anchor'' used to parameterize the construction.
+
+Conceptually, this identity is a shadow of the statement:
+\[
+\exists \text{ latent transition matrix } \Theta \text{ such that } V_{i,n} \text{ are conditionally i.i.d.\ within each row and coherent across rows.}
+\]
+
+In many developments, a stepwise recursion hypothesis (call it ``\(\mathsf{hstep}\)'') appears, used to lift a length-two base case to arbitrary lengths.
+This is mathematically legitimate as an \emph{internal lemma}, but it should not be a \emph{public} assumption:
+in the literature, the correct public assumption is successor-matrix PE (or Markov exchangeability + recurrence), from which such internal recursion can be derived.
+
+\subsection{Negative lesson: ``bad row kernels''}
+
+It is straightforward to build examples where row-wise-looking ingredients exist but cross-anchor coherence fails:
+choose row kernels that do not arise from any single transition matrix, and cross-anchor identities can break.
+This demonstrates that a formal proof must import some \emph{joint} hypothesis---successor-matrix PE is the canonical one.
+
+\section{A clean theorem hierarchy (recommended)}
+
+The following hierarchy keeps user-facing statements classical and pushes proof plumbing into internal lemmas.
+
+\subsection{Public theorem (literature-facing)}
+
+\begin{quote}
+\textbf{Markov de Finetti for Markov chains (Fortini--Diaconis--Freedman route).}
+If a discrete-valued process is Markov exchangeable and recurrent (or strongly recurrent, depending on encoding),
+then its law is a mixture of Markov chains.
+\end{quote}
+
+The best practice is to present this as:
+\[
+\text{(Markov exchangeability + recurrence)} \Rightarrow \text{(successor matrix PE)} \Rightarrow \text{(mixture of Markov chains).}
+\]
+Diaconis--Freedman (1980) is a classical source for the Markov-chain de Finetti theorem, and Fortini et al.\ (2002) cleanly isolates the successor-matrix PE condition. \cite{DiaconisFreedman1980,FortiniEtAl2002}
+
+\subsection{Canonical intermediate definitions}
+
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Strong recurrence} (if no dummy state is used): ensures the successor matrix is total almost surely on relevant events.
+\item \textbf{SuccessorMatrixPE}: joint invariance under finite within-row permutations.
+\item \textbf{RowSuccessorMatrixInvariance}: a derived, often more convenient invariance principle tailored to the row-successor process used in the implementation.
+\end{itemize}
+
+\subsection{Internal lemmas (implementation helpers)}
+
+These should be marked clearly internal:
+\begin{itemize}[leftmargin=2em]
+\item Measurability obligations for \(\Fin(1)\) ``pi'' measures (often derivable from evaluation measurability on atoms).
+\item Start-restricted row-law factorization (a conditioning/disintegration byproduct).
+\item Stepwise induction gadgets (\(\mathsf{hstep}\)-style lemmas): useful for proofs, not for theorem statements.
+\end{itemize}
+
+\section{Where verified algorithms help (and where they do not)}
+
+A second proof approach uses \emph{quantitative finite} control (WR/WOR transport bounds, certificates, checkers).
+This is valuable, but it targets a different kind of claim.
+
+\subsection{Strengths}
+
+Verified algorithms shine when the obligation is:
+\begin{itemize}[leftmargin=2em]
+\item finite combinatorics (counting / carrier equivalence / finite-dimensional reductions),
+\item explicit inequalities with rational certificates,
+\item automatic falsification of incorrect finite claims (counterexample checkers).
+\end{itemize}
+
+This makes them perfect for:
+\begin{itemize}[leftmargin=2em]
+\item pruning false ``shortcut'' lemmas early,
+\item validating finite pattern-rate bounds used in a constructive route,
+\item supporting a \emph{quantitative} variant of the representation theorem (stronger hypotheses, more computable conclusions).
+\end{itemize}
+
+\subsection{Limitations}
+
+They do \emph{not} replace the analytic core:
+\begin{itemize}[leftmargin=2em]
+\item almost-everywhere statements on infinite paths,
+\item disintegration/conditioning arguments,
+\item construction of a latent directing measure from a joint invariance principle.
+\end{itemize}
+
+Thus, the most satisfying integration is:
+\begin{quote}
+Use checkers/certificates to \emph{guard} finite combinatorial lemmas and to build constructive quantitative variants,
+while proving the canonical Fortini bridge (Markov exchangeability + recurrence \(\Rightarrow\) successor-matrix PE) by a human-readable combinatorial argument.
+\end{quote}
+
+\section{How to keep the codebase (and future AI sessions) clean}
+
+A highly effective organizational pattern is a three-tier split:
+\begin{description}[leftmargin=2.8em,style=nextline]
+\item[Canonical] theorems and definitions intended for users: the public theorem, successor-matrix PE, recurrence assumptions, and the minimal composition chain.
+\item[Internal] builder payloads, measurability plumbing, start-restriction utilities, intermediate constructors; explicitly documented as internal scaffolding.
+\item[Legacy/Archive] historical proof attempts, deprecated interfaces, and exploratory lemmas; physically separated so they do not distract new development sessions.
+\end{description}
+
+In practice:
+\begin{itemize}[leftmargin=2em]
+\item ensure the main exported file imports only \texttt{Core + Canonical};
+\item move deprecated or exploratory interfaces into a \texttt{Legacy} module;
+\item move historical experiments into an \texttt{Archive} tree with a short README stating ``not imported by active proofs.''
+\end{itemize}
+
+\section{A suggested ``completion roadmap'' for the canonical route}
+
+Let \(\mu\) denote a prefix law and \(P\) a path measure extending it.
+
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{(Main gap)} Prove:
+\[
+\text{Markov exchangeability + (strong) recurrence} \Rightarrow \text{SuccessorMatrixPE}.
+\]
+This is primarily a finite-combinatorics argument using prefix-carrier equivalences and cylinder decompositions.
+\item From SuccessorMatrixPE, extract:
+\[
+\exists \text{ row kernels with evaluation measurability } + \text{ row-successor invariance}.
+\]
+\item Combine with the already-established ``downstream'' implication:
+\[
+\text{row-successor invariance} \Rightarrow \text{cross-anchor identity} \Rightarrow \text{Markov-mixture representation}.
+\]
+\end{enumerate}
+
+The key conceptual discipline is to keep \(\mathsf{hstep}\)-style assumptions out of the public story:
+if a stepwise induction is needed internally, it should be derived from successor-matrix PE, not postulated.
+
+\section{Conclusion}
+
+A mathematically satisfying formalization of the Markov de Finetti theorem for Markov chains is best obtained by:
+\begin{itemize}[leftmargin=2em]
+\item stating the \emph{public} theorem using classical hypotheses (Markov exchangeability + recurrence/strong recurrence);
+\item making successor-matrix PE the primary intermediate invariant;
+\item treating row-kernel constructors and stepwise recursion as internal proof structure;
+\item using verified algorithms to certify finite obligations and to prevent false combinatorial shortcuts, while keeping the analytic bridge human-readable.
+\end{itemize}
+
+\bigskip
+\noindent\textbf{Acknowledgment.} This note is intentionally conceptual and implementation-oriented; it does not attempt to reproduce full proofs from the cited literature, but rather to clarify how their hypothesis structure maps cleanly into a modern mechanized proof development.
+
+\bibliographystyle{plain}
+\begin{thebibliography}{9}
+
+\bibitem{DiaconisFreedman1980}
+P.~Diaconis and D.~Freedman.
+\newblock De {F}inetti's theorem for {M}arkov chains.
+\newblock \emph{The Annals of Probability}, 8(1):115--130, 1980.
+\newblock Available via Project Euclid: \url{http://projecteuclid.org/euclid.aop/1176994828}.
+
+\bibitem{FortiniEtAl2002}
+S.~Fortini, L.~Ladelli, G.~Petris, and E.~Regazzini.
+\newblock On mixtures of distributions of {M}arkov chains.
+\newblock \emph{Stochastic Processes and their Applications}, 100(1--2):147--165, 2002.
+\newblock DOI: \url{https://doi.org/10.1016/S0304-4149(02)00093-5}.
+
+\bibitem{FortiniPetrone2017}
+S.~Fortini and S.~Petrone.
+\newblock Predictive characterization of mixtures of {M}arkov chains.
+\newblock \emph{Bernoulli}, 2017.
+\newblock DOI: \url{http://dx.doi.org/10.3150/15-BEJ787}.
+
+\end{thebibliography}
+
+\end{document}

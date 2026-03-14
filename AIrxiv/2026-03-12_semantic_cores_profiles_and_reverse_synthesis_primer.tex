@@ -1,0 +1,680 @@
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs,longtable,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{titlesec}
+\usepackage{setspace}
+\usepackage{url}
+\setstretch{1.08}
+\setlist[itemize]{topsep=4pt,itemsep=2pt,leftmargin=1.3em}
+\setlist[enumerate]{topsep=4pt,itemsep=2pt,leftmargin=1.5em}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
+
+\newtheorem{principle}{Principle}
+\newtheorem{definition}{Definition}
+\newtheorem{claim}{Claim}
+\newtheorem{question}{Research question}
+
+\newcommand{\OSLF}{OSLF}
+\newcommand{\NTT}{NTT}
+\newcommand{\GSLT}{GSLT}
+\newcommand{\WM}{WM}
+\newcommand{\GF}{GF}
+\newcommand{\PiT}{\Pi}
+\newcommand{\SigmaT}{\Sigma}
+\newcommand{\Psh}{\mathbf{Psh}}
+\newcommand{\Set}{\mathbf{Set}}
+\newcommand{\Type}{\mathbf{Type}}
+\newcommand{\dashvto}{\dashv}
+\newcommand{\todoitem}[1]{\textcolor{red}{#1}}
+
+\title{Semantic Cores, Profiles, and Reverse Synthesis\\
+\large A Conceptual Primer on \OSLF, Native Type Theory, World-Model Calculus, Grammar, and Consensus}
+\author{}
+\date{2026-03-12}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note consolidates a coherent conceptual picture for a research program that combines operational semantics, categorical semantics, evidence-valued world models, linguistic interface theory, and consensus-protocol synthesis. The central claim is that these topics become easier to reason about when one insists on a small number of separations: kernel versus host representation, operational presentation versus semantic package, evidence semantics versus policy views, endpoint closure versus full semantic adequacy, and data plane versus control plane. On that basis, several more specific theses emerge.
+
+First, the canonical semantic source of truth for native-type semantics should be the presheaf/subobject route, with evidence-oriented summaries derived later rather than treated as foundational. Second, dependent-type endpoints are best understood as stable interfaces to already-developed categorical machinery, not as replacements for that machinery. Third, the world-model calculus has a mathematically distinguished additive center with genuine uniqueness and no-go theorems, while non-additive extensions should be layered around it rather than collapsed into it. Fourth, a weak but substantive notion of universal grammar is best framed as a semantics-preserving interface core rather than as a strong biological universality claim. Fifth, ``reverse \OSLF'' should be posed as a realization or reconstruction problem: from a semantic package plus chosen generators and behavioral structure, recover a class of operational presentations, and then search for good inhabitants. Finally, decentralized consensus is a natural test case for this reverse program: semitopological coalition geometry can feed declarative protocol theories, operational rewrite presentations, and ultimately executable shard profiles.
+
+The note is intentionally didactic. It is not a substitute for the formal developments themselves. Its purpose is to preserve the conceptual architecture, the main distinctions that prevent category mistakes, the most useful theorem-level anchors already available, and the shortest path toward future formalization and implementation work.
+\end{abstract}
+
+\tableofcontents
+
+\section{Purpose and scope}
+
+This article is an archival conceptual primer. It is meant to preserve the cleanest intellectual picture of a multi-part program whose formal parts live across several Lean developments and design notes. The goal is not to restate all proofs. The goal is to preserve the key conceptual moves, the interfaces between layers, and the research discipline that makes the whole program tractable.
+
+The themes are broad, but they cohere around one recurring problem:
+
+\begin{quote}
+How should one pass between operational presentations, semantic packages, evidence-valued evaluators, and executable profiles without collapsing objects that ought to remain distinct?
+\end{quote}
+
+That question appears in several guises:
+
+\begin{itemize}
+  \item In native type theory: how should operational rewrites be interpreted categorically, and which semantic route should be treated as canonical?
+  \item In MeTTa-style architecture: how should trusted kernels, host presentations, and runtimes be related without being identified?
+  \item In world-model design: what is the right mathematical center of evidence semantics, and how should policy or governance layers be attached to it?
+  \item In grammar: what is the weakest interface that preserves the semantic distinctions one cares about?
+  \item In consensus: how can one move from coalition geometry and declarative safety conditions to operational message-passing profiles?
+\end{itemize}
+
+The point of the note is that the same small set of principles answers all of these.
+
+\section{The master architectural distinctions}
+
+The fastest way to become confused in this area is to identify objects that should remain separate. The most useful part of the architecture is therefore a list of \emph{non-identifications}.
+
+\begin{center}
+\begin{tabular}{p{0.28\linewidth} p{0.64\linewidth}}
+\toprule
+Object & Why it must not be identified with something larger or smaller \\
+\midrule
+Trusted kernel & The kernel is the theorem domain for proof-theoretic metatheory. It should not be proved directly on the ambient host representation if the host contains constructors, policies, or operational junk that the kernel never intended to govern. \\
+Operational presentation & A language definition, rewrite theory, or profile is a presentation of behavior. It is not yet the full semantic package induced from it. \\
+Canonical semantic package & This is the presheaf, fibration, or evidence-valued semantics that justifies the presentation. It should not be confused with a runtime summary or a convenience abstraction. \\
+Bridge theorem & A bridge relates layers conservatively. It should not be mistaken for an identity of layers. \\
+Runtime profile & A runtime is a consumer of a frozen profile or specification bundle. It is not the source of truth for semantics. \\
+Evidence semantics & Evidence is the semantic substrate. Confidence, support, acceptance, truth thresholds, and interval policies are views on evidence, not the evidence itself. \\
+Endpoint closure & Having a clean theorem-level endpoint surface is not the same as closing every semantic adequacy question behind that surface. \\
+Ambient possibility space & All physically or logically possible runs are not the same as the well-behaved or intended subspace of runs certified by a protocol discipline. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+These non-identifications yield several general principles.
+
+\begin{principle}[Semantic source of truth]
+When both a canonical semantic route and a simpler convenience abstraction are available, the semantic route should be treated as foundational and the convenience abstraction as derived.
+\end{principle}
+
+\begin{principle}[Profile discipline]
+The right engineering unit is usually a \emph{profile}: a language or rewrite presentation together with premises, runtime policy, optional state constructor, and metadata. Profiles are comparable, compilable, and refinable without forcing one giant undifferentiated semantics.
+\end{principle}
+
+\begin{principle}[Reference-before-optimization]
+A simple explicit reference backend should be the first executable target. Staged runtimes, specialized implementations, and optimized dispatch should be proved as refinements of that reference backend, not introduced as a second semantics.
+\end{principle}
+
+\begin{principle}[Zero-provable-assumptions policy]
+A retained assumption is acceptable only if it has survived an honest necessity audit. If a currently-scoped assumption is actually derivable, it should be proved away. If it is not derivable, there should ideally be a necessity witness, obstruction theorem, or counterexample demonstrating why it must remain scoped.
+\end{principle}
+
+These principles recur throughout the rest of the note.
+
+\section{\OSLF, native type theory, and the canonical semantic route}
+
+\subsection{Forward direction: from rewrites to modal and dependent structure}
+
+At a high level, the \OSLF/\NTT picture is a machine for turning operational presentations into type-theoretic and categorical structure. A rewrite relation gives a reduction graph. That graph induces modal operators through change-of-base and adjunction. Predicates over states become fibers. The result is not merely a modal logic but a package of fibrational and internal-language structure.
+
+The most important conceptual refinement is that there are at least two ways to package this idea:
+
+\begin{enumerate}
+  \item a \emph{prototype or summary route}, where one folds operational information into simpler evidence-like or order-like objects; and
+  \item a \emph{canonical presheaf/subobject route}, where one keeps the full presheaf, predicate-fibration, codomain-fibration, and comprehension structure in view.
+\end{enumerate}
+
+The clean conclusion is that the second route should be canonical. The first route may remain useful as a summary or derived interface, but should not be mistaken for the semantics itself.
+
+That conclusion matters because many of the strongest structures in the theory live only on the canonical side: Beck--Chevalley, image/comprehension, reindexing, codomain/cartesian lifts, internal-language transport, and the right interpretation of modal comprehensions as subobjects or predicates rather than as single scalar summaries.
+
+\subsection{Why the endpoints matter}
+
+A theorem-level endpoint surface is still valuable, even when it is not the whole story. The point of an endpoint surface is not to replace the underlying category theory. Its point is to provide a stable API to that machinery.
+
+This is especially important for native type theory, because there is a great deal of infrastructure behind even simple-looking external claims. To say that an external client can use ``native types,'' ``modal types,'' or ``the $\Pi/\Sigma$ package'' responsibly, one wants theorem names and bundles that package the right part of the canonical semantics without forcing every caller to reconstruct the underlying adjunctions from scratch.
+
+The clean lesson is:
+
+\begin{quote}
+An endpoint is an interface to semantics, not a substitute for semantics.
+\end{quote}
+
+\subsection{Endpoint closure versus semantic closure}
+
+A major conceptual advance is to distinguish two kinds of completion claims.
+
+\begin{itemize}
+  \item \textbf{Endpoint closure} means that the theorem-level surface keyed to some paper or theorem family is closed: all required anchors exist, the intended bundles are present, and their strict claim tracker is resolved.
+  \item \textbf{Semantic closure} means that the deeper adequacy questions behind those endpoints are also settled: for example, compositional operational adequacy, full internalization of intended modal semantics, or a literal functor object where only law packages exist so far.
+\end{itemize}
+
+These should not be conflated. The right public posture is often: ``strict endpoint closure has been achieved on the canonical route; broader semantic adequacy remains tracked separately.'' This is not a weakness. It is a form of mathematical hygiene.
+
+\subsection{\texorpdfstring{The $\Pi/\Sigma$ clarification}{The Pi/Sigma clarification}: two different layers}
+
+A recurring source of confusion is the phrase ``the $\Pi/\Sigma$ package.'' There are really two closely related but distinct layers.
+
+\paragraph{Fiber-level $\Pi/\Sigma$.}
+Within a fixed predicate fiber, one may define
+\[
+\Sigma \mathcal{A} = \sup \mathcal{A}, \qquad \Pi \mathcal{A} = \inf \mathcal{A}.
+\]
+These are the big join and big meet of a family of predicates inside one fiber. Their basic rules are the standard lattice-style introduction and elimination principles:
+\[
+\tau \in \mathcal{A} \Rightarrow \tau \leq \Sigma \mathcal{A},
+\qquad
+\Pi \mathcal{A} \leq \tau,
+\]
+and the corresponding upper/lower-bound rules.
+
+\paragraph{Transport-level $\Pi/\Sigma$.}
+Given a map $f : A \to B$, the deeper dependent structure is the adjoint triple
+\[
+\Sigma_f \dashv f^* \dashv \Pi_f.
+\]
+Here $f^*$ is pullback or reindexing, $\Sigma_f$ is direct image / existential transport, and $\Pi_f$ is universal image / universal transport. This is the genuinely dependent layer.
+
+The conceptual payoff is that one no longer has to choose between the slogans ``$\Pi/\Sigma$ are quantifiers'' and ``$\Pi/\Sigma$ are types.'' They are both, but at different levels:
+
+\begin{itemize}
+  \item in a fiber, they appear as meets and joins of a family of predicates or types;
+  \item along a map, they appear as adjoints to substitution.
+\end{itemize}
+
+This distinction is one of the most important pieces of conceptual cleanup in the whole program.
+
+\subsection{Necessity audits and scoped assumptions}
+
+A second major cleanup is methodological rather than semantic. Some powerful equivalence theorems require image-finiteness, predecessor-finiteness, or other compactness assumptions. The clean policy is not to hide these assumptions. It is to investigate whether they are derivable and, if not, to produce explicit necessity witnesses.
+
+This leads to a healthy trichotomy:
+
+\begin{enumerate}
+  \item an assumption is discharged because it is derivable in the intended canonical setting;
+  \item an assumption remains but is justified by a necessity witness or counterexample; or
+  \item an assumption remains provisionally, and the file should say so plainly.
+\end{enumerate}
+
+That discipline is stronger than either casual optimism or casual pessimism. It is a constructive version of ``zero provable assumptions.''
+
+\section{World-model calculus as evidence-valued semantics}
+
+\subsection{Why world-model semantics matters}
+
+The world-model calculus supplies the semantic layer that \OSLF alone does not. A behavioral logic of rewriting tells us what can happen, what must happen, and which formulas hold relative to a reduction relation. A world-model layer answers a different question:
+
+\begin{quote}
+What evidence does a state carry for a query, and how should logical, probabilistic, or epistemic views be read off from that evidence?
+\end{quote}
+
+This is a semantics/evaluation interface, not merely a proof system. The core object is an evidence extractor. Acceptance, confidence, support intervals, thresholds, and downstream policy are all layered views.
+
+\subsection{The additive fragment is mathematically distinguished}
+
+The most important theorem-level lesson on the \WM side is that the additive fragment is not just convenient. It is mathematically special.
+
+A sufficient-statistic surface assigns each atomic observation an evidence contribution. From that single observation map, there is a canonical additive extension to multisets of observations. In effect, one obtains a unique multiset aggregator satisfying the singleton law and additivity law. This has several deep consequences:
+
+\begin{itemize}
+  \item the induced generic world model is determined by its singleton surface;
+  \item every additive multiset world model is classified by its singleton observation surface, provided zero-preservation is made explicit;
+  \item additive posterior updates factor through the same canonical aggregate;
+  \item one obtains uniqueness, not just existence.
+\end{itemize}
+
+This should be read as a representation theorem for the additive center of evidence semantics.
+
+\subsection{No-go theorems are part of the core, not an embarrassment}
+
+The additive story is strong partly because it comes with genuine incompatibility theorems. If one tries to demand additive revision together with globally idempotent merge and nontriviality, one runs into no-go results. The point is not that additivity is flawed. The point is that additive accumulation describes an evidence ledger, not arbitrary policy-level aggregation.
+
+Similarly, forgetting is not default revision. It is a separate layer with its own laws. Exact inverse forgetting is not available in full generality. Strong positive inverse theorems require richer provenance or support tracking.
+
+These no-go results clarify the architecture:
+
+\begin{itemize}
+  \item additive accumulation is the right semantics of independent evidence aggregation;
+  \item idempotent merge, redaction, and policy-level contraction belong in separate layers;
+  \item negative theorems are design constraints, not failures.
+\end{itemize}
+
+\subsection{The non-additive frontier}
+
+Once the additive fragment is recognized as canonical, the correct question is not ``how do we replace it?'' but rather:
+
+\begin{quote}
+How do we generalize around the additive center in a controlled way?
+\end{quote}
+
+The main frontier topics are these.
+
+\paragraph{Overlap and correlation.}
+Additivity is exactly right for independent accumulation. It is not generally right when two evidence sources overlap or share hidden causes. The right next layer is an overlap or compatibility layer that can recover additivity under explicit independence hypotheses and expose either a residual term or conservative bounds otherwise.
+
+\paragraph{Support-tracked forgetting.}
+Current forgetting no-go results indicate that exact inverse forgetting needs richer support tracking. The positive target is a support-tracked forgetting layer in which inverse behavior is recovered under explicit support containment assumptions.
+
+\paragraph{Functoriality of additive extension.}
+Once additive extension is treated as canonical, it is natural to ask for naturality under additive homomorphisms of evidence carriers. That would let one transport results across raw carriers, weighted carriers, quotient views, and interval or confidence views in a principled way.
+
+\paragraph{Weighted and soft-assignment families.}
+The weighted Normal--Gamma / Gaussian lane suggests a broader program: weighted Beta, weighted Dirichlet, and other soft-assignment conjugate families should become first-class additive or near-additive extensions rather than ad hoc special cases.
+
+\subsection{Views are selectors, not semantics}
+
+A subtle but crucial point is that many familiar epistemic quantities should be treated as \emph{selectors} or \emph{views} on evidence, not as the semantics itself. This applies to strength, confidence, and acceptance orders. The semantic object is the evidence carrier and its laws. Views are policies for reading from that carrier.
+
+This distinction prevents several kinds of confusion:
+
+\begin{itemize}
+  \item it avoids smuggling policy choices into the core semantics;
+  \item it makes multiple backends compatible with one semantic substrate;
+  \item it keeps the door open for typed transport, institution-style semantics, and multiple logic backends over the same evidence layer.
+\end{itemize}
+
+\subsection{Typed transport and fixpoint closure}
+
+The world-model story becomes much stronger when combined with typed categorical transport and fixpoint closure. Institution-style signatures, typed hyperdoctrines, reindexing, existential/universal transport, and least-rule closure show that the \WM calculus is already more than an evaluator. It is a bridgeable semantic substrate with real denotational closure structure.
+
+This suggests a long-term architecture in which the \WM layer is not downstream debris from logic but one of the principal semantic destinations of logic.
+
+\section{Grammar, interface cores, and a weak notion of universal grammar}
+
+\subsection{Grammar as a semantics-preserving interface problem}
+
+The grammar work becomes especially illuminating when viewed through the same lens. \GF supplies abstract syntax trees plus language-specific linearizations. \OSLF and the world-model layer then allow one to transport modal, semantic, and evidence-valued reasoning onto those trees.
+
+The important intellectual move is not to claim a strong empirical or biological universal grammar theorem. The cleaner and more defensible move is to define a \emph{weak formal universal grammar} as a semantics-preserving interface core.
+
+The idea is this:
+
+\begin{quote}
+Given a family of concrete languages that share enough abstract structure, there may exist a weakest interface that preserves the type/evidence/semantic distinctions one cares about.
+\end{quote}
+
+That is a genuine theorem direction. It treats universal grammar as a universal property or weakest congruence preserving chosen invariants, not as a blanket empirical statement about all human languages.
+
+\subsection{Why this framing is attractive}
+
+This reframing has several virtues.
+
+\begin{itemize}
+  \item It cleanly separates formal universality from biological universality.
+  \item It makes the idea falsifiable: the weakest semantics-preserving core may turn out trivial, unstable, or family-relative.
+  \item It aligns naturally with interface refinement, quotient maps, and visible-layer distinctions already present in the grammar work.
+  \item It makes grammar another instance of the same general methodology: preserve the semantic core, quotient away unnecessary distinctions, and track what remains invariant.
+\end{itemize}
+
+This notion of universal grammar is therefore not a side curiosity. It is an instance of a much larger idea that recurs in the consensus and reverse-synthesis story as well.
+
+\section{Reverse \OSLF as reconstruction or realization}
+
+\subsection{Why literal inversion is the wrong goal}
+
+The forward story takes an operational presentation and derives a semantic package. The obvious reverse question is: can one invert this process?
+
+The first conceptual correction is that literal inversion is rarely the right target. One should not expect to recover the unique original operational presentation from the semantic package alone. There are several reasons:
+
+\begin{itemize}
+  \item different presentations may generate equivalent presheaf/topos or internal-language packages;
+  \item translations can pull native types back from one language into another, so the same semantic package may arise from multiple operational sources;
+  \item graph objects recover behavioral relations more directly than finite rule lists, so the semantic object may determine a reduction graph without determining a unique compact presentation.
+\end{itemize}
+
+The right reverse problem is therefore:
+
+\begin{quote}
+Given a semantic package together with enough chosen generators and behavioral structure, recover a class of operational presentations, and if possible choose canonical or elegant inhabitants of that class.
+\end{quote}
+
+\subsection{Seeded reconstruction}
+
+A useful reverse theorem should be \emph{seeded}. The semantic package alone is usually underdetermined. A realistic seed includes:
+
+\begin{itemize}
+  \item a chosen small category of generators or arities;
+  \item a family of representables regarded as recovered sorts;
+  \item a designated graph object or reduction relation on those representables;
+  \item policy data such as premises, congruence choice, collection behavior, or finitary constraints.
+\end{itemize}
+
+Once those are fixed, the reverse problem becomes much more precise. One can ask for a \emph{realization} of the seed as an operational profile.
+
+\subsection{Presentation classes}
+
+The clean mathematical target is not a single protocol or language but a presentation class. A useful abstract notation is
+\[
+\mathcal{P}(S,\Phi)
+= \{ G \mid \mathrm{Semantics}(G) \simeq S,\; \mathrm{Types}(G) \models \Phi \},
+\]
+where $S$ is the semantic seed and $\Phi$ is a behavioral or modal specification.
+
+Then the research problem becomes:
+
+\begin{enumerate}
+  \item characterize $\mathcal{P}(S,\Phi)$;
+  \item find canonical, minimal, efficient, or elegant inhabitants;
+  \item prove that different inhabitants are equivalent in the intended sense.
+\end{enumerate}
+
+This is a far more promising and honest objective than ``recover the original protocol.''
+
+\section{Consensus as the best reverse-\OSLF test case}
+
+\subsection{Why consensus is a natural application}
+
+Consensus is particularly well-suited to this reverse program because its cleanest semantic content is not low-level code but coalition geometry, overlap, and modal behavior:
+
+\begin{itemize}
+  \item who can act together,
+  \item when conflicting commitments are impossible,
+  \item which overlaps are strong enough for safety,
+  \item what it means for progress to be tentative versus final.
+\end{itemize}
+
+This makes consensus a natural bridge between semantic geometry and operational presentation.
+
+\subsection{Semitopology as the right reverse target}
+
+A semitopology is a particularly attractive object at the semantic end. Points are participants. Open sets are actionable coalitions. Arbitrary unions of actionable coalitions remain actionable, but intersections need not. This matches decentralized systems much better than ordinary topology, because two workable coalitions may overlap in a subgroup that is too small, too weakly connected, or too underweighted to act on its own.
+
+The key safety-relevant structure comes from additional overlap axioms such as $n$-twinedness together with honest-kernel assumptions. This produces the clean geometric form of familiar quorum-intersection arguments.
+
+The reverse consensus program thus becomes:
+
+\begin{enumerate}
+  \item recover or specify a semitopological coalition geometry from trust and communication assumptions;
+  \item formulate a declarative protocol theory over that geometry;
+  \item operationalize the declarative theory into a rewrite or message-passing profile;
+  \item prove that the operational profile realizes the same safety and liveness interface.
+\end{enumerate}
+
+\subsection{Control plane versus data plane}
+
+A crucial clarification is that consensus lives primarily on the \emph{control plane}, not the data plane. The data plane is the execution fabric: processes, messages, contract execution, state transition, tuplespace interactions, or application-specific computation. The control plane is the validator or coordination layer: quorums, leader or committee choice, voting, certificates, ordering, finality, and conflict resolution.
+
+The right synthesis target for consensus is therefore not ``the whole distributed application.'' It is a \emph{control-plane profile} that can later be linked to a data-plane profile. This is exactly the kind of separation that profile-based architecture was meant to support.
+
+\subsection{A corrected MVP: threshold-first mini-Cordial}
+
+A minimal proof-of-concept for reverse consensus synthesis should be slightly richer than a toy threshold vote, but much simpler than a full DAG or multi-wave implementation. The best first target is a weighted, single-wave, dual-mode mini-Cordial profile.
+
+\paragraph{Seed.}
+The input should be a small weighted coalition specification together with a conflict relation on candidate values. For example:
+
+\begin{itemize}
+  \item four validators $A,B,C,D$ with weights $3,3,2,2$;
+  \item a fast coalition system $\exists_C$ generated by weight $> 1/2$;
+  \item a finality coalition system $\exists_F$ generated by a stronger threshold or all-but-$F$ condition;
+  \item an honest kernel contained in the finality opens;
+  \item a two-value conflict relation for a single slot or wave.
+\end{itemize}
+
+\paragraph{Declarative core.}
+From that seed, generate a declarative theory with predicates such as
+\texttt{propose(v)}, \texttt{approve(v)}, \texttt{cert(v)}, \texttt{final(v)}, and \texttt{conflict(v,v')},
+with two coalition modalities corresponding to the fast and finality coalition systems.
+
+\paragraph{Pruning.}
+Then prune the theory to a small core sufficient for validity, agreement, and ongoing termination. This is a vital stage. The point is not to keep every high-level axiom around forever; the point is to isolate the minimal declarative content actually needed by the main proofs.
+
+\paragraph{Operationalization.}
+Only after that pruning step should one produce a coarse operational rewrite theory and then a finer certificate-level semantics. The operational layer should reflect two modes:
+
+\begin{itemize}
+  \item a fast or tentative certification path, possibly health-gated; and
+  \item a stronger threshold or certificate-based finality path whose safety is self-enforcing.
+\end{itemize}
+
+\paragraph{Threshold-first discipline.}
+For the first serious proof-of-concept, threshold finality should be proved first. Health-gated conditional finality is conceptually useful but contains an oracle problem: the health predicate is not itself a simple on-chain ground truth. Threshold finality, by contrast, is a self-enforcing certificate story and gives the cleaner first theorem surface.
+
+\subsection{What should be proved first}
+
+A good first formal pipeline should aim for four theorem families.
+
+\begin{enumerate}
+  \item \textbf{Overlap lemma:} the chosen finality opens satisfy the relevant twinedness/intersection law.
+  \item \textbf{Declarative agreement:} conflicting final values are impossible under the overlap and honest-kernel interface.
+  \item \textbf{Operational threshold safety:} the certificate-level finality semantics forbids conflicting finals whenever the relevant Byzantine-weight inequality is respected.
+  \item \textbf{Fine-to-coarse refinement:} the fine operational semantics simulates or refines the coarse theory generated from the declarative core.
+\end{enumerate}
+
+If those hold for a nontrivial single-wave weighted example, the reverse-\OSLF consensus program has a real foothold.
+
+\subsection{Ambient space and well-behaved subspace}
+
+One further refinement is crucial. The ambient distributed system should be modeled separately from the well-behaved protocol subspace.
+
+\begin{itemize}
+  \item The ambient relation includes all deliveries, delays, reorderings, equivocation attempts, and failures that are physically or logically possible in the network model.
+  \item The protocol relation includes only those transitions admitted by the generated rules plus the intended honesty, fairness, and non-equivocation constraints.
+\end{itemize}
+
+The design problem is then not to make the ambient network safe, but to generate a protocol profile whose intended subspace has the desired modal and semantic properties and sits as a controlled refinement inside the ambient space.
+
+This is a better conceptual fit for \OSLF than treating the protocol as if it literally exhausts all network behavior.
+
+\section{How all of this fits together}
+
+The same architecture now appears in several domains.
+
+\subsection{From presentations to semantics}
+
+In the forward direction:
+
+\begin{center}
+Operational presentation / profile
+$\longrightarrow$
+\OSLF / reduction graph / modal structure
+$\longrightarrow$
+presheaf and fibrational semantics
+$\longrightarrow$
+world-model or evidence-valued semantics
+\end{center}
+
+The discipline is to keep the semantic source of truth explicit at each stage.
+
+\subsection{From semantics back to presentations}
+
+In the reverse direction:
+
+\begin{center}
+semantic seed
+$\longrightarrow$
+chosen generators + graph/quorum structure
+$\longrightarrow$
+presentation class
+$\longrightarrow$
+selected profile inhabitant
+$\longrightarrow$
+reference runtime
+\end{center}
+
+The discipline is to ask for realization or reconstruction, not literal inversion.
+
+\subsection{Why profiles are the unifying engineering unit}
+
+Profiles are what make this architecture implementable. Kernels live in one theorem domain. Host presentations live in another. Evidence semantics and categorical semantics live in another. Runtimes consume frozen profile bundles. Optional DSLs lower into the common substrate instead of mutating it. Consensus protocols become control-plane profiles. Grammar fragments become linguistic profiles. World-model backends become evidence profiles.
+
+This explains why the profile abstraction is not an implementation convenience. It is the correct interface object for the whole program.
+
+\section{Open problems and recommended research agenda}
+
+The conceptual picture is now much cleaner than the raw collection of files might suggest, but a number of important research tasks remain.
+
+\subsection{Near-term formal tasks}
+
+\begin{itemize}
+  \item Upgrade law packages into literal categorical objects where useful, especially when a file currently proves functorial laws but not yet an actual functor or 2-functor object.
+  \item Continue necessity audits until every retained assumption is either discharged or paired with an explicit necessity witness.
+  \item Add support-tracked positive forgetting theorems to complement current no-go results.
+  \item Introduce an explicit overlap layer for non-additive world-model merge.
+  \item Add functoriality of additive extension under additive homomorphisms.
+  \item Extend the weighted evidence family beyond the Gaussian lane.
+\end{itemize}
+
+\subsection{Medium-term synthesis tasks}
+
+\begin{itemize}
+  \item Define a category of operational profiles and a suitable semantic category of spatial-behavioral packages.
+  \item Prove a realization or adjunction theorem on a representably generated fragment.
+  \item Build the threshold-first mini-Cordial proof-of-concept and verify the coarse/fine refinement path.
+  \item Generalize from single-wave control-plane synthesis to per-wave or multi-wave factoring only after the single-wave reference theory is stable.
+\end{itemize}
+
+\subsection{Longer-term conceptual tasks}
+
+\begin{itemize}
+  \item Clarify the relation between semantic cores, weakest-interface theories, and Morita-style presentation equivalence across grammar, logic, and consensus.
+  \item Connect world-model evidence semantics more directly to typed internal-language interpretations and initiality or universality statements.
+  \item Develop a disciplined notion of experiment design and value-of-information on top of the world-model layer.
+\end{itemize}
+
+\section{Conclusion}
+
+The main lesson of this research line is unexpectedly simple.
+
+One can make large conceptual progress by being strict about a small number of distinctions: kernel versus host, profile versus runtime, operational presentation versus semantic package, evidence versus views, endpoint closure versus full adequacy, and ambient behavior versus intended subspace. Once those distinctions are respected, several apparently separate research threads line up.
+
+Native type theory becomes a matter of keeping the canonical presheaf/subobject route primary. Dependent-type endpoints become stable interfaces rather than confusing replacements for category theory. World-model calculus reveals an additive semantic center with genuine uniqueness and no-go theorems. Universal grammar becomes a weakest-interface problem rather than an overextended empirical slogan. Reverse \OSLF becomes a realization problem from semantic seeds to presentation classes. Consensus synthesis becomes a profile-generation problem from coalition geometry and declarative safety conditions.
+
+The common style is therefore this: start with a mathematically honest semantic center, build explicit interfaces to it, keep retained assumptions necessity-audited, and only then refine downward into operational profiles and runtimes. That style is conservative enough to support proof and flexible enough to support synthesis.
+
+\appendix
+
+\section{Repository theorem anchors worth remembering}
+
+This appendix records a short list of theorem names and bundles that are especially useful as wayfinding anchors when returning to the formal development.
+
+\subsection{Canonical \NTT / \OSLF anchors}
+
+\begin{itemize}
+  \item \path{prop12_package}: indexed adjoints and Beck--Chevalley on the canonical route.
+  \item \path{prop14_cosmicFibration}: fibered internal-logic package over predicate fibers.
+  \item \path{def21_codomainFibration}: codomain-fibration endpoint together with cartesian-lift structure.
+  \item \path{imageComprehensionAdjunction}: image/comprehension interface for turning predicate data into arrow-level structure.
+  \item \path{thm23_internalLanguagePackage}: internal-language package on the canonical route.
+  \item \path{thm23_functorialLaws}: identity/composition law package for the internal-language construction.
+  \item \path{prop12_piSigmaPredicateRulePack}: rule-pack-first packaging of transport-level $\Sigma_f \dashv f^* \dashv \Pi_f$.
+  \item \path{piSigmaOmegaProp_translation_endpoint}: translation endpoint for theory morphisms preserving $\Pi$, $\Sigma$, $\Omega$, and implication structure.
+  \item \path{topos_representable_patternPred_piSigma_transport_pack_via_rulePack}: representable transport package on the canonical bridge.
+  \item \path{canonical_rulePack_transport_piSigma_and_fixpoint_of_transportGoal}: high-level closure endpoint tying transport to fixpoint closure.
+  \item \path{fullNTTParity_closed}: marker that the strict endpoint tracker is closed; it should always be read as endpoint closure only.
+\end{itemize}
+
+\subsection{Assumption-audit anchors}
+
+\begin{itemize}
+  \item \path{types_nonempty_necessary_for_piSigma}: shows that the nonempty-family guard in one of the weaker $\Pi/\Sigma$ formulations is not cosmetic.
+  \item \path{coreMain_theorem1_langReduces_imageFinite}: canonical Theorem-1 endpoint with forward image-finiteness discharged and predecessor finiteness explicit.
+  \item \path{CoreMainHMEndpointMap}: clean global-versus-scoped separation for Hennessy--Milner style equivalences.
+\end{itemize}
+
+\subsection{World-model anchors}
+
+\begin{itemize}
+  \item \path{aggregate_eq_of_isAdditiveExtension}: uniqueness of the canonical additive extension.
+  \item \path{existsUnique_aggregate}: existence-and-uniqueness formulation of the additive core.
+  \item \path{inducedWorldModel_evidence_eq_aggregate}: bridge from sufficient-statistic aggregation to generic world-model evidence.
+  \item \path{not_global_revision_idempotent_inducedWorldModel_of_unit}: honest no-go theorem for additive revision under unit observation.
+  \item \path{GenericWorldModelForgetting}: correct location for forgetting as its own layer.
+  \item \path{weightedGaussianStatistic}: weighted sufficient-statistic entry point for the Gaussian lane.
+  \item \path{mStepPosterior_unit_eq_gaussian}: hard-label reduction from weighted one-step E/M back to the ordinary Gaussian posterior.
+\end{itemize}
+
+\subsection{Grammar and bridge anchors}
+
+\begin{itemize}
+  \item \path{translation_preserves_evidence_allW}: evidence-level preservation along the grammar-to-world-model route.
+  \item \path{translation_preserves_strength_allW}: strength-level preservation companion.
+  \item \path{scopeOrderingNTBridge}: one concrete quantified/native-type bridge theorem.
+  \item \path{closedFormula_envInvariant_NT}: canary for environment irrelevance of closed quantified formulas in the native-type view.
+\end{itemize}
+
+\section{A short checklist for future design work}
+
+When a new proposal is introduced, the following questions usually expose whether the design is conceptually clean.
+
+\begin{enumerate}
+  \item What is the kernel theorem domain?
+  \item What is the operational presentation or profile?
+  \item What is the canonical semantic package?
+  \item Which layer is the source of truth?
+  \item Is a claimed new theorem really a theorem, an endpoint wrapper, or only a law package?
+  \item Are any retained assumptions actually derivable, or do they need a necessity witness?
+  \item Is the proposal modifying the shared substrate, or lowering into it by theorem-backed translation?
+  \item Does it confuse evidence with a selector or policy view?
+  \item If it is a reverse-synthesis claim, what seed data is assumed, and what uniqueness notion is intended?
+  \item If it is an implementation proposal, what is the simple reference backend to which optimizations will refine?
+\end{enumerate}
+
+This checklist is often more useful than a large number of prematurely detailed questions.
+
+\begin{thebibliography}{99}
+
+\bibitem{GoguenBurstall1992}
+Joseph A. Goguen and Rod M. Burstall.
+\newblock Institutions: Abstract model theory for specification and programming.
+\newblock \emph{Journal of the ACM}, 39(1):95--146, 1992.
+
+\bibitem{Lawvere1969}
+F. William Lawvere.
+\newblock Adjointness in foundations.
+\newblock \emph{Dialectica}, 23(3--4):281--296, 1969.
+
+\bibitem{Dybjer1996}
+Peter Dybjer.
+\newblock Internal type theory.
+\newblock In \emph{Types for Proofs and Programs}, pages 120--134. Springer, 1996.
+
+\bibitem{Ranta2004}
+Aarne Ranta.
+\newblock Grammatical framework: A type-theoretical grammar formalism.
+\newblock \emph{Journal of Functional Programming}, 14(2):145--189, 2004.
+
+\bibitem{Ranta2011}
+Aarne Ranta.
+\newblock \emph{Grammatical Framework: Programming with Multilingual Grammars}.
+\newblock CSLI Publications, 2011.
+
+\bibitem{WilliamsStay2021}
+Christian Williams and Mike Stay.
+\newblock Native type theory.
+\newblock In \emph{Proceedings of the 4th Annual International Conference on Applied Category Theory}, 2021.
+
+\bibitem{Gabbay2025}
+Murdoch J. Gabbay.
+\newblock Semitopology: a topological approach to decentralized collaborative action.
+\newblock \emph{Journal of Logic and Computation}, 2025.
+
+\bibitem{KeidarNaorPoupkoShapiro2022}
+Idit Keidar, Oded Naor, Ouri Poupko, and Ehud Shapiro.
+\newblock Cordial Miners: Fast and efficient consensus for every eventuality.
+\newblock arXiv:2205.09174, 2022.
+
+\bibitem{DanezisEtAl2022}
+George Danezis, Lefteris Kokoris-Kogias, Alberto Sonnino, and Alexander Spiegelman.
+\newblock Narwhal and Tusk: A DAG-based mempool and efficient BFT consensus.
+\newblock In \emph{Proceedings of EuroSys}, pages 34--50, 2022.
+
+\bibitem{GoertzelPLN2009}
+Ben Goertzel, Matthew Ikl{\'e}, Izabela Freire Goertzel, and Ari Heljakka.
+\newblock \emph{Probabilistic Logic Networks: A Comprehensive Framework for Uncertain Inference}.
+\newblock Springer, 2009.
+
+\bibitem{MakkaiReyes1977}
+Michael Makkai and Gonzalo E. Reyes.
+\newblock \emph{First Order Categorical Logic: Model-Theoretical Methods in the Theory of Topoi and Related Categories}.
+\newblock Springer, 1977.
+
+\end{thebibliography}
+
+\end{document}

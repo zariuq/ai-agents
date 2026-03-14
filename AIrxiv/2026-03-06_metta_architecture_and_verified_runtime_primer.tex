@@ -1,0 +1,491 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+\setlist[itemize]{topsep=4pt,itemsep=2pt}
+\setlist[enumerate]{topsep=4pt,itemsep=2pt}
+
+\title{A Conceptual Primer on MeTTa-Pure, MeTTa-Core,\ Verified Profiles, and Lean-Based Runtime Architecture\\
+\large Dated design record for future implementation and research work}
+\author{Prepared as an archival technical primer}
+\date{2026-03-06}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note consolidates a coherent design picture for a clean dependent-type-theoretic kernel for MeTTa together with its relation to the broader MeTTa family of operational profiles, modal semantics, verified runtimes, and theorem-backed domain-specific profiles. The central claim is that a satisfactory architecture requires four distinct but connected layers: a small trusted kernel, a MeTTa-IL presentation of that kernel, a conservative bridge between them, and a profile-oriented runtime family in which HE, PeTTa, and future profiles are comparable without being collapsed into one semantics. The note also records a second major theme: verified implementation should proceed by declarative specification, explicit reference backends, and refinement to optimized runtimes rather than by ad hoc operational growth. The article is intentionally conceptual and is designed to function both as an archival design record and as a primer for future discussions and new implementation sessions.
+\end{abstract}
+
+\tableofcontents
+
+\section{Purpose}
+
+The purpose of this document is to preserve the main conceptual results of an extended design investigation into MeTTa-Pure, MeTTa-Core, PeTTa, and verified runtime architecture. The goal is not to present finished metatheory or finished software, but to state clearly what has been learned, which distinctions should be considered stable, and which proof and implementation directions appear least likely to require later reversal.
+
+The note is written as a primer. It is meant to answer the following recurring questions:
+\begin{itemize}
+  \item What exactly is MeTTa-Pure?
+  \item How is it related to MeTTa-IL, HE, PeTTa, and broader MeTTa runtimes?
+  \item Why is a separate kernel needed at all?
+  \item How should verified runtimes and staged compilers be organized?
+  \item How should profile-specific notations and DSLs fit into the system without contaminating the shared core?
+\end{itemize}
+
+\section{The core diagnosis}
+
+The original temptation is to identify four things that should not be identified:
+\begin{enumerate}
+  \item the ambient host representation used by MeTTa-IL,
+  \item the trusted kernel theorem domain,
+  \item the executable runtime relation, and
+  \item the broader family identity of ``being a form of MeTTa.''
+\end{enumerate}
+
+The design work shows that these have to be separated.
+
+\subsection{Why the ambient host representation is not the kernel theorem domain}
+
+A host datatype can be excellent for runtime lowering, interoperation, profile compilation, quotation, and modal analysis while still being the wrong place to prove kernel metatheory. In the MeTTa setting, the ambient \texttt{Pattern} syntax supports more constructors and more operational structure than the tiny DTT kernel actually intends to use. Once confluence, injectivity, or subject reduction are stated over the whole ambient host language, proofs become polluted by constructors that are not part of the kernel and were never intended to be handled by the kernel congruence rules.
+
+This yields the first stable principle:
+
+\begin{quote}
+\textbf{Kernel metatheory should be proved on the least syntax closed under kernel operations, not on the ambient host representation.}
+\end{quote}
+
+\subsection{Why runtime typing and kernel typing are different things}
+
+Operational MeTTa profiles may use type annotations, runtime checks, or profile-specific reasoning aids. Those are useful, but they are not automatically proof-assistant kernels. A DTT kernel needs conversion-sensitive typing and subject reduction in the kernel sense. A runtime annotation discipline may be fast and practical while still not being the right object for trusted internal reasoning.
+
+This yields the second stable principle:
+
+\begin{quote}
+\textbf{Operational typing and kernel typing should be related by bridge theorems, not identified by default.}
+\end{quote}
+
+\section{Four distinct objects}
+
+The clean architecture has four primary objects.
+
+\subsection{1. The trusted kernel}
+
+The trusted kernel is a scoped dependent type theory, here called \emph{PureKernel}. It should provide:
+\begin{itemize}
+  \item its own syntax, ideally indexed by scope depth,
+  \item renaming and substitution,
+  \item one-step reduction and reflexive-transitive closure,
+  \item confluence or Church--Rosser style results,
+  \item typing with conversion, and
+  \item subject reduction.
+\end{itemize}
+
+This is the object on which proof-theoretic theorems are established.
+
+\subsection{2. The MeTTa-IL presentation of the kernel}
+
+The kernel should also have a \emph{Pattern-side presentation} as a \texttt{LanguageDef}. This is the way the pure kernel appears inside the broader MeTTa world. It is not merely an encoding trick. It is the profile-level presentation of the kernel in the shared substrate.
+
+\subsection{3. The bridge}
+
+A kernel becomes a bona fide form of MeTTa only if there is a conservative bridge theorem from the trusted kernel into the MeTTa-IL presentation. The bridge should preserve at least:
+\begin{itemize}
+  \item constructor shape,
+  \item computational steps,
+  \item and, eventually, typing or at least typing-relevant structure.
+\end{itemize}
+
+\subsection{4. The runtime family}
+
+The broader MeTTa world should be organized as a family of \emph{profiles}, not as one giant undifferentiated semantics. A useful conceptual interface is:
+
+\begin{quote}
+\texttt{MeTTaCoreProfile = LanguageDef + premise program + runtime policy + optional state constructor + profile metadata.}
+\end{quote}
+
+This lets one talk coherently about Pure, HE, PeTTa, and fuller runtime profiles without forcing them to be literally the same language.
+
+\section{MeTTa-Pure is not just a DTT kernel}
+
+A bare DTT kernel is not yet a form of MeTTa. It becomes one only when all of the following hold:
+\begin{enumerate}
+  \item the kernel has a MeTTa-IL presentation,
+  \item the presentation is a valid profile in the shared family, and
+  \item there is a conservative bridge theorem from the kernel into that profile.
+\end{enumerate}
+
+The right slogan is:
+
+\begin{quote}
+\textbf{MeTTa-Pure is a bona fide MeTTa form exactly when it is a conservative core profile equipped with a proved embedding from the trusted kernel into the shared profile substrate.}
+\end{quote}
+
+This is stronger than saying ``the syntax looks similar'' and more informative than saying ``it can be encoded somehow.''
+
+\section{The A/B/C semantic stratification}
+
+A major design breakthrough was recognizing that there are \emph{three} semantic layers, not two.
+
+\subsection{A: executable operational fragment}
+
+Layer A is the currently executable fragment that is meant to run directly against the pure profile. It should be small, explicit, and directly sound into the profile's reduction machinery. It is the layer used for concrete execution and runtime tests.
+
+\subsection{B: full kernel theory}
+
+Layer B is the full kernel reduction relation: the true DTT proof-theoretic reduction used for confluence, injectivity, and subject reduction. B contains congruence structure that A may not expose directly as executable one-step behavior.
+
+\subsection{C: profile-side theory closure}
+
+Layer C is the profile-side analogue of B. It lives on quoted profile terms and closes the profile's computational base steps under the same pure contexts that B uses internally. C exists because B generally does not map directly to raw profile one-step reduction.
+
+The stable lesson is:
+
+\begin{quote}
+\textbf{Do not choose between A and B. Keep A for execution, keep B for proof theory, and define C so that B has a mathematically honest home on the profile side.}
+\end{quote}
+
+\section{Why the old bridge failed}
+
+The original bridge attempts failed around beta reduction and substitution under binders. The key insight is that the failure was caused by the \emph{wrong quotation}, not by any impossibility of a faithful bridge.
+
+A naive map from scoped kernel variables straight to host-side bound variables makes the host opening operation appear to be the same thing as kernel substitution. It is not. The host and kernel are using different binding interfaces.
+
+This yields another stable principle:
+
+\begin{quote}
+\textbf{The quotation must be contextual and locally nameless. Raw variable-index quotation is only a debugging view, not the semantic bridge.}
+\end{quote}
+
+\section{The correct quotation: contextual locally nameless quotation}
+
+The bridge should be parameterized by a naming environment:
+\[
+\texttt{quoteTmWith} : (\texttt{Fin n} \to \texttt{String}) \to \texttt{PureTm n} \to \texttt{Pattern}.
+\]
+
+Its intended behavior is:
+\begin{itemize}
+  \item kernel variables become \texttt{fvar}s selected from the environment,
+  \item under a binder one chooses a fresh binder name,
+  \item the body is quoted with the extended environment,
+  \item the chosen free variable is then closed using \texttt{closeFVar}.
+\end{itemize}
+
+This bridge is the correct way to connect scoped de Bruijn syntax with a locally nameless host representation.
+
+\subsection{A useful policy abstraction}
+
+A minimal naming policy should provide:
+\begin{itemize}
+  \item a binder-name function \(\nu : \mathbb{N} \to \texttt{String}\),
+  \item injectivity of \(\nu\),
+  \item and a compatibility predicate ensuring that future binder names are fresh relative to the current environment.
+\end{itemize}
+
+This turns ad hoc freshness side conditions into a stable interface.
+
+\section{The bridge theorem should be about substitution, not just \texttt{inst0}}
+
+A recurring proof trap is trying to prove a special-case bridge for one-substitution \texttt{inst0} before proving the generic substitution theorem. Under binders, the kernel naturally recurses using lifted substitutions, not by repeatedly invoking the special case.
+
+The correct theorem shape is:
+
+\begin{quote}
+quotation commutes with \emph{general kernel substitution} after translating the substitution into a host-side substitution environment.
+\end{quote}
+
+Once that theorem exists, the \texttt{inst0} bridge becomes a corollary rather than a primitive battle.
+
+This is not just a proof-engineering convenience. It is the mathematically correct level of abstraction.
+
+\section{A separate kernel syntax is the right long-term route}
+
+A stable kernel should use its own scoped syntax rather than a purity predicate over a larger host datatype. A well-scoped kernel datatype has decisive advantages:
+\begin{itemize}
+  \item fewer meaningless cases in proofs,
+  \item cleaner substitution and renaming theorems,
+  \item no need to thread ambient purity predicates through every theorem,
+  \item and a clear boundary between trusted theory and runtime host representation.
+\end{itemize}
+
+This does \emph{not} mean the host representation is discarded. It means the host representation becomes a target of quotation, export, and runtime interoperation rather than the theorem domain itself.
+
+\section{MeTTa-IL as the operational and modal base}
+
+MeTTa-IL should be treated as the shared operational substrate and modal/indexed base. Its main roles are:
+\begin{itemize}
+  \item provide the common \texttt{Pattern}/\texttt{LanguageDef} substrate,
+  \item support generic rewrite engines and premise handling,
+  \item host shared runtime profile data,
+  \item and supply derived modal/behavioral semantics such as OSLF and related categorical constructions.
+\end{itemize}
+
+This means that MeTTa-IL is \emph{not} ``the DTT itself,'' but it is exactly the right place for:
+\begin{itemize}
+  \item runtime profiles,
+  \item profile comparison,
+  \item lowering targets,
+  \item and profile-side theory closures.
+\end{itemize}
+
+\section{Profiles are the right comparison unit}
+
+One should compare MeTTa-family systems as profiles over a shared substrate, not as disconnected implementations. This viewpoint resolves several confusions at once:
+\begin{itemize}
+  \item Pure can be small and trusted without ceasing to be MeTTa,
+  \item HE and PeTTa can differ operationally without ceasing to belong to the same family,
+  \item and future profiles can be added without re-architecting the kernel.
+\end{itemize}
+
+This leads to a stable conceptual division:
+\begin{itemize}
+  \item \textbf{Pure}: kernel-oriented profile,
+  \item \textbf{HE}: runtime-oriented profile,
+  \item \textbf{PeTTa}: logic- and Prolog-oriented profile,
+  \item \textbf{Full/Core}: richer stateful runtime profiles.
+\end{itemize}
+
+\section{PeTTa should be specified declaratively first}
+
+A second major theme is the design of a verified PeTTa runtime. The strongest conclusion is:
+
+\begin{quote}
+\textbf{PeTTa should be specified first as a declarative goal/command calculus, and only then implemented by compilation into an executable backend.}
+\end{quote}
+
+The right conceptual spec is three-layered:
+\begin{enumerate}
+  \item a pure declarative judgment for expression evaluation,
+  \item a stateful declarative judgment for commands and sequencing,
+  \item and an operational instruction layer or goal calculus for the actual execution kernel.
+\end{enumerate}
+
+This makes PeTTa intelligible both to logicians and to runtime engineers.
+
+\subsection{Why this helps implementation}
+
+Once PeTTa is viewed as:
+\begin{quote}
+surface language $\to$ declarative core $\to$ executable backend,
+\end{quote}
+
+then implementation can proceed by:
+\begin{enumerate}
+  \item freezing the spec bundle,
+  \item building a reference backend,
+  \item proving soundness and completeness against the declarative spec,
+  \item then refining to optimized and indexed implementations.
+\end{enumerate}
+
+This is exactly the verified implementation posture that avoids semantic drift.
+
+\section{Verified runtime architecture: reference first, optimization second}
+
+The clean runtime pipeline should have these layers:
+
+\begin{enumerate}
+  \item \textbf{Declarative specification layer} (in the proof package)
+  \item \textbf{Reference backend} with an explicit core evaluator
+  \item \textbf{Session facade} that orchestrates user-facing behavior
+  \item \textbf{Optimized backend} that refines the reference backend
+  \item \textbf{Conformance layer} proving runtime-refines-spec and optimized-refines-reference
+\end{enumerate}
+
+The main lesson from the runtime proof work is that the \emph{Session} module should be only a facade/orchestrator. Search logic, deterministic strategy, nested-effect evaluation, and reference semantics belong in backend modules, not in the user-facing session wrapper.
+
+The stable theorem target is:
+
+\begin{quote}
+\texttt{Session.evalWithState = referenceEvalWithStateCore}
+\end{quote}
+
+but only after the reference backend itself has been made explicit and its preservation theorems are composed in the backend layer.
+
+\section{What a verified SimplePeTTa should mean}
+
+For SimplePeTTa, the intended notion of verification is:
+\begin{itemize}
+  \item the runtime executes a frozen profile bundle,
+  \item the reference backend is proved sound with respect to the declarative core,
+  \item completeness is established at least for a designated terminating or benchmark fragment,
+  \item and the optimized runtime is proved to refine the reference backend.
+\end{itemize}
+
+This provides a realistic notion of verified runtime while leaving room for bounded execution, indexing, and practical search strategies.
+
+\section{The right package structure}
+
+A stable package structure should separate:
+\begin{itemize}
+  \item a lightweight shared executable core package,
+  \item an algorithms/runtime package,
+  \item and a proof-heavy metatheory package.
+\end{itemize}
+
+The shared core package should contain only the computational substrate:
+\begin{itemize}
+  \item \texttt{Pattern},
+  \item \texttt{LanguageDef},
+  \item bindings and matching,
+  \item premise representations,
+  \item and the basic engine interfaces.
+\end{itemize}
+
+The runtime package should depend on that lightweight core and implement:
+\begin{itemize}
+  \item simple reference runtimes,
+  \item staged runtimes,
+  \item and optional indexing/search backends.
+\end{itemize}
+
+The proof package should depend on the same core and prove:
+\begin{itemize}
+  \item kernel metatheory,
+  \item profile correctness,
+  \item runtime conformance,
+  \item and optimization refinement.
+\end{itemize}
+
+This avoids duplicating types and avoids forcing runtime builds to inherit heavyweight theorem dependencies.
+
+\section{Simple runtime, staged runtime, and external kernels}
+
+The right sequence is:
+\begin{enumerate}
+  \item build a simple, directly verified runtime first,
+  \item then build a staged or specialized runtime as a refinement,
+  \item only then consider external hot kernels or low-level verified code paths.
+\end{enumerate}
+
+This keeps the semantic source of truth in one place and makes performance work conservative rather than semantic.
+
+\subsection{Why a staged runtime is still compatible with the common core}
+
+A staged runtime should still consume the same frozen profile/spec bundle as the simple runtime. The difference is not semantic but operational: staging specializes dispatch, matching, indexing, and premise handling. This means the staged runtime is a refinement of the same semantics, not a second semantics.
+
+\section{Optional DSL profiles should be theorem-backed and lowered}
+
+Optional DSLs, such as a tensor/index profile, should not mutate the core runtime pipeline. They should instead follow the pattern:
+\begin{enumerate}
+  \item typed surface/profile syntax,
+  \item semantic invariants and proof obligations,
+  \item lowering into the shared MeTTa-IL \texttt{Pattern} substrate,
+  \item and a portable runtime corpus if useful.
+\end{enumerate}
+
+This yields a healthy extension discipline:
+\begin{quote}
+\textbf{new notation and new profile logic should enter the system through theorem-backed lowering, not by modifying the shared runtime core.}
+\end{quote}
+
+\section{What should be considered locked in}
+
+The following decisions appear stable enough to be treated as part of the architecture rather than provisional experiments.
+
+\begin{enumerate}
+  \item \textbf{Separate kernel syntax}: the trusted kernel should not be proved directly on ambient host syntax.
+  \item \textbf{Contextual quotation}: raw quotation is debugging-only; the semantic bridge must be environment-sensitive and locally nameless.
+  \item \textbf{A/B/C split}: executable profile steps, kernel theory steps, and profile-side theory closure are all necessary.
+  \item \textbf{Profiles over substrate}: Pure, HE, PeTTa, and fuller runtimes should be compared as profiles over a shared substrate.
+  \item \textbf{Declarative-first PeTTa}: the logic and command kernel should be specified declaratively before optimization.
+  \item \textbf{Reference-before-optimization}: optimized runtimes should refine a reference backend, not directly refine a textual spec.
+  \item \textbf{Lightweight shared core package}: shared executable substrate should be factored below the heavy proof package.
+  \item \textbf{Theorem-backed DSL lowering}: profile extensions should lower into the shared substrate without polluting the core runtime.
+\end{enumerate}
+
+\section{Open problems worth keeping in view}
+
+Several important questions remain open, but they are now clearly framed.
+
+\subsection{Algorithmic type checking for the kernel}
+
+The kernel already has the right theorem-theoretic shape, but a full algorithmic checker with soundness and completeness remains to be stabilized.
+
+\subsection{Final bridge packaging}
+
+The kernel-to-profile bridge still needs its final public theorem surface and packaging. The structural ideas are now clear: contextual quotation, substitution bridge, B-to-C theorems, and profile embedding. The remaining task is proof completion and API cleanup.
+
+\subsection{Intrinsic profile-side theory closure vs transported closure}
+
+The intrinsic contextual closure on the profile side is the mathematically correct object. Transported closures may still be useful as proof devices, but they should not replace the intrinsic theorem-level object.
+
+\subsection{How much of broader MeTTa should be reflected into pure theory}
+
+One important long-term question is how far the pure kernel should be reflected upward into richer runtime profiles, and which profile-level structures deserve direct theorem-level analogues.
+
+\section{Least-regret roadmap}
+
+A practical roadmap consistent with all the foregoing principles is:
+
+\subsection*{For MeTTa-Pure}
+\begin{enumerate}
+  \item keep the kernel syntax and metatheory on the scoped kernel,
+  \item finish the generic renaming and substitution bridge,
+  \item derive the single-substitution bridge as a corollary,
+  \item complete the B-to-C bridge theorems,
+  \item and package the pure profile embedding cleanly.
+\end{enumerate}
+
+\subsection*{For LeanPeTTa}
+\begin{enumerate}
+  \item keep the declarative spec as the source of truth,
+  \item expose the reference backend explicitly,
+  \item prove backend preservation and session-wrapper agreement,
+  \item prove optimized refinement only after the reference path is stable,
+  \item and guard performance with corpus-based threshold checks rather than by semantic shortcuts.
+\end{enumerate}
+
+\subsection*{For the runtime family}
+\begin{enumerate}
+  \item keep profiles comparable via the shared substrate,
+  \item use frozen profile artifacts for cross-language/runtime alignment,
+  \item and treat optional DSLs as theorem-backed profile layers rather than runtime mutations.
+\end{enumerate}
+
+\section{Conclusion}
+
+The main achievement of the design work is not merely a collection of partial proofs or a collection of implementations. It is a clarified architecture.
+
+The architecture says:
+\begin{itemize}
+  \item a DTT kernel must be small and trusted,
+  \item a bona fide form of MeTTa must exist as a profile over the shared substrate,
+  \item the kernel and profile must be connected by an explicit conservative bridge,
+  \item runtime verification should proceed through declarative spec, reference backend, and refinement,
+  \item and profile-specific expressivity should be added through theorem-backed lowering rather than by eroding the shared core.
+\end{itemize}
+
+With these distinctions in place, the project no longer looks like an unresolved tangle between theorem proving, language design, and runtime engineering. It looks like a coherent layered system in which each layer has a clear job and clear interfaces to the others.
+
+\section*{Appendix: concise glossary}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.23\textwidth}p{0.69\textwidth}}
+\toprule
+Term & Meaning \\
+\midrule
+\endhead
+PureKernel & The trusted scoped dependent type theory used for kernel metatheory. \\
+MeTTa-IL & The shared operational substrate based on \texttt{Pattern}, \texttt{LanguageDef}, premise machinery, and derived modal/profile constructions. \\
+Profile & A language/runtime/theory configuration over the shared substrate. \\
+Pure profile & The MeTTa-IL presentation of the trusted kernel. \\
+Bridge & The conservative embedding/quotation theorem connecting kernel terms to profile terms. \\
+A layer & Executable operational/profile-facing reduction. \\
+B layer & Full kernel reduction used for confluence, injectivity, and subject reduction. \\
+C layer & Profile-side theory closure corresponding to the kernel theory. \\
+Reference backend & The explicit backend whose semantics are proved against the declarative specification. \\
+Optimized backend & A runtime meant to refine the reference backend rather than redefine semantics. \\
+Theorem-backed lowering & The discipline of introducing DSLs or profiles by giving a typed syntax plus a proved lowering into the shared substrate. \\
+\bottomrule
+\end{longtable}
+
+\end{document}
