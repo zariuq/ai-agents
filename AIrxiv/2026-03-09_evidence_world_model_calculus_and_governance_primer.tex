@@ -1,0 +1,754 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{titlesec}
+\usepackage{csquotes}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+\setlist[itemize]{leftmargin=1.5em}
+\setlist[enumerate]{leftmargin=1.75em}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,frame=single}
+
+\title{Evidence-Carrying World Models, Typed Governance Semantics,\\ and Categorical Backends: A Conceptual Primer}
+\author{}
+\date{2026-03-09}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note consolidates a family of conceptual ideas developed around world-model
+calculus, evidence semantics, governance reasoning, and typed semantic backends.
+Its aim is didactic rather than archival: to state the cleanest current picture,
+separate what is already mathematically sharp from what remains conjectural, and
+record a stable set of design commitments for future formalization work.
+
+The central thesis is that a world-model calculus should be understood first as
+an \emph{evidence evaluator}, not as a global proof theory.  The additive
+fragment---where query extraction is a monoid homomorphism from posterior-state
+revision into an evidence carrier---is mathematically distinguished and deserves
+to remain a named canonical subclass.  More realistic semantics for provenance,
+correlation, overlap, forgetting, and locality should be layered \emph{around}
+that additive core rather than replacing it.  Modal, neighborhood,
+first-order, higher-order, and probabilistic relational semantics can then be
+hosted as semantic backends or extensional embeddings; governance and treaty
+reasoning become typed application layers over the same substrate.
+
+The note also proposes a categorical placement: externally, as an
+\emph{evidence-valued institution}; internally, as an
+\emph{evidence-valued hyperdoctrine} or doctrine of typed queries.  On the
+syntax side, dependent type theory and categories with families provide the
+natural candidate for the internal language of the trusted ontology/kernel
+layer, while presheaf-topos infrastructure remains the right ambient semantic
+home for the broader indexed semantics stack.
+\end{abstract}
+
+\tableofcontents
+
+\section{Purpose and Scope}
+
+This document is a conceptual primer for a research line centered on:
+\begin{itemize}
+  \item a \emph{world-model calculus} for evidence-carrying semantic evaluation,
+  \item typed governance and treaty semantics built on top of that calculus,
+  \item categorical transport layers (institution, hyperdoctrine, Beck--Chevalley),
+  \item modal, neighborhood, first-order, higher-order, and probabilistic
+        relational backends,
+  \item and the possibility that a dependent type theory supplies the internal
+        language of the trusted ontology layer.
+\end{itemize}
+
+The note is deliberately \emph{conceptual}.  It is not a changelog, not a
+proof index, and not a full literature survey.  It aims instead to preserve the
+strongest conceptual picture now available so that future development can resume
+from a stable basis.
+
+\section{The Core Idea: Evidence First, Views Second}
+
+The starting point is a simple but important methodological separation:
+\begin{quote}
+\textbf{Probability is what one queries; evidence is what one carries.}
+\end{quote}
+
+The intended semantics is not that a world-model state directly \emph{is} a
+probability distribution, a proof state, or a truth assignment.  Rather, a
+world-model state carries enough information that queries can extract an
+\emph{evidence object}, and then different operational views of that evidence
+can be selected: strength, confidence, acceptance, interval bounds, posterior
+parameters, and so on.
+
+This separation matters for at least four reasons.
+\begin{enumerate}
+  \item It keeps raw support distinct from acceptance policy.
+  \item It permits multiple views over the same carried evidence.
+  \item It prevents confidence, probability, and actuality from being conflated.
+  \item It makes semantic backends composable: multiple logics can target the
+        same evidence layer while exposing different operational selectors.
+\end{enumerate}
+
+\subsection{The additive evaluator}
+
+The cleanest core interface is:
+\begin{lstlisting}
+class WorldModel (State Query : Type*) [EvidenceType State] where
+  evidence : State -> Query -> Evidence
+  evidence_add : forall W1 W2 q,
+    evidence (W1 + W2) q = evidence W1 q + evidence W2 q
+\end{lstlisting}
+
+The state type is equipped with revision/addition, and query extraction lands
+in an additive evidence carrier.  This says that each query induces a monoid
+homomorphism from the revision algebra of states into the evidence algebra.
+
+This is the mathematically distinguished \emph{additive evidence ledger}
+fragment.  It is not merely a convenient implementation choice.  It captures
+exactly the semantics of independent sufficient-statistic aggregation in several
+canonical families.
+
+\section{Why the additive fragment is special}
+
+The additive fragment should remain a named privileged subclass even if the
+framework is generalized around it.
+
+\subsection{Ledger before policy}
+
+Exact additivity is the cleanest semantics of \emph{accumulating raw evidence}:
+independent observations or independent posterior fragments add.  This records
+how much support and counter-support have been gathered without yet deciding
+what to trust, what to discount, what to forget, or what to accept.
+
+Trust discounting, overlap correction, anti-double-counting, and forgetting are
+all philosophically meaningful, but they are already \emph{epistemic policy}
+choices.  They should therefore be layered around additive accumulation rather
+than used to erase its identity.
+
+\subsection{Canonical sufficient-statistic semantics}
+
+The additive fragment is also singled out by conjugate Bayesian families.
+For example:
+\begin{itemize}
+  \item Beta--Bernoulli: evidence counts are sufficient statistics.
+  \item Dirichlet--multinomial: category counts are sufficient statistics.
+  \item Normal--Gamma: count, sum, and sum-of-squares are sufficient statistics.
+\end{itemize}
+
+In each case, the sufficient statistics aggregate by addition.  This makes the
+additive world-model fragment the canonical semantics of independent evidence
+accumulation for a broad and useful class of empirical models.
+
+\subsection{A universal-property viewpoint}
+
+The mathematically strongest current story is not that additive world models are
+the unique semantics of \emph{all} evidence, but that they are the unique
+\emph{free additive extension} of atomic observations.
+
+Given atomic observation contributions
+\[
+  a : \mathrm{Obs} \to \mathrm{Query} \to Ev,
+\]
+one obtains a unique additive extension
+\[
+  E : \mathrm{Multiset}\,\mathrm{Obs} \to \mathrm{Query} \to Ev
+\]
+satisfying:
+\begin{align*}
+E(\{o\},q) &= a(o,q), \\
+E(\sigma_1 + \sigma_2,q) &= E(\sigma_1,q)+E(\sigma_2,q).
+\end{align*}
+
+The right long-term theorem target is a full classification result:
+\begin{quote}
+Every additive generic world model on multisets is uniquely determined by its
+singleton observation surface.
+\end{quote}
+
+That would justify the additive layer as the canonical semantics of independent
+atomic evidence.
+
+\section{Why the generic shell is not vacuous}
+
+A recurring source of confusion is the intentional triviality of the bare state
+judgment.
+
+\subsection{Admissible states versus proof theory}
+
+The context-free world-model judgment should be read as:
+\begin{quote}
+Any posterior state is admissible input to the evaluator.
+\end{quote}
+
+This is \emph{not} the claim that any proposition is derivable.  Query
+judgments remain deterministic because for fixed state and query the evidence is
+fixed by the extractor.  So the shell behaves more like big-step evaluation than
+like theoremhood.
+
+The right rule of thumb is:
+\begin{itemize}
+  \item the bare shell is an evaluator host,
+  \item trusted derivability begins only in provenance-restricted or
+        context-indexed layers,
+  \item and proof-like content enters through certified rewrite rules,
+        consequence rules, and closure operators.
+\end{itemize}
+
+\subsection{Semantic nontriviality via endpoints}
+
+The framework becomes nontrivial through instantiated backends and endpoint
+correspondences.
+
+For example, if one instantiates states as singleton pointed Kripke models or
+singleton pointed neighborhood models, then query strength recovers ordinary
+satisfaction truth values.  With soundness and completeness assumptions for the
+external proof systems, implication-level proof-theoretic correspondences can be
+transported into world-model strength inequalities.
+
+Thus the generic shell is not a deep global proof system, but it is a faithful
+semantic host for nontrivial proof-theoretic endpoints.
+
+\section{Views are selectors, not semantics}
+
+Strength, confidence, acceptance, and interval bounds should all be treated as
+\emph{selectors} or \emph{views} of evidence, not as the semantics itself.
+
+\subsection{No universal ``better evidence'' order}
+
+Raw evidence often comes with an obvious algebraic order, but that order need
+not coincide with ``better evidence'' for all purposes.  In particular, an order
+that treats both positive and negative mass as monotone can make confidence
+increase while support quality decreases.
+
+A more coherent approach is to define \emph{view-induced preorders}.  For
+example, with a strength context $ctx$ and confidence parameter $\kappa$ one may
+use:
+\[
+  e_1 \preceq_{ctx,\kappa} e_2
+  \iff
+  \mathrm{strengthWith}(ctx,e_1) \le \mathrm{strengthWith}(ctx,e_2)
+  \;\wedge\;
+  \mathrm{confidence}(\kappa,e_1) \le \mathrm{confidence}(\kappa,e_2).
+\]
+
+This keeps kernel algebra and acceptance policy conceptually distinct.
+
+\subsection{Actuality as evidence, not metaphysics}
+
+A closely related clarification concerns actuality.  A ``really exists'' or
+\texttt{rexist} tag should not be read as metaphysical certainty.  In an
+evidence-based world-model calculus, the correct reading is:
+\begin{quote}
+actuality is an \emph{event-occurrence evidence channel}, and categorical
+``actuality for governance'' is a downstream acceptance policy.
+\end{quote}
+
+This yields a clean two-layer design:
+\begin{itemize}
+  \item \texttt{eventualityEvidence / eventEvidence}
+  \item \texttt{acceptedOccurrence / eventAccepted}
+\end{itemize}
+
+The second is a policy-relative categorical layer; the first is the semantic
+one.
+
+\section{Subsumption, compliance, and treaty semantics}
+
+A major application layer developed around these ideas is a typed governance and
+treaty semantics.
+
+\subsection{Event subsumption}
+
+Practical governance does not only compare exact events.  It often asks whether
+an abstract obligation is satisfied by a more specific concrete event.
+
+The clean solution is a subsumption relation on eventualities:
+\begin{itemize}
+  \item same predicate,
+  \item same polarity,
+  \item and every thematic role specified in the abstract event is matched by
+        the concrete one.
+\end{itemize}
+
+This is the right formal replacement for brittle exact matching when checking
+whether an observed event fulfills an abstract clause.
+
+\subsection{Treaty kernels}
+
+On top of event subsumption, a minimal treaty kernel becomes natural:
+\begin{itemize}
+  \item treaty clauses with obligor, obligee, modality, event pattern,
+        optional deadline, and optional repair clause,
+  \item timestamped treaty traces,
+  \item separate predicates for \emph{obligation fulfillment} and
+        \emph{prohibition violation},
+  \item and later policy-gated accepted traces.
+\end{itemize}
+
+The conceptual point is that compliance should not be post-hoc rule checking
+only.  Treaty semantics should influence planning and repair.  This is a useful
+minimal formal layer for an AI-to-AI treaty economy.
+
+\section{Modal and logical backends}
+
+The world-model calculus is broad enough to host several kinds of semantics.
+
+\subsection{Kripke semantics}
+
+A Kripke backend can be obtained by taking states to be multisets of pointed
+models and letting query evidence count supporting versus refuting points.
+Singleton states then recover ordinary pointed-model truth.
+
+This gives a clean adequacy bridge:
+\begin{quote}
+singleton query strength is ordinary modal truth;
+multisets yield evidential ensemble semantics over modal hypotheses.
+\end{quote}
+
+\subsection{Neighborhood semantics}
+
+Neighborhood semantics is even more native to evidence-style reasoning.  It
+supports weaker and non-normal modalities, and it aligns naturally with
+families of evidence sets rather than only relational accessibility.
+
+In the current conceptual picture:
+\begin{itemize}
+  \item Kripke semantics is the clearest classical adequacy witness,
+  \item neighborhood semantics is the better long-term evidence-native modal
+        backend.
+\end{itemize}
+
+\subsection{First-order and higher-order semantics}
+
+The same evaluator pattern can host set-theoretic FOL and Henkin-style HOL:
+\begin{itemize}
+  \item states become multisets of pointed structures and assignments,
+  \item queries become formulas in context,
+  \item singleton adequacy recovers ordinary model satisfaction,
+  \item and implication-level closure wrappers can transport proof-theoretic
+        consequence into world-model strength inequalities.
+\end{itemize}
+
+This suggests that the world-model calculus is not tied to modal logic.  It is
+better viewed as a semantics carrier for multiple logical families.
+
+\section{Probabilistic relational semantics: ProbLog and MLNs}
+
+ProbLog and Markov Logic Networks fit naturally at the extensional semantic
+level.
+
+\subsection{Weighted-world compilation}
+
+Both frameworks induce weighted possible-world semantics.  One can compile them
+into a weighted-world world-model state and define evidence by splitting total
+world weight into support and refutation mass for a query.
+
+Then query strength is the induced marginal probability of the query.  In this
+sense:
+\begin{quote}
+ProbLog and MLNs can be \emph{subsumed extensionally} by the world-model
+calculus.
+\end{quote}
+
+\subsection{What is and is not preserved}
+
+This does \emph{not} mean that the current additive state-revision operation is
+the native program-combination semantics of ProbLog or MLNs.  Their intensional
+composition laws are global and non-additive in important ways.
+
+So the correct claim is:
+\begin{itemize}
+  \item exact query-level semantic subsumption: yes,
+  \item exact native syntactic composition under additive revision: no.
+\end{itemize}
+
+The right architecture is therefore a weaker evaluator core with the additive
+world-model retained as the canonical independent-evidence specialization.
+
+\section{Categorical placement}
+
+The correct categorical home is not a single topos claim and not the claim that
+this calculus is itself the syntactic category of a theory.
+
+\subsection{Externally: evidence-valued institution}
+
+Externally, the cleanest formulation is as an \emph{evidence-valued
+institution}:
+\begin{itemize}
+  \item a category of signatures or contexts,
+  \item sentences/queries over each signature,
+  \item models/world-model states over each signature,
+  \item and evidence-valued satisfaction stable under change of notation.
+\end{itemize}
+
+This captures the idea that the calculus is a semantic target for many logical
+front ends.
+
+\subsection{Internally: evidence-valued hyperdoctrine}
+
+Internally, the strongest picture is hyperdoctrinal:
+\begin{itemize}
+  \item typed queries over a categorical base,
+  \item reindexing along substitutions or morphisms,
+  \item existential and universal transport,
+  \item Beck--Chevalley coherence.
+\end{itemize}
+
+This is exactly the right setting for first-order and typed query semantics.
+
+\subsection{Ambient home: presheaf-topos flavored semantics}
+
+Presheaf topoi are the right \emph{ambient} semantic home for much of the stack:
+strong enough to support internal intuitionistic logic, predicate fibrations,
+change of base, and Yoneda-style context analysis, but generic enough not to
+prematurely overdetermine the ontology.
+
+They are not, by themselves, the final semantics of the trusted dependent type
+kernel.
+
+\section{Dependent type theory and the trusted ontology layer}
+
+The right relation between the world-model calculus and dependent type theory is
+subtle but promising.
+
+\subsection{What DTT can provide}
+
+A dependent type theory with contexts, substitution, $\Pi$/$\Sigma$-types,
+identity types, and universes provides the natural \emph{syntax side} or
+internal language of the trusted ontology layer.
+
+Categorically, this is better described via:
+\begin{itemize}
+  \item categories with families (CwFs),
+  \item locally cartesian closed categories (LCCCs),
+  \item or related contextual/category-with-attributes structures,
+\end{itemize}
+not merely by saying ``topos.''
+
+\subsection{What DTT does not automatically provide}
+
+Dependent type theory does not by itself provide:
+\begin{itemize}
+  \item an evidence algebra,
+  \item posterior-state revision,
+  \item provenance weighting,
+  \item locality/gluing policies,
+  \item or experiment-selection semantics.
+\end{itemize}
+
+So the best long-term slogan is:
+\begin{quote}
+Dependent type theory can supply the internal language and context machinery of
+the trusted ontology/kernel layer; the world-model calculus supplies the
+empirical/evidential semantics layered on top of it.
+\end{quote}
+
+\subsection{The right theorem direction}
+
+The strongest future theorem pack here would show that:
+\begin{enumerate}
+  \item a dependent type theory generates the relevant syntactic/contextual
+        category,
+  \item a world-model hyperdoctrine interprets those contexts and substitutions,
+  \item substitution is respected,
+  \item and key type formers are interpreted by the expected semantic
+        operations.
+\end{enumerate}
+
+That would make the world-model calculus a semantic doctrine into which the
+trusted syntax layer is interpreted.
+
+\section{Why sheaves and subtopoi belong below the world-model layer}
+
+Locality, observers, time slices, and patchwise ontology growth are not reasons
+to rewrite the world-model surface.  They are reasons to enrich its semantic
+backends.
+
+\subsection{Presheaf first, sheaf later}
+
+A presheaf backend gives local data plus restriction maps.  A sheaf backend adds
+a gluing law: compatible local sections assemble into global sections.
+
+This becomes useful when one has:
+\begin{itemize}
+  \item observer-local semantics,
+  \item distributed partial knowledge,
+  \item context-sensitive concepts,
+  \item local ontology patches that should sometimes glue.
+\end{itemize}
+
+\subsection{Why crisp gluing is too strict}
+
+For AGI-style growth, exact equality on overlaps is often too strong.  Local
+patches may only be partially compatible, evidence-weightedly compatible, or
+paraconsistently compatible.
+
+So the correct long-term target is not merely ordinary sheaf gluing but:
+\begin{quote}
+\emph{evidence-valued or paraconsistent gluing over a locality backend.}
+\end{quote}
+
+That allows local-to-global organization without destroying useful partial
+syntheses.
+
+\section{Fixpoint closure and operational reasoning}
+
+The world-model calculus already has the right seed for operational reasoning:
+fixpoint closure.
+
+\subsection{Why fixpoints matter}
+
+Once a one-step consequence operator is available, one can define:
+\begin{itemize}
+  \item immediate consequence,
+  \item least closure,
+  \item bounded cascades,
+  \item eventual discovery on finite spaces,
+  \item and later greatest/guarded variants.
+\end{itemize}
+
+This is the right semantic story for iterative reasoning, recursive closure,
+and stabilization.
+
+\subsection{The $\mu$-to-$\rho$ connection}
+
+If an operational backend such as a $\rho$-calculus is used for execution, the
+best architecture is:
+\begin{itemize}
+  \item keep world-model/fixpoint semantics as the denotational spec,
+  \item prove a $\mu$-style query/fixpoint embedding into the operational
+        process backend,
+  \item show that one-step consequence and eventual stabilization correspond to
+        operational evolution.
+\end{itemize}
+
+This is much stronger than replacing fixpoint semantics with process execution.
+It preserves a semantic anchor.
+
+\section{Provenance, acceptance, and trusted traces}
+
+For practical AGI use, provenance and policy-gated acceptance must become
+first-class.
+
+\subsection{Provenance-first semantics}
+
+A strong default story is:
+\begin{itemize}
+  \item raw observations/events are wrapped with provenance,
+  \item evidence is extracted from those assessed items,
+  \item acceptance policies decide what enters the trusted trace,
+  \item reasoning and treaty compliance then run over accepted traces.
+\end{itemize}
+
+This avoids the false dichotomy between ``mere evidence'' and ``already
+accepted fact.''
+
+\subsection{Forgetfulness should be explicit}
+
+Forgetting is not default revision.  It should be a separate operation with its
+own laws, such as idempotence and invariance for queries outside the forgotten
+scope.
+
+This is crucial for:
+\begin{itemize}
+  \item privacy and redaction,
+  \item stale-evidence expiry,
+  \item theory contraction,
+  \item and explicit support-scope management.
+\end{itemize}
+
+\section{Experiment design and formal science}
+
+One of the most important future directions is to connect the world-model
+calculus to the design and evaluation of experiments.
+
+\subsection{Why this matters}
+
+A semantics of evidence is not yet a semantics of science.  Science also needs:
+\begin{itemize}
+  \item experiment selection,
+  \item value of information,
+  \item comparison of information channels,
+  \item and policy-relative optimality.
+\end{itemize}
+
+The right long-term mathematical interfaces here likely come from categorical
+probability and experiment comparison (e.g. Blackwell-style orderings and
+Markov-category inspired transport), while the world-model calculus supplies the
+semantic state/evidence/query layer into which those experiment morphisms
+report.
+
+\section{A recommended hierarchy of world-model structures}
+
+The best long-term formulation seems to be a hierarchy, not a single monolithic
+class.
+
+\begin{enumerate}
+  \item \textbf{WorldModelCore}: evidence extractor only.
+  \item \textbf{Generic merge layer}: possibly weak, provenance-aware merge.
+  \item \textbf{Overlap/correlation layer}: overlap correction or compatibility.
+  \item \textbf{AdditiveWorldModel}: exact additivity under independent
+        accumulation.
+  \item \textbf{Forgetting layer}: explicit contraction/redaction.
+  \item \textbf{Locality backend}: presheaf first, sheaf/subtopos later.
+  \item \textbf{Closure/fixpoint layer}: consequence and stabilization.
+  \item \textbf{Typed semantic transport layer}: institution + hyperdoctrine.
+  \item \textbf{Trusted ontology/kernel bridge}: dependent type theory or other
+        certified syntax side.
+\end{enumerate}
+
+The existing additive world-model should remain the named canonical subclass,
+not be weakened in place.
+
+\section{A practical theorem roadmap}
+
+The following theorems would most strongly stabilize the theory.
+
+\subsection{For the additive fragment}
+\begin{enumerate}
+  \item \textbf{Classification theorem}: every additive generic world model on
+        multisets is uniquely induced by its singleton observation surface.
+  \item \textbf{Functoriality}: additive extension is natural under additive
+        homomorphisms of evidence carriers.
+  \item \textbf{No-go results}: additive plus idempotent merge plus nontriviality
+        are incompatible; additive plus exact inverse forgetting is incompatible.
+  \item \textbf{Representation theorem}: additive sufficient-statistic semantics
+        induce additive world models.
+\end{enumerate}
+
+\subsection{For non-additive extensions}
+\begin{enumerate}
+  \item \textbf{Overlap-corrected merge}: additive recovery under explicit
+        independence.
+  \item \textbf{Trust action laws}: source discounts act functorially on evidence.
+  \item \textbf{Forgetting invariance}: queries outside forgotten scope are
+        unaffected.
+  \item \textbf{Evidence-valued gluing}: local compatibility induces global
+        assembly under policy.
+\end{enumerate}
+
+\subsection{For the syntax bridge}
+\begin{enumerate}
+  \item interpretation of substitution/reindexing,
+  \item interpretation of key dependent type formers,
+  \item reduction soundness into world-model consequence,
+  \item and ideally an initiality/universality theorem for the syntax-to-WM
+        interpretation.
+\end{enumerate}
+
+\section{Working assumptions for future development}
+
+For future discussion and implementation work, the following assumptions should
+be treated as the current clean baseline.
+
+\begin{enumerate}
+  \item The world-model calculus is primarily a semantics/evaluation interface,
+        not a global proof system.
+  \item The additive fragment is mathematically distinguished and should remain
+        explicit.
+  \item Strength, confidence, acceptance, and intervals are views of evidence,
+        not the evidence itself.
+  \item ``Actuality'' should be modeled as event-occurrence evidence together
+        with policy-relative acceptance, not as metaphysical certainty.
+  \item Governance reasoning benefits from event subsumption and treaty kernels,
+        not only exact event matching.
+  \item Kripke and neighborhood semantics are backends or endpoints, not rivals
+        to the core evaluator.
+  \item Dependent type theory is a plausible syntax/internal-language side of the
+        trusted ontology layer, but not a replacement for evidence semantics.
+  \item Locality, gluing, and observer semantics belong below the world-model
+        interface as backend refinements.
+  \item Fixpoint closure should remain the denotational spec for iterative
+        reasoning even if operational backends are added.
+  \item Experimental design and value-of-information semantics are natural next
+        layers for turning evidence semantics into a formal science engine.
+\end{enumerate}
+
+\section{Conclusion}
+
+The most robust conceptual picture is now clear.
+
+A world-model calculus should be treated as an evidence-carrying semantic
+substrate with a mathematically distinguished additive fragment, a typed
+categorical transport layer, and multiple logical/probabilistic backends.
+Dependent type theory should be viewed as a candidate syntax/internal-language
+side of the trusted ontology layer, not as a replacement for empirical
+semantics.  Provenance, acceptance, forgetting, locality, and experiment
+design should be layered on top or below the core in their proper places rather
+than collapsed into a single overloaded notion of ``truth.''
+
+The additive fragment is special, but not absolute.  It is the right semantics
+of independent evidence accumulation, not the unique semantics of all epistemic
+policy.  The correct long-term architecture therefore preserves that fragment as
+a canonical center while generalizing around it in a disciplined hierarchy.
+
+\begin{thebibliography}{99}
+
+\bibitem{GoguenBurstallInstitution}
+Joseph Goguen and Rod Burstall.
+\newblock \emph{Institutions: Abstract model theory for specification and
+programming}.
+\newblock Journal of the ACM, 39(1):95--146, 1992.
+
+\bibitem{LawvereHyperdoctrine}
+F.~William Lawvere.
+\newblock \emph{Adjointness in foundations}.
+\newblock Dialectica, 23(3--4):281--296, 1969.
+
+\bibitem{DybjerCWF}
+Peter Dybjer.
+\newblock \emph{Internal type theory}.
+\newblock In \emph{Types for Proofs and Programs}, 1995.
+
+\bibitem{KupkePattinsonCoalgebraic}
+Clemens Kupke and Dirk Pattinson.
+\newblock \emph{Coalgebraic semantics of modal logics: an overview}.
+\newblock Theoretical Computer Science, 2009.
+
+\bibitem{vanBenthemEvidence}
+Johan van Benthem, David Fern{\'a}ndez-Duque, and Eric Pacuit.
+\newblock \emph{Evidence and plausibility in neighborhood structures}.
+\newblock Annals of Pure and Applied Logic, 165(1):106--133, 2014.
+
+\bibitem{RichardsonDomingosMLN}
+Matthew Richardson and Pedro Domingos.
+\newblock \emph{Markov logic networks}.
+\newblock Machine Learning, 62(1--2):107--136, 2006.
+
+\bibitem{DeRaedtProbLog}
+Luc De Raedt, Angelika Kimmig, and Hannu Toivonen.
+\newblock \emph{ProbLog: A probabilistic Prolog and its application in link
+ discovery}.
+\newblock IJCAI, 2007.
+
+\bibitem{VanBenthemEtAl}
+Johan van Benthem, David Fern{\'a}ndez-Duque, and Eric Pacuit.
+\newblock \emph{Evidence logic and evidence dynamics}.
+\newblock Synthese, 196:2567--2593, 2019.
+
+\bibitem{Walley}
+Peter Walley.
+\newblock \emph{Statistical Reasoning with Imprecise Probabilities}.
+\newblock Chapman and Hall, 1991.
+
+\bibitem{MarkovCategories}
+Tobias Fritz.
+\newblock \emph{A synthetic approach to Markov kernels, conditional
+independence, and theorems on sufficient statistics}.
+\newblock Advances in Mathematics, 370:107239, 2020.
+
+\bibitem{BlackwellCats}
+Tobias Fritz and coauthors.
+\newblock \emph{Blackwell comparison in Markov categories}.
+\newblock Theoretical Computer Science, 2023.
+
+\end{thebibliography}
+
+\end{document}
