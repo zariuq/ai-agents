@@ -1,7 +1,7 @@
 import Mettapedia.Logic.GenericWorldModelForgetting
 
 /-!
-# WM Evidence-Conservation Pack
+# WM BinaryEvidence-Conservation Pack
 
 Named theorem pack for scoped forgetting/revision conservation behavior:
 
@@ -19,14 +19,14 @@ open Mettapedia.Logic.ConjugateEvidenceSurface
 open Mettapedia.Logic.PLNWorldModelGeneric
 
 variable {State Scope Query Ev : Type*}
-variable [EvidenceType State] [ConjugateEvidence Ev] [GenericWorldModel State Query Ev]
+variable [EvidenceType State] [ConjugateEvidence Ev] [WorldModel State Query Ev]
 
 /-- Outside-scope leakage budget for one scoped revision `Δ`. -/
 def OutsideLeakageBudget
     (F : ForgettingLayer State Scope Query Ev)
     (S : Scope) (Δ : State) (B : ℝ≥0∞) : Prop :=
   ∀ q, ¬ F.inScope S q →
-    GenericWorldModel.queryObservationCount
+    WorldModel.queryObservationCount
       (State := State) (Query := Query) (Ev := Ev) Δ q ≤ B
 
 /-- Anti-hallucination outside forgotten scope under exact inverse forgetting. -/
@@ -36,7 +36,7 @@ theorem antiHallucination_outsideScope_of_exactInverse
     {S : Scope} {Δ : State}
     (hinv : ∀ W : State, F.forget S (W + Δ) = W) :
     ∀ q, ¬ F.inScope S q →
-      GenericWorldModel.evidence
+      WorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) Δ q = 0 :=
   ForgettingLayer.exactInverse_revision_supported
     (State := State) (Scope := Scope) (Query := Query) (Ev := Ev)
@@ -50,31 +50,31 @@ theorem outsideScopeEvidence_conserved_of_exactInverse
     {S : Scope} {Δ : State}
     (hinv : ∀ W : State, F.forget S (W + Δ) = W)
     (W : State) (q : Query) (hout : ¬ F.inScope S q) :
-    GenericWorldModel.evidence
+    WorldModel.extract
       (State := State) (Query := Query) (Ev := Ev) (W + Δ) q =
-    GenericWorldModel.evidence
+    WorldModel.extract
       (State := State) (Query := Query) (Ev := Ev) W q := by
   have hΔ0 :
-      GenericWorldModel.evidence
+      WorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) Δ q = 0 :=
     antiHallucination_outsideScope_of_exactInverse
       (State := State) (Scope := Scope) (Query := Query) (Ev := Ev)
       F hzero hinv q hout
   calc
-    GenericWorldModel.evidence
+    WorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) (W + Δ) q
       =
-    GenericWorldModel.evidence
+    WorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) W q +
-      GenericWorldModel.evidence
+      WorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) Δ q := by
-          simpa using GenericWorldModel.evidence_add' (State := State) (Query := Query) (Ev := Ev) W Δ q
+          simpa using WorldModel.extract_add' (State := State) (Query := Query) (Ev := Ev) W Δ q
     _ =
-      GenericWorldModel.evidence
+      WorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) W q + 0 := by
           simp [hΔ0]
     _ =
-      GenericWorldModel.evidence
+      WorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) W q := by simp
 
 /-- Outside-scope leakage count is exactly zero under exact inverse forgetting. -/
@@ -84,16 +84,16 @@ theorem outsideLeakageCount_zero_of_exactInverse
     {S : Scope} {Δ : State}
     (hinv : ∀ W : State, F.forget S (W + Δ) = W) :
     ∀ q, ¬ F.inScope S q →
-      GenericWorldModel.queryObservationCount
+      WorldModel.queryObservationCount
         (State := State) (Query := Query) (Ev := Ev) Δ q = 0 := by
   intro q hout
   have hΔ0 :
-      GenericWorldModel.evidence
+      WorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) Δ q = 0 :=
     antiHallucination_outsideScope_of_exactInverse
       (State := State) (Scope := Scope) (Query := Query) (Ev := Ev)
       F hzero hinv q hout
-  unfold GenericWorldModel.queryObservationCount
+  unfold WorldModel.queryObservationCount
   simpa [hΔ0] using (ConjugateEvidence.observationCount_zero (Ev := Ev))
 
 /-- Zero-budget leakage theorem. -/
@@ -146,16 +146,16 @@ structure EvidenceConservationPack
       (_hinv : ∀ W : State, F.forget S (W + Δ) = W)
       (W : State) (q : Query),
       ¬ F.inScope S q →
-        GenericWorldModel.evidence
+        WorldModel.extract
           (State := State) (Query := Query) (Ev := Ev) (W + Δ) q =
-        GenericWorldModel.evidence
+        WorldModel.extract
           (State := State) (Query := Query) (Ev := Ev) W q
   anti_hallucination_outsideScope :
     ∀ {S : Scope} {Δ : State}
       (_hinv : ∀ W : State, F.forget S (W + Δ) = W)
       (q : Query),
       ¬ F.inScope S q →
-        GenericWorldModel.evidence
+        WorldModel.extract
           (State := State) (Query := Query) (Ev := Ev) Δ q = 0
   leakage_budget_zero :
     ∀ {S : Scope} {Δ : State}
@@ -165,7 +165,7 @@ structure EvidenceConservationPack
   no_exact_inverse_if_nonzero_outside :
     ∀ {S : Scope} {Δ : State} {q : Query},
       ¬ F.inScope S q →
-      GenericWorldModel.evidence
+      WorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) Δ q ≠ 0 →
       ¬ ∀ W : State, F.forget S (W + Δ) = W
 
@@ -213,12 +213,12 @@ theorem profile_conservation_of_exactInverse
     {S : Scope} {Δ : State}
     (hinv : ∀ W : State, F.forget S (W + Δ) = W)
     (q : Query) (hout : ¬ F.inScope S q) :
-    GenericWorldModel.evidence
+    WorldModel.extract
       (State := State) (Query := Query) (Ev := Ev) Δ q = 0 ∧
     ∀ W : State,
-      GenericWorldModel.evidence
+      WorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) (W + Δ) q =
-      GenericWorldModel.evidence
+      WorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) W q :=
   ⟨antiHallucination_outsideScope_of_exactInverse F hzero hinv q hout,
    fun W => outsideScopeEvidence_conserved_of_exactInverse F hzero hinv W q hout⟩

@@ -23,7 +23,7 @@ open Mettapedia.Logic.PLNIndefiniteTruth
 
 /-- Context-indexed ITV semantics: how to map extracted evidence to an ITV. -/
 structure ITVSemantics (Ctx : Type*) where
-  eval : Ctx → Evidence → PLNIndefiniteTruth.ITV
+  eval : Ctx → BinaryEvidence → PLNIndefiniteTruth.ITV
 
 /-- Context for Walley IDM predictive intervals (`s > 0` is IDM prior strength). -/
 structure IDMPredictiveContext where
@@ -71,14 +71,14 @@ noncomputable def walleyIDMPredictive : ITVSemantics IDMPredictiveContext where
 
 end ITVSemantics
 
-namespace WorldModel
+namespace BinaryWorldModel
 
-variable {State Query Ctx : Type*} [EvidenceType State] [WorldModel State Query]
+variable {State Query Ctx : Type*} [EvidenceType State] [BinaryWorldModel State Query]
 
 /-- ITV query view from an explicit semantics choice. -/
 noncomputable def queryITV (sem : ITVSemantics Ctx) (ctx : Ctx) (W : State) (q : Query) :
     PLNIndefiniteTruth.ITV :=
-  sem.eval ctx (WorldModel.evidence (State := State) (Query := Query) W q)
+  sem.eval ctx (BinaryWorldModel.evidence (State := State) (Query := Query) W q)
 
 /-- Lower bound from `queryITV`. -/
 noncomputable def queryITVLower (sem : ITVSemantics Ctx) (ctx : Ctx) (W : State) (q : Query) :
@@ -115,7 +115,7 @@ theorem queryITVWidth_add_queryITVCredibility_walley
   unfold queryITVWidth queryITVCredibility queryITV
   simpa using
     (PLNIndefiniteTruth.ITV.fromWalleyIDMPredictive_width_add_credibility
-      (e := WorldModel.evidence (State := State) (Query := Query) W q)
+      (e := BinaryWorldModel.evidence (State := State) (Query := Query) W q)
       (s := ctx.s) (hs := ctx.s_pos))
 
 /-- Equivalent Walley IDM identity written as `width = 1 - credibility`. -/
@@ -128,7 +128,7 @@ theorem queryITVWidth_eq_one_sub_queryITVCredibility_walley
   unfold queryITVWidth queryITVCredibility queryITV
   simpa using
     (PLNIndefiniteTruth.ITV.fromWalleyIDMPredictive_width_eq_one_sub_credibility
-      (e := WorldModel.evidence (State := State) (Query := Query) W q)
+      (e := BinaryWorldModel.evidence (State := State) (Query := Query) W q)
       (s := ctx.s) (hs := ctx.s_pos))
 
 /-! ## ITV judgments -/
@@ -145,7 +145,7 @@ def WMITVJudgmentCtx
     (Γ : Set State) (W : State) (q : Query) (itv : PLNIndefiniteTruth.ITV) : Prop :=
   WMJudgmentCtx Γ W ∧ itv = queryITV (State := State) (Query := Query) sem ctx W q
 
-/-- Evidence-level rewrite soundness lifted to ITV semantics. -/
+/-- BinaryEvidence-level rewrite soundness lifted to ITV semantics. -/
 theorem WMRewriteRule.itv_eval_eq_queryITV
     (sem : ITVSemantics Ctx) (ctx : Ctx)
     {r : WMRewriteRule State Query} (hSide : r.side) (W : State) :
@@ -171,7 +171,7 @@ theorem WMRewriteRule.applyITVCtx
       Γ W r.conclusion (sem.eval ctx (r.derive W)) := by
   exact ⟨hW, WMRewriteRule.itv_eval_eq_queryITV (State := State) (Query := Query) sem ctx hSide W⟩
 
-end WorldModel
+end BinaryWorldModel
 
 namespace WorldModelSigma
 

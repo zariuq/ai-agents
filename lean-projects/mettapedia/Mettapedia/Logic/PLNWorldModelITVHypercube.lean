@@ -42,13 +42,13 @@ def CtxOfVertex (v : WMVertex) : Type := CtxOfInterval (v .interval)
 section Untyped
 
 variable {State Query : Type*}
-variable [EvidenceType State] [WorldModel State Query]
+variable [EvidenceType State] [BinaryWorldModel State Query]
 
 /-- Hypercube-interval-indexed ITV query view (untyped queries). -/
 noncomputable def queryITVOfInterval
     (i : WMIntervalSemantics) (ctx : CtxOfInterval i)
     (W : State) (q : Query) : PLNIndefiniteTruth.ITV :=
-  WorldModel.queryITV (State := State) (Query := Query) (Ctx := CtxOfInterval i)
+  BinaryWorldModel.queryITV (State := State) (Query := Query) (Ctx := CtxOfInterval i)
     (semanticsOfInterval i) ctx W q
 
 /-- Hypercube-interval-indexed ITV query lower bound. -/

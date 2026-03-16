@@ -104,7 +104,7 @@ abbrev Atom : Type _ := BNQuery.Atom (bn := bn)
 
 abbrev State : Type _ := Multiset (bn.DiscreteCPT)
 
-noncomputable def evidenceOfProb (p : ℝ≥0∞) : Evidence :=
+noncomputable def evidenceOfProb (p : ℝ≥0∞) : BinaryEvidence :=
   ⟨p, 1 - p⟩
 
 noncomputable def queryProb [Fintype V] [DecidableEq V] (cpt : bn.DiscreteCPT) :
@@ -117,11 +117,11 @@ noncomputable def queryProb [Fintype V] [DecidableEq V] (cpt : bn.DiscreteCPT) :
       BayesianNetwork.linkProbVECond (bn := bn) cpt as ⟨b, valB⟩
 
 noncomputable def queryEvidence [Fintype V] [DecidableEq V] (cpt : bn.DiscreteCPT)
-    (q : PLNQuery (BNQuery.Atom (bn := bn))) : Evidence :=
+    (q : PLNQuery (BNQuery.Atom (bn := bn))) : BinaryEvidence :=
   evidenceOfProb (queryProb (bn := bn) cpt q)
 
 noncomputable def evidence [Fintype V] [DecidableEq V] (W : State (bn := bn))
-    (q : PLNQuery (BNQuery.Atom (bn := bn))) : Evidence :=
+    (q : PLNQuery (BNQuery.Atom (bn := bn))) : BinaryEvidence :=
   (W.map (fun cpt => queryEvidence (bn := bn) cpt q)).sum
 
 instance : AddCommMonoid (State (bn := bn)) := by
@@ -132,7 +132,7 @@ instance : EvidenceType (State (bn := bn)) :=
   { toAddCommMonoid := inferInstance }
 
 noncomputable instance [Fintype V] [DecidableEq V] :
-    WorldModel (State (bn := bn)) (PLNQuery (BNQuery.Atom (bn := bn))) where
+    BinaryWorldModel (State (bn := bn)) (PLNQuery (BNQuery.Atom (bn := bn))) where
   evidence W q := evidence (bn := bn) W q
   evidence_add W₁ W₂ q := by
     classical
@@ -161,18 +161,18 @@ Requires `queryProb cpt q ≤ 1` (a probability bound). -/
 theorem queryStrength_singleton_eq_queryProb [Fintype V] [DecidableEq V]
     (cpt : bn.DiscreteCPT) (q : PLNQuery (BNQuery.Atom (bn := bn)))
     (hq : queryProb (bn := bn) cpt q ≤ 1) :
-    WorldModel.queryStrength
+    BinaryWorldModel.queryStrength
       ({cpt} : Multiset (bn.DiscreteCPT)) q =
       queryProb (bn := bn) cpt q := by
-  unfold WorldModel.queryStrength
-  have hev : WorldModel.evidence ({cpt} : Multiset (bn.DiscreteCPT)) q =
+  unfold BinaryWorldModel.queryStrength
+  have hev : BinaryWorldModel.evidence ({cpt} : Multiset (bn.DiscreteCPT)) q =
       queryEvidence (bn := bn) cpt q := by
     show evidence (bn := bn) ({cpt} : Multiset (bn.DiscreteCPT)) q = _
     exact evidence_singleton cpt q
   rw [hev]
-  show Evidence.toStrength (evidenceOfProb (queryProb (bn := bn) cpt q)) = _
+  show BinaryEvidence.toStrength (evidenceOfProb (queryProb (bn := bn) cpt q)) = _
   -- toStrength (evidenceOfProb p) = p when p ≤ 1
-  unfold Evidence.toStrength evidenceOfProb Evidence.total
+  unfold BinaryEvidence.toStrength evidenceOfProb BinaryEvidence.total
   simp only
   split
   · rename_i h
@@ -247,7 +247,7 @@ lemma queryStrength_singleton_prop_toReal [Fintype V] [DecidableEq V]
     [DecidableRel bn.graph.edges]
     (cpt : bn.DiscreteCPT) (v : V) (val : bn.stateSpace v)
     [IsProbabilityMeasure cpt.jointMeasure] :
-    (WorldModel.queryStrength
+    (BinaryWorldModel.queryStrength
       ({cpt} : State (bn := bn))
       (PLNQuery.prop (⟨v, val⟩ : BNQuery.Atom (bn := bn)))).toReal =
     cpt.jointMeasure.real (eventEq (bn := bn) v val) := by
@@ -264,7 +264,7 @@ lemma queryStrength_singleton_link_toReal [Fintype V] [DecidableEq V]
     [DecidableRel bn.graph.edges]
     (cpt : bn.DiscreteCPT) (a b : V) (valA : bn.stateSpace a) (valB : bn.stateSpace b)
     (ha : cpt.jointMeasure (eventEq (bn := bn) a valA) ≠ 0) :
-    (WorldModel.queryStrength
+    (BinaryWorldModel.queryStrength
       ({cpt} : State (bn := bn))
       (PLNQuery.link (⟨a, valA⟩ : BNQuery.Atom (bn := bn))
                      (⟨b, valB⟩ : BNQuery.Atom (bn := bn)))).toReal =
@@ -293,7 +293,7 @@ lemma wmqueryeq_of_prob_eq
       simp [queryEvidence, evidenceOfProb, h cpt]
     dsimp [f₁, f₂]
     exact this
-  simp [WorldModel.evidence, evidence, f₁, f₂, hmap]
+  simp [BinaryWorldModel.evidence, evidence, f₁, f₂, hmap]
 
 lemma wmqueryeq_of_dsep
     [Fintype V] [DecidableEq V]
@@ -330,7 +330,7 @@ variable (bn : BayesianNetwork V)
 abbrev BNAtom : Type _ := BNQuery.Atom (bn := bn)
 
 variable {State : Type*} [Mettapedia.Logic.EvidenceClass.EvidenceType State]
-  [WorldModel State (PLNQuery (BNAtom bn))]
+  [BinaryWorldModel State (PLNQuery (BNAtom bn))]
 
 /-- D-separation condition as a Σ side-condition for WM rewrites. -/
 def SigmaOfDsep (cond : DSeparationCond V) : Prop :=
@@ -434,7 +434,7 @@ noncomputable def evalVE (plan : CompiledPlan bn) (cpt : bn.DiscreteCPT)
 
 end CompiledPlan
 
-/-! ## Compiled-plan rewrites (BN WorldModel instance) -/
+/-! ## Compiled-plan rewrites (BN BinaryWorldModel instance) -/
 
 namespace BNCompiledRewrite
 
@@ -1510,7 +1510,7 @@ theorem chain_screeningOff_rewrite_applies_of_dsep
             ([ (⟨Three.A, valA⟩ : BNQuery.Atom (bn := chainBN))
              , (⟨Three.B, valB⟩ : BNQuery.Atom (bn := chainBN)) ])
             (⟨Three.C, valC⟩ : BNQuery.Atom (bn := chainBN))) ↦
-          (WorldModel.evidence
+          (BinaryWorldModel.evidence
             (State := State (bn := chainBN))
             (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
             W
@@ -1549,12 +1549,12 @@ theorem chain_screeningOff_strength_eq_of_dsep
     (hLM : ∀ cpt : chainBN.DiscreteCPT, HasLocalMarkovProperty chainBN cpt.jointMeasure) :
     (CompiledPlan.deductionSide Three.A Three.B Three.C).holds (bn := chainBN) →
       ∀ W : State (bn := chainBN),
-        WorldModel.queryStrength
+        BinaryWorldModel.queryStrength
           (State := State (bn := chainBN))
           (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
           W (PLNQuery.linkCond [⟨Three.A, valA⟩, ⟨Three.B, valB⟩] ⟨Three.C, valC⟩)
           =
-        WorldModel.queryStrength
+        BinaryWorldModel.queryStrength
           (State := State (bn := chainBN))
           (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
           W (PLNQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩) := by
@@ -1562,7 +1562,7 @@ theorem chain_screeningOff_strength_eq_of_dsep
   have hEq :=
     chain_screeningOff_wmqueryeq_of_dsep
       (valA := valA) (valB := valB) (valC := valC) hLM hcond
-  simpa [WorldModel.queryStrength] using congrArg Evidence.toStrength (hEq W)
+  simpa [BinaryWorldModel.queryStrength] using congrArg BinaryEvidence.toStrength (hEq W)
 
 theorem chain_screeningOff_wmqueryeq_of_dsepFull
     (valA valB valC : Bool)
@@ -1747,12 +1747,12 @@ theorem fork_screeningOff_strength_eq_of_dsep
     (hLM : ∀ cpt : forkBN.DiscreteCPT, HasLocalMarkovProperty forkBN cpt.jointMeasure) :
     (CompiledPlan.deductionSide Three.A Three.B Three.C).holds (bn := forkBN) →
       ∀ W : State (bn := forkBN),
-        WorldModel.queryStrength
+        BinaryWorldModel.queryStrength
           (State := State (bn := forkBN))
           (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
           W (PLNQuery.linkCond [⟨Three.A, valA⟩, ⟨Three.B, valB⟩] ⟨Three.C, valC⟩)
           =
-        WorldModel.queryStrength
+        BinaryWorldModel.queryStrength
           (State := State (bn := forkBN))
           (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
           W (PLNQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩) := by
@@ -1760,7 +1760,7 @@ theorem fork_screeningOff_strength_eq_of_dsep
   have hEq :=
     fork_screeningOff_wmqueryeq_of_dsep
       (valA := valA) (valB := valB) (valC := valC) hLM hcond
-  simpa [WorldModel.queryStrength] using congrArg Evidence.toStrength (hEq W)
+  simpa [BinaryWorldModel.queryStrength] using congrArg BinaryEvidence.toStrength (hEq W)
 
 end ForkExample
 
@@ -1880,12 +1880,12 @@ theorem collider_screeningOff_strength_eq_of_dsep
     (hLM : ∀ cpt : colliderBN.DiscreteCPT, HasLocalMarkovProperty colliderBN cpt.jointMeasure) :
     (CompiledPlan.abductionSide Three.A Three.C Three.B).holds (bn := colliderBN) →
       ∀ W : State (bn := colliderBN),
-        WorldModel.queryStrength
+        BinaryWorldModel.queryStrength
           (State := State (bn := colliderBN))
           (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
           W (PLNQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
           =
-        WorldModel.queryStrength
+        BinaryWorldModel.queryStrength
           (State := State (bn := colliderBN))
           (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
           W (PLNQuery.prop ⟨Three.B, valB⟩) := by
@@ -1893,7 +1893,7 @@ theorem collider_screeningOff_strength_eq_of_dsep
   have hEq :=
     collider_screeningOff_wmqueryeq_of_dsep
       (valA := valA) (valB := valB) hLM hcond
-  simpa [WorldModel.queryStrength] using congrArg Evidence.toStrength (hEq W)
+  simpa [BinaryWorldModel.queryStrength] using congrArg BinaryEvidence.toStrength (hEq W)
 
 end ColliderExample
 

@@ -8,10 +8,10 @@ This module defines a minimal interface for the **complete** (“distribution-pa
 
 - A *world-model posterior state* `State` that can be revised by combining independent evidence
   sources (an `EvidenceType`, i.e. an additive commutative monoid).
-- Query projections that extract **binary Evidence** (`n⁺, n⁻`) for arbitrary queries.
+- Query projections that extract **binary BinaryEvidence** (`n⁺, n⁻`) for arbitrary queries.
 
 All truth-value notions (strength/weight/confidence/interval bounds) are **views** computed from
-the extracted `Evidence`.  They are intentionally not part of the core interface.
+the extracted `BinaryEvidence`.  They are intentionally not part of the core interface.
 
 This is the “WM judgment + query judgment” split:
 
@@ -30,95 +30,95 @@ open Mettapedia.Logic.EvidenceQuantale
 
 /-- Standard PLN queries over a set of atoms: events/propositions and links/conditionals. -/
 inductive PLNQuery (Atom : Type*) where
-  /-- Evidence for an event/proposition. -/
+  /-- BinaryEvidence for an event/proposition. -/
   | prop : Atom → PLNQuery Atom
-  /-- Evidence for a link/conditional. -/
+  /-- BinaryEvidence for a link/conditional. -/
   | link : Atom → Atom → PLNQuery Atom
-  /-- Evidence for a conditional with multiple antecedents (conjunction). -/
+  /-- BinaryEvidence for a conditional with multiple antecedents (conjunction). -/
   | linkCond : List Atom → Atom → PLNQuery Atom
 
 /-! ## Interface -/
 
 /-- A revisable posterior state supporting **additive** evidence-valued query extraction.
 
-`State` is an `EvidenceType` (so revision is `+`), and queries extract `Evidence`.
+`State` is an `EvidenceType` (so revision is `+`), and queries extract `BinaryEvidence`.
 
 The `evidence_add` law is the key commutation property:
 extracting from revised states is the same as revising extracted evidence. -/
-class WorldModel (State : Type*) (Query : Type*) [EvidenceType State] where
+class BinaryWorldModel (State : Type*) (Query : Type*) [EvidenceType State] where
   /-- Extract binary evidence for a query. -/
-  evidence : State → Query → Evidence
+  evidence : State → Query → BinaryEvidence
   /-- Extraction commutes with revision (`+`) in the world-model state. -/
   evidence_add : ∀ W₁ W₂ q, evidence (W₁ + W₂) q = evidence W₁ q + evidence W₂ q
   /-- Zero state has zero evidence for every query. -/
   evidence_zero : ∀ q, evidence 0 q = 0
 
-namespace WorldModel
+namespace BinaryWorldModel
 
-variable {State Query : Type*} [EvidenceType State] [WorldModel State Query]
+variable {State Query : Type*} [EvidenceType State] [BinaryWorldModel State Query]
 
 /-! ## Generic views (derived, not stored) -/
 
 /-- Posterior-mean probability view of a query (improper-prior strength). -/
 noncomputable def queryStrength (W : State) (q : Query) : ℝ≥0∞ :=
-  Evidence.toStrength (WorldModel.evidence (State := State) (Query := Query) W q)
+  BinaryEvidence.toStrength (BinaryWorldModel.evidence (State := State) (Query := Query) W q)
 
 /-- Context-aware posterior-mean strength view of a query. -/
 noncomputable def queryStrengthWith
     (ctx : BinaryContext) (W : State) (q : Query) : ℝ≥0∞ :=
-  Evidence.strengthWith ctx (WorldModel.evidence (State := State) (Query := Query) W q)
+  BinaryEvidence.strengthWith ctx (BinaryWorldModel.evidence (State := State) (Query := Query) W q)
 
 /-- Confidence view of a query (with prior/context size parameter `κ`). -/
 noncomputable def queryConfidence (κ : ℝ≥0∞) (W : State) (q : Query) : ℝ≥0∞ :=
-  Evidence.toConfidence κ (WorldModel.evidence (State := State) (Query := Query) W q)
+  BinaryEvidence.toConfidence κ (BinaryWorldModel.evidence (State := State) (Query := Query) W q)
 
-/-- WTV view for a query, using the canonical `Evidence → WTV` map with prior size `κ`.
-This is operational plumbing; the core state remains `Evidence`. -/
+/-- WTV view for a query, using the canonical `BinaryEvidence → WTV` map with prior size `κ`.
+This is operational plumbing; the core state remains `BinaryEvidence`. -/
 noncomputable def queryWTV (κ : ℝ≥0∞) (W : State) (q : Query) : PLNWeightTV.WTV :=
-  Evidence.toWTV κ (WorldModel.evidence (State := State) (Query := Query) W q)
+  BinaryEvidence.toWTV κ (BinaryWorldModel.evidence (State := State) (Query := Query) W q)
 
 /-- Generic context-dependent interpretation view of a query. -/
 def queryInterpret
     {Ctx Val : Type*}
-    [InterpretableEvidence Ctx Evidence Val]
+    [InterpretableEvidence Ctx BinaryEvidence Val]
     (ctx : Ctx) (W : State) (q : Query) : Val :=
   InterpretableEvidence.interpret ctx
-    (WorldModel.evidence (State := State) (Query := Query) W q)
+    (BinaryWorldModel.evidence (State := State) (Query := Query) W q)
 
 theorem evidence_add' (W₁ W₂ : State) (q : Query) :
-    WorldModel.evidence (State := State) (Query := Query) (W₁ + W₂) q =
-      WorldModel.evidence (State := State) (Query := Query) W₁ q +
-        WorldModel.evidence (State := State) (Query := Query) W₂ q :=
-  WorldModel.evidence_add (State := State) (Query := Query) W₁ W₂ q
+    BinaryWorldModel.evidence (State := State) (Query := Query) (W₁ + W₂) q =
+      BinaryWorldModel.evidence (State := State) (Query := Query) W₁ q +
+        BinaryWorldModel.evidence (State := State) (Query := Query) W₂ q :=
+  BinaryWorldModel.evidence_add (State := State) (Query := Query) W₁ W₂ q
 
 /-- **Universal property**: for each query `q`, evidence extraction is an
     `AddMonoidHom` from revision states to the evidence monoid.
 
-    This is the categorical content of the WorldModel interface:
+    This is the categorical content of the BinaryWorldModel interface:
     `fun W => evidence W q` is a morphism of additive commutative monoids.
     All five core calculus rules (additivity, commutativity, associativity,
     combine-commutativity, combine-identity) derive from this single
     algebraic condition. -/
-noncomputable def evidenceHomAt (q : Query) : AddMonoidHom State Evidence where
-  toFun W := WorldModel.evidence (State := State) (Query := Query) W q
-  map_zero' := WorldModel.evidence_zero q
+noncomputable def evidenceHomAt (q : Query) : AddMonoidHom State BinaryEvidence where
+  toFun W := BinaryWorldModel.evidence (State := State) (Query := Query) W q
+  map_zero' := BinaryWorldModel.evidence_zero q
   map_add' W₁ W₂ := evidence_add' W₁ W₂ q
 
 /-- **The bundled universal property**: evidence extraction is a single
-    `AddMonoidHom` from states to evidence profiles `Query → Evidence`.
+    `AddMonoidHom` from states to evidence profiles `Query → BinaryEvidence`.
 
-    This is the core categorical content of the WorldModel interface:
-    `WorldModel State Query ≃ AddMonoidHom State (Query → Evidence)`.
+    This is the core categorical content of the BinaryWorldModel interface:
+    `BinaryWorldModel State Query ≃ AddMonoidHom State (Query → BinaryEvidence)`.
     All individual `evidenceHomAt q` are projections of this one arrow. -/
 noncomputable def evidenceProfileHom :
-    AddMonoidHom State (Query → Evidence) where
-  toFun W q := WorldModel.evidence (State := State) (Query := Query) W q
-  map_zero' := funext (WorldModel.evidence_zero (State := State) (Query := Query))
-  map_add' W₁ W₂ := funext (WorldModel.evidence_add W₁ W₂)
+    AddMonoidHom State (Query → BinaryEvidence) where
+  toFun W q := BinaryWorldModel.evidence (State := State) (Query := Query) W q
+  map_zero' := funext (BinaryWorldModel.evidence_zero (State := State) (Query := Query))
+  map_add' W₁ W₂ := funext (BinaryWorldModel.evidence_add W₁ W₂)
 
-/-- Construct a `WorldModel` from a profile homomorphism (inverse direction). -/
-def ofProfileHom (F : AddMonoidHom State (Query → Evidence)) :
-    WorldModel State Query where
+/-- Construct a `BinaryWorldModel` from a profile homomorphism (inverse direction). -/
+def ofProfileHom (F : AddMonoidHom State (Query → BinaryEvidence)) :
+    BinaryWorldModel State Query where
   evidence W q := F W q
   evidence_add W₁ W₂ q := congrFun (F.map_add W₁ W₂) q
   evidence_zero q := congrFun F.map_zero q
@@ -126,11 +126,11 @@ def ofProfileHom (F : AddMonoidHom State (Query → Evidence)) :
 /-- `evidenceHomAt q` is evaluation-at-`q` composed with `evidenceProfileHom`. -/
 theorem evidenceHomAt_eq_eval_comp (q : Query) :
     ∀ W, evidenceHomAt (State := State) (Query := Query) q W =
-      (Pi.evalAddMonoidHom (fun _ : Query => Evidence) q).comp
+      (Pi.evalAddMonoidHom (fun _ : Query => BinaryEvidence) q).comp
         (evidenceProfileHom (State := State) (Query := Query)) W := by
   intro W; rfl
 
-end WorldModel
+end BinaryWorldModel
 
 /-! ## WM calculus judgments (sequent-style spine) -/
 
@@ -142,15 +142,15 @@ inductive WMJudgment {State : Type*} [EvidenceType State] : State → Prop
 notation:50 "⊢wm " W => WMJudgment W
 
 /-- Query judgment: extracted evidence for a query from a derivable state. -/
-def WMQueryJudgment {State Query : Type*} [EvidenceType State] [WorldModel State Query]
-    (W : State) (q : Query) (e : Evidence) : Prop :=
-  WMJudgment W ∧ e = WorldModel.evidence (State := State) (Query := Query) W q
+def WMQueryJudgment {State Query : Type*} [EvidenceType State] [BinaryWorldModel State Query]
+    (W : State) (q : Query) (e : BinaryEvidence) : Prop :=
+  WMJudgment W ∧ e = BinaryWorldModel.evidence (State := State) (Query := Query) W q
 
 notation:50 "⊢q " W " ⇓ " q " ↦ " e => WMQueryJudgment W q e
 
 namespace WMJudgment
 
-variable {State Query : Type*} [EvidenceType State] [WorldModel State Query]
+variable {State Query : Type*} [EvidenceType State] [BinaryWorldModel State Query]
 
 /-- Context-free WM derivability is intentionally permissive: every posterior
 state is available as an axiom. Nontrivial source control enters in `WMJudgmentCtx`
@@ -159,10 +159,10 @@ theorem trivial (W : State) : ⊢wm W :=
   WMJudgment.axiom W
 
 theorem query_of_axiom (W : State) (q : Query) :
-    ⊢q W ⇓ q ↦ (WorldModel.evidence (State := State) (Query := Query) W q) := by
+    ⊢q W ⇓ q ↦ (BinaryWorldModel.evidence (State := State) (Query := Query) W q) := by
   exact ⟨WMJudgment.axiom W, rfl⟩
 
-theorem query_revise {W₁ W₂ : State} {q : Query} {e₁ e₂ : Evidence} :
+theorem query_revise {W₁ W₂ : State} {q : Query} {e₁ e₂ : BinaryEvidence} :
     (⊢q W₁ ⇓ q ↦ e₁) → (⊢q W₂ ⇓ q ↦ e₂) →
       (⊢q (W₁ + W₂) ⇓ q ↦ (e₁ + e₂)) := by
   intro h₁ h₂
@@ -170,17 +170,17 @@ theorem query_revise {W₁ W₂ : State} {q : Query} {e₁ e₂ : Evidence} :
   rcases h₂ with ⟨hW₂, rfl⟩
   refine ⟨WMJudgment.revise hW₁ hW₂, ?_⟩
   simpa using
-    (WorldModel.evidence_add' (State := State) (Query := Query) W₁ W₂ q).symm
+    (BinaryWorldModel.evidence_add' (State := State) (Query := Query) W₁ W₂ q).symm
 
 /-- Query judgments are deterministic for fixed state/query: extracted evidence
-is uniquely determined by `WorldModel.evidence`. -/
-theorem query_deterministic {W : State} {q : Query} {e₁ e₂ : Evidence}
+is uniquely determined by `BinaryWorldModel.evidence`. -/
+theorem query_deterministic {W : State} {q : Query} {e₁ e₂ : BinaryEvidence}
     (h₁ : ⊢q W ⇓ q ↦ e₁) (h₂ : ⊢q W ⇓ q ↦ e₂) :
     e₁ = e₂ := by
   rcases h₁ with ⟨_, he₁⟩
   rcases h₂ with ⟨_, he₂⟩
   calc
-    e₁ = WorldModel.evidence (State := State) (Query := Query) W q := he₁
+    e₁ = BinaryWorldModel.evidence (State := State) (Query := Query) W q := he₁
     _ = e₂ := he₂.symm
 
 end WMJudgment
@@ -206,9 +206,9 @@ inductive WMJudgmentCtx {State : Type*} [EvidenceType State]
 notation:50 "⊢wm[" Γ "] " W => WMJudgmentCtx Γ W
 
 /-- Query judgment under a context: extracted evidence from a state derivable in Γ. -/
-def WMQueryJudgmentCtx {State Query : Type*} [EvidenceType State] [WorldModel State Query]
-    (Γ : Set State) (W : State) (q : Query) (e : Evidence) : Prop :=
-  WMJudgmentCtx Γ W ∧ e = WorldModel.evidence (State := State) (Query := Query) W q
+def WMQueryJudgmentCtx {State Query : Type*} [EvidenceType State] [BinaryWorldModel State Query]
+    (Γ : Set State) (W : State) (q : Query) (e : BinaryEvidence) : Prop :=
+  WMJudgmentCtx Γ W ∧ e = BinaryWorldModel.evidence (State := State) (Query := Query) W q
 
 notation:50 "⊢q[" Γ "] " W " ⇓ " q " ↦ " e => WMQueryJudgmentCtx Γ W q e
 
@@ -242,32 +242,32 @@ theorem union_revise {Γ₁ Γ₂ : Set State} {W₁ W₂ : State}
     ⊢wm[Γ₁ ∪ Γ₂] (W₁ + W₂) :=
   .revise (mono Set.subset_union_left h₁) (mono Set.subset_union_right h₂)
 
-variable {Query : Type*} [WorldModel State Query]
+variable {Query : Type*} [BinaryWorldModel State Query]
 
 /-- Query from a context-indexed base state. -/
 theorem query_of_base (Γ : Set State) (W : State) (hW : W ∈ Γ) (q : Query) :
-    ⊢q[Γ] W ⇓ q ↦ (WorldModel.evidence (State := State) (Query := Query) W q) :=
+    ⊢q[Γ] W ⇓ q ↦ (BinaryWorldModel.evidence (State := State) (Query := Query) W q) :=
   ⟨.base W hW, rfl⟩
 
 /-- Query revision under contexts. -/
-theorem query_revise {Γ : Set State} {W₁ W₂ : State} {q : Query} {e₁ e₂ : Evidence}
+theorem query_revise {Γ : Set State} {W₁ W₂ : State} {q : Query} {e₁ e₂ : BinaryEvidence}
     (h₁ : ⊢q[Γ] W₁ ⇓ q ↦ e₁) (h₂ : ⊢q[Γ] W₂ ⇓ q ↦ e₂) :
     ⊢q[Γ] (W₁ + W₂) ⇓ q ↦ (e₁ + e₂) := by
   rcases h₁ with ⟨hW₁, rfl⟩
   rcases h₂ with ⟨hW₂, rfl⟩
   refine ⟨.revise hW₁ hW₂, ?_⟩
   simpa using
-    (WorldModel.evidence_add' (State := State) (Query := Query) W₁ W₂ q).symm
+    (BinaryWorldModel.evidence_add' (State := State) (Query := Query) W₁ W₂ q).symm
 
 /-- Context-indexed query judgments are deterministic for fixed state/query. -/
 theorem query_deterministic {Γ : Set State} {W : State} {q : Query}
-    {e₁ e₂ : Evidence}
+    {e₁ e₂ : BinaryEvidence}
     (h₁ : ⊢q[Γ] W ⇓ q ↦ e₁) (h₂ : ⊢q[Γ] W ⇓ q ↦ e₂) :
     e₁ = e₂ := by
   rcases h₁ with ⟨_, he₁⟩
   rcases h₂ with ⟨_, he₂⟩
   calc
-    e₁ = WorldModel.evidence (State := State) (Query := Query) W q := he₁
+    e₁ = BinaryWorldModel.evidence (State := State) (Query := Query) W q := he₁
     _ = e₂ := he₂.symm
 
 end WMJudgmentCtx
@@ -348,41 +348,41 @@ end WMJudgmentMulti
 
 namespace PLNQuery
 
-variable {State Atom : Type*} [EvidenceType State] [WorldModel State (PLNQuery Atom)]
+variable {State Atom : Type*} [EvidenceType State] [BinaryWorldModel State (PLNQuery Atom)]
 
-def propEvidence (W : State) (a : Atom) : Evidence :=
-  WorldModel.evidence (State := State) (Query := PLNQuery Atom) W (.prop a)
+def propEvidence (W : State) (a : Atom) : BinaryEvidence :=
+  BinaryWorldModel.evidence (State := State) (Query := PLNQuery Atom) W (.prop a)
 
-def linkEvidence (W : State) (a b : Atom) : Evidence :=
-  WorldModel.evidence (State := State) (Query := PLNQuery Atom) W (.link a b)
+def linkEvidence (W : State) (a b : Atom) : BinaryEvidence :=
+  BinaryWorldModel.evidence (State := State) (Query := PLNQuery Atom) W (.link a b)
 
-def linkCondEvidence (W : State) (as : List Atom) (b : Atom) : Evidence :=
-  WorldModel.evidence (State := State) (Query := PLNQuery Atom) W (.linkCond as b)
+def linkCondEvidence (W : State) (as : List Atom) (b : Atom) : BinaryEvidence :=
+  BinaryWorldModel.evidence (State := State) (Query := PLNQuery Atom) W (.linkCond as b)
 
 noncomputable def propStrength (W : State) (a : Atom) : ℝ≥0∞ :=
-  Evidence.toStrength (propEvidence (State := State) (Atom := Atom) W a)
+  BinaryEvidence.toStrength (propEvidence (State := State) (Atom := Atom) W a)
 
 noncomputable def linkStrength (W : State) (a b : Atom) : ℝ≥0∞ :=
-  Evidence.toStrength (linkEvidence (State := State) (Atom := Atom) W a b)
+  BinaryEvidence.toStrength (linkEvidence (State := State) (Atom := Atom) W a b)
 
 noncomputable def propWTV (κ : ℝ≥0∞) (W : State) (a : Atom) : PLNWeightTV.WTV :=
-  Evidence.toWTV κ (propEvidence (State := State) (Atom := Atom) W a)
+  BinaryEvidence.toWTV κ (propEvidence (State := State) (Atom := Atom) W a)
 
 noncomputable def linkWTV (κ : ℝ≥0∞) (W : State) (a b : Atom) : PLNWeightTV.WTV :=
-  Evidence.toWTV κ (linkEvidence (State := State) (Atom := Atom) W a b)
+  BinaryEvidence.toWTV κ (linkEvidence (State := State) (Atom := Atom) W a b)
 
 theorem propEvidence_add (W₁ W₂ : State) (a : Atom) :
     propEvidence (State := State) (Atom := Atom) (W₁ + W₂) a =
       propEvidence (State := State) (Atom := Atom) W₁ a +
         propEvidence (State := State) (Atom := Atom) W₂ a := by
-  simpa [propEvidence] using WorldModel.evidence_add' (State := State) (Query := PLNQuery Atom) W₁ W₂
+  simpa [propEvidence] using BinaryWorldModel.evidence_add' (State := State) (Query := PLNQuery Atom) W₁ W₂
     (.prop a)
 
 theorem linkEvidence_add (W₁ W₂ : State) (a b : Atom) :
     linkEvidence (State := State) (Atom := Atom) (W₁ + W₂) a b =
       linkEvidence (State := State) (Atom := Atom) W₁ a b +
         linkEvidence (State := State) (Atom := Atom) W₂ a b := by
-  simpa [linkEvidence] using WorldModel.evidence_add' (State := State) (Query := PLNQuery Atom) W₁ W₂
+  simpa [linkEvidence] using BinaryWorldModel.evidence_add' (State := State) (Query := PLNQuery Atom) W₁ W₂
     (.link a b)
 
 end PLNQuery
@@ -406,7 +406,7 @@ queries are packaged as `Sigma Query`.
 class WorldModelSigma (State : Type*) (Srt : Type*) (Query : Srt → Type*)
     [EvidenceType State] where
   /-- Extract binary evidence for a typed query. -/
-  evidence : State → Sigma Query → Evidence
+  evidence : State → Sigma Query → BinaryEvidence
   /-- Extraction commutes with WM revision (`+`). -/
   evidence_add : ∀ W₁ W₂ q, evidence (W₁ + W₂) q = evidence W₁ q + evidence W₂ q
   /-- Zero state has zero evidence for every query. -/
@@ -418,19 +418,19 @@ variable {State Srt : Type*} {Query : Srt → Type*}
 variable [EvidenceType State] [WorldModelSigma State Srt Query]
 
 /-- Extract evidence using an explicit sort index. -/
-def evidenceAt (W : State) {s : Srt} (q : Query s) : Evidence :=
+def evidenceAt (W : State) {s : Srt} (q : Query s) : BinaryEvidence :=
   WorldModelSigma.evidence W ⟨s, q⟩
 
 /-! ## Generic views -/
 
 /-- Posterior-mean strength view for a typed query. -/
 noncomputable def queryStrength (W : State) (q : Sigma Query) : ℝ≥0∞ :=
-  Evidence.toStrength (WorldModelSigma.evidence W q)
+  BinaryEvidence.toStrength (WorldModelSigma.evidence W q)
 
 /-- Context-aware posterior-mean strength view for a typed query. -/
 noncomputable def queryStrengthWith
     (ctx : BinaryContext) (W : State) (q : Sigma Query) : ℝ≥0∞ :=
-  Evidence.strengthWith ctx (WorldModelSigma.evidence W q)
+  BinaryEvidence.strengthWith ctx (WorldModelSigma.evidence W q)
 
 /-- Posterior-mean strength view with explicit sort index. -/
 noncomputable def queryStrengthAt (W : State) {s : Srt} (q : Query s) : ℝ≥0∞ :=
@@ -443,7 +443,7 @@ noncomputable def queryStrengthWithAt
 
 /-- Confidence view for a typed query (with prior/context size parameter `κ`). -/
 noncomputable def queryConfidence (κ : ℝ≥0∞) (W : State) (q : Sigma Query) : ℝ≥0∞ :=
-  Evidence.toConfidence κ (WorldModelSigma.evidence W q)
+  BinaryEvidence.toConfidence κ (WorldModelSigma.evidence W q)
 
 /-- Confidence view with explicit sort index. -/
 noncomputable def queryConfidenceAt
@@ -452,7 +452,7 @@ noncomputable def queryConfidenceAt
 
 /-- WTV view for a typed query. -/
 noncomputable def queryWTV (κ : ℝ≥0∞) (W : State) (q : Sigma Query) : PLNWeightTV.WTV :=
-  Evidence.toWTV κ (WorldModelSigma.evidence W q)
+  BinaryEvidence.toWTV κ (WorldModelSigma.evidence W q)
 
 /-- WTV view with explicit sort index. -/
 noncomputable def queryWTVAt (κ : ℝ≥0∞) (W : State) {s : Srt} (q : Query s) :
@@ -462,14 +462,14 @@ noncomputable def queryWTVAt (κ : ℝ≥0∞) (W : State) {s : Srt} (q : Query 
 /-- Generic context-dependent interpretation view of a typed query. -/
 def queryInterpret
     {Ctx Val : Type*}
-    [InterpretableEvidence Ctx Evidence Val]
+    [InterpretableEvidence Ctx BinaryEvidence Val]
     (ctx : Ctx) (W : State) (q : Sigma Query) : Val :=
   InterpretableEvidence.interpret ctx (WorldModelSigma.evidence W q)
 
 /-- Generic context-dependent interpretation view with explicit sort index. -/
 def queryInterpretAt
     {Ctx Val : Type*}
-    [InterpretableEvidence Ctx Evidence Val]
+    [InterpretableEvidence Ctx BinaryEvidence Val]
     (ctx : Ctx) (W : State) {s : Srt} (q : Query s) : Val :=
   queryInterpret (Query := Query) (Ctx := Ctx) (Val := Val) ctx W ⟨s, q⟩
 
@@ -486,14 +486,14 @@ theorem evidenceAt_add (W₁ W₂ : State) {s : Srt} (q : Query s) :
 
 /-- Typed query judgment from a derivable WM state. -/
 def WMQueryJudgmentSigma
-    (W : State) (q : Sigma Query) (e : Evidence) : Prop :=
+    (W : State) (q : Sigma Query) (e : BinaryEvidence) : Prop :=
   WMJudgment W ∧ e = WorldModelSigma.evidence W q
 
 notation:50 "⊢qΣ " W " ⇓ " q " ↦ " e => WMQueryJudgmentSigma W q e
 
 /-- Typed query judgment under a context-indexed WM derivation. -/
 def WMQueryJudgmentCtxSigma
-    (Γ : Set State) (W : State) (q : Sigma Query) (e : Evidence) : Prop :=
+    (Γ : Set State) (W : State) (q : Sigma Query) (e : BinaryEvidence) : Prop :=
   WMJudgmentCtx Γ W ∧ e = WorldModelSigma.evidence W q
 
 notation:50 "⊢qΣ[" Γ "] " W " ⇓ " q " ↦ " e => WMQueryJudgmentCtxSigma Γ W q e
@@ -513,7 +513,7 @@ def WMStrengthJudgmentCtxSigma
 notation:50 "⊢sΣ[" Γ "] " W " ⇓ " q " ↦ " s => WMStrengthJudgmentCtxSigma Γ W q s
 
 /-- Typed query judgments are deterministic for fixed state/query. -/
-theorem querySigma_deterministic {W : State} {q : Sigma Query} {e₁ e₂ : Evidence}
+theorem querySigma_deterministic {W : State} {q : Sigma Query} {e₁ e₂ : BinaryEvidence}
     (h₁ : ⊢qΣ W ⇓ q ↦ e₁) (h₂ : ⊢qΣ W ⇓ q ↦ e₂) :
     e₁ = e₂ := by
   rcases h₁ with ⟨_, he₁⟩
@@ -524,7 +524,7 @@ theorem querySigma_deterministic {W : State} {q : Sigma Query} {e₁ e₂ : Evid
 
 /-- Context-indexed typed query judgments are deterministic for fixed state/query. -/
 theorem queryCtxSigma_deterministic {Γ : Set State} {W : State} {q : Sigma Query}
-    {e₁ e₂ : Evidence}
+    {e₁ e₂ : BinaryEvidence}
     (h₁ : ⊢qΣ[Γ] W ⇓ q ↦ e₁) (h₂ : ⊢qΣ[Γ] W ⇓ q ↦ e₂) :
     e₁ = e₂ := by
   rcases h₁ with ⟨_, he₁⟩
@@ -565,7 +565,7 @@ structure WMRewriteRuleSigma (State : Type*) (Srt : Type*) (Query : Srt → Type
   /-- The conclusion query. -/
   conclusion : Sigma Query
   /-- Derived evidence term from the WM state. -/
-  derive : State → Evidence
+  derive : State → BinaryEvidence
   /-- Soundness under side conditions. -/
   sound : side → ∀ W : State, derive W = WorldModelSigma.evidence W conclusion
 
@@ -617,7 +617,7 @@ end WMStrengthRuleSigma
 def toWorldModelSigma
     (State : Type*) (Srt : Type*) (Query : Srt → Type*)
     [EvidenceType State] [WorldModelSigma State Srt Query] :
-    WorldModel State (Sigma Query) where
+    BinaryWorldModel State (Sigma Query) where
   evidence := WorldModelSigma.evidence
   evidence_add := WorldModelSigma.evidence_add
   evidence_zero := WorldModelSigma.evidence_zero
@@ -625,20 +625,20 @@ def toWorldModelSigma
 /-- Any untyped WM over `Sigma Query` can be viewed as a typed WM. -/
 def ofWorldModelSigma
     (State : Type*) (Srt : Type*) (Query : Srt → Type*)
-    [EvidenceType State] [WorldModel State (Sigma Query)] :
+    [EvidenceType State] [BinaryWorldModel State (Sigma Query)] :
     WorldModelSigma State Srt Query where
-  evidence := WorldModel.evidence
-  evidence_add := WorldModel.evidence_add
-  evidence_zero := WorldModel.evidence_zero
+  evidence := BinaryWorldModel.evidence
+  evidence_add := BinaryWorldModel.evidence_add
+  evidence_zero := BinaryWorldModel.evidence_zero
 
 /-- Any untyped WM can be trivially typed with one sort (`PUnit`). -/
 def ofWorldModelUnit
     (State : Type*) (Query : Type*)
-    [EvidenceType State] [WorldModel State Query] :
+    [EvidenceType State] [BinaryWorldModel State Query] :
     WorldModelSigma State PUnit (fun _ => Query) where
-  evidence W q := WorldModel.evidence W q.2
-  evidence_add W₁ W₂ q := WorldModel.evidence_add W₁ W₂ q.2
-  evidence_zero q := WorldModel.evidence_zero q.2
+  evidence W q := BinaryWorldModel.evidence W q.2
+  evidence_add W₁ W₂ q := BinaryWorldModel.evidence_add W₁ W₂ q.2
+  evidence_zero q := BinaryWorldModel.evidence_zero q.2
 
 end WorldModelSigma
 

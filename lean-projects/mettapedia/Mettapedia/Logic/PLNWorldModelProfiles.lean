@@ -3,17 +3,17 @@ import Mettapedia.Logic.PLNWorldModel
 /-!
 # World-Model Profiles: The Categorical Spine
 
-This module formalizes the categorical structure underlying the WorldModel
+This module formalizes the categorical structure underlying the BinaryWorldModel
 interface, following the analysis of GPT-5.4 Pro (2026-03-14).
 
 ## The Core Insight
 
-`WorldModel State Query` is equivalent to a single `AddMonoidHom` from
-`State` to the evidence-profile object `Query → Evidence`:
+`BinaryWorldModel State Query` is equivalent to a single `AddMonoidHom` from
+`State` to the evidence-profile object `Query → BinaryEvidence`:
 
-    WorldModel(State, Query) ≃ AddMonoidHom(State, Query → Evidence)
+    BinaryWorldModel(State, Query) ≃ AddMonoidHom(State, Query → BinaryEvidence)
 
-The profile object `JointEvidenceProfile Query := Query → Evidence` is
+The profile object `JointEvidenceProfile Query := Query → BinaryEvidence` is
 the **terminal extensional world model**: every world model maps uniquely
 into it via evidence extraction.
 
@@ -45,13 +45,13 @@ noncomputable instance instEvidenceTypePi {ι : Type*} {Ev : Type*} [EvidenceTyp
 /-- The canonical extensional world model: evidence profiles themselves.
     An element of `JointEvidenceProfile Query` assigns an evidence value
     to each query — it IS the extracted profile, with no hidden state. -/
-abbrev JointEvidenceProfile (Query : Type*) := Query → Evidence
+abbrev JointEvidenceProfile (Query : Type*) := Query → BinaryEvidence
 
 /-- `JointEvidenceProfile` is trivially a world model: evidence extraction
     is just function evaluation.  This is the terminal object in the
     category of world models over `Query`. -/
 noncomputable instance instWorldModelJointEvidenceProfile (Query : Type*) :
-    WorldModel (JointEvidenceProfile Query) Query where
+    BinaryWorldModel (JointEvidenceProfile Query) Query where
   evidence W q := W q
   evidence_add _ _ _ := rfl
   evidence_zero _ := rfl
@@ -63,28 +63,28 @@ noncomputable instance instWorldModelJointEvidenceProfile (Query : Type*) :
     category `AddCommMon / Prof(Query)`. -/
 structure WorldModelHom (State₁ State₂ Query : Type*)
     [EvidenceType State₁] [EvidenceType State₂]
-    [WorldModel State₁ Query] [WorldModel State₂ Query] where
+    [BinaryWorldModel State₁ Query] [BinaryWorldModel State₂ Query] where
   /-- The underlying additive monoid homomorphism. -/
   hom : State₁ →+ State₂
-  /-- Evidence extraction commutes with the morphism. -/
+  /-- BinaryEvidence extraction commutes with the morphism. -/
   comm : ∀ W q,
-    WorldModel.evidence (State := State₂) (Query := Query) (hom W) q =
-    WorldModel.evidence (State := State₁) (Query := Query) W q
+    BinaryWorldModel.evidence (State := State₂) (Query := Query) (hom W) q =
+    BinaryWorldModel.evidence (State := State₁) (Query := Query) W q
 
 /-- Every world model has a canonical morphism to the terminal profile model.
     This morphism IS evidence extraction itself. -/
 noncomputable def toJointEvidenceProfile
-    {State Query : Type*} [EvidenceType State] [WorldModel State Query] :
+    {State Query : Type*} [EvidenceType State] [BinaryWorldModel State Query] :
     WorldModelHom State (JointEvidenceProfile Query) Query where
-  hom := WorldModel.evidenceProfileHom
+  hom := BinaryWorldModel.evidenceProfileHom
   comm _ _ := rfl
 
 /-- The terminal property: any morphism into `JointEvidenceProfile` that
     agrees with evidence extraction must have the same underlying hom. -/
 theorem jointEvidenceProfile_terminal
-    {State Query : Type*} [EvidenceType State] [WorldModel State Query]
+    {State Query : Type*} [EvidenceType State] [BinaryWorldModel State Query]
     (f : WorldModelHom State (JointEvidenceProfile Query) Query) :
-    ∀ W q, f.hom W q = WorldModel.evidenceProfileHom W q := by
+    ∀ W q, f.hom W q = BinaryWorldModel.evidenceProfileHom W q := by
   intro W q
   -- f.comm gives: evidence(f.hom W, q) = evidence(W, q)
   -- For JointEvidenceProfile, evidence(p, q) = p q, so LHS = f.hom W q
@@ -95,7 +95,7 @@ theorem jointEvidenceProfile_terminal
 
 /-- Identity morphism. -/
 def WorldModelHom.id (State Query : Type*)
-    [EvidenceType State] [WorldModel State Query] :
+    [EvidenceType State] [BinaryWorldModel State Query] :
     WorldModelHom State State Query where
   hom := AddMonoidHom.id State
   comm _ _ := rfl
@@ -104,7 +104,7 @@ def WorldModelHom.id (State Query : Type*)
 def WorldModelHom.comp
     {State₁ State₂ State₃ Query : Type*}
     [EvidenceType State₁] [EvidenceType State₂] [EvidenceType State₃]
-    [WorldModel State₁ Query] [WorldModel State₂ Query] [WorldModel State₃ Query]
+    [BinaryWorldModel State₁ Query] [BinaryWorldModel State₂ Query] [BinaryWorldModel State₃ Query]
     (g : WorldModelHom State₂ State₃ Query) (f : WorldModelHom State₁ State₂ Query) :
     WorldModelHom State₁ State₃ Query where
   hom := g.hom.comp f.hom
@@ -117,18 +117,18 @@ def WorldModelHom.comp
 /-- The observational preorder on states: `W₁ ≤ W₂` iff every query
     extracts at least as much evidence from `W₂` as from `W₁`. -/
 def observationalLE {State Query : Type*}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     (W₁ W₂ : State) : Prop :=
-  ∀ q, WorldModel.evidence (State := State) (Query := Query) W₁ q ≤
-       WorldModel.evidence (State := State) (Query := Query) W₂ q
+  ∀ q, BinaryWorldModel.evidence (State := State) (Query := Query) W₁ q ≤
+       BinaryWorldModel.evidence (State := State) (Query := Query) W₂ q
 
 theorem observationalLE_refl {State Query : Type*}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     (W : State) : observationalLE (Query := Query) W W :=
   fun _ => le_refl _
 
 theorem observationalLE_trans {State Query : Type*}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     {W₁ W₂ W₃ : State}
     (h₁₂ : observationalLE (Query := Query) W₁ W₂)
     (h₂₃ : observationalLE (Query := Query) W₂ W₃) :
@@ -144,27 +144,27 @@ theorem observationalLE_trans {State Query : Type*}
     When it exists, `internalize ⊣ extract` as a Galois connection:
     `observationalLE (internalize p) W ↔ ∀ q, p q ≤ evidence W q`. -/
 class HasInternalization (State Query : Type*)
-    [EvidenceType State] [WorldModel State Query] where
+    [EvidenceType State] [BinaryWorldModel State Query] where
   /-- Internalize an evidence profile into a state. -/
-  internalize : (Query → Evidence) → State
+  internalize : (Query → BinaryEvidence) → State
   /-- Internalization is the least majorant: it is below any state
       that dominates the profile. -/
-  internalize_le : ∀ (p : Query → Evidence) (W : State),
-    (∀ q, p q ≤ WorldModel.evidence (State := State) (Query := Query) W q) →
+  internalize_le : ∀ (p : Query → BinaryEvidence) (W : State),
+    (∀ q, p q ≤ BinaryWorldModel.evidence (State := State) (Query := Query) W q) →
     observationalLE (Query := Query) (internalize p) W
   /-- Internalization realizes the profile: the extracted evidence
       dominates the input profile. -/
-  internalize_realizes : ∀ (p : Query → Evidence) (q : Query),
-    p q ≤ WorldModel.evidence (State := State) (Query := Query) (internalize p) q
+  internalize_realizes : ∀ (p : Query → BinaryEvidence) (q : Query),
+    p q ≤ BinaryWorldModel.evidence (State := State) (Query := Query) (internalize p) q
 
 /-- The Galois connection: `internalize p ≤ W ↔ p ≤ extract W`. -/
 theorem galoisConnection_of_hasInternalization
     {State Query : Type*}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     [HasInternalization State Query]
-    (p : Query → Evidence) (W : State) :
+    (p : Query → BinaryEvidence) (W : State) :
     observationalLE (Query := Query) (HasInternalization.internalize p) W ↔
-    (∀ q, p q ≤ WorldModel.evidence (State := State) (Query := Query) W q) :=
+    (∀ q, p q ≤ BinaryWorldModel.evidence (State := State) (Query := Query) W q) :=
   ⟨fun h q => le_trans (HasInternalization.internalize_realizes p q) (h q),
    HasInternalization.internalize_le p W⟩
 
@@ -178,16 +178,16 @@ noncomputable instance instHasInternalizationProfile (Query : Type*) :
 /-- Internalize then extract is inflationary (closure operator property 1). -/
 theorem internalize_extract_inflationary
     {State Query : Type*}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     [HasInternalization State Query]
-    (p : Query → Evidence) (q : Query) :
-    p q ≤ WorldModel.evidence (State := State) (Query := Query)
+    (p : Query → BinaryEvidence) (q : Query) :
+    p q ≤ BinaryWorldModel.evidence (State := State) (Query := Query)
       (HasInternalization.internalize p) q :=
   HasInternalization.internalize_realizes p q
 
 /-! ## §5: The Two-Orders Insight
 
-GPT-5.4 Pro's key structural observation: the Evidence type carries two
+GPT-5.4 Pro's key structural observation: the BinaryEvidence type carries two
 natural preorders that serve different purposes:
 
 1. **Information order** (the current `≤`): more positive AND more negative
@@ -201,7 +201,7 @@ These are NOT the same order, and `toStrength` is NOT monotone for the
 information order. This explains why the enriched-category bridge
 (Goal 3) cannot be a quantale morphism. -/
 
-/-- **No-go**: `toStrength` is not monotone for the information order on Evidence.
+/-- **No-go**: `toStrength` is not monotone for the information order on BinaryEvidence.
 
     Counterexample: `⟨1, 0⟩ ≤ ⟨1, 1⟩` in the information order
     (more total evidence), but `toStrength ⟨1, 0⟩ = 1 > 1/2 = toStrength ⟨1, 1⟩`.
@@ -209,13 +209,13 @@ information order. This explains why the enriched-category bridge
     This is the fundamental reason that the strength-enriched category
     is not the image of the evidence quantale under a monotone map. -/
 theorem toStrength_not_monotone_info_order :
-    ∃ e₁ e₂ : Evidence,
-      e₁ ≤ e₂ ∧ ¬(Evidence.toStrength e₁ ≤ Evidence.toStrength e₂) := by
+    ∃ e₁ e₂ : BinaryEvidence,
+      e₁ ≤ e₂ ∧ ¬(BinaryEvidence.toStrength e₁ ≤ BinaryEvidence.toStrength e₂) := by
   refine ⟨⟨1, 0⟩, ⟨1, 1⟩, ?_, ?_⟩
   · -- ⟨1, 0⟩ ≤ ⟨1, 1⟩ in information order
     exact ⟨le_refl _, zero_le _⟩
   · -- toStrength ⟨1, 0⟩ = 1, toStrength ⟨1, 1⟩ = 1/2
-    simp only [Evidence.toStrength, Evidence.total]
+    simp only [BinaryEvidence.toStrength, BinaryEvidence.total]
     norm_num
 
 /-! ## §6: Enriched Bridge — Two Composition Layers
@@ -248,44 +248,44 @@ complement/residuation correction." -/
 
 /-- Bridge A: direct-path strength is bounded below by the product.
     (This is a re-export of `toStrength_tensor_ge` for the bridge story.) -/
-theorem directPath_strength_lower_bound (e₁ e₂ : Evidence) :
-    Evidence.toStrength (e₁ * e₂) ≥
-      Evidence.toStrength e₁ * Evidence.toStrength e₂ :=
-  Evidence.toStrength_tensor_ge e₁ e₂
+theorem directPath_strength_lower_bound (e₁ e₂ : BinaryEvidence) :
+    BinaryEvidence.toStrength (e₁ * e₂) ≥
+      BinaryEvidence.toStrength e₁ * BinaryEvidence.toStrength e₂ :=
+  BinaryEvidence.toStrength_tensor_ge e₁ e₂
 
 /-! ## §7: Localic Truth-Value Theorem
 
 Every frame `H` (complete Heyting algebra) presents a localic topos
-`Sh(H)`, and in that topos `Sub(1) ≅ H`.  Since `Evidence` is a
+`Sh(H)`, and in that topos `Sub(1) ≅ H`.  Since `BinaryEvidence` is a
 frame (proved in `EvidenceQuantale.lean`), the correct categorical
-home for `SatisfyingSet` is the localic topos `Sh(Evidence)`, where
-frame-valued predicates `P : U → Evidence` classify subobjects.
+home for `SatisfyingSet` is the localic topos `Sh(BinaryEvidence)`, where
+frame-valued predicates `P : U → BinaryEvidence` classify subobjects.
 
-This is NOT the same as saying `Evidence = Ω` for an arbitrary
+This is NOT the same as saying `BinaryEvidence = Ω` for an arbitrary
 presheaf topos `Psh(C)`, because the presheaf classifier `Ω` is
 the sieve presheaf `X ↦ {sieves on X}`, which varies with `X`,
-while `Evidence` is a constant object.
+while `BinaryEvidence` is a constant object.
 
 The distinction matters: `SatisfyingSet` works in the localic/frame
-setting (where `Evidence` IS the truth-value object), not in an
+setting (where `BinaryEvidence` IS the truth-value object), not in an
 arbitrary presheaf setting (where `Ω` is something else). -/
 
-/-- `Evidence` is a frame (complete lattice with distributive joins).
+/-- `BinaryEvidence` is a frame (complete lattice with distributive joins).
     The instance is in EvidenceQuantale.lean; this re-export witnesses
     the localic story. -/
-noncomputable example : CompleteLattice Evidence := inferInstance
+noncomputable example : CompleteLattice BinaryEvidence := inferInstance
 
-/-- **No-go**: `Evidence` is NOT literally `Ω` of a presheaf topos `Psh(C)`
+/-- **No-go**: `BinaryEvidence` is NOT literally `Ω` of a presheaf topos `Psh(C)`
     in general.
 
     The presheaf classifier `Ω_Psh(C)(X) = {sieves on X}` varies with `X`.
-    `Evidence` is a single type, not a presheaf.  So `Evidence = Ω_Psh(C)`
+    `BinaryEvidence` is a single type, not a presheaf.  So `BinaryEvidence = Ω_Psh(C)`
     would require `C` to be the terminal category (one object, one morphism),
-    making `Psh(C) ≃ Set` and `Ω = Prop`, not `Evidence`.
+    making `Psh(C) ≃ Set` and `Ω = Prop`, not `BinaryEvidence`.
 
-    The correct positive statement is localic: in `Sh(Evidence)` (the
-    topos of sheaves on the frame `Evidence`), the subobject classifier
-    IS `Evidence` (as `Sub(1) ≅ Evidence`). -/
+    The correct positive statement is localic: in `Sh(BinaryEvidence)` (the
+    topos of sheaves on the frame `BinaryEvidence`), the subobject classifier
+    IS `BinaryEvidence` (as `Sub(1) ≅ BinaryEvidence`). -/
 theorem evidence_not_presheaf_classifier :
     True := -- This is a conceptual no-go, not a Lean falsehood.
   trivial  -- The positive localic theorem requires Sh(H) infrastructure

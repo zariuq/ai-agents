@@ -72,8 +72,8 @@ namespace WMHyperdoctrine
 variable {State : Type x} [EvidenceType State]
 variable (H : WMHyperdoctrine State)
 
-/-- Evidence extracted for an object-indexed query. -/
-def evidenceAt (W : State) {X : H.Obj} (φ : H.query X) : Evidence := by
+/-- BinaryEvidence extracted for an object-indexed query. -/
+def evidenceAt (W : State) {X : H.Obj} (φ : H.query X) : BinaryEvidence := by
   letI : WorldModelSigma State H.Obj H.query := H.worldModel
   exact WorldModelSigma.evidenceAt (State := State) (Srt := H.Obj) (Query := H.query) W φ
 

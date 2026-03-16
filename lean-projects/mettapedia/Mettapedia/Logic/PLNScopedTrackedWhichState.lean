@@ -137,7 +137,7 @@ theorem scopedTrackedPayloadSupport_eq_empty_of_union_empty
   ext i
   simp [scopedTrackedPayloadSupport, h]
 
-noncomputable instance : GenericWorldModel
+noncomputable instance : WorldModel
     (ScopedTrackedWhichState σ n m) (GroundAtom σ) (Which (Fin n)) where
   evidence := scopedTrackedEvidence
   evidence_add := by

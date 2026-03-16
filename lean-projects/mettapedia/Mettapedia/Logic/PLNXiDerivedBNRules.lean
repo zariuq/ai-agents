@@ -216,7 +216,7 @@ theorem xi_deduction_threshold_of_chainBN
     (hEnc : enc a p = PLNQuery.linkCond
       [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]
       ⟨Three.C, valC⟩)
-    (hTau : tau ≤ Evidence.toStrength
+    (hTau : tau ≤ BinaryEvidence.toStrength
       ((xi_deduction_rewrite_of_chainBN valA valB valC hLMarkov).derive W)) :
     sem R
       (thresholdAtomSemOfWMQ W tau enc) (.atom a) p :=
@@ -235,7 +235,7 @@ theorem xi_deduction_threshold_concrete_true_fixture
       (bn := chainBN))
     (W : BNWorldModel.State (bn := chainBN))
     (tau : ℝ≥0∞)
-    (hTau : tau ≤ Evidence.toStrength
+    (hTau : tau ≤ BinaryEvidence.toStrength
       ((xi_deduction_rewrite_of_chainBN true true true hLMarkov).derive W)) :
     sem (fun _ _ => False)
       (thresholdAtomSemOfWMQ W tau
@@ -267,12 +267,12 @@ theorem xi_deduction_strength_eq_of_chainBN
     (hDSep : (CompiledPlan.deductionSide Three.A Three.B Three.C).holds
       (bn := chainBN))
     (W : BNWorldModel.State (bn := chainBN)) :
-    WorldModel.queryStrength
+    BinaryWorldModel.queryStrength
       (State := BNWorldModel.State (bn := chainBN))
       (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
       W (PLNQuery.linkCond [⟨Three.A, valA⟩, ⟨Three.B, valB⟩] ⟨Three.C, valC⟩)
       =
-    WorldModel.queryStrength
+    BinaryWorldModel.queryStrength
       (State := BNWorldModel.State (bn := chainBN))
       (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
       W (PLNQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩) :=
@@ -289,10 +289,10 @@ Connects the measure-level conditional probability `P(C|A)` to the
 plus the foundational lemma `toStrength_evidenceOfProb` that links the
 WM evidence layer to probability values.
 
-### Evidence ↔ Probability Bridge
+### BinaryEvidence ↔ Probability Bridge
 
 `BNWorldModel` stores evidence as `evidenceOfProb(p) = ⟨p, 1-p⟩` where
-`p` is the conditional probability (ENNReal). `Evidence.toStrength` recovers
+`p` is the conditional probability (ENNReal). `BinaryEvidence.toStrength` recovers
 `p` when `p ≤ 1` (proved: `toStrength_evidenceOfProb`).
 
 **Note**: The full singleton-CPT bridge (`queryStrength {cpt} q = queryProb cpt q`)
@@ -317,11 +317,11 @@ open Mettapedia.Logic.PLNBayesNetFastRules.ChainBN
 open Mettapedia.Logic.PLNBayesNetFastRules.ChainBN.Deduction
 open MeasureTheory
 
-/-- Evidence ↔ Probability bridge: `toStrength` of `evidenceOfProb p` recovers `p`
+/-- BinaryEvidence ↔ Probability bridge: `toStrength` of `evidenceOfProb p` recovers `p`
 when `p ≤ 1`. This is the foundational lemma connecting WM evidence to probability. -/
 theorem toStrength_evidenceOfProb (p : ℝ≥0∞) (hp : p ≤ 1) :
-    Evidence.toStrength (evidenceOfProb p) = p := by
-  unfold Evidence.toStrength evidenceOfProb Evidence.total
+    BinaryEvidence.toStrength (evidenceOfProb p) = p := by
+  unfold BinaryEvidence.toStrength evidenceOfProb BinaryEvidence.total
   simp only
   split
   · rename_i h
@@ -467,7 +467,7 @@ private lemma queryProb_link_true_le_one
 /-- Singleton prop queryStrength.toReal = μ.real(event). -/
 private lemma queryStrength_singleton_prop_toReal
     (cpt : ChainBN.DiscreteCPT) (v : Three) :
-    (WorldModel.queryStrength
+    (BinaryWorldModel.queryStrength
       ({cpt} : BNWorldModel.State (bn := chainBN))
       (PLNQuery.prop (⟨v, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal =
     (μ (cpt := cpt)).real (eventTrue v) := by
@@ -480,7 +480,7 @@ Note: intersection order is b∩a (not a∩b) to match Tier B convention. -/
 private lemma queryStrength_singleton_link_toReal
     (cpt : ChainBN.DiscreteCPT) (a b : Three)
     (ha : (μ (cpt := cpt)) (eventTrue a) ≠ 0) :
-    (WorldModel.queryStrength
+    (BinaryWorldModel.queryStrength
       ({cpt} : BNWorldModel.State (bn := chainBN))
       (PLNQuery.link (⟨a, true⟩ : BNQuery.Atom (bn := chainBN))
                      (⟨b, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal =
@@ -515,19 +515,19 @@ theorem xi_deduction_queryStrength_eq_plnDeduction_of_chainBN
     (hAB_pos : (μ (cpt := cpt)) (A ∩ (B : Set ChainBN.JointSpace)) ≠ 0)
     (hABc_pos : (μ (cpt := cpt)) (A ∩ (B : Set ChainBN.JointSpace)ᶜ) ≠ 0) :
     let W : BNWorldModel.State (bn := chainBN) := {cpt}
-    (WorldModel.queryStrength W
+    (BinaryWorldModel.queryStrength W
       (PLNQuery.link (⟨Three.A, true⟩ : BNQuery.Atom (bn := chainBN))
                      (⟨Three.C, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal =
     plnDeductionStrength
-      (WorldModel.queryStrength W
+      (BinaryWorldModel.queryStrength W
         (PLNQuery.link (⟨Three.A, true⟩ : BNQuery.Atom (bn := chainBN))
                        (⟨Three.B, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal
-      (WorldModel.queryStrength W
+      (BinaryWorldModel.queryStrength W
         (PLNQuery.link (⟨Three.B, true⟩ : BNQuery.Atom (bn := chainBN))
                        (⟨Three.C, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal
-      (WorldModel.queryStrength W
+      (BinaryWorldModel.queryStrength W
         (PLNQuery.prop (⟨Three.B, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal
-      (WorldModel.queryStrength W
+      (BinaryWorldModel.queryStrength W
         (PLNQuery.prop (⟨Three.C, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal := by
   intro W
   -- Bridge: convert each queryStrength to μ.real
@@ -817,7 +817,7 @@ theorem xi_sourceRule_threshold_of_forkBN
     (hEnc : enc a p = PLNQuery.linkCond
       [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]
       ⟨Three.C, valC⟩)
-    (hTau : tau ≤ Evidence.toStrength
+    (hTau : tau ≤ BinaryEvidence.toStrength
       ((xi_sourceRule_rewrite_of_forkBN valA valB valC hLMarkov).derive W)) :
     sem R
       (thresholdAtomSemOfWMQ W tau enc) (.atom a) p :=
@@ -836,7 +836,7 @@ theorem xi_sourceRule_threshold_concrete_true_fixture
       (bn := forkBN))
     (W : BNWorldModel.State (bn := forkBN))
     (tau : ℝ≥0∞)
-    (hTau : tau ≤ Evidence.toStrength
+    (hTau : tau ≤ BinaryEvidence.toStrength
       ((xi_sourceRule_rewrite_of_forkBN true true true hLMarkov).derive W)) :
     sem (fun _ _ => False)
       (thresholdAtomSemOfWMQ W tau
@@ -868,12 +868,12 @@ theorem xi_sourceRule_strength_eq_of_forkBN
     (hDSep : (CompiledPlan.inductionSide Three.A Three.B Three.C).holds
       (bn := forkBN))
     (W : BNWorldModel.State (bn := forkBN)) :
-    WorldModel.queryStrength
+    BinaryWorldModel.queryStrength
       (State := BNWorldModel.State (bn := forkBN))
       (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
       W (PLNQuery.linkCond [⟨Three.A, valA⟩, ⟨Three.B, valB⟩] ⟨Three.C, valC⟩)
       =
-    WorldModel.queryStrength
+    BinaryWorldModel.queryStrength
       (State := BNWorldModel.State (bn := forkBN))
       (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
       W (PLNQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩) :=
@@ -921,7 +921,7 @@ private abbrev fC' := eventEq (bn := forkBN) Three.C true
 -- Local bridge helpers (fork-specific, avoiding name clash with chain's private helpers)
 private lemma fork_qS_link_toReal (cpt : forkBN.DiscreteCPT) (a b : Three)
     (ha : cpt.jointMeasure (eventEq (bn := forkBN) a true) ≠ 0) :
-    (WorldModel.queryStrength ({cpt} : BNWorldModel.State (bn := forkBN))
+    (BinaryWorldModel.queryStrength ({cpt} : BNWorldModel.State (bn := forkBN))
       (PLNQuery.link (⟨a, true⟩ : BNQuery.Atom (bn := forkBN))
                      (⟨b, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal =
     cpt.jointMeasure.real (eventEq (bn := forkBN) b true ∩ eventEq (bn := forkBN) a true) /
@@ -936,7 +936,7 @@ private lemma fork_qS_link_toReal (cpt : forkBN.DiscreteCPT) (a b : Three)
         ENNReal.div_self_le_one
 
 private lemma fork_qS_prop_toReal (cpt : forkBN.DiscreteCPT) (v : Three) :
-    (WorldModel.queryStrength ({cpt} : BNWorldModel.State (bn := forkBN))
+    (BinaryWorldModel.queryStrength ({cpt} : BNWorldModel.State (bn := forkBN))
       (PLNQuery.prop (⟨v, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal =
     cpt.jointMeasure.real (eventEq (bn := forkBN) v true) := by
   rw [queryStrength_singleton_eq_queryProb]
@@ -965,21 +965,21 @@ theorem xi_source_queryStrength_eq_plnInduction_of_forkBN
     (hAB_pos : cpt.jointMeasure (fA' ∩ fB') ≠ 0)
     (hABc_pos : cpt.jointMeasure (fA' ∩ fB'ᶜ) ≠ 0) :
     let W : BNWorldModel.State (bn := forkBN) := {cpt}
-    (WorldModel.queryStrength W
+    (BinaryWorldModel.queryStrength W
       (PLNQuery.link (⟨Three.A, true⟩ : BNQuery.Atom (bn := forkBN))
                      (⟨Three.C, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal =
     plnInductionStrength
-      (WorldModel.queryStrength W
+      (BinaryWorldModel.queryStrength W
         (PLNQuery.link (⟨Three.B, true⟩ : BNQuery.Atom (bn := forkBN))
                        (⟨Three.A, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal
-      (WorldModel.queryStrength W
+      (BinaryWorldModel.queryStrength W
         (PLNQuery.link (⟨Three.B, true⟩ : BNQuery.Atom (bn := forkBN))
                        (⟨Three.C, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal
-      (WorldModel.queryStrength W
+      (BinaryWorldModel.queryStrength W
         (PLNQuery.prop (⟨Three.A, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal
-      (WorldModel.queryStrength W
+      (BinaryWorldModel.queryStrength W
         (PLNQuery.prop (⟨Three.B, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal
-      (WorldModel.queryStrength W
+      (BinaryWorldModel.queryStrength W
         (PLNQuery.prop (⟨Three.C, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal := by
   intro W
   -- Step 1: Bridge queryStrength to μ.real via local fork helpers
@@ -1176,7 +1176,7 @@ theorem xi_sinkRule_threshold_of_colliderBN
     (a : String) (p : Pattern)
     (hEnc : enc a p = PLNQuery.link
       ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
-    (hTau : tau ≤ Evidence.toStrength
+    (hTau : tau ≤ BinaryEvidence.toStrength
       ((xi_sinkRule_rewrite_of_colliderBN valA valB hLMarkov).derive W)) :
     sem R
       (thresholdAtomSemOfWMQ W tau enc) (.atom a) p :=
@@ -1194,7 +1194,7 @@ theorem xi_sinkRule_threshold_concrete_true_fixture
       (bn := colliderBN))
     (W : BNWorldModel.State (bn := colliderBN))
     (tau : ℝ≥0∞)
-    (hTau : tau ≤ Evidence.toStrength
+    (hTau : tau ≤ BinaryEvidence.toStrength
       ((xi_sinkRule_rewrite_of_colliderBN true true hLMarkov).derive W)) :
     sem (fun _ _ => False)
       (thresholdAtomSemOfWMQ W tau
@@ -1223,12 +1223,12 @@ theorem xi_sinkRule_strength_eq_of_colliderBN
     (hDSep : (CompiledPlan.abductionSide Three.A Three.C Three.B).holds
       (bn := colliderBN))
     (W : BNWorldModel.State (bn := colliderBN)) :
-    WorldModel.queryStrength
+    BinaryWorldModel.queryStrength
       (State := BNWorldModel.State (bn := colliderBN))
       (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
       W (PLNQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
       =
-    WorldModel.queryStrength
+    BinaryWorldModel.queryStrength
       (State := BNWorldModel.State (bn := colliderBN))
       (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
       W (PLNQuery.prop ⟨Three.B, valB⟩) :=
@@ -1244,12 +1244,12 @@ theorem xi_sink_queryStrength_toReal_eq_of_colliderBN
     (hDSep : (CompiledPlan.abductionSide Three.A Three.C Three.B).holds
       (bn := colliderBN))
     (W : BNWorldModel.State (bn := colliderBN)) :
-    (WorldModel.queryStrength
+    (BinaryWorldModel.queryStrength
       (State := BNWorldModel.State (bn := colliderBN))
       (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
       W (PLNQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)).toReal
       =
-    (WorldModel.queryStrength
+    (BinaryWorldModel.queryStrength
       (State := BNWorldModel.State (bn := colliderBN))
       (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
       W (PLNQuery.prop ⟨Three.B, valB⟩)).toReal :=
@@ -1296,7 +1296,7 @@ omit
   [StandardBorelSpace colliderBN.JointSpace] in
 private lemma collider_queryStrength_singleton_prop_toReal
     (cpt : colliderBN.DiscreteCPT) (v : Three) (val : Bool) :
-    (WorldModel.queryStrength
+    (BinaryWorldModel.queryStrength
       ({cpt} : BNWorldModel.State (bn := colliderBN))
       (PLNQuery.prop (⟨v, val⟩ : BNQuery.Atom (bn := colliderBN)))).toReal =
     cpt.jointMeasure.real (eventEq (bn := colliderBN) v val) := by
@@ -1424,15 +1424,15 @@ noncomputable section
 
 instance instWorldModelSigmaUnit
     (State Query : Type*)
-    [EvidenceType State] [WorldModel State Query] :
+    [EvidenceType State] [BinaryWorldModel State Query] :
     WorldModelSigma State PUnit (fun _ : PUnit => Query) where
-  evidence W q := WorldModel.evidence W q.2
-  evidence_add W₁ W₂ q := WorldModel.evidence_add W₁ W₂ q.2
+  evidence W q := BinaryWorldModel.evidence W q.2
+  evidence_add W₁ W₂ q := BinaryWorldModel.evidence_add W₁ W₂ q.2
 
 /-- Lift an untyped WM rewrite rule into the typed WM layer with one sort. -/
 noncomputable def wmRewriteRuleToSigmaUnit
     {State Query : Type*}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     (r : WMRewriteRule State Query) :
     WorldModelSigma.WMRewriteRuleSigma State PUnit (fun _ : PUnit => Query) where
   side := r.side
@@ -1444,7 +1444,7 @@ noncomputable def wmRewriteRuleToSigmaUnit
 
 @[simp] theorem wmRewriteRuleToSigmaUnit_side
     {State Query : Type*}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     (r : WMRewriteRule State Query) :
     (wmRewriteRuleToSigmaUnit r).side = r.side := rfl
 
@@ -1454,15 +1454,15 @@ noncomputable def wmRewriteRuleToSigmaUnit
 This is kept as a non-instance to avoid global instance-coherence pressure. -/
 def worldModelSigmaConstFromUntyped
     (State Srt Query : Type*)
-    [EvidenceType State] [WorldModel State Query] :
+    [EvidenceType State] [BinaryWorldModel State Query] :
     WorldModelSigma State Srt (fun _ : Srt => Query) where
-  evidence W q := WorldModel.evidence W q.2
-  evidence_add W₁ W₂ q := WorldModel.evidence_add W₁ W₂ q.2
+  evidence W q := BinaryWorldModel.evidence W q.2
+  evidence_add W₁ W₂ q := BinaryWorldModel.evidence_add W₁ W₂ q.2
 
 /-- Convenience type alias for non-`PUnit` constant-family typed rewrite rules. -/
 abbrev WMRewriteRuleSigmaConst
     (State Srt Query : Type*)
-    [EvidenceType State] [WorldModel State Query] : Type _ :=
+    [EvidenceType State] [BinaryWorldModel State Query] : Type _ :=
   @WorldModelSigma.WMRewriteRuleSigma
     State Srt (fun _ : Srt => Query)
     (inferInstance : EvidenceType State)
@@ -1471,7 +1471,7 @@ abbrev WMRewriteRuleSigmaConst
 /-- Lift an untyped WM rewrite rule into any fixed-sort constant-family WMΣ layer. -/
 noncomputable def wmRewriteRuleToSigmaConst
     {State Srt Query : Type*}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     (s0 : Srt)
     (r : WMRewriteRule State Query) :
     WMRewriteRuleSigmaConst State Srt Query := by
@@ -1487,7 +1487,7 @@ noncomputable def wmRewriteRuleToSigmaConst
 
 @[simp] theorem wmRewriteRuleToSigmaConst_side
     {State Srt Query : Type*}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     (s0 : Srt)
     (r : WMRewriteRule State Query) :
     letI : WorldModelSigma State Srt (fun _ : Srt => Query) :=
@@ -1513,21 +1513,21 @@ end IndexedQuery
 /-- Local dependent WMΣ adapter over an arbitrary sort index from an untyped WM. -/
 def worldModelSigmaIndexedFromUntyped
     (State Srt Query : Type)
-    [EvidenceType State] [WorldModel State Query] :
+    [EvidenceType State] [BinaryWorldModel State Query] :
     WorldModelSigma State Srt (IndexedQuery Srt Query) where
-  evidence W q := WorldModel.evidence W (IndexedQuery.erase q.2)
-  evidence_add W₁ W₂ q := WorldModel.evidence_add W₁ W₂ (IndexedQuery.erase q.2)
+  evidence W q := BinaryWorldModel.evidence W (IndexedQuery.erase q.2)
+  evidence_add W₁ W₂ q := BinaryWorldModel.evidence_add W₁ W₂ (IndexedQuery.erase q.2)
 
 instance instWorldModelSigmaIndexed
     (State Srt Query : Type)
-    [EvidenceType State] [WorldModel State Query] :
+    [EvidenceType State] [BinaryWorldModel State Query] :
     WorldModelSigma State Srt (IndexedQuery Srt Query) :=
   worldModelSigmaIndexedFromUntyped (State := State) (Srt := Srt) (Query := Query)
 
 /-- Convenience type alias for indexed-dependent typed rewrite rules. -/
 abbrev WMRewriteRuleSigmaIndexed
     (State Srt Query : Type)
-    [EvidenceType State] [WorldModel State Query] : Type _ :=
+    [EvidenceType State] [BinaryWorldModel State Query] : Type _ :=
   @WorldModelSigma.WMRewriteRuleSigma
     State Srt (IndexedQuery Srt Query)
     (inferInstance : EvidenceType State)
@@ -1536,7 +1536,7 @@ abbrev WMRewriteRuleSigmaIndexed
 /-- Lift an untyped WM rewrite rule into index-dependent WMΣ form. -/
 noncomputable def wmRewriteRuleToSigmaIndexed
     {State Srt Query : Type}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     (s0 : Srt)
     (r : WMRewriteRule State Query) :
     WMRewriteRuleSigmaIndexed State Srt Query := by
@@ -1553,7 +1553,7 @@ noncomputable def wmRewriteRuleToSigmaIndexed
 
 @[simp] theorem wmRewriteRuleToSigmaIndexed_side
     {State Srt Query : Type}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     (s0 : Srt)
     (r : WMRewriteRule State Query) :
     letI : WorldModelSigma State Srt (IndexedQuery Srt Query) :=
@@ -1582,30 +1582,30 @@ end ThreeNativeQueryFamily
 /-- Native `WorldModelSigma` over `ThreeNativeQueryFamily` (prototype, no erase). -/
 def worldModelSigmaThreeNativeFromUntyped
     (State Query : Type)
-    [EvidenceType State] [WorldModel State Query] :
+    [EvidenceType State] [BinaryWorldModel State Query] :
     WorldModelSigma State Three (ThreeNativeQueryFamily Query) where
   evidence W q := by
     cases q with
     | mk s qs =>
         cases s <;>
-          exact WorldModel.evidence (State := State) (Query := Query) W qs
+          exact BinaryWorldModel.evidence (State := State) (Query := Query) W qs
   evidence_add W₁ W₂ q := by
     cases q with
     | mk s qs =>
         cases s <;>
-          simpa using (WorldModel.evidence_add (State := State) (Query := Query) W₁ W₂ qs)
+          simpa using (BinaryWorldModel.evidence_add (State := State) (Query := Query) W₁ W₂ qs)
 
 /-- Global native `Three`-indexed WMΣ instance (no erase bridge). -/
 instance instWorldModelSigmaThreeNative
     (State Query : Type)
-    [EvidenceType State] [WorldModel State Query] :
+    [EvidenceType State] [BinaryWorldModel State Query] :
     WorldModelSigma State Three (ThreeNativeQueryFamily Query) :=
   worldModelSigmaThreeNativeFromUntyped (State := State) (Query := Query)
 
 /-- Native `Three`-sorted typed rewrite-rule alias (prototype, no erase). -/
 abbrev WMRewriteRuleSigmaThreeNative
     (State Query : Type)
-    [EvidenceType State] [WorldModel State Query] : Type _ :=
+    [EvidenceType State] [BinaryWorldModel State Query] : Type _ :=
   @WorldModelSigma.WMRewriteRuleSigma
     State Three (ThreeNativeQueryFamily Query)
     (inferInstance : EvidenceType State)
@@ -1614,7 +1614,7 @@ abbrev WMRewriteRuleSigmaThreeNative
 /-- Lift an untyped rewrite rule into native `Three`-sorted WMΣ form (prototype). -/
 noncomputable def wmRewriteRuleToSigmaThreeNative
     {State Query : Type}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     (s0 : Three)
     (r : WMRewriteRule State Query) :
     WMRewriteRuleSigmaThreeNative State Query := by
@@ -1632,7 +1632,7 @@ noncomputable def wmRewriteRuleToSigmaThreeNative
 
 @[simp] theorem wmRewriteRuleToSigmaThreeNative_side
     {State Query : Type}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     (s0 : Three)
     (r : WMRewriteRule State Query) :
     letI : WorldModelSigma State Three (ThreeNativeQueryFamily Query) :=
@@ -1661,40 +1661,40 @@ end ThreeNativeTaggedQueryFamily
 /-- Native `WorldModelSigma` over `ThreeNativeTaggedQueryFamily` (no erase bridge). -/
 def worldModelSigmaThreeNativeTaggedFromUntyped
     (State Query : Type)
-    [EvidenceType State] [WorldModel State Query] :
+    [EvidenceType State] [BinaryWorldModel State Query] :
     WorldModelSigma State Three (ThreeNativeTaggedQueryFamily Query) where
   evidence W q := by
     cases q with
     | mk _ qs =>
         cases qs with
-        | atA qa => exact WorldModel.evidence (State := State) (Query := Query) W qa
-        | atB qb => exact WorldModel.evidence (State := State) (Query := Query) W qb
-        | atC qc => exact WorldModel.evidence (State := State) (Query := Query) W qc
+        | atA qa => exact BinaryWorldModel.evidence (State := State) (Query := Query) W qa
+        | atB qb => exact BinaryWorldModel.evidence (State := State) (Query := Query) W qb
+        | atC qc => exact BinaryWorldModel.evidence (State := State) (Query := Query) W qc
   evidence_add W₁ W₂ q := by
     cases q with
     | mk _ qs =>
         cases qs with
         | atA qa =>
             simpa using
-              (WorldModel.evidence_add (State := State) (Query := Query) W₁ W₂ qa)
+              (BinaryWorldModel.evidence_add (State := State) (Query := Query) W₁ W₂ qa)
         | atB qb =>
             simpa using
-              (WorldModel.evidence_add (State := State) (Query := Query) W₁ W₂ qb)
+              (BinaryWorldModel.evidence_add (State := State) (Query := Query) W₁ W₂ qb)
         | atC qc =>
             simpa using
-              (WorldModel.evidence_add (State := State) (Query := Query) W₁ W₂ qc)
+              (BinaryWorldModel.evidence_add (State := State) (Query := Query) W₁ W₂ qc)
 
 /-- Global native `Three`-indexed WMΣ instance for `ThreeNativeTaggedQueryFamily`. -/
 instance instWorldModelSigmaThreeNativeTagged
     (State Query : Type)
-    [EvidenceType State] [WorldModel State Query] :
+    [EvidenceType State] [BinaryWorldModel State Query] :
     WorldModelSigma State Three (ThreeNativeTaggedQueryFamily Query) :=
   worldModelSigmaThreeNativeTaggedFromUntyped (State := State) (Query := Query)
 
 /-- Native `Three`-sorted typed rewrite-rule alias for `ThreeNativeTaggedQueryFamily`. -/
 abbrev WMRewriteRuleSigmaThreeNativeTagged
     (State Query : Type)
-    [EvidenceType State] [WorldModel State Query] : Type _ :=
+    [EvidenceType State] [BinaryWorldModel State Query] : Type _ :=
   @WorldModelSigma.WMRewriteRuleSigma
     State Three (ThreeNativeTaggedQueryFamily Query)
     (inferInstance : EvidenceType State)
@@ -1703,7 +1703,7 @@ abbrev WMRewriteRuleSigmaThreeNativeTagged
 /-- Lift an untyped rewrite rule into native tagged `Three`-sorted WMΣ form. -/
 noncomputable def wmRewriteRuleToSigmaThreeNativeTagged
     {State Query : Type}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     (s0 : Three)
     (r : WMRewriteRule State Query) :
     WMRewriteRuleSigmaThreeNativeTagged State Query := by
@@ -1722,7 +1722,7 @@ noncomputable def wmRewriteRuleToSigmaThreeNativeTagged
 
 @[simp] theorem wmRewriteRuleToSigmaThreeNativeTagged_side
     {State Query : Type}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     (s0 : Three)
     (r : WMRewriteRule State Query) :
     letI : WorldModelSigma State Three (ThreeNativeTaggedQueryFamily Query) :=
@@ -1760,22 +1760,22 @@ end SortTaggedQuery
 /-- Local dependent WMΣ adapter over OSLF sort tags from an untyped WM. -/
 def worldModelSigmaSortTaggedFromUntyped
     (State Query : Type)
-    [EvidenceType State] [WorldModel State Query] :
+    [EvidenceType State] [BinaryWorldModel State Query] :
     WorldModelSigma State MeTTaSortTag (SortTaggedQuery Query) where
-  evidence W q := WorldModel.evidence W (SortTaggedQuery.erase q.2)
-  evidence_add W₁ W₂ q := WorldModel.evidence_add W₁ W₂ (SortTaggedQuery.erase q.2)
+  evidence W q := BinaryWorldModel.evidence W (SortTaggedQuery.erase q.2)
+  evidence_add W₁ W₂ q := BinaryWorldModel.evidence_add W₁ W₂ (SortTaggedQuery.erase q.2)
 
 /-- Global OSLF sort-tagged dependent WMΣ instance from an untyped WM. -/
 instance instWorldModelSigmaSortTagged
     (State Query : Type)
-    [EvidenceType State] [WorldModel State Query] :
+    [EvidenceType State] [BinaryWorldModel State Query] :
     WorldModelSigma State MeTTaSortTag (SortTaggedQuery Query) :=
   worldModelSigmaSortTaggedFromUntyped (State := State) (Query := Query)
 
 /-- Convenience type alias for sort-tagged dependent typed rewrite rules. -/
 abbrev WMRewriteRuleSigmaSortTagged
     (State Query : Type)
-    [EvidenceType State] [WorldModel State Query] : Type _ :=
+    [EvidenceType State] [BinaryWorldModel State Query] : Type _ :=
   @WorldModelSigma.WMRewriteRuleSigma
     State MeTTaSortTag (SortTaggedQuery Query)
     (inferInstance : EvidenceType State)
@@ -1784,7 +1784,7 @@ abbrev WMRewriteRuleSigmaSortTagged
 /-- Lift an untyped WM rewrite rule into sort-tagged dependent WMΣ form. -/
 noncomputable def wmRewriteRuleToSigmaSortTagged
     {State Query : Type}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     (s0 : MeTTaSortTag)
     (r : WMRewriteRule State Query) :
     WMRewriteRuleSigmaSortTagged State Query := by
@@ -1802,7 +1802,7 @@ noncomputable def wmRewriteRuleToSigmaSortTagged
 
 @[simp] theorem wmRewriteRuleToSigmaSortTagged_side
     {State Query : Type}
-    [EvidenceType State] [WorldModel State Query]
+    [EvidenceType State] [BinaryWorldModel State Query]
     (s0 : MeTTaSortTag)
     (r : WMRewriteRule State Query) :
     letI : WorldModelSigma State MeTTaSortTag (SortTaggedQuery Query) :=

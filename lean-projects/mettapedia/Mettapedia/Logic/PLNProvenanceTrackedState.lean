@@ -10,7 +10,7 @@ import Mathlib.Data.Finset.Lattice.Basic
 
 Concrete provenance-history state for `Which`-valued world-model experiments.
 
-Each query carries a multiset of provenance chunks. Evidence unions the active
+Each query carries a multiset of provenance chunks. BinaryEvidence unions the active
 chunks, preserving the crucial `Which` distinction between:
 
 - `wbot` via the empty multiset / empty union;
@@ -125,7 +125,7 @@ theorem trackedPayloadSupport_eq_empty_of_union_empty
   ext i
   simp [trackedPayloadSupport, h]
 
-noncomputable instance : GenericWorldModel
+noncomputable instance : WorldModel
     (TrackedWhichState σ n) (GroundAtom σ) (Which (Fin n)) where
   evidence := trackedEvidence
   evidence_add := by
@@ -204,7 +204,7 @@ theorem toTracked_payloadSupport_eq_whichSupport
 
 theorem toTracked_evidence_eq
     (I : KRelation σ (Which (Fin n))) (q : GroundAtom σ) :
-    GenericWorldModel.evidence
+    WorldModel.extract
       (State := TrackedWhichState σ n) (Query := GroundAtom σ) (Ev := Which (Fin n))
       (toTrackedWhichState I) q = I q := by
   cases hI : I q with
@@ -223,14 +223,14 @@ theorem toTracked_evidence_eq
 theorem toTracked_revision_preserves_add
     (I₁ I₂ : KRelation σ (Which (Fin n))) :
     ∀ q,
-      GenericWorldModel.evidence
+      WorldModel.extract
         (State := TrackedWhichState σ n) (Query := GroundAtom σ) (Ev := Which (Fin n))
         (toTrackedWhichState (fun a => I₁ a + I₂ a)) q =
-      GenericWorldModel.evidence
+      WorldModel.extract
         (State := TrackedWhichState σ n) (Query := GroundAtom σ) (Ev := Which (Fin n))
         (toTrackedWhichState I₁ + toTrackedWhichState I₂) q := by
   intro q
-  rw [toTracked_evidence_eq, GenericWorldModel.evidence_add',
+  rw [toTracked_evidence_eq, WorldModel.extract_add',
     toTracked_evidence_eq, toTracked_evidence_eq]
 
 theorem toTracked_forget_exactInverse

@@ -51,7 +51,7 @@ theorem wmVertexLanguageDef_eq (v w : WMVertex) :
     wmVertexLanguageDef v = wmVertexLanguageDef w := by
   simp only [wmVertexLanguageDef, wmExtVertexLanguageDef, wmTypes]
   -- All axis-dependent rule lists are [], so rewrites = coreRules ++ [] ++ ... ++ []
-  -- and types = ["State", "Query", "Evidence"] for both
+  -- and types = ["State", "Query", "BinaryEvidence"] for both
   cases hL : v .logic <;> cases hL' : w .logic <;>
     cases hT : v .truthValue <;> cases hT' : w .truthValue <;>
     cases hI : v .interval <;> cases hI' : w .interval <;>

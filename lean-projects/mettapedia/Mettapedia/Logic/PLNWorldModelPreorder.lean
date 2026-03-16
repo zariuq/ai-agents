@@ -1,9 +1,9 @@
 import Mettapedia.Logic.EvidenceQuantale
 
 /-!
-# Core Evidence Preorders
+# Core BinaryEvidence Preorders
 
-Evidence-quality and support/confidence preorders for the PLN world-model layer.
+BinaryEvidence-quality and support/confidence preorders for the PLN world-model layer.
 
 These live here (rather than in governance modules) so that the core Logic/WM
 theorem surface can use them without pulling in governance dependencies.
@@ -17,7 +17,7 @@ theorem surface can use them without pulling in governance dependencies.
 
 ## Design note
 
-The coordinatewise `PartialOrder` on `Evidence` (`e₁ ≤ e₂ ↔ pos₁ ≤ pos₂ ∧ neg₁ ≤ neg₂`)
+The coordinatewise `PartialOrder` on `BinaryEvidence` (`e₁ ≤ e₂ ↔ pos₁ ≤ pos₂ ∧ neg₁ ≤ neg₂`)
 is anti-correlated with strength: more negative evidence = higher in the order but lower
 strength. A strength-respecting order must therefore be a separate relation.
 There is no single canonical "better evidence" order — it must be parameterized by
@@ -50,18 +50,18 @@ def selectorProductPreorder
   le_refl x := ⟨le_rfl, le_rfl⟩
   le_trans _ _ _ hxy hyz := ⟨le_trans hxy.1 hyz.1, le_trans hxy.2 hyz.2⟩
 
-/-! ## Evidence Quality Preorder -/
+/-! ## BinaryEvidence Quality Preorder -/
 
 /-- Quality preorder on evidence:
 `e₂` is at least as good as `e₁` if it has at least as much positive evidence and
 no more negative evidence. -/
-def EvidenceQualityLE (e₁ e₂ : Evidence) : Prop :=
+def EvidenceQualityLE (e₁ e₂ : BinaryEvidence) : Prop :=
   e₁.pos ≤ e₂.pos ∧ e₂.neg ≤ e₁.neg
 
-theorem EvidenceQualityLE.refl (e : Evidence) : EvidenceQualityLE e e :=
+theorem EvidenceQualityLE.refl (e : BinaryEvidence) : EvidenceQualityLE e e :=
   ⟨le_rfl, le_rfl⟩
 
-theorem EvidenceQualityLE.trans {e₁ e₂ e₃ : Evidence}
+theorem EvidenceQualityLE.trans {e₁ e₂ e₃ : BinaryEvidence}
     (h12 : EvidenceQualityLE e₁ e₂) (h23 : EvidenceQualityLE e₂ e₃) :
     EvidenceQualityLE e₁ e₃ :=
   ⟨le_trans h12.1 h23.1, le_trans h23.2 h12.2⟩
@@ -74,26 +74,26 @@ variable (κ : ℝ≥0∞)
     confidence as `e₁`, relative to prior context `ctx` and confidence
     parameter `κ`. -/
 noncomputable def supportConfidenceLE
-    (ctx : BinaryContext) (κ : ℝ≥0∞) (e₁ e₂ : Evidence) : Prop :=
-  Evidence.strengthWith ctx e₁ ≤ Evidence.strengthWith ctx e₂ ∧
-  Evidence.toConfidence κ e₁ ≤ Evidence.toConfidence κ e₂
+    (ctx : BinaryContext) (κ : ℝ≥0∞) (e₁ e₂ : BinaryEvidence) : Prop :=
+  BinaryEvidence.strengthWith ctx e₁ ≤ BinaryEvidence.strengthWith ctx e₂ ∧
+  BinaryEvidence.toConfidence κ e₁ ≤ BinaryEvidence.toConfidence κ e₂
 
 /-- The selector-induced preorder corresponding to strength-with-context and
 confidence. -/
 noncomputable def supportConfidencePreorder
-    (ctx : BinaryContext) (κ : ℝ≥0∞) : Preorder Evidence :=
+    (ctx : BinaryContext) (κ : ℝ≥0∞) : Preorder BinaryEvidence :=
   selectorProductPreorder
-    (fun e => Evidence.strengthWith ctx e)
-    (fun e => Evidence.toConfidence κ e)
+    (fun e => BinaryEvidence.strengthWith ctx e)
+    (fun e => BinaryEvidence.toConfidence κ e)
 
 theorem supportConfidenceLE_refl
-    (ctx : BinaryContext) (κ : ℝ≥0∞) (e : Evidence) :
+    (ctx : BinaryContext) (κ : ℝ≥0∞) (e : BinaryEvidence) :
     supportConfidenceLE ctx κ e e :=
   ⟨le_refl _, le_refl _⟩
 
 theorem supportConfidenceLE_trans
     (ctx : BinaryContext) (κ : ℝ≥0∞)
-    {e₁ e₂ e₃ : Evidence}
+    {e₁ e₂ e₃ : BinaryEvidence}
     (h₁₂ : supportConfidenceLE ctx κ e₁ e₂)
     (h₂₃ : supportConfidenceLE ctx κ e₂ e₃) :
     supportConfidenceLE ctx κ e₁ e₃ :=

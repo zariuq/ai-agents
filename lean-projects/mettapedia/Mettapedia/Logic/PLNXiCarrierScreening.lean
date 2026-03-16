@@ -10,21 +10,21 @@ over concrete evidence carriers (Normal-Gamma, Dirichlet).
 
 ## Architecture
 
-`WMRewriteRule.derive` returns binary `Evidence` (pos/neg). Carrier-specific
+`WMRewriteRule.derive` returns binary `BinaryEvidence` (pos/neg). Carrier-specific
 screening works by:
 1. Extracting carrier-level views from the WM state (`view`)
 2. Combining at carrier level (`combine`)
-3. Projecting back to `Evidence` (`proj`)
+3. Projecting back to `BinaryEvidence` (`proj`)
 4. Proving the screening-off condition
 
 Since there are no coercions between `NormalGammaEvidence` / `MultiEvidence`
-and `Evidence`, the projection is explicit.
+and `BinaryEvidence`, the projection is explicit.
 
 ## Carrier Family
 
 A `CarrierFamily` bundles a view, projection, and combiner for any
 carrier evidence type. Carrier-specific rules are direct `WMRewriteRule`
-instances — they bypass the generic `combine : Evidence → Evidence → Evidence`
+instances — they bypass the generic `combine : BinaryEvidence → BinaryEvidence → BinaryEvidence`
 parameter and read from the state at carrier level.
 
 All theorems are fully proved (0 sorry).
@@ -47,17 +47,17 @@ open scoped ENNReal
 
 section CarrierFamily
 
-variable {Atom State : Type*} [EvidenceType State] [WorldModel State (PLNQuery Atom)]
+variable {Atom State : Type*} [EvidenceType State] [BinaryWorldModel State (PLNQuery Atom)]
 
 /-- A carrier family bundles a view function (extracting carrier-level
-evidence from WM state + query), a projection to binary `Evidence`, and
+evidence from WM state + query), a projection to binary `BinaryEvidence`, and
 a carrier-level combiner. This parameterizes rule construction over the
 distribution family. -/
 structure CarrierFamily (CarrierEv : Type*) where
   /-- Extract carrier-level evidence from a WM state for a given query. -/
   view : State → PLNQuery Atom → CarrierEv
-  /-- Project carrier evidence to binary Evidence (pos/neg counts). -/
-  proj : CarrierEv → Evidence
+  /-- Project carrier evidence to binary BinaryEvidence (pos/neg counts). -/
+  proj : CarrierEv → BinaryEvidence
   /-- Combine two carrier evidence values (used for deduction screening). -/
   combine : CarrierEv → CarrierEv → CarrierEv
 
@@ -143,7 +143,7 @@ end CarrierFamily
 
 section CarrierOSLF
 
-variable {Atom State : Type*} [EvidenceType State] [WorldModel State (PLNQuery Atom)]
+variable {Atom State : Type*} [EvidenceType State] [BinaryWorldModel State (PLNQuery Atom)]
 
 /-- Carrier deduction lifts to OSLF atom evidence. -/
 theorem carrierDeduction_semE_atom {CarrierEv : Type*}
@@ -168,7 +168,7 @@ theorem carrierDeduction_threshold_atom {CarrierEv : Type*}
     (enc : String → Pattern → PLNQuery Atom)
     (a : String) (p : Pattern)
     (hEnc : enc a p = PLNQuery.link A C)
-    (hTau : tau ≤ Evidence.toStrength
+    (hTau : tau ≤ BinaryEvidence.toStrength
       ((carrierDeduction cf A B C).derive W)) :
     sem R (thresholdAtomSemOfWMQ W tau enc) (.atom a) p :=
   wmRewriteRule_threshold_atom R
@@ -210,13 +210,13 @@ section NormalGammaCarrier
 
 open Mettapedia.Logic.EvidenceNormalGamma
 
-variable {Atom State : Type*} [EvidenceType State] [WorldModel State (PLNQuery Atom)]
+variable {Atom State : Type*} [EvidenceType State] [BinaryWorldModel State (PLNQuery Atom)]
 
 /-- A Normal-Gamma carrier family, parameterized over the view, projection,
 and combiner. These are supplied by the concrete WM model. -/
 def normalGammaCarrier
     (nnView : State → PLNQuery Atom → NormalGammaEvidence)
-    (nnProj : NormalGammaEvidence → Evidence)
+    (nnProj : NormalGammaEvidence → BinaryEvidence)
     (nnCombine : NormalGammaEvidence → NormalGammaEvidence → NormalGammaEvidence) :
     CarrierFamily (State := State) (Atom := Atom) NormalGammaEvidence :=
   { view := nnView
@@ -226,7 +226,7 @@ def normalGammaCarrier
 /-- Normal-Gamma deduction rule as a WMRewriteRule. -/
 def xi_normalGamma_deduction
     (nnView : State → PLNQuery Atom → NormalGammaEvidence)
-    (nnProj : NormalGammaEvidence → Evidence)
+    (nnProj : NormalGammaEvidence → BinaryEvidence)
     (nnCombine : NormalGammaEvidence → NormalGammaEvidence → NormalGammaEvidence)
     (A B C : Atom) :
     WMRewriteRule State (PLNQuery Atom) :=
@@ -235,7 +235,7 @@ def xi_normalGamma_deduction
 /-- Normal-Gamma source rule as a WMRewriteRule. -/
 def xi_normalGamma_sourceRule
     (nnView : State → PLNQuery Atom → NormalGammaEvidence)
-    (nnProj : NormalGammaEvidence → Evidence)
+    (nnProj : NormalGammaEvidence → BinaryEvidence)
     (nnCombine : NormalGammaEvidence → NormalGammaEvidence → NormalGammaEvidence)
     (A B C : Atom) :
     WMRewriteRule State (PLNQuery Atom) :=
@@ -244,7 +244,7 @@ def xi_normalGamma_sourceRule
 /-- Normal-Gamma sink rule as a WMRewriteRule. -/
 def xi_normalGamma_sinkRule
     (nnView : State → PLNQuery Atom → NormalGammaEvidence)
-    (nnProj : NormalGammaEvidence → Evidence)
+    (nnProj : NormalGammaEvidence → BinaryEvidence)
     (nnCombine : NormalGammaEvidence → NormalGammaEvidence → NormalGammaEvidence)
     (A B C : Atom) :
     WMRewriteRule State (PLNQuery Atom) :=
@@ -258,13 +258,13 @@ section DirichletCarrier
 
 open Mettapedia.Logic.EvidenceDirichlet
 
-variable {Atom State : Type*} [EvidenceType State] [WorldModel State (PLNQuery Atom)]
+variable {Atom State : Type*} [EvidenceType State] [BinaryWorldModel State (PLNQuery Atom)]
 variable {k : ℕ}
 
 /-- A Dirichlet carrier family for k-categorical evidence. -/
 def dirichletCarrier
     (dirView : State → PLNQuery Atom → MultiEvidence k)
-    (dirProj : MultiEvidence k → Evidence)
+    (dirProj : MultiEvidence k → BinaryEvidence)
     (dirCombine : MultiEvidence k → MultiEvidence k → MultiEvidence k) :
     CarrierFamily (State := State) (Atom := Atom) (MultiEvidence k) :=
   { view := dirView
@@ -274,7 +274,7 @@ def dirichletCarrier
 /-- Dirichlet deduction rule as a WMRewriteRule. -/
 def xi_dirichlet_deduction
     (dirView : State → PLNQuery Atom → MultiEvidence k)
-    (dirProj : MultiEvidence k → Evidence)
+    (dirProj : MultiEvidence k → BinaryEvidence)
     (dirCombine : MultiEvidence k → MultiEvidence k → MultiEvidence k)
     (A B C : Atom) :
     WMRewriteRule State (PLNQuery Atom) :=
@@ -283,7 +283,7 @@ def xi_dirichlet_deduction
 /-- Dirichlet source rule as a WMRewriteRule. -/
 def xi_dirichlet_sourceRule
     (dirView : State → PLNQuery Atom → MultiEvidence k)
-    (dirProj : MultiEvidence k → Evidence)
+    (dirProj : MultiEvidence k → BinaryEvidence)
     (dirCombine : MultiEvidence k → MultiEvidence k → MultiEvidence k)
     (A B C : Atom) :
     WMRewriteRule State (PLNQuery Atom) :=
@@ -292,7 +292,7 @@ def xi_dirichlet_sourceRule
 /-- Dirichlet sink rule as a WMRewriteRule. -/
 def xi_dirichlet_sinkRule
     (dirView : State → PLNQuery Atom → MultiEvidence k)
-    (dirProj : MultiEvidence k → Evidence)
+    (dirProj : MultiEvidence k → BinaryEvidence)
     (dirCombine : MultiEvidence k → MultiEvidence k → MultiEvidence k)
     (A B C : Atom) :
     WMRewriteRule State (PLNQuery Atom) :=
@@ -304,7 +304,7 @@ end DirichletCarrier
 
 section XiPackaging
 
-variable {Atom State : Type*} [EvidenceType State] [WorldModel State (PLNQuery Atom)]
+variable {Atom State : Type*} [EvidenceType State] [BinaryWorldModel State (PLNQuery Atom)]
 
 /-- Build a ξPLN package from a set of carrier-derived rules. -/
 def xiFromCarrierRules
@@ -321,7 +321,7 @@ theorem xiFromCarrierRules_sound
     (enc : String → Pattern → PLNQuery Atom)
     (carrierRules : Set (WMRewriteRule State (PLNQuery Atom)))
     (R : Pattern → Pattern → Prop)
-    {W : State} {a : String} {p : Pattern} {e : Evidence}
+    {W : State} {a : String} {p : Pattern} {e : BinaryEvidence}
     (hDer : XiDerivesAtomEvidence
       (xiFromCarrierRules enc carrierRules) W a p e) :
     semE R (wmEvidenceAtomSemQ W enc) (.atom a) p = e :=

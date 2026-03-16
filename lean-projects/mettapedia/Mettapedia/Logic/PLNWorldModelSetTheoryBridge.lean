@@ -76,9 +76,9 @@ theorem consequence_iff_all_model_singleton_strength
     (T : SetTheory) (φ ψ : SetQuery) :
     T ⊨[SmallStruc SetLang] (φ ➝ ψ) ↔
       ∀ S : SetPointed, S ⊧* T →
-        WorldModel.queryStrength (State := SetState) (Query := SetQuery)
+        BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery)
             ({S} : SetState) φ ≤
-          WorldModel.queryStrength (State := SetState) (Query := SetQuery)
+          BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery)
             ({S} : SetState) ψ := by
   simpa [singletonStrengthLEOnTheory] using
     (consequence_iff_singletonStrengthLEOnTheory (T := T) (φ := φ) (ψ := ψ))
@@ -90,9 +90,9 @@ theorem provable_imp_iff_all_model_singleton_strength
     (T : SetTheory) (φ ψ : SetQuery) :
     (T ⊢ (φ ➝ ψ)) ↔
       ∀ S : SetPointed, S ⊧* T →
-        WorldModel.queryStrength (State := SetState) (Query := SetQuery)
+        BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery)
             ({S} : SetState) φ ≤
-          WorldModel.queryStrength (State := SetState) (Query := SetQuery)
+          BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery)
             ({S} : SetState) ψ := by
   simpa [singletonStrengthLEOnTheory] using
     (provable_imp_iff_singletonStrengthLEOnTheory (T := T) (φ := φ) (ψ := ψ))
@@ -103,8 +103,8 @@ theorem multiset_strength_le_of_consequence
     (T : SetTheory) (W : SetState) (φ ψ : SetQuery)
     (hW : stateModelsTheory T W)
     (hcons : T ⊨[SmallStruc SetLang] (φ ➝ ψ)) :
-    WorldModel.queryStrength (State := SetState) (Query := SetQuery) W φ ≤
-      WorldModel.queryStrength (State := SetState) (Query := SetQuery) W ψ := by
+    BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery) W φ ≤
+      BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery) W ψ := by
   simpa [SetLang, SetState, SetQuery, SetTheory] using
     (Mettapedia.Logic.PLNWorldModelFOLCompleteness.multiset_strength_le_of_consequence
       (L := SetLang) (T := T) (W := W) (φ := φ) (ψ := ψ) hW hcons)
@@ -114,8 +114,8 @@ theorem multiset_strength_le_of_provable_imp
     (T : SetTheory) (W : SetState) (φ ψ : SetQuery)
     (hW : stateModelsTheory T W)
     (hprov : T ⊢ (φ ➝ ψ)) :
-    WorldModel.queryStrength (State := SetState) (Query := SetQuery) W φ ≤
-      WorldModel.queryStrength (State := SetState) (Query := SetQuery) W ψ := by
+    BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery) W φ ≤
+      BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery) W ψ := by
   simpa [SetLang, SetState, SetQuery, SetTheory] using
     (Mettapedia.Logic.PLNWorldModelFOLCompleteness.multiset_strength_le_of_provable_imp
       (L := SetLang) (T := T) (W := W) (φ := φ) (ψ := ψ) hW hprov)
@@ -127,9 +127,9 @@ theorem singleton_strength_not_of_satisfies_and_not_satisfies
     (S : SetPointed) (φ ψ : SetQuery)
     (hφ : Mettapedia.Logic.PLNWorldModelFOL.folSatisfies S φ)
     (hnotψ : ¬ Mettapedia.Logic.PLNWorldModelFOL.folSatisfies S ψ) :
-    ¬ (WorldModel.queryStrength (State := SetState) (Query := SetQuery)
+    ¬ (BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery)
           ({S} : SetState) φ ≤
-        WorldModel.queryStrength (State := SetState) (Query := SetQuery)
+        BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery)
           ({S} : SetState) ψ) := by
   intro hle
   have himp :=
@@ -146,9 +146,9 @@ theorem singleton_outside_theory_scope_counterexample
     (hφ : Mettapedia.Logic.PLNWorldModelFOL.folSatisfies S φ)
     (hnotψ : ¬ Mettapedia.Logic.PLNWorldModelFOL.folSatisfies S ψ) :
     ¬ stateModelsTheory T ({S} : SetState) ∧
-      ¬ (WorldModel.queryStrength (State := SetState) (Query := SetQuery)
+      ¬ (BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery)
             ({S} : SetState) φ ≤
-          WorldModel.queryStrength (State := SetState) (Query := SetQuery)
+          BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery)
             ({S} : SetState) ψ) := by
   constructor
   · intro hstate
@@ -165,15 +165,15 @@ theorem set_to_wm_expressivity_split
     (hnotψ : ¬ Mettapedia.Logic.PLNWorldModelFOL.folSatisfies S ψ) :
     ((T ⊢ (φ ➝ ψ)) ↔
       ∀ S' : SetPointed, S' ⊧* T →
-        WorldModel.queryStrength (State := SetState) (Query := SetQuery)
+        BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery)
             ({S'} : SetState) φ ≤
-          WorldModel.queryStrength (State := SetState) (Query := SetQuery)
+          BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery)
             ({S'} : SetState) ψ)
     ∧
     (¬ stateModelsTheory T ({S} : SetState) ∧
-      ¬ (WorldModel.queryStrength (State := SetState) (Query := SetQuery)
+      ¬ (BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery)
             ({S} : SetState) φ ≤
-          WorldModel.queryStrength (State := SetState) (Query := SetQuery)
+          BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery)
             ({S} : SetState) ψ)) := by
   constructor
   · exact provable_imp_iff_all_model_singleton_strength (T := T) (φ := φ) (ψ := ψ)
@@ -188,8 +188,8 @@ theorem provable_imp_to_multiset_and_endpoint_surface
     (T : SetTheory) (φ ψ : SetQuery)
     (hprov : T ⊢ (φ ➝ ψ)) :
     (∀ W : SetState, stateModelsTheory T W →
-      WorldModel.queryStrength (State := SetState) (Query := SetQuery) W φ ≤
-        WorldModel.queryStrength (State := SetState) (Query := SetQuery) W ψ)
+      BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery) W φ ≤
+        BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery) W ψ)
     ∧
     EndpointSurface (H := H) := by
   constructor
@@ -222,8 +222,8 @@ theorem multiset_strength_le_of_consequence_categorical
     (T : SetTheory) (W : SetState) (φ ψ : SetQuery)
     (hW : stateModelsTheory T W)
     (hcons : T ⊨[SmallStruc SetLang] (φ ➝ ψ)) :
-    WorldModel.queryStrength (State := SetState) (Query := SetQuery) W φ ≤
-      WorldModel.queryStrength (State := SetState) (Query := SetQuery) W ψ := by
+    BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery) W φ ≤
+      BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery) W ψ := by
   simpa [SetLang, SetState, SetQuery, SetTheory] using
     (Mettapedia.Logic.PLNWorldModelFOLCompleteness.multiset_strength_le_of_consequence_categorical
       (L := SetLang) (H := H) (_hcat := hcat) (X := X) (_φc := φc)
@@ -237,8 +237,8 @@ theorem multiset_strength_le_of_provable_imp_categorical
     (T : SetTheory) (W : SetState) (φ ψ : SetQuery)
     (hW : stateModelsTheory T W)
     (hprov : T ⊢ (φ ➝ ψ)) :
-    WorldModel.queryStrength (State := SetState) (Query := SetQuery) W φ ≤
-      WorldModel.queryStrength (State := SetState) (Query := SetQuery) W ψ := by
+    BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery) W φ ≤
+      BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery) W ψ := by
   simpa [SetLang, SetState, SetQuery, SetTheory] using
     (Mettapedia.Logic.PLNWorldModelFOLCompleteness.multiset_strength_le_of_provable_imp_categorical
       (L := SetLang) (H := H) (_hcat := hcat) (X := X) (_φc := φc)
@@ -299,16 +299,16 @@ theorem multiset_strength_le_of_provable_imp_ZF
     (W : SetState) (φ ψ : SetQuery)
     (hW : stateModelsZF W)
     (hprov : 𝗭𝗙 ⊢ (φ ➝ ψ)) :
-    WorldModel.queryStrength (State := SetState) (Query := SetQuery) W φ ≤
-      WorldModel.queryStrength (State := SetState) (Query := SetQuery) W ψ :=
+    BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery) W φ ≤
+      BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery) W ψ :=
   multiset_strength_le_of_provable_imp (T := 𝗭𝗙) (W := W) (φ := φ) (ψ := ψ) hW hprov
 
 theorem multiset_strength_le_of_provable_imp_ZFC
     (W : SetState) (φ ψ : SetQuery)
     (hW : stateModelsZFC W)
     (hprov : 𝗭𝗙𝗖 ⊢ (φ ➝ ψ)) :
-    WorldModel.queryStrength (State := SetState) (Query := SetQuery) W φ ≤
-      WorldModel.queryStrength (State := SetState) (Query := SetQuery) W ψ :=
+    BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery) W φ ≤
+      BinaryWorldModel.queryStrength (State := SetState) (Query := SetQuery) W ψ :=
   multiset_strength_le_of_provable_imp (T := 𝗭𝗙𝗖) (W := W) (φ := φ) (ψ := ψ) hW hprov
 
 def wmConsequenceRuleOn_of_provable_imp_ZF

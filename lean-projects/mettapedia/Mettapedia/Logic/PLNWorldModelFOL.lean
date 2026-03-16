@@ -7,7 +7,7 @@ import Foundation.FirstOrder.Basic
 /-!
 # First-Order (Foundation Sentence) Instance for the WM Calculus
 
-This module instantiates `WorldModel` on Foundation first-order semantics:
+This module instantiates `BinaryWorldModel` on Foundation first-order semantics:
 
 - state = multiset of first-order structures (`Struc L`),
 - query = first-order sentence (`Sentence L`),
@@ -36,10 +36,10 @@ def folSatisfies {L : Language.{u}} (S : PointedFOL L) (φ : FOLQuery L) : Prop 
 
 instance {L : Language.{u}} : EvidenceType (Multiset (PointedFOL L)) where
 
-/-- Evidence extracted from a multiset of pointed FOL structures:
+/-- BinaryEvidence extracted from a multiset of pointed FOL structures:
 `pos` counts models of `φ`, `neg` counts refutations of `φ`. -/
 noncomputable def folEvidence {L : Language.{u}}
-    (W : Multiset (PointedFOL L)) (φ : FOLQuery L) : Evidence := by
+    (W : Multiset (PointedFOL L)) (φ : FOLQuery L) : BinaryEvidence := by
   classical
   exact
     ⟨(Multiset.countP (fun S => folSatisfies S φ) W : ℝ≥0∞),
@@ -58,12 +58,12 @@ theorem folEvidence_add {L : Language.{u}}
     (W₁ W₂ : Multiset (PointedFOL L)) (φ : FOLQuery L) :
     folEvidence (W₁ + W₂) φ = folEvidence W₁ φ + folEvidence W₂ φ := by
   classical
-  apply Evidence.ext'
-  · simp [folEvidence, Multiset.countP_add, Evidence.hplus_def]
-  · simp [folEvidence, Multiset.countP_add, Evidence.hplus_def]
+  apply BinaryEvidence.ext'
+  · simp [folEvidence, Multiset.countP_add, BinaryEvidence.hplus_def]
+  · simp [folEvidence, Multiset.countP_add, BinaryEvidence.hplus_def]
 
-/-- Concrete `WorldModel` instance induced by multiset FOL evidence counting. -/
-noncomputable instance {L : Language.{u}} : WorldModel (Multiset (PointedFOL L)) (FOLQuery L) where
+/-- Concrete `BinaryWorldModel` instance induced by multiset FOL evidence counting. -/
+noncomputable instance {L : Language.{u}} : BinaryWorldModel (Multiset (PointedFOL L)) (FOLQuery L) where
   evidence := folEvidence
   evidence_add := folEvidence_add
   evidence_zero q := by
@@ -85,25 +85,25 @@ theorem folEvidence_singleton_of_not_satisfies {L : Language.{u}}
 /-- Singleton WM states recover crisp 0/1 query strength from sentence truth. -/
 theorem queryStrength_singleton_of_satisfies {L : Language.{u}}
     (S : PointedFOL L) (φ : FOLQuery L) (h : folSatisfies S φ) :
-    WorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
+    BinaryWorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
         ({S} : Multiset (PointedFOL L)) φ = 1 := by
-  change Evidence.toStrength (folEvidence ({S} : Multiset (PointedFOL L)) φ) = 1
+  change BinaryEvidence.toStrength (folEvidence ({S} : Multiset (PointedFOL L)) φ) = 1
   rw [folEvidence_singleton_of_satisfies S φ h]
-  simp [Evidence.toStrength, Evidence.total]
+  simp [BinaryEvidence.toStrength, BinaryEvidence.total]
 
 theorem queryStrength_singleton_of_not_satisfies {L : Language.{u}}
     (S : PointedFOL L) (φ : FOLQuery L) (h : ¬ folSatisfies S φ) :
-    WorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
+    BinaryWorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
         ({S} : Multiset (PointedFOL L)) φ = 0 := by
-  change Evidence.toStrength (folEvidence ({S} : Multiset (PointedFOL L)) φ) = 0
+  change BinaryEvidence.toStrength (folEvidence ({S} : Multiset (PointedFOL L)) φ) = 0
   rw [folEvidence_singleton_of_not_satisfies S φ h]
-  simp [Evidence.toStrength, Evidence.total]
+  simp [BinaryEvidence.toStrength, BinaryEvidence.total]
 
 /-- Singleton adequacy: first-order sentence truth iff WM query strength is `1`. -/
 theorem singleton_adequacy_strength_one {L : Language.{u}}
     (S : PointedFOL L) (φ : FOLQuery L) :
     folSatisfies S φ ↔
-      WorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
+      BinaryWorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
         ({S} : Multiset (PointedFOL L)) φ = 1 := by
   constructor
   · intro h
@@ -112,13 +112,13 @@ theorem singleton_adequacy_strength_one {L : Language.{u}}
     by_cases hs : folSatisfies S φ
     · exact hs
     · have h0 :
-          WorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
+          BinaryWorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
               ({S} : Multiset (PointedFOL L)) φ = 0 :=
         queryStrength_singleton_of_not_satisfies S φ hs
       have h01 : (0 : ℝ≥0∞) = 1 := by
         calc
           (0 : ℝ≥0∞) =
-              WorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
+              BinaryWorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
                 ({S} : Multiset (PointedFOL L)) φ := h0.symm
           _ = 1 := h
       exact False.elim (zero_ne_one h01)
@@ -128,10 +128,10 @@ an instance of the generic crisp-specialization theorem family. -/
 theorem singleton_adequacy_strength_one_is_crispSpecialization {L : Language.{u}}
     (S : PointedFOL L) (φ : FOLQuery L) :
     folSatisfies S φ ↔
-      WorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
+      BinaryWorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
         ({S} : Multiset (PointedFOL L)) φ = 1 := by
   simpa [Mettapedia.Logic.PLNWorldModelCrispSpecialization.crispQueryStrength,
-    WorldModel.queryStrength, folEvidence_eq_crispEvidence]
+    BinaryWorldModel.queryStrength, folEvidence_eq_crispEvidence]
     using
       (Mettapedia.Logic.PLNWorldModelCrispSpecialization.singleton_adequacy_strength_one
         (satisfies := folSatisfies) S φ)
@@ -141,9 +141,9 @@ theorem singleton_adequacy_strength_one_is_crispSpecialization {L : Language.{u}
 /-- Singleton-strength consequence schema for FOL WM states. -/
 def singletonStrengthLE {L : Language.{u}} (φ ψ : FOLQuery L) : Prop :=
   ∀ S : PointedFOL L,
-    WorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
+    BinaryWorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
         ({S} : Multiset (PointedFOL L)) φ ≤
-      WorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
+      BinaryWorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
         ({S} : Multiset (PointedFOL L)) ψ
 
 /-- Pointwise semantic implication is equivalent to singleton-strength consequence. -/
@@ -163,11 +163,11 @@ theorem pointwiseImplies_iff_singletonStrengthLE {L : Language.{u}}
     by_contra hψ
     have hsingleton := hle S
     have h1 :
-        WorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
+        BinaryWorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
             ({S} : Multiset (PointedFOL L)) φ = 1 :=
       queryStrength_singleton_of_satisfies S φ hφ
     have h0 :
-        WorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
+        BinaryWorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L)
             ({S} : Multiset (PointedFOL L)) ψ = 0 :=
       queryStrength_singleton_of_not_satisfies S ψ hψ
     have h10 : (1 : ℝ≥0∞) ≤ 0 := by
@@ -211,32 +211,32 @@ private theorem folEvidence_total {L : Language.{u}}
         (Multiset.countP (fun S : PointedFOL L => folSatisfies S φ) W : ℝ≥0∞) +
           (Multiset.countP (fun S : PointedFOL L => ¬ folSatisfies S φ) W : ℝ≥0∞) := by
     exact_mod_cast hcardNat
-  unfold folEvidence Evidence.total
+  unfold folEvidence BinaryEvidence.total
   simpa using hcard.symm
 
 /-- Pointwise semantic implication lifts to WM strength inequality on multiset states. -/
 theorem queryStrength_le_of_pointwise {L : Language.{u}}
     (W : Multiset (PointedFOL L)) (φ ψ : FOLQuery L)
     (himp : ∀ S : PointedFOL L, folSatisfies S φ → folSatisfies S ψ) :
-    WorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L) W φ ≤
-      WorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L) W ψ := by
+    BinaryWorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L) W φ ≤
+      BinaryWorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L) W ψ := by
   let pφ : PointedFOL L → Prop := fun S => folSatisfies S φ
   let pψ : PointedFOL L → Prop := fun S => folSatisfies S ψ
   letI : DecidablePred pφ := Classical.decPred pφ
   letI : DecidablePred pψ := Classical.decPred pψ
   have hφ :
-      WorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L) W φ =
+      BinaryWorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L) W φ =
         if (W.card : ℝ≥0∞) = 0 then 0 else (Multiset.countP pφ W : ℝ≥0∞) / (W.card : ℝ≥0∞) := by
-    unfold WorldModel.queryStrength Evidence.toStrength
+    unfold BinaryWorldModel.queryStrength BinaryEvidence.toStrength
     change (if (folEvidence W φ).total = 0 then 0
       else (folEvidence W φ).pos / (folEvidence W φ).total)
         = if (W.card : ℝ≥0∞) = 0 then 0 else (Multiset.countP pφ W : ℝ≥0∞) / (W.card : ℝ≥0∞)
     rw [folEvidence_total (W := W) (φ := φ)]
     simp [folEvidence, pφ]
   have hψ :
-      WorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L) W ψ =
+      BinaryWorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L) W ψ =
         if (W.card : ℝ≥0∞) = 0 then 0 else (Multiset.countP pψ W : ℝ≥0∞) / (W.card : ℝ≥0∞) := by
-    unfold WorldModel.queryStrength Evidence.toStrength
+    unfold BinaryWorldModel.queryStrength BinaryEvidence.toStrength
     change (if (folEvidence W ψ).total = 0 then 0
       else (folEvidence W ψ).pos / (folEvidence W ψ).total)
         = if (W.card : ℝ≥0∞) = 0 then 0 else (Multiset.countP pψ W : ℝ≥0∞) / (W.card : ℝ≥0∞)
@@ -262,8 +262,8 @@ theorem queryStrength_le_of_pointwise {L : Language.{u}}
 theorem multiset_strength_le_of_singletonStrengthLE {L : Language.{u}}
     (W : Multiset (PointedFOL L)) (φ ψ : FOLQuery L)
     (hsing : singletonStrengthLE φ ψ) :
-    WorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L) W φ ≤
-      WorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L) W ψ := by
+    BinaryWorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L) W φ ≤
+      BinaryWorldModel.queryStrength (State := Multiset (PointedFOL L)) (Query := FOLQuery L) W ψ := by
   have himp : ∀ S : PointedFOL L, folSatisfies S φ → folSatisfies S ψ :=
     (pointwiseImplies_iff_singletonStrengthLE φ ψ).mpr hsing
   exact queryStrength_le_of_pointwise (W := W) (φ := φ) (ψ := ψ) himp

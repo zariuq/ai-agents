@@ -1,7 +1,7 @@
 import Mettapedia.Logic.PLNWorldModel
 
 /-!
-# WM Institution Layer (Evidence-Valued)
+# WM Institution Layer (BinaryEvidence-Valued)
 
 This module adds a conservative institution-style layer over `WorldModelSigma`:
 
@@ -86,29 +86,29 @@ def reindexWorldModelSigma
       (WorldModelSigma.evidence_zero (State := State) (Srt := sig2.Srt) (Query := sig2.Query)
         (mapSentence sigma q))
 
-/-- Evidence-valued satisfaction at a state for a signature sentence. -/
+/-- BinaryEvidence-valued satisfaction at a state for a signature sentence. -/
 def satEvidence
     (sig : WMSignature) [WorldModelSigma State sig.Srt sig.Query]
-    (W : State) (phi : Sentence sig) : Evidence :=
+    (W : State) (phi : Sentence sig) : BinaryEvidence :=
   WorldModelSigma.evidence W phi
 
 /-- Strength-valued satisfaction view. -/
 noncomputable def satStrength
     (sig : WMSignature) [WorldModelSigma State sig.Srt sig.Query]
     (W : State) (phi : Sentence sig) : ℝ≥0∞ :=
-  Evidence.toStrength (satEvidence (State := State) sig W phi)
+  BinaryEvidence.toStrength (satEvidence (State := State) sig W phi)
 
 /-- Context-sensitive strength-valued satisfaction view. -/
 noncomputable def satStrengthWith
     (sig : WMSignature) [WorldModelSigma State sig.Srt sig.Query]
     (ctx : BinaryContext) (W : State) (phi : Sentence sig) : ℝ≥0∞ :=
-  Evidence.strengthWith ctx (satEvidence (State := State) sig W phi)
+  BinaryEvidence.strengthWith ctx (satEvidence (State := State) sig W phi)
 
 /-- Confidence-valued satisfaction view. -/
 noncomputable def satConfidence
     (sig : WMSignature) [WorldModelSigma State sig.Srt sig.Query]
     (kappa : ℝ≥0∞) (W : State) (phi : Sentence sig) : ℝ≥0∞ :=
-  Evidence.toConfidence kappa (satEvidence (State := State) sig W phi)
+  BinaryEvidence.toConfidence kappa (satEvidence (State := State) sig W phi)
 
 /-- Satisfaction condition (evidence level) under signature/query transport. -/
 theorem satisfactionCondition_evidence
@@ -133,7 +133,7 @@ theorem satisfactionCondition_strength
     satStrength (State := State) sig1 W phi =
       satStrength (State := State) sig2 W (mapSentence sigma phi) := by
   simpa [satStrength] using
-    congrArg Evidence.toStrength
+    congrArg BinaryEvidence.toStrength
       (satisfactionCondition_evidence (State := State) (sigma := sigma) W phi)
 
 /-- Satisfaction condition (context-sensitive strength view). -/
@@ -147,7 +147,7 @@ theorem satisfactionCondition_strengthWith
     satStrengthWith (State := State) sig1 ctx W phi =
       satStrengthWith (State := State) sig2 ctx W (mapSentence sigma phi) := by
   simpa [satStrengthWith] using
-    congrArg (Evidence.strengthWith ctx)
+    congrArg (BinaryEvidence.strengthWith ctx)
       (satisfactionCondition_evidence (State := State) (sigma := sigma) W phi)
 
 /-- Satisfaction condition (confidence view). -/
@@ -161,7 +161,7 @@ theorem satisfactionCondition_confidence
     satConfidence (State := State) sig1 kappa W phi =
       satConfidence (State := State) sig2 kappa W (mapSentence sigma phi) := by
   simpa [satConfidence] using
-    congrArg (Evidence.toConfidence kappa)
+    congrArg (BinaryEvidence.toConfidence kappa)
       (satisfactionCondition_evidence (State := State) (sigma := sigma) W phi)
 
 /-- Institution bundle over WM signatures with explicit satisfaction condition. -/
@@ -186,7 +186,7 @@ structure WMInstitution where
   /-- WM semantics at each signature. -/
   worldModel :
     ∀ sig, WorldModelSigma State (sigData sig).Srt (sigData sig).Query
-  /-- Evidence-valued satisfaction condition. -/
+  /-- BinaryEvidence-valued satisfaction condition. -/
   sat_condition :
     ∀ {sig1 sig2} (h : Hom sig1 sig2) (W : State)
       (phi : Sentence (sigData sig1)),
@@ -216,7 +216,7 @@ theorem sat_condition_strength
       satStrength (State := I.State) (I.sigData sig2) W
         ((mapSentence (I.mapHom h)) phi) := by
   simpa [satStrength] using
-    congrArg Evidence.toStrength (I.sat_condition h W phi)
+    congrArg BinaryEvidence.toStrength (I.sat_condition h W phi)
 
 end WMInstitution
 
@@ -229,8 +229,8 @@ For each signature `sig`, define the **evidence profile** of a state:
 
     Prof(sig)(W) := fun phi => satEvidence sig W phi
 
-This is a function `Sentence sig → Evidence`, i.e., an element of
-`Prof(sig) := Sentence sig → Evidence`.
+This is a function `Sentence sig → BinaryEvidence`, i.e., an element of
+`Prof(sig) := Sentence sig → BinaryEvidence`.
 
 A signature morphism `σ : sig₁ → sig₂` induces precomposition:
 
@@ -243,17 +243,17 @@ this precomposition:
 
 which is the naturality square for `extract : Δ(State) ⟹ Prof`. -/
 
-/-- Evidence profile at a signature: maps each sentence to its evidence. -/
+/-- BinaryEvidence profile at a signature: maps each sentence to its evidence. -/
 def evidenceProfile
     (sig : WMSignature) [WorldModelSigma State sig.Srt sig.Query]
-    (W : State) : Sentence sig → Evidence :=
+    (W : State) : Sentence sig → BinaryEvidence :=
   fun phi => satEvidence (State := State) sig W phi
 
 /-- Precomposition on profiles along a signature morphism. -/
 def profilePrecomp
     {sig1 sig2 : WMSignature}
     (sigma : WMSigMorphism sig1 sig2) :
-    (Sentence sig2 → Evidence) → (Sentence sig1 → Evidence) :=
+    (Sentence sig2 → BinaryEvidence) → (Sentence sig1 → BinaryEvidence) :=
   fun F phi => F (mapSentence sigma phi)
 
 /-- **Naturality**: satisfaction condition = evidence extraction commutes
@@ -276,7 +276,7 @@ theorem satisfactionCondition_is_naturality
 
 /-- Profile precomposition is functorial: identity. -/
 theorem profilePrecomp_id (sig : WMSignature)
-    (F : Sentence sig → Evidence) :
+    (F : Sentence sig → BinaryEvidence) :
     profilePrecomp (id sig) F = F := by
   funext phi; simp [profilePrecomp]
 
@@ -284,7 +284,7 @@ theorem profilePrecomp_id (sig : WMSignature)
 theorem profilePrecomp_comp
     {sig1 sig2 sig3 : WMSignature}
     (sigma12 : WMSigMorphism sig1 sig2) (sigma23 : WMSigMorphism sig2 sig3)
-    (F : Sentence sig3 → Evidence) :
+    (F : Sentence sig3 → BinaryEvidence) :
     profilePrecomp (comp sigma12 sigma23) F =
       profilePrecomp sigma12 (profilePrecomp sigma23 F) := by
   funext phi; simp [profilePrecomp]

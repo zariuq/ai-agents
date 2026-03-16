@@ -6,7 +6,7 @@ import Foundation.Modal.Kripke.Basic
 /-!
 # Kripke Instance for the WM Calculus
 
-This module gives a concrete modal-world instance of `WorldModel`:
+This module gives a concrete modal-world instance of `BinaryWorldModel`:
 
 - state = multiset of pointed Kripke models (provenance with multiplicity),
 - query = modal formula (`Formula ℕ`),
@@ -37,9 +37,9 @@ def PointedKripke.satisfies (pk : PointedKripke) (φ : ModalQuery) : Prop :=
 
 instance : EvidenceType (Multiset PointedKripke) where
 
-/-- Evidence extracted from a multiset of pointed models:
+/-- BinaryEvidence extracted from a multiset of pointed models:
 `pos` counts points satisfying `φ`, `neg` counts points refuting `φ`. -/
-noncomputable def kripkeEvidence (W : Multiset PointedKripke) (φ : ModalQuery) : Evidence := by
+noncomputable def kripkeEvidence (W : Multiset PointedKripke) (φ : ModalQuery) : BinaryEvidence := by
   classical
   exact
     ⟨(Multiset.countP (fun pk => pk.satisfies φ) W : ℝ≥0∞),
@@ -48,12 +48,12 @@ noncomputable def kripkeEvidence (W : Multiset PointedKripke) (φ : ModalQuery) 
 theorem kripkeEvidence_add (W₁ W₂ : Multiset PointedKripke) (φ : ModalQuery) :
     kripkeEvidence (W₁ + W₂) φ = kripkeEvidence W₁ φ + kripkeEvidence W₂ φ := by
   classical
-  apply Evidence.ext'
-  · simp [kripkeEvidence, Multiset.countP_add, Evidence.hplus_def]
-  · simp [kripkeEvidence, Multiset.countP_add, Evidence.hplus_def]
+  apply BinaryEvidence.ext'
+  · simp [kripkeEvidence, Multiset.countP_add, BinaryEvidence.hplus_def]
+  · simp [kripkeEvidence, Multiset.countP_add, BinaryEvidence.hplus_def]
 
-/-- Concrete `WorldModel` instance induced by multiset Kripke evidence counting. -/
-noncomputable instance : WorldModel (Multiset PointedKripke) ModalQuery where
+/-- Concrete `BinaryWorldModel` instance induced by multiset Kripke evidence counting. -/
+noncomputable instance : BinaryWorldModel (Multiset PointedKripke) ModalQuery where
   evidence := kripkeEvidence
   evidence_add := kripkeEvidence_add
   evidence_zero q := by
@@ -75,24 +75,24 @@ theorem kripkeEvidence_singleton_of_not_satisfies
 /-- Singleton WM states recover crisp 0/1 query strength from pointed-model truth. -/
 theorem queryStrength_singleton_of_satisfies
     (pk : PointedKripke) (φ : ModalQuery) (h : pk.satisfies φ) :
-    WorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
+    BinaryWorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
         ({pk} : Multiset PointedKripke) φ = 1 := by
-  change Evidence.toStrength (kripkeEvidence ({pk} : Multiset PointedKripke) φ) = 1
+  change BinaryEvidence.toStrength (kripkeEvidence ({pk} : Multiset PointedKripke) φ) = 1
   rw [kripkeEvidence_singleton_of_satisfies pk φ h]
-  simp [Evidence.toStrength, Evidence.total]
+  simp [BinaryEvidence.toStrength, BinaryEvidence.total]
 
 theorem queryStrength_singleton_of_not_satisfies
     (pk : PointedKripke) (φ : ModalQuery) (h : ¬ pk.satisfies φ) :
-    WorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
+    BinaryWorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
         ({pk} : Multiset PointedKripke) φ = 0 := by
-  change Evidence.toStrength (kripkeEvidence ({pk} : Multiset PointedKripke) φ) = 0
+  change BinaryEvidence.toStrength (kripkeEvidence ({pk} : Multiset PointedKripke) φ) = 0
   rw [kripkeEvidence_singleton_of_not_satisfies pk φ h]
-  simp [Evidence.toStrength, Evidence.total]
+  simp [BinaryEvidence.toStrength, BinaryEvidence.total]
 
 /-- Singleton adequacy: pointed-model truth iff WM query strength is `1`. -/
 theorem singleton_adequacy_strength_one (pk : PointedKripke) (φ : ModalQuery) :
     pk.satisfies φ ↔
-      WorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
+      BinaryWorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
         ({pk} : Multiset PointedKripke) φ = 1 := by
   constructor
   · intro h
@@ -101,13 +101,13 @@ theorem singleton_adequacy_strength_one (pk : PointedKripke) (φ : ModalQuery) :
     by_cases hs : pk.satisfies φ
     · exact hs
     · have h0 :
-          WorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
+          BinaryWorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
               ({pk} : Multiset PointedKripke) φ = 0 :=
         queryStrength_singleton_of_not_satisfies pk φ hs
       have h01 : (0 : ℝ≥0∞) = 1 := by
         calc
           (0 : ℝ≥0∞) =
-              WorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
+              BinaryWorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
                 ({pk} : Multiset PointedKripke) φ := h0.symm
           _ = 1 := h
       exact False.elim (zero_ne_one h01)
@@ -117,9 +117,9 @@ theorem singleton_adequacy_strength_one (pk : PointedKripke) (φ : ModalQuery) :
 /-- Singleton-strength consequence schema for Kripke WM states. -/
 def singletonStrengthLE (φ ψ : ModalQuery) : Prop :=
   ∀ pk : PointedKripke,
-    WorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
+    BinaryWorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
         ({pk} : Multiset PointedKripke) φ ≤
-      WorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
+      BinaryWorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
         ({pk} : Multiset PointedKripke) ψ
 
 /-- Pointwise semantic implication is equivalent to singleton-strength consequence. -/
@@ -138,11 +138,11 @@ theorem pointwiseImplies_iff_singletonStrengthLE (φ ψ : ModalQuery) :
     by_contra hψ
     have hsingleton := hle pk
     have h1 :
-        WorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
+        BinaryWorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
             ({pk} : Multiset PointedKripke) φ = 1 :=
       queryStrength_singleton_of_satisfies pk φ hφ
     have h0 :
-        WorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
+        BinaryWorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery)
             ({pk} : Multiset PointedKripke) ψ = 0 :=
       queryStrength_singleton_of_not_satisfies pk ψ hψ
     have h10 : (1 : ℝ≥0∞) ≤ 0 := by
@@ -185,32 +185,32 @@ private theorem kripkeEvidence_total
         (Multiset.countP (fun pk : PointedKripke => PointedKripke.satisfies pk φ) W : ℝ≥0∞) +
           (Multiset.countP (fun pk : PointedKripke => ¬ PointedKripke.satisfies pk φ) W : ℝ≥0∞) := by
     exact_mod_cast hcardNat
-  unfold kripkeEvidence Evidence.total
+  unfold kripkeEvidence BinaryEvidence.total
   simpa using hcard.symm
 
 /-- Pointwise semantic implication lifts to WM strength inequality on multiset states. -/
 theorem queryStrength_le_of_pointwise
     (W : Multiset PointedKripke) (φ ψ : ModalQuery)
     (himp : ∀ pk : PointedKripke, pk.satisfies φ → pk.satisfies ψ) :
-    WorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery) W φ ≤
-      WorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery) W ψ := by
+    BinaryWorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery) W φ ≤
+      BinaryWorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery) W ψ := by
   let pφ : PointedKripke → Prop := fun pk => PointedKripke.satisfies pk φ
   let pψ : PointedKripke → Prop := fun pk => PointedKripke.satisfies pk ψ
   letI : DecidablePred pφ := Classical.decPred pφ
   letI : DecidablePred pψ := Classical.decPred pψ
   have hφ :
-      WorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery) W φ =
+      BinaryWorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery) W φ =
         if (W.card : ℝ≥0∞) = 0 then 0 else (Multiset.countP pφ W : ℝ≥0∞) / (W.card : ℝ≥0∞) := by
-    unfold WorldModel.queryStrength Evidence.toStrength
+    unfold BinaryWorldModel.queryStrength BinaryEvidence.toStrength
     change (if (kripkeEvidence W φ).total = 0 then 0
       else (kripkeEvidence W φ).pos / (kripkeEvidence W φ).total)
         = if (W.card : ℝ≥0∞) = 0 then 0 else (Multiset.countP pφ W : ℝ≥0∞) / (W.card : ℝ≥0∞)
     rw [kripkeEvidence_total (W := W) (φ := φ)]
     simp [kripkeEvidence, pφ]
   have hψ :
-      WorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery) W ψ =
+      BinaryWorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery) W ψ =
         if (W.card : ℝ≥0∞) = 0 then 0 else (Multiset.countP pψ W : ℝ≥0∞) / (W.card : ℝ≥0∞) := by
-    unfold WorldModel.queryStrength Evidence.toStrength
+    unfold BinaryWorldModel.queryStrength BinaryEvidence.toStrength
     change (if (kripkeEvidence W ψ).total = 0 then 0
       else (kripkeEvidence W ψ).pos / (kripkeEvidence W ψ).total)
         = if (W.card : ℝ≥0∞) = 0 then 0 else (Multiset.countP pψ W : ℝ≥0∞) / (W.card : ℝ≥0∞)
@@ -236,8 +236,8 @@ theorem queryStrength_le_of_pointwise
 theorem multiset_strength_le_of_singletonStrengthLE
     (W : Multiset PointedKripke) (φ ψ : ModalQuery)
     (hsing : singletonStrengthLE φ ψ) :
-    WorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery) W φ ≤
-      WorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery) W ψ := by
+    BinaryWorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery) W φ ≤
+      BinaryWorldModel.queryStrength (State := Multiset PointedKripke) (Query := ModalQuery) W ψ := by
   have himp : ∀ pk : PointedKripke, pk.satisfies φ → pk.satisfies ψ :=
     (pointwiseImplies_iff_singletonStrengthLE φ ψ).mpr hsing
   exact queryStrength_le_of_pointwise (W := W) (φ := φ) (ψ := ψ) himp

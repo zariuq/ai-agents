@@ -132,7 +132,7 @@ theorem collider_no_premise_satisfaction (v : WMExtVertex) (pS pW pq : Pattern)
       ruleForgetOutsideGuarded.premises [("q", pq), ("W", pW), ("S", pS)] := by
   rw [collider_premise_empty]; exact List.not_mem_nil
 
-/-! ## §4: Evidence-Add Core Rules (Oracle-Independent)
+/-! ## §4: BinaryEvidence-Add Core Rules (Oracle-Independent)
 
 Core rules like `ruleEvidenceAdd` have empty premises and therefore
 work under any `RelationEnv`, including `RelationEnv.empty`. These
@@ -266,61 +266,61 @@ private theorem forgettingRulesGuarded_unique_match (mode : WMForgettingMode)
     · rfl
     · exact absurd (forgetIdempotent_no_match_forgetExtract pS pW pq) hne
 
-/-! ## §8: Semantic Bridge — Evidence Interpretation (Concern 2)
+/-! ## §8: Semantic Bridge — BinaryEvidence Interpretation (Concern 2)
 
 The WM calculus operates on syntactic Patterns. The PLN probability semantics
-interprets these patterns in the `Evidence` quantale (ℝ≥0∞ × ℝ≥0∞).
+interprets these patterns in the `BinaryEvidence` quantale (ℝ≥0∞ × ℝ≥0∞).
 
 An `EvidenceInterpretation` is a denotation function `⟦·⟧` from patterns to
-`Evidence` values that validates the core rewrite rules: the evidence-add
+`BinaryEvidence` values that validates the core rewrite rules: the evidence-add
 rule corresponds to `hplus` (parallel evidence aggregation). -/
 
-/-- An evidence interpretation assigns `Evidence` values to extraction results
+/-- An evidence interpretation assigns `BinaryEvidence` values to extraction results
     and validates the core algebraic laws.
 
     `extract W q` denotes the evidence for query `q` in world-model `W`.
     The key soundness condition `combine_hplus` asserts that the syntactic
-    `Combine(e₁, e₂)` operation corresponds to `Evidence.hplus`:
+    `Combine(e₁, e₂)` operation corresponds to `BinaryEvidence.hplus`:
     independent evidence sources aggregate additively. -/
 structure EvidenceInterpretation where
-  /-- Evidence for query `q` in world-model `W`. -/
-  extract : Pattern → Pattern → Evidence
-  /-- Evidence-add soundness: revision aggregates evidence additively.
+  /-- BinaryEvidence for query `q` in world-model `W`. -/
+  extract : Pattern → Pattern → BinaryEvidence
+  /-- BinaryEvidence-add soundness: revision aggregates evidence additively.
       `⟦Extract(Revise(W₁,W₂), q)⟧ = ⟦Extract(W₁,q)⟧ ⊕ ⟦Extract(W₂,q)⟧`. -/
   combine_hplus : ∀ W₁ W₂ q,
     extract (pRevise W₁ W₂) q = extract W₁ q + extract W₂ q
   /-- Zero-evidence soundness: extracting from zero evidence yields zero.
       Validates `ruleCombineZero`. -/
-  zero_extract : ∀ q, extract (.apply "Zero" []) q = Evidence.zero
+  zero_extract : ∀ q, extract (.apply "Zero" []) q = BinaryEvidence.zero
 
 /-! All 5 WM core rules are DERIVED from `combine_hplus` + `zero_extract` +
-the `AddCommMonoid` structure of `Evidence`. The WM term algebra modulo
+the `AddCommMonoid` structure of `BinaryEvidence`. The WM term algebra modulo
 rewriting is the free commutative monoid on world-model atoms;
-`extract` is the unique homomorphism to `(Evidence, hplus, zero)`. -/
+`extract` is the unique homomorphism to `(BinaryEvidence, hplus, zero)`. -/
 
 /-- Rule 1 (evidence-add): direct from `combine_hplus`. -/
 theorem evidence_add_sound (I : EvidenceInterpretation) (W₁ W₂ q : Pattern) :
     I.extract (pRevise W₁ W₂) q = I.extract W₁ q + I.extract W₂ q :=
   I.combine_hplus W₁ W₂ q
 
-/-- Rule 2 (revision-comm): derived from commutativity of `+` on Evidence. -/
+/-- Rule 2 (revision-comm): derived from commutativity of `+` on BinaryEvidence. -/
 theorem revision_comm_sound (I : EvidenceInterpretation) (W₁ W₂ q : Pattern) :
     I.extract (pRevise W₁ W₂) q = I.extract (pRevise W₂ W₁) q := by
-  rw [I.combine_hplus, I.combine_hplus, Evidence.hplus_comm]
+  rw [I.combine_hplus, I.combine_hplus, BinaryEvidence.hplus_comm]
 
-/-- Rule 3 (revision-assoc): derived from associativity of `+` on Evidence. -/
+/-- Rule 3 (revision-assoc): derived from associativity of `+` on BinaryEvidence. -/
 theorem revision_assoc_sound (I : EvidenceInterpretation) (W₁ W₂ W₃ q : Pattern) :
     I.extract (pRevise (pRevise W₁ W₂) W₃) q =
     I.extract (pRevise W₁ (pRevise W₂ W₃)) q := by
-  simp only [I.combine_hplus, Evidence.hplus_assoc]
+  simp only [I.combine_hplus, BinaryEvidence.hplus_assoc]
 
-/-- Rule 4 (combine-comm): `add_comm` on Evidence. -/
-theorem combine_comm_sound (e₁ e₂ : Evidence) : e₁ + e₂ = e₂ + e₁ :=
-  Evidence.hplus_comm e₁ e₂
+/-- Rule 4 (combine-comm): `add_comm` on BinaryEvidence. -/
+theorem combine_comm_sound (e₁ e₂ : BinaryEvidence) : e₁ + e₂ = e₂ + e₁ :=
+  BinaryEvidence.hplus_comm e₁ e₂
 
 /-- Rule 5 (combine-zero): zero is identity for evidence addition. -/
-theorem combine_zero_sound (e : Evidence) : e + Evidence.zero = e :=
-  Evidence.hplus_zero e
+theorem combine_zero_sound (e : BinaryEvidence) : e + BinaryEvidence.zero = e :=
+  BinaryEvidence.hplus_zero e
 
 /-- Three-source chain: nested evidence-add = three-way sum. -/
 theorem chain_evidence_semantically_sound (I : EvidenceInterpretation)
@@ -331,19 +331,19 @@ theorem chain_evidence_semantically_sound (I : EvidenceInterpretation)
 
 /-- The universal property: `combine_hplus` + `zero_extract` (= commutative-monoid
     homomorphism conditions) imply ALL 5 WM core rule soundness conditions. -/
-theorem wmCore_sound_of_addCommMonoidHom (extract : Pattern → Pattern → Evidence)
+theorem wmCore_sound_of_addCommMonoidHom (extract : Pattern → Pattern → BinaryEvidence)
     (hcomb : ∀ W₁ W₂ q, extract (pRevise W₁ W₂) q = extract W₁ q + extract W₂ q)
-    (hzero : ∀ q, extract (.apply "Zero" []) q = Evidence.zero) :
+    (hzero : ∀ q, extract (.apply "Zero" []) q = BinaryEvidence.zero) :
     -- All 5 soundness conditions hold:
     (∀ W₁ W₂ q, extract (pRevise W₁ W₂) q = extract (pRevise W₂ W₁) q) ∧
     (∀ W₁ W₂ W₃ q, extract (pRevise (pRevise W₁ W₂) W₃) q =
       extract (pRevise W₁ (pRevise W₂ W₃)) q) ∧
-    (∀ e₁ e₂ : Evidence, e₁ + e₂ = e₂ + e₁) ∧
-    (∀ e : Evidence, e + Evidence.zero = e) :=
-  ⟨fun W₁ W₂ q => by rw [hcomb, hcomb, Evidence.hplus_comm],
-   fun W₁ W₂ W₃ q => by simp only [hcomb, Evidence.hplus_assoc],
-   fun e₁ e₂ => Evidence.hplus_comm e₁ e₂,
-   fun e => Evidence.hplus_zero e⟩
+    (∀ e₁ e₂ : BinaryEvidence, e₁ + e₂ = e₂ + e₁) ∧
+    (∀ e : BinaryEvidence, e + BinaryEvidence.zero = e) :=
+  ⟨fun W₁ W₂ q => by rw [hcomb, hcomb, BinaryEvidence.hplus_comm],
+   fun W₁ W₂ W₃ q => by simp only [hcomb, BinaryEvidence.hplus_assoc],
+   fun e₁ e₂ => BinaryEvidence.hplus_comm e₁ e₂,
+   fun e => BinaryEvidence.hplus_zero e⟩
 
 /-! ## §9: Image-Restricted Box Theory
 

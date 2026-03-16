@@ -18,8 +18,8 @@ The zero law matters. Singleton preservation plus additivity alone does not fix
 ## Generic (polymorphic) additive extension
 
 The `Gen*` variants are polymorphic over any `AddCommMonoid Ev`, so they apply
-to `Evidence`, `MultiEvidence k`, `NormalGammaEvidence`, or any future conjugate
-family. The original `Evidence`-specific names are preserved as abbreviations.
+to `BinaryEvidence`, `MultiEvidence k`, `NormalGammaEvidence`, or any future conjugate
+family. The original `BinaryEvidence`-specific names are preserved as abbreviations.
 -/
 
 namespace Mettapedia.Logic.PLNWorldModelAdditive
@@ -118,24 +118,24 @@ theorem genExistsUnique_additiveExtension [AddCommMonoid Ev]
 
 end Generic
 
-/-! ## Evidence-specific specializations (backward-compatible) -/
+/-! ## BinaryEvidence-specific specializations (backward-compatible) -/
 
 variable {Obs' Query' : Type*}
 
-local instance : Std.Commutative (fun x y : Evidence => x + y) where
+local instance : Std.Commutative (fun x y : BinaryEvidence => x + y) where
   comm := add_comm
 
-local instance : Std.Associative (fun x y : Evidence => x + y) where
+local instance : Std.Associative (fun x y : BinaryEvidence => x + y) where
   assoc := add_assoc
 
 /-- Atomic query-wise evidence contribution from one observation. -/
-abbrev AtomicEvidenceContribution (Obs Query : Type*) := Obs → Query → Evidence
+abbrev AtomicEvidenceContribution (Obs Query : Type*) := Obs → Query → BinaryEvidence
 
 /-- The canonical additive extension of an atomic evidence contribution from
 single observations to multisets of observations. -/
 noncomputable def additiveExtension
     (a : AtomicEvidenceContribution Obs' Query')
-    (σ : Multiset Obs') (q : Query') : Evidence :=
+    (σ : Multiset Obs') (q : Query') : BinaryEvidence :=
   genAdditiveExtension a σ q
 
 @[simp] theorem additiveExtension_zero
@@ -166,7 +166,7 @@ theorem additiveExtension_add
 `0`, singletons, and multiset addition. -/
 abbrev IsAdditiveExtension
     (a : AtomicEvidenceContribution Obs' Query')
-    (E : Multiset Obs' → Query' → Evidence) : Prop :=
+    (E : Multiset Obs' → Query' → BinaryEvidence) : Prop :=
   GenIsAdditiveExtension a E
 
 theorem isAdditiveExtension_additiveExtension
@@ -178,7 +178,7 @@ theorem isAdditiveExtension_additiveExtension
 singletons, and multiset addition. -/
 theorem eq_additiveExtension_of_isAdditiveExtension
     (a : AtomicEvidenceContribution Obs' Query')
-    {E : Multiset Obs' → Query' → Evidence}
+    {E : Multiset Obs' → Query' → BinaryEvidence}
     (hE : IsAdditiveExtension a E) :
     E = additiveExtension a :=
   eq_genAdditiveExtension a hE
@@ -186,7 +186,7 @@ theorem eq_additiveExtension_of_isAdditiveExtension
 /-- Free additive extension theorem over multisets of observations. -/
 theorem existsUnique_additiveExtension
     (a : AtomicEvidenceContribution Obs' Query') :
-    ∃! E : Multiset Obs' → Query' → Evidence, IsAdditiveExtension a E :=
+    ∃! E : Multiset Obs' → Query' → BinaryEvidence, IsAdditiveExtension a E :=
   genExistsUnique_additiveExtension a
 
 /-- Package multiset addition as an `EvidenceType` when using multisets as
@@ -198,7 +198,7 @@ def multisetEvidenceType (Obs : Type*) : EvidenceType (Multiset Obs) where
 noncomputable def worldModelOfAtomicEvidence
     (a : AtomicEvidenceContribution Obs' Query') :
     letI : EvidenceType (Multiset Obs') := multisetEvidenceType Obs'
-    WorldModel (Multiset Obs') Query' := by
+    BinaryWorldModel (Multiset Obs') Query' := by
   letI : EvidenceType (Multiset Obs') := multisetEvidenceType Obs'
   exact
     { evidence := additiveExtension a
@@ -221,10 +221,10 @@ noncomputable def genAdditiveExtensionProfileHom [AddCommMonoid Ev]
   map_zero' := funext (genAdditiveExtension_zero a)
   map_add' σ₁ σ₂ := funext (genAdditiveExtension_add a σ₁ σ₂)
 
-/-- The `Evidence`-specialized version. -/
+/-- The `BinaryEvidence`-specialized version. -/
 noncomputable def additiveExtensionProfileHom
     (a : AtomicEvidenceContribution Obs' Query') :
-    AddMonoidHom (Multiset Obs') (Query' → Evidence) :=
+    AddMonoidHom (Multiset Obs') (Query' → BinaryEvidence) :=
   genAdditiveExtensionProfileHom a
 
 end Mettapedia.Logic.PLNWorldModelAdditive

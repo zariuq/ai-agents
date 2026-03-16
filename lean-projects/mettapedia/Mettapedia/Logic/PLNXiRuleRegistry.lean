@@ -23,7 +23,7 @@ also provides:
 | Deduction | Exact | `xi_deduction_rewrite` | `plnDeductionStrength` |
 | SourceRule | Exact | `xi_sourceRule_rewrite` | `plnInductionStrength` |
 | SinkRule | Exact | `xi_sinkRule_rewrite` | `plnAbductionStrength` |
-| Revision | Exact | `WorldModel.evidence_add` (axiom) | `revision` = hplus |
+| Revision | Exact | `BinaryWorldModel.evidence_add` (axiom) | `revision` = hplus |
 
 Heuristic rules (modus ponens, symmetric MP, inversion) are NOT included here
 and require explicit bound/conditional theorems — see future `PLNXiHeuristicRules.lean`.
@@ -48,12 +48,12 @@ open scoped ENNReal
 /-! ## §1 Exact-Track Rewrite Rules
 
 These rules derive query evidence from other query evidence under explicit
-side conditions. They stay in the `Evidence` world and compose with the
+side conditions. They stay in the `BinaryEvidence` world and compose with the
 WM-calculus bridge. -/
 
 section ExactTrack
 
-variable {Atom State : Type*} [EvidenceType State] [WorldModel State (PLNQuery Atom)]
+variable {Atom State : Type*} [EvidenceType State] [BinaryWorldModel State (PLNQuery Atom)]
 
 /-! ### Deduction
 
@@ -67,7 +67,7 @@ computes `link A C` evidence from `link A B` and `link B C` evidence.
 This is the abstract formulation. Concrete models (e.g. ChainBN) discharge it
 via `chainBN_pos_screeningOff` + `chainBN_neg_screeningOff`. -/
 def DeductionScreeningOff
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence) : Prop :=
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence) : Prop :=
   ∀ W : State,
     combine
       (PLNQuery.linkEvidence (State := State) (Atom := Atom) W A B)
@@ -77,7 +77,7 @@ def DeductionScreeningOff
 /-- Deduction rewrite rule: under screening-off, `link A C` evidence is
 computed from `link A B` and `link B C` via `combine`. -/
 def xi_deduction_rewrite
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence) :
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence) :
     WMRewriteRule State (PLNQuery Atom) :=
   { side := DeductionScreeningOff (State := State) A B C combine
     conclusion := PLNQuery.link A C
@@ -87,7 +87,7 @@ def xi_deduction_rewrite
 
 /-- Direct verification: the deduction rule derives the correct evidence. -/
 theorem xi_deduction_derives
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence) (W : State) :
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence) (W : State) :
     (xi_deduction_rewrite (State := State) A B C combine).derive W =
       combine (PLNQuery.linkEvidence W A B) (PLNQuery.linkEvidence W B C) := rfl
 
@@ -100,7 +100,7 @@ At evidence level: combine `link B A` and `link B C` to get `link A C`. -/
 /-- Source-rule side condition: combining link evidence from `B→A` and `B→C`
 correctly computes `link A C` evidence (Bayes+Deduction at evidence level). -/
 def SourceRuleScreeningOff
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence) : Prop :=
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence) : Prop :=
   ∀ W : State,
     combine
       (PLNQuery.linkEvidence (State := State) (Atom := Atom) W B A)
@@ -110,7 +110,7 @@ def SourceRuleScreeningOff
 /-- Source rule (induction) rewrite: under Σ, `link A C` evidence is computed
 from `link B A` and `link B C` via `combine`. -/
 def xi_sourceRule_rewrite
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence) :
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence) :
     WMRewriteRule State (PLNQuery Atom) :=
   { side := SourceRuleScreeningOff (State := State) A B C combine
     conclusion := PLNQuery.link A C
@@ -120,7 +120,7 @@ def xi_sourceRule_rewrite
 
 /-- Direct verification for source rule. -/
 theorem xi_sourceRule_derives
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence) (W : State) :
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence) (W : State) :
     (xi_sourceRule_rewrite (State := State) A B C combine).derive W =
       combine (PLNQuery.linkEvidence W B A) (PLNQuery.linkEvidence W B C) := rfl
 
@@ -131,7 +131,7 @@ Pattern: `A → B, C → B ⊢ A → C` via Bayes-inverting C→B to B→C, then
 /-- Sink-rule side condition: combining link evidence from `A→B` and `C→B`
 correctly computes `link A C` evidence (Bayes+Deduction at evidence level). -/
 def SinkRuleScreeningOff
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence) : Prop :=
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence) : Prop :=
   ∀ W : State,
     combine
       (PLNQuery.linkEvidence (State := State) (Atom := Atom) W A B)
@@ -141,7 +141,7 @@ def SinkRuleScreeningOff
 /-- Sink rule (abduction) rewrite: under Σ, `link A C` evidence is computed
 from `link A B` and `link C B` via `combine`. -/
 def xi_sinkRule_rewrite
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence) :
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence) :
     WMRewriteRule State (PLNQuery Atom) :=
   { side := SinkRuleScreeningOff (State := State) A B C combine
     conclusion := PLNQuery.link A C
@@ -151,7 +151,7 @@ def xi_sinkRule_rewrite
 
 /-- Direct verification for sink rule. -/
 theorem xi_sinkRule_derives
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence) (W : State) :
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence) (W : State) :
     (xi_sinkRule_rewrite (State := State) A B C combine).derive W =
       combine (PLNQuery.linkEvidence W A B) (PLNQuery.linkEvidence W C B) := rfl
 
@@ -163,8 +163,8 @@ These structures make that decomposition explicit. -/
 /-- Structured source-rule side condition: Bayes inversion of link B→A
 to A→B, followed by deduction A→B, B→C ⊢ A→C. -/
 structure SourceRuleBayesDed
-    (A B C : Atom) (invert : Evidence → Evidence)
-    (dedCombine : Evidence → Evidence → Evidence) : Prop where
+    (A B C : Atom) (invert : BinaryEvidence → BinaryEvidence)
+    (dedCombine : BinaryEvidence → BinaryEvidence → BinaryEvidence) : Prop where
   /-- Bayes inversion: link B→A evidence maps to link A→B evidence. -/
   bayes : ∀ W : State,
     invert (PLNQuery.linkEvidence (State := State) (Atom := Atom) W B A) =
@@ -174,8 +174,8 @@ structure SourceRuleBayesDed
 
 /-- Structured source-rule implies the flat SourceRuleScreeningOff. -/
 theorem sourceBayesDed_implies_screeningOff
-    (A B C : Atom) (invert : Evidence → Evidence)
-    (dedCombine : Evidence → Evidence → Evidence)
+    (A B C : Atom) (invert : BinaryEvidence → BinaryEvidence)
+    (dedCombine : BinaryEvidence → BinaryEvidence → BinaryEvidence)
     (h : SourceRuleBayesDed (State := State) A B C invert dedCombine) :
     SourceRuleScreeningOff (State := State) A B C
       (fun eBA eBC => dedCombine (invert eBA) eBC) := by
@@ -188,8 +188,8 @@ theorem sourceBayesDed_implies_screeningOff
 /-- Structured sink-rule side condition: Bayes inversion of link C→B
 to B→C, followed by deduction A→B, B→C ⊢ A→C. -/
 structure SinkRuleBayesDed
-    (A B C : Atom) (invert : Evidence → Evidence)
-    (dedCombine : Evidence → Evidence → Evidence) : Prop where
+    (A B C : Atom) (invert : BinaryEvidence → BinaryEvidence)
+    (dedCombine : BinaryEvidence → BinaryEvidence → BinaryEvidence) : Prop where
   /-- Bayes inversion: link C→B evidence maps to link B→C evidence. -/
   bayes : ∀ W : State,
     invert (PLNQuery.linkEvidence (State := State) (Atom := Atom) W C B) =
@@ -199,8 +199,8 @@ structure SinkRuleBayesDed
 
 /-- Structured sink-rule implies the flat SinkRuleScreeningOff. -/
 theorem sinkBayesDed_implies_screeningOff
-    (A B C : Atom) (invert : Evidence → Evidence)
-    (dedCombine : Evidence → Evidence → Evidence)
+    (A B C : Atom) (invert : BinaryEvidence → BinaryEvidence)
+    (dedCombine : BinaryEvidence → BinaryEvidence → BinaryEvidence)
     (h : SinkRuleBayesDed (State := State) A B C invert dedCombine) :
     SinkRuleScreeningOff (State := State) A B C
       (fun eAB eCB => dedCombine eAB (invert eCB)) := by
@@ -213,31 +213,31 @@ theorem sinkBayesDed_implies_screeningOff
 /-! ### Revision
 
 Revision is the WM axiom itself: `evidence (W₁ + W₂) q = evidence W₁ q + evidence W₂ q`.
-No separate rule needed — it's built into `WorldModel.evidence_add`.
+No separate rule needed — it's built into `BinaryWorldModel.evidence_add`.
 
 The bridge theorem `semE_wm_atom_revision_q` (PLNWMOSLFBridge) already handles
 this at the OSLF level. We provide named wrappers for the rule registry. -/
 
 /-- Revision evidence equality for arbitrary query. -/
 theorem xi_revision_evidence (W₁ W₂ : State) (q : PLNQuery Atom) :
-    WorldModel.evidence (W₁ + W₂) q =
-      WorldModel.evidence (State := State) (Query := PLNQuery Atom) W₁ q +
-      WorldModel.evidence (State := State) (Query := PLNQuery Atom) W₂ q :=
-  WorldModel.evidence_add W₁ W₂ q
+    BinaryWorldModel.evidence (W₁ + W₂) q =
+      BinaryWorldModel.evidence (State := State) (Query := PLNQuery Atom) W₁ q +
+      BinaryWorldModel.evidence (State := State) (Query := PLNQuery Atom) W₂ q :=
+  BinaryWorldModel.evidence_add W₁ W₂ q
 
 /-- Revision at link level. -/
 theorem xi_revision_link (W₁ W₂ : State) (A B : Atom) :
     PLNQuery.linkEvidence (W₁ + W₂) A B =
       PLNQuery.linkEvidence (State := State) (Atom := Atom) W₁ A B +
       PLNQuery.linkEvidence (State := State) (Atom := Atom) W₂ A B :=
-  WorldModel.evidence_add W₁ W₂ (PLNQuery.link A B)
+  BinaryWorldModel.evidence_add W₁ W₂ (PLNQuery.link A B)
 
 /-- Revision at proposition level. -/
 theorem xi_revision_prop (W₁ W₂ : State) (A : Atom) :
     PLNQuery.propEvidence (W₁ + W₂) A =
       PLNQuery.propEvidence (State := State) (Atom := Atom) W₁ A +
       PLNQuery.propEvidence (State := State) (Atom := Atom) W₂ A :=
-  WorldModel.evidence_add W₁ W₂ (PLNQuery.prop A)
+  BinaryWorldModel.evidence_add W₁ W₂ (PLNQuery.prop A)
 
 end ExactTrack
 
@@ -248,43 +248,43 @@ equals the WM link strength — no additional hypothesis needed. -/
 
 section StrengthEquivalence
 
-variable {Atom State : Type*} [EvidenceType State] [WorldModel State (PLNQuery Atom)]
+variable {Atom State : Type*} [EvidenceType State] [BinaryWorldModel State (PLNQuery Atom)]
 
 /-- Under screening-off, the deduction rule's derived evidence has the
 same strength as the direct WM link A→C evidence. This is a CONSEQUENCE
 of the screening-off condition alone — no additional hypothesis needed. -/
 theorem xi_deduction_strength_eq_link
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence)
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence)
     (hSO : DeductionScreeningOff (State := State) A B C combine)
     (W : State) :
-    Evidence.toStrength ((xi_deduction_rewrite (State := State) A B C combine).derive W) =
+    BinaryEvidence.toStrength ((xi_deduction_rewrite (State := State) A B C combine).derive W) =
       PLNQuery.linkStrength (State := State) (Atom := Atom) W A C := by
   unfold PLNQuery.linkStrength PLNQuery.linkEvidence
-  show Evidence.toStrength (combine _ _) = Evidence.toStrength (WorldModel.evidence W _)
+  show BinaryEvidence.toStrength (combine _ _) = BinaryEvidence.toStrength (BinaryWorldModel.evidence W _)
   congr 1
   exact hSO W
 
 /-- Under screening-off, source rule's derived strength = link A→C strength. -/
 theorem xi_sourceRule_strength_eq_link
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence)
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence)
     (hSO : SourceRuleScreeningOff (State := State) A B C combine)
     (W : State) :
-    Evidence.toStrength ((xi_sourceRule_rewrite (State := State) A B C combine).derive W) =
+    BinaryEvidence.toStrength ((xi_sourceRule_rewrite (State := State) A B C combine).derive W) =
       PLNQuery.linkStrength (State := State) (Atom := Atom) W A C := by
   unfold PLNQuery.linkStrength PLNQuery.linkEvidence
-  show Evidence.toStrength (combine _ _) = Evidence.toStrength (WorldModel.evidence W _)
+  show BinaryEvidence.toStrength (combine _ _) = BinaryEvidence.toStrength (BinaryWorldModel.evidence W _)
   congr 1
   exact hSO W
 
 /-- Under screening-off, sink rule's derived strength = link A→C strength. -/
 theorem xi_sinkRule_strength_eq_link
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence)
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence)
     (hSO : SinkRuleScreeningOff (State := State) A B C combine)
     (W : State) :
-    Evidence.toStrength ((xi_sinkRule_rewrite (State := State) A B C combine).derive W) =
+    BinaryEvidence.toStrength ((xi_sinkRule_rewrite (State := State) A B C combine).derive W) =
       PLNQuery.linkStrength (State := State) (Atom := Atom) W A C := by
   unfold PLNQuery.linkStrength PLNQuery.linkEvidence
-  show Evidence.toStrength (combine _ _) = Evidence.toStrength (WorldModel.evidence W _)
+  show BinaryEvidence.toStrength (combine _ _) = BinaryEvidence.toStrength (BinaryWorldModel.evidence W _)
   congr 1
   exact hSO W
 
@@ -294,21 +294,21 @@ Direct re-statement of `revision_strength_weighted_avg` from `PLNRevision.lean`
 specialized to WM query evidence. -/
 theorem xi_revision_strength_weighted_avg
     (W₁ W₂ : State) (q : PLNQuery Atom)
-    (h₁ : (WorldModel.evidence W₁ q).total ≠ 0)
-    (h₂ : (WorldModel.evidence W₂ q).total ≠ 0)
-    (h₁₂ : (WorldModel.evidence (W₁ + W₂) q).total ≠ 0)
-    (h₁_top : (WorldModel.evidence W₁ q).total ≠ ⊤)
-    (h₂_top : (WorldModel.evidence W₂ q).total ≠ ⊤) :
-    Evidence.toStrength (WorldModel.evidence (W₁ + W₂) q) =
-      ((WorldModel.evidence W₁ q).total / (WorldModel.evidence (W₁ + W₂) q).total) *
-        Evidence.toStrength (WorldModel.evidence W₁ q) +
-      ((WorldModel.evidence W₂ q).total / (WorldModel.evidence (W₁ + W₂) q).total) *
-        Evidence.toStrength (WorldModel.evidence W₂ q) := by
+    (h₁ : (BinaryWorldModel.evidence W₁ q).total ≠ 0)
+    (h₂ : (BinaryWorldModel.evidence W₂ q).total ≠ 0)
+    (h₁₂ : (BinaryWorldModel.evidence (W₁ + W₂) q).total ≠ 0)
+    (h₁_top : (BinaryWorldModel.evidence W₁ q).total ≠ ⊤)
+    (h₂_top : (BinaryWorldModel.evidence W₂ q).total ≠ ⊤) :
+    BinaryEvidence.toStrength (BinaryWorldModel.evidence (W₁ + W₂) q) =
+      ((BinaryWorldModel.evidence W₁ q).total / (BinaryWorldModel.evidence (W₁ + W₂) q).total) *
+        BinaryEvidence.toStrength (BinaryWorldModel.evidence W₁ q) +
+      ((BinaryWorldModel.evidence W₂ q).total / (BinaryWorldModel.evidence (W₁ + W₂) q).total) *
+        BinaryEvidence.toStrength (BinaryWorldModel.evidence W₂ q) := by
   have heq := xi_revision_evidence (State := State) W₁ W₂ q
   rw [heq]
   rw [heq] at h₁₂
   exact revision_strength_weighted_avg
-    (WorldModel.evidence W₁ q) (WorldModel.evidence W₂ q)
+    (BinaryWorldModel.evidence W₁ q) (BinaryWorldModel.evidence W₂ q)
     h₁ h₂ h₁₂ h₁_top h₂_top
 
 end StrengthEquivalence
@@ -321,14 +321,14 @@ from `PLNWMOSLFBridge`. -/
 
 section OSLFBridge
 
-variable {Atom State : Type*} [EvidenceType State] [WorldModel State (PLNQuery Atom)]
+variable {Atom State : Type*} [EvidenceType State] [BinaryWorldModel State (PLNQuery Atom)]
 
-/-! ### Evidence-level bridges (semE) -/
+/-! ### BinaryEvidence-level bridges (semE) -/
 
 /-- Deduction rule lifts to OSLF atom evidence: if the atom encodes `link A C`,
 its evidence equals the `combine` output. -/
 theorem xi_deduction_semE_atom
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence)
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence)
     (hSO : DeductionScreeningOff (State := State) A B C combine)
     (R : Pattern → Pattern → Prop) (W : State)
     (enc : String → Pattern → PLNQuery Atom)
@@ -341,7 +341,7 @@ theorem xi_deduction_semE_atom
 
 /-- Source rule lifts to OSLF atom evidence. -/
 theorem xi_sourceRule_semE_atom
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence)
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence)
     (hSO : SourceRuleScreeningOff (State := State) A B C combine)
     (R : Pattern → Pattern → Prop) (W : State)
     (enc : String → Pattern → PLNQuery Atom)
@@ -354,7 +354,7 @@ theorem xi_sourceRule_semE_atom
 
 /-- Sink rule lifts to OSLF atom evidence. -/
 theorem xi_sinkRule_semE_atom
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence)
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence)
     (hSO : SinkRuleScreeningOff (State := State) A B C combine)
     (R : Pattern → Pattern → Prop) (W : State)
     (enc : String → Pattern → PLNQuery Atom)
@@ -372,13 +372,13 @@ These connect xi rules to strength-threshold Prop semantics.
 
 /-- Deduction rule gives threshold atom truth. -/
 theorem xi_deduction_threshold_atom
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence)
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence)
     (hSO : DeductionScreeningOff (State := State) A B C combine)
     (R : Pattern → Pattern → Prop) (W : State) (tau : ℝ≥0∞)
     (enc : String → Pattern → PLNQuery Atom)
     (a : String) (p : Pattern)
     (hEnc : enc a p = PLNQuery.link A C)
-    (hTau : tau ≤ Evidence.toStrength
+    (hTau : tau ≤ BinaryEvidence.toStrength
       ((xi_deduction_rewrite (State := State) A B C combine).derive W)) :
     sem R (thresholdAtomSemOfWMQ W tau enc) (.atom a) p :=
   wmRewriteRule_threshold_atom R
@@ -386,13 +386,13 @@ theorem xi_deduction_threshold_atom
 
 /-- Source rule gives threshold atom truth. -/
 theorem xi_sourceRule_threshold_atom
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence)
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence)
     (hSO : SourceRuleScreeningOff (State := State) A B C combine)
     (R : Pattern → Pattern → Prop) (W : State) (tau : ℝ≥0∞)
     (enc : String → Pattern → PLNQuery Atom)
     (a : String) (p : Pattern)
     (hEnc : enc a p = PLNQuery.link A C)
-    (hTau : tau ≤ Evidence.toStrength
+    (hTau : tau ≤ BinaryEvidence.toStrength
       ((xi_sourceRule_rewrite (State := State) A B C combine).derive W)) :
     sem R (thresholdAtomSemOfWMQ W tau enc) (.atom a) p :=
   wmRewriteRule_threshold_atom R
@@ -400,13 +400,13 @@ theorem xi_sourceRule_threshold_atom
 
 /-- Sink rule gives threshold atom truth. -/
 theorem xi_sinkRule_threshold_atom
-    (A B C : Atom) (combine : Evidence → Evidence → Evidence)
+    (A B C : Atom) (combine : BinaryEvidence → BinaryEvidence → BinaryEvidence)
     (hSO : SinkRuleScreeningOff (State := State) A B C combine)
     (R : Pattern → Pattern → Prop) (W : State) (tau : ℝ≥0∞)
     (enc : String → Pattern → PLNQuery Atom)
     (a : String) (p : Pattern)
     (hEnc : enc a p = PLNQuery.link A C)
-    (hTau : tau ≤ Evidence.toStrength
+    (hTau : tau ≤ BinaryEvidence.toStrength
       ((xi_sinkRule_rewrite (State := State) A B C combine).derive W)) :
     sem R (thresholdAtomSemOfWMQ W tau enc) (.atom a) p :=
   wmRewriteRule_threshold_atom R

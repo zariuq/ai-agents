@@ -13,7 +13,7 @@ A small housing community/co-op ("Maple Court") with:
 
 ## Core Variables (8)
 
-| Variable | Type | Evidence | Layer | BN Role |
+| Variable | Type | BinaryEvidence | Layer | BN Role |
 |----------|------|----------|-------|---------|
 | RoomOccupied | latent binary | Beta | apartment | fork source |
 | ShowerRunning | latent binary | Beta | apartment | collider parent |
@@ -33,7 +33,7 @@ A small housing community/co-op ("Maple Court") with:
 ## Key Results
 
 1. Hybrid state forms an AddCommMonoid (componentwise revision)
-2. Evidence compositionality (evidence_add) for the WorldModel instance
+2. BinaryEvidence compositionality (evidence_add) for the BinaryWorldModel instance
 3. Sleep consolidation for Normal-Gamma components
 4. Confidence monotonicity with observation count
 5. Privacy export: apartment summary is lossy
@@ -64,11 +64,11 @@ for latent states, one continuous (Normal-Gamma) for humidity. -/
     plus Normal-Gamma evidence for bathroom humidity. -/
 structure ApartmentState where
   /-- Binary evidence for room occupancy (motion sensor) -/
-  roomOccupied : Evidence
+  roomOccupied : BinaryEvidence
   /-- Binary evidence for shower running (water flow threshold) -/
-  showerRunning : Evidence
+  showerRunning : BinaryEvidence
   /-- Binary evidence for pipe leak (leak sensor) -/
-  pipeLeak : Evidence
+  pipeLeak : BinaryEvidence
   /-- Continuous evidence for bathroom humidity -/
   bathroomHumidity : NormalGammaEvidence
 
@@ -76,9 +76,9 @@ namespace ApartmentState
 
 /-- Zero state: no observations of any kind. -/
 def zero : ApartmentState where
-  roomOccupied := Evidence.zero
-  showerRunning := Evidence.zero
-  pipeLeak := Evidence.zero
+  roomOccupied := BinaryEvidence.zero
+  showerRunning := BinaryEvidence.zero
+  pipeLeak := BinaryEvidence.zero
   bathroomHumidity := NormalGammaEvidence.zero
 
 /-- Componentwise addition (revision). -/
@@ -103,9 +103,9 @@ instance : Zero ApartmentState where zero := zero
 @[simp] theorem add_bathroomHumidity (s₁ s₂ : ApartmentState) :
     (s₁ + s₂).bathroomHumidity = s₁.bathroomHumidity + s₂.bathroomHumidity := rfl
 
-@[simp] theorem zero_roomOccupied : (zero : ApartmentState).roomOccupied = Evidence.zero := rfl
-@[simp] theorem zero_showerRunning : (zero : ApartmentState).showerRunning = Evidence.zero := rfl
-@[simp] theorem zero_pipeLeak : (zero : ApartmentState).pipeLeak = Evidence.zero := rfl
+@[simp] theorem zero_roomOccupied : (zero : ApartmentState).roomOccupied = BinaryEvidence.zero := rfl
+@[simp] theorem zero_showerRunning : (zero : ApartmentState).showerRunning = BinaryEvidence.zero := rfl
+@[simp] theorem zero_pipeLeak : (zero : ApartmentState).pipeLeak = BinaryEvidence.zero := rfl
 @[simp] theorem zero_bathroomHumidity :
     (zero : ApartmentState).bathroomHumidity = NormalGammaEvidence.zero := rfl
 
@@ -120,30 +120,30 @@ theorem ext {s₁ s₂ : ApartmentState}
 
 theorem add_comm (s₁ s₂ : ApartmentState) : s₁ + s₂ = s₂ + s₁ := by
   apply ext
-  · exact Evidence.hplus_comm _ _
-  · exact Evidence.hplus_comm _ _
-  · exact Evidence.hplus_comm _ _
+  · exact BinaryEvidence.hplus_comm _ _
+  · exact BinaryEvidence.hplus_comm _ _
+  · exact BinaryEvidence.hplus_comm _ _
   · exact NormalGammaEvidence.hplus_comm _ _
 
 theorem add_assoc (s₁ s₂ s₃ : ApartmentState) : s₁ + s₂ + s₃ = s₁ + (s₂ + s₃) := by
   apply ext
-  · exact Evidence.hplus_assoc _ _ _
-  · exact Evidence.hplus_assoc _ _ _
-  · exact Evidence.hplus_assoc _ _ _
+  · exact BinaryEvidence.hplus_assoc _ _ _
+  · exact BinaryEvidence.hplus_assoc _ _ _
+  · exact BinaryEvidence.hplus_assoc _ _ _
   · exact NormalGammaEvidence.hplus_assoc _ _ _
 
 theorem zero_add (s : ApartmentState) : zero + s = s := by
   apply ext
-  · exact Evidence.zero_hplus _
-  · exact Evidence.zero_hplus _
-  · exact Evidence.zero_hplus _
+  · exact BinaryEvidence.zero_hplus _
+  · exact BinaryEvidence.zero_hplus _
+  · exact BinaryEvidence.zero_hplus _
   · exact NormalGammaEvidence.zero_hplus _
 
 theorem add_zero (s : ApartmentState) : s + zero = s := by
   apply ext
-  · exact Evidence.hplus_zero _
-  · exact Evidence.hplus_zero _
-  · exact Evidence.hplus_zero _
+  · exact BinaryEvidence.hplus_zero _
+  · exact BinaryEvidence.hplus_zero _
+  · exact BinaryEvidence.hplus_zero _
   · exact NormalGammaEvidence.hplus_zero _
 
 noncomputable instance instAddCommMonoid : AddCommMonoid ApartmentState where
@@ -337,7 +337,7 @@ inductive MapleCourtQuery where
   /-- Is the elevator in state i? (categorical, i ∈ {0=normal, 1=slow, 2=faulty}) -/
   | elevatorInState (i : Fin 3)
 
-/-! ## §5: Evidence Extraction
+/-! ## §5: BinaryEvidence Extraction
 
 Reuses the ExceedanceSpec pattern from PLNBrokenSensorDemo:
 continuous queries are projected to binary evidence via an abstract
@@ -352,13 +352,13 @@ structure HumidityExceedanceSpec where
 
 /-- Convert Dirichlet evidence for category i to binary evidence.
     n⁺ = count for category i, n⁻ = counts for all other categories. -/
-def dirichletToBinary (e : MultiEvidence 3) (i : Fin 3) : Evidence :=
+def dirichletToBinary (e : MultiEvidence 3) (i : Fin 3) : BinaryEvidence :=
   ⟨↑(e.counts i), ↑(e.total - e.counts i)⟩
 
 /-- Full evidence extraction for any Maple Court query. -/
 noncomputable def mapleCourtEvidence
     (spec : HumidityExceedanceSpec) (aptPrior bldPrior : NormalGammaPrior)
-    (s : MapleCourtState) : MapleCourtQuery → Evidence
+    (s : MapleCourtState) : MapleCourtQuery → BinaryEvidence
   | .roomOccupied => s.apartment.roomOccupied
   | .showerRunning => s.apartment.showerRunning
   | .pipeLeak => s.apartment.pipeLeak
@@ -375,9 +375,9 @@ noncomputable def mapleCourtEvidence
   | .laundryInState i => dirichletToBinary s.building.laundryState i
   | .elevatorInState i => dirichletToBinary s.building.elevatorHealth i
 
-/-! ## §6: Evidence Compositionality (evidence_add)
+/-! ## §6: BinaryEvidence Compositionality (evidence_add)
 
-The core WorldModel law: extraction from revised states equals
+The core BinaryWorldModel law: extraction from revised states equals
 revised extraction. For binary queries this is trivial (direct component).
 For continuous queries it follows from linearity of the exceedance conversion. -/
 
@@ -424,30 +424,30 @@ noncomputable def bldHumidityPrior : NormalGammaPrior where
 
 /-- A single humidity observation in the apartment. -/
 noncomputable def aptHumidityObs (x : ℝ) : ApartmentState where
-  roomOccupied := Evidence.zero
-  showerRunning := Evidence.zero
-  pipeLeak := Evidence.zero
+  roomOccupied := BinaryEvidence.zero
+  showerRunning := BinaryEvidence.zero
+  pipeLeak := BinaryEvidence.zero
   bathroomHumidity := NormalGammaEvidence.single x
 
 /-- A motion detection event (positive = occupied). -/
 def motionEvent (detected : Bool) : ApartmentState where
   roomOccupied := if detected then ⟨1, 0⟩ else ⟨0, 1⟩
-  showerRunning := Evidence.zero
-  pipeLeak := Evidence.zero
+  showerRunning := BinaryEvidence.zero
+  pipeLeak := BinaryEvidence.zero
   bathroomHumidity := NormalGammaEvidence.zero
 
 /-- A leak sensor reading (positive = leak detected). -/
 def leakEvent (detected : Bool) : ApartmentState where
-  roomOccupied := Evidence.zero
-  showerRunning := Evidence.zero
+  roomOccupied := BinaryEvidence.zero
+  showerRunning := BinaryEvidence.zero
   pipeLeak := if detected then ⟨1, 0⟩ else ⟨0, 1⟩
   bathroomHumidity := NormalGammaEvidence.zero
 
 /-- A shower flow detection (positive = shower running). -/
 def showerEvent (running : Bool) : ApartmentState where
-  roomOccupied := Evidence.zero
+  roomOccupied := BinaryEvidence.zero
   showerRunning := if running then ⟨1, 0⟩ else ⟨0, 1⟩
-  pipeLeak := Evidence.zero
+  pipeLeak := BinaryEvidence.zero
   bathroomHumidity := NormalGammaEvidence.zero
 
 /-- Morning scenario: 3 motion detections, 2 normal humidity readings,
@@ -551,9 +551,9 @@ theorem confidence_monotone_humidity (e₁ e₂ : NormalGammaEvidence) (κ : ℝ
 
 /-- Confidence increases when we add more binary observations:
     total evidence count is non-decreasing under revision. -/
-theorem evidence_pos_monotone (e₁ e₂ : Evidence) :
+theorem evidence_pos_monotone (e₁ e₂ : BinaryEvidence) :
     e₁.pos ≤ (e₁ + e₂).pos := by
-  simp only [Evidence.hplus_def]; exact le_self_add
+  simp only [BinaryEvidence.hplus_def]; exact le_self_add
 
 /-! ## §10: Privacy Export
 
@@ -564,7 +564,7 @@ full state from the summary. -/
 /-- Export apartment evidence as a single binary summary.
     Counts total positive and negative observations across all binary sensors.
     This is the "privacy boundary": raw per-sensor traces stay private. -/
-noncomputable def exportApartmentSummary (s : ApartmentState) : Evidence :=
+noncomputable def exportApartmentSummary (s : ApartmentState) : BinaryEvidence :=
   s.roomOccupied + s.showerRunning + s.pipeLeak
 
 /-- The export is lossy: different apartment states can produce the same summary. -/
@@ -573,21 +573,21 @@ theorem export_is_lossy :
     exportApartmentSummary s₁ = exportApartmentSummary s₂ := by
   refine ⟨
     { roomOccupied := ⟨1, 0⟩, showerRunning := ⟨0, 1⟩,
-      pipeLeak := Evidence.zero, bathroomHumidity := NormalGammaEvidence.zero },
+      pipeLeak := BinaryEvidence.zero, bathroomHumidity := NormalGammaEvidence.zero },
     { roomOccupied := ⟨0, 1⟩, showerRunning := ⟨1, 0⟩,
-      pipeLeak := Evidence.zero, bathroomHumidity := NormalGammaEvidence.zero },
+      pipeLeak := BinaryEvidence.zero, bathroomHumidity := NormalGammaEvidence.zero },
     ?_, ?_⟩
   · intro h
     have := congr_arg ApartmentState.roomOccupied h
     simp at this
-  · simp [exportApartmentSummary, Evidence.hplus_comm]
+  · simp [exportApartmentSummary, BinaryEvidence.hplus_comm]
 
 /-- Export preserves total evidence count (no fabrication). -/
 theorem export_total_preserved (s : ApartmentState) :
     (exportApartmentSummary s).pos + (exportApartmentSummary s).neg =
     (s.roomOccupied.pos + s.showerRunning.pos + s.pipeLeak.pos) +
     (s.roomOccupied.neg + s.showerRunning.neg + s.pipeLeak.neg) := by
-  simp only [exportApartmentSummary, Evidence.hplus_def]
+  simp only [exportApartmentSummary, BinaryEvidence.hplus_def]
 
 /-! ## §11: Collider Explain-Away Structure
 
@@ -620,17 +620,17 @@ theorem collider_gate_opens (s : ApartmentState)
     s.bathroomHumidity ≠ NormalGammaEvidence.zero := h
 
 /-- Structural d-separation: with no humidity evidence, adding shower evidence
-    does not change the pipe leak component. (Evidence independence.) -/
+    does not change the pipe leak component. (BinaryEvidence independence.) -/
 theorem dsep_shower_leak_no_humidity (shower leak : ApartmentState)
-    (hs : shower.pipeLeak = Evidence.zero)
-    (hl : leak.showerRunning = Evidence.zero) :
+    (hs : shower.pipeLeak = BinaryEvidence.zero)
+    (hl : leak.showerRunning = BinaryEvidence.zero) :
     (shower + leak).pipeLeak = leak.pipeLeak ∧
     (shower + leak).showerRunning = shower.showerRunning := by
   constructor
   · simp [hs]
-    exact Evidence.zero_hplus _
+    exact BinaryEvidence.zero_hplus _
   · simp [hl]
-    exact Evidence.hplus_zero _
+    exact BinaryEvidence.hplus_zero _
 
 /-! ## §12: Derived Query: Wall Mold Risk (Chain Motif)
 
