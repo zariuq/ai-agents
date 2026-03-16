@@ -66,7 +66,7 @@ noncomputable instance : EvidenceType (Multiset AgentObservation) :=
 noncomputable instance : BinaryWorldModel (Multiset AgentObservation) AgentQuery :=
   worldModelOfAtomicEvidence agentSurface.observe
 
-noncomputable instance : WorldModel (Multiset AgentObservation) AgentQuery BinaryEvidence :=
+noncomputable instance : AdditiveWorldModel (Multiset AgentObservation) AgentQuery BinaryEvidence :=
   agentSurface.inducedWorldModel
 
 def agentFrontier (_ : AgentObservation) : Set AgentQuery :=
@@ -436,7 +436,7 @@ theorem selfAware_golden_poc_of_nonempty
         closureFromTrace agentSurface agentFrontier agentRules σ ∧
       AgentQuery.awareReady ∈
         cascadeFromTrace agentSurface agentFrontier agentRules σ (Fintype.card AgentQuery) ∧
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
           (State := Multiset AgentObservation) (Query := AgentQuery) (Ev := BinaryEvidence)
           σ AgentQuery.awareReady ≠ 0 ∧
       (σ + σ : Multiset AgentObservation) ≠ σ := by
@@ -457,9 +457,9 @@ empty observation traces are exactly the count-zero / revision-idempotent case. 
 theorem selfAware_triviality_iff
     (σ : Multiset AgentObservation) :
     letI : EvidenceType (Multiset AgentObservation) := multisetEvidenceType AgentObservation
-    letI : WorldModel (Multiset AgentObservation) AgentQuery BinaryEvidence := agentSurface.inducedWorldModel
+    letI : AdditiveWorldModel (Multiset AgentObservation) AgentQuery BinaryEvidence := agentSurface.inducedWorldModel
     ((σ + σ : Multiset AgentObservation) = σ ↔ σ = 0) ∧
-      (WorldModel.queryObservationCount
+      (AdditiveWorldModel.queryObservationCount
           (State := Multiset AgentObservation) (Query := AgentQuery) (Ev := BinaryEvidence)
           σ AgentQuery.awareReady = 0 ↔ σ = 0) := by
   exact wm_trivial_iff (S := agentSurface) agentSurface_unitObservation σ AgentQuery.awareReady

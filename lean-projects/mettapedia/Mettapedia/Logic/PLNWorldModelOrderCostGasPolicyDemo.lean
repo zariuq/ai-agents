@@ -119,7 +119,7 @@ theorem gasRuntimePairwiseOrderCheck_batchSwap_zero
       simp [runMergeSchedule, gasAdditiveOverlapLayer, add_comm, add_left_comm]
     exact congrArg
       (fun s =>
-        WorldModel.queryObservationCount
+        AdditiveWorldModel.queryObservationCount
           (State := SensorArrayState) (Query := GasType) (Ev := NormalGammaEvidence) s g) hstate
   constructor <;> simp [hcount]
 

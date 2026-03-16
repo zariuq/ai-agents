@@ -5411,24 +5411,24 @@ namespace Schema
 
 abbrev DeductionScreeningOff {Atom State : Type*}
     [EvidenceClass.EvidenceType State]
-    [PLNWorldModel.BinaryWorldModel State (PLNWorldModel.PLNQuery Atom)] :=
+    [PLNWorldModel.BinaryWorldModel State (PLNWorldModel.AtomQuery Atom)] :=
   PLNXiRuleRegistry.DeductionScreeningOff (Atom := Atom) (State := State)
 
 abbrev SourceRuleScreeningOff {Atom State : Type*}
     [EvidenceClass.EvidenceType State]
-    [PLNWorldModel.BinaryWorldModel State (PLNWorldModel.PLNQuery Atom)] :=
+    [PLNWorldModel.BinaryWorldModel State (PLNWorldModel.AtomQuery Atom)] :=
   PLNXiRuleRegistry.SourceRuleScreeningOff (Atom := Atom) (State := State)
 
 abbrev SinkRuleScreeningOff {Atom State : Type*}
     [EvidenceClass.EvidenceType State]
-    [PLNWorldModel.BinaryWorldModel State (PLNWorldModel.PLNQuery Atom)] :=
+    [PLNWorldModel.BinaryWorldModel State (PLNWorldModel.AtomQuery Atom)] :=
   PLNXiRuleRegistry.SinkRuleScreeningOff (Atom := Atom) (State := State)
 
 /-! ### Carrier family template -/
 
 abbrev CarrierFamily {Atom State : Type*}
     [EvidenceClass.EvidenceType State]
-    [PLNWorldModel.BinaryWorldModel State (PLNWorldModel.PLNQuery Atom)] :=
+    [PLNWorldModel.BinaryWorldModel State (PLNWorldModel.AtomQuery Atom)] :=
   PLNXiCarrierScreening.CarrierFamily (Atom := Atom) (State := State)
 
 end Schema

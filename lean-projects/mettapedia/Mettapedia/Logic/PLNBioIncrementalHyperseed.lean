@@ -538,7 +538,7 @@ theorem relevant_pairA_discovered_by_card :
       relevant_pairA_in_total_closure
 
 theorem pairABatch₁_count :
-    WorldModel.queryObservationCount
+    AdditiveWorldModel.queryObservationCount
         (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
         pairABatch₁ (.relevant .pairA) = 1 := by
   simpa [pairABatch₁] using
@@ -546,7 +546,7 @@ theorem pairABatch₁_count :
       pairABatch₁ (.relevant .pairA))
 
 theorem pairATrace_count :
-    WorldModel.queryObservationCount
+    AdditiveWorldModel.queryObservationCount
         (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
         pairATrace (.relevant .pairA) = 2 := by
   simpa [pairATrace, pairABatch₁, pairABatch₂] using
@@ -554,7 +554,7 @@ theorem pairATrace_count :
       pairATrace (.relevant .pairA))
 
 theorem pairBTrace_count :
-    WorldModel.queryObservationCount
+    AdditiveWorldModel.queryObservationCount
         (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
         pairBTrace (.relevant .pairB) = 1 := by
   simpa [pairBTrace] using
@@ -562,7 +562,7 @@ theorem pairBTrace_count :
       pairBTrace (.relevant .pairB))
 
 theorem pairARepeatEqtlTrace_count :
-    WorldModel.queryObservationCount
+    AdditiveWorldModel.queryObservationCount
         (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
         pairARepeatEqtlTrace (.relevant .pairA) = 2 := by
   simpa [pairARepeatEqtlTrace, pairABatch₁] using
@@ -586,7 +586,7 @@ theorem pairATrace_rawWM_evidence_eq_batches (q : BioQuery) :
     bio_rawWM_evidence_add pairABatch₁ pairABatch₂ q
 
 theorem pairATrace_nontrivial :
-    WorldModel.queryObservationCount
+    AdditiveWorldModel.queryObservationCount
         (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
         pairATrace (.relevant .pairA) ≠ 0 ∧
       (pairATrace + pairATrace : Multiset BioObservation) ≠ pairATrace := by
@@ -597,10 +597,10 @@ theorem pairATrace_nontrivial :
       (S := bioSurface) bioSurface_unitObservation hTrace (.relevant .pairA)
 
 theorem pairA_incremental_confidence_changes :
-    WorldModel.queryObservationConfidence
+    AdditiveWorldModel.queryObservationConfidence
         (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
         1 pairABatch₁ (.relevant .pairA) ≠
-      WorldModel.queryObservationConfidence
+      AdditiveWorldModel.queryObservationConfidence
         (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
         1 pairATrace (.relevant .pairA) := by
   rw [wm_confidence_eq_ratio (S := bioSurface) (κ := 1) bioSurface_unitObservation
@@ -621,16 +621,16 @@ theorem pairA_incremental_relevance_persists_and_count_increases :
         closureFromTrace bioSurface bioFrontier bioRules pairABatch₁ ∧
       BioQuery.relevant .pairA ∈
         closureFromTrace bioSurface bioFrontier bioRules pairATrace ∧
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
           (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
           pairABatch₁ (.relevant .pairA) = 1 ∧
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
           (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
           pairATrace (.relevant .pairA) = 2 ∧
-      WorldModel.queryObservationConfidence
+      AdditiveWorldModel.queryObservationConfidence
           (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
           1 pairABatch₁ (.relevant .pairA) ≠
-        WorldModel.queryObservationConfidence
+        AdditiveWorldModel.queryObservationConfidence
           (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
           1 pairATrace (.relevant .pairA) := by
   exact ⟨relevant_pairA_in_batch₁_closure, relevant_pairA_in_total_closure,
@@ -644,10 +644,10 @@ theorem pairA_pairB_same_discovery_different_counts :
         closureFromTrace bioSurface bioFrontier bioRules pairATrace ∧
       BioQuery.relevant .pairB ∈
         closureFromTrace bioSurface bioFrontier bioRules pairBTrace ∧
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
           (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
           pairATrace (.relevant .pairA) = 2 ∧
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
           (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
           pairBTrace (.relevant .pairB) = 1 := by
   exact ⟨relevant_pairA_in_total_closure, relevant_pairB_in_closure,
@@ -700,10 +700,10 @@ theorem pairA_static_vs_incremental_comparison :
         staticBioScore .pairA pairATrace ∧
       staticBioScore .pairA pairARepeatEqtlTrace =
         staticBioScore .pairA pairABatch₁ ∧
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
           (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
           pairABatch₁ (.relevant .pairA) = 1 ∧
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
           (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
           pairARepeatEqtlTrace (.relevant .pairA) = 2 := by
   exact ⟨pairABatch₁_staticScore_lt_pairATrace_staticScore,
@@ -716,10 +716,10 @@ the query observation count. Combined with `confidenceFromN_mono` (in
 confidence story: more observations → higher count → higher confidence. -/
 theorem queryObservationCount_mono_add
     (σ₁ σ₂ : Multiset BioObservation) (q : BioQuery) :
-    WorldModel.queryObservationCount
+    AdditiveWorldModel.queryObservationCount
         (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
         σ₁ q ≤
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
           (State := Multiset BioObservation) (Query := BioQuery) (Ev := BinaryEvidence)
           (σ₁ + σ₂) q := by
   rw [wm_count_eq_card (S := bioSurface) bioSurface_unitObservation σ₁ q,

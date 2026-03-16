@@ -48,7 +48,7 @@ variable [EvidenceType State] [BinaryWorldModel State Query]
 /-- Generic atom-evidence semantics from WM queries.
 
 Unlike `wmEvidenceAtomSem` (which hardcodes `Query = Pattern`), this works
-with arbitrary `Query` types (e.g. `PLNQuery Atom`). -/
+with arbitrary `Query` types (e.g. `AtomQuery Atom`). -/
 noncomputable def wmEvidenceAtomSemQ
     (W : State) (queryOfAtom : String → Pattern → Query) : EvidenceAtomSem :=
   fun a p => BinaryWorldModel.evidence W (queryOfAtom a p)
@@ -320,14 +320,14 @@ WM rewrite → atom evidence → `semE` consequence. -/
 
 section ConcreteExample
 
-variable {Atom State : Type*} [EvidenceType State] [BinaryWorldModel State (PLNQuery Atom)]
+variable {Atom State : Type*} [EvidenceType State] [BinaryWorldModel State (AtomQuery Atom)]
 
 /-- Example ξPLN with a single d-separation rewrite rule. -/
 noncomputable def xiDsepExample
-    (q₁ q₂ : PLNQuery Atom) (Sigma : Prop)
-    (h : Sigma → WMQueryEq (State := State) (Query := PLNQuery Atom) q₁ q₂)
-    (enc : String → Pattern → PLNQuery Atom) :
-    XiPLN (State := State) (Query := PLNQuery Atom) :=
+    (q₁ q₂ : AtomQuery Atom) (Sigma : Prop)
+    (h : Sigma → WMQueryEq (State := State) (Query := AtomQuery Atom) q₁ q₂)
+    (enc : String → Pattern → AtomQuery Atom) :
+    XiPLN (State := State) (Query := AtomQuery Atom) :=
   { queryOfAtom := enc
     rulesE := {dsep_rewrite (State := State) q₁ q₂ Sigma h}
     rulesS := ∅ }
@@ -335,14 +335,14 @@ noncomputable def xiDsepExample
 /-- End-to-end: if the atom encodes `q₂` and Σ holds, the atom evidence
 equals the evidence for `q₁` (the rewritten query). -/
 theorem xiDsepExample_atom_eq
-    (q₁ q₂ : PLNQuery Atom) (Sigma : Prop)
-    (h : Sigma → WMQueryEq (State := State) (Query := PLNQuery Atom) q₁ q₂)
-    (enc : String → Pattern → PLNQuery Atom)
+    (q₁ q₂ : AtomQuery Atom) (Sigma : Prop)
+    (h : Sigma → WMQueryEq (State := State) (Query := AtomQuery Atom) q₁ q₂)
+    (enc : String → Pattern → AtomQuery Atom)
     (R : Pattern → Pattern → Prop)
     (a : String) (p : Pattern)
     (hEnc : enc a p = q₂) (hSigma : Sigma) (W : State) :
     semE R (wmEvidenceAtomSemQ W enc) (.atom a) p =
-      BinaryWorldModel.evidence (State := State) (Query := PLNQuery Atom) W q₁ := by
+      BinaryWorldModel.evidence (State := State) (Query := AtomQuery Atom) W q₁ := by
   simp [wmEvidenceAtomSemQ, hEnc]
   exact (h hSigma W).symm
 

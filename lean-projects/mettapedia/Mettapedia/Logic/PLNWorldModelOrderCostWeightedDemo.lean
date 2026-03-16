@@ -58,7 +58,7 @@ noncomputable def weightedRightBiasOverlapLayer {Query : Type*} :
   additive_of_independent := by
     intro I₁ I₂ q hleft
     have hleftE :
-        WorldModel.extract
+        AdditiveWorldModel.extract
           (State := WeightedQueryState Query)
           (Query := Query) (Ev := WeightedNormalGammaEvidence) I₁ q = 0 := by
       simpa using hleft
@@ -99,23 +99,23 @@ theorem weightedSwapAnomalyCount_eq_zero_of_query_eq {Query : Type*}
     weightedSwapAnomalyCount I₁ I₂ q = 0 := by
   unfold weightedSwapAnomalyCount
   have hcount :
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
         (State := WeightedQueryState Query)
         (Query := Query) (Ev := WeightedNormalGammaEvidence)
         (weightedRightBiasMerge I₁ I₂) q =
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
         (State := WeightedQueryState Query)
         (Query := Query) (Ev := WeightedNormalGammaEvidence)
         (weightedRightBiasMerge I₂ I₁) q := by
     have hqE :
-        WorldModel.extract
+        AdditiveWorldModel.extract
           (State := WeightedQueryState Query)
           (Query := Query) (Ev := WeightedNormalGammaEvidence) I₁ q =
-        WorldModel.extract
+        AdditiveWorldModel.extract
           (State := WeightedQueryState Query)
           (Query := Query) (Ev := WeightedNormalGammaEvidence) I₂ q := by
       simpa using hq
-    unfold WorldModel.queryObservationCount
+    unfold AdditiveWorldModel.queryObservationCount
     simpa [weightedRightBiasMerge] using
       congrArg ConjugateEvidence.observationCount hqE.symm
   exact swapAnomalyCount_zero_of_count_eq
@@ -130,39 +130,39 @@ theorem weightedSwapAnomalyCount_eq_weight_of_zero_then_single {Query : Type*}
     (h₂ : I₂ q = WeightedNormalGammaEvidence.single w x) :
     weightedSwapAnomalyCount I₁ I₂ q = (w : ℝ≥0∞) := by
   have hcount₁ :
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
         (State := WeightedQueryState Query)
         (Query := Query) (Ev := WeightedNormalGammaEvidence) I₁ q = 0 := by
     have h₁E :
-        WorldModel.extract
+        AdditiveWorldModel.extract
           (State := WeightedQueryState Query)
           (Query := Query) (Ev := WeightedNormalGammaEvidence) I₁ q = 0 := by
       simpa using h₁
-    unfold WorldModel.queryObservationCount
+    unfold AdditiveWorldModel.queryObservationCount
     rw [h₁E]
     exact ConjugateEvidence.observationCount_zero (Ev := WeightedNormalGammaEvidence)
   have hcount₂ :
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
         (State := WeightedQueryState Query)
         (Query := Query) (Ev := WeightedNormalGammaEvidence) I₂ q = (w : ℝ≥0∞) := by
     have h₂E :
-        WorldModel.extract
+        AdditiveWorldModel.extract
           (State := WeightedQueryState Query)
           (Query := Query) (Ev := WeightedNormalGammaEvidence) I₂ q =
         WeightedNormalGammaEvidence.single w x := by
       simpa using h₂
-    unfold WorldModel.queryObservationCount
+    unfold AdditiveWorldModel.queryObservationCount
     rw [h₂E]
     simpa using
       (WeightedNormalGammaEvidence.observationCount_single (w := w) (x := x))
   have hmerge₁₂ :
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
         (State := WeightedQueryState Query)
         (Query := Query) (Ev := WeightedNormalGammaEvidence)
         ((weightedRightBiasOverlapLayer (Query := Query)).merge I₁ I₂) q = (w : ℝ≥0∞) := by
     simpa [weightedRightBiasOverlapLayer, weightedRightBiasMerge] using hcount₂
   have hmerge₂₁ :
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
         (State := WeightedQueryState Query)
         (Query := Query) (Ev := WeightedNormalGammaEvidence)
         ((weightedRightBiasOverlapLayer (Query := Query)).merge I₂ I₁) q = 0 := by
@@ -178,40 +178,40 @@ theorem weightedScheduleErrorCount_twoStep_eq_weight_of_zero_then_single {Query 
     (h₂ : I₂ q = WeightedNormalGammaEvidence.single w x) :
     weightedScheduleErrorCount base [I₁, I₂] [I₂, I₁] q = (w : ℝ≥0∞) := by
   have hcount₁ :
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
         (State := WeightedQueryState Query)
         (Query := Query) (Ev := WeightedNormalGammaEvidence) I₁ q = 0 := by
     have h₁E :
-        WorldModel.extract
+        AdditiveWorldModel.extract
           (State := WeightedQueryState Query)
           (Query := Query) (Ev := WeightedNormalGammaEvidence) I₁ q = 0 := by
       simpa using h₁
-    unfold WorldModel.queryObservationCount
+    unfold AdditiveWorldModel.queryObservationCount
     rw [h₁E]
     exact ConjugateEvidence.observationCount_zero (Ev := WeightedNormalGammaEvidence)
   have hcount₂ :
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
         (State := WeightedQueryState Query)
         (Query := Query) (Ev := WeightedNormalGammaEvidence) I₂ q = (w : ℝ≥0∞) := by
     have h₂E :
-        WorldModel.extract
+        AdditiveWorldModel.extract
           (State := WeightedQueryState Query)
           (Query := Query) (Ev := WeightedNormalGammaEvidence) I₂ q =
         WeightedNormalGammaEvidence.single w x := by
       simpa using h₂
-    unfold WorldModel.queryObservationCount
+    unfold AdditiveWorldModel.queryObservationCount
     rw [h₂E]
     simpa using
       (WeightedNormalGammaEvidence.observationCount_single (w := w) (x := x))
   have hstep₁₂ :
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
         (State := WeightedQueryState Query)
         (Query := Query) (Ev := WeightedNormalGammaEvidence)
         ((weightedRightBiasOverlapLayer (Query := Query)).merge
           ((weightedRightBiasOverlapLayer (Query := Query)).merge base I₁) I₂) q = (w : ℝ≥0∞) := by
     simpa [weightedRightBiasOverlapLayer, weightedRightBiasMerge] using hcount₂
   have hstep₂₁ :
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
         (State := WeightedQueryState Query)
         (Query := Query) (Ev := WeightedNormalGammaEvidence)
         ((weightedRightBiasOverlapLayer (Query := Query)).merge

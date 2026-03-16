@@ -10,7 +10,7 @@ additive extract carriers.
 The existing `BinaryWorldModel` remains the PLN-facing specialization with extract codomain
 `BinaryEvidence = (n⁺, n⁻)`.  This module adds a parallel generic interface:
 
-- `WorldModel State Query Ev`
+- `AdditiveWorldModel State Query Ev`
 - additive query extraction into any `AddCommMonoid Ev`
 - count/confidence views when `Ev` carries `ConjugateEvidence`
 
@@ -35,29 +35,29 @@ conjugate or extract-like carrier `Ev`.
 `EvidenceType`, so state revision is additive.  The codomain of extraction is
 now any `AddCommMonoid Ev` rather than the fixed binary carrier `BinaryEvidence`.
 -/
-class WorldModel (State Query Ev : Type*) [EvidenceType State] [AddCommMonoid Ev] where
+class AdditiveWorldModel (State Query Ev : Type*) [EvidenceType State] [AddCommMonoid Ev] where
   /-- Extract a value for a query from a state. -/
   extract : State → Query → Ev
   /-- Extraction commutes with additive revision in the state. -/
   extract_add : ∀ W₁ W₂ q, extract (W₁ + W₂) q = extract W₁ q + extract W₂ q
 
-namespace WorldModel
+namespace AdditiveWorldModel
 
 variable {State Query Ev : Type*}
-variable [EvidenceType State] [AddCommMonoid Ev] [WorldModel State Query Ev]
+variable [EvidenceType State] [AddCommMonoid Ev] [AdditiveWorldModel State Query Ev]
 
 /-- Convenience form of the additive extraction law. -/
 theorem extract_add' (W₁ W₂ : State) (q : Query) :
-    WorldModel.extract (State := State) (Query := Query) (Ev := Ev) (W₁ + W₂) q =
-      WorldModel.extract (State := State) (Query := Query) (Ev := Ev) W₁ q +
-        WorldModel.extract (State := State) (Query := Query) (Ev := Ev) W₂ q :=
-  WorldModel.extract_add (State := State) (Query := Query) (Ev := Ev) W₁ W₂ q
+    AdditiveWorldModel.extract (State := State) (Query := Query) (Ev := Ev) (W₁ + W₂) q =
+      AdditiveWorldModel.extract (State := State) (Query := Query) (Ev := Ev) W₁ q +
+        AdditiveWorldModel.extract (State := State) (Query := Query) (Ev := Ev) W₂ q :=
+  AdditiveWorldModel.extract_add (State := State) (Query := Query) (Ev := Ev) W₁ W₂ q
 
 /-- Generic query equivalence: two queries extract identical `Ev`-extract from every state. -/
 def GMQueryEq (q₁ q₂ : Query) : Prop :=
   ∀ W : State,
-    WorldModel.extract (State := State) (Query := Query) (Ev := Ev) W q₁ =
-      WorldModel.extract (State := State) (Query := Query) (Ev := Ev) W q₂
+    AdditiveWorldModel.extract (State := State) (Query := Query) (Ev := Ev) W q₁ =
+      AdditiveWorldModel.extract (State := State) (Query := Query) (Ev := Ev) W q₂
 
 theorem GMQueryEq.refl (q : Query) :
     GMQueryEq (State := State) (Query := Query) (Ev := Ev) q q := by
@@ -84,12 +84,12 @@ variable [ConjugateEvidence Ev]
 /-- Observation-count view of a generic query. -/
 noncomputable def queryObservationCount (W : State) (q : Query) : ℝ≥0∞ :=
   ConjugateEvidence.observationCount
-    (WorldModel.extract (State := State) (Query := Query) (Ev := Ev) W q)
+    (AdditiveWorldModel.extract (State := State) (Query := Query) (Ev := Ev) W q)
 
 /-- Count-induced confidence view of a generic query. -/
 noncomputable def queryObservationConfidence (κ : ℝ≥0∞) (W : State) (q : Query) : ℝ≥0∞ :=
   observationConfidence κ
-    (WorldModel.extract (State := State) (Query := Query) (Ev := Ev) W q)
+    (AdditiveWorldModel.extract (State := State) (Query := Query) (Ev := Ev) W q)
 
 /-- Equality transport for the count view. -/
 theorem GMQueryEq.to_queryObservationCount {q₁ q₂ : Query} :
@@ -112,17 +112,17 @@ theorem GMQueryEq.to_queryObservationConfidence {q₁ q₂ : Query}
 
 end Conjugate
 
-end WorldModel
+end AdditiveWorldModel
 
 /-- The existing binary PLN world-model interface is the specialization of the
 generic interface at `Ev = BinaryEvidence`. -/
 noncomputable instance instGenericWorldModelOfWorldModel
     {State Query : Type*} [EvidenceType State] [BinaryWorldModel State Query] :
-    WorldModel State Query BinaryEvidence where
+    AdditiveWorldModel State Query BinaryEvidence where
   extract := BinaryWorldModel.evidence (State := State) (Query := Query)
   extract_add := BinaryWorldModel.evidence_add (State := State) (Query := Query)
 
-namespace WorldModel
+namespace AdditiveWorldModel
 
 section BinaryBridge
 
@@ -130,7 +130,7 @@ variable {State Query : Type*}
 variable [EvidenceType State] [BinaryWorldModel State Query]
 
 @[simp] theorem evidence_eq_binary_evidence (W : State) (q : Query) :
-    WorldModel.extract (State := State) (Query := Query) (Ev := BinaryEvidence) W q =
+    AdditiveWorldModel.extract (State := State) (Query := Query) (Ev := BinaryEvidence) W q =
       BinaryWorldModel.evidence (State := State) (Query := Query) W q :=
   rfl
 
@@ -146,7 +146,7 @@ theorem queryObservationConfidence_eq_queryConfidence
   unfold queryObservationConfidence BinaryWorldModel.queryConfidence
   simpa [evidence_eq_binary_evidence (State := State) (Query := Query) W q] using
     beta_observationConfidence_eq_toConfidence κ
-      (WorldModel.extract (State := State) (Query := Query) (Ev := BinaryEvidence) W q)
+      (AdditiveWorldModel.extract (State := State) (Query := Query) (Ev := BinaryEvidence) W q)
 
 end BinaryBridge
 
@@ -161,7 +161,7 @@ noncomputable def genericWorldModelOfAtomicEvidence
     {Obs Query Ev : Type*} [AddCommMonoid Ev]
     (a : GenAtomicEvidenceContribution Obs Query Ev) :
     letI : EvidenceType (Multiset Obs) := multisetEvidenceType Obs
-    WorldModel (Multiset Obs) Query Ev := by
+    AdditiveWorldModel (Multiset Obs) Query Ev := by
   letI : EvidenceType (Multiset Obs) := multisetEvidenceType Obs
   exact
     { extract := genAdditiveExtension a
@@ -199,7 +199,7 @@ theorem queryObservationConfidence_of_unit
 count extracted from it must be zero. -/
 theorem queryObservationCount_eq_zero_of_revision_idempotent
     {State Query Ev : Type*}
-    [EvidenceType State] [ConjugateEvidence Ev] [WorldModel State Query Ev]
+    [EvidenceType State] [ConjugateEvidence Ev] [AdditiveWorldModel State Query Ev]
     (W : State) (q : Query)
     (hfin :
       queryObservationCount (State := State) (Query := Query) (Ev := Ev) W q ≠ ⊤)
@@ -207,14 +207,14 @@ theorem queryObservationCount_eq_zero_of_revision_idempotent
     queryObservationCount (State := State) (Query := Query) (Ev := Ev) W q = 0 := by
   unfold queryObservationCount
   apply observationCount_eq_zero_of_add_idempotent hfin
-  have heq := WorldModel.extract_add' (State := State) (Query := Query) (Ev := Ev) W W q
+  have heq := AdditiveWorldModel.extract_add' (State := State) (Query := Query) (Ev := Ev) W W q
   simpa [hidem] using heq.symm
 
 /-- A state with finite, nonzero query observation count cannot be idempotent
 under revision. -/
 theorem not_revision_idempotent_of_finite_nonzero_queryObservationCount
     {State Query Ev : Type*}
-    [EvidenceType State] [ConjugateEvidence Ev] [WorldModel State Query Ev]
+    [EvidenceType State] [ConjugateEvidence Ev] [AdditiveWorldModel State Query Ev]
     (W : State) (q : Query)
     (hfin :
       queryObservationCount (State := State) (Query := Query) (Ev := Ev) W q ≠ ⊤)
@@ -243,9 +243,9 @@ theorem dirichlet_queryObservationCount_of_single {k : ℕ}
     simp [hunit o q]
   exact queryObservationCount_of_unit a hobs σ q
 
-end WorldModel
+end AdditiveWorldModel
 
--- Forward alias note: WorldModel lacks extract_zero.
+-- Forward alias note: AdditiveWorldModel lacks extract_zero.
 -- The zero-preserving version is ZeroPreservingGWM in WorldModelCore.lean
 -- or GSLTEvidenceAssignment in GSLTEvidence.lean.
 -- The canonical `BinaryWorldModel` name will eventually go to the

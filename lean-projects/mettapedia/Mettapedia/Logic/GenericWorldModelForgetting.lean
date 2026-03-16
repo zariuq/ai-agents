@@ -25,13 +25,13 @@ open Mettapedia.Logic.ConjugateEvidenceSurface
 open Mettapedia.Logic.PLNWorldModelGeneric
 
 variable {State Query Ev : Type*}
-variable [EvidenceType State] [AddCommMonoid Ev] [WorldModel State Query Ev]
+variable [EvidenceType State] [AddCommMonoid Ev] [AdditiveWorldModel State Query Ev]
 
 /-- A generic world model is zero-preserving when the empty/zero state extracts
 zero evidence for every query. Additivity alone does not force this. -/
 def GenericWorldModelZeroPreserving : Prop :=
   ∀ q,
-    WorldModel.extract
+    AdditiveWorldModel.extract
       (State := State) (Query := Query) (Ev := Ev) (0 : State) q = 0
 
 /-- A forgetting layer over a generic world model.
@@ -39,21 +39,21 @@ def GenericWorldModelZeroPreserving : Prop :=
 `inScope S q` means that query `q` lies inside the forgotten scope `S`. Outside
 that scope, forgetting must leave the extracted evidence unchanged. -/
 structure ForgettingLayer (State Scope Query Ev : Type*)
-    [EvidenceType State] [AddCommMonoid Ev] [WorldModel State Query Ev] where
+    [EvidenceType State] [AddCommMonoid Ev] [AdditiveWorldModel State Query Ev] where
   inScope : Scope → Query → Prop
   forget : Scope → State → State
   idempotent : ∀ S W, forget S (forget S W) = forget S W
   outsideInvariant :
     ∀ {S W q}, ¬ inScope S q →
-      WorldModel.extract
+      AdditiveWorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) (forget S W) q =
-      WorldModel.extract
+      AdditiveWorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) W q
 
 namespace ForgettingLayer
 
 variable {State Scope Query Ev : Type*}
-variable [EvidenceType State] [AddCommMonoid Ev] [WorldModel State Query Ev]
+variable [EvidenceType State] [AddCommMonoid Ev] [AdditiveWorldModel State Query Ev]
 
 theorem idempotent' (F : ForgettingLayer State Scope Query Ev)
     (S : Scope) (W : State) :
@@ -64,9 +64,9 @@ theorem outsideInvariant'
     (F : ForgettingLayer State Scope Query Ev)
     {S : Scope} {W : State} {q : Query}
     (hout : ¬ F.inScope S q) :
-    WorldModel.extract
+    AdditiveWorldModel.extract
       (State := State) (Query := Query) (Ev := Ev) (F.forget S W) q =
-    WorldModel.extract
+    AdditiveWorldModel.extract
       (State := State) (Query := Query) (Ev := Ev) W q :=
   F.outsideInvariant hout
 
@@ -78,11 +78,11 @@ theorem outsideInvariant_queryObservationCount
     (F : ForgettingLayer State Scope Query Ev)
     {S : Scope} {W : State} {q : Query}
     (hout : ¬ F.inScope S q) :
-    WorldModel.queryObservationCount
+    AdditiveWorldModel.queryObservationCount
       (State := State) (Query := Query) (Ev := Ev) (F.forget S W) q =
-    WorldModel.queryObservationCount
+    AdditiveWorldModel.queryObservationCount
       (State := State) (Query := Query) (Ev := Ev) W q := by
-  unfold WorldModel.queryObservationCount
+  unfold AdditiveWorldModel.queryObservationCount
   simpa using congrArg ConjugateEvidence.observationCount (F.outsideInvariant hout)
 
 theorem outsideInvariant_queryObservationConfidence
@@ -90,11 +90,11 @@ theorem outsideInvariant_queryObservationConfidence
     (κ : ℝ≥0∞)
     {S : Scope} {W : State} {q : Query}
     (hout : ¬ F.inScope S q) :
-    WorldModel.queryObservationConfidence
+    AdditiveWorldModel.queryObservationConfidence
       (State := State) (Query := Query) (Ev := Ev) κ (F.forget S W) q =
-    WorldModel.queryObservationConfidence
+    AdditiveWorldModel.queryObservationConfidence
       (State := State) (Query := Query) (Ev := Ev) κ W q := by
-  unfold WorldModel.queryObservationConfidence
+  unfold AdditiveWorldModel.queryObservationConfidence
   simpa using congrArg (observationConfidence κ) (F.outsideInvariant hout)
 
 end Conjugate
@@ -107,7 +107,7 @@ theorem exactInverse_revision_supported
     {S : Scope} {Δ : State}
     (hinv : ∀ W : State, F.forget S (W + Δ) = W) :
     ∀ q, ¬ F.inScope S q →
-      WorldModel.extract
+      AdditiveWorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) Δ q = 0 := by
   intro q hout
   have hOutside :=
@@ -115,16 +115,16 @@ theorem exactInverse_revision_supported
   have hInv0 : F.forget S ((0 : State) + Δ) = (0 : State) := by
     simpa using hinv (0 : State)
   calc
-    WorldModel.extract
+    AdditiveWorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) Δ q
-      = WorldModel.extract
+      = AdditiveWorldModel.extract
           (State := State) (Query := Query) (Ev := Ev) ((0 : State) + Δ) q := by
             simp
-    _ = WorldModel.extract
+    _ = AdditiveWorldModel.extract
           (State := State) (Query := Query) (Ev := Ev) (F.forget S ((0 : State) + Δ)) q := by
             symm
             exact hOutside
-    _ = WorldModel.extract
+    _ = AdditiveWorldModel.extract
           (State := State) (Query := Query) (Ev := Ev) (0 : State) q := by
             rw [hInv0]
     _ = 0 := hzero q
@@ -137,7 +137,7 @@ theorem no_exactInverse_revision_of_nonzero_outside_scope
     {S : Scope} {Δ : State} {q : Query}
     (hout : ¬ F.inScope S q)
     (hne :
-      WorldModel.extract
+      AdditiveWorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) Δ q ≠ 0) :
     ¬ ∀ W : State, F.forget S (W + Δ) = W := by
   intro hinv
@@ -164,13 +164,13 @@ def profileAgreesOutsideScope
     This is `outsideInvariant` lifted to a single profile-level statement. -/
 theorem ForgettingLayer.forget_profile_invariant
     {State Scope Query Ev : Type*}
-    [EvidenceType State] [AddCommMonoid Ev] [WorldModel State Query Ev]
+    [EvidenceType State] [AddCommMonoid Ev] [AdditiveWorldModel State Query Ev]
     (F : ForgettingLayer State Scope Query Ev)
     (S : Scope) (W : State) :
     profileAgreesOutsideScope F.inScope S
-      (fun q => WorldModel.extract
+      (fun q => AdditiveWorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) (F.forget S W) q)
-      (fun q => WorldModel.extract
+      (fun q => AdditiveWorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) W q) :=
   fun q hq => F.outsideInvariant hq
 
@@ -179,13 +179,13 @@ theorem ForgettingLayer.forget_profile_invariant
     lifted to profile level. -/
 theorem ForgettingLayer.exactInverse_profile_vanishes
     {State Scope Query Ev : Type*}
-    [EvidenceType State] [AddCommMonoid Ev] [WorldModel State Query Ev]
+    [EvidenceType State] [AddCommMonoid Ev] [AdditiveWorldModel State Query Ev]
     (F : ForgettingLayer State Scope Query Ev)
     (hzero : GenericWorldModelZeroPreserving (State := State) (Query := Query) (Ev := Ev))
     {S : Scope} {Δ : State}
     (hinv : ∀ W : State, F.forget S (W + Δ) = W) :
     profileAgreesOutsideScope F.inScope S
-      (fun q => WorldModel.extract
+      (fun q => AdditiveWorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) Δ q)
       (fun _ => (0 : Ev)) :=
   fun q hq => F.exactInverse_revision_supported hzero hinv q hq

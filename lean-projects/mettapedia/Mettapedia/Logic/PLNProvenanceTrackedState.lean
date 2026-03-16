@@ -204,7 +204,7 @@ theorem toTracked_payloadSupport_eq_whichSupport
 
 theorem toTracked_evidence_eq
     (I : KRelation σ (Which (Fin n))) (q : GroundAtom σ) :
-    WorldModel.extract
+    AdditiveWorldModel.extract
       (State := TrackedWhichState σ n) (Query := GroundAtom σ) (Ev := Which (Fin n))
       (toTrackedWhichState I) q = I q := by
   cases hI : I q with
@@ -223,14 +223,14 @@ theorem toTracked_evidence_eq
 theorem toTracked_revision_preserves_add
     (I₁ I₂ : KRelation σ (Which (Fin n))) :
     ∀ q,
-      WorldModel.extract
+      AdditiveWorldModel.extract
         (State := TrackedWhichState σ n) (Query := GroundAtom σ) (Ev := Which (Fin n))
         (toTrackedWhichState (fun a => I₁ a + I₂ a)) q =
-      WorldModel.extract
+      AdditiveWorldModel.extract
         (State := TrackedWhichState σ n) (Query := GroundAtom σ) (Ev := Which (Fin n))
         (toTrackedWhichState I₁ + toTrackedWhichState I₂) q := by
   intro q
-  rw [toTracked_evidence_eq, WorldModel.extract_add',
+  rw [toTracked_evidence_eq, AdditiveWorldModel.extract_add',
     toTracked_evidence_eq, toTracked_evidence_eq]
 
 theorem toTracked_forget_exactInverse

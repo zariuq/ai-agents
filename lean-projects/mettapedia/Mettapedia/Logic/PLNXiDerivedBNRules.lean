@@ -101,11 +101,11 @@ theorem deduction_wmqueryeq_of_chainBN
     (hDSep : (CompiledPlan.deductionSide Three.A Three.B Three.C).holds
       (bn := chainBN)) :
     WMQueryEq (State := BNWorldModel.State (bn := chainBN))
-      (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
-      (PLNQuery.linkCond
+      (Query := AtomQuery (BNQuery.Atom (bn := chainBN)))
+      (AtomQuery.linkCond
         [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]
         ⟨Three.C, valC⟩)
-      (PLNQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩) :=
+      (AtomQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩) :=
   chain_screeningOff_wmqueryeq_of_dsep
     (valA := valA) (valB := valB) (valC := valC) hLMarkov hDSep
 
@@ -126,12 +126,12 @@ noncomputable def xi_deduction_rewrite_of_chainBN
     (hLMarkov : ChainBNLocalMarkovAll) :
     WMRewriteRule
       (BNWorldModel.State (bn := chainBN))
-      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := chainBN))) :=
   dsep_rewrite
     (State := BNWorldModel.State (bn := chainBN))
     (Atom := BNQuery.Atom (bn := chainBN))
-    (PLNQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩)
-    (PLNQuery.linkCond
+    (AtomQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩)
+    (AtomQuery.linkCond
       [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]
       ⟨Three.C, valC⟩)
     ((CompiledPlan.deductionSide Three.A Three.B Three.C).holds (bn := chainBN))
@@ -163,7 +163,7 @@ theorem xi_deduction_admissible_of_chainBN
     (W : BNWorldModel.State (bn := chainBN))
     (hW : ⊢wm W) :
     ⊢q W ⇓
-      (PLNQuery.linkCond
+      (AtomQuery.linkCond
         ([ (⟨Three.A, valA⟩ : BNQuery.Atom (bn := chainBN))
          , (⟨Three.B, valB⟩ : BNQuery.Atom (bn := chainBN)) ])
         (⟨Three.C, valC⟩ : BNQuery.Atom (bn := chainBN))) ↦
@@ -184,9 +184,9 @@ theorem xi_deduction_semE_atom_of_chainBN
       (bn := chainBN))
     (R : Pattern → Pattern → Prop)
     (W : BNWorldModel.State (bn := chainBN))
-    (enc : String → Pattern → PLNQuery (BNQuery.Atom (bn := chainBN)))
+    (enc : String → Pattern → AtomQuery (BNQuery.Atom (bn := chainBN)))
     (a : String) (p : Pattern)
-    (hEnc : enc a p = PLNQuery.linkCond
+    (hEnc : enc a p = AtomQuery.linkCond
       [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]
       ⟨Three.C, valC⟩) :
     semE R
@@ -211,9 +211,9 @@ theorem xi_deduction_threshold_of_chainBN
     (R : Pattern → Pattern → Prop)
     (W : BNWorldModel.State (bn := chainBN))
     (tau : ℝ≥0∞)
-    (enc : String → Pattern → PLNQuery (BNQuery.Atom (bn := chainBN)))
+    (enc : String → Pattern → AtomQuery (BNQuery.Atom (bn := chainBN)))
     (a : String) (p : Pattern)
-    (hEnc : enc a p = PLNQuery.linkCond
+    (hEnc : enc a p = AtomQuery.linkCond
       [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]
       ⟨Three.C, valC⟩)
     (hTau : tau ≤ BinaryEvidence.toStrength
@@ -240,7 +240,7 @@ theorem xi_deduction_threshold_concrete_true_fixture
     sem (fun _ _ => False)
       (thresholdAtomSemOfWMQ W tau
         (fun (_ : String) (_ : Pattern) =>
-          PLNQuery.linkCond
+          AtomQuery.linkCond
             [ (⟨Three.A, true⟩ : BNQuery.Atom (bn := chainBN))
             , (⟨Three.B, true⟩ : BNQuery.Atom (bn := chainBN)) ]
             (⟨Three.C, true⟩ : BNQuery.Atom (bn := chainBN))))
@@ -249,7 +249,7 @@ theorem xi_deduction_threshold_concrete_true_fixture
   xi_deduction_threshold_of_chainBN true true true hLMarkov hDSep
     (fun _ _ => False) W tau
     (fun (_ : String) (_ : Pattern) =>
-      PLNQuery.linkCond
+      AtomQuery.linkCond
         [ (⟨Three.A, true⟩ : BNQuery.Atom (bn := chainBN))
         , (⟨Three.B, true⟩ : BNQuery.Atom (bn := chainBN)) ]
         (⟨Three.C, true⟩ : BNQuery.Atom (bn := chainBN)))
@@ -269,13 +269,13 @@ theorem xi_deduction_strength_eq_of_chainBN
     (W : BNWorldModel.State (bn := chainBN)) :
     BinaryWorldModel.queryStrength
       (State := BNWorldModel.State (bn := chainBN))
-      (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
-      W (PLNQuery.linkCond [⟨Three.A, valA⟩, ⟨Three.B, valB⟩] ⟨Three.C, valC⟩)
+      (Query := AtomQuery (BNQuery.Atom (bn := chainBN)))
+      W (AtomQuery.linkCond [⟨Three.A, valA⟩, ⟨Three.B, valB⟩] ⟨Three.C, valC⟩)
       =
     BinaryWorldModel.queryStrength
       (State := BNWorldModel.State (bn := chainBN))
-      (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
-      W (PLNQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩) :=
+      (Query := AtomQuery (BNQuery.Atom (bn := chainBN)))
+      W (AtomQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩) :=
   chain_screeningOff_strength_eq_of_dsep
     (valA := valA) (valB := valB) (valC := valC) hLMarkov hDSep W
 
@@ -424,7 +424,7 @@ private lemma eventEq_true_eq_eventTrue (v : Three) :
 /-- queryProb for prop at `true` = marginal measure μ(event). -/
 private lemma queryProb_prop_true_eq
     (cpt : ChainBN.DiscreteCPT) (v : Three) :
-    queryProb (bn := chainBN) cpt (PLNQuery.prop ⟨v, true⟩) =
+    queryProb (bn := chainBN) cpt (AtomQuery.prop ⟨v, true⟩) =
       (μ (cpt := cpt)) (eventTrue v) := by
   simp only [queryProb]
   rw [propProbVE_eq_jointMeasure_eventEq, eventEq_true_eq_eventTrue]
@@ -434,7 +434,7 @@ private lemma queryProb_prop_true_eq
 private lemma queryProb_link_true_eq
     (cpt : ChainBN.DiscreteCPT) (a b : Three)
     (ha : (μ (cpt := cpt)) (eventTrue a) ≠ 0) :
-    queryProb (bn := chainBN) cpt (PLNQuery.link ⟨a, true⟩ ⟨b, true⟩) =
+    queryProb (bn := chainBN) cpt (AtomQuery.link ⟨a, true⟩ ⟨b, true⟩) =
       (μ (cpt := cpt)) (eventTrue a ∩ eventTrue b) /
         (μ (cpt := cpt)) (eventTrue a) := by
   simp only [queryProb]
@@ -448,12 +448,12 @@ private lemma queryProb_link_true_eq
 
 private lemma queryProb_prop_true_le_one
     (cpt : ChainBN.DiscreteCPT) (v : Three) :
-    queryProb (bn := chainBN) cpt (PLNQuery.prop ⟨v, true⟩) ≤ 1 := by
+    queryProb (bn := chainBN) cpt (AtomQuery.prop ⟨v, true⟩) ≤ 1 := by
   rw [queryProb_prop_true_eq]; exact prob_le_one
 
 private lemma queryProb_link_true_le_one
     (cpt : ChainBN.DiscreteCPT) (a b : Three) :
-    queryProb (bn := chainBN) cpt (PLNQuery.link ⟨a, true⟩ ⟨b, true⟩) ≤ 1 := by
+    queryProb (bn := chainBN) cpt (AtomQuery.link ⟨a, true⟩ ⟨b, true⟩) ≤ 1 := by
   simp only [queryProb]
   rw [linkProbVE_eq_jointMeasure_eventEq]
   simp only [eventEq_true_eq_eventTrue]
@@ -469,7 +469,7 @@ private lemma queryStrength_singleton_prop_toReal
     (cpt : ChainBN.DiscreteCPT) (v : Three) :
     (BinaryWorldModel.queryStrength
       ({cpt} : BNWorldModel.State (bn := chainBN))
-      (PLNQuery.prop (⟨v, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal =
+      (AtomQuery.prop (⟨v, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal =
     (μ (cpt := cpt)).real (eventTrue v) := by
   rw [queryStrength_singleton_eq_queryProb _ _ (queryProb_prop_true_le_one cpt v)]
   rw [queryProb_prop_true_eq]
@@ -482,7 +482,7 @@ private lemma queryStrength_singleton_link_toReal
     (ha : (μ (cpt := cpt)) (eventTrue a) ≠ 0) :
     (BinaryWorldModel.queryStrength
       ({cpt} : BNWorldModel.State (bn := chainBN))
-      (PLNQuery.link (⟨a, true⟩ : BNQuery.Atom (bn := chainBN))
+      (AtomQuery.link (⟨a, true⟩ : BNQuery.Atom (bn := chainBN))
                      (⟨b, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal =
     (μ (cpt := cpt)).real (eventTrue b ∩ eventTrue a) /
       (μ (cpt := cpt)).real (eventTrue a) := by
@@ -516,19 +516,19 @@ theorem xi_deduction_queryStrength_eq_plnDeduction_of_chainBN
     (hABc_pos : (μ (cpt := cpt)) (A ∩ (B : Set ChainBN.JointSpace)ᶜ) ≠ 0) :
     let W : BNWorldModel.State (bn := chainBN) := {cpt}
     (BinaryWorldModel.queryStrength W
-      (PLNQuery.link (⟨Three.A, true⟩ : BNQuery.Atom (bn := chainBN))
+      (AtomQuery.link (⟨Three.A, true⟩ : BNQuery.Atom (bn := chainBN))
                      (⟨Three.C, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal =
     plnDeductionStrength
       (BinaryWorldModel.queryStrength W
-        (PLNQuery.link (⟨Three.A, true⟩ : BNQuery.Atom (bn := chainBN))
+        (AtomQuery.link (⟨Three.A, true⟩ : BNQuery.Atom (bn := chainBN))
                        (⟨Three.B, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal
       (BinaryWorldModel.queryStrength W
-        (PLNQuery.link (⟨Three.B, true⟩ : BNQuery.Atom (bn := chainBN))
+        (AtomQuery.link (⟨Three.B, true⟩ : BNQuery.Atom (bn := chainBN))
                        (⟨Three.C, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal
       (BinaryWorldModel.queryStrength W
-        (PLNQuery.prop (⟨Three.B, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal
+        (AtomQuery.prop (⟨Three.B, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal
       (BinaryWorldModel.queryStrength W
-        (PLNQuery.prop (⟨Three.C, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal := by
+        (AtomQuery.prop (⟨Three.C, true⟩ : BNQuery.Atom (bn := chainBN)))).toReal := by
   intro W
   -- Bridge: convert each queryStrength to μ.real
   rw [queryStrength_singleton_link_toReal cpt Three.A Three.C hA_pos]
@@ -702,11 +702,11 @@ theorem sourceRule_wmqueryeq_of_forkBN
     (hDSep : (CompiledPlan.inductionSide Three.A Three.B Three.C).holds
       (bn := forkBN)) :
     WMQueryEq (State := BNWorldModel.State (bn := forkBN))
-      (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
-      (PLNQuery.linkCond
+      (Query := AtomQuery (BNQuery.Atom (bn := forkBN)))
+      (AtomQuery.linkCond
         [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]
         ⟨Three.C, valC⟩)
-      (PLNQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩) :=
+      (AtomQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩) :=
   fork_screeningOff_wmqueryeq_of_dsep
     (valA := valA) (valB := valB) (valC := valC) hLMarkov hDSep
 
@@ -727,12 +727,12 @@ noncomputable def xi_sourceRule_rewrite_of_forkBN
     (hLMarkov : ForkBNLocalMarkovAll) :
     WMRewriteRule
       (BNWorldModel.State (bn := forkBN))
-      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := forkBN))) :=
   dsep_rewrite
     (State := BNWorldModel.State (bn := forkBN))
     (Atom := BNQuery.Atom (bn := forkBN))
-    (PLNQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩)
-    (PLNQuery.linkCond
+    (AtomQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩)
+    (AtomQuery.linkCond
       [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]
       ⟨Three.C, valC⟩)
     ((CompiledPlan.inductionSide Three.A Three.B Three.C).holds (bn := forkBN))
@@ -764,7 +764,7 @@ theorem xi_sourceRule_admissible_of_forkBN
     (W : BNWorldModel.State (bn := forkBN))
     (hW : ⊢wm W) :
     ⊢q W ⇓
-      (PLNQuery.linkCond
+      (AtomQuery.linkCond
         ([ (⟨Three.A, valA⟩ : BNQuery.Atom (bn := forkBN))
          , (⟨Three.B, valB⟩ : BNQuery.Atom (bn := forkBN)) ])
         (⟨Three.C, valC⟩ : BNQuery.Atom (bn := forkBN))) ↦
@@ -785,9 +785,9 @@ theorem xi_sourceRule_semE_atom_of_forkBN
       (bn := forkBN))
     (R : Pattern → Pattern → Prop)
     (W : BNWorldModel.State (bn := forkBN))
-    (enc : String → Pattern → PLNQuery (BNQuery.Atom (bn := forkBN)))
+    (enc : String → Pattern → AtomQuery (BNQuery.Atom (bn := forkBN)))
     (a : String) (p : Pattern)
-    (hEnc : enc a p = PLNQuery.linkCond
+    (hEnc : enc a p = AtomQuery.linkCond
       [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]
       ⟨Three.C, valC⟩) :
     semE R
@@ -812,9 +812,9 @@ theorem xi_sourceRule_threshold_of_forkBN
     (R : Pattern → Pattern → Prop)
     (W : BNWorldModel.State (bn := forkBN))
     (tau : ℝ≥0∞)
-    (enc : String → Pattern → PLNQuery (BNQuery.Atom (bn := forkBN)))
+    (enc : String → Pattern → AtomQuery (BNQuery.Atom (bn := forkBN)))
     (a : String) (p : Pattern)
-    (hEnc : enc a p = PLNQuery.linkCond
+    (hEnc : enc a p = AtomQuery.linkCond
       [⟨Three.A, valA⟩, ⟨Three.B, valB⟩]
       ⟨Three.C, valC⟩)
     (hTau : tau ≤ BinaryEvidence.toStrength
@@ -841,7 +841,7 @@ theorem xi_sourceRule_threshold_concrete_true_fixture
     sem (fun _ _ => False)
       (thresholdAtomSemOfWMQ W tau
         (fun (_ : String) (_ : Pattern) =>
-          PLNQuery.linkCond
+          AtomQuery.linkCond
             [ (⟨Three.A, true⟩ : BNQuery.Atom (bn := forkBN))
             , (⟨Three.B, true⟩ : BNQuery.Atom (bn := forkBN)) ]
             (⟨Three.C, true⟩ : BNQuery.Atom (bn := forkBN))))
@@ -850,7 +850,7 @@ theorem xi_sourceRule_threshold_concrete_true_fixture
   xi_sourceRule_threshold_of_forkBN true true true hLMarkov hDSep
     (fun _ _ => False) W tau
     (fun (_ : String) (_ : Pattern) =>
-      PLNQuery.linkCond
+      AtomQuery.linkCond
         [ (⟨Three.A, true⟩ : BNQuery.Atom (bn := forkBN))
         , (⟨Three.B, true⟩ : BNQuery.Atom (bn := forkBN)) ]
         (⟨Three.C, true⟩ : BNQuery.Atom (bn := forkBN)))
@@ -870,13 +870,13 @@ theorem xi_sourceRule_strength_eq_of_forkBN
     (W : BNWorldModel.State (bn := forkBN)) :
     BinaryWorldModel.queryStrength
       (State := BNWorldModel.State (bn := forkBN))
-      (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
-      W (PLNQuery.linkCond [⟨Three.A, valA⟩, ⟨Three.B, valB⟩] ⟨Three.C, valC⟩)
+      (Query := AtomQuery (BNQuery.Atom (bn := forkBN)))
+      W (AtomQuery.linkCond [⟨Three.A, valA⟩, ⟨Three.B, valB⟩] ⟨Three.C, valC⟩)
       =
     BinaryWorldModel.queryStrength
       (State := BNWorldModel.State (bn := forkBN))
-      (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
-      W (PLNQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩) :=
+      (Query := AtomQuery (BNQuery.Atom (bn := forkBN)))
+      W (AtomQuery.link ⟨Three.B, valB⟩ ⟨Three.C, valC⟩) :=
   fork_screeningOff_strength_eq_of_dsep
     (valA := valA) (valB := valB) (valC := valC) hLMarkov hDSep W
 
@@ -922,7 +922,7 @@ private abbrev fC' := eventEq (bn := forkBN) Three.C true
 private lemma fork_qS_link_toReal (cpt : forkBN.DiscreteCPT) (a b : Three)
     (ha : cpt.jointMeasure (eventEq (bn := forkBN) a true) ≠ 0) :
     (BinaryWorldModel.queryStrength ({cpt} : BNWorldModel.State (bn := forkBN))
-      (PLNQuery.link (⟨a, true⟩ : BNQuery.Atom (bn := forkBN))
+      (AtomQuery.link (⟨a, true⟩ : BNQuery.Atom (bn := forkBN))
                      (⟨b, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal =
     cpt.jointMeasure.real (eventEq (bn := forkBN) b true ∩ eventEq (bn := forkBN) a true) /
       cpt.jointMeasure.real (eventEq (bn := forkBN) a true) := by
@@ -937,7 +937,7 @@ private lemma fork_qS_link_toReal (cpt : forkBN.DiscreteCPT) (a b : Three)
 
 private lemma fork_qS_prop_toReal (cpt : forkBN.DiscreteCPT) (v : Three) :
     (BinaryWorldModel.queryStrength ({cpt} : BNWorldModel.State (bn := forkBN))
-      (PLNQuery.prop (⟨v, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal =
+      (AtomQuery.prop (⟨v, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal =
     cpt.jointMeasure.real (eventEq (bn := forkBN) v true) := by
   rw [queryStrength_singleton_eq_queryProb]
   · rw [queryProb_prop_eq_jointMeasure]; simp [Measure.real]
@@ -966,21 +966,21 @@ theorem xi_source_queryStrength_eq_plnInduction_of_forkBN
     (hABc_pos : cpt.jointMeasure (fA' ∩ fB'ᶜ) ≠ 0) :
     let W : BNWorldModel.State (bn := forkBN) := {cpt}
     (BinaryWorldModel.queryStrength W
-      (PLNQuery.link (⟨Three.A, true⟩ : BNQuery.Atom (bn := forkBN))
+      (AtomQuery.link (⟨Three.A, true⟩ : BNQuery.Atom (bn := forkBN))
                      (⟨Three.C, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal =
     plnInductionStrength
       (BinaryWorldModel.queryStrength W
-        (PLNQuery.link (⟨Three.B, true⟩ : BNQuery.Atom (bn := forkBN))
+        (AtomQuery.link (⟨Three.B, true⟩ : BNQuery.Atom (bn := forkBN))
                        (⟨Three.A, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal
       (BinaryWorldModel.queryStrength W
-        (PLNQuery.link (⟨Three.B, true⟩ : BNQuery.Atom (bn := forkBN))
+        (AtomQuery.link (⟨Three.B, true⟩ : BNQuery.Atom (bn := forkBN))
                        (⟨Three.C, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal
       (BinaryWorldModel.queryStrength W
-        (PLNQuery.prop (⟨Three.A, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal
+        (AtomQuery.prop (⟨Three.A, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal
       (BinaryWorldModel.queryStrength W
-        (PLNQuery.prop (⟨Three.B, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal
+        (AtomQuery.prop (⟨Three.B, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal
       (BinaryWorldModel.queryStrength W
-        (PLNQuery.prop (⟨Three.C, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal := by
+        (AtomQuery.prop (⟨Three.C, true⟩ : BNQuery.Atom (bn := forkBN)))).toReal := by
   intro W
   -- Step 1: Bridge queryStrength to μ.real via local fork helpers
   rw [fork_qS_link_toReal cpt Three.A Three.C hA_pos]
@@ -1072,9 +1072,9 @@ theorem sinkRule_wmqueryeq_of_colliderBN
     (hDSep : (CompiledPlan.abductionSide Three.A Three.C Three.B).holds
       (bn := colliderBN)) :
     WMQueryEq (State := BNWorldModel.State (bn := colliderBN))
-      (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
-      (PLNQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
-      (PLNQuery.prop ⟨Three.B, valB⟩) :=
+      (Query := AtomQuery (BNQuery.Atom (bn := colliderBN)))
+      (AtomQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
+      (AtomQuery.prop ⟨Three.B, valB⟩) :=
   collider_screeningOff_wmqueryeq_of_dsep
     (valA := valA) (valB := valB) hLMarkov hDSep
 
@@ -1095,12 +1095,12 @@ noncomputable def xi_sinkRule_rewrite_of_colliderBN
     (hLMarkov : ColliderBNLocalMarkovAll) :
     WMRewriteRule
       (BNWorldModel.State (bn := colliderBN))
-      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := colliderBN))) :=
   dsep_rewrite
     (State := BNWorldModel.State (bn := colliderBN))
     (Atom := BNQuery.Atom (bn := colliderBN))
-    (PLNQuery.prop ⟨Three.B, valB⟩)
-    (PLNQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
+    (AtomQuery.prop ⟨Three.B, valB⟩)
+    (AtomQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
     ((CompiledPlan.abductionSide Three.A Three.C Three.B).holds (bn := colliderBN))
     (fun h => (sinkRule_wmqueryeq_of_colliderBN valA valB hLMarkov h).symm)
 
@@ -1128,7 +1128,7 @@ theorem xi_sinkRule_admissible_of_colliderBN
     (W : BNWorldModel.State (bn := colliderBN))
     (hW : ⊢wm W) :
     ⊢q W ⇓
-      (PLNQuery.link
+      (AtomQuery.link
         (⟨Three.A, valA⟩ : BNQuery.Atom (bn := colliderBN))
         (⟨Three.B, valB⟩ : BNQuery.Atom (bn := colliderBN))) ↦
       (xi_sinkRule_rewrite_of_colliderBN valA valB hLMarkov).derive W :=
@@ -1147,9 +1147,9 @@ theorem xi_sinkRule_semE_atom_of_colliderBN
       (bn := colliderBN))
     (R : Pattern → Pattern → Prop)
     (W : BNWorldModel.State (bn := colliderBN))
-    (enc : String → Pattern → PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    (enc : String → Pattern → AtomQuery (BNQuery.Atom (bn := colliderBN)))
     (a : String) (p : Pattern)
-    (hEnc : enc a p = PLNQuery.link
+    (hEnc : enc a p = AtomQuery.link
       ⟨Three.A, valA⟩ ⟨Three.B, valB⟩) :
     semE R
       (wmEvidenceAtomSemQ W enc) (.atom a) p =
@@ -1172,9 +1172,9 @@ theorem xi_sinkRule_threshold_of_colliderBN
     (R : Pattern → Pattern → Prop)
     (W : BNWorldModel.State (bn := colliderBN))
     (tau : ℝ≥0∞)
-    (enc : String → Pattern → PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    (enc : String → Pattern → AtomQuery (BNQuery.Atom (bn := colliderBN)))
     (a : String) (p : Pattern)
-    (hEnc : enc a p = PLNQuery.link
+    (hEnc : enc a p = AtomQuery.link
       ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
     (hTau : tau ≤ BinaryEvidence.toStrength
       ((xi_sinkRule_rewrite_of_colliderBN valA valB hLMarkov).derive W)) :
@@ -1199,7 +1199,7 @@ theorem xi_sinkRule_threshold_concrete_true_fixture
     sem (fun _ _ => False)
       (thresholdAtomSemOfWMQ W tau
         (fun (_ : String) (_ : Pattern) =>
-          PLNQuery.link
+          AtomQuery.link
             (⟨Three.A, true⟩ : BNQuery.Atom (bn := colliderBN))
             (⟨Three.B, true⟩ : BNQuery.Atom (bn := colliderBN))))
       (.atom "q")
@@ -1207,7 +1207,7 @@ theorem xi_sinkRule_threshold_concrete_true_fixture
   xi_sinkRule_threshold_of_colliderBN true true hLMarkov hDSep
     (fun _ _ => False) W tau
     (fun (_ : String) (_ : Pattern) =>
-      PLNQuery.link
+      AtomQuery.link
         (⟨Three.A, true⟩ : BNQuery.Atom (bn := colliderBN))
         (⟨Three.B, true⟩ : BNQuery.Atom (bn := colliderBN)))
     "q" (Pattern.fvar "x") rfl hTau
@@ -1225,13 +1225,13 @@ theorem xi_sinkRule_strength_eq_of_colliderBN
     (W : BNWorldModel.State (bn := colliderBN)) :
     BinaryWorldModel.queryStrength
       (State := BNWorldModel.State (bn := colliderBN))
-      (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
-      W (PLNQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
+      (Query := AtomQuery (BNQuery.Atom (bn := colliderBN)))
+      W (AtomQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)
       =
     BinaryWorldModel.queryStrength
       (State := BNWorldModel.State (bn := colliderBN))
-      (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
-      W (PLNQuery.prop ⟨Three.B, valB⟩) :=
+      (Query := AtomQuery (BNQuery.Atom (bn := colliderBN)))
+      W (AtomQuery.prop ⟨Three.B, valB⟩) :=
   collider_screeningOff_strength_eq_of_dsep
     (valA := valA) (valB := valB) hLMarkov hDSep W
 
@@ -1246,13 +1246,13 @@ theorem xi_sink_queryStrength_toReal_eq_of_colliderBN
     (W : BNWorldModel.State (bn := colliderBN)) :
     (BinaryWorldModel.queryStrength
       (State := BNWorldModel.State (bn := colliderBN))
-      (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
-      W (PLNQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)).toReal
+      (Query := AtomQuery (BNQuery.Atom (bn := colliderBN)))
+      W (AtomQuery.link ⟨Three.A, valA⟩ ⟨Three.B, valB⟩)).toReal
       =
     (BinaryWorldModel.queryStrength
       (State := BNWorldModel.State (bn := colliderBN))
-      (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
-      W (PLNQuery.prop ⟨Three.B, valB⟩)).toReal :=
+      (Query := AtomQuery (BNQuery.Atom (bn := colliderBN)))
+      W (AtomQuery.prop ⟨Three.B, valB⟩)).toReal :=
   congr_arg ENNReal.toReal
     (xi_sinkRule_strength_eq_of_colliderBN valA valB hLMarkov hDSep W)
 
@@ -1276,7 +1276,7 @@ omit
   [StandardBorelSpace colliderBN.JointSpace] in
 private lemma collider_queryProb_prop_eq
     (cpt : colliderBN.DiscreteCPT) (v : Three) (val : Bool) :
-    queryProb (bn := colliderBN) cpt (PLNQuery.prop ⟨v, val⟩) =
+    queryProb (bn := colliderBN) cpt (AtomQuery.prop ⟨v, val⟩) =
       cpt.jointMeasure (eventEq (bn := colliderBN) v val) := by
   simp only [queryProb]
   rw [propProbVE_eq_jointMeasure_eventEq]
@@ -1287,7 +1287,7 @@ omit
   [StandardBorelSpace colliderBN.JointSpace] in
 private lemma collider_queryProb_prop_le_one
     (cpt : colliderBN.DiscreteCPT) (v : Three) (val : Bool) :
-    queryProb (bn := colliderBN) cpt (PLNQuery.prop ⟨v, val⟩) ≤ 1 := by
+    queryProb (bn := colliderBN) cpt (AtomQuery.prop ⟨v, val⟩) ≤ 1 := by
   rw [collider_queryProb_prop_eq]; exact MeasureTheory.prob_le_one
 
 omit
@@ -1298,7 +1298,7 @@ private lemma collider_queryStrength_singleton_prop_toReal
     (cpt : colliderBN.DiscreteCPT) (v : Three) (val : Bool) :
     (BinaryWorldModel.queryStrength
       ({cpt} : BNWorldModel.State (bn := colliderBN))
-      (PLNQuery.prop (⟨v, val⟩ : BNQuery.Atom (bn := colliderBN)))).toReal =
+      (AtomQuery.prop (⟨v, val⟩ : BNQuery.Atom (bn := colliderBN)))).toReal =
     cpt.jointMeasure.real (eventEq (bn := colliderBN) v val) := by
   rw [queryStrength_singleton_eq_queryProb _ _ (collider_queryProb_prop_le_one cpt v val)]
   rw [collider_queryProb_prop_eq]
@@ -1825,11 +1825,11 @@ variable
 noncomputable def xi_deduction_rewrite_of_chainBN_sigma
     (r : WMRewriteRule
       (BNWorldModel.State (bn := chainBN))
-      (PLNQuery (BNQuery.Atom (bn := chainBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := chainBN)))) :
     WorldModelSigma.WMRewriteRuleSigma
       (BNWorldModel.State (bn := chainBN))
       PUnit
-      (fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+      (fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := chainBN))) :=
   wmRewriteRuleToSigmaUnit r
 
 /-- Lift a chain-BN untyped rewrite rule into direct sort-indexed WMΣ form
@@ -1838,15 +1838,15 @@ noncomputable def xi_deduction_rewrite_of_chainBN_sigma_three
     (s0 : Three)
     (r : WMRewriteRule
       (BNWorldModel.State (bn := chainBN))
-      (PLNQuery (BNQuery.Atom (bn := chainBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := chainBN)))) :
     WMRewriteRuleSigmaConst
       (BNWorldModel.State (bn := chainBN))
       Three
-      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := chainBN))) :=
   wmRewriteRuleToSigmaConst
     (State := BNWorldModel.State (bn := chainBN))
     (Srt := Three)
-    (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+    (Query := AtomQuery (BNQuery.Atom (bn := chainBN)))
     s0 r
 
 /-- Lift a chain-BN untyped rewrite rule into native `Three`-indexed WMΣ form
@@ -1855,13 +1855,13 @@ noncomputable def xi_deduction_rewrite_of_chainBN_sigma_threeNative
     (s0 : Three)
     (r : WMRewriteRule
       (BNWorldModel.State (bn := chainBN))
-      (PLNQuery (BNQuery.Atom (bn := chainBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := chainBN)))) :
     WMRewriteRuleSigmaThreeNative
       (BNWorldModel.State (bn := chainBN))
-      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := chainBN))) :=
   wmRewriteRuleToSigmaThreeNative
     (State := BNWorldModel.State (bn := chainBN))
-    (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+    (Query := AtomQuery (BNQuery.Atom (bn := chainBN)))
     s0 r
 
 /-- Lift a chain-BN untyped rewrite rule into native tagged `Three`-indexed WMΣ form
@@ -1870,13 +1870,13 @@ noncomputable def xi_deduction_rewrite_of_chainBN_sigma_threeNativeTagged
     (s0 : Three)
     (r : WMRewriteRule
       (BNWorldModel.State (bn := chainBN))
-      (PLNQuery (BNQuery.Atom (bn := chainBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := chainBN)))) :
     WMRewriteRuleSigmaThreeNativeTagged
       (BNWorldModel.State (bn := chainBN))
-      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := chainBN))) :=
   wmRewriteRuleToSigmaThreeNativeTagged
     (State := BNWorldModel.State (bn := chainBN))
-    (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+    (Query := AtomQuery (BNQuery.Atom (bn := chainBN)))
     s0 r
 
 /-- Lift a chain-BN untyped rewrite rule into direct index-dependent WMΣ form
@@ -1885,15 +1885,15 @@ noncomputable def xi_deduction_rewrite_of_chainBN_sigma_dep
     (s0 : Three)
     (r : WMRewriteRule
       (BNWorldModel.State (bn := chainBN))
-      (PLNQuery (BNQuery.Atom (bn := chainBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := chainBN)))) :
     WMRewriteRuleSigmaIndexed
       (BNWorldModel.State (bn := chainBN))
       Three
-      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := chainBN))) :=
   wmRewriteRuleToSigmaIndexed
     (State := BNWorldModel.State (bn := chainBN))
     (Srt := Three)
-    (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+    (Query := AtomQuery (BNQuery.Atom (bn := chainBN)))
     s0 r
 
 /-- Lift a chain-BN untyped rewrite rule into OSLF sort-tagged dependent WMΣ form. -/
@@ -1901,13 +1901,13 @@ noncomputable def xi_deduction_rewrite_of_chainBN_sigma_sortTag
     (s0 : MeTTaSortTag)
     (r : WMRewriteRule
       (BNWorldModel.State (bn := chainBN))
-      (PLNQuery (BNQuery.Atom (bn := chainBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := chainBN)))) :
     WMRewriteRuleSigmaSortTagged
       (BNWorldModel.State (bn := chainBN))
-      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := chainBN))) :=
   wmRewriteRuleToSigmaSortTagged
     (State := BNWorldModel.State (bn := chainBN))
-    (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+    (Query := AtomQuery (BNQuery.Atom (bn := chainBN)))
     s0 r
 
 /-- Concrete typed chain-BN deduction rewrite, obtained directly from the
@@ -1920,7 +1920,7 @@ noncomputable def xi_deduction_rewrite_of_chainBN_sigma_concrete
     WorldModelSigma.WMRewriteRuleSigma
       (BNWorldModel.State (bn := chainBN))
       PUnit
-      (fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+      (fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := chainBN))) :=
   xi_deduction_rewrite_of_chainBN_sigma
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_deduction_rewrite_of_chainBN
       (valA := valA) (valB := valB) (valC := valC) hLMarkov)
@@ -1936,7 +1936,7 @@ noncomputable def xi_deduction_rewrite_of_chainBN_sigma_concrete_three
     WMRewriteRuleSigmaConst
       (BNWorldModel.State (bn := chainBN))
       Three
-      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := chainBN))) :=
   xi_deduction_rewrite_of_chainBN_sigma_three s0
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_deduction_rewrite_of_chainBN
       (valA := valA) (valB := valB) (valC := valC) hLMarkov)
@@ -1951,7 +1951,7 @@ noncomputable def xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative
     (hLMarkov : ChainBNLocalMarkovAll) :
     WMRewriteRuleSigmaThreeNative
       (BNWorldModel.State (bn := chainBN))
-      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := chainBN))) :=
   xi_deduction_rewrite_of_chainBN_sigma_threeNative s0
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_deduction_rewrite_of_chainBN
       (valA := valA) (valB := valB) (valC := valC) hLMarkov)
@@ -1966,7 +1966,7 @@ noncomputable def xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagg
     (hLMarkov : ChainBNLocalMarkovAll) :
     WMRewriteRuleSigmaThreeNativeTagged
       (BNWorldModel.State (bn := chainBN))
-      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := chainBN))) :=
   xi_deduction_rewrite_of_chainBN_sigma_threeNativeTagged s0
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_deduction_rewrite_of_chainBN
       (valA := valA) (valB := valB) (valC := valC) hLMarkov)
@@ -1982,7 +1982,7 @@ noncomputable def xi_deduction_rewrite_of_chainBN_sigma_concrete_dep
     WMRewriteRuleSigmaIndexed
       (BNWorldModel.State (bn := chainBN))
       Three
-      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := chainBN))) :=
   xi_deduction_rewrite_of_chainBN_sigma_dep s0
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_deduction_rewrite_of_chainBN
       (valA := valA) (valB := valB) (valC := valC) hLMarkov)
@@ -1996,7 +1996,7 @@ noncomputable def xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag
     (hLMarkov : ChainBNLocalMarkovAll) :
     WMRewriteRuleSigmaSortTagged
       (BNWorldModel.State (bn := chainBN))
-      (PLNQuery (BNQuery.Atom (bn := chainBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := chainBN))) :=
   xi_deduction_rewrite_of_chainBN_sigma_sortTag s0
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_deduction_rewrite_of_chainBN
       (valA := valA) (valB := valB) (valC := valC) hLMarkov)
@@ -2016,7 +2016,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_applyITV_bayesExact95
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := chainBN))
       (Srt := PUnit)
-      (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := chainBN)))
+      (Query := fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := chainBN)))
       ITVSemantics.bayesCredibleExact95 ctx
       W
       (xi_deduction_rewrite_of_chainBN_sigma_concrete
@@ -2027,7 +2027,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_applyITV_bayesExact95
   WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
     (State := BNWorldModel.State (bn := chainBN))
     (Srt := PUnit)
-    (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := chainBN)))
+    (Query := fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := chainBN)))
     (r := xi_deduction_rewrite_of_chainBN_sigma_concrete
       (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2047,7 +2047,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_applyITV_walleyIDM
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := chainBN))
       (Srt := PUnit)
-      (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := chainBN)))
+      (Query := fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := chainBN)))
       ITVSemantics.walleyIDMPredictive ctx
       W
       (xi_deduction_rewrite_of_chainBN_sigma_concrete
@@ -2058,7 +2058,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_applyITV_walleyIDM
   WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
     (State := BNWorldModel.State (bn := chainBN))
     (Srt := PUnit)
-    (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := chainBN)))
+    (Query := fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := chainBN)))
     (r := xi_deduction_rewrite_of_chainBN_sigma_concrete
       (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2079,7 +2079,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_dep_applyITV_bayesExact95
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := chainBN))
       (Srt := Three)
-      (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      (Query := IndexedQuery Three (AtomQuery (BNQuery.Atom (bn := chainBN))))
       ITVSemantics.bayesCredibleExact95 ctx
       W
       (xi_deduction_rewrite_of_chainBN_sigma_concrete_dep
@@ -2090,7 +2090,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_dep_applyITV_bayesExact95
   WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
     (State := BNWorldModel.State (bn := chainBN))
     (Srt := Three)
-    (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (Query := IndexedQuery Three (AtomQuery (BNQuery.Atom (bn := chainBN))))
     (r := xi_deduction_rewrite_of_chainBN_sigma_concrete_dep
       (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2111,7 +2111,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_dep_applyITV_walleyIDM
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := chainBN))
       (Srt := Three)
-      (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      (Query := IndexedQuery Three (AtomQuery (BNQuery.Atom (bn := chainBN))))
       ITVSemantics.walleyIDMPredictive ctx
       W
       (xi_deduction_rewrite_of_chainBN_sigma_concrete_dep
@@ -2122,7 +2122,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_dep_applyITV_walleyIDM
   WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
     (State := BNWorldModel.State (bn := chainBN))
     (Srt := Three)
-    (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (Query := IndexedQuery Three (AtomQuery (BNQuery.Atom (bn := chainBN))))
     (r := xi_deduction_rewrite_of_chainBN_sigma_concrete_dep
       (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2143,7 +2143,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative_applyITV_baye
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := chainBN))
       (Srt := Three)
-      (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      (Query := ThreeNativeQueryFamily (AtomQuery (BNQuery.Atom (bn := chainBN))))
       ITVSemantics.bayesCredibleExact95 ctx
       W
       (xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative
@@ -2154,7 +2154,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative_applyITV_baye
   WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
     (State := BNWorldModel.State (bn := chainBN))
     (Srt := Three)
-    (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (Query := ThreeNativeQueryFamily (AtomQuery (BNQuery.Atom (bn := chainBN))))
     (r := xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative
       (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2175,7 +2175,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative_applyITV_wall
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := chainBN))
       (Srt := Three)
-      (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      (Query := ThreeNativeQueryFamily (AtomQuery (BNQuery.Atom (bn := chainBN))))
       ITVSemantics.walleyIDMPredictive ctx
       W
       (xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative
@@ -2186,7 +2186,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative_applyITV_wall
   WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
     (State := BNWorldModel.State (bn := chainBN))
     (Srt := Three)
-    (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (Query := ThreeNativeQueryFamily (AtomQuery (BNQuery.Atom (bn := chainBN))))
     (r := xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNative
       (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2207,7 +2207,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged_applyIT
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := chainBN))
       (Srt := Three)
-      (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      (Query := ThreeNativeTaggedQueryFamily (AtomQuery (BNQuery.Atom (bn := chainBN))))
       ITVSemantics.bayesCredibleExact95 ctx
       W
       (xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged
@@ -2218,7 +2218,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged_applyIT
   WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
     (State := BNWorldModel.State (bn := chainBN))
     (Srt := Three)
-    (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (Query := ThreeNativeTaggedQueryFamily (AtomQuery (BNQuery.Atom (bn := chainBN))))
     (r := xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged
       (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2239,7 +2239,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged_applyIT
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := chainBN))
       (Srt := Three)
-      (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      (Query := ThreeNativeTaggedQueryFamily (AtomQuery (BNQuery.Atom (bn := chainBN))))
       ITVSemantics.walleyIDMPredictive ctx
       W
       (xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged
@@ -2250,7 +2250,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged_applyIT
   WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
     (State := BNWorldModel.State (bn := chainBN))
     (Srt := Three)
-    (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (Query := ThreeNativeTaggedQueryFamily (AtomQuery (BNQuery.Atom (bn := chainBN))))
     (r := xi_deduction_rewrite_of_chainBN_sigma_concrete_threeNativeTagged
       (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2266,10 +2266,10 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag_applyITV_bayesExa
     letI : WorldModelSigma
       (BNWorldModel.State (bn := chainBN))
       MeTTaSortTag
-      (SortTaggedQuery (PLNQuery (BNQuery.Atom (bn := chainBN)))) :=
+      (SortTaggedQuery (AtomQuery (BNQuery.Atom (bn := chainBN)))) :=
       worldModelSigmaSortTaggedFromUntyped
         (State := BNWorldModel.State (bn := chainBN))
-        (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+        (Query := AtomQuery (BNQuery.Atom (bn := chainBN)))
     ∀ {W : BNWorldModel.State (bn := chainBN)},
       (hSide :
         (xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag
@@ -2278,7 +2278,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag_applyITV_bayesExa
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := chainBN))
       (Srt := MeTTaSortTag)
-      (Query := SortTaggedQuery (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      (Query := SortTaggedQuery (AtomQuery (BNQuery.Atom (bn := chainBN))))
       ITVSemantics.bayesCredibleExact95 ctx
       W
       (xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag
@@ -2290,14 +2290,14 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag_applyITV_bayesExa
   letI : WorldModelSigma
       (BNWorldModel.State (bn := chainBN))
       MeTTaSortTag
-      (SortTaggedQuery (PLNQuery (BNQuery.Atom (bn := chainBN)))) :=
+      (SortTaggedQuery (AtomQuery (BNQuery.Atom (bn := chainBN)))) :=
     worldModelSigmaSortTaggedFromUntyped
       (State := BNWorldModel.State (bn := chainBN))
-      (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+      (Query := AtomQuery (BNQuery.Atom (bn := chainBN)))
   exact WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
     (State := BNWorldModel.State (bn := chainBN))
     (Srt := MeTTaSortTag)
-    (Query := SortTaggedQuery (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (Query := SortTaggedQuery (AtomQuery (BNQuery.Atom (bn := chainBN))))
     (r := xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag
       (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2313,10 +2313,10 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag_applyITV_walleyID
     letI : WorldModelSigma
       (BNWorldModel.State (bn := chainBN))
       MeTTaSortTag
-      (SortTaggedQuery (PLNQuery (BNQuery.Atom (bn := chainBN)))) :=
+      (SortTaggedQuery (AtomQuery (BNQuery.Atom (bn := chainBN)))) :=
       worldModelSigmaSortTaggedFromUntyped
         (State := BNWorldModel.State (bn := chainBN))
-        (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+        (Query := AtomQuery (BNQuery.Atom (bn := chainBN)))
     ∀ {W : BNWorldModel.State (bn := chainBN)},
       (hSide :
         (xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag
@@ -2325,7 +2325,7 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag_applyITV_walleyID
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := chainBN))
       (Srt := MeTTaSortTag)
-      (Query := SortTaggedQuery (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      (Query := SortTaggedQuery (AtomQuery (BNQuery.Atom (bn := chainBN))))
       ITVSemantics.walleyIDMPredictive ctx
       W
       (xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag
@@ -2337,14 +2337,14 @@ theorem xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag_applyITV_walleyID
   letI : WorldModelSigma
       (BNWorldModel.State (bn := chainBN))
       MeTTaSortTag
-      (SortTaggedQuery (PLNQuery (BNQuery.Atom (bn := chainBN)))) :=
+      (SortTaggedQuery (AtomQuery (BNQuery.Atom (bn := chainBN)))) :=
     worldModelSigmaSortTaggedFromUntyped
       (State := BNWorldModel.State (bn := chainBN))
-      (Query := PLNQuery (BNQuery.Atom (bn := chainBN)))
+      (Query := AtomQuery (BNQuery.Atom (bn := chainBN)))
   exact WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
     (State := BNWorldModel.State (bn := chainBN))
     (Srt := MeTTaSortTag)
-    (Query := SortTaggedQuery (PLNQuery (BNQuery.Atom (bn := chainBN))))
+    (Query := SortTaggedQuery (AtomQuery (BNQuery.Atom (bn := chainBN))))
     (r := xi_deduction_rewrite_of_chainBN_sigma_concrete_sortTag
       (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2353,7 +2353,7 @@ omit [∀ v : Three, Inhabited (chainBN.stateSpace v)] in
 theorem xi_deduction_rewrite_of_chainBN_sigma_side
     (r : WMRewriteRule
       (BNWorldModel.State (bn := chainBN))
-      (PLNQuery (BNQuery.Atom (bn := chainBN))))
+      (AtomQuery (BNQuery.Atom (bn := chainBN))))
     (hSide : r.side) :
     (xi_deduction_rewrite_of_chainBN_sigma r).side := by
   simpa [xi_deduction_rewrite_of_chainBN_sigma] using hSide
@@ -2375,11 +2375,11 @@ variable
 noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma
     (r : WMRewriteRule
       (BNWorldModel.State (bn := forkBN))
-      (PLNQuery (BNQuery.Atom (bn := forkBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := forkBN)))) :
     WorldModelSigma.WMRewriteRuleSigma
       (BNWorldModel.State (bn := forkBN))
       PUnit
-      (fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+      (fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := forkBN))) :=
   wmRewriteRuleToSigmaUnit r
 
 /-- Lift a fork-BN untyped rewrite rule into direct sort-indexed WMΣ form
@@ -2388,15 +2388,15 @@ noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_three
     (s0 : Three)
     (r : WMRewriteRule
       (BNWorldModel.State (bn := forkBN))
-      (PLNQuery (BNQuery.Atom (bn := forkBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := forkBN)))) :
     WMRewriteRuleSigmaConst
       (BNWorldModel.State (bn := forkBN))
       Three
-      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := forkBN))) :=
   wmRewriteRuleToSigmaConst
     (State := BNWorldModel.State (bn := forkBN))
     (Srt := Three)
-    (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
+    (Query := AtomQuery (BNQuery.Atom (bn := forkBN)))
     s0 r
 
 /-- Lift a fork-BN untyped rewrite rule into native `Three`-indexed WMΣ form
@@ -2405,13 +2405,13 @@ noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_threeNative
     (s0 : Three)
     (r : WMRewriteRule
       (BNWorldModel.State (bn := forkBN))
-      (PLNQuery (BNQuery.Atom (bn := forkBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := forkBN)))) :
     WMRewriteRuleSigmaThreeNative
       (BNWorldModel.State (bn := forkBN))
-      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := forkBN))) :=
   wmRewriteRuleToSigmaThreeNative
     (State := BNWorldModel.State (bn := forkBN))
-    (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
+    (Query := AtomQuery (BNQuery.Atom (bn := forkBN)))
     s0 r
 
 /-- Lift a fork-BN untyped rewrite rule into native tagged `Three`-indexed WMΣ form
@@ -2420,13 +2420,13 @@ noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_threeNativeTagged
     (s0 : Three)
     (r : WMRewriteRule
       (BNWorldModel.State (bn := forkBN))
-      (PLNQuery (BNQuery.Atom (bn := forkBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := forkBN)))) :
     WMRewriteRuleSigmaThreeNativeTagged
       (BNWorldModel.State (bn := forkBN))
-      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := forkBN))) :=
   wmRewriteRuleToSigmaThreeNativeTagged
     (State := BNWorldModel.State (bn := forkBN))
-    (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
+    (Query := AtomQuery (BNQuery.Atom (bn := forkBN)))
     s0 r
 
 /-- Lift a fork-BN untyped rewrite rule into direct index-dependent WMΣ form
@@ -2435,15 +2435,15 @@ noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_dep
     (s0 : Three)
     (r : WMRewriteRule
       (BNWorldModel.State (bn := forkBN))
-      (PLNQuery (BNQuery.Atom (bn := forkBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := forkBN)))) :
     WMRewriteRuleSigmaIndexed
       (BNWorldModel.State (bn := forkBN))
       Three
-      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := forkBN))) :=
   wmRewriteRuleToSigmaIndexed
     (State := BNWorldModel.State (bn := forkBN))
     (Srt := Three)
-    (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
+    (Query := AtomQuery (BNQuery.Atom (bn := forkBN)))
     s0 r
 
 /-- Lift a fork-BN untyped rewrite rule into OSLF sort-tagged dependent WMΣ form. -/
@@ -2451,13 +2451,13 @@ noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_sortTag
     (s0 : MeTTaSortTag)
     (r : WMRewriteRule
       (BNWorldModel.State (bn := forkBN))
-      (PLNQuery (BNQuery.Atom (bn := forkBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := forkBN)))) :
     WMRewriteRuleSigmaSortTagged
       (BNWorldModel.State (bn := forkBN))
-      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := forkBN))) :=
   wmRewriteRuleToSigmaSortTagged
     (State := BNWorldModel.State (bn := forkBN))
-    (Query := PLNQuery (BNQuery.Atom (bn := forkBN)))
+    (Query := AtomQuery (BNQuery.Atom (bn := forkBN)))
     s0 r
 
 /-- Concrete typed fork-BN source-rule rewrite, obtained directly from the
@@ -2470,7 +2470,7 @@ noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_concrete
     WorldModelSigma.WMRewriteRuleSigma
       (BNWorldModel.State (bn := forkBN))
       PUnit
-      (fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+      (fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := forkBN))) :=
   xi_sourceRule_rewrite_of_forkBN_sigma
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sourceRule_rewrite_of_forkBN
       (valA := valA) (valB := valB) (valC := valC) hLMarkov)
@@ -2486,7 +2486,7 @@ noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_concrete_three
     WMRewriteRuleSigmaConst
       (BNWorldModel.State (bn := forkBN))
       Three
-      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := forkBN))) :=
   xi_sourceRule_rewrite_of_forkBN_sigma_three s0
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sourceRule_rewrite_of_forkBN
       (valA := valA) (valB := valB) (valC := valC) hLMarkov)
@@ -2501,7 +2501,7 @@ noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative
     (hLMarkov : ForkBNLocalMarkovAll) :
     WMRewriteRuleSigmaThreeNative
       (BNWorldModel.State (bn := forkBN))
-      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := forkBN))) :=
   xi_sourceRule_rewrite_of_forkBN_sigma_threeNative s0
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sourceRule_rewrite_of_forkBN
       (valA := valA) (valB := valB) (valC := valC) hLMarkov)
@@ -2516,7 +2516,7 @@ noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagg
     (hLMarkov : ForkBNLocalMarkovAll) :
     WMRewriteRuleSigmaThreeNativeTagged
       (BNWorldModel.State (bn := forkBN))
-      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := forkBN))) :=
   xi_sourceRule_rewrite_of_forkBN_sigma_threeNativeTagged s0
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sourceRule_rewrite_of_forkBN
       (valA := valA) (valB := valB) (valC := valC) hLMarkov)
@@ -2532,7 +2532,7 @@ noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep
     WMRewriteRuleSigmaIndexed
       (BNWorldModel.State (bn := forkBN))
       Three
-      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := forkBN))) :=
   xi_sourceRule_rewrite_of_forkBN_sigma_dep s0
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sourceRule_rewrite_of_forkBN
       (valA := valA) (valB := valB) (valC := valC) hLMarkov)
@@ -2546,7 +2546,7 @@ noncomputable def xi_sourceRule_rewrite_of_forkBN_sigma_concrete_sortTag
     (hLMarkov : ForkBNLocalMarkovAll) :
     WMRewriteRuleSigmaSortTagged
       (BNWorldModel.State (bn := forkBN))
-      (PLNQuery (BNQuery.Atom (bn := forkBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := forkBN))) :=
   xi_sourceRule_rewrite_of_forkBN_sigma_sortTag s0
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sourceRule_rewrite_of_forkBN
       (valA := valA) (valB := valB) (valC := valC) hLMarkov)
@@ -2566,7 +2566,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_applyITV_bayesExact95
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := forkBN))
       (Srt := PUnit)
-      (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := forkBN)))
+      (Query := fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := forkBN)))
       ITVSemantics.bayesCredibleExact95 ctx
       W
       (xi_sourceRule_rewrite_of_forkBN_sigma_concrete
@@ -2577,7 +2577,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_applyITV_bayesExact95
   WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
     (State := BNWorldModel.State (bn := forkBN))
     (Srt := PUnit)
-    (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := forkBN)))
+    (Query := fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := forkBN)))
     (r := xi_sourceRule_rewrite_of_forkBN_sigma_concrete
       (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2597,7 +2597,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_applyITV_walleyIDM
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := forkBN))
       (Srt := PUnit)
-      (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := forkBN)))
+      (Query := fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := forkBN)))
       ITVSemantics.walleyIDMPredictive ctx
       W
       (xi_sourceRule_rewrite_of_forkBN_sigma_concrete
@@ -2608,7 +2608,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_applyITV_walleyIDM
   WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
     (State := BNWorldModel.State (bn := forkBN))
     (Srt := PUnit)
-    (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := forkBN)))
+    (Query := fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := forkBN)))
     (r := xi_sourceRule_rewrite_of_forkBN_sigma_concrete
       (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2629,7 +2629,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep_applyITV_bayesExact95
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := forkBN))
       (Srt := Three)
-      (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := forkBN))))
+      (Query := IndexedQuery Three (AtomQuery (BNQuery.Atom (bn := forkBN))))
       ITVSemantics.bayesCredibleExact95 ctx
       W
       (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep
@@ -2640,7 +2640,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep_applyITV_bayesExact95
   WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
     (State := BNWorldModel.State (bn := forkBN))
     (Srt := Three)
-    (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := forkBN))))
+    (Query := IndexedQuery Three (AtomQuery (BNQuery.Atom (bn := forkBN))))
     (r := xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep
       (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2661,7 +2661,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep_applyITV_walleyIDM
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := forkBN))
       (Srt := Three)
-      (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := forkBN))))
+      (Query := IndexedQuery Three (AtomQuery (BNQuery.Atom (bn := forkBN))))
       ITVSemantics.walleyIDMPredictive ctx
       W
       (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep
@@ -2672,7 +2672,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep_applyITV_walleyIDM
   WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
     (State := BNWorldModel.State (bn := forkBN))
     (Srt := Three)
-    (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := forkBN))))
+    (Query := IndexedQuery Three (AtomQuery (BNQuery.Atom (bn := forkBN))))
     (r := xi_sourceRule_rewrite_of_forkBN_sigma_concrete_dep
       (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2693,7 +2693,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative_applyITV_baye
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := forkBN))
       (Srt := Three)
-      (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := forkBN))))
+      (Query := ThreeNativeQueryFamily (AtomQuery (BNQuery.Atom (bn := forkBN))))
       ITVSemantics.bayesCredibleExact95 ctx
       W
       (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative
@@ -2704,7 +2704,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative_applyITV_baye
   WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
     (State := BNWorldModel.State (bn := forkBN))
     (Srt := Three)
-    (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := forkBN))))
+    (Query := ThreeNativeQueryFamily (AtomQuery (BNQuery.Atom (bn := forkBN))))
     (r := xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative
       (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2725,7 +2725,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative_applyITV_wall
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := forkBN))
       (Srt := Three)
-      (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := forkBN))))
+      (Query := ThreeNativeQueryFamily (AtomQuery (BNQuery.Atom (bn := forkBN))))
       ITVSemantics.walleyIDMPredictive ctx
       W
       (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative
@@ -2736,7 +2736,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative_applyITV_wall
   WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
     (State := BNWorldModel.State (bn := forkBN))
     (Srt := Three)
-    (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := forkBN))))
+    (Query := ThreeNativeQueryFamily (AtomQuery (BNQuery.Atom (bn := forkBN))))
     (r := xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNative
       (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2757,7 +2757,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged_applyIT
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := forkBN))
       (Srt := Three)
-      (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := forkBN))))
+      (Query := ThreeNativeTaggedQueryFamily (AtomQuery (BNQuery.Atom (bn := forkBN))))
       ITVSemantics.bayesCredibleExact95 ctx
       W
       (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged
@@ -2768,7 +2768,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged_applyIT
   WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
     (State := BNWorldModel.State (bn := forkBN))
     (Srt := Three)
-    (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := forkBN))))
+    (Query := ThreeNativeTaggedQueryFamily (AtomQuery (BNQuery.Atom (bn := forkBN))))
     (r := xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged
       (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2789,7 +2789,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged_applyIT
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := forkBN))
       (Srt := Three)
-      (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := forkBN))))
+      (Query := ThreeNativeTaggedQueryFamily (AtomQuery (BNQuery.Atom (bn := forkBN))))
       ITVSemantics.walleyIDMPredictive ctx
       W
       (xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged
@@ -2800,7 +2800,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged_applyIT
   WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
     (State := BNWorldModel.State (bn := forkBN))
     (Srt := Three)
-    (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := forkBN))))
+    (Query := ThreeNativeTaggedQueryFamily (AtomQuery (BNQuery.Atom (bn := forkBN))))
     (r := xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged
       (s0 := s0) (valA := valA) (valB := valB) (valC := valC) hLMarkov)
     ctx hSide hW
@@ -2808,7 +2808,7 @@ theorem xi_sourceRule_rewrite_of_forkBN_sigma_concrete_threeNativeTagged_applyIT
 theorem xi_sourceRule_rewrite_of_forkBN_sigma_side
     (r : WMRewriteRule
       (BNWorldModel.State (bn := forkBN))
-      (PLNQuery (BNQuery.Atom (bn := forkBN))))
+      (AtomQuery (BNQuery.Atom (bn := forkBN))))
     (hSide : r.side) :
     (xi_sourceRule_rewrite_of_forkBN_sigma r).side := by
   simpa [xi_sourceRule_rewrite_of_forkBN_sigma] using hSide
@@ -2831,11 +2831,11 @@ variable
 noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma
     (r : WMRewriteRule
       (BNWorldModel.State (bn := colliderBN))
-      (PLNQuery (BNQuery.Atom (bn := colliderBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := colliderBN)))) :
     WorldModelSigma.WMRewriteRuleSigma
       (BNWorldModel.State (bn := colliderBN))
       PUnit
-      (fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+      (fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := colliderBN))) :=
   wmRewriteRuleToSigmaUnit r
 
 /-- Lift a collider-BN untyped rewrite rule into direct sort-indexed WMΣ form
@@ -2844,15 +2844,15 @@ noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_three
     (s0 : Three)
     (r : WMRewriteRule
       (BNWorldModel.State (bn := colliderBN))
-      (PLNQuery (BNQuery.Atom (bn := colliderBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := colliderBN)))) :
     WMRewriteRuleSigmaConst
       (BNWorldModel.State (bn := colliderBN))
       Three
-      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := colliderBN))) :=
   wmRewriteRuleToSigmaConst
     (State := BNWorldModel.State (bn := colliderBN))
     (Srt := Three)
-    (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    (Query := AtomQuery (BNQuery.Atom (bn := colliderBN)))
     s0 r
 
 /-- Lift a collider-BN untyped rewrite rule into native `Three`-indexed WMΣ form
@@ -2861,13 +2861,13 @@ noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_threeNative
     (s0 : Three)
     (r : WMRewriteRule
       (BNWorldModel.State (bn := colliderBN))
-      (PLNQuery (BNQuery.Atom (bn := colliderBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := colliderBN)))) :
     WMRewriteRuleSigmaThreeNative
       (BNWorldModel.State (bn := colliderBN))
-      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := colliderBN))) :=
   wmRewriteRuleToSigmaThreeNative
     (State := BNWorldModel.State (bn := colliderBN))
-    (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    (Query := AtomQuery (BNQuery.Atom (bn := colliderBN)))
     s0 r
 
 /-- Lift a collider-BN untyped rewrite rule into native tagged `Three`-indexed WMΣ form
@@ -2876,13 +2876,13 @@ noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_threeNativeTagged
     (s0 : Three)
     (r : WMRewriteRule
       (BNWorldModel.State (bn := colliderBN))
-      (PLNQuery (BNQuery.Atom (bn := colliderBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := colliderBN)))) :
     WMRewriteRuleSigmaThreeNativeTagged
       (BNWorldModel.State (bn := colliderBN))
-      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := colliderBN))) :=
   wmRewriteRuleToSigmaThreeNativeTagged
     (State := BNWorldModel.State (bn := colliderBN))
-    (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    (Query := AtomQuery (BNQuery.Atom (bn := colliderBN)))
     s0 r
 
 /-- Lift a collider-BN untyped rewrite rule into direct index-dependent WMΣ form
@@ -2891,15 +2891,15 @@ noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_dep
     (s0 : Three)
     (r : WMRewriteRule
       (BNWorldModel.State (bn := colliderBN))
-      (PLNQuery (BNQuery.Atom (bn := colliderBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := colliderBN)))) :
     WMRewriteRuleSigmaIndexed
       (BNWorldModel.State (bn := colliderBN))
       Three
-      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := colliderBN))) :=
   wmRewriteRuleToSigmaIndexed
     (State := BNWorldModel.State (bn := colliderBN))
     (Srt := Three)
-    (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    (Query := AtomQuery (BNQuery.Atom (bn := colliderBN)))
     s0 r
 
 /-- Lift a collider-BN untyped rewrite rule into OSLF sort-tagged dependent WMΣ form. -/
@@ -2907,13 +2907,13 @@ noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_sortTag
     (s0 : MeTTaSortTag)
     (r : WMRewriteRule
       (BNWorldModel.State (bn := colliderBN))
-      (PLNQuery (BNQuery.Atom (bn := colliderBN)))) :
+      (AtomQuery (BNQuery.Atom (bn := colliderBN)))) :
     WMRewriteRuleSigmaSortTagged
       (BNWorldModel.State (bn := colliderBN))
-      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := colliderBN))) :=
   wmRewriteRuleToSigmaSortTagged
     (State := BNWorldModel.State (bn := colliderBN))
-    (Query := PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    (Query := AtomQuery (BNQuery.Atom (bn := colliderBN)))
     s0 r
 
 /-- Concrete typed collider-BN sink-rule rewrite, obtained directly from the
@@ -2925,7 +2925,7 @@ noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_concrete
     WorldModelSigma.WMRewriteRuleSigma
       (BNWorldModel.State (bn := colliderBN))
       PUnit
-      (fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+      (fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := colliderBN))) :=
   xi_sinkRule_rewrite_of_colliderBN_sigma
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sinkRule_rewrite_of_colliderBN
       (valA := valA) (valB := valB) hLMarkov)
@@ -2940,7 +2940,7 @@ noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_three
     WMRewriteRuleSigmaConst
       (BNWorldModel.State (bn := colliderBN))
       Three
-      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := colliderBN))) :=
   xi_sinkRule_rewrite_of_colliderBN_sigma_three s0
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sinkRule_rewrite_of_colliderBN
       (valA := valA) (valB := valB) hLMarkov)
@@ -2954,7 +2954,7 @@ noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative
     (hLMarkov : ColliderBNLocalMarkovAll) :
     WMRewriteRuleSigmaThreeNative
       (BNWorldModel.State (bn := colliderBN))
-      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := colliderBN))) :=
   xi_sinkRule_rewrite_of_colliderBN_sigma_threeNative s0
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sinkRule_rewrite_of_colliderBN
       (valA := valA) (valB := valB) hLMarkov)
@@ -2968,7 +2968,7 @@ noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTa
     (hLMarkov : ColliderBNLocalMarkovAll) :
     WMRewriteRuleSigmaThreeNativeTagged
       (BNWorldModel.State (bn := colliderBN))
-      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := colliderBN))) :=
   xi_sinkRule_rewrite_of_colliderBN_sigma_threeNativeTagged s0
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sinkRule_rewrite_of_colliderBN
       (valA := valA) (valB := valB) hLMarkov)
@@ -2983,7 +2983,7 @@ noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep
     WMRewriteRuleSigmaIndexed
       (BNWorldModel.State (bn := colliderBN))
       Three
-      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := colliderBN))) :=
   xi_sinkRule_rewrite_of_colliderBN_sigma_dep s0
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sinkRule_rewrite_of_colliderBN
       (valA := valA) (valB := valB) hLMarkov)
@@ -2996,7 +2996,7 @@ noncomputable def xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_sortTag
     (hLMarkov : ColliderBNLocalMarkovAll) :
     WMRewriteRuleSigmaSortTagged
       (BNWorldModel.State (bn := colliderBN))
-      (PLNQuery (BNQuery.Atom (bn := colliderBN))) :=
+      (AtomQuery (BNQuery.Atom (bn := colliderBN))) :=
   xi_sinkRule_rewrite_of_colliderBN_sigma_sortTag s0
     (Mettapedia.Logic.PLNXiDerivedBNRules.xi_sinkRule_rewrite_of_colliderBN
       (valA := valA) (valB := valB) hLMarkov)
@@ -3015,7 +3015,7 @@ theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_applyITV_bayesExact95
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := colliderBN))
       (Srt := PUnit)
-      (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := colliderBN)))
+      (Query := fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := colliderBN)))
       ITVSemantics.bayesCredibleExact95 ctx
       W
       (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete
@@ -3026,7 +3026,7 @@ theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_applyITV_bayesExact95
   WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
     (State := BNWorldModel.State (bn := colliderBN))
     (Srt := PUnit)
-    (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    (Query := fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := colliderBN)))
     (r := xi_sinkRule_rewrite_of_colliderBN_sigma_concrete
       (valA := valA) (valB := valB) hLMarkov)
     ctx hSide hW
@@ -3045,7 +3045,7 @@ theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_applyITV_walleyIDM
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := colliderBN))
       (Srt := PUnit)
-      (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := colliderBN)))
+      (Query := fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := colliderBN)))
       ITVSemantics.walleyIDMPredictive ctx
       W
       (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete
@@ -3056,7 +3056,7 @@ theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_applyITV_walleyIDM
   WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
     (State := BNWorldModel.State (bn := colliderBN))
     (Srt := PUnit)
-    (Query := fun _ : PUnit => PLNQuery (BNQuery.Atom (bn := colliderBN)))
+    (Query := fun _ : PUnit => AtomQuery (BNQuery.Atom (bn := colliderBN)))
     (r := xi_sinkRule_rewrite_of_colliderBN_sigma_concrete
       (valA := valA) (valB := valB) hLMarkov)
     ctx hSide hW
@@ -3076,7 +3076,7 @@ theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep_applyITV_bayesExact
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := colliderBN))
       (Srt := Three)
-      (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+      (Query := IndexedQuery Three (AtomQuery (BNQuery.Atom (bn := colliderBN))))
       ITVSemantics.bayesCredibleExact95 ctx
       W
       (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep
@@ -3087,7 +3087,7 @@ theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep_applyITV_bayesExact
   WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
     (State := BNWorldModel.State (bn := colliderBN))
     (Srt := Three)
-    (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+    (Query := IndexedQuery Three (AtomQuery (BNQuery.Atom (bn := colliderBN))))
     (r := xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep
       (s0 := s0) (valA := valA) (valB := valB) hLMarkov)
     ctx hSide hW
@@ -3107,7 +3107,7 @@ theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep_applyITV_walleyIDM
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := colliderBN))
       (Srt := Three)
-      (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+      (Query := IndexedQuery Three (AtomQuery (BNQuery.Atom (bn := colliderBN))))
       ITVSemantics.walleyIDMPredictive ctx
       W
       (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep
@@ -3118,7 +3118,7 @@ theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep_applyITV_walleyIDM
   WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
     (State := BNWorldModel.State (bn := colliderBN))
     (Srt := Three)
-    (Query := IndexedQuery Three (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+    (Query := IndexedQuery Three (AtomQuery (BNQuery.Atom (bn := colliderBN))))
     (r := xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_dep
       (s0 := s0) (valA := valA) (valB := valB) hLMarkov)
     ctx hSide hW
@@ -3138,7 +3138,7 @@ theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative_applyITV_ba
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := colliderBN))
       (Srt := Three)
-      (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+      (Query := ThreeNativeQueryFamily (AtomQuery (BNQuery.Atom (bn := colliderBN))))
       ITVSemantics.bayesCredibleExact95 ctx
       W
       (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative
@@ -3149,7 +3149,7 @@ theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative_applyITV_ba
   WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
     (State := BNWorldModel.State (bn := colliderBN))
     (Srt := Three)
-    (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+    (Query := ThreeNativeQueryFamily (AtomQuery (BNQuery.Atom (bn := colliderBN))))
     (r := xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative
       (s0 := s0) (valA := valA) (valB := valB) hLMarkov)
     ctx hSide hW
@@ -3169,7 +3169,7 @@ theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative_applyITV_wa
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := colliderBN))
       (Srt := Three)
-      (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+      (Query := ThreeNativeQueryFamily (AtomQuery (BNQuery.Atom (bn := colliderBN))))
       ITVSemantics.walleyIDMPredictive ctx
       W
       (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative
@@ -3180,7 +3180,7 @@ theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative_applyITV_wa
   WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
     (State := BNWorldModel.State (bn := colliderBN))
     (Srt := Three)
-    (Query := ThreeNativeQueryFamily (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+    (Query := ThreeNativeQueryFamily (AtomQuery (BNQuery.Atom (bn := colliderBN))))
     (r := xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNative
       (s0 := s0) (valA := valA) (valB := valB) hLMarkov)
     ctx hSide hW
@@ -3200,7 +3200,7 @@ theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged_apply
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := colliderBN))
       (Srt := Three)
-      (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+      (Query := ThreeNativeTaggedQueryFamily (AtomQuery (BNQuery.Atom (bn := colliderBN))))
       ITVSemantics.bayesCredibleExact95 ctx
       W
       (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged
@@ -3211,7 +3211,7 @@ theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged_apply
   WorldModelSigma.WMRewriteRuleSigma.applyITV_bayesExact95
     (State := BNWorldModel.State (bn := colliderBN))
     (Srt := Three)
-    (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+    (Query := ThreeNativeTaggedQueryFamily (AtomQuery (BNQuery.Atom (bn := colliderBN))))
     (r := xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged
       (s0 := s0) (valA := valA) (valB := valB) hLMarkov)
     ctx hSide hW
@@ -3231,7 +3231,7 @@ theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged_apply
     WorldModelSigma.WMITVJudgmentSigma
       (State := BNWorldModel.State (bn := colliderBN))
       (Srt := Three)
-      (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+      (Query := ThreeNativeTaggedQueryFamily (AtomQuery (BNQuery.Atom (bn := colliderBN))))
       ITVSemantics.walleyIDMPredictive ctx
       W
       (xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged
@@ -3242,7 +3242,7 @@ theorem xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged_apply
   WorldModelSigma.WMRewriteRuleSigma.applyITV_walleyIDM
     (State := BNWorldModel.State (bn := colliderBN))
     (Srt := Three)
-    (Query := ThreeNativeTaggedQueryFamily (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+    (Query := ThreeNativeTaggedQueryFamily (AtomQuery (BNQuery.Atom (bn := colliderBN))))
     (r := xi_sinkRule_rewrite_of_colliderBN_sigma_concrete_threeNativeTagged
       (s0 := s0) (valA := valA) (valB := valB) hLMarkov)
     ctx hSide hW
@@ -3251,7 +3251,7 @@ omit [∀ v : Three, Inhabited (colliderBN.stateSpace v)] in
 theorem xi_sinkRule_rewrite_of_colliderBN_sigma_side
     (r : WMRewriteRule
       (BNWorldModel.State (bn := colliderBN))
-      (PLNQuery (BNQuery.Atom (bn := colliderBN))))
+      (AtomQuery (BNQuery.Atom (bn := colliderBN))))
     (hSide : r.side) :
     (xi_sinkRule_rewrite_of_colliderBN_sigma r).side := by
   simpa [xi_sinkRule_rewrite_of_colliderBN_sigma] using hSide

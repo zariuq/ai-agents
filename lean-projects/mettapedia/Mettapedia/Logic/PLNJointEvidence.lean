@@ -115,7 +115,7 @@ theorem propEvidence_add (E₁ E₂ : JointEvidence n) (A : Fin n) :
         linkCondEvidence (n := n) (E := E₁) as B + linkCondEvidence (n := n) (E := E₂) as B := by
     ext <;> simp [linkCondEvidence, countWorld_add, BinaryEvidence.hplus_def]
 
-  noncomputable instance instWorldModel : BinaryWorldModel (JointEvidence n) (PLNQuery (Fin n)) where
+  noncomputable instance instWorldModel : BinaryWorldModel (JointEvidence n) (AtomQuery (Fin n)) where
     evidence E
       | .prop A => JointEvidence.propEvidence (n := n) (E := E) A
       | .link A B => JointEvidence.linkEvidence (n := n) (E := E) A B

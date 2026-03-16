@@ -92,7 +92,7 @@ theorem weightedGaussianStatistic_queryObservationCount
     letI : EvidenceType (Multiset Obs) := multisetEvidenceType Obs
     letI : WorldModel (Multiset Obs) Query WeightedNormalGammaEvidence :=
       (weightedGaussianStatistic responsibility value).inducedWorldModel
-    WorldModel.queryObservationCount
+    AdditiveWorldModel.queryObservationCount
         (State := Multiset Obs) (Query := Query) (Ev := WeightedNormalGammaEvidence) σ q =
       genAdditiveExtension
         (Ev := ℝ≥0∞)
@@ -114,7 +114,7 @@ theorem weightedGaussianStatistic_queryObservationConfidence
     letI : EvidenceType (Multiset Obs) := multisetEvidenceType Obs
     letI : WorldModel (Multiset Obs) Query WeightedNormalGammaEvidence :=
       (weightedGaussianStatistic responsibility value).inducedWorldModel
-    WorldModel.queryObservationConfidence
+    AdditiveWorldModel.queryObservationConfidence
         (State := Multiset Obs) (Query := Query) (Ev := WeightedNormalGammaEvidence) κ σ q =
       observationConfidence κ
         (aggregate (weightedGaussianStatistic responsibility value) σ q) := by
@@ -161,7 +161,7 @@ theorem weightedGaussianStatistic_one_queryObservationCount
     letI : EvidenceType (Multiset Obs) := multisetEvidenceType Obs
     letI : WorldModel (Multiset Obs) Query WeightedNormalGammaEvidence :=
       (weightedGaussianStatistic (fun _ _ => (1 : NNReal)) value).inducedWorldModel
-    WorldModel.queryObservationCount
+    AdditiveWorldModel.queryObservationCount
         (State := Multiset Obs) (Query := Query) (Ev := WeightedNormalGammaEvidence) σ q =
       (σ.card : ℝ≥0∞) := by
   simpa using

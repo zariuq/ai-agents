@@ -215,18 +215,18 @@ via the existing `instWorldModel` instance. We record this explicitly. -/
 /-- The ProbLog-compiled state is a valid WM state for the standard PLN query type. -/
 noncomputable example (p : ProbAssignment (n + 1)) :
     BinaryWorldModel.evidence
-      (State := JointEvidence (n + 1)) (Query := PLNQuery (Fin (n + 1)))
+      (State := JointEvidence (n + 1)) (Query := AtomQuery (Fin (n + 1)))
       (probLogToJointEvidence p)
-      (PLNQuery.prop ⟨0, Nat.zero_lt_succ n⟩) =
+      (AtomQuery.prop ⟨0, Nat.zero_lt_succ n⟩) =
     propEvidence (n := n + 1) (E := probLogToJointEvidence p) ⟨0, Nat.zero_lt_succ n⟩ := by
   rfl
 
 /-- Full WM queryStrength for a ProbLog-compiled state, via the standard interface. -/
 noncomputable example (p : ProbAssignment n) (A : Fin n) :
     BinaryWorldModel.queryStrength
-      (State := JointEvidence n) (Query := PLNQuery (Fin n))
+      (State := JointEvidence n) (Query := AtomQuery (Fin n))
       (probLogToJointEvidence p)
-      (PLNQuery.prop A) =
+      (AtomQuery.prop A) =
     BinaryEvidence.toStrength (propEvidence (n := n) (E := probLogToJointEvidence p) A) := by
   rfl
 

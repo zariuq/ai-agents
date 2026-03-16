@@ -22,17 +22,17 @@ open Mettapedia.Logic.PLNWorldModelGeneric
 section SwapAnomaly
 
 variable {State Query Ev Ov : Type*}
-variable [EvidenceType State] [ConjugateEvidence Ev] [WorldModel State Query Ev]
+variable [EvidenceType State] [ConjugateEvidence Ev] [AdditiveWorldModel State Query Ev]
 
 /-- Symmetric count-level anomaly of swapping merge order. -/
 noncomputable def SwapAnomalyCount
     (L : OverlapLayer State Query Ev Ov)
     (W₁ W₂ : State) (q : Query) : ℝ≥0∞ :=
   let c₁₂ :=
-    WorldModel.queryObservationCount
+    AdditiveWorldModel.queryObservationCount
       (State := State) (Query := Query) (Ev := Ev) (L.merge W₁ W₂) q
   let c₂₁ :=
-    WorldModel.queryObservationCount
+    AdditiveWorldModel.queryObservationCount
       (State := State) (Query := Query) (Ev := Ev) (L.merge W₂ W₁) q
   (c₁₂ - c₂₁) + (c₂₁ - c₁₂)
 
@@ -53,9 +53,9 @@ theorem swapAnomalyCount_zero_of_count_eq
     (L : OverlapLayer State Query Ev Ov)
     (W₁ W₂ : State) (q : Query)
     (hcount :
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
         (State := State) (Query := Query) (Ev := Ev) (L.merge W₁ W₂) q =
-      WorldModel.queryObservationCount
+      AdditiveWorldModel.queryObservationCount
         (State := State) (Query := Query) (Ev := Ev) (L.merge W₂ W₁) q) :
     SwapAnomalyCount (State := State) (Query := Query) (Ev := Ev) (Ov := Ov) L W₁ W₂ q = 0 := by
   simp [SwapAnomalyCount, hcount]
@@ -64,13 +64,13 @@ theorem swapAnomalyCount_zero_of_commutativeMergeEvidence
     (L : OverlapLayer State Query Ev Ov)
     (W₁ W₂ : State) (q : Query)
     (hcomm :
-      WorldModel.extract
+      AdditiveWorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) (L.merge W₁ W₂) q =
-      WorldModel.extract
+      AdditiveWorldModel.extract
         (State := State) (Query := Query) (Ev := Ev) (L.merge W₂ W₁) q) :
     SwapAnomalyCount (State := State) (Query := Query) (Ev := Ev) (Ov := Ov) L W₁ W₂ q = 0 := by
   apply swapAnomalyCount_zero_of_count_eq
-  unfold WorldModel.queryObservationCount
+  unfold AdditiveWorldModel.queryObservationCount
   simpa using congrArg ConjugateEvidence.observationCount hcomm
 
 theorem swapAnomalyBound_of_pairwise_bounds
@@ -78,18 +78,18 @@ theorem swapAnomalyBound_of_pairwise_bounds
     (W₁ W₂ : State) (q : Query) (B₁ B₂ : ℝ≥0∞)
     (h₁ :
       let c₁₂ :=
-        WorldModel.queryObservationCount
+        AdditiveWorldModel.queryObservationCount
           (State := State) (Query := Query) (Ev := Ev) (L.merge W₁ W₂) q
       let c₂₁ :=
-        WorldModel.queryObservationCount
+        AdditiveWorldModel.queryObservationCount
           (State := State) (Query := Query) (Ev := Ev) (L.merge W₂ W₁) q
       c₁₂ - c₂₁ ≤ B₁)
     (h₂ :
       let c₁₂ :=
-        WorldModel.queryObservationCount
+        AdditiveWorldModel.queryObservationCount
           (State := State) (Query := Query) (Ev := Ev) (L.merge W₁ W₂) q
       let c₂₁ :=
-        WorldModel.queryObservationCount
+        AdditiveWorldModel.queryObservationCount
           (State := State) (Query := Query) (Ev := Ev) (L.merge W₂ W₁) q
       c₂₁ - c₁₂ ≤ B₂) :
     SwapAnomalyBound (State := State) (Query := Query) (Ev := Ev) (Ov := Ov) L W₁ W₂ q (B₁ + B₂) := by
@@ -100,7 +100,7 @@ end SwapAnomaly
 section ScheduleError
 
 variable {State Query Ev Ov : Type*}
-variable [EvidenceType State] [ConjugateEvidence Ev] [WorldModel State Query Ev]
+variable [EvidenceType State] [ConjugateEvidence Ev] [AdditiveWorldModel State Query Ev]
 
 /-- Run a merge schedule from a chosen base state. -/
 def runMergeSchedule
@@ -112,7 +112,7 @@ def runMergeSchedule
 noncomputable def scheduleObservationCount
     (L : OverlapLayer State Query Ev Ov)
     (base : State) (steps : List State) (q : Query) : ℝ≥0∞ :=
-  WorldModel.queryObservationCount
+  AdditiveWorldModel.queryObservationCount
     (State := State) (Query := Query) (Ev := Ev) (runMergeSchedule L base steps) q
 
 /-- Symmetric count-level discrepancy between two schedules. -/
@@ -183,10 +183,10 @@ noncomputable def swapStepAnomalyCount
     (L : OverlapLayer State Query Ev Ov)
     (base A B : State) (q : Query) : ℝ≥0∞ :=
   let cAB :=
-    WorldModel.queryObservationCount
+    AdditiveWorldModel.queryObservationCount
       (State := State) (Query := Query) (Ev := Ev) (L.merge (L.merge base A) B) q
   let cBA :=
-    WorldModel.queryObservationCount
+    AdditiveWorldModel.queryObservationCount
       (State := State) (Query := Query) (Ev := Ev) (L.merge (L.merge base B) A) q
   (cAB - cBA) + (cBA - cAB)
 
