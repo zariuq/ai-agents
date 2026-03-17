@@ -647,6 +647,169 @@ theorem moldRisk_bounded_by_leak (s : ApartmentState) :
     s.pipeLeak.pos ≤ s.pipeLeak.pos + s.pipeLeak.neg :=
   le_self_add
 
+/-! ## §12b: Full Answer Profile (Multi-Carrier Extraction)
+
+After a full day at Maple Court (morning + evening observations), the WM
+can answer every query type from a SINGLE composite state.  This is the
+multi-carrier extraction: binary, continuous, and categorical evidence
+all extracted from `fullDay`.
+
+### Expected values (hand-computed)
+
+| Query | Carrier | Evidence | Strength |
+|-------|---------|----------|----------|
+| roomOccupied | Binary | (4, 0) | 1.0 |
+| showerRunning | Binary | (1, 0) | 1.0 |
+| pipeLeak | Binary | (1, 0) | 1.0 |
+| laundryInState 0 (free) | Categorical | (1, 1) | 0.5 |
+| laundryInState 1 (busy) | Categorical | (1, 1) | 0.5 |
+| laundryInState 2 (full) | Categorical | (0, 2) | 0.0 |
+| elevatorInState 0 (normal) | Categorical | (2, 0) | 1.0 |
+| elevatorInState 1 (slow) | Categorical | (0, 2) | 0.0 |
+| elevatorInState 2 (faulty) | Categorical | (0, 2) | 0.0 |
+
+Continuous queries (humidity exceedance) are parametric in
+`HumidityExceedanceSpec` and cannot be stated as concrete values. -/
+
+section FullProfile
+
+-- Bridge lemma: `+` on MultiEvidence reduces to pointwise addition.
+-- Needed because simp can't see through the HAdd → Add → hplus chain.
+private theorem multiEvidence_add_counts {k : ℕ} (e₁ e₂ : MultiEvidence k) (i : Fin k) :
+    (e₁ + e₂).counts i = e₁.counts i + e₂.counts i := rfl
+
+/-- Full day binary profile: room occupied = (4, 0). -/
+theorem fullDay_roomOccupied (spec aptP bldP) :
+    mapleCourtEvidence spec aptP bldP fullDay .roomOccupied = ⟨4, 0⟩ := by
+  simp only [mapleCourtEvidence, fullDay, morningState, eveningState,
+    morningApt, eveningApt, motionEvent, leakEvent, showerEvent,
+    aptHumidityObs, MapleCourtState.add_apartment,
+    ApartmentState.add_roomOccupied, BinaryEvidence.hplus_def,
+    BinaryEvidence.zero]
+  norm_num
+
+/-- Full day binary profile: shower running = (1, 0). -/
+theorem fullDay_showerRunning (spec aptP bldP) :
+    mapleCourtEvidence spec aptP bldP fullDay .showerRunning = ⟨1, 0⟩ := by
+  simp only [mapleCourtEvidence, fullDay, morningState, eveningState,
+    morningApt, eveningApt, motionEvent, leakEvent, showerEvent,
+    aptHumidityObs, MapleCourtState.add_apartment,
+    ApartmentState.add_showerRunning, BinaryEvidence.hplus_def,
+    BinaryEvidence.zero]
+  norm_num
+
+/-- Full day binary profile: pipe leak = (1, 0). -/
+theorem fullDay_pipeLeak (spec aptP bldP) :
+    mapleCourtEvidence spec aptP bldP fullDay .pipeLeak = ⟨1, 0⟩ := by
+  simp only [mapleCourtEvidence, fullDay, morningState, eveningState,
+    morningApt, eveningApt, motionEvent, leakEvent, showerEvent,
+    aptHumidityObs, MapleCourtState.add_apartment,
+    ApartmentState.add_pipeLeak, BinaryEvidence.hplus_def,
+    BinaryEvidence.zero]
+  norm_num
+
+/-- Full day categorical profile: laundry free = (1, 1).
+    Morning: free (1 obs), Evening: busy (0 free obs). Total: 1 free of 2. -/
+theorem fullDay_laundryFree (spec aptP bldP) :
+    mapleCourtEvidence spec aptP bldP fullDay (.laundryInState 0) = ⟨1, 1⟩ := by
+  simp only [mapleCourtEvidence, dirichletToBinary, fullDay, morningState, eveningState,
+    morningBld, hallwayHumidityObs, laundryObs, elevatorObs,
+    MapleCourtState.add_building, BuildingState.add_laundryState,
+    MultiEvidence.total, MultiEvidence.zero,
+    multiEvidence_add_counts, Fin.sum_univ_three, Fin.isValue]
+  norm_num
+
+/-- Full day categorical profile: laundry busy = (1, 1).
+    Morning: 0 busy obs, Evening: 1 busy obs. Total: 1 busy of 2. -/
+theorem fullDay_laundryBusy (spec aptP bldP) :
+    mapleCourtEvidence spec aptP bldP fullDay (.laundryInState 1) = ⟨1, 1⟩ := by
+  simp only [mapleCourtEvidence, dirichletToBinary, fullDay, morningState, eveningState,
+    morningBld, hallwayHumidityObs, laundryObs, elevatorObs,
+    MapleCourtState.add_building, BuildingState.add_laundryState,
+    MultiEvidence.total, MultiEvidence.zero,
+    multiEvidence_add_counts, Fin.sum_univ_three, Fin.isValue]
+  norm_num
+
+/-- Full day categorical profile: laundry full = (0, 2).
+    Neither morning nor evening observed laundry full. -/
+theorem fullDay_laundryFull (spec aptP bldP) :
+    mapleCourtEvidence spec aptP bldP fullDay (.laundryInState 2) = ⟨0, 2⟩ := by
+  simp only [mapleCourtEvidence, dirichletToBinary, fullDay, morningState, eveningState,
+    morningBld, hallwayHumidityObs, laundryObs, elevatorObs,
+    MapleCourtState.add_building, BuildingState.add_laundryState,
+    MultiEvidence.total, MultiEvidence.zero,
+    multiEvidence_add_counts, Fin.sum_univ_three, Fin.isValue]
+  norm_num
+
+/-- Full day categorical profile: elevator normal = (2, 0).
+    Both morning and evening observed elevator normal. -/
+theorem fullDay_elevatorNormal (spec aptP bldP) :
+    mapleCourtEvidence spec aptP bldP fullDay (.elevatorInState 0) = ⟨2, 0⟩ := by
+  simp only [mapleCourtEvidence, dirichletToBinary, fullDay, morningState, eveningState,
+    morningBld, hallwayHumidityObs, laundryObs, elevatorObs,
+    MapleCourtState.add_building, BuildingState.add_elevatorHealth,
+    MultiEvidence.total, MultiEvidence.zero,
+    multiEvidence_add_counts, Fin.sum_univ_three, Fin.isValue]
+  norm_num
+
+/-- Full day categorical profile: elevator slow = (0, 2). -/
+theorem fullDay_elevatorSlow (spec aptP bldP) :
+    mapleCourtEvidence spec aptP bldP fullDay (.elevatorInState 1) = ⟨0, 2⟩ := by
+  simp only [mapleCourtEvidence, dirichletToBinary, fullDay, morningState, eveningState,
+    morningBld, hallwayHumidityObs, laundryObs, elevatorObs,
+    MapleCourtState.add_building, BuildingState.add_elevatorHealth,
+    MultiEvidence.total, MultiEvidence.zero,
+    multiEvidence_add_counts, Fin.sum_univ_three, Fin.isValue]
+  norm_num
+
+/-- Full day categorical profile: elevator faulty = (0, 2). -/
+theorem fullDay_elevatorFaulty (spec aptP bldP) :
+    mapleCourtEvidence spec aptP bldP fullDay (.elevatorInState 2) = ⟨0, 2⟩ := by
+  simp only [mapleCourtEvidence, dirichletToBinary, fullDay, morningState, eveningState,
+    morningBld, hallwayHumidityObs, laundryObs, elevatorObs,
+    MapleCourtState.add_building, BuildingState.add_elevatorHealth,
+    MultiEvidence.total, MultiEvidence.zero,
+    multiEvidence_add_counts, Fin.sum_univ_three, Fin.isValue]
+  norm_num
+
+/-! ### Categorical evidence_add
+
+Compositionality for categorical queries: extraction from revised state
+= revision of extractions.  Completes the `evidence_add` family
+(binary queries proved above in §6). -/
+
+private theorem dirichletToBinary_add (e₁ e₂ : MultiEvidence 3) (i : Fin 3) :
+    dirichletToBinary (e₁ + e₂) i = dirichletToBinary e₁ i + dirichletToBinary e₂ i := by
+  simp only [dirichletToBinary, BinaryEvidence.hplus_def, MultiEvidence.total,
+    multiEvidence_add_counts]
+  ext
+  · -- pos: ↑(counts₁ i + counts₂ i) = ↑(counts₁ i) + ↑(counts₂ i)
+    push_cast; ring
+  · -- neg: ↑(total₁₂ - counts₁₂ i) = ↑(total₁ - counts₁ i) + ↑(total₂ - counts₂ i)
+    simp only [Fin.sum_univ_three, Finset.sum_add_distrib]
+    -- Goal is now concrete Nat casts in ℝ≥0∞
+    -- Use: ↑a + ↑b = ↑(a + b) then ↑x = ↑y ↔ x = y (for Nat → ℝ≥0∞)
+    rw [← Nat.cast_add, Nat.cast_inj]
+    fin_cases i <;> dsimp <;> omega
+
+/-- Categorical evidence_add for laundry queries. -/
+theorem evidence_add_laundryInState (s₁ s₂ : MapleCourtState) (spec aptP bldP) (i : Fin 3) :
+    mapleCourtEvidence spec aptP bldP (s₁ + s₂) (.laundryInState i) =
+    mapleCourtEvidence spec aptP bldP s₁ (.laundryInState i) +
+    mapleCourtEvidence spec aptP bldP s₂ (.laundryInState i) := by
+  simp only [mapleCourtEvidence, MapleCourtState.add_building, BuildingState.add_laundryState]
+  exact dirichletToBinary_add _ _ _
+
+/-- Categorical evidence_add for elevator queries. -/
+theorem evidence_add_elevatorInState (s₁ s₂ : MapleCourtState) (spec aptP bldP) (i : Fin 3) :
+    mapleCourtEvidence spec aptP bldP (s₁ + s₂) (.elevatorInState i) =
+    mapleCourtEvidence spec aptP bldP s₁ (.elevatorInState i) +
+    mapleCourtEvidence spec aptP bldP s₂ (.elevatorInState i) := by
+  simp only [mapleCourtEvidence, MapleCourtState.add_building, BuildingState.add_elevatorHealth]
+  exact dirichletToBinary_add _ _ _
+
+end FullProfile
+
 /-! ## §13: Garden Bot Interface
 
 The garden-tending bot uses seasonal weather evidence (continuous)

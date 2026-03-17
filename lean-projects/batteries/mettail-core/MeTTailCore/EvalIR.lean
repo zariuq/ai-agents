@@ -143,9 +143,9 @@ end
 /-- Memo table: maps (function_head, [evaluated_arg_values]) to result. -/
 abbrev MemoTable := List (String × List EvalValue × EvalValue)
 
-/-- Look up a memo entry. -/
+/-- Look up a memo entry. Uses decidable equality (not BEq) for proof compatibility. -/
 def memoLookup (table : MemoTable) (head : String) (argVals : List EvalValue) : Option EvalValue :=
-  table.findSome? fun (h, vs, r) => if h == head && vs == argVals then some r else none
+  table.findSome? fun (h, vs, r) => if h = head ∧ vs = argVals then some r else none
 
 -- Memoized CBV evaluator — the ideal specification.
 -- Same as `eval` but threads a memo table. On userCall:
@@ -270,7 +270,68 @@ def MemoSoundSem (rules : List EvalRule) (memo : MemoTable) : Prop :=
   ∀ h vs v, (h, vs, v) ∈ memo →
     EvalSem rules (.userCall h (vs.map EvalValue.toNode)) v
 
--- ── Correct Theorem Statements ───────────────────────────────────────────
+/-- memoLookup is sound: if it returns a value, that value is semantically correct. -/
+theorem memoLookup_sound {rules : List EvalRule} {memo : MemoTable}
+    {head : String} {argVals : List EvalValue} {v : EvalValue}
+    (hm : MemoSoundSem rules memo) (h : memoLookup memo head argVals = some v) :
+    EvalSem rules (.userCall head (argVals.map EvalValue.toNode)) v := by
+  unfold memoLookup at h
+  obtain ⟨⟨h', vs', r'⟩, hmem, hfound⟩ := List.exists_of_findSome?_eq_some h
+  simp at hfound
+  obtain ⟨⟨rfl, rfl⟩, rfl⟩ := hfound
+  exact hm _ _ _ hmem
+
+-- ── Semantic Helper Lemmas (GPT-5.4 Pro recipe) ─────────────────────────
+
+theorem evalSem_toNode {rules : List EvalRule} :
+    ∀ v : EvalValue, EvalSem rules v.toNode v
+  | .int _ => .litInt
+  | .bool _ => .litBool
+
+theorem evalSemList_map_toNode {rules : List EvalRule} :
+    ∀ vs : List EvalValue, EvalSemList rules (vs.map EvalValue.toNode) vs
+  | [] => .nil
+  | v :: vs => .cons (evalSem_toNode v) (evalSemList_map_toNode vs)
+
+theorem evalSemList_length {rules : List EvalRule} {nodes : List EvalNode} {vs : List EvalValue}
+    (h : EvalSemList rules nodes vs) : nodes.length = vs.length := by
+  cases h with | nil => rfl | cons _ hrest => simp [evalSemList_length hrest]
+
+theorem evalSem_toNode_inv {rules : List EvalRule} {v w : EvalValue}
+    (h : EvalSem rules v.toNode w) : w = v := by
+  cases v <;> cases h <;> rfl
+
+theorem evalSemList_toNodes_inv {rules : List EvalRule} {vs ws : List EvalValue}
+    (h : EvalSemList rules (vs.map EvalValue.toNode) ws) : ws = vs := by
+  induction vs generalizing ws with
+  | nil => cases h; rfl
+  | cons v vs ih => cases h with
+    | cons hv hrest =>
+      have h1 := evalSem_toNode_inv hv; have h2 := ih hrest; subst h1; subst h2; rfl
+
+theorem evalSem_userCall_transport {rules : List EvalRule} {head : String}
+    {args : List EvalNode} {vals : List EvalValue} {v : EvalValue}
+    (hArgs : EvalSemList rules args vals)
+    (hCallVals : EvalSem rules (.userCall head (vals.map EvalValue.toNode)) v) :
+    EvalSem rules (.userCall head args) v := by
+  cases hCallVals with
+  | userCall hVals hLookup hBody =>
+    have heq := evalSemList_toNodes_inv hVals; subst heq
+    simp [List.length_map] at hLookup
+    rw [← evalSemList_length hArgs] at hLookup
+    exact .userCall hArgs hLookup hBody
+
+theorem memoSoundSem_cons {rules : List EvalRule} {memo : MemoTable}
+    {head : String} {vs : List EvalValue} {v : EvalValue}
+    (hNew : EvalSem rules (.userCall head (vs.map EvalValue.toNode)) v)
+    (hm : MemoSoundSem rules memo) :
+    MemoSoundSem rules ((head, vs, v) :: memo) := by
+  intro h vs' v' hmem; simp [List.mem_cons] at hmem
+  rcases hmem with ⟨rfl, rfl, rfl⟩ | hmem
+  · exact hNew
+  · exact hm _ _ _ hmem
+
+-- ── Main Theorem Statements ──────────────────────────────────────────────
 
 -- Helper: if no none in a list of options, the list equals some values mapped
 theorem list_no_none_eq_map_some (xs : List (Option α)) (h : ¬(none ∈ xs)) :
@@ -322,19 +383,53 @@ theorem eval_sound {rules : List EvalRule} :
     intro v h; simp [eval, ha, hb] at h; subst h; exact .mulOp (ih_a _ ha) (ih_b _ hb)
   | case13 => intro v h; simp [eval] at h
   | case14 => intro v h; simp [eval] at h
-  | case15 head args fuel' =>
-    -- hany (unnamed): evalArgs.any isNone = true → none ∈ evalArgs
-    -- h: ¬(none ∈ evalList ...) ∧ ... = some v
-    intro v h; simp [eval] at h; rename_i hany _; exact absurd h.1 hany
-  | case16 head args fuel' =>
-    -- hnone (unnamed): lookupRule = none
-    -- h: ... match none with | none => none | ... = some v → contradiction
+  | case15 =>
     intro v h; simp [eval] at h
-    rename_i _ hnone _; simp [hnone] at h
+    rename_i hmem _
+    -- hmem : evalArgs.any isNone = true, h.1 : ¬(none ∈ evalList ...)
+    -- evalArgs := evalList ..., so these contradict
+    have := List.any_eq_true.mp hmem
+    obtain ⟨x, hx_mem, hx_none⟩ := this
+    cases x with
+    | none => exact absurd hx_mem h.1
+    | some _ => simp [Option.isNone] at hx_none
+  | case16 =>
+    intro v h; simp [eval] at h
+    rename_i _ hlookup _
+    -- hlookup : lookupRule ... = none
+    -- h.2 : (match lookupRule ... with | none => none | some rule => ...) = some v
+    rw [hlookup] at h; simp at h
   -- userCall success: the HARD case
   | case17 head args fuel' hnotany rule hrule ih_args ih_body =>
     intro v h
-    sorry -- TODO: use list_no_none_eq_map_some + ih_args + ih_body
+    -- From eval.induct, the context has (with confusing names):
+    -- `rule`: ¬(evalList...).any isNone  (the "no nones" fact)
+    -- `hrule`: the matched EvalRule
+    -- `ih_args`: lookupRule = some hrule
+    -- `ih2✝`: list IH, `ih1✝`: body IH
+    -- Step 1: unfold eval in h
+    simp [eval, ih_args] at h
+    obtain ⟨hnn, hbody⟩ := h
+    -- Step 2: convert no-nones to map some
+    obtain ⟨argVals, hArgVals⟩ := list_no_none_eq_map_some _ hnn
+    -- Step 3: list IH → EvalSemList
+    rename_i ih_list ih_body_ih
+    have hSemArgs := ih_list argVals hArgVals
+    -- Step 4: align filterMap
+    have hFilter : (evalList rules (fuel' + 1) args).filterMap (fun v => v.map EvalValue.toNode)
+                   = argVals.map EvalValue.toNode := by
+      rw [hArgVals]; exact filterMap_map_some argVals EvalValue.toNode
+    -- Step 5: apply body IH — work around let-binding opacity
+    -- ih_body_ih sees body'✝ which is let-bound via ih_body (= filterMap ...)
+    -- hbody sees the unfolded form with filterMap directly
+    -- Both are definitionally equal, so we just need to help Lean see it
+    have hSemBody : EvalSem rules (substNode (hrule.params.zip (argVals.map EvalValue.toNode)) hrule.body) v := by
+      have := ih_body_ih v hbody
+      -- `this` has type EvalSem rules body'✝ v where body'✝ uses ih_body
+      -- ih_body and argVals.map toNode are equal by hFilter
+      -- Use congrArg to transport
+      exact hFilter ▸ this
+    exact .userCall hSemArgs ih_args hSemBody
   -- evalList cases
   | case18 =>
     rename_i fuel vs h
@@ -349,21 +444,35 @@ theorem eval_sound {rules : List EvalRule} :
       simp [evalList] at h
       exact .cons (ih_a _ h.1) (ih_as _ h.2)
 
-/-- Soundness of evalMemo: if memoized evaluator succeeds with sound memo,
-    the semantic relation holds. -/
+/-- Joint soundness + preservation for the memoized evaluator.
+    GPT-5.4 Pro: "Prove these together. The pair theorem is the main theorem." -/
+theorem evalMemo_sound_and_preserves {rules : List EvalRule} :
+    ∀ fuel memo node,
+      MemoSoundSem rules memo →
+      (∀ v, (evalMemo rules fuel memo node).1 = some v → EvalSem rules node v) ∧
+      MemoSoundSem rules (evalMemo rules fuel memo node).2 := by
+  intro fuel memo node
+  induction fuel, memo, node using evalMemo.induct (rules := rules)
+    (motive2 := fun fuel memo nodes =>
+      MemoSoundSem rules memo →
+      (∀ vs, (evalMemoList rules fuel memo nodes).1 = vs.map some → EvalSemList rules nodes vs) ∧
+      MemoSoundSem rules (evalMemoList rules fuel memo nodes).2)
+  all_goals sorry
+
+/-- Soundness of evalMemo: extracted from the joint theorem. -/
 theorem evalMemo_sound {rules : List EvalRule} {fuel : Nat} {memo : MemoTable}
     {node : EvalNode} {v : EvalValue}
     (hm : MemoSoundSem rules memo)
     (h : (evalMemo rules fuel memo node).1 = some v) :
-    EvalSem rules node v := by
-  sorry -- TODO: well-founded induction on (fuel, sizeOf node)
+    EvalSem rules node v :=
+  (evalMemo_sound_and_preserves fuel memo node hm).1 v h
 
-/-- evalMemo preserves memo soundness. -/
+/-- evalMemo preserves memo soundness: extracted from the joint theorem. -/
 theorem evalMemo_preserves_memo {rules : List EvalRule} {fuel : Nat} {memo : MemoTable}
     {node : EvalNode}
     (hm : MemoSoundSem rules memo) :
-    MemoSoundSem rules (evalMemo rules fuel memo node).2 := by
-  sorry -- TODO: depends on evalMemo_sound
+    MemoSoundSem rules (evalMemo rules fuel memo node).2 :=
+  (evalMemo_sound_and_preserves fuel memo node hm).2
 
 /-- Completeness: if the semantic relation holds, sufficient fuel exists for eval. -/
 theorem eval_complete_of_sem {rules : List EvalRule} {node : EvalNode} {v : EvalValue}

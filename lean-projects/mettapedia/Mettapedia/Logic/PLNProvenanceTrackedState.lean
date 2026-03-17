@@ -125,10 +125,10 @@ theorem trackedPayloadSupport_eq_empty_of_union_empty
   ext i
   simp [trackedPayloadSupport, h]
 
-noncomputable instance : WorldModel
+noncomputable instance : AdditiveWorldModel
     (TrackedWhichState σ n) (GroundAtom σ) (Which (Fin n)) where
-  evidence := trackedEvidence
-  evidence_add := by
+  extract := trackedEvidence
+  extract_add := by
     intro W₁ W₂ q
     by_cases h₁ : trackedUnionSupport W₁ q = ∅
     · by_cases h₂ : trackedUnionSupport W₂ q = ∅

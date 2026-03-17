@@ -22,10 +22,10 @@ noncomputable instance : EvidenceType (KRelation σ (Which (Fin n))) where
   toAddCommMonoid := inferInstance
 
 /-- Identity evidence extraction for `Which`-valued K-relations. -/
-noncomputable instance : WorldModel
+noncomputable instance : AdditiveWorldModel
     (KRelation σ (Which (Fin n))) (GroundAtom σ) (Which (Fin n)) where
-  evidence := fun I q => I q
-  evidence_add := by
+  extract := fun I q => I q
+  extract_add := by
     intro I₁ I₂ q
     simp [Pi.add_apply]
 
