@@ -48,6 +48,21 @@ noncomputable def c2w' (c : ℝ) : ℝ := c / (1 - c)
 /-- Weight to confidence: w/(w+1). Always defined for w ≥ 0. -/
 noncomputable def w2c' (w : ℝ) : ℝ := w / (w + 1)
 
+/-- Round-trip: w2c(c2w(c)) = c for c ∈ [0,1). -/
+theorem w2c'_c2w' (c : ℝ) (hc : 0 ≤ c) (hc1 : c < 1) : w2c' (c2w' c) = c := by
+  unfold w2c' c2w'
+  have h : (1 : ℝ) - c ≠ 0 := by linarith
+  field_simp
+  ring
+
+/-- Round-trip: c2w(w2c(w)) = w for w ≥ 0. -/
+theorem c2w'_w2c' (w : ℝ) (hw : 0 ≤ w) : c2w' (w2c' w) = w := by
+  unfold c2w' w2c'
+  have h : (0 : ℝ) < w + 1 := by linarith
+  have h' : w + 1 ≠ 0 := ne_of_gt h
+  field_simp
+  ring
+
 /-- CURRENT (buggy): applies w2c to confidence directly -/
 noncomputable def inductionConfBuggy (c1 c2 : ℝ) : ℝ :=
   w2c' (min c1 c2)

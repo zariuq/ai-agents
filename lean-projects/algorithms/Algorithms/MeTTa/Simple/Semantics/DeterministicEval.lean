@@ -841,4 +841,81 @@ theorem eval_apply_directIntrinsic_onestep
     hMemoMiss hNotEq hNotIf hNotExpr hTranslate hPreserveArgs hArity hDirect hNotSelf
   exact Prod.ext h.1 h.2
 
+/-- `evalMemo` in the unchanged branch: returns `(s, memo', .apply ctor argsV)`. -/
+private theorem evalMemo_apply_unchanged_eq
+    (I : Interface σ) (s : σ) (fuel : Nat) (memo : DetMemo)
+    (ctor : String) (argsV : List Pattern)
+    (hMemoMiss : (if DeterministicStrategy.isMemoizableDeterministicCall (.apply ctor argsV)
+                   then detMemoLookup memo (.apply ctor argsV) else none) = none)
+    (hNotEq : ctor ≠ "=")
+    (hNotIf : ctor ≠ "if")
+    (hNotExpr : ctor ≠ "Expr")
+    (hTranslate : I.translateCall s (.apply ctor argsV) = [])
+    (hPreserveArgs : I.deterministicPreserveArgs ctor = true)
+    (hArity : I.builtinPartialMinArity ctor = none)
+    (hDirect : I.intrinsicDirect s ctor argsV = [])
+    (hNoRule : I.firstRuleReduction? s (.apply ctor argsV) = none)
+    (hNoPartial :
+      ¬((I.rewriteAritiesForHead s ctor).any (· > argsV.length) = true ∧
+        (I.rewriteAritiesForHead s ctor).any (· == argsV.length) = false ∧
+        argsV.isEmpty = false)) :
+    (evalMemo I s (fuel + 1) memo (.apply ctor argsV)).1 = s ∧
+    (evalMemo I s (fuel + 1) memo (.apply ctor argsV)).2.2 = .apply ctor argsV := by
+  have hNotEqBEq : (ctor == "=") = false := beq_eq_false_iff_ne.mpr hNotEq
+  rw [evalMemo.eq_def]; simp only []
+  split
+  · rename_i a b c h; simp only [Pattern.apply.injEq] at h; exact absurd h.1 hNotIf
+  · rename_i elems h; simp only [Pattern.apply.injEq] at h; exact absurd h.1 hNotExpr
+  · rename_i _ c as _ _ heq
+    simp only [Pattern.apply.injEq] at heq
+    obtain ⟨rfl, rfl⟩ := heq
+    simp only [hMemoMiss, hTranslate, List.isEmpty_nil, Bool.not_true, Bool.false_eq_true,
+               ite_false, hPreserveArgs, ite_true, hNotEqBEq, hArity, hDirect,
+               List.isEmpty_nil, hNoRule]
+    -- After simp: goal is about the arity check fallthrough.
+    -- hNoPartial says the triple conjunction is false.
+    -- Case-split on each condition.
+    -- The arity triple condition evaluates to false under hNoPartial
+    suffices hCond :
+        ((((I.rewriteAritiesForHead s ctor).any fun n => decide (n > argsV.length)) &&
+            !((I.rewriteAritiesForHead s ctor).any fun n => n == argsV.length)) &&
+            !argsV.isEmpty) = false by
+      simp [hCond]
+    by_cases hLarger : (I.rewriteAritiesForHead s ctor).any (· > argsV.length) = true
+    · by_cases hExact : (I.rewriteAritiesForHead s ctor).any (· == argsV.length) = false
+      · by_cases hNonEmpty : argsV.isEmpty = false
+        · exact absurd ⟨hLarger, hExact, hNonEmpty⟩ hNoPartial
+        · simp only [Bool.not_eq_false] at hNonEmpty; simp [hNonEmpty]
+      · simp only [Bool.not_eq_false] at hExact; simp [hExact]
+    · simp only [Bool.not_eq_true] at hLarger; simp [hLarger]
+  · exact ⟨rfl, rfl⟩
+
+/-- `eval` in the unchanged branch (starting from empty memo):
+    when translateCall is empty, args are preserved, intrinsicDirect = [],
+    firstRuleReduction? = none, and arity conditions don't trigger partial,
+    `eval` returns the term unchanged. -/
+theorem eval_apply_unchanged
+    (I : Interface σ) (s : σ) (fuel : Nat)
+    (ctor : String) (argsV : List Pattern)
+    (hNotEq : ctor ≠ "=")
+    (hNotIf : ctor ≠ "if")
+    (hNotExpr : ctor ≠ "Expr")
+    (hTranslate : I.translateCall s (.apply ctor argsV) = [])
+    (hPreserveArgs : I.deterministicPreserveArgs ctor = true)
+    (hArity : I.builtinPartialMinArity ctor = none)
+    (hDirect : I.intrinsicDirect s ctor argsV = [])
+    (hNoRule : I.firstRuleReduction? s (.apply ctor argsV) = none)
+    (hNoPartial :
+      ¬((I.rewriteAritiesForHead s ctor).any (· > argsV.length) = true ∧
+        (I.rewriteAritiesForHead s ctor).any (· == argsV.length) = false ∧
+        argsV.isEmpty = false)) :
+    eval I s (fuel + 1) (.apply ctor argsV) = (s, .apply ctor argsV) := by
+  unfold eval
+  have hMemoMiss : (if DeterministicStrategy.isMemoizableDeterministicCall (.apply ctor argsV)
+                    then detMemoLookup [] (.apply ctor argsV) else none) = none := by
+    simp [detMemoLookup]
+  have h := evalMemo_apply_unchanged_eq I s fuel [] ctor argsV
+    hMemoMiss hNotEq hNotIf hNotExpr hTranslate hPreserveArgs hArity hDirect hNoRule hNoPartial
+  exact Prod.ext h.1 h.2
+
 end Algorithms.MeTTa.Simple.Semantics.DeterministicEval

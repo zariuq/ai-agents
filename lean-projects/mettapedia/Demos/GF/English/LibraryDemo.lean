@@ -1,12 +1,12 @@
-import Mettapedia.Languages.GF.English.Syntax
-import Mettapedia.Languages.GF.English.Pronouns
-import Mettapedia.Languages.GF.English.Relatives
-import Mettapedia.Languages.GF.English.Linearization
+import Mettapedia.Languages.GF.HandCrafted.English.Syntax
+import Mettapedia.Languages.GF.HandCrafted.English.Pronouns
+import Mettapedia.Languages.GF.HandCrafted.English.Relatives
+import Mettapedia.Languages.GF.HandCrafted.English.Linearization
 
-open Mettapedia.Languages.GF.English
+open Mettapedia.Languages.GF.HandCrafted.English
 open Syntax Pronouns Relatives
 open Nouns Verbs Adjectives
-open Mettapedia.Languages.GF.English.Linearization
+open Mettapedia.Languages.GF.HandCrafted.English.Linearization
 
 #eval! cat_N.s .Pl .Nom
 #eval! go_V.s .VPast

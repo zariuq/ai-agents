@@ -1,6 +1,6 @@
-import Mettapedia.Languages.GF.English.Linearization
+import Mettapedia.Languages.GF.HandCrafted.English.Linearization
 
-open Mettapedia.Languages.GF.English.Linearization
+open Mettapedia.Languages.GF.HandCrafted.English.Linearization
 
 private def preview (xs : List String) (k : Nat) : String :=
   String.intercalate "," (xs.take k)

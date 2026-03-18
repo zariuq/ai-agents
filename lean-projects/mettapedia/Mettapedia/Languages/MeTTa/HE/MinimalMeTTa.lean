@@ -90,7 +90,7 @@ inductive MinimalStep (dispatch : GroundedDispatch) :
       (h_not_empty : evalResult.1 ≠ Atom.empty) :
       MinimalStep dispatch s
         (.expression [.symbol "chain", a, .var v, template]) ib
-        s ((evalResult.2.assign v evalResult.1).apply template, evalResult.2)
+        s ((evalResult.2.assign v evalResult.1).apply template, evalResult.2.assign v evalResult.1)
 
   /-- `(chain <atom> <var> <template>)` — Atom evaluates to Empty → return Empty. -/
   | chain_empty (s : Space) (a : Atom) (v : String) (template : Atom)
@@ -143,12 +143,13 @@ inductive MinimalStep (dispatch : GroundedDispatch) :
       alternative evaluations in a form `(<atom> <bindings>)`. `<bindings>`
       are represented in a form of a grounded atom."
 
-      Modeling note: The spec represents bindings as opaque grounded atoms
-      in the result expression. We model this via a `ResultSet` parameter
-      carrying the full `(Atom × Bindings)` pairs, since `Bindings` cannot
-      be faithfully embedded in `Atom` without an encoding function.
-      The key semantic property is preserved: `superpose-bind` restores
-      the exact `(atom, bindings)` pairs that `collapse-bind` collected. -/
+      Each result pair `(atom, bindings)` is encoded as `(<atom> <bindings.toAtom>)`
+      in the output expression, faithfully modeling the spec's grounded-atom
+      encoding. The round-trip property `Bindings.ofAtom_toAtom` guarantees
+      `superpose-bind` can restore the exact `(atom, bindings)` pairs.
+
+      Hypercube: this is the □ (necessity) modality — collect ALL reducts
+      with their full contexts (bindings). -/
   | collapse_bind (s : Space) (a : Atom) (ib : Bindings) (results : ResultSet)
       (h_results : ∀ r ∈ results,
         EvalAtom s dispatch a Atom.undefinedType ib r)
@@ -156,23 +157,22 @@ inductive MinimalStep (dispatch : GroundedDispatch) :
         EvalAtom s dispatch a Atom.undefinedType ib r → r ∈ results) :
       MinimalStep dispatch s
         (.expression [.symbol "collapse-bind", a]) ib
-        s (.expression (results.map Prod.fst), ib)
+        s (.expression (results.map fun (a, b) => .expression [a, b.toAtom]), ib)
 
   /-- `(superpose-bind ((<atom> <bindings>) ...))` — Distribute results as
       nondeterministic outcomes.
       Spec: "puts list of the results into the interpreter plan each pair
       as a separate alternative."
-      Each `(atom, bindings)` pair from the collapsed results becomes a
-      separate derivation, restoring the bindings that were active when
-      that particular result was produced.
+      Each `(atom, bindings)` pair is restored from the encoded form,
+      returning both the original atom AND the original bindings.
 
-      The `results` parameter must be the same `ResultSet` produced by the
-      corresponding `collapse-bind`. This is the key invariant linking the
-      two instructions — the `results` carry both atoms AND their bindings. -/
+      Hypercube: this is the ◇ (possibility) modality — choose ONE reduct,
+      restoring its full context (bindings). -/
   | superpose_bind (s : Space) (results : ResultSet) (r : ResultPair)
       (ib : Bindings) (h_mem : r ∈ results) :
       MinimalStep dispatch s
-        (.expression [.symbol "superpose-bind", .expression (results.map Prod.fst)]) ib
+        (.expression [.symbol "superpose-bind",
+          .expression (results.map fun (a, b) => .expression [a, b.toAtom])]) ib
         s r
 
   /-- `(function <body>)` / `(return <atom>)` — Evaluate body until return.
@@ -204,18 +204,17 @@ inductive MinimalStep (dispatch : GroundedDispatch) :
 
   /-- `(call-native <function name> <pointer> <arguments>)` — Call native function.
       Spec: "call the passed Rust function with the passed arguments".
+      Spec note (minimal-metta.md lines 372-376): call-native currently cannot
+      return bindings, so output bindings are the input bindings.
       Modeled via `GroundedDispatch.execute` since native functions are opaque. -/
   | call_native (s : Space) (op : Atom) (args : List Atom) (ib : Bindings)
       (nativeResults : ResultSet) (r : ResultPair)
-      (merged : Bindings) (finalResult : ResultPair) (fuel : Nat)
       (h_exec : dispatch.isExecutable op = true)
       (h_native : dispatch.execute op args = .ok nativeResults)
-      (h_mem : r ∈ nativeResults)
-      (h_merge : merged ∈ mergeBindings r.2 ib fuel)
-      (h_recurse : EvalAtom s dispatch r.1 Atom.undefinedType merged finalResult) :
+      (h_mem : r ∈ nativeResults) :
       MinimalStep dispatch s
         (.expression [.symbol "call-native", op, .expression args]) ib
-        s finalResult
+        s (r.1, ib)
 
 /-! ## Multi-Step Evaluation
 

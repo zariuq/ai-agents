@@ -1,7 +1,6 @@
 import Mettapedia.Logic.PLNInferenceCalculus
 import Mettapedia.Logic.PLNProofCalculus
 import Mettapedia.Logic.PLNCalcBridge
-import Mettapedia.Logic.PLNCorrectedFormulas
 import Mettapedia.Logic.PLNIndefiniteTruth
 import Mettapedia.Logic.PLNQuantaleDivergence
 import Mettapedia.Logic.PLNSoundnessCounterexample

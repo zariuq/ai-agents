@@ -1,9 +1,9 @@
-import Mettapedia.Languages.GF.English.Relatives
-import Mettapedia.Languages.GF.English.Linearization
+import Mettapedia.Languages.GF.HandCrafted.English.Relatives
+import Mettapedia.Languages.GF.HandCrafted.English.Linearization
 
 namespace Mettapedia.Demos.GF.English.Examples
 
-open Mettapedia.Languages.GF.English
+open Mettapedia.Languages.GF.HandCrafted.English
 open Nouns Verbs Adjectives Syntax Pronouns Relatives
 
 private def theCat := linDetCN theDefArt (linUseN cat_N)

@@ -15,7 +15,7 @@ Strengthens the selected-core story in three ways:
 namespace Mettapedia.Languages.GF.UGCoreFamily
 
 open Mettapedia.Languages.GF
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.OSLFBridge
 open Mettapedia.Languages.GF.WorldModelSemantics
 open Mettapedia.Languages.GF.UGCoreSelected

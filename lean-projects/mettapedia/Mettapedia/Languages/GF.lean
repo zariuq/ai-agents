@@ -18,9 +18,9 @@ Full Czech and English morphology ported from GF Resource Grammar Library.
 
 ```lean
 import Mettapedia.Languages.GF
-open Mettapedia.Languages.GF.English.Syntax
-open Mettapedia.Languages.GF.English.Nouns
-open Mettapedia.Languages.GF.English.Verbs
+open Mettapedia.Languages.GF.HandCrafted.English.Syntax
+open Mettapedia.Languages.GF.HandCrafted.English.Nouns
+open Mettapedia.Languages.GF.HandCrafted.English.Verbs
 
 -- "the cat walks"
 #eval! linUseCl .Pres .Simul .CPos
@@ -33,35 +33,35 @@ open Mettapedia.Languages.GF.English.Verbs
 - GF-RGL: ~/claude/gf-rgl/
 -/
 
-import Mettapedia.Languages.GF.Core
-import Mettapedia.Languages.GF.Abstract
-import Mettapedia.Languages.GF.Concrete
-import Mettapedia.Languages.GF.Czech.Morphology
-import Mettapedia.Languages.GF.Czech.Declensions
-import Mettapedia.Languages.GF.Czech.Adjectives
-import Mettapedia.Languages.GF.Czech.Verbs
-import Mettapedia.Languages.GF.Czech.Pronouns
-import Mettapedia.Languages.GF.Czech.Numerals
-import Mettapedia.Languages.GF.Czech.Agreement
-import Mettapedia.Languages.GF.Czech.Examples
-import Mettapedia.Languages.GF.Czech.Properties
-import Mettapedia.Languages.GF.Czech.Tests
-import Mettapedia.Languages.GF.Czech.Linearization
-import Mettapedia.Languages.GF.English.Morphology
-import Mettapedia.Languages.GF.English.Nouns
-import Mettapedia.Languages.GF.English.Verbs
-import Mettapedia.Languages.GF.English.Adjectives
-import Mettapedia.Languages.GF.English.Syntax
-import Mettapedia.Languages.GF.English.Pronouns
-import Mettapedia.Languages.GF.English.Relatives
-import Mettapedia.Languages.GF.English.Properties
-import Mettapedia.Languages.GF.English.Linearization
-import Mettapedia.Languages.GF.English.Examples
-import Mettapedia.Languages.GF.English.RoundTripCorpus
-import Mettapedia.Languages.GF.English.InterfaceContrast
-import Mettapedia.Languages.GF.English.InterfaceRefinement
-import Mettapedia.Languages.GF.English.SemanticHighlights
-import Mettapedia.Languages.GF.Czech.RoundTripCorpus
+import Mettapedia.Languages.GF.HandCrafted.Core
+import Mettapedia.Languages.GF.HandCrafted.Abstract
+import Mettapedia.Languages.GF.HandCrafted.Concrete
+import Mettapedia.Languages.GF.HandCrafted.Czech.Morphology
+import Mettapedia.Languages.GF.HandCrafted.Czech.Declensions
+import Mettapedia.Languages.GF.HandCrafted.Czech.Adjectives
+import Mettapedia.Languages.GF.HandCrafted.Czech.Verbs
+import Mettapedia.Languages.GF.HandCrafted.Czech.Pronouns
+import Mettapedia.Languages.GF.HandCrafted.Czech.Numerals
+import Mettapedia.Languages.GF.HandCrafted.Czech.Agreement
+import Mettapedia.Languages.GF.HandCrafted.Czech.Examples
+import Mettapedia.Languages.GF.HandCrafted.Czech.Properties
+import Mettapedia.Languages.GF.HandCrafted.Czech.Tests
+import Mettapedia.Languages.GF.HandCrafted.Czech.Linearization
+import Mettapedia.Languages.GF.HandCrafted.English.Morphology
+import Mettapedia.Languages.GF.HandCrafted.English.Nouns
+import Mettapedia.Languages.GF.HandCrafted.English.Verbs
+import Mettapedia.Languages.GF.HandCrafted.English.Adjectives
+import Mettapedia.Languages.GF.HandCrafted.English.Syntax
+import Mettapedia.Languages.GF.HandCrafted.English.Pronouns
+import Mettapedia.Languages.GF.HandCrafted.English.Relatives
+import Mettapedia.Languages.GF.HandCrafted.English.Properties
+import Mettapedia.Languages.GF.HandCrafted.English.Linearization
+import Mettapedia.Languages.GF.HandCrafted.English.Examples
+import Mettapedia.Languages.GF.HandCrafted.English.RoundTripCorpus
+import Mettapedia.Languages.GF.HandCrafted.English.InterfaceContrast
+import Mettapedia.Languages.GF.HandCrafted.English.InterfaceRefinement
+import Mettapedia.Languages.GF.HandCrafted.English.SemanticHighlights
+import Mettapedia.Languages.GF.HandCrafted.Czech.RoundTripCorpus
 import Mettapedia.Languages.GF.RoundTripRegression
 import Mettapedia.Languages.GF.OSLFBridge
 import Mettapedia.Languages.GF.Typing

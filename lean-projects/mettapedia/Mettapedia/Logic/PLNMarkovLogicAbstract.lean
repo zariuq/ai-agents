@@ -96,6 +96,8 @@ noncomputable instance : BinaryWorldModel (MassState Query) Query where
     change (Multiset.map f (W₁ + W₂)).sum =
       (Multiset.map f W₁).sum + (Multiset.map f W₂).sum
     exact h
+  evidence_zero _ := by
+    simp [evidence, Multiset.map_zero, Multiset.sum_zero]
 
 theorem evidence_singleton (S : MassSemantics Query) (q : Query) :
     evidence ({S} : MassState Query) q = S.evidenceOfMasses q := by

@@ -21,6 +21,7 @@ import Mettapedia.Logic.HOL.PrimeHenkinExtension
 import Mettapedia.Logic.HOL.HenkinAxiomsInfinity
 import Mettapedia.Logic.HOL.CanonicalKripke
 import Mettapedia.Logic.HOL.CanonicalSemantics
+import Mettapedia.Logic.HOL.CanonicalModel
 import Mettapedia.Logic.HOL.IntuitionisticSoundness
 import Mettapedia.Logic.HOL.Soundness
 import Mettapedia.Logic.HOL.Embedding.FirstOrder
@@ -51,6 +52,8 @@ Public entrypoint for the real Church-style HOL layer:
 - a prime-extension theorem and cumulative Henkin axiom family for canonical worlds,
 - a canonical Kripke/world semantics layer for closed formulas over those worlds,
 - a canonical truth-event semantics for closed formulas over those worlds,
+- a typed companion canonical model semantics over closed substitutions into the
+  cumulative Henkin language,
 - first-order embedding,
 - and the world-model bridge over pointed Henkin models.
 

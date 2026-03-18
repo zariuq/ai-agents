@@ -42,7 +42,7 @@ The deeper judgment is: Pain IS-A sensation that IS-CAUSED-BY a process.
 Literature evidence and causal analysis break the tie that raw counts can't.
 -/
 
-import Mettapedia.Languages.GF.Core
+import Mettapedia.Languages.GF.HandCrafted.Core
 import Mettapedia.Languages.GF.SUMO.EvidenceModel
 import Mettapedia.Languages.GF.SUMO.DocEvidence
 

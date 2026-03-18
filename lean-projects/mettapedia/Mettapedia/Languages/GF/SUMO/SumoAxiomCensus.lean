@@ -17,7 +17,7 @@ This evidence feeds into the RepairLog decisions.
 - "axiom census" = grep of (instance ?X Concept) and similar patterns
 -/
 
-import Mettapedia.Languages.GF.Core
+import Mettapedia.Languages.GF.HandCrafted.Core
 
 namespace Mettapedia.Languages.GF.SUMO.AxiomCensus
 

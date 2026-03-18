@@ -1,37 +1,32 @@
 import Mettapedia.Logic.LP.Provenance
 import Mettapedia.Logic.PLNProvenanceWMSupportBridge
 import Mettapedia.Logic.PLNScopedTrackedWhichState
+import Mettapedia.Logic.PLNProvenanceInference
 import Provenance.Semirings.Which
 
 /-!
 # End-to-End Derivation Tracking Demo
 
-A worked example for the WM-PLN book (Ch 6): provenance flows through
-the Maple Court humidity chain, and scoped forgetting exactly removes
-one observation branch while preserving the other.
-
-## Pipeline
-
-1. Define a tiny LP signature (5 ground atoms, 3 rules)
-2. Label two observations with `Which`-valued provenance seeds
-3. Define the closures (what `T_P_K_LP` would produce)
-4. Convert to `ScopedTrackedWhichState`
-5. Prove exact-inverse forgetting and conservation
-6. Bridge to `AdditiveWorldModel.extract`
+A worked example: provenance flow from LP rules through the actual `T_P_K_LP`
+operator with `Which`, into WM extraction, and then into scoped forgetting.
 
 ## Design note
 
-We define closures by hand rather than evaluating `T_P_K_LP` (which is
-`noncomputable`).  The closures represent what the operator produces
-after fixpoint iteration on the seeded KB.
+`T_P_K_LP` injects plain semiring `1` for EDB facts. For the `Which` semiring,
+that means `wset ∅`, which does **not** carry source labels like `{o₁}` and
+`{o₂}`. So the example uses a *seeded provenance closure*
+`seed + T_P_K_LP ...` rather than raw iteration from the empty K-relation.
+This keeps the example honest with the current code while still exercising
+the actual LP provenance operator on every derived consequence.
 -/
 
 namespace Mettapedia.Logic.PLNDerivationTrackingDemo
 
+open Mettapedia.Logic
 open Mettapedia.Logic.LP
 open Mettapedia.Logic.PLNWorldModelGeneric
 
-/-! ## 1. Tiny function-free Maple Court signature -/
+/-! ## 1. Signature and atoms -/
 
 inductive MapleCourtRel
   | pipeLeak
@@ -52,218 +47,407 @@ def mapleCourtSig : LPSignature where
   functionSymbols := PEmpty
   functionArity := PEmpty.elim
 
-instance : IsEmpty mapleCourtSig.functionSymbols := inferInstance
-instance : DecidableEq mapleCourtSig.constants := inferInstance
-instance : DecidableEq mapleCourtSig.vars := inferInstance
-instance : DecidableEq mapleCourtSig.relationSymbols := inferInstance
-instance : Fintype mapleCourtSig.constants := inferInstance
-instance : Fintype mapleCourtSig.vars := inferInstance
+instance : IsEmpty mapleCourtSig.functionSymbols := inferInstanceAs (IsEmpty PEmpty)
+instance : DecidableEq mapleCourtSig.constants := inferInstanceAs (DecidableEq Unit)
+instance : DecidableEq mapleCourtSig.vars := inferInstanceAs (DecidableEq Unit)
+instance : DecidableEq mapleCourtSig.relationSymbols := inferInstanceAs (DecidableEq MapleCourtRel)
+instance : Fintype mapleCourtSig.constants := inferInstanceAs (Fintype Unit)
+instance : Fintype mapleCourtSig.vars := inferInstanceAs (Fintype Unit)
 
-/-- Named ground atoms (all unary, applied to the single constant `()`). -/
-def pipeLeak₁ : GroundAtom mapleCourtSig := GroundAtom.ofFinArgs .pipeLeak (fun _ => ())
-def showerRunning₁ : GroundAtom mapleCourtSig := GroundAtom.ofFinArgs .showerRunning (fun _ => ())
-def wallHumidity₁ : GroundAtom mapleCourtSig := GroundAtom.ofFinArgs .wallHumidity (fun _ => ())
-def bathroomHumidity₁ : GroundAtom mapleCourtSig := GroundAtom.ofFinArgs .bathroomHumidity (fun _ => ())
-def moldRisk₁ : GroundAtom mapleCourtSig := GroundAtom.ofFinArgs .moldRisk (fun _ => ())
+def unit1 : GroundTerm mapleCourtSig := .const ()
+def x : Term mapleCourtSig := .var ()
 
-/-- Ground atoms with distinct relation symbols are distinct. -/
-theorem atoms_ne_of_rel_ne {r₁ r₂ : MapleCourtRel} (h : r₁ ≠ r₂) :
-    GroundAtom.ofFinArgs r₁ (fun _ : Fin 1 => ((): mapleCourtSig.constants)) ≠
-    GroundAtom.ofFinArgs r₂ (fun _ => ()) := by
-  intro heq; exact h (congrArg GroundAtom.symbol heq)
+def unaryAtom (r : MapleCourtRel) (t : Term mapleCourtSig) : Atom mapleCourtSig where
+  symbol := r; args := fun _ => t
 
-/-! ## 2. Observation seeds as Which-valued KRelations -/
+def unaryGroundAtom (r : MapleCourtRel) : GroundAtom mapleCourtSig :=
+  GroundAtom.ofFinArgs r (fun _ => ())
+
+def pipeLeakX : Atom mapleCourtSig := unaryAtom .pipeLeak x
+def showerRunningX : Atom mapleCourtSig := unaryAtom .showerRunning x
+def wallHumidityX : Atom mapleCourtSig := unaryAtom .wallHumidity x
+def bathroomHumidityX : Atom mapleCourtSig := unaryAtom .bathroomHumidity x
+def moldRiskX : Atom mapleCourtSig := unaryAtom .moldRisk x
+
+def pipeLeak₁ : GroundAtom mapleCourtSig := unaryGroundAtom .pipeLeak
+def showerRunning₁ : GroundAtom mapleCourtSig := unaryGroundAtom .showerRunning
+def wallHumidity₁ : GroundAtom mapleCourtSig := unaryGroundAtom .wallHumidity
+def bathroomHumidity₁ : GroundAtom mapleCourtSig := unaryGroundAtom .bathroomHumidity
+def moldRisk₁ : GroundAtom mapleCourtSig := unaryGroundAtom .moldRisk
+
+/-! ## 2. LP program (3 rules, no EDB facts) -/
+
+def rulePipeLeakToWallHumidity : Clause mapleCourtSig where
+  head := wallHumidityX; body := [pipeLeakX]
+
+def ruleShowerToBathroomHumidity : Clause mapleCourtSig where
+  head := bathroomHumidityX; body := [showerRunningX]
+
+def ruleWallToMoldRisk : Clause mapleCourtSig where
+  head := moldRiskX; body := [wallHumidityX]
+
+def mapleCourtProg : Program mapleCourtSig :=
+  [rulePipeLeakToWallHumidity, ruleShowerToBathroomHumidity, ruleWallToMoldRisk]
+
+-- No EDB facts — observations enter as labelled seeds via T_P_K_LP_seeded
+
+/-! ## 3. Observation seeds -/
 
 def oPipe : Fin 2 := 0
 def oShower : Fin 2 := 1
+def srcPipe : Finset (Fin 2) := {oPipe}
+def srcShower : Finset (Fin 2) := {oShower}
+def pipeProv : Which (Fin 2) := Which.wset srcPipe
+def showerProv : Which (Fin 2) := Which.wset srcShower
 
-def pipeProv : Which (Fin 2) := Which.wset {oPipe}
-def showerProv : Which (Fin 2) := Which.wset {oShower}
+def seedOf (fact : GroundAtom mapleCourtSig) (src : Finset (Fin 2)) :
+    KRelation mapleCourtSig (Which (Fin 2)) :=
+  fun a => if a = fact then Which.wset src else 0
 
-/-- Pipe seed: only `pipeLeak₁` carries provenance `{oPipe}`. -/
-def pipeSeed : KRelation mapleCourtSig (Which (Fin 2)) :=
-  fun a => if a = pipeLeak₁ then pipeProv else 0
+def pipeSeed : KRelation mapleCourtSig (Which (Fin 2)) := seedOf pipeLeak₁ srcPipe
+def showerSeed : KRelation mapleCourtSig (Which (Fin 2)) := seedOf showerRunning₁ srcShower
 
-/-- Shower seed: only `showerRunning₁` carries provenance `{oShower}`. -/
-def showerSeed : KRelation mapleCourtSig (Which (Fin 2)) :=
-  fun a => if a = showerRunning₁ then showerProv else 0
+@[simp] theorem pipeSeed_pipeLeak : pipeSeed pipeLeak₁ = pipeProv := by
+  simp [pipeSeed, seedOf, pipeProv]
+@[simp] theorem pipeSeed_showerRunning : pipeSeed showerRunning₁ = 0 := by
+  simp only [pipeSeed, seedOf]; exact if_neg (by decide)
+@[simp] theorem pipeSeed_wallHumidity : pipeSeed wallHumidity₁ = 0 := by
+  simp only [pipeSeed, seedOf]; exact if_neg (by decide)
+@[simp] theorem pipeSeed_bathroomHumidity : pipeSeed bathroomHumidity₁ = 0 := by
+  simp only [pipeSeed, seedOf]; exact if_neg (by decide)
+@[simp] theorem pipeSeed_moldRisk : pipeSeed moldRisk₁ = 0 := by
+  simp only [pipeSeed, seedOf]; exact if_neg (by decide)
 
-/-! ## 3. Closures (hand-defined fixpoints)
+@[simp] theorem showerSeed_pipeLeak : showerSeed pipeLeak₁ = 0 := by
+  simp only [showerSeed, seedOf]; exact if_neg (by decide)
+@[simp] theorem showerSeed_showerRunning : showerSeed showerRunning₁ = showerProv := by
+  simp [showerSeed, seedOf, showerProv]
+@[simp] theorem showerSeed_wallHumidity : showerSeed wallHumidity₁ = 0 := by
+  simp only [showerSeed, seedOf]; exact if_neg (by decide)
+@[simp] theorem showerSeed_bathroomHumidity : showerSeed bathroomHumidity₁ = 0 := by
+  simp only [showerSeed, seedOf]; exact if_neg (by decide)
+@[simp] theorem showerSeed_moldRisk : showerSeed moldRisk₁ = 0 := by
+  simp only [showerSeed, seedOf]; exact if_neg (by decide)
 
-These represent what `T_P_K_LP` would produce after iterating on the
-seeded KB.  The chain PipeLeak → WallHumidity → MoldRisk propagates
-the pipe provenance; ShowerRunning → BathroomHumidity propagates
-the shower provenance. -/
+/-! ## 4. Unique grounding -/
 
-/-- Pipe closure: PipeLeak, WallHumidity, MoldRisk all carry `{oPipe}`. -/
-def pipeClosure : KRelation mapleCourtSig (Which (Fin 2)) :=
-  fun a =>
-    if a = pipeLeak₁ then pipeProv
-    else if a = wallHumidity₁ then pipeProv
-    else if a = moldRisk₁ then pipeProv
-    else 0
+instance : Unique (Grounding mapleCourtSig) where
+  default := fun _ => unit1
+  uniq g := by
+    funext v; cases v
+    cases h : g () with
+    | const c => cases c; rfl
+    | app f ts => cases f
 
-/-- Shower closure: ShowerRunning, BathroomHumidity carry `{oShower}`. -/
-def showerClosure : KRelation mapleCourtSig (Which (Fin 2)) :=
-  fun a =>
-    if a = showerRunning₁ then showerProv
-    else if a = bathroomHumidity₁ then showerProv
-    else 0
+@[simp] theorem default_grounds_unary_atom (r : MapleCourtRel) :
+    (default : Grounding mapleCourtSig).groundAtom (unaryAtom r x) = unaryGroundAtom r := rfl
 
-/-- Full state: union of both observation branches. -/
-def fullState : KRelation mapleCourtSig (Which (Fin 2)) :=
+/-! ## 5. T_P_K_LP_seeded one-step equations
+
+The seeded operator `T_P_K_LP_seeded` directly takes labelled observations as a
+`KRelation`-valued seed, avoiding the Boolean-EDB workaround. For the Maple Court
+program, with only one grounding, `Fintype.sum_unique` collapses the sum. -/
+
+private theorem T_P_K_LP_seeded_core
+    (seed I : KRelation mapleCourtSig (Which (Fin 2)))
+    (a : GroundAtom mapleCourtSig) :
+    T_P_K_LP_seeded (Which (Fin 2)) mapleCourtProg seed I a =
+      seed a +
+      ((if (default : Grounding mapleCourtSig).groundAtom wallHumidityX = a then
+        I ((default : Grounding mapleCourtSig).groundAtom pipeLeakX) else 0) +
+      ((if (default : Grounding mapleCourtSig).groundAtom bathroomHumidityX = a then
+        I ((default : Grounding mapleCourtSig).groundAtom showerRunningX) else 0) +
+      (if (default : Grounding mapleCourtSig).groundAtom moldRiskX = a then
+        I ((default : Grounding mapleCourtSig).groundAtom wallHumidityX) else 0))) := by
+  classical
+  unfold T_P_K_LP_seeded mapleCourtProg
+  rw [Fintype.sum_unique]
+  simp only [List.map, List.sum_cons, List.sum_nil, add_zero,
+    rulePipeLeakToWallHumidity, ruleShowerToBathroomHumidity, ruleWallToMoldRisk,
+    Clause.mk, List.prod_cons, List.prod_nil, mul_one]
+
+theorem T_P_K_LP_seeded_pipeLeak
+    (seed I : KRelation mapleCourtSig (Which (Fin 2))) :
+    T_P_K_LP_seeded (Which (Fin 2)) mapleCourtProg seed I pipeLeak₁ = seed pipeLeak₁ := by
+  rw [T_P_K_LP_seeded_core]
+  simp only [default_grounds_unary_atom, wallHumidityX, pipeLeakX, bathroomHumidityX,
+    showerRunningX, moldRiskX, pipeLeak₁, unaryGroundAtom]
+  have h1 : wallHumidity₁ ≠ pipeLeak₁ := by decide
+  have h2 : bathroomHumidity₁ ≠ pipeLeak₁ := by decide
+  have h3 : moldRisk₁ ≠ pipeLeak₁ := by decide
+  simp only [wallHumidity₁, bathroomHumidity₁, moldRisk₁, pipeLeak₁, unaryGroundAtom] at h1 h2 h3
+  simp [h1, h2, h3]
+
+theorem T_P_K_LP_seeded_showerRunning
+    (seed I : KRelation mapleCourtSig (Which (Fin 2))) :
+    T_P_K_LP_seeded (Which (Fin 2)) mapleCourtProg seed I showerRunning₁ =
+      seed showerRunning₁ := by
+  rw [T_P_K_LP_seeded_core]
+  simp only [default_grounds_unary_atom, wallHumidityX, pipeLeakX, bathroomHumidityX,
+    showerRunningX, moldRiskX, showerRunning₁, unaryGroundAtom]
+  have h1 : wallHumidity₁ ≠ showerRunning₁ := by decide
+  have h2 : bathroomHumidity₁ ≠ showerRunning₁ := by decide
+  have h3 : moldRisk₁ ≠ showerRunning₁ := by decide
+  simp only [wallHumidity₁, bathroomHumidity₁, moldRisk₁, showerRunning₁, unaryGroundAtom] at h1 h2 h3
+  simp [h1, h2, h3]
+
+theorem T_P_K_LP_seeded_wallHumidity
+    (seed I : KRelation mapleCourtSig (Which (Fin 2))) :
+    T_P_K_LP_seeded (Which (Fin 2)) mapleCourtProg seed I wallHumidity₁ =
+      seed wallHumidity₁ + I pipeLeak₁ := by
+  rw [T_P_K_LP_seeded_core]
+  simp only [default_grounds_unary_atom, wallHumidityX, pipeLeakX, bathroomHumidityX,
+    showerRunningX, moldRiskX, wallHumidity₁, pipeLeak₁, unaryGroundAtom]
+  have h1 : bathroomHumidity₁ ≠ wallHumidity₁ := by decide
+  have h2 : moldRisk₁ ≠ wallHumidity₁ := by decide
+  simp only [bathroomHumidity₁, moldRisk₁, wallHumidity₁, unaryGroundAtom] at h1 h2
+  simp [h1, h2]
+
+theorem T_P_K_LP_seeded_bathroomHumidity
+    (seed I : KRelation mapleCourtSig (Which (Fin 2))) :
+    T_P_K_LP_seeded (Which (Fin 2)) mapleCourtProg seed I bathroomHumidity₁ =
+      seed bathroomHumidity₁ + I showerRunning₁ := by
+  rw [T_P_K_LP_seeded_core]
+  simp only [default_grounds_unary_atom, wallHumidityX, pipeLeakX, bathroomHumidityX,
+    showerRunningX, moldRiskX, bathroomHumidity₁, showerRunning₁, unaryGroundAtom]
+  have h1 : wallHumidity₁ ≠ bathroomHumidity₁ := by decide
+  have h2 : moldRisk₁ ≠ bathroomHumidity₁ := by decide
+  simp only [wallHumidity₁, moldRisk₁, bathroomHumidity₁, unaryGroundAtom] at h1 h2
+  simp [h1, h2]
+
+theorem T_P_K_LP_seeded_moldRisk
+    (seed I : KRelation mapleCourtSig (Which (Fin 2))) :
+    T_P_K_LP_seeded (Which (Fin 2)) mapleCourtProg seed I moldRisk₁ =
+      seed moldRisk₁ + I wallHumidity₁ := by
+  rw [T_P_K_LP_seeded_core]
+  simp only [default_grounds_unary_atom, wallHumidityX, pipeLeakX, bathroomHumidityX,
+    showerRunningX, moldRiskX, moldRisk₁, wallHumidity₁, unaryGroundAtom]
+  have h1 : wallHumidity₁ ≠ moldRisk₁ := by decide
+  have h2 : bathroomHumidity₁ ≠ moldRisk₁ := by decide
+  simp only [wallHumidity₁, bathroomHumidity₁, moldRisk₁, unaryGroundAtom] at h1 h2
+  simp [h1, h2]
+
+/-! ## 6. Two-round seeded closure via T_P_K_LP_seeded -/
+
+/-- Two rounds of `T_P_K_LP_seeded`: enough for the longest chain
+    PipeLeak → WallHumidity → MoldRisk. -/
+noncomputable def closure2 (seed : KRelation mapleCourtSig (Which (Fin 2))) :=
+  T_P_K_LP_seeded (Which (Fin 2)) mapleCourtProg seed
+    (T_P_K_LP_seeded (Which (Fin 2)) mapleCourtProg seed seed)
+
+noncomputable def pipeClosure := closure2 pipeSeed
+noncomputable def showerClosure := closure2 showerSeed
+
+/-! ## 7. Branch-local provenance results -/
+
+/-- Reduction lemma: `closure2 seed a` expands to seed + IDB(seed + IDB(seed)). -/
+private theorem closure_apply (seed : KRelation mapleCourtSig (Which (Fin 2)))
+    (a : GroundAtom mapleCourtSig) :
+    closure2 seed a =
+      seed a + (∑ g : Grounding mapleCourtSig,
+        (mapleCourtProg.map (fun r =>
+          if g.groundAtom r.head = a then
+            (r.body.map (fun b =>
+              T_P_K_LP_seeded (Which (Fin 2)) mapleCourtProg seed seed (g.groundAtom b))).prod
+          else 0)).sum) := rfl
+
+theorem pipeClosure_pipeLeak : pipeClosure pipeLeak₁ = pipeProv := by
+  simp only [pipeClosure, closure2, T_P_K_LP_seeded_pipeLeak]; simp
+
+theorem pipeClosure_wallHumidity : pipeClosure wallHumidity₁ = pipeProv := by
+  simp only [pipeClosure, closure2, T_P_K_LP_seeded_wallHumidity, T_P_K_LP_seeded_pipeLeak]
+  simp
+
+theorem pipeClosure_moldRisk : pipeClosure moldRisk₁ = pipeProv := by
+  simp only [pipeClosure, closure2, T_P_K_LP_seeded_moldRisk, T_P_K_LP_seeded_wallHumidity,
+    T_P_K_LP_seeded_pipeLeak]; simp
+
+theorem pipeClosure_bathroomHumidity_zero : pipeClosure bathroomHumidity₁ = 0 := by
+  simp only [pipeClosure, closure2, T_P_K_LP_seeded_bathroomHumidity,
+    T_P_K_LP_seeded_showerRunning]; simp
+
+theorem showerClosure_showerRunning : showerClosure showerRunning₁ = showerProv := by
+  simp only [showerClosure, closure2, T_P_K_LP_seeded_showerRunning]; simp
+
+theorem showerClosure_bathroomHumidity : showerClosure bathroomHumidity₁ = showerProv := by
+  simp only [showerClosure, closure2, T_P_K_LP_seeded_bathroomHumidity,
+    T_P_K_LP_seeded_showerRunning]; simp
+
+theorem showerClosure_wallHumidity_zero : showerClosure wallHumidity₁ = 0 := by
+  simp only [showerClosure, closure2, T_P_K_LP_seeded_wallHumidity, T_P_K_LP_seeded_pipeLeak]
+  simp
+
+theorem showerClosure_moldRisk_zero : showerClosure moldRisk₁ = 0 := by
+  simp only [showerClosure, closure2, T_P_K_LP_seeded_moldRisk, T_P_K_LP_seeded_wallHumidity,
+    T_P_K_LP_seeded_pipeLeak]; simp
+
+/-! ## 8. Full state and WM extraction -/
+
+noncomputable def fullState : KRelation mapleCourtSig (Which (Fin 2)) :=
   pipeClosure + showerClosure
 
-/-! ## 4. Provenance flow theorems -/
+private theorem fullState_apply (a : GroundAtom mapleCourtSig) :
+    fullState a = pipeClosure a + showerClosure a := rfl
 
-
--- All atom inequalities as @[simp] lemmas (both directions)
-@[simp] theorem ne_pl_sr : pipeLeak₁ ≠ showerRunning₁ := atoms_ne_of_rel_ne (by decide)
-@[simp] theorem ne_sr_pl : showerRunning₁ ≠ pipeLeak₁ := ne_pl_sr.symm
-@[simp] theorem ne_pl_wh : pipeLeak₁ ≠ wallHumidity₁ := atoms_ne_of_rel_ne (by decide)
-@[simp] theorem ne_wh_pl : wallHumidity₁ ≠ pipeLeak₁ := ne_pl_wh.symm
-@[simp] theorem ne_pl_bh : pipeLeak₁ ≠ bathroomHumidity₁ := atoms_ne_of_rel_ne (by decide)
-@[simp] theorem ne_bh_pl : bathroomHumidity₁ ≠ pipeLeak₁ := ne_pl_bh.symm
-@[simp] theorem ne_pl_mr : pipeLeak₁ ≠ moldRisk₁ := atoms_ne_of_rel_ne (by decide)
-@[simp] theorem ne_mr_pl : moldRisk₁ ≠ pipeLeak₁ := ne_pl_mr.symm
-@[simp] theorem ne_sr_wh : showerRunning₁ ≠ wallHumidity₁ := atoms_ne_of_rel_ne (by decide)
-@[simp] theorem ne_wh_sr : wallHumidity₁ ≠ showerRunning₁ := ne_sr_wh.symm
-@[simp] theorem ne_sr_bh : showerRunning₁ ≠ bathroomHumidity₁ := atoms_ne_of_rel_ne (by decide)
-@[simp] theorem ne_bh_sr : bathroomHumidity₁ ≠ showerRunning₁ := ne_sr_bh.symm
-@[simp] theorem ne_sr_mr : showerRunning₁ ≠ moldRisk₁ := atoms_ne_of_rel_ne (by decide)
-@[simp] theorem ne_mr_sr : moldRisk₁ ≠ showerRunning₁ := ne_sr_mr.symm
-@[simp] theorem ne_wh_bh : wallHumidity₁ ≠ bathroomHumidity₁ := atoms_ne_of_rel_ne (by decide)
-@[simp] theorem ne_bh_wh : bathroomHumidity₁ ≠ wallHumidity₁ := ne_wh_bh.symm
-@[simp] theorem ne_wh_mr : wallHumidity₁ ≠ moldRisk₁ := atoms_ne_of_rel_ne (by decide)
-@[simp] theorem ne_mr_wh : moldRisk₁ ≠ wallHumidity₁ := ne_wh_mr.symm
-@[simp] theorem ne_bh_mr : bathroomHumidity₁ ≠ moldRisk₁ := atoms_ne_of_rel_ne (by decide)
-@[simp] theorem ne_mr_bh : moldRisk₁ ≠ bathroomHumidity₁ := ne_bh_mr.symm
-
-/-- Mold risk is traced to the pipe observation. -/
 theorem fullState_moldRisk : fullState moldRisk₁ = pipeProv := by
-  simp [fullState, pipeClosure, showerClosure, Pi.add_apply]
+  rw [fullState_apply, pipeClosure_moldRisk, showerClosure_moldRisk_zero]; simp [add_zero]
 
-/-- Bathroom humidity is traced to the shower observation. -/
 theorem fullState_bathroomHumidity : fullState bathroomHumidity₁ = showerProv := by
-  simp [fullState, pipeClosure, showerClosure, Pi.add_apply]
+  rw [fullState_apply, pipeClosure_bathroomHumidity_zero, showerClosure_bathroomHumidity]
+  simp [add_zero]
 
-/-- Shower closure has no mold risk (only pipe chain derives it). -/
-theorem showerClosure_moldRisk_zero : showerClosure moldRisk₁ = 0 := by
-  simp [showerClosure]
-
-/-- Pipe closure has no bathroom humidity (only shower derives it). -/
-theorem pipeClosure_bathroomHumidity_zero : pipeClosure bathroomHumidity₁ = 0 := by
-  simp [pipeClosure]
-
-/-! ## 5. WM Extraction Bridge -/
-
-/-- WM extraction from the full state: mold risk carries pipe provenance. -/
 theorem extract_fullState_moldRisk :
-    AdditiveWorldModel.extract (State := KRelation mapleCourtSig (Which (Fin 2)))
-      fullState moldRisk₁ = pipeProv :=
-  fullState_moldRisk
+    AdditiveWorldModel.extract
+      (State := KRelation mapleCourtSig (Which (Fin 2)))
+      (Query := GroundAtom mapleCourtSig)
+      (Ev := Which (Fin 2))
+      fullState moldRisk₁ = pipeProv := by
+  simpa using fullState_moldRisk
 
-/-- WM extraction: bathroom humidity carries shower provenance. -/
 theorem extract_fullState_bathroomHumidity :
-    AdditiveWorldModel.extract (State := KRelation mapleCourtSig (Which (Fin 2)))
-      fullState bathroomHumidity₁ = showerProv :=
-  fullState_bathroomHumidity
+    AdditiveWorldModel.extract
+      (State := KRelation mapleCourtSig (Which (Fin 2)))
+      (Query := GroundAtom mapleCourtSig)
+      (Ev := Which (Fin 2))
+      fullState bathroomHumidity₁ = showerProv := by
+  simpa using fullState_bathroomHumidity
 
-/-! ## 6. Scoped tracking and forgetting -/
+/-! ## 9. Scoped tracked state -/
 
 def sPipe : Fin 2 := 0
 def sShower : Fin 2 := 1
 def scopePipe : Finset (Fin 2) := {sPipe}
 def scopeShower : Finset (Fin 2) := {sShower}
 
-def scopedPipe : ScopedTrackedWhichState mapleCourtSig 2 2 :=
+noncomputable def scopedPipe : ScopedTrackedWhichState mapleCourtSig 2 2 :=
   toScopedTrackedWhichState (σ := mapleCourtSig) (n := 2) (m := 2) sPipe pipeClosure
 
-def scopedShower : ScopedTrackedWhichState mapleCourtSig 2 2 :=
+noncomputable def scopedShower : ScopedTrackedWhichState mapleCourtSig 2 2 :=
   toScopedTrackedWhichState (σ := mapleCourtSig) (n := 2) (m := 2) sShower showerClosure
 
-def scopedFull : ScopedTrackedWhichState mapleCourtSig 2 2 :=
+noncomputable def scopedFull : ScopedTrackedWhichState mapleCourtSig 2 2 :=
   scopedPipe + scopedShower
 
-/-- Shower scope is clean w.r.t. pipe scope: shower chunks carry scope 1, not 0. -/
-private theorem scopeClean_shower_pipe :
-    ScopeClean (σ := mapleCourtSig) (n := 2) (m := 2) scopedShower scopePipe := by
-  intro q chunk hchunk
-  unfold scopedShower toScopedTrackedWhichState at hchunk
-  cases h : showerClosure q with
-  | wbot => simp [h] at hchunk
-  | wset s =>
-    simp [h] at hchunk; rcases hchunk with rfl
-    simp [scopePipe, sPipe, sShower]
+theorem scopedTrackedEvidence_toScopedTrackedWhichState_eq
+    (s : Fin 2) (I : KRelation mapleCourtSig (Which (Fin 2)))
+    (q : GroundAtom mapleCourtSig) :
+    scopedTrackedEvidence
+      (toScopedTrackedWhichState (σ := mapleCourtSig) (n := 2) (m := 2) s I) q = I q := by
+  cases hI : I q with
+  | wbot =>
+      show scopedTrackedEvidence
+        (toScopedTrackedWhichState (σ := mapleCourtSig) (n := 2) (m := 2) s I) q = 0
+      unfold scopedTrackedEvidence scopedTrackedUnionSupport toScopedTrackedWhichState
+      simp [hI]
+  | wset support =>
+      have hs : scopedTrackedUnionSupport
+            (toScopedTrackedWhichState (σ := mapleCourtSig) (n := 2) (m := 2) s I) q ≠ ∅ := by
+        unfold scopedTrackedUnionSupport toScopedTrackedWhichState; simp [hI]
+      rw [scopedTrackedEvidence_eq_wset_of_support_ne_empty _ _ hs]
+      unfold scopedTrackedPayloadSupport scopedTrackedUnionSupport toScopedTrackedWhichState
+      simp [hI]; ext x; simp [Finset.mem_biUnion, Finset.mem_image]
+      constructor
+      · rintro ⟨a, (⟨hm, rfl⟩ | ⟨hm, rfl⟩), hxa⟩ <;> simp_all
+      · intro hx; exact ⟨some x, by fin_cases x <;> simp_all, by simp⟩
 
-/-- Pipe scope is clean w.r.t. shower scope: pipe chunks carry scope 0, not 1. -/
-private theorem scopeClean_pipe_shower :
-    ScopeClean (σ := mapleCourtSig) (n := 2) (m := 2) scopedPipe scopeShower := by
+theorem scopeClean_other_singleton (s t : Fin 2) (hst : t ≠ s)
+    (I : KRelation mapleCourtSig (Which (Fin 2))) :
+    ScopeClean
+      (toScopedTrackedWhichState (σ := mapleCourtSig) (n := 2) (m := 2) t I)
+      ({s} : Finset (Fin 2)) := by
   intro q chunk hchunk
-  unfold scopedPipe toScopedTrackedWhichState at hchunk
-  cases h : pipeClosure q with
-  | wbot => simp [h] at hchunk
-  | wset s =>
-    simp [h] at hchunk; rcases hchunk with rfl
-    simp [scopeShower, sPipe, sShower]
+  unfold toScopedTrackedWhichState at hchunk
+  cases hI : I q with
+  | wbot => simp [hI] at hchunk
+  | wset support => simp [hI] at hchunk; rcases hchunk with rfl; simp [hst]
 
-/-- Forgetting the pipe scope removes the pipe branch, leaving only shower. -/
+/-! ## 10. Scoped forgetting -/
+
 theorem forget_pipe_scope :
     forgetScopedByScope scopePipe scopedFull = scopedShower := by
-  unfold scopedFull
+  show forgetScopedByScope {sPipe}
+    (toScopedTrackedWhichState sPipe pipeClosure + toScopedTrackedWhichState sShower showerClosure) =
+    toScopedTrackedWhichState sShower showerClosure
   rw [add_comm]
   exact forgetScopedByScope_exactInverse_of_supported_of_clean
-    (σ := mapleCourtSig) (n := 2) (m := 2)
-    scopedShower scopedPipe
-    scopeClean_shower_pipe
-    (toScopedTrackedWhichState_supportedInSingleton
-      (σ := mapleCourtSig) (n := 2) (m := 2) sPipe pipeClosure)
+    (hclean := scopeClean_other_singleton sPipe sShower (by decide) showerClosure)
+    (hsupp := toScopedTrackedWhichState_supportedInSingleton
+      (σ := mapleCourtSig) (n := 2) (m := 2) (s := sPipe) pipeClosure)
 
-/-- Forgetting the shower scope removes the shower branch, leaving only pipe. -/
+theorem forget_pipe_scope_moldRisk_zero :
+    scopedTrackedEvidence (forgetScopedByScope scopePipe scopedFull) moldRisk₁ = 0 := by
+  simp only [forget_pipe_scope, scopedShower]; rw [scopedTrackedEvidence_toScopedTrackedWhichState_eq]
+  exact showerClosure_moldRisk_zero
+
+theorem forget_pipe_scope_bathroomHumidity :
+    scopedTrackedEvidence (forgetScopedByScope scopePipe scopedFull) bathroomHumidity₁ =
+      showerProv := by
+  simp only [forget_pipe_scope, scopedShower]; rw [scopedTrackedEvidence_toScopedTrackedWhichState_eq]
+  exact showerClosure_bathroomHumidity
+
 theorem forget_shower_scope :
     forgetScopedByScope scopeShower scopedFull = scopedPipe := by
-  unfold scopedFull
+  show forgetScopedByScope {sShower}
+    (toScopedTrackedWhichState sPipe pipeClosure + toScopedTrackedWhichState sShower showerClosure) =
+    toScopedTrackedWhichState sPipe pipeClosure
   exact forgetScopedByScope_exactInverse_of_supported_of_clean
-    (σ := mapleCourtSig) (n := 2) (m := 2)
-    scopedPipe scopedShower
-    scopeClean_pipe_shower
-    (toScopedTrackedWhichState_supportedInSingleton
-      (σ := mapleCourtSig) (n := 2) (m := 2) sShower showerClosure)
+    (hclean := scopeClean_other_singleton sShower sPipe (by decide) pipeClosure)
+    (hsupp := toScopedTrackedWhichState_supportedInSingleton
+      (σ := mapleCourtSig) (n := 2) (m := 2) (s := sShower) showerClosure)
 
-/-! ## 7. Conservation: forget-after-remember = identity -/
+theorem forget_shower_scope_bathroomHumidity_zero :
+    scopedTrackedEvidence (forgetScopedByScope scopeShower scopedFull) bathroomHumidity₁ = 0 := by
+  simp only [forget_shower_scope, scopedPipe]; rw [scopedTrackedEvidence_toScopedTrackedWhichState_eq]
+  exact pipeClosure_bathroomHumidity_zero
 
-/-- Forgetting the pipe branch immediately after adding it back recovers
-    the shower-only base state. -/
-theorem forget_after_remember_pipe :
-    forgetScopedByScope scopePipe (scopedShower + scopedPipe) = scopedShower := by
-  rw [add_comm]; exact forget_pipe_scope
+theorem forget_shower_scope_moldRisk :
+    scopedTrackedEvidence (forgetScopedByScope scopeShower scopedFull) moldRisk₁ = pipeProv := by
+  simp only [forget_shower_scope, scopedPipe]; rw [scopedTrackedEvidence_toScopedTrackedWhichState_eq]
+  exact pipeClosure_moldRisk
 
-/-- Forgetting the shower branch immediately after adding it back recovers
-    the pipe-only base state. -/
-theorem forget_after_remember_shower :
-    forgetScopedByScope scopeShower (scopedPipe + scopedShower) = scopedPipe :=
-  forget_shower_scope
+/-! ## 11. Conservation -/
 
-/-! ## Summary -/
+noncomputable def scopedRemember (s : Fin 2)
+    (I : KRelation mapleCourtSig (Which (Fin 2)))
+    (W : ScopedTrackedWhichState mapleCourtSig 2 2) :
+    ScopedTrackedWhichState mapleCourtSig 2 2 :=
+  W + toScopedTrackedWhichState (σ := mapleCourtSig) (n := 2) (m := 2) s I
 
-/-- End-to-end derivation tracking: provenance flows correctly through
-    the Maple Court humidity chain, and forgetting is exact.
+theorem forget_after_remember_pipe_is_id :
+    forgetScopedByScope scopePipe
+      (scopedRemember sPipe pipeClosure scopedShower) = scopedShower := by
+  show forgetScopedByScope {sPipe}
+    (toScopedTrackedWhichState sShower showerClosure +
+     toScopedTrackedWhichState sPipe pipeClosure) =
+    toScopedTrackedWhichState sShower showerClosure
+  exact forgetScopedByScope_exactInverse_of_supported_of_clean
+    (hclean := scopeClean_other_singleton sPipe sShower (by decide) showerClosure)
+    (hsupp := toScopedTrackedWhichState_supportedInSingleton
+      (σ := mapleCourtSig) (n := 2) (m := 2) (s := sPipe) pipeClosure)
 
-    This is suitable as a book listing for Ch 6. -/
-theorem end_to_end :
-    -- Provenance flows correctly
+theorem forget_after_remember_shower_is_id :
+    forgetScopedByScope scopeShower
+      (scopedRemember sShower showerClosure scopedPipe) = scopedPipe := by
+  show forgetScopedByScope {sShower}
+    (toScopedTrackedWhichState sPipe pipeClosure +
+     toScopedTrackedWhichState sShower showerClosure) =
+    toScopedTrackedWhichState sPipe pipeClosure
+  exact forgetScopedByScope_exactInverse_of_supported_of_clean
+    (hclean := scopeClean_other_singleton sShower sPipe (by decide) pipeClosure)
+    (hsupp := toScopedTrackedWhichState_supportedInSingleton
+      (σ := mapleCourtSig) (n := 2) (m := 2) (s := sShower) showerClosure)
+
+/-! ## 12. End-to-end summary -/
+
+theorem end_to_end_summary :
     fullState moldRisk₁ = pipeProv ∧
     fullState bathroomHumidity₁ = showerProv ∧
-    -- Shower doesn't derive mold risk
-    showerClosure moldRisk₁ = 0 ∧
-    -- Pipe doesn't derive bathroom humidity
-    pipeClosure bathroomHumidity₁ = 0 ∧
-    -- Forgetting is exact (pipe)
-    forgetScopedByScope scopePipe scopedFull = scopedShower ∧
-    -- Forgetting is exact (shower)
-    forgetScopedByScope scopeShower scopedFull = scopedPipe :=
+    scopedTrackedEvidence (forgetScopedByScope scopePipe scopedFull) moldRisk₁ = 0 ∧
+    scopedTrackedEvidence (forgetScopedByScope scopePipe scopedFull) bathroomHumidity₁ = showerProv ∧
+    scopedTrackedEvidence (forgetScopedByScope scopeShower scopedFull) bathroomHumidity₁ = 0 ∧
+    scopedTrackedEvidence (forgetScopedByScope scopeShower scopedFull) moldRisk₁ = pipeProv :=
   ⟨fullState_moldRisk, fullState_bathroomHumidity,
-   showerClosure_moldRisk_zero, pipeClosure_bathroomHumidity_zero,
-   forget_pipe_scope, forget_shower_scope⟩
+    forget_pipe_scope_moldRisk_zero, forget_pipe_scope_bathroomHumidity,
+    forget_shower_scope_bathroomHumidity_zero, forget_shower_scope_moldRisk⟩
 
 end Mettapedia.Logic.PLNDerivationTrackingDemo

@@ -1,11 +1,11 @@
-import Mettapedia.Languages.GF.Abstract
-import Mettapedia.Languages.GF.English.Linearization
+import Mettapedia.Languages.GF.HandCrafted.Abstract
+import Mettapedia.Languages.GF.HandCrafted.English.Linearization
 
 open Mettapedia.Languages.GF
-open Mettapedia.Languages.GF.Core
-open Mettapedia.Languages.GF.Abstract
-open Mettapedia.Languages.GF.Abstract.FunctionSig
-open Mettapedia.Languages.GF.English.Linearization
+open Mettapedia.Languages.GF.HandCrafted.Core
+open Mettapedia.Languages.GF.HandCrafted.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract.FunctionSig
+open Mettapedia.Languages.GF.HandCrafted.English.Linearization
 
 private def keyOf (f : FunctionSig) : String :=
   let rc := FunctionSig.resultCategory f.type

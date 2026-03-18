@@ -1181,6 +1181,123 @@ The trie stack adds 970~lines to the PathMap formalization
 \code{PathMapQuantale} instance backed by the actual trie data
 structure used in the Hyperon runtime rather than a flat-set mock.
 
+\section{Modal Hypercube and the Equational Center}
+\label{sec:modal-hypercube}
+
+The \OSLF{} pipeline generates a type system from \emph{any}
+\code{LanguageDef}---but \emph{how many} type systems does a given language
+admit?  Following Stay, Meredith \& Wells~\cite{StayMeredithWells2026},
+each rewrite rule generates a family of \emph{modal type formers} parameterized
+by \emph{sort assignments}: each rely-input variable and the output slot can
+independently be assigned $*$ (type-level) or $\Box$ (kind-level).
+Equational axioms force certain slots to agree, collapsing the naive
+$2^n$-element cube to a smaller \emph{equational center}~$\mathcal{Z}$.
+
+The file \codepath{Framework/ModalHypercube.lean} (0~sorries) formalizes
+Definition~5.1 and \S5.6 of~\cite{StayMeredithWells2026}.
+
+\subsection{Core Definitions}
+
+\begin{definition}[\code{HSort}]
+The two-element sort universe $\mathbb{S} = \{*, \Box\}$, formalized as
+an inductive type with \code{Fintype}, \code{DecidableEq}, and
+\code{BEq} instances.
+\end{definition}
+
+\begin{definition}[\code{ModalPresentation n}]
+A modal theory presentation with $n$ sort slots and a decidable
+admissibility predicate \code{admissible : (Fin n $\to$ HSort) $\to$ Bool}.
+\end{definition}
+
+\begin{definition}[\code{equationalCenter}]
+$\mathcal{Z} = \{ \Sigma \in \mathbb{S}^n \mid \code{admissible}(\Sigma) \}$,
+computed as \code{Finset.univ.filter admissible}.
+\end{definition}
+
+All proofs use \code{decide} (kernel-checked).
+
+\subsection{Worked Examples}
+
+\paragraph{Weak commutative monoid (\S5.6.1 of~\cite{StayMeredithWells2026}).}
+Three slots ($s_q$, $s_r$, $s_{\mathrm{out}}$), one commutativity equation
+$(qr) = (rq)$.  Commutativity forces $s_q = s_r$; output agreement forces
+$s_{\mathrm{out}} = s_q$.  The naive 8-element cube collapses to 2.
+
+\begin{theorem}[\code{weakMonoid\_center\_card}, 0 sorries]
+$|\mathcal{Z}| = 2$ for the weak monoid presentation.  Proven by \code{decide}.
+\end{theorem}
+
+\paragraph{$\rhocalc$-calculus communication modality (\S5.12).}
+Three slots ($s_n^{\mathrm{Nm}}$, $s_p^{\mathrm{Pr}}$, $s_{\mathrm{out}}$),
+no equational constraints.  Full 8-element cube survives; the
+$(s_p, s_{\mathrm{out}})$ face recovers Barendregt's Lambda Cube.
+
+\begin{theorem}[\code{rhoComm\_center\_card}, 0 sorries]
+$|\mathcal{Z}| = 8$ for the $\rhocalc$-calculus communication modality.
+\end{theorem}
+
+\subsection{Application to the WM Calculus}
+
+The world-model calculus (\codepath{Framework/WMCalculusLanguageDef.lean}) has
+five core rewrite rules.  Two are commutativity equations
+(\code{revision\_comm}, \code{combine\_comm}), each exhibiting the weak-monoid
+collapse pattern: three slots collapsing to two admissible assignments.
+
+\begin{center}
+\begin{tabular}{llccc}
+\textbf{WM Rule} & \textbf{Slots} & \textbf{Naive} & $|\mathcal{Z}|$ & \textbf{Collapse} \\
+\hline
+\code{evidence\_add}  & 2 & 4  & 4 & $1\times$ \\
+\code{revision\_comm} & 3 & 8  & 2 & $4\times$ \\
+\code{combine\_comm}  & 3 & 8  & 2 & $4\times$ \\
+\code{revision\_assoc}& 2 & 4  & 4 & $1\times$ \\
+\code{combine\_zero}  & 1 & 2  & 2 & $1\times$ \\
+\hline
+\textbf{Product}       & 11 & 2048 & 128 & $16\times$
+\end{tabular}
+\end{center}
+
+\begin{theorem}[\code{wmCore\_collapse\_ratio}, 0 sorries]
+The WM commutativity equations reduce the modal type-system family
+from 2048 to 128 vertices, a $16\times$ collapse.
+\end{theorem}
+
+\subsection{Application to PeTTa}
+
+The PeTTa artifact pipeline produces a concrete \code{LanguageDef} for each
+frozen PeTTa program via \code{toLanguageDef} (runtime) and
+\code{pettaSpaceToLangDef} (formal), connected by
+\codepath{Conformance/PeTTaArtifactBridge.lean}.
+
+Both paths set \code{equations := []}, so every PeTTa modality gets its full
+naive cube---no equational collapse.
+
+\begin{theorem}[\code{unconstrained\_center\_eq\_pow}, 0 sorries]
+For any unconstrained $n$-slot presentation, $|\mathcal{Z}| = 2^n$.
+\end{theorem}
+
+This result identifies a \emph{semantic enrichment opportunity}:
+bidirectional PeTTa rewrite rules (used in both directions) are
+effectively equations.  Detecting these in the lowering path and
+adding them to the \code{equations} field would enable equational collapse,
+reducing the type-system family size for PeTTa programs with symmetric rules.
+
+\subsection{Modal Profile Artifact}
+
+\code{ModalProfile.ofLanguageDef} computes a stored modal profile from any
+\code{LanguageDef}, recording per-rule slot counts, the naive product,
+and whether equations exist.  This artifact lives alongside the execution
+contract and scope contract in the PeTTa artifact bundle, making the
+type-system family structure inspectable without re-running the analysis.
+
+\medskip\noindent
+\emph{Summary.}
+The modal hypercube formalization adds 24 kernel-checked theorems
+(0~sorries) in a single file, applying the equational center
+construction to the WM calculus (16$\times$ collapse from commutativity),
+PeTTa (no collapse, enrichment opportunity flagged), and the $\rhocalc$-calculus
+(full cube, Barendregt face identified).
+
 \section{Verified Formula Checker}
 
 The file \codepath{Formula.lean} provides a verified bounded model checker for

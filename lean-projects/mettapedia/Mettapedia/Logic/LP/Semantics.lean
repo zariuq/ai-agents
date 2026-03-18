@@ -7,6 +7,16 @@ import Mathlib.Data.Set.Lattice
 
 Model-theoretic semantics of logic programs with function symbols.
 
+## Scope
+
+These definitions work for **full first-order logic programming** with function symbols
+— not restricted to the Datalog/function-free fragment. The `IsEmpty σ.functionSymbols`
+constraint appears only in specialized modules (`FunctionFreeEvaluation.lean`,
+`BDD/Compilation.lean`) where finite Herbrand bases are needed.
+
+See `LP/PrologInstance.lean` for a concrete example with function symbols (successor
+arithmetic: `nat(s(s(0)))` proved in the least Herbrand model).
+
 ## Design
 
 - `Grounding.groundTerm` / `groundAtom` — apply a grounding to produce
@@ -15,7 +25,7 @@ Model-theoretic semantics of logic programs with function symbols.
 - `T_P_LP_mono` — monotonicity, enabling least fixpoint.
 - `leastHerbrandModel` — via `OrderHom.lfp` (Tarski's theorem on `Set (GroundAtom σ)`).
 - With function symbols, the Herbrand universe may be infinite. The semantics
-  work uniformly; finiteness is an optional constraint (cf. mm-lean4 pattern).
+  work uniformly; finiteness is an optional constraint.
 
 ## References
 

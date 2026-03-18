@@ -1,8 +1,8 @@
-import Mettapedia.Languages.GF.Abstract
+import Mettapedia.Languages.GF.HandCrafted.Abstract
 
 open Mettapedia.Languages.GF
-open Mettapedia.Languages.GF.Abstract
-open Mettapedia.Languages.GF.Abstract.FunctionSig
+open Mettapedia.Languages.GF.HandCrafted.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract.FunctionSig
 
 private def scopeFamilies : List (String × List FunctionSig) :=
   [ ("core", allCoreFunctions)

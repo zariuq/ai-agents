@@ -28,8 +28,8 @@ import Mettapedia.OSLF.MeTTaIL.Engine
 
 namespace Mettapedia.Languages.GF.SUMO.SumoOSLFBridge
 
-open Mettapedia.Languages.GF.Core
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Core
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.OSLFBridge
 open Mettapedia.Languages.GF.SUMO.SumoAbstract
 open Mettapedia.OSLF.MeTTaIL.Syntax

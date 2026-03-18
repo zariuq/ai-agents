@@ -1,4 +1,4 @@
-import Mettapedia.Languages.GF.Abstract
+import Mettapedia.Languages.GF.HandCrafted.Abstract
 
 /-!
 # Pyash GF Inventory Surface
@@ -13,8 +13,8 @@ and `PyashCore*`.
 
 namespace Mettapedia.OSLF.Framework.PyashGFInventory
 
-open Mettapedia.Languages.GF.Core
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Core
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 
 /-- GF category for normalized Pyash `be` words. -/
 def pyashBeWordCat : Category := .base "PyashBeWord"

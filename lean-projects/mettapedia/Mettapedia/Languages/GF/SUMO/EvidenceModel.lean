@@ -1,4 +1,6 @@
-import Mettapedia.Languages.GF.Core
+import Mettapedia.Languages.GF.HandCrafted.Core
+import Mettapedia.Logic.EvidenceKind
+import Mettapedia.Logic.BinEvNat
 
 /-!
 # SUMO Repair BinaryEvidence Model
@@ -278,5 +280,28 @@ These govern automatic state transitions:
 
 def autoApplyThreshold : Float := 0.98
 def holdForReviewThreshold : Float := 0.93
+
+open Mettapedia.Logic
+
+/-! ## Evidence Envelope — Epistemic Assessment Layer
+
+The core `EvidenceAtom` records *what* was observed. The `EvidenceEnvelope`
+wraps an atom with epistemic metadata: *what kind* of evidence it is and
+*how much* pseudo-count backing it has.
+
+This separates observation from assessment (O'Hagan 2019, Morita et al. 2008).
+The envelope is an optional enrichment — existing atoms work without it.
+
+The `contribution` field IS the evidence (Skilling/Goertzel): a "strong against"
+judgment with ESS=3 is `⟨0, 3⟩`. Mixed evidence like "partially supports" is
+`⟨1, 2⟩`. The ESS is `contribution.pos + contribution.neg` (derived, not stored). -/
+
+open Mettapedia.Logic in
+structure EvidenceEnvelope where
+  atom : EvidenceAtom
+  kind : EvidenceKind
+  contribution : BinEvNat          -- the pseudo-count IS the evidence
+  derivedFrom : List String := []  -- lightweight provenance: source atom IDs
+  deriving Repr
 
 end Mettapedia.Languages.GF.SUMO.EvidenceModel

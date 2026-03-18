@@ -1,0 +1,196 @@
+{
+  "grammar": "PaperAmbiguity",
+  "startCats": [
+    "S"
+  ],
+  "funs": {
+    "ASimul": {
+      "name": "ASimul",
+      "argCats": [],
+      "resultCat": "Ant",
+      "status": "primitive"
+    },
+    "AdvCN": {
+      "name": "AdvCN",
+      "argCats": [
+        "CN",
+        "Adv"
+      ],
+      "resultCat": "CN",
+      "status": "primitive"
+    },
+    "AdvVP": {
+      "name": "AdvVP",
+      "argCats": [
+        "VP",
+        "Adv"
+      ],
+      "resultCat": "VP",
+      "status": "primitive"
+    },
+    "ComplSlash": {
+      "name": "ComplSlash",
+      "argCats": [
+        "VPSlash",
+        "NP"
+      ],
+      "resultCat": "VP",
+      "status": "primitive"
+    },
+    "DetCN": {
+      "name": "DetCN",
+      "argCats": [
+        "Det",
+        "CN"
+      ],
+      "resultCat": "NP",
+      "status": "primitive"
+    },
+    "PPos": {
+      "name": "PPos",
+      "argCats": [],
+      "resultCat": "Pol",
+      "status": "primitive"
+    },
+    "PredVP": {
+      "name": "PredVP",
+      "argCats": [
+        "NP",
+        "VP"
+      ],
+      "resultCat": "Cl",
+      "status": "primitive"
+    },
+    "PrepNP": {
+      "name": "PrepNP",
+      "argCats": [
+        "Prep",
+        "NP"
+      ],
+      "resultCat": "Adv",
+      "status": "primitive"
+    },
+    "SlashV2a": {
+      "name": "SlashV2a",
+      "argCats": [
+        "V2"
+      ],
+      "resultCat": "VPSlash",
+      "status": "primitive"
+    },
+    "TPast": {
+      "name": "TPast",
+      "argCats": [],
+      "resultCat": "Tense",
+      "status": "primitive"
+    },
+    "TPres": {
+      "name": "TPres",
+      "argCats": [],
+      "resultCat": "Tense",
+      "status": "primitive"
+    },
+    "TTAnt": {
+      "name": "TTAnt",
+      "argCats": [
+        "Tense",
+        "Ant"
+      ],
+      "resultCat": "Temp",
+      "status": "primitive"
+    },
+    "UseCl": {
+      "name": "UseCl",
+      "argCats": [
+        "Temp",
+        "Pol",
+        "Cl"
+      ],
+      "resultCat": "S",
+      "status": "primitive"
+    },
+    "UseN": {
+      "name": "UseN",
+      "argCats": [
+        "N"
+      ],
+      "resultCat": "CN",
+      "status": "primitive"
+    },
+    "UsePN": {
+      "name": "UsePN",
+      "argCats": [
+        "PN"
+      ],
+      "resultCat": "NP",
+      "status": "primitive"
+    },
+    "anna_PN": {
+      "name": "anna_PN",
+      "argCats": [],
+      "resultCat": "PN",
+      "status": "primitive"
+    },
+    "baby_N": {
+      "name": "baby_N",
+      "argCats": [],
+      "resultCat": "N",
+      "status": "primitive"
+    },
+    "crib_N": {
+      "name": "crib_N",
+      "argCats": [],
+      "resultCat": "N",
+      "status": "primitive"
+    },
+    "dress_V2": {
+      "name": "dress_V2",
+      "argCats": [],
+      "resultCat": "V2",
+      "status": "primitive"
+    },
+    "in_Prep": {
+      "name": "in_Prep",
+      "argCats": [],
+      "resultCat": "Prep",
+      "status": "primitive"
+    },
+    "john_PN": {
+      "name": "john_PN",
+      "argCats": [],
+      "resultCat": "PN",
+      "status": "primitive"
+    },
+    "man_N": {
+      "name": "man_N",
+      "argCats": [],
+      "resultCat": "N",
+      "status": "primitive"
+    },
+    "see_V2": {
+      "name": "see_V2",
+      "argCats": [],
+      "resultCat": "V2",
+      "status": "primitive"
+    },
+    "telescope_N": {
+      "name": "telescope_N",
+      "argCats": [],
+      "resultCat": "N",
+      "status": "primitive"
+    },
+    "the_Det": {
+      "name": "the_Det",
+      "argCats": [],
+      "resultCat": "Det",
+      "status": "primitive"
+    },
+    "with_Prep": {
+      "name": "with_Prep",
+      "argCats": [],
+      "resultCat": "Prep",
+      "status": "primitive"
+    }
+  },
+  "sourceHash": "gf-3.12-paper-ambiguity"
+}

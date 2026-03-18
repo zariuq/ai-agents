@@ -1,4 +1,4 @@
-import Mettapedia.Languages.GF.Abstract
+import Mettapedia.Languages.GF.HandCrafted.Abstract
 import Mettapedia.Languages.GF.OSLFBridge
 import Mettapedia.Languages.GF.Typing
 import Mettapedia.Languages.GF.VisibleLayer
@@ -24,8 +24,8 @@ This is the first worked example demonstrating the complete horizontal wiring.
 
 namespace Mettapedia.Languages.GF.Examples.EveryManWalks
 
-open Mettapedia.Languages.GF.Core
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Core
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.OSLFBridge
 open Mettapedia.Languages.GF.Typing
 open Mettapedia.Languages.GF.VisibleLayer

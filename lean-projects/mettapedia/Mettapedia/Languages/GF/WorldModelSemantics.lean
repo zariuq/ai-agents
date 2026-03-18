@@ -1,5 +1,5 @@
-import Mettapedia.Languages.GF.Core
-import Mettapedia.Languages.GF.Abstract
+import Mettapedia.Languages.GF.HandCrafted.Core
+import Mettapedia.Languages.GF.HandCrafted.Abstract
 import Mettapedia.Languages.GF.OSLFBridge
 import Mettapedia.Languages.GF.Typing
 import Mettapedia.Languages.GF.LinguisticInvariance
@@ -40,8 +40,8 @@ graph, but atom meaning comes from evidence extraction.
 
 namespace Mettapedia.Languages.GF.WorldModelSemantics
 
-open Mettapedia.Languages.GF.Core
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Core
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.OSLFBridge
 open Mettapedia.Languages.GF.Typing
 open Mettapedia.Languages.GF.LinguisticInvariance

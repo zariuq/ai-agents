@@ -1,12 +1,48 @@
-import Mettapedia.Languages.GF.Abstract
+import Mettapedia.Languages.GF.HandCrafted.Abstract
+import GFCore
 
 namespace Mettapedia.Languages.GF.PGFWitnessIR
 
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Core (Category)
+
+instance : Nonempty AbstractNode := ⟨.leaf "" (.base "")⟩
 
 inductive ExportedTree where
   | node : String → List ExportedTree → ExportedTree
   deriving Repr
+
+instance : Inhabited ExportedTree := ⟨.node "" []⟩
+instance : Nonempty ExportedTree := ⟨.node "" []⟩
+
+-- ============================================================
+-- Bridge: GFCore.CheckedExpr → AbstractNode
+-- ============================================================
+
+/-- Build a Category arrow type from a GFCore.FunDecl. -/
+private def arrowTypeOfDecl (d : GFCore.FunDecl) : Category :=
+  d.argCats.foldr (init := Category.base d.resultCat) fun argCat acc =>
+    Category.arrow (Category.base argCat) acc
+
+/-- Convert a GFCore.CheckedExpr (verified against GrammarSig) into
+    the mettapedia AbstractNode encoding. Since CheckedExpr is already
+    type-checked, this conversion is total (no Option needed). -/
+partial def checkedExprToAbstractNode (e : GFCore.CheckedExpr) : AbstractNode :=
+  let name := e.funName
+  if e.isLeaf then
+    let cat := match FunctionSig.findByName? name with
+      | some f => FunctionSig.resultCategory f.type
+      | none => Category.base e.resultCat
+    .leaf name cat
+  else
+    let sig := match FunctionSig.findByName? name with
+      | some f => f
+      | none => ⟨name, arrowTypeOfDecl e.decl⟩
+    .apply sig (e.args.toList.map checkedExprToAbstractNode)
+
+/-- Convert a GFCore.RawTree to ExportedTree (legacy format). -/
+partial def rawTreeToExported (t : GFCore.RawTree) : ExportedTree :=
+  .node t.funName (t.args.toList.map rawTreeToExported)
 
 structure SurfaceWitness where
   label : String

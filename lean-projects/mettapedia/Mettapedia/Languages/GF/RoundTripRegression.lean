@@ -1,5 +1,5 @@
-import Mettapedia.Languages.GF.English.RoundTripCorpus
-import Mettapedia.Languages.GF.Czech.RoundTripCorpus
+import Mettapedia.Languages.GF.HandCrafted.English.RoundTripCorpus
+import Mettapedia.Languages.GF.HandCrafted.Czech.RoundTripCorpus
 
 /-!
 # GF Roundtrip Regression Harness (EN + CZ)
@@ -15,27 +15,27 @@ English and Czech roundtrip corpora.
 namespace Mettapedia.Languages.GF.RoundTripRegression
 
 /-- English roundtrip counterexamples in the curated corpus. -/
-def englishFailures : List Mettapedia.Languages.GF.English.RoundTripCorpus.ExampleSurface :=
-  Mettapedia.Languages.GF.English.RoundTripCorpus.allExamples.filter
+def englishFailures : List Mettapedia.Languages.GF.HandCrafted.English.RoundTripCorpus.ExampleSurface :=
+  Mettapedia.Languages.GF.HandCrafted.English.RoundTripCorpus.allExamples.filter
     (fun e => decide
-      (e ∉ Mettapedia.Languages.GF.English.RoundTripCorpus.parseSurface
-        (Mettapedia.Languages.GF.English.RoundTripCorpus.linearizeSurface e)))
+      (e ∉ Mettapedia.Languages.GF.HandCrafted.English.RoundTripCorpus.parseSurface
+        (Mettapedia.Languages.GF.HandCrafted.English.RoundTripCorpus.linearizeSurface e)))
 
 /-- Czech roundtrip counterexamples in the curated corpus. -/
-def czechFailures : List Mettapedia.Languages.GF.Czech.RoundTripCorpus.ExampleSurface :=
-  Mettapedia.Languages.GF.Czech.RoundTripCorpus.allExamples.filter
+def czechFailures : List Mettapedia.Languages.GF.HandCrafted.Czech.RoundTripCorpus.ExampleSurface :=
+  Mettapedia.Languages.GF.HandCrafted.Czech.RoundTripCorpus.allExamples.filter
     (fun e => decide
-      (e ∉ Mettapedia.Languages.GF.Czech.RoundTripCorpus.parseSurface
-        (Mettapedia.Languages.GF.Czech.RoundTripCorpus.linearizeSurface e)))
+      (e ∉ Mettapedia.Languages.GF.HandCrafted.Czech.RoundTripCorpus.parseSurface
+        (Mettapedia.Languages.GF.HandCrafted.Czech.RoundTripCorpus.linearizeSurface e)))
 
 /-- English harness soundness: no failures in the current corpus. -/
 theorem englishFailures_empty : englishFailures = [] := by
   apply (List.filter_eq_nil_iff).2
   intro e he
   have hOk :
-      e ∈ Mettapedia.Languages.GF.English.RoundTripCorpus.parseSurface
-        (Mettapedia.Languages.GF.English.RoundTripCorpus.linearizeSurface e) :=
-    Mettapedia.Languages.GF.English.RoundTripCorpus.parse_linearize_complete e
+      e ∈ Mettapedia.Languages.GF.HandCrafted.English.RoundTripCorpus.parseSurface
+        (Mettapedia.Languages.GF.HandCrafted.English.RoundTripCorpus.linearizeSurface e) :=
+    Mettapedia.Languages.GF.HandCrafted.English.RoundTripCorpus.parse_linearize_complete e
   simp [hOk]
 
 /-- Czech harness soundness: no failures in the current corpus. -/
@@ -43,9 +43,9 @@ theorem czechFailures_empty : czechFailures = [] := by
   apply (List.filter_eq_nil_iff).2
   intro e he
   have hOk :
-      e ∈ Mettapedia.Languages.GF.Czech.RoundTripCorpus.parseSurface
-        (Mettapedia.Languages.GF.Czech.RoundTripCorpus.linearizeSurface e) :=
-    Mettapedia.Languages.GF.Czech.RoundTripCorpus.parse_linearize_complete e
+      e ∈ Mettapedia.Languages.GF.HandCrafted.Czech.RoundTripCorpus.parseSurface
+        (Mettapedia.Languages.GF.HandCrafted.Czech.RoundTripCorpus.linearizeSurface e) :=
+    Mettapedia.Languages.GF.HandCrafted.Czech.RoundTripCorpus.parse_linearize_complete e
   simp [hOk]
 
 /-- Aggregate regression count across English and Czech corpora. -/

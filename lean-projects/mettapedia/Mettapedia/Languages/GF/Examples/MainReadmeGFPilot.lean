@@ -11,14 +11,14 @@ This is intentionally a small pilot over sentences from `~/claude/README.md`.
 The wording is semantically close, not byte-identical.
 -/
 
-import Mettapedia.Languages.GF.English.Examples
+import Mettapedia.Languages.GF.HandCrafted.English.Examples
 
 namespace Mettapedia.Languages.GF.Examples.MainReadmeGFPilot
 
-open Mettapedia.Languages.GF.English
-open Mettapedia.Languages.GF.English.Nouns
-open Mettapedia.Languages.GF.English.Verbs
-open Mettapedia.Languages.GF.English.Syntax
+open Mettapedia.Languages.GF.HandCrafted.English
+open Mettapedia.Languages.GF.HandCrafted.English.Nouns
+open Mettapedia.Languages.GF.HandCrafted.English.Verbs
+open Mettapedia.Languages.GF.HandCrafted.English.Syntax
 
 /-! ## Domain-Semantic Tree (language-independent) -/
 

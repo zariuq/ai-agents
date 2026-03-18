@@ -24,7 +24,7 @@ claims honest.
 namespace Mettapedia.Languages.GF.GFWMConnections
 
 open CategoryTheory
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.OSLFBridge
 open Mettapedia.Languages.GF.Typing
 open Mettapedia.Languages.GF.WorldModelSemantics

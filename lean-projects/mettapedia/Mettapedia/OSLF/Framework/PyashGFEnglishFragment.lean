@@ -11,7 +11,7 @@ natural-English parsing.
 
 namespace Mettapedia.OSLF.Framework.PyashGFEnglishFragment
 
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.OSLF.MeTTaIL.Syntax
 open Mettapedia.OSLF.Framework.PyashGF
 open Mettapedia.OSLF.Framework.PyashGFInventory

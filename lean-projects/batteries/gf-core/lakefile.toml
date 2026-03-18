@@ -1,0 +1,6 @@
+name = "gf_core"
+version = "0.1.0"
+defaultTargets = ["GFCore"]
+
+[[lean_lib]]
+name = "GFCore"

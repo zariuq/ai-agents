@@ -456,8 +456,321 @@ theorem evalMemo_sound_and_preserves {rules : List EvalRule} :
     (motive2 := fun fuel memo nodes =>
       MemoSoundSem rules memo →
       (∀ vs, (evalMemoList rules fuel memo nodes).1 = vs.map some → EvalSemList rules nodes vs) ∧
-      MemoSoundSem rules (evalMemoList rules fuel memo nodes).2)
-  all_goals sorry
+      MemoSoundSem rules (evalMemoList rules fuel memo nodes).2) with
+  -- ── Batch A: Leaf / trivial cases ──────────────────────────────────────
+  -- case1: intLit
+  | case1 =>
+    intro hm
+    constructor
+    · intro v h; simp [evalMemo] at h; subst h; exact .litInt
+    · simp [evalMemo]; exact hm
+  -- case2: boolLit
+  | case2 =>
+    intro hm
+    constructor
+    · intro v h; simp [evalMemo] at h; subst h; exact .litBool
+    · simp [evalMemo]; exact hm
+  -- case14: userCall fuel=0
+  | case14 =>
+    intro hm
+    constructor
+    · intro v h; simp [evalMemo] at h
+    · simp [evalMemo]; exact hm
+  -- case20: evalMemoList nil (motive2 — hm already in context)
+  | case20 =>
+    rename_i fuel memo hm
+    constructor
+    · intro vs h; simp [evalMemoList] at h; cases vs <;> simp at h; exact .nil
+    · simp [evalMemoList]; exact hm
+  -- ── Batch B: Vacuous / fail cases (result.fst = none) ─────────────────
+  -- case5: ifCond — condition not true or false
+  | case5 =>
+    rename_i fuel memo₀ c t e cv memo₁ hc hnt hnf ih_c
+    intro hm; have ⟨_, hCp⟩ := ih_c hm
+    constructor
+    · intro v h; simp [evalMemo, hc, hnt, hnf] at h
+    · simp [evalMemo, hc, hnt, hnf]; simpa [hc] using hCp
+  -- case7: eqInt fail — not both ints
+  | case7 =>
+    rename_i fuel memo₀ a b cv_a memo₁ ha cv_b memo₂ hb hfail ih_a ih_b
+    intro hm
+    have ⟨_, hAp⟩ := ih_a hm
+    have hpres_a : MemoSoundSem rules memo₁ := by simpa [ha] using hAp
+    have ⟨_, hBp⟩ := ih_b hpres_a
+    constructor
+    · intro v h; simp [evalMemo, ha, hb, hfail] at h
+    · simp [evalMemo, ha, hb, hfail]; simpa [hb] using hBp
+  -- case9: addInt fail
+  | case9 =>
+    rename_i fuel memo₀ a b cv_a memo₁ ha cv_b memo₂ hb hfail ih_a ih_b
+    intro hm
+    have ⟨_, hAp⟩ := ih_a hm
+    have hpres_a : MemoSoundSem rules memo₁ := by simpa [ha] using hAp
+    have ⟨_, hBp⟩ := ih_b hpres_a
+    constructor
+    · intro v h; simp [evalMemo, ha, hb, hfail] at h
+    · simp [evalMemo, ha, hb, hfail]; simpa [hb] using hBp
+  -- case11: subInt fail
+  | case11 =>
+    rename_i fuel memo₀ a b cv_a memo₁ ha cv_b memo₂ hb hfail ih_a ih_b
+    intro hm
+    have ⟨_, hAp⟩ := ih_a hm
+    have hpres_a : MemoSoundSem rules memo₁ := by simpa [ha] using hAp
+    have ⟨_, hBp⟩ := ih_b hpres_a
+    constructor
+    · intro v h; simp [evalMemo, ha, hb, hfail] at h
+    · simp [evalMemo, ha, hb, hfail]; simpa [hb] using hBp
+  -- case13: mulInt fail
+  | case13 =>
+    rename_i fuel memo₀ a b cv_a memo₁ ha cv_b memo₂ hb hfail ih_a ih_b
+    intro hm
+    have ⟨_, hAp⟩ := ih_a hm
+    have hpres_a : MemoSoundSem rules memo₁ := by simpa [ha] using hAp
+    have ⟨_, hBp⟩ := ih_b hpres_a
+    constructor
+    · intro v h; simp [evalMemo, ha, hb, hfail] at h
+    · simp [evalMemo, ha, hb, hfail]; simpa [hb] using hBp
+  -- case15: userCall — args have none
+  | case15 =>
+    rename_i memo₀ head args fuel' argVals memo₁ hargs hany ih_args
+    intro hm; have ⟨_, hAp⟩ := ih_args hm
+    -- The evalMemo.induct already destructured: we know evalMemoList returned (argVals, memo₁)
+    -- and argVals.any isNone = true. The evalMemo result for userCall is therefore (none, memo₁).
+    -- But simp [evalMemo] can't unfold the mutual def. Use `show` to bypass.
+    have hres : evalMemo rules (fuel' + 1) memo₀ (.userCall head args) = (none, memo₁) := by
+      unfold evalMemo; simp [hargs, hany]
+    constructor
+    · intro v h; rw [show (evalMemo _ _ _ _).fst = none from by rw [hres]] at h; simp at h
+    · rw [show (evalMemo _ _ _ _).snd = memo₁ from by rw [hres]]
+      simpa [hargs] using hAp
+  -- case17: userCall — memo miss, no rule
+  | case17 =>
+    rename_i memo₀ head args fuel' argVals memo₁ hargs hnoany vals hmiss hrule ih_args
+    intro hm; have ⟨_, hAp⟩ := ih_args hm
+    have hres : evalMemo rules (fuel' + 1) memo₀ (.userCall head args) = (none, memo₁) := by
+      unfold evalMemo; simp [hargs, hnoany, hmiss, hrule]
+      -- remaining: match on memoLookup with let-bound vals
+      show (match memoLookup memo₁ head (List.filterMap (fun x => x) argVals) with
+        | some cached => (some cached, memo₁) | none => (none, memo₁)) = _
+      rw [hmiss]
+    constructor
+    · intro v h; rw [show (evalMemo _ _ _ _).fst = none from by rw [hres]] at h; simp at h
+    · rw [show (evalMemo _ _ _ _).snd = memo₁ from by rw [hres]]
+      simpa [hargs] using hAp
+  -- case19: userCall — memo miss, body fails
+  | case19 =>
+    rename_i memo₀ head args fuel' argVals memo₁ hargs hnoany vals hmiss
+             rule hrule argNodes env body' memo₂ hbody ih_args ih_body
+    intro hm
+    have ⟨_, hAp⟩ := ih_args hm
+    have hpres_args : MemoSoundSem rules memo₁ := by simpa [hargs] using hAp
+    have ⟨_, hBp⟩ := ih_body hpres_args
+    have hres : evalMemo rules (fuel' + 1) memo₀ (.userCall head args) = (none, memo₂) := by
+      unfold evalMemo; simp [hargs, hnoany]
+      -- Goal is a nested match on memoLookup, lookupRule, evalMemo body
+      rw [show memoLookup memo₁ head (List.filterMap (fun x => x) argVals) = none from hmiss]
+      rw [show lookupRule rules head args.length = some rule from hrule]
+      -- body' is let-bound; goal has the expanded form. Convert and rewrite.
+      show (match (evalMemo rules fuel' memo₁ body').fst with
+        | some v => _ | none => _) = _
+      rw [show (evalMemo rules fuel' memo₁ body').fst = none from by rw [hbody]]
+      rw [show (evalMemo rules fuel' memo₁ body').snd = memo₂ from by rw [hbody]]
+    constructor
+    · intro v h; rw [show (evalMemo _ _ _ _).fst = none from by rw [hres]] at h; simp at h
+    · rw [show (evalMemo _ _ _ _).snd = memo₂ from by rw [hres]]
+      simpa [hbody] using hBp
+  -- ── Batch C: Binary op success cases ──────────────────────────────────
+  -- case6: eqInt success
+  | case6 =>
+    rename_i fuel memo₀ a b memo₁ memo₂ va vb ha hb ih_a ih_b
+    intro hm
+    have ⟨hAs, hAp⟩ := ih_a hm
+    have hpres_a : MemoSoundSem rules memo₁ := by simpa [ha] using hAp
+    have ⟨hBs, hBp⟩ := ih_b hpres_a
+    constructor
+    · intro v h; simp [evalMemo, ha, hb] at h; subst h
+      exact .eqOp (hAs _ (by simp [ha])) (hBs _ (by simp [hb]))
+    · simp [evalMemo, ha, hb]; simpa [hb] using hBp
+  -- case8: addInt success
+  | case8 =>
+    rename_i fuel memo₀ a b memo₁ memo₂ va vb ha hb ih_a ih_b
+    intro hm
+    have ⟨hAs, hAp⟩ := ih_a hm
+    have hpres_a : MemoSoundSem rules memo₁ := by simpa [ha] using hAp
+    have ⟨hBs, hBp⟩ := ih_b hpres_a
+    constructor
+    · intro v h; simp [evalMemo, ha, hb] at h; subst h
+      exact .addOp (hAs _ (by simp [ha])) (hBs _ (by simp [hb]))
+    · simp [evalMemo, ha, hb]; simpa [hb] using hBp
+  -- case10: subInt success
+  | case10 =>
+    rename_i fuel memo₀ a b memo₁ memo₂ va vb ha hb ih_a ih_b
+    intro hm
+    have ⟨hAs, hAp⟩ := ih_a hm
+    have hpres_a : MemoSoundSem rules memo₁ := by simpa [ha] using hAp
+    have ⟨hBs, hBp⟩ := ih_b hpres_a
+    constructor
+    · intro v h; simp [evalMemo, ha, hb] at h; subst h
+      exact .subOp (hAs _ (by simp [ha])) (hBs _ (by simp [hb]))
+    · simp [evalMemo, ha, hb]; simpa [hb] using hBp
+  -- case12: mulInt success
+  | case12 =>
+    rename_i fuel memo₀ a b memo₁ memo₂ va vb ha hb ih_a ih_b
+    intro hm
+    have ⟨hAs, hAp⟩ := ih_a hm
+    have hpres_a : MemoSoundSem rules memo₁ := by simpa [ha] using hAp
+    have ⟨hBs, hBp⟩ := ih_b hpres_a
+    constructor
+    · intro v h; simp [evalMemo, ha, hb] at h; subst h
+      exact .mulOp (hAs _ (by simp [ha])) (hBs _ (by simp [hb]))
+    · simp [evalMemo, ha, hb]; simpa [hb] using hBp
+  -- ── Batch D: If-branch and list cons ─────────────────────────────────
+  -- case3: ifCond true
+  | case3 =>
+    rename_i fuel memo₀ c t e memo₁ hc ih_c ih_t
+    intro hm
+    have ⟨hCs, hCp⟩ := ih_c hm
+    have hpres : MemoSoundSem rules memo₁ := by simpa [hc] using hCp
+    have ⟨hTs, hTp⟩ := ih_t hpres
+    constructor
+    · intro v h; simp [evalMemo, hc] at h
+      exact .ifTrue (hCs _ (by simp [hc])) (hTs v h)
+    · simp [evalMemo, hc]; exact hTp
+  -- case4: ifCond false
+  | case4 =>
+    rename_i fuel memo₀ c t e memo₁ hc ih_c ih_e
+    intro hm
+    have ⟨hCs, hCp⟩ := ih_c hm
+    have hpres : MemoSoundSem rules memo₁ := by simpa [hc] using hCp
+    have ⟨hEs, hEp⟩ := ih_e hpres
+    constructor
+    · intro v h; simp [evalMemo, hc] at h
+      exact .ifFalse (hCs _ (by simp [hc])) (hEs v h)
+    · simp [evalMemo, hc]; exact hEp
+  -- case21: evalMemoList cons (motive2 — hm already in context)
+  | case21 =>
+    rename_i fuel memo₀ a as cv memo₁ ha argVals memo₂ has ih_a ih_as hm
+    have ⟨hAs, hAp⟩ := ih_a hm
+    have hpres : MemoSoundSem rules memo₁ := by simpa [ha] using hAp
+    have ⟨hAss, hAsp⟩ := ih_as hpres
+    constructor
+    · intro vs h; simp [evalMemoList, ha, has] at h
+      cases vs with
+      | nil => simp at h
+      | cons v vs =>
+        simp at h; obtain ⟨hv, hvs⟩ := h
+        exact .cons (hAs v (by simp [ha]; exact hv)) (hAss vs (by simp [has]; exact hvs))
+    · simp [evalMemoList, ha, has]; simpa [has] using hAsp
+  -- ── Batch E: Hard userCall cases ────────────────────────────────────
+  -- case16: userCall — memo HIT
+  | case16 =>
+    rename_i memo₀ head args fuel' argVals memo₁ hargs hnoany vals cached hmemoHit ih_args
+    intro hm
+    have ⟨hArgSs, hArgPres⟩ := ih_args hm
+    have hpres_args : MemoSoundSem rules memo₁ := by simpa [hargs] using hArgPres
+    -- The memo hit gives us: evalMemo result = (some cached, memo₁)
+    -- Soundness: memoLookup_sound + evalSem_userCall_transport
+    -- Preservation: memo₁ unchanged
+    constructor
+    · intro v h
+      -- Need to show: evalMemo ... = some v, and v = cached
+      -- Then use memoLookup_sound on the hit, transport via args
+      unfold evalMemo at h; simp [hargs, hnoany] at h
+      rw [show memoLookup memo₁ head (List.filterMap (fun x => x) argVals) = some cached
+        from hmemoHit] at h
+      simp at h; subst h
+      -- Now need EvalSem rules (.userCall head args) cached
+      -- From hmemoHit: memoLookup memo₁ head vals = some cached
+      -- hpres_args: MemoSoundSem rules memo₁
+      -- memoLookup_sound gives: EvalSem rules (.userCall head (vals.map toNode)) cached
+      have hSemVals := memoLookup_sound hpres_args hmemoHit
+      -- Need EvalSemList rules args vals to transport
+      -- From hnoany: no nones in argVals
+      -- argVals = (evalMemoList ...).fst, so argVals = vals.map some (no nones)
+      -- hArgSs: ∀ vs, argVals = vs.map some → EvalSemList rules args vs
+      have hnn : ¬(none ∈ argVals) := by
+        intro hmem
+        have : argVals.any Option.isNone = true :=
+          List.any_eq_true.mpr ⟨none, hmem, by rfl⟩
+        exact hnoany this
+      obtain ⟨realVals, hRealVals⟩ := list_no_none_eq_map_some argVals hnn
+      have hArgsSem := hArgSs realVals (by simp [hargs]; exact hRealVals)
+      -- vals = realVals (filterMap id on map some = identity)
+      have filterMap_id_map_some : ∀ (xs : List EvalValue),
+          List.filterMap (fun x => x) (xs.map some) = xs := by
+        intro xs; induction xs with
+        | nil => rfl
+        | cons x xs ih => simp [List.filterMap, ih]
+      have hValsEq : vals = realVals := by
+        show List.filterMap (fun x => x) argVals = realVals
+        rw [hRealVals, filterMap_id_map_some]
+      rw [hValsEq] at hSemVals
+      exact evalSem_userCall_transport hArgsSem hSemVals
+    · -- Preservation: memo unchanged on cache hit
+      unfold evalMemo; simp [hargs, hnoany]
+      rw [show memoLookup memo₁ head (List.filterMap (fun x => x) argVals) = some cached
+        from hmemoHit]
+      simpa [hargs] using hArgPres
+  -- case18: userCall — memo MISS, body succeeds, cache insertion
+  | case18 =>
+    rename_i memo₀ head args fuel' argVals memo₁ hargs hnoany vals hmiss
+             rule hrule argNodes env body' memo₂ bodyVal hbody ih_args ih_body
+    intro hm
+    have ⟨hArgSs, hArgPres⟩ := ih_args hm
+    have hpres_args : MemoSoundSem rules memo₁ := by simpa [hargs] using hArgPres
+    have ⟨hBodyS, hBodyP⟩ := ih_body hpres_args
+    -- Extract arg semantics (same as case16)
+    have hnn : ¬(none ∈ argVals) := by
+      intro hmem
+      have : argVals.any Option.isNone = true :=
+        List.any_eq_true.mpr ⟨none, hmem, by rfl⟩
+      exact hnoany this
+    obtain ⟨realVals, hRealVals⟩ := list_no_none_eq_map_some argVals hnn
+    have hArgsSem := hArgSs realVals (by simp [hargs]; exact hRealVals)
+    have filterMap_id_map_some : ∀ (xs : List EvalValue),
+        List.filterMap (fun x => x) (xs.map some) = xs := by
+      intro xs; induction xs with
+      | nil => rfl
+      | cons x xs ih => simp [List.filterMap, ih]
+    have hValsEq : vals = realVals := by
+      show List.filterMap (fun x => x) argVals = realVals
+      rw [hRealVals, filterMap_id_map_some]
+    -- Body soundness: EvalSem rules body' bodyVal
+    have hBodySem : EvalSem rules body' bodyVal :=
+      hBodyS bodyVal (by simp [hbody])
+    -- Construct EvalSem.userCall
+    -- Need: EvalSemList rules args realVals (have it: hArgsSem)
+    -- Need: lookupRule rules head args.length = some rule (have it: hrule)
+    -- Need: EvalSem rules (substNode (rule.params.zip (realVals.map toNode)) rule.body) bodyVal
+    -- body' = substNode env rule.body where env = rule.params.zip argNodes
+    -- argNodes = vals.map toNode = realVals.map toNode (by hValsEq)
+    -- So body' = substNode (rule.params.zip (realVals.map toNode)) rule.body
+    have hBodyEq : body' = substNode (rule.params.zip (realVals.map EvalValue.toNode)) rule.body := by
+      show substNode (rule.params.zip (List.map EvalValue.toNode vals)) rule.body = _
+      rw [hValsEq]
+    rw [hBodyEq] at hBodySem
+    -- Key equation: the full evalMemo result for this case
+    have hres : evalMemo rules (fuel' + 1) memo₀ (.userCall head args) =
+        (some bodyVal, (head, vals, bodyVal) :: memo₂) := by
+      unfold evalMemo; simp [hargs, hnoany]
+      rw [show memoLookup memo₁ head (List.filterMap (fun x => x) argVals) = none from hmiss]
+      rw [show lookupRule rules head args.length = some rule from hrule]
+      -- body' uses vals (which uses filterMap on argVals); they're definitionally equal
+      show (match (evalMemo rules fuel' memo₁ body').fst with
+        | some v => _ | none => _) = _
+      rw [show (evalMemo rules fuel' memo₁ body').fst = some bodyVal from by rw [hbody]]
+      rw [show (evalMemo rules fuel' memo₁ body').snd = memo₂ from by rw [hbody]]
+    constructor
+    · intro v h
+      rw [show (evalMemo _ _ _ _).fst = some bodyVal from by rw [hres]] at h
+      simp at h; subst h
+      exact .userCall hArgsSem hrule hBodySem
+    · rw [show (evalMemo _ _ _ _).snd = (head, vals, bodyVal) :: memo₂ from by rw [hres]]
+      have hBodyPres : MemoSoundSem rules memo₂ := by simpa [hbody] using hBodyP
+      have hNewEntry : EvalSem rules (.userCall head (vals.map EvalValue.toNode)) bodyVal := by
+        rw [hValsEq]; exact .userCall (evalSemList_map_toNode realVals)
+          (by simp [List.length_map]; rwa [← evalSemList_length hArgsSem]) hBodySem
+      exact memoSoundSem_cons hNewEntry hBodyPres
 
 /-- Soundness of evalMemo: extracted from the joint theorem. -/
 theorem evalMemo_sound {rules : List EvalRule} {fuel : Nat} {memo : MemoTable}
@@ -474,11 +787,92 @@ theorem evalMemo_preserves_memo {rules : List EvalRule} {fuel : Nat} {memo : Mem
     MemoSoundSem rules (evalMemo rules fuel memo node).2 :=
   (evalMemo_sound_and_preserves fuel memo node hm).2
 
-/-- Completeness: if the semantic relation holds, sufficient fuel exists for eval. -/
+-- ── Completeness ─────────────────────────────────────────────────────────
+-- If the semantic relation holds, sufficient fuel exists for eval.
+-- Council: mutual induction on EvalSem/EvalSemList directly.
+-- No global monotonicity; local fuel lifting only where needed.
+
+/-- Completeness with threshold: semantic derivation gives a fuel threshold
+    above which eval always succeeds. This is the RIGHT theorem shape —
+    it eliminates the need for separate fuel monotonicity.
+    Council: Tao/Knuth — the obstruction was the theorem shape, not tactics.
+    Meredith/Stay — the userCall threshold is the real invariant. -/
 theorem eval_complete_of_sem {rules : List EvalRule} {node : EvalNode} {v : EvalValue}
     (h : EvalSem rules node v) :
     ∃ fuel, eval rules fuel node = some v := by
-  sorry -- TODO: induction on EvalSem derivation
+  -- Prove the stronger threshold version, then extract ∃ fuel.
+  suffices ∃ fuel₀, ∀ fuel, fuel₀ ≤ fuel → eval rules fuel node = some v by
+    obtain ⟨fuel₀, h⟩ := this; exact ⟨fuel₀, h fuel₀ (Nat.le_refl _)⟩
+  -- Use EvalSem.rec with threshold motives.
+  exact EvalSem.rec
+    (motive_1 := fun node v _ => ∃ fuel₀, ∀ fuel, fuel₀ ≤ fuel → eval rules fuel node = some v)
+    (motive_2 := fun nodes vs _ => ∃ fuel₀, ∀ fuel, fuel₀ ≤ fuel → evalList rules fuel nodes = vs.map some)
+    -- litInt: threshold = 0 (fuel-independent)
+    (⟨0, fun _ _ => by simp [eval]⟩)
+    -- litBool: threshold = 0
+    (⟨0, fun _ _ => by simp [eval]⟩)
+    -- eqOp: threshold = max(fa, fb)
+    (fun _ha _hb ⟨fa, ha'⟩ ⟨fb, hb'⟩ =>
+      ⟨fa.max fb, fun fuel hle => by
+        simp [eval, ha' fuel (Nat.le_trans (Nat.le_max_left _ _) hle), hb' fuel (Nat.le_trans (Nat.le_max_right _ _) hle)]⟩)
+    -- addOp
+    (fun _ha _hb ⟨fa, ha'⟩ ⟨fb, hb'⟩ =>
+      ⟨fa.max fb, fun fuel hle => by
+        simp [eval, ha' fuel (Nat.le_trans (Nat.le_max_left _ _) hle), hb' fuel (Nat.le_trans (Nat.le_max_right _ _) hle)]⟩)
+    -- subOp
+    (fun _ha _hb ⟨fa, ha'⟩ ⟨fb, hb'⟩ =>
+      ⟨fa.max fb, fun fuel hle => by
+        simp [eval, ha' fuel (Nat.le_trans (Nat.le_max_left _ _) hle), hb' fuel (Nat.le_trans (Nat.le_max_right _ _) hle)]⟩)
+    -- mulOp
+    (fun _ha _hb ⟨fa, ha'⟩ ⟨fb, hb'⟩ =>
+      ⟨fa.max fb, fun fuel hle => by
+        simp [eval, ha' fuel (Nat.le_trans (Nat.le_max_left _ _) hle), hb' fuel (Nat.le_trans (Nat.le_max_right _ _) hle)]⟩)
+    -- ifTrue: threshold = max(fc, ft)
+    (fun _hc _ht ⟨fc, hc'⟩ ⟨ft, ht'⟩ =>
+      ⟨fc.max ft, fun fuel hle => by
+        simp [eval, hc' fuel (Nat.le_trans (Nat.le_max_left _ _) hle), ht' fuel (Nat.le_trans (Nat.le_max_right _ _) hle)]⟩)
+    -- ifFalse
+    (fun _hc _he ⟨fc, hc'⟩ ⟨fe, he'⟩ =>
+      ⟨fc.max fe, fun fuel hle => by
+        simp [eval, hc' fuel (Nat.le_trans (Nat.le_max_left _ _) hle), he' fuel (Nat.le_trans (Nat.le_max_right _ _) hle)]⟩)
+    -- userCall: threshold = max(fArgs, fBody + 1)
+    -- For fuel ≥ max(fArgs, fBody+1):
+    --   fuel ≥ 1 so eval unfolds the userCall
+    --   evalList at fuel ≥ fArgs succeeds (args IH)
+    --   body eval at fuel-1 ≥ fBody succeeds (body IH)
+    (fun {args} {argVals} {head} {rule} {v}
+         _hArgs hLookup _hBody ⟨fArgs, hArgs'⟩ ⟨fBody, hBody'⟩ =>
+      ⟨fArgs.max (fBody + 1), fun fuel hle => by
+        have hArgs_f : evalList rules fuel args = argVals.map some :=
+          hArgs' fuel (Nat.le_trans (Nat.le_max_left _ _) hle)
+        have hBody_f : eval rules (fuel - 1)
+            (substNode (rule.params.zip (argVals.map EvalValue.toNode)) rule.body) = some v :=
+          hBody' (fuel - 1) (by
+            have : fBody + 1 ≤ fuel := Nat.le_trans (Nat.le_max_right _ _) hle
+            omega)
+        -- eval at fuel ≥ 1 unfolds the userCall match on fuel as (fuel-1)+1
+        have hfuel_eq : fuel = (fuel - 1) + 1 := by
+          have : fBody + 1 ≤ fuel := Nat.le_trans (Nat.le_max_right _ _) hle
+          omega
+        -- Rewrite fuel as succ to eliminate the match on Nat
+        obtain ⟨fuel', rfl⟩ : ∃ fuel', fuel = fuel' + 1 := by
+          have : fBody + 1 ≤ fuel := Nat.le_trans (Nat.le_max_right _ _) hle
+          exact ⟨fuel - 1, by omega⟩
+        -- Now eval unfolds cleanly at fuel'+1
+        -- hBody_f has fuel'+1-1 which is fuel'; normalize
+        have hBody_f' : eval rules fuel'
+            (substNode (rule.params.zip (argVals.map EvalValue.toNode)) rule.body) = some v := by
+          simpa using hBody_f
+        unfold eval
+        simp only [hArgs_f, hLookup, filterMap_map_some, hBody_f']
+        simp⟩)
+    -- nil: threshold = 0
+    (⟨0, fun _ _ => by simp [evalList]⟩)
+    -- cons: threshold = max(fh, fr)
+    (fun _hHead _hRest ⟨fh, hh'⟩ ⟨fr, hr'⟩ =>
+      ⟨fh.max fr, fun fuel hle => by
+        simp [evalList, hh' fuel (Nat.le_trans (Nat.le_max_left _ _) hle), hr' fuel (Nat.le_trans (Nat.le_max_right _ _) hle)]⟩)
+    h
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- § EvalTrace — The Universal Proof Object
@@ -572,19 +966,91 @@ end
 
 -- ── Key Theorems ─────────────────────────────────────────────────────────
 
--- Correctness: a trace witnesses that eval produces the traced result
--- (for sufficient fuel)
-theorem trace_implies_eval (rules : List EvalRule) (node : EvalNode) (v : EvalValue)
-    (m m' : MemoTable) (t : EvalTrace rules node v m m') :
-    ∃ fuel, eval rules fuel node = some v := by
-  sorry -- induction on t
+-- Semantic extraction + memo preservation for traces.
+-- Proved together because callMiss needs both, and callHit needs memo soundness.
+-- Uses structural recursion on the trace (EvalTrace is Type-valued).
+mutual
+  def trace_implies_sem {rules : List EvalRule}
+      {node : EvalNode} {v : EvalValue} {m m' : MemoTable}
+      (hm : MemoSoundSem rules m)
+      (t : EvalTrace rules node v m m') :
+      EvalSem rules node v :=
+    match t with
+    | .litInt => .litInt
+    | .litBool => .litBool
+    | .eqOp ta tb => .eqOp (trace_implies_sem hm ta) (trace_implies_sem (trace_preserves_sem hm ta) tb)
+    | .addOp ta tb => .addOp (trace_implies_sem hm ta) (trace_implies_sem (trace_preserves_sem hm ta) tb)
+    | .subOp ta tb => .subOp (trace_implies_sem hm ta) (trace_implies_sem (trace_preserves_sem hm ta) tb)
+    | .mulOp ta tb => .mulOp (trace_implies_sem hm ta) (trace_implies_sem (trace_preserves_sem hm ta) tb)
+    | .ifTrue tc tt => .ifTrue (trace_implies_sem hm tc) (trace_implies_sem (trace_preserves_sem hm tc) tt)
+    | .ifFalse tc te => .ifFalse (trace_implies_sem hm tc) (trace_implies_sem (trace_preserves_sem hm tc) te)
+    | .callMiss targs _hmiss hrule tbody =>
+      let hm₁ := traceList_preserves_sem hm targs
+      .userCall (traceList_implies_semList hm targs) hrule (trace_implies_sem hm₁ tbody)
+    | .callHit targs hmemoHit =>
+      let hm₁ := traceList_preserves_sem hm targs
+      evalSem_userCall_transport (traceList_implies_semList hm targs) (memoLookup_sound hm₁ hmemoHit)
 
--- Memo soundness: the output memo of a trace contains only semantically correct entries
+  def traceList_implies_semList {rules : List EvalRule}
+      {nodes : List EvalNode} {vs : List EvalValue} {m m' : MemoTable}
+      (hm : MemoSoundSem rules m)
+      (t : EvalTraceList rules nodes vs m m') :
+      EvalSemList rules nodes vs :=
+    match t with
+    | .nil => .nil
+    | .cons th trest => .cons (trace_implies_sem hm th)
+        (traceList_implies_semList (trace_preserves_sem hm th) trest)
+
+  def trace_preserves_sem {rules : List EvalRule}
+      {node : EvalNode} {v : EvalValue} {m m' : MemoTable}
+      (hm : MemoSoundSem rules m)
+      (t : EvalTrace rules node v m m') :
+      MemoSoundSem rules m' :=
+    match t with
+    | .litInt => hm
+    | .litBool => hm
+    | .eqOp ta tb => trace_preserves_sem (trace_preserves_sem hm ta) tb
+    | .addOp ta tb => trace_preserves_sem (trace_preserves_sem hm ta) tb
+    | .subOp ta tb => trace_preserves_sem (trace_preserves_sem hm ta) tb
+    | .mulOp ta tb => trace_preserves_sem (trace_preserves_sem hm ta) tb
+    | .ifTrue tc tt => trace_preserves_sem (trace_preserves_sem hm tc) tt
+    | .ifFalse tc te => trace_preserves_sem (trace_preserves_sem hm tc) te
+    | .callMiss targs _hmiss hrule tbody =>
+      let hm₁ := traceList_preserves_sem hm targs
+      let hm₂ := trace_preserves_sem hm₁ tbody
+      let hBodySem := trace_implies_sem hm₁ tbody
+      let hArgsSem := traceList_implies_semList hm targs
+      memoSoundSem_cons
+        (.userCall (evalSemList_map_toNode _)
+          (by simp [List.length_map]; rwa [← evalSemList_length hArgsSem]) hBodySem)
+        hm₂
+    | .callHit targs _ => traceList_preserves_sem hm targs
+
+  def traceList_preserves_sem {rules : List EvalRule}
+      {nodes : List EvalNode} {vs : List EvalValue} {m m' : MemoTable}
+      (hm : MemoSoundSem rules m)
+      (t : EvalTraceList rules nodes vs m m') :
+      MemoSoundSem rules m' :=
+    match t with
+    | .nil => hm
+    | .cons th trest => traceList_preserves_sem (trace_preserves_sem hm th) trest
+end
+
+-- Correctness: a trace witnesses that eval produces the traced result
+-- (for sufficient fuel). Needs eval_complete_of_sem.
+theorem trace_implies_eval (rules : List EvalRule) (node : EvalNode) (v : EvalValue)
+    (m m' : MemoTable) (t : EvalTrace rules node v m m')
+    (hm : MemoSoundSem rules m) :
+    ∃ fuel, eval rules fuel node = some v :=
+  eval_complete_of_sem (trace_implies_sem hm t)
+
+-- Memo soundness: the output memo of a trace contains only semantically correct entries.
+-- Direct projection from the mutual block above.
 theorem trace_memo_sound (rules : List EvalRule) (node : EvalNode) (v : EvalValue)
     (m m' : MemoTable) (t : EvalTrace rules node v m m')
     (hm : MemoSoundSem rules m) :
-    MemoSoundSem rules m' := by
-  sorry -- induction on t
+    MemoSoundSem rules m' :=
+  trace_preserves_sem hm t
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- § Grounded Arithmetic Interface (IntArithSink)
@@ -788,15 +1254,62 @@ def evalNodeToValue? : EvalNode → Option EvalValue
   | .boolLit b => some (.bool b)
   | _ => none
 
+/-- Convert a list of argument nodes into evaluated values, if and only if every
+    argument is already a literal node.
+
+    Positive example: `[.intLit 3, .boolLit true]` maps to
+    `some [.int 3, .bool true]`.
+    Negative example: `[.subInt (.intLit 5) (.intLit 1)]` maps to `none`
+    because the argument is still syntax, not a value. -/
+def argsToValues? : List EvalNode → Option (List EvalValue)
+  | [] => some []
+  | a :: as =>
+    match evalNodeToValue? a, argsToValues? as with
+    | some v, some vs => some (v :: vs)
+    | _, _ => none
+
+/-- If `argsToValues?` succeeds, the original nodes are exactly the literal forms
+    of the recovered values. This is the key "value-keyed, not syntax-keyed"
+    contract for memoized calls. -/
+theorem argsToValues?_sound {args : List EvalNode} {vs : List EvalValue}
+    (h : argsToValues? args = some vs) :
+    args = vs.map EvalValue.toNode := by
+  induction args generalizing vs with
+  | nil =>
+    simp [argsToValues?] at h
+    cases h
+    rfl
+  | cons a rest ih =>
+    cases a <;> simp [argsToValues?, evalNodeToValue?] at h
+    case intLit n =>
+      cases hRest : argsToValues? rest <;> simp [hRest] at h
+      case some restVs =>
+        cases h
+        simp [EvalValue.toNode, ih hRest]
+    case boolLit b =>
+      cases hRest : argsToValues? rest <;> simp [hRest] at h
+      case some restVs =>
+        cases h
+        simp [EvalValue.toNode, ih hRest]
+
+/-- Owner of a hybrid recursive-evaluation transition.
+    `scheduler` is the Rust/worklist layer: request spawning, arg collection,
+    memo lookup/store, and canonical call-key formation.
+    `backend` is the MM2/MORK layer: local structural rewriting and grounded
+    arithmetic/branch folds. -/
+inductive HybridOwner where
+  | scheduler
+  | backend
+deriving Repr, DecidableEq, BEq
+
 /-- Try memo hit: if args are all literals AND (memo HEAD ARGS RESULT) exists,
     produce result directly without body expansion. -/
 partial def tryMemoHit (facts : List MM2Fact) : Option (List MM2Fact) :=
   facts.findSome? fun f =>
     match f with
     | .req id (.userCall head args) =>
-      let argVals := args.filterMap evalNodeToValue?
-      if argVals.length != args.length then none
-      else
+      match argsToValues? args with
+      | some argVals =>
         facts.findSome? fun g =>
           match g with
           | .memo h vs v =>
@@ -804,6 +1317,7 @@ partial def tryMemoHit (facts : List MM2Fact) : Option (List MM2Fact) :=
             then some (removeFacts facts [f] ++ [.res id v])
             else none
           | _ => none
+      | none => none
     | _ => none
 
 /-- Try user-unfold with arg evaluation and memoization.
@@ -842,15 +1356,15 @@ partial def tryUserUnfold (rules : List EvalRule) (facts : List MM2Fact) : Optio
   <|> (facts.findSome? fun f =>
     match f with
     | .req id (.userCall head args) =>
-      let argVals := args.filterMap evalNodeToValue?
-      if argVals.length == args.length then
+      match argsToValues? args with
+      | some argVals =>
         match lookupRule rules head args.length with
         | some rule =>
           let env := rule.params.zip args
           let body' := substNode env rule.body
           some (removeFacts facts [f] ++ [.req id body', .memoPending id head argVals])
         | none => none
-      else
+      | none =>
         -- Args not all literals → evaluate them via sub-requests
         let argReqs := (args.zip (List.range args.length)).map fun (a, i) => .req (.arg i id) a
         some (removeFacts facts [f] ++ argReqs ++ [.waitUser id head args.length])
@@ -923,22 +1437,47 @@ partial def tryMemoStore (facts : List MM2Fact) : Option (List MM2Fact) :=
         | _ => none
     | _ => none
 
-/-- One step of the priority scheduler. Tries steps in priority order:
-    -1: memo hit, 0: user unfold, 1: compound unfold, 2: leaf, 3: fold, 4: memo store.
-    Returns none if no step is applicable (fixpoint reached). -/
-partial def priorityStep (rules : List EvalRule) (facts : List MM2Fact) : Option (List MM2Fact) :=
+/-- Scheduler-owned hybrid step candidates.
+    This is the explicit Lean contract for the Rust/worklist layer:
+    it owns memo lookup/store, argument collection, and canonical call-key
+    formation. -/
+partial def trySchedulerStep (rules : List EvalRule) (facts : List MM2Fact) :
+    Option (List MM2Fact) :=
   -- Priority -1: memo hit (highest — skip body expansion if cached)
   tryMemoHit facts
-  -- Priority 0: user unfold (with memoPending emission)
+  -- Priority 0: user unfold / arg collection
   <|> tryUserUnfold rules facts
+  -- Priority 2.5: memo store (BEFORE fold — capture result before it is reused)
+  <|> tryMemoStore facts
+
+/-- Backend-owned hybrid step candidates.
+    This is the explicit Lean contract for the MM2/MORK layer:
+    local structural rewriting plus grounded arithmetic/branch folding. -/
+partial def tryBackendStep (facts : List MM2Fact) : Option (List MM2Fact) :=
   -- Priority 1: compound unfold
-  <|> tryBinopUnfold facts
+  tryBinopUnfold facts
   -- Priority 2: leaf resolution
   <|> tryLeafStep facts
-  -- Priority 2.5: memo store (BEFORE fold — must capture result before fold consumes it)
-  <|> tryMemoStore facts
   -- Priority 3: fold (arithmetic + if-dispatch)
   <|> tryFoldStep facts
+
+/-- One hybrid step, annotated with the layer that owns it.
+    Positive example: user-call arg collection is `scheduler`.
+    Negative example: integer addition folding is not `scheduler`; it is `backend`. -/
+partial def hybridStep (rules : List EvalRule) (facts : List MM2Fact) :
+    Option (HybridOwner × List MM2Fact) :=
+  match trySchedulerStep rules facts with
+  | some facts' => some (.scheduler, facts')
+  | none =>
+    match tryBackendStep facts with
+    | some facts' => some (.backend, facts')
+    | none => none
+
+/-- One step of the priority scheduler. Tries steps in the same effective
+    priority order as before, but now via the explicit hybrid seam.
+    Returns none if no step is applicable (fixpoint reached). -/
+partial def priorityStep (rules : List EvalRule) (facts : List MM2Fact) : Option (List MM2Fact) :=
+  Option.map Prod.snd (hybridStep rules facts)
 
 /-- Run the priority scheduler to fixpoint (or fuel exhaustion). -/
 partial def runToFixpoint (rules : List EvalRule) (facts : List MM2Fact) (fuel : Nat) : List MM2Fact :=
@@ -1120,6 +1659,28 @@ open MeTTailCore.EvalIR in
   match extractResult result with
   | some v => s!"scheduler: fib(3) = {repr v} (memos:{memos.length} pending:{pending.length} reqs:{reqs.length} waits:{waits.length} total:{result.length})"
   | none => s!"FAIL: no result. memos:{memos.length} pending:{pending.length} reqs:{reqs.length} waits:{waits.length} total:{result.length}"
+
+open MeTTailCore.EvalIR in
+#eval
+  let facts := [MM2Fact.req .root (.userCall "fib" [.intLit 5])]
+  let result := runToFixpoint fibRules facts 2000
+  match extractResult result with
+  | some (.int 5) => "scheduler: fib(5) = 5 ✓"
+  | other => s!"FAIL: {repr other}"
+
+open MeTTailCore.EvalIR in
+#eval
+  match hybridStep fibRules [MM2Fact.req .root (.userCall "fib" [.intLit 5])] with
+  | some (.scheduler, _) => "hybridStep: fib root call owned by scheduler ✓"
+  | some (.backend, _) => "FAIL: fib root call should not be backend-owned"
+  | none => "FAIL: no hybrid step for fib root call"
+
+open MeTTailCore.EvalIR in
+#eval
+  match hybridStep fibRules [MM2Fact.req .root (.addInt (.intLit 2) (.intLit 3))] with
+  | some (.backend, _) => "hybridStep: local addInt owned by backend ✓"
+  | some (.scheduler, _) => "FAIL: addInt should not be scheduler-owned"
+  | none => "FAIL: no hybrid step for addInt"
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- § Layer 1 Validation: Ideal CBV+Memo Evaluator

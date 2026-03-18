@@ -78,7 +78,36 @@ noncomputable def T_P_K_LP {σ : LPSignature}
           (r.body.map (fun b => I (g.groundAtom b))).prod
         else 0)).sum
 
-/-! ## Section 4: Homomorphism theorem -/
+/-- Seeded variant of `T_P_K_LP`: the EDB contribution is a K-valued seed
+    rather than a Boolean indicator. This generalizes `T_P_K_LP` to allow
+    labelled observations (e.g. `Which`-valued provenance tags). -/
+noncomputable def T_P_K_LP_seeded {σ : LPSignature}
+    [IsEmpty σ.functionSymbols]
+    [Fintype σ.vars] [DecidableEq σ.vars]
+    [Fintype σ.constants] [DecidableEq σ.constants]
+    [DecidableEq σ.relationSymbols]
+    (K : Type*) [CommSemiring K]
+    (prog : Program σ) (seed I : KRelation σ K) : KRelation σ K :=
+  fun (a : GroundAtom σ) =>
+    seed a +
+    ∑ g : Grounding σ,
+      (prog.map (fun r =>
+        if g.groundAtom r.head = a then
+          (r.body.map (fun b => I (g.groundAtom b))).prod
+        else 0)).sum
+
+/-- The original `T_P_K_LP` is `T_P_K_LP_seeded` with the indicator seed. -/
+theorem T_P_K_LP_eq_seeded {σ : LPSignature}
+    [IsEmpty σ.functionSymbols]
+    [Fintype σ.vars] [DecidableEq σ.vars]
+    [Fintype σ.constants] [DecidableEq σ.constants]
+    [DecidableEq σ.relationSymbols]
+    (K : Type*) [CommSemiring K]
+    (kb : FinKnowledgeBase σ) (I : KRelation σ K) :
+    T_P_K_LP K kb I =
+      T_P_K_LP_seeded K kb.prog (fun a => if a ∈ kb.db then 1 else 0) I := rfl
+
+/-! ## Section 4: Homomorphism theorems -/
 
 /-- Semiring homomorphisms commute with `T_P_K_LP`. -/
 theorem T_P_K_LP_hom {σ : LPSignature}
@@ -104,6 +133,30 @@ theorem T_P_K_LP_hom {σ : LPSignature}
     split_ifs with hg
     · rw [map_list_prod, List.map_map]; rfl
     · rfl
+
+/-- Semiring homomorphisms commute with `T_P_K_LP_seeded`. -/
+theorem T_P_K_LP_seeded_hom {σ : LPSignature}
+    [IsEmpty σ.functionSymbols]
+    [Fintype σ.vars] [DecidableEq σ.vars]
+    [Fintype σ.constants] [DecidableEq σ.constants]
+    [DecidableEq σ.relationSymbols]
+    {K K' : Type*} [CommSemiring K] [CommSemiring K']
+    (h : K →+* K') (prog : Program σ) (seed : KRelation σ K) (I : KRelation σ K) :
+    T_P_K_LP_seeded K' prog (h ∘ seed) (h ∘ I) = h ∘ T_P_K_LP_seeded K prog seed I := by
+  funext a
+  simp only [T_P_K_LP_seeded, Function.comp, map_add, map_sum, map_list_sum]
+  congr 1
+  apply Finset.sum_congr rfl
+  intro g _
+  simp only [List.map_map]
+  congr 1
+  apply List.map_congr_left
+  intro r _
+  simp only [Function.comp]
+  rw [apply_ite (h : K → K'), h.map_zero]
+  split_ifs with hg
+  · rw [map_list_prod, List.map_map]; rfl
+  · rfl
 
 /-! ## Section 5: Support and Boolean collapse -/
 

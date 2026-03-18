@@ -393,6 +393,31 @@ def evalIntrinsic (I : Interface σ) (s : σ) (term : Pattern) : Option (σ × L
       evalIntrinsicApply2 I s ctor arg1 arg2
   | _ => none
 
+/-- The set of heads handled by `StateEffects.evalIntrinsic`. -/
+def evalIntrinsicSpecialHeads : List String :=
+  ["hyperpose", "get-state", "transaction", "bind!", "change-state!", "with_mutex"]
+
+/-- For ctors NOT in the special-head set, `evalIntrinsic` returns `none`. -/
+theorem evalIntrinsic_none_of_nonSpecial
+    (I : Interface σ) (s : σ) (ctor : String) (args : List Pattern)
+    (hNotSpecial : ctor ∉ evalIntrinsicSpecialHeads) :
+    evalIntrinsic I s (.apply ctor args) = none := by
+  simp only [evalIntrinsicSpecialHeads, List.mem_cons, List.not_mem_nil, not_or,
+    not_false_eq_true] at hNotSpecial
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := hNotSpecial
+  unfold evalIntrinsic
+  -- evalIntrinsic dispatches by arity: 1-arg → evalIntrinsicApply1, 2-arg → evalIntrinsicApply2
+  -- For any arity, if ctor not in special set → none
+  cases args with
+  | nil => simp
+  | cons a rest =>
+    cases rest with
+    | nil => simp [evalIntrinsicApply1, h1, h2, h3]
+    | cons b rest2 =>
+      cases rest2 with
+      | nil => simp [evalIntrinsicApply2, h4, h5, h6]
+      | cons => simp
+
 theorem evalIntrinsic_preserves
     (I : Interface σ) (P : σ → Prop) (H : Preservation I P)
     (s : σ) (term : Pattern) :

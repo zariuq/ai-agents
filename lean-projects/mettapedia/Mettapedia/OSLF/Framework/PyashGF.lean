@@ -9,8 +9,8 @@ Proof and closure layer over `PyashGFModel`.
 
 namespace Mettapedia.OSLF.Framework.PyashGF
 
-open Mettapedia.Languages.GF.Core
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Core
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.OSLF.MeTTaIL.Syntax
 open Mettapedia.OSLF.MeTTaIL.Engine
 open Mettapedia.OSLF.Framework.TypeSynthesis

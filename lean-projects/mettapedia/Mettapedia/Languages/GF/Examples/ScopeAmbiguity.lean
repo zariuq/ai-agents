@@ -1,4 +1,4 @@
-import Mettapedia.Languages.GF.Abstract
+import Mettapedia.Languages.GF.HandCrafted.Abstract
 import Mettapedia.Languages.GF.OSLFBridge
 import Mettapedia.Languages.GF.Typing
 import Mettapedia.Languages.GF.VisibleLayer
@@ -32,8 +32,8 @@ The two readings are ordered: inverse ≤ surface (by `scope_ordering_qsemE2`).
 
 namespace Mettapedia.Languages.GF.Examples.ScopeAmbiguity
 
-open Mettapedia.Languages.GF.Core
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Core
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.OSLFBridge
 open Mettapedia.Languages.GF.Typing
 open Mettapedia.Languages.GF.VisibleLayer

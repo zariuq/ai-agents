@@ -8,8 +8,8 @@ Concrete fixtures that consume the pure-interface-aligned GF adapter surface.
 
 namespace Mettapedia.Languages.GF.GFWMObligationAdapterRegression
 
-open Mettapedia.Languages.GF.Core
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Core
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.OSLFBridge
 open Mettapedia.Languages.GF.Typing
 open Mettapedia.Languages.GF.GFWMConnections

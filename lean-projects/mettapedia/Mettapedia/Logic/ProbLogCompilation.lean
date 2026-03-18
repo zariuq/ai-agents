@@ -89,11 +89,13 @@ theorem Grounding.groundAtom_toAtom_self {σ : LPSignature} [IsEmpty σ.function
 
 /-! ## §2 ProbLog Program Syntax -/
 
-/-- A ProbLog program with `n` independent probabilistic facts over LP signature `σ`.
+/-- A ProbLog program with `n` independent probabilistic facts (De Raedt et al. 2007).
 
-    - `probFacts`: the `n` ground atoms that serve as probabilistic facts
-    - `probs`: their probabilities (values in ℝ≥0∞)
-    - `rules`: definite clauses (no negation, no probability annotations)
+    In ProbLog notation: `p₁::f₁. ... pₙ::fₙ. rule₁. ... ruleₘ.`
+
+    - `probFacts`: the `n` ground atoms `f₁,...,fₙ` serving as random variables
+    - `probs`: probability of each fact being true (`pᵢ ∈ [0,1]`)
+    - `rules`: definite clauses (Horn clauses, no probability annotations)
     - `facts_injective`: the probabilistic facts are distinct atoms -/
 structure ProbLogProgram (σ : LPSignature) (n : ℕ) where
   probFacts      : Fin n → GroundAtom σ

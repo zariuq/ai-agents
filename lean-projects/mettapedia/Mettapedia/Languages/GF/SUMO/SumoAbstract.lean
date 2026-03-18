@@ -25,13 +25,13 @@ with the existing GF→OSLF→WM pipeline (same as English/Czech).
 - Brown, Pease & Urban, "Translating SUMO-K to Higher-Order Set Theory" (2023)
 -/
 
-import Mettapedia.Languages.GF.Core
-import Mettapedia.Languages.GF.Abstract
+import Mettapedia.Languages.GF.HandCrafted.Core
+import Mettapedia.Languages.GF.HandCrafted.Abstract
 
 namespace Mettapedia.Languages.GF.SUMO.SumoAbstract
 
-open Mettapedia.Languages.GF.Core
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Core
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 
 /-! ## SUMO-GF Categories
 

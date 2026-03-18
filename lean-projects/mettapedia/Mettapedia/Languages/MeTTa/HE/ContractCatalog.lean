@@ -35,7 +35,6 @@ private def heSwitchControlTheoremRefs : List String :=
   heControlKernelTheoremRefs ++
   [ "Mettapedia.Languages.MeTTa.HE.Conformance.extension_switch_minimal_first_match"       -- planned
   , "Mettapedia.Languages.MeTTa.HE.Conformance.extension_switch_no_match_empty"             -- planned
-  , "Mettapedia.Languages.MeTTa.HE.Conformance.extension_switch_internal_first_match"       -- planned
   ]
 
 private def heAssertControlTheoremRefs : List String :=
@@ -132,23 +131,13 @@ def heSwitchMinimalContract : ControlBuiltinContract where
 def heSwitchMinimalEntry : ExecutionContractEntry :=
   .controlBuiltin heSwitchMinimalContract
 
-def heSwitchInternalContract : ControlBuiltinContract where
-  head := "switch-internal"
-  minArity := 2
-  maxArity := some 2
-  controlKind := .bindThenBody
-  owner := .artifactBackend
-  kernelClass := .metaPhase
-  effectClass := spaceEffectFragment.effectClass
-  resourceClass := spaceEffectFragment.resourceClass
-  backendName := spaceEffectFragment.backendName
-  supportedMemoShapes := []
-  eligibility := .always
-  residualPolicy := .failClosed
-  theoremRefs := heSwitchControlTheoremRefs
-
-def heSwitchInternalEntry : ExecutionContractEntry :=
-  .controlBuiltin heSwitchInternalContract
+/-- `switch-internal` is NOT a primitive control builtin.
+It is defined by stdlib equations in `stdlib.metta` (lines 352-362):
+```
+(= (switch-internal $atom (($pattern $template) $tail)) ...)
+```
+Its semantics are dispatched through `MC_Equation` like any other equation-defined
+op (cf. `if`). It therefore does not receive an execution contract entry. -/
 
 def heAssertContract : ControlBuiltinContract where
   head := "assert"
@@ -223,7 +212,6 @@ def heUnifyEntry : ExecutionContractEntry :=
 def heControlEntries : List ExecutionContractEntry :=
   [ heSwitchEntry
   , heSwitchMinimalEntry
-  , heSwitchInternalEntry
   , heAssertEntry
   , heCaseEntry
   , heUnifyEntry
@@ -235,7 +223,7 @@ Current honest HE execution-contract surface.
 This intentionally exports only the lanes whose semantic ownership is already
 clear in the HE formalization:
 - `eqQuery` as the derived lookup family
-- `switch` / `switch-minimal` / `switch-internal` / `assert` / `case` as
+- `switch` / `switch-minimal` / `assert` / `case` / `unify` as
   explicit `mettaCall` control rules
 
 It intentionally does **not** inherit the shared `coreIntrinsicEntries`

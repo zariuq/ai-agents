@@ -24,7 +24,7 @@ theory of all human languages.
 namespace Mettapedia.Languages.GF.UniversalGrammarCore
 
 open Mettapedia.Languages.GF
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.LinguisticInvariance
 open Mettapedia.Languages.GF.OSLFBridge
 open Mettapedia.Languages.GF.WorldModelSemantics

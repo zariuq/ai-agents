@@ -31,8 +31,8 @@ import Mettapedia.Languages.GF.Typing
 
 namespace Mettapedia.Languages.GF.LinguisticInvariance
 
-open Mettapedia.Languages.GF.Core
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Core
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.OSLFBridge
 open Mettapedia.Languages.GF.Typing
 open Mettapedia.OSLF.MeTTaIL.Syntax

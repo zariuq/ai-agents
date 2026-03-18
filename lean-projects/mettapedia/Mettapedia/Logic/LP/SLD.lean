@@ -5,6 +5,12 @@ import Mettapedia.Logic.LP.Semantics
 
 SLD (Selective Linear Definite clause) resolution for logic programs.
 
+## Scope
+
+SLD resolution is formalized for **full first-order LP** — no function-free
+restriction. The `SLDTree` type and `SLDTree_sound` theorem work with
+compound terms including nested function symbol applications.
+
 ## Design
 
 - `Grounding.compSubst` — composition of a grounding with a substitution,

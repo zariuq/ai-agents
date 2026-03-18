@@ -163,6 +163,64 @@ def fromCore (cb : Mettapedia.Languages.MeTTa.OSLFCore.Bindings) (vars : List St
     | none => none
   ⟨assignments, []⟩
 
+/-! ### Bindings ↔ Atom Encoding
+
+The minimal-metta spec says collapse-bind returns results as `(<atom> <bindings>)`
+pairs where bindings are "represented in a form of a grounded atom." We use
+structural encoding as nested expressions for a provable round-trip.
+
+Hypercube connection (Stay–Meredith–Wells, Section 5.12): this is the reflection
+operator — bindings become first-class citizens in the term language. The
+collapse-bind/superpose-bind pair is a modal operator (□/◇) acting on the full
+(term, context) pair. -/
+
+private def encodeAssignment : String × Atom → Atom
+  | (v, a) => .expression [.symbol v, a]
+
+private def decodeAssignment? : Atom → Option (String × Atom)
+  | .expression [.symbol v, a] => some (v, a)
+  | _ => none
+
+private def encodeEquality : String × String → Atom
+  | (a, c) => .expression [.symbol a, .symbol c]
+
+private def decodeEquality? : Atom → Option (String × String)
+  | .expression [.symbol a, .symbol c] => some (a, c)
+  | _ => none
+
+/-- Encode bindings as an Atom expression for collapse-bind/superpose-bind. -/
+def toAtom (b : Bindings) : Atom :=
+  .expression [.symbol "Bindings",
+    .expression (b.assignments.map encodeAssignment),
+    .expression (b.equalities.map encodeEquality)]
+
+/-- Decode bindings from an Atom expression. Inverse of `toAtom`. -/
+def ofAtom? : Atom → Option Bindings
+  | .expression [.symbol "Bindings", .expression assigns, .expression eqs] =>
+    let assignments := assigns.filterMap decodeAssignment?
+    let equalities := eqs.filterMap decodeEquality?
+    if assignments.length = assigns.length && equalities.length = eqs.length then
+      some ⟨assignments, equalities⟩
+    else none
+  | _ => none
+
+private theorem filterMap_decode_encode_assignments (xs : List (String × Atom)) :
+    (xs.map encodeAssignment).filterMap decodeAssignment? = xs := by
+  induction xs with
+  | nil => rfl
+  | cons x xs ih => cases x; simp [List.map, encodeAssignment, decodeAssignment?, ih]
+
+private theorem filterMap_decode_encode_equalities (xs : List (String × String)) :
+    (xs.map encodeEquality).filterMap decodeEquality? = xs := by
+  induction xs with
+  | nil => rfl
+  | cons x xs ih => cases x; simp [List.map, encodeEquality, decodeEquality?, ih]
+
+theorem ofAtom_toAtom (b : Bindings) : ofAtom? (toAtom b) = some b := by
+  simp only [toAtom, ofAtom?]
+  rw [filterMap_decode_encode_assignments, filterMap_decode_encode_equalities]
+  simp [List.length_map]
+
 end Bindings
 
 /-! ## Result Types -/

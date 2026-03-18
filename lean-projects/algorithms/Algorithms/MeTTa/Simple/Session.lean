@@ -2487,6 +2487,23 @@ end
 def intrinsicDirectPub (s : Session) (ctor : String) (args : List Pattern) : List Pattern :=
   intrinsicDirect s ctor args
 
+/-- `intrinsicDirectPub` equals `filterMap` over the builtin relation table.
+    Exposes the internal structure so bridge lemmas can reason about builtins. -/
+theorem intrinsicDirectPub_eq_filterMap (s : Session) (ctor : String) (args : List Pattern) :
+    intrinsicDirectPub s ctor args =
+      (s.bundle.builtins.relation (intrinsicRelationName ctor) args).filterMap fun row =>
+        match row with
+        | [out] => some out
+        | _ => none := by
+  rfl
+
+/-- `intrinsicDirectPub` length is bounded by the builtin relation table's row count. -/
+theorem intrinsicDirectPub_length_le (s : Session) (ctor : String) (args : List Pattern) :
+    (intrinsicDirectPub s ctor args).length ≤
+      (s.bundle.builtins.relation (intrinsicRelationName ctor) args).length := by
+  rw [intrinsicDirectPub_eq_filterMap]
+  exact List.length_filterMap_le _ _
+
 /-- Public wrapper for `builtinPartialMinArity?`. -/
 def builtinPartialMinArityPub (ctor : String) : Option Nat :=
   builtinPartialMinArity? ctor
@@ -8913,6 +8930,286 @@ theorem intrinsicStatefulF_preserves
 def evalWithStateCoreN (fuel : Nat) (s : Session) (term : Pattern) :
     Session × List Pattern :=
   referenceEvalWithStateCoreN fuel s term
+
+/-- Public wrapper for the fuel-indexed `intrinsicStateful` in the reference evaluator. -/
+def referenceIntrinsicStatefulNPub (fuel : Nat) (s : Session) (term : Pattern) :
+    Option (Session × List Pattern) :=
+  referenceIntrinsicStatefulN fuel s term
+
+/-- Public wrapper for the fuel-indexed `runNestedEffects` in the reference evaluator. -/
+def referenceRunNestedEffectsNPub (fuel : Nat) (s : Session)
+    (isRoot parentCallable : Bool) (term : Pattern) : Session × Pattern × Bool :=
+  referenceRunNestedEffectsN fuel s isRoot parentCallable term
+
+/-- The named concrete `ReferenceEval.Interface` used by `referenceEvalWithStateCoreN`.
+    This is the canonical proof-facing interface: bridge predicates and simulation theorems
+    should be stated in terms of this interface, not the copied `referenceRunNestedEffectsN`.
+    See GPT-5.4 Pro Option E rationale. -/
+def referenceEvalInterfaceN (fuel : Nat) :
+    Algorithms.MeTTa.Simple.Backend.ReferenceEval.Interface Session := {
+  maxNodes := fun s => s.maxNodes
+  maxSteps := fun s => s.maxSteps
+  runNestedEffects := fun s isRoot p term => referenceRunNestedEffectsN fuel s isRoot p term
+  intrinsicStateful := fun s term => referenceIntrinsicStatefulN fuel s term
+  isEagerCallableHead := isEagerCallableHead
+  step := step
+  enqueueNext := enqueueNext
+  insertUnique := insertUnique
+  dedupPatterns := dedupPatterns
+}
+
+-- ─── @[simp] field projection lemmas ─────────────────────────────────────────
+
+@[simp] theorem referenceEvalInterfaceN_maxNodes (fuel : Nat) :
+    (referenceEvalInterfaceN fuel).maxNodes = fun s => s.maxNodes := rfl
+
+@[simp] theorem referenceEvalInterfaceN_maxSteps (fuel : Nat) :
+    (referenceEvalInterfaceN fuel).maxSteps = fun s => s.maxSteps := rfl
+
+@[simp] theorem referenceEvalInterfaceN_intrinsicStateful (fuel : Nat) (s : Session) (term : Pattern) :
+    (referenceEvalInterfaceN fuel).intrinsicStateful s term =
+      referenceIntrinsicStatefulNPub fuel s term := rfl
+
+@[simp] theorem referenceEvalInterfaceN_step (fuel : Nat) :
+    (referenceEvalInterfaceN fuel).step = step := rfl
+
+@[simp] theorem referenceEvalInterfaceN_enqueueNext (fuel : Nat) :
+    (referenceEvalInterfaceN fuel).enqueueNext = enqueueNext := rfl
+
+/-- `evalWithStateCoreN (fuel+1)` equals `evalWithStateCore` applied to the named interface. -/
+theorem evalWithStateCoreN_succ (fuel : Nat) (s : Session) (term : Pattern) :
+    evalWithStateCoreN (fuel + 1) s term =
+      Algorithms.MeTTa.Simple.Backend.ReferenceEval.evalWithStateCore
+        (referenceEvalInterfaceN fuel) s term := by
+  show referenceEvalWithStateCoreN (fuel + 1) s term = _
+  unfold referenceEvalWithStateCoreN
+  rfl
+
+-- ─── Concrete unchanged-branch theorem ───────────────────────────────────────
+
+/-- When `runNestedEffects` is passthrough, `intrinsicStateful` returns `none`,
+    and `step` returns `[]`, the fuel-indexed evaluator returns `(s, [term])`.
+    Thin wrapper over abstract `ReferenceEval.evalWithStateCore_unchanged`. -/
+theorem evalWithStateCoreN_unchanged
+    (fuel : Nat) (s : Session) (term : Pattern)
+    (hNodes : s.maxNodes ≥ 1)
+    (hSteps : 0 < s.maxSteps)
+    (hRNE : Algorithms.MeTTa.Simple.Backend.ReferenceEval.runNestedEffects
+        (referenceEvalInterfaceN fuel) s true false term = (s, term, false))
+    (hIntr : (referenceEvalInterfaceN fuel).intrinsicStateful s term = none)
+    (hStep : step s term = []) :
+    evalWithStateCoreN (fuel + 1) s term = (s, [term]) := by
+  simp only [evalWithStateCoreN_succ]
+  exact Algorithms.MeTTa.Simple.Backend.ReferenceEval.evalWithStateCore_unchanged
+    (referenceEvalInterfaceN fuel) s term hNodes hSteps hRNE hIntr hStep
+
+/-- When `runNestedEffects` is passthrough, `intrinsicStateful` returns `none`,
+    and `step` returns a non-empty `reducts`, the fuel-indexed evaluator one-steps to
+    processing the reducts through the work-queue at depth 1.
+    This is the ref-evaluator side of the directIntrinsic branch. -/
+theorem evalWithStateCoreN_step_nonempty
+    (fuel : Nat) (s : Session) (term : Pattern)
+    (hNodes : s.maxNodes ≥ 1)
+    (hSteps : 0 < s.maxSteps)
+    (hRNE : Algorithms.MeTTa.Simple.Backend.ReferenceEval.runNestedEffects
+        (referenceEvalInterfaceN fuel) s true false term = (s, term, false))
+    (hIntr : (referenceEvalInterfaceN fuel).intrinsicStateful s term = none)
+    (reducts : List Pattern)
+    (hStep : step s term = reducts)
+    (hNonempty : reducts.isEmpty = false) :
+    evalWithStateCoreN (fuel + 1) s term =
+      Algorithms.MeTTa.Simple.Backend.ReferenceEval.evalAuxStateful
+        (referenceEvalInterfaceN fuel) s (s.maxNodes - 1)
+        ((referenceEvalInterfaceN fuel).enqueueNext [] 1 reducts) [] := by
+  simp only [evalWithStateCoreN_succ]
+  -- Unfold evalWithStateCore → evalAuxStateful with maxNodes fuel
+  unfold Algorithms.MeTTa.Simple.Backend.ReferenceEval.evalWithStateCore
+  -- Use the one-step lemma at depth 0
+  obtain ⟨n, hN⟩ : ∃ n, (referenceEvalInterfaceN fuel).maxNodes s = n + 1 :=
+    ⟨s.maxNodes - 1, by simp [referenceEvalInterfaceN]; omega⟩
+  simp only [hN]
+  rw [Algorithms.MeTTa.Simple.Backend.ReferenceEval.evalAuxStateful_step_of_intrinsicNone
+    (referenceEvalInterfaceN fuel) s s term term false 0 [] [] n
+    hRNE (by simp [referenceEvalInterfaceN]; exact hSteps) hIntr]
+  -- The LHS has `have reducts := iface.step s term; if reducts.isEmpty ...`
+  -- Substitute iface.step = step, then step s term = reducts, then reducts.isEmpty = false
+  simp only [referenceEvalInterfaceN_step, hStep, hNonempty,
+    referenceEvalInterfaceN_enqueueNext, Bool.false_eq_true, ite_false]
+  -- Now: evalAuxStateful ... s n (enqueueNext [] (0+1) reducts) [] = ... s (s.maxNodes-1) (enqueueNext [] 1 reducts) []
+  have hNEq : n = s.maxNodes - 1 := by simp [referenceEvalInterfaceN] at hN; omega
+  subst hNEq
+  simp
+
+-- ─── R-2: intrinsicStatefulN_none for builtin terms under StrictContext-like conditions ──
+-- This is NOT a free hypothesis — it is derived from noOverlap + argsIrreducible + builtin.
+
+/-- The combined set of heads handled by all three evalIntrinsic dispatchers AND
+    the ~50-head match inside `referenceIntrinsicStatefulN`. Arithmetic builtins
+    (`+`, `-`, `*`, `<`, etc.) are NOT in this set. -/
+private def intrinsicStatefulSpecialHeads : List String :=
+  -- PeTTaCore.evalIntrinsic heads:
+  Algorithms.MeTTa.Simple.Semantics.PeTTaCore.evalIntrinsicSpecialHeads ++
+  -- StateEffects.evalIntrinsic heads:
+  Algorithms.MeTTa.Simple.Semantics.StateEffects.evalIntrinsicSpecialHeads ++
+  -- StreamOps.evalIntrinsic heads:
+  Algorithms.MeTTa.Simple.Semantics.StreamOps.evalIntrinsicSpecialHeads ++
+  -- Heads from the ~50-branch match in referenceIntrinsicStatefulN:
+  ["add-atom", "add-atom!", "remove-atom", "remove-atom!",
+   "remove-all-atoms", "remove-all-atoms!", "get-atoms", "get-atoms!",
+   "match", "case", "foldall", "forall",
+   "cut", "Predicate", "find", "succeedsPredicate",
+   "add-translator-rule!", "remove-translator-rule!",
+   "new-atom-vectorspace", "add-atom-vector", "add-atom-SRI",
+   "match-k", "match-sri", "match-SRI",
+   "once", "nop", "catch", "msort", "superpose", "hide", "space",
+   "collapse", "translatePredicate", "if", "let", "let*",
+   "progn", "prog1", "Expr", "repr", "atom-of"]
+
+-- ─── Generic foldl identity lemma (GPT-5.4 Pro Package A) ────────────────────
+
+private theorem foldl_eq_init_of_forall_eq_self
+    {α β : Type} (xs : List β) (f : α → β → α) (init : α)
+    (h : ∀ x ∈ xs, ∀ acc, f acc x = acc) :
+    xs.foldl f init = init := by
+  induction xs generalizing init with
+  | nil => rfl
+  | cons x xs ih =>
+    have hx : f init x = init := h x (by simp) init
+    simp [List.foldl, hx]
+    apply ih
+    intro y hy acc
+    exact h y (by simp [hy]) acc
+
+/-- For builtin ctors not in the intrinsicStateful special-head set, with args that are
+    step-irreducible, under noOverlap, `referenceIntrinsicStatefulN` returns `none`.
+    This is NOT a free hypothesis — it is derived from session conditions.
+
+    Proof traces through: PeTTaCore.evalIntrinsic → StateEffects.evalIntrinsic →
+    StreamOps.evalIntrinsic → ~50-head match → referenceIntrinsicApplyFallbackN →
+    referenceIntrinsicApplyDispatchTailN, all returning `none` for non-special builtins. -/
+theorem referenceIntrinsicStatefulN_none_of_builtin_strict
+    (fuel : Nat) (s : Session) (ctor : String) (argsV : List Pattern)
+    (hNotSpecial : ctor ∉ intrinsicStatefulSpecialHeads)
+    (hNoCompat : Algorithms.MeTTa.Simple.Semantics.Dispatch.compatFunctionHeadRewrite
+        { rewrites := fun s => s.bundle.language.rewrites
+          premiseFreeRulesForHeadArity := premiseFreeRulesForHeadArity
+          eval := fun s term => referenceEvalWithStateCoreN fuel s term
+          evalForRuleEnumeration := fun s expr => referenceEvalForRuleEnumerationN fuel s expr
+          applyBindings := applyBindingsCompat
+          matchPattern := matchPatternMeTTa
+          normalizePattern := normalizeDollarVars
+          dedupBindings := dedupBindings }
+        s (.apply ctor argsV) = (s, []))
+    (hNoConstraint : Algorithms.MeTTa.Simple.Semantics.Dispatch.hasCompatHeadConstraintRule
+        { rewrites := fun s => s.bundle.language.rewrites
+          premiseFreeRulesForHeadArity := premiseFreeRulesForHeadArity
+          eval := fun s term => referenceEvalWithStateCoreN fuel s term
+          evalForRuleEnumeration := fun s expr => referenceEvalForRuleEnumerationN fuel s expr
+          applyBindings := applyBindingsCompat
+          matchPattern := matchPatternMeTTa
+          normalizePattern := normalizeDollarVars
+          dedupBindings := dedupBindings }
+        s ctor argsV.length = false)
+    (hIrreducible : ∀ a ∈ argsV,
+        (match referenceIntrinsicStatefulN fuel s a with
+         | some (_sA, outA) => if outA.isEmpty then step s a else outA
+         | none => step s a).filter (· != a) = [])
+    (hNoPartialArity :
+        match builtinPartialMinArity? ctor with
+        | some minArity => argsV.length ≥ minArity
+        | none => True)
+    (hNoArityPartial :
+        ¬((rewriteAritiesForHead s ctor).any (· > argsV.length) = true ∧
+          !(rewriteAritiesForHead s ctor).any (· == argsV.length) ∧
+          !argsV.isEmpty)) :
+    referenceIntrinsicStatefulN (fuel + 1) s (.apply ctor argsV) = none := by
+  simp only [intrinsicStatefulSpecialHeads, List.mem_append, List.mem_cons, List.not_mem_nil,
+    not_or, not_false_eq_true] at hNotSpecial
+  -- The first simp destructured hNotSpecial into nested conjunctions.
+  -- Extract memberships for the three evalIntrinsic modules.
+  -- After simp, hNotSpecial has shape: ((¬∈PC ∧ ¬∈SE) ∧ ¬∈SO) ∧ (¬= heads...)
+  -- But the sub-list memberships are still in ¬∈ form, not destructured.
+  -- hNotSpecial : ((¬∈PC ∧ ¬∈SE) ∧ ¬∈SO) ∧ (¬= direct heads...)
+  obtain ⟨⟨⟨hPC_not, hSE_not⟩, hSO_not⟩, hMatchHeads⟩ := hNotSpecial
+  -- Unfold one level
+  unfold referenceIntrinsicStatefulN
+  -- Layer 1: PeTTaCore.evalIntrinsic returns none
+  simp only [Semantics.PeTTaCore.evalIntrinsic_none_of_nonSpecial _ s ctor argsV hPC_not]
+  -- Layer 2: StateEffects.evalIntrinsic returns none
+  simp only [Semantics.StateEffects.evalIntrinsic_none_of_nonSpecial _ s ctor argsV hSE_not]
+  -- Layer 3: StreamOps.evalIntrinsic returns none
+  simp only [Semantics.StreamOps.evalIntrinsic_none_of_nonSpecial _ s ctor argsV hSO_not]
+  -- Now preIntrinsic = none. The ~50-head match + referenceIntrinsicApplyFallbackN remain.
+  -- Use a single simp_all that handles everything:
+  -- 1. The ~50-head match (hMatchHeads contradicts each specific head)
+  -- 2. referenceIntrinsicApplyFallbackN / referenceIntrinsicApplyDispatchTailN unfolding
+  -- 3. hNoCompat, hNoConstraint, hIrreducible, hNoPartialArity, hNoArityPartial all applied
+  -- Give simp_all large heartbeat budget for the ~50 branches + foldl simplification.
+  simp_all [referenceIntrinsicApplyFallbackN, referenceIntrinsicApplyDispatchTailN]
+  -- GPT-5.4 Pro Package A (Response #4): close the foldl + arity tail
+  have hFilterNilOfAllEq :
+      ∀ {base : Pattern} {xs : List Pattern},
+        (∀ x, x ∈ xs → x = base) → xs.filter (fun x => x != base) = [] := by
+    intro base xs hEq
+    induction xs with
+    | nil => rfl
+    | cons x xs ih =>
+      have hx : x = base := hEq x (by simp)
+      have hxs : ∀ y, y ∈ xs → y = base := fun y hy => hEq y (by simp [hy])
+      simp [hx, ih hxs]
+  let redAt : Nat → List Pattern := fun i =>
+    match referenceIntrinsicStatefulN fuel s (argsV[i]?.getD (Pattern.apply "" [])) with
+    | some (_sA, outA) =>
+        if outA = [] then s.step (argsV[i]?.getD (Pattern.apply "" [])) else outA
+    | none => s.step (argsV[i]?.getD (Pattern.apply "" []))
+  let branchAt : Nat → List Pattern := fun i =>
+    List.map (fun a' => Pattern.apply ctor (List.take i argsV ++ a' :: List.drop (i + 1) argsV))
+      (List.filter (fun a' => a' != argsV[i]?.getD (Pattern.apply "" [])) (redAt i))
+  have hBranchNil : ∀ i ∈ List.range argsV.length, branchAt i = [] := by
+    intro i hi
+    have hiLt : i < argsV.length := by simpa using List.mem_range.mp hi
+    have hiMem : argsV[i]?.getD (Pattern.apply "" []) ∈ argsV := by simp [hiLt]
+    have hAll : ∀ a₂, a₂ ∈ redAt i → a₂ = argsV[i]?.getD (Pattern.apply "" []) := by
+      intro a₂ ha₂; simpa [redAt] using (hIrreducible (argsV[i]?.getD (Pattern.apply "" [])) hiMem a₂ ha₂)
+    simp [branchAt, hFilterNilOfAllEq hAll]
+  have hMapNil : List.map branchAt (List.range argsV.length) =
+      List.map (fun _ => ([] : List Pattern)) (List.range argsV.length) := by
+    exact List.map_congr rfl (fun i hi => hBranchNil i hi)
+  have hFlatNil0 :
+      (List.map (fun _ => ([] : List Pattern)) (List.range argsV.length)).flatten = [] := by
+    induction List.range argsV.length with
+    | nil => rfl
+    | cons x xs ih => simp [ih]
+  have hFlatNil : (List.map branchAt (List.range argsV.length)).flatten = [] := by
+    simpa [hMapNil] using hFlatNil0
+  have hFlatNil' :
+      (List.map (fun x2 =>
+          List.map (fun a' => Pattern.apply ctor (List.take x2 argsV ++ a' :: List.drop (x2 + 1) argsV))
+            (List.filter (fun a' => a' != argsV[x2]?.getD (Pattern.apply "" []))
+              (match referenceIntrinsicStatefulN fuel s (argsV[x2]?.getD (Pattern.apply "" [])) with
+               | some (_sA, outA) => if outA = [] then s.step (argsV[x2]?.getD (Pattern.apply "" [])) else outA
+               | none => s.step (argsV[x2]?.getD (Pattern.apply "" [])))))
+        (List.range argsV.length)).flatten = [] := by
+    simpa [redAt, branchAt] using hFlatNil
+  cases hMin : builtinPartialMinArity? ctor with
+  | none =>
+    by_cases hPA :
+      ((∃ x, x ∈ s.rewriteAritiesForHead ctor ∧ argsV.length < x) ∧
+        (∀ x, x ∈ s.rewriteAritiesForHead ctor → ¬ x = argsV.length)) ∧ ¬ argsV = []
+    · exfalso
+      rcases hPA with ⟨⟨x, hxMem, hxLt⟩, hNoExact, hNonempty⟩
+      exact hNonempty (hNoArityPartial x hxMem hxLt hNoExact)
+    · simp [hMin, hFlatNil', hPA]
+  | some minArity =>
+    have hGe : minArity ≤ argsV.length := by simpa [hMin] using hNoPartialArity
+    have hNotLt : ¬ argsV.length < minArity := Nat.not_lt.mpr hGe
+    by_cases hPA :
+      ((∃ x, x ∈ s.rewriteAritiesForHead ctor ∧ argsV.length < x) ∧
+        (∀ x, x ∈ s.rewriteAritiesForHead ctor → ¬ x = argsV.length)) ∧ ¬ argsV = []
+    · exfalso
+      rcases hPA with ⟨⟨x, hxMem, hxLt⟩, hNoExact, hNonempty⟩
+      exact hNonempty (hNoArityPartial x hxMem hxLt hNoExact)
+    · simp [hMin, hNotLt, hFlatNil', hPA]
 
 /-- Unconditional session-WF preservation for the fuel-indexed evaluator. -/
 theorem evalWithStateCoreN_preserves

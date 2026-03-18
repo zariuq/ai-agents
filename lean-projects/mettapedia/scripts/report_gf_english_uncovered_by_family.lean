@@ -1,10 +1,10 @@
-import Mettapedia.Languages.GF.Abstract
-import Mettapedia.Languages.GF.English.Linearization.Coverage
+import Mettapedia.Languages.GF.HandCrafted.Abstract
+import Mettapedia.Languages.GF.HandCrafted.English.Linearization.Coverage
 
 open Mettapedia.Languages.GF
-open Mettapedia.Languages.GF.Abstract
-open Mettapedia.Languages.GF.Abstract.FunctionSig
-open Mettapedia.Languages.GF.English.Linearization
+open Mettapedia.Languages.GF.HandCrafted.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract.FunctionSig
+open Mettapedia.Languages.GF.HandCrafted.English.Linearization
 
 private def preview (xs : List String) (k : Nat) : String :=
   String.intercalate "," (xs.take k)

@@ -1,9 +1,9 @@
-import Mettapedia.Languages.GF.Abstract
+import Mettapedia.Languages.GF.HandCrafted.Abstract
 import Mettapedia.Languages.GF.PGFWitnessIR
 
 namespace Mettapedia.Languages.GF.Generated.PaperAmbiguityPGFWitnesses
 
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.PGFWitnessIR
 
 def englishTelescopeSurface : String := "John sees the man with the telescope"

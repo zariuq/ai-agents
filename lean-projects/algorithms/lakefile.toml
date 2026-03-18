@@ -1,0 +1,30 @@
+name = "algorithms"
+version = "0.1.0"
+defaultTargets = ["Algorithms"]
+
+[[lean_lib]]
+name = "Algorithms"
+
+[[lean_exe]]
+name = "simpleMeTTa"
+root = "Algorithms.MeTTa.Simple.Main"
+
+[[lean_exe]]
+name = "gfRoundTrip"
+root = "Algorithms.GF.RoundTrip"
+
+[[lean_exe]]
+name = "gfGenSig"
+root = "Algorithms.GF.GenSig"
+
+[[lean_exe]]
+name = "gfGenLex"
+root = "Algorithms.GF.GenLex"
+
+[[require]]
+name = "mettail_core"
+path = "../batteries/mettail-core"
+
+[[require]]
+name = "gf_core"
+path = "../batteries/gf-core"

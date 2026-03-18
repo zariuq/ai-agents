@@ -1,6 +1,13 @@
 import Mettapedia.Languages.MeTTa.HE.LookupPlan
 import Mettapedia.Languages.MeTTa.HE.TransitionSpec
 import Mettapedia.Languages.MeTTa.HE.RewriteIR
+import Mettapedia.Languages.MeTTa.HE.RewriteIRV2
+import Mettapedia.Languages.MeTTa.HE.ContractExport
+import Mettapedia.Languages.MeTTa.HE.SyntaxSpec
+import Mettapedia.Languages.MeTTa.HE.ScopeContract
+import Mettapedia.Languages.MeTTa.HE.NativeProfile
+import Mettapedia.Languages.MeTTa.HE.RuntimeContract
+import Mettapedia.Languages.MeTTa.HE.ArtifactBundle
 
 private def usage : String :=
   String.intercalate "\n"
@@ -17,6 +24,32 @@ private def usage : String :=
     , "  rewrite-ir export-he                 (default out-dir: artifacts/transition)"
     , "  rewrite-ir check-he <out-dir>"
     , "  rewrite-ir check-he                  (default out-dir: artifacts/transition)"
+    , "  rewrite-ir-v2 export-he <out-dir>"
+    , "  rewrite-ir-v2 export-he               (default out-dir: artifacts/transition)"
+    , "  rewrite-ir-v2 check-he <out-dir>"
+    , "  rewrite-ir-v2 check-he                (default out-dir: artifacts/transition)"
+    , "  execution-contract export-he <out-dir>"
+    , "  execution-contract export-he          (default out-dir: artifacts/transition)"
+    , "  execution-contract check-he <out-dir>"
+    , "  execution-contract check-he           (default out-dir: artifacts/transition)"
+    , "  syntax-authority export-he <out-dir>"
+    , "  syntax-authority export-he            (default out-dir: artifacts/syntax)"
+    , "  syntax-authority check-he <out-dir>"
+    , "  syntax-authority check-he             (default out-dir: artifacts/syntax)"
+    , "  scope-contract export-he <out-dir>"
+    , "  scope-contract export-he             (default out-dir: artifacts/transition)"
+    , "  scope-contract check-he <out-dir>"
+    , "  scope-contract check-he              (default out-dir: artifacts/transition)"
+    , "  native-profile export-he <out-dir>"
+    , "  native-profile export-he             (default out-dir: artifacts/transition)"
+    , "  native-profile check-he <out-dir>"
+    , "  native-profile check-he              (default out-dir: artifacts/transition)"
+    , "  runtime-contract export-he <out-dir>"
+    , "  runtime-contract export-he           (default out-dir: artifacts/transition)"
+    , "  runtime-contract check-he <out-dir>"
+    , "  runtime-contract check-he            (default out-dir: artifacts/transition)"
+    , "  bundle export-he"
+    , "  bundle check-he"
     ]
 
 private def defaultLookupOutDir : System.FilePath :=
@@ -24,6 +57,9 @@ private def defaultLookupOutDir : System.FilePath :=
 
 private def defaultTransitionOutDir : System.FilePath :=
   "artifacts/transition"
+
+private def defaultSyntaxOutDir : System.FilePath :=
+  "artifacts/syntax"
 
 def main (args : List String) : IO UInt32 := do
   match args with
@@ -51,6 +87,60 @@ def main (args : List String) : IO UInt32 := do
       Mettapedia.Languages.MeTTa.HE.RewriteIR.checkHeRewriteIR outDir
   | ["rewrite-ir", "check-he"] =>
       Mettapedia.Languages.MeTTa.HE.RewriteIR.checkHeRewriteIR defaultTransitionOutDir
+  | ["rewrite-ir-v2", "export-he", outDir] =>
+      Mettapedia.Languages.MeTTa.HE.RewriteIRV2.exportHeRewriteIRV2 outDir
+  | ["rewrite-ir-v2", "export-he"] =>
+      Mettapedia.Languages.MeTTa.HE.RewriteIRV2.exportHeRewriteIRV2 defaultTransitionOutDir
+  | ["rewrite-ir-v2", "check-he", outDir] =>
+      Mettapedia.Languages.MeTTa.HE.RewriteIRV2.checkHeRewriteIRV2 outDir
+  | ["rewrite-ir-v2", "check-he"] =>
+      Mettapedia.Languages.MeTTa.HE.RewriteIRV2.checkHeRewriteIRV2 defaultTransitionOutDir
+  | ["execution-contract", "export-he", outDir] =>
+      Mettapedia.Languages.MeTTa.HE.ExecutionContract.exportHeExecutionContract outDir
+  | ["execution-contract", "export-he"] =>
+      Mettapedia.Languages.MeTTa.HE.ExecutionContract.exportHeExecutionContract defaultTransitionOutDir
+  | ["execution-contract", "check-he", outDir] =>
+      Mettapedia.Languages.MeTTa.HE.ExecutionContract.checkHeExecutionContract outDir
+  | ["execution-contract", "check-he"] =>
+      Mettapedia.Languages.MeTTa.HE.ExecutionContract.checkHeExecutionContract defaultTransitionOutDir
+  | ["syntax-authority", "export-he", outDir] =>
+      Mettapedia.Languages.MeTTa.HE.exportHeSyntaxAuthority outDir
+  | ["syntax-authority", "export-he"] =>
+      Mettapedia.Languages.MeTTa.HE.exportHeSyntaxAuthority defaultSyntaxOutDir
+  | ["syntax-authority", "check-he", outDir] =>
+      Mettapedia.Languages.MeTTa.HE.checkHeSyntaxAuthority outDir
+  | ["syntax-authority", "check-he"] =>
+      Mettapedia.Languages.MeTTa.HE.checkHeSyntaxAuthority defaultSyntaxOutDir
+  | ["scope-contract", "export-he", outDir] =>
+      Mettapedia.Languages.MeTTa.HE.ScopeContract.exportHeScopeContract outDir
+  | ["scope-contract", "export-he"] =>
+      Mettapedia.Languages.MeTTa.HE.ScopeContract.exportHeScopeContract defaultTransitionOutDir
+  | ["scope-contract", "check-he", outDir] =>
+      Mettapedia.Languages.MeTTa.HE.ScopeContract.checkHeScopeContract outDir
+  | ["scope-contract", "check-he"] =>
+      Mettapedia.Languages.MeTTa.HE.ScopeContract.checkHeScopeContract defaultTransitionOutDir
+  | ["native-profile", "export-he", outDir] =>
+      Mettapedia.Languages.MeTTa.HE.NativeProfile.exportHeNativeProfile outDir
+  | ["native-profile", "export-he"] =>
+      Mettapedia.Languages.MeTTa.HE.NativeProfile.exportHeNativeProfile defaultTransitionOutDir
+  | ["native-profile", "check-he", outDir] =>
+      Mettapedia.Languages.MeTTa.HE.NativeProfile.checkHeNativeProfile outDir
+  | ["native-profile", "check-he"] =>
+      Mettapedia.Languages.MeTTa.HE.NativeProfile.checkHeNativeProfile defaultTransitionOutDir
+  | ["runtime-contract", "export-he", outDir] =>
+      Mettapedia.Languages.MeTTa.HE.RuntimeContract.exportHeRuntimeContract outDir
+  | ["runtime-contract", "export-he"] =>
+      Mettapedia.Languages.MeTTa.HE.RuntimeContract.exportHeRuntimeContract defaultTransitionOutDir
+  | ["runtime-contract", "check-he", outDir] =>
+      Mettapedia.Languages.MeTTa.HE.RuntimeContract.checkHeRuntimeContract outDir
+  | ["runtime-contract", "check-he"] =>
+      Mettapedia.Languages.MeTTa.HE.RuntimeContract.checkHeRuntimeContract defaultTransitionOutDir
+  | ["bundle", "export-he"] =>
+      Mettapedia.Languages.MeTTa.HE.ArtifactBundle.exportHeManifest
+        defaultTransitionOutDir defaultLookupOutDir defaultSyntaxOutDir
+  | ["bundle", "check-he"] =>
+      Mettapedia.Languages.MeTTa.HE.ArtifactBundle.checkHeManifest
+        defaultTransitionOutDir defaultLookupOutDir defaultSyntaxOutDir
   | _ =>
       IO.println usage
       pure 1

@@ -941,6 +941,25 @@ def evalIntrinsic (I : Interface σ) (s : σ) (term : Pattern) : Option (σ × L
       some (s, [trueAtom])
   | _ => none
 
+/-- The set of heads handled by `PeTTaCore.evalIntrinsic`. -/
+def evalIntrinsicSpecialHeads : List String :=
+  ["unify", "id", "cons-atom", "car-atom", "cdr-atom",
+   "first-from-pair", "second-from-pair", "index-atom",
+   "=alpha", "is-var", "is-space", "get-type",
+   "map-atom", "foldl-atom", "filter-atom",
+   "length", "is-expr", "quote", "reduce", "eval", "call",
+   "chain", "import!"]
+
+/-- For ctors NOT in the special-head set, `evalIntrinsic` returns `none`. -/
+theorem evalIntrinsic_none_of_nonSpecial
+    (I : Interface σ) (s : σ) (ctor : String) (args : List Pattern)
+    (hNotSpecial : ctor ∉ evalIntrinsicSpecialHeads) :
+    evalIntrinsic I s (.apply ctor args) = none := by
+  simp only [evalIntrinsicSpecialHeads, List.mem_cons, List.not_mem_nil, not_or,
+    not_false_eq_true] at hNotSpecial
+  unfold evalIntrinsic
+  simp_all
+
 theorem evalIntrinsic_preserves
     (I : Interface σ) (P : σ → Prop) (H : Preservation I P)
     (s : σ) (term : Pattern) :

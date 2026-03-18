@@ -22,7 +22,7 @@ It provides:
 namespace Mettapedia.Languages.GF.GFWMObligationAdapter
 
 open CategoryTheory
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.OSLFBridge
 open Mettapedia.Languages.GF.GFWMConnections
 open Mettapedia.Logic.PLNWorldModel

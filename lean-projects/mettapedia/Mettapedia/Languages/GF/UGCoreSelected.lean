@@ -18,7 +18,7 @@ factorization through `semanticCore`.
 namespace Mettapedia.Languages.GF.UGCoreSelected
 
 open Mettapedia.Languages.GF
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.OSLFBridge
 open Mettapedia.Languages.GF.WorldModelSemantics
 open Mettapedia.Languages.GF.UniversalGrammarCore

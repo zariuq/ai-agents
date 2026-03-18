@@ -17,7 +17,7 @@ as the family grows, because the set of views common to all members shrinks.
 namespace Mettapedia.Languages.GF.UGCommonViewCore
 
 open Mettapedia.Languages.GF
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.OSLFBridge
 open Mettapedia.Languages.GF.WorldModelSemantics
 open Mettapedia.Languages.GF.UniversalGrammarCore

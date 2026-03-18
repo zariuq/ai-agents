@@ -1,7 +1,7 @@
-import Mettapedia.Languages.GF.Abstract
+import Mettapedia.Languages.GF.HandCrafted.Abstract
 
 open Mettapedia.Languages.GF
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 
 private def gfRglCzechRoot : System.FilePath :=
   "/home/zar/claude/gf-rgl/src/czech"

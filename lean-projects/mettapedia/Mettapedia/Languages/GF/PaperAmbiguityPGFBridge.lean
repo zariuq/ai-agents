@@ -1,9 +1,9 @@
-import Mettapedia.Languages.GF.Abstract
+import Mettapedia.Languages.GF.HandCrafted.Abstract
 import Mettapedia.Languages.GF.Generated.PaperAmbiguityPGFWitnesses
 
 namespace Mettapedia.Languages.GF.PaperAmbiguityPGFBridge
 
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.Generated.PaperAmbiguityPGFWitnesses
 
 private def mkLeaf (name cat : String) : AbstractNode :=

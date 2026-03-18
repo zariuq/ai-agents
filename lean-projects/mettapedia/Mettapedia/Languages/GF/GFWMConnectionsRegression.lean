@@ -8,8 +8,8 @@ Small theorem-level fixtures that consume the `GFWMConnections` endpoints.
 
 namespace Mettapedia.Languages.GF.GFWMConnectionsRegression
 
-open Mettapedia.Languages.GF.Core
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Core
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.OSLFBridge
 open Mettapedia.Languages.GF.OSLFToNTT
 open Mettapedia.Languages.GF.Typing

@@ -25,7 +25,7 @@ open LO
 open LO.FirstOrder
 open LO.FirstOrder.SetTheory
 open LO.FirstOrder.Semiformula
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.OSLFBridge
 open Mettapedia.Languages.GF.SUMO.SumoAbstract
 open OSLF.MeTTaIL.Syntax

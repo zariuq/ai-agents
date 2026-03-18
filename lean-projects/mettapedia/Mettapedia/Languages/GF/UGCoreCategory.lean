@@ -13,7 +13,7 @@ namespace Mettapedia.Languages.GF.UGCoreCategory
 
 open CategoryTheory
 open Mettapedia.Languages.GF
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.UGCoreSelected
 
 universe u

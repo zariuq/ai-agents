@@ -5,17 +5,17 @@ Common GF infrastructure used by all compositional README modules:
 properNameNP, ppAdv, linConjNP, mkPresPos, withParenRef, etc.
 -/
 
-import Mettapedia.Languages.GF.English.Examples
-import Mettapedia.Languages.GF.English.Pronouns
+import Mettapedia.Languages.GF.HandCrafted.English.Examples
+import Mettapedia.Languages.GF.HandCrafted.English.Pronouns
 
 namespace Mettapedia.DocText.ReadmeGFHelpers
 
-open Mettapedia.Languages.GF.English
-open Mettapedia.Languages.GF.English.Nouns
-open Mettapedia.Languages.GF.English.Verbs
-open Mettapedia.Languages.GF.English.Adjectives
-open Mettapedia.Languages.GF.English.Syntax
-open Mettapedia.Languages.GF.English.Pronouns
+open Mettapedia.Languages.GF.HandCrafted.English
+open Mettapedia.Languages.GF.HandCrafted.English.Nouns
+open Mettapedia.Languages.GF.HandCrafted.English.Verbs
+open Mettapedia.Languages.GF.HandCrafted.English.Adjectives
+open Mettapedia.Languages.GF.HandCrafted.English.Syntax
+open Mettapedia.Languages.GF.HandCrafted.English.Pronouns
 
 /-- Proper name NP — legitimate literal in GF (UsePN).
     Used only for: repo names, file paths, code literals, technology names. -/

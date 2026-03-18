@@ -80,42 +80,42 @@ def tier1Ops : List OpEntry :=
   , { name := "case"
       category := .mettaCallControl
       interpreterRef := "Interpreter.lean:385-396"
-      languageDefRule := some "MC_Case (to be added)" }
+      languageDefRule := some "MC_Case_Start" }
   , { name := "switch"
       category := .mettaCallControl
       interpreterRef := "Interpreter.lean:342-356"
-      languageDefRule := some "MC_Switch (to be added)" }
+      languageDefRule := some "MC_SwitchMinimal_Start (parseSwitchMinimalCallArgs accepts both switch and switch-minimal)" }
   , { name := "switch-minimal"
       category := .mettaCallControl
       interpreterRef := "Interpreter.lean:342-356"
-      languageDefRule := some "MC_SwitchMinimal (to be added)" }
+      languageDefRule := some "MC_SwitchMinimal_Start, MC_SwitchMinimal_Match, MC_SwitchMinimal_NoMatch" }
   , { name := "switch-internal"
-      category := .mettaCallControl
-      interpreterRef := "Interpreter.lean:357-371"
-      languageDefRule := some "MC_SwitchInternal (to be added)" }
+      category := .preludeEqAndType
+      interpreterRef := "stdlib.metta:352-362 (equation-defined helper)"
+      languageDefRule := some "MC_Equation (via stdlib equations in space)" }
   , { name := "assert"
       category := .mettaCallControl
       interpreterRef := "Interpreter.lean:372-384"
-      languageDefRule := some "MC_Assert (to be added)" }
+      languageDefRule := some "MC_Assert_Start, MC_Assert_True, MC_Assert_NotTrue" }
 
-    -- Minimal instructions: formal OSLF MeTTaMinimalInstance layer
-    -- These use the MeTTaMinimalInstance.lean instruction set
+    -- Minimal instructions: also have HELanguageDef rules for export,
+    -- though they also correspond to OSLF MeTTaMinimalInstance layer
   , { name := "match"
       category := .minimalInstruction
       interpreterRef := "MeTTaMinimalInstance.lean (space query + pattern match)"
-      languageDefRule := none }
+      languageDefRule := some "MC_Match, MC_Match_Empty" }
   , { name := "unify"
       category := .minimalInstruction
       interpreterRef := "MeTTaMinimalInstance.lean:48-49 (Unify instruction)"
-      languageDefRule := none }
+      languageDefRule := some "MC_Unify_Match, MC_Unify_NoMatch" }
   , { name := "superpose"
       category := .minimalInstruction
       interpreterRef := "MeTTaMinimalInstance.lean:58-60 (SuperposeBind)"
-      languageDefRule := none }
+      languageDefRule := some "MC_Superpose, MC_Superpose_Empty" }
   , { name := "collapse"
       category := .minimalInstruction
       interpreterRef := "MeTTaMinimalInstance.lean:55-57 (CollapseBind)"
-      languageDefRule := none }
+      languageDefRule := some "MC_Collapse" }
 
     -- Grounded builtins: dispatched via MC_Grounded
   , { name := "+"
@@ -153,9 +153,10 @@ def tier1Ops : List OpEntry :=
   ]
 
 /-- Operators that need new rewrite rules added to HELanguageDef.lean.
-These are mettaCallControl ops whose rules are not yet in the export pipeline. -/
+These are ops whose classification requires HELanguageDef rules but none exist yet. -/
 def opsNeedingNewRules : List OpEntry :=
-  tier1Ops.filter (fun op => op.category == .mettaCallControl)
+  tier1Ops.filter (fun op =>
+    op.category == .mettaCallControl && op.languageDefRule.isNone)
 
 /-- Operators in the minimal instruction layer (future OSLF integration). -/
 def opsMinimalInstruction : List OpEntry :=

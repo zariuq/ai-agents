@@ -172,6 +172,116 @@ mutual
     term => sizeOf term
 end
 
+-- ─── runNestedEffects shape helpers ──────────────────────────────────────────
+
+/-- The set of special heads that have dedicated branches in `runNestedEffects`.
+    Public so bridge theorems can state `ctor ∉ runNestedEffectsSpecialHeads`. -/
+def runNestedEffectsSpecialHeads : List String :=
+  ["let", "let*", "quote",
+   "add-atom", "add-atom!", "remove-atom", "remove-atom!",
+   "remove-all-atoms", "remove-all-atoms!", "get-atoms", "get-atoms!",
+   "bind!", "change-state!", "get-state", "with_mutex", "transaction",
+   "import!",  -- 2-arg and 3-arg variants
+   "call", "eval", "reduce", "chain", "match",
+   "collapse", "superpose", "msort"]
+
+-- ─── P-1: One-step unfolding for runNestedEffectsArgs ────────────────────────
+-- Isolates the mutual-def unfolding pain into ONE theorem (GPT-5.4 Pro advice).
+
+/-- One-step unfolding of `runNestedEffectsArgs` on a cons list. -/
+theorem runNestedEffectsArgs_cons
+    (I : Interface σ) (s : σ) (callable : Bool)
+    (a : Pattern) (rest acc : List Pattern) (changed : Bool) :
+    runNestedEffectsArgs I s callable (a :: rest) acc changed =
+      let (s1, a', ch) := runNestedEffects I s false callable a
+      runNestedEffectsArgs I s1 callable rest (a' :: acc) (changed || ch) := by
+  simp [runNestedEffectsArgs]
+
+/-- `runNestedEffectsArgs` on empty args returns `(s, accRev.reverse, changed)`. -/
+theorem runNestedEffectsArgs_nil (I : Interface σ) (s : σ) (callable : Bool)
+    (acc : List Pattern) (changed : Bool) :
+    runNestedEffectsArgs I s callable [] acc changed = (s, acc.reverse, changed) := by
+  simp [runNestedEffectsArgs]
+
+-- ─── P-2: Generalized generic-apply theorem ─────────────────────────────────
+
+/-- For ctors NOT in the special-head set, `runNestedEffects` falls to the
+    generic `.apply ctor args` case, regardless of `isRoot`/`parentCallable`. -/
+theorem runNestedEffects_generic_apply
+    (I : Interface σ) (s : σ) (isRoot parentCallable : Bool)
+    (ctor : String) (args : List Pattern)
+    (hNotSpecial : ctor ∉ runNestedEffectsSpecialHeads) :
+    runNestedEffects I s isRoot parentCallable (.apply ctor args) =
+      let currentCallable := I.isEagerCallableHead s ctor
+      let (s1, args', changedArgs) := runNestedEffectsArgs I s currentCallable args [] false
+      (s1, .apply ctor args', changedArgs) := by
+  simp only [runNestedEffectsSpecialHeads, List.mem_cons, List.not_mem_nil, not_or, not_false_eq_true] at hNotSpecial
+  unfold runNestedEffects
+  simp_all
+
+-- ─── P-3: RNENeutral predicates ─────────────────────────────────────────────
+-- "step-irreducible" ≠ "RNE-neutral" — these are different semantic notions.
+
+/-- A single pattern is neutral under `runNestedEffects`: returned unchanged. -/
+def RNENeutral (I : Interface σ) (s : σ) (callable : Bool) (a : Pattern) : Prop :=
+  runNestedEffects I s false callable a = (s, a, false)
+
+/-- All patterns in a list are neutral under `runNestedEffects`.
+    Recursive form aligns with `runNestedEffectsArgs` structural recursion. -/
+def AllRNENeutral (I : Interface σ) (s : σ) (callable : Bool) : List Pattern → Prop
+  | [] => True
+  | a :: rest => RNENeutral I s callable a ∧ AllRNENeutral I s callable rest
+
+-- ─── P-4: Accumulator passthrough lemma ──────────────────────────────────────
+
+/-- General accumulator form: when all args are RNE-neutral, `runNestedEffectsArgs`
+    preserves state and args, only prepending to the accumulator. -/
+theorem runNestedEffectsArgs_neutral_acc
+    (I : Interface σ) (s : σ) (callable : Bool)
+    (args acc : List Pattern) (changed : Bool)
+    (hNeutral : AllRNENeutral I s callable args) :
+    runNestedEffectsArgs I s callable args acc changed =
+      (s, acc.reverse ++ args, changed) := by
+  induction args generalizing acc changed with
+  | nil => simp [runNestedEffectsArgs]
+  | cons a rest ih =>
+    rcases hNeutral with ⟨ha, hRest⟩
+    simp only [RNENeutral] at ha
+    rw [runNestedEffectsArgs_cons]
+    simp only [ha, Bool.or_false]
+    rw [ih (a :: acc) changed hRest]
+    simp [List.reverse_cons, List.append_assoc]
+
+/-- When all args are RNE-neutral, `runNestedEffectsArgs` is a passthrough. -/
+theorem runNestedEffectsArgs_neutral
+    (I : Interface σ) (s : σ) (callable : Bool)
+    (args : List Pattern)
+    (hNeutral : AllRNENeutral I s callable args) :
+    runNestedEffectsArgs I s callable args [] false = (s, args, false) := by
+  simpa using runNestedEffectsArgs_neutral_acc I s callable args [] false hNeutral
+
+-- ─── P-5: Nullary non-special passthrough ────────────────────────────────────
+
+/-- Nullary non-special terms are RNE-neutral (cheap immediate route). -/
+theorem runNestedEffects_passthrough_of_nullary_nonSpecial
+    (I : Interface σ) (s : σ) (isRoot parentCallable : Bool) (ctor : String)
+    (hNotSpecial : ctor ∉ runNestedEffectsSpecialHeads) :
+    runNestedEffects I s isRoot parentCallable (.apply ctor []) =
+      (s, .apply ctor [], false) := by
+  rw [runNestedEffects_generic_apply I s isRoot parentCallable ctor [] hNotSpecial]
+  simp [runNestedEffectsArgs_nil]
+
+/-- For non-special ctor with all-RNE-neutral args, `runNestedEffects` is passthrough. -/
+theorem runNestedEffects_passthrough_of_nonSpecial_neutral
+    (I : Interface σ) (s : σ) (isRoot parentCallable : Bool)
+    (ctor : String) (args : List Pattern)
+    (hNotSpecial : ctor ∉ runNestedEffectsSpecialHeads)
+    (hNeutral : AllRNENeutral I s (I.isEagerCallableHead s ctor) args) :
+    runNestedEffects I s isRoot parentCallable (.apply ctor args) =
+      (s, .apply ctor args, false) := by
+  rw [runNestedEffects_generic_apply I s isRoot parentCallable ctor args hNotSpecial]
+  simp [runNestedEffectsArgs_neutral I s _ args hNeutral]
+
 structure Preservation (I : Interface σ) (P : σ → Prop) where
   runNestedEffects_preserves :
     ∀ {s : σ} {isRoot parentCallable : Bool} {term : Pattern}
@@ -407,6 +517,43 @@ theorem evalWithStateCore_s_eq_of_passthrough_one_step
   | inr out' =>
       simp only [h] at hPass
       exact hPass
+
+-- ─── Empty-pending base case ──────────────────────────────────────────────
+
+/-- When the work-queue is empty, `evalAuxStateful` returns normals reversed. -/
+theorem evalAuxStateful_nil_pending
+    (I : Interface σ) (s : σ) (fuel : Nat) (normals : List Pattern) :
+    evalAuxStateful I s fuel [] normals = (s, normals.reverse) := by
+  cases fuel with
+  | zero => simp [evalAuxStateful, List.map]
+  | succ n => simp [evalAuxStateful, stepAux]
+
+/-- `evalWithStateCore` on a term where `runNestedEffects` is passthrough,
+    `intrinsicStateful` is none, and `step` returns [] produces `(s, [term])`.
+    This is the ref-evaluator side of the `unchanged` branch agreement. -/
+theorem evalWithStateCore_unchanged
+    (I : Interface σ) (s : σ) (term : Pattern)
+    (hNodes : I.maxNodes s ≥ 1)
+    (hSteps : 0 < I.maxSteps s)
+    (hRNE : runNestedEffects I s true false term = (s, term, false))
+    (hIntr : I.intrinsicStateful s term = none)
+    (hStep : I.step s term = []) :
+    evalWithStateCore I s term = (s, [term]) := by
+  obtain ⟨n, hN⟩ : ∃ n, I.maxNodes s = n + 1 := ⟨I.maxNodes s - 1, by omega⟩
+  simp only [evalWithStateCore, hN]
+  -- Unfold one iteration: pending = [(term, 0)], normals = []
+  -- stepAux at fuel=n+1, pending=[(term,0)::nil]:
+  --   runNestedEffects → (s, term, false)
+  --   depth=0 < maxSteps → continue
+  --   intrinsicStateful → none
+  --   step → [] (empty)
+  --   → .inl { s, fuel=n, pending=[], normals=[term] }
+  -- evalAuxStateful recurses with fuel=n, pending=[], normals=[term]
+  -- → (s, [term].reverse) = (s, [term])
+  have hNotDepth : ¬(0 ≥ I.maxSteps s) := by omega
+  simp only [evalAuxStateful, stepAux, hRNE, if_neg hNotDepth, hIntr, hStep]
+  simp only [List.isEmpty_nil]
+  exact evalAuxStateful_nil_pending I s n [term]
 
 -- ─── Phase 2-D exact control lemmas ────────────────────────────────────────
 

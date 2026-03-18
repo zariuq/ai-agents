@@ -28,9 +28,9 @@ GF Grammar ──→ LanguageDef ──→ langOSLF ──→ OSLFTypeSystem
 - Williams & Stay, "Native Type Theory" (ACT 2021)
 -/
 
-import Mettapedia.Languages.GF.Abstract
-import Mettapedia.Languages.GF.Core
-import Mettapedia.Languages.GF.Czech.Linearization
+import Mettapedia.Languages.GF.HandCrafted.Abstract
+import Mettapedia.Languages.GF.HandCrafted.Core
+import Mettapedia.Languages.GF.HandCrafted.Czech.Linearization
 import Mettapedia.OSLF.MeTTaIL.Syntax
 import Mettapedia.OSLF.Formula
 import Mettapedia.OSLF.Framework.TypeSynthesis
@@ -38,9 +38,9 @@ import Mettapedia.OSLF.Framework.CategoryBridge
 
 namespace Mettapedia.Languages.GF.OSLFBridge
 
-open Mettapedia.Languages.GF.Core
-open Mettapedia.Languages.GF.Abstract
-open Mettapedia.Languages.GF.Czech.Linearization
+open Mettapedia.Languages.GF.HandCrafted.Core
+open Mettapedia.Languages.GF.HandCrafted.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Czech.Linearization
 open Mettapedia.OSLF.MeTTaIL.Syntax
 open Mettapedia.OSLF.Formula
 open Mettapedia.OSLF.Framework

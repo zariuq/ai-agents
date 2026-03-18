@@ -635,7 +635,7 @@ This mismatch means:
 - **Low confidences**: Heuristic formula is optimistic (claims tighter bounds than justified)
 - **High confidences**: Heuristic formula is conservative (actual bounds may be tighter)
 
-### Correct Formulas (PLNCorrectedFormulas.lean)
+### Correct Formulas (PLNBugAnalysis.lean)
 
 **Mathematically correct** confidence formulas derived from BinaryEvidence counts:
 
@@ -652,11 +652,11 @@ The corrected formulas:
 
 See also:
 - `PLNBugAnalysis.lean`: Formal proofs that naive formulas underestimate
-- `PLNCorrectedFormulas.lean`: Complete corrected formulas with soundness proofs
+- `PLNBugAnalysis.lean`: Complete corrected formulas with soundness proofs
 
 ### Resolution Approaches
 
-1. **Use corrected formulas** (PLNCorrectedFormulas.lean) — Best option
+1. **Use corrected formulas** (PLNBugAnalysis.lean) — Best option
 2. **Add preconditions**: Prove soundness only when confidences are sufficiently high
 3. **Refine error analysis**: Account for constraints like `a·b ≤ 1` to get tighter bounds
 

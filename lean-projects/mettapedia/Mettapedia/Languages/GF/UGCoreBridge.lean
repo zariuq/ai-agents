@@ -16,7 +16,7 @@ We then instantiate this for the real English/Czech shared views
 namespace Mettapedia.Languages.GF.UGCoreBridge
 
 open Mettapedia.Languages.GF
-open Mettapedia.Languages.GF.Abstract
+open Mettapedia.Languages.GF.HandCrafted.Abstract
 open Mettapedia.Languages.GF.OSLFBridge
 open Mettapedia.Languages.GF.UGCoreSelected
 open Mettapedia.Languages.GF.UGCoreFamily
