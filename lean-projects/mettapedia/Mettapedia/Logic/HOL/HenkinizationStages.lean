@@ -96,6 +96,12 @@ abbrev liftBaseClosedFormula (n : Nat) :
       (ofBase (Base := Base) c)).down = c := by
   simp [lift, ofBase, HenkinConstStage.liftOffset]
 
+@[simp] theorem down_lift_zero {τ : Ty Base}
+    (c : HenkinConstStage Base Const 0 τ) :
+    (lift (Base := Base) (Const := Const) (Nat.zero_le 0) c).down = c.down := by
+  cases c
+  rfl
+
 @[simp] theorem reflectZero_liftBaseTerm
     {Γ : Ctx Base} {τ : Ty Base}
     (t : Term Const Γ τ) :
@@ -127,7 +133,7 @@ abbrev liftBaseClosedFormula (n : Nat) :
   induction Δ with
   | nil => rfl
   | cons φ Δ ih =>
-      simp [Function.comp, ih]
+      simp [Function.comp, ih, ofBase]
 
 theorem liftBase_formulaProvable
     {Γ : Ctx Base} {Δ : List (Formula Const Γ)} {φ : Formula Const Γ}
@@ -185,7 +191,7 @@ theorem original_closedTheory_of_stageZero
       (Mettapedia.Logic.HOL.mapClosedFormula (fun c => c.down)
         (liftBaseClosedFormula (Base := Base) (Const := Const) 0 φ)) :=
     reflectZero_formulaProvable (Base := Base) (Const := Const) d
-  simpa [Mettapedia.Logic.HOL.mapClosedFormula, List.map_map, Function.comp] using h'
+  simpa [Mettapedia.Logic.HOL.mapClosedFormula, List.map_map, Function.comp, ofBase] using h'
 
 theorem original_closedTheory_iff_stageZero
     {Δ : List (ClosedFormula Const)} {φ : ClosedFormula Const} :

@@ -159,6 +159,53 @@ should have been true, and what went wrong when it was not.
 
 \section{Maple Court}
 
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >=Latex,
+  every node/.style={font=\footnotesize},
+  bn/.style={draw, rounded corners=3pt, minimum width=22mm,
+             minimum height=8mm, align=center},
+  binary/.style={bn, fill=blue!10},
+  dirichlet/.style={bn, fill=green!10},
+  continuous/.style={bn, fill=orange!10},
+]
+  % Main chain (screening-off)
+  \node[binary] (leak) at (0, 0) {PipeLeak\\[-1pt]\scriptsize binary};
+  \node[continuous] (humid) at (3.5, 0) {WallHumidity\\[-1pt]\scriptsize Normal-Gamma};
+  \node[binary] (mold) at (7, 0) {MoldRisk\\[-1pt]\scriptsize binary};
+  \draw[->, thick] (leak) -- (humid);
+  \draw[->, thick] (humid) -- (mold);
+
+  % Collider: ShowerRunning also causes WallHumidity
+  \node[binary] (shower) at (3.5, 1.5) {ShowerRunning\\[-1pt]\scriptsize binary};
+  \draw[->, thick] (shower) -- (humid);
+
+  % Independent nodes
+  \node[dirichlet] (elev) at (0, -1.8)
+    {ElevatorHealth\\[-1pt]\scriptsize Dirichlet$(3)$};
+  \node[dirichlet] (laundry) at (3.5, -1.8)
+    {LaundryStatus\\[-1pt]\scriptsize Dirichlet$(3)$};
+  \node[binary] (motion) at (7, -1.8)
+    {MotionDetected\\[-1pt]\scriptsize binary};
+
+  % Label the chain
+  \draw[decorate, decoration={brace, amplitude=4pt, mirror},
+        thick, gray]
+    (leak.south west) ++(0, -0.3) -- node[below=4pt,
+    font=\scriptsize\itshape, text=gray]
+    {screening-off chain (used throughout the book)}
+    (mold.south east) ++(0, -0.3);
+\end{tikzpicture}
+\caption{The Maple Court building model.  Blue: binary evidence
+  (alarm counts).  Orange: continuous evidence (Normal-Gamma
+  sufficient statistics).  Green: categorical evidence (Dirichlet
+  counts).  WallHumidity is a collider: both PipeLeak and
+  ShowerRunning cause it.  The chain PipeLeak $\to$ WallHumidity
+  $\to$ MoldRisk is the screening-off example used throughout.}
+\label{fig:maple-court-bn}
+\end{figure}
+
 \maplecourt{%
 Maple Court Community Commons is the book's running example.
 Each apartment carries a private evidence state over questions
@@ -177,7 +224,7 @@ examples.}
 
 The entire development is formalized in Lean~4 (version~4.28.0)
 with Mathlib~v4.28.0.  The book-referenced files contain
-651~theorems with 0~sorry and 0~\code{native\_decide}
+704~theorems with 0~sorry and 0~\code{native\_decide}
 (Appendix~\ref{app:theorem-map}).  Six application domains---gas
 sensor drift, steel fault classification, NAB anomaly detection,
 GJP geopolitical forecasting, Bayesian-network inference, and
@@ -370,7 +417,15 @@ counts add, sufficient statistics add, and the extractor commutes with that
 addition.  Some additional algebraic structure can then be studied on top of
 particular carriers.  For binary evidence, the current development includes a
 quantale tensor and a Heyting structure.  Those are mathematically real, but
-they are \emph{binary-specific} and do not generalize to all carriers.
+they were originally developed for binary evidence but have now
+been extended to the full $k$-ary Dirichlet family:
+coordinatewise multiplication gives a commutative monoid tensor,
+and the lattice gives a complete Heyting algebra (Frame) for all
+$k$, not just $k = 2$.%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/EvidenceDirichletQuantale.lean}
+(13~theorems, 0~sorry).  The round-trip at $k=2$ recovers
+\code{BinaryEvidence} exactly.}
 
 Evidence items also carry an \emph{epistemic kind} label
 (empirical, expert-elicited, model-derived, text-interpreted,
@@ -1588,7 +1643,19 @@ overlap regimes: additivity is not assumed---it is
 \emph{recovered} when the independence condition holds.%
 \footnote{Formalized in
 \codepath{Mettapedia/Logic/WorldModelOverlap.lean}
-(70~lines, 2~theorems, 0~sorry).}
+(7~theorems, 0~sorry).}
+
+The \code{SubtractiveOverlapLayer} makes the correction explicit
+via inclusion-exclusion:
+\[
+  \mathrm{extract}(\mathrm{merge}(W_1, W_2), q)
+  = \mathrm{extract}(W_1, q) + \mathrm{extract}(W_2, q)
+  - \mathrm{overlap}(W_1, W_2, q).
+\]
+When overlap is zero (independent sources), the subtraction
+vanishes and additive extraction is recovered exactly
+(\code{inclusionExclusion\_of\_zero\_overlap}).  This is the
+formal analogue of the Dempster-Shafer subadditivity correction.
 
 In the probability hypercube
 (Knuth--Skilling~\cite{KnuthSkilling2012}), the overlap regime
@@ -2140,14 +2207,20 @@ Every carrier in the additive regime satisfies two generic laws:
 \end{enumerate}
 
 \noindent
-For binary evidence specifically, two additional structures exist:
-a \emph{quantale tensor} for composing evidence along inference chains,
-and a \emph{Heyting algebra} supporting intuitionistic implication and
-complement.  These are mathematically rich but binary-specific---they
-are developed in \S\ref{sec:binary-tensor}--\S\ref{sec:binary-heyting}
-and do not yet extend to other carriers.%
-\footnote{Open program: generic quantale and Heyting structures for
-Dirichlet and Normal-Gamma carriers.}
+Two additional algebraic structures enrich the carrier family:
+a \emph{quantale tensor} for composing evidence along inference
+chains, and a \emph{Heyting algebra} (complete lattice with Frame
+structure) supporting intuitionistic implication and complement.
+These were originally developed for binary evidence
+(\S\ref{sec:binary-tensor}--\S\ref{sec:binary-heyting}) and have
+now been extended to the full $k$-ary Dirichlet family:
+coordinatewise multiplication gives a commutative monoid tensor,
+and the pointwise lattice gives a complete Heyting algebra for
+all~$k$.%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/EvidenceDirichletQuantale.lean}
+(13~theorems, 0~sorry).  Extension to Normal-Gamma carriers
+remains an open program.}
 
 Every exponential family with sufficient statistics instantiates this
 pattern:
@@ -2280,6 +2353,20 @@ This extends componentwise to Dirichlet vectors and Normal-Gamma
 statistics.  The ordering makes each carrier a lattice (meet $=$
 componentwise min, join $=$ componentwise max).
 
+For the Normal-Gamma carrier, the information order has additional
+structure: zero (the empty-evidence state) is bottom, and
+aggregation is monotone---adding evidence never decreases
+information.  Unlike the counting carriers (binary, Dirichlet),
+the Normal-Gamma carrier does not admit a quantale tensor:
+sufficient statistics for unknown mean and variance are not
+counts, and coordinatewise multiplication does not preserve the
+conjugate structure.  This asymmetry is by design---the
+information order and additive revision are the generic
+properties; the tensor is carrier-specific.%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/EvidenceNormalGammaLattice.lean}
+(10~theorems, 0~sorry).}
+
 The key property: this is a \emph{partial} order.  $(3, 0)$ and
 $(0, 3)$ are incomparable---they contain the same total but differ in
 kind.  No single scalar captures ``how much evidence'' there is.
@@ -2379,7 +2466,10 @@ $(3,0)$ and $(0,3)$ are incomparable, so no faithful
 $\mathbb{R}$-embedding exists.%
 \footnote{Formalized in
 \codepath{Mettapedia/Logic/HeytingValuationOnEvidence.lean}.}%
-\footnote{Open program: Heyting structure for Dirichlet evidence.}
+\footnote{The Heyting structure has been extended to $k$-ary
+Dirichlet evidence: \codepath{Mettapedia/Logic/EvidenceDirichletQuantale.lean}
+(13~theorems, 0~sorry).  The Boolean-to-Heyting categorical bridge is in
+\codepath{Mettapedia/Logic/BooleanHeytingBridge.lean} (4~theorems).}
 
 
 \section{Theoretical Foundations}
@@ -2471,6 +2561,31 @@ This means the system can keep raw data for model switching or
 distributional queries while using compressed statistics for
 efficient $O(1)$ revision---the two representations are provably
 compatible.
+
+\paragraph{Evidence algebra is not quantale algebra.}
+The binary evidence carrier forms a quantale (a complete lattice
+with an associative tensor), but the PLN operations on that
+carrier are \emph{not} the quantale operations.  Two concrete
+divergences are kernel-checked:
+\begin{enumerate}
+\item \textbf{Revision $\neq$ supremum.}  Evidence revision
+  ($\hplus$) adds counts: $(2,1) \hplus (1,2) = (3,3)$.  The
+  lattice supremum takes componentwise max: $(2,1) \sqcup (1,2) =
+  (2,2)$.  These are different---revision is conjugate update,
+  supremum is information combination.
+\item \textbf{Tensor strength $\neq$ strength product.}  The
+  quantale tensor $(3,1) \otimes (2,2) = (6,2)$ has strength
+  $6/8 = 0.75$.  The product of strengths is $0.75 \times 0.5 =
+  0.375$.  Tensor on evidence does not distribute over the
+  strength view.
+\end{enumerate}
+The positive characterization: when one evidence state dominates
+the other componentwise, the supremum equals the dominating
+state.  The quantale provides the algebraic skeleton; PLN fills
+in the probabilistic flesh.%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/PLNQuantaleDivergence.lean}
+(3~theorems, 0~sorry).}
 
 %% ─────────────────────────────────────────────────────────────────
 
@@ -4898,6 +5013,14 @@ has certified zero order-cost.%
 \footnote{Formalized in
 \codepath{Mettapedia/Logic/PLNWorldModelOrderCostWeightedDemo.lean} and
 \codepath{Mettapedia/Logic/PLNWorldModelOrderCostGasPolicyDemo.lean}.}
+A provenance-tracked variant using the \code{Which} semiring
+demonstrates that right-biased (latest-wins) merge on
+provenance-tracked states has maximum swap anomaly ($\top$)
+when one state is zero and the other is nonzero---the
+provenance structure makes order effects maximally visible.%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/PLNWorldModelOrderCostProvenanceDemo.lean}
+(5~theorems, 0~sorry).}
 
 
 \section{Stochastic Experiment and Blackwell Factorization}
@@ -5822,16 +5945,103 @@ the compiled BN rewrite applies; if not, the evidence is
 quarantined.%
 \footnote{Formalized across 13 files:
 \codepath{Mettapedia/Logic/PLNMarkovLogic*.lean}
-(0~sorry).  The UW-CSE social-smoking benchmark is in
-\codepath{Mettapedia/Logic/PLNMarkovLogicSocialSmoking.lean}
-and
-\codepath{Mettapedia/Logic/PLNMarkovLogicUWCSE.lean}.
-The compatibility-gate demo
-(\codepath{Mettapedia/Logic/WMUWCSEGateDemo.lean},
-12~theorems, 0~sorry) kernel-checks the gate structure:
-PairAffinity is the critical discriminator with marginal
-contribution $4 > 3 > 2$; forgetting it drops prediction from
-$6{:}1$ to $4{:}1$.}
+(0~sorry).}
+
+\paragraph{Worked example: UW-CSE advisedBy prediction.}
+The UW-CSE academic network benchmarks link prediction:
+given a student and a professor, predict
+\code{advisedBy(student, professor)}.  Four evidence roles---each
+a \code{SourceItem} in the \code{EvidentialLedger}---contribute:
+
+\begin{description}
+\item[NeedAdvisor(s)] Unary student readiness: phase, years,
+  publications, TA experience.  Contributes $\langle 3, 0 \rangle$
+  for advisedBy.
+\item[CanAdvise(p)] Unary professor capacity: position,
+  publications, courses, advisees.  Contributes
+  $\langle 3, 0 \rangle$.
+\item[PairAffinity(s,p)] Pairwise interaction: shared
+  publications, shared courses, temporary advising.  Contributes
+  $\langle 4, 0 \rangle$---the strongest signal.
+\item[MLN logit] Clause-weight signal from ground MLN inference.
+  Contributes $\langle 2, 2 \rangle$ (balanced).
+\end{description}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >=Latex,
+  every node/.style={font=\footnotesize},
+  role/.style={draw, rounded corners=3pt, minimum width=28mm,
+               minimum height=8mm, align=center},
+  target/.style={draw, very thick, rounded corners=5pt,
+                 minimum width=30mm, minimum height=10mm,
+                 align=center, fill=yellow!12},
+  gate/.style={role, fill=red!15, very thick},
+]
+  \node[role, fill=blue!8] (need) at (0, 2.2)
+    {NeedAdvisor(s)\\[-1pt]\scriptsize $\langle 3, 0 \rangle$};
+  \node[role, fill=blue!8] (can) at (0, 1.1)
+    {CanAdvise(p)\\[-1pt]\scriptsize $\langle 3, 0 \rangle$};
+  \node[gate] (pair) at (0, 0)
+    {PairAffinity(s,p)\\[-1pt]\scriptsize $\langle 4, 0 \rangle$
+     \textbf{GATE}};
+  \node[role, fill=gray!10] (mln) at (0, -1.1)
+    {MLN logit\\[-1pt]\scriptsize $\langle 2, 2 \rangle$};
+
+  \node[target] (pred) at (5.5, 0.55)
+    {advisedBy(s,p)\\[2pt]
+     $\langle 12, 2 \rangle$ \; ($6{:}1$)};
+
+  \draw[->, thick] (need) -- (pred);
+  \draw[->, thick] (can) -- (pred);
+  \draw[->, very thick, red!70!black] (pair) -- (pred);
+  \draw[->, thick] (mln) -- (pred);
+
+  % Marginal annotations
+  \node[font=\scriptsize, text=gray] at (3.2, 2.4) {marginal: 3};
+  \node[font=\scriptsize, text=gray] at (3.2, 1.3) {marginal: 3};
+  \node[font=\scriptsize, text=red!70!black]
+    at (3.2, 0.15) {marginal: \textbf{4}};
+  \node[font=\scriptsize, text=gray] at (3.2, -0.95) {marginal: 2};
+
+  % Gate effect
+  \node[draw, dashed, rounded corners=3pt, fill=orange!8,
+        minimum width=30mm, minimum height=10mm, align=center]
+    (gated) at (5.5, -1.5)
+    {without PairAffinity:\\[2pt]
+     $\langle 8, 2 \rangle$ \; ($4{:}1$)};
+  \draw[->, dashed, thick, red!50] (pred) -- node[right,
+    font=\scriptsize] {forget} (gated);
+\end{tikzpicture}
+\caption{UW-CSE advisedBy evidence roles.  PairAffinity
+  (red, marginal contribution~4) is the compatibility gate:
+  without it, the prediction drops from $6{:}1$ to $4{:}1$.
+  Strong unary signals alone are insufficient.}
+\label{fig:uwcse-gate}
+\end{figure}
+
+\noindent
+With all four roles, the aggregate is $\langle 12, 2 \rangle$
+for advisedBy---a $6{:}1$ ratio.  The compatibility gate
+operates via \code{forget}: removing PairAffinity drops the
+aggregate to $\langle 8, 2 \rangle$ ($4{:}1$).  The marginal
+contributions---PairAffinity ($4$) $>$ NeedAdvisor ($3$) $=$
+CanAdvise ($3$) $>$ MLN logit ($2$)---show that pairwise
+interaction evidence is the critical discriminator.
+
+\emph{Strong unary signals alone---a promising student and an
+active professor---are insufficient for confident edge prediction
+without pairwise evidence that they actually interact.}  This is
+the same \code{forget} pattern that identified IASP as the
+critical discriminator in the Pain reclassification
+(\S\ref{sec:pain-evidence-wm}) and stale reliability weights as
+the bottleneck in GJP forecasting
+(\S\ref{sec:gjp-forecasting}).%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/WMUWCSEGateDemo.lean}
+(177~lines, 12~theorems, 0~sorry).  The social-smoking benchmark
+is in \codepath{Mettapedia/Logic/PLNMarkovLogicUWCSE.lean}.}
 
 \maplecourt{%
 Maple Court's building model can be expressed as an MLN:
@@ -6542,7 +6752,7 @@ natural continuations.  But the kernel is stable, the evidence algebra
 is settled, the compiled inference rules are proved exact under their
 stated conditions, and the scaling theory identifies both the
 achievable guarantees and the fundamental impossibilities.
-The entire development is machine-verified: 651~theorems in Lean~4,
+The entire development is machine-verified: 704~theorems in Lean~4,
 0~sorry, 0~\code{native\_decide}, across six application domains
 (Appendix~\ref{app:theorem-map}).
 
@@ -6973,7 +7183,12 @@ Each inference step operates in one of three modes:
 \noindent
 This three-mode structure is the $\Sigma$-guarded rewrite
 discipline (Chapter~\ref{ch:sigma-rewrites}) applied to real
-networks.
+networks.  A worked example on a fork+chain fixture with all
+three modes---clean hard-gated chaining, bounded-mode interval
+certification, and soft-mode fallback---is kernel-checked.%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/PLNProbGuardedAdmissibilityDemo.lean}
+(13~theorems, 0~sorry).}
 
 
 \section{Hailfinder: The Readable Lane}
@@ -7926,6 +8141,8 @@ File & Lines & Thm & Backs \\
 \code{Logic/PLNWorldModelGeneric} & 254 & 12 & Ch~3--4 \\
 \code{Logic/BinaryEvidence} & 1597 & 44 & Ch~4 \\
 \code{Logic/PLNNoisyOr} & 765 & 50 & Ch~4, 22 \\
+\code{Logic/WorldModelOverlap} & $\sim$120 & 7 & Ch~3 \\
+\code{Logic/EvidenceNormalGammaLattice} & $\sim$150 & 10 & Ch~4 \\
 \code{Logic/PLNMapleCourtDemo} & 906 & 47 & Ch~2--6 \\
 \code{Logic/WMDerivationTrackingDemo} & 453 & 31 & Ch~5 \\
 \code{Logic/EvidentialLedger} & 114 & 2 & Ch~5 \\
@@ -7955,9 +8172,14 @@ File & Lines & Thm & Backs \\
 \code{Logic/WMDemandDemo} & 258 & 27 & Ch~12 \\
 \code{Logic/WMForkDemandDemo} & $\sim$300 & 23 & Ch~12 \\
 \code{Logic/WMUWCSEGateDemo} & 177 & 12 & Ch~16 \\
+\code{Logic/EvidenceDirichletQuantale} & $\sim$200 & 13 & Ch~2, 4 \\
+\code{Logic/PLNProbGuardedAdmissibilityDemo} & $\sim$200 & 13 & Ch~21 \\
+\code{Logic/PLNWorldModelOrderCostProvenanceDemo} & 255 & 5 & Ch~12 \\
+\code{Logic/PLNQuantaleDivergence} & 121 & 3 & Ch~4 \\
+\code{Logic/BooleanHeytingBridge} & $\sim$100 & 4 & Ch~4 \\
 \code{Logic/AIOutcomesDemo} & 280 & 13 & Ch~24 \\
 \midrule
-\textbf{Total (book-referenced files)} & \textbf{$\sim$10,520} & \textbf{651} & \\
+\textbf{Total (book-referenced files)} & \textbf{$\sim$11,700} & \textbf{704} & \\
 \bottomrule
 \end{longtable}
 

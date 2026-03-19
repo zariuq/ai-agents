@@ -207,18 +207,14 @@ theorem T_P_K_LP_countable_eq_finite {σ : LPSignature}
     [Fintype σ.vars] [DecidableEq σ.vars]
     [Fintype σ.constants] [DecidableEq σ.constants]
     [DecidableEq σ.relationSymbols]
-    [DecidableEq (GroundAtom σ)]
     (K : Type*) [CommSemiring K] [TopologicalSpace K] [T1Space K]
     (kb : FinKnowledgeBase σ) (I : KRelation σ K)
     (_hsum : ∀ a, Summable (idbContribution K kb.prog I a)) :
     T_P_K_LP_countable K kb I _hsum = T_P_K_LP K kb I := by
   funext a
-  letI : DecidableEq (GroundAtom σ) := instDecidableEqGroundAtomOfConstantsOfRelationSymbols
   by_cases hmem : a ∈ kb.db
   · simp [T_P_K_LP_countable, T_P_K_LP, idbContribution, hmem, tsum_fintype]
-    rfl
   · simp [T_P_K_LP_countable, T_P_K_LP, idbContribution, hmem, tsum_fintype]
-    rfl
 
 /-- Bridge for seeded variant. -/
 theorem T_P_K_LP_seeded_countable_eq_finite {σ : LPSignature}
@@ -226,15 +222,12 @@ theorem T_P_K_LP_seeded_countable_eq_finite {σ : LPSignature}
     [Fintype σ.vars] [DecidableEq σ.vars]
     [Fintype σ.constants] [DecidableEq σ.constants]
     [DecidableEq σ.relationSymbols]
-    [DecidableEq (GroundAtom σ)]
     (K : Type*) [CommSemiring K] [TopologicalSpace K] [T1Space K]
     (prog : Program σ) (seed I : KRelation σ K)
     (_hsum : ∀ a, Summable (idbContribution K prog I a)) :
     T_P_K_LP_seeded_countable K prog seed I _hsum = T_P_K_LP_seeded K prog seed I := by
   funext a
-  letI : DecidableEq (GroundAtom σ) := instDecidableEqGroundAtomOfConstantsOfRelationSymbols
   simp [T_P_K_LP_seeded_countable, T_P_K_LP_seeded, idbContribution, tsum_fintype]
-  rfl
 
 /-! ## Section 6: Support and Boolean collapse -/
 

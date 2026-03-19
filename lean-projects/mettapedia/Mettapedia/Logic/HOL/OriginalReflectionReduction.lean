@@ -232,6 +232,152 @@ def StageLanguageHenkinAxioms
             (HenkinConstStage.allCounterexampleAxiom (Base := Base) (Const := Const) φ))
 
 /--
+Stage-local provability over an arbitrary finite-stage context.
+
+This is the generic stage-language predicate behind the original-signature
+wrapper `StageLanguageProvable`. It keeps the stage-local proof problem visible
+before any later specialization to lifted original formulas.
+-/
+def InternalStageProvable
+    (n : Nat)
+    (Θ : List (ClosedFormula (HenkinConstStage Base Const n)))
+    (ψ : ClosedFormula (HenkinConstStage Base Const n)) : Prop :=
+  ∃ Γ : List (ClosedFormula (HenkinConstStage Base Const n)),
+    (∀ {χ : ClosedFormula (HenkinConstStage Base Const n)},
+        χ ∈ Γ → χ ∈ StageLanguageHenkinAxioms (Base := Base) (Const := Const) n) ∧
+    ExtDerivation (HenkinConstStage Base Const n)
+      (Θ ++ Γ)
+      ψ
+
+/--
+The Henkin axioms generated exactly when passing from stage `n` to stage `n+1`.
+
+These are the genuinely fresh witness/counterexample axioms. Isolating them is
+the right theorem boundary for the future one-step reflection argument.
+-/
+def ExactStepHenkinAxioms
+    (n : Nat) : ClosedTheorySet (HenkinConstStage Base Const (n + 1)) :=
+  fun ψ =>
+    (∃ (σ : Ty Base) (φ : Formula (HenkinConstStage Base Const n) [σ]),
+      ψ = HenkinConstStage.liftClosedFormula (Base := Base) (Const := Const)
+        (Nat.le_refl (n + 1))
+        (HenkinConstStage.exWitnessAxiom (Base := Base) (Const := Const) φ)) ∨
+    (∃ (σ : Ty Base) (φ : Formula (HenkinConstStage Base Const n) [σ]),
+      ψ = HenkinConstStage.liftClosedFormula (Base := Base) (Const := Const)
+        (Nat.le_refl (n + 1))
+        (HenkinConstStage.allCounterexampleAxiom (Base := Base) (Const := Const) φ))
+
+theorem exWitnessAxiom_mem_exactStepHenkinAxioms
+    {n : Nat} {σ : Ty Base}
+    (φ : Formula (HenkinConstStage Base Const n) [σ]) :
+    HenkinConstStage.liftClosedFormula (Base := Base) (Const := Const)
+      (Nat.le_refl (n + 1))
+      (HenkinConstStage.exWitnessAxiom (Base := Base) (Const := Const) φ) ∈
+      ExactStepHenkinAxioms (Base := Base) (Const := Const) n :=
+  Or.inl ⟨σ, φ, rfl⟩
+
+theorem allCounterexampleAxiom_mem_exactStepHenkinAxioms
+    {n : Nat} {σ : Ty Base}
+    (φ : Formula (HenkinConstStage Base Const n) [σ]) :
+    HenkinConstStage.liftClosedFormula (Base := Base) (Const := Const)
+      (Nat.le_refl (n + 1))
+      (HenkinConstStage.allCounterexampleAxiom (Base := Base) (Const := Const) φ) ∈
+      ExactStepHenkinAxioms (Base := Base) (Const := Const) n :=
+  Or.inr ⟨σ, φ, rfl⟩
+
+/--
+Stage-`n+1` axioms inherited from strictly earlier Henkin stages.
+
+This isolates the "old" part of the stage-`n+1` axiom stock without yet forcing
+it to be expressed as a lifted stage-`n` context.
+-/
+def PriorStepHenkinAxioms
+    (n : Nat) : ClosedTheorySet (HenkinConstStage Base Const (n + 1)) :=
+  fun ψ =>
+    ∃ m : Nat, ∃ hm : m + 1 ≤ n,
+      (∃ (σ : Ty Base) (φ : Formula (HenkinConstStage Base Const m) [σ]),
+        ψ =
+          HenkinConstStage.liftClosedFormula (Base := Base) (Const := Const)
+            (Nat.le_trans hm (Nat.le_succ n))
+            (HenkinConstStage.exWitnessAxiom (Base := Base) (Const := Const) φ)) ∨
+      (∃ (σ : Ty Base) (φ : Formula (HenkinConstStage Base Const m) [σ]),
+        ψ =
+          HenkinConstStage.liftClosedFormula (Base := Base) (Const := Const)
+            (Nat.le_trans hm (Nat.le_succ n))
+            (HenkinConstStage.allCounterexampleAxiom (Base := Base) (Const := Const) φ))
+
+theorem stageLanguageHenkinAxioms_succ_split
+    {n : Nat}
+    {ψ : ClosedFormula (HenkinConstStage Base Const (n + 1))} :
+    ψ ∈ StageLanguageHenkinAxioms (Base := Base) (Const := Const) (n + 1) →
+      ψ ∈ PriorStepHenkinAxioms (Base := Base) (Const := Const) n ∨
+        ψ ∈ ExactStepHenkinAxioms (Base := Base) (Const := Const) n := by
+  intro hψ
+  rcases hψ with ⟨m, hm, hψ⟩
+  have hmn : m ≤ n := Nat.succ_le_succ_iff.mp hm
+  by_cases hEq : m = n
+  · subst hEq
+    have hm' : hm = Nat.le_refl (m + 1) := Subsingleton.elim _ _
+    cases hm'
+    right
+    rcases hψ with hψ | hψ
+    · rcases hψ with ⟨σ, φ, hEqψ⟩
+      exact Or.inl ⟨σ, φ, hEqψ⟩
+    · rcases hψ with ⟨σ, φ, hEqψ⟩
+      exact Or.inr ⟨σ, φ, hEqψ⟩
+  · left
+    have hm_lt : m < n := lt_of_le_of_ne hmn hEq
+    have hm' : m + 1 ≤ n := Nat.succ_le_of_lt hm_lt
+    exact ⟨m, hm', hψ⟩
+
+theorem priorStepHenkinAxioms_subset_stageLanguageHenkinAxioms_succ
+    (n : Nat) :
+    PriorStepHenkinAxioms (Base := Base) (Const := Const) n ⊆
+      StageLanguageHenkinAxioms (Base := Base) (Const := Const) (n + 1) := by
+  intro ψ hψ
+  rcases hψ with ⟨m, hm, hψ⟩
+  exact ⟨m, Nat.le_trans hm (Nat.le_succ n), hψ⟩
+
+theorem exactStepHenkinAxioms_subset_stageLanguageHenkinAxioms_succ
+    (n : Nat) :
+    ExactStepHenkinAxioms (Base := Base) (Const := Const) n ⊆
+      StageLanguageHenkinAxioms (Base := Base) (Const := Const) (n + 1) := by
+  intro ψ hψ
+  rcases hψ with hψ | hψ
+  · rcases hψ with ⟨σ, φ, rfl⟩
+    refine ⟨n, Nat.le_refl (n + 1), Or.inl ?_⟩
+    exact ⟨σ, φ, by simp⟩
+  · rcases hψ with ⟨σ, φ, rfl⟩
+    refine ⟨n, Nat.le_refl (n + 1), Or.inr ?_⟩
+    exact ⟨σ, φ, by simp⟩
+
+/--
+One-step stage-local provability from only the genuinely fresh axioms added at
+the next Henkin stage.
+-/
+def ExactStepProvable
+    (n : Nat)
+    (Θ : List (ClosedFormula (HenkinConstStage Base Const n)))
+    (ψ : ClosedFormula (HenkinConstStage Base Const n)) : Prop :=
+  ∃ Γ : List (ClosedFormula (HenkinConstStage Base Const (n + 1))),
+    (∀ {χ : ClosedFormula (HenkinConstStage Base Const (n + 1))},
+        χ ∈ Γ → χ ∈ ExactStepHenkinAxioms (Base := Base) (Const := Const) n) ∧
+    ExtDerivation (HenkinConstStage Base Const (n + 1))
+      (Θ.map (HenkinConstStage.liftClosedFormula (Base := Base) (Const := Const) (Nat.le_succ n)) ++ Γ)
+      (HenkinConstStage.liftClosedFormula (Base := Base) (Const := Const) (Nat.le_succ n) ψ)
+
+/--
+The future generic one-step reflection theorem should target this local
+exact-step predicate, not the more blunt cumulative stage-language predicate.
+-/
+def ExactStepReflectionGoal : Prop :=
+  ∀ (n : Nat)
+    {Θ : List (ClosedFormula (HenkinConstStage Base Const n))}
+    {ψ : ClosedFormula (HenkinConstStage Base Const n)},
+      ExactStepProvable (Base := Base) (Const := Const) n Θ ψ →
+        ExtDerivation (HenkinConstStage Base Const n) Θ ψ
+
+/--
 Concrete stage-language provability candidate for the witnessed-source bridge.
 
 At stage `n`, we ask for a derivation in the actual stage language from:
@@ -245,12 +391,19 @@ def StageLanguageProvable
     (n : Nat)
     (Δ : List (ClosedFormula Const))
     (φ : ClosedFormula Const) : Prop :=
-  ∃ Γ : List (ClosedFormula (HenkinConstStage Base Const n)),
-    (∀ {ψ : ClosedFormula (HenkinConstStage Base Const n)},
-        ψ ∈ Γ → ψ ∈ StageLanguageHenkinAxioms (Base := Base) (Const := Const) n) ∧
-    ExtDerivation (HenkinConstStage Base Const n)
-      (Δ.map (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n) ++ Γ)
-      (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n φ)
+  InternalStageProvable (Base := Base) (Const := Const) n
+    (Δ.map (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n))
+    (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n φ)
+
+theorem stageLanguageProvable_iff_internalStageProvable
+    {n : Nat}
+    {Δ : List (ClosedFormula Const)}
+    {φ : ClosedFormula Const} :
+    StageLanguageProvable (Base := Base) (Const := Const) n Δ φ ↔
+      InternalStageProvable (Base := Base) (Const := Const) n
+        (Δ.map (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n))
+        (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n φ) :=
+  Iff.rfl
 
 theorem not_mem_stageLanguageHenkinAxioms_zero
     {ψ : ClosedFormula (HenkinConstStage Base Const 0)} :

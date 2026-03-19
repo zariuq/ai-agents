@@ -10247,6 +10247,21 @@ def applyStmt (s : Session) (stmt : SyntaxStmt) : Session × List Pattern :=
       let s0 := noteApplied (withBundleCompiled s bundle')
       let s' := withMessage s0 s!"lowered directive {head} to selfFact/1"
       (s', [])
+  | .defineRule lhs rhs premises =>
+      let rule : RewriteRule := {
+        name := mkRuleName s
+        typeContext := []
+        premises := premises
+        left := lhs
+        right := rhs
+      }
+      let rules' := s.bundle.language.rewrites ++ [rule]
+      let bundle' : SpecBundle := {
+        s.bundle with language := { s.bundle.language with rewrites := rules' }
+      }
+      let s0 := noteApplied (withBundleCompiled s bundle')
+      let s' := withMessage s0 s!"loaded rule {rule.name} with {premises.length} premise(s)"
+      (s', [])
 
 theorem compiledConsistent_applyStmt_eval
     (hEvalPres :
