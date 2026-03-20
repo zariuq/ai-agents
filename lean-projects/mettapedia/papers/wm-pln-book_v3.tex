@@ -1391,13 +1391,10 @@ not as current desiderata.  The eight listed here are the contract
 that the present book fulfills.
 
 \paragraph{The PLN heritage.}
-PLN v0.9 satisfies D1 and D2 in spirit, partially satisfies D7 (via
-evidence stamps), but does not satisfy D3 (single carrier), D4 (scalar
-propagation), D5 (no explicit $\Sigma$), D6 (no formal forgetting),
-or D8 (no proved no-go theorems).  The world-model calculus inherits
-PLN's conceptual vocabulary and evidence-based philosophy while adding
-the formal machinery that PLN lacked.  The desiderata are the precise
-statement of what that machinery is for.
+The relationship to PLN is discussed in
+Chapter~\ref{ch:introduction}.  In brief: PLN~v0.9 satisfies D1,
+D2 in spirit but lacks D3 (single carrier), D5 (no~$\Sigma$),
+D6 (no formal forgetting), D8 (no no-go theorems).
 
 \begin{figure}[htbp]
 \centering
@@ -1665,23 +1662,35 @@ functions), where $\mathrm{bel}(A \cup B) \ge
 
 \medskip
 \begin{center}
-\begin{tabular}{lll}
+\begin{tabular}{llll}
 \toprule
-\textbf{Hypercube vertex} & \textbf{WM subclass} &
-  \textbf{Extraction law} \\
+\textbf{WM regime} & \textbf{Logic} & \textbf{Repr.} &
+  \textbf{Hypercube vertex} \\
 \midrule
-Kolmogorov ($\sigma$-additive) & \code{AdditiveWorldModel} &
-  extract distributes over $+$ \\
-Dempster-Shafer (subadditive) & \code{OverlapWorldModel} &
-  overlap correction \\
-Quantum (non-commutative) & (future) &
-  interference terms \\
+Additive & Boolean & point &
+  classical Bayesian \\
+Overlap-aware & Boolean & bounds &
+  imprecise probability \\
+Evidence-tracking & Heyting & 2D bounds &
+  PLN evidence \\
+Trust-gated & Heyting & point &
+  Heyting-point KS \\
 \bottomrule
 \end{tabular}
 \end{center}
 \medskip
 
 \noindent
+Each regime is determined by two independent structural
+decisions: does the event algebra satisfy excluded middle
+(Boolean vs.\ Heyting), and does the representation track
+per-channel evidence or summarize to a point?  The KS
+representation theorem gives the unique algebra for each
+vertex.%
+\footnote{Classification kernel-checked in
+\codepath{Mettapedia/Logic/WMHypercubeClassification.lean}
+(17~items, 0~sorry).}
+
 The carrier axis is orthogonal: binary, Dirichlet, and
 Normal-Gamma carriers are all formalized and compose with any
 merge-law vertex.%
@@ -2532,6 +2541,39 @@ both state-side and obs-side laws.  The probability
 hypercube~\cite{StayWells2026} classifies theories by which
 combination of these laws they satisfy.}
 
+\paragraph{The KS-Evidence-Measure triangle.}
+The evidence carriers, the KS representation theorem, and the
+measure-valued terminal world model form a commuting triangle:
+\begin{center}
+\begin{tabular}{@{}c@{}}
+KS ordered semigroup $\xrightarrow{\;\Theta = \mathrm{total}\;}$
+$(\mathbb{R}_{\ge 0}^\infty, +)$
+$\xrightarrow{\;\bullet\,\mathrm{dirac}\;}$
+\code{Measure}
+\end{tabular}
+\end{center}
+The evidence carriers (binary, Dirichlet) satisfy the KS axioms
+(ordered, associative, monotone).  The representation theorem
+maps them into $\mathbb{R}_{\ge 0}^\infty$ via the total-evidence
+function.  The measure bridge
+(\code{evidenceToMeasure}) composes this with Dirac
+weighting to produce a formal measure.  Additivity holds at
+every vertex: $\hplus$ on evidence, $+$ on reals, $+$ on
+measures.  The triangle says the WM evidence algebra is not an
+ad-hoc design---it is the \emph{unique} algebra satisfying the
+KS axioms, and the measure theory follows inevitably.%
+\footnote{The KS formalization spans 126K~lines with 1,923
+theorems (0~sorry for the core representation; 11~sorry in
+experimental Shore-Johnson extensions).
+The triangle bridge is in
+\codepath{Mettapedia/Logic/KSEvidenceMeasureBridge.lean}.
+The $\sigma$-additivity boundary
+(\codepath{Mettapedia/ProbabilityTheory/KnuthSkilling/%
+Counterexamples/SigmaAdditivityNecessity.lean})
+proves that finitely additive measures do not automatically
+extend to $\sigma$-additive ones---Step~C of the measure frontier
+requires Scott continuity, which is a separate axiom.}
+
 
 \section{What Evidence Algebra Is Not}
 
@@ -3258,7 +3300,13 @@ deployment decision is a separate governance layer.  This
 separation is exactly the architecture recommended for
 evidence-driven systems: the base WM layer computes what the
 evidence says; reliability, dependence, and governance sit above
-it as extension layers.
+it as extension layers.  The reliability layer is now formalized:
+\code{ReliabilityProfile} assigns per-source scaling weights by
+evidence kind, and \code{reliabilityAdjust} scales evidence
+monotonically (more reliable sources contribute more weight).%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/SourceReliability.lean}
+(14~items, 0~sorry).}
 
 \paragraph{Compositionality.}
 The generic framework proves that evidence from two groups of
@@ -3767,6 +3815,16 @@ building WM adds cost tracking (order-cost governance for the cleaning
 robot's schedule).  Each vertex determines which rewrite rules are
 available---and which side conditions must be checked.}
 
+\noindent
+The 4-vertex WM regime classification
+(\S\ref{sec:non-additive}) maps injectively into the 13-axis
+family: each regime determines specific axis settings
+(commutativity, derived-additivity, probabilistic
+interpretation).%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/ModalProbabilityBridge.lean}
+(14~items, 0~sorry).}
+
 
 \section{OSLF Modal Operators and Semantic Bridge}
 
@@ -3815,14 +3873,25 @@ refuting entities, and the count is additive over multiset union.
 For any type~$T$:
 $\code{AdditiveWorldModel}\;(\code{Multiset}\;T)\;(\code{DecProp}\;T)$.%
 \footnote{Formalized in
-\codepath{Mettapedia/OSLF/Framework/GSLTWorldModel.lean}.}
+\codepath{Mettapedia/OSLF/Framework/GSLTWorldModel.lean}.
+Existence and uniqueness for any observation type $\times$
+evidence carrier are packaged in
+\codepath{Mettapedia/Logic/UniversalEnsembleWM.lean}
+(7~items, 0~sorry).}
 \end{theorem}
 
 \noindent
 This means: every computational system with parallel
 composition---every graph-structured lambda theory (GSLT) in
 Meredith's~\cite{meredith2026ccc} sense---has a canonical additive
-world model via multiset counting.
+world model via multiset counting.  The converse also holds: a
+GSLT equipped with an additive evidence assignment IS an
+\code{AdditiveWorldModel}, with the GSLT's weight map as the
+\code{extract} function and forward transport (reductions in
+weaker theories lift to stronger ones) as \code{extract\_add}.%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/GSLTWeightMapBridge.lean}
+(7~items, 0~sorry).}
 
 \begin{conjecture}[WM universality for typed rewrite systems]
 The WM calculus is not specific to probabilistic logic; it is the
@@ -6082,6 +6151,65 @@ formula $P(q) = 1 - \prod_i (1 - p_i)$, which is exactly
 \code{compilation\_or\_noisyOr} in
 \codepath{Mettapedia/Logic/ProbLogCompilation.lean}.}
 
+\paragraph{The full bridge: WM-PLN $=$ ProbMeTTa $=$ BDD-WMC.}
+The ProbLog distribution semantics probability is computed in
+practice via BDD-based weighted model counting (WMC).  The full
+composition is now proved: WM-PLN query strength $=$ ProbLog
+distribution semantics $=$ BDD WMC ratio.  The bridge theorem
+\code{worldWeight\_eq\_assignmentWeight} connects the world-indexed
+weights (used in the WM proof) to the assignment-indexed weights
+(used in BDD compilation).  A concrete revision example
+demonstrates the ``beyond ProbLog'' value: combining two
+independent sensor sources via $\hplus$ produces correctly
+weighted evidence with increasing confidence.%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/BDD/WMPLNBridge.lean}
+(4~theorems, 0~sorry).  The full BDD compilation chain
+(5,148~lines across 13~files, 0~sorry) is in
+\codepath{Mettapedia/Logic/BDD/}.}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >=Latex,
+  every node/.style={font=\footnotesize},
+  box/.style={draw, rounded corners=3pt, minimum width=28mm,
+              minimum height=9mm, align=center},
+]
+  \node[box, fill=blue!8] (wm) at (0, 0)
+    {WM-PLN\\[-1pt]\scriptsize \code{queryStrength}};
+  \node[box, fill=green!8] (pl) at (4.5, 0)
+    {ProbLog\\[-1pt]\scriptsize \code{queryProb}};
+  \node[box, fill=yellow!12] (bdd) at (4.5, -1.5)
+    {BDD-WMC\\[-1pt]\scriptsize \code{bdd\_wmc}};
+
+  \draw[<->, thick] (wm) -- node[above, font=\scriptsize]
+    {\code{queryStrength\_prop\_eq\_queryProb}} (pl);
+  \draw[<->, thick] (pl) -- node[right, font=\scriptsize]
+    {\code{worldWeight\_eq\_assignmentWeight}} (bdd);
+
+  \node[font=\scriptsize, text=gray, text width=30mm, align=center]
+    at (0, -1.5) {$+$ confidence\\$+$ forgetting\\$+$ provenance};
+\end{tikzpicture}
+\caption{The full bridge: WM-PLN = ProbLog = BDD-WMC.
+  The horizontal arrow is a proved identity on probabilities.
+  The vertical arrow bridges world-indexed and assignment-indexed
+  weights.  WM-PLN additionally provides confidence, forgetting,
+  and provenance (gray, below).}
+\label{fig:problog-bridge}
+\end{figure}
+
+\paragraph{Worked example: Alarm network.}
+The alarm network (burglary/earthquake $\to$ alarm) is computed
+three ways: ProbLog via BDD WMC gives $P(\mathrm{alarm}) = 0.28$.
+WM-PLN gives the same probability plus ESS $= 1000$.  Revising
+with a second sensor increases ESS to $1500$.  Forgetting the
+earthquake prior drops ESS to $500$.  Sensitivity analysis shows
+earthquake contributes more than burglary.  All kernel-checked.%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/BDD/WMProbLogAlarmDemo.lean}
+(0~sorry).}
+
 \paragraph{What WM-PLN adds beyond ProbLog.}
 ProbLog assigns exact probabilities but no confidence---there is
 no measure of how much evidence backs the assigned probability.
@@ -6638,6 +6766,25 @@ multi-query evidence, enabling richer decision-making and more
 informative uncertainty quantification.  This connects to the
 infinitary extension: the hypercube is naturally a product measure
 space.
+
+Two recent developments point the way.
+Stay, Meredith, and Wells~\cite{StayMeredithWells2026}
+show how to generate a \emph{type-system hypercube} from any
+operational theory: each axis corresponds to an enabled modal
+layer (redex tracking, equation modalities, propositional
+structure).  The probability hypercube's axes (additivity,
+commutativity, distributivity) correspond to choices in this
+type-system hypercube.
+Meredith~\cite{meredith2026ccc} extends the picture further:
+a GSLT equipped with a complex-valued weight map is a
+\emph{physics}, where transition probabilities are squared
+amplitudes.  Replacing the WM evidence carrier $V$ with
+$\mathbb{C}$ would give quantum-like inference; the
+KS-Evidence-Measure triangle (Chapter~\ref{ch:evidence})
+would extend to a KS-Amplitude-QuantumMeasure triangle.
+The \code{universalEnsembleWorldModel} would then provide
+amplitudes for any typed rewrite system---a formal grounding
+for ``It from Bit'' at the evidence layer.
 
 \section{Universality}
 

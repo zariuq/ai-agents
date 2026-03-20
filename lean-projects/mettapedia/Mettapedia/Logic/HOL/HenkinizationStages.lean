@@ -70,6 +70,150 @@ abbrev liftClosedFormula {m n : Nat} (h : m ≤ n) :
       ClosedFormula (HenkinConstStage Base Const n) :=
   mapConst (lift (Base := Base) (Const := Const) h)
 
+/--
+Transport-aware composition law for `liftOffset`.
+
+This is the mathematically clean dependent equality behind stage-lift
+composition: first lift by `k₁`, then by `k₂`, and transport across the
+associativity witness on stage indices.
+-/
+def LiftOffsetCompGoal : Prop :=
+  ∀ (k₁ k₂ : Nat) {n : Nat} {τ : Ty Base}
+    (c : HenkinConstStage Base Const n τ),
+      cast
+          (congrArg (fun t => HenkinConstStage Base Const t τ)
+            (Nat.add_assoc n k₁ k₂))
+          (liftOffset (Base := Base) (Const := Const) k₂
+            (liftOffset (Base := Base) (Const := Const) k₁ c)) =
+        liftOffset (Base := Base) (Const := Const) (k₁ + k₂) c
+
+/--
+Ordinary stage-lift composition.
+
+Downstream transport lemmas should be derived from this goal, not reproved
+ad hoc. The hard work is expected to live at the constant-level here.
+-/
+def LiftCompGoal : Prop :=
+  ∀ {l m n : Nat} (hlm : l ≤ m) (hmn : m ≤ n) {τ : Ty Base}
+    (c : HenkinConstStage Base Const l τ),
+      lift (Base := Base) (Const := Const) hmn
+          (lift (Base := Base) (Const := Const) hlm c) =
+        lift (Base := Base) (Const := Const) (Nat.le_trans hlm hmn) c
+
+@[simp] theorem cast_base_succ {n m : Nat} (h : n = m) {τ : Ty Base}
+    (c : HenkinConstStage Base Const n τ) :
+    cast (congrArg (fun t => HenkinConstStage Base Const (t + 1) τ) h)
+        (OneStepHenkinConst.base c : HenkinConstStage Base Const (n + 1) τ) =
+      (OneStepHenkinConst.base
+        (cast (congrArg (fun t => HenkinConstStage Base Const t τ) h) c) :
+          HenkinConstStage Base Const (m + 1) τ) := by
+  cases h
+  rfl
+
+@[simp] theorem liftOffset_cast
+    {k n m : Nat} (h : n = m) {τ : Ty Base}
+    (c : HenkinConstStage Base Const n τ) :
+    cast (congrArg (fun t => HenkinConstStage Base Const (t + k) τ) h)
+        (liftOffset (Base := Base) (Const := Const) k c) =
+      liftOffset (Base := Base) (Const := Const) k
+        (cast (congrArg (fun t => HenkinConstStage Base Const t τ) h) c) := by
+  cases h
+  rfl
+
+@[simp] theorem liftOffset_congr
+    {n k₁ k₂ : Nat} (h : k₁ = k₂) {τ : Ty Base}
+    (c : HenkinConstStage Base Const n τ) :
+    cast (congrArg (fun t => HenkinConstStage Base Const (n + t) τ) h)
+        (liftOffset (Base := Base) (Const := Const) k₁ c) =
+      liftOffset (Base := Base) (Const := Const) k₂ c := by
+  cases h
+  rfl
+
+@[simp] theorem lift_add_right_eq_liftOffset
+    {n k : Nat} {τ : Ty Base}
+    (c : HenkinConstStage Base Const n τ) :
+    lift (Base := Base) (Const := Const) (Nat.le_add_right n k) c =
+      liftOffset (Base := Base) (Const := Const) k c := by
+  rw [lift]
+  let k' := n + k - n
+  have hsub : k' = k := by
+    dsimp [k']
+    simpa [Nat.add_comm] using (Nat.add_sub_cancel_left n k)
+  simpa [k'] using
+    (liftOffset_congr (Base := Base) (Const := Const)
+      (n := n) (k₁ := k') (k₂ := k) hsub c)
+
+theorem liftOffset_comp : LiftOffsetCompGoal (Base := Base) (Const := Const) := by
+  intro k₁ k₂
+  induction k₂ with
+  | zero =>
+      intro n τ c
+      simp [liftOffset]
+  | succ k₂ ih =>
+      intro n τ c
+      have hih :
+          cast
+              (congrArg (fun t => HenkinConstStage Base Const t τ)
+                (Nat.add_assoc n k₁ k₂))
+              (liftOffset (Base := Base) (Const := Const) k₂
+                (liftOffset (Base := Base) (Const := Const) k₁ c)) =
+            liftOffset (Base := Base) (Const := Const) (k₁ + k₂) c :=
+        ih c
+      have hcast :=
+        cast_base_succ (Base := Base) (Const := Const)
+          (h := Nat.add_assoc n k₁ k₂)
+          (c := liftOffset (Base := Base) (Const := Const) k₂
+            (liftOffset (Base := Base) (Const := Const) k₁ c))
+      have hbase :
+          (OneStepHenkinConst.base
+            (cast
+              (congrArg (fun t => HenkinConstStage Base Const t τ)
+                (Nat.add_assoc n k₁ k₂))
+              (liftOffset (Base := Base) (Const := Const) k₂
+                (liftOffset (Base := Base) (Const := Const) k₁ c))) :
+              HenkinConstStage Base Const ((n + (k₁ + k₂)) + 1) τ) =
+            (OneStepHenkinConst.base
+              (liftOffset (Base := Base) (Const := Const) (k₁ + k₂) c) :
+              HenkinConstStage Base Const ((n + (k₁ + k₂)) + 1) τ) :=
+        congrArg
+          (fun x : HenkinConstStage Base Const (n + (k₁ + k₂)) τ =>
+            (OneStepHenkinConst.base x :
+              HenkinConstStage Base Const ((n + (k₁ + k₂)) + 1) τ))
+          hih
+      simpa [liftOffset, Nat.add_assoc] using hcast.trans hbase
+
+theorem liftTerm_comp_of_liftComp
+    (hComp : LiftCompGoal (Base := Base) (Const := Const))
+    {l m n : Nat} (hlm : l ≤ m) (hmn : m ≤ n)
+    {Γ : Ctx Base} {τ : Ty Base}
+    (t : Term (HenkinConstStage Base Const l) Γ τ) :
+    liftTerm (Base := Base) (Const := Const) hmn
+        (liftTerm (Base := Base) (Const := Const) hlm t) =
+      liftTerm (Base := Base) (Const := Const) (Nat.le_trans hlm hmn) t := by
+  rw [liftTerm, liftTerm, Mettapedia.Logic.HOL.mapConst_comp]
+  apply Mettapedia.Logic.HOL.mapConst_ext
+  intro τ c
+  exact hComp hlm hmn c
+
+theorem liftFormula_comp_of_liftComp
+    (hComp : LiftCompGoal (Base := Base) (Const := Const))
+    {l m n : Nat} (hlm : l ≤ m) (hmn : m ≤ n)
+    {Γ : Ctx Base}
+    (φ : Formula (HenkinConstStage Base Const l) Γ) :
+    liftFormula (Base := Base) (Const := Const) hmn
+        (liftFormula (Base := Base) (Const := Const) hlm φ) =
+      liftFormula (Base := Base) (Const := Const) (Nat.le_trans hlm hmn) φ :=
+  liftTerm_comp_of_liftComp (Base := Base) (Const := Const) hComp hlm hmn φ
+
+theorem liftClosedFormula_comp_of_liftComp
+    (hComp : LiftCompGoal (Base := Base) (Const := Const))
+    {l m n : Nat} (hlm : l ≤ m) (hmn : m ≤ n)
+    (φ : ClosedFormula (HenkinConstStage Base Const l)) :
+    liftClosedFormula (Base := Base) (Const := Const) hmn
+        (liftClosedFormula (Base := Base) (Const := Const) hlm φ) =
+      liftClosedFormula (Base := Base) (Const := Const) (Nat.le_trans hlm hmn) φ :=
+  liftFormula_comp_of_liftComp (Base := Base) (Const := Const) hComp hlm hmn φ
+
 /-- Lift original-signature terms directly into stage `n`. -/
 abbrev liftBaseTerm (n : Nat) {Γ : Ctx Base} {τ : Ty Base} :
     Term Const Γ τ → Term (HenkinConstStage Base Const n) Γ τ :=

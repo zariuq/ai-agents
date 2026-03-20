@@ -1,4 +1,5 @@
 import Mettapedia.Logic.HOL.Syntax.ConstMap
+import Mettapedia.Logic.HOL.CanonicalTheory
 
 namespace Mettapedia.Logic.HOL
 
@@ -114,6 +115,41 @@ def allCounterexampleInstance {σ : Ty Base} (φ : Formula Const [σ]) :
 
 @[simp] theorem lift_const {τ : Ty Base} (c : Const τ) :
     lift (Base := Base) c = .base c := rfl
+
+/--
+The one-step Henkin axioms over the immediate witness extension.
+
+This is the exact local theory that the future generic conservativity theorem
+should eliminate before reflecting back to the source signature.
+-/
+def ExactHenkinAxioms : ClosedTheorySet (OneStepHenkinConst Base Const) :=
+  fun ψ =>
+    (∃ (σ : Ty Base) (φ : Formula Const [σ]),
+      ψ = .imp (.ex (liftFormula (Base := Base) (Const := Const) φ))
+        (exWitnessInstance (Base := Base) (Const := Const) φ)) ∨
+    (∃ (σ : Ty Base) (φ : Formula Const [σ]),
+      ψ =
+        .imp
+          (allCounterexampleInstance (Base := Base) (Const := Const) φ)
+          (.all (liftFormula (Base := Base) (Const := Const) φ)))
+
+/--
+Generic one-step conservativity target.
+
+This is the theorem boundary the council now prefers for fresh-parameter
+elimination: if a closed source formula is provable after a single witness
+extension using only lifted old assumptions and the exact one-step Henkin axioms,
+then it was already provable over the source signature.
+-/
+def ConservativityGoal : Prop :=
+  ∀ {Δ : List (ClosedFormula Const)} {φ : ClosedFormula Const},
+    ClosedTheorySet.Provable
+      (Const := OneStepHenkinConst Base Const)
+      (fun ψ =>
+        ψ ∈ Δ.map (liftClosedFormula (Base := Base) (Const := Const) ) ∨
+          ψ ∈ ExactHenkinAxioms (Base := Base) (Const := Const))
+      (liftClosedFormula (Base := Base) (Const := Const) φ) →
+        ExtDerivation Const Δ φ
 
 end OneStepHenkinConst
 

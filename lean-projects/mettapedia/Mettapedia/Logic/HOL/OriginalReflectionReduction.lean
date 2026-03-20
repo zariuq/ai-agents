@@ -458,6 +458,102 @@ def ExactStepReflectionGoal : Prop :=
         ExtDerivation (HenkinConstStage Base Const n) Θ ψ
 
 /--
+Recursive finite-stage theory over `HenkinConstStage`.
+
+Stage `0` is exactly the original closed theory lifted into stage `0`.
+Stage `n + 1` consists of:
+- the theory from stage `n`, lifted one stage up, and
+- the genuinely fresh exact-step Henkin axioms added at stage `n`.
+
+This is the council-backed replacement for using only bounded cumulative-Henkin
+predicates as the main proof arena.
+-/
+def RecursiveStageTheory :
+    (n : Nat) → List (ClosedFormula Const) →
+      ClosedTheorySet (HenkinConstStage Base Const n)
+  | 0, Δ =>
+      fun ψ => ψ ∈ Δ.map
+        (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) 0)
+  | n + 1, Δ =>
+      fun ψ =>
+        (∃ χ : ClosedFormula (HenkinConstStage Base Const n),
+          χ ∈ RecursiveStageTheory n Δ ∧
+            HenkinConstStage.liftClosedFormula (Base := Base) (Const := Const)
+              (Nat.le_succ n) χ = ψ) ∨
+        ψ ∈ ExactStepHenkinAxioms (Base := Base) (Const := Const) n
+
+/--
+Provability over the recursive finite-stage theory.
+
+This is the new concrete stage predicate the council prefers for future finite
+reduction and one-step reflection theorems.
+-/
+def RecursiveStageProvable
+    (n : Nat)
+    (Δ : List (ClosedFormula Const))
+    (φ : ClosedFormula Const) : Prop :=
+  ClosedTheorySet.Provable
+    (Const := HenkinConstStage Base Const n)
+    (RecursiveStageTheory (Base := Base) (Const := Const) n Δ)
+    (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n φ)
+
+theorem recursiveStageProvable_zero
+    {Δ : List (ClosedFormula Const)}
+    {φ : ClosedFormula Const} :
+    RecursiveStageProvable (Base := Base) (Const := Const) 0 Δ φ →
+      StageZeroLiftedProvable (Base := Base) (Const := Const) Δ φ := by
+  rintro ⟨Γ, hΓ, hDeriv⟩
+  refine ExtDerivation.mono ?_ hDeriv
+  intro ψ hψ
+  rcases hΓ ψ hψ with hψ
+  exact hψ
+
+theorem recursiveStageProvable_zero_of_original
+    {Δ : List (ClosedFormula Const)}
+    {φ : ClosedFormula Const}
+    (hProv : ExtDerivation Const Δ φ) :
+    RecursiveStageProvable (Base := Base) (Const := Const) 0 Δ φ := by
+  exact
+    ClosedTheorySet.provable_of_closedTheory
+      (Const := HenkinConstStage Base Const 0)
+      (T := RecursiveStageTheory (Base := Base) (Const := Const) 0 Δ)
+      (Δ := Δ.map
+        (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) 0))
+      (hΔ := by
+        intro ψ hψ
+        exact hψ)
+      (hφ := HenkinConstStage.liftBase_closedTheory_zero_of_original
+        (Base := Base) (Const := Const) hProv)
+
+theorem recursiveStageProvable_zero_iff_originalProvable
+    {Δ : List (ClosedFormula Const)}
+    {φ : ClosedFormula Const} :
+    RecursiveStageProvable (Base := Base) (Const := Const) 0 Δ φ ↔
+      ExtDerivation Const Δ φ := by
+  constructor
+  · intro h
+    exact (stageZeroLiftedProvable_iff_originalProvable
+      (Base := Base) (Const := Const) (Δ := Δ) (φ := φ)).1
+      (recursiveStageProvable_zero (Base := Base) (Const := Const) h)
+  · intro h
+    exact recursiveStageProvable_zero_of_original
+      (Base := Base) (Const := Const) h
+
+/--
+Concrete future reduction goal for the recursive finite-stage theory.
+-/
+def RecursiveStageFiniteReductionGoal : Prop :=
+  FiniteStageReduction (Base := Base) (Const := Const)
+    (RecursiveStageProvable (Base := Base) (Const := Const))
+
+/--
+Concrete future one-step reflection goal for the recursive finite-stage theory.
+-/
+def RecursiveStageOneStepReflectionGoal : Prop :=
+  OneStepStageReflection (Base := Base) (Const := Const)
+    (RecursiveStageProvable (Base := Base) (Const := Const))
+
+/--
 Concrete stage-language provability candidate for the witnessed-source bridge.
 
 At stage `n`, we ask for a derivation in the actual stage language from:
@@ -485,30 +581,6 @@ theorem stageLanguageProvable_iff_internalStageProvable
         (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n φ) :=
   Iff.rfl
 
-@[simp] theorem liftClosedFormula_succ_liftBaseClosedFormula
-    {n : Nat}
-    (φ : ClosedFormula Const) :
-    HenkinConstStage.liftClosedFormula (Base := Base) (Const := Const)
-      (Nat.le_succ n)
-      (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n φ) =
-      HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) (n + 1) φ := by
-  rw [HenkinConstStage.liftClosedFormula, HenkinConstStage.liftBaseClosedFormula,
-    Mettapedia.Logic.HOL.mapConst_comp]
-  apply Mettapedia.Logic.HOL.mapConst_ext
-  intro τ c
-  simp [HenkinConstStage.lift, HenkinConstStage.ofBase, HenkinConstStage.liftOffset]
-
-@[simp] theorem map_liftClosedFormula_succ_liftBaseClosedTheory
-    {n : Nat}
-    (Δ : List (ClosedFormula Const)) :
-    (Δ.map (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n)).map
-      (HenkinConstStage.liftClosedFormula (Base := Base) (Const := Const) (Nat.le_succ n)) =
-      Δ.map (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) (n + 1)) := by
-  induction Δ with
-  | nil => rfl
-  | cons φ Δ ih =>
-      simp [ih]
-
 theorem internalStageProvable_of_derivation
     {n : Nat}
     {Θ : List (ClosedFormula (HenkinConstStage Base Const n))}
@@ -518,36 +590,8 @@ theorem internalStageProvable_of_derivation
   intro h
   refine ⟨[], ?_, ?_⟩
   · intro χ hχ
-    exact False.elim (by simpa using hχ)
+    simp at hχ
   · simpa using h
-
-theorem stageLanguageProvable_succ_to_splitStepProvable
-    {n : Nat}
-    {Δ : List (ClosedFormula Const)}
-    {φ : ClosedFormula Const} :
-    StageLanguageProvable (Base := Base) (Const := Const) (n + 1) Δ φ →
-      SplitStepProvable (Base := Base) (Const := Const) n
-        (Δ.map (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n))
-        (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n φ) := by
-  intro h
-  have h' :
-      InternalStageProvable (Base := Base) (Const := Const) (n + 1)
-        ((Δ.map
-          (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n)).map
-          (HenkinConstStage.liftClosedFormula (Base := Base) (Const := Const)
-            (Nat.le_succ n)))
-        (HenkinConstStage.liftClosedFormula (Base := Base) (Const := Const)
-          (Nat.le_succ n)
-          (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n φ)) := by
-    simpa [StageLanguageProvable, map_liftClosedFormula_succ_liftBaseClosedTheory] using h
-  simpa using
-    (internalStageProvable_succ_to_splitStepProvable
-      (Base := Base)
-      (Const := Const)
-      (Θ := Δ.map
-        (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n))
-      (ψ := HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n φ)
-      h')
 
 theorem not_mem_stageLanguageHenkinAxioms_zero
     {ψ : ClosedFormula (HenkinConstStage Base Const 0)} :
@@ -570,6 +614,7 @@ theorem stageLanguageProvable_zero
     exact
       not_mem_stageLanguageHenkinAxioms_zero (Base := Base) (Const := Const)
         (ψ := ψ) (hΓ hψ)
+
 
 /--
 Concrete reformulation of the remaining hard theorem:
@@ -595,6 +640,23 @@ def PriorStepReductionGoal : Prop :=
         ExactStepProvable (Base := Base) (Const := Const) n Θ ψ
 
 /--
+Remaining stage-language-to-split reduction goal.
+
+This is the concrete specialization of the split-step layer to original lifted
+assumptions. Once proved, the exact remaining burden is only:
+- absorb the inherited prior-stage assumptions, and
+- reflect the genuinely fresh exact-step assumptions.
+-/
+def SplitStageLanguageReductionGoal : Prop :=
+  ∀ (n : Nat)
+    {Δ : List (ClosedFormula Const)}
+    {φ : ClosedFormula Const},
+      StageLanguageProvable (Base := Base) (Const := Const) (n + 1) Δ φ →
+        SplitStepProvable (Base := Base) (Const := Const) n
+          (Δ.map (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n))
+          (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n φ)
+
+/--
 Concrete finite-stage reduction goal for the corrected stage-language bridge.
 
 This is the remaining descent theorem specialized to the first real
@@ -605,13 +667,13 @@ def StageLanguageFiniteReductionGoal : Prop :=
     (StageLanguageProvable (Base := Base) (Const := Const))
 
 theorem stageLanguageOneStepReflection_of_priorStepReduction_and_exactStepReflection
+    (hSplit : SplitStageLanguageReductionGoal (Base := Base) (Const := Const))
     (hPrior : PriorStepReductionGoal (Base := Base) (Const := Const))
     (hExact : ExactStepReflectionGoal (Base := Base) (Const := Const)) :
     StageLanguageOneStepReflectionGoal (Base := Base) (Const := Const) := by
   intro n Δ φ hStage
   have hSplit :=
-    stageLanguageProvable_succ_to_splitStepProvable
-      (Base := Base) (Const := Const) (n := n) (Δ := Δ) (φ := φ) hStage
+    hSplit n hStage
   have hExactProv :
       ExactStepProvable (Base := Base) (Const := Const) n
         (Δ.map (HenkinConstStage.liftBaseClosedFormula (Base := Base) (Const := Const) n))

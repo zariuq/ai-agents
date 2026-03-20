@@ -26,6 +26,14 @@ name = "gfDemo"
 root = "Algorithms.GF.Demo"
 
 [[lean_exe]]
+name = "gfEntailVerify"
+root = "Algorithms.GF.EntailmentVerifier"
+
+[[lean_exe]]
+name = "gfEntailEval"
+root = "Algorithms.GF.EntailmentEval"
+
+[[lean_exe]]
 name = "gfEntailPoC"
 root = "Algorithms.GF.EntailmentPoC"
 
