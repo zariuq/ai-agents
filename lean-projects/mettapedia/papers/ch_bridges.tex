@@ -1,0 +1,992 @@
+\chapter{Bridges to Neighboring Frameworks}
+\label{ch:bridges}
+
+The world-model calculus does not exist in a vacuum.  It touches---and is
+touched by---a constellation of neighboring formalisms: Markov Logic
+Networks, probabilistic logic programming, probabilistic programming
+languages, the classical PLN rule family,
+NARS, first-order logic, categorical probability theory, and process
+calculi.  This chapter constructs explicit bridges between each of these
+and the world-model calculus.  A \emph{bridge} is not a metaphor.  It is a
+pair of translation functions (embedding and projection) together with a
+theorem stating what structural properties are preserved.
+
+The goal is twofold: to show practitioners of each neighboring framework
+exactly how their objects map into (or out of) the WM calculus, and to
+delineate where the calculus genuinely extends those frameworks versus
+where it specializes or restricts them.
+
+\maplecourt{%
+Maple Court's building model touches several of these frameworks
+simultaneously.  The leak-humidity-mold Bayesian network is a special
+case of both MLN and BN world models.  The ProbLog-style rule
+``\texttt{0.3::mold\_risk(X) :- wall\_humidity(X, high)}'' encodes a
+distributional fact that the WM calculus represents as extraction from
+a state.  NARS-style evidence accumulation maps to the binary carrier.
+Classical FOL is the degenerate case where all evidence is crisp.
+Each bridge in this chapter will revisit this running example.}
+
+
+%% ═════════════════════════════════════════════════════════════
+\section{Markov Logic Networks}
+\label{sec:bridge-mln}
+%% ═════════════════════════════════════════════════════════════
+
+Markov Logic Networks (MLNs)~\cite{richardson2006markov} combine
+first-order logic with undirected graphical models.  An MLN is a set of
+weighted first-order formulas $\{(w_i, F_i)\}_{i=1}^m$.  Given a finite
+set of constants (the \emph{domain}), the MLN defines a ground Markov
+network whose log-linear probability over possible worlds~$\omega$ is:
+\[
+  P(\omega) = \frac{1}{Z} \exp\!\Bigl(\sum_{i=1}^m w_i \cdot n_i(\omega)\Bigr)
+\]
+where $n_i(\omega)$ is the number of true groundings of formula~$F_i$ in
+world~$\omega$, and $Z$ is the partition function.
+
+\begin{definition}[MLN as world-model instance (\claimCore{})]
+\label{def:mln-wm}
+An MLN over domain~$D$ with formulas $\{(w_i, F_i)\}$ defines an
+additive world model:
+\begin{itemize}
+\item \textbf{State:} a vector of grounding counts
+  $W = (n_1, \ldots, n_m) \in \mathbb{R}_{\ge 0}^m$, where $n_i$
+  records the weighted evidence for formula~$F_i$.
+\item \textbf{Query:} a ground atom or formula $q$.
+\item \textbf{Value type:} $V = \mathbb{R}$ (log-probabilities or
+  sufficient statistics under the exponential family).
+\item \textbf{Extraction:} $\mathrm{extract}(W, q) = \sum_{i : F_i
+  \text{ relevant to } q} w_i \cdot n_i$ --- the total weighted
+  evidence for~$q$ under the log-linear parameterization.
+\item \textbf{Revision:} pointwise addition of grounding counts:
+  $(n_1, \ldots, n_m) + (n_1', \ldots, n_m') =
+  (n_1 + n_1', \ldots, n_m + n_m')$.
+\end{itemize}
+\end{definition}
+
+\noindent
+The extraction is additive because the log-linear model is additive in
+sufficient statistics: adding evidence for formula~$F_i$ adds to the
+weight of every world where $F_i$ holds.  The log-linear
+parameterization is precisely what makes MLNs natural additive
+world-model instances.
+
+\begin{theorem}[MLN profile-hom correspondence (\claimCore{})]
+\label{thm:mln-hom}
+The MLN extraction map is an additive monoid homomorphism from
+grounding-count states to log-probability profiles:
+\[
+  \widehat{\mathrm{extract}}_{\mathrm{MLN}} :
+  \mathbb{R}_{\ge 0}^m \;\xrightarrow{\;+\;}\;
+  (\mathrm{Query} \to \mathbb{R})
+\]
+This is a special case of the profile-hom equivalence
+(Theorem~\ref{thm:universal-property}) with $V = \mathbb{R}$.
+\end{theorem}
+
+\paragraph{What the bridge preserves.}
+The embedding preserves: additive revision, extraction linearity, and
+the profile-hom structure.  An MLN state embeds faithfully into the
+WM calculus with all five algebraic rules holding.
+
+\paragraph{What the bridge does not preserve.}
+The MLN bridge does \emph{not} preserve the partition function~$Z$
+under revision.  Adding evidence changes the normalization constant,
+so the map from WM states to normalized MLN probabilities is not
+additive---it is a view projection, exactly as in
+Chapter~\ref{ch:views}.  Normalized probability is a lossy view of
+the underlying log-linear state.
+
+\paragraph{The weight--evidence duality.}
+MLN weights~$w_i$ play a dual role: they are both structural parameters
+(defining the model) and evidence multipliers (scaling the contribution
+of each formula).  In the WM calculus, these roles separate cleanly:
+weights belong to the \emph{model class} (the $\Sigma$ side condition),
+while counts belong to the \emph{state}.  This separation is why the
+WM calculus can track provenance and support forgetting, while standard
+MLNs cannot: in an MLN, retracting a single observation requires
+recomputing the full partition function, because the observation's
+contribution is entangled with the global normalization.
+
+\maplecourt{%
+The Maple Court leak-humidity-mold chain can be encoded as an MLN with
+three weighted formulas:
+$w_1 \cdot \mathrm{PipeLeak}(x)$,
+$w_2 \cdot (\mathrm{PipeLeak}(x) \Rightarrow
+\mathrm{WallHumidity}(x))$,
+$w_3 \cdot (\mathrm{WallHumidity}(x) \Rightarrow
+\mathrm{MoldRisk}(x))$.
+The MLN grounding counts are $(n_1, n_2, n_3)$; the WM state is the
+same vector.  Extraction for the query $\mathrm{MoldRisk}(3B)$ sums
+the weighted contributions: $w_2 n_2 + w_3 n_3$.  The bridge maps
+the WM compiled chain rule (Theorem~\ref{thm:chain-deduction}) to
+the MLN's MAP inference under log-linear scoring.}
+
+
+%% ═════════════════════════════════════════════════════════════
+\section{ProbLog and Probabilistic Logic Programming}
+\label{sec:bridge-problog}
+%% ═════════════════════════════════════════════════════════════
+
+ProbLog~\cite{DeRaedt2007ProbLog} annotates Prolog clauses with
+probabilities: \texttt{0.3::leak(X) :- old\_pipe(X)} means that the
+clause fires with probability~$0.3$.  The semantics is given by the
+\emph{distribution semantics}~\cite{Sato1995}: each probabilistic fact
+independently determines whether it is included in a logic program, and
+the probability of a query is the sum over all \emph{explanations}
+(sets of facts that entail the query).
+
+\begin{definition}[ProbLog as world-model instance (\claimConditional{})]
+\label{def:problog-wm}
+A ground ProbLog program with $n$ probabilistic facts defines a
+world-model instance:
+\begin{itemize}
+\item \textbf{State:} the vector of probabilistic-fact inclusion
+  indicators, $(p_1, \ldots, p_n)$, enriched with observation counts
+  for each fact.
+\item \textbf{Query:} a ground atom $q$ derivable from the logic
+  program.
+\item \textbf{Value type:} $V = \mathbb{R}_{\ge 0}^2$ (binary evidence:
+  positive count = number of worlds where $q$ holds, negative = where
+  it does not).
+\item \textbf{Extraction:} for each possible world~$\omega$
+  (a subset of probabilistic facts), check whether $q$ is derivable
+  under $\omega$'s logic program; accumulate binary evidence.
+\end{itemize}
+\end{definition}
+
+\noindent
+The side condition (\claimConditional{}) is that the ProbLog program is
+\emph{ground and acyclic}: the distribution semantics requires a
+well-founded derivation order.  Under this condition, the
+extraction---summing over explanations---commutes with evidence
+revision.
+
+\paragraph{Distributional semantics vs.\ WM extraction.}
+ProbLog's distribution semantics computes the probability of a query by
+marginalizing over all possible worlds.  This is precisely what WM
+extraction does for the Dirichlet-over-worlds instance
+(Chapter~\ref{ch:world-models}, \S``A Worked Instance''):
+\[
+  \mathrm{extract}_{\mathrm{ProbLog}}(W, q) =
+  \sum_{\omega \models q} P(\omega \mid W)
+  = \mathrm{extract}_{\mathrm{WM}}(W, \mathrm{prop}(q))
+\]
+The WM extraction generalizes ProbLog's distribution semantics in two
+directions:
+\begin{enumerate}
+\item ProbLog's probabilistic facts have \emph{fixed} probabilities;
+  the WM calculus tracks evidence counts and computes probabilities as
+  views.  This means WM states can be revised as new data arrives,
+  while ProbLog programs must be re-parameterized.
+\item ProbLog's queries are restricted to the Herbrand base of the
+  logic program; the WM query type is generic and can include
+  temporal, intensional, and deontic modalities
+  (Chapters~\ref{ch:intensional}--\ref{ch:governance}).
+\end{enumerate}
+
+\begin{proposition}[ProbLog probability as WM view (\claimCore{})]
+\label{prop:problog-view}
+The probability assigned to a query~$q$ by a ProbLog program is the
+strength view of the binary evidence extracted by the corresponding
+WM instance:
+\[
+  P_{\mathrm{ProbLog}}(q) = \strength(\mathrm{extract}(W, q))
+  = \frac{n_q^+}{n_q^+ + n_q^-}
+\]
+where $(n_q^+, n_q^-)$ is the binary evidence obtained by counting
+worlds.
+\end{proposition}
+
+\paragraph{The ProbLog--BN connection.}
+For ProbLog programs with a tree-structured dependency graph, the
+distribution semantics reduces to exact BN inference.  The bridge
+to BN world models (Chapter~\ref{ch:bn-models}) then applies
+directly: compiled chain/fork/collider rewrites are available under
+the d-separation side conditions induced by the ProbLog dependency
+structure.
+
+\maplecourt{%
+The ProbLog rule
+\texttt{0.3::mold\_risk(X) :- wall\_humidity(X, high)}
+corresponds to a CPT entry in the Maple Court BN:
+$P(\mathrm{MoldRisk} = \mathrm{true} \mid \mathrm{WallHumidity} =
+\mathrm{high}) = 0.3$.  In the WM calculus, this CPT entry is not a
+fixed parameter but a view of the evidence state
+$(3, 7)$---three mold events in ten high-humidity observations.  As
+more observations arrive, the evidence state is revised; the ProbLog
+probability is the strength view of the current state.}
+
+
+%% ═════════════════════════════════════════════════════════════
+\section{Probabilistic Programming Languages}
+\label{sec:bridge-ppl}
+%% ═════════════════════════════════════════════════════════════
+
+Probabilistic programming languages (PPLs) --- Church~\cite{Goodman2008Church},
+Stan~\cite{Carpenter2017Stan}, WebPPL~\cite{Goodman2014WebPPL},
+Pyro~\cite{Bingham2019Pyro}, and their kin --- elevate probabilistic
+models to first-class programs.  A PPL program is a generative model:
+it defines a joint distribution over all random choices made during
+execution, and inference consists of conditioning that distribution on
+observed data.  The dominant inference strategies are Markov Chain Monte
+Carlo (MCMC) and variational inference (VI).
+
+\paragraph{The PPL paradigm.}
+In a PPL, the programmer writes a stochastic \emph{program}~$M$ that
+samples from prior distributions and performs deterministic computation.
+The posterior $P(\theta \mid \mathrm{obs})$ is the distribution over
+latent variables~$\theta$ conditioned on observed data.  Inference
+engines (NUTS, HMC, ADVI, etc.) explore this posterior by sampling or
+by optimizing a variational approximation.  The program serves
+simultaneously as model specification and as a generator of sample
+execution traces.
+
+\begin{definition}[PPL model as world-model instance (\claimConditional{})]
+\label{def:ppl-wm}
+A PPL model $M$ with latent space~$\Theta$ and observation
+space~$\mathcal{X}$ defines a world-model instance:
+\begin{itemize}
+\item \textbf{State:} a sufficient-statistic summary of the
+  accumulated data $\mathbf{x} = (x_1, \ldots, x_n)$, i.e.\
+  $W = \mathrm{suffStats}(\mathbf{x}) \in V$.
+\item \textbf{Query:} a function $q : \Theta \to \mathbb{R}$ (a
+  posterior expectation or marginal density).
+\item \textbf{Value type:} $V$ is the carrier appropriate for the
+  model family (binary, Dirichlet, Normal-Gamma, etc.).
+\item \textbf{Extraction:} $\mathrm{extract}(W, q) =
+  \mathbb{E}_{\theta \sim P(\theta \mid W)}[q(\theta)]$, the
+  posterior expectation of $q$ given the accumulated data.
+\item \textbf{Revision:} $W_1 \hplus W_2 = $ componentwise addition
+  of sufficient statistics (valid when observations are
+  exchangeable --- de~Finetti~\cite{deFinetti1974}).
+\end{itemize}
+The side condition (\claimConditional{}) is exchangeability: if the
+model assumes i.i.d.\ observations, revision is additive.  For
+non-exchangeable models (time-series, structured priors), the overlap-aware
+or trust-gated regimes apply.
+\end{definition}
+
+\paragraph{What the WM calculus adds over PPLs.}
+Three structural gaps separate PPL-style inference from the WM calculus:
+
+\begin{enumerate}
+\item \textbf{Approximate vs.\ exact.}  PPL inference engines
+  (NUTS, ADVI) approximate the posterior.  The WM calculus provides
+  exact inference paths under explicit side conditions: the BN
+  exactness theorems (Chapter~\ref{ch:bn-models}) certify that
+  compiled rewrites agree with full extraction, with no sampling
+  error.  For models with BN structure, the WM compiled path is
+  both exact and fast; PPL samplers are approximate by design.
+
+\item \textbf{No revision semantics.}  PPL programs are
+  \emph{re-fit} when new data arrives: the model is re-run with a
+  larger dataset.  The WM calculus provides an algebraic revision
+  operation --- $W \hplus W'$ --- that updates the sufficient
+  statistics without re-running the program.  This is online
+  Bayesian updating; it requires no inference engine at
+  revision time.  The sleep-consolidation theorem
+  (Theorem~\ref{thm:sleep-consolidation}) guarantees that batch and
+  sequential revision agree.
+
+\item \textbf{Implicit side conditions.}  PPL models embed
+  independence assumptions (conditional independence given latent
+  variables, exchangeability) informally in the program structure.
+  The WM calculus surfaces these as explicit $\Sigma$ predicates.
+  The no-go theorem (Chapter~\ref{ch:no-go}) shows that ignoring
+  side conditions leads to unsound inference; the $\Sigma$-discipline
+  makes every compiled shortcut honest.
+\end{enumerate}
+
+\begin{proposition}[PPL posterior as WM strength view (\claimCore{})]
+\label{prop:ppl-strength-view}
+For a conjugate PPL model (Beta-Binomial, Dirichlet-Multinomial, or
+Normal-Gamma), the posterior mean of any query~$q$ is the WM strength
+view of the corresponding evidence:
+\[
+  \mathbb{E}[q(\theta) \mid \mathbf{x}] =
+  \strength(\mathrm{extract}(W, q))
+\]
+where $W = \mathrm{suffStats}(\mathbf{x})$.  The full posterior
+distribution is the view returned by \emph{distributional extraction}
+(Chapter~\ref{ch:error-transport}), not a scalar.
+\end{proposition}
+
+\paragraph{PPLBench and the nine-lane validation.}
+The PPLBench comparison (Chapter~\ref{ch:pplbench}) runs the WM
+calculus head-to-head against nine PPL implementations (Stan, Pyro,
+Turing.jl, etc.) on a common benchmark suite.  The WM calculus
+achieves exact posterior agreement with Stan on conjugate models
+(where Stan's NUTS converges to the exact posterior), while using
+only sufficient-statistic arithmetic and zero sampling.  For
+non-conjugate models, the WM distributional path
+(Chapter~\ref{ch:error-transport}) provides certified approximation
+bounds; PPL samplers provide convergence guarantees in the limit
+but no per-query error certificates.
+
+\paragraph{The PPL--BN boundary.}
+A PPL model that compiles to a BN (e.g., a Pyro model with an acyclic
+data-generating process and conjugate priors) falls under the exact BN
+inference regime of Chapter~\ref{ch:bn-models}.  In this case:
+\begin{itemize}
+\item The PPL's MCMC is unnecessary: the BN query bridge
+  (Theorem~\ref{thm:chain-deduction}) gives the exact posterior.
+\item The WM compiled rules (chain, fork, collider) replace NUTS
+  as the inference engine.
+\item Revision is evidence addition; re-fitting is unnecessary.
+\end{itemize}
+This boundary delineates where the WM calculus dominates PPL inference
+outright (BN-structured conjugate models) versus where PPLs remain
+competitive (non-conjugate, non-BN models requiring VI or MCMC).
+
+\maplecourt{%
+The Maple Court humidity model can be expressed as a Stan program:
+a Normal prior on the mean humidity, updated by observations from
+the hallway sensor.  Stan's NUTS would run $\sim\!10^4$ steps to
+estimate the posterior mean.  The WM calculus accumulates sufficient
+statistics $(n, \sum x_i, \sum x_i^2)$ in the Normal-Gamma carrier
+and computes the posterior mean analytically:
+$\mu_n = (\kappa_0 \mu_0 + \sum x_i) / (\kappa_0 + n)$.
+Both approaches agree on the posterior mean; the WM calculus
+provides the exact answer in $O(1)$, while Stan provides an
+approximation in $O(n_{\mathrm{samples}})$.  For the
+non-conjugate question ``what is the probability that \emph{both}
+pipe-leak evidence \emph{and} humidity jointly exceed their
+respective thresholds simultaneously?'' --- a query that involves
+the joint distribution across two carriers --- the WM distributional
+path applies, while Stan would use a dedicated multi-variate model.}
+
+
+%% ═════════════════════════════════════════════════════════════
+\section{PLN v0.9 Subsumption}
+\label{sec:bridge-pln}
+%% ═════════════════════════════════════════════════════════════
+
+The world-model calculus grew from the formalization of Probabilistic
+Logic Networks~\cite{goertzel2009pln}.  This section makes the
+subsumption precise: every classical PLN rule is a compiled WM
+instance, exact under explicit side conditions.
+
+\paragraph{The classical rule family.}
+PLN v0.9 provides seven core inference rules: deduction, induction,
+abduction, modus ponens, revision, negation, and inversion.  Each rule
+takes truth values (strength, confidence pairs) as inputs and produces
+a truth value as output.  The rules are stated as algebraic formulas
+over strength and confidence.
+
+The world-model calculus subsumes this family in the following precise
+sense:
+
+\begin{theorem}[PLN subsumption (\claimConditional{})]
+\label{thm:pln-subsumption}
+Every PLN v0.9 rule is a $\Sigma$-guarded compiled rewrite
+(Chapter~\ref{ch:sigma-rewrites}) of the additive world-model
+calculus.  Specifically:
+\begin{enumerate}
+\item Each rule's strength formula is the strength \emph{view} of a
+  full posterior extraction under stated side conditions
+  (screening-off, positivity, stamp-disjointness).
+\item Each rule's confidence formula is the confidence view of the
+  same extraction.
+\item Each rule is exact (the compiled rewrite agrees with full
+  extraction) when its $\Sigma$ holds; when $\Sigma$ fails, the
+  rule is not licensed.
+\end{enumerate}
+\end{theorem}
+
+\noindent
+The proof is distributed across Chapters~\ref{ch:sigma-rewrites}
+and~\ref{ch:bn-models}: the deduction formula is proved exact under
+chain-BN screening-off (Theorem~\ref{thm:chain-deduction}); induction
+and abduction reduce to Bayes-inversion followed by deduction; modus
+ponens, revision, negation, and inversion each have their own
+$\Sigma$-proofs.
+
+\paragraph{What the calculus adds.}
+The WM calculus adds five capabilities that PLN v0.9 lacks:
+\begin{enumerate}
+\item \textbf{Explicit side conditions.}  PLN v0.9 states rules as
+  universally valid formulas; the WM calculus states the conditions
+  under which each rule is exact.
+\item \textbf{Distributional inference.}  PLN v0.9 propagates scalar
+  (strength, confidence) summaries; the WM calculus propagates full
+  posterior distributions (Chapter~\ref{ch:error-transport}), with
+  five proved limitation theorems quantifying the cost of scalar
+  chaining.
+\item \textbf{Provenance and forgetting.}  PLN v0.9 carries evidence
+  stamps but cannot formally retract evidence; the WM calculus
+  provides scoped forgetting with conservation guarantees
+  (Chapter~\ref{ch:state-ops}).
+\item \textbf{Multiple evidence carriers.}  PLN v0.9 uses binary
+  evidence exclusively; the WM calculus supports Dirichlet,
+  Normal-Gamma, and generic carriers (Chapter~\ref{ch:evidence}).
+\item \textbf{Typed rewrite verification.}  PLN v0.9 justifies rules
+  by informal argument; the WM calculus provides kernel-checked Lean
+  proofs for every rule in the catalog.
+\end{enumerate}
+
+\paragraph{What PLN v0.9 provides that the calculus inherits.}
+The original PLN design contributes the \emph{conceptual vocabulary}
+that the WM calculus formalizes: evidence-based reasoning, the
+strength-confidence decomposition, the idea that inference rules are
+derived rather than primitive, and the revision-as-evidence-combination
+pattern.  The WM calculus does not replace this vocabulary---it gives
+it a precise typed semantics.
+
+\begin{remark}[PLN v0.9 examples as WM conformance tests]
+The three flagship PLN v0.9 examples---DeductionRevision,
+RavenInduction, and FlyingRaven---are fully verified as compiled
+BN rewrites with provenance tracking and 20~kernel-checked
+conformance tests (Chapter~\ref{ch:bn-models}, \S``PLN v0.9
+Examples'').
+\end{remark}
+
+
+%% ═════════════════════════════════════════════════════════════
+\section{NARS Bridge}
+\label{sec:bridge-nars}
+%% ═════════════════════════════════════════════════════════════
+
+The Non-Axiomatic Reasoning System (NARS) of Pei Wang uses a
+truth-value system based on two components: \emph{frequency}
+$f = w^+ / (w^+ + w^-)$ and \emph{confidence}
+$c = (w^+ + w^-) / (w^+ + w^- + k)$, where $w^+$ and $w^-$ are
+positive and negative evidence counts and $k$ is a system parameter
+(typically $k = 1$).
+
+\begin{definition}[NARS truth value as WM binary evidence (\claimCore{})]
+\label{def:nars-bridge}
+The NARS truth value $(f, c)$ with parameter~$k$ corresponds to the
+WM binary evidence $(n^+, n^-)$ via:
+\[
+  n^+ = \frac{f \cdot c \cdot k}{1 - c}, \qquad
+  n^- = \frac{(1-f) \cdot c \cdot k}{1 - c}
+\]
+Conversely, $f = n^+ / (n^+ + n^-)$ and
+$c = (n^+ + n^-) / (n^+ + n^- + k)$.
+\end{definition}
+
+\noindent
+The correspondence is exact: the NARS frequency is the WM strength
+view, and the NARS confidence is the WM confidence view with
+denominator offset~$k$ instead of~$2$ (the WM Laplace smoothing
+uses $k = 2$; NARS typically uses $k = 1$).
+
+\begin{theorem}[NARS revision as WM revision (\claimCore{})]
+\label{thm:nars-revision}
+The NARS revision rule---which combines two truth values
+$(f_1, c_1)$ and $(f_2, c_2)$ into a weighted average---is
+equivalent to additive evidence revision in the WM calculus:
+\[
+  (n_1^+, n_1^-) \hplus (n_2^+, n_2^-) = (n_1^+ + n_2^+, n_1^- + n_2^-)
+\]
+The NARS revision formula
+$f_{\mathrm{rev}} = (f_1 c_1 + f_2 c_2) / (c_1 + c_2)$
+is the strength view of the summed evidence, provided the evidence
+sets are disjoint (the stamp-disjointness condition of
+Chapter~\ref{ch:sigma-rewrites}).
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+Converting NARS truth values to evidence counts:
+$w_i = c_i k / (1 - c_i)$, $w_i^+ = f_i w_i$, $w_i^- = (1-f_i) w_i$.
+Summing and converting back:
+$f_{\mathrm{rev}} = (w_1^+ + w_2^+) / (w_1 + w_2)
+= (f_1 w_1 + f_2 w_2) / (w_1 + w_2)$.
+Since $w_i$ is monotonically related to $c_i$ (for fixed~$k$), the
+NARS weighted-average formula is the strength view of additive
+evidence combination.
+\end{proof}
+
+\paragraph{Where NARS and WM diverge.}
+Three points of divergence:
+\begin{enumerate}
+\item \textbf{Inference rules.}  NARS deduction uses the formula
+  $f_{AC} = f_{AB} \cdot f_{BC}$ with a confidence adjustment.  The
+  WM deduction formula (Definition~\ref{def:deduction-strength}) is
+  more complex because it accounts for the base rate:
+  $s_{AC} = s_{AB} s_{BC} + (1 - s_{AB})(s_C - s_B s_{BC})/(1 - s_B)$.
+  The NARS formula is the special case where the base rate terms
+  vanish (i.e., $s_C = s_B \cdot s_{BC}$).
+\item \textbf{Side conditions.}  NARS rules fire unconditionally;
+  the WM calculus requires explicit $\Sigma$ for each rule.  The
+  no-go theorem (Chapter~\ref{ch:no-go}) shows that unconditional
+  firing is unsound in general.
+\item \textbf{Temporal handling.}  NARS has native temporal operators
+  (predictive and retrospective implications); the WM calculus
+  handles temporality via the temporal quantale
+  (Chapter~\ref{ch:temporal}).  Both approaches use sequential
+  composition, but the WM quantale structure provides free
+  transitivity theorems (Theorem~\ref{thm:temporal-transitivity})
+  that NARS obtains by separate inference rules.
+\end{enumerate}
+
+\maplecourt{%
+Suppose a NARS agent in Maple Court observes five leak alarms and
+two no-alarm readings for Apartment~3B's pipe sensor.  The NARS
+truth value is $f = 5/7 \approx 0.71$, $c = 7/8 = 0.875$ (with
+$k = 1$).  The WM binary evidence is $(5, 2)$.  Both systems
+agree on the evidence; they diverge when chaining to
+$\mathrm{MoldRisk}$: NARS applies $f_{AC} = f_{AB} \cdot f_{BC}$
+unconditionally, while the WM calculus requires screening-off and
+uses the full deduction formula.  For this particular BN structure,
+the WM formula reduces to the NARS formula only when the mold base
+rate satisfies $s_C = s_B \cdot s_{BC}$---a condition that the
+$\Sigma$-discipline makes explicit.}
+
+
+%% ═════════════════════════════════════════════════════════════
+\section{Classical FOL and Set Theory as Degenerate WM}
+\label{sec:bridge-fol}
+%% ═════════════════════════════════════════════════════════════
+
+Classical first-order logic and set theory are world-model instances
+in a degenerate but illuminating way.
+
+\begin{definition}[Boolean world model (\claimCore{})]
+\label{def:boolean-wm}
+A \emph{Boolean world model} is an additive world model with value
+type $V = \mathbb{B} = \{0, 1\}$ under Boolean OR as addition:
+\begin{itemize}
+\item $\mathrm{State} = \mathcal{P}(\Omega)$ (a set of possible
+  worlds, or equivalently a first-order theory).
+\item $\mathrm{Query} = $ first-order sentences over the signature.
+\item $\mathrm{extract}(W, q) = 1$ if $W \models q$, and $0$
+  otherwise.
+\item $\mathrm{revise}(W_1, W_2) = W_1 \cap W_2$ (intersection of
+  model sets, i.e., conjunction of theories).
+\end{itemize}
+\end{definition}
+
+\noindent
+In this instance, the ``additive'' structure degenerates: Boolean OR
+is idempotent ($1 + 1 = 1$), so the additive monoid collapses to a
+bounded semilattice.  Extraction is the characteristic function of
+the satisfaction relation.
+
+\begin{theorem}[FOL as degenerate additive WM (\claimCore{})]
+\label{thm:fol-wm}
+The Boolean world model satisfies the additive world-model axioms
+with $V = (\mathbb{B}, \vee, 0)$:
+\begin{enumerate}
+\item $\mathrm{extract}(W_1 \cap W_2, q) =
+  \mathrm{extract}(W_1, q) \vee \mathrm{extract}(W_2, q)$ when
+  restricted to queries that are monotone in the model set.
+\item $\mathrm{extract}(\Omega, q) = 0$ for non-tautological queries
+  (the empty state knows nothing).
+\end{enumerate}
+For classical (monotone) entailment, all five algebraic rules hold.
+\end{theorem}
+
+\paragraph{Set-theoretic operations as WM operations.}
+The standard set-theoretic operations have WM counterparts:
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Set theory / FOL} & \textbf{WM calculus} \\
+\midrule
+$W \models \varphi$ (entailment) & $\mathrm{extract}(W, \varphi) = 1$ \\
+$\mathrm{Th}(\mathcal{M})$ (theory of a model) & state \\
+$\mathrm{Mod}(T)$ (models of a theory) & $\{W : \mathrm{extract}(W,q)=1\}$ \\
+$T_1 \cup T_2$ (theory union) & $\mathrm{revise}(W_1, W_2)$ \\
+$\emptyset$ (empty theory) & $\mathrm{empty}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Why this bridge matters.}
+The degenerate bridge shows that the WM calculus \emph{contains}
+classical logic as a special case, but with a crucial loss: the
+Boolean carrier discards all uncertainty information.  There is no
+strength, no confidence, no evidence count---only yes/no.
+The information ordering collapses to a total order ($0 < 1$), and
+the lattice structure of the evidence carriers (Figure~\ref{fig:evidence-lattice})
+reduces to a two-element chain.
+
+This is precisely the limitation that motivated the calculus:
+classical logic can express what is known but not how well it is
+known.  The WM calculus replaces the Boolean carrier with richer
+carriers that track both \emph{what} and \emph{how much}.
+
+\begin{proposition}[Crisp extraction (\claimCore{})]
+\label{prop:crisp}
+For any additive world model with carrier~$V$, the ``crisp
+extraction'' obtained by composing extraction with the threshold
+view $\mathbb{1}_{s > 0.5}$ recovers Boolean entailment:
+\[
+  \mathrm{crisp}(W, q) = \begin{cases}
+    1 & \text{if } \strength(\mathrm{extract}(W, q)) > 0.5 \\
+    0 & \text{otherwise}
+  \end{cases}
+\]
+This is a view projection (Chapter~\ref{ch:views}): it discards
+all information except the sign of the evidence balance.
+\end{proposition}
+
+
+%% ═════════════════════════════════════════════════════════════
+\section{Categorical Probability Bridge}
+\label{sec:bridge-categorical}
+%% ═════════════════════════════════════════════════════════════
+
+The categorical probability program of Fritz, Rischel, and
+collaborators (see Fritz 2020, \emph{A synthetic approach to Markov
+kernels}) provides a setting in which probability theory is developed
+abstractly using \emph{Markov categories}: symmetric monoidal
+categories in which every object is equipped with a copy and discard
+morphism satisfying naturality conditions.
+
+\paragraph{Markov categories and the WM calculus.}
+A Markov category $\mathbf{C}$ has:
+\begin{itemize}
+\item Objects: measurable spaces (or their abstract analogues).
+\item Morphisms: Markov kernels $X \to Y$ (stochastic maps).
+\item Monoidal product: independent combination of spaces.
+\item Copy morphism: $\mathrm{copy}_X : X \to X \otimes X$ (duplication).
+\item Discard morphism: $\mathrm{del}_X : X \to I$ (marginalization).
+\end{itemize}
+
+\begin{definition}[WM extraction as Markov-category morphism (\claimCore{})]
+\label{def:markov-cat-bridge}
+In a Markov category, the WM extraction map
+$\mathrm{extract} : \mathrm{State} \times \mathrm{Query} \to V$
+is a \emph{deterministic} morphism (a morphism that commutes with
+copy): querying the same state twice for the same question yields
+the same answer.  The additivity law
+$\mathrm{extract}(W_1 + W_2, q) = \mathrm{extract}(W_1, q) +
+\mathrm{extract}(W_2, q)$ expresses that extraction is a
+\emph{monoid homomorphism in the Markov-category sense}: it
+preserves the monoidal structure of state combination.
+\end{definition}
+
+\begin{theorem}[Profile-hom in Markov categories (\claimCore{})]
+\label{thm:markov-cat-hom}
+The profile-hom equivalence (Theorem~\ref{thm:universal-property})
+has a categorical restatement: an additive world model is an
+\emph{algebra for the commutative-monoid monad} in the category of
+additive monoids, with the extraction being the algebra map.  In a
+Markov category, this becomes: an additive world model is a
+deterministic morphism from the state monoid to the function monoid
+$\mathrm{Query} \to V$, and this morphism commutes with copy
+(determinism) and discard (zero extraction).
+\end{theorem}
+
+\paragraph{The Giry monad connection.}
+The Giry monad $\mathcal{G}$ sends a measurable space~$X$ to the
+space of probability measures on~$X$.  The Kleisli category of~$\mathcal{G}$
+is a Markov category.  In this setting:
+\begin{itemize}
+\item A WM state is a probability measure on the space of possible
+  worlds: $W \in \mathcal{G}(\Omega)$.
+\item Revision is the convolution (mixture) of measures---the Giry
+  monad's multiplication applied to the sum of evidence.
+\item The Giry bind implements Kyburg flattening
+  (Chapter~\ref{ch:world-models}, \S``Giry monad and Markov
+  kernels'').
+\end{itemize}
+The formalization proves that this flattening satisfies all three
+monad laws, establishing the probability-theoretic foundation
+categorically.
+
+\paragraph{Copy-discard categories and evidence.}
+The evidence carriers of Chapter~\ref{ch:evidence} live in a
+\emph{copy-discard category}: the copy morphism on binary evidence
+$(n^+, n^-)$ duplicates the counts (making two copies of the same
+evidence), and the discard morphism sends all evidence to $(0, 0)$
+(the empty state).  The quantale tensor
+(Theorem~\ref{thm:quantale-trans}) is a morphism in this category:
+it composes evidence along inference chains while preserving the
+copy-discard structure.
+
+\begin{remark}[Categorical coherence]
+The categorical probability bridge places the WM calculus in the
+landscape of 2020s categorical probability.  The profile-hom
+equivalence is the algebraic shadow of a Markov-category structure;
+the Giry monad provides the measure-theoretic foundation; the
+copy-discard laws ensure that evidence behaves well under duplication
+and marginalization.  The open conjecture
+(\S\ref{sec:gslt-open-program}) that every GSLT induces a world
+model can be restated categorically: every graph-structured lambda
+theory with parallel composition defines a commutative-monoid
+object in a suitable Markov category.
+\end{remark}
+
+
+%% ═════════════════════════════════════════════════════════════
+\section{Process Calculus Bridge}
+\label{sec:bridge-process}
+%% ═════════════════════════════════════════════════════════════
+
+Meredith's $\rho$-calculus (the reflective higher-order process
+calculus) provides a computational foundation in which processes are
+first-class citizens: they can be sent as messages, composed in
+parallel, and inspected structurally.  The connection to the
+world-model calculus runs through the GSLT universality theorem
+and the amplitude carrier.
+
+\paragraph{The $\rho$-calculus in brief.}
+The $\rho$-calculus~\cite{MeredithRadestock2005} extends the
+$\pi$-calculus with reflection: a process $P$ can be ``reified'' as
+a name $\ulcorner P \urcorner$ and sent over a channel, and
+conversely a name can be ``reflected'' back into a running process.
+The operational semantics has three constructors:
+\begin{enumerate}
+\item $0$ --- the stopped process (the empty state).
+\item $P \mid Q$ --- parallel composition (revision).
+\item $\mathrm{for}(y \leftarrow x)\{P\}$ --- input-guarded
+  continuation (extraction awaiting a query).
+\end{enumerate}
+
+\begin{definition}[$\rho$-calculus as world-model instance (\claimCore{})]
+\label{def:rho-wm}
+A $\rho$-calculus process defines a world-model instance:
+\begin{itemize}
+\item $\mathrm{State} = \mathrm{Process}$ (the set of
+  $\rho$-calculus processes modulo structural congruence).
+\item $\mathrm{Query} = \mathrm{Name}$ (channel names, which are
+  quoted processes).
+\item $V$ = a suitable observation type (barbs, or more generally
+  the values observed on channels).
+\item $\mathrm{revise}(P, Q) = P \mid Q$ (parallel composition).
+\item $\mathrm{empty} = 0$ (the stopped process).
+\item $\mathrm{extract}(P, x) = $ the observable behavior of $P$
+  on channel~$x$ (the barb $P \downarrow_x$).
+\end{itemize}
+\end{definition}
+
+\noindent
+Parallel composition is commutative and associative (by structural
+congruence), so the state space is a commutative monoid.  The
+stopped process is the unit.  The extraction (barb observation) is
+a form of query answering: ``does process $P$ exhibit behavior on
+channel~$x$?''
+
+\paragraph{The amplitude regime.}
+When $V = \mathbb{C}$ (complex amplitudes), the WM calculus enters
+what Meredith calls the \emph{quantum amplitude regime}.  In this
+regime:
+\begin{itemize}
+\item Evidence values are complex amplitudes rather than real counts.
+\item Revision is addition of amplitudes (superposition).
+\item The Born rule $|z|^2$ is a view projection from amplitudes to
+  probabilities---exactly the lossy view pattern of
+  Chapter~\ref{ch:views}.
+\item Interference effects arise naturally: two evidence
+  contributions can cancel ($z_1 + z_2 = 0$) or reinforce
+  ($|z_1 + z_2|^2 > |z_1|^2 + |z_2|^2$).
+\end{itemize}
+
+\begin{proposition}[Amplitude extraction is additive (\claimCore{})]
+\label{prop:amplitude-additive}
+With $V = \mathbb{C}$ and revision as complex addition, the
+extraction law holds:
+\[
+  \mathrm{extract}(P \mid Q, x) =
+  \mathrm{extract}(P, x) + \mathrm{extract}(Q, x)
+\]
+The Born-rule view $|\cdot|^2$ is \emph{not} additive:
+$|z_1 + z_2|^2 \ne |z_1|^2 + |z_2|^2$ in general.  This is another
+instance of the views-are-not-additive principle
+(Proposition~\ref{prop:overview-views-not-semantic-core}).
+\end{proposition}
+
+\paragraph{GSLT universality and process algebra.}
+The GSLT universality theorem
+(Theorem~\ref{thm:universalEnsembleWorldModel} in
+Chapter~\ref{ch:typed}) says: for any type~$T$, multiset ensembles
+of~$T$ give an additive world model.  A $\rho$-calculus process is a
+term of type $\mathrm{Process}$; the multiset of its parallel
+components is an ensemble; and decidable predicates on processes
+(``does this process contain a send on channel~$x$?'') are queries.
+The GSLT theorem therefore gives every $\rho$-calculus system a
+canonical world model.
+
+\begin{lstlisting}[language={}]
+-- Rho-calculus process as WM state
+instance : AdditiveWorldModel Process Name Observation where
+  revise  := Process.par        -- parallel composition
+  empty   := Process.stop       -- stopped process
+  extract := Process.barb       -- observable behavior
+  -- Laws: par_comm, par_assoc, par_zero, barb_par_add
+\end{lstlisting}
+
+\paragraph{The spatial-behavioral bridge.}
+Meredith's spatial-behavioral types~\cite{meredith2026ccc} classify
+processes by the spatial structure of their communication patterns.
+In WM terms, spatial-behavioral types are \emph{query families}:
+each type specifies a class of observations (barbs) that the process
+may exhibit.  The type-checking judgment ``process $P$ has
+spatial-behavioral type $\tau$'' becomes a WM extraction:
+$\mathrm{extract}(P, \tau) \ne 0$ iff $P$ exhibits the behavior
+classified by~$\tau$.
+
+The OSLF modal operators $\Diamond$ and $\Box$
+(Chapter~\ref{ch:typed}) are the WM calculus's version of
+Hennessy-Milner modalities~\cite{HennessyMilner1985}: $\Diamond\varphi$
+asks whether some reduction leads to a state satisfying~$\varphi$
+(forward reachability), and $\Box\varphi$ asks whether every
+predecessor satisfies~$\varphi$ (backward invariance).  The Galois
+connection $\Diamond \dashv \Box$ is the process-algebraic
+completeness theorem recast in WM terms.
+
+\maplecourt{%
+Imagine Maple Court's building automation as a concurrent system:
+each sensor is a process emitting readings on its channel, and the
+building controller is a process listening on all sensor channels.
+The parallel composition $\mathrm{Sensor}_1 \mid \mathrm{Sensor}_2
+\mid \cdots \mid \mathrm{Controller}$ is the WM state.  Querying
+``is there a leak alarm on channel \texttt{pipe\_3B}?'' is a barb
+observation.  The amplitude regime would model quantum sensors
+(e.g., SQUID-based leak detectors) where interference between
+sensor signals is physically meaningful.}
+
+
+%% ═════════════════════════════════════════════════════════════
+\section{What the Calculus Covers and Where It Stops}
+\label{sec:bridge-scope}
+%% ═════════════════════════════════════════════════════════════
+
+The eight bridges above map out the calculus's neighborhood.  This
+section summarizes the coverage and identifies the boundaries---a
+preview of the full Limitations chapter (Chapter~\ref{ch:limitations}).
+
+\paragraph{What the calculus covers.}
+The world-model calculus provides a unified framework for:
+
+\begin{enumerate}
+\item \textbf{Evidence-based uncertain reasoning} with explicit
+  carriers, revisable states, and compositional extraction
+  (Chapters~\ref{ch:world-models}--\ref{ch:evidence}).
+\item \textbf{Compiled inference} with explicit side conditions and
+  kernel-checked correctness proofs, subsuming the PLN rule family
+  and exact BN inference (Chapters~\ref{ch:sigma-rewrites}--\ref{ch:bn-models}).
+\item \textbf{Distributional inference} that avoids the variance
+  accumulation, sensitivity amplification, and coverage collapse of
+  scalar chaining (Chapter~\ref{ch:error-transport}).
+\item \textbf{State management}: forgetting, provenance,
+  explanation, and conservation
+  (Chapter~\ref{ch:state-ops}).
+\item \textbf{Extensional and intensional inheritance} with a
+  typed three-channel model refuting the classical scalar mixture
+  (Chapter~\ref{ch:intensional}).
+\item \textbf{Temporal and causal inference} via the temporal
+  quantale, with free transitivity theorems
+  (Chapter~\ref{ch:temporal}).
+\item \textbf{Normative reasoning} with graded deontic evidence and
+  a temporal-deontic bridge (Chapter~\ref{ch:governance}).
+\item \textbf{Neighboring frameworks}: MLNs, ProbLog, NARS,
+  classical FOL, categorical probability, and process calculi, all
+  as instances or projections of the same calculus (this chapter).
+\end{enumerate}
+
+\paragraph{Where the calculus stops.}
+Five boundaries delimit the current scope:
+
+\begin{description}
+\item[Non-additive regimes.] The overlap-aware, trust-gated, and
+  coalition revision regimes are typed but not developed in full
+  generality.  No profile-hom equivalence is known outside the
+  additive regime (Chapter~\ref{ch:world-models}).
+
+\item[Measure-theoretic grounding.] The Giry monad connection is
+  stated but the terminal
+  $\code{WorldModel (Measure\;\Omega)\;Query}$ instance remains
+  future work.  The current formalization works with finitary
+  carriers and discrete state spaces.
+
+\item[Higher-order completeness.] The calculus handles quantified and
+  higher-order queries as instances of the generic Query type, but
+  no completeness theorem is proved for the full higher-order
+  fragment.
+
+\item[Computational complexity.] The calculus says \emph{what} the
+  correct answer is but does not provide complexity bounds for
+  computing it.  Exact BN inference is \#P-hard in general; the
+  WM calculus licenses compiled shortcuts but does not analyze their
+  computational cost.
+
+\item[The probability hypercube.] The full classification of theories
+  by which combination of merge-law and carrier properties they
+  satisfy (commutativity, distributivity, precision, additivity) is
+  a work in progress.  The 29-file Lean formalization in
+  \codepath{Mettapedia/ProbabilityTheory/Hypercube/} maps the axes
+  but does not yet prove the complete classification theorem.
+\end{description}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >=Latex,
+  every node/.style={font=\footnotesize},
+  framework/.style={draw, rounded corners=4pt, minimum width=28mm,
+              minimum height=10mm, align=center, fill=blue!6},
+  wmbox/.style={draw, very thick, rounded corners=6pt, minimum width=36mm,
+              minimum height=12mm, align=center, fill=green!8},
+  boundary/.style={draw, dashed, rounded corners=4pt, minimum width=28mm,
+              minimum height=10mm, align=center, fill=orange!8},
+]
+  % Center: WM calculus
+  \node[wmbox] (wm) at (0, 0) {WM Calculus\\[-2pt]{\scriptsize additive regime}};
+
+  % Bridges (exact instances)
+  \node[framework] (mln) at (-5, 2.5) {MLN};
+  \node[framework] (problog) at (-2.5, 4.0) {ProbLog};
+  \node[framework] (ppl) at (0, 4.8) {PPLs};
+  \node[framework] (pln) at (2.5, 4.0) {PLN v0.9};
+  \node[framework] (nars) at (5, 2.5) {NARS};
+  \node[framework] (fol) at (-5, -2.5) {FOL / Set};
+  \node[framework] (markov) at (0, -3.5) {Markov Cat.};
+  \node[framework] (rho) at (5, -2.5) {$\rho$-calculus};
+
+  % Arrows
+  \draw[->, thick] (mln) -- node[above left, font=\tiny] {log-linear} (wm);
+  \draw[->, thick] (problog) -- node[left, font=\tiny] {dist.\ sem.} (wm);
+  \draw[->, thick] (ppl) -- node[right, font=\tiny] {suff.\ stats.} (wm);
+  \draw[->, thick] (pln) -- node[right, font=\tiny] {$\Sigma$-compile} (wm);
+  \draw[->, thick] (nars) -- node[above right, font=\tiny] {evidence} (wm);
+  \draw[->, thick] (fol) -- node[below left, font=\tiny] {Boolean} (wm);
+  \draw[->, thick] (markov) -- node[right, font=\tiny] {Giry monad} (wm);
+  \draw[->, thick] (rho) -- node[below right, font=\tiny] {GSLT} (wm);
+
+  % Boundaries
+  \node[boundary] (nonadd) at (-6, 0) {non-additive\\[-2pt]{\scriptsize (frontier)}};
+  \node[boundary] (measure) at (6, 0) {measure-theoretic\\[-2pt]{\scriptsize (open)}};
+
+  \draw[->, dashed, orange!70!black] (nonadd) -- (wm);
+  \draw[->, dashed, orange!70!black] (measure) -- (wm);
+\end{tikzpicture}
+\caption{The world-model calculus and its bridges.  Solid arrows:
+exact embeddings (this chapter).  Dashed arrows: frontier directions
+not yet fully developed.  PPLs (Church, Stan, Pyro, etc.) embed via
+sufficient-statistic carriers under exchangeability.}
+\label{fig:bridges-landscape}
+\end{figure}
+
+\noindent
+The central design principle is visible in the diagram: the WM
+calculus is not one more framework competing with MLNs, ProbLog,
+NARS, or process calculi.  It is the \emph{typed evidence layer}
+that each of these frameworks implicitly uses.  Making that layer
+explicit---with revisable states, compositional extraction, explicit
+side conditions, and kernel-checked proofs---is what the calculus
+contributes.  Where it stops, it stops honestly: the boundaries are
+stated as theorems (the no-go results) or as open programs (the
+probability hypercube, GSLT universality, measure-theoretic
+grounding), not as hand-waving.
+
+\maplecourt{%
+Maple Court's building model can be expressed in any of the eight
+neighboring frameworks:
+as an MLN with weighted formulas,
+as a ProbLog program with probabilistic clauses,
+as a Stan/Pyro PPL with a generative model,
+as a PLN v0.9 rule application,
+as a NARS evidence-accumulation system,
+as a classical FOL theory (ignoring uncertainty),
+as a Markov-category morphism (the categorical view), or
+as a concurrent process system (the process-calculus view).
+Each bridge in this chapter shows how the WM calculus unifies these
+perspectives: the underlying state, evidence, extraction, and
+revision are the same; only the surface language and the
+computational strategy change.  The $\Sigma$-discipline ensures
+that whichever view is used, the correctness conditions are
+explicit.}

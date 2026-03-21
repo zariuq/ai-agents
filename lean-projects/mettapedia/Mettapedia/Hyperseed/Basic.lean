@@ -1,16 +1,19 @@
 import Mettapedia.Logic.SufficientStatisticSurface
 import Mettapedia.Logic.PLNWorldModelFixpointCascade
+import Mettapedia.Logic.PLNWorldModelFixpointClosure
 import Mettapedia.Hyperseed.Ultrainfinitism
 
 /-!
 # Hyperseed Basic
 
-Hyperseed is a thin observation-ingestion and closure layer above the existing
-WM foundations. It does not introduce a new semantics stack:
+Hyperseed is a thin exploration and observation-ingestion layer above the
+existing WM foundations. This file carries two compatible surfaces:
 
-- observations are still accumulated through `SufficientStatisticSurface`,
-- binary WM closure still runs through `PLNWorldModelFixpointClosure`,
-- bounded discovery still runs through `PLNWorldModelFixpointCascade`.
+- a generic `HyperseedKernel` / trace-fold interface for external agents,
+- trace-seeded closure helpers over sufficient-statistics world models.
+
+It does not introduce a new semantics stack; it packages existing WM closure
+machinery into forms that are convenient for OpenClaw-style observation flows.
 -/
 
 namespace Mettapedia.Hyperseed
@@ -23,6 +26,30 @@ open Mettapedia.Logic.PLNWorldModelAdditive
 open Mettapedia.Logic.PLNWorldModelFixpointClosure
 open Mettapedia.Logic.PLNWorldModelFixpointCascade
 open Mettapedia.Logic.SufficientStatisticSurface
+
+/-! ## Observation envelope -/
+
+/-- An observation tagged with source and timestamp metadata.
+Generic over payload, source identifier, and time representation. -/
+structure ObservationEnvelope (Obs Source Time : Type*) where
+  source : Source
+  time : Time
+  payload : Obs
+
+/-! ## Hyperseed kernel -/
+
+/-- The Hyperseed exploration kernel: packages an ingestion function, a seed
+query set, and a consequence rule pool over an existing WM state/query space.
+
+- `ingest` folds a single observation into the WM state.
+- `seedQueries` are the initial query obligations for closure.
+- `rules` is the consequence rule pool.
+-/
+structure HyperseedKernel (Obs State Query : Type*)
+    [EvidenceType State] [WorldModel State Query] where
+  ingest : Obs → State → State
+  seedQueries : Set Query
+  rules : RuleSet State Query
 
 variable {Obs Query : Type*}
 variable {Signal Cost : Type*} [Preorder Cost]
