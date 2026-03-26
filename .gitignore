@@ -94,11 +94,38 @@ megalodon/README
 megalodon/makebytecode
 megalodon/makeopt
 
+# Dotfiles and dotdirs (agent scratch, caches, configs)
+# Use `git add -f` to force-track specific dotfiles if needed
+.*
+!.gitignore
+!.gitmodules
+!.gitattributes
+
 # Temp/build artifacts
 tmp/
 .lake-backup*/
 *.tgz
 _test/
+
+# C build artifacts
+*.o
+*.stage0.o
+
+# Compiled binaries (cetta)
+c-projects/cetta/cetta
+c-projects/cetta/cetta-stage0
+c-projects/cetta/cetta_asan
+
+# Rust build targets
+target/
+target-*/
+
+# Python virtual environments
+venvs/
+
+# ATP datasets (huge)
+atps/datasets/
+
 
 # Misc junk
 Prompts/
