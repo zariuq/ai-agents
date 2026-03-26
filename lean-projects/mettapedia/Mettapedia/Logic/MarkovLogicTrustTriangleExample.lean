@@ -147,15 +147,8 @@ theorem triangleCore_interactionClosed (wt wc : ℝ) :
     Finset.singleton_biUnion, Finset.mem_union] at hb
   -- For each atom a ∈ {0,1,2}: unfold everything and let simp + omega close it.
   rcases ha with rfl | rfl | rfl <;> {
-    simp only [atomInteractionNeighborhood, triangleChainSpec, varNeighborhoodSpec,
-      varNRegionSupport, triangleChainNbrs, varNClauseGated,
-      varNInfluenceClause, varNPriorClause, GroundClause.atoms, Literal.atom,
-      Finset.mem_biUnion, Finset.mem_union, Finset.mem_image, Finset.mem_insert,
-      Finset.mem_singleton, Finset.singleton_biUnion, Finset.mem_erase,
-      Finset.image_insert, Finset.image_singleton, Finset.image_empty,
-      Finset.biUnion_insert, Finset.biUnion_singleton, Finset.biUnion_empty,
-      Finset.empty_union, Finset.union_empty,
-      coreTriangle] at hb ⊢
+    simp [triangleChainNbrs, varNClauseGated,
+      varNInfluenceClause, varNPriorClause, GroundClause.atoms, Literal.atom] at hb ⊢
     aesop
   }
 

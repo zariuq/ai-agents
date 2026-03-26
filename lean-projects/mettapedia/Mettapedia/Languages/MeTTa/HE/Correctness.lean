@@ -687,6 +687,11 @@ These are intentionally private and are not a second public semantics:
 - `EvalAtomSync.interpret_error` carries the local no-success condition needed
   for the evaluator's success-priority filter. -/
 
+/-- Private abbreviation for the evaluator-local "all computed results are errors"
+condition used by the synchronous mirror of `evalAtom`'s error branch. -/
+private def OnlyErrorsAt (results : ResultSet) : Prop :=
+  ∀ r ∈ results, isErrorAtom r.1 = true
+
 mutual
 
 /-- Private synchronous model for `evalAtom`. There are no constructors at fuel `0`. -/
@@ -730,9 +735,7 @@ private inductive EvalAtomSync (space : Space) (dispatch : GroundedDispatch) :
       (h_not_unit : atom ≠ Atom.unit)
       (h_interp : InterpretExpressionSync space dispatch n atom type_ b r)
       (h_is_error : isErrorAtom r.1 = true)
-      (h_all_errors : ∀ r' : ResultPair,
-        r' ∈ interpretExpression space dispatch atom type_ b n →
-        isErrorAtom r'.1 = true) :
+      (h_all_errors : OnlyErrorsAt (interpretExpression space dispatch atom type_ b n)) :
       EvalAtomSync space dispatch (n + 1) atom type_ b r
 
 /-- Private synchronous model for `interpretExpression`. -/
@@ -867,7 +870,10 @@ private inductive InterpretTupleSync (space : Space) (dispatch : GroundedDispatc
       InterpretTupleSync space dispatch (n + 1) (.expression (hd :: tl)) b
         (.expression (headResult.1 :: atomElements tailResult.1), tailResult.2)
 
-/-- Private synchronous model for `mettaCall`. -/
+/-- Private synchronous model for `mettaCall`.
+    Intentionally omits the canonical-spec `MettaCall.empty_results` constructor:
+    this sync layer mirrors the executable evaluator exactly, not the coarser
+    canonical declarative semantics. -/
 private inductive MettaCallSync (space : Space) (dispatch : GroundedDispatch) :
     Nat → Atom → Atom → Bindings → ResultPair → Prop where
   | error_passthrough (n : Nat) (atom type_ : Atom) (b : Bindings)
@@ -1259,5 +1265,613 @@ private theorem interpretFunction_eval_to_sync
           simp [interpretFunction_succ] at hr
       | .expression [] =>
           simp [interpretFunction_succ] at hr
+
+/-! ### Step 3 exactness bundle targets
+
+These structures define the bounded theorem surface we now care about:
+- sync derivation implies evaluator membership at the same fuel,
+- evaluator membership implies sync derivation at the same fuel.
+
+They keep the remaining exactness work bundled and prevent theorem sprawl. -/
+
+private structure AllSyncToEval (space : Space) (dispatch : GroundedDispatch)
+    (fuel : Nat) : Prop where
+  evalAtom :
+    ∀ atom type_ b r,
+      EvalAtomSync space dispatch fuel atom type_ b r →
+      r ∈ evalAtom space dispatch atom type_ b fuel
+  interpretExpression :
+    ∀ atom type_ b r,
+      InterpretExpressionSync space dispatch fuel atom type_ b r →
+      r ∈ interpretExpression space dispatch atom type_ b fuel
+  interpretFunction :
+    ∀ atom opType b r,
+      InterpretFunctionSync space dispatch fuel atom opType b r →
+      r ∈ interpretFunction space dispatch atom opType b fuel
+  interpretArgs :
+    ∀ args types b r,
+      InterpretArgsSync space dispatch fuel args types b r →
+      r ∈ interpretArgs space dispatch args types b fuel
+  interpretTuple :
+    ∀ atom b r,
+      InterpretTupleSync space dispatch fuel atom b r →
+      r ∈ interpretTuple space dispatch atom b fuel
+  mettaCall :
+    ∀ atom type_ b r,
+      MettaCallSync space dispatch fuel atom type_ b r →
+      r ∈ mettaCall space dispatch atom type_ b fuel
+
+private structure AllEvalToSync (space : Space) (dispatch : GroundedDispatch)
+    (fuel : Nat) : Prop where
+  evalAtom :
+    ∀ atom type_ b r,
+      r ∈ evalAtom space dispatch atom type_ b fuel →
+      EvalAtomSync space dispatch fuel atom type_ b r
+  interpretExpression :
+    ∀ atom type_ b r,
+      r ∈ interpretExpression space dispatch atom type_ b fuel →
+      InterpretExpressionSync space dispatch fuel atom type_ b r
+  interpretFunction :
+    ∀ atom opType b r,
+      r ∈ interpretFunction space dispatch atom opType b fuel →
+      InterpretFunctionSync space dispatch fuel atom opType b r
+  interpretArgs :
+    ∀ args types b r,
+      r ∈ interpretArgs space dispatch args types b fuel →
+      InterpretArgsSync space dispatch fuel args types b r
+  interpretTuple :
+    ∀ atom b r,
+      r ∈ interpretTuple space dispatch atom b fuel →
+      InterpretTupleSync space dispatch fuel atom b r
+  mettaCall :
+    ∀ atom type_ b r,
+      r ∈ mettaCall space dispatch atom type_ b fuel →
+      MettaCallSync space dispatch fuel atom type_ b r
+
+/-! ### Step 4 sync-to-evaluator exactness bundle
+
+The first half of exactness is proved by induction on the shared evaluator fuel.
+This mirrors the successful `AllSound` organization above and keeps the proof
+surface bounded to one private bundle instead of a growing forest of ad hoc
+helper lemmas. -/
+
+private theorem isEmpty_false_of_mem {α : Type*} {xs : List α} {x : α}
+    (hx : x ∈ xs) : xs.isEmpty = false := by
+  cases xs with
+  | nil => simp at hx
+  | cons _ _ => simp
+
+private theorem mem_nonerror_filter {results : ResultSet} {r : ResultPair}
+    (hr : r ∈ results) (h_not_error : isErrorAtom r.1 = false) :
+    r ∈ List.filter (fun x => !isErrorAtom x.1) results := by
+  rw [List.mem_filter]
+  exact ⟨hr, by simp [h_not_error]⟩
+
+private theorem mem_error_filter {results : ResultSet} {r : ResultPair}
+    (hr : r ∈ results) (h_is_error : isErrorAtom r.1 = true) :
+    r ∈ List.filter (fun x => isErrorAtom x.1) results := by
+  rw [List.mem_filter]
+  exact ⟨hr, h_is_error⟩
+
+private theorem nonerror_filter_isEmpty_true_of_onlyErrors {results : ResultSet}
+    (h_all : OnlyErrorsAt results) :
+    (List.filter (fun x => !isErrorAtom x.1) results).isEmpty = true := by
+  cases hres : List.filter (fun x => !isErrorAtom x.1) results with
+  | nil =>
+      simp
+  | cons x xs =>
+      have hx_mem : x ∈ List.filter (fun x => !isErrorAtom x.1) results := by
+        simp [hres]
+      rw [List.mem_filter] at hx_mem
+      have hx_err : isErrorAtom x.1 = true := h_all x hx_mem.1
+      simp [hx_err] at hx_mem
+
+private theorem allSyncToEval_zero (space : Space) (dispatch : GroundedDispatch) :
+    AllSyncToEval space dispatch 0 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+  · intro atom type_ b r h
+    cases h
+  · intro atom type_ b r h
+    cases h
+  · intro atom opType b r h
+    cases h
+  · intro args types b r h
+    cases h
+  · intro atom b r h
+    cases h
+  · intro atom type_ b r h
+    cases h
+
+private theorem interpretArgs_sync_to_eval_step
+    (space : Space) (dispatch : GroundedDispatch) (n : Nat)
+    (ih : AllSyncToEval space dispatch n) :
+    ∀ args types b r,
+      InterpretArgsSync space dispatch (n + 1) args types b r →
+      r ∈ interpretArgs space dispatch args types b (n + 1) := by
+  intro args types b r h
+  cases h with
+  | nil _ b =>
+      simp [interpretArgs_succ]
+  | head_changed_error _ a as t ts b headResult h_head h_err h_changed =>
+      rw [interpretArgs_succ]
+      rw [List.mem_flatMap]
+      refine ⟨r, ih.evalAtom _ _ _ _ h_head, ?_⟩
+      simp [h_err, h_changed, bne_iff_ne]
+  | cons_tail_error _ a as t ts b headResult tailResult h_head h_head_ok h_tail h_tail_err =>
+      rw [interpretArgs_succ]
+      rw [List.mem_flatMap]
+      refine ⟨headResult, ih.evalAtom _ _ _ _ h_head, ?_⟩
+      have h_cond_false : (headResult.1 != a && isEmptyOrError headResult.1) = false := by
+        rcases h_head_ok with h_ok | h_same
+        · simp [h_ok]
+        · simp [h_same]
+      simp [h_cond_false]
+      refine ⟨r.1, r.2, ih.interpretArgs _ _ _ _ h_tail, ?_⟩
+      simp [h_tail_err]
+  | cons_ok _ a as t ts b headResult tailResult h_head h_head_ok h_tail h_tail_ok =>
+      rw [interpretArgs_succ]
+      rw [List.mem_flatMap]
+      refine ⟨headResult, ih.evalAtom _ _ _ _ h_head, ?_⟩
+      have h_cond_false : (headResult.1 != a && isEmptyOrError headResult.1) = false := by
+        rcases h_head_ok with h_ok | h_same
+        · simp [h_ok]
+        · simp [h_same]
+      simp [h_cond_false]
+      refine ⟨tailResult.1, tailResult.2, ih.interpretArgs _ _ _ _ h_tail, ?_⟩
+      simp [h_tail_ok]
+
+private theorem interpretFunction_sync_to_eval_step
+    (space : Space) (dispatch : GroundedDispatch) (n : Nat)
+    (ih : AllSyncToEval space dispatch n) :
+    ∀ atom opType b r,
+      InterpretFunctionSync space dispatch (n + 1) atom opType b r →
+      r ∈ interpretFunction space dispatch atom opType b (n + 1) := by
+  intro atom opType b r h
+  cases h with
+  | head_error _ atom opType b op args headResult h_shape h_head h_err =>
+      subst h_shape
+      simp [interpretFunction_succ]
+      refine ⟨r.1, r.2, ih.evalAtom _ _ _ _ h_head, ?_⟩
+      simp [h_err]
+  | head_ok_tail_error _ atom opType b op args argTypes headResult tailResult
+      h_shape h_arg_types h_head h_head_ok h_tail h_tail_err =>
+      subst h_shape
+      simp [interpretFunction_succ]
+      refine ⟨headResult.1, headResult.2, ih.evalAtom _ _ _ _ h_head, ?_⟩
+      simp [h_head_ok, h_arg_types]
+      refine ⟨r.1, r.2, ih.interpretArgs _ _ _ _ h_tail, ?_⟩
+      simp [h_tail_err]
+  | head_ok_tail_ok _ atom opType b op args argTypes headResult tailResult
+      h_shape h_arg_types h_head h_head_ok h_tail h_tail_ok =>
+      subst h_shape
+      simp [interpretFunction_succ]
+      refine ⟨headResult.1, headResult.2, ih.evalAtom _ _ _ _ h_head, ?_⟩
+      simp [h_head_ok, h_arg_types]
+      refine ⟨tailResult.1, tailResult.2, ih.interpretArgs _ _ _ _ h_tail, ?_⟩
+      simp [h_tail_ok]
+
+private theorem interpretTuple_sync_to_eval_step
+    (space : Space) (dispatch : GroundedDispatch) (n : Nat)
+    (ih : AllSyncToEval space dispatch n) :
+    ∀ atom b r,
+      InterpretTupleSync space dispatch (n + 1) atom b r →
+      r ∈ interpretTuple space dispatch atom b (n + 1) := by
+  intro atom b r h
+  cases h with
+  | singleton _ a b r h_eval =>
+      simpa [interpretTuple_succ] using ih.evalAtom a Atom.undefinedType b r h_eval
+  | head_error _ hd tl b headResult h_tl_nonempty h_head h_err =>
+      cases tl with
+      | nil =>
+          contradiction
+      | cons hd2 rest =>
+          simp [interpretTuple_succ]
+          refine ⟨r.1, r.2, ih.evalAtom _ _ _ _ h_head, ?_⟩
+          simp [h_err]
+  | tail_error _ hd tl b headResult tailResult h_tl_nonempty h_head h_head_ok h_tail h_tail_err =>
+      cases tl with
+      | nil =>
+          contradiction
+      | cons hd2 rest =>
+          simp [interpretTuple_succ]
+          refine ⟨headResult.1, headResult.2, ih.evalAtom _ _ _ _ h_head, ?_⟩
+          simp [h_head_ok]
+          refine ⟨r.1, r.2, ih.interpretTuple _ _ _ h_tail, ?_⟩
+          simp [h_tail_err]
+  | success _ hd tl b headResult tailResult h_tl_nonempty h_head h_head_ok h_tail h_tail_ok =>
+      cases tl with
+      | nil =>
+          contradiction
+      | cons hd2 rest =>
+          simp [interpretTuple_succ]
+          refine ⟨headResult.1, headResult.2, ih.evalAtom _ _ _ _ h_head, ?_⟩
+          simp [h_head_ok]
+          refine ⟨tailResult.1, tailResult.2, ih.interpretTuple _ _ _ h_tail, ?_⟩
+          simp [h_tail_ok]
+
+private theorem mettaCall_sync_to_eval_step
+    (space : Space) (dispatch : GroundedDispatch) (n : Nat)
+    (ih : AllSyncToEval space dispatch n) :
+    ∀ atom type_ b r,
+      MettaCallSync space dispatch (n + 1) atom type_ b r →
+      r ∈ mettaCall space dispatch atom type_ b (n + 1) := by
+  intro atom type_ b r h
+  cases h with
+  | error_passthrough _ atom type_ b h_err =>
+      simp [mettaCall, h_err]
+  | grounded_ok _ atom type_ b op args nativeResults nativeResult merged finalResult
+      h_shape h_exec h_not_error h_native h_native_mem h_merge h_recurse =>
+      subst h_shape
+      have h_native_nonempty : nativeResults.isEmpty = false :=
+        isEmpty_false_of_mem h_native_mem
+      simp [mettaCall, h_not_error, h_exec, h_native, h_native_nonempty]
+      refine ⟨nativeResult.1, nativeResult.2, h_native_mem, merged, h_merge, ?_⟩
+      exact ih.evalAtom _ _ _ _ h_recurse
+  | grounded_runtime_error _ atom type_ b op args msg h_shape h_exec h_not_error h_native =>
+      subst h_shape
+      simp [mettaCall, h_not_error, h_exec, h_native]
+  | grounded_no_reduce _ atom type_ b op args h_shape h_exec h_not_error h_native =>
+      subst h_shape
+      simp [mettaCall, h_not_error, h_exec, h_native]
+  | grounded_incorrect_arg _ atom type_ b op args h_shape h_exec h_not_error h_native =>
+      subst h_shape
+      simp [mettaCall, h_not_error, h_exec, h_native]
+  | grounded_empty_results _ atom type_ b op args h_shape h_exec h_not_error h_native =>
+      subst h_shape
+      simp [mettaCall, h_not_error, h_exec, h_native]
+  | equation_match _ atom type_ b rhs queryBindings merged finalResult h_not_error
+      h_not_grounded h_query h_merge h_no_loop h_recurse =>
+      cases atom with
+      | symbol s =>
+          have h_eqs_nonempty : (queryEquations space (.symbol s) n).isEmpty = false :=
+            isEmpty_false_of_mem h_query
+          simp [mettaCall, h_not_error, h_eqs_nonempty]
+          refine ⟨rhs, queryBindings, h_query, merged, h_merge, h_no_loop, ?_⟩
+          exact ih.evalAtom _ _ _ _ h_recurse
+      | var v =>
+          have h_eqs_nonempty : (queryEquations space (.var v) n).isEmpty = false :=
+            isEmpty_false_of_mem h_query
+          simp [mettaCall, h_not_error, h_eqs_nonempty]
+          refine ⟨rhs, queryBindings, h_query, merged, h_merge, h_no_loop, ?_⟩
+          exact ih.evalAtom _ _ _ _ h_recurse
+      | grounded g =>
+          have h_eqs_nonempty : (queryEquations space (.grounded g) n).isEmpty = false :=
+            isEmpty_false_of_mem h_query
+          simp [mettaCall, h_not_error, h_eqs_nonempty]
+          refine ⟨rhs, queryBindings, h_query, merged, h_merge, h_no_loop, ?_⟩
+          exact ih.evalAtom _ _ _ _ h_recurse
+      | expression es =>
+          cases es with
+          | nil =>
+              have h_eqs_nonempty : (queryEquations space (.expression []) n).isEmpty = false :=
+                isEmpty_false_of_mem h_query
+              simp [mettaCall, h_not_error, h_eqs_nonempty]
+              refine ⟨rhs, queryBindings, h_query, merged, h_merge, h_no_loop, ?_⟩
+              exact ih.evalAtom _ _ _ _ h_recurse
+          | cons op args =>
+              have h_eqs_nonempty :
+                  (queryEquations space (.expression (op :: args)) n).isEmpty = false :=
+                isEmpty_false_of_mem h_query
+              simp [mettaCall, h_not_error, h_not_grounded, h_eqs_nonempty]
+              refine ⟨rhs, queryBindings, h_query, merged, h_merge, h_no_loop, ?_⟩
+              exact ih.evalAtom _ _ _ _ h_recurse
+  | no_match _ atom type_ b h_not_error h_not_grounded h_no_eqs =>
+      cases atom with
+      | symbol s =>
+          simp [mettaCall, h_not_error, h_no_eqs]
+      | var v =>
+          simp [mettaCall, h_not_error, h_no_eqs]
+      | grounded g =>
+          simp [mettaCall, h_not_error, h_no_eqs]
+      | expression es =>
+          cases es with
+          | nil =>
+              simp [mettaCall, h_not_error, h_no_eqs]
+          | cons op args =>
+              simp [mettaCall, h_not_error, h_not_grounded, h_no_eqs]
+
+private theorem interpretExpression_sync_to_eval_step
+    (space : Space) (dispatch : GroundedDispatch) (n : Nat)
+    (ih : AllSyncToEval space dispatch n) :
+    ∀ atom type_ b r,
+      InterpretExpressionSync space dispatch (n + 1) atom type_ b r →
+      r ∈ interpretExpression space dispatch atom type_ b (n + 1) := by
+  intro atom type_ b r h
+  cases h with
+  | function_path _ atom type_ b op args funcType b' interpResult callResult succs
+      h_shape h_op_type h_is_func h_check h_check_b h_interp h_call =>
+      subst h_shape
+      let retType :=
+        if getFunctionRetType funcType == some Atom.expressionType
+        then Atom.undefinedType
+        else (getFunctionRetType funcType).getD Atom.undefinedType
+      have h_interp_mem :
+          interpResult ∈ interpretFunction space dispatch (.expression (op :: args)) funcType b' n :=
+        ih.interpretFunction _ _ _ _ h_interp
+      have h_call_mem :
+          r ∈ mettaCall space dispatch interpResult.1 retType interpResult.2 n := by
+        exact ih.mettaCall _ _ _ _ h_call
+      have h_func_mem :
+          r ∈
+            (getAtomTypes space op).flatMap fun ft =>
+              if isFunctionType ft then
+                match checkIfFunctionTypeIsApplicable (.expression (op :: args)) ft type_ space b n with
+                | .inr succs =>
+                  succs.flatMap fun b'' =>
+                    let retType :=
+                      if getFunctionRetType ft == some Atom.expressionType
+                      then Atom.undefinedType
+                      else (getFunctionRetType ft).getD Atom.undefinedType
+                    let interpResults :=
+                      interpretFunction space dispatch (.expression (op :: args)) ft b'' n
+                    interpResults.flatMap fun (r', rb) =>
+                      mettaCall space dispatch r' retType rb n
+                | .inl _ => []
+              else [] := by
+        rw [List.mem_flatMap]
+        refine ⟨funcType, h_op_type, ?_⟩
+        simp [h_is_func, h_check]
+        refine ⟨b', h_check_b, interpResult.1, interpResult.2, h_interp_mem, ?_⟩
+        simpa [retType] using h_call_mem
+      have h_all_mem :
+          r ∈
+            ((getAtomTypes space op).flatMap fun ft =>
+              if isFunctionType ft then
+                match checkIfFunctionTypeIsApplicable (.expression (op :: args)) ft type_ space b n with
+                | .inr succs =>
+                  succs.flatMap fun b'' =>
+                    let retType :=
+                      if getFunctionRetType ft == some Atom.expressionType
+                      then Atom.undefinedType
+                      else (getFunctionRetType ft).getD Atom.undefinedType
+                    let interpResults :=
+                      interpretFunction space dispatch (.expression (op :: args)) ft b'' n
+                    interpResults.flatMap fun (r', rb) =>
+                      mettaCall space dispatch r' retType rb n
+                | .inl _ => []
+              else []) ++
+            (if ((getAtomTypes space op).any fun t =>
+                  !isFunctionType t || t == Atom.undefinedType) then
+              let interpResults := interpretTuple space dispatch (.expression (op :: args)) b n
+              interpResults.flatMap fun (r', rb) =>
+                mettaCall space dispatch r' type_ rb n
+             else []) := by
+        exact List.mem_append.mpr <| Or.inl h_func_mem
+      have h_all_nonempty :
+          (((getAtomTypes space op).flatMap fun ft =>
+              if isFunctionType ft then
+                match checkIfFunctionTypeIsApplicable (.expression (op :: args)) ft type_ space b n with
+                | .inr succs =>
+                  succs.flatMap fun b'' =>
+                    let retType :=
+                      if getFunctionRetType ft == some Atom.expressionType
+                      then Atom.undefinedType
+                      else (getFunctionRetType ft).getD Atom.undefinedType
+                    let interpResults :=
+                      interpretFunction space dispatch (.expression (op :: args)) ft b'' n
+                    interpResults.flatMap fun (r', rb) =>
+                      mettaCall space dispatch r' retType rb n
+                | .inl _ => []
+              else []) ++
+            (if ((getAtomTypes space op).any fun t =>
+                  !isFunctionType t || t == Atom.undefinedType) then
+              let interpResults := interpretTuple space dispatch (.expression (op :: args)) b n
+              interpResults.flatMap fun (r', rb) =>
+                mettaCall space dispatch r' type_ rb n
+             else [])).isEmpty = false :=
+        isEmpty_false_of_mem h_all_mem
+      have h_all_true :
+          (!( ((getAtomTypes space op).flatMap fun ft =>
+              if isFunctionType ft then
+                match checkIfFunctionTypeIsApplicable (.expression (op :: args)) ft type_ space b n with
+                | .inr succs =>
+                  succs.flatMap fun b'' =>
+                    let retType :=
+                      if getFunctionRetType ft == some Atom.expressionType
+                      then Atom.undefinedType
+                      else (getFunctionRetType ft).getD Atom.undefinedType
+                    let interpResults :=
+                      interpretFunction space dispatch (.expression (op :: args)) ft b'' n
+                    interpResults.flatMap fun (r', rb) =>
+                      mettaCall space dispatch r' retType rb n
+                | .inl _ => []
+              else []) ++
+            (if ((getAtomTypes space op).any fun t =>
+                  !isFunctionType t || t == Atom.undefinedType) then
+              let interpResults := interpretTuple space dispatch (.expression (op :: args)) b n
+              interpResults.flatMap fun (r', rb) =>
+                mettaCall space dispatch r' type_ rb n
+             else [])).isEmpty) = true := by
+        cases h : (((getAtomTypes space op).flatMap fun ft =>
+            if isFunctionType ft then
+              match checkIfFunctionTypeIsApplicable (.expression (op :: args)) ft type_ space b n with
+              | .inr succs =>
+                succs.flatMap fun b'' =>
+                  let retType :=
+                    if getFunctionRetType ft == some Atom.expressionType
+                    then Atom.undefinedType
+                    else (getFunctionRetType ft).getD Atom.undefinedType
+                  let interpResults :=
+                    interpretFunction space dispatch (.expression (op :: args)) ft b'' n
+                  interpResults.flatMap fun (r', rb) =>
+                    mettaCall space dispatch r' retType rb n
+              | .inl _ => []
+            else []) ++
+          (if ((getAtomTypes space op).any fun t =>
+                !isFunctionType t || t == Atom.undefinedType) then
+            let interpResults := interpretTuple space dispatch (.expression (op :: args)) b n
+            interpResults.flatMap fun (r', rb) =>
+              mettaCall space dispatch r' type_ rb n
+           else [])).isEmpty <;> simp_all
+      simpa [interpretExpression, h_all_true] using h_all_mem
+  | tuple_path _ atom type_ b op args tupleResult callResult
+      h_shape h_has_non_func h_tuple h_call =>
+      subst h_shape
+      have h_tuple_mem :
+          tupleResult ∈ interpretTuple space dispatch (.expression (op :: args)) b n :=
+        ih.interpretTuple _ _ _ h_tuple
+      have h_call_mem :
+          r ∈ mettaCall space dispatch tupleResult.1 type_ tupleResult.2 n := by
+        exact ih.mettaCall _ _ _ _ h_call
+      have h_tuple_path_mem :
+          r ∈
+            (if ((getAtomTypes space op).any fun t =>
+                  !isFunctionType t || t == Atom.undefinedType) then
+              let interpResults := interpretTuple space dispatch (.expression (op :: args)) b n
+              interpResults.flatMap fun (r', rb) =>
+                mettaCall space dispatch r' type_ rb n
+             else []) := by
+        simp [h_has_non_func]
+        exact ⟨tupleResult.1, tupleResult.2, h_tuple_mem, h_call_mem⟩
+      have h_all_mem :
+          r ∈
+            ((getAtomTypes space op).flatMap fun ft =>
+              if isFunctionType ft then
+                match checkIfFunctionTypeIsApplicable (.expression (op :: args)) ft type_ space b n with
+                | .inr succs =>
+                  succs.flatMap fun b'' =>
+                    let retType :=
+                      if getFunctionRetType ft == some Atom.expressionType
+                      then Atom.undefinedType
+                      else (getFunctionRetType ft).getD Atom.undefinedType
+                    let interpResults :=
+                      interpretFunction space dispatch (.expression (op :: args)) ft b'' n
+                    interpResults.flatMap fun (r', rb) =>
+                      mettaCall space dispatch r' retType rb n
+                | .inl _ => []
+              else []) ++
+            (if ((getAtomTypes space op).any fun t =>
+                  !isFunctionType t || t == Atom.undefinedType) then
+              let interpResults := interpretTuple space dispatch (.expression (op :: args)) b n
+              interpResults.flatMap fun (r', rb) =>
+                mettaCall space dispatch r' type_ rb n
+             else []) := by
+        exact List.mem_append.mpr <| Or.inr h_tuple_path_mem
+      have h_all_nonempty :
+          (((getAtomTypes space op).flatMap fun ft =>
+              if isFunctionType ft then
+                match checkIfFunctionTypeIsApplicable (.expression (op :: args)) ft type_ space b n with
+                | .inr succs =>
+                  succs.flatMap fun b'' =>
+                    let retType :=
+                      if getFunctionRetType ft == some Atom.expressionType
+                      then Atom.undefinedType
+                      else (getFunctionRetType ft).getD Atom.undefinedType
+                    let interpResults :=
+                      interpretFunction space dispatch (.expression (op :: args)) ft b'' n
+                    interpResults.flatMap fun (r', rb) =>
+                      mettaCall space dispatch r' retType rb n
+                | .inl _ => []
+              else []) ++
+            (if ((getAtomTypes space op).any fun t =>
+                  !isFunctionType t || t == Atom.undefinedType) then
+              let interpResults := interpretTuple space dispatch (.expression (op :: args)) b n
+              interpResults.flatMap fun (r', rb) =>
+                mettaCall space dispatch r' type_ rb n
+             else [])).isEmpty = false :=
+        isEmpty_false_of_mem h_all_mem
+      have h_all_true :
+          (!( ((getAtomTypes space op).flatMap fun ft =>
+              if isFunctionType ft then
+                match checkIfFunctionTypeIsApplicable (.expression (op :: args)) ft type_ space b n with
+                | .inr succs =>
+                  succs.flatMap fun b'' =>
+                    let retType :=
+                      if getFunctionRetType ft == some Atom.expressionType
+                      then Atom.undefinedType
+                      else (getFunctionRetType ft).getD Atom.undefinedType
+                    let interpResults :=
+                      interpretFunction space dispatch (.expression (op :: args)) ft b'' n
+                    interpResults.flatMap fun (r', rb) =>
+                      mettaCall space dispatch r' retType rb n
+                | .inl _ => []
+              else []) ++
+            (if ((getAtomTypes space op).any fun t =>
+                  !isFunctionType t || t == Atom.undefinedType) then
+              let interpResults := interpretTuple space dispatch (.expression (op :: args)) b n
+              interpResults.flatMap fun (r', rb) =>
+                mettaCall space dispatch r' type_ rb n
+             else [])).isEmpty) = true := by
+        cases h : (((getAtomTypes space op).flatMap fun ft =>
+            if isFunctionType ft then
+              match checkIfFunctionTypeIsApplicable (.expression (op :: args)) ft type_ space b n with
+              | .inr succs =>
+                succs.flatMap fun b'' =>
+                  let retType :=
+                    if getFunctionRetType ft == some Atom.expressionType
+                    then Atom.undefinedType
+                    else (getFunctionRetType ft).getD Atom.undefinedType
+                  let interpResults :=
+                    interpretFunction space dispatch (.expression (op :: args)) ft b'' n
+                  interpResults.flatMap fun (r', rb) =>
+                    mettaCall space dispatch r' retType rb n
+              | .inl _ => []
+            else []) ++
+          (if ((getAtomTypes space op).any fun t =>
+                !isFunctionType t || t == Atom.undefinedType) then
+            let interpResults := interpretTuple space dispatch (.expression (op :: args)) b n
+            interpResults.flatMap fun (r', rb) =>
+              mettaCall space dispatch r' type_ rb n
+           else [])).isEmpty <;> simp_all
+      simpa [interpretExpression, h_has_non_func, h_all_true] using h_all_mem
+  | op_type_error _ atom type_ b op args failedType errs errAtom
+      h_shape h_has_non_func h_all_fail h_failed_type h_failed_func h_check_fail h_err_mem =>
+      subst h_shape
+      have h_no_func_success :
+          ¬ ∃ x ∈ getAtomTypes space op,
+              isFunctionType x = true ∧
+                ¬(match checkIfFunctionTypeIsApplicable (.expression (op :: args)) x type_ space b n with
+                  | .inr succs =>
+                    succs.flatMap fun b' =>
+                      let retType :=
+                        if getFunctionRetType x == some Atom.expressionType
+                        then Atom.undefinedType
+                        else (getFunctionRetType x).getD Atom.undefinedType
+                      let interpResults :=
+                        interpretFunction space dispatch (.expression (op :: args)) x b' n
+                      interpResults.flatMap fun (r', rb) =>
+                        mettaCall space dispatch r' retType rb n
+                  | .inl _ => []) = [] := by
+        intro hex
+        rcases hex with ⟨ft, h_ft_mem, h_ft_func, h_nonempty⟩
+        have h_all_ft : (if isFunctionType ft then
+            match checkIfFunctionTypeIsApplicable (.expression (op :: args)) ft type_ space b n with
+            | .inl _ => true
+            | .inr _ => false
+          else true) = true := by
+          rw [List.all_eq_true] at h_all_fail
+          exact h_all_fail ft h_ft_mem
+        simp [h_ft_func] at h_all_ft
+        cases h_chk : checkIfFunctionTypeIsApplicable (.expression (op :: args)) ft type_ space b n with
+        | inl errs' =>
+            simp [h_ft_func, h_chk] at h_nonempty
+        | inr succs =>
+            simp [h_ft_func, h_chk] at h_all_ft
+      have h_all_fail_prop :
+          ∀ x ∈ getAtomTypes space op,
+            isFunctionType x = false ∨
+              (match checkIfFunctionTypeIsApplicable (.expression (op :: args)) x type_ space b n with
+                | .inl _ => true
+                | .inr _ => false) = true := by
+        rw [List.all_eq_true] at h_all_fail
+        intro x hx
+        have hx_all := h_all_fail x hx
+        cases h_func : isFunctionType x with
+        | false =>
+            exact Or.inl rfl
+        | true =>
+            exact Or.inr (by simpa [h_func] using hx_all)
+      have h_err_list_mem :
+          (errAtom, b) ∈
+            (getAtomTypes space op).flatMap fun funcType =>
+              if isFunctionType funcType then
+                match checkIfFunctionTypeIsApplicable (.expression (op :: args)) funcType type_ space b n with
+                | .inl errs => errs.map fun e => (e, b)
+                | .inr _ => []
+              else [] := by
+        rw [List.mem_flatMap]
+        refine ⟨failedType, h_failed_type, ?_⟩
+        simp [h_failed_func, h_check_fail, h_err_mem]
+      simpa [interpretExpression, h_has_non_func, h_no_func_success, h_all_fail_prop] using h_err_list_mem
 
 end Mettapedia.Languages.MeTTa.HE

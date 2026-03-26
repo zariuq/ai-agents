@@ -6389,12 +6389,15 @@ layers:
   \codepath{MarkovLogicInfiniteBoundaryStability.lean} (geometric shell
   decay), \codepath{MarkovLogicOntologyGrowth.lean} (cross-specification
   exact invariance), \codepath{MarkovLogicIndividuation.lean} (individuated
-  subsystems and the capstone WM-stability theorem).
+  subsystems and the capstone WM-stability theorem),
+  \codepath{MarkovLogicCoupledSubsystems.lean} (two local cores sharing one
+  protected carrier), and \codepath{MarkovLogicDynamicCoupledSubsystems.lean}
+  (geometric drift bounds for coupled carriers under distant rewriting).
 \item[Examples.]  Belief line (1D chain), 2D grid (Ising lattice),
   knowledge ladder, world of views (unidirectional, bidirectional, and
-  variable-neighborhood variants), the trust-triangle capstone, and
-  self-transcendence paths --- eight files, each reusing the same
-  pipeline.
+  variable-neighborhood variants), the trust-triangle capstone, the
+  coupled-communities carrier example, and self-transcendence paths, all
+  reusing the same pipeline.
 \end{description}
 
 \paragraph{Compatibility-gated evidence roles.}
@@ -6915,6 +6918,12 @@ knowledge.  The Dobrushin budget is the quantitative price of coherence;
 the individuated subsystem is its formal manifestation; and the capstone
 theorem says that the price is paid at the level of WM truth values, not just
 raw probabilities.
+In Weinbaum and Veitas's terminology~\cite{WeinbaumVeitas2015}, the
+interaction-closed region plays the role of a \emph{domain-relative ground}:
+the minimal stable locus from which the subsystem's identity is constituted.
+The Dobrushin budget is the quantitative counterpart of Simondon's
+transductive tension --- it bounds how much the exterior can influence the
+interior without destabilising it.
 
 The formalization captures the \emph{static criterion} for individuation ---
 when a subsystem IS individuated --- but does not yet formalize the
@@ -6926,6 +6935,78 @@ via \code{IndividuatedSubsystem}, \code{queryDiscrepancy\_le\_geometric},
 \code{queryProb\_invariant\_under\_extension},
 \code{wmQueryStrength\_unique}, and the capstone
 \code{wmStrength\_stable\_under\_extension} (0~sorry).}
+
+\paragraph{Coupled subsystems inside one protected carrier.}
+
+The next social step is not yet ``compassion'' in any thick ethical sense,
+but it is already a mathematically meaningful two-community theorem.  A
+single interaction-closed carrier $\Omega$ may contain two disjoint
+nonempty local cores $\Gamma_L$ and $\Gamma_R$, together with an interface
+region $\Omega \setminus (\Gamma_L \cup \Gamma_R)$ through which the two
+communities may influence one another.  The individual cores need not be
+interaction-closed on their own; what is protected is the larger carrier.
+If a second specification agrees with the first on $\Omega$ and both satisfy
+the Dobrushin budget, then every query supported on $\Gamma_L$, every query
+supported on $\Gamma_R$, and every joint query supported on
+$\Gamma_L \cup \Gamma_R$ has exactly the same Gibbs probability and hence
+the same WM truth value in both specifications.%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/MarkovLogicCoupledSubsystems.lean}
+via \code{CoupledSubsystems},
+\code{left\_queryProb\_invariant\_under\_extension},
+\code{right\_queryProb\_invariant\_under\_extension},
+\code{coupled\_queryProb\_invariant\_under\_extension}, and the
+corresponding WM theorems (0~sorry).}
+This is the precise sense in which two local ``worlds of views'' can form
+one protected social carrier: the interface may mediate interaction, but
+distant ontology growth outside the carrier does not alter either side's
+local or joint truth values.
+In the ``world of views'' framework of Veitas and
+Weinbaum~\cite{VeitasWeinbaum2017}, this formalises the coexistence of
+multiple local perspectives inside one shared social carrier: each community
+retains its own semantic ground, and the carrier acts as the ecology in which
+they interact without either perspective being overwritten by the other.
+The social-individuation work of Lenartowicz and
+Weinbaum~\cite{LenartowiczWeinbaum2016} provides the sociological motivation
+for this topology.
+
+\paragraph{Dynamic coupled subsystems.}
+
+The exact carrier theorem has a dynamic counterpart.  If two specifications
+agree not merely on the protected carrier $\Omega$ but on its $n$-shell
+\(\mathrm{iterExpandRegion}(\Omega,n)\), then left-local, right-local, and
+joint carrier queries differ by at most \(2|\Omega|C^n\).  The full carrier
+\(\Omega\), not just the smaller left or right community, appears in the
+bound because the Dobrushin contraction runs on the protected carrier shell.
+This is the
+coupled-community version of dynamic self-transcendence: distant rewriting
+outside the shared carrier perturbs both communities only by a geometric
+tail.%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/MarkovLogicDynamicCoupledSubsystems.lean}
+via \code{DynamicCoupledSubsystemStep} and the left/right/joint
+\code{...\_approximately\_preserved} theorems, together with the path
+theorems \code{left\_queryProb\_cumulative\_drift},
+\code{right\_queryProb\_cumulative\_drift},
+\code{coupled\_queryProb\_cumulative\_drift}, and their WM corollaries
+(0~sorry).}
+
+\paragraph{Worked example: two communities with a liaison layer.}
+
+A concrete carrier example is now formalized as well.  Agents
+\(\{0,1\}\) form the left community, agent \(\{2\}\) is the interface,
+agents \(\{3,4\}\) form the right community, and an external tail
+\(\{5,6,7,\ldots\}\) is disconnected from the carrier.  The protected
+carrier is therefore \(\Omega = \{0,1,2,3,4\}\).  Two specifications may
+share the carrier weight \(w_c\) while assigning different tail weights
+\(w_{t1}\) and \(w_{t2}\); nevertheless, every joint query supported on the
+two communities has exactly the same WM truth value in both specifications.
+This example uses the stronger exact theorem, not merely the dynamic bound,
+because the carrier itself is interaction-closed and the tail is fully
+disconnected.%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/MarkovLogicCoupledCommunitiesExample.lean}
+via \code{coupledCommunities\_joint\_wmStrength\_stable} (0~sorry).}
 
 \paragraph{Worked capstone: a protected trust triangle.}
 
@@ -6979,10 +7060,15 @@ via \code{IndividuatedSubsystem}, \code{queryDiscrepancy\_le\_geometric},
     {$M_1$: $w_c = 0.15$\\$M_2$: $w_c = 0.3$};
 \end{tikzpicture}
 \caption{The trust triangle.  Agents $\{0,1,2\}$ form an interaction-closed
-  core (blue, dashed boundary).  An infinite chain $\{3,4,5,\ldots\}$ operates
-  independently --- no clause crosses the boundary.  Specifications $M_1$ and
-  $M_2$ share the triangle weight $w_t$ but differ on the chain weight $w_c$.
-  Theorem: $\mathrm{queryStrength}_{M_1}(q) = \mathrm{queryStrength}_{M_2}(q)$.}
+  core (blue, dashed boundary).  A separate, \emph{fully disconnected} infinite
+  chain $\{3,4,5,\ldots\}$ shares no edges or clauses with the triangle ---
+  there is no path from any chain node to any triangle node.
+  Specifications $M_1$ and $M_2$ use the same triangle weight $w_t$ but assign
+  different chain weights ($w_{c1} \neq w_{c2}$).  Because the chain is
+  disconnected, the triangle is interaction-closed and the theorem gives exact
+  preservation:
+  $\mathrm{queryStrength}_{M_1}(q) = \mathrm{queryStrength}_{M_2}(q)$
+  for every query $q$ supported on the triangle.}
 \label{fig:trust-triangle}
 \end{figure}
 
@@ -7034,6 +7120,35 @@ exact preservation is no longer guaranteed by the theorem.%
 \codepath{Mettapedia/Logic/MarkovLogicSelfTranscendence.lean}
 via \code{TranscendenceStep.old\_queries\_preserved} and
 \code{TranscendencePath.original\_queries\_stable} (0~sorry).}
+
+\paragraph{Meta-goal stability under proof-backed self-modification.}
+
+The dynamic self-transcendence and coupled-subsystem theorems have a direct
+application to the Schmidhuber
+G\"odel-machine scenario: an agent that rewrites its own code only when a
+machine-checked proof guarantees improvement.  The formalization packages
+two results.%
+\footnote{Formalized in
+\codepath{Mettapedia/UniversalAI/GodelMachine/MetaGoalShellPreservation.lean}
+(0~sorry).  The proof composes the G\"odel-machine utility-improvement
+witness from \codepath{Mettapedia/UniversalAI/GodelMachine/Basic.lean}
+with the Markov-logic individuation and dynamic-transcendence layers.}
+\begin{enumerate}
+\item \textbf{Exact preservation.}
+  If the proof-backed rewrite leaves an interaction-closed protected core
+  untouched, then every WM meta-goal query supported on that core keeps
+  its truth value exactly, and expected utility strictly improves.
+\item \textbf{Dynamic shell preservation.}
+  If the rewrite stays outside the $n$-shell around a protected query
+  region, then every meta-goal query drifts by at most $2|\Gamma|C^n$,
+  and expected utility still strictly improves.
+\end{enumerate}
+\noindent
+Positive example: a proof-backed rewrite of a remote planning module leaves
+core medical or governance queries unchanged (exact case) or bounded by a
+geometric tail (shell case) while certifiably improving utility.
+Negative example: if the rewrite reaches the protected core itself, or the
+Dobrushin budget fails, these theorems give no stability guarantee.
 
 \paragraph{What the theorem does not say.}
 The uniqueness result is genuinely conditional, and the boundary of its
@@ -9331,7 +9446,10 @@ All files listed here have 0~sorry.
 
 {\footnotesize
 \renewcommand{\code}[1]{\path{#1}}
-\begin{longtable}{@{}p{0.44\textwidth}rrp{0.21\textwidth}@{}}
+\newcommand{\compactcodepath}[2]{\shortstack[l]{\code{#1/}\\\code{#2}}}
+\newcommand{\compactinfinitecodepath}[2]{\shortstack[l]{\code{Logic/MarkovLogicInfinite}\\\code{#1#2}}}
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{@{}p{0.49\textwidth}rrp{0.16\textwidth}@{}}
 \toprule
 Path & Lines & Thms & Book refs \\
 \midrule
@@ -9365,19 +9483,25 @@ Path & Lines & Thms & Book refs \\
 \midrule
 \code{Logic/MarkovLogicWorldModel} & 44 & 2 & Ch~16 \\
 \code{Logic/MarkovLogicInfiniteExistence} & 146 & 3 & Ch~16 \\
-\code{Logic/MarkovLogicInfiniteBoundaryStability} & 139 & 4 & Ch~16 \\
+\compactcodepath{Logic}{MarkovLogicInfiniteBoundaryStability} & 139 & 4 & Ch~16 \\
 \code{Logic/MarkovLogicOntologyGrowth} & 386 & 7 & Ch~16 \\
 \code{Logic/MarkovLogicIndividuation} & 286 & 6 & Ch~16 \\
+\code{Logic/MarkovLogicCoupledSubsystems} & 308 & 11 & Ch~16 \\
+\compactcodepath{Logic}{MarkovLogicDynamicCoupledSubsystems} & 828 & 21 & Ch~16 \\
+\compactcodepath{Logic}{MarkovLogicCoupledCommunitiesExample} & 360 & 8 & Ch~16 \\
 \code{Logic/MarkovLogicTrustTriangleExample} & 353 & 11 & Ch~16 \\
 \code{Logic/MarkovLogicSelfTranscendence} & 308 & 5 & Ch~16 \\
+\compactcodepath{Logic}{MarkovLogicDynamicTranscendence} & 603 & 10 & Ch~16 \\
+\compactcodepath{Logic}{MarkovLogicFiniteVolumeContraction} & 557 & 8 & Ch~16 \\
 \code{Logic/MarkovLogicInfiniteUniqueness} & 6768 & 233 & Ch~16 \\
-\code{Logic/MarkovLogicInfiniteBeliefLineExample} & 359 & 9 & Ch~16 \\
-\code{Logic/MarkovLogicInfiniteBidirectionalWorldOfViews} & 378 & 12 & Ch~16 \\
-\code{Logic/MarkovLogicInfiniteBoundedGraphExample} & 322 & 13 & Ch~16 \\
+\compactcodepath{Logic}{MarkovLogicInfiniteBeliefLineExample} & 359 & 9 & Ch~16 \\
+\compactinfinitecodepath{Bidirectional}{WorldOfViews} & 378 & 12 & Ch~16 \\
+\compactinfinitecodepath{BoundedGraph}{Example} & 322 & 13 & Ch~16 \\
 \code{Logic/MarkovLogicInfiniteGridExample} & 430 & 13 & Ch~16 \\
-\code{Logic/MarkovLogicInfiniteVariableNeighborhoodWorldOfViews} & 369 & 6 & Ch~16 \\
+\compactinfinitecodepath{VariableNeighborhood}{WorldOfViews} & 369 & 6 & Ch~16 \\
 \code{Logic/MarkovLogicInfiniteWorldOfViews} & 187 & 5 & Ch~16 \\
 \code{Logic/MarkovLogicInfiniteWorldModel} & 177 & 2 & Ch~16 \\
+\compactcodepath{UniversalAI/GodelMachine}{MetaGoalShellPreservation} & 307 & 9 & Ch~16 \\
 \midrule
 \multicolumn{4}{@{}l}{\emph{Applications (Part~VI)}} \\
 \midrule
@@ -9388,7 +9512,7 @@ Path & Lines & Thms & Book refs \\
 \code{Logic/WMSteelFaultDemo} & 568 & 46 & Ch~20 \\
 \code{Logic/WMNABSleepDemo} & 344 & 30 & Ch~20 \\
 \code{Logic/GJPForecastDemo} & 255 & 14 & Ch~20 \\
-\code{Logic/PLNWorldModelOrderCostGasPolicyDemo} & 155 & 6 & Ch~20 \\
+\compactcodepath{Logic}{PLNWorldModelOrderCostGasPolicyDemo} & 155 & 6 & Ch~20 \\
 \code{Logic/PLNBioHypothesisGeneration} & 635 & 36 & Ch~22 \\
 \code{Logic/PLNGWASHigherOrderBridge} & 310 & 17 & Ch~22 \\
 \code{Logic/WMDemandDemo} & 258 & 27 & Ch~12 \\
@@ -9396,7 +9520,7 @@ Path & Lines & Thms & Book refs \\
 \code{Logic/WMUWCSEGateDemo} & 177 & 12 & Ch~16 \\
 \code{Logic/EvidenceDirichletQuantale} & $\sim$200 & 13 & Ch~2, 4 \\
 \code{Logic/PLNProbGuardedAdmissibilityDemo} & $\sim$200 & 13 & Ch~21 \\
-\code{Logic/PLNWorldModelOrderCostProvenanceDemo} & 255 & 5 & Ch~12 \\
+\compactcodepath{Logic}{PLNWorldModelOrderCostProvenanceDemo} & 255 & 5 & Ch~12 \\
 \code{Logic/PLNQuantaleDivergence} & 121 & 3 & Ch~4 \\
 \code{Logic/BooleanHeytingBridge} & $\sim$100 & 4 & Ch~4 \\
 \code{Logic/AIOutcomesDemo} & 280 & 13 & Ch~24 \\

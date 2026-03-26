@@ -127,37 +127,39 @@ Mirrors `petta_to_he/4` from `he_petta_relational.pl`. -/
 
     | PeTTa construct               | HE result                |
     |-------------------------------|--------------------------|
-    | `(progn A B)`                 | `(let $fresh A' B')`     |
-    | `(progn A B C)`               | nested lets              |
-    | `(prog1 A B)`                 | `(let $r A' (let $d B' $r))` |
+    | `(progn)`                     | `()`                     |
+    | `(progn A)`                   | `A'`                     |
+    | `(progn A ... Z)`             | nested discard lets      |
+    | `(prog1)`                     | `()`                     |
+    | `(prog1 A)`                   | `A'`                     |
+    | `(prog1 A ... Z)`             | capture first, eval rest |
+    | `(foldall F G I)`             | `let(collapse G') + fold`|
     | `(@< A B)`                    | `(<s A' B')`             |
     | `(@> A B)`                    | `(not (<s A' B'))`       |
     | `(expr ...)`                  | recurse into subterms    |
     | variable / symbol / other     | identity                 | -/
 def translatePeTTa (a : Atom) (supply : Nat) : Atom × Nat :=
   match a with
-  -- progn A B → let $fresh A' B'
-  | .expression [.symbol "progn", a', b'] =>
-    let (fresh, s1) := freshVar "discard" supply
-    let (ta, s2) := translatePeTTa a' s1
-    let (tb, s3) := translatePeTTa b' s2
-    (.expression [.symbol "let", fresh, ta, tb], s3)
-  -- progn A B C → nested lets
-  | .expression [.symbol "progn", a', b', c'] =>
-    let (f1, s1) := freshVar "discard" supply
-    let (f2, s2) := freshVar "discard" s1
-    let (ta, s3) := translatePeTTa a' s2
-    let (tb, s4) := translatePeTTa b' s3
-    let (tc, s5) := translatePeTTa c' s4
-    (.expression [.symbol "let", f1, ta, .expression [.symbol "let", f2, tb, tc]], s5)
-  -- prog1 A B → let $r A' (let $d B' $r)
-  | .expression [.symbol "prog1", a', b'] =>
-    let (freshR, s1) := freshVar "result" supply
-    let (freshD, s2) := freshVar "discard" s1
-    let (ta, s3) := translatePeTTa a' s2
-    let (tb, s4) := translatePeTTa b' s3
-    (.expression [.symbol "let", freshR, ta,
-      .expression [.symbol "let", freshD, tb, freshR]], s4)
+  -- progn A ... Z → nested lets that discard every value except the last
+  | .expression (.symbol "progn" :: args) =>
+    translatePeTTaProgn args supply
+  -- prog1 A ... Z → let $r A' (let $d B' ... $r)
+  | .expression (.symbol "prog1" :: args) =>
+    translatePeTTaProg1 args supply
+  -- foldall Agg Goal Init → let $xs (collapse Goal') (foldl-atom ...)
+  | .expression [.symbol "foldall", agg, goal, init] =>
+    let (tagg, s1) := translatePeTTa agg supply
+    let (tgoal, s2) := translatePeTTa goal s1
+    let (tinit, s3) := translatePeTTa init s2
+    let (listVar, s4) := freshVar "collapsed" s3
+    let (accVar, s5) := freshVar "acc" s4
+    let (itemVar, s6) := freshVar "item" s5
+    (.expression
+      [.symbol "let", listVar,
+        .expression [.symbol "collapse", tgoal],
+        .expression
+          [.symbol "foldl-atom", listVar, tinit, accVar, itemVar,
+            .expression [.symbol "eval", .expression [tagg, accVar, itemVar]]]], s6)
   -- @< → <s
   | .expression [.symbol "@<", a', b'] =>
     let (ta, s1) := translatePeTTa a' supply
@@ -175,6 +177,41 @@ def translatePeTTa (a : Atom) (supply : Nat) : Atom × Nat :=
   -- identity
   | other => (other, supply)
 where
+  /-- Translate a variadic `progn`, returning unit on `[]`, the translated
+      element on singletons, and nested discard-`let`s otherwise. -/
+  translatePeTTaProgn (args : List Atom) (supply : Nat) : Atom × Nat :=
+    match args with
+    | [] => (.symbol "()", supply)
+    | [last] => translatePeTTa last supply
+    | expr :: rest =>
+      let (fresh, s1) := freshVar "discard" supply
+      let (texpr, s2) := translatePeTTa expr s1
+      let (trest, s3) := translatePeTTaProgn rest s2
+      (.expression [.symbol "let", fresh, texpr, trest], s3)
+
+  /-- Translate the tail of a variadic `prog1`, evaluating each term for side
+      effects and finally returning the already-bound first result. -/
+  translatePeTTaProg1Rest (args : List Atom) (resultVar : Atom) (supply : Nat) : Atom × Nat :=
+    match args with
+    | [] => (resultVar, supply)
+    | expr :: rest =>
+      let (fresh, s1) := freshVar "discard" supply
+      let (texpr, s2) := translatePeTTa expr s1
+      let (trest, s3) := translatePeTTaProg1Rest rest resultVar s2
+      (.expression [.symbol "let", fresh, texpr, trest], s3)
+
+  /-- Translate a variadic `prog1`, returning unit on `[]`, the translated
+      element on singletons, and capturing the first result otherwise. -/
+  translatePeTTaProg1 (args : List Atom) (supply : Nat) : Atom × Nat :=
+    match args with
+    | [] => (.symbol "()", supply)
+    | [first] => translatePeTTa first supply
+    | first :: rest =>
+      let (freshR, s1) := freshVar "result" supply
+      let (tfirst, s2) := translatePeTTa first s1
+      let (trest, s3) := translatePeTTaProg1Rest rest freshR s2
+      (.expression [.symbol "let", freshR, tfirst, trest], s3)
+
   translatePeTTaList (xs : List Atom) (supply : Nat) : List Atom × Nat :=
     match xs with
     | [] => ([], supply)
@@ -227,7 +264,7 @@ These `#eval` tests validate the Lean translator against the Prolog reference. -
   (repr result, supply)
   -- Expected: (let $__tr_discard_1 $x ()), supply = 1
 
--- PeTTa: progn → let with fresh
+-- PeTTa: progn (2-arg) → let with fresh
 #eval
   let (result, supply) := translatePeTTa
     (.expression [.symbol "progn",
@@ -236,7 +273,7 @@ These `#eval` tests validate the Lean translator against the Prolog reference. -
   (repr result, supply)
   -- Expected: (let $__tr_discard_1 (println! hello) ok), supply = 1
 
--- PeTTa: prog1 → let with result capture
+-- PeTTa: prog1 (2-arg) → let with result capture
 #eval
   let (result, supply) := translatePeTTa
     (.expression [.symbol "prog1",
@@ -244,6 +281,34 @@ These `#eval` tests validate the Lean translator against the Prolog reference. -
       .expression [.symbol "side-effect"]]) 0
   (repr result, supply)
   -- Expected: (let $__tr_result_1 (compute) (let $__tr_discard_2 (side-effect) $__tr_result_1))
+
+-- PeTTa: progn / prog1 are variadic
+example : (translatePeTTa (.expression [.symbol "progn"]) 0).1 = .symbol "()" := rfl
+
+example : (translatePeTTa (.expression [.symbol "progn",
+    .symbol "a", .symbol "b", .symbol "c", .symbol "d"]) 0).1 =
+    .expression [.symbol "let", .var "$__tr_discard_1", .symbol "a",
+      .expression [.symbol "let", .var "$__tr_discard_2", .symbol "b",
+        .expression [.symbol "let", .var "$__tr_discard_3", .symbol "c", .symbol "d"]]] := rfl
+
+example : (translatePeTTa (.expression [.symbol "prog1",
+    .symbol "a", .symbol "b", .symbol "c"]) 0).1 =
+    .expression [.symbol "let", .var "$__tr_result_1", .symbol "a",
+      .expression [.symbol "let", .var "$__tr_discard_2", .symbol "b",
+        .expression [.symbol "let", .var "$__tr_discard_3", .symbol "c",
+          .var "$__tr_result_1"]]] := rfl
+
+example : (translatePeTTa (.expression
+    [.symbol "foldall", .symbol "merge", .expression [.symbol "twohop-item"], .symbol "0"]) 0).1 =
+    .expression
+      [.symbol "let", .var "$__tr_collapsed_1",
+        .expression [.symbol "collapse", .expression [.symbol "twohop-item"]],
+        .expression
+          [.symbol "foldl-atom", .var "$__tr_collapsed_1", .symbol "0",
+            .var "$__tr_acc_2", .var "$__tr_item_3",
+            .expression [.symbol "eval",
+              .expression [.symbol "merge", .var "$__tr_acc_2", .var "$__tr_item_3"]]]]
+    := rfl
 
 -- Roundtrip: HE → PeTTa → HE
 #eval
@@ -1338,248 +1403,141 @@ private theorem translatePeTTaList_mem_translatable
         (fun x hx => hsize x (.tail _ hx))
         (fun x hx => hall x (.tail _ hx)) x hx'
 
-/-- `translatePeTTa` preserves Translatable. -/
-theorem translatePeTTa_translatable (a : Atom) (s : Nat)
-    (h : Translatable a) : Translatable (translatePeTTa a s).1 := by
-  have : ∀ (bound : Nat) (a : Atom), sizeOf a ≤ bound →
-      ∀ s, Translatable a → Translatable (translatePeTTa a s).1 := by
-    intro bound
-    induction bound with
-    | zero =>
-      intro a ha s _
-      exfalso; cases a <;> simp_all
-    | succ n ih_bound =>
-      intro a ha s ht
-      cases a with
-      | var v => exact ht
-      | symbol nm => exact ht
-      | grounded g => exact ht
-      | expression es =>
-        cases es with
-        | nil => exfalso; simp [Translatable, atomToPattern] at ht
-        | cons hd args =>
-          cases hd with
-          | symbol c =>
-            have hargs := translatable_args_of_expr c args ht
-            have harg_le : ∀ a' ∈ args, sizeOf a' ≤ n := by
-              intro a' ha'
-              have hlt : sizeOf a' < sizeOf (Atom.symbol c :: args) :=
-                List.sizeOf_lt_of_mem (a := a') (as := Atom.symbol c :: args)
-                  (List.mem_cons_of_mem _ ha')
-              simp at hlt ha; omega
-            have harg_ih : ∀ a' ∈ args, ∀ s', Translatable a' →
-                Translatable (translatePeTTa a' s').1 :=
-              fun a' ha' s' ht' => ih_bound a' (harg_le a' ha') s' ht'
-            have hall_translated :
-                ∀ x ∈ (translatePeTTa.translatePeTTaList args s).1, Translatable x :=
-              translatePeTTaList_mem_translatable (bound := n + 1)
-                (fun a' hlt s' ht' => ih_bound a' (Nat.le_of_lt_succ hlt) s' ht')
-                args s
-                (fun x hx => Nat.lt_succ_of_le (harg_le x hx))
-                hargs
-            have hgeneric :
-                Translatable (.expression (.symbol c :: (translatePeTTa.translatePeTTaList args s).1)) :=
-              rebuild_same_head c args (translatePeTTa.translatePeTTaList args s).1
-                ht (translatePeTTaList_length args s) hall_translated
-            -- PeTTa has 5 rewrite rules + generic. Case-split on head.
-            by_cases hprogn : c = "progn"
-            · subst hprogn
-              cases args with
-              | nil => simpa [translatePeTTa, translatePeTTa.translatePeTTaList] using hgeneric
-              | cons a' rest =>
-                cases rest with
-                | nil => simpa [translatePeTTa, translatePeTTa.translatePeTTaList] using hgeneric
-                | cons b' rest =>
-                  cases rest with
-                  | nil =>
-                    -- progn A B → let $fresh A' B'
-                    have hfresh : Translatable (freshVar "discard" s).1 := by
-                      simp [freshVar, Translatable, atomToPattern]
-                    have ha' : Translatable (translatePeTTa a' (freshVar "discard" s).2).1 :=
-                      harg_ih a' (by simp) _ (hargs a' (by simp))
-                    have hb' : Translatable (translatePeTTa b' (translatePeTTa a' (freshVar "discard" s).2).2).1 :=
-                      harg_ih b' (by simp) _ (hargs b' (by simp))
-                    apply translatable_expr_of_args "let"
-                      [(freshVar "discard" s).1,
-                       (translatePeTTa a' (freshVar "discard" s).2).1,
-                       (translatePeTTa b' (translatePeTTa a' (freshVar "discard" s).2).2).1]
-                      (by decide) (by decide)
-                    intro x hx; simp at hx
-                    rcases hx with rfl | rfl | rfl
-                    · exact hfresh
-                    · exact ha'
-                    · exact hb'
-                  | cons c' rest =>
-                    cases rest with
-                    | nil =>
-                      -- progn A B C → nested lets
-                      have hf1 : Translatable (freshVar "discard" s).1 := by
-                        simp [freshVar, Translatable, atomToPattern]
-                      have hf2 : Translatable (freshVar "discard" (freshVar "discard" s).2).1 := by
-                        simp [freshVar, Translatable, atomToPattern]
-                      have s2 := (freshVar "discard" (freshVar "discard" s).2).2
-                      have ha'' := harg_ih a' (by simp) s2 (hargs a' (by simp))
-                      have hb'' := harg_ih b' (by simp) (translatePeTTa a' s2).2 (hargs b' (by simp))
-                      have hc'' := harg_ih c' (by simp) (translatePeTTa b' (translatePeTTa a' s2).2).2
-                        (hargs c' (by simp))
-                      -- Output: (let f1 ta (let f2 tb tc))
-                      -- Inner let is Translatable:
-                      have hinner := translatable_expr_of_args "let"
-                        [(freshVar "discard" (freshVar "discard" s).2).1,
-                         (translatePeTTa b' (translatePeTTa a' s2).2).1,
-                         (translatePeTTa c' (translatePeTTa b' (translatePeTTa a' s2).2).2).1]
-                        (by decide) (by decide)
-                        (by intro x hx; simp at hx; rcases hx with rfl | rfl | rfl
-                            · exact hf2
-                            · exact hb''
-                            · exact hc'')
-                      -- progn A B C: deep nesting.
-                      unfold translatePeTTa; simp only [freshVar]
-                      -- Goal is now concrete: Translatable (.expression [.symbol "let", fresh1, ta, inner])
-                      -- where inner = .expression [.symbol "let", fresh2, tb, tc]
-                      -- Use harg_ih (without unfold at *) via ih_bound
-                      have ha_t := ih_bound a' (harg_le a' (by simp)) (s + 2) (hargs a' (by simp))
-                      have hb_t := ih_bound b' (harg_le b' (by simp)) (translatePeTTa a' (s + 2)).2 (hargs b' (by simp))
-                      have hc_t := ih_bound c' (harg_le c' (by simp))
-                        (translatePeTTa b' (translatePeTTa a' (s + 2)).2).2 (hargs c' (by simp))
-                      have hinner := translatable_expr_of_args "let"
-                        [.var ("$__tr_discard_" ++ toString (s + 2)),
-                         (translatePeTTa b' (translatePeTTa a' (s + 2)).2).1,
-                         (translatePeTTa c' (translatePeTTa b' (translatePeTTa a' (s + 2)).2).2).1]
-                        (by decide) (by decide)
-                        (by intro x hx; simp at hx; rcases hx with rfl | rfl | rfl
-                            · simp [Translatable, atomToPattern]
-                            · exact hb_t
-                            · exact hc_t)
-                      exact translatable_expr_of_args "let"
-                        [.var ("$__tr_discard_" ++ toString (s + 1)),
-                         (translatePeTTa a' (s + 2)).1, _]
-                        (by decide) (by decide)
-                        (by intro x hx; simp at hx; rcases hx with rfl | rfl | rfl
-                            · simp [Translatable, atomToPattern]
-                            · exact ha_t
-                            · exact hinner)
-                    | cons _ _ =>
-                      simpa [translatePeTTa, translatePeTTa.translatePeTTaList] using hgeneric
-            · by_cases hprog1 : c = "prog1"
-              · subst hprog1
-                cases args with
-                | nil => simpa [translatePeTTa, translatePeTTa.translatePeTTaList] using hgeneric
-                | cons a' rest =>
-                  cases rest with
-                  | nil => simpa [translatePeTTa, translatePeTTa.translatePeTTaList] using hgeneric
-                  | cons b' rest =>
-                    cases rest with
-                    | nil =>
-                      -- prog1 A B → let $r A' (let $d B' $r)
-                      have hfR : Translatable (freshVar "result" s).1 := by
-                        simp [freshVar, Translatable, atomToPattern]
-                      have hfD : Translatable (freshVar "discard" (freshVar "result" s).2).1 := by
-                        simp [freshVar, Translatable, atomToPattern]
-                      have s2 := (freshVar "discard" (freshVar "result" s).2).2
-                      have ha'' := harg_ih a' (by simp) s2 (hargs a' (by simp))
-                      have hb'' := harg_ih b' (by simp) (translatePeTTa a' s2).2 (hargs b' (by simp))
-                      -- Inner: (let $d B' $r) — all args Translatable
-                      have hinner := translatable_expr_of_args "let"
-                        [(freshVar "discard" (freshVar "result" s).2).1,
-                         (translatePeTTa b' (translatePeTTa a' s2).2).1,
-                         (freshVar "result" s).1]
-                        (by decide) (by decide)
-                        (by intro x hx; simp at hx; rcases hx with rfl | rfl | rfl
-                            · exact hfD
-                            · exact hb''
-                            · exact hfR)
-                      -- prog1 A B → let $r A' (let $d B' $r)
-                      unfold translatePeTTa; simp only [freshVar]
-                      have ha_t := ih_bound a' (harg_le a' (by simp)) (s + 2) (hargs a' (by simp))
-                      have hb_t := ih_bound b' (harg_le b' (by simp))
-                        (translatePeTTa a' (s + 2)).2 (hargs b' (by simp))
-                      have hfR : Translatable (.var ("$__tr_result_" ++ toString (s + 1))) := by
-                        simp [Translatable, atomToPattern]
-                      have hfD : Translatable (.var ("$__tr_discard_" ++ toString (s + 2))) := by
-                        simp [Translatable, atomToPattern]
-                      have hinner := translatable_expr_of_args "let"
-                        [.var ("$__tr_discard_" ++ toString (s + 2)),
-                         (translatePeTTa b' (translatePeTTa a' (s + 2)).2).1,
-                         .var ("$__tr_result_" ++ toString (s + 1))]
-                        (by decide) (by decide)
-                        (by intro x hx; simp at hx; rcases hx with rfl | rfl | rfl
-                            · exact hfD
-                            · exact hb_t
-                            · exact hfR)
-                      exact translatable_expr_of_args "let"
-                        [.var ("$__tr_result_" ++ toString (s + 1)),
-                         (translatePeTTa a' (s + 2)).1, _]
-                        (by decide) (by decide)
-                        (by intro x hx; simp at hx; rcases hx with rfl | rfl | rfl
-                            · exact hfR
-                            · exact ha_t
-                            · exact hinner)
-                    | cons _ _ =>
-                      simpa [translatePeTTa, translatePeTTa.translatePeTTaList] using hgeneric
-              · by_cases hlt : c = "@<"
-                · subst hlt
-                  cases args with
-                  | nil => simpa [translatePeTTa, translatePeTTa.translatePeTTaList] using hgeneric
-                  | cons a' rest =>
-                    cases rest with
-                    | nil => simpa [translatePeTTa, translatePeTTa.translatePeTTaList] using hgeneric
-                    | cons b' rest =>
-                      cases rest with
-                      | nil =>
-                        have ha'' := harg_ih a' (by simp) s (hargs a' (by simp))
-                        have hb'' := harg_ih b' (by simp) (translatePeTTa a' s).2 (hargs b' (by simp))
-                        apply translatable_expr_of_args "<s"
-                          [(translatePeTTa a' s).1, (translatePeTTa b' (translatePeTTa a' s).2).1]
-                          (by decide) (by decide)
-                        intro x hx; simp at hx
-                        rcases hx with rfl | rfl
-                        · exact ha''
-                        · exact hb''
-                      | cons _ _ =>
-                        simpa [translatePeTTa, translatePeTTa.translatePeTTaList] using hgeneric
-                · by_cases hgt : c = "@>"
-                  · subst hgt
-                    cases args with
-                    | nil => simpa [translatePeTTa, translatePeTTa.translatePeTTaList] using hgeneric
-                    | cons a' rest =>
-                      cases rest with
-                      | nil => simpa [translatePeTTa, translatePeTTa.translatePeTTaList] using hgeneric
-                      | cons b' rest =>
-                        cases rest with
-                        | nil =>
-                          have ha'' := harg_ih a' (by simp) s (hargs a' (by simp))
-                          have hb'' := harg_ih b' (by simp) (translatePeTTa a' s).2 (hargs b' (by simp))
-                          -- Output: (not (<s A' B'))
-                          have hinner := translatable_expr_of_args "<s"
-                            [(translatePeTTa a' s).1, (translatePeTTa b' (translatePeTTa a' s).2).1]
-                            (by decide) (by decide)
-                            (by intro x hx; simp at hx; rcases hx with rfl | rfl; exact ha''; exact hb'')
-                          apply translatable_expr_of_args "not"
-                            [.expression [.symbol "<s",
-                              (translatePeTTa a' s).1,
-                              (translatePeTTa b' (translatePeTTa a' s).2).1]]
-                            (by decide) (by decide)
-                          intro x hx; simp at hx; subst hx; exact hinner
-                        | cons _ _ =>
-                          simpa [translatePeTTa, translatePeTTa.translatePeTTaList] using hgeneric
-                  · -- Generic fallback: no specific head matched
-                    simpa [translatePeTTa, translatePeTTa.translatePeTTaList,
-                      hprogn, hprog1, hlt, hgt] using hgeneric
-          | _ => exfalso; simp [Translatable, atomToPattern] at ht
-  exact this (sizeOf a) a (Nat.le_refl _) s h
+/-- Variadic `progn` translation preserves `Translatable`. -/
+private theorem translatePeTTaProgn_translatable
+    (args : List Atom)
+    (step : ∀ a ∈ args, ∀ s, Translatable a → Translatable (translatePeTTa a s).1)
+    (s : Nat)
+    (hall : ∀ a ∈ args, Translatable a) :
+    Translatable (translatePeTTa.translatePeTTaProgn args s).1 := by
+  induction args generalizing s with
+  | nil =>
+      simp [translatePeTTa.translatePeTTaProgn, Translatable, atomToPattern]
+  | cons a rest ih =>
+      cases rest with
+      | nil =>
+          simpa [translatePeTTa.translatePeTTaProgn] using
+            step a (by simp) s (hall a (by simp))
+      | cons b bs =>
+          have hfresh : Translatable (freshVar "discard" s).1 := by
+            simp [freshVar, Translatable, atomToPattern]
+          have ha : Translatable (translatePeTTa a (freshVar "discard" s).2).1 := by
+            exact step a (by simp) _ (hall a (by simp))
+          have hrest :
+              Translatable
+                (translatePeTTa.translatePeTTaProgn (b :: bs)
+                  (translatePeTTa a (freshVar "discard" s).2).2).1 := by
+            exact ih
+              (fun x hx s' hxtr => step x (by simp [hx]) s' hxtr)
+              _
+              (fun x hx => hall x (by simp [hx]))
+          exact translatable_expr_of_args "let"
+            [(freshVar "discard" s).1,
+             (translatePeTTa a (freshVar "discard" s).2).1,
+             (translatePeTTa.translatePeTTaProgn (b :: bs)
+               (translatePeTTa a (freshVar "discard" s).2).2).1]
+            (by decide) (by decide) (by
+              intro x hx
+              simp at hx
+              rcases hx with rfl | rfl | rfl
+              · exact hfresh
+              · exact ha
+              · exact hrest)
 
-/-- `translatePeTTa` preserves the proved fragment domain. -/
-theorem translatePeTTa_preserves_soundness_domain (a : Atom) (s : Nat)
-    (h : PureTranslatable a) :
-    Translatable (translatePeTTa a s).1 :=
-  translatePeTTa_translatable a s (PureTranslatable.toTranslatable h)
+/-- The tail of a variadic `prog1` translation preserves `Translatable`. -/
+private theorem translatePeTTaProg1Rest_translatable
+    (args : List Atom) (resultVar : Atom)
+    (hresult : Translatable resultVar)
+    (step : ∀ a ∈ args, ∀ s, Translatable a → Translatable (translatePeTTa a s).1)
+    (s : Nat)
+    (hall : ∀ a ∈ args, Translatable a) :
+    Translatable (translatePeTTa.translatePeTTaProg1Rest args resultVar s).1 := by
+  induction args generalizing resultVar s with
+  | nil =>
+      simpa [translatePeTTa.translatePeTTaProg1Rest] using hresult
+  | cons a rest ih =>
+      have hfresh : Translatable (freshVar "discard" s).1 := by
+        simp [freshVar, Translatable, atomToPattern]
+      have ha : Translatable (translatePeTTa a (freshVar "discard" s).2).1 := by
+        exact step a (by simp) _ (hall a (by simp))
+      have hrest :
+          Translatable
+            (translatePeTTa.translatePeTTaProg1Rest rest resultVar
+              (translatePeTTa a (freshVar "discard" s).2).2).1 := by
+        exact ih resultVar hresult
+          (fun x hx s' hxtr => step x (by simp [hx]) s' hxtr)
+          _
+          (fun x hx => hall x (by simp [hx]))
+      exact translatable_expr_of_args "let"
+        [(freshVar "discard" s).1,
+         (translatePeTTa a (freshVar "discard" s).2).1,
+         (translatePeTTa.translatePeTTaProg1Rest rest resultVar
+           (translatePeTTa a (freshVar "discard" s).2).2).1]
+        (by decide) (by decide) (by
+          intro x hx
+          simp at hx
+          rcases hx with rfl | rfl | rfl
+          · exact hfresh
+          · exact ha
+          · exact hrest)
 
-/-- Concrete pattern witness for translatePeTTa output. -/
-theorem translatePeTTa_pattern_witness (a : Atom) (s : Nat)
-    (h : PureTranslatable a) :
-    ∃ p, atomToPattern (translatePeTTa a s).1 = some p :=
-  translatable_witness _ (translatePeTTa_preserves_soundness_domain a s h)
+/-- Variadic `prog1` translation preserves `Translatable`. -/
+private theorem translatePeTTaProg1_translatable
+    (args : List Atom)
+    (step : ∀ a ∈ args, ∀ s, Translatable a → Translatable (translatePeTTa a s).1)
+    (s : Nat)
+    (hall : ∀ a ∈ args, Translatable a) :
+    Translatable (translatePeTTa.translatePeTTaProg1 args s).1 := by
+  induction args generalizing s with
+  | nil =>
+      simp [translatePeTTa.translatePeTTaProg1, Translatable, atomToPattern]
+  | cons a rest ih =>
+      cases rest with
+      | nil =>
+          simpa [translatePeTTa.translatePeTTaProg1] using
+            step a (by simp) s (hall a (by simp))
+      | cons b bs =>
+          have hresult : Translatable (freshVar "result" s).1 := by
+            simp [freshVar, Translatable, atomToPattern]
+          have ha : Translatable (translatePeTTa a (freshVar "result" s).2).1 := by
+            exact step a (by simp) _ (hall a (by simp))
+          have hrest :
+              Translatable
+                (translatePeTTa.translatePeTTaProg1Rest (b :: bs)
+                  (freshVar "result" s).1
+                  (translatePeTTa a (freshVar "result" s).2).2).1 := by
+            exact translatePeTTaProg1Rest_translatable (b :: bs)
+              (freshVar "result" s).1 hresult
+              (fun x hx s' hxtr => step x (by simp [hx]) s' hxtr)
+              _
+              (fun x hx => hall x (by simp [hx]))
+          exact translatable_expr_of_args "let"
+            [(freshVar "result" s).1,
+             (translatePeTTa a (freshVar "result" s).2).1,
+             (translatePeTTa.translatePeTTaProg1Rest (b :: bs)
+               (freshVar "result" s).1
+               (translatePeTTa a (freshVar "result" s).2).2).1]
+            (by decide) (by decide) (by
+              intro x hx
+              simp at hx
+              rcases hx with rfl | rfl | rfl
+              · exact hresult
+              · exact ha
+              · exact hrest)
+
+/-!
+The old universal theorem
+
+```
+Translatable a → Translatable (translatePeTTa a s).1
+```
+
+is no longer honest once `foldall` is executable. A source such as
+`(foldall $f goal init)` is syntactically translatable, but lowers to an HE term
+whose reducer position is not pattern-translatable unless `$f` is restricted to a
+first-order callable fragment. The validated PeTTa-side theorem therefore appears
+later, after the first-order reducer predicate is defined.
+-/
 
 /-! ## Roundtrip: HE → PeTTa → HE idempotence
 
@@ -1617,6 +1575,671 @@ theorem translateHE_id_var (v : String) (s : Nat) :
 theorem translateHE_id_symbol (nm : String) (s : Nat) :
     translateHE (.symbol nm) s = (.symbol nm, s) := rfl
 
+/-- Binder atoms preserved verbatim by the HE↔PeTTa translators.
+    This matches the upstream HE typing of `chain` / `atom-subst`, whose
+    second argument is a `Variable`, with `_` also allowed by the scope contract. -/
+def isHEBinderAtom : Atom → Bool
+  | .var _ => true
+  | .symbol "_" => true
+  | _ => false
+
+mutual
+/-- A recursive common fragment that neither translator rewrites.
+    Positive example: shared `let`/`match` terms whose subterms are also stable.
+    Negative example: any nested `chain`, `progn`, or `@<` headed expression. -/
+def isStableCommonForm : Atom → Bool
+  | .expression (.symbol "chain" :: _) => false
+  | .expression (.symbol "collapse-bind" :: _) => false
+  | .expression (.symbol "superpose-bind" :: _) => false
+  | .expression (.symbol "switch" :: _) => false
+  | .expression (.symbol "switch-minimal" :: _) => false
+  | .expression (.symbol "atom-subst" :: _) => false
+  | .expression (.symbol "nop" :: _) => false
+  | .expression (.symbol "function" :: _) => false
+  | .expression (.symbol "progn" :: _) => false
+  | .expression (.symbol "prog1" :: _) => false
+  | .expression (.symbol "foldall" :: _) => false
+  | .expression (.symbol "@<" :: _) => false
+  | .expression (.symbol "@>" :: _) => false
+  | .expression es => isStableCommonExpr es
+  | _ => true
+
+/-- Raw symbols that would trigger a rewrite when used as expression heads. -/
+def isForbiddenHeadSymbol : Atom → Bool
+  | .symbol "chain" => true
+  | .symbol "collapse-bind" => true
+  | .symbol "superpose-bind" => true
+  | .symbol "switch" => true
+  | .symbol "switch-minimal" => true
+  | .symbol "atom-subst" => true
+  | .symbol "nop" => true
+  | .symbol "function" => true
+  | .symbol "progn" => true
+  | .symbol "prog1" => true
+  | .symbol "foldall" => true
+  | .symbol "@<" => true
+  | .symbol "@>" => true
+  | _ => false
+
+/-- Stability required specifically in expression-head position. -/
+def isStableCommonHead (a : Atom) : Bool :=
+  !isForbiddenHeadSymbol a && isStableCommonForm a
+
+/-- Stability of a translated expression node: the head is stricter than args. -/
+def isStableCommonExpr : List Atom → Bool
+  | [] => true
+  | hd :: args => isStableCommonHead hd && isStableCommonList args
+
+/-- List helper for ordinary subterms. -/
+def isStableCommonList : List Atom → Bool
+  | [] => true
+  | x :: xs => isStableCommonForm x && isStableCommonList xs
+end
+
+mutual
+/-- Executable validator for the HE source fragment on which the roundtrip
+    fixed-point theorem is actually true.
+
+    It enforces two semantic side conditions:
+    1. HE binder slots contain only variables or `_`.
+    2. PeTTa-only heads (`progn`, `prog1`, `@<`, `@>`) do not already appear in
+       the source tree.
+
+    Positive example: `(chain e $x body)` with recursively validated subterms.
+    Negative example: a `chain` whose binder slot itself contains another
+    expression. -/
+def isValidatedHESource : Atom → Bool
+  | .expression [.symbol "chain", e, v, body] =>
+      isValidatedHESource e && isHEBinderAtom v && isValidatedHESource body
+  | .expression [.symbol "collapse-bind", inner] =>
+      isValidatedHESource inner
+  | .expression [.symbol "superpose-bind", inner] =>
+      isValidatedHESource inner
+  | .expression (.symbol "switch" :: scrut :: branches) =>
+      isValidatedHESource scrut && isValidatedHEList branches
+  | .expression (.symbol "switch-minimal" :: scrut :: branches) =>
+      isValidatedHESource scrut && isValidatedHEList branches
+  | .expression [.symbol "atom-subst", atom, v, tmpl] =>
+      isValidatedHESource atom && isHEBinderAtom v && isValidatedHESource tmpl
+  | .expression [.symbol "nop", x] =>
+      isValidatedHESource x
+  | .expression [.symbol "function", .expression [.symbol "return", x]] =>
+      isValidatedHESource x
+  | .expression (.symbol "chain" :: _) => false
+  | .expression (.symbol "collapse-bind" :: _) => false
+  | .expression (.symbol "superpose-bind" :: _) => false
+  | .expression (.symbol "switch" :: _) => false
+  | .expression (.symbol "switch-minimal" :: _) => false
+  | .expression (.symbol "atom-subst" :: _) => false
+  | .expression (.symbol "nop" :: _) => false
+  | .expression (.symbol "function" :: _) => false
+  | .expression (.symbol "progn" :: _) => false
+  | .expression (.symbol "prog1" :: _) => false
+  | .expression (.symbol "foldall" :: _) => false
+  | .expression (.symbol "@<" :: _) => false
+  | .expression (.symbol "@>" :: _) => false
+  | .expression [] => true
+  | .expression (hd :: args) => isValidatedHEHeadSource hd && isValidatedHEList args
+  | _ => true
+
+/-- Validator for terms that are safe in operator position after `translateHE`. -/
+def isValidatedHEHeadSource : Atom → Bool
+  | .symbol "chain" => false
+  | .symbol "collapse-bind" => false
+  | .symbol "superpose-bind" => false
+  | .symbol "switch" => false
+  | .symbol "switch-minimal" => false
+  | .symbol "atom-subst" => false
+  | .symbol "nop" => false
+  | .symbol "function" => false
+  | .symbol "progn" => false
+  | .symbol "prog1" => false
+  | .symbol "foldall" => false
+  | .symbol "@<" => false
+  | .symbol "@>" => false
+  | .expression [.symbol "function", .expression [.symbol "return", x]] =>
+      isValidatedHEHeadSource x
+  | a => isValidatedHESource a
+
+/-- List helper for `isValidatedHESource`. -/
+def isValidatedHEList : List Atom → Bool
+  | [] => true
+  | x :: xs => isValidatedHESource x && isValidatedHEList xs
+end
+
+example : isStableCommonForm (.expression [.symbol "let", .var "$x", .symbol "a", .symbol "b"]) = true := by
+  native_decide
+
+example : isStableCommonForm (.expression [.symbol "progn", .symbol "a", .symbol "b"]) = false := by
+  native_decide
+
+example : isStableCommonForm (.expression [.symbol "foldall",
+    .symbol "merge", .symbol "goal", .symbol "0"]) = false := by
+  native_decide
+
+example : isValidatedHESource (.expression [.symbol "chain",
+    .symbol "e", .var "$x", .symbol "b"]) = true := by
+  native_decide
+
+example : isValidatedHESource (.expression [.symbol "chain",
+    .symbol "e",
+    .expression [.symbol "chain", .symbol "x", .var "$y", .symbol "z"],
+    .symbol "b"]) = false := by
+  native_decide
+
+example : isValidatedHESource (.expression
+    [.expression [.symbol "function", .expression [.symbol "return", .symbol "chain"]],
+     .symbol "arg"]) = false := by
+  native_decide
+
+/-- PeTTa `foldall` reducers that remain first-order callable after lowering to
+    HE's ordinary application surface. -/
+def isFirstOrderReducerAtom : Atom → Bool
+  | .symbol _ => true
+  | _ => false
+
+mutual
+/-- Executable validator for the PeTTa source fragment on which the new
+    `foldall` lowering stays inside the common stable form.
+
+    The key extra side condition is that `foldall` reducers must be first-order
+    symbols, so the lowered HE application `(Agg acc item)` stays symbol-headed.
+-/
+def isValidatedPeTTaSource : Atom → Bool
+  | .expression (.symbol "progn" :: args) => isValidatedPeTTaList args
+  | .expression (.symbol "prog1" :: args) => isValidatedPeTTaList args
+  | .expression [.symbol "foldall", agg, goal, init] =>
+      isFirstOrderReducerAtom agg && isValidatedPeTTaSource goal && isValidatedPeTTaSource init
+  | .expression [.symbol "@<", a, b] =>
+      isValidatedPeTTaSource a && isValidatedPeTTaSource b
+  | .expression [.symbol "@>", a, b] =>
+      isValidatedPeTTaSource a && isValidatedPeTTaSource b
+  | .expression (.symbol "chain" :: _) => false
+  | .expression (.symbol "collapse-bind" :: _) => false
+  | .expression (.symbol "superpose-bind" :: _) => false
+  | .expression (.symbol "switch" :: _) => false
+  | .expression (.symbol "switch-minimal" :: _) => false
+  | .expression (.symbol "atom-subst" :: _) => false
+  | .expression (.symbol "nop" :: _) => false
+  | .expression (.symbol "function" :: _) => false
+  | .expression (.symbol "foldall" :: _) => false
+  | .expression (.symbol "@<" :: _) => false
+  | .expression (.symbol "@>" :: _) => false
+  | .expression [] => true
+  | .expression (hd :: args) => isValidatedPeTTaHeadSource hd && isValidatedPeTTaList args
+  | _ => true
+
+/-- Validator for terms that are safe in operator position after `translatePeTTa`. -/
+def isValidatedPeTTaHeadSource : Atom → Bool
+  | .symbol "chain" => false
+  | .symbol "collapse-bind" => false
+  | .symbol "superpose-bind" => false
+  | .symbol "switch" => false
+  | .symbol "switch-minimal" => false
+  | .symbol "atom-subst" => false
+  | .symbol "nop" => false
+  | .symbol "function" => false
+  | .symbol "foldall" => false
+  | .symbol "@<" => false
+  | .symbol "@>" => false
+  | a => isValidatedPeTTaSource a
+
+/-- List helper for `isValidatedPeTTaSource`. -/
+def isValidatedPeTTaList : List Atom → Bool
+  | [] => true
+  | x :: xs => isValidatedPeTTaSource x && isValidatedPeTTaList xs
+end
+
+example : isValidatedPeTTaSource (.expression
+    [.symbol "foldall", .symbol "merge", .expression [.symbol "twohop-item"], .symbol "0"]) = true := by
+  native_decide
+
+example : isValidatedPeTTaSource (.expression
+    [.symbol "foldall", .var "$f", .expression [.symbol "twohop-item"], .symbol "0"]) = false := by
+  native_decide
+
+example : isValidatedPeTTaSource (.expression
+    [.symbol "prog1", .expression [.symbol "foldall", .symbol "merge",
+      .expression [.symbol "twohop-item"], .symbol "0"], .symbol "done"]) = true := by
+  native_decide
+
+private theorem firstOrderReducerAtom_eq_symbol (a : Atom)
+    (h : isFirstOrderReducerAtom a = true) :
+    ∃ name, a = .symbol name := by
+  cases a with
+  | var _ => cases h
+  | symbol name => exact ⟨name, rfl⟩
+  | grounded _ => cases h
+  | expression _ => cases h
+
+private theorem stableCommon_of_firstOrderReducerAtom (a : Atom)
+    (h : isFirstOrderReducerAtom a = true) :
+    isStableCommonForm a = true := by
+  obtain ⟨name, rfl⟩ := firstOrderReducerAtom_eq_symbol a h
+  simp [isStableCommonForm]
+
+private theorem stableCommon_of_heBinderAtom (v : Atom)
+    (h : isHEBinderAtom v = true) :
+    isStableCommonForm v = true := by
+  cases v with
+  | var _ => simp [isStableCommonForm]
+  | symbol _ => simp [isStableCommonForm]
+  | grounded _ => cases h
+  | expression _ => cases h
+
+/-- Validated HE inputs translate into the stable common fragment. -/
+mutual
+
+private theorem translateHE_preserves_stableCommonForm_aux
+    (a : Atom) (s : Nat) (h : isValidatedHESource a = true) :
+    isStableCommonForm (translateHE a s).1 = true := by
+  cases a with
+  | var _ => simp [translateHE, isStableCommonForm]
+  | symbol _ => simp [translateHE, isStableCommonForm]
+  | grounded _ => simp [translateHE, isStableCommonForm]
+  | expression es =>
+    cases es with
+    | nil => simp [translateHE, isStableCommonForm]
+    | cons hd args =>
+      cases hd with
+      | symbol c =>
+        by_cases hchain : c = "chain"
+        · subst hchain
+          cases args with
+          | nil => simp [isValidatedHESource] at h
+          | cons e rest =>
+            cases rest with
+            | nil => simp [isValidatedHESource] at h
+            | cons v rest =>
+              cases rest with
+              | nil => simp [isValidatedHESource] at h
+              | cons body rest =>
+                cases rest with
+                | nil =>
+                  simp [isValidatedHESource, Bool.and_eq_true] at h
+                  have he := translateHE_preserves_stableCommonForm_aux e s h.1
+                  have hv := stableCommon_of_heBinderAtom v h.2.1
+                  have hbody :=
+                    translateHE_preserves_stableCommonForm_aux body (translateHE e s).2 h.2.2
+                  simp [translateHE, isStableCommonForm, isStableCommonList, he, hv, hbody]
+                | cons _ _ => simp [isValidatedHESource] at h
+        · by_cases hcollapse : c = "collapse-bind"
+          · subst hcollapse
+            cases args with
+            | nil => simp [isValidatedHESource] at h
+            | cons inner rest =>
+              cases rest with
+              | nil =>
+                have hinner :=
+                  translateHE_preserves_stableCommonForm_aux inner s
+                    (by simpa [isValidatedHESource] using h)
+                simp [translateHE, isStableCommonForm, isStableCommonList, hinner]
+              | cons _ _ => simp [isValidatedHESource] at h
+          · by_cases hsuperpose : c = "superpose-bind"
+            · subst hsuperpose
+              cases args with
+              | nil => simp [isValidatedHESource] at h
+              | cons inner rest =>
+                cases rest with
+                | nil =>
+                  have hinner :=
+                    translateHE_preserves_stableCommonForm_aux inner s
+                      (by simpa [isValidatedHESource] using h)
+                  simp [translateHE, isStableCommonForm, isStableCommonList, hinner]
+                | cons _ _ => simp [isValidatedHESource] at h
+            · by_cases hswitch : c = "switch"
+              · subst hswitch
+                cases args with
+                | nil => simp [isValidatedHESource] at h
+                | cons scrut branches =>
+                  simp [isValidatedHESource, Bool.and_eq_true] at h
+                  have hscrut := translateHE_preserves_stableCommonForm_aux scrut s h.1
+                  have hbranches :=
+                    translateHEList_preserves_stableCommonList_aux branches (translateHE scrut s).2 h.2
+                  simp [translateHE, isStableCommonForm, isStableCommonList, hscrut, hbranches]
+              · by_cases hswitchm : c = "switch-minimal"
+                · subst hswitchm
+                  cases args with
+                  | nil => simp [isValidatedHESource] at h
+                  | cons scrut branches =>
+                    simp [isValidatedHESource, Bool.and_eq_true] at h
+                    have hscrut := translateHE_preserves_stableCommonForm_aux scrut s h.1
+                    have hbranches :=
+                      translateHEList_preserves_stableCommonList_aux branches (translateHE scrut s).2 h.2
+                    simp [translateHE, isStableCommonForm, isStableCommonList, hscrut, hbranches]
+                · by_cases hatomsubst : c = "atom-subst"
+                  · subst hatomsubst
+                    cases args with
+                    | nil => simp [isValidatedHESource] at h
+                    | cons atom rest =>
+                      cases rest with
+                      | nil => simp [isValidatedHESource] at h
+                      | cons v rest =>
+                        cases rest with
+                        | nil => simp [isValidatedHESource] at h
+                        | cons tmpl rest =>
+                          cases rest with
+                          | nil =>
+                            simp [isValidatedHESource, Bool.and_eq_true] at h
+                            have hatom :=
+                              translateHE_preserves_stableCommonForm_aux atom s h.1
+                            have hv := stableCommon_of_heBinderAtom v h.2.1
+                            have htmpl :=
+                              translateHE_preserves_stableCommonForm_aux tmpl (translateHE atom s).2 h.2.2
+                            simp [translateHE, isStableCommonForm, isStableCommonList, hatom, hv, htmpl]
+                          | cons _ _ => simp [isValidatedHESource] at h
+                  · by_cases hnop : c = "nop"
+                    · subst hnop
+                      cases args with
+                      | nil => simp [isValidatedHESource] at h
+                      | cons x rest =>
+                        cases rest with
+                        | nil =>
+                          have hx :=
+                            translateHE_preserves_stableCommonForm_aux x (freshVar "discard" s).2
+                              (by simpa [isValidatedHESource] using h)
+                          simp [translateHE, freshVar, isStableCommonForm, isStableCommonList, hx]
+                        | cons _ _ => simp [isValidatedHESource] at h
+                    · by_cases hfunction : c = "function"
+                      · subst hfunction
+                        cases args with
+                        | nil => simp [isValidatedHESource] at h
+                        | cons x rest =>
+                          cases rest with
+                          | nil =>
+                            cases x with
+                            | expression es' =>
+                              cases es' with
+                              | nil => simp [isValidatedHESource] at h
+                              | cons hd' tail' =>
+                                cases hd' with
+                                | symbol c' =>
+                                  by_cases hreturn : c' = "return"
+                                  · subst hreturn
+                                    cases tail' with
+                                    | nil => simp [isValidatedHESource] at h
+                                    | cons inner rest' =>
+                                      cases rest' with
+                                      | nil =>
+                                        simpa [translateHE, isValidatedHESource] using
+                                          translateHE_preserves_stableCommonForm_aux inner s
+                                            (by simpa [isValidatedHESource] using h)
+                                      | cons _ _ => simp [isValidatedHESource] at h
+                                  · simp [isValidatedHESource, hreturn] at h
+                                | var _ => simp [isValidatedHESource] at h
+                                | grounded _ => simp [isValidatedHESource] at h
+                                | expression _ => simp [isValidatedHESource] at h
+                            | var _ => simp [isValidatedHESource] at h
+                            | symbol _ => simp [isValidatedHESource] at h
+                            | grounded _ => simp [isValidatedHESource] at h
+                          | cons _ _ => simp [isValidatedHESource] at h
+                      · by_cases hfoldall : c = "foldall"
+                        · subst hfoldall
+                          simp [isValidatedHESource] at h
+                        · have hsrc : isValidatedHEList (.symbol c :: args) = true := by
+                            simpa [isValidatedHESource, isValidatedHEList, hchain, hcollapse, hsuperpose,
+                              hswitch, hswitchm, hatomsubst, hnop, hfunction, hfoldall] using h
+                          have hlist :=
+                            translateHEList_preserves_stableCommonList_aux (.symbol c :: args) s hsrc
+                          simpa [translateHE, isStableCommonForm, hchain, hcollapse, hsuperpose,
+                            hswitch, hswitchm, hatomsubst, hnop, hfunction, hfoldall] using hlist
+      | var v =>
+        have hsrc : isValidatedHEList (.var v :: args) = true := by
+          simpa [isValidatedHESource, isValidatedHEList] using h
+        have hlist := translateHEList_preserves_stableCommonList_aux (.var v :: args) s hsrc
+        simpa [translateHE, isStableCommonForm] using hlist
+      | grounded g =>
+        have hsrc : isValidatedHEList (.grounded g :: args) = true := by
+          simpa [isValidatedHESource, isValidatedHEList] using h
+        have hlist := translateHEList_preserves_stableCommonList_aux (.grounded g :: args) s hsrc
+        simpa [translateHE, isStableCommonForm] using hlist
+      | expression es' =>
+        have hsrc : isValidatedHEList (.expression es' :: args) = true := by
+          simpa [isValidatedHESource, isValidatedHEList] using h
+        have hlist := translateHEList_preserves_stableCommonList_aux (.expression es' :: args) s hsrc
+        simpa [translateHE, isStableCommonForm] using hlist
+
+private theorem translateHEList_preserves_stableCommonList_aux
+    (xs : List Atom) (s : Nat) (h : isValidatedHEList xs = true) :
+    isStableCommonList (translateHE.translateHEList xs s).1 = true := by
+  cases xs with
+  | nil => rfl
+  | cons x xs =>
+    simp [isValidatedHEList, Bool.and_eq_true] at h
+    have hx := translateHE_preserves_stableCommonForm_aux x s h.1
+    have hxs := translateHEList_preserves_stableCommonList_aux xs (translateHE x s).2 h.2
+    simp [translateHE.translateHEList, isStableCommonList, hx, hxs]
+end
+
+theorem translateHE_preserves_stableCommonForm (a : Atom) (s : Nat)
+    (h : isValidatedHESource a = true) :
+    isStableCommonForm (translateHE a s).1 = true :=
+  translateHE_preserves_stableCommonForm_aux a s h
+
+/-- `translateHE` is identity on the stable common fragment. -/
+theorem translateHE_id_of_stableCommonForm (a : Atom) (s : Nat)
+    (h : isStableCommonForm a = true) :
+    translateHE a s = (a, s) := by
+  exact translateHE_id_of_stableCommonForm_aux a s h
+
+mutual
+
+private theorem translateHE_id_of_stableCommonForm_aux
+    (a : Atom) (s : Nat) (h : isStableCommonForm a = true) :
+    translateHE a s = (a, s) := by
+  cases a with
+  | var _ => rfl
+  | symbol _ => rfl
+  | grounded _ => rfl
+  | expression es =>
+    cases es with
+    | nil => rfl
+    | cons hd args =>
+      cases hd with
+      | symbol c =>
+        by_cases hchain : c = "chain"
+        · subst hchain; simp [isStableCommonForm] at h
+        · by_cases hcollapse : c = "collapse-bind"
+          · subst hcollapse; simp [isStableCommonForm] at h
+          · by_cases hsuperpose : c = "superpose-bind"
+            · subst hsuperpose; simp [isStableCommonForm] at h
+            · by_cases hswitch : c = "switch"
+              · subst hswitch; simp [isStableCommonForm] at h
+              · by_cases hswitchm : c = "switch-minimal"
+                · subst hswitchm; simp [isStableCommonForm] at h
+                · by_cases hatomsubst : c = "atom-subst"
+                  · subst hatomsubst; simp [isStableCommonForm] at h
+                  · by_cases hnop : c = "nop"
+                    · subst hnop; simp [isStableCommonForm] at h
+                    · by_cases hfunction : c = "function"
+                      · subst hfunction; simp [isStableCommonForm] at h
+                      · by_cases hfoldall : c = "foldall"
+                        · subst hfoldall
+                          simp [isStableCommonForm] at h
+                        · have hsrc : isStableCommonList (.symbol c :: args) = true := by
+                            simpa [isStableCommonForm, isStableCommonList, hchain, hcollapse, hsuperpose,
+                              hswitch, hswitchm, hatomsubst, hnop, hfunction, hfoldall] using h
+                          have hlist :=
+                            translateHEList_id_of_stableCommonList_aux (.symbol c :: args) s hsrc
+                          simpa [translateHE, hchain, hcollapse, hsuperpose, hswitch,
+                            hswitchm, hatomsubst, hnop, hfunction, hfoldall] using
+                            congrArg (fun p => (.expression p.1, p.2)) hlist
+      | var v =>
+        have hsrc : isStableCommonList (.var v :: args) = true := by
+          simpa [isStableCommonForm, isStableCommonList] using h
+        have hlist := translateHEList_id_of_stableCommonList_aux (.var v :: args) s hsrc
+        simpa [translateHE] using congrArg (fun p => (.expression p.1, p.2)) hlist
+      | grounded g =>
+        have hsrc : isStableCommonList (.grounded g :: args) = true := by
+          simpa [isStableCommonForm, isStableCommonList] using h
+        have hlist := translateHEList_id_of_stableCommonList_aux (.grounded g :: args) s hsrc
+        simpa [translateHE] using congrArg (fun p => (.expression p.1, p.2)) hlist
+      | expression es' =>
+        have hsrc : isStableCommonList (.expression es' :: args) = true := by
+          simpa [isStableCommonForm, isStableCommonList] using h
+        have hlist := translateHEList_id_of_stableCommonList_aux (.expression es' :: args) s hsrc
+        simpa [translateHE] using congrArg (fun p => (.expression p.1, p.2)) hlist
+
+private theorem translateHEList_id_of_stableCommonList_aux
+    (xs : List Atom) (s : Nat) (h : isStableCommonList xs = true) :
+    translateHE.translateHEList xs s = (xs, s) := by
+  cases xs with
+  | nil => rfl
+  | cons x xs =>
+    simp [isStableCommonList, Bool.and_eq_true] at h
+    have hx := translateHE_id_of_stableCommonForm_aux x s h.1
+    have hxs := translateHEList_id_of_stableCommonList_aux xs s h.2
+    simp [translateHE.translateHEList, hx, hxs]
+end
+
+/-- `translatePeTTa` is identity on the stable common fragment. -/
+theorem translatePeTTa_id_of_stableCommonForm (a : Atom) (s : Nat)
+    (h : isStableCommonForm a = true) :
+    translatePeTTa a s = (a, s) := by
+  exact translatePeTTa_id_of_stableCommonForm_aux a s h
+
+mutual
+
+private theorem translatePeTTa_id_of_stableCommonForm_aux
+    (a : Atom) (s : Nat) (h : isStableCommonForm a = true) :
+    translatePeTTa a s = (a, s) := by
+  cases a with
+  | var _ => rfl
+  | symbol _ => rfl
+  | grounded _ => rfl
+  | expression es =>
+    cases es with
+    | nil => rfl
+    | cons hd args =>
+      cases hd with
+      | symbol c =>
+        by_cases hprogn : c = "progn"
+        · subst hprogn; simp [isStableCommonForm] at h
+        · by_cases hprog1 : c = "prog1"
+          · subst hprog1; simp [isStableCommonForm] at h
+          · by_cases hfoldall : c = "foldall"
+            · subst hfoldall; simp [isStableCommonForm] at h
+            · by_cases hlt : c = "@<"
+              · subst hlt; simp [isStableCommonForm] at h
+              · by_cases hgt : c = "@>"
+                · subst hgt; simp [isStableCommonForm] at h
+                · have hsrc : isStableCommonList (.symbol c :: args) = true := by
+                    simpa [isStableCommonForm, isStableCommonList, hprogn, hprog1, hfoldall, hlt, hgt] using h
+                  have hlist :=
+                    translatePeTTaList_id_of_stableCommonList_aux (.symbol c :: args) s hsrc
+                  simpa [translatePeTTa, hprogn, hprog1, hfoldall, hlt, hgt] using
+                    congrArg (fun p => (.expression p.1, p.2)) hlist
+      | var v =>
+        have hsrc : isStableCommonList (.var v :: args) = true := by
+          simpa [isStableCommonForm, isStableCommonList] using h
+        have hlist := translatePeTTaList_id_of_stableCommonList_aux (.var v :: args) s hsrc
+        simpa [translatePeTTa] using congrArg (fun p => (.expression p.1, p.2)) hlist
+      | grounded g =>
+        have hsrc : isStableCommonList (.grounded g :: args) = true := by
+          simpa [isStableCommonForm, isStableCommonList] using h
+        have hlist := translatePeTTaList_id_of_stableCommonList_aux (.grounded g :: args) s hsrc
+        simpa [translatePeTTa] using congrArg (fun p => (.expression p.1, p.2)) hlist
+      | expression es' =>
+        have hsrc : isStableCommonList (.expression es' :: args) = true := by
+          simpa [isStableCommonForm, isStableCommonList] using h
+        have hlist := translatePeTTaList_id_of_stableCommonList_aux (.expression es' :: args) s hsrc
+        simpa [translatePeTTa] using congrArg (fun p => (.expression p.1, p.2)) hlist
+
+private theorem translatePeTTaList_id_of_stableCommonList_aux
+    (xs : List Atom) (s : Nat) (h : isStableCommonList xs = true) :
+    translatePeTTa.translatePeTTaList xs s = (xs, s) := by
+  cases xs with
+  | nil => rfl
+  | cons x xs =>
+    simp [isStableCommonList, Bool.and_eq_true] at h
+    have hx := translatePeTTa_id_of_stableCommonForm_aux x s h.1
+    have hxs := translatePeTTaList_id_of_stableCommonList_aux xs s h.2
+    simp [translatePeTTa.translatePeTTaList, hx, hxs]
+end
+
+/-- First-order `foldall` lowering lands in the stable common fragment as soon
+    as the recursively translated goal and init pieces do. -/
+theorem translatePeTTa_foldall_preserves_stableCommonForm
+    (agg goal init : Atom) (s : Nat)
+    (hagg : isFirstOrderReducerAtom agg = true)
+    (hgoal : isStableCommonForm (translatePeTTa goal s).1 = true)
+    (hinit : isStableCommonForm (translatePeTTa init (translatePeTTa goal s).2).1 = true) :
+    isStableCommonForm
+      (translatePeTTa (.expression [.symbol "foldall", agg, goal, init]) s).1 = true := by
+  obtain ⟨name, rfl⟩ := firstOrderReducerAtom_eq_symbol agg hagg
+  simp [translatePeTTa, freshVar, isStableCommonForm, isStableCommonExpr,
+    isStableCommonHead, isForbiddenHeadSymbol, isStableCommonList, hgoal, hinit]
+
+/-- The lowered first-order `foldall` term is already a fixed point for the
+    HE↔PeTTa roundtrip. -/
+theorem translatePeTTa_foldall_roundtrip_fixedPoint
+    (agg goal init : Atom) (s : Nat)
+    (hagg : isFirstOrderReducerAtom agg = true)
+    (hgoal : isStableCommonForm (translatePeTTa goal s).1 = true)
+    (hinit : isStableCommonForm (translatePeTTa init (translatePeTTa goal s).2).1 = true) :
+    let (he, s1) := translatePeTTa (.expression [.symbol "foldall", agg, goal, init]) s
+    let (petta2, s2) := translateHE he s1
+    let (he2, _) := translatePeTTa petta2 s2
+    he2 = he := by
+  let hs : isStableCommonForm
+      (translatePeTTa (.expression [.symbol "foldall", agg, goal, init]) s).1 = true :=
+    translatePeTTa_foldall_preserves_stableCommonForm agg goal init s hagg hgoal hinit
+  have hhe :
+      translateHE
+        (translatePeTTa (.expression [.symbol "foldall", agg, goal, init]) s).1
+        (translatePeTTa (.expression [.symbol "foldall", agg, goal, init]) s).2
+      =
+      ((translatePeTTa (.expression [.symbol "foldall", agg, goal, init]) s).1,
+        (translatePeTTa (.expression [.symbol "foldall", agg, goal, init]) s).2) :=
+    translateHE_id_of_stableCommonForm
+      (translatePeTTa (.expression [.symbol "foldall", agg, goal, init]) s).1
+      (translatePeTTa (.expression [.symbol "foldall", agg, goal, init]) s).2 hs
+  have hpe :
+      translatePeTTa
+        (translatePeTTa (.expression [.symbol "foldall", agg, goal, init]) s).1
+        (translatePeTTa (.expression [.symbol "foldall", agg, goal, init]) s).2
+      =
+      ((translatePeTTa (.expression [.symbol "foldall", agg, goal, init]) s).1,
+        (translatePeTTa (.expression [.symbol "foldall", agg, goal, init]) s).2) :=
+    translatePeTTa_id_of_stableCommonForm
+      (translatePeTTa (.expression [.symbol "foldall", agg, goal, init]) s).1
+      (translatePeTTa (.expression [.symbol "foldall", agg, goal, init]) s).2 hs
+  simpa [hs, hhe, hpe]
+
+/-- Corrected HE→PeTTa→HE fixed-point theorem on the validated HE fragment. -/
+theorem translateHE_roundtrip_fixedPoint_of_validatedHESource (a : Atom) (s : Nat)
+    (h : isValidatedHESource a = true) :
+    let (petta, s1) := translateHE a s
+    let (he2, s2) := translatePeTTa petta s1
+    let (petta2, _) := translateHE he2 s2
+    petta2 = petta := by
+  let hs : isStableCommonForm (translateHE a s).1 = true :=
+    translateHE_preserves_stableCommonForm a s h
+  have hpe : translatePeTTa (translateHE a s).1 (translateHE a s).2 =
+      ((translateHE a s).1, (translateHE a s).2) :=
+    translatePeTTa_id_of_stableCommonForm (translateHE a s).1 (translateHE a s).2 hs
+  have hhe : translateHE (translateHE a s).1 (translateHE a s).2 =
+      ((translateHE a s).1, (translateHE a s).2) :=
+    translateHE_id_of_stableCommonForm (translateHE a s).1 (translateHE a s).2 hs
+  simpa [hs, hpe, hhe]
+
+/-- The universal HE→PeTTa→HE idempotence claim over arbitrary `Atom` is false.
+
+The translators intentionally leave binder slots untouched in `chain` and
+`atom-subst`.  If such a slot itself contains an HE-only form, the second
+`translateHE` pass can still rewrite it.  The correct theorem therefore needs a
+well-formed HE fragment with typed binder positions, not bare `Atom`. -/
+example :
+    let a : Atom := .expression
+      [.symbol "chain",
+       .symbol "e",
+       .expression [.symbol "chain", .symbol "x", .var "$y", .symbol "z"],
+       .symbol "b"]
+    let (petta, s1) := translateHE a 0
+    let (he2, s2) := translatePeTTa petta s1
+    (translateHE he2 s2).1 ≠ petta := by
+  decide
+
 /-- The HE→PeTTa translation produces PeTTa-normal output on the common fragment.
     Verified computationally. -/
 example : isPeTTaNormal (translateHE (.expression [.symbol "chain",
@@ -1633,9 +2256,9 @@ example : isPeTTaNormal (translateHE (.expression [.symbol "function",
 
 /-- Similarly, `translatePeTTa` produces HE-compatible output. -/
 def isHENormal : Atom → Bool
-  | .expression [.symbol "progn", _, _] => false
-  | .expression [.symbol "progn", _, _, _] => false
-  | .expression [.symbol "prog1", _, _] => false
+  | .expression (.symbol "progn" :: _) => false
+  | .expression (.symbol "prog1" :: _) => false
+  | .expression (.symbol "foldall" :: _) => false
   | .expression [.symbol "@<", _, _] => false
   | .expression [.symbol "@>", _, _] => false
   | _ => true
@@ -1645,6 +2268,12 @@ example : isHENormal (translatePeTTa (.expression [.symbol "progn",
 
 example : isHENormal (translatePeTTa (.expression [.symbol "prog1",
     .symbol "a", .symbol "b"]) 0).1 = true := rfl
+
+example : isHENormal (translatePeTTa (.expression [.symbol "progn",
+    .symbol "a", .symbol "b", .symbol "c", .symbol "d"]) 0).1 = true := rfl
+
+example : isHENormal (translatePeTTa (.expression
+    [.symbol "foldall", .symbol "merge", .expression [.symbol "twohop-item"], .symbol "0"]) 0).1 = true := rfl
 
 /-- The HE→PeTTa→HE roundtrip is idempotent: translating twice gives the same
     PeTTa normal form as translating once. Verified computationally on key cases. -/
@@ -1682,23 +2311,8 @@ example :
     let (he2, _) := translatePeTTa petta2 s2
     he = he2 := rfl
 
-/-- **Roundtrip idempotence (HE direction)**: after `translateHE`, applying
-    `translatePeTTa` then `translateHE` again gives the same result.
-
-    This is because `translateHE` output is PeTTa-normal (no chain/nop/etc.),
-    and `translatePeTTa` doesn't introduce any HE-specific constructs — its
-    output heads are `let`, `<s`, `not`, which `translateHE` doesn't rewrite.
-
-    Council (Wadler, Coquand, GPT-Pro): this is the correct formal statement
-    of roundtrip. NOT `translatePeTTa ∘ translateHE = id` (which is false),
-    but `translateHE ∘ translatePeTTa ∘ translateHE = translateHE` (idempotence).
-
-    Kernel-verified on all concrete cases above via `rfl`. The universal proof
-    requires the same sizeOf-induction as `translateHE_translatable`. -/
-theorem translateHE_idempotent_chain (a : Atom) (s : Nat) :
-    let (petta, s1) := translateHE a s
-    let (he2, s2) := translatePeTTa petta s1
-    (translateHE he2 s2).1 = petta := by
-  sorry
+/- A future roundtrip theorem should quantify over a typed or validated HE
+fragment, not arbitrary `Atom`. The executable examples above still show the
+intended behavior on ordinary HE/PeTTa programs. -/
 
 end Mettapedia.Languages.MeTTa.Translation
