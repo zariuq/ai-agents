@@ -1,0 +1,517 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+\setlist[itemize]{topsep=3pt,itemsep=2pt,parsep=0pt}
+\setlist[enumerate]{topsep=3pt,itemsep=2pt,parsep=0pt}
+
+\title{Contract-First Artifact-Driven Language Execution\\
+\large A Primer for the Lean $\to$ MeTTaIL $\to$ Rust $\to$ MORK/PathMap Pipeline}
+\author{}
+\date{2026-03-17}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note records the core conceptual architecture that emerged while designing a Lean-authoritative, artifact-driven language pipeline centered on \texttt{mettail-rust}. The goal is to make new development sessions immediately productive, while preserving the central doctrine of the project: language semantics belong to Lean and exported artifacts; Rust should provide generic runtime services, backend execution, and explicit host builtin lanes, but not hidden language interpreters. The note explains the current target stack, the contract-first backend discipline, the separation between source elaboration and runtime semantics, the canonical artifact taxonomy, the proper treatment of imports, rule application, compat-head matching, grounded builtins, control and aggregation operators, optimization certificates, and the proof-engineering strategy for verified reference kernels. It is written as a conceptual primer rather than a status report.
+\end{abstract}
+
+\tableofcontents
+
+\section{Purpose and Big Picture}
+
+The project is building a \emph{Lean-first language toolchain} whose intended flow is:
+\[
+\text{Lean language authority} \to \text{MeTTaIL-level artifacts} \to \texttt{mettail-rust} \to \text{MORK/PathMap execution.}
+\]
+
+In project language, the stack is often described as going through stages named \emph{GSLT}, \emph{OSLF}, \emph{NTT}, and \emph{MeTTaIL}. Their internal details are project-specific. The practical point is that a language should move through a sequence of increasingly executable but still semantically controlled representations:
+\begin{enumerate}
+  \item a high-level Lean specification of syntax, semantics, and invariants,
+  \item a normalized intermediate form suitable for lowering and theorem transfer,
+  \item exported artifacts that describe parsing, rule structure, contracts, and backend authority,
+  \item a Rust runtime that consumes those artifacts and executes them through a real backend.
+\end{enumerate}
+
+The central design rule is:
+
+\begin{quote}
+\textbf{Semantics are authored in Lean and exported as artifacts. Rust may provide generic execution services and explicit host builtin lanes, but it must not silently become the semantics authority.}
+\end{quote}
+
+This rule exists because the project repeatedly encountered a failure mode: getting a language to ``work quickly'' by re-implementing the semantics in Rust, or by re-implementing PathMap/MORK behavior in a native scheduler while still calling it a backend. The architecture in this note is meant to make that drift mechanically difficult.
+
+\section{Project Commitments}
+
+The system should satisfy the following commitments.
+
+\subsection{Lean is authoritative}
+A language should be specified in Lean, including as much of the following as is realistically possible:
+\begin{itemize}
+  \item concrete and abstract syntax,
+  \item parser/lowering authority,
+  \item rule and premise structure,
+  \item builtin and effect contracts,
+  \item import and source-elaboration semantics,
+  \item optimization certificates and backend admissibility conditions.
+\end{itemize}
+
+\subsection{The CLI is the main execution path}
+The direct command-line path should be the canonical execution surface. REPL support is valuable for prototyping and diagnostics, but it should not become a privileged alternate interpreter with different semantics.
+
+\subsection{MORK/PathMap is the primary backend}
+The design center is a real backend path using MORK/PathMap (typically through MM2-style lowering where appropriate). Ascent may still be useful as a parity oracle, regression oracle, or temporary comparison backend, but it should not define the long-term semantics surface.
+
+\subsection{Unsupported means fail closed}
+If a feature is not covered by a Lean-exported contract or artifact, the runtime should reject it clearly. A partially working hidden fallback is often worse than an honest failure.
+
+\section{Shared Infrastructure vs. Language Authority}
+
+A recurring mistake is to over-unify languages that happen to share some implementation substrate. The right split is:
+
+\subsection{Shared across languages}
+These pieces should be shared whenever possible:
+\begin{itemize}
+  \item parser infrastructure (for example, embedded tree-sitter machinery),
+  \item artifact loaders and manifest/checksum validation,
+  \item prepared-command or prepared-program runners,
+  \item generic runtime services (query, matching, substitution, memoization, rule execution, builtins, effects),
+  \item backend registration, logging, resource resolution, and provenance tracking.
+\end{itemize}
+
+\subsection{Authoritative per language}
+These pieces should remain language-specific and Lean-authored:
+\begin{itemize}
+  \item syntax authority and pretty-printing authority,
+  \item command-language structure,
+  \item import syntax and import semantics,
+  \item rule sets and premise disciplines,
+  \item builtin availability and contract claims,
+  \item rewrite artifacts and scope artifacts,
+  \item language-specific proof obligations.
+\end{itemize}
+
+This matters especially for PeTTa and HE. They may share runtime services, artifact loaders, and some semantic substructures, but they should not be forced into identical surface syntax or identical control semantics if the Lean authority says otherwise.
+
+\section{The Correct Layering of Source Processing}
+
+One of the most important insights is that \emph{source elaboration} and \emph{runtime execution} must stay separate.
+
+\subsection{Source elaboration}
+Source elaboration includes:
+\begin{itemize}
+  \item parsing source text,
+  \item expanding imports,
+  \item tracking source provenance,
+  \item selecting target spaces or namespaces,
+  \item producing a structured command stream or prepared unit.
+\end{itemize}
+
+This is where import semantics belongs. Import is not a runtime rewrite and not a builtin. It is part of source elaboration.
+
+\subsection{Runtime execution}
+Runtime execution begins \emph{after} source elaboration. It includes:
+\begin{itemize}
+  \item applying commands to a prepared world/backend state,
+  \item executing certified rule and query lanes,
+  \item handling effects and builtins through explicit contracts,
+  \item returning results and diagnostics.
+\end{itemize}
+
+\subsection{The practical consequence}
+The right abstraction is a shared \texttt{SurfaceFileRunner} or equivalent component:
+\begin{enumerate}
+  \item read source units using a resolver contract,
+  \item parse them using language syntax artifacts,
+  \item expand imports according to a language-specific import specification,
+  \item build a provenance-aware prepared command stream,
+  \item lower and execute that stream through the runtime/backend.
+\end{enumerate}
+
+This prevents ``surface interpreters'' from reappearing under the guise of file support.
+
+\section{Import and Filesystem Semantics}
+
+The project should not pretend that all imports are trivial forever, but it also should not force complex module-system semantics onto simple languages.
+
+\subsection{Import belongs in a dedicated source artifact}
+A language should export a source-elaboration artifact such as a \texttt{SurfaceFileSpec} or \texttt{ImportSpec} describing:
+\begin{itemize}
+  \item accepted import forms,
+  \item whether import means transclusion, module scoping, eval-then-export, or foreign resource inclusion,
+  \item whether explicit target spaces/namespaces may be supplied,
+  \item how cycles should be treated,
+  \item whether foreign resources (e.g. Python) are tracked or executed,
+  \item whether library aliases are supported.
+\end{itemize}
+
+\subsection{The engine should provide a default resolver contract}
+The Rust side should provide a \emph{resource resolver contract}, not hardwired language semantics. This includes:
+\begin{itemize}
+  \item path resolution relative to the importing unit,
+  \item library alias resolution,
+  \item canonicalization and cycle detection,
+  \item byte loading,
+  \item optional classification of foreign resources.
+\end{itemize}
+
+\subsection{Default import semantics}
+For simple MeTTa-family languages, the default import meaning should be:
+\begin{quote}
+\emph{transclude the imported source into the elaborated command stream before evaluation, preserving provenance and target-space remapping.}
+\end{quote}
+
+This is simple, honest, and sufficient for many languages, while still leaving room for future module systems.
+
+\section{Prepared Command Streams, Not Batch-Shaped Programs}
+
+A major architectural lesson is that a file should not be modeled merely as ``one space plus a list of queries.'' That shape blocks mutations, imports, new spaces, and future control features.
+
+The correct runtime boundary is a \emph{prepared command stream}. Conceptually:
+
+\begin{verbatim}
+enum PreparedStep {
+  DefineEq, Fact, Eval, AddAtom, RemoveAtom,
+  NewSpace, SetFuel, DefineType, ImportResolved, ...
+}
+\end{verbatim}
+
+Then the backend executes a stateful sequence of steps against a prepared world. This is still not a surface interpreter; it is a structured command execution boundary.
+
+\section{Canonical Artifact Taxonomy}
+
+The most useful artifact split is the following.
+
+\subsection{Manifest and profile artifacts}
+\begin{itemize}
+  \item \texttt{syntax\_spec}: parser and concrete-syntax authority,
+  \item \texttt{manifest}: integrity and versioning metadata,
+  \item \texttt{native\_profile}: runtime/backend selection hints and profile-level requirements.
+\end{itemize}
+
+\subsection{Semantic artifacts}
+\begin{itemize}
+  \item \texttt{transition\_spec}: dispatch ordering, source grouping, and coarse execution metadata,
+  \item \texttt{execution\_contract}: backend-owned query/effect/builtin lanes,
+  \item \texttt{scope\_contract}: binder/scope authority,
+  \item \texttt{rewrite\_ir}: the canonical executable rule artifact.
+\end{itemize}
+
+\subsection{What each artifact should not do}
+\begin{itemize}
+  \item \texttt{transition\_spec} should not encode full rule semantics.
+  \item \texttt{execution\_contract} should not be used for user-defined rule heads.
+  \item \texttt{scope\_contract} should not be polluted with value semantics or backend hints.
+  \item \texttt{rewrite\_ir} should not be duplicated as multiple competing drafts.
+\end{itemize}
+
+\section{Canonical \texttt{rewrite\_ir} v2}
+
+One of the clearest insights of the recent work is that there should be exactly \emph{one} canonical rewrite artifact. A base rewrite artifact plus a separate ``v2 draft'' sidecar is a recipe for drift.
+
+The canonical \texttt{rewrite\_ir} should contain:
+\begin{itemize}
+  \item raw structure:
+    \begin{itemize}
+      \item \texttt{lhs}
+      \item \texttt{rhs}
+      \item \texttt{premises}
+    \end{itemize}
+  \item derived analysis:
+    \begin{itemize}
+      \item \texttt{lhs\_vars}
+      \item \texttt{premise\_var\_flow}
+      \item \texttt{rhs\_vars}
+      \item \texttt{rhs\_fresh\_vars}
+      \item \texttt{rhs\_eval\_requires}
+      \item \texttt{root\_update}
+    \end{itemize}
+  \item optional debug fields such as pretty renderings.
+\end{itemize}
+
+The crucial distinction is between:
+\begin{itemize}
+  \item \textbf{fresh symbolic output variables}, which are semantically legitimate, and
+  \item \textbf{variables required for eager evaluation/lowering}, which really must be bound before certain backend actions may proceed.
+\end{itemize}
+
+This is much more abstract and robust than treating names like \texttt{x}, \texttt{xs}, \texttt{arg}, or \texttt{item} as a debugging frontier.
+
+\section{Scope Contracts and the End of Variable-Name Patching}
+
+One of the most important anti-drift lessons is:
+\begin{quote}
+\textbf{No semantic fix should ever be framed as ``fix variable name $x$'' or ``special-case \texttt{xs}.''}
+\end{quote}
+
+Remaining ``unbound RHS variable'' failures usually fall into semantic classes such as:
+\begin{itemize}
+  \item local binders (let-like, chain-like, lambda-like),
+  \item source-rule payload-local variables,
+  \item collection/rest binders,
+  \item aggregator-local binders,
+  \item symbolic-output variables,
+  \item misclassified literals or tags.
+\end{itemize}
+
+These should be handled by a Lean-exported \texttt{ScopeContract} describing binding forms, not by Rust-side string heuristics.
+
+\section{Rule Application Modes}
+
+The runtime should not reason about user-defined library function names. Instead, it should derive a \emph{rule-application plan} from:
+\begin{itemize}
+  \item \texttt{rewrite\_ir v2}, and
+  \item \texttt{scope\_contract}.
+\end{itemize}
+
+Three generic rule modes are sufficient for a large amount of the design:
+
+\subsection{OrdinaryForward}
+Use when ordinary forward pattern matching and premise solving suffice.
+
+\subsection{CompatHead}
+Use when the left-hand side contains compat-head/compositional argument structure. The runtime should detect this structurally, not by head name.
+
+\subsection{SymbolicOutput}
+Use when the right-hand side contains legitimate fresh symbolic variables after ordinary bindings and premise flow have been accounted for.
+
+The important insight is that these are \emph{semantic classes of rules}, not special cases for specific user-defined library symbols.
+
+\section{Compat-Head Matching: Architecture and Proof Theory}
+
+A recurring challenge is whether MORK/MM2 can efficiently or naturally encode compositional/compat-head matching.
+
+\subsection{Architectural recommendation}
+Do not force the entire compat-head discipline into flat MM2 lowering immediately. Instead:
+\begin{enumerate}
+  \item keep MM2/MORK as the actual executor,
+  \item introduce one generic, contract-certified host-side \emph{compat-head boundary service},
+  \item let that service compute witness bindings or residual instantiations,
+  \item hand the residual phase back to MM2/MORK.
+\end{enumerate}
+
+This is not a return to handwritten language interpreters. It is a generic runtime service for a semantic subproblem that may not map efficiently to the current backend core.
+
+\subsection{Proof-theoretic recommendation}
+The key theorem should hide freshening details instead of exporting private implementation machinery. The right public theorem shape is roughly:
+\begin{quote}
+For a singleton selected compat-head rule, the ordinary compat-head rewrite function is equal to the binding-carrying constrained-call function after projecting away the binding payload.
+\end{quote}
+
+This lets external proof layers reason about binding-flow correctness without needing direct access to a private renaming function.
+
+\section{Execution Contracts: What They Should Cover}
+
+Execution contracts are for \emph{backend-owned lanes}, not for user-defined library functions.
+
+They should cover contract families such as:
+\begin{itemize}
+  \item \textbf{lookup/query lanes}: e.g. \texttt{match \&self}, \texttt{get-atoms}, type queries,
+  \item \textbf{relation premises}: premise evaluators with explicit argument-flow metadata,
+  \item \textbf{space effects}: e.g. \texttt{add-atom}, \texttt{remove-atom},
+  \item \textbf{space-effect payloads}: especially source-rule payloads,
+  \item \textbf{intrinsic or builtin lanes}: MORK-native, grounded-host, control, or aggregation.
+\end{itemize}
+
+They should \emph{not} be used to certify user-defined functions like \texttt{tail}, \texttt{head}, \texttt{lambda}, \texttt{compose}, or other library-defined rewrite heads.
+
+\section{Builtin Families}
+
+A useful conceptual split is:
+
+\subsection{MORK-native builtins}
+These are primitives the backend genuinely implements efficiently, such as integer arithmetic where the backend has a real primitive set.
+
+\subsection{Grounded host builtins}
+These are host-side operations that should remain explicit and contract-governed, such as:
+\begin{itemize}
+  \item some comparisons,
+  \item reflection operators like \texttt{repr},
+  \item perhaps parsing or other host-facing reflective operations.
+\end{itemize}
+
+\subsection{Control builtins}
+These include forms such as:
+\begin{itemize}
+  \item \texttt{if},
+  \item boolean combinators,
+  \item later perhaps error-routing forms.
+\end{itemize}
+
+A crucial design point is that \texttt{if} should typically be a \emph{hybrid control operator}: a ground fast path when the condition is decidable immediately, and a symbolic/MM2 fallback when it is not.
+
+\subsection{Aggregation builtins}
+These include forms such as:
+\begin{itemize}
+  \item \texttt{collapse},
+  \item later \texttt{foldall},
+  \item possibly \texttt{forall} or related collection/aggregation operators.
+\end{itemize}
+
+They should be treated as their own lane family, not as ad hoc intrinsics.
+
+\section{The Next Clean PeTTa Backend Plan}
+
+A good near-term plan for a complete PeTTa backend is:
+\begin{enumerate}
+  \item replace batch-shaped prepared programs with a prepared command stream,
+  \item merge rewrite artifacts into one canonical \texttt{rewrite\_ir v2},
+  \item introduce and consume \texttt{scope\_contract},
+  \item finish the control/boolean symbolic fallback under the existing contract shape,
+  \item add query lanes for \texttt{get-type} and \texttt{get-metatype},
+  \item add a grounded reflection lane for \texttt{repr},
+  \item add an aggregation lane for \texttt{collapse},
+  \item re-run the corpus and classify failures by semantic class rather than by head name.
+\end{enumerate}
+
+This should be done without restoring a direct Rust evaluator as the language semantics engine.
+
+\section{HE: Same Architecture, Distinct Authority}
+
+HE should follow the same \emph{architecture}, but not be flattened into PeTTa.
+
+The right plan is:
+\begin{itemize}
+  \item share parser infrastructure, artifact loaders, runtime services, and contract machinery,
+  \item keep HE's own Lean syntax authority, command authority, and semantic bundle,
+  \item widen HE's contract-first backend in the same style,
+  \item eventually eliminate any remaining native transition shortcut that still behaves like a handwritten scheduler layered on top of artifacts.
+\end{itemize}
+
+The correct principle is:
+\begin{quote}
+\textbf{Copy the architecture. Do not copy the semantics.}
+\end{quote}
+
+\section{Optimization Certificates}
+
+One of the richest emerging ideas is to make theory-driven optimization certificates part of the exported artifact story.
+
+\subsection{Why certificates matter}
+They let the runtime say:
+\begin{quote}
+This optimization is not merely a good idea; it is enabled because Lean exported a certificate that this fragment admits the optimization.
+\end{quote}
+
+\subsection{Examples of useful certificate families}
+\begin{itemize}
+  \item query indexing certificates (
+    no false negatives, exact result, stratified negation safety),
+  \item source-rule compilation certificates,
+  \item deterministic reduction certificates,
+  \item scalar/outcome-set memoization certificates,
+  \item witness/negation certificates,
+  \item builtin demand/purity certificates,
+  \item once/committed-first-answer certificates,
+  \item \texttt{findall}/\texttt{collapse} certificates,
+  \item specialization certificates,
+  \item worklist/trampoline equivalence certificates,
+  \item eventually answer-tabling/SCC certificates.
+\end{itemize}
+
+These ideas help both \texttt{mettail-rust} and a verified Lean runtime, because both want permission to use the same optimizations for the same semantic reasons.
+
+\section{Memoization, Determinism, and Verified Reference Kernels}
+
+Another major insight concerns proof engineering for evaluators.
+
+When the live executable runtime is a mutually recursive partial definition, proving strong global theorems about it directly can be a dead end. A better pattern is:
+\begin{enumerate}
+  \item define a total, fuel-indexed or status-indexed reference kernel,
+  \item prove preservation and soundness on that kernel,
+  \item expose a theorem-bearing public total or faithful backend,
+  \item treat adequacy to the live runtime separately and locally.
+\end{enumerate}
+
+This separates:
+\begin{itemize}
+  \item \textbf{preservation} of the trusted kernel,
+  \item \textbf{public reference execution} for proofs, and
+  \item \textbf{adequacy/refinement} relative to the live executable path.
+\end{itemize}
+
+It is often a mistake to keep attacking the live partial implementation directly once the total/faithful reference kernel exists.
+
+\section{Anti-Patterns to Avoid}
+
+The following patterns repeatedly caused architectural drift.
+
+\subsection{Fake backend drift}
+Calling a Rust-side reimplementation of scheduling or PathMap behavior a ``MORK backend'' when the backend is not actually executing the semantics.
+
+\subsection{Direct language evaluator drift}
+Reintroducing a language-local Rust evaluator because it is faster to make progress that way.
+
+\subsection{Surface interpreter drift}
+Putting import semantics, file semantics, or control semantics into a language-specific surface runner instead of shared source elaboration plus backend execution.
+
+\subsection{Per-symbol patching}
+Fixing semantic failures by adding special cases for names such as \texttt{x}, \texttt{xs}, \texttt{tail}, \texttt{lambda}, or \texttt{functionhead}.
+
+\subsection{Overclaiming artifact coverage}
+Exporting contract entries for lanes that are not actually implemented yet, or silently using a fallback when a certified lane is unavailable.
+
+\section{Checklist for New Work Sessions}
+
+For a new clean session, the most useful checklist is:
+
+\begin{enumerate}
+  \item What is the current language authority bundle in Lean?
+  \item Which artifacts are canonical and which are deprecated drafts?
+  \item Is the execution lane contract-first and fail-closed?
+  \item Is source/file elaboration separated from runtime semantics?
+  \item Are any remaining failures being classified by semantic class rather than symbol name?
+  \item Are unsupported features rejected honestly?
+  \item Is the current backend path real MM2/MORK execution, not a native reimplementation?
+  \item Are grounded host builtins explicit and contract-governed?
+  \item Is the rule compiler consuming \texttt{rewrite\_ir + scope\_contract} rather than symbol patches?
+  \item Are optimization fast paths justified by exported certificates?
+\end{enumerate}
+
+\section{Glossary of Core Terms}
+
+\begin{description}[style=nextline]
+  \item[GSLT / OSLF / NTT / MeTTaIL] Project-specific successive specification layers. The exact internal meanings are less important here than their role as the path from high-level Lean language authority to executable artifacts.
+  \item[Surface elaboration] Parsing, import expansion, provenance tracking, and preparation of a structured command stream.
+  \item[Execution contract] An artifact describing backend-owned execution lanes such as queries, effects, or builtins.
+  \item[Scope contract] An artifact describing binder and free-variable semantics for lowering and rewrite compilation.
+  \item[rewrite\_ir v2] The canonical structured rule artifact, combining raw rule structure with derived variable-flow metadata.
+  \item[Compat-head] A rule-application mode in which certain left-hand-side arguments require compositional or evaluated matching rather than ordinary one-directional pattern matching.
+  \item[Grounded builtin] A host-side builtin lane explicitly allowed by contract.
+  \item[Control builtin] A control/operator lane such as \texttt{if} whose semantics may require both fast ground handling and symbolic fallback.
+  \item[Aggregation builtin] A collection-oriented lane such as \texttt{collapse} or \texttt{foldall}.
+\end{description}
+
+\section{Concluding View}
+
+The deepest conceptual lesson of the project so far is simple:
+
+\begin{quote}
+\textbf{The way to move fast without semantic corruption is not to avoid abstraction; it is to make the abstraction explicit enough that the runtime can only move where Lean has already authorized it.}
+\end{quote}
+
+That means:
+\begin{itemize}
+  \item Lean should define the language authority,
+  \item artifacts should define the executable boundary,
+  \item Rust should implement generic services and explicit host lanes,
+  \item MORK/PathMap should remain the real backend target,
+  \item unsupported behavior should fail closed,
+  \item optimization should be certificate-driven,
+  \item and every pressure to ``just hack this one thing in Rust'' should be treated as a signal to improve the artifact vocabulary instead.
+\end{itemize}
+
+If those principles are kept, then finishing PeTTa, finishing HE, and extending the system to additional languages becomes a matter of widening certified slices rather than reinventing the architecture each time.
+
+\end{document}

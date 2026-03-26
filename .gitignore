@@ -101,6 +101,9 @@ megalodon/makeopt
 !.gitmodules
 !.gitattributes
 
+# Root-level temp/scratch prefixed with _
+/_*
+
 # Temp/build artifacts
 tmp/
 .lake-backup*/
@@ -126,6 +129,21 @@ venvs/
 # ATP datasets (huge)
 atps/datasets/
 
+# Experimental results, data, and scripts (regenerable)
+lean-projects/mettapedia/results/
+lean-projects/mettapedia/data/
+lean-projects/mettapedia/scripts/
+
+# Auto-generated conformance runner output
+*.jsonl
+*.log
+
+
+# AI review bundles (copies of source for external review)
+GPT-Pro_Responses/
+ai_review_bundles/
+**/ai_review_bundles/
+**/gpt54_review_bundle/
 
 # Misc junk
 Prompts/
