@@ -1,0 +1,587 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{tikz-cd}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\lstdefinestyle{code}{
+  basicstyle=\ttfamily\small,
+  frame=single,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  keywordstyle=\color{blue!60!black},
+  commentstyle=\color{green!40!black},
+  stringstyle=\color{red!50!black}
+}
+
+\title{Semantic Authority, Language Bundles, and MM2-Centered Evaluation\\
+\large A Conceptual Primer for Verified Rewritable Language Engines}
+\author{}
+\date{March 23, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note distills a coherent architecture for verified language engineering across four linked layers: language specification, semantic packaging, execution contracts, and backend realization. Its central thesis is that the meaning of a language should be exposed once, explicitly, in a machine-usable semantic authority that both proofs and runtimes consume. The note develops five ideas. First, a language should be authored as a neutral \emph{language bundle} rather than as a low-level record tied to one proof assistant or one runtime. Second, surface syntax, statement classification, and desugaring are part of the language and must not be silently reconstructed in a backend. Third, graph-structured language theories (GSLTs), operational-semantic logical frameworks (OSLFs), and native-type extraction (NTT) should be treated as derived semantic views of the same authority rather than competing sources of truth. Fourth, runtime architecture should follow the rule \emph{profiles choose, contracts execute}: backend decisions come from certified summaries, while detailed contracts drive actual execution. Fifth, recursive evaluation over rewritable languages is best approached through an MM2-centered explicit-state protocol with request/result/join facts, memoization, and persistent rules, while keeping host code as a supervisory shell and benchmark harness. The note is written as a primer for future work and future chats: it records the conceptual decisions, anti-patterns, proof strategy, and migration plan that emerged from a long design iteration.
+\end{abstract}
+
+\tableofcontents
+
+\section{Purpose and Scope}
+
+The goal of this paper is to state, as cleanly as possible, the architectural lessons of a long design process around verified language runtimes. The intended setting is a family of languages with rich rewriting behavior, possible surface syntax variation, theorem-proving or symbolic sublanguages, and multiple execution backends. The main design tension is familiar:
+\begin{quote}
+How can one keep semantics authoritative, proofs reusable, and runtimes replaceable, while still allowing aggressive engineering and performance work?
+\end{quote}
+
+The answer developed here is deliberately conceptual. It is not a tutorial for one particular repository, and it is not an implementation manual for one particular runtime. Instead it offers a stable blueprint.
+
+\paragraph{Primary claim.}
+The meaning of a language must be exposed once, explicitly, in a neutral semantic bundle. Every other layer---surface syntax, proof packaging, native-type extraction, runtime contracts, backend selection, evaluator protocols, and optimization strategies---should be derived from, checked against, or constrained by that bundle.
+
+\paragraph{Secondary claim.}
+A large amount of what is often treated as parser logic, runtime heuristics, or backend convenience is actually part of the language. In particular, statement classification, desugaring, scoping discipline, effect signatures, and execution-lane selection should not be silently reinvented by a backend.
+
+\paragraph{Practical claim.}
+For recursive evaluation and symbolic control flow, an MM2-centered explicit-state protocol is a better long-term target than one-shot compilation of each encountered term. Host code remains useful, but primarily as loader, supervisor, watchdog, benchmark harness, and fallback oracle.
+
+\section{The Core Architectural Shift}
+
+\subsection{From split authority to semantic authority}
+
+The most important mistake to avoid is \emph{split authority}. Split authority occurs when different parts of the system silently decide different parts of the language:
+\begin{itemize}[leftmargin=2em]
+  \item a parser decides which forms are rules and which are facts;
+  \item a runtime decides which operations are effectful and which are pure;
+  \item a proof layer decides a clean rewrite theory, while a backend reconstructs a nearby but different operational classification;
+  \item one artifact claims to represent the language, but critical semantics are encoded in side files, callbacks, or ad hoc dispatch logic.
+\end{itemize}
+
+The corrective principle is simple:
+\begin{quote}
+\textbf{Semantic authority principle.} Every semantically load-bearing distinction must appear explicitly in the authoritative language bundle, or be derivable from it by a checked elaboration.
+\end{quote}
+
+This principle has two immediate corollaries.
+\begin{enumerate}[leftmargin=2em]
+  \item Runtimes may \emph{realize} semantics, but they may not \emph{invent} them.
+  \item Proof layers should verify a well-designed semantic bundle, not force authors to encode languages as giant low-level records.
+\end{enumerate}
+
+\subsection{What counts as ``part of the language''}
+
+The following are all part of the language and should therefore appear in the bundle:
+\begin{itemize}[leftmargin=2em]
+  \item token classes and surface grammar,
+  \item statement forms and top-level classification,
+  \item desugaring and elaboration into kernel terms,
+  \item kernel constructors and equations,
+  \item rewrite rules and premise relations,
+  \item scope and binding structure,
+  \item effect signatures and contract classes,
+  \item execution-lane eligibility and residual policy,
+  \item surface-level variants and semantics variants.
+\end{itemize}
+
+The following should \emph{not} silently appear only in a backend:
+\begin{itemize}[leftmargin=2em]
+  \item ``the last form is the query,''
+  \item ``a form headed by $=$ is a rewrite rule,''
+  \item ``this builtin is memo-safe,''
+  \item ``this branch may mutate space,''
+  \item ``this operation must fail closed rather than fall back symbolically.''
+\end{itemize}
+
+\section{Language Bundles Rather Than Low-Level Records}
+
+\subsection{Why low-level \texttt{LanguageDef} authoring failed}
+
+A low-level record can be useful as an internal kernel representation, but it is usually a bad authoring interface. Typical failure modes are:
+\begin{itemize}[leftmargin=2em]
+  \item it is verbose and discourages direct reading;
+  \item it hides structure by flattening everything into constructor lists;
+  \item it pushes semantics into side comments or naming conventions;
+  \item it does not align with how runtime authors think about a language;
+  \item it creates pressure to add ad hoc escape hatches.
+\end{itemize}
+
+So the fix is not to abandon semantic authoring in Lean or another proof assistant. The fix is to replace the low-level authored object.
+
+\subsection{The neutral bundle schema}
+
+The proposed authored object is a \emph{language bundle}. Conceptually:
+
+\begin{lstlisting}[style=code]
+LanguageBundle = {
+  name,
+  options,
+  tokens,
+  surface,
+  kernel,
+  equations,
+  rewrites,
+  derived_relations,
+  effects,
+  scope_specs,
+  metadata
+}
+\end{lstlisting}
+
+The bundle is deliberately neutral:
+\begin{itemize}[leftmargin=2em]
+  \item it is not tied to a specific Rust macro implementation;
+  \item it is not tied to one proof assistant's internal inductive encoding;
+  \item it is expressive enough to derive proof-facing and runtime-facing views.
+\end{itemize}
+
+\subsection{A three-layer internal structure}
+
+A useful refinement is to split the bundle into three internal layers.
+
+\paragraph{Surface layer.}
+Tokens, notation, precedence, sugar, top-level statement forms, elaboration rules.
+
+\paragraph{Kernel layer.}
+Typed constructors, equations, rewrites, explicit premise families, explicit scoping structure.
+
+\paragraph{Operational layer.}
+Effects, resource classes, eligibility, residual policy, runtime hints, protocol motifs.
+
+This leads to a healthy derivation picture:
+\[
+\text{LanguageBundle} \longrightarrow \text{SurfaceDef},\ \text{KernelDef},\ \text{RuntimeContracts},\ \text{Profiles},\ \text{ProtocolSpecs}.
+\]
+
+\subsection{Why this should remain close to runtime DSLs}
+
+Human-facing authoring syntax should stay close to practical runtime DSLs when possible. If runtime authors naturally think in a declarative macro language, that style should be preserved. The lesson is not that proof-side authoring must look alien. The lesson is that the authored object should elaborate into a principled bundle rather than into runtime-specific ad hoc code.
+
+\section{Surface Syntax Is Part of the Language}
+
+\subsection{The parser fallacy}
+
+A recurring error in language engineering is to treat surface syntax as ``mere parsing'' and therefore as implementation detail. The deeper lesson is:
+\begin{quote}
+Surface syntax is not only concrete syntax. It includes classification, elaboration, and policy.
+\end{quote}
+
+This means at least four distinct layers must be separated.
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Raw reader.} Bytes or characters to tokens or grouped structure.
+  \item \textbf{Concrete syntax.} Parse tree or syntax tree.
+  \item \textbf{Surface classification.} Rule, fact, query, import, directive, test, mutation, and so on.
+  \item \textbf{Elaboration.} Surface objects to kernel terms and statements.
+\end{enumerate}
+
+The first layer is often trusted infrastructure. The rest should be language authority.
+
+\subsection{Surface elaboration by language rule}
+
+In some language families, especially symbolic ones, large parts of surface syntax can be represented as elaboration rules or surface rewrites in the language itself. This is valuable. It shrinks the trusted frontend boundary and aligns surface semantics with the rest of the language.
+
+But this does \emph{not} imply that parsing disappears. What it implies is:
+\begin{quote}
+The trusted reader should be made as small as possible, and everything above it should be made explicit and language-governed.
+\end{quote}
+
+\subsection{Token classes and the RawToken issue}
+
+Raw-token-heavy languages, theorem-prover languages, and parser-light syntaxes stress the bundle design. The right response is not a one-off hack. It is to make token classes first-class. For example:
+\begin{lstlisting}[style=code]
+tokens {
+  ident Label;
+  raw   Sym;
+  raw   ProofTok;
+  exact "$c";
+  exact "$p";
+  exact "$=";
+  exact "$.";
+}
+\end{lstlisting}
+
+This permits languages such as Metamath-like systems to remain principled even when their surface shape is highly token-driven.
+
+\subsection{Shared syntax families versus dialect overlays}
+
+A practical architecture distinguishes:
+\begin{itemize}[leftmargin=2em]
+  \item a \emph{syntax-family bundle} describing a shared concrete syntax, and
+  \item a \emph{dialect overlay} describing classification, elaboration, and program policy.
+\end{itemize}
+
+This is appropriate only when the concrete syntax is genuinely shared. Otherwise one needs separate syntax-family bundles or explicit grammar overlays.
+
+\section{GSLT, OSLF, and NTT as Derived Semantic Views}
+
+\subsection{The semantic pipeline}
+
+The conceptual pipeline developed here is:
+\[
+\text{LanguageBundle} \longrightarrow \text{KernelDef} \longrightarrow \text{GSLT} \longrightarrow \text{OSLF} \longrightarrow \text{NTT/Profile}.
+\]
+
+Each arrow is a derivation, not a change of source of truth.
+
+\paragraph{GSLT layer.}
+A graph-structured language theory packages the language as a structured semantic object, potentially indexed over a family of variants or vertices.
+
+\paragraph{OSLF layer.}
+An operational-semantic logical framework packages reduction, modalities, Galois structure, and semantic operators.
+
+\paragraph{NTT layer.}
+Native-type extraction derives execution-relevant classifications such as determinism, effectfulness, resource class, rule family, premise usage, and lane eligibility.
+
+\subsection{What NTT is good for}
+
+NTT is most valuable when it tells the runtime facts the runtime should not reconstruct heuristically:
+\begin{itemize}[leftmargin=2em]
+  \item rewrite vs query vs control vs effect,
+  \item ordinary forward vs premise-aware vs compat-head vs symbolic-output,
+  \item pure vs effectful,
+  \item deterministic vs branching,
+  \item memo-safe vs non-memo-safe,
+  \item scope kind,
+  \item boundary/witness/residual policy.
+\end{itemize}
+
+NTT is less useful if treated as magical optimization dust. Its role is to expose semantic classification to the implementation layer.
+
+\subsection{Profiles choose, contracts execute}
+
+A concise rule for runtime architecture is:
+\begin{quote}
+\textbf{Profiles choose, contracts execute.}
+\end{quote}
+
+A runtime profile or native-type summary should be used to decide:
+\begin{itemize}[leftmargin=2em]
+  \item which execution lane is semantically licensed,
+  \item whether memoization is allowed,
+  \item whether residual fallback is legal,
+  \item which fragment family is active.
+\end{itemize}
+
+Detailed execution artifacts then drive actual execution. This preserves semantic authority while still allowing engineered backends.
+
+\section{Premises, Derived Relations, and Effects}
+
+One of the deepest lessons is that a language bundle should not contain semantically opaque premise names. Every premise occurrence should fall into one of three classes.
+
+\paragraph{Structural premise.}
+Discharged internally by matching, equations, or rewrites.
+
+\paragraph{Derived relation.}
+Defined by internal relation rules in the bundle and therefore semantically visible.
+
+\paragraph{Effectful premise.}
+Declared as an effect with explicit signature and explicit contract class.
+
+Anything else creates semantic drift. In practice, this means that operations like store access, space mutation, compatibility checks, external calls, or grounded host services must either be internalized as derived relations or explicitly marked as effects.
+
+\section{Backend-Neutral Execution Architecture}
+
+\subsection{Why backend-neutrality matters}
+
+A runtime implementation may change dramatically over time: interpreter, graph engine, path map, bytecode VM, JIT, symbolic evaluator, or proof-producing engine. The enduring value lies in the semantic boundary, not in any single engine.
+
+Therefore the right design principle is:
+\begin{quote}
+\textbf{A runtime backend may be replaced without changing the language bundle.}
+\end{quote}
+
+This requires a backend-neutral execution interface.
+
+\subsection{Prepared programs and runtime bundles}
+
+The practical shape is:
+\begin{itemize}[leftmargin=2em]
+  \item a prepared program or command IR,
+  \item a runtime bundle containing manifest, contracts, profile, and protocol spec,
+  \item a supervisory host shell,
+  \item one or more execution engines.
+\end{itemize}
+
+The host shell should do only those things that are not themselves language meaning:
+\begin{itemize}[leftmargin=2em]
+  \item loading and integrity checking,
+  \item launching evaluation,
+  \item collecting results,
+  \item enforcing external resource limits,
+  \item benchmarking and cross-backend comparison.
+\end{itemize}
+
+\subsection{The anti-pattern of backend-shaped semantics}
+
+A recurring anti-pattern is to let the semantics collapse into whatever the current backend happens to prefer. This leads to:
+\begin{itemize}[leftmargin=2em]
+  \item frontends shaped by current parser shortcuts,
+  \item profiles shaped by current graph-engine quirks,
+  \item memo policies shaped by current cache internals,
+  \item proofs shaped by current runtime implementation rather than language meaning.
+\end{itemize}
+
+This anti-pattern must be resisted from the start.
+
+\section{MM2-Centered Evaluation Rather Than One-Shot Compilation}
+
+\subsection{What failed}
+
+A key engineering insight is that compiling each encountered term as a one-shot job is too coarse for recursive rewriting and symbolic control. Typical failure modes include:
+\begin{itemize}[leftmargin=2em]
+  \item recursive user calls nested inside intrinsic calls,
+  \item branch/control constructs such as \texttt{if} and \texttt{case},
+  \item sequential destructuring such as \texttt{let*},
+  \item multi-step logic-style chaining,
+  \item repeated recompilation of large partially reduced terms.
+\end{itemize}
+
+The correct lesson is not that an engine like MM2 lacks expressive power. The lesson is that it must be used at the right granularity.
+
+\subsection{The right target: explicit-state evaluator protocol}
+
+The preferred long-term target is an MM2-centered explicit-state protocol. Conceptually:
+\begin{itemize}[leftmargin=2em]
+  \item requests encode pending computation,
+  \item results encode completed subcomputations,
+  \item wait/join facts encode dependencies,
+  \item memo facts encode reusable pure subresults,
+  \item rule persistence avoids repeated rule installation.
+\end{itemize}
+
+Typical fact families are:
+\begin{lstlisting}[style=code]
+req_call_fib sid n
+req_if sid cond then else
+req_mul sid a b
+wait_if sid then else
+wait_mul_l sid rhs
+wait_mul_r sid lhsValue
+res sid value
+memo key value
+inflight key owner
+wait_memo key waiter
+\end{lstlisting}
+
+This is superior to a host-style call stack model because it aligns directly with graph-like and rewriting engines.
+
+\subsection{Head-specialized protocol facts}
+
+Index-sensitive backends benefit greatly from head-specialized facts. Rather than generic requests carrying nested payloads, one should push the operator or constructor into the fact head itself. This improves:
+\begin{itemize}[leftmargin=2em]
+  \item index selectivity,
+  \item rule discrimination,
+  \item protocol readability,
+  \item performance profiling,
+  \item backend portability.
+\end{itemize}
+
+\subsection{Persistent rules versus copy budgets}
+
+A particularly important insight is that single-use execution rules are semantically awkward for recursive evaluation protocols. If an engine permits a persistent rule class, that should be preferred. Then:
+\begin{itemize}[leftmargin=2em]
+  \item protocol rules are persistent,
+  \item request/result/wait/memo facts are ephemeral,
+  \item semantic models do not depend on arbitrary copy budgets.
+\end{itemize}
+
+If an engine only offers single-use rules, bounded copies can still be used as an implementation refinement, but they should not be treated as the semantic model.
+
+\subsection{Memoization as protocol, not host heuristic}
+
+Naive recursion such as Fibonacci is not made efficient merely by using a graph engine. The right optimization is protocol-level memoization. For pure deterministic recursive calls:
+\begin{enumerate}[leftmargin=2em]
+  \item check a memo table encoded as facts,
+  \item share in-flight subproblems,
+  \item publish results once,
+  \item wake all waiters.
+\end{enumerate}
+
+This keeps memoization explicit, verifiable, and portable across engines.
+
+\section{Proof Architecture for Recursive Evaluation}
+
+\subsection{Fuel is an algorithmic device, not the final semantics}
+
+A crucial proof-level lesson is that a memoized evaluator should usually \emph{not} be proved correct by direct equality with a fuel-bounded non-memoized function at the same fuel. The reason is simple: memoization can legitimately reuse work computed in a larger-fuel context. Therefore the correct semantic target is a fuel-free semantic relation.
+
+\subsection{Three-layer proof picture}
+
+The durable proof architecture has three layers.
+
+\paragraph{Fuel-free semantics.}
+An inductive big-step or small-step semantic relation giving the intended meaning.
+
+\paragraph{Executable evaluators.}
+Functions such as \texttt{eval} and \texttt{evalMemo} used for execution and testing.
+
+\paragraph{Trace objects.}
+Proof-relevant traces recording memo hits, misses, protocol steps, and cost.
+
+The right theorem pattern is then:
+\begin{itemize}[leftmargin=2em]
+  \item evaluator soundness with respect to semantics,
+  \item completeness above a sufficient fuel threshold,
+  \item trace soundness and preservation of semantic invariants,
+  \item simulation of traces into protocol traces.
+\end{itemize}
+
+\subsection{Ideal protocol first, concrete engine second}
+
+Another important lesson is to prove protocol semantics before engine semantics.
+
+First prove:
+\begin{quote}
+Trace semantics simulate an ideal persistent-rule request/result/join protocol.
+\end{quote}
+
+Then prove:
+\begin{quote}
+The concrete engine faithfully realizes that protocol under the relevant scheduling or copy-budget assumptions.
+\end{quote}
+
+This separation makes the semantic work last even when the backend evolves.
+
+\subsection{Linearity claims for memoized recursion}
+
+When proving complexity properties such as linearity for memoized Fibonacci, it is wise to separate:
+\begin{enumerate}[leftmargin=2em]
+  \item semantic uniqueness of subproblems,
+  \item protocol-level counts such as miss count or distinct memo entries,
+  \item concrete engine runtime behavior under a chosen indexing model.
+\end{enumerate}
+
+This avoids overclaiming wall-clock performance while still proving useful asymptotic behavior.
+
+\section{A Generic Migration Path}
+
+The architecture proposed here supports a clear migration path.
+
+\subsection{Phase 1: Author the bundle}
+
+Design the language in the neutral bundle syntax. Keep surface, kernel, derived, and effectful parts explicit.
+
+\subsection{Phase 2: Derive proof views}
+
+Derive:
+\begin{itemize}[leftmargin=2em]
+  \item kernel semantic views for GSLT/OSLF,
+  \item native-type or profile views,
+  \item protocol motifs and effect signatures.
+\end{itemize}
+
+\subsection{Phase 3: Derive runtime artifacts}
+
+Export manifests, profiles, contracts, prepared IR, protocol specs, and grounded operation registries.
+
+\subsection{Phase 4: Realize on one or more backends}
+
+Provide one or more execution engines:
+\begin{itemize}[leftmargin=2em]
+  \item direct host evaluator,
+  \item graph/rewrite engine,
+  \item bytecode VM,
+  \item JIT,
+  \item theorem-proving or proof-producing evaluator.
+\end{itemize}
+
+These remain replaceable because the semantic authority is stable.
+
+\subsection{Phase 5: Benchmark and refine}
+
+Once multiple realizations exist, benchmark them against the same semantic contracts and the same protocol counters. This is essential: performance work should become informative, not semantics-defining.
+
+\section{Anti-Patterns and Design Rules}
+
+\subsection{Anti-patterns}
+
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Parser authority in the backend.} Classifying statements in backend code without language authority.
+  \item \textbf{Hidden premise semantics.} Premise names whose meaning lives only in a runtime.
+  \item \textbf{Backend-shaped semantics.} Treating current engine convenience as language meaning.
+  \item \textbf{Ad hoc evaluator loops.} Repeatedly recompiling whole terms rather than compiling evaluator state.
+  \item \textbf{Copy-budget semantics.} Treating operational budgets as if they were semantic rules.
+  \item \textbf{Monolithic low-level authoring.} Forcing humans to author giant kernel records directly.
+  \item \textbf{Deceptive demos.} Polishing user-facing demonstrations before the authority boundary is correct.
+\end{enumerate}
+
+\subsection{Positive design rules}
+
+\begin{enumerate}[leftmargin=2em]
+  \item Author a neutral bundle, not backend glue.
+  \item Keep surface, kernel, and operational layers explicit.
+  \item Make token classes first-class.
+  \item Make every premise structural, derived, or effectful.
+  \item Derive GSLT/OSLF/NTT views from the same bundle.
+  \item Let profiles choose and contracts execute.
+  \item Treat host code as supervisory shell unless semantics truly requires more.
+  \item Compile recursive evaluation into explicit request/result/join protocols.
+  \item Prove semantics against ideal protocol models before backend details.
+  \item Benchmark multiple realizations against one semantic authority.
+\end{enumerate}
+
+\section{Open Problems and Research Directions}
+
+Several deep questions remain open and are worth turning into a research program.
+
+\paragraph{Completeness for all reasonable GSLTs.}
+What class of GSLTs is represented by the proposed bundle schema, and what extensions are needed for parser-light, raw-token, or surface-rewrite-heavy languages?
+
+\paragraph{Binding and scope.}
+Can scope, binding, and capture-avoiding substitution be fully first-class in the bundle without exploding complexity?
+
+\paragraph{Protocol extraction.}
+Can evaluator protocols for recursive fragments be extracted automatically from bundle-level declarations and fragment certifications?
+
+\paragraph{Backend refinement theorems.}
+How can one systematically refine ideal persistent-rule protocols to concrete graph or path-map engines with engine-specific scheduling and storage disciplines?
+
+\paragraph{Complexity accounting.}
+Which complexity measures are stable enough across backends to be worthwhile proof targets?
+
+\paragraph{Round-trip laws.}
+Can one establish robust round-trip laws among authoring DSLs, neutral bundles, proof views, and runtime artifacts?
+
+\section{Primer Checklist for Future Work and Future Chats}
+
+The following checklist is intended as a compact operational memory.
+
+\begin{longtable}{p{0.33\textwidth}p{0.6\textwidth}}
+\toprule
+Question & Preferred answer \\
+\midrule
+What is the source of truth? & A neutral language bundle, not a backend DSL and not a low-level record. \\
+Is parsing ``just parsing''? & No. Classification, elaboration, and policy are part of the language. \\
+What should GSLT/OSLF/NTT operate on? & A kernel view derived from the language bundle. \\
+How should runtime decisions be made? & By certified profiles and contracts, not heuristics. \\
+How should recursion be evaluated? & By an explicit-state protocol with request/result/join facts and memoization. \\
+Should the host own semantics? & No. The host is loader, supervisor, benchmark harness, and fallback shell. \\
+What if a backend evolves? & Keep the bundle and protocol stable; treat backend behavior as a refinement. \\
+How should raw-token-heavy languages be handled? & Make token classes first-class in the bundle. \\
+How should effects be represented? & Explicitly, with signatures and contract classes. \\
+What is the biggest anti-pattern? & Split authority: semantics silently divided across frontend, proof layer, and backend. \\
+\bottomrule
+\end{longtable}
+
+\section{Conclusion}
+
+A durable architecture for rewritable language engines emerges once one stops asking whether the proof layer or the runtime should be ``the'' language definition. Neither should be. The correct primary object is a neutral semantic bundle that is pleasant enough to author, precise enough to verify, rich enough to derive semantic and operational views, and explicit enough to constrain multiple realizations. From that point of view, GSLT, OSLF, NTT, surface elaboration, runtime profiles, contracts, and MM2-style evaluator protocols are not rival formalisms. They are coordinated projections of a single language authority.
+
+If this architecture is respected, then practical runtime innovation becomes less dangerous. One can experiment with graph engines, path maps, bytecode, JIT compilation, protocol memoization, or persistent rule extensions without forcing every optimization back into the semantics. Conversely, one can improve semantic clarity---for example by separating surface and kernel language layers, or by turning hidden services into explicit effects---without rewriting every backend from scratch.
+
+That is the main conceptual result: semantic authority should be explicit, backend-neutral, and derivationally rich enough that proofs and runtimes can both be aggressive without drifting apart.
+
+\end{document}

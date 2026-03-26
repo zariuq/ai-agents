@@ -1,0 +1,525 @@
+\documentclass[11pt]{article}
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{microtype}
+\usepackage{titlesec}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{url}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black,citecolor=blue!50!black,pdftitle={Bridge-First Verification and Mechanistic Evidence Chains},pdfauthor={OpenAI ChatGPT}}
+\definecolor{accent}{RGB}{34,72,118}
+\definecolor{lightgray}{RGB}{245,247,250}
+\titleformat{\section}{\large\bfseries\color{accent}}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\normalsize\bfseries\color{accent}}{\thesubsection.}{0.5em}{}
+\setlist[itemize]{topsep=4pt,itemsep=3pt,leftmargin=1.4em}
+\setlist[enumerate]{topsep=4pt,itemsep=3pt,leftmargin=1.6em}
+\setstretch{1.08}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Bridge-First Verification and Evidence Chains}
+\fancyhead[R]{2026-03-19}
+\fancyfoot[C]{\thepage\ / \pageref{LastPage}}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\term}[1]{\emph{#1}}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{2.0cm}
+{\fontsize{20}{24}\selectfont\bfseries\color{accent} Bridge-First Verification and Mechanistic Evidence Chains\par}
+\vspace{0.5cm}
+{\fontsize{12}{15}\selectfont A conceptual primer for future work on LeanPeTTa, the MeTTa suite, and chain-based evidence reasoning\par}
+\vspace{0.8cm}
+{\large 2026-03-19\par}
+\vspace{1.0cm}
+\fcolorbox{accent}{lightgray}{%
+\begin{minipage}{0.88\textwidth}
+\small
+This note distills the most useful technical ideas developed in the associated design and proof conversations. It is intentionally conceptual rather than historical. Its purpose is to preserve the architecture, proof style, theorem surfaces, and modeling ideas that proved most valuable, so future chats can resume from a clean, explicit foundation rather than from scattered local context.
+\end{minipage}}
+\vfill
+\begin{minipage}{0.9\textwidth}
+\small
+\textbf{Scope.} The note covers: (1) the layered architecture for the MeTTa suite and LeanPeTTa, (2) a bridge-first proof methodology for executable runtimes and theorem-bearing references, (3) the deterministic-to-reference proof problem and its clean decomposition, and (4) a chain-first view of mechanistic evidence reasoning, especially for biological gene-prioritization settings.\par
+\end{minipage}
+\vspace*{1.3cm}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Executive summary}
+
+The central lesson is simple: when an executable runtime is operationally useful but proof-hostile, the right response is usually \term{not} to prove directly against the opaque implementation. The right response is to introduce a \term{semantic waist}: a small theorem-facing interface where executable behavior, total reference behavior, and higher-level specifications can meet cleanly.
+
+For LeanPeTTa and the surrounding MeTTa suite, this leads to five durable principles.
+
+\begin{enumerate}
+  \item \textbf{Prove at the bridge, not at the opaque implementation.} The executable runtime may remain optimized, partial, or operationally structured. Proof ownership should move to a transparent bridge layer.
+  \item \textbf{Use supported-first theorem surfaces.} Instead of demanding one global equivalence theorem too early, state local semantic witnesses for covered fragments and prove unconditional theorems from those witnesses.
+  \item \textbf{Split invariants by phase.} Large proofs become tractable when decomposed into branch classification, local semantic atom agreement, continuation/simulation, and packaging.
+  \item \textbf{Distinguish runtime gates from semantic predicates.} Booleans that are useful for execution are not automatically strong enough as proof assumptions. They often need theorem-facing semantic counterparts.
+  \item \textbf{For evidence modeling, score chains rather than isolated features.} In applications such as gene prioritization, the scientific object of interest is often a typed evidence path, not a flat score.
+\end{enumerate}
+
+This note turns those principles into concrete guidance.
+
+\section{The MeTTa-suite architecture}
+
+\subsection{The layered repository shape}
+
+The clean suite-level architecture is:
+
+\begin{enumerate}
+  \item \textbf{MeTTailCore}: a small, neutral base layer containing syntax, matching, substitution, lookup-plan vocabulary, and other genuinely shared substrate-level notions.
+  \item \textbf{Algorithms}: executable Lean runtimes, lowerings, theorem-bearing total and faithful references, and local refinement/adequacy machinery that does not depend on richer external semantics.
+  \item \textbf{Mettapedia}: the semantic authority for derived specifications, language-level contract catalogs, conformance theorems, and richer declarative models.
+  \item \textbf{Backend consumers}: downstream artifact consumers such as Rust executors or other runtime systems, which should consume exported artifacts rather than define competing semantics.
+\end{enumerate}
+
+The crucial import law is:
+
+\begin{itemize}
+  \item MeTTailCore imports neither Algorithms nor Mettapedia.
+  \item Algorithms may import MeTTailCore, but never Mettapedia.
+  \item Mettapedia may import Algorithms and MeTTailCore.
+  \item Only conformance or bridge layers in Mettapedia should import executable runtime layers from Algorithms.
+\end{itemize}
+
+This keeps executable code below, semantic authority above, and neutral substrate logic in the middle.
+
+\subsection{What belongs where}
+
+A recurring source of confusion is the placement of ``execution contracts'' or ``outsourcing contracts.'' The clean rule is:
+
+\begin{itemize}
+  \item \textbf{Neutral schema} belongs in the shared substrate layer only if it is truly language-agnostic.
+  \item \textbf{Language-specific semantic catalogs} belong in Mettapedia, because they are proved facts about the language, not merely runtime settings.
+  \item \textbf{Executable runtime exposure} belongs in Algorithms.
+  \item \textbf{Soundness or conformance of runtime contracts} belongs in Mettapedia.
+\end{itemize}
+
+A practical check is: if a concept is part of the proved semantic story of a language, it probably should not be pushed downward merely because it is useful to an optimizer.
+
+\section{The LeanPeTTa architecture inside Algorithms}
+
+\subsection{The four-path split}
+
+The LeanPeTTa runtime/proof stack is best understood as four interacting paths:
+
+\begin{enumerate}
+  \item \textbf{Live executable path}: the real runtime API and operational evaluator.
+  \item \textbf{Total fuel-indexed reference path}: a theorem-bearing total kernel with explicit fuel.
+  \item \textbf{Faithful status path}: a reference that separates semantic results from out-of-fuel or failure-style states.
+  \item \textbf{Adequacy and refinement layers}: theorem packaging that connects the live/runtime path to the theorem-bearing references.
+\end{enumerate}
+
+The big architectural correction was to stop treating the old live partial-def strongly connected component as the proof center. The executable path remains useful and important, but theorem ownership belongs at the total and faithful waist.
+
+\subsection{The key theorem-bearing modules}
+
+A clean conceptual split is:
+
+\begin{itemize}
+  \item \code{Session.lean}: executable definitions, public wrappers, and only small local semantic lemmas.
+  \item \code{SessionReferenceTotal.lean}: public total reference backend and unconditional preservation theorems.
+  \item \code{SessionReferenceFaithful.lean}: status-based faithful backend and agreement with the total backend on successful runs.
+  \item \code{SessionReferenceAdequacy.lean}: packaging of local adequacy witnesses into public theorems.
+  \item \code{SessionRefinement.lean} and \code{SessionRefinementTotal.lean}: transport theorems from live/runtime behavior to reference behavior and then to the total backend.
+\end{itemize}
+
+The top theorem files should remain boring. If they become the proof battlefield, the architecture has drifted.
+
+\section{Bridge-first proof methodology}
+
+\subsection{Why proving against the live runtime is often the wrong target}
+
+Executable evaluators often have the wrong proof shape. They may be:
+
+\begin{itemize}
+  \item mutually recursive,
+  \item partial or operationally optimized,
+  \item memoized,
+  \item deeply branchy,
+  \item or structured around work queues rather than semantically natural recursion.
+\end{itemize}
+
+In such situations, direct induction or direct unfolding usually creates high-cost proof obligations with little reuse. A better approach is to identify a \term{bridge waist}: a small set of transparent semantic interfaces that represent what the runtime is doing at a proof-friendly level.
+
+For LeanPeTTa, the useful bridge surfaces included:
+
+\begin{itemize}
+  \item \code{referenceMatchBindings},
+  \item \code{evalMatchedTemplate},
+  \item \code{referenceMatchIntrinsicResult},
+  \item \code{intrinsicMatchResultWithEval},
+  \item the total and faithful reference evaluators,
+  \item and a canonical abstract reference evaluator in \code{ReferenceEval.lean}.
+\end{itemize}
+
+\subsection{Supported-first theorem surfaces}
+
+A recurring failure mode is asking for a theorem that is semantically too strong too early. The antidote is a \term{supported-first} theorem surface.
+
+Instead of trying to prove a single theorem of the form
+
+\begin{quote}
+``the optimized runtime equals the full reference runtime on all accepted terms,''
+\end{quote}
+
+introduce a witness that says:
+
+\begin{quote}
+``this term or fragment is supported by the bridge assumptions needed for the proof.''
+\end{quote}
+
+Then prove an unconditional theorem from that witness. If needed, separately prove that the runtime gate implies the supported witness, or strengthen the runtime gate if it does not.
+
+This avoids wasting time on a false or over-strong theorem surface.
+
+\subsection{Split invariants by phase}
+
+The most useful invariant split for LeanPeTTa was:
+
+\begin{enumerate}
+  \item \textbf{Binding enumeration equality}: the two sides enumerate the same candidate bindings.
+  \item \textbf{Substituted-template evaluation equality}: the two sides evaluate bound templates the same way on a controlled fragment.
+  \item \textbf{Intrinsic equality}: local semantic equality at the match or intrinsic waist.
+  \item \textbf{Whole-evaluator transport}: package the local equality into a public refinement theorem.
+\end{enumerate}
+
+A similar phase split reappears in the deterministic bridge problem:
+
+\begin{enumerate}
+  \item classify the dispatch branch,
+  \item prove the local semantic atom agrees,
+  \item prove the continuation or simulation step,
+  \item package the result into the top-level refinement theorem.
+\end{enumerate}
+
+Monolithic invariants tend to hide the real source of failure. Split invariants reveal it.
+
+\section{Canonical semantics and the role of ReferenceEval}
+
+One of the most important cleanups was recognizing that the abstract evaluator in \code{ReferenceEval.lean} should be the \term{canonical} proof-facing semantics.
+
+The key lesson is that copied concrete helpers may look convenient, but if the real reference evaluator already factors through an abstract interface, then the proof should target that interface rather than proving equivalence between multiple copies of the same operational idea.
+
+For LeanPeTTa, the right move was:
+
+\begin{enumerate}
+  \item define a public named interface such as \code{referenceEvalInterfaceN fuel},
+  \item define \code{evalWithStateCoreN} through \code{ReferenceEval.evalWithStateCore} instantiated at that interface,
+  \item state bridge predicates in terms of \code{ReferenceEval.runNestedEffects (referenceEvalInterfaceN fuel)} and \code{(referenceEvalInterfaceN fuel).intrinsicStateful},
+  \item and instantiate the abstract one-step theorems rather than re-proving them concretely.
+\end{enumerate}
+
+This was a decisive reduction in proof complexity.
+
+\subsection{Thin concrete wrappers beat copied proofs}
+
+Once the canonical interface exists, concrete theorems should be wrappers of the form:
+
+\begin{quote}
+``\code{simpa [evalWithStateCoreN	extunderscore succ] using ReferenceEval.some	extunderscore theorem (I := referenceEvalInterfaceN fuel) ...}''
+\end{quote}
+
+This is the right level of proof reuse. It keeps the evaluator theory centralized and prevents duplicated machine proofs from drifting apart.
+
+\section{The compositional match adequacy story}
+
+\subsection{The right target}
+
+A large amount of proof effort initially targeted ``match adequacy'' too directly. The cleaner shape turned out to be:
+
+\begin{itemize}
+  \item prove binding-enumeration equality first,
+  \item then prove substituted-template evaluator equality for a tiny family,
+  \item then let a generic compositional theorem in the space semantics lift that to intrinsic match equality,
+  \item then package that as a local refinement theorem.
+\end{itemize}
+
+The first successful nontrivial family was a get-atoms-style template family on a small max-nodes fragment. The important insight was that get-atoms was not intrinsically important; it was just the cheapest first family whose semantics made the fold invariant obvious.
+
+\subsection{The missing fold invariant}
+
+The difficult part of the first match theorem was not the abstract match boundary itself. It was the fold over bindings, which required a local theorem strong enough to show that evaluating the substituted template left the session unchanged on the relevant fragment.
+
+That led to the right local target:
+
+\begin{quote}
+prove the smallest state-self theorem in the exact shape the fold needs, then reuse the generic compositional theorem.
+\end{quote}
+
+This pattern is reusable: if a theorem fails deep inside a fold, look for the missing local state or shape invariant before trying a bigger induction.
+
+\section{Deterministic versus reference evaluation}
+
+\subsection{The real theorem surface}
+
+The later proof bottleneck was a theorem informally of the form:
+
+\begin{quote}
+``on deterministic-accepted terms, the optimized evaluator agrees with the reference evaluator.''
+\end{quote}
+
+The key conceptual correction was that this theorem should not be attacked directly. It naturally splits into two problems:
+
+\begin{enumerate}
+  \item \textbf{Soundness}: the result chosen by the deterministic evaluator is a result produced by the reference evaluator.
+  \item \textbf{Singleton or uniqueness}: on the supported fragment, the reference evaluator produces exactly one result, namely that same result.
+\end{enumerate}
+
+This split is crucial. If a proof fails, one immediately learns whether the deterministic branch is unreachable on the reference side, or whether the reference side still has extra results.
+
+\subsection{Pre-args and post-args dispatch phases}
+
+A second major correction was recognizing that the branch classifier must mirror the actual operational phases.
+
+For apply terms, there is typically a distinction between:
+
+\begin{itemize}
+  \item \textbf{pre-args dispatch} on the raw term, such as translation checks or memo decisions, and
+  \item \textbf{post-args dispatch} on the term after argument evaluation, such as builtin dispatch, first-rule reduction, partial-arity cases, or unchanged cases.
+\end{itemize}
+
+Classifying all branches in one phase loses that distinction and makes proofs harder than necessary.
+
+\subsection{Exact-control lemmas belong at the definition site}
+
+One of the most reusable insights was that exact-control theorems should be proved in the file where the relevant private definition lives.
+
+For example:
+
+\begin{itemize}
+  \item exact branch-decomposition theorems for a deterministic evaluator belong in its defining file,
+  \item exact one-step queue theorems for the reference evaluator belong in \code{ReferenceEval.lean},
+  \item the bridge file should consume those theorems, not reopen the definitions.
+\end{itemize}
+
+This prevents the bridge from turning into a second copy of the evaluator.
+
+\section{Depth-indexed simulation and safe traces}
+
+A central obstacle in deterministic-versus-reference proofs is that the two evaluators may recurse in different ways:
+
+\begin{itemize}
+  \item one may use recursive descent over terms and arguments,
+  \item the other may use an explicit work queue with depth indices.
+\end{itemize}
+
+The most successful conceptual response is to define a \term{depth-indexed reference entrypoint} that starts the reference evaluator at an arbitrary queue depth. Then one proves one-step theorems at that level and inducts over a supported trace witness instead of raw fuel.
+
+\subsection{Why depth matters}
+
+Once one-step theorems are stated at ``current depth,'' the reference side after a single step is again of the same form, just at depth $d+1$. That aligns the operational shape of the reference evaluator with the recursive shape of the deterministic evaluator.
+
+\subsection{Safe traces}
+
+A particularly clean induction surface is an inductive \term{safe trace} relation describing the currently covered fragment. For example, one may have constructors for:
+
+\begin{itemize}
+  \item unchanged one-step outcomes,
+  \item direct intrinsic one-step outcomes,
+  \item partial builtin or partial-arity outcomes,
+  \item and a recursive constructor extending a trace by one more direct step.
+\end{itemize}
+
+Then simulation is proved by induction on the trace witness, with depth and remaining deterministic fuel as parameters. This is more informative and more modular than induction on a fuel counter alone.
+
+\section{Runtime booleans versus theorem-facing semantic predicates}
+
+Execution gates often expose booleans such as:
+
+\begin{itemize}
+  \item no blocking rewrites,
+  \item no core builtin overrides,
+  \item unique root choices,
+  \item resolved deterministic results,
+  \item accepted unchanged deterministic terms.
+\end{itemize}
+
+These are useful operationally, but they are not automatically theorem-strength assumptions. A boolean like ``no core builtin overrides'' may be only a runtime flag unless it is connected to a semantic proposition that actually states the extensional property one needs.
+
+The right pattern is:
+
+\begin{enumerate}
+  \item keep runtime booleans for execution,
+  \item define theorem-facing semantic predicates such as ``core intrinsic direct is singleton-valued,''
+  \item use the semantic predicates in bridge theorems,
+  \item separately prove that a trusted construction or runtime invariant implies the semantic predicates.
+\end{enumerate}
+
+This avoids smuggling semantic content through booleans that do not yet justify it.
+
+\section{State agreement and memo invariants}
+
+\subsection{Constant-state fragments}
+
+For the initial safe fragment of the deterministic bridge, session state does not change. This is a valuable simplification and should be exploited aggressively.
+
+If the branch assumptions include:
+
+\begin{itemize}
+  \item root nested-effects passthrough,
+  \item no stateful intrinsic firing,
+  \item and pure step semantics,
+\end{itemize}
+
+then the current session can often be frozen to the initial session throughout the trace. One should use a constant-session invariant in this regime instead of prematurely introducing a more general relational state invariant.
+
+\subsection{Memo as a loop invariant}
+
+Memoization is best handled as an explicit invariant. A useful shape is:
+
+\begin{quote}
+for every cached pair $(call, out)$, the canonical reference evaluator returns exactly $(s,[out])$ from the base session.
+\end{quote}
+
+Once memo soundness is formulated this way, cache-hit cases become straightforward: use the invariant for hits, prove insert preservation for misses, and keep the memo story orthogonal to the main semantic branch proof.
+
+\section{Representation choices that make theorems trivial}
+
+A recurrent proof-engineering lesson was that some theorem bottlenecks should be solved by changing the local representation, not by increasing proof power.
+
+For example, if a large function returns either no rows or a singleton row, then representing it directly as a list-of-lists invites unnecessary length proofs. A cleaner local representation is often an option-valued row builder plus a tiny wrapper back into list form. Then the ``length at most one'' theorem becomes structural.
+
+This is a general lesson: if a proof is repeatedly expensive, ask whether the local definition is exposing the wrong algebraic shape.
+
+\section{Tests, stubs, and proof timing}
+
+A useful operational rule emerged:
+
+\begin{itemize}
+  \item passing targeted tests does not prove correctness, but it does make proof work reasonable,
+  \item failing targeted tests are a strong sign not to prove that feature yet,
+  \item implementation completeness and proof completeness should be tracked as separate workstreams.
+\end{itemize}
+
+This suggests a disciplined development order:
+
+\begin{enumerate}
+  \item for a feature with intended runtime behavior, add or fix targeted tests first,
+  \item implement until those tests are green,
+  \item only then attempt the corresponding theorem.
+\end{enumerate}
+
+Meanwhile, proof-bearing supported fragments can continue to expand independently on already green parts of the runtime.
+
+\section{Chain-first reasoning for mechanistic evidence}
+
+The later evidence-modeling discussion surfaced a parallel conceptual lesson: in many scientific applications, especially biological gene prioritization, a scalar score is not the most meaningful object. The meaningful object is often a \term{typed evidence chain}.
+
+\subsection{From flat features to typed paths}
+
+Instead of reasoning only with a feature vector, one can reason with path families such as:
+
+\begin{itemize}
+  \item variant $\to$ molecular QTL $\to$ gene $\to$ trait,
+  \item variant $\to$ enhancer or chromatin contact $\to$ promoter $\to$ gene,
+  \item variant $\to$ coding or pathogenicity effect $\to$ gene,
+  \item variant $\to$ distance-based fallback $\to$ gene.
+\end{itemize}
+
+This makes the reasoning process more legible to biologists and more natural for symbolic or probabilistic reasoning systems.
+
+\subsection{Rescue cases as mechanism discovery}
+
+When a model outperforms a standard baseline, the scientifically interesting question is often not ``how much average AUC improved?'' but ``which loci were rescued, and by what mechanism?''
+
+That naturally leads to a \term{rescue atlas}: for each rescued case, reconstruct the strongest evidence chain and cluster rescue cases into mechanism archetypes. This is more compelling than reporting only aggregate metrics.
+
+\subsection{Chain-first scoring for PLN-style systems}
+
+From a reasoning perspective, the right abstraction is often a weighted path grammar with:
+
+\begin{itemize}
+  \item typed edge families,
+  \item overlap-aware support accumulation,
+  \item contradiction penalties,
+  \item and explicit mechanism archetypes.
+\end{itemize}
+
+This connects symbolic chaining, probabilistic reasoning, and interpretable mechanism modeling.
+
+\section{A practical primer for future chats}
+
+The following checklist is intended to restart future work quickly.
+
+\subsection{Architecture checklist}
+
+\begin{enumerate}
+  \item Keep runtime implementation in Algorithms.
+  \item Keep semantic authority and derived language-level catalogs in Mettapedia.
+  \item Keep only truly neutral foundations in MeTTailCore.
+  \item Avoid putting proof load in top-level refinement files.
+  \item Prefer canonical abstract evaluators to copied concrete semantics.
+\end{enumerate}
+
+\subsection{Proof-design checklist}
+
+\begin{enumerate}
+  \item Ask whether the current theorem surface may be too strong.
+  \item If yes, define a supported witness first.
+  \item Split branch classification, local atom agreement, continuation, and packaging.
+  \item Add exact-control theorems where private definitions live.
+  \item Use wrapper theorems to instantiate abstract results concretely.
+  \item Prefer induction on a trace witness or semantic object over raw fuel, when operational recursion schemes differ.
+  \item Keep state invariants as weak as possible for the current fragment.
+\end{enumerate}
+
+\subsection{When to refactor}
+
+A structural refactor is justified only if it does one of the following:
+
+\begin{itemize}
+  \item exposes a new transparent semantic waist shared by the live and reference paths,
+  \item removes an entire class of downstream hypotheses,
+  \item turns repeated proof fights into reusable local theorems,
+  \item or reveals the correct canonical semantics more clearly.
+\end{itemize}
+
+Otherwise, prefer local theorem work over another architectural change.
+
+\section{Recommended near-term roadmap}
+
+A clean near-term roadmap for LeanPeTTa-style work is:
+
+\begin{enumerate}
+  \item finish any remaining local bridge lemmas for the currently safe deterministic fragment,
+  \item add the depth-indexed reference entrypoint and one-step singleton/unchanged theorems,
+  \item prove a supported deterministic-to-reference theorem by induction on safe traces,
+  \item collapse parameterized refinement theorems into unconditional public theorems for the covered fragment,
+  \item extend coverage family by family, keeping the same proof architecture,
+  \item separately implement and test any still-stubbed runtime features before proving them.
+\end{enumerate}
+
+For evidence-chaining work, the parallel roadmap is:
+
+\begin{enumerate}
+  \item treat rescue cases as the central object of explanation,
+  \item disaggregate pooled evidence into typed path families,
+  \item move from flat-feature scoring toward path-based support models,
+  \item and evaluate not only rank performance but mechanistic coherence.
+\end{enumerate}
+
+\section{Conclusion}
+
+The most durable idea in this note is that both verification and scientific evidence analysis benefit from the same discipline: identify the right semantic waist, keep theorem surfaces honest, and reason over structured paths rather than over opaque operational detail.
+
+For LeanPeTTa, that means bridge-first verification, supported-first adequacy, canonical reference semantics, and phase-split simulation. For mechanistic evidence reasoning, it means typed evidence chains, rescue-focused explanation, and path-level scoring rather than treating every problem as a flat classifier.
+
+Both threads point toward the same general methodology: \term{design the intermediate objects so that the proofs and explanations become natural}. When that is done well, the most difficult work shifts from ad hoc debugging to controlled, reusable theorem and model construction.
+
+\end{document}
