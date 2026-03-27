@@ -32,9 +32,90 @@ static bool is_token_char(char c) {
     return c && !isspace((unsigned char)c) && c != '(' && c != ')' && c != ';' && c != '"';
 }
 
+static char decode_string_escape(char c) {
+    switch (c) {
+        case 'n': return '\n';
+        case 'r': return '\r';
+        case 't': return '\t';
+        case '"': return '"';
+        case '\\': return '\\';
+        default: return c;
+    }
+}
+
+static bool parser_text_well_formed(const char *text) {
+    int depth = 0;
+    for (size_t i = 0; text[i]; i++) {
+        if (text[i] == ';') {
+            while (text[i] && text[i] != '\n') i++;
+            if (!text[i]) break;
+            continue;
+        }
+        if (text[i] == '"') {
+            i++;
+            while (text[i] && text[i] != '"') {
+                if (text[i] == '\\' && text[i + 1]) i++;
+                i++;
+            }
+            if (!text[i]) return false;
+            continue;
+        }
+        if (text[i] == '(') {
+            depth++;
+            continue;
+        }
+        if (text[i] == ')') {
+            depth--;
+            if (depth < 0) return false;
+        }
+    }
+    return depth == 0;
+}
+
+typedef struct {
+    const char **names;
+    VarId *ids;
+    uint32_t len;
+    uint32_t cap;
+} ParserVarScope;
+
+static void parser_var_scope_init(ParserVarScope *scope) {
+    scope->names = NULL;
+    scope->ids = NULL;
+    scope->len = 0;
+    scope->cap = 0;
+}
+
+static void parser_var_scope_free(ParserVarScope *scope) {
+    free(scope->names);
+    free(scope->ids);
+    scope->names = NULL;
+    scope->ids = NULL;
+    scope->len = 0;
+    scope->cap = 0;
+}
+
+static VarId parser_var_scope_id(ParserVarScope *scope, const char *name) {
+    for (uint32_t i = 0; i < scope->len; i++) {
+        if (strcmp(scope->names[i], name) == 0)
+            return scope->ids[i];
+    }
+    if (scope->len >= scope->cap) {
+        scope->cap = scope->cap ? scope->cap * 2 : 8;
+        scope->names = cetta_realloc(scope->names, sizeof(const char *) * scope->cap);
+        scope->ids = cetta_realloc(scope->ids, sizeof(VarId) * scope->cap);
+    }
+    VarId id = fresh_var_id();
+    scope->names[scope->len] = name;
+    scope->ids[scope->len] = id;
+    scope->len++;
+    return id;
+}
+
 /* ── Parse a single token or expression ─────────────────────────────────── */
 
-Atom *parse_sexpr(Arena *a, const char *text, size_t *pos) {
+static Atom *parse_sexpr_scoped(Arena *a, const char *text, size_t *pos,
+                                ParserVarScope *scope) {
     skip_whitespace_and_comments(text, pos);
     if (!text[*pos]) return NULL;
 
@@ -43,13 +124,20 @@ Atom *parse_sexpr(Arena *a, const char *text, size_t *pos) {
         (*pos)++;
         size_t start = *pos;
         while (text[*pos] && text[*pos] != '"') {
-            if (text[*pos] == '\\') (*pos)++;
+            if (text[*pos] == '\\' && text[*pos + 1]) (*pos)++;
             (*pos)++;
         }
         size_t len = *pos - start;
         char *buf = arena_alloc(a, len + 1);
-        memcpy(buf, text + start, len);
-        buf[len] = '\0';
+        size_t out = 0;
+        for (size_t i = start; i < *pos; i++) {
+            if (text[i] == '\\' && i + 1 < *pos) {
+                buf[out++] = decode_string_escape(text[++i]);
+            } else {
+                buf[out++] = text[i];
+            }
+        }
+        buf[out] = '\0';
         if (text[*pos] == '"') (*pos)++;
         return atom_string(a, buf);
     }
@@ -63,7 +151,7 @@ Atom *parse_sexpr(Arena *a, const char *text, size_t *pos) {
         for (;;) {
             skip_whitespace_and_comments(text, pos);
             if (!text[*pos] || text[*pos] == ')') break;
-            Atom *child = parse_sexpr(a, text, pos);
+            Atom *child = parse_sexpr_scoped(a, text, pos, scope);
             if (!child) break;
             if (n >= ccap) {
                 ccap = ccap ? ccap * 2 : 16;
@@ -90,7 +178,8 @@ Atom *parse_sexpr(Arena *a, const char *text, size_t *pos) {
 
     /* Variable: starts with $ */
     if (tok[0] == '$' && len > 1) {
-        return atom_var(a, tok + 1);
+        VarId id = parser_var_scope_id(scope, tok + 1);
+        return atom_var_with_id(a, tok + 1, id);
     }
 
     /* Boolean */
@@ -104,7 +193,7 @@ Atom *parse_sexpr(Arena *a, const char *text, size_t *pos) {
     /* Integer: try to parse */
     char *endp;
     errno = 0;
-    long val = strtol(tok, &endp, 10);
+    long long val = strtoll(tok, &endp, 10);
     if (*endp == '\0' && errno == 0) {
         return atom_int(a, (int64_t)val);
     }
@@ -123,6 +212,14 @@ Atom *parse_sexpr(Arena *a, const char *text, size_t *pos) {
     return atom_symbol(a, tok);
 }
 
+Atom *parse_sexpr(Arena *a, const char *text, size_t *pos) {
+    ParserVarScope scope;
+    parser_var_scope_init(&scope);
+    Atom *result = parse_sexpr_scoped(a, text, pos, &scope);
+    parser_var_scope_free(&scope);
+    return result;
+}
+
 /* ── Parse entire file ──────────────────────────────────────────────────── */
 
 int parse_metta_file(const char *filename, Arena *a, Atom ***out_atoms) {
@@ -137,6 +234,12 @@ int parse_metta_file(const char *filename, Arena *a, Atom ***out_atoms) {
     size_t nread = fread(text, 1, (size_t)fsize, f);
     text[nread] = '\0';
     fclose(f);
+
+    if (!parser_text_well_formed(text)) {
+        free(text);
+        *out_atoms = NULL;
+        return -1;
+    }
 
     /* Parse top-level atoms */
     Atom **atoms = NULL;

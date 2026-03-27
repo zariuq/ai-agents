@@ -1,5 +1,6 @@
 #include "space.h"
 #include "grounded.h"
+#include "stats.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -34,7 +35,7 @@ static void disc_add_leaf(DiscNode *n, uint32_t idx) {
 
 static DiscNode *disc_get_sym(DiscNode *n, const char *key) {
     for (uint32_t i = 0; i < n->nsym; i++)
-        if (strcmp(n->sym[i].key, key) == 0) return n->sym[i].child;
+        if (n->sym[i].key == key || strcmp(n->sym[i].key, key) == 0) return n->sym[i].child;
     if (n->nsym >= n->csym) {
         n->csym = n->csym ? n->csym * 2 : 4;
         n->sym = cetta_realloc(n->sym, sizeof(n->sym[0]) * n->csym);
@@ -379,6 +380,7 @@ static bool is_equation_atom(Atom *a, Atom **lhs_out, Atom **rhs_out) {
 }
 
 static void eq_index_rebuild(Space *s) {
+    cetta_runtime_stats_inc(CETTA_RUNTIME_COUNTER_EQ_INDEX_REBUILD);
     eq_index_free(&s->eq_idx);
     eq_index_init(&s->eq_idx);
     for (uint32_t i = 0; i < s->len; i++) {
@@ -389,6 +391,7 @@ static void eq_index_rebuild(Space *s) {
 }
 
 static void ty_ann_index_rebuild(Space *s) {
+    cetta_runtime_stats_inc(CETTA_RUNTIME_COUNTER_TY_INDEX_REBUILD);
     ty_ann_index_free(&s->ty_idx);
     ty_ann_index_init(&s->ty_idx);
     for (uint32_t i = 0; i < s->len; i++) {
@@ -453,8 +456,18 @@ void query_results_push(QueryResults *qr, Atom *result, Bindings *b) {
         qr->items = cetta_realloc(qr->items, sizeof(QueryResult) * qr->cap);
     }
     qr->items[qr->len].result = result;
-    qr->items[qr->len].bindings = *b;
+    if (!bindings_clone(&qr->items[qr->len].bindings, b))
+        return;
     qr->len++;
+}
+
+void query_results_free(QueryResults *qr) {
+    for (uint32_t i = 0; i < qr->len; i++)
+        bindings_free(&qr->items[i].bindings);
+    free(qr->items);
+    qr->items = NULL;
+    qr->len = 0;
+    qr->cap = 0;
 }
 
 /* ── Equation Query ─────────────────────────────────────────────────────── */
@@ -547,6 +560,8 @@ Atom *get_grounded_type(Arena *a, Atom *atom) {
     case GV_BOOL:   return atom_symbol(a, "Bool");
     case GV_STRING: return atom_symbol(a, "String");
     case GV_SPACE:  return atom_symbol(a, "SpaceType");
+    case GV_FOREIGN:
+        return atom_symbol(a, "Foreign");
     case GV_CAPTURE:
         return atom_expr3(a, atom_symbol(a, "->"),
                           atom_atom_type(a), atom_atom_type(a));
@@ -670,6 +685,7 @@ uint32_t get_atom_types(Space *s, Arena *a, Atom *atom,
                         }
                         types[count++] = concrete_ret;
                     }
+                    bindings_free(&tb);
                     (void)ret_type;
                 }
             }
@@ -703,6 +719,8 @@ static void query_bucket(EqBucket *bucket, Atom *query, Arena *a, QueryResults *
         uint32_t *candidates = NULL;
         uint32_t ncand = 0, ccand = 0;
         disc_lookup(bucket->trie, query, &candidates, &ncand, &ccand);
+        cetta_runtime_stats_add(CETTA_RUNTIME_COUNTER_QUERY_EQUATION_CANDIDATES,
+                                ncand);
         for (uint32_t ci = 0; ci < ncand; ci++) {
             uint32_t i = candidates[ci];
             if (i >= bucket->len) continue;
@@ -715,10 +733,13 @@ static void query_bucket(EqBucket *bucket, Atom *query, Arena *a, QueryResults *
                 Atom *result = bindings_apply(&b, a, rrhs);
                 query_results_push(out, result, &b);
             }
+            bindings_free(&b);
         }
         free(candidates);
     } else {
         /* Small bucket: linear scan is fine */
+        cetta_runtime_stats_add(CETTA_RUNTIME_COUNTER_QUERY_EQUATION_CANDIDATES,
+                                bucket->len);
         for (uint32_t i = 0; i < bucket->len; i++) {
             uint32_t suffix = fresh_var_suffix();
             Atom *rlhs = rename_vars(a, bucket->lhs[i], suffix);
@@ -729,11 +750,13 @@ static void query_bucket(EqBucket *bucket, Atom *query, Arena *a, QueryResults *
                 Atom *result = bindings_apply(&b, a, rrhs);
                 query_results_push(out, result, &b);
             }
+            bindings_free(&b);
         }
     }
 }
 
 void query_equations(Space *s, Atom *query, Arena *a, QueryResults *out) {
+    cetta_runtime_stats_inc(CETTA_RUNTIME_COUNTER_QUERY_EQUATIONS);
     /* Use head-symbol index for O(1) lookup instead of O(N) scan.
        This is the key optimization from Vampire's LiteralIndex. */
     const char *head = eq_head_symbol(query);
