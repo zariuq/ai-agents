@@ -1,4 +1,4 @@
-import Mettapedia.Languages.MeTTa.HE.Eval
+import Mettapedia.Languages.MeTTa.HE.ExecutableBoundary
 
 /-!
 # HE Evaluator Correctness
@@ -17,27 +17,28 @@ because it characterizes the evaluator's behavior *exactly* — no more,
 no less.
 
 For MeTTa specifically, multiple implementations exist (HE, PeTTa, CeTTa,
-MeTTaIL). The declarative spec in `EvalSpec.lean` is shared; each evaluator
-proves its own biconditional against it. This is how you get a verified
-language *ecosystem*, not just a verified implementation. One spec, many
-runtimes, each with a machine-checked correctness certificate.
+MeTTaIL). The coarse declarative spec in `EvalSpec.lean` is shared, while
+implementation-facing refinements can sit above it when a runtime exposes
+behavior the coarse semantics intentionally abstracts over. This is how you get
+a verified language *ecosystem*, not just a verified implementation: one
+canonical semantics, plus precise executable refinement layers where needed.
 
 This is a concrete step toward the QED manifesto's vision: a global library
 of formally verified computational semantics, where trust is established
 once in the proof and carried everywhere by the certificate.
 
-The public theorem we want is deliberately user-facing and portable:
-the pure declarative HE judgment should coincide with *reachable executable
-behavior* (`∃ fuel, ...`). That is the artifact worth transporting across
-backends and proof systems. The private sync model in this file is not the
-final public story; it is the internal exact bridge that makes the public
-story provable.
+The public theorem we want is deliberately user-facing and portable. In HE,
+the coarse declarative judgment is broader than stable executable behavior, so
+the exported theorem surface lives in `ExecutableBoundary.lean` rather than forcing
+the evaluator to coincide with the coarse spec directly. The private sync model
+in this file is not the final public story; it is the internal exact bridge
+that makes the refined public story provable.
 
 This mirrors the successful mm-lean4 architecture. There, the public boundary
 is not the internal operational witness but an acceptance/spec biconditional.
-Likewise here, the long-term target is not "Sync is exact" but "public HE
-specification iff executable reachability". The private bridge exists to make
-that public theorem honest and maintainable.
+Likewise here, the long-term target is not "Sync is exact" but "public
+implementation-refined HE certification iff executable stable reachability".
+The private bridge exists to make that public theorem honest and maintainable.
 
 One important design lesson from this development is that not every useful
 proof invariant belongs in the pure public spec. Evaluator-relative notions
@@ -45,7 +46,7 @@ such as fuel-indexed filtered soundness live here in `Correctness.lean`
 because they mention the evaluator's computed result sets. That is not a
 weakness; it is good abstraction hygiene. Pure spec stays pure, executable
 invariants stay attached to the executable proof layer, and the public
-biconditional composes them at the right boundary.
+certification biconditional composes them at the right boundary.
 
 ## Architecture
 
@@ -61,15 +62,18 @@ biconditional composes them at the right boundary.
 
 **Layer 3 — Public reachability soundness** (proved):
 - `∃ fuel, r ∈ evaluator ... fuel → EvalSpec ... r`
-- mm-lean4-style public surface: existential over fuel, targeting pure spec
+- coarse-spec soundness remains available at the shared declarative boundary
 
-**Layer 4 — Public completeness** (frontier):
-- desired public theorem: `EvalSpec ... r → ∃ fuel, r ∈ evaluator ... fuel`
-- likely path: public aligned bridge witness
-  `EvalSpec → aligned completeness witness → Sync → evaluator`
-- reason for the intermediate witness: the coarse public spec intentionally
-  omits some exact execution-side invariants that the private sync model
-  records explicitly
+**Layer 4 — Executable refinement boundary** (proved):
+- `ExecutableBoundary.EvalAtomStablyReaches`
+- `ExecutableBoundary.EvalAtomCertified`
+- theorem surface: refined HE certification iff stable eventual evaluator reach
+
+**Layer 5 — Counterexample-guided boundary control** (proved):
+- coarse `EvalSpec.EvalAtom` does not imply certification
+- one-shot filtered witnesses do not imply certification
+- the refined executable layer is therefore additive, not a rewrite of
+  `EvalSpec.lean`
 -/
 
 namespace Mettapedia.Languages.MeTTa.HE
@@ -3326,7 +3330,7 @@ top-level `evalAtom` leg and shows that once `InterpretExpression` has the same
 public reachability completeness, the filtered public `EvalAtom` judgment does
 too. -/
 
-theorem evalAtomFiltered_reaches_complete_of_interpretExpression_complete
+private theorem evalAtomFiltered_reaches_complete_of_interpretExpression_complete
     (space : Space) (dispatch : GroundedDispatch)
     (h_interp_complete : ∀ atom type_ b r,
       InterpretExpression space dispatch atom type_ b r →
@@ -4710,5 +4714,327 @@ private theorem mettaCallAligned_public_bridge
       r ∈ mettaCall space dispatch atom type_ b fuel := by
   exact ⟨mettaCallAligned_to_MettaCall space dispatch h,
     mettaCallAligned_eventually_reaches space dispatch h⟩
+
+/-! ## Public certification boundary
+
+The lasting public artifact is a single top-level certification predicate for
+`evalAtom`, now defined in `ExecutableBoundary.lean` as an additive refinement of
+the canonical coarse HE semantics.
+
+The private sync/aligned machinery in this file proves that refined boundary,
+but is not itself part of the exported theorem surface. -/
+
+/-- Stable executable reachability already implies the public declarative
+    `EvalAtom` meaning by soundness. -/
+theorem evalAtomStablyReaches_to_EvalAtom
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom type_ : Atom) (b : Bindings) (r : ResultPair) :
+    EvalAtomStablyReaches space dispatch atom type_ b r →
+      EvalAtom space dispatch atom type_ b r := by
+  intro h_stable
+  exact evalAtom_reaches_sound space dispatch atom type_ b r
+    ⟨h_stable.choose, h_stable.choose_spec h_stable.choose le_rfl⟩
+
+/-- The minimal stabilized witness boundary is already strong enough to imply
+    the lasting public certification boundary. -/
+theorem evalAtomStablyReaches_to_certified
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom type_ : Atom) (b : Bindings) (r : ResultPair) :
+    EvalAtomStablyReaches space dispatch atom type_ b r →
+      EvalAtomCertified space dispatch atom type_ b r := by
+  intro h_stable
+  exact ⟨evalAtomStablyReaches_to_EvalAtom space dispatch atom type_ b r h_stable, h_stable⟩
+
+/-- An `EvalAtomCertified` result has the public declarative meaning. -/
+theorem evalAtomCertified_to_EvalAtom
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom type_ : Atom) (b : Bindings) (r : ResultPair) :
+    EvalAtomCertified space dispatch atom type_ b r →
+      EvalAtom space dispatch atom type_ b r := by
+  intro h
+  exact h.1
+
+/-- The certification boundary is equivalent to stable eventual reachability:
+    the public declarative side follows from soundness. -/
+theorem evalAtomCertified_iff_stably_reaches
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom type_ : Atom) (b : Bindings) (r : ResultPair) :
+    EvalAtomCertified space dispatch atom type_ b r ↔
+      EvalAtomStablyReaches space dispatch atom type_ b r := by
+  constructor
+  · intro h
+    exact h.2
+  · intro h_stable
+    exact evalAtomStablyReaches_to_certified space dispatch atom type_ b r h_stable
+
+/-- A certified result has the honest fuel-indexed filtered-soundness witness
+    at some executable subfuel. This is the right filtered consequence to
+    export; the global non-fuel-indexed filtered predicate is intentionally not
+    claimed here. -/
+theorem evalAtomCertified_to_filtered_witness
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom type_ : Atom) (b : Bindings) (r : ResultPair) :
+    EvalAtomCertified space dispatch atom type_ b r →
+      ∃ n, EvalAtomFilteredAtFuel space dispatch atom type_ b n r := by
+  intro h_cert
+  rcases h_cert.2 with ⟨fuel0, h_eventual⟩
+  exact evalAtom_reaches_filtered_sound space dispatch atom type_ b r
+    ⟨fuel0, h_eventual (fuel0 + 1) (Nat.le_succ fuel0)⟩
+
+/-- Certified results are eventually filtered at every sufficiently large fuel.
+    This strengthens `evalAtomCertified_to_filtered_witness` from a single witness
+    to stable eventual filtered membership. -/
+theorem evalAtomCertified_eventually_filtered
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom type_ : Atom) (b : Bindings) (r : ResultPair) :
+    EvalAtomCertified space dispatch atom type_ b r →
+      ∃ n0, ∀ n, n ≥ n0 →
+        EvalAtomFilteredAtFuel space dispatch atom type_ b n r := by
+  intro h_cert
+  rcases h_cert.2 with ⟨fuel0, h_eventual⟩
+  refine ⟨fuel0, fun n hn => ?_⟩
+  exact evalAtom_filtered_sound space dispatch atom type_ b n r
+    (h_eventual (n + 1) (Nat.le_succ_of_le hn))
+
+/-! ### User-facing evaluation wrapper
+
+The entry point users actually call: `eval` with default dispatch, type, and bindings. -/
+
+/-- `EvalCertified` is the user-facing certified evaluation predicate.
+    It specialises `EvalAtomCertified` to the default entry point:
+    no grounded dispatch, `%Undefined%` expected type, empty bindings. -/
+def EvalCertified (space : Space) (atom : Atom) (r : ResultPair) : Prop :=
+  EvalAtomCertified space GroundedDispatch.none atom Atom.undefinedType Bindings.empty r
+
+/-- `EvalCertified` is equivalent to stable eventual reachability of the
+    default-parameter evaluator. -/
+theorem evalCertified_iff_stably_reaches
+    (space : Space) (atom : Atom) (r : ResultPair) :
+    EvalCertified space atom r ↔
+      ∃ fuel0, ∀ fuel, fuel ≥ fuel0 →
+        r ∈ evalAtom space GroundedDispatch.none atom Atom.undefinedType Bindings.empty fuel :=
+  evalAtomCertified_iff_stably_reaches space GroundedDispatch.none atom Atom.undefinedType Bindings.empty r
+
+/-! ### Internal support theorems for the lower 5 evaluator entry points
+
+These are proof-support theorems. The public facade stays `EvalAtomCertified`. -/
+
+open Internal in
+private theorem interpretExpressionStablyReaches_to_InterpretExpression
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom type_ : Atom) (b : Bindings) (r : ResultPair) :
+    InterpretExpressionStablyReaches space dispatch atom type_ b r →
+      InterpretExpression space dispatch atom type_ b r := by
+  intro h_stable
+  exact interpretExpression_reaches_sound space dispatch atom type_ b r
+    ⟨h_stable.choose, h_stable.choose_spec h_stable.choose le_rfl⟩
+
+open Internal in
+private theorem interpretExpressionStablyReaches_to_certified
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom type_ : Atom) (b : Bindings) (r : ResultPair) :
+    InterpretExpressionStablyReaches space dispatch atom type_ b r →
+      InterpretExpressionCertified space dispatch atom type_ b r := by
+  intro h_stable
+  exact ⟨interpretExpressionStablyReaches_to_InterpretExpression
+    space dispatch atom type_ b r h_stable, h_stable⟩
+
+open Internal in
+private theorem interpretExpressionCertified_to_InterpretExpression
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom type_ : Atom) (b : Bindings) (r : ResultPair) :
+    InterpretExpressionCertified space dispatch atom type_ b r →
+      InterpretExpression space dispatch atom type_ b r := by
+  intro h
+  exact h.1
+
+open Internal in
+private theorem interpretExpressionCertified_iff_stably_reaches
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom type_ : Atom) (b : Bindings) (r : ResultPair) :
+    InterpretExpressionCertified space dispatch atom type_ b r ↔
+      InterpretExpressionStablyReaches space dispatch atom type_ b r := by
+  constructor
+  · intro h
+    exact h.2
+  · intro h_stable
+    exact interpretExpressionStablyReaches_to_certified
+      space dispatch atom type_ b r h_stable
+
+open Internal in
+private theorem interpretFunctionStablyReaches_to_InterpretFunction
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom opType : Atom) (b : Bindings) (r : ResultPair) :
+    InterpretFunctionStablyReaches space dispatch atom opType b r →
+      ∀ retType, InterpretFunction space dispatch atom opType retType b r := by
+  intro h_stable
+  exact interpretFunction_reaches_sound space dispatch atom opType b r
+    ⟨h_stable.choose, h_stable.choose_spec h_stable.choose le_rfl⟩
+
+open Internal in
+private theorem interpretFunctionStablyReaches_to_certified
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom opType : Atom) (b : Bindings) (r : ResultPair) :
+    InterpretFunctionStablyReaches space dispatch atom opType b r →
+      InterpretFunctionCertified space dispatch atom opType b r := by
+  intro h_stable
+  exact ⟨interpretFunctionStablyReaches_to_InterpretFunction
+    space dispatch atom opType b r h_stable, h_stable⟩
+
+open Internal in
+private theorem interpretFunctionCertified_to_InterpretFunction
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom opType : Atom) (b : Bindings) (r : ResultPair) :
+    InterpretFunctionCertified space dispatch atom opType b r →
+      ∀ retType, InterpretFunction space dispatch atom opType retType b r := by
+  intro h
+  exact h.1
+
+open Internal in
+private theorem interpretFunctionCertified_iff_stably_reaches
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom opType : Atom) (b : Bindings) (r : ResultPair) :
+    InterpretFunctionCertified space dispatch atom opType b r ↔
+      InterpretFunctionStablyReaches space dispatch atom opType b r := by
+  constructor
+  · intro h
+    exact h.2
+  · intro h_stable
+    exact interpretFunctionStablyReaches_to_certified
+      space dispatch atom opType b r h_stable
+
+open Internal in
+private theorem interpretArgsStablyReaches_to_InterpretArgs
+    (space : Space) (dispatch : GroundedDispatch)
+    (args types : List Atom) (b : Bindings) (r : ResultPair) :
+    InterpretArgsStablyReaches space dispatch args types b r →
+      InterpretArgs space dispatch args types b r := by
+  intro h_stable
+  exact interpretArgs_reaches_sound space dispatch args types b r
+    ⟨h_stable.choose, h_stable.choose_spec h_stable.choose le_rfl⟩
+
+open Internal in
+private theorem interpretArgsStablyReaches_to_certified
+    (space : Space) (dispatch : GroundedDispatch)
+    (args types : List Atom) (b : Bindings) (r : ResultPair) :
+    InterpretArgsStablyReaches space dispatch args types b r →
+      InterpretArgsCertified space dispatch args types b r := by
+  intro h_stable
+  exact ⟨interpretArgsStablyReaches_to_InterpretArgs
+    space dispatch args types b r h_stable, h_stable⟩
+
+open Internal in
+private theorem interpretArgsCertified_to_InterpretArgs
+    (space : Space) (dispatch : GroundedDispatch)
+    (args types : List Atom) (b : Bindings) (r : ResultPair) :
+    InterpretArgsCertified space dispatch args types b r →
+      InterpretArgs space dispatch args types b r := by
+  intro h
+  exact h.1
+
+open Internal in
+private theorem interpretArgsCertified_iff_stably_reaches
+    (space : Space) (dispatch : GroundedDispatch)
+    (args types : List Atom) (b : Bindings) (r : ResultPair) :
+    InterpretArgsCertified space dispatch args types b r ↔
+      InterpretArgsStablyReaches space dispatch args types b r := by
+  constructor
+  · intro h
+    exact h.2
+  · intro h_stable
+    exact interpretArgsStablyReaches_to_certified
+      space dispatch args types b r h_stable
+
+open Internal in
+private theorem interpretTupleStablyReaches_to_InterpretTuple
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom : Atom) (b : Bindings) (r : ResultPair) :
+    InterpretTupleStablyReaches space dispatch atom b r →
+      InterpretTuple space dispatch atom b r := by
+  intro h_stable
+  exact interpretTuple_reaches_sound space dispatch atom b r
+    ⟨h_stable.choose, h_stable.choose_spec h_stable.choose le_rfl⟩
+
+open Internal in
+private theorem interpretTupleStablyReaches_to_certified
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom : Atom) (b : Bindings) (r : ResultPair) :
+    InterpretTupleStablyReaches space dispatch atom b r →
+      InterpretTupleCertified space dispatch atom b r := by
+  intro h_stable
+  exact ⟨interpretTupleStablyReaches_to_InterpretTuple
+    space dispatch atom b r h_stable, h_stable⟩
+
+open Internal in
+private theorem interpretTupleCertified_to_InterpretTuple
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom : Atom) (b : Bindings) (r : ResultPair) :
+    InterpretTupleCertified space dispatch atom b r →
+      InterpretTuple space dispatch atom b r := by
+  intro h
+  exact h.1
+
+open Internal in
+private theorem interpretTupleCertified_iff_stably_reaches
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom : Atom) (b : Bindings) (r : ResultPair) :
+    InterpretTupleCertified space dispatch atom b r ↔
+      InterpretTupleStablyReaches space dispatch atom b r := by
+  constructor
+  · intro h
+    exact h.2
+  · intro h_stable
+    exact interpretTupleStablyReaches_to_certified
+      space dispatch atom b r h_stable
+
+open Internal in
+private theorem mettaCallStablyReaches_to_MettaCall
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom type_ : Atom) (b : Bindings) (r : ResultPair) :
+    MettaCallStablyReaches space dispatch atom type_ b r →
+      MettaCall space dispatch atom type_ b r := by
+  intro h_stable
+  exact mettaCall_reaches_sound space dispatch atom type_ b r
+    ⟨h_stable.choose, h_stable.choose_spec h_stable.choose le_rfl⟩
+
+open Internal in
+private theorem mettaCallStablyReaches_to_certified
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom type_ : Atom) (b : Bindings) (r : ResultPair) :
+    MettaCallStablyReaches space dispatch atom type_ b r →
+      MettaCallCertified space dispatch atom type_ b r := by
+  intro h_stable
+  exact ⟨mettaCallStablyReaches_to_MettaCall
+    space dispatch atom type_ b r h_stable, h_stable⟩
+
+open Internal in
+private theorem mettaCallCertified_to_MettaCall
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom type_ : Atom) (b : Bindings) (r : ResultPair) :
+    MettaCallCertified space dispatch atom type_ b r →
+      MettaCall space dispatch atom type_ b r := by
+  intro h
+  exact h.1
+
+open Internal in
+private theorem mettaCallCertified_iff_stably_reaches
+    (space : Space) (dispatch : GroundedDispatch)
+    (atom type_ : Atom) (b : Bindings) (r : ResultPair) :
+    MettaCallCertified space dispatch atom type_ b r ↔
+      MettaCallStablyReaches space dispatch atom type_ b r := by
+  constructor
+  · intro h
+    exact h.2
+  · intro h_stable
+    exact mettaCallStablyReaches_to_certified
+      space dispatch atom type_ b r h_stable
+
+private theorem evalAtomAligned_to_EvalAtomCertified
+    (space : Space) (dispatch : GroundedDispatch)
+    {atom type_ : Atom} {b : Bindings} {r : ResultPair}
+    (h : EvalAtomAligned space dispatch atom type_ b r) :
+    EvalAtomCertified space dispatch atom type_ b r := by
+  exact evalAtomStablyReaches_to_certified space dispatch atom type_ b r
+    (evalAtomAligned_eventually_reaches space dispatch h)
 
 end Mettapedia.Languages.MeTTa.HE

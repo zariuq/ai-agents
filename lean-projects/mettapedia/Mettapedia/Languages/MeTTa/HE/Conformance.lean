@@ -1,5 +1,6 @@
 import Mettapedia.Languages.MeTTa.HE.MinimalMeTTa
 import Mettapedia.Languages.MeTTa.HE.Eval
+import Mettapedia.Languages.MeTTa.HE.Certification
 
 /-!
 # HE MeTTa Conformance
@@ -338,6 +339,136 @@ theorem mettaCall_equation_rhs_unstable_low_fuel :
     apply EvalAtom.type_pass
     · rfl
     · exact Or.inr (Or.inr rfl)
+
+private def unstableTopAtom : Atom := .expression [.symbol "q"]
+
+/-- The unstable low-fuel equation-match witness bubbles up to a genuine
+    top-level `evalAtom` result. -/
+theorem evalAtom_unstable_top_level_low_fuel_reaches :
+    (.var "z#0", unstableChainB) ∈
+      evalAtom unstableChainSpace noDispatch
+        unstableTopAtom Atom.undefinedType unstableChainB 5 := by
+  decide
+
+/-- From fuel 6 onward, the executable evaluator has stabilized to the final
+    fully-substituted result, so the low-fuel top-level witness disappears. -/
+theorem evalAtom_unstable_top_level_stabilized_from_fuel6 (n : Nat) :
+    evalAtom unstableChainSpace noDispatch
+      unstableTopAtom Atom.undefinedType unstableChainB (n + 6) =
+      [(.symbol "a", unstableChainB)] := by
+  rfl
+
+/-- The coarse public `EvalAtom` spec admits the unstable low-fuel top-level
+    result. This is exactly the kind of derivation that should NOT be forced
+    into the exported certification boundary. -/
+theorem evalAtom_unstable_top_level_derivation :
+    EvalAtom unstableChainSpace noDispatch
+      unstableTopAtom Atom.undefinedType unstableChainB
+      (.var "z#0", unstableChainB) := by
+  exact evalAtom_sound unstableChainSpace noDispatch
+    unstableTopAtom Atom.undefinedType unstableChainB 5
+    (.var "z#0", unstableChainB)
+    evalAtom_unstable_top_level_low_fuel_reaches
+
+/-- The unstable low-fuel top-level derivation is NOT certified: certification
+    requires stable eventual reachability, but from fuel 6 onward the evaluator
+    only returns the stabilized symbol result. -/
+theorem evalAtom_unstable_top_level_not_certified :
+    ¬ EvalAtomCertified unstableChainSpace noDispatch
+      unstableTopAtom Atom.undefinedType unstableChainB
+      (.var "z#0", unstableChainB) := by
+  intro h_cert
+  rcases (evalAtomCertified_iff_stably_reaches
+      unstableChainSpace noDispatch
+      unstableTopAtom Atom.undefinedType unstableChainB
+      (.var "z#0", unstableChainB)).mp h_cert with ⟨fuel0, h_eventual⟩
+  have h_mem :
+      (.var "z#0", unstableChainB) ∈
+        evalAtom unstableChainSpace noDispatch
+          unstableTopAtom Atom.undefinedType unstableChainB (fuel0 + 6) := by
+    exact h_eventual (fuel0 + 6) (Nat.le_add_right fuel0 6)
+  rw [evalAtom_unstable_top_level_stabilized_from_fuel6 fuel0] at h_mem
+  simp at h_mem
+
+/-- The same unstable top-level result still has an honest fuel-indexed
+    filtered witness at the low subfuel used by the evaluator. This shows that
+    even filtered-at-fuel evidence is weaker than certification. -/
+theorem evalAtom_unstable_top_level_filtered_witness :
+    ∃ n, EvalAtomFilteredAtFuel unstableChainSpace noDispatch
+      unstableTopAtom Atom.undefinedType unstableChainB n
+      (.var "z#0", unstableChainB) := by
+  exact evalAtom_reaches_filtered_sound unstableChainSpace noDispatch
+    unstableTopAtom Atom.undefinedType unstableChainB
+    (.var "z#0", unstableChainB)
+    ⟨4, evalAtom_unstable_top_level_low_fuel_reaches⟩
+
+/-- So the global implication `EvalAtom -> EvalAtomCertified` is false.
+    This blocks the tempting but wrong plan to prove certification for every
+    coarse public `EvalAtom` derivation without strengthening the theorem
+    boundary. -/
+theorem evalAtom_to_stably_reaches_not_valid :
+    ¬ (∀ (space : Space) (dispatch : GroundedDispatch)
+        (atom type_ : Atom) (b : Bindings) (r : ResultPair),
+        EvalAtom space dispatch atom type_ b r →
+          EvalAtomStablyReaches space dispatch atom type_ b r) := by
+  intro h
+  exact evalAtom_unstable_top_level_not_certified <|
+    evalAtomStablyReaches_to_certified unstableChainSpace noDispatch
+      unstableTopAtom Atom.undefinedType unstableChainB
+      (.var "z#0", unstableChainB)
+      (h unstableChainSpace noDispatch
+        unstableTopAtom Atom.undefinedType unstableChainB
+        (.var "z#0", unstableChainB)
+        evalAtom_unstable_top_level_derivation)
+
+/-- So the global implication `EvalAtom -> EvalAtomCertified` is false.
+    This blocks the tempting but wrong plan to prove certification for every
+    coarse public `EvalAtom` derivation without strengthening the theorem
+    boundary. -/
+theorem evalAtom_to_certified_not_valid :
+    ¬ (∀ (space : Space) (dispatch : GroundedDispatch)
+        (atom type_ : Atom) (b : Bindings) (r : ResultPair),
+        EvalAtom space dispatch atom type_ b r →
+          EvalAtomCertified space dispatch atom type_ b r) := by
+  intro h
+  exact evalAtom_unstable_top_level_not_certified <|
+    h unstableChainSpace noDispatch
+      unstableTopAtom Atom.undefinedType unstableChainB
+      (.var "z#0", unstableChainB)
+      evalAtom_unstable_top_level_derivation
+
+/-- Even the honest fuel-indexed filtered witness is still not strong enough
+    to imply certification. This rules out the next tempting-but-false theorem
+    target above the public certification boundary. -/
+theorem filtered_witness_to_stably_reaches_not_valid :
+    ¬ (∀ (space : Space) (dispatch : GroundedDispatch)
+        (atom type_ : Atom) (b : Bindings) (r : ResultPair),
+        (∃ n, EvalAtomFilteredAtFuel space dispatch atom type_ b n r) →
+          EvalAtomStablyReaches space dispatch atom type_ b r) := by
+  intro h
+  exact evalAtom_unstable_top_level_not_certified <|
+    evalAtomStablyReaches_to_certified unstableChainSpace noDispatch
+      unstableTopAtom Atom.undefinedType unstableChainB
+      (.var "z#0", unstableChainB)
+      (h unstableChainSpace noDispatch
+        unstableTopAtom Atom.undefinedType unstableChainB
+        (.var "z#0", unstableChainB)
+        evalAtom_unstable_top_level_filtered_witness)
+
+/-- Even the honest fuel-indexed filtered witness is still not strong enough
+    to imply certification. This rules out the next tempting-but-false theorem
+    target above the public certification boundary. -/
+theorem filtered_witness_to_certified_not_valid :
+    ¬ (∀ (space : Space) (dispatch : GroundedDispatch)
+        (atom type_ : Atom) (b : Bindings) (r : ResultPair),
+        (∃ n, EvalAtomFilteredAtFuel space dispatch atom type_ b n r) →
+          EvalAtomCertified space dispatch atom type_ b r) := by
+  intro h
+  exact evalAtom_unstable_top_level_not_certified <|
+    h unstableChainSpace noDispatch
+      unstableTopAtom Atom.undefinedType unstableChainB
+      (.var "z#0", unstableChainB)
+      evalAtom_unstable_top_level_filtered_witness
 
 /-! ## 7. MinimalStep derivation witnesses -/
 

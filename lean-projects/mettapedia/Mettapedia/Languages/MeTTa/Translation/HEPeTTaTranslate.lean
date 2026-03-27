@@ -280,6 +280,14 @@ def isTranslatorResultVar : Atom → Bool
   | .var v => v.startsWith "$__tr_result_"
   | _ => false
 
+/-- Shared termination script for simple `sizeOf` mutual recursions. -/
+macro "decr_sizeof_simple" : tactic =>
+  `(tactic|
+    all_goals
+      first
+      | simp_wf; omega
+      | simp_wf)
+
 mutual
   /-- Syntactic occurrence check used by the optimizer guards. -/
   def containsAtom (needle : Atom) : Atom → Bool
@@ -288,20 +296,14 @@ mutual
     | a => a == needle
   termination_by a => sizeOf a
   decreasing_by
-    all_goals
-      first
-      | simp_wf; omega
-      | simp_wf
+    decr_sizeof_simple
 
   def containsAtomList (needle : Atom) : List Atom → Bool
     | [] => false
     | x :: xs => containsAtom needle x || containsAtomList needle xs
   termination_by xs => sizeOf xs
   decreasing_by
-    all_goals
-      first
-      | simp_wf; omega
-      | simp_wf
+    decr_sizeof_simple
 end
 
 mutual
@@ -317,20 +319,14 @@ mutual
     | _ => false
   termination_by a => sizeOf a
   decreasing_by
-    all_goals
-      first
-      | simp_wf; omega
-      | simp_wf
+    decr_sizeof_simple
 
   def containsHeadSymbolList (sym : String) : List Atom → Bool
     | [] => false
     | x :: xs => containsHeadSymbol sym x || containsHeadSymbolList sym xs
   termination_by xs => sizeOf xs
   decreasing_by
-    all_goals
-      first
-      | simp_wf; omega
-      | simp_wf
+    decr_sizeof_simple
 end
 
 /-- The executable optimizer avoids turning `let (collapse ...)` into `chain`
@@ -360,10 +356,7 @@ mutual
     | other => other
   termination_by a => sizeOf a
   decreasing_by
-    all_goals
-      first
-      | simp_wf; omega
-      | simp_wf
+    decr_sizeof_simple
 
   /-- Optimize each atom in a list. -/
   def optimizeTranslatedHEList : List Atom → List Atom
@@ -371,10 +364,7 @@ mutual
     | x :: xs => optimizeTranslatedHE x :: optimizeTranslatedHEList xs
   termination_by xs => sizeOf xs
   decreasing_by
-    all_goals
-      first
-      | simp_wf; omega
-      | simp_wf
+    decr_sizeof_simple
 end
 
 /-- Optimized PeTTa→HE translation used by the executable file translator. -/
@@ -2147,6 +2137,253 @@ private theorem stableCommonForm_cons_of_head (hd : Atom) (args : List Atom)
         simpa [isStableCommonHead, isForbiddenHeadSymbol] using hhd
       simp [isStableCommonForm, isStableCommonExpr, isStableCommonHead, isForbiddenHeadSymbol, hform]
 
+private theorem stableCommon_selfSymbol :
+    isStableCommonForm (.symbol "&self") = true := by
+  simp [isStableCommonForm, isStableCommonExpr, isStableCommonHead, isForbiddenHeadSymbol]
+
+/-- Shared default-atomspace operational fragment already modeled on both sides.
+
+    This is the honest theoremic bridge for the current stateful translator work:
+    the translators leave these `&self` forms unchanged as long as their payloads
+    are already in the stable common form.
+
+    Positive example:
+    - `(match &self (edge a $x) $x)`
+    - `(add-atom &self (edge a b))`
+
+    Negative example:
+    - `(new-space)` is intentionally outside this fragment.
+    - `(match &db pat tmpl)` is outside the current default-atomspace theorem boundary.
+-/
+def isDefaultAtomSpaceSharedFragment : Atom → Bool
+  | .expression [.symbol "match", .symbol "&self", pat, tmpl] =>
+      isStableCommonForm pat && isStableCommonForm tmpl
+  | .expression [.symbol "get-atoms", .symbol "&self"] => true
+  | .expression [.symbol "add-atom", .symbol "&self", payload] =>
+      isStableCommonForm payload
+  | .expression [.symbol "remove-atom", .symbol "&self", payload] =>
+      isStableCommonForm payload
+  | _ => false
+
+example : isDefaultAtomSpaceSharedFragment
+    (.expression [.symbol "match", .symbol "&self",
+      .expression [.symbol "edge", .symbol "a", .var "$x"], .var "$x"]) = true := by
+  simp [isDefaultAtomSpaceSharedFragment, isStableCommonForm, isStableCommonExpr,
+    isStableCommonHead, isForbiddenHeadSymbol, isStableCommonList]
+
+example : isDefaultAtomSpaceSharedFragment (.expression [.symbol "new-space"]) = false := by
+  rfl
+
+inductive DefaultAtomSpaceOperationalBridge : Atom → Prop where
+  | matchSelf (pat tmpl : Atom)
+      (hpat : isStableCommonForm pat = true)
+      (htmpl : isStableCommonForm tmpl = true) :
+      DefaultAtomSpaceOperationalBridge
+        (.expression [.symbol "match", .symbol "&self", pat, tmpl])
+  | getAtomsSelf :
+      DefaultAtomSpaceOperationalBridge
+        (.expression [.symbol "get-atoms", .symbol "&self"])
+  | addAtomSelf (payload : Atom)
+      (hpayload : isStableCommonForm payload = true) :
+      DefaultAtomSpaceOperationalBridge
+        (.expression [.symbol "add-atom", .symbol "&self", payload])
+  | removeAtomSelf (payload : Atom)
+      (hpayload : isStableCommonForm payload = true) :
+      DefaultAtomSpaceOperationalBridge
+        (.expression [.symbol "remove-atom", .symbol "&self", payload])
+
+theorem defaultAtomSpaceSharedFragment_has_operational_bridge
+    (a : Atom) (h : isDefaultAtomSpaceSharedFragment a = true) :
+    DefaultAtomSpaceOperationalBridge a := by
+  cases a with
+  | var _ => cases h
+  | symbol _ => cases h
+  | grounded _ => cases h
+  | expression es =>
+      cases es with
+      | nil => cases h
+      | cons hd args =>
+          cases hd with
+          | var _ => cases h
+          | grounded _ => cases h
+          | expression _ => cases h
+          | symbol c =>
+              cases args with
+              | nil =>
+                  have hfalse : False := by
+                    simp [isDefaultAtomSpaceSharedFragment] at h
+                  exact False.elim hfalse
+              | cons a1 rest =>
+                  cases rest with
+                  | nil =>
+                      by_cases hget : c = "get-atoms"
+                      · subst hget
+                        cases a1 with
+                        | symbol s =>
+                            by_cases hself : s = "&self"
+                            · subst hself
+                              exact .getAtomsSelf
+                            · simp [isDefaultAtomSpaceSharedFragment, hself] at h
+                        | var _ => cases h
+                        | grounded _ => cases h
+                        | expression _ => cases h
+                      · simp [isDefaultAtomSpaceSharedFragment, hget] at h
+                  | cons a2 rest =>
+                      cases rest with
+                      | nil =>
+                          by_cases hadd : c = "add-atom"
+                          · subst hadd
+                            cases a1 with
+                            | symbol s =>
+                                by_cases hself : s = "&self"
+                                · subst hself
+                                  have hpayload : isStableCommonForm a2 = true := by
+                                    simpa [isDefaultAtomSpaceSharedFragment] using h
+                                  exact .addAtomSelf a2 hpayload
+                                · simp [isDefaultAtomSpaceSharedFragment, hself] at h
+                            | var _ => cases h
+                            | grounded _ => cases h
+                            | expression _ => cases h
+                          · by_cases hremove : c = "remove-atom"
+                            · subst hremove
+                              cases a1 with
+                              | symbol s =>
+                                  by_cases hself : s = "&self"
+                                  · subst hself
+                                    have hpayload : isStableCommonForm a2 = true := by
+                                      simpa [isDefaultAtomSpaceSharedFragment] using h
+                                    exact .removeAtomSelf a2 hpayload
+                                  · simp [isDefaultAtomSpaceSharedFragment, hself] at h
+                              | var _ => cases h
+                              | grounded _ => cases h
+                              | expression _ => cases h
+                            · simp [isDefaultAtomSpaceSharedFragment, hadd, hremove] at h
+                      | cons a3 rest =>
+                          cases rest with
+                          | nil =>
+                              by_cases hmatch : c = "match"
+                              · subst hmatch
+                                cases a1 with
+                                | symbol s =>
+                                    by_cases hself : s = "&self"
+                                    · subst hself
+                                      have hparts :
+                                          isStableCommonForm a2 = true ∧
+                                            isStableCommonForm a3 = true := by
+                                        simpa [isDefaultAtomSpaceSharedFragment, Bool.and_eq_true] using h
+                                      exact .matchSelf a2 a3 hparts.1 hparts.2
+                                    · simp [isDefaultAtomSpaceSharedFragment, hself] at h
+                                | var _ => cases h
+                                | grounded _ => cases h
+                                | expression _ => cases h
+                              · simp [isDefaultAtomSpaceSharedFragment, hmatch] at h
+                          | cons _ _ =>
+                              have hfalse : False := by
+                                simp [isDefaultAtomSpaceSharedFragment] at h
+                              exact False.elim hfalse
+
+theorem defaultAtomSpaceSharedFragment_preserves_stableCommonForm
+    (a : Atom) (h : isDefaultAtomSpaceSharedFragment a = true) :
+    isStableCommonForm a = true := by
+  cases a with
+  | var _ => cases h
+  | symbol _ => cases h
+  | grounded _ => cases h
+  | expression es =>
+      cases es with
+      | nil => cases h
+      | cons hd args =>
+          cases hd with
+          | var _ => cases h
+          | grounded _ => cases h
+          | expression _ => cases h
+          | symbol c =>
+              cases args with
+              | nil =>
+                  have hfalse : False := by
+                    simp [isDefaultAtomSpaceSharedFragment] at h
+                  exact False.elim hfalse
+              | cons a1 rest =>
+                  cases rest with
+                  | nil =>
+                      by_cases hget : c = "get-atoms"
+                      · subst hget
+                        cases a1 with
+                        | symbol s =>
+                            by_cases hself : s = "&self"
+                            · subst hself
+                              have hhead : isStableCommonHead (.symbol "get-atoms") = true := by
+                                simp [isStableCommonHead, isStableCommonForm, isForbiddenHeadSymbol]
+                              rw [stableCommonForm_cons_of_head (.symbol "get-atoms") [.symbol "&self"] hhead]
+                              simp [isStableCommonList, stableCommon_selfSymbol]
+                            · simp [isDefaultAtomSpaceSharedFragment, hself] at h
+                        | var _ => cases h
+                        | grounded _ => cases h
+                        | expression _ => cases h
+                      · simp [isDefaultAtomSpaceSharedFragment, hget] at h
+                  | cons a2 rest =>
+                      cases rest with
+                      | nil =>
+                          by_cases hadd : c = "add-atom"
+                          · subst hadd
+                            cases a1 with
+                            | symbol s =>
+                                by_cases hself : s = "&self"
+                                · subst hself
+                                  have hpayload : isStableCommonForm a2 = true := by
+                                    simpa [isDefaultAtomSpaceSharedFragment] using h
+                                  have hhead : isStableCommonHead (.symbol "add-atom") = true := by
+                                    simp [isStableCommonHead, isStableCommonForm, isForbiddenHeadSymbol]
+                                  rw [stableCommonForm_cons_of_head (.symbol "add-atom") [.symbol "&self", a2] hhead]
+                                  simp [isStableCommonList, stableCommon_selfSymbol, hpayload]
+                                · simp [isDefaultAtomSpaceSharedFragment, hself] at h
+                            | var _ => cases h
+                            | grounded _ => cases h
+                            | expression _ => cases h
+                          · by_cases hremove : c = "remove-atom"
+                            · subst hremove
+                              cases a1 with
+                              | symbol s =>
+                                  by_cases hself : s = "&self"
+                                  · subst hself
+                                    have hpayload : isStableCommonForm a2 = true := by
+                                      simpa [isDefaultAtomSpaceSharedFragment] using h
+                                    have hhead : isStableCommonHead (.symbol "remove-atom") = true := by
+                                      simp [isStableCommonHead, isStableCommonForm, isForbiddenHeadSymbol]
+                                    rw [stableCommonForm_cons_of_head (.symbol "remove-atom") [.symbol "&self", a2] hhead]
+                                    simp [isStableCommonList, stableCommon_selfSymbol, hpayload]
+                                  · simp [isDefaultAtomSpaceSharedFragment, hself] at h
+                              | var _ => cases h
+                              | grounded _ => cases h
+                              | expression _ => cases h
+                            · simp [isDefaultAtomSpaceSharedFragment, hadd, hremove] at h
+                      | cons a3 rest =>
+                          cases rest with
+                          | nil =>
+                              by_cases hmatch : c = "match"
+                              · subst hmatch
+                                cases a1 with
+                                | symbol s =>
+                                    by_cases hself : s = "&self"
+                                    · subst hself
+                                      have hparts :
+                                          isStableCommonForm a2 = true ∧
+                                            isStableCommonForm a3 = true := by
+                                        simpa [isDefaultAtomSpaceSharedFragment, Bool.and_eq_true] using h
+                                      have hhead : isStableCommonHead (.symbol "match") = true := by
+                                        simp [isStableCommonHead, isStableCommonForm, isForbiddenHeadSymbol]
+                                      rw [stableCommonForm_cons_of_head (.symbol "match") [.symbol "&self", a2, a3] hhead]
+                                      simp [isStableCommonList, stableCommon_selfSymbol, hparts.1, hparts.2]
+                                    · simp [isDefaultAtomSpaceSharedFragment, hself] at h
+                                | var _ => cases h
+                                | grounded _ => cases h
+                                | expression _ => cases h
+                              · simp [isDefaultAtomSpaceSharedFragment, hmatch] at h
+                          | cons _ _ =>
+                              have hfalse : False := by
+                                simp [isDefaultAtomSpaceSharedFragment] at h
+                              exact False.elim hfalse
+
 mutual
 
 private theorem validatedPeTTaSource_of_headSource_aux
@@ -3203,6 +3440,21 @@ theorem translatePeTTa_id_of_stableCommonForm (a : Atom) (s : Nat)
     (h : isStableCommonForm a = true) :
     translatePeTTa a s = (a, s) := by
   exact translatePeTTa_id_of_stableCommonForm_aux a s h
+
+/-- Both translators are identity on the currently formalized shared
+    default-atomspace fragment over `&self`. -/
+theorem translateHE_id_of_defaultAtomSpaceSharedFragment (a : Atom) (s : Nat)
+    (h : isDefaultAtomSpaceSharedFragment a = true) :
+    translateHE a s = (a, s) :=
+  translateHE_id_of_stableCommonForm a s
+    (defaultAtomSpaceSharedFragment_preserves_stableCommonForm a h)
+
+/-- The same fixed-point fact in the PeTTa→HE direction. -/
+theorem translatePeTTa_id_of_defaultAtomSpaceSharedFragment (a : Atom) (s : Nat)
+    (h : isDefaultAtomSpaceSharedFragment a = true) :
+    translatePeTTa a s = (a, s) :=
+  translatePeTTa_id_of_stableCommonForm a s
+    (defaultAtomSpaceSharedFragment_preserves_stableCommonForm a h)
 
 /-- First-order `foldall` lowering lands in the stable common fragment as soon
     as the recursively translated goal and init pieces do. -/
