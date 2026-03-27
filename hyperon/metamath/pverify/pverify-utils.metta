@@ -1,9 +1,32 @@
 ;; mmverify-utils_petta.metta - Clean reconstruction
 !(import! &self ../../PeTTa/lib/lib_he)
 !(import! &self ../../PeTTa/lib/lib_import)
-!(import! &self ../../PeTTa/lib/lib_zar)
+
+;; Keep pverify insulated from broader lib_zar evolution.
+;; We only need the predicate-style import helper plus a small FFI surface.
+(: consult_file (-> Atom Atom))
+(= (consult_file $prologfile)
+   (callPredicate (Predicate (quote (consult $prologfile)))))
+
+(: use_module_file (-> Atom Atom))
+(= (use_module_file $prologfile)
+   (callPredicate (Predicate (quote (use_module $prologfile)))))
+
+(: import_prolog_functions_from_file_pred (-> Atom Expression Atom))
+(= (import_prolog_functions_from_file_pred $prologfile $importfunctions)
+   (let* (($ok (consult_file $prologfile))
+          ($function (superpose $importfunctions)))
+         (import_prolog_function $function)))
+
+(: import_prolog_functions_from_module_pred (-> Atom Expression Atom))
+(= (import_prolog_functions_from_module_pred $prologfile $importfunctions)
+   (let* (($ok (use_module_file $prologfile))
+          ($function (superpose $importfunctions)))
+         (import_prolog_function $function)))
+
 !(import_prolog_functions_from_file_pred "lib/lib_zar.pl"
-  (get_cmdline_args get_cmdline_arg cmdline_arg_count has_cmdline_args))
+  (get_cmdline_args get_cmdline_arg cmdline_arg_count has_cmdline_args
+   new-space delete-space))
 
 ;;; Check for --log flag in command line args (verbose logging)
 ;;; By default, logging is OFF. Use --log to enable verbose output.
@@ -958,4 +981,3 @@
        (progn
          (maybe-store-theorem! $kb $label $dvs $f_hyps $e_hyps $s $proof)
          ()))))
-
