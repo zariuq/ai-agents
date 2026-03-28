@@ -143,6 +143,7 @@ import Mettapedia.Languages.GF.GFWMObligationAdapter
 import Mettapedia.Languages.GF.GFWMObligationAdapterRegression
 import Mettapedia.Languages.GF.GFToFOLSetBridge
 import Mettapedia.Languages.GF.GFToFOLSetBridgeRegression
+import Mettapedia.Conformance.HECoreFiles
 import Mettapedia.Conformance.SimpleHE
 import Mettapedia.Conformance.SimplePeTTa
 
