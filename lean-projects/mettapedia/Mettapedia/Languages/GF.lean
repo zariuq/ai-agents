@@ -66,6 +66,8 @@ import Mettapedia.Languages.GF.RoundTripRegression
 import Mettapedia.Languages.GF.OSLFBridge
 import Mettapedia.Languages.GF.GeneratedBridgeConformance
 import Mettapedia.Languages.GF.GFCoreNTTDiagnostics
+import Mettapedia.Languages.GF.GFCoreTypingActions
+import Mettapedia.Languages.GF.GFKernelAgreement
 import Mettapedia.Languages.GF.OSLFBridge_handcrafted
 import Mettapedia.Languages.GF.Typing
 import Mettapedia.Languages.GF.LinguisticInvariance

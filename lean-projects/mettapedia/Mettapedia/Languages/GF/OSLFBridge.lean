@@ -105,8 +105,11 @@ private def gfTimeOffsetGrammarRules : List GrammarRule :=
   , internalGrammarRule "1" "TimeOffset" []
   ]
 
+private def gfNegationGrammarRule : GrammarRule :=
+  internalGrammarRule "⊛negation" "S" [("inner", .base "S")]
+
 private def gfSemanticSupportTerms : List GrammarRule :=
-  gfPassV2GrammarRule :: gfTemporalGrammarRule :: gfTimeOffsetGrammarRules
+  gfPassV2GrammarRule :: gfTemporalGrammarRule :: gfNegationGrammarRule :: gfTimeOffsetGrammarRules
 
 -- ═══════════════════════════════════════════════════════════════════
 -- Phase 2: Shared GF semantic kernel (authored via languageDef!)
@@ -170,7 +173,23 @@ private def gfSemanticSupportTerms : List GrammarRule :=
 @[reducible] def allTenseRewrites : List RewriteRule :=
   SemanticKernelDSL.allTenseRewrites
 
-/-- All semantic entailment rewrites (identity + active-passive + tense). -/
+/-- Negation + present tense: UseCl(TTAnt(TPres, ASimul), PNeg, cl) ⇝ ⊛negation(⊛temporal(cl, 0)). -/
+@[reducible] def negationPresentRewrite : RewriteRule :=
+  SemanticKernelDSL.negationPresentRewrite
+
+/-- Negation + past tense. -/
+@[reducible] def negationPastRewrite : RewriteRule :=
+  SemanticKernelDSL.negationPastRewrite
+
+/-- Negation + future tense. -/
+@[reducible] def negationFutureRewrite : RewriteRule :=
+  SemanticKernelDSL.negationFutureRewrite
+
+/-- All negation rewrites. -/
+@[reducible] def allNegationRewrites : List RewriteRule :=
+  SemanticKernelDSL.allNegationRewrites
+
+/-- All semantic entailment rewrites (identity + active-passive + tense + negation). -/
 @[reducible] def allSemanticRewrites : List RewriteRule :=
   SemanticKernelDSL.allSemanticRewrites
 

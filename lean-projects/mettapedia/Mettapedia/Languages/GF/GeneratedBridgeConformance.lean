@@ -114,7 +114,14 @@ example : paperLang.rewrites = gfSemanticRewritesForSig paperSig := rfl
 example : paperLang.equations.length = 1 := by
   native_decide
 
-example : paperLang.rewrites.length ≥ 4 := by
+-- Exact rewrite count: 8 of 13 kernel rewrites pass validation.
+-- UseN + ActivePassive + 3 tense + 3 negation = 8.
+-- 5 excluded: PositA, UseComp, UseV, UseN2, UseA2 (constructors absent from sig).
+-- Note: negation rewrites pass validation via the arity-0 exemption in
+-- validatePatternConstructors (PNeg has arity 0 so isn't checked against the
+-- known constructor list). They are included but never fire on PaperAmbiguitySig
+-- parse trees because PNeg is not a declared function in the grammar.
+example : paperLang.rewrites.length = 8 := by
   native_decide
 
 example : paperLang.equations.map (·.name) = ["UseNIdentity"] := by
@@ -186,5 +193,51 @@ example :
       presentSentencePattern temporalPresentPattern := by
   exact engineWithPremises_sound (lang := paperLang)
     (p := presentSentencePattern) (q := temporalPresentPattern) (by native_decide)
+
+/- ═══════════════════════════════════════════════════════════════════
+   Negation: honest fixture parity
+   ═══════════════════════════════════════════════════════════════════ -/
+
+-- Positive: negation rewrites are in the semantic kernel
+example : "NegationPresent" ∈ paperLang.rewrites.map (·.name) := by
+  native_decide
+
+example : "NegationPast" ∈ paperLang.rewrites.map (·.name) := by
+  native_decide
+
+example : "NegationFuture" ∈ paperLang.rewrites.map (·.name) := by
+  native_decide
+
+-- Negative: PNeg is NOT in PaperAmbiguitySig's declared functions.
+-- The negation rewrites are included (via arity-0 validator exemption)
+-- but cannot fire on actual PaperAmbiguitySig parse trees.
+example :
+    ¬ (∃ f ∈ paperSig.funs.toList.map (·.2),
+        (f : FunDecl).name = "PNeg") := by
+  native_decide
+
+-- Negative: the present tense rewrite does NOT fire as negation on a PPos sentence.
+-- (The tense rewrite fires instead, not the negation rewrite.)
+def negTemporalPresentPattern : Pattern :=
+  .apply "⊛negation" [.apply "⊛temporal" [activeClausePattern, .apply "0" []]]
+
+example :
+    negTemporalPresentPattern ∉
+      rewriteWithContextWithPremises paperLang presentSentencePattern := by
+  native_decide
+
+/- ═══════════════════════════════════════════════════════════════════
+   Exact rewrite name inventory
+   ═══════════════════════════════════════════════════════════════════ -/
+
+-- The exact set of rewrite names included for PaperAmbiguitySig.
+-- This serves as a regression fixture: any change to the semantic kernel
+-- or validation logic that alters this set will break this test.
+example : paperLang.rewrites.map (·.name) =
+    [ "UseNElim", "ActivePassive"
+    , "PresentTense", "PastTense", "FutureTense"
+    , "NegationPresent", "NegationPast", "NegationFuture"
+    ] := by
+  native_decide
 
 end Mettapedia.Languages.GF.GeneratedBridgeConformance

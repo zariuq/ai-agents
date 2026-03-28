@@ -679,4 +679,11 @@ end GFCheckerDemo
   IO.println s!"house |= ◇(is_house): {repr result}"
   -- Expected: .unsat (no reducts to check)
 
+-- Note: Agreement between handcrafted rewrites and the DSL-authored rewrites
+-- in SemanticKernelDSL is verified in a separate file (GFKernelAgreement.lean)
+-- because importing SemanticKernelDSL/OSLFBridge brings in the languageDef!
+-- macro syntax which clashes with the handcrafted bridge's record constructors.
+-- The canonical semantic kernel now lives in SemanticKernelDSL.lean;
+-- this file is the legacy bridge retained for backward compatibility.
+
 end Mettapedia.Languages.GF.OSLFBridge

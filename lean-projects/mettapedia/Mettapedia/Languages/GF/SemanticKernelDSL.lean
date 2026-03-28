@@ -7,8 +7,8 @@ This module captures the **council-clear** GF semantic kernel as a directly
 authored `languageDef!` fragment:
 
 - 1 equation: `UseN(x) = x`
-- 10 rewrites: 6 identity eliminations, 1 active/passive entailment,
-  3 tense rewrites
+- 13 rewrites: 6 identity eliminations, 1 active/passive entailment,
+  3 tense rewrites, 3 negation rewrites
 
 It is intentionally a **semantic fragment**, not the full runtime-loaded GF
 grammar. The full constructor inventory still comes from `GFCore.GrammarSig`;
@@ -59,6 +59,9 @@ def gfSemanticKernelLanguageDef : LanguageDef :=
       PresentTense . cl:Cl |- UseCl(TTAnt("TPres", "ASimul"), "PPos", cl) ~> "⊛temporal"(cl, "0");
       PastTense . cl:Cl |- UseCl(TTAnt("TPast", "ASimul"), "PPos", cl) ~> "⊛temporal"(cl, "-1");
       FutureTense . cl:Cl |- UseCl(TTAnt("TFut", "ASimul"), "PPos", cl) ~> "⊛temporal"(cl, "1");
+      NegationPresent . cl:Cl |- UseCl(TTAnt("TPres", "ASimul"), "PNeg", cl) ~> "⊛negation"("⊛temporal"(cl, "0"));
+      NegationPast . cl:Cl |- UseCl(TTAnt("TPast", "ASimul"), "PNeg", cl) ~> "⊛negation"("⊛temporal"(cl, "-1"));
+      NegationFuture . cl:Cl |- UseCl(TTAnt("TFut", "ASimul"), "PNeg", cl) ~> "⊛negation"("⊛temporal"(cl, "1"));
     }
     logic { }
     oracles { }
@@ -104,24 +107,40 @@ def pastTenseRewrite : RewriteRule :=
 def futureTenseRewrite : RewriteRule :=
   rewriteAt 9 (by native_decide)
 
+def negationPresentRewrite : RewriteRule :=
+  rewriteAt 10 (by native_decide)
+
+def negationPastRewrite : RewriteRule :=
+  rewriteAt 11 (by native_decide)
+
+def negationFutureRewrite : RewriteRule :=
+  rewriteAt 12 (by native_decide)
+
 def allIdentityRewrites : List RewriteRule :=
   gfSemanticKernelLanguageDef.rewrites.take 6
 
 def allTenseRewrites : List RewriteRule :=
-  gfSemanticKernelLanguageDef.rewrites.drop 7
+  [presentTenseRewrite, pastTenseRewrite, futureTenseRewrite]
+
+def allNegationRewrites : List RewriteRule :=
+  [negationPresentRewrite, negationPastRewrite, negationFutureRewrite]
 
 def allSemanticRewrites : List RewriteRule :=
   gfSemanticKernelLanguageDef.rewrites
 
 example : gfSemanticKernelLanguageDef.equations.length = 1 := rfl
-example : gfSemanticKernelLanguageDef.rewrites.length = 10 := rfl
+example : gfSemanticKernelLanguageDef.rewrites.length = 13 := rfl
 example : allIdentityRewrites.length = 6 := by native_decide
 example : allTenseRewrites.length = 3 := by native_decide
-example : allSemanticRewrites.length = 10 := rfl
+example : allNegationRewrites.length = 3 := by native_decide
+example : allSemanticRewrites.length = 13 := rfl
 example : useNIdentityEquation.name = "UseNIdentity" := rfl
 example : activePassiveRewrite.name = "ActivePassive" := rfl
 example : presentTenseRewrite.name = "PresentTense" := rfl
 example : pastTenseRewrite.name = "PastTense" := rfl
 example : futureTenseRewrite.name = "FutureTense" := rfl
+example : negationPresentRewrite.name = "NegationPresent" := rfl
+example : negationPastRewrite.name = "NegationPast" := rfl
+example : negationFutureRewrite.name = "NegationFuture" := rfl
 
 end Mettapedia.Languages.GF.SemanticKernelDSL

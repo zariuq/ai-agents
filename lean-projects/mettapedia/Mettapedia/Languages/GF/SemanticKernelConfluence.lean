@@ -34,6 +34,7 @@ inductive GFRewriteLabel where
   | useN | positA | useV | useComp | useN2 | useA2
   | activePassive
   | presentTense | pastTense | futureTense
+  | negationPresent | negationPast | negationFuture
   deriving DecidableEq, Repr
 
 /-- Rewrite families for independence reasoning. -/
@@ -41,6 +42,7 @@ inductive GFRewriteFamily where
   | wrapper
   | voice
   | tense
+  | negation
   deriving DecidableEq, Repr
 
 /-- Family classification of GF rewrite labels. -/
@@ -48,6 +50,7 @@ def labelFamily : GFRewriteLabel → GFRewriteFamily
   | .useN | .positA | .useV | .useComp | .useN2 | .useA2 => .wrapper
   | .activePassive => .voice
   | .presentTense | .pastTense | .futureTense => .tense
+  | .negationPresent | .negationPast | .negationFuture => .negation
 
 /-- One-step top-level GF semantic rewrite relation by explicit label. -/
 inductive GFTopStep : GFRewriteLabel → Pattern → Pattern → Prop where
@@ -88,6 +91,27 @@ inductive GFTopStep : GFRewriteLabel → Pattern → Pattern → Prop where
           , .apply "PPos" []
           , cl ])
         (.apply "⊛temporal" [cl, .apply "1" []])
+  | negationPresent (cl : Pattern) :
+      GFTopStep .negationPresent
+        (.apply "UseCl"
+          [ .apply "TTAnt" [.apply "TPres" [], .apply "ASimul" []]
+          , .apply "PNeg" []
+          , cl ])
+        (.apply "⊛negation" [.apply "⊛temporal" [cl, .apply "0" []]])
+  | negationPast (cl : Pattern) :
+      GFTopStep .negationPast
+        (.apply "UseCl"
+          [ .apply "TTAnt" [.apply "TPast" [], .apply "ASimul" []]
+          , .apply "PNeg" []
+          , cl ])
+        (.apply "⊛negation" [.apply "⊛temporal" [cl, .apply "-1" []]])
+  | negationFuture (cl : Pattern) :
+      GFTopStep .negationFuture
+        (.apply "UseCl"
+          [ .apply "TTAnt" [.apply "TFut" [], .apply "ASimul" []]
+          , .apply "PNeg" []
+          , cl ])
+        (.apply "⊛negation" [.apply "⊛temporal" [cl, .apply "1" []]])
 
 /-- Unlabeled top-step reduction relation for the semantic kernel. -/
 def GFTopReduces (x y : Pattern) : Prop := ∃ ℓ, GFTopStep ℓ x y
@@ -117,6 +141,21 @@ def topStepOut : Pattern → Option Pattern
       , .apply "PPos" []
       , cl ] =>
       some (.apply "⊛temporal" [cl, .apply "1" []])
+  | .apply "UseCl"
+      [ .apply "TTAnt" [.apply "TPres" [], .apply "ASimul" []]
+      , .apply "PNeg" []
+      , cl ] =>
+      some (.apply "⊛negation" [.apply "⊛temporal" [cl, .apply "0" []]])
+  | .apply "UseCl"
+      [ .apply "TTAnt" [.apply "TPast" [], .apply "ASimul" []]
+      , .apply "PNeg" []
+      , cl ] =>
+      some (.apply "⊛negation" [.apply "⊛temporal" [cl, .apply "-1" []]])
+  | .apply "UseCl"
+      [ .apply "TTAnt" [.apply "TFut" [], .apply "ASimul" []]
+      , .apply "PNeg" []
+      , cl ] =>
+      some (.apply "⊛negation" [.apply "⊛temporal" [cl, .apply "1" []]])
   | _ => none
 
 /-- Family selected by the top-step matcher. -/
@@ -143,6 +182,21 @@ def topStepFamily : Pattern → Option GFRewriteFamily
       , .apply "PPos" []
       , _ ] =>
       some .tense
+  | .apply "UseCl"
+      [ .apply "TTAnt" [.apply "TPres" [], .apply "ASimul" []]
+      , .apply "PNeg" []
+      , _ ] =>
+      some .negation
+  | .apply "UseCl"
+      [ .apply "TTAnt" [.apply "TPast" [], .apply "ASimul" []]
+      , .apply "PNeg" []
+      , _ ] =>
+      some .negation
+  | .apply "UseCl"
+      [ .apply "TTAnt" [.apply "TFut" [], .apply "ASimul" []]
+      , .apply "PNeg" []
+      , _ ] =>
+      some .negation
   | _ => none
 
 theorem topStepOut_of_GFTopStep
