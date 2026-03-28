@@ -148,6 +148,20 @@ The translation is backed by a sorry-free Lean 4 proof (5,400+ lines, 0 sorries)
 - **`change-state!` return value** — trusted mode wraps HE's `(State val)` return
   for PeTTa compatibility without modifying PeTTa's runtime
 
+### Running the Lean Translator
+
+The Lean translator is an executable function (`translateHE`, `translatePeTTa`)
+that can be invoked via `lake env lean --run`:
+
+```bash
+cd ~/claude/lean-projects/mettapedia
+lake env lean --run your_script.lean
+```
+
+Where `your_script.lean` imports `Mettapedia.Languages.MeTTa.Translation.HEPeTTaTranslate`
+and calls `translatePeTTa` or `translateHE` on Atom values. The Lean translator
+produces the same translations as the Prolog CLI but is kernel-checked.
+
 Lean proofs: `lean-projects/mettapedia/Mettapedia/Languages/MeTTa/Translation/`
 
 ## File Structure
