@@ -1,4 +1,4 @@
-import Mettapedia.GSLT.Core.GSLT
+import Mettapedia.GSLT.Logic.MinimalContext
 
 /-!
 # Context-Decorated Hennessy-Milner Logic
@@ -9,8 +9,8 @@ Consciousness" (2026), Part I, §5.
 
 ## Main Definitions
 
-* `GSLTContext` — A term with a hole (Definition 5.1)
-* `ContextStep` — Context-labeled transitions (LTS)
+* `MinimalContext` — a context shape certified minimal by an MSL interface
+* `ContextStep` — minimal-context-labeled transitions (LTS)
 * `HMLFormula` — Context-decorated HML formulae (Definition 5.2)
 * `HMLFormula.satisfies` — Satisfaction relation for HML
 
@@ -22,39 +22,11 @@ Consciousness" (2026), Part I, §5.
 
 namespace Mettapedia.GSLT
 
-/-! ## Contexts
-
-    Definition 5.1 (Meredith 2026): A context K[−] is a term with a
-    distinguished hole [−]. K[P] substitutes P for the hole.
--/
-
-/-- A context for a GSLT: a function that plugs a term into a surrounding structure.
-
-    Definition 5.1 (Meredith 2026): A context K[−] is a term of T(S) with a
-    distinguished hole [−]. The application K[P] substitutes P for the hole.
--/
-structure GSLTContext (S : GSLT) where
-  /-- Apply the context: K[P] -/
-  plug : S.Term → S.Term
-
-namespace GSLTContext
-
-variable {S : GSLT}
-
-/-- The identity (empty) context: [−] -/
-def id : GSLTContext S where
-  plug := _root_.id
-
-/-- Composition of contexts: K₁[K₂[−]] -/
-def comp (K₁ K₂ : GSLTContext S) : GSLTContext S where
-  plug := K₁.plug ∘ K₂.plug
-
-end GSLTContext
-
 /-! ## Context-Labeled Transitions -/
 
-/-- A context-labeled transition relation: P →^K Q iff K[P] →_S Q -/
-def GSLT.contextStep (S : GSLT) (t : S.Term) (K : GSLTContext S) (t' : S.Term) : Prop :=
+/-- A minimal-context-labeled transition relation: `P →^K Q` iff `K[P] →_S Q`. -/
+def GSLT.contextStep (S : GSLT) [HasMinimalContexts S]
+    (t : S.Term) (K : MinimalContext S) (t' : S.Term) : Prop :=
   S.Step (K.plug t) t'
 
 /-! ## Context-Decorated HML
@@ -68,10 +40,10 @@ def GSLT.contextStep (S : GSLT) (t : S.Term) (K : GSLTContext S) (t' : S.Term) :
     Definition 5.2 (Meredith 2026):
     ϕ, ψ ::= ⊤ | ⊥ | ϕ ∧ ψ | ¬ϕ | ⟨K⟩ϕ
 
-    where K ranges over contexts of S. The modality ⟨K⟩ϕ means:
+    where K ranges over minimal contexts of S. The modality ⟨K⟩ϕ means:
     "K[u] reduces in one step to some u' satisfying ϕ"
 -/
-inductive HMLFormula (S : GSLT) : Type _ where
+inductive HMLFormula (S : GSLT) [HasMinimalContexts S] : Type _ where
   /-- Truth: always satisfied -/
   | top : HMLFormula S
   /-- Falsity: never satisfied -/
@@ -81,11 +53,11 @@ inductive HMLFormula (S : GSLT) : Type _ where
   /-- Negation -/
   | neg : HMLFormula S → HMLFormula S
   /-- Diamond modality: ⟨K⟩ϕ means K[u] →_S u' and u' ⊨ ϕ -/
-  | diamond : GSLTContext S → HMLFormula S → HMLFormula S
+  | diamond : MinimalContext S → HMLFormula S → HMLFormula S
 
 namespace HMLFormula
 
-variable {S : GSLT}
+variable {S : GSLT} [HasMinimalContexts S]
 
 /-- Disjunction (derived) -/
 def disj (ϕ ψ : HMLFormula S) : HMLFormula S := .neg (.conj (.neg ϕ) (.neg ψ))
@@ -94,14 +66,15 @@ def disj (ϕ ψ : HMLFormula S) : HMLFormula S := .neg (.conj (.neg ϕ) (.neg ψ
 def imp (ϕ ψ : HMLFormula S) : HMLFormula S := disj (.neg ϕ) ψ
 
 /-- Box modality [K]ϕ = ¬⟨K⟩¬ϕ: "for all K-successors, ϕ holds" -/
-def box (K : GSLTContext S) (ϕ : HMLFormula S) : HMLFormula S := .neg (.diamond K (.neg ϕ))
+def box [HasMinimalContexts S] (K : MinimalContext S) (ϕ : HMLFormula S) :
+    HMLFormula S := .neg (.diamond K (.neg ϕ))
 
 /-- Satisfaction relation: u ⊨ ϕ
 
     Definition 5.2 (Meredith 2026):
     u ⊨ ⟨K⟩ϕ  iff  K[u] →_S u' in one step, and u' ⊨ ϕ
 -/
-def satisfies (S : GSLT) : S.Term → HMLFormula S → Prop
+def satisfies (S : GSLT) [HasMinimalContexts S] : S.Term → HMLFormula S → Prop
   | _, .top => True
   | _, .bot => False
   | t, .conj ϕ ψ => satisfies S t ϕ ∧ satisfies S t ψ
@@ -109,24 +82,25 @@ def satisfies (S : GSLT) : S.Term → HMLFormula S → Prop
   | t, .diamond K ϕ => ∃ t', S.Step (K.plug t) t' ∧ satisfies S t' ϕ
 
 /-- Two terms are HML-equivalent if they satisfy the same formulae -/
-def hmlEquiv (S : GSLT) (t u : S.Term) : Prop :=
+def hmlEquiv (S : GSLT) [HasMinimalContexts S] (t u : S.Term) : Prop :=
   ∀ ϕ : HMLFormula S, satisfies S t ϕ ↔ satisfies S u ϕ
 
 /-- HML equivalence is reflexive -/
-theorem hmlEquiv_refl (S : GSLT) (t : S.Term) : hmlEquiv S t t :=
+theorem hmlEquiv_refl (S : GSLT) [HasMinimalContexts S] (t : S.Term) : hmlEquiv S t t :=
   fun _ => Iff.rfl
 
 /-- HML equivalence is symmetric -/
-theorem hmlEquiv_symm {S : GSLT} {t u : S.Term} (h : hmlEquiv S t u) : hmlEquiv S u t :=
+theorem hmlEquiv_symm {S : GSLT} [HasMinimalContexts S]
+    {t u : S.Term} (h : hmlEquiv S t u) : hmlEquiv S u t :=
   fun ϕ => (h ϕ).symm
 
 /-- HML equivalence is transitive -/
-theorem hmlEquiv_trans {S : GSLT} {t u v : S.Term}
+theorem hmlEquiv_trans {S : GSLT} [HasMinimalContexts S] {t u v : S.Term}
     (h1 : hmlEquiv S t u) (h2 : hmlEquiv S u v) : hmlEquiv S t v :=
   fun ϕ => (h1 ϕ).trans (h2 ϕ)
 
 /-- HML equivalence forms a setoid -/
-def hmlSetoid (S : GSLT) : Setoid S.Term where
+def hmlSetoid (S : GSLT) [HasMinimalContexts S] : Setoid S.Term where
   r := hmlEquiv S
   iseqv := ⟨hmlEquiv_refl S, fun h => hmlEquiv_symm h, fun h1 h2 => hmlEquiv_trans h1 h2⟩
 
@@ -140,22 +114,23 @@ end HMLFormula
 -/
 
 /-- Adequacy: bisimilarity implies HML equivalence (soundness direction) -/
-def GSLT.adequacy_sound (S : GSLT) : Prop :=
+def GSLT.adequacy_sound (S : GSLT) [HasMinimalContexts S] : Prop :=
   ∀ {t u : S.Term}, S.Bisimilar t u → HMLFormula.hmlEquiv S t u
 
 /-- Adequacy: HML equivalence implies bisimilarity (completeness direction) -/
-def GSLT.adequacy_complete (S : GSLT) : Prop :=
+def GSLT.adequacy_complete (S : GSLT) [HasMinimalContexts S] : Prop :=
   ∀ {t u : S.Term}, HMLFormula.hmlEquiv S t u → S.Bisimilar t u
 
 /-- Full adequacy: bisimilarity ↔ HML equivalence. Theorem 5.1 (Meredith 2026). -/
-def GSLT.adequacy (S : GSLT) : Prop := S.adequacy_sound ∧ S.adequacy_complete
+def GSLT.adequacy (S : GSLT) [HasMinimalContexts S] : Prop :=
+  S.adequacy_sound ∧ S.adequacy_complete
 
 /-! ## Summary
 
 This file establishes:
 
-1. **GSLTContext**: Terms with holes, with identity and composition (Definition 5.1)
-2. **contextStep**: Context-labeled transitions (MSL construction)
+1. **MinimalContext**: Explicit minimal-context interface for the MSL layer
+2. **contextStep**: Minimal-context-labeled transitions (MSL construction)
 3. **HMLFormula**: Context-decorated HML formulae (Definition 5.2)
 4. **satisfies**: Satisfaction relation for HML
 5. **hmlEquiv**: HML equivalence (proven to be an equivalence relation)
