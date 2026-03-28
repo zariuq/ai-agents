@@ -187,8 +187,8 @@ This file establishes:
 
 **No sorry statements** — everything is fully proven or cleanly stated.
 
-**Next**: `Causality/SyncTree.lean` (Definitions 4.1–4.3) or
-         `Dynamics/PathIntegral.lean` (Definition 9.1)
+**Next**: strengthen `Dynamics/PathIntegral.lean` from finite-support amplitudes
+         to explicit summability hypotheses, or move to the Theorem 10.1 layer
 -/
 
 end Mettapedia.GSLT

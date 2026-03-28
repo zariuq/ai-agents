@@ -4,6 +4,13 @@
 Lean 4 formalization library covering ethics, AI theory, category theory, algorithms,
 and more. The main Lean project in the ai-agents ecosystem. Depends on Mathlib.
 
+## Emulated Research Council
+
+- For hard research, proof, architecture, or strategy work, use `/home/zarclaw/public/council.md` as an inspiration prompt.
+- Treat the council as a perspective-broadening aid, not a literal approval gate. Do not invent fake consensus or exaggerated certainty.
+- If blocked or uncertain, mentally simulate the strongest likely objections and approaches from that council before choosing a path.
+- When useful, briefly report the dominant lines of reasoning and a grounded confidence/completeness estimate tied to actual code, proofs, tests, or experiments.
+
 ## Quick Commands
 
 ### Build

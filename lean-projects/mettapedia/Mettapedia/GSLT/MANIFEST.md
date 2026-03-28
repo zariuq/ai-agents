@@ -118,11 +118,103 @@ Dynamics/ExtendedHML.lean | weightBisimilar_setoid | def | §8 | 📐
 Dynamics/ExtendedHML.lean | weightBisim_refines_bisim | thm | §8 Prop 8.1 | ✅
 
 ## ═══════════════════════════════════════════════════
+## Dynamics/PathIntegral.lean — §9 Finite-Support Path Integrals
+## ═══════════════════════════════════════════════════
+
+Dynamics/PathIntegral.lean | AmplitudeWeightedGSLT | def | §9 Def 9.1 | 📐
+Dynamics/PathIntegral.lean | rewritePathAppend | def | §9 | 📐
+Dynamics/PathIntegral.lean | rewritePathLength_append | thm | §9 | ✅
+Dynamics/PathIntegral.lean | transitionAmplitude | def | §9 Def 9.2 | 📐
+Dynamics/PathIntegral.lean | pathAmplitude_append | thm | §9 | ✅
+Dynamics/PathIntegral.lean | transitionAmplitude_empty | thm | §9 | ✅
+Dynamics/PathIntegral.lean | transitionAmplitude_singleton | thm | §9 | ✅
+Dynamics/PathIntegral.lean | transitionAmplitude_union | thm | §9 | ✅
+
+## ═══════════════════════════════════════════════════
+## Synthesis/MainConservation.lean — §10 Quantum Reversible Synthesis
+## ═══════════════════════════════════════════════════
+
+Synthesis/MainConservation.lean | QuantumTraceEntry | struct | §10 Constr 10.1 | 📐
+Synthesis/MainConservation.lean | QuantumState | struct | §10 Constr 10.1 | 📐
+Synthesis/MainConservation.lean | QuantumState.initial | def | §10 | 📐
+Synthesis/MainConservation.lean | QuantumState.cptTransform | def | §10 Thm 10.1(iii) | 📐
+Synthesis/MainConservation.lean | QuantumState.cptTransform_involutive | thm | §10 | ✅
+Synthesis/MainConservation.lean | QuantumState.cptTransform_traceAccount | thm | §10(iii) | ✅
+Synthesis/MainConservation.lean | QuantumState.cptTransform_conservedBalance | thm | §10(iii) | ✅
+Synthesis/MainConservation.lean | traceAccount | def | §7/§10 | 📐
+Synthesis/MainConservation.lean | traceAccount_map_cptConjugate | thm | §10(iii) | ✅
+Synthesis/MainConservation.lean | traceAccount_append | thm | §10(iii) | ✅
+Synthesis/MainConservation.lean | traceAccount_reverse | thm | §10(iii) | ✅
+Synthesis/MainConservation.lean | conservedBalance | def | §10 | 📐
+Synthesis/MainConservation.lean | netAccountChange | def | §7/§10 | 📐
+Synthesis/MainConservation.lean | ClosedRewriteCycle | def | §7/§10 | 📐
+Synthesis/MainConservation.lean | QuantumStep | inductive | §10 Constr 10.1 | 📐
+Synthesis/MainConservation.lean | QuantumStepStar | inductive | §10 | 📐
+Synthesis/MainConservation.lean | QuantumStepStar.trans | thm | §10 | ✅
+Synthesis/MainConservation.lean | conservedBalance_step | thm | §10 | ✅
+Synthesis/MainConservation.lean | conservedBalance_stepStar | thm | §10 | ✅
+Synthesis/MainConservation.lean | closedCycle_account_eq | thm | §7 Thm 7.1 / §10(i) | ✅
+Synthesis/MainConservation.lean | netAccountChange_eq_zero_of_closedCycle | thm | §7 Thm 7.1 / §10(i) | ✅
+Synthesis/MainConservation.lean | resourceConservation_initialClosedPath | thm | §7 Thm 7.1 | ✅
+Synthesis/MainConservation.lean | transitionProbability | def | §9 Def 9.2 / §10(ii) | 📐
+Synthesis/MainConservation.lean | oneStepTransitionProbability | def | §10(ii) | 📐
+Synthesis/MainConservation.lean | oneStepTransitionProbability_eq_normSq | thm | §10(ii) | ✅
+Synthesis/MainConservation.lean | LocalUnitaryWitness | struct | §10(ii) | 📐
+Synthesis/MainConservation.lean | oneStepProbabilityConservation | thm | §10(ii) | ✅
+Synthesis/MainConservation.lean | PathProbabilityNormalization | struct | §10(ii) | 📐
+Synthesis/MainConservation.lean | transitionProbabilityConservation | thm | §10(ii) | ✅
+Synthesis/MainConservation.lean | WeightMap.cptConjugate | def | §10(iii) | 📐
+Synthesis/MainConservation.lean | CPTSymmetric | struct | §10(iii) | 📐
+Synthesis/MainConservation.lean | mainConservation_resource | thm | §10 Thm 10.1(i) | ✅
+Synthesis/MainConservation.lean | mainConservation_probability | thm | §10 Thm 10.1(ii) interface | ✅
+Synthesis/MainConservation.lean | mainConservation_cpt | thm | §10 Thm 10.1(iii) interface | ✅
+
+## ═══════════════════════════════════════════════════
+## Life/AssemblyTheory.lean — §23 Assembly Depth and Copy Number
+## ═══════════════════════════════════════════════════
+
+Life/AssemblyTheory.lean | AssemblyPath | inductive | §23.1 | 📐
+Life/AssemblyTheory.lean | AssemblyPath.length | def | §23.1 | 📐
+Life/AssemblyTheory.lean | AssemblyWitness | struct | §23.1 | 📐
+Life/AssemblyTheory.lean | Assemblable | def | §23.1 | 📐
+Life/AssemblyTheory.lean | assemblyDepths | def | §23.1 | 📐
+Life/AssemblyTheory.lean | assemblyIndex | def | §23 Prop 23.1 | 📐
+Life/AssemblyTheory.lean | assemblyDepths_nonempty | thm | §23.1 | ✅
+Life/AssemblyTheory.lean | assemblyIndex_mem | thm | §23 Prop 23.1 | ✅
+Life/AssemblyTheory.lean | assemblyIndex_attained | thm | §23 Prop 23.1 | ✅
+Life/AssemblyTheory.lean | assemblyIndex_le_of_witness | thm | §23 Prop 23.1 | ✅
+Life/AssemblyTheory.lean | assemblyIndex_eq_of_minimal | thm | §23 Prop 23.1 | ✅
+Life/AssemblyTheory.lean | elementaryWitness | def | §23 Def 23.1 | 📐
+Life/AssemblyTheory.lean | elementary_assemblable | thm | §23 Def 23.1 | ✅
+Life/AssemblyTheory.lean | assemblyIndex_eq_zero_of_mem | thm | §23 Prop 23.1 | ✅
+Life/AssemblyTheory.lean | Namespace | struct | §23.3 | 📐
+Life/AssemblyTheory.lean | Namespace.copyNumber | def | §23 Def 23.4 | 📐
+Life/AssemblyTheory.lean | Namespace.copyNumber_empty | thm | §23 Def 23.4 | ✅
+Life/AssemblyTheory.lean | Namespace.copyNumber_le_card | thm | §23 Def 23.4 | ✅
+Life/AssemblyTheory.lean | Namespace.copyNumber_eq_of_bisimilar | thm | §23.4 | ✅
+Life/AssemblyTheory.lean | Namespace.copyNumber_eq_card_of_forall | thm | §23.4 | ✅
+
+## ═══════════════════════════════════════════════════
+## Life/ReplicationFixedPoint.lean — §24 Replication Fixed-Point Kernel
+## ═══════════════════════════════════════════════════
+
+Life/ReplicationFixedPoint.lean | replicate | def | §24 | 📐
+Life/ReplicationFixedPoint.lean | replicationBody | def | §24 | 📐
+Life/ReplicationFixedPoint.lean | replicationPrefix | def | §24 | 📐
+Life/ReplicationFixedPoint.lean | replicationPrefix_one | thm | §24 | ✅
+Life/ReplicationFixedPoint.lean | replicate_fixedPointKernel | def | §24 | 📐
+Life/ReplicationFixedPoint.lean | replicationPrefix_step | def | §24 | 📐
+Life/ReplicationFixedPoint.lean | replicate_unfolds_to_prefix | def | §24 | 📐
+Life/ReplicationFixedPoint.lean | replicate_fixedPointKernel_nonempty | thm | §24 | ✅
+Life/ReplicationFixedPoint.lean | replicationPrefix_step_nonempty | thm | §24 | ✅
+Life/ReplicationFixedPoint.lean | replicate_unfolds_to_prefix_nonempty | thm | §24 | ✅
+
+## ═══════════════════════════════════════════════════
 ## COVERAGE SUMMARY
 ## ═══════════════════════════════════════════════════
-## Paper sections covered: §2, §3, §4, §5, §6, §7, §8
-## Paper sections remaining: §9 (Path Integral), §10 (Consciousness)
-## Total definitions: ~45
-## Total theorems proven (✅): ~25
+## Paper sections covered: §2, §3, §4, §5, §6, §7, §8, §9, §10 (resource kernel), §23 (assembly/copy-number kernel), §24 (derived replication kernel)
+## Paper sections remaining: full §10(ii)–(iii) derivations, Part II epistemic theorems, the pure quote/COMM concurrent-Y part of §24, §25–§26, and later speculative layers
+## Total definitions: ~80
+## Total theorems proven (✅): ~61
 ## Total sorry: 0
-## Last updated: 2026-03-22
+## Last updated: 2026-03-28

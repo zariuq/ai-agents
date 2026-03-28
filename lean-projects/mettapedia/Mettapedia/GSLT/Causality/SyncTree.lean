@@ -262,7 +262,8 @@ This file establishes:
 
 **No sorry statements** — everything is fully proven.
 
-**Next**: `Dynamics/PathIntegral.lean` (Definition 9.1–9.2)
+**Next**: the finite-support path-integral layer in
+         `Dynamics/PathIntegral.lean`, then the Theorem 10.1 synthesis layer
 -/
 
 end Mettapedia.GSLT

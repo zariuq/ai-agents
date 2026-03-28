@@ -72,13 +72,18 @@
 - [ ] **Action functional** (Def 6.4) — S[γ] = Σ log w_r^+(ϕ_i)
 - [ ] **Resource algebra** (Def 7.1) — commutative ordered monoid
 - [ ] **Cost map** (Def 7.2) — c_r : HML(K) → A^k
-- [ ] **Conservation theorem** (Thm 7.1) — net account change = 0 on closed paths
+- [x] **Conservation theorem** (Thm 7.1) — net account change = 0 on closed resource-aware cycles in `Synthesis/MainConservation.lean`
 - [ ] **Extended modal operator** (Def 8.1) — ⟨K, w+, w−, c, A⟩ϕ
 
 #### Tier 5: Quantum structure
-- [ ] **Amplitude-weighted GSLT** (Def 9.1) — complex weights with CPT constraint
-- [ ] **Transition amplitude** (Def 9.2) — ⟨Q|P⟩ = Σ_γ W(γ)
-- [ ] **Main Conservation Theorem** (Thm 10.1) — resource + probability + CPT
+- [x] **Amplitude-weighted GSLT** (Def 9.1) — complex-weight specialization captured by `Dynamics/PathIntegral.lean`
+- [x] **Transition amplitude** (Def 9.2) — finite-support version over explicit path families in `Dynamics/PathIntegral.lean`
+- [x] **Quantum-weighted reversible GSLT** (Constr. 10.1) — `⟨P, τ, A⟩` states and reversible debit/credit dynamics in `Synthesis/MainConservation.lean`
+- [x] **Main Conservation Theorem** (Thm 10.1(i)) — resource part proved in `Synthesis/MainConservation.lean`
+- [ ] **Main Conservation Theorem** (Thm 10.1(ii)) — full global probability conservation from local unitarity
+  - Current status: one-step finite witness proved, global finite-support normalization exposed as an explicit interface in `Synthesis/MainConservation.lean`
+- [ ] **Main Conservation Theorem** (Thm 10.1(iii)) — full CPT automorphism proof
+  - Current status: candidate CPT transform and symmetry interface formalized in `Synthesis/MainConservation.lean`
 
 ### 🔲 Part II: Emergent Ontology (lower priority, speculative)
 - [ ] Ontological isolation (Def 13.1)
@@ -89,8 +94,9 @@
 - [ ] Coherence clusters and nerve (Defs 18.1–18.4)
 
 ### 🔲 Part III: Life (lower priority, speculative)
-- [ ] Assembly theory connection (Defs 23.1–23.4)
+- [x] Assembly theory kernel (Defs 23.1–23.4) — elementary terms, minimum causal depth, and namespace copy number in `Life/AssemblyTheory.lean`
 - [ ] Replication as fixed point (§24)
+  Current status: derived rho fixed-point kernel `!P ⇝ᵈ* P | !P` and arbitrary finite unfoldings in `Life/ReplicationFixedPoint.lean`; pure quote/COMM-only concurrent `Y` remains open.
 - [ ] Phase transitions (§25)
 
 ### 🔲 Part IV: Hypercomputational Tower (lower priority, exploratory)
@@ -142,7 +148,7 @@ GSLT/
 │   ├── ExtendedHML.lean              🆕 Extended modal operators (Def 8.1)
 │   └── QuantumAmplitude.lean          🆕 Complex amplitudes, path integral (Defs 9.1–9.3)
 ├── Synthesis/
-│   └── MainTheorem.lean               🆕 Construction 10.1, Theorem 10.1
+│   └── MainConservation.lean          🆕 Construction 10.1, Theorem 10.1 kernel
 ├── GraphTheory/                       ✅ (existing, supports Core)
 │   ├── Basic.lean
 │   ├── Approximants.lean
