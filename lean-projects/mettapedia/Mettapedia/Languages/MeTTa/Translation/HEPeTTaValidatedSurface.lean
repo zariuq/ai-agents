@@ -23,7 +23,7 @@ set_option maxHeartbeats 800000
 mutual
 /-- A recursive common fragment that neither translator rewrites.
     Positive example: shared `let`/`match` terms whose subterms are also stable.
-    Negative example: any nested `chain`, `progn`, or `@<` headed expression. -/
+    Negative example: any nested `chain`, `unique`, `progn`, or `@<` headed expression. -/
 def isStableCommonForm : Atom → Bool
   | .expression (.symbol "chain" :: _) => false
   | .expression (.symbol "collapse-bind" :: _) => false
@@ -33,6 +33,7 @@ def isStableCommonForm : Atom → Bool
   | .expression (.symbol "atom-subst" :: _) => false
   | .expression (.symbol "nop" :: _) => false
   | .expression (.symbol "function" :: _) => false
+  | .expression (.symbol "unique" :: _) => false
   | .expression (.symbol "progn" :: _) => false
   | .expression (.symbol "prog1" :: _) => false
   | .expression (.symbol "foldall" :: _) => false
@@ -51,6 +52,7 @@ def isForbiddenHeadSymbol : Atom → Bool
   | .symbol "atom-subst" => true
   | .symbol "nop" => true
   | .symbol "function" => true
+  | .symbol "unique" => true
   | .symbol "progn" => true
   | .symbol "prog1" => true
   | .symbol "foldall" => true
@@ -102,6 +104,8 @@ def isValidatedHESource : Atom → Bool
       isValidatedHESource x
   | .expression [.symbol "function", .expression [.symbol "return", x]] =>
       isValidatedHESource x
+  | .expression [.symbol "unique", x] =>
+      isValidatedHESource x
   | .expression (.symbol "chain" :: _) => false
   | .expression (.symbol "collapse-bind" :: _) => false
   | .expression (.symbol "superpose-bind" :: _) => false
@@ -110,6 +114,7 @@ def isValidatedHESource : Atom → Bool
   | .expression (.symbol "atom-subst" :: _) => false
   | .expression (.symbol "nop" :: _) => false
   | .expression (.symbol "function" :: _) => false
+  | .expression (.symbol "unique" :: _) => false
   | .expression (.symbol "progn" :: _) => false
   | .expression (.symbol "prog1" :: _) => false
   | .expression (.symbol "foldall" :: _) => false
@@ -129,6 +134,7 @@ def isValidatedHEHeadSource : Atom → Bool
   | .symbol "atom-subst" => false
   | .symbol "nop" => false
   | .symbol "function" => false
+  | .symbol "unique" => false
   | .symbol "progn" => false
   | .symbol "prog1" => false
   | .symbol "foldall" => false
@@ -148,6 +154,9 @@ example : isStableCommonForm (.expression [.symbol "let", .var "$x", .symbol "a"
   native_decide
 
 example : isStableCommonForm (.expression [.symbol "progn", .symbol "a", .symbol "b"]) = false := by
+  native_decide
+
+example : isStableCommonForm (.expression [.symbol "unique", .symbol "goal"]) = false := by
   native_decide
 
 example : isStableCommonForm (.expression [.symbol "foldall",
@@ -199,6 +208,7 @@ def isValidatedPeTTaSource : Atom → Bool
   | .expression (.symbol "atom-subst" :: _) => false
   | .expression (.symbol "nop" :: _) => false
   | .expression (.symbol "function" :: _) => false
+  | .expression (.symbol "unique" :: _) => false
   | .expression (.symbol "foldall" :: _) => false
   | .expression (.symbol "@<" :: _) => false
   | .expression (.symbol "@>" :: _) => false
@@ -230,6 +240,7 @@ def isValidatedPeTTaHeadSource : Atom → Bool
   | .symbol "atom-subst" => false
   | .symbol "nop" => false
   | .symbol "function" => false
+  | .symbol "unique" => false
   | .symbol "progn" => false
   | .symbol "prog1" => false
   | .symbol "foldall" => false
@@ -270,6 +281,9 @@ example : isValidatedPeTTaSource (.expression
 
 example : isValidatedPeTTaSource (.expression
     [.expression [.symbol "prog1", .symbol "chain"], .symbol "arg"]) = false := by
+  native_decide
+
+example : isValidatedPeTTaSource (.expression [.symbol "unique", .symbol "goal"]) = false := by
   native_decide
 
 example : isValidatedPeTTaSource (.expression
@@ -378,10 +392,15 @@ theorem stableCommonForm_cons_of_head (hd : Atom) (args : List Atom)
                                 have hfalse : False := by
                                   simp [isStableCommonHead, isStableCommonForm, isForbiddenHeadSymbol] at hhd
                                 exact False.elim hfalse
-                              · simp [isStableCommonForm, isStableCommonExpr, isStableCommonHead,
-                                  isForbiddenHeadSymbol, isStableCommonList, hchain, hcollapse,
-                                  hsuperpose, hswitch, hswitchm, hatomsubst, hnop, hfunction,
-                                  hprogn, hprog1, hfoldall, hlt, hgt]
+                              · by_cases hunique : c = "unique"
+                                · subst hunique
+                                  have hfalse : False := by
+                                    simp [isStableCommonHead, isStableCommonForm, isForbiddenHeadSymbol] at hhd
+                                  exact False.elim hfalse
+                                · simp [isStableCommonForm, isStableCommonExpr, isStableCommonHead,
+                                    isForbiddenHeadSymbol, isStableCommonList, hchain, hcollapse,
+                                    hsuperpose, hswitch, hswitchm, hatomsubst, hnop, hfunction,
+                                    hprogn, hprog1, hfoldall, hlt, hgt, hunique]
   | grounded _ =>
       simp [isStableCommonForm, isStableCommonExpr, isStableCommonHead, isForbiddenHeadSymbol]
   | expression es =>

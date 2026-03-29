@@ -106,8 +106,7 @@ test_he_to_petta_trusted(1, "new-space → trusted PeTTa gensym call",
 
 test_he_to_petta_trusted(2, "change-state! return value → (State val) wrapper via chain",
     [chain, ['change-state!', '&counter', 42], '$s', [use, '$s']],
-    [let, '$__tr_discard_2', ['change-state!', '&counter', 42],
-     [let, '$s', ['State', 42], [use, '$s']]]).
+    trusted_state_chain_shape('&counter', 42, '$s', [use, '$s'])).
 
 test_he_to_petta(20, "new-state passthrough (shared surface)",
     ['new-state', 1],
@@ -120,6 +119,10 @@ test_he_to_petta(21, "get-state passthrough (shared surface)",
 test_he_to_petta(22, "change-state! passthrough (shared surface)",
     ['change-state!', '&state', 5],
     ['change-state!', '&state', 5]).
+
+test_he_to_petta(24, "unique → collapse + unique-atom + superpose",
+    [unique, [let, '$x', [superpose, [1, 2, 1, 3, 2]], [pair, '$x', '$x']]],
+    unique_shape([let, '$x', [superpose, [1, 2, 1, 3, 2]], [pair, '$x', '$x']])).
 
 test_he_to_petta(15, "deduce-And → let* sequencing",
     ['And',
@@ -260,6 +263,11 @@ test_petta_to_he(22, "change-state! passthrough (shared surface)",
     ['change-state!', '&state', 5],
     ['change-state!', '&state', 5]).
 
+test_petta_to_he(24, "unique-atom(collapse ...) → collapse(unique ...)",
+    ['unique-atom', [collapse,
+      [let, '$x', [superpose, [1, 2, 1, 3, 2]], [pair, '$x', '$x']]]],
+    [collapse, [unique, [let, '$x', [superpose, [1, 2, 1, 3, 2]], [pair, '$x', '$x']]]]).
+
 test_petta_to_he(13, "equation with progn body (fresh vars)",
     ['=', [foo, x], [progn, [bar, x], [baz, x]]],
     capture_must_not_occur).
@@ -358,6 +366,22 @@ run_one_he(N, Name, Input, capture_must_not_occur) :- !,
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
     ).
 
+run_one_he(N, Name, Input, unique_shape(ArgExpected)) :- !,
+    (   he_translate_term(Input, Result)
+    ->  (   Result = [let, ListVar, [collapse, ArgExpected],
+                      [let, UniqueVar, ['unique-atom', ListVar],
+                       [superpose, UniqueVar]]],
+            atom_string(ListVar, ListS),
+            atom_string(UniqueVar, UniqueS),
+            sub_string(ListS, 0, _, _, "$__tr_"),
+            sub_string(UniqueS, 0, _, _, "$__tr_")
+        ->  format("  ✓ ~w: ~w (fresh binders: ~w, ~w)~n",
+                    [N, Name, ListVar, UniqueVar])
+        ;   format("  ✗ ~w: ~w (bad unique lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
 run_one_he(N, Name, Input, Expected) :-
     (   test_he_to_petta(N, _, Input, _),
         (   Input = ['=', _, _]
@@ -367,6 +391,20 @@ run_one_he(N, Name, Input, Expected) :-
         (   Result == Expected
         ->  format("  ✓ ~w: ~w~n", [N, Name])
         ;   format("  ✗ ~w: ~w~n    Expected: ~w~n    Got:      ~w~n", [N, Name, Expected, Result])
+        )
+    ;   format("  ? ~w: ~w (error)~n", [N, Name])
+    ).
+
+run_one_he_trusted(N, Name, Input, trusted_state_chain_shape(Ref, Val, Var, Body)) :- !,
+    (   test_he_to_petta_trusted(N, _, Input, _),
+        he_to_petta:translate_term_trusted(Input, Result),
+        (   Result = [let, Fresh, ['change-state!', Ref, Val],
+                      [let, Var, ['State', Val], Body]],
+            atom_string(Fresh, FreshS),
+            sub_string(FreshS, 0, _, _, "$__tr_")
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got:      ~w~n",
+                    [N, Name, Result])
         )
     ;   format("  ? ~w: ~w (error)~n", [N, Name])
     ).

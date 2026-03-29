@@ -47,7 +47,11 @@ private theorem translateHE_id_of_stableCommonForm_aux
                       · by_cases hfoldall : c = "foldall"
                         · subst hfoldall
                           simp [isStableCommonForm] at h
-                        · have hargs : isStableCommonList args = true := by
+                        · have hunique : c ≠ "unique" := by
+                            intro hc
+                            subst hc
+                            simp [isStableCommonForm] at h
+                          have hargs : isStableCommonList args = true := by
                             have hprogn : c ≠ "progn" := by
                               intro hc
                               subst hc
@@ -69,7 +73,7 @@ private theorem translateHE_id_of_stableCommonForm_aux
                                   isStableCommonList args = true := by
                               simpa [isStableCommonForm, isStableCommonExpr, isStableCommonHead,
                                 isForbiddenHeadSymbol, hchain, hcollapse, hsuperpose, hswitch,
-                                hswitchm, hatomsubst, hnop, hfunction, hfoldall, hprogn,
+                                hswitchm, hatomsubst, hnop, hfunction, hfoldall, hunique, hprogn,
                                 hprog1, hlt, hgt] using h
                             exact hparts.2
                           have htail := translateHEList_id_of_stableCommonList_aux args s hargs
@@ -79,7 +83,7 @@ private theorem translateHE_id_of_stableCommonForm_aux
                             exact congrArg Prod.snd htail
                           simp [translateHE, translateHE.translateHEList, hchain, hcollapse,
                             hsuperpose, hswitch, hswitchm, hatomsubst, hnop, hfunction,
-                            hfoldall, htail₁, htail₂]
+                            hfoldall, hunique, htail₁, htail₂]
       | var v =>
         have hargs : isStableCommonList args = true := by
           simpa [isStableCommonForm, isStableCommonExpr, isStableCommonHead,
@@ -175,12 +179,16 @@ private theorem translatePeTTa_id_of_stableCommonForm_aux
                     intro hc
                     subst hc
                     simp [isStableCommonForm] at h
+                  have hunique : c ≠ "unique" := by
+                    intro hc
+                    subst hc
+                    simp [isStableCommonForm] at h
                   have hparts :
                       isStableCommonHead (.symbol c) = true ∧
                         isStableCommonList args = true := by
                     simpa [isStableCommonForm, isStableCommonExpr, isStableCommonHead,
                       isForbiddenHeadSymbol, hchain, hcollapse, hsuperpose, hswitch,
-                      hswitchm, hatomsubst, hnop, hfunction, hprogn, hprog1, hfoldall,
+                      hswitchm, hatomsubst, hnop, hfunction, hunique, hprogn, hprog1, hfoldall,
                       hlt, hgt] using h
                   have htail := translatePeTTaList_id_of_stableCommonList_aux args s hparts.2
                   have htail₁ : (translatePeTTa.translatePeTTaList args s).1 = args := by

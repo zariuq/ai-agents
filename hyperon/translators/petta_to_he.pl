@@ -123,6 +123,11 @@ translate_term_mode(Mode, [call, [gensym, Prefix]], ['new-space']) :-
     trusted_mode(Mode),
     trusted_new_space_prefix(Prefix), !.
 
+%% PeTTa compatibility idiom: unique-atom(collapse X) computes a deduplicated
+%% list, so raise it to the list-preserving HE surface collapse(unique X).
+translate_term_mode(Mode, ['unique-atom', [collapse, Arg]], [collapse, [unique, TArg]]) :-
+    translate_term_mode(Mode, Arg, TArg), !.
+
 %% @< → <s
 translate_term_mode(Mode, ['@<', A, B], ['<s', TA, TB]) :-
     translate_term_mode(Mode, A, TA),

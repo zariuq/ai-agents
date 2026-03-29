@@ -42,6 +42,12 @@ translate_program_trusted(Program, Out) :-
 
 trusted_new_space_prefix('&__tr_space_').
 
+fresh_var(Prefix, Var) :-
+    (   predicate_property(petta_to_he:fresh_var(_,_), defined)
+    ->  petta_to_he:fresh_var(Prefix, Var)
+    ;   atomic_list_concat(['$__tr_', Prefix, '_0'], Var)
+    ).
+
 %% trusted change-state! return value bridge:
 %% HE's change-state! returns (State val), PeTTa's returns true.
 %% When the return value is bound (via chain), wrap to produce (State val)
@@ -53,10 +59,7 @@ translate_term_mode(trusted, [chain, ['change-state!', Ref, Val], Var, Body],
                     TOut) :-
     translate_term_mode(trusted, Val, TVal),
     translate_term_mode(trusted, Body, TBody),
-    (   predicate_property(petta_to_he:fresh_var(_,_), defined)
-    ->  petta_to_he:fresh_var(discard, FV)
-    ;   FV = '$__tr_discard_0'
-    ),
+    fresh_var(discard, FV),
     TOut = [let, FV, ['change-state!', Ref, TVal],
             [let, Var, ['State', TVal], TBody]], !.
 
@@ -78,6 +81,17 @@ translate_term_mode(Mode, ['superpose-bind', Inner], [superpose, TInner]) :-
 %% In trusted mode, lower to a Prolog gensym call that PeTTa compiles reliably.
 translate_term_mode(trusted, ['new-space'], [call, [gensym, Prefix]]) :-
     trusted_new_space_prefix(Prefix), !.
+
+%% HE stdlib `unique` is generic: collapse the stream, deduplicate the resulting
+%% list, then re-emit it as a stream. PeTTa only hardcodes the direct
+%% `unique(superpose ...)` case, so the translator lowers the generic HE form.
+translate_term_mode(Mode, [unique, Arg], TOut) :-
+    translate_term_mode(Mode, Arg, TArg),
+    fresh_var(collapsed, ListVar),
+    fresh_var(unique, UniqueVar),
+    TOut = [let, ListVar, [collapse, TArg],
+            [let, UniqueVar, ['unique-atom', ListVar],
+             [superpose, UniqueVar]]], !.
 
 %% HE-style conjunction of recursive deductions needs explicit binding flow in PeTTa.
 %% This preserves shared-variable scoping across the two deduction branches.
@@ -104,10 +118,7 @@ translate_term_mode(Mode, ['atom-subst', Atom, Var, Tmpl], [let, Var, TAtom, TTm
 %% nop → (let $fresh_ X ())
 %% Fresh variable to avoid capture (council: Carneiro, Wadler)
 translate_term_mode(Mode, [nop, X], [let, FV, TX, '()']) :-
-    (   predicate_property(petta_to_he:fresh_var(_,_), defined)
-    ->  petta_to_he:fresh_var(discard, FV)
-    ;   FV = '$__tr_discard_0'
-    ),
+    fresh_var(discard, FV),
     translate_term_mode(Mode, X, TX), !.
 
 %% function/return unwrap

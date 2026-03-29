@@ -120,12 +120,14 @@ Emits `collect` instead of `collapse` for `foldall` lowering
 | `nop expr` | `let $_ expr ()` |
 | `switch val branches` | `case val branches` |
 | `function (return x)` | `x` |
+| `unique expr` | `let $xs (collapse expr') (let $u (unique-atom $xs) (superpose $u))` |
 
 | PeTTa Construct | HE Equivalent |
 |----------------|--------------|
 | `progn a b c` | `let $_ a (let $_ b c)` |
 | `prog1 a b c` | `let $r a (let $_ b (let $_ c $r))` |
 | `foldall agg goal init` | `let $list (collapse goal) (foldl-atom ...)` |
+| `unique-atom (collapse expr)` | `collapse (unique expr')` |
 | `@<` | `<s` (string comparison) |
 
 ## What's NOT Translated

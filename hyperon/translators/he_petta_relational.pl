@@ -41,6 +41,19 @@ he_to_petta(['superpose-bind', Inner], [superpose, TInner], S0, S1) :-
     he_to_petta(Inner, TInner, S0, S1), !.
 
 /*
+  HE stdlib `unique` is generic. PeTTa only has a direct stream-op rewrite for
+  unique(superpose ...), so the verified translator lowers any HE unique-term
+  through collapse + unique-atom + superpose.
+*/
+he_to_petta([unique, Arg],
+            [let, ListVar, [collapse, TArg],
+             [let, UniqueVar, ['unique-atom', ListVar], [superpose, UniqueVar]]],
+            S0, S3) :-
+    he_to_petta(Arg, TArg, S0, S1),
+    fresh_name(collapsed, S1, S2, ListVar),
+    fresh_name(unique, S2, S3, UniqueVar), !.
+
+/*
   HE-style conjunction of recursive deductions relies on shared variable
   bindings flowing from the left branch into the right branch. In PeTTa this
   needs to be made explicit with let* sequencing.
@@ -108,6 +121,9 @@ petta_to_he([foldall, Agg, Goal, Init],
     fresh_name(collapsed, S3, S4, ListVar),
     fresh_name(acc, S4, S5, AccVar),
     fresh_name(item, S5, S6, ItemVar), !.
+
+petta_to_he(['unique-atom', [collapse, Arg]], [collapse, [unique, TArg]], S0, S1) :-
+    petta_to_he(Arg, TArg, S0, S1), !.
 
 petta_to_he(['@<', A, B], ['<s', TA, TB], S0, S2) :-
     petta_to_he(A, TA, S0, S1),

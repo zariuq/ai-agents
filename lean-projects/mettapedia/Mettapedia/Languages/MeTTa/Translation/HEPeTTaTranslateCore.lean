@@ -65,6 +65,7 @@ Mirrors `he_to_petta/4` from `he_petta_relational.pl`. -/
     | `(atom-subst A V T)`          | `(let V A' T')`          |
     | `(nop X)`                     | `(let $fresh X' ())`     |
     | `(function (return X))`       | `X'`                     |
+    | `(unique X)`                  | `let(collapse X') + dedup`|
     | `(expr ...)`                  | recurse into subterms    |
     | variable / symbol / other     | identity                 | -/
 def translateHE (a : Atom) (supply : Nat) : Atom × Nat :=
@@ -104,6 +105,17 @@ def translateHE (a : Atom) (supply : Nat) : Atom × Nat :=
   -- function (return X) → unwrap
   | .expression [.symbol "function", .expression [.symbol "return", x]] =>
     translateHE x supply
+  -- unique X → let $xs (collapse X') (let $u (unique-atom $xs) (superpose $u))
+  | .expression [.symbol "unique", x] =>
+    let (tx, s1) := translateHE x supply
+    let (listVar, s2) := freshVar "collapsed" s1
+    let (uniqueVar, s3) := freshVar "unique" s2
+    (.expression
+      [.symbol "let", listVar,
+        .expression [.symbol "collapse", tx],
+        .expression [.symbol "let", uniqueVar,
+          .expression [.symbol "unique-atom", listVar],
+          .expression [.symbol "superpose", uniqueVar]]], s3)
   -- generic expression: recurse into subterms
   | .expression es =>
     let (tes, s1) := translateHEList es supply
@@ -135,6 +147,7 @@ Mirrors `petta_to_he/4` from `he_petta_relational.pl`. -/
     | `(prog1 A)`                   | `A'`                     |
     | `(prog1 A ... Z)`             | capture first, eval rest |
     | `(foldall F G I)`             | `let(collapse G') + fold`|
+    | `(unique-atom (collapse X))`  | `(collapse (unique X'))` |
     | `(@< A B)`                    | `(<s A' B')`             |
     | `(@> A B)`                    | `(not (<s A' B'))`       |
     | `(expr ...)`                  | recurse into subterms    |
@@ -161,6 +174,10 @@ def translatePeTTa (a : Atom) (supply : Nat) : Atom × Nat :=
         .expression
           [.symbol "foldl-atom", listVar, tinit, accVar, itemVar,
             .expression [.symbol "eval", .expression [tagg, accVar, itemVar]]]], s6)
+  -- PeTTa unique workaround surface → list-preserving HE unique surface
+  | .expression [.symbol "unique-atom", .expression [.symbol "collapse", x]] =>
+    let (tx, s1) := translatePeTTa x supply
+    (.expression [.symbol "collapse", .expression [.symbol "unique", tx]], s1)
   -- @< → <s
   | .expression [.symbol "@<", a', b'] =>
     let (ta, s1) := translatePeTTa a' supply
@@ -261,6 +278,14 @@ theorem translatePeTTa_foldall_extended_boundary (agg goal init : Atom) (s : Nat
     let ext := translatePeTTaFoldallExtended agg goal init s
     normalizeExtendedFoldallCollector ext.1 = pure.1 ∧ ext.2 = pure.2 := by
   simp [translatePeTTa, translatePeTTaFoldallExtended, normalizeExtendedFoldallCollector]
+
+/-- `translatePeTTa` raises the native list-valued PeTTa unique workaround to
+    the list-preserving HE surface `collapse (unique X)`. -/
+theorem translatePeTTa_uniqueWorkaround (x : Atom) (s : Nat) :
+    translatePeTTa (.expression
+      [.symbol "unique-atom", .expression [.symbol "collapse", x]]) s =
+    let (tx, s1) := translatePeTTa x s
+    (.expression [.symbol "collapse", .expression [.symbol "unique", tx]], s1) := rfl
 
 /-! ## Optional HE optimization for translated PeTTa→HE output
 
@@ -419,6 +444,20 @@ theorem translateHE_nop (x : Atom) (s : Nat) :
     let (fresh, s1) := freshVar "discard" s
     let (tx, s2) := translateHE x s1
     (.expression [.symbol "let", fresh, tx, .symbol "()"], s2) := rfl
+
+/-- `translateHE` on `(unique X)` lowers HE stdlib uniqueness to
+    `collapse + unique-atom + superpose`. -/
+theorem translateHE_unique (x : Atom) (s : Nat) :
+    translateHE (.expression [.symbol "unique", x]) s =
+    let (tx, s1) := translateHE x s
+    let (listVar, s2) := freshVar "collapsed" s1
+    let (uniqueVar, s3) := freshVar "unique" s2
+    (.expression
+      [.symbol "let", listVar,
+        .expression [.symbol "collapse", tx],
+        .expression [.symbol "let", uniqueVar,
+          .expression [.symbol "unique-atom", listVar],
+          .expression [.symbol "superpose", uniqueVar]]], s3) := rfl
 
 /-- `translateHE` preserves `atomToPattern` on identity cases. -/
 theorem translateHE_identity_preserves (a : Atom) (s : Nat)
@@ -1068,8 +1107,142 @@ theorem translateHE_translatable (a : Atom) (s : Nat)
                                       simpa [translateHE, translateHE.translateHEList] using hgeneric
                               | cons y ys =>
                                 simpa [translateHE, translateHE.translateHEList] using hgeneric
-                          · simpa [translateHE, translateHE.translateHEList, hswitch, hswitchm, hchain,
-                              hcollapse, hsuperpose, hatomsubst, hnop, hfunction] using hgeneric
+                          · by_cases hunique : c = "unique"
+                            · subst hunique
+                              cases args with
+                              | nil =>
+                                  simpa [translateHE, translateHE.translateHEList] using hgeneric
+                              | cons inner rest =>
+                                  cases rest with
+                                  | nil =>
+                                      have hinner : Translatable (translateHE inner s).1 :=
+                                        harg_ih inner (by simp) s (hargs inner (by simp))
+                                      have hlistVarPure :
+                                          PureTranslatable (freshVar "collapsed" (translateHE inner s).2).1 := by
+                                        simp [freshVar, pureTranslatable_var]
+                                      have huniqVarPure :
+                                          PureTranslatable
+                                            (freshVar "unique" (freshVar "collapsed" (translateHE inner s).2).2).1 := by
+                                        simp [freshVar, pureTranslatable_var]
+                                      have hlistVar :
+                                          Translatable (freshVar "collapsed" (translateHE inner s).2).1 :=
+                                        PureTranslatable.toTranslatable hlistVarPure
+                                      have huniqVar :
+                                          Translatable
+                                            (freshVar "unique" (freshVar "collapsed" (translateHE inner s).2).2).1 :=
+                                        PureTranslatable.toTranslatable huniqVarPure
+                                      have hcollapseExpr :
+                                          Translatable
+                                            (.expression
+                                              [.symbol "collapse", (translateHE inner s).1]) := by
+                                        apply translatable_expr_of_args "collapse" [(translateHE inner s).1]
+                                        · decide
+                                        · decide
+                                        · intro x hx
+                                          simp at hx
+                                          rcases hx with rfl
+                                          exact hinner
+                                      have huniqueAtomExpr :
+                                          Translatable
+                                            (.expression
+                                              [.symbol "unique-atom",
+                                                (freshVar "collapsed" (translateHE inner s).2).1]) := by
+                                        apply translatable_expr_of_args "unique-atom"
+                                          [(freshVar "collapsed" (translateHE inner s).2).1]
+                                        · decide
+                                        · decide
+                                        · intro x hx
+                                          simp at hx
+                                          rcases hx with rfl
+                                          exact hlistVar
+                                      have hsuperposeExpr :
+                                          Translatable
+                                            (.expression
+                                              [.symbol "superpose",
+                                                (freshVar "unique"
+                                                  (freshVar "collapsed" (translateHE inner s).2).2).1]) := by
+                                        apply translatable_expr_of_args "superpose"
+                                          [(freshVar "unique" (freshVar "collapsed" (translateHE inner s).2).2).1]
+                                        · decide
+                                        · decide
+                                        · intro x hx
+                                          simp at hx
+                                          rcases hx with rfl
+                                          exact huniqVar
+                                      have hinnerLet :
+                                          Translatable
+                                            (.expression
+                                              [.symbol "let",
+                                                (freshVar "unique" (freshVar "collapsed" (translateHE inner s).2).2).1,
+                                                .expression
+                                                  [.symbol "unique-atom",
+                                                    (freshVar "collapsed" (translateHE inner s).2).1],
+                                                .expression
+                                                  [.symbol "superpose",
+                                                    (freshVar "unique"
+                                                      (freshVar "collapsed" (translateHE inner s).2).2).1]]) := by
+                                        apply translatable_expr_of_args "let"
+                                          [(freshVar "unique" (freshVar "collapsed" (translateHE inner s).2).2).1,
+                                           .expression
+                                             [.symbol "unique-atom",
+                                               (freshVar "collapsed" (translateHE inner s).2).1],
+                                           .expression
+                                             [.symbol "superpose",
+                                               (freshVar "unique"
+                                                 (freshVar "collapsed" (translateHE inner s).2).2).1]]
+                                        · decide
+                                        · decide
+                                        · intro x hx
+                                          simp at hx
+                                          rcases hx with rfl | rfl | rfl
+                                          · exact huniqVar
+                                          · exact huniqueAtomExpr
+                                          · exact hsuperposeExpr
+                                      have houterLet :
+                                          Translatable
+                                            (.expression
+                                              [.symbol "let",
+                                                (freshVar "collapsed" (translateHE inner s).2).1,
+                                                .expression
+                                                  [.symbol "collapse", (translateHE inner s).1],
+                                                .expression
+                                                  [.symbol "let",
+                                                    (freshVar "unique"
+                                                      (freshVar "collapsed" (translateHE inner s).2).2).1,
+                                                    .expression
+                                                      [.symbol "unique-atom",
+                                                        (freshVar "collapsed" (translateHE inner s).2).1],
+                                                    .expression
+                                                      [.symbol "superpose",
+                                                        (freshVar "unique"
+                                                          (freshVar "collapsed" (translateHE inner s).2).2).1]]]) := by
+                                        apply translatable_expr_of_args "let"
+                                          [(freshVar "collapsed" (translateHE inner s).2).1,
+                                           .expression [.symbol "collapse", (translateHE inner s).1],
+                                           .expression
+                                             [.symbol "let",
+                                               (freshVar "unique"
+                                                 (freshVar "collapsed" (translateHE inner s).2).2).1,
+                                               .expression
+                                                 [.symbol "unique-atom",
+                                                   (freshVar "collapsed" (translateHE inner s).2).1],
+                                               .expression
+                                                 [.symbol "superpose",
+                                                   (freshVar "unique"
+                                                     (freshVar "collapsed" (translateHE inner s).2).2).1]]]
+                                        · decide
+                                        · decide
+                                        · intro x hx
+                                          simp at hx
+                                          rcases hx with rfl | rfl | rfl
+                                          · exact hlistVar
+                                          · exact hcollapseExpr
+                                          · exact hinnerLet
+                                      simpa [translateHE, translateHE.translateHEList] using houterLet
+                                  | cons y ys =>
+                                      simpa [translateHE, translateHE.translateHEList] using hgeneric
+                            · simpa [translateHE, translateHE.translateHEList, hswitch, hswitchm, hchain,
+                                hcollapse, hsuperpose, hatomsubst, hnop, hfunction, hunique] using hgeneric
           | _ =>
             -- non-symbol head: atomToPattern fails, contradicting Translatable
             exfalso; simp [Translatable, atomToPattern] at ht
@@ -1369,8 +1542,128 @@ theorem translateHE_preserves_pureTranslatable (a : Atom) (s : Nat)
                                       simpa [translateHE, translateHE.translateHEList] using hgeneric
                               | cons y ys =>
                                 simpa [translateHE, translateHE.translateHEList] using hgeneric
-                          · simpa [translateHE, translateHE.translateHEList, hswitch, hswitchm, hchain,
-                              hcollapse, hsuperpose, hatomsubst, hnop, hfunction] using hgeneric
+                          · by_cases hunique : c = "unique"
+                            · subst hunique
+                              cases args with
+                              | nil =>
+                                  simpa [translateHE, translateHE.translateHEList] using hgeneric
+                              | cons inner rest =>
+                                  cases rest with
+                                  | nil =>
+                                      have hinner : PureTranslatable (translateHE inner s).1 :=
+                                        harg_ih inner (by simp) s (hargs inner (by simp))
+                                      have hlistVar :
+                                          PureTranslatable (freshVar "collapsed" (translateHE inner s).2).1 := by
+                                        simp [freshVar, pureTranslatable_var]
+                                      have huniqVar :
+                                          PureTranslatable
+                                            (freshVar "unique" (freshVar "collapsed" (translateHE inner s).2).2).1 := by
+                                        simp [freshVar, pureTranslatable_var]
+                                      have hcollapseExpr :
+                                          PureTranslatable
+                                            (.expression
+                                              [.symbol "collapse", (translateHE inner s).1]) :=
+                                        pureTranslatable_expr "collapse" [(translateHE inner s).1]
+                                          (by decide)
+                                          (by decide)
+                                          (by intro x hx; simp at hx; rcases hx with rfl; exact hinner)
+                                      have huniqueAtomExpr :
+                                          PureTranslatable
+                                            (.expression
+                                              [.symbol "unique-atom",
+                                                (freshVar "collapsed" (translateHE inner s).2).1]) :=
+                                        pureTranslatable_expr "unique-atom"
+                                          [(freshVar "collapsed" (translateHE inner s).2).1]
+                                          (by decide)
+                                          (by decide)
+                                          (by intro x hx; simp at hx; rcases hx with rfl; exact hlistVar)
+                                      have hsuperposeExpr :
+                                          PureTranslatable
+                                            (.expression
+                                              [.symbol "superpose",
+                                                (freshVar "unique"
+                                                  (freshVar "collapsed" (translateHE inner s).2).2).1]) :=
+                                        pureTranslatable_expr "superpose"
+                                          [(freshVar "unique" (freshVar "collapsed" (translateHE inner s).2).2).1]
+                                          (by decide)
+                                          (by decide)
+                                          (by intro x hx; simp at hx; rcases hx with rfl; exact huniqVar)
+                                      have hinnerLet :
+                                          PureTranslatable
+                                            (.expression
+                                              [.symbol "let",
+                                                (freshVar "unique" (freshVar "collapsed" (translateHE inner s).2).2).1,
+                                                .expression
+                                                  [.symbol "unique-atom",
+                                                    (freshVar "collapsed" (translateHE inner s).2).1],
+                                                .expression
+                                                  [.symbol "superpose",
+                                                    (freshVar "unique"
+                                                      (freshVar "collapsed" (translateHE inner s).2).2).1]]) :=
+                                        pureTranslatable_expr "let"
+                                          [(freshVar "unique" (freshVar "collapsed" (translateHE inner s).2).2).1,
+                                           .expression
+                                             [.symbol "unique-atom",
+                                               (freshVar "collapsed" (translateHE inner s).2).1],
+                                           .expression
+                                             [.symbol "superpose",
+                                               (freshVar "unique"
+                                                 (freshVar "collapsed" (translateHE inner s).2).2).1]]
+                                          (by decide)
+                                          (by decide)
+                                          (by
+                                            intro x hx
+                                            simp at hx
+                                            rcases hx with rfl | rfl | rfl
+                                            · exact huniqVar
+                                            · exact huniqueAtomExpr
+                                            · exact hsuperposeExpr)
+                                      have houterLet :
+                                          PureTranslatable
+                                            (.expression
+                                              [.symbol "let",
+                                                (freshVar "collapsed" (translateHE inner s).2).1,
+                                                .expression
+                                                  [.symbol "collapse", (translateHE inner s).1],
+                                                .expression
+                                                  [.symbol "let",
+                                                    (freshVar "unique"
+                                                      (freshVar "collapsed" (translateHE inner s).2).2).1,
+                                                    .expression
+                                                      [.symbol "unique-atom",
+                                                        (freshVar "collapsed" (translateHE inner s).2).1],
+                                                    .expression
+                                                      [.symbol "superpose",
+                                                        (freshVar "unique"
+                                                          (freshVar "collapsed" (translateHE inner s).2).2).1]]]) :=
+                                        pureTranslatable_expr "let"
+                                          [(freshVar "collapsed" (translateHE inner s).2).1,
+                                           .expression [.symbol "collapse", (translateHE inner s).1],
+                                           .expression
+                                             [.symbol "let",
+                                               (freshVar "unique"
+                                                 (freshVar "collapsed" (translateHE inner s).2).2).1,
+                                               .expression
+                                                 [.symbol "unique-atom",
+                                                   (freshVar "collapsed" (translateHE inner s).2).1],
+                                               .expression
+                                                 [.symbol "superpose",
+                                                   (freshVar "unique"
+                                                     (freshVar "collapsed" (translateHE inner s).2).2).1]]]
+                                          (by decide)
+                                          (by decide)
+                                          (by
+                                            intro x hx
+                                            simp at hx
+                                            rcases hx with rfl | rfl | rfl
+                                            · exact hlistVar
+                                            · exact hcollapseExpr
+                                            · exact hinnerLet)
+                                      simpa [translateHE, translateHE.translateHEList] using houterLet
+                                  | cons y ys =>
+                                      simpa [translateHE, translateHE.translateHEList] using hgeneric
+                            · simpa [translateHE, translateHE.translateHEList, hswitch, hswitchm, hchain,
+                                hcollapse, hsuperpose, hatomsubst, hnop, hfunction, hunique] using hgeneric
           | _ =>
             exfalso
             obtain ⟨_, hp, _⟩ := ht
