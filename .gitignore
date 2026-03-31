@@ -133,6 +133,7 @@ atps/datasets/
 lean-projects/mettapedia/results/
 lean-projects/mettapedia/data/
 lean-projects/mettapedia/scripts/
+lean-projects/mettapedia/Mettapedia/external/exchangeability/
 
 # Auto-generated conformance runner output
 *.jsonl
