@@ -60,6 +60,11 @@ CLAUDE_SOLUTIONS.md
 GEMINI.md
 
 # External tools (have their own repos)
+CreuSAT
+LeanHammer
+creusot
+cvc5
+lean-auto
 PyRes
 eprover
 vampire
@@ -73,6 +78,7 @@ lash-*/
 megalodon/bin/
 megalodon/src/
 megalodon/examples/
+megalodon/mgw_test
 megalodon/secp256k1/
 megalodon/INSTALL
 megalodon/LICENSE
@@ -133,6 +139,14 @@ atps/datasets/
 lean-projects/mettapedia/results/
 lean-projects/mettapedia/data/
 lean-projects/mettapedia/scripts/
+lean-projects/algorithms/lean-toolchain
+lean-projects/mettapedia/Mettapedia/CategoricalLogic/lakefile.lean
+lean-projects/mettapedia/Mettapedia/CategoricalLogic/lean-toolchain
+lean-projects/mettapedia/Mettapedia/SetTheory/BorelDeterminacy/lakefile.lean
+lean-projects/mettapedia/Mettapedia/SetTheory/BorelDeterminacy/lean-toolchain
+lean-projects/mettapedia/Mettapedia/external/CertifyingDatalog/
+lean-projects/mettapedia/Mettapedia/external/exchangeability/
+lean-projects/mettapedia/Mettapedia/external/provenance-lean/
 
 # Auto-generated conformance runner output
 *.jsonl

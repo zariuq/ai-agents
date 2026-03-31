@@ -1,0 +1,773 @@
+\chapter{Desiderata}
+\label{ch:desiderata}
+
+Before building the calculus, we state what it must achieve.  This
+chapter lists eight normative requirements---\emph{desiderata}---that
+the design is held accountable to.  Each desideratum is stated as a
+named, numbered property so that later chapters can cite it explicitly
+when discharging it.  The desiderata are not axioms of the calculus
+(those come in Chapter~\ref{ch:world-models}).  They are requirements
+\emph{on} the calculus: properties that a well-designed framework for
+uncertain reasoning ought to satisfy, and that we claim this one does
+satisfy, under conditions that will be made precise.
+
+\paragraph{Why desiderata, not axioms?}
+An axiom is a starting point for derivation.  A desideratum is a
+target for design.  The distinction matters because several of the
+properties below are not simultaneously achievable in full generality:
+the no-go theorem (Chapter~\ref{ch:no-go}) shows that local chaining
+cannot be universally complete, and the five chaining-limitation
+theorems (Chapter~\ref{ch:error-transport}) show that scalar
+propagation inevitably loses information.  The desiderata say what
+we \emph{want}; the theorems say what we \emph{get} and where we
+\emph{stop}.  The interplay between the two is what gives the book
+its shape.
+
+\paragraph{Origin.}
+These desiderata crystallized during the formalization of Probabilistic
+Logic Networks~\cite{goertzel2009pln}.  The original PLN design
+implicitly assumed most of them---evidence-based reasoning, the
+strength-confidence decomposition, revision as evidence combination,
+the idea that inference rules are derived rather than primitive.  What
+PLN v0.9 did not do was state these requirements explicitly, prove them
+under typed conditions, or delineate where they fail.  The present list
+makes the implicit contract explicit.
+
+\paragraph{Independence.}
+The eight desiderata are logically independent: for each one, there
+exists a system satisfying the other seven while violating it.  These
+independence witnesses are noted after each statement.  The
+independence claim is not a theorem of the formal development---it is a
+design observation that justifies each desideratum's inclusion as
+non-redundant.
+
+\bigskip
+
+The desiderata are organized in three layers.  The first two
+(\textbf{D1}--\textbf{D2}) define the semantic kernel.  The next two
+(\textbf{D3}--\textbf{D4}) constrain the evidence architecture.
+The final four (\textbf{D5}--\textbf{D8}) constrain inference,
+retraction, conservation, and self-knowledge.
+
+\maplecourt{%
+Each desideratum will be illustrated with Maple Court's building
+model.  The illustrations are not proofs---they are concrete
+instances showing that the desiderata arise naturally in a realistic
+evidence-management scenario, not as abstract stipulations.}
+
+
+%% ═══════════════════════════════════════════════════════════════
+\section{D1: State Primacy}
+\label{sec:d1}
+%% ═══════════════════════════════════════════════════════════════
+
+\begin{definition}[Desideratum D1 --- State Primacy]
+\label{def:d1}
+A reasoning system should carry a \emph{revisable state} that can be
+updated, queried, partially retracted, and explained.  Truth-value
+summaries are derived from states, never stored as the primary
+representation.
+\end{definition}
+
+\noindent
+The philosophical motivation is elementary: a bare number has no parts.
+You cannot ask \emph{where} a strength of $0.83$ came from, which
+observations contributed to it, or what would happen if one source were
+retracted.  A state has structure.  It records what was observed, by
+whom, and when.  The four verbs of the calculus---revise, query,
+forget, explain---all require state; the first two require it
+minimally, the last two require it essentially.
+
+\paragraph{What D1 rules out.}
+Any system that stores only a scalar summary (a probability, a
+strength-confidence pair, a log-odds value) as its primary
+representation violates D1.  Classical probability calculus violates D1
+when probabilities are treated as fundamental rather than derived from
+evidence.  PLN v0.9 satisfies D1 in spirit (it carries evidence
+counts) but does not formalize the state operations that D1 enables
+(forgetting, explanation).
+
+\paragraph{Discharge.}
+D1 is discharged by the \code{WorldModel} typeclass
+(Chapter~\ref{ch:world-models}), which takes $\mathrm{State}$ as a
+first-class typed parameter with \code{revise}, \code{empty}, and
+\code{extract} as operations.
+
+\paragraph{Independence witness.}
+A lookup-table system that maps queries directly to real-valued
+answers (no state, no revision) satisfies D2--D8 trivially but
+violates D1: there is nothing to revise, retract, or explain.
+
+\maplecourt{%
+Each Maple Court apartment carries a private state over questions such
+as ``Is there a pipe leak?'' and ``Is the shower running?''  The state
+is not the strength $0.83$---it is the evidence pair $(5, 1)$: five
+leak alarms and one no-alarm reading.  The state can be revised
+(a new alarm arrives), queried (what is the current leak evidence?),
+forgotten (retract the reading from the miscalibrated sensor), and
+explained (the evidence came from sensors 3B-north and 3B-south,
+installed on 2025-01-15).}
+
+
+%% ═══════════════════════════════════════════════════════════════
+\section{D2: Compositional Extraction}
+\label{sec:d2}
+%% ═══════════════════════════════════════════════════════════════
+
+\begin{definition}[Desideratum D2 --- Compositional Extraction]
+\label{def:d2}
+In the primary regime, querying a revised state should decompose into
+queries of the components:
+\[
+  \mathrm{extract}(\mathrm{revise}(W_1, W_2),\, q)
+  = \mathrm{combine}(\mathrm{extract}(W_1, q),\;
+                       \mathrm{extract}(W_2, q)).
+\]
+That is, extraction should be a homomorphism from the state monoid to
+the value monoid.
+\end{definition}
+
+\noindent
+This is the algebraic heart of the additive regime.  It says that
+evidence from independent sources can be combined without interference:
+the result of revising and then querying equals the result of querying
+each source separately and then combining the answers.
+
+\paragraph{Why this matters.}
+Compositional extraction is what makes the profile-hom equivalence
+(Theorem~\ref{thm:universal-property}) possible: an additive world
+model \emph{is} a monoid homomorphism from states to answer profiles.
+Without compositionality, there is no universal property, no clean
+categorical picture, and no guarantee that compiled inference shortcuts
+agree with full extraction.
+
+\paragraph{The foundational justification.}
+D2 is not an arbitrary algebraic choice.  De~Finetti's representation
+theorem for exchangeable sequences shows that, under exchangeability,
+sufficient statistics add: $(n_1^+, n_1^-) + (n_2^+, n_2^-) =
+(n_1^+ + n_2^+, n_1^- + n_2^-)$.  The Solomonoff--de~Finetti
+foundation (Chapter~\ref{ch:world-models}, \S``The Solomonoff--De
+Finetti Foundation'') establishes the categorical necessity chain:
+exchangeability $\to$ de~Finetti mixture $\to$ Kyburg flattening $\to$
+Giry bind $\to$ evidence sufficiency.  D2 is the algebraic shadow of
+this necessity.
+
+\paragraph{What D2 rules out.}
+Any system whose query answers depend on the \emph{order} of evidence
+arrival (in the independent-sources case) violates D2.  Classical
+Bayesian updating satisfies D2 at the level of sufficient statistics
+but violates it at the level of posterior probabilities (normalization
+destroys additivity).  This is exactly why the calculus operates on
+carriers (sufficient statistics), not on probabilities.
+
+\paragraph{What D2 does not require.}
+D2 is stated for the ``primary regime'' (the additive regime).  It is
+\emph{not} required for all revision modes.  The overlap-aware,
+trust-gated, and coalition regimes of Chapter~\ref{ch:world-models}
+explicitly violate D2, and this is expected: when sources share
+information, or when trust gates revision, naive composition is wrong.
+D2 identifies the regime where composition is exact; the other regimes
+are frontier directions where D2's algebraic convenience is traded for
+richer structure.
+
+\paragraph{Discharge.}
+D2 is discharged by the \code{AdditiveWorldModel} axiom
+\code{extract\_add} (Chapter~\ref{ch:world-models},
+\S\ref{sec:additive-regime}) and the profile-hom equivalence
+(Theorem~\ref{thm:universal-property}).
+
+\paragraph{Independence witness.}
+A system that carries states and supports forgetting (D1, D6) but
+uses a nonlinear extraction---e.g.,
+$\mathrm{extract}(W_1 + W_2, q) = \max(\mathrm{extract}(W_1, q),
+\mathrm{extract}(W_2, q))$---satisfies D1, D3--D8 but violates D2.
+
+\maplecourt{%
+Apartment~3B receives two independent sensor reports about the pipe:
+$(3, 1)$ from the north sensor and $(2, 0)$ from the south sensor.
+D2 says the combined evidence is $(5, 1)$, the same whether we
+combine first and then query, or query each and combine the answers.
+The order of arrival does not matter; the combination is commutative
+and associative.  This is why the apartment can buffer overnight
+readings and batch-update at dawn (the sleep-consolidation theorem,
+Theorem~\ref{thm:sleep-consolidation}).}
+
+
+%% ═══════════════════════════════════════════════════════════════
+\section{D3: Generic Evidence Carriers}
+\label{sec:d3}
+%% ═══════════════════════════════════════════════════════════════
+
+\begin{definition}[Desideratum D3 --- Generic Carriers]
+\label{def:d3}
+The value type $V$ in which extracted answers live should be a
+\emph{parameter}, not a fixed datatype.  Different domains (binary
+yes/no, multi-valued categories, continuous measurements) should
+instantiate the same algebraic discipline with different carriers,
+and the calculus should not change across them.
+\end{definition}
+
+\noindent
+The motivation is domain coverage.  A framework that handles only
+binary queries is too narrow for practical applications.  Elevator
+health is three-valued (normal, slow, faulty).  Hallway humidity is
+continuous.  Gene expression levels are real-valued vectors.  Each
+domain has its own natural sufficient statistics, and a good calculus
+should accommodate all of them under one roof.
+
+\paragraph{The algebraic discipline.}
+D3 does not ask for $V$ to be completely arbitrary.  It asks for $V$ to
+be an \code{AddCommMonoid}: a commutative monoid under addition with a
+zero element.  This is the minimal structure needed for D2
+(compositional extraction) to make sense.  Each carrier instantiates
+this structure with its own sufficient statistics:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Carrier} & \textbf{$V$} & \textbf{AddCommMonoid operation} \\
+\midrule
+Binary & $(n^+, n^-) \in \mathbb{R}_{\ge 0}^2$
+  & componentwise addition \\
+Dirichlet & $(\alpha_1, \ldots, \alpha_k) \in \mathbb{R}_{\ge 0}^k$
+  & componentwise addition \\
+Normal-Gamma & $(n, \sum x_i, \sum x_i^2) \in \mathbb{R}_{\ge 0}^3$
+  & componentwise addition \\
+Amplitude & $z \in \mathbb{C}$
+  & complex addition \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+The same five algebraic rules (Chapter~\ref{ch:world-models},
+\S\ref{sec:algebraic-core}) hold for every row of this table.  The
+calculus changes only in the choice of carrier; the algebra stays
+the same.
+
+\paragraph{What D3 rules out.}
+Any framework that hard-codes a single evidence type (e.g., binary
+strength-confidence pairs) violates D3.  PLN v0.9 uses binary evidence
+exclusively; the world-model calculus treats binary evidence as one
+instance among several (Chapter~\ref{ch:evidence}).
+
+\paragraph{Discharge.}
+D3 is discharged by the parametric definition
+$\code{WorldModel (State Query V : Type*)}$ with $V$ constrained
+only by \code{[AddCommMonoid V]} in the additive regime.  The three
+formalized carriers (binary, Dirichlet, Normal-Gamma) are concrete
+instances (Chapter~\ref{ch:evidence}).
+
+\paragraph{Independence witness.}
+PLN v0.9 (with binary evidence only) satisfies D1, D2, D4--D8 but
+violates D3: the carrier is not generic.
+
+\maplecourt{%
+Maple Court uses all three formalized carriers simultaneously:
+binary $(n^+, n^-)$ for leak alarms and occupancy; Dirichlet
+$(\alpha_1, \alpha_2, \alpha_3)$ for the three-valued elevator
+health and laundry status; Normal-Gamma $(n, \sum x_i, \sum x_i^2)$
+for continuous humidity readings.  D3 ensures that the same revision
+law, the same extraction interface, and the same forgetting mechanism
+work across all three---only the carrier changes.}
+
+
+%% ═══════════════════════════════════════════════════════════════
+\section{D4: Evidence over Views}
+\label{sec:d4}
+%% ═══════════════════════════════════════════════════════════════
+
+\begin{definition}[Desideratum D4 --- Evidence over Views]
+\label{def:d4}
+Operational readouts---strength, confidence, interval bounds, posterior
+means---are \emph{derived projections} from richer evidence carriers.
+They must never be treated as the primary semantic objects.  Evidence
+is what you carry; views are what you display.
+\end{definition}
+
+\noindent
+This is the desideratum that most sharply distinguishes the world-model
+calculus from its predecessors.  Classical probability theory operates
+on probabilities.  PLN v0.9 operates on strength-confidence pairs.
+NARS operates on frequency-confidence pairs.  All of these treat the
+projected value as the thing being stored and manipulated.  D4 says:
+store the evidence, not the projection.
+
+\paragraph{Why views are not proof objects.}
+A strength value $s = 0.83$ tells you nothing about how much evidence
+produced it.  The evidence pairs $(5, 1)$ and $(500, 100)$ both have
+strength $\approx 0.83$, but the second is far more informative.
+More importantly, views are not additive
+(Proposition~\ref{prop:overview-views-not-semantic-core}): the
+strength of combined evidence is not the sum of individual strengths.
+Any system that propagates views through inference chains accumulates
+artificial precision---the five chaining-limitation theorems of
+Chapter~\ref{ch:error-transport} quantify this loss precisely.
+
+\paragraph{The categorical reading.}
+In categorical terms, evidence carriers are objects in the category
+of additive commutative monoids; views are morphisms from carriers to
+simpler monoids (or non-monoids).  The key fact is that most views
+are \emph{not} monoid homomorphisms: they do not preserve the
+additive structure.  This is why views cannot serve as the semantic
+layer---they break the algebraic structure that D2 provides.
+
+\paragraph{What D4 rules out.}
+Any system that stores only $s$ and $c$ (strength and confidence),
+discarding the underlying counts, violates D4.  Such a system cannot
+support forgetting (you cannot retract part of a scalar), cannot
+distinguish high-confidence low-evidence from high-confidence
+high-evidence, and cannot propagate full posteriors through inference
+chains.
+
+\paragraph{Discharge.}
+D4 is discharged by the architecture of the calculus: extraction
+returns values in the carrier $V$ (the evidence layer), and views
+are defined as separate functions on $V$ (Chapter~\ref{ch:views}).
+The strength non-monotonicity theorem
+(Theorem~\ref{thm:strength-not-monotone}) proves that views are not
+order-preserving, making the separation essential rather than
+conventional.
+
+\paragraph{Independence witness.}
+A system that stores full evidence carriers but has no extraction
+homomorphism (violating D2) still satisfies D4.  Conversely, a system
+with compositional extraction into a carrier isomorphic to its views
+(e.g., $V = \mathbb{R}$ with extraction returning strength directly)
+satisfies D2 but violates D4.
+
+\maplecourt{%
+Two Maple Court humidity sensors report binary evidence for ``pipe
+leak in 3B'': sensor~north gives $(5, 1)$ and sensor~south gives
+$(2, 0)$.  Combined evidence is $(7, 1)$, yielding strength
+$s = 7/8 = 0.875$ and confidence $c = 8/10 = 0.8$.  A system
+satisfying D4 stores $(7, 1)$---not the scalar pair $(0.875, 0.8)$.
+Why?  Because if sensor~north is later found to be miscalibrated (D6),
+the system can retract $(5, 1)$ to recover $(2, 0)$; from the scalars
+alone, the retraction is impossible.  The evidence pair is the proof
+object; the strength--confidence view is the projection.}
+
+
+%% ═══════════════════════════════════════════════════════════════
+\section{D5: Explicit Side Conditions}
+\label{sec:d5}
+%% ═══════════════════════════════════════════════════════════════
+
+\begin{definition}[Desideratum D5 --- Explicit Side Conditions]
+\label{def:d5}
+Every compiled inference shortcut must carry its structural
+assumptions as a typed, machine-checkable predicate $\Sigma$.  When
+$\Sigma$ holds, the shortcut is \emph{exact}: it agrees with full
+extraction.  When $\Sigma$ fails, the shortcut is not licensed.
+There are no hidden assumptions.
+\end{definition}
+
+\noindent
+This desideratum addresses a deep problem in practical uncertain
+reasoning: rules that work under unstated assumptions.  The PLN
+deduction formula is correct---but only under screening-off and
+positivity ($0 < s_B < 1$).  Naive Bayes classification is
+exact---but only under the conditional independence assumption encoded
+in a fork BN.  D5 says: state the assumption.  Prove the rule.  Check
+the assumption at runtime.
+
+\paragraph{The $\Sigma$-discipline.}
+In the calculus, every compiled rewrite has the form:
+\[
+  \frac{\Sigma \vdash \mathrm{sideCondition} \quad
+        \Sigma; \Gamma \vdash \mathrm{premises}}
+       {\Sigma; \Gamma \vdash \mathrm{conclusion}}
+\]
+The side condition $\Sigma$ appears above the line.  It is not
+optional.  It is a typed proposition that can be proved, checked by a
+decision procedure, or required as a hypothesis.
+
+\paragraph{What D5 rules out.}
+Any system that applies inference rules unconditionally---without
+checking or even stating their side conditions---violates D5.  PLN
+v0.9 states rules as universal formulas (``deduction always gives
+$s_{AC} = \ldots$''); the world-model calculus states them as
+conditional theorems (``if screening-off and positivity, then
+$s_{AC} = \ldots$'').  The no-go theorem
+(Chapter~\ref{ch:no-go}) shows that unconditional application is
+unsound in general: two world-model states can agree on all local
+per-link summaries while differing on the target query.
+
+\paragraph{Discharge.}
+D5 is discharged by the $\Sigma$-guarded rewrite architecture of
+Chapter~\ref{ch:sigma-rewrites} and the BN exactness theorems of
+Chapter~\ref{ch:bn-models}.  Each compiled rule in the catalog
+(Chapter~\ref{ch:sigma-rewrites}, \S``The Compiled Rule Catalog'')
+has an explicit $\Sigma$ column.
+
+\paragraph{Independence witness.}
+A purely extensional world model that stores full joint distributions
+and answers queries by marginalization satisfies D1--D4, D6--D8 but
+has no compiled rules and therefore trivially satisfies (or vacuously
+satisfies) D5.  The interesting violation is a system \emph{with}
+compiled rules but \emph{without} explicit side conditions---this is
+essentially PLN v0.9, which violates D5 while approximately
+satisfying the others.
+
+\maplecourt{%
+The compiled chain rule for
+$\mathrm{PipeLeak} \to \mathrm{WallHumidity} \to \mathrm{MoldRisk}$
+carries the side condition
+$\Sigma = \{\mathrm{ScreenOff}(\mathrm{PipeLeak},
+\mathrm{WallHumidity}, \mathrm{MoldRisk}),\;
+0 < s_{\mathrm{Humidity}} < 1\}$.
+When this $\Sigma$ holds---which it does for Maple Court's BN
+structure, where the DAG guarantees d-separation---the compiled
+formula gives the exact posterior.  When an additional direct
+leak-to-mold pathway is added (breaking screening-off), $\Sigma$
+fails and the rule is not licensed.  D5 ensures that this failure is
+detected, not silently ignored.}
+
+
+%% ═══════════════════════════════════════════════════════════════
+\section{D6: Retractability}
+\label{sec:d6}
+%% ═══════════════════════════════════════════════════════════════
+
+\begin{definition}[Desideratum D6 --- Retractability]
+\label{def:d6}
+It must be possible to \emph{retract} evidence within a declared scope
+while provably preserving all answers outside that scope.
+Formally: for every scope~$S$ and state~$W$, there exists a
+forgetting operation $\mathrm{forget}(S, W)$ such that
+\[
+  \forall q \notin S,\quad
+  \mathrm{extract}(\mathrm{forget}(S, W), q) = \mathrm{extract}(W, q).
+\]
+\end{definition}
+
+\noindent
+Retractability is what separates stateful reasoning from stateless
+truth-value manipulation.  If a sensor is found to be miscalibrated,
+its readings must be retractable.  If a privacy constraint requires
+apartment-level data to expire after 24~hours, the system must forget
+that data without corrupting building-level answers.  If a correction
+arrives (``observation~3 was a false alarm''), the system must remove
+that observation's contribution while preserving everything else.
+
+\paragraph{Why retractability is not deletion.}
+Deleting evidence is easy: set the state to zero.  Retractability is
+hard because it requires \emph{surgical} removal: forget the evidence
+within scope~$S$ while proving that answers outside~$S$ are unchanged.
+This requires the state to carry enough structure to distinguish what
+came from where---which is precisely what provenance provides
+(Chapter~\ref{ch:state-ops}, \S\ref{sec:provenance}).
+
+\paragraph{What D6 rules out.}
+Any system that cannot undo a revision---either because it stores only
+aggregate summaries (violating D1) or because it lacks provenance
+tracking---violates D6.  Classical Bayesian updating can, in principle,
+undo a conjugate update by subtracting the likelihood contribution,
+but this requires knowing which data point to subtract.  Without
+provenance, the data point is lost in the aggregate.
+
+\paragraph{Discharge.}
+D6 is discharged by the \code{ForgettingLayer} structure and the
+outside-invariant law of Chapter~\ref{ch:state-ops},
+\S\ref{sec:forgetting}.
+
+\paragraph{Independence witness.}
+An append-only evidence store (states grow monotonically, no
+retraction) satisfies D1--D5, D7--D8 but violates D6.
+
+\maplecourt{%
+Three hallway humidity alerts arrive, then sensor~3B-north is found
+to be miscalibrated.  If the system stores only the aggregate
+$(5, 1)$, it cannot retract sensor~3B-north's contribution without
+knowing how much of the $(5, 1)$ came from that sensor.  With
+provenance, the state records
+$\{(\text{3B-north}, (3, 1)), (\text{3B-south}, (2, 0))\}$, and
+forgetting scope $S = \text{3B-north}$ yields $(2, 0)$.  The
+building-level humidity answer (which does not depend on 3B's pipe
+sensor) is unchanged.}
+
+
+%% ═══════════════════════════════════════════════════════════════
+\section{D7: Evidence Conservation}
+\label{sec:d7}
+%% ═══════════════════════════════════════════════════════════════
+
+\begin{definition}[Desideratum D7 --- Evidence Conservation]
+\label{def:d7}
+Evidence can be neither \emph{fabricated} (inference cannot create
+support that was not present in the premises) nor \emph{overcounted}
+(the same observation cannot contribute twice to the same query).
+Formally, three conservation laws hold under exact-inverse forgetting:
+\begin{enumerate}
+\item \textbf{Anti-hallucination}: a revision $\Delta$ within scope
+  $S$ contributes zero evidence to queries outside~$S$.
+\item \textbf{Noether conservation}: the revised state agrees with the
+  base state on queries outside the revision's scope.
+\item \textbf{Zero leakage}: the observation count of $\Delta$ at
+  queries outside its scope is zero.
+\end{enumerate}
+\end{definition}
+
+\noindent
+D7 is the evidence-theoretic analogue of conservation laws in physics.
+Just as energy cannot be created or destroyed, evidence cannot be
+fabricated or lost.  The ``anti-hallucination'' property is
+particularly important in the context of large language models and
+generative AI: a system satisfying D7 cannot output a confident
+assertion unless the evidence to support it actually exists in the
+state.
+
+\paragraph{Two faces of conservation.}
+The calculus establishes conservation from two perspectives:
+\begin{itemize}
+\item \textbf{State-level} (Chapter~\ref{ch:state-ops}): the
+  conservation theorems (Theorem~\ref{thm:conservation}) show that
+  scoped forgetting preserves evidence outside the scope.
+\item \textbf{Inference-path level}
+  (Goertzel~\cite{GoertzelEvidenceConservation2026}): a discrete
+  quantale Noether theorem showing that reinforcement is constant
+  along geodesic inference paths, a hallucination bound on conclusion
+  strength, and an evidence monotonicity theorem (a quantale
+  data-processing inequality).
+\end{itemize}
+Together, the two perspectives show that evidence integrity holds
+whether you look at state retraction or at inference chaining.
+
+\paragraph{What D7 rules out.}
+Any system where chaining inference rules can amplify evidence beyond
+what the premises contain violates D7.  This includes systems where
+deduction applied twice produces stronger conclusions than the
+original evidence warrants.  The stamp-disjointness condition in the
+revision rule (Chapter~\ref{ch:sigma-rewrites}) is one mechanism that
+enforces D7: stamps prevent the same observation from being counted
+twice.
+
+\paragraph{Discharge.}
+D7 is discharged by the evidence conservation pack
+(\code{EvidenceConservationPack} in
+Chapter~\ref{ch:state-ops}, \S``Conservation Theorems'') and the
+exact-inverse no-go theorem (if evidence leaked, forgetting cannot
+exactly undo it).
+
+\paragraph{Independence witness.}
+A system with scoped forgetting (D6) but no conservation guarantee
+(e.g., a sloppy retraction that removes too much or too little)
+satisfies D6 but violates D7.  Conversely, a system that never forgets
+(violating D6) trivially satisfies D7 by never modifying the state.
+
+\maplecourt{%
+Suppose the building model infers mold risk from pipe-leak evidence
+via a chain of compiled rules.  D7 guarantees that the mold-risk
+evidence in the conclusion cannot exceed the pipe-leak evidence in
+the premises.  If only $(5, 1)$ of leak evidence exists, the
+mold-risk conclusion has at most $(5, 1)$ worth of evidential
+support (modulated by the chain's conditional probabilities).  The
+anti-hallucination property says: if the pipe-leak evidence is
+entirely within scope ``apartment 3B,'' then the mold-risk answer
+for apartment 5C is unaffected.}
+
+
+%% ═══════════════════════════════════════════════════════════════
+\section{D8: Honest Boundaries}
+\label{sec:d8}
+%% ═══════════════════════════════════════════════════════════════
+
+\begin{definition}[Desideratum D8 --- Honest Boundaries]
+\label{def:d8}
+The calculus must state what it \emph{cannot} do as precisely as what
+it can do.  Impossibility results---no-go theorems, coverage collapse
+bounds, non-uniqueness demonstrations---are first-class contributions,
+not embarrassments.  Every boundary theorem has the same formal status
+as every positive theorem.
+\end{definition}
+
+\noindent
+D8 is a meta-desideratum: it constrains how the calculus presents
+itself.  A framework that claims universality without stating its
+limits is either trivial or dishonest.  The world-model calculus earns
+its credibility by proving both what works and what does not.
+
+\paragraph{The boundary catalog.}
+The book contains a substantial family of boundary results:
+\begin{itemize}
+\item \textbf{No-go for local link completeness}
+  (Chapter~\ref{ch:no-go}): per-link summaries cannot reconstruct
+  the joint.
+\item \textbf{Five chaining limitations}
+  (Chapter~\ref{ch:error-transport}): variance accumulation,
+  sensitivity amplification, coverage collapse, topology-CPT gap,
+  and no universal error bound.
+\item \textbf{Inclusion-exclusion identifiability no-go}
+  (Chapter~\ref{ch:scale-control}): the first two
+  inclusion-exclusion terms do not determine the union cardinality.
+\item \textbf{Trail-free non-stabilization}
+  (Chapter~\ref{ch:scale-control}): re-deriving conclusions without
+  trails can oscillate.
+\item \textbf{Pooling non-uniqueness}
+  (Chapter~\ref{ch:scale-control}): the four pooling axioms do not
+  pin down additive fusion.
+\item \textbf{No binary mixed policy}
+  (Chapter~\ref{ch:intensional}): the classical two-channel
+  intensional mixture is refuted.
+\item \textbf{Exact-inverse no-go}
+  (Chapter~\ref{ch:state-ops}): if evidence leaked, forgetting
+  cannot exactly undo it.
+\item \textbf{Strength non-monotonicity}
+  (Chapter~\ref{ch:views}): more evidence can yield lower strength.
+\end{itemize}
+
+\noindent
+Each boundary theorem carries a \claimBoundary{} label, making it
+visually and taxonomically distinct from \claimCore{} and
+\claimConditional{} results.
+
+\paragraph{What D8 rules out.}
+Any framework that presents only positive results---``our system can
+do X, Y, Z''---without stating where it fails violates D8.  This
+includes marketing-style presentations of AI systems (``universal
+reasoning engine'') that omit computational complexity, soundness
+gaps, or regime limitations.
+
+\paragraph{Discharge.}
+D8 is discharged by the boundary catalog above and by the claim
+taxonomy that labels every theorem as \claimCore{}, \claimConditional{},
+or \claimBoundary{}.
+
+\paragraph{Independence witness.}
+A framework with correct positive results but no proved impossibility
+theorems violates D8 while potentially satisfying D1--D7.
+
+
+%% ═══════════════════════════════════════════════════════════════
+\section{The Desiderata as a Whole}
+\label{sec:desiderata-summary}
+%% ═══════════════════════════════════════════════════════════════
+
+The eight desiderata form a layered specification:
+
+\begin{center}
+\begin{tabular}{clll}
+\toprule
+\textbf{ID} & \textbf{Name} & \textbf{Layer}
+  & \textbf{Primary discharge} \\
+\midrule
+D1 & State Primacy & Semantic kernel
+  & Ch~\ref{ch:world-models}: \code{WorldModel} \\
+D2 & Compositional Extraction & Semantic kernel
+  & Ch~\ref{ch:world-models}: profile-hom \\
+D3 & Generic Carriers & Evidence architecture
+  & Ch~\ref{ch:evidence}: three carriers \\
+D4 & Evidence over Views & Evidence architecture
+  & Ch~\ref{ch:views}: lossy projections \\
+D5 & Explicit Side Conditions & Inference discipline
+  & Ch~\ref{ch:sigma-rewrites}: $\Sigma$-guards \\
+D6 & Retractability & State management
+  & Ch~\ref{ch:state-ops}: forgetting layer \\
+D7 & Evidence Conservation & State management
+  & Ch~\ref{ch:state-ops}: conservation pack \\
+D8 & Honest Boundaries & Self-knowledge
+  & Ch~\ref{ch:no-go}: no-go theorems \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Necessity.}
+Are all eight necessary?  The independence witnesses show that dropping
+any one produces a system that, while coherent, fails in a specific and
+important way: without D1, you cannot retract; without D2, you cannot
+compose; without D3, you are limited to one domain; without D4, you
+confuse projections with semantics; without D5, your shortcuts are
+unsound; without D6, your state is append-only; without D7, your
+inference can hallucinate; without D8, you do not know your own limits.
+
+\paragraph{Sufficiency.}
+Are the eight jointly sufficient for ``responsible uncertain
+reasoning''?  Not in full generality.  At least three additional
+properties are needed for a complete system but are not yet fully
+developed in this book:
+\begin{itemize}
+\item \textbf{Computational tractability}: the calculus says
+  \emph{what} the correct answer is but does not bound the
+  \emph{cost} of computing it.
+\item \textbf{Non-additive regimes}: D2 holds only in the additive
+  regime; overlap-aware and trust-gated revision need their own
+  algebraic discipline.
+\item \textbf{Measure-theoretic grounding}: the current development
+  works with finitary carriers; the terminal measure-valued world
+  model is an open program.
+\end{itemize}
+These are recorded as frontier directions (Chapter~\ref{ch:future}),
+not as current desiderata.  The eight listed here are the contract
+that the present book fulfills.
+
+\paragraph{The PLN heritage.}
+PLN v0.9 satisfies D1 and D2 in spirit, partially satisfies D7 (via
+evidence stamps), but does not satisfy D3 (single carrier), D4 (scalar
+propagation), D5 (no explicit $\Sigma$), D6 (no formal forgetting),
+or D8 (no proved no-go theorems).  The world-model calculus inherits
+PLN's conceptual vocabulary and evidence-based philosophy while adding
+the formal machinery that PLN lacked.  The desiderata are the precise
+statement of what that machinery is for.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+  >=Latex,
+  every node/.style={font=\footnotesize},
+  dbox/.style={draw, rounded corners=4pt, minimum width=32mm,
+              minimum height=10mm, align=center},
+]
+  % Kernel layer
+  \node[dbox, fill=blue!8] (d1) at (0, 4) {D1: State Primacy};
+  \node[dbox, fill=blue!8] (d2) at (5, 4) {D2: Composition};
+
+  % Evidence layer
+  \node[dbox, fill=green!8] (d3) at (0, 2.5) {D3: Generic Carriers};
+  \node[dbox, fill=green!8] (d4) at (5, 2.5) {D4: Evidence $>$ Views};
+
+  % Inference layer
+  \node[dbox, fill=yellow!12] (d5) at (0, 1) {D5: Explicit $\Sigma$};
+  \node[dbox, fill=yellow!12] (d6) at (5, 1) {D6: Retractability};
+
+  % Meta layer
+  \node[dbox, fill=orange!10] (d7) at (0, -0.5) {D7: Conservation};
+  \node[dbox, fill=orange!10] (d8) at (5, -0.5) {D8: Honest Boundaries};
+
+  % Layer labels
+  \node[font=\scriptsize, text=blue!60!black, rotate=90] at (-2.8, 3.25) {kernel};
+  \node[font=\scriptsize, text=green!50!black, rotate=90] at (-2.8, 2.5) {evidence};
+  \node[font=\scriptsize, text=yellow!60!black, rotate=90] at (-2.8, 1) {inference};
+  \node[font=\scriptsize, text=orange!60!black, rotate=90] at (-2.8, -0.5) {integrity};
+
+  % Dependency arrows
+  \draw[->, thick, gray!50] (d1) -- (d6);
+  \draw[->, thick, gray!50] (d2) -- (d5);
+  \draw[->, thick, gray!50] (d3) -- (d4);
+  \draw[->, thick, gray!50] (d6) -- (d7);
+  \draw[->, thick, gray!50] (d5) -- (d8);
+
+  % Annotation
+  \node[font=\scriptsize, text=gray, text width=40mm, align=center]
+    at (2.5, -1.8) {Arrows show enablement:\\
+    D1 enables D6 (states enable retraction);\\
+    D2 enables D5 (composition enables shortcuts);\\
+    D6 enables D7 (retraction enables conservation).};
+\end{tikzpicture}
+\caption{The eight desiderata organized by layer.  Arrows show
+enablement relationships: D1 (state primacy) enables D6
+(retractability); D2 (compositional extraction) enables D5 (explicit
+side conditions for compiled shortcuts); D6 (retractability) enables
+D7 (conservation).}
+\label{fig:desiderata-layers}
+\end{figure}
+
+\maplecourt{%
+Maple Court's building model satisfies all eight desiderata.
+It carries states (D1), combines sensor reports additively (D2),
+handles binary, Dirichlet, and Normal-Gamma evidence (D3), derives
+strength and confidence as views (D4), gates compiled chain rules on
+BN screening-off (D5), retracts miscalibrated sensor data (D6),
+conserves evidence under retraction (D7), and reports where local
+chaining fails (D8).  The desiderata are not abstract stipulations
+imposed from outside---they are the properties that make a building
+automation system trustworthy.}

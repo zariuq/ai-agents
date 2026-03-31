@@ -1,0 +1,1 @@
+-- CategoricalLogic stub
