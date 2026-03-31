@@ -57,21 +57,21 @@ structure TraceEntry where
     records the sequence of rewrites applied. The empty trace ε represents
     an initial condition with no causal past.
 -/
-def Trace : Type _ := List (S.TraceEntry)
+def Trace : Type _ := List (TraceEntry S)
 
 namespace Trace
 
 /-- The empty trace ε — represents an initial condition -/
-def empty : S.Trace := []
+def empty : Trace S := []
 
 /-- Prepend a step to a trace -/
-def cons (entry : S.TraceEntry) (τ : S.Trace) : S.Trace := entry :: τ
+def cons (entry : TraceEntry S) (τ : Trace S) : Trace S := entry :: τ
 
 /-- Length of a trace -/
-def length (τ : S.Trace) : Nat := List.length τ
+def length (τ : Trace S) : Nat := List.length τ
 
 /-- A trace is initial if it is empty -/
-def isInitial (τ : S.Trace) : Prop := τ = []
+def isInitial (τ : Trace S) : Prop := τ = []
 
 end Trace
 
@@ -90,16 +90,16 @@ structure ExtendedTerm where
   /-- The current term -/
   current : S.Term
   /-- The causal history (trace) -/
-  history : S.Trace
+  history : Trace S
 
 namespace ExtendedTerm
 
 /-- An initial extended term has empty history -/
-def initial (t : S.Term) : S.ExtendedTerm :=
+def initial (t : S.Term) : ExtendedTerm S :=
   { current := t, history := Trace.empty S }
 
 /-- Whether an extended term is in the initial state (no causal past) -/
-def isInitial (et : S.ExtendedTerm) : Prop := et.history.isInitial S
+def isInitial (et : ExtendedTerm S) : Prop := et.history.isInitial S
 
 end ExtendedTerm
 
@@ -124,14 +124,14 @@ inductive StepDirection where
     - Forward: ⟨l, τ⟩ → ⟨r, entry · τ⟩  (records the step)
     - Backward: ⟨r, entry · τ⟩ → ⟨l, τ⟩  (undoes the step)
 -/
-inductive ReversibleStep : S.ExtendedTerm → S.ExtendedTerm → Prop where
+inductive ReversibleStep : ExtendedTerm S → ExtendedTerm S → Prop where
   /-- Forward rule r⁺: ⟨l, τ⟩ → ⟨r, r(l) · τ⟩ -/
-  | forward {l r : S.Term} (h : S.Step l r) (τ : S.Trace) :
+  | forward {l r : S.Term} (h : S.Step l r) (τ : Trace S) :
       ReversibleStep
         { current := l, history := τ }
         { current := r, history := ⟨l, r, h⟩ :: τ }
   /-- Backward rule r⁻: ⟨r, r(l) · τ⟩ → ⟨l, τ⟩ -/
-  | backward {l r : S.Term} (h : S.Step l r) (τ : S.Trace) :
+  | backward {l r : S.Term} (h : S.Step l r) (τ : Trace S) :
       ReversibleStep
         { current := r, history := ⟨l, r, h⟩ :: τ }
         { current := l, history := τ }
@@ -142,30 +142,30 @@ inductive ReversibleStep : S.ExtendedTerm → S.ExtendedTerm → Prop where
     Definition 3.4 (Meredith 2026): E† lifts ≡ to act on the current-term
     component of extended terms, leaving traces invariant.
 -/
-def extendedEquiv (et1 et2 : S.ExtendedTerm) : Prop :=
+def extendedEquiv (et1 et2 : ExtendedTerm S) : Prop :=
   S.Equiv et1.current et2.current ∧ et1.history = et2.history
 
-theorem extendedEquiv_refl (et : S.ExtendedTerm) : S.extendedEquiv et et :=
+theorem extendedEquiv_refl (et : ExtendedTerm S) : extendedEquiv S et et :=
   ⟨S.equations.iseqv.refl et.current, rfl⟩
 
-theorem extendedEquiv_symm {et1 et2 : S.ExtendedTerm}
-    (h : S.extendedEquiv et1 et2) : S.extendedEquiv et2 et1 :=
+theorem extendedEquiv_symm {et1 et2 : ExtendedTerm S}
+    (h : extendedEquiv S et1 et2) : extendedEquiv S et2 et1 :=
   ⟨S.equations.iseqv.symm h.1, h.2.symm⟩
 
-theorem extendedEquiv_trans {et1 et2 et3 : S.ExtendedTerm}
-    (h1 : S.extendedEquiv et1 et2) (h2 : S.extendedEquiv et2 et3) :
-    S.extendedEquiv et1 et3 :=
+theorem extendedEquiv_trans {et1 et2 et3 : ExtendedTerm S}
+    (h1 : extendedEquiv S et1 et2) (h2 : extendedEquiv S et2 et3) :
+    extendedEquiv S et1 et3 :=
   ⟨S.equations.iseqv.trans h1.1 h2.1, h1.2.trans h2.2⟩
 
 /-- Setoid on extended terms -/
-def extendedSetoid : Setoid S.ExtendedTerm where
-  r := S.extendedEquiv
-  iseqv := ⟨S.extendedEquiv_refl, fun h => S.extendedEquiv_symm h,
-            fun h1 h2 => S.extendedEquiv_trans h1 h2⟩
+def extendedSetoid : Setoid (ExtendedTerm S) where
+  r := extendedEquiv S
+  iseqv := ⟨extendedEquiv_refl (S := S), fun h => extendedEquiv_symm (S := S) h,
+            fun h1 h2 => extendedEquiv_trans (S := S) h1 h2⟩
 
 /-- Every forward step has a corresponding backward step -/
-theorem reversibleStep_invertible {et1 et2 : S.ExtendedTerm}
-    (h : S.ReversibleStep et1 et2) : S.ReversibleStep et2 et1 := by
+theorem reversibleStep_invertible {et1 et2 : ExtendedTerm S}
+    (h : ReversibleStep S et1 et2) : ReversibleStep S et2 et1 := by
   cases h with
   | forward h τ => exact ReversibleStep.backward h τ
   | backward h τ => exact ReversibleStep.forward h τ
@@ -183,26 +183,26 @@ theorem reversibleStep_invertible {et1 et2 : S.ExtendedTerm}
     Proposition 3.1 (Meredith 2026): η embeds S into S† by giving
     each term an empty history.
 -/
-def envelopeEmbed (t : S.Term) : S.ExtendedTerm :=
+def envelopeEmbed (t : S.Term) : ExtendedTerm S :=
   ExtendedTerm.initial S t
 
 /-- The projection π : S† → S, mapping ⟨P, τ⟩ ↦ P
 
     Proposition 3.1 (Meredith 2026): π forgets the causal history.
 -/
-def envelopeProject (et : S.ExtendedTerm) : S.Term :=
+def envelopeProject (et : ExtendedTerm S) : S.Term :=
   et.current
 
 /-- π ∘ η = id : the projection undoes the embedding.
 
     Proposition 3.1 (Meredith 2026).
 -/
-theorem project_embed (t : S.Term) : S.envelopeProject (S.envelopeEmbed t) = t := by
+theorem project_embed (t : S.Term) : envelopeProject S (envelopeEmbed S t) = t := by
   rfl
 
 /-- η maps S-steps to forward steps in S† -/
 theorem embed_preserves_step {t t' : S.Term} (h : S.Step t t') :
-    S.ReversibleStep (S.envelopeEmbed t) { current := t', history := [⟨t, t', h⟩] } := by
+    ReversibleStep S (envelopeEmbed S t) { current := t', history := [⟨t, t', h⟩] } := by
   exact ReversibleStep.forward h []
 
 /-! ## Summary

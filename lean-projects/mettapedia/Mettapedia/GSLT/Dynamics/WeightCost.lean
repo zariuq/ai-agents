@@ -202,8 +202,20 @@ structure WeightedGSLT (W : Type*) (A : Type*) (k : Nat) where
     debit is matched by a backward credit.
 -/
 
-/-- A closed path starts and ends at the same term -/
-def isClosedPath {S : GSLT} {t : S.Term} (_path : S.RewritePath t t) : Prop := True
+/-- A closed path is a rewrite path whose endpoints coincide.
+
+    The endpoint equality is already tracked by the indices of `RewritePath`;
+    this definition exposes that condition explicitly instead of treating
+    "closed" as a vacuous placeholder.
+-/
+def isClosedPath {S : GSLT} {t u : S.Term} (_path : S.RewritePath t u) : Prop := t = u
+
+theorem isClosedPath_iff {S : GSLT} {t u : S.Term} (γ : S.RewritePath t u) :
+    isClosedPath γ ↔ t = u :=
+  Iff.rfl
+
+theorem isClosedPath_refl {S : GSLT} {t : S.Term} (γ : S.RewritePath t t) :
+    isClosedPath γ := rfl
 
 /-- Statement of the conservation theorem.
 

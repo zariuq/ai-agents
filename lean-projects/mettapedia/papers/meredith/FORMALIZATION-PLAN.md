@@ -48,32 +48,46 @@
 ### 🔲 Not yet formalized (Part I — highest priority):
 
 #### Tier 1: Core GSLT definition (clean, no hacks)
-- [ ] **GSLT as triple (T, E, R)** — grammar + equations + rewrite rules
-  - Currently: only λ-calculus terms. Need: abstract operational theory
+- [x] **GSLT as triple (T, E, R)** — grammar + equations + rewrite rules
+  - Formalized abstractly in `Core/GSLT.lean`
   - Paper Def 2.1: grammar T, equations E (≡), rules R (→)
-- [ ] **Traces** (Def 3.1) — finite sequences of rule applications
-- [ ] **Reversible Envelope S†** (Defs 3.2–3.4) — extended terms ⟨P, τ⟩, forward/backward rules
-- [ ] **Proposition 3.1** — η : S → S†, π : S† → S, π ∘ η = id
+- [x] **Traces** (Def 3.1) — finite sequences of rule applications
+  - Formalized in `Causality/Trace.lean`
+- [x] **Reversible Envelope S†** (Defs 3.2–3.4) — extended terms ⟨P, τ⟩, forward/backward rules
+  - Current status: reversible-step kernel on `⟨P, τ⟩` states formalized in `Causality/Trace.lean`
+- [x] **Proposition 3.1** — η : S → S†, π : S† → S, π ∘ η = id
+  - Current status: embedding/projection kernel and roundtrip theorem formalized in `Causality/Trace.lean`
 
 #### Tier 2: Causal structure
-- [ ] **Synchronization trees** — closed (Def 4.1) and open (Def 4.2)
+- [x] **Synchronization trees** — closed (Def 4.1) and open (Def 4.2)
+  - Formalized in `Causality/SyncTree.lean`
 - [ ] **Causal graphs** (Def 4.3) — sync trees as causal sets
+  - Current status: preorder kernel formalized in `Causality/SyncTree.lean`; antisymmetry/local-finiteness causal-set claims remain open
 - [ ] **Causal distance** (Def 4.4) — d_min, d_max in both closed and open trees
+  - Current status: explicit path objects and path lengths are formalized in `Causality/SyncTree.lean`; min/max distance operators are not yet extracted
 
 #### Tier 3: Logic layer
-- [ ] **Minimal contexts** (Def 5.1) — Milner-Sewell-Leifer construction
-- [ ] **Context-decorated HML** (Def 5.2) — modal logic with context labels
+- [x] **Minimal contexts** (Def 5.1) — Milner-Sewell-Leifer construction
+  - Current status: faithful abstract interface via `Logic/MinimalContext.lean`; the rho-calculus evaluation-context instance is now packaged concretely in `Meredith/RhoMinimalContext.lean`
+- [x] **Context-decorated HML** (Def 5.2) — modal logic with context labels
+  - Formalized over `MinimalContext` in `Logic/ContextHML.lean`
 - [ ] **Adequacy theorem** (Thm 5.1) — bisimilarity ↔ HML equivalence
 - [ ] **Logical metric** (Def 5.3) — ultrametric d_HML on T(S)/∼
+  - Current status: modal depth, depth-bounded HML agreement, distinguishing witnesses, and a 0/1 pseudoultrametric approximation are formalized in `Logic/LogicalMetric.lean`; `Meredith/WeaknessBridge.lean` now proves that such finite-depth witnesses certify genuine quotient-level distinction under adequacy soundness; the full quotient-level ultrametric remains open
 
 #### Tier 4: Dynamics
-- [ ] **Weight map** (Def 6.1) — w_r^+ : HML(K) → ℂ
+- [x] **Weight map** (Def 6.1) — w_r^+ : HML(K) → ℂ
+  - Current status: abstract weight structures and weighted GSLTs formalized in `Dynamics/WeightCost.lean`
 - [ ] **Path amplitude** (Def 6.3) — product of weights along path
+  - Current status: finite-support amplitude kernel formalized in `Dynamics/PathIntegral.lean`
 - [ ] **Action functional** (Def 6.4) — S[γ] = Σ log w_r^+(ϕ_i)
-- [ ] **Resource algebra** (Def 7.1) — commutative ordered monoid
-- [ ] **Cost map** (Def 7.2) — c_r : HML(K) → A^k
+- [x] **Resource algebra** (Def 7.1) — commutative ordered monoid
+  - Current status: vector-account and debit/solvency kernel formalized in `Dynamics/WeightCost.lean`; stronger algebraic axioms can still be sharpened
+- [x] **Cost map** (Def 7.2) — c_r : HML(K) → A^k
+  - Formalized abstractly in `Dynamics/WeightCost.lean`
 - [x] **Conservation theorem** (Thm 7.1) — net account change = 0 on closed resource-aware cycles in `Synthesis/MainConservation.lean`
 - [ ] **Extended modal operator** (Def 8.1) — ⟨K, w+, w−, c, A⟩ϕ
+  - Current status: minimal-context weighted/resource-trace HML kernel formalized in `Dynamics/ExtendedHML.lean`; full paper-faithful state semantics remains to tighten
 
 #### Tier 5: Quantum structure
 - [x] **Amplitude-weighted GSLT** (Def 9.1) — complex-weight specialization captured by `Dynamics/PathIntegral.lean`

@@ -28,6 +28,7 @@ Part I, §8.
 namespace Mettapedia.GSLT
 
 variable (S : GSLT)
+variable {W : Type*} {A : Type*} {k : Nat}
 
 /-! ## Extended HML Formulae
 
@@ -36,28 +37,29 @@ variable (S : GSLT)
     ϕ, ψ ::= ⊤ | ⊥ | ϕ ∧ ψ | ¬ϕ | ⟨K⟩ϕ | ⟨K, w⟩ϕ | [c ≤ b]ϕ | ⟨τ⟩ϕ
 -/
 
-inductive ExtHMLFormula (S : GSLT) (W : Type*) (A : Type*) (k : Nat) : Type _ where
+inductive ExtHMLFormula (S : GSLT) [HasMinimalContexts S] (W : Type*) (A : Type*) (k : Nat) : Type _ where
   | top : ExtHMLFormula S W A k
   | bot : ExtHMLFormula S W A k
   | conj : ExtHMLFormula S W A k → ExtHMLFormula S W A k → ExtHMLFormula S W A k
   | neg : ExtHMLFormula S W A k → ExtHMLFormula S W A k
-  | diamond : GSLTContext S → ExtHMLFormula S W A k → ExtHMLFormula S W A k
-  | wdiamond : GSLTContext S → W → ExtHMLFormula S W A k → ExtHMLFormula S W A k
+  | diamond : MinimalContext S → ExtHMLFormula S W A k → ExtHMLFormula S W A k
+  | wdiamond : MinimalContext S → W → ExtHMLFormula S W A k → ExtHMLFormula S W A k
   | resourceGuard : VectorialAccount A k → VectorialAccount A k →
       ExtHMLFormula S W A k → ExtHMLFormula S W A k
   | traceDiamond : ExtHMLFormula S W A k → ExtHMLFormula S W A k
 
 namespace ExtHMLFormula
 
-variable {S : GSLT} {W : Type*} {A : Type*} {k : Nat}
+variable {S : GSLT} [HasMinimalContexts S] {W : Type*} {A : Type*} {k : Nat}
 
 def disj (ϕ ψ : ExtHMLFormula S W A k) : ExtHMLFormula S W A k :=
   .neg (.conj (.neg ϕ) (.neg ψ))
 
-def box (K : GSLTContext S) (ϕ : ExtHMLFormula S W A k) : ExtHMLFormula S W A k :=
+def box [HasMinimalContexts S] (K : MinimalContext S) (ϕ : ExtHMLFormula S W A k) :
+    ExtHMLFormula S W A k :=
   .neg (.diamond K (.neg ϕ))
 
-def wbox (K : GSLTContext S) (w : W) (ϕ : ExtHMLFormula S W A k) :
+def wbox [HasMinimalContexts S] (K : MinimalContext S) (w : W) (ϕ : ExtHMLFormula S W A k) :
     ExtHMLFormula S W A k :=
   .neg (.wdiamond K w (.neg ϕ))
 
@@ -81,29 +83,29 @@ def hmlEquiv [LE A] (wm : WeightMap S W) (t u : S.Term) : Prop :=
   ∀ ϕ : ExtHMLFormula S W A k, satisfies wm t ϕ ↔ satisfies wm u ϕ
 
 theorem hmlEquiv_refl [LE A] (wm : WeightMap S W) (t : S.Term) :
-    hmlEquiv (k := k) wm t t :=
+    hmlEquiv (A := A) (k := k) wm t t :=
   fun _ => Iff.rfl
 
 theorem hmlEquiv_symm [LE A] {wm : WeightMap S W} {t u : S.Term}
-    (h : hmlEquiv (k := k) wm t u) : hmlEquiv (k := k) wm u t :=
+    (h : hmlEquiv (A := A) (k := k) wm t u) : hmlEquiv (A := A) (k := k) wm u t :=
   fun ϕ => (h ϕ).symm
 
 theorem hmlEquiv_trans [LE A] {wm : WeightMap S W} {t u v : S.Term}
-    (h1 : hmlEquiv (k := k) wm t u) (h2 : hmlEquiv (k := k) wm u v) :
-    hmlEquiv (k := k) wm t v :=
+    (h1 : hmlEquiv (A := A) (k := k) wm t u) (h2 : hmlEquiv (A := A) (k := k) wm u v) :
+    hmlEquiv (A := A) (k := k) wm t v :=
   fun ϕ => (h1 ϕ).trans (h2 ϕ)
 
 def hmlSetoid [LE A] (wm : WeightMap S W) : Setoid S.Term where
-  r := hmlEquiv (k := k) wm
-  iseqv := ⟨hmlEquiv_refl (k := k) wm,
-            fun h => hmlEquiv_symm h,
-            fun h1 h2 => hmlEquiv_trans h1 h2⟩
+  r := hmlEquiv (A := A) (k := k) wm
+  iseqv := ⟨hmlEquiv_refl (A := A) (k := k) wm,
+            fun h => hmlEquiv_symm (A := A) (k := k) h,
+            fun h1 h2 => hmlEquiv_trans (A := A) (k := k) h1 h2⟩
 
 end ExtHMLFormula
 
 /-! ## Embedding Plain HML into Extended HML -/
 
-def HMLFormula.toExtended {W : Type*} {A : Type*} {k : Nat} :
+def HMLFormula.toExtended [HasMinimalContexts S] {W : Type*} {A : Type*} {k : Nat} :
     HMLFormula S → ExtHMLFormula S W A k
   | .top => .top
   | .bot => .bot
@@ -111,28 +113,36 @@ def HMLFormula.toExtended {W : Type*} {A : Type*} {k : Nat} :
   | .neg ϕ => .neg (toExtended ϕ)
   | .diamond K ϕ => .diamond K (toExtended ϕ)
 
-theorem HMLFormula.toExtended_satisfies [LE A]
+theorem HMLFormula.toExtended_satisfies [HasMinimalContexts S] [LE A]
     (wm : WeightMap S W) (t : S.Term) (ϕ : HMLFormula S) :
-    ExtHMLFormula.satisfies (k := k) wm t (ϕ.toExtended) ↔
+    ExtHMLFormula.satisfies (A := A) (k := k) wm t (ϕ.toExtended) ↔
     HMLFormula.satisfies S t ϕ := by
+  revert t
   induction ϕ with
-  | top => simp [toExtended, ExtHMLFormula.satisfies, HMLFormula.satisfies]
-  | bot => simp [toExtended, ExtHMLFormula.satisfies, HMLFormula.satisfies]
+  | top =>
+    intro t
+    simp [toExtended, ExtHMLFormula.satisfies, HMLFormula.satisfies]
+  | bot =>
+    intro t
+    simp [toExtended, ExtHMLFormula.satisfies, HMLFormula.satisfies]
   | conj ϕ ψ ihϕ ihψ =>
+    intro t
     simp only [toExtended, ExtHMLFormula.satisfies, HMLFormula.satisfies]
-    exact ⟨fun ⟨h1, h2⟩ => ⟨ihϕ.mp h1, ihψ.mp h2⟩,
-           fun ⟨h1, h2⟩ => ⟨ihϕ.mpr h1, ihψ.mpr h2⟩⟩
+    exact ⟨fun ⟨h1, h2⟩ => ⟨(ihϕ t).mp h1, (ihψ t).mp h2⟩,
+           fun ⟨h1, h2⟩ => ⟨(ihϕ t).mpr h1, (ihψ t).mpr h2⟩⟩
   | neg ϕ ih =>
+    intro t
     simp only [toExtended, ExtHMLFormula.satisfies, HMLFormula.satisfies]
-    exact ⟨fun h hsat => h (ih.mpr hsat), fun h hsat => h (ih.mp hsat)⟩
+    exact ⟨fun h hsat => h ((ih t).mpr hsat), fun h hsat => h ((ih t).mp hsat)⟩
   | diamond K ϕ ih =>
+    intro t
     simp only [toExtended, ExtHMLFormula.satisfies, HMLFormula.satisfies]
-    exact ⟨fun ⟨t', hs, hsat⟩ => ⟨t', hs, ih.mp hsat⟩,
-           fun ⟨t', hs, hsat⟩ => ⟨t', hs, ih.mpr hsat⟩⟩
+    exact ⟨fun ⟨t', hs, hsat⟩ => ⟨t', hs, (ih t').mp hsat⟩,
+           fun ⟨t', hs, hsat⟩ => ⟨t', hs, (ih t').mpr hsat⟩⟩
 
-theorem extHML_refines_plainHML [LE A]
+theorem extHML_refines_plainHML [HasMinimalContexts S] [LE A]
     (wm : WeightMap S W) {t u : S.Term}
-    (h : ExtHMLFormula.hmlEquiv (k := k) wm t u) :
+    (h : ExtHMLFormula.hmlEquiv (A := A) (k := k) wm t u) :
     HMLFormula.hmlEquiv S t u := by
   intro ϕ
   have := h ϕ.toExtended
@@ -151,25 +161,32 @@ def WeightBisimilar (wm : WeightMap S W) (t u : S.Term) : Prop :=
 
 theorem weightBisimilar_refl (wm : WeightMap S W) (t : S.Term) :
     WeightBisimilar S wm t t := by
-  refine ⟨Eq, ⟨?_, ?_⟩, rfl⟩
+  refine ⟨Eq, ?_, ?_, rfl⟩
   · intro a b hab a' hs; subst hab; exact ⟨a', hs, rfl, rfl⟩
   · intro a b hab b' hs; subst hab; exact ⟨b', hs, rfl, rfl⟩
 
 theorem weightBisimilar_symm {wm : WeightMap S W} {t u : S.Term}
     (h : WeightBisimilar S wm t u) : WeightBisimilar S wm u t := by
-  obtain ⟨R, ⟨hfwd, hbwd⟩, hr⟩ := h
-  exact ⟨fun a b => R b a, ⟨fun hab => hbwd hab, fun hab => hfwd hab⟩, hr⟩
+  obtain ⟨R, hfwd, hbwd, hr⟩ := h
+  refine ⟨fun a b => R b a, ?_, ?_, hr⟩
+  · intro a b hab a' hs
+    obtain ⟨b', h', hwt, hrel⟩ := hbwd hab hs
+    exact ⟨b', h', hwt.symm, hrel⟩
+  · intro a b hab b' hs
+    obtain ⟨a', h', hwt, hrel⟩ := hfwd hab hs
+    exact ⟨a', h', hwt.symm, hrel⟩
 
-def adequacy_extended_sound (wm : WeightMap S W) : Prop :=
+def adequacy_extended_sound [HasMinimalContexts S] [LE A] (wm : WeightMap S W) : Prop :=
   ∀ {t u : S.Term}, WeightBisimilar S wm t u →
-    ExtHMLFormula.hmlEquiv (k := k) wm t u
+    ExtHMLFormula.hmlEquiv (A := A) (k := k) wm t u
 
-def adequacy_extended_complete (wm : WeightMap S W) : Prop :=
-  ∀ {t u : S.Term}, ExtHMLFormula.hmlEquiv (k := k) wm t u →
+def adequacy_extended_complete [HasMinimalContexts S] [LE A] (wm : WeightMap S W) : Prop :=
+  ∀ {t u : S.Term}, ExtHMLFormula.hmlEquiv (A := A) (k := k) wm t u →
     WeightBisimilar S wm t u
 
-def adequacy_extended (wm : WeightMap S W) : Prop :=
-  adequacy_extended_sound (k := k) S wm ∧ adequacy_extended_complete (k := k) S wm
+def adequacy_extended [HasMinimalContexts S] [LE A] (wm : WeightMap S W) : Prop :=
+  adequacy_extended_sound (S := S) (A := A) (k := k) wm ∧
+    adequacy_extended_complete (S := S) (A := A) (k := k) wm
 
 /-! ## Summary
 

@@ -32,6 +32,7 @@ density/phase-transition claims for explicit future work.
 namespace Mettapedia.GSLT
 
 variable (S : GSLT)
+variable [HasMinimalContexts S]
 
 /-- A designated set of elementary terms from which assembly paths may start. -/
 abbrev ElementaryTerms := Set S.Term
@@ -40,7 +41,7 @@ abbrev ElementaryTerms := Set S.Term
     kernel and does not depend on the broader synchronization-tree file. -/
 inductive AssemblyPath : S.Term → S.Term → Type _ where
   | nil (t : S.Term) : AssemblyPath t t
-  | cons {t u v : S.Term} (K : GSLTContext S)
+  | cons {t u v : S.Term} (K : MinimalContext S)
       (h : S.Step (K.plug t) u) (rest : AssemblyPath u v) :
       AssemblyPath t v
 
