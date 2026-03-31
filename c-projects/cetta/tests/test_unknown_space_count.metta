@@ -1,1 +1,0 @@
-!(count-atoms &fresh)

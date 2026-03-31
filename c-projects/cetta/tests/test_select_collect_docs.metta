@@ -1,8 +1,0 @@
-!(get-doc select)
-!(get-doc collect)
-!(get-doc once)
-!(get-doc search-policy)
-!(help! select)
-!(help! collect)
-!(help! once)
-!(help! search-policy)

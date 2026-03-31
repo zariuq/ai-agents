@@ -1,5 +1,0 @@
-!(import! &self mork)
-!(bind! &h (new-space mork))
-!(assertEqualToResult (get-type &h) ((Space mork)))
-!(add-atom &h (edge a b))
-!(assertEqualToResult (match &h (edge $x $y) ($x $y)) ((a b)))

@@ -1,1 +1,0 @@
-(= (cwd-value) (system-cwd))

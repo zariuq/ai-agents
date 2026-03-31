@@ -1,7 +1,0 @@
-!(register-module! support/import_pkg_deep)
-!(import! &pkg import_pkg_deep:moduleA)
-!(assertEqualToResult (match &pkg (pkg-deep-root $x) $x) (loaded))
-!(assertEqualToResult (match &pkg (pkg-deep-mid $x) $x) (loaded))
-!(assertEqualToResult (match &pkg (pkg-deep-helper $x) $x) (loaded))
-!(assertEqualToResult (match &pkg (pkg-deep-leaf $x) $x) (loaded))
-!(assertEqualToResult (match &pkg (pkg-deep-leaf-helper $x) $x) (loaded))

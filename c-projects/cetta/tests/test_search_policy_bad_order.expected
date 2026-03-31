@@ -1,1 +1,0 @@
-[(Error (select (search-policy recursive-dependent-proof (order sideways)) (coin)) (UnsupportedSearchPolicyOrder sideways))]

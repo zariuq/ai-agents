@@ -1,1 +1,0 @@
-!(assertEqualMsg (+ 1 2) 4 "Test message")

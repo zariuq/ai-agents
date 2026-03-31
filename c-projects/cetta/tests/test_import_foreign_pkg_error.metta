@@ -1,7 +1,0 @@
-(base)
-!(collapse (import! &self support/import_foreign_pkg/module.metta))
-!(collapse (match &self (base) (base)))
-!(collapse (match &self (foreign-before) (foreign-before)))
-!(collapse (match &self (foreign-after) (foreign-after)))
-!(plugin-tag)
-!(plugin-inc 4)
