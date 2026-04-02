@@ -156,6 +156,7 @@ lean-projects/mettapedia/Mettapedia/external/provenance-lean/
 # AI review bundles (copies of source for external review)
 GPT-Pro_Responses/
 ai_review_bundles/
+review_bundles/
 **/ai_review_bundles/
 **/gpt54_review_bundle/
 
