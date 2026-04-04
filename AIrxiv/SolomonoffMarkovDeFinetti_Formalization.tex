@@ -898,12 +898,44 @@ The archived excursion-swap code (\lean{segmentSwap} from
 \item \lean{carrierTransport\_forward\_adjacent}: complete forward map
   with evidence preservation
 \end{itemize}
-What remains ($\sim$200 lines) is the \texttt{Equiv} packaging: constructing
-the per-element bijection from the forward map + involutivity of
-\lean{segmentSwap}, then composing adjacent transports for general $n \to n'$.
-The obstruction is Lean bookkeeping around \lean{extractVisitTime}
-(\lean{Nat.find} under \lean{classical}) and \lean{prefixExtend},
-not mathematical content.
+Additional infrastructure proved in subsequent work (0 \texttt{sorry}):
+\begin{itemize}[leftmargin=2em]
+\item \lean{rawSwap\_selfInverse}: the per-element swap is self-inverse
+  (constructs output visit-time proofs internally)
+\item \lean{segmentSwap\_carrier\_mem\_adjacent\_reverse}: reverse
+  carrier membership (carrier${}_{n+1} \to$ carrier${}_n$)
+\item \lean{nthVisitTimeExists\_of\_succ}: visit-time monotonicity
+\item \lean{extractVisitTime\_segmentSwap\_n/n1/n2}: visit-time
+  stability under swap
+\end{itemize}
+
+\paragraph{The Equiv packaging bug (diagnosed April 2026).}
+A structural bug was found in the \texttt{Equiv} construction:
+\lean{rawSwap} computes \lean{segmentSwap(xs, $t_0$, $L_1$, $L_2$)}
+where $L_1 = t_1 - t_0$ and $L_2 = t_2 - t_1$.  This is the
+\emph{forward} swap (carrier${}_n \to$ carrier${}_{n+1}$).  The
+\emph{inverse} requires \lean{segmentSwap(ys, $t_0$, $L_2$, $L_1$)}
+--- the same anchor but with excursion lengths \emph{reversed}.
+Since \lean{rawSwap} always uses the forward parameterization,
+it cannot serve as both \lean{toFun} and \lean{invFun}.
+
+The fix is straightforward: define \lean{toFun} using
+\lean{segmentSwap(xs, $t_0$, $L_1$, $L_2$)} and \lean{invFun}
+using \lean{segmentSwap(ys, $t_0$, $L_2$, $L_1$)} directly (without
+\lean{rawSwap}). Then:
+\begin{itemize}[leftmargin=2em]
+\item \lean{left\_inv}: \lean{segmentSwap\_involutive} with $(t_0, L_1, L_2)$
+\item \lean{right\_inv}: \lean{segmentSwap\_involutive} with $(t_0, L_2, L_1)$
+\item Evidence preservation: \lean{segmentSwap\_evidenceOf} (both directions)
+\item Carrier membership: \lean{segmentSwap\_carrier\_mem\_adjacent} (forward)
+  and \lean{segmentSwap\_carrier\_mem\_adjacent\_reverse} (reverse)
+\end{itemize}
+All four components are already proved.  The remaining work is
+extracting visit-time parameters from carrier membership (via
+\lean{extractVisitTime}) and threading them through the
+\lean{segmentSwap} calls, handling natural-number subtraction
+arithmetic with \lean{Nat.add\_sub\_cancel'} (since \lean{omega}
+cannot reason about opaque \lean{Nat.find} values).
 
 \paragraph{Cross-row coherence step (open).}
 The cons-step induction rule \lean{CrossRowCoherenceStep}: given the

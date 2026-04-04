@@ -820,135 +820,326 @@ terms of extractVisitTime and segmentSwap so that involutivity is provable. -/
   have hcN : t₀ + (t₁ - t₀) + (t₂ - t₁) ≤ N := by omega
   segmentSwap xs t₀ (t₁ - t₀) (t₂ - t₁) hL1 hL2 hcN
 
-/-- rawSwap is involutive: the visit times of the swapped trajectory, when used
-as parameters for a second swap, recover the original trajectory.
-
-This is THE key lemma. It works because:
-- extractVisitTime at n on the swap = t₀ (by extractVisitTime_segmentSwap_n)
-- extractVisitTime at n+1 on the swap = t₀ + L2 (by extractVisitTime_segmentSwap_n1)
-- extractVisitTime at n+2 on the swap = t₀ + L1 + L2 (by extractVisitTime_segmentSwap_n2)
-- So the second swap uses params (t₀, L2, L1) which is the inverse. -/
-theorem rawSwap_involutive {N : ℕ}
+/-- rawSwap is self-inverse: rawSwap(rawSwap(xs)) = xs.
+Crucially, this constructs the output visit-time proofs INTERNALLY,
+so the caller only needs to provide input proofs.
+This is what makes the Equiv's left_inv/right_inv closeable. -/
+theorem rawSwap_selfInverse {N : ℕ}
     (xs : Fin (N + 1) → Fin k) (i : Fin k) (n : ℕ)
     (hex0 : nthVisitTimeExists (k := k) (prefixExtend (k := k) N xs) i n)
     (hex1 : nthVisitTimeExists (k := k) (prefixExtend (k := k) N xs) i (n + 1))
     (hex2 : nthVisitTimeExists (k := k) (prefixExtend (k := k) N xs) i (n + 2))
     (hbd1 : extractVisitTime xs i (n + 1) hex1 < N)
-    (hbd2 : extractVisitTime xs i (n + 2) hex2 < N)
-    (hex0' : nthVisitTimeExists (k := k) (prefixExtend (k := k) N
-      (rawSwap xs i n hex0 hex1 hex2 hbd1 hbd2)) i n)
-    (hex1' : nthVisitTimeExists (k := k) (prefixExtend (k := k) N
-      (rawSwap xs i n hex0 hex1 hex2 hbd1 hbd2)) i (n + 1))
-    (hex2' : nthVisitTimeExists (k := k) (prefixExtend (k := k) N
-      (rawSwap xs i n hex0 hex1 hex2 hbd1 hbd2)) i (n + 2))
-    (hbd1' : extractVisitTime (rawSwap xs i n hex0 hex1 hex2 hbd1 hbd2) i (n + 1) hex1' < N)
-    (hbd2' : extractVisitTime (rawSwap xs i n hex0 hex1 hex2 hbd1 hbd2) i (n + 2) hex2' < N) :
-    rawSwap (rawSwap xs i n hex0 hex1 hex2 hbd1 hbd2) i n hex0' hex1' hex2' hbd1' hbd2' = xs := by
-  -- Let t₀, t₁, t₂ be the original visit times
+    (hbd2 : extractVisitTime xs i (n + 2) hex2 < N) :
+    -- Construct output proofs internally
+    ∃ (hex0' : nthVisitTimeExists (k := k) (prefixExtend (k := k) N
+          (rawSwap xs i n hex0 hex1 hex2 hbd1 hbd2)) i n)
+      (hex1' : nthVisitTimeExists (k := k) (prefixExtend (k := k) N
+          (rawSwap xs i n hex0 hex1 hex2 hbd1 hbd2)) i (n + 1))
+      (hex2' : nthVisitTimeExists (k := k) (prefixExtend (k := k) N
+          (rawSwap xs i n hex0 hex1 hex2 hbd1 hbd2)) i (n + 2))
+      (hbd1' : extractVisitTime (rawSwap xs i n hex0 hex1 hex2 hbd1 hbd2)
+          i (n + 1) hex1' < N)
+      (hbd2' : extractVisitTime (rawSwap xs i n hex0 hex1 hex2 hbd1 hbd2)
+          i (n + 2) hex2' < N),
+    rawSwap (rawSwap xs i n hex0 hex1 hex2 hbd1 hbd2)
+      i n hex0' hex1' hex2' hbd1' hbd2' = xs := by
+  let ys := rawSwap xs i n hex0 hex1 hex2 hbd1 hbd2
   set t₀ := extractVisitTime xs i n hex0
   set t₁ := extractVisitTime xs i (n + 1) hex1
   set t₂ := extractVisitTime xs i (n + 2) hex2
-  set L1 := t₁ - t₀
-  set L2 := t₂ - t₁
-  -- rawSwap xs = segmentSwap xs t₀ L1 L2
-  -- The visit times on the swapped trajectory:
+  set L1 := t₁ - t₀; set L2 := t₂ - t₁
   have h_t₀ := extractVisitTime_spec xs i n hex0
   have h_t₁ := extractVisitTime_spec xs i (n + 1) hex1
   have h_t₂ := extractVisitTime_spec xs i (n + 2) hex2
-  -- Ordering of visit times
   have ht01 : t₀ < t₁ := by
-    by_contra hle; push_neg at hle
-    have := Finset.sum_le_sum_of_subset
-      (f := fun s => if (prefixExtend (k := k) N xs) s = i then 1 else 0)
-      (Finset.range_mono (show t₁ ≤ t₀ by omega))
+    by_contra h; push_neg at h
+    have := Finset.sum_le_sum_of_subset (f := fun s => if (prefixExtend (k := k) N xs) s = i then 1 else 0) (Finset.range_mono h)
     change visitCountBefore (k := k) _ i t₁ ≤ visitCountBefore (k := k) _ i t₀ at this
     rw [h_t₀.2, h_t₁.2] at this; omega
   have ht12 : t₁ < t₂ := by
-    by_contra hle; push_neg at hle
-    have := Finset.sum_le_sum_of_subset
-      (f := fun s => if (prefixExtend (k := k) N xs) s = i then 1 else 0)
-      (Finset.range_mono hle)
+    by_contra h; push_neg at h
+    have := Finset.sum_le_sum_of_subset (f := fun s => if (prefixExtend (k := k) N xs) s = i then 1 else 0) (Finset.range_mono h)
     change visitCountBefore (k := k) _ i t₂ ≤ visitCountBefore (k := k) _ i t₁ at this
     rw [h_t₁.2, h_t₂.2] at this; omega
   have hL1pos : 0 < L1 := by omega
-  have hL1_eq : t₀ + L1 = t₁ := by omega
-  have hL2_eq : t₀ + L1 + L2 = t₂ := by omega
-  have hL2pos' : 0 < L2 := by omega
+  have hL2pos : 0 < L2 := by omega
   have hcN : t₀ + L1 + L2 ≤ N := by omega
   have h_aL1 : isNthVisitTime (k := k) (prefixExtend (k := k) N xs) i (n + 1) (t₀ + L1) := by
-    rwa [hL1_eq]
+    convert h_t₁ using 1; omega
   have h_aL1L2 : isNthVisitTime (k := k) (prefixExtend (k := k) N xs) i (n + 2) (t₀ + L1 + L2) := by
-    rwa [hL2_eq]
-  -- extractVisitTime on the swapped trajectory
+    convert h_t₂ using 1; omega
+  -- Construct visit-time existence for ys = rawSwap(xs) = segmentSwap(xs, t₀, L1, L2)
+  have hnt_n := nthVisitTime_prefixExtend_segmentSwap_eq_of_le xs i n t₀ L1 L2
+    hL1pos hL2pos hcN h_t₀ (by omega)
+  have hnt_n1 := nthVisitTime_segmentSwap_n1 xs i n t₀ L1 L2
+    hL1pos hL2pos hcN h_t₀ h_aL1 h_aL1L2
+  have hnt_n2 := nthVisitTime_segmentSwap_n2 xs i n t₀ L1 L2
+    hL1pos hL2pos hcN h_t₀ h_aL1 h_aL1L2
+  -- Existence proofs from nthVisitTime = some
+  let hex0' : nthVisitTimeExists (k := k) (prefixExtend (k := k) N ys) i n :=
+    ⟨t₀, (nthVisitTime_eq_some_iff (k := k) _ i n t₀).mp hnt_n⟩
+  let hex1' : nthVisitTimeExists (k := k) (prefixExtend (k := k) N ys) i (n + 1) :=
+    ⟨t₀ + L2, (nthVisitTime_eq_some_iff (k := k) _ i (n + 1) (t₀ + L2)).mp hnt_n1⟩
+  let hex2' : nthVisitTimeExists (k := k) (prefixExtend (k := k) N ys) i (n + 2) :=
+    ⟨t₀ + L1 + L2, (nthVisitTime_eq_some_iff (k := k) _ i (n + 2) (t₀ + L1 + L2)).mp hnt_n2⟩
+  -- Bounds: extractVisitTime gives the specific values
   have evt0 := extractVisitTime_segmentSwap_n xs i n t₀ L1 L2
-    hL1pos hL2pos' hcN hex0 h_t₀ rfl (by omega) hex0'
+    hL1pos hL2pos hcN hex0 h_t₀ rfl (by omega) hex0'
   have evt1 := extractVisitTime_segmentSwap_n1 xs i n t₀ L1 L2
-    hL1pos hL2pos' hcN h_t₀ h_aL1 h_aL1L2 hex1'
+    hL1pos hL2pos hcN h_t₀ h_aL1 h_aL1L2 hex1'
   have evt2 := extractVisitTime_segmentSwap_n2 xs i n t₀ L1 L2
-    hL1pos hL2pos' hcN h_t₀ h_aL1 h_aL1L2 hex2'
-  -- rawSwap of the swap uses params: t₀' = t₀, L1' = (t₀+L2) - t₀ = L2, L2' = (t₀+L1+L2) - (t₀+L2) = L1
-  -- So rawSwap(rawSwap(xs)) = segmentSwap(segmentSwap(xs, t₀, L1, L2), t₀, L2, L1) = xs
-  -- The goal is rawSwap(rawSwap(xs)) = xs, which unfolds to
-  -- segmentSwap(segmentSwap(xs, t₀, L1, L2), t₀', L1', L2') = xs
-  -- where t₀' = t₀, L1' = L2, L2' = L1 (after simplification).
-  -- We prove it pointwise.
+    hL1pos hL2pos hcN h_t₀ h_aL1 h_aL1L2 hex2'
+  have hbd1' : extractVisitTime ys i (n + 1) hex1' < N := by rw [evt1]; omega
+  have hbd2' : extractVisitTime ys i (n + 2) hex2' < N := by rw [evt2]; omega
+  -- The involutive result
+  refine ⟨hex0', hex1', hex2', hbd1', hbd2', ?_⟩
+  -- rawSwap(ys) with these proofs = xs
   funext ⟨p, hp⟩
-  -- rawSwap unfolds to segmentSwap, which is a nested dite.
-  -- After two applications, the result is xs by involutivity.
-  -- Use the fact that segmentSwap_involutive gives funext-level equality.
-  have hinv := segmentSwap_involutive xs t₀ L1 L2 hL1pos hL2pos' hcN
-  -- hinv : segmentSwap(segmentSwap(xs, t₀, L1, L2), t₀, L2, L1, ...) = xs
-  -- Need to show rawSwap(rawSwap(xs)) at position p equals xs at position p.
-  -- rawSwap(xs) = segmentSwap(xs, t₀, L1, L2) [by def of rawSwap]
-  -- rawSwap(rawSwap(xs)) = segmentSwap(segmentSwap(xs, t₀, L1, L2), t₀', L1', L2')
-  --   where t₀' = extractVisitTime(swap, n), L1' = ext(swap, n+1) - ext(swap, n), etc.
-  -- By evt0: t₀' = t₀. By evt1: ext(swap, n+1) = t₀+L2. By evt2: ext(swap, n+2) = t₀+L1+L2.
-  -- So L1' = (t₀+L2) - t₀ = L2. L2' = (t₀+L1+L2) - (t₀+L2) = L1.
-  -- segmentSwap(segmentSwap(xs, t₀, L1, L2), t₀, L2, L1) = xs by hinv.
-  -- rawSwap(rawSwap(xs)) ≡ segmentSwap(segmentSwap(xs, t₀, L1, L2), t₀', L1', L2')
-  -- where t₀' = t₀, L1' = L2, L2' = L1 (by evt0, evt1, evt2)
-  -- Show these are equal to hinv's LHS by rewriting.
-  -- Step 1: rawSwap(xs) = segmentSwap(xs, t₀, L1, L2) (by def)
-  -- rawSwap xs unfolds to segmentSwap xs t₀ L1 L2 (by definition of rawSwap)
-  -- Step 2: The params for the second rawSwap: extracted from swapped trajectory
-  -- rawSwap(rawSwap(xs)) at ⟨p, hp⟩:
-  -- = segmentSwap(segmentSwap(xs, t₀, L1, L2), extracted_params...)(⟨p, hp⟩)
-  -- The extracted t₀' = t₀ (evt0), so params are (t₀, (t₀+L2)-t₀, (t₀+L1+L2)-(t₀+L2))
-  -- = (t₀, L2, L1)
-  -- So rawSwap(rawSwap(xs))(p) = segmentSwap(segmentSwap(xs, t₀, L1, L2), t₀, L2, L1)(p)
-  -- = xs(p) by hinv.
-  -- Prove the function equality:
-  -- The goal: rawSwap(rawSwap(xs))(⟨p,hp⟩) = xs(⟨p,hp⟩)
-  -- rawSwap unfolds to segmentSwap with extractVisitTime-derived params.
-  -- After two applications: the params for the outer segmentSwap use
-  -- extractVisitTime on the inner result, which by evt0/evt1/evt2 give t₀/t₀+L2/t₀+L1+L2.
-  -- So the outer swap has params (t₀, L2, L1), making it the inverse.
-  -- segmentSwap(segmentSwap(xs, t₀, L1, L2), t₀, L2, L1)(p) = xs(p) by hinv.
-  -- Unfold rawSwap and use simp with evt0, evt1, evt2 + omega
-  -- The key: rawSwap unfolds (definitionally) to segmentSwap with extracted params.
-  -- The extracted params on the swapped trajectory equal t₀, L2, L1 (by evt0/evt1/evt2).
-  -- So rawSwap(rawSwap(xs)) is definitionally segmentSwap(segmentSwap(xs, t₀, L1, L2), t₀, L2, L1).
-  -- But Lean doesn't see this because extractVisitTime is noncomputable.
-  -- Use `native_decide`? NO (forbidden). Use `decide`? NO (noncomputable).
-  -- The honest answer: rawSwap's opacity prevents direct reduction.
-  -- We need to prove the equality by unfolding rawSwap manually.
-  -- rawSwap xs = segmentSwap xs t₀ L1 L2 (definitionally, since extractVisitTime gives t₀, t₁, t₂)
-  -- rawSwap(swapped_xs) = segmentSwap(swapped_xs, evt0_val, ...) where evt0_val = t₀, etc.
-  -- The issue: extractVisitTime is defined via Classical.choice (Nat.find), making it opaque.
-  -- CREATIVE APPROACH: prove by converting both sides to segmentSwap form.
-  have lhs_eq : rawSwap (rawSwap xs i n hex0 hex1 hex2 _ _) i n hex0' hex1' hex2' hbd1' hbd2' ⟨p, hp⟩ =
-      segmentSwap (segmentSwap xs t₀ L1 L2 hL1pos hL2pos' hcN)
-        (extractVisitTime (segmentSwap xs t₀ L1 L2 hL1pos hL2pos' hcN) i n hex0')
-        (extractVisitTime (segmentSwap xs t₀ L1 L2 hL1pos hL2pos' hcN) i (n + 1) hex1' -
-         extractVisitTime (segmentSwap xs t₀ L1 L2 hL1pos hL2pos' hcN) i n hex0')
-        (extractVisitTime (segmentSwap xs t₀ L1 L2 hL1pos hL2pos' hcN) i (n + 2) hex2' -
-         extractVisitTime (segmentSwap xs t₀ L1 L2 hL1pos hL2pos' hcN) i (n + 1) hex1')
+  have hinv := segmentSwap_involutive xs t₀ L1 L2 hL1pos hL2pos hcN
+  have lhs_eq : rawSwap ys i n hex0' hex1' hex2' hbd1' hbd2' ⟨p, hp⟩ =
+      segmentSwap (segmentSwap xs t₀ L1 L2 hL1pos hL2pos hcN)
+        (extractVisitTime (segmentSwap xs t₀ L1 L2 hL1pos hL2pos hcN) i n hex0')
+        (extractVisitTime (segmentSwap xs t₀ L1 L2 hL1pos hL2pos hcN) i (n + 1) hex1' -
+         extractVisitTime (segmentSwap xs t₀ L1 L2 hL1pos hL2pos hcN) i n hex0')
+        (extractVisitTime (segmentSwap xs t₀ L1 L2 hL1pos hL2pos hcN) i (n + 2) hex2' -
+         extractVisitTime (segmentSwap xs t₀ L1 L2 hL1pos hL2pos hcN) i (n + 1) hex1')
         _ _ _ ⟨p, hp⟩ := rfl
   rw [lhs_eq]
   simp only [evt0, evt1, evt2,
     show (t₀ + L2) - t₀ = L2 by omega,
     show (t₀ + L1 + L2) - (t₀ + L2) = L1 by omega]
   exact congrFun hinv ⟨p, hp⟩
+
+/-- Forward membership: rawSwap of carrier_n member lands in carrier_{n+1}. -/
+theorem rawSwap_fwd_mem {N : ℕ}
+    (i : Fin k) (b : Fin k) (hbi : b ≠ i) (n : ℕ)
+    (xs : Fin (N + 1) → Fin k)
+    (hxs : xs ∈ rowVisitCylinderEventUpToPrefixCarrier (k := k)
+      i ({n} : Finset ℕ) (fun j => if j = n then b else i) N)
+    (hex1 : nthVisitTimeExists (k := k) (prefixExtend (k := k) N xs) i (n + 1))
+    (hex2 : nthVisitTimeExists (k := k) (prefixExtend (k := k) N xs) i (n + 2))
+    (hbd1 : extractVisitTime xs i (n + 1) hex1 < N)
+    (hbd2 : extractVisitTime xs i (n + 2) hex2 < N) :
+    rawSwap xs i n (carrier_mem_visit_exists xs i n b hxs) hex1 hex2 hbd1 hbd2 ∈
+      rowVisitCylinderEventUpToPrefixCarrier (k := k)
+        i ({n + 1} : Finset ℕ) (fun j => if j = n + 1 then b else i) N := by
+  let hex0 := carrier_mem_visit_exists xs i n b hxs
+  have h0 := extractVisitTime_spec xs i n hex0
+  have h1 := extractVisitTime_spec xs i (n + 1) hex1
+  have h2 := extractVisitTime_spec xs i (n + 2) hex2
+  have ht01 : extractVisitTime xs i n hex0 < extractVisitTime xs i (n + 1) hex1 := by
+    by_contra h; push_neg at h
+    have := Finset.sum_le_sum_of_subset (f := fun s => if (prefixExtend (k := k) N xs) s = i then 1 else 0) (Finset.range_mono h)
+    change visitCountBefore (k := k) _ i _ ≤ visitCountBefore (k := k) _ i _ at this
+    rw [h0.2, h1.2] at this; omega
+  have ht12 : extractVisitTime xs i (n + 1) hex1 < extractVisitTime xs i (n + 2) hex2 := by
+    by_contra h; push_neg at h
+    have := Finset.sum_le_sum_of_subset (f := fun s => if (prefixExtend (k := k) N xs) s = i then 1 else 0) (Finset.range_mono h)
+    change visitCountBefore (k := k) _ i _ ≤ visitCountBefore (k := k) _ i _ at this
+    rw [h1.2, h2.2] at this; omega
+  have h_aL1 : isNthVisitTime (k := k) (prefixExtend (k := k) N xs) i (n + 1)
+      (extractVisitTime xs i n hex0 + (extractVisitTime xs i (n + 1) hex1 - extractVisitTime xs i n hex0)) := by
+    convert h1 using 1; exact Nat.add_sub_cancel' (Nat.le_of_lt ht01)
+  have h_aL1L2 : isNthVisitTime (k := k) (prefixExtend (k := k) N xs) i (n + 2)
+      (extractVisitTime xs i n hex0 + (extractVisitTime xs i (n + 1) hex1 - extractVisitTime xs i n hex0) +
+        (extractVisitTime xs i (n + 2) hex2 - extractVisitTime xs i (n + 1) hex1)) := by
+    convert h2 using 1
+    rw [Nat.add_sub_cancel' (Nat.le_of_lt ht01), Nat.add_sub_cancel' (Nat.le_of_lt ht12)]
+  have hsucc : (prefixExtend (k := k) N xs) (extractVisitTime xs i n hex0 + 1) = b := by
+    rcases carrier_mem_witness xs i n b hxs with ⟨t, _, htime, hb, _⟩
+    have := isNthVisitTime_unique (k := k) _ i n t _ ((nthVisitTime_eq_some_iff (k := k) _ i n t).mp htime) h0
+    subst this; simpa [successorAt] using hb
+  exact segmentSwap_carrier_mem_adjacent xs i n b _ _ _
+    (Nat.sub_pos_of_lt ht01) (Nat.sub_pos_of_lt ht12)
+    (by rw [Nat.add_sub_cancel' (Nat.le_of_lt ht01), Nat.add_sub_cancel' (Nat.le_of_lt ht12)]; exact Nat.le_of_lt hbd2)
+    h0 h_aL1 h_aL1L2 hsucc hxs
+
+/-- Reverse membership: rawSwap of carrier_{n+1} member lands in carrier_n. -/
+theorem rawSwap_bwd_mem {N : ℕ}
+    (i : Fin k) (b : Fin k) (hbi : b ≠ i) (n : ℕ)
+    (ys : Fin (N + 1) → Fin k)
+    (hys : ys ∈ rowVisitCylinderEventUpToPrefixCarrier (k := k)
+      i ({n + 1} : Finset ℕ) (fun j => if j = n + 1 then b else i) N)
+    (hex0 : nthVisitTimeExists (k := k) (prefixExtend (k := k) N ys) i n)
+    (hex1 : nthVisitTimeExists (k := k) (prefixExtend (k := k) N ys) i (n + 1))
+    (hex2 : nthVisitTimeExists (k := k) (prefixExtend (k := k) N ys) i (n + 2))
+    (hbd1 : extractVisitTime ys i (n + 1) hex1 < N)
+    (hbd2 : extractVisitTime ys i (n + 2) hex2 < N) :
+    rawSwap ys i n hex0 hex1 hex2 hbd1 hbd2 ∈
+      rowVisitCylinderEventUpToPrefixCarrier (k := k)
+        i ({n} : Finset ℕ) (fun j => if j = n then b else i) N := by
+  have h0 := extractVisitTime_spec ys i n hex0
+  have h1 := extractVisitTime_spec ys i (n + 1) hex1
+  have h2 := extractVisitTime_spec ys i (n + 2) hex2
+  have ht01 : extractVisitTime ys i n hex0 < extractVisitTime ys i (n + 1) hex1 := by
+    by_contra h; push_neg at h
+    have := Finset.sum_le_sum_of_subset (f := fun s => if (prefixExtend (k := k) N ys) s = i then 1 else 0) (Finset.range_mono h)
+    change visitCountBefore (k := k) _ i _ ≤ visitCountBefore (k := k) _ i _ at this
+    rw [h0.2, h1.2] at this; omega
+  have ht12 : extractVisitTime ys i (n + 1) hex1 < extractVisitTime ys i (n + 2) hex2 := by
+    by_contra h; push_neg at h
+    have := Finset.sum_le_sum_of_subset (f := fun s => if (prefixExtend (k := k) N ys) s = i then 1 else 0) (Finset.range_mono h)
+    change visitCountBefore (k := k) _ i _ ≤ visitCountBefore (k := k) _ i _ at this
+    rw [h1.2, h2.2] at this; omega
+  -- rawSwap(ys) = segmentSwap(ys, t₀, L1_ys, L2_ys) where L1_ys = t₁-t₀, L2_ys = t₂-t₁
+  -- segmentSwap_carrier_mem_adjacent_reverse expects (a, L1, L2) where visit n+1 is at a+L2
+  -- Here: a = t₀, and we need (n+1)-th visit at a + L2_param
+  -- The (n+1)-th visit in ys is at t₁. So L2_param = t₁ - t₀ = L1_ys.
+  -- And L1_param = L2_ys = t₂ - t₁.
+  -- So _reverse params: (t₀, L2_ys, L1_ys) = (t₀, t₂-t₁, t₁-t₀)
+  -- But rawSwap uses (t₀, L1_ys, L2_ys) = (t₀, t₁-t₀, t₂-t₁)
+  -- These are DIFFERENT. rawSwap produces segmentSwap(ys, t₀, t₁-t₀, t₂-t₁)
+  -- while the inverse should be segmentSwap(ys, t₀, t₂-t₁, t₁-t₀).
+  -- BUT: rawSwap IS the inverse because L1_ys = L2_original and L2_ys = L1_original
+  -- (the visit times in the swapped trajectory are naturally reversed).
+  -- When ys = rawSwap(xs), L1_ys = L2 and L2_ys = L1 (from the plan analysis).
+  -- So rawSwap(ys) = segmentSwap(ys, t₀, L2, L1) = inverse. ✓
+  -- For an ARBITRARY carrier_{n+1} member ys (not necessarily rawSwap of something),
+  -- rawSwap(ys) = segmentSwap(ys, t₀_ys, t₁_ys-t₀_ys, t₂_ys-t₁_ys)
+  -- We need this to be in carrier_n.
+  -- Use segmentSwap_carrier_mem_adjacent_reverse with:
+  --   a = t₀_ys, L1 = t₂_ys - t₁_ys, L2 = t₁_ys - t₀_ys
+  -- Then visit n+1 is at a + L2 = t₀_ys + (t₁_ys - t₀_ys) = t₁_ys ✓
+  -- And visit n+2 is at a + L1 + L2 = t₀_ys + (t₂_ys-t₁_ys) + (t₁_ys-t₀_ys) = t₂_ys ✓
+  -- The segmentSwap in _reverse: segmentSwap(ys, a, L2, L1) = segmentSwap(ys, t₀, t₁-t₀, t₂-t₁)
+  -- Wait, _reverse applies segmentSwap(ys, a, L2, L1). With our params:
+  -- segmentSwap(ys, t₀, L2=t₁-t₀, L1=t₂-t₁) — that's the SAME as rawSwap(ys)! ✓
+  -- So _reverse with params (t₀, t₂-t₁, t₁-t₀) gives membership for
+  -- segmentSwap(ys, t₀, t₁-t₀, t₂-t₁) = rawSwap(ys). ✓
+  have h_aL2 : isNthVisitTime (k := k) (prefixExtend (k := k) N ys) i (n + 1)
+      (extractVisitTime ys i n hex0 + (extractVisitTime ys i (n + 1) hex1 - extractVisitTime ys i n hex0)) := by
+    convert h1 using 1; exact Nat.add_sub_cancel' (Nat.le_of_lt ht01)
+  have h_aL1L2 : isNthVisitTime (k := k) (prefixExtend (k := k) N ys) i (n + 2)
+      (extractVisitTime ys i n hex0 + (extractVisitTime ys i (n + 2) hex2 - extractVisitTime ys i (n + 1) hex1) +
+        (extractVisitTime ys i (n + 1) hex1 - extractVisitTime ys i n hex0)) := by
+    convert h2 using 1; show _ = extractVisitTime ys i (n + 2) hex2
+    calc extractVisitTime ys i n hex0 + (extractVisitTime ys i (n + 2) hex2 - extractVisitTime ys i (n + 1) hex1) + (extractVisitTime ys i (n + 1) hex1 - extractVisitTime ys i n hex0)
+        = extractVisitTime ys i n hex0 + (extractVisitTime ys i (n + 1) hex1 - extractVisitTime ys i n hex0) + (extractVisitTime ys i (n + 2) hex2 - extractVisitTime ys i (n + 1) hex1) := by omega
+      _ = extractVisitTime ys i (n + 1) hex1 + (extractVisitTime ys i (n + 2) hex2 - extractVisitTime ys i (n + 1) hex1) := by rw [Nat.add_sub_cancel' (Nat.le_of_lt ht01)]
+      _ = extractVisitTime ys i (n + 2) hex2 := Nat.add_sub_cancel' (Nat.le_of_lt ht12)
+  have hsucc : (prefixExtend (k := k) N ys)
+      (extractVisitTime ys i n hex0 + (extractVisitTime ys i (n + 1) hex1 - extractVisitTime ys i n hex0) + 1) = b := by
+    rcases carrier_mem_witness ys i (n + 1) b hys with ⟨t, _, htime, hb, _⟩
+    have := isNthVisitTime_unique (k := k) _ i (n + 1) t _ ((nthVisitTime_eq_some_iff (k := k) _ i (n + 1) t).mp htime) h_aL2
+    subst this; simpa [successorAt] using hb
+  exact segmentSwap_carrier_mem_adjacent_reverse ys i n b
+    (extractVisitTime ys i n hex0)
+    (extractVisitTime ys i (n + 2) hex2 - extractVisitTime ys i (n + 1) hex1)
+    (extractVisitTime ys i (n + 1) hex1 - extractVisitTime ys i n hex0)
+    (Nat.sub_pos_of_lt ht12) (Nat.sub_pos_of_lt ht01)
+    (by show extractVisitTime ys i n hex0 + (extractVisitTime ys i (n + 2) hex2 - extractVisitTime ys i (n + 1) hex1) + (extractVisitTime ys i (n + 1) hex1 - extractVisitTime ys i n hex0) ≤ N
+        calc _ = extractVisitTime ys i (n + 2) hex2 := by omega
+          _ ≤ N := Nat.le_of_lt hbd2)
+    h0 h_aL2 h_aL1L2 hsucc hys
+
+/-- Forward evidence preservation. -/
+theorem rawSwap_fwd_evid {N : ℕ}
+    (xs : Fin (N + 1) → Fin k) (i : Fin k) (n : ℕ)
+    (hex0 : nthVisitTimeExists (k := k) (prefixExtend (k := k) N xs) i n)
+    (hex1 : nthVisitTimeExists (k := k) (prefixExtend (k := k) N xs) i (n + 1))
+    (hex2 : nthVisitTimeExists (k := k) (prefixExtend (k := k) N xs) i (n + 2))
+    (hbd1 : extractVisitTime xs i (n + 1) hex1 < N)
+    (hbd2 : extractVisitTime xs i (n + 2) hex2 < N) :
+    evidenceOf (n := N) (rawSwap xs i n hex0 hex1 hex2 hbd1 hbd2) = evidenceOf (n := N) xs := by
+  have h0 := extractVisitTime_spec xs i n hex0
+  have h1 := extractVisitTime_spec xs i (n + 1) hex1
+  have h2 := extractVisitTime_spec xs i (n + 2) hex2
+  have ht01 : extractVisitTime xs i n hex0 < extractVisitTime xs i (n + 1) hex1 := by
+    by_contra h; push_neg at h
+    have := Finset.sum_le_sum_of_subset (f := fun s => if (prefixExtend (k := k) N xs) s = i then 1 else 0) (Finset.range_mono h)
+    change visitCountBefore (k := k) _ i _ ≤ visitCountBefore (k := k) _ i _ at this
+    rw [h0.2, h1.2] at this; omega
+  have ht12 : extractVisitTime xs i (n + 1) hex1 < extractVisitTime xs i (n + 2) hex2 := by
+    by_contra h; push_neg at h
+    have := Finset.sum_le_sum_of_subset (f := fun s => if (prefixExtend (k := k) N xs) s = i then 1 else 0) (Finset.range_mono h)
+    change visitCountBefore (k := k) _ i _ ≤ visitCountBefore (k := k) _ i _ at this
+    rw [h1.2, h2.2] at this; omega
+  have val0 : xs ⟨extractVisitTime xs i n hex0, by omega⟩ = i := by
+    have := h0.1; rwa [prefixExtend_apply_le' xs (Nat.le_of_lt (Nat.lt_trans ht01 hbd1))] at this
+  have val1_fin : (⟨extractVisitTime xs i n hex0 + (extractVisitTime xs i (n + 1) hex1 - extractVisitTime xs i n hex0), by omega⟩ : Fin (N + 1)) = ⟨extractVisitTime xs i (n + 1) hex1, by omega⟩ :=
+    Fin.ext (Nat.add_sub_cancel' (Nat.le_of_lt ht01))
+  have val2_fin : (⟨extractVisitTime xs i n hex0 + (extractVisitTime xs i (n + 1) hex1 - extractVisitTime xs i n hex0) + (extractVisitTime xs i (n + 2) hex2 - extractVisitTime xs i (n + 1) hex1), by omega⟩ : Fin (N + 1)) = ⟨extractVisitTime xs i (n + 2) hex2, by omega⟩ := by
+    apply Fin.ext; show _ = extractVisitTime xs i (n + 2) hex2
+    have heq1 : extractVisitTime xs i n hex0 + (extractVisitTime xs i (n + 1) hex1 - extractVisitTime xs i n hex0) = extractVisitTime xs i (n + 1) hex1 := Nat.add_sub_cancel' (Nat.le_of_lt ht01)
+    have heq2 : extractVisitTime xs i (n + 1) hex1 + (extractVisitTime xs i (n + 2) hex2 - extractVisitTime xs i (n + 1) hex1) = extractVisitTime xs i (n + 2) hex2 := Nat.add_sub_cancel' (Nat.le_of_lt ht12)
+    simp only [Fin.val_mk]; omega
+  have val1 : xs ⟨extractVisitTime xs i (n + 1) hex1, by omega⟩ = i := by
+    have := h1.1; rwa [prefixExtend_apply_le' xs (Nat.le_of_lt hbd1)] at this
+  have val2 : xs ⟨extractVisitTime xs i (n + 2) hex2, by omega⟩ = i := by
+    have := h2.1; rwa [prefixExtend_apply_le' xs (Nat.le_of_lt hbd2)] at this
+  exact segmentSwap_evidenceOf xs _ _ _
+    (Nat.sub_pos_of_lt ht01) (Nat.sub_pos_of_lt ht12)
+    (by rw [Nat.add_sub_cancel' (Nat.le_of_lt ht01), Nat.add_sub_cancel' (Nat.le_of_lt ht12)]; exact Nat.le_of_lt hbd2)
+    (by rw [val0]; rw [show xs ⟨extractVisitTime xs i n hex0 + (extractVisitTime xs i (n + 1) hex1 - extractVisitTime xs i n hex0), _⟩ = xs ⟨extractVisitTime xs i (n + 1) hex1, _⟩ from congrArg xs val1_fin]; rw [val1])
+    (by rw [show xs ⟨extractVisitTime xs i n hex0 + (extractVisitTime xs i (n + 1) hex1 - extractVisitTime xs i n hex0), _⟩ = xs ⟨extractVisitTime xs i (n + 1) hex1, _⟩ from congrArg xs val1_fin]; rw [val1]; rw [show xs ⟨extractVisitTime xs i n hex0 + (extractVisitTime xs i (n + 1) hex1 - extractVisitTime xs i n hex0) + (extractVisitTime xs i (n + 2) hex2 - extractVisitTime xs i (n + 1) hex1), _⟩ = xs ⟨extractVisitTime xs i (n + 2) hex2, _⟩ from congrArg xs val2_fin]; rw [val2])
+
+/-- **THE CARRIER TRANSPORT EQUIV.** -/
+theorem carrierTransportEquivAdjacent {N : ℕ}
+    (i : Fin k) (b : Fin k) (hbi : b ≠ i) (n : ℕ)
+    (hSuff : ∀ (m : ℕ) (xs : Fin (N + 1) → Fin k),
+      xs ∈ rowVisitCylinderEventUpToPrefixCarrier (k := k)
+        i ({m} : Finset ℕ) (fun j => if j = m then b else i) N →
+      nthVisitTimeExists (k := k) (prefixExtend (k := k) N xs) i (m + 1) ∧
+      nthVisitTimeExists (k := k) (prefixExtend (k := k) N xs) i (m + 2) ∧
+      (∀ (h1 : nthVisitTimeExists (k := k) (prefixExtend (k := k) N xs) i (m + 1))
+         (h2 : nthVisitTimeExists (k := k) (prefixExtend (k := k) N xs) i (m + 2)),
+        extractVisitTime xs i (m + 1) h1 < N ∧ extractVisitTime xs i (m + 2) h2 < N)) :
+    ∃ e :
+      ↥(rowVisitCylinderEventUpToPrefixCarrier (k := k) i ({n} : Finset ℕ)
+          (fun m => if m = n then b else i) N) ≃
+      ↥(rowVisitCylinderEventUpToPrefixCarrier (k := k) i ({n + 1} : Finset ℕ)
+          (fun m => if m = n + 1 then b else i) N),
+      ∀ xs, evidenceOf (n := N) xs.1 = evidenceOf (n := N) (e xs).1 := by
+  -- Abbreviations for hSuff extraction
+  let S := fun m xs (hxs : xs ∈ rowVisitCylinderEventUpToPrefixCarrier (k := k)
+      i ({m} : Finset ℕ) (fun j => if j = m then b else i) N) => hSuff m xs hxs
+  refine ⟨{
+    toFun := fun ⟨xs, hxs⟩ =>
+      ⟨rawSwap xs i n (carrier_mem_visit_exists xs i n b hxs) (S n xs hxs).1 (S n xs hxs).2.1
+        ((S n xs hxs).2.2 (S n xs hxs).1 (S n xs hxs).2.1).1
+        ((S n xs hxs).2.2 (S n xs hxs).1 (S n xs hxs).2.1).2,
+       rawSwap_fwd_mem i b hbi n xs hxs (S n xs hxs).1 (S n xs hxs).2.1
+        ((S n xs hxs).2.2 (S n xs hxs).1 (S n xs hxs).2.1).1
+        ((S n xs hxs).2.2 (S n xs hxs).1 (S n xs hxs).2.1).2⟩
+    invFun := fun ⟨ys, hys⟩ =>
+      let hex1 := carrier_mem_visit_exists ys i (n + 1) b hys
+      let hex0 := nthVisitTimeExists_of_succ _ i n hex1
+      let hex2 := (S (n + 1) ys hys).1
+      have hbd1 : extractVisitTime ys i (n + 1) hex1 < N := by
+        rcases carrier_mem_witness ys i (n + 1) b hys with ⟨t, htN, htime, _, _⟩
+        have := isNthVisitTime_unique (k := k) _ i (n + 1) _ t
+          (extractVisitTime_spec ys i (n + 1) hex1)
+          ((nthVisitTime_eq_some_iff (k := k) _ i (n + 1) t).mp htime); omega
+      have hbd2 : extractVisitTime ys i (n + 2) hex2 < N :=
+        ((S (n + 1) ys hys).2.2 (S (n + 1) ys hys).1 (S (n + 1) ys hys).2.1).1
+      have hmem := rawSwap_bwd_mem i b hbi n ys hys hex0 hex1 hex2 hbd1 hbd2
+      Subtype.mk (rawSwap ys i n hex0 hex1 hex2 hbd1 hbd2) hmem
+    left_inv := by
+      intro ⟨xs, hxs⟩; ext1
+      obtain ⟨_, _, _, _, _, heq⟩ := rawSwap_selfInverse xs i n
+        (carrier_mem_visit_exists xs i n b hxs) (S n xs hxs).1 (S n xs hxs).2.1
+        ((S n xs hxs).2.2 (S n xs hxs).1 (S n xs hxs).2.1).1
+        ((S n xs hxs).2.2 (S n xs hxs).1 (S n xs hxs).2.1).2
+      exact heq
+    right_inv := by
+      intro ⟨ys, hys⟩; ext1
+      let hex1 := carrier_mem_visit_exists ys i (n + 1) b hys
+      let hex0 := nthVisitTimeExists_of_succ _ i n hex1
+      let hex2 := (S (n + 1) ys hys).1
+      have hbd1 : extractVisitTime ys i (n + 1) hex1 < N := by
+        rcases carrier_mem_witness ys i (n + 1) b hys with ⟨t, htN, htime, _, _⟩
+        have := isNthVisitTime_unique (k := k) _ i (n + 1) _ t
+          (extractVisitTime_spec ys i (n + 1) hex1)
+          ((nthVisitTime_eq_some_iff (k := k) _ i (n + 1) t).mp htime); omega
+      have hbd2 : extractVisitTime ys i (n + 2) hex2 < N :=
+        ((S (n + 1) ys hys).2.2 (S (n + 1) ys hys).1 (S (n + 1) ys hys).2.1).1
+      obtain ⟨_, _, _, _, _, heq⟩ := rawSwap_selfInverse ys i n hex0 hex1 hex2 hbd1 hbd2
+      exact heq
+  }, fun ⟨xs, hxs⟩ => (rawSwap_fwd_evid xs i n
+    (carrier_mem_visit_exists xs i n b hxs) (S n xs hxs).1 (S n xs hxs).2.1
+    ((S n xs hxs).2.2 (S n xs hxs).1 (S n xs hxs).2.1).1
+    ((S n xs hxs).2.2 (S n xs hxs).1 (S n xs hxs).2.1).2).symm⟩
 
 end CarrierTransportBridge
 
