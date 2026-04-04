@@ -70,19 +70,19 @@ structure EvidenceBetaParams where
 namespace EvidenceBetaParams
 
 /-- The Beta α parameter: prior + positive evidence -/
-noncomputable def alpha (p : EvidenceBetaParams) : ℝ := p.prior_param + p.evidence_pos
+@[reducible] noncomputable def alpha (p : EvidenceBetaParams) : ℝ := p.prior_param + p.evidence_pos
 
 /-- The Beta β parameter: prior + negative evidence -/
-noncomputable def beta (p : EvidenceBetaParams) : ℝ := p.prior_param + p.evidence_neg
+@[reducible] noncomputable def beta (p : EvidenceBetaParams) : ℝ := p.prior_param + p.evidence_neg
 
 /-- α is positive -/
 theorem alpha_pos (p : EvidenceBetaParams) : 0 < p.alpha := by
-  unfold alpha
+  have : (0 : ℝ) ≤ (p.evidence_pos : ℝ) := Nat.cast_nonneg _
   linarith [p.prior_pos]
 
 /-- β is positive -/
 theorem beta_pos (p : EvidenceBetaParams) : 0 < p.beta := by
-  unfold beta
+  have : (0 : ℝ) ≤ (p.evidence_neg : ℝ) := Nat.cast_nonneg _
   linarith [p.prior_pos]
 
 /-- Convert to BetaBernoulliPrior -/
@@ -93,20 +93,18 @@ noncomputable def toBetaPrior (p : EvidenceBetaParams) : BetaBernoulliPrior :=
     β_pos := p.beta_pos }
 
 /-- Beta posterior mean: α / (α + β) -/
-noncomputable def posteriorMean (p : EvidenceBetaParams) : ℝ :=
+@[reducible] noncomputable def posteriorMean (p : EvidenceBetaParams) : ℝ :=
   p.alpha / (p.alpha + p.beta)
 
 /-- Posterior mean is in [0, 1] -/
 theorem posteriorMean_mem_unit (p : EvidenceBetaParams) :
     0 ≤ p.posteriorMean ∧ p.posteriorMean ≤ 1 := by
-  unfold posteriorMean
   constructor
   · apply div_nonneg
     · linarith [p.alpha_pos]
     · linarith [p.alpha_pos, p.beta_pos]
   · have h_pos : 0 < p.alpha + p.beta := by linarith [p.alpha_pos, p.beta_pos]
     rw [div_le_one h_pos]
-    unfold alpha beta
     -- Need: prior + pos ≤ prior + pos + prior + neg
     -- i.e., 0 ≤ prior + neg, which is true since prior > 0 and neg ≥ 0
     have h1 : (0 : ℝ) ≤ p.evidence_neg := Nat.cast_nonneg _
@@ -721,14 +719,12 @@ inductive CredibleIntervalBackend where
   deriving DecidableEq, Repr
 
 /-- Clip a real to the probability simplex `[0,1]`. -/
-noncomputable def clamp01 (x : ℝ) : ℝ := min 1 (max 0 x)
+@[reducible] noncomputable def clamp01 (x : ℝ) : ℝ := min 1 (max 0 x)
 
 theorem clamp01_nonneg (x : ℝ) : 0 ≤ clamp01 x := by
-  unfold clamp01
   exact le_min (by norm_num) (le_max_left 0 x)
 
 theorem clamp01_le_one (x : ℝ) : clamp01 x ≤ 1 := by
-  unfold clamp01
   exact min_le_left 1 (max 0 x)
 
 /-- Standard Normal quantiles for common confidence levels.

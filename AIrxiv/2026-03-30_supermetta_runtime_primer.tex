@@ -1,0 +1,613 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+
+\title{Toward a Super-MeTTa Runtime:\\A Conceptual Primer on Layered Search, Typed Elaboration, Indexed Spaces, Oracle Boundaries, Attention-Aware Memory, and Benchmarking}
+\author{}
+\date{2026-03-30}
+
+\newcommand{\cetta}{\textsc{CeTTa}}
+\newcommand{\metta}{\textsc{MeTTa}}
+\newcommand{\heprime}{\textsc{HE-prime}}
+\newcommand{\petta}{\textsc{PeTTa}}
+\newcommand{\mork}{\textsc{MORK}}
+\newcommand{\prolog}{\textsc{Prolog}}
+\newcommand{\wam}{\textsc{WAM}}
+\newcommand{\zam}{\textsc{ZAM}}
+\newcommand{\ir}{\textsc{IR}}
+\newcommand{\symid}{\texttt{SymbolId}}
+\newcommand{\varid}{\texttt{VarId}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note distills a coherent architecture for a next-generation \metta{} runtime aimed at symbolic reasoning, large indexed knowledge spaces, future dependent-type elaboration, clean foreign-oracle boundaries, and eventually attention-aware memory management. The main thesis is that a durable design comes from separating \emph{hard semantics} from \emph{soft policy}. Hard semantics includes ownership, lifetimes, profiles, binding identity, and the boundaries between local search, shared indexed spaces, and elaboration. Soft policy includes indexing choices, scheduling, caching, search strategy, and attention allocation. The result is a conceptual blueprint for a \emph{Super-MeTTa} runtime: deterministic by default, nondeterministic when asked, index-friendly at large scale, profile-driven rather than fork-driven, and prepared for later memory economics and external reasoning oracles without baking those concerns into the semantic core.
+\end{abstract}
+
+\section{Purpose and Scope}
+
+The goal of this primer is not to document one particular commit or implementation snapshot. It is to record the interesting conceptual ideas needed to guide later work and later conversations. It therefore focuses on:
+\begin{itemize}[leftmargin=2em]
+  \item the architecture of a serious symbolic runtime rather than one benchmark hack,
+  \item the separation of machines and policies,
+  \item the relationship between search, types, spaces, parsing, oracles, memory, and concurrency,
+  \item and the order in which these pieces should be built so that local improvements do not sabotage the long-term system.
+\end{itemize}
+
+The intended setting is a \metta{} family runtime, but the principles are broader. They apply to any symbolic system that wants to support:\
+(1) local backtracking-style reasoning, \
+(2) large indexed shared spaces, \
+(3) profile-specific language surfaces, \
+(4) optional theorem proving and solver integration, and \
+(5) long-lived interactive or agentic workloads.
+
+\section{The Central Design Thesis}
+
+The runtime should be organized around the following distinction:
+
+\begin{quote}
+\textbf{Hard semantics} should answer what a value \emph{is}, who owns it, where it can live, and what guarantees a computation exposes. \\
+\textbf{Soft policy} should answer how the runtime prioritizes, schedules, indexes, caches, or evicts within those semantic guarantees.
+\end{quote}
+
+This one distinction clarifies many otherwise confusing debates:
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{Determinism} is semantic; clause indexing is policy.
+  \item \textbf{A promoted session object} is semantic; its eviction priority is policy.
+  \item \textbf{A profile's available forms and effects} are semantic; the search strategy used to execute them can be policy.
+  \item \textbf{A source/sink/program-context boundary} is semantic; the batching and scheduling policy across that boundary is policy.
+\end{itemize}
+
+A useful slogan is:
+\begin{quote}
+\emph{Make user-visible meaning explicit; keep backend cleverness mostly invisible.}
+\end{quote}
+
+\section{A Three-Machine Runtime with a Profile Layer}
+
+A robust symbolic runtime should not be one giant mutable evaluator. It should be factored into three distinct machines plus a profile layer.
+
+\subsection{Machine 1: the local search machine}
+
+This machine handles rollback-heavy local symbolic computation:
+\begin{itemize}[leftmargin=2em]
+  \item unification and matching,
+  \item branch-local bindings,
+  \item nondeterministic choice points,
+  \item backtracking and rollback,
+  \item and branch-local scratch allocation.
+\end{itemize}
+
+Its implementation can learn from the \wam{} without becoming a full \prolog{} clone. The important lessons are:
+\begin{itemize}[leftmargin=2em]
+  \item use trails or equivalent rollback structures,
+  \item tie scratch allocation to choice-frame watermarks,
+  \item avoid repeated full cloning of environments,
+  \item and use indexing to reduce pointless branching, not to define semantics.
+\end{itemize}
+
+\subsection{Machine 2: the indexed shared-space machine}
+
+This machine handles persistent, queryable, largely shared state:
+\begin{itemize}[leftmargin=2em]
+  \item exact and prefix lookup,
+  \item indexed joins and conjunctions,
+  \item snapshots and epochs,
+  \item result batches,
+  \item and external program/source/sink execution over shared data.
+\end{itemize}
+
+This is where \mork{}, path maps, zippers, or other large-scale indexed substrates belong. The point of this machine is not to mimic the local evaluator. It is to make large read-mostly spaces cheap to share, cheap to query, and amenable to later parallelism.
+
+\subsection{Machine 3: the type/elaboration machine}
+
+This machine handles:
+\begin{itemize}[leftmargin=2em]
+  \item scoped binders,
+  \item metavariables,
+  \item type constraints,
+  \item normalization and definitional equality,
+  \item and elaboration from surface forms to a kernel.
+\end{itemize}
+
+It may share syntax and identifiers with the runtime, but it should not reuse the runtime's local search environment as its main state representation. It is another rollbackable machine, but with different invariants and different error conditions.
+
+\subsection{Profiles above the machines}
+
+A \emph{profile} is a packaged language surface assembled over the machines. A profile should specify:
+\begin{itemize}[leftmargin=2em]
+  \item surface syntax,
+  \item callable/effect inventory,
+  \item evaluation policy,
+  \item type policy,
+  \item standard library,
+  \item capability set,
+  \item and optional oracle/resource access.
+\end{itemize}
+
+Examples include a base \metta{} profile, an extended \heprime{} profile, a future \petta{} profile, and future \prolog{}-inspired profiles.
+
+\paragraph{Design consequence.}
+Language variants should be profiles, not evaluator forks.
+
+\section{Identifiers: Global Symbols versus Binder Identity}
+
+A runtime of this kind needs two distinct identity spaces.
+
+\subsection{Global spelling identity: \symid{}}
+
+All persistent symbol spellings should be interned and represented by compact symbol ids. Strings should remain boundary phenomena: parser input, printer output, serialization, and diagnostics.
+
+The consequences are significant:
+\begin{itemize}[leftmargin=2em]
+  \item symbol equality becomes integer equality,
+  \item dispatch can be descriptor-driven rather than string-driven,
+  \item indexing becomes denser and cheaper,
+  \item streaming parsers can intern byte spans directly,
+  \item and metadata tables can be keyed by symbol id.
+\end{itemize}
+
+\subsection{Binder identity: \varid{}}
+
+Variables are not just symbols. A variable needs a stable binder identity, often with a surface spelling only for display or debugging. In other words:
+\begin{itemize}[leftmargin=2em]
+  \item \symid{} answers \emph{what global spelling is this?}
+  \item \varid{} answers \emph{which binder is this occurrence attached to?}
+\end{itemize}
+
+That separation is foundational. It prevents the runtime from conflating user spelling with semantic scope.
+
+\section{Namespaces and Module Qualification}
+
+A library ecosystem benefits from qualified names. The cleanest long-term solution is:
+\begin{quote}
+\textbf{Use one canonical semantic namespace separator, and treat prettier variants only as surface sugar.}
+\end{quote}
+
+A practical choice is to keep names internally canonicalized as
+\begin{center}
+\texttt{math:exp} \qquad \texttt{mm2:sink} \qquad \texttt{mork:context-run!}
+\end{center}
+
+and optionally allow the reader or printer to accept or display
+\begin{center}
+\texttt{math.exp} \qquad \texttt{mm2.sink}
+\end{center}
+
+provided the dotted form is immediately canonicalized to the colon form before symbol interning.
+
+The benefit is that there remains only one semantic algebra for:
+\begin{itemize}[leftmargin=2em]
+  \item module paths,
+  \item exported names,
+  \item inventories,
+  \item and compatibility layers.
+\end{itemize}
+
+The runtime should \emph{not} develop two independent qualification systems.
+
+\section{Deterministic by Default, Search by Opt-In}
+
+A core design goal is to avoid the classic backend-tuning burden often associated with \prolog{}-style systems. The runtime should therefore distinguish two user-facing modes.
+
+\subsection{Default evaluator}
+
+The default evaluator should be deterministic by default, or at least explicit about nondeterminism. Users should be able to control:
+\begin{itemize}[leftmargin=2em]
+  \item whether they want the first answer, all answers, or an aggregate,
+  \item whether result order is stable, fair, or unspecified,
+  \item and whether memoization/tabling is off, on, or automatic.
+\end{itemize}
+
+What users should \emph{not} need to control routinely:
+\begin{itemize}[leftmargin=2em]
+  \item trie shape,
+  \item join order quirks,
+  \item exact clause indexing policy,
+  \item or backend-specific term layout tricks.
+\end{itemize}
+
+\subsection{Separate search service}
+
+At the same time, the runtime should admit a more ATP-like search engine or search service for cases where aggressive search is appropriate:
+\begin{itemize}[leftmargin=2em]
+  \item proof search,
+  \item auto tactics,
+  \item large branching symbolic synthesis,
+  \item weighted or portfolio search,
+  \item and result prioritization.
+\end{itemize}
+
+The main principle is simple:
+\begin{quote}
+\emph{Ordinary programming should not feel like backend tuning. Aggressive search should be opt-in.}
+\end{quote}
+
+\section{Shared Spaces: Space Discipline versus Space Engine}
+
+An important architectural refinement is to separate:\
+(1) the \emph{discipline} of a space from \
+(2) the \emph{engine} used to implement it.
+
+For example:
+\begin{itemize}[leftmargin=2em]
+  \item a discipline might be \texttt{atom}, \texttt{stack}, \texttt{queue}, or \texttt{hash},
+  \item while an engine might be \texttt{native}, \texttt{indexed}, or \texttt{mork-like}.
+\end{itemize}
+
+This matters because an indexed engine is not semantically ``another stack kind.'' It is an implementation substrate for storage and query.
+
+The right public abstraction is therefore something like:
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{discipline}: what user-level store behavior is promised,
+  \item \textbf{engine}: how the store is represented and queried,
+  \item \textbf{capabilities}: what operations the store supports.
+\end{itemize}
+
+\section{Programs, Sources, Sinks, and External Oracles}
+
+External integrations should be organized around semantically honest nouns.
+
+\subsection{Programs}
+
+A program is a structured executable artifact: a rule set, a dataflow, or a declarative process specification.
+
+\subsection{Sources and sinks}
+
+Sources and sinks are \emph{descriptors of interaction}, not necessarily open handles. They describe:
+\begin{itemize}[leftmargin=2em]
+  \item where data comes from,
+  \item where data should be sent,
+  \item or what shape an external interaction has.
+\end{itemize}
+
+\subsection{Resources and handles}
+
+Only things with real lifecycle or ownership should become handle-like resources:
+\begin{itemize}[leftmargin=2em]
+  \item files,
+  \item memory-mapped datasets,
+  \item solver sessions,
+  \item network endpoints,
+  \item or external process contexts.
+\end{itemize}
+
+\subsection{Metamath, SMT, ATPs}
+
+A theorem system such as Metamath should therefore normally appear as:
+\begin{itemize}[leftmargin=2em]
+  \item a streamed source,
+  \item a sink or checker,
+  \item or an oracle/session,
+\end{itemize}
+not as a native kernel that the runtime pretends is just another library.
+
+\paragraph{General rule.}
+Do not name something \texttt{resource} or \texttt{open} unless it really owns or acquires something.
+
+\section{Parsing and Interchange: Stream First, Materialize Late}
+
+For large inputs and long-running agents, full-file materialization is the wrong default. The correct base pattern is:
+\begin{quote}
+\emph{stream input at coarse semantic granularity, and only promote what needs to survive.}
+\end{quote}
+
+This suggests a parser architecture with:
+\begin{itemize}[leftmargin=2em]
+  \item buffered or memory-mapped text sources,
+  \item slice-based tokenization,
+  \item direct span-to-\symid{} interning,
+  \item statement iterators rather than full AST lists,
+  \item and delayed promotion into persistent memory.
+\end{itemize}
+
+For domain languages such as Metamath or \prolog{}, the runtime should prefer:
+\begin{center}
+\textbf{streaming frontend} $\rightarrow$ \textbf{normalized IR} $\rightarrow$ \textbf{lowering}
+\end{center}
+
+over ``read the whole file into generic runtime terms and hope for the best.''
+
+\section{Profiles for Alternate Language Surfaces}
+
+A powerful runtime should be able to host alternate source languages without becoming a language zoo. The correct place for alternate surfaces is the profile layer.
+
+\subsection{A future \petta{} profile}
+
+A future \petta{} profile should be treated first as:
+\begin{itemize}[leftmargin=2em]
+  \item a manifest,
+  \item an oracle/conformance lane,
+  \item and a shadow profile,
+\end{itemize}
+
+before it becomes a full runtime implementation. This keeps \petta{} as a semantic anchor without forcing premature evaluator entanglement.
+
+\subsection{A future \prolog{} profile}
+
+Likewise, it is reasonable to host \prolog{} as a frontend over the search machine:
+\begin{center}
+\prolog{} source $\rightarrow$ \texttt{CoreProlog IR} $\rightarrow$ search-machine lowering.
+\end{center}
+
+The lesson is that ``the opposite of implementing \petta{} on \prolog{}'' is not a naive source-to-source transpiler. It is a real frontend plus a normalized intermediate representation.
+
+\section{Memory: Lifetimes First, Collection Later}
+
+A language runtime that wants to become long-lived, interactive, and agentic needs a durable memory model. The strongest conceptual move is:
+\begin{quote}
+\textbf{finish lifetime and ownership discipline first; only then decide how much garbage collection is still necessary.}
+\end{quote}
+
+\subsection{Hard lifetime strata}
+
+A clean symbolic runtime benefits from at least four lifetime strata:
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{runtime-global}: symbol tables, builtin descriptors, immutable global metadata,
+  \item \textbf{module-frozen}: loaded libraries, frozen rule bundles, compiled assets,
+  \item \textbf{session-owned}: spaces, caches, state cells, active resources,
+  \item \textbf{scratch or branch-local}: temporary terms, substitution products, short-lived results.
+\end{enumerate}
+
+These strata are not merely performance tricks. They are ownership classes.
+
+\subsection{Promotion}
+
+Promotion between strata must be explicit. A scratch object should not survive accidentally; it should survive only by promotion into a longer-lived stratum.
+
+\subsection{Root-walk first}
+
+Before a collector is introduced, the runtime should define an explicit root-walk interface for session-owned structures:
+\begin{itemize}[leftmargin=2em]
+  \item registry,
+  \item spaces,
+  \item module store,
+  \item caches,
+  \item resources,
+  \item and active program contexts.
+\end{itemize}
+
+\subsection{If a collector is later needed}
+
+If region discipline, promotion, and streaming are still not enough, the right next collector is generally a:
+\begin{center}
+\textbf{precise, non-moving, session-heap collector}
+\end{center}
+
+rather than a process-wide, conservative, moving collector. That preserves pointer stability and keeps scratch allocation fast and simple.
+
+\section{Attention-Aware Memory as a Policy Layer}
+
+An AGI-oriented runtime may want attention-like resource allocation. The right way to integrate this is:
+\begin{quote}
+\textbf{hard lifetimes underneath, soft attention economics above.}
+\end{quote}
+
+\subsection{What should carry attention?}
+
+Not every raw atom. Instead, attention should attach to \emph{persistent carriers} such as:
+\begin{itemize}[leftmargin=2em]
+  \item space entries,
+  \item cached results,
+  \item query templates,
+  \item indexed chunks,
+  \item resources,
+  \item and possibly promoted derived facts.
+\end{itemize}
+
+\subsection{A useful mapping}
+
+Attention-like concepts can then be interpreted as:
+\begin{itemize}[leftmargin=2em]
+  \item \textbf{hotness} or short-term importance: scheduling priority and residency in hot caches,
+  \item \textbf{retention} or long-term importance: reluctance to evict or demote,
+  \item \textbf{pinning}: never evict unless explicitly told to do so.
+\end{itemize}
+
+\subsection{Hierarchical attention, not per-atom micro-management}
+
+A scalable system should attach attention at multiple levels:
+\begin{itemize}[leftmargin=2em]
+  \item coarse budgets for spaces, modules, and caches,
+  \item mid-scale budgets for query families or indexed chunk groups,
+  \item and only then finer-grained per-entry attention inside an already active region.
+\end{itemize}
+
+This avoids the wasteful design of micro-managing every transient term.
+
+\section{Parallelism: Early Win, Correct Foundation}
+
+The best early parallelism win is not shared mutable search state. It is:
+\begin{center}
+\textbf{snapshot-parallel evaluation over immutable indexed spaces}
+\end{center}
+
+The runtime should therefore be designed so that:
+\begin{itemize}[leftmargin=2em]
+  \item workers read the same immutable space snapshot,
+  \item each worker owns its own scratch arena, bindings builder, and local result buffer,
+  \item and merge occurs only at explicit barriers.
+\end{itemize}
+
+This validates the ownership model early without forcing every local operation across a message boundary.
+
+\paragraph{Important anti-pattern.}
+Do not turn local symbolic operations into communication-style overhead merely because a distributed or process-calculus model is conceptually attractive. Keep local search local and shared spaces shared.
+
+\section{Benchmarking: Measure the Right Things Separately}
+
+A serious runtime needs benchmark families, not one benchmark mythology. The following lanes should be treated as distinct.
+
+\subsection{Ingest and indexing}
+Measure:
+\begin{itemize}[leftmargin=2em]
+  \item atoms or facts loaded per second,
+  \item index-build time,
+  \item peak memory during load,
+  \item and the difference between source formats (e.g. text vs indexed archive).
+\end{itemize}
+
+\subsection{Indexed query}
+Measure:
+\begin{itemize}[leftmargin=2em]
+  \item point queries,
+  \item prefix queries,
+  \item conjunctions,
+  \item and join-heavy workloads over large spaces.
+\end{itemize}
+
+\subsection{Local search}
+Use workloads such as symbolic puzzles, finite graph search, and theorem-style branchy derivation to test rollback discipline, substitution churn, and branch scheduling.
+
+\subsection{Streaming aggregation}
+Test workloads where many proof or evidence items must be combined under thresholds, confidence revision, or grouping. These should test streaming reduction, not merely list materialization.
+
+\subsection{Update and recompute}
+Test add/remove or changing evidence, then rerun queries. This measures snapshots, epochs, and cache invalidation.
+
+\subsection{Oracle and source/sink integration}
+Test streamed imports, external solver calls, theorem checkers, and large archival data sources as first-class benchmark families.
+
+\subsection{Parallel snapshot workloads}
+Later, add multi-seed or multi-branch workloads over one frozen large snapshot to test the correctness of the ownership model under parallelism.
+
+\paragraph{Interpretive rule.}
+If one benchmark is dominated by \texttt{collect} or result materialization, it is primarily testing an aggregation strategy, not a whole runtime philosophy.
+
+\section{A Clean Roadmap}
+
+A practical order of work follows from the architecture.
+
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{Freeze the nouns and seams.}\
+  Finalize the split between local search, shared spaces, type/elaboration, profiles, and program/source/sink/resource concepts.
+
+  \item \textbf{Finish the local search machine.}\
+  Trail-like rollback, choice frames, scratch watermarks, and environment builders come before more benchmark chasing.
+
+  \item \textbf{Stabilize the space engine boundary.}\
+  Make the indexed shared-space substrate explicit and honest.
+
+  \item \textbf{Keep the foreign ABI layered and packet-oriented.}\\
+  Stable handle families and result batches should be favored over leaking internal data structures.
+
+  \item \textbf{Introduce the profile system.}\\
+  Alternate language surfaces and capability bundles should become profiles, not evaluator forks.
+
+  \item \textbf{Add shadow profiles and frontend lanes.}\\
+  Use future \petta{} and \prolog{} support first as conformance and frontend anchors before expanding runtime commitments.
+
+  \item \textbf{Finish the memory strata and promotion model.}\\
+  Then, only if still needed, add a precise non-moving session collector.
+
+  \item \textbf{Add the parallel snapshot MVP.}\\
+  This validates ownership and prepares for larger scaling work.
+
+  \item \textbf{Build the richer type/elaboration machine.}\\
+  This should be done as its own rollbackable machine rather than an extension of runtime bindings.
+\end{enumerate}
+
+\section{Anti-Patterns to Avoid}
+
+The following design mistakes are especially tempting and especially costly.
+
+\begin{enumerate}[leftmargin=2em]
+  \item \textbf{One giant mutable evaluator.}\\
+  This entangles search, spaces, types, oracles, and policy.
+
+  \item \textbf{Two semantic namespace systems.}\\
+  One canonical qualifier is enough; prettier forms should be only sugar.
+
+  \item \textbf{Making every local operation a communication boundary.}\\
+  Keep shared-space and oracle boundaries coarse and semantically meaningful.
+
+  \item \textbf{Letting runtime strings remain the core identity model.}\\
+  Strings belong at boundaries; ids belong in the hot path.
+
+  \item \textbf{Using attention to replace ownership.}\\
+  Lifetimes and roots should be explicit whether or not attention exists.
+
+  \item \textbf{Treating one benchmark pathology as the whole architecture.}\\
+  Separate ingest, query, search, aggregation, and oracle lanes.
+
+  \item \textbf{Prematurely implementing a full alternate runtime profile.}\\
+  Shadow profiles and frontend lanes should come before a full semantic duplication.
+\end{enumerate}
+
+\section{Conclusion}
+
+A serious \metta{} runtime should not be thought of as one evaluator getting gradually more clever. It should be understood as a layered symbolic operating environment with:
+\begin{itemize}[leftmargin=2em]
+  \item a local search machine for rollback-heavy symbolic work,
+  \item an indexed shared-space machine for large persistent knowledge,
+  \item a separate elaboration machine for future typed kernels,
+  \item a profile layer for alternate language surfaces,
+  \item explicit program/source/sink/resource seams for foreign integration,
+  \item a lifetime-first memory discipline,
+  \item and a policy layer for indexing, caching, scheduling, and later attention economics.
+\end{itemize}
+
+The simplest summary is:
+\begin{quote}
+\textbf{Separate the machines, make ownership explicit, keep user-visible meaning stable, and let backend intelligence accumulate behind those boundaries.}
+\end{quote}
+
+That is the cleanest route to a \emph{Super-MeTTa} runtime capable of supporting symbolic programming, large knowledge spaces, theorem interaction, solver integration, future type elaboration, and eventually more AGI-like memory economics without turning into an entangled benchmark-driven mess.
+
+\section*{Selected References for Further Work}
+
+\begin{thebibliography}{99}
+
+\bibitem{AitKaci1991}
+Hassan A\"it-Kaci.
+\newblock \emph{Warren's Abstract Machine: A Tutorial Reconstruction}.
+\newblock MIT Press, 1991.
+
+\bibitem{TofteTalpin1997}
+Mads Tofte and Jean-Pierre Talpin.
+\newblock Region-based memory management.
+\newblock \emph{Information and Computation}, 132(2):109--176, 1997.
+
+\bibitem{DifferentialDataflow}
+Frank McSherry, Derek Murray, Rebecca Isaacs, and Michael Isard.
+\newblock Differential dataflow.
+\newblock In \emph{CIDR}, 2013.
+
+\bibitem{Datafrog}
+Niko Matsakis and collaborators.
+\newblock \emph{Datafrog}: a lightweight Datalog engine.
+\newblock Software/library documentation and implementation notes.
+
+\bibitem{PreciseGCforC}
+Jon Rafkind and John Regehr.
+\newblock Precise garbage collection for C.
+\newblock In \emph{ISMM Workshop on Memory Systems Performance and Correctness}, 2009.
+
+\bibitem{GCArena}
+Kyren and contributors.
+\newblock \emph{gc-arena}: isolated garbage-collected arenas for runtime implementations.
+\newblock Library documentation and design notes.
+
+\bibitem{SWIIndexing}
+Jan Wielemaker and contributors.
+\newblock Just-in-time indexing and tabling facilities in SWI-Prolog.
+\newblock System documentation and implementation notes.
+
+\bibitem{OpenCogAttention}
+OpenCog documentation on economic attention allocation and later critiques of per-atom attention.
+\newblock Historical design notes.
+
+\end{thebibliography}
+
+\end{document}

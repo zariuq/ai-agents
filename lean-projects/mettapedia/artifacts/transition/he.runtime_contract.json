@@ -1,0 +1,250 @@
+{
+  "dialect": "he",
+  "schemaVersion": 1,
+  "contracts": [
+    {
+      "head": "match",
+      "arity": 3,
+      "argRoles": ["space-ref", "pattern", "template"],
+      "specConstructors": ["MinimalStep.match", "MinimalStep.match_empty"],
+      "semanticAuthority": ["Space.queryEquations", "Matching.matchAtoms", "Matching.mergeBindings", "Bindings.apply"],
+      "determinism": "nondeterministic",
+      "bindingsFlow": "mergeFromMatch",
+      "resultCases": ["match succeeds: template with pattern variables substituted, one result per match", "no match: Empty atom"],
+      "errorCases": [],
+      "mutatesSpace": false,
+      "fixtures": [
+      { "label": "match: simple equation lookup", "positive": true, "instructionAtom": "(match &self (= a $x) $x)", "expectedResults": ["b"] },
+      { "label": "match: no equation → Empty", "positive": true, "instructionAtom": "(match &self (= z $x) $x)", "expectedResults": ["Empty"] },
+      { "label": "match: multiple results (nondeterministic)", "positive": true, "instructionAtom": "(match &self (= color $x) $x)", "expectedResults": ["red", "green"] }
+      ]
+    },
+    {
+      "head": "unify",
+      "arity": 4,
+      "argRoles": ["target-atom", "pattern", "success-body", "failure-body"],
+      "specConstructors": ["MinimalStep.unify_match", "MinimalStep.unify_no_match"],
+      "semanticAuthority": ["Matching.matchAtoms", "Matching.mergeBindings", "Bindings.hasLoop", "Bindings.apply"],
+      "determinism": "branchingTwoWay",
+      "bindingsFlow": "mergeFromMatch",
+      "resultCases": ["match succeeds: merged bindings applied to success-body", "match fails: failure-body with original input bindings"],
+      "errorCases": ["variable loop in merged bindings: filtered out (may yield no results)"],
+      "mutatesSpace": false,
+      "fixtures": [
+      { "label": "unify: match succeeds, binds variable", "positive": true, "instructionAtom": "(unify (A B) ($x $y) (found $x $y) (not-found))", "expectedResults": ["(found A B)"] },
+      { "label": "unify: no match, returns else branch", "positive": true, "instructionAtom": "(unify (A B) (C D) success failure)", "expectedResults": ["failure"] },
+      { "label": "unify: variable loop filtered", "positive": false, "instructionAtom": "(unify $x $y success failure)", "expectedResults": [] }
+      ]
+    },
+    {
+      "head": "switch",
+      "arity": 2,
+      "argRoles": ["scrutinee (already evaluated)", "branches ((pattern template) ...)"],
+      "specConstructors": ["MC_SwitchMinimal_Start", "MC_SwitchMinimal_Match", "MC_SwitchMinimal_NoMatch"],
+      "semanticAuthority": ["selectSwitchTemplate", "Matching.matchAtoms", "Matching.mergeBindings", "Bindings.hasLoop", "Bindings.apply"],
+      "determinism": "nondeterministic",
+      "bindingsFlow": "mergeFromMatch",
+      "resultCases": ["first matching branch: template with pattern variables substituted (may yield multiple results if match is nondeterministic)", "no matching branch: Empty"],
+      "errorCases": [],
+      "mutatesSpace": false,
+      "fixtures": [
+      { "label": "switch: first match wins", "positive": true, "instructionAtom": "(switch a ((a ok) (b bad)))", "expectedResults": ["ok"] },
+      { "label": "switch: variable pattern binds into template", "positive": true, "instructionAtom": "(switch z (($x (tag $x))))", "expectedResults": ["(tag z)"] },
+      { "label": "switch: no match → Empty", "positive": false, "instructionAtom": "(switch z ((a ok) (b bad)))", "expectedResults": ["Empty"] },
+      { "label": "switch-minimal: identical to switch", "positive": true, "instructionAtom": "(switch-minimal a ((a ok)))", "expectedResults": ["ok"] }
+      ]
+    },
+    {
+      "head": "case",
+      "arity": 2,
+      "argRoles": ["scrutinee (to be evaluated)", "branches ((pattern template) ...)"],
+      "specConstructors": ["MC_Case_Start (evaluates scrutinee, then delegates to switch)"],
+      "semanticAuthority": ["metta", "switchContract"],
+      "determinism": "nondeterministic",
+      "bindingsFlow": "mergeFromMatch",
+      "resultCases": ["scrutinee evaluates, then matching branch selected (via switch semantics)", "no matching branch: Empty"],
+      "errorCases": [],
+      "mutatesSpace": false,
+      "fixtures": [
+      { "label": "case: evaluates scrutinee then matches", "positive": true, "instructionAtom": "(case a ((a ok) (b bad)))", "expectedResults": ["ok"] },
+      { "label": "case: no match → Empty", "positive": false, "instructionAtom": "(case z ((a ok) (b bad)))", "expectedResults": ["Empty"] }
+      ]
+    },
+    {
+      "head": "chain",
+      "arity": 3,
+      "argRoles": ["atom-to-eval", "variable", "template"],
+      "specConstructors": ["MinimalStep.chain", "MinimalStep.chain_empty"],
+      "semanticAuthority": ["EvalAtom", "Bindings.assign", "Bindings.apply"],
+      "determinism": "deterministic",
+      "bindingsFlow": "assignVariable",
+      "resultCases": ["eval succeeds (non-Empty): template with $var substituted, output bindings include $var assignment", "eval yields Empty: return Empty, output bindings from eval (no $var assignment)"],
+      "errorCases": [],
+      "mutatesSpace": false,
+      "fixtures": [
+      { "label": "chain: eval result substituted into template", "positive": true, "instructionAtom": "(chain x $v (tag $v))", "expectedResults": ["(tag x)"] },
+      { "label": "chain: eval yields Empty → return Empty", "positive": true, "instructionAtom": "(chain Empty $v (tag $v))", "expectedResults": ["Empty"] }
+      ]
+    },
+    {
+      "head": "collapse-bind",
+      "arity": 1,
+      "argRoles": ["atom (to evaluate and collect all results)"],
+      "specConstructors": ["MinimalStep.collapse_bind"],
+      "semanticAuthority": ["EvalAtom", "Bindings.toAtom", "Bindings.ofAtom_toAtom"],
+      "determinism": "deterministic",
+      "bindingsFlow": "encodeBindings",
+      "resultCases": ["one or more results: expression of (<atom> <bindings.toAtom>) pairs", "no results: empty expression ()"],
+      "errorCases": [],
+      "mutatesSpace": false,
+      "fixtures": [
+      { "label": "collapse-bind: single result with bindings encoded", "positive": true, "instructionAtom": "(collapse-bind x)", "expectedResults": ["((x (Bindings () ())))"] },
+      { "label": "collapse-bind: empty eval → empty expression", "positive": false, "instructionAtom": "(collapse-bind (match &self (= z $w) $w))", "expectedResults": ["()"] }
+      ]
+    },
+    {
+      "head": "superpose-bind",
+      "arity": 1,
+      "argRoles": ["encoded-pairs (from collapse-bind output)"],
+      "specConstructors": ["MinimalStep.superpose_bind"],
+      "semanticAuthority": ["Bindings.ofAtom?", "Bindings.ofAtom_toAtom"],
+      "determinism": "nondeterministic",
+      "bindingsFlow": "restoreFromCollapse",
+      "resultCases": ["one result per encoded pair: original (atom, bindings) restored", "empty input: no results"],
+      "errorCases": [],
+      "mutatesSpace": false,
+      "fixtures": [
+      { "label": "superpose-bind: restores single pair", "positive": true, "instructionAtom": "(superpose-bind ((x (Bindings () ()))))", "expectedResults": ["x"] },
+      { "label": "superpose-bind: restores multiple pairs nondeterministically", "positive": true, "instructionAtom": "(superpose-bind ((a (Bindings () ())) (b (Bindings ((v a)) ()))))", "expectedResults": ["a", "b"] },
+      { "label": "superpose-bind: empty input → no results", "positive": false, "instructionAtom": "(superpose-bind ())", "expectedResults": [] }
+      ]
+    },
+    {
+      "head": "assert",
+      "arity": 1,
+      "argRoles": ["expression (to evaluate and check against True)"],
+      "specConstructors": ["MC_Assert_Start", "MC_Assert_True", "MC_Assert_NotTrue"],
+      "semanticAuthority": ["metta", "Matching.matchAtoms", "Matching.mergeBindings", "Bindings.hasLoop"],
+      "determinism": "branchingTwoWay",
+      "bindingsFlow": "mergeFromMatch",
+      "resultCases": ["result matches True: return unit atom ()", "result does not match True: return (Error (assert <expr>) (<result> not True))"],
+      "errorCases": ["assertion failure: explicit Error atom with the failing result"],
+      "mutatesSpace": false,
+      "fixtures": [
+      { "label": "assert: True → unit", "positive": true, "instructionAtom": "(assert True)", "expectedResults": ["()"] },
+      { "label": "assert: False → Error", "positive": false, "instructionAtom": "(assert False)", "expectedResults": ["(Error (assert False) (False not True))"] },
+      { "label": "assert: non-boolean → Error", "positive": false, "instructionAtom": "(assert hello)", "expectedResults": ["(Error (assert hello) (hello not True))"] }
+      ]
+    },
+    {
+      "head": "function",
+      "arity": 1,
+      "argRoles": ["body (to evaluate until return)"],
+      "specConstructors": ["MinimalStep.function_return", "MinimalStep.function_no_return"],
+      "semanticAuthority": ["EvalAtom"],
+      "determinism": "deterministic",
+      "bindingsFlow": "passthrough",
+      "resultCases": ["body evaluates to (return <atom>): unwrap and return <atom>", "body does not produce (return ...): return (Error (function <body>) NoReturn)"],
+      "errorCases": ["NoReturn: body reached a terminal form that is not (return <atom>)"],
+      "mutatesSpace": false,
+      "fixtures": [
+      { "label": "function: return unwraps value", "positive": true, "instructionAtom": "(function (return ok))", "expectedResults": ["ok"] },
+      { "label": "function: no return → NoReturn error", "positive": false, "instructionAtom": "(function stuck)", "expectedResults": ["(Error (function stuck) NoReturn)"] }
+      ]
+    },
+    {
+      "head": "superpose",
+      "arity": 1,
+      "argRoles": ["expression (elements to branch over)"],
+      "specConstructors": ["MC_Superpose", "MC_Superpose_Empty"],
+      "semanticAuthority": [],
+      "determinism": "nondeterministic",
+      "bindingsFlow": "passthrough",
+      "resultCases": ["non-empty expression: one result per element (nondeterministic)", "empty expression (): return Empty"],
+      "errorCases": [],
+      "mutatesSpace": false,
+      "fixtures": [
+      { "label": "superpose: branch over elements", "positive": true, "instructionAtom": "(superpose (a b c))", "expectedResults": ["a", "b", "c"] },
+      { "label": "superpose: empty → Empty", "positive": false, "instructionAtom": "(superpose ())", "expectedResults": ["Empty"] }
+      ]
+    },
+    {
+      "head": "eval",
+      "arity": 1,
+      "argRoles": ["atom (to evaluate one step)"],
+      "specConstructors": ["MinimalStep.eval"],
+      "semanticAuthority": ["EvalAtom"],
+      "determinism": "nondeterministic",
+      "bindingsFlow": "mergeFromMatch",
+      "resultCases": ["atom reduces: one or more result atoms with updated bindings", "atom is irreducible: returned unchanged"],
+      "errorCases": ["stack overflow (fuel exhaustion): atom returned unchanged"],
+      "mutatesSpace": false,
+      "fixtures": [
+      { "label": "eval: symbol is irreducible", "positive": true, "instructionAtom": "(eval x)", "expectedResults": ["x"] },
+      { "label": "eval: expression with equation reduces", "positive": true, "instructionAtom": "(eval (f a))", "expectedResults": ["b"] }
+      ]
+    },
+    {
+      "head": "cons-atom",
+      "arity": 2,
+      "argRoles": ["head (atom)", "tail (expression)"],
+      "specConstructors": ["MinimalStep.cons_atom"],
+      "semanticAuthority": [],
+      "determinism": "deterministic",
+      "bindingsFlow": "passthrough",
+      "resultCases": ["always succeeds: expression with head prepended to tail elements"],
+      "errorCases": [],
+      "mutatesSpace": false,
+      "fixtures": [
+      { "label": "cons-atom: prepend to list", "positive": true, "instructionAtom": "(cons-atom a (b c))", "expectedResults": ["(a b c)"] },
+      { "label": "cons-atom: prepend to empty", "positive": true, "instructionAtom": "(cons-atom a ())", "expectedResults": ["(a)"] }
+      ]
+    },
+    {
+      "head": "decons-atom",
+      "arity": 1,
+      "argRoles": ["expression (non-empty, to deconstruct)"],
+      "specConstructors": ["MinimalStep.decons_atom"],
+      "semanticAuthority": [],
+      "determinism": "deterministic",
+      "bindingsFlow": "passthrough",
+      "resultCases": ["non-empty expression: returns (head tail) where tail is the remaining elements"],
+      "errorCases": ["empty expression (): undefined (no MinimalStep constructor matches)"],
+      "mutatesSpace": false,
+      "fixtures": [
+      { "label": "decons-atom: split expression", "positive": true, "instructionAtom": "(decons-atom (a b c))", "expectedResults": ["(a (b c))"] },
+      { "label": "decons-atom: singleton", "positive": true, "instructionAtom": "(decons-atom (a))", "expectedResults": ["(a ())"] }
+      ]
+    },
+    {
+      "head": "context-space",
+      "arity": 0,
+      "argRoles": [],
+      "specConstructors": ["MinimalStep.context_space"],
+      "semanticAuthority": ["Space.atoms"],
+      "determinism": "deterministic",
+      "bindingsFlow": "passthrough",
+      "resultCases": ["always succeeds: expression containing all atoms in the current space"],
+      "errorCases": [],
+      "mutatesSpace": false,
+      "fixtures": [
+      { "label": "context-space: empty space", "positive": true, "instructionAtom": "(context-space)", "expectedResults": ["()"] }
+      ]
+    },
+    {
+      "head": "call-native",
+      "arity": 2,
+      "argRoles": ["op (executable grounded atom)", "args (expression of arguments)"],
+      "specConstructors": ["MinimalStep.call_native"],
+      "semanticAuthority": ["GroundedDispatch.isExecutable", "GroundedDispatch.execute"],
+      "determinism": "nondeterministic",
+      "bindingsFlow": "passthrough",
+      "resultCases": ["native call succeeds: result atom from native, input bindings preserved", "runtime error: Error atom", "no reduce: atom returned unchanged"],
+      "errorCases": ["GroundedResult.runtimeError: explicit error from native function", "GroundedResult.incorrectArgument: wrong argument types"],
+      "mutatesSpace": false,
+      "fixtures": [
+      { "label": "call-native: bindings are not modified (spec limitation)", "positive": true, "instructionAtom": "(call-native + (1 2))", "expectedResults": ["3"] }
+      ]
+    }
+  ]
+}

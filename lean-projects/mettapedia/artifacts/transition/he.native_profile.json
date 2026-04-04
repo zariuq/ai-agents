@@ -1,0 +1,44 @@
+{
+  "dialect": "he",
+  "backend": "MM2/MORK",
+  "opProfiles": [
+    { "name": "let", "category": "surfaceSugar", "interpreterRef": "N/A — desugars to (case expr ((pat body)))", "languageDefRule": null },
+    { "name": "let*", "category": "surfaceSugar", "interpreterRef": "N/A — desugars to nested let", "languageDefRule": null },
+    { "name": "if", "category": "preludeEqAndType", "interpreterRef": "N/A — handled by (= (if True $then $else) $then) equations", "languageDefRule": "MC_Equation (via injected equations)" },
+    { "name": "case", "category": "mettaCallControl", "interpreterRef": "Interpreter.lean:385-396", "languageDefRule": "MC_Case_Start" },
+    { "name": "switch", "category": "mettaCallControl", "interpreterRef": "Interpreter.lean:342-356", "languageDefRule": "MC_SwitchMinimal_Start (parseSwitchMinimalCallArgs accepts both switch and switch-minimal)" },
+    { "name": "switch-minimal", "category": "mettaCallControl", "interpreterRef": "Interpreter.lean:342-356", "languageDefRule": "MC_SwitchMinimal_Start, MC_SwitchMinimal_Match, MC_SwitchMinimal_NoMatch" },
+    { "name": "switch-internal", "category": "preludeEqAndType", "interpreterRef": "stdlib.metta:352-362 (equation-defined helper)", "languageDefRule": "MC_Equation (via stdlib equations in space)" },
+    { "name": "assert", "category": "mettaCallControl", "interpreterRef": "Interpreter.lean:372-384", "languageDefRule": "MC_Assert_Start, MC_Assert_True, MC_Assert_NotTrue" },
+    { "name": "match", "category": "minimalInstruction", "interpreterRef": "MeTTaMinimalInstance.lean (space query + pattern match)", "languageDefRule": "MC_Match, MC_Match_Empty" },
+    { "name": "unify", "category": "minimalInstruction", "interpreterRef": "MeTTaMinimalInstance.lean:48-49 (Unify instruction)", "languageDefRule": "MC_Unify_Match, MC_Unify_NoMatch" },
+    { "name": "superpose", "category": "minimalInstruction", "interpreterRef": "MeTTaMinimalInstance.lean:58-60 (SuperposeBind)", "languageDefRule": "MC_Superpose, MC_Superpose_Empty" },
+    { "name": "collapse", "category": "minimalInstruction", "interpreterRef": "MeTTaMinimalInstance.lean:55-57 (CollapseBind)", "languageDefRule": "MC_Collapse" },
+    { "name": "+", "category": "groundedBuiltin", "interpreterRef": "Interpreter.lean:319 (grounded dispatch)", "languageDefRule": "MC_Grounded" },
+    { "name": "-", "category": "groundedBuiltin", "interpreterRef": "Interpreter.lean:319", "languageDefRule": "MC_Grounded" },
+    { "name": "*", "category": "groundedBuiltin", "interpreterRef": "Interpreter.lean:319", "languageDefRule": "MC_Grounded" },
+    { "name": "/", "category": "groundedBuiltin", "interpreterRef": "Interpreter.lean:319", "languageDefRule": "MC_Grounded" },
+    { "name": "%", "category": "groundedBuiltin", "interpreterRef": "Interpreter.lean:319", "languageDefRule": "MC_Grounded" },
+    { "name": "<", "category": "groundedBuiltin", "interpreterRef": "Interpreter.lean:319", "languageDefRule": "MC_Grounded" },
+    { "name": ">", "category": "groundedBuiltin", "interpreterRef": "Interpreter.lean:319", "languageDefRule": "MC_Grounded" },
+    { "name": "==", "category": "groundedBuiltin", "interpreterRef": "Interpreter.lean:319", "languageDefRule": "MC_Grounded" }
+  ],
+  "contractProfiles": [
+    { "head": "eqQuery", "contractKind": "lookupQuery", "effectClass": "readOnlyLookup", "backendName": "MORK/MM2" },
+    { "head": "switch", "contractKind": "controlBuiltin", "effectClass": "writesState", "backendName": "MORK/MM2" },
+    { "head": "switch-minimal", "contractKind": "controlBuiltin", "effectClass": "writesState", "backendName": "MORK/MM2" },
+    { "head": "assert", "contractKind": "controlBuiltin", "effectClass": "writesState", "backendName": "MORK/MM2" },
+    { "head": "case", "contractKind": "controlBuiltin", "effectClass": "writesState", "backendName": "MORK/MM2" },
+    { "head": "unify", "contractKind": "controlBuiltin", "effectClass": "writesState", "backendName": "MORK/MM2" }
+  ],
+  "scopeProfiles": [
+    { "head": "chain", "arity": 3, "scopeKind": "chainLike", "binderPositions": [1], "valuePositions": [0], "bodyPositions": [2], "sequential": false, "allowsWildcard": true },
+    { "head": "unify", "arity": 4, "scopeKind": "matchLike", "binderPositions": [1], "valuePositions": [0], "bodyPositions": [2], "sequential": false, "allowsWildcard": true },
+    { "head": "match", "arity": 3, "scopeKind": "matchLike", "binderPositions": [1], "valuePositions": [0], "bodyPositions": [2], "sequential": false, "allowsWildcard": true },
+    { "head": "case", "arity": 2, "scopeKind": "caseLike", "binderPositions": [], "valuePositions": [0], "bodyPositions": [1], "sequential": false, "allowsWildcard": true },
+    { "head": "switch", "arity": 2, "scopeKind": "caseLike", "binderPositions": [], "valuePositions": [0], "bodyPositions": [1], "sequential": false, "allowsWildcard": true },
+    { "head": "switch-minimal", "arity": 2, "scopeKind": "caseLike", "binderPositions": [], "valuePositions": [0], "bodyPositions": [1], "sequential": false, "allowsWildcard": true },
+    { "head": "let", "arity": 3, "scopeKind": "letLike", "binderPositions": [0], "valuePositions": [1], "bodyPositions": [2], "sequential": false, "allowsWildcard": true },
+    { "head": "let*", "arity": 2, "scopeKind": "letStarLike", "binderPositions": [], "valuePositions": [0], "bodyPositions": [1], "sequential": true, "allowsWildcard": true }
+  ]
+}

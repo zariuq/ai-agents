@@ -118,13 +118,12 @@ namespace DirichletParams
 variable {k : ℕ}
 
 /-- Total concentration: α₁ + ... + αₖ -/
-noncomputable def totalConcentration (p : DirichletParams k) : ℝ :=
+@[reducible] noncomputable def totalConcentration (p : DirichletParams k) : ℝ :=
   ∑ i, p.priorParams i
 
 /-- Total concentration is positive when k > 0 -/
 theorem totalConcentration_pos (p : DirichletParams k) (hk : 0 < k) :
     0 < p.totalConcentration := by
-  unfold totalConcentration
   have : Finset.univ.Nonempty := Finset.univ_nonempty_iff.mpr (Fin.pos_iff_nonempty.mp hk)
   exact Finset.sum_pos (fun i _ => p.params_pos i) this
 
@@ -158,38 +157,34 @@ namespace EvidenceDirichletParams
 variable {k : ℕ}
 
 /-- Posterior parameter for outcome i: αᵢ + nᵢ -/
-noncomputable def posteriorParam (p : EvidenceDirichletParams k) (i : Fin k) : ℝ :=
+@[reducible] noncomputable def posteriorParam (p : EvidenceDirichletParams k) (i : Fin k) : ℝ :=
   p.prior.priorParams i + p.evidence.counts i
 
 /-- All posterior parameters are positive -/
 theorem posteriorParam_pos (p : EvidenceDirichletParams k) (i : Fin k) :
     0 < p.posteriorParam i := by
-  unfold posteriorParam
   have hα : 0 < p.prior.priorParams i := p.prior.params_pos i
   have hn : 0 ≤ (p.evidence.counts i : ℝ) := Nat.cast_nonneg _
   linarith
 
 /-- Convert to DirichletParams (the posterior) -/
-noncomputable def toPosterior (p : EvidenceDirichletParams k) : DirichletParams k where
+@[reducible] noncomputable def toPosterior (p : EvidenceDirichletParams k) : DirichletParams k where
   priorParams := fun i => p.posteriorParam i
   params_pos := fun i => p.posteriorParam_pos i
 
 /-- Posterior mean for outcome i: (αᵢ + nᵢ) / Σⱼ(αⱼ + nⱼ)
     Note: hk (k > 0) is needed for well-definedness proofs but not the computation. -/
-noncomputable def posteriorMean (p : EvidenceDirichletParams k) (_hk : 0 < k) (i : Fin k) : ℝ :=
+@[reducible] noncomputable def posteriorMean (p : EvidenceDirichletParams k) (_hk : 0 < k) (i : Fin k) : ℝ :=
   p.posteriorParam i / p.toPosterior.totalConcentration
 
 /-- Posterior mean is in [0, 1] -/
 theorem posteriorMean_mem_unit (p : EvidenceDirichletParams k) (hk : 0 < k) (i : Fin k) :
     0 ≤ p.posteriorMean hk i ∧ p.posteriorMean hk i ≤ 1 := by
-  unfold posteriorMean
   constructor
   · apply div_nonneg
     · exact le_of_lt (p.posteriorParam_pos i)
     · exact le_of_lt (p.toPosterior.totalConcentration_pos hk)
   · rw [div_le_one (p.toPosterior.totalConcentration_pos hk)]
-    unfold DirichletParams.totalConcentration toPosterior
-    simp only
     exact Finset.single_le_sum (fun j _ => le_of_lt (p.posteriorParam_pos j))
       (Finset.mem_univ i)
 
@@ -213,11 +208,11 @@ theorem evidence_aggregation_is_dirichlet_update {k : ℕ}
     (e₁ e₂ : MultiEvidence k) (i : Fin k) :
     (⟨prior, e₁ + e₂⟩ : EvidenceDirichletParams k).posteriorParam i =
     (⟨prior, e₁⟩ : EvidenceDirichletParams k).posteriorParam i + e₂.counts i := by
-  unfold EvidenceDirichletParams.posteriorParam
   -- LHS: prior.priorParams i + ↑((e₁ + e₂).counts i)
   -- RHS: (prior.priorParams i + ↑(e₁.counts i)) + ↑(e₂.counts i)
-  have h1 : (e₁ + e₂).counts i = e₁.counts i + e₂.counts i := rfl
-  simp only [h1, Nat.cast_add]
+  show prior.priorParams i + ↑((e₁ + e₂).counts i) =
+    prior.priorParams i + ↑(e₁.counts i) + ↑(e₂.counts i)
+  simp only [show (e₁ + e₂).counts i = e₁.counts i + e₂.counts i from rfl, Nat.cast_add]
   ring
 
 /-- Corollary: The combined posterior mean approaches the empirical frequency as sample size grows.
@@ -236,7 +231,7 @@ theorem posterior_mean_converges_to_frequency {k : ℕ} (hk : 0 < k)
   use prior.totalConcentration
   -- Unfold definitions
   simp only [EvidenceDirichletParams.posteriorMean, EvidenceDirichletParams.posteriorParam,
-    EvidenceDirichletParams.toPosterior, DirichletParams.totalConcentration]
+    DirichletParams.totalConcentration]
 
   -- Setup: let n = e.total, αᵢ = prior.priorParams i, nᵢ = e.counts i
   set n : ℝ := (e.total : ℝ) with hn_def
@@ -336,39 +331,36 @@ theorem count_le_total (e : MultiEvidence k) (i : Fin k) :
   Finset.single_le_sum (fun _ _ => Nat.zero_le _) (Finset.mem_univ i)
 
 /-- Denominator shared by all IDM predictive bounds. -/
-noncomputable def idmDenom (ctx : IDMPredictiveContext) (e : MultiEvidence k) : ℝ :=
+@[reducible] noncomputable def idmDenom (ctx : IDMPredictiveContext) (e : MultiEvidence k) : ℝ :=
   (e.total : ℝ) + ctx.s
 
 /-- Walley IDM predictive lower bound for category `i`. -/
-noncomputable def idmLower
+@[reducible] noncomputable def idmLower
     (ctx : IDMPredictiveContext) (e : MultiEvidence k) (i : Fin k) : ℝ :=
   (e.counts i : ℝ) / idmDenom ctx e
 
 /-- Walley IDM predictive upper bound for category `i`. -/
-noncomputable def idmUpper
+@[reducible] noncomputable def idmUpper
     (ctx : IDMPredictiveContext) (e : MultiEvidence k) (i : Fin k) : ℝ :=
   ((e.counts i : ℝ) + ctx.s) / idmDenom ctx e
 
 /-- Width of each category interval under IDM (independent of `i`). -/
-noncomputable def idmWidth (ctx : IDMPredictiveContext) (e : MultiEvidence k) : ℝ :=
+@[reducible] noncomputable def idmWidth (ctx : IDMPredictiveContext) (e : MultiEvidence k) : ℝ :=
   ctx.s / idmDenom ctx e
 
 theorem idmDenom_pos (ctx : IDMPredictiveContext) (e : MultiEvidence k) :
     0 < idmDenom ctx e := by
-  unfold idmDenom
   have hTotalNonneg : 0 ≤ (e.total : ℝ) := by exact_mod_cast (Nat.zero_le e.total)
   linarith [ctx.s_pos]
 
 theorem idmLower_nonneg (ctx : IDMPredictiveContext) (e : MultiEvidence k) (i : Fin k) :
     0 ≤ idmLower ctx e i := by
-  unfold idmLower
   apply div_nonneg
   · exact Nat.cast_nonneg (e.counts i)
   · exact le_of_lt (idmDenom_pos ctx e)
 
 theorem idmUpper_nonneg (ctx : IDMPredictiveContext) (e : MultiEvidence k) (i : Fin k) :
     0 ≤ idmUpper ctx e i := by
-  unfold idmUpper
   apply div_nonneg
   · have hCountNonneg : 0 ≤ (e.counts i : ℝ) := Nat.cast_nonneg (e.counts i)
     linarith [ctx.s_pos.le, hCountNonneg]
@@ -376,44 +368,36 @@ theorem idmUpper_nonneg (ctx : IDMPredictiveContext) (e : MultiEvidence k) (i : 
 
 theorem idmLower_le_idmUpper (ctx : IDMPredictiveContext) (e : MultiEvidence k) (i : Fin k) :
     idmLower ctx e i ≤ idmUpper ctx e i := by
-  unfold idmLower idmUpper
   apply div_le_div_of_nonneg_right
   · linarith [ctx.s_pos.le]
   · exact le_of_lt (idmDenom_pos ctx e)
 
 theorem idmUpper_le_one (ctx : IDMPredictiveContext) (e : MultiEvidence k) (i : Fin k) :
     idmUpper ctx e i ≤ 1 := by
-  unfold idmUpper
   apply (div_le_one (idmDenom_pos ctx e)).2
   have hCountLe : (e.counts i : ℝ) ≤ (e.total : ℝ) := by
     exact_mod_cast (count_le_total e i)
-  unfold idmDenom
   linarith [hCountLe]
 
 theorem idmWidth_eq_upper_sub_lower
     (ctx : IDMPredictiveContext) (e : MultiEvidence k) (i : Fin k) :
     idmWidth ctx e = idmUpper ctx e i - idmLower ctx e i := by
-  unfold idmWidth idmUpper idmLower idmDenom
   field_simp [ne_of_gt (idmDenom_pos ctx e)]
   ring
 
 theorem idmWidth_nonneg (ctx : IDMPredictiveContext) (e : MultiEvidence k) :
     0 ≤ idmWidth ctx e := by
-  unfold idmWidth
   exact div_nonneg (le_of_lt ctx.s_pos) (le_of_lt (idmDenom_pos ctx e))
 
 theorem idmWidth_le_one (ctx : IDMPredictiveContext) (e : MultiEvidence k) :
     idmWidth ctx e ≤ 1 := by
-  unfold idmWidth
   apply (div_le_one (idmDenom_pos ctx e)).2
-  unfold idmDenom
   have hTotalNonneg : 0 ≤ (e.total : ℝ) := by exact_mod_cast (Nat.zero_le e.total)
   linarith [hTotalNonneg]
 
 theorem sum_idmLower_eq
     (ctx : IDMPredictiveContext) (e : MultiEvidence k) :
     (∑ i : Fin k, idmLower ctx e i) = (e.total : ℝ) / idmDenom ctx e := by
-  unfold idmLower idmDenom
   calc
     (∑ i : Fin k, (e.counts i : ℝ) / ((e.total : ℝ) + ctx.s))
         = (∑ i : Fin k, (e.counts i : ℝ)) / ((e.total : ℝ) + ctx.s) := by
@@ -425,7 +409,6 @@ theorem sum_idmUpper_eq
     (ctx : IDMPredictiveContext) (e : MultiEvidence k) :
     (∑ i : Fin k, idmUpper ctx e i) =
       ((e.total : ℝ) + (k : ℝ) * ctx.s) / idmDenom ctx e := by
-  unfold idmUpper idmDenom
   calc
     (∑ i : Fin k, ((e.counts i : ℝ) + ctx.s) / ((e.total : ℝ) + ctx.s))
         = (∑ i : Fin k, ((e.counts i : ℝ) + ctx.s)) / ((e.total : ℝ) + ctx.s) := by
@@ -439,7 +422,6 @@ theorem sum_idmLower_le_one (ctx : IDMPredictiveContext) (e : MultiEvidence k) :
     (∑ i : Fin k, idmLower ctx e i) ≤ 1 := by
   rw [sum_idmLower_eq]
   apply (div_le_one (idmDenom_pos ctx e)).2
-  unfold idmDenom
   linarith [ctx.s_pos.le]
 
 theorem one_le_sum_idmUpper (ctx : IDMPredictiveContext) {k : ℕ} (hk : 0 < k)
@@ -451,7 +433,6 @@ theorem one_le_sum_idmUpper (ctx : IDMPredictiveContext) {k : ℕ} (hk : 0 < k)
   have hs_le : ctx.s ≤ (k : ℝ) * ctx.s := by
     simpa using (mul_le_mul_of_nonneg_right hk1 (le_of_lt ctx.s_pos))
   have hNumGe : idmDenom ctx e ≤ (e.total : ℝ) + (k : ℝ) * ctx.s := by
-    unfold idmDenom
     linarith [hs_le]
   exact (one_le_div hDenPos).2 hNumGe
 

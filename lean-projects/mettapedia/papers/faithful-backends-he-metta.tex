@@ -1,0 +1,379 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\setlength{\emergencystretch}{3em}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  citecolor=blue!50!black,
+  urlcolor=blue!50!black
+}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  columns=fullflexible
+}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\HE}{\textup{HE}}
+\newcommand{\CeTTa}{\textup{CeTTa}}
+\newcommand{\PathMap}{\textup{PathMap}}
+
+\title{Faithful Backends for \HE{} MeTTa\\
+\large Bag Semantics, Candidate Selection, Co-Reference Preservation,\\
+and Revision-Based Query Caching}
+\author{Zar Goertzel\\Oru\v{z}i}
+\date{March 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note sketches a correctness story for backend implementations of
+\HE{}~MeTTa.  The central claim is that a practical backend should not be
+identified with the full runtime semantics of a MeTTa space.  The
+semantics lives at the bag level: repeated derivations and repeated atoms
+matter.  The backend may quotient that semantics to support-level
+structure for indexing, as long as the quotient and the refinement layers
+are explicit and proved faithful.
+%
+Our current Lean development decomposes this story into three layers:
+lists of evaluator outcomes, multisets of semantic results, and finite
+support/index views.  On top of this, we add a concrete candidate-selector
+architecture for \PathMap{} tries, a counted-space refinement explaining
+why duplicate adds need not change trie support, an injective
+canonicalization discipline for variable identities, a variant-key query
+correctness layer for alpha-equivalent cache keys, and a revision-based
+cache model for query reuse.  Together these results explain why
+\CeTTa{}'s runtime should use \PathMap{} for candidate narrowing,
+native matching for exact unification, explicit count metadata for bag
+semantics, variant-aware materialization for cached answers, and explicit
+invalidation rules for cached query answers.
+\end{abstract}
+
+\section{Problem Statement}
+
+Backend bugs in MeTTa runtimes tend to fall into a small number of
+families:
+\begin{enumerate}
+\item candidate selectors that are too weak or too strong;
+\item storage layers that silently collapse semantic multiplicity;
+\item canonicalization passes that preserve alpha-shape but break
+  co-reference;
+\item query caches that reuse answers beyond the mutation boundary for
+  which they were computed.
+\end{enumerate}
+
+These failures are easy to confuse because they often show up through the
+same surface symptom: a query returns the wrong answer after spaces have
+been indexed, cloned, canonicalized, or cached.  The right response is
+not to ``prove the runtime'' in one monolithic theorem.  Instead we prove
+one obligation per runtime seam.
+
+\section{Semantic Layers}
+
+The first part of the development says that the semantic carrier for
+\HE{} evaluation is not a set but a bag.
+
+\paragraph{Evaluator layer.}
+The runtime naturally produces a list of outcomes.  This is the
+computational layer where order, scheduling, and implementation strategy
+still matter.
+
+\paragraph{Semantic layer.}
+\code{NondeterminismCarrier.lean} moves to \code{Multiset}, yielding the
+correct semantic equality for repeated results.  \code{BagSupportBridge}
+then proves that support is the quotient visible to set-like indexing.
+
+\paragraph{Index layer.}
+\code{MonadMorphismChain.lean} and \code{SpaceQuerySupport.lean} package
+the resulting bridge:
+\[
+\texttt{List} \to \texttt{Multiset} \to \texttt{Finset}.
+\]
+This is the level at which a trie, hash table, or cached query store is
+allowed to operate.
+
+\paragraph{Positive example.}
+Adding the same atom twice should increase the bag count while leaving the
+support unchanged.
+
+\paragraph{Negative example.}
+Treating a set-valued index as if it were itself the full MeTTa space
+semantics.
+
+\section{Faithful Backend Contract}
+
+\code{SpaceQuerySupport.lean} gives the contract point:
+\begin{quote}
+\code{FaithfulBackend} means backend queries agree with \HE{} queries at
+support level.
+\end{quote}
+
+This is the right initial obligation for a backend such as a
+\PathMap{}-backed space:
+\begin{enumerate}
+\item answer the same support-level equation queries;
+\item answer the same support-level type queries;
+\item refine support semantics with explicit count or row metadata, rather
+  than burying multiplicity in trie keys.
+\end{enumerate}
+
+The counted-space refinement in
+\code{CandidateArchitecture.lean} makes this concrete.  \PathMap{} stores
+support.  The multiplicity layer stores how many copies exist.  The two
+are intentionally separated.
+
+\section{Candidate Selection and \PathMap{}}
+
+Theorems in \code{CandidateArchitecture.lean} now justify the architecture
+that \CeTTa{} uses in practice:
+\begin{enumerate}
+\item the trie performs candidate selection;
+\item native matching filters those candidates exactly;
+\item the composition equals direct querying.
+\end{enumerate}
+
+The abstract theorem \code{twoPhase\_eq\_direct} proves the shape of the
+argument.  The concrete theorem \code{concrete\_twoPhase\_eq\_direct}
+instantiates it for a trie-based selector.  The prefix narrowing results
+then move beyond the unrealistic ``scan all support'' model and state the
+performance-relevant theorem: useful selectors may be strict support
+subsets without losing correctness, provided they are sound and
+phantom-free.
+
+This is the strongest answer to the question ``why not let the backend do
+all the unification?''  Because candidate narrowing and exact matching are
+different obligations.  \PathMap{} is excellent at the first and should
+not be forced to simulate the second through a lossy bridge layer.
+
+\section{Co-Reference Preservation}
+
+The nastiest runtime bugs are usually not about support.  They are about
+binders.
+
+\code{CoReferencePreservation.lean} isolates the right invariant:
+variable canonicalization must be injective.  Under an injective renaming:
+\begin{enumerate}
+\item repeated source variables stay repeated;
+\item distinct source variables stay distinct;
+\item composed renamings remain injective.
+\end{enumerate}
+
+This is the formal obligation behind runtime components such as
+\code{term\_universe.c} and the canonicalization logic in
+\code{table\_store.c}.  If a runtime stores
+\[
+(\to (\to \varphi \psi) (\to \varphi \varphi))
+\]
+and later materializes
+\[
+(\to (\to \varphi \psi) (\to \chi \chi)),
+\]
+then the bug is not ``just alpha-equivalence.''  It is a failure to
+preserve co-reference.
+
+Recent work strengthens this seam in two directions.  First,
+\code{BindingComposition.lean} exposes \code{Bindings.Extends} as the
+right invariant for seed-preserving matching.  Second,
+\code{VariantQueryCorrectness.lean} proves a bisimulation theorem
+\texttt{simpleMatch\_rename\_bisim} using the fuel-free renaming
+\texttt{applyAtomTotal}.  This proves that alpha-equivalent query keys do
+not merely preserve support; they preserve the right notion of matching
+success needed for variant-key cache reuse.
+
+\section{Revision-Based Query Caching}
+
+\code{CacheCorrectness.lean} already captures the main cache seam:
+\begin{enumerate}
+\item populate a cache entry from a space and a query;
+\item reuse it only when the space revision still matches;
+\item invalidate lazily on mutation;
+\item preserve cache validity for non-crossing mutations such as
+  duplicate \code{add-atom-nodup}.
+\end{enumerate}
+
+The important point is that cache correctness is not merely a performance
+claim.  It is part of backend faithfulness.  A cache that returns stale
+support answers is semantically wrong even if the trie and matcher are
+otherwise correct.
+
+The newer files \code{VariantQueryCorrectness.lean} and
+\code{BindingCacheSoundness.lean} extend this from support-level cache
+discipline to binding-aware reuse:
+\begin{enumerate}
+\item \texttt{variant\_queries\_same\_rhs} proves that
+  alpha-equivalent queries produce the same right-hand-side atoms after
+  \code{queryEquations};
+\item \texttt{variant\_cache\_binding\_shape} proves that the result
+  shapes agree under variant reuse;
+\item \texttt{cache\_binding\_exact} and related lemmas isolate the
+  exact-versus-variant parts of the cache story.
+\end{enumerate}
+
+The theorem family around mutation invalidation is especially important
+for implementations that mix:
+\begin{enumerate}
+\item candidate narrowing via a support index;
+\item exact matching via native matcher state;
+\item explicit count metadata;
+\item snapshot or persistent clones.
+\end{enumerate}
+
+\section{Runtime Seam Map}
+
+\begin{center}
+\begin{tabular}{@{}p{0.28\linewidth}p{0.28\linewidth}p{0.34\linewidth}@{}}
+\toprule
+\textbf{Lean file} & \textbf{Runtime seam} & \textbf{Obligation} \\
+\midrule
+\code{CandidateArchitecture.lean} & \code{space\_match\_backend.c} & trie candidate selection + native exact rematch \\
+\code{BagSupportBridge.lean} & counted-space layer & support/count split over bag semantics \\
+\code{CoReferencePreservation.lean} & \code{term\_universe.c} & canonical storage preserves variable identity \\
+\code{VariantQueryCorrectness.lean} & \code{table\_store.c} & variant-key queries preserve RHS answers \\
+\code{BindingCacheSoundness.lean} & \code{table\_store.c} & cached answer shapes remain binding-compatible \\
+\code{BindingComposition.lean} & \code{space\_match\_backend.c} & seed bindings survive rematch/merge \\
+\code{SeedRematchContract.lean} & \code{space\_subst\_match\_with\_seed} & seeded rematch extends seed, rejects loops, imported binding parity \\
+\code{CacheCorrectness.lean} & \code{table\_store.c} & revision-based query reuse and invalidation \\
+\code{IncrementalTableSemantics.lean} & future \code{table\_store.c} & partial table soundness, answer monotonicity, completion \\
+\code{CeTTaRuntimeContracts.lean} & \code{term\_canon.c}, \code{session.c} & canonicalization safety, rollback, effect/profile contracts \\
+\code{SpaceQuerySupport.lean} & backend interface & support-level agreement target \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{What Belongs Here, and What Does Not}
+
+This paper should carry the full backend-correctness story:
+\begin{enumerate}
+\item bag semantics and support quotients;
+\item counted-space refinement;
+\item candidate-selection correctness;
+\item \textbf{seeded native rematch} --- the theorem that turns candidate parity into binding parity (\code{SeedRematchContract.lean});
+\item co-reference-preserving canonical storage;
+\item revision-based cache correctness;
+\item incremental tabling soundness (\code{IncrementalTableSemantics.lean});
+\item runtime contracts: canonicalization, rollback, effect classification (\code{CeTTaRuntimeContracts.lean});
+\item theorem-to-runtime seam mapping.
+\end{enumerate}
+
+The seeded-rematch result is the key new contribution: CeTTa's imported backend is binding-correct because candidate narrowing (from PathMap trie or exact match) is followed by seeded native rematch (\code{space\_subst\_match\_with\_seed}).  The theorem \code{imported\_seedRematch\_binding\_parity} proves that when imported candidates are sound, the two-phase query (candidates then rematch) produces the same result set as direct matching.  Loop rejection (\code{seedRematchSafe\_no\_loop}) and seed extension (\code{seedRematch\_extends\_seed}) complete the safety story.
+
+An implementation checklist (\code{imported-fast-path-checklist.md}) maps
+each proved precondition to a specific CeTTa runtime check, identifies the
+remaining blockers for enabling direct bridge bindings, and recommends a
+phased enablement path (ground-only, single-variable, full V2).
+
+As of April 2026, ground-only is enabled in the runtime (tracked by
+\code{imported-v2-ground-skip}).  The next rung, single-variable queries,
+is fully specified in Lean (\code{SingleVarSafe} in \code{ImportedRowContract.lean})
+with conformance and negative tests, but remains gated pending bridge value
+decode verification.  The Lean preconditions
+(\code{singleVarSafe\_implies\_rematchFreeSafe}, \code{ground\_value\_no\_loop\_risk},
+\code{singleBinding\_merge\_decidable}) document exactly what must hold before
+a MORK implementer flips that switch.
+
+By contrast, the dedicated \PathMap{} formalization paper should keep the
+trie-specific material foregrounded:
+\begin{enumerate}
+\item algebraic hierarchy;
+\item zipper structure;
+\item concrete FTrie selector;
+\item support/count and zero-crossing results insofar as they clarify trie
+  usage.
+\end{enumerate}
+
+Similarly, the \CeTTa{} paper should use the results here to justify
+runtime architecture choices, rather than reproving the whole formal
+stack.
+
+\section{End-to-End Pipeline}
+
+The full formal pipeline is now connected across three Lean files:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Layer} & \textbf{File} & \textbf{Key Theorem} \\
+\midrule
+Bag semantics & \texttt{BagSupportBridge.lean} & \texttt{support\_bind} \\
+Trie storage  & \texttt{HEBridge.lean} & \texttt{same\_support\_same\_trie} \\
+Selection     & \texttt{CandidateArchitecture.lean} & \texttt{concrete\_twoPhase\_eq\_direct} \\
+Matcher instantiation & \texttt{PathMapMatcherInstance.lean} & \texttt{he\_twoPhase\_eq\_direct} \\
+Cache policy  & \texttt{CandidateArchitecture.lean} & \texttt{cache\_policy\_stable/growing/shrinking} \\
+Variant reuse & \texttt{VariantQueryCorrectness.lean} & \texttt{variant\_queries\_same\_rhs} \\
+Binding reuse & \texttt{BindingCacheSoundness.lean} & \texttt{variant\_cache\_binding\_shape} \\
+Contract      & \texttt{CandidateArchitecture.lean} & \texttt{BackendContract}, \texttt{backendContract\_of\_faithful} \\
+Pipeline      & \texttt{HEInterface.lean} & \texttt{end\_to\_end\_pipeline} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The \texttt{end\_to\_end\_pipeline} theorem bundles all three properties in
+one statement: given a faithful trie, (1)~query correctness holds,
+(2)~no phantom candidates exist, and (3)~duplicate adds preserve support.
+
+The \texttt{BackendContract} structure serves as the single proof obligation
+for any \PathMap{}-backed space: provide \texttt{trieFaithful} (every
+support atom has its encoding in the trie), and the full contract follows
+automatically via \texttt{backendContract\_of\_faithful}.
+
+The cache invalidation interface classifies mutations into three kinds:
+\begin{itemize}
+\item \texttt{supportStable}: no cache invalidation needed (duplicate adds,
+  high-count removes);
+\item \texttt{supportGrowing}: invalidate queries matching the new atom;
+\item \texttt{supportShrinking}: invalidate queries matching the removed atom.
+\end{itemize}
+
+\noindent
+Each maps to one branch in \texttt{table\_store.c}.
+
+\section{Current Status and Next Proof Obligations}
+
+The current development already supports the following claims:
+\begin{enumerate}
+\item support-level backend agreement is the correct first target;
+\item \PathMap{} candidate selection plus native matching is a correct
+  architecture;
+\item duplicate adds do not need to mutate trie support;
+\item injective canonicalization is the right shape for binder hygiene;
+\item alpha-equivalent query keys preserve right-hand-side answers and
+  result shape under cache reuse;
+\item revision counters justify lazy cache invalidation.
+\end{enumerate}
+
+The most urgent next formal obligations are:
+\begin{enumerate}
+\item storage/materialization preserves query answers, not just variable
+  injectivity;
+\item snapshot/clone operations preserve backend faithfulness;
+\item revision and snapshot semantics are connected explicitly enough to
+  support staged or open table entries.
+\end{enumerate}
+
+These are the theorems most likely to help with the remaining nasty
+binder bugs in the current \CeTTa{} runtime work.
+
+A companion document (\texttt{theorem-runtime-matrix.md}) maps each proved
+theorem to its runtime seam (\texttt{space.c}, \texttt{table\_store.c},
+\texttt{space\_match\_backend.c}, \texttt{term\_universe.c}) and its
+corresponding regression test target.  This matrix is the integration
+contract between the formal development and the \CeTTa{} runtime.
+
+\end{document}

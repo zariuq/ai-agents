@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "title": "Shared Parser Artifact Schema for MeTTaIL-C",
+  "description": "Common artifact structure for language parser/syntax authority across all mettail-c language targets. Each language exports these artifacts; mettail-c consumes them generically.",
+  "council": "Meredith (abstraction), Stay (shared contracts), Tang (single-sourced), Russell (honest boundaries)",
+  "requiredArtifacts": {
+    "syntax_spec": {
+      "description": "Primary syntax specification: lexical tokens, statement kinds, comment syntax.",
+      "examples": ["mm0.syntax_spec.json", "he.syntax_spec.json"],
+      "requiredFields": ["schemaVersion", "language"]
+    },
+    "syntax_authority_profile": {
+      "description": "Complete syntax authority bundling primary syntax, secondary parsing (if any), and reference sources.",
+      "examples": ["mm0.syntax_authority_profile.json", "metamath-full.syntax_authority_profile.json"],
+      "requiredFields": ["schemaVersion", "language", "twoStageParsing"]
+    }
+  },
+  "optionalArtifacts": {
+    "grammar_spec": {
+      "description": "BNF-style grammar for languages with static grammars. Includes tree-sitter generation support.",
+      "examples": ["he.grammar_spec.json"],
+      "note": "Not applicable for languages with dynamic grammars (MM0 math-string notation)."
+    },
+    "secondary_parse_contract": {
+      "description": "For two-stage languages: how the secondary parse phase works (operator precedence, notation declarations, etc.).",
+      "examples": ["mm0.secondary_parse_contract.json"],
+      "requiredFields": ["isStaticGrammar", "isDynamicOperatorPrecedence"]
+    },
+    "parser_mode_contract": {
+      "description": "Parser mode configuration and certified modes.",
+      "examples": ["metamath-full.parser_mode_contract.json"],
+      "note": "Relevant for languages with multiple verified parser configurations."
+    },
+    "parser_contract": {
+      "description": "Parser entry point, input kind, and soundness claims.",
+      "examples": ["metamath-full.parser_contract.json"]
+    }
+  },
+  "sharedConcepts": {
+    "isStaticGrammar": "true if the grammar is fully determined at language definition time (Metamath, HE, PeTTa). false if notation declarations can extend the grammar at parse time (MM0).",
+    "isDynamicOperatorPrecedence": "true if operator precedence is defined by declarations in the source file (MM0). false otherwise.",
+    "twoStageParsing": "true if the language has primary (file structure) + secondary (expression) parsing stages. false if single-stage.",
+    "verifiedParserAuthority": "Reference to a Lean module with a formally verified parser and soundness theorem."
+  },
+  "languageCoverage": {
+    "MM0": {
+      "twoStageParsing": true,
+      "isStaticGrammar": false,
+      "isDynamicOperatorPrecedence": true,
+      "authority": "mm0/mm0.md + Lean MM0.SyntaxSpec"
+    },
+    "Metamath": {
+      "twoStageParsing": false,
+      "isStaticGrammar": true,
+      "isDynamicOperatorPrecedence": false,
+      "authority": "mm-lean4 (verified parser, end-to-end biconditional)"
+    },
+    "HE": {
+      "twoStageParsing": false,
+      "isStaticGrammar": true,
+      "isDynamicOperatorPrecedence": false,
+      "authority": "MeTTailCore.MeTTaSyntax.Spec + tree-sitter"
+    },
+    "PeTTa": {
+      "twoStageParsing": false,
+      "isStaticGrammar": true,
+      "isDynamicOperatorPrecedence": false,
+      "authority": "MeTTailCore.MeTTaSyntax.Spec + tree-sitter"
+    }
+  }
+}
