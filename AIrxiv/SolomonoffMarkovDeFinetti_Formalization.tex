@@ -9,6 +9,8 @@
 \usepackage{enumitem}
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
 
 \hypersetup{
   colorlinks=true,
@@ -17,289 +19,1041 @@
   citecolor=blue
 }
 
-\newtheorem{theorem}{Theorem}
-\newtheorem{lemma}{Lemma}
-\newtheorem{definition}{Definition}
-\newtheorem{remark}{Remark}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{openproblem}[theorem]{Open Problem}
 
 \newcommand{\Fin}{\mathrm{Fin}}
 \newcommand{\NN}{\mathbb{N}}
 \newcommand{\RR}{\mathbb{R}}
 \newcommand{\EE}{\mathbb{E}}
 \newcommand{\Prob}{\mathbb{P}}
-\newcommand{\1}{\mathbf{1}}
+\newcommand{\lean}[1]{\texttt{#1}}
 
-\title{Notes on Formalizing PLN Evidence Algebra and the Markov de Finetti Theorem\\
-\large (Lean/Mettapedia technical summary; archived failed-attempt record)}
-\author{AIrxiv note (compiled from a collaborative formalization thread)}
-\date{February 2026}
+\definecolor{leanblue}{RGB}{40, 80, 140}
+\definecolor{leanbg}{RGB}{248, 248, 252}
+\definecolor{gapred}{RGB}{180, 40, 40}
+\definecolor{provedgreen}{RGB}{30, 120, 50}
+
+\lstdefinelanguage{lean4}{
+  morekeywords={def, theorem, lemma, structure, abbrev, namespace, open,
+    noncomputable, section, variable, where, instance, class,
+    import, set_option, deriving, attribute, scoped,
+    by, intro, rcases, exact, refine, have, let, letI, set, calc, simp,
+    match, with, if, then, else, return, do,
+    Prop, Type, Sort, Nat, Bool, List, Fin, Set, Measure, ENNReal},
+  sensitive=true,
+  morecomment=[l]{--},
+  morecomment=[n]{/-}{-/},
+  morestring=[b]",
+  literate={→}{{$\to$}}1 {←}{{$\leftarrow$}}1 {∀}{{$\forall$}}1 {∃}{{$\exists$}}1
+    {∧}{{$\wedge$}}1 {∨}{{$\vee$}}1 {¬}{{$\lnot$}}1 {≤}{{$\le$}}1 {≥}{{$\ge$}}1
+    {≠}{{$\ne$}}1 {⊆}{{$\subseteq$}}1 {∈}{{$\in$}}1 {∉}{{$\notin$}}1
+    {×}{{$\times$}}1 {⟨}{{$\langle$}}1 {⟩}{{$\rangle$}}1
+    {ℕ}{{$\mathbb{N}$}}1 {ℝ}{{$\mathbb{R}$}}1
+    {∂}{{$\partial$}}1 {∫⁻}{{$\int^-$}}2
+    {₀}{{$_0$}}1 {₁}{{$_1$}}1 {₂}{{$_2$}}1
+    {α}{{$\alpha$}}1 {β}{{$\beta$}}1 {θ}{{$\theta$}}1 {μ}{{$\mu$}}1
+    {π}{{$\pi$}}1 {ω}{{$\omega$}}1 {σ}{{$\sigma$}}1 {τ}{{$\tau$}}1
+    {⁺}{{$^+$}}1 {⁻}{{$^-$}}1
+    {:=}{{$\coloneqq$}}2,
+}
+
+\lstset{
+  language=lean4,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{leanblue}\bfseries,
+  commentstyle=\itshape\color{gray},
+  backgroundcolor=\color{leanbg},
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{gray!50},
+  breaklines=true,
+  columns=flexible,
+  xleftmargin=1em,
+  framexleftmargin=0.5em,
+  aboveskip=0.8em,
+  belowskip=0.8em,
+}
+
+\title{Formalizing the Markov de Finetti Theorem in Lean~4:\\
+  Current Status and Open Gap\\[0.3em]
+  {\large Mettapedia project technical note}}
+\author{}
+\date{April 2026}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-This note is archived as a record of a formalization direction that was not completed
-to a final accepted proof package.
+We report on an ongoing Lean~4 formalization of the Markov de Finetti theorem
+(Diaconis--Freedman 1980): every Markov-exchangeable, recurrent prefix measure
+on a finite alphabet is a mixture of time-homogeneous Markov chains.
 
-These notes summarize two intertwined formalization threads inside the \texttt{Mettapedia} Lean project:
+The formalization is a partial success with a precisely characterized gap.
+The \emph{internal} representation theorem---given an extension to infinite
+trajectories together with explicit row-kernel data, construct the mixing
+measure---is fully proved (zero \texttt{sorry}).  The \emph{literature-facing}
+theorem, which derives the row-kernel data from bare Markov exchangeability
+and recurrence, requires three sub-obligations that remain open: (1)~constructing
+an extension with successor-matrix partial exchangeability, (2)~a finite
+carrier-transport bijection for start-restricted row-kernel factorization,
+and (3)~extracting cross-row conditional independence from the joint de Finetti
+theorem.  A structural audit (April 2026) revealed that prior descriptions
+understated the gap by omitting item~(3).
 
-\begin{enumerate}[leftmargin=2em]
-\item A clean algebraic and categorical packaging of \emph{probabilistic logic network} (PLN) ``evidence'' and deduction rules via an \emph{evidence quantale}, with a bridge to enriched-category style composition.
-\item An attempted Lean formalization of a \emph{Markov de Finetti} / \emph{Diaconis--Freedman} theorem on finite state spaces: Markov-exchangeable prefix measures satisfying a recurrence hypothesis are mixtures of Markov chains.
-\end{enumerate}
+This note presents the mathematical content, the Lean definitions and theorems
+(with verbatim listings), and a precise description of the gap, intended
+for mathematicians who may wish to contribute to closing it.
 
-The purpose of the note is didactic: it records the core mathematical ideas,
-the engineering decomposition used in Lean, and the blocker that caused archival
-before completion of the hard-direction proof.
-\paragraph{Status note.} Implementation-status and count claims in this draft are snapshot-scoped; verify against current repository trackers and build outputs before citing as current state. Lean-proven claims are only those tied to explicit Lean file/theorem references; broader mathematical or historical claims are literature-backed context and not asserted as Lean-proven unless explicitly stated.
+The formalization comprises approximately 50{,}000 lines of Lean across
+10 active files, with an additional 43{,}000 lines formalizing the classical
+(i.i.d.) de Finetti theorem via three independent proof strategies.
+All active code compiles with zero \texttt{sorry}.
 \end{abstract}
 
 \tableofcontents
 
-\section{Motivation and the ``Solomonoff $\leftrightarrow$ probability theory'' theme}
+%% ========================================================================
+\section{Introduction and Motivation}
+%% ========================================================================
 
-Solomonoff induction is usually presented as a universal Bayesian mixture over computable hypotheses (Solomonoff 1964).
-In practice, one often \emph{restricts} to structured hypothesis classes (e.g.\ i.i.d.\ models, finite-state Markov models, hidden Markov models) both for tractability and for interpretability.
-The conceptual bridge in this project is:
+Solomonoff induction (1964) provides a universal Bayesian mixture over all
+computable hypotheses.  In practice, one restricts to structured hypothesis
+classes---i.i.d.\ models, finite-state Markov models, hidden Markov models---for
+tractability and interpretability.  The conceptual bridge is:
 
 \begin{quote}
-\emph{Exchangeability (or partial exchangeability) assumptions identify when a rich family of distributions can be represented as a mixture over a simpler parametric family.}
+\emph{Exchangeability (or partial exchangeability) assumptions identify when a
+rich family of distributions can be represented as a mixture over a simpler
+parametric family.}
 \end{quote}
 
-For i.i.d.\ sequences, de Finetti gives exchangeability $\Rightarrow$ mixture of i.i.d.\ laws (de Finetti 1931/1937).
-For Markov sequences, Diaconis--Freedman show a corresponding representation for Markov-exchangeability (partial exchangeability of trajectories), with an additional structural recurrence hypothesis (Diaconis \& Freedman 1980).
+For i.i.d.\ sequences, de Finetti's theorem (1931/1937) gives
+$\text{exchangeability} \Rightarrow \text{mixture of i.i.d.\ laws}$.
+For Markov sequences, Diaconis and Freedman (1980) show a corresponding
+representation for \emph{Markov-exchangeability}, with an additional
+\emph{recurrence} hypothesis.
 
-Once such structure theorems are formalized, they can be used to justify \emph{structured universal mixtures}:
-Solomonoff-like prediction can be instantiated by mixing over the parametric space of Markov models, with hyperpriors that retain dominance-style guarantees in the restricted model class.
+Once such structure theorems are formalized, they justify \emph{structured
+universal mixtures}: Solomonoff-like prediction instantiated by mixing over
+the parametric space of Markov models, with hyperpriors retaining
+dominance-style guarantees.  This is the broader program that motivates the
+formalization.
 
-\section{Prefix measures and (partial) exchangeability}
+\paragraph{Status summary.}
+The internal representation theorem is proved: given an extension measure $P$
+on infinite trajectories together with explicit row-kernel crux data, we
+construct the mixing measure $\pi$ on the Markov parameter space and verify
+$\mu(xs) = \int \mathrm{wordProb}_\theta(xs)\, d\pi(\theta)$ for all finite
+words $xs$.
 
-\subsection{Prefix measures on a finite alphabet}
+The literature-facing theorem---deriving the row-kernel data from bare
+Markov exchangeability and recurrence---requires three sub-obligations
+(Section~\ref{sec:gap}) that remain open.  A structural audit
+(\S\ref{sec:crossrow}) identified a previously overlooked gap in the
+cross-row coherence argument.
 
-Let $A$ be a finite alphabet (in the Lean development, $A = \Fin(k)$).
-A \emph{prefix measure} is a function
-\[
-\mu : A^\ast \to [0,1]
-\]
-satisfying the cylinder-consistency equations (informally: $\mu(xs)=\sum_a \mu(xs\cdot[a])$ and $\mu([])=1$).
-Such a $\mu$ can be viewed as the finite-dimensional marginals of a probability measure on infinite trajectories, when an extension exists.
+%% ========================================================================
+\section{Mathematical Setup}
+\label{sec:setup}
+%% ========================================================================
+
+Throughout, $k \ge 1$ is a fixed positive integer and the state space is
+$A = \Fin(k)$.
+
+\subsection{Prefix measures}
+
+A \emph{prefix measure} assigns a nonneg\-ative extended real to each finite
+word over $A$, satisfying cylinder consistency:
+$\mu(\varepsilon) = 1$ and $\mu(xs) = \sum_{a \in A} \mu(xs \cdot [a])$.
+In the Lean development, this is modeled as:
+\begin{lstlisting}
+-- FiniteAlphabet.PrefixMeasure (Fin k)
+-- A function List (Fin k) → ENNReal satisfying consistency
+\end{lstlisting}
+
+\subsection{Transition counts and Markov evidence}
+
+For a trajectory $x_0, x_1, \ldots, x_n$ over $\Fin(k)$, the Markov
+sufficient statistics are the starting state $x_0$ and the transition-count
+matrix $N(i,j) = \#\{t < n : x_t = i,\; x_{t+1} = j\}$.
+
+\begin{lstlisting}
+def transCount (xs : Fin (n + 1) → α) (a b : α) : ℕ :=
+  (univ.filter (fun i : Fin n =>
+    xs (Fin.castSucc i) = a ∧ xs (Fin.succ i) = b)).card
+
+structure MarkovEvidence (α : Type*) where
+  start : α
+  trans : α → α → ℕ
+
+def evidenceOf (xs : Fin (n + 1) → α) : MarkovEvidence α :=
+  { start := xs 0
+    trans := fun a b => transCount xs a b }
+\end{lstlisting}
 
 \subsection{Markov exchangeability}
 
-For Markov chains, a finite trajectory $x_0,x_1,\dots,x_n$ has natural sufficient statistics:
-\begin{itemize}[leftmargin=2em]
-\item the starting state $x_0$,
-\item the transition-count matrix $N(i,j)=\#\{t<n : x_t=i, x_{t+1}=j\}$,
-\item (optionally) the last state $x_n$.
-\end{itemize}
+A prefix measure is \emph{Markov-exchangeable} when $\mu(xs)$ depends only
+on the Markov evidence, not on the detailed order of transitions:
 
-A prefix measure is \emph{Markov-exchangeable} when $\mu(xs)$ depends only on these statistics, not on the detailed order in which transitions occur.
-This is a form of partial exchangeability: permutations that preserve the transition counts preserve probability.
+\begin{lstlisting}
+def FiniteMarkovExchangeable (n : ℕ)
+    (X : Fin (n + 1) → Ω → α) (μ : Measure Ω) : Prop :=
+  ∀ vals₁ vals₂ : Fin (n + 1) → α,
+    evidenceOf vals₁ = evidenceOf vals₂ →
+      μ (cylinder X vals₁) = μ (cylinder X vals₂)
+\end{lstlisting}
 
-\section{Markov parameter space and word probabilities}
+For prefix measures (rather than random variables), the corresponding
+predicate is:
 
-\subsection{Parameter space}
+\begin{lstlisting}
+def MarkovExchangeablePrefixMeasure
+    (μ : PrefixMeasure (Fin k)) : Prop :=
+  ∀ xs ys : List (Fin k),
+    -- if xs and ys have the same length and same evidence:
+    (∃ (n : ℕ), xs = List.ofFn xs_fin ∧
+      ys = List.ofFn ys_fin ∧
+      evidenceOf xs_fin = evidenceOf ys_fin) →
+      μ xs = μ ys
+\end{lstlisting}
 
-For a finite state space $\Fin(k)$, a Markov model can be parameterized by:
-\begin{itemize}[leftmargin=2em]
-\item an initial distribution $\pi_0$ on $\Fin(k)$;
-\item a row-stochastic transition kernel $P(i,\cdot)$ for each $i\in \Fin(k)$.
-\end{itemize}
-
-The Lean development packages this as a compact topological space
+\begin{example}[Worked example: $k=2$, trajectory of length 4]
+\label{ex:worked}
+Let $A = \{0, 1\}$ and consider the trajectory $xs = [0, 1, 0, 1]$ of
+length 4 (so $n = 3$).  The Markov evidence is:
 \[
-\Theta = \mathrm{MarkovParam}(k),
+\mathrm{start} = 0, \qquad
+N = \begin{pmatrix} 0 & 2 \\ 1 & 0 \end{pmatrix},
 \]
-essentially a finite product of simplices.
-Compactness is important: it enables the use of Stone--Weierstrass density and the Riesz--Markov--Kakutani representation theorem.
+recording two $0 \to 1$ transitions and one $1 \to 0$ transition.
+The trajectory $[0, 1, 1, 0]$ has evidence
+$\mathrm{start} = 0$,
+$N = \bigl(\begin{smallmatrix} 0 & 1 \\ 1 & 1 \end{smallmatrix}\bigr)$,
+which differs (one fewer $0 \to 1$, one more $1 \to 1$).
+A Markov-exchangeable measure may assign different probabilities to these.
 
-\subsection{Word probability as a continuous function}
+However, $[0, 1, 0, 1]$ and any other length-4 trajectory starting at $0$
+with the same count matrix $N$ must receive the same probability.  In this
+case, no other trajectory has exactly this count matrix, so the equivalence
+class is a singleton.
 
-Given $\theta=(\pi_0,P)\in \Theta$ and a finite word $xs=[x_0,\dots,x_n]$, define
+The parameter space $\Theta_2 = \mathrm{MarkovParam}(2)$ is
+$\Delta_1 \times \Delta_1 \times \Delta_1$: an initial distribution on
+$\{0,1\}$ (a single parameter $p_0 = \Prob(X_0 = 0)$), and two
+row-stochastic transition probabilities $p_{0 \to 1}$ and $p_{1 \to 0}$.
+For $\theta = (p_0, p_{0\to1}, p_{1\to0})$:
 \[
-\mathrm{wordProb}_\theta(xs)=\pi_0(x_0)\cdot \prod_{t=0}^{n-1} P(x_t,x_{t+1}).
+\mathrm{wordProb}_\theta([0,1,0,1])
+= p_0 \cdot p_{0\to1} \cdot p_{1\to0} \cdot p_{0\to1}
+= p_0 \cdot p_{0\to1}^2 \cdot p_{1\to0}.
 \]
-In Lean this is implemented as a measurable/continuous kernel
+The representation theorem, when applicable, gives
+$\mu([0,1,0,1]) = \int_{\Theta_2} p_0 \cdot p_{0\to1}^2 \cdot p_{1\to0}\, d\pi(\theta)$
+for some probability measure $\pi$ on $\Theta_2$.
+\end{example}
+
+\subsection{Markov parameter space and word probability}
+
+A Markov model on $\Fin(k)$ is parameterized by an initial distribution
+$\pi_0$ and a row-stochastic transition kernel $P(i,\cdot)$:
+
 \[
-\theta \mapsto \mathrm{wordProb}\; \theta\; xs,
+\mathrm{wordProb}_\theta(x_0, \ldots, x_n)
+\;=\; \pi_0(x_0) \cdot \prod_{t=0}^{n-1} P(x_t, x_{t+1}).
 \]
-with a real-valued continuous coercion \texttt{wordProbReal}.
-This function lies in the coordinate-generated subalgebra of $C(\Theta,\RR)$.
 
-\section{Evidence partitions as a Markov analogue of Bernstein bases}
+The parameter space $\Theta_k = \mathrm{MarkovParam}(k)$ is a finite product
+of simplices, hence compact.  The function
+$\theta \mapsto \mathrm{wordProb}_\theta(xs)$ is continuous on $\Theta_k$.
 
-A key engineering move is to avoid reasoning about individual words directly, and instead regroup words by their Markov sufficient statistics.
+\subsection{Recurrence}
 
-Fix a horizon $n$.
-There are finitely many trajectories of length $n+1$ over $\Fin(k)$.
-Each trajectory has an evidence summary $e$ (start, counts, last).
+Markov exchangeability alone does \emph{not} imply a mixture representation.
+A counterexample is constructed in the Lean development: consider $k = 2$
+with the deterministic chain $0 \to 1 \to 1 \to 1 \to \cdots$ (the chain
+leaves state~0 at step~1 and never returns).  This prefix measure is
+Markov-exchangeable---the only trajectory of any given length starting at~0
+is the all-ones tail, so the ``permutation'' equivalence class is always
+a singleton, and the condition holds vacuously.  But it cannot be
+represented as a mixture of time-homogeneous Markov chains, because any
+non-degenerate mixture would assign positive probability to trajectories
+that return to~0, contradicting the deterministic behavior.
 
-\subsection{Two parallel families indexed by evidence}
+The Diaconis--Freedman recurrence condition requires the trajectory to
+return to its starting state infinitely often, almost surely:
 
-For each $n$ and evidence class $e$:
-\begin{itemize}[leftmargin=2em]
-\item $w_\mu(n,e)$ is the total mass assigned by $\mu$ to trajectories with evidence $e$.
-\item $W(n,e):\Theta\to[0,1]$ is the total probability under $\theta$ of all words in that evidence class:
-\[
-W(n,e)(\theta)=\sum_{\text{traj } xs:\ \mathrm{evidence}(xs)=e}\mathrm{wordProb}_\theta(xs).
-\]
-\end{itemize}
+\begin{lstlisting}
+def recurrentEvent : Set (ℕ → Fin k) :=
+  ⋂ N : ℕ, ⋃ n ≥ N, returnEvent n
 
-Crucially, for each fixed $n$, the finite family $\{W(n,e)\}_e$ forms a \emph{partition of unity} on $\Theta$:
-\[
-\forall\theta,\quad \sum_e W(n,e)(\theta)=1,
-\]
-and $\{w_\mu(n,e)\}_e$ is a probability vector.
+def MarkovRecurrentPrefixMeasure
+    (μ : PrefixMeasure (Fin k)) : Prop :=
+  ∃ (P : Measure (ℕ → Fin k)),
+    IsProbabilityMeasure P ∧
+    (∀ xs : List (Fin k),
+      μ xs = P (cylinder xs)) ∧
+    P (recurrentEvent) = 1
+\end{lstlisting}
 
-This is the Markov counterpart of the role Bernstein basis polynomials play in one-dimensional Hausdorff moment proofs: they turn global approximation/representation questions into finite-dimensional simplex constraints at each $n$.
+Recurrence is an \emph{identifiability anchor}: it guarantees the trajectory
+keeps resampling transitions, allowing long-run statistics to stabilize.
 
-\section{Recurrence as an identifiability hypothesis}
+%% ========================================================================
+\section{What Is Proved}
+\label{sec:proved}
+%% ========================================================================
 
-\subsection{Definition (prefix-measure recurrence)}
+All results in this section compile with zero \texttt{sorry} in Lean~4
+with Mathlib.
 
-The Diaconis--Freedman recurrence condition can be phrased on an extension $P$ to infinite trajectories:
-\[
-P\{ X_n = X_0\ \text{i.o.}\}=1.
-\]
-In the Lean development, recurrence for a prefix measure $\mu$ is defined as: there exists an extension measure $P$ to $(\NN\to \Fin(k))$ whose cylinder sets agree with $\mu$ and for which the recurrence event holds almost surely.
+\subsection{Dirichlet conjugacy and structured predictors}
 
-\subsection{Why recurrence is necessary}
+The Dirichlet-multinomial conjugate prior pattern is formalized for
+$k$-ary alphabets.  Evidence is a vector of counts:
 
-Markov exchangeability alone does \emph{not} imply mixture-of-Markov-chains.
-A fully formal counterexample is constructed: a deterministic chain that leaves its start state once and never returns.
-It is Markov-exchangeable as a prefix measure, but violates recurrence, and therefore cannot be represented as a mixture over Markov parameters.
+\begin{lstlisting}
+structure MultiEvidence (k : ℕ) where
+  counts : Fin k → ℕ
 
-Interpretation:
-recurrence is an \emph{identifiability anchor}: it guarantees the trajectory keeps resampling transitions from a reference state, allowing long-run transition statistics to stabilize.
-Without it, transient drift can preserve partial exchangeability on finite prefixes while breaking any global mixture interpretation.
+structure DirichletParams (k : ℕ) where
+  priorParams : Fin k → ℝ
+  params_pos : ∀ i, 0 < priorParams i
+\end{lstlisting}
 
-\section{The Markov de Finetti theorem and the Lean proof architecture}
+The key theorem states that Bayesian update equals coordinatewise count
+addition---the conjugacy that makes finite-dimensional Markov inference
+tractable:
 
-\subsection{Target statement (informal)}
+\begin{lstlisting}
+-- Verbatim from EvidenceDirichlet.lean:
+theorem evidence_aggregation_is_dirichlet_update
+    (prior : DirichletParams k)
+    (e₁ e₂ : MultiEvidence k) (i : Fin k) :
+    (⟨prior, e₁ + e₂⟩ :
+      EvidenceDirichletParams k).posteriorParam i =
+    (⟨prior, e₁⟩ :
+      EvidenceDirichletParams k).posteriorParam i
+    + e₂.counts i
+\end{lstlisting}
 
-Let $\mu$ be a Markov-exchangeable prefix measure on $\Fin(k)$ satisfying recurrence.
-Then there exists a probability measure $\Pi$ on $\Theta=\mathrm{MarkovParam}(k)$ such that for every word $xs$,
-\[
-\mu(xs) \;=\; \int_{\Theta} \mathrm{wordProb}_\theta(xs)\, d\Pi(\theta).
-\]
-Equivalently: $\mu$ is a mixture of Markov chains.
+Here \lean{EvidenceDirichletParams} bundles a prior with observed evidence,
+and \lean{posteriorParam i} returns $\alpha_i + n_i$ (the $i$-th Dirichlet
+posterior parameter).  The theorem says combining evidence and then computing
+the posterior is the same as computing the posterior of the first batch and
+adding the second batch's counts---the Dirichlet conjugate update pattern.
 
-\subsection{Functional-analytic wrapper}
+Building on this, a finite-alphabet Markov(1) predictor with one
+Dirichlet prior per transition row is constructed
+(\lean{MarkovDirichletPredictor.lean}, 497 lines).
 
-The formalization follows a compactness/functional-analysis template:
+A \emph{universal hyperprior mixture} over a countable family of symmetric
+Dirichlet priors (parameter $a \in \{1/2, 1, 3/2, \ldots\}$, including the
+Jeffreys and Laplace choices) is then constructed with computable weights
+and dominance guarantees
+(\lean{MarkovDirichletHyperpriorMixture.lean}).
+
+\subsection{Domain restriction: Markov exchangeability implies count sufficiency}
+
+The bridge file (\lean{MarkovExchangeabilityBridge.lean}, 600+ lines)
+establishes that Markov exchangeability of a prefix measure implies
+predictions factor through transition-count evidence.  The key
+constructions are:
+
+\begin{lstlisting}
+-- Extract the transition-count summary from a trajectory:
+def countsOfFn (xs : Fin (n + 1) → Fin k) :
+    TransCounts k :=
+  ⟨fun a b => transCount xs a b⟩
+
+-- Verify the summary agrees with the evidence:
+theorem summary_ofFn (xs : Fin (n + 1) → Fin k) :
+    TransCounts.summary (List.ofFn xs) =
+      some (countsOfFn xs, xs (Fin.last n))
+\end{lstlisting}
+
+This is the Markov analogue of the i.i.d.\ count-sufficiency result:
+under Markov exchangeability, two trajectories with the same start state
+and transition counts receive the same probability, regardless of
+the order in which transitions occur.
+
+\subsection{Visit-time infrastructure (hard direction)}
+
+The hard direction of the Markov de Finetti theorem requires decomposing
+trajectories by \emph{visit times} to each state.  The Core file
+(\lean{MarkovDeFinettiFortiniBridgeCore.lean}, 1843 lines) formalizes:
+
+\begin{lstlisting}
+def visitCountBefore (ω : ℕ → Fin k) (i : Fin k)
+    (t : ℕ) : ℕ :=
+  Finset.sum (Finset.range t)
+    (fun s => if ω s = i then 1 else 0)
+
+def isNthVisitTime (ω : ℕ → Fin k) (i : Fin k)
+    (n t : ℕ) : Prop :=
+  ω t = i ∧ visitCountBefore ω i t = n
+
+noncomputable def rowSuccessorAtNthVisit
+    (i : Fin k) (n : ℕ) (ω : ℕ → Fin k) : Fin k :=
+  match nthVisitTime ω i n with
+  | some t => successorAt ω t
+  | none => i
+\end{lstlisting}
+
+For each state $i$, the \emph{row-successor process}
+$n \mapsto \mathrm{rowSuccessorAtNthVisit}(i, n, \omega)$
+records the state visited \emph{after} the $n$-th visit to $i$.
+Under Markov exchangeability, this process has strong symmetry properties.
+
+\subsection{The internal representation theorem}
+\label{sec:internal}
+
+The central achievement of the formalization is the \emph{internal}
+representation theorem.  It requires as input:
+
 \begin{enumerate}[leftmargin=2em]
-\item Define the map $\Pi \mapsto \left(\int W(n,e)\, d\Pi\right)_{(n,e)\in u}$ for a finite set $u$ of constraints.
-\item Show this map is continuous, and that the space of probability measures on $\Theta$ is compact.
-\item Define the \emph{moment polytope} as the image of this compact set; it is compact and hence closed.
-\item Reduce the hard direction to a \emph{finite satisfiability} statement: for each finite $u$, the constraint vector defined from $\mu$ lies in the moment polytope.
+\item An extension $P$ (a probability measure on $\NN \to \Fin(k)$)
+  whose cylinders agree with $\mu$.
+\item A family of row kernels
+  $\mathrm{rowKernel} : \Fin(k) \to (\NN \to \Fin(k)) \to
+  \mathrm{ProbabilityMeasure}(\Fin(k))$.
+\item \emph{Row-kernel crux data}: measurability conditions, start-restricted
+  invariance, and a cross-row coherence step.
 \end{enumerate}
 
-Intuitively, the hard work is proving that the finite-dimensional constraints implied by Markov exchangeability + recurrence are consistent with some mixing measure.
+\begin{definition}[Cross-Anchor Product Identity]
+The cross-anchor product identity asserts that cylinder probabilities under
+$P$ decompose as integrals of row-kernel step products, conditioned on
+the starting state:
+\begin{lstlisting}
+def CrossAnchorProductIdentity
+    (P : Measure (ℕ → Fin k))
+    (rowKernel : Fin k → (ℕ → Fin k)
+      → ProbabilityMeasure (Fin k)) : Prop :=
+  ∀ (a b : Fin k) (xs : List (Fin k)),
+    P (cylinder (a :: b :: xs)) =
+      ∫⁻ ω, (if ω 0 = a
+        then rowKernelStepProd rowKernel ω
+               (a :: b :: xs)
+        else 0) ∂P
+\end{lstlisting}
+\end{definition}
 
-\section{The remaining ``Diaconis--Freedman core'' approximation lemma}
+\begin{definition}[Row-Kernel Crux Data]
+\label{def:cruxdata}
+The crux data bundles four conditions on a row-kernel family, each
+ensuring a measurability or coherence property needed by the internal
+theorem:
+\begin{lstlisting}
+def RowKernelCruxData
+    (P : Measure (ℕ → Fin k))
+    (rowKernel : Fin k → (ℕ → Fin k)
+      → ProbabilityMeasure (Fin k)) : Prop :=
+  -- (1) Pointwise measurability: for each state
+  --     i and target b, the map r ↦ rowKernel(i,r)({b})
+  --     is AEMeasurable w.r.t. the row-process law.
+  (∀ i b : Fin k, AEMeasurable
+    (fun r => (rowKernel i r : Measure (Fin k))
+      ({b} : Set (Fin k)))
+    (rowProcessLaw P i)) ∧
+  -- (2) Start-restricted invariance: the kernel
+  --     reproduces cylinder probabilities when
+  --     restricted to trajectories starting at a
+  --     given state.
+  StartRestrictedRowKernelData P rowKernel ∧
+  -- (3) Product measurability: the product-measure
+  --     construction is AEMeasurable (needed for
+  --     Fubini-style arguments).
+  (∀ i : Fin k, AEMeasurable
+    (fun r => Measure.pi
+      (fun _ : Fin 1 => (rowKernel i r :
+        Measure (Fin k))))
+    (rowProcessLaw P i)) ∧
+  -- (4) Cross-row coherence: if the product identity
+  --     holds for (b::c::xs), it extends by one step
+  --     to (a::b::c::xs).
+  CrossRowCoherenceStep P rowKernel
+\end{lstlisting}
+\end{definition}
 
-\subsection{What remains}
+Conditions (1) and (3) are measurability obligations.  Condition (2)
+ensures the kernel is consistent with cylinder probabilities on each
+start-state fiber.  Condition (4) is the inductive step that extends
+the cross-anchor product identity from length-2 prefixes to arbitrary
+lengths.
 
-At the time of writing, the Lean development has reduced the entire hard direction to a single approximation lemma (referred to as \texttt{good\_state\_bound} in the code).
-Conceptually, it compares:
+The internal theorem and its proof:
 
-\begin{itemize}[leftmargin=2em]
-\item a \emph{without-replacement} distribution arising from uniform sampling over trajectories in a fiber determined by a Markov state summary, and
-\item a \emph{with-replacement} product distribution induced by the empirical Markov parameter of that state summary.
-\end{itemize}
+\begin{lstlisting}
+def FortiniSuccessorMatrixInvarianceTheoremInternal
+    (k : ℕ) : Prop :=
+  ∀ μ : PrefixMeasure (Fin k),
+    (∃ (P : Measure (ℕ → Fin k)),
+      IsProbabilityMeasure P ∧
+      (∀ xs, μ xs = P (cylinder xs)) ∧
+      ∃ rowKernel, RowKernelCruxData P rowKernel) →
+    ∃ (pi : Measure (MarkovParam k)),
+      IsProbabilityMeasure pi ∧
+      ∀ xs, μ xs = ∫⁻ θ, wordProb θ xs ∂pi
+\end{lstlisting}
 
-The desired inequality has the form
-\[
-\left| W(\mathrm{empiricalParam}(s)) - \mathrm{prefixCoeff}(s)\right|
-\;\le\; \frac{C}{M},
-\]
-where $M$ is the number of returns to the anchor state (or a lower bound thereof), and $C$ is a constant depending only on $(k,n)$ (and the chosen evidence granularity), not on $s$.
+\begin{theorem}[Internal Representation, {\color{provedgreen}proved, 0 sorry}]
+\label{thm:internal}
+\lean{fortiniSuccessorMatrixInvarianceTheoremInternal\_proved}.
 
-\subsection{Excursion decomposition strategy}
+Given an extension $P$ with row-kernel crux data, the mixing measure $\pi$
+on $\mathrm{MarkovParam}(k)$ is constructed as the pushforward of $P$
+through the map $\omega \mapsto \mathrm{rowKernelToMarkovParam}(\omega)$.
+\end{theorem}
 
-The main combinatorial device is an \emph{excursion decomposition}:
-a trajectory is cut into segments between consecutive returns to the start state.
-The project formalizes:
+\begin{lstlisting}
+-- Full proof (verbatim from source):
+theorem fortiniSuccessorMatrixInvarianceTheoremInternal_proved :
+    FortiniSuccessorMatrixInvarianceTheoremInternal k := by
+  intro μ ⟨P, hPprob, hExt, rowKernel, hcrux⟩
+  rcases hcrux with ⟨hEval, hrow_restrict_data, hPi, hstep⟩
+  letI : IsProbabilityMeasure P := hPprob
+  have hθ := aemeasurable_rowKernelToMarkovParam_diracInit_lifted
+    P rowKernel hEval
+  have hCM := cylinderMixingIdentity_P_of_rowKernelData
+    P rowKernel ⟨hEval, hrow_restrict_data, hPi, hstep⟩
+  have hall :=
+    rowKernelToMarkovParamLaw_reconstruction_all_diracInit_of_lifted_rowKernel
+    P rowKernel hθ hCM
+  set law := rowKernelToMarkovParamLaw P
+    (initKernel := fun ω =>
+      ⟨Measure.dirac (ω 0),
+       Measure.dirac.isProbabilityMeasure⟩)
+    (liftedRowKernelFromRowProcess rowKernel)
+  have hlaw_prob : IsProbabilityMeasure law :=
+    Measure.isProbabilityMeasure_map
+      (f := rowKernelToMarkovParam
+        (initKernel := fun ω =>
+          ⟨Measure.dirac (ω 0),
+           Measure.dirac.isProbabilityMeasure⟩)
+        (liftedRowKernelFromRowProcess rowKernel)) hθ
+  refine ⟨law, hlaw_prob, ?_⟩
+  intro xs
+  rw [hExt xs]
+  exact hall xs
+\end{lstlisting}
 
-\begin{itemize}[leftmargin=2em]
-\item return positions and counts,
-\item the resulting list of excursions,
-\item the induced ``uniform-on-fiber'' measure as a \emph{sampling without replacement} model on excursion lists.
-\end{itemize}
-
-The bound is then obtained by:
+The proof strategy is:
 \begin{enumerate}[leftmargin=2em]
-\item proving a one-step (per-excursion-prefix) deviation bound between without-replacement and with-replacement probabilities (already formalized in the excursion model files),
-\item lifting to a length-$m$ prefix bound using a generic product perturbation inequality:
-\[
-\left|\prod_{i=1}^m p_i - \prod_{i=1}^m q_i\right|
-\;\le\; \sum_{i=1}^m |p_i-q_i|,
-\]
-\item summing over all excursion-prefix events compatible with the evidence partition.
+\item Verify that $\omega \mapsto \mathrm{rowKernelToMarkovParam}(\omega)$
+  is \texttt{AEMeasurable} (from the crux data).
+\item Establish the \emph{cylinder mixing identity}: for each word $xs$ of
+  length $\ge 2$, $P(\mathrm{cylinder}(xs))$ equals the integral of
+  $\mathrm{wordProb}$ against the pushforward law.
+\item Define $\mathrm{law} = P \circ \mathrm{rowKernelToMarkovParam}^{-1}$
+  (the pushforward measure on $\mathrm{MarkovParam}(k)$).
+\item Show $\mathrm{law}$ is a probability measure and reconstruct
+  $\mu(xs) = \int \mathrm{wordProb}_\theta(xs)\, d\mathrm{law}(\theta)$.
 \end{enumerate}
 
-The only remaining engineering step is a clean decomposition lemma expressing both \texttt{prefixCoeff} and \texttt{W(empiricalParam s)} as finite sums over excursion-prefix events, so the already-proven excursion bounds can be applied termwise.
+%% ========================================================================
+\section{The Gap: Refined Analysis}
+\label{sec:gap}
+%% ========================================================================
 
-\section{PLN evidence as an algebraic/categorical object}
+The \emph{literature-facing} theorem takes only Markov exchangeability and
+recurrence as hypotheses---no explicit row-kernel data:
 
-Separately from the Markov de Finetti work, the project develops a robust algebraic view of ``evidence'' used in probabilistic logic networks.
+\begin{lstlisting}
+abbrev FortiniCanonicalRepresentationTheorem
+    (k : ℕ) : Prop :=
+  ∀ μ : PrefixMeasure (Fin k),
+    MarkovExchangeablePrefixMeasure μ →
+    MarkovRecurrentPrefixMeasure μ →
+      ∃ (pi : Measure (MarkovParam k)),
+        IsProbabilityMeasure pi ∧
+        ∀ xs, μ xs = ∫⁻ θ, wordProb θ xs ∂pi
+\end{lstlisting}
 
-\subsection{Evidence counts and projections}
+This is \emph{not} proved directly.  The Lean source contains multiple
+decomposition routes, all of which reduce to a common set of sub-obligations.
+A recent structural audit (April 2026) clarified which obligations are
+essential and which arise from the decomposition architecture.
 
-Evidence is represented as a pair of nonnegative counts $(e^+,e^-)$.
-Two common projections are:
-\begin{itemize}[leftmargin=2em]
-\item strength, typically $e^+/(e^++e^-)$ (when total evidence is nonzero),
-\item confidence, typically a monotone function of total evidence $e^++e^-$.
-\end{itemize}
+\subsection{Architecture overview}
 
-These projections connect to the more traditional PLN truth value representation (strength, confidence), but the evidence-pair view is often algebraically cleaner.
+The proof decomposes into two layers, each with sub-obligations:
 
-\subsection{Quantale structure and residuation}
+\paragraph{Layer 1: Extension with partial exchangeability.}
+From Markov exchangeability and recurrence of the prefix measure $\mu$,
+construct an extension $P$ (a probability measure on infinite trajectories)
+satisfying \emph{successor-matrix partial exchangeability}:
 
-A central insight is that evidence pairs form a commutative monoid under a tensor-like operation (roughly: coordinatewise multiplication in a suitable semiring/complete-lattice setting), and this can be upgraded to a \emph{quantale} with a right adjoint (residuation).
-This structure supports:
+\begin{definition}[Successor-Matrix Partial Exchangeability]
+A measure $P$ on $\NN \to \Fin(k)$ is \emph{successor-matrix partially
+exchangeable} when, for every finite selection of anchor states and visit
+indices, independent within-row permutations leave the joint law of
+row-successor values invariant:
+\begin{lstlisting}
+def SuccessorMatrixPartialExchangeable
+    (P : Measure (ℕ → Fin k)) : Prop :=
+  ∀ (m : ℕ) (anchor : Fin m → Fin k)
+    (idx : Fin m → ℕ) (σ : Fin k → Equiv.Perm ℕ),
+    Measure.map
+      (fun ω => fun j : Fin m =>
+        rowSuccessorVisitProcess (anchor j) ω
+          ((σ (anchor j)) (idx j))) P
+    =
+    Measure.map
+      (fun ω => fun j : Fin m =>
+        rowSuccessorVisitProcess (anchor j) ω
+          (idx j)) P
+\end{lstlisting}
+\end{definition}
 
-\begin{itemize}[leftmargin=2em]
-\item a compositional view of implication chaining,
-\item a ``direct path'' vs ``indirect path'' decomposition of deduction (via complements and residuation),
-\item a bridge to enriched-category composition laws.
-\end{itemize}
+Informally: permuting visit indices independently per row does not change
+the joint law.  This is de Finetti-style exchangeability applied per row
+of the transition matrix.
 
-The Lean development contains a theorem explicitly connecting the PLN deduction lower bound to an enriched composition law.
+\paragraph{Layer 2: Row-kernel construction and start-restricted coherence.}
+From $P$ with successor-matrix PE, construct measurable row kernels
+satisfying the conditions needed by the internal theorem.
 
-\section{Measure-theory curriculum (minimal toolkit that repeatedly mattered)}
+The internal theorem (Section~\ref{sec:internal}) requires four conditions
+bundled as \lean{RowKernelCruxData}.  Of these, three are automatically
+derived from PE by existing infrastructure.  The fourth---\emph{start-restricted
+row-kernel factorization}---is the structural bottleneck.
 
-For an assistant (human or agent) joining the formalization effort, the following results tend to be the practical ``spine'':
+\subsection{What is already derived from PE}
+
+\begin{lstlisting}
+-- PROVED: PE gives row kernels with unrestricted
+-- factorization + measurability
+theorem exists_rowKernel_hrow_hEval_hPi_of_successorMatrixPE
+    (hk : 0 < k)
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (hPE : SuccessorMatrixPartialExchangeable P) :
+    ∃ rowKernel,
+      -- (1) Unrestricted row-process factorization
+      (∀ i, ∀ (m : ℕ) (sel : Fin m → ℕ),
+        StrictMono sel → ...) ∧
+      -- (2) Singleton-eval AE-measurability
+      (∀ i b, AEMeasurable ...) ∧
+      -- (3) Fin 1 product-kernel AE-measurability
+      (∀ i, AEMeasurable ...)
+\end{lstlisting}
+
+This is proved by applying the i.i.d.\ de Finetti machinery (from
+\texttt{external/exchangeability/}) to each row's permutation-invariant
+law, then extracting the directing measure as the row kernel.
+
+\subsection{What is NOT yet derived: the start-restricted bottleneck}
+
+The \emph{cross-anchor product identity}---the core of the representation---
+conditions on the starting state:
+\[
+P(\mathrm{cyl}(a :: b :: xs))
+\;=\; \int_\Omega
+\mathbf{1}[\omega_0 = a] \cdot \prod_t \mathrm{rowKernel}(x_t)(\mathrm{rsp}_{x_t}(\omega))(\{x_{t+1}\})
+\;\, dP(\omega).
+\]
+
+The unrestricted row factorization (proved from PE) gives factorization
+of \lean{rowProcessLaw P i} (all trajectories).  But the product identity
+needs factorization of \lean{rowProcessLaw (P.restrict \{$\omega_0 = a$\}) i}
+(trajectories conditioned on starting at $a$).
+
+\begin{remark}[Why start-restriction is mathematically necessary]
+An audit confirmed that \lean{SuccessorMatrixPartialExchangeable P} does
+\emph{not} imply \lean{SuccessorMatrixPartialExchangeable (P.restrict S)}
+for arbitrary measurable $S$.  PE asserts
+$P(f^{-1}(T)) = P(g^{-1}(T))$ globally, but the start-restricted version
+needs $P(S \cap f^{-1}(T)) = P(S \cap g^{-1}(T))$---a strictly stronger
+claim.  A theorem in the Lean source (\lean{not\_derivable\-\_startRestricted\-RowSuccessorPermInvariant\_of\_witness})
+explicitly records this non-derivability.
+\end{remark}
+
+The existing code provides a \emph{different} route to start-restricted
+properties: not from PE directly, but from Markov exchangeability of $\mu$
+via a \emph{carrier transport} argument.
+
+\subsection{The carrier transport argument}
+\label{sec:carrier}
+
+The start-restricted permutation invariance is derived (lines 1375--1620
+of the Crux file) from Markov exchangeability of $\mu$ via finite
+combinatorics:
 
 \begin{enumerate}[leftmargin=2em]
-\item \textbf{Cylinder sets and Kolmogorov-style consistency:} how prefix measures relate to measures on infinite products.
-\item \textbf{Tonelli/Fubini for nonnegative integrals:} commuting $\int$ with finite sums.
-\item \textbf{Continuity of integration:} $\Pi\mapsto \int f\,d\Pi$ is continuous for continuous bounded $f$ on compact spaces.
-\item \textbf{Compactness of probability measures on compact spaces:} enabling finite intersection arguments and closed-image (moment polytope) arguments.
-\item \textbf{Stone--Weierstrass:} density of coordinate-generated subalgebras inside $C(\Theta)$.
-\item \textbf{Riesz--Markov--Kakutani:} turning positive linear functionals on $C(\Theta)$ into measures (when that route is used explicitly).
+\item Fix a state $i$, a target value $b$, and two visit indices $n, n'$.
+\item Consider the set of length-$N$ trajectory prefixes
+  (the ``carrier'') consistent with each visit event.
+\item Construct a bijection between the two carriers that preserves
+  Markov evidence (start state + transition counts).
+\item By Markov exchangeability, the two carriers have equal
+  $\mu$-measure, hence equal $P$-measure on their cylinders.
+\item Taking $N \to \infty$ gives the start-restricted invariance.
 \end{enumerate}
 
-Notably, the current Markov hard-direction path leans more on finite-dimensional compactness + continuity + closed-image reasoning than on a full Daniell--Stone extension, reserving RMK for the final measure extraction step.
+\begin{lstlisting}
+-- The carrier: finite prefixes consistent with a
+-- visit-time event, as an explicit Finset:
+def rowVisitCylinderEventUpToPrefixCarrier
+    (i : Fin k) (S : Finset ℕ) (v : ℕ → Fin k)
+    (N : ℕ) : Finset (Fin (N + 1) → Fin k) :=
+  Finset.univ.filter (fun xs =>
+    rowVisitCylinderEventUpTo i S v N
+      (prefixExtend N xs))
+\end{lstlisting}
 
-\section{Roadmap for closing the last lemma}
+The carrier transport assumption required by the existing theorems is:
 
-To finish the hard direction in Lean (and thereby close the Solomonoff--Markov exchangeability bridge in this thread), the remaining work is sharply focused:
+\begin{lstlisting}
+-- Required: for each (i, b, n, n', N) with b ≠ i,
+-- an evidence-preserving bijection between carriers
+hCarrierTransport :
+  ∀ (i b : Fin k) (n n' N : ℕ), b ≠ i →
+    ∃ e : carrier(i, {n}, ..., N) ≃
+           carrier(i, {n'}, ..., N),
+      ∀ xs, evidenceOf xs.1 = evidenceOf (e xs).1
+\end{lstlisting}
+
+\begin{openproblem}[Carrier Transport Bijection]
+\label{prob:carrier}
+Construct, for each pair of visit indices $n, n'$ and each horizon $N$,
+an explicit bijection between the corresponding prefix carriers that
+preserves Markov evidence.
+
+This is a \emph{finite combinatorial} problem: given two finite sets of
+trajectories (of length $N+1$ over $\Fin(k)$) defined by visit-time
+conditions, exhibit a bijection that preserves the transition-count matrix.
+
+The key technique is \emph{trajectory segment swapping}: two trajectories
+that differ only in which visit to state $i$ produces successor $b$
+have the same transition counts (the transition $i \to b$ is counted once
+in both cases).  The bijection permutes trajectory segments between the
+$n$-th and $n'$-th visits to $i$.
+
+Mathlib provides \lean{Finset.card\_bij} for cardinality arguments and
+\lean{Nat.multinomial} for counting trajectories with prescribed
+transition counts.  The project includes a
+\lean{FortiniFiniteCheckers} module with decidable
+evidence-preservation checkers that could automate small cases.
+\end{openproblem}
+
+\subsection{The cross-row coherence gap (overlooked until April 2026)}
+\label{sec:crossrow}
+
+A structural audit in April 2026 revealed a second gap hidden by the
+decomposition architecture.  The reduced assembly theorem
+(\lean{successorMatrixPEToBuiltRowKernelOnExtension\_of\_start\_and\_invariance},
+line 2112 of the Crux file) requires \textbf{two independent} assumptions
+beyond what PE provides:
 
 \begin{enumerate}[leftmargin=2em]
-\item Introduce a small refactor to avoid an import cycle: move the statement of the remaining bound into a file that can import both the excursion model and the approximation wrapper.
-\item Prove two decomposition lemmas:
+\item \textbf{\lean{hStartFromPE}}: PE $\Rightarrow$
+  \lean{StartRestrictedRowKernelData} --- the start-restricted row-law
+  factorization (addressed by carrier transport, \S\ref{sec:carrier}).
+\item \textbf{\lean{hInvFromPE}}: PE $\Rightarrow$
+  \lean{RowSuccessorMatrixInvariance} --- the cylinder mixing identity
+  for all finite prefixes of length $\ge 2$.
+\end{enumerate}
+
+\noindent Prior descriptions of the gap identified only item~(1).
+Item~(2) is a genuinely different requirement: it asserts that the
+product of row-kernel evaluations \emph{across different anchor states}
+correctly reproduces cylinder probabilities.
+
+\paragraph{Root cause: individual vs.\ joint de Finetti.}
+The existing code applies the de Finetti theorem to each row process
+\emph{independently} (line 1527 of the Core file):
+\begin{lstlisting}
+have hciid :
+    ∀ i : Fin k,
+      Exchangeability.ConditionallyIID
+        (rowProcessLaw P i)
+        (fun n r => r n) := ...
+\end{lstlisting}
+
+This gives, for each anchor $i$, that the row-$i$ process is
+conditionally i.i.d.\ directed by \lean{rowKernel i}.  But
+\lean{rowKernelStepProd} multiplies evaluations across different
+anchors:
+\[
+\mathrm{rowKernelStepProd}(\omega, [a,b,c,\ldots])
+= \mathrm{rowKernel}_a(\mathrm{rsp}_a(\omega))(\{b\}) \cdot
+  \mathrm{rowKernel}_b(\mathrm{rsp}_b(\omega))(\{c\}) \cdot \ldots
+\]
+
+For this product to equal the cylinder probability, the row processes
+at different anchors must be \emph{conditionally independent given
+$\omega$}.  This is the content of the \emph{joint} de Finetti theorem
+for exchangeable arrays, which PE provides at the joint-law level but
+which the code never extracts.
+
+\begin{remark}[Relationship between the two sub-gaps]
+If the joint de Finetti extraction is formalized (establishing cross-row
+conditional independence from PE), then \lean{hInvFromPE} follows from
+\lean{hStartFromPE} by induction on prefix length: the base case is
+the pair-cylinder identity (from start-restricted factorization), and
+the induction step uses cross-row conditional independence to
+extend by one state.  In that case, the two sub-gaps collapse into:
+(a) carrier transport for \lean{hStartFromPE}, and
+(b) joint de Finetti extraction from PE.
+\end{remark}
+
+\subsection{Note on the recurrence definition}
+
+\lean{MarkovRecurrentPrefixMeasure} requires only that the starting
+state $\omega_0$ is visited infinitely often almost surely.  The
+downstream machinery (\lean{StrongRecurrence}, line 856 of the Crux
+file) needs \emph{all} states to be visited infinitely often.  The
+stronger \lean{MarkovRowRecurrentPrefixMeasure} provides this.
+
+Under Markov exchangeability on a finite state space, starting-state
+recurrence should imply all-state recurrence (by exchangeability,
+all transition rows have the same asymptotic behavior), but this
+implication is \emph{not formalized}.  The strong recurrence variant
+of the main theorem uses the stronger hypothesis, sidestepping this
+issue.
+
+\subsection{Archived approaches and reusable infrastructure}
+\label{sec:archive}
+
+The \texttt{\_archive/MarkovDeFinetti/} directory contains 37 files
+($\sim$5{,}000 lines) from prior proof attempts.  Notable among these:
+
+\begin{itemize}[leftmargin=2em]
+\item \textbf{Euler trail approach} (\lean{EulerTrails}, \lean{EulerTrailFiber},
+  \lean{CopyPerm}, \lean{BESTCore}; 1{,}225 lines, \textbf{0 sorry}).
+  Trajectories with prescribed transition counts are modeled as Euler
+  trails on a multigraph.  ``Copy permutations'' (permuting which copy
+  of each edge is used) preserve vertex sequences.  Key proved results:
   \begin{itemize}
-  \item \texttt{prefixCoeff} is a finite sum over excursion-prefix coefficients.
-  \item \texttt{W(empiricalParam s)} is the matching finite sum over with-replacement excursion probabilities.
+  \item \lean{trailVertexSeq\_applyCopyPerm}: copy perms preserve trajectories.
+  \item \lean{applyCopyPerm\_isEulerTrail}: copy perms preserve the Euler trail property.
+  \item \lean{eulerTrailFinset\_card\_eq}: trail count $= \prod_{a,b} (G(a,b))!$.
   \end{itemize}
-\item Apply the already-proven excursion prefix bound termwise, then aggregate using the generic product-difference inequality.
+  \textbf{This is closely related to the carrier transport bijection}
+  (Open Problem~\ref{prob:carrier}).  The copy-permutation idea
+  amounts to swapping which visit to a state produces a given
+  successor---exactly the segment-swapping bijection described there.
+  Bridging the archived Euler-trail infrastructure to the current
+  carrier framework may be the most efficient route to closing the
+  combinatorial gap.
+
+\item \textbf{Excursion approach} (\lean{Excursions}, \lean{ExcursionBridge},
+  \lean{ExcursionModel}): trajectory decomposition by returns to the
+  starting state.  Partially developed.
+
+\item \textbf{Without-replacement bounds} (\lean{WithoutReplacement},
+  \lean{ApproxBounds}): product-probability comparison bounds between
+  with-replacement and without-replacement sampling.
+\end{itemize}
+
+\subsection{Note on the non-derivability theorem}
+
+The theorem \lean{not\_derivable\_startRestrictedRowSuccessorPermInvariant\_of\_witness}
+(line 510 of the Crux file) proves: \emph{if} a concrete witness
+exists violating start-restricted permutation invariance under bare
+exchangeability (without PE), \emph{then} the invariance is not
+derivable from bare exchangeability.  This is conditional on an
+uninstantiated witness and concerns bare exchangeability rather than PE.
+It does \emph{not} constrain whether the invariance is derivable from
+the strictly stronger assumption of successor-matrix partial
+exchangeability.
+
+\subsection{Summary: the refined gap}
+
+After the April 2026 structural audit, the gap decomposes as follows:
+
+\begin{center}
+\small
+\begin{tabular}{llll}
+\hline
+\textbf{Sub-gap} & \textbf{Nature} & \textbf{Difficulty} & \textbf{Resources} \\
+\hline
+Extension with PE (Bridge A) & Infinite-product measure theory & Hard & --- \\
+Carrier transport bijection & Finite combinatorics & Medium & Archived Euler trail code \\
+Joint de Finetti extraction & Measure-theoretic independence & Medium--Hard & PE infrastructure exists \\
+\hline
+\end{tabular}
+\end{center}
+
+The carrier transport bijection remains the most tractable attack point.
+The archived Euler trail / copy-permutation code (1{,}225 lines, 0
+\texttt{sorry}) may provide the combinatorial core.
+
+The joint de Finetti extraction (establishing cross-row conditional
+independence from PE) is needed for the induction step of the
+cross-anchor product identity.  If resolved, it would also collapse
+the ``\lean{hInvFromPE}'' sub-gap into the carrier transport route.
+
+The extension with PE (Bridge A) is the hardest piece: it requires
+either the Kolmogorov extension theorem or a direct lifting argument
+from finite-dimensional Markov exchangeability to infinite-product PE.
+
+%% ========================================================================
+\section{The Broader Context}
+\label{sec:context}
+%% ========================================================================
+
+\subsection{Classical de Finetti (i.i.d.\ case)}
+
+The i.i.d.\ case of de Finetti's theorem is \emph{fully formalized} in
+the companion project \texttt{Mettapedia/external/exchangeability/}
+(${\sim}43{,}000$ lines of Lean, zero \texttt{sorry}).  Three independent
+proofs are provided:
+
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{Via reverse martingale convergence} (default; follows
+  Kallenberg 2005).
+\item \textbf{Via $L^2$ bounds} (lightest dependencies; elementary).
+\item \textbf{Via the mean ergodic theorem} (deepest theory; connects to
+  dynamical systems).
 \end{enumerate}
 
-\section*{Acknowledgments / provenance}
+The main theorem proved is:
+\[
+\text{Contractable} \;\Longleftrightarrow\;
+\text{Exchangeable} \;\Longleftrightarrow\;
+\text{Conditionally i.i.d.}
+\]
+for infinite sequences on standard Borel spaces.
 
-This note is extracted from a collaborative formalization thread and the corresponding Lean source files in the \texttt{Mettapedia} project.
-It is intended as a technical memory aid for future contributors.
+\subsection{Solomonoff bridge: exchangeability implies count sufficiency}
+
+The file \lean{SolomonoffExchangeable.lean} proves the analogous
+count-sufficiency result for the i.i.d.\ (binary) case at the
+\emph{semimeasure} level---directly connecting to Solomonoff's
+universal prior:
+
+\begin{lstlisting}
+-- From SolomonoffExchangeable.lean (binary/i.i.d. case):
+theorem semimeasureExchangeable_same_counts
+    {μ : BinString → ℝ}
+    (hexch : SemimeasureExchangeable μ)
+    {n : ℕ} (xs₁ xs₂ : Fin n → Bool)
+    (hcount : countTrue xs₁ = countTrue xs₂) :
+    μ (List.ofFn xs₁) = μ (List.ofFn xs₂)
+\end{lstlisting}
+
+Under exchangeability, the Solomonoff-style predictor depends only on
+counts, not on ordering.  This is the binary analogue of the Markov
+count-sufficiency result in Section~\ref{sec:proved}: the Markov version
+replaces \lean{countTrue} (a single count) with \lean{transCount}
+(a $k \times k$ matrix of transition counts).
+
+This justifies the ``evidence is what you carry'' design of PLN:
+under exchangeability, binary evidence counts $(n^+, n^-)$ are
+sufficient statistics for prediction.
+
+\subsection{The complete chain (with gap)}
+
+The intended end-to-end chain is:
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.2cm and 2.5cm,
+  box/.style={draw, rounded corners, minimum width=3cm,
+    minimum height=0.8cm, align=center, font=\small},
+  proved/.style={box, fill=green!12, draw=provedgreen},
+  gap/.style={box, fill=red!10, draw=gapred, dashed},
+  arr/.style={-{Stealth[length=5pt]}, thick}
+]
+\node[proved] (exch) {Markov\\exchangeability};
+\node[proved, right=of exch] (counts) {Transition-count\\sufficiency};
+\node[proved, below=of counts] (dirichlet) {Dirichlet\\conjugacy};
+\node[proved, below=of dirichlet] (hyperprior) {Universal\\hyperprior mixture};
+\node[gap, right=2.5cm of counts] (bridge) {Bridge A\\+ carrier transport\\+ joint de Finetti};
+\node[proved, right=of bridge] (internal) {Internal\\representation};
+\node[proved, below=of internal] (solomonoff) {Solomonoff\\regret bound};
+
+\draw[arr] (exch) -- (counts);
+\draw[arr] (counts) -- (dirichlet);
+\draw[arr] (dirichlet) -- (hyperprior);
+\draw[arr, dashed, gapred] (counts) -- node[above, font=\scriptsize\itshape]
+  {open} (bridge);
+\draw[arr] (bridge) -- (internal);
+\draw[arr] (internal) -- (solomonoff);
+\end{tikzpicture}
+\end{center}
+
+Closing the three sub-obligations (Bridge A, carrier transport, and
+joint de Finetti extraction) would complete the chain from Markov
+exchangeability to a mixture representation with Solomonoff-style
+dominance guarantees.
+
+%% ========================================================================
+\section{File Inventory}
+\label{sec:inventory}
+%% ========================================================================
+
+All files are in the \texttt{Mettapedia} Lean project, available at\\
+\url{https://github.com/zariuq/ai-agents/tree/main/lean-projects/mettapedia/Mettapedia/Logic/}.
+
+\begin{center}
+\small
+\begin{tabular}{llrl}
+\hline
+\textbf{Layer} & \textbf{File} & \textbf{Lines} & \textbf{Status} \\
+\hline
+Definitions & \texttt{MarkovExchangeability.lean} & 146 & {\color{provedgreen}0 sorry} \\
+Conjugacy & \texttt{EvidenceDirichlet.lean} & 496 & {\color{provedgreen}0 sorry} \\
+Predictor & \texttt{MarkovDirichletPredictor.lean} & 497 & {\color{provedgreen}0 sorry} \\
+Hyperprior & \texttt{MarkovDirichletHyperpriorMixture.lean} & $\sim$50K & {\color{provedgreen}0 sorry} \\
+Domain bridge & \texttt{MarkovExchangeabilityBridge.lean} & 600+ & {\color{provedgreen}0 sorry} \\
+Solomonoff & \texttt{SolomonoffExchangeable.lean} & 200+ & {\color{provedgreen}0 sorry} \\
+Recurrence & \texttt{MarkovDeFinettiRecurrence.lean} & --- & {\color{provedgreen}0 sorry} \\
+Hard core & \texttt{MarkovDeFinettiFortiniBridgeCore.lean} & 1843 & {\color{provedgreen}0 sorry} \\
+Hard crux & \texttt{MarkovDeFinettiFortiniBridgeCrux.lean} & $\sim$2600 & {\color{provedgreen}0 sorry} \\
+Surface & \texttt{MarkovDeFinettiFortiniBridgeCanonical.lean} & 131 & {\color{provedgreen}0 sorry} \\
+\hline
+De Finetti & \texttt{external/exchangeability/} & 43K & {\color{provedgreen}0 sorry} \\
+\hline
+\end{tabular}
+\end{center}
+
+\paragraph{Note on ``0 sorry.''}
+Every file listed above compiles without \texttt{sorry}.  However, the
+canonical surface file (\texttt{...Canonical.lean}) proves the
+representation theorem \emph{only under the two bridge assumptions}
+stated as hypotheses.  No file contains a sorry; the gap manifests as
+hypotheses on theorems, not as incomplete proofs.
+
+%% ========================================================================
+\section*{References}
+%% ========================================================================
+
+\begin{enumerate}[leftmargin=2em, label={[\arabic*]}]
+
+\item P.~Diaconis and D.~Freedman, ``De Finetti's theorem for Markov
+  chains,'' \emph{Ann.\ Probab.}, vol.~8, no.~1, pp.~115--130, 1980.
+
+\item S.~Fortini, L.~Ladelli, and E.~Regazzini, ``Exchangeability,
+  predictive distributions and parametric models,''
+  \emph{Sankhy\=a A}, vol.~62, pp.~86--109, 2000.
+
+\item T.~Sato, ``A statistical learning method for logic programs with
+  distribution semantics,'' in \emph{Proc.\ 12th Int.\ Conf.\ Logic
+  Programming (ICLP)}, 1995.
+
+\item M.~Hutter, \emph{Universal Artificial Intelligence: Sequential
+  Decisions Based on Algorithmic Probability}, Springer, 2005.
+
+\item R.~J.~Solomonoff, ``A formal theory of inductive inference,''
+  \emph{Inform.\ Control}, vol.~7, pp.~1--22, 224--254, 1964.
+
+\item O.~Kallenberg, \emph{Probabilistic Symmetries and Invariance
+  Principles}, Springer, 2005.
+
+\item B.~de~Finetti, ``La pr\'evision: ses lois logiques, ses sources
+  subjectives,'' \emph{Ann.\ Inst.\ H.\ Poincar\'e}, vol.~7,
+  pp.~1--68, 1937.
+
+\end{enumerate}
 
 \end{document}
