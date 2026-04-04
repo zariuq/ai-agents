@@ -712,7 +712,7 @@ decreasing_by
 mutual
 
 /-- Every closed cumulative-Henkin code represents its own canonical represented input. -/
-theorem representedInput_spec :
+  theorem representedInput_spec :
     ∀ {τ : Ty Base} (t : ClosedTerm (HInf Base Const) τ),
       Represents (Base := Base) (Const := Const) τ t
         (representedInput (Base := Base) (Const := Const) t)
@@ -1460,8 +1460,7 @@ theorem henkinTruthSet_imp_le_iff
       henkinTruthSet (Base := Base) (Const := Const) q ≤
         henkinTruthSet (Base := Base) (Const := Const) p ⊔ s := by
   constructor
-  · intro h
-    intro W hW
+  · intro h W hW
     change W ∈ henkinTruthSet (Base := Base) (Const := Const) p ⊔ s at hW
     change W ∈ henkinTruthSet (Base := Base) (Const := Const) q
     rw [UpperSet.mem_sup_iff] at hW
@@ -1480,8 +1479,7 @@ theorem henkinTruthSet_imp_le_iff
             (Base := Base)
             (Const := Const)
             (W := W)).1 hpW)
-  · intro h
-    intro W hsW
+  · intro h W hsW
     change W ∈ henkinTruthSet (Base := Base) (Const := Const) (.imp p q)
     apply
       (mem_henkinTruthSet_iff (Base := Base) (Const := Const) (W := W)).2

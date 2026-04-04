@@ -1260,7 +1260,7 @@ def insertRenAt
   | cons α Ξ₁ ih =>
       cases v with
       | vz => rfl
-      | vs v => simp only [insertRenAt, insertRen, Rename.lift]; exact congrArg Var.vs (ih v)
+      | vs v => simp only [insertRenAt, Rename.lift]; exact congrArg Var.vs (ih v)
 
 /-- Insertion preserves the distinguished abstracted variable depth. -/
 @[simp] theorem insertRenAt_varAtDepth
@@ -1271,7 +1271,7 @@ def insertRenAt
   induction Ξ₁ with
   | nil => simp [insertRenAt, varAtDepth, Rename.weaken]
   | cons α Ξ₁ ih =>
-      simp only [insertRenAt, varAtDepth, Rename.lift]; exact congrArg Var.vs ih
+      simp only [insertRenAt, Rename.lift]; exact congrArg Var.vs ih
 
 /-- abstractConstAt commutes with split-point insertion (GPT-5.4 Pro route).
     No `List.append_assoc` casts — the split is structural in the recursion. -/
@@ -1287,10 +1287,10 @@ def insertRenAt
   | .var v => by simp only [abstractConstAt, rename]; exact congrArg Term.var (insertRenAt_insertRen Ξ₁ Ξ₂ v)
   | .const d => by
       simp only [rename, abstractConstAt]; split
-      · next h => have hτ := congrArg Sigma.fst h; subst hτ; simp [cast_eq, rename, insertRenAt_varAtDepth]
+      · next h => have hτ := congrArg Sigma.fst h; subst hτ; simp [cast_eq, insertRenAt_varAtDepth]
       · rfl
   | .app f u => by simp [abstractConstAt, rename, abstractConstAt_insertRenAt Ξ₁ Ξ₂ f, abstractConstAt_insertRenAt Ξ₁ Ξ₂ u]
-  | .lam body => by simp only [abstractConstAt, rename, insertRenAt]; congr 1; exact abstractConstAt_insertRenAt (_ :: Ξ₁) Ξ₂ body
+  | .lam body => by simp only [abstractConstAt, rename]; congr 1; exact abstractConstAt_insertRenAt (_ :: Ξ₁) Ξ₂ body
   | .top => by simp [abstractConstAt, rename]
   | .bot => by simp [abstractConstAt, rename]
   | .and p q => by simp [abstractConstAt, rename, abstractConstAt_insertRenAt Ξ₁ Ξ₂ p, abstractConstAt_insertRenAt Ξ₁ Ξ₂ q]
@@ -1298,8 +1298,8 @@ def insertRenAt
   | .imp p q => by simp [abstractConstAt, rename, abstractConstAt_insertRenAt Ξ₁ Ξ₂ p, abstractConstAt_insertRenAt Ξ₁ Ξ₂ q]
   | .not p => by simp only [abstractConstAt, rename]; congr 1; exact abstractConstAt_insertRenAt Ξ₁ Ξ₂ p
   | .eq a b => by simp [abstractConstAt, rename, abstractConstAt_insertRenAt Ξ₁ Ξ₂ a, abstractConstAt_insertRenAt Ξ₁ Ξ₂ b]
-  | .all body => by simp only [abstractConstAt, rename, insertRenAt]; congr 1; exact abstractConstAt_insertRenAt (_ :: Ξ₁) Ξ₂ body
-  | .ex body => by simp only [abstractConstAt, rename, insertRenAt]; congr 1; exact abstractConstAt_insertRenAt (_ :: Ξ₁) Ξ₂ body
+  | .all body => by simp only [abstractConstAt, rename]; congr 1; exact abstractConstAt_insertRenAt (_ :: Ξ₁) Ξ₂ body
+  | .ex body => by simp only [abstractConstAt, rename]; congr 1; exact abstractConstAt_insertRenAt (_ :: Ξ₁) Ξ₂ body
 
 /-- abstractConstAt commutes with weakening (Ξ₁=[] specialization). -/
 @[simp] theorem abstractConstAt_weaken
@@ -1412,12 +1412,12 @@ theorem abstractConstAt_substAt {c : Const ρ} :
   | Ξ₁, Ξ₂, _, _, t, .var v => by simp only [subst, abstractConstAt]; exact abstractConstAt_substAt_var Ξ₁ Ξ₂ t v
   | _, _, _, _, _, .const d => by
       simp only [subst, abstractConstAt]; split
-      · next h => have hτ := congrArg Sigma.fst h; subst hτ; simp [cast_eq, subst, substAt_varAtDepth]
+      · next h => have hτ := congrArg Sigma.fst h; subst hτ; simp [cast_eq, substAt_varAtDepth]
       · rfl
   | Ξ₁, Ξ₂, _, _, t, .app f u => by
       simp only [subst, abstractConstAt, abstractConstAt_substAt Ξ₁ Ξ₂ t f, abstractConstAt_substAt Ξ₁ Ξ₂ t u]
   | Ξ₁, Ξ₂, _, _, t, .lam body => by
-      simp only [subst, abstractConstAt, substAt]
+      simp only [subst, abstractConstAt]
       congr 1; exact abstractConstAt_substAt (_ :: Ξ₁) Ξ₂ t body
   | _, _, _, _, _, .top => by simp [subst, abstractConstAt]
   | _, _, _, _, _, .bot => by simp [subst, abstractConstAt]
@@ -1432,10 +1432,10 @@ theorem abstractConstAt_substAt {c : Const ρ} :
   | Ξ₁, Ξ₂, _, _, t, .eq a b => by
       simp only [subst, abstractConstAt, abstractConstAt_substAt Ξ₁ Ξ₂ t a, abstractConstAt_substAt Ξ₁ Ξ₂ t b]
   | Ξ₁, Ξ₂, _, _, t, .all body => by
-      simp only [subst, abstractConstAt, substAt]
+      simp only [subst, abstractConstAt]
       congr 1; exact abstractConstAt_substAt (_ :: Ξ₁) Ξ₂ t body
   | Ξ₁, Ξ₂, _, _, t, .ex body => by
-      simp only [subst, abstractConstAt, substAt]
+      simp only [subst, abstractConstAt]
       congr 1; exact abstractConstAt_substAt (_ :: Ξ₁) Ξ₂ t body
 
 /-- Specialization: abstractConstAt commutes with instantiation (Ξ₁=[], Ξ₂=Ξ). -/

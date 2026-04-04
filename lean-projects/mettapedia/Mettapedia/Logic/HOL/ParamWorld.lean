@@ -772,9 +772,9 @@ This mirrors the `hctx`-style equal-context wrappers used in
       (freshParamToVar (Base := Base) (Const := Const) (Γ := Γ) (σ := σ)
         (Ξ := Ξ₁ ++ Ξ₃) (hctx ▸ t)) := by
   subst hctx
-  simpa using
-    (freshParamToVar_insertRenPrefix (Base := Base) (Const := Const)
-      (Γ := Γ) (σ := σ) (ρ := ρ) (Ξ₁ := Ξ₁) (Ξ₃ := Ξ₃) t)
+  exact
+    freshParamToVar_insertRenPrefix (Base := Base) (Const := Const)
+      (Γ := Γ) (σ := σ) (ρ := ρ) (Ξ₁ := Ξ₁) (Ξ₃ := Ξ₃) t
 
 @[simp] theorem freshParamToVar_weaken
     {Γ : Ctx Base} {σ ρ : Ty Base} :
@@ -901,7 +901,7 @@ theorem freshParamToVar_substPrefix
         freshParamToVar_substPrefix Ξ₁ Ξ₂ t f,
         freshParamToVar_substPrefix Ξ₁ Ξ₂ t u]
   | Ξ₁, Ξ₂, _, t, .lam body => by
-      simp only [subst, freshParamToVar, substPrefix, substPrefixOut]
+      simp only [subst, freshParamToVar]
       congr 1
       exact freshParamToVar_substPrefix (_ :: Ξ₁) Ξ₂ t body
   | _, _, _, _, .top => by
@@ -928,11 +928,11 @@ theorem freshParamToVar_substPrefix
         freshParamToVar_substPrefix Ξ₁ Ξ₂ t a,
         freshParamToVar_substPrefix Ξ₁ Ξ₂ t b]
   | Ξ₁, Ξ₂, _, t, .all body => by
-      simp only [subst, freshParamToVar, substPrefix, substPrefixOut]
+      simp only [subst, freshParamToVar]
       congr 1
       exact freshParamToVar_substPrefix (_ :: Ξ₁) Ξ₂ t body
   | Ξ₁, Ξ₂, _, t, .ex body => by
-      simp only [subst, freshParamToVar, substPrefix, substPrefixOut]
+      simp only [subst, freshParamToVar]
       congr 1
       exact freshParamToVar_substPrefix (_ :: Ξ₁) Ξ₂ t body
 
@@ -1139,7 +1139,7 @@ private theorem varToFreshParam_eq_freshSuffixSubst
         varToFreshParam_eq_freshSuffixSubst (Γ := Γ) (σ := σ) Ξ f,
         varToFreshParam_eq_freshSuffixSubst (Γ := Γ) (σ := σ) Ξ t]
   | Ξ, _, .lam body => by
-      simp only [varToFreshParam, liftParamCtx, mapConst, freshSuffixSubst, subst]
+      simp only [varToFreshParam, liftParamCtx, mapConst, subst]
       congr 1
       exact varToFreshParam_eq_freshSuffixSubst (Γ := Γ) (σ := σ) (_ :: Ξ) body
   | _, _, .top => by simp [varToFreshParam, liftParamCtx, mapConst, subst]
@@ -1164,11 +1164,11 @@ private theorem varToFreshParam_eq_freshSuffixSubst
         varToFreshParam_eq_freshSuffixSubst (Γ := Γ) (σ := σ) Ξ a,
         varToFreshParam_eq_freshSuffixSubst (Γ := Γ) (σ := σ) Ξ b]
   | Ξ, _, .all body => by
-      simp only [varToFreshParam, liftParamCtx, mapConst, freshSuffixSubst, subst]
+      simp only [varToFreshParam, liftParamCtx, mapConst, subst]
       congr 1
       exact varToFreshParam_eq_freshSuffixSubst (Γ := Γ) (σ := σ) (_ :: Ξ) body
   | Ξ, _, .ex body => by
-      simp only [varToFreshParam, liftParamCtx, mapConst, freshSuffixSubst, subst]
+      simp only [varToFreshParam, liftParamCtx, mapConst, subst]
       congr 1
       exact varToFreshParam_eq_freshSuffixSubst (Γ := Γ) (σ := σ) (_ :: Ξ) body
 
@@ -1682,16 +1682,16 @@ abbrev liftParamPrefixFormula {Ξ Γ : Ctx Base} :
             unfold liftParamPrefix
             apply mapConst_ext
             intro τ c
-            simpa using prefixParamWeaken_nil (Base := Base) (Const := Const) c
+            exact prefixParamWeaken_nil (Base := Base) (Const := Const) c
     _ = t := mapConst_id t
 
 @[simp] theorem liftParamPrefixFormula_nil
     {Γ : Ctx Base}
     (χ : ClosedFormula (ParamConst Const Γ)) :
     liftParamPrefixFormula (Base := Base) (Const := Const) (Ξ := []) χ = χ := by
-  simpa [liftParamPrefixFormula] using
-    (liftParamPrefix_nil (Base := Base) (Const := Const) (Γ := Γ)
-      (Γ' := ([] : Ctx Base)) χ)
+  exact
+    liftParamPrefix_nil (Base := Base) (Const := Const) (Γ := Γ)
+      (Γ' := ([] : Ctx Base)) χ
 
 @[simp] theorem prefixParamWeaken_singleton
     {Γ : Ctx Base} {σ τ : Ty Base}
@@ -1708,16 +1708,16 @@ abbrev liftParamPrefixFormula {Ξ Γ : Ctx Base} :
   unfold liftParamPrefix liftParamCtx
   apply mapConst_ext
   intro τ c
-  simpa using prefixParamWeaken_singleton (Base := Base) (Const := Const) (σ := σ) c
+  exact prefixParamWeaken_singleton (Base := Base) (Const := Const) (σ := σ) c
 
 @[simp] theorem liftParamPrefixFormula_singleton
     {Γ : Ctx Base} {σ : Ty Base}
     (χ : ClosedFormula (ParamConst Const Γ)) :
     liftParamPrefixFormula (Base := Base) (Const := Const) (Ξ := [σ]) χ =
       liftParamCtxFormula (Base := Base) (Const := Const) (Γ := Γ) σ χ := by
-  simpa [liftParamPrefixFormula, liftParamCtxFormula] using
-    (liftParamPrefix_singleton (Base := Base) (Const := Const) (Γ := Γ)
-      (Γ' := ([] : Ctx Base)) (σ := σ) χ)
+  exact
+    liftParamPrefix_singleton (Base := Base) (Const := Const) (Γ := Γ)
+      (Γ' := ([] : Ctx Base)) (σ := σ) χ
 
 @[simp] theorem liftParam_eq_liftParamPrefix_comp
     {Γ Γ' Ξ : Ctx Base}
@@ -1737,9 +1737,9 @@ abbrev liftParamPrefixFormula {Ξ Γ : Ctx Base} :
     liftParamFormula (Base := Base) (Const := Const) (Ξ ++ Γ) φ =
       liftParamPrefixFormula (Base := Base) (Const := Const) (Ξ := Ξ) (Γ := Γ)
         (liftParamFormula (Base := Base) (Const := Const) Γ φ) := by
-  simpa [liftParamFormula, liftParamPrefixFormula] using
-    (liftParam_eq_liftParamPrefix_comp (Base := Base) (Const := Const)
-      (Γ := Γ) (Γ' := ([] : Ctx Base)) (Ξ := Ξ) φ)
+  exact
+    liftParam_eq_liftParamPrefix_comp (Base := Base) (Const := Const)
+      (Γ := Γ) (Γ' := ([] : Ctx Base)) (Ξ := Ξ) φ
 
 /-- Any one-step world growth enlarges the parameter context by an explicit
 left prefix. -/

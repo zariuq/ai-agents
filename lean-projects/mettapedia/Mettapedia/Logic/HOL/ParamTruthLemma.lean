@@ -501,7 +501,7 @@ theorem PrimeTheory.Saturated.forces_iff_mem {W : PrimeTheory.Saturated Const Γ
   | .bot => by
       constructor
       · intro h
-        exact False.elim (by simpa [PrimeTheory.Saturated.Forces] using h)
+        simp [PrimeTheory.Saturated.Forces] at h
       · intro h
         simpa [PrimeTheory.Saturated.Forces]
           using (PrimeTheory.bot_not_mem (W := W.toPrimeTheory) h)
@@ -662,7 +662,7 @@ theorem mem_rootExWitnessAxioms_of_mem_retract
           (rootChoose (Base := Base) (Const := Const) choose
             (mapConst (fun {τ} => retractParamEmpty (Base := Base) (Const := Const) (τ := τ)) ψ))
           (mapConst (fun {τ} => retractParamEmpty (Base := Base) (Const := Const) (τ := τ)) ψ)))
-  simpa [rootChoose, hψ, Mettapedia.Logic.HOL.mapConst, Mettapedia.Logic.HOL.mapConst_instantiate]
+  simp [rootChoose, hψ, Mettapedia.Logic.HOL.mapConst, Mettapedia.Logic.HOL.mapConst_instantiate]
 
 /-- `mapConst retractParamEmpty` is a left inverse of `liftParam` at context `[]`. -/
 @[simp] theorem mapConst_retractParamEmpty_liftParam

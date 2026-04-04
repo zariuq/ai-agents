@@ -129,9 +129,9 @@ theorem mapConst_rename (f : ∀ {τ : Ty Base}, Const τ → Const' τ)
 theorem mapConst_rename_preimage (f : ∀ {τ : Ty Base}, Const τ → Const' τ)
     (ρ : Rename Base Γ Δ) :
     ∀ (ξ : Term Const Δ τ) (ψ : Term Const' Γ τ),
-    mapConst (fun {τ} => f) ξ = rename (fun {τ} => ρ) ψ →
-    ∃ θ : Term Const Γ τ, ξ = rename (fun {τ} => ρ) θ ∧
-      mapConst (fun {τ} => f) θ = ψ := by
+    mapConst (fun {_} => f) ξ = rename (fun {_} => ρ) ψ →
+    ∃ θ : Term Const Γ τ, ξ = rename (fun {_} => ρ) θ ∧
+      mapConst (fun {_} => f) θ = ψ := by
   intro ξ ψ h
   induction ξ generalizing Γ with
   | var v =>
@@ -237,10 +237,10 @@ theorem mapConst_rename_preimage (f : ∀ {τ : Ty Base}, Const τ → Const' τ
     for some `θ` with `mapConst f θ = ψ`. -/
 theorem mapConst_weaken_preimage (f : ∀ {τ : Ty Base}, Const τ → Const' τ)
     {ξ : Term Const (σ :: Γ) τ} {ψ : Term Const' Γ τ}
-    (h : mapConst (fun {τ} => f) ξ =
+    (h : mapConst (fun {_} => f) ξ =
       weaken (Base := Base) (σ := σ) ψ) :
     ∃ θ : Term Const Γ τ, ξ = weaken (Base := Base) (σ := σ) θ ∧
-      mapConst (fun {τ} => f) θ = ψ :=
+      mapConst (fun {_} => f) θ = ψ :=
   mapConst_rename_preimage f Rename.weaken ξ ψ h
 
 /-- List-level version: if `ξs.map (mapConst f) = ψs.map weaken`,
@@ -250,11 +250,11 @@ theorem map_mapConst_eq_map_weaken_preimage
     {Γ : Ctx Base} {σ : Ty Base} :
     ∀ (ξs : List (Term Const (σ :: Γ) propTy))
       (ψs : List (Term Const' Γ propTy)),
-    ξs.map (mapConst (fun {τ} => f)) =
+    ξs.map (mapConst (fun {_} => f)) =
       ψs.map (weaken (Base := Base) (σ := σ)) →
     ∃ θs : List (Term Const Γ propTy),
       ξs = θs.map (weaken (Base := Base) (σ := σ)) ∧
-      θs.map (mapConst (fun {τ} => f)) = ψs := by
+      θs.map (mapConst (fun {_} => f)) = ψs := by
   intro ξs ψs h
   induction ξs generalizing ψs with
   | nil =>
@@ -566,8 +566,7 @@ private theorem subst_closed_vacuous
           intro τ v
           nomatch v
     _ = rename vacuous t := by
-          simpa using
-            (subst_ofRename vacuous t)
+          exact subst_ofRename vacuous t
     _ = weakenCtx Δ' t := rename_closed_vacuous t Δ' vacuous
 
 /-- `weakenCtx` also commutes with arbitrary substitutions on closed terms. -/
@@ -641,7 +640,7 @@ theorem substConst_subst
     (f : ∀ {τ : Ty Base}, Const τ → ClosedTerm Const' τ)
     {Γ' Δ' : Ctx Base} (σs : Subst Const Γ' Δ') :
     ∀ {τ : Ty Base} (t : Term Const Γ' τ),
-      subst (fun {τ} v => substConst f (σs v)) (substConst f t) =
+      subst (fun {_} v => substConst f (σs v)) (substConst f t) =
         substConst f (subst σs t)
   | _, .var _ => rfl
   | _, .const c => by

@@ -872,29 +872,66 @@ After the April 2026 structural audit, the gap decomposes as follows:
 
 \begin{center}
 \small
-\begin{tabular}{llll}
+\begin{tabular}{lllll}
 \hline
-\textbf{Sub-gap} & \textbf{Nature} & \textbf{Difficulty} & \textbf{Resources} \\
+\textbf{Sub-gap} & \textbf{Nature} & \textbf{Difficulty} & \textbf{Status} & \textbf{Resources} \\
 \hline
-Extension with PE (Bridge A) & Infinite-product measure theory & Hard & --- \\
-Carrier transport bijection & Finite combinatorics & Medium & Archived Euler trail code \\
-Joint de Finetti extraction & Measure-theoretic independence & Medium--Hard & PE infrastructure exists \\
+Carrier transport & Finite combinatorics & Medium & \textbf{903/${\sim}$ 1100 lines} & Ported from archive \\
+Cross-row coherence & Cross-row factorization & Medium--Hard & Open & Per-row kernels exist \\
+Extension with PE & Inf.-product meas.\ theory & Hard & \emph{Avoidable} & Not needed for Route~B \\
 \hline
 \end{tabular}
 \end{center}
 
-The carrier transport bijection remains the most tractable attack point.
-The archived Euler trail / copy-permutation code (1{,}225 lines, 0
-\texttt{sorry}) may provide the combinatorial core.
+\paragraph{Carrier transport (partially closed, April 2026).}
+The archived excursion-swap code (\lean{segmentSwap} from
+\lean{ExcursionBridge.lean}) was ported to two new active files:
+\lean{MarkovDeFinettiCarrierTransportCore.lean} (319 lines) and
+\lean{MarkovDeFinettiCarrierTransport.lean} (584 lines), both 0
+\texttt{sorry}.  The mathematical content is proved:
+\begin{itemize}[leftmargin=2em]
+\item \lean{segmentSwap\_evidenceOf}: segment swap preserves Markov evidence
+\item \lean{visitCountBefore\_segmentSwap\_at\_midpoint}: visit count
+  at the new excursion boundary equals $n+1$
+\item \lean{segmentSwap\_carrier\_mem\_adjacent}: swapped trajectory
+  lands in the target carrier
+\item \lean{carrierTransport\_forward\_adjacent}: complete forward map
+  with evidence preservation
+\end{itemize}
+What remains ($\sim$200 lines) is the \texttt{Equiv} packaging: constructing
+the per-element bijection from the forward map + involutivity of
+\lean{segmentSwap}, then composing adjacent transports for general $n \to n'$.
+The obstruction is Lean bookkeeping around \lean{extractVisitTime}
+(\lean{Nat.find} under \lean{classical}) and \lean{prefixExtend},
+not mathematical content.
 
-The joint de Finetti extraction (establishing cross-row conditional
-independence from PE) is needed for the induction step of the
-cross-anchor product identity.  If resolved, it would also collapse
-the ``\lean{hInvFromPE}'' sub-gap into the carrier transport route.
+\paragraph{Cross-row coherence step (open).}
+The cons-step induction rule \lean{CrossRowCoherenceStep}: given the
+product identity for $(b :: c :: xs)$, derive it for $(a :: b :: c :: xs)$.
+This is the cross-row factorization content---it requires showing that
+the $a \to b$ step (using row-$a$'s kernel) and the $(b :: c :: xs)$
+continuation (using row-$b$'s kernel and beyond) are conditionally
+independent given $\omega$.  This is the manifestation of the ``joint
+de Finetti'' requirement in the carrier transport route.
 
-The extension with PE (Bridge A) is the hardest piece: it requires
-either the Kolmogorov extension theorem or a direct lifting argument
-from finite-dimensional Markov exchangeability to infinite-product PE.
+\paragraph{Bridge A: extension with PE (possibly avoidable).}
+An April 2026 investigation revealed that the carrier transport route
+(\lean{startRestrictedRowSuccessorPermInvariant\_of\_extension\_transport},
+Crux line 1591) takes \lean{MarkovExchangeablePrefixMeasure} directly
+as a hypothesis---\textbf{not} \lean{SuccessorMatrixPartialExchangeable}.
+This means the carrier transport route \emph{bypasses Bridge~A entirely}.
+The extension $P$ is already provided by \lean{MarkovRecurrentPrefixMeasure}.
+The Kolmogorov extension theorem is not needed.
+
+Bridge~A remains relevant only for Route~A (the PE-based composition
+at Crux lines 2377--2392), which is an alternative proof path.  For
+the minimal closure via carrier transport, the gap reduces to:
+\begin{enumerate}[leftmargin=2em]
+\item Carrier transport $\to$ \lean{StartRestrictedRowKernelData}
+  (903 of $\sim$1100 lines done)
+\item \lean{CrossRowCoherenceStep} (the cons-step cross-row factorization,
+  open)
+\end{enumerate}
 
 %% ========================================================================
 \section{The Broader Context}
@@ -1010,6 +1047,8 @@ Solomonoff & \texttt{SolomonoffExchangeable.lean} & 200+ & {\color{provedgreen}0
 Recurrence & \texttt{MarkovDeFinettiRecurrence.lean} & --- & {\color{provedgreen}0 sorry} \\
 Hard core & \texttt{MarkovDeFinettiFortiniBridgeCore.lean} & 1843 & {\color{provedgreen}0 sorry} \\
 Hard crux & \texttt{MarkovDeFinettiFortiniBridgeCrux.lean} & $\sim$2600 & {\color{provedgreen}0 sorry} \\
+Carrier core & \texttt{MarkovDeFinettiCarrierTransportCore.lean} & 319 & {\color{provedgreen}0 sorry} \\
+Carrier bridge & \texttt{MarkovDeFinettiCarrierTransport.lean} & 584 & {\color{provedgreen}0 sorry} \\
 Surface & \texttt{MarkovDeFinettiFortiniBridgeCanonical.lean} & 131 & {\color{provedgreen}0 sorry} \\
 \hline
 De Finetti & \texttt{external/exchangeability/} & 43K & {\color{provedgreen}0 sorry} \\

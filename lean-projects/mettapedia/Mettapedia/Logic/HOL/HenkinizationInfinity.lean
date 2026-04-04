@@ -96,7 +96,7 @@ theorem ofStage_eq_allCounterexample_stage_le
       | allCounterexample φ' => injection h with hn _; omega
 
 theorem ofStage_ne_exWitness_future :
-    ∀ {n m : Nat} (hnm : n ≤ m) {τ : Ty Base}
+    ∀ {n m : Nat} (_ : n ≤ m) {τ : Ty Base}
       (c : HenkinConstStage Base Const n τ)
       (φ : Formula (HenkinConstStage Base Const m) [τ]),
       ofStage (Base := Base) (Const := Const) c ≠
@@ -119,7 +119,7 @@ theorem ofStage_ne_exWitness_future :
           cases h
 
 theorem ofStage_ne_allCounterexample_future :
-    ∀ {n m : Nat} (hnm : n ≤ m) {τ : Ty Base}
+    ∀ {n m : Nat} (_ : n ≤ m) {τ : Ty Base}
       (c : HenkinConstStage Base Const n τ)
       (φ : Formula (HenkinConstStage Base Const m) [τ]),
       ofStage (Base := Base) (Const := Const) c ≠
