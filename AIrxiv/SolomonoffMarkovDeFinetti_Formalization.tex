@@ -99,21 +99,26 @@ on a finite alphabet is a mixture of time-homogeneous Markov chains.
 The formalization is a partial success with a precisely characterized gap.
 The \emph{internal} representation theorem---given an extension to infinite
 trajectories together with explicit row-kernel data, construct the mixing
-measure---is fully proved (zero \texttt{sorry}).  The \emph{literature-facing}
-theorem, which derives the row-kernel data from bare Markov exchangeability
-and recurrence, requires three sub-obligations that remain open: (1)~constructing
-an extension with successor-matrix partial exchangeability, (2)~a finite
-carrier-transport bijection for start-restricted row-kernel factorization,
-and (3)~extracting cross-row conditional independence from the joint de Finetti
-theorem.  A structural audit (April 2026) revealed that prior descriptions
-understated the gap by omitting item~(3).
+measure---is fully proved (zero \texttt{sorry}).  The carrier transport
+bijection---an evidence-preserving Equiv between finite prefix carriers
+for adjacent visit indices---is fully proved (1465 lines, zero \texttt{sorry}).
+The \emph{literature-facing} theorem, which derives the row-kernel data
+from bare Markov exchangeability and recurrence, requires a bridge from
+the proved carrier transport to the proved de Finetti infrastructure.
 
-This note presents the mathematical content, the Lean definitions and theorems
-(with verbatim listings), and a precise description of the gap, intended
-for mathematicians who may wish to contribute to closing it.
+A structural audit (April 2026) identified three bugs in the gap
+characterization: (1) the evidence-preserving Equiv is used far below
+its full strength (only 1D marginals extracted when it preserves all
+transition counts); (2) the zero-sorry count masks unproved mathematical
+content encoded as assumption interfaces; (3) an archived Euler trail
+infrastructure (1225 lines, 0 sorry) provides a more direct route to
+the missing bridge.  The corrected proof strategy (\S\ref{sec:strategy})
+estimates $\sim$530 lines of new code to close the gap entirely,
+primarily a bridge from evidence preservation to successor-matrix
+partial exchangeability.
 
 The formalization comprises approximately 50{,}000 lines of Lean across
-10 active files, with an additional 43{,}000 lines formalizing the classical
+12 active files, with an additional 43{,}000 lines formalizing the classical
 (i.i.d.) de Finetti theorem via three independent proof strategies.
 All active code compiles with zero \texttt{sorry}.
 \end{abstract}
@@ -721,28 +726,32 @@ hCarrierTransport :
       ∀ xs, evidenceOf xs.1 = evidenceOf (e xs).1
 \end{lstlisting}
 
-\begin{openproblem}[Carrier Transport Bijection]
-\label{prob:carrier}
-Construct, for each pair of visit indices $n, n'$ and each horizon $N$,
-an explicit bijection between the corresponding prefix carriers that
-preserves Markov evidence.
+\begin{theorem}[Carrier Transport Bijection, {\color{provedgreen}proved, 0 sorry}]
+\label{thm:carrier}
+For each state $i$, target $b \ne i$, adjacent visit indices $n, n+1$,
+and horizon $N$, there exists an evidence-preserving bijection between
+the corresponding prefix carriers:
+\begin{lstlisting}
+theorem carrierTransportEquivAdjacent
+    (i b : Fin k) (n N : ℕ) (hbi : b ≠ i)
+    (hSuff : ...) :
+    ∃ e : carrier(i, {n}, ..., N) ≃
+           carrier(i, {n+1}, ..., N),
+      ∀ xs, evidenceOf xs.1 = evidenceOf (e xs).1
+\end{lstlisting}
 
-This is a \emph{finite combinatorial} problem: given two finite sets of
-trajectories (of length $N+1$ over $\Fin(k)$) defined by visit-time
-conditions, exhibit a bijection that preserves the transition-count matrix.
+The construction uses trajectory segment swapping
+(\lean{segmentSwap}): the excursion between the $n$-th and $(n+1)$-th
+visits to~$i$ is transposed with the excursion between the $(n+1)$-th
+and $(n+2)$-th visits, preserving all transition counts.  The Equiv
+is built from \lean{rawSwap} (marked \lean{@[reducible]} to enable
+kernel transparency), with \lean{rawSwap\_selfInverse} providing
+the self-inverse property via internal visit-time proof construction.
 
-The key technique is \emph{trajectory segment swapping}: two trajectories
-that differ only in which visit to state $i$ produces successor $b$
-have the same transition counts (the transition $i \to b$ is counted once
-in both cases).  The bijection permutes trajectory segments between the
-$n$-th and $n'$-th visits to $i$.
-
-Mathlib provides \lean{Finset.card\_bij} for cardinality arguments and
-\lean{Nat.multinomial} for counting trajectories with prescribed
-transition counts.  The project includes a
-\lean{FortiniFiniteCheckers} module with decidable
-evidence-preservation checkers that could automate small cases.
-\end{openproblem}
+The general case (arbitrary $n \to n'$) follows by composing
+adjacent Equivs via \lean{Equiv.trans} and Nat induction on $|n - n'|$.
+This composition step is straightforward but not yet implemented.
+\end{theorem}
 
 \subsection{The cross-row coherence gap (overlooked until April 2026)}
 \label{sec:crossrow}
@@ -837,13 +846,14 @@ The \texttt{\_archive/MarkovDeFinetti/} directory contains 37 files
   \item \lean{applyCopyPerm\_isEulerTrail}: copy perms preserve the Euler trail property.
   \item \lean{eulerTrailFinset\_card\_eq}: trail count $= \prod_{a,b} (G(a,b))!$.
   \end{itemize}
-  \textbf{This is closely related to the carrier transport bijection}
-  (Open Problem~\ref{prob:carrier}).  The copy-permutation idea
+  \textbf{This is closely related to the proved carrier transport}
+  (Theorem~\ref{thm:carrier}).  The copy-permutation idea
   amounts to swapping which visit to a state produces a given
-  successor---exactly the segment-swapping bijection described there.
-  Bridging the archived Euler-trail infrastructure to the current
-  carrier framework may be the most efficient route to closing the
-  combinatorial gap.
+  successor---exactly the segment-swapping bijection now proved there.
+  The CopyPerm infrastructure provides \emph{global} bijections
+  (not just adjacent transpositions), offering a potentially more
+  direct route to \lean{SuccessorMatrixPartialExchangeable}
+  (see \S\ref{sec:bug3}).
 
 \item \textbf{Excursion approach} (\lean{Excursions}, \lean{ExcursionBridge},
   \lean{ExcursionModel}): trajectory decomposition by returns to the
@@ -876,38 +886,32 @@ After the April 2026 structural audit, the gap decomposes as follows:
 \hline
 \textbf{Sub-gap} & \textbf{Nature} & \textbf{Difficulty} & \textbf{Status} & \textbf{Resources} \\
 \hline
-Carrier transport & Finite combinatorics & Medium & \textbf{903/${\sim}$ 1100 lines} & Ported from archive \\
+Carrier transport & Finite combinatorics & Medium & {\color{provedgreen}\textbf{CLOSED}} (1465 lines) & Ported from archive \\
+$n{\to}n{+}1 \to n{\to}n'$ & Equiv composition & Easy & Pending ($\sim$30 lines) & \lean{Equiv.trans} \\
 Cross-row coherence & Cross-row factorization & Medium--Hard & Open & Per-row kernels exist \\
 Extension with PE & Inf.-product meas.\ theory & Hard & \emph{Avoidable} & Not needed for Route~B \\
 \hline
 \end{tabular}
 \end{center}
 
-\paragraph{Carrier transport (partially closed, April 2026).}
-The archived excursion-swap code (\lean{segmentSwap} from
-\lean{ExcursionBridge.lean}) was ported to two new active files:
+\paragraph{Carrier transport ({\color{provedgreen}CLOSED}, April 2026).}
+The carrier transport Equiv is fully proved across two files:
 \lean{MarkovDeFinettiCarrierTransportCore.lean} (319 lines) and
-\lean{MarkovDeFinettiCarrierTransport.lean} (584 lines), both 0
-\texttt{sorry}.  The mathematical content is proved:
+\lean{MarkovDeFinettiCarrierTransport.lean} (1146 lines), both 0
+\texttt{sorry}.  The top-level theorem \lean{carrierTransportEquivAdjacent}
+provides the evidence-preserving bijection between adjacent carriers.
+Key components:
 \begin{itemize}[leftmargin=2em]
 \item \lean{segmentSwap\_evidenceOf}: segment swap preserves Markov evidence
-\item \lean{visitCountBefore\_segmentSwap\_at\_midpoint}: visit count
-  at the new excursion boundary equals $n+1$
-\item \lean{segmentSwap\_carrier\_mem\_adjacent}: swapped trajectory
-  lands in the target carrier
-\item \lean{carrierTransport\_forward\_adjacent}: complete forward map
-  with evidence preservation
-\end{itemize}
-Additional infrastructure proved in subsequent work (0 \texttt{sorry}):
-\begin{itemize}[leftmargin=2em]
 \item \lean{rawSwap\_selfInverse}: the per-element swap is self-inverse
   (constructs output visit-time proofs internally)
-\item \lean{segmentSwap\_carrier\_mem\_adjacent\_reverse}: reverse
-  carrier membership (carrier${}_{n+1} \to$ carrier${}_n$)
-\item \lean{nthVisitTimeExists\_of\_succ}: visit-time monotonicity
-\item \lean{extractVisitTime\_segmentSwap\_n/n1/n2}: visit-time
-  stability under swap
+\item \lean{rawSwap\_fwd\_mem}, \lean{rawSwap\_bwd\_mem}: forward/reverse
+  carrier membership
+\item \lean{rawSwap\_fwd\_evid}: evidence preservation through the Equiv
 \end{itemize}
+The remaining composition from adjacent ($n \to n{+}1$) to general
+($n \to n'$) via \lean{Equiv.trans} and Nat induction is
+straightforward ($\sim$30 lines).
 
 \paragraph{The Equiv packaging bug (diagnosed April 2026).}
 A structural bug was found in the \texttt{Equiv} construction:
@@ -964,6 +968,300 @@ the minimal closure via carrier transport, the gap reduces to:
 \item \lean{CrossRowCoherenceStep} (the cons-step cross-row factorization,
   open)
 \end{enumerate}
+
+%% ========================================================================
+\section{Proof Strategy: Structural Audit and Path to Completion}
+\label{sec:strategy}
+%% ========================================================================
+
+A deep structural audit (April 2026) of the proof architecture revealed
+three bugs in how the gap was characterized, and identified a corrected
+proof strategy.  This section documents the findings and the recommended
+path to completion.
+
+\subsection{Bug 1: The evidence-preserving Equiv is used far below its full strength}
+\label{sec:bug1}
+
+The carrier transport Equiv (Theorem~\ref{thm:carrier}) preserves
+\lean{evidenceOf}---the \emph{complete} Markov evidence consisting of
+the start state and all $k^2$ transition counts.  Under Markov
+exchangeability, cylinder probabilities are \emph{determined} by the
+evidence: $\mu(xs) = \mu(ys)$ whenever $\mathrm{evidenceOf}(xs) =
+\mathrm{evidenceOf}(ys)$.
+
+The current pipeline extracts only \emph{1D marginal invariance}
+from this Equiv (via \lean{startRestrictedRowSuccessorPermInvariant\-\_of\_extension\_transport}, Crux line 1591):
+\[
+P(\{\omega_0 = a\} \cap \{\text{succ at visit } \sigma(n) \text{ to } i = b\})
+= P(\{\omega_0 = a\} \cap \{\text{succ at visit } n \text{ to } i = b\}).
+\]
+This throws away the full power of evidence preservation.  The Equiv
+should be able to establish joint finite-dimensional invariance of the
+successor matrix directly---i.e., a route to
+\lean{SuccessorMatrixPartialExchangeable} on the extension $P$---because
+\emph{all} cylinder probabilities are determined by transition counts, and
+the Equiv preserves transition counts.
+
+\begin{remark}[Implication for the gap structure]
+If the carrier transport Equiv can be upgraded to establish
+\lean{SuccessorMatrixPartialExchangeable} on~$P$, then the
+decomposition collapses: the existing infrastructure (Crux lines 1066--1371)
+already derives row kernels from successor-matrix PE via the
+i.i.d.\ de Finetti theorem.  The ``cross-row coherence'' sub-gap and
+the ``PE bridge'' sub-gap would both reduce to this single bridge step.
+\end{remark}
+
+\paragraph{Why the direct route is plausible.}
+The evidence-preserving Equiv acts on finite prefixes of length $N{+}1$.
+For two trajectories $xs, ys$ with $\mathrm{evidenceOf}(xs) =
+\mathrm{evidenceOf}(ys)$, Markov exchangeability gives $\mu(xs) = \mu(ys)$,
+hence $P(\mathrm{cylinder}(xs)) = P(\mathrm{cylinder}(ys))$ by the
+extension property.  Finite cylinder sets generate the product
+$\sigma$-algebra, so agreement on all cylinders implies agreement of the
+induced laws on finite-dimensional projections---which is exactly
+\lean{SuccessorMatrixPartialExchangeable}.
+
+The technical obstacle is that
+\lean{SuccessorMatrixPartialExchangeable} is stated as equality of
+two \lean{Measure.map} applications, which requires lifting from
+cylinder-level equality to pushforward-measure equality.  This
+is a $\pi$-$\lambda$ / monotone class argument in Mathlib.
+
+\subsection{Bug 2: Zero-sorry masking of unproved mathematical content}
+\label{sec:bug2}
+
+The entire codebase compiles with zero \texttt{sorry}.  However, the
+core mathematical content---constructing the row kernel from
+exchangeability---is encoded as \emph{assumption interfaces} rather
+than proved theorems:
+
+\begin{lstlisting}
+-- UNPROVED: defined as Prop, never instantiated
+def BuildRowKernelOnRecurrentExtension (k : ℕ) : Prop :=
+  ∀ μ P, MarkovExchangeablePrefixMeasure μ → ...  →
+    ∃ rowKernel, BuiltRowKernelOnExtension P rowKernel
+
+def SuccessorMatrixPE_of_markovExchangeable_recurrent
+    (k : ℕ) : Prop :=
+  ∀ μ, MarkovExchangeablePrefixMeasure μ → ... →
+    ∃ P, ... ∧ SuccessorMatrixPartialExchangeable P
+
+def ExistsBuiltRowKernel_of_successorMatrixPE
+    (k : ℕ) : Prop :=
+  ∀ P, IsProbabilityMeasure P →
+    SuccessorMatrixPartialExchangeable P →
+    ∃ rowKernel, BuiltRowKernelOnExtension P rowKernel
+\end{lstlisting}
+
+These three \lean{def}s are used as hypotheses in the canonical
+theorems (Crux lines 2345--2392).  The \lean{sorry}-free property is
+achieved by threading them as parameters rather than filling them.
+The Crux file (2622 lines) is an elaborate \emph{conditional proof}:
+given these assumptions, derive the mixture representation.
+
+\paragraph{Honest accounting.}  The three assumptions bundle the
+following mathematical content:
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{Row kernel construction}: apply de Finetti's theorem
+  to each row's exchangeable sequence to extract a directing measure
+  (the row kernel).
+\item \textbf{Conditional IID factorization}
+  (\lean{StartRestrictedRowKernelData}): the finite-dimensional
+  marginals of the row process, conditioned on start state, factor
+  through the kernel.
+\item \textbf{Cross-row coherence}
+  (\lean{CrossRowCoherenceStep}): the product of row-kernel evaluations
+  across different anchor states correctly reproduces cylinder
+  probabilities.
+\item \textbf{Cylinder mixing identity}
+  (\lean{RowSuccessorMatrixInvariance}): the full representation
+  at the extension level ($P(\mathrm{cylinder}(xs)) =
+  \int \mathrm{wordProb}_\theta(xs)\, dP$).
+\end{enumerate}
+
+Items (3) and (4) are \emph{inter-derivable} with items (1) and (2)
+via existing proved infrastructure (the induction combinator at Crux
+line 695 and the \lean{SharedLatentTransitionCoherence} chain at
+lines 1836--1911).  So the genuine unproved content reduces to items
+(1) and (2): kernel construction and conditional IID, which together
+constitute the per-row de Finetti theorem.
+
+\begin{remark}[The \lean{BuiltRowKernelOnExtension} circularity]
+\lean{BuiltRowKernelOnExtension} (Crux line 1781) includes
+\lean{RowSuccessorMatrixInvariance} as its fourth component---which
+\emph{is} the cylinder mixing identity, i.e., the theorem itself at
+the extension level.  The non-circular alternative is
+\lean{RowKernelCruxData} (Crux line 749), which uses
+\lean{CrossRowCoherenceStep} (just the induction step) instead of
+the full mixing identity.  The two are equivalent (proved at Crux
+lines 1903--1911), but \lean{RowKernelCruxData} is the correct
+target for constructive proof work.
+\end{remark}
+
+\subsection{Bug 3: The Euler trail archive is the missing bridge}
+\label{sec:bug3}
+
+The \texttt{\_archive/MarkovDeFinetti/} directory contains a
+\textbf{CopyPerm} infrastructure (512 lines, 0 \texttt{sorry})
+that provides \emph{global} carrier bijections rather than just
+adjacent transpositions:
+
+\begin{itemize}[leftmargin=2em]
+\item \lean{CopyPerm G}: the product group
+  $\prod_{a,b} \mathrm{Perm}(\Fin(G(a,b)))$
+  of per-edge copy-index permutations.
+\item \lean{trailVertexSeq\_applyCopyPerm}: copy permutations preserve
+  vertex sequences (hence transition counts).
+\item \lean{applyCopyPerm\_isEulerTrail}: copy permutations preserve
+  the Euler trail property.
+\end{itemize}
+
+This is a strictly stronger tool than adjacent segment swapping:
+it gives \emph{arbitrary} rearrangements of which copy of each
+edge type is used, all while preserving the vertex sequence.  This
+directly gives the \emph{joint} finite-dimensional invariance
+needed for \lean{SuccessorMatrixPartialExchangeable}, bypassing the
+need to compose adjacent swaps.
+
+However, the CopyPerm code is not imported into the active framework.
+It uses a different data representation (\lean{EulerGraph} and
+\lean{edgeTok}) than the active carrier transport code
+(\lean{rowVisitCylinderEventUpToPrefixCarrier}).
+
+\subsection{Corrected proof strategy}
+\label{sec:corrected}
+
+After the audit, the correct proof architecture is:
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.0cm and 2.5cm,
+  box/.style={draw, rounded corners, minimum width=4cm,
+    minimum height=0.7cm, align=center, font=\small},
+  proved/.style={box, fill=green!12, draw=provedgreen},
+  needed/.style={box, fill=yellow!15, draw=orange},
+  gap/.style={box, fill=red!10, draw=gapred, dashed},
+  arr/.style={-{Stealth[length=5pt]}, thick}
+]
+\node[proved] (carrier) {Carrier Transport Equiv\\(1465 lines, 0 sorry)};
+\node[needed, below=of carrier] (pe) {$\to$ SuccessorMatrixPE on $P$\\(evidence $\to$ pushforward, $\sim$150 lines)};
+\node[proved, below=of pe] (rowdf) {Per-row de Finetti\\(43K lines in external/, 0 sorry)};
+\node[proved, below=of rowdf] (crux) {Crux pipeline\\(2622 lines, 0 sorry)};
+\node[proved, below=of crux] (repr) {Mixture Representation};
+
+\draw[arr] (carrier) -- node[right, font=\scriptsize\itshape] {Bug 1 fix} (pe);
+\draw[arr] (pe) -- node[right, font=\scriptsize\itshape] {existing} (rowdf);
+\draw[arr] (rowdf) -- node[right, font=\scriptsize\itshape] {existing} (crux);
+\draw[arr] (crux) -- (repr);
+\end{tikzpicture}
+\end{center}
+
+The key insight: if Bug~1 is fixed (carrier transport $\to$
+successor-matrix PE), then the existing infrastructure---the
+i.i.d.\ de Finetti theorem already formalized in 43{,}000 lines
+of Lean---provides the row kernel construction automatically.
+The cross-row coherence step and the cylinder mixing identity
+then follow from the Crux file's proved conditional chain.
+
+\paragraph{What the new bridge must prove.}
+The bridge from carrier transport to \lean{SuccessorMatrixPartialExchangeable}
+requires:
+
+\begin{enumerate}[leftmargin=2em]
+\item \textbf{Adjacent $\to$ general composition} ($\sim$30 lines):
+  Compose \lean{carrierTransportEquivAdjacent} via \lean{Equiv.trans}
+  and Nat induction on $|n - n'|$ to obtain the general $n \to n'$
+  carrier Equiv.
+
+\item \textbf{Evidence preservation $\to$ cylinder equality} ($\sim$50 lines):
+  From the evidence-preserving Equiv on finite carriers, derive
+  $P(\mathrm{cylinder}(xs)) = P(\mathrm{cylinder}(ys))$ whenever
+  $\mathrm{evidenceOf}(xs) = \mathrm{evidenceOf}(ys)$, using the
+  extension property $\mu(xs) = P(\mathrm{cylinder}(xs))$ and
+  Markov exchangeability.
+
+\item \textbf{Cylinder equality $\to$ pushforward equality} ($\sim$70 lines):
+  From cylinder-level equality, derive the measure-level equality
+  $\mathrm{Measure.map}(f \circ \sigma)(P) = \mathrm{Measure.map}(f)(P)$
+  using the $\pi$-$\lambda$ theorem (Mathlib's
+  \lean{MeasureTheory.ext\_of\_generate\_finite}).
+\end{enumerate}
+
+\subsection{Remaining mathematical gap: the wiring step}
+\label{sec:wiring}
+
+Even with the corrected strategy, a nontrivial wiring step remains:
+connecting the \lean{SuccessorMatrixPartialExchangeable} property
+to the existing infrastructure that builds
+\lean{BuiltRowKernelOnExtension}.
+
+The existing code path (Crux line 1066) extracts per-row
+conditionally-IID row kernels from PE, but produces them with
+\emph{unrestricted} row-process factorization.  The internal
+theorem requires \emph{start-restricted} factorization
+(\lean{StartRestrictedRowKernelData}).  As noted in
+\S\ref{sec:crossrow}, PE alone does not imply start-restricted
+invariance---this is where the carrier transport contributes its
+essential content.
+
+The precise wiring is:
+\begin{enumerate}[leftmargin=2em]
+\item From PE, build unrestricted row kernels with
+  \lean{hEval} and \lean{hPi} (existing, Crux line 1352).
+\item From carrier transport (via the general $n \to n'$ Equiv),
+  prove \lean{StartRestrictedRowSuccessorPermInvariant}
+  (existing, Crux line 1591).
+\item Upgrade the unrestricted row factorization to start-restricted
+  factorization using the permutation invariance
+  (this is the step that needs explicit proof, $\sim$200 lines).
+\item From start-restricted factorization + per-row conditional IID,
+  derive \lean{CrossRowCoherenceStep} (the induction step).
+\item Apply the induction combinator (existing, Crux line 695)
+  to obtain \lean{CrossAnchorProductIdentity}, then
+  \lean{CylinderMixingIdentity\_P} and the full representation.
+\end{enumerate}
+
+Step~(3) is the key mathematical step: showing that permutation
+invariance of 1D marginals, combined with per-row conditional IID
+from de Finetti, gives the start-restricted factorization.
+Step~(4) follows from step~(3) by the trajectory structure:
+conditioned on the full trajectory $\omega$, the
+transition from state $a$ to the next state uses row-$a$'s kernel,
+and the continuation from the next state is determined by the
+remaining row kernels, which are conditionally independent given $\omega$.
+
+\subsection{Summary of recommended steps}
+
+\begin{center}
+\small
+\begin{tabular}{clcc}
+\hline
+\textbf{Priority} & \textbf{Step} & \textbf{Est.\ lines} & \textbf{Dependencies} \\
+\hline
+1 & Adjacent $\to$ general Equiv composition & 30 & Carrier transport \\
+2 & Evidence preservation $\to$ \lean{SuccessorMatrixPE} & 150 & Step 1 \\
+3 & Start-restricted upgrade from PE + carrier transport & 200 & Step 2, Crux \\
+4 & \lean{CrossRowCoherenceStep} from conditional IID & 100 & Step 3, de Finetti \\
+5 & Instantiate \lean{BuildRowKernelOnRecurrentExtension} & 50 & Steps 2--4 \\
+\hline
+& \textbf{Total estimated new code} & \textbf{$\sim$530} & \\
+\hline
+\end{tabular}
+\end{center}
+
+Step~2 is the most architecturally important: it connects the proved
+carrier transport (1465 lines) to the proved de Finetti infrastructure
+(43{,}000 lines) through the proved Crux pipeline (2622 lines).  Once
+this bridge exists, the remaining steps are consequences of existing
+proved chains.
+
+The Euler trail archive (1225 lines, 0 sorry) provides an alternative
+to Steps~1--2: the CopyPerm group gives the joint finite-dimensional
+invariance more directly than composing adjacent transpositions.
+Integrating this archive into the active framework would require
+adapting from the \lean{EulerGraph}/\lean{edgeTok} data model to the
+\lean{rowVisitCylinderEventUpToPrefixCarrier} framework, estimated at
+$\sim$200 lines.
 
 %% ========================================================================
 \section{The Broader Context}
@@ -1037,24 +1335,27 @@ The intended end-to-end chain is:
 \node[proved, right=of exch] (counts) {Transition-count\\sufficiency};
 \node[proved, below=of counts] (dirichlet) {Dirichlet\\conjugacy};
 \node[proved, below=of dirichlet] (hyperprior) {Universal\\hyperprior mixture};
-\node[gap, right=2.5cm of counts] (bridge) {Bridge A\\+ carrier transport\\+ joint de Finetti};
-\node[proved, right=of bridge] (internal) {Internal\\representation};
+\node[proved, right=2.5cm of counts] (carrier) {Carrier transport\\Equiv (proved)};
+\node[gap, right=of carrier] (bridge) {PE bridge\\$\sim$530 lines};
+\node[proved, below=of bridge] (internal) {Internal repr.\\+ de Finetti (proved)};
 \node[proved, below=of internal] (solomonoff) {Solomonoff\\regret bound};
 
 \draw[arr] (exch) -- (counts);
 \draw[arr] (counts) -- (dirichlet);
 \draw[arr] (dirichlet) -- (hyperprior);
-\draw[arr, dashed, gapred] (counts) -- node[above, font=\scriptsize\itshape]
-  {open} (bridge);
+\draw[arr] (counts) -- (carrier);
+\draw[arr, dashed, gapred] (carrier) -- node[above, font=\scriptsize\itshape]
+  {\S\ref{sec:strategy}} (bridge);
 \draw[arr] (bridge) -- (internal);
 \draw[arr] (internal) -- (solomonoff);
 \end{tikzpicture}
 \end{center}
 
-Closing the three sub-obligations (Bridge A, carrier transport, and
-joint de Finetti extraction) would complete the chain from Markov
-exchangeability to a mixture representation with Solomonoff-style
-dominance guarantees.
+With carrier transport proved and the structural audit complete
+(\S\ref{sec:strategy}), closing the remaining bridge ($\sim$530 lines)
+from evidence preservation to successor-matrix partial exchangeability
+would complete the chain from Markov exchangeability to a mixture
+representation with Solomonoff-style dominance guarantees.
 
 %% ========================================================================
 \section{File Inventory}
@@ -1080,7 +1381,7 @@ Recurrence & \texttt{MarkovDeFinettiRecurrence.lean} & --- & {\color{provedgreen
 Hard core & \texttt{MarkovDeFinettiFortiniBridgeCore.lean} & 1843 & {\color{provedgreen}0 sorry} \\
 Hard crux & \texttt{MarkovDeFinettiFortiniBridgeCrux.lean} & $\sim$2600 & {\color{provedgreen}0 sorry} \\
 Carrier core & \texttt{MarkovDeFinettiCarrierTransportCore.lean} & 319 & {\color{provedgreen}0 sorry} \\
-Carrier bridge & \texttt{MarkovDeFinettiCarrierTransport.lean} & 584 & {\color{provedgreen}0 sorry} \\
+Carrier bridge & \texttt{MarkovDeFinettiCarrierTransport.lean} & 1146 & {\color{provedgreen}0 sorry} \\
 Surface & \texttt{MarkovDeFinettiFortiniBridgeCanonical.lean} & 131 & {\color{provedgreen}0 sorry} \\
 \hline
 De Finetti & \texttt{external/exchangeability/} & 43K & {\color{provedgreen}0 sorry} \\
@@ -1091,9 +1392,12 @@ De Finetti & \texttt{external/exchangeability/} & 43K & {\color{provedgreen}0 so
 \paragraph{Note on ``0 sorry.''}
 Every file listed above compiles without \texttt{sorry}.  However, the
 canonical surface file (\texttt{...Canonical.lean}) proves the
-representation theorem \emph{only under the two bridge assumptions}
-stated as hypotheses.  No file contains a sorry; the gap manifests as
-hypotheses on theorems, not as incomplete proofs.
+representation theorem \emph{only under bridge assumptions}
+stated as hypotheses (see \S\ref{sec:bug2}).  The core mathematical
+content---constructing the row kernel from exchangeability---is
+encoded as three \lean{def \ldots\ : Prop} declarations that are
+used as hypotheses but never instantiated.  The gap manifests as
+uninstantiated assumptions, not as incomplete proofs.
 
 %% ========================================================================
 \section*{References}
