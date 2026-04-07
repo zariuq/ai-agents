@@ -1,0 +1,604 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{graphicx}
+\hypersetup{colorlinks=true, linkcolor=blue!60!black, citecolor=blue!60!black, urlcolor=blue!60!black}
+\setlist[itemize]{topsep=4pt,itemsep=2pt}
+\setlist[enumerate]{topsep=4pt,itemsep=2pt}
+\newcommand{\CeTTa}{\textsc{CeTTa}}
+\newcommand{\MeTTa}{\textsc{MeTTa}}
+\newcommand{\PathMap}{\textsc{PathMap}}
+\newcommand{\MORK}{\textsc{MORK}}
+\newcommand{\MMTwo}{\textsc{MM2}}
+\newcommand{\MORKL}{\textsc{MORKL}}
+\newcommand{\WM}{\textsc{WM}}
+\newcommand{\XSB}{\textsc{XSB}}
+\newcommand{\WAM}{\textsc{WAM}}
+\newcommand{\HE}{\textsc{HE}}
+
+\title{Toward a Clean Architecture for \CeTTa:\\Canonical Terms, Tabled Search, World-Model Spaces, and \PathMap Backends}
+\author{Conceptual synthesis for future design work}
+\date{2026-04-04}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note distills a set of architectural ideas for \CeTTa, a native implementation of \MeTTa/\HE-style set-valued evaluation, with optional \MORK/\PathMap integration and future probabilistic reasoning support. The aim is not to document one specific code snapshot, but to state the cleanest conceptual picture that emerged from a long design exploration. The core thesis is that \CeTTa should separate \emph{semantics}, \emph{search/control}, and \emph{storage}: the language denotes complete nondeterministic result sets; a search machine controls demand, tabling, and scheduling; and a canonical term universe stores shared structure. From this separation follow several concrete positions: one physical term universe with many logical spaces/views; variant-first tabling with explicit revision discipline; native and \PathMap-backed universes as two backends for the same semantics; explicit user-facing bounded consumers such as \texttt{once} and \texttt{collapse}; a world-model calculus for semantically meaningful spaces; and a specialized demand-driven factor-graph engine for PLN-style reasoning rather than a replacement of the general evaluator. The paper is intended both as a didactic primer and as a compact design memo for future architecture discussions.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+\CeTTa sits at an unusual design point. It wants to be a practical runtime for a language with:
+\begin{itemize}
+    \item complete set-valued, nondeterministic semantics,
+    \item explicit spaces and module boundaries,
+    \item symbolic pattern matching and equation dispatch,
+    \item recursive backward-style search,
+    \item eventual probabilistic and world-model-style reasoning,
+    \item optional large persistent backends such as \MORK/\PathMap,
+    \item and a native standalone implementation that remains useful even without the premium backend.
+\end{itemize}
+
+That combination makes several familiar architectures attractive and insufficient at the same time.
+\begin{itemize}
+    \item A plain \WAM-style engine is excellent at local unification, backtracking, and choicepoint control, but does not by itself solve persistent term sharing, revision-aware spaces, or high-reuse large knowledge stores.
+    \item A plain trie or term bank is excellent at structural sharing, canonical storage, and indexed lookup, but does not by itself define control forms, recursive evaluation, or bounded-consumer behavior.
+    \item A pure message-passing graph substrate is excellent for cached local propagation, but does not by itself settle the semantics of general \MeTTa control forms or ordinary symbolic search.
+\end{itemize}
+
+The right long-term picture is therefore not ``choose one of these and force everything through it.'' Instead, the system should be decomposed so that each tool solves the problem it is actually good at.
+
+\section{Design summary in one page}
+The cleanest current summary is this:
+\begin{enumerate}
+    \item \textbf{Semantics first.} Core \MeTTa/\HE evaluation denotes the complete nondeterministic result set. No hidden pruning or incompleteness may be smuggled into ordinary evaluation.
+    \item \textbf{Streaming second.} The runtime may enumerate answers lazily and stop early for bounded consumers, but this is an operational property underneath the semantics.
+    \item \textbf{Search is its own layer.} A search machine should own branch-local speculative state, scheduling, table lookup, and bounded-consumer control.
+    \item \textbf{Storage is its own layer.} Terms should live in a canonical term universe. Spaces should usually be views or membership layers over that universe, not separate physical heaps.
+    \item \textbf{Tabling is real but conservative.} Variant tabling should come first, keyed by canonicalized query plus revision-aware space identity. More aggressive subsumptive or answer-subsuming behavior belongs later and only where semantically justified.
+    \item \textbf{Native and \PathMap-backed runtimes should share semantics.} \PathMap should be a premium backend, not a second language with different meaning.
+    \item \textbf{World-model spaces are semantically special.} A subset of spaces should be modeled as revisable world models with explicit \texttt{revise}, \texttt{extract}, \texttt{forget}, and \texttt{explain} structure.
+    \item \textbf{PLN-style factor graphs are a specialized engine.} Demand-driven factor-graph reasoning on \MORK is promising, but it should be treated as one engine among several, not as a replacement for ordinary \MeTTa evaluation.
+    \item \textbf{Expert algebra should stay small.} \MORKL should expose a small, mathematically honest expert layer, not all backend internals.
+\end{enumerate}
+
+\section{The architectural separation that matters}
+The single most useful separation is:
+\begin{center}
+\textbf{Semantics} $\neq$ \textbf{Search/Control} $\neq$ \textbf{Storage/Indexing}
+\end{center}
+
+This is easy to say and easy to violate. Many runtime pathologies come from collapsing two of these layers into one.
+
+\subsection{Semantics}
+Semantics answers questions such as:
+\begin{itemize}
+    \item What does \texttt{match} mean?
+    \item What does an equation denote?
+    \item When are two answers considered the same, and when are duplicates semantically real?
+    \item What does \texttt{let}, \texttt{chain}, \texttt{quote}, \texttt{collapse}, or \texttt{once} mean?
+\end{itemize}
+
+In \CeTTa, the target semantics is complete set-valued evaluation with multiset-aware behavior where the language requires it.
+
+\subsection{Search and control}
+Search answers questions such as:
+\begin{itemize}
+    \item In what order are clauses or equations tried?
+    \item When are subgoals memoized?
+    \item When can a bounded consumer stop early?
+    \item How are recursive calls represented without blowing the C stack?
+    \item How are local bindings rolled back on failure?
+\end{itemize}
+
+This is where ideas from the \WAM and especially \XSB matter: explicit environments, choicepoints, and tries/tables for reuse rather than repeated re-derivation \cite{xsb_about,xsb_variant,xsb_definite}.
+
+\subsection{Storage and indexing}
+Storage answers questions such as:
+\begin{itemize}
+    \item Where do canonical terms live?
+    \item How are spaces represented physically?
+    \item How is structural sharing realized?
+    \item What indices are available for exact lookup, variant lookup, unification lookup, prefix lookup, and cached results?
+\end{itemize}
+
+This is where \PathMap, hash-consing, term banks, and ATP indexing techniques matter \cite{pathmap_docs,e_technology,filliatre_hashcons,cuoq_doligez}.
+
+\section{One physical term universe, many logical spaces}
+A recurring design mistake is to equate a semantic space with a physical heap or array. The cleaner model is:
+\begin{quote}
+\textbf{One physical term universe; many logical spaces, views, or membership slices over it.}
+\end{quote}
+
+\subsection{Why one universe?}
+A shared universe gives four advantages.
+\begin{enumerate}
+    \item \textbf{Canonical identity.} If two immutable terms are structurally equal, the runtime can treat them as the same stored object.
+    \item \textbf{Structural sharing.} Common substructure is stored once.
+    \item \textbf{No cross-space deep-copy tax.} Moving between spaces can become membership change rather than full duplication.
+    \item \textbf{Simpler caching and indexing.} Canonical query keys and canonical answer keys become meaningful across the whole runtime.
+\end{enumerate}
+
+This is the lesson of shared-term theorem provers and hash-consed symbolic runtimes: representation and sharing want to be central, not bolted on later \cite{e_technology,filliatre_hashcons,cuoq_doligez}.
+
+\subsection{Why many spaces still matter}
+Saying ``one universe'' does \emph{not} mean ``one space only.'' Logical spaces remain important for:
+\begin{itemize}
+    \item module and namespace boundaries,
+    \item provenance and trust,
+    \item privacy and capability restriction,
+    \item snapshot and revision tracking,
+    \item staged import/export and persistence,
+    \item eventual distributed partitioning.
+\end{itemize}
+
+The key point is that these are usually \emph{logical distinctions over one store}, not reasons to create unrelated physical term heaps.
+
+\subsection{A native and a premium universe}
+The best practical split for \CeTTa is:
+\begin{itemize}
+    \item a \textbf{native standalone universe}, implemented with careful canonicalization and later proper weak/GC-friendly hash-consing;
+    \item a \textbf{premium \PathMap-backed universe}, using \MORK/\PathMap as the shared persistent store with richer persistence and prefix-indexing features.
+\end{itemize}
+
+The semantics should be the same across both. The backend should change performance, persistence, and indexing strength, not language meaning.
+
+\section{Spaces may be bags even if terms are canonical}
+A crucial conceptual distinction is:
+\begin{quote}
+\textbf{Canonical term storage may deduplicate terms, while spaces may still be multisets of those terms.}
+\end{quote}
+
+This matters because \HE-style semantics often treats duplicate insertion or duplicate query witnesses as semantically observable.
+
+\subsection{The right representation}
+The clean representation is not ``store duplicate trie keys.'' It is:
+\[
+\texttt{SpaceMembership} : \texttt{TermId} \mapsto \texttt{Multiplicity}
+\]
+
+or, if richer provenance is needed,
+\[
+\texttt{SpaceMembership} : \texttt{TermId} \mapsto \texttt{Rows/Counts/Metadata}
+\]
+
+So the canonical store may hold each term once, while a given space can still report:
+\begin{itemize}
+    \item logical size,
+    \item duplicate-aware enumeration,
+    \item duplicate-aware match multiplicity,
+    \item remove-one behavior.
+\end{itemize}
+
+This is the right way to reconcile a deduplicating store such as \PathMap with multiset-like language semantics.
+
+\section{The runtime spine: SearchMachine, TableStore, TermUniverse}
+A useful internal decomposition is:
+\begin{itemize}
+    \item \textbf{TermUniverse}: canonical storage, term identity, canonicalization hooks;
+    \item \textbf{SearchMachine/SearchContext}: branch-local speculative state, savepoints, trail/builder/scratch machinery, control flow;
+    \item \textbf{TableStore}: revision-aware memo/tabling store.
+\end{itemize}
+
+These three pieces should remain backend-focused and should not turn into new user-facing language abstractions.
+
+\subsection{TermUniverse}
+The main responsibilities are:
+\begin{itemize}
+    \item canonical term identity,
+    \item canonical query keys,
+    \item later shared-term interning and hash-consing,
+    \item later stable \texttt{TermId}/handle ownership.
+\end{itemize}
+
+One of the most useful near-term implementation moves is to unify canonicalization in one internal module and let that feed both tables and future sharing.
+
+\subsection{SearchMachine}
+The search machine should own:
+\begin{itemize}
+    \item recursive control flow,
+    \item branch-local bindings and scratch reuse,
+    \item rollback/savepoints,
+    \item bounded-consumer stopping,
+    \item episode-local state.
+\end{itemize}
+
+A key future move is to turn the existing continuation seam into a true frame stack or trampoline so recursive native evaluation becomes stack-safe and demand-driven rather than \texttt{OutcomeSet}-materializing.
+
+\subsection{TableStore}
+The table store should begin conservatively:
+\begin{itemize}
+    \item variant keys first,
+    \item search-episode-wide scope,
+    \item explicit revision-aware keys,
+    \item complete-result caching first,
+    \item open/incremental tables later.
+\end{itemize}
+
+The lesson from \XSB is clear: tabling becomes valuable when recursive subgoals are encountered repeatedly, but variant-based tabling is the safest default and interacts better with extra-logical features than aggressive subsumptive schemes \cite{xsb_variant,xsb_subsumption,xsb_meta}.
+
+\section{Streaming without semantic drift}
+One of the most important conceptual clarifications is the distinction between:
+\begin{enumerate}
+    \item \textbf{semantic all-answers evaluation},
+    \item \textbf{internal producers/visitors/streams},
+    \item \textbf{explicit user-facing consumers}.
+\end{enumerate}
+
+\subsection{Semantic layer}
+The language meaning remains: ordinary evaluation denotes the full nondeterministic result set.
+
+\subsection{Operational layer}
+Internally, the runtime should become increasingly producer-based:
+\begin{itemize}
+    \item emit one answer at a time,
+    \item avoid forcing complete materialization when not needed,
+    \item resume recursive search without reifying every intermediate result set.
+\end{itemize}
+
+\subsection{User-facing bounded consumers}
+Boundedness must stay explicit in user-facing forms such as:
+\begin{itemize}
+    \item \texttt{once}
+    \item \texttt{select}
+    \item \texttt{collapse}
+    \item \texttt{fold}
+    \item \texttt{fold-by-key}
+\end{itemize}
+
+The crucial invariant is:
+\begin{quote}
+\textbf{Bounded consumers may stop early; core evaluation may not silently prune.}
+\end{quote}
+
+This keeps reproducibility and semantic honesty intact.
+
+\section{What to borrow from \WAM, from \XSB, and from ATP systems}
+\subsection{From the \WAM}
+Borrow local-control discipline, not the whole world-view.
+The useful \WAM lessons are:
+\begin{itemize}
+    \item explicit environments,
+    \item choicepoints,
+    \item trail or rollback-aware mutation discipline,
+    \item cheap local speculative search,
+    \item avoiding repeated whole-tree reconstruction when possible.
+\end{itemize}
+
+\subsection{From \XSB}
+Borrow recursive query robustness.
+The strongest \XSB lessons are:
+\begin{itemize}
+    \item variant-first tabling as the safe default,
+    \item answer uniqueness per table entry,
+    \item explicit distinction between generators/producers and consumers,
+    \item local vs batched evaluation choices,
+    \item incremental maintenance and revision-aware invalidation,
+    \item answer subsumption as a later extension for multi-valued reasoning \cite{xsb_about,xsb_definite,xsb_aggregation}.
+\end{itemize}
+
+\subsection{From ATP systems such as E}
+Borrow the separation of storage and specialized indices.
+The strongest ATP lesson is not ``use one index.'' It is:
+\begin{quote}
+\textbf{Keep one shared term store, then add specialized indices for distinct reasoning tasks.}
+\end{quote}
+
+E explicitly describes a shared term bank and then multiple specialized structures for rewriting, subsumption, and superposition/backward rewriting \cite{e_technology}. This is a strong warning against believing that one data structure --- whether a clause array, a substitution tree, or a trie --- will by itself solve all retrieval tasks.
+
+\section{Tabling in \CeTTa}
+\subsection{Why tabling is wanted}
+Recursive goal-directed evaluation without memoization tends to:
+\begin{itemize}
+    \item rediscover the same subgoals,
+    \item rederive overlapping answers,
+    \item make performance hard to predict,
+    \item explode on moderately cyclic or repetitive knowledge graphs.
+\end{itemize}
+
+Tabling is simply the logic-programming form of sharing recursive work \cite{xsb_definite,xsb_directives}.
+
+\subsection{Why variant tabling should come first}
+Variant tabling says that two calls are reused when they are the same up to variable renaming. This is the default in \XSB and remains the safest first choice because subsumptive schemes can interact poorly with extra-logical constructs and call-context-sensitive behavior \cite{xsb_variant,xsb_subsumption,xsb_meta}.
+
+\subsection{Revision-aware keys}
+In \CeTTa, table keys must not depend only on the query. They should also depend on the consulted space or snapshot identity. Otherwise cached answers can silently become stale under revision.
+
+A conceptual key should therefore include:
+\begin{itemize}
+    \item normalized query,
+    \item operation kind,
+    \item consulted space/view identity,
+    \item revision or snapshot identity.
+\end{itemize}
+
+\subsection{Complete vs incremental table entries}
+The simplest initial form is complete-result caching. The more scalable later form is open/closed tables with incremental answer accumulation. The important conceptual point is that the runtime may move from the former to the latter \emph{without changing the semantic contract}. The semantics is still all answers; only the operational realization becomes more incremental.
+
+\section{World-model calculus as the semantic skeleton for spaces}
+The most useful semantic abstraction for meaningful spaces is not ``space as a bag of atoms.'' It is ``space as a revisable world model.''
+
+At the conceptual level the basic interface is:
+\begin{itemize}
+    \item \texttt{empty}
+    \item \texttt{revise}
+    \item \texttt{extract}
+    \item later, \texttt{forget}
+    \item later, \texttt{explain}
+\end{itemize}
+
+This is the right semantic language for spaces that represent evidence, provenance, beliefs, or revisable knowledge, rather than just transient operational stacks.
+
+\subsection{Additive and non-additive regimes}
+A particularly useful strengthening is an additive world-model regime, where extracting from a revised state can be decomposed into extraction from components and combination in the carrier. This captures when caching, revision, and composition have especially clean algebraic behavior.
+
+But not every useful space is additive. Privacy overlays, coalition boundaries, overlap-aware models, or capability-sensitive spaces may require richer laws. The benefit of the world-model framing is that these regimes become explicit rather than implicit accidents.
+
+\subsection{Compiled inference as a certified shortcut}
+One of the most important conceptual lessons is that compiled inference should be treated as a \emph{certified shortcut} against full extraction, not as a replacement for full semantics. Every compiled rewrite or cached inference shortcut should carry its side conditions. This avoids a common trap in symbolic runtimes: a local acceleration gradually becomes treated as if it were semantically universal.
+
+\section{PLN, demand, and factor graphs as a specialized engine}
+A particularly interesting specialized engine for \CeTTa is demand-driven factor-graph reasoning for PLN on \MORK/\PathMap.
+
+The key idea is simple:
+\begin{quote}
+\textbf{Backward demand selects the relevant subgraph; forward supply computes the actual marginals.}
+\end{quote}
+
+This is the central proposal of the 2026 factor-graph note on backward chaining in \MORK \cite{goertzel2026factor}.
+
+\subsection{Why this idea is compelling}
+The note observes that conventional backward chaining, when implemented as a separate proof-search procedure beside a graph-centric substrate, repeatedly revisits the same neighborhoods, recomputes overlapping subgoals, and fails to reuse memoized local uncertainty propagation \cite{goertzel2026factor}. Recasting backward chaining as demand propagation on the same graph allows background reasoning and goal-directed reasoning to share:
+\begin{itemize}
+    \item topology,
+    \item caches,
+    \item invalidation,
+    \item local message structure,
+    \item uncertainty semantics.
+\end{itemize}
+
+\subsection{Demand should be a control field, not the meaning itself}
+One of the note's best design commitments is to keep backward demand separate from forward supply. Demand selects, prioritizes, and schedules; ordinary forward algebra still computes marginals \cite{goertzel2026factor}. That is exactly the right boundary.
+
+\subsection{The STV/DTV ladder}
+The same note proposes a layered deployment path:
+\begin{enumerate}
+    \item simple backward activation,
+    \item STV demand adjoints using Jacobian sensitivity and information need,
+    \item DTV demand using Beta projection or histogram representation,
+    \item richer Fisher-weighted sensitivity and optional demand vectors.
+\end{enumerate}
+
+The important conceptual takeaway is not any one formula, but the architectural stance:
+\begin{quote}
+\textbf{PLN backward chaining can be internalized as demand propagation on the same substrate used for cached forward propagation.}
+\end{quote}
+
+\subsection{What role this engine should play}
+This is a strong idea, but it should remain a \emph{specialized engine}. It should not replace ordinary \MeTTa evaluation. Many symbolic tasks need ordinary set-valued search, explicit control forms, or exact term-matching semantics that are not naturally rephrased as factor-graph inference.
+
+So the right relationship is:
+\begin{itemize}
+    \item general evaluator/search machine for ordinary \MeTTa semantics,
+    \item world-model calculus for semantically meaningful spaces,
+    \item factor-graph demand engine for declared PLN-style spaces.
+\end{itemize}
+
+\section{\MORKL: the expert algebra}
+\MORKL should exist, but it should remain small.
+
+\subsection{What \MORKL should be}
+\MORKL should be an expert layer exposing backend-native algebra that is genuinely useful and mathematically honest. Good examples are:
+\begin{itemize}
+    \item read-only zippers,
+    \item overlay zippers,
+    \item product zippers where the observational contract is settled,
+    \item ring-style support algebra such as join, meet, and subtraction,
+    \item explicit selectors and selector-based restriction.
+\end{itemize}
+
+\subsection{What \MORKL should not be}
+It should not be:
+\begin{itemize}
+    \item a duplicate generic space API,
+    \item a dumping ground for unstable internals,
+    \item a promise that every current backend gadget already deserves a permanent public noun.
+\end{itemize}
+
+\subsection{Selectors as the next key noun}
+A particularly important design lesson is that some operations, such as support restriction, are better understood as
+\[
+\texttt{restrict} : \texttt{Space} \times \texttt{Selector} \to \texttt{Space}
+\]
+than as generic same-sort binary operations.
+
+That suggests the next stable expert noun should be a \textbf{Selector}, not a proliferation of write-side zipper mutations. Read-side structure should stabilize first; selector-sensitive mutation and dependent zipper semantics can come later.
+
+\section{Native standalone first, premium backend second}
+\CeTTa should remain useful and conceptually coherent without \PathMap. This is not a fallback of shame; it is strategically useful.
+
+\subsection{Why standalone still matters}
+A native standalone runtime gives:
+\begin{itemize}
+    \item easier testing and distribution,
+    \item a reference implementation for semantics,
+    \item a place to evolve canonicalization, tabling, and control flow independent of bridge issues,
+    \item a path to robust native optimization even when premium backend integration is incomplete.
+\end{itemize}
+
+\subsection{Why the premium backend still matters}
+A \PathMap-backed runtime gives:
+\begin{itemize}
+    \item stronger structural sharing,
+    \item persistence and file-backed views,
+    \item good large-dataset indexing properties,
+    \item a natural substrate for graph-centric incremental reasoning,
+    \item a mathematically attractive direction for a true canonical universe.
+\end{itemize}
+
+The correct strategy is therefore not to choose one forever, but to make both implementations of the same conceptual seams.
+
+\section{Recommended roadmap}
+A compact roadmap that respects the above separations is:
+
+\subsection*{Phase A: semantic and spine cleanup}
+\begin{enumerate}
+    \item Freeze the semantic contract: complete set-valued semantics, explicit bounded consumers, no hidden pruning.
+    \item Keep the internal spine clean: canonicalization, search context/machine, table store, and term universe.
+    \item Make recursive native evaluation stack-safe and producer-driven rather than \texttt{OutcomeSet}-driven.
+\end{enumerate}
+
+\subsection*{Phase B: conservative tabling}
+\begin{enumerate}
+    \item Use variant-first tabling with revision-aware keys.
+    \item Keep complete-result staging first if needed, then move to open/closed incremental entries.
+    \item Preserve DFS-like default answer order and multiset behavior.
+\end{enumerate}
+
+\subsection*{Phase C: canonical terms and spaces}
+\begin{enumerate}
+    \item Introduce stable internal term handles or ids.
+    \item Move spaces from raw atom ownership toward membership over universe-owned terms.
+    \item Let native and \PathMap backends implement the same conceptual term-universe contract.
+\end{enumerate}
+
+\subsection*{Phase D: specialized engines}
+\begin{enumerate}
+    \item Introduce world-model spaces explicitly.
+    \item Add answer-subsuming or lattice-valued tabling only for spaces that justify it.
+    \item Add factor-graph demand/supply execution as a specialized PLN backend.
+    \item Stabilize a small expert \MORKL surface around settled read-side algebra and selectors.
+\end{enumerate}
+
+\section{Guiding invariants}
+Any future design change should be checked against the following invariants.
+
+\begin{enumerate}
+    \item \textbf{No hidden semantic pruning.} If an operation is incomplete or bounded, it must be explicit in the surface.
+    \item \textbf{No unnecessary public nouns.} Internal seams are welcome; fake public wrappers are not.
+    \item \textbf{One universe is physical, many spaces are logical.}
+    \item \textbf{Canonical term storage and space multiplicity are distinct.}
+    \item \textbf{Tabling must be revision-aware.}
+    \item \textbf{Deterministic default behavior matters.} Reproducibility is valuable for debugging, theorem proving, and agent-assisted development.
+    \item \textbf{Specialized engines remain specialized.} Factor-graph PLN is powerful, but it should not silently replace ordinary symbolic evaluation.
+    \item \textbf{Theory should guide backend exposure.} If a backend operation has not yet stabilized mathematically, it should remain internal or clearly experimental.
+\end{enumerate}
+
+\section{Open questions}
+Several design questions remain genuinely open.
+\begin{itemize}
+    \item How much explicit substitution or lazy application should be introduced before it makes the evaluator harder to reason about than the copies it removes?
+    \item At what point does native standalone sharing graduate from unified canonicalization to a full weak-hashconsed universe?
+    \item What is the cleanest public contract for expert \PathMap algebra that preserves mathematical honesty without overexposing unstable internals?
+    \item Which spaces should support answer subsumption, and with what carrier structure?
+    \item How much of incremental invalidation should live in generic table machinery, and how much should remain world-model-specific?
+    \item Can the premium backend eventually support direct canonical term handles rather than bridge-specific compiled query bytes without introducing needless lifecycle complexity?
+\end{itemize}
+
+These are healthy open questions. The important point is that the architecture is now clean enough that they can be asked separately rather than all at once.
+
+\section{Conclusion}
+The most useful way to think about \CeTTa is no longer as ``a C runtime with some optimizations'' or ``a future \MORK runtime waiting to happen.'' It is better understood as a layered architecture whose layers should remain distinct:
+\begin{itemize}
+    \item complete set-valued semantics,
+    \item an explicit search and control machine,
+    \item a canonical term universe,
+    \item logical spaces over that universe,
+    \item and optional specialized engines for revision-heavy or probabilistic reasoning.
+\end{itemize}
+
+From that point of view, several positions become natural rather than controversial: one physical term universe with many logical spaces; conservative variant-first tabling; explicit bounded consumers; native and \PathMap-backed universes as two backends for one semantics; world-model calculus for semantically meaningful spaces; and a demand-driven factor-graph PLN engine as one specialized engine rather than the definition of all evaluation.
+
+The practical payoff of this picture is focus. It says what should be stabilized first, what should stay internal longer, and where future optimizations should attach. That, more than any single data structure or abstract machine, is what is needed to move \CeTTa toward a clean long-term design.
+
+\begin{thebibliography}{99}
+
+\bibitem{pathmap_docs}
+A. Vandervorst and contributors.
+\newblock \emph{pathmap crate documentation}.
+\newblock Docs.rs, 2026.
+\newblock \url{https://docs.rs/pathmap}.
+
+\bibitem{xsb_about}
+The XSB Research Group.
+\newblock \emph{About XSB}.
+\newblock XSB project site, accessed 2026.
+\newblock \url{https://xsb.sourceforge.net/about.html}.
+
+\bibitem{xsb_definite}
+L. F. P. de Castro et al.
+\newblock \emph{Using Tabling in XSB: A Tutorial Introduction / Definite Programs}.
+\newblock XSB Manual, accessed 2026.
+\newblock \url{https://xsb.sourceforge.net/shadow_site/manual1/node46.html}.
+
+\bibitem{xsb_variant}
+L. F. P. de Castro et al.
+\newblock \emph{Variant-Based Tabled Evaluation}.
+\newblock XSB Manual, accessed 2026.
+\newblock \url{https://xsb.sourceforge.net/shadow_site/manual1/node50.html}.
+
+\bibitem{xsb_subsumption}
+L. F. P. de Castro et al.
+\newblock \emph{Subsumption-Based Tabled Evaluation}.
+\newblock XSB Manual, accessed 2026.
+\newblock \url{https://xsb.sourceforge.net/shadow_site/manual1/node51.html}.
+
+\bibitem{xsb_meta}
+L. F. P. de Castro et al.
+\newblock \emph{Subsumption-Based Tabling and Meta-Logical Predicates}.
+\newblock XSB Manual, accessed 2026.
+\newblock \url{https://xsb.sourceforge.net/shadow_site/manual1/node56.html}.
+
+\bibitem{xsb_aggregation}
+L. F. P. de Castro et al.
+\newblock \emph{Tabled Aggregation}.
+\newblock XSB Manual, accessed 2026.
+\newblock \url{https://xsb.sourceforge.net/shadow_site/manual1/node72.html}.
+
+\bibitem{swi_jit}
+J. Wielemaker and contributors.
+\newblock \emph{SWI-Prolog Manual: Just-in-time clause indexing}.
+\newblock SWI-Prolog documentation, accessed 2026.
+\newblock \url{https://www.swi-prolog.org/pldoc/man?section=jitindex}.
+
+\bibitem{e_technology}
+S. Schulz.
+\newblock \emph{E Prover Technology Overview}.
+\newblock E Prover project site, accessed 2026.
+\newblock \url{https://wwwlehre.dhbw-stuttgart.de/~sschulz/E/Technology.html}.
+
+\bibitem{filliatre_hashcons}
+S. Conchon and J.-C. Filli\^atre.
+\newblock Type-safe modular hash-consing.
+\newblock In \emph{Proceedings of the ACM SIGPLAN Workshop on ML}, 2006.
+
+\bibitem{cuoq_doligez}
+P. Cuoq and D. Doligez.
+\newblock Hash-consing in an incrementally garbage-collected system: a story of weak pointers and hash tables.
+\newblock ML Workshop, 2008.
+
+\bibitem{wm_pln_v3}
+Anonymous working manuscript.
+\newblock \emph{WM-PLN Book, version 3}.
+\newblock Unpublished manuscript, 2026.
+
+\bibitem{goertzel2026factor}
+Anonymous working manuscript.
+\newblock \emph{PLN Backward-Chaining in MORK via Factor Graphs}.
+\newblock Unpublished manuscript, 2026.
+
+\end{thebibliography}
+
+\end{document}
