@@ -155,6 +155,17 @@ private lemma continuous_stepProb (a b : Fin k) :
     simpa [MarkovParam.toProd] using this
   exact (continuous_apply_singleton (k := k) b).comp hθ
 
+/-- Public Borel-side continuity of the initial-state mass of a `MarkovParam`. -/
+theorem continuous_initProb_borel (a : Fin k) :
+    Continuous (fun θ : MarkovParam k => initProb (k := k) θ a) :=
+  continuous_initProb (k := k) a
+
+/-- Public Borel-side continuity of the one-step transition mass of a
+`MarkovParam`. -/
+theorem continuous_stepProb_borel (a b : Fin k) :
+    Continuous (fun θ : MarkovParam k => stepProb (k := k) θ a b) :=
+  continuous_stepProb (k := k) a b
+
 private lemma continuous_wordProbAux (a : Fin k) :
     ∀ xs : List (Fin k), Continuous (fun θ : MarkovParam k => wordProbAux (k := k) θ a xs) := by
   intro xs
@@ -183,6 +194,20 @@ theorem measurable_wordProb_borel (xs : List (Fin k)) :
   letI : MeasurableSpace (MarkovParam k) := MarkovParam.borelMS
   haveI : BorelSpace (MarkovParam k) := ⟨rfl⟩
   exact (continuous_wordProb (k := k) xs).measurable
+
+/-- The initial-state mass of a `MarkovParam` is Borel measurable. -/
+theorem measurable_initProb_borel (a : Fin k) :
+    @Measurable _ _ MarkovParam.borelMS _ (fun θ : MarkovParam k => initProb (k := k) θ a) := by
+  letI : MeasurableSpace (MarkovParam k) := MarkovParam.borelMS
+  haveI : BorelSpace (MarkovParam k) := ⟨rfl⟩
+  exact (continuous_initProb_borel (k := k) a).measurable
+
+/-- The one-step transition mass of a `MarkovParam` is Borel measurable. -/
+theorem measurable_stepProb_borel (a b : Fin k) :
+    @Measurable _ _ MarkovParam.borelMS _ (fun θ : MarkovParam k => stepProb (k := k) θ a b) := by
+  letI : MeasurableSpace (MarkovParam k) := MarkovParam.borelMS
+  haveI : BorelSpace (MarkovParam k) := ⟨rfl⟩
+  exact (continuous_stepProb_borel (k := k) a b).measurable
 
 /-! ## σ-algebra compatibility
 

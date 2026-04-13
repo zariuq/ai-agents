@@ -342,6 +342,382 @@ theorem markovExchangeable_summary_and_solomonoff_regret
       (Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.SolomonoffBridge.relEntropy_le_log_inv_M₂
         (α := Fin k) (μ := μ) hμLSC n)
 
+/-- For nonempty histories with the same transition-count summary, the
+Markov-Dirichlet predictor updates both histories through the same state
+`(counts,last)`. This is the finite-dimensional sufficient-statistic surface for
+the tractable Markov predictor family. -/
+theorem markovDirichlet_common_state_update_of_same_summary
+    (hk : 0 < k)
+    (prior : Fin k → Mettapedia.Logic.EvidenceDirichlet.DirichletParams k)
+    (xs ys : List (Fin k)) (hx : 0 < xs.length)
+    (hsum : TransCounts.summary (k := k) xs = TransCounts.summary (k := k) ys) :
+    ∃ state : TransCounts k × Fin k,
+      TransCounts.summary (k := k) xs = some state ∧
+      TransCounts.summary (k := k) ys = some state ∧
+      ∀ a : Fin k,
+        (MarkovDirichlet.markovDirichletPrefixMeasure (k := k) hk prior) (xs ++ [a]) =
+          (MarkovDirichlet.markovDirichletPrefixMeasure (k := k) hk prior) xs *
+            ENNReal.ofReal (MarkovDirichlet.stepProb prior state.1 state.2 a) ∧
+        (MarkovDirichlet.markovDirichletPrefixMeasure (k := k) hk prior) (ys ++ [a]) =
+          (MarkovDirichlet.markovDirichletPrefixMeasure (k := k) hk prior) ys *
+            ENNReal.ofReal (MarkovDirichlet.stepProb prior state.1 state.2 a) := by
+  cases xs with
+  | nil =>
+      cases Nat.not_lt_zero _ hx
+  | cons b xsTail =>
+      let state : TransCounts k × Fin k := TransCounts.summaryAux b TransCounts.zero xsTail
+      have hxs : TransCounts.summary (k := k) (b :: xsTail) = some state := by
+        simp [TransCounts.summary, state]
+      have hys : TransCounts.summary (k := k) ys = some state := by
+        calc
+          TransCounts.summary (k := k) ys
+              = TransCounts.summary (k := k) (b :: xsTail) := hsum.symm
+          _ = some state := hxs
+      refine ⟨state, hxs, hys, ?_⟩
+      intro a
+      have hxsUpdate :
+          (MarkovDirichlet.markovDirichletPrefixMeasure (k := k) hk prior) ((b :: xsTail) ++ [a]) =
+            (MarkovDirichlet.markovDirichletPrefixMeasure (k := k) hk prior) (b :: xsTail) *
+              ENNReal.ofReal (MarkovDirichlet.stepProb prior state.1 state.2 a) := by
+        simpa [state] using
+          (MarkovDirichlet.prefixProb_cons_append_singleton
+            (k := k) (prior := prior) (b := b) (xs := xsTail) (a := a))
+      cases ys with
+      | nil =>
+          simp [TransCounts.summary] at hys
+      | cons c ysTail =>
+          have hysSome :
+              some (TransCounts.summaryAux c TransCounts.zero ysTail) = some state := by
+            simpa [TransCounts.summary] using hys
+          have hstateY : TransCounts.summaryAux c TransCounts.zero ysTail = state :=
+            Option.some.inj hysSome
+          have hysUpdate :
+              (MarkovDirichlet.markovDirichletPrefixMeasure (k := k) hk prior) ((c :: ysTail) ++ [a]) =
+                (MarkovDirichlet.markovDirichletPrefixMeasure (k := k) hk prior) (c :: ysTail) *
+                  ENNReal.ofReal (MarkovDirichlet.stepProb prior state.1 state.2 a) := by
+            simpa [hstateY] using
+              (MarkovDirichlet.prefixProb_cons_append_singleton
+                (k := k) (prior := prior) (b := c) (xs := ysTail) (a := a))
+          exact ⟨hxsUpdate, hysUpdate⟩
+
+/-- Markov-domain characterization theorem:
+
+1. the true environment's one-step prediction factors through the transition
+   summary state;
+2. the canonical Markov-Dirichlet predictor factors through that same state;
+3. the finite-alphabet Solomonoff mixture still enjoys the standard log-loss
+   regret bound against the environment.
+
+This is the right post-νPLN abstraction: the sufficient statistic is no longer
+`(n⁺,n⁻)`, but the Markov transition-summary state `(counts,last)`. -/
+theorem markovExchangeable_domain_characterization
+    (hk : 0 < k)
+    (μ : PrefixMeasure (Fin k))
+    (hμMarkov : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (hμLSC :
+      Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.LowerSemicomputablePrefixMeasure
+        (α := Fin k) μ)
+    (prior : Fin k → Mettapedia.Logic.EvidenceDirichlet.DirichletParams k) :
+    (∀ (xs ys : List (Fin k)) (hlen : xs.length = ys.length) (hx : 0 < xs.length)
+      (_hstart : xs.get ⟨0, hx⟩ = ys.get ⟨0, by simpa [hlen] using hx⟩)
+      (_hsum : TransCounts.summary (k := k) xs = TransCounts.summary (k := k) ys)
+      (x : Fin k),
+      μ (xs ++ [x]) = μ (ys ++ [x])) ∧
+    (∀ (xs ys : List (Fin k)) (_hx : 0 < xs.length)
+      (_hsum : TransCounts.summary (k := k) xs = TransCounts.summary (k := k) ys),
+      ∃ state : TransCounts k × Fin k,
+        TransCounts.summary (k := k) xs = some state ∧
+        TransCounts.summary (k := k) ys = some state ∧
+        ∀ a : Fin k,
+          (MarkovDirichlet.markovDirichletPrefixMeasure (k := k) hk prior) (xs ++ [a]) =
+            (MarkovDirichlet.markovDirichletPrefixMeasure (k := k) hk prior) xs *
+              ENNReal.ofReal (MarkovDirichlet.stepProb prior state.1 state.2 a) ∧
+          (MarkovDirichlet.markovDirichletPrefixMeasure (k := k) hk prior) (ys ++ [a]) =
+            (MarkovDirichlet.markovDirichletPrefixMeasure (k := k) hk prior) ys *
+              ENNReal.ofReal (MarkovDirichlet.stepProb prior state.1 state.2 a)) ∧
+    (∀ n : ℕ,
+      ∃ c : ENNReal, c ≠ 0 ∧
+        Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.Dominates
+          (Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.SolomonoffBridge.M₂
+            (α := Fin k)) μ c ∧
+          Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.FiniteHorizon.relEntropy μ
+            (Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.SolomonoffBridge.M₂
+              (α := Fin k)) n ≤
+            Real.log (1 / c.toReal)) := by
+  refine ⟨?_, ?_, ?_⟩
+  · intro xs ys hlen hx hstart hsum x
+    exact
+      mu_append_singleton_eq_of_same_summary_list
+        (k := k) (μ := μ) (hμ := hμMarkov) xs ys hlen hx hstart hsum x
+  · intro xs ys hx hsum
+    exact
+      markovDirichlet_common_state_update_of_same_summary
+        (k := k) hk prior xs ys hx hsum
+  · intro n
+    simpa using
+      (Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.SolomonoffBridge.relEntropy_le_log_inv_M₂
+        (α := Fin k) (μ := μ) hμLSC n)
+
+/-! ## Binary presentations (`Fin 2` and `Bool`) -/
+
+/-- Binary transition-count matrix written in the explicit `ff/ft/tf/tt` style. -/
+@[ext]
+structure BinaryTransCounts where
+  ff : ℕ
+  ft : ℕ
+  tf : ℕ
+  tt : ℕ
+deriving DecidableEq
+
+namespace BinaryTransCounts
+
+/-- Convert the explicit binary count record to the generic `Fin 2` matrix form. -/
+def toFin2Counts (c : BinaryTransCounts) : TransCounts 2 :=
+  ⟨fun i j =>
+    if i = 0 then
+      if j = 0 then c.ff else c.ft
+    else
+      if j = 0 then c.tf else c.tt⟩
+
+/-- Read the four binary transition counts out of the generic `Fin 2` matrix form. -/
+def ofFin2Counts (c : TransCounts 2) : BinaryTransCounts :=
+  ⟨c.counts 0 0, c.counts 0 1, c.counts 1 0, c.counts 1 1⟩
+
+@[simp] theorem ofFin2Counts_toFin2Counts (c : BinaryTransCounts) :
+    ofFin2Counts (toFin2Counts c) = c := by
+  ext <;> simp [toFin2Counts, ofFin2Counts]
+
+@[simp] theorem toFin2Counts_ofFin2Counts (c : TransCounts 2) :
+    toFin2Counts (ofFin2Counts c) = c := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [toFin2Counts, ofFin2Counts]
+
+end BinaryTransCounts
+
+/-- Encode `Bool` as `Fin 2`: `false ↦ 0`, `true ↦ 1`. -/
+def boolToFin2 : Bool → Fin 2
+  | false => 0
+  | true => 1
+
+/-- Decode `Fin 2` back to `Bool`: `0 ↦ false`, `1 ↦ true`. -/
+def fin2ToBool (i : Fin 2) : Bool :=
+  decide (i = 1)
+
+@[simp] theorem fin2ToBool_boolToFin2 (b : Bool) :
+    fin2ToBool (boolToFin2 b) = b := by
+  cases b <;> simp [fin2ToBool, boolToFin2]
+
+@[simp] theorem boolToFin2_fin2ToBool (i : Fin 2) :
+    boolToFin2 (fin2ToBool i) = i := by
+  fin_cases i <;> simp [fin2ToBool, boolToFin2]
+
+theorem boolToFin2_injective : Function.Injective boolToFin2 := by
+  intro b₁ b₂ h
+  have := congrArg fin2ToBool h
+  simpa using this
+
+/-- Encode a binary history as a `Fin 2` history so it can use the generic Markov machinery. -/
+def encodeBoolWord : List Bool → List (Fin 2) :=
+  List.map boolToFin2
+
+@[simp] theorem encodeBoolWord_nil : encodeBoolWord [] = [] := rfl
+
+@[simp] theorem encodeBoolWord_cons (b : Bool) (xs : List Bool) :
+    encodeBoolWord (b :: xs) = boolToFin2 b :: encodeBoolWord xs := rfl
+
+@[simp] theorem encodeBoolWord_append (xs ys : List Bool) :
+    encodeBoolWord (xs ++ ys) = encodeBoolWord xs ++ encodeBoolWord ys := by
+  simp [encodeBoolWord]
+
+@[simp] theorem encodeBoolWord_length (xs : List Bool) :
+    (encodeBoolWord xs).length = xs.length := by
+  simp [encodeBoolWord]
+
+theorem encodeBoolWord_get_zero {xs : List Bool} (hx : 0 < xs.length) :
+    (encodeBoolWord xs).get ⟨0, by simpa using encodeBoolWord_length xs ▸ hx⟩ =
+      boolToFin2 (xs.get ⟨0, hx⟩) := by
+  cases xs with
+  | nil =>
+      cases Nat.not_lt_zero _ hx
+  | cons b bs =>
+      simp [encodeBoolWord]
+
+/-- The binary sufficient state `(ff,ft,tf,tt,lastBit)` corresponding to the
+generic `Fin 2` summary state `(counts,last)`. -/
+def BinarySummaryState := BinaryTransCounts × Bool
+
+namespace BinarySummaryState
+
+/-- Convert the explicit binary summary state to the generic `Fin 2` state. -/
+def toFin2State (state : BinarySummaryState) : TransCounts 2 × Fin 2 :=
+  (BinaryTransCounts.toFin2Counts state.1, boolToFin2 state.2)
+
+/-- Read a generic `Fin 2` summary state back as explicit binary counts and last bit. -/
+def ofFin2State (state : TransCounts 2 × Fin 2) : BinarySummaryState :=
+  (BinaryTransCounts.ofFin2Counts state.1, fin2ToBool state.2)
+
+@[simp] theorem ofFin2State_toFin2State (state : BinarySummaryState) :
+    ofFin2State (toFin2State state) = state := by
+  rcases state with ⟨c, b⟩
+  simp [toFin2State, ofFin2State]
+
+@[simp] theorem toFin2State_ofFin2State (state : TransCounts 2 × Fin 2) :
+    toFin2State (ofFin2State state) = state := by
+  rcases state with ⟨c, i⟩
+  simp [toFin2State, ofFin2State]
+
+end BinarySummaryState
+
+/-- The binary `(counts,lastBit)` presentation of the Markov sufficient state. -/
+def binarySummary (xs : List Bool) : Option BinarySummaryState :=
+  Option.map BinarySummaryState.ofFin2State (TransCounts.summary (k := 2) (encodeBoolWord xs))
+
+@[simp] theorem map_toFin2State_binarySummary (xs : List Bool) :
+    Option.map BinarySummaryState.toFin2State (binarySummary xs) =
+      TransCounts.summary (k := 2) (encodeBoolWord xs) := by
+  unfold binarySummary
+  cases h : TransCounts.summary (k := 2) (encodeBoolWord xs) with
+  | none =>
+      simp
+  | some state =>
+      rcases state with ⟨c, i⟩
+      simp
+
+/-- The `Bool` summary is exactly the generic `Fin 2` summary, just decoded into
+the explicit `ff/ft/tf/tt,lastBit` presentation. -/
+theorem binarySummary_eq_iff_fin2Summary_eq (xs ys : List Bool) :
+    binarySummary xs = binarySummary ys ↔
+      TransCounts.summary (k := 2) (encodeBoolWord xs) =
+        TransCounts.summary (k := 2) (encodeBoolWord ys) := by
+  constructor
+  · intro h
+    have h' := congrArg (Option.map BinarySummaryState.toFin2State) h
+    simpa using h'
+  · intro h
+    have h' := congrArg (Option.map BinarySummaryState.ofFin2State) h
+    simpa [binarySummary] using h'
+
+/-- The general domain characterization specialized to the binary alphabet `Fin 2`. -/
+theorem markovExchangeable_domain_characterization_fin2
+    (μ : PrefixMeasure (Fin 2))
+    (hμMarkov : MarkovExchangeablePrefixMeasure (k := 2) μ)
+    (hμLSC :
+      Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.LowerSemicomputablePrefixMeasure
+        (α := Fin 2) μ)
+    (prior : Fin 2 → Mettapedia.Logic.EvidenceDirichlet.DirichletParams 2) :
+    (∀ (xs ys : List (Fin 2)) (hlen : xs.length = ys.length) (hx : 0 < xs.length)
+      (_hstart : xs.get ⟨0, hx⟩ = ys.get ⟨0, by simpa [hlen] using hx⟩)
+      (_hsum : TransCounts.summary (k := 2) xs = TransCounts.summary (k := 2) ys)
+      (x : Fin 2),
+      μ (xs ++ [x]) = μ (ys ++ [x])) ∧
+    (∀ (xs ys : List (Fin 2)) (_hx : 0 < xs.length)
+      (_hsum : TransCounts.summary (k := 2) xs = TransCounts.summary (k := 2) ys),
+      ∃ state : TransCounts 2 × Fin 2,
+        TransCounts.summary (k := 2) xs = some state ∧
+        TransCounts.summary (k := 2) ys = some state ∧
+        ∀ a : Fin 2,
+          (MarkovDirichlet.markovDirichletPrefixMeasure (k := 2) (by decide) prior) (xs ++ [a]) =
+            (MarkovDirichlet.markovDirichletPrefixMeasure (k := 2) (by decide) prior) xs *
+              ENNReal.ofReal (MarkovDirichlet.stepProb prior state.1 state.2 a) ∧
+          (MarkovDirichlet.markovDirichletPrefixMeasure (k := 2) (by decide) prior) (ys ++ [a]) =
+            (MarkovDirichlet.markovDirichletPrefixMeasure (k := 2) (by decide) prior) ys *
+              ENNReal.ofReal (MarkovDirichlet.stepProb prior state.1 state.2 a)) ∧
+    (∀ n : ℕ,
+      ∃ c : ENNReal, c ≠ 0 ∧
+        Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.Dominates
+          (Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.SolomonoffBridge.M₂
+            (α := Fin 2)) μ c ∧
+          Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.FiniteHorizon.relEntropy μ
+            (Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.SolomonoffBridge.M₂
+              (α := Fin 2)) n ≤
+            Real.log (1 / c.toReal)) := by
+  simpa using
+    (markovExchangeable_domain_characterization
+      (k := 2) (hk := by decide) (μ := μ) hμMarkov hμLSC prior)
+
+/-- Binary Markov-domain characterization written directly on `Bool` histories.
+
+This is presentation-equivalent to `markovExchangeable_domain_characterization_fin2`:
+the sufficient statistic is the same state, just decoded from `(counts,last : Fin 2)`
+to `(ff,ft,tf,tt,lastBit : Bool)`. -/
+theorem markovExchangeable_domain_characterization_bool
+    (μ : PrefixMeasure (Fin 2))
+    (hμMarkov : MarkovExchangeablePrefixMeasure (k := 2) μ)
+    (hμLSC :
+      Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.LowerSemicomputablePrefixMeasure
+        (α := Fin 2) μ)
+    (prior : Fin 2 → Mettapedia.Logic.EvidenceDirichlet.DirichletParams 2) :
+    (∀ (xs ys : List Bool) (hlen : xs.length = ys.length) (hx : 0 < xs.length)
+      (_hstart : xs.get ⟨0, hx⟩ = ys.get ⟨0, by simpa [hlen] using hx⟩)
+      (_hsum : binarySummary xs = binarySummary ys)
+      (x : Bool),
+      μ (encodeBoolWord (xs ++ [x])) = μ (encodeBoolWord (ys ++ [x]))) ∧
+    (∀ (xs ys : List Bool) (_hx : 0 < xs.length)
+      (_hsum : binarySummary xs = binarySummary ys),
+      ∃ state : BinarySummaryState,
+        binarySummary xs = some state ∧
+        binarySummary ys = some state ∧
+        ∀ a : Bool,
+          (MarkovDirichlet.markovDirichletPrefixMeasure (k := 2) (by decide) prior)
+              (encodeBoolWord (xs ++ [a])) =
+            (MarkovDirichlet.markovDirichletPrefixMeasure (k := 2) (by decide) prior)
+                (encodeBoolWord xs) *
+              ENNReal.ofReal
+                (MarkovDirichlet.stepProb prior
+                  (BinarySummaryState.toFin2State state).1
+                  (BinarySummaryState.toFin2State state).2
+                  (boolToFin2 a)) ∧
+          (MarkovDirichlet.markovDirichletPrefixMeasure (k := 2) (by decide) prior)
+              (encodeBoolWord (ys ++ [a])) =
+            (MarkovDirichlet.markovDirichletPrefixMeasure (k := 2) (by decide) prior)
+                (encodeBoolWord ys) *
+              ENNReal.ofReal
+                (MarkovDirichlet.stepProb prior
+                  (BinarySummaryState.toFin2State state).1
+                  (BinarySummaryState.toFin2State state).2
+                  (boolToFin2 a))) ∧
+    (∀ n : ℕ,
+      ∃ c : ENNReal, c ≠ 0 ∧
+        Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.Dominates
+          (Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.SolomonoffBridge.M₂
+            (α := Fin 2)) μ c ∧
+          Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.FiniteHorizon.relEntropy μ
+            (Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.SolomonoffBridge.M₂
+              (α := Fin 2)) n ≤
+            Real.log (1 / c.toReal)) := by
+  obtain ⟨hPred, hDir, hSol⟩ :=
+    markovExchangeable_domain_characterization_fin2
+      (μ := μ) hμMarkov hμLSC prior
+  refine ⟨?_, ?_, hSol⟩
+  · intro xs ys hlen hx hstart hsum x
+    have hy : 0 < ys.length := by simpa [hlen] using hx
+    have hlen' : (encodeBoolWord xs).length = (encodeBoolWord ys).length := by
+      simpa [encodeBoolWord] using hlen
+    have hx' : 0 < (encodeBoolWord xs).length := by
+      simpa using hx
+    have hstart' :
+        (encodeBoolWord xs).get ⟨0, by simpa using hx'⟩ =
+          (encodeBoolWord ys).get ⟨0, by simpa using (show 0 < (encodeBoolWord ys).length by
+            simpa using hy)⟩ := by
+      rw [encodeBoolWord_get_zero (xs := xs) hx, encodeBoolWord_get_zero (xs := ys) hy]
+      exact congrArg boolToFin2 hstart
+    have hsum' := (binarySummary_eq_iff_fin2Summary_eq xs ys).mp hsum
+    simpa using hPred (encodeBoolWord xs) (encodeBoolWord ys) hlen' hx' hstart' hsum'
+      (boolToFin2 x)
+  · intro xs ys hx hsum
+    have hx' : 0 < (encodeBoolWord xs).length := by
+      simpa using hx
+    have hsum' := (binarySummary_eq_iff_fin2Summary_eq xs ys).mp hsum
+    obtain ⟨stateFin, hxsFin, hysFin, hstepFin⟩ := hDir (encodeBoolWord xs) (encodeBoolWord ys) hx' hsum'
+    let state : BinarySummaryState := BinarySummaryState.ofFin2State stateFin
+    refine ⟨state, ?_, ?_, ?_⟩
+    · unfold binarySummary state
+      simp [hxsFin]
+    · unfold binarySummary state
+      simp [hysFin]
+    · intro a
+      simpa [state, encodeBoolWord] using hstepFin (boolToFin2 a)
+
 end MarkovExchangeabilityBridge
 
 end Mettapedia.Logic.UniversalPrediction

@@ -1,4 +1,5 @@
 import Mettapedia.CategoryTheory.DeFinettiStableExports
+import Mettapedia.CategoryTheory.DeFinettiMarkovGiryBridge
 import Mettapedia.CategoryTheory.DeFinettiExternalBridge
 import Mettapedia.CategoryTheory.DeFinettiMarkovCategoryBridge
 import Mettapedia.Logic.SolomonoffExchangeable
@@ -12,6 +13,8 @@ It re-exports the stable theorem chain needed by downstream users.
 
 ## Canonical Endpoints (Use These)
 - `deFinetti_kleisliGiry`: categorical de Finetti in Kleisli(Giry) — **finite-mass** cone universality.
+- `deFinettiExport_markovMixture_to_kleisliGiryFactorization`: Markov de Finetti at the
+  prefix-law Kleisli(Giry) layer through `MarkovParam k`.
 - `deFinettiExport_markovCore_to_globalIIDConeMediatorUnique_markovOnly_of_globalFinitaryInvariance_and_defaultAllSourcesKernel`:
   the canonical Markov-only endpoint.
 - `deFinettiExport_globalIIDConeMediatorUnique_finiteMass_of_globalFinitaryInvariance_and_defaultAllSourcesKernel`:
@@ -51,6 +54,185 @@ theorem deFinettiExport_existsUnique_latentThetaMeasure_of_exchangeable
     (hexch : Mettapedia.Logic.Exchangeability.InfiniteExchangeable X μ) :
     ∃! ν : Measure DeFinettiConnection.Theta, RepresentsLatentTheta X μ ν :=
   deFinettiStable_existsUnique_latentThetaMeasure_of_exchangeable X μ hX hexch
+
+/-- Recommended export: a public `MarkovMixture` determines a Kleisli(Giry)
+mediator from the terminal object into the Markov-parameter space, and that
+mediator recovers the prefix law. -/
+theorem deFinettiExport_markovMixture_to_kleisliGiryFactorization
+    {k : ℕ}
+    {μ : Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure (Fin k)}
+    (M : Mettapedia.Logic.MarkovMixture k μ) :
+    KleisliGiryMarkovDeFinettiFactorization k μ :=
+  kleisliGiryMarkovDeFinettiFactorization_of_markovMixture (k := k) M
+
+/-- Recommended export: a public `MarkovMixture` also determines the
+sequence-cylinder Kleisli(Giry) factorization obtained by integrating the
+canonical fixed-parameter sequence law. -/
+theorem deFinettiExport_markovMixture_to_kleisliGirySequenceCylinderFactorization
+    {k : ℕ}
+    {μ : Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure (Fin k)}
+    (M : Mettapedia.Logic.MarkovMixture k μ) :
+    KleisliGiryMarkovSequenceCylinderFactorization k μ :=
+  kleisliGiryMarkovSequenceCylinderFactorization_of_markovMixture (k := k) M
+
+/-- Recommended export: the measure-level and Kleisli(Giry) Markov factorization
+interfaces are equivalent. -/
+theorem deFinettiExport_categoricalMarkovDeFinettiFactorization_iff_kleisliGiry
+    {k : ℕ}
+    {μ : Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure (Fin k)} :
+    CategoricalMarkovDeFinettiFactorization k μ ↔
+      KleisliGiryMarkovDeFinettiFactorization k μ :=
+  categoricalMarkovDeFinettiFactorization_iff_kleisliGiry (k := k) (μ := μ)
+
+/-- Recommended export: the sequence-cylinder and prefix-word Markov
+factorization interfaces are equivalent at the measure level. -/
+theorem deFinettiExport_categoricalMarkovSequenceCylinderFactorization_iff_prefixLaw
+    {k : ℕ}
+    {μ : Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure (Fin k)} :
+    CategoricalMarkovSequenceCylinderFactorization k μ ↔
+      CategoricalMarkovDeFinettiFactorization k μ :=
+  categoricalMarkovSequenceCylinderFactorization_iff_categoricalMarkovDeFinettiFactorization
+    (k := k) (μ := μ)
+
+/-- Recommended export: the sequence-cylinder and prefix-word Markov
+factorization interfaces are equivalent in Kleisli(Giry). -/
+theorem deFinettiExport_kleisliGiryMarkovSequenceCylinderFactorization_iff_prefixLaw
+    {k : ℕ}
+    {μ : Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure (Fin k)} :
+    KleisliGiryMarkovSequenceCylinderFactorization k μ ↔
+      KleisliGiryMarkovDeFinettiFactorization k μ :=
+  kleisliGiryMarkovSequenceCylinderFactorization_iff_kleisliGiryMarkovDeFinettiFactorization
+    (k := k) (μ := μ)
+
+/-- Recommended export: the new Markov Kleisli(Giry) factorization interface is
+equivalent to the existing public `MarkovMixture` witness. -/
+theorem deFinettiExport_kleisliGiryMarkovDeFinettiFactorization_iff_nonempty_markovMixture
+    {k : ℕ}
+    {μ : Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure (Fin k)} :
+    KleisliGiryMarkovDeFinettiFactorization k μ ↔
+      Nonempty (Mettapedia.Logic.MarkovMixture k μ) :=
+  kleisliGiryMarkovDeFinettiFactorization_iff_nonempty_markovMixture
+    (k := k) (μ := μ)
+
+/-- Recommended export: the sequence-cylinder Kleisli(Giry) Markov
+factorization interface is equivalent to the public `MarkovMixture` witness. -/
+theorem deFinettiExport_kleisliGiryMarkovSequenceCylinderFactorization_iff_nonempty_markovMixture
+    {k : ℕ}
+    {μ : Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure (Fin k)} :
+    KleisliGiryMarkovSequenceCylinderFactorization k μ ↔
+      Nonempty (Mettapedia.Logic.MarkovMixture k μ) :=
+  kleisliGiryMarkovSequenceCylinderFactorization_iff_nonempty_markovMixture
+    (k := k) (μ := μ)
+
+/-- Recommended export: the Borel-side measurable sequence kernel on
+`MarkovParam k` induces a genuine probability measure on state sequences for any
+Borel probability law on parameters. -/
+theorem deFinettiExport_borelMarkovSequenceMixture_prob
+    {k : ℕ}
+    (π : Mettapedia.Logic.MarkovDeFinettiHard.ProbMarkov k) :
+    IsProbabilityMeasure (borelMarkovSequenceMixture (k := k) π) :=
+  borelMarkovSequenceMixture_isProbability (k := k) π
+
+/-- Recommended export: the Borel-side measurable sequence mixture evaluates
+finite cylinders by integrating the corresponding cylinder weights of the
+measurable sequence kernel. -/
+theorem deFinettiExport_borelMarkovSequenceMixture_cylinder_eq
+    {k : ℕ}
+    (π : Mettapedia.Logic.MarkovDeFinettiHard.ProbMarkov k)
+    (xs : List (Fin k)) :
+    borelMarkovSequenceMixture (k := k) π
+        (Mettapedia.Logic.MarkovDeFinettiRecurrence.cylinder (k := k) xs) =
+      borelMarkovCylinderWeightViaProbMarkov (k := k) π xs :=
+  borelMarkovSequenceMixture_cylinder_eq (k := k) π xs
+
+/-- Recommended export: the Borel-side measurable sequence-kernel cylinder
+weights are exactly the older Borel prefix-law moments. -/
+theorem deFinettiExport_borelMarkovCylinderWeightViaProbMarkov_eq_momentMapWord
+    {k : ℕ}
+    (π : Mettapedia.Logic.MarkovDeFinettiHard.ProbMarkov k)
+    (xs : List (Fin k)) :
+    borelMarkovCylinderWeightViaProbMarkov (k := k) π xs =
+      Mettapedia.Logic.MarkovDeFinettiHard.momentMapWord (k := k) xs π :=
+  borelMarkovCylinderWeightViaProbMarkov_eq_momentMapWord (k := k) π xs
+
+/-- Recommended export: the Borel-side sequence-kernel factorization is
+equivalent to the honest Borel prefix-law factorization. -/
+theorem deFinettiExport_categoricalBorelMarkovSequenceKernelFactorization_iff_prefixLaw
+    {k : ℕ}
+    {μ : Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure (Fin k)} :
+    CategoricalBorelMarkovSequenceKernelFactorization k μ ↔
+      CategoricalBorelMarkovDeFinettiFactorization k μ :=
+  categoricalBorelMarkovSequenceKernelFactorization_iff_categoricalBorelMarkovDeFinettiFactorization
+    (k := k) (μ := μ)
+
+/-- Recommended export: the Borel-side sequence-kernel factorization can be
+presented either by cylinder weights or by the induced sequence mixture. -/
+theorem deFinettiExport_categoricalBorelMarkovSequenceKernelFactorization_iff_exists_borelMarkovSequenceMixture
+    {k : ℕ}
+    {μ : Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure (Fin k)} :
+    CategoricalBorelMarkovSequenceKernelFactorization k μ ↔
+      ∃ π : Mettapedia.Logic.MarkovDeFinettiHard.ProbMarkov k,
+        ∀ xs : List (Fin k),
+          μ xs =
+            borelMarkovSequenceMixture (k := k) π
+              (Mettapedia.Logic.MarkovDeFinettiRecurrence.cylinder (k := k) xs) :=
+  categoricalBorelMarkovSequenceKernelFactorization_iff_exists_borelMarkovSequenceMixture
+    (k := k) (μ := μ)
+
+/-- Recommended export: the honest public boundary for the stronger Borel-side
+kernel construction is `BorelMarkovMixture`, not the older active-space
+`MarkovMixture`. -/
+theorem deFinettiExport_categoricalBorelMarkovSequenceKernelFactorization_iff_nonempty_borelMarkovMixture
+    {k : ℕ}
+    {μ : Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure (Fin k)} :
+    CategoricalBorelMarkovSequenceKernelFactorization k μ ↔
+      Nonempty (BorelMarkovMixture k μ) :=
+  categoricalBorelMarkovSequenceKernelFactorization_iff_nonempty_borelMarkovMixture
+    (k := k) (μ := μ)
+
+/-- Recommended export: a Borel-side prefix-law factorization lifts one-way to
+the older active prefix-law factorization by trimming the Borel law down to the
+wordProb-generated σ-algebra. -/
+theorem deFinettiExport_categoricalMarkovDeFinettiFactorization_of_categoricalBorel
+    {k : ℕ}
+    {μ : Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure (Fin k)}
+    (hfac : CategoricalBorelMarkovDeFinettiFactorization k μ) :
+    CategoricalMarkovDeFinettiFactorization k μ :=
+  categoricalMarkovDeFinettiFactorization_of_categoricalBorelMarkovDeFinettiFactorization
+    (k := k) (μ := μ) hfac
+
+/-- Recommended export: a public `BorelMarkovMixture` lifts one-way to the older
+active `MarkovMixture`. -/
+noncomputable def deFinettiExport_markovMixture_of_borelMarkovMixture
+    {k : ℕ}
+    {μ : Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure (Fin k)}
+    (M : BorelMarkovMixture k μ) :
+    Mettapedia.Logic.MarkovMixture k μ :=
+  markovMixtureOfBorelMarkovMixture (k := k) (μ := μ) M
+
+/-- Recommended export: any Borel-side mixture witness yields an active
+`MarkovMixture` witness. -/
+theorem deFinettiExport_nonempty_markovMixture_of_nonempty_borelMarkovMixture
+    {k : ℕ}
+    {μ : Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure (Fin k)} :
+    Nonempty (BorelMarkovMixture k μ) → Nonempty (Mettapedia.Logic.MarkovMixture k μ) :=
+  nonempty_markovMixture_of_nonempty_borelMarkovMixture (k := k) (μ := μ)
+
+/-- Recommended export: the Borel moment map is not injective in the binary
+case, so the reverse Borel lift cannot be expected to be uniquely determined
+by active prefix data. -/
+theorem deFinettiExport_not_injective_borelMomentMapWord_fin2 :
+    ¬ Function.Injective
+      (fun π : Mettapedia.Logic.MarkovDeFinettiHard.ProbMarkov 2 =>
+        fun xs : List (Fin 2) =>
+          Mettapedia.Logic.MarkovDeFinettiHard.momentMapWord (k := 2) xs π) :=
+  not_injective_borelMomentMapWord_fin2
+
+/-- Recommended export: the dead-row binary counterexample gives two distinct
+Borel-side mixture witnesses for the same finite-word law. -/
+theorem deFinettiExport_deadRowPrefixMeasure_has_two_distinct_borelMarkovMixtures :
+    deadRowBorelMarkovMixture₀ ≠ deadRowBorelMarkovMixture₁ :=
+  deadRowPrefixMeasure_has_two_distinct_borelMarkovMixtures
 
 /-- Recommended export: kernel-level universal mediator API is equivalent to
 per-`n` limit-mediator uniqueness packaging. -/

@@ -635,6 +635,27 @@ The formalization connects these three layers: the representation theorem
 and the hyperprior mixture (\texttt{MarkovDirichletHyperpriorMixture.lean})
 gives Solomonoff-style dominance guarantees.
 
+\medskip
+
+\noindent\textbf{Current theorem surface (2026-04):} the post-Markov bridge is
+now exposed at three abstraction levels:
+\begin{enumerate}
+\item \textbf{General $k$-ary}: \texttt{markovExchangeable\_domain\_characterization}
+  shows the sufficient statistic is $(\mathrm{counts}, \mathrm{last})$
+  (\texttt{MarkovExchangeabilityBridge.lean}).
+\item \textbf{Binary presentations}: Both \texttt{Fin 2} and explicit Boolean
+  $(ff,ft,tf,tt,\mathrm{lastBit})$ with witness-based Solomonoff wrappers and
+  direct Markov $\nu$PLN master-chain theorems.
+\item \textbf{Class-recurrence}: \texttt{MarkovBinaryPLNDomainConditionsInClass}
+  packages binary domain conditions under class recurrence, with
+  \texttt{Fin 2} and \texttt{Bool} row-law factorization theorems
+  (\texttt{SolomonoffExchangeable.lean:590--802}). The downstream theorems
+  are scoped to $i \in C$, which is the honest mathematical scope.
+\end{enumerate}
+The class-recurrence layer enables PLN-style reasoning in settings where only
+partial recurrence is known, with explicit tracking of which transition rows
+support the factorization.
+
 \section{The Structural Audit: Bug-Hunting Methodology}
 \label{sec:audit}
 
@@ -733,6 +754,236 @@ and Nat induction extends to arbitrary visit indices.
   (\texttt{lake env lean -j1 <file>}) to catch import-order issues.
 \end{enumerate}
 
+\section{Completed Extensions}
+\label{sec:extensions}
+
+Beyond the core Markov de~Finetti theorem, we formalized several extensions
+that complete the story for practical applications.
+
+\subsection{Abstract Recurrence Generalization}
+
+The core theorem requires recurrence to the \emph{starting state}. We
+generalized this to arbitrary \emph{recurrent classes}---subsets of the state
+space where every pair of states communicates infinitely often:
+
+\begin{lstlisting}
+def RecurrentClass (P : Measure (Nat -> Fin k)) (C : Set (Fin k)) : Prop :=
+  C.Nonempty /\
+  forall i j : Fin k, i in C -> j in C ->
+    ae omega : P, Set.Infinite {t | omega t = i /\ omega (t+1) = j}
+
+def StrongRecurrenceInClass (C : Set (Fin k)) (P : Measure ...) : Prop :=
+  forall i in C, ae omega : P,
+    (exists t, omega t in C) -> Set.Infinite {t | omega t = i}
+\end{lstlisting}
+
+The key insight is that class recurrence provides guarantees only for rows
+\emph{within} the class. We built the full theorem infrastructure for this
+setting:
+\begin{itemize}
+\item \texttt{nthVisitTimeExists\_of\_StrongRecurrenceInClass} bridges
+  class-level recurrence to the row-process machinery
+\item \texttt{ae\_rowRecurrence\_of\_StrongRecurrenceInClass} extracts the
+  exact row-specific recurrence predicate needed by the PE bridge
+\item \texttt{exchangeable\_rowProcess\_of\_rowRecurrence} proves row-process
+  exchangeability from the row-specific hypothesis
+\end{itemize}
+
+The public API packages these results in \texttt{ClassRestrictedMarkovMixtureSurface},
+which carries the extension law, class recurrence hypothesis, and all derived
+row-law consequences. The theorem
+\texttt{ClassRestrictedMarkovMixtureSurface.class\_transition\_structure}
+provides the canonical entrypoint for downstream applications.
+
+\subsection{The MarkovMixture API}
+
+For downstream users, we provide a clean interface packaging the theorem:
+
+\begin{lstlisting}
+structure MarkovMixture (k : Nat) (mu : PrefixMeasure (Fin k)) where
+  mixingLaw : Measure (MarkovParam k)
+  mixingLaw_prob : IsProbabilityMeasure mixingLaw
+  represents : forall xs, mu xs = integral theta, wordProb theta xs dmixingLaw
+\end{lstlisting}
+
+Multiple constructors build \texttt{MarkovMixture} objects from different
+theorem surfaces: \texttt{of\_extension\_strongRecurrence} uses the direct
+extension route, while \texttt{of\_successorMatrixPE\_minimal} uses the
+minimal PE payload. For class-restricted settings,
+\texttt{ClassRestrictedMarkovMixtureSurface} provides the analogous object
+with honest scope for rows in the class.
+
+\subsection{Kleisli(Giry) Prefix-Law Bridge}
+
+We also connected the measure-theoretic theorem surface to the existing
+categorical Giry infrastructure. The new file
+\texttt{CategoryTheory/DeFinettiMarkovGiryBridge.lean} packages a
+\texttt{MarkovMixture} as a constant Kleisli(Giry) mediator
+\[
+1 \to \mathcal{G}(\mathrm{MarkovParam}_k),
+\]
+and proves that the finite-prefix law factors through this mediator. The key
+theorems are:
+\begin{itemize}
+\item \texttt{kleisliGiryMarkovDeFinettiFactorization\_of\_markovMixture}
+\item \texttt{categoricalMarkovDeFinettiFactorization\_iff\_kleisliGiry}
+\item \texttt{kleisliGiryMarkovDeFinettiFactorization\_iff\_nonempty\_markovMixture}
+\end{itemize}
+
+This gives an honest categorical restatement of the proved theorem surface:
+the public Markov-mixture witness is equivalent to a Kleisli(Giry)
+factorization through the Markov parameter space at the finite-prefix level.
+
+\subsection{Binary Post-Markov Bridge}
+
+For applications to PLN and Solomonoff-style prediction, we formalized the
+binary specialization at two presentation levels:
+
+\begin{enumerate}
+\item \textbf{Fin 2 presentation}: Transition counts as a $2 \times 2$ matrix
+  \texttt{TransCounts 2}, with theorems like
+  \texttt{markovExchangeable\_domain\_characterization\_fin2}
+\item \textbf{Bool presentation}: Explicit counts $(ff,ft,tf,tt)$ plus last bit,
+  with the equivalence theorem
+  \texttt{binarySummary\_eq\_iff\_fin2Summary\_eq} bridging the two
+\end{enumerate}
+
+The class-recurrence variant \texttt{MarkovBinaryPLNDomainConditionsInClass}
+packages the binary domain conditions under class recurrence, enabling
+PLN-style reasoning when only partial recurrence is known. The Solomonoff
+bridge uses \texttt{RestrictedSolomonoffMarkovWitness}---an honest witness
+object rather than an overstated universal claim---with direct $\nu$PLN
+master-chain theorems packaging predictor sufficiency, shared Markov-Dirichlet
+update states, and standard regret bounds.
+
+\subsection{Borel-Measurable Sequence Kernel}
+
+The prefix-law Giry bridge (\S9.3) factors \texttt{MarkovMixture} through a
+Kleisli mediator at the \emph{finite-prefix} level. For applications requiring
+infinite sequence measures, we constructed the stronger object: a measurable
+kernel
+\[
+\mathrm{MarkovParam}_k \to \mathcal{G}((\mathrm{Fin}\;k)^{\mathbb{N}})
+\]
+on the \emph{Borel} parameter space.
+
+The construction uses a paired-trajectory approach. Rather than directly
+sampling states, we track pairs $(\theta, s_n) \in \mathrm{MarkovParam}_k
+\times \mathrm{Fin}\;k$ through time, where $\theta$ is carried deterministically
+and $s_n$ evolves according to $\theta.\mathrm{trans}$:
+
+\begin{lstlisting}
+-- Paired transition kernel
+def markovPairStepKernel : Kernel (PairState k) (PairState k) :=
+  (keepParamKernel || markovStepKernel) . Kernel.copy
+
+-- Full trajectory via Mathlib's traj API
+def markovPairedTrajectoryKernel : Kernel (MarkovParam k) (PairTrajectory k) :=
+  (Kernel.traj pairPrefixKernel 0) . pairStartPrefixKernel
+
+-- Project to state sequences
+def markovSequenceKernel : Kernel (MarkovParam k) (Nat -> Fin k) :=
+  Kernel.map markovPairedTrajectoryKernel stateSequenceOfPairTrajectory
+\end{lstlisting}
+
+The critical measurability lemmas are established in
+\texttt{Logic/MarkovDeFinettiMomentProblem.lean}:
+\begin{itemize}
+\item \texttt{continuous\_initProb\_borel}: $\theta \mapsto \theta.\mathrm{init}(a)$ is continuous
+\item \texttt{continuous\_stepProb\_borel}: $\theta \mapsto \theta.\mathrm{trans}(a,b)$ is continuous
+\item \texttt{measurable\_initProb\_borel}, \texttt{measurable\_stepProb\_borel}: Borel measurability follows
+\end{itemize}
+
+The new file \texttt{Logic/MarkovDeFinettiSequenceKernelBorel.lean} (1055 lines)
+builds the full kernel with \texttt{IsMarkovKernel} instances at each stage,
+including the critical theorem:
+\begin{lstlisting}
+theorem markovSequenceKernel_cylinder_eq_wordProb (theta : MarkovParam k) :
+  forall xs, markovSequenceKernel theta (cylinder xs) = wordProb theta xs
+\end{lstlisting}
+
+\subsection{Categorical Borel-Side Surface}
+
+The Borel sequence kernel enables a stronger categorical factorization. Given
+a probability measure $\pi$ on $\mathrm{MarkovParam}_k$ (with Borel
+$\sigma$-algebra), we define the \emph{Borel sequence mixture}:
+\[
+\mu_\pi := \int_{\mathrm{MarkovParam}_k} \mathrm{markovSequenceKernel}(\theta)\, d\pi(\theta)
+\]
+
+This is implemented as:
+\begin{lstlisting}
+def borelMarkovSequenceMixture (pi : ProbMarkov k) : Measure (Nat -> Fin k) :=
+  pi.bind markovSequenceKernel
+
+theorem borelMarkovSequenceMixture_cylinder_eq (pi : ProbMarkov k) (xs : List (Fin k)) :
+  borelMarkovSequenceMixture pi (cylinder xs) =
+    integral theta, markovSequenceKernel theta (cylinder xs) dpi
+\end{lstlisting}
+
+The public factorization surface \texttt{CategoricalBorelMarkovSequenceKernelFactorization}
+packages this as a categorical statement: the prefix law $\mu$ factors through
+integrating the sequence kernel against a Borel probability law on parameters.
+
+\textbf{One-Way Lift}: The Borel-side construction uses a finer $\sigma$-algebra
+than the active \texttt{markovParamMeasurableSpace} (generated by \texttt{wordProb}
+coordinates). We prove the key bridge theorem connecting the two surfaces:
+
+\begin{lstlisting}
+-- Trim a Borel law to the active sigma-algebra
+def probMarkovToActiveMeasure (pi : ProbMarkov k) : Measure (MarkovParam k) :=
+  pi.trim wordProbGenerated_le_borel
+
+-- Trimming preserves wordProb integrals
+theorem lintegral_probMarkovToActiveMeasure_wordProb (pi : ProbMarkov k) (xs : List (Fin k)) :
+  integral theta, wordProb theta xs d(probMarkovToActiveMeasure pi) =
+    integral theta, wordProb theta xs dpi
+
+-- One-way lift: BorelMarkovMixture -> MarkovMixture
+def markovMixtureOfBorelMarkovMixture (M : BorelMarkovMixture k mu) : MarkovMixture k mu
+\end{lstlisting}
+
+This is a \emph{one-way} lift: every \texttt{BorelMarkovMixture} yields an active
+\texttt{MarkovMixture} by trimming the mixing law.
+
+\subsection{Non-Uniqueness of Borel Lifts}
+
+The converse direction---lifting an active \texttt{MarkovMixture} to a Borel
+representative---is \emph{not uniquely determined}. We prove this via an explicit
+``dead row'' counterexample in the binary case:
+
+\begin{lstlisting}
+-- Two distinct binary parameters with identical finite-word laws
+def deadRowTheta_0 : MarkovParam 2 where  -- row 1 -> 0
+  init := dirac 0
+  trans | 0 => dirac 0 | 1 => dirac 0
+
+def deadRowTheta_1 : MarkovParam 2 where  -- row 1 -> 1
+  init := dirac 0
+  trans | 0 => dirac 0 | 1 => dirac 1
+
+theorem deadRowTheta_0_ne_deadRowTheta_1 : deadRowTheta_0 /= deadRowTheta_1
+theorem deadRowTheta_wordProb_eq (xs : List (Fin 2)) :
+  wordProb deadRowTheta_0 xs = wordProb deadRowTheta_1 xs
+\end{lstlisting}
+
+Since state 0 is absorbing and we always start there, row 1 is never reached.
+The two parameters differ only on the unreachable row, so their finite-word
+observables are identical. This lifts to:
+
+\begin{lstlisting}
+theorem not_injective_borelMomentMapWord_fin2 :
+  not Function.Injective (fun pi => fun xs => momentMapWord xs pi)
+
+theorem deadRowPrefixMeasure_has_two_distinct_borelMarkovMixtures :
+  deadRowBorelMarkovMixture_0 /= deadRowBorelMarkovMixture_1
+\end{lstlisting}
+
+\textbf{Consequence}: Any converse from active prefix data to Borel witnesses
+cannot be canonical/unique without additional hypotheses (e.g., recurrence that
+makes all rows reachable). Whether a mere \emph{existence} converse holds by
+measure extension remains open.
+
 \section{Conclusion}
 
 We have presented a complete Lean~4 formalization of the Markov de~Finetti
@@ -766,96 +1017,18 @@ with formal correctness guarantees.
   start-restricted factorization argument.
 \end{enumerate}
 
-\subsection{Future Work}
+\subsection{Future Directions}
 
-The formalization opens several directions for extension:
+Two directions remain open for future work:
 
-\subsubsection{Giry Monad Integration}
+\subsubsection{Existence of Non-Unique Borel Lift}
 
-The Giry monad $\mathcal{G}$ on measurable spaces provides a categorical
-framework for probability. The Markov de~Finetti theorem can be restated
-categorically:
-
-\begin{quote}
-\emph{A Markov-exchangeable, recurrent kernel $\kappa : 1 \to \mathcal{G}(\mathrm{Seq}(A))$
-factors through the Markov parameter space as
-$1 \xrightarrow{\pi} \mathcal{G}(\Theta_k) \xrightarrow{\mathrm{MC}} \mathcal{G}(\mathrm{Seq}(A))$
-where $\mathrm{MC}$ is the Markov-chain kernel.}
-\end{quote}
-
-Existing infrastructure in \texttt{CategoryTheory/DeFinetti*.lean} (15 files,
-$\sim$9,100 lines) provides the Kleisli(Giry) diagram and Markov-category
-bridge. Connecting this to the measure-theoretic formalization would:
-\begin{itemize}
-\item Enable abstract reasoning about conditioning and disintegration
-\item Provide a bridge to synthetic measure theory
-\item Allow composition with other categorical probability constructions
-\end{itemize}
-
-\subsubsection{Abstract Recurrence (Fully Formalized)}
-
-The core formalization requires recurrence to the \emph{starting state}.
-We have now formalized the generalization to \emph{recurrent classes}:
-
-\begin{lstlisting}
--- MarkovDeFinettiRecurrence.lean:183
-def RecurrentClass (P : Measure (Nat -> Fin k)) (C : Set (Fin k)) : Prop :=
-  C.Nonempty /\
-  forall i j : Fin k, i in C -> j in C ->
-    ae omega : P, Set.Infinite {t | omega t = i /\ omega (t+1) = j}
-
--- MarkovDeFinettiRecurrence.lean:190
-def StrongRecurrenceInClass (C : Set (Fin k)) (P : Measure ...) : Prop :=
-  forall i in C, ae omega : P,
-    (exists t, omega t in C) -> Set.Infinite {t | omega t = i}
-\end{lstlisting}
-
-\noindent\textbf{Infrastructure now in place:}
-\begin{itemize}
-\item Class-based visit-time machinery: \texttt{classVisitCountBefore},
-  \texttt{nthClassVisitTime}, singleton equivalences
-  (\texttt{BridgeCore.lean:45--107})
-\item Key bridge lemma: \texttt{nthVisitTimeExists\_of\_StrongRecurrenceInClass}
-  (\texttt{BridgeCore.lean:323})
-\item Process-level exchangeability: \texttt{exchangeable\_rowProcess\_restrict\_class}
-  (\texttt{PEBridge.lean:2097})
-\item Finite-sum decomposition: \texttt{rowProcessLaw\_restrictClass\_eq\_finsetSum}
-  (\texttt{BridgeCore.lean:2245})
-\item Class-level row-process Ces\`aro bridge:
-  \texttt{rowProcessCoordwiseCesaroLimit\_restrictClass\_of\_directingRowKernel\_of\_exchangeable}
-  (\texttt{FiberEventBridge.lean:6902})
-\item Class-level finite-coordinate factorization:
-  \texttt{rowProcessLaw\_restrictClass\_factorizes\_directingRowKernel}
-  (\texttt{FiberEventBridge.lean:7142})
-\end{itemize}
-
-\noindent\textbf{Crown theorem status (2026-04):} The row-level class-restricted
-infrastructure is now fully formalized with 0 sorries. The class-restricted
-factorization theorem threads through the cylinder-mixing and mixture-reconstruction
-assembly via the surface theorems in \texttt{MixtureRepresentation.lean}. This
-enables periodic chains and multi-component Markov systems to use the full
-representation theorem, not just its row-process subtheory.
-
-\subsubsection{API Usability: The \texttt{MarkovMixture} Interface}
-
-For downstream users, a clean API would package the theorem:
-
-\begin{lstlisting}
-structure MarkovMixture (k : Nat) (mu : PrefixMeasure (Fin k)) where
-  /-- The mixing measure on Markov parameters -/
-  mixingLaw : Measure (MarkovParam k)
-  /-- Mixing law is a probability measure -/
-  mixingLaw_prob : IsProbabilityMeasure mixingLaw
-  /-- The representation identity -/
-  represents : forall xs, mu xs = integral theta, wordProb theta xs dmixingLaw
-  /-- Uniqueness (optional): the mixing law is unique -/
-  unique : forall pi', (represents_with pi') -> pi' = mixingLaw
-
-/-- Main entry point: construct the mixture from hypotheses -/
-def MarkovMixture.ofExchangeableRecurrent
-    (hExch : MarkovExchangeablePrefixMeasure mu)
-    (hRec : MarkovRecurrentPrefixMeasure mu) : MarkovMixture k mu := ...
-\end{lstlisting}
+The Giry integration (\S9.5--9.7) is now complete except for one question:
+does every active \texttt{MarkovMixture} have \emph{some} Borel lift, even
+though it is not unique? The non-uniqueness counterexample (\S9.7) shows that
+uniqueness fails, but existence by measure extension on compact Polish spaces
+may still hold. This would require Mathlib infrastructure for extending measures
+from sub-$\sigma$-algebras on compact metrizable spaces.
 
 \subsubsection{Computational Extraction}
 

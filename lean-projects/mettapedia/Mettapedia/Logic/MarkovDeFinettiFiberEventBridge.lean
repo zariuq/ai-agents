@@ -6932,26 +6932,32 @@ directing kernel computed from the full measure.
 - exchangeable_rowProcess_restrict (PEBridge:2057)
 - finite_product_formula_with_directing (ViaMartingale:417)
 - directingMeasure_singleton_ae_eq_of_smul_le (KernelUniqueness:714)
-- rowProcessLaw_restrict_le (FortiniBridgeCrux:335) -/
-theorem startRestrictedRowKernelData_directingRowKernel
-    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
-    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+-- rowProcessLaw_restrict_le (FortiniBridgeCrux:335) -/
+theorem startRestrictedRowLaw_factorizes_directingRowKernel_of_exchangeable
     (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
-    (hExt : ∀ xs : List (Fin k), μ xs = P (cylinder (k := k) xs))
-    (hStrRec : StrongRecurrence (k := k) P)
+    (i a : Fin k)
+    (m : ℕ) (sel : Fin m → ℕ) (hsel : StrictMono sel)
     (hExch :
-      ∀ i : Fin k,
-        Exchangeability.Exchangeable (rowProcessLaw (k := k) P i)
-          (fun n (r : ℕ → Fin k) => r n)) :
-    StartRestrictedRowKernelData (k := k) P (directingRowKernel (k := k) P) := by
-  intro i a m sel hsel
+      Exchangeability.Exchangeable (rowProcessLaw (k := k) P i)
+        (fun n (r : ℕ → Fin k) => r n))
+    (hExchRestr :
+      Exchangeability.Exchangeable (P.restrict {ω : ℕ → Fin k | ω 0 = a})
+        (fun n (ω : ℕ → Fin k) =>
+          rowSuccessorVisitProcess (k := k) i ω n)) :
+    Measure.map
+        (fun r : ℕ → Fin k => fun j : Fin m => r (sel j))
+        (rowProcessLaw (k := k) (P.restrict {ω : ℕ → Fin k | ω 0 = a}) i)
+      =
+    (rowProcessLaw (k := k) (P.restrict {ω : ℕ → Fin k | ω 0 = a}) i).bind
+      (fun r =>
+        Measure.pi
+          (fun _ : Fin m =>
+            (directingRowKernel (k := k) P i r : Measure (Fin k)))) := by
   let S := {ω : ℕ → Fin k | ω 0 = a}
   let Pa := P.restrict S
   let c := P S
-  -- Case split on c = 0 vs c > 0
   by_cases hc : c = 0
-  · -- Case: c = 0 → Pa = 0 → rowProcessLaw Pa i = 0 → both sides are 0
-    have hS_meas : MeasurableSet S := by
+  · have hS_meas : MeasurableSet S := by
       show MeasurableSet ((fun ω : ℕ → Fin k => ω 0) ⁻¹' {a})
       exact (measurable_pi_apply 0) (measurableSet_singleton a)
     have hPa_zero : Pa = 0 := by
@@ -6960,78 +6966,62 @@ theorem startRestrictedRowKernelData_directingRowKernel
       have h1 : Pa T = P (T ∩ S) := Measure.restrict_apply hT
       have h2 : P (T ∩ S) ≤ P S := measure_mono Set.inter_subset_right
       apply le_antisymm
-      · calc Pa T = P (T ∩ S) := h1
+      · calc
+          Pa T = P (T ∩ S) := h1
           _ ≤ P S := h2
           _ = c := rfl
           _ = 0 := hc
       · exact zero_le _
     have hρa_zero : rowProcessLaw (k := k) Pa i = 0 := by
       simp only [rowProcessLaw, hPa_zero, Measure.map_zero]
-    -- The goal uses Pa expanded, so we rewrite manually
     show Measure.map _ (rowProcessLaw (k := k) Pa i) =
          (rowProcessLaw (k := k) Pa i).bind _
     rw [hρa_zero, Measure.map_zero, Measure.bind_zero_left]
-  · -- Case: c > 0 → normalize, apply de Finetti + uniqueness, scale back
-    have hc_pos : 0 < c := pos_iff_ne_zero.mpr hc
+  · have hc_pos : 0 < c := pos_iff_ne_zero.mpr hc
     have hc_ne_top : c ≠ ⊤ := by
       have h1 : P S ≤ P Set.univ := measure_mono (Set.subset_univ _)
       have h2 : P Set.univ = 1 := measure_univ
       have h3 : (1 : ENNReal) < ⊤ := ENNReal.one_lt_top
       exact ne_top_of_lt (lt_of_le_of_lt (h2 ▸ h1) h3)
-    -- Define ρa and ρ
     let ρa := rowProcessLaw (k := k) Pa i
     let ρ := rowProcessLaw (k := k) P i
-    -- ρa ≤ ρ by rowProcessLaw_restrict_le
     have hρa_le : ρa ≤ ρ := rowProcessLaw_restrict_le (k := k) P S i
-    -- ρa has total mass c
     have hρa_mass : ρa Set.univ = c := by
       simp only [rowProcessLaw, ρa]
       rw [Measure.map_apply (measurable_rowSuccessorVisitProcess (k := k) i) MeasurableSet.univ]
       simp only [Set.preimage_univ]
       exact Measure.restrict_apply_univ (μ := P) S
-    -- Define normalized measure ρa_norm
     let ρa_norm := c⁻¹ • ρa
-    -- ρa_norm is a probability measure
     have hρa_norm_prob : IsProbabilityMeasure ρa_norm := by
       constructor
-      calc ρa_norm Set.univ = c⁻¹ * ρa Set.univ := Measure.smul_apply c⁻¹ ρa Set.univ
+      calc
+        ρa_norm Set.univ = c⁻¹ * ρa Set.univ := Measure.smul_apply c⁻¹ ρa Set.univ
         _ = c⁻¹ * c := by rw [hρa_mass]
         _ = 1 := ENNReal.inv_mul_cancel hc hc_ne_top
-    -- The key: ρa = c • ρa_norm, so if map = bind for ρa_norm, then map = bind for ρa
-    -- by scaling: c • (map f ρa_norm) = map f (c • ρa_norm) = map f ρa
-    -- and: c • (ρa_norm.bind κ) = (c • ρa_norm).bind κ = ρa.bind κ
     have hρa_eq : ρa = c • ρa_norm := by
       ext T hT
       simp only [ρa_norm, Measure.smul_apply, smul_eq_mul]
       rw [← mul_assoc, ENNReal.mul_inv_cancel hc hc_ne_top, one_mul]
-    -- Exchangeability of the restricted row-process under Pa
-    have hExch_Pa : Exchangeability.Exchangeable Pa
-        (fun n ω => rowSuccessorVisitProcess (k := k) i ω n) :=
-      exchangeable_rowProcess_restrict (k := k) μ hμ P hExt hStrRec i a
-    -- Convert to ρa exchangeability via map_map
     have hExch_ρa : Exchangeability.Exchangeable ρa (fun n (r : ℕ → Fin k) => r n) := by
       intro n' σ'
-      -- Unfold ρa to rowProcessLaw Pa i = Measure.map (rowSuccessorVisitProcess i) Pa
-      show Measure.map (fun r : ℕ → Fin k => fun j : Fin n' => r (σ' j)) ρa =
-           Measure.map (fun r : ℕ → Fin k => fun j : Fin n' => r j) ρa
-      -- Measurability for map_map
       have hmeas1 : Measurable (fun r : ℕ → Fin k => fun j : Fin n' => r (σ' j)) := by
-        apply measurable_pi_lambda; intro j; exact measurable_pi_apply _
+        apply measurable_pi_lambda
+        intro j
+        exact measurable_pi_apply _
       have hmeas2 : Measurable (fun r : ℕ → Fin k => fun j : Fin n' => r j) := by
-        apply measurable_pi_lambda; intro j; exact measurable_pi_apply _
+        apply measurable_pi_lambda
+        intro j
+        exact measurable_pi_apply _
       have hmeas_rsp := measurable_rowSuccessorVisitProcess (k := k) i
       simp only [ρa, rowProcessLaw]
       rw [Measure.map_map hmeas1 hmeas_rsp, Measure.map_map hmeas2 hmeas_rsp]
-      exact hExch_Pa n' σ'
-    -- ρa_norm exchangeability (scaling preserves exchangeability)
+      exact hExchRestr n' σ'
     have hExch_ρa_norm : Exchangeability.Exchangeable ρa_norm (fun n (r : ℕ → Fin k) => r n) := by
       intro n' σ'
       simp only [ρa_norm, Measure.map_smul]
       exact congrArg (c⁻¹ • ·) (hExch_ρa n' σ')
-    -- Contractability of ρa_norm
     have hContr_ρa_norm : Exchangeability.Contractable ρa_norm (fun n (r : ℕ → Fin k) => r n) :=
       Exchangeability.contractable_of_exchangeable hExch_ρa_norm (fun n => measurable_pi_apply n)
-    -- De Finetti formula for ρa_norm
     haveI : Nonempty (Fin k) := ⟨i⟩
     have hX_meas : ∀ n, Measurable (fun r : ℕ → Fin k => r n) := fun n => measurable_pi_apply n
     have hprod_ρa_norm : Measure.map (fun r => fun j => r (sel j)) ρa_norm =
@@ -7040,37 +7030,29 @@ theorem startRestrictedRowKernelData_directingRowKernel
       letI := hρa_norm_prob
       exact finite_product_formula_with_directing (X := fun n (r : ℕ → Fin k) => r n)
         hContr_ρa_norm hX_meas m sel hsel
-    -- Uniqueness: directing measures agree a.e.
-    -- ρa_norm ≤ c⁻¹ • ρ (from ρa ≤ ρ)
     have hρa_norm_le : ρa_norm ≤ c⁻¹ • ρ := by
-      -- ρa_norm ≤ c⁻¹ • ρ means ∀ T, ρa_norm T ≤ (c⁻¹ • ρ) T
       intro T
       simp only [ρa_norm, Measure.smul_apply, smul_eq_mul]
       exact mul_le_mul_right (hρa_le T) _
-      -- Need: ρa T ≤ ρ T for all T
     have hc_inv_ne_top : c⁻¹ ≠ ⊤ := ENNReal.inv_ne_top.mpr hc
-    -- ρ is a probability measure
     haveI hρ_prob : IsProbabilityMeasure ρ :=
       Measure.isProbabilityMeasure_map
         ((measurable_rowSuccessorVisitProcess (k := k) i).aemeasurable)
-    -- Apply directingMeasure_singleton_ae_eq_of_smul_le
     have hdir_eq : ∀ b : Fin k,
         (fun r => (directingMeasure (μ := ρ) (fun n (r : ℕ → Fin k) => r n) hX_meas r {b}).toReal)
           =ᵐ[ρa_norm]
         (fun r => (directingMeasure (μ := ρa_norm) (fun n (r : ℕ → Fin k) => r n) hX_meas r {b}).toReal) := by
       intro b
       letI := hρa_norm_prob
-      exact Mettapedia.Logic.DirectingMeasureL1Transfer.directingMeasure_singleton_ae_eq_of_smul_le
-        (X := fun n (r : ℕ → Fin k) => r n) hX_meas
-        (hExch i) hExch_ρa_norm hc_inv_ne_top hρa_norm_le b
-    -- The bind for ρa_norm with directingMeasure(ρa_norm) = bind with directingMeasure(ρ) a.e.
-    -- We use that directingMeasures agree on singletons a.e., hence agree as measures a.e.
+      exact
+        Mettapedia.Logic.DirectingMeasureL1Transfer.directingMeasure_singleton_ae_eq_of_smul_le
+          (X := fun n (r : ℕ → Fin k) => r n) hX_meas
+          hExch hExch_ρa_norm hc_inv_ne_top hρa_norm_le b
     have hpi_eq :
         (fun r => Measure.pi (fun _ : Fin m =>
           @directingMeasure _ _ _ ρa_norm hρa_norm_prob _ _ _ _ (fun n (r : ℕ → Fin k) => r n) hX_meas r)) =ᵐ[ρa_norm]
         (fun r => Measure.pi (fun _ : Fin m =>
           @directingMeasure _ _ _ ρ hρ_prob _ _ _ _ (fun n (r : ℕ → Fin k) => r n) hX_meas r)) := by
-      -- Singleton equality → full measure equality (finite type)
       have hfin_eq : ∀ᵐ r ∂ρa_norm, ∀ b : Fin k,
           (@directingMeasure _ _ _ ρ hρ_prob _ _ _ _ (fun n (r : ℕ → Fin k) => r n) hX_meas r {b}).toReal =
           (@directingMeasure _ _ _ ρa_norm hρa_norm_prob _ _ _ _ (fun n (r : ℕ → Fin k) => r n) hX_meas r {b}).toReal := by
@@ -7078,31 +7060,27 @@ theorem startRestrictedRowKernelData_directingRowKernel
         intro b
         exact hdir_eq b
       filter_upwards [hfin_eq] with r hr
-      -- hr : ∀ b, (dm_ρ r {b}).toReal = (dm_ρa r {b}).toReal
-      -- Show dm_ρa r = dm_ρ r, then Measure.pi equality follows
       have hdir_r_eq :
           @directingMeasure _ _ _ ρa_norm hρa_norm_prob _ _ _ _ (fun n (r : ℕ → Fin k) => r n) hX_meas r =
           @directingMeasure _ _ _ ρ hρ_prob _ _ _ _ (fun n (r : ℕ → Fin k) => r n) hX_meas r := by
         apply Measure.ext_of_singleton
         intro b
         have hrb := hr b
-        -- directingMeasure is a probability measure, hence finite
         haveI : IsProbabilityMeasure
             (@directingMeasure _ _ _ ρ hρ_prob _ _ _ _ (fun n (r : ℕ → Fin k) => r n) hX_meas r) :=
           directingMeasure_isProb (fun n (r : ℕ → Fin k) => r n) hX_meas r
         haveI : IsProbabilityMeasure
             (@directingMeasure _ _ _ ρa_norm hρa_norm_prob _ _ _ _ (fun n (r : ℕ → Fin k) => r n) hX_meas r) :=
           directingMeasure_isProb (fun n (r : ℕ → Fin k) => r n) hX_meas r
-        have h1 : (@directingMeasure _ _ _ ρ hρ_prob _ _ _ _ (fun n (r : ℕ → Fin k) => r n) hX_meas r {b}) ≠ ⊤ :=
+        have h1 :
+            (@directingMeasure _ _ _ ρ hρ_prob _ _ _ _ (fun n (r : ℕ → Fin k) => r n) hX_meas r {b}) ≠ ⊤ :=
           measure_ne_top _ _
-        have h2 : (@directingMeasure _ _ _ ρa_norm hρa_norm_prob _ _ _ _ (fun n (r : ℕ → Fin k) => r n) hX_meas r {b}) ≠ ⊤ :=
+        have h2 :
+            (@directingMeasure _ _ _ ρa_norm hρa_norm_prob _ _ _ _ (fun n (r : ℕ → Fin k) => r n) hX_meas r {b}) ≠ ⊤ :=
           measure_ne_top _ _
         rw [← ENNReal.toReal_eq_toReal_iff' h2 h1]
         exact hrb.symm
-      -- The pi measures are equal because their components are equal
       simp only [hdir_r_eq]
-    -- Now show the bind for ρa_norm equals bind with directingRowKernel P i
-    -- directingRowKernel P i r = directingMeasure(ρ) by definition
     have hdirK_eq_dirM :
         (fun r => Measure.pi (fun _ : Fin m =>
           directingMeasure (μ := ρ) (fun n (r : ℕ → Fin k) => r n) hX_meas r)) =ᵐ[ρa_norm]
@@ -7110,21 +7088,16 @@ theorem startRestrictedRowKernelData_directingRowKernel
           (directingRowKernel (k := k) P i r : Measure (Fin k)))) := by
       filter_upwards with r
       congr 1
-    -- Combine: bind with directingMeasure(ρa_norm) = bind with directingRowKernel P i
     have hbind_eq : ρa_norm.bind (fun r => Measure.pi (fun _ : Fin m =>
           directingMeasure (μ := ρa_norm) (fun n (r : ℕ → Fin k) => r n) hX_meas r)) =
         ρa_norm.bind (fun r => Measure.pi (fun _ : Fin m =>
           (directingRowKernel (k := k) P i r : Measure (Fin k)))) := by
       apply Measure.bind_congr_right
       exact hpi_eq.trans hdirK_eq_dirM
-    -- Now we have: map f ρa_norm = ρa_norm.bind(directingRowKernel P i)
     have hprod_ρa_norm' : Measure.map (fun r => fun j => r (sel j)) ρa_norm =
         ρa_norm.bind (fun r => Measure.pi (fun _ : Fin m =>
           (directingRowKernel (k := k) P i r : Measure (Fin k)))) := by
       rw [hprod_ρa_norm, hbind_eq]
-    -- Scale back: ρa = c • ρa_norm
-    -- map f ρa = map f (c • ρa_norm) = c • (map f ρa_norm)
-    -- ρa.bind κ = (c • ρa_norm).bind κ = c • (ρa_norm.bind κ)
     have hmap_scale : Measure.map (fun r => fun j => r (sel j)) ρa =
         c • Measure.map (fun r => fun j => r (sel j)) ρa_norm := by
       rw [hρa_eq]
@@ -7137,9 +7110,7 @@ theorem startRestrictedRowKernelData_directingRowKernel
       exact Measure.bind_smul _ _ _
     rw [hmap_scale, hbind_scale, hprod_ρa_norm']
 
-/-- Class-restricted finite-coordinate factorization for the canonical
-`directingRowKernel`, assembled from the singleton-start factorization theorem. -/
-theorem rowProcessLaw_restrictClass_factorizes_directingRowKernel
+theorem startRestrictedRowKernelData_directingRowKernel
     (μ : FiniteAlphabet.PrefixMeasure (Fin k))
     (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
     (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
@@ -7148,9 +7119,35 @@ theorem rowProcessLaw_restrictClass_factorizes_directingRowKernel
     (hExch :
       ∀ i : Fin k,
         Exchangeability.Exchangeable (rowProcessLaw (k := k) P i)
-          (fun n (r : ℕ → Fin k) => r n))
+          (fun n (r : ℕ → Fin k) => r n)) :
+    StartRestrictedRowKernelData (k := k) P (directingRowKernel (k := k) P) := by
+  intro i a m sel hsel
+  exact
+    startRestrictedRowLaw_factorizes_directingRowKernel_of_exchangeable
+      (k := k) (P := P) i a m sel hsel
+      (hExch i)
+      (exchangeable_rowProcess_restrict (k := k) μ hμ P hExt hStrRec i a)
+
+/-- Class-restricted finite-coordinate factorization for the canonical
+`directingRowKernel`, assembled from per-start factorization on the singleton
+fibers that actually occur inside the class. -/
+theorem rowProcessLaw_restrictClass_factorizes_directingRowKernel_of_startRestricted
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
     (C : Set (Fin k))
-    (i : Fin k) (m : ℕ) (sel : Fin m → ℕ) (hsel : StrictMono sel) :
+    (i : Fin k)
+    (hstart :
+      ∀ a : Fin k, a ∈ C →
+        ∀ (m : ℕ) (sel : Fin m → ℕ), StrictMono sel →
+          Measure.map
+              (fun r : ℕ → Fin k => fun j : Fin m => r (sel j))
+              (rowProcessLaw (k := k) (P.restrict {ω : ℕ → Fin k | ω 0 = a}) i)
+            =
+          (rowProcessLaw (k := k) (P.restrict {ω : ℕ → Fin k | ω 0 = a}) i).bind
+            (fun r =>
+              Measure.pi
+                (fun _ : Fin m =>
+                  (directingRowKernel (k := k) P i r : Measure (Fin k)))))
+    (m : ℕ) (sel : Fin m → ℕ) (hsel : StrictMono sel) :
     Measure.map
         (fun r : ℕ → Fin k => fun j : Fin m => r (sel j))
         (Mettapedia.Logic.MarkovDeFinettiHard.rowProcessLaw_restrictClass (k := k) C P i)
@@ -7172,10 +7169,6 @@ theorem rowProcessLaw_restrictClass_factorizes_directingRowKernel
     Measure.pi
       (fun _ : Fin m =>
         (directingRowKernel (k := k) P i r : Measure (Fin k)))
-  have hstart :
-      StartRestrictedRowKernelData (k := k) P (directingRowKernel (k := k) P) :=
-    startRestrictedRowKernelData_directingRowKernel
-      (k := k) μ hμ P hExt hStrRec hExch
   have hρC :
       ρC = Measure.sum μC := by
     rw [Measure.sum_fintype]
@@ -7213,7 +7206,7 @@ theorem rowProcessLaw_restrictClass_factorizes_directingRowKernel
         (fun a : Fin k => (μC a).bind κ) := by
     funext a
     by_cases hCa : a ∈ C
-    · simp [μC, proj, κ, hCa, hstart i a m sel hsel]
+    · simp [μC, proj, κ, hCa, hstart a hCa m sel hsel]
     · simp [μC, κ, hCa]
   calc
     Measure.map proj ρC = Measure.map proj (Measure.sum μC) := by rw [hρC]
@@ -7224,6 +7217,71 @@ theorem rowProcessLaw_restrictClass_factorizes_directingRowKernel
           symm
           exact Measure.bind_sum μC κ hκ_meas.aemeasurable
     _ = ρC.bind κ := by rw [hρC]
+
+/-- Class-restricted finite-coordinate factorization from fixed-row
+exchangeability data: one unrestricted exchangeability hypothesis for row `i`,
+plus singleton-start exchangeability on the class fibers. -/
+theorem rowProcessLaw_restrictClass_factorizes_directingRowKernel_of_exchangeable
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (C : Set (Fin k))
+    (i : Fin k)
+    (hExch :
+      Exchangeability.Exchangeable (rowProcessLaw (k := k) P i)
+        (fun n (r : ℕ → Fin k) => r n))
+    (hExchRestr :
+      ∀ a : Fin k, a ∈ C →
+        Exchangeability.Exchangeable (P.restrict {ω : ℕ → Fin k | ω 0 = a})
+          (fun n (ω : ℕ → Fin k) =>
+            rowSuccessorVisitProcess (k := k) i ω n))
+    (m : ℕ) (sel : Fin m → ℕ) (hsel : StrictMono sel) :
+    Measure.map
+        (fun r : ℕ → Fin k => fun j : Fin m => r (sel j))
+        (Mettapedia.Logic.MarkovDeFinettiHard.rowProcessLaw_restrictClass (k := k) C P i)
+      =
+    (Mettapedia.Logic.MarkovDeFinettiHard.rowProcessLaw_restrictClass (k := k) C P i).bind
+      (fun r =>
+        Measure.pi
+          (fun _ : Fin m =>
+            (directingRowKernel (k := k) P i r : Measure (Fin k)))) := by
+  exact
+    rowProcessLaw_restrictClass_factorizes_directingRowKernel_of_startRestricted
+      (k := k) (P := P) (C := C) (i := i)
+      (hstart := fun a ha =>
+        startRestrictedRowLaw_factorizes_directingRowKernel_of_exchangeable
+          (k := k) (P := P) i a
+          (hExch := hExch) (hExchRestr := hExchRestr a ha))
+      m sel hsel
+
+/-- Class-restricted finite-coordinate factorization for the canonical
+`directingRowKernel`, assembled from the singleton-start factorization theorem. -/
+theorem rowProcessLaw_restrictClass_factorizes_directingRowKernel
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (cylinder (k := k) xs))
+    (hStrRec : StrongRecurrence (k := k) P)
+    (hExch :
+      ∀ i : Fin k,
+        Exchangeability.Exchangeable (rowProcessLaw (k := k) P i)
+          (fun n (r : ℕ → Fin k) => r n))
+    (C : Set (Fin k))
+    (i : Fin k) (m : ℕ) (sel : Fin m → ℕ) (hsel : StrictMono sel) :
+    Measure.map
+        (fun r : ℕ → Fin k => fun j : Fin m => r (sel j))
+        (Mettapedia.Logic.MarkovDeFinettiHard.rowProcessLaw_restrictClass (k := k) C P i)
+      =
+    (Mettapedia.Logic.MarkovDeFinettiHard.rowProcessLaw_restrictClass (k := k) C P i).bind
+      (fun r =>
+        Measure.pi
+          (fun _ : Fin m =>
+            (directingRowKernel (k := k) P i r : Measure (Fin k)))) := by
+  exact
+    rowProcessLaw_restrictClass_factorizes_directingRowKernel_of_startRestricted
+      (k := k) (P := P) (C := C) (i := i)
+      (hstart := fun a ha =>
+        startRestrictedRowKernelData_directingRowKernel
+          (k := k) μ hμ P hExt hStrRec hExch i a)
+      m sel hsel
 
 lemma ae_tendsto_rowSuccessorEmpiricalFreq_to_rowKernelEval_of_ae_tendsto_rowProcessEmpiricalFreq
     (P : Measure (ℕ → Fin k))

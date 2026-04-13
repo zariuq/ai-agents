@@ -135,6 +135,39 @@ def additions (s : DeterministicLocalSaturationStep Const Γ) :
     List (SignedFormula Const Γ) :=
   LocalSaturationStep.additions s.toLocalSaturationStep
 
+theorem flip_not_mem_additions_of_mem
+    {s : DeterministicLocalSaturationStep Const Γ}
+    {sf : SignedFormula Const Γ}
+    (h : sf ∈ additions s) :
+    SignedFormula.flip sf ∉ additions s := by
+  cases s with
+  | trueAnd φ ψ =>
+      simp [additions, toLocalSaturationStep, LocalSaturationStep.additions] at h ⊢
+      rcases h with rfl | rfl <;> constructor <;> intro hflip <;> cases hflip
+  | falseOr φ ψ =>
+      simp [additions, toLocalSaturationStep, LocalSaturationStep.additions] at h ⊢
+      rcases h with rfl | rfl <;> constructor <;> intro hflip <;> cases hflip
+  | trueAll φ t =>
+      simp [additions, toLocalSaturationStep, LocalSaturationStep.additions] at h ⊢
+      rcases h with rfl
+      intro hflip
+      cases hflip
+  | falseAllWitness φ t =>
+      simp [additions, toLocalSaturationStep, LocalSaturationStep.additions] at h ⊢
+      rcases h with rfl
+      intro hflip
+      cases hflip
+  | trueExWitness φ t =>
+      simp [additions, toLocalSaturationStep, LocalSaturationStep.additions] at h ⊢
+      rcases h with rfl
+      intro hflip
+      cases hflip
+  | falseEx φ t =>
+      simp [additions, toLocalSaturationStep, LocalSaturationStep.additions] at h ⊢
+      rcases h with rfl
+      intro hflip
+      cases hflip
+
 end DeterministicLocalSaturationStep
 
 /-! Local branching obligations package the unresolved connective-level work
@@ -281,6 +314,12 @@ theorem mem_close_insertAll_singleton_iff {H : HintikkaSet Const Γ}
     {added sf : SignedFormula Const Γ} :
     sf ∈ (H.insertAll [added]).close.formulas ↔
       sf = added ∨ sf ∈ H.close.formulas := by
+  simp [close, insertAll, or_assoc, or_comm]
+
+theorem mem_close_insertAll_iff {H : HintikkaSet Const Γ}
+    {Δ : List (SignedFormula Const Γ)} {sf : SignedFormula Const Γ} :
+    sf ∈ (H.insertAll Δ).close.formulas ↔
+      sf ∈ Δ ∨ sf ∈ H.close.formulas := by
   simp [close, insertAll, or_assoc, or_comm]
 
 theorem premise_mem_of_mem_close {H : HintikkaSet Const Γ}
@@ -650,6 +689,38 @@ theorem noncontradictory_close_insertAll_singleton_of_flip_not_mem
           exact trueTop_mem_close H
         exact hFlip hFlipOld
       · exact hH (contradictory_of_falseTop hOld)
+
+theorem noncontradictory_close_insertAll_of_flip_not_mem
+    {H : HintikkaSet Const Γ} {Δ : List (SignedFormula Const Γ)}
+    (hH : H.close.Noncontradictory)
+    (hCompat :
+      ∀ {sf : SignedFormula Const Γ},
+        sf ∈ Δ → SignedFormula.flip sf ∉ H.close.formulas)
+    (hInternal :
+      ∀ {sf : SignedFormula Const Γ},
+        sf ∈ Δ → SignedFormula.flip sf ∉ Δ) :
+    (H.insertAll Δ).close.Noncontradictory := by
+  intro hContra
+  rcases hContra with hConflict | hContra
+  · rcases hConflict with ⟨φ, hTrue, hFalse⟩
+    rcases mem_close_insertAll_iff.mp hTrue with hTrueNew | hTrueOld
+    · rcases mem_close_insertAll_iff.mp hFalse with hFalseNew | hFalseOld
+      · exact (hInternal hTrueNew) (by simpa [SignedFormula.flip] using hFalseNew)
+      · exact (hCompat hTrueNew) (by simpa [SignedFormula.flip] using hFalseOld)
+    · rcases mem_close_insertAll_iff.mp hFalse with hFalseNew | hFalseOld
+      · exact (hCompat hFalseNew) (by simpa [SignedFormula.flip] using hTrueOld)
+      · exact hH (contradictory_of_conflict hTrueOld hFalseOld)
+  · rcases hContra with hTrueBot | hFalseTop
+    · rcases mem_close_insertAll_iff.mp hTrueBot with hTrueBotNew | hTrueBotOld
+      · exact (hCompat hTrueBotNew) (by
+          change (Sign.falseE, (.bot : Formula Const Γ)) ∈ H.close.formulas
+          exact falseBot_mem_close H)
+      · exact hH (contradictory_of_trueBot hTrueBotOld)
+    · rcases mem_close_insertAll_iff.mp hFalseTop with hFalseTopNew | hFalseTopOld
+      · exact (hCompat hFalseTopNew) (by
+          change (Sign.trueE, (.top : Formula Const Γ)) ∈ H.close.formulas
+          exact trueTop_mem_close H)
+      · exact hH (contradictory_of_falseTop hFalseTopOld)
 
 theorem noncontradictory_of_closed_icttConsistent {H : HintikkaSet Const Γ}
     (hClosed : H.Closed)

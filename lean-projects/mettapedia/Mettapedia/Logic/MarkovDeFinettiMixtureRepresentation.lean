@@ -182,6 +182,93 @@ theorem rowProcessLaw_restrictClass_factorizes_of_markovExchangeable_strongRecur
         (k := k) μ hμ P hExt hStrRec)
       C i m sel hsel
 
+/-! ## Public class-recurrence row-law consequences
+
+Class recurrence does not justify an all-rows lift: it only gives the rowwise
+infinite-visit condition for states `i ∈ C`. The honest public surface is
+therefore indexed by such a proof `hi : i ∈ C`. -/
+
+/-- Under Markov exchangeability plus strong recurrence inside a class `C`, the
+row law for each `i ∈ C` is exchangeable. -/
+theorem rowProcessLaw_exchangeable_of_markovExchangeable_strongRecurrenceInClass
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (cylinder (k := k) xs))
+    (C : Set (Fin k))
+    (hStrRecC : StrongRecurrenceInClass (k := k) C P) :
+    ∀ i : Fin k, i ∈ C →
+      Exchangeability.Exchangeable (rowProcessLaw (k := k) P i)
+        (fun n (r : ℕ → Fin k) => r n) := by
+  intro i hi
+  exact
+    rowProcessLaw_exchangeable_of_perm_invariant
+      (k := k) P i
+      (fun σ =>
+        PerRowJointPE.rowProcessLaw_permInvariant_of_markovExchangeability_strongRecurrenceInClass
+          (k := k) μ hμ P hExt C hStrRecC i hi σ inferInstance)
+
+/-- Under Markov exchangeability plus strong recurrence inside a class `C`, the
+singleton-start row law for each `i ∈ C` factors through the canonical
+directing row kernel. -/
+theorem startRestrictedRowLaw_factorizes_of_markovExchangeable_strongRecurrenceInClass
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (cylinder (k := k) xs))
+    (C : Set (Fin k))
+    (hStrRecC : StrongRecurrenceInClass (k := k) C P)
+    (i : Fin k) (hi : i ∈ C)
+    (a : Fin k)
+    (m : ℕ) (sel : Fin m → ℕ) (hsel : StrictMono sel) :
+    Measure.map
+        (fun r : ℕ → Fin k => fun j : Fin m => r (sel j))
+        (rowProcessLaw (k := k) (P.restrict {ω : ℕ → Fin k | ω 0 = a}) i)
+      =
+    (rowProcessLaw (k := k) (P.restrict {ω : ℕ → Fin k | ω 0 = a}) i).bind
+      (fun r =>
+        Measure.pi
+          (fun _ : Fin m =>
+            (directingRowKernel (k := k) P i r : Measure (Fin k)))) := by
+  exact
+    startRestrictedRowLaw_factorizes_directingRowKernel_of_exchangeable
+      (k := k) (P := P) i a m sel hsel
+      (rowProcessLaw_exchangeable_of_markovExchangeable_strongRecurrenceInClass
+        (k := k) μ hμ P hExt C hStrRecC i hi)
+      (PerRowJointPE.exchangeable_rowProcess_restrict_of_markovExchangeability_strongRecurrenceInClass
+        (k := k) μ hμ P hExt C hStrRecC i a hi)
+
+/-- Under Markov exchangeability plus strong recurrence inside a class `C`, the
+class-restricted row law for each `i ∈ C` factors through the canonical
+directing row kernel on finite coordinate projections. -/
+theorem rowProcessLaw_restrictClass_factorizes_of_markovExchangeable_strongRecurrenceInClass
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (cylinder (k := k) xs))
+    (C : Set (Fin k))
+    (hStrRecC : StrongRecurrenceInClass (k := k) C P)
+    (i : Fin k) (hi : i ∈ C)
+    (m : ℕ) (sel : Fin m → ℕ) (hsel : StrictMono sel) :
+    Measure.map
+        (fun r : ℕ → Fin k => fun j : Fin m => r (sel j))
+        (rowProcessLaw_restrictClass (k := k) C P i)
+      =
+    (rowProcessLaw_restrictClass (k := k) C P i).bind
+      (fun r =>
+        Measure.pi
+          (fun _ : Fin m =>
+            (directingRowKernel (k := k) P i r : Measure (Fin k)))) := by
+  exact
+    rowProcessLaw_restrictClass_factorizes_directingRowKernel_of_exchangeable
+      (k := k) (P := P) (C := C) (i := i)
+      (rowProcessLaw_exchangeable_of_markovExchangeable_strongRecurrenceInClass
+        (k := k) μ hμ P hExt C hStrRecC i hi)
+      (fun a ha =>
+        PerRowJointPE.exchangeable_rowProcess_restrict_of_markovExchangeability_strongRecurrenceInClass
+          (k := k) μ hμ P hExt C hStrRecC i a hi)
+      m sel hsel
+
 /-- Direct-route wrapper for the cylinder mixing identity via Crux assembly.
 P(cyl(xs)) = ∫ wordProb(θ(ω), xs) dP for |xs| ≥ 2.
 
@@ -374,5 +461,291 @@ theorem fortini_surface
     FortiniSuccessorMatrixInvarianceTheoremStrongRecurrence k :=
   fortini_surface_of_successorMatrixPE_minimal
     (k := k) hPEStrong hKernelFromPE
+
+/-! ## Public `MarkovMixture` interface
+
+This packages the proved PE-based theorem surface into a small downstream API:
+a probability law on Markov parameters together with the representation
+identity for the given prefix measure. The current constructors are all routed
+through the already-proved strong-recurrence / PE theorems; the eventual public
+class-recurrence lift should refine these constructors rather than replace the
+object itself. -/
+
+/-- Public Markov-mixture object produced by the proved theorem surface. -/
+structure MarkovMixture
+    (k : ℕ)
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k)) where
+  mixingLaw : Measure (MarkovParam k)
+  mixingLaw_prob : IsProbabilityMeasure mixingLaw
+  represents :
+    ∀ xs : List (Fin k), μ xs = ∫⁻ θ, wordProb (k := k) θ xs ∂mixingLaw
+
+namespace MarkovMixture
+
+attribute [instance] mixingLaw_prob
+
+variable {μ : FiniteAlphabet.PrefixMeasure (Fin k)}
+
+/-- The representation identity carried by a `MarkovMixture`. -/
+theorem represents_word
+    (M : MarkovMixture k μ)
+    (xs : List (Fin k)) :
+    μ xs = ∫⁻ θ, wordProb (k := k) θ xs ∂M.mixingLaw :=
+  M.represents xs
+
+/-- Build a `MarkovMixture` from any proved strong-recurrence Fortini surface
+theorem together with a concrete extension satisfying the theorem's hypotheses. -/
+noncomputable def of_extension_strongRecurrence
+    (hFortini : FortiniSuccessorMatrixInvarianceTheoremStrongRecurrence k)
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [hP : IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (cylinder (k := k) xs))
+    (hStrRec : StrongRecurrence (k := k) P) :
+    MarkovMixture k μ := by
+  let hmix := hFortini μ hμ ⟨P, hP, hExt, hStrRec⟩
+  exact
+    ⟨Classical.choose hmix,
+      (Classical.choose_spec hmix).1,
+      (Classical.choose_spec hmix).2⟩
+
+/-- Canonical public constructor from the minimal PE payload
+`SuccessorMatrixPE + hEval + RowSuccessorMatrixInvariance`. -/
+noncomputable def of_successorMatrixPE_minimal
+    (hPEStrong : SuccessorMatrixPE_of_markovExchangeable_strongRecurrence k)
+    (hKernelFromPE :
+      ExistsRowKernel_hEval_and_rowSuccessorMatrixInvariance_of_successorMatrixPE k)
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [hP : IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (cylinder (k := k) xs))
+    (hStrRec : StrongRecurrence (k := k) P) :
+    MarkovMixture k μ :=
+  of_extension_strongRecurrence
+    (k := k)
+    (μ := μ)
+    (hFortini := fortini_surface_of_successorMatrixPE_minimal
+      (k := k) hPEStrong hKernelFromPE)
+    hμ P hExt hStrRec
+
+/-- Public constructor from the reduced PE payload: successor-matrix PE plus
+the start-factorization and row-successor-matrix-invariance builders. -/
+noncomputable def of_successorMatrixPE_reduced
+    (hk : 0 < k)
+    (hPEStrong : SuccessorMatrixPE_of_markovExchangeable_strongRecurrence k)
+    (hStartFromPE :
+      ∀ (P : Measure (ℕ → Fin k)) (_hP : IsProbabilityMeasure P)
+        (_hPE : SuccessorMatrixPartialExchangeable (k := k) P)
+        (rowKernel : Fin k → (ℕ → Fin k) → ProbabilityMeasure (Fin k)),
+          (∀ i : Fin k, ∀ b : Fin k,
+            AEMeasurable
+              (fun r : ℕ → Fin k => (rowKernel i r : Measure (Fin k)) ({b} : Set (Fin k)))
+              (rowProcessLaw (k := k) P i)) →
+          (∀ i : Fin k,
+            AEMeasurable
+              (fun r : ℕ → Fin k =>
+                Measure.pi (fun _ : Fin 1 => (rowKernel i r : Measure (Fin k))))
+              (rowProcessLaw (k := k) P i)) →
+          StartRestrictedRowKernelData (k := k) P rowKernel)
+    (hInvFromPE :
+      ∀ (P : Measure (ℕ → Fin k)) (_hP : IsProbabilityMeasure P)
+        (_hPE : SuccessorMatrixPartialExchangeable (k := k) P)
+        (rowKernel : Fin k → (ℕ → Fin k) → ProbabilityMeasure (Fin k)),
+          (∀ i : Fin k, ∀ b : Fin k,
+            AEMeasurable
+              (fun r : ℕ → Fin k => (rowKernel i r : Measure (Fin k)) ({b} : Set (Fin k)))
+              (rowProcessLaw (k := k) P i)) →
+          (∀ i : Fin k,
+            AEMeasurable
+              (fun r : ℕ → Fin k =>
+                Measure.pi (fun _ : Fin 1 => (rowKernel i r : Measure (Fin k))))
+              (rowProcessLaw (k := k) P i)) →
+          RowSuccessorMatrixInvariance (k := k) P rowKernel)
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [hP : IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (cylinder (k := k) xs))
+    (hStrRec : StrongRecurrence (k := k) P) :
+    MarkovMixture k μ :=
+  of_extension_strongRecurrence
+    (k := k)
+    (μ := μ)
+    (hFortini := fortini_surface_of_successorMatrixPE_reduced
+      (k := k) hk hPEStrong hStartFromPE hInvFromPE)
+    hμ P hExt hStrRec
+
+/-- Public constructor from the stronger PE-to-built-row-kernel payload. -/
+noncomputable def of_successorMatrixPE
+    (hPEStrong : SuccessorMatrixPE_of_markovExchangeable_strongRecurrence k)
+    (hBuildFromPE : ExistsBuiltRowKernel_of_successorMatrixPE k)
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [hP : IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (cylinder (k := k) xs))
+    (hStrRec : StrongRecurrence (k := k) P) :
+    MarkovMixture k μ :=
+  of_extension_strongRecurrence
+    (k := k)
+    (μ := μ)
+    (hFortini := fortini_surface_of_successorMatrixPE
+      (k := k) hPEStrong hBuildFromPE)
+    hμ P hExt hStrRec
+
+/-- Public row-recurrence constructor. This is the cleanest route when the
+caller already has the row-recurrence prefix-law hypothesis rather than a
+concrete strong-recurrence extension. -/
+noncomputable def of_rowRecurrent_successorMatrixPE_minimal
+    (hPEStrong : SuccessorMatrixPE_of_markovExchangeable_strongRecurrence k)
+    (hKernelFromPE :
+      ExistsRowKernel_hEval_and_rowSuccessorMatrixInvariance_of_successorMatrixPE k)
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (hrow : MarkovRowRecurrentPrefixMeasure (k := k) μ) :
+    MarkovMixture k μ := by
+  let hmix :=
+    exists_markovParamLaw_of_markovExchangeable_rowRecurrent_of_successorMatrixPE_minimal
+      (k := k) hPEStrong hKernelFromPE μ hμ hrow
+  exact
+    ⟨Classical.choose hmix,
+      (Classical.choose_spec hmix).1,
+      (Classical.choose_spec hmix).2⟩
+
+end MarkovMixture
+
+/-! ## Class-restricted public surface
+
+This packages the currently proved public consequences of class recurrence
+without overstating them as a full global mixing-law theorem. The resulting
+object carries a concrete extension law together with the class-recurrence
+hypothesis, and exposes the fixed-row consequences for indices `i ∈ C`. -/
+
+/-- Public class-restricted Markov de Finetti surface.
+
+Unlike `MarkovMixture`, this object does not claim a global mixing law on
+Markov parameters. It packages the honest extension-level data currently
+available from `StrongRecurrenceInClass`, together with derived row-level
+consequences for indices inside the recurrent class. -/
+structure ClassRestrictedMarkovMixtureSurface
+    (k : ℕ)
+    (C : Set (Fin k))
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k)) where
+  markovExchangeable : MarkovExchangeablePrefixMeasure (k := k) μ
+  extensionLaw : Measure (ℕ → Fin k)
+  extensionLaw_prob : IsProbabilityMeasure extensionLaw
+  extends_prefix :
+    ∀ xs : List (Fin k), μ xs = extensionLaw (cylinder (k := k) xs)
+  strongRecurrenceInClass :
+    StrongRecurrenceInClass (k := k) C extensionLaw
+
+namespace ClassRestrictedMarkovMixtureSurface
+
+attribute [instance] extensionLaw_prob
+
+variable {C : Set (Fin k)} {μ : FiniteAlphabet.PrefixMeasure (Fin k)}
+
+/-- Build the class-restricted public surface from a concrete extension law. -/
+noncomputable def of_extension
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [hP : IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (cylinder (k := k) xs))
+    (hStrRecC : StrongRecurrenceInClass (k := k) C P) :
+    ClassRestrictedMarkovMixtureSurface k C μ :=
+  ⟨hμ, P, hP, hExt, hStrRecC⟩
+
+/-- Markov exchangeability alone still gives predictor equality from the
+transition-count summary. -/
+theorem predictor_eq_of_same_summary
+    (M : ClassRestrictedMarkovMixtureSurface k C μ)
+    (xs ys : List (Fin k)) (hlen : xs.length = ys.length) (hx : 0 < xs.length)
+    (hstart : xs.get ⟨0, hx⟩ = ys.get ⟨0, by simpa [hlen] using hx⟩)
+    (hsum : TransCounts.summary (k := k) xs = TransCounts.summary (k := k) ys)
+    (x : Fin k) :
+    μ (xs ++ [x]) = μ (ys ++ [x]) := by
+  exact
+    mu_append_singleton_eq_of_same_summary_list
+      (k := k) (μ := μ) (hμ := M.markovExchangeable)
+      xs ys hlen hx hstart hsum x
+
+/-- Under class recurrence, the unrestricted row law is exchangeable for every
+row index inside the class. -/
+theorem rowProcessLaw_exchangeable
+    (M : ClassRestrictedMarkovMixtureSurface k C μ)
+    (i : Fin k) (hi : i ∈ C) :
+    Exchangeability.Exchangeable (rowProcessLaw (k := k) M.extensionLaw i)
+      (fun n (r : ℕ → Fin k) => r n) := by
+  exact
+    rowProcessLaw_exchangeable_of_markovExchangeable_strongRecurrenceInClass
+      (k := k) (μ := μ) M.markovExchangeable
+      M.extensionLaw M.extends_prefix C M.strongRecurrenceInClass i hi
+
+/-- Singleton-start factorization for rows inside the recurrent class. -/
+theorem startRestrictedRowLaw_factorizes
+    (M : ClassRestrictedMarkovMixtureSurface k C μ)
+    (i : Fin k) (hi : i ∈ C)
+    (a : Fin k)
+    (m : ℕ) (sel : Fin m → ℕ) (hsel : StrictMono sel) :
+    Measure.map
+        (fun r : ℕ → Fin k => fun j : Fin m => r (sel j))
+        (rowProcessLaw (k := k)
+          (M.extensionLaw.restrict {ω : ℕ → Fin k | ω 0 = a}) i)
+      =
+    (rowProcessLaw (k := k)
+        (M.extensionLaw.restrict {ω : ℕ → Fin k | ω 0 = a}) i).bind
+      (fun r =>
+        Measure.pi
+          (fun _ : Fin m =>
+            (directingRowKernel (k := k) M.extensionLaw i r : Measure (Fin k)))) := by
+  exact
+    startRestrictedRowLaw_factorizes_of_markovExchangeable_strongRecurrenceInClass
+      (k := k) (μ := μ) M.markovExchangeable
+      M.extensionLaw M.extends_prefix C M.strongRecurrenceInClass i hi a m sel hsel
+
+/-- Class-restricted row-law factorization for rows inside the recurrent class. -/
+theorem restrictClass_rowLaw_factorizes
+    (M : ClassRestrictedMarkovMixtureSurface k C μ)
+    (i : Fin k) (hi : i ∈ C)
+    (m : ℕ) (sel : Fin m → ℕ) (hsel : StrictMono sel) :
+    Measure.map
+        (fun r : ℕ → Fin k => fun j : Fin m => r (sel j))
+        (rowProcessLaw_restrictClass (k := k) C M.extensionLaw i)
+      =
+    (rowProcessLaw_restrictClass (k := k) C M.extensionLaw i).bind
+      (fun r =>
+        Measure.pi
+          (fun _ : Fin m =>
+            (directingRowKernel (k := k) M.extensionLaw i r : Measure (Fin k)))) := by
+  exact
+    rowProcessLaw_restrictClass_factorizes_of_markovExchangeable_strongRecurrenceInClass
+      (k := k) (μ := μ) M.markovExchangeable
+      M.extensionLaw M.extends_prefix C M.strongRecurrenceInClass i hi m sel hsel
+
+/-- Packaged transition-structure consequences carried by the class-restricted
+surface.
+
+This is the intended stable public API for downstream users who want the two
+main consequences of class recurrence at once:
+
+1. predictor equality from the transition-summary state;
+2. class-restricted row-law factorization for rows `i ∈ C`. -/
+theorem class_transition_structure
+    (M : ClassRestrictedMarkovMixtureSurface k C μ) :
+    (∀ (xs ys : List (Fin k)) (hlen : xs.length = ys.length) (hx : 0 < xs.length)
+      (_hstart : xs.get ⟨0, hx⟩ = ys.get ⟨0, by simpa [hlen] using hx⟩)
+      (_hsum : TransCounts.summary (k := k) xs = TransCounts.summary (k := k) ys)
+      (x : Fin k),
+      μ (xs ++ [x]) = μ (ys ++ [x])) ∧
+    (∀ (i : Fin k), i ∈ C →
+      ∀ (m : ℕ) (sel : Fin m → ℕ), StrictMono sel →
+        Measure.map
+            (fun r : ℕ → Fin k => fun j : Fin m => r (sel j))
+            (rowProcessLaw_restrictClass (k := k) C M.extensionLaw i)
+          =
+        (rowProcessLaw_restrictClass (k := k) C M.extensionLaw i).bind
+          (fun r =>
+            Measure.pi
+              (fun _ : Fin m =>
+                (directingRowKernel (k := k) M.extensionLaw i r : Measure (Fin k))))) := by
+  refine ⟨?_, ?_⟩
+  · intro xs ys hlen hx hstart hsum x
+    exact M.predictor_eq_of_same_summary xs ys hlen hx hstart hsum x
+  · intro i hi m sel hsel
+    exact M.restrictClass_rowLaw_factorizes i hi m sel hsel
+
+end ClassRestrictedMarkovMixtureSurface
 
 end Mettapedia.Logic

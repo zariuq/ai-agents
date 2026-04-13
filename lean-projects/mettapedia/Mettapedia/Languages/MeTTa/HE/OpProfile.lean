@@ -98,12 +98,14 @@ def tier1Ops : List OpEntry :=
       interpreterRef := "Interpreter.lean:372-384"
       languageDefRule := some "MC_Assert_Start, MC_Assert_True, MC_Assert_NotTrue" }
 
+    -- Explicit MettaCall rewrite in HELanguageDef (not a MinimalMeTTa instruction)
+  , { name := "match"
+      category := .mettaCallControl
+      interpreterRef := "HELanguageDef.lean:962-991 (MC_Match, MC_Match_Empty)"
+      languageDefRule := some "MC_Match, MC_Match_Empty" }
+
     -- Minimal instructions: also have HELanguageDef rules for export,
     -- though they also correspond to OSLF MeTTaMinimalInstance layer
-  , { name := "match"
-      category := .minimalInstruction
-      interpreterRef := "MeTTaMinimalInstance.lean (space query + pattern match)"
-      languageDefRule := some "MC_Match, MC_Match_Empty" }
   , { name := "unify"
       category := .minimalInstruction
       interpreterRef := "MeTTaMinimalInstance.lean:48-49 (Unify instruction)"

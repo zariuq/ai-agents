@@ -21,7 +21,7 @@ open Mettapedia.Logic.PLNWorldModelFixpointCascade
 open scoped ENNReal
 
 variable {Obs State Query : Type*}
-variable [EvidenceType State] [WorldModel State Query]
+variable [EvidenceType State] [BinaryWorldModel State Query]
 
 /-- Least rule closure of the kernel's seed queries under its rule pool,
 evaluated at WM state `W`. -/
@@ -37,7 +37,7 @@ def hyperseedImmediateIter
 /-- Query strength in the kernel's closure at state `W`. -/
 noncomputable def hyperseedQueryStrength
     (_k : HyperseedKernel Obs State Query) (W : State) (q : Query) : ℝ≥0∞ :=
-  WorldModel.queryStrength (State := State) (Query := Query) W q
+  BinaryWorldModel.queryStrength (State := State) (Query := Query) W q
 
 /-- Seed queries are contained in the Hyperseed closure. -/
 theorem seed_subset_hyperseedClosure

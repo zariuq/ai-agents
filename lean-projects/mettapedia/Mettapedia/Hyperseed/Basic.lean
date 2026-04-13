@@ -46,7 +46,7 @@ query set, and a consequence rule pool over an existing WM state/query space.
 - `rules` is the consequence rule pool.
 -/
 structure HyperseedKernel (Obs State Query : Type*)
-    [EvidenceType State] [WorldModel State Query] where
+    [EvidenceType State] [BinaryWorldModel State Query] where
   ingest : Obs → State → State
   seedQueries : Set Query
   rules : RuleSet State Query

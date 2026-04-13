@@ -1,5 +1,15 @@
 import Algorithms.MeTTa.Eval.Core
 
+/-! # LeanPeTTa Space Operations
+
+Stateful space primitives for the `Algorithms.MeTTa.Eval` evaluator.
+
+This file belongs to the LeanPeTTa / PeTTa-side evaluator lane. It is NOT an
+HE specification file, and it should not be read as dialect-neutral MeTTa
+semantics. In particular, the behavior here is whatever the LeanPeTTa session
+machine currently implements over `Session.space`.
+-/
+
 namespace Algorithms.MeTTa.Eval.Step.SpaceOps
 
 open MeTTailCore.MeTTaIL.Syntax
@@ -15,7 +25,7 @@ def evalSpaceOp (s : Session) (ctor : String) (args : List Pattern) :
   | "add-atom!", [_space, fact] =>
       some ({ s with space := fact :: s.space }, [.apply "()" []])
 
-  -- remove-atom: remove first matching fact
+  -- remove-atom: in LeanPeTTa, drop all facts equal to the requested fact
   | "remove-atom", [_space, fact] =>
       let space' := s.space.filter (· != fact)
       some ({ s with space := space' }, [.apply "()" []])

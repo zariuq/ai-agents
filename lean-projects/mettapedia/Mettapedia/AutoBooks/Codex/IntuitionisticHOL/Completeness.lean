@@ -5,7 +5,7 @@ namespace Mettapedia.AutoBooks.Codex.IntuitionisticHOL
 
 open Mettapedia.Logic.HOL
 
-universe u v
+universe u v w w'
 
 variable {Base : Type u} {Const : Ty Base → Type v}
 
@@ -140,6 +140,14 @@ visible in the staged Hintikka set. -/
 def AgendaVisible (S : SaturationSearchState Const Γ) : Prop :=
   ∀ b ∈ S.agenda, b.premise ∈ S.hintikka.formulas
 
+/-- A productive deterministic saturation move is compatible with the current
+closed hull when each added formula avoids its flipped counterpart there. -/
+def DeterministicAdditionCompatible (S : SaturationSearchState Const Γ)
+    (s : DeterministicLocalSaturationStep Const Γ) : Prop :=
+  ∀ {sf : SignedFormula Const Γ},
+    sf ∈ DeterministicLocalSaturationStep.additions s →
+      SignedFormula.flip sf ∉ S.hintikka.close.formulas
+
 /-- A chosen local branch is compatible with the current closed hull when each
 formula it adds avoids its flipped counterpart in the already closed Hintikka
 set. For genuine branch resolutions this is a singleton compatibility check. -/
@@ -148,6 +156,170 @@ def BranchAdditionCompatible (S : SaturationSearchState Const Γ)
   ∀ {sf : SignedFormula Const Γ},
     sf ∈ LocalSaturationStep.additions r.step →
       SignedFormula.flip sf ∉ S.hintikka.close.formulas
+
+theorem deterministicAdditionCompatible_trueAnd_iff
+    (S : SaturationSearchState Const Γ)
+    {φ ψ : Formula Const Γ} :
+    S.DeterministicAdditionCompatible (.trueAnd φ ψ) ↔
+      (Sign.falseE, φ) ∉ S.hintikka.close.formulas ∧
+        (Sign.falseE, ψ) ∉ S.hintikka.close.formulas := by
+  simp [DeterministicAdditionCompatible, DeterministicLocalSaturationStep.additions,
+    DeterministicLocalSaturationStep.toLocalSaturationStep, LocalSaturationStep.additions,
+    SignedFormula.flip, Sign.flip]
+
+theorem deterministicAdditionCompatible_falseOr_iff
+    (S : SaturationSearchState Const Γ)
+    {φ ψ : Formula Const Γ} :
+    S.DeterministicAdditionCompatible (.falseOr φ ψ) ↔
+      (Sign.trueE, φ) ∉ S.hintikka.close.formulas ∧
+        (Sign.trueE, ψ) ∉ S.hintikka.close.formulas := by
+  simp [DeterministicAdditionCompatible, DeterministicLocalSaturationStep.additions,
+    DeterministicLocalSaturationStep.toLocalSaturationStep, LocalSaturationStep.additions,
+    SignedFormula.flip, Sign.flip]
+
+theorem deterministicAdditionCompatible_trueAll_iff
+    (S : SaturationSearchState Const Γ)
+    {σ : Ty Base} {φ : Formula Const (σ :: Γ)} {t : Term Const Γ σ} :
+    S.DeterministicAdditionCompatible (.trueAll φ t) ↔
+      (Sign.falseE, instantiate (Base := Base) t φ) ∉ S.hintikka.close.formulas := by
+  simp [DeterministicAdditionCompatible, DeterministicLocalSaturationStep.additions,
+    DeterministicLocalSaturationStep.toLocalSaturationStep, LocalSaturationStep.additions,
+    SignedFormula.flip, Sign.flip]
+
+theorem deterministicAdditionCompatible_falseAllWitness_iff
+    (S : SaturationSearchState Const Γ)
+    {σ : Ty Base} {φ : Formula Const (σ :: Γ)} {t : Term Const Γ σ} :
+    S.DeterministicAdditionCompatible (.falseAllWitness φ t) ↔
+      (Sign.trueE, instantiate (Base := Base) t φ) ∉ S.hintikka.close.formulas := by
+  simp [DeterministicAdditionCompatible, DeterministicLocalSaturationStep.additions,
+    DeterministicLocalSaturationStep.toLocalSaturationStep, LocalSaturationStep.additions,
+    SignedFormula.flip, Sign.flip]
+
+theorem deterministicAdditionCompatible_trueExWitness_iff
+    (S : SaturationSearchState Const Γ)
+    {σ : Ty Base} {φ : Formula Const (σ :: Γ)} {t : Term Const Γ σ} :
+    S.DeterministicAdditionCompatible (.trueExWitness φ t) ↔
+      (Sign.falseE, instantiate (Base := Base) t φ) ∉ S.hintikka.close.formulas := by
+  simp [DeterministicAdditionCompatible, DeterministicLocalSaturationStep.additions,
+    DeterministicLocalSaturationStep.toLocalSaturationStep, LocalSaturationStep.additions,
+    SignedFormula.flip, Sign.flip]
+
+theorem deterministicAdditionCompatible_falseEx_iff
+    (S : SaturationSearchState Const Γ)
+    {σ : Ty Base} {φ : Formula Const (σ :: Γ)} {t : Term Const Γ σ} :
+    S.DeterministicAdditionCompatible (.falseEx φ t) ↔
+      (Sign.trueE, instantiate (Base := Base) t φ) ∉ S.hintikka.close.formulas := by
+  simp [DeterministicAdditionCompatible, DeterministicLocalSaturationStep.additions,
+    DeterministicLocalSaturationStep.toLocalSaturationStep, LocalSaturationStep.additions,
+    SignedFormula.flip, Sign.flip]
+
+theorem branchAdditionCompatible_iff_of_singleton_addition
+    (S : SaturationSearchState Const Γ)
+    {r : LocalBranchResolution Const Γ} {sf : SignedFormula Const Γ}
+    (hadd : LocalSaturationStep.additions r.step = [sf]) :
+    S.BranchAdditionCompatible r ↔
+      SignedFormula.flip sf ∉ S.hintikka.close.formulas := by
+  constructor
+  · intro hCompat
+    exact hCompat (by simp [hadd])
+  · intro hFlip sf' hsf'
+    have hEq : sf' = sf := by
+      simp [hadd] at hsf'
+      exact hsf'
+    subst hEq
+    exact hFlip
+
+theorem deterministicAdditionCompatible_trueAnd
+    (S : SaturationSearchState Const Γ)
+    {φ ψ : Formula Const Γ}
+    (hφ : (Sign.falseE, φ) ∉ S.hintikka.close.formulas)
+    (hψ : (Sign.falseE, ψ) ∉ S.hintikka.close.formulas) :
+    S.DeterministicAdditionCompatible (.trueAnd φ ψ) :=
+  (deterministicAdditionCompatible_trueAnd_iff S).2 ⟨hφ, hψ⟩
+
+theorem deterministicAdditionCompatible_falseOr
+    (S : SaturationSearchState Const Γ)
+    {φ ψ : Formula Const Γ}
+    (hφ : (Sign.trueE, φ) ∉ S.hintikka.close.formulas)
+    (hψ : (Sign.trueE, ψ) ∉ S.hintikka.close.formulas) :
+    S.DeterministicAdditionCompatible (.falseOr φ ψ) :=
+  (deterministicAdditionCompatible_falseOr_iff S).2 ⟨hφ, hψ⟩
+
+theorem deterministicAdditionCompatible_trueAll
+    (S : SaturationSearchState Const Γ)
+    {σ : Ty Base} {φ : Formula Const (σ :: Γ)} {t : Term Const Γ σ}
+    (h :
+      (Sign.falseE, instantiate (Base := Base) t φ) ∉ S.hintikka.close.formulas) :
+    S.DeterministicAdditionCompatible (.trueAll φ t) :=
+  (deterministicAdditionCompatible_trueAll_iff S).2 h
+
+theorem deterministicAdditionCompatible_falseAllWitness
+    (S : SaturationSearchState Const Γ)
+    {σ : Ty Base} {φ : Formula Const (σ :: Γ)} {t : Term Const Γ σ}
+    (h :
+      (Sign.trueE, instantiate (Base := Base) t φ) ∉ S.hintikka.close.formulas) :
+    S.DeterministicAdditionCompatible (.falseAllWitness φ t) :=
+  (deterministicAdditionCompatible_falseAllWitness_iff S).2 h
+
+theorem deterministicAdditionCompatible_trueExWitness
+    (S : SaturationSearchState Const Γ)
+    {σ : Ty Base} {φ : Formula Const (σ :: Γ)} {t : Term Const Γ σ}
+    (h :
+      (Sign.falseE, instantiate (Base := Base) t φ) ∉ S.hintikka.close.formulas) :
+    S.DeterministicAdditionCompatible (.trueExWitness φ t) :=
+  (deterministicAdditionCompatible_trueExWitness_iff S).2 h
+
+theorem deterministicAdditionCompatible_falseEx
+    (S : SaturationSearchState Const Γ)
+    {σ : Ty Base} {φ : Formula Const (σ :: Γ)} {t : Term Const Γ σ}
+    (h :
+      (Sign.trueE, instantiate (Base := Base) t φ) ∉ S.hintikka.close.formulas) :
+    S.DeterministicAdditionCompatible (.falseEx φ t) :=
+  (deterministicAdditionCompatible_falseEx_iff S).2 h
+
+theorem branchAdditionCompatible_falseAndLeft_iff
+    (S : SaturationSearchState Const Γ)
+    {r : LocalBranchResolution Const Γ} {φ ψ : Formula Const Γ}
+    (hstep : r.step = .falseAndLeft φ ψ) :
+    S.BranchAdditionCompatible r ↔
+      (Sign.trueE, φ) ∉ S.hintikka.close.formulas := by
+  rw [branchAdditionCompatible_iff_of_singleton_addition
+    (S := S) (r := r) (sf := (Sign.falseE, φ))]
+  · simp [SignedFormula.flip, Sign.flip]
+  · simp [hstep, LocalSaturationStep.additions]
+
+theorem branchAdditionCompatible_falseAndRight_iff
+    (S : SaturationSearchState Const Γ)
+    {r : LocalBranchResolution Const Γ} {φ ψ : Formula Const Γ}
+    (hstep : r.step = .falseAndRight φ ψ) :
+    S.BranchAdditionCompatible r ↔
+      (Sign.trueE, ψ) ∉ S.hintikka.close.formulas := by
+  rw [branchAdditionCompatible_iff_of_singleton_addition
+    (S := S) (r := r) (sf := (Sign.falseE, ψ))]
+  · simp [SignedFormula.flip, Sign.flip]
+  · simp [hstep, LocalSaturationStep.additions]
+
+theorem branchAdditionCompatible_trueOrLeft_iff
+    (S : SaturationSearchState Const Γ)
+    {r : LocalBranchResolution Const Γ} {φ ψ : Formula Const Γ}
+    (hstep : r.step = .trueOrLeft φ ψ) :
+    S.BranchAdditionCompatible r ↔
+      (Sign.falseE, φ) ∉ S.hintikka.close.formulas := by
+  rw [branchAdditionCompatible_iff_of_singleton_addition
+    (S := S) (r := r) (sf := (Sign.trueE, φ))]
+  · simp [SignedFormula.flip, Sign.flip]
+  · simp [hstep, LocalSaturationStep.additions]
+
+theorem branchAdditionCompatible_trueOrRight_iff
+    (S : SaturationSearchState Const Γ)
+    {r : LocalBranchResolution Const Γ} {φ ψ : Formula Const Γ}
+    (hstep : r.step = .trueOrRight φ ψ) :
+    S.BranchAdditionCompatible r ↔
+      (Sign.falseE, ψ) ∉ S.hintikka.close.formulas := by
+  rw [branchAdditionCompatible_iff_of_singleton_addition
+    (S := S) (r := r) (sf := (Sign.trueE, ψ))]
+  · simp [SignedFormula.flip, Sign.flip]
+  · simp [hstep, LocalSaturationStep.additions]
 
 /-- Consume a chosen focused agenda item by removing exactly that target and
 appending any newly exposed obligations from the chosen local saturation step. -/
@@ -254,6 +426,26 @@ theorem mem_resolveHead_of_addition {S : SaturationSearchState Const Γ}
     (h : sf ∈ LocalSaturationStep.additions r.step) :
     sf ∈ (resolveHead S r hhead).hintikka.formulas :=
   HintikkaSet.mem_saturateWithStep_of_addition h
+
+theorem closed_noncontradictory_applyLocalStep_of_deterministicAdditionCompatible
+    {S : SaturationSearchState Const Γ}
+    (hNoncontradictory : S.hintikka.close.Noncontradictory)
+    {s : DeterministicLocalSaturationStep Const Γ}
+    (hCompat : S.DeterministicAdditionCompatible s) :
+    (applyLocalStep S s.toLocalSaturationStep).hintikka.close.Noncontradictory := by
+  simpa [applyLocalStep, HintikkaSet.saturateWithStep, HintikkaSet.insertAll,
+    DeterministicLocalSaturationStep.additions] using
+    (HintikkaSet.noncontradictory_close_insertAll_of_flip_not_mem
+      (H := S.hintikka)
+      (Δ := DeterministicLocalSaturationStep.additions s)
+      hNoncontradictory
+      (hCompat := by
+        intro sf hsf
+        exact hCompat hsf)
+      (hInternal := by
+        intro sf hsf
+        exact DeterministicLocalSaturationStep.flip_not_mem_additions_of_mem
+          (s := s) hsf))
 
 theorem closed_noncontradictory_resolveHead_of_branchAdditionCompatible
     {S : SaturationSearchState Const Γ}
@@ -866,6 +1058,43 @@ inductive HeadPrioritySearchDerivation (F : CompletenessFrontier Const Γ) :
 
 namespace HeadPrioritySearchDerivation
 
+/-- Stepwise compatibility data ensuring that every head-priority move adds
+only formulas whose flips are absent from the closed hull already built so far. -/
+def Compatible {F : CompletenessFrontier Const Γ} :
+    {S : SaturationSearchState Const Γ} →
+      HeadPrioritySearchDerivation F S → Prop
+  | _, .initial => True
+  | _, .saturate (S := S) D _ t =>
+      Compatible D ∧ S.DeterministicAdditionCompatible t.step
+  | _, .resolveHead (S := S) D r _ =>
+      Compatible D ∧ S.BranchAdditionCompatible r
+
+theorem compatible_initial {F : CompletenessFrontier Const Γ} :
+    Compatible (HeadPrioritySearchDerivation.initial (F := F)) := by
+  trivial
+
+theorem compatible_saturate
+    {F : CompletenessFrontier Const Γ}
+    {S : SaturationSearchState Const Γ}
+    (D : HeadPrioritySearchDerivation F S)
+    (hIdle : S.agenda = [])
+    (t : ProductiveTriggeredLocalStep S)
+    (hD : Compatible D)
+    (hStep : S.DeterministicAdditionCompatible t.step) :
+    Compatible (HeadPrioritySearchDerivation.saturate D hIdle t) :=
+  ⟨hD, hStep⟩
+
+theorem compatible_resolveHead
+    {F : CompletenessFrontier Const Γ}
+    {S : SaturationSearchState Const Γ}
+    (D : HeadPrioritySearchDerivation F S)
+    (r : LocalBranchResolution Const Γ)
+    (hhead : S.CanResolveHead r)
+    (hD : Compatible D)
+    (hStep : S.BranchAdditionCompatible r) :
+    Compatible (HeadPrioritySearchDerivation.resolveHead D r hhead) :=
+  ⟨hD, hStep⟩
+
 /-- Any head-priority derivation yields a finite honest reachability proof from
 the rooted initial frontier state to its endpoint. -/
 theorem reachable {F : CompletenessFrontier Const Γ}
@@ -915,6 +1144,23 @@ theorem false_mem {F : CompletenessFrontier Const Γ}
     {S : SaturationSearchState Const Γ} (D : HeadPrioritySearchDerivation F S) :
     (Sign.falseE, F.succedent) ∈ S.hintikka.formulas := by
   simpa using D.toSearchRun.false_mem
+
+theorem closed_noncontradictory {F : CompletenessFrontier Const Γ}
+    {S : SaturationSearchState Const Γ} (D : HeadPrioritySearchDerivation F S)
+    (hInitial : (SaturationSearchState.initial F).hintikka.close.Noncontradictory)
+    (hCompat : D.Compatible) :
+    S.hintikka.close.Noncontradictory := by
+  induction D with
+  | initial =>
+      simpa using hInitial
+  | @saturate S D hIdle t ih =>
+      simp [Compatible] at hCompat
+      exact SaturationSearchState.closed_noncontradictory_applyLocalStep_of_deterministicAdditionCompatible
+        (S := S) (ih hCompat.1) hCompat.2
+  | @resolveHead S D r hhead ih =>
+      simp [Compatible] at hCompat
+      exact SaturationSearchState.closed_noncontradictory_resolveHead_of_branchAdditionCompatible
+        (S := S) (ih hCompat.1) (r := r) (hhead := hhead) hCompat.2
 
 end HeadPrioritySearchDerivation
 
@@ -991,6 +1237,14 @@ theorem false_mem {F : CompletenessFrontier Const Γ}
     (C : HeadPriorityCompletion F) :
     (Sign.falseE, F.succedent) ∈ C.state.hintikka.formulas :=
   C.derivation.false_mem
+
+theorem closed_noncontradictory_of_compatibleDerivation
+    {F : CompletenessFrontier Const Γ}
+    (C : HeadPriorityCompletion F)
+    (hInitial : (SaturationSearchState.initial F).hintikka.close.Noncontradictory)
+    (hCompat : C.derivation.Compatible) :
+    C.state.hintikka.close.Noncontradictory :=
+  C.derivation.closed_noncontradictory hInitial hCompat
 
 end HeadPriorityCompletion
 
@@ -1386,6 +1640,14 @@ def toLocalHintikkaCore (C : CountermodelCandidate Const Γ) :
 def closedHintikka (C : CountermodelCandidate Const Γ) : HintikkaSet Const Γ :=
   C.hintikka.close
 
+theorem closedHintikka_noncontradictory_of_compatibleDerivation
+    (C : CountermodelCandidate Const Γ)
+    (hInitial :
+      (SaturationSearchState.initial C.frontier).hintikka.close.Noncontradictory)
+    (hCompat : C.completion.derivation.Compatible) :
+    C.closedHintikka.Noncontradictory :=
+  C.completion.closed_noncontradictory_of_compatibleDerivation hInitial hCompat
+
 theorem closedHintikka_closed
     (C : CountermodelCandidate Const Γ) :
     C.closedHintikka.Closed :=
@@ -1520,6 +1782,17 @@ def toClosedLocalHintikkaCertificateOfInitialResolveHead
   C.toClosedLocalHintikkaCertificate
     (C.closedHintikka_noncontradictory_of_initialResolveHead
       hhead hState hInitial hCompat)
+
+/-- Package a terminal candidate whose whole head-priority derivation is
+compatible as a closed non-contradictory certificate. -/
+def toClosedLocalHintikkaCertificateOfCompatibleDerivation
+    (C : CountermodelCandidate Const Γ)
+    (hInitial :
+      (SaturationSearchState.initial C.frontier).hintikka.close.Noncontradictory)
+    (hCompat : C.completion.derivation.Compatible) :
+    LocalHintikkaCertificate C.frontier :=
+  C.toClosedLocalHintikkaCertificate
+    (C.closedHintikka_noncontradictory_of_compatibleDerivation hInitial hCompat)
 
 /-- Turn a terminal search candidate into an agreement witness once the semantic
 agreement data for its staged Hintikka set is available. -/
@@ -1744,6 +2017,14 @@ def toHintikkaGoal (F : CompletenessFrontier Const Γ) : HintikkaGoal Const Γ :
   { antecedents := F.antecedents
     succedent := F.succedent }
 
+/-- Frontier-level side conditions excluding the three immediate contradictions
+created when the paper's `T ⊤` and `F ⊥` closure formulas are adjoined to the
+initial signed sequent data. -/
+def ClosedNonconflicting (F : CompletenessFrontier Const Γ) : Prop :=
+  (.bot : Formula Const Γ) ∉ F.antecedents ∧
+    F.succedent ≠ (.top : Formula Const Γ) ∧
+    F.succedent ∉ F.antecedents
+
 /-- Initial signed data from which a saturation search would start. -/
 def initialHintikkaSet (F : CompletenessFrontier Const Γ) : HintikkaSet Const Γ :=
   F.toHintikkaGoal.toHintikkaSet
@@ -1767,6 +2048,71 @@ theorem false_mem_initialHintikkaSet (F : CompletenessFrontier Const Γ) :
     F.initialHintikkaSet.falseFormulas = [F.succedent] := by
   exact HintikkaGoal.falseFormulas_toHintikkaSet F.toHintikkaGoal
 
+theorem true_mem_initialClosedHintikka_iff
+    (F : CompletenessFrontier Const Γ)
+    {φ : Formula Const Γ} :
+    (Sign.trueE, φ) ∈ F.initialHintikkaSet.close.formulas ↔
+      φ = (.top : Formula Const Γ) ∨ φ ∈ F.antecedents := by
+  simp [initialHintikkaSet, toHintikkaGoal, HintikkaGoal.toHintikkaSet,
+    HintikkaGoal.signedFormulas, HintikkaSet.close]
+
+theorem false_mem_initialClosedHintikka_iff
+    (F : CompletenessFrontier Const Γ)
+    {φ : Formula Const Γ} :
+    (Sign.falseE, φ) ∈ F.initialHintikkaSet.close.formulas ↔
+      φ = (.bot : Formula Const Γ) ∨ φ = F.succedent := by
+  simp [initialHintikkaSet, toHintikkaGoal, HintikkaGoal.toHintikkaSet,
+    HintikkaGoal.signedFormulas, HintikkaSet.close]
+
+theorem initialHintikkaSet_close_noncontradictory_iff
+    (F : CompletenessFrontier Const Γ) :
+    F.initialHintikkaSet.close.Noncontradictory ↔ F.ClosedNonconflicting := by
+  constructor
+  · intro hNoncontradictory
+    refine ⟨?_, ?_, ?_⟩
+    · intro hBot
+      have hTrueBot :
+          (Sign.trueE, (.bot : Formula Const Γ)) ∈ F.initialHintikkaSet.close.formulas :=
+        (F.true_mem_initialClosedHintikka_iff).2 (Or.inr hBot)
+      exact (HintikkaSet.trueBot_not_mem_of_noncontradictory hNoncontradictory) hTrueBot
+    · intro hTop
+      have hFalseTop :
+          (Sign.falseE, (.top : Formula Const Γ)) ∈ F.initialHintikkaSet.close.formulas := by
+        exact HintikkaSet.mem_close_of_mem (by
+          simpa [hTop] using F.false_mem_initialHintikkaSet)
+      exact (HintikkaSet.falseTop_not_mem_of_noncontradictory hNoncontradictory) hFalseTop
+    · intro hSucc
+      have hTrueSucc :
+          (Sign.trueE, F.succedent) ∈ F.initialHintikkaSet.close.formulas :=
+        (F.true_mem_initialClosedHintikka_iff).2 (Or.inr hSucc)
+      have hFalseSucc :
+          (Sign.falseE, F.succedent) ∈ F.initialHintikkaSet.close.formulas :=
+        HintikkaSet.mem_close_of_mem F.false_mem_initialHintikkaSet
+      exact
+        (HintikkaSet.true_not_mem_of_false_mem_of_noncontradictory
+          hNoncontradictory hFalseSucc) hTrueSucc
+  · rintro ⟨hNoBot, hSuccNeTop, hSuccNotMem⟩
+    intro hContra
+    rcases hContra with hConflict | hSpecial
+    · rcases hConflict with ⟨φ, hTrue, hFalse⟩
+      rcases (F.true_mem_initialClosedHintikka_iff.mp hTrue) with hTop | hAnt
+      · subst φ
+        rcases (F.false_mem_initialClosedHintikka_iff.mp hFalse) with hBot | hSucc
+        · simp at hBot
+        · exact hSuccNeTop hSucc.symm
+      · rcases (F.false_mem_initialClosedHintikka_iff.mp hFalse) with hBot | hSucc
+        · subst φ
+          exact hNoBot hAnt
+        · subst φ
+          exact hSuccNotMem hAnt
+    · rcases hSpecial with hTrueBot | hFalseTop
+      · rcases (F.true_mem_initialClosedHintikka_iff.mp hTrueBot) with hTop | hBot
+        · simp at hTop
+        · exact hNoBot hBot
+      · rcases (F.false_mem_initialClosedHintikka_iff.mp hFalseTop) with hBot | hSucc
+        · simp at hBot
+        · exact hSuccNeTop hSucc.symm
+
 theorem initialHintikkaSet_icttConsistent_iff_not_derivable
     (F : CompletenessFrontier Const Γ) :
     F.initialHintikkaSet.ICTTConsistent ↔
@@ -1779,6 +2125,13 @@ theorem initialHintikkaSet_icttConsistent_iff_not_derivable
     (SaturationSearchState.initial F).hintikka = F.initialHintikkaSet := by
   rfl
 
+theorem initial_closed_noncontradictory_iff
+    (F : CompletenessFrontier Const Γ) :
+    (SaturationSearchState.initial F).hintikka.close.Noncontradictory ↔
+      F.ClosedNonconflicting := by
+  simpa [CompletenessFrontier.initialHintikkaSet] using
+    F.initialHintikkaSet_close_noncontradictory_iff
+
 theorem initial_icttConsistent_iff_not_derivable
     (F : CompletenessFrontier Const Γ) :
     (SaturationSearchState.initial F).hintikka.ICTTConsistent ↔
@@ -1787,5 +2140,1664 @@ theorem initial_icttConsistent_iff_not_derivable
     F.initialHintikkaSet_icttConsistent_iff_not_derivable
 
 end CompletenessFrontier
+
+namespace SaturationSearchState.HeadPrioritySearchDerivation
+
+theorem closed_noncontradictory_of_closedNonconflicting
+    {F : CompletenessFrontier Const Γ}
+    {S : SaturationSearchState Const Γ} (D : HeadPrioritySearchDerivation F S)
+    (hInitial : F.ClosedNonconflicting)
+    (hCompat : D.Compatible) :
+    S.hintikka.close.Noncontradictory :=
+  D.closed_noncontradictory
+    ((CompletenessFrontier.initial_closed_noncontradictory_iff F).2 hInitial)
+    hCompat
+
+end SaturationSearchState.HeadPrioritySearchDerivation
+
+namespace SaturationSearchState.HeadPriorityCompletion
+
+theorem closed_noncontradictory_of_closedNonconflicting
+    {F : CompletenessFrontier Const Γ}
+    (C : HeadPriorityCompletion F)
+    (hInitial : F.ClosedNonconflicting)
+    (hCompat : C.derivation.Compatible) :
+    C.state.hintikka.close.Noncontradictory :=
+  C.derivation.closed_noncontradictory_of_closedNonconflicting hInitial hCompat
+
+end SaturationSearchState.HeadPriorityCompletion
+
+/-- A head-priority derivation together with the frontier-side closed-hull sanity
+condition and the stepwise compatibility evidence needed to keep its closed
+Hintikka hull noncontradictory throughout the run. Unlike
+`CertifiedHeadPriorityCompletion`, this structure does not require terminality,
+so it can be extended compositionally by further scheduler-approved steps. -/
+structure CertifiedHeadPriorityDerivation
+    (Const : Ty Base → Type v) (Γ : Ctx Base)
+    (F : CompletenessFrontier Const Γ) where
+  state : SaturationSearchState Const Γ
+  derivation : SaturationSearchState.HeadPrioritySearchDerivation F state
+  closedNonconflicting : F.ClosedNonconflicting
+  compatible : derivation.Compatible
+
+namespace CertifiedHeadPriorityDerivation
+
+def frontier (_ : CertifiedHeadPriorityDerivation Const Γ F) :
+    CompletenessFrontier Const Γ :=
+  F
+
+def hintikka (D : CertifiedHeadPriorityDerivation Const Γ F) :
+    HintikkaSet Const Γ :=
+  D.state.hintikka
+
+def closedHintikka (D : CertifiedHeadPriorityDerivation Const Γ F) :
+    HintikkaSet Const Γ :=
+  D.hintikka.close
+
+def initial {F : CompletenessFrontier Const Γ}
+    (hInitial : F.ClosedNonconflicting) :
+    CertifiedHeadPriorityDerivation Const Γ F where
+  state := SaturationSearchState.initial F
+  derivation := SaturationSearchState.HeadPrioritySearchDerivation.initial
+  closedNonconflicting := hInitial
+  compatible := SaturationSearchState.HeadPrioritySearchDerivation.compatible_initial
+
+def saturate
+    {F : CompletenessFrontier Const Γ}
+    (C : CertifiedHeadPriorityDerivation Const Γ F)
+    (hIdle : C.state.agenda = [])
+    (t : SaturationSearchState.ProductiveTriggeredLocalStep C.state)
+    (hCompat : C.state.DeterministicAdditionCompatible t.step) :
+    CertifiedHeadPriorityDerivation Const Γ F where
+  state := C.state.applyLocalStep t.step.toLocalSaturationStep
+  derivation := SaturationSearchState.HeadPrioritySearchDerivation.saturate
+    C.derivation hIdle t
+  closedNonconflicting := C.closedNonconflicting
+  compatible := SaturationSearchState.HeadPrioritySearchDerivation.compatible_saturate
+    C.derivation hIdle t C.compatible hCompat
+
+def resolveHead
+    {F : CompletenessFrontier Const Γ}
+    (C : CertifiedHeadPriorityDerivation Const Γ F)
+    (r : SaturationSearchState.LocalBranchResolution Const Γ)
+    (hhead : C.state.CanResolveHead r)
+    (hCompat : C.state.BranchAdditionCompatible r) :
+    CertifiedHeadPriorityDerivation Const Γ F where
+  state := C.state.resolveHead r hhead
+  derivation := SaturationSearchState.HeadPrioritySearchDerivation.resolveHead
+    C.derivation r hhead
+  closedNonconflicting := C.closedNonconflicting
+  compatible := SaturationSearchState.HeadPrioritySearchDerivation.compatible_resolveHead
+    C.derivation r hhead C.compatible hCompat
+
+theorem closedHintikka_noncontradictory
+    {F : CompletenessFrontier Const Γ}
+    (C : CertifiedHeadPriorityDerivation Const Γ F) :
+    C.closedHintikka.Noncontradictory :=
+  C.derivation.closed_noncontradictory_of_closedNonconflicting
+    C.closedNonconflicting C.compatible
+
+/-- Build a certified derivation from a single scheduler-approved productive
+deterministic saturation step taken from the initial search state. -/
+def ofInitialSaturate
+    {F : CompletenessFrontier Const Γ}
+    (hInitial : F.ClosedNonconflicting)
+    (hIdle : (SaturationSearchState.initial F).agenda = [])
+    (t : SaturationSearchState.ProductiveTriggeredLocalStep
+      (SaturationSearchState.initial F))
+    (hCompat :
+      (SaturationSearchState.initial F).DeterministicAdditionCompatible t.step) :
+    CertifiedHeadPriorityDerivation Const Γ F :=
+  (initial (Const := Const) (Γ := Γ) hInitial).saturate hIdle t hCompat
+
+/-- Build a certified derivation from a single scheduler-approved head
+resolution taken from the initial search state. -/
+def ofInitialResolveHead
+    {F : CompletenessFrontier Const Γ}
+    (hInitial : F.ClosedNonconflicting)
+    (r : SaturationSearchState.LocalBranchResolution Const Γ)
+    (hhead : (SaturationSearchState.initial F).CanResolveHead r)
+    (hCompat :
+      (SaturationSearchState.initial F).BranchAdditionCompatible r) :
+    CertifiedHeadPriorityDerivation Const Γ F :=
+  (initial (Const := Const) (Γ := Γ) hInitial).resolveHead r hhead hCompat
+
+/-- Build a certified derivation from an initial productive deterministic
+saturation step followed by a scheduler-approved head resolution. This is the
+smallest mixed run needed by the current regression canaries. -/
+def ofInitialSaturateThenResolveHead
+    {F : CompletenessFrontier Const Γ}
+    (hInitial : F.ClosedNonconflicting)
+    (hIdle : (SaturationSearchState.initial F).agenda = [])
+    (t : SaturationSearchState.ProductiveTriggeredLocalStep
+      (SaturationSearchState.initial F))
+    (r : SaturationSearchState.LocalBranchResolution Const Γ)
+    (hhead :
+      (SaturationSearchState.applyLocalStep
+        (SaturationSearchState.initial F) t.step.toLocalSaturationStep).CanResolveHead r)
+    (hCompat₁ :
+      (SaturationSearchState.initial F).DeterministicAdditionCompatible t.step)
+    (hCompat₂ :
+      (SaturationSearchState.applyLocalStep
+        (SaturationSearchState.initial F) t.step.toLocalSaturationStep).BranchAdditionCompatible r) :
+    CertifiedHeadPriorityDerivation Const Γ F :=
+  ((initial (Const := Const) (Γ := Γ) hInitial).saturate hIdle t hCompat₁).resolveHead
+    r hhead hCompat₂
+
+end CertifiedHeadPriorityDerivation
+
+/-- A terminal head-priority completion together with the search-side side
+conditions currently needed to upgrade its closed hull into paper-facing
+Hintikka and countermodel data. Bundling these obligations here keeps the
+certificate layer attached to genuine search completions rather than only to
+post hoc countermodel candidates. -/
+structure CertifiedHeadPriorityCompletion
+    (Const : Ty Base → Type v) (Γ : Ctx Base)
+    (F : CompletenessFrontier Const Γ) where
+  completion : SaturationSearchState.HeadPriorityCompletion F
+  closedNonconflicting : F.ClosedNonconflicting
+  compatible : completion.derivation.Compatible
+
+namespace CertifiedHeadPriorityCompletion
+
+def frontier (_ : CertifiedHeadPriorityCompletion Const Γ F) :
+    CompletenessFrontier Const Γ :=
+  F
+
+def state (C : CertifiedHeadPriorityCompletion Const Γ F) :
+    SaturationSearchState Const Γ :=
+  C.completion.state
+
+def hintikka (C : CertifiedHeadPriorityCompletion Const Γ F) :
+    HintikkaSet Const Γ :=
+  C.state.hintikka
+
+def closedHintikka (C : CertifiedHeadPriorityCompletion Const Γ F) :
+    HintikkaSet Const Γ :=
+  C.hintikka.close
+
+theorem closedHintikka_noncontradictory
+    (C : CertifiedHeadPriorityCompletion Const Γ F) :
+    C.closedHintikka.Noncontradictory :=
+  C.completion.closed_noncontradictory_of_closedNonconflicting
+    C.closedNonconflicting C.compatible
+
+def ofCertifiedDerivation
+    {F : CompletenessFrontier Const Γ}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed) :
+    CertifiedHeadPriorityCompletion Const Γ F where
+  completion :=
+    { state := D.state
+      derivation := D.derivation
+      terminal := terminal
+      branchClosed := branchClosed }
+  closedNonconflicting := D.closedNonconflicting
+  compatible := D.compatible
+
+/-- Build a certified completion from a single scheduler-approved productive
+deterministic saturation step taken from the initial search state. -/
+def ofInitialSaturate
+    {F : CompletenessFrontier Const Γ}
+    (hInitial : F.ClosedNonconflicting)
+    (hIdle : (SaturationSearchState.initial F).agenda = [])
+    (t : SaturationSearchState.ProductiveTriggeredLocalStep
+      (SaturationSearchState.initial F))
+    (terminal :
+      (SaturationSearchState.applyLocalStep
+        (SaturationSearchState.initial F) t.step.toLocalSaturationStep).IsTerminal)
+    (branchClosed :
+      (SaturationSearchState.applyLocalStep
+        (SaturationSearchState.initial F) t.step.toLocalSaturationStep).hintikka.BranchClosed)
+    (hCompat :
+      (SaturationSearchState.initial F).DeterministicAdditionCompatible t.step) :
+    CertifiedHeadPriorityCompletion Const Γ F :=
+  ofCertifiedDerivation
+    (CertifiedHeadPriorityDerivation.ofInitialSaturate
+      (Const := Const) (Γ := Γ) hInitial hIdle t hCompat)
+    terminal branchClosed
+
+/-- Build a certified completion from a single scheduler-approved head
+resolution taken from the initial search state. -/
+def ofInitialResolveHead
+    {F : CompletenessFrontier Const Γ}
+    (hInitial : F.ClosedNonconflicting)
+    (r : SaturationSearchState.LocalBranchResolution Const Γ)
+    (hhead : (SaturationSearchState.initial F).CanResolveHead r)
+    (terminal :
+      ((SaturationSearchState.initial F).resolveHead r hhead).IsTerminal)
+    (branchClosed :
+      ((SaturationSearchState.initial F).resolveHead r hhead).hintikka.BranchClosed)
+    (hCompat :
+      (SaturationSearchState.initial F).BranchAdditionCompatible r) :
+    CertifiedHeadPriorityCompletion Const Γ F :=
+  ofCertifiedDerivation
+    (CertifiedHeadPriorityDerivation.ofInitialResolveHead
+      (Const := Const) (Γ := Γ) hInitial r hhead hCompat)
+    terminal branchClosed
+
+/-- Build a certified completion from an initial productive deterministic
+saturation step followed by a scheduler-approved head resolution. This is the
+smallest mixed run needed by the current regression canaries. -/
+def ofInitialSaturateThenResolveHead
+    {F : CompletenessFrontier Const Γ}
+    (hInitial : F.ClosedNonconflicting)
+    (hIdle : (SaturationSearchState.initial F).agenda = [])
+    (t : SaturationSearchState.ProductiveTriggeredLocalStep
+      (SaturationSearchState.initial F))
+    (r : SaturationSearchState.LocalBranchResolution Const Γ)
+    (hhead :
+      (SaturationSearchState.applyLocalStep
+        (SaturationSearchState.initial F) t.step.toLocalSaturationStep).CanResolveHead r)
+    (terminal :
+      ((SaturationSearchState.applyLocalStep
+          (SaturationSearchState.initial F) t.step.toLocalSaturationStep).resolveHead r hhead).IsTerminal)
+    (branchClosed :
+      ((SaturationSearchState.applyLocalStep
+          (SaturationSearchState.initial F) t.step.toLocalSaturationStep).resolveHead r hhead).hintikka.BranchClosed)
+    (hCompat₁ :
+      (SaturationSearchState.initial F).DeterministicAdditionCompatible t.step)
+    (hCompat₂ :
+      (SaturationSearchState.applyLocalStep
+        (SaturationSearchState.initial F) t.step.toLocalSaturationStep).BranchAdditionCompatible r) :
+    CertifiedHeadPriorityCompletion Const Γ F :=
+  ofCertifiedDerivation
+    (CertifiedHeadPriorityDerivation.ofInitialSaturateThenResolveHead
+      (Const := Const) (Γ := Γ) hInitial hIdle t r hhead hCompat₁ hCompat₂)
+    terminal branchClosed
+
+end CertifiedHeadPriorityCompletion
+
+namespace CertifiedHeadPriorityDerivation
+
+def toCertifiedCompletion
+    {F : CompletenessFrontier Const Γ}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed) :
+    CertifiedHeadPriorityCompletion Const Γ F :=
+  CertifiedHeadPriorityCompletion.ofCertifiedDerivation D terminal branchClosed
+
+end CertifiedHeadPriorityDerivation
+
+namespace SaturationSearchState.HeadPriorityCompletion
+
+def toCertified
+    {F : CompletenessFrontier Const Γ}
+    (C : HeadPriorityCompletion F)
+    (hInitial : F.ClosedNonconflicting)
+    (hCompat : C.derivation.Compatible) :
+    CertifiedHeadPriorityCompletion Const Γ F :=
+  { completion := C
+    closedNonconflicting := hInitial
+    compatible := hCompat }
+
+end SaturationSearchState.HeadPriorityCompletion
+
+namespace CountermodelCandidate
+
+theorem closedHintikka_noncontradictory_of_closedNonconflicting
+    (C : CountermodelCandidate Const Γ)
+    (hInitial : C.frontier.ClosedNonconflicting)
+    (hCompat : C.completion.derivation.Compatible) :
+    C.closedHintikka.Noncontradictory :=
+  C.completion.closed_noncontradictory_of_closedNonconflicting hInitial hCompat
+
+/-- Package a terminal candidate whose whole head-priority derivation is
+compatible and whose frontier avoids immediate closed-hull conflicts as a
+closed non-contradictory certificate. -/
+def toClosedLocalHintikkaCertificateOfClosedNonconflicting
+    (C : CountermodelCandidate Const Γ)
+    (hInitial : C.frontier.ClosedNonconflicting)
+    (hCompat : C.completion.derivation.Compatible) :
+    LocalHintikkaCertificate C.frontier :=
+  C.toClosedLocalHintikkaCertificate
+    (C.closedHintikka_noncontradictory_of_closedNonconflicting hInitial hCompat)
+
+/-- Turn the closed hull of a compatible terminal search candidate into an
+agreement witness once semantic agreement data has been provided, assuming the
+frontier already avoids the immediate closed-hull conflicts. -/
+def toClosedLocalAgreementWitnessOfClosedNonconflicting
+    {M : SemilocalModel Base Const}
+    (C : CountermodelCandidate Const Γ)
+    (hInitial : C.frontier.ClosedNonconflicting)
+    (hCompat : C.completion.derivation.Compatible)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤) :
+    LocalAgreementWitness M C.frontier :=
+  C.toClosedLocalAgreementWitnessOfNoncontradictory
+    (C.closedHintikka_noncontradictory_of_closedNonconflicting hInitial hCompat)
+    env global true_top false_ne_top
+
+/-- Package the closed hull of a compatible terminal search candidate as the
+current local countermodel object once semantic agreement data has been
+provided and the frontier avoids immediate closed-hull conflicts. -/
+def toClosedLocalCountermodelOfClosedNonconflicting
+    {M : SemilocalModel Base Const}
+    (C : CountermodelCandidate Const Γ)
+    (hInitial : C.frontier.ClosedNonconflicting)
+    (hCompat : C.completion.derivation.Compatible)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤) :
+    LocalCountermodel (Base := Base) (Const := Const) C.frontier :=
+  (C.toClosedLocalAgreementWitnessOfClosedNonconflicting
+      hInitial hCompat env global true_top false_ne_top).toLocalCountermodel
+
+/-- Strengthen the compatible closed-hull candidate-to-countermodel bridge with
+the semilocal soundness hypothesis needed to refute derivability once the
+frontier avoids immediate closed-hull conflicts. -/
+def toClosedSoundLocalCountermodelOfClosedNonconflicting
+    {M : SemilocalModel Base Const}
+    (C : CountermodelCandidate Const Γ)
+    (hInitial : C.frontier.ClosedNonconflicting)
+    (hCompat : C.completion.derivation.Compatible)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤)
+    (hM : SemilocalModel.SupportsUniformRelativization M) :
+    SoundLocalCountermodel (Base := Base) (Const := Const) C.frontier :=
+  (C.toClosedLocalAgreementWitnessOfClosedNonconflicting
+      hInitial hCompat env global true_top false_ne_top).toSoundLocalCountermodel hM
+
+end CountermodelCandidate
+
+namespace CertifiedHeadPriorityCompletion
+
+/-- Forget only the extra certification witnesses and keep the underlying
+countermodel candidate extracted from the certified completion. -/
+def toCountermodelCandidate
+    (C : CertifiedHeadPriorityCompletion Const Γ F) :
+    CountermodelCandidate Const Γ :=
+  { frontier := F
+    completion := C.completion }
+
+end CertifiedHeadPriorityCompletion
+
+/-- A terminal world-free candidate together with the certified search-side
+side conditions currently needed to turn it into closed Hintikka data and then
+into a semilocal countermodel witness. -/
+structure CertifiedCountermodelCandidate
+    (Const : Ty Base → Type v) (Γ : Ctx Base) where
+  candidate : CountermodelCandidate Const Γ
+  closedNonconflicting : candidate.frontier.ClosedNonconflicting
+  compatible : candidate.completion.derivation.Compatible
+
+namespace CertifiedCountermodelCandidate
+
+def frontier (C : CertifiedCountermodelCandidate Const Γ) :
+    CompletenessFrontier Const Γ :=
+  C.candidate.frontier
+
+def state (C : CertifiedCountermodelCandidate Const Γ) :
+    SaturationSearchState Const Γ :=
+  C.candidate.state
+
+def hintikka (C : CertifiedCountermodelCandidate Const Γ) :
+    HintikkaSet Const Γ :=
+  C.candidate.hintikka
+
+def closedHintikka (C : CertifiedCountermodelCandidate Const Γ) :
+    HintikkaSet Const Γ :=
+  C.candidate.closedHintikka
+
+theorem closedHintikka_noncontradictory
+    (C : CertifiedCountermodelCandidate Const Γ) :
+    C.closedHintikka.Noncontradictory :=
+  C.candidate.closedHintikka_noncontradictory_of_closedNonconflicting
+    C.closedNonconflicting C.compatible
+
+def toClosedLocalHintikkaCertificate
+    (C : CertifiedCountermodelCandidate Const Γ) :
+    LocalHintikkaCertificate C.frontier :=
+  C.candidate.toClosedLocalHintikkaCertificateOfClosedNonconflicting
+    C.closedNonconflicting C.compatible
+
+def toClosedLocalAgreementWitness
+    {M : SemilocalModel Base Const}
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤) :
+    LocalAgreementWitness M C.frontier :=
+  C.candidate.toClosedLocalAgreementWitnessOfClosedNonconflicting
+    C.closedNonconflicting C.compatible env global true_top false_ne_top
+
+def toClosedLocalCountermodel
+    {M : SemilocalModel Base Const}
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤) :
+    LocalCountermodel (Base := Base) (Const := Const) C.frontier :=
+  C.candidate.toClosedLocalCountermodelOfClosedNonconflicting
+    C.closedNonconflicting C.compatible env global true_top false_ne_top
+
+def toClosedSoundLocalCountermodel
+    {M : SemilocalModel Base Const}
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤)
+    (hM : SemilocalModel.SupportsUniformRelativization M) :
+    SoundLocalCountermodel (Base := Base) (Const := Const) C.frontier :=
+  C.candidate.toClosedSoundLocalCountermodelOfClosedNonconflicting
+    C.closedNonconflicting C.compatible env global true_top false_ne_top hM
+
+end CertifiedCountermodelCandidate
+
+namespace CertifiedHeadPriorityCompletion
+
+/-- Repackage a certified completion as the corresponding certified
+countermodel candidate, keeping the same completion data while exposing the
+candidate-level bridge API. -/
+def toCertifiedCountermodelCandidate
+    (C : CertifiedHeadPriorityCompletion Const Γ F) :
+    CertifiedCountermodelCandidate Const Γ :=
+  { candidate := C.toCountermodelCandidate
+    closedNonconflicting := by
+      simpa [toCountermodelCandidate] using C.closedNonconflicting
+    compatible := by
+      simpa [toCountermodelCandidate] using C.compatible }
+
+@[simp] theorem toCertifiedCountermodelCandidate_state
+    (C : CertifiedHeadPriorityCompletion Const Γ F) :
+    C.toCertifiedCountermodelCandidate.state = C.state :=
+  rfl
+
+@[simp] theorem toCertifiedCountermodelCandidate_hintikka
+    (C : CertifiedHeadPriorityCompletion Const Γ F) :
+    C.toCertifiedCountermodelCandidate.hintikka = C.hintikka :=
+  rfl
+
+@[simp] theorem toCertifiedCountermodelCandidate_closedHintikka
+    (C : CertifiedHeadPriorityCompletion Const Γ F) :
+    C.toCertifiedCountermodelCandidate.closedHintikka = C.closedHintikka :=
+  rfl
+
+/-- Forget terminality/branch-closure packaging and view a certified completion
+as the underlying certified head-priority derivation. -/
+def toCertifiedDerivation
+    (C : CertifiedHeadPriorityCompletion Const Γ F) :
+    CertifiedHeadPriorityDerivation Const Γ F :=
+  { state := C.state
+    derivation := C.completion.derivation
+    closedNonconflicting := C.closedNonconflicting
+    compatible := C.compatible }
+
+@[simp] theorem toCertifiedDerivation_state
+    (C : CertifiedHeadPriorityCompletion Const Γ F) :
+    C.toCertifiedDerivation.state = C.state :=
+  rfl
+
+@[simp] theorem toCertifiedDerivation_hintikka
+    (C : CertifiedHeadPriorityCompletion Const Γ F) :
+    C.toCertifiedDerivation.hintikka = C.hintikka :=
+  rfl
+
+@[simp] theorem toCertifiedDerivation_closedHintikka
+    (C : CertifiedHeadPriorityCompletion Const Γ F) :
+    C.toCertifiedDerivation.closedHintikka = C.closedHintikka :=
+  rfl
+
+def toClosedLocalHintikkaCertificate
+    (C : CertifiedHeadPriorityCompletion Const Γ F) :
+    LocalHintikkaCertificate F :=
+  C.toCertifiedCountermodelCandidate.toClosedLocalHintikkaCertificate
+
+@[simp] theorem toClosedLocalHintikkaCertificate_hintikka
+    (C : CertifiedHeadPriorityCompletion Const Γ F) :
+    C.toClosedLocalHintikkaCertificate.hintikka = C.closedHintikka :=
+  rfl
+
+@[simp] theorem toClosedLocalHintikkaCertificate_formulas
+    (C : CertifiedHeadPriorityCompletion Const Γ F) :
+    C.toClosedLocalHintikkaCertificate.hintikka.formulas = C.closedHintikka.formulas :=
+  rfl
+
+def toClosedLocalAgreementWitness
+    {M : SemilocalModel Base Const}
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤) :
+    LocalAgreementWitness M F :=
+  C.toCertifiedCountermodelCandidate.toClosedLocalAgreementWitness
+    env global true_top false_ne_top
+
+def toClosedLocalCountermodel
+    {M : SemilocalModel Base Const}
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤) :
+    LocalCountermodel (Base := Base) (Const := Const) F :=
+  C.toCertifiedCountermodelCandidate.toClosedLocalCountermodel
+    env global true_top false_ne_top
+
+theorem exists_closedLocalAgreementWitness_of_exists_semantics
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ = ⊤) ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ ≠ ⊤)) :
+    Nonempty (Σ M : SemilocalModel.{u, v, w, w'} Base Const, LocalAgreementWitness M F) := by
+  rcases hSem with ⟨M, env, global, true_top, false_ne_top⟩
+  exact ⟨⟨M, C.toClosedLocalAgreementWitness (M := M) env global true_top false_ne_top⟩⟩
+
+theorem exists_closedLocalCountermodel_of_exists_semantics
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ = ⊤) ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ ≠ ⊤)) :
+    Nonempty (LocalCountermodel.{u, v, w, w'} (Base := Base) (Const := Const) F) := by
+  rcases C.exists_closedLocalAgreementWitness_of_exists_semantics hSem with ⟨⟨_, W⟩⟩
+  exact ⟨W.toLocalCountermodel⟩
+
+theorem exists_closedSoundLocalCountermodel_of_exists_semantics
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ = ⊤) ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ ≠ ⊤) ∧
+        SemilocalModel.SupportsUniformRelativization M) :
+    Nonempty (SoundLocalCountermodel.{u, v, w, w'} (Base := Base) (Const := Const) F) := by
+  rcases hSem with ⟨M, env, global, true_top, false_ne_top, hM⟩
+  exact ⟨C.toCertifiedCountermodelCandidate.toClosedSoundLocalCountermodel
+    (M := M) env global true_top false_ne_top hM⟩
+
+theorem not_derivable_of_exists_semantics
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ = ⊤) ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ ≠ ⊤) ∧
+        SemilocalModel.SupportsUniformRelativization M) :
+    ¬ Derivable (Base := Base) (Const := Const) F.antecedents F.succedent := by
+  rcases C.exists_closedSoundLocalCountermodel_of_exists_semantics hSem with ⟨CM⟩
+  exact CM.not_derivable
+
+def toClosedSoundLocalCountermodel
+    {M : SemilocalModel Base Const}
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤)
+    (hM : SemilocalModel.SupportsUniformRelativization M) :
+    SoundLocalCountermodel (Base := Base) (Const := Const) F :=
+  C.toCertifiedCountermodelCandidate.toClosedSoundLocalCountermodel
+    env global true_top false_ne_top hM
+
+end CertifiedHeadPriorityCompletion
+
+namespace SaturationSearchState.HeadPriorityCompletion
+
+theorem exists_closedLocalAgreementWitness_of_exists_semantics
+    {F : CompletenessFrontier Const Γ}
+    (C : HeadPriorityCompletion F)
+    (hInitial : F.ClosedNonconflicting)
+    (hCompat : C.derivation.Compatible)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.trueE, φ) ∈ C.state.hintikka.close.formulas →
+              SemilocalModel.formulaTruth M env φ = ⊤) ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.falseE, φ) ∈ C.state.hintikka.close.formulas →
+              SemilocalModel.formulaTruth M env φ ≠ ⊤)) :
+    Nonempty (Σ M : SemilocalModel.{u, v, w, w'} Base Const, LocalAgreementWitness M F) := by
+  simpa [SaturationSearchState.HeadPriorityCompletion.toCertified,
+    CertifiedHeadPriorityCompletion.state,
+    CertifiedHeadPriorityCompletion.hintikka,
+    CertifiedHeadPriorityCompletion.closedHintikka] using
+    (CertifiedHeadPriorityCompletion.exists_closedLocalAgreementWitness_of_exists_semantics
+      (C := C.toCertified (Const := Const) (Γ := Γ) hInitial hCompat) hSem)
+
+theorem exists_closedLocalCountermodel_of_exists_semantics
+    {F : CompletenessFrontier Const Γ}
+    (C : HeadPriorityCompletion F)
+    (hInitial : F.ClosedNonconflicting)
+    (hCompat : C.derivation.Compatible)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.trueE, φ) ∈ C.state.hintikka.close.formulas →
+              SemilocalModel.formulaTruth M env φ = ⊤) ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.falseE, φ) ∈ C.state.hintikka.close.formulas →
+              SemilocalModel.formulaTruth M env φ ≠ ⊤)) :
+    Nonempty (LocalCountermodel.{u, v, w, w'} (Base := Base) (Const := Const) F) := by
+  simpa [SaturationSearchState.HeadPriorityCompletion.toCertified,
+    CertifiedHeadPriorityCompletion.state,
+    CertifiedHeadPriorityCompletion.hintikka,
+    CertifiedHeadPriorityCompletion.closedHintikka] using
+    (CertifiedHeadPriorityCompletion.exists_closedLocalCountermodel_of_exists_semantics
+      (C := C.toCertified (Const := Const) (Γ := Γ) hInitial hCompat) hSem)
+
+theorem exists_closedSoundLocalCountermodel_of_exists_semantics
+    {F : CompletenessFrontier Const Γ}
+    (C : HeadPriorityCompletion F)
+    (hInitial : F.ClosedNonconflicting)
+    (hCompat : C.derivation.Compatible)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.trueE, φ) ∈ C.state.hintikka.close.formulas →
+              SemilocalModel.formulaTruth M env φ = ⊤) ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.falseE, φ) ∈ C.state.hintikka.close.formulas →
+              SemilocalModel.formulaTruth M env φ ≠ ⊤) ∧
+        SemilocalModel.SupportsUniformRelativization M) :
+    Nonempty (SoundLocalCountermodel.{u, v, w, w'} (Base := Base) (Const := Const) F) := by
+  simpa [SaturationSearchState.HeadPriorityCompletion.toCertified,
+    CertifiedHeadPriorityCompletion.state,
+    CertifiedHeadPriorityCompletion.hintikka,
+    CertifiedHeadPriorityCompletion.closedHintikka] using
+    (CertifiedHeadPriorityCompletion.exists_closedSoundLocalCountermodel_of_exists_semantics
+      (C := C.toCertified (Const := Const) (Γ := Γ) hInitial hCompat) hSem)
+
+theorem not_derivable_of_exists_semantics
+    {F : CompletenessFrontier Const Γ}
+    (C : HeadPriorityCompletion F)
+    (hInitial : F.ClosedNonconflicting)
+    (hCompat : C.derivation.Compatible)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.trueE, φ) ∈ C.state.hintikka.close.formulas →
+              SemilocalModel.formulaTruth M env φ = ⊤) ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.falseE, φ) ∈ C.state.hintikka.close.formulas →
+              SemilocalModel.formulaTruth M env φ ≠ ⊤) ∧
+        SemilocalModel.SupportsUniformRelativization M) :
+    ¬ Derivable (Base := Base) (Const := Const) F.antecedents F.succedent := by
+  simpa [SaturationSearchState.HeadPriorityCompletion.toCertified,
+    CertifiedHeadPriorityCompletion.state,
+    CertifiedHeadPriorityCompletion.hintikka,
+    CertifiedHeadPriorityCompletion.closedHintikka] using
+    (CertifiedHeadPriorityCompletion.not_derivable_of_exists_semantics
+      (C := C.toCertified (Const := Const) (Γ := Γ) hInitial hCompat) hSem)
+
+end SaturationSearchState.HeadPriorityCompletion
+
+namespace CertifiedHeadPriorityDerivation
+
+def toCertifiedCountermodelCandidate
+    {F : CompletenessFrontier Const Γ}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed) :
+    CertifiedCountermodelCandidate Const Γ :=
+  (D.toCertifiedCompletion terminal branchClosed).toCertifiedCountermodelCandidate
+
+@[simp] theorem toCertifiedCompletion_state
+    {F : CompletenessFrontier Const Γ}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed) :
+    (D.toCertifiedCompletion terminal branchClosed).state = D.state :=
+  rfl
+
+@[simp] theorem toCertifiedCompletion_hintikka
+    {F : CompletenessFrontier Const Γ}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed) :
+    (D.toCertifiedCompletion terminal branchClosed).hintikka = D.hintikka :=
+  rfl
+
+@[simp] theorem toCertifiedCompletion_closedHintikka
+    {F : CompletenessFrontier Const Γ}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed) :
+    (D.toCertifiedCompletion terminal branchClosed).closedHintikka = D.closedHintikka :=
+  rfl
+
+@[simp] theorem toCertifiedCountermodelCandidate_state
+    {F : CompletenessFrontier Const Γ}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed) :
+    (D.toCertifiedCountermodelCandidate terminal branchClosed).state = D.state :=
+  rfl
+
+@[simp] theorem toCertifiedCountermodelCandidate_hintikka
+    {F : CompletenessFrontier Const Γ}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed) :
+    (D.toCertifiedCountermodelCandidate terminal branchClosed).hintikka = D.hintikka :=
+  rfl
+
+@[simp] theorem toCertifiedCountermodelCandidate_closedHintikka
+    {F : CompletenessFrontier Const Γ}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed) :
+    (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka = D.closedHintikka :=
+  rfl
+
+theorem closedHintikka_true_top_of_candidate
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (candidate_true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈
+            (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    {φ : Formula Const Γ}
+    (hφ : (Sign.trueE, φ) ∈ D.closedHintikka.formulas) :
+    SemilocalModel.formulaTruth M env φ = ⊤ :=
+  candidate_true_top (by simpa using hφ)
+
+theorem closedHintikka_false_ne_top_of_candidate
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (candidate_false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈
+            (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤)
+    {φ : Formula Const Γ}
+    (hφ : (Sign.falseE, φ) ∈ D.closedHintikka.formulas) :
+    SemilocalModel.formulaTruth M env φ ≠ ⊤ :=
+  candidate_false_ne_top (by simpa using hφ)
+
+theorem closedHintikka_true_top_of_candidate_classified
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    {P : Formula Const Γ → Prop}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (candidate_true_class :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈
+            (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+          P φ)
+    (true_top_of_class :
+      ∀ {φ : Formula Const Γ},
+        P φ →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    {φ : Formula Const Γ}
+    (hφ : (Sign.trueE, φ) ∈ D.closedHintikka.formulas) :
+    SemilocalModel.formulaTruth M env φ = ⊤ :=
+  true_top_of_class <|
+    candidate_true_class (by simpa using hφ)
+
+theorem closedHintikka_false_ne_top_of_candidate_classified
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    {P : Formula Const Γ → Prop}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (candidate_false_class :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈
+            (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+          P φ)
+    (false_ne_top_of_class :
+      ∀ {φ : Formula Const Γ},
+        P φ →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤)
+    {φ : Formula Const Γ}
+    (hφ : (Sign.falseE, φ) ∈ D.closedHintikka.formulas) :
+    SemilocalModel.formulaTruth M env φ ≠ ⊤ :=
+  false_ne_top_of_class <|
+    candidate_false_class (by simpa using hφ)
+
+structure CandidateClosedHintikkaSemantics
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ) where
+  trueClass : Formula Const Γ → Prop
+  falseClass : Formula Const Γ → Prop
+  candidate_true_class :
+    ∀ {φ : Formula Const Γ},
+      (Sign.trueE, φ) ∈
+          (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+        trueClass φ
+  candidate_false_class :
+    ∀ {φ : Formula Const Γ},
+      (Sign.falseE, φ) ∈
+          (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+        falseClass φ
+  true_top_of_class :
+    ∀ {φ : Formula Const Γ},
+      trueClass φ →
+        SemilocalModel.formulaTruth M env φ = ⊤
+  false_ne_top_of_class :
+    ∀ {φ : Formula Const Γ},
+      falseClass φ →
+        SemilocalModel.formulaTruth M env φ ≠ ⊤
+
+namespace CandidateClosedHintikkaSemantics
+
+theorem closedHintikka_true_top
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    {D : CertifiedHeadPriorityDerivation Const Γ F}
+    {terminal : D.state.IsTerminal}
+    {branchClosed : D.state.hintikka.BranchClosed}
+    {env : SemilocalModel.Env M Γ}
+    (S : CandidateClosedHintikkaSemantics D terminal branchClosed env)
+    {φ : Formula Const Γ}
+    (hφ : (Sign.trueE, φ) ∈ D.closedHintikka.formulas) :
+    SemilocalModel.formulaTruth M env φ = ⊤ :=
+  D.closedHintikka_true_top_of_candidate_classified
+    terminal branchClosed env
+    S.candidate_true_class
+    S.true_top_of_class
+    hφ
+
+theorem closedHintikka_false_ne_top
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    {D : CertifiedHeadPriorityDerivation Const Γ F}
+    {terminal : D.state.IsTerminal}
+    {branchClosed : D.state.hintikka.BranchClosed}
+    {env : SemilocalModel.Env M Γ}
+    (S : CandidateClosedHintikkaSemantics D terminal branchClosed env)
+    {φ : Formula Const Γ}
+    (hφ : (Sign.falseE, φ) ∈ D.closedHintikka.formulas) :
+    SemilocalModel.formulaTruth M env φ ≠ ⊤ :=
+  D.closedHintikka_false_ne_top_of_candidate_classified
+    terminal branchClosed env
+    S.candidate_false_class
+    S.false_ne_top_of_class
+    hφ
+
+end CandidateClosedHintikkaSemantics
+
+def toCandidateClosedHintikkaSemantics
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈ D.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈ D.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤) :
+    CandidateClosedHintikkaSemantics D terminal branchClosed env :=
+  { trueClass := fun φ => (Sign.trueE, φ) ∈ D.closedHintikka.formulas
+    falseClass := fun φ => (Sign.falseE, φ) ∈ D.closedHintikka.formulas
+    candidate_true_class := by
+      intro φ hφ
+      simpa using hφ
+    candidate_false_class := by
+      intro φ hφ
+      simpa using hφ
+    true_top_of_class := by
+      intro φ hφ
+      exact true_top hφ
+    false_ne_top_of_class := by
+      intro φ hφ
+      exact false_ne_top hφ }
+
+theorem exists_candidateClosedHintikkaSemantics_of_exists_semantics
+    {F : CompletenessFrontier Const Γ}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.trueE, φ) ∈ D.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ = ⊤) ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.falseE, φ) ∈ D.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ ≠ ⊤)) :
+    ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+      SemilocalModel.IsGlobalEnv M env ∧
+      Nonempty (CandidateClosedHintikkaSemantics D terminal branchClosed env) := by
+  rcases hSem with ⟨M, env, global, true_top, false_ne_top⟩
+  exact ⟨M, env, global,
+    ⟨D.toCandidateClosedHintikkaSemantics terminal branchClosed env true_top false_ne_top⟩⟩
+
+def toClosedLocalHintikkaCertificate
+    {F : CompletenessFrontier Const Γ}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed) :
+    LocalHintikkaCertificate F :=
+  (D.toCertifiedCompletion terminal branchClosed).toClosedLocalHintikkaCertificate
+
+def toClosedLocalAgreementWitnessOfCandidate
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (candidate_true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈
+            (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (candidate_false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈
+            (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤) :
+    LocalAgreementWitness M F :=
+  (D.toCertifiedCompletion terminal branchClosed).toClosedLocalAgreementWitness
+    env global
+    (fun hφ =>
+      D.closedHintikka_true_top_of_candidate
+        terminal branchClosed env candidate_true_top hφ)
+    (fun hφ =>
+      D.closedHintikka_false_ne_top_of_candidate
+        terminal branchClosed env candidate_false_ne_top hφ)
+
+def toClosedLocalAgreementWitnessOfCandidateClassified
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    {Ptrue Pfalse : Formula Const Γ → Prop}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (candidate_true_class :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈
+            (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+          Ptrue φ)
+    (candidate_false_class :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈
+            (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+          Pfalse φ)
+    (true_top_of_class :
+      ∀ {φ : Formula Const Γ},
+        Ptrue φ →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top_of_class :
+      ∀ {φ : Formula Const Γ},
+        Pfalse φ →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤) :
+    LocalAgreementWitness M F :=
+  D.toClosedLocalAgreementWitnessOfCandidate
+    terminal branchClosed env global
+    (fun hφ => true_top_of_class (candidate_true_class hφ))
+    (fun hφ => false_ne_top_of_class (candidate_false_class hφ))
+
+def toClosedLocalAgreementWitnessOfSemantics
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (S : CandidateClosedHintikkaSemantics D terminal branchClosed env) :
+    LocalAgreementWitness M F :=
+  D.toClosedLocalAgreementWitnessOfCandidateClassified
+    terminal branchClosed env global
+    (Ptrue := S.trueClass)
+    (Pfalse := S.falseClass)
+    S.candidate_true_class
+    S.candidate_false_class
+    S.true_top_of_class
+    S.false_ne_top_of_class
+
+def toClosedLocalAgreementWitness
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈ D.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈ D.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤) :
+    LocalAgreementWitness M F :=
+  (D.toCertifiedCompletion terminal branchClosed).toClosedLocalAgreementWitness
+    env global true_top false_ne_top
+
+def toClosedLocalCountermodel
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈ D.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈ D.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤) :
+    LocalCountermodel (Base := Base) (Const := Const) F :=
+  (D.toCertifiedCompletion terminal branchClosed).toClosedLocalCountermodel
+    env global true_top false_ne_top
+
+theorem exists_closedLocalAgreementWitness_of_exists_semantics
+    {F : CompletenessFrontier Const Γ}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.trueE, φ) ∈ D.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ = ⊤) ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.falseE, φ) ∈ D.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ ≠ ⊤)) :
+    Nonempty (Σ M : SemilocalModel.{u, v, w, w'} Base Const, LocalAgreementWitness M F) := by
+  rcases hSem with ⟨M, env, global, true_top, false_ne_top⟩
+  exact ⟨⟨M,
+    D.toClosedLocalAgreementWitness (M := M)
+      terminal branchClosed env global true_top false_ne_top⟩⟩
+
+theorem exists_closedLocalCountermodel_of_exists_semantics
+    {F : CompletenessFrontier Const Γ}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.trueE, φ) ∈ D.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ = ⊤) ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.falseE, φ) ∈ D.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ ≠ ⊤)) :
+    Nonempty (LocalCountermodel.{u, v, w, w'} (Base := Base) (Const := Const) F) := by
+  rcases
+      D.exists_closedLocalAgreementWitness_of_exists_semantics
+        terminal branchClosed hSem with ⟨⟨_, W⟩⟩
+  exact ⟨W.toLocalCountermodel⟩
+
+theorem exists_closedSoundLocalCountermodel_of_exists_semantics
+    {F : CompletenessFrontier Const Γ}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.trueE, φ) ∈ D.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ = ⊤) ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.falseE, φ) ∈ D.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ ≠ ⊤) ∧
+        SemilocalModel.SupportsUniformRelativization M) :
+    Nonempty (SoundLocalCountermodel.{u, v, w, w'} (Base := Base) (Const := Const) F) := by
+  rcases hSem with ⟨M, env, global, true_top, false_ne_top, hM⟩
+  exact ⟨(D.toCertifiedCompletion terminal branchClosed).toCertifiedCountermodelCandidate
+    |>.toClosedSoundLocalCountermodel
+      (M := M) env global true_top false_ne_top hM⟩
+
+theorem not_derivable_of_exists_semantics
+    {F : CompletenessFrontier Const Γ}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.trueE, φ) ∈ D.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ = ⊤) ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.falseE, φ) ∈ D.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ ≠ ⊤) ∧
+        SemilocalModel.SupportsUniformRelativization M) :
+    ¬ Derivable (Base := Base) (Const := Const) F.antecedents F.succedent := by
+  rcases D.exists_closedSoundLocalCountermodel_of_exists_semantics terminal branchClosed hSem with
+    ⟨CM⟩
+  exact CM.not_derivable
+
+def toClosedLocalCountermodelOfCandidate
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (candidate_true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈
+            (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (candidate_false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈
+            (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤) :
+    LocalCountermodel (Base := Base) (Const := Const) F :=
+  (D.toCertifiedCompletion terminal branchClosed).toClosedLocalCountermodel
+    env global
+    (fun hφ =>
+      D.closedHintikka_true_top_of_candidate
+        terminal branchClosed env candidate_true_top hφ)
+    (fun hφ =>
+      D.closedHintikka_false_ne_top_of_candidate
+        terminal branchClosed env candidate_false_ne_top hφ)
+
+def toClosedLocalCountermodelOfCandidateClassified
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    {Ptrue Pfalse : Formula Const Γ → Prop}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (candidate_true_class :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈
+            (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+          Ptrue φ)
+    (candidate_false_class :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈
+            (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+          Pfalse φ)
+    (true_top_of_class :
+      ∀ {φ : Formula Const Γ},
+        Ptrue φ →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top_of_class :
+      ∀ {φ : Formula Const Γ},
+        Pfalse φ →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤) :
+    LocalCountermodel (Base := Base) (Const := Const) F :=
+  D.toClosedLocalCountermodelOfCandidate
+    terminal branchClosed env global
+    (fun hφ => true_top_of_class (candidate_true_class hφ))
+    (fun hφ => false_ne_top_of_class (candidate_false_class hφ))
+
+def toClosedLocalCountermodelOfSemantics
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (S : CandidateClosedHintikkaSemantics D terminal branchClosed env) :
+    LocalCountermodel (Base := Base) (Const := Const) F :=
+  D.toClosedLocalCountermodelOfCandidateClassified
+    terminal branchClosed env global
+    (Ptrue := S.trueClass)
+    (Pfalse := S.falseClass)
+    S.candidate_true_class
+    S.candidate_false_class
+    S.true_top_of_class
+    S.false_ne_top_of_class
+
+def toClosedSoundLocalCountermodel
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈ D.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈ D.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤)
+    (hM : SemilocalModel.SupportsUniformRelativization M) :
+    SoundLocalCountermodel (Base := Base) (Const := Const) F :=
+  (D.toCertifiedCompletion terminal branchClosed).toClosedSoundLocalCountermodel
+    env global true_top false_ne_top hM
+
+def toClosedSoundLocalCountermodelOfCandidate
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (candidate_true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈
+            (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (candidate_false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈
+            (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤)
+    (hM : SemilocalModel.SupportsUniformRelativization M) :
+    SoundLocalCountermodel (Base := Base) (Const := Const) F :=
+  (D.toCertifiedCompletion terminal branchClosed).toClosedSoundLocalCountermodel
+    env global
+    (fun hφ =>
+      D.closedHintikka_true_top_of_candidate
+        terminal branchClosed env candidate_true_top hφ)
+    (fun hφ =>
+      D.closedHintikka_false_ne_top_of_candidate
+        terminal branchClosed env candidate_false_ne_top hφ)
+    hM
+
+def toClosedSoundLocalCountermodelOfCandidateClassified
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    {Ptrue Pfalse : Formula Const Γ → Prop}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (candidate_true_class :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈
+            (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+          Ptrue φ)
+    (candidate_false_class :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈
+            (D.toCertifiedCountermodelCandidate terminal branchClosed).closedHintikka.formulas →
+          Pfalse φ)
+    (true_top_of_class :
+      ∀ {φ : Formula Const Γ},
+        Ptrue φ →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top_of_class :
+      ∀ {φ : Formula Const Γ},
+        Pfalse φ →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤)
+    (hM : SemilocalModel.SupportsUniformRelativization M) :
+    SoundLocalCountermodel (Base := Base) (Const := Const) F :=
+  D.toClosedSoundLocalCountermodelOfCandidate
+    terminal branchClosed env global
+    (fun hφ => true_top_of_class (candidate_true_class hφ))
+    (fun hφ => false_ne_top_of_class (candidate_false_class hφ))
+    hM
+
+def toClosedSoundLocalCountermodelOfSemantics
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (S : CandidateClosedHintikkaSemantics D terminal branchClosed env)
+    (hM : SemilocalModel.SupportsUniformRelativization M) :
+    SoundLocalCountermodel (Base := Base) (Const := Const) F :=
+  D.toClosedSoundLocalCountermodelOfCandidateClassified
+    terminal branchClosed env global
+    (Ptrue := S.trueClass)
+    (Pfalse := S.falseClass)
+    S.candidate_true_class
+    S.candidate_false_class
+    S.true_top_of_class
+    S.false_ne_top_of_class
+    hM
+
+end CertifiedHeadPriorityDerivation
+
+namespace CertifiedHeadPriorityDerivation
+
+namespace CandidateClosedHintikkaSemantics
+
+def toClosedLocalAgreementWitness
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    {D : CertifiedHeadPriorityDerivation Const Γ F}
+    {terminal : D.state.IsTerminal}
+    {branchClosed : D.state.hintikka.BranchClosed}
+    {env : SemilocalModel.Env M Γ}
+    (S : CandidateClosedHintikkaSemantics D terminal branchClosed env)
+    (global : SemilocalModel.IsGlobalEnv M env) :
+    LocalAgreementWitness M F :=
+  D.toClosedLocalAgreementWitnessOfSemantics
+    terminal branchClosed env global S
+
+def toClosedLocalCountermodel
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    {D : CertifiedHeadPriorityDerivation Const Γ F}
+    {terminal : D.state.IsTerminal}
+    {branchClosed : D.state.hintikka.BranchClosed}
+    {env : SemilocalModel.Env M Γ}
+    (S : CandidateClosedHintikkaSemantics D terminal branchClosed env)
+    (global : SemilocalModel.IsGlobalEnv M env) :
+    LocalCountermodel (Base := Base) (Const := Const) F :=
+  D.toClosedLocalCountermodelOfSemantics
+    terminal branchClosed env global S
+
+def toClosedSoundLocalCountermodel
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    {D : CertifiedHeadPriorityDerivation Const Γ F}
+    {terminal : D.state.IsTerminal}
+    {branchClosed : D.state.hintikka.BranchClosed}
+    {env : SemilocalModel.Env M Γ}
+    (S : CandidateClosedHintikkaSemantics D terminal branchClosed env)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (hM : SemilocalModel.SupportsUniformRelativization M) :
+    SoundLocalCountermodel (Base := Base) (Const := Const) F :=
+  D.toClosedSoundLocalCountermodelOfSemantics
+    terminal branchClosed env global S hM
+
+theorem not_validSequent
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    {D : CertifiedHeadPriorityDerivation Const Γ F}
+    {terminal : D.state.IsTerminal}
+    {branchClosed : D.state.hintikka.BranchClosed}
+    {env : SemilocalModel.Env M Γ}
+    (S : CandidateClosedHintikkaSemantics D terminal branchClosed env)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (hM : SemilocalModel.SupportsUniformRelativization M) :
+    ¬ SemilocalModel.ValidSequent M F.antecedents F.succedent :=
+  (S.toClosedSoundLocalCountermodel global hM).not_validSequent
+
+theorem not_derivable
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    {D : CertifiedHeadPriorityDerivation Const Γ F}
+    {terminal : D.state.IsTerminal}
+    {branchClosed : D.state.hintikka.BranchClosed}
+    {env : SemilocalModel.Env M Γ}
+    (S : CandidateClosedHintikkaSemantics D terminal branchClosed env)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (hM : SemilocalModel.SupportsUniformRelativization M) :
+    ¬ Derivable (Base := Base) (Const := Const) F.antecedents F.succedent :=
+  (S.toClosedSoundLocalCountermodel global hM).not_derivable
+
+end CandidateClosedHintikkaSemantics
+
+end CertifiedHeadPriorityDerivation
+
+namespace CertifiedHeadPriorityCompletion
+
+/-- The semantic packaging already available for terminal certified derivations,
+re-indexed at the certified completion layer. -/
+abbrev CandidateClosedHintikkaSemantics
+    {M : SemilocalModel Base Const}
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (env : SemilocalModel.Env M Γ) :=
+  CertifiedHeadPriorityDerivation.CandidateClosedHintikkaSemantics
+    C.toCertifiedDerivation C.completion.terminal C.completion.branchClosed env
+
+/-- Package raw closed-hull semantic agreement data at the certified
+completion layer as a reusable candidate semantics object. -/
+def toCandidateClosedHintikkaSemantics
+    {M : SemilocalModel Base Const}
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (env : SemilocalModel.Env M Γ)
+    (true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤) :
+    CandidateClosedHintikkaSemantics C env :=
+  CertifiedHeadPriorityDerivation.toCandidateClosedHintikkaSemantics
+    (D := C.toCertifiedDerivation)
+    (terminal := C.completion.terminal)
+    (branchClosed := C.completion.branchClosed)
+    env true_top false_ne_top
+
+theorem exists_candidateClosedHintikkaSemantics_of_exists_semantics
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ = ⊤) ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ ≠ ⊤)) :
+    ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+      SemilocalModel.IsGlobalEnv M env ∧
+      Nonempty (CandidateClosedHintikkaSemantics C env) := by
+  rcases hSem with ⟨M, env, global, true_top, false_ne_top⟩
+  exact ⟨M, env, global,
+    ⟨C.toCandidateClosedHintikkaSemantics (M := M) env true_top false_ne_top⟩⟩
+
+def toClosedLocalAgreementWitnessOfSemantics
+    {M : SemilocalModel Base Const}
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (S : CandidateClosedHintikkaSemantics C env) :
+    LocalAgreementWitness M F :=
+  CertifiedHeadPriorityDerivation.CandidateClosedHintikkaSemantics.toClosedLocalAgreementWitness
+    (D := C.toCertifiedDerivation)
+    (terminal := C.completion.terminal)
+    (branchClosed := C.completion.branchClosed)
+    (env := env)
+    S global
+
+def toClosedLocalCountermodelOfSemantics
+    {M : SemilocalModel Base Const}
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (S : CandidateClosedHintikkaSemantics C env) :
+    LocalCountermodel (Base := Base) (Const := Const) F :=
+  CertifiedHeadPriorityDerivation.CandidateClosedHintikkaSemantics.toClosedLocalCountermodel
+    (D := C.toCertifiedDerivation)
+    (terminal := C.completion.terminal)
+    (branchClosed := C.completion.branchClosed)
+    (env := env)
+    S global
+
+def toClosedSoundLocalCountermodelOfSemantics
+    {M : SemilocalModel Base Const}
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (S : CandidateClosedHintikkaSemantics C env)
+    (hM : SemilocalModel.SupportsUniformRelativization M) :
+    SoundLocalCountermodel (Base := Base) (Const := Const) F :=
+  CertifiedHeadPriorityDerivation.CandidateClosedHintikkaSemantics.toClosedSoundLocalCountermodel
+    (D := C.toCertifiedDerivation)
+    (terminal := C.completion.terminal)
+    (branchClosed := C.completion.branchClosed)
+    (env := env)
+    S global hM
+
+def toCandidateClosedHintikkaSemanticsOfClosedLocalAgreementWitness
+    {M : SemilocalModel Base Const}
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (W : LocalAgreementWitness M F)
+    (hCert : W.certificate = C.toClosedLocalHintikkaCertificate) :
+    CandidateClosedHintikkaSemantics C W.env :=
+  C.toCandidateClosedHintikkaSemantics (M := M) W.env
+    (by
+      intro φ hφ
+      exact W.true_top <| by
+        simpa [hCert] using hφ)
+    (by
+      intro φ hφ
+      exact W.false_ne_top <| by
+        simpa [hCert] using hφ)
+
+@[simp] theorem toClosedLocalAgreementWitnessOfSemantics_certificate
+    {M : SemilocalModel Base Const}
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (S : CandidateClosedHintikkaSemantics C env) :
+    (C.toClosedLocalAgreementWitnessOfSemantics env global S).certificate =
+      C.toClosedLocalHintikkaCertificate := by
+  rfl
+
+theorem exists_closedLocalAgreementWitness_of_exists_candidateClosedHintikkaSemantics
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        Nonempty (CandidateClosedHintikkaSemantics C env)) :
+    ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (W : LocalAgreementWitness M F),
+      W.certificate = C.toClosedLocalHintikkaCertificate := by
+  rcases hSem with ⟨M, env, global, ⟨S⟩⟩
+  exact ⟨M, C.toClosedLocalAgreementWitnessOfSemantics (M := M) env global S, by
+    simp⟩
+
+theorem exists_candidateClosedHintikkaSemantics_of_exists_closedLocalAgreementWitness
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (hW :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (W : LocalAgreementWitness M F),
+        W.certificate = C.toClosedLocalHintikkaCertificate) :
+    ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+      SemilocalModel.IsGlobalEnv M env ∧
+      Nonempty (CandidateClosedHintikkaSemantics C env) := by
+  rcases hW with ⟨M, W, hCert⟩
+  exact ⟨M, W.env, W.global,
+    ⟨C.toCandidateClosedHintikkaSemanticsOfClosedLocalAgreementWitness (M := M) W hCert⟩⟩
+
+theorem not_derivable_of_exists_candidateClosedHintikkaSemantics
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        Nonempty (CandidateClosedHintikkaSemantics C env) ∧
+        SemilocalModel.SupportsUniformRelativization M) :
+    ¬ Derivable (Base := Base) (Const := Const) F.antecedents F.succedent := by
+  rcases hSem with ⟨M, env, global, ⟨S⟩, hM⟩
+  exact
+    CertifiedHeadPriorityDerivation.CandidateClosedHintikkaSemantics.not_derivable
+      (D := C.toCertifiedDerivation)
+      (terminal := C.completion.terminal)
+      (branchClosed := C.completion.branchClosed)
+      (env := env)
+      S global hM
+
+end CertifiedHeadPriorityCompletion
 
 end Mettapedia.AutoBooks.Codex.IntuitionisticHOL

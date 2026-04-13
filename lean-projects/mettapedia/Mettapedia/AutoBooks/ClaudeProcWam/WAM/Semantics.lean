@@ -386,11 +386,163 @@ def MachineState.run (m : MachineState) (fuel : Nat) : MachineState :=
 
 /-! ## Semantic Properties -/
 
+/-- A heap cell contains valid addresses w.r.t. heap size -/
+def HeapCell.validAddrs (c : HeapCell) (size : Nat) : Prop :=
+  match c with
+  | .ref a => a < size
+  | .str a => a < size
+  | .lis a => a + 1 < size
+  | .con _ => True
+  | .functor _ => True
+
+/-- A heap cell is fully valid w.r.t. a heap: includes STR functor arity constraint -/
+def HeapCell.heapValid (c : HeapCell) (h : Heap) : Prop :=
+  match c with
+  | .ref a => a < h.cells.size
+  | .str a =>
+    a < h.cells.size ∧
+    (∀ f, h.cells[a]? = some (.functor f) → a + f.arity < h.cells.size)
+  | .lis a => a + 1 < h.cells.size
+  | .con _ => True
+  | .functor _ => True
+
+/-- heapValid implies validAddrs -/
+theorem HeapCell.heapValid_implies_validAddrs (c : HeapCell) (h : Heap)
+    (hv : c.heapValid h) : c.validAddrs h.cells.size := by
+  cases c with
+  | ref a => exact hv
+  | str a => exact hv.1
+  | lis a => exact hv
+  | con _ => trivial
+  | functor _ => trivial
+
+/-- All registers contain cells with valid addresses -/
+def MachineState.regsValid (m : MachineState) : Prop :=
+  ∀ i : Nat, i < m.regs.regs.size →
+    (m.regs.regs[i]?).elim True (·.validAddrs m.heap.cells.size)
+
+/-- All registers contain cells that are fully heap-valid -/
+def MachineState.regsHeapValid (m : MachineState) : Prop :=
+  ∀ i : Nat, i < m.regs.regs.size →
+    (m.regs.regs[i]?).elim True (·.heapValid m.heap)
+
+/-- regsHeapValid implies regsValid -/
+theorem MachineState.regsHeapValid_implies_regsValid (m : MachineState)
+    (hrhv : m.regsHeapValid) : m.regsValid := by
+  intro i hi
+  have h := hrhv i hi
+  cases hc : m.regs.regs[i]? with
+  | none => trivial
+  | some c =>
+    simp only [hc, Option.elim] at h ⊢
+    exact HeapCell.heapValid_implies_validAddrs c m.heap h
+
 /-- A machine state is well-formed -/
 def MachineState.wellFormed (m : MachineState) : Prop :=
   m.heap.wellFormed ∧
   m.h = m.heap.top ∧
   m.tr = m.trail.entries.size
+
+/-- S register validity: in read mode, S points to valid heap position -/
+def MachineState.sValid (m : MachineState) : Prop :=
+  m.mode = .read → m.s < m.heap.cells.size
+
+/-- Stack validity: current environment has valid permanent variables -/
+def MachineState.stackValid (m : MachineState) : Prop :=
+  ∀ yr : YReg, ∀ c : HeapCell,
+    m.getYReg yr = some c → c.validAddrs m.heap.cells.size
+
+/-- Stack heap-validity: permanent variables are fully heap-valid -/
+def MachineState.stackHeapValid (m : MachineState) : Prop :=
+  ∀ yr : YReg, ∀ c : HeapCell,
+    m.getYReg yr = some c → c.heapValid m.heap
+
+/-- stackHeapValid implies stackValid -/
+theorem MachineState.stackHeapValid_implies_stackValid (m : MachineState)
+    (hshv : m.stackHeapValid) : m.stackValid := by
+  intro yr c hget
+  exact HeapCell.heapValid_implies_validAddrs c m.heap (hshv yr c hget)
+
+/-- Choice point validity: at CP creation, heap[0..cp.h) was well-formed.
+    Key invariant for backtrack correctness: after unwinding trail and heap,
+    the restored heap is well-formed. -/
+def ChoicePoint.valid (cp : ChoicePoint) (h : Heap) : Prop :=
+  cp.h ≤ h.cells.size ∧
+  (h.cells.toList.take cp.h).toArray.attach.all fun ⟨c, _⟩ =>
+    match c with
+    | .ref a => a < cp.h
+    | .str a => a < cp.h
+    | .lis a => a + 1 < cp.h
+    | _ => true
+
+/-- All choice points on stack are valid w.r.t. current heap -/
+def MachineState.choicePointsValid (m : MachineState) : Prop :=
+  ∀ i : Nat, i < m.stack.frames.size →
+    match m.stack.frames[i]? with
+    | some (.choice cp) => cp.valid m.heap
+    | _ => True
+
+/-- Strong well-formedness includes register validity -/
+def MachineState.wellFormedStrong (m : MachineState) : Prop :=
+  m.wellFormed ∧ m.regsValid ∧ m.sValid ∧ m.stackValid
+
+/-! ## Backtrack Infrastructure -/
+
+/-- Extract choice point validity from choicePointsValid -/
+theorem MachineState.choicePointsValid_at (m : MachineState) (hcpv : m.choicePointsValid)
+    (cp : ChoicePoint) (hcp : m.stack.get? m.b = some (.choice cp)) : cp.valid m.heap := by
+  unfold choicePointsValid at hcpv
+  unfold Stack.get? at hcp
+  have hb_lt : m.b < m.stack.frames.size := by
+    by_contra h
+    push_neg at h
+    have hne : m.stack.frames[m.b]? = none := Array.getElem?_eq_none_iff.mpr h
+    rw [hne] at hcp
+    cases hcp
+  have := hcpv m.b hb_lt
+  simp only [hcp] at this
+  exact this
+
+/-- unwindHeapTo sets h to the target address -/
+theorem MachineState.unwindHeapTo_h (m : MachineState) (addr : HeapAddr) :
+    (m.unwindHeapTo addr).h = addr := rfl
+
+/-- unwindHeapTo truncates heap cells -/
+theorem MachineState.unwindHeapTo_heap_cells (m : MachineState) (addr : HeapAddr) :
+    (m.unwindHeapTo addr).heap.cells = (m.heap.cells.toList.take addr).toArray := rfl
+
+/-- unwindHeapTo heap size is min of addr and original size -/
+theorem MachineState.unwindHeapTo_heap_size (m : MachineState) (addr : HeapAddr) :
+    (m.unwindHeapTo addr).heap.cells.size = min addr m.heap.cells.size := by
+  simp only [unwindHeapTo_heap_cells, List.size_toArray, List.length_take, Array.length_toList]
+
+/-- unwindHeapTo preserves trail -/
+theorem MachineState.unwindHeapTo_trail (m : MachineState) (addr : HeapAddr) :
+    (m.unwindHeapTo addr).trail = m.trail := rfl
+
+/-- unwindHeapTo preserves tr -/
+theorem MachineState.unwindHeapTo_tr (m : MachineState) (addr : HeapAddr) :
+    (m.unwindHeapTo addr).tr = m.tr := rfl
+
+/-- unwindTrailTo sets tr to the target point -/
+theorem MachineState.unwindTrailTo_tr (m : MachineState) (point : Nat) :
+    (m.unwindTrailTo point).tr = point := rfl
+
+/-- unwindTrailTo trail size equals point (when point ≤ original size) -/
+theorem MachineState.unwindTrailTo_trail_size (m : MachineState) (point : Nat)
+    (hle : point ≤ m.trail.entries.size) :
+    (m.unwindTrailTo point).trail.entries.size = point := by
+  unfold unwindTrailTo Trail.truncateTo
+  simp only [List.size_toArray, List.length_take, Array.length_toList]
+  exact Nat.min_eq_left hle
+
+/-- After unwindHeapTo, heap.top = addr when addr ≤ original size -/
+theorem MachineState.unwindHeapTo_heap_top (m : MachineState) (addr : HeapAddr)
+    (hle : addr ≤ m.heap.cells.size) :
+    (m.unwindHeapTo addr).heap.top = addr := by
+  unfold Heap.top
+  simp only [unwindHeapTo_heap_cells, List.size_toArray, List.length_take, Array.length_toList]
+  exact Nat.min_eq_left hle
 
 /-- MachineState.unify preserves MachineState.wellFormed -/
 theorem MachineState.unify_preserves_wf (m : MachineState) (a1 a2 : HeapAddr)
@@ -542,7 +694,12 @@ theorem execGetStructure_preserves_wf (m : MachineState) (f : Functor) (ai : Arg
         by_cases heq : a == addr
         · -- Unbound: push STR + push functor + bind (construction phase)
           simp only [heq, ↓reduceIte]
-          sorry
+          by_cases harity : f.arity = 0
+          · -- arity = 0: uses push_structure_preserves_wf + bind_preserves_wf
+            -- BLOCKED: proof complex, needs bind_preserves_wellFormed lemma
+            sorry
+          · -- arity > 0: BLOCKED - needs wellFormedWithDebt for construction phase
+            sorry
         · -- Bound: fail
           simp only [heq, Bool.false_eq_true, ↓reduceIte]
           unfold MachineState.setFail MachineState.wellFormed at *
@@ -636,9 +793,187 @@ theorem execGetList_preserves_wf (m : MachineState) (ai : ArgReg)
         unfold MachineState.setFail MachineState.wellFormed at *
         exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
 
-/-- Step preserves well-formedness -/
-theorem MachineState.step_preserves_wf (m : MachineState) (hwf : m.wellFormed) :
-    m.step.wellFormed := by
+/-- execUnifyValue preserves well-formedness.
+    This handles both unify_value and unify_local_value since they use the same exec function.
+    All setFail branches are proven. Read mode ref case needs m.s validity.
+    Write mode ref/lis cases are proven with regsValid for X registers.
+    Y register cases are proven with stackValid.
+    STR cases are proven with regsHeapValid/stackHeapValid for functor arity bounds. -/
+theorem execUnifyValue_preserves_wf (m : MachineState) (vn : VarReg)
+    (hwf : m.wellFormed) (hrhv : m.regsHeapValid) (hsv : m.sValid) (hshv : m.stackHeapValid) :
+    (execUnifyValue m vn).wellFormed := by
+  -- Derive simpler validity from heap validity
+  have hrv : m.regsValid := m.regsHeapValid_implies_regsValid hrhv
+  have hstv : m.stackValid := m.stackHeapValid_implies_stackValid hshv
+  unfold execUnifyValue
+  cases hmode : m.mode with
+  | read =>
+    -- Read mode: unify Vn with HEAP[S]
+    cases hget : m.getVarReg vn with
+    | none =>
+      unfold MachineState.setFail MachineState.wellFormed at *
+      exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
+    | some c =>
+      cases c with
+      | ref a =>
+        -- Need a < heap.size and m.s < heap.size
+        -- m.s < heap.size from sValid (we're in read mode)
+        have hs_valid : m.s < m.heap.cells.size := hsv hmode
+        -- For a < heap.size, need to case split on X vs Y register
+        cases vn with
+        | x xr =>
+          have hget' : m.getXReg xr = some (.ref a) := hget
+          unfold MachineState.getXReg RegisterFile.get? at hget'
+          have hbound : xr.index < m.regs.regs.size := by
+            have ⟨hlt, _⟩ := Array.getElem?_eq_some_iff.mp hget'
+            exact hlt
+          have hcell := hrv xr.index hbound
+          rw [hget'] at hcell
+          -- hcell : a < m.heap.cells.size
+          -- Now unify a m.s with both addresses valid
+          by_cases hfail : (m.unify a m.s).fail
+          · simp only [hfail, ↓reduceIte]
+            exact MachineState.unify_preserves_wf m a m.s hwf hcell hs_valid
+          · simp only [hfail, Bool.false_eq_true, ↓reduceIte]
+            have hwf' := MachineState.unify_preserves_wf m a m.s hwf hcell hs_valid
+            unfold MachineState.nextInstr MachineState.wellFormed at *
+            exact ⟨hwf'.1, hwf'.2.1, hwf'.2.2⟩
+        | y yr =>
+          -- Y register: use stackValid
+          have hget' : m.getYReg yr = some (.ref a) := hget
+          have hcell := hstv yr (.ref a) hget'
+          -- hcell : a < m.heap.cells.size
+          by_cases hfail : (m.unify a m.s).fail
+          · simp only [hfail, ↓reduceIte]
+            exact MachineState.unify_preserves_wf m a m.s hwf hcell hs_valid
+          · simp only [hfail, Bool.false_eq_true, ↓reduceIte]
+            have hwf' := MachineState.unify_preserves_wf m a m.s hwf hcell hs_valid
+            unfold MachineState.nextInstr MachineState.wellFormed at *
+            exact ⟨hwf'.1, hwf'.2.1, hwf'.2.2⟩
+      | con _ =>
+        unfold MachineState.setFail MachineState.wellFormed at *
+        exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
+      | str _ =>
+        unfold MachineState.setFail MachineState.wellFormed at *
+        exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
+      | functor _ =>
+        unfold MachineState.setFail MachineState.wellFormed at *
+        exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
+      | lis _ =>
+        unfold MachineState.setFail MachineState.wellFormed at *
+        exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
+  | write =>
+    -- Write mode: push Vn's value
+    cases hget : m.getVarReg vn with
+    | none =>
+      unfold MachineState.setFail MachineState.wellFormed at *
+      exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
+    | some c =>
+      unfold MachineState.pushHeap MachineState.nextInstr MachineState.wellFormed at *
+      cases c with
+      | con f =>
+        constructor
+        · exact Heap.push_con_preserves_wf m.heap hwf.1 f
+        constructor
+        · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+        · exact hwf.2.2
+      | functor f =>
+        constructor
+        · exact Heap.push_functor_preserves_wf m.heap hwf.1 f
+        constructor
+        · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+        · exact hwf.2.2
+      | ref a =>
+        cases vn with
+        | x xr =>
+          have hget' : m.getXReg xr = some (.ref a) := hget
+          unfold MachineState.getXReg RegisterFile.get? at hget'
+          have hbound : xr.index < m.regs.regs.size := by
+            have ⟨hlt, _⟩ := Array.getElem?_eq_some_iff.mp hget'
+            exact hlt
+          have hcell := hrv xr.index hbound
+          rw [hget'] at hcell
+          constructor
+          · exact Heap.push_ref_preserves_wf m.heap hwf.1 hcell
+          constructor
+          · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+          · exact hwf.2.2
+        | y yr =>
+          -- Y register: use stackValid
+          have hget' : m.getYReg yr = some (.ref a) := hget
+          have hcell := hstv yr (.ref a) hget'
+          constructor
+          · exact Heap.push_ref_preserves_wf m.heap hwf.1 hcell
+          constructor
+          · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+          · exact hwf.2.2
+      | str a =>
+        -- STR needs functor arity bound from regsHeapValid/stackHeapValid
+        cases vn with
+        | x xr =>
+          have hget' : m.getXReg xr = some (.str a) := hget
+          unfold MachineState.getXReg RegisterFile.get? at hget'
+          have hbound : xr.index < m.regs.regs.size := by
+            have ⟨hlt, _⟩ := Array.getElem?_eq_some_iff.mp hget'
+            exact hlt
+          have hcell := hrhv xr.index hbound
+          rw [hget'] at hcell
+          -- hcell : HeapCell.heapValid (.str a) m.heap
+          -- hcell.1 : a < m.heap.cells.size
+          -- hcell.2 : ∀ f, cells[a]? = functor f → a + arity < size
+          constructor
+          · exact Heap.push_str_preserves_wf m.heap hwf.1 hcell.1 hcell.2
+          constructor
+          · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+          · exact hwf.2.2
+        | y yr =>
+          have hget' : m.getYReg yr = some (.str a) := hget
+          have hcell := hshv yr (.str a) hget'
+          constructor
+          · exact Heap.push_str_preserves_wf m.heap hwf.1 hcell.1 hcell.2
+          constructor
+          · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+          · exact hwf.2.2
+      | lis a =>
+        cases vn with
+        | x xr =>
+          have hget' : m.getXReg xr = some (.lis a) := hget
+          unfold MachineState.getXReg RegisterFile.get? at hget'
+          have hbound : xr.index < m.regs.regs.size := by
+            have ⟨hlt, _⟩ := Array.getElem?_eq_some_iff.mp hget'
+            exact hlt
+          have hcell := hrv xr.index hbound
+          rw [hget'] at hcell
+          constructor
+          · exact Heap.push_lis_preserves_wf m.heap hwf.1 hcell
+          constructor
+          · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+          · exact hwf.2.2
+        | y yr =>
+          -- Y register: use stackValid
+          have hget' : m.getYReg yr = some (.lis a) := hget
+          have hcell := hstv yr (.lis a) hget'
+          constructor
+          · exact Heap.push_lis_preserves_wf m.heap hwf.1 hcell
+          constructor
+          · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+          · exact hwf.2.2
+
+/-- Helper: get register validity for a specific register -/
+theorem MachineState.regsValid_at (m : MachineState) (hrv : m.regsValid) (r : XReg)
+    (hr : r.index < m.regs.regs.size) :
+    ∀ c, m.regs.regs[r.index]? = some c → c.validAddrs m.heap.cells.size := by
+  intro c hc
+  have h := hrv r.index hr
+  simp only [hc, Option.elim] at h
+  exact h
+
+/-- Step preserves well-formedness (with register validity precondition) -/
+theorem MachineState.step_preserves_wf (m : MachineState) (hwf : m.wellFormed) (hrhv : m.regsHeapValid)
+    (hsv : m.sValid) (hshv : m.stackHeapValid) (hcpv : m.choicePointsValid) : m.step.wellFormed := by
+  -- Derive simpler validity from heap validity
+  have hrv : m.regsValid := m.regsHeapValid_implies_regsValid hrhv
+  have hstv : m.stackValid := m.stackHeapValid_implies_stackValid hshv
   unfold step
   -- Case: status != running
   by_cases hstat : m.status != .running
@@ -664,16 +999,31 @@ theorem MachineState.step_preserves_wf (m : MachineState) (hwf : m.wellFormed) :
           unfold wellFormed at *
           exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
         | choice cp =>
-          -- BLOCKED: Backtrack requires a global invariant about choice point validity.
-          -- Key insight: conditional trailing ensures:
-          -- (1) At CP creation, heap[0..cp.h) was wellFormed w.r.t. size cp.h
-          -- (2) Bindings to cells < cp.h are trailed (conditional trailing with HB = cp.h)
-          -- After unwindTrailTo: trailed cells become self-refs (always valid)
-          -- After unwindHeapTo: truncate to cp.h, all refs now < cp.h
-          -- Resolution: Extend wellFormed to track choice point validity,
-          -- specifically: ∀ cp ∈ stack, cp.h was a valid checkpoint and
-          -- all bindings to cells < cp.h since creation were trailed.
+          -- BACKTRACK PROOF:
+          -- We have hcpv : m.choicePointsValid and hcp : stack.get? m.b = some (.choice cp)
+          -- From choicePointsValid_at: cp.valid m.heap
+          -- After unwindTrailTo and unwindHeapTo: need to prove wellFormed of truncated heap
+          --
+          -- BLOCKED: ChoicePoint.valid checks refs < cp.h but not functor arity bounds.
+          -- The STR wellFormed condition requires a + f.arity < size, but ChoicePoint.valid
+          -- only ensures a < cp.h. A full proof requires either:
+          -- (1) Strengthen ChoicePoint.valid to track arity bounds, or
+          -- (2) Add an invariant that "at CP creation, heap[0..cp.h) was wellFormed"
+          --
+          -- Key insight: unwindTrailTo sets trailed cells to self-refs (always valid).
+          -- Non-trailed cells in [0..cp.h) retain their CP-creation-time values.
+          -- If those values were wellFormed at creation, they're still valid after unwind.
           simp only
+          -- BACKTRACK WELLFORMED PROOF
+          -- Key components:
+          -- 1. heap.wellFormed: BLOCKED on ChoicePoint.valid missing arity bounds
+          -- 2. h = heap.top: cp.h = truncated_heap.size (provable)
+          -- 3. tr = trail.entries.size: cp.tr = truncated_trail.size (provable)
+          --
+          -- The h and tr parts are straightforward given size lemmas.
+          -- The heap.wellFormed part requires proving that truncating to cp.h
+          -- gives a wellFormed heap. This is blocked because ChoicePoint.valid
+          -- only checks ref/str/lis address bounds, not functor arity bounds.
           sorry
     · simp only [hfail, Bool.false_eq_true, ↓reduceIte]
       -- Case: no current instruction
@@ -690,12 +1040,22 @@ theorem MachineState.step_preserves_wf (m : MachineState) (hwf : m.wellFormed) :
         -- Each instruction case
         cases instr with
         | put_structure f ai =>
-          -- BLOCKED: put_structure creates STR+functor before subterms are pushed.
-          -- Current wellFormed requires a + f.arity < heap.size for STR at a.
-          -- For arity > 0, the heap is temporarily "malformed" until set_* pushes subterms.
-          -- Resolution: Track "construction phase" or weaken wellFormed for incomplete STRs.
-          -- See Heap.push_structure_preserves_wf which handles only arity = 0.
-          sorry
+          -- put_structure creates STR+functor before subterms are pushed.
+          -- For arity = 0, heap is immediately wellFormed after push.
+          -- For arity > 0, heap is temporarily "malformed" until set_* pushes subterms.
+          unfold execPutStructure pushHeap setXReg nextInstr wellFormed at *
+          by_cases harity : f.arity = 0
+          · -- arity = 0: provable using push_structure_preserves_wf
+            have hh_eq : m.h = m.heap.cells.size := hwf.2.1
+            have hheap_wf : ((m.heap.push (.str (m.h + 1))).push (.functor f)).wellFormed := by
+              rw [hh_eq]
+              exact Heap.push_structure_preserves_wf m.heap f hwf.1 harity
+            have hh_new : m.h + 1 + 1 = ((m.heap.push (.str (m.h + 1))).push (.functor f)).top := by
+              rw [Heap.push_top, Heap.push_top, hh_eq]
+              unfold Heap.top; rfl
+            exact ⟨hheap_wf, hh_new, hwf.2.2⟩
+          · -- arity > 0: BLOCKED - needs construction phase tracking
+            sorry
         | put_list ai =>
           -- Only modifies regs and pc (sets Ai to LIS pointing to h)
           unfold execPutList setXReg nextInstr wellFormed at *
@@ -768,10 +1128,7 @@ theorem MachineState.step_preserves_wf (m : MachineState) (hwf : m.wellFormed) :
               unfold nextInstr
               simp only [hwf.1, hwf.2.1, hwf.2.2, and_self]
         | get_value vn ai =>
-          -- BLOCKED: Requires register validity (addresses in vn, ai < heap.size).
-          -- unify_preserves_wf exists but needs preconditions: a1 < size ∧ a2 < size.
-          -- Current wellFormed doesn't track register validity.
-          -- Resolution: Extend wellFormed to include register validity, or add precondition.
+          -- Requires register validity for unify; prove all setFail branches
           unfold execGetValue at *
           cases hget1 : m.getVarReg vn with
           | none =>
@@ -790,30 +1147,67 @@ theorem MachineState.step_preserves_wf (m : MachineState) (hwf : m.wellFormed) :
               | ref a1 =>
                 cases c2 with
                 | ref a2 =>
-                  -- BLOCKED: Need a1 < heap.size and a2 < heap.size
-                  sorry
-                | str _ =>
+                  -- Need a1, a2 < heap.size for unify_preserves_wf
+                  -- For a2 (from XReg ai), use regsValid
+                  -- For a1 (from VarReg vn), case split on X vs Y
+                  cases vn with
+                  | x xr =>
+                    -- Both are X registers, use regsValid to get bounds
+                    simp only
+                    -- Extract bounds from regsValid
+                    -- hget1 : getVarReg (.x xr) = some (.ref a1)
+                    -- Since getVarReg (.x xr) = getXReg xr, we have getXReg xr = some (.ref a1)
+                    have hget1' : m.getXReg xr = some (.ref a1) := hget1
+                    have ha1 : a1 < m.heap.cells.size := by
+                      unfold getXReg RegisterFile.get? at hget1'
+                      -- hget1' : m.regs.regs[xr.index]? = some (HeapCell.ref a1)
+                      have hbound : xr.index < m.regs.regs.size := by
+                        have ⟨hlt, _⟩ := Array.getElem?_eq_some_iff.mp hget1'
+                        exact hlt
+                      have hcell := hrv xr.index hbound
+                      rw [hget1'] at hcell
+                      exact hcell
+                    have ha2 : a2 < m.heap.cells.size := by
+                      unfold getXReg RegisterFile.get? at hget2
+                      -- hget2 : m.regs.regs[ai.index]? = some (HeapCell.ref a2)
+                      have hbound : ai.index < m.regs.regs.size := by
+                        have ⟨hlt, _⟩ := Array.getElem?_eq_some_iff.mp hget2
+                        exact hlt
+                      have hcell := hrv ai.index hbound
+                      rw [hget2] at hcell
+                      exact hcell
+                    -- After unify, check if fail or proceed
+                    by_cases hfail' : (m.unify a1 a2).fail
+                    · simp only [hfail', ↓reduceIte]
+                      exact unify_preserves_wf m a1 a2 hwf ha1 ha2
+                    · simp only [hfail', Bool.false_eq_true, ↓reduceIte]
+                      have hwf' := unify_preserves_wf m a1 a2 hwf ha1 ha2
+                      unfold MachineState.nextInstr MachineState.wellFormed at *
+                      exact ⟨hwf'.1, hwf'.2.1, hwf'.2.2⟩
+                  | y yr =>
+                    -- Y register: use stackValid
+                    simp only
+                    have hget1' : m.getYReg yr = some (.ref a1) := hget1
+                    have ha1 : a1 < m.heap.cells.size := hstv yr (.ref a1) hget1'
+                    have ha2 : a2 < m.heap.cells.size := by
+                      unfold getXReg RegisterFile.get? at hget2
+                      have hbound : ai.index < m.regs.regs.size := by
+                        have ⟨hlt, _⟩ := Array.getElem?_eq_some_iff.mp hget2
+                        exact hlt
+                      have hcell := hrv ai.index hbound
+                      rw [hget2] at hcell
+                      exact hcell
+                    by_cases hfail' : (m.unify a1 a2).fail
+                    · simp only [hfail', ↓reduceIte]
+                      exact unify_preserves_wf m a1 a2 hwf ha1 ha2
+                    · simp only [hfail', Bool.false_eq_true, ↓reduceIte]
+                      have hwf' := unify_preserves_wf m a1 a2 hwf ha1 ha2
+                      unfold MachineState.nextInstr MachineState.wellFormed at *
+                      exact ⟨hwf'.1, hwf'.2.1, hwf'.2.2⟩
+                | _ =>
                   unfold MachineState.setFail MachineState.wellFormed at *
                   exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-                | con _ =>
-                  unfold MachineState.setFail MachineState.wellFormed at *
-                  exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-                | functor _ =>
-                  unfold MachineState.setFail MachineState.wellFormed at *
-                  exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-                | lis _ =>
-                  unfold MachineState.setFail MachineState.wellFormed at *
-                  exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-              | str _ =>
-                unfold MachineState.setFail MachineState.wellFormed at *
-                exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-              | con _ =>
-                unfold MachineState.setFail MachineState.wellFormed at *
-                exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-              | functor _ =>
-                unfold MachineState.setFail MachineState.wellFormed at *
-                exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-              | lis _ =>
+              | _ =>
                 unfold MachineState.setFail MachineState.wellFormed at *
                 exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
         | get_structure f ai =>
@@ -860,10 +1254,95 @@ theorem MachineState.step_preserves_wf (m : MachineState) (hwf : m.wellFormed) :
             exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
           | some c =>
             simp only [hget]
-            -- BLOCKED: Need to know c contains valid addresses
-            sorry
+            unfold MachineState.pushHeap MachineState.nextInstr MachineState.wellFormed at *
+            cases c with
+            | con f =>
+              constructor
+              · exact Heap.push_con_preserves_wf m.heap hwf.1 f
+              constructor
+              · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+              · exact hwf.2.2
+            | functor f =>
+              constructor
+              · exact Heap.push_functor_preserves_wf m.heap hwf.1 f
+              constructor
+              · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+              · exact hwf.2.2
+            | ref a =>
+              -- Need a < heap.size. Case split on X vs Y register
+              cases vn with
+              | x xr =>
+                have hget' : m.getXReg xr = some (.ref a) := hget
+                unfold getXReg RegisterFile.get? at hget'
+                have hbound : xr.index < m.regs.regs.size := by
+                  have ⟨hlt, _⟩ := Array.getElem?_eq_some_iff.mp hget'
+                  exact hlt
+                have hcell := hrv xr.index hbound
+                rw [hget'] at hcell
+                constructor
+                · exact Heap.push_ref_preserves_wf m.heap hwf.1 hcell
+                constructor
+                · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+                · exact hwf.2.2
+              | y yr =>
+                -- Y register: use stackValid
+                have hget' : m.getYReg yr = some (.ref a) := hget
+                have hcell := hstv yr (.ref a) hget'
+                constructor
+                · exact Heap.push_ref_preserves_wf m.heap hwf.1 hcell
+                constructor
+                · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+                · exact hwf.2.2
+            | str a =>
+              -- STR case: use regsHeapValid/stackHeapValid for functor arity
+              cases vn with
+              | x xr =>
+                have hget' : m.getXReg xr = some (.str a) := hget
+                unfold getXReg RegisterFile.get? at hget'
+                have hbound : xr.index < m.regs.regs.size := by
+                  have ⟨hlt, _⟩ := Array.getElem?_eq_some_iff.mp hget'
+                  exact hlt
+                have hcell := hrhv xr.index hbound
+                rw [hget'] at hcell
+                constructor
+                · exact Heap.push_str_preserves_wf m.heap hwf.1 hcell.1 hcell.2
+                constructor
+                · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+                · exact hwf.2.2
+              | y yr =>
+                have hget' : m.getYReg yr = some (.str a) := hget
+                have hcell := hshv yr (.str a) hget'
+                constructor
+                · exact Heap.push_str_preserves_wf m.heap hwf.1 hcell.1 hcell.2
+                constructor
+                · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+                · exact hwf.2.2
+            | lis a =>
+              cases vn with
+              | x xr =>
+                have hget' : m.getXReg xr = some (.lis a) := hget
+                unfold getXReg RegisterFile.get? at hget'
+                have hbound : xr.index < m.regs.regs.size := by
+                  have ⟨hlt, _⟩ := Array.getElem?_eq_some_iff.mp hget'
+                  exact hlt
+                have hcell := hrv xr.index hbound
+                rw [hget'] at hcell
+                constructor
+                · exact Heap.push_lis_preserves_wf m.heap hwf.1 hcell
+                constructor
+                · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+                · exact hwf.2.2
+              | y yr =>
+                -- Y register: use stackValid
+                have hget' : m.getYReg yr = some (.lis a) := hget
+                have hcell := hstv yr (.lis a) hget'
+                constructor
+                · exact Heap.push_lis_preserves_wf m.heap hwf.1 hcell
+                constructor
+                · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+                · exact hwf.2.2
         | set_local_value vn =>
-          -- Same as set_value (simplified implementation)
+          -- Same as set_value
           unfold execSetValue at *
           cases hget : m.getVarReg vn with
           | none =>
@@ -872,7 +1351,92 @@ theorem MachineState.step_preserves_wf (m : MachineState) (hwf : m.wellFormed) :
             exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
           | some c =>
             simp only [hget]
-            sorry
+            unfold MachineState.pushHeap MachineState.nextInstr MachineState.wellFormed at *
+            cases c with
+            | con f =>
+              constructor
+              · exact Heap.push_con_preserves_wf m.heap hwf.1 f
+              constructor
+              · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+              · exact hwf.2.2
+            | functor f =>
+              constructor
+              · exact Heap.push_functor_preserves_wf m.heap hwf.1 f
+              constructor
+              · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+              · exact hwf.2.2
+            | ref a =>
+              cases vn with
+              | x xr =>
+                have hget' : m.getXReg xr = some (.ref a) := hget
+                unfold getXReg RegisterFile.get? at hget'
+                have hbound : xr.index < m.regs.regs.size := by
+                  have ⟨hlt, _⟩ := Array.getElem?_eq_some_iff.mp hget'
+                  exact hlt
+                have hcell := hrv xr.index hbound
+                rw [hget'] at hcell
+                constructor
+                · exact Heap.push_ref_preserves_wf m.heap hwf.1 hcell
+                constructor
+                · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+                · exact hwf.2.2
+              | y yr =>
+                -- Y register: use stackValid
+                have hget' : m.getYReg yr = some (.ref a) := hget
+                have hcell := hstv yr (.ref a) hget'
+                constructor
+                · exact Heap.push_ref_preserves_wf m.heap hwf.1 hcell
+                constructor
+                · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+                · exact hwf.2.2
+            | str a =>
+              -- STR case: use regsHeapValid/stackHeapValid for functor arity
+              cases vn with
+              | x xr =>
+                have hget' : m.getXReg xr = some (.str a) := hget
+                unfold getXReg RegisterFile.get? at hget'
+                have hbound : xr.index < m.regs.regs.size := by
+                  have ⟨hlt, _⟩ := Array.getElem?_eq_some_iff.mp hget'
+                  exact hlt
+                have hcell := hrhv xr.index hbound
+                rw [hget'] at hcell
+                constructor
+                · exact Heap.push_str_preserves_wf m.heap hwf.1 hcell.1 hcell.2
+                constructor
+                · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+                · exact hwf.2.2
+              | y yr =>
+                have hget' : m.getYReg yr = some (.str a) := hget
+                have hcell := hshv yr (.str a) hget'
+                constructor
+                · exact Heap.push_str_preserves_wf m.heap hwf.1 hcell.1 hcell.2
+                constructor
+                · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+                · exact hwf.2.2
+            | lis a =>
+              cases vn with
+              | x xr =>
+                have hget' : m.getXReg xr = some (.lis a) := hget
+                unfold getXReg RegisterFile.get? at hget'
+                have hbound : xr.index < m.regs.regs.size := by
+                  have ⟨hlt, _⟩ := Array.getElem?_eq_some_iff.mp hget'
+                  exact hlt
+                have hcell := hrv xr.index hbound
+                rw [hget'] at hcell
+                constructor
+                · exact Heap.push_lis_preserves_wf m.heap hwf.1 hcell
+                constructor
+                · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+                · exact hwf.2.2
+              | y yr =>
+                -- Y register: use stackValid
+                have hget' : m.getYReg yr = some (.lis a) := hget
+                have hcell := hstv yr (.lis a) hget'
+                constructor
+                · exact Heap.push_lis_preserves_wf m.heap hwf.1 hcell
+                constructor
+                · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
+                · exact hwf.2.2
         | set_constant c =>
           -- Pushes CON cell then nextInstr
           unfold execSetConstant pushHeap nextInstr wellFormed at *
@@ -927,79 +1491,10 @@ theorem MachineState.step_preserves_wf (m : MachineState) (hwf : m.wellFormed) :
               · rw [Heap.push_top]; exact congrArg (· + 1) hwf.2.1
               · exact hwf.2.2
         | unify_value vn =>
-          -- BLOCKED: Read mode calls unify (needs valid addresses).
-          -- Write mode pushes register value (needs register validity).
-          unfold execUnifyValue at *
-          cases m.mode with
-          | read =>
-            cases hget : m.getVarReg vn with
-            | none =>
-              simp only [hget]
-              unfold MachineState.setFail MachineState.wellFormed at *
-              exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-            | some c =>
-              simp only [hget]
-              cases c with
-              | ref a =>
-                -- BLOCKED: Need a < heap.size and m.s < heap.size
-                sorry
-              | str _ =>
-                unfold MachineState.setFail MachineState.wellFormed at *
-                exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-              | con _ =>
-                unfold MachineState.setFail MachineState.wellFormed at *
-                exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-              | functor _ =>
-                unfold MachineState.setFail MachineState.wellFormed at *
-                exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-              | lis _ =>
-                unfold MachineState.setFail MachineState.wellFormed at *
-                exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-          | write =>
-            cases hget : m.getVarReg vn with
-            | none =>
-              simp only [hget]
-              unfold MachineState.setFail MachineState.wellFormed at *
-              exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-            | some c =>
-              simp only [hget]
-              -- BLOCKED: Need to know c contains valid addresses
-              sorry
+          exact execUnifyValue_preserves_wf m vn hwf hrhv hsv hshv
         | unify_local_value vn =>
-          -- Same as unify_value (simplified implementation)
-          unfold execUnifyValue at *
-          cases m.mode with
-          | read =>
-            cases hget : m.getVarReg vn with
-            | none =>
-              simp only [hget]
-              unfold MachineState.setFail MachineState.wellFormed at *
-              exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-            | some c =>
-              simp only [hget]
-              cases c with
-              | ref a => sorry
-              | str _ =>
-                unfold MachineState.setFail MachineState.wellFormed at *
-                exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-              | con _ =>
-                unfold MachineState.setFail MachineState.wellFormed at *
-                exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-              | functor _ =>
-                unfold MachineState.setFail MachineState.wellFormed at *
-                exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-              | lis _ =>
-                unfold MachineState.setFail MachineState.wellFormed at *
-                exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-          | write =>
-            cases hget : m.getVarReg vn with
-            | none =>
-              simp only [hget]
-              unfold MachineState.setFail MachineState.wellFormed at *
-              exact ⟨hwf.1, hwf.2.1, hwf.2.2⟩
-            | some c =>
-              simp only [hget]
-              sorry
+          -- unify_local_value uses the same exec function as unify_value
+          exact execUnifyValue_preserves_wf m vn hwf hrhv hsv hshv
         | unify_constant c =>
           unfold execUnifyConstant wellFormed at *
           cases m.mode with

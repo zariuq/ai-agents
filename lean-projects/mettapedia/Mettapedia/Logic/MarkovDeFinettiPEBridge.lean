@@ -381,12 +381,15 @@ On V (visits i) ∩ AVE (all visits exist a.e.): JRE = ⋃upTo.
 On NV (never visits i): rsp defaults to i, both sides agree.
 Key Mathlib lemma: `measure_eq_measure_of_null_diff`. -/
 
-/-- Under StrongRecurrence, `P(S0 ∩ JRE ∩ V) = P(S0 ∩ ⋃upTo)` where `V = {ω visits i}`.
-Uses `measure_eq_measure_of_null_diff`: ⋃upTo ⊆ JRE ∩ V, and (JRE ∩ V) \ ⋃upTo is null. -/
-theorem measure_JRE_inter_V_eq_upTo_of_strongRecurrence
+/-- Row-specific recurrence suffices to lift `⋃upTo` equality to the full JRE ∩ V
+piece. This is the exact recurrence input used downstream for a fixed row `i`. -/
+theorem measure_JRE_inter_V_eq_upTo_of_rowRecurrence
     (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
-    (hStrRec : MarkovDeFinettiHard.StrongRecurrence (k := k) P)
-    (i : Fin k) (S0 : Set (ℕ → Fin k))
+    (i : Fin k)
+    (hRowRec :
+      ∀ᵐ ω ∂P, (∃ t, ω t = i) → ∀ n,
+        nthVisitTimeExists (k := k) ω i n)
+    (S0 : Set (ℕ → Fin k))
     (S : Finset ℕ) (v : ℕ → Fin k) (hS_ne : S.Nonempty) :
     P (S0 ∩ jointRowSuccEvent (k := k) i S v ∩ {ω | ∃ t, ω t = i}) =
     P (S0 ∩ ⋃ N, rowVisitCylinderEventUpTo (k := k) i S v N) := by
@@ -405,10 +408,10 @@ theorem measure_JRE_inter_V_eq_upTo_of_strongRecurrence
       rcases hS_ne with ⟨m₀, hm₀⟩
       rcases (hN : ∀ n ∈ S, _) m₀ hm₀ with ⟨t, _, ht_time, _⟩
       exact ⟨t, ((nthVisitTime_eq_some_iff (k := k) ω i m₀ t).mp ht_time).1⟩
-  · -- (JRE ∩ V) \ ⋃upTo is null under StrongRecurrence
+  · -- (JRE ∩ V) \ ⋃upTo is null under the row-specific recurrence input
     have hSR : P {ω : ℕ → Fin k | ¬((∃ t, ω t = i) →
         ∀ n, nthVisitTimeExists (k := k) ω i n)} = 0 :=
-      ae_iff.mp (hStrRec i)
+      ae_iff.mp hRowRec
     apply measure_mono_null _ hSR
     intro ω ⟨⟨⟨hS0, hJRE⟩, hV⟩, hNotUpTo⟩
     simp only [Set.mem_setOf_eq, Classical.not_imp, not_forall]
@@ -428,6 +431,19 @@ theorem measure_JRE_inter_V_eq_upTo_of_strongRecurrence
         simp only [rowSuccessorValueEvent, Set.mem_setOf_eq,
           rowSuccessorAtNthVisit, htFn m hm] at hJm
         exact hJm⟩
+
+/-- Under StrongRecurrence, `P(S0 ∩ JRE ∩ V) = P(S0 ∩ ⋃upTo)` where `V = {ω visits i}`.
+Uses `measure_eq_measure_of_null_diff`: ⋃upTo ⊆ JRE ∩ V, and (JRE ∩ V) \ ⋃upTo is null. -/
+theorem measure_JRE_inter_V_eq_upTo_of_strongRecurrence
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (hStrRec : MarkovDeFinettiHard.StrongRecurrence (k := k) P)
+    (i : Fin k) (S0 : Set (ℕ → Fin k))
+    (S : Finset ℕ) (v : ℕ → Fin k) (hS_ne : S.Nonempty) :
+    P (S0 ∩ jointRowSuccEvent (k := k) i S v ∩ {ω | ∃ t, ω t = i}) =
+    P (S0 ∩ ⋃ N, rowVisitCylinderEventUpTo (k := k) i S v N) := by
+  exact
+    measure_JRE_inter_V_eq_upTo_of_rowRecurrence
+      (k := k) P i (hStrRec i) S0 S v hS_ne
 
 /-! ### Instantiation: adjacent transposition → start-restricted multi-index equality
 
@@ -934,19 +950,18 @@ private theorem carrier_equiv_of_fin_perm {N n' : ℕ}
           ← htarget_eq y x hab]
       exact ⟨e₀.trans e_sw, fun xs => (he₀ xs).trans (he_sw (e₀ xs))⟩
 
-/-- Per-start-state equality for the row process preimage under permutation.
-For each start state `j`, the measure of `{ω₀=j} ∩ f⁻¹'{c}` is the same
-whether `f` permutes visit indices via `σ'` or uses identity indexing.
-
-This is the core per-`j` step in `exchangeable_rowProcess`, extracted as a
-reusable lemma for the restricted version `exchangeable_rowProcess_restrict`. -/
-theorem measure_start_inter_rsp_preimage_eq
+/-- Per-start-state equality for the row process preimage under permutation,
+assuming only the row-specific recurrence needed for the fixed row `i`. -/
+theorem measure_start_inter_rsp_preimage_eq_of_rowRecurrence
     (μ : FiniteAlphabet.PrefixMeasure (Fin k))
     (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
     (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
     (hExt : ∀ xs : List (Fin k), μ xs = P (MarkovDeFinettiRecurrence.cylinder (k := k) xs))
-    (hStrRec : MarkovDeFinettiHard.StrongRecurrence (k := k) P)
-    (i : Fin k) (n' : ℕ) (σ' : Equiv.Perm (Fin n')) (c : Fin n' → Fin k)
+    (i : Fin k)
+    (hRowRec :
+      ∀ᵐ ω ∂P, (∃ t, ω t = i) → ∀ n,
+        nthVisitTimeExists (k := k) ω i n)
+    (n' : ℕ) (σ' : Equiv.Perm (Fin n')) (c : Fin n' → Fin k)
     (j : Fin k) :
     P ({ω | ω 0 = j} ∩
         (fun ω (m : Fin n') => rowSuccessorVisitProcess (k := k) i ω ↑(σ' m)) ⁻¹' {c}) =
@@ -1002,8 +1017,8 @@ theorem measure_start_inter_rsp_preimage_eq
       P (S0 ∩ jointRowSuccEvent (k := k) i S (ext₁ a b) ∩ V) =
       P (S0 ∩ jointRowSuccEvent (k := k) i S (ext₂ a b) ∩ V) := by
     intro a b
-    rw [measure_JRE_inter_V_eq_upTo_of_strongRecurrence P hStrRec i S0 S (ext₁ a b) hS_ne,
-        measure_JRE_inter_V_eq_upTo_of_strongRecurrence P hStrRec i S0 S (ext₂ a b) hS_ne]
+    rw [measure_JRE_inter_V_eq_upTo_of_rowRecurrence P i hRowRec S0 S (ext₁ a b) hS_ne,
+        measure_JRE_inter_V_eq_upTo_of_rowRecurrence P i hRowRec S0 S (ext₂ a b) hS_ne]
     exact hUpTo a b
   -- NV-piece JRE equality (per a, b): on NV, rsp defaults to i, so both sides equal
   have hNV_eq : ∀ a b : Fin k,
@@ -1226,6 +1241,28 @@ theorem measure_start_inter_rsp_preimage_eq
       measure_iUnion (hJRE_disj_b ext₂ a (hext₂_n1 a)) (fun b => hJRE_meas_b ext₂ a b)]
   congr 1; ext b
   exact hPerTerm a b
+
+/-- Per-start-state equality for the row process preimage under permutation.
+For each start state `j`, the measure of `{ω₀=j} ∩ f⁻¹'{c}` is the same
+whether `f` permutes visit indices via `σ'` or uses identity indexing.
+
+This is the core per-`j` step in `exchangeable_rowProcess`, extracted as a
+reusable lemma for the restricted version `exchangeable_rowProcess_restrict`. -/
+theorem measure_start_inter_rsp_preimage_eq
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (MarkovDeFinettiRecurrence.cylinder (k := k) xs))
+    (hStrRec : MarkovDeFinettiHard.StrongRecurrence (k := k) P)
+    (i : Fin k) (n' : ℕ) (σ' : Equiv.Perm (Fin n')) (c : Fin n' → Fin k)
+    (j : Fin k) :
+    P ({ω | ω 0 = j} ∩
+        (fun ω (m : Fin n') => rowSuccessorVisitProcess (k := k) i ω ↑(σ' m)) ⁻¹' {c}) =
+    P ({ω | ω 0 = j} ∩
+        (fun ω (m : Fin n') => rowSuccessorVisitProcess (k := k) i ω ↑m) ⁻¹' {c}) := by
+  exact
+    measure_start_inter_rsp_preimage_eq_of_rowRecurrence
+      (k := k) μ hμ P hExt i (hStrRec i) n' σ' c j
 
 /-- Constant-anchor specialization of `measure_start_inter_rsp_preimage_eq`
 rephrased through `multiRowSelectionMap`.
@@ -1953,6 +1990,101 @@ lemma cylinder_cons_eq_start_inter_preimage_multiRowSelectionMap
   simpa [wordSuccessorTupleMap_eq_multiRowSelectionMap (k := k) a ys] using
     (cylinder_cons_eq_start_inter_preimage_wordSuccessorTuple (k := k) a ys)
 
+/-- Strong recurrence in a class gives the exact row-specific recurrence
+predicate used by the PE bridge for any row index `i ∈ C`. -/
+lemma ae_rowRecurrence_of_StrongRecurrenceInClass
+    (C : Set (Fin k))
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (hStrRecC : MarkovDeFinettiRecurrence.StrongRecurrenceInClass (k := k) C P)
+    (i : Fin k) (hi : i ∈ C) :
+    ∀ᵐ ω ∂P, (∃ t, ω t = i) → ∀ n,
+      nthVisitTimeExists (k := k) ω i n := by
+  have hAllN :
+      ∀ n : ℕ,
+        ∀ᵐ ω ∂P, (∃ t : ℕ, ω t ∈ C) → nthVisitTimeExists (k := k) ω i n := by
+    intro n
+    exact
+      nthVisitTimeExists_of_StrongRecurrenceInClass
+        (k := k) C P inferInstance hStrRecC i hi n
+  have hAll :
+      ∀ᵐ ω ∂P, ∀ n : ℕ, (∃ t : ℕ, ω t ∈ C) →
+        nthVisitTimeExists (k := k) ω i n := by
+    rw [ae_all_iff]
+    intro n
+    exact hAllN n
+  filter_upwards [hAll] with ω hω hvisit n
+  refine hω n ?_
+  rcases hvisit with ⟨t, ht⟩
+  exact ⟨t, by simpa [ht] using hi⟩
+
+/-- Exchangeability of the row process only needs the row-specific recurrence
+input for the fixed state `i`. -/
+theorem exchangeable_rowProcess_of_rowRecurrence
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (MarkovDeFinettiRecurrence.cylinder (k := k) xs))
+    (i : Fin k)
+    (hRowRec :
+      ∀ᵐ ω ∂P, (∃ t, ω t = i) → ∀ n,
+        nthVisitTimeExists (k := k) ω i n) :
+    Exchangeability.Exchangeable P
+      (fun n (ω : ℕ → Fin k) =>
+        MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω n) := by
+  intro n' σ'
+  show Measure.map (fun ω (j : Fin n') =>
+      MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω (↑(σ' j))) P =
+    Measure.map (fun ω (j : Fin n') =>
+      MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω ↑j) P
+  have hmeas_rsp := MarkovDeFinettiHard.measurable_rowSuccessorVisitProcess (k := k) i
+  have hf : Measurable (fun ω : ℕ → Fin k => fun j : Fin n' =>
+      MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω (↑(σ' j))) := by
+    apply measurable_pi_lambda
+    intro j
+    show Measurable (fun ω : ℕ → Fin k =>
+      MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω (↑(σ' j)))
+    exact (measurable_pi_apply (↑(σ' j))).comp hmeas_rsp
+  have hg : Measurable (fun ω : ℕ → Fin k => fun j : Fin n' =>
+      MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω ↑j) := by
+    apply measurable_pi_lambda
+    intro j
+    show Measurable (fun ω : ℕ → Fin k =>
+      MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω ↑j)
+    exact (measurable_pi_apply ↑j).comp hmeas_rsp
+  apply MeasureTheory.Measure.ext_of_singleton
+  intro c
+  rw [Measure.map_apply hf (measurableSet_singleton c),
+      Measure.map_apply hg (measurableSet_singleton c)]
+  have hpartition : ∀ E : Set (ℕ → Fin k), MeasurableSet E →
+      P E = ∑ j : Fin k, P ({ω | ω 0 = j} ∩ E) := by
+    intro E hE
+    let fiber : Fin k → Set (ℕ → Fin k) :=
+      fun j => (fun ω : ℕ → Fin k => ω 0) ⁻¹' {j} ∩ E
+    have hcover : E = ⋃ j : Fin k, fiber j := by
+      ext ω
+      simp only [fiber, Set.mem_iUnion, Set.mem_inter_iff,
+        Set.mem_preimage, Set.mem_singleton_iff]
+      exact ⟨fun h => ⟨ω 0, rfl, h⟩, fun ⟨_, _, h⟩ => h⟩
+    have hdisj : Pairwise (Function.onFun Disjoint fiber) := by
+      intro a b hab
+      exact Set.disjoint_left.mpr fun ω ⟨ha, _⟩ ⟨hb, _⟩ =>
+        hab (by simp only [Set.mem_preimage, Set.mem_singleton_iff] at ha hb; exact ha ▸ hb)
+    have hmeas : ∀ j, MeasurableSet (fiber j) :=
+      fun j => (measurable_pi_apply 0 (measurableSet_singleton j)).inter hE
+    have hfiber_eq : ∀ j, P (fiber j) = P ({ω | ω 0 = j} ∩ E) := by
+      intro j
+      congr 1
+    rw [hcover, measure_iUnion hdisj hmeas]
+    simp_rw [hfiber_eq, ← hcover]
+    exact tsum_fintype _
+  rw [hpartition _ (hf (measurableSet_singleton c)),
+      hpartition _ (hg (measurableSet_singleton c))]
+  congr 1
+  ext j
+  exact
+    measure_start_inter_rsp_preimage_eq_of_rowRecurrence
+      (k := k) μ hμ P hExt i hRowRec n' σ' c j
+
 /-- The row process for each state i is Exchangeable under P.
 Uses guard marginalization (S = range(n'+2)) + V/NV decomposition +
 carrier_equiv_of_fin_perm to avoid the different-S and boundary bugs.
@@ -1969,52 +2101,63 @@ theorem exchangeable_rowProcess
     Exchangeability.Exchangeable P
       (fun n (ω : ℕ → Fin k) =>
         MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω n) := by
-  intro n' σ'
-  -- Exchangeable unfolds with extra lambdas; `show` beta-reduces to our target form.
-  show Measure.map (fun ω (j : Fin n') =>
-      MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω (↑(σ' j))) P =
-    Measure.map (fun ω (j : Fin n') =>
-      MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω ↑j) P
-  have hmeas_rsp := MarkovDeFinettiHard.measurable_rowSuccessorVisitProcess (k := k) i
-  have hf : Measurable (fun ω : ℕ → Fin k => fun j : Fin n' =>
-      MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω (↑(σ' j))) := by
-    apply measurable_pi_lambda; intro j
-    show Measurable (fun ω : ℕ → Fin k =>
-      MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω (↑(σ' j)))
-    exact (measurable_pi_apply (↑(σ' j))).comp hmeas_rsp
-  have hg : Measurable (fun ω : ℕ → Fin k => fun j : Fin n' =>
-      MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω ↑j) := by
-    apply measurable_pi_lambda; intro j
-    show Measurable (fun ω : ℕ → Fin k =>
-      MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω ↑j)
-    exact (measurable_pi_apply ↑j).comp hmeas_rsp
-  apply MeasureTheory.Measure.ext_of_singleton; intro c
-  rw [Measure.map_apply hf (measurableSet_singleton c),
-      Measure.map_apply hg (measurableSet_singleton c)]
-  -- Partition by start state
-  have hpartition : ∀ E : Set (ℕ → Fin k), MeasurableSet E →
-      P E = ∑ j : Fin k, P ({ω | ω 0 = j} ∩ E) := by
-    intro E hE
-    let fiber : Fin k → Set (ℕ → Fin k) :=
-      fun j => (fun ω : ℕ → Fin k => ω 0) ⁻¹' {j} ∩ E
-    have hcover : E = ⋃ j : Fin k, fiber j := by
-      ext ω; simp only [fiber, Set.mem_iUnion, Set.mem_inter_iff,
-        Set.mem_preimage, Set.mem_singleton_iff]
-      exact ⟨fun h => ⟨ω 0, rfl, h⟩, fun ⟨_, _, h⟩ => h⟩
-    have hdisj : Pairwise (Function.onFun Disjoint fiber) := by
-      intro a b hab
-      exact Set.disjoint_left.mpr fun ω ⟨ha, _⟩ ⟨hb, _⟩ =>
-        hab (by simp only [Set.mem_preimage, Set.mem_singleton_iff] at ha hb; exact ha ▸ hb)
-    have hmeas : ∀ j, MeasurableSet (fiber j) :=
-      fun j => (measurable_pi_apply 0 (measurableSet_singleton j)).inter hE
-    have hfiber_eq : ∀ j, P (fiber j) = P ({ω | ω 0 = j} ∩ E) := by
-      intro j; congr 1
-    rw [hcover, measure_iUnion hdisj hmeas]
-    simp_rw [hfiber_eq, ← hcover]; exact tsum_fintype _
-  rw [hpartition _ (hf (measurableSet_singleton c)),
-      hpartition _ (hg (measurableSet_singleton c))]
-  congr 1; ext j
-  exact measure_start_inter_rsp_preimage_eq (k := k) μ hμ P hExt hStrRec i n' σ' c j
+  exact
+    exchangeable_rowProcess_of_rowRecurrence
+      (k := k) μ hμ P hExt i (hStrRec i)
+
+/-- Per-row joint perm invariance for a single row.
+The row process for each state i is invariant under arbitrary permutation
+of visit indices. Uses Exchangeable → FullyExchangeable → rowPermute equality.
+
+The proof route: carrier equiv → level-3 lifting → adjacent swap equality
+→ composition of swaps → guard index marginalization → pushforward equality. -/
+theorem rowProcessLaw_permInvariant_of_markovExchangeability_rowRecurrence
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (MarkovDeFinettiRecurrence.cylinder (k := k) xs))
+    (i : Fin k)
+    (hRowRec :
+      ∀ᵐ ω ∂P, (∃ t, ω t = i) → ∀ n,
+        nthVisitTimeExists (k := k) ω i n) :
+    ∀ (σ : Equiv.Perm ℕ), IsFiniteMeasure P →
+      Measure.map (MarkovDeFinettiHard.rowPermute (k := k) σ)
+        (MarkovDeFinettiHard.rowProcessLaw (k := k) P i) =
+      MarkovDeFinettiHard.rowProcessLaw (k := k) P i := by
+  intro σ _
+  have hmeas_rowPermute : Measurable (MarkovDeFinettiHard.rowPermute (k := k) σ) :=
+    measurable_pi_lambda _ (fun n => measurable_pi_apply (σ n))
+  have hExch :=
+    exchangeable_rowProcess_of_rowRecurrence (k := k) μ hμ P hExt i hRowRec
+  have hFull := (Exchangeability.exchangeable_iff_fullyExchangeable
+      (fun m => (measurable_pi_apply m).comp
+        (MarkovDeFinettiHard.measurable_rowSuccessorVisitProcess (k := k) i))).mp hExch
+  have hσ := hFull σ
+  show Measure.map (MarkovDeFinettiHard.rowPermute (k := k) σ)
+      (Measure.map (MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i) P) =
+    Measure.map (MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i) P
+  rw [Measure.map_map hmeas_rowPermute
+      (MarkovDeFinettiHard.measurable_rowSuccessorVisitProcess (k := k) i)]
+  exact hσ
+
+/-- Per-row joint perm invariance for a single class-local row. -/
+theorem rowProcessLaw_permInvariant_of_markovExchangeability_strongRecurrenceInClass
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (MarkovDeFinettiRecurrence.cylinder (k := k) xs))
+    (C : Set (Fin k))
+    (hStrRecC : MarkovDeFinettiRecurrence.StrongRecurrenceInClass (k := k) C P)
+    (i : Fin k) (hi : i ∈ C) :
+    ∀ (σ : Equiv.Perm ℕ), IsFiniteMeasure P →
+      Measure.map (MarkovDeFinettiHard.rowPermute (k := k) σ)
+        (MarkovDeFinettiHard.rowProcessLaw (k := k) P i) =
+      MarkovDeFinettiHard.rowProcessLaw (k := k) P i := by
+  exact
+    rowProcessLaw_permInvariant_of_markovExchangeability_rowRecurrence
+      (k := k) μ hμ P hExt i
+      (ae_rowRecurrence_of_StrongRecurrenceInClass
+        (k := k) C P hStrRecC i hi)
 
 /-- Per-row joint perm invariance for a single row.
 The row process for each state i is invariant under arbitrary permutation
@@ -2032,34 +2175,22 @@ theorem rowProcessLaw_permInvariant_of_markovExchangeability
       Measure.map (MarkovDeFinettiHard.rowPermute (k := k) σ)
         (MarkovDeFinettiHard.rowProcessLaw (k := k) P i) =
       MarkovDeFinettiHard.rowProcessLaw (k := k) P i := by
-  intro i σ _
-  let ρ := MarkovDeFinettiHard.rowProcessLaw (k := k) P i
-  have hmeas_rowPermute : Measurable (MarkovDeFinettiHard.rowPermute (k := k) σ) :=
-    measurable_pi_lambda _ (fun n => measurable_pi_apply (σ n))
-  -- Prove Exchangeable → FullyExchangeable → direct conclusion
-  have hExch := exchangeable_rowProcess (k := k) μ hμ P hExt hStrRec i
-  have hFull := (Exchangeability.exchangeable_iff_fullyExchangeable
-      (fun m => (measurable_pi_apply m).comp
-        (MarkovDeFinettiHard.measurable_rowSuccessorVisitProcess (k := k) i))).mp hExch
-  -- FullyExchangeable gives: P.map(fun ω m => rsp(i,ω,σ m)) = P.map(fun ω m => rsp(i,ω,m))
-  have hσ := hFull σ
-  -- Convert to the rowPermute form via map_map
-  show Measure.map (MarkovDeFinettiHard.rowPermute (k := k) σ)
-      (Measure.map (MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i) P) =
-    Measure.map (MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i) P
-  rw [Measure.map_map hmeas_rowPermute
-      (MarkovDeFinettiHard.measurable_rowSuccessorVisitProcess (k := k) i)]
-  exact hσ
+  intro i σ hfin
+  exact
+    rowProcessLaw_permInvariant_of_markovExchangeability_rowRecurrence
+      (k := k) μ hμ P hExt i (hStrRec i) σ hfin
 
-/-- The row process for each state `i` is Exchangeable under `P.restrict {ω₀ = a}`.
-Uses `Measure.restrict_apply` to convert the restricted measure to
-`P({ω₀=a} ∩ ...)`, then applies `measure_start_inter_rsp_preimage_eq`. -/
-theorem exchangeable_rowProcess_restrict
+/-- The row process under `P.restrict {ω₀ = a}` is exchangeable as soon as the
+fixed row `i` satisfies the row-specific recurrence hypothesis. -/
+theorem exchangeable_rowProcess_restrict_of_rowRecurrence
     (μ : FiniteAlphabet.PrefixMeasure (Fin k))
     (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
     (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
     (hExt : ∀ xs : List (Fin k), μ xs = P (MarkovDeFinettiRecurrence.cylinder (k := k) xs))
-    (hStrRec : MarkovDeFinettiHard.StrongRecurrence (k := k) P) (i a : Fin k) :
+    (i a : Fin k)
+    (hRowRec :
+      ∀ᵐ ω ∂P, (∃ t, ω t = i) → ∀ n,
+        nthVisitTimeExists (k := k) ω i n) :
     Exchangeability.Exchangeable (P.restrict {ω : ℕ → Fin k | ω 0 = a})
       (fun n (ω : ℕ → Fin k) =>
         MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω n) := by
@@ -2086,21 +2217,40 @@ theorem exchangeable_rowProcess_restrict
   rw [Measure.map_apply hf (measurableSet_singleton c),
       Measure.map_apply hg (measurableSet_singleton c)]
   rw [Measure.restrict_apply' hS_meas, Measure.restrict_apply' hS_meas]
-  have := measure_start_inter_rsp_preimage_eq (k := k) μ hμ P hExt hStrRec i n' σ' c a
+  have := measure_start_inter_rsp_preimage_eq_of_rowRecurrence
+    (k := k) μ hμ P hExt i hRowRec n' σ' c a
   rwa [Set.inter_comm, Set.inter_comm ({ω : ℕ → Fin k | ω 0 = a}
     : Set (ℕ → Fin k))] at this
+
+/-- The row process for each state `i` is Exchangeable under `P.restrict {ω₀ = a}`.
+Uses `Measure.restrict_apply` to convert the restricted measure to
+`P({ω₀=a} ∩ ...)`, then applies `measure_start_inter_rsp_preimage_eq`. -/
+theorem exchangeable_rowProcess_restrict
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (MarkovDeFinettiRecurrence.cylinder (k := k) xs))
+    (hStrRec : MarkovDeFinettiHard.StrongRecurrence (k := k) P) (i a : Fin k) :
+    Exchangeability.Exchangeable (P.restrict {ω : ℕ → Fin k | ω 0 = a})
+      (fun n (ω : ℕ → Fin k) =>
+        MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω n) := by
+  exact
+    exchangeable_rowProcess_restrict_of_rowRecurrence
+      (k := k) μ hμ P hExt i a (hStrRec i)
 
 /-- The row process for each state `i` is Exchangeable under
 `P.restrict {ω₀ ∈ C}`.
 This finite-class version reduces to the per-start theorem by partitioning the
 class event into singleton start fibers. -/
-theorem exchangeable_rowProcess_restrict_class
+theorem exchangeable_rowProcess_restrict_class_of_rowRecurrence
     (μ : FiniteAlphabet.PrefixMeasure (Fin k))
     (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
     (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
     (hExt : ∀ xs : List (Fin k), μ xs = P (MarkovDeFinettiRecurrence.cylinder (k := k) xs))
-    (hStrRec : MarkovDeFinettiHard.StrongRecurrence (k := k) P)
-    (C : Set (Fin k)) (i : Fin k) :
+    (C : Set (Fin k)) (i : Fin k)
+    (hRowRec :
+      ∀ᵐ ω ∂P, (∃ t, ω t = i) → ∀ n,
+        nthVisitTimeExists (k := k) ω i n) :
     Exchangeability.Exchangeable (P.restrict {ω : ℕ → Fin k | ω 0 ∈ C})
       (fun n (ω : ℕ → Fin k) =>
         MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω n) := by
@@ -2167,7 +2317,9 @@ theorem exchangeable_rowProcess_restrict_class
         show ω 0 ∈ C
         simpa [hstart] using ha
     rw [hEσ, hEn]
-    exact measure_start_inter_rsp_preimage_eq (k := k) μ hμ P hExt hStrRec i n' σ' c a
+    exact
+      measure_start_inter_rsp_preimage_eq_of_rowRecurrence
+        (k := k) μ hμ P hExt i hRowRec n' σ' c a
   · have hEσ_empty :
         {ω : ℕ → Fin k | ω 0 = a} ∩ (Eσ ∩ {ω : ℕ → Fin k | ω 0 ∈ C}) = ∅ := by
       ext ω
@@ -2193,6 +2345,80 @@ theorem exchangeable_rowProcess_restrict_class
       · intro hω
         cases hω
     simp [hEσ_empty, hEn_empty]
+
+/-- The row process for each state `i` is Exchangeable under
+`P.restrict {ω₀ ∈ C}`.
+This finite-class version reduces to the per-start theorem by partitioning the
+class event into singleton start fibers. -/
+theorem exchangeable_rowProcess_restrict_class
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (MarkovDeFinettiRecurrence.cylinder (k := k) xs))
+    (hStrRec : MarkovDeFinettiHard.StrongRecurrence (k := k) P)
+    (C : Set (Fin k)) (i : Fin k) :
+    Exchangeability.Exchangeable (P.restrict {ω : ℕ → Fin k | ω 0 ∈ C})
+      (fun n (ω : ℕ → Fin k) =>
+        MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω n) := by
+  exact
+    exchangeable_rowProcess_restrict_class_of_rowRecurrence
+      (k := k) μ hμ P hExt C i (hStrRec i)
+
+/-- Class recurrence suffices for row-process exchangeability on any row
+whose anchor state lies inside the recurrent class. -/
+theorem exchangeable_rowProcess_of_markovExchangeability_strongRecurrenceInClass
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (MarkovDeFinettiRecurrence.cylinder (k := k) xs))
+    (C : Set (Fin k))
+    (hStrRecC : MarkovDeFinettiRecurrence.StrongRecurrenceInClass (k := k) C P)
+    (i : Fin k) (hi : i ∈ C) :
+    Exchangeability.Exchangeable P
+      (fun n (ω : ℕ → Fin k) =>
+        MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω n) := by
+  exact
+    exchangeable_rowProcess_of_rowRecurrence
+      (k := k) μ hμ P hExt i
+      (ae_rowRecurrence_of_StrongRecurrenceInClass
+        (k := k) C P hStrRecC i hi)
+
+/-- Singleton-start class-local exchangeability under class recurrence. -/
+theorem exchangeable_rowProcess_restrict_of_markovExchangeability_strongRecurrenceInClass
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (MarkovDeFinettiRecurrence.cylinder (k := k) xs))
+    (C : Set (Fin k))
+    (hStrRecC : MarkovDeFinettiRecurrence.StrongRecurrenceInClass (k := k) C P)
+    (i a : Fin k) (hi : i ∈ C) :
+    Exchangeability.Exchangeable (P.restrict {ω : ℕ → Fin k | ω 0 = a})
+      (fun n (ω : ℕ → Fin k) =>
+        MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω n) := by
+  exact
+    exchangeable_rowProcess_restrict_of_rowRecurrence
+      (k := k) μ hμ P hExt i a
+      (ae_rowRecurrence_of_StrongRecurrenceInClass
+        (k := k) C P hStrRecC i hi)
+
+/-- Class-restricted exchangeability under class recurrence for rows indexed by
+states inside the recurrent class. -/
+theorem exchangeable_rowProcess_restrict_class_of_markovExchangeability_strongRecurrenceInClass
+    (μ : FiniteAlphabet.PrefixMeasure (Fin k))
+    (hμ : MarkovExchangeablePrefixMeasure (k := k) μ)
+    (P : Measure (ℕ → Fin k)) [IsProbabilityMeasure P]
+    (hExt : ∀ xs : List (Fin k), μ xs = P (MarkovDeFinettiRecurrence.cylinder (k := k) xs))
+    (C : Set (Fin k))
+    (hStrRecC : MarkovDeFinettiRecurrence.StrongRecurrenceInClass (k := k) C P)
+    (i : Fin k) (hi : i ∈ C) :
+    Exchangeability.Exchangeable (P.restrict {ω : ℕ → Fin k | ω 0 ∈ C})
+      (fun n (ω : ℕ → Fin k) =>
+        MarkovDeFinettiHard.rowSuccessorVisitProcess (k := k) i ω n) := by
+  exact
+    exchangeable_rowProcess_restrict_class_of_rowRecurrence
+      (k := k) μ hμ P hExt C i
+      (ae_rowRecurrence_of_StrongRecurrenceInClass
+        (k := k) C P hStrRecC i hi)
 
 /-- Per-row joint perm invariance for a single row under the restricted measure
 `P.restrict {ω₀ = a}`. The row process law restricted to paths starting at `a`

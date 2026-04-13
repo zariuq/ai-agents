@@ -1,5 +1,15 @@
 import MeTTailCore
 
+/-! # PeTTaCore Space Operations
+
+Space-effect semantics for the `Algorithms.MeTTa.Simple` / `PeTTaCore` lane.
+
+This module is not a dialect-neutral MeTTa space specification. It models the
+PeTTa-side relation-environment effects used by the verified simple runtime,
+including policy-controlled lowering from surface space references into
+relation names.
+-/
+
 namespace Algorithms.MeTTa.Simple.Semantics.SpaceOps
 
 open MeTTailCore.MeTTaIL.Syntax
@@ -809,6 +819,8 @@ def removeAtom (I : Interface σ) (P : Policy) (s : σ) (space fact : Pattern) :
         { tuples := fun qRel args =>
             let base := (I.bundle s).relationEnv.tuples qRel args
             if rel == qRel && args.length == 1 then
+              -- PeTTaCore space facts are represented as singleton tuples; this
+              -- current semantics drops all tuples equal to `[fact]`.
               base.filter (fun tup => tup != [fact])
             else
               base }

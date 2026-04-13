@@ -15,7 +15,7 @@ open Mettapedia.Logic.PLNWorldModel
 open Mettapedia.Logic.EvidenceClass
 
 variable {Obs State Query : Type*}
-variable [EvidenceType State] [WorldModel State Query]
+variable [EvidenceType State] [BinaryWorldModel State Query]
 
 /-- An observation trace is a list of observations. -/
 abbrev ObservationTrace (Obs : Type*) := List Obs

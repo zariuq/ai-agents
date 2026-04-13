@@ -67,6 +67,7 @@
 \newcommand{\MeTTa}{\textup{MeTTa}}
 \newcommand{\MeTTaIL}{\textup{MeTTaIL}}
 \newcommand{\HE}{\textup{HE}}
+\newcommand{\CeTTa}{\textup{CeTTa}}
 \newcommand{\PathMap}{\textup{PathMap}}
 
 \title{MORK, MM2, and PathMap: A Lean~4 Formalization\\
@@ -2179,6 +2180,140 @@ All classification theorems (19 in \texttt{RuntimeKernel.lean},
 Quot.sound]}.
 
 %% ============================================================
+\section*{Future Work: Multiset Semantics via Semiring Algebra}
+\label{sec:future-multiset}
+%% ============================================================
+
+\PathMap{} implements set semantics: inserting the same expression twice
+yields one copy, and algebraic operations collapse duplicates.  This is
+by design for \MORK{}/MM2, where deterministic execution requires
+deduplication.  However, \MeTTa{} has \emph{multiset} semantics: adding
+the same atom twice creates two copies, and queries return one result
+per copy.
+
+\paragraph{Problem.}
+When \PathMap{} backs ordinary \MeTTa{} spaces (not \MORK{}-managed MM2
+spaces), the set semantics create a semantic mismatch.  \CeTTa{}
+currently works around this via a parallel index mapping serialized
+atoms to row-ID vectors, but this index does not compose with
+\PathMap{}'s algebraic operations.
+
+\paragraph{Approach A: Embedded count.}
+Encode multiplicity in a CeTTa-owned counted key formed by
+\[
+  \texttt{atom\_expr\_bytes} \;\Vert\; \texttt{count\_expr\_bytes}
+\]
+where the count remains an ordinary serialized number expression.  This keeps
+the atom bytes at the front of the key, preserving prefix scans for PathMap
+narrowing.  Using the ordinary pair expression \texttt{(\$atom \$count)}
+directly would \emph{not} preserve the atom prefix under the current MORK expr
+serialization, because the outer arity tag appears before the atom payload.
+On insert, look up the existing count and re-insert with the incremented value.
+On query, decode the count and emit results accordingly.
+
+\begin{itemize}[nosep]
+  \item Works with current \PathMap{} API.
+  \item Count rewrites remain a CeTTa-owned concern; algebra ops still require
+    special handling.
+\end{itemize}
+
+\paragraph{Approach B: \texttt{PathMap<CountValue>} with semiring algebra.}
+A cleaner architecture uses \texttt{PathMap<V>} with \texttt{V = CountValue}
+(a newtype over \texttt{u32}).  This requires:
+
+\begin{enumerate}[nosep]
+  \item \textbf{Semiring \texttt{Lattice} instance for \texttt{CountValue}.}
+    The current numeric \texttt{Lattice} implementations in
+    \texttt{ring.rs} are placeholders that ignore the ``other'' operand.
+    A proper multiset semiring requires:
+    \begin{itemize}[nosep]
+      \item \texttt{pjoin} (union): $\text{count}_a + \text{count}_b$
+      \item \texttt{pmeet} (intersection): $\min(\text{count}_a, \text{count}_b)$
+      \item \texttt{psubtract} (difference): $\max(0, \text{count}_a - \text{count}_b)$
+    \end{itemize}
+
+  \item \textbf{Query-level count multiplication for conjunctions.}
+    Storage gets cleaner under this model, but query evaluation must
+    still multiply counts across matched factors.
+\end{enumerate}
+Note that \texttt{join\_val\_at} is a convenience, not a strict blocker:
+\PathMap{} already supports in-place insert-or-mutate via
+\texttt{write\_zipper\_at\_path} (\texttt{trie\_map.rs:450}).
+
+\paragraph{Theoretical foundation.}
+Multiset (bag) semantics over annotated relations are characterized by
+\emph{provenance semirings}~\cite{GreenProvenanceSemirings2007}.
+Query evaluation is parameterized over a commutative semiring
+$(\mathbb{K}, +, \times, 0, 1)$; for counting multiplicities, the
+natural numbers $(\mathbb{N}, +, \times, 0, 1)$ suffice.  Join operations
+correspond to multiplication (Cartesian product count), union to addition,
+and projection sums multiplicities over projected-away witnesses.
+
+See also Mumick et~al.~\cite{MumickMagicDuplicates1990} on bag semantics
+in Datalog and Abiteboul--Hull--Vianu~\cite{AHV1995} on bag relational
+algebra.
+
+\paragraph{Implementation sketch.}
+\begin{lstlisting}[caption={Semiring \texttt{Lattice} for multiset counts (Rust pseudocode).}]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct CountValue(u32);
+
+impl Lattice for CountValue {
+    fn pjoin(&self, other: &Self) -> AlgebraicResult<Self> {
+        // Union = sum of counts
+        AlgebraicResult::Element(CountValue(
+            self.0.saturating_add(other.0)))
+    }
+    fn pmeet(&self, other: &Self) -> AlgebraicResult<Self> {
+        // Intersection = min of counts
+        let m = self.0.min(other.0);
+        if m == 0 { AlgebraicResult::None }
+        else { AlgebraicResult::Element(CountValue(m)) }
+    }
+}
+
+impl DistributiveLattice for CountValue {
+    fn psubtract(&self, other: &Self) -> AlgebraicResult<Self> {
+        // Difference = saturating subtraction
+        let d = self.0.saturating_sub(other.0);
+        if d == 0 { AlgebraicResult::None }
+        else { AlgebraicResult::Element(CountValue(d)) }
+    }
+}
+\end{lstlisting}
+
+\paragraph{Benefits.}
+\begin{itemize}[nosep]
+  \item Multiset semantics compose with all \PathMap{} algebra operations
+    (no parallel index synchronization).
+  \item Conjunction multiplicity computes correctly: product of factor
+    counts, per semiring multiplication.
+  \item Clean separation: \MORK{}/MM2 continues using \texttt{PathMap<()>}
+    (set semantics), while \MeTTa{} spaces use \texttt{PathMap<CountValue>}
+    (multiset semantics).
+\end{itemize}
+
+\paragraph{Immediate CeTTa-owned path.}
+Approach A is already enough to give CeTTa a mainline-compatible prototype
+for \texttt{new-space pathmap}: one counted key per distinct atom, local
+insert/remove-one rewrite, local query rematch, and local conjunction logic
+that multiplies factor counts.  In that lane, duplicate row ids become a
+derived compatibility view rather than stored truth, and the helper
+\texttt{query\_multi\_with\_factor\_exprs} is no longer structurally required.
+If CeTTa later chooses to store multiple key families in one shared \PathMap{},
+an explicit discriminator byte can be added at that point; the simplest
+fresh-space prototype does not require one.
+
+\paragraph{Formalization opportunity.}
+The Lean formalization could extend \texttt{PathMapQuantale} with a
+\texttt{CountValue} instance and prove semiring laws distribute over
+the \texttt{FTrie} operations.  The existing \texttt{AlgebraicResult}
+infrastructure handles the zero-count $\to$ deletion case via the
+\texttt{.none} variant.  This would provide mechanically-verified
+multiset semantics for \PathMap{}-backed spaces within the Mettapedia
+codebase.
+
+%% ============================================================
 \section*{Acknowledgements}
 %% ============================================================
 
@@ -2233,6 +2368,21 @@ B.~Goertzel, M.~Ikl\'e, I.~F.~Goertzel, and A.~Heljakka.
 R.~J.~Solomonoff.
 \newblock A formal theory of inductive inference, {Part~I}.
 \newblock \emph{Information and Control}, 7(1):1--22, 1964.
+
+\bibitem{GreenProvenanceSemirings2007}
+T.~J.~Green, G.~Karvounarakis, and V.~Tannen.
+\newblock Provenance semirings.
+\newblock In \emph{PODS}, pages 31--40, 2007.
+
+\bibitem{MumickMagicDuplicates1990}
+I.~S.~Mumick, H.~Pirahesh, and R.~Ramakrishnan.
+\newblock The magic of duplicates and aggregates.
+\newblock In \emph{VLDB}, pages 264--277, 1990.
+
+\bibitem{AHV1995}
+S.~Abiteboul, R.~Hull, and V.~Vianu.
+\newblock \emph{Foundations of Databases}.
+\newblock Addison-Wesley, 1995.
 
 \end{thebibliography}
 

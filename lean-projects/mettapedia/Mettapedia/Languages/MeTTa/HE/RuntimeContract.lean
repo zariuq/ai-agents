@@ -28,6 +28,8 @@ For each HE op that Rust may execute, this artifact exports:
 - `Space.lean` — queryEquations, getAtomTypes, simpleMatch
 - `Matching.lean` — matchAtoms, mergeBindings
 - `TypeCheck.lean` — typeCast, checkIfFunctionTypeIsApplicable
+- `HELanguageDef.lean` — explicit MettaCall rewrites for surface ops like `match`
+- `HEPremises.lean` — computable premise relations for rewrite-lane surface ops
 - `Types.lean` — Bindings, ResultSet, Bindings.toAtom round-trip
 -/
 
@@ -83,7 +85,7 @@ structure OpRuntimeContract where
   arity : Nat
   /-- Argument role descriptions (positional). -/
   argRoles : List String
-  /-- Which MinimalMeTTa constructor(s) define this op. -/
+  /-- Which formal constructor(s) or rewrite rule(s) define this op. -/
   specConstructors : List String
   /-- Which computable Lean functions are the semantic authority. -/
   semanticAuthority : List String
@@ -115,14 +117,13 @@ def matchContract : OpRuntimeContract where
   arity := 3
   argRoles := ["space-ref", "pattern", "template"]
   specConstructors :=
-    [ "MinimalStep.match"       -- HELanguageDef: MC_Match
-    , "MinimalStep.match_empty" -- HELanguageDef: MC_Match_Empty
+    [ "MC_Match"
+    , "MC_Match_Empty"
     ]
   semanticAuthority :=
-    [ "Space.queryEquations"    -- equation lookup
-    , "Matching.matchAtoms"     -- bidirectional unification
-    , "Matching.mergeBindings"  -- binding merge
-    , "Bindings.apply"          -- template substitution
+    [ "parseMatchCallArgs"  -- parse `(match <space> <pattern> <template>)`
+    , "spacePatternQuery"   -- iterate space matches, one result per match
+    , "Bindings.apply"      -- template substitution
     ]
   determinism := .nondeterministic
   bindingsFlow := .mergeFromMatch

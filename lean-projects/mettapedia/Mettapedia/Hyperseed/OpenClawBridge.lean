@@ -18,7 +18,7 @@ open Mettapedia.Logic.PLNWorldModel
 open Mettapedia.Logic.EvidenceClass
 
 variable {Obs Source Time State Query : Type*}
-variable [EvidenceType State] [WorldModel State Query]
+variable [EvidenceType State] [BinaryWorldModel State Query]
 
 /-- An OpenClaw observation is an observation envelope with source and time metadata. -/
 abbrev OpenClawObservation (Obs Source Time : Type*) :=

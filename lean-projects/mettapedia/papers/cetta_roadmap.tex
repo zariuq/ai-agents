@@ -20,6 +20,13 @@
 \usepackage{amsmath,amssymb}
 \usepackage{enumitem}
 \usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\tikzstyle{neutralbox} = [draw, rectangle, rounded corners, minimum width=3cm, minimum height=0.8cm, fill=gray!20]
+\tikzstyle{sharedbox} = [draw, rectangle, rounded corners, minimum width=4cm, minimum height=0.8cm, fill=yellow!20]
+\tikzstyle{proofbox} = [draw, rectangle, rounded corners, minimum width=3cm, minimum height=0.8cm, fill=blue!20]
+\tikzstyle{rtbox} = [draw, rectangle, rounded corners, minimum width=3cm, minimum height=0.8cm, fill=green!20]
+\tikzstyle{arrw} = [->, thick]
 \setlength{\emergencystretch}{3em}
 \lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single,columns=fullflexible}
 
@@ -29,6 +36,7 @@
 \newcommand{\CeTTa}{\textup{CeTTa}}
 \newcommand{\PathMap}{\textup{PathMap}}
 \newcommand{\MORK}{\textup{MORK}}
+\newcommand{\MeTTa}{\textup{MeTTa}}
 \newcommand{\WAM}{\textup{WAM}}
 \newcommand{\XSB}{\textup{XSB}}
 
@@ -738,6 +746,112 @@ For distributed backends, integrity becomes load-bearing infrastructure:
 This is not ``security theater.''  A distributed knowledge base without
 integrity guarantees is a distributed bug generator.
 
+\subsection{Multiset Semantics over Set Storage}
+\label{sec:multiset-future}
+
+\MeTTa{} has \emph{multiset} semantics: adding the same atom twice creates
+two copies, and queries return one result per copy.  \PathMap{} and \MORK{}
+use \emph{set} semantics by design---duplicates are automatically removed.
+This is intentional for MM2 deterministic execution but creates a semantic
+mismatch when \PathMap{} backs ordinary \MeTTa{} spaces.
+
+\paragraph{Current workaround.}
+\CeTTa{}'s bridge maintains a parallel \code{atom\_index\_rows} HashMap
+mapping serialized atoms to row-ID vectors.  On insert, each copy gets a
+unique row ID; queries consult the parallel index for multiplicity.
+This is fragile: algebraic operations (\code{pjoin}, \code{pmeet},
+\code{psubtract}) do not propagate to the parallel index, so combining
+spaces can silently corrupt multiplicities.
+
+\paragraph{Approach A: Embedded count (works today).}
+Encode multiplicity in a CeTTa-owned counted key formed by
+\[
+  \texttt{atom\_expr\_bytes} \;\Vert\; \texttt{count\_expr\_bytes}
+\]
+where the count is still stored as a normal serialized number expression.
+This keeps the atom bytes at the very front of the key so CeTTa can prefix-scan
+on atom structure and then decode the trailing count.  Using the ordinary pair
+expression \code{(\$atom \$count)} directly would \emph{not} be prefix-friendly
+under current MORK expr serialization, because the outer arity byte appears
+before the atom payload.  On insert, look up the existing count and re-insert
+with count+1.  On query, decode the count and emit the result that many times.
+\begin{itemize}[nosep]
+  \item \textbf{Pro}: Works with mainline \PathMap{}, no API changes.
+  \item \textbf{Con}: Count rewrites still live in CeTTa's query/storage layer,
+    and algebra ops still don't compose cleanly.
+\end{itemize}
+
+\paragraph{Approach B: \code{PathMap<CountValue>} (clean, needs additions).}
+Use \code{PathMap<CountValue>} where \code{CountValue} is a newtype
+wrapping a count.  This requires:
+\begin{enumerate}[nosep]
+  \item Proper semiring \code{Lattice} impl for \code{CountValue}.
+    Current numeric impls in \code{ring.rs} are placeholders that return
+    \code{Identity} (keeping self, ignoring other).
+  \item Query-level count multiplication for conjunctions: storage gets
+    cleaner under this model, but query evaluation must still multiply
+    counts across matched factors.
+\end{enumerate}
+Note that \code{join\_val\_at} is a convenience, not a strict blocker:
+\PathMap{} already supports in-place insert-or-mutate via
+\code{write\_zipper\_at\_path} (\code{trie\_map.rs:450}).
+
+\paragraph{Semiring algebra for multisets.}
+Multiset (bag) semantics are well-studied in database theory.  The
+canonical reference is Green et~al.~\cite{GreenProvenanceSemirings2007}
+on \emph{provenance semirings}, which parameterize query evaluation over
+an arbitrary commutative semiring $(\mathbb{K}, +, \times, 0, 1)$.
+For counting multiplicities, the natural choice is $(\mathbb{N}, +, \times,
+0, 1)$:
+\begin{itemize}[nosep]
+  \item \textbf{Union}: $\text{count}_a + \text{count}_b$ (additive).
+  \item \textbf{Join/Product}: $\text{count}_a \times \text{count}_b$
+    (Cartesian product multiplicity).
+  \item \textbf{Projection}: sums multiplicities over projected-away
+    witnesses (not mere preservation).
+  \item \textbf{Intersection}: $\min(\text{count}_a, \text{count}_b)$
+    (lattice meet).
+  \item \textbf{Difference}: $\max(0, \text{count}_a - \text{count}_b)$
+    (saturating subtraction).
+\end{itemize}
+See also Mumick et~al.~\cite{MumickMagicDuplicates1990} on bag semantics
+in Datalog and Abiteboul--Hull--Vianu~\cite{AHV1995} for bag relational
+algebra.
+
+\paragraph{Benefits of clean semiring approach.}
+\begin{itemize}[nosep]
+  \item Multiset semantics compose with all \PathMap{} algebra operations.
+  \item No parallel index to maintain (eliminates \code{atom\_index\_rows}).
+  \item Conjunction multiplicity ``just works'' (product of factor counts).
+  \item Clean separation: \MORK{} uses \code{PathMap<()>} (set semantics),
+    \MeTTa{} spaces use \code{PathMap<CountValue>} (multiset semantics).
+  \item Formal backing: semiring semantics are well-studied and can be
+    formalized in Lean against the existing \code{PathMapQuantale} hierarchy.
+\end{itemize}
+
+\paragraph{CeTTa-owned tunnel for Approach A.}
+Even before Approach B is implemented, CeTTa can already collapse the current
+generic pathmap-backed lane to a single trie-owned truth:
+\begin{itemize}[nosep]
+  \item \code{new-space pathmap} remains fully CeTTa-owned.
+  \item PathMap stores one counted key per distinct atom.
+  \item Insert/remove-one rewrite the counted key rather than maintaining a
+    parallel duplicate-row index.
+  \item Query/conjunction logic becomes a local CeTTa concern: prefix scan,
+    local rematch, count readout, and factor-count multiplication.
+  \item This removes the need for \code{atom\_index\_rows} and
+    \code{query\_multi\_with\_factor\_exprs} in that backend lane.
+\end{itemize}
+If CeTTa ever deliberately mixes counted keys with other key families in one
+shared \PathMap{}, a discriminator byte can be reintroduced then; the simplest
+fresh-space prototype does not need one.
+
+\paragraph{Formalization opportunity.}
+The Mettapedia formalization could extend \code{PathMapQuantale} with a
+\code{CountValue} instance and prove that semiring laws distribute over
+the trie operations.  This would provide mechanically-verified multiset
+semantics for \PathMap{}-backed spaces.
+
 %% ════════════════════════════════════════════════════════════════════
 \section{Formal Backing}
 \label{sec:formal}
@@ -1266,6 +1380,220 @@ endgame.
 \end{description}
 
 %% ════════════════════════════════════════════════════════════════════
+\section{The Dual-Target Architecture}
+\label{sec:dual-target}
+
+The mature vision for \CeTTa{} connects to a \textbf{Lean-style dual-target
+elaborator} architecture formalized in \code{papers/PureMeTTa.tex} and
+implemented across \code{Mettapedia/Languages/MeTTa/}.
+
+\subsection{Surface → Elaborated → Pure + Runtime}
+
+The architecture mirrors Lean's pipeline: surface language elaborates to
+a shared typed core, which then compiles to two targets:
+
+\begin{center}
+\begin{tikzpicture}[node distance=1.2cm and 2.5cm]
+  \node[neutralbox] (surface) {Surface MeTTa};
+  \node[sharedbox, below=of surface] (core) {Elaborated MeTTa-Core};
+  \node[proofbox, below left=1cm and 1.5cm of core] (pure) {MeTTa-Pure};
+  \node[rtbox, below right=1cm and 1.5cm of core] (runtime) {\CeTTa{} RuntimeExec};
+
+  \draw[arrw] (surface) -- node[right,font=\small] {elaborate} (core);
+  \draw[arrw] (core) -- node[left,font=\small] {proof} (pure);
+  \draw[arrw] (core) -- node[right,font=\small] {exec} (runtime);
+\end{tikzpicture}
+\end{center}
+
+\paragraph{MeTTa-Pure (Proof Target).}
+Dependently-typed kernel with Pi, Sigma, Id, universes.  Full metatheory:
+subject reduction, confluence, substitution preservation.  Zero sorries,
+zero axioms beyond Lean's kernel.  This is where correctness is proved.
+
+\paragraph{CeTTa RuntimeExec (Execution Target).}
+Efficient C runtime with Layer~3 term sharing, hash-consing, \PathMap{}
+joins, variant tabling.  Decidable fragments of the full semantics.
+This is where performance is achieved.
+
+\paragraph{Elaborated Core (Shared Representation).}
+Four regions: \code{pureKernelRegion} (trusted typed),
+\code{runtimeExecRegion} (effectful), \code{oracleRegion} (FFI/grounded),
+\code{metaRegion} (reflection).  Both targets lower from this shared core.
+
+\subsection{Semantic Skeleton: CBPV First, MATT Later}
+
+The dual-target architecture instantiates \textbf{Call-By-Push-Value}
+(CBPV, Levy 2001) as its immediate semantic skeleton:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{CBPV Concept} & \textbf{CeTTa Lane} \\
+\midrule
+Value types (things that ARE) & MeTTa-Pure: types, proofs, data \\
+Computation types (things that DO) & RuntimeExec: effects, search, space ops \\
+$F A$ (thunk returning $A$) & Suspend a pure value into runtime \\
+$U C$ (suspended computation) & Embed runtime computation as a value \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Key property:} Types may depend on \emph{values} but not on
+arbitrary \emph{computations}.  This is exactly what we want: the pure
+trusted kernel works with values, the runtime produces computations,
+and the boundary is explicit via the adjunction $F \dashv U$.
+
+\paragraph{Long-term: MATT.}
+CBPV is the 2-mode instance of \textbf{Multimodal Adjoint Type Theory}
+(MATT).  As the system matures, we add modes incrementally---Query,
+Effect, Oracle, Meta---without retrofitting foundations.  CBPV is
+valid MATT from day one.
+
+\subsection{Why This Matters}
+
+The traditional trade-off---beauty vs.\ efficiency---dissolves:
+
+\begin{itemize}
+\item \textbf{Write once, verify and execute}: Surface code elaborates to
+  both targets.  You don't maintain separate ``proof code'' and ``fast code.''
+\item \textbf{Proven semantics, optimized execution}: Pure provides
+  confluence and type preservation theorems; Runtime provides hash-consing
+  and search parameterization.
+\item \textbf{Gradual restriction}: Full MeTTa-Pure is undecidable.
+  Runtime executes decidable fragments.  The elaborator routes each
+  expression to the appropriate lane.
+\end{itemize}
+
+\subsection{Layer 3 as the Runtime Bridge}
+
+\CeTTa{}'s Layer~3 (skeleton + \code{slot\_env}) is precisely the
+\textbf{explicit substitution} representation that bridges elaborated
+terms to efficient execution:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{CeTTa Layer 3} & \textbf{$\lambda\sigma$-calculus} & \textbf{$\rho$-calculus} \\
+\midrule
+\code{skeleton} & $M$ in closure $\langle M, \sigma \rangle$ & process with names \\
+\code{slot\_env} & $\sigma$ (substitution) & name$\to$process map \\
+\code{materialize} & $M[\sigma]$ & reflection $*x$ \\
+\code{canonicalize} & closure creation & quotation $@P$ \\
+private slot tag & bound variable discipline & $\nu$-restriction \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The key theorems (to be proved in \code{Mettapedia/Bridge/}):
+\begin{itemize}
+\item \code{materialize\_eq\_applySubst}: Materialization = substitution application
+\item \code{canonicalize\_materialize\_id}: Roundtrip property
+\item \code{cetta\_decidable\_fragment}: CeTTa is a decidable rho fragment
+\end{itemize}
+
+\subsection{Three Sharing Regimes}
+
+Layer~3 is \emph{not} the universal term representation.  The architecture
+requires three distinct sharing regimes, each optimized for its context:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Regime} & \textbf{Where} & \textbf{Mechanism} \\
+\midrule
+1. Persistent exact & Universe store & Hash-consing, canonical reps \\
+2. Runtime open-term & Evaluator/search & Layer~3 (skeleton + \code{slot\_env}) \\
+3. Pure binder-aware & PureKernel & Closures, NbE, explicit substitutions \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Anti-goal:} Do \emph{not} force Layer~3 into the PureKernel.
+Binder-aware normalization (NbE) requires different internal machinery
+than runtime variant sharing.  The shared artifact layer sits above
+these regimes; overlap certificates connect them.
+
+\subsection{Seven-Mode Structure}
+
+The four-region model refines into seven modes for full MATT compatibility:
+
+\begin{enumerate}
+\item \textbf{Pure} --- Trusted kernel: Pi/Sigma/Id/universes, normalization, certificates
+\item \textbf{Artifact} --- Shared typed-core: region classification, overlap certificates
+\item \textbf{Query} --- Read-only: matching, retrieval, bounded search (soundness + completeness)
+\item \textbf{Exec} --- Nondeterministic: rule firing, scheduler, bounded exploration (adequacy)
+\item \textbf{Effect} --- Stateful: add/remove/update space, revision changes
+\item \textbf{Oracle} --- FFI/grounded: explicit contracts, never confused with pure reduction
+\item \textbf{Meta} --- Reflection/tactics: elaboration-time programming, DeLaM-like layers
+\end{enumerate}
+
+Each mode has its own typing discipline; modalities connect modes via
+adjoint functors.
+
+\subsection{Four Theorems}
+
+Do not ask for one giant bisimulation.  Define separate theorems per lane:
+
+\begin{enumerate}
+\item \textbf{ElabSound} --- Elaboration yields well-formed artifacts in the
+      appropriate region.
+\item \textbf{PureAdequacy} --- Pure normalization is authoritative:
+      $\Gamma \vdash e : A$ and $e \leadsto^* v$ implies $v$ is canonical.
+\item \textbf{RuntimeSound} --- Runtime execution is observationally included:
+      $\mathrm{Obs}(\mathrm{exec}(e)) \subseteq \mathrm{Obs}(\mathrm{refSem}(e))$.
+\item \textbf{RuntimeCompleteOnFragment} --- Reverse inclusion on decidable fragments:
+      with bounded parameters, the runtime computes all reachable results.
+\end{enumerate}
+
+\subsection{Search Parameterization}
+
+Full MeTTa evaluation is undecidable.  The runtime's job is to execute
+\emph{tractable fragments} selected by search parameters:
+
+\begin{lstlisting}
+(search-engine depth: 10 breadth: 100 heuristic: bfs backend: pathmap)
+\end{lstlisting}
+
+Parameters split into two classes:
+
+\paragraph{Semantic parameters (affect results):}
+\begin{itemize}
+\item \code{depth: N} --- bounds reduction depth
+\item \code{breadth: M} --- bounds nondeterministic branching
+\item \code{fairness: F} --- completeness class (DFS, BFS, iterative deepening)
+\item \code{fuel: K} --- total step budget (opt-in for debugging only)
+\end{itemize}
+
+\paragraph{Pragmatic parameters (affect only efficiency):}
+\begin{itemize}
+\item \code{heuristic: H} --- exploration strategy (when extensional results preserved)
+\item \code{backend: B} --- storage/indexing engine (PathMap, flat, etc.)
+\item \code{memo: M} --- memoization strategy
+\item \code{scheduler: S} --- scheduling heuristic
+\end{itemize}
+
+The Pure target specifies \emph{what correctness means}; the Runtime
+target specifies \emph{what's computable given resources}.  Pragmatic
+parameters must never change the result set; semantic parameters define
+the decidable fragment.
+
+\subsection{Rholang and Efficiency}
+
+A critical observation: \textbf{no production rholang implementation has
+term-level sharing}.  RChain's RSpace hashes \emph{channels}, not
+\emph{terms}.  \CeTTa{}'s Layer~3 architecture could become the first
+efficient implementation of a rho-calculus fragment with:
+\begin{itemize}
+\item Hash-consing at the term level
+\item Alpha-canonical variable sharing
+\item Static resolution of all reflections
+\item Bounded search with parameterization
+\end{itemize}
+
+This is not incremental improvement---it's filling a gap that doesn't
+currently exist in the rho-calculus implementation landscape.
+
+%% ════════════════════════════════════════════════════════════════════
 
 \begin{thebibliography}{99}
 
@@ -1318,6 +1646,17 @@ SingularityNET.
 \newblock Distributed Atomspace (DAS).
 \newblock \url{https://github.com/singnet/das}
 
+\bibitem{Levy2001}
+P.~B.~Levy.
+\newblock Call-by-push-value.
+\newblock PhD thesis, Queen Mary, University of London, 2001.
+\newblock \url{https://www.cs.bham.ac.uk/~pbl/papers/thesisqmwphd.pdf}
+
+\bibitem{AbadiCCKL1991}
+M.~Abadi, L.~Cardelli, P.-L.~Curien, and J.-J.~L\'{e}vy.
+\newblock Explicit substitutions.
+\newblock \emph{Journal of Functional Programming}, 1(4):375--416, 1991
+
 \bibitem{PathMap}
 A.~Vandervorst.
 \newblock PathMap: Prefix-compressed structural sharing.
@@ -1335,6 +1674,23 @@ egg: E-graphs good.
 \bibitem{Souffle}
 Soufflé: High-performance Datalog.
 \newblock \url{https://souffle-lang.github.io/}
+
+\bibitem{GreenProvenanceSemirings2007}
+T.~J.~Green, G.~Karvounarakis, and V.~Tannen.
+\newblock Provenance semirings.
+\newblock In \emph{PODS}, pages 31--40, 2007.
+\newblock \url{https://doi.org/10.1145/1265530.1265535}
+
+\bibitem{MumickMagicDuplicates1990}
+I.~S.~Mumick, H.~Pirahesh, and R.~Ramakrishnan.
+\newblock The magic of duplicates and aggregates.
+\newblock In \emph{VLDB}, pages 264--277, 1990.
+
+\bibitem{AHV1995}
+S.~Abiteboul, R.~Hull, and V.~Vianu.
+\newblock \emph{Foundations of Databases}.
+\newblock Addison-Wesley, 1995.
+\newblock \url{http://webdam.inria.fr/Alice/}
 
 \bibitem{Lean4}
 Lean 4 theorem prover.

@@ -5,9 +5,14 @@ import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.HeytingAlgebra
 import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.ApplicativeStructure
 import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.Models
 import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.Soundness
+import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.HenkinBridge
 import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.LowerBoundExtensionRegression
 import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.Hintikka
 import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.Completeness
+import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.CanonicalBridge
+import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.HenkinCompletionBridge
+import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.ExtendedSignatureBridge
+import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.HenkinInfinityBridge
 import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.CompletenessRegression
 import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.SourceMap
 
