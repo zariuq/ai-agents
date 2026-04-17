@@ -298,6 +298,44 @@ prefix can \emph{reduce} cross-space sharing (two otherwise identical
 terms diverge at the first path component).  Canonical term storage should
 be separated from space membership indexing.
 
+\subsection{Canonical Storage ABI and Backend Path ABI}
+\label{sec:storage-abi}
+
+The persistent term store should be byte-packed, not pointer-heavy.  This
+follows the E~Prover / Vampire model: perfectly shared immutable term DAGs
+with cached immutable metadata.
+
+\paragraph{Four ABIs.}
+Do not collapse these into one format:
+\begin{enumerate}
+\item \textbf{Logical identity ABI}: \code{AtomId} over shared \code{TermUniverse}
+\item \textbf{Canonical store ABI}: byte-packed immutable term records
+\item \textbf{Evaluation ABI}: decoded/tagged hot-path views
+\item \textbf{Backend path ABI}: self-contained structural bytes for interop
+\end{enumerate}
+
+\paragraph{Internal vs External Bytes.}
+The internal canonical record uses child \code{AtomId}s (DAG sharing).
+The external path key uses recursive structural encoding (portable).
+Do not confuse these---they optimize different concerns.
+
+\paragraph{Models to Follow.}
+\begin{itemize}
+\item E/Vampire/\XSB{} for semantic/storage architecture
+\item YAP/\WAM{} for hot evaluator ergonomics
+\item Cap'n Proto/FlatBuffers for byte record discipline
+\item \PathMap{} for backend path keys, not as sole canonical truth
+\end{itemize}
+
+\paragraph{Born-Canonical Construction (Phase 1f).}
+The ``born-canonical'' principle: terms should be constructed in canonical
+form at the store level, not built transiently and then re-interned.  This
+follows Conchon--Filli\^{a}tre smart constructors: sharing is enforced at
+construction boundaries, and you never hash a term whose children aren't
+already interned.  The 16-byte \code{CettaTermHdr} format (tag, subtag,
+arity\_or\_len, sym\_or\_head, aux32, hash32) is fixed; Phase 1f adds the
+constructor substrate that produces these records directly.
+
 \subsection{Clouds of Possibility}
 
 \begin{description}
@@ -851,6 +889,63 @@ The Mettapedia formalization could extend \code{PathMapQuantale} with a
 \code{CountValue} instance and prove that semiring laws distribute over
 the trie operations.  This would provide mechanically-verified multiset
 semantics for \PathMap{}-backed spaces.
+
+\subsection{Prefix-Based Space Mirroring}
+\label{sec:prefix-mirror}
+
+A powerful view/elaboration pattern emerges from MM2's prefix representation
+of spaces.  In \MORK{}, a space \code{\&kb} can be represented as a prefix
+family \code{(kb \$atom)}:
+
+\begin{lstlisting}
+; MM2 representation: prefix-tagged atoms
+(kb (edge a b))
+(kb (edge b c))
+(kb (type-of a Person))
+
+; Equivalent to HE/CeTTa:
+(add-atom &kb (edge a b))
+(add-atom &kb (edge b c))
+(add-atom &kb (type-of a Person))
+\end{lstlisting}
+
+This suggests a \textbf{mirroring view layer}:
+
+\paragraph{The idea.}
+Mirror a large \MORK{} space (potentially millions of atoms) into a
+prefix-filtered view that CeTTa can query efficiently:
+\begin{itemize}[nosep]
+  \item \code{(mirror \&cetta-view \&mork-space (kb \$\_))} ---
+    create a view containing only \code{(kb ...)} prefixed atoms
+  \item The view tracks a subset; updates propagate lazily
+  \item As long as the view is small enough, mirroring stays fast
+  \item CeTTa queries the view; \MORK{} owns the full space
+\end{itemize}
+
+\paragraph{Quantale semantics.}
+This aligns with \PathMap{}'s \code{prestrict} operation: restricting
+a trie to paths whose prefix appears in another trie.  The view is
+literally \code{prestrict(full\_space, prefix\_selector)}.
+
+\paragraph{Implementation sketch.}
+\begin{enumerate}[nosep]
+  \item Define \code{PrefixView} as a wrapper holding a reference to
+    a \MORK{} space plus a prefix pattern
+  \item On query, translate to \MORK{} prefix-scan + local rematch
+  \item On mutation, propagate to underlying space with prefix prepended
+  \item Track revision numbers for lazy invalidation
+\end{enumerate}
+
+\paragraph{When this wins.}
+\begin{itemize}[nosep]
+  \item Large knowledge bases with structured prefixes (ontologies, taxonomies)
+  \item Cross-system bridges where only a slice is needed
+  \item Incremental reasoning over a stable background theory
+\end{itemize}
+
+This is a \textbf{roadmap item}, not current implementation.  The surface
+elaboration and backend separation from Phase~1f must stabilize first.
+The prefix view builds on top as an optimization layer.
 
 %% ════════════════════════════════════════════════════════════════════
 \section{Formal Backing}
@@ -1592,6 +1687,126 @@ efficient implementation of a rho-calculus fragment with:
 
 This is not incremental improvement---it's filling a gap that doesn't
 currently exist in the rho-calculus implementation landscape.
+
+%% ════════════════════════════════════════════════════════════════════
+\section{HE MeTTa Specification Summary}
+\label{sec:he-spec}
+%% ════════════════════════════════════════════════════════════════════
+
+This section summarizes the Hyperon Experimental (\HE{}) MeTTa specification
+from \code{docs/metta.md} in the \code{trueagi-io/hyperon-experimental}
+repository.  The Lean formalization in \code{Mettapedia/Languages/MeTTa/HE/}
+mechanizes these definitions.
+
+\subsection{Syntax (S-Expression Grammar)}
+
+\begin{lstlisting}[language={}]
+METTA ::= { [ '!' ], ATOM } ;
+ATOM  ::= SYMBOL | VARIABLE | GROUNDED | EXPRESSION ;
+SYMBOL    ::= WORD ;
+VARIABLE  ::= '$', WORD ;
+GROUNDED  ::= STRING | <tokenizer-matched WORD> ;
+EXPRESSION ::= '(' { ATOM } ')' ;
+\end{lstlisting}
+
+\paragraph{Meta-types:} \code{Type}, \code{\%Undefined\%}, \code{Atom},
+\code{Symbol}, \code{Variable}, \code{Expression}, \code{Grounded}.
+
+\paragraph{Special forms:}
+\begin{itemize}[nosep]
+  \item \code{(= <pattern> <body>)} --- function definition
+  \item \code{(: <atom> <type>)} --- type annotation
+  \item \code{(-> $T_1$ ... $T_n$ $R$)} --- function type
+\end{itemize}
+
+\subsection{Core Evaluation Functions}
+
+\begin{description}[nosep]
+\item[\code{metta(\$atom, \$type, \$space, \$bindings)}]
+  Entry point.  Dispatches by meta-type: symbols/grounded go to
+  \code{type\_cast}, expressions to \code{interpret\_expression}.
+
+\item[\code{interpret\_expression}]
+  Checks if head has function type.  If applicable, calls
+  \code{interpret\_function} then \code{metta\_call}.  Otherwise,
+  treats as tuple via \code{interpret\_tuple}.
+
+\item[\code{interpret\_function}]
+  Evaluates arguments according to declared strictness (from type).
+  \code{Atom} type means lazy (unevaluated); other types mean strict.
+
+\item[\code{interpret\_tuple}]
+  Evaluates head, then recursively evaluates tail, assembles result.
+
+\item[\code{metta\_call}]
+  Grounded dispatch or equation matching.  Returns equation bodies
+  with substitutions applied.
+\end{description}
+
+\subsection{Matching Algorithm}
+
+Bidirectional atom unification returns a list of binding sets:
+
+\begin{description}[nosep]
+\item[\code{match\_atoms(\$left, \$right)}]
+  Recursive structural matching.  Symbols must be equal; variables capture
+  values or record equality; expressions match element-wise.
+
+\item[\code{merge\_bindings(\$left, \$right)}]
+  Combines two binding sets, iterating over assignments and equalities
+  from \code{\$right} and integrating them into \code{\$left}.
+
+\item[\code{add\_var\_binding(\$bindings, \$var, \$val)}]
+  If \code{\$var} is unbound, assigns \code{\$val}.  If bound, matches
+  existing value against \code{\$val} (recursive).
+
+\item[\code{add\_var\_equality(\$bindings, \$a, \$b)}]
+  Records that variables \code{\$a} and \code{\$b} must unify.  If both
+  already have values, matches those values.
+\end{description}
+
+Bindings track both assignments (\code{\$x <- val}) and equalities
+(\code{\$x = \$y}).  Variable loops are filtered out of results.
+
+\subsection{Minimal MeTTa Instructions}
+
+The ``assembly language'' for MeTTa:
+\begin{itemize}[nosep]
+  \item \code{(eval <atom>)} --- one evaluation step
+  \item \code{(chain <atom> <var> <template>)} --- interpret then substitute
+  \item \code{(unify <a> <b> <then> <else>)} --- bidirectional matching
+  \item \code{(function <body>)} / \code{(return <atom>)} --- block control
+  \item \code{(collapse-bind <atom>)} / \code{(superpose-bind ...)} --- nondeterminism
+  \item \code{(metta <atom> <type> <space>)} --- recursive interpreter call
+\end{itemize}
+
+\subsection{Lean Formalization}
+
+The Mettapedia formalization covers:
+\begin{description}[nosep]
+\item[\code{HE/Syntax.lean}] Atom inductive, meta-types, well-formedness
+\item[\code{HE/Eval.lean}] \code{metta}, \code{interpret\_expression}, etc.
+\item[\code{HE/Space.lean}] Space operations, pattern matching
+\item[\code{HE/DeclarativeSpec.lean}] Big-step relational semantics
+\item[\code{HE/CoreFragment.lean}] Decidable sublanguage for execution
+\end{description}
+
+\subsection{MM2 Interface}
+
+MM2 (Minimal \MeTTa{}~2) is the \MORK{} execution language:
+\begin{itemize}[nosep]
+  \item \textbf{Exec rules:} \code{(mm2\_exec priority src-pattern sink-action)}
+  \item \textbf{Path atoms:} \code{(path from to)} for graph traversal
+  \item \textbf{Priorities:} Integer scheduling order
+  \item \textbf{Step function:} \code{(step! \&space n)} runs $n$ execution cycles
+\end{itemize}
+
+The Lean formalization in \code{Languages/ProcessCalculi/MORK/} covers:
+\begin{itemize}[nosep]
+  \item \code{Syntax.lean} --- MM2 syntax (ILP, exec rules)
+  \item \code{ThreePhaseRefinement.lean} --- priority-scheduled execution
+  \item \code{Conformance.lean} --- \MORK{}-to-Rust correspondence
+\end{itemize}
 
 %% ════════════════════════════════════════════════════════════════════
 

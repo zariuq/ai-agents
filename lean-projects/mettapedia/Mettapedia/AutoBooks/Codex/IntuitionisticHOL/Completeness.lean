@@ -2576,6 +2576,16 @@ def toClosedLocalHintikkaCertificate
   C.candidate.toClosedLocalHintikkaCertificateOfClosedNonconflicting
     C.closedNonconflicting C.compatible
 
+@[simp] theorem toClosedLocalHintikkaCertificate_hintikka
+    (C : CertifiedCountermodelCandidate Const Γ) :
+    C.toClosedLocalHintikkaCertificate.hintikka = C.closedHintikka :=
+  rfl
+
+@[simp] theorem toClosedLocalHintikkaCertificate_formulas
+    (C : CertifiedCountermodelCandidate Const Γ) :
+    C.toClosedLocalHintikkaCertificate.hintikka.formulas = C.closedHintikka.formulas :=
+  rfl
+
 def toClosedLocalAgreementWitness
     {M : SemilocalModel Base Const}
     (C : CertifiedCountermodelCandidate Const Γ)
@@ -2627,6 +2637,31 @@ def toClosedSoundLocalCountermodel
     SoundLocalCountermodel (Base := Base) (Const := Const) C.frontier :=
   C.candidate.toClosedSoundLocalCountermodelOfClosedNonconflicting
     C.closedNonconflicting C.compatible env global true_top false_ne_top hM
+
+/-- Repackage a certified countermodel candidate as the corresponding certified
+completion so the search-side and semantics-side APIs can be reused directly at
+the candidate layer. -/
+def toCertifiedCompletion
+    (C : CertifiedCountermodelCandidate Const Γ) :
+    CertifiedHeadPriorityCompletion Const Γ C.frontier :=
+  { completion := C.candidate.completion
+    closedNonconflicting := C.closedNonconflicting
+    compatible := C.compatible }
+
+@[simp] theorem toCertifiedCompletion_state
+    (C : CertifiedCountermodelCandidate Const Γ) :
+    C.toCertifiedCompletion.state = C.state :=
+  rfl
+
+@[simp] theorem toCertifiedCompletion_hintikka
+    (C : CertifiedCountermodelCandidate Const Γ) :
+    C.toCertifiedCompletion.hintikka = C.hintikka :=
+  rfl
+
+@[simp] theorem toCertifiedCompletion_closedHintikka
+    (C : CertifiedCountermodelCandidate Const Γ) :
+    C.toCertifiedCompletion.closedHintikka = C.closedHintikka :=
+  rfl
 
 end CertifiedCountermodelCandidate
 
@@ -3799,5 +3834,143 @@ theorem not_derivable_of_exists_candidateClosedHintikkaSemantics
       S global hM
 
 end CertifiedHeadPriorityCompletion
+
+namespace CertifiedCountermodelCandidate
+
+/-- Candidate-level alias for the reusable closed-hull semantic classification
+packaged for certified completions. -/
+abbrev CandidateClosedHintikkaSemantics
+    {M : SemilocalModel Base Const}
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (env : SemilocalModel.Env M Γ) :=
+  CertifiedHeadPriorityCompletion.CandidateClosedHintikkaSemantics
+    (C := C.toCertifiedCompletion) env
+
+/-- Package raw closed-hull semantic agreement data directly at the certified
+candidate layer. -/
+def toCandidateClosedHintikkaSemantics
+    {M : SemilocalModel Base Const}
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (env : SemilocalModel.Env M Γ)
+    (true_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ = ⊤)
+    (false_ne_top :
+      ∀ {φ : Formula Const Γ},
+        (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+          SemilocalModel.formulaTruth M env φ ≠ ⊤) :
+    CandidateClosedHintikkaSemantics C env :=
+  C.toCertifiedCompletion.toCandidateClosedHintikkaSemantics env true_top false_ne_top
+
+/-- Recover the closed local agreement witness directly from a certified
+candidate-level semantics package. -/
+def toClosedLocalAgreementWitnessOfSemantics
+    {M : SemilocalModel Base Const}
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (S : CandidateClosedHintikkaSemantics C env) :
+    LocalAgreementWitness M C.frontier :=
+  C.toCertifiedCompletion.toClosedLocalAgreementWitnessOfSemantics env global S
+
+/-- Recover the current local countermodel object directly from a certified
+candidate-level semantics package. -/
+def toClosedLocalCountermodelOfSemantics
+    {M : SemilocalModel Base Const}
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (S : CandidateClosedHintikkaSemantics C env) :
+    LocalCountermodel (Base := Base) (Const := Const) C.frontier :=
+  C.toCertifiedCompletion.toClosedLocalCountermodelOfSemantics env global S
+
+/-- Recover the sound local countermodel object directly from a certified
+candidate-level semantics package. -/
+def toClosedSoundLocalCountermodelOfSemantics
+    {M : SemilocalModel Base Const}
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (S : CandidateClosedHintikkaSemantics C env)
+    (hM : SemilocalModel.SupportsUniformRelativization M) :
+    SoundLocalCountermodel (Base := Base) (Const := Const) C.frontier :=
+  C.toCertifiedCompletion.toClosedSoundLocalCountermodelOfSemantics env global S hM
+
+/-- Any closed local agreement witness whose certificate matches the certified
+candidate canonically induces a candidate-level semantics package. -/
+def toCandidateClosedHintikkaSemanticsOfClosedLocalAgreementWitness
+    {M : SemilocalModel Base Const}
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (W : LocalAgreementWitness M C.frontier)
+    (hCert : W.certificate = C.toClosedLocalHintikkaCertificate) :
+    CandidateClosedHintikkaSemantics C W.env :=
+  C.toCertifiedCompletion.toCandidateClosedHintikkaSemanticsOfClosedLocalAgreementWitness
+    W (by simpa [CertifiedCountermodelCandidate.toCertifiedCompletion] using hCert)
+
+@[simp] theorem toClosedLocalAgreementWitnessOfSemantics_certificate
+    {M : SemilocalModel Base Const}
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (env : SemilocalModel.Env M Γ)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (S : CandidateClosedHintikkaSemantics C env) :
+    (C.toClosedLocalAgreementWitnessOfSemantics env global S).certificate =
+      C.toClosedLocalHintikkaCertificate := by
+  rfl
+
+theorem exists_candidateClosedHintikkaSemantics_of_exists_semantics
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.trueE, φ) ∈ C.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ = ⊤) ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.falseE, φ) ∈ C.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ ≠ ⊤)) :
+    ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+      SemilocalModel.IsGlobalEnv M env ∧
+      Nonempty (CandidateClosedHintikkaSemantics C env) := by
+  rcases hSem with ⟨M, env, global, true_top, false_ne_top⟩
+  exact ⟨M, env, global,
+    ⟨C.toCandidateClosedHintikkaSemantics (M := M) env true_top false_ne_top⟩⟩
+
+theorem exists_closedLocalAgreementWitness_of_exists_candidateClosedHintikkaSemantics
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        Nonempty (CandidateClosedHintikkaSemantics C env)) :
+    ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (W : LocalAgreementWitness M C.frontier),
+      W.certificate = C.toClosedLocalHintikkaCertificate := by
+  rcases hSem with ⟨M, env, global, ⟨S⟩⟩
+  exact ⟨M, C.toClosedLocalAgreementWitnessOfSemantics (M := M) env global S, by
+    simp⟩
+
+theorem exists_candidateClosedHintikkaSemantics_of_exists_closedLocalAgreementWitness
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (hW :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (W : LocalAgreementWitness M C.frontier),
+        W.certificate = C.toClosedLocalHintikkaCertificate) :
+    ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+      SemilocalModel.IsGlobalEnv M env ∧
+      Nonempty (CandidateClosedHintikkaSemantics C env) := by
+  rcases hW with ⟨M, W, hCert⟩
+  exact ⟨M, W.env, W.global,
+    ⟨C.toCandidateClosedHintikkaSemanticsOfClosedLocalAgreementWitness (M := M) W hCert⟩⟩
+
+theorem not_derivable_of_exists_candidateClosedHintikkaSemantics
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        Nonempty (CandidateClosedHintikkaSemantics C env) ∧
+        SemilocalModel.SupportsUniformRelativization M) :
+    ¬ Derivable (Base := Base) (Const := Const) C.frontier.antecedents C.frontier.succedent := by
+  rcases hSem with ⟨M, env, global, ⟨S⟩, hM⟩
+  exact (C.toClosedSoundLocalCountermodelOfSemantics (M := M) env global S hM).not_derivable
+
+end CertifiedCountermodelCandidate
 
 end Mettapedia.AutoBooks.Codex.IntuitionisticHOL

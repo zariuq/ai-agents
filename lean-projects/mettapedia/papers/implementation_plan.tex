@@ -1,0 +1,348 @@
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single,columns=fullflexible}
+\setlength{\emergencystretch}{3em}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\CeTTa}{\textup{CeTTa}}
+\newcommand{\HE}{\textup{HE}}
+\newcommand{\PeTTa}{\textup{PeTTa}}
+\newcommand{\PathMap}{\textup{PathMap}}
+\newcommand{\MORK}{\textup{MORK}}
+
+\title{\CeTTa{} Implementation Guide\\
+  \large What to Do Next, and Why That Order}
+\author{Zar Goertzel \and Oru\v{z}i}
+\date{2026-04-11}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The roadmap describes the territory.  This guide describes the natural
+order for walking through it.  Universal term sharing comes first because
+it changes what identity means.  Tabling comes second because it builds
+on canonical identity.  Everything else follows from those foundations.
+This is guidance, not a contract.
+\end{abstract}
+
+\tableofcontents
+
+\section{Where We Are}
+
+\CeTTa{} \code{main} already has:
+
+\begin{itemize}
+\item \code{TermUniverse} and persistent hash-consing
+\item \code{SearchContext} and \code{ChoicePoint} for nondeterminism
+\item \code{TableStore} for revision-aware memoization
+\item \code{TAIL\_REENTER} for stack-safe deterministic recursion
+\item \code{SpaceMatchBackend} for backend abstraction
+\end{itemize}
+
+These are real seams, not aspirations.  The gap is that \code{Space}
+still owns \code{Atom **atoms} directly.  Spaces are not yet clean
+membership layers over a shared universe.
+
+\section{The Natural Order}
+
+\subsection{First: Universal Term Sharing}
+
+Why first?  Because it changes the meaning of identity, equality,
+deduplication, and index keys.  Everything downstream---tabling,
+backend parity, hot-path work---depends on terms having honest
+canonical identity.
+
+The move is simple in concept:
+\begin{enumerate}
+\item All persistent terms go through canonical storage.
+\item Spaces store membership (which canonical terms they contain),
+  not ownership (private copies of terms).
+\item Indices key on canonical identity, not ad-hoc pointers.
+\end{enumerate}
+
+The algebra: a Space is a \emph{predicate} over the term universe---it
+answers ``does this term belong?'' rather than ``here is my private copy.''
+Membership and identity are cleanly separated.  The specific representation
+(arrays, sets, bitmaps, tries) is implementation detail; the invariant is
+that no Space owns term storage.
+
+This follows from the HE spec's treatment of spaces as logical containers,
+not physical heaps.  The transition means:
+\begin{itemize}
+\item Terms have one canonical identity regardless of which spaces contain them.
+\item Adding a term to multiple spaces does not duplicate storage.
+\item Indices can key on stable identities that survive space operations.
+\end{itemize}
+
+\paragraph{Current status (April 2026).}
+Phase 1a--c is structurally complete: \code{Space} uses \code{AtomId},
+\code{TermUniverse} owns persistent terms.  However, capacity witnesses show
+100--800$\times$ regression vs.\ pre-TU baselines.  The architecture is correct;
+the implementation pays $O(n)$ per store where SOTA pays $O(\mathrm{arity})$.
+Phase 1d (byte-packing) recovers $\sim$2$\times$; Phase 1f (AtomId-native
+construction) is required to recover the remaining 50--400$\times$.
+
+\paragraph{Council note.}
+\emph{Schulz}: ``Perfect term sharing is the converged design.  But sharing
+with $O(n)$ per store is sharing done wrong.  Fix the construction path.''
+\emph{Conchon--Filli\^{a}tre}: ``Smart constructors enforce sharing at
+construction boundaries.  You never hash a term whose children aren't
+already interned.''
+\emph{Ritchie}: ``Big rewrites go through worse-before-better.  Be honest
+about which phase you're in.  You're not in `better' yet.''
+
+\subsection{Phase 1d: Canonical Storage ABI}
+
+After Space membership is authoritative via \code{AtomId} (Phase~1a--c), freeze the
+physical canonical store format before building more layers.
+
+The \code{TermUniverse} persistent store should become byte-packed:
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    uint8_t  tag;          // symbol/var/expr/ground
+    uint8_t  subtag;       // grounded subtype or var-mode
+    uint16_t arity_or_len; // expr arity or short length
+    uint32_t sym_or_head;  // SymbolId / cached head / spelling
+    uint32_t aux32;        // payload words
+    uint32_t hash32;       // structural hash
+} CettaTermHdr;
+\end{lstlisting}
+
+Payloads:
+\begin{itemize}
+\item \code{SYMBOL}: no payload; \code{sym\_or\_head = SymbolId}
+\item \code{VAR}: payload = \code{uint64\_t var\_id}
+\item \code{EXPR}: payload = \code{AtomId child\_ids[arity]}
+\item Stable groundeds: inline or short payload
+\item Pointer-bearing groundeds: not in portable canonical ABI yet
+\end{itemize}
+
+Keep \code{term\_universe\_get\_atom()} working via lazy decode into
+\code{decoded\_cache} field.  Add store-level accessors:
+\code{tu\_kind()}, \code{tu\_arity()}, \code{tu\_head\_sym()}, \code{tu\_child()}.
+
+\subsection{Phase 1e: Backend Path ABI}
+
+Add separate structural path encoding for \PathMap{}/\MORK{}/interop:
+
+\begin{lstlisting}[language=C]
+bool term_encode_pathkey(Arena *dst,
+                         const TermUniverse *u,
+                         AtomId id,
+                         uint8_t **out_bytes,
+                         uint32_t *out_len);
+\end{lstlisting}
+
+This format is self-contained, versioned, preorder (outer-first for prefix
+sharing).  Do \textbf{not} use universe-local child \code{AtomId} bytes as
+the bridge format---use recursive structural encoding.
+
+\paragraph{Import discipline.}
+Bridge materialization from \PathMap{}/\MORK{} into \CeTTa{} must use
+bottom-up \code{backend\_node $\rightarrow$ AtomId} conversion, memoized by
+backend node identity (stable handle, canonical byte span, or persistent
+node pointer).  Do \textbf{not} materialize via
+\code{dump-text $\rightarrow$ parse-text $\rightarrow$ space\_add\_atom\_id}:
+that path pays UTF-8 parse cost, rebuilds transient \code{Atom*} trees, and
+re-interns structure the backend already has.  Import cost should be
+proportional to the number of unique backend nodes, not to repeated
+traversals across rows.
+
+\subsection{Phase 1f: Born-Canonical Persistent Construction}
+
+\textbf{Why this is critical:} Phases 1a--e establish the \emph{structural}
+foundation for term sharing, but they introduced a 100--800$\times$ performance
+regression. The current architecture computes \code{atom\_hash()} and
+\code{term\_universe\_atom\_is\_stable()} as $O(n)$ tree walks on every
+store---SOTA systems do $O(\mathrm{arity})$ because children are already interned.
+
+The fix is \textbf{bottom-up construction}: the evaluator works with
+\code{AtomId} natively, not \code{Atom*}. When constructing a parent term,
+children are already \code{AtomId}s with cached hashes, so:
+
+\begin{lstlisting}[language=C]
+// Current: O(n) per store
+atom_hash(parent);  // recursively hashes all children
+
+// After 1f: O(arity) per store
+parent_hash = combine(child1.hash32, child2.hash32, ...);
+\end{lstlisting}
+
+This follows the Conchon--Filli\^{a}tre ``smart constructor'' pattern: sharing
+is enforced at construction boundaries, and you never hash a term whose
+children aren't already interned.
+
+\paragraph{Implementation path.}
+\begin{enumerate}
+\item \textbf{Constructor substrate}: Add \code{tu\_intern\_*} constructors
+  (\code{tu\_intern\_symbol}, \code{tu\_intern\_var}, \code{tu\_intern\_int},
+  \code{tu\_intern\_float}, \code{tu\_intern\_bool}, \code{tu\_intern\_string},
+  \code{tu\_expr\_from\_ids}).  These return \code{AtomId} directly with
+  $O(\mathrm{arity})$ hashing---children must already be interned.
+\item \textbf{Persistent ingestion lanes}: Migrate parser and batch-add paths
+  to build \code{AtomId}s bottom-up.  The \code{term\_universe\_store\_atom\_id()}
+  path should delegate to constructors internally.
+\item \textbf{Counters and capacity witnesses}: Add store-level counters
+  (\code{decode\_count}, \code{hash\_recompute\_count}) and assert they remain
+  zero for stable-atom-only workloads.  Verify on benchmark suite.
+\item \textbf{Runtime reconstruction} (if needed): For runtime paths that
+  currently rebuild \code{Atom*} trees before re-interning, add ID-native
+  reconstruction.  Only migrate paths where profiling shows hot decode traffic.
+\end{enumerate}
+
+\paragraph{Explicit non-goals.}
+\begin{itemize}
+\item \textbf{No whole-evaluator rewrite}: The evaluator continues to use
+  \code{Atom*} views for hot-path access.  This phase improves the store
+  boundary, not the eval core.
+\item \textbf{No Layer 3 migration}: Converting the evaluator to work natively
+  with \code{AtomId} handles is a separate, larger effort (Phase 2+).
+\item \textbf{No bridge ABI collapse}: The four-ABI split (logical, store,
+  eval, backend) remains.  Do not unify store and backend formats.
+\end{itemize}
+
+\paragraph{Compatibility theorem.}
+For any \code{Atom*} $a$, if $\code{tu\_intern}(a)$ returns \code{AtomId} $i$,
+then $\code{tu\_decode}(i)$ is structurally equal to $a$.  This is the round-trip
+invariant that protects existing code during migration.
+
+\paragraph{Exit criteria for Phase 1 (term sharing complete).}
+\begin{itemize}
+\item \code{tu\_tail\_special\_forms} $\leq 2\times$ fc3afa7 baseline (0.65s)
+\item \code{tu\_metamath\_stream\_basic} $\leq 2\times$ fc3afa7 baseline (0.20s)
+\item \code{tu\_tilepuzzle} passes within 300s envelope
+\item Hash computation is $O(\mathrm{arity})$, not $O(n)$
+\end{itemize}
+
+Until these criteria are met, Phase 1 is \emph{structurally complete but
+performance-regressed}---commit-ready, but not done.
+
+\subsection{Second: Tabling over Canonical Terms}
+
+Why second?  Because tabling keys and invalidation become cleaner once
+query identity is phrased over canonical terms.
+
+\code{TableStore} already exists.  The work is:
+\begin{enumerate}
+\item Variant keys use canonical term identity.
+\item Decide whether revision-aware invalidation is enough, or whether
+  recursive workloads need suspension/resumption (Level 3+ on the
+  roadmap's tabling ladder).
+\end{enumerate}
+
+Let the workloads tell you.  Recursive backward chaining (where \PeTTa{}
+currently completes and \CeTTa{} OOMs) will show whether simple caching
+suffices or whether you need full SLG.  The goal is performant backward
+chaining that matches \PeTTa{}'s time/memory while preserving \HE{} semantics.
+
+\subsection{Third: Evaluator Control Convergence}
+
+Why third?  Because control-path surgery should respect the representation
+and tabling contracts already established.
+
+The key constraint: \code{TAIL\_REENTER} is constitutional for deterministic
+singleton forms.  Don't replace it without proving the replacement is
+both correct and faster.
+
+Frame-based suspension goes where it's actually needed: multi-result
+streaming, typed application, bounded consumers.  Not everywhere.
+
+\subsection{Fourth: Backend Parity}
+
+Why fourth?  Because backend work risks baking in premature assumptions
+if the semantic center of gravity is still moving.
+
+Once term identity and tabling are stable, verify that native, \PathMap{},
+\MORK{}, and DAS backends produce identical results for identical logical
+contents.  Storage differs; semantics don't.
+
+\subsection{Fifth: Hot Paths and Specialized Lanes}
+
+Why last?  Because their honest shape depends on what the earlier work
+made cheap or unnecessary.
+
+After universal sharing, tabling, control, and backend parity---then
+look at what's still slow.  That's the real hot path, not the one you
+imagined before the foundations were in place.
+
+PLN, ATP, factor-graph reasoning: these are specialized lanes over the
+same semantic contract, not modifications to the core evaluator.
+
+\section{Dependencies}
+
+The order above reflects dependencies:
+
+\begin{center}
+\begin{tabular}{lcl}
+Universal term sharing (1a--c) & $\rightarrow$ & Canonical store ABI (1d) \\
+Canonical store ABI (1d) & $\rightarrow$ & Backend path ABI (1e) \\
+Backend path ABI (1e) & $\rightarrow$ & Tabling keys canonical \\
+Canonical tabling & $\rightarrow$ & Control can rely on table contracts \\
+Stable control & $\rightarrow$ & Backend parity testable \\
+All foundations & $\rightarrow$ & Hot paths are real, not imagined
+\end{tabular}
+\end{center}
+
+You can do preparatory work in parallel, but the integration order
+matters.
+
+\section{What Tests Already Exist}
+
+Use these as sanity checks:
+\begin{itemize}
+\item \code{tests/test\_canon\_roundtrip\_contracts.metta} --- canonicalization
+\item \code{tests/test\_alpha\_equiv.metta} --- alpha equivalence
+\item \code{tests/test\_variant\_table\_contracts.metta} --- tabling
+\item Backward chaining benchmarks (metamath, PLN) --- performance witnesses
+  where \PeTTa{} sets the target
+\item \code{make test} --- full regression
+\end{itemize}
+
+If these break, something's wrong.  If they pass but behavior is
+different, the tests need expansion.
+
+\section{Anytime Work}
+
+Some tasks can proceed in parallel with the ordered work above.
+These are safe whenever, as long as they don't introduce new
+evaluator primitives or change semantics:
+
+\begin{itemize}
+\item Pure stdlib libraries (\code{lib\_array}, list/string utilities)
+\item REPL polish, CLI/help, docs, examples
+\item Benchmark harness, profiling surfaces
+\item Pretty-printing, parser ergonomics
+\item Test cleanup, expected-file maintenance
+\end{itemize}
+
+Rule of thumb: if it lives \emph{above} the evaluator contract and
+doesn't require new language semantics, it's anytime work.
+
+Semi-anytime (can start but should merge after relevant seam stabilizes):
+Lean proofs of already-named invariants, backend adapters, Python polish,
+\code{--lang petta} mode, advanced benchmark suites.
+
+\section{What This Guide Doesn't Do}
+
+It doesn't prescribe exact steps, timelines, or success metrics.
+It doesn't define rollback protocols or kill criteria.  It doesn't
+pretend to know more than the roadmap about where the clouds of
+possibility lead.
+
+The roadmap describes the territory.  This guide says: if you're
+going to walk it, universal term sharing is the natural first step,
+and here's why the rest follows.
+
+Trust the work.  Let the workloads guide refinement.
+
+\end{document}

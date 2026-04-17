@@ -343,6 +343,49 @@ This theorem is the formal core of ``you must carry correlations''.
 It does not make fast PLN useless; it tells us exactly what fast PLN \emph{cannot} claim:
 completeness for arbitrary world models without structural assumptions.
 
+\section{Case Study: Markov Carriers and the Screening No-Go}
+
+We instantiate the \xiPLN{} carrier framework for Markov transition evidence,
+revealing a fundamental incompatibility between PLN's additive deduction and
+Markov transition composition.
+
+\subsection{Single-Step Semantics: Success}
+
+The \code{markovDirichletQueryCarrier} (\codepath{PLNXiCarrierScreening.lean:483})
+provides query-indexed projection from row evidence to binary ``target vs rest''
+evidence. Single-step queries work correctly: the atom \code{(markov-transition i j)}
+evaluates to row-$i$ evidence projected at coordinate $j$.
+
+\subsection{Multi-Step Screening: Failure}
+
+The screening condition for PLN deduction is:
+\[
+  \mathrm{proj}(A{\to}C, \mathrm{rowA} + \mathrm{rowB}) = \mathrm{proj}(A{\to}C, \mathrm{rowA})
+\]
+This requires rowB to contribute zero at coordinate C---false in general.
+The additive carrier is \emph{structurally wrong} for Markov composition.
+
+\subsection{Honest Alternative: Predictive Chaining}
+
+We formalize the correct algebra via \code{markovWMPosteriorChain}
+(\codepath{MarkovPredictiveChaining.lean:32}):
+\begin{enumerate}
+\item Singleton \code{MassSemantics} state (not additive)
+\item Query mass = Chapman-Kolmogorov product over paths
+\item Path atoms compile to predictive chain, not additive pooling
+\end{enumerate}
+
+The \code{markov-transition*} atom family (\codepath{MarkovPathXi.lean:43})
+provides the OSLF surface with concrete binary examples proving end-to-end
+correctness (\code{bit001\_queryStrength\_transitionMultiset\_eq\_of\_summary}).
+
+\subsection{Lesson for PLN Design}
+
+When evidence doesn't compose additively, don't force it through additive
+carriers. Design specialized surfaces with honest semantics. The PeTTaChainer
+implementation validates this: its \code{MpFormula} uses strength multiplication
+$s_{AB} \cdot s_{BC}$, not addition---consistent with our mathematical finding.
+
 \section{Tractable Sublayers: Bayesian Networks as Restricted World Models}
 
 The complete world-table \JointEvidence{} is exponential in $n$.  To scale, we restrict the

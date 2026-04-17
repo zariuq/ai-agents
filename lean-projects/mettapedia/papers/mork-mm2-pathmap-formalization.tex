@@ -2314,6 +2314,118 @@ multiset semantics for \PathMap{}-backed spaces within the Mettapedia
 codebase.
 
 %% ============================================================
+\section{Storage vs Computation Cost Analysis}
+\label{sec:cost-analysis}
+%% ============================================================
+
+This section formalizes when \PathMap{} storage should be preferred over
+on-demand computation.  The theory is mechanized in Lean~4 with zero
+\texttt{sorry} statements.
+
+\subsection{Crossover Theorem}
+
+For a function $f : \alpha \to \beta$ with finite domain $|\alpha| = n$:
+
+\begin{itemize}
+  \item \textbf{Storage cost}: $S = n \cdot \textit{entrySize}$ (upfront)
+    plus $O(1)$ per lookup
+  \item \textbf{Computation cost}: $O(T)$ per evaluation (no upfront cost)
+\end{itemize}
+
+\noindent
+\textbf{Theorem} (\texttt{storage\_better\_iff}):
+Storage beats computation after $q$ queries if and only if
+\[
+  S < q \cdot (T - 1)
+\]
+\noindent
+Equivalently, storage wins when $q > S / (T - 1)$.
+
+\begin{lstlisting}
+theorem storage_better_iff (storageCost computeTime queries : Nat)
+    (h : computeTime > 1) :
+    totalCost_stored storageCost queries <
+    totalCost_compute computeTime queries @$\leftrightarrow$@
+    storageCost < queries * (computeTime - 1)
+\end{lstlisting}
+
+\subsection{Reverse Query Advantage}
+
+\textbf{Theorem} (\texttt{reverse\_stored\_wins}):
+For reverse queries (given output, find inputs), stored tables
+\emph{always} beat enumeration:
+\[
+  |\{x : f(x) = y\}| \le |\alpha|
+\]
+\noindent
+Proof: \texttt{Finset.card\_filter\_le}.
+
+\subsection{Concrete Arithmetic Analysis}
+
+For $n$-bit integers with domain size $N = 2^n$:
+
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Operation} & \textbf{Compute/Query} & \textbf{Table Size} & \textbf{Crossover} \\
+\midrule
+Addition     & $O(n)$    & $N^2 \cdot (n+1)$ bits & $\approx N^2$ queries \\
+Multiplication & $O(n^2)$ & $N^2 \cdot 2n$ bits & $\approx N^2 / n$ queries \\
+Division     & $O(n^2)$  & $N^2 \cdot n$ bits  & $\approx N^2 / n$ queries \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{8-bit arithmetic ($n = 8$, $N = 256$).}
+\begin{itemize}
+  \item Addition table: $256^2 \times 9 \approx 590$ KB; compute: 8 ops/query
+  \item Multiplication table: $256^2 \times 16 \approx 1$ MB; compute: 64 ops/query
+  \item \textbf{Recommendation}: Storage is practical; multiplication benefits most
+\end{itemize}
+
+\paragraph{16-bit arithmetic ($n = 16$, $N = 65536$).}
+\begin{itemize}
+  \item Addition table: $65536^2 \times 17 \approx 73$ GB --- \emph{impractical}
+  \item Multiplication table: $65536^2 \times 32 \approx 137$ GB --- \emph{impractical}
+  \item \textbf{Recommendation}: Always compute on demand
+\end{itemize}
+
+\subsection{Trie vs Flat Table}
+
+For tries (as used by \PathMap{}), lookup cost is $O(d)$ where $d$ is path depth,
+versus $O(1)$ for flat hash tables.  The trade-off:
+
+\begin{lstlisting}
+theorem trie_wins_when_cost_bounded
+    (flatSize trieNodes depth queries : Nat)
+    (h_depth : depth @$\ge$@ 1)
+    (h_trie_smaller : trieNodes < flatSize)
+    (h_cost_bounded : queries * (depth - 1) < flatSize - trieNodes) :
+    trieQueryCost trieNodes depth queries <
+    flatTableQueryCost flatSize queries
+\end{lstlisting}
+
+\noindent
+\textbf{Guidance}: Trie storage wins when paths share prefixes (reducing
+\texttt{trieNodes}) and depth is small.  For \PathMap{}-backed spaces with
+highly structured atoms (many shared prefixes), this is typically satisfied.
+
+\subsection{Formalized Files}
+
+The cost analysis is mechanized in:
+\begin{itemize}
+  \item \texttt{Mettapedia/Complexity/FiniteFunctionStorage.lean} --- core crossover theory
+  \item \texttt{Mettapedia/Complexity/SymbolicComputation.lean} --- arithmetic costs
+  \item \texttt{Mettapedia/Complexity/PathMapCost.lean} --- trie integration
+\end{itemize}
+
+\noindent
+All theorems are proven without axioms or \texttt{sorry}.  The analysis
+informs CeTTa/\MORK{} design: use \PathMap{} storage for heavy query
+workloads and reverse queries; compute on demand for large domains
+or infrequent access.
+
+%% ============================================================
 \section*{Acknowledgements}
 %% ============================================================
 

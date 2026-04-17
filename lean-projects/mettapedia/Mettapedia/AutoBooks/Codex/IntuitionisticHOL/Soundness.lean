@@ -576,6 +576,54 @@ theorem bounded_soundness (M : SemilocalModel Base Const)
       intro u
       exact lam_bounded_valid M u hΔ hφ (ih u)
 
+/-- Propositional derivations are sound at every lower bound in every semilocal model,
+without any structural extension hypothesis. -/
+theorem propositional_bounded_soundness (M : SemilocalModel Base Const)
+    {Γ : Ctx Base} {Δ : List (Formula Const Γ)} {φ : Formula Const Γ} :
+    PropositionalDerivable Const Δ φ →
+    ∀ u : M.Omega, BoundedValidSequent M u Δ φ := by
+  intro d
+  induction d with
+  | ax h =>
+      intro u
+      exact ax_bounded_valid M u h
+  | topR =>
+      intro u
+      exact topR_bounded_valid M u
+  | botL =>
+      intro u
+      exact botL_bounded_valid M u
+  | andL h ih =>
+      intro u
+      exact andL_bounded_valid M u (ih u)
+  | andR h₁ h₂ ih₁ ih₂ =>
+      intro u
+      exact andR_bounded_valid M u (ih₁ u) (ih₂ u)
+  | orL h₁ h₂ ih₁ ih₂ =>
+      intro u
+      exact orL_bounded_valid M u (ih₁ u) (ih₂ u)
+  | orR₁ h ih =>
+      intro u
+      exact orR₁_bounded_valid M u (ih u)
+  | orR₂ h ih =>
+      intro u
+      exact orR₂_bounded_valid M u (ih u)
+  | impL h₁ h₂ ih₁ ih₂ =>
+      intro u
+      exact impL_bounded_valid M u (ih₁ u) (ih₂ u)
+  | impR h ih =>
+      intro u
+      exact impR_bounded_valid M u (ih u)
+
+/-- Propositional derivations are sound in every semilocal model, with no
+lower-bound extension assumption. -/
+theorem propositional_soundness (M : SemilocalModel Base Const)
+    {Γ : Ctx Base} {Δ : List (Formula Const Γ)} {φ : Formula Const Γ} :
+    PropositionalDerivable Const Δ φ →
+    ValidSequent M Δ φ := by
+  intro h
+  exact validSequent_of_bounded_top M ((propositional_bounded_soundness M h) ⊤)
+
 /-- Conditional native archive-free soundness for semilocal models under the
 lower-bound extension law. -/
 theorem soundness_of_supportsLowerBoundExtension (M : SemilocalModel Base Const)

@@ -530,6 +530,12 @@ inductive CPTyped : Context → CPProc → Prop where
     x ≠ w for well-formedness. The cut/tensorR/mix rules require context disjointness.
     TODO: Full proof requires formalizing these constraints. -/
 theorem CPTyped.context_linear (h : CPTyped Γ p) : Γ.linear := by
+  -- Full proof requires showing each typing rule preserves linearity.
+  -- Key blockers:
+  -- 1. ax rule: needs proof that x ≠ w (implicit in the rule but not tracked)
+  -- 2. cut/tensorR/mix: need disjointness premises in the typing rules
+  -- 3. topR: types any process, so Γ' could be non-linear
+  -- TODO: Refactor CPTyped to include linearity/disjointness hypotheses
   sorry
 
 /-- Free channels of a well-typed process are contained in the context.

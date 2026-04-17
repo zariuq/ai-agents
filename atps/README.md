@@ -108,7 +108,6 @@ bash scripts/run_eprover_parallel.sh \
 
 - the limit is 8 cores with `nice -n 19` for the machine.
 - the per-problem limit is 5 seconds for E prover.
-- the limit is `ulimit -v 6291456` for PeTTa subprocesses.
 
 ## Dependencies
 

@@ -44,14 +44,12 @@ cd lean-projects/mettapedia
 lake update && lake exe cache get
 
 export LAKE_JOBS=3
-ulimit -Sv 6291456
 nice -n 19 lake build
 ```
 
 - the build runs from lean-projects/mettapedia.
 - The first build runs lake update and lake exe cache get.
 - the build uses LAKE_JOBS=3 by default.
-- the build uses a 6 GiB memory cap via ulimit -Sv 6291456.
 - the build runs nice -n 19 lake build.
 
 ## Notable subprojects

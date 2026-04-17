@@ -1,4 +1,4 @@
-import Mettapedia.AutoBooks.Codex.Henkin1950.Soundness
+import Mettapedia.AutoBooks.Codex.Henkin1950.ExtensionalSoundness
 
 namespace Mettapedia.AutoBooks.Codex.Henkin1950
 
@@ -92,5 +92,43 @@ theorem not_satisfiable_of_not_derivationConsistent
     ¬ DerivationConsistent T → ¬ Satisfiable T := by
   intro hT hSat
   exact hT (theorem3_forward_derivationConsistent hSat)
+
+/-- The same obstruction already appears one step earlier: if the trusted HOL
+finite-derivation notion finds a contradiction, then the theory cannot even
+have all of its finite closed subtheories satisfiable in paper-general models.
+-/
+theorem not_finiteSubsetSatisfiable_of_not_derivationConsistent
+    {T : ClosedTheorySet} :
+    ¬ DerivationConsistent T → ¬ FiniteSubsetSatisfiable T := by
+  intro hT hFin
+  exact hT (derivationConsistent_of_finiteSubsetSatisfiable hFin)
+
+/-- The paper-facing consistency notion is also obstructed by any finite
+derivation of falsity in the raw trusted HOL proof system. This is the direct
+contrapositive companion to `derivationConsistent_of_consistent`. -/
+theorem not_consistent_of_not_derivationConsistent
+    {T : ClosedTheorySet} :
+    ¬ DerivationConsistent T → ¬ Consistent T := by
+  intro hT hCons
+  exact hT (derivationConsistent_of_consistent hCons)
+
+/-- Theorem 3 forward reaches the paper-facing extensional consistency notion
+once the current paper-general model class is strengthened by a uniform
+`EqAppArgSound` hypothesis. This is the honest compactness-level corollary of
+the new extensional soundness layer. -/
+theorem theorem3_forward_consistent_of_eqAppArgSound
+    (hSound : ∀ M : GeneralModel, EqAppArgSound M)
+    {T : ClosedTheorySet} :
+    Satisfiable T → Consistent T :=
+  consistent_of_satisfiable_of_eqAppArgSound hSound
+
+/-- Contrapositive compactness canary for the extensional consistency notion
+under the same explicit soundness seam. -/
+theorem not_satisfiable_of_inconsistent_of_eqAppArgSound
+    (hSound : ∀ M : GeneralModel, EqAppArgSound M)
+    {T : ClosedTheorySet} :
+    ¬ Consistent T → ¬ Satisfiable T := by
+  intro hT hSat
+  exact hT (theorem3_forward_consistent_of_eqAppArgSound hSound hSat)
 
 end Mettapedia.AutoBooks.Codex.Henkin1950

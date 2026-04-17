@@ -102,6 +102,9 @@ noncomputable instance
           (Multiset.map f W₁).sum + (Multiset.map f W₂).sum := by
       rw [Multiset.map_add, Multiset.sum_add]
     simpa [evidence, f] using h
+  evidence_zero q := by
+    classical
+    simp [evidence]
 
 end ENNReal
 

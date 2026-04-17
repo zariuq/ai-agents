@@ -1,6 +1,7 @@
 import Mettapedia.AutoBooks.Codex.Henkin1950.Syntax
 import Mettapedia.AutoBooks.Codex.Henkin1950.Semantics
 import Mettapedia.AutoBooks.Codex.Henkin1950.Soundness
+import Mettapedia.AutoBooks.Codex.Henkin1950.ExtensionalSoundness
 import Mettapedia.AutoBooks.Codex.Henkin1950.AxiomSchemes
 import Mettapedia.AutoBooks.Codex.Henkin1950.DerivedResults
 import Mettapedia.AutoBooks.Codex.Henkin1950.InferenceRules
@@ -22,6 +23,7 @@ import Mettapedia.AutoBooks.Codex.Henkin1950.CanonicalModel
 import Mettapedia.AutoBooks.Codex.Henkin1950.Theorem1Bridge
 import Mettapedia.AutoBooks.Codex.Henkin1950.Theorem1BridgeRegression
 import Mettapedia.AutoBooks.Codex.Henkin1950.Compactness
+import Mettapedia.AutoBooks.Codex.Henkin1950.CompactnessRegression
 
 /-!
 # Henkin (1950) in Codex
@@ -39,10 +41,14 @@ Current scope:
 - surfaced forward closed-theory direction of Theorem 3.
 - an explicit proof-theoretic bridge from the paper-facing extensional
   consistency notion to raw derivation consistency.
+- an extensional soundness layer for the closed-theory calculus under the
+  explicit `EqAppArgSound` model-side seam.
 - an explicit reverse-Theorem-3 precursor from finite-subtheory satisfiability
   to raw derivation consistency.
 - an explicit Theorem-3 forward corollary from paper-facing satisfiability to
   raw derivation consistency.
+- an explicit Theorem-3 forward corollary from paper-facing satisfiability to
+  paper-facing extensional consistency under uniform `EqAppArgSound`.
 - the first four paper axiom schemata as actual theorems.
 - paper-facing formulations of inference rules `I`-`VI`.
 - selected quoted derived results from p. 85.

@@ -1,5 +1,7 @@
 import Mettapedia.CategoryTheory.DeFinettiStableExports
 import Mettapedia.CategoryTheory.DeFinettiMarkovGiryBridge
+import Mettapedia.CategoryTheory.DeFinettiHigherOrderGiryBridge
+import Mettapedia.CategoryTheory.FiniteHiddenMarkovDeFinettiBridge
 import Mettapedia.CategoryTheory.DeFinettiExternalBridge
 import Mettapedia.CategoryTheory.DeFinettiMarkovCategoryBridge
 import Mettapedia.Logic.SolomonoffExchangeable
@@ -43,6 +45,7 @@ namespace Mettapedia.CategoryTheory
 open MeasureTheory
 open ProbabilityTheory
 open Mettapedia.ProbabilityTheory.HigherOrderProbability
+open scoped BigOperators ENNReal
 
 variable {Y Ω : Type*} [MeasurableSpace Y] [MeasurableSpace Ω]
 
@@ -233,6 +236,119 @@ Borel-side mixture witnesses for the same finite-word law. -/
 theorem deFinettiExport_deadRowPrefixMeasure_has_two_distinct_borelMarkovMixtures :
     deadRowBorelMarkovMixture₀ ≠ deadRowBorelMarkovMixture₁ :=
   deadRowPrefixMeasure_has_two_distinct_borelMarkovMixtures
+
+/-- Recommended export: the higher-order long-word Borel/Giry weight is just
+the ordinary encoded-context moment map. -/
+theorem deFinettiExport_higherOrderLongWordWeightViaProbMarkov_eq_momentMapWord
+    {k m : ℕ} [Fact (0 < m)]
+    (π : Mettapedia.Logic.MarkovDeFinettiHard.ProbMarkov (HigherOrderContextCard k m))
+    (xs : List (Fin k)) (hxs : m ≤ xs.length) :
+    higherOrderLongWordWeightViaProbMarkov (k := k) (m := m) π xs hxs =
+      Mettapedia.Logic.MarkovDeFinettiHard.momentMapWord
+        (k := HigherOrderContextCard k m)
+        (higherOrderEncodedContextWord (k := k) (m := m) xs hxs) π :=
+  higherOrderLongWordWeightViaProbMarkov_eq_momentMapWord
+    (k := k) (m := m) π xs hxs
+
+/-- Recommended export: the honest Borel higher-order long-word factorization
+package is equivalent to having the public higher-order mixture witness. -/
+theorem deFinettiExport_categoricalBorelHigherOrderLongWordFactorization_iff_nonempty_borelHigherOrderLongWordMixture
+    {k m : ℕ} [Fact (0 < m)]
+    {μ : Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure (Fin k)} :
+    CategoricalBorelHigherOrderLongWordFactorization k m μ ↔
+      Nonempty (BorelHigherOrderLongWordMixture k m μ) :=
+  BorelHigherOrderLongWordMixture.categoricalBorelHigherOrderLongWordFactorization_iff_nonempty_borelHigherOrderLongWordMixture
+    (k := k) (m := m) (μ := μ)
+
+/-- Recommended export: every fixed higher-order parameter yields a degenerate
+Dirac Borel witness on encoded context-state parameters. This is the honest
+trivial direction, not a higher-order de Finetti mixture theorem. -/
+theorem deFinettiExport_borelHigherOrderLongWordFactorization_diracWitness
+    {k m : ℕ} [Fact (0 < m)]
+    (θ : Mettapedia.Logic.MarkovDeFinettiHigherOrder.HigherOrderMarkovParam k m) :
+    ∃ π : Mettapedia.Logic.MarkovDeFinettiHard.ProbMarkov (HigherOrderContextCard k m),
+      ∀ xs : List (Fin k), ∀ hxs : m ≤ xs.length,
+        Mettapedia.Logic.MarkovDeFinettiHigherOrder.higherOrderSequenceMeasure (k := k) (m := m) θ
+            (Mettapedia.Logic.MarkovDeFinettiRecurrence.cylinder (k := k) xs) =
+          higherOrderLongWordWeightViaProbMarkov (k := k) (m := m) π xs hxs :=
+  borelHigherOrderLongWordFactorization_diracWitness (k := k) (m := m) θ
+
+/-- Recommended export: a finite discrete mixture of genuine higher-order
+parameters yields an honest non-Dirac higher-order long-word factorization. -/
+theorem deFinettiExport_categoricalBorelHigherOrderLongWordFactorization_of_finiteDiscreteMixture
+    {k m n : ℕ} [Fact (0 < m)]
+    (w : Fin n → ℝ≥0∞) (hw : Finset.sum (Finset.univ : Finset (Fin n)) (fun i => w i) = 1)
+    (Θ : Fin n → Mettapedia.Logic.MarkovDeFinettiHigherOrder.HigherOrderMarkovParam k m) :
+    CategoricalBorelHigherOrderLongWordFactorization k m
+      (Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.xiPrefixMeasure
+        (ν := fun i : Fin n =>
+          higherOrderCylinderPrefixMeasure (k := k) (m := m) (Θ i))
+        (w := w)
+        (hw := by simpa [tsum_fintype] using hw)) :=
+  categoricalBorelHigherOrderLongWordFactorization_of_finiteDiscreteMixture
+    (k := k) (m := m) w (by simpa using hw) Θ
+
+/-- Legacy export alias for the higher-order Dirac witness theorem. -/
+@[deprecated deFinettiExport_borelHigherOrderLongWordFactorization_diracWitness (since := "2026-04-16")]
+theorem deFinettiExport_exists_borelHigherOrderLongWordFactorization_of_param
+    {k m : ℕ} [Fact (0 < m)]
+    (θ : Mettapedia.Logic.MarkovDeFinettiHigherOrder.HigherOrderMarkovParam k m) :
+    ∃ π : Mettapedia.Logic.MarkovDeFinettiHard.ProbMarkov (HigherOrderContextCard k m),
+      ∀ xs : List (Fin k), ∀ hxs : m ≤ xs.length,
+        Mettapedia.Logic.MarkovDeFinettiHigherOrder.higherOrderSequenceMeasure (k := k) (m := m) θ
+            (Mettapedia.Logic.MarkovDeFinettiRecurrence.cylinder (k := k) xs) =
+          higherOrderLongWordWeightViaProbMarkov (k := k) (m := m) π xs hxs :=
+  deFinettiExport_borelHigherOrderLongWordFactorization_diracWitness (k := k) (m := m) θ
+
+/-- Recommended export: the honest Borel finite-HMM factorization package is
+equivalent to having the public finite-HMM mixture witness. -/
+theorem deFinettiExport_categoricalBorelFiniteHMMFactorization_iff_nonempty_borelFiniteHMMMixture
+    {latent obs : ℕ}
+    {emission : Fin latent → ProbabilityMeasure (Fin obs)}
+    {μ : Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure (Fin obs)} :
+    CategoricalBorelFiniteHMMFactorization latent obs emission μ ↔
+      Nonempty (BorelFiniteHMMMixture latent obs emission μ) :=
+  BorelFiniteHMMMixture.categoricalBorelFiniteHMMFactorization_iff_nonempty_borelFiniteHMMMixture
+    (latent := latent) (obs := obs) (emission := emission) (μ := μ)
+
+/-- Recommended export: every fixed finite HMM yields a degenerate Dirac Borel
+factorization through the latent Markov parameter space. This is the honest
+trivial direction, not a finite-HMM de Finetti mixture theorem. -/
+theorem deFinettiExport_borelFiniteHMMFactorization_diracWitness
+    {latent obs : ℕ}
+    (θ : Mettapedia.Logic.FiniteHiddenMarkovModel.FiniteHMMParam latent obs) :
+    ∃ π : Mettapedia.Logic.MarkovDeFinettiHard.ProbMarkov latent,
+      ∀ ys : List (Fin obs),
+        Mettapedia.Logic.FiniteHiddenMarkovModel.observedSequenceMeasure (latent := latent) (obs := obs) θ
+            (Mettapedia.Logic.MarkovDeFinettiRecurrence.cylinder (k := obs) ys) =
+          observedWordWeightViaProbMarkov (latent := latent) (obs := obs) θ.emission π ys :=
+  borelFiniteHMMFactorization_diracWitness (latent := latent) (obs := obs) θ
+
+/-- Legacy export alias for the finite-HMM Dirac witness theorem. -/
+@[deprecated deFinettiExport_borelFiniteHMMFactorization_diracWitness (since := "2026-04-16")]
+theorem deFinettiExport_exists_borelFiniteHMMFactorization_of_param
+    {latent obs : ℕ}
+    (θ : Mettapedia.Logic.FiniteHiddenMarkovModel.FiniteHMMParam latent obs) :
+    ∃ π : Mettapedia.Logic.MarkovDeFinettiHard.ProbMarkov latent,
+      ∀ ys : List (Fin obs),
+        Mettapedia.Logic.FiniteHiddenMarkovModel.observedSequenceMeasure (latent := latent) (obs := obs) θ
+            (Mettapedia.Logic.MarkovDeFinettiRecurrence.cylinder (k := obs) ys) =
+          observedWordWeightViaProbMarkov (latent := latent) (obs := obs) θ.emission π ys :=
+  deFinettiExport_borelFiniteHMMFactorization_diracWitness (latent := latent) (obs := obs) θ
+
+/-- Recommended export: the concrete binary copy HMM assigns observed cylinder
+mass `1` to `[0]`. -/
+theorem deFinettiExport_binaryCopyHMM_observedCylinder_0 :
+    Mettapedia.Logic.FiniteHiddenMarkovModel.observedSequenceMeasure (latent := 2) (obs := 2) binaryCopyHMM
+        (Mettapedia.Logic.MarkovDeFinettiRecurrence.cylinder (k := 2) ([0] : List (Fin 2))) = 1 :=
+  binaryCopyHMM_observedCylinder_0
+
+/-- Recommended export: the concrete binary copy HMM assigns observed cylinder
+mass `0` to `[1]`. -/
+theorem deFinettiExport_binaryCopyHMM_observedCylinder_1 :
+    Mettapedia.Logic.FiniteHiddenMarkovModel.observedSequenceMeasure (latent := 2) (obs := 2) binaryCopyHMM
+        (Mettapedia.Logic.MarkovDeFinettiRecurrence.cylinder (k := 2) ([1] : List (Fin 2))) = 0 :=
+  binaryCopyHMM_observedCylinder_1
 
 /-- Recommended export: kernel-level universal mediator API is equivalent to
 per-`n` limit-mediator uniqueness packaging. -/

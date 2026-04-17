@@ -1,4 +1,4 @@
-import Mettapedia.Logic.BDD.Compilation
+import Mettapedia.Logic.BDD.ProbMeTTaRuntimeCore
 import Mettapedia.Logic.BDD.NormalCompilation
 
 /-!
@@ -36,6 +36,27 @@ open Mettapedia.Logic.ProbLogCompilation
 If every assignment where the BDD evaluates to true also satisfies `queryHoldsA`,
 then BDD-WMC is an upper bound on (actually equals, for correct compilations)
 the distribution semantics mass. -/
+
+/-- **Runtime-core exactness**: the source-level `?prob-bdd` fragment of
+`lib_prob.metta` has an ordered BDD result that is true exactly on the worlds
+where the ProbLog query holds. This is the source/runtime counterpart to the
+compilation-level bridge. -/
+theorem probmetta_runtime_query_bdd_exact {σ : LPSignature} {n : ℕ}
+    [IsEmpty σ.functionSymbols] [Nonempty (GroundTerm σ)]
+    (prog : ProbLogProgram σ n) (q : GroundAtom σ) :
+    ∃ f : BDD n, ProbMeTTaCoreEval prog (.queryBDD q) f ∧ f.Ordered none ∧
+      (∀ a, f.eval a = true ↔ queryHoldsA prog q a) := by
+  exact exists_ordered_probMeTTa_queryBDD_exact prog q
+
+/-- **Runtime-core exactness for evidence conjunction**: the source-level
+`?prob-bdd-ev` fragment of `lib_prob.metta` has an ordered BDD result that is
+true exactly on the worlds where all evidence atoms hold. -/
+theorem probmetta_runtime_query_bdd_ev_exact {σ : LPSignature} {n : ℕ}
+    [IsEmpty σ.functionSymbols] [Nonempty (GroundTerm σ)]
+    (prog : ProbLogProgram σ n) (qs : List (GroundAtom σ)) :
+    ∃ f : BDD n, ProbMeTTaCoreEval prog (.queryBDDEv qs) f ∧ f.Ordered none ∧
+      (∀ a, f.eval a = true ↔ ∀ q ∈ qs, queryHoldsA prog q a) := by
+  exact exists_ordered_probMeTTa_queryBDDEv_exact prog qs
 
 /-- **ProbMeTTa soundness**: if BDD `f` is compiled from a ProbLog program,
     then `bdd_wmc f env` accounts only for worlds where the query holds.

@@ -696,8 +696,53 @@ theorem execGetStructure_preserves_wf (m : MachineState) (f : Functor) (ai : Arg
           simp only [heq, ↓reduceIte]
           by_cases harity : f.arity = 0
           · -- arity = 0: uses push_structure_preserves_wf + bind_preserves_wf
-            -- BLOCKED: proof complex, needs bind_preserves_wellFormed lemma
-            sorry
+            -- After two pushes: heap size = m.h + 2
+            have hh_eq : m.h = m.heap.cells.size := hwf.2.1
+            -- Expand pushHeap definitions
+            unfold MachineState.pushHeap
+            -- After pushes: heap = (m.heap.push (.str (m.h + 1))).push (.functor f)
+            -- heap.size = m.h + 2
+            have hpush_heap : (m.heap.push (.str (m.h + 1))).push (.functor f) =
+                (m.heap.push (.str (m.heap.cells.size + 1))).push (.functor f) := by rw [hh_eq]
+            have hsize2 : ((m.heap.push (.str (m.heap.cells.size + 1))).push (.functor f)).cells.size =
+                m.heap.cells.size + 2 := by simp only [Heap.push_size]
+            -- push_structure creates wellFormed heap for arity=0
+            have hpush_wf : ((m.heap.push (.str (m.heap.cells.size + 1))).push (.functor f)).wellFormed :=
+              Heap.push_structure_preserves_wf m.heap f hwf.1 harity
+            -- bind preserves wf: target m.h < size (m.h + 2)
+            have htgt : m.heap.cells.size < ((m.heap.push (.str (m.heap.cells.size + 1))).push (.functor f)).cells.size := by
+              simp only [Heap.push_size]; omega
+            have hbind_wf : (((m.heap.push (.str (m.heap.cells.size + 1))).push (.functor f)).bind addr m.heap.cells.size).wellFormed :=
+              Heap.bind_preserves_wf _ _ _ hpush_wf htgt
+            -- Show the final state matches wellFormed
+            -- The state after all operations:
+            -- heap = bind(push(push(m.heap)))
+            -- h = m.h + 2 (after two pushes)
+            -- bind doesn't change heap.cells.size
+            have hfinal_heap_size :
+                (((m.heap.push (.str (m.h + 1))).push (.functor f)).bind addr m.h).cells.size =
+                m.heap.cells.size + 2 := by
+              simp only [Heap.bind_size, Heap.push_size]
+            have hfinal_heap_size' :
+                (((m.heap.push (.str (m.h + 1))).push (.functor f)).bind addr m.h).cells.size =
+                m.h + 2 := by
+              simp only [Heap.bind_size, Heap.push_size, hh_eq]
+            -- Use hbind_wf for heap wellFormed
+            have hbind_wf' : (((m.heap.push (.str (m.h + 1))).push (.functor f)).bind addr m.h).wellFormed := by
+              convert hbind_wf using 2 <;> exact hh_eq
+            -- nextInstr preserves wellFormed
+            unfold MachineState.nextInstr MachineState.wellFormed
+            refine ⟨?_, ?_, ?_⟩
+            · -- heap.wellFormed
+              exact hbind_wf'
+            · -- h = heap.cells.size
+              -- h field after both pushHeaps = m.h + 2
+              -- heap.cells.size after pushes and bind = m.h + 2
+              -- Need h = heap.top = heap.cells.size
+              unfold Heap.top
+              exact hfinal_heap_size'.symm
+            · -- p < code.size (preserved by nextInstr)
+              exact hwf.2.2
           · -- arity > 0: BLOCKED - needs wellFormedWithDebt for construction phase
             sorry
         · -- Bound: fail

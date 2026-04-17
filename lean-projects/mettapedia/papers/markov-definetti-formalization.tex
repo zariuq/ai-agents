@@ -55,7 +55,7 @@
 We present a complete Lean~4 formalization of the Markov de~Finetti theorem
 (Diaconis--Freedman 1980): every Markov-exchangeable, recurrent prefix measure
 on a finite alphabet is a mixture of time-homogeneous Markov chains. The
-formalization comprises 23,899 lines of Lean code with zero unproved
+formalization comprises 26,665 lines of Lean code with zero unproved
 assumptions (\texttt{sorry}), building on a 43,683-line formalization of the
 classical (i.i.d.) de~Finetti theorem. Key innovations include a directing
 measure uniqueness lemma that transfers de~Finetti structure across measure
@@ -133,7 +133,7 @@ certainty that the intricate decomposition is correct.
 We present:
 \begin{enumerate}
 \item A complete formalization of Theorem~\ref{thm:df80} in Lean~4 with Mathlib:
-  \textbf{23,899 lines}, \textbf{0 sorry}, \textbf{28 files}.
+  \textbf{26,665 lines}, \textbf{0 sorry}, \textbf{33 files}.
 \item Reuse of a 43,683-line formalization of the classical de~Finetti theorem
   (three independent proofs: martingale, $L^2$, ergodic).
 \item Key innovations:
@@ -519,9 +519,14 @@ Kernel uniqueness & MarkovDeFinettiKernelUniqueness.lean & 922 \\
 Euler trails & MarkovDeFinettiHard*.lean (6 files) & 1,948 \\
 Evidence basis & MarkovDeFinettiEvidenceBasis.lean & 305 \\
 Moment problem & MarkovDeFinettiMomentProblem.lean & 287 \\
+Higher-order Markov & MarkovDeFinettiHigherOrder.lean & 1,219 \\
+Hidden Markov models & FiniteHiddenMarkovModel.lean & 668 \\
+Higher-order Giry bridge & DeFinettiHigherOrderGiryBridge.lean & 175 \\
+HMM de Finetti bridge & FiniteHiddenMarkovDeFinettiBridge.lean & 339 \\
+Higher-order WM bridge & UniversalPredictionHigherOrderMarkovWMBridge.lean & 365 \\
 Other & (11 files) & 1,496 \\
 \midrule
-\textbf{Total} & \textbf{28 files} & \textbf{23,899} \\
+\textbf{Total} & \textbf{33 files} & \textbf{26,665} \\
 \bottomrule
 \end{tabular}
 \caption{Markov de Finetti formalization file inventory}
@@ -655,6 +660,34 @@ now exposed at three abstraction levels:
 The class-recurrence layer enables PLN-style reasoning in settings where only
 partial recurrence is known, with explicit tracking of which transition rows
 support the factorization.
+
+\subsubsection{The Markov Xi Transition Surface}
+
+The formalization exposes a direct transition atom surface via
+\texttt{MarkovTransitionXi.lean} and \texttt{MarkovPathXi.lean}.
+Key theorem: single-step transition queries compile to row-conditioned
+Dirichlet posterior means (\texttt{markovTransitionAtom\_semE\_eq\_rowProjection}).
+
+\paragraph{Multi-step chaining.} PLN's standard deduction screening
+(\texttt{CarrierDeductionScreeningOff}) assumes evidence additivity:
+\[
+  \mathrm{derive}(W) = \mathrm{proj}(\mathrm{view}(A{\to}B) + \mathrm{view}(B{\to}C))
+\]
+For Markov chains, this is \emph{unfillable}. The screening condition
+$\mathrm{proj}(\mathrm{rowA} + \mathrm{rowB}) = \mathrm{proj}(\mathrm{rowA})$
+holds only when $\mathrm{rowB} = 0$.
+
+The honest alternative is \textbf{predictive sequential composition}
+(\texttt{MarkovPredictiveChaining.lean}):
+\[
+  P(x_n | x_0, \mathrm{counts}) = \sum_{x_1,\ldots,x_{n-1}} \prod_{i=0}^{n-1} P(x_{i+1} | x_i, \mathrm{counts})
+\]
+This is formalized as \texttt{markovWMPosteriorChain} and exposed via
+the \texttt{markov-transition*} atom family (\texttt{MarkovPathXi.lean:43}).
+
+\paragraph{Concrete examples.} The binary path atoms \texttt{bit001} ($0 \to 0 \to 1$)
+and \texttt{bit011} ($0 \to 1 \to 1$) demonstrate the full pipeline from
+transition multiset to predictive chain probability (\texttt{MarkovPathXi.lean:290--327}).
 
 \section{The Structural Audit: Bug-Hunting Methodology}
 \label{sec:audit}
@@ -984,10 +1017,229 @@ cannot be canonical/unique without additional hypotheses (e.g., recurrence that
 makes all rows reachable). Whether a mere \emph{existence} converse holds by
 measure extension remains open.
 
+\subsection{Higher-Order Markov Chains}
+
+An order-$m$ Markov chain on alphabet $\mathrm{Fin}\,k$ can be reduced to an
+ordinary first-order chain on \emph{context states}---length-$m$ windows of
+symbols. This reuses the verified finite-state machinery directly:
+
+\begin{lstlisting}
+-- Context states of length m
+abbrev Context (k m : Nat) := Fin m -> Fin k
+
+-- Higher-order parameter: initial law on contexts + next-symbol kernel
+structure HigherOrderMarkovParam (k m : Nat) where
+  init : ProbabilityMeasure (Context k m)
+  next : Context k m -> ProbabilityMeasure (Fin k)
+
+-- Reduction to ordinary MarkovParam on encoded contexts
+noncomputable def toMarkovParam (theta : HigherOrderMarkovParam k m) :
+    MarkovParam (Fintype.card (Context k m))
+\end{lstlisting}
+
+The key theorem \texttt{contextSequenceMeasure\_cylinder\_eq\_contextWordProb}
+proves that cylinder events on context trajectories evaluate to the reduced
+\texttt{wordProb}---a direct port of the first-order sequence theorem through
+the context-state encoding.
+
+For evidence, we define $(m+1)$-gram counts:
+
+\begin{lstlisting}
+structure GramCounts (k m : Nat) where
+  counts : Context k m -> Fin k -> Nat
+
+def gramCountsOfPath : List (Context k m) -> GramCounts k m
+def summary (xs : List (Fin k)) : Option (GramCounts k m * Context k m)
+\end{lstlisting}
+
+The \texttt{summary} function extracts $(m+1)$-gram counts plus the final
+context once the observed word is at least $m$ symbols long. Short prefixes
+are handled by the initial context law directly.
+
+The key incremental update theorem \texttt{summary\_append\_singleton} proves
+that appending a symbol updates the summary by bumping the appropriate
+$(m+1)$-gram count and shifting the terminal context.
+
+For the raw-symbol sequence theorem, we establish shift-consistency predicates
+and a zero-mass support lemma:
+\begin{lstlisting}
+def consistentTail (ctx : Context k m) : List (Context k m) -> Prop
+def prefixShiftConsistent : List (Context k m) -> Prop
+
+theorem contextWordProb_eq_zero_of_not_prefixShiftConsistent
+    (theta : HigherOrderMarkovParam k m)
+    (ctxs : List (Context k m))
+    (hbad : not (prefixShiftConsistent ctxs)) :
+    contextWordProb theta ctxs = 0
+\end{lstlisting}
+
+The raw-symbol sequence theorem is now fully proved:
+\begin{lstlisting}
+theorem higherOrderSequenceMeasure_cylinder_eq_longWordProb
+    (theta : HigherOrderMarkovParam k m) (xs : List (Fin k)) (hxs : m <= xs.length) :
+    higherOrderSequenceMeasure theta (cylinder xs) = longWordProb theta xs hxs
+\end{lstlisting}
+
+Concrete order-2 regression examples demonstrate the full pipeline:
+\begin{lstlisting}
+theorem orderTwo_cylinder_001_eq_longWordProb (theta : HigherOrderMarkovParam 2 2) :
+    higherOrderSequenceMeasure theta (cylinder [0, 0, 1]) = longWordProb theta [0, 0, 1]
+
+theorem orderTwo_cylinder_011_eq_longWordProb (theta : HigherOrderMarkovParam 2 2) :
+    higherOrderSequenceMeasure theta (cylinder [0, 1, 1]) = longWordProb theta [0, 1, 1]
+\end{lstlisting}
+
+\begin{itemize}
+\item \textbf{Positive example}: the cylinder $[0,0,1]$ on an order-2 binary chain
+  now reduces to the honest higher-order probability surface via the full
+  raw-symbol theorem.
+\item \textbf{Negative example}: this does not give de~Finetti mixtures for
+  higher-order chains; that requires lifting through the Borel/Giry bridge.
+\end{itemize}
+
+File: \texttt{MarkovDeFinettiHigherOrder.lean} (1,219 lines, 0~\texttt{sorry}).
+
+\subsection{Finite Hidden Markov Models}
+
+A finite HMM is a latent finite Markov chain plus a finite emission kernel:
+
+\begin{lstlisting}
+structure FiniteHMMParam (latent obs : Nat) where
+  latentParam : MarkovParam latent
+  emission : Fin latent -> ProbabilityMeasure (Fin obs)
+
+def emissionProb (theta : FiniteHMMParam latent obs) (x : Fin latent) (y : Fin obs) : NNReal :=
+  theta.emission x (Set.singleton y)
+\end{lstlisting}
+
+The finite-word observation probability sums over all latent words:
+
+\begin{lstlisting}
+def observedWordProb (theta : FiniteHMMParam latent obs) (ys : List (Fin obs)) : ENNReal :=
+  sum xs : Fin ys.length -> Fin latent,
+    wordProb theta.latentParam (List.ofFn xs) *
+      observationWeight theta (List.ofFn xs) ys
+\end{lstlisting}
+
+Beyond finite-word sums, the formalization now provides a genuine observed
+sequence measure via a paired latent/observation construction:
+
+\begin{lstlisting}
+-- Paired latent/observation state
+abbrev PairState (latent obs : Nat) := Fin latent * Fin obs
+
+-- Paired-state Markov parameter
+noncomputable def pairedMarkovParam (theta : FiniteHMMParam latent obs) :
+    MarkovParam (Fintype.card (PairState latent obs))
+
+-- Genuine observed sequence measure (pushforward to observations)
+noncomputable def observedSequenceMeasure (theta : FiniteHMMParam latent obs) :
+    Measure (Nat -> Fin obs) :=
+  (pairedSequenceMeasure theta).map observationSequenceOfPairedTrajectory
+
+instance observedSequenceMeasure_isProbability :
+    IsProbabilityMeasure (observedSequenceMeasure theta)
+\end{lstlisting}
+
+The observation-cylinder theorem connects the sequence measure back to
+finite-word probabilities:
+\begin{lstlisting}
+theorem observedSequenceMeasure_cylinder_eq_observedWordProb
+    (theta : FiniteHMMParam latent obs) (ys : List (Fin obs)) :
+    observedSequenceMeasure theta (cylinder ys) = observedWordProb theta ys
+\end{lstlisting}
+
+Key results:
+\begin{itemize}
+\item \texttt{observedWordProb\_nil}: empty observation has probability 1
+\item \texttt{emissionKernel}: the emission kernel as an explicit \texttt{Kernel}
+\item \texttt{observedSequenceMeasure}: genuine sequence law on observations
+\item \texttt{observedSequenceMeasure\_cylinder\_eq\_observedWordProb}: cylinder theorem
+\item \texttt{pairedWordProb\_eq}: paired word factorization into latent and emission
+\end{itemize}
+
+This gives a complete finite HMM sequence-law surface: the sequence measure
+evaluates cylinder events exactly as the finite-word observation probability.
+
+\begin{itemize}
+\item \textbf{Positive example}: a 3-state latent chain with 5-symbol emissions
+  has \texttt{observedSequenceMeasure (cylinder [y0,y1,y2]) = observedWordProb [y0,y1,y2]}.
+\item \textbf{Negative example}: this does not give Baum-Welch, forward-backward,
+  or posterior inference; what we proved is the finite sequence-law surface.
+\end{itemize}
+
+File: \texttt{FiniteHiddenMarkovModel.lean} (668 lines, 0~\texttt{sorry}).
+
+\subsection{Higher-Order Borel/Giry Bridge}
+
+The higher-order raw-cylinder theorem lifts into the existing Borel/Giry layer
+by reducing order-$m$ chains to ordinary first-order chains on finite
+encoded context states:
+
+\begin{lstlisting}
+def higherOrderLongWordWeightViaProbMarkov
+    (pi : ProbMarkov (HigherOrderContextCard k m))
+    (xs : List (Fin k)) (hxs : m <= xs.length) : ENNReal :=
+  borelMarkovCylinderWeightViaProbMarkov pi (higherOrderEncodedContextWord xs hxs)
+
+def CategoricalBorelHigherOrderLongWordFactorization (k m : Nat) (mu : PrefixMeasure) : Prop :=
+  exists pi : ProbMarkov (HigherOrderContextCard k m),
+    forall xs, forall hxs : m <= xs.length,
+      mu xs = higherOrderLongWordWeightViaProbMarkov pi xs hxs
+\end{lstlisting}
+
+The design keeps the boundary explicit: the mediator is an ordinary Borel
+\texttt{MarkovParam} on encoded contexts, not a new measurable space on
+\texttt{HigherOrderMarkovParam} itself.
+
+File: \texttt{DeFinettiHigherOrderGiryBridge.lean} (175 lines, 0~\texttt{sorry}).
+
+\subsection{Finite HMM de Finetti Bridge}
+
+The finite HMM surface also lifts to the Borel layer, with the latent
+parameter law as a Borel probability measure on \texttt{MarkovParam} and
+the emission kernel held fixed:
+
+\begin{lstlisting}
+theorem measurable_observedWordProb_borel
+    (emission : Fin latent -> ProbabilityMeasure (Fin obs))
+    (ys : List (Fin obs)) :
+    Measurable (fun theta => observedWordProb { latentParam := theta, emission } ys)
+
+def CategoricalBorelFiniteHMMFactorization (latent obs : Nat)
+    (emission : Fin latent -> ProbabilityMeasure (Fin obs))
+    (mu : PrefixMeasure (Fin obs)) : Prop :=
+  exists pi : ProbMarkov latent,
+    forall ys, mu ys = observedWordWeightViaProbMarkov emission pi ys
+\end{lstlisting}
+
+Includes concrete binary regression examples (\texttt{binaryCopyHMM\_observedCylinder\_0/1}).
+
+File: \texttt{FiniteHiddenMarkovDeFinettiBridge.lean} (339 lines, 0~\texttt{sorry}).
+
+\subsection{Higher-Order WM/PLN Bridge}
+
+The $(m+1)$-gram summary threads into the WM/PLN additive evidence layer:
+
+\begin{lstlisting}
+abbrev HigherOrderObservation (k m : Nat) := Context k m * Fin k
+
+def rowEvidence (c : GramCounts k m) (ctx : Context k m) : MultiEvidence k :=
+  { counts := fun a => c.counts ctx a }
+
+def higherOrderRowStatistic :
+    SufficientStatisticSurface (HigherOrderObservation k m) (Context k m) (MultiEvidence k)
+\end{lstlisting}
+
+The design stays honest: additive evidence is context-conditioned next-symbol
+counts; the final context is boundary data not forced into the additive carrier.
+
+File: \texttt{UniversalPredictionHigherOrderMarkovWMBridge.lean} (365 lines, 0~\texttt{sorry}).
+
 \section{Conclusion}
 
 We have presented a complete Lean~4 formalization of the Markov de~Finetti
-theorem (Diaconis--Freedman 1980), comprising 23,899 lines with zero unproven
+theorem (Diaconis--Freedman 1980), comprising 26,665 lines with zero unproven
 assumptions. Key innovations include:
 
 \begin{itemize}

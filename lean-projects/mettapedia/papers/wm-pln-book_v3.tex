@@ -2368,6 +2368,29 @@ $\to$ Dirichlet-per-row conjugacy $\to$ transition-count sufficiency.
 \code{WorldModel (Measure $\Omega$) Query} instance remains future
 work.}
 
+\subsection{Markov Transition World Models}
+
+The Markov de~Finetti formalization provides a measure-theoretic foundation.
+The WM-PLN bridge exposes three layers:
+
+\paragraph{Layer 1: Single-step transition queries.}
+The \code{markovDirichletQueryCarrier} (\codepath{PLNXiCarrierScreening.lean:483})
+extracts row-conditioned categorical evidence from transition multisets.
+Theorem: \code{markovTransitionAtom\_semE\_eq\_rowProjection}.
+
+\paragraph{Layer 2: Multi-step predictive chaining.}
+The \code{markovWMPosteriorChain} (\codepath{MarkovPredictiveChaining.lean:32})
+computes $n$-step arrival probabilities via Chapman-Kolmogorov summation.
+
+\paragraph{Layer 3: Path atom surface.}
+The \code{markov-transition*} atom family (\codepath{MarkovPathXi.lean:43})
+provides direct OSLF semantics for multi-step path queries with concrete
+binary examples (\code{bit001}, \code{bit011}).
+
+\paragraph{Key negative result.} PLN's additive deduction screening is
+\emph{unfillable} for Markov carriers. Transition composition requires
+matrix multiplication, not evidence addition. This validates the design
+choice of separate predictive surfaces over retrofitting additive carriers.
 
 \section{Four Verbs: Revise, Query, Forget, Explain}
 
