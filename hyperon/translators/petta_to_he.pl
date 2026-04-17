@@ -132,6 +132,15 @@ translate_term_mode(Mode, ['foldl-atom', List, Init, Agg],
     fresh_var(acc, AccVar),
     fresh_var(item, ItemVar), !.
 
+%% PeTTa raw reduce Expr
+%%   → eval Expr'
+%%
+%% PeTTa's one-argument reduce is evaluator dispatch. HE/CeTTa's public
+%% evaluator surface is eval, while HE/CeTTa reduce is the fold compatibility
+%% alias, so this lowering must target eval rather than the 5-argument reduce.
+translate_term_mode(Mode, [reduce, Expr], [eval, TExpr]) :-
+    translate_term_mode(Mode, Expr, TExpr), !.
+
 %% trusted HE→PeTTa new-space lowering reversal
 translate_term_mode(Mode, [call, [gensym, Prefix]], ['new-space']) :-
     trusted_mode(Mode),

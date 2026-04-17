@@ -284,6 +284,14 @@ test_petta_to_he(26, "3-arg foldl-atom → binder form (expression combiner)",
     ['foldl-atom', [collapse, [twohop-item]], 0, ['λ', merge]],
     foldl_atom_short_shape([collapse, [twohop-item]], 0, ['λ', merge])).
 
+test_petta_to_he(27, "raw reduce → eval",
+    [reduce, [fib, 5]],
+    [eval, [fib, 5]]).
+
+test_petta_to_he(28, "collapse(raw reduce ...) → collapse(eval ...)",
+    [collapse, [reduce, '$term']],
+    [collapse, [eval, '$term']]).
+
 %% ═══════════════════════════════════════════════════════════════
 %% PeTTa → HE extended mode tests
 %% ═══════════════════════════════════════════════════════════════

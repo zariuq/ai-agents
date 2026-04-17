@@ -148,6 +148,7 @@ Mirrors `petta_to_he/4` from `he_petta_relational.pl`. -/
     | `(prog1 A ... Z)`             | capture first, eval rest |
     | `(foldall F G I)`             | `let(collapse G') + fold`|
     | `(foldl-atom X I F)`          | binder-form `foldl-atom` |
+    | `(reduce X)`                  | `(eval X')`              |
     | `(unique-atom (collapse X))`  | `(collapse (unique X'))` |
     | `(@< A B)`                    | `(<s A' B')`             |
     | `(@> A B)`                    | `(not (<s A' B'))`       |
@@ -185,6 +186,10 @@ def translatePeTTa (a : Atom) (supply : Nat) : Atom × Nat :=
     (.expression
       [.symbol "foldl-atom", txs, tinit, accVar, itemVar,
         .expression [.symbol "eval", .expression [tagg, accVar, itemVar]]], s5)
+  -- raw PeTTa reduce Expr → HE eval Expr
+  | .expression [.symbol "reduce", expr] =>
+    let (texpr, s1) := translatePeTTa expr supply
+    (.expression [.symbol "eval", texpr], s1)
   -- PeTTa unique workaround surface → list-preserving HE unique surface
   | .expression [.symbol "unique-atom", .expression [.symbol "collapse", x]] =>
     let (tx, s1) := translatePeTTa x supply
@@ -315,6 +320,17 @@ theorem translatePeTTa_foldlAtomShort (xs init agg : Atom) (s : Nat) :
     (.expression
       [.symbol "foldl-atom", txs, tinit, accVar, itemVar,
         .expression [.symbol "eval", .expression [tagg, accVar, itemVar]]], s5) := rfl
+
+/-- Raw PeTTa one-argument `reduce` lowers to HE's one-step evaluator.
+
+    Positive example: `(reduce (fib 5))` becomes `(eval (fib 5))`.
+
+    Negative example: this is not the HE/CeTTa 5-argument fold-compatibility
+    alias `reduce`; it is the PeTTa evaluator-dispatch surface. -/
+theorem translatePeTTa_reduceEval (expr : Atom) (s : Nat) :
+    translatePeTTa (.expression [.symbol "reduce", expr]) s =
+    let (texpr, s1) := translatePeTTa expr s
+    (.expression [.symbol "eval", texpr], s1) := rfl
 
 /-! ## Optional HE optimization for translated PeTTa→HE output
 

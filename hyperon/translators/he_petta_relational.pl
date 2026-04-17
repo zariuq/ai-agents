@@ -132,6 +132,9 @@ petta_to_he(['foldl-atom', List, Init, Agg],
     fresh_name(acc, S3, S4, AccVar),
     fresh_name(item, S4, S5, ItemVar), !.
 
+petta_to_he([reduce, Expr], [eval, TExpr], S0, S1) :-
+    petta_to_he(Expr, TExpr, S0, S1), !.
+
 petta_to_he(['unique-atom', [collapse, Arg]], [collapse, [unique, TArg]], S0, S1) :-
     petta_to_he(Arg, TArg, S0, S1), !.
 

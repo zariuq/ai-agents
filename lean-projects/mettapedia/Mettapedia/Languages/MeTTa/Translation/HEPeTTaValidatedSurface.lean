@@ -24,7 +24,8 @@ mutual
 /-- A recursive common fragment that neither translator rewrites.
     Positive example: shared `let`/`match` terms whose subterms are also stable.
     Negative example: any nested `chain`, `unique`, special `unique-atom (collapse X)`,
-    short 3-argument `foldl-atom`, `progn`, or `@<` headed expression. -/
+    short 3-argument `foldl-atom`, raw `reduce`, `progn`, or `@<` headed
+    expression. -/
 def isStableCommonForm : Atom → Bool
   | .expression (.symbol "chain" :: _) => false
   | .expression (.symbol "collapse-bind" :: _) => false
@@ -60,6 +61,7 @@ def isForbiddenHeadSymbol : Atom → Bool
   | .symbol "unique" => true
   | .symbol "unique-atom" => true
   | .symbol "foldl-atom" => true
+  | .symbol "reduce" => true
   | .symbol "progn" => true
   | .symbol "prog1" => true
   | .symbol "foldall" => true
@@ -88,8 +90,8 @@ mutual
 
     It enforces two semantic side conditions:
     1. HE binder slots contain only variables or `_`.
-    2. PeTTa-only heads (`progn`, `prog1`, short `foldl-atom`, `@<`, `@>`) do not already appear in
-       the source tree.
+    2. PeTTa-only heads (`progn`, `prog1`, short `foldl-atom`, raw `reduce`,
+       `@<`, `@>`) do not already appear in the source tree.
 
     Positive example: `(chain e $x body)` with recursively validated subterms.
     Negative example: a `chain` whose binder slot itself contains another
@@ -126,6 +128,7 @@ def isValidatedHESource : Atom → Bool
   | .expression (.symbol "function" :: _) => false
   | .expression (.symbol "unique" :: _) => false
   | .expression (.symbol "unique-atom" :: _) => false
+  | .expression (.symbol "reduce" :: _) => false
   | .expression (.symbol "progn" :: _) => false
   | .expression (.symbol "prog1" :: _) => false
   | .expression (.symbol "foldall" :: _) => false
@@ -149,6 +152,7 @@ def isValidatedHEHeadSource : Atom → Bool
   | .symbol "unique" => false
   | .symbol "unique-atom" => false
   | .symbol "foldl-atom" => false
+  | .symbol "reduce" => false
   | .symbol "progn" => false
   | .symbol "prog1" => false
   | .symbol "foldall" => false
@@ -235,6 +239,8 @@ def isValidatedPeTTaSource : Atom → Bool
       isFirstOrderReducerAtom agg && isValidatedPeTTaSource goal && isValidatedPeTTaSource init
   | .expression [.symbol "foldl-atom", xs, init, agg] =>
       isFirstOrderReducerAtom agg && isValidatedPeTTaSource xs && isValidatedPeTTaSource init
+  | .expression [.symbol "reduce", arg] =>
+      isValidatedPeTTaSource arg
   | .expression [.symbol "@<", a, b] =>
       isValidatedPeTTaSource a && isValidatedPeTTaSource b
   | .expression [.symbol "@>", a, b] =>
@@ -283,6 +289,7 @@ def isValidatedPeTTaHeadSource : Atom → Bool
   | .symbol "unique" => false
   | .symbol "unique-atom" => false
   | .symbol "foldl-atom" => false
+  | .symbol "reduce" => false
   | .symbol "progn" => false
   | .symbol "prog1" => false
   | .symbol "foldall" => false
@@ -297,6 +304,8 @@ def isValidatedPeTTaHeadSource : Atom → Bool
       isFirstOrderReducerAtom agg && isValidatedPeTTaSource goal && isValidatedPeTTaSource init
   | .expression [.symbol "foldl-atom", xs, init, agg] =>
       isFirstOrderReducerAtom agg && isValidatedPeTTaSource xs && isValidatedPeTTaSource init
+  | .expression [.symbol "reduce", arg] =>
+      isValidatedPeTTaSource arg
   | .expression [.symbol "@<", a, b] =>
       isValidatedPeTTaSource a && isValidatedPeTTaSource b
   | .expression [.symbol "@>", a, b] =>
@@ -319,6 +328,10 @@ example : isValidatedPeTTaSource (.expression
 
 example : isValidatedPeTTaSource (.expression
     [.symbol "foldall", .symbol "@<", .expression [.symbol "twohop-item"], .symbol "0"]) = false := by
+  native_decide
+
+example : isValidatedPeTTaSource (.expression
+    [.symbol "reduce", .expression [.symbol "fib", .symbol "5"]]) = true := by
   native_decide
 
 example : isValidatedPeTTaSource (.expression
@@ -472,16 +485,21 @@ theorem stableCommonForm_cons_of_head (hd : Atom) (args : List Atom)
                                     have hfalse : False := by
                                       simp [isStableCommonHead, isStableCommonForm, isForbiddenHeadSymbol] at hhd
                                     exact False.elim hfalse
-                                  · by_cases hunique : c = "unique"
-                                    · subst hunique
+                                  · by_cases hreduce : c = "reduce"
+                                    · subst hreduce
                                       have hfalse : False := by
                                         simp [isStableCommonHead, isStableCommonForm, isForbiddenHeadSymbol] at hhd
                                       exact False.elim hfalse
-                                    · simp [isStableCommonForm, isStableCommonExpr, isStableCommonHead,
-                                        isForbiddenHeadSymbol, isStableCommonList, hchain, hcollapse,
-                                        hsuperpose, hswitch, hswitchm, hatomsubst, hnop, hfunction,
-                                        hprogn, hprog1, hfoldall, hfoldl, huniqueatom, hlt, hgt,
-                                        hunique]
+                                    · by_cases hunique : c = "unique"
+                                      · subst hunique
+                                        have hfalse : False := by
+                                          simp [isStableCommonHead, isStableCommonForm, isForbiddenHeadSymbol] at hhd
+                                        exact False.elim hfalse
+                                      · simp [isStableCommonForm, isStableCommonExpr, isStableCommonHead,
+                                          isForbiddenHeadSymbol, isStableCommonList, hchain, hcollapse,
+                                          hsuperpose, hswitch, hswitchm, hatomsubst, hnop, hfunction,
+                                          hprogn, hprog1, hfoldall, hfoldl, huniqueatom, hlt, hgt,
+                                          hreduce, hunique]
   | grounded _ =>
       simp [isStableCommonForm, isStableCommonExpr, isStableCommonHead, isForbiddenHeadSymbol]
   | expression es =>
