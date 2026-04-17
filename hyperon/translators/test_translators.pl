@@ -276,6 +276,14 @@ test_petta_to_he(14, "foldall → let(collapse) + foldl-atom",
     [foldall, merge, [twohop-item], 0],
     foldall_shape(merge, [twohop-item], 0)).
 
+test_petta_to_he(25, "3-arg foldl-atom → binder form (symbol combiner)",
+    ['foldl-atom', [collapse, [twohop-item]], 0, merge],
+    foldl_atom_short_shape([collapse, [twohop-item]], 0, merge)).
+
+test_petta_to_he(26, "3-arg foldl-atom → binder form (expression combiner)",
+    ['foldl-atom', [collapse, [twohop-item]], 0, ['λ', merge]],
+    foldl_atom_short_shape([collapse, [twohop-item]], 0, ['λ', merge])).
+
 %% ═══════════════════════════════════════════════════════════════
 %% PeTTa → HE extended mode tests
 %% ═══════════════════════════════════════════════════════════════
@@ -466,6 +474,21 @@ run_one_pe(N, Name, Input, foldall_shape(Agg, Goal, Init)) :- !,
         ->  format("  ✓ ~w: ~w (fresh binders: ~w, ~w)~n",
                     [N, Name, AccVar, ItemVar])
         ;   format("  ✗ ~w: ~w (bad foldall lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe(N, Name, Input, foldl_atom_short_shape(List, Init, Agg)) :- !,
+    (   pe_translate_term(Input, Result)
+    ->  (   Result = ['foldl-atom', List, Init, AccVar, ItemVar,
+                      [eval, [Agg, AccVar, ItemVar]]],
+            atom_string(AccVar, AccS),
+            atom_string(ItemVar, ItemS),
+            sub_string(AccS, 0, _, _, "$__tr_"),
+            sub_string(ItemS, 0, _, _, "$__tr_")
+        ->  format("  ✓ ~w: ~w (fresh binders: ~w, ~w)~n",
+                    [N, Name, AccVar, ItemVar])
+        ;   format("  ✗ ~w: ~w (bad short foldl-atom lowering: ~w)~n", [N, Name, Result])
         )
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
     ).

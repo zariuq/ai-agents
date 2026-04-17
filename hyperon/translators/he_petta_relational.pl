@@ -122,6 +122,16 @@ petta_to_he([foldall, Agg, Goal, Init],
     fresh_name(acc, S4, S5, AccVar),
     fresh_name(item, S5, S6, ItemVar), !.
 
+petta_to_he(['foldl-atom', List, Init, Agg],
+            ['foldl-atom', TList, TInit,
+             AccVar, ItemVar,
+             [eval, [TAgg, AccVar, ItemVar]]], S0, S5) :-
+    petta_to_he(List, TList, S0, S1),
+    petta_to_he(Init, TInit, S1, S2),
+    petta_to_he(Agg, TAgg, S2, S3),
+    fresh_name(acc, S3, S4, AccVar),
+    fresh_name(item, S4, S5, ItemVar), !.
+
 petta_to_he(['unique-atom', [collapse, Arg]], [collapse, [unique, TArg]], S0, S1) :-
     petta_to_he(Arg, TArg, S0, S1), !.
 

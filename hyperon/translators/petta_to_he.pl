@@ -118,6 +118,20 @@ translate_term_mode(Mode, [foldall, Agg, Goal, Init],
     fresh_var(acc, AccVar),
     fresh_var(item, ItemVar), !.
 
+%% PeTTa short-form foldl-atom List Init Agg
+%%   → foldl-atom List' Init' $acc $item (eval (Agg' $acc $item))
+%%
+%% This is a PeTTa surface convenience. HE/CeTTa only exposes the binder form,
+%% so the translator must lower the reducer position explicitly.
+translate_term_mode(Mode, ['foldl-atom', List, Init, Agg],
+               ['foldl-atom', TList, TInit, AccVar, ItemVar,
+                [eval, [TAgg, AccVar, ItemVar]]]) :-
+    translate_term_mode(Mode, List, TList),
+    translate_term_mode(Mode, Init, TInit),
+    translate_term_mode(Mode, Agg, TAgg),
+    fresh_var(acc, AccVar),
+    fresh_var(item, ItemVar), !.
+
 %% trusted HE→PeTTa new-space lowering reversal
 translate_term_mode(Mode, [call, [gensym, Prefix]], ['new-space']) :-
     trusted_mode(Mode),
