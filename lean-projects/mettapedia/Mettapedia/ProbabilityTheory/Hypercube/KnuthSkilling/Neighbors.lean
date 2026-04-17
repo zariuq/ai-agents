@@ -1,5 +1,5 @@
 import Mettapedia.ProbabilityTheory.KnuthSkilling.Core.Algebra
-import Mettapedia.ProbabilityTheory.KnuthSkilling.Additive.Proofs.GridInduction.CredalSets
+import Mettapedia.ProbabilityTheory.ImpreciseProbability.CredalSets
 import Mettapedia.ProbabilityTheory.Hypercube.KnuthSkilling.SequentialSemantics
 import Mettapedia.ProbabilityTheory.Hypercube.KnuthSkilling.ScaleDichotomy
 import Mettapedia.ProbabilityTheory.Hypercube.Basic
@@ -50,6 +50,7 @@ namespace Mettapedia.ProbabilityTheory.Hypercube.KnuthSkilling.Neighbors
 
 open Classical
 open Mettapedia.ProbabilityTheory.KnuthSkilling
+open Mettapedia.ProbabilityTheory.ImpreciseProbability.CredalSets
 open Mettapedia.ProbabilityTheory.KnuthSkilling.Additive
 open Mettapedia.ProbabilityTheory.KnuthSkilling.Additive.Proofs.GridInduction
 open KnuthSkillingAlgebra
@@ -159,7 +160,7 @@ The correct steelman is:
 3. For real-valued completions, this induces an **interval** `[sInf, sSup]` for each term.
 
 This is formalized (for the K&S value scale, independent of event lattices) in
-`Mettapedia/ProbabilityTheory/KnuthSkilling/Additive/Proofs/GridInduction/CredalSets.lean`:
+`Mettapedia/ProbabilityTheory/ImpreciseProbability/CredalSets.lean`:
 - `CredalSets.IntervalAddSemantics.ofThetaFamily` (family of completions ⇒ interval semantics)
 - `CredalSets.intervalOf_unique` (singleton family ⇒ precise interval)
 - `CredalSets.IntervalAddSemantics.width_subadditive` (imprecision accumulates subadditively)
@@ -178,8 +179,8 @@ noncomputable def intervalSemantics_ofThetaFamily (op : α → α → α)
     (hAdd : ∀ i x y, Θ i (op x y) = Θ i x + Θ i y)
     (hBddBelow : ∀ x, BddBelow (Set.range fun i => Θ i x))
     (hBddAbove : ∀ x, BddAbove (Set.range fun i => Θ i x)) :
-    CredalSets.IntervalAddSemantics α :=
-  CredalSets.IntervalAddSemantics.ofThetaFamily op ι Θ hAssoc hAdd hBddBelow hBddAbove
+    IntervalAddSemantics α :=
+  IntervalAddSemantics.ofThetaFamily op ι Θ hAssoc hAdd hBddBelow hBddAbove
 
 /-- A concrete “imprecise” consequence: widths are subadditive for the canonical interval semantics
 induced by any family of additive completions. -/
@@ -195,8 +196,8 @@ theorem intervalSemantics_width_subadditive (op : α → α → α)
       ((intervalSemantics_ofThetaFamily op ι Θ hAssoc hAdd hBddBelow hBddAbove).μ x).width +
         ((intervalSemantics_ofThetaFamily op ι Θ hAssoc hAdd hBddBelow hBddAbove).μ y).width := by
   simpa [intervalSemantics_ofThetaFamily] using
-    CredalSets.IntervalAddSemantics.width_subadditive
-      (S := CredalSets.IntervalAddSemantics.ofThetaFamily op ι Θ hAssoc hAdd hBddBelow hBddAbove) x y
+    IntervalAddSemantics.width_subadditive
+      (S := IntervalAddSemantics.ofThetaFamily op ι Θ hAssoc hAdd hBddBelow hBddAbove) x y
 
 end CanonicalIntervals
 

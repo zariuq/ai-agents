@@ -84,7 +84,59 @@ def range (s : E.LocalSection) : Set E.Carrier :=
 theorem isOpen_range (s : E.LocalSection) : IsOpen s.range := by
   simpa [range] using s.isOpenEmbedding.isOpen_range
 
+/-- A point in the range of a local section projects into its domain. -/
+theorem proj_mem_domain_of_mem_range (s : E.LocalSection) {x : E.Carrier}
+    (hx : x ∈ s.range) : E.proj x ∈ s.domain := by
+  rcases hx with ⟨y, rfl⟩
+  have hy : E.proj (s.toContinuousMap y) = y.1 := congrFun s.proj_comp y
+  exact hy ▸ y.property
+
+/--
+A point in the range of a local section is recovered by evaluating the section
+at its base projection.
+-/
+theorem toContinuousMap_proj_of_mem_range (s : E.LocalSection) {x : E.Carrier}
+    (hx : x ∈ s.range) :
+    s.toContinuousMap ⟨E.proj x, s.proj_mem_domain_of_mem_range hx⟩ = x := by
+  rcases hx with ⟨y, rfl⟩
+  have hy :
+      (⟨E.proj (s.toContinuousMap y), s.proj_mem_domain_of_mem_range ⟨y, rfl⟩⟩ : s.domain) = y := by
+    apply Subtype.ext
+    exact congrFun s.proj_comp y
+  exact congrArg s.toContinuousMap hy
+
 end LocalSection
+
+/-- Every point of an etale space lies in the range of some local section. -/
+theorem exists_localSection_through (E : EtaleSpace X) (x : E.Carrier) :
+    ∃ s : E.LocalSection, x ∈ s.range := by
+  classical
+  obtain ⟨e, hx, hEq⟩ := E.isLocalHomeomorph_proj x
+  let s : E.LocalSection := {
+    domain := e.target
+    isOpen_domain := e.open_target
+    toContinuousMap :=
+      { toFun := fun y => e.toHomeomorphSourceTarget.symm y
+        continuous_toFun := continuous_subtype_val.comp e.toHomeomorphSourceTarget.symm.continuous }
+    proj_comp := by
+      funext y
+      have hy :
+          (((e.toHomeomorphSourceTarget.symm y : e.source) : E.Carrier) ∈ e.source) :=
+        (e.toHomeomorphSourceTarget.symm y).property
+      exact (congrFun hEq (((e.toHomeomorphSourceTarget.symm y : e.source) : E.Carrier))).trans
+        (by exact e.right_inv y.property) }
+  refine ⟨s, ?_⟩
+  refine ⟨⟨e x, e.map_source hx⟩, ?_⟩
+  exact e.left_inv hx
+
+/-- A chosen local section through a given point. -/
+noncomputable def localSectionThrough (E : EtaleSpace X) (x : E.Carrier) : E.LocalSection :=
+  Classical.choose (E.exists_localSection_through x)
+
+/-- The chosen local section through a point contains that point in its range. -/
+theorem mem_range_localSectionThrough (E : EtaleSpace X) (x : E.Carrier) :
+    x ∈ (E.localSectionThrough x).range :=
+  Classical.choose_spec (E.exists_localSection_through x)
 
 /--
 A global section is just a local section over the whole base space.

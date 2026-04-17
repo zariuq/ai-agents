@@ -79,6 +79,12 @@ theorem necessaryAlong_subset (f : X → Y) (S : Set X) :
     necessaryAlong f S ⊆ S :=
   (inverseImage_universalImage_gc f).l_u_le S
 
+/-- Necessity implies possibility along the same variation map. -/
+theorem necessaryAlong_subset_possibleAlong (f : X → Y) (S : Set X) :
+    necessaryAlong f S ⊆ possibleAlong f S := by
+  intro x hx
+  exact subset_possibleAlong f S (necessaryAlong_subset f S hx)
+
 theorem possibleAlong_possibleAlong_subset (f : X → Y) (S : Set X) :
     possibleAlong f (possibleAlong f S) ⊆ possibleAlong f S := by
   change inverseImage f (directImage f (inverseImage f (directImage f S))) ⊆

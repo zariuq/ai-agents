@@ -1,4 +1,4 @@
-import Mettapedia.AutoBooks.Codex.Henkin1950.CanonicalModel
+import Mettapedia.AutoBooks.Codex.Henkin1950.ClassSemantics
 import Mettapedia.AutoBooks.Codex.Henkin1950.Semantics
 
 namespace Mettapedia.AutoBooks.Codex.Henkin1950
@@ -6,17 +6,17 @@ namespace Mettapedia.AutoBooks.Codex.Henkin1950
 open Mettapedia.Logic.HOL
 
 /-!
-Minimal theorem-facing bridge from the class-based canonical semantics already
+Minimal theorem-facing bridge from the paper-faithful class semantics already
 surfaced in Codex to Henkin's paper-facing `GeneralModel` notion.
 
-The current development has reached Theorem 1 in a class-model form:
-membership in a suitably packaged canonical theory implies truth in the
-canonical class semantics under the empty assignment.
+The current development has reached Theorem 1 as genuine class-model
+satisfiability. What still remains is to connect that class-based truth
+relation to the trusted `HenkinModel` semantics used by `GeneralModel`.
 
-What still remains is to connect that class-based truth relation to the trusted
-`HenkinModel` semantics used by `GeneralModel`.  This file records the smallest
-forward bridge needed for the paper's satisfiability conclusion, without
-pretending that the harder model-construction problem has already been solved.
+This file therefore starts with the abstract class-general bridge that would
+turn the new class-semantics endpoint into paper-facing satisfiability, and
+then studies the stronger canonical specialization that still exposes the
+excluded-middle obstruction.
 -/
 
 /-- A closed proposition-bivalence sentence. In the class-based canonical
@@ -29,15 +29,84 @@ def propBivalence : Sentence :=
       (.eq (.var (.vz : Var [o] o)) (.top : Formula [o]))
       (.eq (.var (.vz : Var [o] o)) (.bot : Formula [o])))
 
-/-- The minimal remaining Theorem-1 bridge: every closed sentence true in the
-canonical class model under the empty assignment is also true in a chosen
-paper-general model. -/
+/-- The remaining paper-facing bridge after the class-semantics Theorem 1:
+every closed sentence true in a chosen class general model is also true in a
+chosen paper-general model. -/
+def ClassSentenceSoundBridge
+    (CM : ClassGeneralModel)
+    (M : GeneralModel) : Prop :=
+  ∀ φ : Sentence,
+    CM.models φ →
+      HenkinModel.models M.toHenkinModel φ
+
+/-- A canonical sentence-sound bridge is the stronger specialization where the
+class model is known to be the canonical quotient model itself. -/
 def SentenceSoundBridge
     (CM : CanonicalClassModel)
     (M : GeneralModel) : Prop :=
   ∀ φ : Sentence,
     CM.denoteFormula CM.emptyAssignment φ →
       HenkinModel.models M.toHenkinModel φ
+
+/-- If one fixed class general model satisfies a closed theory and its closed
+sentences soundly transfer to a paper-general model, then the theory is
+satisfiable in Henkin's paper-facing semantics. -/
+theorem satisfiable_of_classGeneralModel_of_classSentenceSoundBridge
+    {T : ClosedTheorySet}
+    {CM : ClassGeneralModel}
+    (hCM : ∀ φ : Sentence, φ ∈ T → CM.models φ)
+    {M : GeneralModel}
+    (hBridge : ClassSentenceSoundBridge CM M) :
+    Satisfiable T := by
+  refine ⟨M, ?_⟩
+  intro φ hφ
+  exact hBridge φ (hCM φ hφ)
+
+/-- If a closed theory is satisfiable in the new class-general semantics, and
+every such class witness soundly transfers to one paper-general model, then
+the theory is satisfiable in Henkin's paper-facing model semantics. -/
+theorem satisfiable_of_classGeneralSatisfiable_of_classSentenceSoundBridge
+    {T : ClosedTheorySet}
+    (hClass : SatisfiableInClassGeneral T)
+    {M : GeneralModel}
+    (hBridge :
+      ∀ CM : ClassGeneralModel,
+        (∀ φ : Sentence, φ ∈ T → CM.models φ) →
+          ClassSentenceSoundBridge CM M) :
+    Satisfiable T := by
+  rcases hClass with ⟨CM, hCM⟩
+  exact
+    satisfiable_of_classGeneralModel_of_classSentenceSoundBridge
+      hCM
+      (hBridge CM hCM)
+
+/-- Paper-facing Theorem 1 from the class-semantics endpoint plus the minimal
+class-sentence-soundness bridge to a chosen general model. This is the exact
+remaining semantic step once `theorem1_classGeneral` has been established. -/
+theorem theorem1_general_of_classSentenceSoundBridge
+    {T : ClosedTheorySet}
+    (hT : CompleteConsistentTheory T)
+    (hEx : ExistentialWitnessClosed T)
+    (hAll : UniversalCounterexampleClosed T)
+    {M : GeneralModel}
+    (hBridge :
+      ∀ CM : ClassGeneralModel,
+        (∀ φ : Sentence, φ ∈ T → CM.models φ) →
+          ClassSentenceSoundBridge CM M) :
+    Satisfiable T :=
+  satisfiable_of_classGeneralSatisfiable_of_classSentenceSoundBridge
+    (CanonicalClassModel.theorem1_classGeneral hT hEx hAll)
+    hBridge
+
+/-- Any canonical sentence-sound bridge yields a class-general bridge for the
+induced paper-faithful class model. -/
+theorem classSentenceSoundBridge_of_sentenceSoundBridge
+    (CM : CanonicalClassModel)
+    {M : GeneralModel}
+    (hBridge : SentenceSoundBridge CM M) :
+    ClassSentenceSoundBridge CM.toClassGeneralModel M := by
+  intro φ hφ
+  exact hBridge φ ((CM.toClassGeneralModel_models_iff φ).1 hφ)
 
 /-- If a closed theory is already satisfied in the canonical class-model sense,
 and that class-model truth soundly transfers to some paper-general model, then
@@ -49,9 +118,13 @@ theorem satisfiable_of_classSatisfiable_of_sentenceSoundBridge
     (hBridge : ∀ CM : CanonicalClassModel, CM.T = T → SentenceSoundBridge CM M) :
     Satisfiable T := by
   rcases hClass with ⟨CM, rfl, hCM⟩
-  refine ⟨M, ?_⟩
-  intro φ hφ
-  exact hBridge CM rfl φ (hCM φ hφ)
+  have hCMClass : ∀ φ : Sentence, φ ∈ CM.T → CM.toClassGeneralModel.models φ := by
+    intro φ hφ
+    exact (CM.toClassGeneralModel_models_iff φ).2 (hCM φ hφ)
+  exact
+    satisfiable_of_classGeneralModel_of_classSentenceSoundBridge
+      hCMClass
+      (classSentenceSoundBridge_of_sentenceSoundBridge CM (hBridge CM rfl))
 
 /-- Paper-facing Theorem 1 from the currently surfaced canonical class-model
 endpoint plus the minimal sentence-soundness bridge to a chosen general model.
@@ -71,17 +144,21 @@ theorem theorem1_general_of_sentenceSoundBridge
           allCounterexample := hAll }
         M) :
     Satisfiable T := by
-  refine ⟨M, ?_⟩
-  intro φ hφ
-  exact hBridge φ <|
-    CanonicalClassModel.theorem1_canonicalClassModel_milestone
-      (M := {
-        T := T
-        completeConsistent := hT
-        existsWitness := hEx
-        allCounterexample := hAll
-      })
-      hφ
+  let CM : CanonicalClassModel :=
+    { T := T
+      completeConsistent := hT
+      existsWitness := hEx
+      allCounterexample := hAll }
+  have hCMClass : ∀ φ : Sentence, φ ∈ T → CM.toClassGeneralModel.models φ := by
+    intro φ hφ
+    exact (CM.toClassGeneralModel_models_iff φ).2 <|
+      CanonicalClassModel.theorem1_canonicalClassModel_milestone
+        (M := CM)
+        hφ
+  exact
+    satisfiable_of_classGeneralModel_of_classSentenceSoundBridge
+      hCMClass
+      (classSentenceSoundBridge_of_sentenceSoundBridge CM hBridge)
 
 /-- Family version of the current Theorem-1 bridge: if one paper-general model
 soundly receives every canonical class model over `T`, then `T` is satisfiable

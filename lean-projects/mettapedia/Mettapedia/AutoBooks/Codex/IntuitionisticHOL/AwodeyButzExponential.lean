@@ -1,4 +1,5 @@
 import Mathlib.Topology.Sheaves.Sheaf
+import Mathlib.Logic.Function.Basic
 import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.AwodeyButzOperations
 
 /-!
@@ -64,6 +65,14 @@ namespace LocalMorphism
 
 variable {E F : EtaleSpace X} {U V : Opens X}
 
+/-- Extensionality for local morphisms. -/
+@[ext] theorem ext {f g : LocalMorphism F E U}
+    (h : ∀ e, f.toFun e = g.toFun e) : f = g := by
+  cases f
+  cases g
+  simp at h ⊢
+  exact funext fun e => h e.1 e.2
+
 /-- Restrict a local morphism along an inclusion of open sets. -/
 def restrict (i : V ⟶ U) (f : LocalMorphism F E U) : LocalMorphism F E V where
   toFun := fun e => f.toFun ⟨e.val, i.le e.property⟩
@@ -75,6 +84,22 @@ def restrict (i : V ⟶ U) (f : LocalMorphism F E U) : LocalMorphism F E V where
       exact continuous_induced_dom
     exact f.continuous_toFun.comp h
   fiberwise := fun e => f.fiberwise ⟨e.val, i.le e.property⟩
+
+@[simp] theorem restrict_toFun (i : V ⟶ U) (f : LocalMorphism F E U)
+    (e : {e : F.Carrier // F.proj e ∈ V}) :
+    (restrict i f).toFun e = f.toFun ⟨e.val, i.le e.property⟩ :=
+  rfl
+
+@[simp] theorem restrict_id (f : LocalMorphism F E U) :
+    restrict (𝟙 U) f = f := by
+  ext e
+  rfl
+
+@[simp] theorem restrict_restrict {W : Opens X} (i : W ⟶ V) (j : V ⟶ U)
+    (f : LocalMorphism F E U) :
+    restrict i (restrict j f) = restrict (i ≫ j) f := by
+  ext e
+  rfl
 
 end LocalMorphism
 
@@ -94,7 +119,7 @@ the full sheaf-theoretic construction is built out.
 -/
 
 /--
-Abstract representation of a germ of local morphisms at a point.
+Raw representative of a germ of local morphisms at a point.
 
 A germ at x represents the equivalence class of local morphisms F → E defined
 near x, where two morphisms are equivalent if they agree on some neighborhood of x.
@@ -106,6 +131,303 @@ structure ExpGermData (F E : EtaleSpace X) (x : X) where
   mem_nbhd : x ∈ nbhd
   /-- The local morphism over the neighborhood. -/
   morphism : LocalMorphism F E nbhd
+
+/-- The raw sigma-type of pointed germ representatives. -/
+abbrev ExpRaw (F E : EtaleSpace X) : Type _ :=
+  Σ x : X, ExpGermData F E x
+
+namespace ExpRaw
+
+variable {E F : EtaleSpace X}
+
+/-- Two pointed representatives define the same germ when they agree on some smaller neighborhood. -/
+def SameGerm (a b : ExpRaw F E) : Prop :=
+  a.1 = b.1 ∧
+    ∃ W : Opens X, a.1 ∈ W ∧
+      ∃ hWa : W ≤ a.2.nbhd, ∃ hWb : W ≤ b.2.nbhd,
+        LocalMorphism.restrict (homOfLE hWa) a.2.morphism =
+          LocalMorphism.restrict (homOfLE hWb) b.2.morphism
+
+theorem sameGerm_refl (a : ExpRaw F E) : SameGerm a a := by
+  refine ⟨rfl, a.2.nbhd, a.2.mem_nbhd, le_rfl, le_rfl, ?_⟩
+  exact LocalMorphism.restrict_id a.2.morphism
+
+theorem sameGerm_symm {a b : ExpRaw F E} (h : SameGerm a b) : SameGerm b a := by
+  rcases h with ⟨hbase, W, hxW, hWa, hWb, hEq⟩
+  refine ⟨hbase.symm, W, ?_, hWb, hWa, hEq.symm⟩
+  simpa [hbase] using hxW
+
+theorem sameGerm_trans {a b c : ExpRaw F E} (hab : SameGerm a b) (hbc : SameGerm b c) :
+    SameGerm a c := by
+  rcases hab with ⟨habBase, Wab, hxWab, hWabA, hWabB, hEqab⟩
+  rcases hbc with ⟨hbcBase, Wbc, hyWbc, hWbcB, hWbcC, hEqbc⟩
+  refine ⟨habBase.trans hbcBase, Wab ⊓ Wbc, ?_, ?_, ?_, ?_⟩
+  · show a.1 ∈ (Wab : Set X) ∩ Wbc
+    refine ⟨hxWab, ?_⟩
+    simpa [habBase] using hyWbc
+  · exact le_trans inf_le_left hWabA
+  · exact le_trans inf_le_right hWbcC
+  · ext e
+    have heMem : F.proj e.val ∈ (Wab : Set X) ∩ Wbc := e.property
+    have habVal :
+        a.2.morphism.toFun ⟨e.val, hWabA heMem.1⟩ =
+          b.2.morphism.toFun ⟨e.val, hWabB heMem.1⟩ := by
+      simpa using congrFun (congrArg LocalMorphism.toFun hEqab) ⟨e.val, heMem.1⟩
+    have hbcVal :
+        b.2.morphism.toFun ⟨e.val, hWbcB heMem.2⟩ =
+          c.2.morphism.toFun ⟨e.val, hWbcC heMem.2⟩ := by
+      simpa using congrFun (congrArg LocalMorphism.toFun hEqbc) ⟨e.val, heMem.2⟩
+    exact habVal.trans hbcVal
+
+instance setoid (F E : EtaleSpace X) : Setoid (ExpRaw F E) where
+  r := SameGerm
+  iseqv := ⟨sameGerm_refl, sameGerm_symm, sameGerm_trans⟩
+
+end ExpRaw
+
+/-- The quotient carrier of the exponential by honest germ equivalence. -/
+abbrev ExpCarrier (F E : EtaleSpace X) : Type _ :=
+  Quotient (ExpRaw.setoid F E)
+
+/-- The chart map associated to a local morphism. -/
+def sectionMapOfLocalMorphism {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) : U → ExpCarrier F E :=
+  fun x =>
+    @Quotient.mk (ExpRaw F E) (ExpRaw.setoid F E) ⟨x.1,
+      { nbhd := U
+        mem_nbhd := x.2
+        morphism := f }⟩
+
+/-- The basic chart image associated to a local morphism. -/
+def chartRangeOfLocalMorphism {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) : Set (ExpCarrier F E) :=
+  Set.range (sectionMapOfLocalMorphism f)
+
+/-- Open subsets of an open subspace, repackaged as opens of the ambient base. -/
+def ambientOpenOfSubtype {U : Opens X} (s : Set U) (hs : IsOpen s) : Opens X :=
+  ⟨Subtype.val '' s, U.isOpen.isOpenMap_subtype_val _ hs⟩
+
+theorem ambientOpenOfSubtype_le {U : Opens X} {s : Set U} (hs : IsOpen s) :
+    ambientOpenOfSubtype s hs ≤ U := by
+  rintro x ⟨y, hy, rfl⟩
+  exact y.2
+
+/-- The germ-overlap locus of two local morphisms. -/
+def chartOverlap {F E : EtaleSpace X} {U V : Opens X}
+    (f : LocalMorphism F E U) (g : LocalMorphism F E V) : Set X :=
+  { x | ∃ W : Opens X, x ∈ W ∧
+      ∃ hWU : W ≤ U, ∃ hWV : W ≤ V,
+        LocalMorphism.restrict (homOfLE hWU) f =
+          LocalMorphism.restrict (homOfLE hWV) g }
+
+theorem isOpen_chartOverlap {F E : EtaleSpace X} {U V : Opens X}
+    (f : LocalMorphism F E U) (g : LocalMorphism F E V) :
+    IsOpen (chartOverlap f g) := by
+  refine isOpen_iff_mem_nhds.mpr ?_
+  intro x hx
+  rcases hx with ⟨W, hxW, hWU, hWV, hEq⟩
+  refine Filter.mem_of_superset (W.isOpen.mem_nhds hxW) ?_
+  intro y hy
+  exact ⟨W, hy, hWU, hWV, hEq⟩
+
+/-- The topology on the germ quotient generated by all local-morphism chart images. -/
+def expCarrierTopologicalSpace (F E : EtaleSpace X) : TopologicalSpace (ExpCarrier F E) :=
+  TopologicalSpace.generateFrom
+    { S | ∃ U : Opens X, ∃ f : LocalMorphism F E U, chartRangeOfLocalMorphism f = S }
+
+instance instTopologicalSpaceExpCarrier (F E : EtaleSpace X) : TopologicalSpace (ExpCarrier F E) :=
+  expCarrierTopologicalSpace F E
+
+theorem isOpen_chartRangeOfLocalMorphism {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) :
+    @IsOpen (ExpCarrier F E) (expCarrierTopologicalSpace F E) (chartRangeOfLocalMorphism f) :=
+  TopologicalSpace.isOpen_generateFrom_of_mem <| by
+    exact ⟨U, f, rfl⟩
+
+/-- The projection of a germ to its base point. -/
+def expProj (F E : EtaleSpace X) (q : ExpCarrier F E) : X :=
+  Quotient.liftOn q (fun a : ExpRaw F E => a.1) fun _ _ h => h.1
+
+@[simp] theorem expProj_sectionMapOfLocalMorphism {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) (x : U) :
+    expProj F E (sectionMapOfLocalMorphism f x) = x.1 :=
+  rfl
+
+theorem sectionMapOfLocalMorphism_eq_iff_sameGerm
+    {F E : EtaleSpace X} {U V : Opens X}
+    (f : LocalMorphism F E U) (g : LocalMorphism F E V) (x : U) (y : V) :
+    sectionMapOfLocalMorphism f x = sectionMapOfLocalMorphism g y ↔
+      ExpRaw.SameGerm
+        ⟨x.1, { nbhd := U, mem_nbhd := x.2, morphism := f }⟩
+        ⟨y.1, { nbhd := V, mem_nbhd := y.2, morphism := g }⟩ := by
+  constructor
+  · intro h
+    simpa [sectionMapOfLocalMorphism] using
+      (@Quotient.exact (ExpRaw F E) (ExpRaw.setoid F E)
+        ⟨x.1, { nbhd := U, mem_nbhd := x.2, morphism := f }⟩
+        ⟨y.1, { nbhd := V, mem_nbhd := y.2, morphism := g }⟩ h)
+  · intro h
+    simpa [sectionMapOfLocalMorphism] using
+      (@Quotient.sound (ExpRaw F E) (ExpRaw.setoid F E)
+        ⟨x.1, { nbhd := U, mem_nbhd := x.2, morphism := f }⟩
+        ⟨y.1, { nbhd := V, mem_nbhd := y.2, morphism := g }⟩ h)
+
+theorem sectionMapOfLocalMorphism_injective {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) :
+    Function.Injective (sectionMapOfLocalMorphism f) := by
+  intro x y hxy
+  have hExact :
+      ExpRaw.SameGerm
+        ⟨x.1, { nbhd := U, mem_nbhd := x.2, morphism := f }⟩
+        ⟨y.1, { nbhd := U, mem_nbhd := y.2, morphism := f }⟩ :=
+    (sectionMapOfLocalMorphism_eq_iff_sameGerm f f x y).mp hxy
+  apply Subtype.ext
+  exact hExact.1
+
+theorem mem_chartRange_iff {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) (p : ExpCarrier F E) :
+    p ∈ chartRangeOfLocalMorphism f ↔
+      ∃ x : U, sectionMapOfLocalMorphism f x = p := Iff.rfl
+
+theorem expProj_mem_of_mem_chartRange {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) {p : ExpCarrier F E}
+    (hp : p ∈ chartRangeOfLocalMorphism f) :
+    expProj F E p ∈ U := by
+  rcases hp with ⟨x, rfl⟩
+  exact x.2
+
+theorem sectionMapOfLocalMorphism_proj_of_mem_chartRange
+    {F E : EtaleSpace X} {U : Opens X} (f : LocalMorphism F E U)
+    {p : ExpCarrier F E} (hp : p ∈ chartRangeOfLocalMorphism f) :
+    sectionMapOfLocalMorphism f ⟨expProj F E p, expProj_mem_of_mem_chartRange f hp⟩ = p := by
+  rcases hp with ⟨x, rfl⟩
+  simp [sectionMapOfLocalMorphism, expProj]
+
+theorem preimage_chartRangeOfLocalMorphism {F E : EtaleSpace X} {U V : Opens X}
+    (f : LocalMorphism F E U) (g : LocalMorphism F E V) :
+    (sectionMapOfLocalMorphism f) ⁻¹' chartRangeOfLocalMorphism g =
+      { x : U | x.1 ∈ chartOverlap f g } := by
+  ext x
+  constructor
+  · intro hx
+    rcases hx with ⟨y, hy⟩
+    have hExact :
+        ExpRaw.SameGerm
+          ⟨x.1, { nbhd := U, mem_nbhd := x.2, morphism := f }⟩
+          ⟨y.1, { nbhd := V, mem_nbhd := y.2, morphism := g }⟩ :=
+      ExpRaw.sameGerm_symm <|
+        (sectionMapOfLocalMorphism_eq_iff_sameGerm g f y x).mp hy
+    rcases hExact with ⟨hbase, W, hxW, hWU, hWV, hEq⟩
+    exact ⟨W, hxW, hWU, hWV, hEq⟩
+  · rintro ⟨W, hxW, hWU, hWV, hEq⟩
+    refine ⟨⟨x.1, hWV hxW⟩, ?_⟩
+    exact (sectionMapOfLocalMorphism_eq_iff_sameGerm g f
+      ⟨x.1, hWV hxW⟩ x).2 <|
+        ExpRaw.sameGerm_symm ⟨rfl, W, hxW, hWU, hWV, hEq⟩
+
+theorem continuous_sectionMapOfLocalMorphism {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) :
+    @Continuous U (ExpCarrier F E) inferInstance (expCarrierTopologicalSpace F E)
+      (sectionMapOfLocalMorphism f) := by
+  rw [continuous_generateFrom_iff]
+  intro s hs
+  rcases hs with ⟨V, g, rfl⟩
+  rw [preimage_chartRangeOfLocalMorphism]
+  exact (isOpen_chartOverlap f g).preimage continuous_subtype_val
+
+theorem image_sectionMapOfLocalMorphism {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) {s : Set U} (hs : IsOpen s) :
+    sectionMapOfLocalMorphism f '' s =
+      chartRangeOfLocalMorphism
+        (LocalMorphism.restrict (homOfLE (ambientOpenOfSubtype_le hs)) f) := by
+  let W : Opens X := ambientOpenOfSubtype s hs
+  let i : W ⟶ U := homOfLE (ambientOpenOfSubtype_le hs)
+  ext p
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    refine ⟨⟨x.1, ⟨x, hx, rfl⟩⟩, ?_⟩
+    exact (sectionMapOfLocalMorphism_eq_iff_sameGerm (LocalMorphism.restrict i f) f
+      ⟨x.1, ⟨x, hx, rfl⟩⟩ x).2 <|
+        ExpRaw.sameGerm_symm <|
+          ⟨rfl, W, ⟨x, hx, rfl⟩, ambientOpenOfSubtype_le hs, le_rfl, rfl⟩
+  · rintro ⟨x, hx⟩
+    rcases x.2 with ⟨y, hy, hyEq⟩
+    let yU : U := ⟨x.1, by simpa [hyEq] using y.2⟩
+    have hyUeq : yU = y := by
+      apply Subtype.ext
+      exact hyEq.symm
+    refine ⟨yU, ?_, ?_⟩
+    · simpa [hyUeq] using hy
+    · refine ((sectionMapOfLocalMorphism_eq_iff_sameGerm f (LocalMorphism.restrict i f)
+        yU x).2 ?_).trans hx
+      refine ⟨rfl, W, x.2, ambientOpenOfSubtype_le hs, le_rfl, rfl⟩
+
+theorem isOpenMap_sectionMapOfLocalMorphism {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) :
+    @IsOpenMap U (ExpCarrier F E) inferInstance (expCarrierTopologicalSpace F E)
+      (sectionMapOfLocalMorphism f) := by
+  intro s hs
+  rw [image_sectionMapOfLocalMorphism f hs]
+  exact isOpen_chartRangeOfLocalMorphism _
+
+theorem isOpenEmbedding_sectionMapOfLocalMorphism {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) :
+    @IsOpenEmbedding U (ExpCarrier F E) inferInstance (expCarrierTopologicalSpace F E)
+      (sectionMapOfLocalMorphism f) :=
+  Topology.IsOpenEmbedding.of_continuous_injective_isOpenMap
+    (continuous_sectionMapOfLocalMorphism f)
+    (sectionMapOfLocalMorphism_injective f)
+    (isOpenMap_sectionMapOfLocalMorphism f)
+
+/-- The chart map with codomain restricted to its image. -/
+def chartToRange {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) : U → chartRangeOfLocalMorphism f :=
+  fun x => ⟨sectionMapOfLocalMorphism f x, ⟨x, rfl⟩⟩
+
+/-- Recover the base point of a germ lying in a chart image. -/
+def rangeToChart {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) : chartRangeOfLocalMorphism f → U :=
+  fun p => ⟨expProj F E p.1, expProj_mem_of_mem_chartRange f p.2⟩
+
+@[simp] theorem chartToRange_val {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) (x : U) :
+    (chartToRange f x : ExpCarrier F E) = sectionMapOfLocalMorphism f x :=
+  rfl
+
+@[simp] theorem rangeToChart_val {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) (p : chartRangeOfLocalMorphism f) :
+    ((rangeToChart f p : U) : X) = expProj F E p.1 :=
+  rfl
+
+@[simp] theorem rangeToChart_chartToRange {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) (x : U) :
+    rangeToChart f (chartToRange f x) = x := by
+  apply Subtype.ext
+  exact expProj_sectionMapOfLocalMorphism f x
+
+@[simp] theorem chartToRange_rangeToChart {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) (p : chartRangeOfLocalMorphism f) :
+    chartToRange f (rangeToChart f p) = p := by
+  apply Subtype.ext
+  exact sectionMapOfLocalMorphism_proj_of_mem_chartRange f p.2
+
+theorem isOpenEmbedding_chartToRange {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) :
+    IsOpenEmbedding (chartToRange f) := by
+  have hSub :
+      IsOpenEmbedding ((↑) : chartRangeOfLocalMorphism f → ExpCarrier F E) :=
+    (isOpen_chartRangeOfLocalMorphism f).isOpenEmbedding_subtypeVal
+  have hComp :
+      IsOpenEmbedding (((↑) : chartRangeOfLocalMorphism f → ExpCarrier F E) ∘ chartToRange f) := by
+    simpa [chartToRange, Function.comp] using isOpenEmbedding_sectionMapOfLocalMorphism f
+  exact Topology.IsOpenEmbedding.of_comp (chartToRange f) hSub hComp
+
+/-- The local-morphism chart identifies its domain homeomorphically with its image. -/
+noncomputable def chartHomeomorph {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) : U ≃ₜ chartRangeOfLocalMorphism f :=
+  (isOpenEmbedding_chartToRange f).toIsEmbedding.toHomeomorphOfSurjective <| by
+    intro p
+    exact ⟨rangeToChart f p, chartToRange_rangeToChart f p⟩
 
 /--
 The exponential étale space E^F.
@@ -121,20 +443,264 @@ The quotient by germ equivalence is implicit in the notion that two ExpGermData
 with the same base point and agreeing on a neighborhood represent the same germ.
 -/
 noncomputable def exp (F E : EtaleSpace X) : EtaleSpace X where
-  Carrier := Σ x : X, ExpGermData F E x
-  carrierTopologicalSpace := sorry  -- Étale topology on germs
-  proj := Sigma.fst
-  isLocalHomeomorph_proj := sorry  -- Requires étale topology definition
+  Carrier := ExpCarrier F E
+  carrierTopologicalSpace := expCarrierTopologicalSpace F E
+  proj := expProj F E
+  isLocalHomeomorph_proj := by
+    rw [isLocalHomeomorph_iff_isOpenEmbedding_restrict]
+    intro p
+    refine Quotient.inductionOn p ?_
+    intro a
+    let f := a.2.morphism
+    refine ⟨chartRangeOfLocalMorphism f, ?_, ?_⟩
+    · exact isOpen_chartRangeOfLocalMorphism f |>.mem_nhds ⟨⟨a.1, a.2.mem_nbhd⟩, rfl⟩
+    · have hSymm :
+          IsOpenEmbedding ((chartHomeomorph f).symm : chartRangeOfLocalMorphism f → a.2.nbhd) :=
+        (chartHomeomorph f).symm.isOpenEmbedding
+      have hSubOpenEmb : IsOpenEmbedding ((↑) : a.2.nbhd → X) := a.2.nbhd.isOpenEmbedding'
+      have hComp :
+          ((↑) : a.2.nbhd → X) ∘ (chartHomeomorph f).symm =
+            (chartRangeOfLocalMorphism f).restrict (expProj F E) := by
+        funext p
+        have hEq : chartToRange f ((chartHomeomorph f).symm p) = p := by
+          change chartHomeomorph f ((chartHomeomorph f).symm p) = p
+          exact (chartHomeomorph f).apply_symm_apply p
+        have hApply :=
+          congrArg (fun q : chartRangeOfLocalMorphism f => expProj F E q.1) hEq
+        simpa [chartToRange, sectionMapOfLocalMorphism, expProj] using hApply
+      simpa [hComp] using hSubOpenEmb.comp hSymm
+
+theorem sameGerm_eval_eq {F E : EtaleSpace X} {a b : ExpRaw F E} {y : F.Carrier}
+    (h : ExpRaw.SameGerm a b) (hy : F.proj y = a.1) :
+    a.2.morphism.toFun ⟨y, by simpa [hy] using a.2.mem_nbhd⟩ =
+      b.2.morphism.toFun ⟨y, by
+        have hyb : F.proj y = b.1 := hy.trans h.1
+        simpa [hyb] using b.2.mem_nbhd⟩ := by
+  rcases h with ⟨hbase, W, hxW, hWa, hWb, hEq⟩
+  have hyW : F.proj y ∈ W := by
+    simpa [hy] using hxW
+  simpa using congrFun (congrArg LocalMorphism.toFun hEq) ⟨y, hyW⟩
+
+/-- Evaluate a germ at a point of the matching fiber. -/
+noncomputable def evalAtGerm {F E : EtaleSpace X} (q : ExpCarrier F E) (y : F.Carrier) :
+    F.proj y = expProj F E q → E.Carrier := by
+  refine Quotient.hrecOn q
+    (fun a => fun h : F.proj y = a.1 =>
+      a.2.morphism.toFun ⟨y, by simpa [h] using a.2.mem_nbhd⟩)
+    ?_
+  intro a b hab
+  refine Function.hfunext
+    (propext ⟨fun h => h.trans hab.1, fun h => h.trans hab.1.symm⟩)
+    ?_
+  intro hA hB _hh
+  apply heq_of_eq
+  let hB' : F.proj y = b.1 := hA.trans hab.1
+  exact (sameGerm_eval_eq (F := F) (E := E) hab hA).trans <|
+    congrArg
+      (fun h : F.proj y = b.1 =>
+        b.2.morphism.toFun ⟨y, by simpa [h] using b.2.mem_nbhd⟩)
+      (Subsingleton.elim hB' hB)
 
 /-- The evaluation map exp(F,E) × F → E. -/
+theorem evalAtGerm_sectionMapOfLocalMorphism {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) (x : U) (y : F.Carrier)
+    (h : F.proj y = expProj F E (sectionMapOfLocalMorphism f x)) :
+    evalAtGerm (sectionMapOfLocalMorphism f x) y h =
+      f.toFun ⟨y, by
+        have hy : F.proj y = x.1 := by simpa using h
+        have hyU : F.proj y ∈ U := hy ▸ x.2
+        exact hyU⟩ := by
+  change
+    (fun h' : F.proj y = x.1 =>
+      f.toFun ⟨y, by
+        have hyU : F.proj y ∈ U := h' ▸ x.2
+        exact hyU⟩)
+      (by simpa using h) =
+    f.toFun ⟨y, by
+      have hy : F.proj y = x.1 := by simpa using h
+      have hyU : F.proj y ∈ U := hy ▸ x.2
+      exact hyU⟩
+  rfl
+
+theorem evalToFun_eq_localMorphism_on_chart {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) (p : (prod (exp F E) F).Carrier)
+    (hp : p.fst ∈ chartRangeOfLocalMorphism f) :
+    (fun p : (prod (exp F E) F).Carrier =>
+      evalAtGerm p.fst p.snd (by simpa [exp] using p.property.symm)) p =
+      f.toFun ⟨p.snd, by
+        have hproj : F.proj p.snd = expProj F E p.fst := by
+          simpa [exp] using p.property.symm
+        simpa [hproj] using expProj_mem_of_mem_chartRange f hp⟩ := by
+  rcases p with ⟨⟨q, y⟩, hq⟩
+  let x : U := ⟨expProj F E q, expProj_mem_of_mem_chartRange f hp⟩
+  have hx : sectionMapOfLocalMorphism f x = q :=
+    sectionMapOfLocalMorphism_proj_of_mem_chartRange f hp
+  simpa [hx] using
+    (evalAtGerm_sectionMapOfLocalMorphism f x y (by simpa [hx, exp] using hq.symm))
+
+theorem continuousOn_evalToFun_chart {F E : EtaleSpace X} {U : Opens X}
+    (f : LocalMorphism F E U) :
+    ContinuousOn
+      (fun p : (prod (exp F E) F).Carrier =>
+        evalAtGerm p.fst p.snd (by simpa [exp] using p.property.symm))
+      { p : (prod (exp F E) F).Carrier | p.fst ∈ chartRangeOfLocalMorphism f } := by
+  rw [continuousOn_iff_continuous_restrict]
+  let chartMap :
+      { p : (prod (exp F E) F).Carrier | p.fst ∈ chartRangeOfLocalMorphism f } →
+        { e : F.Carrier // F.proj e ∈ U } :=
+    fun p => ⟨p.1.snd, by
+      have hproj : F.proj p.1.snd = expProj F E p.1.fst := by
+        simpa [exp] using p.1.property.symm
+      simpa [hproj] using expProj_mem_of_mem_chartRange f p.2⟩
+  have hchartMap : Continuous chartMap := by
+    exact ((prodSnd (exp F E) F).continuous.comp continuous_subtype_val).subtype_mk fun p => by
+      have hproj : F.proj p.1.snd = expProj F E p.1.fst := by
+        simpa [exp] using p.1.property.symm
+      change F.proj p.1.snd ∈ U
+      exact hproj.symm ▸ expProj_mem_of_mem_chartRange f p.2
+  let g :
+      C({ p : (prod (exp F E) F).Carrier | p.fst ∈ chartRangeOfLocalMorphism f }, E.Carrier) :=
+    ⟨fun p => f.toFun (chartMap p), f.continuous_toFun.comp hchartMap⟩
+  refine g.continuous.congr ?_
+  intro p
+  exact (evalToFun_eq_localMorphism_on_chart f p.1 p.2).symm
+
 noncomputable def evalMorphism (F E : EtaleSpace X) :
     C((prod (exp F E) F).Carrier, E.Carrier) where
-  toFun := sorry
-  continuous_toFun := sorry
+  toFun := fun p => evalAtGerm p.fst p.snd <| by
+    simpa [exp] using p.property.symm
+  continuous_toFun := by
+    classical
+    rw [continuous_iff_continuousAt]
+    rintro ⟨⟨q, y⟩, hq⟩
+    obtain ⟨a, rfl⟩ := Quotient.exists_rep q
+    let f := a.2.morphism
+    let s : Set (prod (exp F E) F).Carrier :=
+      { p | p.fst ∈ chartRangeOfLocalMorphism f }
+    have hcontS :
+        ContinuousOn
+          (fun p : (prod (exp F E) F).Carrier =>
+            evalAtGerm p.fst p.snd (by simpa [exp] using p.property.symm))
+          s := by
+      simpa [s, f] using continuousOn_evalToFun_chart (F := F) (E := E) f
+    have hsOpen : IsOpen s := by
+      simpa [s] using
+        (isOpen_chartRangeOfLocalMorphism f).preimage (prodFst (exp F E) F).continuous
+    have hsMem : ⟨((@Quotient.mk (ExpRaw F E) (ExpRaw.setoid F E) a), y), hq⟩ ∈ s := by
+      change (@Quotient.mk (ExpRaw F E) (ExpRaw.setoid F E) a) ∈ chartRangeOfLocalMorphism f
+      exact ⟨⟨a.1, a.2.mem_nbhd⟩, rfl⟩
+    exact (hcontS _ hsMem).continuousAt (hsOpen.mem_nhds hsMem)
+
+theorem evalAtGerm_proj {F E : EtaleSpace X} (q : ExpCarrier F E) (y : F.Carrier)
+    (h : F.proj y = expProj F E q) :
+    E.proj (evalAtGerm q y h) = F.proj y := by
+  revert h
+  refine Quotient.inductionOn q ?_
+  intro a h
+  change E.proj (a.2.morphism.toFun ⟨y, by simpa [h] using a.2.mem_nbhd⟩) = F.proj y
+  exact a.2.morphism.fiberwise ⟨y, by simpa [h] using a.2.mem_nbhd⟩
 
 theorem evalMorphism_proj (F E : EtaleSpace X) (p : (prod (exp F E) F).Carrier) :
-    E.proj (evalMorphism F E p) = (prod (exp F E) F).proj p :=
-  sorry
+    E.proj (evalMorphism F E p) = (prod (exp F E) F).proj p := by
+  change E.proj (evalAtGerm p.fst p.snd (by simpa [exp] using p.property.symm)) = expProj F E p.fst
+  exact (evalAtGerm_proj p.fst p.snd (by simpa [exp] using p.property.symm)).trans <|
+    by simpa [exp] using p.property.symm
+
+noncomputable def localMorphismAlongSection {F E G : EtaleSpace X}
+    (f : C((prod G F).Carrier, E.Carrier))
+    (hf : E.proj ∘ f = (prod G F).proj)
+    (s : G.LocalSection) : LocalMorphism F E ⟨s.domain, s.isOpen_domain⟩ where
+  toFun := fun e =>
+    let gx : G.Carrier := s.toContinuousMap ⟨F.proj e.val, e.property⟩
+    let hbase : G.proj gx = F.proj e.val := by
+      simpa [gx, Function.comp_apply] using
+        congrFun (LocalSection.proj_comp s) ⟨F.proj e.val, e.property⟩
+    f ⟨(gx, e.val), hbase⟩
+  continuous_toFun := by
+    have hbase :
+        Continuous fun e : { e : F.Carrier //
+            F.proj e ∈ (⟨s.domain, s.isOpen_domain⟩ : Opens X) } =>
+          (⟨F.proj e.val, e.property⟩ : s.domain) := by
+      refine Continuous.subtype_mk ?_ _
+      exact F.continuous_proj.comp continuous_subtype_val
+    refine f.continuous.comp ?_
+    refine Continuous.subtype_mk ?_ _
+    exact ((s.toContinuousMap.continuous.comp hbase).prodMk continuous_subtype_val)
+  fiberwise := by
+    intro e
+    let gx : G.Carrier := s.toContinuousMap ⟨F.proj e.val, e.property⟩
+    let hbase : G.proj gx = F.proj e.val := by
+      simpa [gx, Function.comp_apply] using
+        congrFun (LocalSection.proj_comp s) ⟨F.proj e.val, e.property⟩
+    let q : (prod G F).Carrier := ⟨(gx, e.val), hbase⟩
+    exact (congrFun hf q).trans hbase
+
+theorem sameGerm_localMorphismAlongSection_of_mem_range {F E G : EtaleSpace X}
+    (f : C((prod G F).Carrier, E.Carrier))
+    (hf : E.proj ∘ f = (prod G F).proj)
+    {s t : G.LocalSection} {x : G.Carrier}
+    (hsx : x ∈ s.range) (htx : x ∈ t.range) :
+    ExpRaw.SameGerm
+      ⟨G.proj x,
+        { nbhd := ⟨t.domain, t.isOpen_domain⟩
+          mem_nbhd := LocalSection.proj_mem_domain_of_mem_range t htx
+          morphism := localMorphismAlongSection f hf t }⟩
+      ⟨G.proj x,
+        { nbhd := ⟨s.domain, s.isOpen_domain⟩
+          mem_nbhd := LocalSection.proj_mem_domain_of_mem_range s hsx
+          morphism := localMorphismAlongSection f hf s }⟩ := by
+  let Ut : Opens X := ⟨t.domain, t.isOpen_domain⟩
+  let overlapSub : Set Ut := { u | t.toContinuousMap u ∈ s.range }
+  have hoverlapSub : IsOpen overlapSub :=
+    (LocalSection.isOpen_range s).preimage t.toContinuousMap.continuous
+  let W : Opens X := ambientOpenOfSubtype (U := Ut) overlapSub hoverlapSub
+  have hxW : G.proj x ∈ W := by
+    refine ⟨⟨G.proj x, LocalSection.proj_mem_domain_of_mem_range t htx⟩, ?_, rfl⟩
+    have htrec :
+        t.toContinuousMap ⟨G.proj x, LocalSection.proj_mem_domain_of_mem_range t htx⟩ = x :=
+      LocalSection.toContinuousMap_proj_of_mem_range t htx
+    simpa [overlapSub, htrec] using hsx
+  have hWt : W ≤ ⟨t.domain, t.isOpen_domain⟩ := by
+    simpa [Ut] using (ambientOpenOfSubtype_le (U := Ut) hoverlapSub)
+  have hWs : W ≤ ⟨s.domain, s.isOpen_domain⟩ := by
+    intro u hu
+    rcases hu with ⟨v, hv, rfl⟩
+    have hproj : G.proj (t.toContinuousMap v) = v.1 := congrFun (LocalSection.proj_comp t) v
+    exact hproj ▸ LocalSection.proj_mem_domain_of_mem_range s hv
+  refine ⟨rfl, W, hxW, hWt, hWs, ?_⟩
+  ext e
+  have htMemS : t.toContinuousMap ⟨F.proj e.val, hWt e.property⟩ ∈ s.range := by
+    rcases e.property with ⟨v, hv, hvEq⟩
+    have hv' : v = ⟨F.proj e.val, hWt e.property⟩ := by
+      apply Subtype.ext
+      exact hvEq
+    simpa [hv'] using hv
+  have hst :
+      s.toContinuousMap ⟨F.proj e.val, hWs e.property⟩ =
+        t.toContinuousMap ⟨F.proj e.val, hWt e.property⟩ := by
+    have hsRecover := LocalSection.toContinuousMap_proj_of_mem_range s htMemS
+    have hproj :
+        G.proj (t.toContinuousMap ⟨F.proj e.val, hWt e.property⟩) = F.proj e.val := by
+      exact congrFun (LocalSection.proj_comp t) ⟨F.proj e.val, hWt e.property⟩
+    simpa [hproj] using hsRecover
+  change
+    f ⟨(t.toContinuousMap ⟨F.proj e.val, hWt e.property⟩, e.val), by
+      simpa [Function.comp_apply] using
+        congrFun (LocalSection.proj_comp t) ⟨F.proj e.val, hWt e.property⟩⟩ =
+      f ⟨(s.toContinuousMap ⟨F.proj e.val, hWs e.property⟩, e.val), by
+        simpa [Function.comp_apply] using
+          congrFun (LocalSection.proj_comp s) ⟨F.proj e.val, hWs e.property⟩⟩
+  have hpair :
+      (⟨(t.toContinuousMap ⟨F.proj e.val, hWt e.property⟩, e.val), by
+          simpa [Function.comp_apply] using
+            congrFun (LocalSection.proj_comp t) ⟨F.proj e.val, hWt e.property⟩⟩ :
+          (prod G F).Carrier) =
+        ⟨(s.toContinuousMap ⟨F.proj e.val, hWs e.property⟩, e.val), by
+          simpa [Function.comp_apply] using
+            congrFun (LocalSection.proj_comp s) ⟨F.proj e.val, hWs e.property⟩⟩ := by
+    apply Subtype.ext
+    exact Prod.ext hst.symm rfl
+  simpa using congrArg f hpair
 
 /--
 Currying: a morphism G × F → E over X corresponds to a morphism G → E^F over X.
@@ -143,14 +709,75 @@ noncomputable def curry {F E G : EtaleSpace X}
     (f : C((prod G F).Carrier, E.Carrier))
     (hf : E.proj ∘ f = (prod G F).proj) :
     C(G.Carrier, (exp F E).Carrier) where
-  toFun := sorry
-  continuous_toFun := sorry
+  toFun := fun x =>
+    let s : G.LocalSection := EtaleSpace.localSectionThrough G x
+    let hs : x ∈ LocalSection.range s := EtaleSpace.mem_range_localSectionThrough G x
+    let hx : G.proj x ∈ LocalSection.domain s :=
+      LocalSection.proj_mem_domain_of_mem_range s hs
+    @Quotient.mk (ExpRaw F E) (ExpRaw.setoid F E)
+      ⟨G.proj x,
+        { nbhd := ⟨LocalSection.domain s, LocalSection.isOpen_domain s⟩
+          mem_nbhd := hx
+          morphism := localMorphismAlongSection f hf s }⟩
+  continuous_toFun := by
+    classical
+    let curried : G.Carrier → ExpCarrier F E := fun x =>
+      let s : G.LocalSection := EtaleSpace.localSectionThrough G x
+      let hs : x ∈ LocalSection.range s := EtaleSpace.mem_range_localSectionThrough G x
+      let hx : G.proj x ∈ LocalSection.domain s :=
+        LocalSection.proj_mem_domain_of_mem_range s hs
+      @Quotient.mk (ExpRaw F E) (ExpRaw.setoid F E)
+        ⟨G.proj x,
+          { nbhd := ⟨LocalSection.domain s, LocalSection.isOpen_domain s⟩
+            mem_nbhd := hx
+            morphism := localMorphismAlongSection f hf s }⟩
+    change Continuous curried
+    rw [continuous_iff_continuousAt]
+    intro x
+    let s : G.LocalSection := EtaleSpace.localSectionThrough G x
+    have hsx : x ∈ s.range := EtaleSpace.mem_range_localSectionThrough G x
+    let baseMap : s.range → (⟨s.domain, s.isOpen_domain⟩ : Opens X) := fun z =>
+      ⟨G.proj z.1, LocalSection.proj_mem_domain_of_mem_range s z.2⟩
+    have hbaseMap : Continuous baseMap := by
+      refine Continuous.subtype_mk ?_ _
+      exact G.continuous_proj.comp continuous_subtype_val
+    let g : C(s.range, ExpCarrier F E) :=
+      ⟨fun z =>
+        sectionMapOfLocalMorphism (localMorphismAlongSection f hf s) (baseMap z),
+        (continuous_sectionMapOfLocalMorphism (localMorphismAlongSection f hf s)).comp hbaseMap⟩
+    have hEqOnRange :
+        ∀ z : s.range,
+          curried z.1 =
+            sectionMapOfLocalMorphism (localMorphismAlongSection f hf s) (baseMap z) := by
+      intro z
+      let t : G.LocalSection := EtaleSpace.localSectionThrough G z.1
+      have htz : z.1 ∈ t.range := EtaleSpace.mem_range_localSectionThrough G z.1
+      have hcur :
+          curried z.1 =
+            sectionMapOfLocalMorphism (localMorphismAlongSection f hf t)
+              ⟨G.proj z.1, LocalSection.proj_mem_domain_of_mem_range t htz⟩ := by
+        simp [curried, t, sectionMapOfLocalMorphism]
+      refine hcur.trans ?_
+      exact
+        (sectionMapOfLocalMorphism_eq_iff_sameGerm
+          (localMorphismAlongSection f hf t)
+          (localMorphismAlongSection f hf s)
+          ⟨G.proj z.1, LocalSection.proj_mem_domain_of_mem_range t htz⟩
+          (baseMap z)).2
+          (sameGerm_localMorphismAlongSection_of_mem_range f hf z.2 htz)
+    have hcontRange : ContinuousOn curried s.range := by
+      rw [continuousOn_iff_continuous_restrict]
+      refine g.continuous.congr ?_
+      intro z
+      exact (hEqOnRange z).symm
+    exact (hcontRange x hsx).continuousAt ((LocalSection.isOpen_range s).mem_nhds hsx)
 
 theorem curry_proj {F E G : EtaleSpace X}
     (f : C((prod G F).Carrier, E.Carrier))
     (hf : E.proj ∘ f = (prod G F).proj) :
-    (exp F E).proj ∘ curry f hf = G.proj :=
-  sorry
+    (exp F E).proj ∘ curry f hf = G.proj := by
+  funext x
+  simp [curry, exp, expProj]
 
 /--
 Uncurrying: a morphism G → E^F over X corresponds to a morphism G × F → E over X.
@@ -159,14 +786,29 @@ noncomputable def uncurry {F E G : EtaleSpace X}
     (g : C(G.Carrier, (exp F E).Carrier))
     (hg : (exp F E).proj ∘ g = G.proj) :
     C((prod G F).Carrier, E.Carrier) where
-  toFun := sorry
-  continuous_toFun := sorry
+  toFun := fun p =>
+    evalMorphism F E
+      ⟨(g p.fst, p.snd), (congrFun hg p.fst).trans p.property⟩
+  continuous_toFun := by
+    refine (evalMorphism F E).continuous.comp ?_
+    exact
+      ((g.continuous.comp (prodFst G F).continuous).prodMk (prodSnd G F).continuous).subtype_mk
+        fun p => by
+          simpa [Function.comp_apply] using (congrFun hg p.fst).trans p.property
 
 theorem uncurry_proj {F E G : EtaleSpace X}
     (g : C(G.Carrier, (exp F E).Carrier))
     (hg : (exp F E).proj ∘ g = G.proj) :
-    E.proj ∘ uncurry g hg = (prod G F).proj :=
-  sorry
+    E.proj ∘ uncurry g hg = (prod G F).proj := by
+  funext p
+  let q : (prod (exp F E) F).Carrier :=
+    ⟨(g p.fst, p.snd), (congrFun hg p.fst).trans p.property⟩
+  have hEval :
+      E.proj (uncurry g hg p) = (prod (exp F E) F).proj q := by
+    simpa [uncurry, q, Function.comp_apply] using evalMorphism_proj F E q
+  have hBase : (prod (exp F E) F).proj q = (prod G F).proj p := by
+    simpa [q, prod, Function.comp_apply] using congrFun hg p.fst
+  exact hEval.trans hBase
 
 /-- Curry and uncurry are inverse operations. -/
 theorem curry_uncurry {F E G : EtaleSpace X}
@@ -174,14 +816,170 @@ theorem curry_uncurry {F E G : EtaleSpace X}
     (hg : (exp F E).proj ∘ g = G.proj)
     (x : G.Carrier) :
     curry (uncurry g hg) (uncurry_proj g hg) x = g x :=
-  sorry
+  by
+    obtain ⟨a, ha⟩ := Quotient.exists_rep (g x)
+    let s : G.LocalSection := EtaleSpace.localSectionThrough G x
+    let Us : Opens X := ⟨s.domain, s.isOpen_domain⟩
+    have hs : x ∈ s.range := EtaleSpace.mem_range_localSectionThrough G x
+    have hx : G.proj x ∈ s.domain :=
+      LocalSection.proj_mem_domain_of_mem_range s hs
+    have hbase' : a.1 = G.proj x := by
+      have hproj : expProj F E (g x) = G.proj x := by
+        simpa [exp, expProj, Function.comp_apply] using congrFun hg x
+      have haProj : a.1 = expProj F E (g x) := by
+        simpa [expProj] using congrArg (expProj F E) ha
+      exact haProj.trans hproj
+    have hbase : G.proj x = a.1 := hbase'.symm
+    have hcurry :
+        curry (uncurry g hg) (uncurry_proj g hg) x =
+          sectionMapOfLocalMorphism
+            (localMorphismAlongSection (uncurry g hg) (uncurry_proj g hg) s)
+            ⟨G.proj x, hx⟩ := by
+      simp [curry, s, sectionMapOfLocalMorphism]
+    have hxChart : g x ∈ chartRangeOfLocalMorphism a.2.morphism := by
+      refine ⟨⟨a.1, a.2.mem_nbhd⟩, ?_⟩
+      simp [ha, sectionMapOfLocalMorphism]
+    let overlapSub : Set Us := { u | g (s.toContinuousMap u) ∈ chartRangeOfLocalMorphism a.2.morphism }
+    have hoverlapSub : IsOpen overlapSub := by
+      change IsOpen ((fun u : Us => g (s.toContinuousMap u)) ⁻¹' chartRangeOfLocalMorphism a.2.morphism)
+      exact (isOpen_chartRangeOfLocalMorphism a.2.morphism).preimage
+        (g.continuous.comp s.toContinuousMap.continuous)
+    let W : Opens X := ambientOpenOfSubtype (U := Us) overlapSub hoverlapSub
+    have hxW : G.proj x ∈ W := by
+      refine ⟨⟨G.proj x, hx⟩, ?_, rfl⟩
+      have hsval : s.toContinuousMap ⟨G.proj x, hx⟩ = x :=
+        LocalSection.toContinuousMap_proj_of_mem_range s hs
+      simpa [overlapSub, hsval] using hxChart
+    have hWs : W ≤ Us := ambientOpenOfSubtype_le (U := Us) hoverlapSub
+    have hWa : W ≤ a.2.nbhd := by
+      intro u hu
+      rcases hu with ⟨v, hv, rfl⟩
+      have hproj :
+          expProj F E (g (s.toContinuousMap v)) = v.1 := by
+        calc
+          expProj F E (g (s.toContinuousMap v)) = G.proj (s.toContinuousMap v) := by
+            simpa [Function.comp_apply] using congrFun hg (s.toContinuousMap v)
+          _ = v.1 := congrFun (LocalSection.proj_comp s) v
+      exact hproj ▸ expProj_mem_of_mem_chartRange a.2.morphism hv
+    have hsame :
+        ExpRaw.SameGerm
+          ⟨G.proj x,
+            { nbhd := Us
+              mem_nbhd := hx
+              morphism := localMorphismAlongSection (uncurry g hg) (uncurry_proj g hg) s }⟩
+          ⟨a.1,
+            { nbhd := a.2.nbhd
+              mem_nbhd := a.2.mem_nbhd
+              morphism := a.2.morphism }⟩ := by
+      refine ⟨hbase, W, hxW, hWs, hWa, ?_⟩
+      ext e
+      rcases e.property with ⟨u, hu, huEq⟩
+      have huSub : (⟨F.proj e.val, hWs e.property⟩ : Us) = u := by
+        apply Subtype.ext
+        exact huEq.symm
+      let gx : G.Carrier := s.toContinuousMap u
+      have hqBase : expProj F E (g gx) = F.proj e.val := by
+        calc
+          expProj F E (g gx) = G.proj gx := by
+            simpa [gx, Function.comp_apply] using congrFun hg gx
+          _ = u.1 := by
+            simpa [gx] using congrFun (LocalSection.proj_comp s) u
+          _ = F.proj e.val := huEq
+      let q : (prod (exp F E) F).Carrier :=
+        ⟨(g gx, e.val), by simpa [exp] using hqBase⟩
+      have hleft :
+          (localMorphismAlongSection (uncurry g hg) (uncurry_proj g hg) s).toFun
+              ⟨e.val, hWs e.property⟩ =
+            evalMorphism F E q := by
+        change
+          evalMorphism F E
+              ⟨(g (s.toContinuousMap ⟨F.proj e.val, hWs e.property⟩), e.val), by
+                simpa [Function.comp_apply] using
+                  (congrFun hg (s.toContinuousMap ⟨F.proj e.val, hWs e.property⟩)).trans
+                    (congrFun (LocalSection.proj_comp s) ⟨F.proj e.val, hWs e.property⟩)⟩ =
+            evalMorphism F E q
+        have hqeq :
+            (⟨(g (s.toContinuousMap ⟨F.proj e.val, hWs e.property⟩), e.val), by
+                simpa [Function.comp_apply] using
+                  (congrFun hg (s.toContinuousMap ⟨F.proj e.val, hWs e.property⟩)).trans
+                    (congrFun (LocalSection.proj_comp s) ⟨F.proj e.val, hWs e.property⟩)⟩ :
+                (prod (exp F E) F).Carrier) = q := by
+          apply Subtype.ext
+          apply Prod.ext
+          · congr 1
+            simp [q, gx, huSub]
+          · rfl
+        simpa using congrArg (evalMorphism F E) hqeq
+      have heval :
+          evalMorphism F E q = a.2.morphism.toFun ⟨e.val, hWa e.property⟩ := by
+        simpa [evalMorphism, q, Function.comp_apply] using
+          (evalToFun_eq_localMorphism_on_chart (F := F) (E := E) a.2.morphism q hu)
+      simpa using hleft.trans heval
+    have hEq :
+        sectionMapOfLocalMorphism
+            (localMorphismAlongSection (uncurry g hg) (uncurry_proj g hg) s)
+            ⟨G.proj x, hx⟩ =
+          sectionMapOfLocalMorphism a.2.morphism ⟨a.1, a.2.mem_nbhd⟩ := by
+      exact
+        (sectionMapOfLocalMorphism_eq_iff_sameGerm
+          (localMorphismAlongSection (uncurry g hg) (uncurry_proj g hg) s)
+          a.2.morphism
+          ⟨G.proj x, hx⟩
+          ⟨a.1, a.2.mem_nbhd⟩).2 hsame
+    exact hcurry.trans <| by simpa [ha, sectionMapOfLocalMorphism] using hEq
 
 theorem uncurry_curry {F E G : EtaleSpace X}
     (f : C((prod G F).Carrier, E.Carrier))
     (hf : E.proj ∘ f = (prod G F).proj)
     (p : (prod G F).Carrier) :
     uncurry (curry f hf) (curry_proj f hf) p = f p :=
-  sorry
+  by
+    let s : G.LocalSection := EtaleSpace.localSectionThrough G p.fst
+    have hs : p.fst ∈ s.range := EtaleSpace.mem_range_localSectionThrough G p.fst
+    have hx : G.proj p.fst ∈ s.domain :=
+      LocalSection.proj_mem_domain_of_mem_range s hs
+    have hcurry :
+        curry f hf p.fst =
+          sectionMapOfLocalMorphism (localMorphismAlongSection f hf s) ⟨G.proj p.fst, hx⟩ := by
+      simp [curry, s, sectionMapOfLocalMorphism]
+    have hbaseF : F.proj p.snd ∈ s.domain := by
+      exact p.property ▸ hx
+    have hsArg :
+        (⟨F.proj p.snd, hbaseF⟩ : s.domain) = ⟨G.proj p.fst, hx⟩ := by
+      apply Subtype.ext
+      exact p.property.symm
+    have hsval :
+        s.toContinuousMap ⟨F.proj p.snd, hbaseF⟩ = p.fst := by
+      simpa [hsArg] using LocalSection.toContinuousMap_proj_of_mem_range s hs
+    have heval :
+        evalAtGerm
+            (sectionMapOfLocalMorphism (localMorphismAlongSection f hf s) ⟨G.proj p.fst, hx⟩)
+            p.snd (by simpa using p.property.symm) = f p := by
+      calc
+        evalAtGerm
+            (sectionMapOfLocalMorphism (localMorphismAlongSection f hf s) ⟨G.proj p.fst, hx⟩)
+            p.snd (by simpa using p.property.symm)
+            =
+              (localMorphismAlongSection f hf s).toFun ⟨p.snd, hbaseF⟩ := by
+                simpa [hsArg] using
+                  (evalAtGerm_sectionMapOfLocalMorphism
+                    (localMorphismAlongSection f hf s)
+                    ⟨G.proj p.fst, hx⟩ p.snd (by simpa using p.property.symm))
+        _ =
+            f ⟨(s.toContinuousMap ⟨F.proj p.snd, hbaseF⟩, p.snd), by
+              simpa [Function.comp_apply] using
+                congrFun (LocalSection.proj_comp s) ⟨F.proj p.snd, hbaseF⟩⟩ := by
+              rfl
+        _ = f p := by
+              have hpair :
+                  (⟨(s.toContinuousMap ⟨F.proj p.snd, hbaseF⟩, p.snd), by
+                      simpa [Function.comp_apply] using
+                        congrFun (LocalSection.proj_comp s) ⟨F.proj p.snd, hbaseF⟩⟩ :
+                    (prod G F).Carrier) = p := by
+                apply Subtype.ext
+                exact Prod.ext hsval rfl
+              simpa using congrArg f hpair
+    simpa [uncurry, evalMorphism, hcurry, Function.comp_apply] using heval
 
 /--
 A section of the exponential over an open U is equivalent to a local morphism
@@ -189,27 +987,133 @@ F|_U → E|_U of restricted étale spaces.
 -/
 noncomputable def expSectionOfLocalMorphism (E F : EtaleSpace X) (U : Opens X)
     (f : LocalMorphism F E U) : (exp F E).SectionOn U where
-  toContinuousMap := sorry
-  proj_comp := sorry
+  toContinuousMap :=
+    { toFun := sectionMapOfLocalMorphism f
+      continuous_toFun := continuous_sectionMapOfLocalMorphism f }
+  proj_comp := by
+    funext x
+    exact expProj_sectionMapOfLocalMorphism f x
 
 /--
 A section of the exponential gives a local morphism.
 -/
 noncomputable def localMorphismOfExpSection (E F : EtaleSpace X) (U : Opens X)
     (s : (exp F E).SectionOn U) : LocalMorphism F E U where
-  toFun := sorry
-  continuous_toFun := sorry
-  fiberwise := sorry
+  toFun := fun e =>
+    evalMorphism F E
+      ⟨(s.toContinuousMap ⟨F.proj e.val, e.property⟩, e.val), by
+        simpa [Function.comp_apply] using congrFun s.proj_comp ⟨F.proj e.val, e.property⟩⟩
+  continuous_toFun := by
+    have hbase :
+        Continuous fun e : { e : F.Carrier // F.proj e ∈ U } =>
+          (⟨F.proj e.val, e.property⟩ : U) := by
+      refine Continuous.subtype_mk ?_ _
+      exact F.continuous_proj.comp continuous_subtype_val
+    refine (evalMorphism F E).continuous.comp ?_
+    exact
+      ((s.toContinuousMap.continuous.comp hbase).prodMk continuous_subtype_val).subtype_mk
+        fun e => by
+          simpa [Function.comp_apply] using congrFun s.proj_comp ⟨F.proj e.val, e.property⟩
+  fiberwise := by
+    intro e
+    let q : (prod (exp F E) F).Carrier :=
+      ⟨(s.toContinuousMap ⟨F.proj e.val, e.property⟩, e.val), by
+        simpa [Function.comp_apply] using congrFun s.proj_comp ⟨F.proj e.val, e.property⟩⟩
+    simpa [q, Function.comp_apply] using evalMorphism_proj F E q
 
 theorem expSectionOfLocalMorphism_localMorphismOfExpSection
     (E F : EtaleSpace X) (U : Opens X) (s : (exp F E).SectionOn U) :
     expSectionOfLocalMorphism E F U (localMorphismOfExpSection E F U s) = s :=
-  sorry
+  by
+    ext x
+    change sectionMapOfLocalMorphism (localMorphismOfExpSection E F U s) x = s.toContinuousMap x
+    obtain ⟨a, ha⟩ := Quotient.exists_rep (s.toContinuousMap x)
+    have hbase' : a.1 = x.1 := by
+      have hproj : expProj F E (s.toContinuousMap x) = x.1 := by
+        simpa [exp, expProj, Function.comp_apply] using congrFun s.proj_comp x
+      have haProj : a.1 = expProj F E (s.toContinuousMap x) := by
+        simpa [expProj] using congrArg (expProj F E) ha
+      exact haProj.trans hproj
+    have hbase : x.1 = a.1 := hbase'.symm
+    have hxChart : s.toContinuousMap x ∈ chartRangeOfLocalMorphism a.2.morphism := by
+      refine ⟨⟨a.1, a.2.mem_nbhd⟩, ?_⟩
+      simp [ha, sectionMapOfLocalMorphism]
+    let overlapSub : Set U := { u | s.toContinuousMap u ∈ chartRangeOfLocalMorphism a.2.morphism }
+    have hoverlapSub : IsOpen overlapSub := by
+      change IsOpen ((fun u : U => s.toContinuousMap u) ⁻¹' chartRangeOfLocalMorphism a.2.morphism)
+      exact (isOpen_chartRangeOfLocalMorphism a.2.morphism).preimage s.toContinuousMap.continuous
+    let W : Opens X := ambientOpenOfSubtype (U := U) overlapSub hoverlapSub
+    have hxW : x.1 ∈ W := by
+      exact ⟨x, by simpa [overlapSub] using hxChart, rfl⟩
+    have hWU : W ≤ U := ambientOpenOfSubtype_le (U := U) hoverlapSub
+    have hWa : W ≤ a.2.nbhd := by
+      intro u hu
+      rcases hu with ⟨v, hv, rfl⟩
+      have hproj :
+          expProj F E (s.toContinuousMap v) = v.1 := by
+        exact congrFun s.proj_comp v
+      exact hproj ▸ expProj_mem_of_mem_chartRange a.2.morphism hv
+    have hsame :
+        ExpRaw.SameGerm
+          ⟨x.1,
+            { nbhd := U
+              mem_nbhd := x.2
+              morphism := localMorphismOfExpSection E F U s }⟩
+          ⟨a.1,
+            { nbhd := a.2.nbhd
+              mem_nbhd := a.2.mem_nbhd
+              morphism := a.2.morphism }⟩ := by
+      refine ⟨hbase, W, hxW, hWU, hWa, ?_⟩
+      ext e
+      rcases e.property with ⟨u, hu, huEq⟩
+      have huSub : (⟨F.proj e.val, hWU e.property⟩ : U) = u := by
+        apply Subtype.ext
+        exact huEq.symm
+      let q : (prod (exp F E) F).Carrier :=
+        ⟨(s.toContinuousMap u, e.val), by
+          have hproj : expProj F E (s.toContinuousMap u) = F.proj e.val := by
+            calc
+              expProj F E (s.toContinuousMap u) = u.1 := congrFun s.proj_comp u
+              _ = F.proj e.val := huEq
+          simpa [exp] using hproj⟩
+      have hleft :
+          (localMorphismOfExpSection E F U s).toFun ⟨e.val, hWU e.property⟩ = evalMorphism F E q := by
+        change
+          evalMorphism F E
+              ⟨(s.toContinuousMap ⟨F.proj e.val, hWU e.property⟩, e.val), by
+                simpa [Function.comp_apply] using congrFun s.proj_comp ⟨F.proj e.val, hWU e.property⟩⟩ =
+            evalMorphism F E q
+        have hqeq :
+            (⟨(s.toContinuousMap ⟨F.proj e.val, hWU e.property⟩, e.val), by
+                simpa [Function.comp_apply] using congrFun s.proj_comp ⟨F.proj e.val, hWU e.property⟩⟩ :
+                (prod (exp F E) F).Carrier) = q := by
+          apply Subtype.ext
+          apply Prod.ext
+          · simp [q, huSub]
+          · rfl
+        simpa using congrArg (evalMorphism F E) hqeq
+      have heval :
+          evalMorphism F E q = a.2.morphism.toFun ⟨e.val, hWa e.property⟩ := by
+        simpa [evalMorphism, q, Function.comp_apply] using
+          (evalToFun_eq_localMorphism_on_chart (F := F) (E := E) a.2.morphism q hu)
+      simpa using hleft.trans heval
+    have hEq :
+        sectionMapOfLocalMorphism (localMorphismOfExpSection E F U s) x =
+          sectionMapOfLocalMorphism a.2.morphism ⟨a.1, a.2.mem_nbhd⟩ := by
+      exact
+        (sectionMapOfLocalMorphism_eq_iff_sameGerm
+          (localMorphismOfExpSection E F U s)
+          a.2.morphism x ⟨a.1, a.2.mem_nbhd⟩).2 hsame
+    simpa [ha, sectionMapOfLocalMorphism] using hEq
 
 theorem localMorphismOfExpSection_expSectionOfLocalMorphism
     (E F : EtaleSpace X) (U : Opens X) (f : LocalMorphism F E U) :
     localMorphismOfExpSection E F U (expSectionOfLocalMorphism E F U f) = f :=
-  sorry
+  by
+    ext e
+    have hEval :=
+      evalAtGerm_sectionMapOfLocalMorphism f ⟨F.proj e.val, e.property⟩ e.val rfl
+    simpa [localMorphismOfExpSection, expSectionOfLocalMorphism, evalMorphism, Function.comp_apply] using hEval
 
 end EtaleSpace
 

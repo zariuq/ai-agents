@@ -201,8 +201,10 @@ section FiniteDiscreteMixtures
 
 variable {n : ℕ}
 
-local instance : MeasurableSpace (Fin n) := ⊤
-local instance : MeasurableSingletonClass (Fin n) := ⟨fun _ => by simp⟩
+local instance instHigherOrderFiniteDiscreteMixtureIndexMeasurableSpace :
+    MeasurableSpace (Fin n) := ⊤
+local instance instHigherOrderFiniteDiscreteMixtureIndexMeasurableSingletonClass :
+    MeasurableSingletonClass (Fin n) := ⟨fun _ => by simp⟩
 
 /-- Prefix-measure surface carried by a genuine higher-order parameter, defined
 by its raw sequence law on cylinders. -/

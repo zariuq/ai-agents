@@ -6,16 +6,16 @@
       "head": "match",
       "arity": 3,
       "argRoles": ["space-ref", "pattern", "template"],
-      "specConstructors": ["MinimalStep.match", "MinimalStep.match_empty"],
-      "semanticAuthority": ["Space.queryEquations", "Matching.matchAtoms", "Matching.mergeBindings", "Bindings.apply"],
+      "specConstructors": ["MC_Match", "MC_Match_Empty"],
+      "semanticAuthority": ["parseMatchCallArgs", "spacePatternQuery", "Bindings.apply"],
       "determinism": "nondeterministic",
       "bindingsFlow": "mergeFromMatch",
-      "resultCases": ["match succeeds: template with pattern variables substituted, one result per match", "no match: Empty atom"],
+      "resultCases": ["match succeeds: template with pattern variables substituted, one result per match", "no match: internal Empty sentinel, surfaced as no user-visible results"],
       "errorCases": [],
       "mutatesSpace": false,
       "fixtures": [
       { "label": "match: simple equation lookup", "positive": true, "instructionAtom": "(match &self (= a $x) $x)", "expectedResults": ["b"] },
-      { "label": "match: no equation → Empty", "positive": true, "instructionAtom": "(match &self (= z $x) $x)", "expectedResults": ["Empty"] },
+      { "label": "match: no equation → no results", "positive": true, "instructionAtom": "(match &self (= z $x) $x)", "expectedResults": [] },
       { "label": "match: multiple results (nondeterministic)", "positive": true, "instructionAtom": "(match &self (= color $x) $x)", "expectedResults": ["red", "green"] }
       ]
     },
@@ -44,13 +44,13 @@
       "semanticAuthority": ["selectSwitchTemplate", "Matching.matchAtoms", "Matching.mergeBindings", "Bindings.hasLoop", "Bindings.apply"],
       "determinism": "nondeterministic",
       "bindingsFlow": "mergeFromMatch",
-      "resultCases": ["first matching branch: template with pattern variables substituted (may yield multiple results if match is nondeterministic)", "no matching branch: Empty"],
+      "resultCases": ["first matching branch: template with pattern variables substituted (may yield multiple results if match is nondeterministic)", "no matching branch: internal Empty sentinel, surfaced as no user-visible results"],
       "errorCases": [],
       "mutatesSpace": false,
       "fixtures": [
       { "label": "switch: first match wins", "positive": true, "instructionAtom": "(switch a ((a ok) (b bad)))", "expectedResults": ["ok"] },
       { "label": "switch: variable pattern binds into template", "positive": true, "instructionAtom": "(switch z (($x (tag $x))))", "expectedResults": ["(tag z)"] },
-      { "label": "switch: no match → Empty", "positive": false, "instructionAtom": "(switch z ((a ok) (b bad)))", "expectedResults": ["Empty"] },
+      { "label": "switch: no match → no results", "positive": false, "instructionAtom": "(switch z ((a ok) (b bad)))", "expectedResults": [] },
       { "label": "switch-minimal: identical to switch", "positive": true, "instructionAtom": "(switch-minimal a ((a ok)))", "expectedResults": ["ok"] }
       ]
     },
@@ -62,12 +62,12 @@
       "semanticAuthority": ["metta", "switchContract"],
       "determinism": "nondeterministic",
       "bindingsFlow": "mergeFromMatch",
-      "resultCases": ["scrutinee evaluates, then matching branch selected (via switch semantics)", "no matching branch: Empty"],
+      "resultCases": ["scrutinee evaluates, then matching branch selected (via switch semantics)", "no matching branch: internal Empty sentinel, surfaced as no user-visible results"],
       "errorCases": [],
       "mutatesSpace": false,
       "fixtures": [
       { "label": "case: evaluates scrutinee then matches", "positive": true, "instructionAtom": "(case a ((a ok) (b bad)))", "expectedResults": ["ok"] },
-      { "label": "case: no match → Empty", "positive": false, "instructionAtom": "(case z ((a ok) (b bad)))", "expectedResults": ["Empty"] }
+      { "label": "case: no match → no results", "positive": false, "instructionAtom": "(case z ((a ok) (b bad)))", "expectedResults": [] }
       ]
     },
     {
@@ -78,12 +78,12 @@
       "semanticAuthority": ["EvalAtom", "Bindings.assign", "Bindings.apply"],
       "determinism": "deterministic",
       "bindingsFlow": "assignVariable",
-      "resultCases": ["eval succeeds (non-Empty): template with $var substituted, output bindings include $var assignment", "eval yields Empty: return Empty, output bindings from eval (no $var assignment)"],
+      "resultCases": ["eval succeeds (non-Empty): template with $var substituted, output bindings include $var assignment", "eval yields Empty: internal Empty sentinel, surfaced as no user-visible results"],
       "errorCases": [],
       "mutatesSpace": false,
       "fixtures": [
       { "label": "chain: eval result substituted into template", "positive": true, "instructionAtom": "(chain x $v (tag $v))", "expectedResults": ["(tag x)"] },
-      { "label": "chain: eval yields Empty → return Empty", "positive": true, "instructionAtom": "(chain Empty $v (tag $v))", "expectedResults": ["Empty"] }
+      { "label": "chain: eval yields Empty → no results", "positive": true, "instructionAtom": "(chain Empty $v (tag $v))", "expectedResults": [] }
       ]
     },
     {
@@ -99,7 +99,8 @@
       "mutatesSpace": false,
       "fixtures": [
       { "label": "collapse-bind: single result with bindings encoded", "positive": true, "instructionAtom": "(collapse-bind x)", "expectedResults": ["((x (Bindings () ())))"] },
-      { "label": "collapse-bind: empty eval → empty expression", "positive": false, "instructionAtom": "(collapse-bind (match &self (= z $w) $w))", "expectedResults": ["()"] }
+      { "label": "collapse-bind: empty eval → empty expression", "positive": false, "instructionAtom": "(collapse-bind (match &self (= z $w) $w))", "expectedResults": ["()"] },
+      { "label": "collapse-bind: filters Empty branches", "positive": true, "instructionAtom": "(collapse-bind (superpose (a Empty b)))", "expectedResults": ["((a (Bindings () ())) (b (Bindings () ())))"] }
       ]
     },
     {
@@ -160,12 +161,12 @@
       "semanticAuthority": [],
       "determinism": "nondeterministic",
       "bindingsFlow": "passthrough",
-      "resultCases": ["non-empty expression: one result per element (nondeterministic)", "empty expression (): return Empty"],
+      "resultCases": ["non-empty expression: one result per element (nondeterministic)", "empty expression (): internal Empty sentinel, surfaced as no user-visible results"],
       "errorCases": [],
       "mutatesSpace": false,
       "fixtures": [
       { "label": "superpose: branch over elements", "positive": true, "instructionAtom": "(superpose (a b c))", "expectedResults": ["a", "b", "c"] },
-      { "label": "superpose: empty → Empty", "positive": false, "instructionAtom": "(superpose ())", "expectedResults": ["Empty"] }
+      { "label": "superpose: empty → no results", "positive": false, "instructionAtom": "(superpose ())", "expectedResults": [] }
       ]
     },
     {

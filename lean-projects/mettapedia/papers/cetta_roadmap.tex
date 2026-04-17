@@ -599,6 +599,17 @@ The \code{OrderedOutcomeVisitor} and ordered-visitation seam handle
 streaming results in the current evaluator.  This is the path where
 \code{collapse}, \code{fold}, and \code{select} operate.
 
+The next refinement above these seams is a single explicit episode
+layer: a \code{SearchEpisode} owning a normalized \code{SearchRequest}
+and a \code{SearchLangContract}, dispatching through a
+\code{SearchMachineOps} vtable to the existing \code{SearchContext}
+for branch-local state, to \code{SpaceMatchBackendOps} for storage,
+and to \code{TableStore} (wrapped as the first \code{SearchTableOps}
+plugin) for memoization.  The seam is read/search only in v1---lane
+families (MM2-step, ATP saturation, solver-oracle) belong to a later
+epoch.  The implementation plan carries this as Phase~2 with explicit
+non-goals.
+
 \subsection{Search Fairness and Completeness}
 
 Depth-first search is simple and memory-efficient, but incomplete: it can

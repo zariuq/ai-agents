@@ -523,10 +523,12 @@ Higher-order Markov & MarkovDeFinettiHigherOrder.lean & 1,219 \\
 Hidden Markov models & FiniteHiddenMarkovModel.lean & 668 \\
 Higher-order Giry bridge & DeFinettiHigherOrderGiryBridge.lean & 175 \\
 HMM de Finetti bridge & FiniteHiddenMarkovDeFinettiBridge.lean & 339 \\
-Higher-order WM bridge & UniversalPredictionHigherOrderMarkovWMBridge.lean & 365 \\
+Higher-order WM bridge & WMHigherOrderMarkov.lean & 365 \\
+Controlled HMM/POMDP bridge & ControlledFiniteHiddenMarkovModel.lean, ControlledFiniteHiddenMarkovObservedInference.lean, ControlledFiniteHiddenMarkovBridge.lean & 827 \\
+Controlled Solomonoff bridge & ControlledPrefixMeasure.lean, ControlledSolomonoffBridge.lean, ControlledFiniteHiddenMarkovUniversalPredictionBridge.lean & 446 \\
 Other & (11 files) & 1,496 \\
 \midrule
-\textbf{Total} & \textbf{33 files} & \textbf{26,665} \\
+\textbf{Total} & \textbf{36 files} & \textbf{27,938} \\
 \bottomrule
 \end{tabular}
 \caption{Markov de Finetti formalization file inventory}
@@ -1217,6 +1219,110 @@ Includes concrete binary regression examples (\texttt{binaryCopyHMM\_observedCyl
 
 File: \texttt{FiniteHiddenMarkovDeFinettiBridge.lean} (339 lines, 0~\texttt{sorry}).
 
+\subsection{Controlled Finite HMMs, Credal Beliefs, and POMDP-Style Planning}
+
+The action-conditioned extension turns the finite HMM surface into a structured
+finite POMDP substrate.  The latent transition kernel now depends on an
+externally supplied action:
+
+\begin{lstlisting}
+structure ControlledFiniteHMMParam (Action : Type) (latent obs : Nat) where
+  init : ProbabilityMeasure (Fin latent)
+  trans : Action -> Fin latent -> ProbabilityMeasure (Fin latent)
+  emission : Fin latent -> ProbabilityMeasure (Fin obs)
+\end{lstlisting}
+
+At the observation level, the formalization proves a complete finite-state
+filtering and smoothing surface for completed action-observation cycles:
+\begin{itemize}
+\item \texttt{filteringMass}: unnormalized latent belief after a completed trace,
+\item \texttt{filteringPosteriorMass}: normalized posterior given a nonzero
+  observation prefix,
+\item \texttt{smoothingPosteriorMass}: two-sided latent posterior for a split
+  completed trace,
+\item \texttt{no\_observedOnly\_multiset\_queryStrength\_recovers\_filteringPosteriorMass}:
+  an honest obstruction theorem showing that unordered observed multisets do not
+  determine hidden-state beliefs.
+\end{itemize}
+
+This is the key boundary for WM/PLN reasoning under partial observability:
+observation-only additive evidence is insufficient for latent posterior
+tracking, so the formalization moves to a \emph{credal} world-model layer.
+For a finite family of controlled HMMs, the interval-valued object
+\texttt{filteringCredalPLNITV} packages lower and upper latent-state strengths
+as a live indefinite truth value.  Recursive lower and upper optimal-value
+envelopes then propagate that ambiguity into decision theory.
+
+The planning bridge itself is concrete.  A controlled finite HMM is turned into
+a \texttt{BayesianAgents.Environment}, and the resulting value and
+\texttt{qValue} theorems exercise the existing AIXI-style finite-horizon
+planning layer.  The capstone ambiguity theorem shows:
+\begin{enumerate}
+\item each family member's finite-horizon \texttt{optimalValue} lies inside the
+  recursive credal interval,
+\item the interval can be nontrivially wide, and
+\item there need not exist a single observation-history-based optimal action
+  shared by all family members.
+\end{enumerate}
+
+\begin{itemize}
+\item \textbf{Positive example}: the ambiguous controlled family widens the
+  horizon-4 optimal-value interval while preserving identical observation
+  behaviour.
+\item \textbf{Negative example}: this does not yet identify a unique hidden
+  state or unique optimal action from observations alone.
+\end{itemize}
+
+Files:
+\texttt{ControlledFiniteHiddenMarkovModel.lean},
+\texttt{ControlledFiniteHiddenMarkovObservedInference.lean},
+\texttt{WMControlledFiniteHiddenMarkovCredal.lean},
+\texttt{ControlledFiniteHiddenMarkovBridge.lean},
+\texttt{ControlledFiniteHiddenMarkovPlanningExamples.lean},
+\texttt{ControlledFiniteHiddenMarkovExports.lean}.
+
+\subsection{Controlled Solomonoff Regret Along Fixed Action Streams}
+
+The new universal-prediction leg for the controlled setting is conservative but
+honest.  Rather than claiming a fully action-aware universal prior, the
+formalization lifts the ordinary finite-alphabet Solomonoff semimeasure on the
+observation alphabet into the controlled setting by \emph{ignoring the action
+side-information}:
+
+\begin{lstlisting}
+noncomputable abbrev controlledM2 : ControlledSemimeasure Action Y :=
+  ControlledSemimeasure.ofObservationSemimeasure
+    (SolomonoffBridge.M2_on_observations)
+\end{lstlisting}
+
+Conditioning this controlled semimeasure on any fixed action stream recovers
+the ordinary observation-alphabet universal mixture $M_2$.  Consequently, for any
+controlled prefix law whose conditioned observation process is
+lower-semicomputable, the standard finite-horizon Solomonoff log-loss regret
+bound applies along that fixed action stream.
+
+For controlled finite HMMs, this yields a concrete theorem surface, schematically:
+\begin{lstlisting}
+theorem relEntropy_le_log_inv_controlledM2
+    (theta : ControlledFiniteHMMParam Action latent obs)
+    (u : Nat -> Action)
+    (hmu : LowerSemicomputablePrefixMeasure
+      ((toControlledPrefixMeasure theta).conditionOnActionStream u))
+    (n : Nat) :
+    exists c, c != 0 /\
+      Dominates (controlledM2.conditionOnActionStream u)
+        ((toControlledPrefixMeasure theta).conditionOnActionStream u) c /\
+      ControlledFiniteHorizon.relEntropy
+        (toControlledPrefixMeasure theta) controlledM2 u n
+        <= log (1 / c.toReal)
+\end{lstlisting}
+
+The lower-semicomputability hypothesis is not an implementation leftover.  The
+current parameter record allows arbitrary probability measures, so computability
+of the induced law is a genuine extra domain condition.  Removing that
+hypothesis would require an additional computable-parameter surface, not a
+proof cleanup.
+
 \subsection{Higher-Order WM/PLN Bridge}
 
 The $(m+1)$-gram summary threads into the WM/PLN additive evidence layer:
@@ -1234,7 +1340,7 @@ def higherOrderRowStatistic :
 The design stays honest: additive evidence is context-conditioned next-symbol
 counts; the final context is boundary data not forced into the additive carrier.
 
-File: \texttt{UniversalPredictionHigherOrderMarkovWMBridge.lean} (365 lines, 0~\texttt{sorry}).
+File: \texttt{WMHigherOrderMarkov.lean} (365 lines, 0~\texttt{sorry}).
 
 \section{Conclusion}
 
@@ -1303,9 +1409,10 @@ A computational variant would:
   disintegration theory (regular conditional probabilities). Mathlib's
   \texttt{MeasureTheory.Measure.condexp} provides conditional expectation
   but not full disintegration.
-\item \textbf{Hidden Markov models}: Partial exchangeability for observation
-  sequences given latent state processes. This would formalize the Baum-Welch
-  setting within the de~Finetti framework.
+\item \textbf{Controlled hidden Markov models}: the action-conditioned finite
+  POMDP substrate, credal decision envelopes, and fixed-action-stream
+  Solomonoff regret bounds are now formalized; what remains is the genuinely
+  action-aware universal mixture and a controlled de~Finetti theorem.
 \item \textbf{Higher-order Markov}: Extend to $k$-th order Markov chains
   where the sufficient statistic is $(k+1)$-gram counts.
 \end{itemize}

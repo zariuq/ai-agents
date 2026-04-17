@@ -336,6 +336,23 @@ theorem deFinettiExport_exists_borelFiniteHMMFactorization_of_param
           observedWordWeightViaProbMarkov (latent := latent) (obs := obs) θ.emission π ys :=
   deFinettiExport_borelFiniteHMMFactorization_diracWitness (latent := latent) (obs := obs) θ
 
+/-- Recommended export: a finite discrete mixture of latent Markov parameters
+with fixed emission kernel yields an honest non-Dirac finite-HMM factorization
+package. -/
+theorem deFinettiExport_categoricalBorelFiniteHMMFactorization_of_finiteDiscreteMixture
+    {latent obs n : ℕ}
+    (emission : Fin latent → ProbabilityMeasure (Fin obs))
+    (w : Fin n → ℝ≥0∞) (hw : Finset.sum (Finset.univ : Finset (Fin n)) (fun i => w i) = 1)
+    (Θ : Fin n → Mettapedia.Logic.MarkovDeFinettiHard.MarkovParam latent) :
+    CategoricalBorelFiniteHMMFactorization latent obs emission
+      (Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.xiPrefixMeasure
+        (ν := fun i : Fin n =>
+          observedCylinderPrefixMeasure (latent := latent) (obs := obs) emission (Θ i))
+        (w := w)
+        (hw := by simpa [tsum_fintype] using hw)) :=
+  categoricalBorelFiniteHMMFactorization_of_finiteDiscreteMixture
+    (latent := latent) (obs := obs) emission w (by simpa using hw) Θ
+
 /-- Recommended export: the concrete binary copy HMM assigns observed cylinder
 mass `1` to `[0]`. -/
 theorem deFinettiExport_binaryCopyHMM_observedCylinder_0 :

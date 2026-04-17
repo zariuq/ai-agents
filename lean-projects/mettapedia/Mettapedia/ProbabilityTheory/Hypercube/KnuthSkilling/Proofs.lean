@@ -1,6 +1,6 @@
 import Mettapedia.ProbabilityTheory.KnuthSkilling.Core.Basic
 import Mettapedia.ProbabilityTheory.KnuthSkilling.Core.Algebra
-import Mettapedia.ProbabilityTheory.KnuthSkilling.Additive.Proofs.GridInduction.CredalSets
+import Mettapedia.ProbabilityTheory.ImpreciseProbability.CredalSets
 import Mettapedia.ProbabilityTheory.Hypercube.KnuthSkilling.ToyFreeMonoid2
 
 /-!
@@ -30,7 +30,7 @@ In particular, nothing here proves the main K&S representation theorem.
 
 - Stay & Wells, "Generating Hypercubes of Type Systems" (hypercube.pdf)
 - K&S, "Foundations of Inference" Appendix A
-- `Additive/Proofs/GridInduction/CredalSets.lean` (interval / credal-set exploration)
+- `ProbabilityTheory/ImpreciseProbability/CredalSets.lean` (interval / credal-set exploration)
 - `Hypercube/KnuthSkilling/ToyFreeMonoid2.lean` (toy noncommutative monoid)
 -/
 
@@ -39,7 +39,7 @@ namespace Mettapedia.ProbabilityTheory.Hypercube.KnuthSkilling.Proofs
 
 open Mettapedia.ProbabilityTheory.KnuthSkilling
 open KnuthSkillingAlgebra
-open Mettapedia.ProbabilityTheory.KnuthSkilling.Additive.Proofs.GridInduction.CredalSets
+open Mettapedia.ProbabilityTheory.ImpreciseProbability.CredalSets
 
 /-! ## Section 1: Vertex Characterization
 

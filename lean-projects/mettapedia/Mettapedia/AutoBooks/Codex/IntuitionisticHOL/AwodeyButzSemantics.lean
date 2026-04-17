@@ -1,4 +1,5 @@
 import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.AwodeyButzFullTyped
+import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.AwodeyButzHigherOrderPointModelBridge
 import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.Terms
 import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.Sequent
 
@@ -52,8 +53,12 @@ Context weakening morphisms allow us to interpret variables.
 /-- Context weakening morphism: drop the head variable. -/
 noncomputable def weaken (τ : Ty Base) (Γ : Ctx Base) :
     I.CtxHom (τ :: Γ) Γ :=
-  EtaleSpace.BasicTopologicalInterpretation.CtxHom.tail
-    I.toBasicTopologicalInterpretation τ Γ
+  { toContinuousMap := EtaleSpace.prodSnd (I.space τ) (I.ctxSpace Γ)
+    proj_comp := by
+      funext x
+      exact
+        ((EtaleSpace.prod_proj_fst (I.space τ) (I.ctxSpace Γ) x).trans
+          (EtaleSpace.prod_proj_snd (I.space τ) (I.ctxSpace Γ) x)).symm }
 
 /-!
 ## Variable Interpretation
@@ -76,9 +81,15 @@ Constants are pulled back from their global sections.
 
 /-- Pull back a constant to any context. -/
 noncomputable def evalConst {τ : Ty Base} (Γ : Ctx Base) :
-    Const τ → I.CtxTerm Γ τ :=
-  EtaleSpace.BasicTopologicalInterpretation.CtxTerm.const
-    I.toBasicTopologicalInterpretation Γ
+    Const τ → I.CtxTerm Γ τ
+  | c =>
+      { toContinuousMap := (I.toBasicTopologicalInterpretation.const c).toContinuousMap.comp
+          (EtaleSpace.projMap (I.ctxSpace Γ))
+        proj_comp := by
+          funext x
+          simpa [EtaleSpace.projMap, Function.comp] using
+            congrFun (I.toBasicTopologicalInterpretation.const c).proj_comp
+              ((EtaleSpace.projMap (I.ctxSpace Γ)) x) }
 
 /-!
 ## Logical Operations Interface
@@ -101,22 +112,22 @@ class HasLogicalOperations (I : TopologicalInterpretation Base Const X) where
   /-- Falsity in context. -/
   evalBot : (Γ : Ctx Base) → I.CtxTerm Γ .prop
   /-- Conjunction. -/
-  evalAnd : {Γ : Ctx Base} →
+  evalAnd : ∀ {Γ : Ctx Base},
     I.CtxTerm Γ .prop → I.CtxTerm Γ .prop → I.CtxTerm Γ .prop
   /-- Disjunction. -/
-  evalOr : {Γ : Ctx Base} →
+  evalOr : ∀ {Γ : Ctx Base},
     I.CtxTerm Γ .prop → I.CtxTerm Γ .prop → I.CtxTerm Γ .prop
   /-- Implication. -/
-  evalImp : {Γ : Ctx Base} →
+  evalImp : ∀ {Γ : Ctx Base},
     I.CtxTerm Γ .prop → I.CtxTerm Γ .prop → I.CtxTerm Γ .prop
   /-- Equality at an arbitrary type. -/
-  evalEq : {Γ : Ctx Base} {τ : Ty Base} →
+  evalEq : ∀ {Γ : Ctx Base} {τ : Ty Base},
     I.CtxTerm Γ τ → I.CtxTerm Γ τ → I.CtxTerm Γ .prop
   /-- Universal quantification. -/
-  evalAll : {Γ : Ctx Base} {σ : Ty Base} →
+  evalAll : ∀ {Γ : Ctx Base} {σ : Ty Base},
     I.CtxTerm (σ :: Γ) .prop → I.CtxTerm Γ .prop
   /-- Existential quantification. -/
-  evalEx : {Γ : Ctx Base} {σ : Ty Base} →
+  evalEx : ∀ {Γ : Ctx Base} {σ : Ty Base},
     I.CtxTerm (σ :: Γ) .prop → I.CtxTerm Γ .prop
 
 /--
@@ -131,11 +142,11 @@ class HasSequentSemantics (I : TopologicalInterpretation Base Const X)
     [HasLogicalOperations I] where
   /-- Sequent validity in the given topological semantics. -/
   validSequent :
-    {Γ : Ctx Base} → List (Formula Const Γ) → Formula Const Γ → Prop
+    ∀ {Γ : Ctx Base}, List (Formula Const Γ) → Formula Const Γ → Prop
   /-- Derivable sequents are valid in this semantics. -/
   sound :
-    {Γ : Ctx Base} {antecedents : List (Formula Const Γ)}
-      {succedent : Formula Const Γ} →
+    ∀ {Γ : Ctx Base} {antecedents : List (Formula Const Γ)}
+      {succedent : Formula Const Γ},
       Derivable Const antecedents succedent →
         validSequent antecedents succedent
 
@@ -146,11 +157,11 @@ This keeps the theorem layer honest: when we only know that some topological
 interpretation refutes a sequent, we package the base space, interpretation, and
 required semantic instances together instead of hard-coding a single model.
 -/
-structure Counterexample
+structure Counterexample.{w'}
     {Γ : Ctx Base}
     (antecedents : List (Formula Const Γ))
     (succedent : Formula Const Γ) where
-  X : Type w
+  X : Type w'
   instTopologicalSpace : TopologicalSpace X
   I : TopologicalInterpretation Base Const X
   instLogical : HasLogicalOperations I
@@ -175,7 +186,7 @@ def Counterexample.ofInvalid
     (antecedents : List (Formula Const Γ))
     (succedent : Formula Const Γ)
     (hInvalid : ¬ HasSequentSemantics.validSequent (I := I) antecedents succedent) :
-    Counterexample (Base := Base) (Const := Const) antecedents succedent where
+    Counterexample.{u, v, w} (Base := Base) (Const := Const) antecedents succedent where
   X := X
   instTopologicalSpace := inferInstance
   I := I
@@ -195,7 +206,7 @@ theorem exists_counterexample_of_not_valid
     {succedent : Formula Const Γ}
     (hInvalid : ¬ HasSequentSemantics.validSequent (I := I) antecedents succedent) :
     Nonempty
-      (Counterexample (Base := Base) (Const := Const) antecedents succedent) :=
+      (Counterexample.{u, v, w} (Base := Base) (Const := Const) antecedents succedent) :=
   ⟨Counterexample.ofInvalid (I := I) antecedents succedent hInvalid⟩
 
 /-!
@@ -229,6 +240,88 @@ noncomputable def eval (I : TopologicalInterpretation Base Const X)
   | .eq t u => HasLogicalOperations.evalEq (I := I) (eval I t) (eval I u)
   | .all φ => HasLogicalOperations.evalAll (I := I) (eval I φ)
   | .ex φ => HasLogicalOperations.evalEx (I := I) (eval I φ)
+
+@[simp] theorem eval_app_lam (I : TopologicalInterpretation Base Const X)
+    [HasLogicalOperations I]
+    {Γ : Ctx Base} {σ τ : Ty Base}
+    (body : Term Const (σ :: Γ) τ)
+    (arg : Term Const Γ σ) :
+    eval I (.app (.lam body) arg) =
+      (eval I body).reindex
+        (TopologicalInterpretation.CtxHom.cons (eval I arg)
+          (TopologicalInterpretation.CtxHom.id I Γ)) := by
+  simp [eval]
+
+@[simp] theorem eval_top (I : TopologicalInterpretation Base Const X)
+    [HasLogicalOperations I]
+    {Γ : Ctx Base} :
+    eval I (Term.top : Formula Const Γ) =
+      HasLogicalOperations.evalTop (I := I) Γ :=
+  rfl
+
+@[simp] theorem eval_bot (I : TopologicalInterpretation Base Const X)
+    [HasLogicalOperations I]
+    {Γ : Ctx Base} :
+    eval I (Term.bot : Formula Const Γ) =
+      HasLogicalOperations.evalBot (I := I) Γ :=
+  rfl
+
+@[simp] theorem eval_and (I : TopologicalInterpretation Base Const X)
+    [HasLogicalOperations I]
+    {Γ : Ctx Base}
+    (φ ψ : Formula Const Γ) :
+    eval I (Term.and φ ψ) =
+      HasLogicalOperations.evalAnd (I := I) (eval I φ) (eval I ψ) :=
+  rfl
+
+@[simp] theorem eval_or (I : TopologicalInterpretation Base Const X)
+    [HasLogicalOperations I]
+    {Γ : Ctx Base}
+    (φ ψ : Formula Const Γ) :
+    eval I (Term.or φ ψ) =
+      HasLogicalOperations.evalOr (I := I) (eval I φ) (eval I ψ) :=
+  rfl
+
+@[simp] theorem eval_imp (I : TopologicalInterpretation Base Const X)
+    [HasLogicalOperations I]
+    {Γ : Ctx Base}
+    (φ ψ : Formula Const Γ) :
+    eval I (Term.imp φ ψ) =
+      HasLogicalOperations.evalImp (I := I) (eval I φ) (eval I ψ) :=
+  rfl
+
+@[simp] theorem eval_not (I : TopologicalInterpretation Base Const X)
+    [HasLogicalOperations I]
+    {Γ : Ctx Base}
+    (φ : Formula Const Γ) :
+    eval I (Term.not φ) =
+      HasLogicalOperations.evalImp (I := I)
+        (eval I φ) (HasLogicalOperations.evalBot (I := I) Γ) :=
+  rfl
+
+@[simp] theorem eval_eq (I : TopologicalInterpretation Base Const X)
+    [HasLogicalOperations I]
+    {Γ : Ctx Base} {τ : Ty Base}
+    (t u : Term Const Γ τ) :
+    eval I (Term.eq t u) =
+      HasLogicalOperations.evalEq (I := I) (eval I t) (eval I u) :=
+  rfl
+
+@[simp] theorem eval_all (I : TopologicalInterpretation Base Const X)
+    [HasLogicalOperations I]
+    {Γ : Ctx Base} {σ : Ty Base}
+    (φ : Formula Const (σ :: Γ)) :
+    eval I (Term.all φ) =
+      HasLogicalOperations.evalAll (I := I) (eval I φ) :=
+  rfl
+
+@[simp] theorem eval_ex (I : TopologicalInterpretation Base Const X)
+    [HasLogicalOperations I]
+    {Γ : Ctx Base} {σ : Ty Base}
+    (φ : Formula Const (σ :: Γ)) :
+    eval I (Term.ex φ) =
+      HasLogicalOperations.evalEx (I := I) (eval I φ) :=
+  rfl
 
 /-!
 ## Formula Interpretation
@@ -328,13 +421,14 @@ theorem not_derivable_of_topological_counterexample {Base : Type u} {Const : Ty 
   exact hCounter (TopologicalInterpretation.soundness I hDer)
 
 /--
-Any existential topological counterexample refutes derivability.
+Any existential packaged topological counterexample refutes derivability.
 
-This is the strongest honest theorem currently proved by the live topological
-stack: once a counterexample is packaged as an actual topological model with the
-required semantic structure, derivability is impossible.
+This remains the generic consumer theorem for the `Counterexample` package.
+The public completeness wrapper below is stronger: it consumes the produced
+one-point higher-order witness exported by the live Awodey-Butz bridge.
 -/
-theorem awodey_butz_completeness {Base : Type u} {Const : Ty Base → Type v}
+theorem not_derivable_of_exists_topological_counterexample
+    {Base : Type u} {Const : Ty Base → Type v}
     {Γ : Ctx Base} {antecedents : List (Formula Const Γ)}
     {succedent : Formula Const Γ}
     (hCounter :
@@ -344,5 +438,55 @@ theorem awodey_butz_completeness {Base : Type u} {Const : Ty Base → Type v}
     ¬ Derivable (Base := Base) (Const := Const) antecedents succedent := by
   rcases hCounter with ⟨C⟩
   exact C.not_derivable
+
+/--
+Any existential one-point higher-order truth counterexample refutes
+derivability.
+
+This is the strongest produced-witness completeness theorem currently available
+on the live topological stack: the witness is no longer an assumed packaged
+topological interpretation, but an explicit global model point where all
+antecedents force to `⊤` and the succedent does not.
+-/
+theorem awodey_butz_completeness
+    {Base : Type u} {Const : Ty Base → Type v}
+    {Γ : Ctx Base} {antecedents : List (Formula Const Γ)}
+    {succedent : Formula Const Γ}
+    (hCounter :
+      ∃ (M : GlobalModel Base Const)
+        (γ :
+          (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+            (M := M) Γ).Carrier),
+        HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+            (M := M) antecedents γ = ⊤ ∧
+          HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthEval
+            (M := M) succedent γ ≠ ⊤) :
+    ¬ Derivable (Base := Base) (Const := Const) antecedents succedent :=
+  HigherOrderPointTopologicalGlobalModelBridge.not_derivable_of_exists_truth_counterexample
+    (Base := Base) (Const := Const) hCounter
+
+/--
+Any existential semilocal global-environment truth counterexample refutes
+derivability.
+
+This is the nearest current bridge from the completeness spine into the
+one-point Awodey-Butz witness style: the witness is still semilocal, but it is
+already packaged in the exact antecedent/succedent form needed to rule out a
+derivation.
+-/
+theorem awodey_butz_completeness_of_exists_semilocal_truth_counterexample
+    {Base : Type u} {Const : Ty Base → Type v}
+    {Γ : Ctx Base} {antecedents : List (Formula Const Γ)}
+    {succedent : Formula Const Γ}
+    (hCounter :
+      ∃ (M : SemilocalModel Base Const)
+        (ρ : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M ρ ∧
+          SemilocalModel.antecedentTruth M ρ antecedents = ⊤ ∧
+          SemilocalModel.formulaTruth M ρ succedent ≠ ⊤ ∧
+          SemilocalModel.SupportsUniformRelativization M) :
+    ¬ Derivable (Base := Base) (Const := Const) antecedents succedent :=
+  _root_.Mettapedia.AutoBooks.Codex.IntuitionisticHOL.HigherOrderPointTopologicalSemilocalModelBridge.not_derivable_of_exists_semilocal_truth_counterexample
+    (Base := Base) (Const := Const) hCounter
 
 end Mettapedia.AutoBooks.Codex.IntuitionisticHOL

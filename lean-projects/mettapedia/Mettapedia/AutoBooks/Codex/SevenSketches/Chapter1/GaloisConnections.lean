@@ -63,6 +63,30 @@ theorem inducedInterior_idempotent (h : IsAdjunction l u) (y : Q) :
   · exact h.l_u_le (l (u y))
   · exact h.monotone_l (h.le_u_l (u y))
 
+theorem fixed_inducedClosure_iff_exists_upperAdjoint (h : IsAdjunction l u) (x : P) :
+    inducedClosure h x = x ↔ ∃ y, u y = x := by
+  constructor
+  · intro hx
+    refine ⟨l x, ?_⟩
+    simpa [inducedClosure] using hx
+  · rintro ⟨y, rfl⟩
+    show u (l (u y)) = u y
+    apply le_antisymm
+    · exact h.monotone_u (h.l_u_le y)
+    · exact h.le_u_l (u y)
+
+theorem fixed_inducedInterior_iff_exists_lowerAdjoint (h : IsAdjunction l u) (y : Q) :
+    inducedInterior h y = y ↔ ∃ x, l x = y := by
+  constructor
+  · intro hy
+    refine ⟨u y, ?_⟩
+    simpa [inducedInterior] using hy
+  · rintro ⟨x, rfl⟩
+    show l (u (l x)) = l x
+    apply le_antisymm
+    · exact h.l_u_le (l x)
+    · exact h.monotone_l (h.le_u_l x)
+
 /-- Positive canary: every source element lies below its induced closure. -/
 theorem closure_extensive_example (h : IsAdjunction l u) (x : P) :
     x ≤ inducedClosure h x :=

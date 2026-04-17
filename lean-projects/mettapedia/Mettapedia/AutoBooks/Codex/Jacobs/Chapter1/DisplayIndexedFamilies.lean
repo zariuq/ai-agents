@@ -52,6 +52,62 @@ def fiberReindexEquiv (u : I → J) (F : DisplayFamily J) (i : I) :
     intro y
     rfl
 
+/-- Reindexing along the identity map does not change fibres. -/
+def fiberReindexIdEquiv (F : DisplayFamily I) (i : I) :
+    fiber (reindex (fun j : I => j) F) i ≃ fiber F i :=
+  fiberReindexEquiv (fun j : I => j) F i
+
+/-- Reindexing along the identity map does not change the carrier, up to the
+canonical display equivalence. -/
+def reindexIdEquiv (F : DisplayFamily I) :
+    (reindex (fun i : I => i) F).Carrier ≃ F.Carrier where
+  toFun x := by
+    cases x with
+    | mk i y =>
+        exact y.1
+  invFun x := ⟨F.proj x, ⟨x, rfl⟩⟩
+  left_inv := by
+    intro x
+    cases x with
+    | mk i y =>
+        cases y with
+        | mk x hx =>
+            cases hx
+            rfl
+  right_inv := by
+    intro x
+    rfl
+
+/-- Reindexing is associative on carriers, up to the canonical display
+equivalence. -/
+def reindexCompEquiv (u : I → J) (v : J → K) (F : DisplayFamily K) :
+    (reindex u (reindex v F)).Carrier ≃ (reindex (v ∘ u) F).Carrier where
+  toFun x := by
+    cases x with
+    | mk i y =>
+        cases y with
+        | mk y hy =>
+            cases y with
+            | mk j z =>
+                cases hy
+                exact ⟨i, z⟩
+  invFun x := ⟨x.1, ⟨⟨u x.1, x.2⟩, rfl⟩⟩
+  left_inv := by
+    intro x
+    cases x with
+    | mk i y =>
+        cases y with
+        | mk y hy =>
+            cases y with
+            | mk j z =>
+                cases hy
+                rfl
+  right_inv := by
+    intro x
+    cases x with
+    | mk i y =>
+        rfl
+
 /-- Constant display-indexed family with fibre `X` over every index. -/
 def const (I : Type u) (X : Type v) : DisplayFamily I where
   Carrier := I × X

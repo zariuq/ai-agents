@@ -5,8 +5,8 @@ namespace Mettapedia.AutoBooks.Codex.Henkin1950
 /-!
 # Henkin 1950 Theorem 1 Bridge Regression
 
-Positive canaries for the current obstruction surface around
-`SentenceSoundBridge`.
+Positive canaries for the class-to-general bridge surface and the stronger
+canonical obstruction around `SentenceSoundBridge`.
 -/
 
 namespace Regression
@@ -18,6 +18,46 @@ example
     (hEM : ∀ p : Prop, p ∨ ¬ p) :
     HenkinModel.models M.toHenkinModel propBivalence :=
   models_propBivalence_of_excludedMiddle M hEM
+
+example
+    (CM : ClassGeneralModel)
+    {M : GeneralModel}
+    (hBridge : ClassSentenceSoundBridge CM M)
+    (φ : Sentence)
+    (hφ : CM.models φ) :
+    HenkinModel.models M.toHenkinModel φ :=
+  hBridge φ hφ
+
+example
+    (CM : CanonicalClassModel)
+    {M : GeneralModel}
+    (hBridge : SentenceSoundBridge CM M) :
+    ClassSentenceSoundBridge CM.toClassGeneralModel M :=
+  classSentenceSoundBridge_of_sentenceSoundBridge CM hBridge
+
+example
+    {T : ClosedTheorySet}
+    (hClass : SatisfiableInClassGeneral T)
+    {M : GeneralModel}
+    (hBridge :
+      ∀ CM : ClassGeneralModel,
+        (∀ φ : Sentence, φ ∈ T → CM.models φ) →
+          ClassSentenceSoundBridge CM M) :
+    Satisfiable T :=
+  satisfiable_of_classGeneralSatisfiable_of_classSentenceSoundBridge hClass hBridge
+
+example
+    {T : ClosedTheorySet}
+    (hT : CompleteConsistentTheory T)
+    (hEx : ExistentialWitnessClosed T)
+    (hAll : UniversalCounterexampleClosed T)
+    {M : GeneralModel}
+    (hBridge :
+      ∀ CM : ClassGeneralModel,
+        (∀ φ : Sentence, φ ∈ T → CM.models φ) →
+          ClassSentenceSoundBridge CM M) :
+    Satisfiable T :=
+  theorem1_general_of_classSentenceSoundBridge hT hEx hAll hBridge
 
 example :
     ValidInGeneral propBivalence ↔ ∀ p : Prop, p ∨ ¬ p :=

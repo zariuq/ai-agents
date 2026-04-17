@@ -1,4 +1,7 @@
 import Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.Basic
+import Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.ControlledPrefixMeasure
+import Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.ControlledFiniteHorizon
+import Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.ControlledSolomonoffBridge
 import Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.PrefixMeasure
 import Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.FiniteHorizon
 import Mettapedia.Logic.UniversalPrediction.FiniteAlphabet.CompetitorBounds

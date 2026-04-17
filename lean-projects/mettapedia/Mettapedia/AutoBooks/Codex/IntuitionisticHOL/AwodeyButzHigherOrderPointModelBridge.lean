@@ -323,6 +323,208 @@ theorem not_derivable_of_closed_truth_ne_top
 
 end basicInterp
 
+/-- Any existential one-point higher-order truth counterexample refutes
+derivability. This is the strongest produced-witness theorem currently
+available on the live higher-order topological bridge. -/
+theorem not_derivable_of_exists_truth_counterexample
+    {Γ : Ctx Base}
+    {Δ : List (Formula Const Γ)}
+    {φ : Formula Const Γ}
+    (hCounter :
+      ∃ (M : GlobalModel Base Const)
+        (γ : (basicInterp.ctxSpace (M := M) Γ).Carrier),
+        basicInterp.truthAntecedent (M := M) Δ γ = ⊤ ∧
+          basicInterp.truthEval (M := M) φ γ ≠ ⊤) :
+    ¬ Derivable (Base := Base) (Const := Const) Δ φ := by
+  rcases hCounter with ⟨M, γ, hΔ, hφ⟩
+  exact basicInterp.not_derivable_of_truth_counterexample (M := M) γ hΔ hφ
+
 end HigherOrderPointTopologicalGlobalModelBridge
+
+namespace HigherOrderPointTopologicalSemilocalModelBridge
+
+open SimpleQuantifiedTopologicalGlobalModelBridge
+
+variable {Base : Type u} {Const : Ty Base → Type v}
+
+/-- The one-point archive-free topological carrier induced by a semilocal model. -/
+def basicInterp (M : SemilocalModel Base Const) :
+    EtaleSpace.BasicTopologicalInterpretation Base Const PUnit where
+  space := fun τ => pointEtale (M.Carrier τ)
+  const := fun c => pointSection (M.const c)
+
+namespace basicInterp
+
+variable (M : SemilocalModel Base Const)
+
+abbrev NativeEnv (Γ : Ctx Base) :=
+  SemilocalModel.Env M Γ
+
+/-- Contexts as iterated fiber products in the one-point semilocal model. -/
+abbrev ctxSpace (Γ : Ctx Base) : EtaleSpace PUnit :=
+  (basicInterp M).ctxSpace Γ
+
+@[simp] theorem ctx_proj_eq_unit
+    {Γ : Ctx Base}
+    (γ : (ctxSpace (M := M) Γ).Carrier) :
+    (ctxSpace (M := M) Γ).proj γ = () :=
+  Subsingleton.elim _ _
+
+/-- Package a native semantic value as a point in the one-point carrier. -/
+def pointCarrier {τ : Ty Base}
+    (x : M.Carrier τ) : ((basicInterp M).space τ).Carrier :=
+  ((), x)
+
+/-- Extract the native semantic value from a one-point carrier. -/
+def pointCarrierVal {τ : Ty Base}
+    (p : ((basicInterp M).space τ).Carrier) : M.Carrier τ :=
+  p.2
+
+/-- The tail component of a one-point semilocal context carrier. -/
+noncomputable def tailCtx {Γ : Ctx Base} {τ : Ty Base}
+    (γ : (ctxSpace (M := M) (τ :: Γ)).Carrier) :
+    (ctxSpace (M := M) Γ).Carrier :=
+  EtaleSpace.prodSnd ((basicInterp M).space τ) (ctxSpace (M := M) Γ) γ
+
+/-- The head semantic value of a one-point semilocal context carrier. -/
+noncomputable def headVal {Γ : Ctx Base} {τ : Ty Base}
+    (γ : (ctxSpace (M := M) (τ :: Γ)).Carrier) :
+    M.Carrier τ :=
+  pointCarrierVal (M := M)
+    (EtaleSpace.prodFst ((basicInterp M).space τ) (ctxSpace (M := M) Γ) γ)
+
+/-- Extend a one-point semilocal context carrier by a new head value. -/
+noncomputable def consCtx {Γ : Ctx Base} {τ : Ty Base}
+    (x : M.Carrier τ)
+    (γ : (ctxSpace (M := M) Γ).Carrier) :
+    (ctxSpace (M := M) (τ :: Γ)).Carrier := by
+  refine ⟨(pointCarrier (M := M) (τ := τ) x, γ), ?_⟩
+  exact (ctx_proj_eq_unit (M := M) γ).symm
+
+@[simp] theorem tailCtx_consCtx
+    {Γ : Ctx Base} {τ : Ty Base}
+    (x : M.Carrier τ)
+    (γ : (ctxSpace (M := M) Γ).Carrier) :
+    tailCtx (M := M) (consCtx (M := M) x γ) = γ :=
+  rfl
+
+/-- Decode a one-point semilocal context carrier as a native environment. -/
+noncomputable def decodeEnv :
+    {Γ : Ctx Base} →
+      (ctxSpace (M := M) Γ).Carrier →
+        NativeEnv (M := M) Γ
+  | [], _ => fun v => nomatch v
+  | _ :: _, γ => fun v =>
+      match v with
+      | .vz => headVal (M := M) γ
+      | .vs w => decodeEnv (tailCtx (M := M) γ) w
+
+@[simp] theorem decodeEnv_consCtx_apply
+    {Γ : Ctx Base} {τ : Ty Base}
+    (x : M.Carrier τ)
+    (γ : (ctxSpace (M := M) Γ).Carrier) :
+    ∀ {σ : Ty Base} (v : Var (τ :: Γ) σ),
+      decodeEnv (M := M) (consCtx (M := M) x γ) v =
+        ApplicativeStructure.Env.extend M.toApplicativeStructure
+          (decodeEnv (M := M) γ) x v := by
+  intro σ v
+  cases v with
+  | vz => rfl
+  | vs w =>
+      simp [decodeEnv, ApplicativeStructure.Env.extend]
+
+/-- Truth of a formula at a one-point semilocal context carrier. -/
+noncomputable def truthEval
+    {Γ : Ctx Base}
+    (φ : Formula Const Γ)
+    (γ : (ctxSpace (M := M) Γ).Carrier) : M.Omega :=
+  SemilocalModel.formulaTruth M (decodeEnv (M := M) γ) φ
+
+/-- Meet of antecedent truth values in the one-point semilocal model. -/
+noncomputable def truthAntecedent
+    {Γ : Ctx Base}
+    (Δ : List (Formula Const Γ))
+    (γ : (ctxSpace (M := M) Γ).Carrier) : M.Omega :=
+  SemilocalModel.antecedentTruth M (decodeEnv (M := M) γ) Δ
+
+/-- Semilocal truth validity of a full HOL sequent in the one-point model. -/
+def TruthValidSequent
+    {Γ : Ctx Base}
+    (Δ : List (Formula Const Γ))
+    (φ : Formula Const Γ) : Prop :=
+  ∀ γ : (ctxSpace (M := M) Γ).Carrier,
+    SemilocalModel.IsGlobalEnv M (decodeEnv (M := M) γ) →
+      truthAntecedent (M := M) Δ γ ≤ truthEval (M := M) φ γ
+
+theorem truthValidSequent_of_derivable
+    (hM : SemilocalModel.SupportsUniformRelativization M)
+    {Γ : Ctx Base}
+    {Δ : List (Formula Const Γ)}
+    {φ : Formula Const Γ}
+    (h : Derivable (Base := Base) (Const := Const) Δ φ) :
+    TruthValidSequent (M := M) Δ φ := by
+  intro γ hγ
+  exact SemilocalModel.soundness M hM h (decodeEnv (M := M) γ) hγ
+
+theorem not_derivable_of_truth_counterexample
+    (hM : SemilocalModel.SupportsUniformRelativization M)
+    {Γ : Ctx Base}
+    {Δ : List (Formula Const Γ)}
+    {φ : Formula Const Γ}
+    (γ : (ctxSpace (M := M) Γ).Carrier)
+    (hγ : SemilocalModel.IsGlobalEnv M (decodeEnv (M := M) γ))
+    (hΔ : truthAntecedent (M := M) Δ γ = ⊤)
+    (hφ : truthEval (M := M) φ γ ≠ ⊤) :
+    ¬ Derivable (Base := Base) (Const := Const) Δ φ := by
+  intro hder
+  have hvalid :
+      truthAntecedent (M := M) Δ γ ≤ truthEval (M := M) φ γ :=
+    truthValidSequent_of_derivable (M := M) hM (Δ := Δ) (φ := φ) hder γ hγ
+  have htop_le : (⊤ : M.Omega) ≤ truthEval (M := M) φ γ := by
+    rw [← hΔ]
+    exact hvalid
+  exact hφ (le_antisymm le_top htop_le)
+
+theorem not_derivable_of_formulaTruth_counterexample
+    (hM : SemilocalModel.SupportsUniformRelativization M)
+    {Γ : Ctx Base}
+    {Δ : List (Formula Const Γ)}
+    {φ : Formula Const Γ}
+    (ρ : NativeEnv (M := M) Γ)
+    (hρ : SemilocalModel.IsGlobalEnv M ρ)
+    (hΔ : SemilocalModel.antecedentTruth M ρ Δ = ⊤)
+    (hφ : SemilocalModel.formulaTruth M ρ φ ≠ ⊤) :
+    ¬ Derivable (Base := Base) (Const := Const) Δ φ := by
+  intro hder
+  have hvalid :
+      SemilocalModel.antecedentTruth M ρ Δ ≤ SemilocalModel.formulaTruth M ρ φ :=
+    SemilocalModel.soundness M hM hder ρ hρ
+  have htop_le : (⊤ : M.Omega) ≤ SemilocalModel.formulaTruth M ρ φ := by
+    rw [← hΔ]
+    exact hvalid
+  exact hφ (le_antisymm le_top htop_le)
+
+end basicInterp
+
+/-- Any existential one-point semilocal truth counterexample refutes
+derivability. This is the archive-free bridge from semilocal semantic witnesses
+to the point-model truth style used by the Awodey-Butz topological interface. -/
+theorem not_derivable_of_exists_semilocal_truth_counterexample
+    {Γ : Ctx Base}
+    {Δ : List (Formula Const Γ)}
+    {φ : Formula Const Γ}
+    (hCounter :
+      ∃ (M : SemilocalModel Base Const)
+        (ρ : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M ρ ∧
+          SemilocalModel.antecedentTruth M ρ Δ = ⊤ ∧
+          SemilocalModel.formulaTruth M ρ φ ≠ ⊤ ∧
+          SemilocalModel.SupportsUniformRelativization M) :
+    ¬ Derivable (Base := Base) (Const := Const) Δ φ := by
+  rcases hCounter with ⟨M, ρ, hρ, hΔ, hφ, hM⟩
+  exact basicInterp.not_derivable_of_formulaTruth_counterexample
+    (M := M) hM ρ hρ hΔ hφ
+
+end HigherOrderPointTopologicalSemilocalModelBridge
 
 end Mettapedia.AutoBooks.Codex.IntuitionisticHOL

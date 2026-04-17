@@ -1,31 +1,29 @@
-import Mettapedia.ProbabilityTheory.KnuthSkilling.Additive.Proofs.GridInduction.CredalSets
+import Mettapedia.ProbabilityTheory.ImpreciseProbability.CredalSets
 
 /-!
 # Completion Semantics API (Credal / Interval Semantics)
 
-This file is a small **stable API layer** for the “weak neighbor” interpretation of K&S-like
-axioms:
+This file is a small stable API layer for the “family of completions” reading:
 
-*If the axioms do not determine a unique real-valued representation `Θ`, interpret each term by
+*If a theory does not determine a unique real-valued representation `Θ`, interpret each term by
 the set of values it can take across all completions (models).*
 
 For real-valued completions, this induces an **interval semantics** by taking `sInf`/`sSup` across
 the completion family.
 
-This API is intended for reuse in the paper writeup and in the hypercube neighbor analysis.
+This API is intended for reuse in papers and downstream theorem layers that only need the
+proof-agnostic completion semantics, not any particular K&S proof route.
 
 See also:
-- `Mettapedia/ProbabilityTheory/KnuthSkilling/Additive/Proofs/GridInduction/CredalSets.lean`
+- `Mettapedia/ProbabilityTheory/ImpreciseProbability/CredalSets.lean`
   (definitions and core lemmas).
-- `Mettapedia/ProbabilityTheory/Hypercube/KnuthSkilling/Neighbors.lean`
-  (how this relates to nearby vertices).
 -/
 
-namespace Mettapedia.ProbabilityTheory.KnuthSkilling.Additive.Proofs.GridInduction.CompletionSemantics
+namespace Mettapedia.ProbabilityTheory.ImpreciseProbability.CompletionSemantics
 
 open Classical
 open Set
-open Mettapedia.ProbabilityTheory.KnuthSkilling.Additive.Proofs.GridInduction.CredalSets
+open Mettapedia.ProbabilityTheory.ImpreciseProbability.CredalSets
 
 variable {α : Type*}
 
@@ -49,7 +47,7 @@ noncomputable def intervalSemantics (op : α → α → α)
 ## §2: Unique completion ⇒ point semantics
 
 If the completion family is a singleton (formally, `Subsingleton ι`), the induced interval is a
-point interval `[c,c]`, i.e. the semantics is *precise*.
+point interval `[c,c]`, i.e. the semantics is precise.
 -/
 
 /-- In the singleton-completion case, the interval semantics is point-valued at each `x`. -/
@@ -63,7 +61,6 @@ theorem intervalSemantics_precise_of_subsingleton (op : α → α → α)
     (x : α) :
     ((intervalSemantics op ι Θ hAssoc hAdd hBddBelow hBddAbove).μ x).lower =
       ((intervalSemantics op ι Θ hAssoc hAdd hBddBelow hBddAbove).μ x).upper := by
-  -- Reduce to the corresponding lemma about `intervalOf`.
   simpa [intervalSemantics, IntervalAddSemantics.ofThetaFamily] using
     (intervalOf_unique (α := α) (ι := ι) (Θ := Θ) (hBddBelow := hBddBelow) (hBddAbove := hBddAbove) x)
 
@@ -88,7 +85,6 @@ theorem intervalSemantics_mu_eq_const_of_subsingleton (op : α → α → α)
     · intro hr
       rcases hr with rfl
       exact ⟨i0, rfl⟩
-  -- Unfold the interval semantics and compute `sInf`/`sSup` for the singleton range.
   simp [intervalSemantics, IntervalAddSemantics.ofThetaFamily, IntervalAddSemantics.intervalOf, hEq, constInterval]
 
 /-- A canonical point-valued semantics packaged as `IntervalAddSemantics`:
@@ -101,10 +97,9 @@ def pointSemantics (op : α → α → α) (Θ : α → ℝ)
   assoc := hAssoc
   containment := by
     intro x y
-    -- Rewrite `+` on intervals to the definitional `Interval.add`, then compute.
     change
       (constInterval (Θ (op x y))).containedIn
         (Interval.add (constInterval (Θ x)) (constInterval (Θ y)))
     simp [Interval.containedIn, Interval.add, constInterval, hAdd]
 
-end Mettapedia.ProbabilityTheory.KnuthSkilling.Additive.Proofs.GridInduction.CompletionSemantics
+end Mettapedia.ProbabilityTheory.ImpreciseProbability.CompletionSemantics

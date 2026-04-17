@@ -25,6 +25,10 @@ codex_prompts/
 # Build logs
 /build_logs/
 
+# Generated Codex dependency/progress reports
+Mettapedia/AutoBooks/Codex/DEPS*
+Mettapedia/AutoBooks/Codex/PROGRESS*
+
 # LaTeX build artifacts
 /papers/_minted/
 /papers/.cache-luaotfload/

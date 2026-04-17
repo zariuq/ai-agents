@@ -1,0 +1,509 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+\setlist[itemize]{leftmargin=1.5em}
+\setlist[enumerate]{leftmargin=1.75em}
+
+\title{A Conceptual Primer on Learning Beyond Pure Chaining\\\large Credal Beliefs, Representation Growth, and Cognitive Synergy\\\large Dated synthesis: 2026-04-17}
+\author{}
+\date{}
+
+\newtheorem{definition}{Definition}
+\newtheorem{principle}{Principle}
+\newtheorem{claim}{Claim}
+\newtheorem{remark}{Remark}
+\newcommand{\wm}{world-model}
+\newcommand{\wmpln}{WM-PLN}
+\newcommand{\pln}{PLN}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Bel}{\mathrm{Bel}}
+\newcommand{\VOI}{\mathrm{VOI}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note develops a conceptual answer to a central question in symbolic
+probabilistic reasoning: what should a system do when pure chaining no longer
+recovers the right belief state?  The answer proposed here is not to abandon
+reasoning, but to embed it in a richer learning architecture.  The key move is
+to recognize that additive or local chaining succeeds only on a restricted
+fragment, while realistic partially observable environments force one to track
+beliefs over hidden structure, ambiguity over models, and the value of
+constructing better internal representations.
+
+The note argues for a five-part picture.  First, pure chaining must be given a
+sharp semantic boundary.  Second, hidden-state ambiguity should be represented
+credally rather than collapsed prematurely to a single scalar.  Third, learning
+should search for better sufficient statistics, better latent variables, and
+better compression maps rather than merely tuning local rule weights.  Fourth,
+limited computation should be managed by attention and value-of-information
+policies.  Fifth, these mechanisms should compose in a cognitively synergistic
+way: symbolic chaining, Bayesian belief tracking, imprecise belief
+representation, representation learning, and attention control should each
+repair the others' blind spots instead of competing for a single universal
+formalism.
+\end{abstract}
+
+\tableofcontents
+
+\section{Purpose and scope}
+
+This article is a companion to a broader primer on world-model Markov, hidden
+Markov, and POMDP reasoning.  Its focus is narrower and more strategic:
+\begin{quote}
+If pure symbolic probabilistic chaining does not fully solve the reasoning
+problem, where should learning enter?
+\end{quote}
+
+The goal is not to replace semantic reasoning with statistical heuristics.
+Rather, the aim is to describe a layered architecture in which learning enters
+precisely where chaining reaches principled limits.
+
+The note is written as a conceptual primer for future work and future
+conversations.  It therefore emphasizes design commitments, failure modes, and
+research directions rather than implementation detail.
+
+\section{The boundary of pure chaining}
+
+\subsection{What pure chaining is good at}
+
+Pure chaining is strongest in settings where:
+\begin{itemize}
+  \item the semantic model is explicit,
+  \item local composition rules are exact under known side conditions,
+  \item or the posterior state admits an additive sufficient statistic.
+\end{itemize}
+
+In such cases, local symbolic or evidence-carrying reasoning can be exact,
+transparent, and computationally attractive.
+
+\subsection{What breaks}
+
+The boundary appears when the system is asked to reason through hidden
+variables, partial observability, or underdetermined latent structure.  Then
+one encounters at least four kinds of failure.
+\begin{enumerate}
+  \item \textbf{Non-identifiability:} different latent models induce the same
+        observed law.
+  \item \textbf{State uncertainty:} what matters for action is a posterior over
+        hidden states, not a directly observed symbol frequency.
+  \item \textbf{Representation mismatch:} the currently chosen predicates or
+        symbols are not sufficient statistics for the real task.
+  \item \textbf{Resource limits:} even when the semantics is clear, exact
+        inference may be too expensive to run exhaustively.
+\end{enumerate}
+
+\subsection{The methodological lesson}
+
+\begin{principle}[Boundary honesty]
+When pure chaining ceases to be semantically faithful, the right response is not
+to stretch its formulas beyond their domain.  The right response is to change
+the representation, the uncertainty object, the computational policy, or all
+three.
+\end{principle}
+
+This point is subtle.  It does not say symbolic reasoning is obsolete.  It says
+symbolic reasoning must be embedded in a richer architecture that can learn
+better representations, maintain ambiguity honestly, and choose what to compute
+next.
+
+\section{Belief state rather than derived edge}
+
+\subsection{The first conceptual shift}
+
+The first shift beyond pure chaining is from \emph{derived edge confidence} to
+\emph{belief state}.  In a partially observable system, the operative question
+is usually not:
+\begin{quote}
+What scalar truth value should I attach to this next symbolic consequence?
+\end{quote}
+but rather:
+\begin{quote}
+What posterior state over hidden structure should guide action, prediction, and
+further inference?
+\end{quote}
+
+This is the fundamental contribution of filtering in hidden-state models and of
+belief-state semantics in POMDPs.
+
+\subsection{The second shift}
+
+The second shift is from \emph{single posterior state} to \emph{set of possible
+posterior states}.  When observations underdetermine latent structure, belief
+itself is ambiguous.  A single posterior number can be a lossy and misleading
+summary.
+
+\section{Credal beliefs as the first learning-aware response}
+
+\subsection{Why credal semantics comes first}
+
+The most direct response to non-identifiability is a credal one.  If multiple
+hidden models remain compatible with the same observations, then the hidden
+belief should be represented as a set or interval, not as a point estimate
+chosen too early.
+
+\begin{definition}[Credal latent belief]
+Given a family of compatible latent models $\Theta$ and an observation history
+$h$, the credal belief over a latent query $q$ is the interval
+\[
+\left[\inf_{\theta \in \Theta} P_\theta(q \mid h),\;
+\sup_{\theta \in \Theta} P_\theta(q \mid h)\right].
+\]
+\end{definition}
+
+\subsection{Why this matters for symbolic systems}
+
+This move is important because it turns a no-go result into a usable semantic
+object.
+
+Positive example:
+\begin{itemize}
+  \item if two hidden-state models agree on all observations but disagree
+        maximally on a latent-state query, the correct answer is the full
+        interval from $0$ to $1$.
+\end{itemize}
+
+Negative example:
+\begin{itemize}
+  \item a single scalar ``confidence'' may hide the fact that the posterior is
+        structurally ambiguous rather than merely noisy.
+\end{itemize}
+
+\subsection{A conceptual interpretation of confidence}
+
+In this setting, confidence is no longer best interpreted as a primitive extra
+field attached to every inference step.  A deeper interpretation is:
+\begin{quote}
+Confidence reflects the width, stability, or fragility of the compatible belief
+set induced by the current observations and assumptions.
+\end{quote}
+
+This connects credal semantics to the older symbolic intuition that truth value
+should include both strength and confidence, but it grounds that distinction in
+hidden-model ambiguity rather than in an ad hoc numeric convention.
+
+\section{Learning as sufficient-statistic discovery}
+
+\subsection{The basic idea}
+
+When the current observable symbols are not sufficient for the task, one should
+learn derived observables, summary statistics, or latent predicates that make
+the problem more identifiable or more decision-relevant.
+
+\begin{principle}[Representation before weight fitting]
+When pure chaining fails because the currently visible vocabulary is
+insufficient, the first learning move should be to improve the representation,
+not merely to retune local rule weights.
+\end{principle}
+
+\subsection{What this means concretely}
+
+This can take several forms.
+\begin{itemize}
+  \item Learn history features that better predict latent mode or future value.
+  \item Learn abstract predicates that summarize long observational traces.
+  \item Learn context-sensitive sufficient statistics for special subdomains.
+  \item Learn regime detectors that decide which local reasoning laws are safe
+        in the present situation.
+\end{itemize}
+
+\subsection{Why this is better than ``fixing the formulas''}
+
+If the failure comes from omitted structure, then stretching a local chaining
+formula will not recover what the representation never recorded.  The proper
+repair is to make the missing structure visible, either explicitly or through a
+better learned surrogate.
+
+\section{Learning as latent-variable construction}
+
+\subsection{From hidden-state recovery to latent-state invention}
+
+Another conceptual step is to stop assuming that the true latent state space is
+already known.  In many real problems, the best internal state is not recovered
+from the world but constructed by the agent to improve prediction and action.
+
+\begin{definition}[Constructed latent state]
+A constructed latent state is an internal variable introduced because it
+compresses history in a way that improves future prediction, control, or
+explanation, even if it does not correspond one-to-one with a unique external
+hidden variable.
+\end{definition}
+
+\subsection{Why this matters}
+
+This move changes the problem from:
+\begin{quote}
+Which latent state is really there?
+\end{quote}
+to:
+\begin{quote}
+Which internal latent variables make reasoning and action more effective?
+\end{quote}
+
+That reframing is especially important under persistent non-identifiability.
+One need not solve metaphysical uniqueness in order to construct a useful
+belief-state architecture.
+
+\subsection{A key consequence}
+
+If latent variables are allowed to be constructed rather than merely recovered,
+then learning enters not only as parameter estimation but also as ontology
+growth.  The system may decide that its current symbolic vocabulary is too poor
+for the task and extend it.
+
+\section{Learning as attention and belief compression}
+
+\subsection{The computational problem}
+
+Even when the correct belief state is well-defined, tracking it exactly may be
+too expensive.  So another place for learning is not the semantics itself but
+the \emph{compression policy} deciding which parts of belief to maintain
+faithfully.
+
+\subsection{Attention as a first-class epistemic policy}
+
+An attention mechanism can be understood as a learned projection
+\[
+\Bel \mapsto \widehat{\Bel}
+\]
+that preserves action-relevant distinctions while forgetting the rest.
+
+\begin{principle}[Value-sensitive compression]
+A belief-compression map should be evaluated not by whether it preserves all
+semantic distinctions, but by whether it preserves the distinctions that matter
+for high-value decisions.
+\end{principle}
+
+\subsection{Why this is not merely approximation}
+
+This is not just ``cheap inference.''  It is a principled architectural layer:
+the system learns what latent distinctions are worth maintaining under limited
+time and memory.  In that sense, attention is a learned epistemic policy over
+belief state.
+
+\section{Learning as meta-inference}
+
+\subsection{Beliefs about filters}
+
+One can go a step further and treat the update rule itself as uncertain.  Then
+learning no longer tunes only model parameters; it compares alternative
+inference procedures, representation choices, and latent constructions.
+
+\subsection{Why this is attractive}
+
+This matters because real systems are often uncertain not just about the world
+but about:
+\begin{itemize}
+  \item which model family is appropriate,
+  \item which latent vocabulary is worth using,
+  \item which summary statistics are sufficient,
+  \item and which approximation policy best trades off cost and fidelity.
+\end{itemize}
+
+\subsection{The conceptual payoff}
+
+Learning can then be read as model selection and update-rule selection at the
+same time.  A reasoning system is not merely updating beliefs inside a fixed
+formal shell; it is learning which shell best supports competent behavior.
+
+\section{A cognitively synergistic architecture}
+
+\subsection{Why no single mechanism is enough}
+
+Pure chaining fails on hidden structure.  Exact Bayesian filtering is often too
+expensive or too brittle under model mismatch.  Credal semantics preserves
+ambiguity but does not on its own invent better latent states.  Representation
+learning may discover useful features but can lose interpretability.  Attention
+compression manages cost but risks forgetting the wrong thing.
+
+The right picture is therefore not replacement but composition.
+
+\subsection{The synergy stack}
+
+A coherent learning-aware world-model architecture might include:
+\begin{enumerate}
+  \item \textbf{Exact symbolic/evidence reasoning} on fragments where the model
+        really supports it.
+  \item \textbf{Belief-state tracking} for hidden-state semantics.
+  \item \textbf{Credal belief representation} when observations leave latent
+        structure underdetermined.
+  \item \textbf{Representation learning} to discover more useful summaries,
+        predicates, or latent variables.
+  \item \textbf{Attention and compression} to allocate finite computation toward
+        action-relevant distinctions.
+  \item \textbf{Meta-level selection} over models, filters, and reasoning modes.
+\end{enumerate}
+
+\subsection{The conceptual moral}
+
+\begin{principle}[Cognitive synergy]
+The role of learning is not merely to replace symbolic reasoning with a more
+flexible black box.  Its deeper role is to supply missing representations,
+missing statistics, and missing control policies exactly where symbolic chaining
+reaches principled semantic limits.
+\end{principle}
+
+\section{Where learning should enter in world-model reasoning}
+
+The following decomposition is especially useful.
+
+\subsection{Before chaining}
+
+Learning can enter before chaining by improving the representation:
+\begin{itemize}
+  \item feature discovery,
+  \item latent construction,
+  \item regime detection,
+  \item and vocabulary growth.
+\end{itemize}
+
+\subsection{During chaining}
+
+Learning can enter during chaining by controlling:
+\begin{itemize}
+  \item which rules to attempt,
+  \item which contexts to reveal,
+  \item which belief dimensions to maintain,
+  \item and when to abstain.
+\end{itemize}
+
+\subsection{After chaining}
+
+Learning can enter after chaining by revising:
+\begin{itemize}
+  \item which model family remains credible,
+  \item which latent variables are worth preserving,
+  \item and which approximation policy is acceptable under observed error.
+\end{itemize}
+
+\section{What this implies for POMDP-capable reasoning}
+
+\subsection{The planning connection}
+
+In partially observable control, the natural hidden-state object is the belief
+state.  A symbolic world-model system that wants to reason honestly in this
+setting should therefore:
+\begin{itemize}
+  \item track or approximate filtering and smoothing objects,
+  \item carry ambiguity credally when hidden-state models are underdetermined,
+  \item and learn belief compressions or latent refinements that improve action
+        quality.
+\end{itemize}
+
+\subsection{The practical implication}
+
+Learning beyond pure chaining is therefore not optional decoration.  It is the
+mechanism that turns a symbolic reasoning substrate into an architecture capable
+of operating under partial observability, ambiguity, and finite resources.
+
+\subsection{The conservative universal-prediction leg}
+
+One useful new consequence is that the POMDP-facing story is no longer only
+about posterior semantics.  Along any fixed action stream, a controlled hidden
+Markov law can now be compared against a concrete controlled Solomonoff-style
+semimeasure obtained by lifting the ordinary observation-alphabet universal
+mixture and ignoring actions.  This is deliberately conservative, but it is
+already enough to connect ambiguity-aware belief tracking to finite-horizon
+log-loss guarantees.
+
+The conceptual lesson is important:
+\begin{itemize}
+  \item universal prediction can be attached first at the level of fixed action
+        streams;
+  \item this already yields meaningful regret guarantees for partially
+        observable control;
+  \item and the remaining gap is no longer ``whether a bridge exists'' but
+        whether one wants a genuinely action-aware universal mixture rather
+        than the current conservative comparator.
+\end{itemize}
+
+The lower-semicomputability hypothesis in that theorem is also conceptually
+honest.  A raw hidden-state parameter object with arbitrary probability
+measures is not automatically computable.  So a learning architecture that
+wants to reason with universal predictors should expose a computable or
+lower-semicomputable model subclass explicitly instead of suppressing the
+domain condition.
+
+\section{A theorem-shaped research program}
+
+The following research directions are especially coherent.
+
+\begin{enumerate}
+  \item \textbf{Credal latent belief theorems.}  Formalize lower and upper
+        filtering and smoothing beliefs for families of hidden models.
+  \item \textbf{Computable hidden-model classes.}  Package model families whose
+        induced observation laws are lower semicomputable, so universal
+        prediction bounds apply without extra ad hoc hypotheses.
+  \item \textbf{Representation-growth semantics.}  State what it means for a
+        learned latent variable or predicate to improve identifiability or value.
+  \item \textbf{Belief-compression theorems.}  Prove conditions under which a
+        learned compressed belief state preserves action ranking or bounded loss.
+  \item \textbf{Value-of-information policies.}  Formalize when revealing more
+        context is worth its cost.
+  \item \textbf{Mode-switching semantics.}  Specify when the system should rely
+        on exact chaining, posterior inference, credal intervals, or learned
+        compression.
+  \item \textbf{Meta-filter learning.}  Formalize the selection of update rules
+        or model families based on predictive performance and decision quality.
+\end{enumerate}
+
+\section{A compact primer for future conversations}
+
+Future work can take the following as a stable conceptual baseline.
+
+\begin{enumerate}
+  \item Pure chaining is exact only on a restricted semantic fragment.
+  \item Hidden-state reasoning requires belief states, not merely derived local
+        supports.
+  \item Non-identifiability should be represented credally, not hidden.
+  \item Learning should improve representations before merely retuning rule
+        parameters.
+  \item Constructed latent variables are often more important than recovery of a
+        uniquely ``true'' hidden state.
+  \item Attention is best understood as a learned value-sensitive belief
+        compression policy.
+  \item The most powerful architecture is synergistic: symbolic reasoning,
+        Bayesian belief tracking, credal semantics, representation learning,
+        attention, and meta-level control each repair the others' failure modes.
+  \item In POMDP-like settings, learning beyond pure chaining is the route from
+        local symbolic inference to competent action under ambiguity.
+  \item A conservative controlled Solomonoff comparator already gives a first
+        universal-prediction anchor for that route, even before a fully
+        action-aware universal mixture exists.
+\end{enumerate}
+
+\section{Conclusion}
+
+The right response to the limitations of pure chaining is not surrender, and it
+is not unlimited confidence in larger learned models.  The right response is a
+clean architecture in which symbolic reasoning, probabilistic belief tracking,
+imprecise uncertainty, learned representation growth, and attention control are
+all given distinct and principled roles.
+
+From this perspective, learning enters exactly where it should:
+\begin{itemize}
+  \item to discover better sufficient statistics,
+  \item to build more useful latent variables,
+  \item to preserve ambiguity honestly,
+  \item to compress belief under resource limits,
+  \item and to choose which reasoning mode should be active at all.
+\end{itemize}
+
+That picture preserves the strongest virtues of symbolic world-model reasoning
+while acknowledging the realities of hidden structure, partial observability,
+and finite computation.  It therefore provides a coherent foundation for
+learning-aware \wmpln{} and POMDP-capable world-model reasoning.
+
+\end{document}

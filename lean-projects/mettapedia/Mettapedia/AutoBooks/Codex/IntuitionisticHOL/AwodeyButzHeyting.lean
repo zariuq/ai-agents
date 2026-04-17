@@ -124,6 +124,132 @@ topology via `instTopologicalSpaceSubtype`.
 abbrev PropFiberPair {X : Type*} [TopologicalSpace X] (E : EtaleSpace X) : Type _ :=
   { pq : E.Carrier × E.Carrier // E.proj pq.1 = E.proj pq.2 }
 
+namespace TopologicalInterpretation
+
+variable {Base : Type u} {Const : Ty Base → Type v}
+variable {X : Type w} [TopologicalSpace X]
+
+private theorem castCarrier_left_inv
+    {E F : EtaleSpace X}
+    (h : E = F)
+    (p : F.Carrier) :
+    cast (congrArg EtaleSpace.Carrier h) (cast (congrArg EtaleSpace.Carrier h.symm) p) = p := by
+  cases h
+  rfl
+
+private theorem castCarrier_right_inv
+    {E F : EtaleSpace X}
+    (h : E = F)
+    (p : E.Carrier) :
+    cast (congrArg EtaleSpace.Carrier h.symm) (cast (congrArg EtaleSpace.Carrier h) p) = p := by
+  cases h
+  rfl
+
+private theorem continuous_castCarrier
+    {E F : EtaleSpace X}
+    (h : E = F)
+    {Y : Type*} [TopologicalSpace Y]
+    {g : Y → E.Carrier}
+    (hg : Continuous g) :
+    Continuous fun y => cast (congrArg EtaleSpace.Carrier h) (g y) := by
+  cases h
+  simpa using hg
+
+private theorem proj_castCarrier
+    {E F : EtaleSpace X}
+    (h : E = F)
+    (p : E.Carrier) :
+    F.proj (cast (congrArg EtaleSpace.Carrier h) p) = E.proj p := by
+  cases h
+  rfl
+
+/--
+Cast a proposition-valued term evaluation from `space .prop` into the explicit
+`propSpace` carried by the full typed topological interpretation.
+-/
+def propCarrierCast (I : TopologicalInterpretation Base Const X) :
+    (I.space .prop).Carrier → I.propSpace.Carrier :=
+  fun p => cast (congrArg EtaleSpace.Carrier I.space_prop) p
+
+/--
+Cast a proposition-space element back into the ambient `space .prop` carrier.
+-/
+def propCarrierUncast (I : TopologicalInterpretation Base Const X) :
+    I.propSpace.Carrier → (I.space .prop).Carrier :=
+  fun p => cast (congrArg EtaleSpace.Carrier I.space_prop.symm) p
+
+@[simp] theorem propCarrierCast_uncast
+    (I : TopologicalInterpretation Base Const X) (p : I.propSpace.Carrier) :
+    I.propCarrierCast (I.propCarrierUncast p) = p := by
+  exact castCarrier_left_inv I.space_prop p
+
+@[simp] theorem propCarrierUncast_cast
+    (I : TopologicalInterpretation Base Const X) (p : (I.space .prop).Carrier) :
+    I.propCarrierUncast (I.propCarrierCast p) = p := by
+  exact castCarrier_right_inv I.space_prop p
+
+/-- Projection is preserved when casting from `space .prop` to `propSpace`. -/
+theorem propProjCast
+    (I : TopologicalInterpretation Base Const X)
+    (p : (I.space .prop).Carrier) :
+    I.propSpace.proj (I.propCarrierCast p) = (I.space .prop).proj p := by
+  exact proj_castCarrier I.space_prop p
+
+/-- Projection is preserved when casting from `propSpace` back to `space .prop`. -/
+theorem propProjUncast
+    (I : TopologicalInterpretation Base Const X)
+    (p : I.propSpace.Carrier) :
+    (I.space .prop).proj (I.propCarrierUncast p) = I.propSpace.proj p := by
+  exact proj_castCarrier I.space_prop.symm p
+
+/-- Continuity of the cast from `space .prop` to `propSpace`. -/
+theorem continuous_propCarrierCast
+    (I : TopologicalInterpretation Base Const X)
+    {Y : Type*} [TopologicalSpace Y]
+    {g : Y → (I.space .prop).Carrier}
+    (hg : Continuous g) :
+    Continuous fun y => I.propCarrierCast (g y) := by
+  exact continuous_castCarrier I.space_prop hg
+
+/-- Continuity of the cast from `propSpace` back to `space .prop`. -/
+theorem continuous_propCarrierUncast
+    (I : TopologicalInterpretation Base Const X)
+    {Y : Type*} [TopologicalSpace Y]
+    {g : Y → I.propSpace.Carrier}
+    (hg : Continuous g) :
+    Continuous fun y => I.propCarrierUncast (g y) := by
+  exact continuous_castCarrier I.space_prop.symm hg
+
+/--
+Evaluate a proposition-valued context term into the explicit proposition space.
+-/
+abbrev propCtxEval
+    (I : TopologicalInterpretation Base Const X)
+    {Γ : Ctx Base}
+    (φ : I.CtxTerm Γ .prop)
+    (γ : (I.ctxSpace Γ).Carrier) :
+    I.propSpace.Carrier :=
+  I.propCarrierCast (φ.toContinuousMap γ)
+
+@[simp] theorem propCtxEval_proj
+    (I : TopologicalInterpretation Base Const X)
+    {Γ : Ctx Base}
+    (φ : I.CtxTerm Γ .prop)
+    (γ : (I.ctxSpace Γ).Carrier) :
+    I.propSpace.proj (I.propCtxEval φ γ) = (I.ctxSpace Γ).proj γ := by
+  unfold propCtxEval
+  exact (I.propProjCast _).trans (congrFun φ.proj_comp γ)
+
+/-- Proposition-valued context evaluation is continuous after casting to `propSpace`. -/
+theorem continuous_propCtxEval
+    (I : TopologicalInterpretation Base Const X)
+    {Γ : Ctx Base}
+    (φ : I.CtxTerm Γ .prop) :
+    Continuous fun γ => I.propCtxEval φ γ := by
+  exact I.continuous_propCarrierCast φ.toContinuousMap.continuous
+
+end TopologicalInterpretation
+
 /--
 A Heyting-valued interpretation extends a topological interpretation with
 Heyting algebra operations on the proposition space fibers.
@@ -319,7 +445,8 @@ structure HeytingTopologicalInterpretation
   /-- Universal quantification is a valid context term (preserves projection). -/
   quantAll_proj : ∀ σ Γ (φ : TopologicalInterpretation.CtxTerm toTopologicalInterpretation (σ :: Γ) .prop)
     (γ : (toTopologicalInterpretation.ctxSpace Γ).Carrier),
-    propSpace.proj ((quantAll σ Γ φ).toContinuousMap γ) = (toTopologicalInterpretation.ctxSpace Γ).proj γ
+    propSpace.proj (toTopologicalInterpretation.propCtxEval (quantAll σ Γ φ) γ) =
+      (toTopologicalInterpretation.ctxSpace Γ).proj γ
   /--
   Existential quantification operation.
 
@@ -336,7 +463,8 @@ structure HeytingTopologicalInterpretation
   /-- Existential quantification is a valid context term (preserves projection). -/
   quantEx_proj : ∀ σ Γ (φ : TopologicalInterpretation.CtxTerm toTopologicalInterpretation (σ :: Γ) .prop)
     (γ : (toTopologicalInterpretation.ctxSpace Γ).Carrier),
-    propSpace.proj ((quantEx σ Γ φ).toContinuousMap γ) = (toTopologicalInterpretation.ctxSpace Γ).proj γ
+    propSpace.proj (toTopologicalInterpretation.propCtxEval (quantEx σ Γ φ) γ) =
+      (toTopologicalInterpretation.ctxSpace Γ).proj γ
   /--
   Fiberwise ordering on propSpace.
 
@@ -382,52 +510,56 @@ structure HeytingTopologicalInterpretation
     (t : Term Const Γ σ)
     (φ : TopologicalInterpretation.CtxTerm toTopologicalInterpretation (σ :: Γ) .prop)
     (γ : (toTopologicalInterpretation.ctxSpace Γ).Carrier)
-    (h : propSpace.proj ((quantAll σ Γ φ).toContinuousMap γ) =
-         propSpace.proj ((evalInstantiate t φ).toContinuousMap γ)),
-    fiberLe ⟨((quantAll σ Γ φ).toContinuousMap γ, (evalInstantiate t φ).toContinuousMap γ), h⟩
+    (h : propSpace.proj (toTopologicalInterpretation.propCtxEval (quantAll σ Γ φ) γ) =
+         propSpace.proj (toTopologicalInterpretation.propCtxEval (evalInstantiate t φ) γ)),
+    fiberLe ⟨(toTopologicalInterpretation.propCtxEval (quantAll σ Γ φ) γ,
+        toTopologicalInterpretation.propCtxEval (evalInstantiate t φ) γ), h⟩
   -- Existential introduction: φ[t/x] ≤ ∃x.φ(x)
   quantEx_intro : ∀ {σ : Ty Base} {Γ : Ctx Base}
     (t : Term Const Γ σ)
     (φ : TopologicalInterpretation.CtxTerm toTopologicalInterpretation (σ :: Γ) .prop)
     (γ : (toTopologicalInterpretation.ctxSpace Γ).Carrier)
-    (h : propSpace.proj ((evalInstantiate t φ).toContinuousMap γ) =
-         propSpace.proj ((quantEx σ Γ φ).toContinuousMap γ)),
-    fiberLe ⟨((evalInstantiate t φ).toContinuousMap γ, (quantEx σ Γ φ).toContinuousMap γ), h⟩
+    (h : propSpace.proj (toTopologicalInterpretation.propCtxEval (evalInstantiate t φ) γ) =
+         propSpace.proj (toTopologicalInterpretation.propCtxEval (quantEx σ Γ φ) γ)),
+    fiberLe ⟨(toTopologicalInterpretation.propCtxEval (evalInstantiate t φ) γ,
+        toTopologicalInterpretation.propCtxEval (quantEx σ Γ φ) γ), h⟩
   -- Universal introduction adjunction: evalWeaken(Δ) ≤ φ implies Δ ≤ ∀x.φ
   quantAll_intro : ∀ {σ : Ty Base} {Γ : Ctx Base}
     (Δ : TopologicalInterpretation.CtxTerm toTopologicalInterpretation Γ .prop)
     (φ : TopologicalInterpretation.CtxTerm toTopologicalInterpretation (σ :: Γ) .prop),
     (∀ γσΓ : (toTopologicalInterpretation.ctxSpace (σ :: Γ)).Carrier,
-      ∀ h : propSpace.proj ((evalWeaken σ Γ Δ).toContinuousMap γσΓ) =
-            propSpace.proj (φ.toContinuousMap γσΓ),
-      fiberLe ⟨((evalWeaken σ Γ Δ).toContinuousMap γσΓ, φ.toContinuousMap γσΓ), h⟩) →
+      ∀ h : propSpace.proj (toTopologicalInterpretation.propCtxEval (evalWeaken σ Γ Δ) γσΓ) =
+            propSpace.proj (toTopologicalInterpretation.propCtxEval φ γσΓ),
+      fiberLe ⟨(toTopologicalInterpretation.propCtxEval (evalWeaken σ Γ Δ) γσΓ,
+        toTopologicalInterpretation.propCtxEval φ γσΓ), h⟩) →
     (∀ γ : (toTopologicalInterpretation.ctxSpace Γ).Carrier,
-      ∀ h : propSpace.proj (Δ.toContinuousMap γ) =
-            propSpace.proj ((quantAll σ Γ φ).toContinuousMap γ),
-      fiberLe ⟨(Δ.toContinuousMap γ, (quantAll σ Γ φ).toContinuousMap γ), h⟩)
+      ∀ h : propSpace.proj (toTopologicalInterpretation.propCtxEval Δ γ) =
+            propSpace.proj (toTopologicalInterpretation.propCtxEval (quantAll σ Γ φ) γ),
+      fiberLe ⟨(toTopologicalInterpretation.propCtxEval Δ γ,
+        toTopologicalInterpretation.propCtxEval (quantAll σ Γ φ) γ), h⟩)
   -- Existential elimination adjunction: φ ∧ evalWeaken(Δ) ≤ evalWeaken(χ) implies ∃x.φ ∧ Δ ≤ χ
   quantEx_elim : ∀ {σ : Ty Base} {Γ : Ctx Base}
     (Δ : TopologicalInterpretation.CtxTerm toTopologicalInterpretation Γ .prop)
     (φ : TopologicalInterpretation.CtxTerm toTopologicalInterpretation (σ :: Γ) .prop)
     (χ : TopologicalInterpretation.CtxTerm toTopologicalInterpretation Γ .prop),
     (∀ γσΓ : (toTopologicalInterpretation.ctxSpace (σ :: Γ)).Carrier,
-      ∀ hφΔ : propSpace.proj (φ.toContinuousMap γσΓ) =
-              propSpace.proj ((evalWeaken σ Γ Δ).toContinuousMap γσΓ),
-      ∀ hMeetχ : propSpace.proj (fiberMeet ⟨(φ.toContinuousMap γσΓ,
-                   (evalWeaken σ Γ Δ).toContinuousMap γσΓ), hφΔ⟩) =
-                 propSpace.proj ((evalWeaken σ Γ χ).toContinuousMap γσΓ),
-      fiberLe ⟨(fiberMeet ⟨(φ.toContinuousMap γσΓ,
-                 (evalWeaken σ Γ Δ).toContinuousMap γσΓ), hφΔ⟩,
-                (evalWeaken σ Γ χ).toContinuousMap γσΓ), hMeetχ⟩) →
+      ∀ hφΔ : propSpace.proj (toTopologicalInterpretation.propCtxEval φ γσΓ) =
+              propSpace.proj (toTopologicalInterpretation.propCtxEval (evalWeaken σ Γ Δ) γσΓ),
+      ∀ hMeetχ : propSpace.proj (fiberMeet ⟨(toTopologicalInterpretation.propCtxEval φ γσΓ,
+                   toTopologicalInterpretation.propCtxEval (evalWeaken σ Γ Δ) γσΓ), hφΔ⟩) =
+                 propSpace.proj (toTopologicalInterpretation.propCtxEval (evalWeaken σ Γ χ) γσΓ),
+      fiberLe ⟨(fiberMeet ⟨(toTopologicalInterpretation.propCtxEval φ γσΓ,
+                 toTopologicalInterpretation.propCtxEval (evalWeaken σ Γ Δ) γσΓ), hφΔ⟩,
+                toTopologicalInterpretation.propCtxEval (evalWeaken σ Γ χ) γσΓ), hMeetχ⟩) →
     (∀ γ : (toTopologicalInterpretation.ctxSpace Γ).Carrier,
-      ∀ hExΔ : propSpace.proj ((quantEx σ Γ φ).toContinuousMap γ) =
-               propSpace.proj (Δ.toContinuousMap γ),
-      ∀ hMeetχ : propSpace.proj (fiberMeet ⟨((quantEx σ Γ φ).toContinuousMap γ,
-                   Δ.toContinuousMap γ), hExΔ⟩) =
-                 propSpace.proj (χ.toContinuousMap γ),
-      fiberLe ⟨(fiberMeet ⟨((quantEx σ Γ φ).toContinuousMap γ,
-                 Δ.toContinuousMap γ), hExΔ⟩,
-                χ.toContinuousMap γ), hMeetχ⟩)
+      ∀ hExΔ : propSpace.proj (toTopologicalInterpretation.propCtxEval (quantEx σ Γ φ) γ) =
+               propSpace.proj (toTopologicalInterpretation.propCtxEval Δ γ),
+      ∀ hMeetχ : propSpace.proj (fiberMeet ⟨(toTopologicalInterpretation.propCtxEval (quantEx σ Γ φ) γ,
+                   toTopologicalInterpretation.propCtxEval Δ γ), hExΔ⟩) =
+                 propSpace.proj (toTopologicalInterpretation.propCtxEval χ γ),
+      fiberLe ⟨(fiberMeet ⟨(toTopologicalInterpretation.propCtxEval (quantEx σ Γ φ) γ,
+                 toTopologicalInterpretation.propCtxEval Δ γ), hExΔ⟩,
+                toTopologicalInterpretation.propCtxEval χ γ), hMeetχ⟩)
 
 namespace HeytingTopologicalInterpretation
 
@@ -447,21 +579,33 @@ With Heyting structure, we can now interpret all propositional connectives.
 
 /-- Interpret ⊤ in any context. -/
 noncomputable def evalTop (Γ : Ctx Base) : I.toTopologicalInterpretation.CtxTerm Γ .prop where
-  toContinuousMap := I.propTop.toContinuousMap.comp
-    (EtaleSpace.projMap (I.ctxSpace Γ))
+  toContinuousMap := {
+    toFun := fun γ =>
+      I.toTopologicalInterpretation.propCarrierUncast
+        (I.propTop.toContinuousMap ((I.ctxSpace Γ).proj γ))
+    continuous_toFun := by
+      apply I.toTopologicalInterpretation.continuous_propCarrierUncast
+      exact (I.propTop.toContinuousMap.comp (EtaleSpace.projMap (I.ctxSpace Γ))).continuous
+  }
   proj_comp := by
-    funext x
-    simp only [Function.comp_apply, EtaleSpace.projMap]
-    exact congrFun I.propTop.proj_comp ((I.ctxSpace Γ).proj x)
+    funext γ
+    exact (I.toTopologicalInterpretation.propProjUncast _).trans
+      (congrFun I.propTop.proj_comp ((I.ctxSpace Γ).proj γ))
 
 /-- Interpret ⊥ in any context. -/
 noncomputable def evalBot (Γ : Ctx Base) : I.toTopologicalInterpretation.CtxTerm Γ .prop where
-  toContinuousMap := I.propBot.toContinuousMap.comp
-    (EtaleSpace.projMap (I.ctxSpace Γ))
+  toContinuousMap := {
+    toFun := fun γ =>
+      I.toTopologicalInterpretation.propCarrierUncast
+        (I.propBot.toContinuousMap ((I.ctxSpace Γ).proj γ))
+    continuous_toFun := by
+      apply I.toTopologicalInterpretation.continuous_propCarrierUncast
+      exact (I.propBot.toContinuousMap.comp (EtaleSpace.projMap (I.ctxSpace Γ))).continuous
+  }
   proj_comp := by
-    funext x
-    simp only [Function.comp_apply, EtaleSpace.projMap]
-    exact congrFun I.propBot.proj_comp ((I.ctxSpace Γ).proj x)
+    funext γ
+    exact (I.toTopologicalInterpretation.propProjUncast _).trans
+      (congrFun I.propBot.proj_comp ((I.ctxSpace Γ).proj γ))
 
 /-!
 ## Auxiliary Lemmas for Soundness
@@ -699,35 +843,46 @@ noncomputable def evalAnd {Γ : Ctx Base}
     I.toTopologicalInterpretation.CtxTerm Γ .prop where
   toContinuousMap := {
     toFun := fun γ =>
-      -- φ(γ) and ψ(γ) are in the same fiber because both project to proj(γ)
-      let p := φ.toContinuousMap γ
-      let q := ψ.toContinuousMap γ
+      let p := I.toTopologicalInterpretation.propCtxEval φ γ
+      let q := I.toTopologicalInterpretation.propCtxEval ψ γ
       have hpq : I.propSpace.proj p = I.propSpace.proj q := by
-        have hp := congrFun φ.proj_comp γ
-        have hq := congrFun ψ.proj_comp γ
-        exact hp.trans hq.symm
-      I.fiberMeet ⟨(p, q), hpq⟩
+        exact (I.toTopologicalInterpretation.propCtxEval_proj φ γ).trans
+          (I.toTopologicalInterpretation.propCtxEval_proj ψ γ).symm
+      I.toTopologicalInterpretation.propCarrierUncast (I.fiberMeet ⟨(p, q), hpq⟩)
     continuous_toFun := by
-      -- Compose: γ ↦ (φ(γ), ψ(γ)) then fiberMeet
-      have hproof : ∀ γ, I.propSpace.proj (φ.toContinuousMap γ) =
-          I.propSpace.proj (ψ.toContinuousMap γ) := fun γ => by
-        have hp := congrFun φ.proj_comp γ
-        have hq := congrFun ψ.proj_comp γ
-        exact hp.trans hq.symm
+      have hproof : ∀ γ, I.propSpace.proj (I.toTopologicalInterpretation.propCtxEval φ γ) =
+          I.propSpace.proj (I.toTopologicalInterpretation.propCtxEval ψ γ) := fun γ =>
+        (I.toTopologicalInterpretation.propCtxEval_proj φ γ).trans
+          (I.toTopologicalInterpretation.propCtxEval_proj ψ γ).symm
       have hpair : Continuous fun γ =>
-          (⟨(φ.toContinuousMap γ, ψ.toContinuousMap γ), hproof γ⟩ : PropFiberPair I.propSpace) := by
+          (⟨(I.toTopologicalInterpretation.propCtxEval φ γ,
+            I.toTopologicalInterpretation.propCtxEval ψ γ), hproof γ⟩ :
+            PropFiberPair I.propSpace) := by
         refine Continuous.subtype_mk ?_ _
-        exact φ.toContinuousMap.continuous.prodMk ψ.toContinuousMap.continuous
-      exact I.fiberMeet_continuous.comp hpair
+        exact (I.toTopologicalInterpretation.continuous_propCtxEval φ).prodMk
+          (I.toTopologicalInterpretation.continuous_propCtxEval ψ)
+      exact I.toTopologicalInterpretation.continuous_propCarrierUncast
+        (I.fiberMeet_continuous.comp hpair)
   }
   proj_comp := by
     funext γ
-    simp only [Function.comp_apply, TopologicalInterpretation.space_prop]
-    -- The goal is: I.propSpace.proj (I.fiberMeet ⟨...⟩) = (I.ctxSpace Γ).proj γ
-    -- By fiberMeet_proj, LHS = I.propSpace.proj (φ.toContinuousMap γ)
-    -- By φ.proj_comp, this equals (I.ctxSpace Γ).proj γ
-    calc I.propSpace.proj _ = I.propSpace.proj (φ.toContinuousMap γ) := I.fiberMeet_proj _
-      _ = (I.ctxSpace Γ).proj γ := congrFun φ.proj_comp γ
+    let p := I.toTopologicalInterpretation.propCtxEval φ γ
+    let q := I.toTopologicalInterpretation.propCtxEval ψ γ
+    have hpq : I.propSpace.proj p = I.propSpace.proj q := by
+        exact (I.toTopologicalInterpretation.propCtxEval_proj φ γ).trans
+          (I.toTopologicalInterpretation.propCtxEval_proj ψ γ).symm
+    let pair : PropFiberPair I.propSpace := ⟨(p, q), hpq⟩
+    change
+      (I.toTopologicalInterpretation.space .prop).proj
+          (I.toTopologicalInterpretation.propCarrierUncast (I.fiberMeet pair)) =
+        (I.ctxSpace Γ).proj γ
+    calc
+      (I.toTopologicalInterpretation.space .prop).proj
+          (I.toTopologicalInterpretation.propCarrierUncast (I.fiberMeet pair))
+          = I.propSpace.proj (I.fiberMeet pair) :=
+            I.toTopologicalInterpretation.propProjUncast _
+      _ = I.propSpace.proj p := I.fiberMeet_proj pair
+      _ = (I.ctxSpace Γ).proj γ := I.toTopologicalInterpretation.propCtxEval_proj φ γ
 
 /-- Interpret disjunction φ ∨ ψ using fiberwise join. -/
 noncomputable def evalOr {Γ : Ctx Base}
@@ -735,30 +890,46 @@ noncomputable def evalOr {Γ : Ctx Base}
     I.toTopologicalInterpretation.CtxTerm Γ .prop where
   toContinuousMap := {
     toFun := fun γ =>
-      let p := φ.toContinuousMap γ
-      let q := ψ.toContinuousMap γ
+      let p := I.toTopologicalInterpretation.propCtxEval φ γ
+      let q := I.toTopologicalInterpretation.propCtxEval ψ γ
       have hpq : I.propSpace.proj p = I.propSpace.proj q := by
-        have hp := congrFun φ.proj_comp γ
-        have hq := congrFun ψ.proj_comp γ
-        exact hp.trans hq.symm
-      I.fiberJoin ⟨(p, q), hpq⟩
+        exact (I.toTopologicalInterpretation.propCtxEval_proj φ γ).trans
+          (I.toTopologicalInterpretation.propCtxEval_proj ψ γ).symm
+      I.toTopologicalInterpretation.propCarrierUncast (I.fiberJoin ⟨(p, q), hpq⟩)
     continuous_toFun := by
-      have hproof : ∀ γ, I.propSpace.proj (φ.toContinuousMap γ) =
-          I.propSpace.proj (ψ.toContinuousMap γ) := fun γ => by
-        have hp := congrFun φ.proj_comp γ
-        have hq := congrFun ψ.proj_comp γ
-        exact hp.trans hq.symm
+      have hproof : ∀ γ, I.propSpace.proj (I.toTopologicalInterpretation.propCtxEval φ γ) =
+          I.propSpace.proj (I.toTopologicalInterpretation.propCtxEval ψ γ) := fun γ =>
+        (I.toTopologicalInterpretation.propCtxEval_proj φ γ).trans
+          (I.toTopologicalInterpretation.propCtxEval_proj ψ γ).symm
       have hpair : Continuous fun γ =>
-          (⟨(φ.toContinuousMap γ, ψ.toContinuousMap γ), hproof γ⟩ : PropFiberPair I.propSpace) := by
+          (⟨(I.toTopologicalInterpretation.propCtxEval φ γ,
+            I.toTopologicalInterpretation.propCtxEval ψ γ), hproof γ⟩ :
+            PropFiberPair I.propSpace) := by
         refine Continuous.subtype_mk ?_ _
-        exact φ.toContinuousMap.continuous.prodMk ψ.toContinuousMap.continuous
-      exact I.fiberJoin_continuous.comp hpair
+        exact (I.toTopologicalInterpretation.continuous_propCtxEval φ).prodMk
+          (I.toTopologicalInterpretation.continuous_propCtxEval ψ)
+      exact I.toTopologicalInterpretation.continuous_propCarrierUncast
+        (I.fiberJoin_continuous.comp hpair)
   }
   proj_comp := by
     funext γ
-    simp only [Function.comp_apply, TopologicalInterpretation.space_prop]
-    calc I.propSpace.proj _ = I.propSpace.proj (φ.toContinuousMap γ) := I.fiberJoin_proj _
-      _ = (I.ctxSpace Γ).proj γ := congrFun φ.proj_comp γ
+    let p := I.toTopologicalInterpretation.propCtxEval φ γ
+    let q := I.toTopologicalInterpretation.propCtxEval ψ γ
+    have hpq : I.propSpace.proj p = I.propSpace.proj q := by
+        exact (I.toTopologicalInterpretation.propCtxEval_proj φ γ).trans
+          (I.toTopologicalInterpretation.propCtxEval_proj ψ γ).symm
+    let pair : PropFiberPair I.propSpace := ⟨(p, q), hpq⟩
+    change
+      (I.toTopologicalInterpretation.space .prop).proj
+          (I.toTopologicalInterpretation.propCarrierUncast (I.fiberJoin pair)) =
+        (I.ctxSpace Γ).proj γ
+    calc
+      (I.toTopologicalInterpretation.space .prop).proj
+          (I.toTopologicalInterpretation.propCarrierUncast (I.fiberJoin pair))
+          = I.propSpace.proj (I.fiberJoin pair) :=
+            I.toTopologicalInterpretation.propProjUncast _
+      _ = I.propSpace.proj p := I.fiberJoin_proj pair
+      _ = (I.ctxSpace Γ).proj γ := I.toTopologicalInterpretation.propCtxEval_proj φ γ
 
 /-- Interpret implication φ → ψ using fiberwise Heyting implication. -/
 noncomputable def evalImp {Γ : Ctx Base}
@@ -766,30 +937,46 @@ noncomputable def evalImp {Γ : Ctx Base}
     I.toTopologicalInterpretation.CtxTerm Γ .prop where
   toContinuousMap := {
     toFun := fun γ =>
-      let p := φ.toContinuousMap γ
-      let q := ψ.toContinuousMap γ
+      let p := I.toTopologicalInterpretation.propCtxEval φ γ
+      let q := I.toTopologicalInterpretation.propCtxEval ψ γ
       have hpq : I.propSpace.proj p = I.propSpace.proj q := by
-        have hp := congrFun φ.proj_comp γ
-        have hq := congrFun ψ.proj_comp γ
-        exact hp.trans hq.symm
-      I.fiberHimp ⟨(p, q), hpq⟩
+        exact (I.toTopologicalInterpretation.propCtxEval_proj φ γ).trans
+          (I.toTopologicalInterpretation.propCtxEval_proj ψ γ).symm
+      I.toTopologicalInterpretation.propCarrierUncast (I.fiberHimp ⟨(p, q), hpq⟩)
     continuous_toFun := by
-      have hproof : ∀ γ, I.propSpace.proj (φ.toContinuousMap γ) =
-          I.propSpace.proj (ψ.toContinuousMap γ) := fun γ => by
-        have hp := congrFun φ.proj_comp γ
-        have hq := congrFun ψ.proj_comp γ
-        exact hp.trans hq.symm
+      have hproof : ∀ γ, I.propSpace.proj (I.toTopologicalInterpretation.propCtxEval φ γ) =
+          I.propSpace.proj (I.toTopologicalInterpretation.propCtxEval ψ γ) := fun γ =>
+        (I.toTopologicalInterpretation.propCtxEval_proj φ γ).trans
+          (I.toTopologicalInterpretation.propCtxEval_proj ψ γ).symm
       have hpair : Continuous fun γ =>
-          (⟨(φ.toContinuousMap γ, ψ.toContinuousMap γ), hproof γ⟩ : PropFiberPair I.propSpace) := by
+          (⟨(I.toTopologicalInterpretation.propCtxEval φ γ,
+            I.toTopologicalInterpretation.propCtxEval ψ γ), hproof γ⟩ :
+            PropFiberPair I.propSpace) := by
         refine Continuous.subtype_mk ?_ _
-        exact φ.toContinuousMap.continuous.prodMk ψ.toContinuousMap.continuous
-      exact I.fiberHimp_continuous.comp hpair
+        exact (I.toTopologicalInterpretation.continuous_propCtxEval φ).prodMk
+          (I.toTopologicalInterpretation.continuous_propCtxEval ψ)
+      exact I.toTopologicalInterpretation.continuous_propCarrierUncast
+        (I.fiberHimp_continuous.comp hpair)
   }
   proj_comp := by
     funext γ
-    simp only [Function.comp_apply, TopologicalInterpretation.space_prop]
-    calc I.propSpace.proj _ = I.propSpace.proj (φ.toContinuousMap γ) := I.fiberHimp_proj _
-      _ = (I.ctxSpace Γ).proj γ := congrFun φ.proj_comp γ
+    let p := I.toTopologicalInterpretation.propCtxEval φ γ
+    let q := I.toTopologicalInterpretation.propCtxEval ψ γ
+    have hpq : I.propSpace.proj p = I.propSpace.proj q := by
+        exact (I.toTopologicalInterpretation.propCtxEval_proj φ γ).trans
+          (I.toTopologicalInterpretation.propCtxEval_proj ψ γ).symm
+    let pair : PropFiberPair I.propSpace := ⟨(p, q), hpq⟩
+    change
+      (I.toTopologicalInterpretation.space .prop).proj
+          (I.toTopologicalInterpretation.propCarrierUncast (I.fiberHimp pair)) =
+        (I.ctxSpace Γ).proj γ
+    calc
+      (I.toTopologicalInterpretation.space .prop).proj
+          (I.toTopologicalInterpretation.propCarrierUncast (I.fiberHimp pair))
+          = I.propSpace.proj (I.fiberHimp pair) :=
+            I.toTopologicalInterpretation.propProjUncast _
+      _ = I.propSpace.proj p := I.fiberHimp_proj pair
+      _ = (I.ctxSpace Γ).proj γ := I.toTopologicalInterpretation.propCtxEval_proj φ γ
 
 /-- Interpret negation ¬φ. -/
 noncomputable def evalNot {Γ : Ctx Base}
@@ -884,7 +1071,7 @@ noncomputable def evalEq (I : HeytingTopologicalInterpretation Base Const X)
 The Heyting layer supplies the logical operations required by the generic
 topological evaluator.
 -/
-instance instHasLogicalOperations
+noncomputable instance instHasLogicalOperations
     (I : HeytingTopologicalInterpretation Base Const X) :
     TopologicalInterpretation.HasLogicalOperations I.toTopologicalInterpretation where
   evalTop := I.evalTop
@@ -896,23 +1083,98 @@ instance instHasLogicalOperations
   evalAll := fun φ => I.evalAll φ
   evalEx := fun φ => I.evalEx φ
 
+@[simp] theorem instHasLogicalOperations_evalTop
+    (I : HeytingTopologicalInterpretation Base Const X)
+    (Γ : Ctx Base) :
+    TopologicalInterpretation.HasLogicalOperations.evalTop
+        (I := I.toTopologicalInterpretation) Γ =
+      I.evalTop Γ :=
+  rfl
+
+@[simp] theorem instHasLogicalOperations_evalBot
+    (I : HeytingTopologicalInterpretation Base Const X)
+    (Γ : Ctx Base) :
+    TopologicalInterpretation.HasLogicalOperations.evalBot
+        (I := I.toTopologicalInterpretation) Γ =
+      I.evalBot Γ :=
+  rfl
+
+@[simp] theorem instHasLogicalOperations_evalAnd
+    (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base}
+    (φ ψ : I.toTopologicalInterpretation.CtxTerm Γ .prop) :
+    TopologicalInterpretation.HasLogicalOperations.evalAnd
+        (I := I.toTopologicalInterpretation) φ ψ =
+      I.evalAnd φ ψ :=
+  rfl
+
+@[simp] theorem instHasLogicalOperations_evalOr
+    (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base}
+    (φ ψ : I.toTopologicalInterpretation.CtxTerm Γ .prop) :
+    TopologicalInterpretation.HasLogicalOperations.evalOr
+        (I := I.toTopologicalInterpretation) φ ψ =
+      I.evalOr φ ψ :=
+  rfl
+
+@[simp] theorem instHasLogicalOperations_evalImp
+    (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base}
+    (φ ψ : I.toTopologicalInterpretation.CtxTerm Γ .prop) :
+    TopologicalInterpretation.HasLogicalOperations.evalImp
+        (I := I.toTopologicalInterpretation) φ ψ =
+      I.evalImp φ ψ :=
+  rfl
+
+@[simp] theorem instHasLogicalOperations_evalEq
+    (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base} {τ : Ty Base}
+    (t u : I.toTopologicalInterpretation.CtxTerm Γ τ) :
+    TopologicalInterpretation.HasLogicalOperations.evalEq
+        (I := I.toTopologicalInterpretation) t u =
+      I.evalEq t u :=
+  rfl
+
+@[simp] theorem instHasLogicalOperations_evalAll
+    (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base} {σ : Ty Base}
+    (φ : I.toTopologicalInterpretation.CtxTerm (σ :: Γ) .prop) :
+    TopologicalInterpretation.HasLogicalOperations.evalAll
+        (I := I.toTopologicalInterpretation) φ =
+      I.evalAll φ :=
+  rfl
+
+@[simp] theorem instHasLogicalOperations_evalEx
+    (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base} {σ : Ty Base}
+    (φ : I.toTopologicalInterpretation.CtxTerm (σ :: Γ) .prop) :
+    TopologicalInterpretation.HasLogicalOperations.evalEx
+        (I := I.toTopologicalInterpretation) φ =
+      I.evalEx φ :=
+  rfl
+
 /-- Full term evaluation using Heyting structure for connectives. -/
-noncomputable def fullEval (I : HeytingTopologicalInterpretation Base Const X)
-    {Γ : Ctx Base} {τ : Ty Base} :
-    Term Const Γ τ → I.toTopologicalInterpretation.CtxTerm Γ τ
-  | .var v => TopologicalInterpretation.evalVar I.toTopologicalInterpretation v
-  | .const c => I.toTopologicalInterpretation.evalConst Γ c
-  | .lam body => TopologicalInterpretation.CtxTerm.lam (fullEval I body)
-  | .app f a => TopologicalInterpretation.CtxTerm.app (fullEval I f) (fullEval I a)
-  | .top => evalTop I Γ
-  | .bot => evalBot I Γ
-  | .and φ ψ => evalAnd I (fullEval I φ) (fullEval I ψ)
-  | .or φ ψ => evalOr I (fullEval I φ) (fullEval I ψ)
-  | .imp φ ψ => evalImp I (fullEval I φ) (fullEval I ψ)
-  | .not φ => evalNot I (fullEval I φ)
-  | .eq t u => evalEq I (fullEval I t) (fullEval I u)
-  | .all φ => evalAll I (fullEval I φ)
-  | .ex φ => evalEx I (fullEval I φ)
+noncomputable abbrev fullEval (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base} {τ : Ty Base}
+    (t : Term Const Γ τ) :
+    I.toTopologicalInterpretation.CtxTerm Γ τ :=
+  TopologicalInterpretation.eval I.toTopologicalInterpretation t
+
+@[simp] theorem fullEval_app_lam (I : HeytingTopologicalInterpretation Base Const X)
+  {Γ : Ctx Base} {σ τ : Ty Base}
+  (body : Term Const (σ :: Γ) τ)
+  (arg : Term Const Γ σ) :
+  fullEval I (.app (.lam body) arg) =
+    (fullEval I body).reindex
+      (TopologicalInterpretation.CtxHom.cons (fullEval I arg)
+        (TopologicalInterpretation.CtxHom.id I.toTopologicalInterpretation Γ)) := by
+  show
+    TopologicalInterpretation.eval I.toTopologicalInterpretation (.app (.lam body) arg) =
+      (TopologicalInterpretation.eval I.toTopologicalInterpretation body).reindex
+        (TopologicalInterpretation.CtxHom.cons
+          (TopologicalInterpretation.eval I.toTopologicalInterpretation arg)
+          (TopologicalInterpretation.CtxHom.id I.toTopologicalInterpretation Γ))
+  rw [TopologicalInterpretation.eval_app_lam]
 
 /-- Formula truth using full evaluation. -/
 noncomputable def fullFormulaTruth (I : HeytingTopologicalInterpretation Base Const X)
@@ -983,20 +1245,17 @@ which is crucial for proving coherence between syntactic and semantic operations
 theorem evalTop_reindex (I : HeytingTopologicalInterpretation Base Const X)
     {Γ Δ : Ctx Base} (f : I.toTopologicalInterpretation.CtxHom Γ Δ) :
     evalTop I Γ = (evalTop I Δ).reindex f := by
-  -- Two CtxTerms with equal underlying continuous maps are equal
-  -- evalTop Γ has: propTop.comp (projMap ctxSpace Γ)
-  -- (evalTop Δ).reindex f has: propTop.comp (projMap ctxSpace Δ).comp f
-  -- These are equal because (ctxSpace Δ).proj ∘ f = (ctxSpace Γ).proj by f.proj_comp
   unfold evalTop TopologicalInterpretation.CtxTerm.reindex
   congr 1
   · apply ContinuousMap.ext
     intro γ
-    -- Simplify compositions step by step
-    show I.propTop.toContinuousMap ((I.ctxSpace Γ).proj γ) =
-         I.propTop.toContinuousMap ((I.ctxSpace Δ).proj (f.toContinuousMap γ))
-    -- Use f.proj_comp: (ctxSpace Δ).proj ∘ f = (ctxSpace Γ).proj
+    change
+      I.toTopologicalInterpretation.propCarrierUncast
+          (I.propTop.toContinuousMap ((I.ctxSpace Γ).proj γ)) =
+        I.toTopologicalInterpretation.propCarrierUncast
+          (I.propTop.toContinuousMap ((I.ctxSpace Δ).proj (f.toContinuousMap γ)))
     rw [← congrFun f.proj_comp γ]
-    rfl
+    simp [Function.comp_apply]
 
 /-- evalBot commutes with reindexing. -/
 theorem evalBot_reindex (I : HeytingTopologicalInterpretation Base Const X)
@@ -1006,10 +1265,13 @@ theorem evalBot_reindex (I : HeytingTopologicalInterpretation Base Const X)
   congr 1
   · apply ContinuousMap.ext
     intro γ
-    show I.propBot.toContinuousMap ((I.ctxSpace Γ).proj γ) =
-         I.propBot.toContinuousMap ((I.ctxSpace Δ).proj (f.toContinuousMap γ))
+    change
+      I.toTopologicalInterpretation.propCarrierUncast
+          (I.propBot.toContinuousMap ((I.ctxSpace Γ).proj γ)) =
+        I.toTopologicalInterpretation.propCarrierUncast
+          (I.propBot.toContinuousMap ((I.ctxSpace Δ).proj (f.toContinuousMap γ)))
     rw [← congrFun f.proj_comp γ]
-    rfl
+    simp [Function.comp_apply]
 
 /-- evalAnd commutes with reindexing: (φ ∧ ψ).reindex f = φ.reindex f ∧ ψ.reindex f. -/
 theorem evalAnd_reindex (I : HeytingTopologicalInterpretation Base Const X)
@@ -1107,6 +1369,28 @@ noncomputable def evalAntecedents (I : HeytingTopologicalInterpretation Base Con
   | [] => evalTop I Γ
   | φ :: rest => evalAnd I (fullEval I φ) (evalAntecedents I rest)
 
+/-- Evaluate a formula into the explicit proposition space over a context point. -/
+noncomputable abbrev formulaEval (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base} (φ : Formula Const Γ) (γ : (I.ctxSpace Γ).Carrier) :
+    I.propSpace.Carrier :=
+  I.toTopologicalInterpretation.propCtxEval (fullEval I φ) γ
+
+/-- Evaluate antecedents into the explicit proposition space over a context point. -/
+noncomputable abbrev antecedentsEval (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base} (antecedents : List (Formula Const Γ)) (γ : (I.ctxSpace Γ).Carrier) :
+    I.propSpace.Carrier :=
+  I.toTopologicalInterpretation.propCtxEval (evalAntecedents I antecedents) γ
+
+@[simp] theorem formulaEval_proj (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base} (φ : Formula Const Γ) (γ : (I.ctxSpace Γ).Carrier) :
+    I.propSpace.proj (I.formulaEval φ γ) = (I.ctxSpace Γ).proj γ :=
+  I.toTopologicalInterpretation.propCtxEval_proj (fullEval I φ) γ
+
+@[simp] theorem antecedentsEval_proj (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base} (antecedents : List (Formula Const Γ)) (γ : (I.ctxSpace Γ).Carrier) :
+    I.propSpace.proj (I.antecedentsEval antecedents γ) = (I.ctxSpace Γ).proj γ :=
+  I.toTopologicalInterpretation.propCtxEval_proj (evalAntecedents I antecedents) γ
+
 /-- evalAntecedents on cons is evalAnd of the head and tail. -/
 theorem evalAntecedents_cons (I : HeytingTopologicalInterpretation Base Const X)
     {Γ : Ctx Base} (φ : Formula Const Γ) (Δ : List (Formula Const Γ))
@@ -1118,14 +1402,67 @@ theorem evalAntecedents_cons (I : HeytingTopologicalInterpretation Base Const X)
 theorem evalAntecedents_cons_fiberMeet (I : HeytingTopologicalInterpretation Base Const X)
     {Γ : Ctx Base} (φ : Formula Const Γ) (Δ : List (Formula Const Γ))
     (γ : (I.ctxSpace Γ).Carrier) :
-    let φEval := (fullEval I φ).toContinuousMap γ
-    let ΔEval := (evalAntecedents I Δ).toContinuousMap γ
+    let φEval := I.formulaEval φ γ
+    let ΔEval := I.antecedentsEval Δ γ
     have hpq : I.propSpace.proj φEval = I.propSpace.proj ΔEval := by
-      have hφ := congrFun (fullEval I φ).proj_comp γ
-      have hΔ := congrFun (evalAntecedents I Δ).proj_comp γ
-      exact hφ.trans hΔ.symm
-    (evalAntecedents I (φ :: Δ)).toContinuousMap γ =
-    I.fiberMeet ⟨(φEval, ΔEval), hpq⟩ := rfl
+      exact (I.formulaEval_proj φ γ).trans (I.antecedentsEval_proj Δ γ).symm
+    I.antecedentsEval (φ :: Δ) γ =
+    I.fiberMeet ⟨(φEval, ΔEval), hpq⟩ := by
+  simp [antecedentsEval, formulaEval, evalAntecedents, TopologicalInterpretation.propCtxEval,
+    evalAnd]
+
+@[simp] theorem formulaEval_top (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base} (γ : (I.ctxSpace Γ).Carrier) :
+    I.formulaEval (Term.top : Formula Const Γ) γ =
+      I.propTop.toContinuousMap ((I.ctxSpace Γ).proj γ) := by
+  simp [formulaEval, TopologicalInterpretation.propCtxEval, fullEval, evalTop]
+
+@[simp] theorem formulaEval_bot (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base} (γ : (I.ctxSpace Γ).Carrier) :
+    I.formulaEval (Term.bot : Formula Const Γ) γ =
+      I.propBot.toContinuousMap ((I.ctxSpace Γ).proj γ) := by
+  simp [formulaEval, TopologicalInterpretation.propCtxEval, fullEval, evalBot]
+
+theorem formulaEval_and (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base} (φ ψ : Formula Const Γ) (γ : (I.ctxSpace Γ).Carrier) :
+    let φEval := I.formulaEval φ γ
+    let ψEval := I.formulaEval ψ γ
+    have hpq : I.propSpace.proj φEval = I.propSpace.proj ψEval := by
+      exact (I.formulaEval_proj φ γ).trans (I.formulaEval_proj ψ γ).symm
+    I.formulaEval (Term.and φ ψ) γ = I.fiberMeet ⟨(φEval, ψEval), hpq⟩ := by
+  simp [formulaEval, TopologicalInterpretation.propCtxEval, fullEval, evalAnd]
+
+theorem formulaEval_or (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base} (φ ψ : Formula Const Γ) (γ : (I.ctxSpace Γ).Carrier) :
+    let φEval := I.formulaEval φ γ
+    let ψEval := I.formulaEval ψ γ
+    have hpq : I.propSpace.proj φEval = I.propSpace.proj ψEval := by
+      exact (I.formulaEval_proj φ γ).trans (I.formulaEval_proj ψ γ).symm
+    I.formulaEval (Term.or φ ψ) γ = I.fiberJoin ⟨(φEval, ψEval), hpq⟩ := by
+  simp [formulaEval, TopologicalInterpretation.propCtxEval, fullEval, evalOr]
+
+theorem formulaEval_imp (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base} (φ ψ : Formula Const Γ) (γ : (I.ctxSpace Γ).Carrier) :
+    let φEval := I.formulaEval φ γ
+    let ψEval := I.formulaEval ψ γ
+    have hpq : I.propSpace.proj φEval = I.propSpace.proj ψEval := by
+      exact (I.formulaEval_proj φ γ).trans (I.formulaEval_proj ψ γ).symm
+    I.formulaEval (Term.imp φ ψ) γ = I.fiberHimp ⟨(φEval, ψEval), hpq⟩ := by
+  simp [formulaEval, TopologicalInterpretation.propCtxEval, fullEval, evalImp]
+
+@[simp] theorem formulaEval_all (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base} {σ : Ty Base} (φ : Formula Const (σ :: Γ))
+    (γ : (I.ctxSpace Γ).Carrier) :
+    I.formulaEval (Term.all φ) γ =
+      I.toTopologicalInterpretation.propCtxEval (I.quantAll σ Γ (fullEval I φ)) γ := by
+  rfl
+
+@[simp] theorem formulaEval_ex (I : HeytingTopologicalInterpretation Base Const X)
+    {Γ : Ctx Base} {σ : Ty Base} (φ : Formula Const (σ :: Γ))
+    (γ : (I.ctxSpace Γ).Carrier) :
+    I.formulaEval (Term.ex φ) γ =
+      I.toTopologicalInterpretation.propCtxEval (I.quantEx σ Γ (fullEval I φ)) γ := by
+  rfl
 
 /--
 Weakening antecedents agrees pointwise with semantic weakening:
@@ -1159,12 +1496,10 @@ theorem evalAntecedents_weakenAntecedents (I : HeytingTopologicalInterpretation 
 theorem evalAntecedents_entails_member (I : HeytingTopologicalInterpretation Base Const X)
     {Γ : Ctx Base} {φ : Formula Const Γ} {Δ : List (Formula Const Γ)}
     (hmem : φ ∈ Δ) (γ : (I.ctxSpace Γ).Carrier) :
-    let antEval := (evalAntecedents I Δ).toContinuousMap γ
-    let φEval := (fullEval I φ).toContinuousMap γ
+    let antEval := I.antecedentsEval Δ γ
+    let φEval := I.formulaEval φ γ
     have h : I.propSpace.proj antEval = I.propSpace.proj φEval := by
-      have ha := congrFun (evalAntecedents I Δ).proj_comp γ
-      have hφ := congrFun (fullEval I φ).proj_comp γ
-      exact ha.trans hφ.symm
+      exact (I.antecedentsEval_proj Δ γ).trans (I.formulaEval_proj φ γ).symm
     I.fiberLe ⟨(antEval, φEval), h⟩ := by
   induction Δ with
   | nil => cases hmem
@@ -1172,50 +1507,41 @@ theorem evalAntecedents_entails_member (I : HeytingTopologicalInterpretation Bas
     simp only [List.mem_cons] at hmem
     cases hmem with
     | inl heq =>
-      -- φ = ψ, so evalAntecedents (ψ :: rest) ≤ fullEval ψ = fullEval φ
       subst heq
-      -- evalAntecedents (φ :: rest) = fiberMeet (φ, rest)
-      -- By fiberMeet_le_left: fiberMeet (φ, rest) ≤ φ
-      let φEval := (fullEval I φ).toContinuousMap γ
-      let restEval := (evalAntecedents I rest).toContinuousMap γ
+      let φEval := I.formulaEval φ γ
+      let restEval := I.antecedentsEval rest γ
       have h_proj : I.propSpace.proj φEval = I.propSpace.proj restEval := by
-        have hφ := congrFun (fullEval I φ).proj_comp γ
-        have hr := congrFun (evalAntecedents I rest).proj_comp γ
-        exact hφ.trans hr.symm
+        exact (I.formulaEval_proj φ γ).trans (I.antecedentsEval_proj rest γ).symm
       let pair : PropFiberPair I.propSpace := ⟨(φEval, restEval), h_proj⟩
-      -- evalAntecedents (φ :: rest) γ = fiberMeet pair
-      have heq : (evalAntecedents I (φ :: rest)).toContinuousMap γ = I.fiberMeet pair := rfl
-      -- fiberMeet_le_left says fiberMeet pair ≤ pair.val.1 = φEval
+      have h_ant : I.antecedentsEval (φ :: rest) γ = I.fiberMeet pair := by
+        simpa [φEval, restEval, pair] using I.evalAntecedents_cons_fiberMeet φ rest γ
       have hle := fiberMeet_le_left I pair
-      convert hle using 2
+      simpa [φEval, restEval, pair, h_ant] using hle
     | inr hmem' =>
-      -- φ ∈ rest, use IH and transitivity
-      let ψEval := (fullEval I ψ).toContinuousMap γ
-      let restEval := (evalAntecedents I rest).toContinuousMap γ
-      let consEval := (evalAntecedents I (ψ :: rest)).toContinuousMap γ
-      let φEval := (fullEval I φ).toContinuousMap γ
-      -- Projections
-      have hψ := congrFun (fullEval I ψ).proj_comp γ
-      have hr := congrFun (evalAntecedents I rest).proj_comp γ
-      have hcons := congrFun (evalAntecedents I (ψ :: rest)).proj_comp γ
-      have hφ := congrFun (fullEval I φ).proj_comp γ
-      -- Build pairs
+      let ψEval := I.formulaEval ψ γ
+      let restEval := I.antecedentsEval rest γ
+      let consEval := I.antecedentsEval (ψ :: rest) γ
+      let φEval := I.formulaEval φ γ
+      have hψ := I.formulaEval_proj ψ γ
+      have hr := I.antecedentsEval_proj rest γ
+      have hcons := I.antecedentsEval_proj (ψ :: rest) γ
+      have hφ := I.formulaEval_proj φ γ
       have h_ψr : I.propSpace.proj ψEval = I.propSpace.proj restEval := hψ.trans hr.symm
       let ψrest_pair : PropFiberPair I.propSpace := ⟨(ψEval, restEval), h_ψr⟩
-      -- consEval = fiberMeet (ψ, rest)
-      have h_cons_eq : consEval = I.fiberMeet ψrest_pair := rfl
-      -- fiberMeet_le_right: fiberMeet (ψ, rest) ≤ rest
+      have h_cons_eq : consEval = I.fiberMeet ψrest_pair := by
+        simpa [consEval, ψEval, restEval, ψrest_pair] using
+          I.evalAntecedents_cons_fiberMeet ψ rest γ
       have h_cons_rest := fiberMeet_le_right I ψrest_pair
-      -- IH: restEval ≤ φEval
       have h_rest_φ := ih hmem'
-      -- Transitivity: consEval ≤ restEval ≤ φEval
       have h_cons_φ : I.propSpace.proj consEval = I.propSpace.proj φEval :=
         hcons.trans hφ.symm
       have h_cons_rest' : I.propSpace.proj consEval = I.propSpace.proj restEval :=
         hcons.trans hr.symm
       have h_rest_φ' : I.propSpace.proj restEval = I.propSpace.proj φEval :=
         hr.trans hφ.symm
-      exact fiberLe_trans I h_cons_rest' h_rest_φ' h_cons_rest h_rest_φ
+      have h_cons_rest_cast : I.fiberLe ⟨(consEval, restEval), h_cons_rest'⟩ := by
+        simpa [consEval, ψEval, restEval, ψrest_pair, h_cons_eq] using h_cons_rest
+      exact fiberLe_trans I h_cons_rest' h_rest_φ' h_cons_rest_cast h_rest_φ
 
 /--
 Beta-eta equivalent antecedent lists evaluate to the same meet.
@@ -1251,14 +1577,10 @@ def FullValidSequent (I : HeytingTopologicalInterpretation Base Const X)
     {Γ : Ctx Base} (antecedents : List (Formula Const Γ))
     (succedent : Formula Const Γ) : Prop :=
   ∀ γ : (I.toTopologicalInterpretation.ctxSpace Γ).Carrier,
-    let antEval := (evalAntecedents I antecedents).toContinuousMap γ
-    let succEval := (fullEval I succedent).toContinuousMap γ
-    -- The antecedent conjunction implies the succedent fiberwise
+    let antEval := I.antecedentsEval antecedents γ
+    let succEval := I.formulaEval succedent γ
     have h : I.propSpace.proj antEval = I.propSpace.proj succEval := by
-      -- Both project to the same base point (proj γ)
-      have ha := congrFun (evalAntecedents I antecedents).proj_comp γ
-      have hs := congrFun (fullEval I succedent).proj_comp γ
-      exact ha.trans hs.symm
+      exact (I.antecedentsEval_proj antecedents γ).trans (I.formulaEval_proj succedent γ).symm
     I.fiberLe ⟨(antEval, succEval), h⟩
 
 /--
@@ -1284,90 +1606,45 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
     -- The antecedent conjunction contains φ, so it entails φ
     exact evalAntecedents_entails_member I hmem γ
   | topR =>
-    -- ⊤ is valid: any conjunction ≤ ⊤
     rename_i Γ' Δ'
     intro γ
-    -- antEval = evalAntecedents Δ' at γ
-    -- succEval = fullEval .top at γ = evalTop = propTop.comp (ctxSpace.proj)
-    -- By fiberLe_top: p ≤ propTop at (propSpace.proj p)
-    -- We have propSpace.proj antEval = ctxSpace.proj γ (by proj_comp)
-    -- And succEval = propTop.toContinuousMap (ctxSpace.proj γ)
-    --              = propTop.toContinuousMap (propSpace.proj antEval)
-    let antEval := (evalAntecedents I Δ').toContinuousMap γ
+    let antEval := I.antecedentsEval Δ' γ
     have hproj : I.propSpace.proj antEval = (I.ctxSpace Γ').proj γ :=
-      congrFun (evalAntecedents I Δ').proj_comp γ
-    -- succEval equals propTop at the same base point as antEval
-    have hsucc : (fullEval I (Term.top : Term Const Γ' .prop)).toContinuousMap γ =
-                 I.propTop.toContinuousMap (I.propSpace.proj antEval) := by
-      simp only [fullEval, hproj]
-      rfl
-    -- Apply fiberLe_top
+      I.antecedentsEval_proj Δ' γ
+    have hsucc : I.formulaEval (Term.top : Term Const Γ' .prop) γ =
+        I.propTop.toContinuousMap (I.propSpace.proj antEval) := by
+      simp [formulaEval, fullEval, hproj, TopologicalInterpretation.propCtxEval, evalTop]
     simp only [hsucc]
     exact fiberLe_top I antEval
   | botL =>
-    -- ⊥ in antecedents (.bot :: Δ) makes any conclusion valid
-    -- By fiberMeet_bot: ⊥ ∧ anything = ⊥, and by fiberLe_bot: ⊥ ≤ anything
     rename_i Γ' Δ' φ'
     intro γ
-    -- All evaluations project to ctxSpace.proj γ
-    let φEval := (fullEval I φ').toContinuousMap γ
+    let φEval := I.formulaEval φ' γ
     have hφ_proj : I.propSpace.proj φEval = (I.ctxSpace Γ').proj γ :=
-      congrFun (fullEval I φ').proj_comp γ
-    -- fiberLe_bot gives: ⊥ ≤ φEval where ⊥ = propBot at proj(φEval)
+      I.formulaEval_proj φ' γ
     have h_bot_le := fiberLe_bot I φEval
-    -- evalAntecedents (.bot :: Δ) = fiberMeet (evalBot γ, evalAntecedents Δ)
-    -- We need to show this equals propBot at (propSpace.proj φEval)
-    -- Step 1: evalAntecedents (.bot :: Δ) evaluates to ⊥ via fiberMeet_bot
-    have h_ant_proj : I.propSpace.proj ((evalAntecedents I (Term.bot :: Δ')).toContinuousMap γ) =
+    have h_ant_proj : I.propSpace.proj (I.antecedentsEval (Term.bot :: Δ') γ) =
                       (I.ctxSpace Γ').proj γ :=
-      congrFun (evalAntecedents I (Term.bot :: Δ')).proj_comp γ
-    -- Both antEval and propBot at proj(φEval) project to the same base
-    -- and by fiberMeet_bot, the antecedent is exactly ⊥
-    -- To use fiberLe_bot directly, we need to show antEval = propBot at proj(φEval)
-    -- antEval = fiberMeet (evalBot γ, evalAntecedents Δ' γ)
-    -- evalBot γ = propBot at (ctxSpace.proj γ) = propBot at proj(φEval)
-    -- by fiberMeet_bot: fiberMeet (⊥, anything) = ⊥
-    -- So antEval = propBot at proj(φEval)
+      I.antecedentsEval_proj (Term.bot :: Δ') γ
     rw [I.fiberLe_iff_meet] at h_bot_le ⊢
-    -- Goal: fiberMeet (antEval, φEval) = antEval
-    -- h_bot_le: fiberMeet (propBot at proj(φ), φEval) = propBot at proj(φ)
-    -- We convert by showing antEval = propBot at proj(φEval)
-    -- First, compute what evalAntecedents (.bot :: Δ') gives
-    let botEval := (evalBot I Γ').toContinuousMap γ
-    let ΔEval := (evalAntecedents I Δ').toContinuousMap γ
+    let botEval := I.toTopologicalInterpretation.propCtxEval (evalBot I Γ') γ
+    let ΔEval := I.antecedentsEval Δ' γ
     have hbot_proj' : I.propSpace.proj botEval = (I.ctxSpace Γ').proj γ :=
-      congrFun (evalBot I Γ').proj_comp γ
+      I.toTopologicalInterpretation.propCtxEval_proj (evalBot I Γ') γ
     have hΔ_proj : I.propSpace.proj ΔEval = (I.ctxSpace Γ').proj γ :=
-      congrFun (evalAntecedents I Δ').proj_comp γ
-    -- evalAntecedents (.bot :: Δ) = evalAnd (fullEval .bot) (evalAntecedents Δ)
-    --                             = fiberMeet (fullEval .bot γ, evalAntecedents Δ γ)
-    -- fullEval .bot = evalBot, so this is fiberMeet (botEval, ΔEval)
-    -- botEval = propBot.toContinuousMap (ctxSpace.proj γ)
-    have h_botEval : botEval = I.propBot.toContinuousMap ((I.ctxSpace Γ').proj γ) := rfl
-    -- By fiberMeet_bot (applied to ΔEval): fiberMeet (⊥, ΔEval) = ⊥
+      I.antecedentsEval_proj Δ' γ
+    have h_botEval : botEval = I.propBot.toContinuousMap ((I.ctxSpace Γ').proj γ) := by
+      simp [botEval, TopologicalInterpretation.propCtxEval, evalBot]
+    have h_formula_bot : I.formulaEval (Term.bot : Formula Const Γ') γ = botEval := by
+      exact (I.formulaEval_bot (Γ := Γ') γ).trans h_botEval.symm
     have h_meet_bot := I.fiberMeet_bot ΔEval
-    -- h_meet_bot: fiberMeet (propBot at proj(ΔEval), ΔEval) = propBot at proj(ΔEval)
-    -- proj(ΔEval) = ctxSpace.proj γ, so this becomes:
-    -- fiberMeet (propBot at ctxSpace.proj γ, ΔEval) = propBot at ctxSpace.proj γ
-    -- = fiberMeet (botEval, ΔEval) = botEval
-    -- Projection equality for (botEval, ΔEval)
     have hbotΔ : I.propSpace.proj botEval = I.propSpace.proj ΔEval :=
       hbot_proj'.trans hΔ_proj.symm
-    have h_ant_is_bot : (evalAntecedents I (Term.bot :: Δ')).toContinuousMap γ = botEval := by
-      -- evalAntecedents (.bot :: Δ) = evalAnd (fullEval .bot) (evalAntecedents Δ)
-      -- = fiberMeet (fullEval .bot γ, evalAntecedents Δ γ)
-      -- fullEval .bot = evalBot, so fiberMeet (botEval, ΔEval)
-      -- By fiberMeet_bot: fiberMeet (⊥, p) = ⊥
-      have h_fullEval_bot : (fullEval I (Term.bot : Term Const Γ' .prop)).toContinuousMap γ = botEval := rfl
-      -- The antecedent evaluates to fiberMeet (fullEval .bot γ, ΔEval) = fiberMeet (botEval, ΔEval)
-      have h_ant_val : (evalAntecedents I (Term.bot :: Δ')).toContinuousMap γ =
+    have h_ant_is_bot : I.antecedentsEval (Term.bot :: Δ') γ = botEval := by
+      have h_ant_val : I.antecedentsEval (Term.bot :: Δ') γ =
           I.fiberMeet ⟨(botEval, ΔEval), hbotΔ⟩ := by
-        show I.fiberMeet ⟨((fullEval I (Term.bot : Term Const Γ' .prop)).toContinuousMap γ, ΔEval), _⟩ =
-             I.fiberMeet ⟨(botEval, ΔEval), hbotΔ⟩
-        rfl
-      -- fiberMeet (botEval, ΔEval) = botEval via fiberMeet_bot
-      -- We need: fiberMeet (propBot at proj(ΔEval), ΔEval) = propBot at proj(ΔEval)
-      -- And botEval = propBot at proj(ΔEval)
+        simpa [h_formula_bot, ΔEval, hbotΔ] using
+          I.evalAntecedents_cons_fiberMeet (Term.bot : Formula Const Γ') Δ' γ
       have h_bot_eq : botEval = I.propBot.toContinuousMap (I.propSpace.proj ΔEval) := by
         rw [h_botEval, hΔ_proj]
       rw [h_ant_val]
@@ -1377,7 +1654,7 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
         _ = I.propBot.toContinuousMap (I.propSpace.proj ΔEval) := h_meet_bot
         _ = botEval := h_bot_eq.symm
     -- Now we know antEval = botEval = propBot at (ctxSpace.proj γ) = propBot at proj(φEval)
-    have h_ant_is_bot_at_φ : (evalAntecedents I (Term.bot :: Δ')).toContinuousMap γ =
+    have h_ant_is_bot_at_φ : I.antecedentsEval (Term.bot :: Δ') γ =
                              I.propBot.toContinuousMap (I.propSpace.proj φEval) := by
       simp only [h_ant_is_bot, h_botEval, hφ_proj]
     -- Goal and h_bot_le now match
@@ -1395,44 +1672,95 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
     -- Goal: evalAntecedents ((φ ∧ ψ) :: Δ) ≤ χ
     -- These are equal because the antecedent evaluations unfold to the same fiberMeet
     have ih_γ := ih γ
-    -- Both statements use fiberLe_iff_meet, so we work at the meet level
-    rw [I.fiberLe_iff_meet] at ih_γ ⊢
-    -- ih_γ: fiberMeet(evalAntecedents(φ :: ψ :: Δ), χ) = evalAntecedents(φ :: ψ :: Δ)
-    -- Goal: fiberMeet(evalAntecedents((φ ∧ ψ) :: Δ), χ) = evalAntecedents((φ ∧ ψ) :: Δ)
-    -- Both evalAntecedents expressions are definitionally equal via associativity
-    -- Build the associativity proof
-    let φEval := (fullEval I φ').toContinuousMap γ
-    let ψEval := (fullEval I ψ').toContinuousMap γ
-    let ΔEval := (evalAntecedents I Δ').toContinuousMap γ
-    have hφ_proj := congrFun (fullEval I φ').proj_comp γ
-    have hψ_proj := congrFun (fullEval I ψ').proj_comp γ
-    have hΔ_proj := congrFun (evalAntecedents I Δ').proj_comp γ
+    let φEval := I.formulaEval φ' γ
+    let ψEval := I.formulaEval ψ' γ
+    let ΔEval := I.antecedentsEval Δ' γ
     have hφψ : I.propSpace.proj φEval = I.propSpace.proj ψEval :=
-      hφ_proj.trans hψ_proj.symm
+      (I.formulaEval_proj φ' γ).trans (I.formulaEval_proj ψ' γ).symm
     have hψΔ : I.propSpace.proj ψEval = I.propSpace.proj ΔEval :=
-      hψ_proj.trans hΔ_proj.symm
+      (I.formulaEval_proj ψ' γ).trans (I.antecedentsEval_proj Δ' γ).symm
+    have h_andΔ : I.propSpace.proj (I.fiberMeet ⟨(φEval, ψEval), hφψ⟩) =
+        I.propSpace.proj ΔEval := by
+      calc
+        I.propSpace.proj (I.fiberMeet ⟨(φEval, ψEval), hφψ⟩)
+            = I.propSpace.proj ψEval := by
+                rw [I.fiberMeet_proj]
+                exact hφψ
+        _ = I.propSpace.proj ΔEval := hψΔ
+    have h_φ_ψΔ : I.propSpace.proj φEval =
+        I.propSpace.proj (I.fiberMeet ⟨(ψEval, ΔEval), hψΔ⟩) := by
+      calc
+        I.propSpace.proj φEval = I.propSpace.proj ψEval := hφψ
+        _ = I.propSpace.proj (I.fiberMeet ⟨(ψEval, ΔEval), hψΔ⟩) :=
+          (I.fiberMeet_proj ⟨(ψEval, ΔEval), hψΔ⟩).symm
     have hassoc := I.fiberMeet_assoc φEval ψEval ΔEval hφψ hψΔ
-    -- The antecedent evaluations are equal by associativity
-    have h_ant_eq : (evalAntecedents I (Term.and φ' ψ' :: Δ')).toContinuousMap γ =
-                    (evalAntecedents I (φ' :: ψ' :: Δ')).toContinuousMap γ := hassoc
-    convert ih_γ using 2; simp only [h_ant_eq]
+    have h_ant_eq : I.antecedentsEval (Term.and φ' ψ' :: Δ') γ =
+        I.antecedentsEval (φ' :: ψ' :: Δ') γ := by
+      have h_left :
+          I.antecedentsEval (Term.and φ' ψ' :: Δ') γ =
+            I.fiberMeet
+              ⟨(I.fiberMeet ⟨(φEval, ψEval), hφψ⟩, ΔEval),
+                h_andΔ⟩ := by
+        calc
+          I.antecedentsEval (Term.and φ' ψ' :: Δ') γ
+              = I.fiberMeet
+                  ⟨(I.formulaEval (Term.and φ' ψ') γ, ΔEval),
+                    (I.formulaEval_proj (Term.and φ' ψ') γ).trans
+                      (I.antecedentsEval_proj Δ' γ).symm⟩ := by
+                  simpa [ΔEval] using
+                    I.evalAntecedents_cons_fiberMeet (Term.and φ' ψ') Δ' γ
+          _ = I.fiberMeet
+                ⟨(I.fiberMeet ⟨(φEval, ψEval), hφψ⟩, ΔEval),
+                  h_andΔ⟩ := by
+                have h_and_formula :
+                    I.formulaEval (Term.and φ' ψ') γ =
+                      I.fiberMeet ⟨(φEval, ψEval), hφψ⟩ := by
+                  simpa [φEval, ψEval, hφψ] using I.formulaEval_and φ' ψ' γ
+                have h_pair_eq :
+                    (⟨(I.formulaEval (Term.and φ' ψ') γ, ΔEval),
+                      (I.formulaEval_proj (Term.and φ' ψ') γ).trans
+                        (I.antecedentsEval_proj Δ' γ).symm⟩ :
+                      PropFiberPair I.propSpace) =
+                    ⟨(I.fiberMeet ⟨(φEval, ψEval), hφψ⟩, ΔEval), h_andΔ⟩ := by
+                  apply Subtype.ext
+                  ext <;> simp [h_and_formula]
+                rw [h_pair_eq]
+      have h_right :
+          I.antecedentsEval (φ' :: ψ' :: Δ') γ =
+            I.fiberMeet
+              ⟨(φEval, I.fiberMeet ⟨(ψEval, ΔEval), hψΔ⟩),
+                h_φ_ψΔ⟩ := by
+        calc
+          I.antecedentsEval (φ' :: ψ' :: Δ') γ
+              = I.fiberMeet
+                  ⟨(φEval, I.antecedentsEval (ψ' :: Δ') γ),
+                    (I.formulaEval_proj φ' γ).trans
+                      (I.antecedentsEval_proj (ψ' :: Δ') γ).symm⟩ := by
+                  simpa [φEval] using
+                    I.evalAntecedents_cons_fiberMeet φ' (ψ' :: Δ') γ
+          _ = I.fiberMeet
+                ⟨(φEval, I.fiberMeet ⟨(ψEval, ΔEval), hψΔ⟩),
+                  h_φ_ψΔ⟩ := by
+                congr 1
+                ext
+                · rfl
+                · simpa [ψEval, ΔEval] using
+                    I.evalAntecedents_cons_fiberMeet ψ' Δ' γ
+      exact Eq.trans h_left (Eq.trans hassoc h_right.symm)
+    simpa [h_ant_eq] using ih_γ
   | andR _ _ ih1 ih2 =>
     -- Δ ⊢ φ ∧ ψ  from  Δ ⊢ φ and Δ ⊢ ψ
     rename_i Γ' Δ' φ' ψ' _ _
     intro γ
     -- Greatest lower bound: Δ ≤ φ and Δ ≤ ψ imply Δ ≤ φ ∧ ψ
-    let antEval := (evalAntecedents I Δ').toContinuousMap γ
-    let φEval := (fullEval I φ').toContinuousMap γ
-    let ψEval := (fullEval I ψ').toContinuousMap γ
+    let antEval := I.antecedentsEval Δ' γ
+    let φEval := I.formulaEval φ' γ
+    let ψEval := I.formulaEval ψ' γ
     -- Projection equalities
     have hant_φ : I.propSpace.proj antEval = I.propSpace.proj φEval := by
-      have ha := congrFun (evalAntecedents I Δ').proj_comp γ
-      have hφ := congrFun (fullEval I φ').proj_comp γ
-      exact ha.trans hφ.symm
+      exact (I.antecedentsEval_proj Δ' γ).trans (I.formulaEval_proj φ' γ).symm
     have hφ_ψ : I.propSpace.proj φEval = I.propSpace.proj ψEval := by
-      have hφ := congrFun (fullEval I φ').proj_comp γ
-      have hψ := congrFun (fullEval I ψ').proj_comp γ
-      exact hφ.trans hψ.symm
+      exact (I.formulaEval_proj φ' γ).trans (I.formulaEval_proj ψ' γ).symm
     -- IH applications
     have ih1_γ := ih1 γ  -- antEval ≤ φEval
     have ih2_γ := ih2 γ  -- antEval ≤ ψEval
@@ -1442,26 +1770,26 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
     -- Goal: I.fiberLe ⟨(antEval, fullEval (and φ' ψ') γ), _⟩
     -- These are equal because fullEval (and φ' ψ') = evalAnd (fullEval φ') (fullEval ψ')
     --   and evalAnd uses fiberMeet
-    convert hmeet using 2
+    simpa [formulaEval, antecedentsEval, fullEval, TopologicalInterpretation.propCtxEval, evalAnd]
+      using hmeet
   | orL _ _ ih1 ih2 =>
     -- (φ ∨ ψ) :: Δ ⊢ χ  from  φ :: Δ ⊢ χ and ψ :: Δ ⊢ χ
     rename_i Γ' Δ' φ' ψ' χ' _ _
     intro γ
     -- Strategy: By distributivity, (φ ∨ ψ) ∧ Δ = (φ ∧ Δ) ∨ (ψ ∧ Δ)
     -- By LUB: if (φ ∧ Δ) ≤ χ and (ψ ∧ Δ) ≤ χ, then (φ ∧ Δ) ∨ (ψ ∧ Δ) ≤ χ
-    let φEval := (fullEval I φ').toContinuousMap γ
-    let ψEval := (fullEval I ψ').toContinuousMap γ
-    let ΔEval := (evalAntecedents I Δ').toContinuousMap γ
-    let χEval := (fullEval I χ').toContinuousMap γ
-    -- Projection equalities
-    have hφ_proj := congrFun (fullEval I φ').proj_comp γ
-    have hψ_proj := congrFun (fullEval I ψ').proj_comp γ
-    have hΔ_proj := congrFun (evalAntecedents I Δ').proj_comp γ
-    have hχ_proj := congrFun (fullEval I χ').proj_comp γ
-    have hφψ : I.propSpace.proj φEval = I.propSpace.proj ψEval := hφ_proj.trans hψ_proj.symm
-    have hψΔ : I.propSpace.proj ψEval = I.propSpace.proj ΔEval := hψ_proj.trans hΔ_proj.symm
-    have hφΔ : I.propSpace.proj φEval = I.propSpace.proj ΔEval := hφ_proj.trans hΔ_proj.symm
-    have hφχ : I.propSpace.proj φEval = I.propSpace.proj χEval := hφ_proj.trans hχ_proj.symm
+    let φEval := I.formulaEval φ' γ
+    let ψEval := I.formulaEval ψ' γ
+    let ΔEval := I.antecedentsEval Δ' γ
+    let χEval := I.formulaEval χ' γ
+    have hφψ : I.propSpace.proj φEval = I.propSpace.proj ψEval :=
+      (I.formulaEval_proj φ' γ).trans (I.formulaEval_proj ψ' γ).symm
+    have hψΔ : I.propSpace.proj ψEval = I.propSpace.proj ΔEval :=
+      (I.formulaEval_proj ψ' γ).trans (I.antecedentsEval_proj Δ' γ).symm
+    have hφΔ : I.propSpace.proj φEval = I.propSpace.proj ΔEval :=
+      (I.formulaEval_proj φ' γ).trans (I.antecedentsEval_proj Δ' γ).symm
+    have hφχ : I.propSpace.proj φEval = I.propSpace.proj χEval :=
+      (I.formulaEval_proj φ' γ).trans (I.formulaEval_proj χ' γ).symm
     -- The conjunction φ ∧ Δ
     let φΔ_pair : PropFiberPair I.propSpace := ⟨(φEval, ΔEval), hφΔ⟩
     let φΔ_meet := I.fiberMeet φΔ_pair
@@ -1473,6 +1801,12 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
     have ih2_γ := ih2 γ  -- evalAntecedents (ψ :: Δ) ≤ χ
     -- Convert IHs to meet form
     rw [I.fiberLe_iff_meet] at ih1_γ ih2_γ ⊢
+    have h_ant_φ : I.antecedentsEval (φ' :: Δ') γ = φΔ_meet := by
+      simpa [φEval, ΔEval, φΔ_pair, φΔ_meet] using
+        I.evalAntecedents_cons_fiberMeet φ' Δ' γ
+    have h_ant_ψ : I.antecedentsEval (ψ' :: Δ') γ = ψΔ_meet := by
+      simpa [ψEval, ΔEval, ψΔ_pair, ψΔ_meet] using
+        I.evalAntecedents_cons_fiberMeet ψ' Δ' γ
     -- ih1_γ: fiberMeet (evalAntecedents (φ :: Δ), χ) = evalAntecedents (φ :: Δ)
     -- ih2_γ: fiberMeet ((ψ ∧ Δ), χ) = ψ ∧ Δ
     -- Projection for φΔ_meet and ψΔ_meet
@@ -1485,32 +1819,56 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
       calc I.propSpace.proj φΔ_meet
         = I.propSpace.proj φEval := I.fiberMeet_proj φΔ_pair
         _ = I.propSpace.proj χEval := hφχ
+    have ih1_meet : I.fiberMeet ⟨(φΔ_meet, χEval), h_φΔ_χ⟩ = φΔ_meet := by
+      simpa [h_ant_φ] using ih1_γ
+    have h_ψΔ_χ : I.propSpace.proj ψΔ_meet = I.propSpace.proj χEval := by
+      calc I.propSpace.proj ψΔ_meet
+        = I.propSpace.proj ψEval := I.fiberMeet_proj ψΔ_pair
+        _ = I.propSpace.proj χEval := (I.formulaEval_proj ψ' γ).trans
+          (I.formulaEval_proj χ' γ).symm
+    have ih2_meet : I.fiberMeet ⟨(ψΔ_meet, χEval), h_ψΔ_χ⟩ = ψΔ_meet := by
+      simpa [h_ant_ψ] using ih2_γ
     -- The disjunction (φ ∨ ψ)
     let φψ_pair : PropFiberPair I.propSpace := ⟨(φEval, ψEval), hφψ⟩
     let φψ_join := I.fiberJoin φψ_pair
+    have h_or_eval : I.formulaEval (Term.or φ' ψ') γ = φψ_join := by
+      simpa [φEval, ψEval, φψ_pair, φψ_join] using I.formulaEval_or φ' ψ' γ
     -- Use distributivity: (φ ∨ ψ) ∧ Δ = (φ ∧ Δ) ∨ (ψ ∧ Δ)
     have h_distrib := I.fiberMeet_join_distrib φEval ψEval ΔEval hφψ hψΔ
     -- Now apply LUB: since φ ∧ Δ ≤ χ and ψ ∧ Δ ≤ χ, we have (φ ∧ Δ) ∨ (ψ ∧ Δ) ≤ χ
-    have h_lub := I.fiberJoin_lub φΔ_meet ψΔ_meet χEval h_φΔ_proj h_φΔ_χ ih1_γ ih2_γ
+    have h_lub := I.fiberJoin_lub φΔ_meet ψΔ_meet χEval h_φΔ_proj h_φΔ_χ ih1_meet ih2_meet
     -- Rewrite goal: evalAntecedents ((or φ ψ) :: Δ) = fiberMeet (evalOr φ ψ, Δ) = (φ ∨ ψ) ∧ Δ
     -- By distributivity this equals fiberJoin (φ ∧ Δ, ψ ∧ Δ)
     -- So we need: fiberMeet (fiberJoin (φ ∧ Δ, ψ ∧ Δ), χ) = fiberJoin (φ ∧ Δ, ψ ∧ Δ)
     -- which is exactly h_lub
     -- First, show evalAntecedents ((or φ ψ) :: Δ) = (φ ∨ ψ) ∧ Δ = (φ ∧ Δ) ∨ (ψ ∧ Δ)
-    have h_ant_eq : (evalAntecedents I (Term.or φ' ψ' :: Δ')).toContinuousMap γ =
-        I.fiberJoin ⟨(φΔ_meet, ψΔ_meet), h_φΔ_proj⟩ := h_distrib
+    have h_ant_eq : I.antecedentsEval (Term.or φ' ψ' :: Δ') γ =
+        I.fiberJoin ⟨(φΔ_meet, ψΔ_meet), h_φΔ_proj⟩ := by
+      calc
+        I.antecedentsEval (Term.or φ' ψ' :: Δ') γ
+            = I.fiberMeet ⟨(I.formulaEval (Term.or φ' ψ') γ, ΔEval),
+                (I.formulaEval_proj (Term.or φ' ψ') γ).trans
+                  (I.antecedentsEval_proj Δ' γ).symm⟩ := by
+                simpa [ΔEval] using
+                  I.evalAntecedents_cons_fiberMeet (Term.or φ' ψ') Δ' γ
+        _ = I.fiberMeet ⟨(φψ_join, ΔEval),
+              (I.fiberJoin_proj φψ_pair).trans hφΔ⟩ := by
+              apply congrArg I.fiberMeet
+              apply Subtype.ext
+              simp [h_or_eval]
+        _ = I.fiberJoin ⟨(φΔ_meet, ψΔ_meet), h_φΔ_proj⟩ := by
+              simpa [φψ_join, φΔ_meet, ψΔ_meet, φΔ_pair, ψΔ_pair, φψ_pair] using h_distrib
     -- The goal is: fiberMeet ⟨(antEval, χ), _⟩ = antEval
     -- We convert using h_ant_eq: fiberMeet ⟨(join, χ), _⟩ = join
     -- which is h_lub
-    calc I.fiberMeet ⟨((evalAntecedents I (Term.or φ' ψ' :: Δ')).toContinuousMap γ,
-                       (fullEval I χ').toContinuousMap γ), _⟩
+    calc I.fiberMeet ⟨(I.antecedentsEval (Term.or φ' ψ' :: Δ') γ, χEval), _⟩
       = I.fiberMeet ⟨(I.fiberJoin ⟨(φΔ_meet, ψΔ_meet), h_φΔ_proj⟩, χEval), _⟩ := by
           congr 1
           ext
           · exact h_ant_eq
           · rfl
       _ = I.fiberJoin ⟨(φΔ_meet, ψΔ_meet), h_φΔ_proj⟩ := h_lub
-      _ = (evalAntecedents I (Term.or φ' ψ' :: Δ')).toContinuousMap γ := h_ant_eq.symm
+      _ = I.antecedentsEval (Term.or φ' ψ' :: Δ') γ := h_ant_eq.symm
   | orR₁ _ ih =>
     -- Δ ⊢ φ ∨ ψ  from  Δ ⊢ φ
     rename_i Γ' Δ' φ' ψ' _
@@ -1518,22 +1876,18 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
     -- ih: antEval ≤ fullEval φ'
     -- fiberJoin_ge_left: fullEval φ' ≤ fiberJoin(φ', ψ') = evalOr φ' ψ' = succEval
     -- By transitivity: antEval ≤ succEval
-    let antEval := (evalAntecedents I Δ').toContinuousMap γ
-    let φEval := (fullEval I φ').toContinuousMap γ
-    let ψEval := (fullEval I ψ').toContinuousMap γ
+    let antEval := I.antecedentsEval Δ' γ
+    let φEval := I.formulaEval φ' γ
+    let ψEval := I.formulaEval ψ' γ
     -- Build the fiber pair for φ' ∨ ψ'
     have hφψ_proj : I.propSpace.proj φEval = I.propSpace.proj ψEval := by
-      have hφ := congrFun (fullEval I φ').proj_comp γ
-      have hψ := congrFun (fullEval I ψ').proj_comp γ
-      exact hφ.trans hψ.symm
+      exact (I.formulaEval_proj φ' γ).trans (I.formulaEval_proj ψ' γ).symm
     let φψ_pair : PropFiberPair I.propSpace := ⟨(φEval, ψEval), hφψ_proj⟩
     -- The succedent evaluates to fiberJoin of φ' and ψ'
     -- Get the IH: antEval ≤ φEval (specialized to γ)
     have ih_γ := ih γ
     have h_ant_φ : I.propSpace.proj antEval = I.propSpace.proj φEval := by
-      have ha := congrFun (evalAntecedents I Δ').proj_comp γ
-      have hφ := congrFun (fullEval I φ').proj_comp γ
-      exact ha.trans hφ.symm
+      exact (I.antecedentsEval_proj Δ' γ).trans (I.formulaEval_proj φ' γ).symm
     -- φEval ≤ fiberJoin (φEval, ψEval) by fiberJoin_ge_left
     have h_φ_or := fiberJoin_ge_left I φψ_pair
     have h_φ_succ : I.propSpace.proj φEval = I.propSpace.proj (I.fiberJoin φψ_pair) :=
@@ -1542,7 +1896,8 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
     have trans_result := fiberLe_trans I h_ant_φ h_φ_succ ih_γ h_φ_or
     -- The goal is I.fiberLe ⟨(antEval, fullEval (or φ' ψ') γ), h⟩
     -- which equals I.fiberLe ⟨(antEval, fiberJoin φψ_pair), ...⟩ definitionally
-    convert trans_result using 2
+    simpa [formulaEval, antecedentsEval, fullEval, TopologicalInterpretation.propCtxEval, evalOr]
+      using trans_result
   | orR₂ _ ih =>
     -- Δ ⊢ φ ∨ ψ  from  Δ ⊢ ψ
     rename_i Γ' Δ' φ' ψ' _
@@ -1550,26 +1905,23 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
     -- ih: antEval ≤ fullEval ψ'
     -- fiberJoin_ge_right: fullEval ψ' ≤ fiberJoin(φ', ψ') = succEval
     -- By transitivity: antEval ≤ succEval
-    let antEval := (evalAntecedents I Δ').toContinuousMap γ
-    let φEval := (fullEval I φ').toContinuousMap γ
-    let ψEval := (fullEval I ψ').toContinuousMap γ
+    let antEval := I.antecedentsEval Δ' γ
+    let φEval := I.formulaEval φ' γ
+    let ψEval := I.formulaEval ψ' γ
     have hφψ_proj : I.propSpace.proj φEval = I.propSpace.proj ψEval := by
-      have hφ := congrFun (fullEval I φ').proj_comp γ
-      have hψ := congrFun (fullEval I ψ').proj_comp γ
-      exact hφ.trans hψ.symm
+      exact (I.formulaEval_proj φ' γ).trans (I.formulaEval_proj ψ' γ).symm
     let φψ_pair : PropFiberPair I.propSpace := ⟨(φEval, ψEval), hφψ_proj⟩
     have ih_γ := ih γ
     have h_ant_ψ : I.propSpace.proj antEval = I.propSpace.proj ψEval := by
-      have ha := congrFun (evalAntecedents I Δ').proj_comp γ
-      have hψ := congrFun (fullEval I ψ').proj_comp γ
-      exact ha.trans hψ.symm
+      exact (I.antecedentsEval_proj Δ' γ).trans (I.formulaEval_proj ψ' γ).symm
     -- ψEval ≤ fiberJoin (φEval, ψEval) by fiberJoin_ge_right
     have h_ψ_or := fiberJoin_ge_right I φψ_pair
     have h_ψ_succ : I.propSpace.proj ψEval = I.propSpace.proj (I.fiberJoin φψ_pair) :=
       hφψ_proj.symm.trans (I.fiberJoin_proj φψ_pair).symm
     -- Use transitivity: antEval ≤ ψEval ≤ fiberJoin φψ_pair = succEval
     have trans_result := fiberLe_trans I h_ant_ψ h_ψ_succ ih_γ h_ψ_or
-    convert trans_result using 2
+    simpa [formulaEval, antecedentsEval, fullEval, TopologicalInterpretation.propCtxEval, evalOr]
+      using trans_result
   | impL _ _ ih1 ih2 =>
     -- (φ → ψ) :: Δ ⊢ χ  from  Δ ⊢ φ and ψ :: Δ ⊢ χ
     rename_i Γ' Δ' φ' ψ' χ' _ _
@@ -1585,19 +1937,18 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
     -- 5. (φ → ψ) ∧ Δ ≤ ψ ∧ Δ (GLB)
     -- 6. ψ ∧ Δ ≤ χ (ih2)
     -- 7. (φ → ψ) ∧ Δ ≤ χ (transitivity)
-    let φEval := (fullEval I φ').toContinuousMap γ
-    let ψEval := (fullEval I ψ').toContinuousMap γ
-    let ΔEval := (evalAntecedents I Δ').toContinuousMap γ
-    let χEval := (fullEval I χ').toContinuousMap γ
-    -- Projection equalities
-    have hφ_proj := congrFun (fullEval I φ').proj_comp γ
-    have hψ_proj := congrFun (fullEval I ψ').proj_comp γ
-    have hΔ_proj := congrFun (evalAntecedents I Δ').proj_comp γ
-    have hχ_proj := congrFun (fullEval I χ').proj_comp γ
-    have hφψ : I.propSpace.proj φEval = I.propSpace.proj ψEval := hφ_proj.trans hψ_proj.symm
-    have hΔφ : I.propSpace.proj ΔEval = I.propSpace.proj φEval := hΔ_proj.trans hφ_proj.symm
-    have hψΔ : I.propSpace.proj ψEval = I.propSpace.proj ΔEval := hψ_proj.trans hΔ_proj.symm
-    have hΔχ : I.propSpace.proj ΔEval = I.propSpace.proj χEval := hΔ_proj.trans hχ_proj.symm
+    let φEval := I.formulaEval φ' γ
+    let ψEval := I.formulaEval ψ' γ
+    let ΔEval := I.antecedentsEval Δ' γ
+    let χEval := I.formulaEval χ' γ
+    have hφψ : I.propSpace.proj φEval = I.propSpace.proj ψEval :=
+      (I.formulaEval_proj φ' γ).trans (I.formulaEval_proj ψ' γ).symm
+    have hΔφ : I.propSpace.proj ΔEval = I.propSpace.proj φEval :=
+      (I.antecedentsEval_proj Δ' γ).trans (I.formulaEval_proj φ' γ).symm
+    have hψΔ : I.propSpace.proj ψEval = I.propSpace.proj ΔEval :=
+      (I.formulaEval_proj ψ' γ).trans (I.antecedentsEval_proj Δ' γ).symm
+    have hΔχ : I.propSpace.proj ΔEval = I.propSpace.proj χEval :=
+      (I.antecedentsEval_proj Δ' γ).trans (I.formulaEval_proj χ' γ).symm
     -- The implication φ → ψ
     let impEval := I.fiberHimp ⟨(φEval, ψEval), hφψ⟩
     have himp_proj : I.propSpace.proj impEval = I.propSpace.proj φEval :=
@@ -1644,6 +1995,9 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
     -- h_step5: impΔ_meet ≤ ψΔ_meet
     -- Step 6: IH2: ψ ∧ Δ ≤ χ
     have ih2_γ := ih2 γ
+    have h_ant_ψ : I.antecedentsEval (ψ' :: Δ') γ = ψΔ_meet := by
+      simpa [ψEval, ΔEval, ψΔ_pair, ψΔ_meet] using
+        I.evalAntecedents_cons_fiberMeet ψ' Δ' γ
     -- ih2_γ: evalAntecedents (ψ :: Δ) ≤ χ
     -- evalAntecedents (ψ :: Δ) = fiberMeet (ψ, Δ) = ψΔ_meet
     have h_ψΔ_proj : I.propSpace.proj ψΔ_meet = I.propSpace.proj ψEval :=
@@ -1655,7 +2009,9 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
       calc I.propSpace.proj impΔ_meet
         = I.propSpace.proj ψEval := h_impΔ_ψ_proj
         _ = I.propSpace.proj ψΔ_meet := h_ψΔ_proj.symm
-    have h_final := fiberLe_trans I h_impΔ_ψΔ_proj h_ψΔ_χ_proj h_step5 ih2_γ
+    have ih2_meet : I.fiberLe ⟨(ψΔ_meet, χEval), h_ψΔ_χ_proj⟩ := by
+      simpa [h_ant_ψ] using ih2_γ
+    have h_final := fiberLe_trans I h_impΔ_ψΔ_proj h_ψΔ_χ_proj h_step5 ih2_meet
     -- h_final: impΔ_meet ≤ χ
     -- Now convert to the goal: evalAntecedents ((φ → ψ) :: Δ) ≤ χ
     -- evalAntecedents ((φ → ψ) :: Δ) = fiberMeet (fullEval (φ → ψ), Δ)
@@ -1663,7 +2019,10 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
     --                                = fiberMeet (fiberHimp (φ, ψ), Δ)
     --                                = fiberMeet (impEval, Δ)
     --                                = impΔ_meet
-    convert h_final using 2
+    have h_ant_eq : I.antecedentsEval (Term.imp φ' ψ' :: Δ') γ = impΔ_meet := by
+      simpa [ΔEval, impEval, himpΔ, impΔ_pair, I.formulaEval_imp] using
+        I.evalAntecedents_cons_fiberMeet (Term.imp φ' ψ') Δ' γ
+    simpa [h_ant_eq] using h_final
   | impR _ ih =>
     -- Δ ⊢ φ → ψ  from  φ :: Δ ⊢ ψ
     -- IH: evalAntecedents (φ :: Δ) ≤ fullEval ψ  (i.e., φ ∧ Δ ≤ ψ)
@@ -1672,18 +2031,14 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
     rename_i Γ' Δ' φ' ψ' _
     intro γ
     -- evalAntecedents (φ :: Δ) = fiberMeet (φ, evalAntecedents Δ)
-    let φEval := (fullEval I φ').toContinuousMap γ
-    let ψEval := (fullEval I ψ').toContinuousMap γ
-    let ΔEval := (evalAntecedents I Δ').toContinuousMap γ
-    -- Projection equalities
-    have hφ_proj := congrFun (fullEval I φ').proj_comp γ
-    have hψ_proj := congrFun (fullEval I ψ').proj_comp γ
-    have hΔ_proj := congrFun (evalAntecedents I Δ').proj_comp γ
+    let φEval := I.formulaEval φ' γ
+    let ψEval := I.formulaEval ψ' γ
+    let ΔEval := I.antecedentsEval Δ' γ
     have hφΔ : I.propSpace.proj φEval = I.propSpace.proj ΔEval :=
-      hφ_proj.trans hΔ_proj.symm
+      (I.formulaEval_proj φ' γ).trans (I.antecedentsEval_proj Δ' γ).symm
     have hΔφ : I.propSpace.proj ΔEval = I.propSpace.proj φEval := hφΔ.symm
     have hφψ : I.propSpace.proj φEval = I.propSpace.proj ψEval :=
-      hφ_proj.trans hψ_proj.symm
+      (I.formulaEval_proj φ' γ).trans (I.formulaEval_proj ψ' γ).symm
     -- IH: evalAntecedents (φ :: Δ) ≤ ψ
     -- i.e., fiberMeet (φ, Δ) ≤ ψ
     have ih_γ := ih γ
@@ -1694,7 +2049,7 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
     have hcomm : I.fiberMeet φΔ_pair = I.fiberMeet Δφ_pair := I.fiberMeet_comm φΔ_pair
     -- Now we use the Heyting adjunction: (Δ ∧ φ) ≤ ψ iff Δ ≤ (φ → ψ)
     have hΔψ : I.propSpace.proj ΔEval = I.propSpace.proj ψEval :=
-      hΔ_proj.trans hψ_proj.symm
+      (I.antecedentsEval_proj Δ' γ).trans (I.formulaEval_proj ψ' γ).symm
     -- fiberLe_himp_iff says: fiberLe (fiberMeet (Δ, φ), ψ) ↔ fiberLe (Δ, fiberHimp (φ, ψ))
     have hadj := fiberLe_himp_iff I hΔφ hφψ
     -- We need to show the LHS of hadj holds, then extract the RHS
@@ -1702,251 +2057,251 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
     have h_meet_φΔ_ψ : I.propSpace.proj (I.fiberMeet φΔ_pair) = I.propSpace.proj ψEval := by
       have h1 := I.fiberMeet_proj φΔ_pair
       exact h1.trans (hφΔ.trans hΔψ)
+    have h_ant_φ : I.antecedentsEval (φ' :: Δ') γ = I.fiberMeet φΔ_pair := by
+      simpa [φEval, ΔEval, φΔ_pair] using
+        I.evalAntecedents_cons_fiberMeet φ' Δ' γ
+    have h_ih_φ : I.fiberLe ⟨(I.fiberMeet φΔ_pair, ψEval), h_meet_φΔ_ψ⟩ := by
+      simpa [h_ant_φ] using ih_γ
     -- The IH gives us fiberLe ⟨(fiberMeet φΔ_pair, ψ), h_meet_φΔ_ψ⟩
     -- By commutativity, fiberMeet φΔ_pair = fiberMeet Δφ_pair
     -- So we have fiberLe ⟨(fiberMeet Δφ_pair, ψ), _⟩
     have h_ih_comm : I.fiberLe ⟨(I.fiberMeet Δφ_pair, ψEval),
       (I.fiberMeet_proj Δφ_pair).trans (hΔφ.trans hφψ)⟩ := by
-      convert ih_γ using 2
-      ext
-      · exact hcomm.symm
-      · rfl
+      simpa [hcomm] using h_ih_φ
     -- Apply adjunction
     have h_adj_result := hadj.mp h_ih_comm
     -- h_adj_result : I.fiberLe ⟨(ΔEval, fiberHimp ⟨(φ, ψ), hφψ⟩), _⟩
     -- This is our goal (fullEval (imp φ ψ) = evalHimp φ ψ = fiberHimp (φ, ψ))
-    convert h_adj_result using 2
+    change
+      I.fiberLe
+        ⟨(ΔEval,
+            I.toTopologicalInterpretation.propCarrierCast
+              ((I.evalImp (I.eval φ') (I.eval ψ')).toContinuousMap γ)),
+          ?_⟩
+    simpa [antecedentsEval, formulaEval, TopologicalInterpretation.propCtxEval,
+      HeytingTopologicalInterpretation.evalImp, φEval, ψEval] using h_adj_result
   | allL t _ ih =>
     -- ∀x.φ :: Δ ⊢ χ  from  φ[t/x] :: Δ ⊢ χ
     -- Strategy: ∀x.φ ≤ φ[t/x] (by quantAll_instantiate), so
     -- ∀x.φ ∧ Δ ≤ φ[t/x] ∧ Δ (by monotonicity) ≤ χ (by ih)
     rename_i Γ' Δ' σ' φ' χ' _
     intro γ
-    -- Key insight: fullEval (.all φ') = evalAll I (fullEval φ') = quantAll σ' Γ' (fullEval φ')
-    -- And: fullEval (instantiate t φ') = evalInstantiate t (fullEval φ') (by coherence)
     have h_inst_eq := fullEval_instantiate I t φ'
-    -- The structure axiom quantAll_instantiate gives:
-    -- quantAll σ' Γ' (fullEval φ') ≤ evalInstantiate t (fullEval φ')
-    -- Which is: fullEval (.all φ') ≤ fullEval (instantiate t φ')
-    -- Step 1: Get the projection equality for quantAll_instantiate
-    have h_proj_eq : I.propSpace.proj ((I.quantAll σ' Γ' (fullEval I φ')).toContinuousMap γ) =
-                     I.propSpace.proj ((I.evalInstantiate t (fullEval I φ')).toContinuousMap γ) := by
-      have h1 := I.quantAll_proj σ' Γ' (fullEval I φ') γ
-      -- Using the instantiate projection - need the property from structure
-      -- Both project to ctxSpace.proj γ
-      have h2 := congrFun (I.evalInstantiate t (fullEval I φ')).proj_comp γ
-      exact h1.trans h2.symm
-    -- Step 2: Apply quantAll_instantiate
+    let allEval := I.formulaEval (Term.all φ') γ
+    let instEval := I.formulaEval (instantiate t φ') γ
+    let ΔEval := I.antecedentsEval Δ' γ
+    let χEval := I.formulaEval χ' γ
+    have h_all_formula :
+        allEval =
+          I.toTopologicalInterpretation.propCtxEval (I.quantAll σ' Γ' (fullEval I φ')) γ := by
+      exact I.formulaEval_all φ' γ
+    have h_inst_formula :
+        instEval =
+          I.toTopologicalInterpretation.propCtxEval (I.evalInstantiate t (fullEval I φ')) γ := by
+      simpa [instEval, formulaEval] using
+        congrArg (fun term => I.toTopologicalInterpretation.propCtxEval term γ) h_inst_eq
+    have h_all_inst_proj : I.propSpace.proj allEval = I.propSpace.proj instEval := by
+      exact (I.formulaEval_proj (Term.all φ') γ).trans (I.formulaEval_proj (instantiate t φ') γ).symm
+    have h_proj_eq :
+        I.propSpace.proj
+            (I.toTopologicalInterpretation.propCtxEval (I.quantAll σ' Γ' (fullEval I φ')) γ) =
+          I.propSpace.proj
+            (I.toTopologicalInterpretation.propCtxEval (I.evalInstantiate t (fullEval I φ')) γ) := by
+      exact (I.quantAll_proj σ' Γ' (fullEval I φ') γ).trans
+        (I.toTopologicalInterpretation.propCtxEval_proj (I.evalInstantiate t (fullEval I φ')) γ).symm
     have h_quant_le := I.quantAll_instantiate t (fullEval I φ') γ h_proj_eq
-    -- h_quant_le: quantAll σ' Γ' (fullEval φ') γ ≤ evalInstantiate t (fullEval φ') γ
-    -- This is: fullEval (.all φ') γ ≤ fullEval (instantiate t φ') γ (modulo coherence)
-    -- Step 3: Use monotonicity of meet to get ∀x.φ ∧ Δ ≤ φ[t/x] ∧ Δ
-    let allEval := (fullEval I (Term.all φ')).toContinuousMap γ
-    let instEval := (fullEval I (instantiate t φ')).toContinuousMap γ
-    let ΔEval := (evalAntecedents I Δ').toContinuousMap γ
-    let χEval := (fullEval I χ').toContinuousMap γ
-    have h_all_proj := congrFun (fullEval I (Term.all φ')).proj_comp γ
-    have h_inst_proj := congrFun (fullEval I (instantiate t φ')).proj_comp γ
-    have hΔ_proj := congrFun (evalAntecedents I Δ').proj_comp γ
-    have hχ_proj := congrFun (fullEval I χ').proj_comp γ
-    -- allEval = quantAll σ' Γ' (fullEval φ') γ (by definition of fullEval)
-    -- instEval = evalInstantiate t (fullEval φ') γ (by coherence h_inst_eq)
-    have h_all_eq : allEval = (I.quantAll σ' Γ' (fullEval I φ')).toContinuousMap γ := rfl
-    have h_inst_eq' : instEval = (I.evalInstantiate t (fullEval I φ')).toContinuousMap γ := by
-      exact congrFun (congrArg (·.toContinuousMap) h_inst_eq) γ
-    -- Now h_quant_le gives us allEval ≤ instEval
-    have h_all_inst : I.fiberLe ⟨(allEval, instEval), ?h_proj⟩ := by
-      convert h_quant_le using 2
-      ext <;> [exact h_all_eq; exact h_inst_eq']
-    case h_proj =>
-      simp only [Function.comp_apply] at h_all_proj h_inst_proj
-      exact h_all_proj.trans h_inst_proj.symm
-    -- Step 4: Use monotonicity of fiberMeet
+    have h_all_inst : I.fiberLe ⟨(allEval, instEval), h_all_inst_proj⟩ := by
+      simpa [h_all_formula, h_inst_formula] using h_quant_le
     have h_allΔ : I.propSpace.proj allEval = I.propSpace.proj ΔEval := by
-      simp only [Function.comp_apply] at h_all_proj hΔ_proj
-      exact h_all_proj.trans hΔ_proj.symm
+      exact (I.formulaEval_proj (Term.all φ') γ).trans (I.antecedentsEval_proj Δ' γ).symm
     have h_instΔ : I.propSpace.proj instEval = I.propSpace.proj ΔEval := by
-      simp only [Function.comp_apply] at h_inst_proj hΔ_proj
-      exact h_inst_proj.trans hΔ_proj.symm
-    -- fiberMeet is monotone in first argument: if a ≤ b then a ∧ c ≤ b ∧ c
+      exact (I.formulaEval_proj (instantiate t φ') γ).trans (I.antecedentsEval_proj Δ' γ).symm
     have h_mono := fiberMeet_mono_left I h_allΔ h_instΔ h_all_inst
-    -- Step 5: IH gives φ[t/x] ∧ Δ ≤ χ
     have ih_γ := ih γ
-    -- Step 6: Transitivity
+    have h_ant_inst :
+        I.antecedentsEval (instantiate t φ' :: Δ') γ =
+          I.fiberMeet ⟨(instEval, ΔEval), h_instΔ⟩ := by
+      simpa [instEval, ΔEval] using
+        I.evalAntecedents_cons_fiberMeet (instantiate t φ') Δ' γ
+    have ih_inst :
+        I.fiberLe ⟨(I.fiberMeet ⟨(instEval, ΔEval), h_instΔ⟩, χEval),
+          (I.fiberMeet_proj ⟨(instEval, ΔEval), h_instΔ⟩).trans
+            ((I.formulaEval_proj (instantiate t φ') γ).trans
+              (I.formulaEval_proj χ' γ).symm)⟩ := by
+      simpa [χEval, h_ant_inst] using ih_γ
     let allΔ_pair : PropFiberPair I.propSpace := ⟨(allEval, ΔEval), h_allΔ⟩
     let instΔ_pair : PropFiberPair I.propSpace := ⟨(instEval, ΔEval), h_instΔ⟩
-    have h_all_inst_proj : I.propSpace.proj allEval = I.propSpace.proj instEval := by
-      simp only [Function.comp_apply] at h_all_proj h_inst_proj
-      exact h_all_proj.trans h_inst_proj.symm
     have h_allΔ_instΔ_proj : I.propSpace.proj (I.fiberMeet allΔ_pair) =
                              I.propSpace.proj (I.fiberMeet instΔ_pair) := by
-      rw [I.fiberMeet_proj, I.fiberMeet_proj, h_all_inst_proj]
+      calc
+        I.propSpace.proj (I.fiberMeet allΔ_pair) = I.propSpace.proj allEval := I.fiberMeet_proj allΔ_pair
+        _ = I.propSpace.proj instEval := h_all_inst_proj
+        _ = I.propSpace.proj (I.fiberMeet instΔ_pair) := (I.fiberMeet_proj instΔ_pair).symm
     have h_instΔ_χ_proj : I.propSpace.proj (I.fiberMeet instΔ_pair) =
                           I.propSpace.proj χEval := by
-      rw [I.fiberMeet_proj]
-      simp only [Function.comp_apply] at h_inst_proj hχ_proj
-      exact h_inst_proj.trans hχ_proj.symm
-    have h_final := fiberLe_trans I h_allΔ_instΔ_proj h_instΔ_χ_proj h_mono ih_γ
-    convert h_final using 2
+      exact (I.fiberMeet_proj instΔ_pair).trans
+        ((I.formulaEval_proj (instantiate t φ') γ).trans (I.formulaEval_proj χ' γ).symm)
+    have h_final := fiberLe_trans I h_allΔ_instΔ_proj h_instΔ_χ_proj h_mono ih_inst
+    have h_ant_all :
+        I.antecedentsEval (Term.all φ' :: Δ') γ =
+          I.fiberMeet ⟨(allEval, ΔEval), h_allΔ⟩ := by
+      simpa [allEval, ΔEval] using I.evalAntecedents_cons_fiberMeet (Term.all φ') Δ' γ
+    simpa [χEval, h_ant_all] using h_final
   | allR _ ih =>
     -- Δ ⊢ ∀x.φ  from  weaken(Δ) ⊢ φ
     -- Strategy: Use quantAll_intro adjunction
     rename_i Γ' Δ' σ' φ' _
     intro γ
-    -- IH: ∀ γσΓ, evalAntecedents (weakenAntecedents σ' Δ') γσΓ ≤ fullEval φ' γσΓ
-    -- By evalAntecedents_weakenAntecedents:
-    --   evalAntecedents (weakenAntecedents σ' Δ') = evalWeaken σ' Γ' (evalAntecedents Δ')
-    -- So IH becomes: ∀ γσΓ, (evalWeaken σ' Γ' (evalAntecedents Δ')) γσΓ ≤ fullEval φ' γσΓ
-    -- By quantAll_intro: this implies evalAntecedents Δ' γ ≤ quantAll σ' Γ' (fullEval φ') γ
     have h_weaken_eq := evalAntecedents_weakenAntecedents (σ := σ') I Δ'
-    -- Transform IH using coherence
     have ih_transformed : ∀ γσΓ : (I.ctxSpace (σ' :: Γ')).Carrier,
-        ∀ h : I.propSpace.proj ((I.evalWeaken σ' Γ' (evalAntecedents I Δ')).toContinuousMap γσΓ) =
-              I.propSpace.proj ((fullEval I φ').toContinuousMap γσΓ),
-        I.fiberLe ⟨((I.evalWeaken σ' Γ' (evalAntecedents I Δ')).toContinuousMap γσΓ,
-                    (fullEval I φ').toContinuousMap γσΓ), h⟩ := by
+        ∀ h : I.propSpace.proj
+              (I.toTopologicalInterpretation.propCtxEval
+                (I.evalWeaken σ' Γ' (evalAntecedents I Δ')) γσΓ) =
+            I.propSpace.proj (I.formulaEval φ' γσΓ),
+        I.fiberLe ⟨(I.toTopologicalInterpretation.propCtxEval
+            (I.evalWeaken σ' Γ' (evalAntecedents I Δ')) γσΓ,
+          I.formulaEval φ' γσΓ), h⟩ := by
       intro γσΓ h
       have ih_γσΓ := ih γσΓ
-      -- ih_γσΓ uses evalAntecedents (weakenAntecedents σ' Δ')
-      -- Convert using h_weaken_eq
-      convert ih_γσΓ using 2
-      ext
-      · exact congrFun (congrArg (·.toContinuousMap) h_weaken_eq.symm) γσΓ
-      · rfl
-    -- Apply quantAll_intro adjunction
+      have h_weaken_point :
+          I.antecedentsEval (weakenAntecedents σ' Δ') γσΓ =
+            I.toTopologicalInterpretation.propCtxEval
+              (I.evalWeaken σ' Γ' (evalAntecedents I Δ')) γσΓ := by
+        simpa [antecedentsEval] using
+          congrArg (fun term => I.toTopologicalInterpretation.propCtxEval term γσΓ)
+            h_weaken_eq
+      simpa [formulaEval, h_weaken_point] using ih_γσΓ
     have h_adj := I.quantAll_intro (evalAntecedents I Δ') (fullEval I φ') ih_transformed
-    -- h_adj: ∀ γ, evalAntecedents Δ' γ ≤ quantAll σ' Γ' (fullEval φ') γ
-    -- Goal: evalAntecedents Δ' γ ≤ fullEval (.all φ') γ
-    -- fullEval (.all φ') = evalAll I (fullEval φ') = quantAll σ' Γ' (fullEval φ')
-    have h_proj : I.propSpace.proj ((evalAntecedents I Δ').toContinuousMap γ) =
-                  I.propSpace.proj ((fullEval I (Term.all φ')).toContinuousMap γ) := by
-      have ha := congrFun (evalAntecedents I Δ').proj_comp γ
-      have hs := congrFun (fullEval I (Term.all φ')).proj_comp γ
-      exact ha.trans hs.symm
-    exact h_adj γ h_proj
+    have h_proj : I.propSpace.proj (I.antecedentsEval Δ' γ) =
+                  I.propSpace.proj (I.formulaEval (Term.all φ') γ) := by
+      exact (I.antecedentsEval_proj Δ' γ).trans (I.formulaEval_proj (Term.all φ') γ).symm
+    simpa [formulaEval, antecedentsEval] using h_adj γ h_proj
   | exL _ ih =>
     -- ∃x.φ :: Δ ⊢ χ  from  φ :: weaken(Δ) ⊢ weaken(χ)
     -- Strategy: Use quantEx_elim adjunction
     rename_i Γ' Δ' σ' φ' χ' _
     intro γ
-    -- IH: ∀ γσΓ, evalAntecedents (φ' :: weakenAntecedents σ' Δ') γσΓ ≤ fullEval (weaken χ') γσΓ
-    -- Step 1: Convert IH using coherence
-    -- evalAntecedents (φ' :: weakenAntecedents σ' Δ') = fiberMeet (fullEval φ', evalAntecedents (weakenAntecedents σ' Δ'))
-    -- evalAntecedents (weakenAntecedents σ' Δ') = evalWeaken σ' Γ' (evalAntecedents Δ') (by evalAntecedents_weakenAntecedents)
-    -- fullEval (weaken χ') = evalWeaken σ' Γ' (fullEval χ') (by fullEval_weaken)
     have h_weaken_Δ := evalAntecedents_weakenAntecedents (σ := σ') I Δ'
     have h_weaken_χ := fullEval_weaken (σ := σ') I χ'
-    -- Transform IH to the form needed by quantEx_elim
     have ih_transformed : ∀ γσΓ : (I.ctxSpace (σ' :: Γ')).Carrier,
-        ∀ hφΔ : I.propSpace.proj ((fullEval I φ').toContinuousMap γσΓ) =
-                I.propSpace.proj ((I.evalWeaken σ' Γ' (evalAntecedents I Δ')).toContinuousMap γσΓ),
-        ∀ hMeetχ : I.propSpace.proj (I.fiberMeet ⟨((fullEval I φ').toContinuousMap γσΓ,
-                     (I.evalWeaken σ' Γ' (evalAntecedents I Δ')).toContinuousMap γσΓ), hφΔ⟩) =
-                   I.propSpace.proj ((I.evalWeaken σ' Γ' (fullEval I χ')).toContinuousMap γσΓ),
-        I.fiberLe ⟨(I.fiberMeet ⟨((fullEval I φ').toContinuousMap γσΓ,
-                   (I.evalWeaken σ' Γ' (evalAntecedents I Δ')).toContinuousMap γσΓ), hφΔ⟩,
-                  (I.evalWeaken σ' Γ' (fullEval I χ')).toContinuousMap γσΓ), hMeetχ⟩ := by
+        ∀ hφΔ : I.propSpace.proj (I.formulaEval φ' γσΓ) =
+                I.propSpace.proj
+                  (I.toTopologicalInterpretation.propCtxEval
+                    (I.evalWeaken σ' Γ' (evalAntecedents I Δ')) γσΓ),
+        ∀ hMeetχ : I.propSpace.proj
+              (I.fiberMeet
+                ⟨(I.formulaEval φ' γσΓ,
+                  I.toTopologicalInterpretation.propCtxEval
+                    (I.evalWeaken σ' Γ' (evalAntecedents I Δ')) γσΓ), hφΔ⟩) =
+            I.propSpace.proj
+              (I.toTopologicalInterpretation.propCtxEval
+                (I.evalWeaken σ' Γ' (fullEval I χ')) γσΓ),
+        I.fiberLe ⟨(I.fiberMeet
+            ⟨(I.formulaEval φ' γσΓ,
+              I.toTopologicalInterpretation.propCtxEval
+                (I.evalWeaken σ' Γ' (evalAntecedents I Δ')) γσΓ), hφΔ⟩,
+          I.toTopologicalInterpretation.propCtxEval
+            (I.evalWeaken σ' Γ' (fullEval I χ')) γσΓ), hMeetχ⟩ := by
       intro γσΓ hφΔ hMeetχ
       have ih_γσΓ := ih γσΓ
-      -- ih_γσΓ: evalAntecedents (φ' :: weakenAntecedents σ' Δ') ≤ fullEval (weaken χ')
-      -- Convert using coherence equations
-      -- evalAntecedents (φ' :: weakenAntecedents σ' Δ') = fiberMeet (fullEval φ', evalAntecedents (weakenAntecedents σ' Δ'))
-      -- where evalAntecedents (weakenAntecedents σ' Δ') = evalWeaken σ' Γ' (evalAntecedents Δ')
-      have h_ant_eq : (evalAntecedents I (φ' :: weakenAntecedents σ' Δ')).toContinuousMap γσΓ =
-          I.fiberMeet ⟨((fullEval I φ').toContinuousMap γσΓ,
-                       (I.evalWeaken σ' Γ' (evalAntecedents I Δ')).toContinuousMap γσΓ), hφΔ⟩ := by
-        -- evalAntecedents (φ' :: rest) = fiberMeet (fullEval φ', evalAntecedents rest)
-        -- evalAntecedents (weakenAntecedents σ' Δ') = evalWeaken σ' Γ' (evalAntecedents Δ')
-        show I.fiberMeet ⟨((fullEval I φ').toContinuousMap γσΓ,
-               (evalAntecedents I (weakenAntecedents σ' Δ')).toContinuousMap γσΓ), _⟩ =
-             I.fiberMeet ⟨((fullEval I φ').toContinuousMap γσΓ,
-               (I.evalWeaken σ' Γ' (evalAntecedents I Δ')).toContinuousMap γσΓ), hφΔ⟩
-        congr 1
-        ext
-        · rfl
-        · exact congrFun (congrArg (·.toContinuousMap) h_weaken_Δ) γσΓ
-      have h_succ_eq : (fullEval I (weaken (σ := σ') χ')).toContinuousMap γσΓ =
-          (I.evalWeaken σ' Γ' (fullEval I χ')).toContinuousMap γσΓ := by
-        exact congrFun (congrArg (·.toContinuousMap) h_weaken_χ) γσΓ
-      -- Now convert ih_γσΓ
-      convert ih_γσΓ using 2
-      ext
-      · exact h_ant_eq.symm
-      · exact h_succ_eq.symm
-    -- Step 2: Apply quantEx_elim to get the conclusion
+      have h_weaken_Δ_point :
+          I.antecedentsEval (weakenAntecedents σ' Δ') γσΓ =
+            I.toTopologicalInterpretation.propCtxEval
+              (I.evalWeaken σ' Γ' (evalAntecedents I Δ')) γσΓ := by
+        simpa [antecedentsEval] using
+          congrArg (fun term => I.toTopologicalInterpretation.propCtxEval term γσΓ)
+            h_weaken_Δ
+      have h_ant_point :
+          I.antecedentsEval (φ' :: weakenAntecedents σ' Δ') γσΓ =
+            I.fiberMeet
+              ⟨(I.formulaEval φ' γσΓ,
+                I.toTopologicalInterpretation.propCtxEval
+                  (I.evalWeaken σ' Γ' (evalAntecedents I Δ')) γσΓ), hφΔ⟩ := by
+        calc
+          I.antecedentsEval (φ' :: weakenAntecedents σ' Δ') γσΓ
+              = I.fiberMeet
+                  ⟨(I.formulaEval φ' γσΓ,
+                    I.antecedentsEval (weakenAntecedents σ' Δ') γσΓ),
+                    (I.formulaEval_proj φ' γσΓ).trans
+                      (I.antecedentsEval_proj (weakenAntecedents σ' Δ') γσΓ).symm⟩ := by
+                  simpa [formulaEval] using
+                    I.evalAntecedents_cons_fiberMeet φ' (weakenAntecedents σ' Δ') γσΓ
+          _ = I.fiberMeet
+                ⟨(I.formulaEval φ' γσΓ,
+                  I.toTopologicalInterpretation.propCtxEval
+                    (I.evalWeaken σ' Γ' (evalAntecedents I Δ')) γσΓ), hφΔ⟩ := by
+                have h_pair_eq :
+                    (⟨(I.formulaEval φ' γσΓ,
+                      I.antecedentsEval (weakenAntecedents σ' Δ') γσΓ),
+                      (I.formulaEval_proj φ' γσΓ).trans
+                        (I.antecedentsEval_proj (weakenAntecedents σ' Δ') γσΓ).symm⟩ :
+                      PropFiberPair I.propSpace) =
+                    ⟨(I.formulaEval φ' γσΓ,
+                      I.toTopologicalInterpretation.propCtxEval
+                        (I.evalWeaken σ' Γ' (evalAntecedents I Δ')) γσΓ), hφΔ⟩ := by
+                  apply Subtype.ext
+                  ext <;> simp [h_weaken_Δ_point]
+                rw [h_pair_eq]
+      have h_succ_point :
+          I.formulaEval (weaken (σ := σ') χ') γσΓ =
+            I.toTopologicalInterpretation.propCtxEval
+              (I.evalWeaken σ' Γ' (fullEval I χ')) γσΓ := by
+        simpa [formulaEval] using
+          congrArg (fun term => I.toTopologicalInterpretation.propCtxEval term γσΓ)
+            h_weaken_χ
+      simpa [h_ant_point, h_succ_point] using ih_γσΓ
     have h_adj := I.quantEx_elim (evalAntecedents I Δ') (fullEval I φ') (fullEval I χ') ih_transformed
-    -- h_adj: ∀ γ, fiberMeet (quantEx σ' Γ' (fullEval φ') γ, evalAntecedents Δ' γ) ≤ fullEval χ' γ
-    -- Step 3: Projection equalities for the goal
-    let exEval := (fullEval I (Term.ex φ')).toContinuousMap γ
-    let ΔEval := (evalAntecedents I Δ').toContinuousMap γ
-    let χEval := (fullEval I χ').toContinuousMap γ
-    have h_ex_proj := congrFun (fullEval I (Term.ex φ')).proj_comp γ
-    have hΔ_proj := congrFun (evalAntecedents I Δ').proj_comp γ
-    have hχ_proj := congrFun (fullEval I χ').proj_comp γ
-    -- fullEval (.ex φ') = evalEx I (fullEval φ') = quantEx σ' Γ' (fullEval φ')
-    have h_ex_eq : exEval = (I.quantEx σ' Γ' (fullEval I φ')).toContinuousMap γ := rfl
-    -- Projection equalities for applying h_adj
+    let exEval := I.formulaEval (Term.ex φ') γ
+    let ΔEval := I.antecedentsEval Δ' γ
+    let χEval := I.formulaEval χ' γ
     have hExΔ : I.propSpace.proj exEval = I.propSpace.proj ΔEval := by
-      simp only [Function.comp_apply] at h_ex_proj hΔ_proj
-      exact h_ex_proj.trans hΔ_proj.symm
+      exact (I.formulaEval_proj (Term.ex φ') γ).trans (I.antecedentsEval_proj Δ' γ).symm
     let exΔ_pair : PropFiberPair I.propSpace := ⟨(exEval, ΔEval), hExΔ⟩
     have hMeetχ : I.propSpace.proj (I.fiberMeet exΔ_pair) = I.propSpace.proj χEval := by
-      have h := I.fiberMeet_proj exΔ_pair
-      simp only [Function.comp_apply] at h_ex_proj hχ_proj
-      exact h.trans (hExΔ.trans (hΔ_proj.trans hχ_proj.symm))
-    -- Apply h_adj at γ with the projection equalities
+      exact (I.fiberMeet_proj exΔ_pair).trans
+        ((I.formulaEval_proj (Term.ex φ') γ).trans (I.formulaEval_proj χ' γ).symm)
     have h_adj_γ := h_adj γ hExΔ hMeetχ
-    -- h_adj_γ: fiberMeet (exEval, ΔEval) ≤ χEval
-    -- This is exactly: evalAntecedents (Term.ex φ' :: Δ') γ ≤ fullEval χ' γ
-    convert h_adj_γ using 2
+    have h_ant_ex :
+        I.antecedentsEval (Term.ex φ' :: Δ') γ =
+          I.fiberMeet exΔ_pair := by
+      simpa [exEval, ΔEval, exΔ_pair] using
+        I.evalAntecedents_cons_fiberMeet (Term.ex φ') Δ' γ
+    simpa [χEval, h_ant_ex, exΔ_pair] using h_adj_γ
   | exR t _ ih =>
     -- Δ ⊢ ∃x.φ  from  Δ ⊢ φ[t/x]
     -- Strategy: Δ ≤ φ[t/x] (by ih), φ[t/x] ≤ ∃x.φ (by quantEx_intro)
     rename_i Γ' Δ' σ' φ' _
     intro γ
-    -- IH: evalAntecedents Δ' γ ≤ fullEval (instantiate t φ') γ
     have ih_γ := ih γ
-    -- Key: fullEval (instantiate t φ') = evalInstantiate t (fullEval φ') (by coherence)
     have h_inst_eq := fullEval_instantiate I t φ'
-    -- And: fullEval (.ex φ') = evalEx I (fullEval φ') = quantEx σ' Γ' (fullEval φ')
-    -- By quantEx_intro: evalInstantiate t (fullEval φ') ≤ quantEx σ' Γ' (fullEval φ')
-    -- Step 1: Get the projection equality for quantEx_intro
-    have h_proj_eq : I.propSpace.proj ((I.evalInstantiate t (fullEval I φ')).toContinuousMap γ) =
-                     I.propSpace.proj ((I.quantEx σ' Γ' (fullEval I φ')).toContinuousMap γ) := by
-      have h1 := congrFun (I.evalInstantiate t (fullEval I φ')).proj_comp γ
-      have h2 := I.quantEx_proj σ' Γ' (fullEval I φ') γ
-      exact h1.trans h2.symm
-    -- Step 2: Apply quantEx_intro
-    have h_quant_intro := I.quantEx_intro t (fullEval I φ') γ h_proj_eq
-    -- h_quant_intro: evalInstantiate t (fullEval φ') γ ≤ quantEx σ' Γ' (fullEval φ') γ
-    -- Step 3: Define local values
-    let instEval := (fullEval I (instantiate t φ')).toContinuousMap γ
-    let exEval := (fullEval I (Term.ex φ')).toContinuousMap γ
-    let ΔEval := (evalAntecedents I Δ').toContinuousMap γ
-    have h_inst_proj := congrFun (fullEval I (instantiate t φ')).proj_comp γ
-    have h_ex_proj := congrFun (fullEval I (Term.ex φ')).proj_comp γ
-    have hΔ_proj := congrFun (evalAntecedents I Δ').proj_comp γ
-    -- instEval = evalInstantiate t (fullEval φ') γ (by coherence)
-    -- exEval = quantEx σ' Γ' (fullEval φ') γ (by definition)
-    have h_inst_eq' : instEval = (I.evalInstantiate t (fullEval I φ')).toContinuousMap γ := by
-      exact congrFun (congrArg (·.toContinuousMap) h_inst_eq) γ
-    have h_ex_eq : exEval = (I.quantEx σ' Γ' (fullEval I φ')).toContinuousMap γ := rfl
-    -- Now h_quant_intro gives instEval ≤ exEval
-    have h_inst_ex : I.fiberLe ⟨(instEval, exEval), ?h_proj⟩ := by
-      convert h_quant_intro using 2
-      ext <;> [exact h_inst_eq'; exact h_ex_eq]
-    case h_proj =>
-      simp only [Function.comp_apply] at h_inst_proj h_ex_proj
-      exact h_inst_proj.trans h_ex_proj.symm
-    -- Step 4: Transitivity: Δ ≤ instEval ≤ exEval
-    have h_Δ_inst : I.propSpace.proj ΔEval = I.propSpace.proj instEval := by
-      simp only [Function.comp_apply] at hΔ_proj h_inst_proj
-      exact hΔ_proj.trans h_inst_proj.symm
+    let instEval := I.formulaEval (instantiate t φ') γ
+    let exEval := I.formulaEval (Term.ex φ') γ
+    let ΔEval := I.antecedentsEval Δ' γ
+    have h_inst_formula :
+        instEval =
+          I.toTopologicalInterpretation.propCtxEval (I.evalInstantiate t (fullEval I φ')) γ := by
+      simpa [instEval, formulaEval] using
+        congrArg (fun term => I.toTopologicalInterpretation.propCtxEval term γ) h_inst_eq
+    have h_ex_formula :
+        exEval =
+          I.toTopologicalInterpretation.propCtxEval (I.quantEx σ' Γ' (fullEval I φ')) γ := by
+      exact I.formulaEval_ex φ' γ
     have h_inst_ex_proj : I.propSpace.proj instEval = I.propSpace.proj exEval := by
-      simp only [Function.comp_apply] at h_inst_proj h_ex_proj
-      exact h_inst_proj.trans h_ex_proj.symm
+      exact (I.formulaEval_proj (instantiate t φ') γ).trans (I.formulaEval_proj (Term.ex φ') γ).symm
+    have h_proj_eq :
+        I.propSpace.proj
+            (I.toTopologicalInterpretation.propCtxEval (I.evalInstantiate t (fullEval I φ')) γ) =
+          I.propSpace.proj
+            (I.toTopologicalInterpretation.propCtxEval (I.quantEx σ' Γ' (fullEval I φ')) γ) := by
+      exact (I.toTopologicalInterpretation.propCtxEval_proj (I.evalInstantiate t (fullEval I φ')) γ).trans
+        (I.quantEx_proj σ' Γ' (fullEval I φ') γ).symm
+    have h_quant_intro := I.quantEx_intro t (fullEval I φ') γ h_proj_eq
+    have h_inst_ex : I.fiberLe ⟨(instEval, exEval), h_inst_ex_proj⟩ := by
+      simpa [h_inst_formula, h_ex_formula] using h_quant_intro
+    have h_Δ_inst : I.propSpace.proj ΔEval = I.propSpace.proj instEval := by
+      exact (I.antecedentsEval_proj Δ' γ).trans (I.formulaEval_proj (instantiate t φ') γ).symm
     have h_final := fiberLe_trans I h_Δ_inst h_inst_ex_proj ih_γ h_inst_ex
-    convert h_final using 2
+    simpa [instEval, exEval, ΔEval] using h_final
   | lam hΔ hφ _ ih =>
     -- Beta-eta convertibility preserves validity
     -- hΔ : AntecedentsBetaEtaEq Δ Δ'
@@ -1958,12 +2313,9 @@ theorem fullSoundness (I : HeytingTopologicalInterpretation Base Const X)
     have h_ant_eq := evalAntecedents_betaEtaEq I hΔ
     -- By coherence: fullEval φ = fullEval φ'
     have h_succ_eq := fullEval_betaEtaEq I hφ
-    -- IH gives: evalAntecedents Δ' γ ≤ fullEval φ' γ
-    -- Goal: evalAntecedents Δ γ ≤ fullEval φ γ
-    -- Since evalAntecedents Δ = evalAntecedents Δ' and fullEval φ = fullEval φ',
-    -- the goal is exactly the IH
-    simp only [h_ant_eq, h_succ_eq]
-    exact ih γ
+    have h_ant_point := congrArg (fun term => I.toTopologicalInterpretation.propCtxEval term γ) h_ant_eq
+    have h_succ_point := congrArg (fun term => I.toTopologicalInterpretation.propCtxEval term γ) h_succ_eq
+    simpa [h_ant_point, h_succ_point] using ih γ
 
 instance instHasSequentSemantics
     (I : HeytingTopologicalInterpretation Base Const X)
@@ -1978,14 +2330,14 @@ instance instHasSequentSemantics
 Package a failure of `FullValidSequent` in a Heyting topological interpretation
 as an existential topological counterexample.
 -/
-def counterexample_of_not_fullValidSequent
+noncomputable def counterexample_of_not_fullValidSequent
     (I : HeytingTopologicalInterpretation Base Const X)
     [FullEvalCoherent I]
     {Γ : Ctx Base}
     (antecedents : List (Formula Const Γ))
     (succedent : Formula Const Γ)
     (hInvalid : ¬ I.FullValidSequent antecedents succedent) :
-    TopologicalInterpretation.Counterexample
+    TopologicalInterpretation.Counterexample.{u, v, w}
       (Base := Base) (Const := Const) antecedents succedent :=
   TopologicalInterpretation.Counterexample.ofInvalid
     (I := I.toTopologicalInterpretation)
@@ -2005,7 +2357,7 @@ theorem exists_counterexample_of_not_fullValidSequent
     {succedent : Formula Const Γ}
     (hInvalid : ¬ I.FullValidSequent antecedents succedent) :
     Nonempty
-      (TopologicalInterpretation.Counterexample
+      (TopologicalInterpretation.Counterexample.{u, v, w}
         (Base := Base) (Const := Const) antecedents succedent) :=
   TopologicalInterpretation.exists_counterexample_of_not_valid
     (I := I.toTopologicalInterpretation)

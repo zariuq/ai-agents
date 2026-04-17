@@ -61,8 +61,25 @@ attribute [simp] TopologicalInterpretation.space_arr
 
 namespace TopologicalInterpretation
 
-variable {I : TopologicalInterpretation Base Const X}
 variable {X : Type w} [TopologicalSpace X]
+variable {I : TopologicalInterpretation Base Const X}
+
+private theorem continuous_castCarrier
+    {Y : Type*} [TopologicalSpace Y]
+    {E F : EtaleSpace X}
+    (h : E = F)
+    (g : C(Y, E.Carrier)) :
+    Continuous fun y => cast (congrArg EtaleSpace.Carrier h) (g y) := by
+  cases h
+  simpa using g.continuous
+
+private theorem proj_castCarrier
+    {E F : EtaleSpace X}
+    (h : E = F)
+    (p : E.Carrier) :
+    F.proj (cast (congrArg EtaleSpace.Carrier h) p) = E.proj p := by
+  cases h
+  rfl
 
 /-- Restrict the full typed interpretation to the supported simple fragment. -/
 noncomputable def constProp (I : TopologicalInterpretation Base Const X)
@@ -81,13 +98,16 @@ abbrev ctxSpace (I : TopologicalInterpretation Base Const X) :
 
 @[simp] theorem ctxSpace_nil (I : TopologicalInterpretation Base Const X) :
     I.ctxSpace [] = EtaleSpace.terminal X := by
-  simpa [TopologicalInterpretation.ctxSpace] using
-    EtaleSpace.BasicTopologicalInterpretation.ctxSpace_nil I.toBasicTopologicalInterpretation
+  rw [TopologicalInterpretation.ctxSpace]
+  exact
+    EtaleSpace.BasicTopologicalInterpretation.ctxSpace_nil
+      I.toBasicTopologicalInterpretation
 
 @[simp] theorem ctxSpace_cons (I : TopologicalInterpretation Base Const X)
     (τ : Ty Base) (Γ : Ctx Base) :
     I.ctxSpace (τ :: Γ) = EtaleSpace.prod (I.space τ) (I.ctxSpace Γ) := by
-  simpa [TopologicalInterpretation.ctxSpace] using
+  rw [TopologicalInterpretation.ctxSpace]
+  exact
     EtaleSpace.BasicTopologicalInterpretation.ctxSpace_cons
       I.toBasicTopologicalInterpretation τ Γ
 
@@ -104,6 +124,7 @@ abbrev CtxTerm (I : TopologicalInterpretation Base Const X)
 namespace CtxHom
 
 variable {Γ Δ Ξ : Ctx Base}
+variable {τ : Ty Base}
 
 /-- Identity context morphism. -/
 abbrev id (I : TopologicalInterpretation Base Const X) (Γ : Ctx Base) :
@@ -113,6 +134,22 @@ abbrev id (I : TopologicalInterpretation Base Const X) (Γ : Ctx Base) :
 /-- Composition of context morphisms. -/
 abbrev comp (σ : I.CtxHom Γ Δ) (ρ : I.CtxHom Δ Ξ) : I.CtxHom Γ Ξ :=
   EtaleSpace.BasicTopologicalInterpretation.CtxHom.comp σ ρ
+
+/-- Forget the head variable of a nonempty context. -/
+abbrev tail (I : TopologicalInterpretation Base Const X)
+    (τ : Ty Base) (Γ : Ctx Base) :
+    I.CtxHom (τ :: Γ) Γ :=
+  EtaleSpace.BasicTopologicalInterpretation.CtxHom.tail
+    I.toBasicTopologicalInterpretation τ Γ
+
+/-- Extend a context morphism by a new head term. -/
+abbrev cons (t : I.CtxTerm Γ τ) (σ : I.CtxHom Γ Δ) : I.CtxHom Γ (τ :: Δ) :=
+  EtaleSpace.BasicTopologicalInterpretation.CtxTerm.cons t σ
+
+/-- Lift a context morphism under one additional bound variable. -/
+abbrev lift (σ : I.CtxHom Δ Γ) : I.CtxHom (τ :: Δ) (τ :: Γ) :=
+  EtaleSpace.BasicTopologicalInterpretation.CtxHom.lift (I := I.toBasicTopologicalInterpretation)
+    (τ := τ) σ
 
 @[simp] theorem id_apply (x : (I.ctxSpace Γ).Carrier) :
     (CtxHom.id I Γ).toContinuousMap x = x := by
@@ -151,14 +188,18 @@ noncomputable def lam {I : TopologicalInterpretation Base Const X}
     have ht := congrFun t.proj_comp (EtaleSpace.prodSwap (I.ctxSpace Γ) (I.space τ) p)
     simp only [f, Function.comp_apply] at ht ⊢
     exact ht.trans (EtaleSpace.prodSwap_proj (I.ctxSpace Γ) (I.space τ) p)
+  let hArr : EtaleSpace.exp (I.space τ) (I.space υ) = I.space (.arr τ υ) :=
+    (I.space_arr τ υ).symm
   refine
     { toContinuousMap := ?_
       proj_comp := ?_ }
-  · simpa using
-      (EtaleSpace.curry f hf :
-        C((I.ctxSpace Γ).Carrier, (EtaleSpace.exp (I.space τ) (I.space υ)).Carrier))
+  · refine
+      { toFun := fun x => cast (congrArg EtaleSpace.Carrier hArr) ((EtaleSpace.curry f hf) x)
+        continuous_toFun := continuous_castCarrier hArr (EtaleSpace.curry f hf) }
   · funext x
-    simpa using congrFun (EtaleSpace.curry_proj f hf) x
+    simpa [Function.comp_apply, hArr] using
+      (proj_castCarrier hArr ((EtaleSpace.curry f hf) x)).trans
+        (congrFun (EtaleSpace.curry_proj f hf) x)
 
 /--
 Application: given terms `f : Γ ⊢ τ → υ` and `a : Γ ⊢ τ`, produce `f a : Γ ⊢ υ`.
@@ -170,12 +211,17 @@ noncomputable def app {I : TopologicalInterpretation Base Const X}
     (f : I.CtxTerm Γ (.arr τ υ))
     (a : I.CtxTerm Γ τ) :
     I.CtxTerm Γ υ := by
-  let fExp : C((I.ctxSpace Γ).Carrier, (EtaleSpace.exp (I.space τ) (I.space υ)).Carrier) := by
-    simpa using f.toContinuousMap
+  let hArr : I.space (.arr τ υ) = EtaleSpace.exp (I.space τ) (I.space υ) :=
+    I.space_arr τ υ
+  let fExp : C((I.ctxSpace Γ).Carrier, (EtaleSpace.exp (I.space τ) (I.space υ)).Carrier) :=
+    { toFun := fun γ => cast (congrArg EtaleSpace.Carrier hArr) (f.toContinuousMap γ)
+      continuous_toFun := continuous_castCarrier hArr f.toContinuousMap }
   have hfExp :
       (EtaleSpace.exp (I.space τ) (I.space υ)).proj ∘ fExp = (I.ctxSpace Γ).proj := by
     funext γ
-    simpa [fExp] using congrFun f.proj_comp γ
+    simpa [Function.comp_apply, fExp, hArr] using
+      (proj_castCarrier hArr (f.toContinuousMap γ)).trans
+        (congrFun f.proj_comp γ)
   -- Projection compatibility for pairing f and a
   have hp : ∀ γ : (I.ctxSpace Γ).Carrier,
       (EtaleSpace.exp (I.space τ) (I.space υ)).proj (fExp γ) =
@@ -188,7 +234,7 @@ noncomputable def app {I : TopologicalInterpretation Base Const X}
       C((I.ctxSpace Γ).Carrier,
         (EtaleSpace.prod (EtaleSpace.exp (I.space τ) (I.space υ)) (I.space τ)).Carrier) :=
     ⟨fun γ => ⟨(fExp γ, a.toContinuousMap γ), hp γ⟩,
-    (f.toContinuousMap.continuous.prodMk a.toContinuousMap.continuous).subtype_mk (hp ·)⟩
+    (fExp.continuous.prodMk a.toContinuousMap.continuous).subtype_mk (hp ·)⟩
   exact {
     toContinuousMap := (EtaleSpace.evalMorphism (I.space τ) (I.space υ)).comp pair
     proj_comp := by
@@ -198,12 +244,58 @@ noncomputable def app {I : TopologicalInterpretation Base Const X}
       exact hEval.trans (congrFun hfExp γ)
   }
 
+/-- Beta law for the full typed topological interpretation. -/
+@[simp] theorem app_lam {I : TopologicalInterpretation Base Const X}
+    {Γ : Ctx Base} {τ υ : Ty Base}
+    (t : I.CtxTerm (τ :: Γ) υ)
+    (a : I.CtxTerm Γ τ) :
+    app (lam t) a = t.reindex (CtxHom.cons a (CtxHom.id I Γ)) := by
+  ext γ
+  let f :
+      C((EtaleSpace.prod (I.ctxSpace Γ) (I.space τ)).Carrier, (I.space υ).Carrier) :=
+    t.toContinuousMap.comp (EtaleSpace.prodSwap (I.ctxSpace Γ) (I.space τ))
+  have hf : (I.space υ).proj ∘ f = (EtaleSpace.prod (I.ctxSpace Γ) (I.space τ)).proj := by
+    funext p
+    have ht := congrFun t.proj_comp (EtaleSpace.prodSwap (I.ctxSpace Γ) (I.space τ) p)
+    simp only [f, Function.comp_apply] at ht ⊢
+    exact ht.trans (EtaleSpace.prodSwap_proj (I.ctxSpace Γ) (I.space τ) p)
+  let p : (EtaleSpace.prod (I.ctxSpace Γ) (I.space τ)).Carrier :=
+    ⟨(γ, a.toContinuousMap γ), (congrFun a.proj_comp γ).symm⟩
+  have happ :
+      (app (lam t) a).toContinuousMap γ =
+        EtaleSpace.uncurry (EtaleSpace.curry f hf) (EtaleSpace.curry_proj f hf) p := by
+    let q₁ : (EtaleSpace.prod (EtaleSpace.exp (I.space τ) (I.space υ)) (I.space τ)).Carrier :=
+      ⟨((EtaleSpace.curry f hf) γ, a.toContinuousMap γ),
+        (congrFun (EtaleSpace.curry_proj f hf) γ).trans (congrFun a.proj_comp γ).symm⟩
+    let q₂ : (EtaleSpace.prod (EtaleSpace.exp (I.space τ) (I.space υ)) (I.space τ)).Carrier :=
+      ⟨((EtaleSpace.curry f hf) p.fst, p.snd),
+        (congrFun (EtaleSpace.curry_proj f hf) p.fst).trans p.property⟩
+    have hp_fst : p.fst = γ := by
+      rfl
+    have hp_snd : p.snd = a.toContinuousMap γ := by
+      rfl
+    have hq : q₁ = q₂ := by
+      apply Subtype.ext
+      apply Prod.ext
+      · simp [q₁, q₂, hp_fst]
+      · simp [q₁, q₂, hp_snd]
+    simpa [app, lam, f, p, q₁, q₂, EtaleSpace.uncurry] using
+      congrArg (EtaleSpace.evalMorphism (I.space τ) (I.space υ)) hq
+  have hreindex :
+      (t.reindex (CtxHom.cons a (CtxHom.id I Γ))).toContinuousMap γ = f p := by
+    rfl
+  calc
+    (app (lam t) a).toContinuousMap γ
+        = EtaleSpace.uncurry (EtaleSpace.curry f hf) (EtaleSpace.curry_proj f hf) p := happ
+    _ = f p := EtaleSpace.uncurry_curry f hf p
+    _ = (t.reindex (CtxHom.cons a (CtxHom.id I Γ))).toContinuousMap γ := hreindex.symm
+
 end CtxTerm
 
 /--
 Convert a full topological interpretation to a simple one (forgetting arrow type support).
 -/
-def toSimple (I : TopologicalInterpretation Base Const X) :
+noncomputable def toSimple (I : TopologicalInterpretation Base Const X) :
     SimpleTopologicalInterpretation Base Const X where
   propSpace := I.propSpace
   baseSpace := I.baseSpace
@@ -216,7 +308,13 @@ The full interpretation agrees with the simple interpretation on supported types
 theorem space_eq_simple_space (I : TopologicalInterpretation Base Const X)
     (τ : SimpleTy Base) :
     I.space τ.toTy = I.toSimple.space τ := by
-  cases τ <;> simp [SimpleTopologicalInterpretation.space, TopologicalInterpretation.toSimple]
+  cases τ with
+  | prop =>
+      change I.space .prop = I.propSpace
+      exact I.space_prop
+  | base b =>
+      change I.space (.base b) = I.baseSpace b
+      exact I.space_base b
 
 end TopologicalInterpretation
 

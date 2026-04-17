@@ -349,13 +349,6 @@ theorem binaryCopyHMM_observedCylinder_1 :
 
 end BinaryExamples
 
-section FiniteDiscreteMixtures
-
-variable {n : ℕ}
-
-local instance : MeasurableSpace (Fin n) := ⊤
-local instance : MeasurableSingletonClass (Fin n) := ⟨fun _ => by simp⟩
-
 /-- Prefix-measure surface carried by a fixed latent Markov parameter and a
 fixed emission kernel, defined from the observed sequence law on cylinders. -/
 noncomputable def observedCylinderPrefixMeasure
@@ -448,6 +441,15 @@ noncomputable def observedCylinderPrefixMeasure
         observedSequenceMeasure (latent := latent) (obs := obs) ⟨θ, emission⟩
           (MarkovDeFinettiRecurrence.cylinder (k := obs) x) := by
               rw [hpart]
+
+section FiniteDiscreteMixtures
+
+variable {n : ℕ}
+
+local instance instFiniteHMMFiniteDiscreteMixtureIndexMeasurableSpace :
+    MeasurableSpace (Fin n) := ⊤
+local instance instFiniteHMMFiniteDiscreteMixtureIndexMeasurableSingletonClass :
+    MeasurableSingletonClass (Fin n) := ⟨fun _ => by simp⟩
 
 /-- Finite discrete law on latent Markov parameters with a fixed emission
 kernel. -/

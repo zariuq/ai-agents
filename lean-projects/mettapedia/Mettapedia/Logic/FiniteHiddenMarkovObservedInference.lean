@@ -1,5 +1,7 @@
 import Mettapedia.Logic.FiniteHiddenMarkovModel
 import Mettapedia.Logic.MarkovDeFinettiMomentProblem
+import Mettapedia.Logic.MarkovDeFinettiSequenceKernel
+import Mettapedia.Logic.BinaryEvidence
 
 /-!
 # Observed-Only Inference for Finite Hidden Markov Models
@@ -29,6 +31,7 @@ namespace Mettapedia.Logic.FiniteHiddenMarkovObservedInference
 open Mettapedia.Logic
 open Mettapedia.Logic.MarkovDeFinettiHard
 open Mettapedia.Logic.FiniteHiddenMarkovModel
+open Mettapedia.Logic.EvidenceQuantale
 open scoped BigOperators ENNReal NNReal
 
 variable {latent obs : ℕ}
@@ -40,6 +43,12 @@ lemma ofFn_snoc {α : Type*} {n : ℕ} (a : α) (g : Fin n → α) :
       (List.ofFn_succ' (f := Fin.snoc g a))
   rw [hlist]
   simp [List.concat_eq_append]
+
+lemma ofFn_precompose_cast {α : Type*} {m n : ℕ}
+    (h : m = n) (f : Fin m → α) :
+    List.ofFn (fun i : Fin n => f (Fin.cast h.symm i)) = List.ofFn f := by
+  subst h
+  simp
 
 /-! ## Backward messages -/
 
@@ -326,6 +335,171 @@ theorem observedWordProb_eq_sum_forwardMessage
         rw [ofFn_snoc (a := x) (g := xs)]
       simpa [forwardMessage] using hsnoc
 
+/-- Appending a latent tail and an observed tail factors the observation
+likelihood when the split boundary is aligned by length. This local helper is
+placed here because forward-message snoc recursion depends on it. -/
+theorem observationWeight_append_of_length_eq_aux
+    (θ : FiniteHMMParam latent obs) :
+    ∀ xs : List (Fin latent), ∀ zs : List (Fin obs),
+      xs.length = zs.length →
+      ∀ ys : List (Fin latent), ∀ us : List (Fin obs),
+        observationWeight θ (xs ++ ys) (zs ++ us) =
+          observationWeight θ xs zs * observationWeight θ ys us
+  | [], [], hlen, ys, us => by
+      simp [FiniteHiddenMarkovModel.observationWeight]
+  | [], z :: zs, hlen, ys, us => by
+      cases hlen
+  | x :: xs, [], hlen, ys, us => by
+      cases hlen
+  | x :: xs, z :: zs, hlen, ys, us => by
+      have htail : xs.length = zs.length := Nat.succ.inj hlen
+      simp [FiniteHiddenMarkovModel.observationWeight,
+        observationWeight_append_of_length_eq_aux (θ := θ) (xs := xs) (zs := zs) (ys := ys)
+          (us := us) htail,
+        mul_assoc]
+
+/-- Snoc recursion for forward messages along any nonempty observed prefix. -/
+theorem forwardMessage_append_singleton_of_ne_nil
+    (θ : FiniteHMMParam latent obs)
+    (ys : List (Fin obs)) (hys : ys ≠ [])
+    (y : Fin obs) (x : Fin latent) :
+    forwardMessage θ (ys ++ [y]) x =
+      ∑ u : Fin latent,
+        forwardMessage θ ys u *
+          (stepProb (k := latent) θ.latentParam u x : ℝ≥0∞) *
+            (emissionProb θ x y : ℝ≥0∞) := by
+  cases ys with
+  | nil =>
+      contradiction
+  | cons z zs =>
+      let n := zs.length
+      have hfront :
+          forwardMessage θ ((z :: zs) ++ [y]) x =
+            ∑ ws : Fin (n + 1) → Fin latent,
+              wordProb (k := latent) θ.latentParam (List.ofFn ws ++ [x]) *
+                observationWeight θ (List.ofFn ws ++ [x]) ((z :: zs) ++ [y]) := by
+        unfold forwardMessage
+        let hlen : (zs ++ [y]).length = n + 1 := by
+          simp [n]
+        let e :
+            (Fin ((zs ++ [y]).length) → Fin latent) ≃
+              (Fin (n + 1) → Fin latent) :=
+          { toFun := fun ws i => ws (Fin.cast hlen.symm i)
+            invFun := fun ws i => ws (Fin.cast hlen i)
+            left_inv := by
+              intro ws
+              funext i
+              simp
+            right_inv := by
+              intro ws
+              funext i
+              simp }
+        refine Fintype.sum_equiv e
+          (fun ws : Fin ((zs ++ [y]).length) → Fin latent =>
+            wordProb (k := latent) θ.latentParam (List.ofFn ws ++ [x]) *
+              observationWeight θ (List.ofFn ws ++ [x]) ((z :: zs) ++ [y]))
+          (fun ws : Fin (n + 1) → Fin latent =>
+            wordProb (k := latent) θ.latentParam (List.ofFn ws ++ [x]) *
+              observationWeight θ (List.ofFn ws ++ [x]) ((z :: zs) ++ [y])) ?_
+        intro ws
+        dsimp [e]
+        rw [ofFn_precompose_cast (h := hlen) (f := ws)]
+      rw [hfront]
+      have hmain :
+        (∑ ws : Fin (n + 1) → Fin latent,
+          wordProb (k := latent) θ.latentParam (List.ofFn ws ++ [x]) *
+            observationWeight θ (List.ofFn ws ++ [x]) ((z :: zs) ++ [y])) =
+        ∑ u : Fin latent,
+          forwardMessage θ (z :: zs) u *
+            (stepProb (k := latent) θ.latentParam u x : ℝ≥0∞) *
+              (emissionProb θ x y : ℝ≥0∞) := by
+        have hdecomp :
+            (∑ ws : Fin (n + 1) → Fin latent,
+              wordProb (k := latent) θ.latentParam
+                  (List.ofFn ws ++ [x]) *
+                observationWeight θ
+                  (List.ofFn ws ++ [x]) ((z :: zs) ++ [y])) =
+              ∑ p : Fin latent × (Fin n → Fin latent),
+                wordProb (k := latent) θ.latentParam
+                    (List.ofFn (Fin.snoc p.2 p.1) ++ [x]) *
+                  observationWeight θ
+                    (List.ofFn (Fin.snoc p.2 p.1) ++ [x]) ((z :: zs) ++ [y]) := by
+          simpa [n] using
+            (Fintype.sum_equiv
+              (Fin.snocEquiv (α := fun _ : Fin (n + 1) => Fin latent))
+              (fun p : Fin latent × (Fin n → Fin latent) =>
+                wordProb (k := latent) θ.latentParam
+                    (List.ofFn (Fin.snoc p.2 p.1) ++ [x]) *
+                  observationWeight θ
+                    (List.ofFn (Fin.snoc p.2 p.1) ++ [x]) ((z :: zs) ++ [y]))
+              (fun ws : Fin (n + 1) → Fin latent =>
+                wordProb (k := latent) θ.latentParam (List.ofFn ws ++ [x]) *
+                  observationWeight θ (List.ofFn ws ++ [x]) ((z :: zs) ++ [y]))
+              (fun _ => rfl)).symm
+        rw [hdecomp, Fintype.sum_prod_type]
+        refine Finset.sum_congr rfl ?_
+        intro u hu
+        have hprefix :
+            ∑ xs : Fin n → Fin latent,
+              wordProb (k := latent) θ.latentParam (List.ofFn (Fin.snoc xs u)) *
+                observationWeight θ (List.ofFn (Fin.snoc xs u)) (z :: zs) =
+              forwardMessage θ (z :: zs) u := by
+          have hsnoc :
+              ∑ xs : Fin n → Fin latent,
+                wordProb (k := latent) θ.latentParam (List.ofFn (Fin.snoc xs u)) *
+                  observationWeight θ (List.ofFn (Fin.snoc xs u)) (z :: zs) =
+                ∑ xs : Fin n → Fin latent,
+                  wordProb (k := latent) θ.latentParam (List.ofFn xs ++ [u]) *
+                    observationWeight θ (List.ofFn xs ++ [u]) (z :: zs) := by
+            refine Finset.sum_congr rfl ?_
+            intro xs hxs
+            rw [ofFn_snoc]
+          simpa [forwardMessage, n] using hsnoc
+        calc
+          ∑ xs : Fin n → Fin latent,
+            wordProb (k := latent) θ.latentParam
+                  (List.ofFn (Fin.snoc xs u) ++ [x]) *
+                observationWeight θ
+                  (List.ofFn (Fin.snoc xs u) ++ [x]) ((z :: zs) ++ [y]) =
+              ∑ xs : Fin n → Fin latent,
+                (wordProb (k := latent) θ.latentParam (List.ofFn (Fin.snoc xs u)) *
+                  observationWeight θ (List.ofFn (Fin.snoc xs u)) (z :: zs)) *
+                    ((stepProb (k := latent) θ.latentParam u x : ℝ≥0∞) *
+                      (emissionProb θ x y : ℝ≥0∞)) := by
+                refine Finset.sum_congr rfl ?_
+                intro xs hxs
+                rw [ofFn_snoc]
+                have hlen : (List.ofFn xs ++ [u]).length = (z :: zs).length := by
+                  simp [n]
+                have hlast : (List.ofFn xs ++ [u]).getLast (by simp) = u := by
+                  simp
+                rw [MarkovDeFinettiSequenceKernel.wordProb_append_singleton_of_ne_nil
+                  (k := latent) (θ := θ.latentParam) (ys := List.ofFn xs ++ [u]) (b := x) (by simp)]
+                rw [hlast]
+                rw [observationWeight_append_of_length_eq_aux
+                  (θ := θ) (xs := List.ofFn xs ++ [u]) (zs := z :: zs) hlen
+                  (ys := [x]) (us := [y])]
+                simp [FiniteHiddenMarkovModel.observationWeight,
+                  mul_assoc, mul_left_comm, mul_comm]
+            _ =
+              (∑ xs : Fin n → Fin latent,
+                wordProb (k := latent) θ.latentParam (List.ofFn (Fin.snoc xs u)) *
+                  observationWeight θ (List.ofFn (Fin.snoc xs u)) (z :: zs)) *
+                ((stepProb (k := latent) θ.latentParam u x : ℝ≥0∞) *
+                  (emissionProb θ x y : ℝ≥0∞)) := by
+                    rw [Finset.sum_mul]
+            _ =
+              forwardMessage θ (z :: zs) u *
+                ((stepProb (k := latent) θ.latentParam u x : ℝ≥0∞) *
+                  (emissionProb θ x y : ℝ≥0∞)) := by
+                    rw [hprefix]
+            _ =
+              forwardMessage θ (z :: zs) u *
+                (stepProb (k := latent) θ.latentParam u x : ℝ≥0∞) *
+                  (emissionProb θ x y : ℝ≥0∞) := by
+                    ac_rfl
+      exact hmain
+
 /-! ## Filtering masses -/
 
 /-- Unnormalized filtering mass at the final latent state after observing the
@@ -374,6 +548,40 @@ theorem filteringPosteriorMass_sum_eq_one
     _ = observedWordProb θ ys * (observedWordProb θ ys)⁻¹ := by
           rw [filteringMass_sum_eq_observedWordProb]
     _ = 1 := ENNReal.mul_inv_cancel hys htop
+
+theorem filteringPosteriorMass_le_one
+    (θ : FiniteHMMParam latent obs) (ys : List (Fin obs))
+    (q : Fin latent) (hys : observedWordProb θ ys ≠ 0) :
+    filteringPosteriorMass θ ys q ≤ 1 := by
+  calc
+    filteringPosteriorMass θ ys q ≤ ∑ x : Fin latent, filteringPosteriorMass θ ys x := by
+      exact Finset.single_le_sum (fun _ _ => zero_le _) (Finset.mem_univ q)
+    _ = 1 := filteringPosteriorMass_sum_eq_one (θ := θ) (ys := ys) hys
+
+/-- Binary WM-style evidence view induced by the observed-only filtering
+posterior: positive mass for the queried latent state and negative mass its
+posterior complement. -/
+noncomputable def filteringPosteriorEvidence
+    (θ : FiniteHMMParam latent obs)
+    (ys : List (Fin obs)) (q : Fin latent) : BinaryEvidence :=
+  ⟨filteringPosteriorMass θ ys q, 1 - filteringPosteriorMass θ ys q⟩
+
+theorem filteringPosteriorEvidence_toStrength_eq_filteringPosteriorMass
+    (θ : FiniteHMMParam latent obs) (ys : List (Fin obs))
+    (q : Fin latent) (hys : observedWordProb θ ys ≠ 0) :
+    BinaryEvidence.toStrength (filteringPosteriorEvidence θ ys q) =
+      filteringPosteriorMass θ ys q := by
+  have hq : filteringPosteriorMass θ ys q ≤ 1 :=
+    filteringPosteriorMass_le_one (θ := θ) (ys := ys) q hys
+  have htotal : (filteringPosteriorEvidence θ ys q).total = 1 := by
+    unfold filteringPosteriorEvidence BinaryEvidence.total
+    simpa [add_comm] using
+      (tsub_add_cancel_of_le hq : 1 - filteringPosteriorMass θ ys q + filteringPosteriorMass θ ys q = 1)
+  unfold BinaryEvidence.toStrength
+  rw [if_neg]
+  · rw [htotal]
+    simp [filteringPosteriorEvidence]
+  · simp [htotal]
 
 /-! ## Smoothing masses -/
 
@@ -447,6 +655,157 @@ theorem smoothingMass_sum_eq_observedWordProb_singleton
   refine Finset.sum_congr rfl ?_
   intro x hx
   rw [smoothingMass, forwardMessage_singleton]
+
+/-- Appending one observed symbol to a nonempty prefix shifts the smoothing
+split by one step. -/
+theorem smoothingMass_sum_shift_append_singleton
+    (θ : FiniteHMMParam latent obs)
+    (ys : List (Fin obs)) (hys : ys ≠ [])
+    (y : Fin obs) (zs : List (Fin obs)) :
+    ∑ x : Fin latent, smoothingMass θ (ys ++ [y]) zs x =
+      ∑ u : Fin latent, smoothingMass θ ys (y :: zs) u := by
+  calc
+    ∑ x : Fin latent, smoothingMass θ (ys ++ [y]) zs x =
+      ∑ x : Fin latent,
+        (∑ u : Fin latent,
+          forwardMessage θ ys u *
+            (stepProb (k := latent) θ.latentParam u x : ℝ≥0∞) *
+              (emissionProb θ x y : ℝ≥0∞)) *
+          backwardMessage θ x zs := by
+            refine Finset.sum_congr rfl ?_
+            intro x hx
+            simp [smoothingMass,
+              forwardMessage_append_singleton_of_ne_nil (θ := θ) (ys := ys) hys (y := y)]
+    _ =
+      ∑ x : Fin latent,
+        ∑ u : Fin latent,
+          (forwardMessage θ ys u *
+            (stepProb (k := latent) θ.latentParam u x : ℝ≥0∞) *
+              (emissionProb θ x y : ℝ≥0∞)) *
+            backwardMessage θ x zs := by
+              refine Finset.sum_congr rfl ?_
+              intro x hx
+              rw [Finset.sum_mul]
+    _ =
+      ∑ u : Fin latent,
+        ∑ x : Fin latent,
+          (forwardMessage θ ys u *
+            (stepProb (k := latent) θ.latentParam u x : ℝ≥0∞) *
+              (emissionProb θ x y : ℝ≥0∞)) *
+            backwardMessage θ x zs := by
+              rw [Finset.sum_comm]
+    _ =
+      ∑ u : Fin latent,
+        forwardMessage θ ys u *
+          ∑ x : Fin latent,
+            (stepProb (k := latent) θ.latentParam u x : ℝ≥0∞) *
+              (emissionProb θ x y : ℝ≥0∞) *
+                backwardMessage θ x zs := by
+                  refine Finset.sum_congr rfl ?_
+                  intro u hu
+                  calc
+                    ∑ x : Fin latent,
+                      (forwardMessage θ ys u *
+                        (stepProb (k := latent) θ.latentParam u x : ℝ≥0∞) *
+                          (emissionProb θ x y : ℝ≥0∞)) *
+                        backwardMessage θ x zs =
+                      ∑ x : Fin latent,
+                        forwardMessage θ ys u *
+                          (((stepProb (k := latent) θ.latentParam u x : ℝ≥0∞) *
+                            (emissionProb θ x y : ℝ≥0∞)) *
+                              backwardMessage θ x zs) := by
+                                refine Finset.sum_congr rfl ?_
+                                intro x hx
+                                ac_rfl
+                    _ =
+                      forwardMessage θ ys u *
+                        ∑ x : Fin latent,
+                          ((stepProb (k := latent) θ.latentParam u x : ℝ≥0∞) *
+                            (emissionProb θ x y : ℝ≥0∞)) *
+                              backwardMessage θ x zs := by
+                                rw [Finset.mul_sum]
+                    _ =
+                      forwardMessage θ ys u *
+                        ∑ x : Fin latent,
+                          (stepProb (k := latent) θ.latentParam u x : ℝ≥0∞) *
+                            (emissionProb θ x y : ℝ≥0∞) *
+                              backwardMessage θ x zs := by
+                                refine congrArg (fun t => forwardMessage θ ys u * t) ?_
+                                refine Finset.sum_congr rfl ?_
+                                intro x hx
+                                ac_rfl
+    _ =
+      ∑ u : Fin latent,
+        forwardMessage θ ys u * backwardMessage θ u (y :: zs) := by
+          refine Finset.sum_congr rfl ?_
+          intro u hu
+          simp [backwardMessage_cons, mul_left_comm, mul_comm]
+    _ =
+      ∑ u : Fin latent, smoothingMass θ ys (y :: zs) u := by
+        refine Finset.sum_congr rfl ?_
+        intro u hu
+        simp [smoothingMass]
+
+/-- Full nonempty-prefix forward/backward total-mass identity. -/
+theorem smoothingMass_sum_eq_observedWordProb_append_of_ne_nil
+    (θ : FiniteHMMParam latent obs) :
+    ∀ ys : List (Fin obs), ys ≠ [] →
+      ∀ zs : List (Fin obs),
+        ∑ x : Fin latent, smoothingMass θ ys zs x =
+          observedWordProb θ (ys ++ zs)
+  | [], hys => False.elim (hys rfl)
+  | ys, hys => by
+      induction ys using List.reverseRecOn with
+      | nil =>
+          contradiction
+      | append_singleton ys y ih =>
+          intro zs
+          cases ys with
+          | nil =>
+              simpa [List.nil_append] using
+                smoothingMass_sum_eq_observedWordProb_singleton
+                  (θ := θ) (y := y) (zs := zs)
+          | cons y₀ ys' =>
+              have hprefix : y₀ :: ys' ≠ [] := List.cons_ne_nil _ _
+              calc
+                ∑ x : Fin latent, smoothingMass θ ((y₀ :: ys') ++ [y]) zs x =
+                  ∑ u : Fin latent, smoothingMass θ (y₀ :: ys') (y :: zs) u := by
+                    exact smoothingMass_sum_shift_append_singleton
+                      (θ := θ) (ys := y₀ :: ys') hprefix (y := y) (zs := zs)
+                _ = observedWordProb θ ((y₀ :: ys') ++ (y :: zs)) := by
+                    exact ih hprefix (y :: zs)
+                _ = observedWordProb θ (((y₀ :: ys') ++ [y]) ++ zs) := by
+                    simp
+
+/-- Normalized smoothing posterior mass at the split latent state. -/
+def smoothingPosteriorMass (θ : FiniteHMMParam latent obs)
+    (ys : List (Fin obs)) (zs : List (Fin obs)) (x : Fin latent) : ℝ≥0∞ :=
+  smoothingMass θ ys zs x / observedWordProb θ (ys ++ zs)
+
+theorem smoothingPosteriorMass_sum_eq_one
+    (θ : FiniteHMMParam latent obs)
+    (ys zs : List (Fin obs))
+    (hys : ys ≠ [])
+    (hobs : observedWordProb θ (ys ++ zs) ≠ 0) :
+    ∑ x : Fin latent, smoothingPosteriorMass θ ys zs x = 1 := by
+  have htop : observedWordProb θ (ys ++ zs) ≠ ⊤ :=
+    observedWordProb_ne_top (θ := θ) (ys ++ zs)
+  unfold smoothingPosteriorMass
+  calc
+    ∑ x : Fin latent, smoothingMass θ ys zs x / observedWordProb θ (ys ++ zs) =
+      ∑ x : Fin latent, smoothingMass θ ys zs x *
+        (observedWordProb θ (ys ++ zs))⁻¹ := by
+          simp [div_eq_mul_inv]
+    _ =
+      (∑ x : Fin latent, smoothingMass θ ys zs x) *
+        (observedWordProb θ (ys ++ zs))⁻¹ := by
+          rw [Finset.sum_mul]
+    _ =
+      observedWordProb θ (ys ++ zs) *
+        (observedWordProb θ (ys ++ zs))⁻¹ := by
+          rw [smoothingMass_sum_eq_observedWordProb_append_of_ne_nil
+            (θ := θ) ys hys zs]
+    _ = 1 := ENNReal.mul_inv_cancel hobs htop
 
 /-! ## Observed-only boundary: hidden-label nonidentifiability -/
 
@@ -547,6 +906,12 @@ theorem hiddenLabelSwap_observedWordProb_singleton_model0 :
     hiddenLabelSwap_forwardMessage_state1_model0]
   simp
 
+/-- The label-swapped twin has the same observed singleton probability `1`. -/
+theorem hiddenLabelSwap_observedWordProb_singleton_model1 :
+    observedWordProb hiddenLabelSwapHMM₁ [0] = 1 := by
+  rw [← hiddenLabelSwap_observedWordProb_singleton,
+    hiddenLabelSwap_observedWordProb_singleton_model0]
+
 /-- Negative example: under the label-swapped model, the same observation `0`
 places zero filtering mass on hidden state `0`. -/
 theorem hiddenLabelSwap_forwardMessage_state0_model1 :
@@ -562,11 +927,39 @@ theorem hiddenLabelSwap_forwardMessage_state0_model1 :
     cases h
   simp [h10]
 
+/-- Under the first model, the normalized observed-only filtering posterior
+puts full mass on hidden state `0`. -/
+theorem hiddenLabelSwap_filteringPosterior_state0_model0 :
+    filteringPosteriorMass hiddenLabelSwapHMM₀ [0] 0 = 1 := by
+  unfold filteringPosteriorMass filteringMass
+  rw [hiddenLabelSwap_forwardMessage_state0_model0,
+    hiddenLabelSwap_observedWordProb_singleton_model0]
+  simp
+
+/-- Under the label-swapped model, the same observed singleton puts zero
+posterior mass on hidden state `0`. -/
+theorem hiddenLabelSwap_filteringPosterior_state0_model1 :
+    filteringPosteriorMass hiddenLabelSwapHMM₁ [0] 0 = 0 := by
+  unfold filteringPosteriorMass filteringMass
+  rw [hiddenLabelSwap_forwardMessage_state0_model1,
+    hiddenLabelSwap_observedWordProb_singleton_model1]
+  simp
+
 /-- Positive example: when the observed singleton has positive mass, the
 filtering posterior normalizes to total mass `1`. -/
 theorem hiddenLabelSwap_filteringPosterior_sum_model0 :
     ∑ x : Fin 2, filteringPosteriorMass hiddenLabelSwapHMM₀ [0] x = 1 := by
   apply filteringPosteriorMass_sum_eq_one
+  rw [hiddenLabelSwap_observedWordProb_singleton_model0]
+  simp
+
+/-- Positive example: the WM-style strength view of filtering posterior
+evidence recovers the actual posterior mass. -/
+theorem hiddenLabelSwap_filteringPosteriorEvidence_strength_model0 :
+    BinaryEvidence.toStrength
+        (filteringPosteriorEvidence hiddenLabelSwapHMM₀ [0] 0) =
+      filteringPosteriorMass hiddenLabelSwapHMM₀ [0] 0 := by
+  apply filteringPosteriorEvidence_toStrength_eq_filteringPosteriorMass
   rw [hiddenLabelSwap_observedWordProb_singleton_model0]
   simp
 
@@ -589,5 +982,32 @@ theorem exists_same_observedWordProb_different_forwardMessage :
   rw [hiddenLabelSwap_forwardMessage_state0_model0,
     hiddenLabelSwap_forwardMessage_state0_model1]
   simp
+
+/-- Honest observed-only WM obstruction: no unordered-observation multiset
+consumer can uniformly recover the filtering posterior strength, because the
+same observation multiset `{0}` arises from two models with different latent
+posteriors. -/
+theorem no_observedOnly_multiset_queryStrength_recovers_filteringPosteriorMass :
+    ¬ ∃ e : Multiset (Fin 2) → Fin 2 → BinaryEvidence,
+        ∀ θ : FiniteHMMParam 2 2, ∀ q : Fin 2,
+          BinaryEvidence.toStrength (e ({(0 : Fin 2)} : Multiset (Fin 2)) q) =
+            filteringPosteriorMass θ [0] q := by
+  intro h
+  rcases h with ⟨e, he⟩
+  have h0 :
+      BinaryEvidence.toStrength (e ({(0 : Fin 2)} : Multiset (Fin 2)) 0) =
+        filteringPosteriorMass hiddenLabelSwapHMM₀ [0] 0 :=
+    he hiddenLabelSwapHMM₀ 0
+  have h1 :
+      BinaryEvidence.toStrength (e ({(0 : Fin 2)} : Multiset (Fin 2)) 0) =
+        filteringPosteriorMass hiddenLabelSwapHMM₁ [0] 0 :=
+    he hiddenLabelSwapHMM₁ 0
+  rw [hiddenLabelSwap_filteringPosterior_state0_model0] at h0
+  rw [hiddenLabelSwap_filteringPosterior_state0_model1] at h1
+  have hEq : (1 : ℝ≥0∞) = 0 := by
+    calc
+      (1 : ℝ≥0∞) = BinaryEvidence.toStrength (e ({(0 : Fin 2)} : Multiset (Fin 2)) 0) := h0.symm
+      _ = 0 := h1
+  simp at hEq
 
 end Mettapedia.Logic.FiniteHiddenMarkovObservedInference

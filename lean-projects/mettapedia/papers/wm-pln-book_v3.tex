@@ -2392,6 +2392,83 @@ binary examples (\code{bit001}, \code{bit011}).
 matrix multiplication, not evidence addition. This validates the design
 choice of separate predictive surfaces over retrofitting additive carriers.
 
+\subsection{Controlled Hidden Markov Models and Credal Planning}
+
+The same lesson becomes sharper under partial observability.  A
+controlled finite hidden Markov model (HMM) adds an action-conditioned
+latent transition kernel and an observation kernel:
+\[
+  \theta = (\pi_0,\; T(a,x,x'),\; E(x,y)).
+\]
+Completed action--observation cycles induce a history-level filtering
+state, smoothing state, and observed trace law.  This gives a
+structured finite POMDP substrate inside the world-model calculus: the
+latent dynamics remain finite-state, but the agent only sees the
+observations.
+
+Three theorem families now matter operationally.
+
+\paragraph{Observed-only inference.}
+The controlled HMM surface provides exact filtering and smoothing
+posteriors for completed action--observation traces, together with
+their normalization theorems.  This is the first honest
+observation-only belief-state layer for the finite controlled setting.%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/ControlledFiniteHiddenMarkovObservedInference.lean}.}
+
+\paragraph{Credal WM semantics.}
+Observation-only additive evidence cannot in general determine hidden
+belief states.  The formalization proves a concrete obstruction theorem
+for observation-only carriers and replaces the impossible additive
+surface with a \emph{credal} one: lower and upper latent-state
+strengths are packaged as an indefinite truth value, and these bounds
+are propagated into lower and upper finite-horizon decision values.%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/WMControlledFiniteHiddenMarkovCredal.lean}
+and packaged for downstream use in
+\codepath{Mettapedia/UniversalAI/ControlledFiniteHiddenMarkovExports.lean}.}
+
+\paragraph{BayesianAgents planning.}
+Each controlled finite HMM is turned into a concrete
+\code{BayesianAgents.Environment}.  The planning examples prove
+nontrivial \code{qValue}, \code{optimalValue}, and
+\code{optimalAction} facts, culminating in an ambiguity-sensitive
+family where the recursive credal interval for \code{optimalValue} is
+strictly wider than a point and no single observation-history-based
+action is optimal across the whole family.  This is the decision-theoretic
+teeth of the non-identifiability result.%
+\footnote{Formalized in
+\codepath{Mettapedia/UniversalAI/ControlledFiniteHiddenMarkovBridge.lean}
+and
+\codepath{Mettapedia/UniversalAI/ControlledFiniteHiddenMarkovPlanningExamples.lean}.}
+
+\paragraph{Controlled Solomonoff leg.}
+The universal-prediction triangle now has a concrete controlled leg at
+the theorem level.  The formalization introduces
+\code{ControlledSemimeasure} and \code{ControlledPrefixMeasure}, then
+lifts the ordinary observation-alphabet Solomonoff mixture into the
+controlled setting by ignoring the action side-information.  Along any
+fixed action stream, the conditioned controlled predictor is exactly
+the ordinary finite-alphabet Solomonoff semimeasure~\code{M2}; hence
+the standard finite-horizon log-loss regret bound applies to any
+controlled prefix law whose conditioned observation process is lower
+semicomputable.%
+\footnote{Formalized in
+\codepath{Mettapedia/Logic/UniversalPrediction/FiniteAlphabet/ControlledPrefixMeasure.lean},
+\codepath{Mettapedia/Logic/UniversalPrediction/FiniteAlphabet/ControlledSolomonoffBridge.lean},
+and
+\codepath{Mettapedia/Logic/ControlledFiniteHiddenMarkovUniversalPredictionBridge.lean}.}
+
+\medskip\noindent
+This controlled Solomonoff result is intentionally conservative.
+\emph{Positive example:} it gives a real controlled regret theorem now,
+compatible with the existing finite-alphabet Solomonoff machinery.
+\emph{Negative example:} it is not yet a genuinely action-aware
+universal prior.  The lower-semicomputability hypothesis remains a
+genuine domain condition, because the current controlled-HMM parameter
+record allows arbitrary probability measures rather than computable
+ones.
+
 \section{Four Verbs: Revise, Query, Forget, Explain}
 
 The world-model interface supports four operations:
@@ -7634,7 +7711,7 @@ The practical action-rendering bridges into the meaning/WM layer, and the
 public WM-grounding surface now covers three lanes, not just one: Gewirth PGC,
 universal-duty/non-maleficence, and universal-duty/consent.  All five ethical
 grounds (asserted, Gewirth PGC, universal duty, care relation, consequentialist)
-now carry non-trivial witnesses via \code{Witnessed₀}.%
+now carry non-trivial witnesses via \code{Witnessed}\(_0\).%
 \footnote{Formalized in
 \codepath{Mettapedia/CognitiveArchitecture/GodelClaw/Ethics/MetaEthicsTrustTriangleExample.lean}
 and
@@ -7657,7 +7734,7 @@ trust triangle:
   non-maleficence.  Resolver recommends \emph{lock down}, budget
   52~comparisons.  This case also exercises the candidate-local
   consequentialist witness, verifying that the
-  \code{WitnessedForCandidateSet₀} machinery works on a live choice set.
+  \code{WitnessedForCandidateSet}\(_0\) machinery works on a live choice set.
 \end{itemize}
 \noindent
 Each case provides a proved dominant admissible action, an explicit polynomial
@@ -8255,9 +8332,17 @@ applications, but the experimental demonstration is incomplete.
 
 The Universal Prediction module explores connections between the
 world-model calculus and algorithmic information theory.  This module
-is work-in-progress and is not part of the stable core narrative.
-Its theorems are not referenced by the main development, and its
-sorry count is nonzero.
+is still broader and more exploratory than the stable core narrative.
+However, the finite-alphabet Solomonoff layer and its controlled-HMM
+bridge are now theorem-grade and directly connected to the WM-facing
+development: the finite-alphabet universal mixture is concrete, the
+controlled fixed-action-stream regret theorem is proved, and the
+controlled-HMM export surface reuses it.  What remains open is the
+genuinely action-aware universal mixture and the broader integration of
+the exploratory universal-prediction modules.  So the honest status is
+mixed: the core controlled-HMM/Solomonoff seam is now stable and
+sorry-free, while the larger universal-prediction program remains
+work-in-progress.
 
 \section{Codebase Organization}
 
@@ -9171,9 +9256,9 @@ question---\emph{which genes does a SNP influence that direct evidence
 discovered patterns.
 
 We apply the typed backward chainer (\code{nilbc},
-Chapter~\ref{ch:inference}) to the same genomic KB, augmented with
+Chapter~\ref{ch:intensional}) to the same genomic KB, augmented with
 co-regulation and co-expression patterns mined by the Hyperon pattern
-miner (Section~\ref{sec:pln-selector}).  Three typed PLN rules
+miner (Section~\ref{sec:selectors}).  Three typed PLN rules
 serve as inference steps:
 \begin{enumerate}
 \item \textbf{Direct target}: eQTL link $\to$ gene is a target;
@@ -9221,7 +9306,7 @@ relation type, preventing the circular chains that plague deep
 single-relation chaining.
 
 We extend the knowledge base with 132{,}556 human Gene$\to$Pathway
-edges from Reactome~\cite{Reactome2022} (124 pathways, up to 2{,}000
+edges from Reactome~\cite{Fabregat2018Reactome} (124 pathways, up to 2{,}000
 genes per pathway, 35{,}738 reachable genes).  Three additional
 typed PLN rules:
 \begin{enumerate}
@@ -9284,7 +9369,7 @@ reads ``pathway-mediated target via co-regulation transfer
 (rs10000544$\leftrightarrow$rs10000795$\to$Gene$_1$) and
 shared Reactome pathway membership with Gene$_2$.''
 
-Adding Hetionet~\cite{Himmelstein2017} disease associations (42~edges
+Adding Hetionet~\cite{Himmelstein2017Rephetio} disease associations (42~edges
 for our genes) and compound--target bindings (15~edges) completes the
 \emph{variant-to-drug} chain.  Three additional typed rules:
 \begin{enumerate}
@@ -9381,7 +9466,7 @@ CDO1 (cysteine dioxygenase type~1, chr5q22.3) catalyzes the
 rate-limiting step in taurine biosynthesis: cysteine $\to$
 cysteine sulfinic acid.  Taurine modulates blood pressure via
 vasodilation, and taurine supplementation trials show
-antihypertensive effects~\cite{Militante2004Taurine}.  The
+antihypertensive effects~\cite{Militante2002Taurine}.  The
 backward chainer identified this chain from 58~eQTL SNPs
 (tissue-broad, effect-strong) and Hetionet's CDO1--hypertension
 annotation.  Tissue extraction confirmed 723 eQTL variants

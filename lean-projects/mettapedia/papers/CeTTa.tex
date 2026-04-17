@@ -1019,6 +1019,238 @@ ambient, or user-visible.}
   ($\sim$12$\times$ speedup over \PeTTa{}).
 \end{itemize}
 
+\appendix
+
+%% ════════════════════════════════════════════════════════════════════
+\section{\textsc{Experimental} --- MAM: The MeTTa Abstract Machine}
+\label{app:mam}
+
+\emph{This appendix is explicitly experimental.  It captures design
+exploration from ongoing discussions (April~2026) between the authors,
+external reviewers (GPT-5.4 Pro), and Codex, concerning the
+post-phase-1f abstract-machine layer for \CeTTa{}.  Nothing here is yet
+implemented or committed architecture.  It is recorded to preserve
+design rationale; the authoritative implementation plan remains
+\code{implementation\_plan.tex}.}
+
+\subsection{Motivation}
+
+The phase-1f-era extraction seam (\code{src/search\_machine.\{h,c\}})
+pulls policy parsing, stream combinators, and a \code{TableStore}
+plugin out of \code{eval.c}, and wraps them in a thin callback struct
+\code{CettaSearchMachine = \{stream\_source, eval\_bound\_single,
+  eval\_ctx, table\_plugin\}}, stack-allocated at each call site.
+This is a useful refactor, but it is a \emph{plug interface} — not an
+abstract machine in the WAM / ZAM / SLG-WAM sense.  Real abstract
+machines (XSB's SLG-WAM, SWI's tabling runtime, Soufflé's compiled
+Datalog, miniKanren's CPS-transformed search) have persistent machine
+state, explicit visitor protocols, capability advertisement, and
+episode lifetimes.
+
+The proposal here is a \emph{principled} next layer that retains the
+current code as \code{SearchAdapter} (transitional helper) while
+naming the real abstraction from first principles.
+
+\subsection{Current categorical reading}
+
+The MAM's present semantic reading, under active revision, models it
+as a \textbf{quantale-enriched traced profunctor}, fibrated for
+reflection.  This reading is provisional --- it captures the current
+best understanding of the structure, not a definitional claim that
+binds future architecture.  Unpacked:
+
+\begin{itemize}
+\item \textbf{Profunctor} $P : \mathcal{Q}^{\mathrm{op}} \times
+  \mathcal{A} \to \mathcal{V}$: \emph{search}.  Queries in
+  $\mathcal{Q}$ relate to answer streams in $\mathcal{A}$, with
+  intensity weighted by elements of $\mathcal{V}$.
+\item \textbf{Quantale enrichment} $\mathcal{V} = (L, \otimes, \le,
+  \bigvee)$: \emph{multiplicity}.  Answer weights live in a quantale:
+  $\mathcal{V} = \mathbf{2}$ for classical boolean search;
+  $\mathcal{V} = \mathbb{N}$ for counted answers;
+  $\mathcal{V} = [0,1]^2$ (strength $\times$ confidence) for PLN.
+  \PathMap{}'s trie-algebra is natively a quantale.
+\item \textbf{Trace} $\mathrm{Tr}_X^{A,B} : \mathrm{Hom}(A \otimes X, B
+  \otimes X) \to \mathrm{Hom}(A, B)$: \emph{fixpoint}.  Feedback /
+  saturation / tabling / cyclic queries are all instances of
+  categorical trace (Joyal--Street--Verity, Hasegawa).
+\item \textbf{Kleisli structure over an effect monad} (or algebraic
+  effect handlers \emph{\`a la} Plotkin--Pretnar): \emph{control}.
+  Demand, cut, suspension, resumption, and schedule are composable
+  effect operations.
+\item \textbf{Fibration} $p : \mathcal{T} \to \mathcal{B}$ (optional,
+  for reflective MeTTa): rules-over-machine-state.
+\end{itemize}
+
+A trace operator is provably equivalent to taking the least fixpoint
+of a parameterised endofunction (Hasegawa 1997); this is why tabling,
+PLN-convergence, and saturation all fit one uniform operator.
+
+\subsection{The proposed machine family: MAM}
+
+We name the machine family \textbf{MAM: MeTTa Abstract Machine}.
+The name is chosen by identity rather than by current structure or
+scope: MAM is the abstract machine for the MeTTa language family,
+and that identification remains accurate as the internal architecture
+evolves.  The naming tradition (WAM, ZAM, STG, CEK, CAM) uses either
+author identity or component decomposition; MAM uses the language
+identity it serves, which is stable across architectural iteration.
+Specifically, MAM does \emph{not} hardcode a categorical claim (as
+``QAM = Quantale Abstract Machine'' would have done), and does
+\emph{not} hardcode a functional scope (as ``SCAM = Search \& Control
+Abstract Machine'' would have done).  The categorical reading and the
+current feature set are both free to evolve without renaming.
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Concept} & \textbf{Name} \\
+\midrule
+Machine family & \code{MAM} (Quantale Abstract Machine) \\
+Formal description & Quantale-enriched traced profunctor \\
+Engine 1 (goal-directed, Kleisli/effect) & \code{Chainer} \\
+\quad first realization (native) & \code{native\_chainer} \\
+Engine 2 (fixpoint, trace) & \code{Saturator} \\
+\quad first realization (pathmap) & \code{pathmap\_saturator} \\
+Per-session state & \code{Episode} \\
+Dispatch vtable & \code{MAMOps} \\
+Answer & \code{Answer} / \code{WeightedAnswer} \\
+Schedule axis & \code{dfs} / \code{bfs} / \code{iddfs} / \code{interleave} / \code{native} \\
+Demand axis & \code{unbounded} / \code{once} / \code{limit-k} / \code{fold} \\
+Visitor control & \code{CONTINUE} / \code{STOP} / \code{ERROR} / \code{SUSPEND} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{The two-engine pressure strategy}
+
+Rather than over-specifying a first concrete machine, MAM is
+pressured from day~1 by \emph{two} independent realizations that
+stress complementary axes of the seam:
+
+\begin{description}
+\item[\code{Chainer} (goal-directed).]  WAM-lineage control: explicit
+  environments/frames, choicepoints, trail/undo, deterministic
+  tail-path handling, bounded-demand response, direct conjunction
+  when advertised.  Design-guide workload: \textbf{metamath backward
+    chaining} (where \PeTTa{} currently completes and \CeTTa{}~OOMs).
+  First realization: \code{native\_chainer}.
+\item[\code{Saturator} (fixpoint).]  SLG / Datalog / saturation
+  lineage: snapshots, delta-sets, conjunction planning, exact
+  membership, counted answers, eventual path toward PLN and
+  ATP-style saturation.  Design-guide workload: \textbf{PLN
+    multi-pattern deduction}.  First realization: \code{pathmap\_saturator}
+  (because \PathMap{}'s quantale structure makes weighted answer
+  aggregation natural).
+\end{description}
+
+This pair creates the right kind of pressure on the seam: Chainer
+forces frames, choicepoints, \code{EnvRef}, demand handling, and
+explicit scheduling; Saturator forces snapshots, delta sets,
+conjunction planning, exact membership, counted answers, and the
+eventual path to PLN and ATP.
+
+Compiled / bytecode (ZAM-lineage) and ATP saturation engines are
+explicit \emph{later} lanes --- they risk freezing the protocol in
+the wrong shape if pursued before Chainer and Saturator coexist
+cleanly under one MAM.
+
+\subsection{Axes that must stay separate}
+
+A core architectural commitment is that the following axes are
+\textbf{distinct data} in \code{SearchRequest}, not tangled behind
+surface-level operators:
+
+\begin{description}
+\item[Schedule.]  \code{dfs}~/~\code{bfs}~/~\code{iddfs}~/\code{interleave}
+  are \emph{fairness policies}, not engines.  Korf's classic result
+  motivates \code{iddfs} as a completeness-friendly default over raw
+  \code{bfs} (BFS completeness with DFS memory); miniKanren's
+  interleaving exists precisely to avoid starvation on infinite
+  branches.
+\item[Demand.]  \code{once}~/~\code{limit-k}~/~\code{unbounded}~/\code{fold}
+  describes how many answers are requested, independently of schedule.
+  \code{once} and \code{select~1} must build \code{demand = FIRST};
+  they must \emph{not} silently hardcode DFS.
+\item[Table mode.]  \code{none}~/~\code{variant}~/~\code{subsumptive}~/\code{incremental}
+  mirrors the XSB / SWI ladder; each is an explicit engine-level choice.
+\item[Backend.]  \code{native}~/~\PathMap{}~/~MORK chosen by the
+  actual \code{Space}, not by a global preference.
+\item[Lane.]  \code{recursive-dependent-proof}~/~\code{atp-saturation}~/\code{solver-oracle}~/~\dots{}
+  chosen at surface.
+\end{description}
+
+The request builder (one per \code{--lang}) normalizes surface syntax
+into \code{SearchRequest~+~SearchLangContract}; the MAM consumes the
+normalized object, never raw surface atoms.
+
+\subsection{The seven-type vocabulary}
+
+Seven types are proposed to land together before the first real
+backend optimization (counted-answer variant table, \PathMap{}-native
+conjunction, native exact-match index).  Landing them simultaneously
+prevents the "first optimization forces a rewrite" pathology.
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Type} & \textbf{Categorical role} \\
+\midrule
+\code{SearchRequest} & Object of $\mathcal{Q}$ \\
+\code{SearchAnswer} & Object of $\mathcal{A}$ (quantale-weighted) \\
+\code{SearchLangContract} & Subcategory inclusion $\mathcal{C} \hookrightarrow \mathrm{MAM}$ \\
+\code{SearchCaps} & Capabilities = presence of morphisms/natural transformations \\
+\code{VisitCtl} & Algebra of the effect operation $\mathrm{visit}$ \\
+\code{MAMOps} & Kleisli dispatch vtable \\
+\code{Episode} & One trace-iteration instance \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Implementation-actual \code{SUSPEND/RESUME} behavior, cancellation
+tokens, snapshot-token machinery, and per-\code{--lang} registration
+remain explicitly deferred.
+
+\subsection{Reference base}
+
+The proposal draws on the following literature, all available in the
+local library:
+
+\begin{itemize}
+\item \emph{A\"{\i}t-Kaci 1991, WAM Tutorial Reconstruction} --
+  foundational WAM semantics; drives \code{Chainer} design.
+\item \emph{Swift \& Warren, XSB System Manual; Sagonas et al.\ 1994} --
+  SLG-WAM tabling; drives \code{Saturator} / table-mode ladder.
+\item \emph{Scholz, Jordan, Suboti\'c, Westmann 2016, Soufflé: On Fast
+  Large-Scale Program Analysis in Datalog (CC)} -- staged compilation
+  of fixpoint computation; compiled \code{Saturator} path.
+\item \emph{Keoliya \& Byrd 2020, microKanren} -- interleaving search
+  as a distinct schedule axis.
+\item \emph{Ager, Biernacki, Danvy, Midtgaard 2003, A Functional
+  Correspondence Between Evaluators and Abstract Machines (BRICS)} --
+  derivation methodology for machines from evaluator semantics.
+\item \emph{Leroy 1990, The ZINC Experiment} -- machine-description
+  vs.\ run-instance separation (maps to
+  \code{MAMOps}~/~\code{MAM}~/~\code{Episode}).
+\item \emph{Russell \& Norvig, AIMA Ch.~3} -- IDDFS completeness;
+  uniform treatment of uninformed search.
+\end{itemize}
+
+\subsection{Status}
+
+This appendix records design rationale; it does not commit
+implementation.  Reasoned council review converged on $\sim$0.88
+confidence on MAM naming and two-engine strategy.  The concrete
+implementation plan (phase~2 seam; phase~3 tabling plugin;
+phase~4 backend parity) is the authoritative schedule and is
+unchanged by this appendix.
+
+\emph{This text should be revisited at each phase boundary and
+revised as implementation reveals which proposals held and which
+did not.}
+
+%% ════════════════════════════════════════════════════════════════════
+
 \begin{thebibliography}{9}
 \bibitem{metta}
   B.~Goertzel et al.,

@@ -227,46 +227,147 @@ invariant that protects existing code during migration.
 Until these criteria are met, Phase 1 is \emph{structurally complete but
 performance-regressed}---commit-ready, but not done.
 
-\subsection{Second: Tabling over Canonical Terms}
+\subsection{Phase 2: ASM Search Seam (Read/Search v1)}
 
-Why second?  Because tabling keys and invalidation become cleaner once
-query identity is phrased over canonical terms.
+Once Phase 1 exit criteria are met, introduce a small explicit episode
+seam between the language surface and the backend ops.
+
+Positive example: a \code{SearchEpisode} wrapping the existing
+\code{SearchContext}, consuming a normalized \code{SearchRequest} and a
+\code{SearchLangContract}, exposing \code{visit\_query},
+\code{visit\_conjunction}, \code{exact\_contains} through a
+\code{SearchMachineOps} dispatch table.
+
+Negative example: a first tranche that already carries MM2, ATP
+saturation, solver-oracle lanes, or a scheduler tower.  That is a
+later epoch.
+
+\paragraph{Files.}
+\code{src/search\_episode.h}, \code{src/search\_episode.c},
+\code{src/search\_episode\_default.c}.  The existing
+\code{src/search\_machine.h} (branch-local \code{SearchContext} and
+\code{ChoicePoint}) is left in place and becomes what the default
+episode drives.
+
+\paragraph{Axis factorization (data, not behavior).}
+\begin{itemize}
+\item \emph{lane}: semantic proof/execution family
+  (\code{recursive-dependent-proof} in v1; others deferred)
+\item \emph{backend}: storage/indexing engine (native / \PathMap{} /
+  \MORK{}), chosen by the actual \code{Space}, not by a global preference
+\item \emph{fairness}: DFS / BFS / IDDFS / native (semantic only when
+  bounded)
+\item \emph{table mode}: \code{none} in v1; variant/subsumptive/incremental
+  are explicit future modes, not universal law
+\item \emph{order}: presentation contract (native / reverse / lex /
+  unspecified)
+\item \emph{demand}: unbounded / once / limit-k / streaming fold
+\end{itemize}
+
+\paragraph{First tranche (behavior-preserving).}
+\begin{enumerate}
+\item Add the episode / request / visitor types; no algorithms move.
+\item Implement \code{search\_episode\_default} by delegating to
+  current \code{SearchContext} + fallback conjunction engine + backend
+  direct ops when advertised via a small \code{SearchCaps} struct.
+\item Pull \code{search-policy} and \code{pragma!}\ table-mode
+  interpretation out of \code{eval.c} into a
+  \code{search\_request\_from\_surface(...)} builder.
+\item Route the streaming surfaces (\code{select}, \code{once},
+  \code{collect}, \code{fold}, \code{fold-by-key}) through the visitor
+  seam.  The live glue currently sits around
+  \code{eval.c:2797}--\code{eval.c:3375}.
+\end{enumerate}
+
+\paragraph{Explicit non-goals for Phase 2.}
+\begin{itemize}
+\item \textbf{No \code{EvalLaneOps} tier} in v1.  Lane families are a
+  later epoch; the v1 seam is read/search only.
+\item \textbf{No backend details in the seam}: hash/trie/pathmap
+  choice, candidate narrowing, join order, row/provenance bookkeeping,
+  exact-memo encoding, and GC remain backend-local.
+\item \textbf{No language observables below the seam}: per-\code{--lang}
+  promises (\HE{}, \PeTTa{}, future langs) normalize to a
+  \code{SearchRequest + SearchLangContract} above the seam.
+\item \textbf{No new table modes in v1}: \code{table\_mode = none} is
+  the only value honored; variant mode arrives via the plugin wrap in
+  the next subsection.
+\end{itemize}
+
+\subsection{Phase 3: Tabling as First ASM Plugin}
+
+With canonical term identity (Phase 1) and the episode seam (Phase 2)
+in place, tabling lands as the first pluggable table mode under the
+seam.
+
+Positive example: \code{TableStore} (the existing revision-aware
+store) wrapped as a \code{SearchTableOps} implementation, with
+\emph{variant} as the sole honored \code{table\_mode} value in v1.
+
+Negative example: today's variant-table behavior silently becoming
+the universal law of all future backends and all future lanes.
 
 \code{TableStore} already exists.  The work is:
 \begin{enumerate}
-\item Variant keys use canonical term identity.
-\item Decide whether revision-aware invalidation is enough, or whether
-  recursive workloads need suspension/resumption (Level 3+ on the
-  roadmap's tabling ladder).
+\item Variant keys use canonical term identity (enabled by Phase 1).
+\item Wrap \code{TableStore} behind a \code{SearchTableOps} vtable;
+  register it as a plugin the episode may consult when
+  \code{req.table\_mode = variant}.
+\item Decide whether revision-aware invalidation is enough, or
+  whether recursive workloads need suspension/resumption (Level 3+ on
+  the roadmap's tabling ladder, see \code{cetta\_roadmap.tex}
+  \S{}``Tabling: The Ladder of Capabilities'').
 \end{enumerate}
 
-Let the workloads tell you.  Recursive backward chaining (where \PeTTa{}
-currently completes and \CeTTa{} OOMs) will show whether simple caching
-suffices or whether you need full SLG.  The goal is performant backward
-chaining that matches \PeTTa{}'s time/memory while preserving \HE{} semantics.
+Let the workloads tell you.  Recursive backward chaining (where
+\PeTTa{} currently completes and \CeTTa{} OOMs) will show whether
+simple caching suffices or whether full SLG is required.  Additional
+modes (subsumptive, incremental, answer-subsuming, monotonic) stay
+explicit---never a hidden default.  The goal is performant backward
+chaining that matches \PeTTa{}'s time/memory while preserving \HE{}
+semantics.
 
-\subsection{Third: Evaluator Control Convergence}
+\subsection{Phase 4: Evaluator Control Convergence}
 
-Why third?  Because control-path surgery should respect the representation
-and tabling contracts already established.
+Why fourth?  Because control-path surgery should respect the
+representation and tabling contracts already established.
 
 The key constraint: \code{TAIL\_REENTER} is constitutional for deterministic
 singleton forms.  Don't replace it without proving the replacement is
 both correct and faster.
 
-Frame-based suspension goes where it's actually needed: multi-result
-streaming, typed application, bounded consumers.  Not everywhere.
+Frame-based suspension goes where it is actually needed: multi-result
+streaming, typed application, bounded consumers---i.e., exactly the
+surfaces routed through the Phase~2 visitor seam.  Positive example:
+\code{select} / \code{fold} / \code{fold-by-key} calling
+\code{episode\_ops->visit\_query} with a \code{SearchVisitCtl} that
+may request \code{STOP} once demand is satisfied.  Negative example:
+ad-hoc tail-position tricks re-invented inside every streaming
+consumer.
 
-\subsection{Fourth: Backend Parity}
+\subsection{Phase 5: Backend Parity as Contract Equivalence}
 
-Why fourth?  Because backend work risks baking in premature assumptions
-if the semantic center of gravity is still moving.
+Why fifth?  Because backend work risks baking in premature
+assumptions if the semantic center of gravity is still moving.
 
-Once term identity and tabling are stable, verify that native, \PathMap{},
-\MORK{}, and DAS backends produce identical results for identical logical
-contents.  Storage differs; semantics don't.
+Once term identity, the episode seam, and tabling are stable, verify
+that native, \PathMap{}, \MORK{}, and DAS backends produce answer
+streams observationally equivalent under the same
+\code{SearchRequest + SearchLangContract}.  Internal realizations
+may diverge freely: native may grow WAM-ish frame tuning and custom
+exact-membership structures; \PathMap{} may grow counted answer
+stores, prefix scans, and algebraic shortcuts; \MORK{}/MM2 may grow
+bridge-specific packet contracts.  That is healthy divergence, not
+architectural failure.
 
-\subsection{Fifth: Hot Paths and Specialized Lanes}
+The parity claim is: for any two backend realizations $B_1, B_2$
+satisfying the same \code{SearchLangContract} on shared logical
+content, a conforming visitor observes equivalent answer streams
+modulo the contract's declared observability (order, multiplicity,
+freshening).  Storage differs.  Internal search and table
+realizations may differ.  The contract does not.
+
+\subsection{Phase 6: Hot Paths and Specialized Lanes}
 
 Why last?  Because their honest shape depends on what the earlier work
 made cheap or unnecessary.
@@ -323,6 +424,17 @@ evaluator primitives or change semantics:
 \item Benchmark harness, profiling surfaces
 \item Pretty-printing, parser ergonomics
 \item Test cleanup, expected-file maintenance
+\item \textbf{Scout libraries for the ASM seam} (anytime after
+  Phase~2 begins): small pure-fallback libraries whose workloads
+  empirically stress the episode seam without committing to broader
+  library design---\code{lib\_set.metta} (\code{set-insert-new?},
+  \code{set-contains?}), \code{lib\_queue.metta},
+  \code{lib\_key.metta} (compact-key encodings, e.g.\ 9-tile board
+  $\rightarrow$ 64-bit int).  These are seam probes, not an
+  application/library unleashing.  Positive example: \code{lib\_set}
+  plus a \code{board-key} helper driving the tilepuzzle dedup matrix.
+  Negative example: \code{lib\_http}, sockets, or anything forcing
+  new backend contracts before the seam is stable.
 \end{itemize}
 
 Rule of thumb: if it lives \emph{above} the evaluator contract and

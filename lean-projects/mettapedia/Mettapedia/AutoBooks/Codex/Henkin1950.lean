@@ -20,7 +20,9 @@ import Mettapedia.AutoBooks.Codex.Henkin1950.CanonicalFrame
 import Mettapedia.AutoBooks.Codex.Henkin1950.CanonicalPropClasses
 import Mettapedia.AutoBooks.Codex.Henkin1950.TheoremTransport
 import Mettapedia.AutoBooks.Codex.Henkin1950.CanonicalModel
+import Mettapedia.AutoBooks.Codex.Henkin1950.ClassSemantics
 import Mettapedia.AutoBooks.Codex.Henkin1950.Theorem1Bridge
+import Mettapedia.AutoBooks.Codex.Henkin1950.ClassSemanticsRegression
 import Mettapedia.AutoBooks.Codex.Henkin1950.Theorem1BridgeRegression
 import Mettapedia.AutoBooks.Codex.Henkin1950.Compactness
 import Mettapedia.AutoBooks.Codex.Henkin1950.CompactnessRegression

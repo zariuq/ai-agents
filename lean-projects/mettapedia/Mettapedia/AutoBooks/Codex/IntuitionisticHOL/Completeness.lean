@@ -253,6 +253,15 @@ theorem deterministicAdditionCompatible_trueAll
     S.DeterministicAdditionCompatible (.trueAll φ t) :=
   (deterministicAdditionCompatible_trueAll_iff S).2 h
 
+theorem not_deterministicAdditionCompatible_trueAll
+    (S : SaturationSearchState Const Γ)
+    {σ : Ty Base} {φ : Formula Const (σ :: Γ)} {t : Term Const Γ σ}
+    (h :
+      (Sign.falseE, instantiate (Base := Base) t φ) ∈ S.hintikka.close.formulas) :
+    ¬ S.DeterministicAdditionCompatible (.trueAll φ t) := by
+  rw [deterministicAdditionCompatible_trueAll_iff]
+  simpa using h
+
 theorem deterministicAdditionCompatible_falseAllWitness
     (S : SaturationSearchState Const Γ)
     {σ : Ty Base} {φ : Formula Const (σ :: Γ)} {t : Term Const Γ σ}
@@ -260,6 +269,15 @@ theorem deterministicAdditionCompatible_falseAllWitness
       (Sign.trueE, instantiate (Base := Base) t φ) ∉ S.hintikka.close.formulas) :
     S.DeterministicAdditionCompatible (.falseAllWitness φ t) :=
   (deterministicAdditionCompatible_falseAllWitness_iff S).2 h
+
+theorem not_deterministicAdditionCompatible_falseAllWitness
+    (S : SaturationSearchState Const Γ)
+    {σ : Ty Base} {φ : Formula Const (σ :: Γ)} {t : Term Const Γ σ}
+    (h :
+      (Sign.trueE, instantiate (Base := Base) t φ) ∈ S.hintikka.close.formulas) :
+    ¬ S.DeterministicAdditionCompatible (.falseAllWitness φ t) := by
+  rw [deterministicAdditionCompatible_falseAllWitness_iff]
+  simpa using h
 
 theorem deterministicAdditionCompatible_trueExWitness
     (S : SaturationSearchState Const Γ)
@@ -269,6 +287,15 @@ theorem deterministicAdditionCompatible_trueExWitness
     S.DeterministicAdditionCompatible (.trueExWitness φ t) :=
   (deterministicAdditionCompatible_trueExWitness_iff S).2 h
 
+theorem not_deterministicAdditionCompatible_trueExWitness
+    (S : SaturationSearchState Const Γ)
+    {σ : Ty Base} {φ : Formula Const (σ :: Γ)} {t : Term Const Γ σ}
+    (h :
+      (Sign.falseE, instantiate (Base := Base) t φ) ∈ S.hintikka.close.formulas) :
+    ¬ S.DeterministicAdditionCompatible (.trueExWitness φ t) := by
+  rw [deterministicAdditionCompatible_trueExWitness_iff]
+  simpa using h
+
 theorem deterministicAdditionCompatible_falseEx
     (S : SaturationSearchState Const Γ)
     {σ : Ty Base} {φ : Formula Const (σ :: Γ)} {t : Term Const Γ σ}
@@ -276,6 +303,15 @@ theorem deterministicAdditionCompatible_falseEx
       (Sign.trueE, instantiate (Base := Base) t φ) ∉ S.hintikka.close.formulas) :
     S.DeterministicAdditionCompatible (.falseEx φ t) :=
   (deterministicAdditionCompatible_falseEx_iff S).2 h
+
+theorem not_deterministicAdditionCompatible_falseEx
+    (S : SaturationSearchState Const Γ)
+    {σ : Ty Base} {φ : Formula Const (σ :: Γ)} {t : Term Const Γ σ}
+    (h :
+      (Sign.trueE, instantiate (Base := Base) t φ) ∈ S.hintikka.close.formulas) :
+    ¬ S.DeterministicAdditionCompatible (.falseEx φ t) := by
+  rw [deterministicAdditionCompatible_falseEx_iff]
+  simpa using h
 
 theorem branchAdditionCompatible_falseAndLeft_iff
     (S : SaturationSearchState Const Γ)
@@ -3389,6 +3425,32 @@ theorem exists_closedSoundLocalCountermodel_of_exists_semantics
   exact ⟨(D.toCertifiedCompletion terminal branchClosed).toCertifiedCountermodelCandidate
     |>.toClosedSoundLocalCountermodel
       (M := M) env global true_top false_ne_top hM⟩
+
+theorem exists_semilocal_truth_counterexample_of_exists_semantics
+    {F : CompletenessFrontier Const Γ}
+    (D : CertifiedHeadPriorityDerivation Const Γ F)
+    (terminal : D.state.IsTerminal)
+    (branchClosed : D.state.hintikka.BranchClosed)
+    (hSem :
+      ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+        SemilocalModel.IsGlobalEnv M env ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.trueE, φ) ∈ D.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ = ⊤) ∧
+        (∀ {φ : Formula Const Γ},
+            (Sign.falseE, φ) ∈ D.closedHintikka.formulas →
+              SemilocalModel.formulaTruth M env φ ≠ ⊤) ∧
+        SemilocalModel.SupportsUniformRelativization M) :
+    ∃ (M : SemilocalModel.{u, v, w, w'} Base Const) (env : SemilocalModel.Env M Γ),
+      SemilocalModel.IsGlobalEnv M env ∧
+      SemilocalModel.antecedentTruth M env F.antecedents = ⊤ ∧
+      SemilocalModel.formulaTruth M env F.succedent ≠ ⊤ ∧
+      SemilocalModel.SupportsUniformRelativization M := by
+  rcases D.exists_closedSoundLocalCountermodel_of_exists_semantics terminal branchClosed hSem with
+    ⟨CM⟩
+  exact ⟨CM.model, CM.agreement.env, CM.agreement.global,
+    CM.agreement.antecedentTruth_eq_top, CM.agreement.succedent_ne_top,
+    CM.supportsUniformRelativization⟩
 
 theorem not_derivable_of_exists_semantics
     {F : CompletenessFrontier Const Γ}

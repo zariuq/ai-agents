@@ -1,1 +1,2 @@
 import Mettapedia.AutoBooks.Codex.Jacobs.Chapter1.DisplayIndexedFamilies
+import Mettapedia.AutoBooks.Codex.Jacobs.Chapter1.DisplayIndexedFamiliesRegression

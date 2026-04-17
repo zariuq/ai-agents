@@ -1,5 +1,5 @@
 import Mettapedia.ProbabilityTheory.KnuthSkilling.Additive.Axioms.SandwichSeparation
-import Mettapedia.ProbabilityTheory.KnuthSkilling.Additive.Proofs.GridInduction.CredalSets
+import Mettapedia.ProbabilityTheory.ImpreciseProbability.CredalSets
 import Mettapedia.ProbabilityTheory.Hypercube.KnuthSkilling.Neighbors
 import Mettapedia.ProbabilityTheory.Hypercube.Basic
 import Mathlib.Order.ConditionallyCompleteLattice.Basic

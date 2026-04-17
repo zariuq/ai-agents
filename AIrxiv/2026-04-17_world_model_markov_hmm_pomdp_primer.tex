@@ -1,0 +1,621 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+\setlist[itemize]{leftmargin=1.5em}
+\setlist[enumerate]{leftmargin=1.75em}
+
+\title{A Conceptual Primer on World-Model Markov Reasoning,\\Hidden-State Inference, and POMDP Belief Semantics\\\large Dated synthesis: 2026-04-17}
+\author{}
+\date{}
+
+\newtheorem{definition}{Definition}
+\newtheorem{principle}{Principle}
+\newtheorem{claim}{Claim}
+\newtheorem{remark}{Remark}
+\newcommand{\wm}{world-model}
+\newcommand{\wmpln}{WM-PLN}
+\newcommand{\pln}{PLN}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\ENN}{\mathbb{R}_{\ge 0}^{\infty}}
+\newcommand{\argmax}{\mathop{\mathrm{argmax}}}
+\newcommand{\Law}{\mathrm{Law}}
+\newcommand{\Bel}{\mathrm{Bel}}
+\newcommand{\Obs}{\mathrm{Obs}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note is a conceptual primer for a research line connecting world-model
+calculus, Markov semantics, higher-order Markov chains, hidden Markov models,
+credal uncertainty, and POMDP-style reasoning.  Its purpose is not to archive
+implementation history but to preserve the strongest conceptual picture now
+available so that future technical work and future conversations can resume
+from a stable basis.
+
+The central thesis is that probabilistic symbolic reasoning becomes reliable
+only when it sharply separates five layers that are often conflated:
+\begin{enumerate}
+  \item the explicit semantic model that determines probabilities,
+  \item the evidence or posterior state carried by a reasoning system,
+  \item the query surface exposed to users,
+  \item the operational control layer that decides what computation to perform,
+  \item and the higher-order uncertainty induced by hidden structure,
+        non-identifiability, or model ambiguity.
+\end{enumerate}
+
+On this view, additive evidence revision remains a mathematically privileged
+fragment, but it is not the universal semantics of hidden-state reasoning.  For
+ordinary finite-state Markov chains, predictive path semantics can be exposed
+honestly through world-model queries.  For higher-order Markov chains, the
+right reduction is to first-order chains on context states.  For hidden Markov
+models, complete-data evidence remains additive, but observed-only belief
+tracking is fundamentally non-additive; the correct response is filtering,
+smoothing, and, in the ambiguous case, credal or interval-valued belief
+representations.  Action-conditioned hidden Markov models then provide a clean
+structured entry point for POMDP-capable world-model reasoning.
+\end{abstract}
+
+\tableofcontents
+
+\section{Purpose and scope}
+
+This document consolidates a cluster of ideas that belong together:
+\begin{itemize}
+  \item world-model semantics as the truthmaking layer for probabilistic logic;
+  \item honest Markov path semantics in place of ad hoc multi-step chaining;
+  \item higher-order Markov semantics via context-state reduction;
+  \item hidden-state inference via forward, backward, filtering, and smoothing;
+  \item observed-only non-identifiability and its implications for additive
+        evidence calculi;
+  \item credal world-model views as an honest response to ambiguity;
+  \item and controlled hidden Markov models as a bridge into POMDP-style
+        reasoning.
+\end{itemize}
+
+The note is strictly conceptual.  It is written to be useful both as an
+academic synthesis and as a primer for future technical work.  It therefore
+emphasizes conceptual boundaries, canonical constructions, and theorem-shaped
+open problems rather than implementation detail.
+
+\section{The guiding separation: semantics, evidence, queries, and control}
+
+\subsection{The main distinction}
+
+The first indispensable distinction is:
+\begin{quote}
+The semantic model determines what is true; the carried evidence or posterior
+state records what a reasoner knows; the query surface exposes selected views of
+that state; and the control layer decides what computation to perform next.
+\end{quote}
+
+Many failures of probabilistic symbolic reasoning arise from collapsing these
+roles into one object.
+
+\begin{itemize}
+  \item A probability in a semantic model is not the same thing as a confidence
+        attached to a derived symbolic judgment.
+  \item A local truth value is not automatically a reusable semantic fact.
+  \item A search-control score is not the same thing as posterior support.
+  \item A posterior belief state is not the same thing as an additive multiset
+        of observations unless the underlying model class genuinely supports
+        such a reduction.
+\end{itemize}
+
+\subsection{The additive fragment remains special}
+
+The additive \wm{} fragment should not be discarded.  It remains canonical for
+families where independent observations aggregate through sufficient
+statistics.  In that setting, evidence accumulation is literally additive.  The
+point is not that additivity is wrong; the point is that it is correct only in
+the fragment where the semantics really supports it.
+
+\begin{principle}[Additive privilege]
+When a model class admits a sufficient-statistic posterior that aggregates by
+addition, the additive world-model semantics is the canonical surface for that
+class.
+\end{principle}
+
+Positive example:
+\begin{itemize}
+  \item Beta--Bernoulli and Dirichlet--multinomial families aggregate evidence
+        by counts, so additive evidence states are exactly right.
+\end{itemize}
+
+Negative example:
+\begin{itemize}
+  \item Observed-only hidden-state inference generally does not reduce to an
+        additive multiset statistic that recovers the correct posterior over
+        latent states.
+\end{itemize}
+
+\section{From local chaining to explicit predictive semantics}
+
+\subsection{Why naive probabilistic chaining fails}
+
+The tempting but unreliable idea is that one can propagate local truth values
+through arbitrary chains as if local support values composed like logical
+probabilities.  This fails for familiar reasons:
+\begin{itemize}
+  \item hidden overlap and dependence are forgotten,
+  \item derived links are reused as if they were independent raw premises,
+  \item and multi-step composition is forced into an additive or deductive form
+        that the semantics does not justify.
+\end{itemize}
+
+\subsection{What survives}
+
+What survives is the narrower but much cleaner claim:
+\begin{quote}
+Multi-step probabilistic reasoning should be exposed through direct semantic
+queries against an explicit model, not through generic reuse of locally derived
+support values.
+\end{quote}
+
+For finite-state Markov chains, this means that multi-step queries should be
+read as \emph{predictive path probabilities}.  The right semantics is
+sequential posterior or predictive composition, not generic additive deduction.
+
+\section{Finite-state Markov world-model semantics}
+
+\subsection{Single-step queries}
+
+The simplest Markov query asks for the probability of a one-step transition
+\[
+P(X_{t+1}=x' \mid H_t),
+\]
+where $H_t$ is the relevant history summary.  In a conjugate finite-state
+setting, the sufficient statistic can be read off from row counts and boundary
+data.
+
+\subsection{Path queries}
+
+The conceptual improvement over naive chaining is to introduce direct path
+queries
+\[
+P(X_{t+1}=x_1,\ldots,X_{t+n}=x_n \mid H_t).
+\]
+These are not mere chains of local truth values; they are model-defined path
+probabilities.
+
+\begin{principle}[Predictive over deductive]
+For finite-state Markov reasoning, multi-step query strength should be defined
+by predictive path semantics, not by additive reuse of locally derived
+transition judgments.
+\end{principle}
+
+\subsection{Threshold semantics}
+
+Once direct predictive query strength exists, threshold theorems become
+meaningful: one may ask whether a path or transition has support above a given
+cutoff, but this thresholding happens \emph{after} semantic evaluation, not in
+place of it.
+
+\section{Higher-order Markov chains through context-state reduction}
+
+\subsection{The basic idea}
+
+An order-$m$ Markov chain on symbols can be reinterpreted as a first-order
+Markov chain on length-$m$ contexts.  This is not merely a coding trick.  It
+is the mathematically right reduction for bringing higher-order chains into the
+same finite-state kernel and world-model infrastructure.
+
+\begin{definition}[Context-state reduction]
+An order-$m$ chain on symbols $x_t$ is represented as a first-order chain on
+states
+\[
+c_t = (x_t,\ldots,x_{t+m-1}),
+\]
+with transitions given by shift-consistent context extension.
+\end{definition}
+
+\subsection{Why this matters}
+
+This reduction gives three conceptual payoffs.
+\begin{enumerate}
+  \item It turns higher-order sequence laws into ordinary first-order path laws
+        on context states.
+  \item It identifies the right sufficient statistic: $(m+1)$-gram counts.
+  \item It makes higher-order reasoning compatible with the same predictive and
+        evidence-carrying surfaces used for first-order finite-state chains.
+\end{enumerate}
+
+\subsection{Raw symbol semantics versus context semantics}
+
+There are two distinct but equivalent views:
+\begin{itemize}
+  \item context-trajectory semantics, where the underlying process lives on
+        contexts;
+  \item raw-symbol semantics, where one projects context trajectories back down
+        to symbol sequences.
+\end{itemize}
+
+The raw-symbol cylinder law is conceptually important because it shows that the
+context-state reduction is not just an auxiliary proof device; it is genuinely
+equivalent to the higher-order symbolic process.
+
+\section{Hidden Markov models: from complete data to observed-only inference}
+
+\subsection{The two views of an HMM}
+
+A finite HMM has:
+\begin{itemize}
+  \item a latent Markov chain,
+  \item an emission kernel,
+  \item and an induced observed process obtained by summing or integrating over
+        latent paths.
+\end{itemize}
+
+From the complete-data point of view, the model remains additive in a useful
+way: one can accumulate latent transition counts and emission counts.  From the
+observed-only point of view, however, the correct object is not an additive
+count summary but a posterior distribution over latent states.
+
+\subsection{Forward and backward semantics}
+
+The forward message computes the unnormalized mass of ending in latent state
+$x$ after an observed prefix.  The backward message computes the continuation
+likelihood of the future observations given latent state $x$.  Their product
+recovers the standard smoothing factorization.
+
+Conceptually, four objects matter:
+\begin{itemize}
+  \item observed-word probability,
+  \item filtering posterior,
+  \item smoothing posterior,
+  \item and two-slice latent posterior.
+\end{itemize}
+
+\subsection{Filtering}
+
+Filtering is the posterior belief state
+\[
+\Bel_t(x) = P(X_t=x \mid Y_{\le t}, A_{\le t}),
+\]
+or its action-free specialization when no actions are present.  This is the
+load-bearing object for observed-only reasoning.
+
+\subsection{Smoothing}
+
+Smoothing is the two-sided posterior
+\[
+P(X_t=x \mid Y_{\le T}, A_{\le T-1}),
+\]
+or its finite-prefix analogue.  The conceptual lesson is that smoothing is not
+an optional embellishment.  It makes explicit that observed-only reasoning is
+posterior reasoning over hidden trajectories, not a direct additive tally.
+
+\section{The non-identifiability boundary}
+
+\subsection{What the obstruction says}
+
+The central negative insight is:
+\begin{quote}
+Observed-only hidden-state belief cannot in general be recovered from an
+additive multiset-based evidence surface over observations alone.
+\end{quote}
+
+The cleanest witness is a label-swap construction: two hidden models can induce
+the same observed distribution while assigning incompatible latent posteriors.
+This is not a pathology.  It is the structural reason observed-only HMM belief
+tracking cannot simply inherit the complete-data additive world-model
+infrastructure.
+
+\subsection{Why the result matters}
+
+This obstruction has three consequences.
+\begin{enumerate}
+  \item It marks the boundary of additive \wmpln{} reasoning for hidden-state
+        models.
+  \item It justifies filtering and smoothing as first-class semantic objects.
+  \item It motivates credal or interval-valued belief representations when the
+        observations underdetermine latent structure.
+\end{enumerate}
+
+\section{Credal world-model semantics for observed-only ambiguity}
+
+\subsection{The conceptual move}
+
+When the observations do not identify a unique hidden model, the right response
+is not to pretend that a single posterior strength exists.  Instead one should
+carry a family of compatible hidden models and expose lower and upper support
+for a latent query.
+
+\begin{definition}[Credal filtering truth value]
+Given a finite family of compatible hidden models $\Theta$, an observed trace
+$z$, and a latent query $q$, define
+\[
+\underline{s}(q \mid z) = \inf_{\theta \in \Theta} P_\theta(q \mid z), \qquad
+\overline{s}(q \mid z) = \sup_{\theta \in \Theta} P_\theta(q \mid z).
+\]
+\end{definition}
+
+This interval is the honest observed-only world-model answer when latent
+structure is ambiguous.
+
+\subsection{Why this is conceptually natural}
+
+The credal move is not a retreat from semantics.  It is the semantics of
+ambiguity.  In this sense, the obstruction theorem is not merely a negative
+result.  It says what the next representation should be.
+
+Positive example:
+\begin{itemize}
+  \item a label-swapped HMM family can induce the full interval $[0,1]$ for a
+        latent-state query after a singleton observation.
+\end{itemize}
+
+Negative example:
+\begin{itemize}
+  \item the interval need not collapse even for very short traces, so
+        observed-only ambiguity is not a rare asymptotic phenomenon.
+\end{itemize}
+
+\section{Controlled HMMs as a structured bridge to POMDP reasoning}
+
+\subsection{Why action-conditioning matters}
+
+A POMDP is not merely an HMM with observations.  It is an action-conditioned
+partially observable process.  The clean structured bridge is therefore a
+controlled finite HMM:
+\begin{itemize}
+  \item latent prior,
+  \item action-conditioned latent transition kernel,
+  \item emission kernel,
+  \item filtering and smoothing on completed action-observation cycles.
+\end{itemize}
+
+\subsection{What this unlocks}
+
+This does \emph{not} create the general agent framework from scratch.  Rather,
+it provides a structured finite-state instance of an already general
+history-conditional environment formalism.  The main gain is conceptual:
+\begin{quote}
+The belief state of a finite POMDP can now be expressed as a controlled
+filtering posterior in the world-model reasoning layer.
+\end{quote}
+
+\subsection{The controlled Solomonoff leg}
+
+The controlled story now has a conservative universal-prediction leg as well.
+A controlled finite HMM induces a controlled prefix law on completed
+action-observation traces, and along any fixed action stream one can condition
+that law down to an ordinary observation-prefix measure.  The ordinary
+finite-alphabet Solomonoff semimeasure $M_2$ can then be lifted back into the
+controlled setting by ignoring actions and acting as a comparator on the
+observation side.  This yields a real theorem:
+\begin{quote}
+For any fixed action stream, if the induced observation law is lower
+semicomputable, then the controlled Solomonoff comparator satisfies the
+standard finite-horizon log-loss regret bound against that controlled hidden
+Markov law.
+\end{quote}
+
+Positive example:
+\begin{itemize}
+  \item the controlled Markov / Solomonoff / \wm{} triangle is now closed at
+        the level of fixed-action-stream regret bounds.
+\end{itemize}
+
+Negative example:
+\begin{itemize}
+  \item the current comparator is deliberately conservative: it is not yet a
+        genuinely action-aware universal mixture.
+\end{itemize}
+
+\subsection{A genuine computability boundary}
+
+The lower-semicomputability side condition in the controlled Solomonoff theorem
+is not a technical embarrassment.  It reflects a real domain boundary.  The
+raw controlled finite HMM parameter record allows arbitrary probability
+measures, so lower semicomputability does not follow automatically from the
+bare semantic object.  The right response is to package a computable or
+lower-semicomputable subclass explicitly, not to erase the assumption by fiat.
+
+\subsection{The correct interpretation}
+
+In this context, ``unlocking POMDP reasoning'' means:
+\begin{itemize}
+  \item one has a structured controlled latent-state model,
+  \item one has a bridge from that model to a generic environment interface,
+  \item and one can state planning semantics in terms of belief-state update.
+\end{itemize}
+
+What it does \emph{not} mean is that additive evidence alone now suffices for
+hidden-state planning.  The obstruction theorem still applies.
+
+\section{World-model reasoning for POMDPs}
+
+\subsection{What proper WM reasoning should mean here}
+
+Proper \wm{} reasoning for POMDP-like systems should mean:
+\begin{enumerate}
+  \item a semantic model with explicit latent and observed dynamics,
+  \item belief-state update equations,
+  \item query surfaces for filtering, smoothing, and prediction,
+  \item planning or control semantics that read those belief states correctly,
+  \item and an honest ambiguity layer when observations fail to identify a
+        unique latent state model.
+\end{enumerate}
+
+\subsection{What it should not mean}
+
+It should not mean:
+\begin{itemize}
+  \item reusing additive observation multisets as if they were sufficient for
+        latent-state posteriors,
+  \item calling any local truth-value propagation scheme ``belief update'',
+  \item or hiding hidden-state ambiguity under a single scalar confidence.
+\end{itemize}
+
+\section{The de Finetti and mixture story}
+
+\subsection{What is trivial and what is not}
+
+Mixture theorems come in two sharply different forms.
+
+\paragraph{Trivial direction.}
+For each fixed parameter $\theta$, the law induced by $\theta$ can always be
+represented as a Dirac mixture concentrated at $\theta$.
+
+\paragraph{Nontrivial direction.}
+One wants a real mixture theorem: finite discrete mixtures, or ultimately
+arbitrary Borel mixtures, together with an honest image characterization of the
+laws thus obtained.
+
+\subsection{The naming lesson}
+
+The conceptual lesson is methodological:
+\begin{quote}
+Dirac-witness existence theorems are legitimate, but they should be named as
+Dirac-witness theorems rather than as if they already established the full de
+Finetti image theorem.
+\end{quote}
+
+This matters because the difference is mathematically substantive.  A statement
+may be correct as written while still overselling what kind of factorization has
+actually been proved.
+
+\subsection{Higher-order and HMM mixture surfaces}
+
+For higher-order Markov models, the first honest nontrivial step is a finite
+discrete mixture theorem on context-state parameters.  For hidden Markov
+models, the same applies to latent Markov parameters with fixed emission
+kernel.  The genuinely hard open layer is the arbitrary-Borel image theorem in
+both settings.
+
+\section{The ProbMeTTa lesson: semantic mirror versus source semantics}
+
+\subsection{The initial gap}
+
+Another general lesson emerging from this line of work is the distinction
+between:
+\begin{itemize}
+  \item a semantic theorem downstream of a compilation or translation relation,
+  \item and a formal semantics of the actual source-level runtime language.
+\end{itemize}
+
+It is easy to prove a theorem of the form:
+\begin{quote}
+If the source system compiles to a certain semantic object, then the downstream
+theorem holds.
+\end{quote}
+This is useful, but it is not the same as formalizing the actual source
+operators and proving the compiler relation from the runtime semantics.
+
+\subsection{The right target}
+
+The right target is not byte-for-byte replay of an implementation.  The right
+target is a mathematically honest source semantics for the runtime core,
+together with adequacy theorems connecting it to the already-proved semantic
+backend.
+
+This yields a more general methodological rule:
+\begin{principle}[Semantic fidelity over operational mimicry]
+When formalizing a symbolic runtime, the goal should be semantic adequacy of the
+source operators, not a brittle proof of implementation-level reduction order.
+\end{principle}
+
+\section{Stable design rules for future work}
+
+The following rules are worth treating as stable design commitments.
+
+\begin{enumerate}
+  \item \textbf{Name theorems honestly.}  Distinguish Dirac witnesses from real
+        mixture theorems.
+  \item \textbf{Do not publish consumer surfaces before the semantics are
+        stable.}  Query syntax should follow semantic stabilization, not
+        precede it.
+  \item \textbf{Prefer direct semantic queries over reuse of derived links.}
+  \item \textbf{Treat additive evidence as a privileged fragment, not a
+        universal law.}
+  \item \textbf{Use credal or interval-valued views when hidden structure is
+        not identifiable from observations.}
+  \item \textbf{Keep complete-data and observed-only semantics separate.}
+  \item \textbf{Reduce higher-order chains through context states unless a
+        better semantic representation is proved.}
+  \item \textbf{Bridge into planning through controlled filtering, not through
+        ad hoc symbolic chaining.}
+\end{enumerate}
+
+\section{The next theorem program}
+
+The most coherent next theorem program is:
+\begin{enumerate}
+  \item a computable or lower-semicomputable controlled-HMM parameter class
+        that discharges the fixed-action-stream Solomonoff hypothesis by
+        construction;
+  \item stronger credal planning bounds beyond the current finite-horizon
+        envelope theorems;
+  \item ambiguity-sensitive planning examples where observation-consistent model
+        families widen the decision interval, not only the posterior interval;
+  \item arbitrary-Borel mixture theorems for higher-order Markov and hidden
+        Markov settings;
+  \item a genuinely action-aware universal mixture, rather than the current
+        conservative action-ignoring comparator;
+  \item and only after those, an HMM/POMDP query surface for symbolic consumer
+        interfaces.
+\end{enumerate}
+
+\section{A compact primer for future technical conversations}
+
+Future work can safely assume the following conceptual baseline.
+
+\begin{enumerate}
+  \item \textbf{Finite-state Markov chains:} direct path semantics is the right
+        multi-step query surface.
+  \item \textbf{Higher-order Markov chains:} the right reduction is to
+        first-order chains on context states; the sufficient statistics are
+        $(m+1)$-gram counts.
+  \item \textbf{Hidden Markov models:} complete-data evidence is additive, but
+        observed-only latent belief is posterior, not additive tally.
+  \item \textbf{Observed-only ambiguity:} when multiple hidden models remain
+        compatible with the same observations, lower and upper latent support
+        should be carried explicitly.
+  \item \textbf{POMDP bridge:} the structured finite-state route goes through
+        controlled hidden Markov models and belief-state recursion.
+  \item \textbf{Controlled Solomonoff leg:} along fixed action streams there is
+        now a concrete conservative universal comparator with a genuine
+        finite-horizon regret theorem.
+  \item \textbf{Formalization strategy:} prefer semantic adequacy and honest
+        boundaries over overclaimed universality or implementation mimicry.
+  \item \textbf{Open boundary:} the arbitrary-Borel mixture and image
+        theorems remain the deepest unresolved measure-theoretic layer.
+  \item \textbf{Practical implication:} proper symbolic probabilistic reasoning
+        requires different surfaces for additive evidence, predictive path
+        queries, posterior latent beliefs, and ambiguity-aware credal views.
+\end{enumerate}
+
+\section{Conclusion}
+
+The broad picture is now reasonably clear.
+
+The right semantics for probabilistic symbolic reasoning is not generic
+truth-value propagation.  It is world-model semantics with query-specific
+evidence extraction.  Additive evidence remains canonical where sufficient
+statistics justify it.  Predictive path semantics is the right surface for
+Markov composition.  Higher-order chains should be reduced through context
+states.  Hidden-state models require filtering and smoothing rather than naive
+observation counting.  Observed-only ambiguity calls for credal world-model
+views.  Action-conditioned hidden Markov models provide the cleanest bridge to
+POMDP-capable world-model reasoning.
+
+This yields a conceptually disciplined research program: one preserves the
+fragments that are exactly additive, one introduces posterior objects where
+additivity genuinely fails, one names theorems honestly, and one delays
+consumer surfaces until the semantic core has stabilized.  That is a much
+cleaner foundation for future reasoning systems than either naive local
+probabilistic chaining or overgeneralized confidence calculus.
+
+\end{document}
