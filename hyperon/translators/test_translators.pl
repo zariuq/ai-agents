@@ -292,6 +292,22 @@ test_petta_to_he(28, "collapse(raw reduce ...) → collapse(eval ...)",
     [collapse, [reduce, '$term']],
     [collapse, [eval, '$term']]).
 
+test_petta_to_he(29, "length(collapse ...) → bind + size-atom",
+    [length, [collapse, '$term']],
+    length_collapse_shape('$term')).
+
+test_petta_to_he(30, "test scalar → assertEqual lowering",
+    [test, ['+', 1, 2], 3],
+    [assertEqual, ['+', 1, 2], 3]).
+
+test_petta_to_he(31, "test length(collapse ...) → assertEqual lowering",
+    [test, [length, [collapse, [match, '&self', ['edge', '$x', '$y'], '$x']]], 2],
+    test_length_collapse_shape([match, '&self', ['edge', '$x', '$y'], '$x'], 2)).
+
+test_petta_to_he(32, "generic length stays length (compat helper is file-level)",
+    [length, [foo, bar]],
+    [length, [foo, bar]]).
+
 %% ═══════════════════════════════════════════════════════════════
 %% PeTTa → HE extended mode tests
 %% ═══════════════════════════════════════════════════════════════
@@ -497,6 +513,28 @@ run_one_pe(N, Name, Input, foldl_atom_short_shape(List, Init, Agg)) :- !,
         ->  format("  ✓ ~w: ~w (fresh binders: ~w, ~w)~n",
                     [N, Name, AccVar, ItemVar])
         ;   format("  ✗ ~w: ~w (bad short foldl-atom lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe(N, Name, Input, length_collapse_shape(Goal)) :- !,
+    (   pe_translate_term(Input, Result)
+    ->  (   Result = [let, TupleVar, [collapse, Goal], [size-atom, TupleVar]],
+            atom_string(TupleVar, TupleS),
+            sub_string(TupleS, 0, _, _, "$__tr_")
+        ->  format("  ✓ ~w: ~w (fresh tuple binder: ~w)~n", [N, Name, TupleVar])
+        ;   format("  ✗ ~w: ~w (bad length(collapse ...) lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe(N, Name, Input, test_length_collapse_shape(Goal, Expected)) :- !,
+    (   pe_translate_term(Input, Result)
+    ->  (   Result = [assertEqual, [let, TupleVar, [collapse, Goal], [size-atom, TupleVar]], Expected],
+            atom_string(TupleVar, TupleS),
+            sub_string(TupleS, 0, _, _, "$__tr_")
+        ->  format("  ✓ ~w: ~w (fresh tuple binder: ~w)~n", [N, Name, TupleVar])
+        ;   format("  ✗ ~w: ~w (bad test length(collapse ...) lowering: ~w)~n", [N, Name, Result])
         )
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
     ).

@@ -135,6 +135,19 @@ petta_to_he(['foldl-atom', List, Init, Agg],
 petta_to_he([reduce, Expr], [eval, TExpr], S0, S1) :-
     petta_to_he(Expr, TExpr, S0, S1), !.
 
+petta_to_he([length, [collapse, Expr]],
+            [let, TupleVar, [collapse, TExpr], [size-atom, TupleVar]], S0, S3) :-
+    petta_to_he(Expr, TExpr, S0, S1),
+    fresh_name(tuple, S1, S3, TupleVar), !.
+
+petta_to_he([length, Expr], [length, TExpr], S0, S1) :-
+    petta_to_he(Expr, TExpr, S0, S1), !.
+
+petta_to_he([test, Actual, Expected],
+            [assertEqual, TActual, TExpected], S0, S2) :-
+    petta_to_he(Actual, TActual, S0, S1),
+    petta_to_he(Expected, TExpected, S1, S2), !.
+
 petta_to_he(['unique-atom', [collapse, Arg]], [collapse, [unique, TArg]], S0, S1) :-
     petta_to_he(Arg, TArg, S0, S1), !.
 

@@ -141,6 +141,37 @@ translate_term_mode(Mode, ['foldl-atom', List, Init, Agg],
 translate_term_mode(Mode, [reduce, Expr], [eval, TExpr]) :-
     translate_term_mode(Mode, Expr, TExpr), !.
 
+%% PeTTa length(collapse Expr)
+%%   → let $tuple (collapse Expr') (size-atom $tuple)
+%%
+%% This is the critical high-volume PeTTa pattern. Lower it directly to the
+%% CeTTa shape that counts collapsed result tuples without relying on a generic
+%% user-level wrapper around eval, which is fragile on very large tuples.
+translate_term_mode(Mode, [length, [collapse, Expr]],
+               [let, TupleVar, [collapse, TExpr], [size-atom, TupleVar]]) :-
+    translate_term_mode(Mode, Expr, TExpr),
+    fresh_var(tuple, TupleVar), !.
+
+%% PeTTa length Expr
+%%   → length Expr'
+%%
+%% Keep the source head intact for the remaining non-collapse cases and provide
+%% a tiny compatibility definition at the file/program level when needed.
+translate_term_mode(Mode, [length, Expr], [length, TExpr]) :-
+    translate_term_mode(Mode, Expr, TExpr), !.
+
+%% PeTTa test Actual Expected
+%%   → assertEqual Actual' Expected'
+%%
+%% CeTTa's assertEqual already evaluates both sides as result sets. This gives
+%% the right behavior for the real PeTTa surfaces we import, including scalar
+%% tests and collapsed/list-valued tests, without introducing an extra
+%% collapse/index shim that misbehaves on CeTTa tuples.
+translate_term_mode(Mode, [test, Actual, Expected],
+               [assertEqual, TActual, TExpected]) :-
+    translate_term_mode(Mode, Actual, TActual),
+    translate_term_mode(Mode, Expected, TExpected), !.
+
 %% trusted HE→PeTTa new-space lowering reversal
 translate_term_mode(Mode, [call, [gensym, Prefix]], ['new-space']) :-
     trusted_mode(Mode),
@@ -180,10 +211,9 @@ translate_decl_mode(_, [':', Name, Type], [':', Name, Type]) :- !.
 
 translate_decl_mode(_, X, X).
 
-translate_program_mode(_, [], []).
-translate_program_mode(Mode, [D|Ds], [TD|TDs]) :-
-    translate_decl_mode(Mode, D, TD),
-    translate_program_mode(Mode, Ds, TDs).
+translate_program_mode(Mode, Decls, Program) :-
+    maplist(translate_decl_mode(Mode), Decls, TDecls0),
+    prepend_petta_compat_program_decls(Decls, TDecls0, Program).
 
 %% ── Post-translation HE optimization ───────────────────────────
 %%
@@ -284,3 +314,30 @@ foldall_collector_head(trusted_extended, collect).
 
 trusted_mode(trusted).
 trusted_mode(trusted_extended).
+
+prepend_petta_compat_program_decls(SourceDecls, TDecls0, TDecls) :-
+    (   program_uses_length(SourceDecls),
+        \+ program_defines_length(SourceDecls)
+    ->  petta_length_compat_decls(CompatDecls),
+        append(CompatDecls, TDecls0, TDecls)
+    ;   TDecls = TDecls0
+    ).
+
+program_uses_length(Term) :-
+    is_list(Term),
+    (   Term = [length, _]
+    ;   member(Subterm, Term),
+        program_uses_length(Subterm)
+    ).
+
+program_uses_length(_) :-
+    fail.
+
+program_defines_length([['=', [length|_], _]|_]) :- !.
+program_defines_length([_|Rest]) :-
+    program_defines_length(Rest).
+
+petta_length_compat_decls([
+    ['=', [length, '$expr'],
+     [let, '$tuple', [eval, '$expr'], [size-atom, '$tuple']]]
+]).

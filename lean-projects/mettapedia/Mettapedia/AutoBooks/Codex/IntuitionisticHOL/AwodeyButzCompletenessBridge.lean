@@ -1,6 +1,7 @@
 import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.Completeness
 import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.CanonicalBridge
 import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.AwodeyButzSemantics
+import Mettapedia.AutoBooks.Codex.IntuitionisticHOL.AwodeyButzHeytingPointModelBridge
 
 namespace Mettapedia.AutoBooks.Codex.IntuitionisticHOL
 
@@ -94,6 +95,137 @@ theorem awodey_butz_completeness_of_exists_beta_truth_counterexample
   exact awodey_butz_completeness_bridge_of_exists_beta_truth_counterexample
     (Base := Base) (Const := Const) t body hCounter
 
+/--
+Frontier-level consumer of the conjunction witness validity layer.
+
+This closes the remaining connective gap at the frontier layer so higher
+completeness-facing interfaces can reuse the full `and/or/imp` fragment
+uniformly.
+-/
+theorem awodey_butz_and_witness_top_of_truthValidSequent
+    (F : CompletenessFrontier Const Γ)
+    (φ ψ : Formula Const Γ)
+    (M : GlobalModel Base Const)
+    (hvalid :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.TruthValidSequent
+        (M := M) F.antecedents (Term.and φ ψ))
+    (γ :
+      (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+        (M := M) Γ).Carrier)
+    (hΔ :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+        (M := M) F.antecedents γ = ⊤) :
+    M.truth
+      ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+          (M := M)).decodeProp
+        ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := M)).fiberMeet
+          ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) φ γ)),
+              ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) ψ γ))), by simp⟩)) = ⊤ := by
+  exact HigherOrderPointHeytingGlobalModelBridge.and_formula_witness_top_of_truthValidSequent
+    (M := M) φ ψ hvalid γ hΔ
+
+/--
+Frontier-level consumer of the connective witness validity layer.
+
+This is the first completeness-facing theorem above the raw one-point bridge
+that uses the generic `TruthValidSequent` connective witness consumer directly.
+-/
+theorem awodey_butz_or_witness_top_of_truthValidSequent
+    (F : CompletenessFrontier Const Γ)
+    (φ ψ : Formula Const Γ)
+    (M : GlobalModel Base Const)
+    (hvalid :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.TruthValidSequent
+        (M := M) F.antecedents (Term.or φ ψ))
+    (γ :
+      (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+        (M := M) Γ).Carrier)
+    (hΔ :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+        (M := M) F.antecedents γ = ⊤) :
+    M.truth
+      ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+          (M := M)).decodeProp
+        ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := M)).fiberJoin
+          ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) φ γ)),
+              ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) ψ γ))), by simp⟩)) = ⊤ := by
+  refine
+    HigherOrderPointHeytingGlobalModelBridge.connective_formula_witness_top_of_truthValidSequent
+      (M := M) hvalid γ hΔ
+      ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+          (M := M)).fiberJoin
+        ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+              (M := M)).encodeProp
+              (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                (M := M) φ γ)),
+            ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+              (M := M)).encodeProp
+              (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                (M := M) ψ γ))), by simp⟩) ?_
+  exact HigherOrderPointHeytingGlobalModelBridge.connective_formula_witness_truth_eq_truthEval
+    (M := M) (Term.or φ ψ) γ
+    ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+        (M := M)).fiberJoin
+      ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := M)).encodeProp
+            (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+              (M := M) φ γ)),
+          ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := M)).encodeProp
+            (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+              (M := M) ψ γ))), by simp⟩)
+    (HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness_formula_or
+      (M := M) φ ψ γ)
+
+/--
+Second frontier-level consumer of the connective witness validity layer.
+
+This keeps the higher completeness-facing reuse from becoming `or`-specific by
+mirroring it on implication at the same abstraction level.
+-/
+theorem awodey_butz_imp_witness_top_of_truthValidSequent
+    (F : CompletenessFrontier Const Γ)
+    (φ ψ : Formula Const Γ)
+    (M : GlobalModel Base Const)
+    (hvalid :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.TruthValidSequent
+        (M := M) F.antecedents (Term.imp φ ψ))
+    (γ :
+      (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+        (M := M) Γ).Carrier)
+    (hΔ :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+        (M := M) F.antecedents γ = ⊤) :
+    M.truth
+      ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+          (M := M)).decodeProp
+        ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := M)).fiberHimp
+          ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) φ γ)),
+              ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) ψ γ))), by simp⟩)) = ⊤ := by
+  exact HigherOrderPointHeytingGlobalModelBridge.imp_formula_witness_top_of_truthValidSequent
+    (M := M) φ ψ hvalid γ hΔ
+
 end CompletenessFrontier
 
 namespace SoundLocalCountermodel
@@ -111,6 +243,136 @@ theorem awodey_butz_completeness
     (Base := Base) (Const := Const)
     ⟨C.model, W.env, W.global, W.antecedentTruth_eq_top, W.succedent_ne_top,
       C.supportsUniformRelativization⟩
+
+/--
+Sound-local transitive consumer of the frontier beta-specialized point
+counterexample route.
+-/
+theorem awodey_butz_completeness_of_exists_beta_truth_counterexample
+    {F : CompletenessFrontier Const Γ}
+    (C : SoundLocalCountermodel (Base := Base) (Const := Const) F)
+    {σ : Ty Base}
+    (t : Term Const Γ σ)
+    (body : Formula Const (σ :: Γ))
+    (hCounter :
+      ∃ (M : GlobalModel Base Const)
+        (γ :
+          (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+            (M := M) Γ).Carrier),
+        HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+            (M := M) F.antecedents γ = ⊤ ∧
+          HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthEval
+            (M := M) (instantiate t body) γ ≠ ⊤) :
+    ¬ Derivable (Base := Base) (Const := Const)
+      F.antecedents (.app (.lam body) t) := by
+  let _ : SemilocalModel Base Const := C.model
+  exact F.awodey_butz_completeness_of_exists_beta_truth_counterexample
+    (Base := Base) (Const := Const) t body hCounter
+
+/--
+Sound-local transitive consumer of the frontier disjunction witness-validity
+theorem.
+-/
+theorem awodey_butz_or_witness_top_of_truthValidSequent
+    {F : CompletenessFrontier Const Γ}
+    (C : SoundLocalCountermodel (Base := Base) (Const := Const) F)
+    (φ ψ : Formula Const Γ)
+    (M : GlobalModel Base Const)
+    (hvalid :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.TruthValidSequent
+        (M := M) F.antecedents (Term.or φ ψ))
+    (γ :
+      (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+        (M := M) Γ).Carrier)
+    (hΔ :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+        (M := M) F.antecedents γ = ⊤) :
+    M.truth
+      ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+          (M := M)).decodeProp
+        ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := M)).fiberJoin
+          ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) φ γ)),
+              ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) ψ γ))), by simp⟩)) = ⊤ := by
+  let _ : SemilocalModel Base Const := C.model
+  exact F.awodey_butz_or_witness_top_of_truthValidSequent
+    (Base := Base) (Const := Const) φ ψ M hvalid γ hΔ
+
+/--
+Sound-local transitive consumer of the frontier conjunction witness-validity
+theorem.
+-/
+theorem awodey_butz_and_witness_top_of_truthValidSequent
+    {F : CompletenessFrontier Const Γ}
+    (C : SoundLocalCountermodel (Base := Base) (Const := Const) F)
+    (φ ψ : Formula Const Γ)
+    (M : GlobalModel Base Const)
+    (hvalid :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.TruthValidSequent
+        (M := M) F.antecedents (Term.and φ ψ))
+    (γ :
+      (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+        (M := M) Γ).Carrier)
+    (hΔ :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+        (M := M) F.antecedents γ = ⊤) :
+    M.truth
+      ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+          (M := M)).decodeProp
+        ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := M)).fiberMeet
+          ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) φ γ)),
+              ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) ψ γ))), by simp⟩)) = ⊤ := by
+  let _ : SemilocalModel Base Const := C.model
+  exact F.awodey_butz_and_witness_top_of_truthValidSequent
+    (Base := Base) (Const := Const) φ ψ M hvalid γ hΔ
+
+/--
+Sound-local transitive consumer of the frontier implication witness-validity
+theorem.
+-/
+theorem awodey_butz_imp_witness_top_of_truthValidSequent
+    {F : CompletenessFrontier Const Γ}
+    (C : SoundLocalCountermodel (Base := Base) (Const := Const) F)
+    (φ ψ : Formula Const Γ)
+    (M : GlobalModel Base Const)
+    (hvalid :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.TruthValidSequent
+        (M := M) F.antecedents (Term.imp φ ψ))
+    (γ :
+      (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+        (M := M) Γ).Carrier)
+    (hΔ :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+        (M := M) F.antecedents γ = ⊤) :
+    M.truth
+      ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+          (M := M)).decodeProp
+        ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := M)).fiberHimp
+          ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) φ γ)),
+              ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) ψ γ))), by simp⟩)) = ⊤ := by
+  let _ : SemilocalModel Base Const := C.model
+  exact F.awodey_butz_imp_witness_top_of_truthValidSequent
+    (Base := Base) (Const := Const) φ ψ M hvalid γ hΔ
 
 end SoundLocalCountermodel
 
@@ -147,6 +409,164 @@ theorem awodey_butz_completeness
     ¬ Derivable (Base := Base) (Const := Const) F.antecedents F.succedent := by
   exact (S.toClosedSoundLocalCountermodel global hM).awodey_butz_completeness
 
+/--
+Derivation-level transitive consumer of the sound-local beta-specialized point
+counterexample route.
+-/
+theorem awodey_butz_completeness_of_exists_beta_truth_counterexample
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    {D : CertifiedHeadPriorityDerivation Const Γ F}
+    {terminal : D.state.IsTerminal}
+    {branchClosed : D.state.hintikka.BranchClosed}
+    {env : SemilocalModel.Env M Γ}
+    (S : CandidateClosedHintikkaSemantics D terminal branchClosed env)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (hM : SemilocalModel.SupportsUniformRelativization M)
+    {σ : Ty Base}
+    (t : Term Const Γ σ)
+    (body : Formula Const (σ :: Γ))
+    (hCounter :
+      ∃ (G : GlobalModel Base Const)
+        (γ :
+          (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+            (M := G) Γ).Carrier),
+        HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+            (M := G) F.antecedents γ = ⊤ ∧
+          HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthEval
+            (M := G) (instantiate t body) γ ≠ ⊤) :
+    ¬ Derivable (Base := Base) (Const := Const)
+      F.antecedents (.app (.lam body) t) := by
+  let CM := S.toClosedSoundLocalCountermodel global hM
+  exact CM.awodey_butz_completeness_of_exists_beta_truth_counterexample
+    (Base := Base) (Const := Const) t body hCounter
+
+/--
+Derivation-level transitive consumer of the sound-local conjunction
+witness-validity theorem.
+-/
+theorem awodey_butz_and_witness_top_of_truthValidSequent
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    {D : CertifiedHeadPriorityDerivation Const Γ F}
+    {terminal : D.state.IsTerminal}
+    {branchClosed : D.state.hintikka.BranchClosed}
+    {env : SemilocalModel.Env M Γ}
+    (S : CandidateClosedHintikkaSemantics D terminal branchClosed env)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (hM : SemilocalModel.SupportsUniformRelativization M)
+    (φ ψ : Formula Const Γ)
+    (G : GlobalModel Base Const)
+    (hvalid :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.TruthValidSequent
+        (M := G) F.antecedents (Term.and φ ψ))
+    (γ :
+      (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+        (M := G) Γ).Carrier)
+    (hΔ :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+        (M := G) F.antecedents γ = ⊤) :
+    G.truth
+      ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+          (M := G)).decodeProp
+        ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := G)).fiberMeet
+          ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := G)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := G) φ γ)),
+              ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := G)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := G) ψ γ))), by simp⟩)) = ⊤ := by
+  let CM := S.toClosedSoundLocalCountermodel global hM
+  exact CM.awodey_butz_and_witness_top_of_truthValidSequent
+    (Base := Base) (Const := Const) φ ψ G hvalid γ hΔ
+
+/--
+Derivation-level transitive consumer of the sound-local disjunction
+witness-validity theorem.
+-/
+theorem awodey_butz_or_witness_top_of_truthValidSequent
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    {D : CertifiedHeadPriorityDerivation Const Γ F}
+    {terminal : D.state.IsTerminal}
+    {branchClosed : D.state.hintikka.BranchClosed}
+    {env : SemilocalModel.Env M Γ}
+    (S : CandidateClosedHintikkaSemantics D terminal branchClosed env)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (hM : SemilocalModel.SupportsUniformRelativization M)
+    (φ ψ : Formula Const Γ)
+    (G : GlobalModel Base Const)
+    (hvalid :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.TruthValidSequent
+        (M := G) F.antecedents (Term.or φ ψ))
+    (γ :
+      (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+        (M := G) Γ).Carrier)
+    (hΔ :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+        (M := G) F.antecedents γ = ⊤) :
+    G.truth
+      ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+          (M := G)).decodeProp
+        ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := G)).fiberJoin
+          ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := G)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := G) φ γ)),
+              ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := G)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := G) ψ γ))), by simp⟩)) = ⊤ := by
+  let CM := S.toClosedSoundLocalCountermodel global hM
+  exact CM.awodey_butz_or_witness_top_of_truthValidSequent
+    (Base := Base) (Const := Const) φ ψ G hvalid γ hΔ
+
+/--
+Derivation-level transitive consumer of the sound-local implication
+witness-validity theorem.
+-/
+theorem awodey_butz_imp_witness_top_of_truthValidSequent
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    {D : CertifiedHeadPriorityDerivation Const Γ F}
+    {terminal : D.state.IsTerminal}
+    {branchClosed : D.state.hintikka.BranchClosed}
+    {env : SemilocalModel.Env M Γ}
+    (S : CandidateClosedHintikkaSemantics D terminal branchClosed env)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (hM : SemilocalModel.SupportsUniformRelativization M)
+    (φ ψ : Formula Const Γ)
+    (G : GlobalModel Base Const)
+    (hvalid :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.TruthValidSequent
+        (M := G) F.antecedents (Term.imp φ ψ))
+    (γ :
+      (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+        (M := G) Γ).Carrier)
+    (hΔ :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+        (M := G) F.antecedents γ = ⊤) :
+    G.truth
+      ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+          (M := G)).decodeProp
+        ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := G)).fiberHimp
+          ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := G)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := G) φ γ)),
+              ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := G)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := G) ψ γ))), by simp⟩)) = ⊤ := by
+  let CM := S.toClosedSoundLocalCountermodel global hM
+  exact CM.awodey_butz_imp_witness_top_of_truthValidSequent
+    (Base := Base) (Const := Const) φ ψ G hvalid γ hΔ
+
 end CandidateClosedHintikkaSemantics
 
 end CertifiedHeadPriorityDerivation
@@ -175,6 +595,164 @@ theorem awodey_butz_completeness
       (branchClosed := C.completion.branchClosed)
       (env := env)
       S global hM
+
+/--
+Certified completion-level transitive consumer of the derivation-level
+beta-specialized point counterexample route.
+-/
+theorem awodey_butz_completeness_of_exists_beta_truth_counterexample
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    {env : SemilocalModel.Env M Γ}
+    (S : CandidateClosedHintikkaSemantics C env)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (hM : SemilocalModel.SupportsUniformRelativization M)
+    {σ : Ty Base}
+    (t : Term Const Γ σ)
+    (body : Formula Const (σ :: Γ))
+    (hCounter :
+      ∃ (G : GlobalModel Base Const)
+        (γ :
+          (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+            (M := G) Γ).Carrier),
+        HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+            (M := G) F.antecedents γ = ⊤ ∧
+          HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthEval
+            (M := G) (instantiate t body) γ ≠ ⊤) :
+    ¬ Derivable (Base := Base) (Const := Const)
+      F.antecedents (.app (.lam body) t) := by
+  exact
+    CertifiedHeadPriorityDerivation.CandidateClosedHintikkaSemantics.awodey_butz_completeness_of_exists_beta_truth_counterexample
+      (D := C.toCertifiedDerivation)
+      (terminal := C.completion.terminal)
+      (branchClosed := C.completion.branchClosed)
+      (env := env)
+      S global hM t body hCounter
+
+/--
+Certified completion-level transitive consumer of the sound-local conjunction
+witness-validity theorem.
+-/
+theorem awodey_butz_and_witness_top_of_truthValidSequent
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    {env : SemilocalModel.Env M Γ}
+    (S : CandidateClosedHintikkaSemantics C env)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (hM : SemilocalModel.SupportsUniformRelativization M)
+    (φ ψ : Formula Const Γ)
+    (G : GlobalModel Base Const)
+    (hvalid :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.TruthValidSequent
+        (M := G) F.antecedents (Term.and φ ψ))
+    (γ :
+      (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+        (M := G) Γ).Carrier)
+    (hΔ :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+        (M := G) F.antecedents γ = ⊤) :
+    G.truth
+      ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+          (M := G)).decodeProp
+        ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := G)).fiberMeet
+          ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := G)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := G) φ γ)),
+              ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := G)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := G) ψ γ))), by simp⟩)) = ⊤ := by
+  let CM := C.toClosedSoundLocalCountermodelOfSemantics env global S hM
+  exact CM.awodey_butz_and_witness_top_of_truthValidSequent
+    (Base := Base) (Const := Const) φ ψ G hvalid γ hΔ
+
+/--
+Certified completion-level transitive consumer of the sound-local disjunction
+witness-validity theorem.
+-/
+theorem awodey_butz_or_witness_top_of_truthValidSequent
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    {env : SemilocalModel.Env M Γ}
+    (S : CandidateClosedHintikkaSemantics C env)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (hM : SemilocalModel.SupportsUniformRelativization M)
+    (φ ψ : Formula Const Γ)
+    (G : GlobalModel Base Const)
+    (hvalid :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.TruthValidSequent
+        (M := G) F.antecedents (Term.or φ ψ))
+    (γ :
+      (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+        (M := G) Γ).Carrier)
+    (hΔ :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+        (M := G) F.antecedents γ = ⊤) :
+    G.truth
+      ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+          (M := G)).decodeProp
+        ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := G)).fiberJoin
+          ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := G)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := G) φ γ)),
+              ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := G)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := G) ψ γ))), by simp⟩)) = ⊤ := by
+  let CM := C.toClosedSoundLocalCountermodelOfSemantics env global S hM
+  exact CM.awodey_butz_or_witness_top_of_truthValidSequent
+    (Base := Base) (Const := Const) φ ψ G hvalid γ hΔ
+
+/--
+Certified completion-level transitive consumer of the derivation-level
+implication witness-validity theorem.
+-/
+theorem awodey_butz_imp_witness_top_of_truthValidSequent
+    {F : CompletenessFrontier Const Γ}
+    {M : SemilocalModel Base Const}
+    (C : CertifiedHeadPriorityCompletion Const Γ F)
+    {env : SemilocalModel.Env M Γ}
+    (S : CandidateClosedHintikkaSemantics C env)
+    (global : SemilocalModel.IsGlobalEnv M env)
+    (hM : SemilocalModel.SupportsUniformRelativization M)
+    (φ ψ : Formula Const Γ)
+    (G : GlobalModel Base Const)
+    (hvalid :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.TruthValidSequent
+        (M := G) F.antecedents (Term.imp φ ψ))
+    (γ :
+      (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+        (M := G) Γ).Carrier)
+    (hΔ :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+        (M := G) F.antecedents γ = ⊤) :
+    G.truth
+      ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+          (M := G)).decodeProp
+        ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := G)).fiberHimp
+          ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := G)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := G) φ γ)),
+              ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := G)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := G) ψ γ))), by simp⟩)) = ⊤ := by
+  exact
+    CertifiedHeadPriorityDerivation.CandidateClosedHintikkaSemantics.awodey_butz_imp_witness_top_of_truthValidSequent
+      (D := C.toCertifiedDerivation)
+      (terminal := C.completion.terminal)
+      (branchClosed := C.completion.branchClosed)
+      (env := env)
+      S global hM φ ψ G hvalid γ hΔ
 
 end CandidateClosedHintikkaSemantics
 
@@ -212,6 +790,105 @@ theorem awodey_butz_completeness_of_exists_candidateClosedHintikkaSemantics
       C.frontier.antecedents C.frontier.succedent := by
   rcases hSem with ⟨M, env, global, ⟨S⟩, hM⟩
   exact S.awodey_butz_completeness global hM
+
+/--
+Candidate-level transitive consumer of the frontier conjunction witness-validity
+theorem.
+-/
+theorem awodey_butz_and_witness_top_of_truthValidSequent
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (φ ψ : Formula Const Γ)
+    (M : GlobalModel Base Const)
+    (hvalid :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.TruthValidSequent
+        (M := M) C.frontier.antecedents (Term.and φ ψ))
+    (γ :
+      (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+        (M := M) Γ).Carrier)
+    (hΔ :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+        (M := M) C.frontier.antecedents γ = ⊤) :
+    M.truth
+      ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+          (M := M)).decodeProp
+        ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := M)).fiberMeet
+          ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) φ γ)),
+              ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) ψ γ))), by simp⟩)) = ⊤ := by
+  exact C.frontier.awodey_butz_and_witness_top_of_truthValidSequent
+    (Base := Base) (Const := Const) φ ψ M hvalid γ hΔ
+
+/--
+Candidate-level transitive consumer of the frontier disjunction witness-validity
+theorem.
+-/
+theorem awodey_butz_or_witness_top_of_truthValidSequent
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (φ ψ : Formula Const Γ)
+    (M : GlobalModel Base Const)
+    (hvalid :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.TruthValidSequent
+        (M := M) C.frontier.antecedents (Term.or φ ψ))
+    (γ :
+      (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+        (M := M) Γ).Carrier)
+    (hΔ :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+        (M := M) C.frontier.antecedents γ = ⊤) :
+    M.truth
+      ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+          (M := M)).decodeProp
+        ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := M)).fiberJoin
+          ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) φ γ)),
+              ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) ψ γ))), by simp⟩)) = ⊤ := by
+  exact C.frontier.awodey_butz_or_witness_top_of_truthValidSequent
+    (Base := Base) (Const := Const) φ ψ M hvalid γ hΔ
+
+/--
+Candidate-level transitive consumer of the frontier implication witness-validity
+theorem.
+-/
+theorem awodey_butz_imp_witness_top_of_truthValidSequent
+    (C : CertifiedCountermodelCandidate Const Γ)
+    (φ ψ : Formula Const Γ)
+    (M : GlobalModel Base Const)
+    (hvalid :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.TruthValidSequent
+        (M := M) C.frontier.antecedents (Term.imp φ ψ))
+    (γ :
+      (HigherOrderPointTopologicalGlobalModelBridge.basicInterp.ctxSpace
+        (M := M) Γ).Carrier)
+    (hΔ :
+      HigherOrderPointTopologicalGlobalModelBridge.basicInterp.truthAntecedent
+        (M := M) C.frontier.antecedents γ = ⊤) :
+    M.truth
+      ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+          (M := M)).decodeProp
+        ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+            (M := M)).fiberHimp
+          ⟨(((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) φ γ)),
+              ((HigherOrderPointHeytingGlobalModelBridge.concreteOnePointPropositionWitness
+                (M := M)).encodeProp
+                (HigherOrderPointHeytingGlobalModelBridge.pointFormulaValue
+                  (M := M) ψ γ))), by simp⟩)) = ⊤ := by
+  exact C.frontier.awodey_butz_imp_witness_top_of_truthValidSequent
+    (Base := Base) (Const := Const) φ ψ M hvalid γ hΔ
 
 /--
 Candidate-level forwarder for the beta-specialized one-point counterexample

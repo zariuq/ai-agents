@@ -223,12 +223,48 @@ postprocess_toplevel_atoms(he_to_petta, Atoms, TAtoms0, TAtoms) :-
     ).
 postprocess_toplevel_atoms(he_to_petta_trusted, Atoms, TAtoms0, TAtoms) :-
     postprocess_toplevel_atoms(he_to_petta, Atoms, TAtoms0, TAtoms).
+postprocess_toplevel_atoms(Direction, Atoms, TAtoms0, TAtoms) :-
+    petta_to_he_direction(Direction),
+    maybe_prepend_petta_compat_items(Atoms, TAtoms0, TAtoms), !.
 postprocess_toplevel_atoms(_, _, TAtoms, TAtoms).
 
 is_obsolete_bool_and_item(plain(Expr)) :-
     obsolete_bool_and_rule(Expr).
 is_obsolete_bool_and_item(_) :-
     fail.
+
+petta_to_he_direction(petta_to_he).
+petta_to_he_direction(petta_to_he_trusted).
+petta_to_he_direction(petta_to_he_raw).
+petta_to_he_direction(petta_to_he_extended).
+petta_to_he_direction(petta_to_he_extended_raw).
+
+maybe_prepend_petta_compat_items(SourceAtoms, TAtoms0, TAtoms) :-
+    (   source_program_uses_length(SourceAtoms),
+        \+ source_program_defines_length(SourceAtoms)
+    ->  petta_length_compat_items(CompatItems),
+        append(CompatItems, TAtoms0, TAtoms)
+    ;   TAtoms = TAtoms0
+    ).
+
+source_program_uses_length(Term) :-
+    is_list(Term),
+    (   Term = [length, _]
+    ;   member(Subterm, Term),
+        source_program_uses_length(Subterm)
+    ).
+
+source_program_uses_length(_) :-
+    fail.
+
+source_program_defines_length([['=', [length|_], _]|_]) :- !.
+source_program_defines_length([_|Rest]) :-
+    source_program_defines_length(Rest).
+
+petta_length_compat_items([
+    plain(['=', [length, '$expr'],
+           [let, '$tuple', [eval, '$expr'], [size-atom, '$tuple']]])
+]).
 
 %% ── Local module/path compatibility for translated files ────────
 

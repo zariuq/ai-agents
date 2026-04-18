@@ -484,6 +484,16 @@ The answer affects what matchers must reject, what tables can store safely,
 and what alpha-equivalence means.  Settling this is prerequisite to
 serious tabling and compiled-lane work.
 
+One promising discipline, especially for future relation-compiled lanes,
+is to split unification into two interfaces: a \emph{guard predicate}
+(``does a match exist?'') and a deterministic \emph{binding extractor}
+(``what substitution does this chosen match induce?'').  Positive
+example: a rho-style COMM lane can let the guard participate in
+search/saturation while delaying substitution construction until a
+rewrite actually fires.  Negative example: one monolithic unification
+hook that entangles search branching, fixpoint existence, and binding
+materialization.
+
 \subsection{Clouds of Possibility}
 
 \begin{description}
@@ -680,6 +690,12 @@ Many queries need only partial results:
 These are not mere conveniences.  For large nondeterministic searches,
 bounded demand is the difference between ``finishes in milliseconds'' and
 ``runs forever computing unused results.''
+
+This is not only a usability issue.  In fragments with multiset or
+bag-style pattern matching (rho-style COMM, certain PLN conjunctions),
+enumerating all compatible matches is combinatorial in the worst case.
+For those lanes, \code{once}, \code{select k}, and related demand bounds
+are part of the tractability contract, not just presentation knobs.
 
 The challenge: threading demand through an eager evaluator.  Options include
 generator-style suspension (yield and resume), explicit demand tokens
@@ -1164,6 +1180,13 @@ flag could enable those divergences intentionally, allowing \CeTTa{}
 to run \PeTTa{} benchmarks without claiming they're \HE{}-compliant.
 Useful for performance comparison and migration.
 
+But \code{--lang petta} is not the hardest dialect pressure test.
+Because it stresses reflection, multiset matching, channel/name
+capabilities, and concurrency semantics, a future \code{--lang
+rhocalc} may be the more revealing test of whether the shared search
+waist is genuinely dialect-parametric rather than merely tolerant of
+surface syntax variation.
+
 \subsection{PLN/ATP as Optional Lanes}
 
 Backward chaining, forward chaining, ATP integration (Lash-style or
@@ -1192,6 +1215,15 @@ This could enable:
 Open question: how much rho-calculus machinery does \CeTTa{} need versus
 borrow?  Full Rholang compilation?  A lightweight embedding?  A translation
 layer that preserves key properties?
+
+Reflection also sharpens the future liveness/GC story.  If reified
+spaces can be inspected ambiently, hidden names can leak and naive
+reachability notions break under lookahead.  Any future GC theory for
+reified spaces should therefore be deployment-relative and
+capability-disciplined: a process inspects a space only if it was
+explicitly given that capability.  This is a plausible later Lean
+formalization target once reflective spaces become first-class in the
+runtime story.
 
 %% ════════════════════════════════════════════════════════════════════
 \section{The Cloud of Forks}

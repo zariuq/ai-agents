@@ -1410,7 +1410,7 @@ explicit beta redex.
 -/
 theorem evalInstantiate_eq_reindex_cons
     (I : HeytingTopologicalInterpretation Base Const X)
-    [hcoh : FullEvalCoherent I]
+    [FullEvalPointwiseCoherent I]
     {Γ : Ctx Base} {σ : Ty Base}
     (t : Term Const Γ σ) (φ : Formula Const (σ :: Γ)) :
     (fullEval I φ).reindex
@@ -1549,16 +1549,13 @@ Pointwise beta reduction agrees with evaluation through semantic instantiation.
       I.formulaEval (instantiate t φ) γ := by
   calc
     I.formulaEval (.app (.lam φ) t) γ =
-        I.toTopologicalInterpretation.propCtxEval
-          ((fullEval I φ).reindex
-            (TopologicalInterpretation.CtxHom.cons (fullEval I t)
-              (TopologicalInterpretation.CtxHom.id I.toTopologicalInterpretation Γ))) γ := by
-          rw [formulaEval, fullEval_app_lam]
-    _ = I.toTopologicalInterpretation.propCtxEval
-          (I.evalInstantiate t (fullEval I φ)) γ := by
-          rw [evalInstantiate_eq_reindex_cons]
+        I.toTopologicalInterpretation.propCtxEval (fullEval I (.app (.lam φ) t)) γ := by
+          rw [formulaEval]
+    _ = I.toTopologicalInterpretation.propCtxEval (fullEval I (instantiate t φ)) γ := by
+          congr 1
+          exact fullEval_betaEtaEq I (BetaEtaEq.beta t φ)
     _ = I.formulaEval (instantiate t φ) γ := by
-          rw [formulaEval, ← fullEval_instantiate]
+          rw [formulaEval]
 
 /--
 Weakening antecedents agrees pointwise with semantic weakening:
