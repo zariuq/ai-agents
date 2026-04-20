@@ -78,6 +78,17 @@ theorem c2w_nonneg (c : ℝ) : 0 ≤ c2w c := by
   have hcc1pos : 0 < 1 - cc := by linarith
   simpa [cc] using div_nonneg hcc0 (le_of_lt hcc1pos)
 
+/-- Corrected revision surface used by the evidence bridge. This is the
+weight-sum / `w2c` view justified by BinaryEvidence addition, without the
+upstream-main confidence floor clamp. -/
+noncomputable def truthRevisionCorrected (t1 t2 : TV) : TV :=
+  let w1 := c2w t1.c
+  let w2 := c2w t2.c
+  let w := w1 + w2
+  let f := safeDiv (w1 * t1.s + w2 * t2.s) w
+  let c := w2c w
+  ⟨min 1 f, min 1 c⟩
+
 /-- Revision confidence agrees with `BinaryEvidence.toConfidence` after mapping STVs to evidence and
 adding, assuming a single finite `κ`. -/
 theorem truthRevision_conf_eq_toConfidence
@@ -85,7 +96,7 @@ theorem truthRevision_conf_eq_toConfidence
     (t1 t2 : TV)
     (hs1 : 0 ≤ t1.s) (hs1' : t1.s ≤ 1)
     (hs2 : 0 ≤ t2.s) (hs2' : t2.s ≤ 1) :
-    (truthRevision t1 t2).c =
+    (truthRevisionCorrected t1 t2).c =
       (BinaryEvidence.toConfidence (κ := κ) (TV.toEvidence κ t1 + TV.toEvidence κ t2)).toReal := by
   -- Expand the BinaryEvidence side.
   have ht1 : (TV.toEvidence κ t1).total =
@@ -191,7 +202,7 @@ theorem truthRevision_conf_eq_toConfidence
   -- Now expand both `truthRevision` and the BinaryEvidence side.
   -- `hconf` rewrites the BinaryEvidence confidence to `((w1E+w2E)/(w1E+w2E+1)).toReal`.
   -- Then `toReal_div` + the `toReal_add` computations above finish.
-  simp [truthRevision, hconf, ENNReal.toReal_div, hwsum_toReal, hwsum1_toReal,
+  simp [truthRevisionCorrected, hconf, ENNReal.toReal_div, hwsum_toReal, hwsum1_toReal,
     w2c_eq_div_of_nonneg _ hw_nonneg, hmin]
 
 /-- Revision strength agrees with `BinaryEvidence.toStrength` after mapping STVs to evidence and adding,
@@ -201,7 +212,7 @@ theorem truthRevision_strength_eq_toStrength
     (t1 t2 : TV)
     (hs1 : 0 ≤ t1.s) (hs1' : t1.s ≤ 1)
     (hs2 : 0 ≤ t2.s) (hs2' : t2.s ≤ 1) :
-    (truthRevision t1 t2).s =
+    (truthRevisionCorrected t1 t2).s =
       (BinaryEvidence.toStrength (TV.toEvidence κ t1 + TV.toEvidence κ t2)).toReal := by
   -- Real weights used by the MeTTa revision formula.
   set w1 : ℝ := c2w t1.c
@@ -233,8 +244,8 @@ theorem truthRevision_strength_eq_toStrength
   have hmin : min 1 (safeDiv (w1 * t1.s + w2 * t2.s) w) = safeDiv (w1 * t1.s + w2 * t2.s) w :=
     min_eq_right hf_le
 
-  have lhs : (truthRevision t1 t2).s = safeDiv (w1 * t1.s + w2 * t2.s) w := by
-    simp [truthRevision, w1, w2, w, hmin]
+  have lhs : (truthRevisionCorrected t1 t2).s = safeDiv (w1 * t1.s + w2 * t2.s) w := by
+    simp [truthRevisionCorrected, w1, w2, w, hmin]
 
   -- ENNReal weights (the BinaryEvidence-side analogue of `w1`, `w2`).
   set w1E : ℝ≥0∞ := ENNReal.ofReal (capConf t1.c) / ENNReal.ofReal (1 - capConf t1.c)
@@ -366,7 +377,7 @@ theorem truthRevision_strength_eq_toStrength
 
     -- Combine everything.
     calc
-      (truthRevision t1 t2).s = safeDiv (w1 * t1.s + w2 * t2.s) w := lhs
+      (truthRevisionCorrected t1 t2).s = safeDiv (w1 * t1.s + w2 * t2.s) w := lhs
       _ = (w1 * t1.s + w2 * t2.s) / w := by simp [hsafediv]
       _ = (t1.s * w1 + t2.s * w2) / w := by ring
       _ = (BinaryEvidence.toStrength (TV.toEvidence κ t1 + TV.toEvidence κ t2)).toReal := by
@@ -379,23 +390,24 @@ theorem truthRevision_eq_toTV_hplus
     (t1 t2 : TV)
     (hs1 : 0 ≤ t1.s) (hs1' : t1.s ≤ 1)
     (hs2 : 0 ≤ t2.s) (hs2' : t2.s ≤ 1) :
-    truthRevision t1 t2 = BinaryEvidence.toTV κ (TV.toEvidence κ t1 + TV.toEvidence κ t2) := by
+    truthRevisionCorrected t1 t2 = BinaryEvidence.toTV κ (TV.toEvidence κ t1 + TV.toEvidence κ t2) := by
   -- Reduce to equality of the two fields.
   have hs :
-      (truthRevision t1 t2).s = (BinaryEvidence.toTV κ (TV.toEvidence κ t1 + TV.toEvidence κ t2)).s := by
+      (truthRevisionCorrected t1 t2).s = (BinaryEvidence.toTV κ (TV.toEvidence κ t1 + TV.toEvidence κ t2)).s := by
     simpa [BinaryEvidence.toTV] using
       (truthRevision_strength_eq_toStrength (κ := κ) hκ0 hκT t1 t2 hs1 hs1' hs2 hs2')
   have hc :
-      (truthRevision t1 t2).c = (BinaryEvidence.toTV κ (TV.toEvidence κ t1 + TV.toEvidence κ t2)).c := by
+      (truthRevisionCorrected t1 t2).c = (BinaryEvidence.toTV κ (TV.toEvidence κ t1 + TV.toEvidence κ t2)).c := by
     -- `truthRevision_conf_eq_toConfidence` is stated directly against `toConfidence`, which is
     -- exactly the confidence coordinate of `BinaryEvidence.toTV`.
     simpa [BinaryEvidence.toTV] using
       (truthRevision_conf_eq_toConfidence (κ := κ) hκ0 hκT t1 t2 hs1 hs1' hs2 hs2')
   -- Rebuild the `TV` from its coordinates on both sides.
   calc
-    truthRevision t1 t2 = TV.mk (truthRevision t1 t2).s (truthRevision t1 t2).c := by
+    truthRevisionCorrected t1 t2 =
+        TV.mk (truthRevisionCorrected t1 t2).s (truthRevisionCorrected t1 t2).c := by
       symm
-      exact TV.eta (truthRevision t1 t2)
+      exact TV.eta (truthRevisionCorrected t1 t2)
     _ = TV.mk (BinaryEvidence.toTV κ (TV.toEvidence κ t1 + TV.toEvidence κ t2)).s
           (BinaryEvidence.toTV κ (TV.toEvidence κ t1 + TV.toEvidence κ t2)).c := by
       simp [hs, hc]

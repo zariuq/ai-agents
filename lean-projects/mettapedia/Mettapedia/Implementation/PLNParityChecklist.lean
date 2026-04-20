@@ -53,7 +53,14 @@ It is intentionally *not* a prose paper section (no `.md`), just a compiler-chec
 
 ## MeTTa Libraries: Truth-Function Coverage
 
-### PeTTa PLN (`hyperon/PeTTa/lib/lib_pln.metta`)
+### PeTTa PLN main mirror (`hyperon/PeTTa/lib/lib_pln.metta`)
+
+Audit provenance:
+
+- the Lean mirror tracks `trueagi-io/PeTTa` `main` commit
+  `dec4505f33aaac266aefbc469f2cf85400c5a455`
+- public upstream-main reference:
+  `https://github.com/trueagi-io/PeTTa/blob/main/lib/lib_pln.metta`
 
 Preferred discussion surface:
 
@@ -78,7 +85,7 @@ Rule-status dashboard:
 | Conjunction (hypergeometric regime) | `truthConjunctionHypergeometric` | finite-population modal regime |
 | Mirror-only heuristic extras | `truthInversion`, `truthEquivalenceToImplication`, `truthTransitiveSimilarity`, `truthEvaluationImplication` | compare in `PeTTaLibPLNFormalAnalysis` |
 
-Selected WM-backed additions not present in the current PeTTa library:
+Selected WM-backed additions not present in current upstream PeTTa main:
 
 - `truthPredictiveImplicationConservative`
   - conservative scalar lifting of the Chapter-14 predictive-implication lane

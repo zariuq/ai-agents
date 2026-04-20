@@ -40,7 +40,7 @@ Quick map for readers:
   - `truthDeductionConservative`
   - `truthModusPonensConservative`
   - `truthSymmetricModusPonensConservative`
-* Additional WM-backed TV surfaces not present in the current PeTTa library:
+* Additional WM-backed TV surfaces not present in current upstream PeTTa main:
   - `truthPredictiveImplicationConservative`
   - `truthConjunctionConditionalConservative`
   - `truthConjunctionIndependentEvidenceStyle`
@@ -74,7 +74,13 @@ def toMettaTV (t : TV) : MettaTV := t
 /-! ## Exact WM-backed rules -/
 
 /-- Exact TV-level revision rule, justified by BinaryEvidence aggregation. -/
-noncomputable abbrev truthRevision := Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthRevision
+noncomputable def truthRevision (t1 t2 : TV) : TV :=
+  let w1 := Mettapedia.Logic.PeTTaLibPLNTruthFunctions.c2w t1.c
+  let w2 := Mettapedia.Logic.PeTTaLibPLNTruthFunctions.c2w t2.c
+  let w := w1 + w2
+  let f := Mettapedia.Logic.PeTTaLibPLNTruthFunctions.safeDiv (w1 * t1.s + w2 * t2.s) w
+  let c := Mettapedia.Logic.PeTTaLibPLNTruthFunctions.w2c w
+  ⟨min 1 f, min 1 c⟩
 
 theorem truthRevision_strength_eq_toStrength
     (κ : ENNReal) (hκ0 : κ ≠ 0) (hκT : κ ≠ ⊤)
@@ -129,11 +135,17 @@ theorem truthRevision_eq_toTV_hplus
 /-- Exact induction rule currently justified in Lean:
 strength from the Bayes+dediuction derivation, confidence from the corrected
 weight-space minimum (equivalently min of capped confidences). -/
-noncomputable abbrev truthInduction := Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction
+noncomputable def truthInduction (a b c ba bc : TV) : TV :=
+  let s := plnInductionStrength ba.s bc.s a.s b.s c.s
+  let conf :=
+    Mettapedia.Logic.PeTTaLibPLNTruthFunctions.w2c
+      (min (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.c2w ba.c)
+           (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.c2w bc.c))
+  ⟨s, conf⟩
 
 theorem truthInduction_strength_eq (a b c ba bc : TV) :
-    (truthInduction a b c ba bc).s = plnInductionStrength ba.s bc.s a.s b.s c.s :=
-  Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction_s_eq a b c ba bc
+    (truthInduction a b c ba bc).s = plnInductionStrength ba.s bc.s a.s b.s c.s := by
+  simp [truthInduction]
 
 theorem truthInduction_conf_eq_min_capped (a b c ba bc : TV) :
     (truthInduction a b c ba bc).c = min (capConf ba.c) (capConf bc.c) := by
@@ -151,11 +163,17 @@ theorem truthInduction_conf_le_inputs
 /-- Exact abduction rule currently justified in Lean:
 strength from the Bayes+dediuction derivation, confidence from the corrected
 weight-space minimum (equivalently min of capped confidences). -/
-noncomputable abbrev truthAbduction := Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthAbduction
+noncomputable def truthAbduction (a b c ab cb : TV) : TV :=
+  let s := plnAbductionStrength ab.s cb.s a.s b.s c.s
+  let conf :=
+    Mettapedia.Logic.PeTTaLibPLNTruthFunctions.w2c
+      (min (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.c2w ab.c)
+           (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.c2w cb.c))
+  ⟨s, conf⟩
 
 theorem truthAbduction_strength_eq (a b c ab cb : TV) :
-    (truthAbduction a b c ab cb).s = plnAbductionStrength ab.s cb.s a.s b.s c.s :=
-  Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthAbduction_s_eq a b c ab cb
+    (truthAbduction a b c ab cb).s = plnAbductionStrength ab.s cb.s a.s b.s c.s := by
+  simp [truthAbduction]
 
 theorem truthAbduction_conf_eq_min_capped (a b c ab cb : TV) :
     (truthAbduction a b c ab cb).c = min (capConf ab.c) (capConf cb.c) := by
@@ -259,13 +277,13 @@ theorem truthSymmetricModusPonens_conf_le_inputs
   · exact min_le_right _ _
   · exact le_trans (min_le_left _ _) (min_le_left _ _)
 
-/-! ## Additional WM-backed rule surfaces absent from the current PeTTa library
+/-! ## Additional WM-backed rule surfaces absent from current upstream PeTTa main
 
 These are constructive additions from the WM side of the development.
 
 They are included here because the underlying WM theory is already real and
-useful, even though the current PeTTa/OpenCog-style `lib_pln.metta` does not
-ship them as first-class truth functions.
+useful, even though the current upstream PeTTa/OpenCog-style `lib_pln.metta`
+line does not ship them as first-class truth functions.
 -/
 
 /-- Conservative TV-level predictive implication application.

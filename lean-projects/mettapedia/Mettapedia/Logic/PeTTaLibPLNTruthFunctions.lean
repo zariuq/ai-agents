@@ -15,10 +15,11 @@ open Mettapedia.Logic.PLNInferenceRules
 This file is a transparent Lean transcription of the numerical truth-value rules in:
 
 * `/home/zar/claude/hyperon/PeTTa/lib/lib_pln.metta`
+* `https://github.com/trueagi-io/PeTTa/blob/main/lib/lib_pln.metta`
 
 at PeTTa commit:
 
-* `20dc6937b5790300e5151701a0d3f49aff36b1fa`
+* `dec4505f33aaac266aefbc469f2cf85400c5a455`
 
 This file is intentionally a mirror of that library surface. It is **not** the
 place where canonicity or world-model justification is decided. For the
@@ -102,13 +103,13 @@ by
 /-- `Truth_Induction` as mirrored from PeTTa `lib_pln.metta`. -/
 noncomputable def truthInduction (a b c ba bc : TV) : TV :=
   let s := plnInductionStrength ba.s bc.s a.s b.s c.s
-  let conf := w2c (min (c2w ba.c) (c2w bc.c))
+  let conf := w2c (min ba.c bc.c)
   ⟨s, conf⟩
 
 /-- `Truth_Abduction` as mirrored from PeTTa `lib_pln.metta`. -/
 noncomputable def truthAbduction (a b c ab cb : TV) : TV :=
   let s := plnAbductionStrength ab.s cb.s a.s b.s c.s
-  let conf := w2c (min (c2w ab.c) (c2w cb.c))
+  let conf := w2c (min ab.c cb.c)
   ⟨s, conf⟩
 
 /-- SourceRule (cospan completion): alias of `truthInduction`. -/
@@ -136,7 +137,7 @@ noncomputable def truthRevision (t1 t2 : TV) : TV :=
   let w := w1 + w2
   let f := safeDiv (w1 * t1.s + w2 * t2.s) w
   let c := w2c w
-  ⟨min 1 f, min 1 c⟩
+  ⟨min 1 f, min 1 (max (max c t1.c) t2.c)⟩
 
 /-- `Truth_Negation` as mirrored from PeTTa `lib_pln.metta`. -/
 noncomputable def truthNegation (t : TV) : TV :=
@@ -196,6 +197,14 @@ theorem truthInduction_s_eq (a b c ba bc : TV) :
 
 theorem truthAbduction_s_eq (a b c ab cb : TV) :
     (truthAbduction a b c ab cb).s = plnAbductionStrength ab.s cb.s a.s b.s c.s := by
+  simp [truthAbduction]
+
+theorem truthInduction_c_eq_raw_min (a b c ba bc : TV) :
+    (truthInduction a b c ba bc).c = w2c (min ba.c bc.c) := by
+  simp [truthInduction]
+
+theorem truthAbduction_c_eq_raw_min (a b c ab cb : TV) :
+    (truthAbduction a b c ab cb).c = w2c (min ab.c cb.c) := by
   simp [truthAbduction]
 
 /-- `w2c (c2w c)` reduces to the capped confidence `capConf c`. -/

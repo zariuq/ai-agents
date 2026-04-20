@@ -17,19 +17,26 @@ abbrev capConf := Mettapedia.Logic.PeTTaLibPLNTruthFunctions.capConf
 /-!
 # Formal Analysis of PeTTa `lib_pln.metta`
 
-This file compares the transparent PeTTa library mirror against the current
+This file compares the transparent upstream `trueagi-io/PeTTa` `main`
+mirror (`dec4505f33aaac266aefbc469f2cf85400c5a455`) against the current
 WM-backed justified truth-function layer.
 
 Reading guide:
 
-* exact equality theorems mean the PeTTa library formula already matches the
-  justified Lean rule;
-* bound theorems mean the PeTTa library formula is conservative / admissible,
-  but not yet promoted to a uniquely canonical WM rule;
+* exact equality theorems mean the upstream PeTTa library formula already
+  matches the justified Lean rule;
+* disagreement / counterexample theorems mark places where the upstream PeTTa
+  library formula is only heuristic and the WM-backed layer corrects it;
+* bound theorems mean a library formula is conservative / admissible, but not
+  yet promoted to a uniquely canonical WM rule;
 * canonical-upstream theorems compare the upstream `hyperon/PLN/lib_pln.metta`
   confidence family against both the PeTTa mirror and the WM-justified layer;
 * for mirror-only rules, we record the strongest formal analogue currently available
   and prove what we can about its relation to the mirrored library formula.
+
+Public upstream-main reference:
+
+* `https://github.com/trueagi-io/PeTTa/blob/main/lib/lib_pln.metta`
 -/
 
 theorem pettaw2c_le_self (w : ℝ) (hw : 0 ≤ w) :
@@ -125,20 +132,28 @@ theorem canonicalInduction_conf_le_petta_wm
     (hbcC : bc.c ∈ Set.Icc (0 : ℝ) MAX_CONF) :
     CanonicalUpstream.truthInductionConf ba bc ≤
       (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction a b c ba bc).c := by
-  have hcurr :
-      (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction a b c ba bc).c =
-        min ba.c bc.c := by
-    calc
-      (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction a b c ba bc).c
-          = min (capConf ba.c) (capConf bc.c) := by
-              simpa [Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction] using
-                (Mettapedia.Logic.NuEvidenceQuantaleBridge.InductionAbductionBridge.inductionAbduction_conf_eq_min_capped
-                  ba.c bc.c)
-      _ = min ba.c bc.c := by
-              rw [capConf_eq_self_of_mem_core ba.c hbaC.1 hbaC.2,
-                capConf_eq_self_of_mem_core bc.c hbcC.1 hbcC.2]
-  rw [hcurr]
-  exact canonicalInduction_conf_le_inputs ba bc hbcS hbaC hbcC
+  rw [Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction_c_eq_raw_min]
+  unfold CanonicalUpstream.truthInductionConf
+  apply Mettapedia.Logic.PeTTaLibPLNTruthFunctions.w2c_monotone
+  let w : ℝ := bc.s * bc.c * ba.c
+  change w ≤ min ba.c bc.c
+  have hMAX : MAX_CONF ≤ 1 := by
+    norm_num [MAX_CONF, Mettapedia.Logic.PeTTaLibPLNTruthFunctions.MAX_CONF]
+  have hbaC1 : ba.c ≤ 1 := by
+    linarith [hbaC.2, hMAX]
+  have hbcC1 : bc.c ≤ 1 := by
+    linarith [hbcC.2, hMAX]
+  have hw_le_ba : w ≤ ba.c := by
+    unfold w
+    have hfac : bc.s * bc.c ≤ 1 := by
+      nlinarith [hbcS.1, hbcS.2, hbcC.1, hbcC1]
+    nlinarith [hfac, hbaC.1]
+  have hw_le_bc : w ≤ bc.c := by
+    unfold w
+    have hfac : bc.s * ba.c ≤ 1 := by
+      nlinarith [hbcS.1, hbcS.2, hbaC.1, hbaC1]
+    nlinarith [hfac, hbcC.1]
+  exact le_min hw_le_ba hw_le_bc
 
 theorem canonicalInduction_conf_le_wm_best
     (a b c ba bc : TV)
@@ -147,8 +162,25 @@ theorem canonicalInduction_conf_le_wm_best
     (hbcC : bc.c ∈ Set.Icc (0 : ℝ) MAX_CONF) :
     CanonicalUpstream.truthInductionConf ba bc ≤
       (Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthInduction a b c ba bc).c := by
-  simpa [Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthInduction] using
+  have hcanon_le_petta :=
     canonicalInduction_conf_le_petta_wm a b c ba bc hbcS hbaC hbcC
+  have hpetta_le_min :
+      (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction a b c ba bc).c ≤
+        min ba.c bc.c := by
+    rw [Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction_c_eq_raw_min]
+    let m : ℝ := min ba.c bc.c
+    have hm : 0 ≤ m := by
+      unfold m
+      exact le_min hbaC.1 hbcC.1
+    exact le_trans (pettaw2c_le_self m hm) (by simp [m])
+  have hwm_eq :
+      (Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthInduction a b c ba bc).c =
+        min ba.c bc.c := by
+    rw [Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthInduction_conf_eq_min_capped]
+    change min (capConf ba.c) (capConf bc.c) = min ba.c bc.c
+    rw [capConf_eq_self_of_mem_core ba.c hbaC.1 hbaC.2,
+      capConf_eq_self_of_mem_core bc.c hbcC.1 hbcC.2]
+  exact le_trans hcanon_le_petta (by rw [hwm_eq]; exact hpetta_le_min)
 
 theorem canonicalAbduction_conf_le_inputs
     (ab cb : TV)
@@ -188,20 +220,28 @@ theorem canonicalAbduction_conf_le_petta_wm
     (hcbC : cb.c ∈ Set.Icc (0 : ℝ) MAX_CONF) :
     CanonicalUpstream.truthAbductionConf ab cb ≤
       (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthAbduction a b c ab cb).c := by
-  have hcurr :
-      (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthAbduction a b c ab cb).c =
-        min ab.c cb.c := by
-    calc
-      (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthAbduction a b c ab cb).c
-          = min (capConf ab.c) (capConf cb.c) := by
-              simpa [Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthAbduction] using
-                (Mettapedia.Logic.NuEvidenceQuantaleBridge.InductionAbductionBridge.inductionAbduction_conf_eq_min_capped
-                  ab.c cb.c)
-      _ = min ab.c cb.c := by
-              rw [capConf_eq_self_of_mem_core ab.c habC.1 habC.2,
-                capConf_eq_self_of_mem_core cb.c hcbC.1 hcbC.2]
-  rw [hcurr]
-  exact canonicalAbduction_conf_le_inputs ab cb habS habC hcbC
+  rw [Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthAbduction_c_eq_raw_min]
+  unfold CanonicalUpstream.truthAbductionConf
+  apply Mettapedia.Logic.PeTTaLibPLNTruthFunctions.w2c_monotone
+  let w : ℝ := ab.s * ab.c * cb.c
+  change w ≤ min ab.c cb.c
+  have hMAX : MAX_CONF ≤ 1 := by
+    norm_num [MAX_CONF, Mettapedia.Logic.PeTTaLibPLNTruthFunctions.MAX_CONF]
+  have habC1 : ab.c ≤ 1 := by
+    linarith [habC.2, hMAX]
+  have hcbC1 : cb.c ≤ 1 := by
+    linarith [hcbC.2, hMAX]
+  have hw_le_ab : w ≤ ab.c := by
+    unfold w
+    have hfac : ab.s * cb.c ≤ 1 := by
+      nlinarith [habS.1, habS.2, hcbC.1, hcbC1]
+    nlinarith [hfac, habC.1]
+  have hw_le_cb : w ≤ cb.c := by
+    unfold w
+    have hfac : ab.s * ab.c ≤ 1 := by
+      nlinarith [habS.1, habS.2, habC.1, habC1]
+    nlinarith [hfac, hcbC.1]
+  exact le_min hw_le_ab hw_le_cb
 
 theorem canonicalAbduction_conf_le_wm_best
     (a b c ab cb : TV)
@@ -210,8 +250,25 @@ theorem canonicalAbduction_conf_le_wm_best
     (hcbC : cb.c ∈ Set.Icc (0 : ℝ) MAX_CONF) :
     CanonicalUpstream.truthAbductionConf ab cb ≤
       (Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthAbduction a b c ab cb).c := by
-  simpa [Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthAbduction] using
+  have hcanon_le_petta :=
     canonicalAbduction_conf_le_petta_wm a b c ab cb habS habC hcbC
+  have hpetta_le_min :
+      (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthAbduction a b c ab cb).c ≤
+        min ab.c cb.c := by
+    rw [Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthAbduction_c_eq_raw_min]
+    let m : ℝ := min ab.c cb.c
+    have hm : 0 ≤ m := by
+      unfold m
+      exact le_min habC.1 hcbC.1
+    exact le_trans (pettaw2c_le_self m hm) (by simp [m])
+  have hwm_eq :
+      (Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthAbduction a b c ab cb).c =
+        min ab.c cb.c := by
+    rw [Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthAbduction_conf_eq_min_capped]
+    change min (capConf ab.c) (capConf cb.c) = min ab.c cb.c
+    rw [capConf_eq_self_of_mem_core ab.c habC.1 habC.2,
+      capConf_eq_self_of_mem_core cb.c hcbC.1 hcbC.2]
+  exact le_trans hcanon_le_petta (by rw [hwm_eq]; exact hpetta_le_min)
 
 theorem canonicalDeduction_conf_le_edge_inputs
     (pq qr : TV)
@@ -336,19 +393,115 @@ theorem canonicalTransitiveSimilarity_conf_le_mirror
   rw [hmirror]
   exact le_trans hscaled hprod_le_min
 
-/-! ## Exact agreement with the justified layer -/
+/-! ## Direct comparison with the justified layer -/
 
-theorem revision_matches_justified (t1 t2 : TV) :
+theorem revision_strength_matches_justified (t1 t2 : TV) :
+    (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthRevision t1 t2).s =
+      (truthRevision t1 t2).s := by
+  simp [Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthRevision,
+    Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthRevision]
+
+theorem revision_conf_matches_justified_of_positive_inputs
+    (t1 t2 : TV)
+    (hc1 : 0 < t1.c) (hc1_lt : t1.c < MAX_CONF)
+    (hc2 : 0 < t2.c) (hc2_lt : t2.c < MAX_CONF) :
+    (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthRevision t1 t2).c =
+      (truthRevision t1 t2).c := by
+  have hMAX : MAX_CONF < 1 := by
+    norm_num [MAX_CONF, Mettapedia.Logic.PeTTaLibPLNTruthFunctions.MAX_CONF]
+  have hc1_lt1 : t1.c < 1 := lt_trans hc1_lt hMAX
+  have hc2_lt1 : t2.c < 1 := lt_trans hc2_lt hMAX
+  have hcap1 : capConf t1.c = t1.c :=
+    capConf_eq_self_of_mem_core t1.c (le_of_lt hc1) (le_of_lt hc1_lt)
+  have hcap2 : capConf t2.c = t2.c :=
+    capConf_eq_self_of_mem_core t2.c (le_of_lt hc2) (le_of_lt hc2_lt)
+  have hw_nonneg :
+      0 ≤ Mettapedia.Logic.PeTTaLibPLNTruthFunctions.c2w t1.c +
+          Mettapedia.Logic.PeTTaLibPLNTruthFunctions.c2w t2.c := by
+    exact add_nonneg
+      (Mettapedia.Logic.NuEvidenceQuantaleBridge.Bridge.c2w_nonneg t1.c)
+      (Mettapedia.Logic.NuEvidenceQuantaleBridge.Bridge.c2w_nonneg t2.c)
+  have hmax0 :
+      max 0
+          (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.c2w t1.c +
+            Mettapedia.Logic.PeTTaLibPLNTruthFunctions.c2w t2.c) =
+        Mettapedia.Logic.PeTTaLibPLNTruthFunctions.c2w t1.c +
+          Mettapedia.Logic.PeTTaLibPLNTruthFunctions.c2w t2.c :=
+    max_eq_right hw_nonneg
+  have hw1_nonneg : 0 ≤ t1.c / (1 - t1.c) := by
+    have hden : 0 ≤ 1 - t1.c := by linarith
+    exact div_nonneg (le_of_lt hc1) hden
+  have hw2_nonneg : 0 ≤ t2.c / (1 - t2.c) := by
+    have hden : 0 ≤ 1 - t2.c := by linarith
+    exact div_nonneg (le_of_lt hc2) hden
+  have hsum_nonneg :
+      0 ≤ t1.c / (1 - t1.c) + t2.c / (1 - t2.c) := by
+    exact add_nonneg hw1_nonneg hw2_nonneg
+  have hmax0_expanded :
+      max 0 (t1.c / (1 - t1.c) + t2.c / (1 - t2.c)) =
+        t1.c / (1 - t1.c) + t2.c / (1 - t2.c) :=
+    max_eq_right hsum_nonneg
+  have hcore :
+      Mettapedia.Logic.PeTTaLibPLNTruthFunctions.w2c
+          (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.c2w t1.c +
+            Mettapedia.Logic.PeTTaLibPLNTruthFunctions.c2w t2.c) =
+        Mettapedia.Logic.PLNBugAnalysis.revisionConfEvidence t1.c t2.c := by
+    simp [Mettapedia.Logic.PeTTaLibPLNTruthFunctions.c2w,
+      Mettapedia.Logic.PeTTaLibPLNTruthFunctions.w2c,
+      Mettapedia.Logic.PLNBugAnalysis.revisionConfEvidence,
+      Mettapedia.Logic.PLNBugAnalysis.c2w',
+      Mettapedia.Logic.PLNBugAnalysis.w2c',
+      hcap1, hcap2, hmax0_expanded]
+  have hmirror :
+      (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthRevision t1 t2).c =
+        Mettapedia.Logic.PLNBugAnalysis.revisionConfMetta t1.c t2.c := by
+    simp [Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthRevision,
+      Mettapedia.Logic.PLNBugAnalysis.revisionConfMetta, hcore]
+  have hwm :
+      (truthRevision t1 t2).c =
+        min 1 (Mettapedia.Logic.PLNBugAnalysis.revisionConfEvidence t1.c t2.c) := by
+    simp [Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthRevision, hcore]
+  rw [hmirror, hwm]
+  exact Mettapedia.Logic.PLNBugAnalysis.max_clamp_redundant
+    t1.c t2.c hc1 hc1_lt1 hc2 hc2_lt1
+
+theorem revision_matches_justified_of_positive_inputs
+    (t1 t2 : TV)
+    (hc1 : 0 < t1.c) (hc1_lt : t1.c < MAX_CONF)
+    (hc2 : 0 < t2.c) (hc2_lt : t2.c < MAX_CONF) :
     Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthRevision t1 t2 =
-      truthRevision t1 t2 := rfl
+      truthRevision t1 t2 := by
+  cases t1 with
+  | mk s1 c1 =>
+    cases t2 with
+    | mk s2 c2 =>
+      simp at hc1 hc1_lt hc2 hc2_lt
+      have hs :
+          (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthRevision ⟨s1, c1⟩ ⟨s2, c2⟩).s =
+            (truthRevision ⟨s1, c1⟩ ⟨s2, c2⟩).s :=
+        revision_strength_matches_justified ⟨s1, c1⟩ ⟨s2, c2⟩
+      have hc :
+          (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthRevision ⟨s1, c1⟩ ⟨s2, c2⟩).c =
+            (truthRevision ⟨s1, c1⟩ ⟨s2, c2⟩).c :=
+        revision_conf_matches_justified_of_positive_inputs
+          ⟨s1, c1⟩ ⟨s2, c2⟩ hc1 hc1_lt hc2 hc2_lt
+      rw [← Mettapedia.Logic.PeTTaLibPLNTruthFunctions.TV.eta
+          (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthRevision ⟨s1, c1⟩ ⟨s2, c2⟩),
+        ← Mettapedia.Logic.PeTTaLibPLNTruthFunctions.TV.eta
+          (truthRevision ⟨s1, c1⟩ ⟨s2, c2⟩)]
+      simp [hs, hc]
 
-theorem induction_matches_justified (a b c ba bc : TV) :
-    Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction a b c ba bc =
-      truthInduction a b c ba bc := rfl
+theorem induction_strength_matches_justified (a b c ba bc : TV) :
+    (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction a b c ba bc).s =
+      (truthInduction a b c ba bc).s := by
+  simp [Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction,
+    Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthInduction]
 
-theorem abduction_matches_justified (a b c ab cb : TV) :
-    Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthAbduction a b c ab cb =
-      truthAbduction a b c ab cb := rfl
+theorem abduction_strength_matches_justified (a b c ab cb : TV) :
+    (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthAbduction a b c ab cb).s =
+      (truthAbduction a b c ab cb).s := by
+  simp [Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthAbduction,
+    Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthAbduction]
 
 theorem deduction_matches_conservative (p q r pq qr : TV) :
     Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthDeduction p q r pq qr =
@@ -368,27 +521,41 @@ theorem negation_matches_justified (t : TV) :
 
 /-! ## Core consequences -/
 
-theorem induction_conf_eq_min_capped (a b c ba bc : TV) :
+theorem induction_conf_eq_raw_min (a b c ba bc : TV) :
     (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction a b c ba bc).c =
-      min (capConf ba.c) (capConf bc.c) :=
-  truthInduction_conf_eq_min_capped a b c ba bc
+      Mettapedia.Logic.PeTTaLibPLNTruthFunctions.w2c (min ba.c bc.c) :=
+  Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction_c_eq_raw_min a b c ba bc
 
-theorem abduction_conf_eq_min_capped (a b c ab cb : TV) :
+theorem abduction_conf_eq_raw_min (a b c ab cb : TV) :
     (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthAbduction a b c ab cb).c =
-      min (capConf ab.c) (capConf cb.c) :=
-  truthAbduction_conf_eq_min_capped a b c ab cb
+      Mettapedia.Logic.PeTTaLibPLNTruthFunctions.w2c (min ab.c cb.c) :=
+  Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthAbduction_c_eq_raw_min a b c ab cb
 
 theorem induction_conf_le_inputs
     (a b c ba bc : TV) (hba : 0 ≤ ba.c) (hbc : 0 ≤ bc.c) :
     (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction a b c ba bc).c ≤
-      min ba.c bc.c :=
-  truthInduction_conf_le_inputs a b c ba bc hba hbc
+      min ba.c bc.c := by
+  rw [induction_conf_eq_raw_min]
+  let m : ℝ := min ba.c bc.c
+  have hm : 0 ≤ m := by
+    unfold m
+    exact le_min hba hbc
+  exact le_trans
+    (pettaw2c_le_self m hm)
+    (by simp [m])
 
 theorem abduction_conf_le_inputs
     (a b c ab cb : TV) (hab : 0 ≤ ab.c) (hcb : 0 ≤ cb.c) :
     (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthAbduction a b c ab cb).c ≤
-      min ab.c cb.c :=
-  truthAbduction_conf_le_inputs a b c ab cb hab hcb
+      min ab.c cb.c := by
+  rw [abduction_conf_eq_raw_min]
+  let m : ℝ := min ab.c cb.c
+  have hm : 0 ≤ m := by
+    unfold m
+    exact le_min hab hcb
+  exact le_trans
+    (pettaw2c_le_self m hm)
+    (by simp [m])
 
 theorem deduction_conf_le_inputs
     (p q r pq qr : TV)
@@ -419,23 +586,95 @@ theorem capConf_eq_self_of_mem (c : ℝ) (h0 : 0 ≤ c) (h1 : c ≤ MAX_CONF) :
     simpa [MAX_CONF] using h1
   simp [Mettapedia.Logic.PeTTaLibPLNTruthFunctions.capConf, h0, h1']
 
-theorem induction_conf_eq_min_of_bounded_inputs
+theorem wm_induction_conf_eq_min_of_bounded_inputs
     (a b c ba bc : TV)
     (hba0 : 0 ≤ ba.c) (hba1 : ba.c ≤ MAX_CONF)
     (hbc0 : 0 ≤ bc.c) (hbc1 : bc.c ≤ MAX_CONF) :
-    (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction a b c ba bc).c =
+    (Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthInduction a b c ba bc).c =
       min ba.c bc.c := by
-  rw [induction_conf_eq_min_capped]
+  rw [Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthInduction_conf_eq_min_capped]
+  change min (capConf ba.c) (capConf bc.c) = min ba.c bc.c
   rw [capConf_eq_self_of_mem ba.c hba0 hba1, capConf_eq_self_of_mem bc.c hbc0 hbc1]
+
+theorem induction_conf_strictly_below_wm_on_positive_inputs
+    (a b c ba bc : TV)
+    (hba0 : 0 < ba.c) (hba1 : ba.c ≤ MAX_CONF)
+    (hbc0 : 0 < bc.c) (hbc1 : bc.c ≤ MAX_CONF) :
+    (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction a b c ba bc).c <
+      (Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthInduction a b c ba bc).c := by
+  rw [induction_conf_eq_raw_min, wm_induction_conf_eq_min_of_bounded_inputs a b c ba bc
+    (le_of_lt hba0) hba1 (le_of_lt hbc0) hbc1]
+  let m : ℝ := min ba.c bc.c
+  have hm0 : 0 < m := by
+    unfold m
+    exact lt_min hba0 hbc0
+  have hm_le : m ≤ MAX_CONF := by
+    unfold m
+    exact min_le_iff.mpr (Or.inl hba1)
+  have hm1 : m < 1 := by
+    have hMAX : MAX_CONF < 1 := by
+      norm_num [MAX_CONF, Mettapedia.Logic.PeTTaLibPLNTruthFunctions.MAX_CONF]
+    exact lt_of_le_of_lt hm_le hMAX
+  unfold Mettapedia.Logic.PeTTaLibPLNTruthFunctions.w2c
+  have hmax : max 0 m = m := max_eq_right (le_of_lt hm0)
+  rw [hmax]
+  have hden : 0 < m + 1 := by linarith
+  rw [div_lt_iff₀ hden]
+  nlinarith [sq_nonneg m]
+
+theorem wm_abduction_conf_eq_min_of_bounded_inputs
+    (a b c ab cb : TV)
+    (hab0 : 0 ≤ ab.c) (hab1 : ab.c ≤ MAX_CONF)
+    (hcb0 : 0 ≤ cb.c) (hcb1 : cb.c ≤ MAX_CONF) :
+    (Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthAbduction a b c ab cb).c =
+      min ab.c cb.c := by
+  rw [Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthAbduction_conf_eq_min_capped]
+  change min (capConf ab.c) (capConf cb.c) = min ab.c cb.c
+  rw [capConf_eq_self_of_mem ab.c hab0 hab1, capConf_eq_self_of_mem cb.c hcb0 hcb1]
+
+theorem abduction_conf_strictly_below_wm_on_positive_inputs
+    (a b c ab cb : TV)
+    (hab0 : 0 < ab.c) (hab1 : ab.c ≤ MAX_CONF)
+    (hcb0 : 0 < cb.c) (hcb1 : cb.c ≤ MAX_CONF) :
+    (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthAbduction a b c ab cb).c <
+      (Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthAbduction a b c ab cb).c := by
+  rw [abduction_conf_eq_raw_min, wm_abduction_conf_eq_min_of_bounded_inputs a b c ab cb
+    (le_of_lt hab0) hab1 (le_of_lt hcb0) hcb1]
+  let m : ℝ := min ab.c cb.c
+  have hm0 : 0 < m := by
+    unfold m
+    exact lt_min hab0 hcb0
+  have hm_le : m ≤ MAX_CONF := by
+    unfold m
+    exact min_le_iff.mpr (Or.inl hab1)
+  have hm1 : m < 1 := by
+    have hMAX : MAX_CONF < 1 := by
+      norm_num [MAX_CONF, Mettapedia.Logic.PeTTaLibPLNTruthFunctions.MAX_CONF]
+    exact lt_of_le_of_lt hm_le hMAX
+  unfold Mettapedia.Logic.PeTTaLibPLNTruthFunctions.w2c
+  have hmax : max 0 m = m := max_eq_right (le_of_lt hm0)
+  rw [hmax]
+  have hden : 0 < m + 1 := by linarith
+  rw [div_lt_iff₀ hden]
+  nlinarith [sq_nonneg m]
 
 example :
     let zero : TV := ⟨0, 0⟩
     let ba : TV := ⟨0.7, 0.9⟩
     let bc : TV := ⟨0.8, 0.9⟩
-    (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction zero zero zero ba bc).c = 0.9 := by
+    (Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction zero zero zero ba bc).c = 0.9 / 1.9 := by
+  dsimp
+  norm_num [Mettapedia.Logic.PeTTaLibPLNTruthFunctions.truthInduction,
+    Mettapedia.Logic.PeTTaLibPLNTruthFunctions.w2c]
+
+example :
+    let zero : TV := ⟨0, 0⟩
+    let ba : TV := ⟨0.7, 0.9⟩
+    let bc : TV := ⟨0.8, 0.9⟩
+    (Mettapedia.Logic.WMPLNJustifiedTruthFunctions.truthInduction zero zero zero ba bc).c = 0.9 := by
   dsimp
   have h :=
-    induction_conf_eq_min_of_bounded_inputs
+    wm_induction_conf_eq_min_of_bounded_inputs
       (a := (⟨0, 0⟩ : TV)) (b := (⟨0, 0⟩ : TV)) (c := (⟨0, 0⟩ : TV))
       (ba := (⟨0.7, 0.9⟩ : TV)) (bc := (⟨0.8, 0.9⟩ : TV))
       (by norm_num)
@@ -463,8 +702,9 @@ example :
 
 For the core confidence rules, the local picture is now explicit:
 
-* induction / abduction: canonical upstream is more cautious than both PeTTa
-  and the WM-justified layer;
+* induction / abduction: canonical upstream is more cautious than upstream
+  PeTTa raw-min, and upstream PeTTa raw-min is itself more cautious than the
+  WM-justified weight-space correction on positive in-range inputs;
 * deduction: canonical upstream is conservative relative to the edge
   confidences, but is not globally below the PeTTa / WM min-of-five family;
 * modus ponens: canonical upstream is more cautious than both PeTTa and
@@ -687,11 +927,11 @@ theorem truthEvaluationImplication_some_conf_le_inputs
         _ ≤ ab.c := by
               nlinarith
 
-/-! ## Constructive WM-backed additions absent from current PeTTa `lib_pln.metta`
+/-! ## Constructive WM-backed additions absent from current upstream PeTTa main
 
-These are not mirror comparisons, because the current PeTTa library does not
-ship them. They are included here so the analysis layer also shows the concrete
-WM-backed rules we can already offer today.
+These are not mirror comparisons, because the current upstream `main` line
+omits them. They are included here so the analysis layer also shows the
+concrete WM-backed rules we can already offer today.
 -/
 
 theorem predictiveImplication_conf_le_inputs

@@ -17,8 +17,13 @@ and provides computationally tractable corrections.
 
 ## References
 
-- MeTTa implementation: `hyperon/PeTTa/lib/lib_pln.metta`
+- historical/raw-min MeTTa implementation surface:
+  `trueagi-io/PeTTa` `upstream/main` / `hyperon/PeTTa/lib/lib_pln.metta`
 - Lean PLN BinaryEvidence: `Mettapedia.Logic.EvidenceQuantale`
+
+This file analyzes the raw confidence-space-min line
+`w2c(min(c1, c2))` mirrored by
+`Mettapedia.Logic.PeTTaLibPLNTruthFunctions`.
 -/
 
 namespace Mettapedia.Logic.PLNBugAnalysis
