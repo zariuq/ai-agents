@@ -11,13 +11,19 @@ he_translate_term_trusted(In, Out) :- he_to_petta:translate_term_trusted(In, Out
 he_translate_decl(In, Out) :- he_to_petta:translate_decl(In, Out).
 he_translate_program(In, Out) :- he_to_petta:translate_program(In, Out).
 pe_translate_term(In, Out) :- petta_to_he:translate_term(In, Out).
+pe_translate_term_hyperpose(In, Out) :- petta_to_he:translate_term_hyperpose(In, Out).
 pe_translate_term_ext(In, Out) :- petta_to_he:translate_term_extended(In, Out).
+pe_translate_term_ext_hyperpose(In, Out) :- petta_to_he:translate_term_extended_hyperpose(In, Out).
 pe_translate_term_trusted(In, Out) :- petta_to_he:translate_term_trusted(In, Out).
 pe_translate_decl(In, Out) :- petta_to_he:translate_decl(In, Out).
+pe_translate_decl_hyperpose(In, Out) :- petta_to_he:translate_decl_hyperpose(In, Out).
+pe_translate_decl_ext_hyperpose(In, Out) :- petta_to_he:translate_decl_extended_hyperpose(In, Out).
+pe_translate_program(In, Out) :- petta_to_he:translate_program(In, Out).
 pe_optimize_term(In, Out) :- petta_to_he:optimize_term(In, Out).
 
 :- discontiguous test_he_to_petta/4.
 :- discontiguous test_petta_to_he/4.
+:- discontiguous test_petta_to_he_program/4.
 :- discontiguous run_one_pe/4.
 
 %% ═══════════════════════════════════════════════════════════════
@@ -284,29 +290,78 @@ test_petta_to_he(26, "3-arg foldl-atom → binder form (expression combiner)",
     ['foldl-atom', [collapse, [twohop-item]], 0, ['λ', merge]],
     foldl_atom_short_shape([collapse, [twohop-item]], 0, ['λ', merge])).
 
-test_petta_to_he(27, "raw reduce → eval",
+test_petta_to_he(27, "raw reduce → unquote(quote ...)",
     [reduce, [fib, 5]],
-    [eval, [fib, 5]]).
+    [unquote, [quote, [fib, 5]]]).
 
-test_petta_to_he(28, "collapse(raw reduce ...) → collapse(eval ...)",
+test_petta_to_he(28, "collapse(raw reduce ...) → collapse(unquote(quote ...))",
     [collapse, [reduce, '$term']],
-    [collapse, [eval, '$term']]).
+    [collapse, [unquote, [quote, '$term']]]).
 
 test_petta_to_he(29, "length(collapse ...) → bind + size-atom",
     [length, [collapse, '$term']],
     length_collapse_shape('$term')).
 
-test_petta_to_he(30, "test scalar → assertEqual lowering",
+test_petta_to_he(30, "test scalar → builtin test surface before program rewrite",
     [test, ['+', 1, 2], 3],
-    [assertEqual, ['+', 1, 2], 3]).
+    [test, ['+', 1, 2], 3]).
 
-test_petta_to_he(31, "test length(collapse ...) → assertEqual lowering",
+test_petta_to_he(30_1, "quote lowers to quoted-syntax helper",
+    [quote, ['fib', 5]],
+    ['quoted-syntax', [quote, ['fib', 5]]]).
+
+test_petta_to_he(30_2, "eval lowers to unquote(quote ...)",
+    [eval, ['fib', 5]],
+    [unquote, [quote, ['fib', 5]]]).
+
+test_petta_to_he(31, "test length(collapse ...) → quoted HE helper call",
     [test, [length, [collapse, [match, '&self', ['edge', '$x', '$y'], '$x']]], 2],
     test_length_collapse_shape([match, '&self', ['edge', '$x', '$y'], '$x'], 2)).
+
+test_petta_to_he_program(1, "program-level builtin test rewrites to assertEqualToEval",
+    [['=', [probe], [test, ['+', 1, 2], 3]]],
+    program_rewrites_builtin_test).
+
+test_petta_to_he_program(1_1, "program-level quoted-syntax helper is prepended",
+    [['=', [probe], [quote, ['+', 1, 2]]]],
+    program_uses_quote_helper).
+
+test_petta_to_he_program(2, "program-level user-defined test stays user-defined",
+    [['=', [test, '$x'], '$x'],
+     ['=', [probe], [test, ['+', 1, 2], 3]]],
+    program_uses_user_defined_test).
 
 test_petta_to_he(32, "generic length stays length (compat helper is file-level)",
     [length, [foo, bar]],
     [length, [foo, bar]]).
+
+test_petta_to_he(33, "hyperpose → superpose",
+    [hyperpose, [['prime?', 2], ['prime?', 3]]],
+    [superpose, [['prime?', 2], ['prime?', 3]]]).
+
+test_petta_to_he(34, "once(hyperpose ...) → once(superpose ...)",
+    [once, [hyperpose, [[slow-branch], [cheap-branch]]]],
+    [once, [superpose, [[slow-branch], [cheap-branch]]]]).
+
+test_petta_to_he(35, "computed hyperpose input stays computed after superpose lowering",
+    [let, '$xs', [1, 2, 3], [hyperpose, '$xs']],
+    [let, '$xs', [1, 2, 3], [superpose, '$xs']]).
+
+%% ═══════════════════════════════════════════════════════════════
+%% PeTTa → HE hyperpose-preserving mode tests
+%% ═══════════════════════════════════════════════════════════════
+
+test_petta_to_he_hyperpose(1, "hyperpose-preserving mode keeps hyperpose",
+    [hyperpose, [['prime?', 2], ['prime?', 3]]],
+    [hyperpose, [['prime?', 2], ['prime?', 3]]]).
+
+test_petta_to_he_hyperpose(2, "once(hyperpose ...) stays once(hyperpose ...)",
+    [once, [hyperpose, [[slow-branch], [cheap-branch]]]],
+    [once, [hyperpose, [[slow-branch], [cheap-branch]]]]).
+
+test_petta_to_he_hyperpose(3, "computed hyperpose input stays computed in preserve mode",
+    [let, '$xs', [1, 2, 3], [hyperpose, '$xs']],
+    [let, '$xs', [1, 2, 3], [hyperpose, '$xs']]).
 
 %% ═══════════════════════════════════════════════════════════════
 %% PeTTa → HE extended mode tests
@@ -315,6 +370,10 @@ test_petta_to_he(32, "generic length stays length (compat helper is file-level)"
 test_petta_to_he_ext(1, "foldall (extended) → let(collect) + foldl-atom",
     [foldall, merge, [twohop-item], 0],
     foldall_shape_ext(merge, [twohop-item], 0)).
+
+test_petta_to_he_ext_hyperpose(1, "extended hyperpose-preserving mode keeps hyperpose",
+    [hyperpose, [['prime?', 2], ['prime?', 3]]],
+    [hyperpose, [['prime?', 2], ['prime?', 3]]]).
 
 %% ═══════════════════════════════════════════════════════════════
 %% PeTTa → HE optimization tests
@@ -373,12 +432,21 @@ run_tests :-
     format("~n=== PeTTa → HE Tests ===~n"),
     forall(test_petta_to_he(N, Name, Input, Expected),
         run_one_pe(N, Name, Input, Expected)),
+    format("~n=== PeTTa → HE Program Tests ===~n"),
+    forall(test_petta_to_he_program(N, Name, Input, Expected),
+        run_one_pe_program(N, Name, Input, Expected)),
+    format("~n=== PeTTa → HE Hyperpose-Preserving Mode Tests ===~n"),
+    forall(test_petta_to_he_hyperpose(N, Name, Input, Expected),
+        run_one_pe_hyperpose(N, Name, Input, Expected)),
     format("~n=== PeTTa → HE Trusted Tests ===~n"),
     forall(test_petta_to_he_trusted(N, Name, Input, Expected),
         run_one_pe_trusted(N, Name, Input, Expected)),
     format("~n=== PeTTa → HE Extended Mode Tests ===~n"),
     forall(test_petta_to_he_ext(N, Name, Input, Expected),
         run_one_pe_ext(N, Name, Input, Expected)),
+    format("~n=== PeTTa → HE Extended Hyperpose-Preserving Mode Tests ===~n"),
+    forall(test_petta_to_he_ext_hyperpose(N, Name, Input, Expected),
+        run_one_pe_ext_hyperpose(N, Name, Input, Expected)),
     format("~n=== PeTTa → HE Optimization Tests ===~n"),
     forall(test_petta_to_he_opt(N, Name, Input, Expected),
         run_one_pe_opt(N, Name, Input, Expected)),
@@ -502,6 +570,19 @@ run_one_pe(N, Name, Input, foldall_shape(Agg, Goal, Init)) :- !,
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
     ).
 
+run_one_pe_hyperpose(N, Name, Input, Expected) :-
+    (   test_petta_to_he_hyperpose(N, _, Input, _),
+        (   Input = ['=', _, _]
+        ->  pe_translate_decl_hyperpose(Input, Result)
+        ;   pe_translate_term_hyperpose(Input, Result)
+        ),
+        (   Result == Expected
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Expected: ~w~n    Got:      ~w~n", [N, Name, Expected, Result])
+        )
+    ;   format("  ? ~w: ~w (error)~n", [N, Name])
+    ).
+
 run_one_pe(N, Name, Input, foldl_atom_short_shape(List, Init, Agg)) :- !,
     (   pe_translate_term(Input, Result)
     ->  (   Result = ['foldl-atom', List, Init, AccVar, ItemVar,
@@ -530,11 +611,40 @@ run_one_pe(N, Name, Input, length_collapse_shape(Goal)) :- !,
 
 run_one_pe(N, Name, Input, test_length_collapse_shape(Goal, Expected)) :- !,
     (   pe_translate_term(Input, Result)
-    ->  (   Result = [assertEqual, [let, TupleVar, [collapse, Goal], [size-atom, TupleVar]], Expected],
+        ->  (   Result = [test, [let, TupleVar, [collapse, Goal], [size-atom, TupleVar]], Expected],
             atom_string(TupleVar, TupleS),
             sub_string(TupleS, 0, _, _, "$__tr_")
         ->  format("  ✓ ~w: ~w (fresh tuple binder: ~w)~n", [N, Name, TupleVar])
         ;   format("  ✗ ~w: ~w (bad test length(collapse ...) lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_rewrites_builtin_test) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [['=', [probe], [assertEqualToEval, ['+', 1, 2], 3]]]
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_uses_quote_helper) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [['=', ['quoted-syntax', [quote, '$expr']], '$expr'],
+                     ['=', [probe], ['quoted-syntax', [quote, ['+', 1, 2]]]]]
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_uses_user_defined_test) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [['=', [test, '$x'], '$x'],
+                     ['=', [probe], [test, ['+', 1, 2], 3]]]
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
         )
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
     ).
@@ -555,6 +665,20 @@ run_one_pe_ext(N, Name, Input, foldall_shape_ext(Agg, Goal, Init)) :- !,
         ;   format("  ✗ ~w: ~w (bad extended foldall lowering: ~w)~n", [N, Name, Result])
         )
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_ext_hyperpose(N, Name, Input, Expected) :-
+    (   test_petta_to_he_ext_hyperpose(N, _, Input, _),
+        (   Input = ['=', _, _]
+        ->  pe_translate_decl_ext_hyperpose(Input, Raw),
+            petta_to_he:optimize_decl(Raw, Result)
+        ;   pe_translate_term_ext_hyperpose(Input, Result)
+        ),
+        (   Result == Expected
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Expected: ~w~n    Got:      ~w~n", [N, Name, Expected, Result])
+        )
+    ;   format("  ? ~w: ~w (error)~n", [N, Name])
     ).
 
 run_one_pe(N, Name, Input, Expected) :-

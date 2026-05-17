@@ -147,6 +147,10 @@ lean-projects/mettapedia/Mettapedia/SetTheory/BorelDeterminacy/lean-toolchain
 lean-projects/mettapedia/Mettapedia/external/CertifyingDatalog/
 lean-projects/mettapedia/Mettapedia/external/exchangeability/
 lean-projects/mettapedia/Mettapedia/external/provenance-lean/
+lean-projects/mettapedia/Mettapedia/Logic/Foundation/
+lean-projects/mettapedia/Mettapedia/Algebra/OrderedSemigroups/
+lean-projects/mettapedia/Mettapedia/Metatheory/
+hyperon/CeTTa/
 
 # Auto-generated conformance runner output
 *.jsonl

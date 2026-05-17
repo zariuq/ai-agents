@@ -15,6 +15,9 @@ Bidirectional translator between Hyperon Experimental (HE) and PeTTa MeTTa diale
 # PeTTa -> HE
 ./translate.sh petta2he program.metta program_he.metta
 
+# PeTTa -> HE, preserving actual hyperpose for supporting runtimes
+./translate.sh petta2he --preserve-hyperpose program.metta program_he_hyperpose.metta
+
 # Run test suite
 ./translate.sh --test
 ```
@@ -62,8 +65,8 @@ Bidirectional translator between Hyperon Experimental (HE) and PeTTa MeTTa diale
 ### Real-world: backward chainer (51 atoms)
 
 ```bash
-$ ./translate.sh he2petta tests/bench_backchain_he.metta /tmp/bc_petta.metta
-$ head -5 /tmp/bc_petta.metta
+$ ./translate.sh he2petta tests/bench_backchain_he.metta build/bc_petta.metta
+$ head -5 build/bc_petta.metta
 ; Translated from HE to PeTTa (51 atoms)
 ; Source: tests/bench_backchain_he.metta
 
@@ -110,6 +113,25 @@ Emits `collect` instead of `collapse` for `foldall` lowering
 ./translate.sh petta2he --extended input.metta output.metta
 ```
 
+### Hyperpose-Preserving Mode (PeTTa -> HE only)
+
+Preserves `hyperpose` instead of lowering it to `superpose`. Use this only for
+HE runtimes that actually implement `hyperpose` semantics, such as
+`petta --he`:
+
+```bash
+./translate.sh petta2he --preserve-hyperpose input.metta output.metta
+```
+
+In the PeTTa HE profile repository's `examples/he_translated/` directory, the
+portable/default outputs use the `_he.metta` suffix. For sources whose
+portability story specifically depends on deparallelizing `hyperpose`, the
+portable sequentialized artifact may instead use `_he_sequential.metta`, while
+preserve-hyperpose artifacts conventionally use `_he_parallel.metta`. That
+naming keeps ordinary portable HE output separate from the rare cases where we
+want to make the sequentialized hyperpose lowering explicit, and from "HE++
+runtime compatibility with actual hyperpose support".
+
 ## What Gets Translated
 
 | HE Construct | PeTTa Equivalent |
@@ -127,7 +149,12 @@ Emits `collect` instead of `collapse` for `foldall` lowering
 | `progn a b c` | `let $_ a (let $_ b c)` |
 | `prog1 a b c` | `let $r a (let $_ b (let $_ c $r))` |
 | `foldall agg goal init` | `let $list (collapse goal) (foldl-atom ...)` |
+| `foldl-atom list init agg` | `foldl-atom list' init' $acc $item (eval (agg' $acc $item))` |
+| `reduce expr` | `eval expr'` |
+| `length (collapse expr)` | `let $tuple (collapse expr') (size-atom $tuple)` |
+| `test actual expected` | `test actual' expected'` plus a file-local core-HE-compatible definition when needed |
 | `unique-atom (collapse expr)` | `collapse (unique expr')` |
+| `hyperpose exprs` | `superpose exprs'` by default, or `hyperpose exprs'` with `--preserve-hyperpose` |
 | `@<` | `<s` (string comparison) |
 
 ## What's NOT Translated
@@ -135,6 +162,11 @@ Emits `collect` instead of `collapse` for `foldall` lowering
 - Python FFI (`py-atom`, `py-call`, `py-dot`) — passed through unchanged
 - Git module imports — passed through unchanged
 - PeTTa-specific Prolog builtins (e.g., `fail`) — require manual adaptation
+
+Note: `hyperpose` is lowered to sequential nondeterministic choice by default,
+including computed-list cases such as `let $xs ... (hyperpose $xs)`. Use
+`--preserve-hyperpose` when targeting an HE runtime that genuinely supports a
+`hyperpose` surface; the default portability contract remains sequential.
 
 ## Verified Properties (Lean)
 
@@ -156,7 +188,7 @@ The Lean translator is an executable function (`translateHE`, `translatePeTTa`)
 that can be invoked via `lake env lean --run`:
 
 ```bash
-cd ~/claude/lean-projects/mettapedia
+cd /path/to/mettapedia
 lake env lean --run your_script.lean
 ```
 

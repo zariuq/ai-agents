@@ -31,10 +31,14 @@
                              obsolete_bool_and_rule/1,
                              should_drop_obsolete_bool_and_rule/1]).
 :- use_module(petta_to_he, [translate_term/2 as pe_translate_term,
+                             translate_term_hyperpose/2 as pe_translate_term_hyperpose,
                              translate_term_extended/2 as pe_translate_term_ext,
+                             translate_term_extended_hyperpose/2 as pe_translate_term_ext_hyperpose,
                              translate_term_trusted/2 as pe_translate_term_trusted,
                              translate_decl/2 as pe_translate_decl,
+                             translate_decl_hyperpose/2 as pe_translate_decl_hyperpose,
                              translate_decl_extended/2 as pe_translate_decl_ext,
+                             translate_decl_extended_hyperpose/2 as pe_translate_decl_ext_hyperpose,
                              translate_decl_trusted/2 as pe_translate_decl_trusted,
                              optimize_term/2 as pe_optimize_term,
                              optimize_decl/2 as pe_optimize_decl]).
@@ -53,7 +57,8 @@ translate_file(Path) :-
     read_metta_file(Path, Atoms),
     length(Atoms, N),
     format("; Translated from HE to PeTTa (~w atoms)~n", [N]),
-    format("; Source: ~w~n~n", [Path]),
+    display_source_path(Path, DisplayPath),
+    format("; Source: ~w~n~n", [DisplayPath]),
     translate_toplevel_atoms(he_to_petta, Atoms, TAtoms),
     forall(member(TA, TAtoms), write_toplevel_atom(current_output, TA)).
 
@@ -72,6 +77,12 @@ translate_file_he_to_petta_bundle(InPath, BundleDir) :-
 translate_file_petta_to_he(InPath, OutPath) :-
     translate_file_to_path(petta_to_he, InPath, OutPath).
 
+translate_file_petta_to_he_hyperpose(InPath, OutPath) :-
+    translate_file_to_path(petta_to_he_hyperpose, InPath, OutPath).
+
+translate_file_petta_to_he_hyperpose_raw(InPath, OutPath) :-
+    translate_file_to_path(petta_to_he_hyperpose_raw, InPath, OutPath).
+
 translate_file_petta_to_he_trusted(InPath, OutPath) :-
     translate_file_to_path(petta_to_he_trusted, InPath, OutPath).
 
@@ -80,6 +91,12 @@ translate_file_petta_to_he_raw(InPath, OutPath) :-
 
 translate_file_petta_to_he_extended(InPath, OutPath) :-
     translate_file_to_path(petta_to_he_extended, InPath, OutPath).
+
+translate_file_petta_to_he_extended_hyperpose(InPath, OutPath) :-
+    translate_file_to_path(petta_to_he_extended_hyperpose, InPath, OutPath).
+
+translate_file_petta_to_he_extended_hyperpose_raw(InPath, OutPath) :-
+    translate_file_to_path(petta_to_he_extended_hyperpose_raw, InPath, OutPath).
 
 translate_file_petta_to_he_extended_raw(InPath, OutPath) :-
     translate_file_to_path(petta_to_he_extended_raw, InPath, OutPath).
@@ -97,14 +114,22 @@ translate_file_he_to_petta_mode(InPath, OutPath, trusted) :-
 
 translate_file_petta_to_he_mode(InPath, OutPath, pure) :-
     translate_file_petta_to_he(InPath, OutPath).
+translate_file_petta_to_he_mode(InPath, OutPath, hyperpose) :-
+    translate_file_petta_to_he_hyperpose(InPath, OutPath).
 translate_file_petta_to_he_mode(InPath, OutPath, trusted) :-
     translate_file_petta_to_he_trusted(InPath, OutPath).
 translate_file_petta_to_he_mode(InPath, OutPath, extended) :-
     translate_file_petta_to_he_extended(InPath, OutPath).
+translate_file_petta_to_he_mode(InPath, OutPath, extended_hyperpose) :-
+    translate_file_petta_to_he_extended_hyperpose(InPath, OutPath).
 translate_file_petta_to_he_mode(InPath, OutPath, raw) :-
     translate_file_petta_to_he_raw(InPath, OutPath).
+translate_file_petta_to_he_mode(InPath, OutPath, hyperpose_raw) :-
+    translate_file_petta_to_he_hyperpose_raw(InPath, OutPath).
 translate_file_petta_to_he_mode(InPath, OutPath, extended_raw) :-
     translate_file_petta_to_he_extended_raw(InPath, OutPath).
+translate_file_petta_to_he_mode(InPath, OutPath, extended_hyperpose_raw) :-
+    translate_file_petta_to_he_extended_hyperpose_raw(InPath, OutPath).
 
 translate_file_to_path(Direction, InPath, OutPath) :-
     absolute_file_name(InPath, AbsInPath, [relative_to('.'), solutions(first)]),
@@ -140,27 +165,60 @@ translate_file_tree_inplace(Direction, InPath, OutSuffix) :-
     absolute_file_name(InPath, AbsInPath, [relative_to('.'), solutions(first)]),
     translate_file_tree_inplace_recursive(Direction, AbsInPath, OutSuffix, [], _).
 
+display_source_path(Path, DisplayPath) :-
+    absolute_file_name(Path, AbsPath, [relative_to('.'), solutions(first)]),
+    working_directory(Cwd, Cwd),
+    atom_concat(Cwd, Rel, AbsPath), !,
+    ( Rel = ''
+    -> DisplayPath = '.'
+    ;  DisplayPath = Rel
+    ).
+display_source_path(Path, Path).
+
 write_translation_header(Stream, he_to_petta, InPath, N) :-
+    display_source_path(InPath, DisplayPath),
     format(Stream, "; Translated from HE to PeTTa (~w atoms)~n", [N]),
-    format(Stream, "; Source: ~w~n~n", [InPath]).
+    format(Stream, "; Source: ~w~n~n", [DisplayPath]).
 write_translation_header(Stream, he_to_petta_trusted, InPath, N) :-
+    display_source_path(InPath, DisplayPath),
     format(Stream, "; Translated from HE to PeTTa (trusted, ~w atoms)~n", [N]),
-    format(Stream, "; Source: ~w~n~n", [InPath]).
+    format(Stream, "; Source: ~w~n~n", [DisplayPath]).
 write_translation_header(Stream, petta_to_he, InPath, N) :-
+    display_source_path(InPath, DisplayPath),
     format(Stream, "; Translated from PeTTa to HE (~w atoms)~n", [N]),
-    format(Stream, "; Source: ~w~n~n", [InPath]).
+    format(Stream, "; Source: ~w~n~n", [DisplayPath]).
+write_translation_header(Stream, petta_to_he_hyperpose, InPath, N) :-
+    display_source_path(InPath, DisplayPath),
+    format(Stream, "; Translated from PeTTa to HE (preserve hyperpose, ~w atoms)~n", [N]),
+    format(Stream, "; Source: ~w~n~n", [DisplayPath]).
 write_translation_header(Stream, petta_to_he_trusted, InPath, N) :-
+    display_source_path(InPath, DisplayPath),
     format(Stream, "; Translated from PeTTa to HE (trusted, ~w atoms)~n", [N]),
-    format(Stream, "; Source: ~w~n~n", [InPath]).
+    format(Stream, "; Source: ~w~n~n", [DisplayPath]).
 write_translation_header(Stream, petta_to_he_raw, InPath, N) :-
+    display_source_path(InPath, DisplayPath),
     format(Stream, "; Translated from PeTTa to HE (raw, ~w atoms)~n", [N]),
-    format(Stream, "; Source: ~w~n~n", [InPath]).
+    format(Stream, "; Source: ~w~n~n", [DisplayPath]).
+write_translation_header(Stream, petta_to_he_hyperpose_raw, InPath, N) :-
+    display_source_path(InPath, DisplayPath),
+    format(Stream, "; Translated from PeTTa to HE (preserve hyperpose raw, ~w atoms)~n", [N]),
+    format(Stream, "; Source: ~w~n~n", [DisplayPath]).
 write_translation_header(Stream, petta_to_he_extended, InPath, N) :-
+    display_source_path(InPath, DisplayPath),
     format(Stream, "; Translated from PeTTa to HE (extended, ~w atoms)~n", [N]),
-    format(Stream, "; Source: ~w~n~n", [InPath]).
+    format(Stream, "; Source: ~w~n~n", [DisplayPath]).
+write_translation_header(Stream, petta_to_he_extended_hyperpose, InPath, N) :-
+    display_source_path(InPath, DisplayPath),
+    format(Stream, "; Translated from PeTTa to HE (extended preserve hyperpose, ~w atoms)~n", [N]),
+    format(Stream, "; Source: ~w~n~n", [DisplayPath]).
 write_translation_header(Stream, petta_to_he_extended_raw, InPath, N) :-
+    display_source_path(InPath, DisplayPath),
     format(Stream, "; Translated from PeTTa to HE (extended raw, ~w atoms)~n", [N]),
-    format(Stream, "; Source: ~w~n~n", [InPath]).
+    format(Stream, "; Source: ~w~n~n", [DisplayPath]).
+write_translation_header(Stream, petta_to_he_extended_hyperpose_raw, InPath, N) :-
+    display_source_path(InPath, DisplayPath),
+    format(Stream, "; Translated from PeTTa to HE (extended preserve hyperpose raw, ~w atoms)~n", [N]),
+    format(Stream, "; Source: ~w~n~n", [DisplayPath]).
 
 translate_decl_for(he_to_petta, A, TA) :-
     safe_translate_he(A, TA).
@@ -168,14 +226,22 @@ translate_decl_for(he_to_petta_trusted, A, TA) :-
     safe_translate_he_trusted(A, TA).
 translate_decl_for(petta_to_he, A, TA) :-
     safe_translate_pe(A, TA).
+translate_decl_for(petta_to_he_hyperpose, A, TA) :-
+    safe_translate_pe_hyperpose(A, TA).
 translate_decl_for(petta_to_he_trusted, A, TA) :-
     safe_translate_pe_trusted(A, TA).
 translate_decl_for(petta_to_he_raw, A, TA) :-
     safe_translate_pe_raw(A, TA).
+translate_decl_for(petta_to_he_hyperpose_raw, A, TA) :-
+    safe_translate_pe_hyperpose_raw(A, TA).
 translate_decl_for(petta_to_he_extended, A, TA) :-
     safe_translate_pe_extended(A, TA).
+translate_decl_for(petta_to_he_extended_hyperpose, A, TA) :-
+    safe_translate_pe_extended_hyperpose(A, TA).
 translate_decl_for(petta_to_he_extended_raw, A, TA) :-
     safe_translate_pe_extended_raw(A, TA).
+translate_decl_for(petta_to_he_extended_hyperpose_raw, A, TA) :-
+    safe_translate_pe_extended_hyperpose_raw(A, TA).
 
 translate_term_for(he_to_petta, A, TA) :-
     he_translate_term(A, TA).
@@ -184,16 +250,26 @@ translate_term_for(he_to_petta_trusted, A, TA) :-
 translate_term_for(petta_to_he, A, TA) :-
     pe_translate_term(A, Raw),
     pe_optimize_term(Raw, TA).
+translate_term_for(petta_to_he_hyperpose, A, TA) :-
+    pe_translate_term_hyperpose(A, Raw),
+    pe_optimize_term(Raw, TA).
 translate_term_for(petta_to_he_trusted, A, TA) :-
     pe_translate_term_trusted(A, Raw),
     pe_optimize_term(Raw, TA).
 translate_term_for(petta_to_he_raw, A, TA) :-
     pe_translate_term(A, TA).
+translate_term_for(petta_to_he_hyperpose_raw, A, TA) :-
+    pe_translate_term_hyperpose(A, TA).
 translate_term_for(petta_to_he_extended, A, TA) :-
     pe_translate_term_ext(A, Raw),
     pe_optimize_term(Raw, TA).
+translate_term_for(petta_to_he_extended_hyperpose, A, TA) :-
+    pe_translate_term_ext_hyperpose(A, Raw),
+    pe_optimize_term(Raw, TA).
 translate_term_for(petta_to_he_extended_raw, A, TA) :-
     pe_translate_term_ext(A, TA).
+translate_term_for(petta_to_he_extended_hyperpose_raw, A, TA) :-
+    pe_translate_term_ext_hyperpose(A, TA).
 
 translate_toplevel_atoms(Direction, Atoms, TAtoms) :-
     translate_toplevel_atoms_acc(Direction, Atoms, TAtoms0),
@@ -234,17 +310,41 @@ is_obsolete_bool_and_item(_) :-
     fail.
 
 petta_to_he_direction(petta_to_he).
+petta_to_he_direction(petta_to_he_hyperpose).
 petta_to_he_direction(petta_to_he_trusted).
 petta_to_he_direction(petta_to_he_raw).
+petta_to_he_direction(petta_to_he_hyperpose_raw).
 petta_to_he_direction(petta_to_he_extended).
+petta_to_he_direction(petta_to_he_extended_hyperpose).
 petta_to_he_direction(petta_to_he_extended_raw).
+petta_to_he_direction(petta_to_he_extended_hyperpose_raw).
 
 maybe_prepend_petta_compat_items(SourceAtoms, TAtoms0, TAtoms) :-
+    maybe_rewrite_builtin_test_items(SourceAtoms, TAtoms0, TAtoms1),
+    maybe_prepend_quote_compat_items(SourceAtoms, TAtoms1, TAtoms2),
+    maybe_prepend_length_compat_items(SourceAtoms, TAtoms2, TAtoms3),
+    TAtoms = TAtoms3.
+
+maybe_prepend_quote_compat_items(SourceAtoms, TAtoms0, TAtoms) :-
+    (   source_program_uses_quote(SourceAtoms),
+        \+ source_program_defines_quoted_syntax(SourceAtoms)
+    ->  petta_quote_compat_items(CompatItems),
+        append(CompatItems, TAtoms0, TAtoms)
+    ;   TAtoms = TAtoms0
+    ).
+
+maybe_prepend_length_compat_items(SourceAtoms, TAtoms0, TAtoms) :-
     (   source_program_uses_length(SourceAtoms),
         \+ source_program_defines_length(SourceAtoms)
     ->  petta_length_compat_items(CompatItems),
         append(CompatItems, TAtoms0, TAtoms)
     ;   TAtoms = TAtoms0
+    ).
+
+maybe_rewrite_builtin_test_items(SourceAtoms, TAtoms0, TAtoms) :-
+    (   source_program_defines_test(SourceAtoms)
+    ->  TAtoms = TAtoms0
+    ;   maplist(rewrite_builtin_test_item, TAtoms0, TAtoms)
     ).
 
 source_program_uses_length(Term) :-
@@ -257,14 +357,61 @@ source_program_uses_length(Term) :-
 source_program_uses_length(_) :-
     fail.
 
+source_program_uses_quote(Term) :-
+    is_list(Term),
+    (   Term = [quote, _]
+    ;   member(Subterm, Term),
+        source_program_uses_quote(Subterm)
+    ).
+
+source_program_uses_quote(_) :-
+    fail.
+
+source_program_uses_test(Term) :-
+    is_list(Term),
+    (   Term = [test, _, _]
+    ;   member(Subterm, Term),
+        source_program_uses_test(Subterm)
+    ).
+
+source_program_uses_test(_) :-
+    fail.
+
 source_program_defines_length([['=', [length|_], _]|_]) :- !.
 source_program_defines_length([_|Rest]) :-
     source_program_defines_length(Rest).
+
+source_program_defines_quoted_syntax([['=', ['quoted-syntax'|_], _]|_]) :- !.
+source_program_defines_quoted_syntax([_|Rest]) :-
+    source_program_defines_quoted_syntax(Rest).
+
+source_program_defines_test([['=', [test|_], _]|_]) :- !.
+source_program_defines_test([_|Rest]) :-
+    source_program_defines_test(Rest).
 
 petta_length_compat_items([
     plain(['=', [length, '$expr'],
            [let, '$tuple', [eval, '$expr'], [size-atom, '$tuple']]])
 ]).
+
+petta_quote_compat_items([
+    plain(['=', ['quoted-syntax', [quote, '$expr']], '$expr'])
+]).
+
+rewrite_builtin_test_item(exec(Expr), exec(TExpr)) :-
+    rewrite_builtin_test_term(Expr, TExpr).
+rewrite_builtin_test_item(plain(Expr), plain(TExpr)) :-
+    rewrite_builtin_test_term(Expr, TExpr).
+
+rewrite_builtin_test_term([test, Actual, Expected],
+                          [assertEqualToEval, RActual, RExpected]) :-
+    !,
+    rewrite_builtin_test_term(Actual, RActual),
+    rewrite_builtin_test_term(Expected, RExpected).
+rewrite_builtin_test_term(List, Rewritten) :-
+    is_list(List), !,
+    maplist(rewrite_builtin_test_term, List, Rewritten).
+rewrite_builtin_test_term(Term, Term).
 
 %% ── Local module/path compatibility for translated files ────────
 
@@ -337,8 +484,14 @@ spec_payload(Spec, Spec, bare) :-
 
 relativize_spec_for_output(OutputPath, Resolved, Style, TSpec) :-
     file_directory_name(OutputPath, OutputDir),
-    relative_file_name(Resolved, OutputDir, Rel),
+    directory_as_base(OutputDir, OutputBase),
+    relative_file_name(Resolved, OutputBase, Rel),
     rebuild_spec(Rel, Style, TSpec).
+
+directory_as_base(Dir, Dir) :-
+    sub_atom(Dir, _, 1, 0, /), !.
+directory_as_base(Dir, Base) :-
+    atom_concat(Dir, '/', Base).
 
 rebuild_spec(Payload, bare, Payload).
 rebuild_spec(Payload, quoted, Spec) :-
@@ -579,6 +732,7 @@ output_path_for_source_from_entry(EntrySource, BundleDir, EntryOutput) :-
 %% source/output-path aware and therefore belong to the file translator.
 
 run_path_compat_tests :-
+    setup_path_compat_fixture,
     format("~n=== File Translation Path Compatibility Tests ===~n"),
     forall(path_compat_case(N, Name, Goal), run_path_compat_case(N, Name, Goal)).
 
@@ -590,57 +744,79 @@ run_path_compat_case(N, Name, Goal) :-
     ).
 
 path_compat_case(1, "plain local import spec rewrites relative to translated output",
-    relocate_local_import_spec(
-        '/home/zar/claude/c-projects/cetta/tests/test_import_nested_depth.metta',
-        '/home/zar/claude/hyperon/translators/.generated_path_compat/out/test_import_nested_depth.petta.metta',
-        'support/import_deep/root.metta',
-        '../../../c-projects/cetta/tests/support/import_deep/root.metta')).
+    (   path_fixture('test_import_nested_depth.metta', Source),
+        path_generated('out/test_import_nested_depth.petta.metta', Output),
+        relocate_local_import_spec(Source, Output,
+            'support/import_deep/root.metta',
+            '../source_fixture/support/import_deep/root.metta')
+    )).
 
 path_compat_case(2, "bare helper import resolves to local .metta file",
-    relocate_local_import_spec(
-        '/home/zar/claude/c-projects/cetta/tests/support/import_pkg/moduleA.metta',
-        '/home/zar/claude/hyperon/translators/.generated_path_compat/out/moduleA.he.metta',
-        'Helper',
-        '../../../c-projects/cetta/tests/support/import_pkg/Helper.metta')).
+    (   path_fixture('support/import_pkg/moduleA.metta', Source),
+        path_generated('out/moduleA.he.metta', Output),
+        relocate_local_import_spec(Source, Output,
+            'Helper',
+            '../source_fixture/support/import_pkg/Helper.metta')
+    )).
 
 path_compat_case(3, "register-module! root relocates relative to translated output",
-    relocate_local_module_root(
-        '/home/zar/claude/c-projects/cetta/tests/test_import_modules.metta',
-        '/home/zar/claude/hyperon/translators/.generated_path_compat/out/test_import_modules.petta.metta',
-        'support/import_pkg',
-        '../../../c-projects/cetta/tests/support/import_pkg')).
+    (   path_fixture('test_import_modules.metta', Source),
+        path_generated('out/test_import_modules.petta.metta', Output),
+        relocate_local_module_root(Source, Output,
+            'support/import_pkg',
+            '../source_fixture/support/import_pkg')
+    )).
 
 path_compat_case(4, "foreign/python import surface is intentionally untouched",
-    relocate_local_import_spec(
-        '/home/zar/claude/c-projects/cetta/tests/test_import_foreign_python_file.metta',
-        '/home/zar/claude/hyperon/translators/.generated_path_compat/out/test_import_foreign_python_file.he.metta',
-        'support/import_foreign_pyfile',
-        'support/import_foreign_pyfile')).
+    (   path_fixture('test_import_foreign_python_file.metta', Source),
+        path_generated('out/test_import_foreign_python_file.he.metta', Output),
+        relocate_local_import_spec(Source, Output,
+            'support/import_foreign_pyfile',
+            'support/import_foreign_pyfile')
+    )).
 
 path_compat_case(5, "recursive translation keeps files in place with renamed outputs",
-    (   FixtureRoot = '/home/zar/claude/hyperon/translators/.generated_path_compat/inplace_fixture',
+    (   path_generated('inplace_fixture', FixtureRoot),
         setup_recursive_fixture(FixtureRoot),
+        directory_file_path(FixtureRoot, 'test_import_modules.metta', Entry),
+        directory_file_path(FixtureRoot, 'test_import_modules.he2petta.metta', EntryOut),
+        directory_file_path(FixtureRoot, 'support/import_pkg/moduleA.he2petta.metta', ModuleOut),
         translate_file_he_to_petta_recursive(
-            '/home/zar/claude/hyperon/translators/.generated_path_compat/inplace_fixture/test_import_modules.metta',
-            '.he2petta.metta'),
-        file_contains_text('/home/zar/claude/hyperon/translators/.generated_path_compat/inplace_fixture/test_import_modules.he2petta.metta',
+            Entry, '.he2petta.metta'),
+        file_contains_text(EntryOut,
             "!(register-module! support/import_pkg)"),
-        file_contains_text('/home/zar/claude/hyperon/translators/.generated_path_compat/inplace_fixture/test_import_modules.he2petta.metta',
+        file_contains_text(EntryOut,
             "!(import! &db support/import_pkg/moduleA.he2petta.metta)"),
-        exists_file('/home/zar/claude/hyperon/translators/.generated_path_compat/inplace_fixture/support/import_pkg/moduleA.he2petta.metta'),
-        file_contains_text('/home/zar/claude/hyperon/translators/.generated_path_compat/inplace_fixture/support/import_pkg/moduleA.he2petta.metta',
+        exists_file(ModuleOut),
+        file_contains_text(ModuleOut,
             "!(import! &self Helper.he2petta.metta)")
     )).
 
 path_compat_case(6, "bundle translation emits manifest and bundled entry file",
-    (   BundleDir = '/home/zar/claude/hyperon/translators/.generated_path_compat/bundle_he',
-        translate_file_he_to_petta_bundle(
-            '/home/zar/claude/c-projects/cetta/tests/test_import_nested_depth.metta',
-            BundleDir),
-        exists_file('/home/zar/claude/hyperon/translators/.generated_path_compat/bundle_he/bundle_manifest.tsv'),
-        file_contains_text('/home/zar/claude/hyperon/translators/.generated_path_compat/bundle_he/test_import_nested_depth.metta',
+    (   path_generated('bundle_he', BundleDir),
+        path_fixture('test_import_nested_depth.metta', Entry),
+        directory_file_path(BundleDir, 'bundle_manifest.tsv', Manifest),
+        directory_file_path(BundleDir, 'test_import_nested_depth.metta', EntryOut),
+        directory_file_path(BundleDir, 'support/import_deep/root.metta', RootOut),
+        translate_file_he_to_petta_bundle(Entry, BundleDir),
+        exists_file(Manifest),
+        file_contains_text(EntryOut,
             "!(import! &deep support/import_deep/root.metta)"),
-        exists_file('/home/zar/claude/hyperon/translators/.generated_path_compat/bundle_he/support/import_deep/root.metta')
+        exists_file(RootOut)
+    )).
+
+path_compat_case(7, "default PeTTa->HE file translation lowers hyperpose to superpose",
+    (   path_fixture('test_hyperpose_surface.metta', Source),
+        path_generated('out/test_hyperpose_surface.he.metta', Output),
+        translate_file_petta_to_he(Source, Output),
+        file_contains_text(Output, "(once (superpose ((slow-branch) (cheap-branch))))")
+    )).
+
+path_compat_case(8, "hyperpose-preserving PeTTa->HE file translation keeps hyperpose",
+    (   path_fixture('test_hyperpose_surface.metta', Source),
+        path_generated('out/test_hyperpose_surface.hyperpose.he.metta', Output),
+        translate_file_petta_to_he_hyperpose(Source, Output),
+        file_contains_text(Output, "(once (hyperpose ((slow-branch) (cheap-branch))))")
     )).
 
 file_contains_text(Path, Snippet) :-
@@ -659,11 +835,64 @@ setup_recursive_fixture(FixtureRoot) :-
     copy_fixture_relative(FixtureRoot, 'support/import_pkg/data/Facts.metta').
 
 copy_fixture_relative(FixtureRoot, RelPath) :-
-    directory_file_path('/home/zar/claude/c-projects/cetta/tests', RelPath, Source),
+    path_fixture(RelPath, Source),
     directory_file_path(FixtureRoot, RelPath, Dest),
     file_directory_name(Dest, DestDir),
     make_directory_path(DestDir),
     copy_file(Source, Dest).
+
+path_fixture(RelPath, Path) :-
+    path_generated('source_fixture', Root),
+    directory_file_path(Root, RelPath, Path).
+
+path_generated(RelPath, Path) :-
+    source_file(run_path_compat_tests, SourceFile),
+    file_directory_name(SourceFile, SourceDir),
+    directory_file_path(SourceDir, '.generated_path_compat', CompatDir),
+    directory_file_path(CompatDir, RelPath, Path).
+
+setup_path_compat_fixture :-
+    path_generated('source_fixture', Root),
+    path_generated('out', OutRoot),
+    (   exists_directory(Root)
+    ->  delete_directory_and_contents(Root)
+    ;   true
+    ),
+    make_directory_path(OutRoot),
+    write_fixture_relative(Root, 'test_import_nested_depth.metta',
+        "!(import! &deep support/import_deep/root.metta)\n"),
+    write_fixture_relative(Root, 'test_import_modules.metta',
+        "!(register-module! support/import_pkg)\n!(import! &db import_pkg:moduleA)\n!(import! &facts import_pkg:data:Facts)\n"),
+    write_fixture_relative(Root, 'test_import_foreign_python_file.metta',
+        "!(import! &self support/import_foreign_pyfile)\n"),
+    write_fixture_relative(Root, 'test_hyperpose_surface.metta',
+        "!(test (once (hyperpose ((slow-branch) (cheap-branch)))) True)\n"),
+    write_fixture_relative(Root, 'support/import_deep/root.metta',
+        "(deep-root loaded)\n!(import! &self level1/Mid.metta)\n"),
+    write_fixture_relative(Root, 'support/import_deep/level1/Mid.metta',
+        "(deep-mid loaded)\n!(import! &self level2/Leaf.metta)\n!(import! &self ../shared/Helper.metta)\n"),
+    write_fixture_relative(Root, 'support/import_deep/level1/level2/Leaf.metta',
+        "(deep-leaf loaded)\n!(import! &self ../../shared/LeafHelper.metta)\n"),
+    write_fixture_relative(Root, 'support/import_deep/shared/Helper.metta',
+        "(deep-helper loaded)\n"),
+    write_fixture_relative(Root, 'support/import_deep/shared/LeafHelper.metta',
+        "(deep-leaf-helper loaded)\n"),
+    write_fixture_relative(Root, 'support/import_pkg/moduleA.metta',
+        "(pkg-root loaded)\n!(import! &self Helper)\n"),
+    write_fixture_relative(Root, 'support/import_pkg/Helper.metta',
+        "(pkg-helper loaded)\n"),
+    write_fixture_relative(Root, 'support/import_pkg/data/Facts.metta',
+        "(item alpha)\n(item beta)\n").
+
+write_fixture_relative(Root, RelPath, Text) :-
+    directory_file_path(Root, RelPath, Path),
+    file_directory_name(Path, Dir),
+    make_directory_path(Dir),
+    setup_call_cleanup(
+        open(Path, write, Stream),
+        write(Stream, Text),
+        close(Stream)
+    ).
 
 write_toplevel_atom(Stream, exec(Expr)) :-
     write(Stream, '!'),
@@ -732,6 +961,17 @@ safe_translate_pe(A, TA) :-
         pe_optimize_term(Raw, TA)
     ).
 
+safe_translate_pe_hyperpose(A, TA) :-
+    (   A = ['=', _, _]
+    ->  pe_translate_decl_hyperpose(A, Raw),
+        pe_optimize_decl(Raw, TA)
+    ;   A = [':', _, _]
+    ->  pe_translate_decl_hyperpose(A, Raw),
+        pe_optimize_decl(Raw, TA)
+    ;   pe_translate_term_hyperpose(A, Raw),
+        pe_optimize_term(Raw, TA)
+    ).
+
 safe_translate_pe_trusted(A, TA) :-
     (   A = ['=', _, _]
     ->  pe_translate_decl_trusted(A, Raw),
@@ -749,6 +989,12 @@ safe_translate_pe_raw(A, TA) :-
     ;   pe_translate_term(A, TA)
     ).
 
+safe_translate_pe_hyperpose_raw(A, TA) :-
+    (   A = ['=', _, _] -> pe_translate_decl_hyperpose(A, TA)
+    ;   A = [':', _, _] -> pe_translate_decl_hyperpose(A, TA)
+    ;   pe_translate_term_hyperpose(A, TA)
+    ).
+
 safe_translate_pe_extended(A, TA) :-
     (   A = ['=', _, _]
     ->  pe_translate_decl_ext(A, Raw),
@@ -760,10 +1006,27 @@ safe_translate_pe_extended(A, TA) :-
         pe_optimize_term(Raw, TA)
     ).
 
+safe_translate_pe_extended_hyperpose(A, TA) :-
+    (   A = ['=', _, _]
+    ->  pe_translate_decl_ext_hyperpose(A, Raw),
+        pe_optimize_decl(Raw, TA)
+    ;   A = [':', _, _]
+    ->  pe_translate_decl_ext_hyperpose(A, Raw),
+        pe_optimize_decl(Raw, TA)
+    ;   pe_translate_term_ext_hyperpose(A, Raw),
+        pe_optimize_term(Raw, TA)
+    ).
+
 safe_translate_pe_extended_raw(A, TA) :-
     (   A = ['=', _, _] -> pe_translate_decl_ext(A, TA)
     ;   A = [':', _, _] -> pe_translate_decl_ext(A, TA)
     ;   pe_translate_term_ext(A, TA)
+    ).
+
+safe_translate_pe_extended_hyperpose_raw(A, TA) :-
+    (   A = ['=', _, _] -> pe_translate_decl_ext_hyperpose(A, TA)
+    ;   A = [':', _, _] -> pe_translate_decl_ext_hyperpose(A, TA)
+    ;   pe_translate_term_ext_hyperpose(A, TA)
     ).
 
 %% ── Batch test: PeTTa → HE on PeTTa examples + miner ────────────

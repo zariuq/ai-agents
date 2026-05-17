@@ -4,8 +4,8 @@
 %% MeTTa lexer rule: tokens are delimited by whitespace, '(', ')' only.
 %% Everything else (including $, %, +, -, <, >, =, !, @, etc.) is a symbol char.
 %%
-%% Council (Carneiro, Knuth): parser correctness is the foundation.
-%% Council (Wadler, Pfenning): parse → translate → print, each testable.
+%% Parser correctness is the foundation: parse, translate, and print stay
+%% separately testable.
 
 :- module(metta_parser, [read_metta_file/2, read_metta_string/2,
                           print_sexpr/1, print_sexpr/2]).

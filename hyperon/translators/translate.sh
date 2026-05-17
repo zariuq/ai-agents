@@ -14,6 +14,7 @@
 #   ./translate.sh he2petta --bundle input.metta output_dir/
 #   ./translate.sh petta2he --bundle input.metta output_dir/
 #   ./translate.sh petta2he --extended input.metta output.metta
+#   ./translate.sh petta2he --preserve-hyperpose input.metta output.metta
 #   ./translate.sh --test
 #   ./translate.sh --help
 
@@ -37,6 +38,9 @@ Options:
   --recursive   Translate file and all local imports in place
   --bundle      Translate file and all local imports into a bundle directory
   --extended    Use extended mode (PeTTa->HE only: emit 'collect' instead of 'collapse')
+  --preserve-hyperpose
+                Preserve 'hyperpose' instead of lowering it to 'superpose'
+                (PeTTa->HE only; for HE runtimes that actually support hyperpose)
   --raw         Skip post-translation optimization (PeTTa->HE only)
   --test        Run the translator test suite
   --help        Show this help
@@ -74,7 +78,7 @@ case "$1" in
         swipl -q -l "$SCRIPT_DIR/test_translators.pl" -g run_tests -g halt
         echo "---"
         echo "Running path compatibility tests..."
-        swipl -q -l "$SCRIPT_DIR/test_on_real_files.pl" -g run_path_compat_tests -g halt 2>/dev/null || true
+        swipl -q -l "$SCRIPT_DIR/test_on_real_files.pl" -g run_path_compat_tests -g halt
         echo "All tests passed."
         exit 0
         ;;
@@ -91,12 +95,14 @@ esac
 # Parse options
 MODE="single"
 EXTENDED=""
+HYPERPOSE=""
 RAW=""
 while [[ $# -gt 0 && "$1" == --* ]]; do
     case "$1" in
         --recursive) MODE="recursive"; shift ;;
         --bundle) MODE="bundle"; shift ;;
         --extended) EXTENDED="_extended"; shift ;;
+        --preserve-hyperpose) HYPERPOSE="_hyperpose"; shift ;;
         --raw) RAW="_raw"; shift ;;
         *) echo "Error: unknown option '$1'"; exit 1 ;;
     esac
@@ -123,7 +129,7 @@ case "$MODE" in
         if [ "$DIRECTION" = "he2petta" ]; then
             GOAL="translate_file_he_to_petta('$INPUT','$OUTPUT')"
         else
-            GOAL="translate_file_petta_to_he${EXTENDED}${RAW:+_raw}('$INPUT','$OUTPUT')"
+            GOAL="translate_file_petta_to_he${EXTENDED}${HYPERPOSE}${RAW:+_raw}('$INPUT','$OUTPUT')"
         fi
         ;;
     recursive)

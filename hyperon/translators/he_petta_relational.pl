@@ -144,7 +144,7 @@ petta_to_he([length, Expr], [length, TExpr], S0, S1) :-
     petta_to_he(Expr, TExpr, S0, S1), !.
 
 petta_to_he([test, Actual, Expected],
-            [assertEqual, TActual, TExpected], S0, S2) :-
+            [test, TActual, TExpected], S0, S2) :-
     petta_to_he(Actual, TActual, S0, S1),
     petta_to_he(Expected, TExpected, S1, S2), !.
 

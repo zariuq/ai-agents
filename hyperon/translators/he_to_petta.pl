@@ -52,8 +52,8 @@ fresh_var(Prefix, Var) :-
 %% HE's change-state! returns (State val), PeTTa's returns true.
 %% When the return value is bound (via chain), wrap to produce (State val)
 %% explicitly after executing the side effect.
-%% Council: Carneiro, Pfenning — handle dialect difference in the translator,
-%% never modify PeTTa's core runtime.
+%% Handle the dialect difference in the translator rather than modifying
+%% PeTTa's core runtime.
 %% MUST be before generic chain rule to take priority in trusted mode.
 translate_term_mode(trusted, [chain, ['change-state!', Ref, Val], Var, Body],
                     TOut) :-
@@ -116,7 +116,7 @@ translate_term_mode(Mode, ['atom-subst', Atom, Var, Tmpl], [let, Var, TAtom, TTm
     translate_term_mode(Mode, Tmpl, TTmpl), !.
 
 %% nop → (let $fresh_ X ())
-%% Fresh variable to avoid capture (council: Carneiro, Wadler)
+%% Fresh variable to avoid capture.
 translate_term_mode(Mode, [nop, X], [let, FV, TX, '()']) :-
     fresh_var(discard, FV),
     translate_term_mode(Mode, X, TX), !.
