@@ -152,7 +152,7 @@ runtime compatibility with actual hyperpose support".
 | `foldl-atom list init agg` | `foldl-atom list' init' $acc $item (eval (agg' $acc $item))` |
 | `reduce expr` | `eval expr'` |
 | `length (collapse expr)` | `let $tuple (collapse expr') (size-atom $tuple)` |
-| `test actual expected` | `test actual' expected'` plus a file-local core-HE-compatible definition when needed |
+| `test actual expected` | `test actual' expected'`, preserving the observable test surface |
 | `unique-atom (collapse expr)` | `collapse (unique expr')` |
 | `hyperpose exprs` | `superpose exprs'` by default, or `hyperpose exprs'` with `--preserve-hyperpose` |
 | `@<` | `<s` (string comparison) |

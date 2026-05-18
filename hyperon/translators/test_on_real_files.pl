@@ -404,7 +404,7 @@ rewrite_builtin_test_item(plain(Expr), plain(TExpr)) :-
     rewrite_builtin_test_term(Expr, TExpr).
 
 rewrite_builtin_test_term([test, Actual, Expected],
-                          [assertEqualToEval, RActual, RExpected]) :-
+                          [test, RActual, RExpected]) :-
     !,
     rewrite_builtin_test_term(Actual, RActual),
     rewrite_builtin_test_term(Expected, RExpected).

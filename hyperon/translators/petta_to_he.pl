@@ -243,10 +243,9 @@ translate_term_mode(Mode, [length, Expr], [length, TExpr]) :-
 %% PeTTa test Actual Expected
 %%   → test Actual' Expected'
 %%
-%% Keep the surface head intact and prepend one file-local definition only when
-%% the source relied on the builtin PeTTa test. This keeps the actual
-%% expression in ordinary call position instead of rebuilding evaluation from a
-%% quoted helper argument later.
+%% Keep the observable source test surface intact. PeTTa's test prints the
+%% actual/expected comparison before returning, so lowering it to a quiet
+%% assertion helper would change source I/O semantics.
 translate_term_mode(Mode, [test, Actual, Expected],
                [test, TActual, TExpected]) :-
     translate_term_mode(Mode, Actual, TActual),
@@ -500,7 +499,7 @@ rewrite_builtin_test_decl(Term, Rewritten) :-
     rewrite_builtin_test_term(Term, Rewritten).
 
 rewrite_builtin_test_term([test, Actual, Expected],
-                          [assertEqualToEval, RActual, RExpected]) :-
+                          [test, RActual, RExpected]) :-
     !,
     rewrite_builtin_test_term(Actual, RActual),
     rewrite_builtin_test_term(Expected, RExpected).

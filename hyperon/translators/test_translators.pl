@@ -318,7 +318,7 @@ test_petta_to_he(31, "test length(collapse ...) → quoted HE helper call",
     [test, [length, [collapse, [match, '&self', ['edge', '$x', '$y'], '$x']]], 2],
     test_length_collapse_shape([match, '&self', ['edge', '$x', '$y'], '$x'], 2)).
 
-test_petta_to_he_program(1, "program-level builtin test rewrites to assertEqualToEval",
+test_petta_to_he_program(1, "program-level builtin test preserves observable test surface",
     [['=', [probe], [test, ['+', 1, 2], 3]]],
     program_rewrites_builtin_test).
 
@@ -622,7 +622,7 @@ run_one_pe(N, Name, Input, test_length_collapse_shape(Goal, Expected)) :- !,
 
 run_one_pe_program(N, Name, Input, program_rewrites_builtin_test) :- !,
     (   pe_translate_program(Input, Result)
-    ->  (   Result = [['=', [probe], [assertEqualToEval, ['+', 1, 2], 3]]]
+    ->  (   Result = [['=', [probe], [test, ['+', 1, 2], 3]]]
         ->  format("  ✓ ~w: ~w~n", [N, Name])
         ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
         )
