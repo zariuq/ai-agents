@@ -4,21 +4,24 @@ import Mettapedia.Languages.MeTTa.Translation.HEPeTTaTranslateStableCommon
 /-!
 # HE↔PeTTa Operational Bridge Fragments
 
-Small-step/trace bridge relations for the currently theorem-backed sequential
-state fragment and the shared atomspace-handle fragment.
+Small-step/trace bridge relations for the currently theorem-backed operational
+fragments.
 
 The key scope boundary is honest:
 
-- builtin state surface: `new-state`, `get-state`, `change-state!`
+- state has a local model here, but no nonempty stable-common identity
+  fragment: PeTTa named state and HE native state have different contracts
 - shared atomspace surface: `match`, `get-atoms`, `add-atom`, `remove-atom`
 - explicit handles are allowed as long as the handle itself is already in the
   stable/common fragment
 - allocation of new spaces is modeled by `SpaceAllocStep` with
   translation-preservation theorems for both directions
 
-The proof strategy is intentionally lightweight: the executable translators are
-already identity on these validated fragments, so translation preservation of
-the operational relations reduces to those fixed-point theorems.
+The proof strategy is intentionally lightweight: where a fragment is admitted
+as stable-common identity, the executable translators are already identity on
+that validated fragment, so translation preservation of the operational
+relations reduces to those fixed-point theorems. The state fixed-point lemmas
+below are therefore vacuous until a genuine common state contract is added.
 -/
 
 namespace Mettapedia.Languages.MeTTa.Translation
@@ -274,6 +277,12 @@ inductive StateTrace : StateConfig → List Atom → StateConfig → List StateO
       (hrest : StateTrace cfg1 rest cfg2 obsRest) :
       StateTrace cfg (cmd :: rest) cfg2 (obs :: obsRest)
 
+/-- State programs admitted to the stable-common identity bridge.
+
+    This predicate is intentionally empty through `isSharedStateFragment` while
+    PeTTa named state and HE native state remain separate operational
+    contracts.
+-/
 def SharedStateProgram (ops : List Atom) : Prop :=
   ∀ a, a ∈ ops → isSharedStateFragment a = true
 

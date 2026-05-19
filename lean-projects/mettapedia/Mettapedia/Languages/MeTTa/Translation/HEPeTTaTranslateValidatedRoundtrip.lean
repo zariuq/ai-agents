@@ -165,9 +165,30 @@ private theorem translatePeTTa_notForbidden_of_headSource_aux
                                 have hfalse : False := by
                                   simpa [isValidatedPeTTaHeadSource, isValidatedPeTTaSource] using h
                                 exact False.elim hfalse
-                              · simp [translatePeTTa, translatePeTTa.translatePeTTaList, hprogn,
-                                  hprog1, hfoldl, hfoldall, hreduce, hlt, hgt, hunique,
-                                  huniqueatom, isForbiddenHeadSymbol]
+                              · by_cases hbind : c = "bind!"
+                                · subst hbind
+                                  have hfalse : False := by
+                                    simpa [isValidatedPeTTaHeadSource, isValidatedPeTTaSource] using h
+                                  exact False.elim hfalse
+                                · by_cases hnew : c = "new-state"
+                                  · subst hnew
+                                    have hfalse : False := by
+                                      simpa [isValidatedPeTTaHeadSource, isValidatedPeTTaSource] using h
+                                    exact False.elim hfalse
+                                  · by_cases hget : c = "get-state"
+                                    · subst hget
+                                      have hfalse : False := by
+                                        simpa [isValidatedPeTTaHeadSource, isValidatedPeTTaSource] using h
+                                      exact False.elim hfalse
+                                    · by_cases hchange : c = "change-state!"
+                                      · subst hchange
+                                        have hfalse : False := by
+                                          simpa [isValidatedPeTTaHeadSource, isValidatedPeTTaSource] using h
+                                        exact False.elim hfalse
+                                      · simp [translatePeTTa, translatePeTTa.translatePeTTaList, hprogn,
+                                          hprog1, hfoldl, hfoldall, hreduce, hlt, hgt, hunique,
+                                          huniqueatom, hbind, hnew, hget, hchange,
+                                          isForbiddenHeadSymbol]
           | var _ =>
               simp [translatePeTTa, translatePeTTa.translatePeTTaList, isForbiddenHeadSymbol]
           | grounded _ =>
@@ -622,13 +643,38 @@ private theorem translatePeTTa_preserves_stableCommonForm_aux
                               have hbad : False := by
                                 simpa [isValidatedPeTTaSource, isValidatedPeTTaHeadSource] using h
                               exact hbad
+                            have hbind : c ≠ "bind!" := by
+                              intro hc
+                              subst hc
+                              have hbad : False := by
+                                simpa [isValidatedPeTTaSource, isValidatedPeTTaHeadSource] using h
+                              exact hbad
+                            have hnew : c ≠ "new-state" := by
+                              intro hc
+                              subst hc
+                              have hbad : False := by
+                                simpa [isValidatedPeTTaSource, isValidatedPeTTaHeadSource] using h
+                              exact hbad
+                            have hget : c ≠ "get-state" := by
+                              intro hc
+                              subst hc
+                              have hbad : False := by
+                                simpa [isValidatedPeTTaSource, isValidatedPeTTaHeadSource] using h
+                              exact hbad
+                            have hchange : c ≠ "change-state!" := by
+                              intro hc
+                              subst hc
+                              have hbad : False := by
+                                simpa [isValidatedPeTTaSource, isValidatedPeTTaHeadSource] using h
+                              exact hbad
                             have hparts :
                                 isValidatedPeTTaHeadSource (.symbol c) = true ∧
                                   isValidatedPeTTaList args = true := by
                               simpa [isValidatedPeTTaSource, isValidatedPeTTaHeadSource,
                                 Bool.and_eq_true, hchain, hcollapse, hsuperpose, hswitch,
                                 hswitchm, hatomsubst, hnop, hfunction, hunique,
-                                huniqueatom, hprogn, hprog1, hfoldl, hfoldall, hreduce, hlt, hgt] using h
+                                huniqueatom, hbind, hnew, hget, hchange, hprogn, hprog1,
+                                hfoldl, hfoldall, hreduce, hlt, hgt] using h
                             have htail :
                                 isStableCommonList (translatePeTTa.translatePeTTaList args s).1 = true :=
                               translatePeTTaList_preserves_stableCommonList_aux args s hparts.2
@@ -647,7 +693,7 @@ private theorem translatePeTTa_preserves_stableCommonForm_aux
                               exact htail
                             simpa [translatePeTTa, translatePeTTa.translatePeTTaList,
                               hprogn, hprog1, hfoldl, hfoldall, hreduce, hlt, hgt, hunique,
-                              huniqueatom] using hbody
+                              huniqueatom, hbind, hnew, hget, hchange] using hbody
           | var _ =>
               have hargs : isValidatedPeTTaList args = true := by
                 simpa [isValidatedPeTTaSource, isValidatedPeTTaHeadSource] using h

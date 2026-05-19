@@ -123,13 +123,30 @@ private theorem translateHE_id_of_stableCommonForm_aux
                                 intro hc
                                 subst hc
                                 simp [isStableCommonForm] at h
+                              have hbind : c ≠ "bind!" := by
+                                intro hc
+                                subst hc
+                                simp [isStableCommonForm] at h
+                              have hnew : c ≠ "new-state" := by
+                                intro hc
+                                subst hc
+                                simp [isStableCommonForm] at h
+                              have hget : c ≠ "get-state" := by
+                                intro hc
+                                subst hc
+                                simp [isStableCommonForm] at h
+                              have hchange : c ≠ "change-state!" := by
+                                intro hc
+                                subst hc
+                                simp [isStableCommonForm] at h
                               have hparts :
                                   isStableCommonHead (.symbol c) = true ∧
                                     isStableCommonList args = true := by
                                 simpa [isStableCommonForm, isStableCommonExpr, isStableCommonHead,
                                   isForbiddenHeadSymbol, hchain, hcollapse, hsuperpose, hswitch,
                                   hswitchm, hatomsubst, hnop, hfunction, hfoldl, hfoldall,
-                                  hunique, huniqueatom, hprogn, hprog1, hlt, hgt] using h
+                                  hunique, huniqueatom, hprogn, hprog1, hlt, hgt, hbind, hnew,
+                                  hget, hchange] using h
                               exact hparts.2
                             have htail := translateHEList_id_of_stableCommonList_aux args s hargs
                             have htail₁ : (translateHE.translateHEList args s).1 = args := by
@@ -299,20 +316,38 @@ private theorem translatePeTTa_id_of_stableCommonForm_aux
                           intro hc
                           subst hc
                           simp [isStableCommonForm] at h
+                        have hbind : c ≠ "bind!" := by
+                          intro hc
+                          subst hc
+                          simp [isStableCommonForm] at h
+                        have hnew : c ≠ "new-state" := by
+                          intro hc
+                          subst hc
+                          simp [isStableCommonForm] at h
+                        have hget : c ≠ "get-state" := by
+                          intro hc
+                          subst hc
+                          simp [isStableCommonForm] at h
+                        have hchange : c ≠ "change-state!" := by
+                          intro hc
+                          subst hc
+                          simp [isStableCommonForm] at h
                         have hparts :
                             isStableCommonHead (.symbol c) = true ∧
                               isStableCommonList args = true := by
                           simpa [isStableCommonForm, isStableCommonExpr, isStableCommonHead,
                             isForbiddenHeadSymbol, hchain, hcollapse, hsuperpose, hswitch,
                             hswitchm, hatomsubst, hnop, hfunction, hunique, huniqueatom, hprogn,
-                            hprog1, hfoldl, hfoldall, hlt, hgt, hreduce] using h
+                            hprog1, hfoldl, hfoldall, hlt, hgt, hreduce, hbind, hnew, hget,
+                            hchange] using h
                         have htail := translatePeTTaList_id_of_stableCommonList_aux args s hparts.2
                         have htail₁ : (translatePeTTa.translatePeTTaList args s).1 = args := by
                           exact congrArg Prod.fst htail
                         have htail₂ : (translatePeTTa.translatePeTTaList args s).2 = s := by
                           exact congrArg Prod.snd htail
                         simp [translatePeTTa, translatePeTTa.translatePeTTaList, hprogn, hprog1,
-                          huniqueatom, hfoldl, hfoldall, hlt, hgt, hreduce, htail₁, htail₂]
+                          huniqueatom, hfoldl, hfoldall, hlt, hgt, hreduce, hbind, hnew, hget,
+                          hchange, htail₁, htail₂]
       | var v =>
         have hargs : isStableCommonList args = true := by
           simpa [isStableCommonForm, isStableCommonExpr, isStableCommonHead,
@@ -402,23 +437,24 @@ theorem translatePeTTa_id_of_sharedAtomSpaceFragment (a : Atom) (s : Nat)
   translatePeTTa_id_of_stableCommonForm a s
     (sharedAtomSpaceFragment_preserves_stableCommonForm a h)
 
-/-- Both translators are identity on the shared state fragment
-    (`new-state`, `get-state`, `change-state!`) when arguments are already in
-    stable common form. -/
+/-- HE→PeTTa is identity on the currently admitted state identity fragment.
+
+    The fragment is intentionally empty: PeTTa named state and HE native state
+    share spellings, but not an operational contract. -/
 theorem translateHE_id_of_sharedStateFragment (a : Atom) (s : Nat)
     (h : isSharedStateFragment a = true) :
     translateHE a s = (a, s) :=
   translateHE_id_of_stableCommonForm a s
     (sharedStateFragment_preserves_stableCommonForm a h)
 
-/-- PeTTa→HE direction of the same shared state fixed-point fact. -/
+/-- PeTTa→HE direction of the empty state identity boundary. -/
 theorem translatePeTTa_id_of_sharedStateFragment (a : Atom) (s : Nat)
     (h : isSharedStateFragment a = true) :
     translatePeTTa a s = (a, s) :=
   translatePeTTa_id_of_stableCommonForm a s
     (sharedStateFragment_preserves_stableCommonForm a h)
 
-/-- HE→PeTTa fixed-point form specialized to the shared state fragment. -/
+/-- HE→PeTTa roundtrip specialized to the empty state identity boundary. -/
 theorem translateHE_then_translatePeTTa_id_of_sharedStateFragment (a : Atom) (s : Nat)
     (h : isSharedStateFragment a = true) :
     let (petta, s1) := translateHE a s
@@ -427,7 +463,7 @@ theorem translateHE_then_translatePeTTa_id_of_sharedStateFragment (a : Atom) (s 
   translateHE_then_translatePeTTa_id_of_stableCommonForm a s
     (sharedStateFragment_preserves_stableCommonForm a h)
 
-/-- PeTTa→HE fixed-point form specialized to the shared state fragment. -/
+/-- PeTTa→HE roundtrip specialized to the empty state identity boundary. -/
 theorem translatePeTTa_then_translateHE_id_of_sharedStateFragment (a : Atom) (s : Nat)
     (h : isSharedStateFragment a = true) :
     let (he, s1) := translatePeTTa a s

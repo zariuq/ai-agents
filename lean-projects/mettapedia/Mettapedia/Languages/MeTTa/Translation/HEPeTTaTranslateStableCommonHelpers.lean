@@ -124,10 +124,23 @@ theorem validatedPeTTaSource_of_headSource_aux
                                     · by_cases hgt : c = "@>"
                                       · subst hgt
                                         simp [isValidatedPeTTaHeadSource] at h
-                                      · simp [isValidatedPeTTaHeadSource, isValidatedPeTTaSource,
-                                          hchain, hcollapse, hsuperpose, hswitch, hswitchm,
-                                          hatomsubst, hnop, hfunction, hunique, huniqueatom, hprogn,
-                                          hprog1, hfoldall, hfoldl, hreduce, hlt, hgt] at h ⊢
+                                      · by_cases hbind : c = "bind!"
+                                        · subst hbind
+                                          simp [isValidatedPeTTaHeadSource] at h
+                                        · by_cases hnew : c = "new-state"
+                                          · subst hnew
+                                            simp [isValidatedPeTTaHeadSource] at h
+                                          · by_cases hget : c = "get-state"
+                                            · subst hget
+                                              simp [isValidatedPeTTaHeadSource] at h
+                                            · by_cases hchange : c = "change-state!"
+                                              · subst hchange
+                                                simp [isValidatedPeTTaHeadSource] at h
+                                              · simp [isValidatedPeTTaHeadSource, isValidatedPeTTaSource,
+                                                  hchain, hcollapse, hsuperpose, hswitch, hswitchm,
+                                                  hatomsubst, hnop, hfunction, hunique, huniqueatom,
+                                                  hprogn, hprog1, hfoldall, hfoldl, hreduce, hlt, hgt,
+                                                  hbind, hnew, hget, hchange] at h ⊢
   | grounded _ => simp [isValidatedPeTTaHeadSource, isValidatedPeTTaSource]
   | expression es =>
       cases es with
@@ -315,8 +328,29 @@ theorem validatedPeTTaSource_of_headSource_aux
                                         | cons _ _ =>
                                             simp [isValidatedPeTTaHeadSource, isValidatedPeTTaSource,
                                               hprogn, hunique, huniqueatom, hprog1, hfoldall, hfoldl, hreduce, hlt] at h
-                              · simpa [isValidatedPeTTaHeadSource, isValidatedPeTTaSource,
-                                  hprogn, hunique, huniqueatom, hprog1, hfoldall, hfoldl, hreduce, hlt, hgt] using h
+                              · by_cases hbind : c = "bind!"
+                                · subst hbind
+                                  simpa [isValidatedPeTTaHeadSource, isValidatedPeTTaSource,
+                                    hprogn, hunique, huniqueatom, hprog1, hfoldall, hfoldl,
+                                    hreduce, hlt, hgt] using h
+                                · by_cases hnew : c = "new-state"
+                                  · subst hnew
+                                    simpa [isValidatedPeTTaHeadSource, isValidatedPeTTaSource,
+                                      hprogn, hunique, huniqueatom, hprog1, hfoldall, hfoldl,
+                                      hreduce, hlt, hgt, hbind] using h
+                                  · by_cases hget : c = "get-state"
+                                    · subst hget
+                                      simpa [isValidatedPeTTaHeadSource, isValidatedPeTTaSource,
+                                        hprogn, hunique, huniqueatom, hprog1, hfoldall, hfoldl,
+                                        hreduce, hlt, hgt, hbind, hnew] using h
+                                    · by_cases hchange : c = "change-state!"
+                                      · subst hchange
+                                        simpa [isValidatedPeTTaHeadSource, isValidatedPeTTaSource,
+                                          hprogn, hunique, huniqueatom, hprog1, hfoldall, hfoldl,
+                                          hreduce, hlt, hgt, hbind, hnew, hget] using h
+                                      · simpa [isValidatedPeTTaHeadSource, isValidatedPeTTaSource,
+                                          hprogn, hunique, huniqueatom, hprog1, hfoldall, hfoldl,
+                                          hreduce, hlt, hgt, hbind, hnew, hget, hchange] using h
           | var _ => simpa [isValidatedPeTTaHeadSource] using h
           | grounded _ => simpa [isValidatedPeTTaHeadSource] using h
           | expression _ => simpa [isValidatedPeTTaHeadSource] using h
@@ -410,9 +444,22 @@ theorem headSourcePeTTaSymbol_notForbidden_aux
                                 · by_cases hgt : c = "@>"
                                   · subst hgt
                                     simp [isValidatedPeTTaHeadSource] at h
-                                  · simp [isForbiddenHeadSymbol, hchain, hcollapse, hsuperpose,
-                                      hswitch, hswitchm, hatomsubst, hnop, hfunction, hunique,
-                                      huniqueatom, hprogn, hprog1, hfoldall, hfoldl, hreduce, hlt, hgt]
+                                  · by_cases hbind : c = "bind!"
+                                    · subst hbind
+                                      simp [isValidatedPeTTaHeadSource] at h
+                                    · by_cases hnew : c = "new-state"
+                                      · subst hnew
+                                        simp [isValidatedPeTTaHeadSource] at h
+                                      · by_cases hget : c = "get-state"
+                                        · subst hget
+                                          simp [isValidatedPeTTaHeadSource] at h
+                                        · by_cases hchange : c = "change-state!"
+                                          · subst hchange
+                                            simp [isValidatedPeTTaHeadSource] at h
+                                          · simp [isForbiddenHeadSymbol, hchain, hcollapse, hsuperpose,
+                                              hswitch, hswitchm, hatomsubst, hnop, hfunction, hunique,
+                                              huniqueatom, hprogn, hprog1, hfoldall, hfoldl, hreduce,
+                                              hlt, hgt, hbind, hnew, hget, hchange]
 
 
 

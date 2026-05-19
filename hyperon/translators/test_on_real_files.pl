@@ -41,7 +41,13 @@
                              translate_decl_extended_hyperpose/2 as pe_translate_decl_ext_hyperpose,
                              translate_decl_trusted/2 as pe_translate_decl_trusted,
                              optimize_term/2 as pe_optimize_term,
-                             optimize_decl/2 as pe_optimize_decl]).
+                             optimize_decl/2 as pe_optimize_decl,
+                             with_helper_context/2 as pe_with_helper_context,
+                             quoted_syntax_fun/1 as pe_quoted_syntax_fun,
+                             petta_state_clear_fun/1 as pe_petta_state_clear_fun,
+                             petta_state_set_fun/1 as pe_petta_state_set_fun,
+                             petta_state_get_fun/1 as pe_petta_state_get_fun,
+                             petta_state_cell_fun/1 as pe_petta_state_cell_fun]).
 
 %% ── File-level translation ──────────────────────────────────────
 %%
@@ -272,6 +278,13 @@ translate_term_for(petta_to_he_extended_hyperpose_raw, A, TA) :-
     pe_translate_term_ext_hyperpose(A, TA).
 
 translate_toplevel_atoms(Direction, Atoms, TAtoms) :-
+    petta_to_he_direction(Direction),
+    !,
+    pe_with_helper_context(Atoms,
+        ( translate_toplevel_atoms_acc(Direction, Atoms, TAtoms0),
+          postprocess_toplevel_atoms(Direction, Atoms, TAtoms0, TAtoms)
+        )).
+translate_toplevel_atoms(Direction, Atoms, TAtoms) :-
     translate_toplevel_atoms_acc(Direction, Atoms, TAtoms0),
     postprocess_toplevel_atoms(Direction, Atoms, TAtoms0, TAtoms).
 
@@ -321,12 +334,23 @@ petta_to_he_direction(petta_to_he_extended_hyperpose_raw).
 
 maybe_prepend_petta_compat_items(SourceAtoms, TAtoms0, TAtoms) :-
     maybe_rewrite_builtin_test_items(SourceAtoms, TAtoms0, TAtoms1),
-    maybe_prepend_quote_compat_items(SourceAtoms, TAtoms1, TAtoms2),
-    maybe_prepend_length_compat_items(SourceAtoms, TAtoms2, TAtoms3),
-    TAtoms = TAtoms3.
+    maybe_prepend_petta_state_compat_items(SourceAtoms, TAtoms1, TAtoms2),
+    maybe_prepend_quote_compat_items(SourceAtoms, TAtoms2, TAtoms3),
+    maybe_prepend_length_compat_items(SourceAtoms, TAtoms3, TAtoms4),
+    TAtoms = TAtoms4.
+
+maybe_prepend_petta_state_compat_items(SourceAtoms, TAtoms0, TAtoms) :-
+    (   translated_items_use_petta_state_helper(TAtoms0),
+        \+ source_program_defines_petta_state_helper(SourceAtoms)
+    ->  petta_state_compat_items(CompatItems),
+        append(CompatItems, TAtoms0, TAtoms)
+    ;   TAtoms = TAtoms0
+    ).
 
 maybe_prepend_quote_compat_items(SourceAtoms, TAtoms0, TAtoms) :-
-    (   source_program_uses_quote(SourceAtoms),
+    (   ( source_program_uses_quote(SourceAtoms)
+        ; translated_items_use_quoted_syntax(TAtoms0)
+        ),
         \+ source_program_defines_quoted_syntax(SourceAtoms)
     ->  petta_quote_compat_items(CompatItems),
         append(CompatItems, TAtoms0, TAtoms)
@@ -367,6 +391,49 @@ source_program_uses_quote(Term) :-
 source_program_uses_quote(_) :-
     fail.
 
+translated_items_use_quoted_syntax(Items) :-
+    is_list(Items),
+    member(Item, Items),
+    item_payload(Item, Term),
+    term_uses_quoted_syntax(Term), !.
+
+term_uses_quoted_syntax(Term) :-
+    is_list(Term),
+    pe_quoted_syntax_fun(QuoteFun),
+    (   Term = [QuoteFun|_]
+    ;   member(Subterm, Term),
+        term_uses_quoted_syntax(Subterm)
+    ).
+
+term_uses_quoted_syntax(_) :-
+    fail.
+
+translated_items_use_petta_state_helper(Items) :-
+    is_list(Items),
+    member(Item, Items),
+    item_payload(Item, Term),
+    term_uses_petta_state_helper(Term), !.
+
+term_uses_petta_state_helper(Term) :-
+    is_list(Term),
+    (   petta_state_helper_call(Term)
+    ;   member(Subterm, Term),
+        term_uses_petta_state_helper(Subterm)
+    ).
+
+term_uses_petta_state_helper(_) :-
+    fail.
+
+petta_state_helper_call([Head|_]) :-
+    atom(Head),
+    (   pe_petta_state_clear_fun(Head)
+    ;   pe_petta_state_set_fun(Head)
+    ;   pe_petta_state_get_fun(Head)
+    ).
+
+item_payload(exec(Term), Term).
+item_payload(plain(Term), Term).
+
 source_program_uses_test(Term) :-
     is_list(Term),
     (   Term = [test, _, _]
@@ -381,9 +448,19 @@ source_program_defines_length([['=', [length|_], _]|_]) :- !.
 source_program_defines_length([_|Rest]) :-
     source_program_defines_length(Rest).
 
-source_program_defines_quoted_syntax([['=', ['quoted-syntax'|_], _]|_]) :- !.
+source_program_defines_quoted_syntax([['=', [Head|_], _]|_]) :-
+    pe_quoted_syntax_fun(Head), !.
 source_program_defines_quoted_syntax([_|Rest]) :-
     source_program_defines_quoted_syntax(Rest).
+
+source_program_defines_petta_state_helper([['=', [Head|_], _]|_]) :-
+    atom(Head),
+    (   pe_petta_state_clear_fun(Head)
+    ;   pe_petta_state_set_fun(Head)
+    ;   pe_petta_state_get_fun(Head)
+    ), !.
+source_program_defines_petta_state_helper([_|Rest]) :-
+    source_program_defines_petta_state_helper(Rest).
 
 source_program_defines_test([['=', [test|_], _]|_]) :- !.
 source_program_defines_test([_|Rest]) :-
@@ -395,8 +472,34 @@ petta_length_compat_items([
 ]).
 
 petta_quote_compat_items([
-    plain(['=', ['quoted-syntax', [quote, '$expr']], '$expr'])
-]).
+    plain(['=', [QuoteFun, [quote, '$expr']], '$expr'])
+]) :-
+    pe_quoted_syntax_fun(QuoteFun).
+
+petta_state_compat_items(Items) :-
+    pe_petta_state_clear_fun(ClearFun),
+    pe_petta_state_set_fun(SetFun),
+    pe_petta_state_get_fun(GetFun),
+    pe_petta_state_cell_fun(CellFun),
+    Items = [
+    plain(['=', [ClearFun, '$name'],
+           [let, '$__tr_state_removed',
+            [collapse,
+             [match, '&self', [CellFun, '$name', '$old'],
+              ['remove-atom', '&self',
+               [CellFun, '$name', '$old']]]],
+            true]]),
+    plain(['=', [SetFun, '$name', '$value'],
+           [let, '$__tr_state_cleared',
+            [ClearFun, '$name'],
+            [let, '$__tr_state_added',
+             ['add-atom', '&self',
+              [CellFun, '$name', '$value']],
+             true]]]),
+    plain(['=', [GetFun, '$name'],
+           [match, '&self', [CellFun, '$name', '$value'],
+            '$value']])
+    ].
 
 rewrite_builtin_test_item(exec(Expr), exec(TExpr)) :-
     rewrite_builtin_test_term(Expr, TExpr).

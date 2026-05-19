@@ -23,7 +23,13 @@
             translate_program_trusted_extended/2,
             optimize_term/2,
             optimize_decl/2,
-            optimize_program/2
+            optimize_program/2,
+            with_helper_context/2,
+            quoted_syntax_fun/1,
+            petta_state_clear_fun/1,
+            petta_state_set_fun/1,
+            petta_state_get_fun/1,
+            petta_state_cell_fun/1
           ]).
 
 %% ── Fresh variable generation (capture-avoiding) ────────────────
@@ -33,23 +39,135 @@
 :- dynamic tr_counter/1.
 tr_counter(0).
 
+:- dynamic tr_helper_name/2.
+
+:- meta_predicate with_helper_context(+, 0).
+
 fresh_var(Prefix, Var) :-
     retract(tr_counter(N)),
     N1 is N + 1,
     assert(tr_counter(N1)),
     atomic_list_concat(['$__tr_', Prefix, '_', N1], Var).
 
+with_helper_context(SourceTerms, Goal) :-
+    setup_call_cleanup(
+        activate_helper_context(SourceTerms, Saved),
+        Goal,
+        restore_helper_context(Saved)).
+
+activate_helper_context(SourceTerms, Saved) :-
+    findall(Key-Name, tr_helper_name(Key, Name), Saved),
+    retractall(tr_helper_name(_, _)),
+    helper_context_names(SourceTerms, HelperNames),
+    forall(member(Key-Name, HelperNames),
+           assertz(tr_helper_name(Key, Name))).
+
+restore_helper_context(Saved) :-
+    retractall(tr_helper_name(_, _)),
+    forall(member(Key-Name, Saved),
+           assertz(tr_helper_name(Key, Name))).
+
+helper_context_names(SourceTerms, HelperNames) :-
+    term_atom_set(SourceTerms, Used0),
+    choose_helper_name(quoted_syntax, Used0, Used1, Quote),
+    choose_helper_name(state_clear, Used1, Used2, Clear),
+    choose_helper_name(state_set, Used2, Used3, Set),
+    choose_helper_name(state_get, Used3, Used4, Get),
+    choose_helper_name(state_cell, Used4, _Used5, Cell),
+    HelperNames = [
+        quoted_syntax-Quote,
+        state_clear-Clear,
+        state_set-Set,
+        state_get-Get,
+        state_cell-Cell
+    ].
+
+choose_helper_name(Key, Used0, [Name|Used0], Name) :-
+    helper_default_name(Key, Default),
+    \+ memberchk(Default, Used0),
+    !,
+    Name = Default.
+choose_helper_name(Key, Used0, [Name|Used0], Name) :-
+    helper_fallback_base(Key, Base),
+    unique_helper_name(Base, Used0, 1, Name).
+
+unique_helper_name(Base, Used, N, Name) :-
+    atomic_list_concat([Base, N], '-', Candidate),
+    (   memberchk(Candidate, Used)
+    ->  N1 is N + 1,
+        unique_helper_name(Base, Used, N1, Name)
+    ;   Name = Candidate
+    ).
+
+term_atom_set(Term, Atoms) :-
+    collect_term_atoms(Term, [], RawAtoms),
+    sort(RawAtoms, Atoms).
+
+collect_term_atoms(Term, Acc, [Term|Acc]) :-
+    atom(Term),
+    !.
+collect_term_atoms(Term, Acc0, Acc) :-
+    is_list(Term),
+    !,
+    collect_term_atoms_list(Term, Acc0, Acc).
+collect_term_atoms(_, Acc, Acc).
+
+collect_term_atoms_list([], Acc, Acc).
+collect_term_atoms_list([Term|Terms], Acc0, Acc) :-
+    collect_term_atoms(Term, Acc0, Acc1),
+    collect_term_atoms_list(Terms, Acc1, Acc).
+
+helper_default_name(quoted_syntax, 'quoted-syntax').
+helper_default_name(state_clear, '__tr-petta-state-clear!').
+helper_default_name(state_set, '__tr-petta-state-set!').
+helper_default_name(state_get, '__tr-petta-state-get').
+helper_default_name(state_cell, '__tr-petta-state-cell').
+
+helper_fallback_base(quoted_syntax, '__tr-quoted-syntax').
+helper_fallback_base(state_clear, '__tr-petta-state-clear').
+helper_fallback_base(state_set, '__tr-petta-state-set').
+helper_fallback_base(state_get, '__tr-petta-state-get').
+helper_fallback_base(state_cell, '__tr-petta-state-cell').
+
+helper_name(Key, Name) :-
+    tr_helper_name(Key, Active),
+    !,
+    Name = Active.
+helper_name(Key, Name) :-
+    helper_default_name(Key, Name).
+
+quoted_syntax_fun(Name) :-
+    helper_name(quoted_syntax, Name).
+
 %% Quoted PeTTa syntax must be translated as code, but remain data.
 %%
 %% This helper rewrites source syntax into target HE syntax without executing
 %% it, so later eval/unquote on the translated file sees the right target
 %% code rather than the original PeTTa-specific surface forms.
-translate_quoted_term_mode(Mode, [quote, Expr], ['quoted-syntax', [quote, TExpr]]) :-
+translate_quoted_term_mode(Mode, [quote, Expr], [QuoteFun, [quote, TExpr]]) :-
+    quoted_syntax_fun(QuoteFun),
     translate_quoted_term_mode(Mode, Expr, TExpr), !.
 translate_quoted_term_mode(Mode, [eval, Expr], [unquote, [quote, TExpr]]) :-
     translate_quoted_term_mode(Mode, Expr, TExpr), !.
 translate_quoted_term_mode(Mode, [reduce, Expr], [unquote, [quote, TExpr]]) :-
     translate_quoted_term_mode(Mode, Expr, TExpr), !.
+translate_quoted_term_mode(Mode, ['bind!', Ref, ['new-state', Init]],
+                           [SetFun, TRef, TInit]) :-
+    petta_state_set_fun(SetFun),
+    translate_quoted_term_mode(Mode, Ref, TRef),
+    translate_quoted_term_mode(Mode, Init, TInit), !.
+translate_quoted_term_mode(Mode, ['change-state!', Ref, Value],
+                           [SetFun, TRef, TValue]) :-
+    petta_state_set_fun(SetFun),
+    translate_quoted_term_mode(Mode, Ref, TRef),
+    translate_quoted_term_mode(Mode, Value, TValue), !.
+translate_quoted_term_mode(Mode, ['get-state', Ref], [GetFun, TRef]) :-
+    petta_state_get_fun(GetFun),
+    translate_quoted_term_mode(Mode, Ref, TRef), !.
+translate_quoted_term_mode(Mode, ['new-state', Init],
+                           [QuoteFun, [quote, ['new-state', TInit]]]) :-
+    quoted_syntax_fun(QuoteFun),
+    translate_quoted_term_mode(Mode, Init, TInit), !.
 translate_quoted_term_mode(Mode, [length, [collapse, Expr]],
                            [let, TupleVar, [collapse, TExpr], [size-atom, TupleVar]]) :-
     translate_quoted_term_mode(Mode, Expr, TExpr),
@@ -143,6 +261,14 @@ translate_program_trusted_extended(Program, Out) :-
     translate_program_mode(trusted_extended, Program, Out).
 
 trusted_new_space_prefix('&__tr_space_').
+petta_state_clear_fun(Name) :-
+    helper_name(state_clear, Name).
+petta_state_set_fun(Name) :-
+    helper_name(state_set, Name).
+petta_state_get_fun(Name) :-
+    helper_name(state_get, Name).
+petta_state_cell_fun(Name) :-
+    helper_name(state_cell, Name).
 
 %% progn / prog1 are variadic in PeTTa.
 %% progn []     → ()
@@ -163,7 +289,8 @@ translate_term_mode(Mode, [prog1|Args], TExpr) :-
 %% PeTTa quote yields the syntax tree of the translated expression, not HE's
 %% quoted wrapper value. quoted-syntax is a file-local compatibility helper
 %% for the PeTTa HE target.
-translate_term_mode(Mode, [quote, Expr], ['quoted-syntax', [quote, TExpr]]) :-
+translate_term_mode(Mode, [quote, Expr], [QuoteFun, [quote, TExpr]]) :-
+    quoted_syntax_fun(QuoteFun),
     translate_quoted_term_mode(Mode, Expr, TExpr), !.
 
 %% PeTTa eval Expr
@@ -220,6 +347,40 @@ translate_term_mode(Mode, ['foldl-atom', List, Init, Agg],
 %% data instead of HE quote wrappers.
 translate_term_mode(Mode, [reduce, Expr], [unquote, [quote, TExpr]]) :-
     translate_quoted_term_mode(Mode, Expr, TExpr), !.
+
+%% PeTTa named-state surface:
+%%   bind! name (new-state value)  sets a named mutable cell and returns true
+%%   change-state! name value      updates that cell and returns true
+%%   get-state name                reads that cell
+%%
+%% HE's `new-state` is an actual State handle constructor, while PeTTa stores
+%% state by symbolic name via nb_setval/2. Passing this syntax through creates
+%% State handles in HE and changes both observable results and later mutation.
+%% Lower PeTTa named states to a file-local atomspace-backed compatibility
+%% surface instead of relying on HE's native StateMonad representation.
+translate_term_mode(Mode, ['bind!', Ref, ['new-state', Init]],
+                    [SetFun, TRef, TInit]) :-
+    petta_state_set_fun(SetFun),
+    translate_term_mode(Mode, Ref, TRef),
+    translate_term_mode(Mode, Init, TInit), !.
+
+translate_term_mode(Mode, ['change-state!', Ref, Value],
+                    [SetFun, TRef, TValue]) :-
+    petta_state_set_fun(SetFun),
+    translate_term_mode(Mode, Ref, TRef),
+    translate_term_mode(Mode, Value, TValue), !.
+
+translate_term_mode(Mode, ['get-state', Ref], [GetFun, TRef]) :-
+    petta_state_get_fun(GetFun),
+    translate_term_mode(Mode, Ref, TRef), !.
+
+%% Standalone PeTTa `(new-state value)` is not a constructor call in PeTTa's
+%% runtime; outside `bind!` it behaves as ordinary expression data. Use the
+%% existing quoted-syntax helper so HE does not allocate a native state handle.
+translate_term_mode(Mode, ['new-state', Init],
+                    [QuoteFun, [quote, ['new-state', TInit]]]) :-
+    quoted_syntax_fun(QuoteFun),
+    translate_term_mode(Mode, Init, TInit), !.
 
 %% PeTTa length(collapse Expr)
 %%   → let $tuple (collapse Expr') (size-atom $tuple)
@@ -305,8 +466,10 @@ translate_decl_mode(_, [':', Name, Type], [':', Name, Type]) :- !.
 translate_decl_mode(_, X, X).
 
 translate_program_mode(Mode, Decls, Program) :-
-    maplist(translate_decl_mode(Mode), Decls, TDecls0),
-    prepend_petta_compat_program_decls(Decls, TDecls0, Program).
+    with_helper_context(Decls,
+        ( maplist(translate_decl_mode(Mode), Decls, TDecls0),
+          prepend_petta_compat_program_decls(Decls, TDecls0, Program)
+        )).
 
 %% ── Post-translation HE optimization ───────────────────────────
 %%
@@ -414,9 +577,18 @@ trusted_mode(trusted_extended).
 
 prepend_petta_compat_program_decls(SourceDecls, TDecls0, TDecls) :-
     maybe_rewrite_builtin_test_calls(SourceDecls, TDecls0, TDecls1),
-    maybe_prepend_quote_compat_decls(TDecls1, TDecls2),
-    maybe_prepend_length_compat_decls(SourceDecls, TDecls2, TDecls3),
-    TDecls = TDecls3.
+    maybe_prepend_petta_state_compat_decls(TDecls1, TDecls2),
+    maybe_prepend_quote_compat_decls(TDecls2, TDecls3),
+    maybe_prepend_length_compat_decls(SourceDecls, TDecls3, TDecls4),
+    TDecls = TDecls4.
+
+maybe_prepend_petta_state_compat_decls(TDecls0, TDecls) :-
+    (   program_uses_petta_state_helper(TDecls0),
+        \+ program_defines_petta_state_helper(TDecls0)
+    ->  petta_state_compat_decls(CompatDecls),
+        append(CompatDecls, TDecls0, TDecls)
+    ;   TDecls = TDecls0
+    ).
 
 maybe_prepend_quote_compat_decls(TDecls0, TDecls) :-
     (   program_uses_quoted_syntax(TDecls0),
@@ -452,13 +624,31 @@ program_uses_length(_) :-
 
 program_uses_quoted_syntax(Term) :-
     is_list(Term),
-    (   Term = ['quoted-syntax'|_]
+    quoted_syntax_fun(QuoteFun),
+    (   Term = [QuoteFun|_]
     ;   member(Subterm, Term),
         program_uses_quoted_syntax(Subterm)
     ).
 
 program_uses_quoted_syntax(_) :-
     fail.
+
+program_uses_petta_state_helper(Term) :-
+    is_list(Term),
+    (   petta_state_helper_call(Term)
+    ;   member(Subterm, Term),
+        program_uses_petta_state_helper(Subterm)
+    ).
+
+program_uses_petta_state_helper(_) :-
+    fail.
+
+petta_state_helper_call([Head|_]) :-
+    atom(Head),
+    (   petta_state_clear_fun(Head)
+    ;   petta_state_set_fun(Head)
+    ;   petta_state_get_fun(Head)
+    ).
 
 program_uses_test(Term) :-
     is_list(Term),
@@ -474,9 +664,19 @@ program_defines_length([['=', [length|_], _]|_]) :- !.
 program_defines_length([_|Rest]) :-
     program_defines_length(Rest).
 
-program_defines_quoted_syntax([['=', ['quoted-syntax'|_], _]|_]) :- !.
+program_defines_quoted_syntax([['=', [Head|_], _]|_]) :-
+    quoted_syntax_fun(Head), !.
 program_defines_quoted_syntax([_|Rest]) :-
     program_defines_quoted_syntax(Rest).
+
+program_defines_petta_state_helper([['=', [Head|_], _]|_]) :-
+    atom(Head),
+    (   petta_state_clear_fun(Head)
+    ;   petta_state_set_fun(Head)
+    ;   petta_state_get_fun(Head)
+    ), !.
+program_defines_petta_state_helper([_|Rest]) :-
+    program_defines_petta_state_helper(Rest).
 
 program_defines_test([['=', [test|_], _]|_]) :- !.
 program_defines_test([_|Rest]) :-
@@ -488,8 +688,30 @@ petta_length_compat_decls([
 ]).
 
 petta_quote_compat_decls([
-    ['=', ['quoted-syntax', [quote, '$expr']], '$expr']
-]).
+    ['=', [QuoteFun, [quote, '$expr']], '$expr']
+]) :-
+    quoted_syntax_fun(QuoteFun).
+
+petta_state_compat_decls(Decls) :-
+    petta_state_clear_fun(ClearFun),
+    petta_state_set_fun(SetFun),
+    petta_state_get_fun(GetFun),
+    petta_state_cell_fun(CellFun),
+    Decls = [
+        ['=', [ClearFun, '$name'],
+         [let, '$__tr_state_removed',
+          [collapse,
+           [match, '&self', [CellFun, '$name', '$old'],
+            ['remove-atom', '&self', [CellFun, '$name', '$old']]]],
+          true]],
+        ['=', [SetFun, '$name', '$value'],
+         [let, '$__tr_state_cleared', [ClearFun, '$name'],
+          [let, '$__tr_state_added',
+           ['add-atom', '&self', [CellFun, '$name', '$value']],
+           true]]],
+        ['=', [GetFun, '$name'],
+         [match, '&self', [CellFun, '$name', '$value'], '$value']]
+    ].
 
 rewrite_builtin_test_decl(['=', LHS, RHS], ['=', RLHS, RRHS]) :-
     !,

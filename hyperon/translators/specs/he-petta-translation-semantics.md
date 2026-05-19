@@ -4,8 +4,8 @@ Status: draft engineering specification.
 
 This document is the code-near semantic contract for the HE <-> PeTTa
 translator in this directory.  It explains which language surfaces are shared,
-which are implementation/profile-specific, and how the translator handles the
-differences without pretending that all generated files are pure HE.
+which are implementation/profile-specific, and how the translator classifies
+generated files that require helper or profile support.
 
 The command-line entry point is:
 
@@ -41,9 +41,9 @@ The translator has two related but distinct jobs.
 2. Make non-common surfaces explicit, either by lowering them to a portable
    target form or by marking them as helper/profile-specific.
 
-The translator is not allowed to blur these categories.  In particular, a file
-that requires PeTTa HE compatibility helpers is not a pure-HE conformance
-artifact just because it has `.metta` syntax.
+The translator keeps these categories explicit.  In particular, a file that
+requires PeTTa HE compatibility helpers is not a pure-HE conformance artifact
+merely because it has `.metta` syntax.
 
 Positive example:
 
@@ -69,8 +69,8 @@ Negative example:
 ```
 
 cannot be presented as a pure-HE claim unless the target semantics for
-PeTTa-style quote-as-syntax are supplied or lowered away.  The current
-translator uses a helper surface for this PeTTa compatibility lane.
+PeTTa-style quote-as-syntax are supplied or lowered away.  The translator uses a
+helper surface for this PeTTa compatibility lane.
 
 ## 2. Semantic Lanes
 
@@ -88,6 +88,12 @@ The default `petta2he` mode should prefer shared core or portable lowering.  If
 a helper is emitted, the artifact should be classified as using a helper
 surface.  If `--preserve-hyperpose` is used, the artifact is intentionally not
 the default pure-portable hyperpose lowering.
+
+Generated helper names are context-sensitive.  The translator first scans the
+source program and chooses helper symbols that do not collide with source
+symbols.  For example, if a source program already defines `quoted-syntax`, the
+generated quote helper will use a fresh `__tr-quoted-syntax-N` name instead of
+capturing or shadowing the source definition.
 
 ## 3. HE Core Surface Used By The Translator
 
@@ -127,6 +133,7 @@ Important PeTTa-facing surfaces include:
 | `foldall`, PeTTa-style `foldl-atom` | Lowered to `collapse` plus explicit `foldl-atom` accumulator/item variables. |
 | `length (collapse e)` | Lowered to `let tuple (collapse e) (size-atom tuple)`. |
 | `test` | Preserved as an observable source-test helper, not silently replaced by a quiet assertion. |
+| `bind! name (new-state value)`, `get-state name`, `change-state! name value` | Lowered to PeTTa named-state helpers; not HE native state. |
 | `quote`, `eval`, `reduce` | PeTTa compatibility lane; see Section 7. |
 | `hyperpose` | Lowered to `superpose` by default, preserved only with explicit target intent. |
 | Python/Git/host FFI | Passed through or classified as extension; not pure HE. |
@@ -147,8 +154,8 @@ PeTTa source forms.
 | `(unique e)` | `let/collapse/unique-atom/superpose` | Uses PeTTa's available uniqueness surface. |
 
 Fresh names use the `$__tr_...` namespace.  Translation must avoid capturing
-source variables.  The relational core threads freshness explicitly to support
-future proof work.
+source variables.  The relational core threads freshness explicitly so the
+capture-avoidance contract is visible to proof-oriented tooling.
 
 ## 6. PeTTa -> HE Rules
 
@@ -165,6 +172,10 @@ forms.
 | `(test actual expected)` | `(test actual' expected')` | Preserves observable test reporting. |
 | `(unique-atom (collapse e))` | `(collapse (unique e'))` | Uses HE uniqueness surface where available. |
 | `(hyperpose xs)` | `(superpose xs')` by default | Preserves nondeterministic values, not parallel scheduling. |
+| `(bind! name (new-state value))` | `(__tr-petta-state-set! name' value')` | PeTTa named-state initialization, not HE native state allocation. |
+| `(get-state name)` | `(__tr-petta-state-get name')` | PeTTa named-state read. |
+| `(change-state! name value)` | `(__tr-petta-state-set! name' value')` | PeTTa named-state update. |
+| `(new-state value)` outside `bind!` | `(quoted-syntax (quote (new-state value')))` | Preserves PeTTa data syntax; does not allocate an HE state handle. |
 | `(@< a b)` | `(<s a' b')` | String comparison naming bridge. |
 
 Positive example:
@@ -192,7 +203,7 @@ must still generate fresh names that do not capture or shadow source variables.
 
 ## 7. Quote, Eval, Reduce, And `quoted-syntax`
 
-This is the most delicate current compatibility boundary.
+This is a compatibility boundary where runtimes commonly differ.
 
 PeTTa default mode exposes:
 
@@ -212,8 +223,8 @@ Some HE implementations expose `quote` as a visible wrapper:
 (quote (+ 1 2))
 ```
 
-The translator currently preserves PeTTa-visible behavior by emitting a
-file-local helper when needed:
+The translator preserves PeTTa-visible behavior by emitting a file-local helper
+when needed:
 
 ```metta
 (= (quoted-syntax (quote $expr)) $expr)
@@ -264,7 +275,89 @@ Negative example:
 (= (quoted-syntax (quote $expr)) $expr)
 ```
 
-## 8. Tests And Assertion Surfaces
+## 8. State
+
+PeTTa and HE both use the spellings `new-state`, `get-state`, and
+`change-state!`, but they do not denote the same portable contract.
+
+PeTTa named state:
+
+```metta
+!(bind! counter (new-state 0))
+!(change-state! counter 1)
+!(get-state counter)
+```
+
+uses the symbol `counter` as a mutable cell name.  In PeTTa's implementation,
+`bind! name (new-state value)` delegates to `change-state! name value`, and the
+state is stored by name.
+
+HE native state:
+
+```metta
+!(let $s (new-state 0)
+   (change-state! $s 1))
+```
+
+allocates and updates an explicit state handle.  Treating PeTTa named-state
+syntax as HE native state changes the meaning of later `get-state` and
+`change-state!` calls, so it is not a valid stable-common identity translation.
+
+The PeTTa-to-HE direction therefore lowers the whole PeTTa named-state family
+to file-local helpers:
+
+| PeTTa source | HE-facing generated form |
+| --- | --- |
+| `(bind! name (new-state value))` | `(__tr-petta-state-set! name' value')` |
+| `(change-state! name value)` | `(__tr-petta-state-set! name' value')` |
+| `(get-state name)` | `(__tr-petta-state-get name')` |
+| standalone `(new-state value)` | `(quoted-syntax (quote (new-state value')))` |
+
+The helper definitions use an atomspace-backed cell relation:
+
+```metta
+(__tr-petta-state-cell name value)
+```
+
+and are generated only when the translated program uses the helper surface.
+This is a translator-helper lane, not an HE-core claim.  The concrete helper
+symbols are chosen to avoid source-program collisions; the names shown above
+are the default names when they are unused by the source.
+
+The HE-to-PeTTa direction may pass HE native state spellings through as HE
+source syntax.  That passthrough is not evidence that PeTTa named state and HE
+native state are stable-common syntax; it only preserves an HE-facing source
+surface for a PeTTa target profile that already provides compatible runtime
+support.
+
+Positive example:
+
+```metta
+(progn
+  (bind! counter (new-state 0))
+  (change-state! counter 1)
+  (get-state counter))
+```
+
+becomes:
+
+```metta
+(let $__tr_discard_1 (__tr-petta-state-set! counter 0)
+  (let $__tr_discard_2 (__tr-petta-state-set! counter 1)
+    (__tr-petta-state-get counter)))
+```
+
+Negative example:
+
+```metta
+(bind! counter (new-state 0))
+```
+
+must not be translated by simply passing `(new-state 0)` through as an HE state
+handle constructor.  That would silently switch from PeTTa's named-cell
+semantics to HE's handle semantics.
+
+## 9. Tests And Assertion Surfaces
 
 PeTTa `test` has observable output:
 
@@ -301,7 +394,7 @@ Negative example:
 should not be used as the automatic lowering of a source `test` if the source
 program expected PeTTa's printed `test` report.
 
-## 9. Hyperpose
+## 10. Hyperpose
 
 `hyperpose` is PeTTa's parallel nondeterministic surface.  Portable HE does not
 require this exact scheduling/parallelism surface.
@@ -318,8 +411,9 @@ is lowered to:
 (superpose xs')
 ```
 
-This preserves the nondeterministic result set/order expected by the current
-pure-portable survey, but not parallel execution strategy.
+This preserves nondeterministic values, but not parallel execution strategy.
+Programs should not rely on result order unless the target profile declares an
+ordering contract.
 
 Explicit preserve mode:
 
@@ -336,7 +430,7 @@ keeps:
 and the artifact must be classified as requiring a runtime with `hyperpose`
 support.
 
-## 10. Type And Unknown Behavior
+## 11. Type And Unknown Behavior
 
 Unknown type behavior must be explicit because it affects translation
 soundness.
@@ -370,7 +464,7 @@ because that variable can escape into stored type facts and later unify with
 concrete types, creating branch-order-dependent behavior.  Unknown types should
 remain unknown; metatypes distinguish variables.
 
-## 11. Imports, Spaces, And State
+## 12. Imports, Spaces, And Host Resources
 
 Translation over imports has two forms:
 
@@ -379,13 +473,15 @@ Translation over imports has two forms:
 | `--recursive` | Translate a file and local imports beside their sources. |
 | `--bundle` | Translate a file and local imports into a self-contained output tree. |
 
-Space and state operations are part of the proof/audit boundary.  The translator
-may preserve source operations when the target runtime supports them, but must
-not claim pure HE portability for host-specific spaces, MORK/PathMap handles,
-Python handles, Git imports, or other implementation resources unless the
-target profile declares them.
+Space operations, state operations, and host resources are part of the
+validation boundary.  The translator may preserve source operations when the
+target runtime supports the same contract, but must not claim pure HE
+portability for host-specific spaces, MORK/PathMap handles, Python handles, Git
+imports, HE native state, PeTTa named state, or other implementation resources
+unless the target profile declares the contract explicitly.  PeTTa named state
+is handled by the helper lowering in Section 8.
 
-## 12. Proof And Validation Status
+## 13. Proof And Validation Status
 
 There are three different evidence layers.
 
@@ -393,7 +489,7 @@ There are three different evidence layers.
 | --- | --- |
 | Unit tests in `test_translators.pl` | Individual syntactic rewrite rules and helper insertion behavior. |
 | Real-file translator tests in `test_on_real_files.pl` | Parser, serializer, recursive/bundle workflows, and corpus translation shape. |
-| Lean translator/proof development | Pure/common-fragment correspondence claims, explicit freshness/proof-friendly translation core. |
+| Lean translator/proof development | Pure/common-fragment correspondence claims and explicit freshness discipline. |
 | PeTTa HE profile suite/survey | Runtime correctness and performance for generated artifacts under `./run.sh --he`. |
 | Cross-engine portability checker | Classification of behavior across PeTTa `--he`, CeTTa, and upstream HE when available. |
 
@@ -414,30 +510,32 @@ TIMEOUT_SECONDS=30 \
 ./tests/tools/check_generated_he_portability.sh
 ```
 
-## 13. Production Readiness Criteria
+## 14. Production Readiness Criteria
 
 A translation rule is production-ready only when all applicable items are true.
 
 1. The source and target semantic lanes are named.
 2. The rule has positive and negative examples.
 3. Fresh variables are capture-avoiding.
-4. Observable output is preserved or the deviation is explicitly classified.
-5. Helper surfaces are named as helpers, not HE core.
-6. `translate.sh --test` passes.
-7. A representative generated artifact runs under its intended target.
-8. Cross-engine differences are classified when the artifact is described as
+4. Generated helper names avoid collisions with source symbols.
+5. Observable output is preserved or the deviation is explicitly classified.
+6. Helper surfaces are named as helpers, not HE core.
+7. `translate.sh --test` passes.
+8. A representative generated artifact runs under its intended target.
+9. Cross-engine differences are classified when the artifact is described as
    portable.
 
 For performance work, correctness gates come first.  A faster generated program
 that changes source behavior is a regression, not an optimization.
 
-## 14. Current Open Edges
+## 15. Current Open Edges
 
 The following areas remain intentionally visible rather than hidden.
 
 | Edge | Current handling |
 | --- | --- |
 | `quote` / `eval` / `reduce` | PeTTa HE compatibility via `quoted-syntax` and `unquote`; not pure HE core. |
+| PeTTa named state | Lowered via `__tr-petta-state-*` helpers; not HE native state identity. |
 | `test` | Preserved for source examples; helper/assertion surfaces classified separately. |
 | `hyperpose` | Lowered to `superpose` by default; preserved only under explicit mode. |
 | Host resources | Passed through or extension-classified; not pure HE. |

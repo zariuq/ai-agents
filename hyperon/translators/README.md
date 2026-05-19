@@ -1,6 +1,9 @@
 # HE <-> PeTTa MeTTa Translator
 
-Bidirectional translator between Hyperon Experimental (HE) and PeTTa MeTTa dialects, backed by a sorry-free Lean proof of semantic correspondence.
+Bidirectional translator between Hyperon Experimental (HE) and PeTTa MeTTa
+dialects.  The command-line translator is implemented in Prolog; the
+shared-core translation rules are accompanied by a Lean formalization and
+runtime regression tests.
 
 ## Prerequisites
 
@@ -15,7 +18,7 @@ Bidirectional translator between Hyperon Experimental (HE) and PeTTa MeTTa diale
 # PeTTa -> HE
 ./translate.sh petta2he program.metta program_he.metta
 
-# PeTTa -> HE, preserving actual hyperpose for supporting runtimes
+# PeTTa -> HE, preserving hyperpose for supporting runtimes
 ./translate.sh petta2he --preserve-hyperpose program.metta program_he_hyperpose.metta
 
 # Run test suite
@@ -116,8 +119,7 @@ Emits `collect` instead of `collapse` for `foldall` lowering
 ### Hyperpose-Preserving Mode (PeTTa -> HE only)
 
 Preserves `hyperpose` instead of lowering it to `superpose`. Use this only for
-HE runtimes that actually implement `hyperpose` semantics, such as
-`petta --he`:
+HE runtimes that provide `hyperpose` semantics, such as `petta --he`:
 
 ```bash
 ./translate.sh petta2he --preserve-hyperpose input.metta output.metta
@@ -129,8 +131,8 @@ portability story specifically depends on deparallelizing `hyperpose`, the
 portable sequentialized artifact may instead use `_he_sequential.metta`, while
 preserve-hyperpose artifacts conventionally use `_he_parallel.metta`. That
 naming keeps ordinary portable HE output separate from the rare cases where we
-want to make the sequentialized hyperpose lowering explicit, and from "HE++
-runtime compatibility with actual hyperpose support".
+make the sequentialized hyperpose lowering explicit, and from runtime-specific
+hyperpose support.
 
 ## What Gets Translated
 
@@ -168,14 +170,18 @@ including computed-list cases such as `let $xs ... (hyperpose $xs)`. Use
 `--preserve-hyperpose` when targeting an HE runtime that genuinely supports a
 `hyperpose` surface; the default portability contract remains sequential.
 
-## Verified Properties (Lean)
+## Verified Properties
 
-The translation is backed by a sorry-free Lean 4 proof (5,400+ lines, 0 sorries):
+The shared-core translation rules are accompanied by a sorry-free Lean 4
+development and by command-line regression tests.  The Lean development covers:
 
 - **Pattern matching equivalence** between HE and PeTTa matching
 - **Equation dispatch correspondence** for the pure fragment
 - **`progn` -> `let*`** and **`foldall` -> `collapse+foldl-atom`** lowering
-- **State operations** (`new-state`, `get-state`, `change-state!`) operational bridge
+- **State-operation boundary** — PeTTa named state is lowered through explicit
+  helpers; HE native state is not treated as stable-common identity syntax
+- **Helper-name hygiene** — generated helper names avoid source-symbol
+  collisions instead of shadowing user code
 - **Space operations** (`match`, `add-atom`, `remove-atom`, `new-space`) formalized
 - **Import commutativity** — translating a stable-common module then importing
   produces the same space as importing then translating (kernel-checked)
@@ -192,9 +198,12 @@ cd /path/to/mettapedia
 lake env lean --run your_script.lean
 ```
 
-Where `your_script.lean` imports `Mettapedia.Languages.MeTTa.Translation.HEPeTTaTranslate`
-and calls `translatePeTTa` or `translateHE` on Atom values. The Lean translator
-produces the same translations as the Prolog CLI but is kernel-checked.
+Where `your_script.lean` imports
+`Mettapedia.Languages.MeTTa.Translation.HEPeTTaTranslate` and calls
+`translatePeTTa` or `translateHE` on Atom values.  The Lean translator mirrors
+the core rewrite rules and is kernel-checked.  The Prolog CLI additionally does
+file/program-level helper-name selection to avoid source-symbol collisions
+before emitting concrete helper definitions.
 
 Lean proofs: `lean-projects/mettapedia/Mettapedia/Languages/MeTTa/Translation/`
 

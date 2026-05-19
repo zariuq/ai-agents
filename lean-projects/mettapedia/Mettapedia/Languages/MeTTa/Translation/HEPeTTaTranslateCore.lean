@@ -149,6 +149,10 @@ Mirrors `petta_to_he/4` from `he_petta_relational.pl`. -/
     | `(foldall F G I)`             | `let(collapse G') + fold`|
     | `(foldl-atom X I F)`          | binder-form `foldl-atom` |
     | `(reduce X)`                  | `(eval X')`              |
+    | `(bind! R (new-state V))`     | PeTTa named-state helper |
+    | `(get-state R)`               | PeTTa named-state helper |
+    | `(change-state! R V)`         | PeTTa named-state helper |
+    | `(new-state V)`               | quoted PeTTa data        |
     | `(unique-atom (collapse X))`  | `(collapse (unique X'))` |
     | `(@< A B)`                    | `(<s A' B')`             |
     | `(@> A B)`                    | `(not (<s A' B'))`       |
@@ -190,6 +194,27 @@ def translatePeTTa (a : Atom) (supply : Nat) : Atom × Nat :=
   | .expression [.symbol "reduce", expr] =>
     let (texpr, s1) := translatePeTTa expr supply
     (.expression [.symbol "eval", texpr], s1)
+  -- PeTTa named-state initialization → explicit compatibility helper.
+  | .expression [.symbol "bind!", ref, .expression [.symbol "new-state", init]] =>
+    let (tref, s1) := translatePeTTa ref supply
+    let (tinit, s2) := translatePeTTa init s1
+    (.expression [.symbol "__tr-petta-state-set!", tref, tinit], s2)
+  -- PeTTa named-state read → explicit compatibility helper.
+  | .expression [.symbol "get-state", ref] =>
+    let (tref, s1) := translatePeTTa ref supply
+    (.expression [.symbol "__tr-petta-state-get", tref], s1)
+  -- PeTTa named-state update → explicit compatibility helper.
+  | .expression [.symbol "change-state!", ref, value] =>
+    let (tref, s1) := translatePeTTa ref supply
+    let (tvalue, s2) := translatePeTTa value s1
+    (.expression [.symbol "__tr-petta-state-set!", tref, tvalue], s2)
+  -- Standalone PeTTa `(new-state value)` is source data, not an HE State handle.
+  | .expression [.symbol "new-state", init] =>
+    let (tinit, s1) := translatePeTTa init supply
+    (.expression
+      [.symbol "quoted-syntax",
+        .expression [.symbol "quote",
+          .expression [.symbol "new-state", tinit]]], s1)
   -- PeTTa unique workaround surface → list-preserving HE unique surface
   | .expression [.symbol "unique-atom", .expression [.symbol "collapse", x]] =>
     let (tx, s1) := translatePeTTa x supply

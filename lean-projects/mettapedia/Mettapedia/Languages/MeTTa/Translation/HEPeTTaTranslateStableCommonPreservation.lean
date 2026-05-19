@@ -278,36 +278,57 @@ private theorem translateHE_preserves_stableCommonForm_aux
                                           have hfalse : False := by
                                             simpa [isValidatedHESource] using h
                                           exact False.elim hfalse
-                                        · have hpair :
-                                              isValidatedHEHeadSource (.symbol c) = true ∧
-                                                isValidatedHEList args = true := by
-                                            simpa [isValidatedHESource, isValidatedHEHeadSource,
-                                              Bool.and_eq_true, hchain, hcollapse, hsuperpose,
-                                              hswitch, hswitchm, hatomsubst, hnop, hfunction,
-                                              hunique, hfoldl, hfoldall, huniqueatom, hprogn,
-                                              hprog1, hreduce, hlt, hgt] using h
-                                          have hargs : isValidatedHEList args = true := hpair.2
-                                          have htail :
-                                              isStableCommonList (translateHE.translateHEList args s).1 = true :=
-                                            translateHEList_preserves_stableCommonList_aux args s hargs
-                                          have hhead : isStableCommonHead (.symbol c) = true := by
-                                            simp [isStableCommonHead, isStableCommonForm, isForbiddenHeadSymbol,
-                                              hchain, hcollapse, hsuperpose, hswitch, hswitchm,
-                                              hatomsubst, hnop, hfunction, hunique, hfoldl, hfoldall,
-                                              huniqueatom, hprogn, hprog1, hreduce, hlt, hgt]
-                                          have hcons :=
-                                            stableCommonForm_cons_of_head (.symbol c)
-                                              (translateHE.translateHEList args s).1 hhead
-                                          have hbody :
-                                              isStableCommonForm
-                                                (Atom.expression
-                                                  (.symbol c :: (translateHE.translateHEList args s).1)) = true := by
-                                            rw [hcons]
-                                            exact htail
-                                          simpa [translateHE, translateHE.translateHEList, hchain,
-                                            hcollapse, hsuperpose, hswitch, hswitchm, hatomsubst,
-                                            hnop, hfunction, hunique, hfoldl, hfoldall, huniqueatom,
-                                            hprogn, hprog1, hreduce, hlt, hgt] using hbody
+                                        · by_cases hbind : c = "bind!"
+                                          · subst hbind
+                                            have hfalse : False := by
+                                              simpa [isValidatedHESource] using h
+                                            exact False.elim hfalse
+                                          · by_cases hnew : c = "new-state"
+                                            · subst hnew
+                                              have hfalse : False := by
+                                                simpa [isValidatedHESource] using h
+                                              exact False.elim hfalse
+                                            · by_cases hget : c = "get-state"
+                                              · subst hget
+                                                have hfalse : False := by
+                                                  simpa [isValidatedHESource] using h
+                                                exact False.elim hfalse
+                                              · by_cases hchange : c = "change-state!"
+                                                · subst hchange
+                                                  have hfalse : False := by
+                                                    simpa [isValidatedHESource] using h
+                                                  exact False.elim hfalse
+                                                · have hpair :
+                                                      isValidatedHEHeadSource (.symbol c) = true ∧
+                                                        isValidatedHEList args = true := by
+                                                    simpa [isValidatedHESource, isValidatedHEHeadSource,
+                                                      Bool.and_eq_true, hchain, hcollapse, hsuperpose,
+                                                      hswitch, hswitchm, hatomsubst, hnop, hfunction,
+                                                      hunique, hfoldl, hfoldall, huniqueatom, hprogn,
+                                                      hprog1, hreduce, hlt, hgt, hbind, hnew, hget,
+                                                      hchange] using h
+                                                  have hargs : isValidatedHEList args = true := hpair.2
+                                                  have htail :
+                                                      isStableCommonList (translateHE.translateHEList args s).1 = true :=
+                                                    translateHEList_preserves_stableCommonList_aux args s hargs
+                                                  have hnot : isForbiddenHeadSymbol (.symbol c) = false :=
+                                                    headSourceSymbol_notForbidden_aux c hpair.1
+                                                  have hhead : isStableCommonHead (.symbol c) = true := by
+                                                    simp [isStableCommonHead, isStableCommonForm, hnot]
+                                                  have hcons :=
+                                                    stableCommonForm_cons_of_head (.symbol c)
+                                                      (translateHE.translateHEList args s).1 hhead
+                                                  have hbody :
+                                                      isStableCommonForm
+                                                        (Atom.expression
+                                                          (.symbol c :: (translateHE.translateHEList args s).1)) = true := by
+                                                    rw [hcons]
+                                                    exact htail
+                                                  simpa [translateHE, translateHE.translateHEList, hchain,
+                                                    hcollapse, hsuperpose, hswitch, hswitchm, hatomsubst,
+                                                    hnop, hfunction, hunique, hfoldl, hfoldall, huniqueatom,
+                                                    hprogn, hprog1, hreduce, hlt, hgt, hbind, hnew, hget,
+                                                    hchange] using hbody
       | var v =>
         have hargs : isValidatedHEList args = true := by
           simpa [isValidatedHESource, isValidatedHEHeadSource] using h
@@ -480,9 +501,30 @@ private theorem headSourceSymbol_notForbidden_aux
                                     have hfalse : False := by
                                       simpa [isValidatedHEHeadSource, isValidatedHESource] using h
                                     exact False.elim hfalse
-                                  · simp [isForbiddenHeadSymbol, hchain, hcollapse, hsuperpose,
-                                      hswitch, hswitchm, hatomsubst, hnop, hfunction, hunique,
-                                      hfoldl, huniqueatom, hprogn, hprog1, hfoldall, hreduce, hlt, hgt]
+                                  · by_cases hbind : c = "bind!"
+                                    · subst hbind
+                                      have hfalse : False := by
+                                        simpa [isValidatedHEHeadSource, isValidatedHESource] using h
+                                      exact False.elim hfalse
+                                    · by_cases hnew : c = "new-state"
+                                      · subst hnew
+                                        have hfalse : False := by
+                                          simpa [isValidatedHEHeadSource, isValidatedHESource] using h
+                                        exact False.elim hfalse
+                                      · by_cases hget : c = "get-state"
+                                        · subst hget
+                                          have hfalse : False := by
+                                            simpa [isValidatedHEHeadSource, isValidatedHESource] using h
+                                          exact False.elim hfalse
+                                        · by_cases hchange : c = "change-state!"
+                                          · subst hchange
+                                            have hfalse : False := by
+                                              simpa [isValidatedHEHeadSource, isValidatedHESource] using h
+                                            exact False.elim hfalse
+                                          · simp [isForbiddenHeadSymbol, hchain, hcollapse, hsuperpose,
+                                              hswitch, hswitchm, hatomsubst, hnop, hfunction, hunique,
+                                              hfoldl, huniqueatom, hprogn, hprog1, hfoldall, hreduce,
+                                              hlt, hgt, hbind, hnew, hget, hchange]
 
 private theorem translateHE_notForbidden_of_headSource_aux
     (a : Atom) (s : Nat) (h : isValidatedHEHeadSource a = true) :

@@ -1,0 +1,400 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\setlength{\emergencystretch}{3em}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  citecolor=blue!50!black,
+  urlcolor=blue!50!black
+}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  columns=fullflexible
+}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\HE}{\textup{HE}}
+\newcommand{\PeTTa}{\textup{PeTTa}}
+\newcommand{\CeTTa}{\textup{CeTTa}}
+
+\title{Semantic Contracts for \HE{} $\leftrightarrow$ \PeTTa{} Translation\\
+\large Shared Core, Compatibility Profiles, and Production Boundaries}
+\author{Zar Goertzel}
+\date{May 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document states the semantic contract for translating between Hyperon
+Experimental (\HE{}) MeTTa and \PeTTa{} MeTTa.  The central point is that both
+systems use MeTTa syntax, but they do not always give the same operational
+meaning to every surface form.  A faithful translator must therefore do more
+than parse and reprint S-expressions: it must preserve observable behavior on a
+shared core, lower source conveniences to explicit target forms where possible,
+and classify helper or profile-specific surfaces explicitly when portability
+requires more than syntax.
+
+We describe the shared and non-shared language surfaces, the main translation
+rules in both directions, the status of quote/eval/reduce, \code{test},
+\code{hyperpose}, type queries, state, imports, and space operations, and the
+validation obligations for production use.  The companion engineering
+specification lives with the translator implementation at
+\code{hyperon/translators/specs/he-petta-translation-semantics.md}.
+\end{abstract}
+
+\tableofcontents
+
+\section{Problem}
+
+\HE{} and \PeTTa{} are both MeTTa runtimes, but MeTTa syntax alone does not fix
+all runtime behavior.  A file that ends in \code{.metta} may be:
+\begin{enumerate}
+\item a source program intended for default \PeTTa{};
+\item an \HE{} program intended for a reference \HE{} runtime;
+\item a generated \HE{}-facing artifact intended for \code{petta --he};
+\item an artifact that supplies helper definitions to preserve source behavior;
+\item an extension program that relies on host facilities outside core \HE{}.
+\end{enumerate}
+
+The translator's job is to keep these categories explicit.  Classifying every
+generated artifact as pure \HE{} would be incorrect.  Classifying every
+difference as an untranslatable failure would also be incorrect, because many
+differences have principled lowerings.
+
+\paragraph{Positive example.}
+The \PeTTa{} source form
+\begin{lstlisting}
+!(test (length (collapse (demo-peano 300))) 301)
+\end{lstlisting}
+can be translated to an explicit \HE{}-facing computation:
+\begin{lstlisting}
+!(test (let $__tr_tuple_1 (collapse (demo-peano 300))
+         (size-atom $__tr_tuple_1))
+       301)
+\end{lstlisting}
+This is ordinary portable lowering.
+
+\paragraph{Negative example.}
+The \PeTTa{} source form
+\begin{lstlisting}
+!(test (quote (+ 1 2)) (+ 1 2))
+\end{lstlisting}
+depends on \PeTTa{}'s visible quote behavior.  A target runtime whose
+\code{quote} returns a visible wrapper cannot be claimed to agree merely
+because both sides parse the same text.
+
+\section{Semantic Lanes}
+
+The translator uses the following semantic lanes.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.22\linewidth}
+                  >{\raggedright\arraybackslash}p{0.46\linewidth}
+                  >{\raggedright\arraybackslash}p{0.22\linewidth}}
+\toprule
+Lane & Meaning & Example \\
+\midrule
+\endhead
+Shared core & Behavior is expected to agree on the target engines under
+consideration. & \code{if}, \code{case}, many \code{let}, \code{match}, and
+arithmetic examples. \\
+Portable lowering & Source surface is rewritten to target forms without
+\PeTTa{}-only assumptions. & \code{length (collapse e)} to \code{let} plus
+\code{size-atom}. \\
+Translator helper & Generated artifact needs a small helper definition to
+preserve source behavior. & \code{test}, \code{assertEqualToEval},
+\code{quoted-syntax}. \\
+\PeTTa{} \HE{} compatibility & Intended for \code{./run.sh --he}; may rely on
+profile behavior outside \HE{} core. & Callable-return application and selected
+quote/eval/reduce compatibility. \\
+\PeTTa{} extension & Useful runtime surface outside the strict portability
+claim. & Python FFI, host resources, selected path/indexing support. \\
+\bottomrule
+\end{longtable}
+
+This table is part of the correctness contract.  A helper-class artifact may be
+correct for its intended target while remaining unsuitable as a backend-agnostic
+\HE{} conformance example.
+
+\section{\HE{} Surface}
+
+The \HE{} target surface used by the translator is centered on explicit
+evaluation and binding constructs.  Important target forms include:
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Construct & Role \\
+\midrule
+\code{chain} & Sequenced evaluation with result binding. \\
+\code{collapse}, \code{collapse-bind} & Collection of nondeterministic results. \\
+\code{superpose}, \code{superpose-bind} & Re-entry of alternatives. \\
+\code{eval}, \code{evalc}, \code{unquote} & Explicit evaluation of syntax/data. \\
+\code{case}, \code{switch} & Pattern-directed branching. \\
+\code{size-atom} & Explicit tuple size/count surface. \\
+\code{function}, \code{return} & Minimal function-return surface. \\
+\code{metta} & Interpreter call with expected type and space. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The translator should not turn implementation extensions into \HE{} core
+requirements.  If a target runtime provides an extra surface, that surface must
+be named as a profile or extension.
+
+\section{\PeTTa{} Surface}
+
+\PeTTa{} source programs use the same S-expression syntax plus Prolog-backed
+runtime conveniences.  Some forms are shared.  Others require explicit
+translation.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.32\linewidth}
+                  >{\raggedright\arraybackslash}p{0.58\linewidth}}
+\toprule
+\PeTTa{} surface & Translation status \\
+\midrule
+\endhead
+\code{let}, \code{let*}, \code{if}, \code{case}, \code{match},
+\code{collapse}, \code{superpose} & Usually shared or nearly identity. \\
+\code{progn}, \code{prog1} & Lowered to sequenced \code{chain}/\code{let}
+forms. \\
+\code{foldall}, \PeTTa{}-style \code{foldl-atom} & Lowered to
+\code{collapse} plus explicit accumulator/item variables. \\
+\code{length (collapse e)} & Lowered to \code{let tuple (collapse e')
+(size-atom tuple)}. \\
+\code{test} & Preserved because its printed report is observable behavior. \\
+\code{quote}, \code{eval}, \code{reduce} & Compatibility lane; see
+Section~\ref{sec:quote}. \\
+\code{hyperpose} & Lowered to \code{superpose} by default, preserved only with
+explicit target intent. \\
+Python, Git, and host FFI & Passed through or extension-classified; not pure
+\HE{}. \\
+\bottomrule
+\end{longtable}
+
+\section{\HE{} to \PeTTa{}}
+
+The \HE{}-to-\PeTTa{} direction adapts explicit \HE{} sequencing and binding to
+\PeTTa{} source forms:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\HE{} input & \PeTTa{} output & Intent \\
+\midrule
+\code{(chain e \$x b)} & \code{(let \$x e b)} & Preserve sequencing. \\
+\code{(collapse-bind e)} & \code{(collapse e')} & Preserve collection. \\
+\code{(superpose-bind xs)} & \code{(superpose xs')} & Preserve alternatives. \\
+\code{(nop e)} & \code{(let \$fresh e' ())} & Keep effect, discard result. \\
+\code{(switch x bs)} & \code{(case x' bs')} & Translate branches. \\
+\code{(function (return x))} & \code{x'} & Remove wrapper where safe. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Fresh names use a reserved generated namespace such as \code{\$\_\_tr\_...}.
+Correctness requires capture avoidance: generated names must not accidentally
+bind or shadow source variables.
+
+\section{\PeTTa{} to \HE{}}
+
+The \PeTTa{}-to-\HE{} direction lowers source conveniences to explicit
+\HE{}-facing forms:
+
+\begin{center}
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.25\linewidth}
+                >{\raggedright\arraybackslash}p{0.31\linewidth}
+                >{\raggedright\arraybackslash}p{0.32\linewidth}}
+\toprule
+\PeTTa{} input & \HE{}-facing output & Intent \\
+\midrule
+\code{progn} & Nested sequencing & Preserve effects and final value. \\
+\code{prog1} & Result capture plus sequencing & Preserve first result. \\
+\code{foldall} & \code{collapse} plus \code{foldl-atom} & Make fold explicit. \\
+\code{foldl-atom} & Explicit accumulator/item variables & Avoid implicit agg shape. \\
+\code{length (collapse e)} & \code{let} plus \code{size-atom} & Portable lowering. \\
+\code{test} & \code{test} & Preserve observable test surface. \\
+\code{unique-atom (collapse e)} & \code{collapse (unique e')} & Use target uniqueness. \\
+\code{hyperpose} & \code{superpose}, unless preserved & Drop scheduling, keep values. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Quote, Eval, Reduce}
+\label{sec:quote}
+
+Quote/eval/reduce are a common compatibility boundary.  In default \PeTTa{},
+\begin{lstlisting}
+!(quote (+ 1 2))
+\end{lstlisting}
+exposes the syntax value:
+\begin{lstlisting}
+(+ 1 2)
+\end{lstlisting}
+whereas some \HE{} implementations expose a visible quote wrapper:
+\begin{lstlisting}
+(quote (+ 1 2))
+\end{lstlisting}
+
+The \PeTTa{}-to-\HE{} translator preserves \PeTTa{}-visible behavior by
+inserting a helper when needed:
+\begin{lstlisting}
+(= (quoted-syntax (quote $expr)) $expr)
+\end{lstlisting}
+and lowering:
+\begin{lstlisting}
+(quote e)   -> (quoted-syntax (quote e'))
+(eval e)    -> (unquote (quote e'))
+(reduce e)  -> (unquote (quote e'))
+\end{lstlisting}
+
+This is a compatibility translation, not a pure-\HE{} core claim.
+\code{quoted-syntax} is a helper surface.  A backend-agnostic artifact must
+avoid it, supply it explicitly, or replace it with a target-specific
+quote/eval representation whose semantics are specified.
+
+\section{Tests And Assertions}
+
+\PeTTa{}'s \code{test} form prints an actual/expected report before returning
+the assertion result.  That output is observable behavior.  Therefore the
+translator preserves source \code{test} by default:
+
+\begin{lstlisting}
+!(test (+ 1 2) 3)
+\end{lstlisting}
+
+stays:
+
+\begin{lstlisting}
+!(test (+ 1 2) 3)
+\end{lstlisting}
+
+Quiet assertion helpers are appropriate for explicit profile tests.  Examples
+include \code{assertEqualToEval}, \code{assertEqualToResult}, and
+\code{assertAlphaEqualToResult}.  They are not a faithful replacement for a
+source \code{test} whose printed report matters.
+
+\section{Hyperpose}
+
+\code{hyperpose} is \PeTTa{}'s parallel nondeterministic surface.  The default
+portable translation lowers it to \code{superpose}, preserving the
+nondeterministic values but not claiming to preserve parallel scheduling.
+
+\begin{lstlisting}
+(hyperpose xs) -> (superpose xs')
+\end{lstlisting}
+
+When the target runtime intentionally supports \code{hyperpose}, users may ask
+the translator to preserve it:
+
+\begin{lstlisting}
+./translate.sh petta2he --preserve-hyperpose input.metta output.metta
+\end{lstlisting}
+
+Such a file is no longer the default pure-portable lowering.  It is a
+runtime-profile artifact.
+
+\section{Type Queries}
+
+The translator depends on unknown type behavior being stable.  The intended
+behavior is:
+
+\begin{lstlisting}
+!(get-type $x)      ; %Undefined%
+!(get-metatype $x)  ; Variable
+\end{lstlisting}
+
+Returning a fresh type variable for \code{(get-type \$x)} is unsound for
+translation: that variable can escape into stored type facts and later unify
+with concrete types, producing branch-order-dependent routes.  Unknown types
+should remain unknown; metatypes distinguish variables.
+
+\section{Imports, Spaces, And State}
+
+Translation over imports is supported in recursive and bundle modes.  Space and
+state operations are part of the semantic boundary because they can expose
+mutation order, duplicate atoms, backend indexing, and host resources.
+
+\PeTTa{} named state and \HE{} native state share spellings such as
+\code{new-state}, \code{get-state}, and \code{change-state!}, but they are not
+the same portable contract.  A \PeTTa{} form such as:
+\begin{lstlisting}
+!(bind! counter (new-state 0))
+\end{lstlisting}
+uses \code{counter} as a mutable cell name.  \HE{} native state allocates an
+explicit state handle.  The \PeTTa{}-to-\HE{} direction therefore lowers named
+state through translator helpers instead of treating it as identity syntax.
+
+The rule is simple: preserve or lower what has a specified target meaning, and
+classify the rest.  Python handles, Git imports, MORK/PathMap handles, runtime
+statistics, and other host resources are not pure \HE{} merely because the
+syntax is readable by an \HE{} parser.
+
+\section{Evidence And Gates}
+
+There are several distinct evidence layers:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Gate & Evidence \\
+\midrule
+\code{translate.sh --test} & Unit and real-file translator behavior. \\
+\code{run\_he\_profile\_suite.sh} & PeTTa \code{--he} runtime profile behavior. \\
+\code{run\_translator\_survey.sh} & Corpus correctness and performance budget. \\
+\code{check\_generated\_he\_portability.sh} & Cross-engine classification. \\
+Lean translator files & Proof-oriented common-fragment correspondence. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+These gates answer different questions.  A green \PeTTa{} \code{--he} survey is
+not automatically a cross-engine proof.  A helper-surface classification is not
+a runtime failure.  A proof over the common fragment does not license arbitrary
+host extensions.
+
+\section{Production Criteria}
+
+A translation rule is production-ready only when:
+\begin{enumerate}
+\item its source and target semantic lanes are named;
+\item positive and negative examples are recorded;
+\item fresh variables are capture-avoiding;
+\item generated helper names avoid source-symbol collisions;
+\item observable output is preserved or explicitly classified;
+\item helper surfaces are named as helpers, not \HE{} core;
+\item translator tests pass;
+\item representative generated artifacts run under their intended target;
+\item cross-engine differences are classified when portability is claimed.
+\end{enumerate}
+
+Performance work must preserve these correctness obligations.  A faster
+translation that changes source behavior is a regression.
+
+\section{Conclusion}
+
+The \HE{} $\leftrightarrow$ \PeTTa{} translator should be understood as a
+semantic bridge between related MeTTa profiles, not as a string rewriter between
+identical languages.  Its most important discipline is classification: shared
+core behavior, portable lowering, helper surfaces, compatibility profiles, and
+extensions must stay distinct.  With that discipline, the translator can serve
+both engineering use and formalization work without making false portability
+claims.
+
+\end{document}

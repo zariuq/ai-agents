@@ -25,6 +25,7 @@ pe_optimize_term(In, Out) :- petta_to_he:optimize_term(In, Out).
 :- discontiguous test_petta_to_he/4.
 :- discontiguous test_petta_to_he_program/4.
 :- discontiguous run_one_pe/4.
+:- discontiguous run_one_pe_program/4.
 
 %% ═══════════════════════════════════════════════════════════════
 %% HE → PeTTa test cases
@@ -114,15 +115,15 @@ test_he_to_petta_trusted(2, "change-state! return value → (State val) wrapper 
     [chain, ['change-state!', '&counter', 42], '$s', [use, '$s']],
     trusted_state_chain_shape('&counter', 42, '$s', [use, '$s'])).
 
-test_he_to_petta(20, "new-state passthrough (shared surface)",
+test_he_to_petta(20, "new-state passthrough (HE native state spelling)",
     ['new-state', 1],
     ['new-state', 1]).
 
-test_he_to_petta(21, "get-state passthrough (shared surface)",
+test_he_to_petta(21, "get-state passthrough (HE native state spelling)",
     ['get-state', '&state'],
     ['get-state', '&state']).
 
-test_he_to_petta(22, "change-state! passthrough (shared surface)",
+test_he_to_petta(22, "change-state! passthrough (HE native state spelling)",
     ['change-state!', '&state', 5],
     ['change-state!', '&state', 5]).
 
@@ -257,17 +258,21 @@ test_petta_to_he(19, "new-space passthrough (extension surface)",
     ['new-space'],
     ['new-space']).
 
-test_petta_to_he(20, "new-state passthrough (shared surface)",
+test_petta_to_he(20, "standalone new-state stays PeTTa data, not HE State handle",
     ['new-state', 1],
-    ['new-state', 1]).
+    ['quoted-syntax', [quote, ['new-state', 1]]]).
 
-test_petta_to_he(21, "get-state passthrough (shared surface)",
+test_petta_to_he(20_1, "bind! name (new-state value) → PeTTa named-state helper",
+    ['bind!', state, ['new-state', 1]],
+    ['__tr-petta-state-set!', state, 1]).
+
+test_petta_to_he(21, "get-state → PeTTa named-state helper",
     ['get-state', '&state'],
-    ['get-state', '&state']).
+    ['__tr-petta-state-get', '&state']).
 
-test_petta_to_he(22, "change-state! passthrough (shared surface)",
+test_petta_to_he(22, "change-state! → PeTTa named-state helper",
     ['change-state!', '&state', 5],
-    ['change-state!', '&state', 5]).
+    ['__tr-petta-state-set!', '&state', 5]).
 
 test_petta_to_he(24, "unique-atom(collapse ...) → collapse(unique ...)",
     ['unique-atom', [collapse,
@@ -325,6 +330,31 @@ test_petta_to_he_program(1, "program-level builtin test preserves observable tes
 test_petta_to_he_program(1_1, "program-level quoted-syntax helper is prepended",
     [['=', [probe], [quote, ['+', 1, 2]]]],
     program_uses_quote_helper).
+
+test_petta_to_he_program(1_2, "program-level PeTTa named-state helpers are prepended",
+    [['=', [probe],
+      [progn,
+       ['bind!', state, ['new-state', rest]],
+       ['change-state!', state, active],
+       ['get-state', state]]]],
+    program_uses_petta_state_helpers).
+
+test_petta_to_he_program(1_3, "quote helper avoids source quoted-syntax symbol",
+    [['=', ['quoted-syntax', '$x'], [user_quote, '$x']],
+     ['=', [probe], [quote, ['+', 1, 2]]]],
+    program_quote_helper_avoids_source_symbol).
+
+test_petta_to_he_program(1_4, "state helpers avoid source helper-like symbols",
+    [['=', ['__tr-petta-state-clear!', '$x'], [user_clear, '$x']],
+     ['=', ['__tr-petta-state-set!', '$x', '$y'], [user_set, '$x', '$y']],
+     ['=', ['__tr-petta-state-get', '$x'], [user_get, '$x']],
+     ['=', ['__tr-petta-state-cell', '$x', '$y'], [user_cell, '$x', '$y']],
+     ['=', [probe],
+      [progn,
+       ['bind!', state, ['new-state', rest]],
+       ['change-state!', state, active],
+       ['get-state', state]]]],
+    program_state_helpers_avoid_source_symbols).
 
 test_petta_to_he_program(2, "program-level user-defined test stays user-defined",
     [['=', [test, '$x'], '$x'],
@@ -634,6 +664,81 @@ run_one_pe_program(N, Name, Input, program_uses_quote_helper) :- !,
     ->  (   Result = [['=', ['quoted-syntax', [quote, '$expr']], '$expr'],
                      ['=', [probe], ['quoted-syntax', [quote, ['+', 1, 2]]]]]
         ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_uses_petta_state_helpers) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                ['=', ['__tr-petta-state-clear!', '$name'], _],
+                ['=', ['__tr-petta-state-set!', '$name', '$value'], _],
+                ['=', ['__tr-petta-state-get', '$name'], _],
+                ['=', [probe],
+                 [let, Discard1, ['__tr-petta-state-set!', state, rest],
+                  [let, Discard2, ['__tr-petta-state-set!', state, active],
+                   ['__tr-petta-state-get', state]]]]
+            ],
+            atom_string(Discard1, Discard1S),
+            atom_string(Discard2, Discard2S),
+            sub_string(Discard1S, 0, _, _, "$__tr_"),
+            sub_string(Discard2S, 0, _, _, "$__tr_")
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+contains_symbol(Sym, Term) :-
+    Term == Sym.
+contains_symbol(Sym, Term) :-
+    is_list(Term),
+    member(Subterm, Term),
+    contains_symbol(Sym, Subterm).
+
+run_one_pe_program(N, Name, Input, program_quote_helper_avoids_source_symbol) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                ['=', [Helper, [quote, '$expr']], '$expr'],
+                ['=', ['quoted-syntax', '$x'], [user_quote, '$x']],
+                ['=', [probe], [Helper, [quote, ['+', 1, 2]]]]
+            ],
+            Helper \= 'quoted-syntax',
+            atom_string(Helper, HelperS),
+            sub_string(HelperS, 0, _, _, "__tr-quoted-syntax")
+        ->  format("  ✓ ~w: ~w (helper: ~w)~n", [N, Name, Helper])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_state_helpers_avoid_source_symbols) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                ['=', [Clear, '$name'], ClearBody],
+                ['=', [Set, '$name', '$value'], SetBody],
+                ['=', [Get, '$name'], GetBody],
+                ['=', ['__tr-petta-state-clear!', '$x'], [user_clear, '$x']],
+                ['=', ['__tr-petta-state-set!', '$x', '$y'], [user_set, '$x', '$y']],
+                ['=', ['__tr-petta-state-get', '$x'], [user_get, '$x']],
+                ['=', ['__tr-petta-state-cell', '$x', '$y'], [user_cell, '$x', '$y']],
+                ['=', [probe],
+                 [let, Discard1, [Set, state, rest],
+                  [let, Discard2, [Set, state, active],
+                   [Get, state]]]]
+            ],
+            Clear \= '__tr-petta-state-clear!',
+            Set \= '__tr-petta-state-set!',
+            Get \= '__tr-petta-state-get',
+            contains_symbol(Clear, SetBody),
+            \+ contains_symbol('__tr-petta-state-cell', ClearBody),
+            \+ contains_symbol('__tr-petta-state-cell', GetBody),
+            atom_string(Discard1, Discard1S),
+            atom_string(Discard2, Discard2S),
+            sub_string(Discard1S, 0, _, _, "$__tr_"),
+            sub_string(Discard2S, 0, _, _, "$__tr_")
+        ->  format("  ✓ ~w: ~w (helpers: ~w, ~w, ~w)~n", [N, Name, Clear, Set, Get])
         ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
         )
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
