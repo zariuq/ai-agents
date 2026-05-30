@@ -5,6 +5,7 @@
 
 :- use_module(he_to_petta, []).
 :- use_module(petta_to_he, []).
+:- use_module(he_petta_relational, []).
 
 he_translate_term(In, Out) :- he_to_petta:translate_term(In, Out).
 he_translate_term_trusted(In, Out) :- he_to_petta:translate_term_trusted(In, Out).
@@ -12,20 +13,36 @@ he_translate_decl(In, Out) :- he_to_petta:translate_decl(In, Out).
 he_translate_program(In, Out) :- he_to_petta:translate_program(In, Out).
 pe_translate_term(In, Out) :- petta_to_he:translate_term(In, Out).
 pe_translate_term_hyperpose(In, Out) :- petta_to_he:translate_term_hyperpose(In, Out).
+pe_translate_term_ffi_tokens(In, Out) :- petta_to_he:translate_term_ffi_tokens(In, Out).
+pe_translate_term_petta_he(In, Out) :- petta_to_he:translate_term_petta_he(In, Out).
+pe_translate_term_petta_he_hyperpose(In, Out) :- petta_to_he:translate_term_petta_he_hyperpose(In, Out).
 pe_translate_term_ext(In, Out) :- petta_to_he:translate_term_extended(In, Out).
 pe_translate_term_ext_hyperpose(In, Out) :- petta_to_he:translate_term_extended_hyperpose(In, Out).
 pe_translate_term_trusted(In, Out) :- petta_to_he:translate_term_trusted(In, Out).
 pe_translate_decl(In, Out) :- petta_to_he:translate_decl(In, Out).
 pe_translate_decl_hyperpose(In, Out) :- petta_to_he:translate_decl_hyperpose(In, Out).
+pe_translate_decl_petta_he(In, Out) :- petta_to_he:translate_decl_petta_he(In, Out).
+pe_translate_decl_petta_he_hyperpose(In, Out) :- petta_to_he:translate_decl_petta_he_hyperpose(In, Out).
 pe_translate_decl_ext_hyperpose(In, Out) :- petta_to_he:translate_decl_extended_hyperpose(In, Out).
 pe_translate_program(In, Out) :- petta_to_he:translate_program(In, Out).
+pe_translate_program_ffi_tokens(In, Out) :- petta_to_he:translate_program_ffi_tokens(In, Out).
 pe_optimize_term(In, Out) :- petta_to_he:optimize_term(In, Out).
+rel_pe_translate_term(In, Out) :- he_petta_relational:petta_to_he(In, Out, 0, _).
+rel_pe_append_suffix_head_extension(PrefixElems, Actual, TailVar, ApplyArg, Out) :-
+    he_petta_relational:petta_append_suffix_head_extension(PrefixElems, Actual, TailVar, ApplyArg, Out, 0, _).
+rel_pe_append_suffix_let_extension(PrefixElems, Observed, TailVar, RawBody, Out) :-
+    he_petta_relational:petta_append_suffix_let_extension(PrefixElems, Observed, TailVar, RawBody, Out, 0, _).
 
 :- discontiguous test_he_to_petta/4.
 :- discontiguous test_petta_to_he/4.
 :- discontiguous test_petta_to_he_program/4.
+:- discontiguous test_petta_to_he_ffi_tokens/4.
+:- discontiguous test_petta_to_he_petta_he/4.
+:- discontiguous test_petta_to_he_petta_he_hyperpose/4.
+:- discontiguous test_rel_petta_to_he/4.
 :- discontiguous run_one_pe/4.
 :- discontiguous run_one_pe_program/4.
+:- discontiguous run_one_pe_ffi_tokens/4.
 
 %% ═══════════════════════════════════════════════════════════════
 %% HE → PeTTa test cases
@@ -46,6 +63,10 @@ test_he_to_petta(3, "collapse-bind → collapse",
 test_he_to_petta(4, "superpose-bind → superpose",
     ['superpose-bind', [collapse, [foo]]],
     [superpose, [collapse, [foo]]]).
+
+test_he_to_petta(4_1, "singleton-visible-witness → once",
+    ['singleton-visible-witness', ['=', x, 42]],
+    [once, ['=', x, 42]]).
 
 test_he_to_petta(5, "switch → case",
     [switch, x, [['1', one], ['2', two]]],
@@ -228,7 +249,7 @@ test_petta_to_he(11, "@> → not(<s)",
 
 test_petta_to_he(12, "if passthrough",
     [if, true, yes, no],
-    [if, true, yes, no]).
+    [if, 'True', yes, no]).
 
 test_petta_to_he(15, "add-atom passthrough (shared)",
     ['add-atom', '&self', ['Fact', a]],
@@ -299,37 +320,74 @@ test_petta_to_he(27, "raw reduce → unquote(quote ...)",
     [reduce, [fib, 5]],
     [unquote, [quote, [fib, 5]]]).
 
-test_petta_to_he(28, "collapse(raw reduce ...) → collapse(unquote(quote ...))",
+test_petta_to_he(28, "collapse(reduce $term) → collapse(unquote $term) for quoted-code variables",
     [collapse, [reduce, '$term']],
-    [collapse, [unquote, [quote, '$term']]]).
+    [collapse, [unquote, '$term']]).
 
 test_petta_to_he(29, "length(collapse ...) → bind + size-atom",
     [length, [collapse, '$term']],
     length_collapse_shape('$term')).
 
-test_petta_to_he(30, "test scalar → builtin test surface before program rewrite",
+test_petta_to_he(30, "test scalar → source test form before program rewrite",
     [test, ['+', 1, 2], 3],
     [test, ['+', 1, 2], 3]).
 
-test_petta_to_he(30_1, "quote lowers to quoted-syntax helper",
+test_petta_to_he(30_1, "pure quote lowers to native HE quote",
     [quote, ['fib', 5]],
-    ['quoted-syntax', [quote, ['fib', 5]]]).
+    [quote, ['fib', 5]]).
 
 test_petta_to_he(30_2, "eval lowers to unquote(quote ...)",
     [eval, ['fib', 5]],
+    [unquote, [quote, ['fib', 5]]]).
+
+test_petta_to_he(30_3, "call lowers to unquote(quote ...)",
+    [call, ['fib', 5]],
     [unquote, [quote, ['fib', 5]]]).
 
 test_petta_to_he(31, "test length(collapse ...) → quoted HE helper call",
     [test, [length, [collapse, [match, '&self', ['edge', '$x', '$y'], '$x']]], 2],
     test_length_collapse_shape([match, '&self', ['edge', '$x', '$y'], '$x'], 2)).
 
-test_petta_to_he_program(1, "program-level builtin test preserves observable test surface",
-    [['=', [probe], [test, ['+', 1, 2], 3]]],
-    program_rewrites_builtin_test).
+test_petta_to_he(31_1, "partial builtin value lowers to petta-lambda helper",
+    ['+', 1],
+    partial_builtin_lambda_shape('+', 1)).
 
-test_petta_to_he_program(1_1, "program-level quoted-syntax helper is prepended",
+test_petta_to_he(31_2, "assertion-only msort lowers to bag-equality helper",
+    [test, [msort, [collapse, [match, '&self', [foo, '$x'], '$x']]], [1, 1, 2]],
+    ['petta-test-bag-equal', [match, '&self', [foo, '$x'], '$x'], [1, 1, 2]]).
+
+test_petta_to_he(31_3, "callable source-variable application lowers through petta-apply2",
+    ['$f', 43, 44],
+    ['petta-apply2', '$f', 43, 44]).
+
+test_petta_to_he_program(1, "program-level direct test uses petta-test-equal helper",
+    [['=', [probe], [test, ['+', 1, 2], 3]]],
+    program_uses_builtin_test_helper).
+
+test_petta_to_he_program(1_0_1, "program-level nondet test uses petta-test-results helper",
+    [['=', [probe], [test, [if, '$x', yes, no], [yes, no]]]],
+    program_uses_collapse_test_helper).
+
+test_petta_to_he_program(1_0_2, "program-level mixed tests route per call",
+    [['=', [probe_direct], [test, ['+', 1, 2], 3]],
+     ['=', [probe_results], [test, [if, '$x', yes, no], [yes, no]]]],
+    program_uses_mixed_test_helpers).
+
+test_petta_to_he_program(1_0_3, "=alpha with free vars stays on direct test helper",
+    [['=', [probe_alpha], [test, ['=alpha', ['Father', '$X'], ['Father', '$Y']], 'True']]],
+    program_routes_alpha_test_direct).
+
+test_petta_to_he_program(1_0_4, "locally bound chain vars stay on direct test helper",
+    [['=', [probe_chain], [test, [chain, ['+', 2, 4], '$n', ['*', 3, '$n']], 18]]],
+    program_routes_chain_test_direct).
+
+test_petta_to_he_program(1_0_5, "program-level assertion-only msort uses bag test helper",
+    [['=', [probe_bag], [test, [msort, [collapse, [match, '&self', [foo, '$x'], '$x']]], [1, 1, 2]]]],
+    program_uses_bag_test_helper).
+
+test_petta_to_he_program(1_1, "program-level pure quote uses native HE quote",
     [['=', [probe], [quote, ['+', 1, 2]]]],
-    program_uses_quote_helper).
+    program_uses_native_quote).
 
 test_petta_to_he_program(1_2, "program-level PeTTa named-state helpers are prepended",
     [['=', [probe],
@@ -339,10 +397,10 @@ test_petta_to_he_program(1_2, "program-level PeTTa named-state helpers are prepe
        ['get-state', state]]]],
     program_uses_petta_state_helpers).
 
-test_petta_to_he_program(1_3, "quote helper avoids source quoted-syntax symbol",
+test_petta_to_he_program(1_3, "native quote does not need a helper despite source quoted-syntax symbol",
     [['=', ['quoted-syntax', '$x'], [user_quote, '$x']],
      ['=', [probe], [quote, ['+', 1, 2]]]],
-    program_quote_helper_avoids_source_symbol).
+    program_native_quote_ignores_source_quoted_syntax).
 
 test_petta_to_he_program(1_4, "state helpers avoid source helper-like symbols",
     [['=', ['__tr-petta-state-clear!', '$x'], [user_clear, '$x']],
@@ -355,6 +413,119 @@ test_petta_to_he_program(1_4, "state helpers avoid source helper-like symbols",
        ['change-state!', state, active],
        ['get-state', state]]]],
     program_state_helpers_avoid_source_symbols).
+
+test_petta_to_he_program(1_5, "program-level append helper is prepended",
+    [['=', [probe], [append, [1], [2, 3]]]],
+    program_uses_append_helper).
+
+test_petta_to_he_program(1_5_1, "program-level second-from-pair helper is prepended",
+    [['=', [probe], ['second-from-pair', [a, b]]]],
+    program_uses_second_from_pair_helper).
+
+test_petta_to_he_program(1_5_2, "program-level user-defined second-from-pair stays user-defined",
+    [['=', ['second-from-pair', '$pair'], '$pair'],
+     ['=', [probe], ['second-from-pair', [a, b]]]],
+    program_uses_user_defined_second_from_pair).
+
+test_petta_to_he_program(1_5_3, "program-level builtin partial becomes generated first-order helper",
+    [['=', [probe], ['+', 1]]],
+    program_rewrites_partial_builtin_helper).
+
+test_petta_to_he_program(1_5_4, "program-level zero-arity function returning callable is applied curried",
+    [['=', [mp], ['+']],
+     ['=', [probe], [mp, 1, 1]]],
+    program_curried_callable_result).
+
+test_petta_to_he_program(1_5_4_1, "program-level partial composition value lowers to direct nested helper composition",
+    [['=', ['..', '$f1', '$f2', '$arg'], ['$f1', ['$f2', '$arg']]],
+     ['=', [plus1times2], ['..', ['*', 2], ['+', 1]]]],
+    program_rewrites_partial_composition_helper).
+
+test_petta_to_he_program(1_5_5, "canonical map-flat pair lowers to map-atom",
+    [['=', ['map-flat', '$f', '()'], '()'],
+     ['=', ['map-flat', '$f', [cons, '$x', '$xs']],
+      [cons, ['$f', '$x'], ['map-flat', '$f', '$xs']]]],
+    program_canonicalizes_map_flat).
+
+test_petta_to_he_program(1_5_6, "canonical fold-nested pair lowers to foldl-atom + metatype check",
+    [['=', ['fold-nested', '$f', '$init', '()'], '$init'],
+     ['=', ['fold-nested', '$f', '$init', [cons, '$x', '$xs']],
+      [if, ['is-expr', '$x'],
+       ['fold-nested', '$f', ['fold-nested', '$f', '$init', '$x'], '$xs'],
+       ['fold-nested', '$f', ['$f', '$init', '$x'], '$xs']]]],
+    program_canonicalizes_fold_nested).
+
+test_petta_to_he_program(1_5_7, "two-argument composition helper keeps direct multiarg target call",
+    [['=', ['.:', '$f1', '$f2', '$arg1', '$arg2'],
+      ['$f1', ['$f2', '$arg1', '$arg2']]]],
+    program_preserves_direct_binary_composition).
+
+test_petta_to_he_program(1_5_8, "strict Roman intersection alias lowers to intersection-atom",
+    [['=', ['/==\\', '$a', '$b'], ['/?\\', '==', '$a', '$b']]],
+    program_canonicalizes_roman_eqeq_intersection).
+
+test_petta_to_he_program(1_5_9, "strict Roman subtraction alias lowers to subtraction-atom",
+    [['=', ['\\==', '$a', '$b'], ['\\?', '==', '$a', '$b']]],
+    program_canonicalizes_roman_eqeq_subtraction).
+
+test_petta_to_he_program(1_5_10, "strict Roman union alias lowers to subtraction plus union-atom",
+    [['=', ['\\==/', '$a', '$b'], ['\\?/', '==', '$a', '$b']]],
+    program_canonicalizes_roman_eqeq_union).
+
+test_petta_to_he_program(1_5_11, "nontrivial function heads normalize into fresh args plus let guard",
+    [['=', [in, '$x', '$L'], [let, 'True', ['is-member', '$x', '$L'], '$x']],
+     ['=', [myplus, [in, '$X', [1, 2, 3]], [in, '$Y', [2, 3]]],
+      [in, ['+', '$X', '$Y'], [3, 4, 5]]]],
+    program_normalizes_function_head_patterns).
+
+test_petta_to_he_program(1_5_11_1, "source-defined generator head only freshens the nontrivial argument",
+    [['=', [animal, '$X'], [only, [[living, '$X'], [being, '$X']], '$X']],
+     ['=', [tagged_cat, [animal, '$X'], '$tag'], [pair, '$X', '$tag']]],
+    program_selectively_freshens_function_head_args).
+
+test_petta_to_he_program(1_5_11_2, "duplicate source head variables become explicit unify guard",
+    [['=', [same, '$x', '$x'], ok]],
+    program_normalizes_duplicate_function_head_vars).
+
+test_petta_to_he_program(1_5_11_3, "append-suffix function heads lower through structural decons and recover tail data",
+    [['=', [myfunc, '$A', '$B'], [append, [append, [42], '$A'], '$B']],
+     ['=', [h, [myfunc, [10], '$B'], '$C'], ['$B', '$C']]],
+    program_normalizes_append_suffix_function_head).
+
+test_petta_to_he_program(1_5_11_4, "equality-form function-call inversion rejoins the same structural head path",
+    [['=', [myfunc, '$A', '$B'], [append, [append, [42], '$A'], '$B']],
+     ['=', [h_unify, '$A', '$C'],
+      [if, ['=', '$A', [myfunc, [10], '$B']], ['$B', '$C'], [empty]]]],
+    program_normalizes_function_call_inversion_eq_guard).
+
+test_petta_to_he_program(1_5_11_5, "structural function-call inversion let-patterns lower through decons and raw application",
+    [['=', [f, '$Head', '$Tail'], [append, ['$Head'], '$Tail']],
+     ['=', [probe], [let, [f, '$Head', '$Tail'], [1, 2, 3, 4], ['$Head', '$Tail']]]],
+    program_normalizes_structural_function_call_inversion_let_pattern).
+
+test_petta_to_he_program(1_5_11_6, "pure arithmetic function-call inversion let-patterns are rejected instead of miscompiled",
+    [['=', [g, '$X', '$Y', '$Z'], [append, [['#+', '$X', '$Z']], '$Y']],
+     ['=', [probe], [let, [g, '$X', '$Y', 35], [42, 2, 3], ['$X', '$Y', 40]]]],
+    translation_error(domain_error(he_core_surface, arithmetic_inversion))).
+
+test_petta_to_he_ffi_tokens(1, "ffi-tokens mode emits explicit function-call inversion marker for arithmetic let-patterns",
+    [['=', [g, '$X', '$Y', '$Z'], [append, [['#+', '$X', '$Z']], '$Y']],
+     ['=', [probe], [let, [g, '$X', '$Y', 35], [42, 2, 3], ['$X', '$Y', 40]]]],
+    program_uses_ffi_function_call_inversion_helper).
+
+test_petta_to_he_program(1_5_12, "call-result equality condition binds once and compares with ==",
+    [['=', [trickyspec, '$f'],
+      [if, ['=', ['$f', 1], 2], [trickyspec, ['+', 2]], ['$f', 1]]]],
+    program_normalizes_callable_equality_condition).
+
+test_petta_to_he_program(1_6, "program-level length helper uses direct size-atom",
+    [['=', [probe], [length, [1, 2, 3]]]],
+    program_uses_direct_length_helper).
+
+test_petta_to_he_program(1_7, "program-level user-defined msort stays user-defined",
+    [['=', [msort, '$x'], '$x'],
+     ['=', [probe], [msort, [3, 1, 2]]]],
+    program_uses_user_defined_msort).
 
 test_petta_to_he_program(2, "program-level user-defined test stays user-defined",
     [['=', [test, '$x'], '$x'],
@@ -369,13 +540,51 @@ test_petta_to_he(33, "hyperpose → superpose",
     [hyperpose, [['prime?', 2], ['prime?', 3]]],
     [superpose, [['prime?', 2], ['prime?', 3]]]).
 
-test_petta_to_he(34, "once(hyperpose ...) → once(superpose ...)",
+test_petta_to_he(34, "pure once(hyperpose ...) → first result via collapse/case/decons",
     [once, [hyperpose, [[slow-branch], [cheap-branch]]]],
-    [once, [superpose, [[slow-branch], [cheap-branch]]]]).
+    pure_once_shape([superpose, [[slow-branch], [cheap-branch]]])).
 
 test_petta_to_he(35, "computed hyperpose input stays computed after superpose lowering",
     [let, '$xs', [1, 2, 3], [hyperpose, '$xs']],
     [let, '$xs', [1, 2, 3], [superpose, '$xs']]).
+
+test_petta_to_he(36, "pure cut is rejected rather than silently miscompiled",
+    [cut],
+    translation_error(domain_error(he_core_surface, cut))).
+
+test_petta_to_he(37, "pure canonical Goal,cut idiom lowers to first-result once",
+    ['let*', [['$x', [match, '&self', [foo, '$1'], '$1']],
+              ['$temp', [cut]]],
+     '$x'],
+    pure_once_shape([match, '&self', [foo, '$1'], '$1'])).
+
+test_petta_to_he(38, "pure unprovided msort is rejected rather than silently preserved",
+    [msort, [collapse, [match, '&self', '$x', '$x']]],
+    translation_error(domain_error(he_core_surface, msort))).
+
+test_petta_to_he(38_1, "pure finite exists match emptiness check keeps the canonical once/collapse boundary",
+    ['==', '()', [collapse, [once, [match, '$Space', '$Atom', '$Atom']]]],
+    finite_exists_match_shape([match, '$Space', '$Atom', '$Atom'])).
+
+test_petta_to_he(38_2, "pure singleton once over deterministic equality lowers to dedicated singleton witness surface",
+    [once, ['=', '$x', 42]],
+    singleton_visible_witness_shape([unify, '$x', 42, 'True', 'Empty'])).
+
+test_petta_to_he(39, "plain let preserves tuple binders as patterns",
+    [let, ['$x', '$y'], [1, 2], ['$x', '$y']],
+    [let, ['$x', '$y'], [1, 2], [eval, ['atom-subst', '$x', '$fun', ['$fun', '$y']]]]).
+
+test_petta_to_he(40, "let* preserves tuple binders as patterns",
+    ['let*', [[['$x', '$y'], [1, 2]], ['$z', 3]], ['$x', '$y', '$z']],
+    ['let*', [[['$x', '$y'], [1, 2]], ['$z', 3]], [eval, ['atom-subst', '$x', '$fun', ['$fun', '$y', '$z']]]]).
+
+test_petta_to_he(41, "fake lambda preserves tuple parameters as patterns",
+    [lambda, ['$x', '$y'], ['+', '$x', '$y']],
+    [lambda, ['$x', '$y'], ['+', '$x', '$y']]).
+
+test_petta_to_he(42, "compiled lambda preserves tuple parameters as patterns",
+    ['|->', ['$x', '$y'], ['+', '$x', '$y']],
+    ['|->', ['$x', '$y'], ['+', '$x', '$y']]).
 
 %% ═══════════════════════════════════════════════════════════════
 %% PeTTa → HE hyperpose-preserving mode tests
@@ -385,13 +594,73 @@ test_petta_to_he_hyperpose(1, "hyperpose-preserving mode keeps hyperpose",
     [hyperpose, [['prime?', 2], ['prime?', 3]]],
     [hyperpose, [['prime?', 2], ['prime?', 3]]]).
 
-test_petta_to_he_hyperpose(2, "once(hyperpose ...) stays once(hyperpose ...)",
+test_petta_to_he_hyperpose(2, "pure preserve-hyperpose once(...) → first result via collapse/case/decons",
     [once, [hyperpose, [[slow-branch], [cheap-branch]]]],
-    [once, [hyperpose, [[slow-branch], [cheap-branch]]]]).
+    pure_once_shape([hyperpose, [[slow-branch], [cheap-branch]]])).
 
 test_petta_to_he_hyperpose(3, "computed hyperpose input stays computed in preserve mode",
     [let, '$xs', [1, 2, 3], [hyperpose, '$xs']],
     [let, '$xs', [1, 2, 3], [hyperpose, '$xs']]).
+
+test_petta_to_he_petta_he(1, "PeTTa HE profile keeps once(superpose ...)",
+    [once, [hyperpose, [[slow-branch], [cheap-branch]]]],
+    [once, [superpose, [[slow-branch], [cheap-branch]]]]).
+
+test_petta_to_he_petta_he(2, "PeTTa HE profile preserves cut",
+    [cut],
+    [cut]).
+
+test_petta_to_he_petta_he(3, "PeTTa HE profile preserves native msort",
+    [msort, [collapse, [match, '&self', '$x', '$x']]],
+    [msort, [collapse, [match, '&self', '$x', '$x']]]).
+
+test_petta_to_he_petta_he(4, "PeTTa HE profile preserves lambda body variable-head tuples",
+    ['|->', ['$x'], ['$x', 2, 3]],
+    ['|->', ['$x'], ['$x', 2, 3]]).
+
+test_petta_to_he_petta_he(5, "PeTTa HE profile preserves structured let* body variable-head tuples",
+    ['let*', [[['$f1', '$c1', 3], [1, 2, '$d1']]], ['$f1', '$c1', '$d1']],
+    ['let*', [[['$f1', '$c1', 3], [1, 2, '$d1']]], ['$f1', '$c1', '$d1']]).
+
+test_petta_to_he_petta_he(5_1, "PeTTa HE profile preserves flat expression-head tuples",
+    [[link, '$x', human], [link, '$y', human], [link, '$z', human]],
+    [[link, '$x', human], [link, '$y', human], [link, '$z', human]]).
+
+test_petta_to_he_petta_he(5_2, "PeTTa HE profile preserves expression-headed iterate state tuples",
+    [[+, '$t', 1], 1, [+, '$sum', [*, '$t', '$i']]],
+    [[+, '$t', 1], 1, [+, '$sum', [*, '$t', '$i']]]).
+
+test_petta_to_he_petta_he(5_3, "PeTTa HE profile preserves non-variable function heads in declarations",
+    ['=', [successor, b, a], 'True'],
+    ['=', [successor, b, a], 'True']).
+
+test_petta_to_he_petta_he(5_4, "PeTTa HE profile preserves native eval surface",
+    [eval, '$code'],
+    [eval, '$code']).
+
+test_petta_to_he_petta_he(5_4_1, "PeTTa HE profile preserves native call surface",
+    [call, '$code'],
+    [call, '$code']).
+
+test_petta_to_he_petta_he(5_4_2, "PeTTa HE profile preserves native reduce surface",
+    [reduce, '$code'],
+    [reduce, '$code']).
+
+test_petta_to_he_petta_he(5_5, "PeTTa HE profile preserves member-filter source calls in bodies",
+    [in, ['+', 1, 3], [3, 4, 5]],
+    [in, ['+', 1, 3], [3, 4, 5]]).
+
+test_petta_to_he_petta_he(5_6, "PeTTa HE profile preserves expression-data arguments without quote injection",
+    [map-flat3, [p1, [1, 2]]],
+    [map-flat3, [p1, [1, 2]]]).
+
+test_petta_to_he_petta_he(6, "PeTTa HE profile preserves native partial builtin values",
+    ['+', 2],
+    ['+', 2]).
+
+test_petta_to_he_petta_he_hyperpose(1, "PeTTa HE profile preserve-hyperpose keeps once(hyperpose ...)",
+    [once, [hyperpose, [[slow-branch], [cheap-branch]]]],
+    [once, [hyperpose, [[slow-branch], [cheap-branch]]]]).
 
 %% ═══════════════════════════════════════════════════════════════
 %% PeTTa → HE extended mode tests
@@ -401,9 +670,17 @@ test_petta_to_he_ext(1, "foldall (extended) → let(collect) + foldl-atom",
     [foldall, merge, [twohop-item], 0],
     foldall_shape_ext(merge, [twohop-item], 0)).
 
+test_petta_to_he_ext(2, "extended once(...) → select 1(...)",
+    [once, [superpose, [1, 2]]],
+    [select, 1, [superpose, [1, 2]]]).
+
 test_petta_to_he_ext_hyperpose(1, "extended hyperpose-preserving mode keeps hyperpose",
     [hyperpose, [['prime?', 2], ['prime?', 3]]],
     [hyperpose, [['prime?', 2], ['prime?', 3]]]).
+
+test_petta_to_he_ext_hyperpose(2, "extended hyperpose-preserving once(...) → select 1(hyperpose ...)",
+    [once, [hyperpose, [[slow-branch], [cheap-branch]]]],
+    [select, 1, [hyperpose, [[slow-branch], [cheap-branch]]]]).
 
 %% ═══════════════════════════════════════════════════════════════
 %% PeTTa → HE optimization tests
@@ -445,11 +722,37 @@ test_roundtrip(3, "if with chain normalizes in branch",
     [if, cond, [chain, a, x, x], fallback],
     [if, cond, [let, x, a, x], fallback]).
 
+test_rel_petta_to_he(1, "relational core rejects pure cut",
+    [cut],
+    fails).
+
+test_rel_petta_to_he(2, "relational core rejects unprovided msort",
+    [msort, [collapse, [match, '&self', '$x', '$x']]],
+    fails).
+
+test_rel_petta_to_he(3, "relational core exposes append-suffix head-pattern extension shape",
+    [head_extension, [42, 10], '$arg', '$tail', '$C'],
+    append_suffix_head_extension_shape).
+
+test_rel_petta_to_he(4, "relational core exposes structural append-suffix let-pattern extension helper surface",
+    [let_extension, ['$Head'], [1, 2, 3, 4], '$Tail', ['__tr-raw-apply1', '$Head', '$Tail']],
+    append_suffix_let_extension_shape).
+
+test_rel_petta_to_he(5, "relational core exposes singleton visible witness surface",
+    [once, ['=', '$x', 42]],
+    ['singleton-visible-witness', [unify, '$x', 42, 'True', 'Empty']]).
+
 %% ═══════════════════════════════════════════════════════════════
 %% Test runner
 %% ═══════════════════════════════════════════════════════════════
 
 run_tests :-
+    with_output_to(string(Output), run_tests_body),
+    write(Output),
+    \+ sub_string(Output, _, _, _, "  ✗"),
+    \+ sub_string(Output, _, _, _, "  ?").
+
+run_tests_body :-
     format("~n=== HE → PeTTa Tests ===~n"),
     forall(test_he_to_petta(N, Name, Input, Expected),
         run_one_he(N, Name, Input, Expected)),
@@ -465,9 +768,18 @@ run_tests :-
     format("~n=== PeTTa → HE Program Tests ===~n"),
     forall(test_petta_to_he_program(N, Name, Input, Expected),
         run_one_pe_program(N, Name, Input, Expected)),
+    format("~n=== PeTTa → HE FFI-Tokens Mode Tests ===~n"),
+    forall(test_petta_to_he_ffi_tokens(N, Name, Input, Expected),
+        run_one_pe_ffi_tokens(N, Name, Input, Expected)),
     format("~n=== PeTTa → HE Hyperpose-Preserving Mode Tests ===~n"),
     forall(test_petta_to_he_hyperpose(N, Name, Input, Expected),
         run_one_pe_hyperpose(N, Name, Input, Expected)),
+    format("~n=== PeTTa → HE PeTTa Profile Mode Tests ===~n"),
+    forall(test_petta_to_he_petta_he(N, Name, Input, Expected),
+        run_one_pe_petta_he(N, Name, Input, Expected)),
+    format("~n=== PeTTa → HE PeTTa Profile Hyperpose Mode Tests ===~n"),
+    forall(test_petta_to_he_petta_he_hyperpose(N, Name, Input, Expected),
+        run_one_pe_petta_he_hyperpose(N, Name, Input, Expected)),
     format("~n=== PeTTa → HE Trusted Tests ===~n"),
     forall(test_petta_to_he_trusted(N, Name, Input, Expected),
         run_one_pe_trusted(N, Name, Input, Expected)),
@@ -482,7 +794,10 @@ run_tests :-
         run_one_pe_opt(N, Name, Input, Expected)),
     format("~n=== Normalization Tests (HE → PeTTa → HE normal form) ===~n"),
     forall(test_roundtrip(N, Name, Input, Expected),
-        run_one_rt(N, Name, Input, Expected)).
+        run_one_rt(N, Name, Input, Expected)),
+    format("~n=== Relational PeTTa → HE Boundary Tests ===~n"),
+    forall(test_rel_petta_to_he(N, Name, Input, Expected),
+        run_one_rel_pe(N, Name, Input, Expected)).
 
 %% Special handler for HE capture tests
 run_one_he(N, Name, Input, capture_must_not_occur) :- !,
@@ -600,11 +915,46 @@ run_one_pe(N, Name, Input, foldall_shape(Agg, Goal, Init)) :- !,
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
     ).
 
+run_one_pe_hyperpose(N, Name, Input, pure_once_shape(ExpectedInner)) :- !,
+    (   pe_translate_term_hyperpose(Input, Result)
+    ->  (   pure_once_result_shape(Result, ExpectedInner)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w (bad pure once lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
 run_one_pe_hyperpose(N, Name, Input, Expected) :-
     (   test_petta_to_he_hyperpose(N, _, Input, _),
         (   Input = ['=', _, _]
         ->  pe_translate_decl_hyperpose(Input, Result)
         ;   pe_translate_term_hyperpose(Input, Result)
+        ),
+        (   Result == Expected
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Expected: ~w~n    Got:      ~w~n", [N, Name, Expected, Result])
+        )
+    ;   format("  ? ~w: ~w (error)~n", [N, Name])
+    ).
+
+run_one_pe_petta_he(N, Name, Input, Expected) :-
+    (   test_petta_to_he_petta_he(N, _, Input, _),
+        (   Input = ['=', _, _]
+        ->  pe_translate_decl_petta_he(Input, Result)
+        ;   pe_translate_term_petta_he(Input, Result)
+        ),
+        (   Result == Expected
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Expected: ~w~n    Got:      ~w~n", [N, Name, Expected, Result])
+        )
+    ;   format("  ? ~w: ~w (error)~n", [N, Name])
+    ).
+
+run_one_pe_petta_he_hyperpose(N, Name, Input, Expected) :-
+    (   test_petta_to_he_petta_he_hyperpose(N, _, Input, _),
+        (   Input = ['=', _, _]
+        ->  pe_translate_decl_petta_he_hyperpose(Input, Result)
+        ;   pe_translate_term_petta_he_hyperpose(Input, Result)
         ),
         (   Result == Expected
         ->  format("  ✓ ~w: ~w~n", [N, Name])
@@ -630,7 +980,7 @@ run_one_pe(N, Name, Input, foldl_atom_short_shape(List, Init, Agg)) :- !,
 
 run_one_pe(N, Name, Input, length_collapse_shape(Goal)) :- !,
     (   pe_translate_term(Input, Result)
-    ->  (   Result = [let, TupleVar, [collapse, Goal], [size-atom, TupleVar]],
+    ->  (   Result = [let, TupleVar, [collapse, Goal], ['size-atom', TupleVar]],
             atom_string(TupleVar, TupleS),
             sub_string(TupleS, 0, _, _, "$__tr_")
         ->  format("  ✓ ~w: ~w (fresh tuple binder: ~w)~n", [N, Name, TupleVar])
@@ -641,7 +991,7 @@ run_one_pe(N, Name, Input, length_collapse_shape(Goal)) :- !,
 
 run_one_pe(N, Name, Input, test_length_collapse_shape(Goal, Expected)) :- !,
     (   pe_translate_term(Input, Result)
-        ->  (   Result = [test, [let, TupleVar, [collapse, Goal], [size-atom, TupleVar]], Expected],
+        ->  (   Result = [test, [let, TupleVar, [collapse, Goal], ['size-atom', TupleVar]], Expected],
             atom_string(TupleVar, TupleS),
             sub_string(TupleS, 0, _, _, "$__tr_")
         ->  format("  ✓ ~w: ~w (fresh tuple binder: ~w)~n", [N, Name, TupleVar])
@@ -650,19 +1000,202 @@ run_one_pe(N, Name, Input, test_length_collapse_shape(Goal, Expected)) :- !,
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
     ).
 
-run_one_pe_program(N, Name, Input, program_rewrites_builtin_test) :- !,
+run_one_pe(N, Name, Input, pure_once_shape(ExpectedInner)) :- !,
+    (   pe_translate_term(Input, Result)
+    ->  (   pure_once_result_shape(Result, ExpectedInner)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w (bad pure once lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe(N, Name, Input, finite_exists_match_shape(ExpectedInner)) :- !,
+    (   pe_translate_term(Input, Result)
+    ->  (   finite_exists_match_result_shape(Result, ExpectedInner)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w (bad finite exists-match lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe(N, Name, Input, singleton_visible_witness_shape(ExpectedInner)) :- !,
+    (   pe_translate_term(Input, Result)
+    ->  (   singleton_visible_witness_result_shape(Result, ExpectedInner)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w (bad singleton-visible-witness lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe(N, Name, Input, translation_error(ExpectedError)) :- !,
+    catch((pe_translate_term(Input, Result),
+           Outcome = translated(Result)),
+          error(Error, _Context),
+          Outcome = error(Error)),
+    (   Outcome = error(ExpectedError)
+    ->  format("  ✓ ~w: ~w~n", [N, Name])
+    ;   format("  ✗ ~w: ~w~n    Expected error: ~w~n    Got:      ~w~n",
+               [N, Name, ExpectedError, Outcome])
+    ).
+
+pure_once_result_shape(Result, ExpectedInner) :-
+    Result = [let, TupleVar, [collapse, ExpectedInner],
+              [case, TupleVar,
+               [['()', 'Empty'],
+                [NonemptyVar,
+                 [let, [HeadVar, TailVar],
+                  ['decons-atom', NonemptyVar],
+                  HeadVar]]]]],
+    atom_string(TupleVar, TupleS),
+    atom_string(NonemptyVar, NonemptyS),
+    atom_string(HeadVar, HeadS),
+    atom_string(TailVar, TailS),
+    sub_string(TupleS, 0, _, _, "$__tr_"),
+    sub_string(NonemptyS, 0, _, _, "$__tr_"),
+    sub_string(HeadS, 0, _, _, "$__tr_"),
+    sub_string(TailS, 0, _, _, "$__tr_").
+
+finite_exists_match_result_shape(Result, ExpectedInner) :-
+    Result = ['==', '()', [collapse, OnceExpr]],
+    pure_once_result_shape(OnceExpr, ExpectedInner).
+
+singleton_visible_witness_result_shape(Result, ExpectedInner) :-
+    Result = ['singleton-visible-witness', ExpectedInner].
+
+run_one_pe_program(N, Name, Input, program_uses_builtin_test_helper) :- !,
     (   pe_translate_program(Input, Result)
-    ->  (   Result = [['=', [probe], [test, ['+', 1, 2], 3]]]
+    ->  (   Result = [
+                [':', 'petta-test-equal', ['->', 'Atom', 'Atom', 'Bool']],
+                ['=', ['petta-test-equal', '$actual', '$expected'], TestBody],
+                ['=', [probe], ['petta-test-equal', ['+', 1, 2], 3]]
+            ],
+            \+ contains_symbol(collapse, TestBody),
+            contains_symbol('==', TestBody),
+            contains_symbol('println!', TestBody),
+            contains_symbol('format-args', TestBody)
         ->  format("  ✓ ~w: ~w~n", [N, Name])
         ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
         )
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
     ).
 
-run_one_pe_program(N, Name, Input, program_uses_quote_helper) :- !,
+run_one_pe_program(N, Name, Input, program_uses_direct_length_helper) :- !,
     (   pe_translate_program(Input, Result)
-    ->  (   Result = [['=', ['quoted-syntax', [quote, '$expr']], '$expr'],
-                     ['=', [probe], ['quoted-syntax', [quote, ['+', 1, 2]]]]]
+    ->  (   Result = [
+                ['=', [length, '$expr'], ['size-atom', '$expr']],
+                ['=', [probe], [length, [1, 2, 3]]]
+            ]
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_uses_user_defined_msort) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [['=', [msort, '$x'], '$x'],
+                     ['=', [probe], [msort, [3, 1, 2]]]]
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_uses_collapse_test_helper) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                ['=', [NormalizeFun, '$tuple'], NormalizeBody],
+                [':', 'petta-test-results', ['->', 'Atom', 'Atom', 'Bool']],
+                ['=', ['petta-test-results', '$actual', '$expected'], TestBody],
+                ['=', [probe], ['petta-test-results', [if, '$x', yes, no], [yes, no]]]
+            ],
+            atom(NormalizeFun),
+            contains_symbol(case, NormalizeBody),
+            contains_symbol(collapse, TestBody),
+            contains_symbol(NormalizeFun, TestBody),
+            contains_symbol('==', TestBody),
+            contains_symbol('println!', TestBody),
+            contains_symbol('format-args', TestBody)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_uses_bag_test_helper) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                [':', 'petta-test-bag-equal', ['->', 'Atom', 'Atom', 'Bool']],
+                ['=', ['petta-test-bag-equal', '$actual', '$expected'], TestBody],
+                ['=', [probe_bag], ['petta-test-bag-equal',
+                                    [match, '&self', [foo, '$x'], '$x'],
+                                    [1, 1, 2]]]
+            ],
+            contains_symbol(collapse, TestBody),
+            contains_symbol('subtraction-atom', TestBody),
+            contains_symbol('println!', TestBody)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_uses_mixed_test_helpers) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   member([':', 'petta-test-equal', ['->', 'Atom', 'Atom', 'Bool']], Result),
+            member(['=', ['petta-test-equal', '$actual', '$expected'], EqualBody], Result),
+            member(['=', [NormalizeFun, '$tuple'], NormalizeBody], Result),
+            member([':', 'petta-test-results', ['->', 'Atom', 'Atom', 'Bool']], Result),
+            member(['=', ['petta-test-results', '$actual', '$expected'], ResultsBody], Result),
+            member(['=', [probe_direct], ['petta-test-equal', ['+', 1, 2], 3]], Result),
+            member(['=', [probe_results], ['petta-test-results', [if, '$x', yes, no], [yes, no]]], Result),
+            atom(NormalizeFun),
+            contains_symbol(case, NormalizeBody),
+            contains_symbol(collapse, ResultsBody),
+            contains_symbol(NormalizeFun, ResultsBody),
+            \+ contains_symbol(collapse, EqualBody),
+            contains_symbol('println!', ResultsBody),
+            contains_symbol('println!', EqualBody)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_routes_alpha_test_direct) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   member(['=', [probe_alpha],
+                     ['petta-test-equal',
+                      ['=alpha', ['Father', '$X'], ['Father', '$Y']],
+                      'True']], Result),
+            \+ member(['=', [probe_alpha],
+                       ['petta-test-results',
+                        ['=alpha', ['Father', '$X'], ['Father', '$Y']],
+                        'True']], Result)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_routes_chain_test_direct) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   member(['=', [probe_chain],
+                     ['petta-test-equal',
+                      [let, _, ['+', 2, 4], [let, _, ['*', 3, '$n'], ['*', 3, '$n']]],
+                      18]], Result)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   member(['=', [probe_chain], ProbeBody], Result),
+            ProbeBody = ['petta-test-equal', _, 18]
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_uses_native_quote) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [['=', [probe], [quote, ['+', 1, 2]]]]
         ->  format("  ✓ ~w: ~w~n", [N, Name])
         ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
         )
@@ -697,17 +1230,30 @@ contains_symbol(Sym, Term) :-
     member(Subterm, Term),
     contains_symbol(Sym, Subterm).
 
-run_one_pe_program(N, Name, Input, program_quote_helper_avoids_source_symbol) :- !,
+run_one_pe_ffi_tokens(N, Name, Input, program_uses_ffi_function_call_inversion_helper) :- !,
+    (   pe_translate_program_ffi_tokens(Input, Result)
+    ->  (   member([':', 'petta-ffi-function-call-inversion', ['->', 'Atom', 'Atom', 'Atom', 'Atom', 'Atom']], Result),
+            member(['=', ['petta-ffi-function-call-inversion', '$lane', '$pattern', '$observed', '$continuation'], OracleBody], Result),
+            member(['=', [probe],
+                    ['petta-ffi-function-call-inversion',
+                     'arithmetic-append-suffix',
+                     [quote, [g, '$X', '$Y', 35]],
+                     [42, 2, 3],
+                     [eval, ['atom-subst', '$X', '$fun', ['$fun', '$Y', 40]]]]], Result),
+            contains_symbol('Error', OracleBody)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_native_quote_ignores_source_quoted_syntax) :- !,
     (   pe_translate_program(Input, Result)
     ->  (   Result = [
-                ['=', [Helper, [quote, '$expr']], '$expr'],
                 ['=', ['quoted-syntax', '$x'], [user_quote, '$x']],
-                ['=', [probe], [Helper, [quote, ['+', 1, 2]]]]
-            ],
-            Helper \= 'quoted-syntax',
-            atom_string(Helper, HelperS),
-            sub_string(HelperS, 0, _, _, "__tr-quoted-syntax")
-        ->  format("  ✓ ~w: ~w (helper: ~w)~n", [N, Name, Helper])
+                ['=', [probe], [quote, ['+', 1, 2]]]
+            ]
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
         ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
         )
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
@@ -744,6 +1290,356 @@ run_one_pe_program(N, Name, Input, program_state_helpers_avoid_source_symbols) :
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
     ).
 
+run_one_pe_program(N, Name, Input, program_uses_append_helper) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                ['=', [append, '()', '$ys'], '$ys'],
+                ['=', [append, '$xs', '$ys'], AppendBody],
+                ['=', [probe], [append, [1], [2, 3]]]
+            ],
+            contains_symbol('decons-atom', AppendBody),
+            contains_symbol('cons-atom', AppendBody)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_uses_second_from_pair_helper) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                [':', 'second-from-pair', ['->', 'Atom', 'Atom']],
+                ['=', ['second-from-pair', '$pair'], HelperBody],
+                ['=', [probe], ['second-from-pair', [a, b]]]
+            ],
+            contains_symbol(unify, HelperBody),
+            contains_symbol(return, HelperBody),
+            contains_symbol('Error', HelperBody)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_uses_user_defined_second_from_pair) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                ['=', ['second-from-pair', '$pair'], '$pair'],
+                ['=', [probe], ['second-from-pair', [a, b]]]
+            ]
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_rewrites_partial_builtin_helper) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                ['=', [HelperName, ArgVar], ['+', 1, ArgVar]],
+                ['=', [probe], HelperName]
+            ],
+            atom(HelperName),
+            sub_atom(HelperName, 0, _, _, 'petta-partial-'),
+            atom_string(ArgVar, ArgVarS),
+            sub_string(ArgVarS, 0, _, _, "$__tr_")
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_curried_callable_result) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                [':', 'petta-lambda', ['->', 'Atom', '$t', ['->', '$a', '$t']]],
+                ['=', [['petta-lambda', '$var', '$body'], '$arg'],
+                 [let, '$var', '$arg', '$body']],
+                ['=', [mp], ['petta-lambda', Arg1, ['petta-lambda', Arg2, ['+', Arg1, Arg2]]]],
+                ['=', [probe], [[[mp], 1], 1]]
+            ],
+            atom_string(Arg1, Arg1S),
+            atom_string(Arg2, Arg2S),
+            sub_string(Arg1S, 0, _, _, "$__tr_"),
+            sub_string(Arg2S, 0, _, _, "$__tr_")
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_rewrites_partial_composition_helper) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   memberchk(['=', [HelperMul, ParamMul], ['*', 2, ParamMul]], Result),
+            memberchk(['=', [HelperAdd, ParamAdd], ['+', 1, ParamAdd]], Result),
+            memberchk(['=', [HelperCompose, Param],
+                       [HelperMul, [HelperAdd, Param]]], Result),
+            memberchk(['=', [plus1times2], HelperCompose], Result)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_canonicalizes_map_flat) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                [':', Apply1, ['->', 'Atom', 'Atom', 'Atom']]
+                | _
+            ],
+            Apply1Body = [if, ['==', '$f', '+'],
+                          ['petta-lambda', '$x', ['+', '$arg', '$x']],
+                          [function,
+                           [chain, [eval, ['atom-subst', '$f', '$fun', ['$fun', '$arg']]],
+                            '$call',
+                            [chain, [eval, '$call'], '$mid',
+                             [chain, [eval, '$mid'], '$res', [return, '$res']]]]]],
+            memberchk(['=', [Apply1, ['petta-lambda', '$var', '$body'], '$arg'],
+                       [let, '$var', '$arg', '$body']], Result),
+            memberchk(['=', [Apply1, '$f', '$arg'], Apply1Body], Result),
+            memberchk(['=', ['map-flat', '$f', '$list'],
+                       ['map-atom', '$list', '$item', [Apply1, '$f', '$item']]], Result)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_canonicalizes_fold_nested) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                [':', Apply1, ['->', 'Atom', 'Atom', 'Atom']]
+                | _
+            ],
+            memberchk([':', Apply2, ['->', 'Atom', 'Atom', 'Atom', 'Atom']], Result),
+            Apply1Body = [if, ['==', '$f', '+'],
+                          ['petta-lambda', '$x', ['+', '$arg', '$x']],
+                          [function,
+                           [chain, [eval, ['atom-subst', '$f', '$fun', ['$fun', '$arg']]],
+                            '$call',
+                            [chain, [eval, '$call'], '$mid',
+                             [chain, [eval, '$mid'], '$res', [return, '$res']]]]]],
+            memberchk(['=', [Apply1, ['petta-lambda', '$var', '$body'], '$arg'],
+                       [let, '$var', '$arg', '$body']], Result),
+            memberchk(['=', [Apply1, '$f', '$arg'], Apply1Body], Result),
+            memberchk(['=', [Apply2, '$f', '$arg1', '$arg2'],
+                       [if, ['==', '$f', '+'],
+                        ['+', '$arg1', '$arg2'],
+                        [Apply1, [Apply1, '$f', '$arg1'], '$arg2']]], Result),
+            memberchk(['=', ['fold-nested', '$f', '$init', '$list'],
+                       ['foldl-atom', '$list', '$init', '$acc', '$item',
+                        [if, ['==', ['get-metatype', '$item'], 'Expression'],
+                         ['fold-nested', '$f', '$acc', '$item'],
+                         [Apply2, '$f', '$acc', '$item']]]], Result)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_preserves_direct_binary_composition) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                ['=', ['.:', '$f1', '$f2', '$arg1', '$arg2'],
+                 ['$f1', ['$f2', '$arg1', '$arg2']]]
+            ]
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_canonicalizes_roman_eqeq_intersection) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                ['=', ['/==\\', '$a', '$b'],
+                 [let, '$intersection', ['intersection-atom', '$a', '$b'], '$intersection']]
+            ]
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_canonicalizes_roman_eqeq_subtraction) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                ['=', ['\\==', '$a', '$b'],
+                 [let, '$difference', ['subtraction-atom', '$a', '$b'], '$difference']]
+            ]
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_canonicalizes_roman_eqeq_union) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                ['=', ['\\==/', '$a', '$b'],
+                 [let, '$difference', ['subtraction-atom', '$a', '$b'],
+                  ['union-atom', '$difference', '$b']]]
+            ]
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_normalizes_function_head_patterns) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                ['=', ['is-member', '$item', '$tuple'],
+                 [not,
+                  ['==',
+                   [collapse,
+                    [let, '$x', [superpose, '$tuple'],
+                     [if, ['==', '$x', '$item'],
+                      'True',
+                      [empty]]]],
+                   '()']]],
+                ['=', [in, '$x', '$L'],
+                 [let, 'True', ['is-member', '$x', '$L'], '$x']],
+                ['=', [myplus, Arg1, Arg2],
+                 [let, Candidate1, [superpose, [1, 2, 3]],
+                  [unify, Candidate1, Arg1,
+                   [let, Candidate2, [superpose, [2, 3]],
+                    [unify, Candidate2, Arg2,
+                     [let, SumVar, ['+', Candidate1, Candidate2],
+                      [let, 'True', ['is-member', SumVar, [3, 4, 5]], SumVar]],
+                     'Empty']],
+                   'Empty']]]
+            ],
+            atom_string(Arg1, Arg1S),
+            atom_string(Arg2, Arg2S),
+            atom_string(Candidate1, Candidate1S),
+            atom_string(Candidate2, Candidate2S),
+            atom_string(SumVar, SumVarS),
+            sub_string(Arg1S, 0, _, _, "$__tr_head_arg_"),
+            sub_string(Arg2S, 0, _, _, "$__tr_head_arg_"),
+            sub_string(Candidate1S, 0, _, _, "$__tr_head_candidate_"),
+            sub_string(Candidate2S, 0, _, _, "$__tr_head_candidate_"),
+            sub_string(SumVarS, 0, _, _, "$__tr_member_value_")
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_normalizes_append_suffix_function_head) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   memberchk(['=', [myfunc, '$A', '$B'], [append, [append, [42], '$A'], '$B']], Result),
+            memberchk(['=', [h, Arg1, '$C'], Body], Result),
+            atom_string(Arg1, Arg1S),
+            sub_string(Arg1S, 0, _, _, "$__tr_head_arg_"),
+            contains_symbol('decons-atom', Body),
+            contains_symbol('first-from-pair', Body),
+            contains_symbol('second-from-pair', Body),
+            contains_symbol(unify, Body),
+            contains_symbol('atom-subst', Body),
+            \+ contains_symbol('petta-apply1', Body),
+            \+ contains_symbol(case, Body)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_normalizes_function_call_inversion_eq_guard) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   memberchk(['=', [myfunc, '$A', '$B'], [append, [append, [42], '$A'], '$B']], Result),
+            memberchk(['=', [h_unify, Arg1, '$C'], Body], Result),
+            atom_string(Arg1, Arg1S),
+            sub_string(Arg1S, 0, _, _, "$__tr_head_arg_"),
+            contains_symbol('decons-atom', Body),
+            contains_symbol('first-from-pair', Body),
+            contains_symbol('second-from-pair', Body),
+            contains_symbol(unify, Body),
+            contains_symbol('atom-subst', Body),
+            \+ contains_symbol('petta-apply1', Body),
+            \+ contains_symbol(case, Body)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_normalizes_structural_function_call_inversion_let_pattern) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   memberchk(['=', [f, '$Head', '$Tail'], [append, ['$Head'], '$Tail']], Result),
+            memberchk(['=', [probe], Body], Result),
+            contains_symbol('decons-atom', Body),
+            contains_symbol('first-from-pair', Body),
+            contains_symbol('second-from-pair', Body),
+            contains_symbol('atom-subst', Body),
+            \+ contains_symbol('petta-apply1', Body),
+            \+ contains_symbol([let, [f, '$Head', '$Tail']], Body)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, translation_error(ExpectedError)) :- !,
+    catch((pe_translate_program(Input, Result),
+           Outcome = translated(Result)),
+          error(Error, _Context),
+          Outcome = error(Error)),
+    (   Outcome = error(ExpectedError)
+    ->  format("  ✓ ~w: ~w~n", [N, Name])
+    ;   format("  ✗ ~w: ~w~n    Expected error: ~w~n    Got: ~w~n",
+                [N, Name, ExpectedError, Outcome])
+    ).
+
+run_one_pe_program(N, Name, Input, program_selectively_freshens_function_head_args) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                ['=', [animal, '$X'], [only, [[living, '$X'], [being, '$X']], '$X']],
+                ['=', [tagged_cat, Arg1, '$tag'],
+                 [chain, [animal, '$X'], Candidate,
+                  [unify, Candidate, Arg1,
+                   [pair, Candidate, '$tag'],
+                   'Empty']]]
+            ],
+            atom_string(Arg1, Arg1S),
+            atom_string(Candidate, CandidateS),
+            sub_string(Arg1S, 0, _, _, "$__tr_head_arg_"),
+            sub_string(CandidateS, 0, _, _, "$__tr_head_candidate_")
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_normalizes_duplicate_function_head_vars) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   Result = [
+                ['=', [same, '$x', Arg2],
+                 [unify, Arg2, '$x', ok, 'Empty']]
+            ],
+            atom_string(Arg2, Arg2S),
+            sub_string(Arg2S, 0, _, _, "$__tr_head_arg_")
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe_program(N, Name, Input, program_normalizes_callable_equality_condition) :- !,
+    (   pe_translate_program(Input, Result)
+    ->  (   memberchk([':', Apply1, ['->', 'Atom', 'Atom', 'Atom']], Result),
+            memberchk(['=', [PartialHelper, Param], ['+', 2, Param]], Result),
+            memberchk(['=', [trickyspec, '$f'],
+                       [let, CallResult, [Apply1, '$f', 1],
+                        [if, ['==', CallResult, 2],
+                         [trickyspec, PartialHelper],
+                         CallResult]]], Result)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
 run_one_pe_program(N, Name, Input, program_uses_user_defined_test) :- !,
     (   pe_translate_program(Input, Result)
     ->  (   Result = [['=', [test, '$x'], '$x'],
@@ -772,6 +1668,19 @@ run_one_pe_ext(N, Name, Input, foldall_shape_ext(Agg, Goal, Init)) :- !,
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
     ).
 
+run_one_pe_ext(N, Name, Input, Expected) :-
+    (   test_petta_to_he_ext(N, _, Input, _),
+        (   Input = ['=', _, _]
+        ->  petta_to_he:translate_decl_extended(Input, Result)
+        ;   petta_to_he:translate_term_extended(Input, Result)
+        ),
+        (   Result == Expected
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Expected: ~w~n    Got:      ~w~n", [N, Name, Expected, Result])
+        )
+    ;   format("  ? ~w: ~w (error)~n", [N, Name])
+    ).
+
 run_one_pe_ext_hyperpose(N, Name, Input, Expected) :-
     (   test_petta_to_he_ext_hyperpose(N, _, Input, _),
         (   Input = ['=', _, _]
@@ -784,6 +1693,16 @@ run_one_pe_ext_hyperpose(N, Name, Input, Expected) :-
         ;   format("  ✗ ~w: ~w~n    Expected: ~w~n    Got:      ~w~n", [N, Name, Expected, Result])
         )
     ;   format("  ? ~w: ~w (error)~n", [N, Name])
+    ).
+
+run_one_pe(N, Name, Input, partial_builtin_lambda_shape(Fun, PrefixArg)) :- !,
+    (   test_petta_to_he(N, _, Input, _),
+        petta_to_he:translate_term(Input, Result),
+        Result = ['petta-lambda', ArgVar, [Fun, PrefixArg, ArgVar]],
+        atom_string(ArgVar, ArgVarS),
+        sub_string(ArgVarS, 0, _, _, "$__tr_")
+    ->  format("  ✓ ~w: ~w~n", [N, Name])
+    ;   format("  ✗ ~w: ~w~n    Got unexpected partial builtin lowering~n", [N, Name])
     ).
 
 run_one_pe(N, Name, Input, Expected) :-
@@ -833,4 +1752,49 @@ run_one_rt(N, Name, Input, Expected) :-
                     [N, Name, Input, Expected, Mid, Back])
         )
     ;   format("  ? ~w: ~w (error)~n", [N, Name])
+    ).
+
+run_one_rel_pe(N, Name, Input, fails) :- !,
+    (   rel_pe_translate_term(Input, Result)
+    ->  format("  ✗ ~w: ~w~n    Expected relational failure, got: ~w~n",
+               [N, Name, Result])
+    ;   format("  ✓ ~w: ~w~n", [N, Name])
+    ).
+
+run_one_rel_pe(N, Name,
+               [head_extension, PrefixElems, Actual, TailVar, ApplyArg],
+               append_suffix_head_extension_shape) :- !,
+    (   rel_pe_append_suffix_head_extension(PrefixElems, Actual, TailVar, ApplyArg, Result)
+    ->  (   contains_symbol('decons-atom', Result),
+            contains_symbol('first-from-pair', Result),
+            contains_symbol('second-from-pair', Result),
+            contains_symbol('__tr-raw-apply1', Result),
+            \+ contains_symbol(case, Result)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (relational translation error)~n", [N, Name])
+    ).
+
+run_one_rel_pe(N, Name,
+               [let_extension, PrefixElems, Observed, TailVar, RawBody],
+               append_suffix_let_extension_shape) :- !,
+    (   rel_pe_append_suffix_let_extension(PrefixElems, Observed, TailVar, RawBody, Result)
+    ->  (   contains_symbol('decons-atom', Result),
+            contains_symbol('first-from-pair', Result),
+            contains_symbol('second-from-pair', Result),
+            contains_symbol('__tr-raw-apply1', Result),
+            \+ contains_symbol(case, Result)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (relational translation error)~n", [N, Name])
+    ).
+
+run_one_rel_pe(N, Name, Input, Expected) :-
+    (   rel_pe_translate_term(Input, Result),
+        Result == Expected
+    ->  format("  ✓ ~w: ~w~n", [N, Name])
+    ;   format("  ✗ ~w: ~w~n    Expected: ~w~n",
+               [N, Name, Expected])
     ).

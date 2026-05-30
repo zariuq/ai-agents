@@ -13,6 +13,8 @@
 #   ./translate.sh petta2he --recursive input.metta
 #   ./translate.sh he2petta --bundle input.metta output_dir/
 #   ./translate.sh petta2he --bundle input.metta output_dir/
+#   ./translate.sh petta2he --petta-he input.metta output.metta
+#   ./translate.sh petta2he --ffi-tokens input.metta output.metta
 #   ./translate.sh petta2he --extended input.metta output.metta
 #   ./translate.sh petta2he --preserve-hyperpose input.metta output.metta
 #   ./translate.sh --test
@@ -37,6 +39,10 @@ Directions:
 Options:
   --recursive   Translate file and all local imports in place
   --bundle      Translate file and all local imports into a bundle directory
+  --petta-he    Target PeTTa's --he profile; preserves PeTTa goal-control
+                surfaces such as once/cut when the profile supports them
+  --ffi-tokens  Emit explicit FFI dependency tokens for non-pure callable
+                inversion such as CLP-backed arithmetic inversion
   --extended    Use extended mode (PeTTa->HE only: emit 'collect' instead of 'collapse')
   --preserve-hyperpose
                 Preserve 'hyperpose' instead of lowering it to 'superpose'
@@ -95,12 +101,16 @@ esac
 # Parse options
 MODE="single"
 EXTENDED=""
+PETTA_HE=""
+FFI_TOKENS=""
 HYPERPOSE=""
 RAW=""
 while [[ $# -gt 0 && "$1" == --* ]]; do
     case "$1" in
         --recursive) MODE="recursive"; shift ;;
         --bundle) MODE="bundle"; shift ;;
+        --petta-he) PETTA_HE="_petta_he"; shift ;;
+        --ffi-tokens) FFI_TOKENS="_ffi_tokens"; shift ;;
         --extended) EXTENDED="_extended"; shift ;;
         --preserve-hyperpose) HYPERPOSE="_hyperpose"; shift ;;
         --raw) RAW="_raw"; shift ;;
@@ -129,7 +139,15 @@ case "$MODE" in
         if [ "$DIRECTION" = "he2petta" ]; then
             GOAL="translate_file_he_to_petta('$INPUT','$OUTPUT')"
         else
-            GOAL="translate_file_petta_to_he${EXTENDED}${HYPERPOSE}${RAW:+_raw}('$INPUT','$OUTPUT')"
+            MODES_SET=0
+            [ -n "$PETTA_HE" ] && MODES_SET=$((MODES_SET + 1))
+            [ -n "$EXTENDED" ] && MODES_SET=$((MODES_SET + 1))
+            [ -n "$FFI_TOKENS" ] && MODES_SET=$((MODES_SET + 1))
+            if [ "$MODES_SET" -gt 1 ]; then
+                echo "Error: --petta-he, --ffi-tokens, and --extended are separate target modes." >&2
+                exit 64
+            fi
+            GOAL="translate_file_petta_to_he${PETTA_HE}${FFI_TOKENS}${EXTENDED}${HYPERPOSE}${RAW:+_raw}('$INPUT','$OUTPUT')"
         fi
         ;;
     recursive)

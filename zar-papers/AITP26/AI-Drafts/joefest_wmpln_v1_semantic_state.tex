@@ -1,0 +1,155 @@
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{url}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black}
+\setlist[itemize]{leftmargin=1.4em,itemsep=0.25em,topsep=0.25em}
+\setlist[enumerate]{leftmargin=1.6em,itemsep=0.25em,topsep=0.25em}
+\newcommand{\WMPLN}{WM--PLN}
+\newcommand{\PLN}{PLN}
+\newcommand{\KS}{K\&S}
+\newcommand{\codepath}[1]{\path{#1}}
+\newcommand{\leanref}[1]{\path{#1}}
+\newcommand{\Evidence}{\ensuremath{\mathcal{E}}}
+\newcommand{\World}{\ensuremath{\mathcal{W}}}
+\newcommand{\Query}{\ensuremath{\mathcal{Q}}}
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\draftnote}{\noindent\textit{Draft extended abstract for author revision.}}
+\sloppy
+
+% Draft inspiration only. Author should rewrite, verify claims, and choose final voice.
+\title{World Models as Evidence-Carrying Semantics\\for Reasoning Under Uncertainty}
+\author{Zarathustra Amareis Goertzel\\\small Mettapedia Project}
+\date{Draft for JoeFest extended abstract}
+\begin{document}
+\maketitle
+\draftnote
+
+\begin{abstract}
+Probabilistic Logic Networks (PLN) represent uncertain judgments using local truth values, typically a strength and a confidence. This was a powerful engineering idea, but it can blur three different objects: a semantic state of knowledge, an evidence algebra extracted from that state, and scalar views used for display or action selection. This extended abstract proposes the \emph{world-model calculus} as a formal refoundation of PLN-style uncertain reasoning. A world model carries a revisable state; queries extract evidence from that state; strength, confidence, intervals, and probabilities are then lossy views of evidence, not the semantics itself. In the additive regime, extraction is a homomorphism from revised states to answer profiles, making the semantic contract explicit. Classic PLN rules are recovered as compiled, side-conditioned shortcuts to world-model extraction rather than as free-floating truth-value manipulations. This lens is offered in tribute to Joseph Halpern's career-long insistence that knowledge, uncertainty, evidence, causality, and belief revision be given precise semantic homes.
+\end{abstract}
+
+\section{Motivation: from local truth values to semantic state}
+
+PLN was designed to support deduction, induction, abduction, and revision over uncertain knowledge \cite{GoertzelPLN2009}. Its characteristic truth value separates \emph{strength}, a probability-like estimate, from \emph{confidence}, a reliability-like quantity derived from effective evidence. The separation was insightful: two claims can have the same probability but radically different evidential support. A probability of $0.8$ estimated from $4$ successes in $5$ trials should revise differently from a probability of $0.8$ estimated from $400$ successes in $500$ trials.
+
+The world-model calculus turns this intuition into a semantic discipline. The primitive object is not a local pair of real numbers. It is a revisable state $W \in \World$ that can be queried. For a query $q \in \Query$, extraction returns an evidence object:
+\[
+  \mathrm{extract}(W,q) \in \Evidence.
+\]
+Views such as strength, confidence, intervals, posterior means, or exceedance probabilities are functions out of \Evidence. They are useful, but lossy. This separation mirrors a central theme of Halpern's work on uncertainty: the representation of belief, evidence, probability, and plausibility matters, and conflating distinct representational roles leads to wrong conclusions \cite{Halpern2003,FaginHalpernMegiddo1990}.
+
+\section{The additive world-model contract}
+
+In the main exact regime, world states and evidence carriers are additive commutative structures. Revision combines states, and extraction commutes with revision:
+\[
+  \mathrm{extract}(W_1 + W_2,q) =
+  \mathrm{extract}(W_1,q) + \mathrm{extract}(W_2,q).
+\]
+Together with an empty-state law, this says that the curried extraction map
+\[
+  W \mapsto (q \mapsto \mathrm{extract}(W,q))
+\]
+is an additive homomorphism from states to answer profiles. This is the semantic heart of the calculus. It says exactly when independent evidence can be accumulated compositionally and exactly what is preserved by revision.
+
+Different evidence carriers instantiate different kinds of uncertainty: binary Beta evidence $(n^+,n^-)$, Dirichlet evidence for multi-valued alternatives, Normal--Gamma evidence for continuous observations, and richer carriers for provenance or source reliability. Scalar truth-value views are recovered after extraction. In particular,
+\[
+  s = \frac{n^+}{n^+ + n^-}, \qquad
+  c = \frac{n^+ + n^-}{n^+ + n^- + \kappa}.
+\]
+The point is not to discard the PLN truth value. The point is to place it in the right layer.
+
+\section{PLN rules as certified shortcuts}
+
+This architecture changes the status of PLN inference rules. A local rule is not valid merely because it is algebraically plausible. It is valid when a declared model class and side conditions make it a shortcut to semantic extraction.
+
+For example, in a Bayesian-network fragment $A \to B \to C$, PLN deduction is exact when the relevant screening-off assumptions hold and the conditioning probabilities are positive. The Lean formalization states this as a theorem of the form
+\[
+\begin{aligned}
+  \mathrm{strength}(W, A \to C)
+   ={}& \mathrm{plnDed}\bigl(
+       \mathrm{strength}(W,A \to B),
+       \mathrm{strength}(W,B \to C),\\
+      &\qquad\qquad
+       \mathrm{strength}(W,B),
+       \mathrm{strength}(W,C)\bigr),
+\end{aligned}
+\]
+under explicit side conditions. The corresponding artifact is
+\codepath{Mettapedia/Logic/PLNBayesNetFastRules.lean}, including
+\leanref{chainBN_plnDeductionStrength_exact} and the analogous fork theorem.
+
+The negative controls are just as important. Collider patterns, missing context, and hidden dependence are precisely the cases where unconstrained local chaining should not be trusted. The world-model view therefore turns PLN rules into \emph{certified compiled fragments}: fast when the side conditions hold, blocked or weakened when they do not.
+
+\section{Examples and artifacts}
+
+Three small examples make the distinction concrete.
+
+\begin{enumerate}
+\item \textbf{Same strength, different evidence.} A ProbLog-style point probability cannot distinguish $4/10$ from $400/1000$. WM--PLN stores the sufficient statistics, so new evidence revises these cases differently.
+
+\item \textbf{Noisy-OR / fuzzy-OR.} PLN's fuzzy-OR expression $s_1+s_2-s_1s_2$ coincides with the noisy-OR formula induced by independent probabilistic clauses. In the Mettapedia development this bridge is proved and exercised in a ProbMeTTa implementation.
+
+\item \textbf{Chain, fork, collider.} Exact chaining is recovered in chain and fork networks under screening-off assumptions; collider cases expose where local truth-value propagation fails without the appropriate observed context.
+\end{enumerate}
+
+The formalization sits in the Mettapedia Lean repository. Relevant modules include \codepath{Mettapedia/Logic/PLNWorldModelGeneric.lean} for generic additive extraction, \codepath{Mettapedia/Logic/PLNBayesNetFastRules.lean} for exact BN-derived PLN rules, and \codepath{Mettapedia/Logic/ProbLogDistributionSemantics.lean} for probabilistic-logic bridging.
+
+\section{Contribution}
+
+The contribution is a refoundation rather than a replacement. WM--PLN preserves PLN's useful operational ideas while enforcing Halpernian semantic hygiene: states before summaries, evidence before scalar views, model classes before local rules, and side conditions before chaining. It provides a path by which uncertain-reasoning systems can retain the practical speed of PLN while gaining explicit semantics and machine-checked boundaries.
+
+
+\begin{thebibliography}{99}
+
+\bibitem{Halpern2003}
+J.~Y. Halpern.
+\newblock \emph{Reasoning about Uncertainty}.
+\newblock MIT Press, 2003.
+
+\bibitem{FaginHalpernMegiddo1990}
+R.~Fagin, J.~Y. Halpern, and N.~Megiddo.
+\newblock A logic for reasoning about probabilities.
+\newblock \emph{Information and Computation}, 87(1--2):78--128, 1990.
+
+\bibitem{FaginHalpernMosesVardi1995}
+R.~Fagin, J.~Y. Halpern, Y.~Moses, and M.~Y. Vardi.
+\newblock \emph{Reasoning about Knowledge}.
+\newblock MIT Press, 1995.
+
+\bibitem{Halpern1999}
+J.~Y. Halpern.
+\newblock Cox's theorem revisited.
+\newblock \emph{Journal of Artificial Intelligence Research}, 11:429--435, 1999.
+
+\bibitem{HalpernPearl2005}
+J.~Y. Halpern and J.~Pearl.
+\newblock Causes and explanations: A structural-model approach. Parts I and II.
+\newblock \emph{British Journal for the Philosophy of Science}, 56(4):843--887 and 56(4):889--911, 2005.
+
+\bibitem{GoertzelPLN2009}
+B.~Goertzel, M.~Ikl\'{e}, I.~F. Goertzel, and A.~Heljakka.
+\newblock \emph{Probabilistic Logic Networks: A Comprehensive Framework for Uncertain Inference}.
+\newblock Springer, 2009.
+
+\bibitem{KnuthSkilling2012}
+K.~H. Knuth and J.~Skilling.
+\newblock Foundations of inference.
+\newblock \emph{Axioms}, 1(1):38--73, 2012.
+
+\bibitem{Pearl2000}
+J.~Pearl.
+\newblock \emph{Causality: Models, Reasoning, and Inference}.
+\newblock Cambridge University Press, 2000.
+
+\end{thebibliography}
+
+\end{document}

@@ -1,0 +1,487 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{listings}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+\setlist[itemize]{topsep=0.35em,itemsep=0.2em,parsep=0em}
+\setlist[enumerate]{topsep=0.35em,itemsep=0.2em,parsep=0em}
+\lstset{basicstyle=\ttfamily\small,columns=fullflexible,keepspaces=true,showstringspaces=false}
+
+\title{A Multi-Dialect Architecture Primer for CeTTa:\\
+Clean Semantic Seams for PeTTa, HE, Rho Calculus, Query Memoization, and Exact Arithmetic\\
+\large Conceptual notes for future implementation and review (2026-05-01)}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document distills the main architectural lessons developed during an extended implementation and debugging cycle for a C-based MeTTa-family runtime. The central problem is not merely to ``support more syntax,'' but to support multiple semantic regimes---strict HE-style evaluation, PeTTa-style relational behavior, rho-calculus as a closed process language, host-side imported capabilities, query memoization, declared recursive tabling, and exact integer arithmetic---without collapsing all of them into one evaluator-shaped blur.
+
+The core thesis is that long-run maintainability depends on drawing a small number of hard semantic seams and refusing to violate them for convenience. In particular: language, profile, import policy, capability pack, lowering phase, answer-stream algebra, query memoization, declared tabling, and host/runtime adapters must remain distinct concepts. The paper proposes a clean decomposition, explains the main semantic contracts, summarizes the runtime ownership model that emerged from performance work, and records concrete invariants that future implementation work should preserve.
+
+The document is written as a conceptual primer for future chats, reviews, and design sessions. It is intentionally self-contained, non-attributed, and focused on implementable ideas rather than historical commentary.
+\end{abstract}
+
+\tableofcontents
+
+\section{Scope and goal}
+
+The target runtime supports multiple front ends and execution styles:
+\begin{itemize}
+    \item a core MeTTa-family evaluator,
+    \item a PeTTa dialect with relational and logic-programming behavior,
+    \item an HE-style profile with typed and spec-shaped behavior,
+    \item a closed rho-calculus language,
+    \item imported host capabilities (for example, spaces, documents, file system, system hooks, or external stores),
+    \item query memoization and later declared recursive tabling,
+    \item exact integer arithmetic beyond machine-word range.
+\end{itemize}
+
+The goal is \emph{not} to make these regimes indistinguishable. The goal is to make them \emph{composable without semantic smearing}. The clean architecture is therefore one in which:
+\begin{enumerate}
+    \item the shared runtime owns only genuinely shared notions,
+    \item language-specific lowering remains language-specific,
+    \item imported capabilities stay explicit,
+    \item performance fast paths do not silently bypass public semantics,
+    \item the system remains debuggable using minimized witnesses and stable invariants.
+\end{enumerate}
+
+\section{Working vocabulary}
+
+The following vocabulary proved useful and should remain stable.
+
+\subsection{Language, profile, import policy, capability pack}
+
+\paragraph{Language.} A language determines the surface grammar, the admissible core constructs, and the lowering rules that convert surface forms into evaluator-facing forms. Examples: \texttt{--lang petta}, \texttt{--lang he}, \texttt{--lang rhocalc}.
+
+\paragraph{Profile.} A profile is a semantic variation inside a language, but it must remain small. A profile may affect type checking, equality rules, callable dispatch, or evaluation details. Profiles should never become junk drawers for unrelated libraries and services.
+
+\paragraph{Import policy.} Import policy decides how modules are resolved: strict roots, relative paths, package mounts, library aliases, and so on. Import policy is not evaluator semantics and should not be hidden in the evaluator.
+
+\paragraph{Capability pack.} A capability pack is an imported surface bundle that offers services outside the semantic core. Examples include string/file/system helpers, runtime stats, document access, space backends, or external storage adapters. Capability packs can compose with a language profile without pretending to be part of the language core.
+
+\subsection{Four lowering roles}
+
+One of the deepest lessons is that a single recursive lowering function tends to become haunted if it tries to infer too many roles at once. The four roles that should remain explicit are:
+\begin{enumerate}
+    \item \textbf{Declaration lowering}: turning surface declarations into runtime artifacts.
+    \item \textbf{Value lowering}: ordinary forward evaluation of expressions as values.
+    \item \textbf{Goal lowering}: compiling expressions that represent success/failure with bindings.
+    \item \textbf{Inverse-value compilation}: satisfying an expression against a target value while preserving bindings.
+\end{enumerate}
+
+These four roles are conceptually distinct and should be implemented as distinct entry points. Most of the late-stage PeTTa difficulty came from letting one family of functions guess among them.
+
+\subsection{Outcome, OutcomeSet, AnswerBank, TableStore}
+
+\paragraph{Outcome.} A single evaluator result branch: visible atom, bindings/environment, control state, and any delayed or reference-oriented payload.
+
+\paragraph{OutcomeSet.} A finite snapshot of answer branches. This is the natural substrate for generic answer-stream operators.
+
+\paragraph{AnswerBank.} A stable owner for canonical long-lived answers. This should own answer payloads when a query table or delayed replay needs persistence.
+
+\paragraph{TableStore.} A store keyed by query variant (plus relevant revision context) that records memoized or tabled answers. Query memoization and declared recursive tabling should both reuse this substrate, but they are not the same public feature.
+
+\section{Design principles}
+
+\subsection{Principle 1: semantic categories must stay explicit}
+
+Several architectural problems disappeared once implicit blends were split into explicit categories:
+\begin{itemize}
+    \item language vs profile,
+    \item profile vs import policy,
+    \item capability vs core semantics,
+    \item query memoization vs declared tabling,
+    \item value lowering vs goal lowering,
+    \item stream algebra vs ordinary evaluation,
+    \item closed rho semantics vs imported rho host helpers,
+    \item exact integer semantics vs floating fallbacks.
+\end{itemize}
+
+A useful rule of thumb is: if a feature is visible to users but not representable in a short contract sentence, it is probably straddling two categories and needs to be split.
+
+\subsection{Principle 2: fast paths must honor public surfaces}
+
+Optimizations are welcome, but they must not silently bypass user-visible overrides. If a public surface such as \texttt{get-atoms}, \texttt{add-atoms}, or a stream operator can be overridden or interpreted by surface code, then an optimization may only short-circuit when the public surface is still in its default meaning. Source-side and target-side override checks must be symmetric.
+
+\subsection{Principle 3: measure ownership, not only wall time}
+
+Several ``mysterious'' performance regressions turned out to be ownership mistakes rather than algorithmic mistakes. The stable diagnostic pattern was:
+\begin{enumerate}
+    \item identify whether memory growth comes from transient bags or long-lived owners,
+    \item separate bounded local reuse from retained survivor policy,
+    \item instrument promotion bytes, survivor bytes, query-table bytes, and replay counts,
+    \item change one owner boundary at a time,
+    \item rerun the same witnesses after each tranche.
+\end{enumerate}
+
+\subsection{Principle 4: do not overfit the shared evaluator to one language}
+
+The shared evaluator should gain new capabilities only when those capabilities are genuinely reusable. For example:
+\begin{itemize}
+    \item a generic answer-stream algebra is reusable;
+    \item a generic TableStore/AnswerBank substrate is reusable;
+    \item a generic reduction/fuel vocabulary is reusable;
+    \item Petta-specific relational callable-head lowering is \emph{not} generic evaluator law;
+    \item rho host helper inventory is \emph{not} generic evaluator law.
+\end{itemize}
+
+\section{PeTTa as a language, not as a bag of exceptions}
+
+\subsection{Guarded patterns}
+
+The clean semantic model for callable patterns is not ``teach structural matching to understand functions.'' It is to compile patterns into:
+\[
+\texttt{GuardedPattern} = \{\texttt{skeleton},\; \texttt{guard}\}
+\]
+where:
+\begin{itemize}
+    \item \texttt{skeleton} is a plain structural pattern or fresh placeholder,
+    \item \texttt{guard} is a relation-style goal that must succeed for the match to hold.
+\end{itemize}
+
+This lets structural matching stay structural, while callable heads, \texttt{cons}-like patterns, and other relational patterns become explicit premises.
+
+\subsection{The four-entry lowering split}
+
+For PeTTa, the clean long-run entry points are:
+\begin{lstlisting}
+petta_lower_decl_surface(...)
+petta_lower_value_term(...)
+petta_compile_goal_expr(...)
+petta_compile_inverse_value(...)
+\end{lstlisting}
+
+This split is the clean route to finishing the last 5--15\% of parity work. In particular:
+\begin{itemize}
+    \item declaration lowering must be reused both at file load and at runtime mutation;
+    \item value lowering must not accidentally swallow relation-style behavior;
+    \item goal lowering must own success/failure and exported bindings;
+    \item inverse-value compilation must handle returned-head and nested relational subterms.
+\end{itemize}
+
+\subsection{Dynamic declaration mutation}
+
+The correct semantics for runtime \texttt{add-atom} and \texttt{remove-atom} on surface declarations is not ``store the surface atom directly.'' The correct semantics is:
+\[
+\texttt{surface declaration} \mapsto [\texttt{runtime artifacts}]
+\]
+using the \emph{same} deterministic lowering pipeline as file load. This implies a helper of the form:
+\begin{lstlisting}
+petta_decl_surface_to_artifacts(surface_decl) -> [artifact...]
+\end{lstlisting}
+
+The lowering must be deterministic per declaration. Runtime add/remove should not depend on ambient fresh-variable history from earlier declarations. Binder-position-based freshening, or an equally deterministic scheme, is the right direction.
+
+\subsection{Lambda support via lambda lifting}
+
+For PeTTa lambdas, the clean first implementation path is not runtime closures but a pre-lowering lambda-lifting pass. A surface form such as:
+\begin{lstlisting}
+(|-> ($x $y) body)
+\end{lstlisting}
+should become a hidden callable definition plus either a symbol or a partially applied closure-like term carrying free variables. This matches the way ordinary callables already run through the fast path and keeps lambda calls on the same higher-order call substrate.
+
+\section{Strict HE support without semantic sprawl}
+
+\subsection{One profile, metadata tiers, explicit extras}
+
+The clean HE path is:
+\begin{itemize}
+    \item one CLI profile such as \texttt{--he},
+    \item surface metadata classifying each surface as \texttt{core} or \texttt{extension},
+    \item no fake second profile such as \texttt{--he-extended} if the runtime only has one real semantic profile,
+    \item imported capability packs for string/file/system/docs/runtime helpers rather than pretending they are part of strict HE semantics.
+\end{itemize}
+
+This keeps strict HE small and honest while still allowing a rich surrounding runtime.
+
+\subsection{Bridge facade}
+
+The right long-run boundary is a single \texttt{he\_bridge} facade that core PeTTa files call. Core files should not directly name HE type predicates, match overrides, import helpers, or special return sentinels. The bridge is not a grand abstraction layer; it is a locality boundary that prevents HE details from leaking through the rest of the runtime.
+
+\subsection{Type algorithm discipline}
+
+The HE type path should eventually be a literal, space-aware algorithm port rather than a collection of clever shortcuts. The most important invariant is that type lookup and applicability checks must thread the relevant space rather than hardwiring \texttt{\&self}. The next semantic tranche for HE should therefore be a spec-shaped rewrite of argument checking, function applicability, and any interpreter shortcuts that currently bypass the intended type algorithm.
+
+\section{Answer streams are not ordinary values}
+
+\subsection{Why stream operators must not be implemented as ordinary equations}
+
+Atom-level multiset operators such as:
+\begin{itemize}
+    \item \texttt{unique-atom},
+    \item \texttt{union-atom},
+    \item \texttt{intersection-atom},
+    \item \texttt{subtraction-atom}
+\end{itemize}
+are ordinary value functions. Their stream-level counterparts:
+\begin{itemize}
+    \item \texttt{unique},
+    \item \texttt{union},
+    \item \texttt{intersection},
+    \item \texttt{subtraction}
+\end{itemize}
+are \emph{not} ordinary equations over already-collapsed values. They are operators over answer streams. Implementing them as ordinary stdlib equations destroys the raw stream and yields incorrect semantics.
+
+\subsection{Collapse laws as the semantic specification}
+
+The clean specification is:
+\begin{align*}
+\texttt{collapse(unique S)} &= \texttt{unique-atom(collapse S)} \\
+\texttt{collapse(union S1 S2)} &= \texttt{union-atom(collapse S1, collapse S2)} \\
+\texttt{collapse(intersection S1 S2)} &= \texttt{intersection-atom(collapse S1, collapse S2)} \\
+\texttt{collapse(subtraction S1 S2)} &= \texttt{subtraction-atom(collapse S1, collapse S2)}
+\end{align*}
+
+From those laws, the runtime semantics follows naturally:
+\begin{enumerate}
+    \item evaluate each operand to an \texttt{OutcomeSet} snapshot,
+    \item drop \texttt{Empty} outcomes,
+    \item suppress that operand's errors when that operand has non-error answers, just as \texttt{collapse} does,
+    \item compare branches by fully materialized visible answer atom,
+    \item preserve stable left-to-right order,
+    \item keep the representative environment of the surviving left branch.
+\end{enumerate}
+
+\subsection{Extensional equality}
+
+Stream operators should compare visible answer atoms, not hidden derivation environments. If two branches yield the same visible answer with different hidden derivations, \texttt{unique} keeps the first and discards the rest. This is intentional: the stream algebra is over answer values. If derivation-sensitive operators are ever needed, they should be separate surfaces.
+
+\subsection{Generic substrate, not Petta-only trickery}
+
+The stream engine should be generic answer-stream infrastructure over \texttt{OutcomeSet}/\texttt{AnswerRef}, not a Petta-only hack. The public PeTTa names may be Petta surfaces, but the implementation should live at the shared evaluator layer because the semantics is genuinely reusable.
+
+\section{Query memoization is not declared recursive tabling}
+
+\subsection{The shared substrate is real}
+
+A runtime may already have a real tabled-query substrate:
+\begin{itemize}
+    \item variant-shaped query keys,
+    \item canonicalized answers,
+    \item answer banks,
+    \item replay machinery,
+    \item stale invalidation via revisioning.
+\end{itemize}
+
+This substrate is worth keeping.
+
+\subsection{But the public feature is different}
+
+Declared recursive tabling, such as a user saying ``table this recursive head,'' is a different public feature from query-result memoization. The latter caches completed query answers. The former additionally needs:
+\begin{itemize}
+    \item per-head table selection,
+    \item in-progress call detection,
+    \item waiter registration and staged replay,
+    \item deterministic answer order,
+    \item at least a first completion discipline.
+\end{itemize}
+
+The clean architecture is therefore:
+\begin{itemize}
+    \item keep query memoization as an internal/shared substrate,
+    \item add declared recursive tabling as a front door over that substrate,
+    \item do not oversell a query-cache pragma as if it were full user-visible tabling.
+\end{itemize}
+
+\section{Runtime ownership and performance}
+
+\subsection{Separate bounded local reuse from retention policy}
+
+A recurring performance lesson was that bounded local survivor reuse and retained-survivor policy must remain separate questions. A bounded local ring for tail-survivor application can be good for locality and speed. Whether retired survivor slots must be retained longer is a different, language-dependent question.
+
+The clean rule is therefore:
+\begin{itemize}
+    \item use bounded local reuse whenever the local-survivor path is semantically safe,
+    \item make retention of retired slots an explicit policy choice, not an accidental consequence of disabling local reuse.
+\end{itemize}
+
+\subsection{AnswerBank and TableStore ownership}
+
+If delayed results, replay, or query tables need persistent answers, \texttt{AnswerBank} should be the stable owner for answer payloads. \texttt{TableStore} should index and replay answers rather than accidentally becoming a second owner of full answer payloads through staging arenas or replay copies.
+
+\subsection{Fast transfers must preserve public semantics}
+
+Back-end transfer fast paths between native spaces, MORK/PathMap, or other backends are valuable, but they must obey two contracts:
+\begin{enumerate}
+    \item they must respect both source-side and target-side public surface overrides,
+    \item they must distinguish successful direct transfer, safe fallback, and hard error.
+\end{enumerate}
+
+A boolean ``worked or not'' API is too weak here. The right API shape is tri-state: \texttt{OK}, \texttt{NEEDS\_TEXT\_FALLBACK}, \texttt{ERROR}.
+
+\subsection{Development hygiene}
+
+One build-system lesson is simple but important: avoid always-rebuilding heavy bridge components (for example, Rust static libraries) when nothing changed. This is not a semantic principle, but it strongly affects the usability of the runtime during active development.
+
+\section{Big integers: exactness first, backend sophistication later}
+
+\subsection{What the first tranche should guarantee}
+
+A sound first bigint tranche should guarantee:
+\begin{itemize}
+    \item exact parse/print/storage of arbitrary-size integers,
+    \item exact integer \texttt{+}, \texttt{-}, \texttt{*}, \texttt{/}, \texttt{\%} when both operands are integral,
+    \item exact integer comparisons,
+    \item exact integral \texttt{pow} for non-negative integral exponents,
+    \item symmetric bridge encode/decode so large integers do not come back as symbols,
+    \item no silent wrong-answer fallback to float for mixed huge bigint/float operations.
+\end{itemize}
+
+\subsection{What the first tranche need not guarantee}
+
+The first tranche need not yet be state-of-the-art in algorithmic sophistication. A decimal-string backend with a clean \texttt{cetta\_bigint\_*} API can be acceptable if the semantics is exact. Later, the implementation behind the API can be swapped for a limb backend, Karatsuba/Toom thresholds, or another faster internal engine.
+
+\subsection{Security and robustness}
+
+Two practical security lessons matter even for a first tranche:
+\begin{itemize}
+    \item never silently round huge integers through \texttt{double} and then claim success,
+    \item avoid unchecked size arithmetic in allocation paths for multiplication/division internals.
+\end{itemize}
+
+The first is a semantic-security requirement; the second is an implementation-safety requirement.
+
+\section{Rho calculus as a closed language with explicit host adapters}
+
+\subsection{Keep \texttt{--lang rhocalc} closed}
+
+The right macro-architecture is:
+\begin{itemize}
+    \item \texttt{--lang rhocalc} is a closed rho-calculus language,
+    \item host-side access to rho is through explicit import of a rho host library,
+    \item host payloads inside rho are opaque data unless a named adapter says otherwise.
+\end{itemize}
+
+This is the smallest design that keeps rho semantics clear while still allowing rich interoperation.
+
+\subsection{Semantic categories}
+
+The useful semantic kinds are:
+\begin{itemize}
+    \item \texttt{RhoProc}: a well-formed rho process,
+    \item \texttt{RhoName}: a rho name, including quoted processes and fresh names,
+    \item \texttt{HostAtom}: arbitrary host payload data,
+    \item \texttt{RhoMachine}: a persistent runtime/scheduler handle if exposed,
+    \item \texttt{RhoEndpoint}/\texttt{RhoAdapter}: explicit bridges between a rho runtime and host capabilities.
+\end{itemize}
+
+\subsection{Do not model the runtime as a space}
+
+A rho runtime is not fundamentally a \texttt{SpaceType}. It is a reaction engine with scheduling state. If a persistent handle is later exposed, it should be named \texttt{RhoMachine} or \texttt{RhoRuntime}, not \texttt{RhoSpace}. Space-like adapters or views can exist, but they are not the core runtime object.
+
+\subsection{MeTTa and MORK interop}
+
+The natural long-run interop pattern is explicit adapters:
+\begin{itemize}
+    \item a source adapter from a MeTTa space to rho channels,
+    \item a sink adapter from rho outputs into a MeTTa space,
+    \item analogous adapters for MORK/MorkSpace,
+    \item no implicit ``rho evaluates host expressions'' rule.
+\end{itemize}
+
+\subsection{Fresh-name opacity}
+
+One important invariant is that the printed spelling of a fresh rho name is not a capability. Generic matcher alpha-equality should not allow a user-written symbol such as \texttt{rho:fresh:1} to stand in for a runtime-generated fresh name. If deterministic textual renderings are needed for tests or logs, they should live at the pretty-print layer, not at semantic equality.
+
+\section{Capability packs and honest conformance reporting}
+
+\subsection{The reporting principle}
+
+Conformance reporting should headline only what belongs to the semantic contract. For example, for an HE profile, the headline should be something like:
+\begin{itemize}
+    \item strict HE-spec core exact,
+    \item HE profile suite pass,
+    \item default-language smoke suite pass.
+\end{itemize}
+
+The headline should not be cluttered by counts of workload helpers, documentation helpers, presentation-only rows, import probes, or locally convenient extensions.
+
+\subsection{Classification buckets}
+
+The useful buckets are:
+\begin{itemize}
+    \item \textbf{core conformance}: semantic contract,
+    \item \textbf{extension behavior}: supported, but not part of strict conformance accounting,
+    \item \textbf{support/import/workload probes}: informative only,
+    \item \textbf{presentation}: pretty-printing, naming, formatting.
+\end{itemize}
+
+This keeps reviews honest and helps future chats focus on the real blockers.
+
+\section{A theorem-prover lane should be a separate kernel family}
+
+The discussion also suggested a broader architecture direction that should be retained conceptually even if not implemented immediately.
+
+\begin{itemize}
+    \item Metamath/MM0-like systems are best viewed as proof-object and checker languages, not as the main runtime search language.
+    \item Superposition and given-clause calculi are a natural theorem-prover runtime lane because they stress indexing, simplification, proof objects, fairness, and guidance in a way that complements MeTTa-family evaluation.
+    \item A future theorem-proving dialect should be a distinct kernel family, not an accidental overgrowth of HE or PeTTa.
+\end{itemize}
+
+This matters architecturally because it reinforces the central theme: one runtime can support multiple kernels if the seams are explicit.
+
+\section{Practical merge checklist for future work}
+
+A useful merge checklist for any large semantic tranche is:
+\begin{enumerate}
+    \item state the contract in one paragraph,
+    \item identify the smallest layer that should own the semantics,
+    \item add minimized repros before broad examples,
+    \item add one or two heavy witnesses only after the minimals are green,
+    \item instrument the ownership/performance counters relevant to the change,
+    \item ensure fast paths respect public override contracts,
+    \item separate semantic regressions from build/dev-hygiene regressions,
+    \item keep capability or workload rows out of strict conformance headlines.
+\end{enumerate}
+
+\section{How to use this document in future chats}
+
+A good future implementation chat should begin by locating the problem in this map:
+\begin{enumerate}
+    \item Is the issue about language lowering, evaluator semantics, import policy, or capability surfaces?
+    \item If it is evaluator-facing, does it belong to value lowering, goal lowering, inverse-value compilation, or declaration mutation?
+    \item If it is about performance, which owner is growing: transient bag, bounded local survivor, answer bank, table store, or retained replay state?
+    \item If it is about answer streams, is the operator really over \texttt{OutcomeSet}, or is it accidentally being implemented as an ordinary value function?
+    \item If it is about tabling, is it query memoization or declared recursive tabling?
+    \item If it is about interop, is the right abstraction a closed language, an imported host helper, or an explicit runtime adapter?
+    \item If it is about HE conformance, does it belong to core semantics, extension behavior, or only support/reporting?
+\end{enumerate}
+
+If a new issue cannot be placed cleanly in that map, the issue is probably architectural rather than local.
+
+\section{Condensed non-negotiable invariants}
+
+For quick reference, the main invariants are:
+\begin{enumerate}
+    \item Do not blur language, profile, import policy, and capability pack.
+    \item Do not let one recursive lowering function infer declaration, value, goal, and inverse roles at once.
+    \item Do not implement stream operators as ordinary stdlib equations over already-evaluated values.
+    \item Do not market query memoization as declared recursive tabling.
+    \item Do not let a fast path bypass public source/target overrides.
+    \item Do not conflate bounded local reuse with retained-survivor policy.
+    \item Do not silently round huge integers through float and claim exact arithmetic.
+    \item Do not model a rho runtime as a space.
+    \item Do not let fresh rho names become semantically equal to user-written fresh-looking symbols.
+    \item Do not let strict conformance reporting absorb extension, workload, or presentation rows.
+\end{enumerate}
+
+\section{Conclusion}
+
+The unifying lesson is that semantic cleanliness and implementation performance are not enemies. In fact, many of the hardest bugs and regressions came from letting one layer impersonate another: stream algebra disguised as ordinary equations, query memoization disguised as tabling, runtime services disguised as profile semantics, payload data disguised as executable host code, or safety fixes that accidentally erased bounded local reuse.
+
+The clean route is not maximal abstraction. It is a small number of explicit boundaries, each backed by precise tests and stable vocabulary. Once those boundaries are respected, the runtime can evolve in powerful directions---Petta parity, HE conformance, exact bigint support, rho-process interop, theorem-proving kernels, external stores, and learned guidance---without degenerating into one undifferentiated evaluator.
+
+\end{document}

@@ -1,0 +1,435 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{setspace}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+\setlist[itemize]{topsep=0.3em,itemsep=0.2em,leftmargin=1.5em}
+\setlist[enumerate]{topsep=0.3em,itemsep=0.2em,leftmargin=1.8em}
+\titleformat{\section}{\large\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection.}{0.5em}{}
+\title{Architectural Primer for CeTTa, MeTTa, PeTTa, and RhoCalc\\\large A conceptual synthesis for future design work}
+\author{}
+\date{2026-05-15}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+This note consolidates a set of architectural principles that emerged from design and review work around CeTTa, MeTTa, PeTTa, and RhoCalc. It is not a status report, product plan, or historical record. It is a conceptual primer intended to preserve the main ideas needed for future work: how to separate core semantics from profiles and extensions; how to integrate proof-aware optimization with practical runtime engineering; how to design concurrency and process-calculus support without poisoning the host language; how to structure testing, benchmarking, and productization; and how to choose boundaries that remain stable under later implementation pressure. The intended use is simple: a new engineering or research thread should be able to read this document and recover the main architectural frame without re-deriving it from scattered discussions.
+\end{abstract}
+
+\tableofcontents
+\bigskip
+
+\section{Purpose and scope}
+The main problem is not merely to build one language implementation. The problem is to build a family of semantically related systems that can evolve without collapsing into ambiguity, ad hoc optimization, or accidental dialects. The systems in scope are:
+\begin{itemize}
+  \item \textbf{CeTTa}: a systems-oriented runtime and implementation substrate.
+  \item \textbf{MeTTa}: a symbolic language family with rewriting, nondeterminism, spaces, and reflection.
+  \item \textbf{PeTTa}: a Prolog-oriented implementation path that exploits logic-programming strength while carrying MeTTa-like semantics.
+  \item \textbf{RhoCalc}: a pure process-calculus layer for concurrency, communication, and name generation.
+\end{itemize}
+
+The design target is not ``one true implementation.'' The design target is a stack with:
+\begin{itemize}
+  \item a small and explicit semantic core,
+  \item named profiles for genuine semantic variation,
+  \item adapters between host surfaces and core semantics,
+  \item runtime substrates that can be optimized without silently changing meaning,
+  \item and enough discipline around tests, benchmarks, and releases that the system can eventually become dependable outside a research lab.
+\end{itemize}
+
+\section{The master separation: semantics, syntax, profile, runtime, runner}
+A large fraction of later confusion can be prevented by keeping five concepts separate.
+
+\subsection{Semantics}
+Semantics is the mathematical or operational contract of a language fragment. It answers the question: what does this term mean?
+
+\subsection{Syntax}
+Syntax is only the concrete encoding of terms. A single semantic core may have multiple syntaxes: for example a MeTTa-like S-expression syntax and a Rholang-style concrete syntax.
+
+\subsection{Profile}
+A profile is an explicit named choice about supported semantics, optional features, or compatibility behavior. Profiles are necessary when the ecosystem is still exploring, but they must be explicit and machine-readable.
+
+\subsection{Runtime substrate}
+The runtime substrate is the execution machinery: term representation, space indices, query engines, channels, worker pools, mutation logs, table managers, and so on.
+
+\subsection{Runner policy}
+A runner is an explicit execution policy on top of a relation or evaluator: repeated stepping, deterministic scheduling, throughput mode, bounded demand, etc. A runner must not silently redefine the language.
+
+\subsection{The guiding rule}
+A stable architecture should be expressible as:
+\begin{quote}
+\emph{Semantics first, syntax second, profile third, runtime fourth, runner fifth.}
+\end{quote}
+
+Violating this ordering creates the usual pathologies: host interfaces define backend meaning; syntactic convenience bleeds into semantics; optimization shortcuts become undocumented language features; or a runner masquerades as the core language.
+
+\section{Standardization without freezing too early}
+The most defensible process for an experimental language family is not full unification now and not laissez-faire forever. The right pattern is:
+\begin{enumerate}
+  \item prototype a small core,
+  \item write a living spec for that core,
+  \item keep disputed behavior in explicit profiles or extensions,
+  \item require tests and at least one independent semantic check before promoting behavior into the core,
+  \item periodically publish stable snapshots.
+\end{enumerate}
+
+The most important practical rule is:
+\begin{quote}
+\emph{Same syntax must not silently mean different semantics. If semantics vary, the selected profile must be explicit.}
+\end{quote}
+
+This suggests a clean ladder:
+\begin{itemize}
+  \item \textbf{Experimental}: one implementation may ship it behind a flag; no portability claim.
+  \item \textbf{Draft profile}: prose semantics and tests exist; portability still provisional.
+  \item \textbf{Candidate core}: a test suite and either a second implementation or an independent validator exist.
+  \item \textbf{Ratified snapshot}: included in a stable release or dated semantic snapshot.
+\end{itemize}
+
+For MeTTa-family work, the main risk is not the lack of a standard. The main risk is letting implementation identity decide semantics while all sides still claim to implement the same language.
+
+\section{The layered architecture for MeTTa-family systems}
+\subsection{Core language versus host language}
+The right architecture is not to define every sublanguage in terms of every other one. Instead:
+\begin{itemize}
+  \item each core should have its own semantic object,
+  \item host languages should expose thin adapters onto that object,
+  \item and projections between layers should be explicit.
+\end{itemize}
+
+This matters especially for concurrency. MeTTa can interleave with process-calculus concepts, but that does not mean the Rho core should be defined in terms of MeTTa nondeterminism, nor that MeTTa should inherit process-calculus runner policy by accident.
+
+\subsection{CeTTa as substrate}
+CeTTa should be treated as the shared implementation substrate, not as the owner of every semantic object. In practice this means:
+\begin{itemize}
+  \item shared memory management, canonical term IDs, indexing, logging, metrics, and build/test infrastructure,
+  \item but separate semantic kernels where needed.
+\end{itemize}
+
+\subsection{Profiles rather than silent dialects}
+For MeTTa-family work, the clean split is:
+\begin{itemize}
+  \item \textbf{core}: the small normative surface,
+  \item \textbf{compat}: useful but non-core compatibility behaviors,
+  \item \textbf{extension}: explicit extra surfaces and policies,
+  \item \textbf{workload/support}: examples, probes, benchmark harnesses, and diagnostics, which should not be mistaken for core semantics.
+\end{itemize}
+
+\section{HE compatibility over PeTTa: the right conceptual model}
+The right mental model for HE-on-PeTTa is not ``pretend everything is HE.'' It is:
+\begin{quote}
+\emph{preserve a strict HE-compatible core, keep compatibility layers explicit, and let PeTTa-specific power remain visible as extension rather than secretly redefining the core.}
+\end{quote}
+
+\subsection{Translator-generated HE witnesses}
+A strong move is to generate HE-spec witness versions of example workloads. This prevents ``PeTTa \texttt{--he} still has many PeTTa powers'' from hiding semantic drift. The translator becomes part of the semantics discipline, not merely a convenience tool.
+
+\subsection{Three execution fragments matter}
+The remaining performance and architecture work in HE-on-PeTTa falls naturally into three fragments.
+\begin{enumerate}
+  \item \textbf{Deterministic compiled fragment}: pure, deterministic, no observable multivalue behavior, no mid-call mutation of the callable/type world. This should lower to a direct compiled Prolog ABI with guarded deoptimization fallback.
+  \item \textbf{Grouped mutation fragment}: repeated \texttt{\&self} mutation where intermediate states are not observed. This wants batched write-sets and commit barriers.
+  \item \textbf{Observable multivalue fragment}: collection, first-visible behavior, explicit stream materialization, and other genuinely HE-visible behaviors. This is where extra cost may be inherent.
+\end{enumerate}
+
+The conceptual advance here is important: one should not ask whether ``HE is slow.'' One should ask which semantic fragments permit native lowering and which force richer runtime machinery.
+
+\subsection{A strong possible result}
+A valuable theoretical result would be to prove:
+\begin{itemize}
+  \item a \textbf{positive theorem}: certain HE fragments admit semantics-preserving lowering to native Prolog execution up to guarded fallback, and
+  \item a \textbf{separation theorem}: some HE-observable fragments necessarily require extra runtime machinery compared with plain deterministic logic execution.
+\end{itemize}
+
+This is much more meaningful than generic optimism or pessimism about HE performance.
+
+\section{From raw plural producers to sinks: spaces as sources and sinks}
+A recurring systems problem is the gap between plural producers and plural consumers. In many naive designs, a source like:
+\begin{quote}
+\texttt{(get-atoms \&src)}
+\end{quote}
+produces many results, but a consumer like:
+\begin{quote}
+\texttt{(add-atoms \&dst ...)}
+\end{quote}
+accepts only a reified tuple. The resulting bridge:
+\begin{quote}
+\texttt{(add-atoms \&dst (collapse (get-atoms \&src)))}
+\end{quote}
+creates exactly the wrong materialization boundary.
+
+The durable concept is a \textbf{source/sink protocol}. A source should not have to become a concrete tuple merely because the consumer is plural. This applies not only to atomspace transfer but later to answer streams, fold sinks, and process-event pipelines.
+
+The clean rule is:
+\begin{quote}
+\emph{Do not force a plural producer through an aggregate representation unless the surface explicitly requests materialization.}
+\end{quote}
+
+This same idea will recur in process-calculus stepping, stream folds, and tabling.
+
+\section{Proof-guided optimization instead of ad hoc cleverness}
+The highest-leverage optimization strategy is not ``invent optimizer folklore.'' It is:
+\begin{enumerate}
+  \item define a small trusted artifact, either a proof object or a validator,
+  \item treat optimization opportunities as local rewrite or translation-validation questions,
+  \item and use a search or equality substrate rather than embedding every optimization as hand-written special-case lore.
+\end{enumerate}
+
+\subsection{Three useful layers}
+A coherent stack has:
+\begin{itemize}
+  \item a \textbf{born-canonical term layer} with maximal sharing and stable keys,
+  \item a \textbf{proof- or validator-backed local rewrite layer},
+  \item and a \textbf{query/tabling/search layer} for incremental reasoning and bounded demand.
+\end{itemize}
+
+This is exactly the spirit behind proof-derived optimizations, translation validation, e-graphs, and Datalog/tabling systems.
+
+\subsection{Practical moral}
+The trusted object should be small. It might be:
+\begin{itemize}
+  \item a proof object,
+  \item a local validator,
+  \item or a translation-check relation.
+\end{itemize}
+
+The point is the same: trust the proof or validator, not unstructured optimizer bravado.
+
+\section{Concurrency and distributed runtime: the hybrid answer}
+A serious CeTTa runtime should not force one concurrency model across all workloads. The strongest architecture is hybrid.
+
+\subsection{Single-machine default}
+On one machine:
+\begin{itemize}
+  \item use a fixed-size \textbf{work-stealing pool} for CPU-bound symbolic work,
+  \item use \textbf{structured query scopes} for cancellation and failure propagation,
+  \item use \textbf{bounded channels} for answer streams and pipeline edges,
+  \item reserve actor-style isolation for coarse services such as networking, adapters, and foreign boundaries.
+\end{itemize}
+
+\subsection{Distributed default}
+For distributed scale-out:
+\begin{itemize}
+  \item keep strong consistency for metadata and control-plane state,
+  \item use event propagation or append-only exchange for the data plane,
+  \item use CRDT-style replication only where the merge law is mathematically valid,
+  \item never pretend consensus and CRDTs solve the same problem.
+\end{itemize}
+
+\subsection{TableManager, AnswerBank, and streams}
+A future-proof architecture treats:
+\begin{itemize}
+  \item \texttt{TableStore} as a real \textbf{TableManager} with active-call states,
+  \item \texttt{AnswerBank} as an \textbf{answer publication substrate},
+  \item and hyperpose-like branch engines as \textbf{budgeted parallel producers/consumers} over bounded answer streams.
+\end{itemize}
+
+\section{RhoCalc: the right architecture for the core calculus}
+\subsection{The kernel first}
+The best architecture for \texttt{--lang rhocalc} is a calculus kernel with projections, not a CLI implementation and not a host library implementation.
+
+The kernel should own:
+\begin{itemize}
+  \item rho-native terms,
+  \item validation,
+  \item normalization,
+  \item one-step reaction collection,
+  \item and a raw successor-set result type.
+\end{itemize}
+
+A good shape is:
+\begin{quote}
+\texttt{RhoTerm -> RhoStepSet}
+\end{quote}
+not:
+\begin{quote}
+\texttt{RhoTerm -> superpose(...) -> CLI undoing that packaging again}
+\end{quote}
+
+\subsection{A crucial rule}
+\textbf{Object-level parallelism, meta-level branching, and host-level nondeterminism must stay distinct.}
+
+In other words:
+\begin{itemize}
+  \item \texttt{rho:par} is object-level parallelism,
+  \item \texttt{RhoStepSet} is the meta-level branching object,
+  \item host \texttt{superpose} or similar nondeterminism is only an optional projection.
+\end{itemize}
+
+This rule is one of the main protection mechanisms against poisoning the architecture.
+
+\subsection{Recommended layering}
+\begin{enumerate}
+  \item \textbf{Kernel}: \texttt{RhoTerm}, \texttt{RhoProfile}, validator, normalizer, \texttt{RhoStepSet}.
+  \item \textbf{CLI}: \texttt{--lang rhocalc} as the first public surface, exposing one-step semantics by default.
+  \item \textbf{Translation}: \texttt{.rho <-> .mrho} with fail-closed accepted subsets.
+  \item \textbf{Host adapter}: \texttt{lib/rho} as a thin adapter over the kernel.
+  \item \textbf{Richer surface later}: \texttt{lib/rholang} or pattern libraries as a separate layer.
+\end{enumerate}
+
+\subsection{Validation discipline}
+The key anti-bug rule is:
+\begin{quote}
+\emph{No accepted-but-misbehaving forms. Either support a form correctly or reject it explicitly.}
+\end{quote}
+
+This is especially important around dependent joins, quoted pattern positions, and accepted concrete syntax.
+
+\subsection{Parallel-ready collector shape}
+For future serious rho work, the collector should already be shaped as:
+\begin{itemize}
+  \item local reaction buffers,
+  \item extensional keys,
+  \item explicit merge/dedup,
+  \item no hidden dependence on host packaging,
+  \item and clear ownership of successor batches.
+\end{itemize}
+
+Even before actual parallel execution, that ownership boundary is worth getting right.
+
+\section{Self-hosting, DTT, and staged implementation}
+A naive dream of ``write the whole thing in itself'' is not the right next move. The better pattern is staged self-hosting.
+
+\subsection{Three layers}
+\begin{itemize}
+  \item \textbf{Native kernel}: hot runtime paths, canonical term representation, matcher kernels, storage engines, FFI boundaries.
+  \item \textbf{CeTTa-K / CeTTa-IL}: a restricted lowerable kernel language with explicit effects and search boundaries.
+  \item \textbf{Full reflective CeTTa}: translators, elaborators, diagnostics, proofs, richer language services.
+\end{itemize}
+
+This is the right way to think about self-hosting: front-end and middle-end first, not all hot loops immediately.
+
+\subsection{Why DTT matters first}
+If dependent type theory is a bigger roadmap item than self-hosting, the right move is to use DTT where it clarifies boundaries immediately:
+\begin{itemize}
+  \item typed IR and elaboration,
+  \item rewrite certificates,
+  \item proof-directed diagnostics,
+  \item effect distinctions,
+  \item and typed foreign boundaries.
+\end{itemize}
+
+The first big application is not necessarily a full self-hosting compiler. It may instead be the typed bridge and elaboration infrastructure that later makes self-hosting plausible.
+
+\section{Testing, benchmarks, and conformance}
+The correct separation is:
+\begin{quote}
+\textbf{tests are for correctness and capability; benchmarks are for performance.}
+\end{quote}
+
+\subsection{Tests}
+Use explicit categories:
+\begin{itemize}
+  \item \texttt{exact}: stable golden output
+  \item \texttt{pattern}: structure matters, incidental formatting does not
+  \item \texttt{property}: invariant-based checks
+  \item \texttt{probe}: non-gating diagnostics
+  \item \texttt{xfail}: known-broken or intentionally unsupported cases
+\end{itemize}
+
+Build once per \textbf{build-key}, not once per individual test:
+\begin{quote}
+\texttt{(build mode, flags, compiler, runtime features)}
+\end{quote}
+Then run test subsets over that build artifact.
+
+\subsection{Benchmarks}
+Use tiers:
+\begin{itemize}
+  \item \texttt{bench-smoke}: cheap catastrophe detector
+  \item \texttt{bench-compare}: meaningful regression comparison with baselines
+  \item \texttt{bench-capacity}: large or long-running workloads
+\end{itemize}
+
+Do not treat benchmark outputs like golden files. Store performance histories keyed by:
+\begin{quote}
+\texttt{commit + machine + build-key + benchmark name}
+\end{quote}
+
+\subsection{One recurring lesson}
+A benchmark or test lane should be kept only if its failure tells you something actionable. Bureaucratic harnesses are almost as dangerous as missing harnesses.
+
+\section{Commercial-grade versus research-grade}
+``Commercial-grade'' is not a mystical badge and not just ``software written by expensive professionals.'' It is software that a team is prepared to stand behind under real user load, real failures, real upgrades, and real support obligations.
+
+That usually requires more than a strong research core:
+\begin{itemize}
+  \item release and upgrade policy,
+  \item build/install portability,
+  \item observability,
+  \item support and ownership,
+  \item security/update path,
+  \item and a commitment to smoothing the long tail of runtime behavior.
+\end{itemize}
+
+A mature substrate like SWI-Prolog helps because it contributes a strong floor: portability, tooling, debugger/profiler infrastructure, release cadence, and a more predictable runtime base. But a language layered over it does not automatically inherit the whole commercial-grade envelope. The hosted language still has to earn its own semantics, ergonomics, compatibility story, and support obligations.
+
+\section{Anti-patterns to avoid}
+The following mistakes are worth naming explicitly, because they recur.
+
+\begin{enumerate}
+  \item \textbf{Host-first kernel design}: letting the adapter define the semantic core.
+  \item \textbf{Runner disguised as language}: repeated execution or scheduler policy hidden behind ordinary language entrypoints.
+  \item \textbf{Accepted-but-wrong forms}: parsing or lowering syntax that is not truly supported.
+  \item \textbf{Implicit profile drift}: same syntax meaning different things under different implementations without explicit profile declarations.
+  \item \textbf{Optimization folklore}: trusting hand-written special cases without proofs, validators, or clear semantic contracts.
+  \item \textbf{Build-path mythology}: requiring personal checkout layouts or undocumented external machinery for the default user path.
+\end{enumerate}
+
+\section{A compact near-term roadmap}
+A coherent near-term roadmap looks like this.
+
+\subsection{For MeTTa/PeTTa/HE work}
+\begin{enumerate}
+  \item keep a strict HE-compatible core and explicit compatibility/extension rings,
+  \item finish deterministic compiled-call and batched mutation substrates,
+  \item keep visible multivalue semantics explicit,
+  \item treat translation-generated witnesses as semantic evidence, not only as examples.
+\end{enumerate}
+
+\subsection{For RhoCalc}
+\begin{enumerate}
+  \item freeze a pure core kernel with a raw successor-set API,
+  \item expose the one-step relation through CLI and host adapters without semantic divergence,
+  \item make accepted \texttt{.rho} subsets fail closed,
+  \item keep richer surfaces in \texttt{lib/rholang} or rho-pattern libraries, not in the kernel.
+\end{enumerate}
+
+\subsection{For CeTTa as shared substrate}
+\begin{enumerate}
+  \item stabilize build-key-based testing,
+  \item stabilize bounded streams, budgets, and runtime counters,
+  \item treat parallelism as a runtime substrate layered under, not as a reason to muddy semantic cores.
+\end{enumerate}
+
+\section{Questions that should anchor future chats}
+Any new design or implementation discussion should answer these questions explicitly.
+
+\begin{enumerate}
+  \item What is the semantic object at the center of this feature?
+  \item Which layer owns it: kernel, syntax, profile, runtime, or runner?
+  \item What are the explicit acceptance/rejection boundaries?
+  \item What invariant test would catch this class of regression permanently?
+  \item Is the proposed optimization justified by a semantic classification, a proof, or a validator?
+  \item Is this change general substrate work, or a family-specific fix masquerading as infrastructure?
+  \item Will this make later concurrency/distributed work cleaner, or merely postpone the cleanup?
+\end{enumerate}
+
+\section{Conclusion}
+The main conceptual lesson is simple but demanding: keep semantic objects small, explicit, and independent of their projections. A language family like CeTTa/MeTTa/PeTTa/RhoCalc can evolve coherently only if its core relations, profiles, translations, and runtime policies are disentangled before implementation pressure makes their boundaries blurry. Once those boundaries are clean, performance work becomes more principled, standardization becomes less frightening, testing becomes more meaningful, and productization stops looking like a vague social demand and starts looking like a manageable engineering program.
+
+\bigskip
+\noindent\textbf{Suggested working maxim:} \emph{Define the raw object first. Everything else is an adapter, proof obligation, or policy layer.}
+
+\end{document}

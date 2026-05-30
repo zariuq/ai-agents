@@ -1,0 +1,99 @@
+% easychair.tex,v 3.5 2017/03/15
+% Draft for AITP 2026 -- mirrors completing_mm-lean4.tex structure.
+
+\documentclass{easychair}
+
+\usepackage{doc}
+
+% For compactenum
+% \usepackage{paralist}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{footnoterange}
+\usepackage{todonotes}
+\usepackage{cite}
+\usepackage{siunitx}
+\usepackage{amsmath,amssymb,amsthm}
+
+\newtheorem{theorem}{Theorem}
+
+\newcommand{\WM}{\ensuremath{\mathsf{WM}}}
+\newcommand{\PLN}{\ensuremath{\mathsf{PLN}}}
+\newcommand{\Ev}{\ensuremath{\mathcal{E}}}
+\newcommand{\State}{\ensuremath{\mathcal{S}}}
+\newcommand{\Query}{\ensuremath{\mathcal{Q}}}
+\newcommand{\revise}{\mathbin{\oplus}}
+\newcommand{\tensor}{\mathbin{\otimes}}
+\newcommand{\ev}{\mathsf{ev}}
+\newcommand{\side}{\Sigma}
+% \code was already defined by the `doc' package, so we override it.
+\renewcommand{\code}[1]{\texttt{#1}}
+\sloppy
+
+\title{The World Model Calculus: \\ Autoformalizing and Extending Probabilistic Logic Networks
+%Note, the below is old.
+% \thanks{Supported by Dar CISCO No. 2023-322029 A Formalization of Ethics for Decision Support,
+% by the ERC Consolidator grant no. 649043 AI4REASON,
+% and by the Czech project AI\&Reasoning CZ.02.1.01/0.0/0.0/15\_003/
+% 0000466 and the European Regional Development Fund.}
+}
+
+% Authors are joined by \and. Their affiliations are given by \inst, which indexes
+% into the list defined using \institute
+%
+\author{
+Zarathustra Amadeus Goertzel%\inst{1}
+\and Oruži\thanks{A collaboration of AI coworkers consisting of at least Claude 4.x, Codex 5.2+, and ChatGPT Pro.}
+}
+
+% Institutes for affiliations are also joined by \and,
+\institute{
+  Czech Technical University in Prague, Czech Republic
+ }
+
+\authorrunning{Goertzel \& Oruži}
+\titlerunning{World Model Calculus}
+
+\begin{document}
+\maketitle
+
+\vspace{-3mm}
+\paragraph*{Introduction:}
+Probabilistic Logic Networks (PLN)~\cite{PLN2008} give fast, local rules for deduction, induction, abduction, revision, and inference control.  The difficulty is not the rules themselves but their preconditions: local truth values do not determine the joint world from which they were extracted, so chaining silently smuggles in independence and locality assumptions.  Probabilistic reasoning should not be an excuse for handwaving.  This work-in-progress presents the \emph{World-Model (WM) calculus}, a Lean~4 formalized discipline of \emph{knowing what can and what cannot be said} about uncertain inference: each PLN rule is recast as a compiled, side-conditioned shortcut to an explicit world-model query.  Classical chaining is recovered when Bayesian-network~\cite{pearl1988}, ProbLog~\cite{DeRaedt2007}, or Markov-logic~\cite{RichardsonMLN} side conditions justify it, and is blocked, weakened, or made approximate when they do not.  The intended AITP contribution is a project proposal for \emph{proof-carrying probabilistic inference control}: use PLN-like heuristics for proof search and premise selection, but make each shortcut a theorem about a declared semantic model, an approximation with an error ledger, or an honest abstention.  The Lean~4 development lives in \href{https://github.com/zariuq/mettapedia}{Mettapedia}, with companion implementations in \href{https://github.com/trueagi-io/PeTTa}{PeTTa} and CeTTa MeTTa~\cite{metametta}; this abstract continues an AITP line alongside MeTTaMath~\cite{goertzel2025mettamath} and verified mm-lean4 (AITP 2026, submitted).
+
+\vspace{-3mm}
+\paragraph*{The World-Model Calculus:}
+The refoundation is to stop treating the scalar truth value as the semantic object.  The primitives are a revisable state $W \in \State$, a query $q \in \Query$, and extracted evidence $\mathrm{evidence}(W,q) \in \Ev$, with $\mathrm{evidence}(W_1 \revise W_2,\,q) = \mathrm{evidence}(W_1,q) + \mathrm{evidence}(W_2,q)$ in the main additive regime --- so evidence extraction is a homomorphism from revised states to answer profiles.  In Lean this is the core of \code{BinaryWorldModel}: PLN's strength and confidence, interval truth values~\cite{halpern2003}, posterior means, and Knuth--Skilling-style probabilities~\cite{KnuthSkilling2012} become explicit \emph{views} rather than the semantic primitive.  Each PLN rule is then a $\side$-guarded rewrite
+$\side \;\Rightarrow\; \forall W.\; \mathrm{derive}(W) = \mathrm{evidence}(W,q),$
+where $\side$ is the theorem-proving obligation, not decoration: for Bayesian-network fragments, $\side$ may be d-separation, screening-off, positivity, or bounded treewidth.  Theorem families such as \code{chainBN\_plnDeductionStrength\_exact} and \code{forkBN\_plnDeductionStrength\_exact} show that the classical PLN deduction formula becomes \emph{exact} for chain and fork BN motifs under $\side$; collider patterns, hidden confounders, and local-link-only views do not license unconstrained chaining.  The No-Go content is mundane (the joint is not a function of the marginals); making it a \emph{typed obligation in the chaining layer} is what converts folklore into discipline.  Knowing what cannot be said is half of managing uncertainty.
+
+\vspace{-3mm}
+\paragraph*{Bridges and Plug-in Estimators:}
+WM is not yet another isolated probabilistic logic.  \code{ProbLogDistributionSemantics.lean} proves WM query strength agrees with finite ProbLog query probability; \code{MarkovLogicClauseWorldModel.lean} and \code{MarkovLogicInfiniteWorldModel.lean} package finite-support and infinite Gibbs/DLR MLN semantics as WM states.  ProbLog, MLN, PLN, and plain Bayesian networks become different \emph{world-model classes} feeding one evidence/query calculus, so mixing them inside a chain becomes type-safe instead of folklore.
+A $\side$-guarded rewrite is also a precise \emph{plug-in point}: where $\side$ holds the kernel returns an exact certificate; where it fails the kernel returns the type of object an estimator is allowed to produce.  This matches what working probabilistic provers already do informally --- XGBoost-based clause selection in ENIGMA~\cite{JakubuvU17a} and \emph{Make E Smart Again}~\cite{goertzelmakeESmart}, $k$-NN / Naive-Bayes premise selection in the MaLARea tradition~\cite{USPJ:IJCAR-2008}, and variational estimators such as Pathfinder~\cite{pathfinder} for high-dimensional posteriors --- all hostable as approximate views with declared error budgets.  The WM kernel's job is to say precisely \emph{what they are approximating}, so a higher-order value estimator (Geisweiller's AITP'25 conjecture-probability proposal~\cite{Geisweiller25PLN} is a natural target) fills a typed slot rather than a folklore one: \emph{localize the lawful, plug in estimators on the residual, and never let a chain forget which}.
+
+\vspace{-3mm}
+\paragraph*{Autoformalizing and Auto-Steelmanning PLN:}
+The project is deliberately a large autoformalization and \emph{auto-steelmanning} effort.  Probabilistic-AGI literature is rich in ``under reasonable independence assumptions, X'' claims; the WM kernel is a target for autoformalizing those assumptions into the precise $\side$ that makes X a theorem.  When an AI coworker proposes to extend the kernel, the contract is a theorem statement and a discharged proof, not just code --- forcing the steelman of each rule to become a checkable artifact.  The Lean development spans dozens of modules (evidence layer, WM kernel, BN compilation, Knuth--Skilling valuation bridges, FO/HO quantifier semantics, modal instances, institution/hyperdoctrine packaging) with zero sorries and standard Lean kernel axioms only.  The recurring tension, also familiar from mm-lean4, is that AI coworkers are eager to make a proof go through and reluctant to surface the side condition they are silently using; the human role is to hold the line that every $\side$ is explicit.  The methodology has worked in MeTTaMath~\cite{goertzel2025mettamath}: spec-driven Lean kernels turn ``the AI wrote something plausible'' into ``the AI produced a checked obligation, and where it failed, we know exactly what assumption was missing.''  WM complements AITP-style autoformalization and MM0-style~\cite{metamath0tp} trusted-kernel discipline by autoformalizing the assumptions probabilistic provers already implicitly carry.
+
+\vspace{-3mm}
+\paragraph*{Futureward:}
+The AITP feedback loop is what we value most here.  Pointers welcome on the exact proof obligations a practical prover should certify on the fly; how to trade exact certificates against bounded approximation in search; whether premise-selection systems can export enough structure for proof-carrying uncertainty rather than just rankings; and which probabilistic-prover folklore is the lowest-hanging fruit for autoformalization into a typed WM rewrite.  Longer-term, the modal/deontic instances of WM are the cognitive-inference-control substrate we hope to plug Hyperon-style probabilistic chaining into, with the same discipline applied: \emph{every probabilistic chain should know the world model that makes it lawful} --- bridging Poincar\'e-style intuitive leaps and Hilbert-style verifiable certificates as the QED~\cite{urban130, urbanisabelle} era appears to demand.
+
+\vspace{-3mm}
+\paragraph*{Acknowledgements}
+Many thanks to the PLN authors and NARS researchers for their prior work and ongoing discussions.
+Many thanks to the Hyperon and OpenCog community for the broader research context, and to Mario Carneiro and Josef Urban for ongoing Lean and AI4REASON guidance.
+Thanks to OpenAI for providing amazing AI services at reasonable costs.
+This work is supported by Dar Novamente --- Cognitive Inference Control.
+
+
+\bibliographystyle{plain}
+\newpage
+\vspace{-3mm}
+\bibliography{aitp26}
+
+% \newpage
+% \appendix
+
+\end{document}

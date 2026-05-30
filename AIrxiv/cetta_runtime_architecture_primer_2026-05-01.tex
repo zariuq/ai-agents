@@ -1,0 +1,1200 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{listings}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  citecolor=blue!50!black,
+  urlcolor=blue!50!black
+}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  columns=fullflexible,
+  keepspaces=true
+}
+
+\newcommand{\CeTTa}{CeTTa}
+\newcommand{\MeTTa}{MeTTa}
+\newcommand{\PeTTa}{PeTTa}
+\newcommand{\HE}{HE}
+\newcommand{\MAM}{MAM}
+\newcommand{\PathMap}{PathMap}
+\newcommand{\MORK}{MORK}
+\newcommand{\MM}{MM2}
+\newcommand{\RhoCalc}{RhoCalc}
+\newcommand{\AtomSource}{\texttt{AtomSource}}
+\newcommand{\AnswerBank}{\texttt{AnswerBank}}
+\newcommand{\AnswerRef}{\texttt{AnswerRef}}
+\newcommand{\EvalHeap}{\texttt{EvalHeap}}
+\newcommand{\RunBudget}{\texttt{CettaRunBudget}}
+\newcommand{\RunClass}{\texttt{CettaRunClass}}
+\newcommand{\RunResult}{\texttt{CettaRunResult}}
+
+\title{\textbf{CeTTa Runtime Architecture Primer}\\
+Conceptual Notes on MeTTa, PeTTa, HE, PathMap/MORK/MM2, RhoCalc, and the MeTTa Abstract Machine\\
+\large 2026-05-01}
+\author{AIrxiv technical note}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This paper distills a sequence of design investigations around \CeTTa{}, a C runtime for \MeTTa{}, and its interaction with \PeTTa{}, Hyperon Experimental (\HE{}) semantics, \PathMap{}/\MORK{}/\MM{} storage, and \RhoCalc{}-inspired concurrency.  The purpose is not to report a finished implementation, but to record the durable architectural ideas that emerged: how to separate semantics, search, scheduling, storage, memory ownership, and backend transfer; how to preserve reflective language definitions while still admitting proven fast paths; how to make long-running reasoning workloads tractable without premature full garbage collection or premature abstract-machine overreach; and how to stage \PeTTa{} and \HE{} compatibility without making every runtime subsystem pay for every language profile.
+
+The paper is written as a primer for future research and implementation sessions.  It names the key concepts, presents the invariants that should survive refactoring, gives interface sketches where useful, and separates near-term engineering moves from endgame architecture.  It intentionally omits conversational framing and personal details.  The intended use is to serve as a clean handoff document for new collaborators or fresh assistant sessions.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Purpose and Reading Guide}
+
+\CeTTa{} is best understood as an attempt to make a direct, high-performance, semantically serious runtime for \MeTTa{}.  It must preserve the parts of \HE{} semantics that are treated as the baseline contract, interoperate with \PeTTa{} and \PeTTa{}-style Prolog compilation, make use of backend storage systems such as \PathMap{} and \MORK{}, and eventually support richer process/concurrency semantics inspired by \RhoCalc{}.  These goals pull in different directions.  A simple evaluator is easy to reason about but too slow for recursive reasoning.  A WAM-like compiled lane is fast but must not silently change \HE{}-observable behavior.  Backend algebra is powerful but must not erase multiplicity.  Reflective public definitions are philosophically and practically valuable, but naively relying on them for bulk runtime operations can create catastrophic materialization costs.
+
+The central architectural lesson is that no single object named ``the evaluator,'' ``the backend,'' or ``the abstract machine'' should own all these concerns.  The runtime needs a layered structure:
+
+\begin{itemize}[leftmargin=*]
+  \item language/profile contracts define what is observable;
+  \item evaluation lanes implement particular operational strategies;
+  \item schedulers manage fairness, budgets, cancellation, and later parallelism;
+  \item storage backends own membership/indexing, not the language semantics;
+  \item memory substrates own lifetime and representation;
+  \item answer substrates own long-lived nondeterministic results;
+  \item proof and test layers state when optimized paths are allowed.
+\end{itemize}
+
+This paper is organized around those layers.  It should be readable in two ways.  A newcomer can read the whole document to understand the design territory.  An implementer can jump to the relevant sections: \S\ref{sec:term-representation} for term identity, \S\ref{sec:mam} for the MeTTa Abstract Machine, \S\ref{sec:memory} for eval memory, \S\ref{sec:answers} for answer ownership, \S\ref{sec:bulk-transfer} for space-to-space transfer, \S\ref{sec:petta-he} for \PeTTa{}/\HE{} profiles, and \S\ref{sec:rho} for concurrency and budgets.
+
+\section{Vocabulary}
+
+The following terms are used throughout.
+
+\paragraph{\MeTTa{}.}  A reflective metagraph rewriting language with nondeterministic evaluation, spaces, pattern matching, functions defined by equations, and special instructions such as \texttt{eval}, \texttt{chain}, \texttt{collapse-bind}, and \texttt{superpose-bind} in minimal \MeTTa{}.
+
+\paragraph{\HE{}.}  Hyperon Experimental, treated here as the baseline semantic reference for a core profile of \MeTTa{}.  Its specification organizes evaluation through staged functions such as \texttt{metta}, \texttt{interpret\_expression}, \texttt{interpret\_function}, \texttt{interpret\_args}, \texttt{interpret\_tuple}, and \texttt{metta\_call}.  It also specifies matching and binding merging at a high level.
+
+\paragraph{\PeTTa{}.}  A Prolog-based \MeTTa{} implementation that can compile many \MeTTa{} forms into efficient Prolog clauses.  It is an important performance comparator and a source of practical examples, but it is not identical to \HE{} in every behavior.
+
+\paragraph{\CeTTa{}.}  The C runtime being designed and optimized.  It aims to support multiple \texttt{--lang} profiles, including \HE{}-like behavior and \PeTTa{}-like extensions, while enabling fast native, \PathMap{}, \MORK{}, and future distributed/backend lanes.
+
+\paragraph{\MAM{}.}  The MeTTa Abstract Machine.  This should not be a synonym for a small helper struct.  It should be an episode-oriented runtime control plane that can host different search lanes, schedules, memo policies, backend capabilities, and answer modes.
+
+\paragraph{Space.}  A logical collection of atoms.  Different spaces may preserve order, multiplicity, set behavior, queue/stack behavior, or backend-specific structure.  A space is not the same as a term universe.
+
+\paragraph{Term universe.}  The canonical identity store for persistent terms.  The term universe answers questions such as ``what is the stable identity of this atom?'' Spaces answer membership questions such as ``is this atom present in this view, how often, and in what logical order?''
+
+\paragraph{Backend.}  The implementation of a space or storage/indexing layer, such as native arrays, \PathMap{}, \MORK{}, or \MM{} bridges.  Backends should be free to diverge internally while preserving the language/profile contract where they overlap.
+
+\paragraph{Lane.}  An execution or reasoning strategy: direct recursive evaluation, top-down goal-directed agenda, tabled SLG-like evaluation, fixpoint/saturation, solver oracle, \MM{} stepper, or future compiled machine.  Lanes are not the same as backends.
+
+\paragraph{Schedule.}  The order in which work is explored: DFS, BFS, iterative deepening, fair interleaving, round-robin, best-first, or cooperative task scheduling.  Schedules are not the same as lanes.
+
+\paragraph{Memo policy.}  How calls and answers are cached: none, revision-aware cache, variant tabling, subsumptive tabling, incremental tabling, answer subsumption, shared tables, and so on.  Memo policy is not the same as backend storage.
+
+\paragraph{Answer algebra.}  The semantics of answer collection: set, bag/multiset, ordered stream, witness/proof, aggregate/lattice, or answer-subsumptive result.  It must be explicit; backend multiplicity should not silently determine language meaning.
+
+\section{Architectural Principles}
+
+\subsection{One Semantic Contract, Many Execution Lanes}
+
+The mature goal is not one evaluator with many ad hoc special cases.  It is a family of execution lanes under explicit language/profile contracts.  Where two lanes claim to implement the same observable fragment, they must agree on observable results.  Where a profile deliberately extends or diverges from another profile, that divergence should be named.
+
+A useful separation is:
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.23\textwidth} >{\raggedright\arraybackslash}p{0.68\textwidth}}
+\toprule
+Layer & Responsibility \\
+\midrule
+Language/profile & Observable semantics: result set/multiset/order if specified, evaluation strictness, freshening, extension behavior. \\
+Evaluation lane & How reductions/search are performed: direct recursive, agenda, tabled, fixpoint, compiled, oracle. \\
+Scheduler & Fairness, budgets, cancellation, yielding, parking/resume, later true parallelism. \\
+Storage/backend & Space membership, indexing, physical encoding, path/trie operations, bridge transfer. \\
+Memory substrate & Persistent identity, eval lifetime, scratch arenas, safe-point evacuation, large objects. \\
+Answer substrate & Long-lived nondeterministic answers, env slices, variant payloads, replay/table ownership. \\
+Proof/test layer & Conditions under which fast paths are semantics-preserving. \\
+\bottomrule
+\end{longtable}
+
+This separation prevents common mistakes: treating \PathMap{} as a search strategy, treating BFS/DFS as backends, treating variant tabling as a universal semantic law, or treating a fast primitive as if it were automatically equivalent to a reflective public definition.
+
+\subsection{Profile-Specific Observability}
+
+\CeTTa{} should support multiple \texttt{--lang} profiles.  It is therefore dangerous to say that the abstract machine has one global result-order policy or one global freshening policy.  A better structure is:
+
+\begin{itemize}[leftmargin=*]
+  \item the profile states which behaviors are observable;
+  \item the runtime states which capabilities it can provide;
+  \item the planner chooses a lane/schedule/backend combination that satisfies the profile contract;
+  \item parity tests compare only where two lanes claim overlap.
+\end{itemize}
+
+For example, a \HE{} profile may demand compatibility with the \HE{} evaluator algorithm, while a \PeTTa{} profile may expose extra relational behavior or \PeTTa{} library conveniences.  Supporting more than \HE{} is not a failure; conflating extension behavior with \HE{} core conformance is.
+
+\subsection{Reflection and Fast Paths}
+
+\MeTTa{} programs can define and redefine functions by equations.  Public definitions should remain meaningful as specifications and as override points.  However, implementing every common operation literally through public equations can be prohibitively slow.  The durable compromise is:
+
+\begin{enumerate}[leftmargin=*]
+  \item public equations remain the semantic/default specification;
+  \item internal primitives or backend fast paths implement proven instances of that specification;
+  \item fast paths are used only when the active meaning is the default or when an optimizer can prove equivalence under side conditions;
+  \item user redefinitions or extension hooks take priority over unconditional primitive hijacking.
+\end{enumerate}
+
+This pattern is analogous to a library definition plus compiler rewrite rule.  The important point is not whether a function is ``primitive'' or ``library'' in isolation.  The important point is whether the runtime can justify replacing the visible definition with a faster operational path without changing observable behavior.
+
+\subsection{Invariants Before Optimizations}
+
+The most useful optimizations in this project are invariants made explicit:
+
+\begin{itemize}[leftmargin=*]
+  \item ground persistent terms can be borrowed safely across eval episodes;
+  \item a bulk transfer preserves logical source enumeration, multiplicity, and destination insertion semantics;
+  \item a long-lived answer has one compact semantic owner and many ephemeral materialized views;
+  \item scheduler-visible reductions are separate from semantic fuel/depth limits;
+  \item branch-local unification may mutate/rollback, but published answers own stable bindings;
+  \item backend failure after partial mutation is not the same as backend unavailability before mutation.
+\end{itemize}
+
+Such invariants should be represented in code through flags, counters, tests, and eventually formal lemmas.  They should not remain informal hopes.
+
+\section{Term Representation and Spaces}\label{sec:term-representation}
+
+\subsection{Term Identity and the One-Universe Ideal}
+
+A symbolic runtime pays for term representation everywhere: matching, substitution, equality, table keys, result materialization, backend transfer, and proof logging.  \CeTTa{} therefore benefits from a single persistent term universe for canonical identities.  Each persistent atom should have a stable \texttt{AtomId}.  Structural equality should become identity equality where possible.  Strings should be pushed to the boundary through \texttt{SymbolId} or equivalent interned spellings.
+
+The ideal structure is:
+
+\begin{itemize}[leftmargin=*]
+  \item persistent terms are canonical and immutable;
+  \item spaces hold membership/indexing over term identities or backend structural rows;
+  \item evaluation may borrow persistent terms but must not publish dangling eval-arena terms;
+  \item backend path encodings are distinct from canonical store records.
+\end{itemize}
+
+This gives a clean answer to a common confusion: a \PathMap{} path is not necessarily the canonical term representation.  It may be a backend path ABI optimized for trie operations.  The term universe is the logical identity layer.
+
+\subsection{Four Term ABIs}
+
+Do not collapse all term representations into one format.  Four different ABIs serve different roles:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Logical identity ABI}: \texttt{AtomId} in the term universe.
+  \item \textbf{Canonical store ABI}: compact immutable records with child ids, tags, hashes, and metadata.
+  \item \textbf{Evaluation ABI}: decoded/tagged hot-path views suitable for C evaluation, scratch allocation, and temporary open terms.
+  \item \textbf{Backend path ABI}: self-contained structural bytes for \PathMap{}/\MORK{} interop and path operations.
+\end{enumerate}
+
+Conflating these causes avoidable copying, broken sharing, or backend-specific semantics leaking upward.
+
+\subsection{Born-Canonical Construction}
+
+A persistent term should ideally be constructed in canonical form from already-canonical children.  This avoids the repeated pattern ``build transient tree, then intern it again.''  The invariant is:
+
+\begin{quote}
+No persistent expression is born with non-canonical persistent children.
+\end{quote}
+
+For open/eval-local terms, full canonicalization may be too expensive or lifetime-sensitive.  It is acceptable to maintain separate regimes:
+
+\begin{itemize}[leftmargin=*]
+  \item persistent exact sharing in the term universe;
+  \item runtime open-term sharing through skeleton plus environment;
+  \item pure/binder-aware sharing through closure/NbE-style machinery where needed.
+\end{itemize}
+
+\subsection{Multiplicity and Ordered Spaces}
+
+A backend that naturally stores sets is not automatically suitable for a language profile with multiset semantics.  Likewise, a source-to-destination transfer is not correct merely because the final set of distinct atoms is equal.  The runtime must preserve the relevant logical observables:
+
+\begin{itemize}[leftmargin=*]
+  \item duplicate count where duplicates are observable;
+  \item source enumeration order where order is observable;
+  \item destination insertion behavior for queues/stacks/ordered spaces;
+  \item structural coalescing only in profiles or backends where it is honest.
+\end{itemize}
+
+For \PathMap{} spaces, a counted layer can represent multiset semantics, while raw \MORK{} structural storage may legitimately be set-like.  The contract should state which behavior is being implemented, not assume one backend's algebra is universal.
+
+\section{Evaluation Semantics and Tail Paths}
+
+\subsection{The HE Evaluation Shape}
+
+The \HE{} specification decomposes evaluation into mutually recursive stages.  The important practical lesson is that evaluation is context-sensitive:
+
+\begin{itemize}[leftmargin=*]
+  \item expected type affects whether an expression is reduced;
+  \item function types determine argument strictness;
+  \item an expression can be returned unchanged in an \texttt{Atom} context;
+  \item equation lookup happens through the current space;
+  \item grounded operations may reduce or decline to reduce.
+\end{itemize}
+
+A predicate like \texttt{isValue(term)} is too simple.  The more accurate question is whether a term is in normal form at a particular expected type, space, profile, and binding environment.
+
+\subsection{Typed Strictness}
+
+In \HE{}-style evaluation, special forms such as \texttt{if} need not be hardcoded as C branches.  The function type can make one argument strict and others lazy.  For example, an \texttt{if} type can require the condition to evaluate to \texttt{Bool} while leaving branches as \texttt{Atom}.  The evaluator then follows the general typed-argument algorithm.
+
+This is an important design pressure: local per-head shortcuts are tempting but can undermine the general typed evaluator.  When shortcuts are added, they should either implement the typed semantics exactly or be profile-specific with tests.
+
+\subsection{TCO as a Semantic Constraint}
+
+Tail-call optimization is not merely performance polish.  In recursive \MeTTa{} programs, deterministic tail paths must not consume unbounded C stack.  A direct tail-reentry trampoline such as \texttt{TAIL\_REENTER} is an architectural invariant for deterministic single-result forms:
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{let}, \texttt{chain}, \texttt{let*};
+  \item deterministic \texttt{if}/\texttt{case} branches;
+  \item function/return-like blocks;
+  \item known singleton continuations.
+\end{itemize}
+
+A frame/resume machine is needed for streaming and nondeterminism, but it should not replace direct tail reentry in cases where direct reentry is both correct and faster.  The direct recursive/trampoline path and the explicit frame path should be tested for observable equivalence on their overlap.
+
+\section{The MeTTa Abstract Machine}\label{sec:mam}
+
+\subsection{What the MAM Is Not}
+
+A small struct containing a stream callback, eval-step callback, and optional table plugin is a useful seam, but it is not yet a state-of-the-art abstract machine.  A real \MAM{} must have explicit episode state, demand, scheduling, memo handles, snapshot/revision information, and answer publication semantics.
+
+Similarly, \texttt{SearchContext} should remain branch-local.  It is closer to a WAM choicepoint/trail context for one OR branch than to the whole abstract machine.  Evaluation frames or resume stacks are AND-side control objects.  The \MAM{} sits above them as an episode-level control plane.
+
+\subsection{Orthogonal Axes}
+
+The \MAM{} should keep these axes separate:
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.22\textwidth} >{\raggedright\arraybackslash}p{0.70\textwidth}}
+\toprule
+Axis & Examples \\
+\midrule
+Language/profile & \HE{}, \PeTTa{}, \MM{} host, future core/profile variants. \\
+Lane & recursive proof/eval, goal agenda, tabled variant, tabled subsumptive, fixpoint/saturation, solver oracle, \MM{} stepper. \\
+Schedule & native default, DFS, BFS, IDDFS, fair interleaving, round-robin, best-first. \\
+Backend & native, \PathMap{}, \MORK{}, \MM{} bridge, future distributed spaces. \\
+Memo & none, revision cache, variant, delayed variant, subsumptive, answer-subsumptive, incremental, shared. \\
+Answer mode & set, bag, aggregate/lattice, witness/proof, ordered stream. \\
+Demand & all answers, first answer, k answers, fuel/step budget, until predicate. \\
+\bottomrule
+\end{longtable}
+
+The classic mistake is to name a backend as if it were a search strategy, or to name BFS/DFS as if they were engines.  A \PathMap{} backend can run under different schedules.  A goal-agenda lane can run DFS or fair interleaving.  A tabled lane can use native or \PathMap{} answer storage.
+
+\subsection{Minimal Episode Interface}
+
+A useful internal interface sketch is:
+
+\begin{lstlisting}[language=C]
+typedef struct CettaSearchEpisode CettaSearchEpisode;
+typedef struct CettaSearchProvider CettaSearchProvider;
+typedef struct CettaEnvRef CettaEnvRef;
+
+typedef enum {
+    CETTA_LANG_HE,
+    CETTA_LANG_PETTA,
+    CETTA_LANG_MM2_HOST,
+    CETTA_LANG_RHOCALC
+} CettaLangId;
+
+typedef enum {
+    CETTA_LANE_RECURSIVE_EVAL,
+    CETTA_LANE_GOAL_AGENDA,
+    CETTA_LANE_TABLED_VARIANT,
+    CETTA_LANE_FIXPOINT,
+    CETTA_LANE_SOLVER_ORACLE,
+    CETTA_LANE_MM2_STEP
+} CettaSearchLane;
+
+typedef enum {
+    CETTA_SCHED_NATIVE,
+    CETTA_SCHED_DFS,
+    CETTA_SCHED_BFS,
+    CETTA_SCHED_IDDFS,
+    CETTA_SCHED_INTERLEAVE,
+    CETTA_SCHED_ROUND_ROBIN,
+    CETTA_SCHED_BEST_FIRST
+} CettaSchedule;
+
+typedef struct {
+    CettaLangId lang;
+    CettaSearchLane lane;
+    CettaSchedule schedule;
+    uint64_t answer_limit;
+    uint64_t step_budget;
+    uint32_t flags;
+} CettaSearchRequest;
+
+typedef struct {
+    CettaEnvRef *env;
+    Atom *value;
+    uint64_t multiplicity;
+    double score;
+    void *witness;
+    uint32_t flags;
+} CettaSearchAnswer;
+
+typedef enum {
+    CETTA_VISIT_CONTINUE,
+    CETTA_VISIT_STOP,
+    CETTA_VISIT_ERROR,
+    CETTA_VISIT_SUSPEND
+} CettaVisitCtl;
+
+typedef CettaVisitCtl (*CettaAnswerVisitor)(
+    const CettaSearchAnswer *ans,
+    void *ctx);
+\end{lstlisting}
+
+The exact names can change.  The important boundary is visitor-first streaming plus an episode object.  Materializing a list of all answers should be an adapter, not the fundamental protocol.
+
+\subsection{Two Early Engines}
+
+The earliest endgame-leaning engines should not be ``BFS'' and ``DFS,'' because those are schedules.  The two useful engines are:
+
+\paragraph{GoalAgenda.}  A top-down, WAM-like goal-directed lane with explicit frames, choicepoints, env refs, demand handling, and schedules such as DFS, BFS, IDDFS, and fair interleaving.
+
+\paragraph{Fixpoint.}  A tabled/join/saturation lane that can exploit \PathMap{} algebra, delta sets, exact membership, counted answers, and later PLN/ATP-like saturation.
+
+These two force different design pressures early: GoalAgenda forces control and env discipline; Fixpoint forces snapshot, table, join, multiplicity, and completion discipline.
+
+\section{Runtime Budgets, Run Classes, and Schedulers}\label{sec:runtime-budget}
+
+\subsection{Semantic Limits vs Scheduler Budgets}
+
+A central naming and design issue is to avoid using one ``budget'' field for every constraint.  The runtime should separate semantic search limits from scheduler fairness and cancellation.
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    uint32_t depth_limit;
+    uint32_t breadth_limit;
+    uint32_t answer_limit;
+    uint32_t fuel_limit;      // language/search-visible
+} CettaSearchLimits;
+
+typedef struct {
+    uint32_t reductions_left; // scheduler-visible
+    CettaEvalCancelToken *cancel_token;
+    uint64_t deadline_ns;    // 0 = none
+    uint32_t flags;
+} CettaRunBudget;
+\end{lstlisting}
+
+The term \emph{fuel} should remain language/search-visible.  The term \emph{reductions} is appropriate for scheduler-visible accounting, following BEAM-like terminology.  A reduction should count a meaningful unit of interpreted/scheduled work, not every pointer comparison.
+
+\subsection{Run Class vs Effect Flags}
+
+Do not make one enum that mixes semantic effects, scheduler placement, memo policy, and blocking behavior.  A useful split is:
+
+\begin{lstlisting}[language=C]
+typedef enum {
+    CETTA_RUN_COOPERATIVE = 0,
+    CETTA_RUN_WORKER_SAFE,
+    CETTA_RUN_DIRTY_CPU,
+    CETTA_RUN_DIRTY_IO,
+    CETTA_RUN_EXCLUSIVE
+} CettaRunClass;
+
+typedef uint32_t CettaEffectFlags;
+// bits: READS_SPACE, WRITES_SPACE, READS_STATE, WRITES_STATE,
+// MAY_BLOCK, FOREIGN_CALL, ALLOCATES_FRESH, NONDETERMINISTIC, etc.
+\end{lstlisting}
+
+A computation can be semantically pure but long-running, read-only but blocking, or effectful but still worker-safe under a snapshot.  Scheduler placement and semantic effect classification are different dimensions.
+
+\subsection{Run Result and Yield Reasons}
+
+A shared status protocol is more immediately useful than a generic task object.
+
+\begin{lstlisting}[language=C]
+typedef enum {
+    CETTA_RUN_CONTINUE = 0,
+    CETTA_RUN_YIELDED,
+    CETTA_RUN_BLOCKED,
+    CETTA_RUN_DONE,
+    CETTA_RUN_CANCELLED,
+    CETTA_RUN_ERROR
+} CettaRunStatus;
+
+typedef enum {
+    CETTA_YIELD_QUANTUM_EXHAUSTED = 0,
+    CETTA_YIELD_COOPERATIVE,
+    CETTA_YIELD_MUTEX,
+    CETTA_YIELD_CHANNEL,
+    CETTA_YIELD_IO,
+    CETTA_YIELD_FOREIGN,
+    CETTA_YIELD_BACKPRESSURE,
+    CETTA_YIELD_NONE
+} CettaYieldReason;
+
+typedef struct {
+    CettaRunStatus status;
+    CettaYieldReason reason;
+} CettaRunResult;
+\end{lstlisting}
+
+This supports \PeTTa{} hyperpose, \RhoCalc{} reactions, HE streaming loops, and future worker pools without prematurely forcing all work into one generic \texttt{CettaTask} abstraction.
+
+\section{Eval Memory and Lifetime}\label{sec:memory}
+
+\subsection{Why Full GC Is Not the First Move}
+
+Long-running eval episodes can accumulate dead intermediate structures in an eval arena.  This looks garbage-collector-like, but a general moving/tracing collector is difficult in a C runtime full of raw \texttt{Atom *} locals.  A better first move is generational eval memory with safe-point evacuation.
+
+\subsection{EvalHeap}
+
+The recommended memory substrate is:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{persistent}: term universe and durable space/table content;
+  \item \textbf{young}: eval nursery for ordinary ephemeral construction;
+  \item \textbf{old}: eval-stable survivor arena for values crossing safe points;
+  \item \textbf{large-object space}: optional path for very large expressions that should not be repeatedly copied through young.
+\end{itemize}
+
+Collection should occur only at quiescent safe points where the live root set is explicit: top-level evaluation boundaries, nested eval/collapse/stream boundaries, deterministic tail-reentry boundaries, and later scheduler yield/resume boundaries.
+
+\subsection{Safe-Point Invariants}
+
+At each safe point:
+
+\begin{enumerate}[leftmargin=*]
+  \item enumerate all live roots explicitly;
+  \item evacuate reachable young terms to old or borrow persistent terms;
+  \item rewrite root pointers;
+  \item reset young;
+  \item assert that no durable object points into reclaimed young memory.
+\end{enumerate}
+
+Key invariants:
+
+\begin{itemize}[leftmargin=*]
+  \item persistent spaces/tables/registries never point into young;
+  \item a value crossing a safe point is either promoted or borrow-safe;
+  \item ground persistent terms are immutable and may be borrowed;
+  \item foreign handles are non-moving leaves;
+  \item large expressions may bypass young if repeated copying would dominate.
+\end{itemize}
+
+\subsection{When to Stop Arena Work}
+
+EvalHeap work is valuable when the dominant problem is dead intermediate structure.  It is not sufficient when survivor state itself dominates.  A good stop rule is:
+
+\begin{itemize}[leftmargin=*]
+  \item green tests and ownership invariants are stable;
+  \item ordinary workloads are within the recovered performance envelope;
+  \item the remaining wall is long-lived answer/subgoal growth rather than nursery trash;
+  \item no next arena patch has a plausible large asymptotic upside.
+\end{itemize}
+
+At that point, shift to answer representation and scheduling.
+
+\section{Answer Ownership and Long-Lived Results}\label{sec:answers}
+
+\subsection{The Problem}
+
+Long-horizon PLN and recursive relation workloads can still OOM even after eval arenas are improved, because the wrong data survives.  If each delayed answer owns a fully materialized atom plus a full bindings environment, memory grows with transport duplication rather than semantic novelty.
+
+The desired invariant is:
+
+\begin{quote}
+One long-lived semantic answer payload, many ephemeral views.
+\end{quote}
+
+\subsection{AnswerBank and AnswerRef}
+
+A useful representation is:
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    Atom *skeleton;          // shared/open form
+    Bindings env_slice;      // only variables reachable from skeleton/slots
+    VariantInstance variant; // private slot payload if any
+    uint32_t flags;          // ground, borrowed, no_env, etc.
+} AnswerPayload;
+
+typedef struct {
+    AnswerPayload *p;
+} AnswerRef;
+\end{lstlisting}
+
+Then:
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{OutcomeSet} stores \AnswerRef{}s where possible;
+  \item delayed replay stores refs, not expanded blobs;
+  \item \texttt{TableStore} becomes a client of the payload layout, not the sole owner;
+  \item materialized atoms are scratch views or generation-tagged caches, not durable state;
+  \item env slices contain exactly the variables reachable from skeleton and variant slots.
+\end{itemize}
+
+\subsection{Builder-Based Query Execution}
+
+For nilbc-like recursive workloads, the KB may be tiny, but binding operations dominate.  A local optimization with high leverage is builder-style equation matching:
+
+\begin{itemize}[leftmargin=*]
+  \item seed a \texttt{BindingsBuilder} from the current environment;
+  \item perform branch-local unification into the builder;
+  \item freeze/publish only at the answer boundary;
+  \item project visible bindings with a builder rather than cloning through ordinary add operations;
+  \item stream equation results into consumers where possible.
+\end{itemize}
+
+The invariant is:
+
+\begin{quote}
+Branch-local unification may mutate/rollback.  Published query results must own stable bindings and stable atoms.
+\end{quote}
+
+If builder matching and streaming do not move a recursive workload substantially, the next step is not more local shaving.  It is a relation execution lane with trail/choicepoint discipline or explicit memoization.
+
+\section{Bulk Transfer and Atom Sources}\label{sec:bulk-transfer}
+
+\subsection{The Materialization Boundary}
+
+A measured bottleneck arose in space-to-space transfer:
+
+\begin{lstlisting}
+(add-atoms &dst (collapse (get-atoms &src)))
+\end{lstlisting}
+
+Operationally this does:
+
+\begin{enumerate}[leftmargin=*]
+  \item enumerate source atoms;
+  \item create many evaluator outcomes;
+  \item collapse them into one large expression;
+  \item call \texttt{add-atoms};
+  \item loop over the expression and insert each atom.
+\end{enumerate}
+
+Even if \texttt{add-atoms} has a fast loop after seeing an expression, the expensive collapse boundary has already happened.  The real problem is plural-producer to plural-consumer composition.
+
+\subsection{Internal Packet Protocol}
+
+The first fix should be internal, not a public type.  Introduce a small packet/source/sink protocol:
+
+\begin{lstlisting}[language=C]
+typedef enum {
+    CETTA_ATOM_PACKET_ATOM,
+    CETTA_ATOM_PACKET_ATOM_ID,
+    CETTA_ATOM_PACKET_EXPR_ROW
+} CettaAtomPacketKind;
+
+typedef struct {
+    CettaAtomPacketKind kind;
+    Atom *atom;
+    AtomId atom_id;
+    const uint8_t *row;
+    size_t row_len;
+    uint32_t multiplicity;
+} CettaAtomPacket;
+
+typedef bool (*CettaAtomPacketVisitor)(
+    const CettaAtomPacket *pkt,
+    void *ctx);
+\end{lstlisting}
+
+Backend seams:
+
+\begin{lstlisting}[language=C]
+bool space_match_backend_visit_packets(
+    Space *src,
+    Arena *scratch,
+    CettaAtomPacketVisitor visitor,
+    void *ctx);
+
+SpaceTransferResult space_match_backend_transfer_direct(
+    Space *dst,
+    Space *src,
+    Arena *persistent,
+    uint64_t *out_items);
+\end{lstlisting}
+
+\texttt{transfer\_direct} is optional.  If unavailable before mutation, fallback can use packet visitation.  If a bridge route fails after possible mutation, it must return error, not silently fall back and replay effects.
+
+\subsection{Reflective Public Definitions}
+
+Public \texttt{add-atoms} should remain meaningful.  The runtime should not unconditionally hijack it.  The safe staging is:
+
+\begin{enumerate}[leftmargin=*]
+  \item recognize the boot/default shape \texttt{add-atoms dst (collapse (get-atoms src))};
+  \item verify that the active meanings are the default meanings;
+  \item lower to backend transfer or packet streaming;
+  \item otherwise evaluate the public definition normally.
+\end{enumerate}
+
+Later, a proof-guided optimizer can recognize more shapes.  For now, optimize the measured bottleneck.
+
+\subsection{Proof Target}
+
+The proof should not merely say ``multiset union is equivalent.''  It should state operational equivalence to the default definition:
+
+\begin{quote}
+Bulk transfer from source to destination is equivalent to folding destination insertion over the source's logical enumeration.
+\end{quote}
+
+In Lean-like pseudocode:
+
+\begin{lstlisting}
+class AtomSource (sigma : Type) where
+  enumerate : sigma -> List Atom
+
+class SpaceLike (tau : Type) where
+  addAtom : tau -> Atom -> tau
+
+class BulkTransfer (sigma tau : Type) where
+  bulkTransfer : tau -> sigma -> tau
+
+theorem bulk_transfer_correct
+  [AtomSource sigma] [SpaceLike tau] [BulkTransfer sigma tau]
+  (dst : tau) (src : sigma) :
+  BulkTransfer.bulkTransfer dst src =
+    List.foldl SpaceLike.addAtom dst (AtomSource.enumerate src)
+\end{lstlisting}
+
+This theorem can be instantiated for same-universe AtomId sequences, contextual rows, counted \PathMap{} rows, and structural \MORK{} rows.
+
+\section{PeTTa Relations, Callables, and Dynamic Semantics}
+
+\subsection{Relation Completion}
+
+A key \PeTTa{} frontier involved relational function heads and inverse use.  The durable design lesson is that relation execution should not be implemented through post-hoc environment guessing.  It needs explicit relation-call unification and a hidden-relation clause visitor.
+
+A useful helper shape is:
+
+\begin{lstlisting}[language=C]
+bool petta_rel_visit_clauses(
+    Space *s,
+    SymbolId rel_head,
+    uint32_t arity,
+    Atom *const *query_args,
+    Atom *query_out,
+    const Bindings *seed,
+    PettaRelAnswerVisitor visit,
+    void *ctx);
+\end{lstlisting}
+
+The helper should:
+
+\begin{itemize}[leftmargin=*]
+  \item find candidate hidden relation clauses by head/arity;
+  \item freshen clause-local variables;
+  \item explicitly unify caller query args/output with the clause head;
+  \item evaluate the clause body under the merged environment;
+  \item export caller-visible bindings.
+\end{itemize}
+
+This addresses renamed-wrapper export and open-output relation search more cleanly than heuristics.
+
+\subsection{Callable Values}
+
+Full \PeTTa{} completion requires first-class callable values, not merely direct lambda evaluation.  Named callables, partial applications, and lambdas should share one substrate:
+
+\begin{itemize}[leftmargin=*]
+  \item underapplied calls become callable values;
+  \item lambdas become hidden callable heads plus captures or equivalent descriptors;
+  \item applying any callable value routes through the same call pipeline with bound args prepended;
+  \item \texttt{repr} and other reflective operations see callable values consistently.
+\end{itemize}
+
+A tactical direct-lambda closure path is useful but not final.  The final architecture is a unified callable-value substrate.
+
+\subsection{Dynamic Mutation and Spaces}
+
+Dynamic mutation semantics are deep enough to belong near space/backend/runtime policy, not merely translator sugar.  Examples include:
+
+\begin{itemize}[leftmargin=*]
+  \item alpha-equivalent removal of variableized declaration atoms;
+  \item transaction boundaries;
+  \item mutex-protected state;
+  \item add/remove invalidation of indexes, type facts, and equation metadata.
+\end{itemize}
+
+The runtime should have hook dispatchers for add/remove, not single ad hoc multifile hooks that silently ignore later hooks.  Each index/cache should be an explicit client of the mutation stream.
+
+\section{PeTTa \texttt{--he} and Translated HE Examples}\label{sec:petta-he}
+
+\subsection{Profile Framing}
+
+A \PeTTa{} \texttt{--he} bridge should be framed as a compatibility profile:
+
+\begin{itemize}[leftmargin=*]
+  \item \HE{}-spec core conformance is the headline semantic criterion;
+  \item translated \PeTTa{} examples are a broad practical regression/performance surface;
+  \item \PeTTa{} extensions supported under \texttt{--he} are not failures, but they should be labeled as extensions;
+  \item default \PeTTa{} behavior must remain isolated and regression-tested.
+\end{itemize}
+
+The useful denominator split is:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{HE-spec-core exact}: canonical core conformance.
+  \item \textbf{Translated PeTTa-to-HE corpus}: practical examples rendered into HE-compatible surface forms.
+  \item \textbf{Extension/performance stress}: hyperpose, PLN, tilepuzzle, large primes, streams, and other features beyond minimal HE core.
+\end{enumerate}
+
+\subsection{Translation Choices}
+
+Reasonable translation choices include:
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{test} to explicit assertion/test forms;
+  \item \texttt{foldall} to \texttt{collapse} plus \texttt{foldl-atom} where portable;
+  \item direct lowering for common \texttt{length(collapse ...)} shapes;
+  \item \texttt{hyperpose} sequentialized to \texttt{superpose} for portable HE, while preserving a separate HE++/extension lane where hyperpose remains hyperpose.
+\end{itemize}
+
+Sequentializing hyperpose should be presented as a portability choice, not as a claim that true parallel/fair semantics are identical.
+
+\subsection{Inverse Constructor Compilation}
+
+For equations whose body is a non-callable data constructor, the compiled clause should constrain output structure before recursive subgoals.  For Peano addition:
+
+\begin{lstlisting}
+(= (plus (S $x) $y) (S (plus $x $y)))
+\end{lstlisting}
+
+The inverse-friendly Prolog shape is:
+
+\begin{lstlisting}[language=Prolog]
+plus(['S', X], Y, ['S', R]) :-
+    plus(X, Y, R).
+\end{lstlisting}
+
+rather than:
+
+\begin{lstlisting}[language=Prolog]
+plus(['S', X], Y, Out) :-
+    plus(X, Y, R),
+    Out = ['S', R].
+\end{lstlisting}
+
+The latter recurses before constraining the output and can loop in inverse mode.  This belongs in compiled clause lowering, not in runtime eval hooks.
+
+\subsection{HE Performance Fast Paths}
+
+Once correctness is mostly closed, performance pain often comes from generic runtime tax:
+
+\begin{itemize}[leftmargin=*]
+  \item repeated \texttt{\&self} direct-match and type-screening misses;
+  \item dynamic equation/clause discovery;
+  \item expensive duplicate-space checks;
+  \item generic \texttt{collapse} materialization;
+  \item hyperpose/thread overhead not yet profiled at worker granularity.
+\end{itemize}
+
+The best next tranches are metadata/index based:
+
+\paragraph{Hook dispatcher.}  Add/remove hooks should be dispatchers that run all registered clients.
+
+\paragraph{Space key index.}  Maintain relation/arity counts for spaces.  Use it for negative fast paths before dynamic match calls.
+
+\paragraph{Equation metadata.}  Use function metadata for atom-headed equation existence checks.  Keep generic match fallback only for open or unusual heads.
+
+\paragraph{Type fact index.}  Maintain direct type facts for \texttt{(: Fun Type)} additions/removals.  Use them before generic matching.
+
+\paragraph{Duplicate helper.}  Keep the readable \texttt{add-unique-or-fail} spec, but add a default helper for absent-then-add without \texttt{collapse(once(match ...))} when the active meaning is default.
+
+\subsection{What Not to Optimize First}
+
+Do not start with broad \texttt{collapse(move ...)} special cases, e-graph rewrite systems, or full abstract-machine rewrites unless profiling shows the metadata fast paths are no longer dominant.  Those may become important later, but the first HE performance tranche should attack measured generic misses.
+
+\section{RhoCalc, Hyperpose, and Parallelism}\label{sec:rho}
+
+\subsection{Rho as Semantics, Not a Complete Runtime Recipe}
+
+\RhoCalc{} and rho-style process calculi are valuable because they make channels, communication, quotation/reflection, and process composition first-class.  They do not by themselves determine the most efficient runtime strategy for every workload.  A higher-order process calculus can express many protocols; it does not automatically choose indexing, scheduling, budget accounting, worker pools, or cache/memo strategies.
+
+Therefore \CeTTa{} should not ``become Rholang.''  It should support \RhoCalc{} as a profile/lane and use rho ideas where they clarify source/sink/channel composition, while keeping \MeTTa{} runtime needs primary.
+
+\subsection{MVP Concurrency vs True Parallelism}
+
+For \PeTTa{} hyperpose, the near-term need is not OS-thread parallelism.  It is deterministic, resumable cooperative concurrency:
+
+\begin{itemize}[leftmargin=*]
+  \item branch tasks resume where they left off;
+  \item \texttt{once} can cancel remaining branches;
+  \item mutex waits park rather than burn fuel;
+  \item transaction boundaries are explicit;
+  \item scheduling is deterministic enough for tests.
+\end{itemize}
+
+True parallel execution, worker pools, dirty schedulers, and rho channel semantics can come later on the same scheduler vocabulary.
+
+\subsection{Scheduler Nucleus}
+
+The first reusable concurrency substrate should support task states such as:
+
+\begin{itemize}[leftmargin=*]
+  \item runnable;
+  \item blocked on mutex;
+  \item blocked on channel;
+  \item done;
+  \item cancelled;
+  \item error.
+\end{itemize}
+
+It should expose \RunBudget{}, \RunClass{}, and \RunResult{} as described in \S\ref{sec:runtime-budget}.  This lets \PeTTa{} hyperpose, \RhoCalc{} reactions, and HE long loops share control vocabulary without sharing all semantics.
+
+\subsection{Rho-Oriented Source/Sink Future}
+
+The internal \AtomSource{}/packet transfer layer is a natural precursor to rho channels.  But it should remain internal until the public type/channel story is clear.  The sequence is:
+
+\begin{enumerate}[leftmargin=*]
+  \item internal source/sink protocols for measured bottlenecks;
+  \item cooperative scheduler nucleus;
+  \item \RhoCalc{} machine with channels/join indexes/fresh name supply;
+  \item only then, public source/channel abstractions if the profiles converge.
+\end{enumerate}
+
+\section{Backend Semantics: PathMap, MORK, and MM2}
+
+\subsection{Logical Rows and Contextual Rows}
+
+\PathMap{}, \MORK{}, and \MM{} can transfer data much faster when structural rows or contextual exact rows are moved directly rather than decoded into native atoms and re-encoded.  The runtime should distinguish:
+
+\begin{itemize}[leftmargin=*]
+  \item logical \texttt{AtomId} sequences;
+  \item counted \PathMap{} rows;
+  \item raw structural \MORK{} rows;
+  \item contextual exact rows for \MM{}/ACT paths.
+\end{itemize}
+
+\subsection{Direct Transfer Result States}
+
+A backend transfer API needs at least three states:
+
+\begin{itemize}[leftmargin=*]
+  \item \texttt{OK}: transfer completed;
+  \item \texttt{NEEDS\_TEXT\_FALLBACK} or equivalent: route unavailable before mutation, safe to fall back;
+  \item \texttt{ERROR}: route attempted and failed or may have partially mutated state; fallback is unsafe.
+\end{itemize}
+
+Returning a boolean is not enough, because failure after partial mutation cannot be treated like route unavailability.
+
+\subsection{Self-Transfer}
+
+Self-transfer must respect backend semantics:
+
+\begin{itemize}[leftmargin=*]
+  \item counted/multiset spaces may double counts;
+  \item structural set-like spaces may remain idempotent;
+  \item these are not contradictions if the backend contract is explicit.
+\end{itemize}
+
+Tests should cover self-transfer directly, not assume it is a degenerate case.
+
+\section{Proof, Verification, and Reporting}
+
+\subsection{Three Confidence Layers}
+
+A practical verification stack has three layers:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Executable conformance}: test suites, differential testing against \HE{}/\PeTTa{}, backend parity tests, regression probes.
+  \item \textbf{Mechanized theorems}: Lean proofs of local invariants such as bulk-transfer correctness, term canonicity, binding projection safety, cache coherence, and runtime soundness fragments.
+  \item \textbf{Proof-producing delegation}: future ATP/PLN/Lean/Metamath integrations that produce checkable witnesses.
+\end{enumerate}
+
+Do not wait for layer 2 to ship all optimizations.  But when a fast path is justified by an invariant, write the invariant down in a proof-oriented form and link the implementation to it.
+
+\subsection{Reporting Discipline}
+
+A recurring risk is mixing denominators.  Good reports separate:
+
+\begin{itemize}[leftmargin=*]
+  \item core conformance;
+  \item extension support;
+  \item curated witnesses;
+  \item raw upstream examples;
+  \item performance stress tests;
+  \item intentionally red capacity witnesses.
+\end{itemize}
+
+A translated example corpus is valuable, but it should not replace the core conformance corpus.  A heavy witness whose expected output is known but not completed should be labeled as capacity/performance, not correctness pass.
+
+\subsection{Counters Before Claims}
+
+Before making performance claims, add counters that name the suspected substrate:
+
+\begin{itemize}[leftmargin=*]
+  \item binding clones by call site;
+  \item binding frees;
+  \item binding apply by reason;
+  \item term copies by source;
+  \item answer promotion count/bytes;
+  \item answer-ref materializations;
+  \item space direct-match misses;
+  \item equation metadata hits/misses;
+  \item scheduler reductions/yields/blocks;
+  \item backend transfer direct/fallback/error counts.
+\end{itemize}
+
+The point is not merely instrumentation.  It is to keep optimization from becoming aesthetic.
+
+\section{Recommended Tranche Structure}
+
+\subsection{Tranche A: Stabilize Public Semantics and Reporting}
+
+\begin{itemize}[leftmargin=*]
+  \item Keep \HE{}-core, translated \PeTTa{} examples, and extension/performance lanes separate.
+  \item Keep default \PeTTa{} smoke green when working on \texttt{--he}.
+  \item Keep \CeTTa{} backend parity tests separate from profile-specific tests.
+\end{itemize}
+
+\subsection{Tranche B: Runtime Metadata Fast Paths}
+
+\begin{itemize}[leftmargin=*]
+  \item Add add/remove hook dispatcher.
+  \item Add space key index.
+  \item Add equation metadata existence checks.
+  \item Add type fact index.
+  \item Add duplicate-space absent-then-add helper where default semantics allow.
+\end{itemize}
+
+\subsection{Tranche C: Bulk Transfer Substrate}
+
+\begin{itemize}[leftmargin=*]
+  \item Add internal packet/source/sink interface.
+  \item Add direct transfer API with tri-state result.
+  \item Optimize default \texttt{add-atoms dst (collapse (get-atoms src))} shape.
+  \item Prove operational equivalence to source enumeration plus destination insertion.
+\end{itemize}
+
+\subsection{Tranche D: Answer and Binding Substrate}
+
+\begin{itemize}[leftmargin=*]
+  \item Add or finish \AnswerBank{} and \AnswerRef{} for long-lived results.
+  \item Enforce scratch-only materialization for durable answer refs.
+  \item Use env slicing on store/promotion.
+  \item Add builder-style equation matching and projection for recursive relation workloads.
+\end{itemize}
+
+\subsection{Tranche E: Scheduler Nucleus}
+
+\begin{itemize}[leftmargin=*]
+  \item Add \RunBudget{}, \RunClass{}, \RunResult{}, and yield reasons.
+  \item Make hyperpose deterministic/resumable before true parallelism.
+  \item Add mutex parking and transaction boundaries.
+  \item Thread the same vocabulary into \RhoCalc{} step/reaction entrypoints.
+\end{itemize}
+
+\subsection{Tranche F: Relation/Callable Lane}
+
+\begin{itemize}[leftmargin=*]
+  \item Add hidden relation clause visitor or equivalent.
+  \item Add unified callable-value substrate for named callables, partials, and lambdas.
+  \item Keep relation memoization explicit and profile/lane-scoped.
+\end{itemize}
+
+\subsection{Tranche G: MAM Growth}
+
+\begin{itemize}[leftmargin=*]
+  \item Promote episode/request/answer/caps types into the real \MAM{}.
+  \item Add GoalAgenda and Fixpoint lanes.
+  \item Add variant/delayed/subsumptive tabling only when the workload demands it.
+  \item Keep parity tests across overlapping lanes.
+\end{itemize}
+
+\section{Interface Sketch Appendix}
+
+\subsection{Search Request}
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    CettaLangId lang;
+    CettaSearchLane lane;
+    CettaSchedule schedule;
+    CettaSearchLimits limits;
+    CettaMemoMode memo;
+    CettaAnswerMode answer_mode;
+    uint32_t flags;
+} CettaSearchRequest;
+\end{lstlisting}
+
+\subsection{Run Budget and Result}
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    uint32_t reductions_left;
+    CettaEvalCancelToken *cancel_token;
+    uint64_t deadline_ns;
+    uint32_t flags;
+} CettaRunBudget;
+
+typedef struct {
+    CettaRunStatus status;
+    CettaYieldReason reason;
+} CettaRunResult;
+\end{lstlisting}
+
+\subsection{Answer Payload}
+
+\begin{lstlisting}[language=C]
+typedef struct {
+    Atom *skeleton;
+    Bindings env_slice;
+    VariantInstance variant;
+    uint32_t flags;
+} CettaAnswerPayload;
+
+typedef struct {
+    CettaAnswerPayload *payload;
+} CettaAnswerRef;
+\end{lstlisting}
+
+\subsection{Atom Packet}
+
+\begin{lstlisting}[language=C]
+typedef enum {
+    CETTA_ATOM_PACKET_ATOM,
+    CETTA_ATOM_PACKET_ATOM_ID,
+    CETTA_ATOM_PACKET_EXPR_ROW
+} CettaAtomPacketKind;
+
+typedef struct {
+    CettaAtomPacketKind kind;
+    Atom *atom;
+    AtomId atom_id;
+    const uint8_t *row;
+    size_t row_len;
+    uint32_t multiplicity;
+} CettaAtomPacket;
+\end{lstlisting}
+
+\section{Glossary of Durable Names}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.28\textwidth} >{\raggedright\arraybackslash}p{0.64\textwidth}}
+\toprule
+Name & Meaning \\
+\midrule
+\texttt{CettaSearchRequest} & Profile/lane/schedule/memo/demand request for an episode. \\
+\texttt{CettaSearchEpisode} & Long-lived episode object owning agenda, memo handles, demand, stats, and answer publication. \\
+\texttt{SearchContext} & Branch-local speculative binding/rollback context, not the whole machine. \\
+\texttt{CettaRunBudget} & Scheduler-visible cooperative budget and cancellation/deadline token. \\
+\texttt{CettaSearchLimits} & Language/search-visible depth/breadth/fuel/answer limits. \\
+\texttt{CettaRunClass} & Scheduler placement class: cooperative, worker-safe, dirty CPU, dirty I/O, exclusive. \\
+\texttt{CettaEffectFlags} & Semantic/effect bits: reads/writes space, may block, foreign call, nondeterministic, etc. \\
+\texttt{CettaRunResult} & Result of one scheduler slice: continue, yielded, blocked, done, cancelled, error. \\
+\texttt{EvalHeap} & Young/old/large-object eval lifetime substrate with safe-point evacuation. \\
+\texttt{AnswerBank} & Episode-local or table-local owner of compact answer payloads. \\
+\texttt{AnswerRef} & Stable handle to an answer payload. \\
+\texttt{AtomSource}/packet & Internal source/sink protocol for plural producers and consumers without tuple materialization. \\
+\texttt{GoalAgenda} & Top-down goal-directed execution lane. \\
+\texttt{Fixpoint} & Join/tabled/saturation-style execution lane. \\
+\bottomrule
+\end{longtable}
+
+\section{Conclusion}
+
+The throughline is separation without fragmentation.  \CeTTa{} can support \HE{} fidelity, \PeTTa{} performance ideas, \PathMap{}/\MORK{}/\MM{} backend algebra, and \RhoCalc{}-inspired process semantics if each concern is named at the correct layer.  The runtime should not force every profile through one evaluator path, nor should it hide semantic choices in backend accidents.  The most durable design moves are:
+
+\begin{itemize}[leftmargin=*]
+  \item one persistent term universe plus distinct space membership layers;
+  \item an episode-oriented \MAM{} with orthogonal profile, lane, schedule, backend, memo, answer, and demand axes;
+  \item generational eval memory at explicit safe points, not premature general GC;
+  \item compact long-lived answer ownership through \AnswerRef{} and env slices;
+  \item internal plural source/sink transfer to avoid collapse/materialization bottlenecks;
+  \item metadata/index fast paths for \HE{} runtime overhead;
+  \item a cooperative scheduler vocabulary before true parallelism;
+  \item proof-guided optimization and honest denominator reporting.
+\end{itemize}
+
+The project does not need to solve every endgame problem before shipping useful improvements.  It does need each improvement to leave a clean path forward.  The concepts in this primer are intended to be that path: small enough to implement incrementally, explicit enough to verify, and general enough to survive the transition from today's runtime experiments to a mature AGI-oriented \MeTTa{} execution substrate.
+
+\begin{thebibliography}{99}
+
+\bibitem{wam}
+D. H. D. Warren.
+\newblock \emph{An Abstract Prolog Instruction Set}.
+\newblock Technical Note 309, SRI International, 1983.
+
+\bibitem{xsb}
+T. Swift and D. S. Warren.
+\newblock \emph{XSB: Extending Prolog with Tabled Logic Programming}.
+\newblock Theory and Practice of Logic Programming, and XSB system documentation.
+
+\bibitem{swi-tabling}
+Jan Wielemaker and contributors.
+\newblock \emph{SWI-Prolog Tabling Documentation}.
+\newblock SWI-Prolog manual.
+
+\bibitem{hashcons}
+Sylvain Conchon and Jean-Christophe Filli\^{a}tre.
+\newblock Type-Safe Modular Hash-Consing.
+\newblock ML Workshop, 2006.
+
+\bibitem{graf}
+Peter Graf.
+\newblock \emph{Substitution Tree Indexing}.
+\newblock RTA, 1994.
+
+\bibitem{souffle}
+Bernhard Scholz and the Souffl\'{e} contributors.
+\newblock \emph{Souffl\'{e}: A Datalog Compiler}.
+
+\bibitem{egg}
+Max Willsey et al.
+\newblock egg: Fast and Extensible Equality Saturation.
+\newblock POPL, 2021.
+
+\bibitem{ltj}
+Todd L. Veldhuizen.
+\newblock Leapfrog Triejoin: A Simple, Worst-Case Optimal Join Algorithm.
+\newblock ICDT, 2014.
+
+\bibitem{cbpv}
+Paul Blain Levy.
+\newblock \emph{Call-By-Push-Value}.
+\newblock PhD thesis, Queen Mary, University of London, 2001.
+
+\bibitem{explicit-subst}
+Mart\'{i}n Abadi, Luca Cardelli, Pierre-Louis Curien, and Jean-Jacques L\'{e}vy.
+\newblock Explicit Substitutions.
+\newblock Journal of Functional Programming, 1991.
+
+\bibitem{rho}
+L. G. Meredith and Matthias Radestock.
+\newblock A Reflective Higher-Order Calculus.
+\newblock Electronic Notes in Theoretical Computer Science, 2005.
+
+\bibitem{beam}
+Ericsson AB and Erlang/OTP contributors.
+\newblock \emph{Erlang/OTP and BEAM Runtime Documentation}.
+
+\bibitem{tokio}
+Tokio contributors.
+\newblock \emph{Tokio Cooperative Scheduling and Runtime Documentation}.
+
+\bibitem{compcert}
+Xavier Leroy and contributors.
+\newblock The CompCert Verified Compiler.
+
+\bibitem{cakeml}
+Ramana Kumar et al.
+\newblock CakeML: A Verified Implementation of ML.
+
+\bibitem{ghc-rules}
+Simon Peyton Jones et al.
+\newblock Playing by the Rules: Rewriting as a Practical Optimisation Technique in GHC.
+
+\end{thebibliography}
+
+\end{document}

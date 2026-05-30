@@ -1,0 +1,133 @@
+
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{cleveref}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+
+\geometry{margin=1in}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{axiom}[theorem]{Axiom}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+
+% Lean footnote helper: keep Lean references out of the main exposition.
+% `\path{...}` allows line breaks in long file paths.
+\newcommand{\LeanFile}[1]{\footnote{\textbf{Lean}: \path{#1}.}}
+
+% Minimal-fix additions: both used below (line 62 and line 69) but were only
+% defined inside the commented-out preamble block. Lifted into the active
+% preamble so the file builds; commented-out block left untouched per "idk" note.
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\draftnote}{\noindent\textit{Draft extended abstract for author revision.}}
+
+% idk, I'll use what ks-math-foundations has above.
+% \usepackage[margin=1in]{geometry}
+% \usepackage[T1]{fontenc}
+% \usepackage[utf8]{inputenc}
+% \usepackage{amsmath,amssymb,amsthm}
+% \usepackage{booktabs}
+% \usepackage{array}
+% \usepackage{enumitem}
+% \usepackage{xcolor}
+% \usepackage{hyperref}
+% \usepackage{url}
+% \hypersetup{colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black}
+% \setlist[itemize]{leftmargin=1.4em,itemsep=0.25em,topsep=0.25em}
+% \setlist[enumerate]{leftmargin=1.6em,itemsep=0.25em,topsep=0.25em}
+% \newcommand{\WMPLN}{WM--PLN}
+% \newcommand{\PLN}{PLN}
+% \newcommand{\KS}{K\&S}
+% \newcommand{\codepath}[1]{\path{#1}}
+% \newcommand{\leanref}[1]{\path{#1}}
+% \newcommand{\Evidence}{\ensuremath{\mathcal{E}}}
+% \newcommand{\World}{\ensuremath{\mathcal{W}}}
+% \newcommand{\Query}{\ensuremath{\mathcal{Q}}}
+% \newcommand{\R}{\ensuremath{\mathbb{R}}}
+% \newcommand{\draftnote}{\noindent\textit{Draft extended abstract for author revision.}}
+% \sloppy
+
+% Draft by Author.  This is meant as a draft for JoeFest 2026.
+% Comments are largely directed to the beloved AI assistants <3.
+\title{Formal Foundations of Inference in Lean\\From Finite Lattices to Infinitary Probability}
+\author{Zarathustra Amadeus Goertzel}
+\date{\today}
+\begin{document}
+\maketitle
+\draftnote
+
+\begin{abstract}
+Knuth and Skilling's \emph{Foundations of Inference} aims to derive basic probability theory, Bayes' rule, and the entropy formula from order and symmetry constraints over distributive lattices.
+This aims to provide clearer intuition as to why the laws of probability take the form they do, continuing the tradition of Cox's axioms.
+I set out to formalize their work with the help of Codex and Claude Code\footnote{Most of the work was done by Codex 5.2 and Claude Code Opus 4.5.  I will use the pronoun 'we' in this document to fairly credit the AI assistance without which this would not have been done.}.
+Curiously, a missing \emph{separation axiom} was discovered, without which the additive representation does not hold.
+This was discovered to be equivalent, in the bounded-below setting, to Alimov's \emph{no-anomalous-pairs} condition (Alimov~1950)~--~the classical hypothesis under which Hölder's representation theorem yields an order-embedding of an ordered semigroup into~$\R$. %% Thank Claude for the correction here!  I am not sure to what extent we need the "in the bounded-below setting" part.  Claude, you must be absolutely careful not to introduce extraneous details.
+These axioms play the role of the hidden richness assumptions that Cox-style approaches often require.
+Regularity assumptions were also needed to derive the Entropy formula.
+Additionally, we find that adding three completeness axioms ($\sigma$-closure of events, sequential completeness of the value scale, and Scott continuity of the valuation) recovers Kolmogorov's $\sigma$-additivity as a theorem~--~providing a unified foundation for both discrete and continuous probability theory. %% Thank you for the correctness as to the axioms we added.  The abstract is where we should insert the marketing claim and we should not understate the results.  I did not intend to cover all measure theory.  The point is to recover the core of Kolmogov's measure-theoretic probablitiy theory, and I tihnk your versoin UNDERSELLS what we have.  That is very, very bad.
+This work both presents the formalization of the foundations of inference and showcases how AI-assisted formalization can assist in axiomatic ablation studies over formal systems. %% I probably did not write a single line of Lean.  To call it AI-assisted theorem proving with substanital human steering is probably to over-weigh my own role.
+
+% As to the suggestion, no, I will not add childish line counts  file counts.  Longer isn't bette.
+% Unifying Kolmogorov's probability theory with the finite versions is a strong contribution.
+% Saying "without which it does not hold" already implies we proved that.
+% Yes, can you elaborate on what Halpbern said about Cox?  the 1999 paper?  We could mention that when we discuss continuity.
+% Great, yes, I will mention the proof route diversity and ispmilicyt.
+% We only have an abstract.  You dn't need to nag me about the draftnote.
+% I find the ablation of axioms in appendix C etc with entropy confusing, so presenting that will take care :).
+\end{abstract}
+
+\section{Introduction}
+Probability theory can be directly defined via Kolmogorov's measure theoretic axioms [cite]; however these do not explain \emph{why} this is the correct way to reason about Uncertainty.
+Cox's theorem [cite] derives the rules of probability from desiderata for ``degrees of belief'', but requires continuity and differentiability assumptions.
+
+%% [edit-1 reverted now that we're switching to pub26.bib: \cite{KnuthSkilling2012} -> \cite{ksfoi12}, matching the key in pub26.bib.]
+Knuth and Skilling~\cite{ksfoi12} presented an algebraic foundation of probabilistic inference, which is about combining and evaluating information.
+Under certain symmetries (associativity, distributivity, etc), the familiar calculi emerge.
+Under weakened assumptions, credal sets, intervals, and weaker calculi for reasoning about uncertainty emerge.  %% Not sure how to word this.
+
+This suggests a vision of future work in sketching out a \emph{probability hypercube} of domain assumption-grounded calculi for reasoning about uncertainty.
+E.g., dropping commutativity can lead to forms of quantum probability in a natural manner.
+
+\section{Events, Order, and Valuations}
+%% [edit-2: "distributive of events" -> "distributive lattice of events" -- missing word "lattice".]
+%% [edit-3: footnote: $human(x)$ etc. wrapped in \text{...}. Reason: bare names in math mode render as italic concatenated h*u*m*a*n*x. The \text{} keeps the prose font and renders correctly as the predicate name "human(x)".]
+We begin with a distributive lattice of events over a set $E$ where order lines up with entailment: if a entails b, then a should not be assigned a larger plausibility than b\footnote{E.g., $\text{human}(x) \Rightarrow \text{animal}(x)$ and $P(\text{human}(x)) \leq P(\text{animal}(x))$.}.
+%% [edit-4: typo "represenents" -> "represents".]
+%% [edit-5: typo "comibnation" -> "combination".]
+The top $\top$ and bottom $\bot$ events represent True and False.  Join ($a \vee b$) represents combination of events and meet ($a \wedge b$) represents intersection of events.
+
+\begin{definition}
+A \emph{distributive lattice} is a set $E$ equipped with $\vee,\wedge$ such that both operations are
+associative, commutative, idempotent, and satisfy absorption, and such that $\wedge$ distributes over
+$\vee$ (equivalently $\vee$ distributes over $\wedge$).
+\end{definition}
+
+%% Keeping below as formatting nudge
+\[
+  \Theta(x \oplus y) = \Theta(x) + \Theta(y).
+\]
+
+
+%% [edit-6: switched from inline \thebibliography{99} block to bibtex via pub26.bib.
+%%   - \bibliographystyle{plain} matches the alphabetical-by-author rendering of your old inline block.
+%%     Switch to alpha / amsplain / unsrt later if you prefer different label style.
+%%   - The 6 inline entries that were NOT in pub26.bib (Halpern1999, Halpern2003,
+%%     FaginHalpernMegiddo1990, Cox1946, Kolmogorov1933, Jaynes2003) are no longer rendered.
+%%     None of them are cited from the body yet, so this is benign for now -- but you'll
+%%     need to add them to pub26.bib when you fill in the [cite] placeholders on
+%%     lines ~91-92 (Kolmogorov1933, Cox1946) and any future Halpern1999 mention.
+%%   - Build sequence is now: pdflatex -> bibtex -> pdflatex -> pdflatex.]
+\bibliographystyle{plain}
+\bibliography{pub26}
+\end{document}

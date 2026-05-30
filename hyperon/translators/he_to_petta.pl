@@ -76,6 +76,10 @@ translate_term_mode(Mode, ['collapse-bind', Inner], [collapse, TInner]) :-
 translate_term_mode(Mode, ['superpose-bind', Inner], [superpose, TInner]) :-
     translate_term_mode(Mode, Inner, TInner), !.
 
+%% singleton-visible-witness → once
+translate_term_mode(Mode, ['singleton-visible-witness', Inner], [once, TInner]) :-
+    translate_term_mode(Mode, Inner, TInner), !.
+
 %% trusted new-space lowering:
 %% PeTTa miscompiles `let $s (new-space) ...` in compiled function bodies.
 %% In trusted mode, lower to a Prolog gensym call that PeTTa compiles reliably.

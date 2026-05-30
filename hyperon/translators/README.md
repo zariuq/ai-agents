@@ -18,8 +18,11 @@ runtime regression tests.
 # PeTTa -> HE
 ./translate.sh petta2he program.metta program_he.metta
 
-# PeTTa -> HE, preserving hyperpose for supporting runtimes
-./translate.sh petta2he --preserve-hyperpose program.metta program_he_hyperpose.metta
+# PeTTa -> PeTTa --he profile, preserving PeTTa goal-control surfaces
+./translate.sh petta2he --petta-he program.metta program_petta_he.metta
+
+# PeTTa -> PeTTa --he profile, preserving hyperpose too
+./translate.sh petta2he --petta-he --preserve-hyperpose program.metta program_he_hyperpose.metta
 
 # Run test suite
 ./translate.sh --test
@@ -110,10 +113,22 @@ Translates a file and all local imports into a self-contained directory:
 ### Extended Mode (PeTTa -> HE only)
 
 Emits `collect` instead of `collapse` for `foldall` lowering
-(CeTTa-compatible, not standard HE):
+and uses HE-extended committed-choice surfaces such as `select`.
+This is appropriate for CeTTa `--profile he-extended` and PeTTa `--he`,
+but it is not an upstream-HE-core claim:
 
 ```bash
 ./translate.sh petta2he --extended input.metta output.metta
+```
+
+### PeTTa HE Profile Mode (PeTTa -> HE only)
+
+Preserves PeTTa `--he` profile goal-control surfaces such as `once` and `cut`.
+Use this for artifacts intended to run specifically with `./run.sh --he`, not
+for backend-agnostic upstream HE examples:
+
+```bash
+./translate.sh petta2he --petta-he input.metta output.metta
 ```
 
 ### Hyperpose-Preserving Mode (PeTTa -> HE only)
@@ -152,9 +167,11 @@ hyperpose support.
 | `prog1 a b c` | `let $r a (let $_ b (let $_ c $r))` |
 | `foldall agg goal init` | `let $list (collapse goal) (foldl-atom ...)` |
 | `foldl-atom list init agg` | `foldl-atom list' init' $acc $item (eval (agg' $acc $item))` |
-| `reduce expr` | `eval expr'` |
+| `quote expr` | `quote expr'` in the pure lane; PeTTa-profile artifacts may use a helper representation |
+| `call/eval/reduce expr` | `unquote (quote expr')` for syntactic expressions; `unquote $code` for quoted-code variables |
 | `length (collapse expr)` | `let $tuple (collapse expr') (size-atom $tuple)` |
-| `test actual expected` | `test actual' expected'`, preserving the observable test surface |
+| `test actual expected` | Self-contained observable test via a file-local `test` helper |
+| `once expr` | Pure lane: first result via `collapse` + `case` + `decons-atom`; extended lane: `select 1 expr'`; PeTTa-profile lane: `once expr'` |
 | `unique-atom (collapse expr)` | `collapse (unique expr')` |
 | `hyperpose exprs` | `superpose exprs'` by default, or `hyperpose exprs'` with `--preserve-hyperpose` |
 | `@<` | `<s` (string comparison) |
@@ -163,12 +180,39 @@ hyperpose support.
 
 - Python FFI (`py-atom`, `py-call`, `py-dot`) — passed through unchanged
 - Git module imports — passed through unchanged
+- PeTTa `cut` search control — passed through only for PeTTa-profile targets;
+  the default pure PeTTa-to-HE translator rejects it because there is no
+  current clean upstream-HE-core lowering
+- PeTTa-native `msort` over arbitrary atoms — passed through only for
+  PeTTa-profile targets or when the source defines `msort` itself; the default
+  pure translator rejects unprovided `msort` because HE core has no specified
+  total order over arbitrary atoms
 - PeTTa-specific Prolog builtins (e.g., `fail`) — require manual adaptation
 
 Note: `hyperpose` is lowered to sequential nondeterministic choice by default,
 including computed-list cases such as `let $xs ... (hyperpose $xs)`. Use
 `--preserve-hyperpose` when targeting an HE runtime that genuinely supports a
 `hyperpose` surface; the default portability contract remains sequential.
+Likewise, default `once` is lowered through pure HE building blocks
+(`collapse`, `case`, and `decons-atom`), so it does not depend on `select`. Use
+`--extended` when deliberately targeting CeTTa-style `select`, and use
+`--petta-he` when targeting PeTTa `--he` performance/behavior specifically;
+that mode preserves `once`.
+
+Cross-engine validation has two distinct lanes:
+
+```bash
+# PeTTa --he profile artifacts in examples/he_translated/
+cd ../petta-he-profile
+HE_METTA_BIN=/path/to/metta tests/tools/check_generated_he_portability.sh
+
+# Fresh default pure-HE translator outputs under .he-logs/
+HE_METTA_BIN=/path/to/metta tests/tools/run_pure_he_engine_bench.sh
+```
+
+The second command is the stricter check for backend-neutral translation,
+because it regenerates default pure outputs instead of using PeTTa-profile
+artifacts.
 
 ## Verified Properties
 

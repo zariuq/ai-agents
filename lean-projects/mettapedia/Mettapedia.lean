@@ -103,6 +103,9 @@ import Mettapedia.Logic.PLNWorldModelKripkeCompleteness
 import Mettapedia.Logic.PLNWorldModelKripkeNeighborhoodEmbedding
 import Mettapedia.Logic.PLNWorldModelKripkeNeighborhoodCanonical
 import Mettapedia.Logic.PLNWorldModelKripkeWeighted
+import Mettapedia.Logic.ConceptOntology
+import Mettapedia.Logic.AbstractInheritance
+import Mettapedia.Logic.NARSInheritance
 import Mettapedia.Logic.PLNWorldModelExperiment
 import Mettapedia.Logic.PLNWorldModelExperimentRegression
 import Mettapedia.Logic.PLNWorldModelExperimentStochastic

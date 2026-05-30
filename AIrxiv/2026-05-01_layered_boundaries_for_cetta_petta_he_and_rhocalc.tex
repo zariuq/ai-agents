@@ -1,0 +1,513 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{url}
+
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+\setlist[itemize]{topsep=4pt,itemsep=3pt,parsep=0pt,leftmargin=1.4em}
+\setlist[enumerate]{topsep=4pt,itemsep=3pt,parsep=0pt,leftmargin=1.6em}
+\titleformat{\section}{\large\bfseries}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection.}{0.5em}{}
+
+\newcommand{\term}[1]{\texttt{#1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\lang}[1]{\textsf{#1}}
+\newcommand{\strong}[1]{\textbf{#1}}
+
+\title{Layered Boundaries for CeTTa, PeTTa, HE, PathMap/MORK, and Rhocalc\\
+\large A Conceptual Primer for Clean Semantics, Runtimes, and Interoperation}
+\author{}
+\date{2026-05-01}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note records a set of architectural conclusions for a family of experimental languages, runtimes, and backends centered on CeTTa, MeTTa-style orchestration, PeTTa, HE compatibility work, PathMap/MORK storage, and Rhocalc. The main thesis is simple: \emph{semantic cores, execution policies, storage backends, and host orchestration should be separated aggressively and named honestly}. When those seams are preserved, the system stays lean, formalization becomes tractable, benchmarking becomes honest, and later extensions remain possible without contaminating the core. When those seams are blurred, one obtains hidden default essences, duplicated semantics, expensive materialization paths, and interfaces that are hard to reason about. The paper summarizes the most useful conceptual decisions, non-obvious design rules, and naming conventions that emerged across these systems. It is intended as a didactic primer and a stable reference for future implementation work.
+\end{abstract}
+
+\section{Introduction}
+
+The recurring problem across experimental language projects is not merely missing features. The deeper problem is \emph{boundary confusion}. A runtime scheduler gets mistaken for the semantics of a calculus. A storage backend is treated as if it were the hidden essence of every space. A compatibility profile quietly expands into a second language. A debugging or text transport path becomes the ordinary data path. A variable identity convention that is only approximately true gets described as if it were exact.
+
+The systems considered here are rich enough that this confusion can happen in several places at once:
+
+\begin{itemize}
+  \item CeTTa uses spaces, backends, and host-level orchestration.
+  \item PeTTa adds callable, relational, and control surfaces whose semantics depend on phase distinctions.
+  \item HE compatibility work must remain precise without infecting default PeTTa behavior.
+  \item PathMap and MORK want high-performance structural storage with clean host boundaries.
+  \item Rhocalc wants to be a real process calculus, not a scheduler accidentally presented as a language.
+\end{itemize}
+
+The central outcome of the work summarized here is a layered architecture in which each subsystem keeps one job. The resulting picture is not merely neat; it is a practical guide to what should be merged, what should be deferred, what belongs in a library rather than a language mode, and which abstractions must remain explicit in documentation and proofs.
+
+\section{The Main Architectural Thesis}
+
+\subsection{One core, one job}
+
+A good core should be austere. It should expose the smallest public surface that is still semantically meaningful and operationally useful. Everything else should move outward into explicit layers.
+
+Across the systems discussed here, the same rule appears repeatedly:
+
+\begin{itemize}
+  \item A \strong{semantic core} should describe the mathematics or language meaning.
+  \item An \strong{executable layer} should provide a faithful, practical representation of that core.
+  \item A \strong{runtime layer} should choose execution policy, scheduling, tracing, caching, or multithreading.
+  \item A \strong{host layer} should orchestrate, search, compare, compile, and interface with other systems.
+\end{itemize}
+
+The error to avoid is letting any one of these layers masquerade as another.
+
+\subsection{Public relations, private policies}
+
+Whenever there is a choice between exposing a mathematical relation and exposing one engine policy, the default public surface should favor the relation.
+
+Examples:
+
+\begin{itemize}
+  \item In Rhocalc, one-step reduction is a relation. A deterministic \code{next-step} policy is a runtime choice.
+  \item In spaces, the abstract contract is public. Which backend owns hot-path state is a private implementation choice.
+  \item In HE and PeTTa, semantic forms and compatibility obligations are public. Which internal helper tables are used to implement them is private.
+\end{itemize}
+
+This rule does \emph{not} imply that runtimes must expose full branching search by default. It implies only that the language meaning and the engine policy must be distinguishable.
+
+\subsection{Do not standardize helper clutter}
+
+Many useful things are real but should not be standardized into a small core. Examples include benchmark drivers, scheduler controls, pretty-printers, tracing helpers, admin inventory queries, or temporary compatibility shims. If they are useful, they can live in explicit libraries, developer tools, or runtime APIs. They should not silently accumulate inside a semantic kernel.
+
+\section{Spaces and Backends}
+
+\subsection{Space is a contract, not hidden native-C storage}
+
+A major design correction is to treat \code{Space} as an interface shell rather than as a thin wrapper around one universal native-C representation.
+
+The clean long-term picture is:
+
+\begin{itemize}
+  \item \strong{Space} is the uniform contract.
+  \item Native C storage is one implementation of that contract.
+  \item PathMap is another implementation.
+  \item Imported or bridge-backed stores are further implementations.
+  \item Projection back into native CeTTa form is explicit and demand-driven.
+\end{itemize}
+
+This avoids the historical mistake in which specialized backends appeared to exist, while the real ownership of data still sat in a hidden native shadow.
+
+\subsection{Backend-owned hot state}
+
+Performance-sensitive storage must be owned where the performance-sensitive algorithms live. If PathMap or MORK is the real matching or counting engine, then it should own the hot-path representation. The host should not force every mutation through a mirrored universal store merely for convenience.
+
+The corresponding host rule is:
+
+\begin{quote}
+Native host materialization is an explicit adapter or projection layer, not the universal owner of all spaces.
+\end{quote}
+
+This makes it possible to have honest specialized backends without pretending they are merely decorated native spaces.
+
+\subsection{Projection and materialization must be explicit}
+
+Operations such as \code{get-atoms}, clone-like snapshotting, bridge export, or legacy host surfaces may need native materialization. That is acceptable, but it must be named honestly. A host consumer should request materialization instead of relying on hidden dual ownership.
+
+This principle leads to a clean vocabulary:
+
+\begin{itemize}
+  \item \strong{logical length}: the backend's own notion of size.
+  \item \strong{materialize native}: an explicit projection request.
+  \item \strong{export bridge}: an explicit structural export, ideally without text.
+\end{itemize}
+
+\subsection{Avoid text as the normal transport API}
+
+One of the sharpest performance lessons is that text dump/parse paths should not be ordinary transport mechanisms between backends. They are useful as fallbacks, diagnostics, and compatibility shims. They are not acceptable as the default copy path for large structured workloads.
+
+The ordinary path should be a \strong{coarse batch packet API}: row packets, multiplicity-aware transfer, structural expression bytes, and explicit variable/context metadata where needed. One-off operations such as \code{copy-atom} tend to be wrong abstractions because they standardize the least efficient path.
+
+\subsection{Exact identity versus structural storage}
+
+Backends such as PathMap and MORK want structural storage. The host, however, sometimes needs exact identity for round-tripping stored expressions, especially exact variable identity. The right compromise is:
+
+\begin{itemize}
+  \item keep internal storage structural,
+  \item add versioned packet/context metadata at the ABI boundary when exact host identity matters,
+  \item permit alpha-correct reconstruction when only structural behavior matters.
+\end{itemize}
+
+A useful guiding rule is:
+
+\begin{quote}
+Preserve exact canonical stored identity at the boundary; preserve only co-reference internally unless a stronger promise is explicitly required.
+\end{quote}
+
+This keeps the hot storage representation lean while making external exactness honest and versioned.
+
+\section{Variable Identity and Packet Design}
+
+\subsection{Why the problem exists}
+
+CeTTa variable identity, backend-local variable slots, and structural bytes are not the same thing. The problem becomes acute when expressions move across C, Rust, PathMap, MORK, query bindings, and host reconstruction.
+
+Any design that tries to recover exact host identity from spelling alone is fragile. Any design that forces structural backends to use host-global variable identifiers as their primary storage representation is also undesirable.
+
+\subsection{The boundary solution}
+
+The clean solution is a versioned packet format with explicit context or variable tables on the boundary, together with an internal presentation sidecar only where exact round-trip is required.
+
+Conceptually:
+
+\begin{itemize}
+  \item variable-free rows stay cheap and purely structural,
+  \item variable-bearing rows carry compact local-slot metadata,
+  \item query values distinguish variables originating from the query from variables originating in stored data,
+  \item exact decoding fails if required metadata is absent,
+  \item alpha-only synthesis is allowed only in explicitly alpha-only modes.
+\end{itemize}
+
+The key idea is that \emph{exactness is a protocol property, not an accidental guess}. That keeps the semantics crisp and the performance model understandable.
+
+\subsection{Multiplicity matters}
+
+A batch transfer format should represent multiplicity explicitly rather than expanding duplicates into repeated rows. This applies to counted spaces, query packets, and relation-style results. It matters both for performance and for semantic clarity.
+
+A good mental model is:
+
+\begin{quote}
+The structural row tells you \emph{what}; multiplicity tells you \emph{how many}; context metadata tells you \emph{which variables those occurrences correspond to at the host boundary}.
+\end{quote}
+
+\section{Language Profiles and Compatibility Work}
+
+\subsection{Profiles should remain small and explicit}
+
+Compatibility profiles are useful only when their obligations are clearly bounded. A profile should not turn into an implicit second language.
+
+Across PeTTa and HE work, the clean pattern is:
+
+\begin{itemize}
+  \item keep a tiny exact core with well-defined obligations,
+  \item classify rows into \emph{exact}, \emph{supports more}, and \emph{extension/support},
+  \item avoid reporting extra power as if it were conformance failure,
+  \item keep default behavior of the base language protected.
+\end{itemize}
+
+This is especially important for HE, where the compatibility lane should remain reviewable without forcing ordinary PeTTa users to think about HE everywhere.
+
+\subsection{Host-owned primitive surfaces must be explicit}
+
+Some surfaces are simply host-owned. They are not ordinary library equations, and pretending otherwise creates duplicated semantics. Examples include parsing surfaces, control constructs, and selected primitive arithmetic or atom operations.
+
+The general rule is:
+
+\begin{quote}
+If a surface is fundamentally a runtime or language primitive, own it explicitly in the host; do not duplicate its executable meaning in imported compatibility libraries.
+\end{quote}
+
+This is important for avoiding double ownership after imports, subtle duplicate answers, and confusing phase interactions.
+
+\subsection{Phase and callability are semantic facts}
+
+A recurring PeTTa lesson is that callability and evaluation phase should not be re-guessed ad hoc at runtime. A cleaner approach is declaration-time freezing of syntax when appropriate, together with explicit \code{call}, \code{eval}, or \code{reduce} forms that re-enter the live callable inventory deliberately.
+
+This keeps ordinary constructor terms from being retroactively interpreted as active runtime calls, while still supporting higher-order language constructs.
+
+\subsection{Runtime-added declarations must pass through the same lowering as static declarations}
+
+If a language has a lowering or adaptation phase for declarations, then runtime-added declarations must traverse the same semantic path. Otherwise dynamic addition and removal will not mean the same thing as their static counterparts. This is a conceptual issue, not just a bug pattern.
+
+\section{PeTTa and HE as Case Studies in Extension Hygiene}
+
+\subsection{PeTTa}
+
+PeTTa work uncovered several general rules:
+
+\begin{itemize}
+  \item distinguish relation-level semantics from evaluator shortcuts,
+  \item treat open generation and closed matching as different obligations,
+  \item keep callable metadata centralized rather than duplicated across lowering and runtime,
+  \item use profile or library separation for support surfaces rather than expanding the core silently.
+\end{itemize}
+
+One particularly important lesson is that partial success on closed data does not imply correctness for open generative use. Destructors and generators are different.
+
+\subsection{HE}
+
+HE compatibility work illustrates how to keep a compatibility profile from becoming intrusive.
+
+The clean shape is:
+
+\begin{itemize}
+  \item a small HE-specific bridge or facade,
+  \item a separate \code{src/he/*} implementation subtree,
+  \item lazy or explicit activation rather than unconditional semantic takeover,
+  \item separate reporting for exact core conformance, support-more rows, and extension rows.
+\end{itemize}
+
+A useful heuristic is:
+
+\begin{quote}
+A compatibility profile is mature when it preserves the host language's default behavior, exposes its exact obligations honestly, and can be reviewed without requiring maintainers to mentally carry it through unrelated subsystems.
+\end{quote}
+
+\section{Concurrency, Hyperpose, and Rhocalc}
+
+\subsection{Pure semantics versus execution policy}
+
+Concurrency work repeatedly reveals the same danger: confusing a relation with an executor. The calculus or language may describe many valid next states. A runtime must often choose one. Those are different things.
+
+\subsection{Hyperpose as a scheduler problem first}
+
+For Petta-style parallel exploration, the most honest minimum viable product is often not OS-thread parallelism but a \strong{single-threaded fair resumable scheduler}. The key properties are:
+
+\begin{itemize}
+  \item resumable branch cursors,
+  \item parking rather than immediate failure on temporary blocking conditions,
+  \item explicit cancellation and fairness,
+  \item a runtime substrate that can later support threads without changing the surface semantics.
+\end{itemize}
+
+This is enough to solve many real pathologies caused by restarting long deterministic prefixes from scratch.
+
+\subsection{Rhocalc should keep the calculus small}
+
+Rhocalc should be the executable closed-core process calculus layer. It should remain clearly distinct from any later runtime package that chooses scheduling, tracing, fairness, or multithreading policy.
+
+The clean division is:
+
+\begin{itemize}
+  \item \lang{rhocalc}: the language mode for the pure executable calculus,
+  \item \code{rho}: the tiny imported library for the pure calculus relation,
+  \item later \code{rho-run}: an optional runtime/orchestration library,
+  \item later \code{RhoMachine} and \code{RSpace}: runtime and storage objects, not new language modes.
+\end{itemize}
+
+\subsection{The important Rhocalc semantic split}
+
+A major conceptual clarification is that the public \code{rho:step} should correspond to the one-step relation, whereas a deterministic committed-choice machine step is an engine policy. This leads naturally to the distinction:
+
+\begin{itemize}
+  \item \code{rho:step}: relation-facing observation,
+  \item \code{rho:next-step}: engine policy, if later exposed,
+  \item \code{rho:run}: repeated engine policy,
+  \item \code{rho:all-steps}: practical materialization of the one-step relation, if desired.
+\end{itemize}
+
+The crucial point is that the engine should be described as \emph{choosing from the relation}, not as \emph{being the relation}.
+
+\subsection{Multithreading belongs to the runtime layer}
+
+Actual multithreading should live in the runtime layer, not in the pure calculus library. The calculus expresses concurrency; the runtime decides how to schedule and execute it. This suggests a development order:
+
+\begin{enumerate}
+  \item first make the pure relation and the deterministic runtime layer explicit,
+  \item then expose runtime controls through a library such as \code{rho-run},
+  \item only later optimize that runtime with threads or richer storage backends.
+\end{enumerate}
+
+This prevents premature coupling between semantic commitments and execution strategy.
+
+\section{MeTTa Over Rho}
+
+\subsection{The exciting work belongs outside \code{rho}}
+
+Once \code{rho} is kept lean, the most interesting work moves naturally into host libraries over \code{rho}. This is a feature, not a limitation.
+
+The most compelling host-level uses include:
+
+\begin{itemize}
+  \item bounded reachability and state-space exploration,
+  \item explicit reduction-graph construction,
+  \item scheduler experiments over the same relation,
+  \item deadlock and emission checks,
+  \item protocol analysis and bounded equivalence experiments,
+  \item compilation of higher-level protocol DSLs down to pure rho.
+\end{itemize}
+
+These should live in MeTTa libraries such as \code{rho-search}, \code{rho-strat}, and \code{rho-check}, not inside the pure \code{rho} core.
+
+\subsection{Primary direction: MeTTa over rho}
+
+The most natural direction of interoperation is \emph{MeTTa over rho}. That is, host code should be able to build rho processes as data, inspect them, step them, compare them, and later run them through explicit runtime services.
+
+The opposite direction, \emph{rho over MeTTa}, should only happen through explicit capability or service endpoints. A rho process should not silently evaluate arbitrary host expressions just because they appear in its payload. If host interaction is desired, it should occur through explicit adapters.
+
+\subsection{Capability values versus structural payloads}
+
+The clean boundary is:
+
+\begin{itemize}
+  \item structural host atoms may travel as data and be matched structurally when that is part of the chosen interface,
+  \item spaces, callbacks, runtime handles, and external services should cross only as opaque capability values or endpoint adapters.
+\end{itemize}
+
+This distinction is essential for clean interoperation with MORK, PathMap, and future RSpace-like services.
+
+\section{Formalization Strategy}
+
+\subsection{Prove the right object first}
+
+A repeated danger is proving the wrong thing beautifully. Formal work should be stratified so that semantic kernels are stabilized before byte-level or runtime-specific details harden.
+
+A good general order is:
+
+\begin{enumerate}
+  \item define the semantic core and its explicit boundaries,
+  \item define the exactness promises at external interfaces,
+  \item prove support-local or context-local coverage rather than unrealistic global recovery properties,
+  \item only then prove byte-level packet round-trips,
+  \item only after that connect concrete implementations or indices to the abstract semantics.
+\end{enumerate}
+
+\subsection{Local coverage is better than global fantasy}
+
+In contextual packet and opening-style proofs, a finite packet context only needs to cover the slots actually used by the current atom, row, or value. Requiring a finite context to recover a whole global assignment is the wrong theorem target and leads to awkward formalization.
+
+\subsection{Bridge laws should be strong enough, not maximal}
+
+Projection laws between CeTTa atoms and a host matcher or logic engine should preserve exactly what is needed for correctness: structure, co-reference, alpha-compatibility, and the intended matching behavior. A full inverse is often unnecessary at the first stage.
+
+\section{Benchmarking and Performance Philosophy}
+
+\subsection{Honest benchmark lanes}
+
+A useful benchmark taxonomy separates three kinds of evidence:
+
+\begin{itemize}
+  \item \strong{capability tests}: tiny semantic witnesses;
+  \item \strong{bulk or light stress}: medium-size operational probes that should be affordable in ordinary development;
+  \item \strong{heavy or SRS benchmarks}: large intentional stress tests that are opt-in and interpreted cautiously.
+\end{itemize}
+
+This prevents semantic correctness discussions from being dominated by giant workloads and prevents heavy stress tests from masquerading as ordinary regressions.
+
+\subsection{What to optimize first}
+
+Before heroic optimizations, one should remove obviously wrong boundaries:
+
+\begin{itemize}
+  \item text materialization in ordinary copy paths,
+  \item per-atom duplicate scans where a batch seen-set would suffice,
+  \item repeated parsing or lowering in hot loops,
+  \item hidden reconstruction of native shadow state during backend-native operations,
+  \item restart-from-root behavior where resumable cursors are available.
+\end{itemize}
+
+\subsection{Rust style and byte-level discipline}
+
+When using Rust for storage or matching engines, it is easy to write elegant code that quietly performs poorly. The relevant caution is not ``avoid Rust'' but rather ``keep the hot path byte-level and explicit.'' In practice this means minimizing parser round-trips, per-atom heap churn, hidden string work, and trait-heavy abstraction in critical loops.
+
+\section{Naming Conventions}
+
+Names should help maintain the layer split.
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.26\textwidth} p{0.68\textwidth}}
+\toprule
+\strong{Name} & \strong{Recommended meaning} \\
+\midrule
+\endhead
+\code{--lang rhocalc} & Pure executable rho-calculus surface. \\
+\code{rho} & Tiny imported pure library; relation-facing helper surface. \\
+\code{rho-run} & Optional runtime/orchestration library over rho. \\
+\code{RhoMachine} & Stateful runtime object; deterministic or threaded engine later. \\
+\code{RSpace} & Later storage/runtime substrate for rho-oriented coordination, distinct from the calculus itself. \\
+\code{rholang} & Reserved for genuine Rholang compatibility, not for scheduler policy. \\
+\code{Space} & Uniform host contract, not secretly native C storage. \\
+\code{PathMap} / \code{MORK} & Specialized structural backends or engines. \\
+\bottomrule
+\end{longtable}
+
+Names to avoid include overloaded forms such as \code{rho --extended}, \code{rhometta}, or any name that makes a runtime policy sound like a new language.
+
+\section{Merge Policy and Epoch Discipline}
+
+One recurring practical lesson is that a project should be merged once its \emph{semantic boundary is honest}, even if some larger runtime or extension story remains open.
+
+A good merge criterion for an experimental feature is:
+
+\begin{itemize}
+  \item the core public meaning is clear,
+  \item the current implementation matches that meaning closely enough to be useful,
+  \item extension work is clearly deferred rather than silently coupled,
+  \item the test suite witnesses the intended boundary,
+  \item benchmark or packaging claims are honest.
+\end{itemize}
+
+This is especially important for Rhocalc, where it is easy to keep the branch open forever while waiting for runtime, RSpace, or multithreaded scheduling questions. The correct move is usually to merge the honest calculus-facing tranche and let a later epoch own the runtime layer.
+
+\section{A Compact Engineering Plan for Future Work}
+
+The following order has repeatedly appeared as the cleanest way to continue without backtracking.
+
+\subsection*{Storage and backend work}
+\begin{enumerate}
+  \item Keep \code{Space} as contract and specialized backends as real owners.
+  \item Add or refine explicit materialization/projection hooks.
+  \item Standardize coarse batch packet paths before micro-APIs.
+  \item Add exact variable/context metadata only where exact host identity is part of the public contract.
+\end{enumerate}
+
+\subsection*{PeTTa and HE work}
+\begin{enumerate}
+  \item Keep callable and phase metadata centralized.
+  \item Keep host primitives explicit.
+  \item Keep compatibility reporting separated into exact, support-more, and extension categories.
+  \item Treat concurrency and scheduler work as runtime-layer additions, not semantic clutter.
+\end{enumerate}
+
+\subsection*{Rhocalc work}
+\begin{enumerate}
+  \item Keep \code{rhocalc} and \code{rho} pure and relation-first.
+  \item Freeze a short written layer note in the repository.
+  \item Add runtime controls later in a separate library such as \code{rho-run}.
+  \item Build search, strategy, and checking libraries over \code{rho:step} rather than expanding \code{rho} itself.
+\end{enumerate}
+
+\section{Summary of Settled Positions}
+
+For quick future reference, the following positions are the most important:
+
+\begin{enumerate}
+  \item \strong{Do not confuse semantics with execution policy.}
+  Relations are public; schedulers are runtime choices.
+
+  \item \strong{Do not force every specialized backend through a universal native shadow.}
+  Native projection is explicit; backend-owned hot state is legitimate.
+
+  \item \strong{Do not use text as the ordinary transport between rich backends.}
+  Prefer coarse structural packet interfaces with multiplicity and context metadata.
+
+  \item \strong{Do not standardize helper clutter into semantic cores.}
+  Use explicit runtime, developer, or compatibility libraries.
+
+  \item \strong{Keep imported pure libraries tiny.}
+  Let MeTTa or host libraries provide search, strategy, and orchestration.
+
+  \item \strong{Keep compatibility reporting honest.}
+  Distinguish exact conformance, extra support, and extension behavior.
+
+  \item \strong{Prove the right object before proving bytes.}
+  Semantic boundary first, protocol exactness second, byte-level refinement after that.
+
+  \item \strong{Merge honest semantic tranches before runtime dreams are finished.}
+  Separate epochs are healthier than branches held open forever.
+\end{enumerate}
+
+\section{Conclusion}
+
+The main lesson of this body of work is that clarity of layering is not cosmetic. It is the difference between a system that can grow and one that quietly accumulates contradictions. Semantic kernels should remain small and honest. Runtime policy should be explicit. Storage ownership should belong where performance-critical algorithms live. Imported libraries should stay lean enough to be correct and complete. Richer search, orchestration, checking, and runtime control should move outward into libraries and runtime objects rather than inward into the core.
+
+If this note succeeds, it should make future work simpler: the next design question should first ask \emph{which layer does this belong to?} Once that is answered well, many implementation choices become almost obvious.
+
+\end{document}

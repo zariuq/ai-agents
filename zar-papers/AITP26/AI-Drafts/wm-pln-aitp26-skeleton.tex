@@ -1,0 +1,116 @@
+% easychair.tex,v 3.5 2017/03/15
+% Skeleton mirrors completing_mm-lean4.tex structure; content to be filled in.
+
+\documentclass{easychair}
+
+\usepackage{doc}
+
+% For compactenum
+% \usepackage{paralist}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{footnoterange}
+\usepackage{todonotes}
+\usepackage{cite}
+\usepackage{siunitx}
+\usepackage{amsmath,amssymb,amsthm}
+
+\newtheorem{theorem}{Theorem}
+
+% Convenience macros carried over from the prior WM-PLN draft; trim if unused.
+\newcommand{\Evidence}{\mathsf{Evidence}}
+\newcommand{\State}{\mathsf{State}}
+\newcommand{\Query}{\mathsf{Query}}
+\newcommand{\revise}{\mathbin{\oplus}}
+\newcommand{\tensor}{\mathbin{\otimes}}
+\newcommand{\ev}{\mathsf{ev}}
+\newcommand{\side}{\Sigma}
+% \code was already defined by the `doc' package, so we override it.
+\renewcommand{\code}[1]{\texttt{#1}}
+
+\title{The World Model Calculus: \\ Autoformalizing and Extending Probabilistic Logic Networks
+%Note, the below is old.
+% \thanks{Supported by Dar CISCO No. 2023-322029 A Formalization of Ethics for Decision Support,
+% by the ERC Consolidator grant no. 649043 AI4REASON,
+% and by the Czech project AI\&Reasoning CZ.02.1.01/0.0/0.0/15\_003/
+% 0000466 and the European Regional Development Fund.}
+}
+
+% Authors are joined by \and. Their affiliations are given by \inst, which indexes
+% into the list defined using \institute
+%
+\author{
+Zarathustra Amadeus Goertzel%\inst{1}
+\and Oruži\thanks{A collaboration of AI coworkers consisting of at least Claude 4.x, Codex 5.2+, and ChatGPT Pro.}
+}
+
+% Institutes for affiliations are also joined by \and,
+\institute{
+  Czech Technical University in Prague, Czech Republic
+ }
+
+%  \authorrunning{} has to be set for the shorter version of the authors' names;
+% otherwise a warning will be rendered in the running heads. When processed by
+% EasyChair, this command is mandatory: a document without \authorrunning
+% will be rejected by EasyChair
+
+\authorrunning{Goertzel \& Oruži}
+
+% \titlerunning{} has to be set to either the main title or its shorter
+% version for the running heads. When processed by
+% EasyChair, this command is mandatory: a document without \titlerunning
+% will be rejected by EasyChair
+\titlerunning{World Model Calculus}
+
+\begin{document}
+\maketitle
+
+\vspace{-3mm}
+\paragraph*{Introduction:}
+% TODO: motivate the World-Model calculus and the autoformalization angle.
+% Frame: PLN as a probabilistic-logic system, the gap that a formal semantic kernel fills,
+% and why the AITP community should care (small kernel, fast compiled rules proved relative
+% to declared model classes).
+
+\vspace{-3mm}
+\paragraph*{The World-Model Calculus:}
+% TODO: the kernel itself.
+% Evidence / State / Query, the revise (\revise) and tensor (\tensor) combinators,
+% Sigma-guarded inference, the no-go theorem, and the tractable sublayers
+% that subsume MLN / ProbLog / PLN as instances.
+
+\vspace{-3mm}
+\paragraph*{Autoformalizing and Extending PLN:}
+% TODO: the Lean 4 formalization (zero sorries), the CeTTa implementation,
+% the higher-order chaining and modal instantiations,
+% and how the formalization extends PLN beyond its informal description.
+
+\vspace{-3mm}
+\paragraph*{Zar's role as the human instigator:}
+% TODO: mirror the mm-lean4 paper's angle on human-AI collaboration.
+% What design choices required human judgment; where the AIs ran into walls;
+% how the formalization discipline was maintained.
+
+\vspace{-3mm}
+\paragraph*{Futureward:}
+% TODO: the broader vision.
+% How verified probabilistic reasoning fits into AGI architectures (Hyperon, OpenCog),
+% the bridge to ATP/ITP communities, and what comes next.
+
+\vspace{-3mm}
+\paragraph*{Acknowledgements}
+Many thanks to the PLN authors and NARS researchers for their prior work and some ongoing discussions.
+Many thanks to the Hyperon and OpenCog community for the broader research context.
+Thanks to OpenAI for providing amazing AI services at reasonable costs.
+This work is supported by Dar Novamente --- Cognitive Inference Control.
+
+
+\bibliographystyle{plain}
+\newpage
+\vspace{-3mm}
+\bibliography{aitp26}
+
+% \newpage
+% \appendix
+
+\end{document}

@@ -85,6 +85,8 @@ megalodon/LICENSE
 megalodon/README
 megalodon/makebytecode
 megalodon/makeopt
+gf-rgl/
+gf-wordnet/
 
 # Document Repos
 ethics/
@@ -226,3 +228,7 @@ all_mm4*.txt
 verifier_unit_run_*.log
 **/_scratch/
 !lean-projects/mettapedia/EXTERNAL_REPOS.md
+
+# ZarWiki is private by default — the entire local knowledgebase (markdown
+# sources, generated site/, mirrors, love-shrine) stays out of version control.
+zarwiki/

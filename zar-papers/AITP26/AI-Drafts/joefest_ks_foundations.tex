@@ -1,0 +1,324 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{url}
+\hypersetup{colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black}
+\setlist[itemize]{leftmargin=1.4em,itemsep=0.25em,topsep=0.25em}
+\setlist[enumerate]{leftmargin=1.6em,itemsep=0.25em,topsep=0.25em}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{axiom}[theorem]{Axiom}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% Lean references are kept out of the main exposition; this footnote helper carries them.
+\newcommand{\LeanFile}[1]{\footnote{\raggedright\textbf{Lean}: \path{#1}.\par}}
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+
+\sloppy
+
+\title{Symmetry Foundations for Inference in Lean\\From Finite Lattices to Infinitary Probability}
+\author{Zarathustra Amareis Goertzel\\\small Mettapedia Project}
+\date{Extended abstract for JoeFest 2026}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We report a Lean~4 formalization of the algebraic route from order and symmetry to the
+probability calculus and Shannon information measures, in the tradition of Knuth and
+Skilling~\cite{KnuthSkilling2012}. The development makes precise which hypotheses each
+representation theorem actually consumes: an Alimov-style \emph{no anomalous pairs}
+condition (equivalent to a separation property) for the additive representation, a
+positivity gate for the product representation, and an explicit regularity gate
+(measurability or monotonicity) for the variational/Cauchy step. The same algebraic
+skeleton extends to infinitary probability: under three independent completeness axioms
+($\sigma$-closure of events, sequential completeness of the value scale, and Scott
+continuity of the valuation), $\sigma$-additivity is recovered as a theorem. The route
+thus offers a single auditable trail of hypotheses from ordered-semigroup symmetry,
+through addition, multiplication, and entropy, to $\sigma$-additive probability.
+\end{abstract}
+
+\section{Introduction}
+
+Foundations of probabilistic inference fall into two main camps. The
+\emph{measure-theoretic} foundation of Kolmogorov~\cite{Kolmogorov1933} starts from a
+$\sigma$-algebra of events and a countably additive probability measure as primitives.
+The \emph{plausibility-theoretic} foundation of Cox~\cite{Cox1946} and
+Jaynes~\cite{Jaynes2003} derives the sum and product rules from consistency desiderata on
+a real-valued plausibility function, but is sensitive to richness assumptions on the
+plausibility scale: Halpern~\cite{Halpern1999} showed that on small finite domains the
+classical functional-equation arguments need not yield the probability calculus at all.
+
+Knuth and Skilling~\cite{KnuthSkilling2012} occupy a third position. They start with
+\emph{ordered} valuations on finite distributive lattices, identify a small list of
+order-and-symmetry axioms, and derive addition, multiplication, conditioning, and entropy
+as forced numerical representations. The route is finitary by design and avoids global
+continuity hypotheses, so the algebraic argument never depends on a continuum of
+plausibility values.
+
+This extended abstract summarizes a Lean~4 formalization%
+\LeanFile{Mettapedia/ProbabilityTheory/KnuthSkilling/FoundationsOfInference.lean}
+of that route, and three further results obtained in the process: an Alimov-style necessity
+witness for the density axiom, an explicit Cauchy regularity gate for the variational step,
+and an infinitary bridge that recovers $\sigma$-additivity from the same algebraic
+skeleton.
+
+\section{Additive representation}
+
+Let $S$ be a totally ordered set carrying a binary operation $\oplus$ that represents the
+valuation of disjoint joins on a distributive lattice of events. Write $x^{(n)}$ for the
+$n$-fold iteration $x \oplus \cdots \oplus x$.
+
+\begin{axiom}[Ordered semigroup]
+$\oplus$ is associative and strictly monotone in each argument: $x < y$ implies
+$x \oplus z < y \oplus z$ and $z \oplus x < z \oplus y$.
+\end{axiom}
+
+\begin{axiom}[No anomalous pairs, Alimov~\cite{Alimov1950}]
+There is no pair $a, b > 0$ with $a^{(n)} < b^{(n)} < a^{(n+1)}$ for every $n \ge 1$.
+\end{axiom}
+
+The negation describes \emph{infinitesimal} differences invisible to finite iteration;
+ruling them out is precisely what forces one-dimensionality. An equivalent rational-density
+formulation, which we call \emph{separation}, asks that for any $0 < x < y$ and any positive
+$a$ there exist positive integers $m, n$ with $x^{(m)} < a^{(n)} \le y^{(m)}$. The
+formalization proves the equivalence both in the bounded-below (probability) setting and in
+a bilateral setting that distinguishes positive and negative cones, and shows that
+separation already implies commutativity of $\oplus$%
+\LeanFile{Mettapedia/ProbabilityTheory/KnuthSkilling/Core/Algebra.lean}.
+
+\begin{theorem}[Additive representation]
+\textbf{Assumptions.} $(S, \oplus)$ is a linearly ordered semigroup with strict
+monotonicity and no anomalous pairs.
+\textbf{Conclusion.} There exists an order embedding $\Theta : S \hookrightarrow (\R, +)$
+with
+\[
+\Theta(x \oplus y) = \Theta(x) + \Theta(y),
+\]
+unique up to positive affine rescaling. If $S$ has an identity $0$ that is also the minimum
+of the order, $\Theta$ can be normalized so that $\Theta(0) = 0$ and $\Theta(x) \ge 0$ for
+all $x$.
+\end{theorem}
+
+We have three independent proof routes%
+\LeanFile{Mettapedia/ProbabilityTheory/KnuthSkilling/Additive/}: H\"older embedding (the
+conceptually cleanest path, via Eric Paul's \texttt{OrderedSemigroups}
+library~\cite{Paul2024,Holder1901}), Dedekind cuts (an explicit density construction from
+separation), and grid induction (a constructive finite-lattice route closer to the original
+Knuth--Skilling exposition).
+
+\begin{remark}[Necessity of the density axiom]
+The lexicographic semigroup $(\N \times \N, +)$ satisfies associativity and strict
+monotonicity but contains an anomalous pair: with $a = (1, 0)$ and $b = (1, 1)$, every
+$a^{(n)} = (n, 0) < b^{(n)} = (n, n) < a^{(n+1)} = (n+1, 0)$. No order embedding into
+$(\R, +)$ exists, so the density axiom is not a consequence of associativity and
+monotonicity alone.
+\end{remark}
+
+\begin{remark}[Bounded-below normalization is also necessary]
+$(\Z, +, \le)$ satisfies the ordered-semigroup axioms and has no anomalous pairs, yet every
+order embedding $\Theta$ assigns negative values to negative integers%
+\LeanFile{Mettapedia/ProbabilityTheory/KnuthSkilling/Additive/Counterexamples/NegativeWithoutIdentity.lean}.
+Positivity of the representation is therefore not automatic from order preservation alone;
+it requires that the identity element be the minimum of the order.
+\end{remark}
+
+\section{Product, conditioning, and the variational gate}
+
+A second binary operation $\otimes$ represents the valuation of independent products. After
+regrading $\oplus$ to addition, we ask that $\otimes$ distribute over $+$, be associative,
+and be positive ($x, y > 0 \Rightarrow x \otimes y > 0$).
+
+\begin{theorem}[Product representation]
+Under the above assumptions on $\otimes$, there exists $C > 0$ such that
+\[
+x \otimes y = \frac{xy}{C}.
+\]
+\end{theorem}
+
+The proof reduces to a Cauchy-type functional equation in one variable; positivity of
+$\otimes$ supplies the monotonicity needed to exclude Hamel-basis solutions%
+\LeanFile{Mettapedia/ProbabilityTheory/KnuthSkilling/Multiplicative/Main.lean}. From the
+product representation and a chaining axiom on conditional valuations one then recovers
+the familiar product and Bayes rules.
+
+\paragraph{Variational potentials and entropy.}
+For a variational potential $H$ whose derivative satisfies the separated functional
+equation $H'(m_x m_y) = \lambda(m_x) + \mu(m_y)$, two distinct gates are
+needed~\cite{Aczel1966,Kuczma2009}. \emph{Globality} requires that the local
+Lagrange-multiplier identity hold across a sufficiently rich class of inputs (so that the
+equation is global, not just stationary-point-local). \emph{Regularity} requires that the
+resulting Cauchy equation be solved under measurability, monotonicity, or continuity at one
+point, in order to exclude pathological Hamel solutions. With both gates in force,
+$H'(m) = B + C \log m$, hence
+\[
+H(m) = A + Bm + C(m \log m - m),
+\]
+which specializes to Kullback--Leibler divergence and Shannon entropy:
+\[
+D(w \| u) = \sum_i w_i \log \frac{w_i}{u_i},
+\qquad
+S(p) = -\sum_i p_i \log p_i.
+\]
+Both gates are tracked explicitly in the formalization%
+\LeanFile{Mettapedia/ProbabilityTheory/KnuthSkilling/Variational/Main.lean}; without
+regularity, Cauchy's equation admits uncountably many non-measurable solutions and the
+algebraic derivation of entropy fails. The same Cauchy step appears in the
+Shore--Johnson axiomatization of cross-entropy~\cite{ShoreJohnson1980}, and it is at this
+shared step that both routes must place their regularity gate.
+
+\section[Infinitary bridge: sigma-additivity]{Infinitary bridge: $\sigma$-additivity}
+
+A long-standing limitation of algebraic foundations of probability is that the resulting
+valuation is only \emph{finitely} additive, while Kolmogorov's framework takes
+$\sigma$-additivity as primitive. The de~Finetti--Kolmogorov debate~\cite{deFinetti1974}
+is partly a debate about whether this gap is benign. The algebraic route closes the gap by
+adding three natural extension axioms, each independent of the finitary symmetries.
+
+\begin{axiom}[$\sigma$-complete events]
+Every countable family $(e_n)$ of events in the lattice $E$ has a join $\bigsqcup_n e_n \in E$.
+\end{axiom}
+
+\begin{axiom}[Scale completeness]
+Every bounded monotone sequence in the value scale $S$ has a supremum.
+\end{axiom}
+
+\begin{axiom}[Scott continuity of the valuation]
+The valuation $v : E \to S$ preserves directed suprema: $v(\bigsqcup_i e_i) = \bigsqcup_i v(e_i)$.
+\end{axiom}
+
+\begin{theorem}[$\sigma$-additivity from K\&S\,+\,completeness]
+Under the K\&S axioms (associativity, strict monotonicity, no anomalous pairs, bounded-below
+identity) plus the three completeness axioms above, the composition $\mu = \Theta \circ v$
+is $\sigma$-additive: for any pairwise disjoint sequence $(e_n) \subseteq E$,
+\[
+\mu\!\Bigl( \bigsqcup_n e_n \Bigr) \;=\; \sum_{n=0}^\infty \mu(e_n).
+\]
+\end{theorem}
+
+The three axioms are mutually independent and none is a consequence of the finitary
+axioms%
+\LeanFile{Mettapedia/ProbabilityTheory/KnuthSkilling/Core/ScaleCompleteness.lean}: countable
+joins can fail in a Boolean algebra that supports only finite ones; an Archimedean scale
+need not be sequentially complete (the rationals); and a finitely-additive valuation need
+not respect directed suprema (any purely finitely-additive measure on $\N$). Categorically,
+the move from Boolean algebras to $\sigma$-frames is exactly the right setting for these
+axioms, and Scott continuity is the natural morphism condition. The algebraic regrade
+$\oplus \to +$ continues to do the structural work in the infinitary case:
+$\sigma$-additivity becomes a theorem about the interaction of Scott continuity with the
+additive coordinate, not a primitive postulate.
+
+\section{Place in the landscape}
+
+\begin{table}[h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Foundation} & \textbf{Events} & \textbf{Codomain} & \textbf{Key axiom} & \textbf{Regularity gate} \\
+\midrule
+Kolmogorov~\cite{Kolmogorov1933} & $\sigma$-algebra & $[0,1]$ & $\sigma$-additivity & --- \\
+Cox--Jaynes~\cite{Cox1946,Jaynes2003} & propositions & $[0,1]$ & consistency & continuity \\
+de~Finetti~\cite{deFinetti1974} & events & $[0,1]$ & finite additivity & --- \\
+K\&S, finite~\cite{KnuthSkilling2012} & lattice & ordered scale & associativity & no anomalous pairs \\
+K\&S\,+\,completeness (this work) & $\sigma$-lattice & complete scale & + Scott cont. & + completeness \\
+Shore--Johnson~\cite{ShoreJohnson1980} & distributions & divergence & system independence & measurability \\
+\bottomrule
+\end{tabular}
+\caption{Where each foundation places its primary structural axiom and its regularity gate.}
+\end{table}
+
+The Knuth--Skilling route makes finite additivity, multiplication, and entropy
+\emph{derived} quantities; under the three completeness axioms above, $\sigma$-additivity
+joins them as a theorem. Because the algebraic argument never invokes a continuum of
+plausibility values, the finite-lattice case does not need to mimic one to support the
+calculus, and each step from finite symmetry up to measure-theoretic probability appears
+as a separately auditable bridge axiom rather than a primitive postulate.
+
+\section*{Acknowledgments}
+Thanks to Ben Goertzel for proposing the separation axiomatization and for first pointing
+me toward the Knuth--Skilling paper, and to Eray \"Ozkural for ongoing discussion of the
+algebraic foundations program. The formalization builds on Mathlib and on Eric Paul's
+\texttt{OrderedSemigroups} library~\cite{Paul2024}.
+
+\begin{thebibliography}{99}
+
+\bibitem{KnuthSkilling2012}
+K.~H. Knuth and J.~Skilling.
+\newblock Foundations of inference.
+\newblock \emph{Axioms}, 1(1):38--73, 2012.
+
+\bibitem{Halpern1999}
+J.~Y. Halpern.
+\newblock Cox's theorem revisited.
+\newblock \emph{Journal of Artificial Intelligence Research}, 11:429--435, 1999.
+
+\bibitem{Cox1946}
+R.~T. Cox.
+\newblock Probability, frequency, and reasonable expectation.
+\newblock \emph{American Journal of Physics}, 14:1--13, 1946.
+
+\bibitem{Kolmogorov1933}
+A.~N. Kolmogorov.
+\newblock \emph{Foundations of the Theory of Probability}.
+\newblock Chelsea, New York, 1956. Original German edition 1933.
+
+\bibitem{Jaynes2003}
+E.~T. Jaynes.
+\newblock \emph{Probability Theory: The Logic of Science}.
+\newblock Cambridge University Press, 2003.
+
+\bibitem{deFinetti1974}
+B.~de~Finetti.
+\newblock \emph{Theory of Probability} (2 vols).
+\newblock Wiley, 1974--1975.
+
+\bibitem{Aczel1966}
+J.~Acz\'el.
+\newblock \emph{Lectures on Functional Equations and Their Applications}.
+\newblock Academic Press, 1966.
+
+\bibitem{Kuczma2009}
+M.~Kuczma.
+\newblock \emph{An Introduction to the Theory of Functional Equations and Inequalities:
+Cauchy's Equation and Jensen's Inequality}, 2nd ed., edited by A.~Gil\'anyi.
+\newblock Birkh\"auser, 2009.
+
+\bibitem{Alimov1950}
+N.~G. Alimov.
+\newblock On ordered semigroups.
+\newblock \emph{Izv. Akad. Nauk SSSR Ser. Mat.}, 14:569--576, 1950.
+
+\bibitem{Holder1901}
+O.~H\"older.
+\newblock Die Axiome der Quantit\"at und die Lehre vom Mass.
+\newblock \emph{Berichte \"uber die Verhandlungen der K\"oniglich S\"achsischen
+Gesellschaft der Wissenschaften zu Leipzig, Math.-Phys. Cl.}, 53:1--64, 1901.
+
+\bibitem{ShoreJohnson1980}
+J.~E. Shore and R.~W. Johnson.
+\newblock Axiomatic derivation of the principle of maximum entropy and the principle of
+minimum cross-entropy.
+\newblock \emph{IEEE Trans. Inform. Theory}, 26(1):26--37, 1980.
+
+\bibitem{Paul2024}
+E.~Paul.
+\newblock OrderedSemigroups: Formalization in Lean~4.
+\newblock GitHub repository, 2024. \url{https://github.com/ericluap/OrderedSemigroups}
+
+\end{thebibliography}
+\end{document}
