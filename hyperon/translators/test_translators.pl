@@ -356,9 +356,13 @@ test_petta_to_he(31_2, "assertion-only msort lowers to bag-equality helper",
     [test, [msort, [collapse, [match, '&self', [foo, '$x'], '$x']]], [1, 1, 2]],
     ['petta-test-bag-equal', [match, '&self', [foo, '$x'], '$x'], [1, 1, 2]]).
 
-test_petta_to_he(31_3, "callable source-variable application lowers through petta-apply2",
+test_petta_to_he(31_3, "variable-headed tuples materialize through atom-subst so HE can distinguish data from callable heads",
     ['$f', 43, 44],
-    ['petta-apply2', '$f', 43, 44]).
+    [eval, ['atom-subst', '$f', '$fun', ['$fun', 43, 44]]]).
+
+test_petta_to_he(31_4, "singleton variable-headed tuples materialize through explicit tuple construction",
+    ['$f'],
+    singleton_tuple_shape('$f')).
 
 test_petta_to_he_program(1, "program-level direct test uses petta-test-equal helper",
     [['=', [probe], [test, ['+', 1, 2], 3]]],
@@ -569,6 +573,10 @@ test_petta_to_he(38_1, "pure finite exists match emptiness check keeps the canon
 test_petta_to_he(38_2, "pure singleton once over deterministic equality lowers to dedicated singleton witness surface",
     [once, ['=', '$x', 42]],
     singleton_visible_witness_shape([unify, '$x', 42, 'True', 'Empty'])).
+
+test_petta_to_he(38_3, "flat tuples of computed expressions stay flat instead of re-associating as applications",
+    [[foo, 1], [bar, 2], [baz, 3]],
+    [[foo, 1], [bar, 2], [baz, 3]]).
 
 test_petta_to_he(39, "plain let preserves tuple binders as patterns",
     [let, ['$x', '$y'], [1, 2], ['$x', '$y']],
@@ -1023,6 +1031,16 @@ run_one_pe(N, Name, Input, singleton_visible_witness_shape(ExpectedInner)) :- !,
     ->  (   singleton_visible_witness_result_shape(Result, ExpectedInner)
         ->  format("  ✓ ~w: ~w~n", [N, Name])
         ;   format("  ✗ ~w: ~w (bad singleton-visible-witness lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe(N, Name, Input, singleton_tuple_shape(ExpectedHead)) :- !,
+    (   pe_translate_term(Input, Result)
+    ->  (   Result = ['cons-atom', ExpectedHead, Tail],
+            ( Tail == '()' ; Tail == [] )
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w (bad singleton tuple lowering: ~w)~n", [N, Name, Result])
         )
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
     ).
@@ -1566,7 +1584,8 @@ run_one_pe_program(N, Name, Input, program_normalizes_function_call_inversion_eq
 
 run_one_pe_program(N, Name, Input, program_normalizes_structural_function_call_inversion_let_pattern) :- !,
     (   pe_translate_program(Input, Result)
-    ->  (   memberchk(['=', [f, '$Head', '$Tail'], [append, ['$Head'], '$Tail']], Result),
+    ->  (   memberchk(['=', [f, '$Head', '$Tail'],
+                       [append, ['cons-atom', '$Head', '()'], '$Tail']], Result),
             memberchk(['=', [probe], Body], Result),
             contains_symbol('decons-atom', Body),
             contains_symbol('first-from-pair', Body),
@@ -1627,10 +1646,9 @@ run_one_pe_program(N, Name, Input, program_normalizes_duplicate_function_head_va
 
 run_one_pe_program(N, Name, Input, program_normalizes_callable_equality_condition) :- !,
     (   pe_translate_program(Input, Result)
-    ->  (   memberchk([':', Apply1, ['->', 'Atom', 'Atom', 'Atom']], Result),
-            memberchk(['=', [PartialHelper, Param], ['+', 2, Param]], Result),
+    ->  (   memberchk(['=', [PartialHelper, Param], ['+', 2, Param]], Result),
             memberchk(['=', [trickyspec, '$f'],
-                       [let, CallResult, [Apply1, '$f', 1],
+                       [let, CallResult, [eval, ['atom-subst', '$f', '$fun', ['$fun', 1]]],
                         [if, ['==', CallResult, 2],
                          [trickyspec, PartialHelper],
                          CallResult]]], Result)

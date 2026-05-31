@@ -448,6 +448,17 @@ translate_quoted_term_mode(Mode, [eval, Expr], TExpr) :-
     translate_eval_like_mode(Mode, Expr, TExpr), !.
 translate_quoted_term_mode(Mode, [reduce, Expr], TExpr) :-
     translate_eval_like_mode(Mode, Expr, TExpr), !.
+translate_quoted_term_mode(Mode, ['__tr-raw-apply1', Head, Arg], TExpr) :-
+    translate_quoted_term_mode(Mode, Head, THead),
+    translate_quoted_term_mode(Mode, Arg, TArg),
+    TExpr = [eval, ['atom-subst', THead, '$fun', ['$fun', TArg]]],
+    !.
+translate_quoted_term_mode(Mode, ['__tr-raw-apply', Head|Args], TExpr) :-
+    Args \= [],
+    translate_quoted_term_mode(Mode, Head, THead),
+    translate_quoted_term_list_mode(Mode, Args, TArgs),
+    TExpr = [eval, ['atom-subst', THead, '$fun', ['$fun'|TArgs]]],
+    !.
 translate_quoted_term_mode(Mode, ['bind!', Ref, ['new-state', Init]],
                            [SetFun, TRef, TInit]) :-
     petta_state_set_fun(SetFun),
@@ -519,21 +530,25 @@ translate_quoted_term_mode(Mode, [Head|Args], TExpr) :-
     expr_data_fun_positions(Head, QuotePositions),
     translate_quoted_args_with_quote_positions(Mode, Args, QuotePositions, TArgs),
     TExpr = [Head|TArgs], !.
+translate_quoted_term_mode(Mode, [Head], ['cons-atom', THead, '()']) :-
+    source_variable_atom(Head),
+    \+ petta_he_profile_mode(Mode),
+    translate_quoted_term_mode(Mode, Head, THead), !.
 translate_quoted_term_mode(Mode, [Head|Args], [Head|TArgs]) :-
     petta_he_profile_mode(Mode),
     source_variable_atom(Head),
-    Args \= [],
     translate_quoted_term_list_mode(Mode, Args, TArgs), !.
+translate_quoted_term_mode(Mode, [Head|Args], TExpr) :-
+    source_variable_atom(Head),
+    \+ petta_he_profile_mode(Mode),
+    Args \= [],
+    build_raw_function_call_inversion_apply(Head, Args, RawApply),
+    translate_quoted_term_mode(Mode, RawApply, TExpr), !.
 translate_quoted_term_mode(Mode, [Head|Args], [THead|TArgs]) :-
-    petta_he_profile_mode(Mode),
     is_list(Head),
     Args \= [],
     translate_quoted_term_mode(Mode, Head, THead),
     translate_quoted_term_list_mode(Mode, Args, TArgs), !.
-translate_quoted_term_mode(Mode, [Head|Args], TExpr) :-
-    source_variable_atom(Head),
-    Args \= [],
-    translate_quoted_callable_source_var_application_mode(Mode, Head, Args, TExpr), !.
 translate_quoted_term_mode(Mode, [Head|Args], TExpr) :-
     Args \= [],
     needs_curried_application(Head, Args),
@@ -1103,22 +1118,25 @@ translate_term_mode(Mode, [case, Scrutinee, Branches], [case, TScrutinee, TBranc
     translate_case_branches_mode(Mode, Branches, TBranches),
     !.
 
+translate_term_mode(Mode, [Head], ['cons-atom', THead, '()']) :-
+    source_variable_atom(Head),
+    \+ petta_he_profile_mode(Mode),
+    translate_term_mode(Mode, Head, THead), !.
 translate_term_mode(Mode, [Head|Args], [Head|TArgs]) :-
     petta_he_profile_mode(Mode),
     source_variable_atom(Head),
-    Args \= [],
     translate_term_list_mode(Mode, Args, TArgs), !.
+translate_term_mode(Mode, [Head|Args], TExpr) :-
+    source_variable_atom(Head),
+    \+ petta_he_profile_mode(Mode),
+    Args \= [],
+    build_raw_function_call_inversion_apply(Head, Args, RawApply),
+    translate_term_mode(Mode, RawApply, TExpr), !.
 translate_term_mode(Mode, [Head|Args], [THead|TArgs]) :-
-    petta_he_profile_mode(Mode),
     is_list(Head),
     Args \= [],
     translate_term_mode(Mode, Head, THead),
     translate_term_list_mode(Mode, Args, TArgs), !.
-
-translate_term_mode(Mode, [Head|Args], TExpr) :-
-    source_variable_atom(Head),
-    Args \= [],
-    translate_callable_source_var_application_mode(Mode, Head, Args, TExpr), !.
 
 %% PeTTa applies first-class callables left-associatively:
 %%   ($f a b) → (($f a) b)
@@ -1508,7 +1526,6 @@ rawify_function_call_inversion_body(BoundVars, [case, Expr, Branches],
 rawify_function_call_inversion_body(BoundVars, [Head|Args], RawApply) :-
     source_variable_atom(Head),
     memberchk(Head, BoundVars),
-    Args \= [],
     !,
     rawify_function_call_inversion_list(BoundVars, Args, RawArgs),
     build_raw_function_call_inversion_apply(Head, RawArgs, RawApply).
@@ -1577,7 +1594,6 @@ rawify_pattern_bound_body(BoundVars, [case, Expr, Branches],
 rawify_pattern_bound_body(BoundVars, [Head|Args], RawApply) :-
     source_variable_atom(Head),
     memberchk(Head, BoundVars),
-    Args \= [],
     !,
     rawify_pattern_bound_list(BoundVars, Args, RawArgs),
     build_raw_function_call_inversion_apply(Head, RawArgs, RawApply).
@@ -1610,6 +1626,8 @@ rawify_pattern_bound_bindings(BoundVars, [[Binder, Value]|Rest],
     sort(NextVars0, NextVars),
     rawify_pattern_bound_bindings(NextVars, Rest, RawRest, FinalVars).
 
+build_raw_function_call_inversion_apply(Head, [], ['cons-atom', Head, '()']) :-
+    !.
 build_raw_function_call_inversion_apply(Head, [Arg], ['__tr-raw-apply1', Head, Arg]) :-
     !.
 build_raw_function_call_inversion_apply(Head, Args, ['__tr-raw-apply', Head|Args]).
@@ -2002,6 +2020,10 @@ callable_bool_condition_term([Apply1Fun, _Fun, _Arg]) :-
     petta_apply1_fun(Apply1Fun).
 callable_bool_condition_term([Apply2Fun, _Fun, _Arg1, _Arg2]) :-
     petta_apply2_fun(Apply2Fun).
+callable_bool_condition_term([eval, ['atom-subst', _Fun, '$fun', ['$fun'|_Args]]]).
+callable_bool_condition_term([Head|Args]) :-
+    source_variable_atom(Head),
+    Args \= [].
 
 partial_helper_candidate(Term, Spec, Param) :-
     partial_builtin_helper_candidate(Term, Spec, Param).
@@ -2318,14 +2340,6 @@ translate_quoted_args_with_quote_positions(Mode, [Arg|Rest], QuotePositions, Ind
     Index1 is Index + 1,
     translate_quoted_args_with_quote_positions(Mode, Rest, QuotePositions, Index1, TRest).
 
-needs_curried_application(Head, Args) :-
-    is_list(Head),
-    Args \= [],
-    !.
-needs_curried_application(Head, Args) :-
-    source_variable_atom(Head),
-    Args \= [],
-    !.
 needs_curried_application(Head, Args) :-
     atom(Head),
     callable_arity(Head, Arity),
