@@ -1,6 +1,9 @@
-# Languages
+# Formal Languages (Lean 4)
 
-Mettapedia/Languages formalizes formal linguistics, natural language semantics, and process calculi.
+`Mettapedia/Languages` formalizes a range of languages and their semantics:
+Grammatical Framework (GF) natural-language grammars, the π- and ρ-process
+calculi, the MeTTa language (syntax, OSLF core, and the HE↔PeTTa translation),
+and smaller imperative, register-machine, and Metamath formalizations.
 
 ## Modules
 
@@ -67,3 +70,22 @@ The process calculi lane includes Lybech pi-to-rho forward simulation and Meredi
 - The rho-calculus module is 11 files with locally nameless COMM reduction and spice rule.
 - The ProcessCalculi module doesn't contain sorries.
 - ProcessCalculi/README.md contains detailed architecture and proof status.
+
+### Other language modules
+
+- `MeTTa/` (203 files) — the MeTTa language: syntax, the OSLF core
+  (`MeTTa/OSLFCore/`), and the HE↔PeTTa translation development
+  (`MeTTa/Translation/`); see the OSLF and `hyperon/translators` READMEs.
+- `IMP/` (5 files) — the classic IMP imperative language.
+- `Metamath/` (11 files) — Metamath language formalization.
+- `MinskyLite/` (5 files) — Minsky register-machine fragment.
+- `MM0/` (2 files) — Metamath Zero (MM0).
+
+## Status
+
+All 448 `.lean` files are `sorry`-free and `axiom`-free (verified 2026-05-31).
+Reproduce from this directory (prints nothing):
+
+```bash
+rg -n --glob '*.lean' '^\s*sorry\b|^\s*(@\[[^]]*\]\s*)*axiom\s' .
+```

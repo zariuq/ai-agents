@@ -1,7 +1,20 @@
-# Cognitive architecture framework
+# Cognitive Architecture — MetaMo, OpenPsi, MicroPsi & GödelClaw (Lean 4)
 
-Mettapedia/CognitiveArchitecture formalizes MetaMo, OpenPsi, MicroPsi, and their mathematical bridges.
-This module doesn't contain sorries across thirty-one files.
+`Mettapedia/CognitiveArchitecture` formalizes the MetaMo motivational Q-module
+framework, its OpenPsi and MicroPsi instances, their mathematical bridges and
+value systems, and the work-in-progress **GödelClaw** ethical-agent kernel
+(`GodelClaw/`).
+
+The MetaMo/OpenPsi/MicroPsi/Bridges/Values strands are `sorry`- and `admit`-free;
+`GodelClaw/` is also `sorry`-free but introduces one named ethical postulate
+(see GödelClaw below). Reproduce from this directory:
+
+```bash
+# real sorry/admit tactics (prints nothing):
+rg -n --glob '*.lean' '^\s*(sorry|admit)\b' .
+# axiom declarations (prints only the one GödelClaw postulate):
+rg -n --glob '*.lean' '^\s*axiom\s' .
+```
 
 ## Modules
 
@@ -93,6 +106,21 @@ Values is nine files extending beyond consequentialism.
 
 - `Values/FOETBridge.lean`
   - Values/FOETBridge.lean connects value formalization to FOET
+
+### GödelClaw (work in progress)
+
+`GodelClaw/` (32 files, including `GodelClaw/Ethics/`) is a work-in-progress
+ethical-agent kernel — a policy kernel, tool broker, gate chain, and "mindlock"
+with a MetaMo bridge, over a meaning/agency ethics layer. It introduces one
+named primitive as a postulate (currently a `Prop` `axiom` — more a placeholder
+definition than a proved theorem, to be refined):
+
+```lean
+-- GodelClaw/Core.lean
+/-- "Realize the known desires of all beings when possible, while avoiding
+    preventable harm." — from Formal-Ethics-Ontology (SUO-KIF). -/
+axiom UniversalLovingCare : Prop
+```
 
 ## Key results
 

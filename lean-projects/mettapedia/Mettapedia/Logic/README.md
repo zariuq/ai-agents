@@ -1,4 +1,4 @@
-# Mettapedia logic module
+# Probabilistic Logic Networks (PLN) in Lean 4
 
 Mettapedia Logic formalizes probabilistic logic networks with theorem-level bridges.
 The module connects probability theory, Heyting semantics, quantales, and Solomonoff-style prediction.
@@ -21,6 +21,12 @@ The module connects probability theory, Heyting semantics, quantales, and Solomo
 | Foundations/ | 90+ | Embedded |
 | System Bridges | 4 | Complete |
 ```
+
+Sorry status (verified 2026-05-31): **0 `axiom`** across all 710 `.lean` files,
+and every category marked *Complete* above is `sorry`-free; the only `sorry`s are
+in the work-in-progress `UniversalHyperprior/` lane. Reproduce from this
+directory: `rg -n --glob '*.lean' '^\s*sorry\b' .` (all hits are under
+`UniversalHyperprior/`).
 
 ## Semantics tree
 
@@ -53,8 +59,7 @@ The module connects probability theory, Heyting semantics, quantales, and Solomo
 
 ```bash
 cd /home/zar/claude/lean-projects/mettapedia
-ulimit -Sv 6291456 && export LAKE_JOBS=3 && nice -n 19 \
-  lake build Mettapedia.Logic.PLNFirstOrder.QuantifierRegression
+lake build Mettapedia.Logic.PLNFirstOrder.QuantifierRegression
 ```
 
 ```bash
@@ -76,8 +81,7 @@ cd /home/zar/claude/lean-projects/mettapedia
 
 ```bash
 cd /home/zar/claude/lean-projects/mettapedia
-ulimit -Sv 6291456 && export LAKE_JOBS=3 && nice -n 19 \
-  lake build Mettapedia.Logic.PLNIntensionalRegression
+lake build Mettapedia.Logic.PLNIntensionalRegression
 ```
 
 ```bash
@@ -98,8 +102,7 @@ cd /home/zar/claude/lean-projects/mettapedia
 
 ```bash
 cd /home/zar/claude/lean-projects/mettapedia
-ulimit -Sv 6291456 && export LAKE_JOBS=3 && nice -n 19 \
-  lake build Mettapedia.Logic.PLNInferenceControlRegression
+lake build Mettapedia.Logic.PLNInferenceControlRegression
 ```
 
 ```bash
@@ -123,8 +126,7 @@ cd /home/zar/claude/lean-projects/mettapedia
 
 ```bash
 cd /home/zar/claude/lean-projects/mettapedia
-ulimit -Sv 6291456 && export LAKE_JOBS=3 && nice -n 19 \
-  lake build Mettapedia.Logic.PLNWorldModelNeighborhoodConsequence \
+lake build Mettapedia.Logic.PLNWorldModelNeighborhoodConsequence \
              Mettapedia.Logic.PLNWorldModelCategoricalRegression
 ```
 
@@ -144,8 +146,7 @@ cd /home/zar/claude/lean-projects/mettapedia
 
 ```bash
 cd /home/zar/claude/lean-projects/mettapedia
-ulimit -Sv 6291456 && export LAKE_JOBS=3 && nice -n 19 \
-  lake build Mettapedia.Logic.PLNSelectorRewriteThresholdRegression
+lake build Mettapedia.Logic.PLNSelectorRewriteThresholdRegression
 ```
 
 ```bash

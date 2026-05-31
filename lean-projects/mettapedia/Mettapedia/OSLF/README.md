@@ -1,4 +1,4 @@
-# OSLF overview
+# OSLF — Operational Semantics in Logical Form (Lean 4)
 
 OSLF turns operational rewrite systems into a logical/type-theoretic interface.
 Lean justifies the interface mechanically.
@@ -88,7 +88,7 @@ open Mettapedia.OSLF
 
 ## MeTTa spec-facing slice
 
-The spec-facing MeTTa slice uses `Mettapedia/Languages/MeTTa/Core/FullLanguageDef.lean`.
+The spec-facing MeTTa slice uses `Mettapedia/Languages/MeTTa/OSLFCore/FullLanguageDef.lean`.
 
 It uses explicit syntax patterns for display.
 
@@ -114,15 +114,15 @@ It uses explicit syntax patterns for display.
 ### Same example at the Lean level
 
 ```lean
-import Mettapedia.Languages.MeTTa.Core.FullLanguageDef
-import Mettapedia.Languages.MeTTa.Core.Premises
+import Mettapedia.Languages.MeTTa.OSLFCore.FullLanguageDef
+import Mettapedia.Languages.MeTTa.OSLFCore.Premises
 
 open Mettapedia.OSLF.MeTTaIL.Syntax
 
 def exState : Pattern :=
   .apply "State"
     [ .apply "Eval" [.apply "ATrue" []]
-    , Mettapedia.Languages.MeTTa.Core.Premises.space0Pattern
+    , Mettapedia.Languages.MeTTa.OSLFCore.Premises.space0Pattern
     , .apply "AFalse" [] ]
 ```
 
@@ -226,8 +226,8 @@ The scope isn't blanket future-work parity.
 - `Mettapedia/OSLF/Framework/TinyMLInstance.lean`
 - `Mettapedia/OSLF/Framework/MeTTaMinimalInstance.lean`
 - `Mettapedia/OSLF/Framework/MeTTaFullInstance.lean`
-- `Mettapedia/OSLF/MeTTaCore/FullLanguageDef.lean`
-- `Mettapedia/OSLF/MeTTaCore/Premises.lean`
+- `Mettapedia/Languages/MeTTa/OSLFCore/FullLanguageDef.lean`
+- `Mettapedia/Languages/MeTTa/OSLFCore/Premises.lean`
 
 ## Practical workflow
 
@@ -252,6 +252,7 @@ lake build Mettapedia.OSLF.Main
 - `Main` aligns the same focused OSLF boundary.
 - Process-calculus modules are available.
 - Maintainers rely `FULLStatus.lean` and concrete theorem names for exact completion claims.
+- 0 `sorry`, 0 `axiom` across `Mettapedia/OSLF/` (reproduce: `rg '^\s*sorry\b' --glob '*.lean' OSLF`); paper-claim parity is machine-checked in `Framework/NTTClaimTracker.lean` and `Framework/PaperClaimTracker.lean`.
 
 - `Mettapedia/Languages/ProcessCalculi/PiCalculus.lean`
 - `Mettapedia/Languages/ProcessCalculi/RhoCalculus.lean`
@@ -271,3 +272,10 @@ It validates roundtrip scripts in `hyperon/mettail-rust`.
 
 It exports a premise-free subset for current Rust ingestion.
 The current boundary isn't full premise-rich MeTTaFull ingestion.
+
+## References
+
+- L. Gregory Meredith and Mike Stay, "Operational Semantics in Logical Form" (2020) — the source OSLF algorithm.
+- Williams & Stay, "Native Type Theory" (arXiv:2102.04672) — categorical foundation for the `NativeType/` endpoints.
+- `papers/leanOSLF.pdf` — this project's Lean 4 formalization writeup.
+- `papers/process-calculi.pdf` — the ρ/π/Petri-net instance writeups.

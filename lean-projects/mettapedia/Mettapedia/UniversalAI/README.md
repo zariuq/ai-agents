@@ -2,8 +2,8 @@
 
 Lean 4.28 formalization of Hutter's *Universal Artificial Intelligence:
 Sequential Decisions Based on Algorithmic Probability* (Springer, 2005),
-Chapters 4–7. **71 files, ~27,000 lines. Zero sorry in core chapters
-(21 total in auxiliary extensions).**
+Chapters 4–7. **80 files, ~44,900 lines. Zero `sorry` in the core chapters;
+9 remain, all in the Chapter 5 `GrainOfTruth/ROADMAP.lean` roadmap.**
 
 Companion directory: `Logic/UniversalPrediction/` covers Chapters 2–3
 (~12,900 lines, zero sorry).
@@ -13,10 +13,14 @@ Companion directory: `Logic/UniversalPrediction/` covers Chapters 2–3
 | Chapter | Topic | Coverage | Lines | Sorries |
 |---------|-------|----------|-------|---------|
 | Ch 4 — Agents & environments | Action/observation/reward, value functions, AIXI agent | ~95% | ~5,800 | 0 |
-| Ch 5 — Optimality of AIXI | Intelligence measure (Legg-Hutter Υ), grain-of-truth, asymptotic optimality | ~85% | ~12,500 | 11 (in `GrainOfTruth/ROADMAP.lean`) |
+| Ch 5 — Optimality of AIXI | Intelligence measure (Legg-Hutter Υ), grain-of-truth, asymptotic optimality | ~85% | ~12,500 | 9 (in `GrainOfTruth/ROADMAP.lean`) |
 | Ch 6 — Problem classes | SP, SG, FM, EX reductions to AIXI | ~95% | ~2,000 | 0 |
 | Ch 7 — Computation & AIXItl | Levin search, time-bounded AIXI, ε-optimality | ~90% | ~11,900 | 0 |
-| Extensions | Multi-agent, self-modification, Gödel machines | WIP | ~5,700 | 10 (GodelMachine) |
+| Extensions | Multi-agent, self-modification | WIP | ~4,300 | 0 |
+
+Sorry status (verified 2026-05-31): the only `sorry`s are the 9 in
+`GrainOfTruth/ROADMAP.lean`. Reproduce from this directory:
+`rg -n --glob '*.lean' '^\s*sorry\b' .`
 
 ## Chapter 4: Bayesian Agents (`BayesianAgents/`)
 
@@ -78,11 +82,6 @@ extending AIXI to multi-agent settings.
 
 Optimal self-modifying policies, realistic agents, value function
 preservation under self-modification.
-
-### Gödel Machines (`GodelMachine/`, ~1,500 lines, 10 sorries)
-
-Schmidhuber's self-referential self-improving agents. `ROADMAP.lean`
-marks remaining proof gaps.
 
 ## References
 

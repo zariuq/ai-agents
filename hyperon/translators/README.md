@@ -1,4 +1,4 @@
-# HE <-> PeTTa MeTTa Translator
+# HE <-> PeTTa MeTTa Translator (Prolog CLI + Lean 4 core)
 
 Bidirectional translator between Hyperon Experimental (HE) and PeTTa MeTTa
 dialects.  The command-line translator is implemented in Prolog; the
@@ -27,6 +27,19 @@ runtime regression tests.
 # Run test suite
 ./translate.sh --test
 ```
+
+## Testing Policy
+
+Translator correctness is established by runtime behavior, not by the
+translator restating its own current output.
+
+- Behavioral tests are the oracle: run the translated artifact and compare its
+  observable results against the source behavior.
+- Literal syntax checks are only shape/change detectors.
+- Any shape-only translator surface must be paired with an executable behavior
+  contract.
+- Edited expected translator output is not evidence by itself; it must be
+  backed by the behavioral oracle.
 
 ## Examples
 
@@ -251,15 +264,41 @@ before emitting concrete helper definitions.
 
 Lean proofs: `lean-projects/mettapedia/Mettapedia/Languages/MeTTa/Translation/`
 
+## Status
+
+Verified 2026-05-31. Run from this `translators/` directory:
+
+```bash
+LEAN=../../lean-projects/mettapedia/Mettapedia/Languages/MeTTa/Translation
+
+# No sorry/admit tactics and no axiom declarations in the translator core (prints nothing):
+rg -n --glob '*.lean' '^\s*(sorry|admit)\b|^\s*(@\[[^]]*\]\s*)*(noncomputable\s+)?axiom\s' "$LEAN"
+
+# The only sorry/admit token in the tree is one comment, not a tactic (prints one comment line):
+rg -n --glob '*.lean' '\b(sorry|admit)\b' "$LEAN"
+
+# Behavioral oracle: translated artifacts are re-run and compared:
+./translate.sh --test
+```
+
+- **Lean core** — the formalization in `$LEAN` (11 files, ~103 theorems/lemmas)
+  is `sorry`-, `admit`-, and `axiom`-free; the only `sorry` token in the tree is
+  inside a comment (`HEPeTTaTranslateExamples.lean`).
+- **Behavioral oracle** — `./translate.sh --test` prints "All tests passed"
+  (SWI-Prolog 10.0.2).
+
 ## File Structure
 
 ```
 translators/
-  translate.sh          # CLI wrapper (this tool)
-  metta_parser.pl       # S-expression parser (DCG-based)
-  he_to_petta.pl        # HE -> PeTTa translation rules
-  petta_to_he.pl        # PeTTa -> HE translation + optimizer
-  he_petta_relational.pl # Relational core (proof-friendly)
-  test_on_real_files.pl  # File-level driver + recursive/bundle
-  test_translators.pl    # Unit test suite
+  translate.sh                      # CLI wrapper (this tool)
+  metta_parser.pl                   # S-expression parser (DCG-based)
+  he_to_petta.pl                    # HE -> PeTTa translation rules
+  petta_to_he.pl                    # PeTTa -> HE translation + optimizer
+  he_petta_relational.pl            # Relational core (proof-friendly)
+  lib_petta.metta                   # PeTTa helper library emitted into translations
+  test_on_real_files.pl             # File-level driver + recursive/bundle
+  test_translators.pl               # Unit test suite
+  translator_behavior_contracts.pl  # Behavior-contract test cases
+  specs/                            # he-petta-translation-semantics.md (spec)
 ```

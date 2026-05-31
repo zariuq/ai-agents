@@ -189,6 +189,11 @@ nice -n 19 lake build Mettapedia.ProbabilityTheory.KnuthSkilling
 
 Complete. Roughly human-checked. Zero `sorry`, zero `axiom`.
 
+> Note: alongside the verified paper formalization, this directory also keeps
+> some exploratory work-in-progress — e.g. `Exploration/OpenIntervalLattice.lean`
+> and `Multiplicative/Scratch/FibonacciProofScratch.lean` — which still contain
+> `sorry`. These are not imported by the paper development and remain open.
+
 ## Examples
 
 - `Examples/CoinDie.lean`: Full pipeline coin/die → ℝ

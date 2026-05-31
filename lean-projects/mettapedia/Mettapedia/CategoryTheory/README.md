@@ -1,12 +1,15 @@
-# CategoryTheory foundation
+# Category Theory foundations for OSLF, PLN & de Finetti (Lean 4)
 
-Mettapedia/CategoryTheory provides categorical foundations for OSLF, PLN, and de Finetti formalization.
+`Mettapedia/CategoryTheory` provides the categorical foundations the rest of
+Mettapedia builds on: a lambda-theory / native-type-theory strand (for OSLF and
+PLN) and a categorical de Finetti strand (exchangeability as a limit-cone
+universal property).
 
 ## Architecture
 
 - The architecture is three main strands.
 - Strand one is lambda theory and native type theory across seven files.
-- Strand two is categorical de Finetti across thirteen files.
+- Strand two is categorical de Finetti across the `DeFinetti*` files (interfaces, permutation/kernel cones, Giry/Markov bridges, exports, plus a smoke test and a counterexample).
 - Strand three is supporting files for fuzzy frames, graph theory, and internal language.
 
 ### Lambda theory and native type theory strand
@@ -104,8 +107,15 @@ Mettapedia/CategoryTheory provides categorical foundations for OSLF, PLN, and de
 
 ## Proof status
 
-- Nineteen of twenty-three files are fully proven with zero sorries.
-- The remaining four files are TOGL one sorry, FuzzyFrame two sorries, ModalTypes one sorry, and Hypercube two sorries.
+Every `.lean` file in this directory (29 as of 2026-05-31) is `sorry`-free,
+`admit`-free, and `axiom`-free. Reproduce from this directory:
+
+```bash
+# real sorry/admit tactics + axiom declarations (prints nothing):
+rg -n --glob '*.lean' '^\s*(sorry|admit)\b|^\s*(@\[[^]]*\]\s*)*(noncomputable\s+)?axiom\s' .
+# the only "sorry"/"admit" tokens are in comments and prose (e.g. "processes admit a factorization"):
+rg -n --glob '*.lean' '\b(sorry|admit)\b' .
+```
 
 ## Dependency flow
 
