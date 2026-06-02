@@ -24,6 +24,10 @@
                 copy_file/2,
                 delete_directory_and_contents/1
               ]).
+:- use_module(library(process),
+              [ process_create/3,
+                process_wait/2
+              ]).
 :- use_module(he_to_petta, [translate_term/2 as he_translate_term,
                              translate_term_trusted/2 as he_translate_term_trusted,
                              translate_decl/2 as he_translate_decl,
@@ -53,12 +57,20 @@
                              normalize_callable_equality_program/2 as pe_normalize_callable_equality_program,
                              quoted_syntax_fun/1 as pe_quoted_syntax_fun,
                              petta_test_equal_fun/1 as pe_petta_test_equal_fun,
+                             petta_test_equal_data_fun/1 as pe_petta_test_equal_data_fun,
                              petta_test_results_fun/1 as pe_petta_test_results_fun,
+                             petta_test_results_data_fun/1 as pe_petta_test_results_data_fun,
                              petta_test_bag_fun/1 as pe_petta_test_bag_fun,
                              petta_test_normalize_fun/1 as pe_petta_test_normalize_fun,
+                             petta_test_public_term_fun/1 as pe_petta_test_public_term_fun,
+                             petta_test_public_syntax_fun/1 as pe_petta_test_public_syntax_fun,
+                             petta_if2_fun/1 as pe_petta_if2_fun,
                              petta_lambda_fun/1 as pe_petta_lambda_fun,
                              petta_apply1_fun/1 as pe_petta_apply1_fun,
                              petta_apply2_fun/1 as pe_petta_apply2_fun,
+                             petta_bool_and_fun/1 as pe_petta_bool_and_fun,
+                             petta_bool_or_fun/1 as pe_petta_bool_or_fun,
+                             petta_member_fun/1 as pe_petta_member_fun,
                              petta_ffi_function_call_inversion_fun/1 as pe_petta_ffi_function_call_inversion_fun,
                              petta_lib_petta_helper_decls/2 as pe_petta_lib_petta_helper_decls,
                              test_call_needs_collapse/1 as pe_test_call_needs_collapse,
@@ -67,6 +79,7 @@
                              petta_state_set_fun/1 as pe_petta_state_set_fun,
                              petta_state_get_fun/1 as pe_petta_state_get_fun,
                              petta_state_cell_fun/1 as pe_petta_state_cell_fun]).
+:- use_module(translator_behavior_contracts, [behavior_contract/2]).
 
 %% ── File-level translation ──────────────────────────────────────
 %%
@@ -970,6 +983,66 @@ source_program_uses_is_member(Term) :-
 source_program_uses_is_member(_) :-
     fail.
 
+source_program_uses_reverse(Term) :-
+    is_list(Term),
+    (   Term = [reverse, _]
+    ;   member(Subterm, Term),
+        source_program_uses_reverse(Subterm)
+    ).
+
+source_program_uses_reverse(_) :-
+    fail.
+
+source_program_uses_last(Term) :-
+    is_list(Term),
+    (   Term = [last, _]
+    ;   member(Subterm, Term),
+        source_program_uses_last(Subterm)
+    ).
+
+source_program_uses_last(_) :-
+    fail.
+
+source_program_uses_foldl(Term) :-
+    is_list(Term),
+    (   Term = [foldl, _, _, _]
+    ;   member(Subterm, Term),
+        source_program_uses_foldl(Subterm)
+    ).
+
+source_program_uses_foldl(_) :-
+    fail.
+
+source_program_uses_min(Term) :-
+    is_list(Term),
+    (   Term = [min, _, _]
+    ;   member(Subterm, Term),
+        source_program_uses_min(Subterm)
+    ).
+
+source_program_uses_min(_) :-
+    fail.
+
+source_program_uses_max(Term) :-
+    is_list(Term),
+    (   Term = [max, _, _]
+    ;   member(Subterm, Term),
+        source_program_uses_max(Subterm)
+    ).
+
+source_program_uses_max(_) :-
+    fail.
+
+source_program_uses_alpha_unique_atom(Term) :-
+    is_list(Term),
+    (   Term = ['alpha-unique-atom', _]
+    ;   member(Subterm, Term),
+        source_program_uses_alpha_unique_atom(Subterm)
+    ).
+
+source_program_uses_alpha_unique_atom(_) :-
+    fail.
+
 source_program_uses_quote(Term) :-
     is_list(Term),
     (   Term = [quote, _]
@@ -1027,7 +1100,33 @@ translated_items_need_lib_petta_helpers(Direction, SourceAtoms, Items, HelperKey
     findall(Key,
             translated_items_need_lib_petta_helper(Direction, SourceAtoms, Items, Key),
             RawKeys),
-    sort(RawKeys, HelperKeys).
+    helper_key_closure(RawKeys, HelperKeys).
+
+helper_key_closure(Keys0, Keys) :-
+    sort(Keys0, Seed),
+    helper_key_closure_fixpoint(Seed, Keys).
+
+helper_key_closure_fixpoint(Keys0, Keys) :-
+    findall(Dep,
+            ( member(Key, Keys0),
+              helper_key_dependency(Key, Dep)
+            ),
+            RawDeps),
+    append(Keys0, RawDeps, Keys1),
+    sort(Keys1, Sorted),
+    (   Sorted == Keys0
+    ->  Keys = Sorted
+    ;   helper_key_closure_fixpoint(Sorted, Keys)
+    ).
+
+helper_key_dependency(apply2, apply1).
+helper_key_dependency(apply2, lambda).
+helper_key_dependency(apply1, lambda).
+helper_key_dependency(test_equal, test_public).
+helper_key_dependency(test_equal_data, test_public).
+helper_key_dependency(test_results, test_public).
+helper_key_dependency(test_results_data, test_public).
+helper_key_dependency(test_bag, test_public).
 
 translated_items_need_lib_petta_helper(_Direction, SourceAtoms, _Items, second_from_pair) :-
     source_program_uses_second_from_pair(SourceAtoms),
@@ -1036,18 +1135,55 @@ translated_items_need_lib_petta_helper(Direction, SourceAtoms, _Items, is_member
     \+ petta_he_profile_direction(Direction),
     source_program_uses_is_member(SourceAtoms),
     \+ source_program_defines_is_member(SourceAtoms).
+translated_items_need_lib_petta_helper(_Direction, SourceAtoms, _Items, reverse) :-
+    source_program_uses_reverse(SourceAtoms),
+    \+ source_program_defines_reverse(SourceAtoms).
+translated_items_need_lib_petta_helper(_Direction, SourceAtoms, _Items, last) :-
+    source_program_uses_last(SourceAtoms),
+    \+ source_program_defines_last(SourceAtoms).
+translated_items_need_lib_petta_helper(_Direction, SourceAtoms, _Items, foldl) :-
+    source_program_uses_foldl(SourceAtoms),
+    \+ source_program_defines_foldl(SourceAtoms).
+translated_items_need_lib_petta_helper(_Direction, SourceAtoms, _Items, min) :-
+    source_program_uses_min(SourceAtoms),
+    \+ source_program_defines_min(SourceAtoms).
+translated_items_need_lib_petta_helper(_Direction, SourceAtoms, _Items, max) :-
+    source_program_uses_max(SourceAtoms),
+    \+ source_program_defines_max(SourceAtoms).
+translated_items_need_lib_petta_helper(_Direction, SourceAtoms, _Items, alpha_unique_atom) :-
+    source_program_uses_alpha_unique_atom(SourceAtoms),
+    \+ source_program_defines_alpha_unique_atom(SourceAtoms).
 translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, test_equal) :-
     translated_items_use_named_helper(Items, pe_petta_test_equal_fun).
+translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, test_equal_data) :-
+    translated_items_use_named_helper(Items, pe_petta_test_equal_data_fun).
 translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, test_results) :-
     translated_items_use_named_helper(Items, pe_petta_test_results_fun).
+translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, test_results_data) :-
+    translated_items_use_named_helper(Items, pe_petta_test_results_data_fun).
 translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, test_bag) :-
     translated_items_use_named_helper(Items, pe_petta_test_bag_fun).
+translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, test_public) :-
+    (   translated_items_use_named_helper(Items, pe_petta_test_equal_fun)
+    ;   translated_items_use_named_helper(Items, pe_petta_test_equal_data_fun)
+    ;   translated_items_use_named_helper(Items, pe_petta_test_results_fun)
+    ;   translated_items_use_named_helper(Items, pe_petta_test_results_data_fun)
+    ;   translated_items_use_named_helper(Items, pe_petta_test_bag_fun)
+    ).
 translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, lambda) :-
     translated_items_use_named_helper(Items, pe_petta_lambda_fun).
 translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, apply1) :-
     translated_items_use_named_helper(Items, pe_petta_apply1_fun).
 translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, apply2) :-
     translated_items_use_named_helper(Items, pe_petta_apply2_fun).
+translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, bool_and) :-
+    translated_items_use_named_helper(Items, pe_petta_bool_and_fun).
+translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, bool_or) :-
+    translated_items_use_named_helper(Items, pe_petta_bool_or_fun).
+translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, if2) :-
+    translated_items_use_named_helper(Items, pe_petta_if2_fun).
+translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, member) :-
+    translated_items_use_named_helper(Items, pe_petta_member_fun).
 translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, ffi_function_call_inversion) :-
     translated_items_use_named_helper(Items, pe_petta_ffi_function_call_inversion_fun).
 
@@ -1070,14 +1206,41 @@ term_uses_named_head(_, _) :-
     fail.
 
 lib_petta_helpers_can_import(HelperKeys) :-
+    \+ memberchk(test_public, HelperKeys),
+    \+ memberchk(test_equal, HelperKeys),
+    \+ memberchk(test_equal_data, HelperKeys),
+    \+ memberchk(test_results, HelperKeys),
+    \+ memberchk(test_results_data, HelperKeys),
+    \+ memberchk(test_bag, HelperKeys),
+    \+ memberchk(lambda, HelperKeys),
+    \+ memberchk(apply1, HelperKeys),
+    \+ memberchk(apply2, HelperKeys),
+    \+ memberchk(if2, HelperKeys),
+    \+ memberchk(bool_and, HelperKeys),
+    \+ memberchk(bool_or, HelperKeys),
+    \+ memberchk(member, HelperKeys),
     maplist(lib_petta_helper_uses_default_names, HelperKeys).
 
 lib_petta_helper_uses_default_names(second_from_pair).
 lib_petta_helper_uses_default_names(is_member).
+lib_petta_helper_uses_default_names(reverse).
+lib_petta_helper_uses_default_names(last).
+lib_petta_helper_uses_default_names(foldl).
+lib_petta_helper_uses_default_names(min).
+lib_petta_helper_uses_default_names(max).
+lib_petta_helper_uses_default_names(alpha_unique_atom).
+lib_petta_helper_uses_default_names(test_public) :-
+    pe_petta_test_public_term_fun('petta-public-term'),
+    pe_petta_test_public_syntax_fun('petta-public-syntax').
 lib_petta_helper_uses_default_names(test_equal) :-
     pe_petta_test_equal_fun('petta-test-equal').
+lib_petta_helper_uses_default_names(test_equal_data) :-
+    pe_petta_test_equal_data_fun('petta-test-equal-data').
 lib_petta_helper_uses_default_names(test_results) :-
     pe_petta_test_results_fun('petta-test-results'),
+    pe_petta_test_normalize_fun('petta-normalize-results').
+lib_petta_helper_uses_default_names(test_results_data) :-
+    pe_petta_test_results_data_fun('petta-test-results-data'),
     pe_petta_test_normalize_fun('petta-normalize-results').
 lib_petta_helper_uses_default_names(test_bag) :-
     pe_petta_test_bag_fun('petta-test-bag-equal').
@@ -1090,6 +1253,14 @@ lib_petta_helper_uses_default_names(apply2) :-
     pe_petta_apply2_fun('petta-apply2'),
     pe_petta_apply1_fun('petta-apply1'),
     pe_petta_lambda_fun('petta-lambda').
+lib_petta_helper_uses_default_names(bool_and) :-
+    pe_petta_bool_and_fun('petta-bool-and').
+lib_petta_helper_uses_default_names(bool_or) :-
+    pe_petta_bool_or_fun('petta-bool-or').
+lib_petta_helper_uses_default_names(if2) :-
+    pe_petta_if2_fun('petta-if2').
+lib_petta_helper_uses_default_names(member) :-
+    pe_petta_member_fun('petta-member').
 lib_petta_helper_uses_default_names(ffi_function_call_inversion) :-
     pe_petta_ffi_function_call_inversion_fun('petta-ffi-function-call-inversion').
 
@@ -1108,6 +1279,30 @@ source_program_defines_second_from_pair([_|Rest]) :-
 source_program_defines_is_member([['=', ['is-member'|_], _]|_]) :- !.
 source_program_defines_is_member([_|Rest]) :-
     source_program_defines_is_member(Rest).
+
+source_program_defines_reverse([['=', [reverse|_], _]|_]) :- !.
+source_program_defines_reverse([_|Rest]) :-
+    source_program_defines_reverse(Rest).
+
+source_program_defines_last([['=', [last|_], _]|_]) :- !.
+source_program_defines_last([_|Rest]) :-
+    source_program_defines_last(Rest).
+
+source_program_defines_foldl([['=', [foldl|_], _]|_]) :- !.
+source_program_defines_foldl([_|Rest]) :-
+    source_program_defines_foldl(Rest).
+
+source_program_defines_min([['=', [min|_], _]|_]) :- !.
+source_program_defines_min([_|Rest]) :-
+    source_program_defines_min(Rest).
+
+source_program_defines_max([['=', [max|_], _]|_]) :- !.
+source_program_defines_max([_|Rest]) :-
+    source_program_defines_max(Rest).
+
+source_program_defines_alpha_unique_atom([['=', ['alpha-unique-atom'|_], _]|_]) :- !.
+source_program_defines_alpha_unique_atom([_|Rest]) :-
+    source_program_defines_alpha_unique_atom(Rest).
 
 source_program_defines_quoted_syntax([['=', [Head|_], _]|_]) :-
     pe_quoted_syntax_fun(Head), !.
@@ -1198,7 +1393,7 @@ rewrite_builtin_test_item(plain(Expr), plain(TExpr)) :-
 rewrite_builtin_test_term([test, Actual, Expected],
                           [TestFun, RActual, RExpected]) :-
     !,
-    builtin_test_helper_head(Actual, TestFun),
+    builtin_test_helper_head(Actual, Expected, TestFun),
     rewrite_builtin_test_term(Actual, RActual),
     rewrite_builtin_test_term(Expected, RExpected).
 rewrite_builtin_test_term(List, Rewritten) :-
@@ -1206,13 +1401,46 @@ rewrite_builtin_test_term(List, Rewritten) :-
     maplist(rewrite_builtin_test_term, List, Rewritten).
 rewrite_builtin_test_term(Term, Term).
 
-builtin_test_helper_head(Actual, 'petta-test-bag-equal') :-
+builtin_test_helper_head(Actual, _Expected, 'petta-test-bag-equal') :-
     pe_test_call_needs_bag_equality(Actual),
     !.
-builtin_test_helper_head(Actual, 'petta-test-results') :-
+builtin_test_helper_head(Actual, Expected, 'petta-test-results-data') :-
+    pe_test_call_needs_collapse(Actual),
+    test_expected_literal_data(Expected),
+    !.
+builtin_test_helper_head(Actual, _Expected, 'petta-test-results') :-
     pe_test_call_needs_collapse(Actual),
     !.
-builtin_test_helper_head(_, 'petta-test-equal').
+builtin_test_helper_head(_Actual, Expected, 'petta-test-equal-data') :-
+    test_expected_literal_data(Expected),
+    !.
+builtin_test_helper_head(_, _, 'petta-test-equal').
+
+test_expected_literal_data([quote, _]) :-
+    !.
+test_expected_literal_data(Term) :-
+    atom(Term),
+    \+ petta_to_he:callable_arity(Term, 0),
+    !.
+test_expected_literal_data(Term) :-
+    \+ is_list(Term),
+    !.
+test_expected_literal_data([Head|_]) :-
+    is_list(Head),
+    !.
+test_expected_literal_data([Head|_]) :-
+    atom(Head),
+    \+ petta_to_he:source_variable_atom(Head),
+    \+ petta_to_he:callable_arity(Head, _),
+    \+ test_expected_eval_head(Head).
+
+test_expected_eval_head(progn).
+test_expected_eval_head(prog1).
+test_expected_eval_head(if).
+test_expected_eval_head(case).
+test_expected_eval_head(let).
+test_expected_eval_head('let*').
+test_expected_eval_head(chain).
 
 %% ── Local module/path compatibility for translated files ────────
 
@@ -1559,7 +1787,11 @@ output_path_for_source_from_entry(EntrySource, BundleDir, EntryOutput) :-
 run_path_compat_tests :-
     setup_path_compat_fixture,
     format("~n=== File Translation Path Compatibility Tests ===~n"),
-    forall(path_compat_case(N, Name, Goal), run_path_compat_case(N, Name, Goal)).
+    forall(path_compat_case(N, Name, Goal), run_path_compat_case(N, Name, Goal)),
+    verify_behavior_contract_coverage,
+    format("~n=== File Translation Behavior Contract Tests ===~n"),
+    forall(path_behavior_case(Contract, Name, Goal),
+           run_path_behavior_case(Contract, Name, Goal)).
 
 run_path_compat_case(N, Name, Goal) :-
     (   call(Goal)
@@ -1567,6 +1799,22 @@ run_path_compat_case(N, Name, Goal) :-
     ;   format("  ✗ ~w: ~w~n", [N, Name]),
         fail
     ).
+
+run_path_behavior_case(Contract, Name, Goal) :-
+    (   call(Goal)
+    ->  format("  ✓ ~w: ~w~n", [Contract, Name])
+    ;   format("  ✗ ~w: ~w~n", [Contract, Name]),
+        fail
+    ).
+
+verify_behavior_contract_coverage :-
+    forall(behavior_contract(Contract, _),
+           (   path_behavior_case(Contract, _, _)
+           ->  true
+           ;   format("  ✗ policy: missing executable behavior case for contract ~w~n",
+                      [Contract]),
+               fail
+           )).
 
 path_compat_case(1, "plain local import spec rewrites relative to translated output",
     (   path_fixture('test_import_nested_depth.metta', Source),
@@ -1648,12 +1896,13 @@ path_compat_case(8, "hyperpose-preserving PeTTa->HE file translation keeps hyper
         \+ file_contains_text(Output, "select")
     )).
 
-path_compat_case(9, "PeTTa->HE file translation routes test calls through lib_petta",
+path_compat_case(9, "PeTTa->HE file translation inlines test helpers instead of importing lib_petta",
     (   path_fixture('test_hyperpose_surface.metta', Source),
         path_generated('out/test_hyperpose_surface.with_test.he.metta', Output),
         translate_file_petta_to_he(Source, Output),
-        file_contains_text(Output, "!(import! &self lib_petta)"),
+        \+ file_contains_text(Output, "!(import! &self lib_petta)"),
         file_contains_text(Output, "petta-test-"),
+        file_contains_text(Output, "(= (petta-public-term $expr)"),
         \+ file_contains_text(Output, "(: test (-> Atom Atom Bool))")
     )).
 
@@ -1682,15 +1931,13 @@ path_compat_case(12, "PeTTa-profile file translation preserves cut",
         file_contains_text(Output, "(cut)")
     )).
 
-path_compat_case(13, "default PeTTa->HE file translation lowers assertion-only msort to bag equality",
+path_compat_case(13, "default PeTTa->HE file translation inlines assertion-only msort bag helpers",
     (   path_fixture('test_msort_surface.metta', Source),
         path_generated('out/test_msort_surface.he.metta', Output),
-        path_generated('out/lib_petta.metta', HelperOut),
         translate_file_petta_to_he(Source, Output),
-        file_contains_text(Output, "!(import! &self lib_petta)"),
+        \+ file_contains_text(Output, "!(import! &self lib_petta)"),
         file_contains_text(Output, "petta-test-bag-equal"),
-        exists_file(HelperOut),
-        file_contains_text(HelperOut, "(= (petta-test-bag-equal $actual $expected)")
+        file_contains_text(Output, "(= (petta-test-bag-equal $actual $expected)")
     )).
 
 path_compat_case(14, "PeTTa-profile file translation preserves native msort",
@@ -1732,13 +1979,65 @@ path_compat_case(18, "user-defined second-from-pair does not pull lib_petta",
         \+ file_contains_text(Output, "lib_petta")
     )).
 
-path_compat_case(19, "mixed test surfaces route per call instead of per file",
+path_compat_case(18_1, "default PeTTa->HE file translation emits local lib_petta for reverse",
+    (   path_fixture('test_reverse_surface.metta', Source),
+        path_generated('out/test_reverse_surface.he.metta', Output),
+        path_generated('out/lib_petta.metta', HelperOut),
+        translate_file_petta_to_he(Source, Output),
+        file_contains_text(Output, "!(import! &self lib_petta)"),
+        exists_file(HelperOut),
+        file_contains_text(HelperOut, "(= (reverse $xs)")
+    )).
+
+path_compat_case(18_2, "default PeTTa->HE file translation emits local lib_petta for last",
+    (   path_fixture('test_last_surface.metta', Source),
+        path_generated('out/test_last_surface.he.metta', Output),
+        path_generated('out/lib_petta.metta', HelperOut),
+        translate_file_petta_to_he(Source, Output),
+        file_contains_text(Output, "!(import! &self lib_petta)"),
+        exists_file(HelperOut),
+        file_contains_text(HelperOut, "(= (last $xs)")
+    )).
+
+path_compat_case(18_3, "default PeTTa->HE file translation emits local lib_petta for short foldl",
+    (   path_fixture('test_foldl_surface.metta', Source),
+        path_generated('out/test_foldl_surface.he.metta', Output),
+        path_generated('out/lib_petta.metta', HelperOut),
+        translate_file_petta_to_he(Source, Output),
+        file_contains_text(Output, "!(import! &self lib_petta)"),
+        exists_file(HelperOut),
+        file_contains_text(HelperOut, "(= (foldl $f $list $init)")
+    )).
+
+path_compat_case(18_4, "default PeTTa->HE file translation emits local lib_petta for alpha-unique-atom",
+    (   path_fixture('test_alpha_unique_atom_surface.metta', Source),
+        path_generated('out/test_alpha_unique_atom_surface.he.metta', Output),
+        path_generated('out/lib_petta.metta', HelperOut),
+        translate_file_petta_to_he(Source, Output),
+        file_contains_text(Output, "!(import! &self lib_petta)"),
+        exists_file(HelperOut),
+        file_contains_text(HelperOut, "(= (alpha-unique-atom $tuple)")
+    )).
+
+path_compat_case(18_5, "default PeTTa->HE file translation emits local lib_petta for min/max",
+    (   path_fixture('test_minmax_surface.metta', Source),
+        path_generated('out/test_minmax_surface.he.metta', Output),
+        path_generated('out/lib_petta.metta', HelperOut),
+        translate_file_petta_to_he(Source, Output),
+        file_contains_text(Output, "!(import! &self lib_petta)"),
+        exists_file(HelperOut),
+        file_contains_text(HelperOut, "(= (min $a $b)"),
+        file_contains_text(HelperOut, "(= (max $a $b)")
+    )).
+
+path_compat_case(19, "mixed test surfaces route per call and inline the needed helpers",
     (   path_fixture('test_mixed_test_surface.metta', Source),
         path_generated('out/test_mixed_test_surface.he.metta', Output),
         translate_file_petta_to_he(Source, Output),
-        file_contains_text(Output, "!(import! &self lib_petta)"),
-        file_contains_text(Output, "!(petta-test-equal (+ 1 2) 3)"),
-        file_contains_text(Output, "!(petta-test-results (if $x yes no) (yes no))")
+        \+ file_contains_text(Output, "!(import! &self lib_petta)"),
+        file_contains_text(Output, "!(petta-test-equal-data (+ 1 2) 3)"),
+        file_contains_text(Output, "!(petta-test-results-data (if $x yes no) (yes no))"),
+        file_contains_text(Output, "(= (petta-public-term $expr)")
     )).
 
 path_compat_case(20, "PeTTa->HE file translation materializes local imported modules as sidecar deps",
@@ -1785,26 +2084,29 @@ path_compat_case(23, "PeTTa->HE file translation reports pure-unsupported import
         sub_string(Message, _, _, _, "test_imported_dependency_blocker.metta")
     )).
 
-path_compat_case(24, "PeTTa->HE file translation rewrites builtin partials to local helpers",
+path_compat_case(24, "PeTTa->HE file translation rewrites builtin partials to inline local helpers",
     (   path_fixture('test_partial_builtin_surface.metta', Source),
         path_generated('out/partial_builtin/test_partial_builtin_surface.he.metta', Output),
-        path_generated('out/partial_builtin/lib_petta.metta', HelperOut),
         translate_file_petta_to_he(Source, Output),
-        \+ file_contains_text(Output, "lib_petta"),
+        \+ file_contains_text(Output, "!(import! &self lib_petta)"),
+        file_contains_text(Output, "(: petta-lambda (-> Atom $t (-> $a $t)))"),
+        file_contains_text(Output, "(: petta-apply1 (-> Atom Atom Atom))"),
         file_contains_text(Output, "(= (petta-partial-1 $__tr_"),
         file_contains_text(Output, "(= (inc) petta-partial-1)"),
-        file_contains_text(Output, "!((inc) 2)"),
-        \+ exists_file(HelperOut)
+        file_contains_text(Output, "!(petta-apply1 (inc) 2)")
     )).
 
-path_compat_case(25, "generated builtin partial helper names avoid source collisions",
+path_compat_case(25, "generated builtin partial helper names avoid source collisions with inline helpers",
     (   path_fixture('test_partial_builtin_helper_collision.metta', Source),
         path_generated('out/partial_builtin_collision/test_partial_builtin_helper_collision.he.metta', Output),
         translate_file_petta_to_he(Source, Output),
         \+ file_contains_text(Output, "!(import! &self lib_petta)"),
+        file_contains_text(Output, "(: petta-lambda (-> Atom $t (-> $a $t)))"),
+        file_contains_text(Output, "(: petta-apply1 (-> Atom Atom Atom))"),
         file_contains_text(Output, "(= (petta-partial-1 $x) user-defined)"),
         file_contains_text(Output, "(= (petta-partial-2 $__tr_"),
-        file_contains_text(Output, "(= (inc) petta-partial-2)")
+        file_contains_text(Output, "(= (inc) petta-partial-2)"),
+        file_contains_text(Output, "!(petta-apply1 (inc) 2)")
     )).
 
 path_compat_case(26, "default PeTTa->HE file translation still rejects raw standalone msort",
@@ -1822,8 +2124,8 @@ path_compat_case(27, "Expression-typed callable-data family rewrites calls throu
         translate_file_petta_to_he(Source, Output),
         file_contains_text(Output, "(= (map-flat3 $pairq) (let ($head $tail) (decons-atom $pairq)"),
         file_contains_text(Output, "(= (map-flat4 $pairq) (let ($head $tail) (decons-atom $pairq)"),
-        file_contains_text(Output, "!(petta-test-results (map-flat3 (quote (p1 (1 2)))) (2 3))"),
-        file_contains_text(Output, "!(petta-test-results (map-flat4 (quote (x (p1 (1 2))))) (2 3))")
+        file_contains_text(Output, "!(petta-test-results-data (map-flat3 (quote (p1 (1 2)))) (2 3))"),
+        file_contains_text(Output, "!(petta-test-results-data (map-flat4 (quote (x (p1 (1 2))))) (2 3))")
     )).
 
 path_compat_case(28, "Closed unary callable composition rewrites to a reusable helper symbol",
@@ -1833,8 +2135,9 @@ path_compat_case(28, "Closed unary callable composition rewrites to a reusable h
         file_contains_text(Output, "(= (petta-partial-1 $__tr_"),
         file_contains_text(Output, "(= (petta-partial-2 $__tr_"),
         file_contains_text(Output, "(= (petta-partial-3 $__tr_"),
+        file_contains_text(Output, "(= (.. $f1 $f2 $arg) (petta-apply1 $f1 ($f2 $arg)))"),
         file_contains_text(Output, "(= (plus1times2) petta-partial-3)"),
-        file_contains_text(Output, "!(petta-test-equal ((plus1times2) 1) 4)")
+        file_contains_text(Output, "!(petta-test-equal-data (petta-apply1 (plus1times2) 1) 4)")
     )).
 
 path_compat_case(29, "finite generator function heads lower through superpose guards and bag-equality tests",
@@ -1872,7 +2175,8 @@ path_compat_case(31, "append-suffix function heads lower through structural deco
         file_contains_text(Output, "(unify $__tr_head_elem_"),
         file_contains_text(Output, "(let $__tr_head_suffix_"),
         file_contains_text(Output, "(eval (atom-subst $__tr_head_suffix_"),
-        file_contains_text(Output, "($fun $C))")
+        file_contains_text(Output, "$__tr_apply_fun_"),
+        file_contains_text(Output, "$C))")
     )).
 
 path_compat_case(32, "equality-form function-call inversion normalizes into the same structural file surface",
@@ -1886,7 +2190,8 @@ path_compat_case(32, "equality-form function-call inversion normalizes into the 
         file_contains_text(Output, "(unify $__tr_head_elem_"),
         file_contains_text(Output, "(let $__tr_head_suffix_"),
         file_contains_text(Output, "(eval (atom-subst $__tr_head_suffix_"),
-        file_contains_text(Output, "($fun $C))")
+        file_contains_text(Output, "$__tr_apply_fun_"),
+        file_contains_text(Output, "$C))")
     )).
 
 path_compat_case(33, "pure structural function-call inversion let-patterns lower through decons",
@@ -1896,7 +2201,8 @@ path_compat_case(33, "pure structural function-call inversion let-patterns lower
         file_contains_text(Output, "(= (probe) (chain (decons-atom (1 2 3 4))"),
         file_contains_text(Output, "(first-from-pair $__tr_head_pair_"),
         file_contains_text(Output, "(second-from-pair $__tr_head_pair_"),
-        file_contains_text(Output, "(eval (atom-subst $Head $fun ($fun $Tail)))"),
+        file_contains_text(Output, "(eval (atom-subst $Head $__tr_apply_fun_"),
+        file_contains_text(Output, "$Tail)))"),
         \+ file_contains_text(Output, "(let (f $Head $Tail) (1 2 3 4)")
     )).
 
@@ -1914,7 +2220,8 @@ path_compat_case(35, "PeTTa-profile arithmetic function-call inversion let-patte
         path_generated('out/test_function_call_inversion_arith_let_surface.petta_he.metta', Output),
         translate_file_petta_to_he_petta_he(Source, Output),
         file_contains_text(Output, "(= (probe) (let (g $X $Y 35) (42 2 3)"),
-        file_contains_text(Output, "(eval (atom-subst $X $fun ($fun $Y 40)))"),
+        file_contains_text(Output, "(eval (atom-subst $X $__tr_apply_fun_"),
+        file_contains_text(Output, "$Y 40)))"),
         \+ file_contains_text(Output, "(petta-apply2 $X $Y 40)")
     )).
 
@@ -1924,7 +2231,8 @@ path_compat_case(36, "ffi-tokens mode lowers arithmetic function-call inversion 
         translate_file_petta_to_he_ffi_tokens(Source, Output),
         file_contains_text(Output, "(= (probe) (petta-ffi-function-call-inversion arithmetic-append-suffix"),
         file_contains_text(Output, "(quote (g $X $Y 35))"),
-        file_contains_text(Output, "(eval (atom-subst $X $fun ($fun $Y 40)))"),
+        file_contains_text(Output, "(eval (atom-subst $X $__tr_apply_fun_"),
+        file_contains_text(Output, "$Y 40)))"),
         \+ file_contains_text(Output, "domain_error(he_core_surface")
     )).
 
@@ -1965,9 +2273,84 @@ path_compat_case(40, "PeTTa-profile file translation preserves expression-data r
         \+ file_contains_text(Output, "(quote ($f $xs))")
     )).
 
+path_behavior_case(variable_head_data_callable_boundary,
+    "pure file translation preserves data-tuple and callable-lambda variable-head runtime behavior",
+    (   path_fixture('test_variable_head_boundary_behavior.metta', Source),
+        path_generated('out/test_variable_head_boundary_behavior.he.metta', Output),
+        translate_file_petta_to_he(Source, Output),
+        run_petta_runtime(default, Source, SourceRc, SourceOut, _SourceErr),
+        run_petta_runtime(he, Output, HeRc, HeOut, _HeErr),
+        SourceRc =:= 0,
+        HeRc =:= 0,
+        \+ sub_string(SourceOut, _, _, _, "❌"),
+        \+ sub_string(HeOut, _, _, _, "❌"),
+        normalize_runtime_output(SourceOut, Normalized),
+        normalize_runtime_output(HeOut, Normalized)
+    )).
+
 file_contains_text(Path, Snippet) :-
     read_file_to_string(Path, Text, []),
     sub_string(Text, _, _, _, Snippet).
+
+petta_profile_run_sh(Path) :-
+    source_file(run_path_compat_tests, SourceFile),
+    file_directory_name(SourceFile, SourceDir),
+    directory_file_path(SourceDir, '../petta-he-profile/run.sh', RelPath),
+    absolute_file_name(RelPath, Path, [solutions(first)]).
+
+runtime_timeout_seconds('30').
+
+run_petta_runtime(default, File, Rc, Stdout, Stderr) :-
+    petta_profile_run_sh(RunSh),
+    runtime_timeout_seconds(Timeout),
+    process_create(path(timeout), ['--kill-after=5', Timeout, RunSh, File, '--silent'],
+                   [stdout(pipe(OutPipe)),
+                    stderr(pipe(ErrPipe)),
+                    process(Pid)]),
+    read_string(OutPipe, _, Stdout),
+    close(OutPipe),
+    read_string(ErrPipe, _, Stderr),
+    close(ErrPipe),
+    process_wait(Pid, exit(Rc)).
+run_petta_runtime(he, File, Rc, Stdout, Stderr) :-
+    petta_profile_run_sh(RunSh),
+    runtime_timeout_seconds(Timeout),
+    process_create(path(timeout), ['--kill-after=5', Timeout, RunSh, '--he', File, '--silent'],
+                   [stdout(pipe(OutPipe)),
+                    stderr(pipe(ErrPipe)),
+                    process(Pid)]),
+    read_string(OutPipe, _, Stdout),
+    close(OutPipe),
+    read_string(ErrPipe, _, Stderr),
+    close(ErrPipe),
+    process_wait(Pid, exit(Rc)).
+
+normalize_runtime_output(Text, Normalized) :-
+    split_string(Text, "\n", "\r \t", Lines0),
+    exclude(runtime_noise_line, Lines0, Lines1),
+    exclude(string_empty, Lines1, Lines),
+    include(assertion_surface_line, Lines, AssertionLines),
+    (   AssertionLines = []
+    ->  atomics_to_string(Lines, "\n", Normalized)
+    ;   maplist(assertion_surface_status, AssertionLines, Statuses),
+        atomics_to_string(Statuses, "\n", Normalized)
+    ).
+
+runtime_noise_line(Line) :-
+    sub_string(Line, 0, _, _, "MORK init:").
+
+assertion_surface_line(Line) :-
+    sub_string(Line, 0, 3, _, "is ").
+
+assertion_surface_status(Line, pass) :-
+    sub_string(Line, _, _, _, "✅"),
+    !.
+assertion_surface_status(Line, fail) :-
+    sub_string(Line, _, _, _, "❌"),
+    !.
+assertion_surface_status(Line, raw(Line)).
+
+string_empty("").
 
 setup_recursive_fixture(FixtureRoot) :-
     (   exists_directory(FixtureRoot)
@@ -2042,6 +2425,16 @@ setup_path_compat_fixture :-
         "!(msort (collapse (match &self $x $x)))\n"),
     write_fixture_relative(Root, 'test_length_surface.metta',
         "!(length (1 2 3))\n"),
+    write_fixture_relative(Root, 'test_reverse_surface.metta',
+        "!(reverse (1 2 3))\n"),
+    write_fixture_relative(Root, 'test_last_surface.metta',
+        "!(last (1 2 3))\n"),
+    write_fixture_relative(Root, 'test_foldl_surface.metta',
+        "(= (snoc $x $acc) (append $acc ($x)))\n!(foldl snoc (1 2 3) ())\n"),
+    write_fixture_relative(Root, 'test_alpha_unique_atom_surface.metta',
+        "!(alpha-unique-atom ((link $x human) (link $y human) (child $z human)))\n"),
+    write_fixture_relative(Root, 'test_minmax_surface.metta',
+        "!(max 2 (min 1 3))\n"),
     write_fixture_relative(Root, 'test_second_from_pair_surface.metta',
         "!(second-from-pair (A B))\n"),
     write_fixture_relative(Root, 'test_second_from_pair_user_surface.metta',
@@ -2056,6 +2449,10 @@ setup_path_compat_fixture :-
         "(= (.. $f1 $f2 $arg) ($f1 ($f2 $arg)))\n(= (plus1times2) (.. (* 2) (+ 1)))\n!(test (plus1times2 1) 4)\n"),
     write_fixture_relative(Root, 'test_exprdata_callable_surface.metta',
         "(: map-flat3 (-> Expression %Undefined%))\n(= (map-flat3 ($f ())) ())\n(= (map-flat3 ($f (cons $x $xs))) (cons ($f $x) (map-flat3 ($f $xs))))\n(: map-flat4 (-> Expression %Undefined%))\n(= (map-flat4 ($v ($f ()))) ())\n(= (map-flat4 ($v ($f (cons $x $xs)))) (cons ($f $x) (map-flat4 ($v ($f $xs)))))\n(= (p1 $x) (+ 1 $x))\n!(test (map-flat3 (p1 (1 2))) (2 3))\n!(test (map-flat4 (x (p1 (1 2)))) (2 3))\n"),
+    write_fixture_relative(Root, 'test_variable_head_boundary_runtime.metta',
+        "(= (myfunc2 $mylambda) ($mylambda 43 44))\n!(test (let ($x $y) (1 2) ($x $y)) (1 2))\n!(test (let* ((($x $y) (1 2)) ($z 3)) ($x $y $z)) (1 2 3))\n!(test (let* (($k 45) ($lambda (|-> ($x $y) (42 $x $y $k)))) (myfunc2 $lambda)) (42 43 44 45))\n"),
+    write_fixture_relative(Root, 'test_variable_head_boundary_behavior.metta',
+        "(= (myfunc2 $mylambda) ($mylambda 43 44))\n!(let ($x $y) (1 2) ($x $y))\n!(let* ((($x $y) (1 2)) ($z 3)) ($x $y $z))\n!(let* (($k 45) ($lambda (|-> ($x $y) (42 $x $y $k)))) (myfunc2 $lambda))\n"),
     write_fixture_relative(Root, 'test_functionhead_guard_surface.metta',
         "(= (in $x $L) (let True (is-member $x $L) $x))\n(= (myplus (in $X (1 2 3)) (in $Y (2 3))) (in (+ $X $Y) (3 4 5)))\n!(test (collapse (myplus $x $y)) (3 4 4 5 5))\n"),
     write_fixture_relative(Root, 'test_functionhead_duplicate_surface.metta',

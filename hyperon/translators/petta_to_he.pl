@@ -38,12 +38,20 @@
             with_helper_context/2,
             quoted_syntax_fun/1,
             petta_test_equal_fun/1,
+            petta_test_equal_data_fun/1,
             petta_test_results_fun/1,
+            petta_test_results_data_fun/1,
             petta_test_bag_fun/1,
             petta_test_normalize_fun/1,
+            petta_test_public_term_fun/1,
+            petta_test_public_syntax_fun/1,
+            petta_if2_fun/1,
             petta_lambda_fun/1,
             petta_apply1_fun/1,
             petta_apply2_fun/1,
+            petta_bool_and_fun/1,
+            petta_bool_or_fun/1,
+            petta_member_fun/1,
             petta_ffi_function_call_inversion_fun/1,
             petta_lib_petta_helper_decls/2,
             test_call_needs_collapse/1,
@@ -79,6 +87,10 @@ fresh_var(Prefix, Var) :-
     N1 is N + 1,
     assert(tr_counter(N1)),
     atomic_list_concat(['$__tr_', Prefix, '_', N1], Var).
+
+atom_subst_apply_term(THead, TArgs, TExpr) :-
+    fresh_var(apply_fun, FunVar),
+    TExpr = [eval, ['atom-subst', THead, FunVar, [FunVar|TArgs]]].
 
 with_helper_context(SourceTerms, Goal) :-
     setup_call_cleanup(
@@ -298,26 +310,42 @@ helper_context_names(SourceTerms, HelperNames) :-
     term_atom_set(SourceTerms, Used0),
     choose_helper_name(quoted_syntax, Used0, Used1, Quote),
     choose_helper_name(test_equal, Used1, Used2, TestEqual),
-    choose_helper_name(test_results, Used2, Used3, TestResults),
-    choose_helper_name(test_bag, Used3, Used4, TestBag),
-    choose_helper_name(test_normalize, Used4, Used5, TestNormalize),
-    choose_helper_name(lambda, Used5, Used6, Lambda),
-    choose_helper_name(apply1, Used6, Used7, Apply1),
-    choose_helper_name(apply2, Used7, Used8, Apply2),
-    choose_helper_name(ffi_function_call_inversion, Used8, Used9, FfiFunctionCallInversion),
-    choose_helper_name(state_clear, Used9, Used10, Clear),
-    choose_helper_name(state_set, Used10, Used11, Set),
-    choose_helper_name(state_get, Used11, Used12, Get),
-    choose_helper_name(state_cell, Used12, _Used13, Cell),
+    choose_helper_name(test_equal_data, Used2, Used3, TestEqualData),
+    choose_helper_name(test_results, Used3, Used4, TestResults),
+    choose_helper_name(test_results_data, Used4, Used5, TestResultsData),
+    choose_helper_name(test_bag, Used5, Used6, TestBag),
+    choose_helper_name(test_normalize, Used6, Used7, TestNormalize),
+    choose_helper_name(test_public_term, Used7, Used8, TestPublicTerm),
+    choose_helper_name(test_public_syntax, Used8, Used9, TestPublicSyntax),
+    choose_helper_name(if2, Used9, Used10, If2),
+    choose_helper_name(lambda, Used10, Used11, Lambda),
+    choose_helper_name(apply1, Used11, Used12, Apply1),
+    choose_helper_name(apply2, Used12, Used13, Apply2),
+    choose_helper_name(bool_and, Used13, Used14, BoolAnd),
+    choose_helper_name(bool_or, Used14, Used15, BoolOr),
+    choose_helper_name(member, Used15, Used16, Member),
+    choose_helper_name(ffi_function_call_inversion, Used16, Used17, FfiFunctionCallInversion),
+    choose_helper_name(state_clear, Used17, Used18, Clear),
+    choose_helper_name(state_set, Used18, Used19, Set),
+    choose_helper_name(state_get, Used19, Used20, Get),
+    choose_helper_name(state_cell, Used20, _Used21, Cell),
     HelperNames = [
         quoted_syntax-Quote,
         test_equal-TestEqual,
+        test_equal_data-TestEqualData,
         test_results-TestResults,
+        test_results_data-TestResultsData,
         test_bag-TestBag,
         test_normalize-TestNormalize,
+        test_public_term-TestPublicTerm,
+        test_public_syntax-TestPublicSyntax,
+        if2-If2,
         lambda-Lambda,
         apply1-Apply1,
         apply2-Apply2,
+        bool_and-BoolAnd,
+        bool_or-BoolOr,
+        member-Member,
         ffi_function_call_inversion-FfiFunctionCallInversion,
         state_clear-Clear,
         state_set-Set,
@@ -362,12 +390,20 @@ collect_term_atoms_list([Term|Terms], Acc0, Acc) :-
 
 helper_default_name(quoted_syntax, 'quoted-syntax').
 helper_default_name(test_equal, 'petta-test-equal').
+helper_default_name(test_equal_data, 'petta-test-equal-data').
 helper_default_name(test_results, 'petta-test-results').
+helper_default_name(test_results_data, 'petta-test-results-data').
 helper_default_name(test_bag, 'petta-test-bag-equal').
 helper_default_name(test_normalize, 'petta-normalize-results').
+helper_default_name(test_public_term, 'petta-public-term').
+helper_default_name(test_public_syntax, 'petta-public-syntax').
+helper_default_name(if2, 'petta-if2').
 helper_default_name(lambda, 'petta-lambda').
 helper_default_name(apply1, 'petta-apply1').
 helper_default_name(apply2, 'petta-apply2').
+helper_default_name(bool_and, 'petta-bool-and').
+helper_default_name(bool_or, 'petta-bool-or').
+helper_default_name(member, 'petta-member').
 helper_default_name(ffi_function_call_inversion, 'petta-ffi-function-call-inversion').
 helper_default_name(state_clear, '__tr-petta-state-clear!').
 helper_default_name(state_set, '__tr-petta-state-set!').
@@ -376,12 +412,20 @@ helper_default_name(state_cell, '__tr-petta-state-cell').
 
 helper_fallback_base(quoted_syntax, '__tr-quoted-syntax').
 helper_fallback_base(test_equal, 'petta-test-equal').
+helper_fallback_base(test_equal_data, 'petta-test-equal-data').
 helper_fallback_base(test_results, 'petta-test-results').
+helper_fallback_base(test_results_data, 'petta-test-results-data').
 helper_fallback_base(test_bag, 'petta-test-bag-equal').
 helper_fallback_base(test_normalize, 'petta-normalize-results').
+helper_fallback_base(test_public_term, 'petta-public-term').
+helper_fallback_base(test_public_syntax, 'petta-public-syntax').
+helper_fallback_base(if2, 'petta-if2').
 helper_fallback_base(lambda, 'petta-lambda').
 helper_fallback_base(apply1, 'petta-apply1').
 helper_fallback_base(apply2, 'petta-apply2').
+helper_fallback_base(bool_and, 'petta-bool-and').
+helper_fallback_base(bool_or, 'petta-bool-or').
+helper_fallback_base(member, 'petta-member').
 helper_fallback_base(ffi_function_call_inversion, 'petta-ffi-function-call-inversion').
 helper_fallback_base(state_clear, '__tr-petta-state-clear').
 helper_fallback_base(state_set, '__tr-petta-state-set').
@@ -401,14 +445,29 @@ quoted_syntax_fun(Name) :-
 petta_test_equal_fun(Name) :-
     helper_name(test_equal, Name).
 
+petta_test_equal_data_fun(Name) :-
+    helper_name(test_equal_data, Name).
+
 petta_test_results_fun(Name) :-
     helper_name(test_results, Name).
+
+petta_test_results_data_fun(Name) :-
+    helper_name(test_results_data, Name).
 
 petta_test_bag_fun(Name) :-
     helper_name(test_bag, Name).
 
 petta_test_normalize_fun(Name) :-
     helper_name(test_normalize, Name).
+
+petta_test_public_term_fun(Name) :-
+    helper_name(test_public_term, Name).
+
+petta_test_public_syntax_fun(Name) :-
+    helper_name(test_public_syntax, Name).
+
+petta_if2_fun(Name) :-
+    helper_name(if2, Name).
 
 petta_lambda_fun(Name) :-
     helper_name(lambda, Name).
@@ -418,6 +477,15 @@ petta_apply1_fun(Name) :-
 
 petta_apply2_fun(Name) :-
     helper_name(apply2, Name).
+
+petta_bool_and_fun(Name) :-
+    helper_name(bool_and, Name).
+
+petta_bool_or_fun(Name) :-
+    helper_name(bool_or, Name).
+
+petta_member_fun(Name) :-
+    helper_name(member, Name).
 
 petta_ffi_function_call_inversion_fun(Name) :-
     helper_name(ffi_function_call_inversion, Name).
@@ -451,13 +519,13 @@ translate_quoted_term_mode(Mode, [reduce, Expr], TExpr) :-
 translate_quoted_term_mode(Mode, ['__tr-raw-apply1', Head, Arg], TExpr) :-
     translate_quoted_term_mode(Mode, Head, THead),
     translate_quoted_term_mode(Mode, Arg, TArg),
-    TExpr = [eval, ['atom-subst', THead, '$fun', ['$fun', TArg]]],
+    atom_subst_apply_term(THead, [TArg], TExpr),
     !.
 translate_quoted_term_mode(Mode, ['__tr-raw-apply', Head|Args], TExpr) :-
     Args \= [],
     translate_quoted_term_mode(Mode, Head, THead),
     translate_quoted_term_list_mode(Mode, Args, TArgs),
-    TExpr = [eval, ['atom-subst', THead, '$fun', ['$fun'|TArgs]]],
+    atom_subst_apply_term(THead, TArgs, TExpr),
     !.
 translate_quoted_term_mode(Mode, ['bind!', Ref, ['new-state', Init]],
                            [SetFun, TRef, TInit]) :-
@@ -482,6 +550,49 @@ translate_quoted_term_mode(Mode, [length, [collapse, Expr]],
     fresh_var(tuple, TupleVar), !.
 translate_quoted_term_mode(Mode, [length, Expr], [length, TExpr]) :-
     translate_quoted_term_mode(Mode, Expr, TExpr), !.
+translate_quoted_term_mode(Mode, [if, Cond, Then], [If2Fun, TCond, TThen]) :-
+    \+ petta_he_profile_mode(Mode),
+    petta_if2_fun(If2Fun),
+    translate_quoted_term_mode(Mode, Cond, TCond),
+    translate_quoted_term_mode(Mode, Then, TThen), !.
+translate_quoted_term_mode(Mode, [and, Left, Right],
+                          [let, LeftVar, TLeft,
+                           [let, RightVar, TRight,
+                            [AndFun, LeftVar, RightVar]]]) :-
+    \+ petta_he_profile_mode(Mode),
+    petta_bool_and_fun(AndFun),
+    translate_quoted_term_mode(Mode, Left, TLeft),
+    translate_quoted_term_mode(Mode, Right, TRight),
+    fresh_var(bool_left, LeftVar),
+    fresh_var(bool_right, RightVar), !.
+translate_quoted_term_mode(Mode, [or, Left, Right],
+                          [let, LeftVar, TLeft,
+                           [let, RightVar, TRight,
+                            [OrFun, LeftVar, RightVar]]]) :-
+    \+ petta_he_profile_mode(Mode),
+    petta_bool_or_fun(OrFun),
+    translate_quoted_term_mode(Mode, Left, TLeft),
+    translate_quoted_term_mode(Mode, Right, TRight),
+    fresh_var(bool_left, LeftVar),
+    fresh_var(bool_right, RightVar), !.
+translate_quoted_term_mode(Mode, [member, Item, Tuple], [MemberFun, TItem, TTuple]) :-
+    \+ petta_he_profile_mode(Mode),
+    petta_member_fun(MemberFun),
+    translate_quoted_term_mode(Mode, Item, TItem),
+    translate_quoted_term_mode(Mode, Tuple, TTuple), !.
+translate_quoted_term_mode(Mode, [maplist, Fun, List],
+                           ['map-atom', TList, ItemVar, TBody]) :-
+    translate_quoted_term_mode(Mode, List, TList),
+    fresh_var(item, ItemVar),
+    partial_application_quoted_body(Mode, Fun, ItemVar, TBody), !.
+translate_quoted_term_mode(Mode, ['filter-atom', List, Fun],
+                           ['filter-atom', TList, ItemVar, TBody]) :-
+    translate_quoted_term_mode(Mode, List, TList),
+    fresh_var(item, ItemVar),
+    partial_application_quoted_body(Mode, Fun, ItemVar, TBody), !.
+translate_quoted_term_mode(Mode, PartialCall, TExpr) :-
+    source_defined_partial_value_call(PartialCall, _Head, _PrefixArgs, _Arity),
+    translate_quoted_term_list_mode(Mode, PartialCall, TExpr), !.
 translate_quoted_term_mode(Mode, PartialCall, TExpr) :-
     petta_he_profile_mode(Mode),
     partial_value_source_call(PartialCall, _Head, _PrefixArgs, _Arity),
@@ -538,12 +649,17 @@ translate_quoted_term_mode(Mode, [Head|Args], [Head|TArgs]) :-
     petta_he_profile_mode(Mode),
     source_variable_atom(Head),
     translate_quoted_term_list_mode(Mode, Args, TArgs), !.
-translate_quoted_term_mode(Mode, [Head|Args], TExpr) :-
+translate_quoted_term_mode(Mode, [Head|Args], [THead|TArgs]) :-
     source_variable_atom(Head),
     \+ petta_he_profile_mode(Mode),
     Args \= [],
-    build_raw_function_call_inversion_apply(Head, Args, RawApply),
-    translate_quoted_term_mode(Mode, RawApply, TExpr), !.
+    translate_quoted_term_mode(Mode, Head, THead),
+    translate_quoted_term_list_mode(Mode, Args, TArgs), !.
+translate_quoted_term_mode(Mode, [Head|Args], TExpr) :-
+    is_list(Head),
+    Args \= [],
+    expression_head_needs_curried_application(Head),
+    translate_curried_application_quoted_mode(Mode, Head, Args, TExpr), !.
 translate_quoted_term_mode(Mode, [Head|Args], [THead|TArgs]) :-
     is_list(Head),
     Args \= [],
@@ -716,6 +832,44 @@ translate_term_mode(Mode, [call, Expr], TExpr) :-
     TExpr = [call, TQuoted], !.
 translate_term_mode(Mode, [eval, Expr], TExpr) :-
     translate_eval_like_mode(Mode, Expr, TExpr), !.
+translate_term_mode(Mode, [if, [once, Goal], Then], TExpr) :-
+    \+ petta_he_profile_mode(Mode),
+    translate_term_mode(Mode, [once, [let, 'True', Goal, Then]], TExpr), !.
+translate_term_mode(Mode, [if, Cond, Then], [If2Fun, TCond, TThen]) :-
+    \+ petta_he_profile_mode(Mode),
+    petta_if2_fun(If2Fun),
+    translate_term_mode(Mode, Cond, TCond),
+    translate_term_mode(Mode, Then, TThen), !.
+translate_term_mode(_Mode, ['is-var', Expr], 'True') :-
+    source_variable_atom(Expr), !.
+translate_term_mode(_Mode, ['is-var', Expr], 'False') :-
+    nonvar(Expr),
+    \+ source_variable_atom(Expr), !.
+translate_term_mode(Mode, [and, Left, Right],
+                    [let, LeftVar, TLeft,
+                     [let, RightVar, TRight,
+                      [AndFun, LeftVar, RightVar]]]) :-
+    \+ petta_he_profile_mode(Mode),
+    petta_bool_and_fun(AndFun),
+    translate_term_mode(Mode, Left, TLeft),
+    translate_term_mode(Mode, Right, TRight),
+    fresh_var(bool_left, LeftVar),
+    fresh_var(bool_right, RightVar), !.
+translate_term_mode(Mode, [or, Left, Right],
+                    [let, LeftVar, TLeft,
+                     [let, RightVar, TRight,
+                      [OrFun, LeftVar, RightVar]]]) :-
+    \+ petta_he_profile_mode(Mode),
+    petta_bool_or_fun(OrFun),
+    translate_term_mode(Mode, Left, TLeft),
+    translate_term_mode(Mode, Right, TRight),
+    fresh_var(bool_left, LeftVar),
+    fresh_var(bool_right, RightVar), !.
+translate_term_mode(Mode, [member, Item, Tuple], [MemberFun, TItem, TTuple]) :-
+    \+ petta_he_profile_mode(Mode),
+    petta_member_fun(MemberFun),
+    translate_term_mode(Mode, Item, TItem),
+    translate_term_mode(Mode, Tuple, TTuple), !.
 
 %% foldall Agg Goal Init
 %%   pure mode:
@@ -762,6 +916,27 @@ translate_term_mode(Mode, ['map-atom', List, Fun],
     translate_term_mode(Mode, List, TList),
     fresh_var(item, ItemVar),
     partial_application_body(Mode, Fun, ItemVar, TBody), !.
+
+%% PeTTa short-form maplist Fun List
+%%   → map-atom List' $item (Fun' $item)
+translate_term_mode(Mode, [maplist, Fun, List],
+               ['map-atom', TList, ItemVar, TBody]) :-
+    translate_term_mode(Mode, List, TList),
+    fresh_var(item, ItemVar),
+    partial_application_body(Mode, Fun, ItemVar, TBody), !.
+
+%% PeTTa short-form filter-atom List Fun
+%%   → filter-atom List' $item (Fun' $item)
+translate_term_mode(Mode, ['filter-atom', List, Fun],
+               ['filter-atom', TList, ItemVar, TBody]) :-
+    translate_term_mode(Mode, List, TList),
+    fresh_var(item, ItemVar),
+    partial_application_body(Mode, Fun, ItemVar, TBody), !.
+
+translate_term_mode(Mode, PartialCall, TExpr) :-
+    petta_he_profile_mode(Mode),
+    source_defined_partial_value_call(PartialCall, _Head, _PrefixArgs, _Arity),
+    translate_term_list_mode(Mode, PartialCall, TExpr), !.
 
 %% PeTTa renders under-applied calls as partial values.
 translate_term_mode(Mode, PartialCall, TExpr) :-
@@ -1093,6 +1268,9 @@ translate_term_mode(Mode, ['|->', Params, Body], ['|->', TParams, TBody]) :-
     translate_term_mode(Mode, Body, TBody),
     !.
 
+translate_term_mode(Mode, ['|->', Params, Body], TExpr) :-
+    translate_nested_lambda_mode(Mode, Params, Body, TExpr), !.
+
 translate_term_mode(Mode, ['|->', Params, Body], ['|->', TParams, TBody]) :-
     pattern_bound_source_variables(Params, ParamVars),
     rawify_pattern_bound_body(ParamVars, Body, RawBody),
@@ -1103,14 +1281,14 @@ translate_term_mode(Mode, ['|->', Params, Body], ['|->', TParams, TBody]) :-
 translate_term_mode(Mode, ['__tr-raw-apply1', Head, Arg], TExpr) :-
     translate_term_mode(Mode, Head, THead),
     translate_term_mode(Mode, Arg, TArg),
-    TExpr = [eval, ['atom-subst', THead, '$fun', ['$fun', TArg]]],
+    atom_subst_apply_term(THead, [TArg], TExpr),
     !.
 
 translate_term_mode(Mode, ['__tr-raw-apply', Head|Args], TExpr) :-
     Args \= [],
     translate_term_mode(Mode, Head, THead),
     translate_term_list_mode(Mode, Args, TArgs),
-    TExpr = [eval, ['atom-subst', THead, '$fun', ['$fun'|TArgs]]],
+    atom_subst_apply_term(THead, TArgs, TExpr),
     !.
 
 translate_term_mode(Mode, [case, Scrutinee, Branches], [case, TScrutinee, TBranches]) :-
@@ -1126,12 +1304,17 @@ translate_term_mode(Mode, [Head|Args], [Head|TArgs]) :-
     petta_he_profile_mode(Mode),
     source_variable_atom(Head),
     translate_term_list_mode(Mode, Args, TArgs), !.
-translate_term_mode(Mode, [Head|Args], TExpr) :-
+translate_term_mode(Mode, [Head|Args], [THead|TArgs]) :-
     source_variable_atom(Head),
     \+ petta_he_profile_mode(Mode),
     Args \= [],
-    build_raw_function_call_inversion_apply(Head, Args, RawApply),
-    translate_term_mode(Mode, RawApply, TExpr), !.
+    translate_term_mode(Mode, Head, THead),
+    translate_term_list_mode(Mode, Args, TArgs), !.
+translate_term_mode(Mode, [Head|Args], TExpr) :-
+    is_list(Head),
+    Args \= [],
+    expression_head_needs_curried_application(Head),
+    translate_curried_application_mode(Mode, Head, Args, TExpr), !.
 translate_term_mode(Mode, [Head|Args], [THead|TArgs]) :-
     is_list(Head),
     Args \= [],
@@ -1591,12 +1774,11 @@ rawify_pattern_bound_body(BoundVars, [case, Expr, Branches],
     !,
     rawify_pattern_bound_body(BoundVars, Expr, RawExpr),
     rawify_pattern_bound_branches(BoundVars, Branches, RawBranches).
-rawify_pattern_bound_body(BoundVars, [Head|Args], RawApply) :-
+rawify_pattern_bound_body(BoundVars, [Head|Args], [Head|RawArgs]) :-
     source_variable_atom(Head),
     memberchk(Head, BoundVars),
     !,
-    rawify_pattern_bound_list(BoundVars, Args, RawArgs),
-    build_raw_function_call_inversion_apply(Head, RawArgs, RawApply).
+    rawify_pattern_bound_list(BoundVars, Args, RawArgs).
 rawify_pattern_bound_body(BoundVars, List, RawList) :-
     is_list(List),
     !,
@@ -1653,6 +1835,15 @@ translate_decl_mode(Mode, Decl, Out) :-
     normalize_function_head_decl(Decl, Normalized),
     !,
     translate_decl_mode(Mode, Normalized, Out).
+
+translate_decl_mode(Mode, ['=', LHS, [Head|Args]], ['=', LHS, TRHS]) :-
+    \+ petta_he_profile_mode(Mode),
+    LHS = [_Functor|FormalArgs],
+    source_variable_atom(Head),
+    memberchk(Head, FormalArgs),
+    Args \= [],
+    translate_callable_source_var_application_mode(Mode, Head, Args, TRHS),
+    !.
 
 translate_decl_mode(Mode, ['=', LHS, RHS], ['=', LHS, TRHS]) :-
     translate_term_mode(Mode, RHS, TRHS), !.
@@ -2020,7 +2211,8 @@ callable_bool_condition_term([Apply1Fun, _Fun, _Arg]) :-
     petta_apply1_fun(Apply1Fun).
 callable_bool_condition_term([Apply2Fun, _Fun, _Arg1, _Arg2]) :-
     petta_apply2_fun(Apply2Fun).
-callable_bool_condition_term([eval, ['atom-subst', _Fun, '$fun', ['$fun'|_Args]]]).
+callable_bool_condition_term([eval, ['atom-subst', _Fun, Binder, [Binder|_Args]]]) :-
+    source_variable_atom(Binder).
 callable_bool_condition_term([Head|Args]) :-
     source_variable_atom(Head),
     Args \= [].
@@ -2185,6 +2377,7 @@ translate_prog1_rest(Mode, [Expr|Rest], ResultVar, [let, FreshD, TExpr, TRest]) 
     translate_prog1_rest(Mode, Rest, ResultVar, TRest).
 
 partial_application_body(Mode, [Head|PrefixArgs], Arg, TBody) :-
+    partial_application_source_prefix(Head, PrefixArgs),
     append([Head|PrefixArgs], [Arg], Call),
     translate_term_mode(Mode, Call, TBody), !.
 partial_application_body(_Mode, Fun, Arg, [Apply1Fun, Fun, Arg]) :-
@@ -2192,6 +2385,16 @@ partial_application_body(_Mode, Fun, Arg, [Apply1Fun, Fun, Arg]) :-
     petta_apply1_fun(Apply1Fun), !.
 partial_application_body(Mode, Fun, Arg, TBody) :-
     translate_term_mode(Mode, [Fun, Arg], TBody).
+
+partial_application_quoted_body(Mode, [Head|PrefixArgs], Arg, TBody) :-
+    partial_application_source_prefix(Head, PrefixArgs),
+    append([Head|PrefixArgs], [Arg], Call),
+    translate_quoted_term_mode(Mode, Call, TBody), !.
+partial_application_quoted_body(_Mode, Fun, Arg, [Apply1Fun, Fun, Arg]) :-
+    source_variable_atom(Fun),
+    petta_apply1_fun(Apply1Fun), !.
+partial_application_quoted_body(Mode, Fun, Arg, TBody) :-
+    translate_quoted_term_mode(Mode, [Fun, Arg], TBody).
 
 reducer_application_body(Agg, TAgg, AccVar, ItemVar,
                          [Apply2Fun, TAgg, AccVar, ItemVar]) :-
@@ -2209,6 +2412,18 @@ partial_call_repr([Fun|Args], ReprString) :-
     atomic_list_concat(['"(partial ', Fun, ' ', ArgsText, ')"'], ReprString).
 
 partial_value_source_call([Head|PrefixArgs], Head, PrefixArgs, Arity) :-
+    atom(Head),
+    callable_arity(Head, Arity),
+    length(PrefixArgs, PrefixCount),
+    PrefixCount < Arity.
+
+source_defined_partial_value_call([Head|PrefixArgs], Head, PrefixArgs, Arity) :-
+    atom(Head),
+    tr_source_fun_arity(Head, Arity),
+    length(PrefixArgs, PrefixCount),
+    PrefixCount < Arity.
+
+partial_application_source_prefix(Head, PrefixArgs) :-
     atom(Head),
     callable_arity(Head, Arity),
     length(PrefixArgs, PrefixCount),
@@ -2304,6 +2519,25 @@ build_partial_lambda_quoted_mode(Mode, CallPrefix, Remaining,
     Remaining1 is Remaining - 1,
     build_partial_lambda_quoted_mode(Mode, NextPrefix, Remaining1, Inner).
 
+translate_nested_lambda_mode(Mode, Params, Body, TExpr) :-
+    lambda_source_params(Params, ParamVars),
+    pattern_bound_source_variables(Params, BoundVars),
+    rawify_pattern_bound_body(BoundVars, Body, RawBody),
+    translate_term_mode(Mode, RawBody, TRawBody),
+    nest_petta_lambdas(ParamVars, TRawBody, TExpr).
+
+lambda_source_params(Params, [Params]) :-
+    source_variable_atom(Params), !.
+lambda_source_params(Params, Params) :-
+    is_list(Params),
+    Params \= [],
+    maplist(source_variable_atom, Params).
+
+nest_petta_lambdas([], Body, Body).
+nest_petta_lambdas([Param|Rest], Body, [LambdaFun, Param, Nested]) :-
+    petta_lambda_fun(LambdaFun),
+    nest_petta_lambdas(Rest, Body, Nested).
+
 translate_term_list_mode(_Mode, [], []).
 translate_term_list_mode(Mode, [Term|Rest], [TTerm|TRest]) :-
     translate_term_mode(Mode, Term, TTerm),
@@ -2346,6 +2580,15 @@ needs_curried_application(Head, Args) :-
     length(Args, ArgCount),
     ArgCount > Arity.
 
+expression_head_needs_curried_application(Head) :-
+    is_list(Head),
+    (   source_defined_partial_value_call(Head, _Fun, _PrefixArgs, _Arity)
+    ;   Head = ['|->', Params, _Body],
+        lambda_source_params(Params, _ParamVars)
+    ;   Head = [lambda, Params, _Body],
+        lambda_source_params(Params, _ParamVars)
+    ).
+
 translate_curried_application_mode(Mode, Head, Args, TExpr) :-
     atom(Head),
     callable_arity(Head, Arity),
@@ -2376,13 +2619,15 @@ translate_curried_application_quoted_mode(Mode, Head, Args, TExpr) :-
 
 left_associate_application_mode(_Mode, THead, [], THead).
 left_associate_application_mode(Mode, THead, [Arg|Rest], TExpr) :-
+    petta_apply1_fun(Apply1Fun),
     translate_term_mode(Mode, Arg, TArg),
-    left_associate_application_mode(Mode, [THead, TArg], Rest, TExpr).
+    left_associate_application_mode(Mode, [Apply1Fun, THead, TArg], Rest, TExpr).
 
 left_associate_application_quoted_mode(_Mode, THead, [], THead).
 left_associate_application_quoted_mode(Mode, THead, [Arg|Rest], TExpr) :-
+    petta_apply1_fun(Apply1Fun),
     translate_quoted_term_mode(Mode, Arg, TArg),
-    left_associate_application_quoted_mode(Mode, [THead, TArg], Rest, TExpr).
+    left_associate_application_quoted_mode(Mode, [Apply1Fun, THead, TArg], Rest, TExpr).
 
 translate_callable_source_var_application_mode(Mode, Head, Args, TExpr) :-
     translate_term_mode(Mode, Head, THead),
@@ -2493,12 +2738,12 @@ source_program_defines_fun(Fun) :-
     tr_source_fun_count(Fun, Count),
     Count > 0.
 
-translate_eval_like_mode(Mode, Expr, [unquote, TExpr]) :-
+translate_eval_like_mode(Mode, Expr, [eval, TExpr]) :-
     native_quote_mode(Mode),
     source_variable_atom(Expr),
     translate_term_mode(Mode, Expr, TExpr), !.
-translate_eval_like_mode(Mode, Expr, [unquote, [quote, TExpr]]) :-
-    translate_quoted_term_mode(Mode, Expr, TExpr).
+translate_eval_like_mode(Mode, Expr, _) :-
+    throw_unsupported_petta_native_for_he_core(Mode, [eval_like, Expr], translate_eval_like_mode/3).
 
 pure_once_lowering(TExpr, [let, TupleVar, [collapse, TExpr],
                           [case, TupleVar,
@@ -2718,22 +2963,44 @@ prepend_petta_compat_program_decls(Mode, SourceDecls, TDecls0, TDecls) :-
     maybe_prepend_append_compat_decls(SourceDecls, TDecls2, TDecls3),
     maybe_prepend_second_from_pair_compat_decls(SourceDecls, TDecls3, TDecls4),
     maybe_prepend_is_member_compat_decls(SourceDecls, TDecls4, TDecls5),
-    maybe_prepend_petta_lambda_compat_decls(SourceDecls, TDecls5, TDecls6),
-    maybe_prepend_petta_apply_compat_decls(SourceDecls, TDecls6, TDecls7),
-    maybe_prepend_petta_ffi_function_call_inversion_compat_decls(SourceDecls, TDecls7, TDecls8),
-    maybe_prepend_petta_state_compat_decls(TDecls8, TDecls9),
-    maybe_prepend_quote_compat_decls(TDecls9, TDecls10),
-    maybe_prepend_length_compat_decls(Mode, SourceDecls, TDecls10, TDecls11),
-    TDecls = TDecls11.
+    maybe_prepend_reverse_compat_decls(SourceDecls, TDecls5, TDecls6),
+    maybe_prepend_last_compat_decls(SourceDecls, TDecls6, TDecls7),
+    maybe_prepend_foldl_compat_decls(SourceDecls, TDecls7, TDecls8),
+    maybe_prepend_min_compat_decls(SourceDecls, TDecls8, TDecls9),
+    maybe_prepend_max_compat_decls(SourceDecls, TDecls9, TDecls10),
+    maybe_prepend_alpha_unique_atom_compat_decls(SourceDecls, TDecls10, TDecls11),
+    maybe_prepend_petta_bool_compat_decls(SourceDecls, TDecls11, TDecls12),
+    maybe_prepend_petta_if2_compat_decls(SourceDecls, TDecls12, TDecls13),
+    maybe_prepend_petta_member_compat_decls(SourceDecls, TDecls13, TDecls14),
+    maybe_prepend_petta_lambda_compat_decls(SourceDecls, TDecls14, TDecls15),
+    maybe_prepend_petta_apply_compat_decls(SourceDecls, TDecls15, TDecls16),
+    maybe_prepend_petta_ffi_function_call_inversion_compat_decls(SourceDecls, TDecls16, TDecls17),
+    maybe_prepend_petta_state_compat_decls(TDecls17, TDecls18),
+    maybe_prepend_quote_compat_decls(TDecls18, TDecls19),
+    maybe_prepend_length_compat_decls(Mode, SourceDecls, TDecls19, TDecls20),
+    TDecls = TDecls20.
 
 maybe_prepend_petta_test_compat_decls(Mode, _SourceDecls, TDecls0, TDecls) :-
     petta_he_profile_mode(Mode),
     !,
     TDecls = TDecls0.
 maybe_prepend_petta_test_compat_decls(_Mode, _SourceDecls, TDecls0, TDecls) :-
-    maybe_prepend_petta_test_results_compat_decls(TDecls0, TDecls1),
-    maybe_prepend_petta_test_bag_compat_decls(TDecls1, TDecls2),
-    maybe_prepend_petta_test_equal_compat_decls(TDecls2, TDecls).
+    maybe_prepend_petta_test_public_compat_decls(TDecls0, TDecls1),
+    maybe_prepend_petta_test_results_compat_decls(TDecls1, TDecls2),
+    maybe_prepend_petta_test_results_data_compat_decls(TDecls2, TDecls3),
+    maybe_prepend_petta_test_bag_compat_decls(TDecls3, TDecls4),
+    maybe_prepend_petta_test_equal_compat_decls(TDecls4, TDecls5),
+    maybe_prepend_petta_test_equal_data_compat_decls(TDecls5, TDecls).
+
+maybe_prepend_petta_test_public_compat_decls(TDecls0, TDecls) :-
+    (   (   program_uses_any_petta_test_helper(TDecls0)
+        ;   program_uses_petta_test_public_term(TDecls0)
+        ;   program_uses_petta_test_public_syntax(TDecls0)
+        )
+    ->  petta_test_public_compat_decls(CompatDecls),
+        append(CompatDecls, TDecls0, TDecls)
+    ;   TDecls = TDecls0
+    ).
 
 maybe_prepend_petta_test_equal_compat_decls(TDecls0, TDecls) :-
     (   program_uses_petta_test_equal(TDecls0)
@@ -2742,9 +3009,23 @@ maybe_prepend_petta_test_equal_compat_decls(TDecls0, TDecls) :-
     ;   TDecls = TDecls0
     ).
 
+maybe_prepend_petta_test_equal_data_compat_decls(TDecls0, TDecls) :-
+    (   program_uses_petta_test_equal_data(TDecls0)
+    ->  petta_test_equal_data_compat_decls(CompatDecls),
+        append(CompatDecls, TDecls0, TDecls)
+    ;   TDecls = TDecls0
+    ).
+
 maybe_prepend_petta_test_results_compat_decls(TDecls0, TDecls) :-
     (   program_uses_petta_test_results(TDecls0)
     ->  petta_test_results_compat_decls(CompatDecls),
+        append(CompatDecls, TDecls0, TDecls)
+    ;   TDecls = TDecls0
+    ).
+
+maybe_prepend_petta_test_results_data_compat_decls(TDecls0, TDecls) :-
+    (   program_uses_petta_test_results_data(TDecls0)
+    ->  petta_test_results_data_compat_decls(CompatDecls),
         append(CompatDecls, TDecls0, TDecls)
     ;   TDecls = TDecls0
     ).
@@ -2776,6 +3057,90 @@ maybe_prepend_is_member_compat_decls(SourceDecls, TDecls0, TDecls) :-
     (   program_uses_is_member(SourceDecls),
         \+ program_defines_is_member(SourceDecls)
     ->  petta_is_member_compat_decls(CompatDecls),
+        append(CompatDecls, TDecls0, TDecls)
+    ;   TDecls = TDecls0
+    ).
+
+maybe_prepend_reverse_compat_decls(SourceDecls, TDecls0, TDecls) :-
+    (   program_uses_reverse(SourceDecls),
+        \+ program_defines_reverse(SourceDecls)
+    ->  petta_reverse_compat_decls(CompatDecls),
+        append(CompatDecls, TDecls0, TDecls)
+    ;   TDecls = TDecls0
+    ).
+
+maybe_prepend_last_compat_decls(SourceDecls, TDecls0, TDecls) :-
+    (   program_uses_last(SourceDecls),
+        \+ program_defines_last(SourceDecls)
+    ->  petta_last_compat_decls(CompatDecls),
+        append(CompatDecls, TDecls0, TDecls)
+    ;   TDecls = TDecls0
+    ).
+
+maybe_prepend_foldl_compat_decls(SourceDecls, TDecls0, TDecls) :-
+    (   program_uses_foldl(SourceDecls),
+        \+ program_defines_foldl(SourceDecls)
+    ->  petta_foldl_compat_decls(CompatDecls),
+        append(CompatDecls, TDecls0, TDecls)
+    ;   TDecls = TDecls0
+    ).
+
+maybe_prepend_min_compat_decls(SourceDecls, TDecls0, TDecls) :-
+    (   program_uses_min(SourceDecls),
+        \+ program_defines_min(SourceDecls)
+    ->  petta_min_compat_decls(CompatDecls),
+        append(CompatDecls, TDecls0, TDecls)
+    ;   TDecls = TDecls0
+    ).
+
+maybe_prepend_max_compat_decls(SourceDecls, TDecls0, TDecls) :-
+    (   program_uses_max(SourceDecls),
+        \+ program_defines_max(SourceDecls)
+    ->  petta_max_compat_decls(CompatDecls),
+        append(CompatDecls, TDecls0, TDecls)
+    ;   TDecls = TDecls0
+    ).
+
+maybe_prepend_alpha_unique_atom_compat_decls(SourceDecls, TDecls0, TDecls) :-
+    (   program_uses_alpha_unique_atom(SourceDecls),
+        \+ program_defines_alpha_unique_atom(SourceDecls)
+    ->  petta_alpha_unique_atom_compat_decls(CompatDecls),
+        append(CompatDecls, TDecls0, TDecls)
+    ;   TDecls = TDecls0
+    ).
+
+maybe_prepend_petta_bool_compat_decls(SourceDecls, TDecls0, TDecls) :-
+    maybe_prepend_petta_bool_or_compat_decls(SourceDecls, TDecls0, TDecls1),
+    maybe_prepend_petta_bool_and_compat_decls(SourceDecls, TDecls1, TDecls).
+
+maybe_prepend_petta_bool_and_compat_decls(SourceDecls, TDecls0, TDecls) :-
+    (   program_uses_petta_bool_and(TDecls0),
+        \+ program_defines_petta_bool_and(SourceDecls)
+    ->  petta_bool_and_compat_decls(CompatDecls),
+        append(CompatDecls, TDecls0, TDecls)
+    ;   TDecls = TDecls0
+    ).
+
+maybe_prepend_petta_bool_or_compat_decls(SourceDecls, TDecls0, TDecls) :-
+    (   program_uses_petta_bool_or(TDecls0),
+        \+ program_defines_petta_bool_or(SourceDecls)
+    ->  petta_bool_or_compat_decls(CompatDecls),
+        append(CompatDecls, TDecls0, TDecls)
+    ;   TDecls = TDecls0
+    ).
+
+maybe_prepend_petta_if2_compat_decls(SourceDecls, TDecls0, TDecls) :-
+    (   program_uses_petta_if2(TDecls0),
+        \+ program_defines_petta_if2(SourceDecls)
+    ->  petta_if2_compat_decls(CompatDecls),
+        append(CompatDecls, TDecls0, TDecls)
+    ;   TDecls = TDecls0
+    ).
+
+maybe_prepend_petta_member_compat_decls(SourceDecls, TDecls0, TDecls) :-
+    (   program_uses_petta_member(TDecls0),
+        \+ program_defines_petta_member(SourceDecls)
+    ->  petta_member_compat_decls(CompatDecls),
         append(CompatDecls, TDecls0, TDecls)
     ;   TDecls = TDecls0
     ).
@@ -2890,6 +3255,66 @@ program_uses_is_member(Term) :-
 program_uses_is_member(_) :-
     fail.
 
+program_uses_reverse(Term) :-
+    is_list(Term),
+    (   Term = [reverse, _]
+    ;   member(Subterm, Term),
+        program_uses_reverse(Subterm)
+    ).
+
+program_uses_reverse(_) :-
+    fail.
+
+program_uses_last(Term) :-
+    is_list(Term),
+    (   Term = [last, _]
+    ;   member(Subterm, Term),
+        program_uses_last(Subterm)
+    ).
+
+program_uses_last(_) :-
+    fail.
+
+program_uses_foldl(Term) :-
+    is_list(Term),
+    (   Term = [foldl, _, _, _]
+    ;   member(Subterm, Term),
+        program_uses_foldl(Subterm)
+    ).
+
+program_uses_foldl(_) :-
+    fail.
+
+program_uses_min(Term) :-
+    is_list(Term),
+    (   Term = [min, _, _]
+    ;   member(Subterm, Term),
+        program_uses_min(Subterm)
+    ).
+
+program_uses_min(_) :-
+    fail.
+
+program_uses_max(Term) :-
+    is_list(Term),
+    (   Term = [max, _, _]
+    ;   member(Subterm, Term),
+        program_uses_max(Subterm)
+    ).
+
+program_uses_max(_) :-
+    fail.
+
+program_uses_alpha_unique_atom(Term) :-
+    is_list(Term),
+    (   Term = ['alpha-unique-atom', _]
+    ;   member(Subterm, Term),
+        program_uses_alpha_unique_atom(Subterm)
+    ).
+
+program_uses_alpha_unique_atom(_) :-
+    fail.
+
 program_uses_quoted_syntax(Term) :-
     is_list(Term),
     quoted_syntax_fun(QuoteFun),
@@ -2929,6 +3354,17 @@ program_uses_petta_test_equal(Term) :-
 program_uses_petta_test_equal(_) :-
     fail.
 
+program_uses_petta_test_equal_data(Term) :-
+    is_list(Term),
+    (   petta_test_equal_data_fun(TestEqualData),
+        Term = [TestEqualData, _, _]
+    ;   member(Subterm, Term),
+        program_uses_petta_test_equal_data(Subterm)
+    ).
+
+program_uses_petta_test_equal_data(_) :-
+    fail.
+
 program_uses_petta_test_results(Term) :-
     is_list(Term),
     (   petta_test_results_fun(TestResults),
@@ -2940,6 +3376,17 @@ program_uses_petta_test_results(Term) :-
 program_uses_petta_test_results(_) :-
     fail.
 
+program_uses_petta_test_results_data(Term) :-
+    is_list(Term),
+    (   petta_test_results_data_fun(TestResultsData),
+        Term = [TestResultsData, _, _]
+    ;   member(Subterm, Term),
+        program_uses_petta_test_results_data(Subterm)
+    ).
+
+program_uses_petta_test_results_data(_) :-
+    fail.
+
 program_uses_petta_test_bag(Term) :-
     is_list(Term),
     (   petta_test_bag_fun(TestBag),
@@ -2949,6 +3396,43 @@ program_uses_petta_test_bag(Term) :-
     ).
 
 program_uses_petta_test_bag(_) :-
+    fail.
+
+program_uses_any_petta_test_helper(Term) :-
+    program_uses_petta_test_equal(Term),
+    !.
+program_uses_any_petta_test_helper(Term) :-
+    program_uses_petta_test_equal_data(Term),
+    !.
+program_uses_any_petta_test_helper(Term) :-
+    program_uses_petta_test_results(Term),
+    !.
+program_uses_any_petta_test_helper(Term) :-
+    program_uses_petta_test_results_data(Term),
+    !.
+program_uses_any_petta_test_helper(Term) :-
+    program_uses_petta_test_bag(Term).
+
+program_uses_petta_test_public_term(Term) :-
+    is_list(Term),
+    (   petta_test_public_term_fun(PublicTerm),
+        Term = [PublicTerm, _]
+    ;   member(Subterm, Term),
+        program_uses_petta_test_public_term(Subterm)
+    ).
+
+program_uses_petta_test_public_term(_) :-
+    fail.
+
+program_uses_petta_test_public_syntax(Term) :-
+    is_list(Term),
+    (   petta_test_public_syntax_fun(PublicSyntax),
+        Term = [PublicSyntax, _]
+    ;   member(Subterm, Term),
+        program_uses_petta_test_public_syntax(Subterm)
+    ).
+
+program_uses_petta_test_public_syntax(_) :-
     fail.
 
 program_uses_petta_lambda_helper(Term) :-
@@ -2984,6 +3468,50 @@ program_uses_petta_apply2_helper(Term) :-
 program_uses_petta_apply2_helper(_) :-
     fail.
 
+program_uses_petta_bool_and(Term) :-
+    is_list(Term),
+    (   petta_bool_and_fun(AndFun),
+        Term = [AndFun, _, _]
+    ;   member(Subterm, Term),
+        program_uses_petta_bool_and(Subterm)
+    ).
+
+program_uses_petta_bool_and(_) :-
+    fail.
+
+program_uses_petta_bool_or(Term) :-
+    is_list(Term),
+    (   petta_bool_or_fun(OrFun),
+        Term = [OrFun, _, _]
+    ;   member(Subterm, Term),
+        program_uses_petta_bool_or(Subterm)
+    ).
+
+program_uses_petta_bool_or(_) :-
+    fail.
+
+program_uses_petta_if2(Term) :-
+    is_list(Term),
+    (   petta_if2_fun(If2Fun),
+        Term = [If2Fun, _, _]
+    ;   member(Subterm, Term),
+        program_uses_petta_if2(Subterm)
+    ).
+
+program_uses_petta_if2(_) :-
+    fail.
+
+program_uses_petta_member(Term) :-
+    is_list(Term),
+    (   petta_member_fun(MemberFun),
+        Term = [MemberFun, _, _]
+    ;   member(Subterm, Term),
+        program_uses_petta_member(Subterm)
+    ).
+
+program_uses_petta_member(_) :-
+    fail.
+
 program_uses_petta_ffi_function_call_inversion_helper(Term) :-
     is_list(Term),
     (   petta_ffi_function_call_inversion_fun(FfiFun),
@@ -3011,6 +3539,30 @@ program_defines_is_member([['=', ['is-member'|_], _]|_]) :- !.
 program_defines_is_member([_|Rest]) :-
     program_defines_is_member(Rest).
 
+program_defines_reverse([['=', [reverse|_], _]|_]) :- !.
+program_defines_reverse([_|Rest]) :-
+    program_defines_reverse(Rest).
+
+program_defines_last([['=', [last|_], _]|_]) :- !.
+program_defines_last([_|Rest]) :-
+    program_defines_last(Rest).
+
+program_defines_foldl([['=', [foldl|_], _]|_]) :- !.
+program_defines_foldl([_|Rest]) :-
+    program_defines_foldl(Rest).
+
+program_defines_min([['=', [min|_], _]|_]) :- !.
+program_defines_min([_|Rest]) :-
+    program_defines_min(Rest).
+
+program_defines_max([['=', [max|_], _]|_]) :- !.
+program_defines_max([_|Rest]) :-
+    program_defines_max(Rest).
+
+program_defines_alpha_unique_atom([['=', ['alpha-unique-atom'|_], _]|_]) :- !.
+program_defines_alpha_unique_atom([_|Rest]) :-
+    program_defines_alpha_unique_atom(Rest).
+
 program_defines_petta_lambda([['=', [[Head|_], _], _]|_]) :-
     petta_lambda_fun(Head), !.
 program_defines_petta_lambda([_|Rest]) :-
@@ -3025,6 +3577,26 @@ program_defines_petta_apply2([['=', [Head|_], _]|_]) :-
     petta_apply2_fun(Head), !.
 program_defines_petta_apply2([_|Rest]) :-
     program_defines_petta_apply2(Rest).
+
+program_defines_petta_bool_and([['=', [Head|_], _]|_]) :-
+    petta_bool_and_fun(Head), !.
+program_defines_petta_bool_and([_|Rest]) :-
+    program_defines_petta_bool_and(Rest).
+
+program_defines_petta_bool_or([['=', [Head|_], _]|_]) :-
+    petta_bool_or_fun(Head), !.
+program_defines_petta_bool_or([_|Rest]) :-
+    program_defines_petta_bool_or(Rest).
+
+program_defines_petta_if2([['=', [Head|_], _]|_]) :-
+    petta_if2_fun(Head), !.
+program_defines_petta_if2([_|Rest]) :-
+    program_defines_petta_if2(Rest).
+
+program_defines_petta_member([['=', [Head|_], _]|_]) :-
+    petta_member_fun(Head), !.
+program_defines_petta_member([_|Rest]) :-
+    program_defines_petta_member(Rest).
 
 program_defines_petta_ffi_function_call_inversion([['=', [Head|_], _]|_]) :-
     petta_ffi_function_call_inversion_fun(Head), !.
@@ -3049,97 +3621,299 @@ program_defines_test([['=', [test|_], _]|_]) :- !.
 program_defines_test([_|Rest]) :-
     program_defines_test(Rest).
 
+petta_test_public_compat_decls([
+    [':', PublicTerm, ['->', 'Atom', 'Atom']],
+    [':', PublicSyntax, ['->', 'Atom', 'Atom']],
+    ['=', [PublicTerm, '$expr'], PublicTermBody],
+    ['=', [PublicSyntax, '$expr'], PublicSyntaxBody]
+]) :-
+    petta_test_public_term_fun(PublicTerm),
+    petta_test_public_syntax_fun(PublicSyntax),
+    PublicTermBody =
+        [if, ['==', ['get-metatype', '$expr'], 'Expression'],
+         [case, '$expr',
+          [['()', '()'],
+           [[quote, '$__tr_public_quoted'],
+            [PublicSyntax, '$__tr_public_quoted']],
+           ['$__tr_public_any',
+            ['map-atom', '$expr', '$__tr_public_item',
+             [eval, [PublicTerm, '$__tr_public_item']]]]]],
+         '$expr'],
+    PublicSyntaxBody =
+        [if, ['==', ['get-metatype', '$expr'], 'Expression'],
+         [case, '$expr',
+          [['()', '()'],
+           ['$__tr_public_any',
+            ['map-atom', '$expr', '$__tr_public_item',
+             [eval, [PublicSyntax, '$__tr_public_item']]]]]],
+         '$expr'].
+
+petta_if2_compat_decls([
+    ['=', [If2Fun, 'True', '$then'], '$then']
+]) :-
+    petta_if2_fun(If2Fun).
+
 petta_test_equal_compat_decls([
     [':', TestEqual, ['->', 'Atom', 'Atom', 'Bool']],
     ['=', [TestEqual, '$actual', '$expected'], TestBody]
 ]) :-
     petta_test_equal_fun(TestEqual),
-    petta_test_direct_body(TestBody).
+    petta_test_public_term_fun(PublicTerm),
+    petta_test_direct_body(PublicTerm, TestBody).
+
+petta_test_equal_data_compat_decls([
+    [':', TestEqualData, ['->', 'Atom', 'Atom', 'Bool']],
+    ['=', [TestEqualData, '$actual', '$expected'], TestBody]
+]) :-
+    petta_test_equal_data_fun(TestEqualData),
+    petta_test_public_term_fun(PublicTerm),
+    petta_test_public_syntax_fun(PublicSyntax),
+    petta_test_direct_data_body(PublicTerm, PublicSyntax, TestBody).
 
 petta_test_results_compat_decls([
     ['=', [NormalizeFun, '$tuple'],
-     [case, '$tuple',
-      [[['$single'], '$single'],
-       ['$many', '$many']]]],
+     [PublicTerm,
+      [case, '$tuple',
+       [[['$single'], '$single'],
+        ['$many', '$many']]]]],
     [':', TestResults, ['->', 'Atom', 'Atom', 'Bool']],
     ['=', [TestResults, '$actual', '$expected'], TestBody]
 ]) :-
     petta_test_normalize_fun(NormalizeFun),
+    petta_test_public_term_fun(PublicTerm),
     petta_test_results_fun(TestResults),
     petta_test_collapse_body(NormalizeFun, TestBody).
+
+petta_test_results_data_compat_decls([
+    ['=', [NormalizeFun, '$tuple'],
+     [PublicTerm,
+      [case, '$tuple',
+       [[['$single'], '$single'],
+        ['$many', '$many']]]]],
+    [':', TestResultsData, ['->', 'Atom', 'Atom', 'Bool']],
+    ['=', [TestResultsData, '$actual', '$expected'], TestBody]
+]) :-
+    petta_test_normalize_fun(NormalizeFun),
+    petta_test_public_term_fun(PublicTerm),
+    petta_test_public_syntax_fun(PublicSyntax),
+    petta_test_results_data_fun(TestResultsData),
+    petta_test_collapse_data_body(NormalizeFun, PublicTerm, PublicSyntax, TestBody).
 
 petta_test_bag_compat_decls([
     [':', TestBag, ['->', 'Atom', 'Atom', 'Bool']],
     ['=', [TestBag, '$actual', '$expected'], TestBody]
 ]) :-
     petta_test_bag_fun(TestBag),
-    petta_test_bag_body(TestBody).
+    petta_test_public_term_fun(PublicTerm),
+    petta_test_bag_body(PublicTerm, TestBody).
 
-petta_test_direct_body(
-    [let, '$__tr_actual_value', '$actual',
-     [if, ['==', '$__tr_actual_value', '$expected'],
-       [let, '$__tr_test_printed',
-        ['println!',
-         ['format-args', '"is {}, should {}. ✅"',
-          ['$__tr_actual_value', '$expected']]],
-        'True'],
-       [if, ['=alpha', '$__tr_actual_value', '$expected'],
-       [let, '$__tr_test_printed',
-        ['println!',
-         ['format-args', '"is {}, should {}. ✅"',
-          ['$__tr_actual_value', '$expected']]],
-        'True'],
-       [let, '$__tr_test_printed',
-        ['println!',
-         ['format-args', '"is {}, should {}. ❌"',
-          ['$__tr_actual_value', '$expected']]],
-        'False']]]]
-).
+petta_test_direct_body(PublicTerm, Body) :-
+    Success =
+        [let, '$__tr_test_printed',
+         ['println!',
+          ['format-args', '"is {}, should {}. ✅"',
+           ['$__tr_actual_public', '$__tr_expected_public']]],
+         'True'],
+    Failure =
+        [let, '$__tr_test_printed',
+         ['println!',
+          ['format-args', '"is {}, should {}. ❌"',
+           ['$__tr_actual_public', '$__tr_expected_public']]],
+         'False'],
+    Body =
+        [let, '$__tr_actual_value', [eval, '$actual'],
+         [let, '$__tr_expected_value', [eval, '$expected'],
+          [let, '$__tr_actual_public_1', [eval, [PublicTerm, '$__tr_actual_value']],
+           [let, '$__tr_expected_public_1', [eval, [PublicTerm, '$__tr_expected_value']],
+            [let, '$__tr_actual_public', [eval, '$__tr_actual_public_1'],
+             [let, '$__tr_expected_public', [eval, '$__tr_expected_public_1'],
+              [if, ['==', '$__tr_actual_public', '$__tr_expected_public'],
+               Success,
+               [if, ['=alpha', '$__tr_actual_public', '$__tr_expected_public'],
+                Success,
+                Failure]]]]]]]].
 
-petta_test_collapse_body(NormalizeFun,
-    [let, '$__tr_actual_results',
-      [NormalizeFun, [collapse, '$actual']],
-      [let, '$__tr_expected_results',
-       [NormalizeFun, [collapse, '$expected']],
-       [if, ['==', '$__tr_actual_results', '$__tr_expected_results'],
+petta_test_direct_data_body(PublicTerm, PublicSyntax, Body) :-
+    RawSuccess =
+        [let, '$__tr_test_printed',
+         ['println!',
+          ['format-args', '"is {}, should {}. ✅"',
+           ['$__tr_actual_value', '$__tr_expected_any']]],
+         'True'],
+    Success =
+        [let, '$__tr_test_printed',
+         ['println!',
+          ['format-args', '"is {}, should {}. ✅"',
+           ['$__tr_actual_public', '$__tr_expected_public']]],
+         'True'],
+    Failure =
+        [let, '$__tr_test_printed',
+         ['println!',
+          ['format-args', '"is {}, should {}. ❌"',
+           ['$__tr_actual_public', '$__tr_expected_public']]],
+         'False'],
+    QuotedFallback =
+        [let, '$__tr_actual_public_1', [eval, [PublicTerm, '$__tr_actual_value']],
+         [let, '$__tr_expected_public_1', [eval, [PublicSyntax, '$__tr_expected_syntax']],
+          [let, '$__tr_actual_public', [eval, '$__tr_actual_public_1'],
+           [let, '$__tr_expected_public', [eval, '$__tr_expected_public_1'],
+            [if, ['==', '$__tr_actual_public', '$__tr_expected_public'],
+             Success,
+             [if, ['=alpha', '$__tr_actual_public', '$__tr_expected_public'],
+              Success,
+              Failure]]]]]],
+    AnyFallback =
+        [let, '$__tr_actual_public_1', [eval, [PublicTerm, '$__tr_actual_value']],
+         [let, '$__tr_expected_public_1', [eval, [PublicTerm, '$__tr_expected_any']],
+          [let, '$__tr_actual_public', [eval, '$__tr_actual_public_1'],
+           [let, '$__tr_expected_public', [eval, '$__tr_expected_public_1'],
+            [if, ['==', '$__tr_actual_public', '$__tr_expected_public'],
+             Success,
+             [if, ['=alpha', '$__tr_actual_public', '$__tr_expected_public'],
+              Success,
+              Failure]]]]]],
+    Body =
+        [let, '$__tr_actual_value', [eval, '$actual'],
+         [case, '$expected',
+          [[[quote, '$__tr_expected_syntax'],
+            QuotedFallback],
+           ['$__tr_expected_any',
+            [if, ['==', '$__tr_actual_value', '$__tr_expected_any'],
+             RawSuccess,
+             [if, ['=alpha', '$__tr_actual_value', '$__tr_expected_any'],
+              RawSuccess,
+              AnyFallback]]]]]].
+
+petta_test_collapse_body(NormalizeFun, Body) :-
+    Success =
         [let, '$__tr_test_printed',
          ['println!',
           ['format-args', '"is {}, should {}. ✅"',
            ['$__tr_actual_results', '$__tr_expected_results']]],
          'True'],
+    Failure =
         [let, '$__tr_test_printed',
          ['println!',
-         ['format-args', '"is {}, should {}. ❌"',
-          ['$__tr_actual_results', '$__tr_expected_results']]],
-         'False']]]]
-).
+          ['format-args', '"is {}, should {}. ❌"',
+           ['$__tr_actual_results', '$__tr_expected_results']]],
+         'False'],
+    Body =
+        [let, '$__tr_actual_collapse',
+         [collapse, [let, '$__tr_actual_item', '$actual', '$__tr_actual_item']],
+         [let, '$__tr_expected_collapse',
+          [collapse, [let, '$__tr_expected_item', '$expected', '$__tr_expected_item']],
+          [let, '$__tr_actual_results_1',
+           [eval, [NormalizeFun, '$__tr_actual_collapse']],
+           [let, '$__tr_expected_results_1',
+            [eval, [NormalizeFun, '$__tr_expected_collapse']],
+          [let, '$__tr_actual_results', [eval, '$__tr_actual_results_1'],
+           [let, '$__tr_expected_results', [eval, '$__tr_expected_results_1'],
+            [if, ['==', '$__tr_actual_results', '$__tr_expected_results'],
+             Success,
+             Failure]]]]]]].
 
-petta_test_bag_body(
-    [let, '$__tr_actual_results',
-     [collapse, [let, '$__tr_actual_item', '$actual', '$__tr_actual_item']],
-     [let, '$__tr_expected_results', '$expected',
-      [let, '$__tr_actual_only',
-       ['subtraction-atom', '$__tr_actual_results', '$__tr_expected_results'],
-       [let, '$__tr_expected_only',
-        ['subtraction-atom', '$__tr_expected_results', '$__tr_actual_results'],
-        [if, ['==', '$__tr_actual_only', '()'],
-         [if, ['==', '$__tr_expected_only', '()'],
-          [let, '$__tr_test_printed',
-           ['println!',
-            ['format-args', '"is {}, should {}. ✅"',
-             ['$__tr_actual_results', '$__tr_expected_results']]],
-           'True'],
-          [let, '$__tr_test_printed',
-           ['println!',
-            ['format-args', '"is {}, should {}. ❌"',
-             ['$__tr_actual_results', '$__tr_expected_results']]],
-           'False']],
-         [let, '$__tr_test_printed',
-          ['println!',
-           ['format-args', '"is {}, should {}. ❌"',
-            ['$__tr_actual_results', '$__tr_expected_results']]],
-          'False']]]]]]
-).
+petta_test_collapse_data_body(NormalizeFun, PublicTerm, PublicSyntax, Body) :-
+    RawSuccess =
+        [let, '$__tr_test_printed',
+         ['println!',
+          ['format-args', '"is {}, should {}. ✅"',
+           ['$__tr_actual_results_raw', '$__tr_expected_results_raw']]],
+         'True'],
+    RawBagCompare =
+        [if, ['==', ['get-metatype', '$__tr_actual_results_raw'], 'Expression'],
+         [if, ['==', ['get-metatype', '$__tr_expected_results_raw'], 'Expression'],
+          [let, '$__tr_actual_only',
+           ['subtraction-atom', '$__tr_actual_results_raw', '$__tr_expected_results_raw'],
+           [let, '$__tr_expected_only',
+            ['subtraction-atom', '$__tr_expected_results_raw', '$__tr_actual_results_raw'],
+            [if, ['==', '$__tr_actual_only', '()'],
+             [if, ['==', '$__tr_expected_only', '()'],
+              RawSuccess,
+              AnyFallback],
+             AnyFallback]]],
+          AnyFallback],
+         AnyFallback],
+    Success =
+        [let, '$__tr_test_printed',
+         ['println!',
+          ['format-args', '"is {}, should {}. ✅"',
+           ['$__tr_actual_results', '$__tr_expected_results']]],
+         'True'],
+    Failure =
+        [let, '$__tr_test_printed',
+         ['println!',
+          ['format-args', '"is {}, should {}. ❌"',
+           ['$__tr_actual_results', '$__tr_expected_results']]],
+         'False'],
+    QuotedFallback =
+        [let, '$__tr_actual_results_1',
+         [eval, [NormalizeFun, '$__tr_actual_collapse']],
+         [let, '$__tr_expected_results_1',
+          [eval, [PublicSyntax, '$__tr_expected_syntax']],
+          [let, '$__tr_actual_results', [eval, '$__tr_actual_results_1'],
+           [let, '$__tr_expected_results', [eval, '$__tr_expected_results_1'],
+            [if, ['==', '$__tr_actual_results', '$__tr_expected_results'],
+             Success,
+             Failure]]]]],
+    AnyFallback =
+        [let, '$__tr_actual_results_1',
+         [eval, [NormalizeFun, '$__tr_actual_collapse']],
+         [let, '$__tr_expected_results_1',
+          [eval, [PublicTerm, '$__tr_expected_any']],
+          [let, '$__tr_actual_results', [eval, '$__tr_actual_results_1'],
+           [let, '$__tr_expected_results', [eval, '$__tr_expected_results_1'],
+            [if, ['==', '$__tr_actual_results', '$__tr_expected_results'],
+             Success,
+             Failure]]]]],
+    Body =
+        [let, '$__tr_actual_collapse',
+         [collapse, [let, '$__tr_actual_item', '$actual', '$__tr_actual_item']],
+         [let, '$__tr_actual_results_raw',
+          '$__tr_actual_collapse',
+          [case, '$expected',
+           [[[quote, '$__tr_expected_syntax'],
+             QuotedFallback],
+            ['$__tr_expected_any',
+             [let, '$__tr_expected_results_raw',
+              '$__tr_expected_any',
+              [if, ['==', '$__tr_actual_results_raw', '$__tr_expected_results_raw'],
+               RawSuccess,
+               [if, ['=alpha', '$__tr_actual_results_raw', '$__tr_expected_results_raw'],
+                RawSuccess,
+                RawBagCompare]]]]]]]].
+
+petta_test_bag_body(PublicTerm, Body) :-
+    Success =
+        [let, '$__tr_test_printed',
+         ['println!',
+          ['format-args', '"is {}, should {}. ✅"',
+           ['$__tr_actual_results', '$__tr_expected_results']]],
+         'True'],
+    Failure =
+        [let, '$__tr_test_printed',
+         ['println!',
+          ['format-args', '"is {}, should {}. ❌"',
+           ['$__tr_actual_results', '$__tr_expected_results']]],
+         'False'],
+    CompareBody =
+        [let, '$__tr_actual_only',
+         ['subtraction-atom', '$__tr_actual_results', '$__tr_expected_results'],
+         [let, '$__tr_expected_only',
+          ['subtraction-atom', '$__tr_expected_results', '$__tr_actual_results'],
+          [if, ['==', '$__tr_actual_only', '()'],
+           [if, ['==', '$__tr_expected_only', '()'],
+            Success,
+            Failure],
+           Failure]]],
+    Body =
+        [let, '$__tr_actual_results_1',
+         [eval,
+          [PublicTerm,
+           [collapse, [let, '$__tr_actual_item', '$actual', '$__tr_actual_item']]]],
+         [let, '$__tr_expected_results_1', [eval, [PublicTerm, '$expected']],
+          [let, '$__tr_actual_results', [eval, '$__tr_actual_results_1'],
+           [let, '$__tr_expected_results', [eval, '$__tr_expected_results_1'],
+            CompareBody]]]].
 
 petta_append_compat_decls([
     ['=', [append, '()', '$ys'], '$ys'],
@@ -3174,25 +3948,98 @@ petta_is_member_compat_decls([
        '()']]]
 ]).
 
+petta_reverse_compat_decls([
+    [':', reverse, ['->', 'Atom', 'Atom']],
+    ['=', [reverse, '$xs'], ['petta-reverse-acc', '$xs', '()']],
+    ['=', ['petta-reverse-acc', '()', '$acc'], '$acc'],
+    ['=', ['petta-reverse-acc', '$xs', '$acc'],
+     [case, ['decons-atom', '$xs'],
+      [[['$head', '$tail'],
+        ['petta-reverse-acc', '$tail', ['cons-atom', '$head', '$acc']]]]]]
+]).
+
+petta_last_compat_decls([
+    [':', last, ['->', 'Atom', 'Atom']],
+    ['=', [last, '$xs'],
+     [case, ['decons-atom', '$xs'],
+      [[['$head', '()'], '$head'],
+       [['$head', '$tail'], [last, '$tail']]]]]
+]).
+
+petta_foldl_compat_decls([
+    [':', foldl, ['->', 'Atom', 'Atom', 'Atom', 'Atom']],
+    ['=', [foldl, '$f', '$list', '$init'],
+     ['foldl-atom', '$list', '$init', '$__tr_acc', '$__tr_item',
+      [eval, ['$f', '$__tr_item', '$__tr_acc']]]]
+]).
+
+petta_min_compat_decls([
+    [':', min, ['->', 'Number', 'Number', 'Number']],
+    ['=', [min, '$a', '$b'],
+     [if, ['<=', '$a', '$b'], '$a', '$b']]
+]).
+
+petta_max_compat_decls([
+    [':', max, ['->', 'Number', 'Number', 'Number']],
+    ['=', [max, '$a', '$b'],
+     [if, ['<=', '$a', '$b'], '$b', '$a']]
+]).
+
+petta_alpha_unique_atom_compat_decls([
+    [':', 'alpha-unique-atom', ['->', 'Atom', 'Atom']],
+    ['=', ['petta-is-alpha-member', '$item', '$tuple'],
+     [not,
+      ['==',
+       [collapse,
+        [let, '$x', [superpose, '$tuple'],
+         [if, ['=alpha', '$x', '$item'],
+          'True',
+          [empty]]]],
+       '()']]],
+    ['=', ['alpha-unique-atom', '$tuple'],
+     ['petta-alpha-unique-atom-loop', '$tuple', '()']],
+    ['=', ['petta-alpha-unique-atom-loop', '()', '$seen'], '()'],
+    ['=', ['petta-alpha-unique-atom-loop', '$tuple', '$seen'],
+     [case, ['decons-atom', '$tuple'],
+      [[['$head', '$tail'],
+        [if, ['petta-is-alpha-member', '$head', '$seen'],
+         ['petta-alpha-unique-atom-loop', '$tail', '$seen'],
+         [let, '$rest',
+          ['petta-alpha-unique-atom-loop', '$tail', ['cons-atom', '$head', '$seen']],
+          ['cons-atom', '$head', '$rest']]]]]]]
+]).
+
+petta_bool_and_compat_decls([
+    ['=', [AndFun, 'True', '$y'], '$y'],
+    ['=', [AndFun, 'False', '$y'], 'False']
+]) :-
+    petta_bool_and_fun(AndFun).
+
+petta_bool_or_compat_decls([
+    ['=', [OrFun, 'True', '$y'], 'True'],
+    ['=', [OrFun, 'False', '$y'], '$y']
+]) :-
+    petta_bool_or_fun(OrFun).
+
+petta_member_compat_decls([
+    ['=', [MemberFun, '$x', ['$x', '$tail']], 'True'],
+    ['=', [MemberFun, '$x', ['$head', '$tail']], [MemberFun, '$x', '$tail']]
+]) :-
+    petta_member_fun(MemberFun).
+
 petta_lambda_compat_decls([
     [':', LambdaFun, ['->', 'Atom', '$t', ['->', '$a', '$t']]],
     ['=', [[LambdaFun, '$var', '$body'], '$arg'],
-     [let, '$var', '$arg', '$body']]
+     [unquote, [quote, [let, '$var', '$arg', '$body']]]]
 ]) :-
     petta_lambda_fun(LambdaFun).
 
 petta_apply1_compat_decls([
     [':', Apply1Fun, ['->', 'Atom', 'Atom', 'Atom']],
     ['=', [Apply1Fun, [LambdaFun, '$var', '$body'], '$arg'],
-     [let, '$var', '$arg', '$body']],
+     [unquote, [quote, [let, '$var', '$arg', '$body']]]],
     ['=', [Apply1Fun, '$f', '$arg'],
-     [if, ['==', '$f', '+'],
-      [LambdaFun, '$x', ['+', '$arg', '$x']],
-       [function,
-        [chain, [eval, ['atom-subst', '$f', '$fun', ['$fun', '$arg']]],
-         '$call',
-         [chain, [eval, '$call'], '$mid',
-          [chain, [eval, '$mid'], '$res', [return, '$res']]]]]]]
+     [eval, ['$f', '$arg']]]
 ]) :-
     petta_apply1_fun(Apply1Fun),
     petta_lambda_fun(LambdaFun).
@@ -3200,9 +4047,9 @@ petta_apply1_compat_decls([
 petta_apply2_compat_decls([
     [':', Apply2Fun, ['->', 'Atom', 'Atom', 'Atom', 'Atom']],
     ['=', [Apply2Fun, '$f', '$arg1', '$arg2'],
-     [if, ['==', '$f', '+'],
-      ['+', '$arg1', '$arg2'],
-      [Apply1Fun, [Apply1Fun, '$f', '$arg1'], '$arg2']]]
+     [let, '$__tr_apply_mid',
+      [Apply1Fun, '$f', '$arg1'],
+      [Apply1Fun, '$__tr_apply_mid', '$arg2']]]
 ]) :-
     petta_apply2_fun(Apply2Fun),
     petta_apply1_fun(Apply1Fun).
@@ -3228,22 +4075,48 @@ petta_lib_petta_helper_decls_acc([Key|Rest], Acc, Decls) :-
 
 petta_lib_petta_helper_decl_block(test_equal, Decls) :-
     petta_test_equal_compat_decls(Decls).
+petta_lib_petta_helper_decl_block(test_equal_data, Decls) :-
+    petta_test_equal_data_compat_decls(Decls).
 petta_lib_petta_helper_decl_block(test_results, Decls) :-
     petta_test_results_compat_decls(Decls).
+petta_lib_petta_helper_decl_block(test_results_data, Decls) :-
+    petta_test_results_data_compat_decls(Decls).
 petta_lib_petta_helper_decl_block(test_bag, Decls) :-
     petta_test_bag_compat_decls(Decls).
+petta_lib_petta_helper_decl_block(test_public, Decls) :-
+    petta_test_public_compat_decls(Decls).
+petta_lib_petta_helper_decl_block(if2, Decls) :-
+    petta_if2_compat_decls(Decls).
 petta_lib_petta_helper_decl_block(lambda, Decls) :-
     petta_lambda_compat_decls(Decls).
 petta_lib_petta_helper_decl_block(apply1, Decls) :-
     petta_apply1_compat_decls(Decls).
 petta_lib_petta_helper_decl_block(apply2, Decls) :-
     petta_apply2_compat_decls(Decls).
+petta_lib_petta_helper_decl_block(bool_and, Decls) :-
+    petta_bool_and_compat_decls(Decls).
+petta_lib_petta_helper_decl_block(bool_or, Decls) :-
+    petta_bool_or_compat_decls(Decls).
+petta_lib_petta_helper_decl_block(member, Decls) :-
+    petta_member_compat_decls(Decls).
 petta_lib_petta_helper_decl_block(ffi_function_call_inversion, Decls) :-
     petta_ffi_function_call_inversion_compat_decls(Decls).
 petta_lib_petta_helper_decl_block(second_from_pair, Decls) :-
     petta_second_from_pair_compat_decls(Decls).
 petta_lib_petta_helper_decl_block(is_member, Decls) :-
     petta_is_member_compat_decls(Decls).
+petta_lib_petta_helper_decl_block(reverse, Decls) :-
+    petta_reverse_compat_decls(Decls).
+petta_lib_petta_helper_decl_block(last, Decls) :-
+    petta_last_compat_decls(Decls).
+petta_lib_petta_helper_decl_block(foldl, Decls) :-
+    petta_foldl_compat_decls(Decls).
+petta_lib_petta_helper_decl_block(min, Decls) :-
+    petta_min_compat_decls(Decls).
+petta_lib_petta_helper_decl_block(max, Decls) :-
+    petta_max_compat_decls(Decls).
+petta_lib_petta_helper_decl_block(alpha_unique_atom, Decls) :-
+    petta_alpha_unique_atom_compat_decls(Decls).
 
 petta_length_compat_decls(Mode, [
     ['=', [length, '$expr'],
@@ -3291,21 +4164,70 @@ rewrite_builtin_test_decl(Term, Rewritten) :-
 rewrite_builtin_test_term([test, Actual, Expected],
                           [TestFun, RActual, RExpected]) :-
     !,
-    builtin_test_helper_head(Actual, TestFun),
     rewrite_builtin_test_term(Actual, RActual),
-    rewrite_builtin_test_term(Expected, RExpected).
+    rewrite_builtin_test_term(Expected, RExpected),
+    builtin_test_helper_head(Actual, Expected, TestFun).
 rewrite_builtin_test_term(List, Rewritten) :-
     is_list(List), !,
     maplist(rewrite_builtin_test_term, List, Rewritten).
 rewrite_builtin_test_term(Term, Term).
 
-builtin_test_helper_head(Actual, TestFun) :-
+builtin_test_helper_head(Actual, Expected, TestFun) :-
     (   test_call_needs_bag_equality(Actual)
     ->  petta_test_bag_fun(TestFun)
+    ;   test_call_needs_collapse(Actual),
+        test_expected_literal_data(Expected)
+    ->  petta_test_results_data_fun(TestFun)
     ;   test_call_needs_collapse(Actual)
     ->  petta_test_results_fun(TestFun)
+    ;   test_expected_literal_data(Expected)
+    ->  petta_test_equal_data_fun(TestFun)
     ;   petta_test_equal_fun(TestFun)
     ).
+
+test_expected_literal_data([quote, _]) :-
+    !.
+test_expected_literal_data(Term) :-
+    atom(Term),
+    \+ callable_arity(Term, 0),
+    !.
+test_expected_literal_data(Term) :-
+    \+ is_list(Term),
+    !.
+test_expected_literal_data([Head|_]) :-
+    is_list(Head),
+    !.
+test_expected_literal_data([Head|_]) :-
+    atom(Head),
+    \+ source_variable_atom(Head),
+    \+ callable_arity(Head, _),
+    \+ test_expected_eval_head(Head).
+
+test_expected_eval_head(progn).
+test_expected_eval_head(prog1).
+test_expected_eval_head(if).
+test_expected_eval_head(case).
+test_expected_eval_head(let).
+test_expected_eval_head('let*').
+test_expected_eval_head(chain).
+test_expected_eval_head(foldall).
+test_expected_eval_head(forall).
+test_expected_eval_head(match).
+test_expected_eval_head(collapse).
+test_expected_eval_head(superpose).
+test_expected_eval_head(hyperpose).
+test_expected_eval_head(call).
+test_expected_eval_head(eval).
+test_expected_eval_head(reduce).
+test_expected_eval_head(once).
+test_expected_eval_head(select).
+test_expected_eval_head('map-atom').
+test_expected_eval_head('filter-atom').
+test_expected_eval_head('foldl-atom').
+test_expected_eval_head(maplist).
+test_expected_eval_head('add-atom').
+test_expected_eval_head('remove-atom').
+test_expected_eval_head(empty).
 
 test_call_needs_bag_equality([collapse, Actual]) :-
     collapse_test_needs_bag_equality(Actual).
@@ -3332,6 +4254,11 @@ explicit_collection_test_actual([collapse, _]).
 contains_free_source_variable_control_surface(Term) :-
     Term = [Head|_],
     control_surface_head(Head),
+    term_has_free_source_variable(Term),
+    !.
+contains_free_source_variable_control_surface(Term) :-
+    Term = [Head|_],
+    petta_if2_fun(Head),
     term_has_free_source_variable(Term),
     !.
 contains_free_source_variable_control_surface(Term) :-
@@ -3426,6 +4353,8 @@ pattern_bound_source_variables_list([Term|Rest], Acc0, Acc) :-
     pattern_bound_source_variables_acc(Term, Acc0, Acc1),
     pattern_bound_source_variables_list(Rest, Acc1, Acc).
 
+contains_uncollected_nondet_surface([if, _, _]) :-
+    !.
 contains_uncollected_nondet_surface([collapse, _]) :-
     !,
     fail.

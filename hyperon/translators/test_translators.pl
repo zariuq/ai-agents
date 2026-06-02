@@ -2,10 +2,16 @@
 %% Tests on hand-crafted examples covering all translation rules.
 %%
 %% Run: swipl -l test_translators.pl -g run_tests -g halt
+%%
+%% Correctness comes from runtime behavior, not from the translator restating
+%% its own current output. Literal shape checks are only change detectors:
+%% every shape-only assertion must be paired with an executable behavior
+%% contract in test_on_real_files.pl.
 
 :- use_module(he_to_petta, []).
 :- use_module(petta_to_he, []).
 :- use_module(he_petta_relational, []).
+:- use_module(translator_behavior_contracts, [behavior_contract/2]).
 
 he_translate_term(In, Out) :- he_to_petta:translate_term(In, Out).
 he_translate_term_trusted(In, Out) :- he_to_petta:translate_term_trusted(In, Out).
@@ -35,6 +41,7 @@ rel_pe_append_suffix_let_extension(PrefixElems, Observed, TailVar, RawBody, Out)
 
 :- discontiguous test_he_to_petta/4.
 :- discontiguous test_petta_to_he/4.
+:- discontiguous test_petta_to_he_error/4.
 :- discontiguous test_petta_to_he_program/4.
 :- discontiguous test_petta_to_he_ffi_tokens/4.
 :- discontiguous test_petta_to_he_petta_he/4.
@@ -186,6 +193,9 @@ test_he_program(2, "keep bool-And helper when other RHS And uses remain",
 
 %% PeTTa→HE tests use structural checking (fresh var names are counter-dependent).
 %% We check: (a) correct shape, (b) binder has $__tr_ prefix, (c) source args preserved.
+%%
+%% shape_only(Contract, Expected) marks tests whose syntax is only a change
+%% detector. Those tests must name a paired executable behavior contract.
 
 test_petta_to_he(1, "progn (2-arg) → nested let (fresh vars)",
     [progn, [println, hello], result],
@@ -316,13 +326,13 @@ test_petta_to_he(26, "3-arg foldl-atom → binder form (expression combiner)",
     ['foldl-atom', [collapse, [twohop-item]], 0, ['λ', merge]],
     foldl_atom_short_shape([collapse, [twohop-item]], 0, ['λ', merge])).
 
-test_petta_to_he(27, "raw reduce → unquote(quote ...)",
+test_petta_to_he_error(27, "raw reduce rejects in pure mode when the argument is not a variable",
     [reduce, [fib, 5]],
-    [unquote, [quote, [fib, 5]]]).
+    error(domain_error(he_core_surface, [eval_like, [fib, 5]]), _)).
 
-test_petta_to_he(28, "collapse(reduce $term) → collapse(unquote $term) for quoted-code variables",
+test_petta_to_he(28, "collapse(reduce $term) → collapse(eval $term) for code-valued variables",
     [collapse, [reduce, '$term']],
-    [collapse, [unquote, '$term']]).
+    [collapse, [eval, '$term']]).
 
 test_petta_to_he(29, "length(collapse ...) → bind + size-atom",
     [length, [collapse, '$term']],
@@ -336,13 +346,13 @@ test_petta_to_he(30_1, "pure quote lowers to native HE quote",
     [quote, ['fib', 5]],
     [quote, ['fib', 5]]).
 
-test_petta_to_he(30_2, "eval lowers to unquote(quote ...)",
+test_petta_to_he_error(30_2, "eval rejects in pure mode when the argument is not a variable",
     [eval, ['fib', 5]],
-    [unquote, [quote, ['fib', 5]]]).
+    error(domain_error(he_core_surface, [eval_like, ['fib', 5]]), _)).
 
-test_petta_to_he(30_3, "call lowers to unquote(quote ...)",
+test_petta_to_he_error(30_3, "call rejects in pure mode when the argument is not a variable",
     [call, ['fib', 5]],
-    [unquote, [quote, ['fib', 5]]]).
+    error(domain_error(he_core_surface, [eval_like, ['fib', 5]]), _)).
 
 test_petta_to_he(31, "test length(collapse ...) → quoted HE helper call",
     [test, [length, [collapse, [match, '&self', ['edge', '$x', '$y'], '$x']]], 2],
@@ -356,19 +366,19 @@ test_petta_to_he(31_2, "assertion-only msort lowers to bag-equality helper",
     [test, [msort, [collapse, [match, '&self', [foo, '$x'], '$x']]], [1, 1, 2]],
     ['petta-test-bag-equal', [match, '&self', [foo, '$x'], '$x'], [1, 1, 2]]).
 
-test_petta_to_he(31_3, "variable-headed tuples materialize through atom-subst so HE can distinguish data from callable heads",
+test_petta_to_he(31_3, "variable-headed tuples stay bare until a later lowering proves a callable surface",
     ['$f', 43, 44],
-    [eval, ['atom-subst', '$f', '$fun', ['$fun', 43, 44]]]).
+    shape_only(variable_head_data_callable_boundary, ['$f', 43, 44])).
 
 test_petta_to_he(31_4, "singleton variable-headed tuples materialize through explicit tuple construction",
     ['$f'],
     singleton_tuple_shape('$f')).
 
-test_petta_to_he_program(1, "program-level direct test uses petta-test-equal helper",
+test_petta_to_he_program(1, "program-level direct test with literal expected data uses petta-test-equal-data helper",
     [['=', [probe], [test, ['+', 1, 2], 3]]],
     program_uses_builtin_test_helper).
 
-test_petta_to_he_program(1_0_1, "program-level nondet test uses petta-test-results helper",
+test_petta_to_he_program(1_0_1, "program-level nondet test with literal expected data uses petta-test-results-data helper",
     [['=', [probe], [test, [if, '$x', yes, no], [yes, no]]]],
     program_uses_collapse_test_helper).
 
@@ -580,19 +590,21 @@ test_petta_to_he(38_3, "flat tuples of computed expressions stay flat instead of
 
 test_petta_to_he(39, "plain let preserves tuple binders as patterns",
     [let, ['$x', '$y'], [1, 2], ['$x', '$y']],
-    [let, ['$x', '$y'], [1, 2], [eval, ['atom-subst', '$x', '$fun', ['$fun', '$y']]]]).
+    shape_only(variable_head_data_callable_boundary,
+               [let, ['$x', '$y'], [1, 2], ['$x', '$y']])).
 
 test_petta_to_he(40, "let* preserves tuple binders as patterns",
     ['let*', [[['$x', '$y'], [1, 2]], ['$z', 3]], ['$x', '$y', '$z']],
-    ['let*', [[['$x', '$y'], [1, 2]], ['$z', 3]], [eval, ['atom-subst', '$x', '$fun', ['$fun', '$y', '$z']]]]).
+    shape_only(variable_head_data_callable_boundary,
+               ['let*', [[['$x', '$y'], [1, 2]], ['$z', 3]], ['$x', '$y', '$z']])).
 
 test_petta_to_he(41, "fake lambda preserves tuple parameters as patterns",
     [lambda, ['$x', '$y'], ['+', '$x', '$y']],
     [lambda, ['$x', '$y'], ['+', '$x', '$y']]).
 
-test_petta_to_he(42, "compiled lambda preserves tuple parameters as patterns",
+test_petta_to_he(42, "compiled lambda lowers source-var parameter tuples to nested petta-lambda",
     ['|->', ['$x', '$y'], ['+', '$x', '$y']],
-    ['|->', ['$x', '$y'], ['+', '$x', '$y']]).
+    ['petta-lambda', '$x', ['petta-lambda', '$y', ['+', '$x', '$y']]]).
 
 %% ═══════════════════════════════════════════════════════════════
 %% PeTTa → HE hyperpose-preserving mode tests
@@ -761,6 +773,7 @@ run_tests :-
     \+ sub_string(Output, _, _, _, "  ?").
 
 run_tests_body :-
+    verify_shape_only_behavior_pairs,
     format("~n=== HE → PeTTa Tests ===~n"),
     forall(test_he_to_petta(N, Name, Input, Expected),
         run_one_he(N, Name, Input, Expected)),
@@ -1082,13 +1095,13 @@ singleton_visible_witness_result_shape(Result, ExpectedInner) :-
 
 run_one_pe_program(N, Name, Input, program_uses_builtin_test_helper) :- !,
     (   pe_translate_program(Input, Result)
-    ->  (   Result = [
-                [':', 'petta-test-equal', ['->', 'Atom', 'Atom', 'Bool']],
-                ['=', ['petta-test-equal', '$actual', '$expected'], TestBody],
-                ['=', [probe], ['petta-test-equal', ['+', 1, 2], 3]]
-            ],
+    ->  (   member([':', 'petta-test-equal-data', ['->', 'Atom', 'Atom', 'Bool']], Result),
+            member(['=', ['petta-test-equal-data', '$actual', '$expected'], TestBody], Result),
+            result_defines_public_term_helpers(Result),
+            member(['=', [probe], ['petta-test-equal-data', ['+', 1, 2], 3]], Result),
             \+ contains_symbol(collapse, TestBody),
             contains_symbol('==', TestBody),
+            contains_symbol('petta-public-term', TestBody),
             contains_symbol('println!', TestBody),
             contains_symbol('format-args', TestBody)
         ->  format("  ✓ ~w: ~w~n", [N, Name])
@@ -1121,13 +1134,13 @@ run_one_pe_program(N, Name, Input, program_uses_user_defined_msort) :- !,
 
 run_one_pe_program(N, Name, Input, program_uses_collapse_test_helper) :- !,
     (   pe_translate_program(Input, Result)
-    ->  (   Result = [
-                ['=', [NormalizeFun, '$tuple'], NormalizeBody],
-                [':', 'petta-test-results', ['->', 'Atom', 'Atom', 'Bool']],
-                ['=', ['petta-test-results', '$actual', '$expected'], TestBody],
-                ['=', [probe], ['petta-test-results', [if, '$x', yes, no], [yes, no]]]
-            ],
+    ->  (   member(['=', [NormalizeFun, '$tuple'], NormalizeBody], Result),
+            member([':', 'petta-test-results-data', ['->', 'Atom', 'Atom', 'Bool']], Result),
+            member(['=', ['petta-test-results-data', '$actual', '$expected'], TestBody], Result),
+            member(['=', [probe], ['petta-test-results-data', [if, '$x', yes, no], [yes, no]]], Result),
+            result_defines_public_term_helpers(Result),
             atom(NormalizeFun),
+            contains_symbol('petta-public-term', NormalizeBody),
             contains_symbol(case, NormalizeBody),
             contains_symbol(collapse, TestBody),
             contains_symbol(NormalizeFun, TestBody),
@@ -1142,14 +1155,14 @@ run_one_pe_program(N, Name, Input, program_uses_collapse_test_helper) :- !,
 
 run_one_pe_program(N, Name, Input, program_uses_bag_test_helper) :- !,
     (   pe_translate_program(Input, Result)
-    ->  (   Result = [
-                [':', 'petta-test-bag-equal', ['->', 'Atom', 'Atom', 'Bool']],
-                ['=', ['petta-test-bag-equal', '$actual', '$expected'], TestBody],
-                ['=', [probe_bag], ['petta-test-bag-equal',
-                                    [match, '&self', [foo, '$x'], '$x'],
-                                    [1, 1, 2]]]
-            ],
+    ->  (   member([':', 'petta-test-bag-equal', ['->', 'Atom', 'Atom', 'Bool']], Result),
+            member(['=', ['petta-test-bag-equal', '$actual', '$expected'], TestBody], Result),
+            member(['=', [probe_bag], ['petta-test-bag-equal',
+                                       [match, '&self', [foo, '$x'], '$x'],
+                                       [1, 1, 2]]], Result),
+            result_defines_public_term_helpers(Result),
             contains_symbol(collapse, TestBody),
+            contains_symbol('petta-public-term', TestBody),
             contains_symbol('subtraction-atom', TestBody),
             contains_symbol('println!', TestBody)
         ->  format("  ✓ ~w: ~w~n", [N, Name])
@@ -1160,13 +1173,13 @@ run_one_pe_program(N, Name, Input, program_uses_bag_test_helper) :- !,
 
 run_one_pe_program(N, Name, Input, program_uses_mixed_test_helpers) :- !,
     (   pe_translate_program(Input, Result)
-    ->  (   member([':', 'petta-test-equal', ['->', 'Atom', 'Atom', 'Bool']], Result),
-            member(['=', ['petta-test-equal', '$actual', '$expected'], EqualBody], Result),
+    ->  (   member([':', 'petta-test-equal-data', ['->', 'Atom', 'Atom', 'Bool']], Result),
+            member(['=', ['petta-test-equal-data', '$actual', '$expected'], EqualBody], Result),
             member(['=', [NormalizeFun, '$tuple'], NormalizeBody], Result),
-            member([':', 'petta-test-results', ['->', 'Atom', 'Atom', 'Bool']], Result),
-            member(['=', ['petta-test-results', '$actual', '$expected'], ResultsBody], Result),
-            member(['=', [probe_direct], ['petta-test-equal', ['+', 1, 2], 3]], Result),
-            member(['=', [probe_results], ['petta-test-results', [if, '$x', yes, no], [yes, no]]], Result),
+            member([':', 'petta-test-results-data', ['->', 'Atom', 'Atom', 'Bool']], Result),
+            member(['=', ['petta-test-results-data', '$actual', '$expected'], ResultsBody], Result),
+            member(['=', [probe_direct], ['petta-test-equal-data', ['+', 1, 2], 3]], Result),
+            member(['=', [probe_results], ['petta-test-results-data', [if, '$x', yes, no], [yes, no]]], Result),
             atom(NormalizeFun),
             contains_symbol(case, NormalizeBody),
             contains_symbol(collapse, ResultsBody),
@@ -1183,7 +1196,7 @@ run_one_pe_program(N, Name, Input, program_uses_mixed_test_helpers) :- !,
 run_one_pe_program(N, Name, Input, program_routes_alpha_test_direct) :- !,
     (   pe_translate_program(Input, Result)
     ->  (   member(['=', [probe_alpha],
-                     ['petta-test-equal',
+                     ['petta-test-equal-data',
                       ['=alpha', ['Father', '$X'], ['Father', '$Y']],
                       'True']], Result),
             \+ member(['=', [probe_alpha],
@@ -1199,12 +1212,12 @@ run_one_pe_program(N, Name, Input, program_routes_alpha_test_direct) :- !,
 run_one_pe_program(N, Name, Input, program_routes_chain_test_direct) :- !,
     (   pe_translate_program(Input, Result)
     ->  (   member(['=', [probe_chain],
-                     ['petta-test-equal',
+                     ['petta-test-equal-data',
                       [let, _, ['+', 2, 4], [let, _, ['*', 3, '$n'], ['*', 3, '$n']]],
                       18]], Result)
         ->  format("  ✓ ~w: ~w~n", [N, Name])
         ;   member(['=', [probe_chain], ProbeBody], Result),
-            ProbeBody = ['petta-test-equal', _, 18]
+            ProbeBody = ['petta-test-equal-data', _, 18]
         ->  format("  ✓ ~w: ~w~n", [N, Name])
         ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
         )
@@ -1248,16 +1261,56 @@ contains_symbol(Sym, Term) :-
     member(Subterm, Term),
     contains_symbol(Sym, Subterm).
 
+result_defines_public_term_helpers(Result) :-
+    member([':', 'petta-public-term', ['->', 'Atom', 'Atom']], Result),
+    member([':', 'petta-public-syntax', ['->', 'Atom', 'Atom']], Result),
+    member(['=', ['petta-public-term', '$expr'], PublicBody], Result),
+    member(['=', ['petta-public-syntax', '$expr'], SyntaxBody], Result),
+    contains_symbol('get-metatype', PublicBody),
+    contains_symbol('Expression', PublicBody),
+    contains_symbol(case, PublicBody),
+    contains_symbol('map-atom', PublicBody),
+    contains_symbol(quote, PublicBody),
+    contains_symbol('get-metatype', SyntaxBody),
+    contains_symbol('Expression', SyntaxBody),
+    contains_symbol(case, SyntaxBody),
+    contains_symbol('map-atom', SyntaxBody).
+
+translator_fresh_var(Var) :-
+    atom_string(Var, VarS),
+    sub_string(VarS, 0, _, _, "$__tr_").
+
+matches_atom_subst_apply(Term, Fun, Args) :-
+    Term = [eval, ['atom-subst', Fun, Binder, Apply]],
+    translator_fresh_var(Binder),
+    Apply = [Binder|Args].
+
+verify_shape_only_behavior_pairs :-
+    findall(N-Contract,
+            test_petta_to_he(N, _, _, shape_only(Contract, _)),
+            ShapePairs),
+    verify_shape_only_behavior_pairs(ShapePairs).
+
+verify_shape_only_behavior_pairs([]).
+verify_shape_only_behavior_pairs([N-Contract|Rest]) :-
+    (   behavior_contract(Contract, _)
+    ->  verify_shape_only_behavior_pairs(Rest)
+    ;   format("  ✗ policy: shape-only translator test ~w lacks a paired behavior contract (~w)~n",
+               [N, Contract]),
+        fail
+    ).
+
 run_one_pe_ffi_tokens(N, Name, Input, program_uses_ffi_function_call_inversion_helper) :- !,
     (   pe_translate_program_ffi_tokens(Input, Result)
     ->  (   member([':', 'petta-ffi-function-call-inversion', ['->', 'Atom', 'Atom', 'Atom', 'Atom', 'Atom']], Result),
             member(['=', ['petta-ffi-function-call-inversion', '$lane', '$pattern', '$observed', '$continuation'], OracleBody], Result),
-            member(['=', [probe],
-                    ['petta-ffi-function-call-inversion',
-                     'arithmetic-append-suffix',
-                     [quote, [g, '$X', '$Y', 35]],
-                     [42, 2, 3],
-                     [eval, ['atom-subst', '$X', '$fun', ['$fun', '$Y', 40]]]]], Result),
+            member(['=', [probe], ProbeBody], Result),
+            ProbeBody = ['petta-ffi-function-call-inversion',
+                         'arithmetic-append-suffix',
+                         [quote, [g, '$X', '$Y', 35]],
+                         [42, 2, 3],
+                         Continuation],
+            matches_atom_subst_apply(Continuation, '$X', ['$Y', 40]),
             contains_symbol('Error', OracleBody)
         ->  format("  ✓ ~w: ~w~n", [N, Name])
         ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
@@ -1369,13 +1422,10 @@ run_one_pe_program(N, Name, Input, program_rewrites_partial_builtin_helper) :- !
 
 run_one_pe_program(N, Name, Input, program_curried_callable_result) :- !,
     (   pe_translate_program(Input, Result)
-    ->  (   Result = [
-                [':', 'petta-lambda', ['->', 'Atom', '$t', ['->', '$a', '$t']]],
-                ['=', [['petta-lambda', '$var', '$body'], '$arg'],
-                 [let, '$var', '$arg', '$body']],
-                ['=', [mp], ['petta-lambda', Arg1, ['petta-lambda', Arg2, ['+', Arg1, Arg2]]]],
-                ['=', [probe], [[[mp], 1], 1]]
-            ],
+    ->  (   member([':', 'petta-apply1', ['->', 'Atom', 'Atom', 'Atom']], Result),
+            member([':', 'petta-lambda', ['->', 'Atom', '$t', ['->', '$a', '$t']]], Result),
+            member(['=', [mp], ['petta-lambda', Arg1, ['petta-lambda', Arg2, ['+', Arg1, Arg2]]]], Result),
+            member(['=', [probe], ['petta-apply1', ['petta-apply1', [mp], 1], 1]], Result),
             atom_string(Arg1, Arg1S),
             atom_string(Arg2, Arg2S),
             sub_string(Arg1S, 0, _, _, "$__tr_"),
@@ -1390,9 +1440,16 @@ run_one_pe_program(N, Name, Input, program_rewrites_partial_composition_helper) 
     (   pe_translate_program(Input, Result)
     ->  (   memberchk(['=', [HelperMul, ParamMul], ['*', 2, ParamMul]], Result),
             memberchk(['=', [HelperAdd, ParamAdd], ['+', 1, ParamAdd]], Result),
-            memberchk(['=', [HelperCompose, Param],
-                       [HelperMul, [HelperAdd, Param]]], Result),
-            memberchk(['=', [plus1times2], HelperCompose], Result)
+            (   memberchk(['=', [HelperCompose, Param],
+                           [HelperMul, [HelperAdd, Param]]], Result),
+                memberchk(['=', [plus1times2], HelperCompose], Result)
+            ;   memberchk([':', Apply1, ['->', 'Atom', 'Atom', 'Atom']], Result),
+                memberchk(['=', ['..', '$f1', '$f2', '$arg'],
+                           [Apply1, '$f1', ['$f2', '$arg']]], Result),
+                memberchk(['=', [plus1times2], ['..', HelperMul, HelperAdd]], Result)
+            ;   memberchk(['=', ['..', '$f1', '$f2', '$arg'], ['$f1', ['$f2', '$arg']]], Result),
+                memberchk(['=', [plus1times2], ['..', HelperMul, HelperAdd]], Result)
+            )
         ->  format("  ✓ ~w: ~w~n", [N, Name])
         ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
         )
@@ -1405,16 +1462,10 @@ run_one_pe_program(N, Name, Input, program_canonicalizes_map_flat) :- !,
                 [':', Apply1, ['->', 'Atom', 'Atom', 'Atom']]
                 | _
             ],
-            Apply1Body = [if, ['==', '$f', '+'],
-                          ['petta-lambda', '$x', ['+', '$arg', '$x']],
-                          [function,
-                           [chain, [eval, ['atom-subst', '$f', '$fun', ['$fun', '$arg']]],
-                            '$call',
-                            [chain, [eval, '$call'], '$mid',
-                             [chain, [eval, '$mid'], '$res', [return, '$res']]]]]],
             memberchk(['=', [Apply1, ['petta-lambda', '$var', '$body'], '$arg'],
-                       [let, '$var', '$arg', '$body']], Result),
+                       [unquote, [quote, [let, '$var', '$arg', '$body']]]], Result),
             memberchk(['=', [Apply1, '$f', '$arg'], Apply1Body], Result),
+            Apply1Body = [eval, ['$f', '$arg']],
             memberchk(['=', ['map-flat', '$f', '$list'],
                        ['map-atom', '$list', '$item', [Apply1, '$f', '$item']]], Result)
         ->  format("  ✓ ~w: ~w~n", [N, Name])
@@ -1430,20 +1481,14 @@ run_one_pe_program(N, Name, Input, program_canonicalizes_fold_nested) :- !,
                 | _
             ],
             memberchk([':', Apply2, ['->', 'Atom', 'Atom', 'Atom', 'Atom']], Result),
-            Apply1Body = [if, ['==', '$f', '+'],
-                          ['petta-lambda', '$x', ['+', '$arg', '$x']],
-                          [function,
-                           [chain, [eval, ['atom-subst', '$f', '$fun', ['$fun', '$arg']]],
-                            '$call',
-                            [chain, [eval, '$call'], '$mid',
-                             [chain, [eval, '$mid'], '$res', [return, '$res']]]]]],
             memberchk(['=', [Apply1, ['petta-lambda', '$var', '$body'], '$arg'],
-                       [let, '$var', '$arg', '$body']], Result),
+                       [unquote, [quote, [let, '$var', '$arg', '$body']]]], Result),
             memberchk(['=', [Apply1, '$f', '$arg'], Apply1Body], Result),
+            Apply1Body = [eval, ['$f', '$arg']],
             memberchk(['=', [Apply2, '$f', '$arg1', '$arg2'],
-                       [if, ['==', '$f', '+'],
-                        ['+', '$arg1', '$arg2'],
-                        [Apply1, [Apply1, '$f', '$arg1'], '$arg2']]], Result),
+                       [let, '$__tr_apply_mid',
+                        [Apply1, '$f', '$arg1'],
+                        [Apply1, '$__tr_apply_mid', '$arg2']]], Result),
             memberchk(['=', ['fold-nested', '$f', '$init', '$list'],
                        ['foldl-atom', '$list', '$init', '$acc', '$item',
                         [if, ['==', ['get-metatype', '$item'], 'Expression'],
@@ -1648,10 +1693,12 @@ run_one_pe_program(N, Name, Input, program_normalizes_callable_equality_conditio
     (   pe_translate_program(Input, Result)
     ->  (   memberchk(['=', [PartialHelper, Param], ['+', 2, Param]], Result),
             memberchk(['=', [trickyspec, '$f'],
-                       [let, CallResult, [eval, ['atom-subst', '$f', '$fun', ['$fun', 1]]],
+                       [let, CallResult, CallTerm,
                         [if, ['==', CallResult, 2],
                          [trickyspec, PartialHelper],
                          CallResult]]], Result)
+            ,
+            CallTerm == ['$f', 1]
         ->  format("  ✓ ~w: ~w~n", [N, Name])
         ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
         )
@@ -1711,6 +1758,19 @@ run_one_pe_ext_hyperpose(N, Name, Input, Expected) :-
         ;   format("  ✗ ~w: ~w~n    Expected: ~w~n    Got:      ~w~n", [N, Name, Expected, Result])
         )
     ;   format("  ? ~w: ~w (error)~n", [N, Name])
+    ).
+
+run_one_pe(N, Name, Input, shape_only(Contract, Expected)) :- !,
+    (   behavior_contract(Contract, _),
+        (   Input = ['=', _, _]
+        ->  petta_to_he:translate_decl(Input, Result)
+        ;   petta_to_he:translate_term(Input, Result)
+        ),
+        (   Result == Expected
+        ->  format("  ✓ ~w: ~w [shape-only, paired: ~w]~n", [N, Name, Contract])
+        ;   format("  ✗ ~w: ~w~n    Expected: ~w~n    Got:      ~w~n", [N, Name, Expected, Result])
+        )
+    ;   format("  ? ~w: ~w (missing behavior contract: ~w)~n", [N, Name, Contract])
     ).
 
 run_one_pe(N, Name, Input, partial_builtin_lambda_shape(Fun, PrefixArg)) :- !,
