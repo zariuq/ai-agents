@@ -56,6 +56,7 @@ import Mettapedia.CategoryTheory.GeneralizedOpenMaps
 
 -- Computability
 import Mettapedia.Computability.KolmogorovComplexity.Basic
+import Mettapedia.Computability.KolmogorovComplexity.PartitionedCompression
 -- import Mettapedia.Computability.KolmogorovComplexity.Prefix  -- WIP (Phase 2)
 
 -- Arithmetical Hierarchy (Grain of Truth - Phase 1)
