@@ -306,6 +306,19 @@ translate_term_mode(trusted, [chain, ['change-state!', Ref, Val], Var, Body],
     TOut = [let, FV, ['change-state!', Ref, TVal],
             [let, Var, ['State', TVal], TBody]], !.
 
+%% Minimal-MeTTa (eval E) on a source-defined head: one reduction step whose
+%% result keeps reducing to normal form, which for terminating code equals
+%% full evaluation — so it compiles to a DIRECT native call instead of the
+%% per-call space-query dispatcher. (Code observing partially-reduced forms
+%% would need the slow faithful path; none in the corpus does.)
+translate_term_mode(Mode, [eval, [F|Args]], [F|TArgs]) :-
+    atom(F),
+    (   he2petta_source_defined_fun(F)
+    ;   evaluable_builtin_head(F)   % one step of a grounded op = its value
+    ),
+    is_list(Args),
+    maplist(translate_term_mode(Mode), Args, TArgs), !.
+
 %% chain → let
 translate_term_mode(Mode, [chain, Expr, Var, Body], [let, Var, TExpr, TBody]) :-
     translate_term_mode(Mode, Expr, TExpr),
