@@ -158,6 +158,12 @@
                 (let $printed
                   (println! (format-args "is {}, should {}. ✅" ($__tr_actual_results_raw $__tr_expected_results_raw)))
                   True)
+              ; A single tuple-valued result: the collapsed bag is the
+              ; singleton of the expected value, not element-equal to it.
+              (if (=alpha $__tr_actual_results_raw (cons-atom $__tr_expected_results_raw ()))
+                (let $printed
+                  (println! (format-args "is {}, should {}. ✅" ($__tr_actual_results_raw $__tr_expected_results_raw)))
+                  True)
                 (if (== (get-metatype $__tr_actual_results_raw) Expression)
                   (if (== (get-metatype $__tr_expected_results_raw) Expression)
                     (let $__tr_actual_only
@@ -212,7 +218,7 @@
                               True)
                             (let $printed
                               (println! (format-args "is {}, should {}. ❌" ($actual-results $expected-results)))
-                              False))))))))))))))))))
+                              False)))))))))))))))))))
 
 (: petta-test-bag-equal (-> Atom Atom Bool))
 (= (petta-test-bag-equal $actual $expected)

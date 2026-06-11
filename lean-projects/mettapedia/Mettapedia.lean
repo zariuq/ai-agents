@@ -61,6 +61,7 @@ import Mettapedia.Computability.CollatzThreeAdic
 import Mettapedia.Computability.CollatzThreeAdicTransfer
 import Mettapedia.Computability.CollatzThreeAdicExact
 import Mettapedia.Computability.CollatzThreeAdicAsymptotics
+import Mettapedia.Computability.CollatzThreeAdicPaths
 import Mettapedia.Computability.KolmogorovComplexity.Basic
 import Mettapedia.Computability.KolmogorovComplexity.PartitionedCompression
 -- import Mettapedia.Computability.KolmogorovComplexity.Prefix  -- WIP (Phase 2)
@@ -76,6 +77,9 @@ import Mettapedia.Languages.ProcessCalculi.RhoCalculus.Context
 import Mettapedia.Languages.ProcessCalculi.RhoCalculus.PresentMoment
 
 -- Logic
+import Mettapedia.Logic.GunkyMereology
+import Mettapedia.Logic.StoneGunkDuality
+import Mettapedia.Logic.Metaphysics
 import Mettapedia.Logic.SolomonoffPrior
 import Mettapedia.Logic.SolomonoffInduction
 -- import Mettapedia.Logic.SolomonoffMeasure  -- WIP (outer measure construction is incomplete)

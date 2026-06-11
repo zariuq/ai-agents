@@ -45,6 +45,27 @@ theorem card_codesUpTo (c : ℕ) : Fintype.card (CodesUpTo c) = 2 ^ (c + 1) - 1 
       simp [Fin.sum_univ_eq_sum_range]
     _ = 2 ^ (c + 1) - 1 := hgeomRange
 
+/-- Any finite type whose cardinality fits inside the bounded code space
+`CodesUpTo c` admits an injective encoding into that space. -/
+theorem exists_injective_intoCodesUpTo_of_card_le
+    {X : Type} [Fintype X] (c : ℕ)
+    (hcard : Fintype.card X ≤ 2 ^ (c + 1) - 1) :
+    ∃ encode : X → CodesUpTo c, Function.Injective encode := by
+  classical
+  obtain ⟨eX⟩ := Fintype.truncEquivFin X
+  obtain ⟨eCodes⟩ := Fintype.truncEquivFin (CodesUpTo c)
+  have hcard' : Fintype.card X ≤ Fintype.card (CodesUpTo c) := by
+    simpa [card_codesUpTo c] using hcard
+  let toFin : Fin (Fintype.card X) → Fin (Fintype.card (CodesUpTo c)) :=
+    Fin.castLEEmb hcard'
+  refine ⟨fun x => eCodes.symm (toFin (eX x)), ?_⟩
+  intro x y hxy
+  apply eX.injective
+  have hfin : toFin (eX x) = toFin (eX y) := by
+    simpa [toFin] using congrArg eCodes hxy
+  apply Fin.ext
+  simpa [toFin] using congrArg Fin.val hfin
+
 /-- Repackage a partition function on any finite type as a sigma of its fibers. -/
 def partitionFiberEquivOfFinite {X : Type} [Fintype X] {ι : Type} (branch : X → ι) :
     X ≃ Σ i : ι, {x : X // branch x = i} where

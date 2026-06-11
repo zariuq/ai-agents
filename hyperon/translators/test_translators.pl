@@ -57,11 +57,14 @@ rel_pe_append_suffix_let_extension(PrefixElems, Observed, TailVar, RawBody, Out)
 
 test_he_to_petta(1, "chain → let",
     [chain, ['+', x, 1], y, ['*', y, y]],
-    [let, y, ['+', x, 1], ['*', y, y]]).
+    [let, y, ['call-or-inert', [quote, ['+', x, 1]]],
+     ['call-or-inert', [quote, ['*', y, y]]]]).
 
 test_he_to_petta(2, "nested chain → nested let",
     [chain, ['+', x, 1], y, [chain, ['*', y, 2], z, ['-', z, 1]]],
-    [let, y, ['+', x, 1], [let, z, ['*', y, 2], ['-', z, 1]]]).
+    [let, y, ['call-or-inert', [quote, ['+', x, 1]]],
+     [let, z, ['call-or-inert', [quote, ['*', y, 2]]],
+      ['call-or-inert', [quote, ['-', z, 1]]]]]).
 
 test_he_to_petta(3, "collapse-bind → collapse",
     ['collapse-bind', [superpose, [a, b, c]]],
@@ -93,11 +96,14 @@ test_he_to_petta(8, "function/return → unwrap",
 
 test_he_to_petta(9, "if passthrough (translate children)",
     [if, ['==', x, 0], zero, [chain, ['-', x, 1], n, [foo, n]]],
-    [if, ['==', x, 0], zero, [let, n, ['-', x, 1], [foo, n]]]).
+    [if, ['call-or-inert', [quote, ['==', x, 0]]], zero,
+     [let, n, ['call-or-inert', [quote, ['-', x, 1]]], [foo, n]]]).
 
 test_he_to_petta(10, "equation with chain body",
     ['=', [sq, x], [chain, ['+', x, 1], y, ['*', y, y]]],
-    ['=', [sq, x], [let, y, ['+', x, 1], ['*', y, y]]]).
+    ['=', [sq, x],
+     [let, y, ['call-or-inert', [quote, ['+', x, 1]]],
+      ['call-or-inert', [quote, ['*', y, y]]]]]).
 
 test_he_to_petta(11, "type declaration passthrough",
     [':', sq, ['->', 'Number', 'Number']],
@@ -109,15 +115,61 @@ test_he_to_petta(12, "bare fact passthrough",
 
 test_he_to_petta(13, "let passthrough (shared)",
     [let, x, ['+', 1, 2], ['*', x, x]],
-    [let, x, ['+', 1, 2], ['*', x, x]]).
+    [let, x, ['call-or-inert', [quote, ['+', 1, 2]]],
+     ['call-or-inert', [quote, ['*', x, x]]]]).
 
-test_he_to_petta(14, "match passthrough (shared)",
+%% Expected from engine runs (2026-06-10): upstream evaluates match results
+%% (the instantiated template keeps reducing); native PeTTa returns them raw,
+%% so the lowering wraps the match in an explicit eval.
+test_he_to_petta(14, "match results are evaluated as in upstream HE",
     [match, '&self', ['Foo', '$x'], '$x'],
-    [match, '&self', ['Foo', '$x'], '$x']).
+    match_wrapped('&self', ['Foo', '$x'], '$x')).
 
-test_he_to_petta(16, "add-atom passthrough (shared)",
+%% Expected from engine runs (2026-06-10): upstream HE add-atom returns (),
+%% native PeTTa add-atom returns True, so the translation wraps to the HE
+%% unit surface.
+test_he_to_petta(16, "add-atom returns HE unit surface",
     ['add-atom', '&self', ['Fact', a]],
-    ['add-atom', '&self', ['Fact', a]]).
+    unit_wrapped(['add-atom', '&self', ['Fact', a]])).
+
+%% Stored atomspace data must preserve plain application data; wrapping a body
+%% like (+ 1 3) into call-or-inert would change what later match retrieves.
+test_he_to_petta(16_1, "add-atom stores raw application data inside equations",
+    ['add-atom', '&self', ['=', [addnormal], ['+', 1, 3]]],
+    unit_wrapped(['add-atom', '&self', ['=', [addnormal], ['+', 1, 3]]])).
+
+%% Expected from engine runs (2026-06-10): upstream assertEqualToResult is a
+%% bag comparison against a literal unevaluated expected tuple; native PeTTa
+%% strips (quote X) to X without evaluating X, so the quote protects the
+%% expected tuple across the eager-argument boundary.
+test_he_to_petta(25, "assertEqualToResult lowers to collapse + quoted expected",
+    ['assertEqualToResult', ['+', 1, 2], [3]],
+    assert_results_inline(['call-or-inert', [quote, ['+', 1, 2]]], [3])).
+
+test_he_to_petta(26, "assertAlphaEqualToResult lowers to collapse + quoted expected",
+    ['assertAlphaEqualToResult', [adder], ['$y']],
+    ['assert-alpha-results-equal', [collapse, [adder]], [quote, ['$y']]]).
+
+%% Expected from engine runs (2026-06-10): (== (quote A) (quote B)) compares
+%% A and B unevaluated on both upstream HE and native PeTTa.
+test_he_to_petta(27, "noreduce-eq lowers to quoted syntactic equality",
+    ['noreduce-eq', ['+', 1, 2], 3],
+    ['==', [quote, ['+', 1, 2]], [quote, 3]]).
+
+test_he_to_petta(28, "unquote of quoted form lowers to the inner form",
+    [unquote, [quote, ['+', 1, 2]]],
+    ['call-or-inert', [quote, ['+', 1, 2]]]).
+
+test_he_to_petta(29, "bare unquote stays inert",
+    [unquote, 42],
+    [unquote, 42]).
+
+%% Expected from engine runs (2026-06-10): upstream add-reduct stores the
+%% equation with the reduced body and returns (); the equation is assembled
+%% around a runtime-reduced value and passed literally to add-atom.
+test_he_to_petta(30, "add-reduct lowers to runtime-reduced equation + unit",
+    ['add-reduct', '&self', ['=', [ar], ['+', 1, 3]]],
+    add_reduct_shape('&self', [ar], ['call-or-inert', [quote, ['+', 1, 3]]])).
 
 test_he_to_petta(17, "remove-atom passthrough (shared)",
     ['remove-atom', '&self', ['Fact', a]],
@@ -127,9 +179,9 @@ test_he_to_petta(18, "get-atoms passthrough (shared)",
     ['get-atoms', '&self'],
     ['get-atoms', '&self']).
 
-test_he_to_petta(23, "explicit space handle passthrough (shared atomspace handle)",
+test_he_to_petta(23, "match on explicit space handle keeps the handle and evaluates results",
     [match, '&bag', ['Fact', '$x'], '$x'],
-    [match, '&bag', ['Fact', '$x'], '$x']).
+    match_wrapped('&bag', ['Fact', '$x'], '$x')).
 
 test_he_to_petta(19, "new-space passthrough (extension surface)",
     ['new-space'],
@@ -151,22 +203,26 @@ test_he_to_petta(21, "get-state passthrough (HE native state spelling)",
     ['get-state', '&state'],
     ['get-state', '&state']).
 
-test_he_to_petta(22, "change-state! passthrough (HE native state spelling)",
+%% Expected from engine runs (2026-06-10): upstream typed-call errors embed
+%% the ORIGINAL change-state! expression (e.g. with the token or new-state
+%% form), so the lowering carries the quoted original alongside the call.
+test_he_to_petta(22, "change-state! carries its original source expression",
     ['change-state!', '&state', 5],
-    ['change-state!', '&state', 5]).
+    ['change-state-with-source', [quote, ['change-state!', '&state', 5]],
+     '&state', 5]).
 
 test_he_to_petta(24, "unique → collapse + unique-atom + superpose",
     [unique, [let, '$x', [superpose, [1, 2, 1, 3, 2]], [pair, '$x', '$x']]],
     unique_shape([let, '$x', [superpose, [1, 2, 1, 3, 2]], [pair, '$x', '$x']])).
 
-test_he_to_petta(15, "deduce-And → let* sequencing",
+%% Expected from engine runs (2026-06-10): native let* with literal patterns
+%% is unreliable; the conjunction lowers to bind-then-guard with fresh vars.
+test_he_to_petta(15, "deduce-And → bind-then-guard sequencing",
     ['And',
       ['deduce', ['Evaluation', ['philosopher', '$x']]],
       ['deduce', ['Evaluation', ['likes-to-wrestle', '$x']]]],
-    ['let*',
-      [['T', ['deduce', ['Evaluation', ['philosopher', '$x']]]],
-       ['T', ['deduce', ['Evaluation', ['likes-to-wrestle', '$x']]]]],
-      'T']).
+    and_guard(['deduce', ['Evaluation', ['philosopher', '$x']]],
+              ['deduce', ['Evaluation', ['likes-to-wrestle', '$x']]])).
 
 test_he_program(1, "backchain kernel drops obsolete bool-And helper",
     [['=', ['deduce', ['And', '$a', '$b']],
@@ -174,7 +230,7 @@ test_he_program(1, "backchain kernel drops obsolete bool-And helper",
      ['=', ['And', 'T', 'T'], 'T'],
      ['=', ['ift', 'T', '$then'], '$then']],
     [['=', ['deduce', ['And', '$a', '$b']],
-          ['let*', [['T', ['deduce', '$a']], ['T', ['deduce', '$b']]], 'T']],
+          and_guard(['deduce', '$a'], ['deduce', '$b'])],
      ['=', ['ift', 'T', '$then'], '$then']]).
 
 test_he_program(2, "keep bool-And helper when other RHS And uses remain",
@@ -183,7 +239,7 @@ test_he_program(2, "keep bool-And helper when other RHS And uses remain",
      ['=', ['And', 'T', 'T'], 'T'],
      ['=', ['explain', '$x'], ['And', '$x', '$x']]],
     [['=', ['deduce', ['And', '$a', '$b']],
-          ['let*', [['T', ['deduce', '$a']], ['T', ['deduce', '$b']]], 'T']],
+          and_guard(['deduce', '$a'], ['deduce', '$b'])],
      ['=', ['And', 'T', 'T'], 'T'],
      ['=', ['explain', '$x'], ['And', '$x', '$x']]]).
 
@@ -357,6 +413,16 @@ test_petta_to_he(30_2, "eval lowers to direct unquote/quote on closed concrete s
 test_petta_to_he(30_3, "call lowers to direct unquote/quote on closed concrete syntax in pure mode",
     [call, ['fib', 5]],
     let_bound_runtime_surface([unquote, [quote, ['fib', 5]]])).
+
+%% Input-sensitivity contract (2026-06-10): call-of-quote must preserve the
+%% quoted content; a content-discarding constant here once froze a counterfeit
+%% witness into the translator.
+test_petta_to_he(30_8, "call of quoted form embeds its payload (A)",
+    ['call', [quote, ['+', 1, 2]]],
+    embeds_payload(['+', 1, 2])).
+test_petta_to_he(30_9, "call of quoted form embeds its payload (B)",
+    ['call', [quote, [fib, 7]]],
+    embeds_payload([fib, 7])).
 
 test_petta_to_he(31, "test length(collapse ...) → quoted HE helper call",
     [test, [length, [collapse, [match, '&self', ['edge', '$x', '$y'], '$x']]], 2],
@@ -736,7 +802,8 @@ test_petta_to_he_opt(4, "keep foldall let(collapse ...) intact",
 
 test_roundtrip(1, "chain normalizes to let",
     [chain, ['+', x, 1], y, ['*', y, y]],
-    [let, y, ['+', x, 1], ['*', y, y]]).
+    [let, y, ['call-or-inert', [quote, ['+', x, 1]]],
+     ['call-or-inert', [quote, ['*', y, y]]]]).
 
 test_roundtrip(2, "nested chain normalizes to nested lets",
     [chain, a, x, [chain, b, y, [c, x, y]]],
@@ -836,6 +903,51 @@ run_one_he(N, Name, Input, capture_must_not_occur) :- !,
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
     ).
 
+run_one_he(N, Name, Input, and_guard(L, R)) :- !,
+    (   he_translate_term(Input, Result)
+    ->  (   and_guard_shape(L, R, Result)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w (bad And lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_he(N, Name, Input, match_wrapped(S, P, T)) :- !,
+    (   he_translate_term(Input, Result)
+    ->  (   Result = [let, RV, [match, S, P, T], ['match-template-eval', RV]],
+            atom_string(RV, RS),
+            sub_string(RS, 0, _, _, "$__tr_")
+        ->  format("  ✓ ~w: ~w (fresh binder: ~w)~n", [N, Name, RV])
+        ;   format("  ✗ ~w: ~w (bad match lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_he(N, Name, Input, unit_wrapped(InnerExpected)) :- !,
+    (   he_translate_term(Input, Result)
+    ->  (   Result = [let, FV, InnerExpected, '()'],
+            atom_string(FV, FS),
+            sub_string(FS, 0, _, _, "$__tr_")
+        ->  format("  ✓ ~w: ~w (fresh binder: ~w)~n", [N, Name, FV])
+        ;   format("  ✗ ~w: ~w (bad unit wrapping: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_he(N, Name, Input, add_reduct_shape(Space, Head, BodyExpected)) :- !,
+    (   he_translate_term(Input, Result)
+    ->  (   Result = [let, ValV, BodyExpected,
+                      [let, FV, ['add-atom', Space, ['=', Head, ValV]], '()']],
+            atom_string(ValV, VS),
+            atom_string(FV, FS),
+            sub_string(VS, 0, _, _, "$__tr_"),
+            sub_string(FS, 0, _, _, "$__tr_")
+        ->  format("  ✓ ~w: ~w (fresh binders: ~w, ~w)~n", [N, Name, ValV, FV])
+        ;   format("  ✗ ~w: ~w (bad add-reduct lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
 run_one_he(N, Name, Input, unique_shape(ArgExpected)) :- !,
     (   he_translate_term(Input, Result)
     ->  (   Result = [let, ListVar, [collapse, ArgExpected],
@@ -848,6 +960,17 @@ run_one_he(N, Name, Input, unique_shape(ArgExpected)) :- !,
         ->  format("  ✓ ~w: ~w (fresh binders: ~w, ~w)~n",
                     [N, Name, ListVar, UniqueVar])
         ;   format("  ✗ ~w: ~w (bad unique lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_he(N, Name, Input, assert_results_inline(ActualExpected, ExpectedLiteral)) :- !,
+    (   he_translate_term(Input, Result)
+    ->  (   assert_results_inline_shape(ActualExpected, ExpectedLiteral, Result)
+        ->  Result = [let, ActualVar|_],
+            format("  ✓ ~w: ~w (fresh binder: ~w)~n", [N, Name, ActualVar])
+        ;   format("  ✗ ~w: ~w (bad assertEqualToResult lowering: ~w)~n",
+                    [N, Name, Result])
         )
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
     ).
@@ -896,7 +1019,7 @@ run_one_he_trusted(N, Name, Input, Expected) :-
 run_one_he_program(N, Name, Input, Expected) :-
     (   test_he_program(N, _, Input, _),
         he_translate_program(Input, Result),
-        (   Result == Expected
+        (   program_atoms_match(Expected, Result)
         ->  format("  ✓ ~w: ~w~n", [N, Name])
         ;   format("  ✗ ~w: ~w~n    Expected: ~w~n    Got:      ~w~n",
                     [N, Name, Expected, Result])
@@ -904,8 +1027,50 @@ run_one_he_program(N, Name, Input, Expected) :-
     ;   format("  ? ~w: ~w (error)~n", [N, Name])
     ).
 
+program_atoms_match([], []).
+program_atoms_match([E|Es], [R|Rs]) :-
+    expected_atom_matches(E, R),
+    program_atoms_match(Es, Rs).
+
+expected_atom_matches(E, R) :- E == R, !.
+expected_atom_matches(['=', H, and_guard(L, Rt)], ['=', H, Body]) :- !,
+    and_guard_shape(L, Rt, Body).
+expected_atom_matches(E, R) :- E = R.
+
+%% The deduce-And lowering: bind-then-guard with fresh binders.
+and_guard_shape(L, R, [let, V1, L,
+                       [if, ['==', V1, 'T'],
+                        [let, V2, R, [if, ['==', V2, 'T'], 'T', [empty]]],
+                        [empty]]]) :-
+    atom_string(V1, S1), sub_string(S1, 0, _, _, "$__tr_"),
+    atom_string(V2, S2), sub_string(S2, 0, _, _, "$__tr_").
+
+assert_results_inline_shape(ActualExpected, ExpectedLiteral,
+                            [let, ActualVar, [collapse, ActualExpected],
+                             [if, Cond, '()', _ErrorQ]]) :-
+    atom_string(ActualVar, ActualS),
+    sub_string(ActualS, 0, _, _, "$__tr_"),
+    Cond = [if,
+            ['==', ['subtraction-atom', ActualVar, [quote, ExpectedLiteral]], '()'],
+            ['==', ['subtraction-atom', [quote, ExpectedLiteral], ActualVar], '()'],
+            'False'].
+
 %% Special handler for capture regression tests
 %% Checks that generated binder names have $__tr_ prefix (fresh, no capture)
+%% Input-sensitivity contract: a lowering must embed its payload (a
+%% content-discarding constant emitter is a counterfeit witness).
+run_one_pe(N, Name, Input, embeds_payload(Payload)) :- !,
+    (   pe_translate_term(Input, Result)
+    ->  (   term_string(Result, RS),
+            term_string(Payload, PS),
+            sub_string(RS, _, _, _, PS)
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w (payload ~w missing in: ~w)~n",
+                   [N, Name, Payload, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
 run_one_pe(N, Name, Input, capture_must_not_occur) :- !,
     (   (Input = ['=', _, _] -> pe_translate_decl(Input, Result)
         ; pe_translate_term(Input, Result))

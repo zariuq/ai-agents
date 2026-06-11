@@ -2924,8 +2924,9 @@ runtime_eval_inline_target([quote, Inner], Inner) :-
     !.
 runtime_eval_inline_target(TExpr, [unquote, [quote, TExpr]]).
 
-runtime_call_inline_target([quote, _], [metta, [eval], '%Undefined%', '&self']) :-
-    !.
+%% No special case for call-of-quote: the generic lowering preserves the
+%% quoted content. (A content-discarding constant here was a counterfeit
+%% witness: two distinct inputs must produce two distinct outputs.)
 runtime_call_inline_target(TExpr, [unquote, [quote, TExpr]]).
 
 translate_call_like_mode(Mode, Expr, TExpr) :-
@@ -4227,11 +4228,19 @@ petta_test_collapse_data_body(NormalizeFun, PublicTerm, PublicSyntax, Body) :-
             ['$__tr_expected_any',
              [let, '$__tr_expected_results_raw',
               '$__tr_expected_any',
-              [if, ['==', '$__tr_actual_results_raw', '$__tr_expected_results_raw'],
+              %% =alpha leads: upstream's typed == raises BadArgType on
+              %% shape-mismatched arguments instead of returning False.
+              [if, ['=alpha', '$__tr_actual_results_raw', '$__tr_expected_results_raw'],
                RawSuccess,
-               [if, ['=alpha', '$__tr_actual_results_raw', '$__tr_expected_results_raw'],
-                RawSuccess,
-                RawBagCompare]]]]]]]].
+               %% A single tuple-valued result: the collapsed bag is the
+               %% singleton of the expected value. (Bound through let:
+               %% =alpha takes its arguments unevaluated.)
+               [let, '$__tr_expected_singleton',
+                ['cons-atom', '$__tr_expected_results_raw', '()'],
+                [if, ['=alpha', '$__tr_actual_results_raw',
+                      '$__tr_expected_singleton'],
+                 RawSuccess,
+                 RawBagCompare]]]]]]]]].
 
 petta_test_bag_body(PublicTerm, Body) :-
     Success =

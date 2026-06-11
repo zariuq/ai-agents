@@ -203,19 +203,50 @@ translate_file_to_path(Direction, InPath, OutPath) :-
     ;   file_directory_name(AbsOutPath, OutDir),
         make_directory_path(OutDir),
         read_metta_file(AbsInPath, Atoms),
+        ensure_he2petta_supported_source(Direction, Atoms),
         length(Atoms, N),
         setup_call_cleanup(
             open(AbsOutPath, write, Stream),
             once((
                 write_translation_header(Stream, Direction, AbsInPath, N),
+                maybe_write_he2petta_lib_import(Stream, Direction),
                 translate_toplevel_atoms(Direction, Atoms, TAtoms),
                 relocate_local_module_surfaces(AbsInPath, AbsOutPath, TAtoms, CompatAtoms),
-                forall(member(TA, CompatAtoms), write_toplevel_atom(Stream, TA)),
-                maybe_materialize_petta_helper_libs(CompatAtoms, AbsOutPath)
+                unitwrap_he2petta_imports(Direction, CompatAtoms, FinalAtoms),
+                forall(member(TA, FinalAtoms), write_toplevel_atom(Stream, TA)),
+                maybe_materialize_petta_helper_libs(FinalAtoms, AbsOutPath)
             )),
             close(Stream)
         )
     ).
+
+%% When HE2PETTA_LIB_IMPORT is set, file-level HE->PeTTa translation prepends
+%% an import of the PeTTa-side HE compatibility library (lib_he) so the
+%% artifact is self-contained under native PeTTa. The path is given by the
+%% caller relative to the output file location.
+maybe_write_he2petta_lib_import(Stream, Direction) :-
+    (   he2petta_direction_name(Direction),
+        getenv('HE2PETTA_LIB_IMPORT', LibPath),
+        LibPath \== ''
+    ->  format(Stream, "!(import! &self ~w)~n~n", [LibPath])
+    ;   true
+    ).
+
+he2petta_direction_name(he_to_petta).
+he2petta_direction_name(he_to_petta_trusted).
+
+%% import! returns () in HE but True in PeTTa; wrap the written directive to
+%% the HE unit surface. Applied after relocation so module-path rewriting and
+%% recursive dependency discovery keep seeing the bare import shape.
+unitwrap_he2petta_imports(Direction, Atoms, Out) :-
+    (   he2petta_direction_name(Direction)
+    ->  maplist(unitwrap_toplevel_import, Atoms, Out)
+    ;   Out = Atoms
+    ).
+
+%% Native import! itself returns unit now; keep the directive bare so module
+%% resolution sees the top-level import shape.
+unitwrap_toplevel_import(Atom, Atom).
 
 materialized_petta_dependency_direction(petta_to_he).
 materialized_petta_dependency_direction(petta_to_he_hyperpose).
@@ -243,6 +274,7 @@ translate_materialized_file_recursive(_, _, SourcePath, _, Seen, Seen) :-
 translate_materialized_file_recursive(Direction, EntrySource, SourcePath, OutPath,
                                       SeenIn, SeenOut) :-
     read_metta_file(SourcePath, Atoms),
+    ensure_he2petta_supported_source(Direction, Atoms),
     length(Atoms, N),
     translate_toplevel_atoms(Direction, Atoms, TAtoms0),
     rewrite_materialized_module_surfaces(EntrySource, SourcePath, OutPath,
@@ -291,6 +323,28 @@ rewrite_materialized_module_surfaces(EntrySource, SourcePath, OutPath, TAtoms0,
     rewrite_materialized_module_surfaces_acc(EntrySource, SourcePath, OutPath,
         TAtoms0, [], TAtoms, [], DepPairs),
     sort(DepPairs, Deps).
+
+ensure_he2petta_supported_source(Direction, Atoms) :-
+    (   he2petta_direction_name(Direction),
+        he2petta_has_doc_surface(Atoms)
+    ->  throw(error(domain_error(he_core_surface, doc_surface),
+                    context(test_on_real_files:translate_file_to_path/3,
+                            'no portable doc-surface translation: @doc/get-doc/help! depend on lane-specific documentation support')))
+    ;   true
+    ).
+
+he2petta_has_doc_surface(['!', Expr | Rest]) :-
+    !,
+    (   he2petta_doc_exec_expr(Expr)
+    ;   he2petta_has_doc_surface(Rest)
+    ).
+he2petta_has_doc_surface([['@doc'|_]|_]) :-
+    !.
+he2petta_has_doc_surface([_|Rest]) :-
+    he2petta_has_doc_surface(Rest).
+
+he2petta_doc_exec_expr(['get-doc'|_]).
+he2petta_doc_exec_expr(['help!'|_]).
 
 rewrite_materialized_module_surfaces_acc(_, _, _, [], _, [], DepAcc, DepAcc).
 rewrite_materialized_module_surfaces_acc(EntrySource, SourcePath, OutPath,
@@ -601,8 +655,16 @@ translate_toplevel_atoms(Direction, Atoms, TAtoms) :-
           postprocess_toplevel_atoms(Direction, Atoms, TAtoms0, TAtoms)
         )).
 translate_toplevel_atoms(Direction, Atoms, TAtoms) :-
-    translate_toplevel_atoms_acc(Direction, Atoms, Atoms, TAtoms0),
-    postprocess_toplevel_atoms(Direction, Atoms, TAtoms0, TAtoms).
+    (   he2petta_direction_name(Direction)
+    ->  he_to_petta:rename_native_reserved_heads(Atoms, Atoms1)
+    ;   Atoms1 = Atoms
+    ),
+    (   he2petta_direction_name(Direction)
+    ->  SourceCtx = ctx(Atoms1, [])
+    ;   SourceCtx = Atoms1
+    ),
+    translate_toplevel_atoms_acc(Direction, SourceCtx, Atoms1, TAtoms0),
+    postprocess_toplevel_atoms(Direction, Atoms1, TAtoms0, TAtoms).
 
 source_nil_surface('()').
 source_nil_surface([]).
@@ -771,11 +833,90 @@ translate_toplevel_atoms_acc(Direction, SourceAtoms,
     !,
     translate_toplevel_atoms_acc(Direction, SourceAtoms, Rest, TRest).
 translate_toplevel_atoms_acc(Direction, SourceAtoms, ['!' , Expr | Rest], [exec(TExpr) | TRest]) :-
-    translate_term_for(Direction, Expr, TExpr),
+    translate_exec_term_for(Direction, SourceAtoms, Expr, TExpr),
     translate_toplevel_atoms_acc(Direction, SourceAtoms, Rest, TRest).
 translate_toplevel_atoms_acc(Direction, SourceAtoms, [A | Rest], [plain(TA) | TRest]) :-
     translate_toplevel_atom(Direction, A, TA),
-    translate_toplevel_atoms_acc(Direction, SourceAtoms, Rest, TRest).
+    he2petta_extend_seen_funs(SourceAtoms, A, NextSourceAtoms),
+    translate_toplevel_atoms_acc(Direction, NextSourceAtoms, Rest, TRest).
+
+translate_exec_term_for(he_to_petta, ctx(AllAtoms, SeenFuns), A, TA) :-
+    he2petta_all_defined_funs(AllAtoms, AllFuns),
+    subtract(AllFuns, SeenFuns, FutureFuns),
+    he_to_petta:translate_term_with_fun_context(SeenFuns, FutureFuns, A, TA0),
+    he2petta_wrap_exec_let_bindings(TA0, TA).
+translate_exec_term_for(he_to_petta_trusted, ctx(AllAtoms, SeenFuns), A, TA) :-
+    he2petta_all_defined_funs(AllAtoms, AllFuns),
+    subtract(AllFuns, SeenFuns, FutureFuns),
+    he_to_petta:translate_term_trusted_with_fun_context(SeenFuns, FutureFuns, A, TA0),
+    he2petta_wrap_exec_let_bindings(TA0, TA).
+translate_exec_term_for(Direction, _SourceAtoms, A, TA) :-
+    translate_term_for(Direction, A, TA).
+
+he2petta_all_defined_funs(Atoms, Funs) :-
+    findall(Fun,
+            he2petta_source_defined_marker_or_decl(Atoms, Fun),
+            Funs0),
+    sort(Funs0, Funs).
+
+he2petta_source_defined_marker_or_decl(Atoms, Fun) :-
+    member(Atom, Atoms),
+    he2petta_defined_fun_atom(Atom, Fun).
+he2petta_source_defined_marker_or_decl(Atoms, Fun) :-
+    member(['source-defined-function', Fun], Atoms).
+
+he2petta_wrap_exec_let_bindings([quote|Payload], [quote|Payload]) :- !.
+he2petta_wrap_exec_let_bindings([let, Pat, Val, Body],
+                                [let, Pat, WrappedVal, TBody]) :-
+    !,
+    he2petta_wrap_exec_let_bindings(Val, TVal),
+    (   he2petta_generated_temp_var(Pat)
+    ->  WrappedVal = TVal
+    ;   WrappedVal = ['match-template-eval', TVal]
+    ),
+    he2petta_wrap_exec_let_bindings(Body, TBody).
+he2petta_wrap_exec_let_bindings(['let*', Bindings, Body],
+                                ['let*', TBindings, TBody]) :-
+    !,
+    maplist(he2petta_wrap_exec_let_binding, Bindings, TBindings),
+    he2petta_wrap_exec_let_bindings(Body, TBody).
+he2petta_wrap_exec_let_bindings(List, TList) :-
+    is_list(List),
+    !,
+    maplist(he2petta_wrap_exec_let_bindings, List, TList).
+he2petta_wrap_exec_let_bindings(X, X).
+
+he2petta_wrap_exec_let_binding([Pat, Val], [Pat, WrappedVal]) :-
+    he2petta_wrap_exec_let_bindings(Val, TVal),
+    (   he2petta_generated_temp_var(Pat)
+    ->  WrappedVal = TVal
+    ;   WrappedVal = ['match-template-eval', TVal]
+    ).
+he2petta_wrap_exec_let_binding(Binding, Binding).
+
+he2petta_generated_temp_var(Pat) :-
+    atom(Pat),
+    atom_concat('$__tr_', _, Pat).
+
+he2petta_extend_seen_funs(ctx(AllAtoms, Seen0), Atom, ctx(AllAtoms, Seen)) :-
+    !,
+    (   he2petta_defined_fun_atom(Atom, Fun),
+        \+ memberchk(Fun, Seen0)
+    ->  append(Seen0, [Fun], Seen)
+    ;   Seen = Seen0
+    ).
+he2petta_extend_seen_funs(SourceAtoms, _Atom, SourceAtoms).
+
+he2petta_defined_fun_atom(['=', Head, _], Fun) :-
+    he2petta_defined_fun_head(Head, Fun).
+he2petta_defined_fun_atom([':', Head, _], Fun) :-
+    he2petta_defined_fun_head(Head, Fun).
+
+he2petta_defined_fun_head([Head|_], Fun) :-
+    !,
+    he_to_petta:base_head_symbol(Head, Fun).
+he2petta_defined_fun_head(Head, Fun) :-
+    he_to_petta:base_head_symbol(Head, Fun).
 
 file_map_flat3_exprdata_body(Apply1, F,
                              [let, ['$head', '$tail'], ['decons-atom', '$pairq'],
@@ -817,6 +958,10 @@ translate_toplevel_atom(Direction, A, TA) :-
     ),
     !,
     translate_decl_for(Direction, A, TA).
+%% HE->PeTTa: plain top-level facts are stored data that upstream never
+%% evaluates; they pass through verbatim (renaming already ran as a pre-pass).
+translate_toplevel_atom(Direction, A, A) :-
+    he2petta_direction_name(Direction), !.
 translate_toplevel_atom(Direction, A, TA) :-
     translate_term_for(Direction, A, TA).
 
@@ -1589,11 +1734,13 @@ translate_file_tree_inplace_recursive(_, SourcePath, _, Seen, Seen) :-
 translate_file_tree_inplace_recursive(Direction, SourcePath, OutSuffix,
                                       SeenIn, SeenOut) :-
     translated_sibling_path(SourcePath, OutSuffix, OutPath),
-    read_metta_file(SourcePath, Atoms),
+    read_metta_file(SourcePath, Atoms0),
+    maybe_rewrite_he_source_import_snapshots(Direction, SourcePath, Atoms0, Atoms),
     length(Atoms, N),
     translate_toplevel_atoms(Direction, Atoms, TAtoms0),
     rewrite_inplace_recursive_module_surfaces(SourcePath, OutPath, OutSuffix,
-        TAtoms0, TAtoms, Deps),
+        TAtoms0, TAtoms1, Deps),
+    maybe_inline_he_entry_helpers(Direction, SeenIn, TAtoms1, TAtoms),
     setup_call_cleanup(
         open(OutPath, write, Stream),
         (
@@ -1670,11 +1817,13 @@ translate_file_tree_recursive(_, _, _, _, SourcePath, Seen, Seen) :-
 translate_file_tree_recursive(Direction, TreeMode, SourceRootDir, OutputRootDir,
                               SourcePath, SeenIn, SeenOut) :-
     output_path_for_source(SourceRootDir, OutputRootDir, SourcePath, OutPath),
-    read_metta_file(SourcePath, Atoms),
+    read_metta_file(SourcePath, Atoms0),
+    maybe_rewrite_he_source_import_snapshots(Direction, SourcePath, Atoms0, Atoms),
     length(Atoms, N),
     translate_toplevel_atoms(Direction, Atoms, TAtoms0),
     rewrite_recursive_module_surfaces(SourceRootDir, OutputRootDir, SourcePath,
-        OutPath, TAtoms0, TAtoms, Deps),
+        OutPath, TAtoms0, TAtoms1, Deps),
+    maybe_inline_he_entry_helpers(Direction, SeenIn, TAtoms1, TAtoms),
     file_directory_name(OutPath, OutFileDir),
     make_directory_path(OutFileDir),
     setup_call_cleanup(
@@ -1717,6 +1866,72 @@ rewrite_recursive_module_surfaces(SourceRootDir, OutputRootDir, SourcePath,
     rewrite_recursive_module_surfaces_acc(SourceRootDir, OutputRootDir, SourcePath,
         OutPath, TAtoms0, [], TAtoms, [], DepPairs),
     sort(DepPairs, Deps).
+
+maybe_rewrite_he_source_import_snapshots(Direction, SourcePath, Atoms0, Atoms) :-
+    (   he2petta_direction_name(Direction)
+    ->  rewrite_he_source_import_snapshots(SourcePath, Atoms0, Atoms)
+    ;   Atoms = Atoms0
+    ).
+
+rewrite_he_source_import_snapshots(SourcePath, Atoms0, Atoms) :-
+    rewrite_he_source_import_snapshots_acc(SourcePath, Atoms0, [], Atoms).
+
+rewrite_he_source_import_snapshots_acc(_, [], _, []).
+rewrite_he_source_import_snapshots_acc(SourcePath, ['!', ['import!', SpaceRef, Spec]|Rest],
+                                       ImportedRefs, ['!', Rewritten|OutRest]) :-
+    atom(SpaceRef),
+    SpaceRef \== '&self',
+    resolve_local_module_file(SourcePath, Spec, ResolvedFile, _Style),
+    he_snapshot_export_atoms(ResolvedFile, DirectAtoms),
+    !,
+    he_snapshot_import_expr(SpaceRef, DirectAtoms, Rewritten),
+    sort([SpaceRef|ImportedRefs], ImportedRefs1),
+    rewrite_he_source_import_snapshots_acc(SourcePath, Rest, ImportedRefs1, OutRest).
+rewrite_he_source_import_snapshots_acc(SourcePath, [Atom0|Rest], ImportedRefs, [Atom|OutRest]) :-
+    rewrite_imported_space_get_type(ImportedRefs, Atom0, Atom),
+    rewrite_he_source_import_snapshots_acc(SourcePath, Rest, ImportedRefs, OutRest).
+
+he_snapshot_export_atoms(SourcePath, DirectAtoms) :-
+    read_metta_file(SourcePath, Atoms),
+    he_snapshot_visible_atoms(Atoms, Visible0),
+    he_snapshot_reorder_visible_atoms(Visible0, DirectAtoms).
+
+he_snapshot_visible_atoms([], []).
+he_snapshot_visible_atoms(['!', _ExecExpr|Rest], Visible) :-
+    !,
+    he_snapshot_visible_atoms(Rest, Visible).
+he_snapshot_visible_atoms(['!'|Rest], Visible) :-
+    !,
+    he_snapshot_visible_atoms(Rest, Visible).
+he_snapshot_visible_atoms([Atom|Rest], [Atom|Visible]) :-
+    he_snapshot_visible_atoms(Rest, Visible).
+
+he_snapshot_reorder_visible_atoms(Visible0, Ordered) :-
+    partition(he_snapshot_type_decl_atom, Visible0, TypeDecls, OtherAtoms),
+    append(OtherAtoms, TypeDecls, Ordered).
+
+he_snapshot_type_decl_atom([':', _, _]).
+
+he_snapshot_import_expr(SpaceRef, DirectAtoms, Expr) :-
+    he_snapshot_add_bindings(SpaceRef, DirectAtoms, 1, Bindings),
+    Expr = ['let*', Bindings, '()'].
+
+he_snapshot_add_bindings(_, [], _, []).
+he_snapshot_add_bindings(SpaceRef, [Atom|Rest], N, [[Var, ['add-atom', SpaceRef, Atom]]|Bindings]) :-
+    format(atom(Var), '$__tr_import_~d', [N]),
+    N1 is N + 1,
+    he_snapshot_add_bindings(SpaceRef, Rest, N1, Bindings).
+
+rewrite_imported_space_get_type(ImportedRefs, ['get-type', Ref], [quote, 'SpaceType']) :-
+    atom(Ref),
+    memberchk(Ref, ImportedRefs),
+    !.
+rewrite_imported_space_get_type(_, [quote|Payload], [quote|Payload]) :- !.
+rewrite_imported_space_get_type(ImportedRefs, List0, List) :-
+    is_list(List0),
+    !,
+    maplist(rewrite_imported_space_get_type(ImportedRefs), List0, List).
+rewrite_imported_space_get_type(_, Atom, Atom).
 
 rewrite_recursive_module_surfaces_acc(_, _, _, _, [], _, [], DepAcc, DepAcc).
 rewrite_recursive_module_surfaces_acc(SourceRootDir, OutputRootDir, SourcePath,
@@ -1894,11 +2109,13 @@ path_compat_case(5, "recursive translation keeps files in place with renamed out
             Entry, '.he2petta.metta'),
         file_contains_text(EntryOut,
             "!(register-module! support/import_pkg)"),
+        % import! is unit-wrapped (HE returns ()), so match the call shape
+        % rather than a leading bang.
         file_contains_text(EntryOut,
-            "!(import! &db support/import_pkg/moduleA.he2petta.metta)"),
+            "(import! &db support/import_pkg/moduleA.he2petta.metta)"),
         exists_file(ModuleOut),
         file_contains_text(ModuleOut,
-            "!(import! &self Helper.he2petta.metta)")
+            "(import! &self Helper.he2petta.metta)")
     )).
 
 path_compat_case(6, "bundle translation emits manifest and bundled entry file",
@@ -1910,8 +2127,37 @@ path_compat_case(6, "bundle translation emits manifest and bundled entry file",
         translate_file_he_to_petta_bundle(Entry, BundleDir),
         exists_file(Manifest),
         file_contains_text(EntryOut,
-            "!(import! &deep support/import_deep/root.metta)"),
-        exists_file(RootOut)
+            "(add-atom &deep (deep-root loaded))"),
+        \+ exists_file(RootOut)
+    )).
+
+path_compat_case(6_1, "HE->PeTTa file translation renames callable equality heads without breaking declaration syntax",
+    (   path_fixture('test_he_eq_surface.metta', Source),
+        path_generated('out/test_he_eq_surface.petta.metta', Output),
+        translate_file_he_to_petta(Source, Output),
+        file_contains_text(Output, "(= (=-he $x $x) T)"),
+        file_contains_text(Output, "(call-or-inert (quote (=-he Socrates Socrates)))"),
+        \+ file_contains_text(Output, "(= (= $x $x) T)")
+    )).
+
+path_compat_case(6_2, "HE->PeTTa file translation preserves pre-definition reserved head spelling",
+    (   path_fixture('test_he_reserved_head_order_surface.metta', Source),
+        path_generated('out/test_he_reserved_head_order_surface.petta.metta', Output),
+        translate_file_he_to_petta(Source, Output),
+        file_contains_text(Output, "!(let $x (match-template-eval foo) (quote (is-space $x)))"),
+        file_contains_text(Output, "(: is-space-he (-> Atom Bool))"),
+        file_contains_text(Output, "(= (is-space-he $atom) T)"),
+        file_contains_text(Output, "(source-defined-function is-space)")
+    )).
+
+path_compat_case(6_3, "HE->PeTTa file translation rejects doc-surface portability gaps explicitly",
+    (   path_fixture('test_he_doc_surface.metta', Source),
+        path_generated('out/test_he_doc_surface.petta.metta', Output),
+        catch((translate_file_he_to_petta(Source, Output), Outcome = translated),
+              error(domain_error(he_core_surface, doc_surface), context(_, Message)),
+              Outcome = rejected(Message)),
+        Outcome = rejected(Message),
+        sub_string(Message, _, _, _, 'no portable doc-surface translation')
     )).
 
 path_compat_case(7, "default PeTTa->HE file translation lowers hyperpose and keeps once pure",
@@ -2472,6 +2718,12 @@ setup_path_compat_fixture :-
         "!(register-module! support/import_pkg)\n!(import! &db import_pkg:moduleA)\n!(import! &facts import_pkg:data:Facts)\n"),
     write_fixture_relative(Root, 'test_import_foreign_python_file.metta',
         "!(import! &self support/import_foreign_pyfile)\n"),
+    write_fixture_relative(Root, 'test_he_eq_surface.metta',
+        "(: T Type)\n(= (= $x $x) T)\n!(= Socrates Socrates)\n"),
+    write_fixture_relative(Root, 'test_he_reserved_head_order_surface.metta',
+        "!(let $x foo (is-space $x))\n(: is-space (-> Atom Bool))\n(= (is-space $atom) T)\n"),
+    write_fixture_relative(Root, 'test_he_doc_surface.metta',
+        "(@doc foo (@desc \"Doc\"))\n!(get-doc foo)\n"),
     write_fixture_relative(Root, 'test_hyperpose_surface.metta',
         "!(test (once (hyperpose ((slow-branch) (cheap-branch)))) True)\n"),
     write_fixture_relative(Root, 'test_cut_surface.metta',
@@ -2578,6 +2830,115 @@ write_toplevel_atom(Stream, exec(Expr)) :-
 write_toplevel_atom(Stream, plain(Expr)) :-
     print_sexpr(Stream, Expr),
     nl(Stream).
+
+maybe_inline_he_entry_helpers(Direction, SeenIn, Atoms, FinalAtoms) :-
+    (   he2petta_direction_name(Direction),
+        SeenIn == [],
+        translated_items_need_inline_he_helpers(Atoms, HelperHeads),
+        HelperHeads \== []
+    ->  he_inline_helper_items(HelperHeads, HelperItems),
+        splice_he_helper_items_before_first_use(Atoms, HelperHeads, HelperItems, FinalAtoms)
+    ;   FinalAtoms = Atoms
+    ).
+
+translated_items_need_inline_he_helpers(Items, HelperHeads) :-
+    findall(Head,
+            translated_items_need_inline_he_helper(Items, Head),
+            RawHeads),
+    he_inline_helper_head_closure(RawHeads, HelperHeads).
+
+translated_items_need_inline_he_helper(Items, Head) :-
+    he_inline_runtime_head(Head),
+    translated_items_use_named_head(Items, Head).
+
+translated_items_use_named_head(Items, Head) :-
+    is_list(Items),
+    member(Item, Items),
+    item_payload(Item, Term),
+    term_uses_named_head(Term, Head),
+    !.
+
+he_inline_runtime_head('assert-results-equal').
+he_inline_runtime_head('assert-result-sets-equal').
+he_inline_runtime_head('assert-alpha-results-equal').
+he_inline_runtime_head('assert-alpha-result-sets-equal').
+he_inline_runtime_head('assert-unit').
+he_inline_runtime_head('assert-includes').
+he_inline_runtime_head('assert-equal-msg').
+he_inline_runtime_head('assert-results-equal-msg').
+he_inline_runtime_head('call-or-inert').
+he_inline_runtime_head('change-state-with-source').
+he_inline_runtime_head('match-template-eval').
+
+he_inline_helper_head_closure(Heads0, Heads) :-
+    sort(Heads0, Seed),
+    he_inline_helper_head_closure_fixpoint(Seed, Heads).
+
+he_inline_helper_head_closure_fixpoint(Heads0, Heads) :-
+    findall(Dep,
+            ( member(Head, Heads0),
+              he_inline_helper_head_dependency(Head, Dep)
+            ),
+            RawDeps),
+    append(Heads0, RawDeps, Heads1),
+    sort(Heads1, Sorted),
+    (   Sorted == Heads0
+    ->  Heads = Sorted
+    ;   he_inline_helper_head_closure_fixpoint(Sorted, Heads)
+    ).
+
+he_inline_helper_head_dependency('assert-results-equal', 'results-bag-equal').
+he_inline_helper_head_dependency('assert-result-sets-equal', 'normalize-states').
+he_inline_helper_head_dependency('assert-result-sets-equal', 'state-normal-form').
+he_inline_helper_head_dependency('assert-result-sets-equal', 'results-bag-equal').
+he_inline_helper_head_dependency('assert-alpha-results-equal', 'alpha-bag-equal').
+he_inline_helper_head_dependency('assert-alpha-results-equal', 'alpha-bag-remove-one').
+he_inline_helper_head_dependency('assert-alpha-result-sets-equal', 'normalize-states').
+he_inline_helper_head_dependency('assert-alpha-result-sets-equal', 'state-normal-form').
+he_inline_helper_head_dependency('assert-alpha-result-sets-equal', 'alpha-bag-equal').
+he_inline_helper_head_dependency('assert-alpha-result-sets-equal', 'alpha-bag-remove-one').
+he_inline_helper_head_dependency('assert-equal-msg', 'results-bag-equal').
+he_inline_helper_head_dependency('assert-results-equal-msg', 'results-bag-equal').
+he_inline_helper_head_dependency('call-or-inert', 'eval-or-inert').
+he_inline_helper_head_dependency('match-template-eval', 'match-template-eval-if').
+he_inline_helper_head_dependency('match-template-eval', 'match-template-eval-application').
+
+he_inline_helper_items(HelperHeads, Items) :-
+    he_helper_template_path(TemplatePath),
+    read_metta_file(TemplatePath, HelperAtoms0),
+    include(he_inline_helper_atom(HelperHeads), HelperAtoms0, HelperAtoms),
+    wrap_plain_items(HelperAtoms, Items).
+
+he_helper_template_path(TemplatePath) :-
+    source_file(run_path_compat_tests, SourceFile),
+    file_directory_name(SourceFile, SourceDir),
+    directory_file_path(SourceDir, '../PeTTa/lib/lib_he.metta', RelPath),
+    absolute_file_name(RelPath, TemplatePath, [solutions(first)]).
+
+he_inline_helper_atom(HelperHeads, ['=', [Head|_], _]) :-
+    memberchk(Head, HelperHeads),
+    !.
+he_inline_helper_atom(_, _) :-
+    fail.
+
+splice_he_helper_items_before_first_use(Items, HelperHeads, HelperItems, Spliced) :-
+    splice_he_helper_items_before_first_use_acc(Items, HelperHeads, HelperItems, Spliced, false).
+
+splice_he_helper_items_before_first_use_acc([], _, HelperItems, HelperItems, false) :- !.
+splice_he_helper_items_before_first_use_acc([], _, _, [], true).
+splice_he_helper_items_before_first_use_acc([Item|Items], HelperHeads, HelperItems, Spliced, false) :-
+    item_payload(Item, Term),
+    term_uses_any_named_head(Term, HelperHeads),
+    !,
+    append(HelperItems, [Item|Items], Spliced).
+splice_he_helper_items_before_first_use_acc([Item|Items], HelperHeads, HelperItems, [Item|Spliced], Inserted0) :-
+    splice_he_helper_items_before_first_use_acc(Items, HelperHeads, HelperItems, Spliced, Inserted0).
+
+term_uses_any_named_head(Term, [Head|_]) :-
+    term_uses_named_head(Term, Head),
+    !.
+term_uses_any_named_head(Term, [_|Heads]) :-
+    term_uses_any_named_head(Term, Heads).
 
 maybe_materialize_petta_helper_libs(Atoms, OutPath) :-
     (   translated_items_import_lib_petta(Atoms)
