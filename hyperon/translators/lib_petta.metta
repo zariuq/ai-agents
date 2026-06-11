@@ -258,7 +258,7 @@
       (return $second)
       (return (Error (second-from-pair $pair) "incorrect pair format")))))
 
-(: reverse (-> Atom Atom))
+(: reverse (-> Atom Expression))
 (= (reverse $xs)
   (petta-reverse-acc $xs ()))
 (= (petta-reverse-acc () $acc)
@@ -268,13 +268,13 @@
     ((($head $tail)
       (petta-reverse-acc $tail (cons-atom $head $acc))))))
 
-(: last (-> Atom Atom))
+(: last (-> Atom Expression))
 (= (last $xs)
   (case (decons-atom $xs)
     ((($head ()) $head)
      (($head $tail) (last $tail)))))
 
-(: foldl (-> Atom Atom Atom Atom))
+(: foldl (-> Atom Atom Atom Expression))
 (= (foldl $f $list $init)
   (foldl-atom $list $init $__tr_acc $__tr_item
     (eval ($f $__tr_item $__tr_acc))))
@@ -287,7 +287,7 @@
 (= (max $a $b)
   (if (<= $a $b) $b $a))
 
-(: alpha-unique-atom (-> Atom Atom))
+(: alpha-unique-atom (-> Atom Expression))
 (= (petta-is-alpha-member $item $tuple)
   (not (== (collapse (let $x (superpose $tuple)
                          (if (=alpha $x $item)

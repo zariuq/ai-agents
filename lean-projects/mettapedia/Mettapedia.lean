@@ -54,7 +54,13 @@ import Mettapedia.CategoryTheory.Hypercube
 import Mettapedia.CategoryTheory.PLNSemiringQuantale
 import Mettapedia.CategoryTheory.GeneralizedOpenMaps
 
+-- Information theory (combinatorial bounds)
+import Mettapedia.InformationTheory.BinomialEntropy
 -- Computability
+import Mettapedia.Computability.CollatzThreeAdic
+import Mettapedia.Computability.CollatzThreeAdicTransfer
+import Mettapedia.Computability.CollatzThreeAdicExact
+import Mettapedia.Computability.CollatzThreeAdicAsymptotics
 import Mettapedia.Computability.KolmogorovComplexity.Basic
 import Mettapedia.Computability.KolmogorovComplexity.PartitionedCompression
 -- import Mettapedia.Computability.KolmogorovComplexity.Prefix  -- WIP (Phase 2)

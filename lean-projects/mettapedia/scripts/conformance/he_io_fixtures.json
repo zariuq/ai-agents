@@ -117,6 +117,74 @@
     "source_note": "collapse collects nondet outcomes preserving duplicates"
   },
   {
+    "id": "he_ext_tv_conjunction_reduces",
+    "tier": "extension_impl_target",
+    "implementation_priority": "P1",
+    "implementation_group": "pln_tv",
+    "setup": [
+      "(= (min $a $b) (if (< $a $b) $a $b))",
+      "(= (s-tv (stv $s $c)) $s)",
+      "(= (c-tv (stv $s $c)) $c)",
+      "(= (TV $x) (match &self (.tv $x $stv) $stv))",
+      "(= (TV (And $a $b)) (stv (min (s-tv (TV $a)) (s-tv (TV $b))) (min (c-tv (TV $a)) (c-tv (TV $b)))))",
+      "(.tv aa (stv 0.5 0.8))",
+      "(.tv bb (stv 0.3 0.9))"
+    ],
+    "query": "!(TV (And aa bb))",
+    "expected": ["(stv 0.3 0.8)"],
+    "source_note": "Minimal witness extracted from he_c3_pln_stv.metta: conjunction truth-value reduction must re-enter nested TV/min projections applicatively"
+  },
+  {
+    "id": "he_ext_tv_implication_reduces",
+    "tier": "extension_impl_target",
+    "implementation_priority": "P1",
+    "implementation_group": "pln_tv",
+    "setup": [
+      "(= (s-tv (stv $s $c)) $s)",
+      "(= (c-tv (stv $s $c)) $c)",
+      "(= (TV $x) (match &self (.tv $x $stv) $stv))",
+      "(= (TV $x) (match &self (.tv (Implication $y $x) (stv $s $c)) (stv (* $s (s-tv (TV $y))) (* $c (c-tv (TV $y))))))",
+      "(.tv aa (stv 0.5 0.8))",
+      "(.tv (Implication aa ff) (stv 0.8 1.0))"
+    ],
+    "query": "!(TV ff)",
+    "expected": ["(stv 0.4 0.8)"],
+    "source_note": "Minimal witness extracted from he_c3_pln_stv.metta: implication truth-value reduction must recurse through antecedent TV lookup"
+  },
+  {
+    "id": "he_ext_type_prop_application_type",
+    "tier": "extension_impl_target",
+    "implementation_priority": "P1",
+    "implementation_group": "type_prop",
+    "setup": [
+      "(: Entity Type)",
+      "(: Socrates Entity)",
+      "(: Human (-> Entity Type))",
+      "(: Mortal (-> Entity Type))",
+      "(: HumansAreMortal (-> (Human $t) (Mortal $t)))",
+      "(: SocratesIsHuman (Human Socrates))"
+    ],
+    "query": "!(get-type (HumansAreMortal SocratesIsHuman))",
+    "expected": ["(Mortal Socrates)"],
+    "source_note": "Minimal witness extracted from he_d4_type_prop.metta: proof-object application carries the instantiated proposition family"
+  },
+  {
+    "id": "he_ext_type_prop_bad_proof_rejected",
+    "tier": "extension_impl_target",
+    "implementation_priority": "P1",
+    "implementation_group": "type_prop",
+    "setup": [
+      "(: Entity Type)",
+      "(: Socrates Entity)",
+      "(: Human (-> Entity Type))",
+      "(: Mortal (-> Entity Type))",
+      "(: HumansAreMortal (-> (Human $t) (Mortal $t)))"
+    ],
+    "query": "!(get-type (HumansAreMortal (Human Socrates)))",
+    "expected": [],
+    "source_note": "Minimal witness extracted from he_d4_type_prop.metta: proposition shape is not itself a proof object"
+  },
+  {
     "id": "he_ext_assert_true_unit",
     "tier": "extension_impl_target",
     "implementation_priority": "P1",

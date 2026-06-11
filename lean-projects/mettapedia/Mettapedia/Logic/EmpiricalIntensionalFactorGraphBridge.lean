@@ -1774,6 +1774,8 @@ variable {Obj Attr Q Gate : Type*}
 variable [Preorder Q] [Fintype Gate] [Nonempty Gate] [Fintype Obj] [Nonempty Obj] [Fintype Attr]
 
 open Mettapedia.Logic.ConceptOntology
+open Mettapedia.ProbabilityTheory.ImpreciseProbability
+open Mettapedia.ProbabilityTheory.ImpreciseProbability.ProjectiveCredal
 
 noncomputable def lowerCredalConceptInheritanceTable
     (Γ : Gate → EvidenceGate Q)
@@ -2724,6 +2726,404 @@ omit [Fintype Gate] [Nonempty Gate] [Nonempty Obj] in
     · exact hSuperNot ((mem_lowerConceptFamily_singleton_iff (G := G) (M := M) superConcept).2 hSuperLower)
   · intro h
     exact False.elim h
+
+/-- Gate-indexed gamble for the credal inheritance judgment.
+
+The two coordinates of `Gate × Gate` intentionally track independent admissible
+gate choices for the subconcept and superconcept.  This matches
+`credalInheritanceJudgment`, whose upper support requires each side to be formed
+under some admissible gate, not necessarily the same one. -/
+noncomputable def credalInheritanceGamble
+    (Γ : Gate → EvidenceGate Q)
+    (M : Obj → Attr → Q)
+    (subConcept superConcept : DualConcept Obj Attr) :
+    Gamble (Gate × Gate) :=
+  fun gs =>
+    if subConcept ∈ AbstractInheritance.finiteConceptFamily (Γ gs.1) M ∧
+        superConcept ∈ AbstractInheritance.finiteConceptFamily (Γ gs.2) M then
+      1
+    else
+      0
+
+omit [Fintype Gate] [Nonempty Gate] [Nonempty Obj] in
+@[simp] theorem credalInheritanceGamble_apply
+    (Γ : Gate → EvidenceGate Q)
+    (M : Obj → Attr → Q)
+    (subConcept superConcept : DualConcept Obj Attr)
+    (gs : Gate × Gate) :
+    credalInheritanceGamble Γ M subConcept superConcept gs =
+      if subConcept ∈ AbstractInheritance.finiteConceptFamily (Γ gs.1) M ∧
+          superConcept ∈ AbstractInheritance.finiteConceptFamily (Γ gs.2) M then
+        1
+      else
+        0 :=
+  rfl
+
+omit [Nonempty Obj] in
+theorem lowerEnvelope_credalInheritanceGamble_eq
+    (Γ : Gate → EvidenceGate Q)
+    (M : Obj → Attr → Q)
+    (subConcept superConcept : DualConcept Obj Attr) :
+    lowerEnvelope (gateCredalSet (Gate := Gate × Gate))
+        (credalInheritanceGamble Γ M subConcept superConcept) =
+      if credallyPreciseInheritance Γ M subConcept superConcept then 1 else 0 := by
+  classical
+  by_cases hPrecise : credallyPreciseInheritance Γ M subConcept superConcept
+  · rcases hPrecise with ⟨hSubLower, hSuperLower⟩
+    apply le_antisymm
+    · rw [if_pos ⟨hSubLower, hSuperLower⟩]
+      obtain ⟨g₀⟩ := ‹Nonempty Gate›
+      have hmem :
+          PrecisePrevision.dirac (g₀, g₀) ∈ gateCredalSet (Gate := Gate × Gate) :=
+        ⟨(g₀, g₀), rfl⟩
+      have hle :=
+        lowerEnvelope_le_of_mem (gateCredalSet (Gate := Gate × Gate))
+          (credalInheritanceGamble Γ M subConcept superConcept)
+          (finite_credalRange_bddBelow (gateCredalSet (Gate := Gate × Gate))
+            (credalInheritanceGamble Γ M subConcept superConcept))
+          hmem
+      simpa [gateCredalSet, credalInheritanceGamble, hSubLower g₀, hSuperLower g₀]
+        using hle
+    · apply le_lowerEnvelope_of_forall_le
+        (gateCredalSet (Gate := Gate × Gate))
+        (gateCredalSet_nonempty (Gate := Gate × Gate))
+        (credalInheritanceGamble Γ M subConcept superConcept)
+      intro P hP
+      rcases hP with ⟨gs, rfl⟩
+      rw [if_pos ⟨hSubLower, hSuperLower⟩]
+      simp [credalInheritanceGamble, hSubLower gs.1, hSuperLower gs.2]
+  · have hWitness :
+        ∃ gs : Gate × Gate,
+          ¬ (subConcept ∈ AbstractInheritance.finiteConceptFamily (Γ gs.1) M ∧
+            superConcept ∈ AbstractInheritance.finiteConceptFamily (Γ gs.2) M) := by
+      by_contra hNoWitness
+      push_neg at hNoWitness
+      apply hPrecise
+      exact ⟨fun g => (hNoWitness (g, Classical.choice ‹Nonempty Gate›)).1,
+        fun g => (hNoWitness (Classical.choice ‹Nonempty Gate›, g)).2⟩
+    apply le_antisymm
+    · rw [if_neg hPrecise]
+      rcases hWitness with ⟨gs₀, hgs₀⟩
+      have hmem :
+          PrecisePrevision.dirac gs₀ ∈ gateCredalSet (Gate := Gate × Gate) :=
+        ⟨gs₀, rfl⟩
+      have hle :=
+        lowerEnvelope_le_of_mem (gateCredalSet (Gate := Gate × Gate))
+          (credalInheritanceGamble Γ M subConcept superConcept)
+          (finite_credalRange_bddBelow (gateCredalSet (Gate := Gate × Gate))
+            (credalInheritanceGamble Γ M subConcept superConcept))
+          hmem
+      have hgsClosed :
+          ¬ (AbstractInheritance.DualConcept.IsClosed (crispRelation (Γ gs₀.1) M)
+              subConcept ∧
+            AbstractInheritance.DualConcept.IsClosed (crispRelation (Γ gs₀.2) M)
+              superConcept) := by
+        intro hClosed
+        exact hgs₀
+          ⟨(AbstractInheritance.mem_finiteConceptFamily_iff
+              (G := Γ gs₀.1) (M := M) (A := subConcept)).2 hClosed.1,
+            (AbstractInheritance.mem_finiteConceptFamily_iff
+              (G := Γ gs₀.2) (M := M) (A := superConcept)).2 hClosed.2⟩
+      simpa [gateCredalSet, credalInheritanceGamble,
+        AbstractInheritance.mem_finiteConceptFamily_iff, hgsClosed] using hle
+    · apply le_lowerEnvelope_of_forall_le
+        (gateCredalSet (Gate := Gate × Gate))
+        (gateCredalSet_nonempty (Gate := Gate × Gate))
+        (credalInheritanceGamble Γ M subConcept superConcept)
+      intro P hP
+      rcases hP with ⟨gs, rfl⟩
+      rw [if_neg hPrecise]
+      by_cases hgsClosed :
+          AbstractInheritance.DualConcept.IsClosed (crispRelation (Γ gs.1) M)
+              subConcept ∧
+            AbstractInheritance.DualConcept.IsClosed (crispRelation (Γ gs.2) M)
+              superConcept <;>
+        simp [credalInheritanceGamble, AbstractInheritance.mem_finiteConceptFamily_iff,
+          hgsClosed]
+
+omit [Nonempty Obj] in
+theorem upperEnvelope_credalInheritanceGamble_eq
+    (Γ : Gate → EvidenceGate Q)
+    (M : Obj → Attr → Q)
+    (subConcept superConcept : DualConcept Obj Attr) :
+    upperEnvelope (gateCredalSet (Gate := Gate × Gate))
+        (credalInheritanceGamble Γ M subConcept superConcept) =
+      if credalInheritanceJudgment Γ M subConcept superConcept then 1 else 0 := by
+  classical
+  by_cases hJudgment : credalInheritanceJudgment Γ M subConcept superConcept
+  · rcases hJudgment with ⟨hSubUpper, hSuperUpper⟩
+    rcases hSubUpper with ⟨gSub, hSub⟩
+    rcases hSuperUpper with ⟨gSuper, hSuper⟩
+    apply le_antisymm
+    · apply upperEnvelope_le_of_forall_le
+        (gateCredalSet (Gate := Gate × Gate))
+        (gateCredalSet_nonempty (Gate := Gate × Gate))
+        (credalInheritanceGamble Γ M subConcept superConcept)
+      intro P hP
+      rcases hP with ⟨gs, rfl⟩
+      rw [if_pos ⟨⟨gSub, hSub⟩, ⟨gSuper, hSuper⟩⟩]
+      by_cases hgsClosed :
+          AbstractInheritance.DualConcept.IsClosed (crispRelation (Γ gs.1) M)
+              subConcept ∧
+            AbstractInheritance.DualConcept.IsClosed (crispRelation (Γ gs.2) M)
+              superConcept <;>
+        simp [credalInheritanceGamble, AbstractInheritance.mem_finiteConceptFamily_iff,
+          hgsClosed]
+    · have hmem :
+          PrecisePrevision.dirac (gSub, gSuper) ∈ gateCredalSet (Gate := Gate × Gate) :=
+        ⟨(gSub, gSuper), rfl⟩
+      have hge :=
+        le_upperEnvelope_of_mem (gateCredalSet (Gate := Gate × Gate))
+          (credalInheritanceGamble Γ M subConcept superConcept)
+          (finite_credalRange_bddAbove (gateCredalSet (Gate := Gate × Gate))
+            (credalInheritanceGamble Γ M subConcept superConcept))
+          hmem
+      rw [if_pos ⟨⟨gSub, hSub⟩, ⟨gSuper, hSuper⟩⟩]
+      simpa [gateCredalSet, credalInheritanceGamble, hSub, hSuper] using hge
+  · have hAllClosed :
+        ∀ gs : Gate × Gate,
+          ¬ (AbstractInheritance.DualConcept.IsClosed (crispRelation (Γ gs.1) M)
+              subConcept ∧
+            AbstractInheritance.DualConcept.IsClosed (crispRelation (Γ gs.2) M)
+              superConcept) := by
+      intro gs hClosed
+      apply hJudgment
+      exact
+        ⟨⟨gs.1, (AbstractInheritance.mem_finiteConceptFamily_iff
+            (G := Γ gs.1) (M := M) (A := subConcept)).2 hClosed.1⟩,
+          ⟨gs.2, (AbstractInheritance.mem_finiteConceptFamily_iff
+            (G := Γ gs.2) (M := M) (A := superConcept)).2 hClosed.2⟩⟩
+    apply le_antisymm
+    · apply upperEnvelope_le_of_forall_le
+        (gateCredalSet (Gate := Gate × Gate))
+        (gateCredalSet_nonempty (Gate := Gate × Gate))
+        (credalInheritanceGamble Γ M subConcept superConcept)
+      intro P hP
+      rcases hP with ⟨gs, rfl⟩
+      rw [if_neg hJudgment]
+      simp [credalInheritanceGamble, AbstractInheritance.mem_finiteConceptFamily_iff,
+        hAllClosed gs]
+    · obtain ⟨g₀⟩ := ‹Nonempty Gate›
+      let gs₀ : Gate × Gate := (g₀, g₀)
+      have hmem :
+          PrecisePrevision.dirac gs₀ ∈ gateCredalSet (Gate := Gate × Gate) :=
+        ⟨gs₀, rfl⟩
+      have hge :=
+        le_upperEnvelope_of_mem (gateCredalSet (Gate := Gate × Gate))
+          (credalInheritanceGamble Γ M subConcept superConcept)
+          (finite_credalRange_bddAbove (gateCredalSet (Gate := Gate × Gate))
+            (credalInheritanceGamble Γ M subConcept superConcept))
+          hmem
+      rw [if_neg hJudgment]
+      simpa [gateCredalSet, credalInheritanceGamble,
+        AbstractInheritance.mem_finiteConceptFamily_iff, hAllClosed gs₀] using hge
+
+omit [Nonempty Obj] in
+theorem credalEnvelopeWidth_credalInheritanceGamble_eq
+    (Γ : Gate → EvidenceGate Q)
+    (M : Obj → Attr → Q)
+    (subConcept superConcept : DualConcept Obj Attr) :
+    credalEnvelopeWidth (gateCredalSet (Gate := Gate × Gate))
+        (credalInheritanceGamble Γ M subConcept superConcept) =
+      if credallyImpreciseInheritance Γ M subConcept superConcept then 1 else 0 := by
+  classical
+  by_cases hPrecise : credallyPreciseInheritance Γ M subConcept superConcept
+  · have hJudgment :=
+      credallyPreciseInheritance_imp_judgment Γ M subConcept superConcept hPrecise
+    have hNotImprecise :=
+      not_credallyImpreciseInheritance_of_precise Γ M subConcept superConcept hPrecise
+    rw [if_neg hNotImprecise]
+    unfold credalEnvelopeWidth
+    rw [lowerEnvelope_credalInheritanceGamble_eq,
+      upperEnvelope_credalInheritanceGamble_eq]
+    rw [if_pos hPrecise, if_pos hJudgment]
+    ring
+  · by_cases hJudgment : credalInheritanceJudgment Γ M subConcept superConcept
+    · have hImprecise : credallyImpreciseInheritance Γ M subConcept superConcept := by
+        rcases hJudgment with ⟨hSubUpper, hSuperUpper⟩
+        rw [credallyImpreciseInheritance_iff]
+        refine ⟨hSubUpper, hSuperUpper, ?_⟩
+        rw [credallyPreciseInheritance_iff] at hPrecise
+        by_cases hSubLower : subConcept ∈ lowerConceptFamily Γ M
+        · right
+          intro hSuperLower
+          exact hPrecise ⟨hSubLower, hSuperLower⟩
+        · exact Or.inl hSubLower
+      rw [if_pos hImprecise]
+      unfold credalEnvelopeWidth
+      rw [lowerEnvelope_credalInheritanceGamble_eq,
+        upperEnvelope_credalInheritanceGamble_eq]
+      rw [if_neg hPrecise, if_pos hJudgment]
+      ring
+    · have hNotImprecise :
+        ¬ credallyImpreciseInheritance Γ M subConcept superConcept := by
+        intro hImprecise
+        exact hJudgment
+          (credallyImpreciseInheritance_imp_judgment Γ M subConcept superConcept hImprecise)
+      rw [if_neg hNotImprecise]
+      unfold credalEnvelopeWidth
+      rw [lowerEnvelope_credalInheritanceGamble_eq,
+        upperEnvelope_credalInheritanceGamble_eq]
+      rw [if_neg hPrecise, if_neg hJudgment]
+      ring
+
+omit [Nonempty Obj] in
+theorem credalEnvelopeWidthComplement_credalInheritanceGamble_eq
+    (Γ : Gate → EvidenceGate Q)
+    (M : Obj → Attr → Q)
+    (subConcept superConcept : DualConcept Obj Attr) :
+    credalEnvelopeWidthComplement (gateCredalSet (Gate := Gate × Gate))
+        (credalInheritanceGamble Γ M subConcept superConcept) =
+      if credallyImpreciseInheritance Γ M subConcept superConcept then 0 else 1 := by
+  classical
+  by_cases hImprecise : credallyImpreciseInheritance Γ M subConcept superConcept
+  · rw [if_pos hImprecise]
+    rw [credalEnvelopeWidthComplement,
+      credalEnvelopeWidth_credalInheritanceGamble_eq, if_pos hImprecise]
+    ring
+  · rw [if_neg hImprecise]
+    rw [credalEnvelopeWidthComplement,
+      credalEnvelopeWidth_credalInheritanceGamble_eq, if_neg hImprecise]
+    ring
+
+omit [Nonempty Obj] in
+theorem credalEnvelopeMidpoint_credalInheritanceGamble_eq
+    (Γ : Gate → EvidenceGate Q)
+    (M : Obj → Attr → Q)
+    (subConcept superConcept : DualConcept Obj Attr) :
+    credalEnvelopeMidpoint (gateCredalSet (Gate := Gate × Gate))
+        (credalInheritanceGamble Γ M subConcept superConcept) =
+      if credallyPreciseInheritance Γ M subConcept superConcept then 1
+      else if credalInheritanceJudgment Γ M subConcept superConcept then (1 / 2 : ℝ)
+      else 0 := by
+  classical
+  by_cases hPrecise : credallyPreciseInheritance Γ M subConcept superConcept
+  · have hJudgment :=
+      credallyPreciseInheritance_imp_judgment Γ M subConcept superConcept hPrecise
+    unfold credalEnvelopeMidpoint
+    rw [lowerEnvelope_credalInheritanceGamble_eq,
+      upperEnvelope_credalInheritanceGamble_eq]
+    rw [if_pos hPrecise, if_pos hJudgment, if_pos hPrecise]
+    ring
+  · by_cases hJudgment : credalInheritanceJudgment Γ M subConcept superConcept
+    · unfold credalEnvelopeMidpoint
+      rw [lowerEnvelope_credalInheritanceGamble_eq,
+        upperEnvelope_credalInheritanceGamble_eq]
+      rw [if_neg hPrecise, if_pos hJudgment, if_neg hPrecise, if_pos hJudgment]
+      ring
+    · unfold credalEnvelopeMidpoint
+      rw [lowerEnvelope_credalInheritanceGamble_eq,
+        upperEnvelope_credalInheritanceGamble_eq]
+      rw [if_neg hPrecise, if_neg hJudgment, if_neg hPrecise, if_neg hJudgment]
+      ring
+
+omit [Nonempty Obj] in
+theorem globalEnvelopeWidth_credalInheritanceGamble_eq
+    (Γ : Gate → EvidenceGate Q)
+    (M : Obj → Attr → Q)
+    (subConcept superConcept : DualConcept Obj Attr) :
+    (gateCredalProjectiveSpec (Gate := Gate × Gate)).globalEnvelopeWidth
+        (credalInheritanceGamble Γ M subConcept superConcept) =
+      if credallyImpreciseInheritance Γ M subConcept superConcept then 1 else 0 := by
+  simp [gateCredalProjectiveSpec, ProjectiveLocalCredalSpec.globalEnvelopeWidth,
+    credalEnvelopeWidth_credalInheritanceGamble_eq]
+
+omit [Nonempty Obj] in
+theorem globalEnvelopeWidthComplement_credalInheritanceGamble_eq
+    (Γ : Gate → EvidenceGate Q)
+    (M : Obj → Attr → Q)
+    (subConcept superConcept : DualConcept Obj Attr) :
+    (gateCredalProjectiveSpec (Gate := Gate × Gate)).globalEnvelopeWidthComplement
+        (credalInheritanceGamble Γ M subConcept superConcept) =
+      if credallyImpreciseInheritance Γ M subConcept superConcept then 0 else 1 := by
+  simp [gateCredalProjectiveSpec, ProjectiveLocalCredalSpec.globalEnvelopeWidthComplement,
+    credalEnvelopeWidthComplement_credalInheritanceGamble_eq]
+
+omit [Nonempty Obj] in
+theorem globalEnvelopeMidpoint_credalInheritanceGamble_eq
+    (Γ : Gate → EvidenceGate Q)
+    (M : Obj → Attr → Q)
+    (subConcept superConcept : DualConcept Obj Attr) :
+    (gateCredalProjectiveSpec (Gate := Gate × Gate)).globalEnvelopeMidpoint
+        (credalInheritanceGamble Γ M subConcept superConcept) =
+      if credallyPreciseInheritance Γ M subConcept superConcept then 1
+      else if credalInheritanceJudgment Γ M subConcept superConcept then (1 / 2 : ℝ)
+      else 0 := by
+  simp [gateCredalProjectiveSpec, ProjectiveLocalCredalSpec.globalEnvelopeMidpoint,
+    credalEnvelopeMidpoint_credalInheritanceGamble_eq]
+
+/-- Review-facing package: the credal inheritance predicates read directly as
+PLN-style midpoint and width-complement coordinates on the independent-gate
+inheritance gamble. -/
+structure CredalInheritanceTruthCoordinateCrown
+    (Γ : Gate → EvidenceGate Q)
+    (M : Obj → Attr → Q)
+    (subConcept superConcept : DualConcept Obj Attr) where
+  widthReadout :
+    (gateCredalProjectiveSpec (Gate := Gate × Gate)).globalEnvelopeWidth
+        (credalInheritanceGamble Γ M subConcept superConcept) =
+      if credallyImpreciseInheritance Γ M subConcept superConcept then 1 else 0
+  widthComplementReadout :
+    (gateCredalProjectiveSpec (Gate := Gate × Gate)).globalEnvelopeWidthComplement
+        (credalInheritanceGamble Γ M subConcept superConcept) =
+      if credallyImpreciseInheritance Γ M subConcept superConcept then 0 else 1
+  midpointReadout :
+    (gateCredalProjectiveSpec (Gate := Gate × Gate)).globalEnvelopeMidpoint
+        (credalInheritanceGamble Γ M subConcept superConcept) =
+      if credallyPreciseInheritance Γ M subConcept superConcept then 1
+      else if credalInheritanceJudgment Γ M subConcept superConcept then (1 / 2 : ℝ)
+      else 0
+  imprecise_width_eq_one :
+    credallyImpreciseInheritance Γ M subConcept superConcept →
+      (gateCredalProjectiveSpec (Gate := Gate × Gate)).globalEnvelopeWidth
+          (credalInheritanceGamble Γ M subConcept superConcept) = 1
+  imprecise_widthComplement_eq_zero :
+    credallyImpreciseInheritance Γ M subConcept superConcept →
+      (gateCredalProjectiveSpec (Gate := Gate × Gate)).globalEnvelopeWidthComplement
+          (credalInheritanceGamble Γ M subConcept superConcept) = 0
+  imprecise_midpoint_eq_half :
+    credallyImpreciseInheritance Γ M subConcept superConcept →
+      (gateCredalProjectiveSpec (Gate := Gate × Gate)).globalEnvelopeMidpoint
+          (credalInheritanceGamble Γ M subConcept superConcept) = (1 / 2 : ℝ)
+  precise_widthComplement_eq_one :
+    credallyPreciseInheritance Γ M subConcept superConcept →
+      (gateCredalProjectiveSpec (Gate := Gate × Gate)).globalEnvelopeWidthComplement
+          (credalInheritanceGamble Γ M subConcept superConcept) = 1
+
+omit [Nonempty Obj] in
+theorem credalInheritanceTruthCoordinateCrown
+    (Γ : Gate → EvidenceGate Q)
+    (M : Obj → Attr → Q)
+    (subConcept superConcept : DualConcept Obj Attr) :
+    CredalInheritanceTruthCoordinateCrown Γ M subConcept superConcept where
+  widthReadout :=
+    globalEnvelopeWidth_credalInheritanceGamble_eq Γ M subConcept superConcept
+  widthComplementReadout :=
+    globalEnvelopeWidthComplement_credalInheritanceGamble_eq Γ M subConcept superConcept
+  midpointReadout :=
+    globalEnvelopeMidpoint_credalInheritanceGamble_eq Γ M subConcept superConcept
+  imprecise_width_eq_one := by
+    intro hImprecise
+    rw [globalEnvelopeWidth_credalInheritanceGamble_eq, if_pos hImprecise]
+  imprecise_widthComplement_eq_zero := by
+    intro hImprecise
+    rw [globalEnvelopeWidthComplement_credalInheritanceGamble_eq, if_pos hImprecise]
+  imprecise_midpoint_eq_half := by
+    intro hImprecise
+    have hJudgment :=
+      credallyImpreciseInheritance_imp_judgment Γ M subConcept superConcept hImprecise
+    have hNotPrecise :
+        ¬ credallyPreciseInheritance Γ M subConcept superConcept := by
+      intro hPrecise
+      exact not_credallyImpreciseInheritance_of_precise
+        Γ M subConcept superConcept hPrecise hImprecise
+    rw [globalEnvelopeMidpoint_credalInheritanceGamble_eq,
+      if_neg hNotPrecise, if_pos hJudgment]
+  precise_widthComplement_eq_one := by
+    intro hPrecise
+    have hNotImprecise :=
+      not_credallyImpreciseInheritance_of_precise Γ M subConcept superConcept hPrecise
+    rw [globalEnvelopeWidthComplement_credalInheritanceGamble_eq, if_neg hNotImprecise]
 
 end RobustCredalFinitePairBridge
 

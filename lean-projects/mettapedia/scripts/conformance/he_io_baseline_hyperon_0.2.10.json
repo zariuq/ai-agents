@@ -2,7 +2,7 @@
   "suite": "he_io",
   "engine": "hyperon",
   "version": "metta-0.2.10",
-  "generated_utc": "2026-03-05T14:22:37.009260+00:00",
+  "generated_utc": "2026-06-09T09:40:11.708485+00:00",
   "cases": [
     {
       "id": "he_duplicate_multiplicity_preserved",
@@ -87,6 +87,28 @@
       "bag": {
         "alpha": 1
       }
+    },
+    {
+      "id": "he_ext_tv_conjunction_reduces",
+      "bag": {
+        "(stv 0.3 0.8)": 1
+      }
+    },
+    {
+      "id": "he_ext_tv_implication_reduces",
+      "bag": {
+        "(stv 0.4 0.8)": 1
+      }
+    },
+    {
+      "id": "he_ext_type_prop_application_type",
+      "bag": {
+        "(Mortal Socrates)": 1
+      }
+    },
+    {
+      "id": "he_ext_type_prop_bad_proof_rejected",
+      "bag": {}
     },
     {
       "id": "he_nested_rewrite",

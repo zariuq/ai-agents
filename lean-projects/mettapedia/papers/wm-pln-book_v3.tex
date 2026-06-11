@@ -6722,11 +6722,11 @@ depends on the interaction strength.
 
 The formalization certifies both sides of this story.  For
 \emph{finite-support} MLNs the partition function is finite and the WM bridge
-is an exact identity (Theorem~\ref{thm:mln-wm-strength}).  For
-\emph{countably infinite} MLNs the semantics becomes a Gibbs/DLR measure
-problem, and the formalization proves existence, uniqueness under a uniform
-contraction condition, and a bridge theorem connecting the Gibbs probability
-back to WM-PLN query strength.
+is an exact identity (Theorem~\ref{thm:mln-wm-strength}).  For the
+\emph{countably infinite} case, the formalization proves conditional
+existence theorems for the configured DLR/Gibbs setup, uniqueness under a
+uniform contraction condition, and bridge theorems connecting Gibbs
+probability back to WM-PLN query strength.
 
 A caveat before the theorems: the formalization certifies
 \emph{well-posedness}, not closed-form computation.  For a concrete weight
@@ -6739,8 +6739,9 @@ it is well-defined --- but leaves the approximation algorithm to the runtime.
 
 \medskip
 \noindent
-The first of the three infinite-case theorems establishes that the Gibbs
-specification always admits at least one global probability measure.
+The first of the three infinite-case theorems establishes existence for the
+configured Gibbs specification under the stated countability, exhaustion, and
+boundary-condition data.
 
 \begin{theorem}[Infinite MLN existence on countable domains (\claimConditional{})]
 \label{thm:infinite-mln-existence}
@@ -6846,7 +6847,7 @@ layers:
 \begin{description}
 \item[Theory.]  \codepath{MarkovLogicInfiniteExistence.lean} (DLR existence
   via compactness), \codepath{MarkovLogicInfiniteUniqueness.lean} (Dobrushin
-  uniqueness via descending-shell contraction, 6{,}758~lines).
+  uniqueness via descending-shell contraction).
 \item[Bridge.]  \codepath{MarkovLogicInfiniteWorldModel.lean} (Gibbs
   $\to$ \texttt{MassSemantics} $\to$ \texttt{queryStrength}),
   \codepath{MarkovLogicInfiniteBoundaryStability.lean} (geometric shell
@@ -7042,7 +7043,7 @@ semantics back into the algebraic WM interface.
     {\texttt{MassSemantics}\quad
      $\mathrm{totalMass} = 1$};
   \node[stage, fill=yellow!12] (wm) at (0, 0)
-    {$\mathrm{queryStrength} = \mu(q)$};
+    {$\mathrm{STV}(q)=\langle \mu(q),\,1\rangle$};
 
   \draw[arrow] (spec) -- (meas)
     node[midway, right=10mm, note] {DLR existence};
@@ -7050,7 +7051,7 @@ semantics back into the algebraic WM interface.
     node[midway, right=10mm, note] {$\mu$ is a probability measure};
   \draw[arrow] (mass) -- (wm)
     node[midway, right=10mm, note]
-    {$\langle\mu(q),\;1{-}\mu(q)\rangle$};
+    {$\mu(q)$ = true mass,\quad $1{-}\mu(q)$ = false mass};
 
   % Uniqueness brace
   \draw[thick, red!60!black, decorate,
@@ -7061,7 +7062,9 @@ semantics back into the algebraic WM interface.
 \end{tikzpicture}
 \caption{The infinite MLN $\to$ WM semantic pipeline.  Each arrow is a
   Lean definition or theorem; the left brace marks the scope of the
-  Dobrushin uniqueness guarantee.}
+  Dobrushin uniqueness guarantee. Under uniqueness, the query credal width is
+  zero, so the confidence-like width-complement is $1$; the separate
+  $1-\mu(q)$ quantity is false mass, not confidence.}
 \label{fig:infinite-mln-pipeline}
 \end{figure}
 
@@ -7202,14 +7205,14 @@ $w = 0.2$ (each neighbour multiplies odds by $e^{0.2}\approx 1.22$), the
 Dobrushin budget is $2\times 0.2 = 0.4$, safely below~$1$.  The probability
 that sensor~$(15,23)$ reads high is uniquely determined by the specification,
 regardless of boundary conditions at infinity.  But with $w = 0.6$, the budget
-$2\times 0.6 = 1.2$ exceeds the threshold---this is the regime of the
-classical 2D Ising model at low temperature, the most studied phase transition
-in all of statistical mechanics.  Existence of a Gibbs measure still holds, but
-the proved uniqueness theorem no longer applies: coexisting $+$ and $-$
-equilibria become possible.%
+$2\times 0.6 = 1.2$ exceeds the threshold, so the proved Dobrushin uniqueness
+theorem no longer applies. This points toward the classical low-temperature
+Ising phase-transition story, where plus/minus infinite-volume phases can
+coexist, but the present Lean development does not yet prove that specific 2D
+plus/minus separation.%
 \footnote{Formalized in
 \codepath{Mettapedia/Logic/MarkovLogicInfiniteGridExample.lean}
-(430~lines, 0~sorry).  The proof reuses the full pipeline:
+(0~sorry in the current slice).  The proof reuses the full pipeline:
 \code{gridClassicalSpec\_uniformSmallTotalInfluence},
 \code{grid\_uniqueMeasure},
 \code{grid\_wmBridge\_unique}.}
@@ -8311,6 +8314,116 @@ converts this to PLN evidence $(n^+, n^-) = (1.2, 0.3)$ with
 strength $0.8$ and confidence $0.6$---the same belief, now
 carrying evidence counts that support revision and forgetting.}
 
+\begin{example}[Temporal chaining: what the \texttt{q r m} stream says]
+\label{ex:qrm-temporal-chaining}
+Consider the following finite event stream:
+\begin{quote}
+\small\ttfamily
+k a q r m b h t q r m s p q n r c q r z d m a r\\
+q h q r m b l q r m t c q r v n p q r m s
+\end{quote}
+There are several different questions one might accidentally call
+``$q \to m$''.  They are not the same question.
+
+\medskip
+\begin{center}
+\small
+\begin{tabular}{p{0.22\linewidth}p{0.18\linewidth}p{0.48\linewidth}}
+\toprule
+\textbf{Question} & \textbf{Count in the stream} & \textbf{Meaning} \\
+\midrule
+$q \to r$ & $7/9$ & after seeing $q$, expect $r$ next often \\
+$r \to m$ & $5/9$ & after seeing $r$, expect $m$ next sometimes \\
+$q \to m$ in one step & $0/9$ & $m$ never appears immediately after $q$ \\
+$(q,r) \to m$ & $5/7$ & once $q$ is followed by $r$, $m$ is likely next \\
+$q \to r \to m$ in two steps & $5/9$ & five of the nine $q$'s start a $qrm$ pattern \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+Here $(q,r)$ means a two-event context: the last two events were
+$q$ and then $r$.  It is not the same as asking what follows $q$
+alone.  The common mistake is to flatten all of these into one
+generic ``$q \to m$'' question.
+
+\noindent
+So the plain-language answer is:
+\[
+\boxed{\begin{gathered}
+\text{Do not believe immediate } q \to m.\\
+\text{Do believe the mediated pattern } q \to r \to m.
+\end{gathered}}
+\]
+If you have seen only $q$, the next useful prediction is $r$, not
+$m$.  If you have seen $q$ followed by $r$, then $m$ is the good
+prediction.  This is the answer the world-model view wants us to
+represent.
+
+NARS gives a useful scalar warning for the collapsed claim.  Its
+deduction rule derives a weak chain estimate for ``$q$ leads to
+$m$'':
+\[
+  \langle 35/81,\;7/20\rangle
+  \approx \langle 0.432,\;0.350\rangle.
+\]
+Revising that with the direct negative one-step evidence
+$\langle 0,\;0.9\rangle$ gives
+\[
+  \langle 245/10044,\;124/137\rangle
+  \approx \langle 0.024,\;0.905\rangle.
+\]
+As a one-number warning, this is sensible: the collapsed one-step
+claim $q \to m$ should be near zero.
+
+A deliberately naive scalar PLN calculation gives a different scalar
+if we force the same collapsed question through the full deduction
+formula using the
+stream marginals $P(q)=P(r)=9/45$ and $P(m)=6/45$:
+\[
+  \text{chain estimate} =
+  \langle 71/162,\;0.9\rangle
+  \approx \langle 0.438,\;0.9\rangle,
+\]
+and naive scalar revision with the direct negative packet gives
+\[
+  \langle 71/324,\;18/19\rangle
+  \approx \langle 0.219,\;0.947\rangle.
+\]
+This is not the answer we should trust for the one observed stream.
+The reason is not that PLN arithmetic is meaningless.  The reason is
+that the chain estimate and the direct one-step estimate were both
+computed from the same 45 observations.  Revision is evidence
+addition.  You cannot get more evidence by counting the same data
+twice and pretending that it came from two independent experiments.
+Evidence addition is licensed when the packets are fresh or
+provenance-disjoint.  Here they are not fresh: the same $q$ positions
+are being reused.
+
+WM-PLN therefore gives more guidance than either bare scalar:
+\begin{enumerate}
+\item Ask the right query.  The immediate query $q \to m$ is false in
+  this stream; the mediated query $q \to r \to m$ is supported.
+\item Keep the structured answer.  Store $q \to r$ and
+  $(q,r)\to m$ rather than collapsing everything into one
+  unconditional $q \to m$ truth value.
+\item Do not revise same-stream derived evidence with same-stream
+  direct evidence as if it were new data.
+\item If an independent validation stream later supplies a direct
+  $q \to m$ estimate, then revision is legitimate; the provenance
+  stamps are disjoint.
+\end{enumerate}
+
+\noindent
+This example is formalized in Lean and mirrored by two runtime probes:
+\begin{flushleft}
+\footnotesize
+\codepath{Mettapedia/Logic/TemporalChainingExample.lean}\\
+\codepath{hyperon/PeTTa/examples/nars\_temporal\_sequence\_probe.metta}\\
+\codepath{hyperon/PeTTa/examples/pln\_temporal\_sequence\_probe.metta}
+\end{flushleft}
+\end{example}
+
 
 %% ═══════════════════════════════════════════════════════════════
 \section{PLN v0.9 Subsumption}
@@ -8628,7 +8741,7 @@ The formalization operates at three tiers of generality:
   finiteness constraint.  The evidence carriers (binary over
   $\mathbb{R}_{\ge 0}^\infty$, Normal-Gamma over~$\mathbb{R}$)
   and view projections are explicitly continuous.  The infinitary
-  MLN layer (77~theorems, 0~sorry) and FOL/PredCode infinitary
+  MLN layer and FOL/PredCode infinitary
   completeness theorems (34~theorems) demonstrate extension to
   countable and uncountable domains.  The gas sensor, steel
   fault, and NAB application demos all use $\mathbb{R}$-valued
@@ -8828,16 +8941,15 @@ split-complex carriers fail that gate.  Thus standard PLN is the real
 phaseless shadow; a waveform or quantum PLN would need a separate phase
 semantics rather than another confidence formula.
 
-A useful future-work witness for the infinitary side is the magnet.
-The same local rule---neighboring spins prefer to agree---can have one
-global Gibbs state above the critical temperature and two extremal
-global Gibbs states below it.  In the shared abstraction sought here,
-that is exactly the place where phase transition, non-unique projective
-extension, and spontaneous imprecision meet: a precise local
-specification has a credal set of global completions.  This is not part
-of the current Walley package; it is the didactic witness for the
-future \code{ProjectiveLimitCredalSet} target connecting infinite MLNs,
-natural extension, Dobrushin uniqueness, and imprecise de~Finetti.
+A useful future-work witness for the infinitary side is now more sharply
+split. A first concrete infinitary contrast is already formalized: a
+geometrically reinforced half-line yields positive origin-spin envelope
+width, while the zero-weight zero-field grid collapses under the Dobrushin
+budget. What remains open is the genuinely classical 2D low-temperature
+Ising plus/minus separation, where two distinct infinite-volume Gibbs
+measures are constructed and shown to separate a named query. That is the
+right next phase-coexistence crown linking infinite MLNs, projective
+completion, and imprecise de~Finetti.
 
 \section{Universality}
 

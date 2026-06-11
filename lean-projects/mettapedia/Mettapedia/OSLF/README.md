@@ -6,6 +6,8 @@ The core idea starts from `LanguageDef`.
 The core idea connects the step relation to the executable engine.
 The core idea derives modal operators with a Galois connection.
 
+Reference orientation: OSLF is the Lean-formalized bridge from operational rules to modal/type-theoretic structure; [Native Type Theory](https://arxiv.org/abs/2102.04672) supplies the broader categorical foundation, [Generating Hypercubes of Type Systems](https://github.com/F1R3FLY-io/publications/blob/main/drafts/Hypercube/main.pdf) refines the generated type-system family, and [MeTTaIL](https://github.com/F1R3FLY-io/mettail-rust) is the executable-language-generation side.
+
 ## OSLF is a construction
 
 OSLF is a construction.
@@ -275,7 +277,9 @@ The current boundary isn't full premise-rich MeTTaFull ingestion.
 
 ## References
 
-- L. Gregory Meredith and Mike Stay, "Operational Semantics in Logical Form" (2020) — the source OSLF algorithm.
-- Williams & Stay, "Native Type Theory" (arXiv:2102.04672) — categorical foundation for the `NativeType/` endpoints.
-- `papers/leanOSLF.pdf` — this project's Lean 4 formalization writeup.
-- `papers/process-calculi.pdf` — the ρ/π/Petri-net instance writeups.
+- L. Gregory Meredith and Mike Stay, ["Operational Semantics in Logical Form" (2020)](../../papers/references.bib) — the source OSLF algorithm, cited in the local bibliography; see also this project's [Lean 4 OSLF writeup](../../papers/leanOSLF.pdf).
+- Christian Williams and Mike Stay, ["Native Type Theory"](https://arxiv.org/abs/2102.04672) — categorical foundation for the [`NativeType/`](NativeType/) endpoints and [`NTTClaimTracker.lean`](Framework/NTTClaimTracker.lean).
+- Mike Stay, L. Gregory Meredith, and Christian Wells, ["Generating Hypercubes of Type Systems"](https://github.com/F1R3FLY-io/publications/blob/main/drafts/Hypercube/main.pdf) — modal type-former and hypercube background for [`ModalHypercube.lean`](Framework/ModalHypercube.lean) and related GSLT functor files.
+- [`../../papers/leanOSLF.pdf`](../../papers/leanOSLF.pdf) — this project's Lean 4 formalization writeup.
+- [`../../papers/MeTTaIL.pdf`](../../papers/MeTTaIL.pdf) and [`F1R3FLY-io/mettail-rust`](https://github.com/F1R3FLY-io/mettail-rust) — the MeTTaIL specification/runtime-generation companion.
+- [`../../papers/process-calculi.pdf`](../../papers/process-calculi.pdf) — the ρ/π/Petri-net instance writeups.

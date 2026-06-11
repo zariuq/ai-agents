@@ -183,6 +183,44 @@ theorem objectDerivationLooseConcept_midpoint :
       articleContext.evidence
       objectDerivationLooseConcept)
 
+/-- Review-facing package for the extracted Mizar witness: the
+`ObjectDerivation` concept forms under the loose article gate, fails the strict
+gate, and therefore has maximal credal width with the expected PLN display
+coordinates. -/
+structure ObjectDerivationCredalBenchmarkCrown : Prop where
+  definitionWitness :
+    Item.definition_5 ∈ objectDerivationLooseConcept.extent
+  strictClosureFails :
+    ¬ DualConcept.IsClosed
+      (crispRelation (mizarGateFamily .strict) articleContext.evidence)
+      objectDerivationLooseConcept
+  upperMembership :
+    objectDerivationLooseConcept ∈ upperMizarConceptFamily
+  lowerRejection :
+    objectDerivationLooseConcept ∉ lowerMizarConceptFamily
+  widthReadout :
+    (gateCredalProjectiveSpec (Gate := MizarGate)).globalEnvelopeWidth
+        (conceptFormationGamble mizarGateFamily articleContext.evidence
+          objectDerivationLooseConcept) = 1
+  widthComplementReadout :
+    (gateCredalProjectiveSpec (Gate := MizarGate)).globalEnvelopeWidthComplement
+        (conceptFormationGamble mizarGateFamily articleContext.evidence
+          objectDerivationLooseConcept) = 0
+  midpointReadout :
+    (gateCredalProjectiveSpec (Gate := MizarGate)).globalEnvelopeMidpoint
+        (conceptFormationGamble mizarGateFamily articleContext.evidence
+          objectDerivationLooseConcept) = (1 / 2 : ℝ)
+
+theorem objectDerivationCredalBenchmarkCrown :
+    ObjectDerivationCredalBenchmarkCrown where
+  definitionWitness := definition_5_mem_objectDerivationLooseConcept_extent
+  strictClosureFails := objectDerivationLooseConcept_not_closed_strict
+  upperMembership := objectDerivationLooseConcept_mem_upper
+  lowerRejection := objectDerivationLooseConcept_not_mem_lower
+  widthReadout := objectDerivationLooseConcept_width
+  widthComplementReadout := objectDerivationLooseConcept_widthComplement
+  midpointReadout := objectDerivationLooseConcept_midpoint
+
 end MizarBenchmark
 
 end Mettapedia.Logic.ConceptOntology

@@ -44,12 +44,28 @@
 MeTTa is a reflective, non-deterministic meta-language with three
 actively maintained runtimes: Hyperon Experimental (\HE{}, Rust),
 \PeTTa{} (Prolog), and \CeTTa{} (C).  This paper describes \CeTTa{},
-a direct C implementation of the \HE{} MeTTa evaluator that passes 297
-oracle-verified tests and achieves \textbf{9.5$\times$ speedup over
+a direct C implementation of the \HE{} MeTTa evaluator that passes a
+375-file regression suite with zero failures (equally green in the
+MORK-bridge build), backed by a 333-case rule-indexed conformance
+catalog against upstream \HE{}~v0.2.10 covering 24/24 specification
+rule capacities, and achieves \textbf{9.5$\times$ speedup over
 \PeTTa{}} on genuine depth-10 PLN backward chaining with truth-value
 propagation (19{,}845~hypotheses over 1.4M~atoms in 15\,s vs.\
 \PeTTa{}'s 143\,s), while losing 13$\times$ on pure branching search
 (8-queens) and 30$\times$ on BFS state exploration (tilepuzzle).
+The runtime is organized as an explicit profile family:
+\code{he-compat} mirrors Rust \HE{} literally (including its quirks);
+the principled \code{he} line carries exact rationals, true division,
+and per-case recorded divergences; \code{he-extended} adds labeled
+extensions; \code{he-prime} adds dependent telescopes.  The one-step
+reduction relation is reflected into MeTTa itself as a modal surface
+(\code{transitions}, \code{box}, \code{diamond}, normal-form tests)
+aligned with the OSLF
+$\mathrm{LanguageDef}\to\mathrm{ReductionSpan}\to\Diamond/\Box$
+pipeline proven in Lean, and the first frontier rule classes (grounded
+dispatch, argument congruence) are welded to a reflectable LangDef
+rule pack whose rule-removal tests prove the engine genuinely depends
+on the declared rules.
 The runtime features SymbolId-based dispatch (38\% instruction
 reduction), structured space kinds (queue, hash, stack), a pluggable
 match backend with PathMap/MORK integration, and compiled space
@@ -85,7 +101,24 @@ Three implementations exist:
 
 \paragraph{Contributions.}
 \begin{enumerate}
-\item A direct C runtime passing 297 \HE{}-oracle-verified tests.
+\item A direct C runtime passing a 375-file regression suite (0
+  failures) plus 104 profile tests, validated against upstream \HE{}
+  v0.2.10 as oracle.
+\item An explicit profile family (\code{he-compat} / \code{he} /
+  \code{he-extended} / \code{he-prime}) with per-case recorded
+  divergences and a fail-by-default conformance harness: a 333-case
+  rule-indexed catalog (all agree, 24/24 spec-rule capacities) and a
+  378-example broad corpus with every difference classified
+  (Section~\ref{sec:specdriven}).
+\item A reflective modal LTS surface over the evaluator's one-step
+  reduction relation---successor frontier, $\Box$/$\Diamond$,
+  normal-form tests---with runtime De~Morgan self-tests mirroring the
+  Galois connection proven in the Lean OSLF framework.
+\item The first specification weld: a reflectable frontier rule pack
+  gating grounded dispatch and argument congruence, with
+  anti-decorative rule-removal tests.  This converts a cross-branch
+  frontier soundness bug (missing argument congruence) into a
+  structurally prevented class.
 \item A bidirectional \HE{}$\leftrightarrow$\PeTTa{} translator
   (Prolog + executable Lean), with a sorry-free Lean proof of semantic
   correspondence.
@@ -142,11 +175,230 @@ as C functions with a shared arena allocator.
 \subsection{Test Suite}
 
 \CeTTa{} is validated against the \HE{} CLI (v0.2.10) as oracle.
-The command \code{make test} runs each \code{.metta} test file on both
-\CeTTa{} and \HE{}, comparing output.  Current status: \textbf{244
-passed, 0 failed, 3 skipped} on the oracle suite, plus 36 profile
-tests covering module imports, foreign (Python) function dispatch,
-and extension surfaces.
+Golden regression files are oracle-validated when introduced;
+\code{make test} replays them on every build.  Current status:
+\textbf{375 passed, 0 failed, 40 skipped} on the default build and
+\textbf{371 passed, 0 failed, 44 skipped} on the MORK-bridge build
+(all bridge sub-lanes green), plus 104 profile tests covering module
+imports, foreign (Python) function dispatch, numeric-tower and
+profile-surface splits, and extension surfaces.  Two further lanes are
+fail-by-default: \code{make test-langdef-pack} disables individual
+frontier-pack rules and \emph{requires} the witnesses to fail
+(Section~\ref{sec:specdriven}), and the semantic conformance suite
+re-runs the curated oracle corpus live against upstream \HE{}
+(Section~\ref{sec:conformance}).
+
+%% ────────────────────────────────────────────────────────────────────
+\section{Specification-Driven Semantics: Profiles, Conformance, and the
+  Frontier Rule Pack}
+\label{sec:specdriven}
+
+\CeTTa{} is organized around an explicit principle: \emph{the semantics
+is a named object, not an emergent property of the implementation}.
+This section describes the profile family, the oracle-conformance
+campaign against upstream \HE{}, the evaluator bug classes that
+campaign exposed, the reflective modal surface over the one-step
+reduction relation, and the first welded rule pack that makes the
+reduction rules themselves runtime data.
+
+\subsection{The Profile Family}
+\label{sec:profiles}
+
+Profiles are distinct semantic products, implemented as additive
+layers---never as visibility masks over one shared universe:
+
+\begin{description}
+\item[\code{he-compat}] A literal mirror of Rust \HE{}~v0.2.10,
+  including its quirks: integer division for \code{/}, the strict
+  three-argument \code{if} surface, Rust's library inventory behavior.
+  Compatibility means matching upstream \emph{behavior}, not
+  reproducing its library set; library availability is out of scope
+  for conformance.
+\item[\code{he}] The principled line.  Spec-faithful where the written
+  specification speaks; where \HE{}'s implementation and its
+  specification diverge, the divergence is adjudicated and recorded
+  per-case.  Carries exact arbitrary-precision rationals, true
+  division for \code{/}, floor division \code{//}, Euclidean
+  \code{math:mod}, and the clean \code{math:} namespace over the
+  Rust-heritage \code{*-math} ops.  Extensions that accept more
+  programs (e.g.\ two-argument \code{if}) are deliberate, recorded
+  surface choices.
+\item[\code{he-extended}] \code{he} plus labeled \CeTTa{} extensions:
+  typed space kinds, \code{with-space-snapshot}, the \code{lts}
+  reflection surface, MORK/PathMap-backed spaces.
+\item[\code{he-prime}] The dependent-telescope extension
+  (Section~\ref{sec:heprime}).
+\end{description}
+
+Two rules keep this family honest.  First, unknown symbols stay
+inert: MeTTa's philosophy is to leave uninterpreted what it does not
+know how to interpret, so no profile ever raises an ``unsupported
+feature'' error---a profile determines what is \emph{interpreted},
+never what is \emph{legal}.  Second, profile differences are explicit
+splits with named tests (e.g.\ \code{profile\_if\_compat\_arity}
+pins that \code{he-compat} rejects two-argument \code{if} exactly as
+upstream does, while \code{he}/\code{he-extended} accept it as a
+recorded extension).
+
+\subsection{Oracle Conformance}
+\label{sec:conformance}
+
+For \code{he-compat}, upstream \HE{}~v0.2.10 is the sole oracle, and
+the harness is a fail-by-default gate, not a green-manufacturing
+report.  Comparison is by \emph{result-bag equality}---multisets of
+parsed results, never byte-equality of output text---so formatting
+differences cannot masquerade as semantic agreement, and duplicate
+results (which are semantically real in MeTTa) are counted.
+
+\begin{description}
+\item[Curated catalog.] 333 cases, every one oracle-validated and in
+  agreement, each mapped to the specification rules it exercises:
+  24/24 spec-rule capacities are covered, and every capacity is
+  classified into one of three lanes---\emph{reduction-span} (the
+  one-step semantics the modal layer consumes),
+  \emph{supporting-surface} (match, unify, grounded dispatch
+  plumbing), and \emph{spatial-policy} (module import, inventory,
+  space policy).  The lane split keeps policy surfaces out of the
+  reduction relation.
+\item[Broad corpus.] 378 upstream examples: 302 agree, 59 classified
+  differences (library availability, which is out of conformance
+  scope; path-import capabilities upstream rejects; environment and
+  rendering differences; and adjudicated upstream drift), 7 timeouts,
+  10 not runnable upstream.  No difference is left unclassified.
+\item[Adjudicated divergences.] Where \CeTTa{} deliberately diverges
+  from upstream, each case carries independent grounds.  Three
+  examples: upstream's post-0.2.10 \code{function}/\code{NoReturn}
+  behavior contradicts its own written specification (a deliberate
+  loop fix that left the document stale); upstream's \code{get-doc}
+  errors on \HE{}'s own documentation example (an arity regression);
+  and the user-visible result of top-level \code{eval} on a
+  non-reducible term is genuinely under-determined by the
+  specification---both engines deviate from the literal
+  instruction-layer reading, in opposite directions.
+\end{description}
+
+The catalog carries an explicit
+\code{no\_runtime\_trace\_or\_certificate\_surface} flag, enforced by
+the suite: conformance is \emph{testing}, and the specification is
+what gets \emph{proven about} in Lean.  \CeTTa{} does not emit
+execution traces or certificates, and a per-run check is never
+presented as a proof.
+
+\subsection{Evaluator Bug Classes the Campaign Exposed}
+\label{sec:bugclasses}
+
+Two bug classes were found and fixed, both instructive.
+
+\paragraph{The Empty algebra.}  When overlapping equations yield a
+branch that reduces to \code{Empty}, two dual defects appeared: the
+surviving sibling branch was returned without being re-driven to
+applicative normal form (violating the spec's applicative order), and
+in other shapes \code{Empty} itself leaked into the visible result bag
+(the spec is explicit that \code{Empty} ``is not returned among other
+results'').  The fix treats the evaluator's outcome set as an algebra
+with \code{Empty} as its absorbing zero and re-drives surviving
+branches independently of their siblings.  In modal terms
+(Section~\ref{sec:modal}): the successor algebra must satisfy
+$\Diamond\bot = \bot$.
+
+\paragraph{The frontier congruence bug.}  The reflective one-step
+frontier reported \code{(+ 1 (+ 2 3))} as a \emph{normal form}: the
+one-step relation lacked argument congruence (stepping a reducible
+argument when the head cannot fire), while the big-step evaluator had
+it.  Because the one-step relation and the evaluator were separately
+hand-maintained C branch sets, the gap replicated identically across
+three development branches and was invisible to every test that only
+exercised head-reducible terms.  The bug was diagnosed through the
+modal surface itself ($\Box\bot$ holding on a reducible term), fixed
+as deterministic left-to-right congruence matching the evaluator's
+applicative order---and is the direct motivation for the rule-pack
+weld in Section~\ref{sec:langdefpack}.
+
+\subsection{The Reflective Modal Surface}
+\label{sec:modal}
+
+The library surface \code{lts} (generic, step-parameterized) and
+\code{lts:he} (bound to the \HE{} evaluator's frontier) reflect the
+one-step reduction relation into MeTTa as data:
+
+\begin{itemize}
+\item \code{lts:he:transitions} emits the one-step successor frontier
+  of an atom as quoted states (zero results on quiescent atoms);
+  \code{lts:he:trace-2} enumerates two-step traces.
+\item \code{lts:he:is-normal-form} is exactly $\Box\bot$ (every
+  successor satisfies falsity, i.e.\ no successor exists);
+  \code{lts:he:is-can-step} is $\Diamond\top$.
+\item \code{lts:he:box}~$\phi$ and \code{lts:he:diamond}~$\phi$
+  generalize these to arbitrary unary predicates: $\Box\phi$ holds
+  when every one-step successor satisfies $\phi$ (vacuously at normal
+  forms), $\Diamond\phi$ when some successor does.
+\end{itemize}
+
+The De~Morgan law $\Box\phi = \lnot\Diamond\lnot\phi$ is installed as
+a runtime self-test; it is the executable mirror of the Galois
+connection proven once and for all in the Mettapedia OSLF framework,
+where $\mathrm{LanguageDef}\to\mathrm{RewriteSystem}\to
+\mathrm{ReductionSpan}\to(\Diamond,\Box)$ is derived generically and
+\code{langGalois} establishes the adjunction.  Native behavioral types
+in the sense of Native Type Theory arise as predicates over exactly
+this reduction span; the runtime surface and the Lean derivation
+describe the same object at two levels.
+
+Multiplicity discipline: \code{transitions} preserves the result
+\emph{bag} (duplicate successors are semantically real), while the
+modal predicates quotient to reachability.  Evaluation and conformance
+compare bags; $\Diamond/\Box$ use support.  Result sets are never
+deduplicated for speed.
+
+\subsection{The Frontier Rule Pack}
+\label{sec:langdefpack}
+
+The congruence bug demonstrated the structural disease: reduction
+rules as anonymous, duplicated C branches are invisible, unremovable,
+and untestable-by-absence.  The cure is to make the rule set a
+\emph{named, reflectable object} the evaluator provably depends on.
+
+Three granularity strata are kept distinct.  \emph{HEFine} is the Lean
+\code{mettaHE} instruction machine (59 rules over interpreter states;
+the proof reference).  \emph{HEFrontier} is the coarse user-visible
+one-step relation---one observable surface rewrite, e.g.\
+\code{(+ 1 (+ 2 3))} $\to$ \code{(+ 1 5)}---which is what the
+\code{lts} surface exposes.  \emph{HEBigStep} is full evaluation.  The
+pack encodes HEFrontier; its relationship to the fine machine is a
+collapse/simulation with explicit provenance links (each coarse rule
+names the fine rules that justify it), never a label identity.
+
+The runtime object, \code{CettaLangDefPack}, carries: language,
+profile, and granularity identifiers; a schema version; a source
+digest over the canonical rule-descriptor text; the rule table; a
+disabled-rule mask populated from the
+\code{CETTA\_LANGDEF\_DISABLED\_RULES} environment variable; and an
+honest claim level (currently \emph{bag-tested-adequate}: tested
+against the legacy frontier and oracle bags, not yet Lean-proven).
+Two rules are live---\code{HEF\_GroundedDispatch} and
+\code{HEF\_LeftmostExprCongruence}---and gate the only implementations
+of those rule classes in the one-step subsystem; quote/return and
+empty/error quiescence are declared as structural metadata pending
+migration.  The pack is reflected into MeTTa by
+\code{lts:he:pack-info}.
+
+The load-bearing test is \emph{anti-decorative}: a dedicated lane
+re-runs the witness suite with each rule disabled and \emph{requires}
+the witnesses to fail (the frontier must go empty; normal-form must
+flip).  If the witnesses still passed with a rule removed, a duplicate
+hidden code path would exist---precisely the disease that produced the
+congruence bug.  The lane fails closed in both directions and runs on
+both the default and MORK-bridge builds.
+
+The roadmap is a deliberate hybrid: the pack-as-data drives the
+(non-hot) frontier and reflection surfaces now; a
+\code{--compile-langdef} backend---extending the existing
+\code{--compile-stdlib} blob precedent---will later emit \emph{both}
+the reflectable pack and specialized C for the hot evaluator under a
+single shared source digest, so performance never costs the semantic
+object.  An evaluate-by-iterating-the-frontier mode is planned purely
+as a reference oracle and benchmark baseline, not as the production
+evaluator.
 
 %% ────────────────────────────────────────────────────────────────────
 \section{Verified \HE{}$\leftrightarrow$\PeTTa{} Translation}
@@ -1056,13 +1308,29 @@ the standard PLN idiom that works across all three runtimes.
 evaluator can achieve \textbf{9.5$\times$ speedup} over \PeTTa{} on
 genuine depth-10 PLN backward chaining with truth-value propagation
 (19{,}845~hypotheses, 1{,}632~depth-10 drug candidates, 15\,s vs.\
-143\,s), while maintaining oracle-verified correctness across 297 tests.
+143\,s), while maintaining oracle-verified correctness across a
+375-file regression suite and a 333-case rule-indexed conformance
+catalog (24/24 spec-rule capacities, all agree) against upstream
+\HE{}~v0.2.10.
 The sorry-free Lean proof of \HE{}$\leftrightarrow$\PeTTa{} semantic
 correspondence (5{,}400+ lines, 0~sorries), including import
 commutativity and operational bridges for state and space allocation,
 establishes that MeTTa's three runtimes are semantically compatible
 on the shared fragment.  The compiled \code{.act} space format via
 MORK enables zero-copy indexed loading of large knowledge bases.
+
+Beyond raw performance, \CeTTa{} now treats its own semantics as a
+first-class object.  The profile family makes \code{he-compat} (literal
+Rust \HE{}) and the principled \code{he} line distinct, recorded
+semantic products; the reflective modal surface exposes the one-step
+reduction relation---$\Diamond$, $\Box$, normal-form---to MeTTa
+programs themselves, aligned with the Lean OSLF derivation; and the
+frontier rule pack makes the first reduction-rule classes named,
+reflectable, and removable, with rule-removal tests proving the engine
+depends on the declared rules rather than on duplicate hidden branches.
+The congruence bug that motivated this weld---an argument-congruence
+rule silently missing from the one-step relation on three branches at
+once---is exactly the drift class this architecture eliminates.
 
 The 30$\times$ gap with \PeTTa{} on the 8-puzzle BFS benchmark
 is precisely diagnosed by callgrind/massif profiling: binding
@@ -1075,6 +1343,22 @@ ambient, or user-visible.}
 
 \paragraph{Future work.}
 \begin{itemize}
+\item \textbf{Widen the frontier rule pack:} migrate equation match,
+  quote/return and empty/error quiescence into the pack, one rule
+  class at a time, each with bag-equality and rule-removal gates.
+\item \textbf{\code{--compile-langdef} codegen:} a generator emitting
+  both the reflectable pack and specialized C for the hot evaluator
+  under one shared source digest, extending the
+  \code{--compile-stdlib} blob precedent; an
+  evaluate-by-frontier-iteration mode as reference oracle.
+\item \textbf{Lean coarse frontier:} an \code{HEFrontierStep} relation
+  in Lean with the OSLF span instantiated over it, and (separately) the
+  delimited collapse/simulation theorems connecting it to the fine
+  \code{mettaHE} instruction machine.
+\item \textbf{Bounded modal operators:} fuel-bounded
+  \code{reachable-within} ($\Diamond^{\le k}$) and
+  \code{invariant-within} ($\Box^{\le k}$) over the now-faithful
+  one-step frontier.
 \item \textbf{Local search machine:} trail/watermark rollback,
   \code{BindingsBuilder}, arena mark/reset for scratch atoms.
   Target: 3--5$\times$ on search-heavy workloads (tilepuzzle gap

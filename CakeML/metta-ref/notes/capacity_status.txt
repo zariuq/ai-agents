@@ -483,6 +483,189 @@ Currently proves:
   bridge_eval_m1_rec_fuller_let_star_payload_sound combine result soundness,
   nested-family soundness, family soundness, and the branch-specific payload
   witnesses.
+- A shared bridge payload predicate now covers the supported nested recursive
+  branch slices. bridge_eval_m1_rec_supported_nested_payload_sound dispatches
+  chain, evalc, case, switch, and successful-head let* branch results into
+  bridge_nested_payload_result; the let* case factors its pair-valued residual
+  proof through bridge_let_star_payload_result_sound.
+- The shared payload predicate is now consumed by a fuller recursive bridge
+  theorem: bridge_eval_m1_rec_supported_nested_fuller_sound bundles ordinary
+  result soundness, nested-family soundness, family soundness, and the
+  bridge_nested_payload_result witness for every supported nested branch result.
+- The next control branch cluster now has the same reusable bridge shape.
+  bridge_eval_m1_rec_supported_control_fuller_sound covers function, return,
+  and eval branch results, bundling ordinary result soundness, control-family
+  soundness, family soundness, and a bridge_control_payload_result witness.
+- The verified nested and control clusters are now combined behind one
+  supported-branch theorem. bridge_eval_m1_rec_supported_branch_fuller_sound
+  packages ordinary result soundness, family soundness, and the appropriate
+  cluster-specific payload/soundness witness for chain/evalc/case/switch/let*
+  plus function/return/eval.
+- Non-proven fallback paths now have a bridge-consumable classification:
+  bridge_eval_m1_rec_fallback_fuller_sound packages ordinary result soundness,
+  family soundness, eval_m1_ext membership, and equality/builtin/match-space
+  classification for atoms outside eval_m1_rec_proven_branch_atom. The theorem
+  bridge_eval_m1_rec_supported_or_fallback_fuller_sound combines this fallback
+  coverage with the already verified supported branch clusters.
+- The match subfamily of fallback is now split out with stronger bridge
+  evidence: bridge_eval_m1_rec_match_fallback_fuller_sound proves result
+  soundness, family soundness, generic fallback classification, and the precise
+  bridge_match_space_payload membership for `(match &self pattern templ)`.
+- The equality-rewrite subfamily of fallback is now split out with stronger
+  bridge evidence: bridge_eval_m1_rec_equality_fallback_fuller_sound covers
+  non-proven, non-match, non-builtin atoms whose eval_equalities result is
+  nonempty, tying outputs directly to eval_equalities membership and
+  equality_step provenance.
+- The builtin subfamily of fallback is likewise split out:
+  bridge_eval_m1_rec_builtin_fallback_fuller_sound covers non-proven,
+  non-match atoms for which builtin_eval returns a result list, tying outputs
+  directly to builtin_step provenance while retaining generic fallback
+  classification.
+- The identity/default subfamily of fallback is now split out:
+  bridge_eval_m1_rec_identity_fallback_fuller_sound covers non-proven,
+  non-match, non-builtin atoms with no equality rewrites, tying the only output
+  directly to the original atom while retaining generic fallback
+  classification.
+- The four fallback subfamilies are now packaged behind a single bridge
+  theorem: bridge_eval_m1_rec_split_fallback_fuller_sound partitions each
+  non-proven fallback atom into match, builtin, equality-rewrite, or identity
+  fallback and returns the corresponding subfamily payload witness alongside
+  ordinary result/family soundness and generic fallback classification.
+- The supported-branch and split-fallback bridge facts are now consumed by a
+  stronger combined theorem:
+  bridge_eval_m1_rec_supported_or_split_fallback_fuller_sound keeps the
+  supported branch payload for proven recursive branch clusters and uses the
+  split fallback payload for every non-proven fallback result.
+- A downstream modular evaluator-core bridge theory now consumes that theorem:
+  metta_m1_bridge_eval_soundScript.sml defines
+  bridge_evaluator_core_payload_atom/result and proves
+  bridge_eval_m1_rec_evaluator_core_payload_sound. It includes a positive
+  return example and a negative primitive-add example, making explicit that
+  primitive proven branches still need their own integration rather than being
+  silently included in this core predicate.
+- The same downstream theory now adds primitive branch coverage:
+  bridge_primitive_payload_atom/result covers arithmetic/comparison and
+  boolean primitive families, with positive add and negative return examples.
+  bridge_eval_m1_rec_primitive_payload_sound consumes the model's
+  input-sensitive primitive soundness theorems, and
+  bridge_eval_m1_rec_evaluator_payload_sound combines evaluator-core and
+  primitive payload coverage behind one downstream predicate.
+- The downstream evaluator theory now has a total HOL-model evaluator payload
+  theorem: bridge_model_evaluator_payload_atom/result partitions all atoms into
+  the model's proven family predicate or the split fallback predicate, proves
+  bridge_model_evaluator_payload_atom_total, and proves
+  bridge_eval_m1_rec_model_evaluator_payload_sound for every SUC-fuel
+  recursive model result.
+- notes/curriculum_coverage.tsv is now the checked curriculum coverage matrix.
+  tools/check_curriculum_coverage.py verifies that each cited theorem, app-spec
+  certificate, test, oracle script entry, file, and make target actually exists.
+  This is an evidence registry, not an additional semantic proof.
+- The parser-token HOL layer now has bridge_token_is_atom and
+  bridge_token_is_atom_parse_singleton, connecting the token classifier for
+  BTokAtom directly to successful singleton bridge_parse_atom_token behavior
+  with positive and negative witnesses. This is HOL parser-boundary evidence,
+  not a CF proof of the shipped parser.
+- The parser-head slice now also has a custom parse-result kernel:
+  bridge_parse_atom_token_result, bridge_parse_atom_token_result_success,
+  translator/app-spec certificates, and bridge_parse_atom_token_result_hand_spec.
+  This avoids the brittle polymorphic option CF boundary while still tying the
+  result-shaped parser head to the existing bridge_parse_atom_token model.
+- The atom-token import boundary now has
+  bridge_import_parsed_atom_tokens_result_with_env and
+  bridge_import_parsed_atom_tokens_result_with_env_success, plus
+  translator/app-spec certificates and
+  bridge_import_parsed_atom_tokens_result_with_env_hand_spec. This gives a
+  concrete success/parser-error/import-error result shape for full atom-token
+  parsing and dynamic-symbol import.
+- The command-token import boundary now has
+  bridge_import_parsed_command_tokens_result_with_env and
+  bridge_import_parsed_command_tokens_result_with_env_success, plus
+  translator/app-spec certificates and
+  bridge_import_parsed_command_tokens_result_with_env_hand_spec. This mirrors
+  the atom-token result shape for `!` run commands and add commands, keeping
+  parser errors separate from dynamic-symbol import errors.
+- The program-token import boundary now has
+  bridge_import_parsed_program_tokens_result_with_env and
+  bridge_import_parsed_program_tokens_result_with_env_success, plus
+  translator/app-spec certificates and
+  bridge_import_parsed_program_tokens_result_with_env_hand_spec. This lifts
+  the explicit parse/import error split across full command lists.
+- The raw character lexer slice now has bridge_tokenize_source_chars_fuel for
+  whitespace, comments, parentheses, bang, decimal integers, variables,
+  symbols, and string literals. It includes positive and negative witnesses,
+  bridge_parse_source_program_chars_fuel, and
+  bridge_source_chars_to_surface_program_parser_related, plus translator/app
+  spec certificates and tiny CF wrappers over LIST_TYPE CHAR. This is still a
+  verified char-list lexer model, not yet a CF proof of the shipped
+  String.explode-based parser entrypoint.
+- The source-string parser boundary now has bridge_tokenize_source_string_fuel
+  and bridge_parse_source_program_string_fuel, implemented as mlstring
+  `explode` into the verified char-list lexer/parser. It includes
+  bridge_source_string_to_surface_program_parser_related, positive and negative
+  string witnesses, translator/app-spec certificates, and tiny CF wrappers over
+  STRING_TYPE. This proves the source-string model entrypoint, but still does
+  not prove the exact shipped SML/CakeML parser functions.
+- The public source-string parse-from-string result shape now has
+  bridge_parse_source_{atom,command,program}_string_shipped. These model the
+  shipped trailing-token behavior for atom/command parsing and use
+  bridge_lex_error_message for lexer messages such as empty variable and
+  unterminated string. Positive and negative witnesses cover atom, command,
+  program, trailing-token, and lexer-error cases, and each entrypoint has a
+  translator/app-spec certificate plus a tiny CF wrapper spec. This is still a
+  proved model entrypoint over the verified fuelled lexer/parser, not a direct
+  CF proof of the exact recursive shipped parser bodies.
+- The same public source-string layer now has no-explicit-fuel bounded
+  entrypoints:
+  bridge_tokenize_source_string_bound and
+  bridge_parse_source_{atom,command,program}_string_shipped_bound. These choose
+  the lexer fuel from SUC (LENGTH (explode text)) and the token-parser fuel
+  from SUC (2 * LENGTH toks), and have positive/negative parser witnesses,
+  translator/app-spec certificates, and tiny CF wrapper specs.
+  bridge_tokenize_source_chars_fuel_no_fuel_error and
+  bridge_tokenize_source_string_bound_no_fuel_error prove that this chosen
+  lexer bound cannot surface the synthetic lexer fuel error. The parser proof
+  infrastructure includes bridge_parse_source_atom_tokens_fuel_rest_lt, which
+  proves every successful source full-atom or expression-item parse returns a
+  strict suffix of the input token list. It now also includes
+  bridge_parse_source_atom_tokens_fuel_no_fuel_error_strong and
+  bridge_parse_source_atom_tokens_double_bound_no_fuel_error, proving that
+  source atom/expression-item token parsing cannot surface the synthetic parser
+  fuel error under a doubled token-length bound.
+  bridge_parse_source_atom_tokens_bound_no_fuel_error and
+  bridge_parse_source_command_tokens_bound_no_fuel_error connect that doubled
+  bound to the public source atom/command token entrypoints. The program
+  parser now has bridge_parse_source_command_tokens_fuel_rest_lt,
+  bridge_parse_source_program_tokens_fuel_no_fuel_error_strong, and
+  bridge_parse_source_program_tokens_bound_no_fuel_error, proving the public
+  source program-token bound cannot surface the synthetic parser fuel error.
+  bridge_parse_source_atom_tokens_shipped_no_parser_fuel_error and
+  bridge_parse_source_command_tokens_shipped_no_parser_fuel_error plus
+  bridge_parse_source_program_tokens_shipped_no_parser_fuel_error lift these
+  results to the shipped string-error result surface. The remaining parser-bound
+  work is a direct CF proof of the exact shipped recursive parser bodies.
+- The prototype/source parser bridge now has bridge_proto_token and
+  bridge_proto_source_token_rel for the shipped-style Sym/Var/Int/Str/Expr
+  string atom shape, plus bridge_parse_proto_source_full_tokens_related,
+  bridge_parse_command_proto_source_tokens_fuel_related,
+  bridge_parse_program_proto_source_tokens_fuel_related, and
+  bridge_proto_source_token_list_parser_simulation. These prove that related
+  prototype-token and source-token streams parse to related atoms, commands,
+  and programs. The bridge now also has bounded no-explicit-fuel public
+  entrypoints, bridge_parse_{source,proto}_{atom,command,program}_tokens_bound,
+  plus bridge_proto_source_bound_parser_simulation, positive/negative bounded
+  parser witnesses, translator/app-spec certificates, and tiny CF wrappers for
+  those bounded entrypoints. The same boundary now has shipped-style
+  string-error result wrappers:
+  bridge_parse_{source,proto}_{atom,command,program}_tokens_shipped, with
+  bridge_parse_error_message for the parser error strings, the relational
+  theorem bridge_proto_source_shipped_parser_simulation, positive/negative
+  shipped-result examples, translator/app-spec certificates, and tiny CF
+  wrapper specs. The proto side now mirrors the source side's parser-fuel
+  guarantees with proto atom/command/program rest-decrease and doubled-bound
+  no-fuel theorems, plus shipped no-parser-fuel theorems for proto atom,
+  command, and program token entrypoints. This is still a verified prototype
+  parser model and result shape, not a direct CF proof of the exact shipped
+  SML/CakeML parser code.
 
 Substitution zoo foothold:
 - substitution extension/refinement facts for association-list bindings;
@@ -551,7 +734,9 @@ Next proofs
    direct CF proof against the same core. The artificial one-pattern return
    block has been removed from the bridge surface so only proof-bearing
    wrappers remain. Token-list parser simulation covers source tokens to
-   bridge tokens at atom, command, and program levels. Surface evaluated-+
+   bridge tokens at atom, command, and program levels, and now also covers
+   prototype Sym-string tokens to source tokens at atom, command, and program
+   levels, including no-explicit-fuel bounded parser entrypoints. Surface evaluated-+
    wrappers have CF theorems that connect imported evaluated argument lists
    to the full add fragment. Case/switch now have a translated first-branch
    payload selector and value-list selector, with HOL decomposition theorems

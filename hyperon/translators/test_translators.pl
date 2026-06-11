@@ -326,13 +326,13 @@ test_petta_to_he(26, "3-arg foldl-atom → binder form (expression combiner)",
     ['foldl-atom', [collapse, [twohop-item]], 0, ['λ', merge]],
     foldl_atom_short_shape([collapse, [twohop-item]], 0, ['λ', merge])).
 
-test_petta_to_he_error(27, "raw reduce rejects in pure mode when the argument is not a variable",
+test_petta_to_he(27, "raw reduce lowers to direct unquote/quote on closed concrete syntax in pure mode",
     [reduce, [fib, 5]],
-    error(domain_error(he_core_surface, [eval_like, [fib, 5]]), _)).
+    let_bound_runtime_surface([unquote, [quote, [fib, 5]]])).
 
-test_petta_to_he(28, "collapse(reduce $term) → collapse(eval $term) for code-valued variables",
+test_petta_to_he(28, "collapse(reduce $term) keeps code-valued variable runtime helper intact",
     [collapse, [reduce, '$term']],
-    [collapse, [eval, '$term']]).
+    collapse_let_bound_runtime_helper('petta-runtime-reduce', '$term')).
 
 test_petta_to_he(29, "length(collapse ...) → bind + size-atom",
     [length, [collapse, '$term']],
@@ -346,13 +346,17 @@ test_petta_to_he(30_1, "pure quote lowers to native HE quote",
     [quote, ['fib', 5]],
     [quote, ['fib', 5]]).
 
-test_petta_to_he_error(30_2, "eval rejects in pure mode when the argument is not a variable",
-    [eval, ['fib', 5]],
-    error(domain_error(he_core_surface, [eval_like, ['fib', 5]]), _)).
+test_petta_to_he(30_1_5, "=alpha lowers through runtime-evaluated alpha helper",
+    ['=alpha', ['Father', '$X'], ['Father', '$Y']],
+    let_bound_runtime_helper('petta-alpha-equal-eval', [['Father', '$X'], ['Father', '$Y']])).
 
-test_petta_to_he_error(30_3, "call rejects in pure mode when the argument is not a variable",
+test_petta_to_he(30_2, "eval lowers to direct unquote/quote on closed concrete syntax in pure mode",
+    [eval, ['fib', 5]],
+    let_bound_runtime_surface([unquote, [quote, ['fib', 5]]])).
+
+test_petta_to_he(30_3, "call lowers to direct unquote/quote on closed concrete syntax in pure mode",
     [call, ['fib', 5]],
-    error(domain_error(he_core_surface, [eval_like, ['fib', 5]]), _)).
+    let_bound_runtime_surface([unquote, [quote, ['fib', 5]]])).
 
 test_petta_to_he(31, "test length(collapse ...) → quoted HE helper call",
     [test, [length, [collapse, [match, '&self', ['edge', '$x', '$y'], '$x']]], 2],
@@ -387,7 +391,7 @@ test_petta_to_he_program(1_0_2, "program-level mixed tests route per call",
      ['=', [probe_results], [test, [if, '$x', yes, no], [yes, no]]]],
     program_uses_mixed_test_helpers).
 
-test_petta_to_he_program(1_0_3, "=alpha with free vars stays on direct test helper",
+test_petta_to_he_program(1_0_3, "=alpha with free vars stays on translated assertion helpers",
     [['=', [probe_alpha], [test, ['=alpha', ['Father', '$X'], ['Father', '$Y']], 'True']]],
     program_routes_alpha_test_direct).
 
@@ -999,6 +1003,42 @@ run_one_pe(N, Name, Input, foldl_atom_short_shape(List, Init, Agg)) :- !,
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
     ).
 
+run_one_pe(N, Name, Input, let_bound_runtime_helper(Helper, Arg)) :- !,
+    (   pe_translate_term(Input, Result)
+    ->  (   Result = [let, ValueVar, HelperCall, ValueVar],
+            runtime_helper_call_matches(HelperCall, Helper, Arg),
+            atom_string(ValueVar, ValueS),
+            sub_string(ValueS, 0, _, _, "$__tr_")
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w (bad runtime helper lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe(N, Name, Input, let_bound_runtime_surface(ExpectedSurface)) :- !,
+    (   pe_translate_term(Input, Result)
+    ->  (   Result = [let, ValueVar, ActualSurface, ValueVar],
+            ActualSurface = ExpectedSurface,
+            atom_string(ValueVar, ValueS),
+            sub_string(ValueS, 0, _, _, "$__tr_")
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w (bad direct runtime surface lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
+run_one_pe(N, Name, Input, collapse_let_bound_runtime_helper(Helper, Arg)) :- !,
+    (   pe_translate_term(Input, Result)
+    ->  (   Result = [collapse, [let, ValueVar, HelperCall, ValueVar]],
+            runtime_helper_call_matches(HelperCall, Helper, Arg),
+            atom_string(ValueVar, ValueS),
+            sub_string(ValueS, 0, _, _, "$__tr_")
+        ->  format("  ✓ ~w: ~w~n", [N, Name])
+        ;   format("  ✗ ~w: ~w (bad collapsed runtime helper lowering: ~w)~n", [N, Name, Result])
+        )
+    ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
+    ).
+
 run_one_pe(N, Name, Input, length_collapse_shape(Goal)) :- !,
     (   pe_translate_term(Input, Result)
     ->  (   Result = [let, TupleVar, [collapse, Goal], ['size-atom', TupleVar]],
@@ -1009,6 +1049,10 @@ run_one_pe(N, Name, Input, length_collapse_shape(Goal)) :- !,
         )
     ;   format("  ? ~w: ~w (translation error)~n", [N, Name])
     ).
+
+runtime_helper_call_matches([Helper, Arg], Helper, Arg) :-
+    !.
+runtime_helper_call_matches([Helper, Left, Right], Helper, [Left, Right]).
 
 run_one_pe(N, Name, Input, test_length_collapse_shape(Goal, Expected)) :- !,
     (   pe_translate_term(Input, Result)
@@ -1195,14 +1239,13 @@ run_one_pe_program(N, Name, Input, program_uses_mixed_test_helpers) :- !,
 
 run_one_pe_program(N, Name, Input, program_routes_alpha_test_direct) :- !,
     (   pe_translate_program(Input, Result)
-    ->  (   member(['=', [probe_alpha],
-                     ['petta-test-equal-data',
-                      ['=alpha', ['Father', '$X'], ['Father', '$Y']],
-                      'True']], Result),
-            \+ member(['=', [probe_alpha],
-                       ['petta-test-results',
-                        ['=alpha', ['Father', '$X'], ['Father', '$Y']],
-                        'True']], Result)
+    ->  (   (   member(['=', [probe_alpha],
+                         [let, AlphaVar,
+                          ['petta-alpha-equal-eval', ['Father', '$X'], ['Father', '$Y']],
+                          ['petta-test-runtime-bool', AlphaVar, 'True']]], Result),
+                atom_string(AlphaVar, AlphaS),
+                sub_string(AlphaS, 0, _, _, "$__tr_")
+            )
         ->  format("  ✓ ~w: ~w~n", [N, Name])
         ;   format("  ✗ ~w: ~w~n    Got: ~w~n", [N, Name, Result])
         )

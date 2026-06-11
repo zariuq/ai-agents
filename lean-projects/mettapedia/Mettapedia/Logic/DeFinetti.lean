@@ -3,8 +3,10 @@ import Mettapedia.Logic.MomentSequences
 import Mettapedia.Logic.HausdorffMoment
 import Mettapedia.Logic.EvidenceBeta
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Integral.IntegrableOn
+import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.Probability.ProbabilityMassFunction.Basic
 import Mathlib.Data.Fin.Tuple.Basic
@@ -374,6 +376,15 @@ theorem countTrue_append_fin {m n : ℕ} (a : Fin m → Bool) (b : Fin n → Boo
           cardSumSubtype
     _ = countTrue a + countTrue b := by
           simp [hA, hB]
+
+/-- `countFalse` respects `Fin.append`. -/
+theorem countFalse_append_fin {m n : ℕ} (a : Fin m → Bool) (b : Fin n → Bool) :
+    countFalse (Fin.append a b) = countFalse a + countFalse b := by
+  have hpart_append := count_partition (Fin.append a b)
+  have hpart_a := count_partition a
+  have hpart_b := count_partition b
+  rw [countTrue_append_fin] at hpart_append
+  omega
 
 @[simp]
 lemma countTrue_zerosThenOnes (n k : ℕ) : countTrue (zerosThenOnes n k) = k := by
@@ -1027,6 +1038,833 @@ theorem counts_sufficient_for_mixture (M : BernoulliMixture) (_n : ℕ) :
       M.prob xs₁ = M.prob xs₂ :=
   fun xs₁ xs₂ h => M.prob_depends_only_on_counts xs₁ xs₂ h
 
+/-! ### Posterior/update calculus for Bernoulli mixtures -/
+
+/-- Count-likelihood for `k` observed successes and `l` observed failures at
+Bernoulli parameter `θ`. -/
+noncomputable def countLikelihood (k l : ℕ) (θ : ℝ) : ℝ :=
+  θ ^ k * (1 - θ) ^ l
+
+@[simp] theorem countLikelihood_succ_true (k l : ℕ) (θ : ℝ) :
+    countLikelihood (k + 1) l θ = θ * countLikelihood k l θ := by
+  simp [countLikelihood, pow_succ, mul_assoc, mul_comm]
+
+@[simp] theorem countLikelihood_succ_false (k l : ℕ) (θ : ℝ) :
+    countLikelihood k (l + 1) θ = (1 - θ) * countLikelihood k l θ := by
+  simp [countLikelihood, pow_succ, mul_comm, mul_left_comm]
+
+theorem countLikelihood_add (k₁ l₁ k₂ l₂ : ℕ) (θ : ℝ) :
+    countLikelihood (k₁ + k₂) (l₁ + l₂) θ =
+      countLikelihood k₁ l₁ θ * countLikelihood k₂ l₂ θ := by
+  simp [countLikelihood, pow_add, mul_assoc, mul_left_comm]
+
+theorem countLikelihood_continuous (k l : ℕ) :
+    Continuous (fun θ : ℝ => countLikelihood k l θ) := by
+  unfold countLikelihood
+  exact ((continuous_id.pow k).mul ((continuous_const.sub continuous_id).pow l))
+
+theorem countLikelihood_nonneg_on_unit
+    (k l : ℕ) {θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1) :
+    0 ≤ countLikelihood k l θ := by
+  have h0 : 0 ≤ θ := hθ.1
+  have h1 : 0 ≤ 1 - θ := sub_nonneg.mpr hθ.2
+  exact mul_nonneg (pow_nonneg h0 k) (pow_nonneg h1 l)
+
+namespace BernoulliMixture
+
+/-- Marginal likelihood/evidence mass for `k` successes and `l` failures under
+a Bernoulli mixture. -/
+noncomputable def countEvidenceMass (M : BernoulliMixture) (k l : ℕ) : ℝ :=
+  ∫ θ in Set.Icc 0 1, countLikelihood k l θ ∂M.mixingMeasure
+
+/-- The unnormalized posterior mixing measure, obtained by tilting the prior
+mixing measure on `[0,1]` by the count likelihood. -/
+noncomputable def unnormalizedPosteriorMixingMeasure
+    (M : BernoulliMixture) (k l : ℕ) : Measure ℝ :=
+  (M.mixingMeasure.restrict (Set.Icc (0 : ℝ) 1)).withDensity
+    (fun θ : ℝ => ENNReal.ofReal (countLikelihood k l θ))
+
+/-- The normalized posterior mixing measure.  Under nonzero evidence mass,
+`posteriorMixingMeasure_isProbability` proves this measure is probabilistic, and
+`posteriorBernoulliMixture` packages it back as a Bernoulli mixture. -/
+noncomputable def posteriorMixingMeasure
+    (M : BernoulliMixture) (k l : ℕ) : Measure ℝ :=
+  ENNReal.ofReal ((M.countEvidenceMass k l)⁻¹) •
+    M.unnormalizedPosteriorMixingMeasure k l
+
+@[simp] theorem unnormalizedPosteriorMixingMeasure_support_unit
+    (M : BernoulliMixture) (k l : ℕ) :
+    M.unnormalizedPosteriorMixingMeasure k l (Set.Icc (0 : ℝ) 1)ᶜ = 0 := by
+  simp [unnormalizedPosteriorMixingMeasure]
+
+@[simp] theorem posteriorMixingMeasure_support_unit
+    (M : BernoulliMixture) (k l : ℕ) :
+    M.posteriorMixingMeasure k l (Set.Icc (0 : ℝ) 1)ᶜ = 0 := by
+  simp [posteriorMixingMeasure, unnormalizedPosteriorMixingMeasure]
+
+/-- Posterior numerator for a real-valued parameter observable `f`. -/
+noncomputable def posteriorWeightedIntegral
+    (M : BernoulliMixture) (k l : ℕ) (f : ℝ → ℝ) : ℝ :=
+  ∫ θ in Set.Icc 0 1, f θ * countLikelihood k l θ ∂M.mixingMeasure
+
+/-- Posterior expectation functional as a Bayes ratio.  It is meaningful once
+`countEvidenceMass M k l` is nonzero. -/
+noncomputable def posteriorExpectation
+    (M : BernoulliMixture) (k l : ℕ) (f : ℝ → ℝ) : ℝ :=
+  M.posteriorWeightedIntegral k l f / M.countEvidenceMass k l
+
+/-- One-step posterior predictive probability of the next bit being true. -/
+noncomputable def posteriorPredictiveTrue
+    (M : BernoulliMixture) (k l : ℕ) : ℝ :=
+  M.posteriorExpectation k l (fun θ : ℝ => θ)
+
+/-- One-step posterior predictive probability of the next bit being false. -/
+noncomputable def posteriorPredictiveFalse
+    (M : BernoulliMixture) (k l : ℕ) : ℝ :=
+  M.posteriorExpectation k l (fun θ : ℝ => 1 - θ)
+
+@[simp] theorem countEvidenceMass_eq_prob_of_counts
+    (M : BernoulliMixture) {n : ℕ} (xs : Fin n → Bool) :
+    M.countEvidenceMass (countTrue xs) (countFalse xs) = M.prob xs := by
+  simp [countEvidenceMass, prob, countLikelihood, bernoulliProductPMF_eq_power]
+
+theorem countLikelihood_integrable_restrict_unit
+    (M : BernoulliMixture) (k l : ℕ) :
+    Integrable (fun θ : ℝ => countLikelihood k l θ)
+      (M.mixingMeasure.restrict (Set.Icc (0 : ℝ) 1)) := by
+  letI : IsProbabilityMeasure M.mixingMeasure := M.isProbability
+  letI : IsFiniteMeasureOnCompacts M.mixingMeasure := by
+    refine ⟨fun K _hK => ?_⟩
+    exact measure_lt_top M.mixingMeasure K
+  change IntegrableOn (fun θ : ℝ => countLikelihood k l θ)
+    (Set.Icc (0 : ℝ) 1) M.mixingMeasure
+  exact (countLikelihood_continuous k l).integrableOn_Icc
+
+theorem countLikelihood_nonneg_restrict_unit_ae
+    (M : BernoulliMixture) (k l : ℕ) :
+    0 ≤ᶠ[ae (M.mixingMeasure.restrict (Set.Icc (0 : ℝ) 1))]
+      fun θ : ℝ => countLikelihood k l θ := by
+  filter_upwards [ae_restrict_mem measurableSet_Icc] with θ hθ
+  exact countLikelihood_nonneg_on_unit k l hθ
+
+theorem countEvidenceMass_nonneg (M : BernoulliMixture) (k l : ℕ) :
+    0 ≤ M.countEvidenceMass k l := by
+  exact integral_nonneg_of_ae (countLikelihood_nonneg_restrict_unit_ae M k l)
+
+theorem unnormalizedPosteriorMixingMeasure_apply_univ
+    (M : BernoulliMixture) (k l : ℕ) :
+    M.unnormalizedPosteriorMixingMeasure k l Set.univ =
+      ENNReal.ofReal (M.countEvidenceMass k l) := by
+  rw [unnormalizedPosteriorMixingMeasure, withDensity_apply _ MeasurableSet.univ,
+    setLIntegral_univ]
+  symm
+  simpa [countEvidenceMass] using
+    (ofReal_integral_eq_lintegral_ofReal
+      (countLikelihood_integrable_restrict_unit M k l)
+      (countLikelihood_nonneg_restrict_unit_ae M k l))
+
+theorem posteriorMixingMeasure_apply_univ_of_pos
+    (M : BernoulliMixture) (k l : ℕ)
+    (hpos : 0 < M.countEvidenceMass k l) :
+    M.posteriorMixingMeasure k l Set.univ = 1 := by
+  rw [posteriorMixingMeasure, Measure.smul_apply,
+    unnormalizedPosteriorMixingMeasure_apply_univ]
+  rw [ENNReal.ofReal_inv_of_pos hpos]
+  have h0 : ENNReal.ofReal (M.countEvidenceMass k l) ≠ 0 := by
+    exact ne_of_gt (ENNReal.ofReal_pos.mpr hpos)
+  simpa [smul_eq_mul, mul_comm] using
+    (ENNReal.inv_mul_cancel h0 ENNReal.ofReal_ne_top)
+
+theorem posteriorMixingMeasure_apply_univ
+    (M : BernoulliMixture) (k l : ℕ)
+    (hZ : M.countEvidenceMass k l ≠ 0) :
+    M.posteriorMixingMeasure k l Set.univ = 1 := by
+  exact posteriorMixingMeasure_apply_univ_of_pos M k l
+    (lt_of_le_of_ne (countEvidenceMass_nonneg M k l) hZ.symm)
+
+theorem posteriorMixingMeasure_isProbability
+    (M : BernoulliMixture) (k l : ℕ)
+    (hZ : M.countEvidenceMass k l ≠ 0) :
+    IsProbabilityMeasure (M.posteriorMixingMeasure k l) := by
+  rw [isProbabilityMeasure_iff]
+  exact posteriorMixingMeasure_apply_univ M k l hZ
+
+/-- The normalized posterior, packaged back as a Bernoulli mixture. -/
+noncomputable def posteriorBernoulliMixture
+    (M : BernoulliMixture) (k l : ℕ)
+    (hZ : M.countEvidenceMass k l ≠ 0) : BernoulliMixture where
+  mixingMeasure := M.posteriorMixingMeasure k l
+  isProbability := posteriorMixingMeasure_isProbability M k l hZ
+  support_unit := posteriorMixingMeasure_support_unit M k l
+
+@[simp] theorem posteriorBernoulliMixture_mixingMeasure
+    (M : BernoulliMixture) (k l : ℕ)
+    (hZ : M.countEvidenceMass k l ≠ 0) :
+    (M.posteriorBernoulliMixture k l hZ).mixingMeasure =
+      M.posteriorMixingMeasure k l :=
+  rfl
+
+@[simp] theorem posteriorWeightedIntegral_one_eq_countEvidenceMass
+    (M : BernoulliMixture) (k l : ℕ) :
+    M.posteriorWeightedIntegral k l (fun _ : ℝ => 1) =
+      M.countEvidenceMass k l := by
+  simp [posteriorWeightedIntegral, countEvidenceMass]
+
+theorem posteriorExpectation_one_eq_one
+    (M : BernoulliMixture) (k l : ℕ)
+    (hZ : M.countEvidenceMass k l ≠ 0) :
+    M.posteriorExpectation k l (fun _ : ℝ => 1) = 1 := by
+  rw [posteriorExpectation, posteriorWeightedIntegral_one_eq_countEvidenceMass]
+  field_simp [hZ]
+
+@[simp] theorem posteriorWeightedIntegral_true_eq_countEvidenceMass_succ
+    (M : BernoulliMixture) (k l : ℕ) :
+    M.posteriorWeightedIntegral k l (fun θ : ℝ => θ) =
+      M.countEvidenceMass (k + 1) l := by
+  simp [posteriorWeightedIntegral, countEvidenceMass, countLikelihood, pow_succ,
+    mul_assoc, mul_comm]
+
+@[simp] theorem posteriorWeightedIntegral_false_eq_countEvidenceMass_succ
+    (M : BernoulliMixture) (k l : ℕ) :
+    M.posteriorWeightedIntegral k l (fun θ : ℝ => 1 - θ) =
+      M.countEvidenceMass k (l + 1) := by
+  simp [posteriorWeightedIntegral, countEvidenceMass, countLikelihood, pow_succ,
+    mul_comm, mul_left_comm]
+
+/-- A posterior weighted count-likelihood is the prior evidence mass with the
+two count pairs added.  This is the finite-prefix Bayes numerator for arbitrary
+future true/false counts. -/
+@[simp] theorem posteriorWeightedIntegral_countLikelihood_eq_countEvidenceMass_add
+    (M : BernoulliMixture) (k l a b : ℕ) :
+    M.posteriorWeightedIntegral k l (fun θ : ℝ => countLikelihood a b θ) =
+      M.countEvidenceMass (k + a) (l + b) := by
+  simp [posteriorWeightedIntegral, countEvidenceMass, countLikelihood_add, mul_comm]
+
+/-- Integrating the parameter observable against the unnormalized tilted
+posterior measure recovers the true-success posterior numerator. -/
+theorem unnormalizedPosteriorMixingMeasure_integral_true_eq_posteriorWeightedIntegral
+    (M : BernoulliMixture) (k l : ℕ) :
+    ∫ θ in Set.Icc 0 1, θ ∂M.unnormalizedPosteriorMixingMeasure k l =
+      M.posteriorWeightedIntegral k l (fun θ : ℝ => θ) := by
+  unfold unnormalizedPosteriorMixingMeasure posteriorWeightedIntegral
+  rw [restrict_withDensity measurableSet_Icc]
+  rw [integral_withDensity_eq_integral_toReal_smul₀]
+  · change ∫ θ, (ENNReal.ofReal (countLikelihood k l θ)).toReal * θ
+        ∂(M.mixingMeasure.restrict (Set.Icc (0 : ℝ) 1)).restrict
+          (Set.Icc (0 : ℝ) 1) =
+      ∫ θ in Set.Icc (0 : ℝ) 1, θ * countLikelihood k l θ ∂M.mixingMeasure
+    rw [Measure.restrict_restrict measurableSet_Icc]
+    simp only [Set.inter_self]
+    refine setIntegral_congr_fun (μ := M.mixingMeasure) (s := Set.Icc (0 : ℝ) 1)
+      (f := fun θ : ℝ => (ENNReal.ofReal (countLikelihood k l θ)).toReal * θ)
+      (g := fun θ : ℝ => θ * countLikelihood k l θ) measurableSet_Icc ?_
+    intro θ hθ
+    change (ENNReal.ofReal (countLikelihood k l θ)).toReal * θ =
+      θ * countLikelihood k l θ
+    rw [ENNReal.toReal_ofReal (countLikelihood_nonneg_on_unit k l hθ)]
+    ring
+  · exact (ENNReal.continuous_ofReal.comp
+      (countLikelihood_continuous k l)).aemeasurable
+  · filter_upwards with θ
+    simp
+
+/-- Integrating the complement observable against the unnormalized tilted
+posterior measure recovers the false-failure posterior numerator. -/
+theorem unnormalizedPosteriorMixingMeasure_integral_false_eq_posteriorWeightedIntegral
+    (M : BernoulliMixture) (k l : ℕ) :
+    ∫ θ in Set.Icc 0 1, (1 - θ) ∂M.unnormalizedPosteriorMixingMeasure k l =
+      M.posteriorWeightedIntegral k l (fun θ : ℝ => 1 - θ) := by
+  unfold unnormalizedPosteriorMixingMeasure posteriorWeightedIntegral
+  rw [restrict_withDensity measurableSet_Icc]
+  rw [integral_withDensity_eq_integral_toReal_smul₀]
+  · change ∫ θ, (ENNReal.ofReal (countLikelihood k l θ)).toReal * (1 - θ)
+        ∂(M.mixingMeasure.restrict (Set.Icc (0 : ℝ) 1)).restrict
+          (Set.Icc (0 : ℝ) 1) =
+      ∫ θ in Set.Icc (0 : ℝ) 1, (1 - θ) * countLikelihood k l θ ∂M.mixingMeasure
+    rw [Measure.restrict_restrict measurableSet_Icc]
+    simp only [Set.inter_self]
+    refine setIntegral_congr_fun (μ := M.mixingMeasure) (s := Set.Icc (0 : ℝ) 1)
+      (f := fun θ : ℝ =>
+        (ENNReal.ofReal (countLikelihood k l θ)).toReal * (1 - θ))
+      (g := fun θ : ℝ => (1 - θ) * countLikelihood k l θ) measurableSet_Icc ?_
+    intro θ hθ
+    change (ENNReal.ofReal (countLikelihood k l θ)).toReal * (1 - θ) =
+      (1 - θ) * countLikelihood k l θ
+    rw [ENNReal.toReal_ofReal (countLikelihood_nonneg_on_unit k l hθ)]
+    ring
+  · exact (ENNReal.continuous_ofReal.comp
+      (countLikelihood_continuous k l)).aemeasurable
+  · filter_upwards with θ
+    simp
+
+/-- Integrating a future count-likelihood against the unnormalized tilted
+posterior measure recovers the corresponding posterior weighted numerator. -/
+theorem unnormalizedPosteriorMixingMeasure_integral_countLikelihood_eq_posteriorWeightedIntegral
+    (M : BernoulliMixture) (k l a b : ℕ) :
+    ∫ θ in Set.Icc 0 1, countLikelihood a b θ
+        ∂M.unnormalizedPosteriorMixingMeasure k l =
+      M.posteriorWeightedIntegral k l (fun θ : ℝ => countLikelihood a b θ) := by
+  unfold unnormalizedPosteriorMixingMeasure posteriorWeightedIntegral
+  rw [restrict_withDensity measurableSet_Icc]
+  rw [integral_withDensity_eq_integral_toReal_smul₀]
+  · change ∫ θ, (ENNReal.ofReal (countLikelihood k l θ)).toReal *
+          countLikelihood a b θ
+        ∂(M.mixingMeasure.restrict (Set.Icc (0 : ℝ) 1)).restrict
+          (Set.Icc (0 : ℝ) 1) =
+      ∫ θ in Set.Icc (0 : ℝ) 1,
+          countLikelihood a b θ * countLikelihood k l θ ∂M.mixingMeasure
+    rw [Measure.restrict_restrict measurableSet_Icc]
+    simp only [Set.inter_self]
+    refine setIntegral_congr_fun (μ := M.mixingMeasure) (s := Set.Icc (0 : ℝ) 1)
+      (f := fun θ : ℝ =>
+        (ENNReal.ofReal (countLikelihood k l θ)).toReal * countLikelihood a b θ)
+      (g := fun θ : ℝ => countLikelihood a b θ * countLikelihood k l θ)
+      measurableSet_Icc ?_
+    intro θ hθ
+    change (ENNReal.ofReal (countLikelihood k l θ)).toReal * countLikelihood a b θ =
+      countLikelihood a b θ * countLikelihood k l θ
+    rw [ENNReal.toReal_ofReal (countLikelihood_nonneg_on_unit k l hθ)]
+    ring
+  · exact (ENNReal.continuous_ofReal.comp
+      (countLikelihood_continuous k l)).aemeasurable
+  · filter_upwards with θ
+    simp
+
+theorem posteriorBernoulliMixture_countEvidenceMass_true_eq_posteriorPredictiveTrue
+    (M : BernoulliMixture) (k l : ℕ)
+    (hZ : M.countEvidenceMass k l ≠ 0) :
+    (M.posteriorBernoulliMixture k l hZ).countEvidenceMass 1 0 =
+      M.posteriorPredictiveTrue k l := by
+  unfold countEvidenceMass posteriorBernoulliMixture posteriorPredictiveTrue
+    posteriorExpectation
+  simp [posteriorMixingMeasure, countLikelihood]
+  rw [unnormalizedPosteriorMixingMeasure_integral_true_eq_posteriorWeightedIntegral]
+  rw [ENNReal.toReal_ofReal]
+  · rw [posteriorWeightedIntegral_true_eq_countEvidenceMass_succ]
+    rw [inv_mul_eq_div]
+  · exact inv_nonneg.mpr (countEvidenceMass_nonneg M k l)
+
+theorem posteriorBernoulliMixture_countEvidenceMass_false_eq_posteriorPredictiveFalse
+    (M : BernoulliMixture) (k l : ℕ)
+    (hZ : M.countEvidenceMass k l ≠ 0) :
+    (M.posteriorBernoulliMixture k l hZ).countEvidenceMass 0 1 =
+      M.posteriorPredictiveFalse k l := by
+  unfold countEvidenceMass posteriorBernoulliMixture posteriorPredictiveFalse
+    posteriorExpectation
+  simp [posteriorMixingMeasure, countLikelihood]
+  rw [unnormalizedPosteriorMixingMeasure_integral_false_eq_posteriorWeightedIntegral]
+  rw [ENNReal.toReal_ofReal]
+  · rw [posteriorWeightedIntegral_false_eq_countEvidenceMass_succ]
+    rw [inv_mul_eq_div]
+  · exact inv_nonneg.mpr (countEvidenceMass_nonneg M k l)
+
+/-- Arbitrary-count posterior evidence mass is the Bayes ratio between the
+joint prior evidence mass and the observed-evidence normalizer. -/
+theorem posteriorBernoulliMixture_countEvidenceMass_eq_ratio
+    (M : BernoulliMixture) (k l a b : ℕ)
+    (hZ : M.countEvidenceMass k l ≠ 0) :
+    (M.posteriorBernoulliMixture k l hZ).countEvidenceMass a b =
+      M.countEvidenceMass (k + a) (l + b) / M.countEvidenceMass k l := by
+  unfold countEvidenceMass posteriorBernoulliMixture posteriorMixingMeasure
+  simp [countLikelihood_add]
+  rw [unnormalizedPosteriorMixingMeasure_integral_countLikelihood_eq_posteriorWeightedIntegral]
+  rw [ENNReal.toReal_ofReal]
+  · rw [posteriorWeightedIntegral_countLikelihood_eq_countEvidenceMass_add]
+    rw [inv_mul_eq_div]
+    repeat rw [countEvidenceMass]
+    simp [countLikelihood_add]
+  · exact inv_nonneg.mpr (countEvidenceMass_nonneg M k l)
+
+/-- Finite-prefix probability under the posterior Bernoulli mixture is the
+corresponding count-evidence Bayes ratio. -/
+theorem posteriorBernoulliMixture_prob_eq_countEvidenceMass_ratio
+    (M : BernoulliMixture) (k l : ℕ)
+    (hZ : M.countEvidenceMass k l ≠ 0) {n : ℕ} (xs : Fin n → Bool) :
+    (M.posteriorBernoulliMixture k l hZ).prob xs =
+      M.countEvidenceMass (k + countTrue xs) (l + countFalse xs) /
+        M.countEvidenceMass k l := by
+  rw [← countEvidenceMass_eq_prob_of_counts]
+  exact posteriorBernoulliMixture_countEvidenceMass_eq_ratio M k l
+    (countTrue xs) (countFalse xs) hZ
+
+/-- The probability of an appended finite prefix is the evidence mass obtained
+by adding the observed and future true/false counts. -/
+theorem prob_append_eq_countEvidenceMass_add
+    (M : BernoulliMixture) {m n : ℕ}
+    (obs : Fin m → Bool) (xs : Fin n → Bool) :
+    M.prob (Fin.append obs xs) =
+      M.countEvidenceMass (countTrue obs + countTrue xs)
+        (countFalse obs + countFalse xs) := by
+  rw [← countEvidenceMass_eq_prob_of_counts]
+  rw [countTrue_append_fin, countFalse_append_fin]
+
+/-- A represented cylinder has real measure equal to its Bernoulli-mixture
+finite-prefix probability. -/
+theorem represented_cyl_measure_toReal_eq_prob
+    {Ω : Type*} [MeasurableSpace Ω]
+    (M : BernoulliMixture) (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    (hrep : Represents M X μ) {n : ℕ} (xs : Fin n → Bool) :
+    (μ (cyl X xs)).toReal = M.prob xs := by
+  have hNonneg : 0 ≤ M.prob xs := by
+    rw [← countEvidenceMass_eq_prob_of_counts]
+    exact countEvidenceMass_nonneg M (countTrue xs) (countFalse xs)
+  change (μ {ω | ∀ i : Fin n, X i.val ω = xs i}).toReal = M.prob xs
+  rw [hrep n xs]
+  exact ENNReal.toReal_ofReal hNonneg
+
+/-- A represented cylinder has `ENNReal` measure equal to its
+Bernoulli-mixture finite-prefix probability. -/
+theorem represented_cyl_measure_eq_ofReal_prob
+    {Ω : Type*} [MeasurableSpace Ω]
+    (M : BernoulliMixture) (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    (hrep : Represents M X μ) {n : ℕ} (xs : Fin n → Bool) :
+    μ (cyl X xs) = ENNReal.ofReal (M.prob xs) := by
+  change μ {ω | ∀ i : Fin n, X i.val ω = xs i} =
+    ENNReal.ofReal (M.prob xs)
+  exact hrep n xs
+
+/-- A represented cylinder has real measure equal to the matching count
+evidence mass. -/
+theorem represented_cyl_measure_toReal_eq_countEvidenceMass
+    {Ω : Type*} [MeasurableSpace Ω]
+    (M : BernoulliMixture) (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    (hrep : Represents M X μ) {n : ℕ} (xs : Fin n → Bool) :
+    (μ (cyl X xs)).toReal =
+      M.countEvidenceMass (countTrue xs) (countFalse xs) := by
+  rw [represented_cyl_measure_toReal_eq_prob M X μ hrep xs]
+  rw [← countEvidenceMass_eq_prob_of_counts]
+
+/-- A represented cylinder has `ENNReal` measure equal to the matching count
+evidence mass. -/
+theorem represented_cyl_measure_eq_ofReal_countEvidenceMass
+    {Ω : Type*} [MeasurableSpace Ω]
+    (M : BernoulliMixture) (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    (hrep : Represents M X μ) {n : ℕ} (xs : Fin n → Bool) :
+    μ (cyl X xs) =
+      ENNReal.ofReal (M.countEvidenceMass (countTrue xs) (countFalse xs)) := by
+  rw [represented_cyl_measure_eq_ofReal_prob M X μ hrep xs]
+  rw [countEvidenceMass_eq_prob_of_counts]
+
+/-- Finite-prefix conditioning for a represented process: after observing a
+prefix `obs`, the real-valued conditional probability of the longer appended
+prefix agrees with the posterior Bernoulli mixture's finite-prefix probability.
+
+This is intentionally a finite-cylinder theorem.  It is the reusable bridge for
+the later full conditioned-process/carrier construction. -/
+theorem represented_prefixAppend_conditionalProbability_eq_posterior_prob
+    {Ω : Type*} [MeasurableSpace Ω]
+    (M : BernoulliMixture) (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    (hrep : Represents M X μ) {m n : ℕ}
+    (obs : Fin m → Bool) (xs : Fin n → Bool)
+    (hZ : M.countEvidenceMass (countTrue obs) (countFalse obs) ≠ 0) :
+    (μ (cyl X (Fin.append obs xs))).toReal / (μ (cyl X obs)).toReal =
+      (M.posteriorBernoulliMixture (countTrue obs) (countFalse obs) hZ).prob xs := by
+  rw [represented_cyl_measure_toReal_eq_prob M X μ hrep (Fin.append obs xs)]
+  rw [represented_cyl_measure_toReal_eq_prob M X μ hrep obs]
+  rw [prob_append_eq_countEvidenceMass_add]
+  rw [← countEvidenceMass_eq_prob_of_counts (M := M) obs]
+  rw [posteriorBernoulliMixture_prob_eq_countEvidenceMass_ratio]
+
+/-- The normalized restriction of a represented sample-space measure to an
+observed finite prefix. -/
+noncomputable def conditionedOnPrefixMeasure
+    {Ω : Type*} [MeasurableSpace Ω]
+    (μ : Measure Ω) (X : ℕ → Ω → Bool) {m : ℕ}
+    (obs : Fin m → Bool) : Measure Ω :=
+  (μ (cyl X obs))⁻¹ • μ.restrict (cyl X obs)
+
+/-- The future/tail Boolean process after a finite observed prefix.
+
+Positive example: after observing an `m`-bit prefix, index `0` of the tail is
+the original coordinate `m`.  Negative example: this is not a new sample space;
+it is the shifted coordinate process on the same conditioned sample space. -/
+noncomputable def tailProcess
+    {Ω : Type*} (X : ℕ → Ω → Bool) (m : ℕ) : ℕ → Ω → Bool :=
+  fun j ω => X (m + j) ω
+
+/-- Measurability is inherited by the future/tail process coordinatewise. -/
+theorem tailProcess_measurable
+    {Ω : Type*} [MeasurableSpace Ω] (X : ℕ → Ω → Bool) (m : ℕ)
+    (hX : ∀ i : ℕ, Measurable (X i)) :
+    ∀ j : ℕ, Measurable (tailProcess X m j) := by
+  intro j
+  exact hX (m + j)
+
+/-- An appended prefix cylinder is contained in the observed-prefix cylinder. -/
+theorem append_cyl_subset_obs
+    {Ω : Type*} [MeasurableSpace Ω] (X : ℕ → Ω → Bool) {m n : ℕ}
+    (obs : Fin m → Bool) (xs : Fin n → Bool) :
+    cyl X (Fin.append obs xs) ⊆ cyl X obs := by
+  intro ω hω i
+  have hi := hω (Fin.castAdd n i)
+  simpa [cyl, Fin.append] using hi
+
+/-- Appending an observed prefix and a future prefix is the same cylinder as
+observing the prefix and then reading the shifted tail-process prefix. -/
+theorem cyl_append_eq_obs_inter_tail_cyl
+    {Ω : Type*} (X : ℕ → Ω → Bool) {m n : ℕ}
+    (obs : Fin m → Bool) (xs : Fin n → Bool) :
+    cyl X (Fin.append obs xs) =
+      cyl X obs ∩ cyl (tailProcess X m) xs := by
+  ext ω
+  constructor
+  · intro hω
+    constructor
+    · intro i
+      have hi := hω (Fin.castAdd n i)
+      simpa [cyl, Fin.append] using hi
+    · intro j
+      have hj := hω (Fin.natAdd m j)
+      simpa [cyl, tailProcess, Fin.append] using hj
+  · intro hω
+    rcases hω with ⟨hobs, htail⟩
+    intro i
+    induction i using Fin.addCases with
+    | left i0 =>
+        have hi := hobs i0
+        simpa [cyl, Fin.append] using hi
+    | right j0 =>
+        have hj := htail j0
+        simpa [cyl, tailProcess, Fin.append] using hj
+
+/-- The normalized observed-prefix restriction is a probability measure whenever
+the represented observed-evidence normalizer is nonzero. -/
+theorem conditionedOnPrefixMeasure_isProbability
+    {Ω : Type*} [MeasurableSpace Ω]
+    (M : BernoulliMixture) (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    (hrep : Represents M X μ) {m : ℕ} (obs : Fin m → Bool)
+    (hZ : M.countEvidenceMass (countTrue obs) (countFalse obs) ≠ 0) :
+    IsProbabilityMeasure (conditionedOnPrefixMeasure μ X obs) := by
+  rw [isProbabilityMeasure_iff]
+  unfold conditionedOnPrefixMeasure
+  rw [Measure.smul_apply, Measure.restrict_apply_univ]
+  have hμobs :=
+    represented_cyl_measure_eq_ofReal_countEvidenceMass M X μ hrep obs
+  rw [hμobs]
+  have hnonneg := countEvidenceMass_nonneg M (countTrue obs) (countFalse obs)
+  have hpos : 0 < M.countEvidenceMass (countTrue obs) (countFalse obs) :=
+    lt_of_le_of_ne hnonneg hZ.symm
+  have h0 :
+      ENNReal.ofReal (M.countEvidenceMass (countTrue obs) (countFalse obs)) ≠ 0 := by
+    exact ne_of_gt (ENNReal.ofReal_pos.mpr hpos)
+  simpa [smul_eq_mul, mul_comm] using
+    ENNReal.inv_mul_cancel h0 ENNReal.ofReal_ne_top
+
+/-- Applying the normalized observed-prefix restriction to an appended prefix
+cylinder recovers the old finite-cylinder conditional probability ratio. -/
+theorem conditionedOnPrefixMeasure_append_cyl_toReal_eq_ratio
+    {Ω : Type*} [MeasurableSpace Ω]
+    (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    (hX : ∀ i : ℕ, Measurable (X i)) {m n : ℕ}
+    (obs : Fin m → Bool) (xs : Fin n → Bool) :
+    ((conditionedOnPrefixMeasure μ X obs) (cyl X (Fin.append obs xs))).toReal =
+      (μ (cyl X (Fin.append obs xs))).toReal / (μ (cyl X obs)).toReal := by
+  unfold conditionedOnPrefixMeasure
+  rw [Measure.smul_apply]
+  rw [Measure.restrict_apply' (measurableSet_cyl X hX obs)]
+  have hsubset := append_cyl_subset_obs X obs xs
+  rw [Set.inter_eq_left.mpr hsubset]
+  simp [ENNReal.toReal_mul, div_eq_mul_inv, mul_comm]
+
+/-- The normalized observed-prefix restriction has appended-prefix cylinder
+probabilities equal to the posterior Bernoulli mixture. -/
+theorem conditionedOnPrefixMeasure_append_cyl_toReal_eq_posterior_prob
+    {Ω : Type*} [MeasurableSpace Ω]
+    (M : BernoulliMixture) (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    (hX : ∀ i : ℕ, Measurable (X i))
+    (hrep : Represents M X μ) {m n : ℕ}
+    (obs : Fin m → Bool) (xs : Fin n → Bool)
+    (hZ : M.countEvidenceMass (countTrue obs) (countFalse obs) ≠ 0) :
+    ((conditionedOnPrefixMeasure μ X obs) (cyl X (Fin.append obs xs))).toReal =
+      (M.posteriorBernoulliMixture (countTrue obs) (countFalse obs) hZ).prob xs := by
+  rw [conditionedOnPrefixMeasure_append_cyl_toReal_eq_ratio X μ hX obs xs]
+  exact represented_prefixAppend_conditionalProbability_eq_posterior_prob
+    M X μ hrep obs xs hZ
+
+/-- Posterior finite-prefix probability is the ratio of appended-prior prefix
+probability to observed-prefix probability. -/
+theorem posteriorBernoulliMixture_prob_eq_append_div_prob
+    (M : BernoulliMixture) {m n : ℕ}
+    (obs : Fin m → Bool) (xs : Fin n → Bool)
+    (hZ : M.countEvidenceMass (countTrue obs) (countFalse obs) ≠ 0) :
+    (M.posteriorBernoulliMixture (countTrue obs) (countFalse obs) hZ).prob xs =
+      M.prob (Fin.append obs xs) / M.prob obs := by
+  rw [posteriorBernoulliMixture_prob_eq_countEvidenceMass_ratio]
+  rw [prob_append_eq_countEvidenceMass_add]
+  rw [← countEvidenceMass_eq_prob_of_counts (M := M) obs]
+
+/-- Applying the normalized observed-prefix restriction to a shifted
+tail-process cylinder recovers the same conditional probability ratio. -/
+theorem conditionedOnPrefixMeasure_tail_cyl_toReal_eq_ratio
+    {Ω : Type*} [MeasurableSpace Ω]
+    (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    (hX : ∀ i : ℕ, Measurable (X i)) {m n : ℕ}
+    (obs : Fin m → Bool) (xs : Fin n → Bool) :
+    ((conditionedOnPrefixMeasure μ X obs) (cyl (tailProcess X m) xs)).toReal =
+      (μ (cyl X (Fin.append obs xs))).toReal / (μ (cyl X obs)).toReal := by
+  unfold conditionedOnPrefixMeasure
+  rw [Measure.smul_apply]
+  rw [Measure.restrict_apply' (measurableSet_cyl X hX obs)]
+  have hset : cyl (tailProcess X m) xs ∩ cyl X obs =
+      cyl X (Fin.append obs xs) := by
+    rw [Set.inter_comm]
+    exact (cyl_append_eq_obs_inter_tail_cyl X obs xs).symm
+  rw [hset]
+  simp [ENNReal.toReal_mul, div_eq_mul_inv, mul_comm]
+
+/-- The conditioned original-space measure gives the shifted future/tail
+process posterior Bernoulli-mixture finite-prefix probabilities. -/
+theorem conditionedOnPrefixMeasure_tail_cyl_toReal_eq_posterior_prob
+    {Ω : Type*} [MeasurableSpace Ω]
+    (M : BernoulliMixture) (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    (hX : ∀ i : ℕ, Measurable (X i))
+    (hrep : Represents M X μ) {m n : ℕ}
+    (obs : Fin m → Bool) (xs : Fin n → Bool)
+    (hZ : M.countEvidenceMass (countTrue obs) (countFalse obs) ≠ 0) :
+    ((conditionedOnPrefixMeasure μ X obs) (cyl (tailProcess X m) xs)).toReal =
+      (M.posteriorBernoulliMixture (countTrue obs) (countFalse obs) hZ).prob xs := by
+  rw [conditionedOnPrefixMeasure_tail_cyl_toReal_eq_ratio X μ hX obs xs]
+  exact represented_prefixAppend_conditionalProbability_eq_posterior_prob
+    M X μ hrep obs xs hZ
+
+/-- The shifted tail-process cylinder under the conditioned measure has exactly
+the posterior Bernoulli-mixture `ENNReal` cylinder probability. -/
+theorem conditionedOnPrefixMeasure_tail_cyl_eq_ofReal_posterior_prob
+    {Ω : Type*} [MeasurableSpace Ω]
+    (M : BernoulliMixture) (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    (hX : ∀ i : ℕ, Measurable (X i))
+    (hrep : Represents M X μ) {m n : ℕ}
+    (obs : Fin m → Bool) (xs : Fin n → Bool)
+    (hZ : M.countEvidenceMass (countTrue obs) (countFalse obs) ≠ 0) :
+    (conditionedOnPrefixMeasure μ X obs) (cyl (tailProcess X m) xs) =
+      ENNReal.ofReal
+        ((M.posteriorBernoulliMixture (countTrue obs) (countFalse obs) hZ).prob xs) := by
+  unfold conditionedOnPrefixMeasure
+  rw [Measure.smul_apply]
+  rw [Measure.restrict_apply' (measurableSet_cyl X hX obs)]
+  have hset : cyl (tailProcess X m) xs ∩ cyl X obs =
+      cyl X (Fin.append obs xs) := by
+    rw [Set.inter_comm]
+    exact (cyl_append_eq_obs_inter_tail_cyl X obs xs).symm
+  rw [hset]
+  rw [represented_cyl_measure_eq_ofReal_prob M X μ hrep (Fin.append obs xs)]
+  rw [represented_cyl_measure_eq_ofReal_prob M X μ hrep obs]
+  have hDenPos : 0 < M.prob obs := by
+    rw [← countEvidenceMass_eq_prob_of_counts (M := M) obs]
+    exact lt_of_le_of_ne
+      (countEvidenceMass_nonneg M (countTrue obs) (countFalse obs)) hZ.symm
+  rw [smul_eq_mul]
+  rw [mul_comm]
+  rw [← div_eq_mul_inv]
+  rw [← ENNReal.ofReal_div_of_pos hDenPos]
+  congr 1
+  exact (posteriorBernoulliMixture_prob_eq_append_div_prob M obs xs hZ).symm
+
+/-- The conditioned sample-space measure and shifted future/tail process
+represent the posterior Bernoulli mixture. -/
+theorem conditionedOnPrefixMeasure_tail_represents_posteriorBernoulliMixture
+    {Ω : Type*} [MeasurableSpace Ω]
+    (M : BernoulliMixture) (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    (hX : ∀ i : ℕ, Measurable (X i))
+    (hrep : Represents M X μ) {m : ℕ}
+    (obs : Fin m → Bool)
+    (hZ : M.countEvidenceMass (countTrue obs) (countFalse obs) ≠ 0) :
+    Represents
+      (M.posteriorBernoulliMixture (countTrue obs) (countFalse obs) hZ)
+      (tailProcess X m)
+      (conditionedOnPrefixMeasure μ X obs) := by
+  intro n xs
+  exact conditionedOnPrefixMeasure_tail_cyl_eq_ofReal_posterior_prob
+    M X μ hX hrep obs xs hZ
+
+theorem posteriorPredictiveTrue_eq_countEvidenceMass_ratio
+    (M : BernoulliMixture) (k l : ℕ) :
+    M.posteriorPredictiveTrue k l =
+      M.countEvidenceMass (k + 1) l / M.countEvidenceMass k l := by
+  rw [posteriorPredictiveTrue, posteriorExpectation,
+    posteriorWeightedIntegral_true_eq_countEvidenceMass_succ]
+
+theorem posteriorPredictiveFalse_eq_countEvidenceMass_ratio
+    (M : BernoulliMixture) (k l : ℕ) :
+    M.posteriorPredictiveFalse k l =
+      M.countEvidenceMass k (l + 1) / M.countEvidenceMass k l := by
+  rw [posteriorPredictiveFalse, posteriorExpectation,
+    posteriorWeightedIntegral_false_eq_countEvidenceMass_succ]
+
+theorem posteriorPredictiveTrue_update_identity
+    (M : BernoulliMixture) (k l : ℕ)
+    (hZ : M.countEvidenceMass k l ≠ 0) :
+    M.posteriorPredictiveTrue k l * M.countEvidenceMass k l =
+      M.countEvidenceMass (k + 1) l := by
+  rw [posteriorPredictiveTrue_eq_countEvidenceMass_ratio]
+  field_simp [hZ]
+
+theorem posteriorPredictiveFalse_update_identity
+    (M : BernoulliMixture) (k l : ℕ)
+    (hZ : M.countEvidenceMass k l ≠ 0) :
+    M.posteriorPredictiveFalse k l * M.countEvidenceMass k l =
+      M.countEvidenceMass k (l + 1) := by
+  rw [posteriorPredictiveFalse_eq_countEvidenceMass_ratio]
+  field_simp [hZ]
+
+/-- Posterior/update API package for the Bernoulli-mixture de Finetti crown.
+The package records the proved Bayes-ratio update laws while keeping the
+normalizer nonzero hypothesis explicit. -/
+structure PosteriorUpdateCrown (M : BernoulliMixture) (k l : ℕ) where
+  normalizer_nonzero : M.countEvidenceMass k l ≠ 0
+  posterior_isProbability : IsProbabilityMeasure (M.posteriorMixingMeasure k l)
+  posterior_support_unit :
+    M.posteriorMixingMeasure k l (Set.Icc (0 : ℝ) 1)ᶜ = 0
+  posterior_mixture_exists :
+    ∃ P : BernoulliMixture, P.mixingMeasure = M.posteriorMixingMeasure k l
+  expectation_one :
+    M.posteriorExpectation k l (fun _ : ℝ => 1) = 1
+  predictiveTrue_ratio :
+    M.posteriorPredictiveTrue k l =
+      M.countEvidenceMass (k + 1) l / M.countEvidenceMass k l
+  predictiveFalse_ratio :
+    M.posteriorPredictiveFalse k l =
+      M.countEvidenceMass k (l + 1) / M.countEvidenceMass k l
+  predictiveTrue_update :
+    M.posteriorPredictiveTrue k l * M.countEvidenceMass k l =
+      M.countEvidenceMass (k + 1) l
+  predictiveFalse_update :
+    M.posteriorPredictiveFalse k l * M.countEvidenceMass k l =
+      M.countEvidenceMass k (l + 1)
+  countEvidenceMass_ratio :
+    ∀ a b : ℕ,
+      (M.posteriorBernoulliMixture k l normalizer_nonzero).countEvidenceMass a b =
+        M.countEvidenceMass (k + a) (l + b) / M.countEvidenceMass k l
+  prefixProbability_ratio :
+    ∀ {n : ℕ} (xs : Fin n → Bool),
+      (M.posteriorBernoulliMixture k l normalizer_nonzero).prob xs =
+        M.countEvidenceMass (k + countTrue xs) (l + countFalse xs) /
+          M.countEvidenceMass k l
+
+theorem posteriorUpdateCrown
+    (M : BernoulliMixture) (k l : ℕ)
+    (hZ : M.countEvidenceMass k l ≠ 0) :
+    PosteriorUpdateCrown M k l where
+  normalizer_nonzero := hZ
+  posterior_isProbability := posteriorMixingMeasure_isProbability M k l hZ
+  posterior_support_unit := posteriorMixingMeasure_support_unit M k l
+  posterior_mixture_exists := ⟨M.posteriorBernoulliMixture k l hZ, rfl⟩
+  expectation_one := posteriorExpectation_one_eq_one M k l hZ
+  predictiveTrue_ratio := posteriorPredictiveTrue_eq_countEvidenceMass_ratio M k l
+  predictiveFalse_ratio := posteriorPredictiveFalse_eq_countEvidenceMass_ratio M k l
+  predictiveTrue_update := posteriorPredictiveTrue_update_identity M k l hZ
+  predictiveFalse_update := posteriorPredictiveFalse_update_identity M k l hZ
+  countEvidenceMass_ratio := fun a b =>
+    posteriorBernoulliMixture_countEvidenceMass_eq_ratio M k l a b hZ
+  prefixProbability_ratio := fun xs =>
+    posteriorBernoulliMixture_prob_eq_countEvidenceMass_ratio M k l hZ xs
+
+/-- Finite-prefix conditioning package for a represented process.
+
+This packages the part of posterior conditioning that is already fully
+finite-cylinder and representation-level: a represented prior process plus a
+nonzero observed prefix normalizer yields posterior-mixture probabilities for
+all appended finite prefixes. -/
+structure RepresentedPosteriorPrefixConditioningCrown
+    {Ω : Type*} [MeasurableSpace Ω]
+    (M : BernoulliMixture) (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    {m : ℕ} (obs : Fin m → Bool) where
+  represented : Represents M X μ
+  normalizer_nonzero :
+    M.countEvidenceMass (countTrue obs) (countFalse obs) ≠ 0
+  posteriorUpdate :
+    PosteriorUpdateCrown M (countTrue obs) (countFalse obs)
+  observedCylinderMass :
+    (μ (cyl X obs)).toReal =
+      M.countEvidenceMass (countTrue obs) (countFalse obs)
+  prefixConditionalProbability :
+    ∀ {n : ℕ} (xs : Fin n → Bool),
+      (μ (cyl X (Fin.append obs xs))).toReal / (μ (cyl X obs)).toReal =
+        (M.posteriorBernoulliMixture
+          (countTrue obs) (countFalse obs) normalizer_nonzero).prob xs
+
+theorem representedPosteriorPrefixConditioningCrown
+    {Ω : Type*} [MeasurableSpace Ω]
+    (M : BernoulliMixture) (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    {m : ℕ} (obs : Fin m → Bool)
+    (hrep : Represents M X μ)
+    (hZ : M.countEvidenceMass (countTrue obs) (countFalse obs) ≠ 0) :
+    RepresentedPosteriorPrefixConditioningCrown M X μ obs where
+  represented := hrep
+  normalizer_nonzero := hZ
+  posteriorUpdate :=
+    posteriorUpdateCrown M (countTrue obs) (countFalse obs) hZ
+  observedCylinderMass :=
+    represented_cyl_measure_toReal_eq_countEvidenceMass M X μ hrep obs
+  prefixConditionalProbability := fun xs =>
+    represented_prefixAppend_conditionalProbability_eq_posterior_prob
+      M X μ hrep obs xs hZ
+
+/-- Conditioned-measure package for a represented process.
+
+This upgrades finite-prefix conditioning from an external ratio to an explicit
+normalized restriction of the original sample-space measure, and then to the
+shifted tail process represented by that conditioned measure. -/
+structure RepresentedPosteriorConditionedMeasureCrown
+    {Ω : Type*} [MeasurableSpace Ω]
+    (M : BernoulliMixture) (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    {m : ℕ} (obs : Fin m → Bool) where
+  represented : Represents M X μ
+  coordinate_measurable : ∀ i : ℕ, Measurable (X i)
+  normalizer_nonzero :
+    M.countEvidenceMass (countTrue obs) (countFalse obs) ≠ 0
+  prefixConditioning :
+    RepresentedPosteriorPrefixConditioningCrown M X μ obs
+  conditionedMeasure_isProbability :
+    IsProbabilityMeasure (conditionedOnPrefixMeasure μ X obs)
+  tailProcess_measurable :
+    ∀ i : ℕ, Measurable (tailProcess X m i)
+  conditionedPrefixProbability :
+    ∀ {n : ℕ} (xs : Fin n → Bool),
+      ((conditionedOnPrefixMeasure μ X obs) (cyl X (Fin.append obs xs))).toReal =
+        (M.posteriorBernoulliMixture
+          (countTrue obs) (countFalse obs) normalizer_nonzero).prob xs
+  conditionedTailPrefixProbability :
+    ∀ {n : ℕ} (xs : Fin n → Bool),
+      ((conditionedOnPrefixMeasure μ X obs) (cyl (tailProcess X m) xs)).toReal =
+        (M.posteriorBernoulliMixture
+          (countTrue obs) (countFalse obs) normalizer_nonzero).prob xs
+  conditionedTailRepresentsPosterior :
+    Represents
+      (M.posteriorBernoulliMixture
+        (countTrue obs) (countFalse obs) normalizer_nonzero)
+      (tailProcess X m)
+      (conditionedOnPrefixMeasure μ X obs)
+
+theorem representedPosteriorConditionedMeasureCrown
+    {Ω : Type*} [MeasurableSpace Ω]
+    (M : BernoulliMixture) (X : ℕ → Ω → Bool) (μ : Measure Ω)
+    {m : ℕ} (obs : Fin m → Bool)
+    (hX : ∀ i : ℕ, Measurable (X i))
+    (hrep : Represents M X μ)
+    (hZ : M.countEvidenceMass (countTrue obs) (countFalse obs) ≠ 0) :
+    RepresentedPosteriorConditionedMeasureCrown M X μ obs where
+  represented := hrep
+  coordinate_measurable := hX
+  normalizer_nonzero := hZ
+  prefixConditioning :=
+    representedPosteriorPrefixConditioningCrown M X μ obs hrep hZ
+  conditionedMeasure_isProbability :=
+    conditionedOnPrefixMeasure_isProbability M X μ hrep obs hZ
+  tailProcess_measurable :=
+    tailProcess_measurable X m hX
+  conditionedPrefixProbability := fun xs =>
+    conditionedOnPrefixMeasure_append_cyl_toReal_eq_posterior_prob
+      M X μ hX hrep obs xs hZ
+  conditionedTailPrefixProbability := fun xs =>
+    conditionedOnPrefixMeasure_tail_cyl_toReal_eq_posterior_prob
+      M X μ hX hrep obs xs hZ
+  conditionedTailRepresentsPosterior :=
+    conditionedOnPrefixMeasure_tail_represents_posteriorBernoulliMixture
+      M X μ hX hrep obs hZ
+
+end BernoulliMixture
+
 /- The posterior distribution of θ given k successes in n trials.
 
     With prior μ (the mixing measure), the posterior is:
@@ -1034,9 +1872,10 @@ theorem counts_sufficient_for_mixture (M : BernoulliMixture) (_n : ℕ) :
 
     For Beta(α,β) prior, this gives Beta(α+k, β+n-k) posterior.
 -/
--- TODO: formalize the posterior mixing measure as a conditional probability measure
--- obtained by weighting `mixingMeasure` with the likelihood `θ^k (1-θ)^(n-k)` and
--- normalizing. This needs conditional-measure infrastructure.
+-- The projective/external process-carrier connection for this posterior
+-- package is supplied in `DeFinettiProjectiveCredalBridge.lean`; the remaining
+-- construction boundary there is the external realization of the normalized
+-- posterior mixture.
 
 end SufficientStatistics
 

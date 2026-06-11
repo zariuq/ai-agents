@@ -3,6 +3,7 @@ import Mettapedia.ProbabilityTheory.ImpreciseProbability.CredalSets
 import Mettapedia.ProbabilityTheory.ImpreciseProbability.CompletionSemantics
 import Mettapedia.ProbabilityTheory.ImpreciseProbability.DesirableGambles
 import Mettapedia.ProbabilityTheory.ImpreciseProbability.ProjectiveCredal
+import Mettapedia.ProbabilityTheory.ImpreciseProbability.ProjectiveFiniteWindowRealization
 import Mettapedia.ProbabilityTheory.ImpreciseProbability.Seminorm
 
 /-!

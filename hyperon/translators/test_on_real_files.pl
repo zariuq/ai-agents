@@ -58,6 +58,7 @@
                              quoted_syntax_fun/1 as pe_quoted_syntax_fun,
                              petta_test_equal_fun/1 as pe_petta_test_equal_fun,
                              petta_test_equal_data_fun/1 as pe_petta_test_equal_data_fun,
+                             petta_test_runtime_bool_fun/1 as pe_petta_test_runtime_bool_fun,
                              petta_test_results_fun/1 as pe_petta_test_results_fun,
                              petta_test_results_data_fun/1 as pe_petta_test_results_data_fun,
                              petta_test_bag_fun/1 as pe_petta_test_bag_fun,
@@ -1157,6 +1158,8 @@ translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, test_equ
     translated_items_use_named_helper(Items, pe_petta_test_equal_fun).
 translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, test_equal_data) :-
     translated_items_use_named_helper(Items, pe_petta_test_equal_data_fun).
+translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, test_runtime_bool) :-
+    translated_items_use_named_helper(Items, pe_petta_test_runtime_bool_fun).
 translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, test_results) :-
     translated_items_use_named_helper(Items, pe_petta_test_results_fun).
 translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, test_results_data) :-
@@ -1166,10 +1169,19 @@ translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, test_bag
 translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, test_public) :-
     (   translated_items_use_named_helper(Items, pe_petta_test_equal_fun)
     ;   translated_items_use_named_helper(Items, pe_petta_test_equal_data_fun)
+    ;   translated_items_use_named_helper(Items, pe_petta_test_runtime_bool_fun)
     ;   translated_items_use_named_helper(Items, pe_petta_test_results_fun)
     ;   translated_items_use_named_helper(Items, pe_petta_test_results_data_fun)
     ;   translated_items_use_named_helper(Items, pe_petta_test_bag_fun)
     ).
+translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, alpha_equal_eval) :-
+    translated_items_use_named_helper(Items, petta_to_he:petta_alpha_equal_eval_fun).
+translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, runtime_call) :-
+    translated_items_use_named_helper(Items, petta_to_he:petta_runtime_call_fun).
+translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, runtime_eval) :-
+    translated_items_use_named_helper(Items, petta_to_he:petta_runtime_eval_fun).
+translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, runtime_reduce) :-
+    translated_items_use_named_helper(Items, petta_to_he:petta_runtime_reduce_fun).
 translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, lambda) :-
     translated_items_use_named_helper(Items, pe_petta_lambda_fun).
 translated_items_need_lib_petta_helper(_Direction, _SourceAtoms, Items, apply1) :-
@@ -1209,9 +1221,14 @@ lib_petta_helpers_can_import(HelperKeys) :-
     \+ memberchk(test_public, HelperKeys),
     \+ memberchk(test_equal, HelperKeys),
     \+ memberchk(test_equal_data, HelperKeys),
+    \+ memberchk(test_runtime_bool, HelperKeys),
     \+ memberchk(test_results, HelperKeys),
     \+ memberchk(test_results_data, HelperKeys),
     \+ memberchk(test_bag, HelperKeys),
+    \+ memberchk(alpha_equal_eval, HelperKeys),
+    \+ memberchk(runtime_call, HelperKeys),
+    \+ memberchk(runtime_eval, HelperKeys),
+    \+ memberchk(runtime_reduce, HelperKeys),
     \+ memberchk(lambda, HelperKeys),
     \+ memberchk(apply1, HelperKeys),
     \+ memberchk(apply2, HelperKeys),
@@ -1236,6 +1253,8 @@ lib_petta_helper_uses_default_names(test_equal) :-
     pe_petta_test_equal_fun('petta-test-equal').
 lib_petta_helper_uses_default_names(test_equal_data) :-
     pe_petta_test_equal_data_fun('petta-test-equal-data').
+lib_petta_helper_uses_default_names(test_runtime_bool) :-
+    pe_petta_test_runtime_bool_fun('petta-test-runtime-bool').
 lib_petta_helper_uses_default_names(test_results) :-
     pe_petta_test_results_fun('petta-test-results'),
     pe_petta_test_normalize_fun('petta-normalize-results').
@@ -1244,6 +1263,14 @@ lib_petta_helper_uses_default_names(test_results_data) :-
     pe_petta_test_normalize_fun('petta-normalize-results').
 lib_petta_helper_uses_default_names(test_bag) :-
     pe_petta_test_bag_fun('petta-test-bag-equal').
+lib_petta_helper_uses_default_names(alpha_equal_eval) :-
+    petta_to_he:petta_alpha_equal_eval_fun('petta-alpha-equal-eval').
+lib_petta_helper_uses_default_names(runtime_call) :-
+    petta_to_he:petta_runtime_call_fun('petta-runtime-call').
+lib_petta_helper_uses_default_names(runtime_eval) :-
+    petta_to_he:petta_runtime_eval_fun('petta-runtime-eval').
+lib_petta_helper_uses_default_names(runtime_reduce) :-
+    petta_to_he:petta_runtime_reduce_fun('petta-runtime-reduce').
 lib_petta_helper_uses_default_names(lambda) :-
     pe_petta_lambda_fun('petta-lambda').
 lib_petta_helper_uses_default_names(apply1) :-
@@ -1391,11 +1418,17 @@ rewrite_builtin_test_item(plain(Expr), plain(TExpr)) :-
     rewrite_builtin_test_term(Expr, TExpr).
 
 rewrite_builtin_test_term([test, Actual, Expected],
-                          [TestFun, RActual, RExpected]) :-
+                          Rewritten) :-
     !,
-    builtin_test_helper_head(Actual, Expected, TestFun),
     rewrite_builtin_test_term(Actual, RActual),
-    rewrite_builtin_test_term(Expected, RExpected).
+    rewrite_builtin_test_term(Expected, RExpected),
+    (   petta_to_he:alpha_runtime_bool_test_actual(RActual, Expected),
+        petta_to_he:lift_alpha_runtime_bool_actual(RActual, Binder, Value)
+    ->  pe_petta_test_runtime_bool_fun(TestFun),
+        Rewritten = [let, Binder, Value, [TestFun, Binder, RExpected]]
+    ;   builtin_test_helper_head(Actual, Expected, TestFun),
+        Rewritten = [TestFun, RActual, RExpected]
+    ).
 rewrite_builtin_test_term(List, Rewritten) :-
     is_list(List), !,
     maplist(rewrite_builtin_test_term, List, Rewritten).
@@ -1403,6 +1436,9 @@ rewrite_builtin_test_term(Term, Term).
 
 builtin_test_helper_head(Actual, _Expected, 'petta-test-bag-equal') :-
     pe_test_call_needs_bag_equality(Actual),
+    !.
+builtin_test_helper_head(Actual, Expected, 'petta-test-runtime-bool') :-
+    petta_to_he:alpha_runtime_bool_test_actual(Actual, Expected),
     !.
 builtin_test_helper_head(Actual, Expected, 'petta-test-results-data') :-
     pe_test_call_needs_collapse(Actual),
@@ -2030,6 +2066,29 @@ path_compat_case(18_5, "default PeTTa->HE file translation emits local lib_petta
         file_contains_text(HelperOut, "(= (max $a $b)")
     )).
 
+path_compat_case(18_6, "alpha helper-backed tests use the runtime-bool helper",
+    (   path_fixture('test_alpha_equal_surface.metta', Source),
+        path_generated('out/test_alpha_equal_surface.he.metta', Output),
+        translate_file_petta_to_he(Source, Output),
+        file_contains_text(Output, "!(let $__tr_alpha_equal_eval_"),
+        file_contains_text(Output, "(petta-test-runtime-bool $__tr_alpha_equal_eval_"),
+        \+ file_contains_text(Output, "!(petta-test-results-data (let $__tr_alpha_equal_eval_"),
+        \+ file_contains_text(Output, "!(petta-test-equal-data (let $__tr_alpha_equal_eval_")
+    )).
+
+path_compat_case(18_7, "default PeTTa->HE preserves raw nested syntax inside data tuples while inlining closed concrete runtime surfaces",
+    (   path_fixture('test_runtime_surface_raw_tuple.metta', Source),
+        path_generated('out/test_runtime_surface_raw_tuple.he.metta', Output),
+        translate_file_petta_to_he(Source, Output),
+        file_contains_text(Output, "(within (quote (fib 5)))"),
+        file_contains_text(Output, "(call-within (let $__tr_runtime_call_"),
+        file_contains_text(Output, "(unquote (quote (fib 5)))"),
+        file_contains_text(Output, "(quote-within (quote (fib 5)))"),
+        file_contains_text(Output, "(eval-within (let $__tr_runtime_eval_"),
+        file_contains_text(Output, "(reduce-within (let $__tr_runtime_reduce_"),
+        \+ file_contains_text(Output, "(within (fib 5))")
+    )).
+
 path_compat_case(19, "mixed test surfaces route per call and inline the needed helpers",
     (   path_fixture('test_mixed_test_surface.metta', Source),
         path_generated('out/test_mixed_test_surface.he.metta', Output),
@@ -2433,6 +2492,10 @@ setup_path_compat_fixture :-
         "(= (snoc $x $acc) (append $acc ($x)))\n!(foldl snoc (1 2 3) ())\n"),
     write_fixture_relative(Root, 'test_alpha_unique_atom_surface.metta',
         "!(alpha-unique-atom ((link $x human) (link $y human) (child $z human)))\n"),
+    write_fixture_relative(Root, 'test_alpha_equal_surface.metta',
+        "!(test (=alpha (alpha-unique-atom ((link $x human) (link $y human) (child $z human))) ((link $a human) (child $b human))) True)\n"),
+    write_fixture_relative(Root, 'test_runtime_surface_raw_tuple.metta',
+        "(= (fib $N) (if (< $N 2) $N (+ (fib (- $N 1)) (fib (- $N 2)))))\n(= (probe) ((within (fib 5)) (call-within (call (fib 5))) (quote-within (quote (fib 5))) (eval-within (eval (fib 5))) (reduce-within (reduce (fib 5)))))\n"),
     write_fixture_relative(Root, 'test_minmax_surface.metta',
         "!(max 2 (min 1 3))\n"),
     write_fixture_relative(Root, 'test_second_from_pair_surface.metta',
