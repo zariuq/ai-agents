@@ -1,0 +1,294 @@
+{
+  "failure_kind": "timeout",
+  "input_file": "/home/zar/claude/atps/datasets/mml_8.1.15_fof/problems_small/conlat_2/conlat_2__t18_conlat_2",
+  "interpolant": null,
+  "interpolant_features": null,
+  "interpolant_found": false,
+  "interpolant_source": null,
+  "left_formula_count": 139,
+  "left_only_symbols": [
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "a_2_0_conlat_1"
+    },
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "a_2_1_conlat_1"
+    },
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "a_2_24_conlat_2"
+    },
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "a_2_7_conlat_2"
+    },
+    {
+      "arity": 3,
+      "kind": "function",
+      "name": "g1_conlat_1"
+    },
+    {
+      "arity": 4,
+      "kind": "function",
+      "name": "k1_domain_1"
+    },
+    {
+      "arity": 0,
+      "kind": "function",
+      "name": "k1_xboole_0"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k2_relat_1"
+    },
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "k2_zfmisc_1"
+    },
+    {
+      "arity": 3,
+      "kind": "function",
+      "name": "k3_relset_1"
+    },
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "k4_tarski"
+    },
+    {
+      "arity": 0,
+      "kind": "function",
+      "name": "k5_ordinal1"
+    },
+    {
+      "arity": 0,
+      "kind": "function",
+      "name": "n1"
+    },
+    {
+      "arity": 0,
+      "kind": "function",
+      "name": "o_0_0_xboole_0"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "u1_conlat_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "l1_struct_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "l5_struct_0"
+    },
+    {
+      "arity": 3,
+      "kind": "predicate",
+      "name": "r1_conlat_1"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "r1_tarski"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "r2_hidden"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "r2_tarski"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v13_struct_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v14_struct_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v15_struct_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_conlat_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_finset_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_funct_1"
+    },
+    {
+      "arity": 3,
+      "kind": "predicate",
+      "name": "v1_funct_2"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v1_partfun1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_relat_1"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v1_subset_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_xboole_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_xtuple_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_zfmisc_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v2_funct_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v3_funct_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v4_funct_1"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v4_relat_1"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v5_relat_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v7_struct_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v8_struct_0"
+    }
+  ],
+  "original_role_counts": {
+    "axiom": 139,
+    "conjecture": 1
+  },
+  "return_code": 1,
+  "right_formula_count": 1,
+  "right_only_symbols": [],
+  "shared_symbols": [
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k1_conlat_1"
+    },
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "k1_funct_1"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k1_zfmisc_1"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k2_conlat_1"
+    },
+    {
+      "arity": 4,
+      "kind": "function",
+      "name": "k3_funct_2"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k7_conlat_2"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k9_setfam_1"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "u1_struct_0"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "u4_struct_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "l1_conlat_1"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "m1_subset_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v11_struct_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v2_struct_0"
+    }
+  ],
+  "status": null,
+  "stderr": "",
+  "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\n% Time limit reached! \n% ------------------------------\n% Version: Vampire 5.0.1 (Release build, commit 72927f3a4 on 2026-05-26 21:03:11 +0200)\n% CaDiCaL version: 2.1.3\n% Termination reason: Time limit\n% Termination phase: Saturation\n% Time elapsed: 10.0000 s\n% Peak memory usage: 91 MB\n",
+  "strip_numerals": true
+}

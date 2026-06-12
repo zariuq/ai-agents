@@ -1,0 +1,453 @@
+{
+  "credal_summary": {
+    "intent_support_histogram": {
+      "4": 8,
+      "5": 6,
+      "6": 4
+    },
+    "lower_concept_count": 2,
+    "stable_concept_count": 2,
+    "support_histogram": {
+      "1": 12,
+      "2": 1,
+      "3": 2,
+      "4": 6,
+      "5": 6,
+      "6": 2
+    },
+    "unstable_concept_count": 27,
+    "upper_concept_count": 29
+  },
+  "dataset": {
+    "attributes": 27,
+    "is_binary": true,
+    "kind": "mizar-json",
+    "max_count": 1,
+    "name": "lattice2_extremum_unity_context",
+    "objects": 6,
+    "source": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t14_t19_schema_context.json"
+  },
+  "gate_family": {
+    "concept_count_by_gate": [
+      15,
+      14,
+      15,
+      14,
+      14,
+      14
+    ],
+    "densities": [
+      0.38271604938271603,
+      0.3765432098765432,
+      0.38271604938271603,
+      0.3765432098765432,
+      0.38271604938271603,
+      0.38271604938271603
+    ],
+    "distinct_concept_families": 6,
+    "gate_count": 6,
+    "labels": [
+      "leave_out:lattice2__lattice2__t14_lattice2",
+      "leave_out:lattice2__lattice2__t15_lattice2",
+      "leave_out:lattice2__lattice2__t16_lattice2",
+      "leave_out:lattice2__lattice2__t17_lattice2",
+      "leave_out:lattice2__lattice2__t18_lattice2",
+      "leave_out:lattice2__lattice2__t19_lattice2"
+    ]
+  },
+  "samples": {
+    "unstable_concepts": [
+      {
+        "extent": [
+          "lattice2__lattice2__t17_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u1-left-identity",
+          "identity_orientation:left",
+          "role:left_identity",
+          "schema:left_identity_extremum_uniqueness",
+          "sym:k4_binop_1",
+          "sym:k6_lattices",
+          "sym:l3_lattices",
+          "sym:m1_subset_1",
+          "sym:u1_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "target:k6-extremum"
+        ],
+        "intent_size": 13
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t15_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u2-left-identity",
+          "identity_orientation:left",
+          "role:left_identity",
+          "schema:left_identity_extremum_uniqueness",
+          "sym:k4_binop_1",
+          "sym:k5_lattices",
+          "sym:l3_lattices",
+          "sym:m1_subset_1",
+          "sym:u1_struct_0",
+          "sym:u2_lattices",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "target:k5-extremum"
+        ],
+        "intent_size": 13
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t14_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 5,
+        "intent": [
+          "family:direct-k3-left-identity",
+          "identity_orientation:left",
+          "role:left_identity",
+          "schema:left_identity_extremum_uniqueness",
+          "sym:k3_lattices",
+          "sym:k5_lattices",
+          "sym:l3_lattices",
+          "sym:m1_subset_1",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "target:k5-extremum"
+        ],
+        "intent_size": 12
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t16_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 5,
+        "intent": [
+          "family:direct-k4-left-identity",
+          "identity_orientation:left",
+          "role:left_identity",
+          "schema:left_identity_extremum_uniqueness",
+          "sym:k4_lattices",
+          "sym:k6_lattices",
+          "sym:l3_lattices",
+          "sym:m1_subset_1",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "target:k6-extremum"
+        ],
+        "intent_size": 12
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t19_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u1-unity",
+          "role:unity",
+          "schema:unity_extremum_identification",
+          "sym:k3_binop_1",
+          "sym:k6_lattices",
+          "sym:l3_lattices",
+          "sym:u1_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v1_setwiseo",
+          "sym:v2_struct_0",
+          "target:k6-extremum"
+        ],
+        "intent_size": 12
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t18_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u2-unity",
+          "role:unity",
+          "schema:unity_extremum_identification",
+          "sym:k3_binop_1",
+          "sym:k5_lattices",
+          "sym:l3_lattices",
+          "sym:u1_struct_0",
+          "sym:u2_lattices",
+          "sym:v10_lattices",
+          "sym:v1_setwiseo",
+          "sym:v2_struct_0",
+          "target:k5-extremum"
+        ],
+        "intent_size": 12
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t14_lattice2",
+          "lattice2__lattice2__t15_lattice2"
+        ],
+        "extent_size": 2,
+        "gate_support": 4,
+        "intent": [
+          "identity_orientation:left",
+          "role:left_identity",
+          "schema:left_identity_extremum_uniqueness",
+          "sym:k5_lattices",
+          "sym:l3_lattices",
+          "sym:m1_subset_1",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "target:k5-extremum"
+        ],
+        "intent_size": 10
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t16_lattice2",
+          "lattice2__lattice2__t17_lattice2"
+        ],
+        "extent_size": 2,
+        "gate_support": 4,
+        "intent": [
+          "identity_orientation:left",
+          "role:left_identity",
+          "schema:left_identity_extremum_uniqueness",
+          "sym:k6_lattices",
+          "sym:l3_lattices",
+          "sym:m1_subset_1",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "target:k6-extremum"
+        ],
+        "intent_size": 10
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t15_lattice2",
+          "lattice2__lattice2__t17_lattice2"
+        ],
+        "extent_size": 2,
+        "gate_support": 4,
+        "intent": [
+          "identity_orientation:left",
+          "role:left_identity",
+          "schema:left_identity_extremum_uniqueness",
+          "sym:k4_binop_1",
+          "sym:l3_lattices",
+          "sym:m1_subset_1",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0"
+        ],
+        "intent_size": 9
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t18_lattice2",
+          "lattice2__lattice2__t19_lattice2"
+        ],
+        "extent_size": 2,
+        "gate_support": 4,
+        "intent": [
+          "role:unity",
+          "schema:unity_extremum_identification",
+          "sym:k3_binop_1",
+          "sym:l3_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v1_setwiseo",
+          "sym:v2_struct_0"
+        ],
+        "intent_size": 8
+      }
+    ],
+    "unstable_intents": [
+      {
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u1-left-identity",
+          "identity_orientation:left",
+          "role:left_identity",
+          "schema:left_identity_extremum_uniqueness",
+          "sym:k4_binop_1",
+          "sym:k6_lattices",
+          "sym:l3_lattices",
+          "sym:m1_subset_1",
+          "sym:u1_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "target:k6-extremum"
+        ],
+        "intent_size": 13
+      },
+      {
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u2-left-identity",
+          "identity_orientation:left",
+          "role:left_identity",
+          "schema:left_identity_extremum_uniqueness",
+          "sym:k4_binop_1",
+          "sym:k5_lattices",
+          "sym:l3_lattices",
+          "sym:m1_subset_1",
+          "sym:u1_struct_0",
+          "sym:u2_lattices",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "target:k5-extremum"
+        ],
+        "intent_size": 13
+      },
+      {
+        "gate_support": 5,
+        "intent": [
+          "family:direct-k3-left-identity",
+          "identity_orientation:left",
+          "role:left_identity",
+          "schema:left_identity_extremum_uniqueness",
+          "sym:k3_lattices",
+          "sym:k5_lattices",
+          "sym:l3_lattices",
+          "sym:m1_subset_1",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "target:k5-extremum"
+        ],
+        "intent_size": 12
+      },
+      {
+        "gate_support": 5,
+        "intent": [
+          "family:direct-k4-left-identity",
+          "identity_orientation:left",
+          "role:left_identity",
+          "schema:left_identity_extremum_uniqueness",
+          "sym:k4_lattices",
+          "sym:k6_lattices",
+          "sym:l3_lattices",
+          "sym:m1_subset_1",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "target:k6-extremum"
+        ],
+        "intent_size": 12
+      },
+      {
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u1-unity",
+          "role:unity",
+          "schema:unity_extremum_identification",
+          "sym:k3_binop_1",
+          "sym:k6_lattices",
+          "sym:l3_lattices",
+          "sym:u1_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v1_setwiseo",
+          "sym:v2_struct_0",
+          "target:k6-extremum"
+        ],
+        "intent_size": 12
+      },
+      {
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u2-unity",
+          "role:unity",
+          "schema:unity_extremum_identification",
+          "sym:k3_binop_1",
+          "sym:k5_lattices",
+          "sym:l3_lattices",
+          "sym:u1_struct_0",
+          "sym:u2_lattices",
+          "sym:v10_lattices",
+          "sym:v1_setwiseo",
+          "sym:v2_struct_0",
+          "target:k5-extremum"
+        ],
+        "intent_size": 12
+      },
+      {
+        "gate_support": 4,
+        "intent": [
+          "identity_orientation:left",
+          "role:left_identity",
+          "schema:left_identity_extremum_uniqueness",
+          "sym:k5_lattices",
+          "sym:l3_lattices",
+          "sym:m1_subset_1",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "target:k5-extremum"
+        ],
+        "intent_size": 10
+      },
+      {
+        "gate_support": 4,
+        "intent": [
+          "identity_orientation:left",
+          "role:left_identity",
+          "schema:left_identity_extremum_uniqueness",
+          "sym:k6_lattices",
+          "sym:l3_lattices",
+          "sym:m1_subset_1",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "target:k6-extremum"
+        ],
+        "intent_size": 10
+      },
+      {
+        "gate_support": 4,
+        "intent": [
+          "identity_orientation:left",
+          "role:left_identity",
+          "schema:left_identity_extremum_uniqueness",
+          "sym:k4_binop_1",
+          "sym:l3_lattices",
+          "sym:m1_subset_1",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0"
+        ],
+        "intent_size": 9
+      },
+      {
+        "gate_support": 4,
+        "intent": [
+          "role:unity",
+          "schema:unity_extremum_identification",
+          "sym:k3_binop_1",
+          "sym:l3_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v1_setwiseo",
+          "sym:v2_struct_0"
+        ],
+        "intent_size": 8
+      }
+    ]
+  },
+  "theoretical_notes": [
+    "Leave-one-out gates probe whether a concept's intent survives omission of any single object; unstable intents mark bridge vocabulary that depends on specific examples."
+  ]
+}

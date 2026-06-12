@@ -1,0 +1,319 @@
+{
+  "benchmark": {
+    "countermodel_orders": [
+      5,
+      6,
+      8
+    ],
+    "countermodel_time_limit": 8,
+    "evaluated_properties": [
+      "associative",
+      "c_identity",
+      "commutative",
+      "flexible",
+      "left_alternative",
+      "left_bol",
+      "lip",
+      "moufang",
+      "right_alternative",
+      "right_bol",
+      "rip",
+      "two_sided_inverses",
+      "x_cubed_associative"
+    ],
+    "gate_labels": [
+      "all",
+      "order=4"
+    ],
+    "kappa": 2.0,
+    "min_support": 1,
+    "name": "loop_property_benchmark",
+    "oracle_time_limit": 5,
+    "oracle_verdict_counts": {
+      "proved": 0,
+      "refuted": 0,
+      "unresolved": 0
+    },
+    "population_generation": "exhaustive reduced Latin square enumeration",
+    "population_order_counts": {
+      "4": 4
+    },
+    "population_orders": [
+      4
+    ],
+    "population_size": 4,
+    "signature": "loop (op, ld, rd, e); quasigroup axioms + two-sided identity",
+    "track": "loop-property-implication",
+    "unresolved_rules": []
+  },
+  "candidates": [
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "baseline": {
+        "antecedent_support": 4,
+        "jaccard": 1.0,
+        "positive": 4,
+        "support_fraction": 1.0
+      },
+      "consequent": "c_identity",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 2,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 4,
+        "confidence": 0.6666666666666666,
+        "consequent_support": 4,
+        "jaccard": 1.0,
+        "negative": 0,
+        "object_count": 4,
+        "positive": 4,
+        "strength": 1.0,
+        "support_fraction": 1.0
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        }
+      },
+      "inheritance_credal": {
+        "inheritance_credal_width": 0.0,
+        "lower_inheritance_strength": 1.0,
+        "observed_gate_count": 2,
+        "upper_inheritance_strength": 1.0
+      },
+      "inheritance_tv": {
+        "confidence": 0.6666666666666666,
+        "form": "<strength, confidence>",
+        "strength": 1.0
+      },
+      "inheritance_weight": 4,
+      "pln": {
+        "confidence": 0.6666666666666666,
+        "kappa": 2.0,
+        "score": 0.6666666666666666,
+        "strength": 1.0
+      }
+    }
+  ],
+  "population_property_histogram": {
+    "associative": 4,
+    "c_identity": 4,
+    "commutative": 4,
+    "flexible": 4,
+    "left_alternative": 4,
+    "left_bol": 4,
+    "lip": 4,
+    "moufang": 4,
+    "right_alternative": 4,
+    "right_bol": 4,
+    "rip": 4,
+    "two_sided_inverses": 4,
+    "x_cubed_associative": 4
+  },
+  "population_sample": [
+    {
+      "object": "loop_n4_0",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ]
+      ],
+      "order": 4
+    },
+    {
+      "object": "loop_n4_1",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          2,
+          3,
+          1,
+          0
+        ],
+        [
+          3,
+          2,
+          0,
+          1
+        ]
+      ],
+      "order": 4
+    },
+    {
+      "object": "loop_n4_2",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "order": 4
+    },
+    {
+      "object": "loop_n4_3",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          3,
+          0,
+          2
+        ],
+        [
+          2,
+          0,
+          3,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ]
+      ],
+      "order": 4
+    }
+  ]
+}

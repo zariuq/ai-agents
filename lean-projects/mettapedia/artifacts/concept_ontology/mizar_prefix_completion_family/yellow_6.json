@@ -1,0 +1,1019 @@
+{
+  "article": "yellow_6",
+  "attributes": [
+    "CONSTANTS",
+    "ConstantNet",
+    "Convergence",
+    "Convergence-Class",
+    "ConvergenceSpace",
+    "DIVERGENCE",
+    "ITERATED_LIMITS",
+    "Iterated",
+    "Lim",
+    "ManySortedSet",
+    "NetStr",
+    "NetUniv",
+    "OpenNeighborhoods",
+    "RelStr",
+    "SUBNETS",
+    "SubNetStr",
+    "Subset",
+    "TopStruct",
+    "net_set",
+    "the_universe_of",
+    "the_value_of"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "the_universe_of": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let X; func the_universe_of X -> set equals Tarski-Class the_transitive-closure_of X; correctness; end;"
+    },
+    {
+      "counts": {
+        "the_universe_of": 1
+      },
+      "index": 1,
+      "kind": "registration",
+      "object": "registration_1",
+      "preview": "registration let X; cluster the_universe_of X -> epsilon-transitive Tarski; coherence; end;"
+    },
+    {
+      "counts": {
+        "the_universe_of": 1
+      },
+      "index": 2,
+      "kind": "registration",
+      "object": "registration_2",
+      "preview": "registration let X; cluster the_universe_of X -> universal non empty; coherence; end;"
+    },
+    {
+      "counts": {
+        "ManySortedSet": 2
+      },
+      "index": 2,
+      "kind": "theorem",
+      "object": "theorem_2",
+      "preview": "theorem Th2: for Y be non empty set for J being 1-sorted-yielding ManySortedSet of Y, i being Element of Y holds (Carrie"
+    },
+    {
+      "counts": {
+        "ManySortedSet": 1
+      },
+      "index": 5,
+      "kind": "registration",
+      "object": "registration_5",
+      "preview": "registration let I be set; cluster yielding_non-empty_carriers for 1-sorted-yielding ManySortedSet of I; existence proof"
+    },
+    {
+      "counts": {
+        "ManySortedSet": 1
+      },
+      "index": 6,
+      "kind": "registration",
+      "object": "registration_6",
+      "preview": "registration let I be non empty set; let J be RelStr-yielding ManySortedSet of I; cluster the carrier of product J -> fu"
+    },
+    {
+      "counts": {
+        "ManySortedSet": 1
+      },
+      "index": 7,
+      "kind": "registration",
+      "object": "registration_7",
+      "preview": "registration let I be set; let J be yielding_non-empty_carriers 1-sorted-yielding ManySortedSet of I; cluster Carrier J "
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 1
+      },
+      "index": 8,
+      "kind": "registration",
+      "object": "registration_8",
+      "preview": "registration let T be non empty RelStr, A be lower Subset of T; cluster A` -> upper; coherence proof let x,y be Element "
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 1
+      },
+      "index": 9,
+      "kind": "registration",
+      "object": "registration_9",
+      "preview": "registration let T be non empty RelStr, A be upper Subset of T; cluster A` -> lower; coherence proof let x,y be Element "
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let N be non empty RelStr; redefine attr N is directed means :Def3: for x,y being Element of N ex z being Ele"
+    },
+    {
+      "counts": {
+        "RelStr": 23
+      },
+      "index": 11,
+      "kind": "registration",
+      "object": "registration_11",
+      "preview": "registration cluster non empty directed transitive strict for RelStr; existence proof take BoolePoset {}; thus thesis; e"
+    },
+    {
+      "counts": {
+        "ManySortedSet": 1,
+        "RelStr": 1
+      },
+      "index": 12,
+      "kind": "registration",
+      "object": "registration_12",
+      "preview": "registration let I be set; cluster yielding_non-empty_carriers for RelStr-yielding ManySortedSet of I; existence proof s"
+    },
+    {
+      "counts": {
+        "ManySortedSet": 1
+      },
+      "index": 13,
+      "kind": "registration",
+      "object": "registration_13",
+      "preview": "registration let I be non empty set; let J be yielding_non-empty_carriers RelStr-yielding ManySortedSet of I; cluster pr"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 2
+      },
+      "index": 14,
+      "kind": "registration",
+      "object": "registration_14",
+      "preview": "registration let Y1,Y2 be directed RelStr; cluster [:Y1,Y2:] -> directed; coherence proof reconsider S2 = [#]Y2 as direc"
+    },
+    {
+      "counts": {
+        "RelStr": 9
+      },
+      "index": 3,
+      "kind": "theorem",
+      "object": "theorem_3",
+      "preview": "theorem Th3: for R being RelStr holds the carrier of R = the carrier of R~ proof let R be RelStr; R~ = RelStr(#the carri"
+    },
+    {
+      "counts": {
+        "NetStr": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let S be 1-sorted, N be NetStr over S; attr N is constant means :Def4: the mapping of N is constant; end;"
+    },
+    {
+      "counts": {
+        "ConstantNet": 1,
+        "NetStr": 2,
+        "RelStr": 3
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let R be RelStr, T be non empty 1-sorted, p be Element of T; func ConstantNet(R,p) -> strict NetStr over T me"
+    },
+    {
+      "counts": {
+        "ConstantNet": 3,
+        "RelStr": 1
+      },
+      "index": 15,
+      "kind": "registration",
+      "object": "registration_15",
+      "preview": "registration let R be RelStr, T be non empty 1-sorted, p be Element of T; cluster ConstantNet(R,p) -> constant; coherenc"
+    },
+    {
+      "counts": {
+        "ConstantNet": 3,
+        "RelStr": 3
+      },
+      "index": 16,
+      "kind": "registration",
+      "object": "registration_16",
+      "preview": "registration let R be non empty RelStr, T be non empty 1-sorted, p be Element of T; cluster ConstantNet(R,p) -> non empt"
+    },
+    {
+      "counts": {
+        "ConstantNet": 2,
+        "RelStr": 4
+      },
+      "index": 17,
+      "kind": "registration",
+      "object": "registration_17",
+      "preview": "registration let R be non empty directed RelStr, T be non empty 1-sorted, p be Element of T; cluster ConstantNet(R,p) ->"
+    },
+    {
+      "counts": {
+        "ConstantNet": 2,
+        "RelStr": 4
+      },
+      "index": 18,
+      "kind": "registration",
+      "object": "registration_18",
+      "preview": "registration let R be non empty transitive RelStr, T be non empty 1-sorted, p be Element of T; cluster ConstantNet(R,p) "
+    },
+    {
+      "counts": {
+        "ConstantNet": 2,
+        "RelStr": 4
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem Th4: for R be RelStr, T be non empty 1-sorted, p be Element of T holds the carrier of ConstantNet(R,p) = the car"
+    },
+    {
+      "counts": {
+        "ConstantNet": 5,
+        "RelStr": 2
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem Th5: for R be non empty RelStr, T be non empty 1-sorted, p be Element of T, q be Element of ConstantNet(R,p) hol"
+    },
+    {
+      "counts": {
+        "NetStr": 1
+      },
+      "index": 19,
+      "kind": "registration",
+      "object": "registration_19",
+      "preview": "registration let T be non empty 1-sorted, N be non empty NetStr over T; cluster the mapping of N -> non empty; coherence"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem Th6: for R being RelStr holds R is full SubRelStr of R proof let R be RelStr; the InternalRel of R c= the Intern"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 7,
+      "kind": "theorem",
+      "object": "theorem_7",
+      "preview": "theorem Th7: for R being RelStr, S being SubRelStr of R, T being SubRelStr of S holds T is SubRelStr of R proof let R be"
+    },
+    {
+      "counts": {
+        "NetStr": 2,
+        "SubNetStr": 1
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let S be 1-sorted, N be NetStr over S; mode SubNetStr of N -> NetStr over S means :Def6: it is SubRelStr of N"
+    },
+    {
+      "counts": {
+        "NetStr": 2,
+        "SubNetStr": 1
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem for S being 1-sorted, N being NetStr over S holds N is SubNetStr of N proof let S be 1-sorted, N be NetStr over "
+    },
+    {
+      "counts": {
+        "NetStr": 8,
+        "SubNetStr": 6
+      },
+      "index": 9,
+      "kind": "theorem",
+      "object": "theorem_9",
+      "preview": "theorem for Q being 1-sorted, R being NetStr over Q, S being SubNetStr of R, T being SubNetStr of S holds T is SubNetStr"
+    },
+    {
+      "counts": {
+        "NetStr": 5,
+        "SubNetStr": 1
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let S be 1-sorted, N be NetStr over S, M be SubNetStr of N; attr M is full means :Def7: M is full SubRelStr o"
+    },
+    {
+      "counts": {
+        "NetStr": 2,
+        "SubNetStr": 2
+      },
+      "index": 20,
+      "kind": "registration",
+      "object": "registration_20",
+      "preview": "registration let S be 1-sorted, N be NetStr over S; cluster full strict for SubNetStr of N; existence proof reconsider M"
+    },
+    {
+      "counts": {
+        "NetStr": 2,
+        "SubNetStr": 2
+      },
+      "index": 21,
+      "kind": "registration",
+      "object": "registration_21",
+      "preview": "registration let S be 1-sorted, N be non empty NetStr over S; cluster full non empty strict for SubNetStr of N; existenc"
+    },
+    {
+      "counts": {
+        "NetStr": 2,
+        "SubNetStr": 2
+      },
+      "index": 10,
+      "kind": "theorem",
+      "object": "theorem_10",
+      "preview": "theorem Th10: for S being 1-sorted, N being NetStr over S, M be SubNetStr of N holds the carrier of M c= the carrier of "
+    },
+    {
+      "counts": {
+        "NetStr": 2,
+        "SubNetStr": 2
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem Th11: for S being 1-sorted, N being NetStr over S, M be SubNetStr of N , x,y being Element of N, i,j being Eleme"
+    },
+    {
+      "counts": {
+        "NetStr": 2,
+        "SubNetStr": 2
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem Th12: for S being 1-sorted, N being non empty NetStr over S, M be non empty full SubNetStr of N, x,y being Eleme"
+    },
+    {
+      "counts": {
+        "ConstantNet": 1,
+        "RelStr": 1
+      },
+      "index": 22,
+      "kind": "registration",
+      "object": "registration_22",
+      "preview": "registration let T be non empty 1-sorted; cluster constant strict for net of T; existence proof set R = the non empty di"
+    },
+    {
+      "counts": {
+        "NetStr": 1
+      },
+      "index": 23,
+      "kind": "registration",
+      "object": "registration_23",
+      "preview": "registration let T be non empty 1-sorted, N be constant NetStr over T; cluster the mapping of N -> constant; coherence b"
+    },
+    {
+      "counts": {
+        "NetStr": 2,
+        "the_value_of": 4
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition let T be non empty 1-sorted, N be NetStr over T; assume A1: N is constant non empty; func the_value_of N -> E"
+    },
+    {
+      "counts": {
+        "ConstantNet": 4,
+        "RelStr": 2,
+        "the_value_of": 4
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem Th13: for R be non empty RelStr, T be non empty 1-sorted, p be Element of T holds the_value_of (ConstantNet(R,p)"
+    },
+    {
+      "counts": {
+        "the_value_of": 3
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem Th16: for T being non empty 1-sorted, N be constant net of T, i being Element of N holds N.i = the_value_of N pr"
+    },
+    {
+      "counts": {
+        "NetStr": 3,
+        "RelStr": 2,
+        "SubNetStr": 4
+      },
+      "index": 10,
+      "kind": "definition",
+      "object": "definition_10",
+      "preview": "definition let S be 1-sorted, N be NetStr over S, X; func N\"X -> strict SubNetStr of N means :Def10: it is full SubRelSt"
+    },
+    {
+      "counts": {
+        "NetStr": 1
+      },
+      "index": 24,
+      "kind": "registration",
+      "object": "registration_24",
+      "preview": "registration let S be 1-sorted, N be transitive NetStr over S, X; cluster N\"X -> transitive full; coherence proof recons"
+    },
+    {
+      "counts": {
+        "SubNetStr": 1
+      },
+      "index": 21,
+      "kind": "theorem",
+      "object": "theorem_21",
+      "preview": "theorem Th21: for S being non empty 1-sorted, N be net of S, X st N is_often_in X holds N\"X is non empty directed proof "
+    },
+    {
+      "counts": {
+        "ManySortedSet": 1,
+        "NetStr": 9,
+        "NetUniv": 1,
+        "the_universe_of": 5
+      },
+      "index": 11,
+      "kind": "definition",
+      "object": "definition_11",
+      "preview": "definition let X be non empty 1-sorted; func NetUniv X -> set means :Def11: for x being object holds x in it iff ex N be"
+    },
+    {
+      "counts": {
+        "ConstantNet": 1,
+        "NetUniv": 8,
+        "RelStr": 4,
+        "the_universe_of": 5
+      },
+      "index": 25,
+      "kind": "registration",
+      "object": "registration_25",
+      "preview": "registration let X be non empty 1-sorted; cluster NetUniv X -> non empty; coherence proof {} in {{}} by TARSKI:def 1; th"
+    },
+    {
+      "counts": {
+        "ManySortedSet": 1,
+        "net_set": 1
+      },
+      "index": 12,
+      "kind": "definition",
+      "object": "definition_12",
+      "preview": "definition let X be set, T be 1-sorted; mode net_set of X,T -> ManySortedSet of X means :Def12: for i being set st i in "
+    },
+    {
+      "counts": {
+        "ManySortedSet": 2,
+        "net_set": 2
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem Th24: for X being set, T being 1-sorted, F being ManySortedSet of X holds F is net_set of X,T iff for i being se"
+    },
+    {
+      "counts": {
+        "net_set": 1
+      },
+      "index": 13,
+      "kind": "definition",
+      "object": "definition_13",
+      "preview": "definition let X be non empty set, T be 1-sorted; let J be net_set of X,T, i be Element of X; redefine func J.i -> net o"
+    },
+    {
+      "counts": {
+        "net_set": 2
+      },
+      "index": 26,
+      "kind": "registration",
+      "object": "registration_26",
+      "preview": "registration let X be set, T be 1-sorted; cluster -> RelStr-yielding for net_set of X,T; coherence proof let F be net_se"
+    },
+    {
+      "counts": {
+        "net_set": 1
+      },
+      "index": 27,
+      "kind": "registration",
+      "object": "registration_27",
+      "preview": "registration let T be 1-sorted, Y be net of T; cluster -> yielding_non-empty_carriers for net_set of the carrier of Y,T;"
+    },
+    {
+      "counts": {
+        "ManySortedSet": 1,
+        "RelStr": 7,
+        "net_set": 1
+      },
+      "index": 28,
+      "kind": "registration",
+      "object": "registration_28",
+      "preview": "registration let T be non empty 1-sorted, Y be net of T, J be net_set of the carrier of Y ,T; cluster product J -> direc"
+    },
+    {
+      "counts": {
+        "net_set": 1
+      },
+      "index": 29,
+      "kind": "registration",
+      "object": "registration_29",
+      "preview": "registration let X be set, T be 1-sorted; cluster -> yielding_non-empty_carriers for net_set of X,T; coherence by Def12;"
+    },
+    {
+      "counts": {
+        "net_set": 2
+      },
+      "index": 30,
+      "kind": "registration",
+      "object": "registration_30",
+      "preview": "registration let X be set, T be 1-sorted; cluster yielding_non-empty_carriers for net_set of X,T; existence proof set F "
+    },
+    {
+      "counts": {
+        "Iterated": 1,
+        "NetStr": 1,
+        "RelStr": 5,
+        "net_set": 1
+      },
+      "index": 14,
+      "kind": "definition",
+      "object": "definition_14",
+      "preview": "definition let T be non empty 1-sorted, Y be net of T, J be net_set of the carrier of Y ,T; func Iterated J -> strict ne"
+    },
+    {
+      "counts": {
+        "Iterated": 4,
+        "NetUniv": 6,
+        "RelStr": 1,
+        "net_set": 2,
+        "the_universe_of": 7
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem Th25: for T being non empty 1-sorted, Y being net of T, J being net_set of the carrier of Y,T st Y in NetUniv T "
+    },
+    {
+      "counts": {
+        "Iterated": 3,
+        "RelStr": 1,
+        "net_set": 2
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem Th26: for T being non empty 1-sorted, N being net of T for J being net_set of the carrier of N, T holds the carr"
+    },
+    {
+      "counts": {
+        "Iterated": 5,
+        "net_set": 2
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem Th27: for T being non empty 1-sorted, N being net of T, J being net_set of the carrier of N, T, i being Element "
+    },
+    {
+      "counts": {
+        "Iterated": 6,
+        "net_set": 2
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem Th28: for T being non empty 1-sorted, Y being net of T, J being net_set of the carrier of Y,T holds rng the mapp"
+    },
+    {
+      "counts": {
+        "OpenNeighborhoods": 1,
+        "RelStr": 1,
+        "Subset": 1
+      },
+      "index": 15,
+      "kind": "definition",
+      "object": "definition_15",
+      "preview": "definition let T be non empty TopSpace, p be Point of T; func OpenNeighborhoods p -> RelStr equals (InclPoset { V where "
+    },
+    {
+      "counts": {
+        "OpenNeighborhoods": 2,
+        "Subset": 1
+      },
+      "index": 31,
+      "kind": "registration",
+      "object": "registration_31",
+      "preview": "registration let T be non empty TopSpace, p be Point of T; cluster OpenNeighborhoods p -> non empty; coherence proof set"
+    },
+    {
+      "counts": {
+        "OpenNeighborhoods": 2,
+        "Subset": 2
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem Th29: for T being non empty TopSpace, p being Point of T, x being Element of OpenNeighborhoods p ex W being Subs"
+    },
+    {
+      "counts": {
+        "OpenNeighborhoods": 3,
+        "Subset": 5
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem Th30: for T be non empty TopSpace, p be Point of T for x being Subset of T holds x in the carrier of OpenNeighbo"
+    },
+    {
+      "counts": {
+        "OpenNeighborhoods": 2,
+        "RelStr": 1,
+        "Subset": 1
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem Th31: for T be non empty TopSpace, p be Point of T for x,y being Element of OpenNeighborhoods p holds x <= y iff"
+    },
+    {
+      "counts": {
+        "OpenNeighborhoods": 4,
+        "Subset": 3
+      },
+      "index": 32,
+      "kind": "registration",
+      "object": "registration_32",
+      "preview": "registration let T be non empty TopSpace, p be Point of T; cluster OpenNeighborhoods p -> transitive directed; coherence"
+    },
+    {
+      "counts": {
+        "Lim": 1,
+        "Subset": 3
+      },
+      "index": 16,
+      "kind": "definition",
+      "object": "definition_16",
+      "preview": "definition let T be non empty TopSpace, N be net of T; defpred P[Point of T] means for V being a_neighborhood of $1 hold"
+    },
+    {
+      "counts": {
+        "Lim": 3
+      },
+      "index": 32,
+      "kind": "theorem",
+      "object": "theorem_32",
+      "preview": "theorem Th32: for T being non empty TopSpace, N being net of T, Y being subnet of N holds Lim N c= Lim Y proof let T be "
+    },
+    {
+      "counts": {
+        "Lim": 1,
+        "the_value_of": 2
+      },
+      "index": 33,
+      "kind": "theorem",
+      "object": "theorem_33",
+      "preview": "theorem Th33: for T being non empty TopSpace, N be constant net of T holds the_value_of N in Lim N proof let T be non em"
+    },
+    {
+      "counts": {
+        "Lim": 2,
+        "Subset": 2
+      },
+      "index": 34,
+      "kind": "theorem",
+      "object": "theorem_34",
+      "preview": "theorem Th34: for T being non empty TopSpace, N be net of T, p be Point of T st p in Lim N for d being Element of N ex S"
+    },
+    {
+      "counts": {
+        "Lim": 10,
+        "NetStr": 1,
+        "OpenNeighborhoods": 12,
+        "Subset": 8
+      },
+      "index": 35,
+      "kind": "theorem",
+      "object": "theorem_35",
+      "preview": "theorem Th35: for T being non empty TopSpace holds T is Hausdorff iff for N being net of T, p,q being Point of T st p in"
+    },
+    {
+      "counts": {
+        "Lim": 3
+      },
+      "index": 33,
+      "kind": "registration",
+      "object": "registration_33",
+      "preview": "registration let T be Hausdorff non empty TopSpace, N be net of T; cluster Lim N -> trivial; coherence proof for p,q bei"
+    },
+    {
+      "counts": {
+        "Lim": 1
+      },
+      "index": 17,
+      "kind": "definition",
+      "object": "definition_17",
+      "preview": "definition let T be non empty TopSpace, N be net of T; attr N is convergent means :Def16: Lim N <> {}; end;"
+    },
+    {
+      "counts": {
+        "ConstantNet": 1,
+        "RelStr": 1
+      },
+      "index": 35,
+      "kind": "registration",
+      "object": "registration_35",
+      "preview": "registration let T be non empty TopSpace; cluster convergent strict for net of T; existence proof set R = the non empty "
+    },
+    {
+      "counts": {
+        "Lim": 2
+      },
+      "index": 18,
+      "kind": "definition",
+      "object": "definition_18",
+      "preview": "definition let T be Hausdorff non empty TopSpace, N be convergent net of T; func lim N -> Element of T means :Def17: it "
+    },
+    {
+      "counts": {
+        "Lim": 2,
+        "the_value_of": 2
+      },
+      "index": 36,
+      "kind": "theorem",
+      "object": "theorem_36",
+      "preview": "theorem for T be Hausdorff non empty TopSpace, N be constant net of T holds lim N = the_value_of N proof let T be Hausdo"
+    },
+    {
+      "counts": {
+        "Lim": 4
+      },
+      "index": 37,
+      "kind": "theorem",
+      "object": "theorem_37",
+      "preview": "theorem for T being non empty TopSpace, N being net of T for p being Point of T st not p in Lim N ex Y being subnet of N"
+    },
+    {
+      "counts": {
+        "Lim": 4,
+        "NetUniv": 4,
+        "the_universe_of": 2
+      },
+      "index": 38,
+      "kind": "theorem",
+      "object": "theorem_38",
+      "preview": "theorem Th38: for T being non empty TopSpace, N being net of T st N in NetUniv T for p being Point of T st not p in Lim "
+    },
+    {
+      "counts": {
+        "Convergence": 1,
+        "Iterated": 7,
+        "Lim": 6,
+        "ManySortedSet": 1,
+        "RelStr": 3,
+        "net_set": 2
+      },
+      "index": 39,
+      "kind": "theorem",
+      "object": "theorem_39",
+      "preview": "theorem Th39: for T being non empty TopSpace, N being net of T, p being Point of T st p in Lim N for J being net_set of "
+    },
+    {
+      "counts": {
+        "Convergence-Class": 1,
+        "NetUniv": 1
+      },
+      "index": 19,
+      "kind": "definition",
+      "object": "definition_19",
+      "preview": "definition let S be non empty 1-sorted; mode Convergence-Class of S -> set means :Def18: it c= [:NetUniv S,the carrier o"
+    },
+    {
+      "counts": {
+        "Convergence-Class": 2,
+        "NetUniv": 1,
+        "Subset": 1
+      },
+      "index": 36,
+      "kind": "registration",
+      "object": "registration_36",
+      "preview": "registration let S be non empty 1-sorted; cluster -> Relation-like for Convergence-Class of S; coherence proof let C be "
+    },
+    {
+      "counts": {
+        "Convergence": 1,
+        "Convergence-Class": 3,
+        "Lim": 8,
+        "NetUniv": 12,
+        "the_universe_of": 2
+      },
+      "index": 20,
+      "kind": "definition",
+      "object": "definition_20",
+      "preview": "definition let T be non empty TopSpace; func Convergence T -> Convergence-Class of T means :Def19: for N being net of T,"
+    },
+    {
+      "counts": {
+        "CONSTANTS": 1,
+        "Convergence-Class": 1,
+        "DIVERGENCE": 1,
+        "ITERATED_LIMITS": 1,
+        "Iterated": 1,
+        "NetUniv": 4,
+        "SUBNETS": 1,
+        "net_set": 1,
+        "the_value_of": 1
+      },
+      "index": 21,
+      "kind": "definition",
+      "object": "definition_21",
+      "preview": "definition let T be non empty 1-sorted, C be Convergence-Class of T; attr C is (CONSTANTS) means :Def20: for N being con"
+    },
+    {
+      "counts": {
+        "CONSTANTS": 2,
+        "Convergence": 2,
+        "DIVERGENCE": 2,
+        "ITERATED_LIMITS": 1,
+        "Iterated": 2,
+        "Lim": 10,
+        "NetUniv": 8,
+        "SUBNETS": 2,
+        "net_set": 1,
+        "the_value_of": 1
+      },
+      "index": 37,
+      "kind": "registration",
+      "object": "registration_37",
+      "preview": "registration let T be non empty TopSpace; cluster Convergence T -> (CONSTANTS) (SUBNETS) (DIVERGENCE) (ITERATED_LIMITS);"
+    },
+    {
+      "counts": {
+        "Convergence-Class": 1,
+        "ConvergenceSpace": 1,
+        "Subset": 2,
+        "TopStruct": 2
+      },
+      "index": 22,
+      "kind": "definition",
+      "object": "definition_22",
+      "preview": "definition let S be non empty 1-sorted, C be Convergence-Class of S; func ConvergenceSpace C -> strict TopStruct means :"
+    },
+    {
+      "counts": {
+        "Convergence-Class": 1,
+        "ConvergenceSpace": 3
+      },
+      "index": 38,
+      "kind": "registration",
+      "object": "registration_38",
+      "preview": "registration let S be non empty 1-sorted, C be Convergence-Class of S; cluster ConvergenceSpace C -> non empty; coherenc"
+    },
+    {
+      "counts": {
+        "Convergence-Class": 1,
+        "ConvergenceSpace": 2,
+        "Subset": 8
+      },
+      "index": 39,
+      "kind": "registration",
+      "object": "registration_39",
+      "preview": "registration let S be non empty 1-sorted, C be Convergence-Class of S; cluster ConvergenceSpace C -> TopSpace-like; cohe"
+    },
+    {
+      "counts": {
+        "Convergence": 1,
+        "Convergence-Class": 2,
+        "ConvergenceSpace": 2,
+        "Lim": 1,
+        "NetUniv": 4,
+        "Subset": 2,
+        "the_universe_of": 1
+      },
+      "index": 40,
+      "kind": "theorem",
+      "object": "theorem_40",
+      "preview": "theorem Th40: for S be non empty 1-sorted, C be Convergence-Class of S holds C c= Convergence ConvergenceSpace C proof l"
+    },
+    {
+      "counts": {
+        "CONSTANTS": 1,
+        "Convergence-Class": 1,
+        "DIVERGENCE": 1,
+        "ITERATED_LIMITS": 1,
+        "SUBNETS": 1
+      },
+      "index": 23,
+      "kind": "definition",
+      "object": "definition_23",
+      "preview": "definition let T be non empty 1-sorted, C be Convergence-Class of T; attr C is topological means C is (CONSTANTS) (SUBNE"
+    },
+    {
+      "counts": {
+        "CONSTANTS": 1,
+        "Convergence-Class": 2,
+        "DIVERGENCE": 1,
+        "Iterated": 1,
+        "NetUniv": 4,
+        "SUBNETS": 1,
+        "net_set": 1
+      },
+      "index": 40,
+      "kind": "registration",
+      "object": "registration_40",
+      "preview": "registration let T be non empty 1-sorted; cluster non empty topological for Convergence-Class of T; existence proof reco"
+    },
+    {
+      "counts": {
+        "CONSTANTS": 2,
+        "Convergence-Class": 2,
+        "DIVERGENCE": 2,
+        "ITERATED_LIMITS": 2,
+        "SUBNETS": 2
+      },
+      "index": 41,
+      "kind": "registration",
+      "object": "registration_41",
+      "preview": "registration let T be non empty 1-sorted; cluster topological -> (CONSTANTS) (SUBNETS) (DIVERGENCE) (ITERATED_LIMITS) fo"
+    },
+    {
+      "counts": {
+        "Convergence-Class": 2,
+        "ConvergenceSpace": 6,
+        "Subset": 4
+      },
+      "index": 41,
+      "kind": "theorem",
+      "object": "theorem_41",
+      "preview": "theorem Th41: for T being non empty 1-sorted, C being topological Convergence-Class of T, S being Subset of (Convergence"
+    },
+    {
+      "counts": {
+        "Convergence-Class": 2,
+        "ConvergenceSpace": 3,
+        "Subset": 2
+      },
+      "index": 42,
+      "kind": "theorem",
+      "object": "theorem_42",
+      "preview": "theorem Th42: for T being non empty 1-sorted, C being topological Convergence-Class of T, S being Subset of (Convergence"
+    },
+    {
+      "counts": {
+        "ConstantNet": 1,
+        "Convergence": 1,
+        "Convergence-Class": 2,
+        "ConvergenceSpace": 9,
+        "Iterated": 1,
+        "Lim": 7,
+        "ManySortedSet": 1,
+        "NetUniv": 4,
+        "RelStr": 4,
+        "Subset": 4,
+        "net_set": 1,
+        "the_universe_of": 3,
+        "the_value_of": 3
+      },
+      "index": 43,
+      "kind": "theorem",
+      "object": "theorem_43",
+      "preview": "theorem Th43: for T being non empty 1-sorted, C being topological Convergence-Class of T, S being Subset of ConvergenceS"
+    },
+    {
+      "counts": {
+        "CONSTANTS": 2,
+        "ConstantNet": 1,
+        "Convergence": 6,
+        "Convergence-Class": 3,
+        "ConvergenceSpace": 7,
+        "DIVERGENCE": 2,
+        "ITERATED_LIMITS": 2,
+        "Iterated": 30,
+        "Lim": 4,
+        "ManySortedSet": 6,
+        "NetUniv": 14,
+        "RelStr": 8,
+        "SUBNETS": 2,
+        "Subset": 2,
+        "net_set": 4,
+        "the_universe_of": 2,
+        "the_value_of": 5
+      },
+      "index": 44,
+      "kind": "theorem",
+      "object": "theorem_44",
+      "preview": "theorem for T be non empty 1-sorted, C be Convergence-Class of T holds Convergence ConvergenceSpace C = C iff C is topol"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/yellow_6.miz"
+}

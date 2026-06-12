@@ -1,0 +1,980 @@
+{
+  "article": "lattice5",
+  "attributes": [
+    "Aq",
+    "BasicDF",
+    "BiFun",
+    "BiFunction",
+    "Cardinal",
+    "ConsecutiveDelta",
+    "ConsecutiveSet",
+    "DistEsti",
+    "EqRelLATT",
+    "ExtensionSeq",
+    "Function",
+    "Homomorphism",
+    "L1",
+    "L2",
+    "NAT",
+    "NextDelta",
+    "NextSet",
+    "Poset",
+    "Quadr",
+    "QuadrSeq",
+    "R1",
+    "R2",
+    "Sequence",
+    "SubRelStr",
+    "Sublattice",
+    "are_joint_by",
+    "distance_function",
+    "is_extension_of",
+    "join-inheriting",
+    "meet-inheriting",
+    "new_bi_fun",
+    "new_set",
+    "type_of"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "Function": 5
+      },
+      "index": 1,
+      "kind": "theorem",
+      "object": "theorem_1",
+      "preview": "theorem Th1: for f being Function, F being Function-yielding Function st f = union rng F holds dom f = union rng doms F "
+    },
+    {
+      "counts": {
+        "EqRelLATT": 2,
+        "Poset": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let A be set; func EqRelLATT A -> Poset equals LattPOSet EqRelLatt A; correctness; end;"
+    },
+    {
+      "counts": {
+        "EqRelLATT": 1
+      },
+      "index": 1,
+      "kind": "registration",
+      "object": "registration_1",
+      "preview": "registration let A be set; cluster EqRelLATT A -> with_infima with_suprema; coherence; end;"
+    },
+    {
+      "counts": {
+        "EqRelLATT": 10
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem Th4: for A, x being set holds x in the carrier of EqRelLATT A iff x is Equivalence_Relation of A proof let A, x "
+    },
+    {
+      "counts": {
+        "EqRelLATT": 3
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem Th5: for A being set, x,y being Element of EqRelLatt A holds x [= y iff x c= y proof let A be set, x,y be Elemen"
+    },
+    {
+      "counts": {
+        "EqRelLATT": 3
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem Th6: for A being set, a,b being Element of EqRelLATT A holds a <= b iff a c= b proof let A be set, a,b be Elemen"
+    },
+    {
+      "counts": {
+        "EqRelLATT": 8
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem Th8: for A being set, a,b being Element of EqRelLATT A holds a \"/\\\" b = a /\\ b proof let A be set, a,b be Elemen"
+    },
+    {
+      "counts": {
+        "EqRelLATT": 7
+      },
+      "index": 10,
+      "kind": "theorem",
+      "object": "theorem_10",
+      "preview": "theorem Th10: for A being set, a,b being Element of EqRelLATT A for E1,E2 being Equivalence_Relation of A st a = E1 & b "
+    },
+    {
+      "counts": {
+        "EqRelLATT": 10,
+        "Sublattice": 1
+      },
+      "index": 2,
+      "kind": "registration",
+      "object": "registration_2",
+      "preview": "registration let A be set; cluster EqRelLATT A -> complete; coherence proof let X be Subset of EqRelLATT A; set B = X /\\"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "L1": 6,
+        "L2": 4
+      },
+      "index": 3,
+      "kind": "registration",
+      "object": "registration_3",
+      "preview": "registration let L1,L2 be LATTICE; cluster meet-preserving join-preserving for Function of L1,L2; existence proof set z "
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "Homomorphism": 1,
+        "L1": 3,
+        "L2": 3
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let L1,L2 be LATTICE; mode Homomorphism of L1,L2 is meet-preserving join-preserving Function of L1,L2; end;"
+    },
+    {
+      "counts": {
+        "SubRelStr": 2,
+        "join-inheriting": 1,
+        "meet-inheriting": 1
+      },
+      "index": 4,
+      "kind": "registration",
+      "object": "registration_4",
+      "preview": "registration let L be LATTICE; cluster meet-inheriting join-inheriting strict for SubRelStr of L; existence proof set a "
+    },
+    {
+      "counts": {
+        "SubRelStr": 1,
+        "Sublattice": 1,
+        "join-inheriting": 1,
+        "meet-inheriting": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let L be non empty RelStr; mode Sublattice of L is meet-inheriting join-inheriting SubRelStr of L; end;"
+    },
+    {
+      "counts": {
+        "Homomorphism": 1,
+        "L1": 7,
+        "L2": 10,
+        "SubRelStr": 1,
+        "join-inheriting": 2,
+        "meet-inheriting": 2
+      },
+      "index": 5,
+      "kind": "registration",
+      "object": "registration_5",
+      "preview": "registration let L1, L2 be LATTICE; let f be Homomorphism of L1,L2; cluster Image f -> meet-inheriting join-inheriting; "
+    },
+    {
+      "counts": {
+        "NAT": 1,
+        "R1": 3,
+        "R2": 3,
+        "are_joint_by": 1
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let X; let f be non empty FinSequence of X; let x,y be object; let R1, R2 be Relation; pred x,y are_joint_by "
+    },
+    {
+      "counts": {
+        "NAT": 5,
+        "R1": 7,
+        "R2": 7,
+        "are_joint_by": 1
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem Th11: for x being set, o being Element of NAT, R1,R2 being Relation, f being non empty FinSequence of X st R1 is"
+    },
+    {
+      "counts": {
+        "NAT": 6,
+        "R1": 10,
+        "R2": 9,
+        "are_joint_by": 5
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem Th12: for x,y being object, R1,R2 being Relation, n,m being Element of NAT st (n <= m & R1 is_reflexive_in X & R"
+    },
+    {
+      "counts": {
+        "EqRelLATT": 1,
+        "NAT": 11,
+        "Sublattice": 1,
+        "are_joint_by": 15,
+        "type_of": 1
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let X; let Y be Sublattice of EqRelLATT X; given e such that A1: e in the carrier of Y and A2: e <> id X; giv"
+    },
+    {
+      "counts": {
+        "EqRelLATT": 2,
+        "NAT": 4,
+        "Sublattice": 2,
+        "are_joint_by": 4,
+        "type_of": 4
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem Th13: for Y being Sublattice of EqRelLATT X, n being Element of NAT st (ex e st e in the carrier of Y & e <> id "
+    },
+    {
+      "counts": {
+        "BiFunction": 1,
+        "Function": 1
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let A be set, L be 1-sorted; mode BiFunction of A,L is Function of [:A,A:],the carrier of L; end;"
+    },
+    {
+      "counts": {
+        "BiFunction": 1
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition let A be non empty set, L be 1-sorted; let f be BiFunction of A,L; let x,y be Element of A; redefine func f.("
+    },
+    {
+      "counts": {
+        "BiFunction": 1
+      },
+      "index": 9,
+      "kind": "definition",
+      "object": "definition_9",
+      "preview": "definition let A; let L be 1-sorted; let f be BiFunction of A,L; attr f is symmetric means :Def5: for x,y being Element "
+    },
+    {
+      "counts": {
+        "BiFunction": 1
+      },
+      "index": 10,
+      "kind": "definition",
+      "object": "definition_10",
+      "preview": "definition let A,L; let f be BiFunction of A,L; attr f is zeroed means :Def6: for x being Element of A holds f.(x,x) = B"
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "Function": 1
+      },
+      "index": 6,
+      "kind": "registration",
+      "object": "registration_6",
+      "preview": "registration let A, L; cluster symmetric zeroed u.t.i. for BiFunction of A,L; existence proof reconsider f = [:A,A:] -->"
+    },
+    {
+      "counts": {
+        "BiFunction": 1,
+        "distance_function": 1
+      },
+      "index": 11,
+      "kind": "definition",
+      "object": "definition_11",
+      "preview": "definition let A, L; mode distance_function of A,L is symmetric zeroed u.t.i. BiFunction of A,L; end;"
+    },
+    {
+      "counts": {
+        "EqRelLATT": 8,
+        "Function": 4,
+        "distance_function": 1
+      },
+      "index": 12,
+      "kind": "definition",
+      "object": "definition_12",
+      "preview": "definition let A, L; let d be distance_function of A,L; func alpha d -> Function of L,EqRelLATT A means :Def8: for e bei"
+    },
+    {
+      "counts": {
+        "EqRelLATT": 1,
+        "distance_function": 2
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem Th14: for d being distance_function of A,L holds alpha d is meet-preserving proof let d be distance_function of "
+    },
+    {
+      "counts": {
+        "distance_function": 2
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem Th15: for d being distance_function of A,L st d is onto holds alpha d is one-to-one proof let d be distance_func"
+    },
+    {
+      "counts": {
+        "new_set": 1
+      },
+      "index": 13,
+      "kind": "definition",
+      "object": "definition_13",
+      "preview": "definition let A be set; func new_set A -> set equals A \\/ {{A}, {{A}}, {{{A}}} }; correctness; end;"
+    },
+    {
+      "counts": {
+        "new_set": 1
+      },
+      "index": 7,
+      "kind": "registration",
+      "object": "registration_7",
+      "preview": "registration let A be set; cluster new_set A -> non empty; coherence; end;"
+    },
+    {
+      "counts": {
+        "BiFunction": 4,
+        "Function": 1,
+        "new_bi_fun": 1,
+        "new_set": 17
+      },
+      "index": 14,
+      "kind": "definition",
+      "object": "definition_14",
+      "preview": "definition let A,L; let d be BiFunction of A,L; let q be Element of [:A,A,the carrier of L,the carrier of L:]; func new_"
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "new_bi_fun": 2,
+        "new_set": 2
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem Th16: for d being BiFunction of A,L st d is zeroed for q being Element of [:A,A,the carrier of L,the carrier of "
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "new_bi_fun": 2,
+        "new_set": 1
+      },
+      "index": 17,
+      "kind": "theorem",
+      "object": "theorem_17",
+      "preview": "theorem Th17: for d being BiFunction of A,L st d is symmetric for q being Element of [:A,A,the carrier of L,the carrier "
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "new_bi_fun": 2,
+        "new_set": 18
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem Th18: for d being BiFunction of A,L st d is symmetric & d is u.t.i. for q being Element of [:A,A,the carrier of "
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "new_bi_fun": 2,
+        "new_set": 3
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem Th19: for d be BiFunction of A,L for q be Element of [:A,A,the carrier of L,the carrier of L:] holds d c= new_bi"
+    },
+    {
+      "counts": {
+        "BiFunction": 1,
+        "Cardinal": 1,
+        "DistEsti": 1
+      },
+      "index": 15,
+      "kind": "definition",
+      "object": "definition_15",
+      "preview": "definition let A,L; let d be BiFunction of A,L; func DistEsti(d) -> Cardinal means :Def11: it,{ [x,y,a,b] where x is Ele"
+    },
+    {
+      "counts": {
+        "DistEsti": 2,
+        "L1": 1,
+        "Sequence": 1,
+        "distance_function": 2
+      },
+      "index": 20,
+      "kind": "theorem",
+      "object": "theorem_20",
+      "preview": "theorem Th20: for d be distance_function of A,L holds DistEsti(d) <> {} proof let d be distance_function of A,L; set X ="
+    },
+    {
+      "counts": {
+        "ConsecutiveSet": 1,
+        "L1": 24,
+        "Sequence": 2,
+        "new_set": 2
+      },
+      "index": 16,
+      "kind": "definition",
+      "object": "definition_16",
+      "preview": "definition let A; let O; func ConsecutiveSet(A,O) -> set means :Def12: ex L0 being Sequence st it = last L0 & dom L0 = s"
+    },
+    {
+      "counts": {
+        "ConsecutiveSet": 2,
+        "Sequence": 2,
+        "new_set": 1
+      },
+      "index": 21,
+      "kind": "theorem",
+      "object": "theorem_21",
+      "preview": "theorem Th21: ConsecutiveSet(A,0) = A proof deffunc V(Ordinal,Sequence) = union rng $2; deffunc U(Ordinal,set) = new_set"
+    },
+    {
+      "counts": {
+        "ConsecutiveSet": 3,
+        "Sequence": 2,
+        "new_set": 2
+      },
+      "index": 22,
+      "kind": "theorem",
+      "object": "theorem_22",
+      "preview": "theorem Th22: ConsecutiveSet(A,succ O) = new_set ConsecutiveSet(A,O) proof deffunc V(Ordinal,Sequence) = union rng $2; d"
+    },
+    {
+      "counts": {
+        "ConsecutiveSet": 3,
+        "Sequence": 2,
+        "new_set": 1
+      },
+      "index": 23,
+      "kind": "theorem",
+      "object": "theorem_23",
+      "preview": "theorem Th23: O <> 0 & O is limit_ordinal & dom T = O & (for O1 being Ordinal st O1 in O holds T.O1 = ConsecutiveSet(A,O"
+    },
+    {
+      "counts": {
+        "ConsecutiveSet": 10,
+        "Sequence": 1,
+        "new_set": 1
+      },
+      "index": 8,
+      "kind": "registration",
+      "object": "registration_8",
+      "preview": "registration let A; let O; cluster ConsecutiveSet(A,O) -> non empty; coherence proof defpred X[Ordinal] means Consecutiv"
+    },
+    {
+      "counts": {
+        "ConsecutiveSet": 11,
+        "Sequence": 1,
+        "new_set": 1
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem Th24: A c= ConsecutiveSet(A,O) proof defpred X[Ordinal] means A c= ConsecutiveSet(A,$1); A1: for O1 st X[O1] hol"
+    },
+    {
+      "counts": {
+        "BiFunction": 1,
+        "Cardinal": 2,
+        "Function": 1,
+        "QuadrSeq": 1,
+        "Sequence": 3
+      },
+      "index": 17,
+      "kind": "definition",
+      "object": "definition_17",
+      "preview": "definition let A,L; let d be BiFunction of A,L; mode QuadrSeq of d -> Sequence of [:A,A,the carrier of L,the carrier of "
+    },
+    {
+      "counts": {
+        "BiFunction": 1,
+        "ConsecutiveSet": 6,
+        "Quadr": 1,
+        "QuadrSeq": 1
+      },
+      "index": 18,
+      "kind": "definition",
+      "object": "definition_18",
+      "preview": "definition let A,L; let d be BiFunction of A,L; let q be QuadrSeq of d; let O; assume A1: O in dom q; func Quadr(q,O) ->"
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "Cardinal": 2,
+        "DistEsti": 6,
+        "QuadrSeq": 2
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem Th25: for d being BiFunction of A,L, q being QuadrSeq of d holds O in DistEsti(d) iff O in dom q proof let d be "
+    },
+    {
+      "counts": {
+        "BiFun": 1,
+        "BiFunction": 2
+      },
+      "index": 19,
+      "kind": "definition",
+      "object": "definition_19",
+      "preview": "definition let A,L; let z be set; assume A1: z is BiFunction of A,L; func BiFun(z,A,L) -> BiFunction of A,L equals :Def1"
+    },
+    {
+      "counts": {
+        "BiFun": 2,
+        "BiFunction": 1,
+        "ConsecutiveDelta": 1,
+        "ConsecutiveSet": 2,
+        "L1": 24,
+        "Quadr": 2,
+        "QuadrSeq": 1,
+        "Sequence": 2,
+        "new_bi_fun": 2
+      },
+      "index": 20,
+      "kind": "definition",
+      "object": "definition_20",
+      "preview": "definition let A,L; let d be BiFunction of A,L; let q be QuadrSeq of d; let O; func ConsecutiveDelta(q,O) -> set means :"
+    },
+    {
+      "counts": {
+        "BiFun": 1,
+        "BiFunction": 2,
+        "ConsecutiveDelta": 2,
+        "ConsecutiveSet": 1,
+        "Quadr": 1,
+        "QuadrSeq": 2,
+        "Sequence": 2,
+        "new_bi_fun": 1
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem Th26: for d being BiFunction of A,L for q being QuadrSeq of d holds ConsecutiveDelta(q,0) = d proof deffunc D(Or"
+    },
+    {
+      "counts": {
+        "BiFun": 2,
+        "BiFunction": 2,
+        "ConsecutiveDelta": 3,
+        "ConsecutiveSet": 2,
+        "Quadr": 2,
+        "QuadrSeq": 2,
+        "Sequence": 2,
+        "new_bi_fun": 2
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem Th27: for d be BiFunction of A,L for q being QuadrSeq of d holds ConsecutiveDelta(q,succ O) = new_bi_fun(BiFun(C"
+    },
+    {
+      "counts": {
+        "BiFun": 1,
+        "BiFunction": 2,
+        "ConsecutiveDelta": 3,
+        "ConsecutiveSet": 1,
+        "Quadr": 1,
+        "QuadrSeq": 2,
+        "Sequence": 2,
+        "new_bi_fun": 1
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem Th28: for d be BiFunction of A,L for q being QuadrSeq of d holds O <> 0 & O is limit_ordinal & dom T = O & (for "
+    },
+    {
+      "counts": {
+        "ConsecutiveSet": 15,
+        "Sequence": 1,
+        "new_set": 2
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem Th29: O1 c= O2 implies ConsecutiveSet(A,O1) c= ConsecutiveSet(A,O2) proof defpred X[Ordinal] means O1 c= $1 impl"
+    },
+    {
+      "counts": {
+        "BiFun": 2,
+        "BiFunction": 11,
+        "ConsecutiveDelta": 20,
+        "ConsecutiveSet": 35,
+        "Function": 3,
+        "Quadr": 4,
+        "QuadrSeq": 2,
+        "Sequence": 3,
+        "new_bi_fun": 4,
+        "new_set": 1
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem Th30: for d be BiFunction of A,L for q being QuadrSeq of d holds ConsecutiveDelta(q,O) is BiFunction of Consecut"
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "ConsecutiveDelta": 1,
+        "ConsecutiveSet": 1,
+        "QuadrSeq": 1
+      },
+      "index": 21,
+      "kind": "definition",
+      "object": "definition_21",
+      "preview": "definition let A,L; let d be BiFunction of A,L; let q be QuadrSeq of d; let O; redefine func ConsecutiveDelta(q,O) -> Bi"
+    },
+    {
+      "counts": {
+        "BiFun": 1,
+        "BiFunction": 2,
+        "ConsecutiveDelta": 12,
+        "ConsecutiveSet": 1,
+        "Quadr": 2,
+        "QuadrSeq": 2,
+        "Sequence": 1,
+        "new_bi_fun": 2
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem Th31: for d be BiFunction of A,L for q being QuadrSeq of d holds d c= ConsecutiveDelta(q,O) proof let d be BiFun"
+    },
+    {
+      "counts": {
+        "BiFun": 1,
+        "BiFunction": 2,
+        "ConsecutiveDelta": 16,
+        "ConsecutiveSet": 1,
+        "Quadr": 2,
+        "QuadrSeq": 2,
+        "Sequence": 1,
+        "new_bi_fun": 2
+      },
+      "index": 32,
+      "kind": "theorem",
+      "object": "theorem_32",
+      "preview": "theorem Th32: for d being BiFunction of A,L for q being QuadrSeq of d st O1 c= O2 holds ConsecutiveDelta(q,O1) c= Consec"
+    },
+    {
+      "counts": {
+        "BiFun": 1,
+        "BiFunction": 4,
+        "ConsecutiveDelta": 17,
+        "ConsecutiveSet": 13,
+        "Quadr": 4,
+        "QuadrSeq": 2,
+        "Sequence": 2,
+        "new_bi_fun": 4,
+        "new_set": 1
+      },
+      "index": 33,
+      "kind": "theorem",
+      "object": "theorem_33",
+      "preview": "theorem Th33: for d be BiFunction of A,L st d is zeroed for q being QuadrSeq of d holds ConsecutiveDelta(q,O) is zeroed "
+    },
+    {
+      "counts": {
+        "BiFun": 1,
+        "BiFunction": 5,
+        "ConsecutiveDelta": 25,
+        "ConsecutiveSet": 23,
+        "Quadr": 4,
+        "QuadrSeq": 2,
+        "Sequence": 2,
+        "new_bi_fun": 4,
+        "new_set": 1
+      },
+      "index": 34,
+      "kind": "theorem",
+      "object": "theorem_34",
+      "preview": "theorem Th34: for d be BiFunction of A,L st d is symmetric for q being QuadrSeq of d holds ConsecutiveDelta(q,O) is symm"
+    },
+    {
+      "counts": {
+        "BiFun": 1,
+        "BiFunction": 6,
+        "ConsecutiveDelta": 34,
+        "ConsecutiveSet": 54,
+        "DistEsti": 11,
+        "Quadr": 9,
+        "QuadrSeq": 2,
+        "Sequence": 2,
+        "new_bi_fun": 4,
+        "new_set": 1
+      },
+      "index": 35,
+      "kind": "theorem",
+      "object": "theorem_35",
+      "preview": "theorem Th35: for d be BiFunction of A,L st d is symmetric u.t.i. for q being QuadrSeq of d st O c= DistEsti(d) holds Co"
+    },
+    {
+      "counts": {
+        "ConsecutiveDelta": 1,
+        "ConsecutiveSet": 1,
+        "DistEsti": 1,
+        "QuadrSeq": 1,
+        "distance_function": 2
+      },
+      "index": 36,
+      "kind": "theorem",
+      "object": "theorem_36",
+      "preview": "theorem for d being distance_function of A,L for q being QuadrSeq of d st O c= DistEsti(d) holds ConsecutiveDelta(q,O) i"
+    },
+    {
+      "counts": {
+        "BiFunction": 1,
+        "ConsecutiveSet": 1,
+        "DistEsti": 1,
+        "NextSet": 1
+      },
+      "index": 22,
+      "kind": "definition",
+      "object": "definition_22",
+      "preview": "definition let A,L; let d be BiFunction of A,L; func NextSet(d) -> set equals ConsecutiveSet(A,DistEsti(d)); correctness"
+    },
+    {
+      "counts": {
+        "BiFunction": 1,
+        "NextSet": 1
+      },
+      "index": 9,
+      "kind": "registration",
+      "object": "registration_9",
+      "preview": "registration let A,L; let d be BiFunction of A,L; cluster NextSet(d) -> non empty; coherence; end;"
+    },
+    {
+      "counts": {
+        "BiFunction": 1,
+        "ConsecutiveDelta": 1,
+        "DistEsti": 1,
+        "NextDelta": 1,
+        "QuadrSeq": 1
+      },
+      "index": 23,
+      "kind": "definition",
+      "object": "definition_23",
+      "preview": "definition let A,L; let d be BiFunction of A,L; let q be QuadrSeq of d; func NextDelta(q) -> set equals ConsecutiveDelta"
+    },
+    {
+      "counts": {
+        "NextDelta": 1,
+        "NextSet": 1,
+        "QuadrSeq": 1,
+        "distance_function": 2
+      },
+      "index": 24,
+      "kind": "definition",
+      "object": "definition_24",
+      "preview": "definition let A,L; let d be distance_function of A,L; let q be QuadrSeq of d; redefine func NextDelta(q) -> distance_fu"
+    },
+    {
+      "counts": {
+        "Aq": 4,
+        "NextDelta": 1,
+        "NextSet": 1,
+        "QuadrSeq": 1,
+        "distance_function": 2,
+        "is_extension_of": 1
+      },
+      "index": 25,
+      "kind": "definition",
+      "object": "definition_25",
+      "preview": "definition let A,L; let d be distance_function of A,L; let Aq be non empty set, dq be distance_function of Aq,L; pred Aq"
+    },
+    {
+      "counts": {
+        "Aq": 9,
+        "BiFun": 1,
+        "BiFunction": 1,
+        "ConsecutiveDelta": 5,
+        "ConsecutiveSet": 4,
+        "DistEsti": 4,
+        "NextDelta": 1,
+        "NextSet": 1,
+        "Quadr": 7,
+        "QuadrSeq": 1,
+        "distance_function": 4,
+        "is_extension_of": 2,
+        "new_bi_fun": 11,
+        "new_set": 8
+      },
+      "index": 37,
+      "kind": "theorem",
+      "object": "theorem_37",
+      "preview": "theorem Th37: for d be distance_function of A,L for Aq be non empty set, dq be distance_function of Aq,L st Aq, dq is_ex"
+    },
+    {
+      "counts": {
+        "Aq": 44,
+        "ExtensionSeq": 1,
+        "Function": 2,
+        "NAT": 11,
+        "NextDelta": 2,
+        "NextSet": 2,
+        "QuadrSeq": 2,
+        "distance_function": 22,
+        "is_extension_of": 12
+      },
+      "index": 26,
+      "kind": "definition",
+      "object": "definition_26",
+      "preview": "definition let A,L; let d be distance_function of A,L; mode ExtensionSeq of A,d -> Function means :Def20: dom it = NAT &"
+    },
+    {
+      "counts": {
+        "Aq": 5,
+        "ConsecutiveSet": 2,
+        "DistEsti": 2,
+        "ExtensionSeq": 2,
+        "NAT": 6,
+        "NextDelta": 1,
+        "NextSet": 1,
+        "QuadrSeq": 1,
+        "distance_function": 4,
+        "is_extension_of": 1
+      },
+      "index": 38,
+      "kind": "theorem",
+      "object": "theorem_38",
+      "preview": "theorem Th38: for d be distance_function of A,L for S being ExtensionSeq of A, d for k,l being Nat st k <= l holds (S.k)"
+    },
+    {
+      "counts": {
+        "Aq": 5,
+        "ConsecutiveDelta": 2,
+        "DistEsti": 2,
+        "ExtensionSeq": 2,
+        "NAT": 6,
+        "NextDelta": 1,
+        "NextSet": 1,
+        "QuadrSeq": 1,
+        "distance_function": 4,
+        "is_extension_of": 1
+      },
+      "index": 39,
+      "kind": "theorem",
+      "object": "theorem_39",
+      "preview": "theorem Th39: for d be distance_function of A,L for S being ExtensionSeq of A, d for k,l being Nat st k <= l holds (S.k)"
+    },
+    {
+      "counts": {
+        "BasicDF": 1,
+        "BiFunction": 1,
+        "Function": 1,
+        "distance_function": 3
+      },
+      "index": 27,
+      "kind": "definition",
+      "object": "definition_27",
+      "preview": "definition let L; func BasicDF(L) -> distance_function of the carrier of L,L means :Def21: for x,y being Element of L ho"
+    },
+    {
+      "counts": {
+        "BasicDF": 2,
+        "DistEsti": 5,
+        "NAT": 2,
+        "distance_function": 1
+      },
+      "index": 40,
+      "kind": "theorem",
+      "object": "theorem_40",
+      "preview": "theorem Th40: BasicDF(L) is onto proof set X = the carrier of L, f = BasicDF(L); for w being object st w in X ex z being"
+    },
+    {
+      "counts": {
+        "Aq": 4,
+        "BasicDF": 2,
+        "BiFunction": 1,
+        "ExtensionSeq": 2,
+        "Function": 4,
+        "NAT": 44,
+        "distance_function": 21,
+        "is_extension_of": 10
+      },
+      "index": 41,
+      "kind": "theorem",
+      "object": "theorem_41",
+      "preview": "theorem Th41: for S being ExtensionSeq of the carrier of L, BasicDF(L) for FS being non empty set st FS = union the set "
+    },
+    {
+      "counts": {
+        "BasicDF": 2,
+        "ExtensionSeq": 2,
+        "NAT": 14,
+        "distance_function": 6,
+        "is_extension_of": 2
+      },
+      "index": 42,
+      "kind": "theorem",
+      "object": "theorem_42",
+      "preview": "theorem Th42: for S being ExtensionSeq of the carrier of L, BasicDF(L) for FS being non empty set, FD being distance_fun"
+    },
+    {
+      "counts": {
+        "BasicDF": 2,
+        "EqRelLATT": 2,
+        "ExtensionSeq": 2,
+        "Homomorphism": 2,
+        "NAT": 10,
+        "SubRelStr": 1,
+        "are_joint_by": 1,
+        "distance_function": 2
+      },
+      "index": 43,
+      "kind": "theorem",
+      "object": "theorem_43",
+      "preview": "theorem Th43: for S being ExtensionSeq of the carrier of L, BasicDF(L) for FS being non empty set for FD being distance_"
+    },
+    {
+      "counts": {
+        "BasicDF": 1,
+        "BiFun": 1,
+        "ConsecutiveDelta": 3,
+        "ConsecutiveSet": 5,
+        "DistEsti": 2,
+        "EqRelLATT": 3,
+        "ExtensionSeq": 1,
+        "Homomorphism": 2,
+        "NAT": 13,
+        "NextDelta": 4,
+        "NextSet": 4,
+        "Quadr": 3,
+        "QuadrSeq": 1,
+        "SubRelStr": 1,
+        "are_joint_by": 1,
+        "distance_function": 3,
+        "is_extension_of": 1,
+        "new_bi_fun": 7,
+        "new_set": 8,
+        "type_of": 1
+      },
+      "index": 44,
+      "kind": "theorem",
+      "object": "theorem_44",
+      "preview": "theorem ex A being non empty set, f being Homomorphism of L,EqRelLATT A st f is one-to-one & type_of Image f <= 3 proof "
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/lattice5.miz"
+}

@@ -1,0 +1,501 @@
+{
+  "article": "yellow_2",
+  "attributes": [
+    "Function",
+    "Ids",
+    "IdsMap",
+    "Image",
+    "InclPoset",
+    "SubRelStr",
+    "SupMap"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "SubRelStr": 2
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem for L being RelStr for S, T being full SubRelStr of L st the carrier of S c= the carrier of T holds the Internal"
+    },
+    {
+      "counts": {
+        "SubRelStr": 2
+      },
+      "index": 7,
+      "kind": "theorem",
+      "object": "theorem_7",
+      "preview": "theorem Th7: for L being non empty RelStr for S being non empty SubRelStr of L holds (X is directed Subset of S implies "
+    },
+    {
+      "counts": {
+        "SubRelStr": 2
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem for L being non empty RelStr for S, T being non empty full SubRelStr of L st the carrier of S c= the carrier of "
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let J be set, L be RelStr; let f, g be Function of J, the carrier of L; pred f <= g means for j being set st "
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 1,
+      "kind": "notation",
+      "object": "notation_1",
+      "preview": "notation let J be set, L be RelStr; let f, g be Function of J, the carrier of L; synonym g >= f for f <= g; end;"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Image": 1
+      },
+      "index": 9,
+      "kind": "theorem",
+      "object": "theorem_9",
+      "preview": "theorem for L, M being non empty RelStr, f,g being Function of L, M holds f <= g iff for x being Element of L holds f.x "
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "Image": 1,
+        "SubRelStr": 2
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let L, M be non empty RelStr; let f be Function of L, M; func Image f -> strict full SubRelStr of M equals su"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Image": 3
+      },
+      "index": 10,
+      "kind": "theorem",
+      "object": "theorem_10",
+      "preview": "theorem for L, M being non empty RelStr for f being Function of L, M for y being Element of Image f ex x being Element o"
+    },
+    {
+      "counts": {
+        "SubRelStr": 1
+      },
+      "index": 1,
+      "kind": "registration",
+      "object": "registration_1",
+      "preview": "registration let L be non empty RelStr; let X be non empty Subset of L; cluster subrelstr X -> non empty; coherence by Y"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "Image": 1
+      },
+      "index": 2,
+      "kind": "registration",
+      "object": "registration_2",
+      "preview": "registration let L, M be non empty RelStr; let f be Function of L, M; cluster Image f -> non empty; coherence proof dom "
+    },
+    {
+      "counts": {
+        "Function": 4
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem for L, M, N being non empty RelStr for f being Function of L, M, g being Function of M, N holds f is monotone & "
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem for L, M being non empty RelStr for f being Function of L, M for X being Subset of L, x being Element of L holds"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem for L, M being non empty RelStr for f being Function of L, M for X being Subset of L, x being Element of L holds"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem for S, T being non empty RelStr for f being Function of S, T for X being directed Subset of S holds f is monoton"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem Th16: for L being with_suprema Poset for f being Function of L, L holds f is directed-sups-preserving implies f "
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 17,
+      "kind": "theorem",
+      "object": "theorem_17",
+      "preview": "theorem for L being with_infima Poset for f being Function of L, L holds f is filtered-infs-preserving implies f is mono"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem for S being non empty 1-sorted for f being Function of S, S holds f is idempotent implies for x being Element of"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem Th19: for S being non empty 1-sorted for f being Function of S, S holds f is idempotent implies rng f = {x where"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 20,
+      "kind": "theorem",
+      "object": "theorem_20",
+      "preview": "theorem Th20: for S being non empty 1-sorted for f being Function of S, S st f is idempotent holds X c= rng f implies f."
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "SubRelStr": 2
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem Th29: :: Theorem 2.3 (The Fixed-Point Theorem) for f being Function of L, L st f is monotone for M being Subset "
+    },
+    {
+      "counts": {
+        "SubRelStr": 2
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem Th30: for S being infs-inheriting non empty full SubRelStr of L holds S is complete LATTICE proof let S be infs-"
+    },
+    {
+      "counts": {
+        "SubRelStr": 2
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem Th31: for S being sups-inheriting non empty full SubRelStr of L holds S is complete LATTICE proof let S be sups-"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Image": 1,
+        "SubRelStr": 1
+      },
+      "index": 32,
+      "kind": "theorem",
+      "object": "theorem_32",
+      "preview": "theorem Th32: ::Remark 2.4 (Part I, variant 1) for M being non empty RelStr for f being Function of L, M st f is sups-pr"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Image": 1,
+        "SubRelStr": 1
+      },
+      "index": 33,
+      "kind": "theorem",
+      "object": "theorem_33",
+      "preview": "theorem Th33: ::Remark 2.4 (Part I, variant 2) for M being non empty RelStr for f being Function of L, M st f is infs-pr"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Image": 3
+      },
+      "index": 34,
+      "kind": "theorem",
+      "object": "theorem_34",
+      "preview": "theorem ::Remark 2.4 (Part II) for L, M being complete LATTICE for f being Function of L, M st f is sups-preserving or f"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Image": 3,
+        "SubRelStr": 2
+      },
+      "index": 35,
+      "kind": "theorem",
+      "object": "theorem_35",
+      "preview": "theorem ::Remark 2.5 for f being Function of L, L st f is idempotent directed-sups-preserving holds Image f is directed-"
+    },
+    {
+      "counts": {
+        "Ids": 1
+      },
+      "index": 4,
+      "kind": "registration",
+      "object": "registration_4",
+      "preview": "registration let L be non empty reflexive transitive RelStr; cluster Ids L -> non empty; correctness proof set x = the E"
+    },
+    {
+      "counts": {
+        "Ids": 4,
+        "InclPoset": 3
+      },
+      "index": 41,
+      "kind": "theorem",
+      "object": "theorem_41",
+      "preview": "theorem Th41: for L being non empty reflexive transitive RelStr holds (x is Element of InclPoset(Ids L) iff x is Ideal o"
+    },
+    {
+      "counts": {
+        "Ids": 2,
+        "InclPoset": 2
+      },
+      "index": 42,
+      "kind": "theorem",
+      "object": "theorem_42",
+      "preview": "theorem Th42: for L being non empty reflexive transitive RelStr for I being Element of InclPoset(Ids L) holds x in I imp"
+    },
+    {
+      "counts": {
+        "Ids": 2,
+        "InclPoset": 2
+      },
+      "index": 43,
+      "kind": "theorem",
+      "object": "theorem_43",
+      "preview": "theorem for L being with_infima Poset for x, y being Element of InclPoset(Ids L) holds x \"/\\\" y = x /\\ y proof let L be "
+    },
+    {
+      "counts": {
+        "Ids": 6,
+        "InclPoset": 1
+      },
+      "index": 5,
+      "kind": "registration",
+      "object": "registration_5",
+      "preview": "registration let L be with_infima Poset; cluster InclPoset(Ids L) -> with_infima; correctness proof for x, y be set st x"
+    },
+    {
+      "counts": {
+        "Ids": 3,
+        "InclPoset": 3
+      },
+      "index": 44,
+      "kind": "theorem",
+      "object": "theorem_44",
+      "preview": "theorem Th44: for L being with_suprema Poset for x, y being Element of InclPoset(Ids L) holds ex Z being Subset of L st "
+    },
+    {
+      "counts": {
+        "Ids": 3,
+        "InclPoset": 3
+      },
+      "index": 6,
+      "kind": "registration",
+      "object": "registration_6",
+      "preview": "registration let L be with_suprema Poset; cluster InclPoset(Ids L) -> with_suprema; correctness proof set P = InclPoset("
+    },
+    {
+      "counts": {
+        "Ids": 3
+      },
+      "index": 45,
+      "kind": "theorem",
+      "object": "theorem_45",
+      "preview": "theorem Th45: for L being lower-bounded sup-Semilattice for X being non empty Subset of Ids L holds meet X is Ideal of L"
+    },
+    {
+      "counts": {
+        "Ids": 5,
+        "InclPoset": 4
+      },
+      "index": 46,
+      "kind": "theorem",
+      "object": "theorem_46",
+      "preview": "theorem Th46: for L being lower-bounded sup-Semilattice for A being non empty Subset of InclPoset(Ids L) holds ex_inf_of"
+    },
+    {
+      "counts": {
+        "Ids": 3,
+        "InclPoset": 3
+      },
+      "index": 47,
+      "kind": "theorem",
+      "object": "theorem_47",
+      "preview": "theorem Th47: for L being with_suprema Poset holds ex_inf_of {},InclPoset(Ids L) & \"/\\\"({}, InclPoset(Ids L)) = [#]L pro"
+    },
+    {
+      "counts": {
+        "Ids": 3,
+        "InclPoset": 3
+      },
+      "index": 48,
+      "kind": "theorem",
+      "object": "theorem_48",
+      "preview": "theorem Th48: for L being lower-bounded sup-Semilattice holds InclPoset(Ids L) is complete proof let L be lower-bounded "
+    },
+    {
+      "counts": {
+        "Ids": 1,
+        "InclPoset": 1
+      },
+      "index": 7,
+      "kind": "registration",
+      "object": "registration_7",
+      "preview": "registration let L be lower-bounded sup-Semilattice; cluster InclPoset(Ids L) -> complete; correctness by Th48; end; beg"
+    },
+    {
+      "counts": {
+        "Function": 5,
+        "Ids": 9,
+        "InclPoset": 4,
+        "SupMap": 1
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let L be non empty Poset; func SupMap L -> Function of InclPoset(Ids L), L means :Def3: for I being Ideal of "
+    },
+    {
+      "counts": {
+        "Ids": 5,
+        "InclPoset": 1,
+        "SupMap": 3
+      },
+      "index": 49,
+      "kind": "theorem",
+      "object": "theorem_49",
+      "preview": "theorem Th49: for L being non empty Poset holds dom SupMap L = Ids L & rng SupMap L is Subset of L proof let L be non em"
+    },
+    {
+      "counts": {
+        "Ids": 1,
+        "SupMap": 2
+      },
+      "index": 50,
+      "kind": "theorem",
+      "object": "theorem_50",
+      "preview": "theorem for L being non empty Poset holds x in dom SupMap L iff x is Ideal of L proof let L be non empty Poset; hereby a"
+    },
+    {
+      "counts": {
+        "Ids": 1,
+        "InclPoset": 1,
+        "SupMap": 2
+      },
+      "index": 51,
+      "kind": "theorem",
+      "object": "theorem_51",
+      "preview": "theorem Th51: for L being up-complete non empty Poset holds SupMap L is monotone proof let L be up-complete non empty Po"
+    },
+    {
+      "counts": {
+        "SupMap": 1
+      },
+      "index": 8,
+      "kind": "registration",
+      "object": "registration_8",
+      "preview": "registration let L be up-complete non empty Poset; cluster SupMap L -> monotone; correctness by Th51; end;"
+    },
+    {
+      "counts": {
+        "Function": 3,
+        "Ids": 4,
+        "IdsMap": 1,
+        "InclPoset": 4
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let L be non empty Poset; func IdsMap L -> Function of L, InclPoset(Ids L) means :Def4: for x being Element o"
+    },
+    {
+      "counts": {
+        "Ids": 1,
+        "IdsMap": 6,
+        "InclPoset": 1
+      },
+      "index": 52,
+      "kind": "theorem",
+      "object": "theorem_52",
+      "preview": "theorem Th52: for L being non empty Poset holds IdsMap L is monotone proof let L be non empty Poset; let x1,x2 be Elemen"
+    },
+    {
+      "counts": {
+        "IdsMap": 1
+      },
+      "index": 9,
+      "kind": "registration",
+      "object": "registration_9",
+      "preview": "registration let L be non empty Poset; cluster IdsMap L -> monotone; correctness by Th52; end; begin :: A Family of Elem"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 2,
+      "kind": "notation",
+      "object": "notation_2",
+      "preview": "notation let J be set, L be non empty RelStr; let F be Function of J, the carrier of L; synonym Sup F for \\\\/(F, L); syn"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 53,
+      "kind": "theorem",
+      "object": "theorem_53",
+      "preview": "theorem for F being Function of J, the carrier of L holds F.j <= Sup F & Inf F <= F.j proof let F be Function of J, the "
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 54,
+      "kind": "theorem",
+      "object": "theorem_54",
+      "preview": "theorem for F being Function of J, the carrier of L holds (for j holds F.j <= a) implies Sup F <= a proof let F be Funct"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 55,
+      "kind": "theorem",
+      "object": "theorem_55",
+      "preview": "theorem for F being Function of J, the carrier of L holds (for j holds a <= F. j) implies a <= Inf F proof let F be Func"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/yellow_2.miz"
+}

@@ -1,0 +1,1258 @@
+{
+  "article": "conlat_1",
+  "attributes": [
+    "Attribute",
+    "AttributeDerivation",
+    "B-carrier",
+    "B-join",
+    "B-meet",
+    "BinOp",
+    "BoolePoset",
+    "CP",
+    "CP1",
+    "CP2",
+    "Con",
+    "Concept-with-all-Attributes",
+    "Concept-with-all-Objects",
+    "ConceptLattice",
+    "ConceptStr",
+    "ContextStr",
+    "Extent",
+    "FormalConcept",
+    "FormalContext",
+    "Function",
+    "Information",
+    "Intent",
+    "LattStr",
+    "ObjectDerivation",
+    "Set-of-FormalConcepts",
+    "Subset",
+    "co-Galois",
+    "co-universal",
+    "concept-like",
+    "is-SubConcept-of",
+    "is-connected-with",
+    "quasi-empty"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "ContextStr": 1,
+        "Information": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition ::$CD struct (2-sorted) ContextStr (# carrier, carrier' -> set, Information -> Relation of the carrier,the ca"
+    },
+    {
+      "counts": {
+        "ContextStr": 2
+      },
+      "index": 2,
+      "kind": "registration",
+      "object": "registration_2",
+      "preview": "registration cluster strict non empty non void for ContextStr; existence proof ContextStr(#{{}},{{}},the Relation of {{}"
+    },
+    {
+      "counts": {
+        "ContextStr": 1,
+        "FormalContext": 1
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition mode FormalContext is non empty non void ContextStr; end;"
+    },
+    {
+      "counts": {
+        "Attribute": 1
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let C be 2-sorted; mode Object of C is Element of C; mode Attribute of C is Element of the carrier' of C; end"
+    },
+    {
+      "counts": {
+        "Subset": 2
+      },
+      "index": 4,
+      "kind": "registration",
+      "object": "registration_4",
+      "preview": "registration let C be non empty non void 2-sorted; cluster non empty for Subset of the carrier of C; existence proof tak"
+    },
+    {
+      "counts": {
+        "Attribute": 1,
+        "FormalContext": 1,
+        "Information": 1,
+        "is-connected-with": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let C be FormalContext; let o be Object of C; let a be Attribute of C; pred o is-connected-with a means [o,a]"
+    },
+    {
+      "counts": {
+        "Attribute": 1,
+        "FormalContext": 1,
+        "is-connected-with": 1
+      },
+      "index": 1,
+      "kind": "notation",
+      "object": "notation_1",
+      "preview": "notation let C be FormalContext; let o be Object of C; let a be Attribute of C; antonym o is-not-connected-with a for o "
+    },
+    {
+      "counts": {
+        "Attribute": 28,
+        "FormalContext": 1,
+        "Function": 4,
+        "ObjectDerivation": 1,
+        "Subset": 14,
+        "is-connected-with": 28
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let C be FormalContext; func ObjectDerivation(C) -> Function of bool the carrier of C,bool the carrier' of C "
+    },
+    {
+      "counts": {
+        "Attribute": 29,
+        "AttributeDerivation": 1,
+        "FormalContext": 1,
+        "Function": 4,
+        "Subset": 14,
+        "is-connected-with": 29
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let C be FormalContext; func AttributeDerivation(C) -> Function of bool the carrier' of C,bool the carrier of"
+    },
+    {
+      "counts": {
+        "Attribute": 12,
+        "FormalContext": 2,
+        "ObjectDerivation": 2,
+        "Subset": 1,
+        "is-connected-with": 12
+      },
+      "index": 1,
+      "kind": "theorem",
+      "object": "theorem_1",
+      "preview": "theorem for C being FormalContext for o being Object of C holds ( ObjectDerivation(C)).({o}) = {a where a is Attribute o"
+    },
+    {
+      "counts": {
+        "Attribute": 9,
+        "AttributeDerivation": 2,
+        "FormalContext": 2,
+        "Subset": 1,
+        "is-connected-with": 12
+      },
+      "index": 2,
+      "kind": "theorem",
+      "object": "theorem_2",
+      "preview": "theorem for C being FormalContext for a being Attribute of C holds ( AttributeDerivation(C)).({a}) = {o where o is Objec"
+    },
+    {
+      "counts": {
+        "Attribute": 3,
+        "FormalContext": 2,
+        "ObjectDerivation": 3,
+        "Subset": 2,
+        "is-connected-with": 4
+      },
+      "index": 3,
+      "kind": "theorem",
+      "object": "theorem_3",
+      "preview": "theorem Th3: for C being FormalContext for O1,O2 being Subset of the carrier of C holds O1 c= O2 implies (ObjectDerivati"
+    },
+    {
+      "counts": {
+        "Attribute": 4,
+        "AttributeDerivation": 3,
+        "FormalContext": 2,
+        "Subset": 2,
+        "is-connected-with": 4
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem Th4: for C being FormalContext for A1,A2 being Subset of the carrier' of C holds A1 c= A2 implies (AttributeDeri"
+    },
+    {
+      "counts": {
+        "Attribute": 6,
+        "AttributeDerivation": 3,
+        "FormalContext": 2,
+        "ObjectDerivation": 1,
+        "Subset": 3,
+        "is-connected-with": 5
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem Th5: for C being FormalContext for O being Subset of the carrier of C holds O c= (AttributeDerivation(C)).((Obje"
+    },
+    {
+      "counts": {
+        "Attribute": 5,
+        "AttributeDerivation": 1,
+        "FormalContext": 2,
+        "ObjectDerivation": 3,
+        "Subset": 3,
+        "is-connected-with": 5
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem Th6: for C being FormalContext for A being Subset of the carrier' of C holds A c= (ObjectDerivation(C)).((Attrib"
+    },
+    {
+      "counts": {
+        "Attribute": 12,
+        "AttributeDerivation": 2,
+        "FormalContext": 2,
+        "ObjectDerivation": 4,
+        "Subset": 4,
+        "is-connected-with": 12
+      },
+      "index": 7,
+      "kind": "theorem",
+      "object": "theorem_7",
+      "preview": "theorem Th7: for C being FormalContext for O being Subset of the carrier of C holds (ObjectDerivation(C)).O = (ObjectDer"
+    },
+    {
+      "counts": {
+        "Attribute": 13,
+        "AttributeDerivation": 4,
+        "FormalContext": 2,
+        "ObjectDerivation": 2,
+        "Subset": 4,
+        "is-connected-with": 12
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem Th8: for C being FormalContext for A being Subset of the carrier' of C holds (AttributeDerivation(C)).A = (Attri"
+    },
+    {
+      "counts": {
+        "Attribute": 7,
+        "AttributeDerivation": 4,
+        "FormalContext": 2,
+        "Information": 4,
+        "Subset": 4,
+        "is-connected-with": 6
+      },
+      "index": 9,
+      "kind": "theorem",
+      "object": "theorem_9",
+      "preview": "theorem Th9: for C being FormalContext for O being Subset of the carrier of C for A being Subset of the carrier' of C ho"
+    },
+    {
+      "counts": {
+        "Attribute": 6,
+        "FormalContext": 2,
+        "Information": 4,
+        "ObjectDerivation": 4,
+        "Subset": 4,
+        "is-connected-with": 6
+      },
+      "index": 10,
+      "kind": "theorem",
+      "object": "theorem_10",
+      "preview": "theorem Th10: for C being FormalContext for O being Subset of the carrier of C for A being Subset of the carrier' of C h"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 2,
+        "FormalContext": 2,
+        "Information": 1,
+        "ObjectDerivation": 1,
+        "Subset": 4
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem for C being FormalContext for O being Subset of the carrier of C for A being Subset of the carrier' of C holds O"
+    },
+    {
+      "counts": {
+        "BoolePoset": 11,
+        "FormalContext": 1,
+        "Function": 3,
+        "ObjectDerivation": 8
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let C be FormalContext; func phi(C) -> Function of BoolePoset the carrier of C, BoolePoset the carrier' of C "
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 7,
+        "BoolePoset": 7,
+        "FormalContext": 1,
+        "Function": 1
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition let C be FormalContext; func psi(C) -> Function of BoolePoset the carrier' of C, BoolePoset the carrier of C "
+    },
+    {
+      "counts": {
+        "Con": 3,
+        "Function": 2,
+        "co-Galois": 1
+      },
+      "index": 9,
+      "kind": "definition",
+      "object": "definition_9",
+      "preview": "definition let P,R be non empty RelStr; let Con be Connection of P,R; attr Con is co-Galois means ex f being Function of"
+    },
+    {
+      "counts": {
+        "Con": 10,
+        "Function": 6,
+        "co-Galois": 3
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem Th12: for P,R being non empty Poset for Con being Connection of P,R for f being Function of P,R, g being Functio"
+    },
+    {
+      "counts": {
+        "Con": 9,
+        "Function": 6,
+        "co-Galois": 2
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem for P,R being non empty Poset for Con being Connection of P,R st Con is co-Galois for f being Function of P,R, g"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 4,
+        "BoolePoset": 14,
+        "FormalContext": 2,
+        "ObjectDerivation": 4,
+        "Subset": 10,
+        "co-Galois": 1
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem for C being FormalContext holds [phi(C),psi(C)] is co-Galois proof let C be FormalContext; A1: LattPOSet BooleLa"
+    },
+    {
+      "counts": {
+        "Attribute": 11,
+        "FormalContext": 2,
+        "ObjectDerivation": 16,
+        "Subset": 3,
+        "is-connected-with": 12
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem Th15: for C being FormalContext for O1,O2 being Subset of the carrier of C holds (ObjectDerivation(C)).(O1 \\/ O2"
+    },
+    {
+      "counts": {
+        "Attribute": 15,
+        "AttributeDerivation": 16,
+        "FormalContext": 2,
+        "Subset": 3,
+        "is-connected-with": 12
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem Th16: for C being FormalContext for A1,A2 being Subset of the carrier' of C holds (AttributeDerivation(C)).(A1 \\"
+    },
+    {
+      "counts": {
+        "Attribute": 4,
+        "FormalContext": 2,
+        "ObjectDerivation": 2,
+        "Subset": 1,
+        "is-connected-with": 4
+      },
+      "index": 17,
+      "kind": "theorem",
+      "object": "theorem_17",
+      "preview": "theorem Th17: for C being FormalContext holds (ObjectDerivation(C)).{} = the carrier' of C proof let C be FormalContext;"
+    },
+    {
+      "counts": {
+        "Attribute": 4,
+        "AttributeDerivation": 2,
+        "FormalContext": 2,
+        "Subset": 1,
+        "is-connected-with": 4
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem Th18: for C being FormalContext holds (AttributeDerivation(C)).{} = the carrier of C proof let C be FormalContex"
+    },
+    {
+      "counts": {
+        "ConceptStr": 1,
+        "Extent": 1,
+        "Intent": 1,
+        "Subset": 2
+      },
+      "index": 10,
+      "kind": "definition",
+      "object": "definition_10",
+      "preview": "definition let C be 2-sorted; struct ConceptStr over C (# Extent -> Subset of the carrier of C, Intent -> Subset of the "
+    },
+    {
+      "counts": {
+        "CP": 7,
+        "ConceptStr": 1,
+        "Extent": 2,
+        "Intent": 2,
+        "quasi-empty": 1
+      },
+      "index": 11,
+      "kind": "definition",
+      "object": "definition_11",
+      "preview": "definition let C be 2-sorted; let CP be ConceptStr over C; attr CP is empty means :Def7: the Extent of CP is empty & the"
+    },
+    {
+      "counts": {
+        "ConceptStr": 4,
+        "Subset": 4,
+        "quasi-empty": 2
+      },
+      "index": 5,
+      "kind": "registration",
+      "object": "registration_5",
+      "preview": "registration let C be non empty non void 2-sorted; cluster strict non empty for ConceptStr over C; existence proof set A"
+    },
+    {
+      "counts": {
+        "ConceptStr": 3,
+        "Extent": 4,
+        "FormalContext": 2,
+        "Intent": 3,
+        "ObjectDerivation": 2
+      },
+      "index": 6,
+      "kind": "registration",
+      "object": "registration_6",
+      "preview": "registration let C be empty void 2-sorted; cluster -> empty for ConceptStr over C; coherence; end; Lm1: for C being Form"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 1,
+        "CP": 6,
+        "ConceptStr": 1,
+        "Extent": 2,
+        "FormalContext": 1,
+        "Intent": 2,
+        "ObjectDerivation": 1,
+        "concept-like": 1
+      },
+      "index": 12,
+      "kind": "definition",
+      "object": "definition_12",
+      "preview": "definition let C be FormalContext; let CP be ConceptStr over C; attr CP is concept-like means :Def9: (ObjectDerivation(C"
+    },
+    {
+      "counts": {
+        "Attribute": 4,
+        "AttributeDerivation": 2,
+        "ConceptStr": 3,
+        "Extent": 1,
+        "FormalContext": 1,
+        "Intent": 1,
+        "ObjectDerivation": 7,
+        "Subset": 3,
+        "concept-like": 2,
+        "is-connected-with": 4
+      },
+      "index": 7,
+      "kind": "registration",
+      "object": "registration_7",
+      "preview": "registration let C be FormalContext; cluster concept-like non empty for ConceptStr over C; existence proof set o = the O"
+    },
+    {
+      "counts": {
+        "ConceptStr": 1,
+        "FormalConcept": 1,
+        "FormalContext": 1,
+        "concept-like": 1
+      },
+      "index": 13,
+      "kind": "definition",
+      "object": "definition_13",
+      "preview": "definition let C be FormalContext; mode FormalConcept of C is concept-like non empty ConceptStr over C; end;"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 1,
+        "CP": 8,
+        "ConceptStr": 1,
+        "Extent": 3,
+        "FormalConcept": 3,
+        "FormalContext": 1,
+        "Intent": 3,
+        "ObjectDerivation": 1
+      },
+      "index": 8,
+      "kind": "registration",
+      "object": "registration_8",
+      "preview": "registration let C be FormalContext; cluster strict for FormalConcept of C; existence proof set CP = the FormalConcept o"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 6,
+        "ConceptStr": 7,
+        "Extent": 2,
+        "FormalConcept": 6,
+        "FormalContext": 2,
+        "Intent": 2,
+        "ObjectDerivation": 12,
+        "Subset": 8
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem Th19: for C being FormalContext for O being Subset of the carrier of C holds ConceptStr(#(AttributeDerivation(C)"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 7,
+        "ConceptStr": 4,
+        "FormalConcept": 4,
+        "FormalContext": 2,
+        "ObjectDerivation": 8,
+        "Subset": 6
+      },
+      "index": 20,
+      "kind": "theorem",
+      "object": "theorem_20",
+      "preview": "theorem for C being FormalContext for O being Subset of the carrier of C holds (ex A being Subset of the carrier' of C s"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 12,
+        "ConceptStr": 7,
+        "Extent": 2,
+        "FormalConcept": 6,
+        "FormalContext": 2,
+        "Intent": 2,
+        "ObjectDerivation": 6,
+        "Subset": 8
+      },
+      "index": 21,
+      "kind": "theorem",
+      "object": "theorem_21",
+      "preview": "theorem Th21: for C being FormalContext for A being Subset of the carrier' of C holds ConceptStr(#(AttributeDerivation(C"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 8,
+        "ConceptStr": 4,
+        "FormalConcept": 4,
+        "FormalContext": 2,
+        "ObjectDerivation": 7,
+        "Subset": 6
+      },
+      "index": 22,
+      "kind": "theorem",
+      "object": "theorem_22",
+      "preview": "theorem for C being FormalContext for A being Subset of the carrier' of C holds (ex O being Subset of the carrier of C s"
+    },
+    {
+      "counts": {
+        "CP": 3,
+        "ConceptStr": 1,
+        "Extent": 1,
+        "FormalContext": 1
+      },
+      "index": 14,
+      "kind": "definition",
+      "object": "definition_14",
+      "preview": "definition let C be FormalContext; let CP be ConceptStr over C; attr CP is universal means the Extent of CP = the carrie"
+    },
+    {
+      "counts": {
+        "CP": 3,
+        "ConceptStr": 1,
+        "FormalContext": 1,
+        "Intent": 1,
+        "co-universal": 1
+      },
+      "index": 15,
+      "kind": "definition",
+      "object": "definition_15",
+      "preview": "definition let C be FormalContext; let CP be ConceptStr over C; attr CP is co-universal means the Intent of CP = the car"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 4,
+        "CP": 4,
+        "ConceptStr": 2,
+        "FormalConcept": 4,
+        "FormalContext": 1,
+        "ObjectDerivation": 4,
+        "Subset": 2,
+        "co-universal": 2
+      },
+      "index": 9,
+      "kind": "registration",
+      "object": "registration_9",
+      "preview": "registration let C be FormalContext; cluster strict universal for FormalConcept of C; existence proof reconsider e = {} "
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 5,
+        "CP": 2,
+        "Concept-with-all-Objects": 1,
+        "ConceptStr": 2,
+        "FormalConcept": 2,
+        "FormalContext": 1,
+        "ObjectDerivation": 2,
+        "Subset": 3
+      },
+      "index": 16,
+      "kind": "definition",
+      "object": "definition_16",
+      "preview": "definition let C be FormalContext; func Concept-with-all-Objects(C) -> strict universal FormalConcept of C means :Def12:"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 2,
+        "CP": 2,
+        "Concept-with-all-Attributes": 1,
+        "ConceptStr": 2,
+        "FormalConcept": 2,
+        "FormalContext": 1,
+        "ObjectDerivation": 5,
+        "Subset": 3,
+        "co-universal": 2
+      },
+      "index": 17,
+      "kind": "definition",
+      "object": "definition_17",
+      "preview": "definition let C be FormalContext; func Concept-with-all-Attributes(C) -> strict co-universal FormalConcept of C means :"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 3,
+        "Concept-with-all-Attributes": 2,
+        "Concept-with-all-Objects": 2,
+        "ConceptStr": 2,
+        "Extent": 1,
+        "FormalContext": 2,
+        "Intent": 1,
+        "ObjectDerivation": 3,
+        "Subset": 4
+      },
+      "index": 23,
+      "kind": "theorem",
+      "object": "theorem_23",
+      "preview": "theorem Th23: for C being FormalContext holds the Extent of Concept-with-all-Objects(C) = the carrier of C & the Intent "
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 1,
+        "CP": 14,
+        "Extent": 4,
+        "FormalConcept": 2,
+        "FormalContext": 2,
+        "Intent": 4,
+        "ObjectDerivation": 1,
+        "co-universal": 2
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem for C being FormalContext for CP being FormalConcept of C holds (the Extent of CP = {} implies CP is co-universa"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 1,
+        "CP": 18,
+        "Concept-with-all-Attributes": 2,
+        "Concept-with-all-Objects": 2,
+        "Extent": 5,
+        "FormalConcept": 2,
+        "FormalContext": 2,
+        "Intent": 5,
+        "ObjectDerivation": 1,
+        "co-universal": 1
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem Th25: for C being FormalContext for CP being strict FormalConcept of C holds (the Extent of CP = {} implies CP ="
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 1,
+        "CP": 17,
+        "ConceptStr": 2,
+        "Extent": 4,
+        "FormalConcept": 3,
+        "FormalContext": 2,
+        "Intent": 4,
+        "ObjectDerivation": 1,
+        "co-universal": 2,
+        "quasi-empty": 2
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem for C being FormalContext for CP being quasi-empty ConceptStr over C st CP is FormalConcept of C holds CP is uni"
+    },
+    {
+      "counts": {
+        "CP": 10,
+        "Concept-with-all-Attributes": 2,
+        "Concept-with-all-Objects": 2,
+        "ConceptStr": 2,
+        "Extent": 1,
+        "FormalConcept": 2,
+        "FormalContext": 2,
+        "Intent": 1,
+        "quasi-empty": 2
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem for C being FormalContext for CP being quasi-empty ConceptStr over C st CP is strict FormalConcept of C holds CP"
+    },
+    {
+      "counts": {
+        "CP": 2,
+        "FormalConcept": 3,
+        "FormalContext": 1,
+        "Set-of-FormalConcepts": 1
+      },
+      "index": 18,
+      "kind": "definition",
+      "object": "definition_18",
+      "preview": "definition let C be FormalContext; mode Set-of-FormalConcepts of C -> non empty set means :Def14: for X being set st X i"
+    },
+    {
+      "counts": {
+        "FormalConcept": 1,
+        "FormalContext": 1,
+        "Set-of-FormalConcepts": 1
+      },
+      "index": 19,
+      "kind": "definition",
+      "object": "definition_19",
+      "preview": "definition let C be FormalContext; let FCS be Set-of-FormalConcepts of C; redefine mode Element of FCS -> FormalConcept "
+    },
+    {
+      "counts": {
+        "CP1": 3,
+        "CP2": 3,
+        "Extent": 2,
+        "FormalConcept": 1,
+        "FormalContext": 1,
+        "is-SubConcept-of": 1
+      },
+      "index": 20,
+      "kind": "definition",
+      "object": "definition_20",
+      "preview": "definition let C be FormalContext; let CP1,CP2 be FormalConcept of C; pred CP1 is-SubConcept-of CP2 means the Extent of "
+    },
+    {
+      "counts": {
+        "CP1": 3,
+        "CP2": 3,
+        "FormalConcept": 1,
+        "FormalContext": 1,
+        "is-SubConcept-of": 1
+      },
+      "index": 2,
+      "kind": "notation",
+      "object": "notation_2",
+      "preview": "notation let C be FormalContext; let CP1,CP2 be FormalConcept of C; synonym CP2 is-SuperConcept-of CP1 for CP1 is-SubCon"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 4,
+        "CP1": 14,
+        "CP2": 14,
+        "Extent": 6,
+        "FormalConcept": 2,
+        "FormalContext": 2,
+        "Intent": 12,
+        "ObjectDerivation": 2,
+        "is-SubConcept-of": 3
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem Th28: for C being FormalContext for CP1,CP2 being FormalConcept of C holds CP1 is-SubConcept-of CP2 iff the Inte"
+    },
+    {
+      "counts": {
+        "CP1": 3,
+        "CP2": 3,
+        "FormalConcept": 1,
+        "FormalContext": 1,
+        "Intent": 2
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem for C being FormalContext for CP1,CP2 being FormalConcept of C holds CP1 is-SuperConcept-of CP2 iff the Intent o"
+    },
+    {
+      "counts": {
+        "CP": 6,
+        "Concept-with-all-Attributes": 2,
+        "Concept-with-all-Objects": 2,
+        "Extent": 2,
+        "FormalConcept": 2,
+        "FormalContext": 2,
+        "Intent": 2,
+        "is-SubConcept-of": 2
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem for C being FormalContext for CP being FormalConcept of C holds CP is-SubConcept-of Concept-with-all-Objects(C) "
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 6,
+        "B-carrier": 1,
+        "CP": 16,
+        "ConceptStr": 10,
+        "Extent": 5,
+        "FormalConcept": 1,
+        "FormalContext": 1,
+        "Intent": 5,
+        "ObjectDerivation": 6,
+        "Subset": 8
+      },
+      "index": 21,
+      "kind": "definition",
+      "object": "definition_21",
+      "preview": "definition let C be FormalContext; func B-carrier(C) -> non empty set equals { ConceptStr(#E,I#) where E is Subset of th"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 1,
+        "B-carrier": 3,
+        "ConceptStr": 2,
+        "FormalConcept": 1,
+        "FormalContext": 1,
+        "ObjectDerivation": 1,
+        "Set-of-FormalConcepts": 1,
+        "Subset": 2
+      },
+      "index": 22,
+      "kind": "definition",
+      "object": "definition_22",
+      "preview": "definition let C be FormalContext; redefine func B-carrier(C) -> Set-of-FormalConcepts of C; coherence proof for X being"
+    },
+    {
+      "counts": {
+        "B-carrier": 1,
+        "FormalContext": 1
+      },
+      "index": 10,
+      "kind": "registration",
+      "object": "registration_10",
+      "preview": "registration let C be FormalContext; cluster B-carrier(C) -> non empty; coherence; end;"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 2,
+        "B-carrier": 4,
+        "CP": 14,
+        "ConceptStr": 2,
+        "Extent": 1,
+        "FormalConcept": 5,
+        "FormalContext": 2,
+        "Intent": 1,
+        "ObjectDerivation": 2,
+        "Subset": 2
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem Th31: for C being FormalContext for CP being object holds CP in B-carrier (C) iff CP is strict FormalConcept of "
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 14,
+        "B-carrier": 25,
+        "B-meet": 1,
+        "BinOp": 3,
+        "CP": 4,
+        "CP1": 30,
+        "CP2": 30,
+        "ConceptStr": 11,
+        "Extent": 19,
+        "FormalConcept": 9,
+        "FormalContext": 1,
+        "Function": 1,
+        "Intent": 21,
+        "ObjectDerivation": 10,
+        "Subset": 17
+      },
+      "index": 23,
+      "kind": "definition",
+      "object": "definition_23",
+      "preview": "definition let C be FormalContext; func B-meet(C) -> BinOp of B-carrier(C) means :Def17: for CP1,CP2 being strict Formal"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 10,
+        "B-carrier": 33,
+        "B-join": 4,
+        "B-meet": 3,
+        "BinOp": 3,
+        "CP": 4,
+        "CP1": 42,
+        "CP2": 42,
+        "ConceptStr": 11,
+        "Extent": 21,
+        "FormalConcept": 13,
+        "FormalContext": 5,
+        "Function": 1,
+        "Intent": 19,
+        "ObjectDerivation": 14,
+        "Subset": 17
+      },
+      "index": 24,
+      "kind": "definition",
+      "object": "definition_24",
+      "preview": "definition let C be FormalContext; func B-join(C) -> BinOp of B-carrier(C) means :Def18: for CP1,CP2 being strict Formal"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 2,
+        "B-meet": 4,
+        "CP1": 10,
+        "CP2": 10,
+        "ConceptStr": 2,
+        "Extent": 4,
+        "FormalConcept": 2,
+        "FormalContext": 2,
+        "Intent": 4,
+        "ObjectDerivation": 2,
+        "Subset": 4
+      },
+      "index": 32,
+      "kind": "theorem",
+      "object": "theorem_32",
+      "preview": "theorem Th32: for C being FormalContext for CP1,CP2 being strict FormalConcept of C holds (B-meet(C)).(CP1,CP2) = (B-mee"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 2,
+        "B-join": 4,
+        "CP1": 10,
+        "CP2": 10,
+        "ConceptStr": 2,
+        "Extent": 4,
+        "FormalConcept": 2,
+        "FormalContext": 2,
+        "Intent": 4,
+        "ObjectDerivation": 2,
+        "Subset": 4
+      },
+      "index": 33,
+      "kind": "theorem",
+      "object": "theorem_33",
+      "preview": "theorem Th33: for C being FormalContext for CP1,CP2 being strict FormalConcept of C holds (B-join(C)).(CP1,CP2) = (B-joi"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 24,
+        "B-meet": 14,
+        "CP": 4,
+        "CP1": 20,
+        "CP2": 22,
+        "ConceptStr": 4,
+        "Extent": 8,
+        "FormalConcept": 4,
+        "FormalContext": 2,
+        "Intent": 32,
+        "ObjectDerivation": 16,
+        "Subset": 8
+      },
+      "index": 34,
+      "kind": "theorem",
+      "object": "theorem_34",
+      "preview": "theorem Th34: for C being FormalContext for CP1,CP2,CP3 being strict FormalConcept of C holds (B-meet(C)).(CP1,(B-meet(C"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 16,
+        "B-join": 14,
+        "CP": 4,
+        "CP1": 20,
+        "CP2": 22,
+        "ConceptStr": 4,
+        "Extent": 32,
+        "FormalConcept": 4,
+        "FormalContext": 2,
+        "Intent": 8,
+        "ObjectDerivation": 24,
+        "Subset": 8
+      },
+      "index": 35,
+      "kind": "theorem",
+      "object": "theorem_35",
+      "preview": "theorem Th35: for C being FormalContext for CP1,CP2,CP3 being strict FormalConcept of C holds (B-join(C)).(CP1,(B-join(C"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 11,
+        "B-join": 2,
+        "B-meet": 5,
+        "CP1": 17,
+        "CP2": 36,
+        "ConceptStr": 2,
+        "Extent": 25,
+        "FormalConcept": 3,
+        "FormalContext": 2,
+        "Intent": 15,
+        "ObjectDerivation": 14,
+        "Subset": 4
+      },
+      "index": 36,
+      "kind": "theorem",
+      "object": "theorem_36",
+      "preview": "theorem Th36: for C being FormalContext for CP1,CP2 being strict FormalConcept of C holds (B-join(C)).((B-meet(C)).(CP1,"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 14,
+        "B-join": 5,
+        "B-meet": 2,
+        "CP1": 36,
+        "CP2": 17,
+        "ConceptStr": 2,
+        "Extent": 15,
+        "FormalConcept": 3,
+        "FormalContext": 2,
+        "Intent": 25,
+        "ObjectDerivation": 11,
+        "Subset": 4
+      },
+      "index": 37,
+      "kind": "theorem",
+      "object": "theorem_37",
+      "preview": "theorem Th37: for C being FormalContext for CP1,CP2 being strict FormalConcept of C holds (B-meet(C)).(CP1,(B-join(C)).("
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 4,
+        "B-meet": 2,
+        "CP": 16,
+        "Concept-with-all-Objects": 5,
+        "ConceptStr": 1,
+        "Extent": 9,
+        "FormalConcept": 2,
+        "FormalContext": 2,
+        "Intent": 5,
+        "ObjectDerivation": 11,
+        "Subset": 3
+      },
+      "index": 38,
+      "kind": "theorem",
+      "object": "theorem_38",
+      "preview": "theorem for C being FormalContext for CP being strict FormalConcept of C holds (B-meet(C)).(CP,Concept-with-all-Objects("
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 5,
+        "B-join": 2,
+        "CP": 11,
+        "Concept-with-all-Objects": 13,
+        "ConceptStr": 1,
+        "Extent": 12,
+        "FormalConcept": 2,
+        "FormalContext": 2,
+        "Intent": 5,
+        "ObjectDerivation": 11,
+        "Subset": 2
+      },
+      "index": 39,
+      "kind": "theorem",
+      "object": "theorem_39",
+      "preview": "theorem Th39: for C being FormalContext for CP being strict FormalConcept of C holds (B-join(C)).(CP,Concept-with-all-Ob"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 11,
+        "B-join": 2,
+        "CP": 16,
+        "Concept-with-all-Attributes": 5,
+        "ConceptStr": 1,
+        "Extent": 5,
+        "FormalConcept": 2,
+        "FormalContext": 2,
+        "Intent": 9,
+        "ObjectDerivation": 4,
+        "Subset": 3
+      },
+      "index": 40,
+      "kind": "theorem",
+      "object": "theorem_40",
+      "preview": "theorem for C being FormalContext for CP being strict FormalConcept of C holds (B-join(C)).(CP,Concept-with-all-Attribut"
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 11,
+        "B-meet": 2,
+        "CP": 11,
+        "Concept-with-all-Attributes": 13,
+        "ConceptStr": 1,
+        "Extent": 5,
+        "FormalConcept": 2,
+        "FormalContext": 2,
+        "Intent": 12,
+        "ObjectDerivation": 5,
+        "Subset": 2
+      },
+      "index": 41,
+      "kind": "theorem",
+      "object": "theorem_41",
+      "preview": "theorem for C being FormalContext for CP being strict FormalConcept of C holds (B-meet(C)).(CP,Concept-with-all-Attribut"
+    },
+    {
+      "counts": {
+        "B-carrier": 1,
+        "B-join": 1,
+        "B-meet": 1,
+        "ConceptLattice": 1,
+        "FormalContext": 1,
+        "LattStr": 2
+      },
+      "index": 25,
+      "kind": "definition",
+      "object": "definition_25",
+      "preview": "definition let C be FormalContext; func ConceptLattice(C) -> strict non empty LattStr equals LattStr(#B-carrier (C),B-jo"
+    },
+    {
+      "counts": {
+        "B-carrier": 7,
+        "B-join": 19,
+        "B-meet": 19,
+        "ConceptLattice": 1,
+        "FormalConcept": 6,
+        "FormalContext": 2,
+        "LattStr": 2
+      },
+      "index": 42,
+      "kind": "theorem",
+      "object": "theorem_42",
+      "preview": "theorem Th42: for C being FormalContext holds ConceptLattice(C) is Lattice proof let C be FormalContext; set L = LattStr"
+    },
+    {
+      "counts": {
+        "ConceptLattice": 1,
+        "FormalContext": 1
+      },
+      "index": 11,
+      "kind": "registration",
+      "object": "registration_11",
+      "preview": "registration let C be FormalContext; cluster ConceptLattice(C) -> strict non empty Lattice-like; coherence by Th42; end;"
+    },
+    {
+      "counts": {
+        "B-carrier": 1,
+        "ConceptLattice": 1,
+        "FormalConcept": 1,
+        "FormalContext": 1,
+        "Subset": 1
+      },
+      "index": 26,
+      "kind": "definition",
+      "object": "definition_26",
+      "preview": "definition let C be FormalContext; let S be non empty Subset of ConceptLattice(C); redefine mode Element of S -> FormalC"
+    },
+    {
+      "counts": {
+        "CP": 3,
+        "ConceptLattice": 1,
+        "FormalConcept": 1,
+        "FormalContext": 1
+      },
+      "index": 27,
+      "kind": "definition",
+      "object": "definition_27",
+      "preview": "definition let C be FormalContext; let CP be Element of ConceptLattice(C); func CP@ -> strict FormalConcept of C equals "
+    },
+    {
+      "counts": {
+        "AttributeDerivation": 3,
+        "B-join": 2,
+        "CP1": 23,
+        "CP2": 30,
+        "ConceptLattice": 3,
+        "ConceptStr": 2,
+        "Extent": 10,
+        "FormalContext": 2,
+        "Intent": 14,
+        "ObjectDerivation": 2,
+        "Subset": 4,
+        "is-SubConcept-of": 3
+      },
+      "index": 43,
+      "kind": "theorem",
+      "object": "theorem_43",
+      "preview": "theorem Th43: for C being FormalContext for CP1,CP2 being Element of ConceptLattice(C) holds CP1 [= CP2 iff CP1@ is-SubC"
+    },
+    {
+      "counts": {
+        "Attribute": 12,
+        "AttributeDerivation": 13,
+        "B-carrier": 7,
+        "B-join": 2,
+        "CP": 7,
+        "Concept-with-all-Objects": 1,
+        "ConceptLattice": 26,
+        "ConceptStr": 1,
+        "Extent": 22,
+        "FormalConcept": 3,
+        "FormalContext": 2,
+        "Intent": 23,
+        "ObjectDerivation": 1,
+        "Subset": 6,
+        "is-SubConcept-of": 3,
+        "is-connected-with": 8
+      },
+      "index": 44,
+      "kind": "theorem",
+      "object": "theorem_44",
+      "preview": "theorem Th44: for C being FormalContext holds ConceptLattice(C) is complete Lattice proof let C be FormalContext; for X "
+    },
+    {
+      "counts": {
+        "ConceptLattice": 1,
+        "FormalContext": 1
+      },
+      "index": 12,
+      "kind": "registration",
+      "object": "registration_12",
+      "preview": "registration let C be FormalContext; cluster ConceptLattice(C) -> complete; coherence by Th44; end;"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/conlat_1.miz"
+}

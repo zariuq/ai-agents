@@ -1,0 +1,866 @@
+{
+  "inputs": {
+    "gate_summary_heavy": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t18_t25_right_partition_gates/summary.json",
+    "gate_summary_light": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t14_t17_right_partition_gates/summary.json",
+    "track_a": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/finite_structure_property_benchmark_v2.json",
+    "track_b": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_selector_family_candidates_v2.json"
+  },
+  "shared_assessment": {
+    "baseline_contrast": {
+      "track_a_baseline_can_overrate_false_rules": true,
+      "track_b_generic_miner_is_still_weaker_than_packaging_lead": true
+    },
+    "heavy_cluster_is_currently_interpolant_timeout_bound": true,
+    "light_cluster_has_gate_sensitive_semantic_frontier": true,
+    "mixed_selector_microgates_still_timeout_bound": true,
+    "track_a_closed_loop": true,
+    "track_b_additional_schema_lead_count": 1,
+    "track_b_has_mml_relevant_lead": true,
+    "track_b_packaging_lead_absent_as_packaged_iff_on_local_shelf": true,
+    "track_b_packaging_lead_absent_in_configured_broader_search_scope": true
+  },
+  "track_a": {
+    "baseline_misfires": [
+      {
+        "antecedent": [
+          "idempotent"
+        ],
+        "confidence": 0.9310344827586207,
+        "consequent": "associative",
+        "countermodel_found": true,
+        "jaccard": 0.78125,
+        "pln_score": 0.8620689655172413,
+        "strength": 0.9259259259259259,
+        "support_fraction": 0.78125,
+        "theorem_status": "CounterSatisfiable",
+        "width": 0.15384615384615385
+      },
+      {
+        "antecedent": [
+          "has_left_zero"
+        ],
+        "confidence": 0.9090909090909091,
+        "consequent": "associative",
+        "countermodel_found": true,
+        "jaccard": 0.6666666666666666,
+        "pln_score": 0.9090909090909091,
+        "strength": 1.0,
+        "support_fraction": 0.625,
+        "theorem_status": "CounterSatisfiable",
+        "width": 0.0
+      },
+      {
+        "antecedent": [
+          "has_right_zero"
+        ],
+        "confidence": 0.9,
+        "consequent": "associative",
+        "countermodel_found": true,
+        "jaccard": 0.6,
+        "pln_score": 0.9,
+        "strength": 1.0,
+        "support_fraction": 0.5625,
+        "theorem_status": "CounterSatisfiable",
+        "width": 0.0
+      },
+      {
+        "antecedent": [
+          "has_right_identity"
+        ],
+        "confidence": 0.8888888888888888,
+        "consequent": "associative",
+        "countermodel_found": true,
+        "jaccard": 0.5333333333333333,
+        "pln_score": 0.8888888888888888,
+        "strength": 1.0,
+        "support_fraction": 0.5,
+        "theorem_status": "CounterSatisfiable",
+        "width": 0.0
+      },
+      {
+        "antecedent": [
+          "has_left_zero",
+          "idempotent"
+        ],
+        "confidence": 0.8888888888888888,
+        "consequent": "associative",
+        "countermodel_found": true,
+        "jaccard": 0.5333333333333333,
+        "pln_score": 0.8888888888888888,
+        "strength": 1.0,
+        "support_fraction": 0.5,
+        "theorem_status": "CounterSatisfiable",
+        "width": 0.0
+      }
+    ],
+    "candidate_count": 20,
+    "closed_loop": true,
+    "population_size": 32,
+    "proved_count": 3,
+    "refuted_count": 17,
+    "top_proved": [
+      {
+        "antecedent": [
+          "left_projection"
+        ],
+        "confidence": 0.8461538461538461,
+        "consequent": "right_cancellative",
+        "countermodel_found": false,
+        "jaccard": 1.0,
+        "pln_score": 0.8461538461538461,
+        "strength": 1.0,
+        "support_fraction": 0.34375,
+        "theorem_status": "Theorem",
+        "width": 0.0
+      },
+      {
+        "antecedent": [
+          "associative",
+          "left_projection"
+        ],
+        "confidence": 0.8461538461538461,
+        "consequent": "right_cancellative",
+        "countermodel_found": false,
+        "jaccard": 1.0,
+        "pln_score": 0.8461538461538461,
+        "strength": 1.0,
+        "support_fraction": 0.34375,
+        "theorem_status": "Theorem",
+        "width": 0.0
+      },
+      {
+        "antecedent": [
+          "has_left_zero",
+          "left_projection"
+        ],
+        "confidence": 0.8461538461538461,
+        "consequent": "right_cancellative",
+        "countermodel_found": false,
+        "jaccard": 1.0,
+        "pln_score": 0.8461538461538461,
+        "strength": 1.0,
+        "support_fraction": 0.34375,
+        "theorem_status": "Theorem",
+        "width": 0.0
+      }
+    ],
+    "top_refuted": [
+      {
+        "antecedent": [
+          "has_left_zero"
+        ],
+        "confidence": 0.9090909090909091,
+        "consequent": "associative",
+        "countermodel_found": true,
+        "jaccard": 0.6666666666666666,
+        "pln_score": 0.9090909090909091,
+        "strength": 1.0,
+        "support_fraction": 0.625,
+        "theorem_status": "CounterSatisfiable",
+        "width": 0.0
+      },
+      {
+        "antecedent": [
+          "has_right_zero"
+        ],
+        "confidence": 0.9,
+        "consequent": "associative",
+        "countermodel_found": true,
+        "jaccard": 0.6,
+        "pln_score": 0.9,
+        "strength": 1.0,
+        "support_fraction": 0.5625,
+        "theorem_status": "CounterSatisfiable",
+        "width": 0.0
+      },
+      {
+        "antecedent": [
+          "has_right_identity"
+        ],
+        "confidence": 0.8888888888888888,
+        "consequent": "associative",
+        "countermodel_found": true,
+        "jaccard": 0.5333333333333333,
+        "pln_score": 0.8888888888888888,
+        "strength": 1.0,
+        "support_fraction": 0.5,
+        "theorem_status": "CounterSatisfiable",
+        "width": 0.0
+      },
+      {
+        "antecedent": [
+          "has_left_zero",
+          "idempotent"
+        ],
+        "confidence": 0.8888888888888888,
+        "consequent": "associative",
+        "countermodel_found": true,
+        "jaccard": 0.5333333333333333,
+        "pln_score": 0.8888888888888888,
+        "strength": 1.0,
+        "support_fraction": 0.5,
+        "theorem_status": "CounterSatisfiable",
+        "width": 0.0
+      },
+      {
+        "antecedent": [
+          "has_right_identity",
+          "idempotent"
+        ],
+        "confidence": 0.8823529411764706,
+        "consequent": "has_left_zero",
+        "countermodel_found": true,
+        "jaccard": 0.75,
+        "pln_score": 0.8823529411764706,
+        "strength": 1.0,
+        "support_fraction": 0.46875,
+        "theorem_status": "CounterSatisfiable",
+        "width": 0.0
+      }
+    ],
+    "unresolved_count": 0,
+    "unsatisfied_count": 32
+  },
+  "track_b": {
+    "additional_schema_leads": [
+      {
+        "cluster_name": "lattice4__t_transport_property_relation_family",
+        "common_symbols": [
+          "k1_zfmisc_1",
+          "k2_zfmisc_1",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "v10_lattices",
+          "v1_funct_1",
+          "v1_funct_2",
+          "v1_lattice4",
+          "v2_lattice4",
+          "v2_struct_0"
+        ],
+        "instance_sketches": [
+          {
+            "problem": "lattice4__t12_lattice4",
+            "relation_term": "r3_lattice4(B, A, C)",
+            "source_property_term": "v13_lattices(B)",
+            "target_property_term": "v13_lattices(A)",
+            "witness_guard_family": "v2_funct_2"
+          },
+          {
+            "problem": "lattice4__t18_lattice4",
+            "relation_term": "r2_lattice4(B, A, C)",
+            "source_property_term": "v14_lattices(B)",
+            "target_property_term": "v14_lattices(A)",
+            "witness_guard_family": "v2_funct_2"
+          },
+          {
+            "problem": "lattice4__t28_lattice4",
+            "relation_term": "r1_lattice4(B, A, C)",
+            "source_property_term": "v3_filter_0(B)",
+            "target_property_term": "v3_filter_0(A)",
+            "witness_guard_family": "v3_funct_2"
+          },
+          {
+            "problem": "lattice4__t31_lattice4",
+            "relation_term": "r4_lattice4(B, A, C)",
+            "source_property_term": "v17_lattices(B)",
+            "target_property_term": "v17_lattices(A)",
+            "witness_guard_family": "v2_funct_2"
+          }
+        ],
+        "problem_count": 4,
+        "problems": [
+          "lattice4__t12_lattice4",
+          "lattice4__t18_lattice4",
+          "lattice4__t28_lattice4",
+          "lattice4__t31_lattice4"
+        ],
+        "schema_kind": "lattice4_transport_property_relation"
+      }
+    ],
+    "candidate_count": 12,
+    "gate_status_heavy_cluster": {
+      "cluster": [
+        "lattice2__lattice2__t18_lattice2",
+        "lattice2__lattice2__t19_lattice2",
+        "lattice2__lattice2__t20_lattice2",
+        "lattice2__lattice2__t21_lattice2",
+        "lattice2__lattice2__t22_lattice2",
+        "lattice2__lattice2__t23_lattice2",
+        "lattice2__lattice2__t24_lattice2",
+        "lattice2__lattice2__t25_lattice2"
+      ],
+      "credal_summary": {
+        "gate_count": 6,
+        "labels": [
+          "full",
+          "move_d1_lattices_right",
+          "move_d2_lattices_right",
+          "move_redefinition_k3_lattices_right",
+          "move_redefinition_k4_lattices_right",
+          "move_redefinition_k4_binop_1_right"
+        ],
+        "lower_concept_count": 1,
+        "unstable_concept_count": 0,
+        "unstable_samples": [],
+        "upper_concept_count": 1
+      },
+      "full_timeout_count": 8,
+      "gate_count": 6,
+      "gate_deltas": [
+        {
+          "changed_problem_count": 0,
+          "gate": "move_d1_lattices_right",
+          "timeout_problem_count": 8
+        },
+        {
+          "changed_problem_count": 0,
+          "gate": "move_d2_lattices_right",
+          "timeout_problem_count": 8
+        },
+        {
+          "changed_problem_count": 0,
+          "gate": "move_redefinition_k3_lattices_right",
+          "timeout_problem_count": 8
+        },
+        {
+          "changed_problem_count": 0,
+          "gate": "move_redefinition_k4_binop_1_right",
+          "timeout_problem_count": 8
+        },
+        {
+          "changed_problem_count": 0,
+          "gate": "move_redefinition_k4_lattices_right",
+          "timeout_problem_count": 8
+        }
+      ]
+    },
+    "gate_status_light_cluster": {
+      "cluster": [
+        "lattice2__lattice2__t14_lattice2",
+        "lattice2__lattice2__t15_lattice2",
+        "lattice2__lattice2__t16_lattice2",
+        "lattice2__lattice2__t17_lattice2"
+      ],
+      "credal_summary": {
+        "gate_count": 6,
+        "labels": [
+          "full",
+          "move_d1_lattices_right",
+          "move_d2_lattices_right",
+          "move_redefinition_k3_lattices_right",
+          "move_redefinition_k4_lattices_right",
+          "move_redefinition_k4_binop_1_right"
+        ],
+        "lower_concept_count": 1,
+        "unstable_concept_count": 23,
+        "unstable_samples": [
+          {
+            "extent": [
+              "lattice2__lattice2__t15_lattice2",
+              "lattice2__lattice2__t17_lattice2"
+            ],
+            "gate_support": 5,
+            "intent": [
+              "interp:k4_binop_1",
+              "interp:l3_lattices",
+              "interp:m1_subset_1",
+              "interp:u1_struct_0",
+              "interp:v10_lattices",
+              "interp:v2_struct_0"
+            ]
+          },
+          {
+            "extent": [
+              "lattice2__lattice2__t14_lattice2",
+              "lattice2__lattice2__t15_lattice2",
+              "lattice2__lattice2__t16_lattice2",
+              "lattice2__lattice2__t17_lattice2"
+            ],
+            "gate_support": 5,
+            "intent": [
+              "interp:l3_lattices",
+              "interp:m1_subset_1",
+              "interp:u1_struct_0",
+              "interp:v10_lattices",
+              "interp:v2_struct_0"
+            ]
+          },
+          {
+            "extent": [
+              "lattice2__lattice2__t15_lattice2"
+            ],
+            "gate_support": 4,
+            "intent": [
+              "interp:k4_binop_1",
+              "interp:k5_lattices",
+              "interp:l3_lattices",
+              "interp:m1_subset_1",
+              "interp:u1_struct_0",
+              "interp:u2_lattices",
+              "interp:v10_lattices",
+              "interp:v2_struct_0"
+            ]
+          },
+          {
+            "extent": [
+              "lattice2__lattice2__t17_lattice2"
+            ],
+            "gate_support": 4,
+            "intent": [
+              "interp:k4_binop_1",
+              "interp:k6_lattices",
+              "interp:l3_lattices",
+              "interp:m1_subset_1",
+              "interp:u1_lattices",
+              "interp:u1_struct_0",
+              "interp:v10_lattices",
+              "interp:v2_struct_0"
+            ]
+          },
+          {
+            "extent": [
+              "lattice2__lattice2__t14_lattice2",
+              "lattice2__lattice2__t15_lattice2"
+            ],
+            "gate_support": 4,
+            "intent": [
+              "interp:k5_lattices",
+              "interp:l3_lattices",
+              "interp:m1_subset_1",
+              "interp:u1_struct_0",
+              "interp:v10_lattices",
+              "interp:v2_struct_0"
+            ]
+          },
+          {
+            "extent": [
+              "lattice2__lattice2__t16_lattice2",
+              "lattice2__lattice2__t17_lattice2"
+            ],
+            "gate_support": 4,
+            "intent": [
+              "interp:k6_lattices",
+              "interp:l3_lattices",
+              "interp:m1_subset_1",
+              "interp:u1_struct_0",
+              "interp:v10_lattices",
+              "interp:v2_struct_0"
+            ]
+          },
+          {
+            "extent": [
+              "lattice2__lattice2__t14_lattice2"
+            ],
+            "gate_support": 3,
+            "intent": [
+              "interp:k3_lattices",
+              "interp:k5_lattices",
+              "interp:l3_lattices",
+              "interp:m1_subset_1",
+              "interp:u1_struct_0",
+              "interp:v10_lattices",
+              "interp:v2_struct_0"
+            ]
+          },
+          {
+            "extent": [
+              "lattice2__lattice2__t16_lattice2"
+            ],
+            "gate_support": 3,
+            "intent": [
+              "interp:k4_lattices",
+              "interp:k6_lattices",
+              "interp:l3_lattices",
+              "interp:m1_subset_1",
+              "interp:u1_struct_0",
+              "interp:v10_lattices",
+              "interp:v2_struct_0"
+            ]
+          },
+          {
+            "extent": [
+              "lattice2__lattice2__t15_lattice2"
+            ],
+            "gate_support": 1,
+            "intent": [
+              "interp:k1_lattices",
+              "interp:k3_lattices",
+              "interp:k4_binop_1",
+              "interp:k5_lattices",
+              "interp:l2_lattices",
+              "interp:l3_lattices",
+              "interp:m1_subset_1",
+              "interp:u1_struct_0",
+              "interp:u2_lattices",
+              "interp:v10_lattices",
+              "interp:v2_struct_0",
+              "interp:v4_lattices"
+            ]
+          },
+          {
+            "extent": [
+              "lattice2__lattice2__t17_lattice2"
+            ],
+            "gate_support": 1,
+            "intent": [
+              "interp:k2_lattices",
+              "interp:k4_binop_1",
+              "interp:k4_lattices",
+              "interp:k6_lattices",
+              "interp:l1_lattices",
+              "interp:l3_lattices",
+              "interp:m1_subset_1",
+              "interp:u1_lattices",
+              "interp:u1_struct_0",
+              "interp:v10_lattices",
+              "interp:v2_struct_0",
+              "interp:v6_lattices"
+            ]
+          },
+          {
+            "extent": [
+              "lattice2__lattice2__t16_lattice2"
+            ],
+            "gate_support": 1,
+            "intent": [
+              "interp:k1_lattices",
+              "interp:k3_lattices",
+              "interp:k4_lattices",
+              "interp:k6_lattices",
+              "interp:l2_lattices",
+              "interp:l3_lattices",
+              "interp:m1_subset_1",
+              "interp:u1_struct_0",
+              "interp:v10_lattices",
+              "interp:v2_struct_0",
+              "interp:v4_lattices"
+            ]
+          },
+          {
+            "extent": [
+              "lattice2__lattice2__t14_lattice2"
+            ],
+            "gate_support": 1,
+            "intent": [
+              "interp:k2_lattices",
+              "interp:k3_lattices",
+              "interp:k4_binop_1",
+              "interp:k5_lattices",
+              "interp:l1_lattices",
+              "interp:l3_lattices",
+              "interp:m1_subset_1",
+              "interp:u1_lattices",
+              "interp:u1_struct_0",
+              "interp:v10_lattices",
+              "interp:v2_struct_0"
+            ]
+          }
+        ],
+        "upper_concept_count": 24
+      },
+      "full_timeout_count": 0,
+      "gate_count": 6,
+      "gate_deltas": [
+        {
+          "changed_problem_count": 3,
+          "gate": "move_d2_lattices_right",
+          "timeout_problem_count": 0
+        },
+        {
+          "changed_problem_count": 3,
+          "gate": "move_redefinition_k3_lattices_right",
+          "timeout_problem_count": 0
+        },
+        {
+          "changed_problem_count": 3,
+          "gate": "move_redefinition_k4_lattices_right",
+          "timeout_problem_count": 0
+        },
+        {
+          "changed_problem_count": 1,
+          "gate": "move_d1_lattices_right",
+          "timeout_problem_count": 0
+        }
+      ]
+    },
+    "generic_candidates_are_family_splits": true,
+    "generic_top_candidates": [
+      {
+        "antecedent": [
+          "role:left_identity"
+        ],
+        "confidence": 0.5,
+        "consequent": "family:encoded-u1-left-identity",
+        "strength": 0.5,
+        "supporting_objects": [
+          "lattice2__lattice2__t17_lattice2"
+        ],
+        "width": 1.0
+      },
+      {
+        "antecedent": [
+          "role:left_identity"
+        ],
+        "confidence": 0.5,
+        "consequent": "family:encoded-u2-left-identity",
+        "strength": 0.5,
+        "supporting_objects": [
+          "lattice2__lattice2__t15_lattice2"
+        ],
+        "width": 1.0
+      },
+      {
+        "antecedent": [
+          "target:k5-extremum"
+        ],
+        "confidence": 0.5,
+        "consequent": "family:encoded-u2-left-identity",
+        "strength": 0.5,
+        "supporting_objects": [
+          "lattice2__lattice2__t15_lattice2"
+        ],
+        "width": 1.0
+      },
+      {
+        "antecedent": [
+          "target:k6-extremum"
+        ],
+        "confidence": 0.5,
+        "consequent": "family:encoded-u1-left-identity",
+        "strength": 0.5,
+        "supporting_objects": [
+          "lattice2__lattice2__t17_lattice2"
+        ],
+        "width": 1.0
+      },
+      {
+        "antecedent": [
+          "family:encoded-u1-u2-mixed"
+        ],
+        "confidence": 0.5,
+        "consequent": "role:from_v11",
+        "strength": 0.5,
+        "supporting_objects": [
+          "lattice2__lattice2__t23_lattice2"
+        ],
+        "width": 1.0
+      },
+      {
+        "antecedent": [
+          "family:encoded-u1-u2-mixed"
+        ],
+        "confidence": 0.5,
+        "consequent": "role:implies_v11",
+        "strength": 0.5,
+        "supporting_objects": [
+          "lattice2__lattice2__t24_lattice2"
+        ],
+        "width": 1.0
+      }
+    ],
+    "microgate_probe": {
+      "all_timeout": true,
+      "best_memory_run": {
+        "artifact": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/t21_t23_microgate_probe/t22_d11_lattices_right_20s.json",
+        "extra_right_records": [
+          "d11_lattices"
+        ],
+        "failure_kind": "timeout",
+        "interpolant_found": false,
+        "peak_memory_mb": 139.0,
+        "problem": "lattice2__lattice2__t22_lattice2",
+        "time_elapsed_s": 20.0
+      },
+      "probe_dir": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/t21_t23_microgate_probe",
+      "run_count": 10,
+      "runs": [
+        {
+          "artifact": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/t21_t23_microgate_probe/t21_full_20s.json",
+          "extra_right_records": [],
+          "failure_kind": "timeout",
+          "interpolant_found": false,
+          "peak_memory_mb": 224.0,
+          "problem": "lattice2__lattice2__t21_lattice2",
+          "time_elapsed_s": 20.001
+        },
+        {
+          "artifact": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/t21_t23_microgate_probe/t21_prior_t11_right_20s.json",
+          "extra_right_records": [
+            "prior_lattice2__t11_lattice2"
+          ],
+          "failure_kind": "timeout",
+          "interpolant_found": false,
+          "peak_memory_mb": 213.0,
+          "problem": "lattice2__lattice2__t21_lattice2",
+          "time_elapsed_s": 20.001
+        },
+        {
+          "artifact": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/t21_t23_microgate_probe/t21_prior_t18_right_20s.json",
+          "extra_right_records": [
+            "prior_lattice2__t18_lattice2"
+          ],
+          "failure_kind": "timeout",
+          "interpolant_found": false,
+          "peak_memory_mb": 234.0,
+          "problem": "lattice2__lattice2__t21_lattice2",
+          "time_elapsed_s": 20.0
+        },
+        {
+          "artifact": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/t21_t23_microgate_probe/t21_prior_t20_right_20s.json",
+          "extra_right_records": [
+            "prior_lattice2__t20_lattice2"
+          ],
+          "failure_kind": "timeout",
+          "interpolant_found": false,
+          "peak_memory_mb": 234.0,
+          "problem": "lattice2__lattice2__t21_lattice2",
+          "time_elapsed_s": 20.0
+        },
+        {
+          "artifact": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/t21_t23_microgate_probe/t22_d11_lattices_right_20s.json",
+          "extra_right_records": [
+            "d11_lattices"
+          ],
+          "failure_kind": "timeout",
+          "interpolant_found": false,
+          "peak_memory_mb": 139.0,
+          "problem": "lattice2__lattice2__t22_lattice2",
+          "time_elapsed_s": 20.0
+        },
+        {
+          "artifact": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/t21_t23_microgate_probe/t22_d11_lattices_right_30s.json",
+          "extra_right_records": [
+            "d11_lattices"
+          ],
+          "failure_kind": "timeout",
+          "interpolant_found": false,
+          "peak_memory_mb": 172.0,
+          "problem": "lattice2__lattice2__t22_lattice2",
+          "time_elapsed_s": 30.001
+        },
+        {
+          "artifact": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/t21_t23_microgate_probe/t22_full_20s.json",
+          "extra_right_records": [],
+          "failure_kind": "timeout",
+          "interpolant_found": false,
+          "peak_memory_mb": 218.0,
+          "problem": "lattice2__lattice2__t22_lattice2",
+          "time_elapsed_s": 20.001
+        },
+        {
+          "artifact": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/t21_t23_microgate_probe/t22_prior_t20_right_20s.json",
+          "extra_right_records": [
+            "prior_lattice2__t20_lattice2"
+          ],
+          "failure_kind": "timeout",
+          "interpolant_found": false,
+          "peak_memory_mb": 241.0,
+          "problem": "lattice2__lattice2__t22_lattice2",
+          "time_elapsed_s": 20.0
+        },
+        {
+          "artifact": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/t21_t23_microgate_probe/t22_prior_t21_right_20s.json",
+          "extra_right_records": [
+            "prior_lattice2__t21_lattice2"
+          ],
+          "failure_kind": "timeout",
+          "interpolant_found": false,
+          "peak_memory_mb": 241.0,
+          "problem": "lattice2__lattice2__t22_lattice2",
+          "time_elapsed_s": 20.0
+        },
+        {
+          "artifact": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/t21_t23_microgate_probe/t24_d11_lattices_right_30s.json",
+          "extra_right_records": [
+            "d11_lattices"
+          ],
+          "failure_kind": "timeout",
+          "interpolant_found": false,
+          "peak_memory_mb": 237.0,
+          "problem": "lattice2__lattice2__t24_lattice2",
+          "time_elapsed_s": 30.0
+        }
+      ]
+    },
+    "missing_registration_lead_count": 1,
+    "primary_packaging_lead": {
+      "antecedent": [
+        "role:from_v11",
+        "role:implies_v11"
+      ],
+      "baseline": {
+        "antecedent_support": 2,
+        "jaccard": 1.0,
+        "positive": 2,
+        "support_fraction": 1.0
+      },
+      "candidate_kind": "missing_registration_style",
+      "consequent": "candidate:registration_or_iff_for_v11_mixed_relation",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 2,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "lead_name": "mixed_selector_v11_equivalence_schema",
+      "oracle": {
+        "broader_search_equivalence_hits": [],
+        "broader_search_roots": [
+          "/home/zar/claude/atps/datasets/extended_mptp5k/chainy/train",
+          "/home/zar/claude/atps/datasets/mml_8.1.15_fof/problems_small/lattice2",
+          "/home/zar/claude/atps/datasets/mml_8.1.15_fof/problems_small/lattice4",
+          "/home/zar/claude/atps/datasets/mml_8.1.15_fof/problems_small/filter_1",
+          "/home/zar/claude/atps/datasets/mml_8.1.15_fof/problems_small/fvsum_1",
+          "/home/zar/claude/atps/datasets/mml_8.1.15_fof/problems_small/prvect_1"
+        ],
+        "kind": "paired_existing_theorems",
+        "library_packaging_candidate": true,
+        "open_conjecture": false,
+        "proposed_surface": "equivalence_or_registration",
+        "shelf_equivalence_hits": [],
+        "supporting_theorems": [
+          "lattice2__lattice2__t21_lattice2",
+          "lattice2__lattice2__t22_lattice2",
+          "lattice2__lattice2__t23_lattice2",
+          "lattice2__lattice2__t24_lattice2"
+        ]
+      },
+      "pln": {
+        "confidence": 0.5,
+        "kappa": 2.0,
+        "score": 0.5,
+        "strength": 1.0
+      },
+      "proposed_schema_template": "In a nonempty bounded lattice context, the mixed selector relation r6_binop_1(u1_struct_0(A), OP1(A), OP2(A)) is equivalent to the additional v11_lattices(A) condition.",
+      "supporting_instances": [
+        {
+          "backing_theorems": [
+            "lattice2__lattice2__t23_lattice2",
+            "lattice2__lattice2__t24_lattice2"
+          ],
+          "broader_equivalence_hits": [],
+          "left_selector_term": "u1_lattices(A)",
+          "packaged_equivalence_hits": [],
+          "proposed_equivalence": "(! [A] : ((~v2_struct_0(A) & (v10_lattices(A) & l3_lattices(A))) => (v11_lattices(A) <=> r6_binop_1(u1_struct_0(A), u1_lattices(A), u2_lattices(A)))))",
+          "relation_term": "r6_binop_1(u1_struct_0(A), u1_lattices(A), u2_lattices(A))",
+          "right_selector_term": "u2_lattices(A)",
+          "selector_family": "encoded-u1-u2-mixed"
+        },
+        {
+          "backing_theorems": [
+            "lattice2__lattice2__t21_lattice2",
+            "lattice2__lattice2__t22_lattice2"
+          ],
+          "broader_equivalence_hits": [],
+          "left_selector_term": "u2_lattices(A)",
+          "packaged_equivalence_hits": [],
+          "proposed_equivalence": "(! [A] : ((~v2_struct_0(A) & (v10_lattices(A) & l3_lattices(A))) => (v11_lattices(A) <=> r6_binop_1(u1_struct_0(A), u2_lattices(A), u1_lattices(A)))))",
+          "relation_term": "r6_binop_1(u1_struct_0(A), u2_lattices(A), u1_lattices(A))",
+          "right_selector_term": "u1_lattices(A)",
+          "selector_family": "encoded-u2-u1-mixed"
+        }
+      ]
+    }
+  }
+}

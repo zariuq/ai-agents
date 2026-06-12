@@ -1,0 +1,154 @@
+{
+  "article": "conlat_1",
+  "attributes": [
+    "Attribute",
+    "AttributeDerivation",
+    "ContextStr",
+    "FormalContext",
+    "Function",
+    "Information",
+    "ObjectDerivation",
+    "Subset",
+    "is-connected-with"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "ContextStr": 1,
+        "Information": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition ::$CD struct (2-sorted) ContextStr (# carrier, carrier' -> set, Information -> Relation of the carrier,the ca"
+    },
+    {
+      "counts": {
+        "ContextStr": 2
+      },
+      "index": 2,
+      "kind": "registration",
+      "object": "registration_2",
+      "preview": "registration cluster strict non empty non void for ContextStr; existence proof ContextStr(#{{}},{{}},the Relation of {{}"
+    },
+    {
+      "counts": {
+        "ContextStr": 1,
+        "FormalContext": 1
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition mode FormalContext is non empty non void ContextStr; end;"
+    },
+    {
+      "counts": {
+        "Attribute": 1
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let C be 2-sorted; mode Object of C is Element of C; mode Attribute of C is Element of the carrier' of C; end"
+    },
+    {
+      "counts": {
+        "Subset": 2
+      },
+      "index": 4,
+      "kind": "registration",
+      "object": "registration_4",
+      "preview": "registration let C be non empty non void 2-sorted; cluster non empty for Subset of the carrier of C; existence proof tak"
+    },
+    {
+      "counts": {
+        "Attribute": 1,
+        "FormalContext": 1,
+        "Information": 1,
+        "is-connected-with": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let C be FormalContext; let o be Object of C; let a be Attribute of C; pred o is-connected-with a means [o,a]"
+    },
+    {
+      "counts": {
+        "Attribute": 1,
+        "FormalContext": 1,
+        "is-connected-with": 1
+      },
+      "index": 1,
+      "kind": "notation",
+      "object": "notation_1",
+      "preview": "notation let C be FormalContext; let o be Object of C; let a be Attribute of C; antonym o is-not-connected-with a for o "
+    },
+    {
+      "counts": {
+        "Attribute": 28,
+        "FormalContext": 1,
+        "Function": 4,
+        "ObjectDerivation": 1,
+        "Subset": 14,
+        "is-connected-with": 28
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let C be FormalContext; func ObjectDerivation(C) -> Function of bool the carrier of C,bool the carrier' of C "
+    },
+    {
+      "counts": {
+        "Attribute": 29,
+        "AttributeDerivation": 1,
+        "FormalContext": 1,
+        "Function": 4,
+        "Subset": 14,
+        "is-connected-with": 29
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let C be FormalContext; func AttributeDerivation(C) -> Function of bool the carrier' of C,bool the carrier of"
+    },
+    {
+      "counts": {
+        "Attribute": 12,
+        "FormalContext": 2,
+        "ObjectDerivation": 2,
+        "Subset": 1,
+        "is-connected-with": 12
+      },
+      "index": 1,
+      "kind": "theorem",
+      "object": "theorem_1",
+      "preview": "theorem for C being FormalContext for o being Object of C holds ( ObjectDerivation(C)).({o}) = {a where a is Attribute o"
+    },
+    {
+      "counts": {
+        "Attribute": 9,
+        "AttributeDerivation": 2,
+        "FormalContext": 2,
+        "Subset": 1,
+        "is-connected-with": 12
+      },
+      "index": 2,
+      "kind": "theorem",
+      "object": "theorem_2",
+      "preview": "theorem for C being FormalContext for a being Attribute of C holds ( AttributeDerivation(C)).({a}) = {o where o is Objec"
+    },
+    {
+      "counts": {
+        "Attribute": 3,
+        "FormalContext": 2,
+        "ObjectDerivation": 3,
+        "Subset": 2,
+        "is-connected-with": 4
+      },
+      "index": 3,
+      "kind": "theorem",
+      "object": "theorem_3",
+      "preview": "theorem Th3: for C being FormalContext for O1,O2 being Subset of the carrier of C holds O1 c= O2 implies (ObjectDerivati"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/conlat_1.miz"
+}

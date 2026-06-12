@@ -1,0 +1,1182 @@
+{
+  "article": "waybel_4",
+  "attributes": [
+    "AR",
+    "AR-above",
+    "AR-below",
+    "App",
+    "Aux",
+    "AuxBottom",
+    "DownMap",
+    "Function",
+    "Ids",
+    "InclPoset",
+    "IntRel",
+    "L-waybelow",
+    "Map2Rel",
+    "MonSet",
+    "Rel2Map",
+    "RelStr",
+    "Subset",
+    "is_directed_wrt",
+    "is_maximal_in",
+    "is_maximal_wrt",
+    "is_minimal_in",
+    "is_minimal_wrt",
+    "satisfying_INT",
+    "satisfying_SI"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "L-waybelow": 1,
+        "RelStr": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let L be non empty reflexive RelStr; func L-waybelow -> Relation of L means :Def1: for x,y being Element of L"
+    },
+    {
+      "counts": {
+        "IntRel": 1,
+        "RelStr": 1
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let L be RelStr; func IntRel L -> Relation of L equals the InternalRel of L; coherence; correctness; end;"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let L be RelStr, R be Relation of L; attr R is auxiliary(i) means :Def3: for x, y being Element of L holds [x"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let L be non empty RelStr, R be Relation of L; attr R is auxiliary(iii) means :Def5: for x, y, z being Elemen"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let L be non empty RelStr, R be Relation of L; attr R is auxiliary means R is auxiliary(i) auxiliary(ii) auxi"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 1,
+      "kind": "registration",
+      "object": "registration_1",
+      "preview": "registration let L be non empty RelStr; cluster auxiliary -> auxiliary(i) auxiliary(ii) auxiliary(iii) auxiliary(iv) for"
+    },
+    {
+      "counts": {
+        "IntRel": 1,
+        "RelStr": 1
+      },
+      "index": 2,
+      "kind": "registration",
+      "object": "registration_2",
+      "preview": "registration let L be lower-bounded with_suprema transitive antisymmetric RelStr; cluster auxiliary for Relation of L; e"
+    },
+    {
+      "counts": {
+        "AR": 21
+      },
+      "index": 1,
+      "kind": "theorem",
+      "object": "theorem_1",
+      "preview": "theorem Th1: for L being lower-bounded sup-Semilattice for AR being auxiliary(ii) auxiliary(iii) Relation of L for x, y,"
+    },
+    {
+      "counts": {
+        "IntRel": 1,
+        "RelStr": 1
+      },
+      "index": 4,
+      "kind": "registration",
+      "object": "registration_4",
+      "preview": "registration let L be RelStr; cluster IntRel L -> auxiliary(i); coherence by ORDERS_2:def 5; end;"
+    },
+    {
+      "counts": {
+        "IntRel": 2,
+        "RelStr": 1
+      },
+      "index": 5,
+      "kind": "registration",
+      "object": "registration_5",
+      "preview": "registration let L be transitive RelStr; cluster IntRel L -> auxiliary(ii); coherence proof set A = IntRel L; let x,y,z,"
+    },
+    {
+      "counts": {
+        "IntRel": 2,
+        "RelStr": 1
+      },
+      "index": 6,
+      "kind": "registration",
+      "object": "registration_6",
+      "preview": "registration let L be with_suprema antisymmetric RelStr; cluster IntRel L -> auxiliary(iii); coherence proof set A = Int"
+    },
+    {
+      "counts": {
+        "IntRel": 1,
+        "RelStr": 1
+      },
+      "index": 7,
+      "kind": "registration",
+      "object": "registration_7",
+      "preview": "registration let L be lower-bounded antisymmetric non empty RelStr; cluster IntRel L -> auxiliary(iv); coherence by YELL"
+    },
+    {
+      "counts": {
+        "Aux": 1
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let L be lower-bounded sup-Semilattice; func Aux L -> set means :Def8: a in it iff a is auxiliary Relation of"
+    },
+    {
+      "counts": {
+        "AR": 4,
+        "Aux": 1,
+        "IntRel": 2
+      },
+      "index": 8,
+      "kind": "registration",
+      "object": "registration_8",
+      "preview": "registration let L be lower-bounded sup-Semilattice; cluster Aux L -> non empty; coherence proof IntRel L is auxiliary R"
+    },
+    {
+      "counts": {
+        "AR": 2,
+        "IntRel": 1
+      },
+      "index": 2,
+      "kind": "theorem",
+      "object": "theorem_2",
+      "preview": "theorem Th2: for L being lower-bounded sup-Semilattice for AR being auxiliary(i) Relation of L holds AR c= IntRel L by L"
+    },
+    {
+      "counts": {
+        "Aux": 6,
+        "InclPoset": 4,
+        "IntRel": 3
+      },
+      "index": 3,
+      "kind": "theorem",
+      "object": "theorem_3",
+      "preview": "theorem for L being lower-bounded sup-Semilattice holds Top InclPoset Aux L = IntRel L proof let L be lower-bounded sup-"
+    },
+    {
+      "counts": {
+        "Aux": 7,
+        "InclPoset": 5,
+        "IntRel": 1
+      },
+      "index": 9,
+      "kind": "registration",
+      "object": "registration_9",
+      "preview": "registration let L be lower-bounded sup-Semilattice; cluster InclPoset Aux L -> upper-bounded; coherence proof set I = I"
+    },
+    {
+      "counts": {
+        "AuxBottom": 1,
+        "RelStr": 1
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let L be non empty RelStr; func AuxBottom L -> Relation of L means :Def9: for x,y be Element of L holds [x,y]"
+    },
+    {
+      "counts": {
+        "AuxBottom": 2
+      },
+      "index": 10,
+      "kind": "registration",
+      "object": "registration_10",
+      "preview": "registration let L be lower-bounded sup-Semilattice; cluster AuxBottom L -> auxiliary; coherence proof set A = AuxBottom"
+    },
+    {
+      "counts": {
+        "AR": 4,
+        "AuxBottom": 3
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem Th4: for L being lower-bounded sup-Semilattice for AR being auxiliary(iv) Relation of L holds AuxBottom L c= AR "
+    },
+    {
+      "counts": {
+        "Aux": 7,
+        "AuxBottom": 3,
+        "InclPoset": 5
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem for L being lower-bounded sup-Semilattice holds Bottom InclPoset Aux L = AuxBottom L proof let L be with_suprema"
+    },
+    {
+      "counts": {
+        "Aux": 7,
+        "AuxBottom": 1,
+        "InclPoset": 5
+      },
+      "index": 11,
+      "kind": "registration",
+      "object": "registration_11",
+      "preview": "registration let L be lower-bounded sup-Semilattice; cluster InclPoset Aux L -> lower-bounded; coherence proof set I = A"
+    },
+    {
+      "counts": {
+        "Aux": 4,
+        "InclPoset": 3,
+        "Subset": 2
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem Th11: for L being lower-bounded sup-Semilattice for X being non empty Subset of InclPoset Aux L holds meet X is "
+    },
+    {
+      "counts": {
+        "Aux": 6,
+        "InclPoset": 1
+      },
+      "index": 12,
+      "kind": "registration",
+      "object": "registration_12",
+      "preview": "registration let L be lower-bounded sup-Semilattice; cluster InclPoset Aux L -> with_infima; coherence proof for x, y be"
+    },
+    {
+      "counts": {
+        "Aux": 8,
+        "InclPoset": 7,
+        "Subset": 2
+      },
+      "index": 13,
+      "kind": "registration",
+      "object": "registration_13",
+      "preview": "registration let L be lower-bounded sup-Semilattice; cluster InclPoset Aux L -> complete; coherence proof for X be Subse"
+    },
+    {
+      "counts": {
+        "AR": 9,
+        "AR-above": 1,
+        "AR-below": 1,
+        "RelStr": 1,
+        "Subset": 2
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition let L be non empty RelStr, x be Element of L; let AR be Relation of the carrier of L; A1: {y where y is Eleme"
+    },
+    {
+      "counts": {
+        "AR": 3,
+        "AR-below": 2
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem Th12: for L being lower-bounded sup-Semilattice, x being Element of L for AR being auxiliary(i) Relation of L ho"
+    },
+    {
+      "counts": {
+        "AR": 2,
+        "AR-below": 2
+      },
+      "index": 14,
+      "kind": "registration",
+      "object": "registration_14",
+      "preview": "registration let L be lower-bounded sup-Semilattice, x be Element of L; let AR be auxiliary(iv) Relation of L; cluster A"
+    },
+    {
+      "counts": {
+        "AR": 3,
+        "AR-below": 2
+      },
+      "index": 15,
+      "kind": "registration",
+      "object": "registration_15",
+      "preview": "registration let L be lower-bounded sup-Semilattice, x be Element of L; let AR be auxiliary(ii) Relation of L; cluster A"
+    },
+    {
+      "counts": {
+        "AR": 4,
+        "AR-below": 2
+      },
+      "index": 16,
+      "kind": "registration",
+      "object": "registration_16",
+      "preview": "registration let L be lower-bounded sup-Semilattice, x be Element of L; let AR be auxiliary(iii) Relation of L; cluster "
+    },
+    {
+      "counts": {
+        "AR": 1,
+        "AR-below": 6,
+        "Function": 3,
+        "Ids": 5,
+        "InclPoset": 4
+      },
+      "index": 9,
+      "kind": "definition",
+      "object": "definition_9",
+      "preview": "definition let L be lower-bounded sup-Semilattice; let AR be auxiliary(ii) auxiliary(iii) auxiliary(iv) Relation of L; f"
+    },
+    {
+      "counts": {
+        "AR": 8,
+        "AR-below": 3,
+        "RelStr": 2
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem Th13: for L being non empty RelStr, AR being Relation of L for a being object, y being Element of L holds a in A"
+    },
+    {
+      "counts": {
+        "AR": 10,
+        "AR-above": 3
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem for L being sup-Semilattice, AR being Relation of L for y being Element of L holds a in AR-above y iff [y,a] in "
+    },
+    {
+      "counts": {
+        "AR": 5,
+        "AR-below": 3
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem for L being lower-bounded sup-Semilattice, AR being auxiliary(i) Relation of L for x being Element of L holds AR"
+    },
+    {
+      "counts": {
+        "Function": 17,
+        "Ids": 18,
+        "InclPoset": 18,
+        "MonSet": 1,
+        "RelStr": 3
+      },
+      "index": 10,
+      "kind": "definition",
+      "object": "definition_10",
+      "preview": "definition let L be non empty Poset; func MonSet L -> strict RelStr means :Def13: ( a in the carrier of it iff ex s be F"
+    },
+    {
+      "counts": {
+        "Function": 6,
+        "Ids": 28,
+        "InclPoset": 28,
+        "MonSet": 16,
+        "RelStr": 3
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem for L being lower-bounded sup-Semilattice holds MonSet L is full SubRelStr of (InclPoset Ids L)|^(the carrier of"
+    },
+    {
+      "counts": {
+        "AR": 4,
+        "AR-below": 3
+      },
+      "index": 17,
+      "kind": "theorem",
+      "object": "theorem_17",
+      "preview": "theorem Th17: for L being lower-bounded sup-Semilattice, AR being auxiliary(ii) Relation of L for x, y being Element of "
+    },
+    {
+      "counts": {
+        "AR": 1,
+        "AR-below": 6
+      },
+      "index": 17,
+      "kind": "registration",
+      "object": "registration_17",
+      "preview": "registration let L be lower-bounded sup-Semilattice; let AR be auxiliary(ii) auxiliary(iii) auxiliary(iv) Relation of L;"
+    },
+    {
+      "counts": {
+        "AR": 2,
+        "AR-below": 4,
+        "Function": 1,
+        "Ids": 1,
+        "InclPoset": 1,
+        "MonSet": 1
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem Th18: for L being lower-bounded sup-Semilattice, AR being auxiliary Relation of L holds AR-below in the carrier "
+    },
+    {
+      "counts": {
+        "MonSet": 1
+      },
+      "index": 18,
+      "kind": "registration",
+      "object": "registration_18",
+      "preview": "registration let L be lower-bounded sup-Semilattice; cluster MonSet L -> non empty; coherence by Th18; end;"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "Ids": 1,
+        "InclPoset": 1,
+        "MonSet": 1
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem Th19: for L being lower-bounded sup-Semilattice holds IdsMap L in the carrier of MonSet L proof let L be lower-b"
+    },
+    {
+      "counts": {
+        "AR": 2,
+        "AR-below": 5,
+        "Ids": 1,
+        "InclPoset": 1
+      },
+      "index": 20,
+      "kind": "theorem",
+      "object": "theorem_20",
+      "preview": "theorem for L being lower-bounded sup-Semilattice, AR being auxiliary Relation of L holds AR-below <= IdsMap L proof let"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Ids": 3,
+        "InclPoset": 3
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem Th25: (the carrier of L) --> {Bottom L} is Function of L, InclPoset Ids L proof {Bottom L} = downarrow Bottom L "
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Ids": 2,
+        "InclPoset": 2,
+        "MonSet": 1
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem Th26: (the carrier of L) --> {Bottom L} in the carrier of MonSet L proof set s = (the carrier of L) --> {Bottom "
+    },
+    {
+      "counts": {
+        "AR": 2,
+        "AR-below": 3,
+        "Function": 3,
+        "Ids": 5,
+        "InclPoset": 5,
+        "MonSet": 10
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem for AR being auxiliary Relation of L holds [(the carrier of L) --> {Bottom L} , AR-below] in the InternalRel of "
+    },
+    {
+      "counts": {
+        "MonSet": 1
+      },
+      "index": 19,
+      "kind": "registration",
+      "object": "registration_19",
+      "preview": "registration let L; cluster MonSet L -> upper-bounded; coherence by Lm6; end;"
+    },
+    {
+      "counts": {
+        "AR": 18,
+        "AR-below": 7,
+        "Aux": 14,
+        "Function": 3,
+        "InclPoset": 9,
+        "MonSet": 4,
+        "Rel2Map": 1
+      },
+      "index": 11,
+      "kind": "definition",
+      "object": "definition_11",
+      "preview": "definition let L; func Rel2Map L -> Function of InclPoset Aux L, MonSet L means :Def14: for AR being auxiliary Relation "
+    },
+    {
+      "counts": {
+        "Ids": 1,
+        "InclPoset": 1
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem for R1, R2 being auxiliary Relation of L st R1 c= R2 holds R1-below <= R2-below proof let R1, R2 be auxiliary Re"
+    },
+    {
+      "counts": {
+        "Aux": 5,
+        "Function": 2,
+        "Ids": 3,
+        "InclPoset": 6,
+        "MonSet": 2,
+        "Rel2Map": 7
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem Th29: for R1, R2 being Relation of L st R1 c= R2 holds R1-below x c= R2-below x proof let R1, R2 be Relation of "
+    },
+    {
+      "counts": {
+        "Rel2Map": 1
+      },
+      "index": 20,
+      "kind": "registration",
+      "object": "registration_20",
+      "preview": "registration let L; cluster Rel2Map L -> monotone; coherence by Lm7; end;"
+    },
+    {
+      "counts": {
+        "AR": 18,
+        "Aux": 17,
+        "Function": 26,
+        "Ids": 31,
+        "InclPoset": 38,
+        "Map2Rel": 3,
+        "MonSet": 20,
+        "RelStr": 1
+      },
+      "index": 12,
+      "kind": "definition",
+      "object": "definition_12",
+      "preview": "definition let L; func Map2Rel L -> Function of MonSet L, InclPoset Aux L means :Def15: for s be object st s in the carr"
+    },
+    {
+      "counts": {
+        "Map2Rel": 1
+      },
+      "index": 21,
+      "kind": "registration",
+      "object": "registration_21",
+      "preview": "registration let L; cluster Map2Rel L -> monotone; coherence by Lm8; end;"
+    },
+    {
+      "counts": {
+        "AR": 6,
+        "AR-below": 10,
+        "Aux": 9,
+        "Function": 3,
+        "Ids": 3,
+        "InclPoset": 7,
+        "Map2Rel": 6,
+        "MonSet": 1,
+        "Rel2Map": 6
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem Th30: (Map2Rel L) * (Rel2Map L) = id dom (Rel2Map L) proof set LS = (Map2Rel L) * (Rel2Map L); set R = id dom (R"
+    },
+    {
+      "counts": {
+        "AR": 7,
+        "AR-below": 3,
+        "Aux": 2,
+        "Function": 5,
+        "Ids": 7,
+        "InclPoset": 7,
+        "Map2Rel": 6,
+        "MonSet": 8,
+        "Rel2Map": 3
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem Th31: (Rel2Map L) * (Map2Rel L) = id (the carrier of MonSet L) proof set LS = (Rel2Map L) * (Map2Rel L); set R ="
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "Map2Rel": 1,
+        "Rel2Map": 3
+      },
+      "index": 22,
+      "kind": "registration",
+      "object": "registration_22",
+      "preview": "registration let L; cluster Rel2Map L -> one-to-one; coherence proof ex g be Function st g*(Rel2Map L) = id dom (Rel2Map"
+    },
+    {
+      "counts": {
+        "Map2Rel": 4,
+        "MonSet": 2,
+        "Rel2Map": 6
+      },
+      "index": 32,
+      "kind": "theorem",
+      "object": "theorem_32",
+      "preview": "theorem Th32: (Rel2Map L)\" = Map2Rel L proof (Rel2Map L)*(Map2Rel L) = id (the carrier of MonSet L) implies rng (Rel2Map"
+    },
+    {
+      "counts": {
+        "Aux": 2,
+        "Function": 2,
+        "InclPoset": 2,
+        "Map2Rel": 1,
+        "MonSet": 2,
+        "Rel2Map": 2
+      },
+      "index": 33,
+      "kind": "theorem",
+      "object": "theorem_33",
+      "preview": "theorem Rel2Map L is isomorphic proof ex g being Function of MonSet L, InclPoset Aux L st g = (Rel2Map L)\" & g is monoto"
+    },
+    {
+      "counts": {
+        "DownMap": 16,
+        "Function": 5,
+        "Ids": 6,
+        "InclPoset": 6
+      },
+      "index": 13,
+      "kind": "definition",
+      "object": "definition_13",
+      "preview": "definition let L be Semilattice, I be Ideal of L; func DownMap I -> Function of L, InclPoset Ids L means :Def16: for x b"
+    },
+    {
+      "counts": {
+        "DownMap": 2,
+        "Function": 2,
+        "Ids": 2,
+        "InclPoset": 2,
+        "MonSet": 1
+      },
+      "index": 35,
+      "kind": "theorem",
+      "object": "theorem_35",
+      "preview": "theorem Th35: for L being Semilattice, I being Ideal of L holds DownMap I in the carrier of MonSet L proof let L be Semi"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2
+      },
+      "index": 36,
+      "kind": "theorem",
+      "object": "theorem_36",
+      "preview": "theorem Th36: for L being with_infima antisymmetric reflexive RelStr, x being Element of L for D being non empty lower S"
+    },
+    {
+      "counts": {
+        "AR": 2,
+        "AR-below": 1,
+        "RelStr": 1
+      },
+      "index": 14,
+      "kind": "definition",
+      "object": "definition_14",
+      "preview": "definition let L be non empty RelStr, AR be Relation of L; attr AR is approximating means :Def17: for x be Element of L "
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "Ids": 1,
+        "InclPoset": 1,
+        "Subset": 1
+      },
+      "index": 15,
+      "kind": "definition",
+      "object": "definition_15",
+      "preview": "definition let L be non empty Poset; let mp be Function of L, InclPoset Ids L; attr mp is approximating means for x be E"
+    },
+    {
+      "counts": {
+        "DownMap": 3,
+        "Ids": 2,
+        "InclPoset": 1,
+        "Subset": 4
+      },
+      "index": 37,
+      "kind": "theorem",
+      "object": "theorem_37",
+      "preview": "theorem Th37: for L being lower-bounded meet-continuous Semilattice, I being Ideal of L holds DownMap I is approximating"
+    },
+    {
+      "counts": {
+        "Subset": 2
+      },
+      "index": 38,
+      "kind": "theorem",
+      "object": "theorem_38",
+      "preview": "theorem Th38: for L being lower-bounded continuous LATTICE holds L is meet-continuous proof let L be lower-bounded conti"
+    },
+    {
+      "counts": {
+        "DownMap": 1
+      },
+      "index": 39,
+      "kind": "theorem",
+      "object": "theorem_39",
+      "preview": "theorem for L being lower-bounded continuous LATTICE, I being Ideal of L holds DownMap I is approximating by Th37;"
+    },
+    {
+      "counts": {
+        "L-waybelow": 2,
+        "RelStr": 1
+      },
+      "index": 24,
+      "kind": "registration",
+      "object": "registration_24",
+      "preview": "registration let L be non empty reflexive antisymmetric RelStr; cluster L-waybelow -> auxiliary(i); coherence proof let "
+    },
+    {
+      "counts": {
+        "AR": 3,
+        "L-waybelow": 2,
+        "RelStr": 1
+      },
+      "index": 25,
+      "kind": "registration",
+      "object": "registration_25",
+      "preview": "registration let L be non empty reflexive transitive RelStr; cluster L-waybelow -> auxiliary(ii); coherence proof set AR"
+    },
+    {
+      "counts": {
+        "AR": 4,
+        "L-waybelow": 2
+      },
+      "index": 26,
+      "kind": "registration",
+      "object": "registration_26",
+      "preview": "registration let L be with_suprema Poset; cluster L-waybelow -> auxiliary(iii); coherence proof set AR = L-waybelow; let"
+    },
+    {
+      "counts": {
+        "AR": 3,
+        "L-waybelow": 2
+      },
+      "index": 27,
+      "kind": "registration",
+      "object": "registration_27",
+      "preview": "registration let L be /\\-complete non empty Poset; cluster L-waybelow -> auxiliary(iii); coherence proof set AR = L-wayb"
+    },
+    {
+      "counts": {
+        "L-waybelow": 1,
+        "RelStr": 1
+      },
+      "index": 28,
+      "kind": "registration",
+      "object": "registration_28",
+      "preview": "registration let L be lower-bounded antisymmetric reflexive non empty RelStr; cluster L-waybelow -> auxiliary(iv); coher"
+    },
+    {
+      "counts": {
+        "AR": 4,
+        "L-waybelow": 2
+      },
+      "index": 40,
+      "kind": "theorem",
+      "object": "theorem_40",
+      "preview": "theorem Th40: for L being complete LATTICE, x being Element of L holds (L-waybelow)-below x = waybelow x proof let L be "
+    },
+    {
+      "counts": {
+        "AR": 5,
+        "IntRel": 2,
+        "L-waybelow": 1,
+        "Subset": 1
+      },
+      "index": 41,
+      "kind": "theorem",
+      "object": "theorem_41",
+      "preview": "theorem Th41: for L being LATTICE holds IntRel L is approximating proof let L be LATTICE; set AR = IntRel L; let x be El"
+    },
+    {
+      "counts": {
+        "L-waybelow": 1
+      },
+      "index": 29,
+      "kind": "registration",
+      "object": "registration_29",
+      "preview": "registration let L be lower-bounded continuous LATTICE; cluster L-waybelow -> approximating; coherence by Lm12; end;"
+    },
+    {
+      "counts": {
+        "IntRel": 1
+      },
+      "index": 30,
+      "kind": "registration",
+      "object": "registration_30",
+      "preview": "registration let L be complete LATTICE; cluster approximating auxiliary for Relation of L; existence proof reconsider A "
+    },
+    {
+      "counts": {
+        "App": 1,
+        "Aux": 2
+      },
+      "index": 16,
+      "kind": "definition",
+      "object": "definition_16",
+      "preview": "definition let L be complete LATTICE; defpred P[object] means $1 is approximating auxiliary Relation of L; func App L ->"
+    },
+    {
+      "counts": {
+        "App": 2
+      },
+      "index": 31,
+      "kind": "registration",
+      "object": "registration_31",
+      "preview": "registration let L be complete LATTICE; cluster App L -> non empty; coherence proof set a = the approximating auxiliary "
+    },
+    {
+      "counts": {
+        "AR": 9,
+        "AR-below": 4,
+        "Function": 4,
+        "Ids": 4,
+        "InclPoset": 4,
+        "Map2Rel": 2,
+        "MonSet": 2,
+        "Subset": 1
+      },
+      "index": 42,
+      "kind": "theorem",
+      "object": "theorem_42",
+      "preview": "theorem Th42: for L being complete LATTICE for mp being Function of L, InclPoset Ids L st mp is approximating & mp in th"
+    },
+    {
+      "counts": {
+        "DownMap": 13,
+        "Subset": 1
+      },
+      "index": 43,
+      "kind": "theorem",
+      "object": "theorem_43",
+      "preview": "theorem Th43: for L being complete LATTICE, x being Element of L holds meet the set of all (DownMap I).x where I is Idea"
+    },
+    {
+      "counts": {
+        "AR": 13,
+        "AR-below": 8,
+        "App": 5,
+        "DownMap": 17,
+        "Function": 2,
+        "Ids": 2,
+        "InclPoset": 2,
+        "Map2Rel": 2,
+        "MonSet": 1,
+        "Subset": 1
+      },
+      "index": 44,
+      "kind": "theorem",
+      "object": "theorem_44",
+      "preview": "theorem Th44: for L being lower-bounded meet-continuous LATTICE, x being Element of L holds meet {AR-below x where AR is"
+    },
+    {
+      "counts": {
+        "AR": 8,
+        "AR-below": 1,
+        "App": 3,
+        "L-waybelow": 3
+      },
+      "index": 45,
+      "kind": "theorem",
+      "object": "theorem_45",
+      "preview": "theorem Th45: L is continuous iff for R being approximating auxiliary Relation of L holds L-waybelow c= R & L-waybelow i"
+    },
+    {
+      "counts": {
+        "AR": 2,
+        "AR-below": 1,
+        "App": 3,
+        "L-waybelow": 1
+      },
+      "index": 46,
+      "kind": "theorem",
+      "object": "theorem_46",
+      "preview": "theorem L is continuous iff (L is meet-continuous & ex R being approximating auxiliary Relation of L st for R9 being app"
+    },
+    {
+      "counts": {
+        "AR": 5,
+        "RelStr": 1,
+        "satisfying_SI": 1
+      },
+      "index": 17,
+      "kind": "definition",
+      "object": "definition_17",
+      "preview": "definition let L be RelStr, AR be Relation of L; attr AR is satisfying_SI means for x, z be Element of L holds ( [x,z] i"
+    },
+    {
+      "counts": {
+        "AR": 5,
+        "RelStr": 1,
+        "satisfying_INT": 1
+      },
+      "index": 18,
+      "kind": "definition",
+      "object": "definition_18",
+      "preview": "definition let L be RelStr, AR be Relation of L; attr AR is satisfying_INT means :Def21: for x, z be Element of L holds "
+    },
+    {
+      "counts": {
+        "AR": 11,
+        "RelStr": 2,
+        "satisfying_INT": 1,
+        "satisfying_SI": 2
+      },
+      "index": 47,
+      "kind": "theorem",
+      "object": "theorem_47",
+      "preview": "theorem Th47: for L being RelStr, AR being Relation of L holds AR is satisfying_SI implies AR is satisfying_INT proof le"
+    },
+    {
+      "counts": {
+        "AR": 1,
+        "RelStr": 1,
+        "satisfying_INT": 1,
+        "satisfying_SI": 1
+      },
+      "index": 32,
+      "kind": "registration",
+      "object": "registration_32",
+      "preview": "registration let L be non empty RelStr; cluster satisfying_SI -> satisfying_INT for Relation of L; coherence by Th47; en"
+    },
+    {
+      "counts": {
+        "AR": 3,
+        "AR-below": 4
+      },
+      "index": 48,
+      "kind": "theorem",
+      "object": "theorem_48",
+      "preview": "theorem Th48: for AR being approximating Relation of L st not x <= y holds ex u being Element of L st [u,x] in AR & not "
+    },
+    {
+      "counts": {
+        "Subset": 1
+      },
+      "index": 50,
+      "kind": "theorem",
+      "object": "theorem_50",
+      "preview": "theorem Th50: for R being approximating auxiliary Relation of L holds x << z & x <> z implies ex y being Element of L st"
+    },
+    {
+      "counts": {
+        "L-waybelow": 2,
+        "satisfying_SI": 2
+      },
+      "index": 51,
+      "kind": "theorem",
+      "object": "theorem_51",
+      "preview": "theorem Th51: for L being lower-bounded continuous LATTICE holds L-waybelow is satisfying_SI proof let L be lower-bounde"
+    },
+    {
+      "counts": {
+        "L-waybelow": 1,
+        "satisfying_SI": 1
+      },
+      "index": 33,
+      "kind": "registration",
+      "object": "registration_33",
+      "preview": "registration let L be lower-bounded continuous LATTICE; cluster L-waybelow -> satisfying_SI; coherence by Th51; end;"
+    },
+    {
+      "counts": {
+        "L-waybelow": 1
+      },
+      "index": 52,
+      "kind": "theorem",
+      "object": "theorem_52",
+      "preview": "theorem Th52: for L being lower-bounded continuous LATTICE, x,y being Element of L st x << y ex x9 being Element of L st"
+    },
+    {
+      "counts": {
+        "Subset": 5
+      },
+      "index": 53,
+      "kind": "theorem",
+      "object": "theorem_53",
+      "preview": "theorem for L being lower-bounded continuous LATTICE holds for x,y being Element of L holds ( x << y iff for D being non"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 1,
+        "is_directed_wrt": 1
+      },
+      "index": 19,
+      "kind": "definition",
+      "object": "definition_19",
+      "preview": "definition let L be RelStr, X be Subset of L, R be Relation of the carrier of L; pred X is_directed_wrt R means for x,y "
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2,
+        "is_directed_wrt": 2
+      },
+      "index": 54,
+      "kind": "theorem",
+      "object": "theorem_54",
+      "preview": "theorem for L being RelStr, X being Subset of L st X is_directed_wrt (the InternalRel of L) holds X is directed proof le"
+    },
+    {
+      "counts": {
+        "is_maximal_wrt": 1
+      },
+      "index": 20,
+      "kind": "definition",
+      "object": "definition_20",
+      "preview": "definition let X be set, x be object; let R be Relation; pred x is_maximal_wrt X,R means x in X & not ex y being set st "
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "is_maximal_in": 1,
+        "is_maximal_wrt": 1
+      },
+      "index": 21,
+      "kind": "definition",
+      "object": "definition_21",
+      "preview": "definition let L be RelStr, X be set, x be Element of L; pred x is_maximal_in X means x is_maximal_wrt X, the InternalRe"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "is_maximal_in": 3,
+        "is_maximal_wrt": 2
+      },
+      "index": 55,
+      "kind": "theorem",
+      "object": "theorem_55",
+      "preview": "theorem for L being RelStr, X being set, x being Element of L holds x is_maximal_in X iff x in X & not ex y being Elemen"
+    },
+    {
+      "counts": {
+        "is_minimal_wrt": 1
+      },
+      "index": 22,
+      "kind": "definition",
+      "object": "definition_22",
+      "preview": "definition let X be set, x be object; let R be Relation; pred x is_minimal_wrt X,R means x in X & not ex y being set st "
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "is_minimal_in": 1,
+        "is_minimal_wrt": 1
+      },
+      "index": 23,
+      "kind": "definition",
+      "object": "definition_23",
+      "preview": "definition let L be RelStr, X be set, x be Element of L; pred x is_minimal_in X means x is_minimal_wrt X, the InternalRe"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "is_minimal_in": 3,
+        "is_minimal_wrt": 2
+      },
+      "index": 56,
+      "kind": "theorem",
+      "object": "theorem_56",
+      "preview": "theorem for L being RelStr, X being set, x being Element of L holds x is_minimal_in X iff x in X & not ex y being Elemen"
+    },
+    {
+      "counts": {
+        "AR": 9,
+        "AR-below": 4,
+        "is_maximal_wrt": 2,
+        "satisfying_SI": 2
+      },
+      "index": 57,
+      "kind": "theorem",
+      "object": "theorem_57",
+      "preview": "theorem AR is satisfying_SI implies for x holds ( ex y st y is_maximal_wrt (AR-below x), AR ) implies [x,x] in AR proof "
+    },
+    {
+      "counts": {
+        "AR": 15,
+        "AR-below": 5,
+        "is_maximal_wrt": 3,
+        "satisfying_SI": 1
+      },
+      "index": 58,
+      "kind": "theorem",
+      "object": "theorem_58",
+      "preview": "theorem ( for x holds ( ex y st y is_maximal_wrt (AR-below x), AR ) implies [x,x] in AR ) implies AR is satisfying_SI pr"
+    },
+    {
+      "counts": {
+        "AR": 14,
+        "AR-below": 4,
+        "is_directed_wrt": 1,
+        "satisfying_INT": 2
+      },
+      "index": 59,
+      "kind": "theorem",
+      "object": "theorem_59",
+      "preview": "theorem for AR being auxiliary(ii) auxiliary(iii) Relation of L holds AR is satisfying_INT implies for x holds AR-below "
+    },
+    {
+      "counts": {
+        "AR": 9,
+        "AR-below": 5,
+        "is_directed_wrt": 3,
+        "satisfying_INT": 1
+      },
+      "index": 60,
+      "kind": "theorem",
+      "object": "theorem_60",
+      "preview": "theorem ( for x holds AR-below x is_directed_wrt AR) implies AR is satisfying_INT proof assume A1: for x holds AR-below "
+    },
+    {
+      "counts": {
+        "satisfying_INT": 2,
+        "satisfying_SI": 1
+      },
+      "index": 61,
+      "kind": "theorem",
+      "object": "theorem_61",
+      "preview": "theorem Th61: for R being approximating auxiliary(i) auxiliary(ii) auxiliary(iii) Relation of L st R is satisfying_INT h"
+    },
+    {
+      "counts": {
+        "satisfying_INT": 1,
+        "satisfying_SI": 1
+      },
+      "index": 34,
+      "kind": "registration",
+      "object": "registration_34",
+      "preview": "registration let L; cluster satisfying_INT -> satisfying_SI for approximating auxiliary Relation of L; coherence by Th61"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/waybel_4.miz"
+}

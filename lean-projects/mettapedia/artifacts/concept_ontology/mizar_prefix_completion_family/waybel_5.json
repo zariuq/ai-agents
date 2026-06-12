@@ -1,0 +1,516 @@
+{
+  "article": "waybel_5",
+  "attributes": [
+    "CLSubFrame",
+    "DoubleIndexedSet",
+    "Function",
+    "ManySortedFunction",
+    "completely-distributive",
+    "directed-sups-inheriting",
+    "infs-inheriting"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 3,
+      "kind": "theorem",
+      "object": "theorem_3",
+      "preview": "theorem ::Theorem 2.1 (1) implies (4) for L being continuous lower-bounded sup-Semilattice holds SupMap L is upper_adjoi"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem ::Theorem 2.1 (4) implies (1) for L being up-complete lower-bounded LATTICE holds SupMap L is upper_adjoint impl"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem ::Theorem 2.1 (5) implies (4) for L being complete Semilattice holds SupMap L is infs-preserving sups-preserving"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 1,
+        "ManySortedFunction": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let J, D be set, K be ManySortedSet of J; mode DoubleIndexedSet of K, D is ManySortedFunction of K, (J --> D)"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 2
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let J be set, K be ManySortedSet of J, S be 1-sorted; mode DoubleIndexedSet of K, S is DoubleIndexedSet of K,"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 2,
+        "Function": 1
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem Th6: for J, D being set, K being ManySortedSet of J for F being DoubleIndexedSet of K, D for j being set st j in"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 1,
+        "Function": 1
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let J, D be non empty set, K be ManySortedSet of J; let F be DoubleIndexedSet of K, D; let j be Element of J;"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 1
+      },
+      "index": 1,
+      "kind": "registration",
+      "object": "registration_1",
+      "preview": "registration let J, D be non empty set, K be non-empty ManySortedSet of J; let F be DoubleIndexedSet of K, D; let j be E"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 2,
+        "Function": 1
+      },
+      "index": 2,
+      "kind": "registration",
+      "object": "registration_2",
+      "preview": "registration let J be set, D be non empty set; let K be non-empty ManySortedSet of J; cluster -> non-empty for DoubleInd"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 3,
+      "kind": "registration",
+      "object": "registration_3",
+      "preview": "registration let F be Function-yielding Function; cluster dom Frege F -> functional; coherence; end; ::$CT"
+    },
+    {
+      "counts": {
+        "Function": 5
+      },
+      "index": 7,
+      "kind": "theorem",
+      "object": "theorem_7",
+      "preview": "theorem Th8: for F being Function-yielding Function for f being Function st f in dom Frege F holds dom f = dom F & dom F"
+    },
+    {
+      "counts": {
+        "Function": 4
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem Th9: for F being Function-yielding Function for f being Function st f in dom Frege F for i being set st i in dom"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 6,
+        "Function": 9
+      },
+      "index": 9,
+      "kind": "theorem",
+      "object": "theorem_9",
+      "preview": "theorem Th10: for J, D being set, K being ManySortedSet of J for F being DoubleIndexedSet of K, D for f being Function s"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 4,
+      "kind": "registration",
+      "object": "registration_4",
+      "preview": "registration let f be non-empty Function-yielding Function; cluster doms f -> non-empty; correctness proof for j being o"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 2,
+        "Function": 3
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let J, D be set, K be ManySortedSet of J; let F be DoubleIndexedSet of K, D; redefine func Frege F -> DoubleI"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 2,
+        "Function": 2
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let J, D be non empty set, K be non-empty ManySortedSet of J; let F be DoubleIndexedSet of K, D; let G be Dou"
+    },
+    {
+      "counts": {
+        "Function": 11
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let L be non empty RelStr; let F be Function-yielding Function; func \\//(F, L) -> Function of dom F, the carr"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 1
+      },
+      "index": 1,
+      "kind": "notation",
+      "object": "notation_1",
+      "preview": "notation let J be set, K be ManySortedSet of J, L be non empty RelStr; let F be DoubleIndexedSet of K, L; synonym Sups F"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 1
+      },
+      "index": 2,
+      "kind": "notation",
+      "object": "notation_2",
+      "preview": "notation let I, J be set, L be non empty RelStr; let F be DoubleIndexedSet of (I --> J), L; synonym Sups F for \\//(F, L)"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 10,
+      "kind": "theorem",
+      "object": "theorem_10",
+      "preview": "theorem Th11: for L being non empty RelStr for F, G being Function-yielding Function st dom F = dom G & (for x st x in d"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem Th12: for L being non empty RelStr for F, G being Function-yielding Function st dom F = dom G & (for x st x in d"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem Th13: for L being non empty RelStr for F being Function-yielding Function holds (y in rng \\//(F, L) iff ex x st "
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 2
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem Th14: for L being non empty RelStr for J being non empty set, K being ManySortedSet of J for F being DoubleIndex"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 3
+      },
+      "index": 5,
+      "kind": "registration",
+      "object": "registration_5",
+      "preview": "registration let J be non empty set, K be ManySortedSet of J, L be non empty RelStr; let F be DoubleIndexedSet of K, L; "
+    },
+    {
+      "counts": {
+        "Function": 5
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem Th15: for F being Function-yielding Function holds (for f being Function st f in dom Frege F holds //\\((Frege F)"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 2,
+        "Function": 1
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem Th16: for F being DoubleIndexedSet of K, L holds Inf Sups F >= Sup Infs Frege F proof let F be DoubleIndexedSet "
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 2,
+        "Function": 4
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem Th17: (L is continuous & for c st c << a holds c <= b) implies a <= b proof assume that A1: L is continuous and "
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 6,
+        "Function": 7,
+        "ManySortedFunction": 1
+      },
+      "index": 17,
+      "kind": "theorem",
+      "object": "theorem_17",
+      "preview": "theorem Th18: ::Theorem 2.3 (2) implies (1) (for J being non empty set st J in the_universe_of the carrier of L for K be"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 1
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem ::Theorem 2.3 (1) iff (2) L is continuous iff for J, K for F being DoubleIndexedSet of K, L st for j being Eleme"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 1,
+        "Function": 5
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let J, K, D be non empty set; let F be Function of [:J, K:], D; redefine func curry F -> DoubleIndexedSet of "
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 2,
+        "Function": 11
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem Th20: for F being Function of [:J, K:], D holds dom curry F = J & dom( (curry F).j) = K & F.(j, k) = ((curry F)."
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 2,
+        "Function": 6
+      },
+      "index": 20,
+      "kind": "theorem",
+      "object": "theorem_20",
+      "preview": "theorem ::Theorem 2.3 (1) iff (2') L is continuous iff for J, K being non empty set for F being Function of [:J, K:], th"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 16,
+        "Function": 20,
+        "ManySortedFunction": 2
+      },
+      "index": 21,
+      "kind": "theorem",
+      "object": "theorem_21",
+      "preview": "theorem Th22: for F being Function of [:J, K:], the carrier of L for X being Subset of L st X = {a where a is Element of"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 1,
+        "Function": 1,
+        "completely-distributive": 1
+      },
+      "index": 22,
+      "kind": "theorem",
+      "object": "theorem_22",
+      "preview": "theorem ::Theorem 2.3 (1) iff (3) L is continuous iff for J, K for F being Function of [:J, K:], the carrier of L for X "
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 1,
+        "completely-distributive": 1
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition let L be non empty RelStr; attr L is completely-distributive means :Def3: L is complete & for J being non emp"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 2,
+        "completely-distributive": 1
+      },
+      "index": 6,
+      "kind": "registration",
+      "object": "registration_6",
+      "preview": "registration cluster -> completely-distributive for 1-element Poset; coherence proof let L be 1-element Poset; reconside"
+    },
+    {
+      "counts": {
+        "completely-distributive": 1
+      },
+      "index": 7,
+      "kind": "registration",
+      "object": "registration_7",
+      "preview": "registration cluster completely-distributive for LATTICE; existence proof set x = the set,R = the Order of {x}; RelStr(#"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 1,
+        "completely-distributive": 2
+      },
+      "index": 23,
+      "kind": "theorem",
+      "object": "theorem_23",
+      "preview": "theorem Th24: ::Corollary 2.5 for L being completely-distributive LATTICE holds L is continuous proof let L be completel"
+    },
+    {
+      "counts": {
+        "completely-distributive": 1
+      },
+      "index": 8,
+      "kind": "registration",
+      "object": "registration_8",
+      "preview": "registration cluster completely-distributive -> complete continuous for LATTICE; correctness by Th24; end;"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 1,
+        "Function": 2,
+        "completely-distributive": 2
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem Th25: for L being non empty antisymmetric transitive with_infima RelStr for x being Element of L for X, Y being "
+    },
+    {
+      "counts": {
+        "completely-distributive": 2
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem Th26: for L being completely-distributive LATTICE for X being Subset of L for x being Element of L holds x \"/\\\" "
+    },
+    {
+      "counts": {
+        "completely-distributive": 3
+      },
+      "index": 9,
+      "kind": "registration",
+      "object": "registration_9",
+      "preview": "registration cluster completely-distributive -> Heyting for LATTICE; correctness proof let L be LATTICE; assume L is com"
+    },
+    {
+      "counts": {
+        "CLSubFrame": 1,
+        "directed-sups-inheriting": 1,
+        "infs-inheriting": 1
+      },
+      "index": 9,
+      "kind": "definition",
+      "object": "definition_9",
+      "preview": "definition let L be non empty RelStr; mode CLSubFrame of L is infs-inheriting directed-sups-inheriting non empty full Su"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 2,
+        "Function": 6
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem Th27: for F being DoubleIndexedSet of K, L st for j being Element of J holds rng(F.j) is directed holds rng Infs"
+    },
+    {
+      "counts": {
+        "CLSubFrame": 2,
+        "DoubleIndexedSet": 3,
+        "Function": 5
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem ::Theorem 2.7 (ii) L is continuous implies for S being CLSubFrame of L holds S is continuous LATTICE proof assum"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem Th29: for S being non empty Poset st ex g being Function of L, S st g is infs-preserving onto holds S is complet"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 10,
+      "kind": "registration",
+      "object": "registration_10",
+      "preview": "registration let J be set, y be set; cluster J => y -> total for J-defined Function; coherence; end;"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "ManySortedFunction": 1
+      },
+      "index": 10,
+      "kind": "definition",
+      "object": "definition_10",
+      "preview": "definition let A, B, J be set, f be Function of A, B; redefine func J => f -> ManySortedFunction of (J --> A), (J --> B)"
+    },
+    {
+      "counts": {
+        "Function": 5,
+        "ManySortedFunction": 1
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem Th30: for A, B being set for f being Function of A, B, g being Function of B, A st g*f = id A holds (J => g)**(J"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 4,
+        "Function": 4
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem Th31: for J, A being non empty set, B being set, K being ManySortedSet of J for F being DoubleIndexedSet of K, A"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 2,
+        "Function": 2
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem Th32: for J, A, B being non empty set, K being ManySortedSet of J for F being DoubleIndexedSet of K, A for f bei"
+    },
+    {
+      "counts": {
+        "DoubleIndexedSet": 4,
+        "Function": 3
+      },
+      "index": 32,
+      "kind": "theorem",
+      "object": "theorem_32",
+      "preview": "theorem ::Theorem 2.7 (iii) L is continuous implies for S being non empty Poset st ex g being Function of L, S st g is i"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/waybel_5.miz"
+}

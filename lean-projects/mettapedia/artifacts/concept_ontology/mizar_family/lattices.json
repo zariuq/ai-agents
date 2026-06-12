@@ -1,0 +1,817 @@
+{
+  "article": "lattices",
+  "attributes": [
+    "B_Lattice",
+    "BinOp",
+    "Boolean",
+    "Bottom",
+    "C_Lattice",
+    "D_Lattice",
+    "IT",
+    "L_join",
+    "L_meet",
+    "LattStr",
+    "Lattice",
+    "Lattice-like",
+    "M_Lattice",
+    "Top",
+    "is_a_complement_of",
+    "join-absorbing",
+    "join-associative",
+    "join-closed",
+    "join-commutative",
+    "lower-bounded",
+    "meet-absorbing",
+    "meet-associative",
+    "meet-closed",
+    "meet-commutative",
+    "upper-bounded"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "BinOp": 1,
+        "L_meet": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition struct(1-sorted) /\\-SemiLattStr (# carrier -> set, L_meet -> BinOp of the carrier #); end;"
+    },
+    {
+      "counts": {
+        "BinOp": 1,
+        "L_join": 1
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition struct (1-sorted) \\/-SemiLattStr (# carrier -> set, L_join -> BinOp of the carrier #); end;"
+    },
+    {
+      "counts": {
+        "BinOp": 1,
+        "L_join": 1,
+        "L_meet": 1,
+        "LattStr": 1
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition struct (/\\-SemiLattStr,\\/-SemiLattStr) LattStr (# carrier -> set, L_join, L_meet -> BinOp of the carrier #); "
+    },
+    {
+      "counts": {
+        "BinOp": 1
+      },
+      "index": 1,
+      "kind": "registration",
+      "object": "registration_1",
+      "preview": "registration let D be non empty set, u be BinOp of D; cluster \\/-SemiLattStr (# D, u #) -> non empty; coherence; cluster"
+    },
+    {
+      "counts": {
+        "BinOp": 1,
+        "LattStr": 1
+      },
+      "index": 2,
+      "kind": "registration",
+      "object": "registration_2",
+      "preview": "registration let D be non empty set, u,n be BinOp of D; cluster LattStr (# D, u, n #) -> non empty; coherence; end;"
+    },
+    {
+      "counts": {
+        "BinOp": 3,
+        "LattStr": 2
+      },
+      "index": 3,
+      "kind": "registration",
+      "object": "registration_3",
+      "preview": "registration cluster 1-element strict for \\/-SemiLattStr; existence proof set u = the BinOp of bool {}; take L = \\/-Semi"
+    },
+    {
+      "counts": {
+        "L_join": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let G be non empty \\/-SemiLattStr, p, q be Element of G; func p\"\\/\"q -> Element of G equals (the L_join of G)"
+    },
+    {
+      "counts": {
+        "L_meet": 1
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let G be non empty /\\-SemiLattStr, p, q be Element of G; func p\"/\\\"q -> Element of G equals (the L_meet of G)"
+    },
+    {
+      "counts": {
+        "BinOp": 6,
+        "LattStr": 2
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let G be non empty \\/-SemiLattStr, p, q be Element of G; pred p [= q means :Def3: p\"\\/\"q = q; end; Lm1: for u"
+    },
+    {
+      "counts": {
+        "IT": 5,
+        "join-associative": 1,
+        "join-commutative": 1
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let IT be non empty \\/-SemiLattStr; attr IT is join-commutative means :Def4: for a,b being Element of IT hold"
+    },
+    {
+      "counts": {
+        "IT": 5,
+        "meet-associative": 1,
+        "meet-commutative": 1
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition let IT be non empty /\\-SemiLattStr; attr IT is meet-commutative means :Def6: for a,b being Element of IT hold"
+    },
+    {
+      "counts": {
+        "IT": 5,
+        "LattStr": 1,
+        "join-absorbing": 1,
+        "meet-absorbing": 1
+      },
+      "index": 9,
+      "kind": "definition",
+      "object": "definition_9",
+      "preview": "definition let IT be non empty LattStr; attr IT is meet-absorbing means :Def8: for a,b being Element of IT holds (a \"/\\\""
+    },
+    {
+      "counts": {
+        "IT": 3,
+        "LattStr": 1,
+        "Lattice-like": 1,
+        "join-absorbing": 1,
+        "join-associative": 1,
+        "join-commutative": 1,
+        "meet-absorbing": 1,
+        "meet-associative": 1,
+        "meet-commutative": 1
+      },
+      "index": 10,
+      "kind": "definition",
+      "object": "definition_10",
+      "preview": "definition let IT be non empty LattStr; attr IT is Lattice-like means IT is join-commutative join-associative meet-absor"
+    },
+    {
+      "counts": {
+        "LattStr": 2,
+        "Lattice-like": 2,
+        "join-absorbing": 2,
+        "join-associative": 2,
+        "join-commutative": 2,
+        "meet-absorbing": 2,
+        "meet-associative": 2,
+        "meet-commutative": 2
+      },
+      "index": 4,
+      "kind": "registration",
+      "object": "registration_4",
+      "preview": "registration cluster Lattice-like -> join-commutative join-associative meet-absorbing meet-commutative meet-associative "
+    },
+    {
+      "counts": {
+        "BinOp": 3,
+        "LattStr": 2,
+        "Lattice-like": 1,
+        "join-absorbing": 1,
+        "join-associative": 2,
+        "join-commutative": 2,
+        "meet-absorbing": 1,
+        "meet-associative": 2,
+        "meet-commutative": 2
+      },
+      "index": 5,
+      "kind": "registration",
+      "object": "registration_5",
+      "preview": "registration cluster strict join-commutative join-associative for non empty \\/-SemiLattStr; existence proof set u = the "
+    },
+    {
+      "counts": {
+        "LattStr": 1,
+        "Lattice": 1,
+        "Lattice-like": 1
+      },
+      "index": 11,
+      "kind": "definition",
+      "object": "definition_11",
+      "preview": "definition mode Lattice is Lattice-like non empty LattStr; end;"
+    },
+    {
+      "counts": {
+        "join-commutative": 1
+      },
+      "index": 12,
+      "kind": "definition",
+      "object": "definition_12",
+      "preview": "definition let L be join-commutative non empty \\/-SemiLattStr, a, b be Element of L; redefine func a\"\\/\"b; commutativity"
+    },
+    {
+      "counts": {
+        "meet-commutative": 1
+      },
+      "index": 13,
+      "kind": "definition",
+      "object": "definition_13",
+      "preview": "definition let L be meet-commutative non empty /\\-SemiLattStr, a, b be Element of L; redefine func a\"/\\\"b; commutativity"
+    },
+    {
+      "counts": {
+        "IT": 3,
+        "LattStr": 1
+      },
+      "index": 14,
+      "kind": "definition",
+      "object": "definition_14",
+      "preview": "definition let IT be non empty LattStr; attr IT is distributive means :Def11: for a,b,c being Element of IT holds a \"/\\\""
+    },
+    {
+      "counts": {
+        "IT": 3,
+        "LattStr": 1
+      },
+      "index": 15,
+      "kind": "definition",
+      "object": "definition_15",
+      "preview": "definition let IT be non empty LattStr; attr IT is modular means for a,b,c being Element of IT st a [= c holds a\"\\/\"(b\"/"
+    },
+    {
+      "counts": {
+        "IT": 4,
+        "lower-bounded": 1
+      },
+      "index": 16,
+      "kind": "definition",
+      "object": "definition_16",
+      "preview": "definition let IT be non empty /\\-SemiLattStr; attr IT is lower-bounded means :Def13: ex c being Element of IT st for a "
+    },
+    {
+      "counts": {
+        "BinOp": 2,
+        "IT": 4,
+        "LattStr": 2,
+        "Lattice": 1,
+        "join-absorbing": 1,
+        "join-associative": 1,
+        "join-commutative": 1,
+        "meet-absorbing": 1,
+        "meet-associative": 1,
+        "meet-commutative": 1,
+        "upper-bounded": 1
+      },
+      "index": 17,
+      "kind": "definition",
+      "object": "definition_17",
+      "preview": "definition let IT be non empty \\/-SemiLattStr; attr IT is upper-bounded means :Def14: ex c being Element of IT st for a "
+    },
+    {
+      "counts": {
+        "BinOp": 1,
+        "LattStr": 1,
+        "Lattice": 2,
+        "lower-bounded": 2,
+        "upper-bounded": 2
+      },
+      "index": 6,
+      "kind": "registration",
+      "object": "registration_6",
+      "preview": "registration cluster strict distributive lower-bounded upper-bounded modular for Lattice; existence proof set uu = the B"
+    },
+    {
+      "counts": {
+        "BinOp": 4,
+        "D_Lattice": 1,
+        "LattStr": 4,
+        "Lattice": 6,
+        "M_Lattice": 1,
+        "lower-bounded": 1,
+        "upper-bounded": 1
+      },
+      "index": 18,
+      "kind": "definition",
+      "object": "definition_18",
+      "preview": "definition mode D_Lattice is distributive Lattice; mode M_Lattice is modular Lattice; mode 0_Lattice is lower-bounded La"
+    },
+    {
+      "counts": {
+        "IT": 3,
+        "LattStr": 1,
+        "lower-bounded": 1,
+        "upper-bounded": 1
+      },
+      "index": 19,
+      "kind": "definition",
+      "object": "definition_19",
+      "preview": "definition let IT be non empty LattStr; attr IT is bounded means IT is lower-bounded upper-bounded; end;"
+    },
+    {
+      "counts": {
+        "LattStr": 2,
+        "lower-bounded": 2,
+        "upper-bounded": 2
+      },
+      "index": 7,
+      "kind": "registration",
+      "object": "registration_7",
+      "preview": "registration cluster lower-bounded upper-bounded -> bounded for non empty LattStr; coherence; cluster bounded -> lower-b"
+    },
+    {
+      "counts": {
+        "BinOp": 1,
+        "LattStr": 1,
+        "Lattice": 2
+      },
+      "index": 8,
+      "kind": "registration",
+      "object": "registration_8",
+      "preview": "registration cluster bounded strict for Lattice; existence proof set uu = the BinOp of bool {}; set G=LattStr(#bool {},u"
+    },
+    {
+      "counts": {
+        "Lattice": 1
+      },
+      "index": 20,
+      "kind": "definition",
+      "object": "definition_20",
+      "preview": "definition mode 01_Lattice is bounded Lattice; end;"
+    },
+    {
+      "counts": {
+        "Bottom": 1,
+        "IT": 4,
+        "lower-bounded": 1
+      },
+      "index": 21,
+      "kind": "definition",
+      "object": "definition_21",
+      "preview": "definition let L be non empty /\\-SemiLattStr; assume A1: L is lower-bounded; func Bottom L -> Element of L means :Def16:"
+    },
+    {
+      "counts": {
+        "IT": 4,
+        "Top": 1,
+        "upper-bounded": 1
+      },
+      "index": 22,
+      "kind": "definition",
+      "object": "definition_22",
+      "preview": "definition let L be non empty \\/-SemiLattStr; assume A1: L is upper-bounded; func Top L -> Element of L means :Def17: fo"
+    },
+    {
+      "counts": {
+        "Bottom": 2,
+        "LattStr": 1,
+        "Top": 2,
+        "is_a_complement_of": 1
+      },
+      "index": 23,
+      "kind": "definition",
+      "object": "definition_23",
+      "preview": "definition let L be non empty LattStr, a, b be Element of L; pred a is_a_complement_of b means a\"\\/\"b = Top L & b\"\\/\"a ="
+    },
+    {
+      "counts": {
+        "IT": 4,
+        "LattStr": 1,
+        "is_a_complement_of": 1
+      },
+      "index": 24,
+      "kind": "definition",
+      "object": "definition_24",
+      "preview": "definition let IT be non empty LattStr; attr IT is complemented means :Def19: for b being Element of IT ex a being Eleme"
+    },
+    {
+      "counts": {
+        "BinOp": 1,
+        "Bottom": 2,
+        "LattStr": 1,
+        "Lattice": 2,
+        "Top": 2
+      },
+      "index": 9,
+      "kind": "registration",
+      "object": "registration_9",
+      "preview": "registration cluster bounded complemented strict for Lattice; existence proof set n = the BinOp of bool {}; reconsider G"
+    },
+    {
+      "counts": {
+        "C_Lattice": 1
+      },
+      "index": 25,
+      "kind": "definition",
+      "object": "definition_25",
+      "preview": "definition mode C_Lattice is complemented 01_Lattice; end;"
+    },
+    {
+      "counts": {
+        "Boolean": 1,
+        "IT": 3,
+        "LattStr": 1
+      },
+      "index": 26,
+      "kind": "definition",
+      "object": "definition_26",
+      "preview": "definition let IT be non empty LattStr; attr IT is Boolean means IT is bounded complemented distributive; end;"
+    },
+    {
+      "counts": {
+        "Boolean": 2,
+        "LattStr": 2
+      },
+      "index": 10,
+      "kind": "registration",
+      "object": "registration_10",
+      "preview": "registration cluster Boolean -> bounded complemented distributive for non empty LattStr; coherence; cluster bounded comp"
+    },
+    {
+      "counts": {
+        "BinOp": 1,
+        "Boolean": 1,
+        "Bottom": 2,
+        "C_Lattice": 1,
+        "LattStr": 1,
+        "Lattice": 2,
+        "Top": 2
+      },
+      "index": 11,
+      "kind": "registration",
+      "object": "registration_11",
+      "preview": "registration cluster Boolean strict for Lattice; existence proof set n = the BinOp of bool {}; reconsider G = LattStr (#"
+    },
+    {
+      "counts": {
+        "B_Lattice": 1,
+        "Boolean": 1,
+        "Lattice": 1
+      },
+      "index": 27,
+      "kind": "definition",
+      "object": "definition_27",
+      "preview": "definition mode B_Lattice is Boolean Lattice; end;"
+    },
+    {
+      "counts": {
+        "LattStr": 1,
+        "join-absorbing": 1,
+        "meet-absorbing": 1,
+        "meet-commutative": 1
+      },
+      "index": 12,
+      "kind": "registration",
+      "object": "registration_12",
+      "preview": "registration let L be meet-absorbing join-absorbing meet-commutative non empty LattStr, a be Element of L; reduce a \"\\/\""
+    },
+    {
+      "counts": {
+        "LattStr": 1,
+        "join-absorbing": 1,
+        "meet-absorbing": 1,
+        "meet-commutative": 1
+      },
+      "index": 13,
+      "kind": "registration",
+      "object": "registration_13",
+      "preview": "registration let L be meet-absorbing join-absorbing meet-commutative non empty LattStr, a be Element of L; reduce a \"/\\\""
+    },
+    {
+      "counts": {
+        "Lattice": 2
+      },
+      "index": 1,
+      "kind": "theorem",
+      "object": "theorem_1",
+      "preview": "theorem Th1: for L being Lattice holds (for a,b,c being Element of L holds a \"/\\\"(b\"\\/\"c) = (a\"/\\\"b)\"\\/\"(a\"/\\\"c)) iff fo"
+    },
+    {
+      "counts": {
+        "LattStr": 1,
+        "join-absorbing": 1,
+        "meet-absorbing": 1
+      },
+      "index": 2,
+      "kind": "theorem",
+      "object": "theorem_2",
+      "preview": "theorem Th2: for L being meet-absorbing join-absorbing non empty LattStr, a, b being Element of L holds a [= b iff a\"/\\\""
+    },
+    {
+      "counts": {
+        "LattStr": 2,
+        "join-absorbing": 2,
+        "join-associative": 2,
+        "meet-absorbing": 2,
+        "meet-commutative": 2
+      },
+      "index": 3,
+      "kind": "theorem",
+      "object": "theorem_3",
+      "preview": "theorem Th3: for L being meet-absorbing join-absorbing join-associative meet-commutative non empty LattStr, a, b being E"
+    },
+    {
+      "counts": {
+        "LattStr": 1,
+        "meet-absorbing": 1,
+        "meet-commutative": 1
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem Th4: for L being meet-absorbing meet-commutative non empty LattStr, a, b being Element of L holds a\"/\\\"b [= a by"
+    },
+    {
+      "counts": {
+        "LattStr": 1,
+        "join-absorbing": 1,
+        "meet-absorbing": 1,
+        "meet-commutative": 1
+      },
+      "index": 28,
+      "kind": "definition",
+      "object": "definition_28",
+      "preview": "definition let L be meet-absorbing join-absorbing meet-commutative non empty LattStr, a, b be Element of L; redefine pre"
+    },
+    {
+      "counts": {
+        "join-associative": 1
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem for L being join-associative non empty \\/-SemiLattStr, a, b, c being Element of L holds a [= b & b [= c implies "
+    },
+    {
+      "counts": {
+        "join-commutative": 2
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem Th6: for L being join-commutative non empty \\/-SemiLattStr, a, b being Element of L holds a [= b & b [= a implie"
+    },
+    {
+      "counts": {
+        "LattStr": 2,
+        "join-absorbing": 2,
+        "meet-absorbing": 2,
+        "meet-associative": 2
+      },
+      "index": 7,
+      "kind": "theorem",
+      "object": "theorem_7",
+      "preview": "theorem Th7: for L being meet-absorbing join-absorbing meet-associative non empty LattStr, a, b, c being Element of L ho"
+    },
+    {
+      "counts": {
+        "D_Lattice": 1,
+        "Lattice": 2
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem for L being Lattice holds (for a,b,c being Element of L holds (a\"/\\\"b) \"\\/\"(b\"/\\\"c)\"\\/\"(c\"/\\\"a) = (a\"\\/\"b)\"/\\\"(b"
+    },
+    {
+      "counts": {
+        "Lattice": 2
+      },
+      "index": 14,
+      "kind": "registration",
+      "object": "registration_14",
+      "preview": "registration cluster distributive -> modular for Lattice; coherence proof let L be Lattice; assume A1: L is distributive"
+    },
+    {
+      "counts": {
+        "Bottom": 5
+      },
+      "index": 15,
+      "kind": "registration",
+      "object": "registration_15",
+      "preview": "registration let L be 0_Lattice, a be Element of L; reduce Bottom L \"\\/\" a to a; reducibility proof thus Bottom L\"\\/\"a ="
+    },
+    {
+      "counts": {
+        "Bottom": 1
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem for L being 0_Lattice, a being Element of L holds Bottom L \"\\/\" a = a;"
+    },
+    {
+      "counts": {
+        "Bottom": 2
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem for L being 0_Lattice, a being Element of L holds Bottom L \"/\\\" a = Bottom L;"
+    },
+    {
+      "counts": {
+        "Bottom": 1
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem for L being 0_Lattice, a being Element of L holds Bottom L [= a;"
+    },
+    {
+      "counts": {
+        "Top": 5
+      },
+      "index": 16,
+      "kind": "registration",
+      "object": "registration_16",
+      "preview": "registration let L be 1_Lattice, a be Element of L; reduce Top L\"/\\\"a to a; reducibility proof thus Top L\"/\\\"a = ( Top L"
+    },
+    {
+      "counts": {
+        "Top": 1
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem for L being 1_Lattice, a being Element of L holds Top L\"/\\\"a = a;"
+    },
+    {
+      "counts": {
+        "Top": 2
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem for L being 1_Lattice, a being Element of L holds Top L\"\\/\"a = Top L;"
+    },
+    {
+      "counts": {
+        "Top": 3
+      },
+      "index": 17,
+      "kind": "theorem",
+      "object": "theorem_17",
+      "preview": "theorem for L being 1_Lattice, a being Element of L holds a [= Top L proof let L be 1_Lattice, a be Element of L; Top L\""
+    },
+    {
+      "counts": {
+        "B_Lattice": 1,
+        "D_Lattice": 1,
+        "IT": 1,
+        "LattStr": 1,
+        "is_a_complement_of": 1
+      },
+      "index": 29,
+      "kind": "definition",
+      "object": "definition_29",
+      "preview": "definition let L be non empty LattStr, x be Element of L; assume A1: L is complemented D_Lattice; func x` -> Element of "
+    },
+    {
+      "counts": {
+        "Bottom": 1,
+        "is_a_complement_of": 1
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem Th18: a`\"/\\\"a = Bottom L proof a` is_a_complement_of a by Def21; hence thesis; end;"
+    },
+    {
+      "counts": {
+        "Top": 1,
+        "is_a_complement_of": 1
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem Th19: a`\"\\/\"a = Top L proof a` is_a_complement_of a by Def21; hence thesis; end;"
+    },
+    {
+      "counts": {
+        "Bottom": 2,
+        "Top": 2,
+        "is_a_complement_of": 2
+      },
+      "index": 17,
+      "kind": "registration",
+      "object": "registration_17",
+      "preview": "registration let L,a; reduce a`` to a; reducibility proof a` is_a_complement_of a by Def21; then A1: a\"\\/\"a` =Top L & a "
+    },
+    {
+      "counts": {
+        "Bottom": 3,
+        "Top": 3,
+        "is_a_complement_of": 1
+      },
+      "index": 21,
+      "kind": "theorem",
+      "object": "theorem_21",
+      "preview": "theorem Th21: ( a\"/\\\"b )` = a`\"\\/\" b` proof A1: (a`\"\\/\"b`)\"/\\\"(a\"/\\\"b) = (a\"/\\\"b)\"/\\\"(a`\"\\/\"b`) & (a`\"\\/\"b`)\"\\/\"(a\"/\\\"b)"
+    },
+    {
+      "counts": {
+        "Bottom": 6,
+        "Top": 1
+      },
+      "index": 23,
+      "kind": "theorem",
+      "object": "theorem_23",
+      "preview": "theorem Th23: b\"/\\\"a = Bottom L iff b [= a` proof thus b\"/\\\"a = Bottom L implies b [= a` proof assume A1: b\"/\\\"a = Botto"
+    },
+    {
+      "counts": {
+        "Bottom": 3
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem a [= b implies b` [= a` proof assume a [= b; then b`\"/\\\"a [= b`\"/\\\"b by Th7; then A1: b`\"/\\\"a [= Bottom L by Th1"
+    },
+    {
+      "counts": {
+        "LattStr": 1,
+        "join-closed": 1,
+        "meet-closed": 1
+      },
+      "index": 30,
+      "kind": "definition",
+      "object": "definition_30",
+      "preview": "definition let L be non empty LattStr, S be Subset of L; attr S is initial means :Def22: for p,q being Element of L st p"
+    },
+    {
+      "counts": {
+        "LattStr": 1
+      },
+      "index": 18,
+      "kind": "registration",
+      "object": "registration_18",
+      "preview": "registration let L be non empty LattStr; cluster [#]L -> initial final non empty; coherence; end;"
+    },
+    {
+      "counts": {
+        "LattStr": 1
+      },
+      "index": 19,
+      "kind": "registration",
+      "object": "registration_19",
+      "preview": "registration let L be non empty LattStr; cluster initial final non empty for Subset of L; existence proof take [#]L; thu"
+    },
+    {
+      "counts": {
+        "Lattice": 1
+      },
+      "index": 20,
+      "kind": "registration",
+      "object": "registration_20",
+      "preview": "registration let L be Lattice; cluster initial final non empty for Subset of L; existence proof take [#]L; thus thesis; "
+    },
+    {
+      "counts": {
+        "LattStr": 1,
+        "meet-absorbing": 1,
+        "meet-closed": 1,
+        "meet-commutative": 1
+      },
+      "index": 21,
+      "kind": "registration",
+      "object": "registration_21",
+      "preview": "registration let L be meet-absorbing meet-commutative non empty LattStr; cluster initial -> meet-closed for Subset of L;"
+    },
+    {
+      "counts": {
+        "LattStr": 1,
+        "join-absorbing": 1,
+        "join-associative": 1,
+        "join-closed": 1,
+        "meet-absorbing": 1,
+        "meet-commutative": 1
+      },
+      "index": 22,
+      "kind": "registration",
+      "object": "registration_22",
+      "preview": "registration let L be meet-absorbing join-absorbing join-associative meet-commutative non empty LattStr; cluster final -"
+    },
+    {
+      "counts": {
+        "Lattice": 2
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem for L being Lattice, S being initial final non empty Subset of L holds S = [#]L proof let L be Lattice, S be ini"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/lattices.miz"
+}

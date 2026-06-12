@@ -1,0 +1,455 @@
+{
+  "article": "lattice2",
+  "attributes": [
+    "D0_Lattice",
+    "FinJoin",
+    "FinMeet",
+    "H_Lattice",
+    "Heyting",
+    "IT",
+    "LattStr",
+    "Lattice",
+    "lower-bounded"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "LattStr": 1,
+        "Lattice": 1
+      },
+      "index": 1,
+      "kind": "notation",
+      "object": "notation_1",
+      "preview": "notation let D be non empty set; let o,o9 be BinOp of D; antonym o doesn't_absorb o9 for o absorbs o9; end; :: Dual Latt"
+    },
+    {
+      "counts": {
+        "LattStr": 3
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let L be LattStr; func L.: -> strict LattStr equals LattStr(#the carrier of L, the L_meet of L , the L_join o"
+    },
+    {
+      "counts": {
+        "LattStr": 1
+      },
+      "index": 1,
+      "kind": "registration",
+      "object": "registration_1",
+      "preview": "registration let L be non empty LattStr; cluster L.: -> non empty; coherence; end;"
+    },
+    {
+      "counts": {
+        "LattStr": 1,
+        "Lattice": 1
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem for L being strict non empty LattStr holds L .: .: = L; :: General Lattices reserve L for Lattice; reserve a,b,c"
+    },
+    {
+      "counts": {
+        "FinJoin": 1,
+        "FinMeet": 1,
+        "Lattice": 1
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let A be non empty set, L be Lattice; let B be Element of Fin A; let f be Function of A, the carrier of L; fu"
+    },
+    {
+      "counts": {
+        "FinJoin": 1
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem Th28: x in B implies f.x [= FinJoin(B,f) by SETWISEO:22;"
+    },
+    {
+      "counts": {
+        "FinJoin": 7
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem Th29: (ex x st x in B & u [= f.x) implies u [= FinJoin(B,f) proof given x such that A1: x in B and A2: u [= f.x;"
+    },
+    {
+      "counts": {
+        "FinJoin": 1
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem (for x st x in B holds f.x = u) & B <> {} implies FinJoin(B,f) = u by SETWISEO:24;"
+    },
+    {
+      "counts": {
+        "FinJoin": 3
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem FinJoin(B,f) [= u implies for x st x in B holds f.x [= u proof assume A1: FinJoin(B,f) [= u; let x; assume x in "
+    },
+    {
+      "counts": {
+        "FinJoin": 2
+      },
+      "index": 32,
+      "kind": "theorem",
+      "object": "theorem_32",
+      "preview": "theorem Th32: B <> {} & (for x st x in B holds f.x [= u) implies FinJoin(B,f) [= u proof assume that A1: B <> {} and A2:"
+    },
+    {
+      "counts": {
+        "FinJoin": 3
+      },
+      "index": 33,
+      "kind": "theorem",
+      "object": "theorem_33",
+      "preview": "theorem B <> {} & (for x st x in B holds f.x [= g.x) implies FinJoin(B,f) [= FinJoin(B,g) proof assume that A1: B <> {} "
+    },
+    {
+      "counts": {
+        "FinJoin": 2
+      },
+      "index": 34,
+      "kind": "theorem",
+      "object": "theorem_34",
+      "preview": "theorem Th34: B <> {} & f|B = g|B implies FinJoin(B,f) = FinJoin(B,g) proof assume that A1: B <> {} and A2: f|B = g|B; f"
+    },
+    {
+      "counts": {
+        "FinJoin": 2
+      },
+      "index": 35,
+      "kind": "theorem",
+      "object": "theorem_35",
+      "preview": "theorem B <> {} implies v \"\\/\" FinJoin(B,f) = FinJoin(B, (the L_join of L)[;]( v, f ) ) by Th20,SETWISEO:27;"
+    },
+    {
+      "counts": {
+        "Lattice": 1
+      },
+      "index": 8,
+      "kind": "registration",
+      "object": "registration_8",
+      "preview": "registration let L be Lattice; cluster L.: -> Lattice-like; coherence proof the L_join of L.: absorbs the L_meet of L.: "
+    },
+    {
+      "counts": {
+        "FinJoin": 2,
+        "FinMeet": 2,
+        "Lattice": 1
+      },
+      "index": 36,
+      "kind": "theorem",
+      "object": "theorem_36",
+      "preview": "theorem for L being Lattice, B being Element of Fin A for f being Function of A, the carrier of L, f9 being Function of "
+    },
+    {
+      "counts": {
+        "FinJoin": 1,
+        "FinMeet": 1
+      },
+      "index": 40,
+      "kind": "theorem",
+      "object": "theorem_40",
+      "preview": "theorem Th40: x in B implies FinMeet(B,f) [= f.x proof reconsider f9 = f as Function of A, the carrier of L.:; assume x "
+    },
+    {
+      "counts": {
+        "FinJoin": 1,
+        "FinMeet": 1
+      },
+      "index": 41,
+      "kind": "theorem",
+      "object": "theorem_41",
+      "preview": "theorem Th41: (ex x st x in B & f.x [= u) implies FinMeet(B,f)[= u proof given x such that A1: x in B and A2: f.x [= u; "
+    },
+    {
+      "counts": {
+        "FinMeet": 1
+      },
+      "index": 42,
+      "kind": "theorem",
+      "object": "theorem_42",
+      "preview": "theorem (for x st x in B holds f.x = u) & B <> {} implies FinMeet(B,f) = u by SETWISEO:24;"
+    },
+    {
+      "counts": {
+        "FinMeet": 2
+      },
+      "index": 43,
+      "kind": "theorem",
+      "object": "theorem_43",
+      "preview": "theorem B <> {} implies v \"/\\\" FinMeet(B,f) = FinMeet(B, (the L_meet of L)[;]( v, f ) ) by Th25,SETWISEO:27;"
+    },
+    {
+      "counts": {
+        "FinMeet": 3
+      },
+      "index": 44,
+      "kind": "theorem",
+      "object": "theorem_44",
+      "preview": "theorem u [= FinMeet(B,f) implies for x st x in B holds u [= f.x proof assume A1: u [= FinMeet(B,f); let x; assume x in "
+    },
+    {
+      "counts": {
+        "FinJoin": 2,
+        "FinMeet": 4
+      },
+      "index": 45,
+      "kind": "theorem",
+      "object": "theorem_45",
+      "preview": "theorem B <> {} & f|B = g|B implies FinMeet(B,f) = FinMeet(B,g) proof reconsider f9 = f, g9 = g as Function of A, the ca"
+    },
+    {
+      "counts": {
+        "FinJoin": 1,
+        "FinMeet": 1
+      },
+      "index": 46,
+      "kind": "theorem",
+      "object": "theorem_46",
+      "preview": "theorem Th46: B <> {} & (for x st x in B holds u [= f.x) implies u [= FinMeet( B,f) proof assume that A1: B <> {} and A2"
+    },
+    {
+      "counts": {
+        "FinMeet": 3
+      },
+      "index": 47,
+      "kind": "theorem",
+      "object": "theorem_47",
+      "preview": "theorem B <> {} & (for x st x in B holds f.x [= g.x) implies FinMeet(B,f) [= FinMeet(B,g) proof assume that A1: B <> {} "
+    },
+    {
+      "counts": {
+        "Lattice": 2,
+        "lower-bounded": 2
+      },
+      "index": 48,
+      "kind": "theorem",
+      "object": "theorem_48",
+      "preview": "theorem for L being Lattice holds L is lower-bounded iff L.: is upper-bounded proof let L be Lattice; thus L is lower-bo"
+    },
+    {
+      "counts": {
+        "Lattice": 2,
+        "lower-bounded": 2
+      },
+      "index": 49,
+      "kind": "theorem",
+      "object": "theorem_49",
+      "preview": "theorem Th49: for L being Lattice holds L is upper-bounded iff L.: is lower-bounded proof let L be Lattice; thus L is up"
+    },
+    {
+      "counts": {
+        "FinJoin": 4
+      },
+      "index": 53,
+      "kind": "theorem",
+      "object": "theorem_53",
+      "preview": "theorem Th53: f|B = g|B implies FinJoin(B,f) = FinJoin(B,g) proof set J = the L_join of L; A1: Bottom L = the_unity_wrt "
+    },
+    {
+      "counts": {
+        "FinJoin": 2
+      },
+      "index": 54,
+      "kind": "theorem",
+      "object": "theorem_54",
+      "preview": "theorem Th54: (for x st x in B holds f.x [= u) implies FinJoin(B,f) [= u proof assume A1: for x st x in B holds f.x [= u"
+    },
+    {
+      "counts": {
+        "FinJoin": 3
+      },
+      "index": 55,
+      "kind": "theorem",
+      "object": "theorem_55",
+      "preview": "theorem (for x st x in B holds f.x [= g.x) implies FinJoin(B,f) [= FinJoin(B,g ) proof assume A1: for x st x in B holds "
+    },
+    {
+      "counts": {
+        "FinJoin": 2,
+        "FinMeet": 4
+      },
+      "index": 58,
+      "kind": "theorem",
+      "object": "theorem_58",
+      "preview": "theorem f|B = g|B implies FinMeet(B,f) = FinMeet(B,g) proof assume A1: f|B = g|B; reconsider f9 = f, g9 = g as Function "
+    },
+    {
+      "counts": {
+        "FinJoin": 1,
+        "FinMeet": 1
+      },
+      "index": 59,
+      "kind": "theorem",
+      "object": "theorem_59",
+      "preview": "theorem Th59: (for x st x in B holds u [= f.x) implies u [= FinMeet(B,f) proof reconsider f9 = f as Function of A, the c"
+    },
+    {
+      "counts": {
+        "FinMeet": 3
+      },
+      "index": 60,
+      "kind": "theorem",
+      "object": "theorem_60",
+      "preview": "theorem (for x st x in B holds f.x [= g.x) implies FinMeet(B,f) [= FinMeet(B,g ) proof assume A1: for x st x in B holds "
+    },
+    {
+      "counts": {
+        "D0_Lattice": 2,
+        "Lattice": 1,
+        "lower-bounded": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition mode D0_Lattice is distributive lower-bounded Lattice; end; reserve L for D0_Lattice, f,g for (Function of A,"
+    },
+    {
+      "counts": {
+        "FinJoin": 2
+      },
+      "index": 64,
+      "kind": "theorem",
+      "object": "theorem_64",
+      "preview": "theorem Th64: (the L_meet of L).(u, FinJoin(B, f)) = FinJoin(B, (the L_meet of L)[;](u,f)) proof A1: (the L_meet of L).("
+    },
+    {
+      "counts": {
+        "FinJoin": 5
+      },
+      "index": 65,
+      "kind": "theorem",
+      "object": "theorem_65",
+      "preview": "theorem (for x st x in B holds g.x = u \"/\\\" f.x) implies u \"/\\\" FinJoin(B,f) = FinJoin(B,g) proof reconsider G = ((the L"
+    },
+    {
+      "counts": {
+        "FinJoin": 2,
+        "Heyting": 1
+      },
+      "index": 66,
+      "kind": "theorem",
+      "object": "theorem_66",
+      "preview": "theorem u \"/\\\" FinJoin(B,f) = FinJoin(B, (the L_meet of L)[;](u, f)) by Th64; :: Heyting Lattices"
+    },
+    {
+      "counts": {
+        "Heyting": 1,
+        "IT": 3,
+        "Lattice": 1,
+        "lower-bounded": 1
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let IT be Lattice; attr IT is Heyting means IT is implicative lower-bounded; end;"
+    },
+    {
+      "counts": {
+        "Heyting": 1,
+        "Lattice": 1,
+        "lower-bounded": 1
+      },
+      "index": 11,
+      "kind": "registration",
+      "object": "registration_11",
+      "preview": "registration cluster Heyting for Lattice; existence proof set L = the B_Lattice; take L; thus L is implicative lower-bou"
+    },
+    {
+      "counts": {
+        "Heyting": 2,
+        "Lattice": 2,
+        "lower-bounded": 2
+      },
+      "index": 12,
+      "kind": "registration",
+      "object": "registration_12",
+      "preview": "registration cluster Heyting -> implicative lower-bounded for Lattice; coherence; cluster implicative lower-bounded -> H"
+    },
+    {
+      "counts": {
+        "H_Lattice": 1,
+        "Heyting": 1,
+        "Lattice": 1
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition mode H_Lattice is Heyting Lattice; end;"
+    },
+    {
+      "counts": {
+        "Heyting": 1,
+        "Lattice": 1
+      },
+      "index": 13,
+      "kind": "registration",
+      "object": "registration_13",
+      "preview": "registration cluster Heyting strict for Lattice; existence proof set L = the strict B_Lattice; L is I_Lattice; hence the"
+    },
+    {
+      "counts": {
+        "H_Lattice": 2
+      },
+      "index": 67,
+      "kind": "theorem",
+      "object": "theorem_67",
+      "preview": "theorem for L being 0_Lattice holds L is H_Lattice iff for x,z being Element of L ex y being Element of L st x \"/\\\" y [="
+    },
+    {
+      "counts": {
+        "Lattice": 1
+      },
+      "index": 68,
+      "kind": "theorem",
+      "object": "theorem_68",
+      "preview": "theorem for L being Lattice holds L is finite iff L.: is finite;"
+    },
+    {
+      "counts": {
+        "FinJoin": 1,
+        "FinMeet": 1,
+        "Lattice": 4,
+        "lower-bounded": 1
+      },
+      "index": 14,
+      "kind": "registration",
+      "object": "registration_14",
+      "preview": "registration cluster finite -> lower-bounded for Lattice; coherence proof let L be Lattice; assume L is finite; then rec"
+    },
+    {
+      "counts": {
+        "Lattice": 1
+      },
+      "index": 15,
+      "kind": "registration",
+      "object": "registration_15",
+      "preview": "registration cluster finite -> bounded for Lattice; coherence; end;"
+    },
+    {
+      "counts": {
+        "D0_Lattice": 1,
+        "FinJoin": 2,
+        "Heyting": 1,
+        "Lattice": 2
+      },
+      "index": 16,
+      "kind": "registration",
+      "object": "registration_16",
+      "preview": "registration cluster distributive finite -> Heyting for Lattice; coherence proof let L be Lattice; assume A1: L is distr"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/lattice2.miz"
+}

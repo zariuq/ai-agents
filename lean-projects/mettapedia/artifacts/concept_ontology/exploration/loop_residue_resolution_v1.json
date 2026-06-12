@@ -1,0 +1,164 @@
+{
+  "name": "loop_residue_resolution_v1",
+  "probed_orders": [
+    7,
+    9,
+    11,
+    12
+  ],
+  "proof_time_limit": 300,
+  "results": [
+    {
+      "antecedent": [
+        "flexible",
+        "left_alternative"
+      ],
+      "confirmed_orders_unsat": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "consequent": "lip",
+      "countermodel_order": null,
+      "ladder": [
+        {
+          "order": 5,
+          "source": "benchmark_v1",
+          "status": "Unsatisfiable"
+        },
+        {
+          "order": 6,
+          "source": "benchmark_v1",
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 7,
+          "return_code": 0,
+          "source": "residue_resolution",
+          "status": "Unsatisfiable",
+          "time_limit": 120
+        },
+        {
+          "order": 8,
+          "source": "benchmark_v1",
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 9,
+          "return_code": 0,
+          "source": "residue_resolution",
+          "status": "Unsatisfiable",
+          "time_limit": 120
+        },
+        {
+          "order": 10,
+          "source": "hardening_v1",
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 11,
+          "return_code": 0,
+          "source": "residue_resolution",
+          "status": "Unsatisfiable",
+          "time_limit": 120
+        },
+        {
+          "finite_model_found": false,
+          "order": 12,
+          "return_code": 0,
+          "source": "residue_resolution",
+          "status": "Unsatisfiable",
+          "time_limit": 200
+        }
+      ],
+      "proof_return_code": 1,
+      "proof_status": "Timeout",
+      "rule": "flexible & left_alternative => lip",
+      "verdict": "open"
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "right_alternative"
+      ],
+      "confirmed_orders_unsat": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "consequent": "rip",
+      "countermodel_order": null,
+      "ladder": [
+        {
+          "order": 5,
+          "source": "benchmark_v1",
+          "status": "Unsatisfiable"
+        },
+        {
+          "order": 6,
+          "source": "benchmark_v1",
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 7,
+          "return_code": 0,
+          "source": "residue_resolution",
+          "status": "Unsatisfiable",
+          "time_limit": 120
+        },
+        {
+          "order": 8,
+          "source": "benchmark_v1",
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 9,
+          "return_code": 0,
+          "source": "residue_resolution",
+          "status": "Unsatisfiable",
+          "time_limit": 120
+        },
+        {
+          "order": 10,
+          "source": "hardening_v1",
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 11,
+          "return_code": 0,
+          "source": "residue_resolution",
+          "status": "Unsatisfiable",
+          "time_limit": 120
+        },
+        {
+          "finite_model_found": false,
+          "order": 12,
+          "return_code": 0,
+          "source": "residue_resolution",
+          "status": "Unsatisfiable",
+          "time_limit": 200
+        }
+      ],
+      "proof_return_code": 1,
+      "proof_status": "Timeout",
+      "rule": "flexible & right_alternative => rip",
+      "verdict": "open"
+    }
+  ]
+}

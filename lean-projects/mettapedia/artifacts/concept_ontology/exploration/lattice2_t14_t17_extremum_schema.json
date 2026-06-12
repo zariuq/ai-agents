@@ -1,0 +1,109 @@
+{
+  "cluster_name": "lattice2_t14_t17_extremum_family",
+  "common_hypotheses": [
+    "~v2_struct_0(A)",
+    "v10_lattices(A)",
+    "l3_lattices(A)",
+    "m1_subset_1(B, u1_struct_0(A))",
+    "forall C in u1_struct_0(A), operation(A, B, C) = C"
+  ],
+  "common_symbols": [
+    "l3_lattices",
+    "m1_subset_1",
+    "u1_struct_0",
+    "v10_lattices",
+    "v2_struct_0"
+  ],
+  "identity_orientation": "left",
+  "instances": [
+    {
+      "conjecture": "(! [A] : ( ( ~ (v2_struct_0(A)) & (v10_lattices(A) & l3_lattices(A)) ) => (! [B] : (m1_subset_1(B, u1_struct_0(A)) => ( (! [C] : (m1_subset_1(C, u1_struct_0(A)) => k3_lattices(A, B, C)=C) ) => B=k5_lattices(A)) ) ) ) )",
+      "operation_family": "direct-k3-left-identity",
+      "operation_term": "k3_lattices(A, B, C)",
+      "path": "/home/zar/claude/atps/datasets/extended_mptp5k/chainy/train/lattice2__lattice2__t14_lattice2",
+      "problem": "lattice2__lattice2__t14_lattice2",
+      "record_name": "t14_lattice2",
+      "symbols": [
+        "k3_lattices",
+        "k5_lattices",
+        "l3_lattices",
+        "m1_subset_1",
+        "u1_struct_0",
+        "v10_lattices",
+        "v2_struct_0"
+      ],
+      "target_family": "k5-extremum",
+      "target_term": "k5_lattices(A)"
+    },
+    {
+      "conjecture": "(! [A] : ( ( ~ (v2_struct_0(A)) & (v10_lattices(A) & l3_lattices(A)) ) => (! [B] : (m1_subset_1(B, u1_struct_0(A)) => ( (! [C] : (m1_subset_1(C, u1_struct_0(A)) => k4_binop_1(u1_struct_0(A), u2_lattices(A), B, C)=C) ) => B=k5_lattices(A)) ) ) ) )",
+      "operation_family": "encoded-u2-left-identity",
+      "operation_term": "k4_binop_1(u1_struct_0(A), u2_lattices(A), B, C)",
+      "path": "/home/zar/claude/atps/datasets/extended_mptp5k/chainy/train/lattice2__lattice2__t15_lattice2",
+      "problem": "lattice2__lattice2__t15_lattice2",
+      "record_name": "t15_lattice2",
+      "symbols": [
+        "k4_binop_1",
+        "k5_lattices",
+        "l3_lattices",
+        "m1_subset_1",
+        "u1_struct_0",
+        "u2_lattices",
+        "v10_lattices",
+        "v2_struct_0"
+      ],
+      "target_family": "k5-extremum",
+      "target_term": "k5_lattices(A)"
+    },
+    {
+      "conjecture": "(! [A] : ( ( ~ (v2_struct_0(A)) & (v10_lattices(A) & l3_lattices(A)) ) => (! [B] : (m1_subset_1(B, u1_struct_0(A)) => ( (! [C] : (m1_subset_1(C, u1_struct_0(A)) => k4_lattices(A, B, C)=C) ) => B=k6_lattices(A)) ) ) ) )",
+      "operation_family": "direct-k4-left-identity",
+      "operation_term": "k4_lattices(A, B, C)",
+      "path": "/home/zar/claude/atps/datasets/extended_mptp5k/chainy/train/lattice2__lattice2__t16_lattice2",
+      "problem": "lattice2__lattice2__t16_lattice2",
+      "record_name": "t16_lattice2",
+      "symbols": [
+        "k4_lattices",
+        "k6_lattices",
+        "l3_lattices",
+        "m1_subset_1",
+        "u1_struct_0",
+        "v10_lattices",
+        "v2_struct_0"
+      ],
+      "target_family": "k6-extremum",
+      "target_term": "k6_lattices(A)"
+    },
+    {
+      "conjecture": "(! [A] : ( ( ~ (v2_struct_0(A)) & (v10_lattices(A) & l3_lattices(A)) ) => (! [B] : (m1_subset_1(B, u1_struct_0(A)) => ( (! [C] : (m1_subset_1(C, u1_struct_0(A)) => k4_binop_1(u1_struct_0(A), u1_lattices(A), B, C)=C) ) => B=k6_lattices(A)) ) ) ) )",
+      "operation_family": "encoded-u1-left-identity",
+      "operation_term": "k4_binop_1(u1_struct_0(A), u1_lattices(A), B, C)",
+      "path": "/home/zar/claude/atps/datasets/extended_mptp5k/chainy/train/lattice2__lattice2__t17_lattice2",
+      "problem": "lattice2__lattice2__t17_lattice2",
+      "record_name": "t17_lattice2",
+      "symbols": [
+        "k4_binop_1",
+        "k6_lattices",
+        "l3_lattices",
+        "m1_subset_1",
+        "u1_lattices",
+        "u1_struct_0",
+        "v10_lattices",
+        "v2_struct_0"
+      ],
+      "target_family": "k6-extremum",
+      "target_term": "k6_lattices(A)"
+    }
+  ],
+  "problems": [
+    "lattice2__lattice2__t14_lattice2",
+    "lattice2__lattice2__t15_lattice2",
+    "lattice2__lattice2__t16_lattice2",
+    "lattice2__lattice2__t17_lattice2"
+  ],
+  "schema_kind": "left_identity_extremum_uniqueness",
+  "schema_template": {
+    "formula": "(! [A] : ((~v2_struct_0(A) & (v10_lattices(A) & l3_lattices(A))) => (! [B] : (m1_subset_1(B, u1_struct_0(A)) => ((! [C] : (m1_subset_1(C, u1_struct_0(A)) => OP(A,B,C)=C)) => B=TARGET(A))))))",
+    "prose": "In a nonempty bounded lattice context, if an element B of the carrier acts as a left identity for a designated lattice operation, then B is the corresponding distinguished extremal element."
+  }
+}

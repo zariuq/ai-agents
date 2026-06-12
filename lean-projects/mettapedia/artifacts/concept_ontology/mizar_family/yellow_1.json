@@ -1,0 +1,490 @@
+{
+  "article": "yellow_1",
+  "attributes": [
+    "BoolePoset",
+    "InclPoset",
+    "MonMaps",
+    "RelStr",
+    "RelStr-yielding",
+    "SubRelStr"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "InclPoset": 1,
+        "RelStr": 2
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let X be set; func InclPoset X -> strict RelStr equals RelStr(#X, RelIncl X#); correctness; end;"
+    },
+    {
+      "counts": {
+        "InclPoset": 1
+      },
+      "index": 5,
+      "kind": "registration",
+      "object": "registration_5",
+      "preview": "registration let X be set; cluster InclPoset X -> reflexive antisymmetric transitive; coherence; end;"
+    },
+    {
+      "counts": {
+        "InclPoset": 1
+      },
+      "index": 6,
+      "kind": "registration",
+      "object": "registration_6",
+      "preview": "registration let X be non empty set; cluster InclPoset X -> non empty; coherence; end;"
+    },
+    {
+      "counts": {
+        "InclPoset": 2
+      },
+      "index": 1,
+      "kind": "theorem",
+      "object": "theorem_1",
+      "preview": "theorem the carrier of InclPoset X = X & the InternalRel of InclPoset X = RelIncl X;"
+    },
+    {
+      "counts": {
+        "BoolePoset": 1,
+        "RelStr": 1
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let X be set; func BoolePoset X -> strict RelStr equals LattPOSet BooleLatt X; correctness; end;"
+    },
+    {
+      "counts": {
+        "BoolePoset": 1
+      },
+      "index": 7,
+      "kind": "registration",
+      "object": "registration_7",
+      "preview": "registration let X be set; cluster BoolePoset X -> non empty reflexive antisymmetric transitive; coherence; end;"
+    },
+    {
+      "counts": {
+        "BoolePoset": 1
+      },
+      "index": 8,
+      "kind": "registration",
+      "object": "registration_8",
+      "preview": "registration let X be set; cluster BoolePoset X -> complete; coherence; end;"
+    },
+    {
+      "counts": {
+        "BoolePoset": 2
+      },
+      "index": 2,
+      "kind": "theorem",
+      "object": "theorem_2",
+      "preview": "theorem Th2: for x,y be Element of BoolePoset X holds x <= y iff x c= y proof let x,y be Element of BoolePoset X; recons"
+    },
+    {
+      "counts": {
+        "InclPoset": 3
+      },
+      "index": 3,
+      "kind": "theorem",
+      "object": "theorem_3",
+      "preview": "theorem Th3: for X be non empty set, x,y be Element of InclPoset X holds x <= y iff x c= y proof let X be non empty set;"
+    },
+    {
+      "counts": {
+        "BoolePoset": 2,
+        "InclPoset": 1
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem Th4: BoolePoset X = InclPoset bool X proof set B = BoolePoset X; the carrier of B = bool X by LATTICE3:def 1; th"
+    },
+    {
+      "counts": {
+        "BoolePoset": 2,
+        "InclPoset": 1,
+        "RelStr": 1,
+        "SubRelStr": 2
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem for Y be Subset-Family of X holds InclPoset Y is full SubRelStr of BoolePoset X proof set L = BoolePoset X; let "
+    },
+    {
+      "counts": {
+        "InclPoset": 4
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem for X be non empty set holds InclPoset X is with_suprema implies for x ,y be Element of InclPoset X holds x \\/ y"
+    },
+    {
+      "counts": {
+        "InclPoset": 4
+      },
+      "index": 7,
+      "kind": "theorem",
+      "object": "theorem_7",
+      "preview": "theorem for X be non empty set holds InclPoset X is with_infima implies for x, y be Element of InclPoset X holds x \"/\\\" "
+    },
+    {
+      "counts": {
+        "InclPoset": 4
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem Th8: for X be non empty set holds for x,y be Element of InclPoset X st x \\/ y in X holds x \"\\/\" y = x \\/ y proof"
+    },
+    {
+      "counts": {
+        "InclPoset": 4
+      },
+      "index": 9,
+      "kind": "theorem",
+      "object": "theorem_9",
+      "preview": "theorem Th9: for X be non empty set for x,y be Element of InclPoset X st x /\\ y in X holds x \"/\\\" y = x /\\ y proof let X"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 10,
+      "kind": "theorem",
+      "object": "theorem_10",
+      "preview": "theorem for L be RelStr st for x,y be Element of L holds x <= y iff x c= y holds the InternalRel of L = RelIncl the carr"
+    },
+    {
+      "counts": {
+        "InclPoset": 2
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem for X be non empty set st (for x,y be set st (x in X & y in X) holds x \\/ y in X) holds InclPoset X is with_supr"
+    },
+    {
+      "counts": {
+        "InclPoset": 2
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem for X be non empty set st for x,y be set st x in X & y in X holds x /\\ y in X holds InclPoset X is with_infima p"
+    },
+    {
+      "counts": {
+        "InclPoset": 9
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem Th13: for X be non empty set holds {} in X implies Bottom InclPoset X = {} proof let X be non empty set; assume "
+    },
+    {
+      "counts": {
+        "InclPoset": 10
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem Th14: for X be non empty set holds union X in X implies Top InclPoset X = union X proof let X be non empty set; "
+    },
+    {
+      "counts": {
+        "InclPoset": 5
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem for X being non empty set holds InclPoset X is upper-bounded implies union X in X proof let X be non empty set; "
+    },
+    {
+      "counts": {
+        "BoolePoset": 4,
+        "InclPoset": 5
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem for X be non empty set holds InclPoset X is lower-bounded implies meet X in X proof let X be non empty set; assu"
+    },
+    {
+      "counts": {
+        "BoolePoset": 2,
+        "InclPoset": 1
+      },
+      "index": 17,
+      "kind": "theorem",
+      "object": "theorem_17",
+      "preview": "theorem for x,y be Element of BoolePoset X holds x \"\\/\" y = x \\/ y & x \"/\\\" y = x /\\ y proof let x,y be Element of Boole"
+    },
+    {
+      "counts": {
+        "BoolePoset": 2
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem Bottom BoolePoset X = {} proof thus Bottom BoolePoset X = \"\\/\"({},LattPOSet BooleLatt X) by YELLOW_0:def 11 .= \""
+    },
+    {
+      "counts": {
+        "BoolePoset": 2,
+        "InclPoset": 2
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem Top BoolePoset X = X proof A1: Top InclPoset bool X = union bool X by Th14; BoolePoset X = InclPoset bool X by T"
+    },
+    {
+      "counts": {
+        "BoolePoset": 2
+      },
+      "index": 20,
+      "kind": "theorem",
+      "object": "theorem_20",
+      "preview": "theorem for Y being non empty Subset of BoolePoset X holds inf Y = meet Y proof set L = BoolePoset X; let Y be non empty"
+    },
+    {
+      "counts": {
+        "BoolePoset": 2
+      },
+      "index": 21,
+      "kind": "theorem",
+      "object": "theorem_21",
+      "preview": "theorem for Y being Subset of BoolePoset X holds sup Y = union Y proof set L = BoolePoset X; let Y be Subset of L; A1: t"
+    },
+    {
+      "counts": {
+        "InclPoset": 2
+      },
+      "index": 22,
+      "kind": "theorem",
+      "object": "theorem_22",
+      "preview": "theorem for T being non empty TopSpace, X being Subset of InclPoset the topology of T holds sup X = union X proof let T "
+    },
+    {
+      "counts": {
+        "InclPoset": 3
+      },
+      "index": 23,
+      "kind": "theorem",
+      "object": "theorem_23",
+      "preview": "theorem for T be non empty TopSpace holds Bottom InclPoset the topology of T = {} by Th13,PRE_TOPC:1; Lm2: for T be non "
+    },
+    {
+      "counts": {
+        "InclPoset": 10
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem for T be non empty TopSpace holds Top InclPoset the topology of T = the carrier of T proof let T be non empty To"
+    },
+    {
+      "counts": {
+        "InclPoset": 1
+      },
+      "index": 9,
+      "kind": "registration",
+      "object": "registration_9",
+      "preview": "registration let T be non empty TopSpace; cluster InclPoset the topology of T -> complete non trivial; coherence by Lm3,"
+    },
+    {
+      "counts": {
+        "InclPoset": 3
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem for T being TopSpace, F being Subset-Family of T holds F is open iff F is Subset of InclPoset the topology of T "
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "RelStr-yielding": 1
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let R be Relation; attr R is RelStr-yielding means :Def3: for v being set st v in rng R holds v is RelStr; en"
+    },
+    {
+      "counts": {
+        "RelStr-yielding": 2
+      },
+      "index": 10,
+      "kind": "registration",
+      "object": "registration_10",
+      "preview": "registration cluster RelStr-yielding -> 1-sorted-yielding for Function; coherence proof let F be Function such that A1: "
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "RelStr-yielding": 1
+      },
+      "index": 11,
+      "kind": "registration",
+      "object": "registration_11",
+      "preview": "registration let I be set; cluster RelStr-yielding for ManySortedSet of I; existence proof set R = the RelStr; take I --"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "RelStr-yielding": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let J be non empty set, A be RelStr-yielding ManySortedSet of J, j be Element of J; redefine func A.j -> RelS"
+    },
+    {
+      "counts": {
+        "RelStr": 11,
+        "RelStr-yielding": 1
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let I be set; let J be RelStr-yielding ManySortedSet of I; func product J -> strict RelStr means :Def4: the c"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "RelStr-yielding": 1
+      },
+      "index": 12,
+      "kind": "registration",
+      "object": "registration_12",
+      "preview": "registration let X be set; let L be RelStr; cluster X --> L -> RelStr-yielding; coherence proof let v be set; assume A1:"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let I be set; let T be RelStr; func T|^I -> strict RelStr equals product (I --> T); correctness; end;"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "RelStr-yielding": 2
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem Th26: for J be RelStr-yielding ManySortedSet of {} holds product J = RelStr (#{{}}, id {{}}#) proof let J be Rel"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem for Y be RelStr holds Y|^{} = RelStr (#{{}}, id {{}}#) by Th26;"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem Th28: for X be set, Y be RelStr holds Funcs (X, the carrier of Y) = the carrier of Y|^X proof let X be set; let "
+    },
+    {
+      "counts": {
+        "RelStr": 3
+      },
+      "index": 13,
+      "kind": "registration",
+      "object": "registration_13",
+      "preview": "registration let X be set; let Y be non empty RelStr; cluster Y|^X -> non empty; coherence proof set f = the Function of"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 14,
+      "kind": "registration",
+      "object": "registration_14",
+      "preview": "registration let X be set; let Y be reflexive non empty RelStr; cluster Y|^X -> reflexive; coherence proof per cases; su"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 15,
+      "kind": "registration",
+      "object": "registration_15",
+      "preview": "registration let Y be non empty RelStr; cluster Y|^{} -> 1-element; coherence by Th26; end;"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 16,
+      "kind": "registration",
+      "object": "registration_16",
+      "preview": "registration let Y be non empty reflexive RelStr; cluster Y|^{} -> with_infima with_suprema antisymmetric; coherence; en"
+    },
+    {
+      "counts": {
+        "RelStr": 7
+      },
+      "index": 17,
+      "kind": "registration",
+      "object": "registration_17",
+      "preview": "registration let X be set; let Y be transitive non empty RelStr; cluster Y|^X -> transitive; coherence proof set IT = Y|"
+    },
+    {
+      "counts": {
+        "RelStr": 5
+      },
+      "index": 18,
+      "kind": "registration",
+      "object": "registration_18",
+      "preview": "registration let X be set; let Y be antisymmetric non empty RelStr; cluster Y|^X -> antisymmetric; coherence proof set I"
+    },
+    {
+      "counts": {
+        "RelStr": 11
+      },
+      "index": 19,
+      "kind": "registration",
+      "object": "registration_19",
+      "preview": "registration let X be non empty set; let Y be non empty with_infima antisymmetric RelStr; cluster Y|^X -> with_infima; c"
+    },
+    {
+      "counts": {
+        "RelStr": 11
+      },
+      "index": 20,
+      "kind": "registration",
+      "object": "registration_20",
+      "preview": "registration let X be non empty set; let Y be non empty with_suprema antisymmetric RelStr; cluster Y|^X -> with_suprema;"
+    },
+    {
+      "counts": {
+        "MonMaps": 1,
+        "RelStr": 1,
+        "SubRelStr": 3
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let S,T be RelStr; func MonMaps (S,T) -> strict full SubRelStr of T|^the carrier of S means for f being Funct"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/yellow_1.miz"
+}

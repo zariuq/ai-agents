@@ -1,0 +1,580 @@
+Article I selected GF witness lane
+Exact ParseEng witnesses where available; context/exact-subfragment repairs shown separately.
+
+Clause: Article I, Section 1
+Source: All legislative Powers herein granted shall be vested in a Congress of the United States
+Parser input: All legislative Powers herein granted shall be vested in a Congress of the United States
+Accepted parses: 1
+GF linearization:
+- all legislative powers herein granted shall be vested in a congress of the United States
+GF bracketed linearization:
+- (Phr:44 (Utt:42 (S:41 (NP:16 (Predet:1 all) (NP:15 (NP:5 (AP:4 (A:3 legislative))) (CN:14 (CN:9 (CN:7 (N:6 powers)) (Adv:8 herein)) (NP:13 (AP:12 (VPSlash:11 (V2:10 granted))))))) (VPS:40 (VPS2:30 (VPSlash:29 (VV:21 shall)))) (VPS:40 (VPS2:30 (VPSlash:29 (VPSlash:28 (VP:26 be)) (VPSlash:28 (VP:26 (VPSlash:25 (V2:24 vested)))))) (VPS2:30 (VPSlash:29 (VPSlash:28 (Prep:27 in)))) (NP:39 (Det:33 (Quant:31 a)) (CN:38 (CN:35 (N:34 congress)) of (NP:37 the (LN:36 United States))))))))
+FormalGF structural round-trip: true
+Pretty GF:
+phrase
+├─ no-conjunction
+├─ sentence
+│  └─ predication
+│     ├─ PredetNP
+│     │  ├─ all ⟨Predet⟩
+│     │  └─ GenModNP
+│     │     ├─ plural
+│     │     ├─ AdjAsNP
+│     │     │  └─ adjective: legislative ⟨A⟩
+│     │     └─ appositive common noun
+│     │        ├─ AdvCN
+│     │        │  ├─ noun: power ⟨N⟩
+│     │        │  └─ herein ⟨Adv⟩
+│     │        └─ AdjAsNP
+│     │           └─ PastPartAP
+│     │              └─ SlashV2a: grant ⟨V2⟩
+│     └─ verbal predicate
+│        ├─ tense-modal predicate
+│        │  ├─ tense/aspect
+│        │  │  ├─ present tense
+│        │  │  └─ simultaneous aspect
+│        │  ├─ positive polarity
+│        │  └─ verb with VP complement
+│        │     ├─ shall ⟨VV⟩
+│        │     ├─ simultaneous aspect
+│        │     ├─ positive polarity
+│        │     └─ prepositional predicate
+│        │        ├─ PassVPSlash
+│        │        │  └─ SlashV2a: vest ⟨V2⟩
+│        │        └─ in ⟨Prep⟩
+│        └─ noun phrase
+│           ├─ determiner
+│           │  ├─ a
+│           │  └─ singular
+│           └─ possessive noun phrase
+│              ├─ noun: congress ⟨N⟩
+│              └─ UseLN: united states ⟨LN⟩
+└─ no-vocative
+
+
+==============================
+
+Clause: Article I, Section 2
+Source: The House of Representatives shall be composed of Members chosen every second Year by the People of the several States
+Parser input: The House of Representatives shall be composed of Members chosen every second Year by the People of the several States
+Accepted parses: 1
+GF linearization:
+- the house of representatives shall be composed of members chosen every second year by the people of the several states
+GF bracketed linearization:
+- (Phr:66 (Utt:64 (S:63 (NP:13 (Det:3 (Quant:1 the)) (CN:12 (CN:5 (N:4 house)) of (NP:11 (CN:10 (N:9 representatives))))) (VPS:62 (VPS2:27 (VPSlash:26 (VV:18 shall)))) (VPS:62 (VPS2:27 (VPSlash:26 (VPSlash:25 (VP:23 be)) (VPSlash:25 (VP:23 (VPSlash:22 (V2:21 composed)))))) (VPS2:27 (VPSlash:26 (VPSlash:25 (Prep:24 of)))) (NP:61 (CN:60 (CN:59 (N:58 members)) (AP:57 (VPSlash:42 (VPSlash:32 (V2:31 chosen))) (VPSlash:42 (Adv:41 (NP:40 (Det:33 every) (CN:39 (CN:35 (N:34 second)) (NP:38 (CN:37 (N:36 year))))))) by (NP:56 (Det:45 (Quant:43 the)) (CN:55 (CN:47 (N:46 people)) of (NP:54 (Det:51 (Quant:48 the) (Num:50 (Card:49 several))) (CN:53 (N:52 states))))))))))))
+FormalGF structural round-trip: true
+Pretty GF:
+phrase
+├─ no-conjunction
+├─ sentence
+│  └─ predication
+│     ├─ noun phrase
+│     │  ├─ determiner
+│     │  │  ├─ the
+│     │  │  └─ singular
+│     │  └─ possessive noun phrase
+│     │     ├─ noun: house ⟨N⟩
+│     │     └─ noun phrase
+│     │        ├─ determiner
+│     │        │  ├─ a
+│     │        │  └─ plural
+│     │        └─ noun: representativeMasc ⟨N⟩
+│     └─ verbal predicate
+│        ├─ tense-modal predicate
+│        │  ├─ tense/aspect
+│        │  │  ├─ present tense
+│        │  │  └─ simultaneous aspect
+│        │  ├─ positive polarity
+│        │  └─ verb with VP complement
+│        │     ├─ shall ⟨VV⟩
+│        │     ├─ simultaneous aspect
+│        │     ├─ positive polarity
+│        │     └─ prepositional predicate
+│        │        ├─ PassVPSlash
+│        │        │  └─ SlashV2a: compose ⟨V2⟩
+│        │        └─ of ⟨Prep⟩
+│        └─ noun phrase
+│           ├─ determiner
+│           │  ├─ gen ⟨Quant⟩
+│           │  └─ plural
+│           └─ AdjCN
+│              ├─ PastPartAgentAP
+│              │  ├─ AdvVPSlash
+│              │  │  ├─ SlashV2a: choose ⟨V2⟩
+│              │  │  └─ TimeNP
+│              │  │     └─ noun phrase
+│              │  │        ├─ every ⟨Det⟩
+│              │  │        └─ appositive common noun
+│              │  │           ├─ noun: second ⟨N⟩
+│              │  │           └─ MassNP
+│              │  │              └─ noun: year ⟨N⟩
+│              │  └─ noun phrase
+│              │     ├─ determiner
+│              │     │  ├─ the
+│              │     │  └─ plural
+│              │     └─ possessive noun phrase
+│              │        ├─ noun: people ⟨N⟩
+│              │        └─ noun phrase
+│              │           ├─ determiner
+│              │           │  ├─ the
+│              │           │  └─ cardinal number: several ⟨Card⟩
+│              │           └─ noun: state ⟨N⟩
+│              └─ noun: memberMasc ⟨N⟩
+└─ no-vocative
+
+
+==============================
+
+Clause: Article I, Section 2
+Source: No Person shall be a Representative who shall not have attained to the Age of twenty five Years
+Parser input: No Person shall be a Representative who shall not have attained to the Age of twenty five Years
+Accepted parses: 1
+GF linearization:
+- no person shall be a representative who shall not have attained to the age of twenty for five years
+GF bracketed linearization:
+- (Phr:77 (Utt:75 (S:74 (NP:6 (Det:3 (Quant:1 no)) (CN:5 (N:4 person))) (VPS:73 (VPS2:40 (VPSlash:39 (VV:11 shall)))) (VPS:73 (VPS2:40 (VPSlash:39 (VPSlash:38 (VP:36 be)) (VPSlash:38 (VP:36 (Comp:35 a (CN:34 (CN:15 (N:14 representative)) (RS:33 (RP:16 who) (VPS:32 (VPS2:27 (VPSlash:26 (VV:21 shall)))) (VPS:32 (VPS2:27 not (VPSlash:26 (VPSlash:25 (V2:24 have)))) (NP:31 (AP:30 (VPSlash:29 (V2:28 attained)))))))))))) (VPS2:40 (VPSlash:39 (VPSlash:38 (Prep:37 to)))) (NP:72 (Det:43 (Quant:41 the)) (CN:71 (CN:59 (CN:45 (N:44 age)) of (NP:58 (DAP:57 (Det:56 (Num:55 (Card:54 (Numeral:53 (Sub1000000000000:52 (Sub1000000000:51 (Sub1000000:50 (Sub1000:49 (Sub100:48 (Digit:47 twenty))))))))))))) (Adv:70 for (Card:68 (Numeral:67 (Sub1000000000000:66 (Sub1000000000:65 (Sub1000000:64 (Sub1000:63 (Sub100:62 (Sub10:61 (Digit:60 five))))))))) (Timeunit:69 years))))))))
+FormalGF structural round-trip: true
+Pretty GF:
+phrase
+├─ no-conjunction
+├─ sentence
+│  └─ predication
+│     ├─ noun phrase
+│     │  ├─ determiner
+│     │  │  ├─ no ⟨Quant⟩
+│     │  │  └─ singular
+│     │  └─ noun: person ⟨N⟩
+│     └─ verbal predicate
+│        ├─ tense-modal predicate
+│        │  ├─ tense/aspect
+│        │  │  ├─ present tense
+│        │  │  └─ simultaneous aspect
+│        │  ├─ positive polarity
+│        │  └─ verb with VP complement
+│        │     ├─ shall ⟨VV⟩
+│        │     ├─ simultaneous aspect
+│        │     ├─ positive polarity
+│        │     └─ prepositional predicate
+│        │        ├─ UseComp_ser
+│        │        │  └─ CompCN
+│        │        │     └─ RelCN
+│        │        │        ├─ noun: representativeFem ⟨N⟩
+│        │        │        └─ RelVPS
+│        │        │           ├─ IdRP
+│        │        │           └─ verbal predicate
+│        │        │              ├─ tense-modal predicate
+│        │        │              │  ├─ tense/aspect
+│        │        │              │  │  ├─ present tense
+│        │        │              │  │  └─ simultaneous aspect
+│        │        │              │  ├─ PNeg
+│        │        │              │  └─ verb with VP complement
+│        │        │              │     ├─ shall ⟨VV⟩
+│        │        │              │     ├─ simultaneous aspect
+│        │        │              │     ├─ positive polarity
+│        │        │              │     └─ SlashV2a: have ⟨V2⟩
+│        │        │              └─ AdjAsNP
+│        │        │                 └─ PastPartAP
+│        │        │                    └─ SlashV2a: attain ⟨V2⟩
+│        │        └─ to ⟨Prep⟩
+│        └─ noun phrase
+│           ├─ determiner
+│           │  ├─ the
+│           │  └─ singular
+│           └─ AdvCN
+│              ├─ possessive noun phrase
+│              │  ├─ noun: age ⟨N⟩
+│              │  └─ UseDAPMasc
+│              │     └─ DetDAP
+│              │        └─ determiner
+│              │           ├─ gen ⟨Quant⟩
+│              │           └─ cardinal number
+│              │              └─ numeral
+│              │                 └─ num
+│              │                    └─ pot4as5
+│              │                       └─ pot3as4
+│              │                          └─ pot2as3
+│              │                             └─ pot1as2
+│              │                                └─ pot1: n2
+│              └─ timeunitAdv
+│                 ├─ numeral
+│                 │  └─ num
+│                 │     └─ pot4as5
+│                 │        └─ pot3as4
+│                 │           └─ pot2as3
+│                 │              └─ pot1as2
+│                 │                 └─ pot0as1
+│                 │                    └─ pot0: n5
+│                 └─ year_Timeunit
+└─ no-vocative
+
+
+==============================
+
+Clause: Article I, Section 3
+Source: The Senate shall have the sole Power to try all Impeachments
+Parser input: The Senate shall have the sole Power to try all Impeachments
+Accepted parses: 0
+GF linearization: []
+GF bracketed linearization: []
+FormalGF structural round-trip: true
+Pretty GF:
+
+
+Context/exact-subfragment repair witnesses:
+
+Correction kind: exact subfragment
+Parser input: The Senate shall have the sole Power
+Confidence: 990/1000
+Justification: Exact contiguous subfragment of the original clause; ParseEng parses it without meta holes.
+Accepted parses: 1
+GF linearization:
+- the senate shall have the sole power
+GF bracketed linearization:
+- (Phr:31 (Utt:29 (S:28 (NP:6 (Det:3 (Quant:1 the)) (CN:5 (N:4 senate))) (VPS:27 (VPS2:17 (VPSlash:16 (VV:11 shall)))) (VPS:27 (VPS2:17 (VPSlash:16 (VPSlash:15 (V2:14 have)))) (NP:26 (Det:20 (Quant:18 the)) (CN:25 (AP:22 (A:21 sole)) (CN:24 (N:23 power))))))))
+FormalGF structural round-trip: true
+Pretty GF:
+phrase
+├─ no-conjunction
+├─ sentence
+│  └─ predication
+│     ├─ noun phrase
+│     │  ├─ determiner
+│     │  │  ├─ the
+│     │  │  └─ singular
+│     │  └─ noun: senate ⟨N⟩
+│     └─ verbal predicate
+│        ├─ tense-modal predicate
+│        │  ├─ tense/aspect
+│        │  │  ├─ present tense
+│        │  │  └─ simultaneous aspect
+│        │  ├─ positive polarity
+│        │  └─ verb with VP complement
+│        │     ├─ shall ⟨VV⟩
+│        │     ├─ simultaneous aspect
+│        │     ├─ positive polarity
+│        │     └─ SlashV2a: have ⟨V2⟩
+│        └─ noun phrase
+│           ├─ determiner
+│           │  ├─ the
+│           │  └─ singular
+│           └─ AdjCN
+│              ├─ adjective: sole ⟨A⟩
+│              └─ noun: power ⟨N⟩
+└─ no-vocative
+
+
+--- correction ---
+
+Correction kind: context completion
+Parser input: The Senate shall try all Impeachments
+Confidence: 930/1000
+Justification: The controlled infinitive 'to try all Impeachments' is governed by the subject 'The Senate' in the same clause. This preserves the actor/action relation but drops the explicit 'sole Power' modality.
+Accepted parses: 1
+GF linearization:
+- the senate shall try all impeachments
+GF bracketed linearization:
+- (Phr:30 (Utt:28 (S:27 (NP:6 (Det:3 (Quant:1 the)) (CN:5 (N:4 senate))) (VPS:26 (VPS2:17 (VPSlash:16 (VV:11 shall)))) (VPS:26 (VPS2:17 (VPSlash:16 (VPSlash:15 (V2:14 try)))) (NP:25 (Predet:18 all) (NP:24 (CN:23 (N:22 impeachments))))))))
+FormalGF structural round-trip: true
+Pretty GF:
+phrase
+├─ no-conjunction
+├─ sentence
+│  └─ predication
+│     ├─ noun phrase
+│     │  ├─ determiner
+│     │  │  ├─ the
+│     │  │  └─ singular
+│     │  └─ noun: senate ⟨N⟩
+│     └─ verbal predicate
+│        ├─ tense-modal predicate
+│        │  ├─ tense/aspect
+│        │  │  ├─ present tense
+│        │  │  └─ simultaneous aspect
+│        │  ├─ positive polarity
+│        │  └─ verb with VP complement
+│        │     ├─ shall ⟨VV⟩
+│        │     ├─ simultaneous aspect
+│        │     ├─ positive polarity
+│        │     └─ SlashV2a: try ⟨V2⟩
+│        └─ PredetNP
+│           ├─ all ⟨Predet⟩
+│           └─ noun phrase
+│              ├─ determiner
+│              │  ├─ gen ⟨Quant⟩
+│              │  └─ plural
+│              └─ noun: impeachment ⟨N⟩
+└─ no-vocative
+
+
+==============================
+
+Clause: Article I, Section 5
+Source: Each House may determine the Rules of its Proceedings
+Parser input: Each House may determine the Rules of its Proceedings
+Accepted parses: 1
+GF linearization:
+- each house may determine the rules of its proceedings
+GF bracketed linearization:
+- (Phr:32 (Utt:30 (S:29 (NP:4 (Det:1 each) (CN:3 (N:2 house))) (VPS:28 (VPS2:15 (VPSlash:14 (VV:9 may)))) (VPS:28 (VPS2:15 (VPSlash:14 (VPSlash:13 (V2:12 determine)))) (RNP:27 (NP:21 (Det:18 (Quant:16 the)) (CN:20 (N:19 rules))) (Prep:22 of) (RNP:26 its (CN:25 (N:24 proceedings))))))))
+FormalGF structural round-trip: true
+Pretty GF:
+phrase
+├─ no-conjunction
+├─ sentence
+│  └─ predication
+│     ├─ noun phrase
+│     │  ├─ each ⟨Det⟩
+│     │  └─ noun: house ⟨N⟩
+│     └─ ReflVPS2
+│        ├─ tense-modal predicate
+│        │  ├─ tense/aspect
+│        │  │  ├─ present tense
+│        │  │  └─ simultaneous aspect
+│        │  ├─ positive polarity
+│        │  └─ verb with VP complement
+│        │     ├─ may ⟨VV⟩
+│        │     ├─ simultaneous aspect
+│        │     ├─ positive polarity
+│        │     └─ SlashV2a: determine ⟨V2⟩
+│        └─ AdvRNP
+│           ├─ noun phrase
+│           │  ├─ determiner
+│           │  │  ├─ the
+│           │  │  └─ plural
+│           │  └─ noun: rule ⟨N⟩
+│           ├─ of ⟨Prep⟩
+│           └─ ReflPoss
+│              ├─ singular
+│              └─ noun: proceedings ⟨N⟩
+└─ no-vocative
+
+
+==============================
+
+Clause: Article I, Section 7
+Source: Every Bill shall be presented to the President of the United States
+Parser input: Every Bill shall be presented to the President of the United States
+Accepted parses: 1
+GF linearization:
+- every bill shall be presented to the president of the United States
+GF bracketed linearization:
+- (Phr:28 (Utt:26 (S:25 (NP:4 (Det:1 every) (CN:3 (N:2 bill))) (VPS:24 (VP:23 (VV:9 shall))) (VPS:24 (VP:23 (VPI:22 (VP:21 be) (VP:21 (VPSlash:20 (V3:10 presented)) (VPSlash:20 (V3:10 to) (NP:19 (Det:13 (Quant:11 the)) (CN:18 (CN:15 (N:14 president)) of (NP:17 the (LN:16 United States))))))))))))
+FormalGF structural round-trip: true
+Pretty GF:
+phrase
+├─ no-conjunction
+├─ sentence
+│  └─ predication
+│     ├─ noun phrase
+│     │  ├─ every ⟨Det⟩
+│     │  └─ noun: bill ⟨N⟩
+│     └─ MkVPS
+│        ├─ tense/aspect
+│        │  ├─ present tense
+│        │  └─ simultaneous aspect
+│        ├─ positive polarity
+│        └─ ComplVPIVV
+│           ├─ shall ⟨VV⟩
+│           └─ MkVPI
+│              └─ PassVPSlash
+│                 └─ Slash3V3
+│                    ├─ present to ⟨V3⟩
+│                    └─ noun phrase
+│                       ├─ determiner
+│                       │  ├─ the
+│                       │  └─ singular
+│                       └─ possessive noun phrase
+│                          ├─ noun: presidentMasc ⟨N⟩
+│                          └─ UseLN: united states ⟨LN⟩
+└─ no-vocative
+
+
+==============================
+
+Clause: Article I, Section 7
+Source: he shall sign it
+Parser input: he shall sign it
+Accepted parses: 1
+GF linearization:
+- he shall sign it
+GF bracketed linearization:
+- (Phr:20 (Utt:18 (S:17 (NP:2 (Pron:1 he)) (VPS:16 (VPS2:13 (VPSlash:12 (VV:7 shall)))) (VPS:16 (VPS2:13 (VPSlash:12 (VPSlash:11 (V2:10 sign)))) (NP:15 (Pron:14 it))))))
+FormalGF structural round-trip: true
+Pretty GF:
+phrase
+├─ no-conjunction
+├─ sentence
+│  └─ predication
+│     ├─ UsePron: he ⟨Pron⟩
+│     └─ verbal predicate
+│        ├─ tense-modal predicate
+│        │  ├─ tense/aspect
+│        │  │  ├─ present tense
+│        │  │  └─ simultaneous aspect
+│        │  ├─ positive polarity
+│        │  └─ verb with VP complement
+│        │     ├─ shall ⟨VV⟩
+│        │     ├─ simultaneous aspect
+│        │     ├─ positive polarity
+│        │     └─ SlashV2a: sign ⟨V2⟩
+│        └─ UsePron: it ⟨Pron⟩
+└─ no-vocative
+
+
+==============================
+
+Clause: Article I, Section 7
+Source: it shall be a Law
+Parser input: it shall be a Law
+Accepted parses: 1
+GF linearization:
+- it shall be a law
+GF bracketed linearization:
+- (Phr:16 (Utt:14 (S:13 (Cl:12 it (VP:11 (VV:5 shall)) (VP:11 (VPI:10 (VP:9 be) (VP:9 (Comp:8 a (CN:7 (N:6 law))))))))))
+FormalGF structural round-trip: true
+Pretty GF:
+phrase
+├─ no-conjunction
+├─ sentence
+│  └─ UseCl
+│     ├─ tense/aspect
+│     │  ├─ present tense
+│     │  └─ simultaneous aspect
+│     ├─ positive polarity
+│     └─ ImpersCl
+│        └─ ComplVPIVV
+│           ├─ shall ⟨VV⟩
+│           └─ MkVPI
+│              └─ be
+│                 └─ CompCN
+│                    └─ noun: law ⟨N⟩
+└─ no-vocative
+
+
+==============================
+
+Clause: Article I, Section 8
+Source: To declare War
+Parser input: To declare War
+Accepted parses: 0
+GF linearization: []
+GF bracketed linearization: []
+FormalGF structural round-trip: true
+Pretty GF:
+
+
+Context/exact-subfragment repair witnesses:
+
+Correction kind: context completion
+Parser input: Congress may declare War
+Confidence: 760/1000
+Justification: Article I, Section 8 introduces Congress's powers, and 'To declare War' is one item in that list. 'May' captures power better than duty, but it is not the literal modal text.
+Accepted parses: 1
+GF linearization:
+- congress may declare war
+GF bracketed linearization:
+- (Phr:22 (Utt:20 (S:19 (NP:3 (CN:2 (N:1 congress))) (VPS:18 (VPS2:14 (VPSlash:13 (VV:8 may)))) (VPS:18 (VPS2:14 (VPSlash:13 (VPSlash:12 (V2:11 declare)))) (NP:17 (CN:16 (N:15 war)))))))
+FormalGF structural round-trip: true
+Pretty GF:
+phrase
+├─ no-conjunction
+├─ sentence
+│  └─ predication
+│     ├─ MassNP
+│     │  └─ noun: congress ⟨N⟩
+│     └─ verbal predicate
+│        ├─ tense-modal predicate
+│        │  ├─ tense/aspect
+│        │  │  ├─ present tense
+│        │  │  └─ simultaneous aspect
+│        │  ├─ positive polarity
+│        │  └─ verb with VP complement
+│        │     ├─ may ⟨VV⟩
+│        │     ├─ simultaneous aspect
+│        │     ├─ positive polarity
+│        │     └─ SlashV2a: declare ⟨V2⟩
+│        └─ MassNP
+│           └─ noun: war ⟨N⟩
+└─ no-vocative
+
+
+==============================
+
+Clause: Article I, Section 9
+Source: The Privilege of the Writ of Habeas Corpus shall not be suspended
+Parser input: The Privilege of the Writ of Habeas Corpus shall not be suspended
+Accepted parses: 1
+GF linearization:
+- the privilege of the writ of habeas corpus shall not be suspended
+GF bracketed linearization:
+- (Phr:32 (Utt:30 (S:29 (NP:17 (Det:3 (Quant:1 the)) (CN:16 (CN:12 (CN:5 (N:4 privilege)) of (NP:11 (Det:8 (Quant:6 the)) (CN:10 (N:9 writ)))) of (NP:15 (CN:14 (N:13 habeas corpus))))) (VPS:28 (VP:27 (VV:22 shall))) (VPS:28 not (VP:27 (VPI:26 (VP:25 be) (VP:25 (VPSlash:24 (V2:23 suspended)))))))))
+FormalGF structural round-trip: true
+Pretty GF:
+phrase
+├─ no-conjunction
+├─ sentence
+│  └─ predication
+│     ├─ noun phrase
+│     │  ├─ determiner
+│     │  │  ├─ the
+│     │  │  └─ singular
+│     │  └─ partitive noun phrase
+│     │     ├─ partitive noun phrase
+│     │     │  ├─ noun: privilege ⟨N⟩
+│     │     │  └─ noun phrase
+│     │     │     ├─ determiner
+│     │     │     │  ├─ the
+│     │     │     │  └─ singular
+│     │     │     └─ noun: writ ⟨N⟩
+│     │     └─ MassNP
+│     │        └─ noun: habeas corpus ⟨N⟩
+│     └─ MkVPS
+│        ├─ tense/aspect
+│        │  ├─ present tense
+│        │  └─ simultaneous aspect
+│        ├─ PNeg
+│        └─ ComplVPIVV
+│           ├─ shall ⟨VV⟩
+│           └─ MkVPI
+│              └─ PassVPSlash
+│                 └─ SlashV2a: suspend ⟨V2⟩
+└─ no-vocative
+
+
+==============================
+
+Clause: Article I, Section 9
+Source: No Title of Nobility shall be granted by the United States
+Parser input: No Title of Nobility shall be granted by the United States
+Accepted parses: 1
+GF linearization:
+- no title of nobility shall be granted by the United States
+GF bracketed linearization:
+- (Phr:27 (Utt:25 (S:24 (NP:10 (Det:3 (Quant:1 no)) (CN:9 (CN:5 (N:4 title)) of (NP:8 (CN:7 (N:6 nobility))))) (VPS:23 (VP:22 (VV:15 shall))) (VPS:23 (VP:22 (VPI:21 (VP:20 be) (VP:20 (VPSlash:17 (V2:16 granted)) by (NP:19 the (LN:18 United States)))))))))
+FormalGF structural round-trip: true
+Pretty GF:
+phrase
+├─ no-conjunction
+├─ sentence
+│  └─ predication
+│     ├─ noun phrase
+│     │  ├─ determiner
+│     │  │  ├─ no ⟨Quant⟩
+│     │  │  └─ singular
+│     │  └─ partitive noun phrase
+│     │     ├─ noun: title ⟨N⟩
+│     │     └─ MassNP
+│     │        └─ noun: nobility ⟨N⟩
+│     └─ MkVPS
+│        ├─ tense/aspect
+│        │  ├─ present tense
+│        │  └─ simultaneous aspect
+│        ├─ positive polarity
+│        └─ ComplVPIVV
+│           ├─ shall ⟨VV⟩
+│           └─ MkVPI
+│              └─ PassAgentVPSlash
+│                 ├─ SlashV2a: grant ⟨V2⟩
+│                 └─ UseLN: united states ⟨LN⟩
+└─ no-vocative
+

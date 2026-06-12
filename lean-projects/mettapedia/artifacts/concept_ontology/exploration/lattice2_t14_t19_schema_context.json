@@ -1,0 +1,211 @@
+{
+  "article": "lattice2_extremum_unity_context",
+  "attributes": [
+    "family:direct-k3-left-identity",
+    "family:direct-k4-left-identity",
+    "family:encoded-u1-left-identity",
+    "family:encoded-u1-unity",
+    "family:encoded-u2-left-identity",
+    "family:encoded-u2-unity",
+    "identity_orientation:left",
+    "role:left_identity",
+    "role:unity",
+    "schema:left_identity_extremum_uniqueness",
+    "schema:unity_extremum_identification",
+    "sym:k3_binop_1",
+    "sym:k3_lattices",
+    "sym:k4_binop_1",
+    "sym:k4_lattices",
+    "sym:k5_lattices",
+    "sym:k6_lattices",
+    "sym:l3_lattices",
+    "sym:m1_subset_1",
+    "sym:u1_lattices",
+    "sym:u1_struct_0",
+    "sym:u2_lattices",
+    "sym:v10_lattices",
+    "sym:v1_setwiseo",
+    "sym:v2_struct_0",
+    "target:k5-extremum",
+    "target:k6-extremum"
+  ],
+  "metadata": {
+    "attribute_presence": {
+      "family:direct-k3-left-identity": 1,
+      "family:direct-k4-left-identity": 1,
+      "family:encoded-u1-left-identity": 1,
+      "family:encoded-u1-unity": 1,
+      "family:encoded-u2-left-identity": 1,
+      "family:encoded-u2-unity": 1,
+      "identity_orientation:left": 4,
+      "role:left_identity": 4,
+      "role:unity": 2,
+      "schema:left_identity_extremum_uniqueness": 4,
+      "schema:unity_extremum_identification": 2,
+      "sym:k3_binop_1": 2,
+      "sym:k3_lattices": 1,
+      "sym:k4_binop_1": 2,
+      "sym:k4_lattices": 1,
+      "sym:k5_lattices": 3,
+      "sym:k6_lattices": 3,
+      "sym:l3_lattices": 6,
+      "sym:m1_subset_1": 4,
+      "sym:u1_lattices": 2,
+      "sym:u1_struct_0": 6,
+      "sym:u2_lattices": 2,
+      "sym:v10_lattices": 6,
+      "sym:v1_setwiseo": 2,
+      "sym:v2_struct_0": 6,
+      "target:k5-extremum": 3,
+      "target:k6-extremum": 3
+    },
+    "kind": "schema-combined-context",
+    "object_count": 6,
+    "schema_files": [
+      "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t14_t17_extremum_schema.json",
+      "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t18_t19_unity_schema.json"
+    ]
+  },
+  "rows": [
+    {
+      "counts": {
+        "family:direct-k3-left-identity": 1,
+        "identity_orientation:left": 1,
+        "role:left_identity": 1,
+        "schema:left_identity_extremum_uniqueness": 1,
+        "sym:k3_lattices": 1,
+        "sym:k5_lattices": 1,
+        "sym:l3_lattices": 1,
+        "sym:m1_subset_1": 1,
+        "sym:u1_struct_0": 1,
+        "sym:v10_lattices": 1,
+        "sym:v2_struct_0": 1,
+        "target:k5-extremum": 1
+      },
+      "metadata": {
+        "family": "direct-k3-left-identity",
+        "schema_file": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t14_t17_extremum_schema.json",
+        "schema_kind": "left_identity_extremum_uniqueness",
+        "target_family": "k5-extremum"
+      },
+      "object": "lattice2__lattice2__t14_lattice2"
+    },
+    {
+      "counts": {
+        "family:encoded-u2-left-identity": 1,
+        "identity_orientation:left": 1,
+        "role:left_identity": 1,
+        "schema:left_identity_extremum_uniqueness": 1,
+        "sym:k4_binop_1": 1,
+        "sym:k5_lattices": 1,
+        "sym:l3_lattices": 1,
+        "sym:m1_subset_1": 1,
+        "sym:u1_struct_0": 1,
+        "sym:u2_lattices": 1,
+        "sym:v10_lattices": 1,
+        "sym:v2_struct_0": 1,
+        "target:k5-extremum": 1
+      },
+      "metadata": {
+        "family": "encoded-u2-left-identity",
+        "schema_file": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t14_t17_extremum_schema.json",
+        "schema_kind": "left_identity_extremum_uniqueness",
+        "target_family": "k5-extremum"
+      },
+      "object": "lattice2__lattice2__t15_lattice2"
+    },
+    {
+      "counts": {
+        "family:direct-k4-left-identity": 1,
+        "identity_orientation:left": 1,
+        "role:left_identity": 1,
+        "schema:left_identity_extremum_uniqueness": 1,
+        "sym:k4_lattices": 1,
+        "sym:k6_lattices": 1,
+        "sym:l3_lattices": 1,
+        "sym:m1_subset_1": 1,
+        "sym:u1_struct_0": 1,
+        "sym:v10_lattices": 1,
+        "sym:v2_struct_0": 1,
+        "target:k6-extremum": 1
+      },
+      "metadata": {
+        "family": "direct-k4-left-identity",
+        "schema_file": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t14_t17_extremum_schema.json",
+        "schema_kind": "left_identity_extremum_uniqueness",
+        "target_family": "k6-extremum"
+      },
+      "object": "lattice2__lattice2__t16_lattice2"
+    },
+    {
+      "counts": {
+        "family:encoded-u1-left-identity": 1,
+        "identity_orientation:left": 1,
+        "role:left_identity": 1,
+        "schema:left_identity_extremum_uniqueness": 1,
+        "sym:k4_binop_1": 1,
+        "sym:k6_lattices": 1,
+        "sym:l3_lattices": 1,
+        "sym:m1_subset_1": 1,
+        "sym:u1_lattices": 1,
+        "sym:u1_struct_0": 1,
+        "sym:v10_lattices": 1,
+        "sym:v2_struct_0": 1,
+        "target:k6-extremum": 1
+      },
+      "metadata": {
+        "family": "encoded-u1-left-identity",
+        "schema_file": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t14_t17_extremum_schema.json",
+        "schema_kind": "left_identity_extremum_uniqueness",
+        "target_family": "k6-extremum"
+      },
+      "object": "lattice2__lattice2__t17_lattice2"
+    },
+    {
+      "counts": {
+        "family:encoded-u2-unity": 1,
+        "role:unity": 1,
+        "schema:unity_extremum_identification": 1,
+        "sym:k3_binop_1": 1,
+        "sym:k5_lattices": 1,
+        "sym:l3_lattices": 1,
+        "sym:u1_struct_0": 1,
+        "sym:u2_lattices": 1,
+        "sym:v10_lattices": 1,
+        "sym:v1_setwiseo": 1,
+        "sym:v2_struct_0": 1,
+        "target:k5-extremum": 1
+      },
+      "metadata": {
+        "family": "encoded-u2-unity",
+        "schema_file": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t18_t19_unity_schema.json",
+        "schema_kind": "unity_extremum_identification",
+        "target_family": "k5-extremum"
+      },
+      "object": "lattice2__lattice2__t18_lattice2"
+    },
+    {
+      "counts": {
+        "family:encoded-u1-unity": 1,
+        "role:unity": 1,
+        "schema:unity_extremum_identification": 1,
+        "sym:k3_binop_1": 1,
+        "sym:k6_lattices": 1,
+        "sym:l3_lattices": 1,
+        "sym:u1_lattices": 1,
+        "sym:u1_struct_0": 1,
+        "sym:v10_lattices": 1,
+        "sym:v1_setwiseo": 1,
+        "sym:v2_struct_0": 1,
+        "target:k6-extremum": 1
+      },
+      "metadata": {
+        "family": "encoded-u1-unity",
+        "schema_file": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t18_t19_unity_schema.json",
+        "schema_kind": "unity_extremum_identification",
+        "target_family": "k6-extremum"
+      },
+      "object": "lattice2__lattice2__t19_lattice2"
+    }
+  ]
+}

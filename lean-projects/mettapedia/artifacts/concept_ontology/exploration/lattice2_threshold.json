@@ -1,0 +1,297 @@
+{
+  "credal_summary": {
+    "intent_support_histogram": {
+      "1": 17,
+      "2": 3,
+      "4": 3
+    },
+    "lower_concept_count": 2,
+    "stable_concept_count": 2,
+    "support_histogram": {
+      "1": 27,
+      "4": 2
+    },
+    "unstable_concept_count": 27,
+    "upper_concept_count": 29
+  },
+  "dataset": {
+    "attributes": 9,
+    "is_binary": false,
+    "kind": "mizar-json",
+    "max_count": 7,
+    "name": "lattice2",
+    "objects": 45,
+    "source": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/mizar_family/lattice2.json"
+  },
+  "gate_family": {
+    "concept_count_by_gate": [
+      22,
+      7,
+      3,
+      3
+    ],
+    "densities": [
+      0.1925925925925926,
+      0.0345679012345679,
+      0.0049382716049382715,
+      0.0024691358024691358
+    ],
+    "distinct_concept_families": 4,
+    "gate_count": 4,
+    "labels": [
+      "threshold>=1",
+      "threshold>=3",
+      "threshold>=5",
+      "threshold>=7"
+    ]
+  },
+  "samples": {
+    "unstable_concepts": [
+      {
+        "extent": [
+          "registration_16"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "D0_Lattice",
+          "FinJoin",
+          "Heyting",
+          "Lattice"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "registration_14"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "FinJoin",
+          "FinMeet",
+          "Lattice",
+          "lower-bounded"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "definition_5"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "Heyting",
+          "IT",
+          "Lattice",
+          "lower-bounded"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "definition_3",
+          "theorem_36",
+          "registration_14"
+        ],
+        "extent_size": 3,
+        "gate_support": 1,
+        "intent": [
+          "FinJoin",
+          "FinMeet",
+          "Lattice"
+        ],
+        "intent_size": 3
+      },
+      {
+        "extent": [
+          "definition_5",
+          "registration_11",
+          "registration_12"
+        ],
+        "extent_size": 3,
+        "gate_support": 1,
+        "intent": [
+          "Heyting",
+          "Lattice",
+          "lower-bounded"
+        ],
+        "intent_size": 3
+      },
+      {
+        "extent": [
+          "definition_4"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "D0_Lattice",
+          "Lattice",
+          "lower-bounded"
+        ],
+        "intent_size": 3
+      },
+      {
+        "extent": [
+          "definition_6"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "H_Lattice",
+          "Heyting",
+          "Lattice"
+        ],
+        "intent_size": 3
+      },
+      {
+        "extent": [
+          "definition_3",
+          "theorem_36",
+          "theorem_40",
+          "theorem_41",
+          "theorem_45",
+          "theorem_46",
+          "theorem_58",
+          "theorem_59",
+          "registration_14"
+        ],
+        "extent_size": 9,
+        "gate_support": 1,
+        "intent": [
+          "FinJoin",
+          "FinMeet"
+        ],
+        "intent_size": 2
+      },
+      {
+        "extent": [
+          "theorem_48",
+          "theorem_49",
+          "definition_4",
+          "definition_5",
+          "registration_11",
+          "registration_12",
+          "registration_14"
+        ],
+        "extent_size": 7,
+        "gate_support": 1,
+        "intent": [
+          "Lattice",
+          "lower-bounded"
+        ],
+        "intent_size": 2
+      },
+      {
+        "extent": [
+          "definition_5",
+          "registration_11",
+          "registration_12",
+          "definition_6",
+          "registration_13",
+          "registration_16"
+        ],
+        "extent_size": 6,
+        "gate_support": 1,
+        "intent": [
+          "Heyting",
+          "Lattice"
+        ],
+        "intent_size": 2
+      }
+    ],
+    "unstable_intents": [
+      {
+        "gate_support": 2,
+        "intent": [
+          "FinMeet"
+        ],
+        "intent_size": 1
+      },
+      {
+        "gate_support": 2,
+        "intent": [
+          "LattStr"
+        ],
+        "intent_size": 1
+      },
+      {
+        "gate_support": 2,
+        "intent": [
+          "Lattice"
+        ],
+        "intent_size": 1
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "D0_Lattice",
+          "FinJoin",
+          "Heyting",
+          "Lattice"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "FinJoin",
+          "FinMeet",
+          "Lattice",
+          "lower-bounded"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "Heyting",
+          "IT",
+          "Lattice",
+          "lower-bounded"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "D0_Lattice",
+          "Lattice",
+          "lower-bounded"
+        ],
+        "intent_size": 3
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "FinJoin",
+          "FinMeet",
+          "Lattice"
+        ],
+        "intent_size": 3
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "H_Lattice",
+          "Heyting",
+          "Lattice"
+        ],
+        "intent_size": 3
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "Heyting",
+          "Lattice",
+          "lower-bounded"
+        ],
+        "intent_size": 3
+      }
+    ]
+  },
+  "theoretical_notes": [
+    "Count-valued evidence gives threshold gates a natural semantic axis, so unstable concepts can be interpreted as threshold-sensitive rather than purely artificial."
+  ]
+}

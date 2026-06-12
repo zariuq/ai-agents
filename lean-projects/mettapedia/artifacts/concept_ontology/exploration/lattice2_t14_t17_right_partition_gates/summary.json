@@ -1,0 +1,1361 @@
+{
+  "attributes": [
+    "interp:k1_lattices",
+    "interp:k2_lattices",
+    "interp:k3_lattices",
+    "interp:k4_binop_1",
+    "interp:k4_lattices",
+    "interp:k5_lattices",
+    "interp:k6_lattices",
+    "interp:l1_lattices",
+    "interp:l2_lattices",
+    "interp:l3_lattices",
+    "interp:m1_subset_1",
+    "interp:u1_lattices",
+    "interp:u1_struct_0",
+    "interp:u2_lattices",
+    "interp:v10_lattices",
+    "interp:v2_struct_0",
+    "interp:v4_lattices",
+    "interp:v6_lattices"
+  ],
+  "cluster": [
+    "lattice2__lattice2__t14_lattice2",
+    "lattice2__lattice2__t15_lattice2",
+    "lattice2__lattice2__t16_lattice2",
+    "lattice2__lattice2__t17_lattice2"
+  ],
+  "credal_summary": {
+    "gate_count": 6,
+    "labels": [
+      "full",
+      "move_d1_lattices_right",
+      "move_d2_lattices_right",
+      "move_redefinition_k3_lattices_right",
+      "move_redefinition_k4_lattices_right",
+      "move_redefinition_k4_binop_1_right"
+    ],
+    "lower_concept_count": 1,
+    "unstable_concept_count": 23,
+    "unstable_samples": [
+      {
+        "extent": [
+          "lattice2__lattice2__t15_lattice2",
+          "lattice2__lattice2__t17_lattice2"
+        ],
+        "gate_support": 5,
+        "intent": [
+          "interp:k4_binop_1",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ]
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t14_lattice2",
+          "lattice2__lattice2__t15_lattice2",
+          "lattice2__lattice2__t16_lattice2",
+          "lattice2__lattice2__t17_lattice2"
+        ],
+        "gate_support": 5,
+        "intent": [
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ]
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t15_lattice2"
+        ],
+        "gate_support": 4,
+        "intent": [
+          "interp:k4_binop_1",
+          "interp:k5_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:u2_lattices",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ]
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t17_lattice2"
+        ],
+        "gate_support": 4,
+        "intent": [
+          "interp:k4_binop_1",
+          "interp:k6_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_lattices",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ]
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t14_lattice2",
+          "lattice2__lattice2__t15_lattice2"
+        ],
+        "gate_support": 4,
+        "intent": [
+          "interp:k5_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ]
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t16_lattice2",
+          "lattice2__lattice2__t17_lattice2"
+        ],
+        "gate_support": 4,
+        "intent": [
+          "interp:k6_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ]
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t14_lattice2"
+        ],
+        "gate_support": 3,
+        "intent": [
+          "interp:k3_lattices",
+          "interp:k5_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ]
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t16_lattice2"
+        ],
+        "gate_support": 3,
+        "intent": [
+          "interp:k4_lattices",
+          "interp:k6_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ]
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t15_lattice2"
+        ],
+        "gate_support": 1,
+        "intent": [
+          "interp:k1_lattices",
+          "interp:k3_lattices",
+          "interp:k4_binop_1",
+          "interp:k5_lattices",
+          "interp:l2_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:u2_lattices",
+          "interp:v10_lattices",
+          "interp:v2_struct_0",
+          "interp:v4_lattices"
+        ]
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t17_lattice2"
+        ],
+        "gate_support": 1,
+        "intent": [
+          "interp:k2_lattices",
+          "interp:k4_binop_1",
+          "interp:k4_lattices",
+          "interp:k6_lattices",
+          "interp:l1_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_lattices",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0",
+          "interp:v6_lattices"
+        ]
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t16_lattice2"
+        ],
+        "gate_support": 1,
+        "intent": [
+          "interp:k1_lattices",
+          "interp:k3_lattices",
+          "interp:k4_lattices",
+          "interp:k6_lattices",
+          "interp:l2_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0",
+          "interp:v4_lattices"
+        ]
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t14_lattice2"
+        ],
+        "gate_support": 1,
+        "intent": [
+          "interp:k2_lattices",
+          "interp:k3_lattices",
+          "interp:k4_binop_1",
+          "interp:k5_lattices",
+          "interp:l1_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_lattices",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ]
+      }
+    ],
+    "upper_concept_count": 24
+  },
+  "gate_family_kind": "right_partition",
+  "gates": {
+    "full": [
+      {
+        "extra_right_records": [],
+        "failure_kind": null,
+        "gate": "full",
+        "input_symbols": [
+          "k3_lattices",
+          "k5_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t14_lattice2"
+      },
+      {
+        "extra_right_records": [],
+        "failure_kind": null,
+        "gate": "full",
+        "input_symbols": [
+          "k4_binop_1",
+          "k5_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "u2_lattices",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t15_lattice2"
+      },
+      {
+        "extra_right_records": [],
+        "failure_kind": null,
+        "gate": "full",
+        "input_symbols": [
+          "k4_lattices",
+          "k6_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t16_lattice2"
+      },
+      {
+        "extra_right_records": [],
+        "failure_kind": null,
+        "gate": "full",
+        "input_symbols": [
+          "k4_binop_1",
+          "k6_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_lattices",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t17_lattice2"
+      }
+    ],
+    "move_d1_lattices_right": [
+      {
+        "extra_right_records": [
+          "d1_lattices"
+        ],
+        "failure_kind": null,
+        "gate": "move_d1_lattices_right",
+        "input_symbols": [
+          "k3_lattices",
+          "k5_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t14_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d1_lattices"
+        ],
+        "failure_kind": null,
+        "gate": "move_d1_lattices_right",
+        "input_symbols": [
+          "k1_lattices",
+          "k4_binop_1",
+          "k5_lattices",
+          "l2_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "u2_lattices",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t15_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d1_lattices"
+        ],
+        "failure_kind": null,
+        "gate": "move_d1_lattices_right",
+        "input_symbols": [
+          "k4_lattices",
+          "k6_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t16_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d1_lattices"
+        ],
+        "failure_kind": null,
+        "gate": "move_d1_lattices_right",
+        "input_symbols": [
+          "k4_binop_1",
+          "k6_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_lattices",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t17_lattice2"
+      }
+    ],
+    "move_d2_lattices_right": [
+      {
+        "extra_right_records": [
+          "d2_lattices"
+        ],
+        "failure_kind": null,
+        "gate": "move_d2_lattices_right",
+        "input_symbols": [
+          "k2_lattices",
+          "k3_lattices",
+          "k4_binop_1",
+          "k5_lattices",
+          "l1_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_lattices",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t14_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d2_lattices"
+        ],
+        "failure_kind": null,
+        "gate": "move_d2_lattices_right",
+        "input_symbols": [
+          "k4_binop_1",
+          "k5_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "u2_lattices",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t15_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d2_lattices"
+        ],
+        "failure_kind": null,
+        "gate": "move_d2_lattices_right",
+        "input_symbols": [
+          "k2_lattices",
+          "k4_binop_1",
+          "k4_lattices",
+          "k6_lattices",
+          "l1_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_lattices",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t16_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d2_lattices"
+        ],
+        "failure_kind": null,
+        "gate": "move_d2_lattices_right",
+        "input_symbols": [
+          "k2_lattices",
+          "k4_binop_1",
+          "k6_lattices",
+          "l1_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_lattices",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t17_lattice2"
+      }
+    ],
+    "move_redefinition_k3_lattices_right": [
+      {
+        "extra_right_records": [
+          "redefinition_k3_lattices"
+        ],
+        "failure_kind": null,
+        "gate": "move_redefinition_k3_lattices_right",
+        "input_symbols": [
+          "k1_lattices",
+          "k3_lattices",
+          "k5_lattices",
+          "l2_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0",
+          "v4_lattices"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t14_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k3_lattices"
+        ],
+        "failure_kind": null,
+        "gate": "move_redefinition_k3_lattices_right",
+        "input_symbols": [
+          "k1_lattices",
+          "k3_lattices",
+          "k4_binop_1",
+          "k5_lattices",
+          "l2_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "u2_lattices",
+          "v10_lattices",
+          "v2_struct_0",
+          "v4_lattices"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t15_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k3_lattices"
+        ],
+        "failure_kind": null,
+        "gate": "move_redefinition_k3_lattices_right",
+        "input_symbols": [
+          "k1_lattices",
+          "k3_lattices",
+          "k4_lattices",
+          "k6_lattices",
+          "l2_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0",
+          "v4_lattices"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t16_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k3_lattices"
+        ],
+        "failure_kind": null,
+        "gate": "move_redefinition_k3_lattices_right",
+        "input_symbols": [
+          "k4_binop_1",
+          "k6_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_lattices",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t17_lattice2"
+      }
+    ],
+    "move_redefinition_k4_binop_1_right": [
+      {
+        "extra_right_records": [
+          "redefinition_k4_binop_1"
+        ],
+        "failure_kind": null,
+        "gate": "move_redefinition_k4_binop_1_right",
+        "input_symbols": [
+          "k3_lattices",
+          "k5_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t14_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_binop_1"
+        ],
+        "failure_kind": null,
+        "gate": "move_redefinition_k4_binop_1_right",
+        "input_symbols": [
+          "k4_binop_1",
+          "k5_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "u2_lattices",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t15_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_binop_1"
+        ],
+        "failure_kind": null,
+        "gate": "move_redefinition_k4_binop_1_right",
+        "input_symbols": [
+          "k4_lattices",
+          "k6_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t16_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_binop_1"
+        ],
+        "failure_kind": null,
+        "gate": "move_redefinition_k4_binop_1_right",
+        "input_symbols": [
+          "k4_binop_1",
+          "k6_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_lattices",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t17_lattice2"
+      }
+    ],
+    "move_redefinition_k4_lattices_right": [
+      {
+        "extra_right_records": [
+          "redefinition_k4_lattices"
+        ],
+        "failure_kind": null,
+        "gate": "move_redefinition_k4_lattices_right",
+        "input_symbols": [
+          "k2_lattices",
+          "k3_lattices",
+          "k4_lattices",
+          "k5_lattices",
+          "l1_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0",
+          "v6_lattices"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t14_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_lattices"
+        ],
+        "failure_kind": null,
+        "gate": "move_redefinition_k4_lattices_right",
+        "input_symbols": [
+          "k4_binop_1",
+          "k5_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "u2_lattices",
+          "v10_lattices",
+          "v2_struct_0"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t15_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_lattices"
+        ],
+        "failure_kind": null,
+        "gate": "move_redefinition_k4_lattices_right",
+        "input_symbols": [
+          "k2_lattices",
+          "k4_lattices",
+          "k6_lattices",
+          "l1_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0",
+          "v6_lattices"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t16_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_lattices"
+        ],
+        "failure_kind": null,
+        "gate": "move_redefinition_k4_lattices_right",
+        "input_symbols": [
+          "k2_lattices",
+          "k4_binop_1",
+          "k4_lattices",
+          "k6_lattices",
+          "l1_lattices",
+          "l3_lattices",
+          "m1_subset_1",
+          "u1_lattices",
+          "u1_struct_0",
+          "v10_lattices",
+          "v2_struct_0",
+          "v6_lattices"
+        ],
+        "interpolant_found": true,
+        "problem": "lattice2__lattice2__t17_lattice2"
+      }
+    ]
+  },
+  "vocabulary_deltas": [
+    {
+      "changed_problem_count": 3,
+      "gate": "move_d2_lattices_right",
+      "problems": [
+        {
+          "extra_right_records": [
+            "d2_lattices"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k3_lattices",
+            "k5_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k2_lattices",
+            "k3_lattices",
+            "k4_binop_1",
+            "k5_lattices",
+            "l1_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_lattices",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "problem": "lattice2__lattice2__t14_lattice2",
+          "symbols_changed": true
+        },
+        {
+          "extra_right_records": [
+            "d2_lattices"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k4_binop_1",
+            "k5_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "u2_lattices",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k4_binop_1",
+            "k5_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "u2_lattices",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "problem": "lattice2__lattice2__t15_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d2_lattices"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k4_lattices",
+            "k6_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k2_lattices",
+            "k4_binop_1",
+            "k4_lattices",
+            "k6_lattices",
+            "l1_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_lattices",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "problem": "lattice2__lattice2__t16_lattice2",
+          "symbols_changed": true
+        },
+        {
+          "extra_right_records": [
+            "d2_lattices"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k4_binop_1",
+            "k6_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_lattices",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k2_lattices",
+            "k4_binop_1",
+            "k6_lattices",
+            "l1_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_lattices",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "problem": "lattice2__lattice2__t17_lattice2",
+          "symbols_changed": true
+        }
+      ],
+      "timeout_problem_count": 0
+    },
+    {
+      "changed_problem_count": 3,
+      "gate": "move_redefinition_k3_lattices_right",
+      "problems": [
+        {
+          "extra_right_records": [
+            "redefinition_k3_lattices"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k3_lattices",
+            "k5_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k1_lattices",
+            "k3_lattices",
+            "k5_lattices",
+            "l2_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0",
+            "v4_lattices"
+          ],
+          "problem": "lattice2__lattice2__t14_lattice2",
+          "symbols_changed": true
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k3_lattices"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k4_binop_1",
+            "k5_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "u2_lattices",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k1_lattices",
+            "k3_lattices",
+            "k4_binop_1",
+            "k5_lattices",
+            "l2_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "u2_lattices",
+            "v10_lattices",
+            "v2_struct_0",
+            "v4_lattices"
+          ],
+          "problem": "lattice2__lattice2__t15_lattice2",
+          "symbols_changed": true
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k3_lattices"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k4_lattices",
+            "k6_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k1_lattices",
+            "k3_lattices",
+            "k4_lattices",
+            "k6_lattices",
+            "l2_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0",
+            "v4_lattices"
+          ],
+          "problem": "lattice2__lattice2__t16_lattice2",
+          "symbols_changed": true
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k3_lattices"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k4_binop_1",
+            "k6_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_lattices",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k4_binop_1",
+            "k6_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_lattices",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "problem": "lattice2__lattice2__t17_lattice2",
+          "symbols_changed": false
+        }
+      ],
+      "timeout_problem_count": 0
+    },
+    {
+      "changed_problem_count": 3,
+      "gate": "move_redefinition_k4_lattices_right",
+      "problems": [
+        {
+          "extra_right_records": [
+            "redefinition_k4_lattices"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k3_lattices",
+            "k5_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k2_lattices",
+            "k3_lattices",
+            "k4_lattices",
+            "k5_lattices",
+            "l1_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0",
+            "v6_lattices"
+          ],
+          "problem": "lattice2__lattice2__t14_lattice2",
+          "symbols_changed": true
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_lattices"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k4_binop_1",
+            "k5_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "u2_lattices",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k4_binop_1",
+            "k5_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "u2_lattices",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "problem": "lattice2__lattice2__t15_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_lattices"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k4_lattices",
+            "k6_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k2_lattices",
+            "k4_lattices",
+            "k6_lattices",
+            "l1_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0",
+            "v6_lattices"
+          ],
+          "problem": "lattice2__lattice2__t16_lattice2",
+          "symbols_changed": true
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_lattices"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k4_binop_1",
+            "k6_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_lattices",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k2_lattices",
+            "k4_binop_1",
+            "k4_lattices",
+            "k6_lattices",
+            "l1_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_lattices",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0",
+            "v6_lattices"
+          ],
+          "problem": "lattice2__lattice2__t17_lattice2",
+          "symbols_changed": true
+        }
+      ],
+      "timeout_problem_count": 0
+    },
+    {
+      "changed_problem_count": 1,
+      "gate": "move_d1_lattices_right",
+      "problems": [
+        {
+          "extra_right_records": [
+            "d1_lattices"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k3_lattices",
+            "k5_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k3_lattices",
+            "k5_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "problem": "lattice2__lattice2__t14_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d1_lattices"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k4_binop_1",
+            "k5_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "u2_lattices",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k1_lattices",
+            "k4_binop_1",
+            "k5_lattices",
+            "l2_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "u2_lattices",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "problem": "lattice2__lattice2__t15_lattice2",
+          "symbols_changed": true
+        },
+        {
+          "extra_right_records": [
+            "d1_lattices"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k4_lattices",
+            "k6_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k4_lattices",
+            "k6_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "problem": "lattice2__lattice2__t16_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d1_lattices"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k4_binop_1",
+            "k6_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_lattices",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k4_binop_1",
+            "k6_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_lattices",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "problem": "lattice2__lattice2__t17_lattice2",
+          "symbols_changed": false
+        }
+      ],
+      "timeout_problem_count": 0
+    },
+    {
+      "changed_problem_count": 0,
+      "gate": "move_redefinition_k4_binop_1_right",
+      "problems": [
+        {
+          "extra_right_records": [
+            "redefinition_k4_binop_1"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k3_lattices",
+            "k5_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k3_lattices",
+            "k5_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "problem": "lattice2__lattice2__t14_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_binop_1"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k4_binop_1",
+            "k5_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "u2_lattices",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k4_binop_1",
+            "k5_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "u2_lattices",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "problem": "lattice2__lattice2__t15_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_binop_1"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k4_lattices",
+            "k6_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k4_lattices",
+            "k6_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "problem": "lattice2__lattice2__t16_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_binop_1"
+          ],
+          "full_failure_kind": null,
+          "full_symbols": [
+            "k4_binop_1",
+            "k6_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_lattices",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "gate_failure_kind": null,
+          "gate_symbols": [
+            "k4_binop_1",
+            "k6_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_lattices",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "problem": "lattice2__lattice2__t17_lattice2",
+          "symbols_changed": false
+        }
+      ],
+      "timeout_problem_count": 0
+    }
+  ]
+}

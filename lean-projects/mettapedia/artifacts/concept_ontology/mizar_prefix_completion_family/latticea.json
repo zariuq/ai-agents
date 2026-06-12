@@ -1,0 +1,339 @@
+{
+  "article": "latticea",
+  "attributes": [
+    "Def6",
+    "Function",
+    "IT",
+    "PFilters",
+    "PrimeFilters",
+    "PseudoCocomplements",
+    "PseudoComplements",
+    "Spectrum",
+    "StoneDef",
+    "StoneR",
+    "StoneSpace",
+    "Subset",
+    "Subset-Family",
+    "TopSpace"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "IT": 4
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let IT be set; attr IT is unordered means for p1,p2 being set st p1 in IT & p2 in IT & p1 <> p2 holds p1,p2 a"
+    },
+    {
+      "counts": {
+        "PFilters": 1,
+        "Subset-Family": 1
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let L be Lattice; func PFilters L -> Subset-Family of L equals { F where F is Filter of L : F is prime }; coh"
+    },
+    {
+      "counts": {
+        "PFilters": 2
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem PrimFil: for L being distributive Lattice holds F_primeSet L c< PFilters L proof let L be distributive Lattice; "
+    },
+    {
+      "counts": {
+        "Subset": 2
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem lemma1: for L being Lattice, A being Subset of L st L = BooleLatt {{}} holds A = {} or A = {{}} or A = {{},{{}}}"
+    },
+    {
+      "counts": {
+        "PFilters": 1
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem Th16: for L being Lattice, a being Element of L holds { F where F is Filter of L : F is prime & a in F } c= PFil"
+    },
+    {
+      "counts": {
+        "Subset": 1
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem HelpMaxPrime: for L be Lattice, F be Filter of L, a be Element of L, G be set st G = { x where x is Element of L"
+    },
+    {
+      "counts": {
+        "Subset": 1
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem HelpMaxPrime2: for L be Lattice, F be Ideal of L, a be Element of L, G be set st G = { x where x is Element of L"
+    },
+    {
+      "counts": {
+        "Subset": 1
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem MaxIPrime: for L being distributive Lattice, F being Ideal of L st F is maximal holds F is prime proof let L be "
+    },
+    {
+      "counts": {
+        "Subset": 1
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem Th15: :: Theorem 15, p. 64, Gratzer for L being distributive Lattice, I being Ideal of L, F being Filter of L st"
+    },
+    {
+      "counts": {
+        "Subset": 1
+      },
+      "index": 23,
+      "kind": "theorem",
+      "object": "theorem_23",
+      "preview": "theorem for L being distributive Lattice, I being Ideal of L holds I = meet { P where P is Ideal of L : P is prime & I c"
+    },
+    {
+      "counts": {
+        "Def6": 1,
+        "Function": 3,
+        "IT": 2,
+        "PrimeFilters": 1
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let L be Lattice; func PrimeFilters L -> Function means :Def6: dom it = the carrier of L & for a being Elemen"
+    },
+    {
+      "counts": {
+        "Def6": 2,
+        "PrimeFilters": 3
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem Th17: for L being Lattice, a being Element of L, x being set holds x in PrimeFilters L.a iff ex F being Filter o"
+    },
+    {
+      "counts": {
+        "PrimeFilters": 2
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem for L being Lattice, a being Element of L, F being Filter of L holds F in PrimeFilters L.a iff F is prime & a in"
+    },
+    {
+      "counts": {
+        "PrimeFilters": 16
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem for L being distributive Lattice, a, b being Element of L holds PrimeFilters L.(a \"/\\\" b) = PrimeFilters L.a /\\ "
+    },
+    {
+      "counts": {
+        "PrimeFilters": 16
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem for L being distributive Lattice, a, b being Element of L holds PrimeFilters L.(a \"\\/\" b) = PrimeFilters L.a \\/ "
+    },
+    {
+      "counts": {
+        "Def6": 3,
+        "Function": 3,
+        "PFilters": 4,
+        "PrimeFilters": 2
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let L be distributive Lattice; redefine func PrimeFilters L -> Function of the carrier of L, bool PFilters L;"
+    },
+    {
+      "counts": {
+        "PrimeFilters": 1,
+        "StoneR": 1
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let L be distributive Lattice; func StoneR L -> set equals rng PrimeFilters L; coherence; end;"
+    },
+    {
+      "counts": {
+        "StoneR": 1
+      },
+      "index": 9,
+      "kind": "registration",
+      "object": "registration_9",
+      "preview": "registration let L be distributive Lattice; cluster StoneR L -> non empty; coherence; end;"
+    },
+    {
+      "counts": {
+        "Def6": 1,
+        "PrimeFilters": 6,
+        "StoneR": 3
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem Th23: for L being distributive Lattice, x being set holds x in StoneR L iff ex a being Element of L st (PrimeFil"
+    },
+    {
+      "counts": {
+        "Def6": 4,
+        "IT": 2,
+        "PFilters": 22,
+        "PrimeFilters": 4,
+        "StoneDef": 1,
+        "StoneR": 22,
+        "StoneSpace": 1,
+        "Subset": 12,
+        "Subset-Family": 16,
+        "TopSpace": 3
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition let L be upper-bounded distributive Lattice; func StoneSpace L -> strict TopSpace means :StoneDef: the carrie"
+    },
+    {
+      "counts": {
+        "PFilters": 1,
+        "PseudoComplements": 1,
+        "StoneDef": 1,
+        "StoneSpace": 1
+      },
+      "index": 10,
+      "kind": "registration",
+      "object": "registration_10",
+      "preview": "registration let L be non trivial upper-bounded distributive Lattice; cluster StoneSpace L -> non empty; coherence proof"
+    },
+    {
+      "counts": {
+        "PseudoCocomplements": 1,
+        "PseudoComplements": 1,
+        "Subset": 2
+      },
+      "index": 9,
+      "kind": "definition",
+      "object": "definition_9",
+      "preview": "definition let L be Lattice; let a be Element of L; func PseudoComplements a -> Subset of L equals { x where x is Elemen"
+    },
+    {
+      "counts": {
+        "PseudoCocomplements": 2,
+        "PseudoComplements": 2
+      },
+      "index": 11,
+      "kind": "registration",
+      "object": "registration_11",
+      "preview": "registration let L be distributive bounded Lattice; let a be Element of L; cluster PseudoComplements a -> initial non em"
+    },
+    {
+      "counts": {
+        "PseudoComplements": 2
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem for L being Lattice, a,b being Element of L holds b in PseudoComplements a iff b \"/\\\" a = Bottom L proof let L b"
+    },
+    {
+      "counts": {
+        "PseudoCocomplements": 2
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem for L being Lattice, a,b being Element of L holds b in PseudoCocomplements a iff b \"\\/\" a = Top L proof let L be"
+    },
+    {
+      "counts": {
+        "PseudoComplements": 1
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem for L being bounded Lattice, a being Element of L holds Bottom L in PseudoComplements a proof let L be bounded L"
+    },
+    {
+      "counts": {
+        "PseudoCocomplements": 1
+      },
+      "index": 32,
+      "kind": "theorem",
+      "object": "theorem_32",
+      "preview": "theorem for L being bounded Lattice, a being Element of L holds Top L in PseudoCocomplements a proof let L be bounded La"
+    },
+    {
+      "counts": {
+        "Spectrum": 1,
+        "Subset-Family": 1
+      },
+      "index": 10,
+      "kind": "definition",
+      "object": "definition_10",
+      "preview": "definition let L be Lattice; func Spectrum L -> Subset-Family of L equals { I where I is Ideal of L : I is prime proper "
+    },
+    {
+      "counts": {
+        "PseudoComplements": 1,
+        "Subset": 2
+      },
+      "index": 33,
+      "kind": "theorem",
+      "object": "theorem_33",
+      "preview": "theorem for L being distributive bounded Lattice holds L is Boolean iff for I being Ideal of L st I is proper prime hold"
+    },
+    {
+      "counts": {
+        "Spectrum": 2
+      },
+      "index": 12,
+      "kind": "registration",
+      "object": "registration_12",
+      "preview": "registration let L be non trivial distributive bounded Lattice; cluster Spectrum L -> non empty; coherence proof set p ="
+    },
+    {
+      "counts": {
+        "PseudoCocomplements": 1,
+        "Spectrum": 8
+      },
+      "index": 34,
+      "kind": "theorem",
+      "object": "theorem_34",
+      "preview": "theorem NachSpec: for L being distributive bounded Lattice holds L is Boolean iff Spectrum L is unordered proof let L be"
+    },
+    {
+      "counts": {
+        "Spectrum": 1
+      },
+      "index": 13,
+      "kind": "registration",
+      "object": "registration_13",
+      "preview": "registration let L be Boolean Lattice; cluster Spectrum L -> unordered; coherence by NachSpec; end;"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/latticea.miz"
+}

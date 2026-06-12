@@ -1,0 +1,537 @@
+{
+  "article": "waybel_2",
+  "attributes": [
+    "FinSups",
+    "Function",
+    "NetStr",
+    "inf_op",
+    "meet-continuous",
+    "satisfying_MC",
+    "sup_op"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 1,
+      "kind": "registration",
+      "object": "registration_1",
+      "preview": "registration let X, Y be non empty set, f be Function of X, Y, Z be non empty Subset of X; cluster f.:Z -> non empty; co"
+    },
+    {
+      "counts": {
+        "Function": 3
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem Th13: for S1, S2 being RelStr, D being Subset of S1 for f being Function of S1,S2 st f is monotone holds f.:(dow"
+    },
+    {
+      "counts": {
+        "Function": 3
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem Th14: for S1, S2 being RelStr, D being Subset of S1 for f being Function of S1,S2 st f is monotone holds f.:(upa"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "NetStr": 1
+      },
+      "index": 1,
+      "kind": "scheme",
+      "object": "scheme_1",
+      "preview": "scheme ExNet { L() -> non empty RelStr, N() -> prenet of L(), F(set) -> Element of L()} : ex M being prenet of L() st th"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "NetStr": 2
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem Th19: for L being non empty reflexive RelStr, D being non empty directed Subset of L for n being Function of D, "
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "NetStr": 2
+      },
+      "index": 20,
+      "kind": "theorem",
+      "object": "theorem_20",
+      "preview": "theorem Th20: for L being non empty reflexive RelStr, D being non empty directed Subset of L for n being Function of D, "
+    },
+    {
+      "counts": {
+        "NetStr": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let L be non empty RelStr, N be NetStr over L; func sup N -> Element of L equals Sup the mapping of N; cohere"
+    },
+    {
+      "counts": {
+        "FinSups": 1,
+        "Function": 7,
+        "NetStr": 6
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let L be non empty RelStr, J be set, f be Function of J,the carrier of L; func FinSups f -> prenet of L means"
+    },
+    {
+      "counts": {
+        "FinSups": 2,
+        "Function": 3,
+        "NetStr": 1
+      },
+      "index": 21,
+      "kind": "theorem",
+      "object": "theorem_21",
+      "preview": "theorem for L being non empty RelStr, J, x being set for f being Function of J ,the carrier of L holds x is Element of F"
+    },
+    {
+      "counts": {
+        "FinSups": 5,
+        "Function": 2,
+        "NetStr": 1
+      },
+      "index": 7,
+      "kind": "registration",
+      "object": "registration_7",
+      "preview": "registration let L be complete antisymmetric non empty reflexive RelStr, J be set, f be Function of J,the carrier of L; "
+    },
+    {
+      "counts": {
+        "Function": 3,
+        "NetStr": 4
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let L be non empty RelStr, x be Element of L, N be non empty NetStr over L; func x \"/\\\" N -> strict NetStr ov"
+    },
+    {
+      "counts": {
+        "NetStr": 2
+      },
+      "index": 22,
+      "kind": "theorem",
+      "object": "theorem_22",
+      "preview": "theorem Th22: for L being non empty RelStr, N being non empty NetStr over L for x being Element of L, y being set holds "
+    },
+    {
+      "counts": {
+        "NetStr": 1
+      },
+      "index": 8,
+      "kind": "registration",
+      "object": "registration_8",
+      "preview": "registration let L be non empty RelStr, x be Element of L, N be non empty NetStr over L; cluster x \"/\\\" N -> non empty; "
+    },
+    {
+      "counts": {
+        "NetStr": 2
+      },
+      "index": 23,
+      "kind": "theorem",
+      "object": "theorem_23",
+      "preview": "theorem Th23: for L being non empty RelStr, x being Element of L for F being non empty NetStr over L holds rng (the mapp"
+    },
+    {
+      "counts": {
+        "FinSups": 4,
+        "Function": 3,
+        "NetStr": 1
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem Th24: for L being non empty RelStr, J being set for f being Function of J,the carrier of L st for x being set ho"
+    },
+    {
+      "counts": {
+        "FinSups": 2,
+        "Function": 3,
+        "NetStr": 1
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem Th25: for L being non empty reflexive antisymmetric RelStr, J being set for f being Function of J,the carrier of"
+    },
+    {
+      "counts": {
+        "FinSups": 7,
+        "Function": 3,
+        "NetStr": 1
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem Th26: for L being non empty reflexive antisymmetric RelStr, J being set for f being Function of J,the carrier of"
+    },
+    {
+      "counts": {
+        "FinSups": 3
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem for L being with_suprema Poset st for X being directed Subset of L, x being Element of L holds x \"/\\\" sup X = su"
+    },
+    {
+      "counts": {
+        "FinSups": 9
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem for L being up-complete LATTICE st for X being Subset of L, x being Element of L holds x \"/\\\" sup X = sup ({x} \""
+    },
+    {
+      "counts": {
+        "Function": 3,
+        "inf_op": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let L be non empty RelStr; func inf_op L -> Function of [:L,L:], L means :Def4: for x, y being Element of L h"
+    },
+    {
+      "counts": {
+        "inf_op": 3
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem Th31: for L being non empty RelStr, x being Element of [:L,L:] holds ( inf_op L).x = x`1 \"/\\\" x`2 proof let L be"
+    },
+    {
+      "counts": {
+        "inf_op": 2
+      },
+      "index": 10,
+      "kind": "registration",
+      "object": "registration_10",
+      "preview": "registration let L be with_infima transitive antisymmetric RelStr; cluster inf_op L -> monotone; coherence proof let x, "
+    },
+    {
+      "counts": {
+        "inf_op": 2
+      },
+      "index": 32,
+      "kind": "theorem",
+      "object": "theorem_32",
+      "preview": "theorem Th32: for S being non empty RelStr, D1, D2 being Subset of S holds ( inf_op S).:[:D1,D2:] = D1 \"/\\\" D2 proof let"
+    },
+    {
+      "counts": {
+        "inf_op": 2
+      },
+      "index": 33,
+      "kind": "theorem",
+      "object": "theorem_33",
+      "preview": "theorem Th33: for L being up-complete Semilattice for D being non empty directed Subset of [:L,L:] holds sup ((inf_op L)"
+    },
+    {
+      "counts": {
+        "Function": 3,
+        "sup_op": 1
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let L be non empty RelStr; func sup_op L -> Function of [:L,L:], L means :Def5: for x, y being Element of L h"
+    },
+    {
+      "counts": {
+        "sup_op": 3
+      },
+      "index": 34,
+      "kind": "theorem",
+      "object": "theorem_34",
+      "preview": "theorem Th34: for L being non empty RelStr, x being Element of [:L,L:] holds ( sup_op L).x = x`1 \"\\/\" x`2 proof let L be"
+    },
+    {
+      "counts": {
+        "sup_op": 2
+      },
+      "index": 11,
+      "kind": "registration",
+      "object": "registration_11",
+      "preview": "registration let L be with_suprema transitive antisymmetric RelStr; cluster sup_op L -> monotone; coherence proof let x,"
+    },
+    {
+      "counts": {
+        "sup_op": 2
+      },
+      "index": 35,
+      "kind": "theorem",
+      "object": "theorem_35",
+      "preview": "theorem Th35: for S being non empty RelStr, D1, D2 being Subset of S holds ( sup_op S).:[:D1,D2:] = D1 \"\\/\" D2 proof let"
+    },
+    {
+      "counts": {
+        "meet-continuous": 1,
+        "sup_op": 2
+      },
+      "index": 36,
+      "kind": "theorem",
+      "object": "theorem_36",
+      "preview": "theorem for L being complete non empty Poset for D being non empty filtered Subset of [:L,L:] holds inf ((sup_op L).:D) "
+    },
+    {
+      "counts": {
+        "satisfying_MC": 1
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let R be non empty reflexive RelStr; attr R is satisfying_MC means :Def6: for x being Element of R, D being n"
+    },
+    {
+      "counts": {
+        "meet-continuous": 1,
+        "satisfying_MC": 1
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let R be non empty reflexive RelStr; attr R is meet-continuous means R is up-complete satisfying_MC; end;"
+    },
+    {
+      "counts": {
+        "satisfying_MC": 1
+      },
+      "index": 12,
+      "kind": "registration",
+      "object": "registration_12",
+      "preview": "registration cluster -> satisfying_MC for 1-element reflexive RelStr; coherence by STRUCT_0:def 10; end;"
+    },
+    {
+      "counts": {
+        "meet-continuous": 2,
+        "satisfying_MC": 2
+      },
+      "index": 13,
+      "kind": "registration",
+      "object": "registration_13",
+      "preview": "registration cluster meet-continuous -> up-complete satisfying_MC for non empty reflexive RelStr; coherence; cluster up-"
+    },
+    {
+      "counts": {
+        "satisfying_MC": 1
+      },
+      "index": 37,
+      "kind": "theorem",
+      "object": "theorem_37",
+      "preview": "theorem Th37: for S being non empty reflexive RelStr st for X being Subset of S, x being Element of S holds x \"/\\\" sup X"
+    },
+    {
+      "counts": {
+        "satisfying_MC": 2
+      },
+      "index": 41,
+      "kind": "theorem",
+      "object": "theorem_41",
+      "preview": "theorem Th41: for L being non empty reflexive RelStr st L is satisfying_MC holds for x being Element of L, N being non e"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "NetStr": 1,
+        "satisfying_MC": 1
+      },
+      "index": 42,
+      "kind": "theorem",
+      "object": "theorem_42",
+      "preview": "theorem Th42: for L being non empty reflexive RelStr st for x being Element of L, N being prenet of L st N is eventually"
+    },
+    {
+      "counts": {
+        "inf_op": 3
+      },
+      "index": 43,
+      "kind": "theorem",
+      "object": "theorem_43",
+      "preview": "theorem Th43: for L being up-complete antisymmetric non empty reflexive RelStr st inf_op L is directed-sups-preserving h"
+    },
+    {
+      "counts": {
+        "satisfying_MC": 1
+      },
+      "index": 44,
+      "kind": "theorem",
+      "object": "theorem_44",
+      "preview": "theorem Th44: for L being non empty reflexive antisymmetric RelStr st for D1, D2 being non empty directed Subset of L ho"
+    },
+    {
+      "counts": {
+        "satisfying_MC": 2
+      },
+      "index": 45,
+      "kind": "theorem",
+      "object": "theorem_45",
+      "preview": "theorem Th45: for L being satisfying_MC with_infima antisymmetric non empty reflexive RelStr holds for x being Element o"
+    },
+    {
+      "counts": {
+        "inf_op": 3
+      },
+      "index": 46,
+      "kind": "theorem",
+      "object": "theorem_46",
+      "preview": "theorem Th46: for L being up-complete Semilattice st for x being Element of L, E being non empty directed Subset of L st"
+    },
+    {
+      "counts": {
+        "FinSups": 3,
+        "Function": 2
+      },
+      "index": 47,
+      "kind": "theorem",
+      "object": "theorem_47",
+      "preview": "theorem Th47: for L being complete antisymmetric non empty reflexive RelStr st for x being Element of L, N being prenet "
+    },
+    {
+      "counts": {
+        "FinSups": 14,
+        "Function": 2
+      },
+      "index": 48,
+      "kind": "theorem",
+      "object": "theorem_48",
+      "preview": "theorem Th48: for L being complete Semilattice st for x being Element of L, J being set, f being Function of J,the carri"
+    },
+    {
+      "counts": {
+        "inf_op": 1,
+        "meet-continuous": 2
+      },
+      "index": 49,
+      "kind": "theorem",
+      "object": "theorem_49",
+      "preview": "theorem Th49: for L being up-complete LATTICE holds L is meet-continuous iff SupMap L is meet-preserving join-preserving"
+    },
+    {
+      "counts": {
+        "meet-continuous": 1
+      },
+      "index": 15,
+      "kind": "registration",
+      "object": "registration_15",
+      "preview": "registration let L be meet-continuous LATTICE; cluster SupMap L -> meet-preserving join-preserving; coherence by Th49; e"
+    },
+    {
+      "counts": {
+        "meet-continuous": 2,
+        "satisfying_MC": 1
+      },
+      "index": 50,
+      "kind": "theorem",
+      "object": "theorem_50",
+      "preview": "theorem Th50: for L being up-complete LATTICE holds L is meet-continuous iff for I1, I2 being Ideal of L holds (sup I1) "
+    },
+    {
+      "counts": {
+        "meet-continuous": 2,
+        "satisfying_MC": 1
+      },
+      "index": 51,
+      "kind": "theorem",
+      "object": "theorem_51",
+      "preview": "theorem Th51: for L being up-complete LATTICE holds L is meet-continuous iff for D1, D2 being non empty directed Subset "
+    },
+    {
+      "counts": {
+        "inf_op": 1,
+        "meet-continuous": 2
+      },
+      "index": 52,
+      "kind": "theorem",
+      "object": "theorem_52",
+      "preview": "theorem for L being up-complete LATTICE holds L is meet-continuous iff for x being Element of L, D being non empty direc"
+    },
+    {
+      "counts": {
+        "inf_op": 3,
+        "meet-continuous": 2,
+        "satisfying_MC": 1
+      },
+      "index": 53,
+      "kind": "theorem",
+      "object": "theorem_53",
+      "preview": "theorem Th53: for L being up-complete Semilattice holds L is meet-continuous iff inf_op L is directed-sups-preserving pr"
+    },
+    {
+      "counts": {
+        "inf_op": 1,
+        "meet-continuous": 1
+      },
+      "index": 16,
+      "kind": "registration",
+      "object": "registration_16",
+      "preview": "registration let L be meet-continuous Semilattice; cluster inf_op L -> directed-sups-preserving; coherence by Th53; end;"
+    },
+    {
+      "counts": {
+        "meet-continuous": 1
+      },
+      "index": 54,
+      "kind": "theorem",
+      "object": "theorem_54",
+      "preview": "theorem Th54: for L being up-complete Semilattice holds L is meet-continuous iff for x being Element of L, N being non e"
+    },
+    {
+      "counts": {
+        "FinSups": 3,
+        "Function": 3,
+        "meet-continuous": 4,
+        "satisfying_MC": 1
+      },
+      "index": 55,
+      "kind": "theorem",
+      "object": "theorem_55",
+      "preview": "theorem for L being complete Semilattice holds L is meet-continuous iff for x being Element of L, J being set for f bein"
+    },
+    {
+      "counts": {
+        "meet-continuous": 1
+      },
+      "index": 17,
+      "kind": "registration",
+      "object": "registration_17",
+      "preview": "registration let L be meet-continuous Semilattice, x be Element of L; cluster x \"/\\\" -> directed-sups-preserving; cohere"
+    },
+    {
+      "counts": {
+        "meet-continuous": 3,
+        "satisfying_MC": 1
+      },
+      "index": 56,
+      "kind": "theorem",
+      "object": "theorem_56",
+      "preview": "theorem Th56: for H being complete non empty Poset holds H is Heyting iff H is meet-continuous distributive proof let H "
+    },
+    {
+      "counts": {
+        "meet-continuous": 2
+      },
+      "index": 18,
+      "kind": "registration",
+      "object": "registration_18",
+      "preview": "registration cluster complete Heyting -> meet-continuous distributive for non empty Poset; coherence by Th56; cluster co"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/waybel_2.miz"
+}

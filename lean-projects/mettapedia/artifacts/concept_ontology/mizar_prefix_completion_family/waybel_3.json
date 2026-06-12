@@ -1,0 +1,493 @@
+{
+  "article": "waybel_3",
+  "attributes": [
+    "Subset",
+    "is_way_below",
+    "locally-compact",
+    "non-Empty",
+    "reflexive-yielding",
+    "satisfying_axiom_of_approximation"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "Subset": 1,
+        "is_way_below": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition :: 1.1, p. 38 let L be non empty reflexive RelStr; let x,y be Element of L; pred x is_way_below y means for D"
+    },
+    {
+      "counts": {
+        "is_way_below": 2
+      },
+      "index": 1,
+      "kind": "notation",
+      "object": "notation_1",
+      "preview": "notation :: 1.1, p. 38 let L be non empty reflexive RelStr; let x,y be Element of L; synonym x << y for x is_way_below y"
+    },
+    {
+      "counts": {
+        "is_way_below": 1
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition :: 1.1, p. 38 let L be non empty reflexive RelStr; let x be Element of L; attr x is compact means x is_way_be"
+    },
+    {
+      "counts": {
+        "Subset": 1
+      },
+      "index": 1,
+      "kind": "theorem",
+      "object": "theorem_1",
+      "preview": "theorem Th1: :: 1.2(i), p. 39 for L being non empty reflexive antisymmetric RelStr for x,y being Element of L st x << y "
+    },
+    {
+      "counts": {
+        "Subset": 2
+      },
+      "index": 2,
+      "kind": "theorem",
+      "object": "theorem_2",
+      "preview": "theorem Th2: :: 1.2(ii), p. 39 for L being non empty reflexive transitive RelStr, u,x,y,z being Element of L st u <= x &"
+    },
+    {
+      "counts": {
+        "Subset": 2
+      },
+      "index": 3,
+      "kind": "theorem",
+      "object": "theorem_3",
+      "preview": "theorem Th3: :: 1.2(iii), p. 39 for L being non empty Poset st L is with_suprema or L is /\\-complete for x,y,z being Ele"
+    },
+    {
+      "counts": {
+        "Subset": 1
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem Th4: :: 1.2(iv), p. 39 for L being lower-bounded antisymmetric reflexive non empty RelStr for x being Element of"
+    },
+    {
+      "counts": {
+        "Subset": 2
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition :: after 1.2, p. 39 let L be non empty reflexive RelStr; let x be Element of L; A1: {y where y is Element of "
+    },
+    {
+      "counts": {
+        "Subset": 2
+      },
+      "index": 5,
+      "kind": "registration",
+      "object": "registration_5",
+      "preview": "registration let L be connected non empty RelStr; cluster -> directed filtered for Subset of L; coherence proof let X be"
+    },
+    {
+      "counts": {
+        "Subset": 1
+      },
+      "index": 6,
+      "kind": "registration",
+      "object": "registration_6",
+      "preview": "registration cluster up-complete lower-bounded -> complete for non empty Chain; coherence proof let L be non empty Chain"
+    },
+    {
+      "counts": {
+        "Subset": 1
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem Th13: for L being up-complete non empty Chain for x,y being Element of L st x < y holds x << y proof let L be up"
+    },
+    {
+      "counts": {
+        "Subset": 2
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem Th16: for L being up-complete non empty Poset for D being non empty finite directed Subset of L holds sup D in D"
+    },
+    {
+      "counts": {
+        "Subset": 1
+      },
+      "index": 17,
+      "kind": "theorem",
+      "object": "theorem_17",
+      "preview": "theorem for L being up-complete non empty Poset st L is finite for x being Element of L holds x is isolated_from_below p"
+    },
+    {
+      "counts": {
+        "Subset": 10
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem Th18: for L being complete LATTICE, x,y being Element of L st x << y for X being Subset of L st y <= sup X ex A "
+    },
+    {
+      "counts": {
+        "Subset": 7
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem for L being complete LATTICE, x,y being Element of L st for X being Subset of L st y <= sup X ex A being finite "
+    },
+    {
+      "counts": {
+        "Subset": 1
+      },
+      "index": 21,
+      "kind": "theorem",
+      "object": "theorem_21",
+      "preview": "theorem Th21: for L being up-complete non empty Poset, x,y being Element of L st for I being Ideal of L st y <= sup I ho"
+    },
+    {
+      "counts": {
+        "Subset": 1
+      },
+      "index": 22,
+      "kind": "theorem",
+      "object": "theorem_22",
+      "preview": "theorem :: Remark 1.5 (ii) for L being lower-bounded LATTICE st L is meet-continuous for x,y being Element of L holds x "
+    },
+    {
+      "counts": {
+        "Subset": 6
+      },
+      "index": 23,
+      "kind": "theorem",
+      "object": "theorem_23",
+      "preview": "theorem for L being complete LATTICE holds (for x being Element of L holds x is compact) iff for X being non empty Subse"
+    },
+    {
+      "counts": {
+        "satisfying_axiom_of_approximation": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let L be non empty reflexive RelStr; attr L is satisfying_axiom_of_approximation means : Def5: for x being El"
+    },
+    {
+      "counts": {
+        "satisfying_axiom_of_approximation": 1
+      },
+      "index": 8,
+      "kind": "registration",
+      "object": "registration_8",
+      "preview": "registration cluster -> satisfying_axiom_of_approximation for 1-element reflexive RelStr; coherence by ZFMISC_1:def 10; "
+    },
+    {
+      "counts": {
+        "satisfying_axiom_of_approximation": 1
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let L be non empty reflexive RelStr; attr L is continuous means : Def6: (for x being Element of L holds waybe"
+    },
+    {
+      "counts": {
+        "satisfying_axiom_of_approximation": 2
+      },
+      "index": 9,
+      "kind": "registration",
+      "object": "registration_9",
+      "preview": "registration cluster continuous -> up-complete satisfying_axiom_of_approximation for non empty reflexive RelStr; coheren"
+    },
+    {
+      "counts": {
+        "satisfying_axiom_of_approximation": 2
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem for L being up-complete Semilattice st for x being Element of L holds waybelow x is non empty directed holds L i"
+    },
+    {
+      "counts": {
+        "Subset": 1,
+        "satisfying_axiom_of_approximation": 2
+      },
+      "index": 12,
+      "kind": "registration",
+      "object": "registration_12",
+      "preview": "registration cluster complete -> satisfying_axiom_of_approximation for non empty Chain; coherence proof let L be non emp"
+    },
+    {
+      "counts": {
+        "satisfying_axiom_of_approximation": 1
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem for L being complete LATTICE st for x being Element of L holds x is compact holds L is satisfying_axiom_of_appro"
+    },
+    {
+      "counts": {
+        "non-Empty": 1,
+        "reflexive-yielding": 1
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let f be Relation; attr f is non-Empty means :Def7: for S being 1-sorted st S in rng f holds S is non empty; "
+    },
+    {
+      "counts": {
+        "non-Empty": 2,
+        "reflexive-yielding": 1
+      },
+      "index": 13,
+      "kind": "registration",
+      "object": "registration_13",
+      "preview": "registration let I be set; cluster RelStr-yielding non-Empty reflexive-yielding for ManySortedSet of I; existence proof "
+    },
+    {
+      "counts": {
+        "non-Empty": 1
+      },
+      "index": 14,
+      "kind": "registration",
+      "object": "registration_14",
+      "preview": "registration let I be set; let J be RelStr-yielding non-Empty ManySortedSet of I; cluster product J -> non empty; cohere"
+    },
+    {
+      "counts": {
+        "non-Empty": 1
+      },
+      "index": 15,
+      "kind": "registration",
+      "object": "registration_15",
+      "preview": "registration let I be non empty set; let J be RelStr-yielding non-Empty ManySortedSet of I; let i be Element of I; clust"
+    },
+    {
+      "counts": {
+        "non-Empty": 1
+      },
+      "index": 16,
+      "kind": "registration",
+      "object": "registration_16",
+      "preview": "registration let I be set; let J be RelStr-yielding non-Empty ManySortedSet of I; cluster product J -> constituted-Funct"
+    },
+    {
+      "counts": {
+        "non-Empty": 1
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition let I be non empty set; let J be RelStr-yielding non-Empty ManySortedSet of I; let x be Element of product J;"
+    },
+    {
+      "counts": {
+        "Subset": 2,
+        "non-Empty": 1
+      },
+      "index": 9,
+      "kind": "definition",
+      "object": "definition_9",
+      "preview": "definition let I be non empty set; let J be RelStr-yielding non-Empty ManySortedSet of I; let i be Element of I; let X b"
+    },
+    {
+      "counts": {
+        "non-Empty": 2
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem Th27: for I being non empty set for J being RelStr-yielding non-Empty ManySortedSet of I for x being Function ho"
+    },
+    {
+      "counts": {
+        "non-Empty": 2
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem Th28: for I being non empty set for J being RelStr-yielding non-Empty ManySortedSet of I for x,y being Element o"
+    },
+    {
+      "counts": {
+        "reflexive-yielding": 1
+      },
+      "index": 17,
+      "kind": "registration",
+      "object": "registration_17",
+      "preview": "registration let I be non empty set; let J be RelStr-yielding reflexive-yielding ManySortedSet of I; let i be Element of"
+    },
+    {
+      "counts": {
+        "non-Empty": 1,
+        "reflexive-yielding": 1
+      },
+      "index": 18,
+      "kind": "registration",
+      "object": "registration_18",
+      "preview": "registration let I be non empty set; let J be RelStr-yielding non-Empty reflexive-yielding ManySortedSet of I; cluster p"
+    },
+    {
+      "counts": {
+        "non-Empty": 2
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem Th29: for I being non empty set for J being RelStr-yielding non-Empty ManySortedSet of I st for i being Element "
+    },
+    {
+      "counts": {
+        "non-Empty": 2
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem Th30: for I being non empty set for J being RelStr-yielding non-Empty ManySortedSet of I st for i being Element "
+    },
+    {
+      "counts": {
+        "Subset": 1,
+        "non-Empty": 2,
+        "reflexive-yielding": 2
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem Th31: for I being non empty set for J being RelStr-yielding non-Empty reflexive-yielding ManySortedSet of I st f"
+    },
+    {
+      "counts": {
+        "Subset": 2,
+        "non-Empty": 2,
+        "reflexive-yielding": 2
+      },
+      "index": 32,
+      "kind": "theorem",
+      "object": "theorem_32",
+      "preview": "theorem Th32: for I being non empty set for J being RelStr-yielding non-Empty reflexive-yielding ManySortedSet of I st f"
+    },
+    {
+      "counts": {
+        "Subset": 20,
+        "non-Empty": 2,
+        "reflexive-yielding": 2
+      },
+      "index": 33,
+      "kind": "theorem",
+      "object": "theorem_33",
+      "preview": "theorem for I being non empty set for J being RelStr-yielding non-Empty reflexive-yielding ManySortedSet of I st for i b"
+    },
+    {
+      "counts": {
+        "Subset": 4,
+        "is_way_below": 1
+      },
+      "index": 34,
+      "kind": "theorem",
+      "object": "theorem_34",
+      "preview": "theorem Th34: for T being non empty TopSpace for x,y being Element of InclPoset the topology of T st x is_way_below y fo"
+    },
+    {
+      "counts": {
+        "Subset": 4,
+        "is_way_below": 1
+      },
+      "index": 35,
+      "kind": "theorem",
+      "object": "theorem_35",
+      "preview": "theorem Th35: for T being non empty TopSpace for x,y being Element of InclPoset the topology of T st for F being Subset-"
+    },
+    {
+      "counts": {
+        "Subset": 4
+      },
+      "index": 36,
+      "kind": "theorem",
+      "object": "theorem_36",
+      "preview": "theorem Th36: for T being non empty TopSpace for x being Element of InclPoset the topology of T for X being Subset of T "
+    },
+    {
+      "counts": {
+        "Subset": 2,
+        "locally-compact": 1
+      },
+      "index": 10,
+      "kind": "definition",
+      "object": "definition_10",
+      "preview": "definition let T be non empty TopSpace; attr T is locally-compact means for x being Point of T, X being Subset of T st x"
+    },
+    {
+      "counts": {
+        "Subset": 2,
+        "locally-compact": 1
+      },
+      "index": 19,
+      "kind": "registration",
+      "object": "registration_19",
+      "preview": "registration cluster compact T_2 -> regular normal locally-compact for non empty TopSpace; coherence proof let T be non "
+    },
+    {
+      "counts": {
+        "Subset": 5
+      },
+      "index": 38,
+      "kind": "theorem",
+      "object": "theorem_38",
+      "preview": "theorem Th38: for T being non empty TopSpace for x,y being Element of InclPoset the topology of T st ex Z being Subset o"
+    },
+    {
+      "counts": {
+        "Subset": 22,
+        "locally-compact": 1
+      },
+      "index": 39,
+      "kind": "theorem",
+      "object": "theorem_39",
+      "preview": "theorem Th39: for T being non empty TopSpace st T is locally-compact for x,y being Element of InclPoset the topology of "
+    },
+    {
+      "counts": {
+        "Subset": 3,
+        "locally-compact": 2
+      },
+      "index": 40,
+      "kind": "theorem",
+      "object": "theorem_40",
+      "preview": "theorem for T being non empty TopSpace st T is locally-compact & T is T_2 for x,y being Element of InclPoset the topolog"
+    },
+    {
+      "counts": {
+        "Subset": 6,
+        "locally-compact": 1
+      },
+      "index": 41,
+      "kind": "theorem",
+      "object": "theorem_41",
+      "preview": "theorem for X being non empty TopSpace st X is regular & InclPoset the topology of X is continuous holds X is locally-co"
+    },
+    {
+      "counts": {
+        "Subset": 3,
+        "locally-compact": 2
+      },
+      "index": 42,
+      "kind": "theorem",
+      "object": "theorem_42",
+      "preview": "theorem for T being non empty TopSpace st T is locally-compact holds InclPoset the topology of T is continuous proof let"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/waybel_3.miz"
+}

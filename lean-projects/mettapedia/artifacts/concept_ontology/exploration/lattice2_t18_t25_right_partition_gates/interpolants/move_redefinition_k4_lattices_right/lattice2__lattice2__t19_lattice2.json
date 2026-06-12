@@ -1,0 +1,362 @@
+{
+  "extra_right_records": [
+    "redefinition_k4_lattices"
+  ],
+  "failure_kind": "timeout",
+  "input_file": "/home/zar/claude/atps/datasets/extended_mptp5k/chainy/train/lattice2__lattice2__t19_lattice2",
+  "interpolant": null,
+  "interpolant_features": null,
+  "interpolant_found": false,
+  "interpolant_source": null,
+  "left_formula_count": 118,
+  "left_only_symbols": [
+    {
+      "arity": 3,
+      "kind": "function",
+      "name": "k1_binop_1"
+    },
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "k1_funct_1"
+    },
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "k1_funct_4"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k1_lattice2"
+    },
+    {
+      "arity": 0,
+      "kind": "function",
+      "name": "k1_xboole_0"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k1_zfmisc_1"
+    },
+    {
+      "arity": 4,
+      "kind": "function",
+      "name": "k2_partfun1"
+    },
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "k2_zfmisc_1"
+    },
+    {
+      "arity": 3,
+      "kind": "function",
+      "name": "k3_lattices"
+    },
+    {
+      "arity": 4,
+      "kind": "function",
+      "name": "k4_binop_1"
+    },
+    {
+      "arity": 3,
+      "kind": "function",
+      "name": "k4_lattices"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k5_finsub_1"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k5_lattices"
+    },
+    {
+      "arity": 0,
+      "kind": "function",
+      "name": "k5_ordinal1"
+    },
+    {
+      "arity": 4,
+      "kind": "function",
+      "name": "k9_funct_4"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k9_xtuple_0"
+    },
+    {
+      "arity": 0,
+      "kind": "function",
+      "name": "n1"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "u2_lattices"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "l1_lattices"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "l1_struct_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "l2_lattices"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "m1_subset_1"
+    },
+    {
+      "arity": 3,
+      "kind": "predicate",
+      "name": "r1_binop_1"
+    },
+    {
+      "arity": 6,
+      "kind": "predicate",
+      "name": "r1_funct_2"
+    },
+    {
+      "arity": 3,
+      "kind": "predicate",
+      "name": "r1_lattice2"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "r1_tarski"
+    },
+    {
+      "arity": 3,
+      "kind": "predicate",
+      "name": "r2_binop_1"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "r2_hidden"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "r2_tarski"
+    },
+    {
+      "arity": 3,
+      "kind": "predicate",
+      "name": "r3_binop_1"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v13_struct_0"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v18_lattices"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v19_lattices"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v1_binop_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_finset_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_funct_1"
+    },
+    {
+      "arity": 3,
+      "kind": "predicate",
+      "name": "v1_funct_2"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v1_partfun1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_relat_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_xboole_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_zfmisc_1"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v20_lattices"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v21_lattices"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v2_binop_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v2_funct_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v2_relat_1"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v3_binop_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v3_funct_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v3_lattices"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v3_relat_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v4_funct_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v4_lattices"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v5_lattices"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v6_lattices"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v7_lattices"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v7_struct_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v8_lattices"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v8_struct_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v9_lattices"
+    }
+  ],
+  "original_role_counts": {
+    "axiom": 118,
+    "conjecture": 1
+  },
+  "return_code": 1,
+  "right_formula_count": 1,
+  "right_only_symbols": [],
+  "shared_symbols": [
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "k3_binop_1"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k6_lattices"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "u1_lattices"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "u1_struct_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "l3_lattices"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v10_lattices"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v1_setwiseo"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v2_struct_0"
+    }
+  ],
+  "status": null,
+  "stderr": "",
+  "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\n% Time limit reached! \n% ------------------------------\n% Version: Vampire 5.0.1 (Release build, commit 72927f3a4 on 2026-05-26 21:03:11 +0200)\n% CaDiCaL version: 2.1.3\n% Termination reason: Time limit\n% Termination phase: Saturation\n% Time elapsed: 5.0000 s\n% Peak memory usage: 97 MB\n",
+  "strip_numerals": true
+}

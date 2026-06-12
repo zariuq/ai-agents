@@ -1,0 +1,1026 @@
+{
+  "benchmark": {
+    "attribute_count": 52,
+    "kappa": 2.0,
+    "max_antecedent_size": 2,
+    "min_support": 2,
+    "name": "lattice2_selector_family_context_v2",
+    "object_count": 10,
+    "source_context": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_selector_family_context_v2.json",
+    "top_k": 12,
+    "track": "mizar-semantic-candidates"
+  },
+  "candidates": [
+    {
+      "antecedent": [
+        "role:left_identity"
+      ],
+      "baseline": {
+        "antecedent_support": 2,
+        "jaccard": 0.5,
+        "positive": 1,
+        "support_fraction": 0.1
+      },
+      "candidate_kind": "attribute_implication",
+      "consequent": "family:encoded-u1-left-identity",
+      "credal": {
+        "gate_labels": [
+          "all",
+          "leave_out:lattice2__lattice2__t15_lattice2",
+          "leave_out:lattice2__lattice2__t17_lattice2",
+          "leave_out:lattice2__lattice2__t18_lattice2",
+          "leave_out:lattice2__lattice2__t19_lattice2",
+          "leave_out:lattice2__lattice2__t20_lattice2",
+          "leave_out:lattice2__lattice2__t21_lattice2",
+          "leave_out:lattice2__lattice2__t22_lattice2",
+          "leave_out:lattice2__lattice2__t23_lattice2",
+          "leave_out:lattice2__lattice2__t24_lattice2",
+          "leave_out:lattice2__lattice2__t25_lattice2",
+          "drop_family:encoded-u2-left-identity",
+          "drop_family:encoded-u1-left-identity",
+          "drop_family:encoded-u2-unity",
+          "drop_family:encoded-u1-unity",
+          "drop_family:encoded-u2-u1-mixed",
+          "drop_family:encoded-u1-u2-mixed"
+        ],
+        "lower_strength": 0.0,
+        "observed_gate_count": 17,
+        "upper_strength": 1.0,
+        "width": 1.0
+      },
+      "full_population": {
+        "antecedent_support": 2,
+        "confidence": 0.5,
+        "consequent_support": 1,
+        "jaccard": 0.5,
+        "negative": 1,
+        "object_count": 10,
+        "positive": 1,
+        "strength": 0.5,
+        "support_fraction": 0.1
+      },
+      "oracle": {
+        "kind": "existing_instances",
+        "library_packaging_candidate": false,
+        "open_conjecture": false,
+        "supporting_objects": [
+          "lattice2__lattice2__t17_lattice2"
+        ]
+      },
+      "pln": {
+        "confidence": 0.5,
+        "kappa": 2.0,
+        "score": 0.25,
+        "strength": 0.5
+      },
+      "supporting_objects": [
+        "lattice2__lattice2__t17_lattice2"
+      ]
+    },
+    {
+      "antecedent": [
+        "role:left_identity"
+      ],
+      "baseline": {
+        "antecedent_support": 2,
+        "jaccard": 0.5,
+        "positive": 1,
+        "support_fraction": 0.1
+      },
+      "candidate_kind": "attribute_implication",
+      "consequent": "family:encoded-u2-left-identity",
+      "credal": {
+        "gate_labels": [
+          "all",
+          "leave_out:lattice2__lattice2__t15_lattice2",
+          "leave_out:lattice2__lattice2__t17_lattice2",
+          "leave_out:lattice2__lattice2__t18_lattice2",
+          "leave_out:lattice2__lattice2__t19_lattice2",
+          "leave_out:lattice2__lattice2__t20_lattice2",
+          "leave_out:lattice2__lattice2__t21_lattice2",
+          "leave_out:lattice2__lattice2__t22_lattice2",
+          "leave_out:lattice2__lattice2__t23_lattice2",
+          "leave_out:lattice2__lattice2__t24_lattice2",
+          "leave_out:lattice2__lattice2__t25_lattice2",
+          "drop_family:encoded-u2-left-identity",
+          "drop_family:encoded-u1-left-identity",
+          "drop_family:encoded-u2-unity",
+          "drop_family:encoded-u1-unity",
+          "drop_family:encoded-u2-u1-mixed",
+          "drop_family:encoded-u1-u2-mixed"
+        ],
+        "lower_strength": 0.0,
+        "observed_gate_count": 17,
+        "upper_strength": 1.0,
+        "width": 1.0
+      },
+      "full_population": {
+        "antecedent_support": 2,
+        "confidence": 0.5,
+        "consequent_support": 1,
+        "jaccard": 0.5,
+        "negative": 1,
+        "object_count": 10,
+        "positive": 1,
+        "strength": 0.5,
+        "support_fraction": 0.1
+      },
+      "oracle": {
+        "kind": "existing_instances",
+        "library_packaging_candidate": false,
+        "open_conjecture": false,
+        "supporting_objects": [
+          "lattice2__lattice2__t15_lattice2"
+        ]
+      },
+      "pln": {
+        "confidence": 0.5,
+        "kappa": 2.0,
+        "score": 0.25,
+        "strength": 0.5
+      },
+      "supporting_objects": [
+        "lattice2__lattice2__t15_lattice2"
+      ]
+    },
+    {
+      "antecedent": [
+        "target:k5-extremum"
+      ],
+      "baseline": {
+        "antecedent_support": 2,
+        "jaccard": 0.5,
+        "positive": 1,
+        "support_fraction": 0.1
+      },
+      "candidate_kind": "attribute_implication",
+      "consequent": "family:encoded-u2-left-identity",
+      "credal": {
+        "gate_labels": [
+          "all",
+          "leave_out:lattice2__lattice2__t15_lattice2",
+          "leave_out:lattice2__lattice2__t17_lattice2",
+          "leave_out:lattice2__lattice2__t18_lattice2",
+          "leave_out:lattice2__lattice2__t19_lattice2",
+          "leave_out:lattice2__lattice2__t20_lattice2",
+          "leave_out:lattice2__lattice2__t21_lattice2",
+          "leave_out:lattice2__lattice2__t22_lattice2",
+          "leave_out:lattice2__lattice2__t23_lattice2",
+          "leave_out:lattice2__lattice2__t24_lattice2",
+          "leave_out:lattice2__lattice2__t25_lattice2",
+          "drop_family:encoded-u2-left-identity",
+          "drop_family:encoded-u1-left-identity",
+          "drop_family:encoded-u2-unity",
+          "drop_family:encoded-u1-unity",
+          "drop_family:encoded-u2-u1-mixed",
+          "drop_family:encoded-u1-u2-mixed"
+        ],
+        "lower_strength": 0.0,
+        "observed_gate_count": 17,
+        "upper_strength": 1.0,
+        "width": 1.0
+      },
+      "full_population": {
+        "antecedent_support": 2,
+        "confidence": 0.5,
+        "consequent_support": 1,
+        "jaccard": 0.5,
+        "negative": 1,
+        "object_count": 10,
+        "positive": 1,
+        "strength": 0.5,
+        "support_fraction": 0.1
+      },
+      "oracle": {
+        "kind": "existing_instances",
+        "library_packaging_candidate": false,
+        "open_conjecture": false,
+        "supporting_objects": [
+          "lattice2__lattice2__t15_lattice2"
+        ]
+      },
+      "pln": {
+        "confidence": 0.5,
+        "kappa": 2.0,
+        "score": 0.25,
+        "strength": 0.5
+      },
+      "supporting_objects": [
+        "lattice2__lattice2__t15_lattice2"
+      ]
+    },
+    {
+      "antecedent": [
+        "target:k6-extremum"
+      ],
+      "baseline": {
+        "antecedent_support": 2,
+        "jaccard": 0.5,
+        "positive": 1,
+        "support_fraction": 0.1
+      },
+      "candidate_kind": "attribute_implication",
+      "consequent": "family:encoded-u1-left-identity",
+      "credal": {
+        "gate_labels": [
+          "all",
+          "leave_out:lattice2__lattice2__t15_lattice2",
+          "leave_out:lattice2__lattice2__t17_lattice2",
+          "leave_out:lattice2__lattice2__t18_lattice2",
+          "leave_out:lattice2__lattice2__t19_lattice2",
+          "leave_out:lattice2__lattice2__t20_lattice2",
+          "leave_out:lattice2__lattice2__t21_lattice2",
+          "leave_out:lattice2__lattice2__t22_lattice2",
+          "leave_out:lattice2__lattice2__t23_lattice2",
+          "leave_out:lattice2__lattice2__t24_lattice2",
+          "leave_out:lattice2__lattice2__t25_lattice2",
+          "drop_family:encoded-u2-left-identity",
+          "drop_family:encoded-u1-left-identity",
+          "drop_family:encoded-u2-unity",
+          "drop_family:encoded-u1-unity",
+          "drop_family:encoded-u2-u1-mixed",
+          "drop_family:encoded-u1-u2-mixed"
+        ],
+        "lower_strength": 0.0,
+        "observed_gate_count": 17,
+        "upper_strength": 1.0,
+        "width": 1.0
+      },
+      "full_population": {
+        "antecedent_support": 2,
+        "confidence": 0.5,
+        "consequent_support": 1,
+        "jaccard": 0.5,
+        "negative": 1,
+        "object_count": 10,
+        "positive": 1,
+        "strength": 0.5,
+        "support_fraction": 0.1
+      },
+      "oracle": {
+        "kind": "existing_instances",
+        "library_packaging_candidate": false,
+        "open_conjecture": false,
+        "supporting_objects": [
+          "lattice2__lattice2__t17_lattice2"
+        ]
+      },
+      "pln": {
+        "confidence": 0.5,
+        "kappa": 2.0,
+        "score": 0.25,
+        "strength": 0.5
+      },
+      "supporting_objects": [
+        "lattice2__lattice2__t17_lattice2"
+      ]
+    },
+    {
+      "antecedent": [
+        "family:encoded-u1-u2-mixed"
+      ],
+      "baseline": {
+        "antecedent_support": 2,
+        "jaccard": 0.3333333333333333,
+        "positive": 1,
+        "support_fraction": 0.1
+      },
+      "candidate_kind": "attribute_implication",
+      "consequent": "role:from_v11",
+      "credal": {
+        "gate_labels": [
+          "all",
+          "leave_out:lattice2__lattice2__t15_lattice2",
+          "leave_out:lattice2__lattice2__t17_lattice2",
+          "leave_out:lattice2__lattice2__t18_lattice2",
+          "leave_out:lattice2__lattice2__t19_lattice2",
+          "leave_out:lattice2__lattice2__t20_lattice2",
+          "leave_out:lattice2__lattice2__t21_lattice2",
+          "leave_out:lattice2__lattice2__t22_lattice2",
+          "leave_out:lattice2__lattice2__t23_lattice2",
+          "leave_out:lattice2__lattice2__t24_lattice2",
+          "leave_out:lattice2__lattice2__t25_lattice2",
+          "drop_family:encoded-u2-left-identity",
+          "drop_family:encoded-u1-left-identity",
+          "drop_family:encoded-u2-unity",
+          "drop_family:encoded-u1-unity",
+          "drop_family:encoded-u2-u1-mixed",
+          "drop_family:encoded-u1-u2-mixed"
+        ],
+        "lower_strength": 0.0,
+        "observed_gate_count": 16,
+        "upper_strength": 1.0,
+        "width": 1.0
+      },
+      "full_population": {
+        "antecedent_support": 2,
+        "confidence": 0.5,
+        "consequent_support": 2,
+        "jaccard": 0.3333333333333333,
+        "negative": 1,
+        "object_count": 10,
+        "positive": 1,
+        "strength": 0.5,
+        "support_fraction": 0.1
+      },
+      "oracle": {
+        "kind": "existing_instances",
+        "library_packaging_candidate": false,
+        "open_conjecture": false,
+        "supporting_objects": [
+          "lattice2__lattice2__t23_lattice2"
+        ]
+      },
+      "pln": {
+        "confidence": 0.5,
+        "kappa": 2.0,
+        "score": 0.25,
+        "strength": 0.5
+      },
+      "supporting_objects": [
+        "lattice2__lattice2__t23_lattice2"
+      ]
+    },
+    {
+      "antecedent": [
+        "family:encoded-u1-u2-mixed"
+      ],
+      "baseline": {
+        "antecedent_support": 2,
+        "jaccard": 0.3333333333333333,
+        "positive": 1,
+        "support_fraction": 0.1
+      },
+      "candidate_kind": "attribute_implication",
+      "consequent": "role:implies_v11",
+      "credal": {
+        "gate_labels": [
+          "all",
+          "leave_out:lattice2__lattice2__t15_lattice2",
+          "leave_out:lattice2__lattice2__t17_lattice2",
+          "leave_out:lattice2__lattice2__t18_lattice2",
+          "leave_out:lattice2__lattice2__t19_lattice2",
+          "leave_out:lattice2__lattice2__t20_lattice2",
+          "leave_out:lattice2__lattice2__t21_lattice2",
+          "leave_out:lattice2__lattice2__t22_lattice2",
+          "leave_out:lattice2__lattice2__t23_lattice2",
+          "leave_out:lattice2__lattice2__t24_lattice2",
+          "leave_out:lattice2__lattice2__t25_lattice2",
+          "drop_family:encoded-u2-left-identity",
+          "drop_family:encoded-u1-left-identity",
+          "drop_family:encoded-u2-unity",
+          "drop_family:encoded-u1-unity",
+          "drop_family:encoded-u2-u1-mixed",
+          "drop_family:encoded-u1-u2-mixed"
+        ],
+        "lower_strength": 0.0,
+        "observed_gate_count": 16,
+        "upper_strength": 1.0,
+        "width": 1.0
+      },
+      "full_population": {
+        "antecedent_support": 2,
+        "confidence": 0.5,
+        "consequent_support": 2,
+        "jaccard": 0.3333333333333333,
+        "negative": 1,
+        "object_count": 10,
+        "positive": 1,
+        "strength": 0.5,
+        "support_fraction": 0.1
+      },
+      "oracle": {
+        "kind": "existing_instances",
+        "library_packaging_candidate": false,
+        "open_conjecture": false,
+        "supporting_objects": [
+          "lattice2__lattice2__t24_lattice2"
+        ]
+      },
+      "pln": {
+        "confidence": 0.5,
+        "kappa": 2.0,
+        "score": 0.25,
+        "strength": 0.5
+      },
+      "supporting_objects": [
+        "lattice2__lattice2__t24_lattice2"
+      ]
+    },
+    {
+      "antecedent": [
+        "family:encoded-u1-unity"
+      ],
+      "baseline": {
+        "antecedent_support": 2,
+        "jaccard": 0.3333333333333333,
+        "positive": 1,
+        "support_fraction": 0.1
+      },
+      "candidate_kind": "attribute_implication",
+      "consequent": "role:self_relation",
+      "credal": {
+        "gate_labels": [
+          "all",
+          "leave_out:lattice2__lattice2__t15_lattice2",
+          "leave_out:lattice2__lattice2__t17_lattice2",
+          "leave_out:lattice2__lattice2__t18_lattice2",
+          "leave_out:lattice2__lattice2__t19_lattice2",
+          "leave_out:lattice2__lattice2__t20_lattice2",
+          "leave_out:lattice2__lattice2__t21_lattice2",
+          "leave_out:lattice2__lattice2__t22_lattice2",
+          "leave_out:lattice2__lattice2__t23_lattice2",
+          "leave_out:lattice2__lattice2__t24_lattice2",
+          "leave_out:lattice2__lattice2__t25_lattice2",
+          "drop_family:encoded-u2-left-identity",
+          "drop_family:encoded-u1-left-identity",
+          "drop_family:encoded-u2-unity",
+          "drop_family:encoded-u1-unity",
+          "drop_family:encoded-u2-u1-mixed",
+          "drop_family:encoded-u1-u2-mixed"
+        ],
+        "lower_strength": 0.0,
+        "observed_gate_count": 16,
+        "upper_strength": 1.0,
+        "width": 1.0
+      },
+      "full_population": {
+        "antecedent_support": 2,
+        "confidence": 0.5,
+        "consequent_support": 2,
+        "jaccard": 0.3333333333333333,
+        "negative": 1,
+        "object_count": 10,
+        "positive": 1,
+        "strength": 0.5,
+        "support_fraction": 0.1
+      },
+      "oracle": {
+        "kind": "existing_instances",
+        "library_packaging_candidate": false,
+        "open_conjecture": false,
+        "supporting_objects": [
+          "lattice2__lattice2__t25_lattice2"
+        ]
+      },
+      "pln": {
+        "confidence": 0.5,
+        "kappa": 2.0,
+        "score": 0.25,
+        "strength": 0.5
+      },
+      "supporting_objects": [
+        "lattice2__lattice2__t25_lattice2"
+      ]
+    },
+    {
+      "antecedent": [
+        "family:encoded-u1-unity"
+      ],
+      "baseline": {
+        "antecedent_support": 2,
+        "jaccard": 0.3333333333333333,
+        "positive": 1,
+        "support_fraction": 0.1
+      },
+      "candidate_kind": "attribute_implication",
+      "consequent": "role:unity",
+      "credal": {
+        "gate_labels": [
+          "all",
+          "leave_out:lattice2__lattice2__t15_lattice2",
+          "leave_out:lattice2__lattice2__t17_lattice2",
+          "leave_out:lattice2__lattice2__t18_lattice2",
+          "leave_out:lattice2__lattice2__t19_lattice2",
+          "leave_out:lattice2__lattice2__t20_lattice2",
+          "leave_out:lattice2__lattice2__t21_lattice2",
+          "leave_out:lattice2__lattice2__t22_lattice2",
+          "leave_out:lattice2__lattice2__t23_lattice2",
+          "leave_out:lattice2__lattice2__t24_lattice2",
+          "leave_out:lattice2__lattice2__t25_lattice2",
+          "drop_family:encoded-u2-left-identity",
+          "drop_family:encoded-u1-left-identity",
+          "drop_family:encoded-u2-unity",
+          "drop_family:encoded-u1-unity",
+          "drop_family:encoded-u2-u1-mixed",
+          "drop_family:encoded-u1-u2-mixed"
+        ],
+        "lower_strength": 0.0,
+        "observed_gate_count": 16,
+        "upper_strength": 1.0,
+        "width": 1.0
+      },
+      "full_population": {
+        "antecedent_support": 2,
+        "confidence": 0.5,
+        "consequent_support": 2,
+        "jaccard": 0.3333333333333333,
+        "negative": 1,
+        "object_count": 10,
+        "positive": 1,
+        "strength": 0.5,
+        "support_fraction": 0.1
+      },
+      "oracle": {
+        "kind": "existing_instances",
+        "library_packaging_candidate": false,
+        "open_conjecture": false,
+        "supporting_objects": [
+          "lattice2__lattice2__t19_lattice2"
+        ]
+      },
+      "pln": {
+        "confidence": 0.5,
+        "kappa": 2.0,
+        "score": 0.25,
+        "strength": 0.5
+      },
+      "supporting_objects": [
+        "lattice2__lattice2__t19_lattice2"
+      ]
+    },
+    {
+      "antecedent": [
+        "family:encoded-u1-unity"
+      ],
+      "baseline": {
+        "antecedent_support": 2,
+        "jaccard": 0.3333333333333333,
+        "positive": 1,
+        "support_fraction": 0.1
+      },
+      "candidate_kind": "attribute_implication",
+      "consequent": "target:k6-extremum",
+      "credal": {
+        "gate_labels": [
+          "all",
+          "leave_out:lattice2__lattice2__t15_lattice2",
+          "leave_out:lattice2__lattice2__t17_lattice2",
+          "leave_out:lattice2__lattice2__t18_lattice2",
+          "leave_out:lattice2__lattice2__t19_lattice2",
+          "leave_out:lattice2__lattice2__t20_lattice2",
+          "leave_out:lattice2__lattice2__t21_lattice2",
+          "leave_out:lattice2__lattice2__t22_lattice2",
+          "leave_out:lattice2__lattice2__t23_lattice2",
+          "leave_out:lattice2__lattice2__t24_lattice2",
+          "leave_out:lattice2__lattice2__t25_lattice2",
+          "drop_family:encoded-u2-left-identity",
+          "drop_family:encoded-u1-left-identity",
+          "drop_family:encoded-u2-unity",
+          "drop_family:encoded-u1-unity",
+          "drop_family:encoded-u2-u1-mixed",
+          "drop_family:encoded-u1-u2-mixed"
+        ],
+        "lower_strength": 0.0,
+        "observed_gate_count": 16,
+        "upper_strength": 1.0,
+        "width": 1.0
+      },
+      "full_population": {
+        "antecedent_support": 2,
+        "confidence": 0.5,
+        "consequent_support": 2,
+        "jaccard": 0.3333333333333333,
+        "negative": 1,
+        "object_count": 10,
+        "positive": 1,
+        "strength": 0.5,
+        "support_fraction": 0.1
+      },
+      "oracle": {
+        "kind": "existing_instances",
+        "library_packaging_candidate": false,
+        "open_conjecture": false,
+        "supporting_objects": [
+          "lattice2__lattice2__t19_lattice2"
+        ]
+      },
+      "pln": {
+        "confidence": 0.5,
+        "kappa": 2.0,
+        "score": 0.25,
+        "strength": 0.5
+      },
+      "supporting_objects": [
+        "lattice2__lattice2__t19_lattice2"
+      ]
+    },
+    {
+      "antecedent": [
+        "family:encoded-u2-u1-mixed"
+      ],
+      "baseline": {
+        "antecedent_support": 2,
+        "jaccard": 0.3333333333333333,
+        "positive": 1,
+        "support_fraction": 0.1
+      },
+      "candidate_kind": "attribute_implication",
+      "consequent": "role:from_v11",
+      "credal": {
+        "gate_labels": [
+          "all",
+          "leave_out:lattice2__lattice2__t15_lattice2",
+          "leave_out:lattice2__lattice2__t17_lattice2",
+          "leave_out:lattice2__lattice2__t18_lattice2",
+          "leave_out:lattice2__lattice2__t19_lattice2",
+          "leave_out:lattice2__lattice2__t20_lattice2",
+          "leave_out:lattice2__lattice2__t21_lattice2",
+          "leave_out:lattice2__lattice2__t22_lattice2",
+          "leave_out:lattice2__lattice2__t23_lattice2",
+          "leave_out:lattice2__lattice2__t24_lattice2",
+          "leave_out:lattice2__lattice2__t25_lattice2",
+          "drop_family:encoded-u2-left-identity",
+          "drop_family:encoded-u1-left-identity",
+          "drop_family:encoded-u2-unity",
+          "drop_family:encoded-u1-unity",
+          "drop_family:encoded-u2-u1-mixed",
+          "drop_family:encoded-u1-u2-mixed"
+        ],
+        "lower_strength": 0.0,
+        "observed_gate_count": 16,
+        "upper_strength": 1.0,
+        "width": 1.0
+      },
+      "full_population": {
+        "antecedent_support": 2,
+        "confidence": 0.5,
+        "consequent_support": 2,
+        "jaccard": 0.3333333333333333,
+        "negative": 1,
+        "object_count": 10,
+        "positive": 1,
+        "strength": 0.5,
+        "support_fraction": 0.1
+      },
+      "oracle": {
+        "kind": "existing_instances",
+        "library_packaging_candidate": false,
+        "open_conjecture": false,
+        "supporting_objects": [
+          "lattice2__lattice2__t21_lattice2"
+        ]
+      },
+      "pln": {
+        "confidence": 0.5,
+        "kappa": 2.0,
+        "score": 0.25,
+        "strength": 0.5
+      },
+      "supporting_objects": [
+        "lattice2__lattice2__t21_lattice2"
+      ]
+    },
+    {
+      "antecedent": [
+        "family:encoded-u2-u1-mixed"
+      ],
+      "baseline": {
+        "antecedent_support": 2,
+        "jaccard": 0.3333333333333333,
+        "positive": 1,
+        "support_fraction": 0.1
+      },
+      "candidate_kind": "attribute_implication",
+      "consequent": "role:implies_v11",
+      "credal": {
+        "gate_labels": [
+          "all",
+          "leave_out:lattice2__lattice2__t15_lattice2",
+          "leave_out:lattice2__lattice2__t17_lattice2",
+          "leave_out:lattice2__lattice2__t18_lattice2",
+          "leave_out:lattice2__lattice2__t19_lattice2",
+          "leave_out:lattice2__lattice2__t20_lattice2",
+          "leave_out:lattice2__lattice2__t21_lattice2",
+          "leave_out:lattice2__lattice2__t22_lattice2",
+          "leave_out:lattice2__lattice2__t23_lattice2",
+          "leave_out:lattice2__lattice2__t24_lattice2",
+          "leave_out:lattice2__lattice2__t25_lattice2",
+          "drop_family:encoded-u2-left-identity",
+          "drop_family:encoded-u1-left-identity",
+          "drop_family:encoded-u2-unity",
+          "drop_family:encoded-u1-unity",
+          "drop_family:encoded-u2-u1-mixed",
+          "drop_family:encoded-u1-u2-mixed"
+        ],
+        "lower_strength": 0.0,
+        "observed_gate_count": 16,
+        "upper_strength": 1.0,
+        "width": 1.0
+      },
+      "full_population": {
+        "antecedent_support": 2,
+        "confidence": 0.5,
+        "consequent_support": 2,
+        "jaccard": 0.3333333333333333,
+        "negative": 1,
+        "object_count": 10,
+        "positive": 1,
+        "strength": 0.5,
+        "support_fraction": 0.1
+      },
+      "oracle": {
+        "kind": "existing_instances",
+        "library_packaging_candidate": false,
+        "open_conjecture": false,
+        "supporting_objects": [
+          "lattice2__lattice2__t22_lattice2"
+        ]
+      },
+      "pln": {
+        "confidence": 0.5,
+        "kappa": 2.0,
+        "score": 0.25,
+        "strength": 0.5
+      },
+      "supporting_objects": [
+        "lattice2__lattice2__t22_lattice2"
+      ]
+    },
+    {
+      "antecedent": [
+        "family:encoded-u2-unity"
+      ],
+      "baseline": {
+        "antecedent_support": 2,
+        "jaccard": 0.3333333333333333,
+        "positive": 1,
+        "support_fraction": 0.1
+      },
+      "candidate_kind": "attribute_implication",
+      "consequent": "role:self_relation",
+      "credal": {
+        "gate_labels": [
+          "all",
+          "leave_out:lattice2__lattice2__t15_lattice2",
+          "leave_out:lattice2__lattice2__t17_lattice2",
+          "leave_out:lattice2__lattice2__t18_lattice2",
+          "leave_out:lattice2__lattice2__t19_lattice2",
+          "leave_out:lattice2__lattice2__t20_lattice2",
+          "leave_out:lattice2__lattice2__t21_lattice2",
+          "leave_out:lattice2__lattice2__t22_lattice2",
+          "leave_out:lattice2__lattice2__t23_lattice2",
+          "leave_out:lattice2__lattice2__t24_lattice2",
+          "leave_out:lattice2__lattice2__t25_lattice2",
+          "drop_family:encoded-u2-left-identity",
+          "drop_family:encoded-u1-left-identity",
+          "drop_family:encoded-u2-unity",
+          "drop_family:encoded-u1-unity",
+          "drop_family:encoded-u2-u1-mixed",
+          "drop_family:encoded-u1-u2-mixed"
+        ],
+        "lower_strength": 0.0,
+        "observed_gate_count": 16,
+        "upper_strength": 1.0,
+        "width": 1.0
+      },
+      "full_population": {
+        "antecedent_support": 2,
+        "confidence": 0.5,
+        "consequent_support": 2,
+        "jaccard": 0.3333333333333333,
+        "negative": 1,
+        "object_count": 10,
+        "positive": 1,
+        "strength": 0.5,
+        "support_fraction": 0.1
+      },
+      "oracle": {
+        "kind": "existing_instances",
+        "library_packaging_candidate": false,
+        "open_conjecture": false,
+        "supporting_objects": [
+          "lattice2__lattice2__t20_lattice2"
+        ]
+      },
+      "pln": {
+        "confidence": 0.5,
+        "kappa": 2.0,
+        "score": 0.25,
+        "strength": 0.5
+      },
+      "supporting_objects": [
+        "lattice2__lattice2__t20_lattice2"
+      ]
+    }
+  ],
+  "context_metadata": {
+    "artifact_files": [
+      "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_selector_extremum_bridge_schema.json",
+      "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t20_t25_synthesized_schema.json",
+      "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t21_t23_synthesized_schema.json",
+      "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t22_t24_synthesized_schema.json"
+    ],
+    "attribute_presence": {
+      "family:encoded-u1-left-identity": 1,
+      "family:encoded-u1-u2-mixed": 2,
+      "family:encoded-u1-unity": 2,
+      "family:encoded-u2-left-identity": 1,
+      "family:encoded-u2-u1-mixed": 2,
+      "family:encoded-u2-unity": 2,
+      "role:from_v11": 2,
+      "role:implies_v11": 2,
+      "role:left_identity": 2,
+      "role:self_relation": 2,
+      "role:unity": 2,
+      "schema:selector_extremum_bridge_schema": 4,
+      "schema:selector_mixed_relation_from_v11": 2,
+      "schema:selector_mixed_relation_implies_v11": 2,
+      "schema:selector_self_relation_assertion": 2,
+      "selector:u1": 3,
+      "selector:u2": 3,
+      "selector_left:u1": 5,
+      "selector_left:u2": 5,
+      "selector_pair:u1->u1": 3,
+      "selector_pair:u1->u2": 2,
+      "selector_pair:u2->u1": 2,
+      "selector_pair:u2->u2": 3,
+      "selector_relation:cross_role_bridge": 4,
+      "selector_relation:mixed_relation": 4,
+      "selector_relation:self_relation": 2,
+      "selector_right:u1": 5,
+      "selector_right:u2": 5,
+      "sym:k5_lattices": 2,
+      "sym:k6_lattices": 2,
+      "sym:l3_lattices": 10,
+      "sym:r6_binop_1": 6,
+      "sym:u1_lattices": 7,
+      "sym:u1_struct_0": 10,
+      "sym:u2_lattices": 7,
+      "sym:v10_lattices": 10,
+      "sym:v11_lattices": 4,
+      "sym:v2_struct_0": 10,
+      "sym_instance:k3_binop_1": 2,
+      "sym_instance:k4_binop_1": 2,
+      "sym_instance:k5_lattices": 2,
+      "sym_instance:k6_lattices": 2,
+      "sym_instance:l3_lattices": 4,
+      "sym_instance:m1_subset_1": 2,
+      "sym_instance:u1_lattices": 2,
+      "sym_instance:u1_struct_0": 4,
+      "sym_instance:u2_lattices": 2,
+      "sym_instance:v10_lattices": 4,
+      "sym_instance:v1_setwiseo": 2,
+      "sym_instance:v2_struct_0": 4,
+      "target:k5-extremum": 2,
+      "target:k6-extremum": 2
+    },
+    "kind": "selector-family-context",
+    "object_count": 10
+  },
+  "missing_registration_leads": [
+    {
+      "antecedent": [
+        "role:from_v11",
+        "role:implies_v11"
+      ],
+      "baseline": {
+        "antecedent_support": 2,
+        "jaccard": 1.0,
+        "positive": 2,
+        "support_fraction": 1.0
+      },
+      "candidate_kind": "missing_registration_style",
+      "consequent": "candidate:registration_or_iff_for_v11_mixed_relation",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 2,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "lead_class": "packaging_or_registration_candidate",
+      "lead_name": "mixed_selector_v11_equivalence_schema",
+      "oracle": {
+        "broader_search_equivalence_hits": [],
+        "broader_search_roots": [
+          "/home/zar/claude/atps/datasets/extended_mptp5k/chainy/train",
+          "/home/zar/claude/atps/datasets/mml_8.1.15_fof/problems_small/lattice2",
+          "/home/zar/claude/atps/datasets/mml_8.1.15_fof/problems_small/lattice4",
+          "/home/zar/claude/atps/datasets/mml_8.1.15_fof/problems_small/filter_1",
+          "/home/zar/claude/atps/datasets/mml_8.1.15_fof/problems_small/fvsum_1",
+          "/home/zar/claude/atps/datasets/mml_8.1.15_fof/problems_small/prvect_1"
+        ],
+        "kind": "paired_existing_theorems",
+        "library_packaging_candidate": true,
+        "open_conjecture": false,
+        "proposed_surface": "equivalence_or_registration",
+        "shelf_equivalence_hits": [],
+        "supporting_theorems": [
+          "lattice2__lattice2__t21_lattice2",
+          "lattice2__lattice2__t22_lattice2",
+          "lattice2__lattice2__t23_lattice2",
+          "lattice2__lattice2__t24_lattice2"
+        ]
+      },
+      "pln": {
+        "confidence": 0.5,
+        "kappa": 2.0,
+        "score": 0.5,
+        "strength": 1.0
+      },
+      "proposed_schema_template": "In a nonempty bounded lattice context, the mixed selector relation r6_binop_1(u1_struct_0(A), OP1(A), OP2(A)) is equivalent to the additional v11_lattices(A) condition.",
+      "supporting_instances": [
+        {
+          "backing_theorems": [
+            "lattice2__lattice2__t23_lattice2",
+            "lattice2__lattice2__t24_lattice2"
+          ],
+          "broader_equivalence_hits": [],
+          "left_selector_term": "u1_lattices(A)",
+          "packaged_equivalence_hits": [],
+          "proposed_equivalence": "(! [A] : ((~v2_struct_0(A) & (v10_lattices(A) & l3_lattices(A))) => (v11_lattices(A) <=> r6_binop_1(u1_struct_0(A), u1_lattices(A), u2_lattices(A)))))",
+          "relation_term": "r6_binop_1(u1_struct_0(A), u1_lattices(A), u2_lattices(A))",
+          "right_selector_term": "u2_lattices(A)",
+          "selector_family": "encoded-u1-u2-mixed"
+        },
+        {
+          "backing_theorems": [
+            "lattice2__lattice2__t21_lattice2",
+            "lattice2__lattice2__t22_lattice2"
+          ],
+          "broader_equivalence_hits": [],
+          "left_selector_term": "u2_lattices(A)",
+          "packaged_equivalence_hits": [],
+          "proposed_equivalence": "(! [A] : ((~v2_struct_0(A) & (v10_lattices(A) & l3_lattices(A))) => (v11_lattices(A) <=> r6_binop_1(u1_struct_0(A), u2_lattices(A), u1_lattices(A)))))",
+          "relation_term": "r6_binop_1(u1_struct_0(A), u2_lattices(A), u1_lattices(A))",
+          "right_selector_term": "u1_lattices(A)",
+          "selector_family": "encoded-u2-u1-mixed"
+        }
+      ]
+    }
+  ],
+  "schema_family_leads": [
+    {
+      "antecedent": [
+        "role:transport_witness",
+        "role:source_property_transfer"
+      ],
+      "baseline": {
+        "antecedent_support": 4,
+        "jaccard": 1.0,
+        "positive": 4,
+        "support_fraction": 1.0
+      },
+      "candidate_kind": "schema_family",
+      "consequent": "candidate:lattice4_transport_property_relation",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "lead_class": "theorem_family_candidate",
+      "lead_name": "lattice4_transport_property_relation_schema",
+      "oracle": {
+        "kind": "existing_theorem_family",
+        "library_packaging_candidate": false,
+        "mml_relevance": "transport_property_relation_family",
+        "open_conjecture": false,
+        "supporting_theorems": [
+          "lattice4__t12_lattice4",
+          "lattice4__t18_lattice4",
+          "lattice4__t28_lattice4",
+          "lattice4__t31_lattice4"
+        ],
+        "theorem_family_candidate": true
+      },
+      "pln": {
+        "confidence": 0.6666666666666666,
+        "kappa": 2.0,
+        "score": 0.6666666666666666,
+        "strength": 1.0
+      },
+      "proposed_schema_template": "In the lattice4 transport setting, a source-side structural property on B, together with an admissible transport witness from B to A, yields the corresponding target-side structural property on A and a named lattice4 transport relation between B, A, and the witness.",
+      "supporting_instances": [
+        {
+          "problem": "lattice4__t12_lattice4",
+          "relation_term": "r3_lattice4(B, A, C)",
+          "source_property_term": "v13_lattices(B)",
+          "target_property_term": "v13_lattices(A)",
+          "witness_guard_family": "v2_funct_2"
+        },
+        {
+          "problem": "lattice4__t18_lattice4",
+          "relation_term": "r2_lattice4(B, A, C)",
+          "source_property_term": "v14_lattices(B)",
+          "target_property_term": "v14_lattices(A)",
+          "witness_guard_family": "v2_funct_2"
+        },
+        {
+          "problem": "lattice4__t28_lattice4",
+          "relation_term": "r1_lattice4(B, A, C)",
+          "source_property_term": "v3_filter_0(B)",
+          "target_property_term": "v3_filter_0(A)",
+          "witness_guard_family": "v3_funct_2"
+        },
+        {
+          "problem": "lattice4__t31_lattice4",
+          "relation_term": "r4_lattice4(B, A, C)",
+          "source_property_term": "v17_lattices(B)",
+          "target_property_term": "v17_lattices(A)",
+          "witness_guard_family": "v2_funct_2"
+        }
+      ]
+    }
+  ]
+}

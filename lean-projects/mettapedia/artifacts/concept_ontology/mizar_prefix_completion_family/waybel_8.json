@@ -1,0 +1,294 @@
+{
+  "article": "waybel_8",
+  "attributes": [
+    "CompactSublatt",
+    "SubRelStr",
+    "Subset",
+    "satisfying_axiom_K"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "CompactSublatt": 1,
+        "SubRelStr": 3,
+        "Subset": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition :: DEFINITION 4.1 let L be non empty reflexive RelStr; func CompactSublatt L -> strict full SubRelStr of L me"
+    },
+    {
+      "counts": {
+        "CompactSublatt": 1
+      },
+      "index": 1,
+      "kind": "registration",
+      "object": "registration_1",
+      "preview": "registration let L be lower-bounded non empty reflexive antisymmetric RelStr; cluster CompactSublatt L -> non empty; coh"
+    },
+    {
+      "counts": {
+        "CompactSublatt": 2
+      },
+      "index": 1,
+      "kind": "theorem",
+      "object": "theorem_1",
+      "preview": "theorem for L be complete LATTICE for x,y,k be Element of L holds x <= k & k <= y & k in the carrier of CompactSublatt L"
+    },
+    {
+      "counts": {
+        "CompactSublatt": 6
+      },
+      "index": 3,
+      "kind": "theorem",
+      "object": "theorem_3",
+      "preview": "theorem :: REMARK 4.3 for L be lower-bounded with_suprema non empty Poset holds CompactSublatt L is join-inheriting & Bo"
+    },
+    {
+      "counts": {
+        "Subset": 2
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let L be non empty reflexive RelStr; let x be Element of L; func compactbelow x -> Subset of L equals {y wher"
+    },
+    {
+      "counts": {
+        "CompactSublatt": 7
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem Th5: for L be non empty reflexive RelStr for x be Element of L holds compactbelow x = downarrow x /\\ the carrier"
+    },
+    {
+      "counts": {
+        "satisfying_axiom_K": 1
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let L be non empty reflexive RelStr; attr L is satisfying_axiom_K means :Def3: for x be Element of L holds x "
+    },
+    {
+      "counts": {
+        "satisfying_axiom_K": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition :: DEFINITION 4.4 let L be non empty reflexive RelStr; attr L is algebraic means :Def4: (for x being Element "
+    },
+    {
+      "counts": {
+        "CompactSublatt": 6,
+        "Subset": 3,
+        "satisfying_axiom_K": 2
+      },
+      "index": 7,
+      "kind": "theorem",
+      "object": "theorem_7",
+      "preview": "theorem Th7: :: PROPOSITION 4.5 for L be LATTICE holds L is algebraic iff ( L is continuous & for x,y be Element of L st"
+    },
+    {
+      "counts": {
+        "satisfying_axiom_K": 1
+      },
+      "index": 4,
+      "kind": "registration",
+      "object": "registration_4",
+      "preview": "registration cluster algebraic -> up-complete satisfying_axiom_K for non empty reflexive RelStr; coherence; end;"
+    },
+    {
+      "counts": {
+        "CompactSublatt": 4
+      },
+      "index": 5,
+      "kind": "registration",
+      "object": "registration_5",
+      "preview": "registration let L be non empty with_suprema Poset; cluster CompactSublatt L -> join-inheriting; coherence proof now let"
+    },
+    {
+      "counts": {
+        "CompactSublatt": 1
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let L be non empty reflexive RelStr; attr L is arithmetic means L is algebraic & CompactSublatt L is meet-inh"
+    },
+    {
+      "counts": {
+        "CompactSublatt": 6
+      },
+      "index": 7,
+      "kind": "registration",
+      "object": "registration_7",
+      "preview": "registration cluster trivial -> arithmetic for LATTICE; coherence proof let L be LATTICE; assume A1: L is trivial; recon"
+    },
+    {
+      "counts": {
+        "Subset": 3
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem Th8: for L1,L2 be non empty reflexive antisymmetric RelStr st the RelStr of L1 = the RelStr of L2 & L1 is up-com"
+    },
+    {
+      "counts": {
+        "Subset": 3
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem Th15: for L1,L2 be non empty reflexive RelStr st the RelStr of L1 = the RelStr of L2 & L1 is up-complete holds L"
+    },
+    {
+      "counts": {
+        "satisfying_axiom_K": 3
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem Th16: for L1,L2 be up-complete non empty reflexive antisymmetric RelStr st the RelStr of L1 = the RelStr of L2 &"
+    },
+    {
+      "counts": {
+        "satisfying_axiom_K": 1
+      },
+      "index": 17,
+      "kind": "theorem",
+      "object": "theorem_17",
+      "preview": "theorem Th17: for L1,L2 be non empty reflexive antisymmetric RelStr st the RelStr of L1 = the RelStr of L2 & L1 is algeb"
+    },
+    {
+      "counts": {
+        "CompactSublatt": 8
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem Th18: for L1,L2 be LATTICE st the RelStr of L1 = the RelStr of L2 & L1 is arithmetic holds L2 is arithmetic proo"
+    },
+    {
+      "counts": {
+        "CompactSublatt": 9,
+        "SubRelStr": 2
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem :: PROPOSITION 4.7 a) for L be algebraic LATTICE holds L is arithmetic iff CompactSublatt L is LATTICE proof let"
+    },
+    {
+      "counts": {
+        "CompactSublatt": 10,
+        "SubRelStr": 1
+      },
+      "index": 20,
+      "kind": "theorem",
+      "object": "theorem_20",
+      "preview": "theorem Th20: :: PROPOSITION 4.7 b) for L be algebraic lower-bounded LATTICE holds L is arithmetic iff L-waybelow is mul"
+    },
+    {
+      "counts": {
+        "Subset": 1
+      },
+      "index": 18,
+      "kind": "registration",
+      "object": "registration_18",
+      "preview": "registration let L be algebraic LATTICE; let c be closure Function of L,L; cluster non empty directed for Subset of Imag"
+    },
+    {
+      "counts": {
+        "CompactSublatt": 4,
+        "Subset": 3
+      },
+      "index": 23,
+      "kind": "theorem",
+      "object": "theorem_23",
+      "preview": "theorem Th23: for L be algebraic LATTICE for c be closure Function of L,L st c is directed-sups-preserving holds c.:([#]"
+    },
+    {
+      "counts": {
+        "CompactSublatt": 5,
+        "Subset": 1,
+        "satisfying_axiom_K": 1
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem :: PROPOSITION 4.9.(i) for L be algebraic lower-bounded LATTICE for c be closure Function of L,L st c is directe"
+    },
+    {
+      "counts": {
+        "CompactSublatt": 35,
+        "Subset": 4
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem :: PROPOSITION 4.9.(ii) for L be algebraic lower-bounded LATTICE, c be closure Function of L,L st c is directed-"
+    },
+    {
+      "counts": {
+        "Subset": 10
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem Th27: for X be set for x,y be Element of BoolePoset X holds x << y iff for Y be Subset-Family of X st y c= union"
+    },
+    {
+      "counts": {
+        "Subset": 3
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem Th28: for X be set for x be Element of BoolePoset X holds x is finite iff x is compact proof let X be set; let x"
+    },
+    {
+      "counts": {
+        "Subset": 6
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem Th29: for X be set for x be Element of BoolePoset X holds compactbelow x = the set of all y where y is finite Su"
+    },
+    {
+      "counts": {
+        "CompactSublatt": 4,
+        "Subset": 5
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem for X be set for F be Subset of X holds F in the carrier of CompactSublatt BoolePoset X iff F is finite proof le"
+    },
+    {
+      "counts": {
+        "Subset": 10
+      },
+      "index": 19,
+      "kind": "registration",
+      "object": "registration_19",
+      "preview": "registration let X be set; let x be Element of BoolePoset X; cluster compactbelow x -> lower directed; coherence proof n"
+    },
+    {
+      "counts": {
+        "Subset": 2,
+        "satisfying_axiom_K": 1
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem Th31: :: EXAMPLES 4.11.(1b) for X be set holds BoolePoset X is algebraic proof let X be set; now let x be Elemen"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/waybel_8.miz"
+}

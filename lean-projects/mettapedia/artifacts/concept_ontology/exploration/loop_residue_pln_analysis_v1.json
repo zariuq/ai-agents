@@ -1,0 +1,250 @@
+{
+  "analyses": [
+    {
+      "closure_surplus_reading": "lip is supported by the sampled closure of premise flexible & left_alternative through certified orders [4, 5, 6, 7, 8, 9, 10, 11, 12], but remains unresolved in the fuller closure over all finite loops",
+      "credal_confidence_width": 0.28,
+      "credal_inheritance_tv": {
+        "confidence_lower": 0.62,
+        "confidence_upper": 0.9,
+        "form": "credal: <strength, [c_lower, c_upper]>",
+        "strength": 1.0
+      },
+      "headline": "OPEN; strength 1.0, credal confidence [0.62, 0.90] capped by the inductive leap past order 12",
+      "inheritance_tv_empirical": {
+        "confidence": 0.9796,
+        "form": "<strength, confidence>",
+        "strength": 1.0
+      },
+      "inheritance_weight": 96,
+      "open_world_at_current_vantage": true,
+      "pln_truth_value": {
+        "confidence_lower": 0.62,
+        "confidence_upper": 0.9,
+        "form": "credal: <strength, [c_lower, c_upper]>",
+        "strength": 1.0
+      },
+      "proved": false,
+      "refuted_order": null,
+      "resolution_used": true,
+      "rule": "flexible & left_alternative => lip",
+      "scrutability_gap_role": "candidate",
+      "stage1_enumerative": {
+        "extensional_strength": 1.0,
+        "naive_count_confidence": 0.9796,
+        "negative_instances": 0,
+        "note": "overconfident: all instances are small loops (orders <= 6)",
+        "per_order_support": {
+          "4": {
+            "antecedent_support": 4,
+            "positive": 4,
+            "strength": 1.0
+          },
+          "5": {
+            "antecedent_support": 6,
+            "positive": 6,
+            "strength": 1.0
+          },
+          "6": {
+            "antecedent_support": 86,
+            "positive": 86,
+            "strength": 1.0
+          }
+        },
+        "positive_instances": 96
+      },
+      "stage2_hempel_raven": {
+        "all_confirmations_are_rare_class": true,
+        "note": "every confirmation is a genuine antecedent instance (rare, informative), not a vacuous ~lip contrapositive; this is the good kind of raven evidence",
+        "vacuous_contrapositive_confirmations": 0
+      },
+      "stage3_abstraction": {
+        "note": "each UNSAT order is a universal over that whole order-class, certified by reasoning about the pattern, not by enumeration",
+        "proof_certified_orders_unsat": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ]
+      },
+      "stage4_inductive_credal_cap": {
+        "empirical_break_orders": [
+          8,
+          8,
+          8,
+          8,
+          8,
+          10,
+          10,
+          10,
+          10,
+          12,
+          12,
+          12,
+          12
+        ],
+        "reasoning": "certified UNSAT through order 12 >= max observed break order 12; passed the moufang-at-12 threshold; residual risk is a break at some larger order; all observed breaks are EVEN-order, so the next decisive test is the even order 14"
+      },
+      "thats_all_at_current_vantage": false,
+      "world_assumption_comparison": {
+        "actual_reading": {
+          "status": "open_world",
+          "truth_value": {
+            "confidence_lower": 0.62,
+            "confidence_upper": 0.9,
+            "form": "credal: <strength, [c_lower, c_upper]>",
+            "strength": 1.0
+          }
+        },
+        "changes_output": true,
+        "counterfactual_thats_all_reading": {
+          "note": "This is the same finite evidence treated as if the currently visible population were the whole world, so the open credal interval collapses to the bounded empirical point reading.",
+          "status": "thats_all",
+          "truth_value": {
+            "confidence": 0.9796,
+            "form": "<strength, confidence>",
+            "strength": 1.0
+          }
+        },
+        "same_evidence_base": true
+      },
+      "world_assumption_status": "open_world"
+    },
+    {
+      "closure_surplus_reading": "rip is supported by the sampled closure of premise flexible & right_alternative through certified orders [4, 5, 6, 7, 8, 9, 10, 11, 12], but remains unresolved in the fuller closure over all finite loops",
+      "credal_confidence_width": 0.28,
+      "credal_inheritance_tv": {
+        "confidence_lower": 0.62,
+        "confidence_upper": 0.9,
+        "form": "credal: <strength, [c_lower, c_upper]>",
+        "strength": 1.0
+      },
+      "headline": "OPEN; strength 1.0, credal confidence [0.62, 0.90] capped by the inductive leap past order 12",
+      "inheritance_tv_empirical": {
+        "confidence": 0.9796,
+        "form": "<strength, confidence>",
+        "strength": 1.0
+      },
+      "inheritance_weight": 96,
+      "open_world_at_current_vantage": true,
+      "pln_truth_value": {
+        "confidence_lower": 0.62,
+        "confidence_upper": 0.9,
+        "form": "credal: <strength, [c_lower, c_upper]>",
+        "strength": 1.0
+      },
+      "proved": false,
+      "refuted_order": null,
+      "resolution_used": true,
+      "rule": "flexible & right_alternative => rip",
+      "scrutability_gap_role": "candidate",
+      "stage1_enumerative": {
+        "extensional_strength": 1.0,
+        "naive_count_confidence": 0.9796,
+        "negative_instances": 0,
+        "note": "overconfident: all instances are small loops (orders <= 6)",
+        "per_order_support": {
+          "4": {
+            "antecedent_support": 4,
+            "positive": 4,
+            "strength": 1.0
+          },
+          "5": {
+            "antecedent_support": 6,
+            "positive": 6,
+            "strength": 1.0
+          },
+          "6": {
+            "antecedent_support": 86,
+            "positive": 86,
+            "strength": 1.0
+          }
+        },
+        "positive_instances": 96
+      },
+      "stage2_hempel_raven": {
+        "all_confirmations_are_rare_class": true,
+        "note": "every confirmation is a genuine antecedent instance (rare, informative), not a vacuous ~lip contrapositive; this is the good kind of raven evidence",
+        "vacuous_contrapositive_confirmations": 0
+      },
+      "stage3_abstraction": {
+        "note": "each UNSAT order is a universal over that whole order-class, certified by reasoning about the pattern, not by enumeration",
+        "proof_certified_orders_unsat": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ]
+      },
+      "stage4_inductive_credal_cap": {
+        "empirical_break_orders": [
+          8,
+          8,
+          8,
+          8,
+          8,
+          10,
+          10,
+          10,
+          10,
+          12,
+          12,
+          12,
+          12
+        ],
+        "reasoning": "certified UNSAT through order 12 >= max observed break order 12; passed the moufang-at-12 threshold; residual risk is a break at some larger order; all observed breaks are EVEN-order, so the next decisive test is the even order 14"
+      },
+      "thats_all_at_current_vantage": false,
+      "world_assumption_comparison": {
+        "actual_reading": {
+          "status": "open_world",
+          "truth_value": {
+            "confidence_lower": 0.62,
+            "confidence_upper": 0.9,
+            "form": "credal: <strength, [c_lower, c_upper]>",
+            "strength": 1.0
+          }
+        },
+        "changes_output": true,
+        "counterfactual_thats_all_reading": {
+          "note": "This is the same finite evidence treated as if the currently visible population were the whole world, so the open credal interval collapses to the bounded empirical point reading.",
+          "status": "thats_all",
+          "truth_value": {
+            "confidence": 0.9796,
+            "form": "<strength, confidence>",
+            "strength": 1.0
+          }
+        },
+        "same_evidence_base": true
+      },
+      "world_assumption_status": "open_world"
+    }
+  ],
+  "empirical_break_orders": [
+    8,
+    8,
+    8,
+    8,
+    8,
+    10,
+    10,
+    10,
+    10,
+    12,
+    12,
+    12,
+    12
+  ],
+  "k_lookahead": 2.0,
+  "name": "loop_residue_pln_analysis_v1",
+  "resolution_artifact_present": true
+}

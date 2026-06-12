@@ -1,0 +1,19 @@
+{
+  "domain_sizes": {},
+  "finite_model_found": false,
+  "function_summaries": [],
+  "input_file": "/home/zar/claude/atps/datasets/mml_8.1.15_fof/problems_small/conlat_2/conlat_2__t18_conlat_2",
+  "original_role_counts": {
+    "axiom": 139,
+    "conjecture": 1
+  },
+  "predicate_summaries": [],
+  "removed_role_counts": {
+    "conjecture": 1
+  },
+  "return_code": 1,
+  "status": null,
+  "stderr": "",
+  "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nMonotonicity information:\nSort Inference information:\n2 inferred subsorts\nSubsort 0 has 7 constants and 46 functions\nSubsort 1 has 6 constants and 2 functions\n1 distinct sorts\n0 has 3 inferred subsorts as members [0,1,2]\nVampire to distinct sort mapping:\n[$i]\n% TRYING [1]\n% TRYING [2]\n% TRYING [3]\n% TRYING [4]\n% TRYING [5]\n% TRYING [6]\n% TRYING [7]\n% TRYING [8]\n% Time limit reached! \n% ------------------------------\n% Version: Vampire 5.0.1 (Release build, commit 72927f3a4 on 2026-05-26 21:03:11 +0200)\n% CaDiCaL version: 2.1.3\n% Termination reason: Time limit\n% Termination phase: Finite model building SAT solving\n% Time elapsed: 10.0000 s\n% Peak memory usage: 525 MB\n",
+  "strip_numerals": true
+}

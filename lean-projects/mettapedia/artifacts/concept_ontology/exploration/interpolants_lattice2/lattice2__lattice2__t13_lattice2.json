@@ -1,0 +1,297 @@
+{
+  "failure_kind": null,
+  "input_file": "/home/zar/claude/atps/datasets/extended_mptp5k/chainy/train/lattice2__lattice2__t13_lattice2",
+  "interpolant": "(v3_lattices(sK24) & sK24 != k1_lattice2(k1_lattice2(sK24)) & l3_lattices(sK24) & ~v2_struct_0(sK24)) => ((21 => $false) & ~l3_lattices(sK24))",
+  "interpolant_features": {
+    "avatar_component_count": 1,
+    "char_length": 142,
+    "conjunction_count": 4,
+    "disjunction_count": 0,
+    "distinct_symbol_count": 5,
+    "equality_count": 0,
+    "equivalence_count": 0,
+    "exists_count": 0,
+    "forall_count": 0,
+    "generated_symbol_count": 1,
+    "generated_symbols": [
+      "sK24"
+    ],
+    "implication_count": 2,
+    "inequality_count": 1,
+    "input_symbol_count": 4,
+    "input_symbols": [
+      "k1_lattice2",
+      "l3_lattices",
+      "v2_struct_0",
+      "v3_lattices"
+    ],
+    "negation_count": 2,
+    "symbols": [
+      "k1_lattice2",
+      "l3_lattices",
+      "sK24",
+      "v2_struct_0",
+      "v3_lattices"
+    ],
+    "token_count": 41,
+    "uses_only_shared_input_symbols": true
+  },
+  "interpolant_found": true,
+  "interpolant_source": "pre_simplification",
+  "left_formula_count": 104,
+  "left_only_symbols": [
+    {
+      "arity": 3,
+      "kind": "function",
+      "name": "g3_lattices"
+    },
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "k1_funct_1"
+    },
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "k1_funct_4"
+    },
+    {
+      "arity": 0,
+      "kind": "function",
+      "name": "k1_xboole_0"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k1_zfmisc_1"
+    },
+    {
+      "arity": 4,
+      "kind": "function",
+      "name": "k2_partfun1"
+    },
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "k2_zfmisc_1"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k5_finsub_1"
+    },
+    {
+      "arity": 0,
+      "kind": "function",
+      "name": "k5_ordinal1"
+    },
+    {
+      "arity": 4,
+      "kind": "function",
+      "name": "k9_funct_4"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k9_xtuple_0"
+    },
+    {
+      "arity": 0,
+      "kind": "function",
+      "name": "n1"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "u1_lattices"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "u1_struct_0"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "u2_lattices"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "l1_lattices"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "l1_struct_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "l2_lattices"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "m1_subset_1"
+    },
+    {
+      "arity": 6,
+      "kind": "predicate",
+      "name": "r1_funct_2"
+    },
+    {
+      "arity": 3,
+      "kind": "predicate",
+      "name": "r1_lattice2"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "r1_tarski"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "r2_hidden"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "r2_tarski"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v10_lattices"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v13_struct_0"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v18_lattices"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v19_lattices"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v1_binop_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_finset_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_funct_1"
+    },
+    {
+      "arity": 3,
+      "kind": "predicate",
+      "name": "v1_funct_2"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v1_partfun1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_relat_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_xboole_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_zfmisc_1"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v2_binop_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v2_funct_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v2_relat_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v3_funct_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v3_relat_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v4_funct_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v7_struct_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v8_struct_0"
+    }
+  ],
+  "original_role_counts": {
+    "axiom": 104,
+    "conjecture": 1
+  },
+  "return_code": 2,
+  "right_formula_count": 1,
+  "right_only_symbols": [],
+  "shared_symbols": [
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k1_lattice2"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "l3_lattices"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v2_struct_0"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v3_lattices"
+    }
+  ],
+  "status": "Theorem",
+  "stderr": "",
+  "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\n% Refutation found. Thanks to Tanya!\n% SZS status Theorem for \n% SZS output start Proof for \n12.  IC1 ! [X0] : ((~v2_struct_0(X0) & l3_lattices(X0)) => (u1_struct_0(X0) = u1_struct_0(k1_lattice2(X0)) & r1_funct_2(k2_zfmisc_1(u1_struct_0(X0),u1_struct_0(X0)),u1_struct_0(X0),k2_zfmisc_1(u1_struct_0(k1_lattice2(X0)),u1_struct_0(k1_lattice2(X0))),u1_struct_0(k1_lattice2(X0)),u2_lattices(X0),u1_lattices(k1_lattice2(X0))) & r1_funct_2(k2_zfmisc_1(u1_struct_0(X0),u1_struct_0(X0)),u1_struct_0(X0),k2_zfmisc_1(u1_struct_0(k1_lattice2(X0)),u1_struct_0(k1_lattice2(X0))),u1_struct_0(k1_lattice2(X0)),u1_lattices(X0),u2_lattices(k1_lattice2(X0))))) [input(axiom)]\n89.  IC1 ! [X0,X1,X2] : ((v1_funct_1(X1) & v1_funct_2(X1,k2_zfmisc_1(X0,X0),X0) & m1_subset_1(X1,k1_zfmisc_1(k2_zfmisc_1(k2_zfmisc_1(X0,X0),X0))) & v1_funct_1(X2) & v1_funct_2(X2,k2_zfmisc_1(X0,X0),X0) & m1_subset_1(X2,k1_zfmisc_1(k2_zfmisc_1(k2_zfmisc_1(X0,X0),X0)))) => ! [X3,X4,X5] : (g3_lattices(X0,X1,X2) = g3_lattices(X3,X4,X5) => (X0 = X3 & X1 = X4 & X2 = X5))) [input(axiom)]\n92.  IC1 ! [X0,X1,X2] : ((v1_funct_1(X1) & v1_funct_2(X1,k2_zfmisc_1(X0,X0),X0) & m1_subset_1(X1,k1_zfmisc_1(k2_zfmisc_1(k2_zfmisc_1(X0,X0),X0))) & v1_funct_1(X2) & v1_funct_2(X2,k2_zfmisc_1(X0,X0),X0) & m1_subset_1(X2,k1_zfmisc_1(k2_zfmisc_1(k2_zfmisc_1(X0,X0),X0)))) => (v3_lattices(g3_lattices(X0,X1,X2)) & l3_lattices(g3_lattices(X0,X1,X2)))) [input(axiom)]\n95.  IC1 ! [X0] : (l1_lattices(X0) => (v1_funct_1(u1_lattices(X0)) & v1_funct_2(u1_lattices(X0),k2_zfmisc_1(u1_struct_0(X0),u1_struct_0(X0)),u1_struct_0(X0)) & m1_subset_1(u1_lattices(X0),k1_zfmisc_1(k2_zfmisc_1(k2_zfmisc_1(u1_struct_0(X0),u1_struct_0(X0)),u1_struct_0(X0)))))) [input(axiom)]\n97.  IC1 ! [X0] : (l2_lattices(X0) => (v1_funct_1(u2_lattices(X0)) & v1_funct_2(u2_lattices(X0),k2_zfmisc_1(u1_struct_0(X0),u1_struct_0(X0)),u1_struct_0(X0)) & m1_subset_1(u2_lattices(X0),k1_zfmisc_1(k2_zfmisc_1(k2_zfmisc_1(u1_struct_0(X0),u1_struct_0(X0)),u1_struct_0(X0)))))) [input(axiom)]\n98.  IC1 ! [X0] : (l3_lattices(X0) => (v3_lattices(X0) => X0 = g3_lattices(u1_struct_0(X0),u2_lattices(X0),u1_lattices(X0)))) [input(axiom)]\n100.  IC1 ! [X0] : (l3_lattices(X0) => (v3_lattices(k1_lattice2(X0)) & l3_lattices(k1_lattice2(X0)))) [input(axiom)]\n101.  IC1 ! [X0] : (l3_lattices(X0) => (l1_lattices(X0) & l2_lattices(X0))) [input(axiom)]\n104.  IC1 ! [X0] : (l3_lattices(X0) => k1_lattice2(X0) = g3_lattices(u1_struct_0(X0),u1_lattices(X0),u2_lattices(X0))) [input(axiom)]\n105.  IC2 ! [X0] : ((~v2_struct_0(X0) & v3_lattices(X0) & l3_lattices(X0)) => k1_lattice2(k1_lattice2(X0)) = X0) [input(conjecture)]\n106. ~! [X0] : ((~v2_struct_0(X0) & v3_lattices(X0) & l3_lattices(X0)) => k1_lattice2(k1_lattice2(X0)) = X0) [negated conjecture 105]\n139. ! [X0] : ((~v2_struct_0(X0) & l3_lattices(X0)) => u1_struct_0(X0) = u1_struct_0(k1_lattice2(X0))) [pure predicate removal 12]\n160. ! [X0] : (u1_struct_0(X0) = u1_struct_0(k1_lattice2(X0)) | (v2_struct_0(X0) | ~l3_lattices(X0))) [ennf transformation 139]\n161. ! [X0] : (u1_struct_0(X0) = u1_struct_0(k1_lattice2(X0)) | v2_struct_0(X0) | ~l3_lattices(X0)) [flattening 160]\n249. ! [X0,X1,X2] : (! [X3,X4,X5] : ((X0 = X3 & X1 = X4 & X2 = X5) | g3_lattices(X0,X1,X2) != g3_lattices(X3,X4,X5)) | (~v1_funct_1(X1) | ~v1_funct_2(X1,k2_zfmisc_1(X0,X0),X0) | ~m1_subset_1(X1,k1_zfmisc_1(k2_zfmisc_1(k2_zfmisc_1(X0,X0),X0))) | ~v1_funct_1(X2) | ~v1_funct_2(X2,k2_zfmisc_1(X0,X0),X0) | ~m1_subset_1(X2,k1_zfmisc_1(k2_zfmisc_1(k2_zfmisc_1(X0,X0),X0))))) [ennf transformation 89]\n250. ! [X0,X1,X2] : (! [X3,X4,X5] : ((X0 = X3 & X1 = X4 & X2 = X5) | g3_lattices(X0,X1,X2) != g3_lattices(X3,X4,X5)) | ~v1_funct_1(X1) | ~v1_funct_2(X1,k2_zfmisc_1(X0,X0),X0) | ~m1_subset_1(X1,k1_zfmisc_1(k2_zfmisc_1(k2_zfmisc_1(X0,X0),X0))) | ~v1_funct_1(X2) | ~v1_funct_2(X2,k2_zfmisc_1(X0,X0),X0) | ~m1_subset_1(X2,k1_zfmisc_1(k2_zfmisc_1(k2_zfmisc_1(X0,X0),X0)))) [flattening 249]\n251. ! [X0,X1,X2] : ((v3",
+  "strip_numerals": true
+}

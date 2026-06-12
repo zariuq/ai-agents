@@ -1,0 +1,547 @@
+{
+  "credal_summary": {
+    "intent_support_histogram": {
+      "4": 9,
+      "5": 6,
+      "6": 4
+    },
+    "lower_concept_count": 2,
+    "stable_concept_count": 2,
+    "support_histogram": {
+      "1": 12,
+      "2": 1,
+      "3": 2,
+      "4": 7,
+      "5": 6,
+      "6": 2
+    },
+    "unstable_concept_count": 28,
+    "upper_concept_count": 30
+  },
+  "dataset": {
+    "attributes": 35,
+    "is_binary": true,
+    "kind": "mizar-json",
+    "max_count": 1,
+    "name": "lattice2_selector_family_context",
+    "objects": 6,
+    "source": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_selector_family_context.json"
+  },
+  "gate_family": {
+    "concept_count_by_gate": [
+      15,
+      15,
+      15,
+      15,
+      15,
+      15
+    ],
+    "densities": [
+      0.38095238095238093,
+      0.38095238095238093,
+      0.38095238095238093,
+      0.38095238095238093,
+      0.42857142857142855,
+      0.42857142857142855
+    ],
+    "distinct_concept_families": 6,
+    "gate_count": 6,
+    "labels": [
+      "leave_out:lattice2__lattice2__t15_lattice2",
+      "leave_out:lattice2__lattice2__t17_lattice2",
+      "leave_out:lattice2__lattice2__t18_lattice2",
+      "leave_out:lattice2__lattice2__t19_lattice2",
+      "leave_out:lattice2__lattice2__t20_lattice2",
+      "leave_out:lattice2__lattice2__t25_lattice2"
+    ]
+  },
+  "samples": {
+    "unstable_concepts": [
+      {
+        "extent": [
+          "lattice2__lattice2__t17_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u1-left-identity",
+          "role:left_identity",
+          "schema:selector_extremum_bridge_schema",
+          "selector:u1",
+          "selector_relation:cross_role_bridge",
+          "sym:k6_lattices",
+          "sym:l3_lattices",
+          "sym:u1_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "sym_instance:k4_binop_1",
+          "sym_instance:k6_lattices",
+          "sym_instance:l3_lattices",
+          "sym_instance:m1_subset_1",
+          "sym_instance:u1_lattices",
+          "sym_instance:u1_struct_0",
+          "sym_instance:v10_lattices",
+          "sym_instance:v2_struct_0",
+          "target:k6-extremum"
+        ],
+        "intent_size": 20
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t19_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u1-unity",
+          "role:unity",
+          "schema:selector_extremum_bridge_schema",
+          "selector:u1",
+          "selector_relation:cross_role_bridge",
+          "sym:k6_lattices",
+          "sym:l3_lattices",
+          "sym:u1_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "sym_instance:k3_binop_1",
+          "sym_instance:k6_lattices",
+          "sym_instance:l3_lattices",
+          "sym_instance:u1_lattices",
+          "sym_instance:u1_struct_0",
+          "sym_instance:v10_lattices",
+          "sym_instance:v1_setwiseo",
+          "sym_instance:v2_struct_0",
+          "target:k6-extremum"
+        ],
+        "intent_size": 20
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t15_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u2-left-identity",
+          "role:left_identity",
+          "schema:selector_extremum_bridge_schema",
+          "selector:u2",
+          "selector_relation:cross_role_bridge",
+          "sym:k5_lattices",
+          "sym:l3_lattices",
+          "sym:u1_struct_0",
+          "sym:u2_lattices",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "sym_instance:k4_binop_1",
+          "sym_instance:k5_lattices",
+          "sym_instance:l3_lattices",
+          "sym_instance:m1_subset_1",
+          "sym_instance:u1_struct_0",
+          "sym_instance:u2_lattices",
+          "sym_instance:v10_lattices",
+          "sym_instance:v2_struct_0",
+          "target:k5-extremum"
+        ],
+        "intent_size": 20
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t18_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u2-unity",
+          "role:unity",
+          "schema:selector_extremum_bridge_schema",
+          "selector:u2",
+          "selector_relation:cross_role_bridge",
+          "sym:k5_lattices",
+          "sym:l3_lattices",
+          "sym:u1_struct_0",
+          "sym:u2_lattices",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "sym_instance:k3_binop_1",
+          "sym_instance:k5_lattices",
+          "sym_instance:l3_lattices",
+          "sym_instance:u1_struct_0",
+          "sym_instance:u2_lattices",
+          "sym_instance:v10_lattices",
+          "sym_instance:v1_setwiseo",
+          "sym_instance:v2_struct_0",
+          "target:k5-extremum"
+        ],
+        "intent_size": 20
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t25_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u1-unity",
+          "schema:selector_self_relation_assertion",
+          "selector:u1",
+          "selector_relation:self_relation",
+          "sym:l3_lattices",
+          "sym:r6_binop_1",
+          "sym:u1_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0"
+        ],
+        "intent_size": 10
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t20_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u2-unity",
+          "schema:selector_self_relation_assertion",
+          "selector:u2",
+          "selector_relation:self_relation",
+          "sym:l3_lattices",
+          "sym:r6_binop_1",
+          "sym:u1_struct_0",
+          "sym:u2_lattices",
+          "sym:v10_lattices",
+          "sym:v2_struct_0"
+        ],
+        "intent_size": 10
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t17_lattice2",
+          "lattice2__lattice2__t19_lattice2"
+        ],
+        "extent_size": 2,
+        "gate_support": 4,
+        "intent": [
+          "schema:selector_extremum_bridge_schema",
+          "selector:u1",
+          "selector_relation:cross_role_bridge",
+          "sym:k6_lattices",
+          "sym:l3_lattices",
+          "sym:u1_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "sym_instance:k6_lattices",
+          "sym_instance:l3_lattices",
+          "sym_instance:u1_lattices",
+          "sym_instance:u1_struct_0",
+          "sym_instance:v10_lattices",
+          "sym_instance:v2_struct_0",
+          "target:k6-extremum"
+        ],
+        "intent_size": 16
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t15_lattice2",
+          "lattice2__lattice2__t18_lattice2"
+        ],
+        "extent_size": 2,
+        "gate_support": 4,
+        "intent": [
+          "schema:selector_extremum_bridge_schema",
+          "selector:u2",
+          "selector_relation:cross_role_bridge",
+          "sym:k5_lattices",
+          "sym:l3_lattices",
+          "sym:u1_struct_0",
+          "sym:u2_lattices",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "sym_instance:k5_lattices",
+          "sym_instance:l3_lattices",
+          "sym_instance:u1_struct_0",
+          "sym_instance:u2_lattices",
+          "sym_instance:v10_lattices",
+          "sym_instance:v2_struct_0",
+          "target:k5-extremum"
+        ],
+        "intent_size": 16
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t15_lattice2",
+          "lattice2__lattice2__t17_lattice2"
+        ],
+        "extent_size": 2,
+        "gate_support": 4,
+        "intent": [
+          "role:left_identity",
+          "schema:selector_extremum_bridge_schema",
+          "selector_relation:cross_role_bridge",
+          "sym:l3_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "sym_instance:k4_binop_1",
+          "sym_instance:l3_lattices",
+          "sym_instance:m1_subset_1",
+          "sym_instance:u1_struct_0",
+          "sym_instance:v10_lattices",
+          "sym_instance:v2_struct_0"
+        ],
+        "intent_size": 13
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t18_lattice2",
+          "lattice2__lattice2__t19_lattice2"
+        ],
+        "extent_size": 2,
+        "gate_support": 4,
+        "intent": [
+          "role:unity",
+          "schema:selector_extremum_bridge_schema",
+          "selector_relation:cross_role_bridge",
+          "sym:l3_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "sym_instance:k3_binop_1",
+          "sym_instance:l3_lattices",
+          "sym_instance:u1_struct_0",
+          "sym_instance:v10_lattices",
+          "sym_instance:v1_setwiseo",
+          "sym_instance:v2_struct_0"
+        ],
+        "intent_size": 13
+      }
+    ],
+    "unstable_intents": [
+      {
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u1-left-identity",
+          "role:left_identity",
+          "schema:selector_extremum_bridge_schema",
+          "selector:u1",
+          "selector_relation:cross_role_bridge",
+          "sym:k6_lattices",
+          "sym:l3_lattices",
+          "sym:u1_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "sym_instance:k4_binop_1",
+          "sym_instance:k6_lattices",
+          "sym_instance:l3_lattices",
+          "sym_instance:m1_subset_1",
+          "sym_instance:u1_lattices",
+          "sym_instance:u1_struct_0",
+          "sym_instance:v10_lattices",
+          "sym_instance:v2_struct_0",
+          "target:k6-extremum"
+        ],
+        "intent_size": 20
+      },
+      {
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u1-unity",
+          "role:unity",
+          "schema:selector_extremum_bridge_schema",
+          "selector:u1",
+          "selector_relation:cross_role_bridge",
+          "sym:k6_lattices",
+          "sym:l3_lattices",
+          "sym:u1_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "sym_instance:k3_binop_1",
+          "sym_instance:k6_lattices",
+          "sym_instance:l3_lattices",
+          "sym_instance:u1_lattices",
+          "sym_instance:u1_struct_0",
+          "sym_instance:v10_lattices",
+          "sym_instance:v1_setwiseo",
+          "sym_instance:v2_struct_0",
+          "target:k6-extremum"
+        ],
+        "intent_size": 20
+      },
+      {
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u2-left-identity",
+          "role:left_identity",
+          "schema:selector_extremum_bridge_schema",
+          "selector:u2",
+          "selector_relation:cross_role_bridge",
+          "sym:k5_lattices",
+          "sym:l3_lattices",
+          "sym:u1_struct_0",
+          "sym:u2_lattices",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "sym_instance:k4_binop_1",
+          "sym_instance:k5_lattices",
+          "sym_instance:l3_lattices",
+          "sym_instance:m1_subset_1",
+          "sym_instance:u1_struct_0",
+          "sym_instance:u2_lattices",
+          "sym_instance:v10_lattices",
+          "sym_instance:v2_struct_0",
+          "target:k5-extremum"
+        ],
+        "intent_size": 20
+      },
+      {
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u2-unity",
+          "role:unity",
+          "schema:selector_extremum_bridge_schema",
+          "selector:u2",
+          "selector_relation:cross_role_bridge",
+          "sym:k5_lattices",
+          "sym:l3_lattices",
+          "sym:u1_struct_0",
+          "sym:u2_lattices",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "sym_instance:k3_binop_1",
+          "sym_instance:k5_lattices",
+          "sym_instance:l3_lattices",
+          "sym_instance:u1_struct_0",
+          "sym_instance:u2_lattices",
+          "sym_instance:v10_lattices",
+          "sym_instance:v1_setwiseo",
+          "sym_instance:v2_struct_0",
+          "target:k5-extremum"
+        ],
+        "intent_size": 20
+      },
+      {
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u1-unity",
+          "schema:selector_self_relation_assertion",
+          "selector:u1",
+          "selector_relation:self_relation",
+          "sym:l3_lattices",
+          "sym:r6_binop_1",
+          "sym:u1_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0"
+        ],
+        "intent_size": 10
+      },
+      {
+        "gate_support": 5,
+        "intent": [
+          "family:encoded-u2-unity",
+          "schema:selector_self_relation_assertion",
+          "selector:u2",
+          "selector_relation:self_relation",
+          "sym:l3_lattices",
+          "sym:r6_binop_1",
+          "sym:u1_struct_0",
+          "sym:u2_lattices",
+          "sym:v10_lattices",
+          "sym:v2_struct_0"
+        ],
+        "intent_size": 10
+      },
+      {
+        "gate_support": 4,
+        "intent": [
+          "schema:selector_extremum_bridge_schema",
+          "selector:u1",
+          "selector_relation:cross_role_bridge",
+          "sym:k6_lattices",
+          "sym:l3_lattices",
+          "sym:u1_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "sym_instance:k6_lattices",
+          "sym_instance:l3_lattices",
+          "sym_instance:u1_lattices",
+          "sym_instance:u1_struct_0",
+          "sym_instance:v10_lattices",
+          "sym_instance:v2_struct_0",
+          "target:k6-extremum"
+        ],
+        "intent_size": 16
+      },
+      {
+        "gate_support": 4,
+        "intent": [
+          "schema:selector_extremum_bridge_schema",
+          "selector:u2",
+          "selector_relation:cross_role_bridge",
+          "sym:k5_lattices",
+          "sym:l3_lattices",
+          "sym:u1_struct_0",
+          "sym:u2_lattices",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "sym_instance:k5_lattices",
+          "sym_instance:l3_lattices",
+          "sym_instance:u1_struct_0",
+          "sym_instance:u2_lattices",
+          "sym_instance:v10_lattices",
+          "sym_instance:v2_struct_0",
+          "target:k5-extremum"
+        ],
+        "intent_size": 16
+      },
+      {
+        "gate_support": 4,
+        "intent": [
+          "role:left_identity",
+          "schema:selector_extremum_bridge_schema",
+          "selector_relation:cross_role_bridge",
+          "sym:l3_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "sym_instance:k4_binop_1",
+          "sym_instance:l3_lattices",
+          "sym_instance:m1_subset_1",
+          "sym_instance:u1_struct_0",
+          "sym_instance:v10_lattices",
+          "sym_instance:v2_struct_0"
+        ],
+        "intent_size": 13
+      },
+      {
+        "gate_support": 4,
+        "intent": [
+          "role:unity",
+          "schema:selector_extremum_bridge_schema",
+          "selector_relation:cross_role_bridge",
+          "sym:l3_lattices",
+          "sym:u1_struct_0",
+          "sym:v10_lattices",
+          "sym:v2_struct_0",
+          "sym_instance:k3_binop_1",
+          "sym_instance:l3_lattices",
+          "sym_instance:u1_struct_0",
+          "sym_instance:v10_lattices",
+          "sym_instance:v1_setwiseo",
+          "sym_instance:v2_struct_0"
+        ],
+        "intent_size": 13
+      }
+    ]
+  },
+  "theoretical_notes": [
+    "Leave-one-out gates probe whether a concept's intent survives omission of any single object; unstable intents mark bridge vocabulary that depends on specific examples."
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "article": "yellow_7",
+  "attributes": [
+    "ComplMap",
+    "Function"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "ComplMap": 1,
+        "Function": 4
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let L be non empty RelStr; func ComplMap L -> Function of L, L opp means : Def1: for x being Element of L hol"
+    },
+    {
+      "counts": {
+        "ComplMap": 2
+      },
+      "index": 12,
+      "kind": "registration",
+      "object": "registration_12",
+      "preview": "registration let L be Boolean LATTICE; cluster ComplMap L -> one-to-one; coherence proof let a,b be Element of L; set f "
+    },
+    {
+      "counts": {
+        "ComplMap": 2
+      },
+      "index": 13,
+      "kind": "registration",
+      "object": "registration_13",
+      "preview": "registration let L be Boolean LATTICE; cluster ComplMap L -> isomorphic; coherence proof set f = ComplMap L; A1: dom f ="
+    },
+    {
+      "counts": {
+        "ComplMap": 1
+      },
+      "index": 38,
+      "kind": "theorem",
+      "object": "theorem_38",
+      "preview": "theorem for L being Boolean LATTICE holds L, L opp are_isomorphic proof let L be Boolean LATTICE; take ComplMap L; thus "
+    },
+    {
+      "counts": {
+        "Function": 6
+      },
+      "index": 39,
+      "kind": "theorem",
+      "object": "theorem_39",
+      "preview": "theorem for S,T being non empty RelStr, f be set holds (f is Function of S,T iff f is Function of S opp,T) & (f is Funct"
+    },
+    {
+      "counts": {
+        "Function": 4
+      },
+      "index": 40,
+      "kind": "theorem",
+      "object": "theorem_40",
+      "preview": "theorem for S,T being non empty RelStr for f being Function of S,T, g being Function of S,T opp st f = g holds (f is mon"
+    },
+    {
+      "counts": {
+        "Function": 4
+      },
+      "index": 41,
+      "kind": "theorem",
+      "object": "theorem_41",
+      "preview": "theorem for S,T being non empty RelStr for f being Function of S,T opp, g being Function of S opp,T st f = g holds (f is"
+    },
+    {
+      "counts": {
+        "Function": 4
+      },
+      "index": 42,
+      "kind": "theorem",
+      "object": "theorem_42",
+      "preview": "theorem Th42: for S,T being non empty RelStr for f being Function of S,T, g being Function of S opp,T opp st f = g holds"
+    },
+    {
+      "counts": {
+        "Function": 4
+      },
+      "index": 43,
+      "kind": "theorem",
+      "object": "theorem_43",
+      "preview": "theorem for S,T being non empty RelStr, f be set holds (f is Connection of S,T iff f is Connection of S~,T) & (f is Conn"
+    },
+    {
+      "counts": {
+        "Function": 8
+      },
+      "index": 44,
+      "kind": "theorem",
+      "object": "theorem_44",
+      "preview": "theorem for S,T being non empty Poset for f1 being Function of S,T, g1 being Function of T,S for f2 being Function of S~"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 45,
+      "kind": "theorem",
+      "object": "theorem_45",
+      "preview": "theorem Th45: for J being set, D being non empty set, K being ManySortedSet of J for F being DoubleIndexedSet of K,D hol"
+    },
+    {
+      "counts": {
+        "Function": 8
+      },
+      "index": 48,
+      "kind": "theorem",
+      "object": "theorem_48",
+      "preview": "theorem Th48: for L being complete LATTICE holds L is completely-distributive iff for J being non empty set, K being non"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 49,
+      "kind": "theorem",
+      "object": "theorem_49",
+      "preview": "theorem Th49: for L being complete antisymmetric non empty RelStr, F be Function holds \\\\/(F, L) = //\\(F, L opp) & //\\(F"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 50,
+      "kind": "theorem",
+      "object": "theorem_50",
+      "preview": "theorem Th50: for L being complete antisymmetric non empty RelStr for F be Function-yielding Function holds \\//(F, L) = "
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/yellow_7.miz"
+}

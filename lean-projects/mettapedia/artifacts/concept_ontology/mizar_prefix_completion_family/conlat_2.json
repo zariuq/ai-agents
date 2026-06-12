@@ -1,0 +1,310 @@
+{
+  "article": "conlat_2",
+  "attributes": [
+    "CP",
+    "ConceptLattice",
+    "ConceptStr",
+    "Context",
+    "ContextStr",
+    "DualHomomorphism",
+    "FormalConcept",
+    "Function",
+    "Homomorphism"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "CP": 3,
+        "ConceptLattice": 2,
+        "FormalConcept": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let C be FormalContext; let CP be strict FormalConcept of C; func @CP -> Element of ConceptLattice(C) equals "
+    },
+    {
+      "counts": {
+        "ConceptLattice": 9
+      },
+      "index": 1,
+      "kind": "registration",
+      "object": "registration_1",
+      "preview": "registration let C be FormalContext; cluster ConceptLattice C -> bounded; coherence proof A1: (@Concept-with-all-Objects"
+    },
+    {
+      "counts": {
+        "ConceptLattice": 8
+      },
+      "index": 1,
+      "kind": "theorem",
+      "object": "theorem_1",
+      "preview": "theorem Th1: for C being FormalContext holds Bottom (ConceptLattice(C)) = Concept-with-all-Attributes(C) & Top (ConceptL"
+    },
+    {
+      "counts": {
+        "ConceptLattice": 5,
+        "FormalConcept": 2
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem Th4: for C being FormalContext for D being Subset of ConceptLattice(C) holds \"/\\\"(D,ConceptLattice(C)) is Formal"
+    },
+    {
+      "counts": {
+        "ConceptLattice": 3,
+        "FormalConcept": 2
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let C be FormalContext; let D be Subset of ConceptLattice(C); func \"/\\\"(D,C) -> FormalConcept of C equals \"/\\"
+    },
+    {
+      "counts": {
+        "ConceptLattice": 6
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem for C being FormalContext holds \"\\/\"({} ConceptLattice(C),C) = Concept-with-all-Attributes(C) & \"/\\\"({} ConceptL"
+    },
+    {
+      "counts": {
+        "ConceptLattice": 10
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem for C being FormalContext holds \"\\/\"([#] the carrier of ConceptLattice (C),C) = Concept-with-all-Objects(C) & \"/"
+    },
+    {
+      "counts": {
+        "CP": 7,
+        "ConceptLattice": 10,
+        "ConceptStr": 89,
+        "FormalConcept": 5
+      },
+      "index": 7,
+      "kind": "theorem",
+      "object": "theorem_7",
+      "preview": "theorem for C being FormalContext for D being non empty Subset of ConceptLattice(C) holds the Extent of \"\\/\"(D,C) = (Att"
+    },
+    {
+      "counts": {
+        "CP": 7,
+        "ConceptLattice": 10,
+        "ConceptStr": 89,
+        "FormalConcept": 5
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem for C being FormalContext for D being non empty Subset of ConceptLattice(C) holds the Extent of \"/\\\"(D,C) = meet"
+    },
+    {
+      "counts": {
+        "CP": 22,
+        "ConceptLattice": 4,
+        "ConceptStr": 5,
+        "FormalConcept": 3
+      },
+      "index": 9,
+      "kind": "theorem",
+      "object": "theorem_9",
+      "preview": "theorem Th9: for C being FormalContext for CP being strict FormalConcept of C holds \"\\/\"({ConceptStr(#O,A#) where O is S"
+    },
+    {
+      "counts": {
+        "CP": 22,
+        "ConceptLattice": 4,
+        "ConceptStr": 5,
+        "FormalConcept": 3
+      },
+      "index": 10,
+      "kind": "theorem",
+      "object": "theorem_10",
+      "preview": "theorem Th10: for C being FormalContext for CP being strict FormalConcept of C holds \"/\\\"({ConceptStr(#O,A#) where O is "
+    },
+    {
+      "counts": {
+        "ConceptLattice": 5,
+        "ConceptStr": 8,
+        "FormalConcept": 1,
+        "Function": 3
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let C be FormalContext; func gamma(C) -> Function of the carrier of C, the carrier of ConceptLattice (C) mean"
+    },
+    {
+      "counts": {
+        "ConceptLattice": 5,
+        "ConceptStr": 8,
+        "FormalConcept": 1,
+        "Function": 3
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let C be FormalContext; func delta(C) -> Function of the carrier' of C, the carrier of ConceptLattice(C) mean"
+    },
+    {
+      "counts": {
+        "ConceptLattice": 1,
+        "FormalConcept": 2
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem for C being FormalContext for o being Object of C for a being Attribute of C holds (gamma(C)).o is FormalConcept"
+    },
+    {
+      "counts": {
+        "ConceptLattice": 6,
+        "ConceptStr": 10
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem Th12: for C being FormalContext holds rng(gamma(C)) is supremum-dense & rng(delta(C)) is infimum-dense proof let"
+    },
+    {
+      "counts": {
+        "ConceptStr": 6,
+        "Function": 6,
+        "Homomorphism": 1
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem Th13: for C being FormalContext for o being Object of C for a being Attribute of C holds o is-connected-with a i"
+    },
+    {
+      "counts": {
+        "ConceptLattice": 48,
+        "ConceptStr": 54,
+        "FormalConcept": 8,
+        "Function": 6,
+        "Homomorphism": 2
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem Th14: for L being complete Lattice for C being FormalContext holds ConceptLattice(C),L are_isomorphic iff ex g b"
+    },
+    {
+      "counts": {
+        "Context": 1,
+        "ContextStr": 2
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let L be Lattice; func Context(L) -> strict non empty non void ContextStr equals ContextStr(#the carrier of L"
+    },
+    {
+      "counts": {
+        "ConceptLattice": 1,
+        "Context": 8,
+        "Function": 2
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem Th15: for L being complete Lattice holds ConceptLattice(Context(L)),L are_isomorphic proof let L be complete Lat"
+    },
+    {
+      "counts": {
+        "ConceptLattice": 9,
+        "Context": 1,
+        "Homomorphism": 1
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem for L being Lattice holds L is complete iff ex C being FormalContext st ConceptLattice(C),L are_isomorphic proof"
+    },
+    {
+      "counts": {
+        "ContextStr": 2
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let C be FormalContext; func C.: -> strict non empty non void ContextStr equals ContextStr(#the carrier' of C"
+    },
+    {
+      "counts": {
+        "CP": 6,
+        "ConceptStr": 3
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let C be FormalContext; let CP be ConceptStr over C; func CP.: -> strict ConceptStr over C.: means :Def8: the"
+    },
+    {
+      "counts": {
+        "CP": 7,
+        "ConceptStr": 1,
+        "FormalConcept": 1
+      },
+      "index": 3,
+      "kind": "registration",
+      "object": "registration_3",
+      "preview": "registration let C be FormalContext; let CP be FormalConcept of C; cluster CP.: -> non empty concept-like; coherence pro"
+    },
+    {
+      "counts": {
+        "CP": 10,
+        "FormalConcept": 2
+      },
+      "index": 20,
+      "kind": "theorem",
+      "object": "theorem_20",
+      "preview": "theorem for C being strict FormalContext for CP being strict FormalConcept of C holds (CP.:).: = CP proof let C be stric"
+    },
+    {
+      "counts": {
+        "CP": 30,
+        "ConceptLattice": 56,
+        "ConceptStr": 91,
+        "DualHomomorphism": 1,
+        "FormalConcept": 24,
+        "Function": 1,
+        "Homomorphism": 3
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition let C be FormalContext; func DualHomomorphism(C) -> Homomorphism of (ConceptLattice(C)).:, ConceptLattice(C.:"
+    },
+    {
+      "counts": {
+        "CP": 14,
+        "ConceptLattice": 16,
+        "ConceptStr": 1,
+        "DualHomomorphism": 2,
+        "FormalConcept": 2
+      },
+      "index": 21,
+      "kind": "theorem",
+      "object": "theorem_21",
+      "preview": "theorem Th21: for C being FormalContext holds DualHomomorphism(C) is bijective proof let C be FormalContext; set f = Dua"
+    },
+    {
+      "counts": {
+        "ConceptLattice": 2,
+        "DualHomomorphism": 1
+      },
+      "index": 22,
+      "kind": "theorem",
+      "object": "theorem_22",
+      "preview": "theorem for C being FormalContext holds ConceptLattice(C.:),(ConceptLattice(C)).: are_isomorphic proof let C be FormalCo"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/conlat_2.miz"
+}

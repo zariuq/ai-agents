@@ -1,0 +1,464 @@
+{
+  "article": "waybel_6",
+  "attributes": [
+    "IRR",
+    "Open",
+    "PRIME",
+    "Subset",
+    "co-prime",
+    "join-irreducible",
+    "meet-irreducible",
+    "order-generating"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "Subset": 2
+      },
+      "index": 1,
+      "kind": "scheme",
+      "object": "scheme_1",
+      "preview": "scheme NonUniqExD1 { Z() ->non empty RelStr, X() -> Subset of Z(), Y() -> non empty Subset of Z(), P[object,object] }: e"
+    },
+    {
+      "counts": {
+        "Subset": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let L be non empty 1-sorted; let C,D be non empty Subset of L; let f be Function of C,D; let c be Element of "
+    },
+    {
+      "counts": {
+        "Subset": 2
+      },
+      "index": 3,
+      "kind": "registration",
+      "object": "registration_3",
+      "preview": "registration let S,T be complete LATTICE; cluster sups-preserving for Function of S,T; existence proof set t = Bottom T;"
+    },
+    {
+      "counts": {
+        "Open": 1,
+        "Subset": 3
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem Th4: for S,T being complete LATTICE, f being sups-preserving Function of S,T st T is meet-continuous & f is meet"
+    },
+    {
+      "counts": {
+        "Open": 1,
+        "Subset": 1
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let L be non empty reflexive RelStr, X be Subset of L; attr X is Open means :Def1: for x be Element of L st x"
+    },
+    {
+      "counts": {
+        "Open": 2,
+        "Subset": 2
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem for L be up-complete LATTICE, X be upper Subset of L holds X is Open iff for x be Element of L st x in X holds w"
+    },
+    {
+      "counts": {
+        "Open": 2,
+        "Subset": 2
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem ::3.2, p.68 for L be up-complete LATTICE, X be upper Subset of L holds X is Open iff X = union {wayabove x where"
+    },
+    {
+      "counts": {
+        "Open": 1
+      },
+      "index": 4,
+      "kind": "registration",
+      "object": "registration_4",
+      "preview": "registration let L be up-complete lower-bounded LATTICE; cluster Open for Filter of L; existence proof take [#]L; now le"
+    },
+    {
+      "counts": {
+        "Open": 1
+      },
+      "index": 7,
+      "kind": "theorem",
+      "object": "theorem_7",
+      "preview": "theorem for L be lower-bounded continuous LATTICE, x be Element of L holds ( wayabove x) is Open proof let L be lower-bo"
+    },
+    {
+      "counts": {
+        "Open": 2,
+        "Subset": 11
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem Th8: ::3.3, p.68 for L be lower-bounded continuous LATTICE, x,y be Element of L st x << y holds ex F be Open Fil"
+    },
+    {
+      "counts": {
+        "Open": 2,
+        "Subset": 3
+      },
+      "index": 9,
+      "kind": "theorem",
+      "object": "theorem_9",
+      "preview": "theorem Th9: ::3.4, p.69 for L being complete LATTICE, X being Open upper Subset of L holds for x being Element of L st "
+    },
+    {
+      "counts": {
+        "meet-irreducible": 1
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition ::def 3.5, p.69 let G be non empty RelStr, g be Element of G; attr g is meet-irreducible means for x,y being "
+    },
+    {
+      "counts": {
+        "meet-irreducible": 1
+      },
+      "index": 1,
+      "kind": "notation",
+      "object": "notation_1",
+      "preview": "notation ::def 3.5, p.69 let G be non empty RelStr, g be Element of G; synonym g is irreducible for g is meet-irreducibl"
+    },
+    {
+      "counts": {
+        "join-irreducible": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let G be non empty RelStr, g be Element of G; attr g is join-irreducible means for x,y being Element of G st "
+    },
+    {
+      "counts": {
+        "IRR": 1,
+        "Subset": 3
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let L be non empty RelStr; func IRR L -> Subset of L means :Def4: for x be Element of L holds x in it iff x i"
+    },
+    {
+      "counts": {
+        "Subset": 5
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem for L being Semilattice, x being Element of L holds x is irreducible iff for A being finite non empty Subset of "
+    },
+    {
+      "counts": {
+        "Open": 1
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem Th14: ::3.7, p.69 for L be lower-bounded continuous LATTICE, x,y be Element of L st not y <= x holds ex p be Ele"
+    },
+    {
+      "counts": {
+        "Subset": 1,
+        "order-generating": 1
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let L be non empty RelStr, X be Subset of L; attr X is order-generating means for x be Element of L holds ex_"
+    },
+    {
+      "counts": {
+        "Subset": 8,
+        "order-generating": 4
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem Th15: ::3.9 (1-2), p.70 for L be up-complete lower-bounded LATTICE, X be Subset of L holds X is order-generating"
+    },
+    {
+      "counts": {
+        "Subset": 31,
+        "order-generating": 4
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem ::3.9 (1-3), p.70 for L be up-complete lower-bounded LATTICE, X be Subset of L holds X is order-generating iff f"
+    },
+    {
+      "counts": {
+        "Subset": 3,
+        "order-generating": 4
+      },
+      "index": 17,
+      "kind": "theorem",
+      "object": "theorem_17",
+      "preview": "theorem Th17: ::3.9 (1-4), p.70 for L be up-complete lower-bounded LATTICE, X be Subset of L holds X is order-generating"
+    },
+    {
+      "counts": {
+        "IRR": 3,
+        "Subset": 2,
+        "order-generating": 1
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem Th18: ::3.10, p.70 for L be lower-bounded continuous LATTICE, X be Subset of L st X = IRR L \\ { Top L} holds X i"
+    },
+    {
+      "counts": {
+        "PRIME": 1,
+        "Subset": 2,
+        "order-generating": 3
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem Th19: for L being lower-bounded continuous LATTICE, X,Y being Subset of L st X is order-generating & X c= Y hold"
+    },
+    {
+      "counts": {
+        "PRIME": 1
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let L be non empty RelStr; let l be Element of L; attr l is prime means for x,y be Element of L st x \"/\\\" y <"
+    },
+    {
+      "counts": {
+        "PRIME": 5,
+        "Subset": 3
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition let L be non empty RelStr; func PRIME L -> Subset of L means :Def7: for x be Element of L holds x in it iff x"
+    },
+    {
+      "counts": {
+        "PRIME": 1,
+        "co-prime": 1
+      },
+      "index": 9,
+      "kind": "definition",
+      "object": "definition_9",
+      "preview": "definition let L be non empty RelStr; let l be Element of L; attr l is co-prime means l~ is prime; end;"
+    },
+    {
+      "counts": {
+        "PRIME": 1
+      },
+      "index": 20,
+      "kind": "theorem",
+      "object": "theorem_20",
+      "preview": "theorem Th20: for L being upper-bounded antisymmetric non empty RelStr holds Top L is prime by YELLOW_0:45;"
+    },
+    {
+      "counts": {
+        "PRIME": 2,
+        "co-prime": 1
+      },
+      "index": 21,
+      "kind": "theorem",
+      "object": "theorem_21",
+      "preview": "theorem for L being lower-bounded antisymmetric non empty RelStr holds Bottom L is co-prime proof let L be lower-bounded"
+    },
+    {
+      "counts": {
+        "PRIME": 1
+      },
+      "index": 6,
+      "kind": "registration",
+      "object": "registration_6",
+      "preview": "registration let L be upper-bounded antisymmetric non empty RelStr; cluster prime for Element of L; existence proof take"
+    },
+    {
+      "counts": {
+        "PRIME": 2,
+        "Subset": 5
+      },
+      "index": 22,
+      "kind": "theorem",
+      "object": "theorem_22",
+      "preview": "theorem Th22: for L being Semilattice, l being Element of L holds l is prime iff for A being finite non empty Subset of "
+    },
+    {
+      "counts": {
+        "PRIME": 2,
+        "Subset": 6,
+        "co-prime": 4
+      },
+      "index": 23,
+      "kind": "theorem",
+      "object": "theorem_23",
+      "preview": "theorem Th23: for L being sup-Semilattice, x being Element of L holds x is co-prime iff for A being finite non empty Sub"
+    },
+    {
+      "counts": {
+        "PRIME": 2
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem Th24: for L being LATTICE, l being Element of L st l is prime holds l is irreducible proof let L be LATTICE, l b"
+    },
+    {
+      "counts": {
+        "PRIME": 4
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem Th25: ::3.12 (1-2), p.70 for l holds l is prime iff for x being set, f being Function of L,BoolePoset {x} st (fo"
+    },
+    {
+      "counts": {
+        "PRIME": 4,
+        "Subset": 1
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem Th26: ::3.12 (1-3), p.70 for L being upper-bounded LATTICE, l being Element of L st l <> Top L holds l is prime "
+    },
+    {
+      "counts": {
+        "PRIME": 3
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem Th27: ::3.12 (1-4), p.70 for L being distributive LATTICE for l being Element of L holds l is prime iff l is irr"
+    },
+    {
+      "counts": {
+        "IRR": 5,
+        "PRIME": 7
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem Th28: for L being distributive LATTICE holds PRIME L = IRR L proof let L be distributive LATTICE; now let l1 be "
+    },
+    {
+      "counts": {
+        "PRIME": 4
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem ::3.12 (1-5), p.70 for L being Boolean LATTICE for l being Element of L st l <> Top L holds l is prime iff for x"
+    },
+    {
+      "counts": {
+        "Open": 5,
+        "PRIME": 4
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem ::3.12 (1-6), p.70 for L being continuous distributive lower-bounded LATTICE for l being Element of L st l <> To"
+    },
+    {
+      "counts": {
+        "Subset": 2
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem Th31: for L being RelStr, X being Subset of L holds chi(X, the carrier of L) is Function of L, BoolePoset {{}} p"
+    },
+    {
+      "counts": {
+        "PRIME": 2
+      },
+      "index": 33,
+      "kind": "theorem",
+      "object": "theorem_33",
+      "preview": "theorem Th33: for L being upper-bounded LATTICE, f being Function of L, BoolePoset {{}}, p being prime Element of L st c"
+    },
+    {
+      "counts": {
+        "PRIME": 16,
+        "Subset": 1,
+        "order-generating": 2
+      },
+      "index": 34,
+      "kind": "theorem",
+      "object": "theorem_34",
+      "preview": "theorem Th34: ::3.13, p.71 for L being complete LATTICE st PRIME L is order-generating holds L is distributive meet-cont"
+    },
+    {
+      "counts": {
+        "IRR": 3,
+        "PRIME": 3,
+        "order-generating": 2
+      },
+      "index": 35,
+      "kind": "theorem",
+      "object": "theorem_35",
+      "preview": "theorem Th35: ::3.14 (1-3), p.71 for L being lower-bounded continuous LATTICE holds L is distributive iff PRIME L is ord"
+    },
+    {
+      "counts": {
+        "PRIME": 1,
+        "order-generating": 1
+      },
+      "index": 36,
+      "kind": "theorem",
+      "object": "theorem_36",
+      "preview": "theorem ::3.14 (1-2), p.71 for L being lower-bounded continuous LATTICE holds L is distributive iff L is Heyting proof l"
+    },
+    {
+      "counts": {
+        "PRIME": 16,
+        "Subset": 20,
+        "co-prime": 10,
+        "order-generating": 1
+      },
+      "index": 37,
+      "kind": "theorem",
+      "object": "theorem_37",
+      "preview": "theorem Th37: for L being continuous complete LATTICE st for l being Element of L ex X being Subset of L st l = sup X & "
+    },
+    {
+      "counts": {
+        "Subset": 2,
+        "co-prime": 2
+      },
+      "index": 38,
+      "kind": "theorem",
+      "object": "theorem_38",
+      "preview": "theorem ::3.15 (2-1), p.72 for L being complete LATTICE holds L is completely-distributive iff L is continuous & for l b"
+    },
+    {
+      "counts": {
+        "Subset": 1,
+        "co-prime": 1
+      },
+      "index": 39,
+      "kind": "theorem",
+      "object": "theorem_39",
+      "preview": "theorem ::3.15 (2-3), p.72 for L being complete LATTICE holds L is completely-distributive iff L is distributive continu"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/waybel_6.miz"
+}

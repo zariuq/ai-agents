@@ -1,0 +1,761 @@
+HOL-to-CakeML extraction bridge sketch
+======================================
+
+Purpose
+-------
+
+The current MeTTa prototype has three related artifacts:
+
+1. HOL definitions and theorems in
+   /home/zar/claude/CakeML/metta-ref/hol/metta_m1Script.sml.
+2. A handwritten SML executable prototype in
+   /home/zar/claude/CakeML/metta-ref/sml/metta_m1.sml.
+3. A handwritten CakeML executable prototype in
+   /home/zar/claude/CakeML/metta-ref/cml/metta_m1.cml.
+
+The next verified-execution goal is to replace disciplined handwritten parity
+with a small, auditable path from HOL definitions to CakeML-representable code.
+
+Checked first step
+------------------
+
+The HOL theory now contains a representation bridge:
+
+- exported_atom
+- export_atom
+- export_atom_list
+- import_exported_atom
+- import_exported_atom_list
+- import_export_atom
+- import_export_atom_list
+- import_export_atom_map
+- export_eval_m1_rec
+- import_export_eval_m1_rec
+- eval_return_fragment
+- export_eval_return_fragment
+- import_export_eval_return_fragment
+- eval_return_fragment_agrees_with_eval_m1_rec
+- eval_add_fragment
+- export_eval_add_fragment
+- import_export_eval_add_fragment
+- eval_add_fragment_agrees_with_eval_m1_rec
+- eval_eval_fragment
+- export_eval_eval_fragment
+- import_export_eval_eval_fragment
+- eval_eval_fragment_agrees_with_eval_m1_rec
+- eval_chain_fragment
+- export_eval_chain_fragment
+- import_export_eval_chain_fragment
+- eval_chain_fragment_agrees_with_eval_m1_rec
+- eval_case_fragment
+- export_eval_case_fragment
+- import_export_eval_case_fragment
+- eval_case_fragment_agrees_with_eval_m1_rec
+- eval_typed_fragment
+- export_eval_typed_fragment
+- import_export_eval_typed_fragment
+- eval_typed_fragment_agrees_with_typed_eval_m1_rec
+- eval_evalc_fragment
+- export_eval_evalc_fragment
+- import_export_eval_evalc_fragment
+- eval_evalc_fragment_agrees_with_eval_m1_rec
+- eval_vec_cons_fragment
+- export_eval_vec_cons_fragment
+- import_export_eval_vec_cons_fragment
+- eval_vec_cons_fragment_agrees_with_eval_m1_rec
+
+The checked theorem import_export_eval_m1_rec states that exported recursive
+evaluator results can be imported back to exactly the HOL evaluator result
+list. This does not yet verify compiled CakeML execution. It is the first
+representation-level checkpoint needed before connecting extracted evaluator
+fragments to executable CakeML code.
+
+The checked return-fragment theorem is the first executable-fragment
+checkpoint: eval_return_fragment agrees with eval_m1_rec on the return branch,
+and the exported fragment imports back to the same result list. The SML and
+CakeML prototypes contain the corresponding eval_return_fragment and
+export_eval_return_fragment functions, with tests that exercise
+import-after-export on a return atom.
+
+The checked add-fragment theorem is the second executable-fragment checkpoint:
+eval_add_fragment agrees with eval_m1_rec on the evaluated integer-addition
+branch, and exported add-fragment results import back to the same result list.
+The SML and CakeML prototypes contain corresponding eval_add_fragment and
+export_eval_add_fragment functions, with tests that exercise evaluated
+arguments before import-after-export.
+
+The checked eval, chain, and case fragments are the next executable-fragment
+checkpoints:
+
+- eval_eval_fragment agrees with eval_m1_rec on the recursive eval branch.
+- eval_chain_fragment agrees with eval_m1_rec on the chain branch.
+- eval_case_fragment agrees with eval_m1_rec on a simple case branch.
+
+Each exported fragment imports back to the same result list, and the SML and
+CakeML prototypes contain corresponding import-after-export tests.
+
+The checked type/evalc/dependent fragments add the next bridge layer:
+
+- eval_typed_fragment agrees with typed_eval_m1_rec.
+- eval_evalc_fragment agrees with eval_m1_rec on the integrated evalc branch.
+- eval_vec_cons_fragment agrees with eval_m1_rec on the dependent Vec/Cons
+  branch.
+
+Each exported fragment imports back to the same result list, with positive and
+negative SML/CakeML tests for typed Add and evalc result checking.
+
+The checked source/surface boundary slice now includes:
+
+- bridge_source_token and bridge_source_surface_token_rel for symbols,
+  variables, integers, strings, parentheses, and bang tokens.
+- bridge_parse_source_atom_token and bridge_parse_atom_token relatedness for
+  single atom-token parsing.
+- a checked full-expression positive parser witness for a source
+  `(return $x)` token list and the corresponding numeric surface token list.
+- bridge_parse_source_surface_tokens_fuel_related, a general fuel-indexed
+  mutual parser simulation theorem: related bridge_source_token and
+  bridge_token lists parse to related source/surface atoms and related
+  residual token lists, including arbitrary nested parenthesized expressions.
+- bridge_parse_source_surface_full_tokens_related, the atom-parser projection
+  of that mutual theorem.
+- bridge_parse_command_source_surface_tokens_fuel_related, proving that
+  source/surface command token lists parse compatibly through the `!` run
+  command and ordinary add-atom command layer.
+- bridge_parse_program_source_surface_tokens_fuel_related, lifting the command
+  theorem to full multi-command token-list programs with related command lists
+  and matching parse errors.
+- positive/negative command/program witnesses covering a `!(return $x)` run
+  command, a mixed add/run program, and an unrelated variable-token parse.
+- bridge_tokenize_source_chars_fuel, a raw char-list lexer model for
+  whitespace, comments, parentheses, bang tokens, decimal integers, variables,
+  symbols, and string literals, with positive and negative witnesses.
+- bridge_parse_source_program_chars_fuel, composing the raw char-list lexer
+  with the source-token program parser.
+- bridge_source_chars_to_surface_program_parser_related, proving that a
+  successful raw char-list lex result feeds into the existing
+  source-token/surface-token program parser simulation whenever the produced
+  source tokens are related to the corresponding surface tokens.
+- bridge_tokenize_source_string_fuel and
+  bridge_parse_source_program_string_fuel, the mlstring entrypoints that
+  `explode` source text into the verified char-list lexer/parser, with
+  positive and negative string witnesses.
+- bridge_source_string_to_surface_program_parser_related, lifting the raw
+  char-list parser simulation theorem to the mlstring source boundary.
+- bridge_proto_token and bridge_proto_source_token_rel, plus
+  bridge_parse_proto_source_full_tokens_related,
+  bridge_parse_command_proto_source_tokens_fuel_related,
+  bridge_parse_program_proto_source_tokens_fuel_related, and
+  bridge_proto_source_token_list_parser_simulation. These lift the
+  shipped-style prototype Sym-string token parser model through source-token
+  atoms, commands, and full programs.
+- bridge_parse_{source,proto}_{atom,command,program}_tokens_bound, public
+  no-explicit-fuel parser entrypoints that use the token-list length as the
+  internal proof fuel, plus bridge_proto_source_bound_parser_simulation.
+- bridge_parse_{source,proto}_{atom,command,program}_tokens_shipped and
+  bridge_parse_error_message, shipped-style string-error parser result wrappers
+  over the same bounded model parsers, plus
+  bridge_proto_source_shipped_parser_simulation and positive/negative
+  shipped-result witnesses.
+- bridge_parse_proto_{atom,command,program}_tokens_bound_no_fuel_error and
+  bridge_parse_proto_{atom,command,program}_tokens_shipped_no_parser_fuel_error,
+  mirroring the source parser no-fuel guarantees for prototype token streams.
+- bridge_parse_source_{atom,command,program}_string_shipped and
+  bridge_lex_error_message, public parse-from-string shaped source entrypoints
+  with shipped-style trailing-token and lexer-error messages, plus
+  positive/negative witnesses.
+- bridge_tokenize_source_string_bound and
+  bridge_parse_source_{atom,command,program}_string_shipped_bound, public
+  no-explicit-fuel source-string entrypoints that choose lexer fuel from
+  SUC (LENGTH (explode text)) and token-parser fuel from
+  SUC (2 * LENGTH toks), plus positive/negative witnesses. The lexer side has
+  bridge_tokenize_source_chars_fuel_no_fuel_error and
+  bridge_tokenize_source_string_bound_no_fuel_error, so the public string
+  lexer bound cannot surface the synthetic lexer fuel error.
+- bridge_parse_source_atom_tokens_fuel_rest_lt, proving that successful
+  source full-atom and expression-item token parses return a strict suffix of
+  their input token list.
+- bridge_parse_source_atom_tokens_fuel_no_fuel_error_strong and
+  bridge_parse_source_atom_tokens_double_bound_no_fuel_error, proving that
+  source atom/expression-item token parsing cannot return the synthetic parser
+  fuel error under a doubled token-length bound.
+- bridge_parse_source_atom_tokens_bound_no_fuel_error,
+  bridge_parse_source_command_tokens_bound_no_fuel_error,
+  bridge_parse_source_atom_tokens_shipped_no_parser_fuel_error, and
+  bridge_parse_source_command_tokens_shipped_no_parser_fuel_error, connecting
+  the doubled bound to public atom/command token entrypoints and their shipped
+  string-error result wrappers.
+- bridge_parse_source_command_tokens_fuel_rest_lt,
+  bridge_parse_source_program_tokens_fuel_no_fuel_error_strong,
+  bridge_parse_source_program_tokens_bound_no_fuel_error, and
+  bridge_parse_source_program_tokens_shipped_no_parser_fuel_error, extending
+  the doubled parser-fuel bound to program-token parsing and its shipped
+  string-error result wrapper. The exact shipped recursive parser bodies still
+  need direct proof against the same model.
+- translator certificates and app-spec certificates for
+  bridge_parse_atom_token, bridge_parse_atom_tokens_fuel,
+  bridge_parse_source_atom_token, bridge_parse_source_atom_tokens_fuel,
+  bridge_parse_proto_atom_token, bridge_parse_proto_atom_tokens_fuel,
+  bridge_parse_command_tokens_fuel, bridge_parse_program_tokens_fuel,
+  bridge_parse_source_command_tokens_fuel,
+  bridge_parse_source_program_tokens_fuel,
+  bridge_parse_proto_command_tokens_fuel,
+  bridge_parse_proto_program_tokens_fuel,
+  bridge_parse_source_atom_tokens_bound,
+  bridge_parse_source_command_tokens_bound,
+  bridge_parse_source_program_tokens_bound,
+  bridge_parse_proto_atom_tokens_bound,
+  bridge_parse_proto_command_tokens_bound,
+  bridge_parse_proto_program_tokens_bound,
+  bridge_parse_source_atom_tokens_shipped,
+  bridge_parse_source_command_tokens_shipped,
+  bridge_parse_source_program_tokens_shipped,
+  bridge_parse_proto_atom_tokens_shipped,
+  bridge_parse_proto_command_tokens_shipped,
+  bridge_parse_proto_program_tokens_shipped,
+  bridge_lex_error_message,
+  bridge_parse_source_atom_string_shipped,
+  bridge_parse_source_command_string_shipped,
+  bridge_parse_source_program_string_shipped,
+  bridge_tokenize_source_string_bound,
+  bridge_parse_source_atom_string_shipped_bound,
+  bridge_parse_source_command_string_shipped_bound,
+  bridge_parse_source_program_string_shipped_bound,
+  bridge_tokenize_source_chars_fuel,
+  bridge_parse_source_program_chars_fuel,
+  bridge_tokenize_source_string_fuel, and
+  bridge_parse_source_program_string_fuel. The mutually recursive full atom
+  parsers use the atom-parser conjunct of the translation theorem as the
+  executable app spec.
+- tiny CF wrappers:
+  bridge_parse_atom_token_hand_spec,
+  bridge_parse_atom_tokens_fuel_hand_spec,
+  bridge_parse_source_atom_token_hand_spec,
+  bridge_parse_source_atom_tokens_fuel_hand_spec,
+  bridge_parse_proto_atom_token_hand_spec,
+  bridge_parse_proto_atom_tokens_fuel_hand_spec,
+  bridge_parse_source_atom_tokens_bound_hand_spec,
+  bridge_parse_proto_atom_tokens_bound_hand_spec,
+  bridge_parse_command_tokens_fuel_hand_spec,
+  bridge_parse_program_tokens_fuel_hand_spec,
+  bridge_parse_source_command_tokens_fuel_hand_spec, and
+  bridge_parse_source_program_tokens_fuel_hand_spec,
+  bridge_parse_proto_command_tokens_fuel_hand_spec, and
+  bridge_parse_proto_program_tokens_fuel_hand_spec,
+  bridge_parse_source_command_tokens_bound_hand_spec,
+  bridge_parse_source_program_tokens_bound_hand_spec,
+  bridge_parse_proto_command_tokens_bound_hand_spec, and
+  bridge_parse_proto_program_tokens_bound_hand_spec,
+  bridge_tokenize_source_chars_fuel_hand_spec, and
+  bridge_parse_source_program_chars_fuel_hand_spec,
+  bridge_tokenize_source_string_fuel_hand_spec, and
+  bridge_parse_source_program_string_fuel_hand_spec.
+
+This now includes raw char-list, mlstring source-string, and prototype
+Sym-string token parser theorems, including no-explicit-fuel bounded parser
+entrypoints. It is still not a CF proof of the exact shipped SML/CakeML parser
+functions.
+
+The checked surface primitive-values wrapper slice now includes:
+
+- bridge_surface_eval_add_values_wrapper, importing already-evaluated surface
+  argument result lists into the numeric HOL add-values fragment.
+- bridge_surface_eval_add_values_wrapper_matches_rec_add_values.
+- bridge_surface_eval_add_values_wrapper_v_certificate and
+  bridge_surface_eval_add_values_wrapper_v_app_spec_certificate.
+- bridge_surface_eval_add_values_wrapper_hand_spec, a tiny CF wrapper around
+  the translated surface add-values wrapper.
+- bridge_surface_eval_lt_values_wrapper, bridge_surface_eval_eq_values_wrapper,
+  bridge_surface_eval_and_values_wrapper, bridge_surface_eval_or_values_wrapper,
+  and bridge_surface_eval_not_values_wrapper, each importing already-evaluated
+  surface argument result lists into the corresponding numeric HOL primitive
+  values fragment.
+- wrapper-to-recursive-helper theorems for <, ==, and/or/not:
+  bridge_surface_eval_lt_values_wrapper_matches_rec_lt_values,
+  bridge_surface_eval_eq_values_wrapper_matches_rec_eq_values,
+  bridge_surface_eval_and_values_wrapper_matches_rec_and_values,
+  bridge_surface_eval_or_values_wrapper_matches_rec_or_values, and
+  bridge_surface_eval_not_values_wrapper_matches_rec_not_values.
+- translator certificates, app-spec certificates, and CF wrapper specs for
+  those five additional surface primitive-values wrappers.
+- bridge_surface_eval_add_evaluated_args_wrapper, an explicit surface wrapper
+  for the already-evaluated argument-list boundary of +. It has import and
+  rec_add_values agreement theorems, positive/negative examples, a translator
+  certificate, an app-spec certificate, and
+  bridge_surface_eval_add_evaluated_args_wrapper_hand_spec.
+- bridge_surface_eval_add_fragment_wrapper, a HOL-level surface wrapper for
+  the evaluated recursive + branch, with:
+  bridge_surface_eval_add_fragment_wrapper_agrees_with_eval_m1_rec,
+  bridge_surface_eval_add_fragment_wrapper_via_values, and an evaluated
+  nested-argument positive example. This wrapper calls eval_m1_rec and is
+  therefore not translated/CF-certified yet.
+
+The exact marked prototype return-core block is quoted in the bridge theory
+using the CakeML constructor names generated for bridge_proto_atom
+(Protoexpr/Protosym). A direct whole-function CF theorem for that literal
+pattern block is still open: the remaining obligation is the low-level
+validate_pat/pmatch side condition for the nested
+`Protoexpr [Protosym "return", value]` pattern.
+
+The two branch payloads of that block are now directly CF-proved as handwritten
+CakeML helpers:
+
+- bridge_proto_return_singleton_hand_spec proves the wildcard payload
+  `[atom]`.
+- bridge_proto_return_value_hand_spec proves the return payload
+  `[Protoexpr [Protosym "return", value]]`.
+
+The current proved CF facts are therefore the translated proto/source
+return-core wrappers plus these two exact payload helpers. The remaining gap is
+only the nested-pattern dispatch theorem for the raw marked block itself.
+
+The bridge also now has a verified refactor target for that gap:
+bridge_proto_eval_return_fragment_core_factored decomposes the dispatch into a
+small return-head predicate, an item-list helper, and a top-level ProtoExpr
+case. HOL proves
+bridge_proto_eval_return_fragment_core_factored_eq, so this refactor is
+extensionally equal to the original nested-pattern semantics. The factored
+definition has translator/app-spec certificates, and the corresponding
+handwritten factored body is CF-proved by
+bridge_proto_eval_return_fragment_core_factored_body_hand_spec.
+
+These are evaluated-values wrappers, not yet full recursive surface evaluator
+branch wrappers.
+
+The checked recursive surface primitive branch slice now includes:
+
+- bridge_surface_eval_lt_fragment_wrapper,
+  bridge_surface_eval_eq_fragment_wrapper,
+  bridge_surface_eval_and_fragment_wrapper,
+  bridge_surface_eval_or_fragment_wrapper, and
+  bridge_surface_eval_not_fragment_wrapper.
+- Each imports a surface space and surface expression, calls the corresponding
+  numeric HOL branch fragment, and proves agreement with eval_m1_rec on the
+  intended primitive branch shape.
+- Each has positive and negative examples for the surface branch shape.
+
+These recursive branch wrappers are HOL-level bridge theorems. They are not
+translator/CF certificates, because they call eval_m1_rec; the translator-backed
+executable layer remains at the pure evaluated-values helper boundary until the
+recursive evaluator is translated or otherwise CF-verified.
+
+Mechanical parity check
+-----------------------
+
+The SML and CakeML mirrors now use marked fragment blocks guarded by:
+
+- BEGIN GENERATED PRE_EVAL_FRAGMENTS
+- BEGIN GENERATED POST_EVAL_FRAGMENTS
+
+/home/zar/claude/CakeML/metta-ref/tools/check_fragment_exports.py lint-checks
+those blocks in both /home/zar/claude/CakeML/metta-ref/sml/metta_m1.sml and
+/home/zar/claude/CakeML/metta-ref/cml/metta_m1.cml. The Makefile target
+check-fragments runs this check before the normal test target.
+
+The same tool also derives the fragment inventory from
+/home/zar/claude/CakeML/metta-ref/hol/metta_m1Script.sml. For each HOL
+fragment definition it checks that the HOL source contains the corresponding
+export definition, import/export theorem, and semantic-agreement theorem, and
+that the marked SML/CakeML fragment blocks expose the fragment and exporter.
+
+This is lint, not extraction. The tool no longer owns semantic fragment bodies.
+It is allowed to check names, signatures, and inventory alignment; the semantic
+authority remains the HOL definitions and proof-producing CakeML translator
+certificates.
+
+Bridge plan
+-----------
+
+1. Keep the HOL evaluator as the semantic source of truth.
+2. Define a small CakeML-compatible core syntax for exported atoms, bindings,
+   result lists, and finite host-call profiles.
+3. Prove import-after-export round trips for each representation component.
+4. Prove that exported evaluator fragments commute with import/export.
+5. For pure helpers, use HOL definitions plus the CakeML translator to obtain
+   certificate theorems and app specs.
+6. For handwritten wrappers or future stateful/FFI code, use CF proofs against
+   the HOL specification.
+7. Use the existing SML/CakeML/CeTTa oracle tests as regression checks, not as
+   substitutes for the HOL bridge theorem.
+
+Positive example
+----------------
+
+The current checked positive example is evaluator-result export:
+
+  MAP import_exported_atom (export_eval_m1_rec fuel space atom) =
+  eval_m1_rec fuel space atom
+
+This verifies lossless export for every result produced by the HOL recursive
+evaluator.
+
+The current checked fragment example is:
+
+  eval_return_fragment (Expr [Sym 19; value]) =
+  eval_m1_rec (SUC fuel) space (Expr [Sym 19; value])
+
+plus:
+
+  MAP import_exported_atom (export_eval_return_fragment atom) =
+  eval_return_fragment atom
+
+The current checked arithmetic fragment example is:
+
+  eval_add_fragment fuel space (Expr [Sym 11; a; b]) =
+  eval_m1_rec (SUC fuel) space (Expr [Sym 11; a; b])
+
+plus:
+
+  MAP import_exported_atom (export_eval_add_fragment fuel space atom) =
+  eval_add_fragment fuel space atom
+
+The current checked control/structural fragment examples are:
+
+  eval_eval_fragment fuel space (Expr [Sym 20; term]) =
+  eval_m1_rec (SUC fuel) space (Expr [Sym 20; term])
+
+  eval_chain_fragment fuel space (Expr [Sym 21; source; Var v; template]) =
+  eval_m1_rec (SUC fuel) space (Expr [Sym 21; source; Var v; template])
+
+  eval_case_fragment fuel space
+    (Expr [Sym 54; scrut; Expr branches]) =
+  eval_m1_rec (SUC fuel) space
+    (Expr [Sym 54; scrut; Expr branches])
+
+plus import-after-export theorems for each fragment's exported result list.
+
+The current checked type/dependent fragment examples are:
+
+  eval_typed_fragment fuel space atom =
+  typed_eval_m1_rec fuel space atom
+
+  eval_evalc_fragment fuel space (Expr [Sym 57; term; expected]) =
+  eval_m1_rec (SUC fuel) space (Expr [Sym 57; term; expected])
+
+  eval_vec_cons_fragment space (Expr [Sym 58; elem; tail]) =
+  eval_m1_rec (SUC fuel) space (Expr [Sym 58; elem; tail])
+
+plus import-after-export theorems for each exported result list.
+
+The current translated chain-payload slice is:
+
+  bridge_chain_subst_values v vals template
+  bridge_chain_concat_results result_rows
+
+This uses a first-order bridge copy of lookup/substitution, proves that copy
+equal to lookup_bind/apply_subst, translates it with the CakeML translator,
+translates result-list concatenation, and proves:
+
+  MEM out (bridge_eval_chain_fragment fuel space
+    (Expr [Sym 21; source; Var v; template])) ==>
+  there is a substituted template in
+    bridge_chain_subst_values v (eval_m1_rec fuel space source) template
+  whose recursive evaluation produced out.
+
+It also proves the stronger decomposition:
+
+  bridge_eval_chain_fragment fuel space
+    (Expr [Sym 21; source; Var v; template]) =
+  bridge_chain_concat_results
+    (MAP
+      (lambda substituted. eval_m1_rec fuel space substituted)
+      (bridge_chain_subst_values v
+        (eval_m1_rec fuel space source) template))
+
+This is intentionally not a claim that the whole recursive evaluator branch
+has a CakeML translation certificate yet.
+
+The current translated match-payload slice is:
+
+  bridge_match_space_payload space pattern template
+  bridge_eval_match_fragment space atom
+
+This uses first-order bridge copies of bind_var, match_atom/match_list, and
+match_space. The bridge theory proves the copies equal bind_var, match_atom,
+match_list, and match_space, gives positive and negative matcher examples,
+proves bridge_eval_match_fragment agrees with eval_m1_ext/eval_m1_rec on the
+match branch, and obtains CakeML translator/app-spec certificates for the pure
+payload and pure match fragment. This is a foothold for the later
+whole-evaluator CakeML correctness theorem.
+
+The current tiny CF-wrapper slice is:
+
+  bridge_eval_return_fragment_hand atom = eval_return_fragment atom
+  bridge_eval_match_fragment_hand space atom =
+    bridge_eval_match_fragment space atom
+  bridge_proto_return_singleton_hand atom = [atom]
+  bridge_proto_return_value_hand value =
+    [Protoexpr [Protosym "return", value]]
+  bridge_surface_is_return_symbol_hand s = (s = "return")
+
+The bridge theory proves CF app specs for these wrappers. The first two are
+intentionally small wrappers over translated numeric-world HOL functions. The
+next two directly prove the two constructor payloads used by the quoted
+prototype return block. The final one is a direct CF proof for the
+string-boundary return-symbol test. Together with
+bridge_surface_eval_return_fragment_core_import, this proves that the
+bridge_surface_atom return-core behavior imports to the numeric
+eval_return_fragment result without claiming that the current full string-world
+marked block is verified.
+
+The current source-to-surface slice is:
+
+  bridge_source_atom
+  bridge_source_surface_rel var_env str_env source surface
+  bridge_source_eval_return_fragment_core source
+
+Here bridge_source_atom models source atoms whose symbols, variables, and
+strings are still mlstrings. The relation maps source symbols directly to
+bridge_surface_atom symbols, variables through var_env, and string literals
+through str_env. HOL proves positive and negative examples, plus:
+
+  bridge_source_eval_return_fragment_core_refines_surface
+
+This theorem says the source-level return core refines the surface-level return
+core whenever the source and surface atoms are related. It is still a core
+relation theorem. The pure source-level return core is also translated by the
+CakeML translator and wrapped by:
+
+  bridge_source_eval_return_fragment_core_hand_spec
+
+This is the first proof-bearing wrapper for the source-string return-core
+shape. It is still narrower than a proof of the full marked SML/CakeML block
+as shipped, because the shipped block uses the prototype's handwritten atom
+datatype rather than the bridge_source_atom datatype.
+
+The current prototype-to-source slice is:
+
+  bridge_proto_atom
+  bridge_proto_source_rel proto source
+  bridge_proto_eval_return_fragment_core proto
+
+bridge_proto_atom mirrors the handwritten prototype shape with Sym/Var/Int/Str
+and Expr constructors over mlstrings. HOL proves positive/negative relation
+examples and:
+
+  bridge_proto_eval_return_fragment_core_refines_source
+
+The prototype return core is translated and has:
+
+  bridge_proto_eval_return_fragment_core_hand_spec
+
+This is the current proof-bearing correspondence for the marked return-block
+shape: the prototype-world return core refines the source-world return core.
+The remaining step is to connect the exact shipped SML/CakeML constructor names
+to bridge_proto_atom with a whole marked-block CF proof.
+
+The current parser-token boundary slice is:
+
+  bridge_source_token
+  bridge_source_surface_token_rel var_env str_env source_tok surface_tok
+  bridge_parse_source_atom_token source_tokens
+  bridge_parse_proto_atom_token proto_tokens
+
+HOL proves that related source/surface atom tokens parse to related
+bridge_source_atom/bridge_surface_atom values and related remainders:
+
+  bridge_parse_atom_token_source_surface_related
+
+It also proves that related prototype/source atom, command, and program token
+streams parse compatibly:
+
+  bridge_proto_source_token_list_parser_simulation
+  bridge_proto_source_bound_parser_simulation
+  bridge_proto_source_shipped_parser_simulation
+  bridge_parse_proto_atom_tokens_bound_no_fuel_error
+  bridge_parse_proto_command_tokens_bound_no_fuel_error
+  bridge_parse_proto_program_tokens_bound_no_fuel_error
+  bridge_parse_proto_atom_tokens_shipped_no_parser_fuel_error
+  bridge_parse_proto_command_tokens_shipped_no_parser_fuel_error
+  bridge_parse_proto_program_tokens_shipped_no_parser_fuel_error
+
+This is deliberately a model-parser theorem, not yet a CF proof of the exact
+shipped SML/CakeML parser functions.
+
+The current surface-level match wrapper relation is:
+
+  bridge_surface_eval_match_fragment_rel surface_space surface_atom outs
+
+It imports a bridge_surface_atom space and match atom into numeric HOL atoms,
+then runs bridge_eval_match_fragment. HOL proves a relation soundness theorem,
+positive/negative examples, and an input-sensitive theorem connecting imported
+surface match calls to eval_m1_rec:
+
+  bridge_surface_eval_match_fragment_rel_agrees_with_eval_m1_rec
+
+The tiny executable surface wrapper is:
+
+  bridge_surface_eval_match_fragment_wrapper
+
+It imports the surface space and atom, calls bridge_eval_match_fragment when
+both imports succeed, and returns [] on import failure. HOL proves:
+
+  bridge_surface_eval_match_fragment_wrapper_rel
+  bridge_surface_eval_match_fragment_wrapper_agrees_with_eval_m1_rec
+  bridge_surface_eval_match_fragment_wrapper_hand_spec
+
+The last theorem is a CF proof for a small CakeML wrapper over the translated
+surface match wrapper.
+
+The generated translated-code artifact:
+
+  /home/zar/claude/CakeML/metta-ref/generated/bridge_eval_match_fragment.sexp
+
+is emitted from the CakeML translator program state after
+bridge_eval_match_fragment is translated. It is an auditable artifact; the
+translator theorem, app spec, and CF wrapper theorem remain the proof-bearing
+objects.
+
+The harness:
+
+  /home/zar/claude/CakeML/metta-ref/tools/check_generated_match_sexp.sh
+
+consumes that s-expression through the CakeML compiler's s-expression input
+mode and emits an ignored assembly file. This checks that the generated
+artifact is accepted by the CakeML toolchain; it is not a semantic proof.
+
+The bridge theory also records a checked artifact manifest:
+
+  bridge_eval_match_fragment_artifact_manifest_checked
+  bridge_eval_match_fragment_artifact_manifest_points_to_match_branch
+
+The manifest theorem deliberately does not invent semantics for the file. It
+points the generated match artifact names at the existing
+bridge_eval_match_fragment_agrees_with_eval_m1_rec theorem, leaving the HOL
+certificate as the semantic authority.
+
+Marked block audit
+------------------
+
+/home/zar/claude/CakeML/metta-ref/notes/fragment_block_audit.txt classifies
+each marked SML/CakeML fragment block. At present every marked block is
+exploratory only. Some have translated helper or numeric CF-wrapper backing,
+but no marked string-world block is itself verified yet. The return block has
+been refactored into the same factored shape as the proved bridge target:
+a return-head predicate, an item-list helper, and the public
+eval_return_fragment_core wrapper. This makes the eventual relation proof
+smaller and easier to audit, but still does not by itself prove the shipped
+string-world block.
+
+Bridge policy
+-------------
+
+The working policy for the full evaluator bridge is:
+
+1. Pure semantic kernels should be HOL definitions with CakeML translator
+   certificates and app-spec certificates.
+2. CF should be used for small handwritten wrappers, public surface/string
+   boundaries, stateful runner code, and FFI boundaries.
+3. Python and shell tooling may lint manifests or consume generated artifacts,
+   but must not be treated as semantic authority.
+
+Checked instances of this policy now include:
+
+- Pure helpers translated from HOL: match payloads, chain payloads, source and
+  prototype parser token helpers including bounded entrypoints, surface
+  primitive value-list wrappers, eval/evalc
+  post-processing helpers, and let* first-step payload construction.
+- CF wrappers over translated helpers: return/match wrappers, parser wrappers,
+  primitive value-list wrappers, and the eval/evalc surface helper wrappers.
+- Recursive branch bridge theorems that keep semantic authority in HOL:
+  bridge_eval_evalc_fragment_payload_recursive_sound exposes evalc's checked
+  value payload and type/error result, while
+  bridge_eval_m1_rec_fuller_evalc_payload_sound lifts that payload through the
+  common recursive result/family soundness layer.
+  bridge_eval_m1_rec_fuller_let_star_payload_sound does the same for the
+  successful first-binding let* step, consuming the residual payload theorem
+  and the common recursive soundness theorems together.
+  bridge_eval_m1_rec_supported_nested_payload_sound now gives one common
+  payload-result predicate for the supported nested branch slices: chain,
+  evalc, case, switch, and successful-head let*. The let* residual pair
+  payload is factored through bridge_let_star_payload_result_sound so future
+  let* recursion proofs can consume a named payload predicate rather than a
+  large inline existential.
+  bridge_eval_m1_rec_supported_nested_fuller_sound consumes that common
+  payload predicate and packages it with eval_m1_rec_result_sound,
+  eval_m1_rec_nested_family_sound, and eval_m1_rec_family_sound, giving later
+  branch proofs one bridge-side theorem to consume for the supported nested
+  branch cluster.
+  bridge_eval_m1_rec_supported_control_fuller_sound repeats that pattern for
+  the control branch cluster consisting of function, return, and eval. Its
+  bridge_control_payload_result predicate records function return-payload
+  extraction, return identity, and eval's recursive-or-NotReducible result
+  behavior alongside the ordinary result/control/family soundness facts.
+  bridge_eval_m1_rec_supported_branch_fuller_sound then combines the supported
+  nested and supported control clusters into one theorem for later evaluator
+  bridge proofs. It deliberately covers only those verified clusters and leaves
+  fallback/equality/match/state/FFI behavior outside the combined predicate.
+  bridge_eval_m1_rec_fallback_fuller_sound adds a separate, conservative
+  bridge predicate for fallback paths: non-proven branches are related to
+  eval_m1_ext membership and classified as identity, stack-overflow marker,
+  equality step, builtin step, or match-space output. The follow-on theorem
+  bridge_eval_m1_rec_supported_or_fallback_fuller_sound combines that fallback
+  classification with the supported branch cluster theorem without claiming
+  full state, parser, module, or FFI verification.
+  bridge_eval_m1_rec_match_fallback_fuller_sound strengthens the match
+  subfamily of fallback specifically: `(match &self pattern templ)` results
+  are tied to bridge_match_space_payload membership, while still carrying the
+  ordinary result/family soundness and generic fallback classification.
+  bridge_eval_m1_rec_equality_fallback_fuller_sound does the same for equality
+  fallback where eval_m1_ext dispatches to eval_equalities: it records
+  eval_equalities membership plus equality_step provenance, while retaining the
+  generic fallback classification and result/family soundness facts.
+  bridge_eval_m1_rec_builtin_fallback_fuller_sound splits out builtin fallback
+  results where eval_m1_ext dispatches through builtin_eval: it records
+  builtin_step provenance in addition to the generic fallback classification
+  and result/family soundness facts. This is still a pure builtin-evaluator
+  theorem, not a full external-call or FFI semantics theorem.
+  bridge_eval_m1_rec_identity_fallback_fuller_sound splits out the default
+  identity fallback where eval_m1_ext has no match, builtin, or equality result:
+  it records that the returned value is the original atom, while retaining the
+  generic fallback classification and result/family soundness facts.
+  bridge_eval_m1_rec_split_fallback_fuller_sound packages the four fallback
+  subfamilies into one bridge theorem for later recursive soundness proofs:
+  every non-proven fallback atom is partitioned into match, builtin,
+  equality-rewrite, or identity fallback and paired with the corresponding
+  subfamily payload witness.
+  bridge_eval_m1_rec_supported_or_split_fallback_fuller_sound then combines
+  the proven recursive branch clusters with this split fallback theorem, so
+  later evaluator bridge proofs can consume one payload predicate for both
+  supported branch results and all non-proven fallback results.
+  metta_m1_bridge_eval_soundScript.sml starts the downstream modular bridge
+  layer: bridge_eval_m1_rec_evaluator_core_payload_sound consumes the combined
+  theorem without adding more proofs to the large CakeML bridge theory. The
+  positive return and negative add examples document that primitive proven
+  branches remain outside this evaluator-core payload predicate until a
+  primitive-branch bridge is added.
+  The same downstream theory now adds that primitive-branch bridge for the
+  arithmetic/comparison and boolean families:
+  bridge_eval_m1_rec_primitive_payload_sound records input-sensitive primitive
+  payload evidence, and bridge_eval_m1_rec_evaluator_payload_sound combines
+  primitive payloads with evaluator-core payloads for later evaluator proofs.
+  bridge_eval_m1_rec_model_evaluator_payload_sound is the current total
+  HOL-model evaluator payload theorem: every atom is partitioned into the
+  model's proven family predicate or split fallback predicate, yielding ordinary
+  result/family soundness plus the corresponding model payload. This still does
+  not verify the parser, runner state, filesystem/module behavior, or FFI.
+- CF branch-facing postconditions:
+  bridge_surface_eval_payload_result_wrapper_hand_eval_m1_rec_spec and
+  bridge_surface_evalc_checked_values_wrapper_hand_eval_m1_rec_spec state
+  app-level postconditions directly in terms of eval_m1_rec branch results,
+  not only helper-fragment results.
+
+The next whole-evaluator bridge step is to keep translating pure pieces that
+do not close over state, filesystem, or host calls, and to place CF only around
+the small wrappers that connect those translated pieces to the handwritten
+surface/runner code.
+
+Negative example
+----------------
+
+The current bridge does not claim:
+
+  compiled CakeML bytes implement eval_m1_rec
+
+That requires the later CakeML compilation/semantics boundary. The current
+theorems prove representation preservation for exported HOL results, checked
+executable fragments, source/surface return-core refinement, directly
+CF-proved return-block payloads, surface match wrapper agreement, and
+translated pure chain/match payloads. The fragment inventory is now derived
+from the HOL source, and the marked SML/CakeML fragment blocks are
+lint-checked against that inventory. The Python lint tool is not a semantic
+generator.

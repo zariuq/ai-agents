@@ -1,0 +1,67 @@
+{
+  "article": "waybel_7",
+  "attributes": [
+    "is_a_cluster_point_of",
+    "is_a_convergence_point_of"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "is_a_cluster_point_of": 1,
+        "is_a_convergence_point_of": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let T be TopSpace; let F be set,x be object; pred x is_a_cluster_point_of F,T means for A being Subset of T s"
+    },
+    {
+      "counts": {
+        "is_a_cluster_point_of": 2,
+        "is_a_convergence_point_of": 2
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem Th27: for T being non empty TopSpace for F being ultra Filter of BoolePoset the carrier of T for p being set hol"
+    },
+    {
+      "counts": {
+        "is_a_cluster_point_of": 3
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem Th28: for T being non empty TopSpace for x,y being Element of InclPoset the topology of T st x << y for F being "
+    },
+    {
+      "counts": {
+        "is_a_cluster_point_of": 1,
+        "is_a_convergence_point_of": 1
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem for T being non empty TopSpace for x,y being Element of InclPoset the topology of T st x << y for F being ultra "
+    },
+    {
+      "counts": {
+        "is_a_convergence_point_of": 3
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem Th30: for T being non empty TopSpace for x,y being Element of InclPoset the topology of T st x c= y & for F bein"
+    },
+    {
+      "counts": {
+        "is_a_convergence_point_of": 2
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem for T being non empty TopSpace for B being prebasis of T for x,y being Element of InclPoset the topology of T st"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/waybel_7.miz"
+}

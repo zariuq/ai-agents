@@ -1,0 +1,93 @@
+{
+  "rows": [
+    {
+      "problem": "lattice2__lattice2__t12_lattice2",
+      "finite_model_found": true,
+      "status": "Satisfiable",
+      "return_code": 0,
+      "domain_size": 3,
+      "predicate_count": 32,
+      "function_count": 13,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nMonotonicity information:\nSort Inference information:\n3 inferred subsorts\nSubsort 0 has 13 constants and 18 functions\nSubsort 1 has 6 constants and 2 functions\nSubsort 2 has 1 constants and 1 functions\n1 distinct sorts\n0 has 4 inferred subsorts as members [0,1,2,3]\nVampire to distinct sort mapping:\n[$i]\n% TRYING [1]\n%"
+    },
+    {
+      "problem": "lattice2__lattice2__t13_lattice2",
+      "finite_model_found": true,
+      "status": "Satisfiable",
+      "return_code": 0,
+      "domain_size": 3,
+      "predicate_count": 32,
+      "function_count": 13,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nMonotonicity information:\nSort Inference information:\n3 inferred subsorts\nSubsort 0 has 13 constants and 18 functions\nSubsort 1 has 6 constants and 2 functions\nSubsort 2 has 1 constants and 1 functions\n1 distinct sorts\n0 has 4 inferred subsorts as members [0,1,2,3]\nVampire to distinct sort mapping:\n[$i]\n% TRYING [1]\n%"
+    },
+    {
+      "problem": "lattice2__lattice2__t14_lattice2",
+      "finite_model_found": true,
+      "status": "Satisfiable",
+      "return_code": 0,
+      "domain_size": 2,
+      "predicate_count": 42,
+      "function_count": 19,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nMonotonicity information:\nSort Inference information:\n3 inferred subsorts\nSubsort 0 has 13 constants and 27 functions\nSubsort 1 has 4 constants and 1 functions\nSubsort 2 has 1 constants and 1 functions\n1 distinct sorts\n0 has 4 inferred subsorts as members [0,1,2,3]\nVampire to distinct sort mapping:\n[$i]\n% TRYING [1]\n%"
+    },
+    {
+      "problem": "lattice2__lattice2__t15_lattice2",
+      "finite_model_found": true,
+      "status": "Satisfiable",
+      "return_code": 0,
+      "domain_size": 2,
+      "predicate_count": 40,
+      "function_count": 17,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nMonotonicity information:\nSort Inference information:\n3 inferred subsorts\nSubsort 0 has 13 constants and 25 functions\nSubsort 1 has 4 constants and 1 functions\nSubsort 2 has 1 constants and 1 functions\n1 distinct sorts\n0 has 4 inferred subsorts as members [0,1,2,3]\nVampire to distinct sort mapping:\n[$i]\n% TRYING [1]\n%"
+    },
+    {
+      "problem": "lattice2__lattice2__t16_lattice2",
+      "finite_model_found": true,
+      "status": "Satisfiable",
+      "return_code": 0,
+      "domain_size": 2,
+      "predicate_count": 42,
+      "function_count": 20,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nMonotonicity information:\nSort Inference information:\n3 inferred subsorts\nSubsort 0 has 13 constants and 30 functions\nSubsort 1 has 4 constants and 1 functions\nSubsort 2 has 1 constants and 1 functions\n1 distinct sorts\n0 has 4 inferred subsorts as members [0,1,2,3]\nVampire to distinct sort mapping:\n[$i]\n% TRYING [1]\n%"
+    },
+    {
+      "problem": "lattice2__lattice2__t17_lattice2",
+      "finite_model_found": true,
+      "status": "Satisfiable",
+      "return_code": 0,
+      "domain_size": 2,
+      "predicate_count": 40,
+      "function_count": 19,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nMonotonicity information:\nSort Inference information:\n3 inferred subsorts\nSubsort 0 has 13 constants and 30 functions\nSubsort 1 has 4 constants and 1 functions\nSubsort 2 has 1 constants and 1 functions\n1 distinct sorts\n0 has 4 inferred subsorts as members [0,1,2,3]\nVampire to distinct sort mapping:\n[$i]\n% TRYING [1]\n%"
+    },
+    {
+      "problem": "lattice2__lattice2__t18_lattice2",
+      "finite_model_found": true,
+      "status": "Satisfiable",
+      "return_code": 0,
+      "domain_size": 2,
+      "predicate_count": 45,
+      "function_count": 19,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nMonotonicity information:\nSort Inference information:\n3 inferred subsorts\nSubsort 0 has 13 constants and 33 functions\nSubsort 1 has 4 constants and 1 functions\nSubsort 2 has 1 constants and 1 functions\n1 distinct sorts\n0 has 4 inferred subsorts as members [0,1,2,3]\nVampire to distinct sort mapping:\n[$i]\n% TRYING [1]\n%"
+    },
+    {
+      "problem": "lattice2__lattice2__t19_lattice2",
+      "finite_model_found": true,
+      "status": "Satisfiable",
+      "return_code": 0,
+      "domain_size": 2,
+      "predicate_count": 45,
+      "function_count": 19,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nMonotonicity information:\nSort Inference information:\n3 inferred subsorts\nSubsort 0 has 13 constants and 33 functions\nSubsort 1 has 4 constants and 1 functions\nSubsort 2 has 1 constants and 1 functions\n1 distinct sorts\n0 has 4 inferred subsorts as members [0,1,2,3]\nVampire to distinct sort mapping:\n[$i]\n% TRYING [1]\n%"
+    }
+  ],
+  "counts": {
+    "total": 8,
+    "finite_model_found": 8,
+    "time_or_other": 0,
+    "domain_size_histogram": {
+      "2": 6,
+      "3": 2
+    }
+  }
+}

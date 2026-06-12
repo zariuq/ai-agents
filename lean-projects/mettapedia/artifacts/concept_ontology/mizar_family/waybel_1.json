@@ -1,0 +1,1218 @@
+{
+  "article": "waybel_1",
+  "attributes": [
+    "Boolean",
+    "Connection",
+    "Function",
+    "Galois",
+    "Heyting",
+    "Image",
+    "L1",
+    "L2",
+    "are_isomorphic",
+    "ex_max_of",
+    "ex_min_of",
+    "is_a_complement_of",
+    "is_maximum_of",
+    "is_minimum_of",
+    "lower_adjoint",
+    "upper_adjoint"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "Function": 1,
+        "L1": 7,
+        "L2": 2
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let L1,L2 be non empty 1-sorted, f be Function of L1,L2; redefine attr f is one-to-one means for x,y being El"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "L1": 3,
+        "L2": 2
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let L1,L2 be non empty RelStr, f be Function of L1,L2; redefine attr f is monotone means for x,y being Elemen"
+    },
+    {
+      "counts": {
+        "ex_max_of": 1,
+        "ex_min_of": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let S be non empty RelStr, X be set; pred ex_min_of X,S means ex_inf_of X,S & \"/\\\"(X,S) in X; pred ex_max_of "
+    },
+    {
+      "counts": {
+        "ex_max_of": 1,
+        "ex_min_of": 1
+      },
+      "index": 1,
+      "kind": "notation",
+      "object": "notation_1",
+      "preview": "notation let S be non empty RelStr, X be set; synonym X has_the_min_in S for ex_min_of X,S; synonym X has_the_max_in S f"
+    },
+    {
+      "counts": {
+        "is_maximum_of": 1,
+        "is_minimum_of": 1
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let S be non empty RelStr, s be Element of S, X be set; pred s is_minimum_of X means ex_inf_of X,S & s = \"/\\\""
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "L1": 3,
+        "L2": 3,
+        "are_isomorphic": 1
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let L1,L2 be RelStr; pred L1,L2 are_isomorphic means ex f being Function of L1,L2 st f is isomorphic; reflexi"
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "L1": 6,
+        "L2": 6,
+        "are_isomorphic": 2
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem for L1,L2 be non empty RelStr st L1,L2 are_isomorphic holds L2,L1 are_isomorphic proof let L1,L2 be non empty Re"
+    },
+    {
+      "counts": {
+        "Function": 13,
+        "Galois": 1,
+        "L1": 17,
+        "L2": 15,
+        "are_isomorphic": 3
+      },
+      "index": 7,
+      "kind": "theorem",
+      "object": "theorem_7",
+      "preview": "theorem for L1,L2,L3 being RelStr st L1,L2 are_isomorphic & L2,L3 are_isomorphic holds L1,L3 are_isomorphic proof let L1"
+    },
+    {
+      "counts": {
+        "Connection": 1,
+        "Function": 4
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let S,T be RelStr; mode Connection of S,T -> set means :Def9: ex g being Function of S,T, d being Function of"
+    },
+    {
+      "counts": {
+        "Connection": 1,
+        "Function": 2
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition let S,T be RelStr, g be Function of S,T, d be Function of T,S; redefine func [g,d] -> Connection of S,T; cohe"
+    },
+    {
+      "counts": {
+        "Connection": 1,
+        "Function": 2,
+        "Galois": 1
+      },
+      "index": 9,
+      "kind": "definition",
+      "object": "definition_9",
+      "preview": "definition let S,T be non empty RelStr, gc be Connection of S,T; attr gc is Galois means ex g being Function of S,T, d b"
+    },
+    {
+      "counts": {
+        "Function": 6,
+        "Galois": 2
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem Th8: for S,T being non empty Poset,g being Function of S,T, d being Function of T,S holds [g,d] is Galois iff g "
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Galois": 1,
+        "upper_adjoint": 1
+      },
+      "index": 10,
+      "kind": "definition",
+      "object": "definition_10",
+      "preview": "definition let S,T be non empty RelStr, g be Function of S,T; attr g is upper_adjoint means ex d being Function of T,S s"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Galois": 1,
+        "lower_adjoint": 1
+      },
+      "index": 11,
+      "kind": "definition",
+      "object": "definition_11",
+      "preview": "definition let S,T be non empty RelStr, d be Function of T,S; attr d is lower_adjoint means :Def12: ex g being Function "
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Galois": 1,
+        "lower_adjoint": 1,
+        "upper_adjoint": 1
+      },
+      "index": 9,
+      "kind": "theorem",
+      "object": "theorem_9",
+      "preview": "theorem for S,T being non empty Poset,g being Function of S,T, d being Function of T,S st [g,d] is Galois holds g is upp"
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "Galois": 2,
+        "is_minimum_of": 7
+      },
+      "index": 10,
+      "kind": "theorem",
+      "object": "theorem_10",
+      "preview": "theorem Th10: for S,T being non empty Poset,g being Function of S,T, d being Function of T,S holds [g,d] is Galois iff g"
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "Galois": 2,
+        "is_maximum_of": 6
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem Th11: for S,T being non empty Poset,g being Function of S,T, d being Function of T,S holds [g,d] is Galois iff d"
+    },
+    {
+      "counts": {
+        "Function": 3,
+        "Galois": 1,
+        "upper_adjoint": 1
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem Th12: for S,T being non empty Poset,g being Function of S,T st g is upper_adjoint holds g is infs-preserving pro"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "upper_adjoint": 1
+      },
+      "index": 3,
+      "kind": "registration",
+      "object": "registration_3",
+      "preview": "registration let S,T be non empty Poset; cluster upper_adjoint -> infs-preserving for Function of S,T; coherence by Th12"
+    },
+    {
+      "counts": {
+        "Function": 3,
+        "Galois": 1,
+        "lower_adjoint": 1
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem Th13: for S,T being non empty Poset, d being Function of T,S st d is lower_adjoint holds d is sups-preserving pr"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "lower_adjoint": 1
+      },
+      "index": 4,
+      "kind": "registration",
+      "object": "registration_4",
+      "preview": "registration let S,T be non empty Poset; cluster lower_adjoint -> sups-preserving for Function of S,T; coherence by Th13"
+    },
+    {
+      "counts": {
+        "Function": 5,
+        "Galois": 2,
+        "is_minimum_of": 1
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem Th14: for S,T being non empty Poset,g being Function of S,T st S is complete & g is infs-preserving ex d being F"
+    },
+    {
+      "counts": {
+        "Function": 5,
+        "Galois": 2,
+        "is_maximum_of": 1
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem Th15: for S,T being non empty Poset, d being Function of T,S st T is complete & d is sups-preserving ex g being "
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "Galois": 2,
+        "is_minimum_of": 1,
+        "upper_adjoint": 3
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem for S,T being non empty Poset, g being Function of S,T st S is complete holds (g is infs-preserving iff g is mon"
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "Galois": 2,
+        "is_maximum_of": 1,
+        "lower_adjoint": 3
+      },
+      "index": 17,
+      "kind": "theorem",
+      "object": "theorem_17",
+      "preview": "theorem Th17: for S,T being non empty Poset, d being Function of T,S st T is complete holds d is sups-preserving iff d i"
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "Galois": 2
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem Th18: for S,T being non empty Poset,g being Function of S,T, d being Function of T,S st [g,d] is Galois holds d*"
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "Galois": 1
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem Th19: for S,T being non empty Poset,g being Function of S,T, d being Function of T,S st g is monotone & d is mon"
+    },
+    {
+      "counts": {
+        "Function": 4
+      },
+      "index": 20,
+      "kind": "theorem",
+      "object": "theorem_20",
+      "preview": "theorem Th20: for S,T being non empty Poset,g being Function of S,T, d being Function of T,S st g is monotone & d is mon"
+    },
+    {
+      "counts": {
+        "Function": 4
+      },
+      "index": 21,
+      "kind": "theorem",
+      "object": "theorem_21",
+      "preview": "theorem Th21: for S,T being non empty RelStr, g being Function of S,T, d being Function of T,S st g = g*d*g holds g*d is"
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "Galois": 2,
+        "is_minimum_of": 2
+      },
+      "index": 22,
+      "kind": "theorem",
+      "object": "theorem_22",
+      "preview": "theorem Th22: for S,T being non empty Poset,g being Function of S,T, d being Function of T,S st [g,d] is Galois & g is o"
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "is_minimum_of": 3
+      },
+      "index": 23,
+      "kind": "theorem",
+      "object": "theorem_23",
+      "preview": "theorem Th23: for S,T being non empty Poset,g being Function of S,T, d being Function of T,S st for t being Element of T"
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "Galois": 2,
+        "is_minimum_of": 1
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem for S,T being non empty Poset,g being Function of S,T, d being Function of T,S st [g,d] is Galois holds g is ont"
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "Galois": 2,
+        "is_maximum_of": 2
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem Th25: for S,T being non empty Poset,g being Function of S,T, d being Function of T,S st [g,d] is Galois & d is o"
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "is_maximum_of": 3
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem Th26: for S,T being non empty Poset,g being Function of S,T, d being Function of T,S st for s being Element of S"
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "Galois": 2,
+        "is_maximum_of": 1
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem for S,T being non empty Poset,g being Function of S,T, d being Function of T,S st [g,d] is Galois holds g is one"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 12,
+      "kind": "definition",
+      "object": "definition_12",
+      "preview": "definition let L be non empty RelStr, p be Function of L,L; attr p is projection means :Def13: p is idempotent monotone;"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 6,
+      "kind": "registration",
+      "object": "registration_6",
+      "preview": "registration let L be non empty RelStr; cluster projection for Function of L,L; existence proof take id L; thus thesis; "
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 13,
+      "kind": "definition",
+      "object": "definition_13",
+      "preview": "definition let L be non empty RelStr, c be Function of L,L; attr c is closure means c is projection & id(L) <= c; end;"
+    },
+    {
+      "counts": {
+        "Function": 3,
+        "L1": 5,
+        "L2": 6
+      },
+      "index": 7,
+      "kind": "registration",
+      "object": "registration_7",
+      "preview": "registration let L be non empty RelStr; cluster closure -> projection for Function of L,L; coherence; end; Lm1: for L1,L"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 8,
+      "kind": "registration",
+      "object": "registration_8",
+      "preview": "registration let L be non empty reflexive RelStr; cluster closure for Function of L,L; existence proof take id L; thus i"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 14,
+      "kind": "definition",
+      "object": "definition_14",
+      "preview": "definition let L be non empty RelStr, k be Function of L,L; attr k is kernel means k is projection & k <= id(L); end;"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 10,
+      "kind": "registration",
+      "object": "registration_10",
+      "preview": "registration let L be non empty RelStr; cluster kernel -> projection for Function of L,L; coherence; end;"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 11,
+      "kind": "registration",
+      "object": "registration_11",
+      "preview": "registration let L be non empty reflexive RelStr; cluster kernel for Function of L,L; existence proof take id L; thus id"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 12,
+      "kind": "registration",
+      "object": "registration_12",
+      "preview": "registration let L be non empty reflexive RelStr; cluster id L -> kernel; coherence by Lm1; end; Lm2: for L being non em"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem Th28: for L being non empty Poset, c being Function of L,L, X being Subset of L st c is closure & ex_inf_of X,L "
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem Th29: for L being non empty Poset, k being Function of L,L, X being Subset of L st k is kernel & ex_sup_of X,L &"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Image": 3,
+        "L1": 4,
+        "L2": 2
+      },
+      "index": 15,
+      "kind": "definition",
+      "object": "definition_15",
+      "preview": "definition let L1, L2 be non empty RelStr, g be Function of L1,L2; func corestr(g) -> Function of L1,Image g equals (the"
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "Image": 2,
+        "L1": 8,
+        "L2": 8
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem Th30: for L1, L2 being non empty RelStr,g being Function of L1,L2 holds corestr g = g proof let L1, L2 be non em"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "L1": 2,
+        "L2": 2
+      },
+      "index": 13,
+      "kind": "registration",
+      "object": "registration_13",
+      "preview": "registration let L1, L2 be non empty RelStr, g be Function of L1,L2; cluster corestr g -> onto; coherence by Lm3; end;"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "L1": 5,
+        "L2": 5
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem Th31: for L1, L2 being non empty RelStr, g being Function of L1,L2 st g is monotone holds corestr g is monotone "
+    },
+    {
+      "counts": {
+        "Function": 3,
+        "Image": 6,
+        "L1": 4,
+        "L2": 5
+      },
+      "index": 16,
+      "kind": "definition",
+      "object": "definition_16",
+      "preview": "definition let L1, L2 be non empty RelStr, g be Function of L1,L2; func inclusion(g) -> Function of Image g,L2 equals id"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "L1": 2,
+        "L2": 2
+      },
+      "index": 14,
+      "kind": "registration",
+      "object": "registration_14",
+      "preview": "registration let L1, L2 be non empty RelStr, g be Function of L1,L2; cluster inclusion g -> one-to-one monotone; coheren"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Image": 1
+      },
+      "index": 32,
+      "kind": "theorem",
+      "object": "theorem_32",
+      "preview": "theorem Th32: for L being non empty RelStr, f being Function of L,L holds ( inclusion f)*(corestr f) = f proof let L be "
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Image": 4
+      },
+      "index": 33,
+      "kind": "theorem",
+      "object": "theorem_33",
+      "preview": "theorem Th33: for L being non empty Poset, f being Function of L,L st f is idempotent holds (corestr f)*(inclusion f) = "
+    },
+    {
+      "counts": {
+        "Function": 6,
+        "Image": 1
+      },
+      "index": 34,
+      "kind": "theorem",
+      "object": "theorem_34",
+      "preview": "theorem for L being non empty Poset, f being Function of L,L st f is projection ex T being non empty Poset, q being Func"
+    },
+    {
+      "counts": {
+        "Function": 6
+      },
+      "index": 35,
+      "kind": "theorem",
+      "object": "theorem_35",
+      "preview": "theorem for L being non empty Poset, f being Function of L,L st (ex T being non empty Poset, q being Function of L,T, i "
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Galois": 1,
+        "Image": 2
+      },
+      "index": 36,
+      "kind": "theorem",
+      "object": "theorem_36",
+      "preview": "theorem Th36: for L being non empty Poset, f being Function of L,L st f is closure holds [inclusion f,corestr f] is Galo"
+    },
+    {
+      "counts": {
+        "Function": 6,
+        "Galois": 2,
+        "Image": 1
+      },
+      "index": 37,
+      "kind": "theorem",
+      "object": "theorem_37",
+      "preview": "theorem for L being non empty Poset, f being Function of L,L st f is closure ex S being non empty Poset, g being Functio"
+    },
+    {
+      "counts": {
+        "Function": 6,
+        "Galois": 2
+      },
+      "index": 38,
+      "kind": "theorem",
+      "object": "theorem_38",
+      "preview": "theorem Th38: for L being non empty Poset, f being Function of L,L st f is monotone & ex S being non empty Poset, g bein"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Galois": 1,
+        "Image": 2
+      },
+      "index": 39,
+      "kind": "theorem",
+      "object": "theorem_39",
+      "preview": "theorem Th39: for L being non empty Poset, f being Function of L,L st f is kernel holds [corestr f,inclusion f] is Galoi"
+    },
+    {
+      "counts": {
+        "Function": 6,
+        "Galois": 2,
+        "Image": 1
+      },
+      "index": 40,
+      "kind": "theorem",
+      "object": "theorem_40",
+      "preview": "theorem for L being non empty Poset, f being Function of L,L st f is kernel ex T being non empty Poset, g being Function"
+    },
+    {
+      "counts": {
+        "Function": 6,
+        "Galois": 2
+      },
+      "index": 41,
+      "kind": "theorem",
+      "object": "theorem_41",
+      "preview": "theorem for L being non empty Poset, f being Function of L,L st f is monotone & ex T being non empty Poset, g being Func"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 42,
+      "kind": "theorem",
+      "object": "theorem_42",
+      "preview": "theorem Th42: for L being non empty Poset, p being Function of L,L st p is projection holds rng p = {c where c is Elemen"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 43,
+      "kind": "theorem",
+      "object": "theorem_43",
+      "preview": "theorem Th43: for L being non empty Poset, p being Function of L,L st p is projection holds {c where c is Element of L: "
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 44,
+      "kind": "theorem",
+      "object": "theorem_44",
+      "preview": "theorem Th44: for L being non empty Poset, p being Function of L,L st p is projection holds rng(p|{c where c is Element "
+    },
+    {
+      "counts": {
+        "Function": 4
+      },
+      "index": 45,
+      "kind": "theorem",
+      "object": "theorem_45",
+      "preview": "theorem Th45: for L being non empty Poset, p being Function of L,L st p is projection for Lc being non empty Subset of L"
+    },
+    {
+      "counts": {
+        "Function": 4
+      },
+      "index": 46,
+      "kind": "theorem",
+      "object": "theorem_46",
+      "preview": "theorem for L being non empty Poset, p being Function of L,L st p is projection for Lk being non empty Subset of L st Lk"
+    },
+    {
+      "counts": {
+        "Function": 4
+      },
+      "index": 47,
+      "kind": "theorem",
+      "object": "theorem_47",
+      "preview": "theorem Th47: for L being non empty Poset, p being Function of L,L st p is projection for Lc being non empty Subset of L"
+    },
+    {
+      "counts": {
+        "Function": 4
+      },
+      "index": 48,
+      "kind": "theorem",
+      "object": "theorem_48",
+      "preview": "theorem for L being non empty Poset, p being Function of L,L st p is projection for Lk being non empty Subset of L st Lk"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 49,
+      "kind": "theorem",
+      "object": "theorem_49",
+      "preview": "theorem Th49: for L being non empty Poset, p being Function of L,L st p is monotone for Lc being Subset of L st Lc = {c "
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 50,
+      "kind": "theorem",
+      "object": "theorem_50",
+      "preview": "theorem Th50: for L being non empty Poset, p being Function of L,L st p is monotone for Lk being Subset of L st Lk = {k "
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Image": 9
+      },
+      "index": 51,
+      "kind": "theorem",
+      "object": "theorem_51",
+      "preview": "theorem for L being non empty Poset, p being Function of L,L st p is projection for Lc being non empty Subset of L st Lc"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Image": 9
+      },
+      "index": 52,
+      "kind": "theorem",
+      "object": "theorem_52",
+      "preview": "theorem for L being non empty Poset, p being Function of L,L st p is projection for Lk being non empty Subset of L st Lk"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Image": 7
+      },
+      "index": 53,
+      "kind": "theorem",
+      "object": "theorem_53",
+      "preview": "theorem Th53: for L being non empty Poset, p being Function of L,L holds (p is closure implies Image p is infs-inheritin"
+    },
+    {
+      "counts": {
+        "Function": 3,
+        "Image": 10
+      },
+      "index": 54,
+      "kind": "theorem",
+      "object": "theorem_54",
+      "preview": "theorem for L being complete non empty Poset, p being Function of L,L st p is projection holds Image p is complete proof"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Galois": 1,
+        "Image": 4,
+        "lower_adjoint": 1
+      },
+      "index": 55,
+      "kind": "theorem",
+      "object": "theorem_55",
+      "preview": "theorem for L being non empty Poset, c being Function of L,L st c is closure holds corestr c is sups-preserving & for X "
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Galois": 1,
+        "Heyting": 1,
+        "Image": 4,
+        "upper_adjoint": 1
+      },
+      "index": 56,
+      "kind": "theorem",
+      "object": "theorem_56",
+      "preview": "theorem for L being non empty Poset, k being Function of L,L st k is kernel holds (corestr k) is infs-preserving & for X"
+    },
+    {
+      "counts": {
+        "Galois": 2,
+        "lower_adjoint": 1
+      },
+      "index": 57,
+      "kind": "theorem",
+      "object": "theorem_57",
+      "preview": "theorem Th57: for L being complete non empty Poset holds [IdsMap L,SupMap L] is Galois & SupMap L is sups-preserving pro"
+    },
+    {
+      "counts": {
+        "Galois": 1,
+        "Image": 5,
+        "are_isomorphic": 1
+      },
+      "index": 58,
+      "kind": "theorem",
+      "object": "theorem_58",
+      "preview": "theorem for L being complete non empty Poset holds (IdsMap L)*(SupMap L) is closure & Image ((IdsMap L)*(SupMap L)),L ar"
+    },
+    {
+      "counts": {
+        "Function": 3
+      },
+      "index": 17,
+      "kind": "definition",
+      "object": "definition_17",
+      "preview": "definition let S be non empty RelStr; let x be Element of S; func x \"/\\\" -> Function of S,S means :Def18: for s being El"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Galois": 2,
+        "ex_max_of": 4,
+        "is_maximum_of": 2,
+        "lower_adjoint": 3
+      },
+      "index": 62,
+      "kind": "theorem",
+      "object": "theorem_62",
+      "preview": "theorem Th62: for S being Semilattice holds (for x being Element of S holds x \"/\\\" is lower_adjoint) iff for x,t being E"
+    },
+    {
+      "counts": {
+        "lower_adjoint": 2
+      },
+      "index": 63,
+      "kind": "theorem",
+      "object": "theorem_63",
+      "preview": "theorem Th63: for S being Semilattice st for x being Element of S holds x \"/\\\" is lower_adjoint for X being Subset of S "
+    },
+    {
+      "counts": {
+        "lower_adjoint": 2
+      },
+      "index": 64,
+      "kind": "theorem",
+      "object": "theorem_64",
+      "preview": "theorem for S being complete non empty Poset holds (for x being Element of S holds x \"/\\\" is lower_adjoint) iff for X be"
+    },
+    {
+      "counts": {
+        "Heyting": 1,
+        "lower_adjoint": 1
+      },
+      "index": 18,
+      "kind": "definition",
+      "object": "definition_18",
+      "preview": "definition let H be non empty RelStr; attr H is Heyting means H is LATTICE & for x being Element of H holds x \"/\\\" is lo"
+    },
+    {
+      "counts": {
+        "Heyting": 1
+      },
+      "index": 16,
+      "kind": "registration",
+      "object": "registration_16",
+      "preview": "registration cluster Heyting -> with_infima with_suprema reflexive transitive antisymmetric for non empty RelStr; cohere"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Galois": 3,
+        "Heyting": 1,
+        "is_maximum_of": 2
+      },
+      "index": 19,
+      "kind": "definition",
+      "object": "definition_19",
+      "preview": "definition let H be non empty RelStr, a be Element of H; assume A1: H is Heyting; func a => -> Function of H,H means :De"
+    },
+    {
+      "counts": {
+        "Heyting": 1,
+        "lower_adjoint": 1
+      },
+      "index": 66,
+      "kind": "theorem",
+      "object": "theorem_66",
+      "preview": "theorem Th66: for H being non empty RelStr st H is Heyting holds H is distributive proof let H be non empty RelStr; assu"
+    },
+    {
+      "counts": {
+        "Heyting": 1
+      },
+      "index": 17,
+      "kind": "registration",
+      "object": "registration_17",
+      "preview": "registration cluster Heyting -> distributive for non empty RelStr; coherence by Th66; end;"
+    },
+    {
+      "counts": {
+        "Galois": 1,
+        "Heyting": 2
+      },
+      "index": 67,
+      "kind": "theorem",
+      "object": "theorem_67",
+      "preview": "theorem Th67: for H being non empty RelStr st H is Heyting for x,a,y being Element of H holds x >= a \"/\\\" y iff a => x >"
+    },
+    {
+      "counts": {
+        "Heyting": 2
+      },
+      "index": 68,
+      "kind": "theorem",
+      "object": "theorem_68",
+      "preview": "theorem Th68: for H being non empty RelStr st H is Heyting holds H is upper-bounded proof let H be non empty RelStr; ass"
+    },
+    {
+      "counts": {
+        "Heyting": 1
+      },
+      "index": 18,
+      "kind": "registration",
+      "object": "registration_18",
+      "preview": "registration cluster Heyting -> upper-bounded for non empty RelStr; coherence by Th68; end;"
+    },
+    {
+      "counts": {
+        "Heyting": 2
+      },
+      "index": 69,
+      "kind": "theorem",
+      "object": "theorem_69",
+      "preview": "theorem Th69: for H being non empty RelStr st H is Heyting for a,b being Element of H holds Top H = a => b iff a <= b pr"
+    },
+    {
+      "counts": {
+        "Heyting": 2
+      },
+      "index": 70,
+      "kind": "theorem",
+      "object": "theorem_70",
+      "preview": "theorem for H being non empty RelStr st H is Heyting for a being Element of H holds Top H = a => a proof let H be non em"
+    },
+    {
+      "counts": {
+        "Heyting": 2
+      },
+      "index": 71,
+      "kind": "theorem",
+      "object": "theorem_71",
+      "preview": "theorem for H being non empty RelStr st H is Heyting for a,b being Element of H st Top H = a => b & Top H = b => a holds"
+    },
+    {
+      "counts": {
+        "Heyting": 2
+      },
+      "index": 72,
+      "kind": "theorem",
+      "object": "theorem_72",
+      "preview": "theorem Th72: for H being non empty RelStr st H is Heyting for a,b being Element of H holds b <= (a => b) proof let H be"
+    },
+    {
+      "counts": {
+        "Heyting": 2
+      },
+      "index": 73,
+      "kind": "theorem",
+      "object": "theorem_73",
+      "preview": "theorem for H being non empty RelStr st H is Heyting for a being Element of H holds Top H = a => Top H proof let H be no"
+    },
+    {
+      "counts": {
+        "Heyting": 4
+      },
+      "index": 74,
+      "kind": "theorem",
+      "object": "theorem_74",
+      "preview": "theorem for H being non empty RelStr st H is Heyting for b being Element of H holds b = (Top H) => b proof let H be non "
+    },
+    {
+      "counts": {
+        "Heyting": 2
+      },
+      "index": 75,
+      "kind": "theorem",
+      "object": "theorem_75",
+      "preview": "theorem Th75: for H being non empty RelStr st H is Heyting for a,b,c being Element of H st a <= b holds (b => c) <= (a ="
+    },
+    {
+      "counts": {
+        "Heyting": 2
+      },
+      "index": 76,
+      "kind": "theorem",
+      "object": "theorem_76",
+      "preview": "theorem for H being non empty RelStr st H is Heyting for a,b,c being Element of H st b <= c holds (a => b) <= (a => c) p"
+    },
+    {
+      "counts": {
+        "Heyting": 2
+      },
+      "index": 77,
+      "kind": "theorem",
+      "object": "theorem_77",
+      "preview": "theorem Th77: for H being non empty RelStr st H is Heyting for a,b being Element of H holds a\"/\\\"(a => b) = a\"/\\\"b proof"
+    },
+    {
+      "counts": {
+        "Heyting": 2
+      },
+      "index": 78,
+      "kind": "theorem",
+      "object": "theorem_78",
+      "preview": "theorem Th78: for H being non empty RelStr st H is Heyting for a,b,c being Element of H holds (a\"\\/\"b)=> c = (a => c) \"/"
+    },
+    {
+      "counts": {
+        "Heyting": 2,
+        "ex_max_of": 1,
+        "is_maximum_of": 1
+      },
+      "index": 79,
+      "kind": "theorem",
+      "object": "theorem_79",
+      "preview": "theorem for H being non empty RelStr st H is Heyting & H is lower-bounded for a being Element of H holds 'not' a is_maxi"
+    },
+    {
+      "counts": {
+        "Heyting": 2
+      },
+      "index": 80,
+      "kind": "theorem",
+      "object": "theorem_80",
+      "preview": "theorem Th80: for H being non empty RelStr st H is Heyting & H is lower-bounded holds 'not' Bottom H = Top H & 'not' Top"
+    },
+    {
+      "counts": {
+        "Heyting": 2
+      },
+      "index": 81,
+      "kind": "theorem",
+      "object": "theorem_81",
+      "preview": "theorem for H being non empty lower-bounded RelStr st H is Heyting for a,b being Element of H holds 'not' a >= b iff 'no"
+    },
+    {
+      "counts": {
+        "Heyting": 2
+      },
+      "index": 82,
+      "kind": "theorem",
+      "object": "theorem_82",
+      "preview": "theorem Th82: for H being non empty lower-bounded RelStr st H is Heyting for a ,b being Element of H holds 'not' a >= b "
+    },
+    {
+      "counts": {
+        "Heyting": 2
+      },
+      "index": 83,
+      "kind": "theorem",
+      "object": "theorem_83",
+      "preview": "theorem for H being non empty lower-bounded RelStr st H is Heyting for a,b being Element of H st a <= b holds 'not' b <="
+    },
+    {
+      "counts": {
+        "Heyting": 1
+      },
+      "index": 84,
+      "kind": "theorem",
+      "object": "theorem_84",
+      "preview": "theorem for H being non empty lower-bounded RelStr st H is Heyting for a,b being Element of H holds 'not' (a\"\\/\"b) = 'no"
+    },
+    {
+      "counts": {
+        "Heyting": 2
+      },
+      "index": 85,
+      "kind": "theorem",
+      "object": "theorem_85",
+      "preview": "theorem for H being non empty lower-bounded RelStr st H is Heyting for a,b being Element of H holds 'not' (a\"/\\\"b) >= 'n"
+    },
+    {
+      "counts": {
+        "is_a_complement_of": 1
+      },
+      "index": 22,
+      "kind": "definition",
+      "object": "definition_22",
+      "preview": "definition let L be non empty RelStr, x,y be Element of L; pred y is_a_complement_of x means x \"\\/\" y = Top L & x \"/\\\" y"
+    },
+    {
+      "counts": {
+        "is_a_complement_of": 1
+      },
+      "index": 23,
+      "kind": "definition",
+      "object": "definition_23",
+      "preview": "definition let L be non empty RelStr; attr L is complemented means for x being Element of L ex y being Element of L st y"
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "Galois": 3,
+        "Heyting": 2,
+        "is_a_complement_of": 1
+      },
+      "index": 19,
+      "kind": "registration",
+      "object": "registration_19",
+      "preview": "registration let X be set; cluster BoolePoset X -> complemented; coherence proof let x be Element of BoolePoset X; A1: t"
+    },
+    {
+      "counts": {
+        "Heyting": 2,
+        "is_a_complement_of": 1
+      },
+      "index": 86,
+      "kind": "theorem",
+      "object": "theorem_86",
+      "preview": "theorem Th86: for L being bounded LATTICE st L is Heyting & for x being Element of L holds 'not' 'not' x = x for x being"
+    },
+    {
+      "counts": {
+        "Heyting": 3
+      },
+      "index": 87,
+      "kind": "theorem",
+      "object": "theorem_87",
+      "preview": "theorem Th87: for L being bounded LATTICE holds L is distributive complemented iff L is Heyting & for x being Element of"
+    },
+    {
+      "counts": {
+        "Boolean": 1
+      },
+      "index": 24,
+      "kind": "definition",
+      "object": "definition_24",
+      "preview": "definition let B be non empty RelStr; attr B is Boolean means B is LATTICE & B is bounded distributive complemented; end"
+    },
+    {
+      "counts": {
+        "Boolean": 1
+      },
+      "index": 20,
+      "kind": "registration",
+      "object": "registration_20",
+      "preview": "registration cluster Boolean -> reflexive transitive antisymmetric with_infima with_suprema bounded distributive complem"
+    },
+    {
+      "counts": {
+        "Boolean": 1
+      },
+      "index": 21,
+      "kind": "registration",
+      "object": "registration_21",
+      "preview": "registration cluster reflexive transitive antisymmetric with_infima with_suprema bounded distributive complemented -> Bo"
+    },
+    {
+      "counts": {
+        "Boolean": 1,
+        "Heyting": 1
+      },
+      "index": 22,
+      "kind": "registration",
+      "object": "registration_22",
+      "preview": "registration cluster Boolean -> Heyting for non empty RelStr; coherence by Th87; end;"
+    },
+    {
+      "counts": {
+        "Boolean": 1
+      },
+      "index": 23,
+      "kind": "registration",
+      "object": "registration_23",
+      "preview": "registration cluster strict Boolean non empty for LATTICE; existence proof take BoolePoset {}; thus thesis; end; end;"
+    },
+    {
+      "counts": {
+        "Boolean": 1,
+        "Heyting": 1
+      },
+      "index": 24,
+      "kind": "registration",
+      "object": "registration_24",
+      "preview": "registration cluster strict Heyting non empty for LATTICE; existence proof set L = the strict Boolean non empty LATTICE;"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/waybel_1.miz"
+}

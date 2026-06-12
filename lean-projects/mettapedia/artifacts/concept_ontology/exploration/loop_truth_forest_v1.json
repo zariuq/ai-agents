@@ -1,0 +1,1085 @@
+{
+  "abstraction_classes": [
+    {
+      "class": [
+        "associative",
+        "c_identity",
+        "left_bol",
+        "moufang",
+        "right_bol"
+      ],
+      "internal_splits": [
+        {
+          "edge": "left_bol => associative",
+          "splits_at_order": 8
+        },
+        {
+          "edge": "left_bol => moufang",
+          "splits_at_order": 8
+        },
+        {
+          "edge": "left_bol => right_bol",
+          "splits_at_order": 8
+        },
+        {
+          "edge": "c_identity => associative",
+          "splits_at_order": 10
+        },
+        {
+          "edge": "c_identity => moufang",
+          "splits_at_order": 10
+        },
+        {
+          "edge": "moufang => associative",
+          "splits_at_order": 12
+        },
+        {
+          "edge": "moufang => c_identity",
+          "splits_at_order": 12
+        }
+      ]
+    }
+  ],
+  "consistency_inconsistencies": [],
+  "derived_credal_conjectures": [],
+  "edge_count": 39,
+  "edges": [
+    {
+      "antecedent": [
+        "flexible"
+      ],
+      "break_order": null,
+      "consequent": "x_cubed_associative",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "flexible"
+      ],
+      "break_order": null,
+      "consequent": "two_sided_inverses",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "commutative"
+      ],
+      "break_order": null,
+      "consequent": "flexible",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "commutative"
+      ],
+      "break_order": null,
+      "consequent": "x_cubed_associative",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "commutative"
+      ],
+      "break_order": null,
+      "consequent": "two_sided_inverses",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "lip"
+      ],
+      "break_order": null,
+      "consequent": "two_sided_inverses",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "rip"
+      ],
+      "break_order": null,
+      "consequent": "two_sided_inverses",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "left_alternative"
+      ],
+      "break_order": null,
+      "consequent": "x_cubed_associative",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "right_alternative"
+      ],
+      "break_order": null,
+      "consequent": "x_cubed_associative",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "lip",
+        "x_cubed_associative"
+      ],
+      "break_order": 8,
+      "consequent": "left_alternative",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": null,
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": false,
+      "verdict": "refuted",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "frontier_collapsed_by_counterexample"
+    },
+    {
+      "antecedent": [
+        "rip",
+        "x_cubed_associative"
+      ],
+      "break_order": 8,
+      "consequent": "right_alternative",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": null,
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": false,
+      "verdict": "refuted",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "frontier_collapsed_by_counterexample"
+    },
+    {
+      "antecedent": [
+        "left_alternative",
+        "two_sided_inverses"
+      ],
+      "break_order": 12,
+      "consequent": "lip",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": null,
+      "source": "hardening_v1",
+      "thats_all_at_current_vantage": false,
+      "verdict": "refuted",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "frontier_collapsed_by_counterexample"
+    },
+    {
+      "antecedent": [
+        "right_alternative",
+        "two_sided_inverses"
+      ],
+      "break_order": 12,
+      "consequent": "rip",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": null,
+      "source": "hardening_v1",
+      "thats_all_at_current_vantage": false,
+      "verdict": "refuted",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "frontier_collapsed_by_counterexample"
+    },
+    {
+      "antecedent": [
+        "left_alternative",
+        "lip"
+      ],
+      "break_order": null,
+      "consequent": "x_cubed_associative",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "right_alternative",
+        "rip"
+      ],
+      "break_order": null,
+      "consequent": "x_cubed_associative",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "left_alternative",
+        "lip"
+      ],
+      "break_order": null,
+      "consequent": "two_sided_inverses",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "right_alternative",
+        "rip"
+      ],
+      "break_order": null,
+      "consequent": "two_sided_inverses",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "lip"
+      ],
+      "break_order": 10,
+      "consequent": "left_alternative",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": null,
+      "source": "hardening_v1",
+      "thats_all_at_current_vantage": false,
+      "verdict": "refuted",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "frontier_collapsed_by_counterexample"
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "rip"
+      ],
+      "break_order": 10,
+      "consequent": "right_alternative",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": null,
+      "source": "hardening_v1",
+      "thats_all_at_current_vantage": false,
+      "verdict": "refuted",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "frontier_collapsed_by_counterexample"
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "left_alternative"
+      ],
+      "break_order": null,
+      "consequent": "lip",
+      "credal_confidence_width": 0.28,
+      "credal_inheritance_tv": {
+        "confidence_lower": 0.62,
+        "confidence_upper": 0.9,
+        "form": "credal: <strength, [c_lower, c_upper]>",
+        "strength": 1.0
+      },
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": true,
+      "pln_truth_value": {
+        "c_hi": 0.9,
+        "c_lo": 0.62,
+        "strength": 1.0
+      },
+      "source": "resolution_v1",
+      "thats_all_at_current_vantage": false,
+      "verdict": "open",
+      "world_assumption_comparison": {
+        "actual_reading": {
+          "status": "open_world",
+          "truth_value": {
+            "confidence_lower": 0.62,
+            "confidence_upper": 0.9,
+            "form": "credal: <strength, [c_lower, c_upper]>",
+            "strength": 1.0
+          }
+        },
+        "changes_output": true,
+        "counterfactual_thats_all_reading": {
+          "note": "This is the same finite evidence treated as if the currently visible population were the whole world, so the open credal interval collapses to the bounded empirical point reading.",
+          "status": "thats_all",
+          "truth_value": {
+            "confidence": 0.9796,
+            "form": "<strength, confidence>",
+            "strength": 1.0
+          }
+        },
+        "same_evidence_base": true
+      },
+      "world_assumption_status": "open_world"
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "right_alternative"
+      ],
+      "break_order": null,
+      "consequent": "rip",
+      "credal_confidence_width": 0.28,
+      "credal_inheritance_tv": {
+        "confidence_lower": 0.62,
+        "confidence_upper": 0.9,
+        "form": "credal: <strength, [c_lower, c_upper]>",
+        "strength": 1.0
+      },
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": true,
+      "pln_truth_value": {
+        "c_hi": 0.9,
+        "c_lo": 0.62,
+        "strength": 1.0
+      },
+      "source": "resolution_v1",
+      "thats_all_at_current_vantage": false,
+      "verdict": "open",
+      "world_assumption_comparison": {
+        "actual_reading": {
+          "status": "open_world",
+          "truth_value": {
+            "confidence_lower": 0.62,
+            "confidence_upper": 0.9,
+            "form": "credal: <strength, [c_lower, c_upper]>",
+            "strength": 1.0
+          }
+        },
+        "changes_output": true,
+        "counterfactual_thats_all_reading": {
+          "note": "This is the same finite evidence treated as if the currently visible population were the whole world, so the open credal interval collapses to the bounded empirical point reading.",
+          "status": "thats_all",
+          "truth_value": {
+            "confidence": 0.9796,
+            "form": "<strength, confidence>",
+            "strength": 1.0
+          }
+        },
+        "same_evidence_base": true
+      },
+      "world_assumption_status": "open_world"
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "left_alternative"
+      ],
+      "break_order": null,
+      "consequent": "x_cubed_associative",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "right_alternative"
+      ],
+      "break_order": null,
+      "consequent": "x_cubed_associative",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "left_alternative"
+      ],
+      "break_order": null,
+      "consequent": "two_sided_inverses",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "right_alternative"
+      ],
+      "break_order": null,
+      "consequent": "two_sided_inverses",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "break_order": null,
+      "consequent": "c_identity",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "break_order": null,
+      "consequent": "left_bol",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "break_order": null,
+      "consequent": "moufang",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "break_order": null,
+      "consequent": "right_bol",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "benchmark_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "c_identity"
+      ],
+      "break_order": 10,
+      "consequent": "associative",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": null,
+      "source": "hardening_v1",
+      "thats_all_at_current_vantage": false,
+      "verdict": "refuted",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "frontier_collapsed_by_counterexample"
+    },
+    {
+      "antecedent": [
+        "left_bol"
+      ],
+      "break_order": 8,
+      "consequent": "associative",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": null,
+      "source": "hardening_v1",
+      "thats_all_at_current_vantage": false,
+      "verdict": "refuted",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "frontier_collapsed_by_counterexample"
+    },
+    {
+      "antecedent": [
+        "left_bol"
+      ],
+      "break_order": 8,
+      "consequent": "moufang",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": null,
+      "source": "hardening_v1",
+      "thats_all_at_current_vantage": false,
+      "verdict": "refuted",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "frontier_collapsed_by_counterexample"
+    },
+    {
+      "antecedent": [
+        "left_bol"
+      ],
+      "break_order": 8,
+      "consequent": "right_bol",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": null,
+      "source": "hardening_v1",
+      "thats_all_at_current_vantage": false,
+      "verdict": "refuted",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "frontier_collapsed_by_counterexample"
+    },
+    {
+      "antecedent": [
+        "moufang"
+      ],
+      "break_order": 12,
+      "consequent": "associative",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": null,
+      "source": "hardening_v1",
+      "thats_all_at_current_vantage": false,
+      "verdict": "refuted",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "frontier_collapsed_by_counterexample"
+    },
+    {
+      "antecedent": [
+        "moufang"
+      ],
+      "break_order": null,
+      "consequent": "left_bol",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "hardening_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "moufang"
+      ],
+      "break_order": 12,
+      "consequent": "c_identity",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": null,
+      "source": "hardening_v1",
+      "thats_all_at_current_vantage": false,
+      "verdict": "refuted",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "frontier_collapsed_by_counterexample"
+    },
+    {
+      "antecedent": [
+        "c_identity"
+      ],
+      "break_order": 10,
+      "consequent": "moufang",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": null,
+      "source": "hardening_v1",
+      "thats_all_at_current_vantage": false,
+      "verdict": "refuted",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "frontier_collapsed_by_counterexample"
+    },
+    {
+      "antecedent": [
+        "c_identity"
+      ],
+      "break_order": null,
+      "consequent": "left_alternative",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "hardening_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    },
+    {
+      "antecedent": [
+        "left_bol",
+        "right_bol"
+      ],
+      "break_order": null,
+      "consequent": "moufang",
+      "credal_confidence_width": null,
+      "credal_inheritance_tv": null,
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": false,
+      "pln_truth_value": {
+        "c_hi": 1.0,
+        "c_lo": 1.0,
+        "strength": 1.0
+      },
+      "source": "hardening_v1",
+      "thats_all_at_current_vantage": true,
+      "verdict": "proved",
+      "world_assumption_comparison": null,
+      "world_assumption_status": "thats_all"
+    }
+  ],
+  "free_theorems_via_deduction": [
+    {
+      "implication": "associative => left_alternative",
+      "population_consistent": true,
+      "via": "transitive closure of proved edges"
+    },
+    {
+      "implication": "associative => x_cubed_associative",
+      "population_consistent": true,
+      "via": "transitive closure of proved edges"
+    },
+    {
+      "implication": "c_identity => x_cubed_associative",
+      "population_consistent": true,
+      "via": "transitive closure of proved edges"
+    }
+  ],
+  "name": "loop_truth_forest_v1",
+  "open_edges_ranked_by_credal_width": [
+    {
+      "break_order_probed_to": null,
+      "closure_surplus_reading": "lip is supported by the sampled closure of flexible & left_alternative but remains unresolved in the fuller closure",
+      "credal_confidence_width": 0.28,
+      "credal_inheritance_tv": {
+        "confidence_lower": 0.62,
+        "confidence_upper": 0.9,
+        "form": "credal: <strength, [c_lower, c_upper]>",
+        "strength": 1.0
+      },
+      "edge": "flexible & left_alternative => lip",
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": true,
+      "pln_truth_value": {
+        "c_hi": 0.9,
+        "c_lo": 0.62,
+        "strength": 1.0
+      },
+      "scrutability_gap_role": "candidate",
+      "thats_all_at_current_vantage": false,
+      "world_assumption_comparison": {
+        "actual_reading": {
+          "status": "open_world",
+          "truth_value": {
+            "confidence_lower": 0.62,
+            "confidence_upper": 0.9,
+            "form": "credal: <strength, [c_lower, c_upper]>",
+            "strength": 1.0
+          }
+        },
+        "changes_output": true,
+        "counterfactual_thats_all_reading": {
+          "note": "This is the same finite evidence treated as if the currently visible population were the whole world, so the open credal interval collapses to the bounded empirical point reading.",
+          "status": "thats_all",
+          "truth_value": {
+            "confidence": 0.9796,
+            "form": "<strength, confidence>",
+            "strength": 1.0
+          }
+        },
+        "same_evidence_base": true
+      },
+      "world_assumption_status": "open_world"
+    },
+    {
+      "break_order_probed_to": null,
+      "closure_surplus_reading": "rip is supported by the sampled closure of flexible & right_alternative but remains unresolved in the fuller closure",
+      "credal_confidence_width": 0.28,
+      "credal_inheritance_tv": {
+        "confidence_lower": 0.62,
+        "confidence_upper": 0.9,
+        "form": "credal: <strength, [c_lower, c_upper]>",
+        "strength": 1.0
+      },
+      "edge": "flexible & right_alternative => rip",
+      "inheritance_credal": null,
+      "inheritance_tv": null,
+      "inheritance_weight": null,
+      "open_world_at_current_vantage": true,
+      "pln_truth_value": {
+        "c_hi": 0.9,
+        "c_lo": 0.62,
+        "strength": 1.0
+      },
+      "scrutability_gap_role": "candidate",
+      "thats_all_at_current_vantage": false,
+      "world_assumption_comparison": {
+        "actual_reading": {
+          "status": "open_world",
+          "truth_value": {
+            "confidence_lower": 0.62,
+            "confidence_upper": 0.9,
+            "form": "credal: <strength, [c_lower, c_upper]>",
+            "strength": 1.0
+          }
+        },
+        "changes_output": true,
+        "counterfactual_thats_all_reading": {
+          "note": "This is the same finite evidence treated as if the currently visible population were the whole world, so the open credal interval collapses to the bounded empirical point reading.",
+          "status": "thats_all",
+          "truth_value": {
+            "confidence": 0.9796,
+            "form": "<strength, confidence>",
+            "strength": 1.0
+          }
+        },
+        "same_evidence_base": true
+      },
+      "world_assumption_status": "open_world"
+    }
+  ],
+  "population_size": 9468,
+  "verdict_counts": {
+    "open": 2,
+    "proved": 24,
+    "refuted": 13
+  },
+  "world_assumption_counts": {
+    "frontier_collapsed_by_counterexample": 13,
+    "open_world": 2,
+    "thats_all": 24
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "article": "lattice2_interpolant_symbols",
+  "attributes": [
+    "interp:k1_lattice2",
+    "interp:k1_zfmisc_1",
+    "interp:k2_partfun1",
+    "interp:k2_zfmisc_1",
+    "interp:k3_lattices",
+    "interp:k4_binop_1",
+    "interp:k4_lattices",
+    "interp:k5_lattices",
+    "interp:k6_lattices",
+    "interp:k9_funct_4",
+    "interp:l3_lattices",
+    "interp:m1_subset_1",
+    "interp:u1_lattices",
+    "interp:u1_struct_0",
+    "interp:u2_lattices",
+    "interp:v10_lattices",
+    "interp:v1_funct_1",
+    "interp:v2_struct_0",
+    "interp:v3_lattices"
+  ],
+  "metadata": {
+    "artifact_count": 7,
+    "attribute_presence": {
+      "interp:k1_lattice2": 1,
+      "interp:k1_zfmisc_1": 1,
+      "interp:k2_partfun1": 1,
+      "interp:k2_zfmisc_1": 1,
+      "interp:k3_lattices": 1,
+      "interp:k4_binop_1": 2,
+      "interp:k4_lattices": 1,
+      "interp:k5_lattices": 2,
+      "interp:k6_lattices": 2,
+      "interp:k9_funct_4": 1,
+      "interp:l3_lattices": 6,
+      "interp:m1_subset_1": 5,
+      "interp:u1_lattices": 1,
+      "interp:u1_struct_0": 4,
+      "interp:u2_lattices": 1,
+      "interp:v10_lattices": 4,
+      "interp:v1_funct_1": 1,
+      "interp:v2_struct_0": 6,
+      "interp:v3_lattices": 1
+    },
+    "kind": "interpolant-shared-symbol-context"
+  },
+  "rows": [
+    {
+      "counts": {
+        "interp:l3_lattices": 1,
+        "interp:v2_struct_0": 1
+      },
+      "object": "lattice2__lattice2__t12_lattice2"
+    },
+    {
+      "counts": {
+        "interp:k1_lattice2": 1,
+        "interp:l3_lattices": 1,
+        "interp:v2_struct_0": 1,
+        "interp:v3_lattices": 1
+      },
+      "object": "lattice2__lattice2__t13_lattice2"
+    },
+    {
+      "counts": {
+        "interp:k3_lattices": 1,
+        "interp:k5_lattices": 1,
+        "interp:l3_lattices": 1,
+        "interp:m1_subset_1": 1,
+        "interp:u1_struct_0": 1,
+        "interp:v10_lattices": 1,
+        "interp:v2_struct_0": 1
+      },
+      "object": "lattice2__lattice2__t14_lattice2"
+    },
+    {
+      "counts": {
+        "interp:k4_binop_1": 1,
+        "interp:k5_lattices": 1,
+        "interp:l3_lattices": 1,
+        "interp:m1_subset_1": 1,
+        "interp:u1_struct_0": 1,
+        "interp:u2_lattices": 1,
+        "interp:v10_lattices": 1,
+        "interp:v2_struct_0": 1
+      },
+      "object": "lattice2__lattice2__t15_lattice2"
+    },
+    {
+      "counts": {
+        "interp:k4_lattices": 1,
+        "interp:k6_lattices": 1,
+        "interp:l3_lattices": 1,
+        "interp:m1_subset_1": 1,
+        "interp:u1_struct_0": 1,
+        "interp:v10_lattices": 1,
+        "interp:v2_struct_0": 1
+      },
+      "object": "lattice2__lattice2__t16_lattice2"
+    },
+    {
+      "counts": {
+        "interp:k4_binop_1": 1,
+        "interp:k6_lattices": 1,
+        "interp:l3_lattices": 1,
+        "interp:m1_subset_1": 1,
+        "interp:u1_lattices": 1,
+        "interp:u1_struct_0": 1,
+        "interp:v10_lattices": 1,
+        "interp:v2_struct_0": 1
+      },
+      "object": "lattice2__lattice2__t17_lattice2"
+    },
+    {
+      "counts": {
+        "interp:k1_zfmisc_1": 1,
+        "interp:k2_partfun1": 1,
+        "interp:k2_zfmisc_1": 1,
+        "interp:k9_funct_4": 1,
+        "interp:m1_subset_1": 1,
+        "interp:v1_funct_1": 1
+      },
+      "object": "lattice2__lattice2__t6_lattice2"
+    }
+  ]
+}

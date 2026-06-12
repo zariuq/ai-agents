@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Audit log for GF parsing repairs considered for original US Constitution main-text fragments. Entries here are not automatically applied by the witness exporter. A correction becomes trusted only after the exporter consumes it, regenerates witnesses, and Lean conformance builds.",
+  "policy": {
+    "rejectMetaHoles": true,
+    "doNotHandFillRawTrees": true,
+    "unknownTokenPolicy": {
+      "usableGenericUnknownToken": false,
+      "testedInput": "zzzzzz shall declare War",
+      "observedResult": "Unexpected token: \"zzzzzz\"",
+      "note": "ParseEng does not provide a safe generic unknown lexical item in this lane. Words such as \"someone\" parse as ordinary lexical content, so they must not be used as placeholders for unknown constitutional actors."
+    },
+    "allowedCorrectionKinds": [
+      "exact_subfragment",
+      "context_completion",
+      "custom_grammar_needed"
+    ]
+  },
+  "sourceUrls": [
+    "https://www.archives.gov/founding-docs/constitution-transcript",
+    "https://constitution.congress.gov/constitution/"
+  ],
+  "corrections": [
+    {
+      "clauseId": "articleISection3SenateImpeachments",
+      "anchor": "Article I, Section 3",
+      "originalText": "The Senate shall have the sole Power to try all Impeachments",
+      "observedFailure": {
+        "rawParseCount": 3,
+        "acceptedParseCount": 0,
+        "reason": "ParseEng produces a typed skeleton with a PGF meta hole in the controlled infinitive.",
+        "holeEvidence": "InOrderToVP ASimul PPos ? (UseV try_V)"
+      },
+      "recommendedHandling": "Split into exact subfragment plus contextual action completion, or represent the whole legal construction in a custom Constitution grammar.",
+      "candidateFixes": [
+        {
+          "kind": "exact_subfragment",
+          "parserInput": "The Senate shall have the sole Power",
+          "applyAsWitness": true,
+          "confidence": 0.99,
+          "justification": "Exact contiguous subfragment of the original clause; ParseEng parses it without meta holes.",
+          "source": "Original Article I, Section 3 wording."
+        },
+        {
+          "kind": "context_completion",
+          "parserInput": "The Senate shall try all Impeachments",
+          "applyAsWitness": true,
+          "confidence": 0.93,
+          "justification": "The controlled infinitive 'to try all Impeachments' is governed by the subject 'The Senate' in the same clause. This preserves the actor/action relation but drops the explicit 'sole Power' modality.",
+          "source": "Original Article I, Section 3 wording; tested with ParseEng and no meta hole."
+        },
+        {
+          "kind": "custom_grammar_needed",
+          "parserInput": "The Senate shall have the sole Power to try all Impeachments",
+          "applyAsWitness": false,
+          "confidence": 0.97,
+          "justification": "The exact legal construction should ultimately be typed as a power-bearing controlled-infinitive clause rather than split into two ordinary English sentences.",
+          "source": "Observed ParseEng hole; legal syntax of Article I, Section 3."
+        }
+      ],
+      "appliedInExporter": true
+    },
+    {
+      "clauseId": "articleISection8DeclareWar",
+      "anchor": "Article I, Section 8",
+      "originalText": "To declare War",
+      "observedFailure": {
+        "rawParseCount": 3,
+        "acceptedParseCount": 0,
+        "reason": "ParseEng treats the infinitive fragment as a phrase with an implicit subject and inserts a PGF meta hole.",
+        "holeEvidence": "UttVP ASimul PPos ? (ComplSlash (SlashV2a declare_*_V2) (MassNP (UseN war_*_N)))"
+      },
+      "recommendedHandling": "Use a Constitution-specific grammar category for enumerated powers. Treat any ordinary-sentence completion as contextual and weaker than exact surface grounding.",
+      "candidateFixes": [
+        {
+          "kind": "context_completion",
+          "parserInput": "Congress may declare War",
+          "applyAsWitness": true,
+          "confidence": 0.76,
+          "justification": "Article I, Section 8 introduces Congress's powers, and 'To declare War' is one item in that list. 'May' captures power better than duty, but it is not the literal modal text.",
+          "source": "Article I, Section 8 power-list context; tested with ParseEng and no meta hole."
+        },
+        {
+          "kind": "context_completion",
+          "parserInput": "Congress shall declare War",
+          "applyAsWitness": false,
+          "confidence": 0.58,
+          "justification": "This parses without meta holes and supplies the governing actor, but it risks converting a granted power into a duty. It should not be used for legal semantics except as a syntactic smoke test.",
+          "source": "Article I, Section 8 power-list context; tested with ParseEng and no meta hole."
+        },
+        {
+          "kind": "custom_grammar_needed",
+          "parserInput": "To declare War",
+          "applyAsWitness": false,
+          "confidence": 0.98,
+          "justification": "The exact fragment is not a standalone sentence; it is an enumerated PowerItem under 'The Congress shall have Power'. A custom grammar can type it directly without inventing a subject or modal.",
+          "source": "Original Article I, Section 8 wording and observed ParseEng meta hole."
+        }
+      ],
+      "appliedInExporter": true
+    },
+    {
+      "clauseId": "articleVProposeAmendments",
+      "anchor": "Article V",
+      "originalText": "shall propose Amendments to this Constitution",
+      "observedFailure": {
+        "rawParseCount": 3,
+        "acceptedParseCount": 0,
+        "reason": "ParseEng produces a verb-phrase sentence witness with a missing subject before 'shall'.",
+        "holeEvidence": "UttVPS ? (ComplVPS2 (MkVPS2 ... propose_*_V2) ...)"
+      },
+      "recommendedHandling": "Context-complete with 'The Congress' only when the Article V antecedent is tracked separately; otherwise use a custom grammar for conditional duties.",
+      "candidateFixes": [
+        {
+          "kind": "context_completion",
+          "parserInput": "The Congress shall propose Amendments to this Constitution",
+          "applyAsWitness": true,
+          "confidence": 0.91,
+          "justification": "The subject 'The Congress' is explicit in the same Article V sentence. This completion parses without meta holes, but omits the condition 'whenever two thirds of both Houses shall deem it necessary'.",
+          "source": "Original Article V wording; tested with ParseEng and no meta hole."
+        },
+        {
+          "kind": "custom_grammar_needed",
+          "parserInput": "shall propose Amendments to this Constitution",
+          "applyAsWitness": false,
+          "confidence": 0.96,
+          "justification": "The exact fragment is a conditional legal duty whose subject and antecedent are supplied by the surrounding sentence. A custom grammar should preserve those dependencies instead of flattening them.",
+          "source": "Original Article V wording and observed ParseEng meta hole."
+        }
+      ],
+      "appliedInExporter": true
+    }
+  ]
+}

@@ -1,0 +1,499 @@
+{
+  "fmb_time_limit": 45,
+  "kind_counts": {
+    "implication_proved": 15,
+    "smallest_order_theorem": 9
+  },
+  "ladder_orders": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "name": "loop_spectrum_miner_v1",
+  "pair_count": 24,
+  "population_orders": [
+    4,
+    5,
+    6
+  ],
+  "population_size": 9468,
+  "results": [
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "found_order": null,
+      "kind": "implication_proved",
+      "negated_consequent": "flexible",
+      "rungs": [],
+      "small_order_support": 90,
+      "statement": "associative => flexible is a theorem; no associative & ~flexible loop exists at any order"
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "found_order": null,
+      "kind": "implication_proved",
+      "negated_consequent": "left_alternative",
+      "rungs": [],
+      "small_order_support": 90,
+      "statement": "associative => left_alternative is a theorem; no associative & ~left_alternative loop exists at any order"
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "found_order": null,
+      "kind": "implication_proved",
+      "negated_consequent": "lip",
+      "rungs": [],
+      "small_order_support": 90,
+      "statement": "associative => lip is a theorem; no associative & ~lip loop exists at any order"
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "found_order": null,
+      "kind": "implication_proved",
+      "negated_consequent": "right_alternative",
+      "rungs": [],
+      "small_order_support": 90,
+      "statement": "associative => right_alternative is a theorem; no associative & ~right_alternative loop exists at any order"
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "found_order": null,
+      "kind": "implication_proved",
+      "negated_consequent": "rip",
+      "rungs": [],
+      "small_order_support": 90,
+      "statement": "associative => rip is a theorem; no associative & ~rip loop exists at any order"
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "found_order": null,
+      "kind": "implication_proved",
+      "negated_consequent": "two_sided_inverses",
+      "rungs": [],
+      "small_order_support": 90,
+      "statement": "associative => two_sided_inverses is a theorem; no associative & ~two_sided_inverses loop exists at any order"
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "found_order": null,
+      "kind": "implication_proved",
+      "negated_consequent": "x_cubed_associative",
+      "rungs": [],
+      "small_order_support": 90,
+      "statement": "associative => x_cubed_associative is a theorem; no associative & ~x_cubed_associative loop exists at any order"
+    },
+    {
+      "antecedent": [
+        "c_identity"
+      ],
+      "found_order": 10,
+      "kind": "smallest_order_theorem",
+      "negated_consequent": "associative",
+      "rungs": [
+        {
+          "finite_model_found": false,
+          "order": 7,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 8,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 9,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": true,
+          "order": 10,
+          "return_code": 0,
+          "status": "Satisfiable"
+        }
+      ],
+      "small_order_support": 90,
+      "statement": "the smallest loop satisfying c_identity & ~associative has order 10",
+      "witness_block": "tff('declare_$i1',type,c0:$i).\ntff('declare_$i2',type,c1:$i).\ntff('declare_$i3',type,c2:$i).\ntff('declare_$i4',type,c3:$i).\ntff('declare_$i5',type,c4:$i).\ntff('declare_$i6',type,c5:$i).\ntff('declare_$i7',type,c6:$i).\ntff('declare_$i8',type,c7:$i).\ntff('declare_$i9',type,c8:$i).\ntff('declare_$i10',type,c9:$i).\ntff('finite_domain_$i',axiom,\n      ! [X:$i] : (\n         X = c0 | X = c1 | X = c2 | X = c3 | X = c4 | \n         X = c5 | X = c6 | X = c7 | X = c8 | X = c9\n      ) ).\n\ntff('distinct_domain_$i',axiom,\n         c0 != c1 & c0 != c2 & c0 != c3 & c0 != c4 & c0 != c5 & \n         c0 != c6 & c0 != c7 & c0 != c8 & c0 != c9 & c1 != c2 & \n         c1 != c3 & c1 != c4 & c1 != c5 & c1 != c6 & c1 != c7 & \n         c1 != c8 & c1 != c9 & c2 != c3 & c2 != c4 & c2 != c5 & \n         c2 != c6 & c2 != c7 & c2 != c8 & c2 != c9 & c3 != c4 & \n         c3 != c5 & c3 != c6 & c3 != c7 & c3 != c8 & c3 != c9 & \n         c4 != c5 & c4 != c6 & c4 != c7 & c4 != c8 & c4 != c9 & \n         c5 != c6 & c5 != c7 & c5 != c8 & c5 != c9 & c6 != c7 & \n         c6 != c8 & c6 != c9 & c7 != c8 & c7 != c9 & c8 != c9\n).\n\ntff(declare_e,type,e:$i).\ntff(e_definition,axiom,e = c0).\ntff(declare_ld,type,ld: ($i * $i) > $i).\ntff(function_ld,axiom,\n           ld(c0,c0) = c0\n         & ld(c0,c1) = c1\n         & ld(c0,c2) = c2\n         & ld(c0,c3) = c3\n         & ld(c0,c4) = c4\n         & ld(c0,c5) = c5\n         & ld(c0,c6) = c6\n         & ld(c0,c7) = c7\n         & ld(c0,c8) = c8\n         & ld(c0,c9) = c9\n         & ld(c1,c0) = c1\n         & ld(c1,c1) = c0\n         & ld(c1,c2) = c4\n         & ld(c1,c3) = c8\n         & ld(c1,c4) = c2\n         & ld(c1,c5) = c9\n         & ld(c1,c6) = c7\n         & ld(c1,c7) = c6\n         & ld(c1,c8) = c3\n         & ld(c1,c9) = c5\n         & ld(c2,c0) = c2\n         & ld(c2,c1) = c4\n         & ld(c2,c2) = c0\n         & ld(c2,c3) = c6\n         & ld(c2,c4) = c1\n         & ld(c2,c5) = c7\n         & ld(c2,c6) = c3\n         & ld(c2,c7) = c5\n         & ld(c2,c8) = c9\n         & ld(c2,c9) = c8\n         & ld(c3,c0) = c3\n         & ld(c3,c1) = c8\n         & ld(c3,c2) = c6\n         & ld(c3,c3) = c0\n         & ld(c3,c4) = c5\n         & ld(c3,c5) = c4\n         & ld(c3,c6) = c2\n         & ld(c3,c7) = c9\n         & ld(c3,c8) = c1\n         & ld(c3,c9) = c7\n         & ld(c4,c0) = c4\n         & ld(c4,c1) = c2\n         & ld(c4,c2) = c1\n         & ld(c4,c3) = c5\n         & ld(c4,c4) = c0\n         & ld(c4,c5) = c3\n         & ld(c4,c6) = c9\n         & ld(c4,c7) = c8\n         & ld(c4,c8) = c7\n         & ld(c4,c9) = c6\n         & ld(c5,c0) = c5\n         & ld(c5,c1) = c9\n         & ld(c5,c2) = c7\n         & ld(c5,c3) = c4\n         & ld(c5,c4) = c3\n         & ld(c5,c5) = c0\n         & ld(c5,c6) = c8\n         & ld(c5,c7) = c2\n         & ld(c5,c8) = c6\n         & ld(c5,c9) = c1\n         & ld(c6,c0) = c6\n         & ld(c6,c1) = c7\n         & ld(c6,c2) = c3\n         & ld(c6,c3) = c2\n         & ld(c6,c4) = c9\n         & ld(c6,c5) = c8\n         & ld(c6,c6) = c0\n         & ld(c6,c7) = c1\n         & ld(c6,c8) = c5\n         & ld(c6,c9) = c4\n         & ld(c7,c0) = c7\n         & ld(c7,c1) = c6\n         & ld(c7,c2) = c5\n         & ld(c7,c3) = c9\n         & ld(c7,c4) = c8\n         & ld(c7,c5) = c2\n         & ld(c7,c6) = c1\n         & ld(c7,c7) = c0\n         & ld(c7,c8) = c4\n         & ld(c7,c9) = c3\n         & ld(c8,c0) = c8\n         & ld(c8,c1) = c3\n         & ld(c8,c2) = c9\n         & ld(c8,c3) = c1\n         & ld(c8,c4) = c7\n         & ld(c8,c5) = c6\n         & ld(c8,c6) = c5\n         & ld(c8,c7) = c4\n         & ld(c8,c8) = c0\n         & ld(c8,c9) = c2\n         & ld(c9,c0) = c9\n         & ld(c9,c1) = c5\n         & ld(c9,c2) = c8\n         & ld(c9,c3) = c7\n         & ld(c9,c4) = c6\n         & ld(c9,c5) = c1\n         & ld(c9,c6) = c4\n         & ld(c9,c7) = c3\n         & ld(c9,c8) = c2\n         & ld(c9,c9) = c0\n\n).\n\ntff(declare_op,type,op: ($i * $i) > $i).\ntff(function_op,axiom,\n           op(c0,c0) = c0\n         & op(c0,c1) = c1\n         & op(c0,c2) = c2\n         & op(c0,c3) = c3\n         & op(c0,c4) = c4\n         & op(c0,c5) = c5\n         & op(c0,c6) = c6\n         & op(c0,c7) = c7\n         & op(c0,c8) = c8\n         & op(c0,c9) = c9\n         & op(c1,c0) = c1\n         & op(c1,c1) = c0\n         & op(c1,c2) = c4\n         & op(c1,c3) = c8\n         & op(c1,c4) = c2\n         & op(c1,c5) = c9\n         & op(c1,c6) = c7\n         & op(c1,c7) = c6\n         & op(c1,c8) = c3\n         & op(c1,c9) = c5\n         & op(c2,c0) = c2\n         & op(c2,c1) = c4\n         & op(c2,c2) = c0\n         & op(c2,c3) = c6\n         & op(c2,c4) = c1\n         & op(c2,c5) = c7\n         & op(c2,c6) = c3\n         & op(c2,c7) = c5\n         & op(c2,c8) = c9\n         & op(c2,c9) = c8\n         & op(c3,c0) = c3\n         & op(c3,c1) = c8\n         & op(c3,c2) = c6\n         & op(c3,c3) = c0\n         & op(c3,c4) = c5\n         & op(c3,c5) = c4\n         & op(c3,c6) = c2\n         & op(c3,c7) = c9\n         & op(c3,c8) = c1\n         & op(c3,c9) = c7\n         & op(c4,c0) = c4\n         & op(c4,c1) = c2\n         & op(c4,c2) = c1\n         & op(c4,c3) = c5\n         & op(c4,c4) = c0\n         & op(c4,c5) = c3\n         & op(c4,c6) = c9\n         & op(c4,c7) = c8\n         & op(c4,c8) = c7\n         & op(c4,c9) = c6\n         & op(c5,c0) = c5\n         & op(c5,c1) = c9\n         & op(c5,c2) = c7\n         & op(c5,c3) = c4\n         & op(c5,c4) = c3\n         & op(c5,c5) = c0\n         & op(c5,c6) = c8\n         & op(c5,c7) = c2\n         & op(c5,c8) = c6\n         & op(c5,c9) = c1\n         & op(c6,c0) = c6\n         & op(c6,c1) = c7\n         & op(c6,c2) = c3\n         & op(c6,c3) = c2\n         & op(c6,c4) = c9\n         & op(c6,c5) = c8\n         & op(c6,c6) = c0\n         & op(c6,c7) = c1\n         & op(c6,c8) = c5\n         & op(c6,c9) = c4\n         & op(c7,c0) = c7\n         & op(c7,c1) = c6\n         & op(c7,c2) = c5\n         & op(c7,c3) = c9\n         & op(c7,c4) = c8\n         & op(c7,c5) = c2\n         & op(c7,c6) = c1\n         & op(c7,c7) = c0\n         & op(c7,c8) = c4\n         & op(c7,c9) = c3\n         & op(c8,c0) = c8\n         & op(c8,c1) = c3\n         & op(c8,c2) = c9\n         & op(c8,c3) = c1\n         & op(c8,c4) = c7\n         & op(c8,c5) = c6\n         & op(c8,c6) = c5\n         & op(c8,c7) = c4\n         & op(c8,c8) = c0\n         & op(c8,c9) = c2\n         & op(c9,c0) = c9\n         & op(c9,c1) = c5\n         & op(c9,c2) = c8\n         & op(c9,c3) = c7\n         & op(c9,c4) = c6\n         & op(c9,c5) = c1\n         & op(c9,c6) = c4\n         & op(c9,c7) = c3\n         & op(c9,c8) = c2\n         & op(c9,c9) = c0\n\n).\n\ntff(declare_rd,type,rd: ($i * $i) > $i).\ntff(function_rd,axiom,\n           rd(c0,c0) = c0\n         & rd(c0,c1) = c1\n         & rd(c0,c2) = c2\n         & rd(c0,c3) = c3\n         & rd(c0,c4) = c4\n         & rd(c0,c5) = c5\n         & rd(c0,c6) = c6\n         & rd(c0,c7) = c7\n         & rd(c0,c8) = c8\n         & rd(c0,c9) = c9\n         & rd(c1,c0) = c1\n         & rd(c1,c1) = c0\n         & rd(c1,c2) = c4\n         & rd(c1,c3) = c8\n         & rd(c1,c4) = c2\n         & rd(c1,c5) = c9\n         & rd(c1,c6) = c7\n         & rd(c1,c7) = c6\n         & rd(c1,c8) = c3\n         & rd(c1,c9) = c5\n         & rd(c2,c0) = c2\n         & rd(c2,c1) = c4\n         & rd(c2,c2) = c0\n         & rd(c2,c3) = c6\n         & rd(c2,c4) = c1\n         & rd(c2,c5) = c7\n         & rd(c2,c6) = c3\n         & rd(c2,c7) = c5\n         & rd(c2,c8) = c9\n         & rd(c2,c9) = c8\n         & rd(c3,c0) = c3\n         & rd(c3,c1) = c8\n         & rd(c3,c2) = c6\n         & rd(c3,c3) = c0\n         & rd(c3,c4) = c5\n         & rd(c3,c5) = c4\n         & rd(c3,c6) = c2\n         & rd(c3,c7) = c9\n         & rd(c3,c8) = c1\n         & rd(c3,c9) = c7\n         & rd(c4,c0) = c4\n         & rd(c4,c1) = c2\n         & rd(c4,c2) = c1\n         & rd(c4,c3) = c5\n         & rd(c4,c4) = c0\n         & rd(c4,c5) = c3\n         & rd(c4,c6) = c9\n         & rd(c4,c7) = c8\n         & rd(c4,c8) = c7\n         & rd(c4,c9) = c6\n         & rd(c5,c0) = c5\n         & rd(c5,c1) = c9\n         & rd(c5,c2) = c7\n         & rd(c5,c3) = c4\n         & rd(c5,c4) = c3\n         & rd(c5,c5) = c0\n         & rd(c5,c6) = c8\n         & rd(c5,c7) = c2\n         & rd(c5,c8) = c6\n         & rd(c5,c9) = c1\n         & rd(c6,c0) = c6\n         & rd(c6,c1) = c7\n         & rd(c6,c2) = c3\n         & rd(c6,c3) = c2\n         & rd(c6,c4) = c9\n         & rd(c6,c5) = c8\n         & rd(c6,c6) = c0\n         & rd(c6,c7) = c1\n         & rd(c6,c8) = c5\n         & rd(c6,c9) = c4\n         & rd(c7,c0) = c7\n         & rd(c7,c1) = c6\n         & rd(c7,c2) = c5\n         & rd(c7,c3) = c9\n         & rd(c7,c4) = c8\n         & rd(c7,c5) = c2\n         & rd(c7,c6) = c1\n         & rd(c7,c7) = c0\n         & rd(c7,c8) = c4\n         & rd(c7,c9) = c3\n         & rd(c8,c0) = c8\n         & rd(c8,c1) = c3\n         & rd(c8,c2) = c9\n         & rd(c8,c3) = c1\n         & rd(c8,c4) = c7\n         & rd(c8,c5) = c6\n         & rd(c8,c6) = c5\n         & rd(c8,c7) = c4\n         & rd(c8,c8) = c0\n         & rd(c8,c9) = c2\n         & rd(c9,c0) = c9\n         & rd(c9,c1) = c5\n         & rd(c9,c2) = c8\n         & rd(c9,c3) = c7\n         & rd(c9,c4) = c6\n         & rd(c9,c5) = c1\n         & rd(c9,c6) = c4\n         & rd(c9,c7) = c3\n         & rd(c9,c8) = c2\n         & rd(c9,c9) = c0\n\n)."
+    },
+    {
+      "antecedent": [
+        "c_identity"
+      ],
+      "found_order": 12,
+      "kind": "smallest_order_theorem",
+      "negated_consequent": "flexible",
+      "rungs": [
+        {
+          "finite_model_found": false,
+          "order": 7,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 8,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 9,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 10,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 11,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": true,
+          "order": 12,
+          "return_code": 0,
+          "status": "Satisfiable"
+        }
+      ],
+      "small_order_support": 90,
+      "statement": "the smallest loop satisfying c_identity & ~flexible has order 12",
+      "witness_block": "tff('declare_$i1',type,c0:$i).\ntff('declare_$i2',type,c1:$i).\ntff('declare_$i3',type,c2:$i).\ntff('declare_$i4',type,c3:$i).\ntff('declare_$i5',type,c4:$i).\ntff('declare_$i6',type,c5:$i).\ntff('declare_$i7',type,c6:$i).\ntff('declare_$i8',type,c7:$i).\ntff('declare_$i9',type,c8:$i).\ntff('declare_$i10',type,c9:$i).\ntff('declare_$i11',type,c10:$i).\ntff('declare_$i12',type,c11:$i).\ntff('finite_domain_$i',axiom,\n      ! [X:$i] : (\n         X = c0 | X = c1 | X = c2 | X = c3 | X = c4 | \n         X = c5 | X = c6 | X = c7 | X = c8 | X = c9 | \n         X = c10 | X = c11\n      ) ).\n\ntff('distinct_domain_$i',axiom,\n         c0 != c1 & c0 != c2 & c0 != c3 & c0 != c4 & c0 != c5 & \n         c0 != c6 & c0 != c7 & c0 != c8 & c0 != c9 & c0 != c10 & \n         c0 != c11 & c1 != c2 & c1 != c3 & c1 != c4 & c1 != c5 & \n         c1 != c6 & c1 != c7 & c1 != c8 & c1 != c9 & c1 != c10 & \n         c1 != c11 & c2 != c3 & c2 != c4 & c2 != c5 & c2 != c6 & \n         c2 != c7 & c2 != c8 & c2 != c9 & c2 != c10 & c2 != c11 & \n         c3 != c4 & c3 != c5 & c3 != c6 & c3 != c7 & c3 != c8 & \n         c3 != c9 & c3 != c10 & c3 != c11 & c4 != c5 & c4 != c6 & \n         c4 != c7 & c4 != c8 & c4 != c9 & c4 != c10 & c4 != c11 & \n         c5 != c6 & c5 != c7 & c5 != c8 & c5 != c9 & c5 != c10 & \n         c5 != c11 & c6 != c7 & c6 != c8 & c6 != c9 & c6 != c10 & \n         c6 != c11 & c7 != c8 & c7 != c9 & c7 != c10 & c7 != c11 & \n         c8 != c9 & c8 != c10 & c8 != c11 & c9 != c10 & c9 != c11 & \n         c10 != c11\n).\n\ntff(declare_e,type,e:$i).\ntff(e_definition,axiom,e = c0).\ntff(declare_ld,type,ld: ($i * $i) > $i).\ntff(function_ld,axiom,\n           ld(c0,c0) = c0\n         & ld(c0,c1) = c1\n         & ld(c0,c2) = c2\n         & ld(c0,c3) = c3\n         & ld(c0,c4) = c4\n         & ld(c0,c5) = c5\n         & ld(c0,c6) = c6\n         & ld(c0,c7) = c7\n         & ld(c0,c8) = c8\n         & ld(c0,c9) = c9\n         & ld(c0,c10) = c10\n         & ld(c0,c11) = c11\n         & ld(c1,c0) = c9\n         & ld(c1,c1) = c0\n         & ld(c1,c2) = c8\n         & ld(c1,c3) = c2\n         & ld(c1,c4) = c11\n         & ld(c1,c5) = c4\n         & ld(c1,c6) = c7\n         & ld(c1,c7) = c1\n         & ld(c1,c8) = c5\n         & ld(c1,c9) = c10\n         & ld(c1,c10) = c6\n         & ld(c1,c11) = c3\n         & ld(c2,c0) = c5\n         & ld(c2,c1) = c3\n         & ld(c2,c2) = c0\n         & ld(c2,c3) = c9\n         & ld(c2,c4) = c1\n         & ld(c2,c5) = c10\n         & ld(c2,c6) = c4\n         & ld(c2,c7) = c2\n         & ld(c2,c8) = c6\n         & ld(c2,c9) = c8\n         & ld(c2,c10) = c11\n         & ld(c2,c11) = c7\n         & ld(c3,c0) = c8\n         & ld(c3,c1) = c5\n         & ld(c3,c2) = c1\n         & ld(c3,c3) = c0\n         & ld(c3,c4) = c7\n         & ld(c3,c5) = c9\n         & ld(c3,c6) = c2\n         & ld(c3,c7) = c3\n         & ld(c3,c8) = c10\n         & ld(c3,c9) = c11\n         & ld(c3,c10) = c4\n         & ld(c3,c11) = c6\n         & ld(c4,c0) = c4\n         & ld(c4,c1) = c11\n         & ld(c4,c2) = c9\n         & ld(c4,c3) = c10\n         & ld(c4,c4) = c0\n         & ld(c4,c5) = c6\n         & ld(c4,c6) = c5\n         & ld(c4,c7) = c8\n         & ld(c4,c8) = c7\n         & ld(c4,c9) = c2\n         & ld(c4,c10) = c3\n         & ld(c4,c11) = c1\n         & ld(c5,c0) = c2\n         & ld(c5,c1) = c4\n         & ld(c5,c2) = c7\n         & ld(c5,c3) = c1\n         & ld(c5,c4) = c6\n         & ld(c5,c5) = c0\n         & ld(c5,c6) = c8\n         & ld(c5,c7) = c11\n         & ld(c5,c8) = c9\n         & ld(c5,c9) = c3\n         & ld(c5,c10) = c5\n         & ld(c5,c11) = c10\n         & ld(c6,c0) = c6\n         & ld(c6,c1) = c10\n         & ld(c6,c2) = c4\n         & ld(c6,c3) = c5\n         & ld(c6,c4) = c2\n         & ld(c6,c5) = c3\n         & ld(c6,c6) = c0\n         & ld(c6,c7) = c9\n         & ld(c6,c8) = c11\n         & ld(c6,c9) = c7\n         & ld(c6,c10) = c1\n         & ld(c6,c11) = c8\n         & ld(c7,c0) = c10\n         & ld(c7,c1) = c9\n         & ld(c7,c2) = c5\n         & ld(c7,c3) = c8\n         & ld(c7,c4) = c3\n         & ld(c7,c5) = c11\n         & ld(c7,c6) = c1\n         & ld(c7,c7) = c0\n         & ld(c7,c8) = c4\n         & ld(c7,c9) = c6\n         & ld(c7,c10) = c7\n         & ld(c7,c11) = c2\n         & ld(c8,c0) = c3\n         & ld(c8,c1) = c2\n         & ld(c8,c2) = c6\n         & ld(c8,c3) = c7\n         & ld(c8,c4) = c10\n         & ld(c8,c5) = c1\n         & ld(c8,c6) = c11\n         & ld(c8,c7) = c4\n         & ld(c8,c8) = c0\n         & ld(c8,c9) = c5\n         & ld(c8,c10) = c8\n         & ld(c8,c11) = c9\n         & ld(c9,c0) = c1\n         & ld(c9,c1) = c7\n         & ld(c9,c2) = c3\n         & ld(c9,c3) = c11\n         & ld(c9,c4) = c5\n         & ld(c9,c5) = c8\n         & ld(c9,c6) = c10\n         & ld(c9,c7) = c6\n         & ld(c9,c8) = c2\n         & ld(c9,c9) = c0\n         & ld(c9,c10) = c9\n         & ld(c9,c11) = c4\n         & ld(c10,c0) = c7\n         & ld(c10,c1) = c6\n         & ld(c10,c2) = c11\n         & ld(c10,c3) = c4\n         & ld(c10,c4) = c8\n         & ld(c10,c5) = c2\n         & ld(c10,c6) = c9\n         & ld(c10,c7) = c10\n         & ld(c10,c8) = c3\n         & ld(c10,c9) = c1\n         & ld(c10,c10) = c0\n         & ld(c10,c11) = c5\n         & ld(c11,c0) = c11\n         & ld(c11,c1) = c8\n         & ld(c11,c2) = c10\n         & ld(c11,c3) = c6\n         & ld(c11,c4) = c9\n         & ld(c11,c5) = c7\n         & ld(c11,c6) = c3\n         & ld(c11,c7) = c5\n         & ld(c11,c8) = c1\n         & ld(c11,c9) = c4\n         & ld(c11,c10) = c2\n         & ld(c11,c11) = c0\n\n).\n\ntff(declare_op,type,op: ($i * $i) > $i).\ntff(function_op,axiom,\n           op(c0,c0) = c0\n         & op(c0,c1) = c1\n         & op(c0,c2) = c2\n         & op(c0,c3) = c3\n         & op(c0,c4) = c4\n         & op(c0,c5) = c5\n         & op(c0,c6) = c6\n         & op(c0,c7) = c7\n         & op(c0,c8) = c8\n         & op(c0,c9) = c9\n         & op(c0,c10) = c10\n         & op(c0,c11) = c11\n         & op(c1,c0) = c1\n         & op(c1,c1) = c7\n         & op(c1,c2) = c3\n         & op(c1,c3) = c11\n         & op(c1,c4) = c5\n         & op(c1,c5) = c8\n         & op(c1,c6) = c10\n         & op(c1,c7) = c6\n         & op(c1,c8) = c2\n         & op(c1,c9) = c0\n         & op(c1,c10) = c9\n         & op(c1,c11) = c4\n         & op(c2,c0) = c2\n         & op(c2,c1) = c4\n         & op(c2,c2) = c7\n         & op(c2,c3) = c1\n         & op(c2,c4) = c6\n         & op(c2,c5) = c0\n         & op(c2,c6) = c8\n         & op(c2,c7) = c11\n         & op(c2,c8) = c9\n         & op(c2,c9) = c3\n         & op(c2,c10) = c5\n         & op(c2,c11) = c10\n         & op(c3,c0) = c3\n         & op(c3,c1) = c2\n         & op(c3,c2) = c6\n         & op(c3,c3) = c7\n         & op(c3,c4) = c10\n         & op(c3,c5) = c1\n         & op(c3,c6) = c11\n         & op(c3,c7) = c4\n         & op(c3,c8) = c0\n         & op(c3,c9) = c5\n         & op(c3,c10) = c8\n         & op(c3,c11) = c9\n         & op(c4,c0) = c4\n         & op(c4,c1) = c11\n         & op(c4,c2) = c9\n         & op(c4,c3) = c10\n         & op(c4,c4) = c0\n         & op(c4,c5) = c6\n         & op(c4,c6) = c5\n         & op(c4,c7) = c8\n         & op(c4,c8) = c7\n         & op(c4,c9) = c2\n         & op(c4,c10) = c3\n         & op(c4,c11) = c1\n         & op(c5,c0) = c5\n         & op(c5,c1) = c3\n         & op(c5,c2) = c0\n         & op(c5,c3) = c9\n         & op(c5,c4) = c1\n         & op(c5,c5) = c10\n         & op(c5,c6) = c4\n         & op(c5,c7) = c2\n         & op(c5,c8) = c6\n         & op(c5,c9) = c8\n         & op(c5,c10) = c11\n         & op(c5,c11) = c7\n         & op(c6,c0) = c6\n         & op(c6,c1) = c10\n         & op(c6,c2) = c4\n         & op(c6,c3) = c5\n         & op(c6,c4) = c2\n         & op(c6,c5) = c3\n         & op(c6,c6) = c0\n         & op(c6,c7) = c9\n         & op(c6,c8) = c11\n         & op(c6,c9) = c7\n         & op(c6,c10) = c1\n         & op(c6,c11) = c8\n         & op(c7,c0) = c7\n         & op(c7,c1) = c6\n         & op(c7,c2) = c11\n         & op(c7,c3) = c4\n         & op(c7,c4) = c8\n         & op(c7,c5) = c2\n         & op(c7,c6) = c9\n         & op(c7,c7) = c10\n         & op(c7,c8) = c3\n         & op(c7,c9) = c1\n         & op(c7,c10) = c0\n         & op(c7,c11) = c5\n         & op(c8,c0) = c8\n         & op(c8,c1) = c5\n         & op(c8,c2) = c1\n         & op(c8,c3) = c0\n         & op(c8,c4) = c7\n         & op(c8,c5) = c9\n         & op(c8,c6) = c2\n         & op(c8,c7) = c3\n         & op(c8,c8) = c10\n         & op(c8,c9) = c11\n         & op(c8,c10) = c4\n         & op(c8,c11) = c6\n         & op(c9,c0) = c9\n         & op(c9,c1) = c0\n         & op(c9,c2) = c8\n         & op(c9,c3) = c2\n         & op(c9,c4) = c11\n         & op(c9,c5) = c4\n         & op(c9,c6) = c7\n         & op(c9,c7) = c1\n         & op(c9,c8) = c5\n         & op(c9,c9) = c10\n         & op(c9,c10) = c6\n         & op(c9,c11) = c3\n         & op(c10,c0) = c10\n         & op(c10,c1) = c9\n         & op(c10,c2) = c5\n         & op(c10,c3) = c8\n         & op(c10,c4) = c3\n         & op(c10,c5) = c11\n         & op(c10,c6) = c1\n         & op(c10,c7) = c0\n         & op(c10,c8) = c4\n         & op(c10,c9) = c6\n         & op(c10,c10) = c7\n         & op(c10,c11) = c2\n         & op(c11,c0) = c11\n         & op(c11,c1) = c8\n         & op(c11,c2) = c10\n         & op(c11,c3) = c6\n         & op(c11,c4) = c9\n         & op(c11,c5) = c7\n         & op(c11,c6) = c3\n         & op(c11,c7) = c5\n         & op(c11,c8) = c1\n         & op(c11,c9) = c4\n         & op(c11,c10) = c2\n         & op(c11,c11) = c0\n\n).\n\ntff(declare_rd,type,rd: ($i * $i) > $i).\ntff(function_rd,axiom,\n           rd(c0,c0) = c0\n         & rd(c0,c1) = c9\n         & rd(c0,c2) = c5\n         & rd(c0,c3) = c8\n         & rd(c0,c4) = c4\n         & rd(c0,c5) = c2\n         & rd(c0,c6) = c6\n         & rd(c0,c7) = c10\n         & rd(c0,c8) = c3\n         & rd(c0,c9) = c1\n         & rd(c0,c10) = c7\n         & rd(c0,c11) = c11\n         & rd(c1,c0) = c1\n         & rd(c1,c1) = c0\n         & rd(c1,c2) = c8\n         & rd(c1,c3) = c2\n         & rd(c1,c4) = c5\n         & rd(c1,c5) = c3\n         & rd(c1,c6) = c10\n         & rd(c1,c7) = c9\n         & rd(c1,c8) = c11\n         & rd(c1,c9) = c7\n         & rd(c1,c10) = c6\n         & rd(c1,c11) = c4\n         & rd(c2,c0) = c2\n         & rd(c2,c1) = c3\n         & rd(c2,c2) = c0\n         & rd(c2,c3) = c9\n         & rd(c2,c4) = c6\n         & rd(c2,c5) = c7\n         & rd(c2,c6) = c8\n         & rd(c2,c7) = c5\n         & rd(c2,c8) = c1\n         & rd(c2,c9) = c4\n         & rd(c2,c10) = c11\n         & rd(c2,c11) = c10\n         & rd(c3,c0) = c3\n         & rd(c3,c1) = c5\n         & rd(c3,c2) = c1\n         & rd(c3,c3) = c0\n         & rd(c3,c4) = c10\n         & rd(c3,c5) = c6\n         & rd(c3,c6) = c11\n         & rd(c3,c7) = c8\n         & rd(c3,c8) = c7\n         & rd(c3,c9) = c2\n         & rd(c3,c10) = c4\n         & rd(c3,c11) = c9\n         & rd(c4,c0) = c4\n         & rd(c4,c1) = c2\n         & rd(c4,c2) = c6\n         & rd(c4,c3) = c7\n         & rd(c4,c4) = c0\n         & rd(c4,c5) = c9\n         & rd(c4,c6) = c5\n         & rd(c4,c7) = c3\n         & rd(c4,c8) = c10\n         & rd(c4,c9) = c11\n         & rd(c4,c10) = c8\n         & rd(c4,c11) = c1\n         & rd(c5,c0) = c5\n         & rd(c5,c1) = c8\n         & rd(c5,c2) = c10\n         & rd(c5,c3) = c6\n         & rd(c5,c4) = c1\n         & rd(c5,c5) = c0\n         & rd(c5,c6) = c4\n         & rd(c5,c7) = c11\n         & rd(c5,c8) = c9\n         & rd(c5,c9) = c3\n         & rd(c5,c10) = c2\n         & rd(c5,c11) = c7\n         & rd(c6,c0) = c6\n         & rd(c6,c1) = c7\n         & rd(c6,c2) = c3\n         & rd(c6,c3) = c11\n         & rd(c6,c4) = c2\n         & rd(c6,c5) = c4\n         & rd(c6,c6) = c0\n         & rd(c6,c7) = c1\n         & rd(c6,c8) = c5\n         & rd(c6,c9) = c10\n         & rd(c6,c10) = c9\n         & rd(c6,c11) = c8\n         & rd(c7,c0) = c7\n         & rd(c7,c1) = c1\n         & rd(c7,c2) = c2\n         & rd(c7,c3) = c3\n         & rd(c7,c4) = c8\n         & rd(c7,c5) = c11\n         & rd(c7,c6) = c9\n         & rd(c7,c7) = c0\n         & rd(c7,c8) = c4\n         & rd(c7,c9) = c6\n         & rd(c7,c10) = c10\n         & rd(c7,c11) = c5\n         & rd(c8,c0) = c8\n         & rd(c8,c1) = c11\n         & rd(c8,c2) = c9\n         & rd(c8,c3) = c10\n         & rd(c8,c4) = c7\n         & rd(c8,c5) = c1\n         & rd(c8,c6) = c2\n         & rd(c8,c7) = c4\n         & rd(c8,c8) = c0\n         & rd(c8,c9) = c5\n         & rd(c8,c10) = c3\n         & rd(c8,c11) = c6\n         & rd(c9,c0) = c9\n         & rd(c9,c1) = c10\n         & rd(c9,c2) = c4\n         & rd(c9,c3) = c5\n         & rd(c9,c4) = c11\n         & rd(c9,c5) = c8\n         & rd(c9,c6) = c7\n         & rd(c9,c7) = c6\n         & rd(c9,c8) = c2\n         & rd(c9,c9) = c0\n         & rd(c9,c10) = c1\n         & rd(c9,c11) = c3\n         & rd(c10,c0) = c10\n         & rd(c10,c1) = c6\n         & rd(c10,c2) = c11\n         & rd(c10,c3) = c4\n         & rd(c10,c4) = c3\n         & rd(c10,c5) = c5\n         & rd(c10,c6) = c1\n         & rd(c10,c7) = c7\n         & rd(c10,c8) = c8\n         & rd(c10,c9) = c9\n         & rd(c10,c10) = c0\n         & rd(c10,c11) = c2\n         & rd(c11,c0) = c11\n         & rd(c11,c1) = c4\n         & rd(c11,c2) = c7\n         & rd(c11,c3) = c1\n         & rd(c11,c4) = c9\n         & rd(c11,c5) = c10\n         & rd(c11,c6) = c3\n         & rd(c11,c7) = c2\n         & rd(c11,c8) = c6\n         & rd(c11,c9) = c8\n         & rd(c11,c10) = c5\n         & rd(c11,c11) = c0\n\n)."
+    },
+    {
+      "antecedent": [
+        "c_identity"
+      ],
+      "found_order": null,
+      "kind": "implication_proved",
+      "negated_consequent": "left_alternative",
+      "rungs": [],
+      "small_order_support": 90,
+      "statement": "c_identity => left_alternative is a theorem; no c_identity & ~left_alternative loop exists at any order"
+    },
+    {
+      "antecedent": [
+        "c_identity"
+      ],
+      "found_order": 10,
+      "kind": "smallest_order_theorem",
+      "negated_consequent": "left_bol",
+      "rungs": [
+        {
+          "finite_model_found": false,
+          "order": 7,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 8,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 9,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": true,
+          "order": 10,
+          "return_code": 0,
+          "status": "Satisfiable"
+        }
+      ],
+      "small_order_support": 90,
+      "statement": "the smallest loop satisfying c_identity & ~left_bol has order 10",
+      "witness_block": "tff('declare_$i1',type,c0:$i).\ntff('declare_$i2',type,c1:$i).\ntff('declare_$i3',type,c2:$i).\ntff('declare_$i4',type,c3:$i).\ntff('declare_$i5',type,c4:$i).\ntff('declare_$i6',type,c5:$i).\ntff('declare_$i7',type,c6:$i).\ntff('declare_$i8',type,c7:$i).\ntff('declare_$i9',type,c8:$i).\ntff('declare_$i10',type,c9:$i).\ntff('finite_domain_$i',axiom,\n      ! [X:$i] : (\n         X = c0 | X = c1 | X = c2 | X = c3 | X = c4 | \n         X = c5 | X = c6 | X = c7 | X = c8 | X = c9\n      ) ).\n\ntff('distinct_domain_$i',axiom,\n         c0 != c1 & c0 != c2 & c0 != c3 & c0 != c4 & c0 != c5 & \n         c0 != c6 & c0 != c7 & c0 != c8 & c0 != c9 & c1 != c2 & \n         c1 != c3 & c1 != c4 & c1 != c5 & c1 != c6 & c1 != c7 & \n         c1 != c8 & c1 != c9 & c2 != c3 & c2 != c4 & c2 != c5 & \n         c2 != c6 & c2 != c7 & c2 != c8 & c2 != c9 & c3 != c4 & \n         c3 != c5 & c3 != c6 & c3 != c7 & c3 != c8 & c3 != c9 & \n         c4 != c5 & c4 != c6 & c4 != c7 & c4 != c8 & c4 != c9 & \n         c5 != c6 & c5 != c7 & c5 != c8 & c5 != c9 & c6 != c7 & \n         c6 != c8 & c6 != c9 & c7 != c8 & c7 != c9 & c8 != c9\n).\n\ntff(declare_e,type,e:$i).\ntff(e_definition,axiom,e = c0).\ntff(declare_ld,type,ld: ($i * $i) > $i).\ntff(function_ld,axiom,\n           ld(c0,c0) = c0\n         & ld(c0,c1) = c1\n         & ld(c0,c2) = c2\n         & ld(c0,c3) = c3\n         & ld(c0,c4) = c4\n         & ld(c0,c5) = c5\n         & ld(c0,c6) = c6\n         & ld(c0,c7) = c7\n         & ld(c0,c8) = c8\n         & ld(c0,c9) = c9\n         & ld(c1,c0) = c1\n         & ld(c1,c1) = c0\n         & ld(c1,c2) = c7\n         & ld(c1,c3) = c4\n         & ld(c1,c4) = c3\n         & ld(c1,c5) = c6\n         & ld(c1,c6) = c5\n         & ld(c1,c7) = c2\n         & ld(c1,c8) = c9\n         & ld(c1,c9) = c8\n         & ld(c2,c0) = c2\n         & ld(c2,c1) = c7\n         & ld(c2,c2) = c0\n         & ld(c2,c3) = c8\n         & ld(c2,c4) = c5\n         & ld(c2,c5) = c4\n         & ld(c2,c6) = c9\n         & ld(c2,c7) = c1\n         & ld(c2,c8) = c3\n         & ld(c2,c9) = c6\n         & ld(c3,c0) = c3\n         & ld(c3,c1) = c4\n         & ld(c3,c2) = c8\n         & ld(c3,c3) = c0\n         & ld(c3,c4) = c1\n         & ld(c3,c5) = c9\n         & ld(c3,c6) = c7\n         & ld(c3,c7) = c6\n         & ld(c3,c8) = c2\n         & ld(c3,c9) = c5\n         & ld(c4,c0) = c4\n         & ld(c4,c1) = c3\n         & ld(c4,c2) = c5\n         & ld(c4,c3) = c1\n         & ld(c4,c4) = c0\n         & ld(c4,c5) = c2\n         & ld(c4,c6) = c8\n         & ld(c4,c7) = c9\n         & ld(c4,c8) = c6\n         & ld(c4,c9) = c7\n         & ld(c5,c0) = c5\n         & ld(c5,c1) = c6\n         & ld(c5,c2) = c4\n         & ld(c5,c3) = c9\n         & ld(c5,c4) = c2\n         & ld(c5,c5) = c0\n         & ld(c5,c6) = c1\n         & ld(c5,c7) = c8\n         & ld(c5,c8) = c7\n         & ld(c5,c9) = c3\n         & ld(c6,c0) = c6\n         & ld(c6,c1) = c5\n         & ld(c6,c2) = c9\n         & ld(c6,c3) = c7\n         & ld(c6,c4) = c8\n         & ld(c6,c5) = c1\n         & ld(c6,c6) = c0\n         & ld(c6,c7) = c3\n         & ld(c6,c8) = c4\n         & ld(c6,c9) = c2\n         & ld(c7,c0) = c7\n         & ld(c7,c1) = c2\n         & ld(c7,c2) = c1\n         & ld(c7,c3) = c6\n         & ld(c7,c4) = c9\n         & ld(c7,c5) = c8\n         & ld(c7,c6) = c3\n         & ld(c7,c7) = c0\n         & ld(c7,c8) = c5\n         & ld(c7,c9) = c4\n         & ld(c8,c0) = c8\n         & ld(c8,c1) = c9\n         & ld(c8,c2) = c3\n         & ld(c8,c3) = c2\n         & ld(c8,c4) = c6\n         & ld(c8,c5) = c7\n         & ld(c8,c6) = c4\n         & ld(c8,c7) = c5\n         & ld(c8,c8) = c0\n         & ld(c8,c9) = c1\n         & ld(c9,c0) = c9\n         & ld(c9,c1) = c8\n         & ld(c9,c2) = c6\n         & ld(c9,c3) = c5\n         & ld(c9,c4) = c7\n         & ld(c9,c5) = c3\n         & ld(c9,c6) = c2\n         & ld(c9,c7) = c4\n         & ld(c9,c8) = c1\n         & ld(c9,c9) = c0\n\n).\n\ntff(declare_op,type,op: ($i * $i) > $i).\ntff(function_op,axiom,\n           op(c0,c0) = c0\n         & op(c0,c1) = c1\n         & op(c0,c2) = c2\n         & op(c0,c3) = c3\n         & op(c0,c4) = c4\n         & op(c0,c5) = c5\n         & op(c0,c6) = c6\n         & op(c0,c7) = c7\n         & op(c0,c8) = c8\n         & op(c0,c9) = c9\n         & op(c1,c0) = c1\n         & op(c1,c1) = c0\n         & op(c1,c2) = c7\n         & op(c1,c3) = c4\n         & op(c1,c4) = c3\n         & op(c1,c5) = c6\n         & op(c1,c6) = c5\n         & op(c1,c7) = c2\n         & op(c1,c8) = c9\n         & op(c1,c9) = c8\n         & op(c2,c0) = c2\n         & op(c2,c1) = c7\n         & op(c2,c2) = c0\n         & op(c2,c3) = c8\n         & op(c2,c4) = c5\n         & op(c2,c5) = c4\n         & op(c2,c6) = c9\n         & op(c2,c7) = c1\n         & op(c2,c8) = c3\n         & op(c2,c9) = c6\n         & op(c3,c0) = c3\n         & op(c3,c1) = c4\n         & op(c3,c2) = c8\n         & op(c3,c3) = c0\n         & op(c3,c4) = c1\n         & op(c3,c5) = c9\n         & op(c3,c6) = c7\n         & op(c3,c7) = c6\n         & op(c3,c8) = c2\n         & op(c3,c9) = c5\n         & op(c4,c0) = c4\n         & op(c4,c1) = c3\n         & op(c4,c2) = c5\n         & op(c4,c3) = c1\n         & op(c4,c4) = c0\n         & op(c4,c5) = c2\n         & op(c4,c6) = c8\n         & op(c4,c7) = c9\n         & op(c4,c8) = c6\n         & op(c4,c9) = c7\n         & op(c5,c0) = c5\n         & op(c5,c1) = c6\n         & op(c5,c2) = c4\n         & op(c5,c3) = c9\n         & op(c5,c4) = c2\n         & op(c5,c5) = c0\n         & op(c5,c6) = c1\n         & op(c5,c7) = c8\n         & op(c5,c8) = c7\n         & op(c5,c9) = c3\n         & op(c6,c0) = c6\n         & op(c6,c1) = c5\n         & op(c6,c2) = c9\n         & op(c6,c3) = c7\n         & op(c6,c4) = c8\n         & op(c6,c5) = c1\n         & op(c6,c6) = c0\n         & op(c6,c7) = c3\n         & op(c6,c8) = c4\n         & op(c6,c9) = c2\n         & op(c7,c0) = c7\n         & op(c7,c1) = c2\n         & op(c7,c2) = c1\n         & op(c7,c3) = c6\n         & op(c7,c4) = c9\n         & op(c7,c5) = c8\n         & op(c7,c6) = c3\n         & op(c7,c7) = c0\n         & op(c7,c8) = c5\n         & op(c7,c9) = c4\n         & op(c8,c0) = c8\n         & op(c8,c1) = c9\n         & op(c8,c2) = c3\n         & op(c8,c3) = c2\n         & op(c8,c4) = c6\n         & op(c8,c5) = c7\n         & op(c8,c6) = c4\n         & op(c8,c7) = c5\n         & op(c8,c8) = c0\n         & op(c8,c9) = c1\n         & op(c9,c0) = c9\n         & op(c9,c1) = c8\n         & op(c9,c2) = c6\n         & op(c9,c3) = c5\n         & op(c9,c4) = c7\n         & op(c9,c5) = c3\n         & op(c9,c6) = c2\n         & op(c9,c7) = c4\n         & op(c9,c8) = c1\n         & op(c9,c9) = c0\n\n).\n\ntff(declare_rd,type,rd: ($i * $i) > $i).\ntff(function_rd,axiom,\n           rd(c0,c0) = c0\n         & rd(c0,c1) = c1\n         & rd(c0,c2) = c2\n         & rd(c0,c3) = c3\n         & rd(c0,c4) = c4\n         & rd(c0,c5) = c5\n         & rd(c0,c6) = c6\n         & rd(c0,c7) = c7\n         & rd(c0,c8) = c8\n         & rd(c0,c9) = c9\n         & rd(c1,c0) = c1\n         & rd(c1,c1) = c0\n         & rd(c1,c2) = c7\n         & rd(c1,c3) = c4\n         & rd(c1,c4) = c3\n         & rd(c1,c5) = c6\n         & rd(c1,c6) = c5\n         & rd(c1,c7) = c2\n         & rd(c1,c8) = c9\n         & rd(c1,c9) = c8\n         & rd(c2,c0) = c2\n         & rd(c2,c1) = c7\n         & rd(c2,c2) = c0\n         & rd(c2,c3) = c8\n         & rd(c2,c4) = c5\n         & rd(c2,c5) = c4\n         & rd(c2,c6) = c9\n         & rd(c2,c7) = c1\n         & rd(c2,c8) = c3\n         & rd(c2,c9) = c6\n         & rd(c3,c0) = c3\n         & rd(c3,c1) = c4\n         & rd(c3,c2) = c8\n         & rd(c3,c3) = c0\n         & rd(c3,c4) = c1\n         & rd(c3,c5) = c9\n         & rd(c3,c6) = c7\n         & rd(c3,c7) = c6\n         & rd(c3,c8) = c2\n         & rd(c3,c9) = c5\n         & rd(c4,c0) = c4\n         & rd(c4,c1) = c3\n         & rd(c4,c2) = c5\n         & rd(c4,c3) = c1\n         & rd(c4,c4) = c0\n         & rd(c4,c5) = c2\n         & rd(c4,c6) = c8\n         & rd(c4,c7) = c9\n         & rd(c4,c8) = c6\n         & rd(c4,c9) = c7\n         & rd(c5,c0) = c5\n         & rd(c5,c1) = c6\n         & rd(c5,c2) = c4\n         & rd(c5,c3) = c9\n         & rd(c5,c4) = c2\n         & rd(c5,c5) = c0\n         & rd(c5,c6) = c1\n         & rd(c5,c7) = c8\n         & rd(c5,c8) = c7\n         & rd(c5,c9) = c3\n         & rd(c6,c0) = c6\n         & rd(c6,c1) = c5\n         & rd(c6,c2) = c9\n         & rd(c6,c3) = c7\n         & rd(c6,c4) = c8\n         & rd(c6,c5) = c1\n         & rd(c6,c6) = c0\n         & rd(c6,c7) = c3\n         & rd(c6,c8) = c4\n         & rd(c6,c9) = c2\n         & rd(c7,c0) = c7\n         & rd(c7,c1) = c2\n         & rd(c7,c2) = c1\n         & rd(c7,c3) = c6\n         & rd(c7,c4) = c9\n         & rd(c7,c5) = c8\n         & rd(c7,c6) = c3\n         & rd(c7,c7) = c0\n         & rd(c7,c8) = c5\n         & rd(c7,c9) = c4\n         & rd(c8,c0) = c8\n         & rd(c8,c1) = c9\n         & rd(c8,c2) = c3\n         & rd(c8,c3) = c2\n         & rd(c8,c4) = c6\n         & rd(c8,c5) = c7\n         & rd(c8,c6) = c4\n         & rd(c8,c7) = c5\n         & rd(c8,c8) = c0\n         & rd(c8,c9) = c1\n         & rd(c9,c0) = c9\n         & rd(c9,c1) = c8\n         & rd(c9,c2) = c6\n         & rd(c9,c3) = c5\n         & rd(c9,c4) = c7\n         & rd(c9,c5) = c3\n         & rd(c9,c6) = c2\n         & rd(c9,c7) = c4\n         & rd(c9,c8) = c1\n         & rd(c9,c9) = c0\n\n)."
+    },
+    {
+      "antecedent": [
+        "c_identity"
+      ],
+      "found_order": null,
+      "kind": "implication_proved",
+      "negated_consequent": "lip",
+      "rungs": [],
+      "small_order_support": 90,
+      "statement": "c_identity => lip is a theorem; no c_identity & ~lip loop exists at any order"
+    },
+    {
+      "antecedent": [
+        "c_identity"
+      ],
+      "found_order": 10,
+      "kind": "smallest_order_theorem",
+      "negated_consequent": "moufang",
+      "rungs": [
+        {
+          "finite_model_found": false,
+          "order": 7,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 8,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 9,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": true,
+          "order": 10,
+          "return_code": 0,
+          "status": "Satisfiable"
+        }
+      ],
+      "small_order_support": 90,
+      "statement": "the smallest loop satisfying c_identity & ~moufang has order 10",
+      "witness_block": "tff('declare_$i1',type,c0:$i).\ntff('declare_$i2',type,c1:$i).\ntff('declare_$i3',type,c2:$i).\ntff('declare_$i4',type,c3:$i).\ntff('declare_$i5',type,c4:$i).\ntff('declare_$i6',type,c5:$i).\ntff('declare_$i7',type,c6:$i).\ntff('declare_$i8',type,c7:$i).\ntff('declare_$i9',type,c8:$i).\ntff('declare_$i10',type,c9:$i).\ntff('finite_domain_$i',axiom,\n      ! [X:$i] : (\n         X = c0 | X = c1 | X = c2 | X = c3 | X = c4 | \n         X = c5 | X = c6 | X = c7 | X = c8 | X = c9\n      ) ).\n\ntff('distinct_domain_$i',axiom,\n         c0 != c1 & c0 != c2 & c0 != c3 & c0 != c4 & c0 != c5 & \n         c0 != c6 & c0 != c7 & c0 != c8 & c0 != c9 & c1 != c2 & \n         c1 != c3 & c1 != c4 & c1 != c5 & c1 != c6 & c1 != c7 & \n         c1 != c8 & c1 != c9 & c2 != c3 & c2 != c4 & c2 != c5 & \n         c2 != c6 & c2 != c7 & c2 != c8 & c2 != c9 & c3 != c4 & \n         c3 != c5 & c3 != c6 & c3 != c7 & c3 != c8 & c3 != c9 & \n         c4 != c5 & c4 != c6 & c4 != c7 & c4 != c8 & c4 != c9 & \n         c5 != c6 & c5 != c7 & c5 != c8 & c5 != c9 & c6 != c7 & \n         c6 != c8 & c6 != c9 & c7 != c8 & c7 != c9 & c8 != c9\n).\n\ntff(declare_e,type,e:$i).\ntff(e_definition,axiom,e = c0).\ntff(declare_ld,type,ld: ($i * $i) > $i).\ntff(function_ld,axiom,\n           ld(c0,c0) = c0\n         & ld(c0,c1) = c1\n         & ld(c0,c2) = c2\n         & ld(c0,c3) = c3\n         & ld(c0,c4) = c4\n         & ld(c0,c5) = c5\n         & ld(c0,c6) = c6\n         & ld(c0,c7) = c7\n         & ld(c0,c8) = c8\n         & ld(c0,c9) = c9\n         & ld(c1,c0) = c1\n         & ld(c1,c1) = c0\n         & ld(c1,c2) = c4\n         & ld(c1,c3) = c5\n         & ld(c1,c4) = c2\n         & ld(c1,c5) = c3\n         & ld(c1,c6) = c7\n         & ld(c1,c7) = c6\n         & ld(c1,c8) = c9\n         & ld(c1,c9) = c8\n         & ld(c2,c0) = c2\n         & ld(c2,c1) = c4\n         & ld(c2,c2) = c0\n         & ld(c2,c3) = c7\n         & ld(c2,c4) = c1\n         & ld(c2,c5) = c9\n         & ld(c2,c6) = c8\n         & ld(c2,c7) = c3\n         & ld(c2,c8) = c6\n         & ld(c2,c9) = c5\n         & ld(c3,c0) = c3\n         & ld(c3,c1) = c5\n         & ld(c3,c2) = c7\n         & ld(c3,c3) = c0\n         & ld(c3,c4) = c8\n         & ld(c3,c5) = c1\n         & ld(c3,c6) = c9\n         & ld(c3,c7) = c2\n         & ld(c3,c8) = c4\n         & ld(c3,c9) = c6\n         & ld(c4,c0) = c4\n         & ld(c4,c1) = c2\n         & ld(c4,c2) = c1\n         & ld(c4,c3) = c8\n         & ld(c4,c4) = c0\n         & ld(c4,c5) = c6\n         & ld(c4,c6) = c5\n         & ld(c4,c7) = c9\n         & ld(c4,c8) = c3\n         & ld(c4,c9) = c7\n         & ld(c5,c0) = c5\n         & ld(c5,c1) = c3\n         & ld(c5,c2) = c9\n         & ld(c5,c3) = c1\n         & ld(c5,c4) = c6\n         & ld(c5,c5) = c0\n         & ld(c5,c6) = c4\n         & ld(c5,c7) = c8\n         & ld(c5,c8) = c7\n         & ld(c5,c9) = c2\n         & ld(c6,c0) = c6\n         & ld(c6,c1) = c7\n         & ld(c6,c2) = c8\n         & ld(c6,c3) = c9\n         & ld(c6,c4) = c5\n         & ld(c6,c5) = c4\n         & ld(c6,c6) = c0\n         & ld(c6,c7) = c1\n         & ld(c6,c8) = c2\n         & ld(c6,c9) = c3\n         & ld(c7,c0) = c7\n         & ld(c7,c1) = c6\n         & ld(c7,c2) = c3\n         & ld(c7,c3) = c2\n         & ld(c7,c4) = c9\n         & ld(c7,c5) = c8\n         & ld(c7,c6) = c1\n         & ld(c7,c7) = c0\n         & ld(c7,c8) = c5\n         & ld(c7,c9) = c4\n         & ld(c8,c0) = c8\n         & ld(c8,c1) = c9\n         & ld(c8,c2) = c6\n         & ld(c8,c3) = c4\n         & ld(c8,c4) = c3\n         & ld(c8,c5) = c7\n         & ld(c8,c6) = c2\n         & ld(c8,c7) = c5\n         & ld(c8,c8) = c0\n         & ld(c8,c9) = c1\n         & ld(c9,c0) = c9\n         & ld(c9,c1) = c8\n         & ld(c9,c2) = c5\n         & ld(c9,c3) = c6\n         & ld(c9,c4) = c7\n         & ld(c9,c5) = c2\n         & ld(c9,c6) = c3\n         & ld(c9,c7) = c4\n         & ld(c9,c8) = c1\n         & ld(c9,c9) = c0\n\n).\n\ntff(declare_op,type,op: ($i * $i) > $i).\ntff(function_op,axiom,\n           op(c0,c0) = c0\n         & op(c0,c1) = c1\n         & op(c0,c2) = c2\n         & op(c0,c3) = c3\n         & op(c0,c4) = c4\n         & op(c0,c5) = c5\n         & op(c0,c6) = c6\n         & op(c0,c7) = c7\n         & op(c0,c8) = c8\n         & op(c0,c9) = c9\n         & op(c1,c0) = c1\n         & op(c1,c1) = c0\n         & op(c1,c2) = c4\n         & op(c1,c3) = c5\n         & op(c1,c4) = c2\n         & op(c1,c5) = c3\n         & op(c1,c6) = c7\n         & op(c1,c7) = c6\n         & op(c1,c8) = c9\n         & op(c1,c9) = c8\n         & op(c2,c0) = c2\n         & op(c2,c1) = c4\n         & op(c2,c2) = c0\n         & op(c2,c3) = c7\n         & op(c2,c4) = c1\n         & op(c2,c5) = c9\n         & op(c2,c6) = c8\n         & op(c2,c7) = c3\n         & op(c2,c8) = c6\n         & op(c2,c9) = c5\n         & op(c3,c0) = c3\n         & op(c3,c1) = c5\n         & op(c3,c2) = c7\n         & op(c3,c3) = c0\n         & op(c3,c4) = c8\n         & op(c3,c5) = c1\n         & op(c3,c6) = c9\n         & op(c3,c7) = c2\n         & op(c3,c8) = c4\n         & op(c3,c9) = c6\n         & op(c4,c0) = c4\n         & op(c4,c1) = c2\n         & op(c4,c2) = c1\n         & op(c4,c3) = c8\n         & op(c4,c4) = c0\n         & op(c4,c5) = c6\n         & op(c4,c6) = c5\n         & op(c4,c7) = c9\n         & op(c4,c8) = c3\n         & op(c4,c9) = c7\n         & op(c5,c0) = c5\n         & op(c5,c1) = c3\n         & op(c5,c2) = c9\n         & op(c5,c3) = c1\n         & op(c5,c4) = c6\n         & op(c5,c5) = c0\n         & op(c5,c6) = c4\n         & op(c5,c7) = c8\n         & op(c5,c8) = c7\n         & op(c5,c9) = c2\n         & op(c6,c0) = c6\n         & op(c6,c1) = c7\n         & op(c6,c2) = c8\n         & op(c6,c3) = c9\n         & op(c6,c4) = c5\n         & op(c6,c5) = c4\n         & op(c6,c6) = c0\n         & op(c6,c7) = c1\n         & op(c6,c8) = c2\n         & op(c6,c9) = c3\n         & op(c7,c0) = c7\n         & op(c7,c1) = c6\n         & op(c7,c2) = c3\n         & op(c7,c3) = c2\n         & op(c7,c4) = c9\n         & op(c7,c5) = c8\n         & op(c7,c6) = c1\n         & op(c7,c7) = c0\n         & op(c7,c8) = c5\n         & op(c7,c9) = c4\n         & op(c8,c0) = c8\n         & op(c8,c1) = c9\n         & op(c8,c2) = c6\n         & op(c8,c3) = c4\n         & op(c8,c4) = c3\n         & op(c8,c5) = c7\n         & op(c8,c6) = c2\n         & op(c8,c7) = c5\n         & op(c8,c8) = c0\n         & op(c8,c9) = c1\n         & op(c9,c0) = c9\n         & op(c9,c1) = c8\n         & op(c9,c2) = c5\n         & op(c9,c3) = c6\n         & op(c9,c4) = c7\n         & op(c9,c5) = c2\n         & op(c9,c6) = c3\n         & op(c9,c7) = c4\n         & op(c9,c8) = c1\n         & op(c9,c9) = c0\n\n).\n\ntff(declare_rd,type,rd: ($i * $i) > $i).\ntff(function_rd,axiom,\n           rd(c0,c0) = c0\n         & rd(c0,c1) = c1\n         & rd(c0,c2) = c2\n         & rd(c0,c3) = c3\n         & rd(c0,c4) = c4\n         & rd(c0,c5) = c5\n         & rd(c0,c6) = c6\n         & rd(c0,c7) = c7\n         & rd(c0,c8) = c8\n         & rd(c0,c9) = c9\n         & rd(c1,c0) = c1\n         & rd(c1,c1) = c0\n         & rd(c1,c2) = c4\n         & rd(c1,c3) = c5\n         & rd(c1,c4) = c2\n         & rd(c1,c5) = c3\n         & rd(c1,c6) = c7\n         & rd(c1,c7) = c6\n         & rd(c1,c8) = c9\n         & rd(c1,c9) = c8\n         & rd(c2,c0) = c2\n         & rd(c2,c1) = c4\n         & rd(c2,c2) = c0\n         & rd(c2,c3) = c7\n         & rd(c2,c4) = c1\n         & rd(c2,c5) = c9\n         & rd(c2,c6) = c8\n         & rd(c2,c7) = c3\n         & rd(c2,c8) = c6\n         & rd(c2,c9) = c5\n         & rd(c3,c0) = c3\n         & rd(c3,c1) = c5\n         & rd(c3,c2) = c7\n         & rd(c3,c3) = c0\n         & rd(c3,c4) = c8\n         & rd(c3,c5) = c1\n         & rd(c3,c6) = c9\n         & rd(c3,c7) = c2\n         & rd(c3,c8) = c4\n         & rd(c3,c9) = c6\n         & rd(c4,c0) = c4\n         & rd(c4,c1) = c2\n         & rd(c4,c2) = c1\n         & rd(c4,c3) = c8\n         & rd(c4,c4) = c0\n         & rd(c4,c5) = c6\n         & rd(c4,c6) = c5\n         & rd(c4,c7) = c9\n         & rd(c4,c8) = c3\n         & rd(c4,c9) = c7\n         & rd(c5,c0) = c5\n         & rd(c5,c1) = c3\n         & rd(c5,c2) = c9\n         & rd(c5,c3) = c1\n         & rd(c5,c4) = c6\n         & rd(c5,c5) = c0\n         & rd(c5,c6) = c4\n         & rd(c5,c7) = c8\n         & rd(c5,c8) = c7\n         & rd(c5,c9) = c2\n         & rd(c6,c0) = c6\n         & rd(c6,c1) = c7\n         & rd(c6,c2) = c8\n         & rd(c6,c3) = c9\n         & rd(c6,c4) = c5\n         & rd(c6,c5) = c4\n         & rd(c6,c6) = c0\n         & rd(c6,c7) = c1\n         & rd(c6,c8) = c2\n         & rd(c6,c9) = c3\n         & rd(c7,c0) = c7\n         & rd(c7,c1) = c6\n         & rd(c7,c2) = c3\n         & rd(c7,c3) = c2\n         & rd(c7,c4) = c9\n         & rd(c7,c5) = c8\n         & rd(c7,c6) = c1\n         & rd(c7,c7) = c0\n         & rd(c7,c8) = c5\n         & rd(c7,c9) = c4\n         & rd(c8,c0) = c8\n         & rd(c8,c1) = c9\n         & rd(c8,c2) = c6\n         & rd(c8,c3) = c4\n         & rd(c8,c4) = c3\n         & rd(c8,c5) = c7\n         & rd(c8,c6) = c2\n         & rd(c8,c7) = c5\n         & rd(c8,c8) = c0\n         & rd(c8,c9) = c1\n         & rd(c9,c0) = c9\n         & rd(c9,c1) = c8\n         & rd(c9,c2) = c5\n         & rd(c9,c3) = c6\n         & rd(c9,c4) = c7\n         & rd(c9,c5) = c2\n         & rd(c9,c6) = c3\n         & rd(c9,c7) = c4\n         & rd(c9,c8) = c1\n         & rd(c9,c9) = c0\n\n)."
+    },
+    {
+      "antecedent": [
+        "c_identity"
+      ],
+      "found_order": null,
+      "kind": "implication_proved",
+      "negated_consequent": "right_alternative",
+      "rungs": [],
+      "small_order_support": 90,
+      "statement": "c_identity => right_alternative is a theorem; no c_identity & ~right_alternative loop exists at any order"
+    },
+    {
+      "antecedent": [
+        "c_identity"
+      ],
+      "found_order": 10,
+      "kind": "smallest_order_theorem",
+      "negated_consequent": "right_bol",
+      "rungs": [
+        {
+          "finite_model_found": false,
+          "order": 7,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 8,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": false,
+          "order": 9,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": true,
+          "order": 10,
+          "return_code": 0,
+          "status": "Satisfiable"
+        }
+      ],
+      "small_order_support": 90,
+      "statement": "the smallest loop satisfying c_identity & ~right_bol has order 10",
+      "witness_block": "tff('declare_$i1',type,c0:$i).\ntff('declare_$i2',type,c1:$i).\ntff('declare_$i3',type,c2:$i).\ntff('declare_$i4',type,c3:$i).\ntff('declare_$i5',type,c4:$i).\ntff('declare_$i6',type,c5:$i).\ntff('declare_$i7',type,c6:$i).\ntff('declare_$i8',type,c7:$i).\ntff('declare_$i9',type,c8:$i).\ntff('declare_$i10',type,c9:$i).\ntff('finite_domain_$i',axiom,\n      ! [X:$i] : (\n         X = c0 | X = c1 | X = c2 | X = c3 | X = c4 | \n         X = c5 | X = c6 | X = c7 | X = c8 | X = c9\n      ) ).\n\ntff('distinct_domain_$i',axiom,\n         c0 != c1 & c0 != c2 & c0 != c3 & c0 != c4 & c0 != c5 & \n         c0 != c6 & c0 != c7 & c0 != c8 & c0 != c9 & c1 != c2 & \n         c1 != c3 & c1 != c4 & c1 != c5 & c1 != c6 & c1 != c7 & \n         c1 != c8 & c1 != c9 & c2 != c3 & c2 != c4 & c2 != c5 & \n         c2 != c6 & c2 != c7 & c2 != c8 & c2 != c9 & c3 != c4 & \n         c3 != c5 & c3 != c6 & c3 != c7 & c3 != c8 & c3 != c9 & \n         c4 != c5 & c4 != c6 & c4 != c7 & c4 != c8 & c4 != c9 & \n         c5 != c6 & c5 != c7 & c5 != c8 & c5 != c9 & c6 != c7 & \n         c6 != c8 & c6 != c9 & c7 != c8 & c7 != c9 & c8 != c9\n).\n\ntff(declare_e,type,e:$i).\ntff(e_definition,axiom,e = c0).\ntff(declare_ld,type,ld: ($i * $i) > $i).\ntff(function_ld,axiom,\n           ld(c0,c0) = c0\n         & ld(c0,c1) = c1\n         & ld(c0,c2) = c2\n         & ld(c0,c3) = c3\n         & ld(c0,c4) = c4\n         & ld(c0,c5) = c5\n         & ld(c0,c6) = c6\n         & ld(c0,c7) = c7\n         & ld(c0,c8) = c8\n         & ld(c0,c9) = c9\n         & ld(c1,c0) = c1\n         & ld(c1,c1) = c0\n         & ld(c1,c2) = c7\n         & ld(c1,c3) = c4\n         & ld(c1,c4) = c3\n         & ld(c1,c5) = c6\n         & ld(c1,c6) = c5\n         & ld(c1,c7) = c2\n         & ld(c1,c8) = c9\n         & ld(c1,c9) = c8\n         & ld(c2,c0) = c2\n         & ld(c2,c1) = c7\n         & ld(c2,c2) = c0\n         & ld(c2,c3) = c8\n         & ld(c2,c4) = c5\n         & ld(c2,c5) = c4\n         & ld(c2,c6) = c9\n         & ld(c2,c7) = c1\n         & ld(c2,c8) = c3\n         & ld(c2,c9) = c6\n         & ld(c3,c0) = c3\n         & ld(c3,c1) = c4\n         & ld(c3,c2) = c8\n         & ld(c3,c3) = c0\n         & ld(c3,c4) = c1\n         & ld(c3,c5) = c9\n         & ld(c3,c6) = c7\n         & ld(c3,c7) = c6\n         & ld(c3,c8) = c2\n         & ld(c3,c9) = c5\n         & ld(c4,c0) = c4\n         & ld(c4,c1) = c3\n         & ld(c4,c2) = c5\n         & ld(c4,c3) = c1\n         & ld(c4,c4) = c0\n         & ld(c4,c5) = c2\n         & ld(c4,c6) = c8\n         & ld(c4,c7) = c9\n         & ld(c4,c8) = c6\n         & ld(c4,c9) = c7\n         & ld(c5,c0) = c5\n         & ld(c5,c1) = c6\n         & ld(c5,c2) = c4\n         & ld(c5,c3) = c9\n         & ld(c5,c4) = c2\n         & ld(c5,c5) = c0\n         & ld(c5,c6) = c1\n         & ld(c5,c7) = c8\n         & ld(c5,c8) = c7\n         & ld(c5,c9) = c3\n         & ld(c6,c0) = c6\n         & ld(c6,c1) = c5\n         & ld(c6,c2) = c9\n         & ld(c6,c3) = c7\n         & ld(c6,c4) = c8\n         & ld(c6,c5) = c1\n         & ld(c6,c6) = c0\n         & ld(c6,c7) = c3\n         & ld(c6,c8) = c4\n         & ld(c6,c9) = c2\n         & ld(c7,c0) = c7\n         & ld(c7,c1) = c2\n         & ld(c7,c2) = c1\n         & ld(c7,c3) = c6\n         & ld(c7,c4) = c9\n         & ld(c7,c5) = c8\n         & ld(c7,c6) = c3\n         & ld(c7,c7) = c0\n         & ld(c7,c8) = c5\n         & ld(c7,c9) = c4\n         & ld(c8,c0) = c8\n         & ld(c8,c1) = c9\n         & ld(c8,c2) = c3\n         & ld(c8,c3) = c2\n         & ld(c8,c4) = c6\n         & ld(c8,c5) = c7\n         & ld(c8,c6) = c4\n         & ld(c8,c7) = c5\n         & ld(c8,c8) = c0\n         & ld(c8,c9) = c1\n         & ld(c9,c0) = c9\n         & ld(c9,c1) = c8\n         & ld(c9,c2) = c6\n         & ld(c9,c3) = c5\n         & ld(c9,c4) = c7\n         & ld(c9,c5) = c3\n         & ld(c9,c6) = c2\n         & ld(c9,c7) = c4\n         & ld(c9,c8) = c1\n         & ld(c9,c9) = c0\n\n).\n\ntff(declare_op,type,op: ($i * $i) > $i).\ntff(function_op,axiom,\n           op(c0,c0) = c0\n         & op(c0,c1) = c1\n         & op(c0,c2) = c2\n         & op(c0,c3) = c3\n         & op(c0,c4) = c4\n         & op(c0,c5) = c5\n         & op(c0,c6) = c6\n         & op(c0,c7) = c7\n         & op(c0,c8) = c8\n         & op(c0,c9) = c9\n         & op(c1,c0) = c1\n         & op(c1,c1) = c0\n         & op(c1,c2) = c7\n         & op(c1,c3) = c4\n         & op(c1,c4) = c3\n         & op(c1,c5) = c6\n         & op(c1,c6) = c5\n         & op(c1,c7) = c2\n         & op(c1,c8) = c9\n         & op(c1,c9) = c8\n         & op(c2,c0) = c2\n         & op(c2,c1) = c7\n         & op(c2,c2) = c0\n         & op(c2,c3) = c8\n         & op(c2,c4) = c5\n         & op(c2,c5) = c4\n         & op(c2,c6) = c9\n         & op(c2,c7) = c1\n         & op(c2,c8) = c3\n         & op(c2,c9) = c6\n         & op(c3,c0) = c3\n         & op(c3,c1) = c4\n         & op(c3,c2) = c8\n         & op(c3,c3) = c0\n         & op(c3,c4) = c1\n         & op(c3,c5) = c9\n         & op(c3,c6) = c7\n         & op(c3,c7) = c6\n         & op(c3,c8) = c2\n         & op(c3,c9) = c5\n         & op(c4,c0) = c4\n         & op(c4,c1) = c3\n         & op(c4,c2) = c5\n         & op(c4,c3) = c1\n         & op(c4,c4) = c0\n         & op(c4,c5) = c2\n         & op(c4,c6) = c8\n         & op(c4,c7) = c9\n         & op(c4,c8) = c6\n         & op(c4,c9) = c7\n         & op(c5,c0) = c5\n         & op(c5,c1) = c6\n         & op(c5,c2) = c4\n         & op(c5,c3) = c9\n         & op(c5,c4) = c2\n         & op(c5,c5) = c0\n         & op(c5,c6) = c1\n         & op(c5,c7) = c8\n         & op(c5,c8) = c7\n         & op(c5,c9) = c3\n         & op(c6,c0) = c6\n         & op(c6,c1) = c5\n         & op(c6,c2) = c9\n         & op(c6,c3) = c7\n         & op(c6,c4) = c8\n         & op(c6,c5) = c1\n         & op(c6,c6) = c0\n         & op(c6,c7) = c3\n         & op(c6,c8) = c4\n         & op(c6,c9) = c2\n         & op(c7,c0) = c7\n         & op(c7,c1) = c2\n         & op(c7,c2) = c1\n         & op(c7,c3) = c6\n         & op(c7,c4) = c9\n         & op(c7,c5) = c8\n         & op(c7,c6) = c3\n         & op(c7,c7) = c0\n         & op(c7,c8) = c5\n         & op(c7,c9) = c4\n         & op(c8,c0) = c8\n         & op(c8,c1) = c9\n         & op(c8,c2) = c3\n         & op(c8,c3) = c2\n         & op(c8,c4) = c6\n         & op(c8,c5) = c7\n         & op(c8,c6) = c4\n         & op(c8,c7) = c5\n         & op(c8,c8) = c0\n         & op(c8,c9) = c1\n         & op(c9,c0) = c9\n         & op(c9,c1) = c8\n         & op(c9,c2) = c6\n         & op(c9,c3) = c5\n         & op(c9,c4) = c7\n         & op(c9,c5) = c3\n         & op(c9,c6) = c2\n         & op(c9,c7) = c4\n         & op(c9,c8) = c1\n         & op(c9,c9) = c0\n\n).\n\ntff(declare_rd,type,rd: ($i * $i) > $i).\ntff(function_rd,axiom,\n           rd(c0,c0) = c0\n         & rd(c0,c1) = c1\n         & rd(c0,c2) = c2\n         & rd(c0,c3) = c3\n         & rd(c0,c4) = c4\n         & rd(c0,c5) = c5\n         & rd(c0,c6) = c6\n         & rd(c0,c7) = c7\n         & rd(c0,c8) = c8\n         & rd(c0,c9) = c9\n         & rd(c1,c0) = c1\n         & rd(c1,c1) = c0\n         & rd(c1,c2) = c7\n         & rd(c1,c3) = c4\n         & rd(c1,c4) = c3\n         & rd(c1,c5) = c6\n         & rd(c1,c6) = c5\n         & rd(c1,c7) = c2\n         & rd(c1,c8) = c9\n         & rd(c1,c9) = c8\n         & rd(c2,c0) = c2\n         & rd(c2,c1) = c7\n         & rd(c2,c2) = c0\n         & rd(c2,c3) = c8\n         & rd(c2,c4) = c5\n         & rd(c2,c5) = c4\n         & rd(c2,c6) = c9\n         & rd(c2,c7) = c1\n         & rd(c2,c8) = c3\n         & rd(c2,c9) = c6\n         & rd(c3,c0) = c3\n         & rd(c3,c1) = c4\n         & rd(c3,c2) = c8\n         & rd(c3,c3) = c0\n         & rd(c3,c4) = c1\n         & rd(c3,c5) = c9\n         & rd(c3,c6) = c7\n         & rd(c3,c7) = c6\n         & rd(c3,c8) = c2\n         & rd(c3,c9) = c5\n         & rd(c4,c0) = c4\n         & rd(c4,c1) = c3\n         & rd(c4,c2) = c5\n         & rd(c4,c3) = c1\n         & rd(c4,c4) = c0\n         & rd(c4,c5) = c2\n         & rd(c4,c6) = c8\n         & rd(c4,c7) = c9\n         & rd(c4,c8) = c6\n         & rd(c4,c9) = c7\n         & rd(c5,c0) = c5\n         & rd(c5,c1) = c6\n         & rd(c5,c2) = c4\n         & rd(c5,c3) = c9\n         & rd(c5,c4) = c2\n         & rd(c5,c5) = c0\n         & rd(c5,c6) = c1\n         & rd(c5,c7) = c8\n         & rd(c5,c8) = c7\n         & rd(c5,c9) = c3\n         & rd(c6,c0) = c6\n         & rd(c6,c1) = c5\n         & rd(c6,c2) = c9\n         & rd(c6,c3) = c7\n         & rd(c6,c4) = c8\n         & rd(c6,c5) = c1\n         & rd(c6,c6) = c0\n         & rd(c6,c7) = c3\n         & rd(c6,c8) = c4\n         & rd(c6,c9) = c2\n         & rd(c7,c0) = c7\n         & rd(c7,c1) = c2\n         & rd(c7,c2) = c1\n         & rd(c7,c3) = c6\n         & rd(c7,c4) = c9\n         & rd(c7,c5) = c8\n         & rd(c7,c6) = c3\n         & rd(c7,c7) = c0\n         & rd(c7,c8) = c5\n         & rd(c7,c9) = c4\n         & rd(c8,c0) = c8\n         & rd(c8,c1) = c9\n         & rd(c8,c2) = c3\n         & rd(c8,c3) = c2\n         & rd(c8,c4) = c6\n         & rd(c8,c5) = c7\n         & rd(c8,c6) = c4\n         & rd(c8,c7) = c5\n         & rd(c8,c8) = c0\n         & rd(c8,c9) = c1\n         & rd(c9,c0) = c9\n         & rd(c9,c1) = c8\n         & rd(c9,c2) = c6\n         & rd(c9,c3) = c5\n         & rd(c9,c4) = c7\n         & rd(c9,c5) = c3\n         & rd(c9,c6) = c2\n         & rd(c9,c7) = c4\n         & rd(c9,c8) = c1\n         & rd(c9,c9) = c0\n\n)."
+    },
+    {
+      "antecedent": [
+        "c_identity"
+      ],
+      "found_order": null,
+      "kind": "implication_proved",
+      "negated_consequent": "rip",
+      "rungs": [],
+      "small_order_support": 90,
+      "statement": "c_identity => rip is a theorem; no c_identity & ~rip loop exists at any order"
+    },
+    {
+      "antecedent": [
+        "c_identity"
+      ],
+      "found_order": null,
+      "kind": "implication_proved",
+      "negated_consequent": "two_sided_inverses",
+      "rungs": [],
+      "small_order_support": 90,
+      "statement": "c_identity => two_sided_inverses is a theorem; no c_identity & ~two_sided_inverses loop exists at any order"
+    },
+    {
+      "antecedent": [
+        "c_identity"
+      ],
+      "found_order": null,
+      "kind": "implication_proved",
+      "negated_consequent": "x_cubed_associative",
+      "rungs": [],
+      "small_order_support": 90,
+      "statement": "c_identity => x_cubed_associative is a theorem; no c_identity & ~x_cubed_associative loop exists at any order"
+    },
+    {
+      "antecedent": [
+        "left_bol"
+      ],
+      "found_order": 8,
+      "kind": "smallest_order_theorem",
+      "negated_consequent": "associative",
+      "rungs": [
+        {
+          "finite_model_found": false,
+          "order": 7,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": true,
+          "order": 8,
+          "return_code": 0,
+          "status": "Satisfiable"
+        }
+      ],
+      "small_order_support": 90,
+      "statement": "the smallest loop satisfying left_bol & ~associative has order 8",
+      "witness_block": "tff('declare_$i1',type,c0:$i).\ntff('declare_$i2',type,c1:$i).\ntff('declare_$i3',type,c2:$i).\ntff('declare_$i4',type,c3:$i).\ntff('declare_$i5',type,c4:$i).\ntff('declare_$i6',type,c5:$i).\ntff('declare_$i7',type,c6:$i).\ntff('declare_$i8',type,c7:$i).\ntff('finite_domain_$i',axiom,\n      ! [X:$i] : (\n         X = c0 | X = c1 | X = c2 | X = c3 | X = c4 | \n         X = c5 | X = c6 | X = c7\n      ) ).\n\ntff('distinct_domain_$i',axiom,\n         c0 != c1 & c0 != c2 & c0 != c3 & c0 != c4 & c0 != c5 & \n         c0 != c6 & c0 != c7 & c1 != c2 & c1 != c3 & c1 != c4 & \n         c1 != c5 & c1 != c6 & c1 != c7 & c2 != c3 & c2 != c4 & \n         c2 != c5 & c2 != c6 & c2 != c7 & c3 != c4 & c3 != c5 & \n         c3 != c6 & c3 != c7 & c4 != c5 & c4 != c6 & c4 != c7 & \n         c5 != c6 & c5 != c7 & c6 != c7\n).\n\ntff(declare_e,type,e:$i).\ntff(e_definition,axiom,e = c0).\ntff(declare_ld,type,ld: ($i * $i) > $i).\ntff(function_ld,axiom,\n           ld(c0,c0) = c0\n         & ld(c0,c1) = c1\n         & ld(c0,c2) = c2\n         & ld(c0,c3) = c3\n         & ld(c0,c4) = c4\n         & ld(c0,c5) = c5\n         & ld(c0,c6) = c6\n         & ld(c0,c7) = c7\n         & ld(c1,c0) = c1\n         & ld(c1,c1) = c0\n         & ld(c1,c2) = c3\n         & ld(c1,c3) = c2\n         & ld(c1,c4) = c6\n         & ld(c1,c5) = c7\n         & ld(c1,c6) = c4\n         & ld(c1,c7) = c5\n         & ld(c2,c0) = c2\n         & ld(c2,c1) = c3\n         & ld(c2,c2) = c0\n         & ld(c2,c3) = c1\n         & ld(c2,c4) = c5\n         & ld(c2,c5) = c4\n         & ld(c2,c6) = c7\n         & ld(c2,c7) = c6\n         & ld(c3,c0) = c5\n         & ld(c3,c1) = c7\n         & ld(c3,c2) = c1\n         & ld(c3,c3) = c0\n         & ld(c3,c4) = c2\n         & ld(c3,c5) = c6\n         & ld(c3,c6) = c3\n         & ld(c3,c7) = c4\n         & ld(c4,c0) = c4\n         & ld(c4,c1) = c6\n         & ld(c4,c2) = c5\n         & ld(c4,c3) = c7\n         & ld(c4,c4) = c0\n         & ld(c4,c5) = c2\n         & ld(c4,c6) = c1\n         & ld(c4,c7) = c3\n         & ld(c5,c0) = c3\n         & ld(c5,c1) = c2\n         & ld(c5,c2) = c4\n         & ld(c5,c3) = c6\n         & ld(c5,c4) = c7\n         & ld(c5,c5) = c0\n         & ld(c5,c6) = c5\n         & ld(c5,c7) = c1\n         & ld(c6,c0) = c6\n         & ld(c6,c1) = c4\n         & ld(c6,c2) = c7\n         & ld(c6,c3) = c5\n         & ld(c6,c4) = c1\n         & ld(c6,c5) = c3\n         & ld(c6,c6) = c0\n         & ld(c6,c7) = c2\n         & ld(c7,c0) = c7\n         & ld(c7,c1) = c5\n         & ld(c7,c2) = c6\n         & ld(c7,c3) = c4\n         & ld(c7,c4) = c3\n         & ld(c7,c5) = c1\n         & ld(c7,c6) = c2\n         & ld(c7,c7) = c0\n\n).\n\ntff(declare_op,type,op: ($i * $i) > $i).\ntff(function_op,axiom,\n           op(c0,c0) = c0\n         & op(c0,c1) = c1\n         & op(c0,c2) = c2\n         & op(c0,c3) = c3\n         & op(c0,c4) = c4\n         & op(c0,c5) = c5\n         & op(c0,c6) = c6\n         & op(c0,c7) = c7\n         & op(c1,c0) = c1\n         & op(c1,c1) = c0\n         & op(c1,c2) = c3\n         & op(c1,c3) = c2\n         & op(c1,c4) = c6\n         & op(c1,c5) = c7\n         & op(c1,c6) = c4\n         & op(c1,c7) = c5\n         & op(c2,c0) = c2\n         & op(c2,c1) = c3\n         & op(c2,c2) = c0\n         & op(c2,c3) = c1\n         & op(c2,c4) = c5\n         & op(c2,c5) = c4\n         & op(c2,c6) = c7\n         & op(c2,c7) = c6\n         & op(c3,c0) = c3\n         & op(c3,c1) = c2\n         & op(c3,c2) = c4\n         & op(c3,c3) = c6\n         & op(c3,c4) = c7\n         & op(c3,c5) = c0\n         & op(c3,c6) = c5\n         & op(c3,c7) = c1\n         & op(c4,c0) = c4\n         & op(c4,c1) = c6\n         & op(c4,c2) = c5\n         & op(c4,c3) = c7\n         & op(c4,c4) = c0\n         & op(c4,c5) = c2\n         & op(c4,c6) = c1\n         & op(c4,c7) = c3\n         & op(c5,c0) = c5\n         & op(c5,c1) = c7\n         & op(c5,c2) = c1\n         & op(c5,c3) = c0\n         & op(c5,c4) = c2\n         & op(c5,c5) = c6\n         & op(c5,c6) = c3\n         & op(c5,c7) = c4\n         & op(c6,c0) = c6\n         & op(c6,c1) = c4\n         & op(c6,c2) = c7\n         & op(c6,c3) = c5\n         & op(c6,c4) = c1\n         & op(c6,c5) = c3\n         & op(c6,c6) = c0\n         & op(c6,c7) = c2\n         & op(c7,c0) = c7\n         & op(c7,c1) = c5\n         & op(c7,c2) = c6\n         & op(c7,c3) = c4\n         & op(c7,c4) = c3\n         & op(c7,c5) = c1\n         & op(c7,c6) = c2\n         & op(c7,c7) = c0\n\n).\n\ntff(declare_rd,type,rd: ($i * $i) > $i).\ntff(function_rd,axiom,\n           rd(c0,c0) = c0\n         & rd(c0,c1) = c1\n         & rd(c0,c2) = c2\n         & rd(c0,c3) = c5\n         & rd(c0,c4) = c4\n         & rd(c0,c5) = c3\n         & rd(c0,c6) = c6\n         & rd(c0,c7) = c7\n         & rd(c1,c0) = c1\n         & rd(c1,c1) = c0\n         & rd(c1,c2) = c5\n         & rd(c1,c3) = c2\n         & rd(c1,c4) = c6\n         & rd(c1,c5) = c7\n         & rd(c1,c6) = c4\n         & rd(c1,c7) = c3\n         & rd(c2,c0) = c2\n         & rd(c2,c1) = c3\n         & rd(c2,c2) = c0\n         & rd(c2,c3) = c1\n         & rd(c2,c4) = c5\n         & rd(c2,c5) = c4\n         & rd(c2,c6) = c7\n         & rd(c2,c7) = c6\n         & rd(c3,c0) = c3\n         & rd(c3,c1) = c2\n         & rd(c3,c2) = c1\n         & rd(c3,c3) = c0\n         & rd(c3,c4) = c7\n         & rd(c3,c5) = c6\n         & rd(c3,c6) = c5\n         & rd(c3,c7) = c4\n         & rd(c4,c0) = c4\n         & rd(c4,c1) = c6\n         & rd(c4,c2) = c3\n         & rd(c4,c3) = c7\n         & rd(c4,c4) = c0\n         & rd(c4,c5) = c2\n         & rd(c4,c6) = c1\n         & rd(c4,c7) = c5\n         & rd(c5,c0) = c5\n         & rd(c5,c1) = c7\n         & rd(c5,c2) = c4\n         & rd(c5,c3) = c6\n         & rd(c5,c4) = c2\n         & rd(c5,c5) = c0\n         & rd(c5,c6) = c3\n         & rd(c5,c7) = c1\n         & rd(c6,c0) = c6\n         & rd(c6,c1) = c4\n         & rd(c6,c2) = c7\n         & rd(c6,c3) = c3\n         & rd(c6,c4) = c1\n         & rd(c6,c5) = c5\n         & rd(c6,c6) = c0\n         & rd(c6,c7) = c2\n         & rd(c7,c0) = c7\n         & rd(c7,c1) = c5\n         & rd(c7,c2) = c6\n         & rd(c7,c3) = c4\n         & rd(c7,c4) = c3\n         & rd(c7,c5) = c1\n         & rd(c7,c6) = c2\n         & rd(c7,c7) = c0\n\n)."
+    },
+    {
+      "antecedent": [
+        "left_bol"
+      ],
+      "found_order": 8,
+      "kind": "smallest_order_theorem",
+      "negated_consequent": "c_identity",
+      "rungs": [
+        {
+          "finite_model_found": false,
+          "order": 7,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": true,
+          "order": 8,
+          "return_code": 0,
+          "status": "Satisfiable"
+        }
+      ],
+      "small_order_support": 90,
+      "statement": "the smallest loop satisfying left_bol & ~c_identity has order 8",
+      "witness_block": "tff('declare_$i1',type,c0:$i).\ntff('declare_$i2',type,c1:$i).\ntff('declare_$i3',type,c2:$i).\ntff('declare_$i4',type,c3:$i).\ntff('declare_$i5',type,c4:$i).\ntff('declare_$i6',type,c5:$i).\ntff('declare_$i7',type,c6:$i).\ntff('declare_$i8',type,c7:$i).\ntff('finite_domain_$i',axiom,\n      ! [X:$i] : (\n         X = c0 | X = c1 | X = c2 | X = c3 | X = c4 | \n         X = c5 | X = c6 | X = c7\n      ) ).\n\ntff('distinct_domain_$i',axiom,\n         c0 != c1 & c0 != c2 & c0 != c3 & c0 != c4 & c0 != c5 & \n         c0 != c6 & c0 != c7 & c1 != c2 & c1 != c3 & c1 != c4 & \n         c1 != c5 & c1 != c6 & c1 != c7 & c2 != c3 & c2 != c4 & \n         c2 != c5 & c2 != c6 & c2 != c7 & c3 != c4 & c3 != c5 & \n         c3 != c6 & c3 != c7 & c4 != c5 & c4 != c6 & c4 != c7 & \n         c5 != c6 & c5 != c7 & c6 != c7\n).\n\ntff(declare_e,type,e:$i).\ntff(e_definition,axiom,e = c0).\ntff(declare_ld,type,ld: ($i * $i) > $i).\ntff(function_ld,axiom,\n           ld(c0,c0) = c0\n         & ld(c0,c1) = c1\n         & ld(c0,c2) = c2\n         & ld(c0,c3) = c3\n         & ld(c0,c4) = c4\n         & ld(c0,c5) = c5\n         & ld(c0,c6) = c6\n         & ld(c0,c7) = c7\n         & ld(c1,c0) = c6\n         & ld(c1,c1) = c0\n         & ld(c1,c2) = c7\n         & ld(c1,c3) = c1\n         & ld(c1,c4) = c5\n         & ld(c1,c5) = c2\n         & ld(c1,c6) = c3\n         & ld(c1,c7) = c4\n         & ld(c2,c0) = c4\n         & ld(c2,c1) = c7\n         & ld(c2,c2) = c0\n         & ld(c2,c3) = c2\n         & ld(c2,c4) = c3\n         & ld(c2,c5) = c1\n         & ld(c2,c6) = c5\n         & ld(c2,c7) = c6\n         & ld(c3,c0) = c3\n         & ld(c3,c1) = c6\n         & ld(c3,c2) = c4\n         & ld(c3,c3) = c0\n         & ld(c3,c4) = c2\n         & ld(c3,c5) = c7\n         & ld(c3,c6) = c1\n         & ld(c3,c7) = c5\n         & ld(c4,c0) = c2\n         & ld(c4,c1) = c5\n         & ld(c4,c2) = c3\n         & ld(c4,c3) = c4\n         & ld(c4,c4) = c0\n         & ld(c4,c5) = c6\n         & ld(c4,c6) = c7\n         & ld(c4,c7) = c1\n         & ld(c5,c0) = c5\n         & ld(c5,c1) = c2\n         & ld(c5,c2) = c1\n         & ld(c5,c3) = c7\n         & ld(c5,c4) = c6\n         & ld(c5,c5) = c0\n         & ld(c5,c6) = c4\n         & ld(c5,c7) = c3\n         & ld(c6,c0) = c1\n         & ld(c6,c1) = c3\n         & ld(c6,c2) = c5\n         & ld(c6,c3) = c6\n         & ld(c6,c4) = c7\n         & ld(c6,c5) = c4\n         & ld(c6,c6) = c0\n         & ld(c6,c7) = c2\n         & ld(c7,c0) = c7\n         & ld(c7,c1) = c4\n         & ld(c7,c2) = c6\n         & ld(c7,c3) = c5\n         & ld(c7,c4) = c1\n         & ld(c7,c5) = c3\n         & ld(c7,c6) = c2\n         & ld(c7,c7) = c0\n\n).\n\ntff(declare_op,type,op: ($i * $i) > $i).\ntff(function_op,axiom,\n           op(c0,c0) = c0\n         & op(c0,c1) = c1\n         & op(c0,c2) = c2\n         & op(c0,c3) = c3\n         & op(c0,c4) = c4\n         & op(c0,c5) = c5\n         & op(c0,c6) = c6\n         & op(c0,c7) = c7\n         & op(c1,c0) = c1\n         & op(c1,c1) = c3\n         & op(c1,c2) = c5\n         & op(c1,c3) = c6\n         & op(c1,c4) = c7\n         & op(c1,c5) = c4\n         & op(c1,c6) = c0\n         & op(c1,c7) = c2\n         & op(c2,c0) = c2\n         & op(c2,c1) = c5\n         & op(c2,c2) = c3\n         & op(c2,c3) = c4\n         & op(c2,c4) = c0\n         & op(c2,c5) = c6\n         & op(c2,c6) = c7\n         & op(c2,c7) = c1\n         & op(c3,c0) = c3\n         & op(c3,c1) = c6\n         & op(c3,c2) = c4\n         & op(c3,c3) = c0\n         & op(c3,c4) = c2\n         & op(c3,c5) = c7\n         & op(c3,c6) = c1\n         & op(c3,c7) = c5\n         & op(c4,c0) = c4\n         & op(c4,c1) = c7\n         & op(c4,c2) = c0\n         & op(c4,c3) = c2\n         & op(c4,c4) = c3\n         & op(c4,c5) = c1\n         & op(c4,c6) = c5\n         & op(c4,c7) = c6\n         & op(c5,c0) = c5\n         & op(c5,c1) = c2\n         & op(c5,c2) = c1\n         & op(c5,c3) = c7\n         & op(c5,c4) = c6\n         & op(c5,c5) = c0\n         & op(c5,c6) = c4\n         & op(c5,c7) = c3\n         & op(c6,c0) = c6\n         & op(c6,c1) = c0\n         & op(c6,c2) = c7\n         & op(c6,c3) = c1\n         & op(c6,c4) = c5\n         & op(c6,c5) = c2\n         & op(c6,c6) = c3\n         & op(c6,c7) = c4\n         & op(c7,c0) = c7\n         & op(c7,c1) = c4\n         & op(c7,c2) = c6\n         & op(c7,c3) = c5\n         & op(c7,c4) = c1\n         & op(c7,c5) = c3\n         & op(c7,c6) = c2\n         & op(c7,c7) = c0\n\n).\n\ntff(declare_rd,type,rd: ($i * $i) > $i).\ntff(function_rd,axiom,\n           rd(c0,c0) = c0\n         & rd(c0,c1) = c6\n         & rd(c0,c2) = c4\n         & rd(c0,c3) = c3\n         & rd(c0,c4) = c2\n         & rd(c0,c5) = c5\n         & rd(c0,c6) = c1\n         & rd(c0,c7) = c7\n         & rd(c1,c0) = c1\n         & rd(c1,c1) = c0\n         & rd(c1,c2) = c5\n         & rd(c1,c3) = c6\n         & rd(c1,c4) = c7\n         & rd(c1,c5) = c4\n         & rd(c1,c6) = c3\n         & rd(c1,c7) = c2\n         & rd(c2,c0) = c2\n         & rd(c2,c1) = c5\n         & rd(c2,c2) = c0\n         & rd(c2,c3) = c4\n         & rd(c2,c4) = c3\n         & rd(c2,c5) = c6\n         & rd(c2,c6) = c7\n         & rd(c2,c7) = c1\n         & rd(c3,c0) = c3\n         & rd(c3,c1) = c1\n         & rd(c3,c2) = c2\n         & rd(c3,c3) = c0\n         & rd(c3,c4) = c4\n         & rd(c3,c5) = c7\n         & rd(c3,c6) = c6\n         & rd(c3,c7) = c5\n         & rd(c4,c0) = c4\n         & rd(c4,c1) = c7\n         & rd(c4,c2) = c3\n         & rd(c4,c3) = c2\n         & rd(c4,c4) = c0\n         & rd(c4,c5) = c1\n         & rd(c4,c6) = c5\n         & rd(c4,c7) = c6\n         & rd(c5,c0) = c5\n         & rd(c5,c1) = c2\n         & rd(c5,c2) = c1\n         & rd(c5,c3) = c7\n         & rd(c5,c4) = c6\n         & rd(c5,c5) = c0\n         & rd(c5,c6) = c4\n         & rd(c5,c7) = c3\n         & rd(c6,c0) = c6\n         & rd(c6,c1) = c3\n         & rd(c6,c2) = c7\n         & rd(c6,c3) = c1\n         & rd(c6,c4) = c5\n         & rd(c6,c5) = c2\n         & rd(c6,c6) = c0\n         & rd(c6,c7) = c4\n         & rd(c7,c0) = c7\n         & rd(c7,c1) = c4\n         & rd(c7,c2) = c6\n         & rd(c7,c3) = c5\n         & rd(c7,c4) = c1\n         & rd(c7,c5) = c3\n         & rd(c7,c6) = c2\n         & rd(c7,c7) = c0\n\n)."
+    },
+    {
+      "antecedent": [
+        "left_bol"
+      ],
+      "found_order": 8,
+      "kind": "smallest_order_theorem",
+      "negated_consequent": "flexible",
+      "rungs": [
+        {
+          "finite_model_found": false,
+          "order": 7,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": true,
+          "order": 8,
+          "return_code": 0,
+          "status": "Satisfiable"
+        }
+      ],
+      "small_order_support": 90,
+      "statement": "the smallest loop satisfying left_bol & ~flexible has order 8",
+      "witness_block": "tff('declare_$i1',type,c0:$i).\ntff('declare_$i2',type,c1:$i).\ntff('declare_$i3',type,c2:$i).\ntff('declare_$i4',type,c3:$i).\ntff('declare_$i5',type,c4:$i).\ntff('declare_$i6',type,c5:$i).\ntff('declare_$i7',type,c6:$i).\ntff('declare_$i8',type,c7:$i).\ntff('finite_domain_$i',axiom,\n      ! [X:$i] : (\n         X = c0 | X = c1 | X = c2 | X = c3 | X = c4 | \n         X = c5 | X = c6 | X = c7\n      ) ).\n\ntff('distinct_domain_$i',axiom,\n         c0 != c1 & c0 != c2 & c0 != c3 & c0 != c4 & c0 != c5 & \n         c0 != c6 & c0 != c7 & c1 != c2 & c1 != c3 & c1 != c4 & \n         c1 != c5 & c1 != c6 & c1 != c7 & c2 != c3 & c2 != c4 & \n         c2 != c5 & c2 != c6 & c2 != c7 & c3 != c4 & c3 != c5 & \n         c3 != c6 & c3 != c7 & c4 != c5 & c4 != c6 & c4 != c7 & \n         c5 != c6 & c5 != c7 & c6 != c7\n).\n\ntff(declare_e,type,e:$i).\ntff(e_definition,axiom,e = c0).\ntff(declare_ld,type,ld: ($i * $i) > $i).\ntff(function_ld,axiom,\n           ld(c0,c0) = c0\n         & ld(c0,c1) = c1\n         & ld(c0,c2) = c2\n         & ld(c0,c3) = c3\n         & ld(c0,c4) = c4\n         & ld(c0,c5) = c5\n         & ld(c0,c6) = c6\n         & ld(c0,c7) = c7\n         & ld(c1,c0) = c5\n         & ld(c1,c1) = c0\n         & ld(c1,c2) = c6\n         & ld(c1,c3) = c2\n         & ld(c1,c4) = c3\n         & ld(c1,c5) = c7\n         & ld(c1,c6) = c4\n         & ld(c1,c7) = c1\n         & ld(c2,c0) = c4\n         & ld(c2,c1) = c6\n         & ld(c2,c2) = c0\n         & ld(c2,c3) = c1\n         & ld(c2,c4) = c7\n         & ld(c2,c5) = c3\n         & ld(c2,c6) = c5\n         & ld(c2,c7) = c2\n         & ld(c3,c0) = c6\n         & ld(c3,c1) = c4\n         & ld(c3,c2) = c1\n         & ld(c3,c3) = c0\n         & ld(c3,c4) = c5\n         & ld(c3,c5) = c2\n         & ld(c3,c6) = c7\n         & ld(c3,c7) = c3\n         & ld(c4,c0) = c2\n         & ld(c4,c1) = c3\n         & ld(c4,c2) = c7\n         & ld(c4,c3) = c5\n         & ld(c4,c4) = c0\n         & ld(c4,c5) = c6\n         & ld(c4,c6) = c1\n         & ld(c4,c7) = c4\n         & ld(c5,c0) = c1\n         & ld(c5,c1) = c7\n         & ld(c5,c2) = c3\n         & ld(c5,c3) = c4\n         & ld(c5,c4) = c6\n         & ld(c5,c5) = c0\n         & ld(c5,c6) = c2\n         & ld(c5,c7) = c5\n         & ld(c6,c0) = c3\n         & ld(c6,c1) = c2\n         & ld(c6,c2) = c5\n         & ld(c6,c3) = c7\n         & ld(c6,c4) = c1\n         & ld(c6,c5) = c4\n         & ld(c6,c6) = c0\n         & ld(c6,c7) = c6\n         & ld(c7,c0) = c7\n         & ld(c7,c1) = c5\n         & ld(c7,c2) = c4\n         & ld(c7,c3) = c6\n         & ld(c7,c4) = c2\n         & ld(c7,c5) = c1\n         & ld(c7,c6) = c3\n         & ld(c7,c7) = c0\n\n).\n\ntff(declare_op,type,op: ($i * $i) > $i).\ntff(function_op,axiom,\n           op(c0,c0) = c0\n         & op(c0,c1) = c1\n         & op(c0,c2) = c2\n         & op(c0,c3) = c3\n         & op(c0,c4) = c4\n         & op(c0,c5) = c5\n         & op(c0,c6) = c6\n         & op(c0,c7) = c7\n         & op(c1,c0) = c1\n         & op(c1,c1) = c7\n         & op(c1,c2) = c3\n         & op(c1,c3) = c4\n         & op(c1,c4) = c6\n         & op(c1,c5) = c0\n         & op(c1,c6) = c2\n         & op(c1,c7) = c5\n         & op(c2,c0) = c2\n         & op(c2,c1) = c3\n         & op(c2,c2) = c7\n         & op(c2,c3) = c5\n         & op(c2,c4) = c0\n         & op(c2,c5) = c6\n         & op(c2,c6) = c1\n         & op(c2,c7) = c4\n         & op(c3,c0) = c3\n         & op(c3,c1) = c2\n         & op(c3,c2) = c5\n         & op(c3,c3) = c7\n         & op(c3,c4) = c1\n         & op(c3,c5) = c4\n         & op(c3,c6) = c0\n         & op(c3,c7) = c6\n         & op(c4,c0) = c4\n         & op(c4,c1) = c6\n         & op(c4,c2) = c0\n         & op(c4,c3) = c1\n         & op(c4,c4) = c7\n         & op(c4,c5) = c3\n         & op(c4,c6) = c5\n         & op(c4,c7) = c2\n         & op(c5,c0) = c5\n         & op(c5,c1) = c0\n         & op(c5,c2) = c6\n         & op(c5,c3) = c2\n         & op(c5,c4) = c3\n         & op(c5,c5) = c7\n         & op(c5,c6) = c4\n         & op(c5,c7) = c1\n         & op(c6,c0) = c6\n         & op(c6,c1) = c4\n         & op(c6,c2) = c1\n         & op(c6,c3) = c0\n         & op(c6,c4) = c5\n         & op(c6,c5) = c2\n         & op(c6,c6) = c7\n         & op(c6,c7) = c3\n         & op(c7,c0) = c7\n         & op(c7,c1) = c5\n         & op(c7,c2) = c4\n         & op(c7,c3) = c6\n         & op(c7,c4) = c2\n         & op(c7,c5) = c1\n         & op(c7,c6) = c3\n         & op(c7,c7) = c0\n\n).\n\ntff(declare_rd,type,rd: ($i * $i) > $i).\ntff(function_rd,axiom,\n           rd(c0,c0) = c0\n         & rd(c0,c1) = c5\n         & rd(c0,c2) = c4\n         & rd(c0,c3) = c6\n         & rd(c0,c4) = c2\n         & rd(c0,c5) = c1\n         & rd(c0,c6) = c3\n         & rd(c0,c7) = c7\n         & rd(c1,c0) = c1\n         & rd(c1,c1) = c0\n         & rd(c1,c2) = c6\n         & rd(c1,c3) = c4\n         & rd(c1,c4) = c3\n         & rd(c1,c5) = c7\n         & rd(c1,c6) = c2\n         & rd(c1,c7) = c5\n         & rd(c2,c0) = c2\n         & rd(c2,c1) = c3\n         & rd(c2,c2) = c0\n         & rd(c2,c3) = c5\n         & rd(c2,c4) = c7\n         & rd(c2,c5) = c6\n         & rd(c2,c6) = c1\n         & rd(c2,c7) = c4\n         & rd(c3,c0) = c3\n         & rd(c3,c1) = c2\n         & rd(c3,c2) = c1\n         & rd(c3,c3) = c0\n         & rd(c3,c4) = c5\n         & rd(c3,c5) = c4\n         & rd(c3,c6) = c7\n         & rd(c3,c7) = c6\n         & rd(c4,c0) = c4\n         & rd(c4,c1) = c6\n         & rd(c4,c2) = c7\n         & rd(c4,c3) = c1\n         & rd(c4,c4) = c0\n         & rd(c4,c5) = c3\n         & rd(c4,c6) = c5\n         & rd(c4,c7) = c2\n         & rd(c5,c0) = c5\n         & rd(c5,c1) = c7\n         & rd(c5,c2) = c3\n         & rd(c5,c3) = c2\n         & rd(c5,c4) = c6\n         & rd(c5,c5) = c0\n         & rd(c5,c6) = c4\n         & rd(c5,c7) = c1\n         & rd(c6,c0) = c6\n         & rd(c6,c1) = c4\n         & rd(c6,c2) = c5\n         & rd(c6,c3) = c7\n         & rd(c6,c4) = c1\n         & rd(c6,c5) = c2\n         & rd(c6,c6) = c0\n         & rd(c6,c7) = c3\n         & rd(c7,c0) = c7\n         & rd(c7,c1) = c1\n         & rd(c7,c2) = c2\n         & rd(c7,c3) = c3\n         & rd(c7,c4) = c4\n         & rd(c7,c5) = c5\n         & rd(c7,c6) = c6\n         & rd(c7,c7) = c0\n\n)."
+    },
+    {
+      "antecedent": [
+        "left_bol"
+      ],
+      "found_order": null,
+      "kind": "implication_proved",
+      "negated_consequent": "left_alternative",
+      "rungs": [],
+      "small_order_support": 90,
+      "statement": "left_bol => left_alternative is a theorem; no left_bol & ~left_alternative loop exists at any order"
+    },
+    {
+      "antecedent": [
+        "left_bol"
+      ],
+      "found_order": null,
+      "kind": "implication_proved",
+      "negated_consequent": "lip",
+      "rungs": [],
+      "small_order_support": 90,
+      "statement": "left_bol => lip is a theorem; no left_bol & ~lip loop exists at any order"
+    },
+    {
+      "antecedent": [
+        "left_bol"
+      ],
+      "found_order": 8,
+      "kind": "smallest_order_theorem",
+      "negated_consequent": "moufang",
+      "rungs": [
+        {
+          "finite_model_found": false,
+          "order": 7,
+          "return_code": 0,
+          "status": "Unsatisfiable"
+        },
+        {
+          "finite_model_found": true,
+          "order": 8,
+          "return_code": 0,
+          "status": "Satisfiable"
+        }
+      ],
+      "small_order_support": 90,
+      "statement": "the smallest loop satisfying left_bol & ~moufang has order 8",
+      "witness_block": "tff('declare_$i1',type,c0:$i).\ntff('declare_$i2',type,c1:$i).\ntff('declare_$i3',type,c2:$i).\ntff('declare_$i4',type,c3:$i).\ntff('declare_$i5',type,c4:$i).\ntff('declare_$i6',type,c5:$i).\ntff('declare_$i7',type,c6:$i).\ntff('declare_$i8',type,c7:$i).\ntff('finite_domain_$i',axiom,\n      ! [X:$i] : (\n         X = c0 | X = c1 | X = c2 | X = c3 | X = c4 | \n         X = c5 | X = c6 | X = c7\n      ) ).\n\ntff('distinct_domain_$i',axiom,\n         c0 != c1 & c0 != c2 & c0 != c3 & c0 != c4 & c0 != c5 & \n         c0 != c6 & c0 != c7 & c1 != c2 & c1 != c3 & c1 != c4 & \n         c1 != c5 & c1 != c6 & c1 != c7 & c2 != c3 & c2 != c4 & \n         c2 != c5 & c2 != c6 & c2 != c7 & c3 != c4 & c3 != c5 & \n         c3 != c6 & c3 != c7 & c4 != c5 & c4 != c6 & c4 != c7 & \n         c5 != c6 & c5 != c7 & c6 != c7\n).\n\ntff(declare_e,type,e:$i).\ntff(e_definition,axiom,e = c0).\ntff(declare_ld,type,ld: ($i * $i) > $i).\ntff(function_ld,axiom,\n           ld(c0,c0) = c0\n         & ld(c0,c1) = c1\n         & ld(c0,c2) = c2\n         & ld(c0,c3) = c3\n         & ld(c0,c4) = c4\n         & ld(c0,c5) = c5\n         & ld(c0,c6) = c6\n         & ld(c0,c7) = c7\n         & ld(c1,c0) = c4\n         & ld(c1,c1) = c0\n         & ld(c1,c2) = c7\n         & ld(c1,c3) = c2\n         & ld(c1,c4) = c6\n         & ld(c1,c5) = c3\n         & ld(c1,c6) = c1\n         & ld(c1,c7) = c5\n         & ld(c2,c0) = c2\n         & ld(c2,c1) = c3\n         & ld(c2,c2) = c0\n         & ld(c2,c3) = c1\n         & ld(c2,c4) = c7\n         & ld(c2,c5) = c6\n         & ld(c2,c6) = c5\n         & ld(c2,c7) = c4\n         & ld(c3,c0) = c3\n         & ld(c3,c1) = c5\n         & ld(c3,c2) = c4\n         & ld(c3,c3) = c0\n         & ld(c3,c4) = c2\n         & ld(c3,c5) = c1\n         & ld(c3,c6) = c7\n         & ld(c3,c7) = c6\n         & ld(c4,c0) = c1\n         & ld(c4,c1) = c6\n         & ld(c4,c2) = c3\n         & ld(c4,c3) = c5\n         & ld(c4,c4) = c0\n         & ld(c4,c5) = c7\n         & ld(c4,c6) = c4\n         & ld(c4,c7) = c2\n         & ld(c5,c0) = c5\n         & ld(c5,c1) = c7\n         & ld(c5,c2) = c6\n         & ld(c5,c3) = c4\n         & ld(c5,c4) = c3\n         & ld(c5,c5) = c0\n         & ld(c5,c6) = c2\n         & ld(c5,c7) = c1\n         & ld(c6,c0) = c6\n         & ld(c6,c1) = c4\n         & ld(c6,c2) = c5\n         & ld(c6,c3) = c7\n         & ld(c6,c4) = c1\n         & ld(c6,c5) = c2\n         & ld(c6,c6) = c0\n         & ld(c6,c7) = c3\n         & ld(c7,c0) = c7\n         & ld(c7,c1) = c2\n         & ld(c7,c2) = c1\n         & ld(c7,c3) = c6\n         & ld(c7,c4) = c5\n         & ld(c7,c5) = c4\n         & ld(c7,c6) = c3\n         & ld(c7,c7) = c0\n\n).\n\ntff(declare_op,type,op: ($i * $i) > $i).\ntff(function_op,axiom,\n           op(c0,c0) = c0\n         & op(c0,c1) = c1\n         & op(c0,c2) = c2\n         & op(c0,c3) = c3\n         & op(c0,c4) = c4\n         & op(c0,c5) = c5\n         & op(c0,c6) = c6\n         & op(c0,c7) = c7\n         & op(c1,c0) = c1\n         & op(c1,c1) = c6\n         & op(c1,c2) = c3\n         & op(c1,c3) = c5\n         & op(c1,c4) = c0\n         & op(c1,c5) = c7\n         & op(c1,c6) = c4\n         & op(c1,c7) = c2\n         & op(c2,c0) = c2\n         & op(c2,c1) = c3\n         & op(c2,c2) = c0\n         & op(c2,c3) = c1\n         & op(c2,c4) = c7\n         & op(c2,c5) = c6\n         & op(c2,c6) = c5\n         & op(c2,c7) = c4\n         & op(c3,c0) = c3\n         & op(c3,c1) = c5\n         & op(c3,c2) = c4\n         & op(c3,c3) = c0\n         & op(c3,c4) = c2\n         & op(c3,c5) = c1\n         & op(c3,c6) = c7\n         & op(c3,c7) = c6\n         & op(c4,c0) = c4\n         & op(c4,c1) = c0\n         & op(c4,c2) = c7\n         & op(c4,c3) = c2\n         & op(c4,c4) = c6\n         & op(c4,c5) = c3\n         & op(c4,c6) = c1\n         & op(c4,c7) = c5\n         & op(c5,c0) = c5\n         & op(c5,c1) = c7\n         & op(c5,c2) = c6\n         & op(c5,c3) = c4\n         & op(c5,c4) = c3\n         & op(c5,c5) = c0\n         & op(c5,c6) = c2\n         & op(c5,c7) = c1\n         & op(c6,c0) = c6\n         & op(c6,c1) = c4\n         & op(c6,c2) = c5\n         & op(c6,c3) = c7\n         & op(c6,c4) = c1\n         & op(c6,c5) = c2\n         & op(c6,c6) = c0\n         & op(c6,c7) = c3\n         & op(c7,c0) = c7\n         & op(c7,c1) = c2\n         & op(c7,c2) = c1\n         & op(c7,c3) = c6\n         & op(c7,c4) = c5\n         & op(c7,c5) = c4\n         & op(c7,c6) = c3\n         & op(c7,c7) = c0\n\n).\n\ntff(declare_rd,type,rd: ($i * $i) > $i).\ntff(function_rd,axiom,\n           rd(c0,c0) = c0\n         & rd(c0,c1) = c4\n         & rd(c0,c2) = c2\n         & rd(c0,c3) = c3\n         & rd(c0,c4) = c1\n         & rd(c0,c5) = c5\n         & rd(c0,c6) = c6\n         & rd(c0,c7) = c7\n         & rd(c1,c0) = c1\n         & rd(c1,c1) = c0\n         & rd(c1,c2) = c7\n         & rd(c1,c3) = c2\n         & rd(c1,c4) = c6\n         & rd(c1,c5) = c3\n         & rd(c1,c6) = c4\n         & rd(c1,c7) = c5\n         & rd(c2,c0) = c2\n         & rd(c2,c1) = c7\n         & rd(c2,c2) = c0\n         & rd(c2,c3) = c4\n         & rd(c2,c4) = c3\n         & rd(c2,c5) = c6\n         & rd(c2,c6) = c5\n         & rd(c2,c7) = c1\n         & rd(c3,c0) = c3\n         & rd(c3,c1) = c2\n         & rd(c3,c2) = c1\n         & rd(c3,c3) = c0\n         & rd(c3,c4) = c5\n         & rd(c3,c5) = c4\n         & rd(c3,c6) = c7\n         & rd(c3,c7) = c6\n         & rd(c4,c0) = c4\n         & rd(c4,c1) = c6\n         & rd(c4,c2) = c3\n         & rd(c4,c3) = c5\n         & rd(c4,c4) = c0\n         & rd(c4,c5) = c7\n         & rd(c4,c6) = c1\n         & rd(c4,c7) = c2\n         & rd(c5,c0) = c5\n         & rd(c5,c1) = c3\n         & rd(c5,c2) = c6\n         & rd(c5,c3) = c1\n         & rd(c5,c4) = c7\n         & rd(c5,c5) = c0\n         & rd(c5,c6) = c2\n         & rd(c5,c7) = c4\n         & rd(c6,c0) = c6\n         & rd(c6,c1) = c1\n         & rd(c6,c2) = c5\n         & rd(c6,c3) = c7\n         & rd(c6,c4) = c4\n         & rd(c6,c5) = c2\n         & rd(c6,c6) = c0\n         & rd(c6,c7) = c3\n         & rd(c7,c0) = c7\n         & rd(c7,c1) = c5\n         & rd(c7,c2) = c4\n         & rd(c7,c3) = c6\n         & rd(c7,c4) = c2\n         & rd(c7,c5) = c1\n         & rd(c7,c6) = c3\n         & rd(c7,c7) = c0\n\n)."
+    }
+  ],
+  "spectrum_conjectures": [],
+  "theorems": [
+    "the smallest loop satisfying c_identity & ~associative has order 10",
+    "the smallest loop satisfying c_identity & ~flexible has order 12",
+    "the smallest loop satisfying c_identity & ~left_bol has order 10",
+    "the smallest loop satisfying c_identity & ~moufang has order 10",
+    "the smallest loop satisfying c_identity & ~right_bol has order 10",
+    "the smallest loop satisfying left_bol & ~associative has order 8",
+    "the smallest loop satisfying left_bol & ~c_identity has order 8",
+    "the smallest loop satisfying left_bol & ~flexible has order 8",
+    "the smallest loop satisfying left_bol & ~moufang has order 8"
+  ]
+}

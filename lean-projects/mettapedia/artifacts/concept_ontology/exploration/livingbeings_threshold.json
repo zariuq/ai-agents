@@ -1,0 +1,301 @@
+{
+  "credal_summary": {
+    "intent_support_histogram": {
+      "1": 19,
+      "2": 1
+    },
+    "lower_concept_count": 1,
+    "stable_concept_count": 1,
+    "support_histogram": {
+      "1": 19,
+      "2": 1
+    },
+    "unstable_concept_count": 19,
+    "upper_concept_count": 20
+  },
+  "dataset": {
+    "attributes": 9,
+    "is_binary": true,
+    "kind": "cxt",
+    "max_count": 1,
+    "name": "Living beings and water",
+    "objects": 8,
+    "source": "https://github.com/fcatools/contexts/raw/main/contexts/livingbeings_en.cxt"
+  },
+  "gate_family": {
+    "concept_count_by_gate": [
+      19,
+      2
+    ],
+    "densities": [
+      0.4722222222222222,
+      0.0
+    ],
+    "distinct_concept_families": 2,
+    "gate_count": 2,
+    "labels": [
+      "threshold>=1",
+      "threshold>=2"
+    ]
+  },
+  "samples": {
+    "unstable_concepts": [
+      {
+        "extent": [
+          "reed"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives in water",
+          "lives on land",
+          "needs chlorophyll to produce food",
+          "one seed leave"
+        ],
+        "intent_size": 5
+      },
+      {
+        "extent": [
+          "frog"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives in water",
+          "lives on land",
+          "can move around",
+          "has limbs"
+        ],
+        "intent_size": 5
+      },
+      {
+        "extent": [
+          "dog"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives on land",
+          "can move around",
+          "has limbs",
+          "suckles its offspring"
+        ],
+        "intent_size": 5
+      },
+      {
+        "extent": [
+          "waterweed",
+          "reed"
+        ],
+        "extent_size": 2,
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives in water",
+          "needs chlorophyll to produce food",
+          "one seed leave"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "bream",
+          "frog"
+        ],
+        "extent_size": 2,
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives in water",
+          "can move around",
+          "has limbs"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "reed",
+          "maize"
+        ],
+        "extent_size": 2,
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives on land",
+          "needs chlorophyll to produce food",
+          "one seed leave"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "frog",
+          "dog"
+        ],
+        "extent_size": 2,
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives on land",
+          "can move around",
+          "has limbs"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "bean"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives on land",
+          "needs chlorophyll to produce food",
+          "two seed leaves"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "leech",
+          "bream",
+          "frog"
+        ],
+        "extent_size": 3,
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives in water",
+          "can move around"
+        ],
+        "intent_size": 3
+      },
+      {
+        "extent": [
+          "reed",
+          "bean",
+          "maize"
+        ],
+        "extent_size": 3,
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives on land",
+          "needs chlorophyll to produce food"
+        ],
+        "intent_size": 3
+      }
+    ],
+    "unstable_intents": [
+      {
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives in water",
+          "lives on land",
+          "needs chlorophyll to produce food",
+          "one seed leave"
+        ],
+        "intent_size": 5
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives in water",
+          "lives on land",
+          "can move around",
+          "has limbs"
+        ],
+        "intent_size": 5
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives on land",
+          "can move around",
+          "has limbs",
+          "suckles its offspring"
+        ],
+        "intent_size": 5
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives in water",
+          "needs chlorophyll to produce food",
+          "one seed leave"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives in water",
+          "can move around",
+          "has limbs"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives on land",
+          "needs chlorophyll to produce food",
+          "two seed leaves"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives on land",
+          "needs chlorophyll to produce food",
+          "one seed leave"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives on land",
+          "can move around",
+          "has limbs"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives in water",
+          "lives on land"
+        ],
+        "intent_size": 3
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "needs water to live",
+          "lives in water",
+          "can move around"
+        ],
+        "intent_size": 3
+      }
+    ]
+  },
+  "theoretical_notes": [
+    "Threshold gates over binary evidence are structurally weak: they can only keep the original relation or jump toward a degenerate sparse/null relation.",
+    "At least one gate erased all incidence, so any instability there reflects gate degeneracy more than latent graded structure."
+  ]
+}

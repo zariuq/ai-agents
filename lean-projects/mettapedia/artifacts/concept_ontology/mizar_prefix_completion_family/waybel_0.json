@@ -1,0 +1,1554 @@
+{
+  "article": "waybel_0",
+  "attributes": [
+    "Chain",
+    "Filt",
+    "Filt_0",
+    "Filter",
+    "Function",
+    "Ideal",
+    "Ids",
+    "Ids_0",
+    "LATTICE",
+    "NetStr",
+    "Poset",
+    "RelStr",
+    "Semilattice",
+    "Subset",
+    "directed-sups-inheriting",
+    "directed-sups-preserving",
+    "eventually-directed",
+    "eventually-filtered",
+    "filtered-infs-inheriting",
+    "filtered-infs-preserving",
+    "infs-preserving",
+    "is_eventually_in",
+    "is_often_in",
+    "join-preserving",
+    "meet-preserving",
+    "preserves_inf_of",
+    "preserves_sup_of",
+    "sup-Semilattice",
+    "sups-preserving",
+    "up-complete",
+    "with_infima",
+    "with_suprema"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 3
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let L be RelStr; let X be Subset of L; attr X is directed means :Def1: :: Definition 1.1 for x,y being Elemen"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 7
+      },
+      "index": 1,
+      "kind": "theorem",
+      "object": "theorem_1",
+      "preview": "theorem Th1: for L being non empty transitive RelStr, X being Subset of L holds X is non empty directed iff for Y being "
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 5
+      },
+      "index": 2,
+      "kind": "theorem",
+      "object": "theorem_2",
+      "preview": "theorem Th2: for L being non empty transitive RelStr, X being Subset of L holds X is non empty filtered iff for Y being "
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 1
+      },
+      "index": 1,
+      "kind": "registration",
+      "object": "registration_1",
+      "preview": "registration let L be RelStr; cluster empty -> directed filtered for Subset of L; coherence; end;"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 1
+      },
+      "index": 2,
+      "kind": "registration",
+      "object": "registration_2",
+      "preview": "registration let L be RelStr; cluster directed filtered for Subset of L; existence proof take {}L; thus thesis; end; end"
+    },
+    {
+      "counts": {
+        "RelStr": 6,
+        "Subset": 4
+      },
+      "index": 3,
+      "kind": "theorem",
+      "object": "theorem_3",
+      "preview": "theorem Th3: for L1,L2 being RelStr st the RelStr of L1 = the RelStr of L2 for X1 being Subset of L1, X2 being Subset of"
+    },
+    {
+      "counts": {
+        "RelStr": 6,
+        "Subset": 4
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem for L1,L2 being RelStr st the RelStr of L1 = the RelStr of L2 for X1 being Subset of L1, X2 being Subset of L2 s"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem Th5: for L being non empty reflexive RelStr, x being Element of L holds {x} is directed filtered proof let L be "
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 1
+      },
+      "index": 3,
+      "kind": "registration",
+      "object": "registration_3",
+      "preview": "registration let L be non empty reflexive RelStr; cluster directed filtered non empty finite for Subset of L; existence "
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "with_suprema": 1
+      },
+      "index": 4,
+      "kind": "registration",
+      "object": "registration_4",
+      "preview": "registration let L be with_suprema RelStr; cluster [#]L -> directed; coherence proof set X = [#]L; let x,y be Element of"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 5,
+      "kind": "registration",
+      "object": "registration_5",
+      "preview": "registration let L be upper-bounded non empty RelStr; cluster [#]L -> directed; coherence proof set X = [#]L; let x,y be"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "with_infima": 1
+      },
+      "index": 6,
+      "kind": "registration",
+      "object": "registration_6",
+      "preview": "registration let L be with_infima RelStr; cluster [#]L -> filtered; coherence proof set X = [#]L; let x,y be Element of "
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 7,
+      "kind": "registration",
+      "object": "registration_7",
+      "preview": "registration let L be lower-bounded non empty RelStr; cluster [#]L -> filtered; coherence proof set X = [#]L; let x,y be"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 2,
+        "directed-sups-inheriting": 1,
+        "filtered-infs-inheriting": 1
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let L be non empty RelStr; let S be SubRelStr of L; attr S is filtered-infs-inheriting means :Def3: for X bei"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "directed-sups-inheriting": 1,
+        "filtered-infs-inheriting": 1
+      },
+      "index": 8,
+      "kind": "registration",
+      "object": "registration_8",
+      "preview": "registration let L be non empty RelStr; cluster infs-inheriting -> filtered-infs-inheriting for SubRelStr of L; coherenc"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 9,
+      "kind": "registration",
+      "object": "registration_9",
+      "preview": "registration let L be non empty RelStr; cluster infs-inheriting sups-inheriting non empty full strict for SubRelStr of L"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2,
+        "filtered-infs-inheriting": 2
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem for L being non empty transitive RelStr for S being filtered-infs-inheriting non empty full SubRelStr of L for X"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2,
+        "directed-sups-inheriting": 2
+      },
+      "index": 7,
+      "kind": "theorem",
+      "object": "theorem_7",
+      "preview": "theorem for L being non empty transitive RelStr for S being directed-sups-inheriting non empty full SubRelStr of L for X"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "RelStr": 1
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let L1,L2 be RelStr; let f be Function of L1,L2; attr f is antitone means for x,y being Element of L1 st x <="
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "NetStr": 1,
+        "RelStr": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let L be 1-sorted; struct (RelStr) NetStr over L (# carrier -> set, InternalRel -> (Relation of the carrier),"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "NetStr": 1
+      },
+      "index": 10,
+      "kind": "registration",
+      "object": "registration_10",
+      "preview": "registration let L be 1-sorted; let X be non empty set; let O be Relation of X; let F be Function of X, the carrier of L"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let N be RelStr; attr N is directed means :Def6: [#]N is directed; end;"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "NetStr": 2,
+        "Poset": 1,
+        "RelStr": 2,
+        "with_suprema": 1
+      },
+      "index": 11,
+      "kind": "registration",
+      "object": "registration_11",
+      "preview": "registration let L be 1-sorted; cluster non empty reflexive transitive antisymmetric directed for strict NetStr over L; "
+    },
+    {
+      "counts": {
+        "NetStr": 1
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let L be 1-sorted; mode prenet of L is directed non empty NetStr over L; end;"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "NetStr": 1
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition let L be non empty 1-sorted; let N be non empty NetStr over L; func netmap(N,L) -> Function of N,L equals the"
+    },
+    {
+      "counts": {
+        "NetStr": 1,
+        "RelStr": 1
+      },
+      "index": 9,
+      "kind": "definition",
+      "object": "definition_9",
+      "preview": "definition let L be non empty RelStr; let N be non empty NetStr over L; attr N is monotone means netmap(N,L) is monotone"
+    },
+    {
+      "counts": {
+        "NetStr": 1,
+        "is_eventually_in": 1,
+        "is_often_in": 1
+      },
+      "index": 10,
+      "kind": "definition",
+      "object": "definition_10",
+      "preview": "definition let L be non empty 1-sorted; let N be non empty NetStr over L; let X be set; pred N is_eventually_in X means "
+    },
+    {
+      "counts": {
+        "NetStr": 2,
+        "is_eventually_in": 4,
+        "is_often_in": 2
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem for L being non empty 1-sorted, N being non empty NetStr over L for X,Y being set st X c= Y holds (N is_eventual"
+    },
+    {
+      "counts": {
+        "NetStr": 2,
+        "is_eventually_in": 2,
+        "is_often_in": 2
+      },
+      "index": 9,
+      "kind": "theorem",
+      "object": "theorem_9",
+      "preview": "theorem for L being non empty 1-sorted, N being non empty NetStr over L for X being set holds N is_eventually_in X iff n"
+    },
+    {
+      "counts": {
+        "NetStr": 2,
+        "is_eventually_in": 2,
+        "is_often_in": 2
+      },
+      "index": 10,
+      "kind": "theorem",
+      "object": "theorem_10",
+      "preview": "theorem for L being non empty 1-sorted, N being non empty NetStr over L for X being set holds N is_often_in X iff not N "
+    },
+    {
+      "counts": {
+        "NetStr": 1,
+        "RelStr": 1,
+        "is_eventually_in": 2
+      },
+      "index": 1,
+      "kind": "scheme",
+      "object": "scheme_1",
+      "preview": "scheme HoldsEventually {L() -> non empty RelStr, N() -> non empty NetStr over L(), P[set]}: N() is_eventually_in {N().k "
+    },
+    {
+      "counts": {
+        "NetStr": 1,
+        "RelStr": 1,
+        "eventually-directed": 1,
+        "eventually-filtered": 1,
+        "is_eventually_in": 2
+      },
+      "index": 11,
+      "kind": "definition",
+      "object": "definition_11",
+      "preview": "definition let L be non empty RelStr; let N be non empty NetStr over L; attr N is eventually-directed means for i being "
+    },
+    {
+      "counts": {
+        "NetStr": 2,
+        "RelStr": 2,
+        "eventually-directed": 2,
+        "is_eventually_in": 2
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem Th11: for L being non empty RelStr, N being non empty NetStr over L holds N is eventually-directed iff for i bei"
+    },
+    {
+      "counts": {
+        "NetStr": 2,
+        "RelStr": 2,
+        "eventually-filtered": 2,
+        "is_eventually_in": 2
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem Th12: for L being non empty RelStr, N being non empty NetStr over L holds N is eventually-filtered iff for i bei"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "eventually-directed": 1,
+        "eventually-filtered": 1
+      },
+      "index": 12,
+      "kind": "registration",
+      "object": "registration_12",
+      "preview": "registration let L be non empty RelStr; cluster monotone -> eventually-directed for prenet of L; coherence proof let N b"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "NetStr": 1,
+        "Poset": 1,
+        "RelStr": 3
+      },
+      "index": 13,
+      "kind": "registration",
+      "object": "registration_13",
+      "preview": "registration let L be non empty reflexive RelStr; cluster monotone antitone strict for prenet of L; existence proof set "
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 7
+      },
+      "index": 12,
+      "kind": "definition",
+      "object": "definition_12",
+      "preview": "definition let L be RelStr; let X be Subset of L; func downarrow X -> Subset of L means :Def15: for x being Element of L"
+    },
+    {
+      "counts": {
+        "RelStr": 6,
+        "Subset": 4
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem Th13: for L1,L2 being RelStr st the RelStr of L1 = the RelStr of L2 for X being Subset of L1 for Y being Subset "
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem Th14: for L being non empty RelStr, X being Subset of L holds downarrow X = {x where x is Element of L: ex y bei"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem Th15: for L being non empty RelStr, X being Subset of L holds uparrow X = {x where x is Element of L: ex y being"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 1
+      },
+      "index": 14,
+      "kind": "registration",
+      "object": "registration_14",
+      "preview": "registration let L be non empty reflexive RelStr; let X be non empty Subset of L; cluster downarrow X -> non empty; cohe"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem Th16: for L being reflexive RelStr, X being Subset of L holds X c= downarrow X & X c= uparrow X proof let L be r"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 2
+      },
+      "index": 13,
+      "kind": "definition",
+      "object": "definition_13",
+      "preview": "definition let L be non empty RelStr; let x be Element of L; func downarrow x -> Subset of L equals :: Definition 1.3 (i"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 17,
+      "kind": "theorem",
+      "object": "theorem_17",
+      "preview": "theorem Th17: for L being non empty RelStr, x,y being Element of L holds y in downarrow x iff y <= x proof let L be non "
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem Th18: for L being non empty RelStr, x,y being Element of L holds y in uparrow x iff x <= y proof let L be non em"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem for L being non empty reflexive antisymmetric RelStr for x,y being Element of L st downarrow x = downarrow y hol"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 20,
+      "kind": "theorem",
+      "object": "theorem_20",
+      "preview": "theorem for L being non empty reflexive antisymmetric RelStr for x,y being Element of L st uparrow x = uparrow y holds x"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 21,
+      "kind": "theorem",
+      "object": "theorem_21",
+      "preview": "theorem Th21: for L being non empty transitive RelStr for x,y being Element of L st x <= y holds downarrow x c= downarro"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 22,
+      "kind": "theorem",
+      "object": "theorem_22",
+      "preview": "theorem Th22: for L being non empty transitive RelStr for x,y being Element of L st x <= y holds uparrow y c= uparrow x "
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 15,
+      "kind": "registration",
+      "object": "registration_15",
+      "preview": "registration let L be non empty reflexive RelStr; let x be Element of L; cluster downarrow x -> non empty directed; cohe"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 1
+      },
+      "index": 14,
+      "kind": "definition",
+      "object": "definition_14",
+      "preview": "definition let L be RelStr; let X be Subset of L; attr X is lower means :Def19: :: Definition 1.3 (v) for x,y being Elem"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 2
+      },
+      "index": 16,
+      "kind": "registration",
+      "object": "registration_16",
+      "preview": "registration let L be RelStr; cluster lower upper for Subset of L; existence proof the carrier of L c= the carrier of L;"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2
+      },
+      "index": 23,
+      "kind": "theorem",
+      "object": "theorem_23",
+      "preview": "theorem Th23: for L being RelStr, X being Subset of L holds X is lower iff downarrow X c= X proof let L be RelStr, X be "
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem Th24: for L being RelStr, X being Subset of L holds X is upper iff uparrow X c= X proof let L be RelStr, X be Su"
+    },
+    {
+      "counts": {
+        "RelStr": 6,
+        "Subset": 4
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem for L1,L2 being RelStr st the RelStr of L1 = the RelStr of L2 for X1 being Subset of L1, X2 being Subset of L2 s"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 5
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem for L being RelStr, A being Subset-Family of L st for X being Subset of L st X in A holds X is lower holds union"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem Th27: for L being RelStr, X,Y being Subset of L st X is lower & Y is lower holds X /\\ Y is lower & X \\/ Y is low"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 5
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem for L being RelStr, A being Subset-Family of L st for X being Subset of L st X in A holds X is upper holds union"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem Th29: for L being RelStr, X,Y being Subset of L st X is upper & Y is upper holds X /\\ Y is upper & X \\/ Y is upp"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 1
+      },
+      "index": 17,
+      "kind": "registration",
+      "object": "registration_17",
+      "preview": "registration let L be non empty transitive RelStr; let X be Subset of L; cluster downarrow X -> lower; coherence proof l"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 18,
+      "kind": "registration",
+      "object": "registration_18",
+      "preview": "registration let L be non empty transitive RelStr; let x be Element of L; cluster downarrow x -> lower; coherence; clust"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 19,
+      "kind": "registration",
+      "object": "registration_19",
+      "preview": "registration let L be non empty RelStr; cluster [#]L -> lower upper; coherence; end;"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 1
+      },
+      "index": 20,
+      "kind": "registration",
+      "object": "registration_20",
+      "preview": "registration let L be non empty RelStr; cluster non empty lower upper for Subset of L; existence proof take [#]L; thus t"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 2
+      },
+      "index": 21,
+      "kind": "registration",
+      "object": "registration_21",
+      "preview": "registration let L be non empty reflexive transitive RelStr; cluster non empty lower directed for Subset of L; existence"
+    },
+    {
+      "counts": {
+        "Poset": 1,
+        "Subset": 1,
+        "with_infima": 1,
+        "with_suprema": 1
+      },
+      "index": 22,
+      "kind": "registration",
+      "object": "registration_22",
+      "preview": "registration let L be with_infima with_suprema Poset; cluster non empty directed filtered lower upper for Subset of L; e"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem Th30: for L being non empty transitive reflexive RelStr, X be Subset of L holds X is directed iff downarrow X is"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 1
+      },
+      "index": 23,
+      "kind": "registration",
+      "object": "registration_23",
+      "preview": "registration let L be non empty transitive reflexive RelStr; let X be directed Subset of L; cluster downarrow X -> direc"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem Th31: for L being non empty transitive reflexive RelStr, X be Subset of L for x be Element of L holds x is_>=_th"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2
+      },
+      "index": 32,
+      "kind": "theorem",
+      "object": "theorem_32",
+      "preview": "theorem Th32: for L being non empty transitive reflexive RelStr, X be Subset of L holds ex_sup_of X,L iff ex_sup_of down"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2
+      },
+      "index": 33,
+      "kind": "theorem",
+      "object": "theorem_33",
+      "preview": "theorem Th33: for L being non empty transitive reflexive RelStr, X be Subset of L st ex_sup_of X,L holds sup X = sup dow"
+    },
+    {
+      "counts": {
+        "Poset": 2
+      },
+      "index": 34,
+      "kind": "theorem",
+      "object": "theorem_34",
+      "preview": "theorem for L being non empty Poset, x being Element of L holds ex_sup_of downarrow x, L & sup downarrow x = x proof let"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2
+      },
+      "index": 35,
+      "kind": "theorem",
+      "object": "theorem_35",
+      "preview": "theorem Th35: for L being non empty transitive reflexive RelStr, X be Subset of L holds X is filtered iff uparrow X is f"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 1
+      },
+      "index": 24,
+      "kind": "registration",
+      "object": "registration_24",
+      "preview": "registration let L be non empty transitive reflexive RelStr; let X be filtered Subset of L; cluster uparrow X -> filtere"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2
+      },
+      "index": 36,
+      "kind": "theorem",
+      "object": "theorem_36",
+      "preview": "theorem Th36: for L being non empty transitive reflexive RelStr, X be Subset of L for x be Element of L holds x is_<=_th"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2
+      },
+      "index": 37,
+      "kind": "theorem",
+      "object": "theorem_37",
+      "preview": "theorem Th37: for L being non empty transitive reflexive RelStr, X be Subset of L holds ex_inf_of X,L iff ex_inf_of upar"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2
+      },
+      "index": 38,
+      "kind": "theorem",
+      "object": "theorem_38",
+      "preview": "theorem Th38: for L being non empty transitive reflexive RelStr, X be Subset of L st ex_inf_of X,L holds inf X = inf upa"
+    },
+    {
+      "counts": {
+        "Poset": 2
+      },
+      "index": 39,
+      "kind": "theorem",
+      "object": "theorem_39",
+      "preview": "theorem for L being non empty Poset, x being Element of L holds ex_inf_of uparrow x, L & inf uparrow x = x proof let L b"
+    },
+    {
+      "counts": {
+        "Filter": 1,
+        "Ideal": 1,
+        "RelStr": 1,
+        "Subset": 2
+      },
+      "index": 15,
+      "kind": "definition",
+      "object": "definition_15",
+      "preview": "definition let L be non empty reflexive transitive RelStr; mode Ideal of L is directed lower non empty Subset of L; :: D"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2,
+        "with_suprema": 2
+      },
+      "index": 40,
+      "kind": "theorem",
+      "object": "theorem_40",
+      "preview": "theorem Th40: for L being with_suprema antisymmetric RelStr, X being lower Subset of L holds X is directed iff for x,y b"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2,
+        "with_infima": 2
+      },
+      "index": 41,
+      "kind": "theorem",
+      "object": "theorem_41",
+      "preview": "theorem Th41: for L being with_infima antisymmetric RelStr, X being upper Subset of L holds X is filtered iff for x,y be"
+    },
+    {
+      "counts": {
+        "Poset": 2,
+        "Subset": 7,
+        "with_suprema": 2
+      },
+      "index": 42,
+      "kind": "theorem",
+      "object": "theorem_42",
+      "preview": "theorem Th42: for L being with_suprema Poset for X being non empty lower Subset of L holds X is directed iff for Y being"
+    },
+    {
+      "counts": {
+        "Poset": 2,
+        "Subset": 7,
+        "with_infima": 2
+      },
+      "index": 43,
+      "kind": "theorem",
+      "object": "theorem_43",
+      "preview": "theorem Th43: for L being with_infima Poset for X being non empty upper Subset of L holds X is filtered iff for Y being "
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2,
+        "with_infima": 3,
+        "with_suprema": 3
+      },
+      "index": 44,
+      "kind": "theorem",
+      "object": "theorem_44",
+      "preview": "theorem for L being non empty antisymmetric RelStr st L is with_suprema or L is with_infima for X,Y being Subset of L st"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 2,
+        "with_infima": 3,
+        "with_suprema": 3
+      },
+      "index": 45,
+      "kind": "theorem",
+      "object": "theorem_45",
+      "preview": "theorem for L being non empty antisymmetric RelStr st L is with_suprema or L is with_infima for X,Y being Subset of L st"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 10
+      },
+      "index": 46,
+      "kind": "theorem",
+      "object": "theorem_46",
+      "preview": "theorem for L being RelStr, A being Subset-Family of L st (for X being Subset of L st X in A holds X is directed) & (for"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 10
+      },
+      "index": 47,
+      "kind": "theorem",
+      "object": "theorem_47",
+      "preview": "theorem for L being RelStr, A being Subset-Family of L st (for X being Subset of L st X in A holds X is filtered) & (for"
+    },
+    {
+      "counts": {
+        "Ideal": 1,
+        "RelStr": 1
+      },
+      "index": 16,
+      "kind": "definition",
+      "object": "definition_16",
+      "preview": "definition let L be non empty reflexive transitive RelStr; let I be Ideal of L; attr I is principal means ex x being Ele"
+    },
+    {
+      "counts": {
+        "Filter": 1,
+        "RelStr": 1
+      },
+      "index": 17,
+      "kind": "definition",
+      "object": "definition_17",
+      "preview": "definition let L be non empty reflexive transitive RelStr; let F be Filter of L; attr F is principal means ex x being El"
+    },
+    {
+      "counts": {
+        "Ideal": 2,
+        "RelStr": 2
+      },
+      "index": 48,
+      "kind": "theorem",
+      "object": "theorem_48",
+      "preview": "theorem for L being non empty reflexive transitive RelStr, I being Ideal of L holds I is principal iff ex x being Elemen"
+    },
+    {
+      "counts": {
+        "Filter": 2,
+        "RelStr": 2
+      },
+      "index": 49,
+      "kind": "theorem",
+      "object": "theorem_49",
+      "preview": "theorem for L being non empty reflexive transitive RelStr, F being Filter of L holds F is principal iff ex x being Eleme"
+    },
+    {
+      "counts": {
+        "Filt": 1,
+        "Filter": 1,
+        "Ideal": 1,
+        "Ids": 1,
+        "RelStr": 1
+      },
+      "index": 18,
+      "kind": "definition",
+      "object": "definition_18",
+      "preview": "definition let L be non empty reflexive transitive RelStr; func Ids L -> set equals :: Definition 1.3 (xi) the set of al"
+    },
+    {
+      "counts": {
+        "Filt": 1,
+        "Filt_0": 1,
+        "Ids": 1,
+        "Ids_0": 1,
+        "RelStr": 1
+      },
+      "index": 19,
+      "kind": "definition",
+      "object": "definition_19",
+      "preview": "definition let L be non empty reflexive transitive RelStr; func Ids_0 L -> set equals :: Definition 1.3 (xii) Ids L \\/ {"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 9
+      },
+      "index": 20,
+      "kind": "definition",
+      "object": "definition_20",
+      "preview": "definition let L be non empty RelStr; let X be Subset of L; set D = {\"\\/\"(Y,L) where Y is finite Subset of X: ex_sup_of "
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 1
+      },
+      "index": 25,
+      "kind": "registration",
+      "object": "registration_25",
+      "preview": "registration let L be non empty antisymmetric lower-bounded RelStr; let X be Subset of L; cluster finsups X -> non empty"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 1
+      },
+      "index": 26,
+      "kind": "registration",
+      "object": "registration_26",
+      "preview": "registration let L be non empty antisymmetric upper-bounded RelStr; let X be Subset of L; cluster fininfs X -> non empty"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 3
+      },
+      "index": 27,
+      "kind": "registration",
+      "object": "registration_27",
+      "preview": "registration let L be non empty reflexive antisymmetric RelStr; let X be non empty Subset of L; cluster finsups X -> non"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 4
+      },
+      "index": 50,
+      "kind": "theorem",
+      "object": "theorem_50",
+      "preview": "theorem Th50: for L being non empty reflexive antisymmetric RelStr for X being Subset of L holds X c= finsups X & X c= f"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 10
+      },
+      "index": 51,
+      "kind": "theorem",
+      "object": "theorem_51",
+      "preview": "theorem Th51: for L being non empty transitive RelStr for X,F being Subset of L st (for Y being finite Subset of X st Y "
+    },
+    {
+      "counts": {
+        "Poset": 1,
+        "Subset": 7,
+        "with_suprema": 1
+      },
+      "index": 28,
+      "kind": "registration",
+      "object": "registration_28",
+      "preview": "registration let L be with_suprema Poset; let X be Subset of L; cluster finsups X -> directed; coherence proof reconside"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 9
+      },
+      "index": 52,
+      "kind": "theorem",
+      "object": "theorem_52",
+      "preview": "theorem Th52: for L being non empty transitive reflexive RelStr, X,F being Subset of L st (for Y being finite Subset of "
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 8
+      },
+      "index": 53,
+      "kind": "theorem",
+      "object": "theorem_53",
+      "preview": "theorem Th53: for L being non empty transitive reflexive RelStr, X,F being Subset of L st (for Y being finite Subset of "
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 8
+      },
+      "index": 54,
+      "kind": "theorem",
+      "object": "theorem_54",
+      "preview": "theorem Th54: for L being non empty transitive reflexive RelStr, X,F being Subset of L st (for Y being finite Subset of "
+    },
+    {
+      "counts": {
+        "Poset": 2,
+        "Subset": 7,
+        "with_suprema": 2
+      },
+      "index": 55,
+      "kind": "theorem",
+      "object": "theorem_55",
+      "preview": "theorem for L being with_suprema Poset, X being Subset of L st ex_sup_of X,L or L is complete holds sup X = sup finsups "
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 10
+      },
+      "index": 56,
+      "kind": "theorem",
+      "object": "theorem_56",
+      "preview": "theorem Th56: for L being non empty transitive RelStr for X,F being Subset of L st (for Y being finite Subset of X st Y "
+    },
+    {
+      "counts": {
+        "Poset": 1,
+        "Subset": 7,
+        "with_infima": 1
+      },
+      "index": 29,
+      "kind": "registration",
+      "object": "registration_29",
+      "preview": "registration let L be with_infima Poset; let X be Subset of L; cluster fininfs X -> filtered; coherence proof reconsider"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 9
+      },
+      "index": 57,
+      "kind": "theorem",
+      "object": "theorem_57",
+      "preview": "theorem Th57: for L being non empty transitive reflexive RelStr, X,F being Subset of L st (for Y being finite Subset of "
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 8
+      },
+      "index": 58,
+      "kind": "theorem",
+      "object": "theorem_58",
+      "preview": "theorem Th58: for L being non empty transitive reflexive RelStr, X,F being Subset of L st (for Y being finite Subset of "
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 8
+      },
+      "index": 59,
+      "kind": "theorem",
+      "object": "theorem_59",
+      "preview": "theorem Th59: for L being non empty transitive reflexive RelStr, X,F being Subset of L st (for Y being finite Subset of "
+    },
+    {
+      "counts": {
+        "Poset": 2,
+        "Subset": 7,
+        "with_infima": 2
+      },
+      "index": 60,
+      "kind": "theorem",
+      "object": "theorem_60",
+      "preview": "theorem for L being with_infima Poset, X being Subset of L st ex_inf_of X,L or L is complete holds inf X = inf fininfs X"
+    },
+    {
+      "counts": {
+        "Ideal": 2,
+        "Poset": 2,
+        "Subset": 3,
+        "with_suprema": 2
+      },
+      "index": 61,
+      "kind": "theorem",
+      "object": "theorem_61",
+      "preview": "theorem for L being with_suprema Poset, X being Subset of L holds X c= downarrow finsups X & for I being Ideal of L st X"
+    },
+    {
+      "counts": {
+        "Filter": 2,
+        "Poset": 2,
+        "Subset": 3,
+        "with_infima": 2
+      },
+      "index": 62,
+      "kind": "theorem",
+      "object": "theorem_62",
+      "preview": "theorem for L being with_infima Poset, X being Subset of L holds X c= uparrow fininfs X & for F being Filter of L st X c"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 21,
+      "kind": "definition",
+      "object": "definition_21",
+      "preview": "definition let L be non empty RelStr; attr L is connected means :Def29: for x,y being Element of L holds x <= y or y <= "
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 30,
+      "kind": "registration",
+      "object": "registration_30",
+      "preview": "registration cluster trivial -> connected for non empty reflexive RelStr; coherence proof let L be non empty reflexive R"
+    },
+    {
+      "counts": {
+        "Poset": 1,
+        "RelStr": 1
+      },
+      "index": 31,
+      "kind": "registration",
+      "object": "registration_31",
+      "preview": "registration cluster connected for non empty Poset; existence proof set O = the Order of {0}; take L = RelStr(#{0},O#); "
+    },
+    {
+      "counts": {
+        "Chain": 1,
+        "Poset": 1
+      },
+      "index": 22,
+      "kind": "definition",
+      "object": "definition_22",
+      "preview": "definition mode Chain is connected non empty Poset; end;"
+    },
+    {
+      "counts": {
+        "Chain": 1
+      },
+      "index": 32,
+      "kind": "registration",
+      "object": "registration_32",
+      "preview": "registration let L be Chain; cluster L~ -> connected; coherence proof let x,y be Element of L~; A1: (~x)~ = ~x; A2: (~y)"
+    },
+    {
+      "counts": {
+        "LATTICE": 1,
+        "Poset": 3,
+        "Semilattice": 1,
+        "sup-Semilattice": 1,
+        "with_infima": 2,
+        "with_suprema": 2
+      },
+      "index": 23,
+      "kind": "definition",
+      "object": "definition_23",
+      "preview": "definition mode Semilattice is with_infima Poset; mode sup-Semilattice is with_suprema Poset; mode LATTICE is with_infim"
+    },
+    {
+      "counts": {
+        "Filter": 2,
+        "Semilattice": 2,
+        "Subset": 2
+      },
+      "index": 63,
+      "kind": "theorem",
+      "object": "theorem_63",
+      "preview": "theorem for L being Semilattice for X being upper non empty Subset of L holds X is Filter of L iff subrelstr X is meet-i"
+    },
+    {
+      "counts": {
+        "Ideal": 2,
+        "Subset": 2,
+        "sup-Semilattice": 2
+      },
+      "index": 64,
+      "kind": "theorem",
+      "object": "theorem_64",
+      "preview": "theorem for L being sup-Semilattice for X being lower non empty Subset of L holds X is Ideal of L iff subrelstr X is joi"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "RelStr": 1,
+        "Subset": 1,
+        "preserves_inf_of": 1,
+        "preserves_sup_of": 1
+      },
+      "index": 24,
+      "kind": "definition",
+      "object": "definition_24",
+      "preview": "definition let S,T be non empty RelStr; let f be Function of S,T; let X be Subset of S; pred f preserves_inf_of X means "
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "RelStr": 10,
+        "Subset": 4,
+        "preserves_inf_of": 2,
+        "preserves_sup_of": 4
+      },
+      "index": 65,
+      "kind": "theorem",
+      "object": "theorem_65",
+      "preview": "theorem for S1,S2, T1,T2 being non empty RelStr st the RelStr of S1 = the RelStr of T1 & the RelStr of S2 = the RelStr o"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "RelStr": 1,
+        "Subset": 4,
+        "directed-sups-preserving": 1,
+        "filtered-infs-preserving": 1,
+        "infs-preserving": 1,
+        "join-preserving": 1,
+        "meet-preserving": 1,
+        "preserves_inf_of": 3,
+        "preserves_sup_of": 3,
+        "sups-preserving": 1
+      },
+      "index": 25,
+      "kind": "definition",
+      "object": "definition_25",
+      "preview": "definition let L1,L2 be non empty RelStr; let f be Function of L1,L2; attr f is infs-preserving means for X being Subset"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "RelStr": 1,
+        "directed-sups-preserving": 1,
+        "filtered-infs-preserving": 1,
+        "infs-preserving": 1,
+        "join-preserving": 1,
+        "meet-preserving": 1,
+        "sups-preserving": 1
+      },
+      "index": 33,
+      "kind": "registration",
+      "object": "registration_33",
+      "preview": "registration let L1,L2 be non empty RelStr; cluster infs-preserving -> filtered-infs-preserving meet-preserving for Func"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "RelStr": 1
+      },
+      "index": 26,
+      "kind": "definition",
+      "object": "definition_26",
+      "preview": "definition let S,T be RelStr; let f be Function of S,T; attr f is isomorphic means :Def38: f is one-to-one monotone & ex"
+    },
+    {
+      "counts": {
+        "Function": 4,
+        "RelStr": 2
+      },
+      "index": 66,
+      "kind": "theorem",
+      "object": "theorem_66",
+      "preview": "theorem Th66: for S,T being non empty RelStr, f being Function of S,T holds f is isomorphic iff f is one-to-one & rng f "
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "RelStr": 1
+      },
+      "index": 34,
+      "kind": "registration",
+      "object": "registration_34",
+      "preview": "registration let S,T be non empty RelStr; cluster isomorphic -> one-to-one monotone for Function of S,T; coherence by De"
+    },
+    {
+      "counts": {
+        "Function": 3,
+        "RelStr": 2
+      },
+      "index": 67,
+      "kind": "theorem",
+      "object": "theorem_67",
+      "preview": "theorem for S,T being non empty RelStr, f being Function of S,T st f is isomorphic holds f\" is Function of T,S & rng (f\""
+    },
+    {
+      "counts": {
+        "Function": 5,
+        "RelStr": 2
+      },
+      "index": 68,
+      "kind": "theorem",
+      "object": "theorem_68",
+      "preview": "theorem for S,T being non empty RelStr, f being Function of S,T st f is isomorphic for g being Function of T,S st g = f\""
+    },
+    {
+      "counts": {
+        "Filter": 2,
+        "Function": 2,
+        "Poset": 2,
+        "preserves_inf_of": 4
+      },
+      "index": 69,
+      "kind": "theorem",
+      "object": "theorem_69",
+      "preview": "theorem Th69: for S,T being non empty Poset, f being Function of S,T st for X being Filter of S holds f preserves_inf_of"
+    },
+    {
+      "counts": {
+        "Filter": 3,
+        "Function": 2,
+        "Poset": 2,
+        "Subset": 2,
+        "filtered-infs-preserving": 1,
+        "preserves_inf_of": 3
+      },
+      "index": 70,
+      "kind": "theorem",
+      "object": "theorem_70",
+      "preview": "theorem for S,T being non empty Poset, f being Function of S,T st for X being Filter of S holds f preserves_inf_of X hol"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Poset": 2,
+        "Semilattice": 2,
+        "Subset": 16,
+        "infs-preserving": 1,
+        "preserves_inf_of": 6
+      },
+      "index": 71,
+      "kind": "theorem",
+      "object": "theorem_71",
+      "preview": "theorem for S being Semilattice, T being non empty Poset, f being Function of S,T st (for X being finite Subset of S hol"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Ideal": 2,
+        "Poset": 2,
+        "preserves_sup_of": 4
+      },
+      "index": 72,
+      "kind": "theorem",
+      "object": "theorem_72",
+      "preview": "theorem Th72: for S,T being non empty Poset, f being Function of S,T st for X being Ideal of S holds f preserves_sup_of "
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Ideal": 3,
+        "Poset": 2,
+        "Subset": 2,
+        "directed-sups-preserving": 1,
+        "preserves_sup_of": 3
+      },
+      "index": 73,
+      "kind": "theorem",
+      "object": "theorem_73",
+      "preview": "theorem for S,T being non empty Poset, f being Function of S,T st for X being Ideal of S holds f preserves_sup_of X hold"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "Poset": 2,
+        "Semilattice": 1,
+        "Subset": 16,
+        "preserves_sup_of": 6,
+        "sup-Semilattice": 2,
+        "sups-preserving": 1
+      },
+      "index": 74,
+      "kind": "theorem",
+      "object": "theorem_74",
+      "preview": "theorem for S being sup-Semilattice, T being non empty Poset, f being Function of S,T st (for X being finite Subset of S"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 1,
+        "up-complete": 1
+      },
+      "index": 27,
+      "kind": "definition",
+      "object": "definition_27",
+      "preview": "definition let L be non empty reflexive RelStr; attr L is up-complete means for X being non empty directed Subset of L e"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "up-complete": 2,
+        "with_suprema": 2
+      },
+      "index": 35,
+      "kind": "registration",
+      "object": "registration_35",
+      "preview": "registration cluster up-complete -> upper-bounded for with_suprema reflexive RelStr; coherence proof let L be with_supre"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 4,
+        "up-complete": 2
+      },
+      "index": 75,
+      "kind": "theorem",
+      "object": "theorem_75",
+      "preview": "theorem for L being non empty reflexive antisymmetric RelStr holds L is up-complete iff for X being non empty directed S"
+    },
+    {
+      "counts": {
+        "RelStr": 1,
+        "Subset": 1
+      },
+      "index": 28,
+      "kind": "definition",
+      "object": "definition_28",
+      "preview": "definition let L be non empty reflexive RelStr; attr L is /\\-complete means for X being non empty Subset of L ex x being"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 4
+      },
+      "index": 76,
+      "kind": "theorem",
+      "object": "theorem_76",
+      "preview": "theorem Th76: for L being non empty reflexive antisymmetric RelStr holds L is /\\-complete iff for X being non empty Subs"
+    },
+    {
+      "counts": {
+        "Poset": 4,
+        "RelStr": 4,
+        "Subset": 9,
+        "up-complete": 5,
+        "with_suprema": 3
+      },
+      "index": 36,
+      "kind": "registration",
+      "object": "registration_36",
+      "preview": "registration cluster complete -> up-complete /\\-complete for non empty reflexive RelStr; coherence proof let L be non em"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "with_infima": 1
+      },
+      "index": 37,
+      "kind": "registration",
+      "object": "registration_37",
+      "preview": "registration cluster /\\-complete -> with_infima for non empty reflexive antisymmetric RelStr; coherence proof let L be n"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "Subset": 1,
+        "with_suprema": 1
+      },
+      "index": 38,
+      "kind": "registration",
+      "object": "registration_38",
+      "preview": "registration cluster /\\-complete -> with_suprema for non empty reflexive antisymmetric upper-bounded RelStr; coherence p"
+    },
+    {
+      "counts": {
+        "LATTICE": 2
+      },
+      "index": 39,
+      "kind": "registration",
+      "object": "registration_39",
+      "preview": "registration cluster complete strict for LATTICE; existence proof set L = the complete strict LATTICE; take L; thus thes"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/waybel_0.miz"
+}

@@ -1,0 +1,358 @@
+{
+  "credal_summary": {
+    "intent_support_histogram": {
+      "5": 3,
+      "6": 7,
+      "7": 4
+    },
+    "lower_concept_count": 2,
+    "stable_concept_count": 2,
+    "support_histogram": {
+      "1": 15,
+      "2": 1,
+      "3": 1,
+      "5": 3,
+      "6": 6,
+      "7": 2
+    },
+    "unstable_concept_count": 26,
+    "upper_concept_count": 28
+  },
+  "dataset": {
+    "attributes": 19,
+    "is_binary": true,
+    "kind": "mizar-json",
+    "max_count": 1,
+    "name": "lattice2_interpolant_symbols",
+    "objects": 7,
+    "source": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_interpolant_context.json"
+  },
+  "gate_family": {
+    "concept_count_by_gate": [
+      14,
+      13,
+      12,
+      11,
+      12,
+      11,
+      12
+    ],
+    "densities": [
+      0.3007518796992481,
+      0.2857142857142857,
+      0.2631578947368421,
+      0.2556390977443609,
+      0.2631578947368421,
+      0.2556390977443609,
+      0.2706766917293233
+    ],
+    "distinct_concept_families": 7,
+    "gate_count": 7,
+    "labels": [
+      "leave_out:lattice2__lattice2__t12_lattice2",
+      "leave_out:lattice2__lattice2__t13_lattice2",
+      "leave_out:lattice2__lattice2__t14_lattice2",
+      "leave_out:lattice2__lattice2__t15_lattice2",
+      "leave_out:lattice2__lattice2__t16_lattice2",
+      "leave_out:lattice2__lattice2__t17_lattice2",
+      "leave_out:lattice2__lattice2__t6_lattice2"
+    ]
+  },
+  "samples": {
+    "unstable_concepts": [
+      {
+        "extent": [
+          "lattice2__lattice2__t15_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 6,
+        "intent": [
+          "interp:k4_binop_1",
+          "interp:k5_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:u2_lattices",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ],
+        "intent_size": 8
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t17_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 6,
+        "intent": [
+          "interp:k4_binop_1",
+          "interp:k6_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_lattices",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ],
+        "intent_size": 8
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t14_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 6,
+        "intent": [
+          "interp:k3_lattices",
+          "interp:k5_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ],
+        "intent_size": 7
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t16_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 6,
+        "intent": [
+          "interp:k4_lattices",
+          "interp:k6_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ],
+        "intent_size": 7
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t6_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 6,
+        "intent": [
+          "interp:k1_zfmisc_1",
+          "interp:k2_partfun1",
+          "interp:k2_zfmisc_1",
+          "interp:k9_funct_4",
+          "interp:m1_subset_1",
+          "interp:v1_funct_1"
+        ],
+        "intent_size": 6
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t13_lattice2"
+        ],
+        "extent_size": 1,
+        "gate_support": 6,
+        "intent": [
+          "interp:k1_lattice2",
+          "interp:l3_lattices",
+          "interp:v2_struct_0",
+          "interp:v3_lattices"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t15_lattice2",
+          "lattice2__lattice2__t17_lattice2"
+        ],
+        "extent_size": 2,
+        "gate_support": 5,
+        "intent": [
+          "interp:k4_binop_1",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ],
+        "intent_size": 6
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t14_lattice2",
+          "lattice2__lattice2__t15_lattice2"
+        ],
+        "extent_size": 2,
+        "gate_support": 5,
+        "intent": [
+          "interp:k5_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ],
+        "intent_size": 6
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t16_lattice2",
+          "lattice2__lattice2__t17_lattice2"
+        ],
+        "extent_size": 2,
+        "gate_support": 5,
+        "intent": [
+          "interp:k6_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ],
+        "intent_size": 6
+      },
+      {
+        "extent": [
+          "lattice2__lattice2__t14_lattice2",
+          "lattice2__lattice2__t15_lattice2",
+          "lattice2__lattice2__t16_lattice2",
+          "lattice2__lattice2__t17_lattice2"
+        ],
+        "extent_size": 4,
+        "gate_support": 3,
+        "intent": [
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ],
+        "intent_size": 5
+      }
+    ],
+    "unstable_intents": [
+      {
+        "gate_support": 6,
+        "intent": [
+          "interp:k4_binop_1",
+          "interp:k5_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:u2_lattices",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ],
+        "intent_size": 8
+      },
+      {
+        "gate_support": 6,
+        "intent": [
+          "interp:k4_binop_1",
+          "interp:k6_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_lattices",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ],
+        "intent_size": 8
+      },
+      {
+        "gate_support": 6,
+        "intent": [
+          "interp:k3_lattices",
+          "interp:k5_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ],
+        "intent_size": 7
+      },
+      {
+        "gate_support": 6,
+        "intent": [
+          "interp:k4_lattices",
+          "interp:k6_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ],
+        "intent_size": 7
+      },
+      {
+        "gate_support": 6,
+        "intent": [
+          "interp:k1_zfmisc_1",
+          "interp:k2_partfun1",
+          "interp:k2_zfmisc_1",
+          "interp:k9_funct_4",
+          "interp:m1_subset_1",
+          "interp:v1_funct_1"
+        ],
+        "intent_size": 6
+      },
+      {
+        "gate_support": 6,
+        "intent": [
+          "interp:k1_lattice2",
+          "interp:l3_lattices",
+          "interp:v2_struct_0",
+          "interp:v3_lattices"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 6,
+        "intent": [
+          "interp:m1_subset_1"
+        ],
+        "intent_size": 1
+      },
+      {
+        "gate_support": 5,
+        "intent": [
+          "interp:k4_binop_1",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ],
+        "intent_size": 6
+      },
+      {
+        "gate_support": 5,
+        "intent": [
+          "interp:k5_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ],
+        "intent_size": 6
+      },
+      {
+        "gate_support": 5,
+        "intent": [
+          "interp:k6_lattices",
+          "interp:l3_lattices",
+          "interp:m1_subset_1",
+          "interp:u1_struct_0",
+          "interp:v10_lattices",
+          "interp:v2_struct_0"
+        ],
+        "intent_size": 6
+      }
+    ]
+  },
+  "theoretical_notes": [
+    "Leave-one-out gates probe whether a concept's intent survives omission of any single object; unstable intents mark bridge vocabulary that depends on specific examples."
+  ]
+}

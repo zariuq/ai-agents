@@ -1,0 +1,639 @@
+{
+  "article": "yellow_9",
+  "attributes": [
+    "Function",
+    "NetStr",
+    "Refinement",
+    "T1",
+    "T2",
+    "TopAugmentation",
+    "TopExtension",
+    "TopRelStr",
+    "TopSpace"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "Function": 1,
+        "TopSpace": 1
+      },
+      "index": 4,
+      "kind": "scheme",
+      "object": "scheme_4",
+      "preview": "scheme ABC {A() -> TopSpace, F(set) -> set, f() -> Function, P[set]}: f()\"union {F(x) where x is Subset of A(): P[x]} = "
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 2,
+      "kind": "theorem",
+      "object": "theorem_2",
+      "preview": "theorem Th2: for S being 1-sorted, T being non empty 1-sorted, f being Function of S,T for X being Subset of T holds (f\""
+    },
+    {
+      "counts": {
+        "TopRelStr": 1
+      },
+      "index": 1,
+      "kind": "registration",
+      "object": "registration_1",
+      "preview": "registration cluster strict complete 1-element for TopLattice; existence proof take the strict reflexive 1-element discr"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 2,
+      "kind": "registration",
+      "object": "registration_2",
+      "preview": "registration let S be non empty RelStr, T be upper-bounded non empty reflexive antisymmetric RelStr; cluster infs-preser"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 3,
+      "kind": "registration",
+      "object": "registration_3",
+      "preview": "registration let S be non empty RelStr, T be lower-bounded non empty reflexive antisymmetric RelStr; cluster sups-preser"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let R,S be 1-sorted; assume A1: the carrier of S c= the carrier of R; A2: dom id the carrier of S = the carri"
+    },
+    {
+      "counts": {
+        "NetStr": 2
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let R be non empty RelStr, X be non empty Subset of R; func X+id -> strict non empty NetStr over R equals (in"
+    },
+    {
+      "counts": {
+        "T1": 4,
+        "TopSpace": 2
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem Th8: for T being TopSpace st T is empty holds the topology of T = {{}} proof let T1 be TopSpace; assume T1 is em"
+    },
+    {
+      "counts": {
+        "TopSpace": 2
+      },
+      "index": 9,
+      "kind": "theorem",
+      "object": "theorem_9",
+      "preview": "theorem Th9: for T being 1-element TopSpace holds the topology of T = bool the carrier of T & for x being Point of T hol"
+    },
+    {
+      "counts": {
+        "TopSpace": 2
+      },
+      "index": 10,
+      "kind": "theorem",
+      "object": "theorem_10",
+      "preview": "theorem for T being 1-element TopSpace holds {the carrier of T} is Basis of T & {} is prebasis of T & {{}} is prebasis o"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 21,
+      "kind": "theorem",
+      "object": "theorem_21",
+      "preview": "theorem Th21: for X being set, A being Subset-Family of X holds UniCl FinMeetCl UniCl A = UniCl FinMeetCl A proof let X "
+    },
+    {
+      "counts": {
+        "TopSpace": 2
+      },
+      "index": 22,
+      "kind": "theorem",
+      "object": "theorem_22",
+      "preview": "theorem Th22: for T being TopSpace, K being Subset-Family of T holds the topology of T = UniCl K iff K is Basis of T pro"
+    },
+    {
+      "counts": {
+        "TopSpace": 2
+      },
+      "index": 23,
+      "kind": "theorem",
+      "object": "theorem_23",
+      "preview": "theorem Th23: for T being TopSpace, K being Subset-Family of T holds K is prebasis of T iff FinMeetCl K is Basis of T pr"
+    },
+    {
+      "counts": {
+        "TopSpace": 2
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem Th24: for T being non empty TopSpace, B being Subset-Family of T st UniCl B is prebasis of T holds B is prebasis"
+    },
+    {
+      "counts": {
+        "T1": 8,
+        "T2": 9,
+        "TopSpace": 2
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem Th25: for T1, T2 being TopSpace, B being Basis of T1 st the carrier of T1 = the carrier of T2 & B is Basis of T2"
+    },
+    {
+      "counts": {
+        "T1": 8,
+        "T2": 9,
+        "TopSpace": 2
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem Th26: for T1, T2 being TopSpace, P being prebasis of T1 st the carrier of T1 = the carrier of T2 & P is prebasis"
+    },
+    {
+      "counts": {
+        "TopSpace": 1
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem for T being TopSpace, K being Basis of T holds K is open & K is prebasis of T;"
+    },
+    {
+      "counts": {
+        "TopSpace": 1
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem for T being TopSpace, K being prebasis of T holds K is open;"
+    },
+    {
+      "counts": {
+        "TopSpace": 2
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem Th29: for T being non empty TopSpace, B being prebasis of T holds B \\/ {the carrier of T} is prebasis of T proof"
+    },
+    {
+      "counts": {
+        "TopSpace": 2
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem for T being TopSpace, B being Basis of T holds B \\/ {the carrier of T} is Basis of T proof let T be TopSpace, B "
+    },
+    {
+      "counts": {
+        "TopSpace": 2
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem Th31: for T being TopSpace, B being Basis of T for A being Subset of T holds A is open iff for p being Point of "
+    },
+    {
+      "counts": {
+        "TopSpace": 2
+      },
+      "index": 32,
+      "kind": "theorem",
+      "object": "theorem_32",
+      "preview": "theorem Th32: for T being TopSpace, B being Subset-Family of T st B c= the topology of T & for A being Subset of T st A "
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "TopSpace": 4
+      },
+      "index": 33,
+      "kind": "theorem",
+      "object": "theorem_33",
+      "preview": "theorem Th33: for S being TopSpace, T being non empty TopSpace, K being Basis of T for f being Function of S,T holds f i"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "TopSpace": 4
+      },
+      "index": 34,
+      "kind": "theorem",
+      "object": "theorem_34",
+      "preview": "theorem for S being TopSpace,T being non empty TopSpace, K being Basis of T for f being Function of S,T holds f is conti"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "TopSpace": 4
+      },
+      "index": 35,
+      "kind": "theorem",
+      "object": "theorem_35",
+      "preview": "theorem Th35: for S being TopSpace,T being non empty TopSpace, K being prebasis of T for f being Function of S,T holds f"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "TopSpace": 4
+      },
+      "index": 36,
+      "kind": "theorem",
+      "object": "theorem_36",
+      "preview": "theorem for S being TopSpace,T being non empty TopSpace, K being prebasis of T for f being Function of S,T holds f is co"
+    },
+    {
+      "counts": {
+        "TopSpace": 2
+      },
+      "index": 37,
+      "kind": "theorem",
+      "object": "theorem_37",
+      "preview": "theorem Th37: for T being non empty TopSpace, x being Point of T, X being Subset of T for K being Basis of T st for A be"
+    },
+    {
+      "counts": {
+        "TopSpace": 2
+      },
+      "index": 38,
+      "kind": "theorem",
+      "object": "theorem_38",
+      "preview": "theorem Th38: for T being non empty TopSpace, x being Point of T, X being Subset of T for K being prebasis of T st for Z"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "TopSpace": 2
+      },
+      "index": 39,
+      "kind": "theorem",
+      "object": "theorem_39",
+      "preview": "theorem for T being non empty TopSpace, K being prebasis of T, x being Point of T for N being net of T st for A being Su"
+    },
+    {
+      "counts": {
+        "T1": 17,
+        "T2": 17,
+        "TopSpace": 2
+      },
+      "index": 40,
+      "kind": "theorem",
+      "object": "theorem_40",
+      "preview": "theorem Th40: for T1,T2 being non empty TopSpace for B1 being Basis of T1, B2 being Basis of T2 holds {[:a,b:] where a i"
+    },
+    {
+      "counts": {
+        "T1": 32,
+        "T2": 32,
+        "TopSpace": 2
+      },
+      "index": 41,
+      "kind": "theorem",
+      "object": "theorem_41",
+      "preview": "theorem Th41: for T1,T2 being non empty TopSpace for B1 being prebasis of T1, B2 being prebasis of T2 holds {[:the carri"
+    },
+    {
+      "counts": {
+        "T1": 26,
+        "T2": 26,
+        "TopSpace": 2
+      },
+      "index": 43,
+      "kind": "theorem",
+      "object": "theorem_43",
+      "preview": "theorem for T1,T2 being non empty TopSpace for B1 being prebasis of T1, B2 being prebasis of T2 st union B1 = the carrie"
+    },
+    {
+      "counts": {
+        "TopAugmentation": 1,
+        "TopRelStr": 2
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let R be RelStr; mode TopAugmentation of R -> TopRelStr means : Def4: the RelStr of it = the RelStr of R; exi"
+    },
+    {
+      "counts": {
+        "TopAugmentation": 1
+      },
+      "index": 1,
+      "kind": "notation",
+      "object": "notation_1",
+      "preview": "notation let R be RelStr; let T be TopAugmentation of R; synonym T is correct for T is TopSpace-like; end;"
+    },
+    {
+      "counts": {
+        "TopAugmentation": 2,
+        "TopRelStr": 1
+      },
+      "index": 11,
+      "kind": "registration",
+      "object": "registration_11",
+      "preview": "registration let R be RelStr; cluster correct discrete strict for TopAugmentation of R; existence proof reconsider BB = "
+    },
+    {
+      "counts": {
+        "TopAugmentation": 1,
+        "TopRelStr": 2
+      },
+      "index": 44,
+      "kind": "theorem",
+      "object": "theorem_44",
+      "preview": "theorem for T being TopRelStr holds T is TopAugmentation of T proof let T be TopRelStr; thus the RelStr of T = the RelSt"
+    },
+    {
+      "counts": {
+        "TopAugmentation": 3,
+        "TopRelStr": 2
+      },
+      "index": 45,
+      "kind": "theorem",
+      "object": "theorem_45",
+      "preview": "theorem for S being TopRelStr, T being TopAugmentation of S holds S is TopAugmentation of T proof let S be TopRelStr, T "
+    },
+    {
+      "counts": {
+        "T1": 5,
+        "T2": 4,
+        "TopAugmentation": 5
+      },
+      "index": 46,
+      "kind": "theorem",
+      "object": "theorem_46",
+      "preview": "theorem for R being RelStr, T1 being TopAugmentation of R for T2 being TopAugmentation of T1 holds T2 is TopAugmentation"
+    },
+    {
+      "counts": {
+        "TopAugmentation": 2
+      },
+      "index": 12,
+      "kind": "registration",
+      "object": "registration_12",
+      "preview": "registration let R be non empty RelStr; cluster -> non empty for TopAugmentation of R; coherence proof let T be TopAugme"
+    },
+    {
+      "counts": {
+        "TopAugmentation": 2
+      },
+      "index": 13,
+      "kind": "registration",
+      "object": "registration_13",
+      "preview": "registration let R be reflexive RelStr; cluster -> reflexive for TopAugmentation of R; coherence proof let T be TopAugme"
+    },
+    {
+      "counts": {
+        "TopAugmentation": 2
+      },
+      "index": 14,
+      "kind": "registration",
+      "object": "registration_14",
+      "preview": "registration let R be transitive RelStr; cluster -> transitive for TopAugmentation of R; coherence proof let T be TopAug"
+    },
+    {
+      "counts": {
+        "TopAugmentation": 2
+      },
+      "index": 15,
+      "kind": "registration",
+      "object": "registration_15",
+      "preview": "registration let R be antisymmetric RelStr; cluster -> antisymmetric for TopAugmentation of R; coherence proof let T be "
+    },
+    {
+      "counts": {
+        "TopAugmentation": 2
+      },
+      "index": 16,
+      "kind": "registration",
+      "object": "registration_16",
+      "preview": "registration let R be complete non empty RelStr; cluster -> complete for TopAugmentation of R; coherence proof let T be "
+    },
+    {
+      "counts": {
+        "TopAugmentation": 2
+      },
+      "index": 48,
+      "kind": "theorem",
+      "object": "theorem_48",
+      "preview": "theorem Th48: for S being non empty reflexive RelStr, T being TopAugmentation of S st the topology of T = sigma S holds "
+    },
+    {
+      "counts": {
+        "TopAugmentation": 2
+      },
+      "index": 49,
+      "kind": "theorem",
+      "object": "theorem_49",
+      "preview": "theorem Th49: for S being complete LATTICE, T being TopAugmentation of S st the topology of T = sigma S holds T is Scott"
+    },
+    {
+      "counts": {
+        "TopAugmentation": 2,
+        "TopRelStr": 1
+      },
+      "index": 17,
+      "kind": "registration",
+      "object": "registration_17",
+      "preview": "registration let R be complete LATTICE; cluster Scott strict correct for TopAugmentation of R; existence proof set T = T"
+    },
+    {
+      "counts": {
+        "TopRelStr": 2
+      },
+      "index": 50,
+      "kind": "theorem",
+      "object": "theorem_50",
+      "preview": "theorem Th50: for S,T being complete Scott non empty reflexive transitive antisymmetric TopRelStr st the RelStr of S = t"
+    },
+    {
+      "counts": {
+        "TopAugmentation": 4,
+        "TopRelStr": 1
+      },
+      "index": 51,
+      "kind": "theorem",
+      "object": "theorem_51",
+      "preview": "theorem Th51: for S being complete LATTICE, T being Scott TopAugmentation of S holds the topology of T = sigma S proof l"
+    },
+    {
+      "counts": {
+        "TopAugmentation": 2
+      },
+      "index": 52,
+      "kind": "theorem",
+      "object": "theorem_52",
+      "preview": "theorem for S,T being complete LATTICE st the RelStr of S = the RelStr of T holds sigma S = sigma T proof let S,T be com"
+    },
+    {
+      "counts": {
+        "TopAugmentation": 2,
+        "TopSpace": 2
+      },
+      "index": 18,
+      "kind": "registration",
+      "object": "registration_18",
+      "preview": "registration let R be complete LATTICE; cluster Scott -> correct for TopAugmentation of R; coherence proof let T be TopA"
+    },
+    {
+      "counts": {
+        "TopExtension": 1,
+        "TopSpace": 2
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let T be TopStruct; mode TopExtension of T -> TopSpace means : Def5: the carrier of T = the carrier of it & t"
+    },
+    {
+      "counts": {
+        "TopExtension": 2,
+        "TopSpace": 1
+      },
+      "index": 53,
+      "kind": "theorem",
+      "object": "theorem_53",
+      "preview": "theorem Th53: for S being TopStruct ex T being TopExtension of S st T is strict & the topology of S is prebasis of T pro"
+    },
+    {
+      "counts": {
+        "TopExtension": 2
+      },
+      "index": 19,
+      "kind": "registration",
+      "object": "registration_19",
+      "preview": "registration let T be TopStruct; cluster strict discrete for TopExtension of T; existence proof reconsider S = bool the "
+    },
+    {
+      "counts": {
+        "Refinement": 1,
+        "T1": 9,
+        "T2": 9,
+        "TopExtension": 2,
+        "TopSpace": 1
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let T1,T2 be TopStruct; mode Refinement of T1,T2 -> TopSpace means : Def6: the carrier of it = (the carrier o"
+    },
+    {
+      "counts": {
+        "Refinement": 4,
+        "T1": 7,
+        "T2": 7
+      },
+      "index": 20,
+      "kind": "registration",
+      "object": "registration_20",
+      "preview": "registration let T1 be non empty TopStruct, T2 be TopStruct; cluster -> non empty for Refinement of T1,T2; coherence pro"
+    },
+    {
+      "counts": {
+        "Refinement": 2,
+        "T1": 8,
+        "T2": 8
+      },
+      "index": 54,
+      "kind": "theorem",
+      "object": "theorem_54",
+      "preview": "theorem for T1,T2 being TopStruct, T, T9 being Refinement of T1,T2 holds the TopStruct of T = the TopStruct of T9 proof "
+    },
+    {
+      "counts": {
+        "Refinement": 3,
+        "T1": 7,
+        "T2": 7
+      },
+      "index": 55,
+      "kind": "theorem",
+      "object": "theorem_55",
+      "preview": "theorem for T1,T2 being TopStruct, T being Refinement of T1,T2 holds T is Refinement of T2,T1 proof let T1, T2 be TopStr"
+    },
+    {
+      "counts": {
+        "Refinement": 2,
+        "T1": 6,
+        "T2": 6
+      },
+      "index": 56,
+      "kind": "theorem",
+      "object": "theorem_56",
+      "preview": "theorem for T1,T2 being TopStruct, T being Refinement of T1,T2 for X being Subset-Family of T st X = (the topology of T1"
+    },
+    {
+      "counts": {
+        "Refinement": 2,
+        "T1": 15,
+        "T2": 14,
+        "TopExtension": 2
+      },
+      "index": 57,
+      "kind": "theorem",
+      "object": "theorem_57",
+      "preview": "theorem for T1, T2 being TopStruct st the carrier of T1 = the carrier of T2 for T being Refinement of T1, T2 holds T is "
+    },
+    {
+      "counts": {
+        "Refinement": 2,
+        "T1": 17,
+        "T2": 17,
+        "TopSpace": 2
+      },
+      "index": 58,
+      "kind": "theorem",
+      "object": "theorem_58",
+      "preview": "theorem for T1,T2 being non empty TopSpace, T be Refinement of T1, T2 for B1 being prebasis of T1, B2 being prebasis of "
+    },
+    {
+      "counts": {
+        "Refinement": 2,
+        "T1": 28,
+        "T2": 28,
+        "TopSpace": 2
+      },
+      "index": 59,
+      "kind": "theorem",
+      "object": "theorem_59",
+      "preview": "theorem Th59: for T1,T2 being non empty TopSpace for B1 being Basis of T1, B2 being Basis of T2 for T being Refinement o"
+    },
+    {
+      "counts": {
+        "Refinement": 2,
+        "T1": 11,
+        "T2": 11,
+        "TopSpace": 2
+      },
+      "index": 60,
+      "kind": "theorem",
+      "object": "theorem_60",
+      "preview": "theorem Th60: for T1,T2 being non empty TopSpace st the carrier of T1 = the carrier of T2 for T being Refinement of T1, "
+    },
+    {
+      "counts": {
+        "Refinement": 1,
+        "T1": 5,
+        "T2": 5,
+        "TopAugmentation": 2
+      },
+      "index": 61,
+      "kind": "theorem",
+      "object": "theorem_61",
+      "preview": "theorem for L being non empty RelStr for T1,T2 being correct TopAugmentation of L for T be Refinement of T1, T2 holds IN"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/yellow_9.miz"
+}

@@ -1,0 +1,1332 @@
+{
+  "aggregate": {
+    "article_count": 13,
+    "articles_with_nontrivial_concept_families": 13,
+    "articles_with_unstable_concepts": 13,
+    "max_unstable_concepts_in_article": 309,
+    "top_unstable_articles": [
+      {
+        "article": "conlat_1",
+        "distinct_concept_families": 4,
+        "thresholds": [
+          1,
+          12,
+          23,
+          42
+        ],
+        "unstable_concept_count": 309
+      },
+      {
+        "article": "waybel_0",
+        "distinct_concept_families": 4,
+        "thresholds": [
+          1,
+          4,
+          8,
+          16
+        ],
+        "unstable_concept_count": 122
+      },
+      {
+        "article": "lattices",
+        "distinct_concept_families": 4,
+        "thresholds": [
+          1,
+          3,
+          5,
+          6
+        ],
+        "unstable_concept_count": 91
+      },
+      {
+        "article": "lattice4",
+        "distinct_concept_families": 4,
+        "thresholds": [
+          1,
+          7,
+          15,
+          66
+        ],
+        "unstable_concept_count": 73
+      },
+      {
+        "article": "waybel_1",
+        "distinct_concept_families": 4,
+        "thresholds": [
+          1,
+          5,
+          9,
+          17
+        ],
+        "unstable_concept_count": 61
+      }
+    ],
+    "total_unstable_concepts": 917
+  },
+  "articles": [
+    {
+      "article": "conlat_1",
+      "attribute_count": 32,
+      "distinct_concept_families": 4,
+      "gate_count": 4,
+      "lower_concept_count": 2,
+      "max_count": 42,
+      "row_count": 83,
+      "sample_unstable_concepts": [
+        {
+          "extent": [
+            "theorem_44"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "Attribute",
+            "AttributeDerivation",
+            "B-carrier",
+            "B-join",
+            "CP",
+            "Concept-with-all-Objects",
+            "ConceptLattice",
+            "ConceptStr",
+            "Extent",
+            "FormalConcept",
+            "FormalContext",
+            "Intent",
+            "ObjectDerivation",
+            "Subset",
+            "is-SubConcept-of",
+            "is-connected-with"
+          ],
+          "intent_size": 16
+        },
+        {
+          "extent": [
+            "definition_24"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "AttributeDerivation",
+            "B-carrier",
+            "B-join",
+            "B-meet",
+            "BinOp",
+            "CP",
+            "CP1",
+            "CP2",
+            "ConceptStr",
+            "Extent",
+            "FormalConcept",
+            "FormalContext",
+            "Function",
+            "Intent",
+            "ObjectDerivation",
+            "Subset"
+          ],
+          "intent_size": 16
+        },
+        {
+          "extent": [
+            "definition_23",
+            "definition_24"
+          ],
+          "extent_size": 2,
+          "gate_support": 1,
+          "intent": [
+            "AttributeDerivation",
+            "B-carrier",
+            "B-meet",
+            "BinOp",
+            "CP",
+            "CP1",
+            "CP2",
+            "ConceptStr",
+            "Extent",
+            "FormalConcept",
+            "FormalContext",
+            "Function",
+            "Intent",
+            "ObjectDerivation",
+            "Subset"
+          ],
+          "intent_size": 15
+        }
+      ],
+      "sample_unstable_intents": [
+        {
+          "gate_support": 3,
+          "intent": [
+            "CP1",
+            "CP2"
+          ],
+          "intent_size": 2
+        },
+        {
+          "gate_support": 3,
+          "intent": [
+            "Extent"
+          ],
+          "intent_size": 1
+        },
+        {
+          "gate_support": 3,
+          "intent": [
+            "Intent"
+          ],
+          "intent_size": 1
+        }
+      ],
+      "theoretical_notes": [
+        "Count-valued evidence gives threshold gates a natural semantic axis, so unstable concepts can be interpreted as threshold-sensitive rather than purely artificial."
+      ],
+      "thresholds": [
+        1,
+        12,
+        23,
+        42
+      ],
+      "unstable_concept_count": 309,
+      "unstable_intent_sample_count": 10,
+      "upper_concept_count": 311
+    },
+    {
+      "article": "conlat_2",
+      "attribute_count": 9,
+      "distinct_concept_families": 4,
+      "gate_count": 4,
+      "lower_concept_count": 2,
+      "max_count": 91,
+      "row_count": 27,
+      "sample_unstable_concepts": [
+        {
+          "extent": [
+            "definition_8"
+          ],
+          "extent_size": 1,
+          "gate_support": 2,
+          "intent": [
+            "CP",
+            "ConceptLattice",
+            "ConceptStr",
+            "FormalConcept"
+          ],
+          "intent_size": 4
+        },
+        {
+          "extent": [
+            "definition_8"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "CP",
+            "ConceptLattice",
+            "ConceptStr",
+            "DualHomomorphism",
+            "FormalConcept",
+            "Function",
+            "Homomorphism"
+          ],
+          "intent_size": 7
+        },
+        {
+          "extent": [
+            "definition_8",
+            "theorem_21"
+          ],
+          "extent_size": 2,
+          "gate_support": 1,
+          "intent": [
+            "CP",
+            "ConceptLattice",
+            "ConceptStr",
+            "DualHomomorphism",
+            "FormalConcept"
+          ],
+          "intent_size": 5
+        }
+      ],
+      "sample_unstable_intents": [
+        {
+          "gate_support": 3,
+          "intent": [
+            "CP",
+            "ConceptLattice",
+            "ConceptStr",
+            "FormalConcept"
+          ],
+          "intent_size": 4
+        },
+        {
+          "gate_support": 3,
+          "intent": [
+            "ConceptLattice",
+            "ConceptStr"
+          ],
+          "intent_size": 2
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "ConceptLattice",
+            "ConceptStr",
+            "FormalConcept"
+          ],
+          "intent_size": 3
+        }
+      ],
+      "theoretical_notes": [
+        "Count-valued evidence gives threshold gates a natural semantic axis, so unstable concepts can be interpreted as threshold-sensitive rather than purely artificial."
+      ],
+      "thresholds": [
+        1,
+        7,
+        24,
+        91
+      ],
+      "unstable_concept_count": 42,
+      "unstable_intent_sample_count": 10,
+      "upper_concept_count": 44
+    },
+    {
+      "article": "yellow_0",
+      "attribute_count": 12,
+      "distinct_concept_families": 4,
+      "gate_count": 4,
+      "lower_concept_count": 2,
+      "max_count": 8,
+      "row_count": 98,
+      "sample_unstable_concepts": [
+        {
+          "extent": [
+            "registration_12"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "RelStr",
+            "SubRelStr",
+            "ex_inf_of",
+            "ex_sup_of",
+            "infs-inheriting",
+            "join-inheriting",
+            "meet-inheriting",
+            "sups-inheriting"
+          ],
+          "intent_size": 8
+        },
+        {
+          "extent": [
+            "definition_12",
+            "registration_12"
+          ],
+          "extent_size": 2,
+          "gate_support": 1,
+          "intent": [
+            "RelStr",
+            "SubRelStr",
+            "ex_inf_of",
+            "ex_sup_of",
+            "infs-inheriting",
+            "sups-inheriting"
+          ],
+          "intent_size": 6
+        },
+        {
+          "extent": [
+            "definition_11",
+            "registration_12"
+          ],
+          "extent_size": 2,
+          "gate_support": 1,
+          "intent": [
+            "RelStr",
+            "SubRelStr",
+            "ex_inf_of",
+            "ex_sup_of",
+            "join-inheriting",
+            "meet-inheriting"
+          ],
+          "intent_size": 6
+        }
+      ],
+      "sample_unstable_intents": [
+        {
+          "gate_support": 3,
+          "intent": [
+            "RelStr"
+          ],
+          "intent_size": 1
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "RelStr",
+            "ex_inf_of"
+          ],
+          "intent_size": 2
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "RelStr",
+            "ex_sup_of"
+          ],
+          "intent_size": 2
+        }
+      ],
+      "theoretical_notes": [
+        "Count-valued evidence gives threshold gates a natural semantic axis, so unstable concepts can be interpreted as threshold-sensitive rather than purely artificial."
+      ],
+      "thresholds": [
+        1,
+        3,
+        6,
+        8
+      ],
+      "unstable_concept_count": 45,
+      "unstable_intent_sample_count": 10,
+      "upper_concept_count": 47
+    },
+    {
+      "article": "yellow_1",
+      "attribute_count": 6,
+      "distinct_concept_families": 4,
+      "gate_count": 4,
+      "lower_concept_count": 2,
+      "max_count": 11,
+      "row_count": 51,
+      "sample_unstable_concepts": [
+        {
+          "extent": [
+            "definition_5",
+            "registration_19",
+            "registration_20"
+          ],
+          "extent_size": 3,
+          "gate_support": 2,
+          "intent": [
+            "RelStr"
+          ],
+          "intent_size": 1
+        },
+        {
+          "extent": [
+            "theorem_5"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "BoolePoset",
+            "InclPoset",
+            "RelStr",
+            "SubRelStr"
+          ],
+          "intent_size": 4
+        },
+        {
+          "extent": [
+            "definition_7"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "MonMaps",
+            "RelStr",
+            "SubRelStr"
+          ],
+          "intent_size": 3
+        }
+      ],
+      "sample_unstable_intents": [
+        {
+          "gate_support": 3,
+          "intent": [
+            "InclPoset"
+          ],
+          "intent_size": 1
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "BoolePoset",
+            "InclPoset"
+          ],
+          "intent_size": 2
+        },
+        {
+          "gate_support": 1,
+          "intent": [
+            "BoolePoset",
+            "InclPoset",
+            "RelStr",
+            "SubRelStr"
+          ],
+          "intent_size": 4
+        }
+      ],
+      "theoretical_notes": [
+        "Count-valued evidence gives threshold gates a natural semantic axis, so unstable concepts can be interpreted as threshold-sensitive rather than purely artificial."
+      ],
+      "thresholds": [
+        1,
+        4,
+        9,
+        11
+      ],
+      "unstable_concept_count": 16,
+      "unstable_intent_sample_count": 10,
+      "upper_concept_count": 18
+    },
+    {
+      "article": "yellow_2",
+      "attribute_count": 7,
+      "distinct_concept_families": 4,
+      "gate_count": 4,
+      "lower_concept_count": 2,
+      "max_count": 9,
+      "row_count": 50,
+      "sample_unstable_concepts": [
+        {
+          "extent": [
+            "definition_3",
+            "definition_4"
+          ],
+          "extent_size": 2,
+          "gate_support": 2,
+          "intent": [
+            "Function",
+            "Ids",
+            "InclPoset"
+          ],
+          "intent_size": 3
+        },
+        {
+          "extent": [
+            "theorem_52"
+          ],
+          "extent_size": 1,
+          "gate_support": 2,
+          "intent": [
+            "IdsMap"
+          ],
+          "intent_size": 1
+        },
+        {
+          "extent": [
+            "definition_4"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "Function",
+            "Ids",
+            "IdsMap",
+            "InclPoset"
+          ],
+          "intent_size": 4
+        }
+      ],
+      "sample_unstable_intents": [
+        {
+          "gate_support": 3,
+          "intent": [
+            "IdsMap"
+          ],
+          "intent_size": 1
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "Function",
+            "Ids",
+            "InclPoset"
+          ],
+          "intent_size": 3
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "Ids",
+            "InclPoset"
+          ],
+          "intent_size": 2
+        }
+      ],
+      "theoretical_notes": [
+        "Count-valued evidence gives threshold gates a natural semantic axis, so unstable concepts can be interpreted as threshold-sensitive rather than purely artificial."
+      ],
+      "thresholds": [
+        1,
+        3,
+        5,
+        9
+      ],
+      "unstable_concept_count": 24,
+      "unstable_intent_sample_count": 10,
+      "upper_concept_count": 26
+    },
+    {
+      "article": "yellow_3",
+      "attribute_count": 1,
+      "distinct_concept_families": 4,
+      "gate_count": 4,
+      "lower_concept_count": 0,
+      "max_count": 4,
+      "row_count": 70,
+      "sample_unstable_concepts": [
+        {
+          "extent": [
+            "registration_1",
+            "theorem_2",
+            "theorem_3",
+            "theorem_4",
+            "theorem_5",
+            "theorem_6",
+            "theorem_7",
+            "scheme_2",
+            "scheme_4",
+            "definition_3",
+            "definition_4",
+            "definition_5"
+          ],
+          "extent_size": 70,
+          "gate_support": 3,
+          "intent": [],
+          "intent_size": 0
+        },
+        {
+          "extent": [
+            "registration_1",
+            "theorem_2",
+            "theorem_3",
+            "theorem_4",
+            "theorem_5",
+            "theorem_6",
+            "theorem_7",
+            "scheme_2",
+            "scheme_4",
+            "definition_3",
+            "definition_4",
+            "definition_5"
+          ],
+          "extent_size": 70,
+          "gate_support": 1,
+          "intent": [
+            "RelStr"
+          ],
+          "intent_size": 1
+        },
+        {
+          "extent": [
+            "theorem_2",
+            "theorem_3",
+            "theorem_4",
+            "theorem_5",
+            "theorem_6",
+            "theorem_7",
+            "definition_3",
+            "theorem_11",
+            "theorem_12",
+            "theorem_13",
+            "theorem_14",
+            "theorem_15"
+          ],
+          "extent_size": 51,
+          "gate_support": 1,
+          "intent": [
+            "RelStr"
+          ],
+          "intent_size": 1
+        }
+      ],
+      "sample_unstable_intents": [
+        {
+          "gate_support": 3,
+          "intent": [],
+          "intent_size": 0
+        }
+      ],
+      "theoretical_notes": [
+        "Count-valued evidence gives threshold gates a natural semantic axis, so unstable concepts can be interpreted as threshold-sensitive rather than purely artificial."
+      ],
+      "thresholds": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "unstable_concept_count": 5,
+      "unstable_intent_sample_count": 1,
+      "upper_concept_count": 5
+    },
+    {
+      "article": "waybel_0",
+      "attribute_count": 32,
+      "distinct_concept_families": 4,
+      "gate_count": 4,
+      "lower_concept_count": 2,
+      "max_count": 16,
+      "row_count": 143,
+      "sample_unstable_concepts": [
+        {
+          "extent": [
+            "definition_25"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "Function",
+            "RelStr",
+            "Subset",
+            "directed-sups-preserving",
+            "filtered-infs-preserving",
+            "infs-preserving",
+            "join-preserving",
+            "meet-preserving",
+            "preserves_inf_of",
+            "preserves_sup_of",
+            "sups-preserving"
+          ],
+          "intent_size": 11
+        },
+        {
+          "extent": [
+            "definition_25",
+            "registration_33"
+          ],
+          "extent_size": 2,
+          "gate_support": 1,
+          "intent": [
+            "Function",
+            "RelStr",
+            "directed-sups-preserving",
+            "filtered-infs-preserving",
+            "infs-preserving",
+            "join-preserving",
+            "meet-preserving",
+            "sups-preserving"
+          ],
+          "intent_size": 8
+        },
+        {
+          "extent": [
+            "theorem_74"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "Function",
+            "Poset",
+            "Semilattice",
+            "Subset",
+            "preserves_sup_of",
+            "sup-Semilattice",
+            "sups-preserving"
+          ],
+          "intent_size": 7
+        }
+      ],
+      "sample_unstable_intents": [
+        {
+          "gate_support": 2,
+          "intent": [
+            "RelStr",
+            "Subset"
+          ],
+          "intent_size": 2
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "Function"
+          ],
+          "intent_size": 1
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "RelStr"
+          ],
+          "intent_size": 1
+        }
+      ],
+      "theoretical_notes": [
+        "Count-valued evidence gives threshold gates a natural semantic axis, so unstable concepts can be interpreted as threshold-sensitive rather than purely artificial."
+      ],
+      "thresholds": [
+        1,
+        4,
+        8,
+        16
+      ],
+      "unstable_concept_count": 122,
+      "unstable_intent_sample_count": 10,
+      "upper_concept_count": 124
+    },
+    {
+      "article": "waybel_1",
+      "attribute_count": 16,
+      "distinct_concept_families": 4,
+      "gate_count": 4,
+      "lower_concept_count": 2,
+      "max_count": 17,
+      "row_count": 119,
+      "sample_unstable_concepts": [
+        {
+          "extent": [
+            "theorem_7"
+          ],
+          "extent_size": 1,
+          "gate_support": 2,
+          "intent": [
+            "Function",
+            "L1",
+            "L2"
+          ],
+          "intent_size": 3
+        },
+        {
+          "extent": [
+            "theorem_56"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "Function",
+            "Galois",
+            "Heyting",
+            "Image",
+            "upper_adjoint"
+          ],
+          "intent_size": 5
+        },
+        {
+          "extent": [
+            "theorem_7"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "Function",
+            "Galois",
+            "L1",
+            "L2",
+            "are_isomorphic"
+          ],
+          "intent_size": 5
+        }
+      ],
+      "sample_unstable_intents": [
+        {
+          "gate_support": 3,
+          "intent": [
+            "Function",
+            "L1",
+            "L2"
+          ],
+          "intent_size": 3
+        },
+        {
+          "gate_support": 3,
+          "intent": [
+            "Image"
+          ],
+          "intent_size": 1
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "Function"
+          ],
+          "intent_size": 1
+        }
+      ],
+      "theoretical_notes": [
+        "Count-valued evidence gives threshold gates a natural semantic axis, so unstable concepts can be interpreted as threshold-sensitive rather than purely artificial."
+      ],
+      "thresholds": [
+        1,
+        5,
+        9,
+        17
+      ],
+      "unstable_concept_count": 61,
+      "unstable_intent_sample_count": 10,
+      "upper_concept_count": 63
+    },
+    {
+      "article": "lattices",
+      "attribute_count": 25,
+      "distinct_concept_families": 4,
+      "gate_count": 4,
+      "lower_concept_count": 2,
+      "max_count": 6,
+      "row_count": 72,
+      "sample_unstable_concepts": [
+        {
+          "extent": [
+            "definition_6"
+          ],
+          "extent_size": 1,
+          "gate_support": 2,
+          "intent": [
+            "BinOp"
+          ],
+          "intent_size": 1
+        },
+        {
+          "extent": [
+            "definition_18"
+          ],
+          "extent_size": 1,
+          "gate_support": 2,
+          "intent": [
+            "Lattice"
+          ],
+          "intent_size": 1
+        },
+        {
+          "extent": [
+            "definition_17"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "BinOp",
+            "IT",
+            "LattStr",
+            "Lattice",
+            "join-absorbing",
+            "join-associative",
+            "join-commutative",
+            "meet-absorbing",
+            "meet-associative",
+            "meet-commutative",
+            "upper-bounded"
+          ],
+          "intent_size": 11
+        }
+      ],
+      "sample_unstable_intents": [
+        {
+          "gate_support": 3,
+          "intent": [
+            "IT"
+          ],
+          "intent_size": 1
+        },
+        {
+          "gate_support": 3,
+          "intent": [
+            "Lattice"
+          ],
+          "intent_size": 1
+        },
+        {
+          "gate_support": 3,
+          "intent": [
+            "Top"
+          ],
+          "intent_size": 1
+        }
+      ],
+      "theoretical_notes": [
+        "Count-valued evidence gives threshold gates a natural semantic axis, so unstable concepts can be interpreted as threshold-sensitive rather than purely artificial."
+      ],
+      "thresholds": [
+        1,
+        3,
+        5,
+        6
+      ],
+      "unstable_concept_count": 91,
+      "unstable_intent_sample_count": 10,
+      "upper_concept_count": 93
+    },
+    {
+      "article": "lattice2",
+      "attribute_count": 9,
+      "distinct_concept_families": 4,
+      "gate_count": 4,
+      "lower_concept_count": 2,
+      "max_count": 7,
+      "row_count": 45,
+      "sample_unstable_concepts": [
+        {
+          "extent": [
+            "registration_16"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "D0_Lattice",
+            "FinJoin",
+            "Heyting",
+            "Lattice"
+          ],
+          "intent_size": 4
+        },
+        {
+          "extent": [
+            "registration_14"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "FinJoin",
+            "FinMeet",
+            "Lattice",
+            "lower-bounded"
+          ],
+          "intent_size": 4
+        },
+        {
+          "extent": [
+            "definition_5"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "Heyting",
+            "IT",
+            "Lattice",
+            "lower-bounded"
+          ],
+          "intent_size": 4
+        }
+      ],
+      "sample_unstable_intents": [
+        {
+          "gate_support": 2,
+          "intent": [
+            "FinMeet"
+          ],
+          "intent_size": 1
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "LattStr"
+          ],
+          "intent_size": 1
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "Lattice"
+          ],
+          "intent_size": 1
+        }
+      ],
+      "theoretical_notes": [
+        "Count-valued evidence gives threshold gates a natural semantic axis, so unstable concepts can be interpreted as threshold-sensitive rather than purely artificial."
+      ],
+      "thresholds": [
+        1,
+        3,
+        5,
+        7
+      ],
+      "unstable_concept_count": 27,
+      "unstable_intent_sample_count": 10,
+      "upper_concept_count": 29
+    },
+    {
+      "article": "lattice3",
+      "attribute_count": 11,
+      "distinct_concept_families": 4,
+      "gate_count": 4,
+      "lower_concept_count": 2,
+      "max_count": 16,
+      "row_count": 79,
+      "sample_unstable_concepts": [
+        {
+          "extent": [
+            "registration_13",
+            "scheme_2"
+          ],
+          "extent_size": 2,
+          "gate_support": 1,
+          "intent": [
+            "LattPOSet",
+            "Poset",
+            "RelStr",
+            "is_",
+            "is_less_than",
+            "with_infima",
+            "with_suprema"
+          ],
+          "intent_size": 7
+        },
+        {
+          "extent": [
+            "definition_17"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "IT",
+            "LattPOSet",
+            "Lattice",
+            "Poset",
+            "RelStr",
+            "with_infima",
+            "with_suprema"
+          ],
+          "intent_size": 7
+        },
+        {
+          "extent": [
+            "theorem_19"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "LattPOSet",
+            "LattStr",
+            "Lattice",
+            "Poset",
+            "RelStr",
+            "with_infima",
+            "with_suprema"
+          ],
+          "intent_size": 7
+        }
+      ],
+      "sample_unstable_intents": [
+        {
+          "gate_support": 3,
+          "intent": [
+            "is_"
+          ],
+          "intent_size": 1
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "BooleLatt"
+          ],
+          "intent_size": 1
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "LattPOSet"
+          ],
+          "intent_size": 1
+        }
+      ],
+      "theoretical_notes": [
+        "Count-valued evidence gives threshold gates a natural semantic axis, so unstable concepts can be interpreted as threshold-sensitive rather than purely artificial."
+      ],
+      "thresholds": [
+        1,
+        4,
+        8,
+        16
+      ],
+      "unstable_concept_count": 59,
+      "unstable_intent_sample_count": 10,
+      "upper_concept_count": 61
+    },
+    {
+      "article": "lattice4",
+      "attribute_count": 20,
+      "distinct_concept_families": 4,
+      "gate_count": 4,
+      "lower_concept_count": 2,
+      "max_count": 66,
+      "row_count": 53,
+      "sample_unstable_concepts": [
+        {
+          "extent": [
+            "theorem_43"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "BL",
+            "ClosedSubset",
+            "Field",
+            "FinJoin",
+            "FinMeet",
+            "SetImp",
+            "Subset",
+            "field_by"
+          ],
+          "intent_size": 8
+        },
+        {
+          "extent": [
+            "theorem_31"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "BL",
+            "D1",
+            "D2",
+            "Homomorphism",
+            "preserves_bottom",
+            "preserves_complement",
+            "preserves_top"
+          ],
+          "intent_size": 7
+        },
+        {
+          "extent": [
+            "theorem_18"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "D1",
+            "FinMeet",
+            "Function",
+            "Homomorphism",
+            "L2",
+            "preserves_top"
+          ],
+          "intent_size": 6
+        }
+      ],
+      "sample_unstable_intents": [
+        {
+          "gate_support": 2,
+          "intent": [
+            "BL",
+            "FinJoin",
+            "FinMeet"
+          ],
+          "intent_size": 3
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "L1",
+            "L2"
+          ],
+          "intent_size": 2
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "Field"
+          ],
+          "intent_size": 1
+        }
+      ],
+      "theoretical_notes": [
+        "Count-valued evidence gives threshold gates a natural semantic axis, so unstable concepts can be interpreted as threshold-sensitive rather than purely artificial."
+      ],
+      "thresholds": [
+        1,
+        7,
+        15,
+        66
+      ],
+      "unstable_concept_count": 73,
+      "unstable_intent_sample_count": 10,
+      "upper_concept_count": 75
+    },
+    {
+      "article": "lattice6",
+      "attribute_count": 11,
+      "distinct_concept_families": 4,
+      "gate_count": 4,
+      "lower_concept_count": 2,
+      "max_count": 140,
+      "row_count": 42,
+      "sample_unstable_concepts": [
+        {
+          "extent": [
+            "theorem_3"
+          ],
+          "extent_size": 1,
+          "gate_support": 2,
+          "intent": [
+            "LattPOSet",
+            "is-upper-neighbour-of"
+          ],
+          "intent_size": 2
+        },
+        {
+          "extent": [
+            "registration_9"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "JIRRS",
+            "LattPOSet",
+            "MIRRS",
+            "Subset",
+            "co-noetherian",
+            "completely-join-irreducible",
+            "infimum-dense",
+            "supremum-dense"
+          ],
+          "intent_size": 8
+        },
+        {
+          "extent": [
+            "theorem_27"
+          ],
+          "extent_size": 1,
+          "gate_support": 1,
+          "intent": [
+            "LattPOSet",
+            "MIRRS",
+            "Subset",
+            "co-noetherian",
+            "completely-meet-irreducible",
+            "infimum-dense"
+          ],
+          "intent_size": 6
+        }
+      ],
+      "sample_unstable_intents": [
+        {
+          "gate_support": 3,
+          "intent": [
+            "LattPOSet",
+            "Subset"
+          ],
+          "intent_size": 2
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "LattPOSet",
+            "is-upper-neighbour-of"
+          ],
+          "intent_size": 2
+        },
+        {
+          "gate_support": 2,
+          "intent": [
+            "is-upper-neighbour-of"
+          ],
+          "intent_size": 1
+        }
+      ],
+      "theoretical_notes": [
+        "Count-valued evidence gives threshold gates a natural semantic axis, so unstable concepts can be interpreted as threshold-sensitive rather than purely artificial."
+      ],
+      "thresholds": [
+        1,
+        6,
+        14,
+        140
+      ],
+      "unstable_concept_count": 43,
+      "unstable_intent_sample_count": 10,
+      "upper_concept_count": 45
+    }
+  ],
+  "criterion": "per-article count-valued threshold gates; lower concepts form under every sampled threshold, upper concepts form under at least one sampled threshold",
+  "family_summary": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/mizar_family/family_summary.json",
+  "gate_family": "threshold",
+  "max_thresholds": 4
+}

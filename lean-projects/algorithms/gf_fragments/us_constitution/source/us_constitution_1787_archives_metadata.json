@@ -1,0 +1,13 @@
+{
+  "source": "National Archives, Constitution of the United States: A Transcription",
+  "sourceUrl": "https://www.archives.gov/founding-docs/constitution-transcript",
+  "fetchedAt": "2026-05-30T18:52:09.191876+00:00",
+  "description": "Official transcript of the Constitution as inscribed on parchment by Jacob Shallus. The main_text file contains the Preamble and Articles I-VII. The full_transcript file also includes interlineation notes, attestation, and signers.",
+  "mainTextFile": "source/us_constitution_1787_archives_main_text.txt",
+  "fullTranscriptFile": "source/us_constitution_1787_archives_full_transcript.txt",
+  "paragraphsFile": "source/us_constitution_1787_archives_paragraphs.json",
+  "mainTextParagraphCount": 113,
+  "fullTranscriptParagraphCount": 168,
+  "mainTextSha256": "b4a65537296030cacf0676ee8b19b83927ae9820cd1f92011686260546acd4d9",
+  "fullTranscriptSha256": "193415cc7b19b535353d168455690b60e783cb82a81ffd7c61779863ab917be3"
+}

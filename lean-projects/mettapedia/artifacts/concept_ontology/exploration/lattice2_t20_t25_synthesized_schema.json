@@ -1,0 +1,60 @@
+{
+  "cluster_name": "lattice2_t20_t25_selector_self_relation_family",
+  "common_hypotheses": [
+    "~v2_struct_0(A)",
+    "v10_lattices(A)",
+    "l3_lattices(A)"
+  ],
+  "common_symbols": [
+    "l3_lattices",
+    "r6_binop_1",
+    "u1_struct_0",
+    "v10_lattices",
+    "v2_struct_0"
+  ],
+  "instances": [
+    {
+      "conjecture": "(! [A] : ( ( ~ (v2_struct_0(A)) & (v10_lattices(A) & l3_lattices(A)) ) => r6_binop_1(u1_struct_0(A), u2_lattices(A), u2_lattices(A))) )",
+      "path": "/home/zar/claude/atps/datasets/extended_mptp5k/chainy/train/lattice2__lattice2__t20_lattice2",
+      "problem": "lattice2__lattice2__t20_lattice2",
+      "record_name": "t20_lattice2",
+      "relation_term": "r6_binop_1(u1_struct_0(A), u2_lattices(A), u2_lattices(A))",
+      "selector_family": "encoded-u2-unity",
+      "selector_term": "u2_lattices(A)",
+      "symbols": [
+        "l3_lattices",
+        "r6_binop_1",
+        "u1_struct_0",
+        "u2_lattices",
+        "v10_lattices",
+        "v2_struct_0"
+      ]
+    },
+    {
+      "conjecture": "(! [A] : ( ( ~ (v2_struct_0(A)) & (v10_lattices(A) & l3_lattices(A)) ) => r6_binop_1(u1_struct_0(A), u1_lattices(A), u1_lattices(A))) )",
+      "path": "/home/zar/claude/atps/datasets/extended_mptp5k/chainy/train/lattice2__lattice2__t25_lattice2",
+      "problem": "lattice2__lattice2__t25_lattice2",
+      "record_name": "t25_lattice2",
+      "relation_term": "r6_binop_1(u1_struct_0(A), u1_lattices(A), u1_lattices(A))",
+      "selector_family": "encoded-u1-unity",
+      "selector_term": "u1_lattices(A)",
+      "symbols": [
+        "l3_lattices",
+        "r6_binop_1",
+        "u1_lattices",
+        "u1_struct_0",
+        "v10_lattices",
+        "v2_struct_0"
+      ]
+    }
+  ],
+  "problems": [
+    "lattice2__lattice2__t20_lattice2",
+    "lattice2__lattice2__t25_lattice2"
+  ],
+  "schema_kind": "selector_self_relation_assertion",
+  "schema_template": {
+    "formula": "(! [A] : ((~v2_struct_0(A) & (v10_lattices(A) & l3_lattices(A))) => r6_binop_1(u1_struct_0(A), OP(A), OP(A))))",
+    "prose": "In a nonempty bounded lattice context, the selected encoded lattice operator stands in the distinguished self-relation recorded by r6_binop_1 when paired with itself."
+  }
+}

@@ -1,0 +1,1598 @@
+{
+  "article_count": 31,
+  "articles": [
+    {
+      "article": "conlat_1",
+      "attribute_count": 32,
+      "attributes": [
+        "Attribute",
+        "AttributeDerivation",
+        "B-carrier",
+        "B-join",
+        "B-meet",
+        "BinOp",
+        "BoolePoset",
+        "CP",
+        "CP1",
+        "CP2",
+        "Con",
+        "Concept-with-all-Attributes",
+        "Concept-with-all-Objects",
+        "ConceptLattice",
+        "ConceptStr",
+        "ContextStr",
+        "Extent",
+        "FormalConcept",
+        "FormalContext",
+        "Function",
+        "Information",
+        "Intent",
+        "LattStr",
+        "ObjectDerivation",
+        "Set-of-FormalConcepts",
+        "Subset",
+        "co-Galois",
+        "co-universal",
+        "concept-like",
+        "is-SubConcept-of",
+        "is-connected-with",
+        "quasi-empty"
+      ],
+      "density": 0.2085843373493976,
+      "row_count": 83,
+      "source_path": "/home/zar/claude/mizar/share/mml/conlat_1.miz"
+    },
+    {
+      "article": "conlat_2",
+      "attribute_count": 9,
+      "attributes": [
+        "CP",
+        "ConceptLattice",
+        "ConceptStr",
+        "Context",
+        "ContextStr",
+        "DualHomomorphism",
+        "FormalConcept",
+        "Function",
+        "Homomorphism"
+      ],
+      "density": 0.3168724279835391,
+      "row_count": 27,
+      "source_path": "/home/zar/claude/mizar/share/mml/conlat_2.miz"
+    },
+    {
+      "article": "yellow_0",
+      "attribute_count": 12,
+      "attributes": [
+        "Bottom",
+        "RelStr",
+        "SubRelStr",
+        "Top",
+        "ex_inf_of",
+        "ex_sup_of",
+        "infs-inheriting",
+        "join-inheriting",
+        "lower-bounded",
+        "meet-inheriting",
+        "sups-inheriting",
+        "upper-bounded"
+      ],
+      "density": 0.18112244897959184,
+      "row_count": 98,
+      "source_path": "/home/zar/claude/mizar/share/mml/yellow_0.miz"
+    },
+    {
+      "article": "yellow_1",
+      "attribute_count": 6,
+      "attributes": [
+        "BoolePoset",
+        "InclPoset",
+        "MonMaps",
+        "RelStr",
+        "RelStr-yielding",
+        "SubRelStr"
+      ],
+      "density": 0.2222222222222222,
+      "row_count": 51,
+      "source_path": "/home/zar/claude/mizar/share/mml/yellow_1.miz"
+    },
+    {
+      "article": "yellow_2",
+      "attribute_count": 7,
+      "attributes": [
+        "Function",
+        "Ids",
+        "IdsMap",
+        "Image",
+        "InclPoset",
+        "SubRelStr",
+        "SupMap"
+      ],
+      "density": 0.24571428571428572,
+      "row_count": 50,
+      "source_path": "/home/zar/claude/mizar/share/mml/yellow_2.miz"
+    },
+    {
+      "article": "yellow_3",
+      "attribute_count": 1,
+      "attributes": [
+        "RelStr"
+      ],
+      "density": 1.0,
+      "row_count": 70,
+      "source_path": "/home/zar/claude/mizar/share/mml/yellow_3.miz"
+    },
+    {
+      "article": "yellow_4",
+      "attribute_count": 5,
+      "attributes": [
+        "D1",
+        "D2",
+        "Subset",
+        "is_coarser_than",
+        "is_finer_than"
+      ],
+      "density": 0.37777777777777777,
+      "row_count": 72,
+      "source_path": "/home/zar/claude/mizar/share/mml/yellow_4.miz"
+    },
+    {
+      "article": "yellow_5",
+      "attribute_count": 0,
+      "attributes": [],
+      "density": 0.0,
+      "row_count": 0,
+      "source_path": "/home/zar/claude/mizar/share/mml/yellow_5.miz"
+    },
+    {
+      "article": "yellow_6",
+      "attribute_count": 21,
+      "attributes": [
+        "CONSTANTS",
+        "ConstantNet",
+        "Convergence",
+        "Convergence-Class",
+        "ConvergenceSpace",
+        "DIVERGENCE",
+        "ITERATED_LIMITS",
+        "Iterated",
+        "Lim",
+        "ManySortedSet",
+        "NetStr",
+        "NetUniv",
+        "OpenNeighborhoods",
+        "RelStr",
+        "SUBNETS",
+        "SubNetStr",
+        "Subset",
+        "TopStruct",
+        "net_set",
+        "the_universe_of",
+        "the_value_of"
+      ],
+      "density": 0.1259600614439324,
+      "row_count": 93,
+      "source_path": "/home/zar/claude/mizar/share/mml/yellow_6.miz"
+    },
+    {
+      "article": "yellow_7",
+      "attribute_count": 2,
+      "attributes": [
+        "ComplMap",
+        "Function"
+      ],
+      "density": 0.5357142857142857,
+      "row_count": 14,
+      "source_path": "/home/zar/claude/mizar/share/mml/yellow_7.miz"
+    },
+    {
+      "article": "yellow_8",
+      "attribute_count": 7,
+      "attributes": [
+        "Baire",
+        "Basis",
+        "CofinTop",
+        "Subset-Family",
+        "TopStruct",
+        "is_dense_point_of",
+        "x-quasi_basis"
+      ],
+      "density": 0.23660714285714285,
+      "row_count": 32,
+      "source_path": "/home/zar/claude/mizar/share/mml/yellow_8.miz"
+    },
+    {
+      "article": "yellow_9",
+      "attribute_count": 9,
+      "attributes": [
+        "Function",
+        "NetStr",
+        "Refinement",
+        "T1",
+        "T2",
+        "TopAugmentation",
+        "TopExtension",
+        "TopRelStr",
+        "TopSpace"
+      ],
+      "density": 0.20811287477954143,
+      "row_count": 63,
+      "source_path": "/home/zar/claude/mizar/share/mml/yellow_9.miz"
+    },
+    {
+      "article": "waybel_0",
+      "attribute_count": 32,
+      "attributes": [
+        "Chain",
+        "Filt",
+        "Filt_0",
+        "Filter",
+        "Function",
+        "Ideal",
+        "Ids",
+        "Ids_0",
+        "LATTICE",
+        "NetStr",
+        "Poset",
+        "RelStr",
+        "Semilattice",
+        "Subset",
+        "directed-sups-inheriting",
+        "directed-sups-preserving",
+        "eventually-directed",
+        "eventually-filtered",
+        "filtered-infs-inheriting",
+        "filtered-infs-preserving",
+        "infs-preserving",
+        "is_eventually_in",
+        "is_often_in",
+        "join-preserving",
+        "meet-preserving",
+        "preserves_inf_of",
+        "preserves_sup_of",
+        "sup-Semilattice",
+        "sups-preserving",
+        "up-complete",
+        "with_infima",
+        "with_suprema"
+      ],
+      "density": 0.08085664335664336,
+      "row_count": 143,
+      "source_path": "/home/zar/claude/mizar/share/mml/waybel_0.miz"
+    },
+    {
+      "article": "waybel_1",
+      "attribute_count": 16,
+      "attributes": [
+        "Boolean",
+        "Connection",
+        "Function",
+        "Galois",
+        "Heyting",
+        "Image",
+        "L1",
+        "L2",
+        "are_isomorphic",
+        "ex_max_of",
+        "ex_min_of",
+        "is_a_complement_of",
+        "is_maximum_of",
+        "is_minimum_of",
+        "lower_adjoint",
+        "upper_adjoint"
+      ],
+      "density": 0.12710084033613445,
+      "row_count": 119,
+      "source_path": "/home/zar/claude/mizar/share/mml/waybel_1.miz"
+    },
+    {
+      "article": "waybel_2",
+      "attribute_count": 7,
+      "attributes": [
+        "FinSups",
+        "Function",
+        "NetStr",
+        "inf_op",
+        "meet-continuous",
+        "satisfying_MC",
+        "sup_op"
+      ],
+      "density": 0.23809523809523808,
+      "row_count": 54,
+      "source_path": "/home/zar/claude/mizar/share/mml/waybel_2.miz"
+    },
+    {
+      "article": "waybel_3",
+      "attribute_count": 6,
+      "attributes": [
+        "Subset",
+        "is_way_below",
+        "locally-compact",
+        "non-Empty",
+        "reflexive-yielding",
+        "satisfying_axiom_of_approximation"
+      ],
+      "density": 0.23202614379084968,
+      "row_count": 51,
+      "source_path": "/home/zar/claude/mizar/share/mml/waybel_3.miz"
+    },
+    {
+      "article": "waybel_4",
+      "attribute_count": 24,
+      "attributes": [
+        "AR",
+        "AR-above",
+        "AR-below",
+        "App",
+        "Aux",
+        "AuxBottom",
+        "DownMap",
+        "Function",
+        "Ids",
+        "InclPoset",
+        "IntRel",
+        "L-waybelow",
+        "Map2Rel",
+        "MonSet",
+        "Rel2Map",
+        "RelStr",
+        "Subset",
+        "is_directed_wrt",
+        "is_maximal_in",
+        "is_maximal_wrt",
+        "is_minimal_in",
+        "is_minimal_wrt",
+        "satisfying_INT",
+        "satisfying_SI"
+      ],
+      "density": 0.12301587301587301,
+      "row_count": 105,
+      "source_path": "/home/zar/claude/mizar/share/mml/waybel_4.miz"
+    },
+    {
+      "article": "waybel_5",
+      "attribute_count": 7,
+      "attributes": [
+        "CLSubFrame",
+        "DoubleIndexedSet",
+        "Function",
+        "ManySortedFunction",
+        "completely-distributive",
+        "directed-sups-inheriting",
+        "infs-inheriting"
+      ],
+      "density": 0.23351648351648352,
+      "row_count": 52,
+      "source_path": "/home/zar/claude/mizar/share/mml/waybel_5.miz"
+    },
+    {
+      "article": "waybel_6",
+      "attribute_count": 8,
+      "attributes": [
+        "IRR",
+        "Open",
+        "PRIME",
+        "Subset",
+        "co-prime",
+        "join-irreducible",
+        "meet-irreducible",
+        "order-generating"
+      ],
+      "density": 0.21739130434782608,
+      "row_count": 46,
+      "source_path": "/home/zar/claude/mizar/share/mml/waybel_6.miz"
+    },
+    {
+      "article": "waybel_7",
+      "attribute_count": 2,
+      "attributes": [
+        "is_a_cluster_point_of",
+        "is_a_convergence_point_of"
+      ],
+      "density": 0.75,
+      "row_count": 6,
+      "source_path": "/home/zar/claude/mizar/share/mml/waybel_7.miz"
+    },
+    {
+      "article": "waybel_8",
+      "attribute_count": 4,
+      "attributes": [
+        "CompactSublatt",
+        "SubRelStr",
+        "Subset",
+        "satisfying_axiom_K"
+      ],
+      "density": 0.35,
+      "row_count": 30,
+      "source_path": "/home/zar/claude/mizar/share/mml/waybel_8.miz"
+    },
+    {
+      "article": "waybel_9",
+      "attribute_count": 11,
+      "attributes": [
+        "InternalRel",
+        "NetStr",
+        "RelStr",
+        "TopLattice",
+        "TopRelStr",
+        "TopStruct",
+        "ex_inf_of",
+        "ex_sup_of",
+        "is_a_cluster_point_of",
+        "with_infima",
+        "with_suprema"
+      ],
+      "density": 0.17853231106243153,
+      "row_count": 83,
+      "source_path": "/home/zar/claude/mizar/share/mml/waybel_9.miz"
+    },
+    {
+      "article": "lattices",
+      "attribute_count": 25,
+      "attributes": [
+        "B_Lattice",
+        "BinOp",
+        "Boolean",
+        "Bottom",
+        "C_Lattice",
+        "D_Lattice",
+        "IT",
+        "L_join",
+        "L_meet",
+        "LattStr",
+        "Lattice",
+        "Lattice-like",
+        "M_Lattice",
+        "Top",
+        "is_a_complement_of",
+        "join-absorbing",
+        "join-associative",
+        "join-closed",
+        "join-commutative",
+        "lower-bounded",
+        "meet-absorbing",
+        "meet-associative",
+        "meet-closed",
+        "meet-commutative",
+        "upper-bounded"
+      ],
+      "density": 0.11555555555555555,
+      "row_count": 72,
+      "source_path": "/home/zar/claude/mizar/share/mml/lattices.miz"
+    },
+    {
+      "article": "lattice2",
+      "attribute_count": 9,
+      "attributes": [
+        "D0_Lattice",
+        "FinJoin",
+        "FinMeet",
+        "H_Lattice",
+        "Heyting",
+        "IT",
+        "LattStr",
+        "Lattice",
+        "lower-bounded"
+      ],
+      "density": 0.1925925925925926,
+      "row_count": 45,
+      "source_path": "/home/zar/claude/mizar/share/mml/lattice2.miz"
+    },
+    {
+      "article": "lattice3",
+      "attribute_count": 11,
+      "attributes": [
+        "BooleLatt",
+        "IT",
+        "LattPOSet",
+        "LattStr",
+        "Lattice",
+        "Poset",
+        "RelStr",
+        "is_",
+        "is_less_than",
+        "with_infima",
+        "with_suprema"
+      ],
+      "density": 0.1852704257767549,
+      "row_count": 79,
+      "source_path": "/home/zar/claude/mizar/share/mml/lattice3.miz"
+    },
+    {
+      "article": "lattice4",
+      "attribute_count": 20,
+      "attributes": [
+        "BL",
+        "ClosedSubset",
+        "D1",
+        "D2",
+        "Field",
+        "FinJoin",
+        "FinMeet",
+        "Function",
+        "Homomorphism",
+        "L1",
+        "L2",
+        "SetImp",
+        "Subset",
+        "field_by",
+        "join-closed",
+        "meet-closed",
+        "preserves_bottom",
+        "preserves_complement",
+        "preserves_implication",
+        "preserves_top"
+      ],
+      "density": 0.13018867924528302,
+      "row_count": 53,
+      "source_path": "/home/zar/claude/mizar/share/mml/lattice4.miz"
+    },
+    {
+      "article": "lattice5",
+      "attribute_count": 33,
+      "attributes": [
+        "Aq",
+        "BasicDF",
+        "BiFun",
+        "BiFunction",
+        "Cardinal",
+        "ConsecutiveDelta",
+        "ConsecutiveSet",
+        "DistEsti",
+        "EqRelLATT",
+        "ExtensionSeq",
+        "Function",
+        "Homomorphism",
+        "L1",
+        "L2",
+        "NAT",
+        "NextDelta",
+        "NextSet",
+        "Poset",
+        "Quadr",
+        "QuadrSeq",
+        "R1",
+        "R2",
+        "Sequence",
+        "SubRelStr",
+        "Sublattice",
+        "are_joint_by",
+        "distance_function",
+        "is_extension_of",
+        "join-inheriting",
+        "meet-inheriting",
+        "new_bi_fun",
+        "new_set",
+        "type_of"
+      ],
+      "density": 0.13696969696969696,
+      "row_count": 75,
+      "source_path": "/home/zar/claude/mizar/share/mml/lattice5.miz"
+    },
+    {
+      "article": "lattice6",
+      "attribute_count": 11,
+      "attributes": [
+        "JIRRS",
+        "LattPOSet",
+        "MIRRS",
+        "Subset",
+        "co-atomic",
+        "co-noetherian",
+        "completely-join-irreducible",
+        "completely-meet-irreducible",
+        "infimum-dense",
+        "is-upper-neighbour-of",
+        "supremum-dense"
+      ],
+      "density": 0.19264069264069264,
+      "row_count": 42,
+      "source_path": "/home/zar/claude/mizar/share/mml/lattice6.miz"
+    },
+    {
+      "article": "lattice7",
+      "attribute_count": 6,
+      "attributes": [
+        "Chain",
+        "Join-IRR",
+        "LOWER",
+        "NAT",
+        "Ring_of_sets",
+        "Subset"
+      ],
+      "density": 0.2716049382716049,
+      "row_count": 27,
+      "source_path": "/home/zar/claude/mizar/share/mml/lattice7.miz"
+    },
+    {
+      "article": "lattice8",
+      "attribute_count": 14,
+      "attributes": [
+        "Aq",
+        "BiFunction",
+        "ConsecutiveDelta2",
+        "ConsecutiveSet2",
+        "ExtensionSeq2",
+        "Function",
+        "NextDelta2",
+        "NextSet2",
+        "Quadr2",
+        "finitely_typed",
+        "has_a_representation_of_type",
+        "is_extension2_of",
+        "new_bi_fun2",
+        "new_set2"
+      ],
+      "density": 0.2434402332361516,
+      "row_count": 49,
+      "source_path": "/home/zar/claude/mizar/share/mml/lattice8.miz"
+    },
+    {
+      "article": "latticea",
+      "attribute_count": 14,
+      "attributes": [
+        "Def6",
+        "Function",
+        "IT",
+        "PFilters",
+        "PrimeFilters",
+        "PseudoCocomplements",
+        "PseudoComplements",
+        "Spectrum",
+        "StoneDef",
+        "StoneR",
+        "StoneSpace",
+        "Subset",
+        "Subset-Family",
+        "TopSpace"
+      ],
+      "density": 0.13616071428571427,
+      "row_count": 32,
+      "source_path": "/home/zar/claude/mizar/share/mml/latticea.miz"
+    }
+  ],
+  "attribute_presence": {
+    "AR": [
+      "waybel_4"
+    ],
+    "AR-above": [
+      "waybel_4"
+    ],
+    "AR-below": [
+      "waybel_4"
+    ],
+    "App": [
+      "waybel_4"
+    ],
+    "Aq": [
+      "lattice5",
+      "lattice8"
+    ],
+    "Attribute": [
+      "conlat_1"
+    ],
+    "AttributeDerivation": [
+      "conlat_1"
+    ],
+    "Aux": [
+      "waybel_4"
+    ],
+    "AuxBottom": [
+      "waybel_4"
+    ],
+    "B-carrier": [
+      "conlat_1"
+    ],
+    "B-join": [
+      "conlat_1"
+    ],
+    "B-meet": [
+      "conlat_1"
+    ],
+    "BL": [
+      "lattice4"
+    ],
+    "B_Lattice": [
+      "lattices"
+    ],
+    "Baire": [
+      "yellow_8"
+    ],
+    "BasicDF": [
+      "lattice5"
+    ],
+    "Basis": [
+      "yellow_8"
+    ],
+    "BiFun": [
+      "lattice5"
+    ],
+    "BiFunction": [
+      "lattice5",
+      "lattice8"
+    ],
+    "BinOp": [
+      "conlat_1",
+      "lattices"
+    ],
+    "BooleLatt": [
+      "lattice3"
+    ],
+    "BoolePoset": [
+      "conlat_1",
+      "yellow_1"
+    ],
+    "Boolean": [
+      "lattices",
+      "waybel_1"
+    ],
+    "Bottom": [
+      "lattices",
+      "yellow_0"
+    ],
+    "CLSubFrame": [
+      "waybel_5"
+    ],
+    "CONSTANTS": [
+      "yellow_6"
+    ],
+    "CP": [
+      "conlat_1",
+      "conlat_2"
+    ],
+    "CP1": [
+      "conlat_1"
+    ],
+    "CP2": [
+      "conlat_1"
+    ],
+    "C_Lattice": [
+      "lattices"
+    ],
+    "Cardinal": [
+      "lattice5"
+    ],
+    "Chain": [
+      "lattice7",
+      "waybel_0"
+    ],
+    "ClosedSubset": [
+      "lattice4"
+    ],
+    "CofinTop": [
+      "yellow_8"
+    ],
+    "CompactSublatt": [
+      "waybel_8"
+    ],
+    "ComplMap": [
+      "yellow_7"
+    ],
+    "Con": [
+      "conlat_1"
+    ],
+    "Concept-with-all-Attributes": [
+      "conlat_1"
+    ],
+    "Concept-with-all-Objects": [
+      "conlat_1"
+    ],
+    "ConceptLattice": [
+      "conlat_1",
+      "conlat_2"
+    ],
+    "ConceptStr": [
+      "conlat_1",
+      "conlat_2"
+    ],
+    "Connection": [
+      "waybel_1"
+    ],
+    "ConsecutiveDelta": [
+      "lattice5"
+    ],
+    "ConsecutiveDelta2": [
+      "lattice8"
+    ],
+    "ConsecutiveSet": [
+      "lattice5"
+    ],
+    "ConsecutiveSet2": [
+      "lattice8"
+    ],
+    "ConstantNet": [
+      "yellow_6"
+    ],
+    "Context": [
+      "conlat_2"
+    ],
+    "ContextStr": [
+      "conlat_1",
+      "conlat_2"
+    ],
+    "Convergence": [
+      "yellow_6"
+    ],
+    "Convergence-Class": [
+      "yellow_6"
+    ],
+    "ConvergenceSpace": [
+      "yellow_6"
+    ],
+    "D0_Lattice": [
+      "lattice2"
+    ],
+    "D1": [
+      "lattice4",
+      "yellow_4"
+    ],
+    "D2": [
+      "lattice4",
+      "yellow_4"
+    ],
+    "DIVERGENCE": [
+      "yellow_6"
+    ],
+    "D_Lattice": [
+      "lattices"
+    ],
+    "Def6": [
+      "latticea"
+    ],
+    "DistEsti": [
+      "lattice5"
+    ],
+    "DoubleIndexedSet": [
+      "waybel_5"
+    ],
+    "DownMap": [
+      "waybel_4"
+    ],
+    "DualHomomorphism": [
+      "conlat_2"
+    ],
+    "EqRelLATT": [
+      "lattice5"
+    ],
+    "ExtensionSeq": [
+      "lattice5"
+    ],
+    "ExtensionSeq2": [
+      "lattice8"
+    ],
+    "Extent": [
+      "conlat_1"
+    ],
+    "Field": [
+      "lattice4"
+    ],
+    "Filt": [
+      "waybel_0"
+    ],
+    "Filt_0": [
+      "waybel_0"
+    ],
+    "Filter": [
+      "waybel_0"
+    ],
+    "FinJoin": [
+      "lattice2",
+      "lattice4"
+    ],
+    "FinMeet": [
+      "lattice2",
+      "lattice4"
+    ],
+    "FinSups": [
+      "waybel_2"
+    ],
+    "FormalConcept": [
+      "conlat_1",
+      "conlat_2"
+    ],
+    "FormalContext": [
+      "conlat_1"
+    ],
+    "Function": [
+      "conlat_1",
+      "conlat_2",
+      "lattice4",
+      "lattice5",
+      "lattice8",
+      "latticea",
+      "waybel_0",
+      "waybel_1",
+      "waybel_2",
+      "waybel_4",
+      "waybel_5",
+      "yellow_2",
+      "yellow_7",
+      "yellow_9"
+    ],
+    "Galois": [
+      "waybel_1"
+    ],
+    "H_Lattice": [
+      "lattice2"
+    ],
+    "Heyting": [
+      "lattice2",
+      "waybel_1"
+    ],
+    "Homomorphism": [
+      "conlat_2",
+      "lattice4",
+      "lattice5"
+    ],
+    "IRR": [
+      "waybel_6"
+    ],
+    "IT": [
+      "lattice2",
+      "lattice3",
+      "latticea",
+      "lattices"
+    ],
+    "ITERATED_LIMITS": [
+      "yellow_6"
+    ],
+    "Ideal": [
+      "waybel_0"
+    ],
+    "Ids": [
+      "waybel_0",
+      "waybel_4",
+      "yellow_2"
+    ],
+    "IdsMap": [
+      "yellow_2"
+    ],
+    "Ids_0": [
+      "waybel_0"
+    ],
+    "Image": [
+      "waybel_1",
+      "yellow_2"
+    ],
+    "InclPoset": [
+      "waybel_4",
+      "yellow_1",
+      "yellow_2"
+    ],
+    "Information": [
+      "conlat_1"
+    ],
+    "IntRel": [
+      "waybel_4"
+    ],
+    "Intent": [
+      "conlat_1"
+    ],
+    "InternalRel": [
+      "waybel_9"
+    ],
+    "Iterated": [
+      "yellow_6"
+    ],
+    "JIRRS": [
+      "lattice6"
+    ],
+    "Join-IRR": [
+      "lattice7"
+    ],
+    "L-waybelow": [
+      "waybel_4"
+    ],
+    "L1": [
+      "lattice4",
+      "lattice5",
+      "waybel_1"
+    ],
+    "L2": [
+      "lattice4",
+      "lattice5",
+      "waybel_1"
+    ],
+    "LATTICE": [
+      "waybel_0"
+    ],
+    "LOWER": [
+      "lattice7"
+    ],
+    "L_join": [
+      "lattices"
+    ],
+    "L_meet": [
+      "lattices"
+    ],
+    "LattPOSet": [
+      "lattice3",
+      "lattice6"
+    ],
+    "LattStr": [
+      "conlat_1",
+      "lattice2",
+      "lattice3",
+      "lattices"
+    ],
+    "Lattice": [
+      "lattice2",
+      "lattice3",
+      "lattices"
+    ],
+    "Lattice-like": [
+      "lattices"
+    ],
+    "Lim": [
+      "yellow_6"
+    ],
+    "MIRRS": [
+      "lattice6"
+    ],
+    "M_Lattice": [
+      "lattices"
+    ],
+    "ManySortedFunction": [
+      "waybel_5"
+    ],
+    "ManySortedSet": [
+      "yellow_6"
+    ],
+    "Map2Rel": [
+      "waybel_4"
+    ],
+    "MonMaps": [
+      "yellow_1"
+    ],
+    "MonSet": [
+      "waybel_4"
+    ],
+    "NAT": [
+      "lattice5",
+      "lattice7"
+    ],
+    "NetStr": [
+      "waybel_0",
+      "waybel_2",
+      "waybel_9",
+      "yellow_6",
+      "yellow_9"
+    ],
+    "NetUniv": [
+      "yellow_6"
+    ],
+    "NextDelta": [
+      "lattice5"
+    ],
+    "NextDelta2": [
+      "lattice8"
+    ],
+    "NextSet": [
+      "lattice5"
+    ],
+    "NextSet2": [
+      "lattice8"
+    ],
+    "ObjectDerivation": [
+      "conlat_1"
+    ],
+    "Open": [
+      "waybel_6"
+    ],
+    "OpenNeighborhoods": [
+      "yellow_6"
+    ],
+    "PFilters": [
+      "latticea"
+    ],
+    "PRIME": [
+      "waybel_6"
+    ],
+    "Poset": [
+      "lattice3",
+      "lattice5",
+      "waybel_0"
+    ],
+    "PrimeFilters": [
+      "latticea"
+    ],
+    "PseudoCocomplements": [
+      "latticea"
+    ],
+    "PseudoComplements": [
+      "latticea"
+    ],
+    "Quadr": [
+      "lattice5"
+    ],
+    "Quadr2": [
+      "lattice8"
+    ],
+    "QuadrSeq": [
+      "lattice5"
+    ],
+    "R1": [
+      "lattice5"
+    ],
+    "R2": [
+      "lattice5"
+    ],
+    "Refinement": [
+      "yellow_9"
+    ],
+    "Rel2Map": [
+      "waybel_4"
+    ],
+    "RelStr": [
+      "lattice3",
+      "waybel_0",
+      "waybel_4",
+      "waybel_9",
+      "yellow_0",
+      "yellow_1",
+      "yellow_3",
+      "yellow_6"
+    ],
+    "RelStr-yielding": [
+      "yellow_1"
+    ],
+    "Ring_of_sets": [
+      "lattice7"
+    ],
+    "SUBNETS": [
+      "yellow_6"
+    ],
+    "Semilattice": [
+      "waybel_0"
+    ],
+    "Sequence": [
+      "lattice5"
+    ],
+    "Set-of-FormalConcepts": [
+      "conlat_1"
+    ],
+    "SetImp": [
+      "lattice4"
+    ],
+    "Spectrum": [
+      "latticea"
+    ],
+    "StoneDef": [
+      "latticea"
+    ],
+    "StoneR": [
+      "latticea"
+    ],
+    "StoneSpace": [
+      "latticea"
+    ],
+    "SubNetStr": [
+      "yellow_6"
+    ],
+    "SubRelStr": [
+      "lattice5",
+      "waybel_8",
+      "yellow_0",
+      "yellow_1",
+      "yellow_2"
+    ],
+    "Sublattice": [
+      "lattice5"
+    ],
+    "Subset": [
+      "conlat_1",
+      "lattice4",
+      "lattice6",
+      "lattice7",
+      "latticea",
+      "waybel_0",
+      "waybel_3",
+      "waybel_4",
+      "waybel_6",
+      "waybel_8",
+      "yellow_4",
+      "yellow_6"
+    ],
+    "Subset-Family": [
+      "latticea",
+      "yellow_8"
+    ],
+    "SupMap": [
+      "yellow_2"
+    ],
+    "T1": [
+      "yellow_9"
+    ],
+    "T2": [
+      "yellow_9"
+    ],
+    "Top": [
+      "lattices",
+      "yellow_0"
+    ],
+    "TopAugmentation": [
+      "yellow_9"
+    ],
+    "TopExtension": [
+      "yellow_9"
+    ],
+    "TopLattice": [
+      "waybel_9"
+    ],
+    "TopRelStr": [
+      "waybel_9",
+      "yellow_9"
+    ],
+    "TopSpace": [
+      "latticea",
+      "yellow_9"
+    ],
+    "TopStruct": [
+      "waybel_9",
+      "yellow_6",
+      "yellow_8"
+    ],
+    "are_isomorphic": [
+      "waybel_1"
+    ],
+    "are_joint_by": [
+      "lattice5"
+    ],
+    "co-Galois": [
+      "conlat_1"
+    ],
+    "co-atomic": [
+      "lattice6"
+    ],
+    "co-noetherian": [
+      "lattice6"
+    ],
+    "co-prime": [
+      "waybel_6"
+    ],
+    "co-universal": [
+      "conlat_1"
+    ],
+    "completely-distributive": [
+      "waybel_5"
+    ],
+    "completely-join-irreducible": [
+      "lattice6"
+    ],
+    "completely-meet-irreducible": [
+      "lattice6"
+    ],
+    "concept-like": [
+      "conlat_1"
+    ],
+    "directed-sups-inheriting": [
+      "waybel_0",
+      "waybel_5"
+    ],
+    "directed-sups-preserving": [
+      "waybel_0"
+    ],
+    "distance_function": [
+      "lattice5"
+    ],
+    "eventually-directed": [
+      "waybel_0"
+    ],
+    "eventually-filtered": [
+      "waybel_0"
+    ],
+    "ex_inf_of": [
+      "waybel_9",
+      "yellow_0"
+    ],
+    "ex_max_of": [
+      "waybel_1"
+    ],
+    "ex_min_of": [
+      "waybel_1"
+    ],
+    "ex_sup_of": [
+      "waybel_9",
+      "yellow_0"
+    ],
+    "field_by": [
+      "lattice4"
+    ],
+    "filtered-infs-inheriting": [
+      "waybel_0"
+    ],
+    "filtered-infs-preserving": [
+      "waybel_0"
+    ],
+    "finitely_typed": [
+      "lattice8"
+    ],
+    "has_a_representation_of_type": [
+      "lattice8"
+    ],
+    "inf_op": [
+      "waybel_2"
+    ],
+    "infimum-dense": [
+      "lattice6"
+    ],
+    "infs-inheriting": [
+      "waybel_5",
+      "yellow_0"
+    ],
+    "infs-preserving": [
+      "waybel_0"
+    ],
+    "is-SubConcept-of": [
+      "conlat_1"
+    ],
+    "is-connected-with": [
+      "conlat_1"
+    ],
+    "is-upper-neighbour-of": [
+      "lattice6"
+    ],
+    "is_": [
+      "lattice3"
+    ],
+    "is_a_cluster_point_of": [
+      "waybel_7",
+      "waybel_9"
+    ],
+    "is_a_complement_of": [
+      "lattices",
+      "waybel_1"
+    ],
+    "is_a_convergence_point_of": [
+      "waybel_7"
+    ],
+    "is_coarser_than": [
+      "yellow_4"
+    ],
+    "is_dense_point_of": [
+      "yellow_8"
+    ],
+    "is_directed_wrt": [
+      "waybel_4"
+    ],
+    "is_eventually_in": [
+      "waybel_0"
+    ],
+    "is_extension2_of": [
+      "lattice8"
+    ],
+    "is_extension_of": [
+      "lattice5"
+    ],
+    "is_finer_than": [
+      "yellow_4"
+    ],
+    "is_less_than": [
+      "lattice3"
+    ],
+    "is_maximal_in": [
+      "waybel_4"
+    ],
+    "is_maximal_wrt": [
+      "waybel_4"
+    ],
+    "is_maximum_of": [
+      "waybel_1"
+    ],
+    "is_minimal_in": [
+      "waybel_4"
+    ],
+    "is_minimal_wrt": [
+      "waybel_4"
+    ],
+    "is_minimum_of": [
+      "waybel_1"
+    ],
+    "is_often_in": [
+      "waybel_0"
+    ],
+    "is_way_below": [
+      "waybel_3"
+    ],
+    "join-absorbing": [
+      "lattices"
+    ],
+    "join-associative": [
+      "lattices"
+    ],
+    "join-closed": [
+      "lattice4",
+      "lattices"
+    ],
+    "join-commutative": [
+      "lattices"
+    ],
+    "join-inheriting": [
+      "lattice5",
+      "yellow_0"
+    ],
+    "join-irreducible": [
+      "waybel_6"
+    ],
+    "join-preserving": [
+      "waybel_0"
+    ],
+    "locally-compact": [
+      "waybel_3"
+    ],
+    "lower-bounded": [
+      "lattice2",
+      "lattices",
+      "yellow_0"
+    ],
+    "lower_adjoint": [
+      "waybel_1"
+    ],
+    "meet-absorbing": [
+      "lattices"
+    ],
+    "meet-associative": [
+      "lattices"
+    ],
+    "meet-closed": [
+      "lattice4",
+      "lattices"
+    ],
+    "meet-commutative": [
+      "lattices"
+    ],
+    "meet-continuous": [
+      "waybel_2"
+    ],
+    "meet-inheriting": [
+      "lattice5",
+      "yellow_0"
+    ],
+    "meet-irreducible": [
+      "waybel_6"
+    ],
+    "meet-preserving": [
+      "waybel_0"
+    ],
+    "net_set": [
+      "yellow_6"
+    ],
+    "new_bi_fun": [
+      "lattice5"
+    ],
+    "new_bi_fun2": [
+      "lattice8"
+    ],
+    "new_set": [
+      "lattice5"
+    ],
+    "new_set2": [
+      "lattice8"
+    ],
+    "non-Empty": [
+      "waybel_3"
+    ],
+    "order-generating": [
+      "waybel_6"
+    ],
+    "preserves_bottom": [
+      "lattice4"
+    ],
+    "preserves_complement": [
+      "lattice4"
+    ],
+    "preserves_implication": [
+      "lattice4"
+    ],
+    "preserves_inf_of": [
+      "waybel_0"
+    ],
+    "preserves_sup_of": [
+      "waybel_0"
+    ],
+    "preserves_top": [
+      "lattice4"
+    ],
+    "quasi-empty": [
+      "conlat_1"
+    ],
+    "reflexive-yielding": [
+      "waybel_3"
+    ],
+    "satisfying_INT": [
+      "waybel_4"
+    ],
+    "satisfying_MC": [
+      "waybel_2"
+    ],
+    "satisfying_SI": [
+      "waybel_4"
+    ],
+    "satisfying_axiom_K": [
+      "waybel_8"
+    ],
+    "satisfying_axiom_of_approximation": [
+      "waybel_3"
+    ],
+    "sup-Semilattice": [
+      "waybel_0"
+    ],
+    "sup_op": [
+      "waybel_2"
+    ],
+    "supremum-dense": [
+      "lattice6"
+    ],
+    "sups-inheriting": [
+      "yellow_0"
+    ],
+    "sups-preserving": [
+      "waybel_0"
+    ],
+    "the_universe_of": [
+      "yellow_6"
+    ],
+    "the_value_of": [
+      "yellow_6"
+    ],
+    "type_of": [
+      "lattice5"
+    ],
+    "up-complete": [
+      "waybel_0"
+    ],
+    "upper-bounded": [
+      "lattices",
+      "yellow_0"
+    ],
+    "upper_adjoint": [
+      "waybel_1"
+    ],
+    "with_infima": [
+      "lattice3",
+      "waybel_0",
+      "waybel_9"
+    ],
+    "with_suprema": [
+      "lattice3",
+      "waybel_0",
+      "waybel_9"
+    ],
+    "x-quasi_basis": [
+      "yellow_8"
+    ]
+  },
+  "family": [
+    "conlat_1",
+    "conlat_2",
+    "yellow_0",
+    "yellow_1",
+    "yellow_2",
+    "yellow_3",
+    "yellow_4",
+    "yellow_5",
+    "yellow_6",
+    "yellow_7",
+    "yellow_8",
+    "yellow_9",
+    "waybel_0",
+    "waybel_1",
+    "waybel_2",
+    "waybel_3",
+    "waybel_4",
+    "waybel_5",
+    "waybel_6",
+    "waybel_7",
+    "waybel_8",
+    "waybel_9",
+    "lattices",
+    "lattice2",
+    "lattice3",
+    "lattice4",
+    "lattice5",
+    "lattice6",
+    "lattice7",
+    "lattice8",
+    "latticea"
+  ]
+}

@@ -1,0 +1,639 @@
+{
+  "article": "yellow_3",
+  "attributes": [
+    "RelStr"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 1,
+      "kind": "registration",
+      "object": "registration_1",
+      "preview": "registration let L be RelStr, X be empty Subset of L; cluster downarrow X -> empty; coherence proof assume downarrow X i"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 2,
+      "kind": "theorem",
+      "object": "theorem_2",
+      "preview": "theorem for L being with_infima transitive antisymmetric RelStr for a, b, c, d being Element of L st a <= c & b <= d hol"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 3,
+      "kind": "theorem",
+      "object": "theorem_3",
+      "preview": "theorem for L being with_suprema transitive antisymmetric RelStr for a, b, c, d being Element of L st a <= c & b <= d ho"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem for L being complete reflexive antisymmetric non empty RelStr for D being Subset of L, x being Element of L st x"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem for L being complete reflexive antisymmetric non empty RelStr for D being Subset of L, x being Element of L st x"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem for L being RelStr, X, Y being Subset of L st X c= Y holds downarrow X c= downarrow Y proof let L be RelStr, X, "
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 7,
+      "kind": "theorem",
+      "object": "theorem_7",
+      "preview": "theorem for L being RelStr, X, Y being Subset of L st X c= Y holds uparrow X c= uparrow Y proof let L be RelStr, X, Y be"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 2,
+      "kind": "scheme",
+      "object": "scheme_2",
+      "preview": "scheme InfUnion { L() -> complete antisymmetric non empty RelStr, P[set] } : \"/\\\" ({ \"/\\\"(X,L()) where X is Subset of L("
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 4,
+      "kind": "scheme",
+      "object": "scheme_4",
+      "preview": "scheme SupUnion { L() -> complete antisymmetric non empty RelStr, P[set] } : \"\\/\" ({ \"\\/\"(X,L()) where X is Subset of L("
+    },
+    {
+      "counts": {
+        "RelStr": 3
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let X, Y be RelStr; func [:X,Y:] -> strict RelStr means :Def2: the carrier of it = [:the carrier of X, the ca"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let L1, L2 be RelStr, D be Subset of [:L1,L2:]; redefine func proj1 D -> Subset of L1; coherence proof proj1 "
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let S1, S2 be RelStr, D1 be Subset of S1, D2 be Subset of S2; redefine func [:D1,D2:] -> Subset of [:S1,S2:];"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let S1, S2 be non empty RelStr, x be Element of S1, y be Element of S2; redefine func [x,y] -> Element of [:S"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let L1, L2 be non empty RelStr, x be Element of [:L1,L2:]; redefine func x`1 -> Element of L1; coherence proo"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem Th11: for S1, S2 being non empty RelStr for a, c being Element of S1, b, d being Element of S2 holds a <= c & b "
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem Th12: for S1, S2 being non empty RelStr, x, y being Element of [:S1,S2 :] holds x <= y iff x`1 <= y`1 & x`2 <= y"
+    },
+    {
+      "counts": {
+        "RelStr": 4
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem for A, B being RelStr, C being non empty RelStr for f, g being Function of [:A,B:],C st for x being Element of A"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 2,
+      "kind": "registration",
+      "object": "registration_2",
+      "preview": "registration let X, Y be non empty RelStr; cluster [:X,Y:] -> non empty; coherence proof set y = the Element of Y; set x"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 3,
+      "kind": "registration",
+      "object": "registration_3",
+      "preview": "registration let X, Y be reflexive RelStr; cluster [:X,Y:] -> reflexive; coherence proof let x be object; assume x in th"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 4,
+      "kind": "registration",
+      "object": "registration_4",
+      "preview": "registration let X, Y be antisymmetric RelStr; cluster [:X,Y:] -> antisymmetric; coherence proof let x, y be object such"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 5,
+      "kind": "registration",
+      "object": "registration_5",
+      "preview": "registration let X, Y be transitive RelStr; cluster [:X,Y:] -> transitive; coherence proof set P = the InternalRel of X,"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 6,
+      "kind": "registration",
+      "object": "registration_6",
+      "preview": "registration let X, Y be with_suprema RelStr; cluster [:X,Y:] -> with_suprema; coherence proof set IT = [:X,Y:]; let x, "
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 7,
+      "kind": "registration",
+      "object": "registration_7",
+      "preview": "registration let X, Y be with_infima RelStr; cluster [:X,Y:] -> with_infima; coherence proof set IT = [:X,Y:]; let x, y "
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem for X, Y being RelStr st [:X,Y:] is non empty holds X is non empty & Y is non empty proof let X, Y be RelStr; as"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem for X, Y being non empty RelStr st [:X,Y:] is reflexive holds X is reflexive & Y is reflexive proof let X, Y be "
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem for X, Y being non empty reflexive RelStr st [:X,Y:] is antisymmetric holds X is antisymmetric & Y is antisymmet"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 17,
+      "kind": "theorem",
+      "object": "theorem_17",
+      "preview": "theorem for X, Y being non empty reflexive RelStr st [:X,Y:] is transitive holds X is transitive & Y is transitive proof"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem for X, Y being non empty reflexive RelStr st [:X,Y:] is with_suprema holds X is with_suprema & Y is with_suprema"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem for X, Y being non empty reflexive RelStr st [:X,Y:] is with_infima holds X is with_infima & Y is with_infima pr"
+    },
+    {
+      "counts": {
+        "RelStr": 3
+      },
+      "index": 8,
+      "kind": "registration",
+      "object": "registration_8",
+      "preview": "registration let S1, S2 be RelStr; let D1 be directed Subset of S1, D2 be directed Subset of S2; cluster [:D1,D2:] -> di"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 20,
+      "kind": "theorem",
+      "object": "theorem_20",
+      "preview": "theorem for S1, S2 being non empty RelStr for D1 being non empty Subset of S1, D2 being non empty Subset of S2 st [:D1,D"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 21,
+      "kind": "theorem",
+      "object": "theorem_21",
+      "preview": "theorem Th21: for S1, S2 being non empty RelStr for D being non empty Subset of [:S1,S2:] holds proj1 D is non empty & p"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 22,
+      "kind": "theorem",
+      "object": "theorem_22",
+      "preview": "theorem for S1, S2 being non empty reflexive RelStr for D being non empty directed Subset of [:S1,S2:] holds proj1 D is "
+    },
+    {
+      "counts": {
+        "RelStr": 3
+      },
+      "index": 9,
+      "kind": "registration",
+      "object": "registration_9",
+      "preview": "registration let S1, S2 be RelStr; let D1 be filtered Subset of S1, D2 be filtered Subset of S2; cluster [:D1,D2:] -> fi"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 23,
+      "kind": "theorem",
+      "object": "theorem_23",
+      "preview": "theorem for S1, S2 being non empty RelStr for D1 being non empty Subset of S1, D2 being non empty Subset of S2 st [:D1,D"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem for S1, S2 being non empty reflexive RelStr for D being non empty filtered Subset of [:S1,S2:] holds proj1 D is "
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 10,
+      "kind": "registration",
+      "object": "registration_10",
+      "preview": "registration let S1, S2 be RelStr, D1 be upper Subset of S1, D2 be upper Subset of S2; cluster [:D1,D2:] -> upper for Su"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem for S1, S2 being non empty reflexive RelStr for D1 being non empty Subset of S1, D2 being non empty Subset of S2"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem for S1, S2 being non empty reflexive RelStr for D being non empty upper Subset of [:S1,S2:] holds proj1 D is upp"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 11,
+      "kind": "registration",
+      "object": "registration_11",
+      "preview": "registration let S1, S2 be RelStr, D1 be lower Subset of S1, D2 be lower Subset of S2; cluster [:D1,D2:] -> lower for Su"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem for S1, S2 being non empty reflexive RelStr for D1 being non empty Subset of S1, D2 being non empty Subset of S2"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem for S1, S2 being non empty reflexive RelStr for D being non empty lower Subset of [:S1,S2:] holds proj1 D is low"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition let R be RelStr; attr R is void means :Def3: the InternalRel of R is empty; end;"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 12,
+      "kind": "registration",
+      "object": "registration_12",
+      "preview": "registration cluster empty -> void for RelStr; coherence; end;"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 14,
+      "kind": "registration",
+      "object": "registration_14",
+      "preview": "registration cluster non void -> non empty for RelStr; coherence; end;"
+    },
+    {
+      "counts": {
+        "RelStr": 3
+      },
+      "index": 15,
+      "kind": "registration",
+      "object": "registration_15",
+      "preview": "registration cluster non empty reflexive -> non void for RelStr; coherence proof let R be RelStr; assume R is non empty "
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 16,
+      "kind": "registration",
+      "object": "registration_16",
+      "preview": "registration let R be non void RelStr; cluster the InternalRel of R -> non empty; coherence by Def3; end;"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem Th29: for S1, S2 being non empty RelStr for D1 being non empty Subset of S1, D2 being non empty Subset of S2 for"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem Th30: for S1, S2 being non empty RelStr for D1 being Subset of S1, D2 being Subset of S2 for x being Element of "
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem Th31: for S1, S2 being non empty RelStr for D being Subset of [:S1,S2 :] for x being Element of S1, y being Elem"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 32,
+      "kind": "theorem",
+      "object": "theorem_32",
+      "preview": "theorem Th32: for S1, S2 being non empty RelStr for D1 being non empty Subset of S1, D2 being non empty Subset of S2 for"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 33,
+      "kind": "theorem",
+      "object": "theorem_33",
+      "preview": "theorem Th33: for S1, S2 being non empty RelStr for D1 being Subset of S1, D2 being Subset of S2 for x being Element of "
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 34,
+      "kind": "theorem",
+      "object": "theorem_34",
+      "preview": "theorem Th34: for S1, S2 being non empty RelStr for D being Subset of [:S1,S2 :] for x being Element of S1, y being Elem"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 35,
+      "kind": "theorem",
+      "object": "theorem_35",
+      "preview": "theorem Th35: for S1, S2 being antisymmetric non empty RelStr for D1 being Subset of S1, D2 being Subset of S2 for x bei"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 36,
+      "kind": "theorem",
+      "object": "theorem_36",
+      "preview": "theorem Th36: for S1, S2 being antisymmetric non empty RelStr for D1 being Subset of S1, D2 being Subset of S2 for x bei"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 37,
+      "kind": "theorem",
+      "object": "theorem_37",
+      "preview": "theorem for S1, S2 being antisymmetric non empty RelStr for D1 being non empty Subset of S1, D2 being non empty Subset o"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 38,
+      "kind": "theorem",
+      "object": "theorem_38",
+      "preview": "theorem for S1, S2 being antisymmetric non empty RelStr for D1 being non empty Subset of S1, D2 being non empty Subset o"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 39,
+      "kind": "theorem",
+      "object": "theorem_39",
+      "preview": "theorem Th39: for S1, S2 being antisymmetric non empty RelStr for D1 being non empty Subset of S1, D2 being non empty Su"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 40,
+      "kind": "theorem",
+      "object": "theorem_40",
+      "preview": "theorem Th40: for S1, S2 being antisymmetric non empty RelStr for D1 being non empty Subset of S1, D2 being non empty Su"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 41,
+      "kind": "theorem",
+      "object": "theorem_41",
+      "preview": "theorem Th41: for S1, S2 being antisymmetric non empty RelStr for D being Subset of [:S1,S2:] holds ex_sup_of proj1 D,S1"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 42,
+      "kind": "theorem",
+      "object": "theorem_42",
+      "preview": "theorem Th42: for S1, S2 being antisymmetric non empty RelStr for D being Subset of [:S1,S2:] holds ex_inf_of proj1 D,S1"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 43,
+      "kind": "theorem",
+      "object": "theorem_43",
+      "preview": "theorem Th43: for S1, S2 being antisymmetric non empty RelStr for D1 being non empty Subset of S1, D2 being non empty Su"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 44,
+      "kind": "theorem",
+      "object": "theorem_44",
+      "preview": "theorem Th44: for S1, S2 being antisymmetric non empty RelStr for D1 being non empty Subset of S1, D2 being non empty Su"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 17,
+      "kind": "registration",
+      "object": "registration_17",
+      "preview": "registration let X, Y be complete antisymmetric non empty RelStr; cluster [:X,Y:] -> complete; coherence proof set IT = "
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 45,
+      "kind": "theorem",
+      "object": "theorem_45",
+      "preview": "theorem for X, Y being non empty lower-bounded antisymmetric RelStr st [:X,Y:] is complete holds X is complete & Y is co"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 46,
+      "kind": "theorem",
+      "object": "theorem_46",
+      "preview": "theorem for L1,L2 being antisymmetric non empty RelStr for D being non empty Subset of [:L1,L2:] st [:L1,L2:] is complet"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 47,
+      "kind": "theorem",
+      "object": "theorem_47",
+      "preview": "theorem for L1,L2 being antisymmetric non empty RelStr for D being non empty Subset of [:L1,L2:] st [:L1,L2:] is complet"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 48,
+      "kind": "theorem",
+      "object": "theorem_48",
+      "preview": "theorem for S1,S2 being non empty reflexive RelStr for D being non empty directed Subset of [:S1,S2:] holds [:proj1 D,pr"
+    },
+    {
+      "counts": {
+        "RelStr": 2
+      },
+      "index": 49,
+      "kind": "theorem",
+      "object": "theorem_49",
+      "preview": "theorem for S1,S2 being non empty reflexive RelStr for D being non empty filtered Subset of [:S1,S2:] holds [:proj1 D,pr"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 6,
+      "kind": "scheme",
+      "object": "scheme_6",
+      "preview": "scheme Kappa2DS { X,Y,Z() -> non empty RelStr, F(set,set) -> set }: ex f being Function of [:X(),Y():], Z() st for x bei"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/yellow_3.miz"
+}

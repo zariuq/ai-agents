@@ -1,0 +1,590 @@
+{
+  "article": "lattice4",
+  "attributes": [
+    "BL",
+    "ClosedSubset",
+    "D1",
+    "D2",
+    "Field",
+    "FinJoin",
+    "FinMeet",
+    "Function",
+    "Homomorphism",
+    "L1",
+    "L2",
+    "SetImp",
+    "Subset",
+    "field_by",
+    "join-closed",
+    "meet-closed",
+    "preserves_bottom",
+    "preserves_complement",
+    "preserves_implication",
+    "preserves_top"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "L1": 2,
+        "L2": 2
+      },
+      "index": 3,
+      "kind": "theorem",
+      "object": "theorem_3",
+      "preview": "theorem p in <.<.q.) \\/ F.) implies ex r st r in F & q \"/\\\" r [= p proof A1: <.<.q.) \\/ F.)={r : ex p9,q9 being Element "
+    },
+    {
+      "counts": {
+        "D1": 1,
+        "Function": 1,
+        "L1": 3,
+        "L2": 2
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let L1,L2 be non empty \\/-SemiLattStr; let f be Function of L1,L2; attr f is \"\\/\"-preserving means :D1: for a"
+    },
+    {
+      "counts": {
+        "D2": 1,
+        "Function": 1,
+        "L1": 3,
+        "L2": 2
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let L1,L2 be non empty /\\-SemiLattStr; let f be Function of L1,L2; attr f is \"/\\\"-preserving means :D2: for a"
+    },
+    {
+      "counts": {
+        "Function": 2,
+        "L1": 8,
+        "L2": 4
+      },
+      "index": 2,
+      "kind": "registration",
+      "object": "registration_2",
+      "preview": "registration let L1,L2 be meet-absorbing join-absorbing meet-commutative non empty LattStr; cluster \"\\/\"-preserving \"/\\\""
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "Homomorphism": 2,
+        "L1": 4,
+        "L2": 4
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let L1,L2 be Lattice; mode Homomorphism of L1,L2 is \"\\/\"-preserving \"/\\\"-preserving Function of L1,L2; end; r"
+    },
+    {
+      "counts": {
+        "D1": 1
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem Th4: a1 [= b1 implies f.a1 [= f.b1 by D1;"
+    },
+    {
+      "counts": {
+        "D1": 1,
+        "Function": 1,
+        "L1": 1,
+        "L2": 1
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem Th5: f is one-to-one implies (a1 [= b1 iff (f.a1) [= (f.b1)) proof assume A1: f is one-to-one; reconsider f as F"
+    },
+    {
+      "counts": {
+        "Function": 1,
+        "L1": 2,
+        "L2": 2
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem Th6: ::: GROUP_6:58 for f being Function of L1,L2 holds f is onto implies for a2 being Element of L2 ex a1 being"
+    },
+    {
+      "counts": {
+        "Field": 12,
+        "Function": 2,
+        "Homomorphism": 1,
+        "L1": 25,
+        "L2": 20
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let L1,L2; redefine pred L1,L2 are_isomorphic means ex f st f is bijective; compatibility proof thus L1,L2 ar"
+    },
+    {
+      "counts": {
+        "L1": 3,
+        "L2": 3,
+        "preserves_bottom": 1,
+        "preserves_complement": 1,
+        "preserves_implication": 1,
+        "preserves_top": 1
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let L1,L2,f; pred f preserves_implication means f.(a1 => b1) = (f.a1) => (f.b1); pred f preserves_top means f"
+    },
+    {
+      "counts": {
+        "ClosedSubset": 1,
+        "Subset": 1,
+        "join-closed": 1,
+        "meet-closed": 1
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let L; mode ClosedSubset of L is meet-closed join-closed Subset of L; end;"
+    },
+    {
+      "counts": {
+        "ClosedSubset": 1,
+        "Subset": 1
+      },
+      "index": 7,
+      "kind": "theorem",
+      "object": "theorem_7",
+      "preview": "theorem Th7: the carrier of L is ClosedSubset of L proof the carrier of L c= the carrier of L; then reconsider F=the car"
+    },
+    {
+      "counts": {
+        "ClosedSubset": 2
+      },
+      "index": 3,
+      "kind": "registration",
+      "object": "registration_3",
+      "preview": "registration let L; cluster non empty for ClosedSubset of L; existence proof the carrier of L is ClosedSubset of L by Th"
+    },
+    {
+      "counts": {
+        "ClosedSubset": 1
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem for F being Filter of L holds F is ClosedSubset of L; reserve B for Element of Fin the carrier of L;"
+    },
+    {
+      "counts": {
+        "FinJoin": 2,
+        "FinMeet": 2
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let L,B; func FinJoin B -> Element of L equals FinJoin (B,id L); coherence; func FinMeet B -> Element of L eq"
+    },
+    {
+      "counts": {
+        "FinJoin": 2
+      },
+      "index": 9,
+      "kind": "theorem",
+      "object": "theorem_9",
+      "preview": "theorem Th9: FinJoin {.p.} = p proof thus FinJoin {.p.} =(the L_join of L) $$ ({.p.},id L) by LATTICE2:def 3 .= (id L).p"
+    },
+    {
+      "counts": {
+        "FinMeet": 2,
+        "Homomorphism": 1,
+        "L2": 1
+      },
+      "index": 10,
+      "kind": "theorem",
+      "object": "theorem_10",
+      "preview": "theorem Th10: FinMeet {.p.} = p proof set M = the L_meet of L; thus FinMeet {.p.} = M $$ ({.p.},id L) by LATTICE2:def 4 "
+    },
+    {
+      "counts": {
+        "D1": 2,
+        "D2": 3,
+        "L2": 3
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem Th11: f is onto implies L2 is distributive proof assume A1: f is onto; thus L2 is distributive proof let a,b,c b"
+    },
+    {
+      "counts": {
+        "D2": 1,
+        "Homomorphism": 2,
+        "L2": 6,
+        "preserves_bottom": 1
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem Th12: for f being Homomorphism of 0L,L2 st f is onto holds L2 is lower-bounded & f preserves_bottom proof let f "
+    },
+    {
+      "counts": {
+        "FinJoin": 4
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem Th13: FinJoin(B \\/ {.b.},f) = FinJoin (B,f) \"\\/\" f.b proof set J= the L_join of 0L; thus FinJoin (B \\/ {.b.},f) "
+    },
+    {
+      "counts": {
+        "FinJoin": 5
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem Th14: FinJoin(B \\/ {.b.}) = FinJoin B \"\\/\" b proof thus FinJoin(B \\/ {.b.}) =FinJoin (B,id 0L) \"\\/\" (id 0L).b by"
+    },
+    {
+      "counts": {
+        "FinJoin": 9,
+        "Function": 2
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem FinJoin B1 \"\\/\" FinJoin B2 = FinJoin (B1 \\/ B2) proof set J = the L_join of 0L; thus FinJoin (B1 \\/ B2) = J $$ ("
+    },
+    {
+      "counts": {
+        "FinJoin": 1
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem FinJoin {}.the carrier of 0L = Bottom 0L by Lm1;"
+    },
+    {
+      "counts": {
+        "ClosedSubset": 2,
+        "FinJoin": 4
+      },
+      "index": 17,
+      "kind": "theorem",
+      "object": "theorem_17",
+      "preview": "theorem Th17: for A being ClosedSubset of 0L st Bottom 0L in A for B holds B c= A implies FinJoin B in A proof let A be "
+    },
+    {
+      "counts": {
+        "D1": 1,
+        "FinMeet": 2,
+        "Function": 2,
+        "Homomorphism": 2,
+        "L2": 6,
+        "preserves_top": 1
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem Th18: for f being Homomorphism of 1L,L2 st f is onto holds L2 is upper-bounded & f preserves_top proof let f be "
+    },
+    {
+      "counts": {
+        "FinMeet": 1
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem FinMeet {}.the carrier of 1L = Top 1L by Lm2; reserve f,g for UnOp of the carrier of 1L;"
+    },
+    {
+      "counts": {
+        "FinMeet": 4
+      },
+      "index": 20,
+      "kind": "theorem",
+      "object": "theorem_20",
+      "preview": "theorem Th20: FinMeet(B \\/ {.b.},f) = FinMeet (B,f) \"/\\\" f.b proof set M= the L_meet of 1L; thus FinMeet (B \\/ {.b.},f) "
+    },
+    {
+      "counts": {
+        "FinMeet": 5
+      },
+      "index": 21,
+      "kind": "theorem",
+      "object": "theorem_21",
+      "preview": "theorem Th21: FinMeet(B \\/ {.b.}) = FinMeet B \"/\\\" b proof thus FinMeet(B \\/ {.b.}) =FinMeet (B,id 1L) \"/\\\" (id 1L).b by"
+    },
+    {
+      "counts": {
+        "FinMeet": 4
+      },
+      "index": 22,
+      "kind": "theorem",
+      "object": "theorem_22",
+      "preview": "theorem Th22: FinMeet(f.:B,g) = FinMeet(B,g*f) proof set M= the L_meet of 1L; thus FinMeet(f.:B,g) = M$$(f.:B,g) by LATT"
+    },
+    {
+      "counts": {
+        "FinMeet": 7
+      },
+      "index": 23,
+      "kind": "theorem",
+      "object": "theorem_23",
+      "preview": "theorem Th23: FinMeet B1 \"/\\\" FinMeet B2 = FinMeet (B1 \\/ B2) proof set M = the L_meet of 1L; thus FinMeet (B1 \\/ B2) = "
+    },
+    {
+      "counts": {
+        "ClosedSubset": 2,
+        "FinMeet": 5
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem Th24: for F being ClosedSubset of 1L st Top 1L in F for B holds B c= F implies FinMeet B in F proof let F be Clo"
+    },
+    {
+      "counts": {
+        "FinMeet": 6,
+        "Homomorphism": 1
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem Th25: FinMeet B \"\\/\" p = FinMeet (((the L_join of DL)[:](id DL,p)).:B) proof set J = the L_join of DL; set M = t"
+    },
+    {
+      "counts": {
+        "D2": 1
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem Th26: f.i \"/\\\" f.(i => j) [= f.j proof i \"/\\\" (i => j) [= j by FILTER_0:def 7; then f.(i \"/\\\" (i => j)) [= f.j b"
+    },
+    {
+      "counts": {
+        "D2": 1
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem Th27: f is one-to-one implies (f.i \"/\\\" f.k [= f.j implies f.k [= f.(i => j)) proof assume A1: f is one-to-one; "
+    },
+    {
+      "counts": {
+        "BL": 5,
+        "Homomorphism": 2,
+        "Subset": 1,
+        "preserves_implication": 1
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem f is bijective implies CL is implicative & f preserves_implication proof assume A1: f is bijective; thus CL is i"
+    },
+    {
+      "counts": {
+        "BL": 5
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem Th29: (Top BL)` = Bottom BL proof set a=Bottom BL; thus (Top BL)` = (a \"\\/\" a`)` by LATTICES:21 .= a` \"/\\\"a`` .="
+    },
+    {
+      "counts": {
+        "BL": 5
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem Th30: (Bottom BL)` = Top BL proof set a = Top BL; thus (Bottom BL)` = (a \"/\\\" a`)` by LATTICES:20 .= a` \"\\/\"a`` "
+    },
+    {
+      "counts": {
+        "BL": 3,
+        "D1": 1,
+        "D2": 1,
+        "Homomorphism": 1,
+        "preserves_bottom": 1,
+        "preserves_complement": 1,
+        "preserves_top": 1
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem f is onto implies CL is Boolean & f preserves_complement proof assume A1: f is onto; then A2: f preserves_top by"
+    },
+    {
+      "counts": {
+        "BL": 8,
+        "Field": 2,
+        "Subset": 2
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition let BL; mode Field of BL -> non empty Subset of BL means :Def9: a in it & b in it implies a \"/\\\" b in it & a`"
+    },
+    {
+      "counts": {
+        "BL": 6,
+        "Field": 1,
+        "Subset": 1
+      },
+      "index": 34,
+      "kind": "theorem",
+      "object": "theorem_34",
+      "preview": "theorem Th34: the carrier of BL is Field of BL proof the carrier of BL c= the carrier of BL; then reconsider F=the carri"
+    },
+    {
+      "counts": {
+        "BL": 1,
+        "ClosedSubset": 1
+      },
+      "index": 35,
+      "kind": "theorem",
+      "object": "theorem_35",
+      "preview": "theorem Th35: F is ClosedSubset of BL proof A1: for a,b st a in F & b in F holds a \"/\\\" b in F by Def9; for a,b st a in "
+    },
+    {
+      "counts": {
+        "BL": 15,
+        "Field": 8,
+        "Subset": 1,
+        "field_by": 1
+      },
+      "index": 9,
+      "kind": "definition",
+      "object": "definition_9",
+      "preview": "definition let BL,A; func field_by A -> Field of BL means :Def10: A c= it & for F st A c= F holds it c= F; existence pro"
+    },
+    {
+      "counts": {
+        "BL": 3,
+        "SetImp": 1,
+        "Subset": 1
+      },
+      "index": 10,
+      "kind": "definition",
+      "object": "definition_10",
+      "preview": "definition let BL,A; func SetImp A -> Subset of BL equals { a => b : a in A & b in A}; coherence proof set B={ a => b : "
+    },
+    {
+      "counts": {
+        "BL": 2,
+        "SetImp": 2
+      },
+      "index": 4,
+      "kind": "registration",
+      "object": "registration_4",
+      "preview": "registration let BL,A; cluster SetImp A -> non empty; coherence proof set x = the Element of A; set B={ a => b : a in A "
+    },
+    {
+      "counts": {
+        "SetImp": 1
+      },
+      "index": 36,
+      "kind": "theorem",
+      "object": "theorem_36",
+      "preview": "theorem x in SetImp A iff ex p,q st x = p => q & p in A & q in A;"
+    },
+    {
+      "counts": {
+        "SetImp": 2
+      },
+      "index": 37,
+      "kind": "theorem",
+      "object": "theorem_37",
+      "preview": "theorem Th37: c in SetImp A iff ex p,q st c = p` \"\\/\" q & p in A & q in A proof hereby assume c in SetImp A; then consid"
+    },
+    {
+      "counts": {
+        "BL": 11,
+        "Function": 3
+      },
+      "index": 11,
+      "kind": "definition",
+      "object": "definition_11",
+      "preview": "definition let BL; deffunc U(Element of BL) = $1`; func comp BL -> Function of the carrier of BL, the carrier of BL mean"
+    },
+    {
+      "counts": {
+        "BL": 6,
+        "FinJoin": 5
+      },
+      "index": 38,
+      "kind": "theorem",
+      "object": "theorem_38",
+      "preview": "theorem Th38: FinJoin(B \\/ {.b.},comp BL) = FinJoin (B,comp BL) \"\\/\" b` proof thus FinJoin(B \\/ {.b.},comp BL) = FinJoin"
+    },
+    {
+      "counts": {
+        "BL": 22,
+        "FinJoin": 2,
+        "FinMeet": 2
+      },
+      "index": 39,
+      "kind": "theorem",
+      "object": "theorem_39",
+      "preview": "theorem (FinJoin B)` = FinMeet (B,comp BL) proof set M= the L_meet of BL; set J= the L_join of BL; A1: for a,b being Ele"
+    },
+    {
+      "counts": {
+        "BL": 6,
+        "FinMeet": 5
+      },
+      "index": 40,
+      "kind": "theorem",
+      "object": "theorem_40",
+      "preview": "theorem FinMeet(B \\/ {.b.},comp BL) = FinMeet (B,comp BL) \"/\\\" b` proof thus FinMeet(B \\/ {.b.},comp BL) =FinMeet (B,com"
+    },
+    {
+      "counts": {
+        "BL": 22,
+        "FinJoin": 2,
+        "FinMeet": 2
+      },
+      "index": 41,
+      "kind": "theorem",
+      "object": "theorem_41",
+      "preview": "theorem Th41: (FinMeet B)` = FinJoin (B,comp BL) proof set M= the L_meet of BL; set J= the L_join of BL; A1: for a,b bei"
+    },
+    {
+      "counts": {
+        "BL": 66,
+        "ClosedSubset": 2,
+        "FinJoin": 34,
+        "FinMeet": 16,
+        "SetImp": 9
+      },
+      "index": 42,
+      "kind": "theorem",
+      "object": "theorem_42",
+      "preview": "theorem Th42: for AF being non empty ClosedSubset of BL st Bottom BL in AF & Top BL in AF for B holds B c= SetImp AF imp"
+    },
+    {
+      "counts": {
+        "BL": 15,
+        "ClosedSubset": 3,
+        "Field": 1,
+        "FinJoin": 1,
+        "FinMeet": 10,
+        "SetImp": 13,
+        "Subset": 1,
+        "field_by": 1
+      },
+      "index": 43,
+      "kind": "theorem",
+      "object": "theorem_43",
+      "preview": "theorem for AF being non empty ClosedSubset of BL st Bottom BL in AF & Top BL in AF holds { FinMeet B : B c= SetImp AF }"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/lattice4.miz"
+}

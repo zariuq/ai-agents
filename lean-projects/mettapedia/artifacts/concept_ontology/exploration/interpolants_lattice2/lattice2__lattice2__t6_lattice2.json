@@ -1,0 +1,187 @@
+{
+  "failure_kind": null,
+  "input_file": "/home/zar/claude/atps/datasets/extended_mptp5k/chainy/train/lattice2__lattice2__t6_lattice2",
+  "interpolant": "((sK15 = k9_funct_4(sK12,sK13,sK15,k2_partfun1(sK12,sK13,sK15,sK14))) | ~v1_funct_1(sK15) | ~m1_subset_1(sK15,k1_zfmisc_1(k2_zfmisc_1(sK12,sK13))))",
+  "interpolant_features": {
+    "avatar_component_count": 0,
+    "char_length": 147,
+    "conjunction_count": 0,
+    "disjunction_count": 2,
+    "distinct_symbol_count": 10,
+    "equality_count": 1,
+    "equivalence_count": 0,
+    "exists_count": 0,
+    "forall_count": 0,
+    "generated_symbol_count": 4,
+    "generated_symbols": [
+      "sK12",
+      "sK13",
+      "sK14",
+      "sK15"
+    ],
+    "implication_count": 0,
+    "inequality_count": 0,
+    "input_symbol_count": 6,
+    "input_symbols": [
+      "k1_zfmisc_1",
+      "k2_partfun1",
+      "k2_zfmisc_1",
+      "k9_funct_4",
+      "m1_subset_1",
+      "v1_funct_1"
+    ],
+    "negation_count": 2,
+    "symbols": [
+      "k1_zfmisc_1",
+      "k2_partfun1",
+      "k2_zfmisc_1",
+      "k9_funct_4",
+      "m1_subset_1",
+      "sK12",
+      "sK13",
+      "sK14",
+      "sK15",
+      "v1_funct_1"
+    ],
+    "token_count": 47,
+    "uses_only_shared_input_symbols": true
+  },
+  "interpolant_found": true,
+  "interpolant_source": "final",
+  "left_formula_count": 69,
+  "left_only_symbols": [
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "k1_funct_1"
+    },
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "k1_funct_4"
+    },
+    {
+      "arity": 0,
+      "kind": "function",
+      "name": "k1_xboole_0"
+    },
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "k5_relat_1"
+    },
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k9_xtuple_0"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "r1_tarski"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "r2_hidden"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "r2_tarski"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "v1_partfun1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_relat_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_zfmisc_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v2_funct_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v2_relat_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v3_funct_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v3_relat_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v4_funct_1"
+    }
+  ],
+  "original_role_counts": {
+    "axiom": 69,
+    "conjecture": 1
+  },
+  "return_code": 0,
+  "right_formula_count": 1,
+  "right_only_symbols": [],
+  "shared_symbols": [
+    {
+      "arity": 1,
+      "kind": "function",
+      "name": "k1_zfmisc_1"
+    },
+    {
+      "arity": 4,
+      "kind": "function",
+      "name": "k2_partfun1"
+    },
+    {
+      "arity": 2,
+      "kind": "function",
+      "name": "k2_zfmisc_1"
+    },
+    {
+      "arity": 4,
+      "kind": "function",
+      "name": "k9_funct_4"
+    },
+    {
+      "arity": 2,
+      "kind": "predicate",
+      "name": "m1_subset_1"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_funct_1"
+    },
+    {
+      "arity": 3,
+      "kind": "predicate",
+      "name": "v1_funct_2"
+    },
+    {
+      "arity": 1,
+      "kind": "predicate",
+      "name": "v1_xboole_0"
+    }
+  ],
+  "status": "Theorem",
+  "stderr": "",
+  "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\n% Refutation found. Thanks to Tanya!\n% SZS status Theorem for \n% SZS output start Proof for \n31.  IC1 ! [X0,X1,X2,X3] : ((v1_funct_1(X2) & m1_subset_1(X2,k1_zfmisc_1(k2_zfmisc_1(X0,X1)))) => k2_partfun1(X0,X1,X2,X3) = k5_relat_1(X2,X3)) [input(axiom)]\n32.  IC1 ! [X0,X1,X2,X3] : ((v1_funct_1(X2) & m1_subset_1(X2,k1_zfmisc_1(k2_zfmisc_1(X0,X1))) & v1_funct_1(X3) & m1_subset_1(X3,k1_zfmisc_1(k2_zfmisc_1(X0,X1)))) => k9_funct_4(X0,X1,X2,X3) = k1_funct_4(X2,X3)) [input(axiom)]\n35.  IC1 ! [X0,X1,X2,X3] : ((v1_funct_1(X2) & m1_subset_1(X2,k1_zfmisc_1(k2_zfmisc_1(X0,X1)))) => (v1_funct_1(k2_partfun1(X0,X1,X2,X3)) & m1_subset_1(k2_partfun1(X0,X1,X2,X3),k1_zfmisc_1(k2_zfmisc_1(X0,X1))))) [input(axiom)]\n37.  IC1 ! [X0,X1] : (v1_relat_1(X0) => v1_relat_1(k5_relat_1(X0,X1))) [input(axiom)]\n44.  IC1 ! [X0] : (v1_relat_1(X0) => ! [X1] : (m1_subset_1(X1,k1_zfmisc_1(X0)) => v1_relat_1(X1))) [input(axiom)]\n56.  IC1 ! [X0,X1] : v1_relat_1(k2_zfmisc_1(X0,X1)) [input(axiom)]\n57.  IC1 ! [X0,X1] : ((v1_relat_1(X0) & v1_funct_1(X0)) => (v1_relat_1(k5_relat_1(X0,X1)) & v1_funct_1(k5_relat_1(X0,X1)))) [input(axiom)]\n68.  IC1 ! [X0] : ((v1_relat_1(X0) & v1_funct_1(X0)) => ! [X1] : ((v1_relat_1(X1) & v1_funct_1(X1)) => (r1_tarski(X1,X0) => k1_funct_4(X0,X1) = X0))) [input(axiom)]\n69.  IC1 ! [X0] : ! [X1] : (v1_relat_1(X1) => r1_tarski(k5_relat_1(X1,X0),X1)) [input(axiom)]\n70.  IC2 ! [X0] : ! [X1] : (~v1_xboole_0(X1) => ! [X2] : (m1_subset_1(X2,k1_zfmisc_1(X0)) => ! [X3] : ((v1_funct_1(X3) & v1_funct_2(X3,X0,X1) & m1_subset_1(X3,k1_zfmisc_1(k2_zfmisc_1(X0,X1)))) => k9_funct_4(X0,X1,X3,k2_partfun1(X0,X1,X3,X2)) = X3))) [input(conjecture)]\n71. ~! [X0] : ! [X1] : (~v1_xboole_0(X1) => ! [X2] : (m1_subset_1(X2,k1_zfmisc_1(X0)) => ! [X3] : ((v1_funct_1(X3) & v1_funct_2(X3,X0,X1) & m1_subset_1(X3,k1_zfmisc_1(k2_zfmisc_1(X0,X1)))) => k9_funct_4(X0,X1,X3,k2_partfun1(X0,X1,X3,X2)) = X3))) [negated conjecture 70]\n87. ! [X0,X1] : (v1_relat_1(X1) => r1_tarski(k5_relat_1(X1,X0),X1)) [flattening 69]\n88. ~! [X0,X1] : (~v1_xboole_0(X1) => ! [X2] : (m1_subset_1(X2,k1_zfmisc_1(X0)) => ! [X3] : ((v1_funct_1(X3) & v1_funct_2(X3,X0,X1) & m1_subset_1(X3,k1_zfmisc_1(k2_zfmisc_1(X0,X1)))) => k9_funct_4(X0,X1,X3,k2_partfun1(X0,X1,X3,X2)) = X3))) [flattening 71]\n123. ! [X0,X1,X2,X3] : (k2_partfun1(X0,X1,X2,X3) = k5_relat_1(X2,X3) | (~v1_funct_1(X2) | ~m1_subset_1(X2,k1_zfmisc_1(k2_zfmisc_1(X0,X1))))) [ennf transformation 31]\n124. ! [X0,X1,X2,X3] : (k2_partfun1(X0,X1,X2,X3) = k5_relat_1(X2,X3) | ~v1_funct_1(X2) | ~m1_subset_1(X2,k1_zfmisc_1(k2_zfmisc_1(X0,X1)))) [flattening 123]\n125. ! [X0,X1,X2,X3] : (k9_funct_4(X0,X1,X2,X3) = k1_funct_4(X2,X3) | (~v1_funct_1(X2) | ~m1_subset_1(X2,k1_zfmisc_1(k2_zfmisc_1(X0,X1))) | ~v1_funct_1(X3) | ~m1_subset_1(X3,k1_zfmisc_1(k2_zfmisc_1(X0,X1))))) [ennf transformation 32]\n126. ! [X0,X1,X2,X3] : (k9_funct_4(X0,X1,X2,X3) = k1_funct_4(X2,X3) | ~v1_funct_1(X2) | ~m1_subset_1(X2,k1_zfmisc_1(k2_zfmisc_1(X0,X1))) | ~v1_funct_1(X3) | ~m1_subset_1(X3,k1_zfmisc_1(k2_zfmisc_1(X0,X1)))) [flattening 125]\n129. ! [X0,X1,X2,X3] : ((v1_funct_1(k2_partfun1(X0,X1,X2,X3)) & m1_subset_1(k2_partfun1(X0,X1,X2,X3),k1_zfmisc_1(k2_zfmisc_1(X0,X1)))) | (~v1_funct_1(X2) | ~m1_subset_1(X2,k1_zfmisc_1(k2_zfmisc_1(X0,X1))))) [ennf transformation 35]\n130. ! [X0,X1,X2,X3] : ((v1_funct_1(k2_partfun1(X0,X1,X2,X3)) & m1_subset_1(k2_partfun1(X0,X1,X2,X3),k1_zfmisc_1(k2_zfmisc_1(X0,X1)))) | ~v1_funct_1(X2) | ~m1_subset_1(X2,k1_zfmisc_1(k2_zfmisc_1(X0,X1)))) [flattening 129]\n131. ! [X0,X1] : (v1_relat_1(k5_relat_1(X0,X1)) | ~v1_relat_1(X0)) [ennf transformation 37]\n140. ! [X0] : (! [X1] : (v1_relat_1(X1) | ~m1_subset_1(X1,k1_zfmisc_1(X0))) | ~v1_relat_1(X0)) [ennf transformation 44]\n162. ! [X0,X1] : ((v1_relat_1(k5_relat_1(X0,X1)) & v1_funct_1(k5_relat_1(X0,X1))) | (~v1_relat_1(X0) | ~v1_funct_1(X0))) [ennf transformation 57]\n163. ! [X0,X1] : ((v1_relat_1(k5_relat_1(X0,X1)) & v1_funct_1(k5_relat_1(X0,X1))",
+  "strip_numerals": true
+}

@@ -1,0 +1,70 @@
+{
+  "cluster_name": "lattice2_t18_t19_unity_extremum_family",
+  "common_hypotheses": [
+    "~v2_struct_0(A)",
+    "v10_lattices(A)",
+    "l3_lattices(A)",
+    "v1_setwiseo(OP(A), u1_struct_0(A))"
+  ],
+  "common_symbols": [
+    "k3_binop_1",
+    "l3_lattices",
+    "u1_struct_0",
+    "v10_lattices",
+    "v1_setwiseo",
+    "v2_struct_0"
+  ],
+  "instances": [
+    {
+      "conjecture": "(! [A] : ( ( ~ (v2_struct_0(A)) & (v10_lattices(A) & l3_lattices(A)) ) => (v1_setwiseo(u2_lattices(A), u1_struct_0(A)) => k5_lattices(A)=k3_binop_1(u1_struct_0(A), u2_lattices(A))) ) )",
+      "path": "/home/zar/claude/atps/datasets/extended_mptp5k/chainy/train/lattice2__lattice2__t18_lattice2",
+      "problem": "lattice2__lattice2__t18_lattice2",
+      "record_name": "t18_lattice2",
+      "selector_family": "encoded-u2-unity",
+      "selector_term": "u2_lattices(A)",
+      "symbols": [
+        "k3_binop_1",
+        "k5_lattices",
+        "l3_lattices",
+        "u1_struct_0",
+        "u2_lattices",
+        "v10_lattices",
+        "v1_setwiseo",
+        "v2_struct_0"
+      ],
+      "target_family": "k5-extremum",
+      "target_term": "k5_lattices(A)",
+      "unity_term": "k3_binop_1(u1_struct_0(A), u2_lattices(A))"
+    },
+    {
+      "conjecture": "(! [A] : ( ( ~ (v2_struct_0(A)) & (v10_lattices(A) & l3_lattices(A)) ) => (v1_setwiseo(u1_lattices(A), u1_struct_0(A)) => k6_lattices(A)=k3_binop_1(u1_struct_0(A), u1_lattices(A))) ) )",
+      "path": "/home/zar/claude/atps/datasets/extended_mptp5k/chainy/train/lattice2__lattice2__t19_lattice2",
+      "problem": "lattice2__lattice2__t19_lattice2",
+      "record_name": "t19_lattice2",
+      "selector_family": "encoded-u1-unity",
+      "selector_term": "u1_lattices(A)",
+      "symbols": [
+        "k3_binop_1",
+        "k6_lattices",
+        "l3_lattices",
+        "u1_lattices",
+        "u1_struct_0",
+        "v10_lattices",
+        "v1_setwiseo",
+        "v2_struct_0"
+      ],
+      "target_family": "k6-extremum",
+      "target_term": "k6_lattices(A)",
+      "unity_term": "k3_binop_1(u1_struct_0(A), u1_lattices(A))"
+    }
+  ],
+  "problems": [
+    "lattice2__lattice2__t18_lattice2",
+    "lattice2__lattice2__t19_lattice2"
+  ],
+  "schema_kind": "unity_extremum_identification",
+  "schema_template": {
+    "formula": "(! [A] : ((~v2_struct_0(A) & (v10_lattices(A) & l3_lattices(A))) => (v1_setwiseo(OP(A), u1_struct_0(A)) => TARGET(A)=k3_binop_1(u1_struct_0(A), OP(A)))))",
+    "prose": "In a nonempty bounded lattice context, if the selected lattice operation is setwise on the carrier, then its induced unity term is the corresponding distinguished extremal element."
+  }
+}

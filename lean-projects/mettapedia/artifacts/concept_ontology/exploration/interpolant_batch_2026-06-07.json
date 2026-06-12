@@ -1,0 +1,67 @@
+{
+  "rows": [
+    {
+      "problem": "lattice2__lattice2__t6_lattice2",
+      "family": "lattice2",
+      "strip_numerals": false,
+      "status": "Theorem",
+      "failure_kind": null,
+      "interpolant_found": true,
+      "interpolant_source": "final",
+      "char_length": 147,
+      "distinct_symbol_count": 10,
+      "generated_symbol_count": 4,
+      "avatar_component_count": 0,
+      "uses_only_shared_input_symbols": true
+    },
+    {
+      "problem": "lattice2__lattice2__t12_lattice2",
+      "family": "lattice2",
+      "strip_numerals": true,
+      "status": "Theorem",
+      "failure_kind": null,
+      "interpolant_found": true,
+      "interpolant_source": "pre_simplification",
+      "char_length": 67,
+      "distinct_symbol_count": 0,
+      "generated_symbol_count": 0,
+      "avatar_component_count": 3,
+      "uses_only_shared_input_symbols": true
+    },
+    {
+      "problem": "lattice2__lattice2__t14_lattice2",
+      "family": "lattice2",
+      "strip_numerals": true,
+      "status": "Theorem",
+      "failure_kind": null,
+      "interpolant_found": true,
+      "interpolant_source": "pre_simplification",
+      "char_length": 250,
+      "distinct_symbol_count": 0,
+      "generated_symbol_count": 0,
+      "avatar_component_count": 1,
+      "uses_only_shared_input_symbols": true
+    },
+    {
+      "problem": "conlat_2__t18_conlat_2",
+      "family": "conlat_2",
+      "strip_numerals": true,
+      "status": null,
+      "failure_kind": "timeout",
+      "interpolant_found": false,
+      "interpolant_source": null,
+      "char_length": null,
+      "distinct_symbol_count": null,
+      "generated_symbol_count": null,
+      "avatar_component_count": null,
+      "uses_only_shared_input_symbols": null
+    }
+  ],
+  "counts": {
+    "total": 4,
+    "interpolant_found": 3,
+    "final_interpolant": 1,
+    "pre_simplification_interpolant": 2,
+    "timeout": 1
+  }
+}

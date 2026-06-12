@@ -1,0 +1,169 @@
+{
+  "batch": [
+    "lattice2__lattice2__t12_lattice2",
+    "lattice2__lattice2__t13_lattice2",
+    "lattice2__lattice2__t14_lattice2",
+    "lattice2__lattice2__t15_lattice2",
+    "lattice2__lattice2__t16_lattice2",
+    "lattice2__lattice2__t17_lattice2",
+    "lattice2__lattice2__t18_lattice2",
+    "lattice2__lattice2__t19_lattice2",
+    "conlat_2__l19_conlat_2",
+    "conlat_2__l20_conlat_2",
+    "conlat_2__l21_conlat_2",
+    "conlat_2__t10_conlat_2"
+  ],
+  "rows": [
+    {
+      "problem": "lattice2__lattice2__t12_lattice2",
+      "family": "lattice2",
+      "strip_numerals": false,
+      "finite_model_found": false,
+      "status": null,
+      "return_code": 4,
+      "domain_size": null,
+      "predicate_count": 0,
+      "function_count": 0,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nUser error: Failed to create predicate application for v13_struct_0 of type ($i * $i) > $o\nThe sort $int of the intended term argument 1 (at index 1) is not an instance of sort $i (detected at or around line 14 in file <stdin>)\n"
+    },
+    {
+      "problem": "lattice2__lattice2__t13_lattice2",
+      "family": "lattice2",
+      "strip_numerals": false,
+      "finite_model_found": false,
+      "status": null,
+      "return_code": 4,
+      "domain_size": null,
+      "predicate_count": 0,
+      "function_count": 0,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nUser error: Failed to create predicate application for v13_struct_0 of type ($i * $i) > $o\nThe sort $int of the intended term argument 1 (at index 1) is not an instance of sort $i (detected at or around line 18 in file <stdin>)\n"
+    },
+    {
+      "problem": "lattice2__lattice2__t14_lattice2",
+      "family": "lattice2",
+      "strip_numerals": false,
+      "finite_model_found": false,
+      "status": null,
+      "return_code": 4,
+      "domain_size": null,
+      "predicate_count": 0,
+      "function_count": 0,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nUser error: Failed to create predicate application for v13_struct_0 of type ($i * $i) > $o\nThe sort $int of the intended term argument 1 (at index 1) is not an instance of sort $i (detected at or around line 18 in file <stdin>)\n"
+    },
+    {
+      "problem": "lattice2__lattice2__t15_lattice2",
+      "family": "lattice2",
+      "strip_numerals": false,
+      "finite_model_found": false,
+      "status": null,
+      "return_code": 4,
+      "domain_size": null,
+      "predicate_count": 0,
+      "function_count": 0,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nUser error: Failed to create predicate application for v13_struct_0 of type ($i * $i) > $o\nThe sort $int of the intended term argument 1 (at index 1) is not an instance of sort $i (detected at or around line 19 in file <stdin>)\n"
+    },
+    {
+      "problem": "lattice2__lattice2__t16_lattice2",
+      "family": "lattice2",
+      "strip_numerals": false,
+      "finite_model_found": false,
+      "status": null,
+      "return_code": 4,
+      "domain_size": null,
+      "predicate_count": 0,
+      "function_count": 0,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nUser error: Failed to create predicate application for v13_struct_0 of type ($i * $i) > $o\nThe sort $int of the intended term argument 1 (at index 1) is not an instance of sort $i (detected at or around line 20 in file <stdin>)\n"
+    },
+    {
+      "problem": "lattice2__lattice2__t17_lattice2",
+      "family": "lattice2",
+      "strip_numerals": false,
+      "finite_model_found": false,
+      "status": null,
+      "return_code": 4,
+      "domain_size": null,
+      "predicate_count": 0,
+      "function_count": 0,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nUser error: Failed to create predicate application for v13_struct_0 of type ($i * $i) > $o\nThe sort $int of the intended term argument 1 (at index 1) is not an instance of sort $i (detected at or around line 21 in file <stdin>)\n"
+    },
+    {
+      "problem": "lattice2__lattice2__t18_lattice2",
+      "family": "lattice2",
+      "strip_numerals": false,
+      "finite_model_found": false,
+      "status": null,
+      "return_code": 4,
+      "domain_size": null,
+      "predicate_count": 0,
+      "function_count": 0,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nUser error: Failed to create predicate application for v13_struct_0 of type ($i * $i) > $o\nThe sort $int of the intended term argument 1 (at index 1) is not an instance of sort $i (detected at or around line 22 in file <stdin>)\n"
+    },
+    {
+      "problem": "lattice2__lattice2__t19_lattice2",
+      "family": "lattice2",
+      "strip_numerals": false,
+      "finite_model_found": false,
+      "status": null,
+      "return_code": 4,
+      "domain_size": null,
+      "predicate_count": 0,
+      "function_count": 0,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nUser error: Failed to create predicate application for v13_struct_0 of type ($i * $i) > $o\nThe sort $int of the intended term argument 1 (at index 1) is not an instance of sort $i (detected at or around line 23 in file <stdin>)\n"
+    },
+    {
+      "problem": "conlat_2__l19_conlat_2",
+      "family": "conlat_2",
+      "strip_numerals": true,
+      "finite_model_found": false,
+      "status": null,
+      "return_code": 1,
+      "domain_size": null,
+      "predicate_count": 0,
+      "function_count": 0,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nMonotonicity information:\nSort Inference information:\n2 inferred subsorts\nSubsort 0 has 7 constants and 24 functions\nSubsort 1 has 4 constants and 0 functions\nFound bound of 4 for subsort 1\n1 distinct sorts\n0 has 3 inferred subsorts as members [0,1,2]\nVampire to distinct sort mapping:\n[$i]\n% TRYING [1]\n% TRYING [2]\n% TRYING [3]\n% TRYING [4]\n% TRYING [5]\n% TRYING [6]\n% TRYING [7]\n% TRYING [8]\n% Time limit reached! \n%"
+    },
+    {
+      "problem": "conlat_2__l20_conlat_2",
+      "family": "conlat_2",
+      "strip_numerals": true,
+      "finite_model_found": false,
+      "status": null,
+      "return_code": 1,
+      "domain_size": null,
+      "predicate_count": 0,
+      "function_count": 0,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nMonotonicity information:\nSort Inference information:\n2 inferred subsorts\nSubsort 0 has 7 constants and 42 functions\nSubsort 1 has 4 constants and 0 functions\nFound bound of 4 for subsort 1\n1 distinct sorts\n0 has 3 inferred subsorts as members [0,1,2]\nVampire to distinct sort mapping:\n[$i]\n% TRYING [1]\n% TRYING [2]\n% TRYING [3]\n% TRYING [4]\n% TRYING [5]\n% TRYING [6]\n% Time limit reached! \n% -------------------------"
+    },
+    {
+      "problem": "conlat_2__l21_conlat_2",
+      "family": "conlat_2",
+      "strip_numerals": true,
+      "finite_model_found": false,
+      "status": null,
+      "return_code": 1,
+      "domain_size": null,
+      "predicate_count": 0,
+      "function_count": 0,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nMonotonicity information:\nSort Inference information:\n3 inferred subsorts\nSubsort 0 has 7 constants and 24 functions\nSubsort 1 has 4 constants and 0 functions\nSubsort 2 has 1 constants and 1 functions\nFound bound of 4 for subsort 1\n1 distinct sorts\n0 has 4 inferred subsorts as members [0,1,2,3]\nVampire to distinct sort mapping:\n[$i]\n% TRYING [1]\n% TRYING [2]\n% TRYING [3]\n% TRYING [4]\n% TRYING [5]\n% TRYING [6]\n% TRYI"
+    },
+    {
+      "problem": "conlat_2__t10_conlat_2",
+      "family": "conlat_2",
+      "strip_numerals": true,
+      "finite_model_found": false,
+      "status": null,
+      "return_code": 1,
+      "domain_size": null,
+      "predicate_count": 0,
+      "function_count": 0,
+      "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nMonotonicity information:\nSort Inference information:\n2 inferred subsorts\nSubsort 0 has 7 constants and 51 functions\nSubsort 1 has 11 constants and 2 functions\n1 distinct sorts\n0 has 3 inferred subsorts as members [0,1,2]\nVampire to distinct sort mapping:\n[$i]\n% TRYING [1]\n% TRYING [2]\n% TRYING [3]\n% TRYING [4]\n% TRYING [5]\n% TRYING [6]\n% Time limit reached! \n% ------------------------------\n% Version: Vampire 5.0.1"
+    }
+  ],
+  "counts": {
+    "total": 12,
+    "finite_model_found": 0,
+    "no_model_or_timeout": 12,
+    "lattice2_found": 0,
+    "conlat_2_found": 0
+  }
+}

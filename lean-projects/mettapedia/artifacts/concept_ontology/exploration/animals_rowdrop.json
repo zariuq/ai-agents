@@ -1,0 +1,312 @@
+{
+  "credal_summary": {
+    "intent_support_histogram": {
+      "2": 21,
+      "3": 14
+    },
+    "lower_concept_count": 2,
+    "stable_concept_count": 2,
+    "support_histogram": {
+      "1": 64,
+      "2": 7,
+      "3": 2
+    },
+    "unstable_concept_count": 71,
+    "upper_concept_count": 73
+  },
+  "dataset": {
+    "attributes": 11,
+    "is_binary": true,
+    "kind": "cxt",
+    "max_count": 1,
+    "name": "animals_en.cxt",
+    "objects": 35,
+    "source": "https://github.com/fcatools/contexts/raw/main/contexts/animals_en.cxt"
+  },
+  "gate_family": {
+    "concept_count_by_gate": [
+      25,
+      30,
+      29
+    ],
+    "densities": [
+      0.24415584415584415,
+      0.22857142857142856,
+      0.2545454545454545
+    ],
+    "distinct_concept_families": 3,
+    "gate_count": 3,
+    "labels": [
+      "drop_rows_mod3_eq_0",
+      "drop_rows_mod3_eq_1",
+      "drop_rows_mod3_eq_2"
+    ]
+  },
+  "samples": {
+    "unstable_concepts": [
+      {
+        "extent": [
+          "alligator"
+        ],
+        "extent_size": 1,
+        "gate_support": 2,
+        "intent": [
+          "eggs",
+          "man-eater",
+          "lives in water",
+          "airbreather",
+          "four-legged",
+          "scales"
+        ],
+        "intent_size": 6
+      },
+      {
+        "extent": [
+          "cat"
+        ],
+        "extent_size": 1,
+        "gate_support": 2,
+        "intent": [
+          "nocturnal",
+          "pet",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 6
+      },
+      {
+        "extent": [
+          "rattler"
+        ],
+        "extent_size": 1,
+        "gate_support": 2,
+        "intent": [
+          "eggs",
+          "nocturnal",
+          "airbreather",
+          "scales"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "parakeet"
+        ],
+        "extent_size": 1,
+        "gate_support": 2,
+        "intent": [
+          "eggs",
+          "pet",
+          "airbreather",
+          "warmblooded"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "chicken"
+        ],
+        "extent_size": 1,
+        "gate_support": 2,
+        "intent": [
+          "eggs",
+          "livestock",
+          "airbreather",
+          "warmblooded"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "alligator",
+          "trout",
+          "stingray"
+        ],
+        "extent_size": 3,
+        "gate_support": 2,
+        "intent": [
+          "eggs",
+          "lives in water",
+          "scales"
+        ],
+        "intent_size": 3
+      },
+      {
+        "extent": [
+          "rattler",
+          "tarantula"
+        ],
+        "extent_size": 2,
+        "gate_support": 2,
+        "intent": [
+          "eggs",
+          "nocturnal",
+          "airbreather"
+        ],
+        "intent_size": 3
+      },
+      {
+        "extent": [
+          "cat",
+          "skunk",
+          "possum"
+        ],
+        "extent_size": 3,
+        "gate_support": 1,
+        "intent": [
+          "nocturnal",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 5
+      },
+      {
+        "extent": [
+          "lion",
+          "tiger",
+          "bear"
+        ],
+        "extent_size": 3,
+        "gate_support": 1,
+        "intent": [
+          "man-eater",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 5
+      },
+      {
+        "extent": [
+          "horse",
+          "cow",
+          "sheep"
+        ],
+        "extent_size": 3,
+        "gate_support": 1,
+        "intent": [
+          "livestock",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 5
+      }
+    ],
+    "unstable_intents": [
+      {
+        "gate_support": 2,
+        "intent": [
+          "eggs",
+          "man-eater",
+          "lives in water",
+          "airbreather",
+          "four-legged",
+          "scales"
+        ],
+        "intent_size": 6
+      },
+      {
+        "gate_support": 2,
+        "intent": [
+          "nocturnal",
+          "pet",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 6
+      },
+      {
+        "gate_support": 2,
+        "intent": [
+          "nocturnal",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 5
+      },
+      {
+        "gate_support": 2,
+        "intent": [
+          "pet",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 5
+      },
+      {
+        "gate_support": 2,
+        "intent": [
+          "eggs",
+          "nocturnal",
+          "airbreather",
+          "scales"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 2,
+        "intent": [
+          "eggs",
+          "pet",
+          "airbreather",
+          "warmblooded"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 2,
+        "intent": [
+          "eggs",
+          "livestock",
+          "airbreather",
+          "warmblooded"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 2,
+        "intent": [
+          "eggs",
+          "airbreather",
+          "four-legged",
+          "scales"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 2,
+        "intent": [
+          "eggs",
+          "nocturnal",
+          "airbreather"
+        ],
+        "intent_size": 3
+      },
+      {
+        "gate_support": 2,
+        "intent": [
+          "eggs",
+          "lives in water",
+          "scales"
+        ],
+        "intent_size": 3
+      }
+    ]
+  },
+  "theoretical_notes": [
+    "Binary FCA contexts need uncertainty from the observation family itself; row-drop gates probe robustness under partial observation rather than graded cell weights."
+  ]
+}

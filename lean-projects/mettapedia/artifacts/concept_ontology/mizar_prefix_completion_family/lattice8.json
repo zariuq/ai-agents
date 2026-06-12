@@ -1,0 +1,581 @@
+{
+  "article": "lattice8",
+  "attributes": [
+    "Aq",
+    "BiFunction",
+    "ConsecutiveDelta2",
+    "ConsecutiveSet2",
+    "ExtensionSeq2",
+    "Function",
+    "NextDelta2",
+    "NextSet2",
+    "Quadr2",
+    "finitely_typed",
+    "has_a_representation_of_type",
+    "is_extension2_of",
+    "new_bi_fun2",
+    "new_set2"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "finitely_typed": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let L be RelStr; attr L is finitely_typed means :Def1: ex A being non empty set st (for e being object st e i"
+    },
+    {
+      "counts": {
+        "finitely_typed": 1,
+        "has_a_representation_of_type": 1
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let L be lower-bounded LATTICE; let n be Element of NAT; pred L has_a_representation_of_type<= n means ex A b"
+    },
+    {
+      "counts": {
+        "finitely_typed": 2
+      },
+      "index": 2,
+      "kind": "registration",
+      "object": "registration_2",
+      "preview": "registration let A be non trivial set; cluster non trivial finitely_typed full for non empty Sublattice of EqRelLATT A; "
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem for L1,L2 be lower-bounded LATTICE for f being Function of L1,L2 st f is infs-preserving sups-preserving holds f"
+    },
+    {
+      "counts": {
+        "Function": 1
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem Th5: for L1,L2 be lower-bounded LATTICE st L1,L2 are_isomorphic & L1 is modular holds L2 is modular proof let L1"
+    },
+    {
+      "counts": {
+        "Function": 2
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem Th6: for S being lower-bounded non empty Poset for T being non empty Poset for f being monotone Function of S,T "
+    },
+    {
+      "counts": {
+        "finitely_typed": 2
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem Th8: for A being non trivial set for L being finitely_typed full non empty Sublattice of EqRelLATT A for e being"
+    },
+    {
+      "counts": {
+        "finitely_typed": 1,
+        "has_a_representation_of_type": 3
+      },
+      "index": 9,
+      "kind": "theorem",
+      "object": "theorem_9",
+      "preview": "theorem Th9: for L be lower-bounded LATTICE holds L has_a_representation_of_type<= 2 implies L is modular proof let L be"
+    },
+    {
+      "counts": {
+        "new_set2": 1
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let A be set; func new_set2 A -> set equals A \\/ {{A}, {{A}}}; correctness; end;"
+    },
+    {
+      "counts": {
+        "new_set2": 1
+      },
+      "index": 3,
+      "kind": "registration",
+      "object": "registration_3",
+      "preview": "registration let A be set; cluster new_set2 A -> non empty; coherence; end;"
+    },
+    {
+      "counts": {
+        "BiFunction": 4,
+        "Function": 1,
+        "new_bi_fun2": 1,
+        "new_set2": 16
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let A be non empty set; let L be lower-bounded LATTICE; let d be BiFunction of A,L; let q be Element of [:A,A"
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "new_bi_fun2": 2,
+        "new_set2": 2
+      },
+      "index": 10,
+      "kind": "theorem",
+      "object": "theorem_10",
+      "preview": "theorem Th10: for A being non empty set for L being lower-bounded LATTICE for d being BiFunction of A,L st d is zeroed f"
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "new_bi_fun2": 2,
+        "new_set2": 1
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem Th11: for A being non empty set for L being lower-bounded LATTICE for d being BiFunction of A,L st d is symmetri"
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "new_bi_fun2": 2,
+        "new_set2": 18
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem Th12: for A being non empty set for L being lower-bounded LATTICE st L is modular for d being BiFunction of A,L "
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "new_bi_fun2": 2,
+        "new_set2": 3
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem Th13: for A being non empty set for L being lower-bounded LATTICE for d be BiFunction of A,L for q be Element of"
+    },
+    {
+      "counts": {
+        "ConsecutiveSet2": 1,
+        "new_set2": 2
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let A be non empty set; let O be Ordinal; func ConsecutiveSet2(A,O) -> set means :Def5: ex L0 being Sequence "
+    },
+    {
+      "counts": {
+        "ConsecutiveSet2": 2,
+        "new_set2": 1
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem Th14: for A being non empty set holds ConsecutiveSet2(A,0) = A proof deffunc D(set,Sequence) = union rng $2; def"
+    },
+    {
+      "counts": {
+        "ConsecutiveSet2": 3,
+        "new_set2": 2
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem Th15: for A being non empty set for O being Ordinal holds ConsecutiveSet2(A,succ O) = new_set2 ConsecutiveSet2(A"
+    },
+    {
+      "counts": {
+        "ConsecutiveSet2": 3,
+        "new_set2": 1
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem Th16: for A being non empty set for O being Ordinal for T being Sequence holds O <> 0 & O is limit_ordinal & dom"
+    },
+    {
+      "counts": {
+        "ConsecutiveSet2": 10,
+        "new_set2": 1
+      },
+      "index": 4,
+      "kind": "registration",
+      "object": "registration_4",
+      "preview": "registration let A be non empty set; let O be Ordinal; cluster ConsecutiveSet2(A,O) -> non empty; coherence proof defpre"
+    },
+    {
+      "counts": {
+        "ConsecutiveSet2": 11,
+        "new_set2": 1
+      },
+      "index": 17,
+      "kind": "theorem",
+      "object": "theorem_17",
+      "preview": "theorem Th17: for A being non empty set for O being Ordinal holds A c= ConsecutiveSet2(A,O) proof let A be non empty set"
+    },
+    {
+      "counts": {
+        "BiFunction": 1,
+        "ConsecutiveSet2": 6,
+        "Quadr2": 1
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let A be non empty set; let L be lower-bounded LATTICE; let d be BiFunction of A,L; let q be QuadrSeq of d; l"
+    },
+    {
+      "counts": {
+        "BiFunction": 1,
+        "ConsecutiveDelta2": 1,
+        "ConsecutiveSet2": 2,
+        "Quadr2": 2,
+        "new_bi_fun2": 2
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let A be non empty set; let L be lower-bounded LATTICE; let d be BiFunction of A,L; let q be QuadrSeq of d; l"
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "ConsecutiveDelta2": 2,
+        "ConsecutiveSet2": 1,
+        "Quadr2": 1,
+        "new_bi_fun2": 1
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem Th18: for A being non empty set for L be lower-bounded LATTICE for d being BiFunction of A,L for q being QuadrSe"
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "ConsecutiveDelta2": 3,
+        "ConsecutiveSet2": 2,
+        "Quadr2": 2,
+        "new_bi_fun2": 2
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem Th19: for A being non empty set for L be lower-bounded LATTICE for d be BiFunction of A,L for q being QuadrSeq o"
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "ConsecutiveDelta2": 3,
+        "ConsecutiveSet2": 1,
+        "Quadr2": 1,
+        "new_bi_fun2": 1
+      },
+      "index": 20,
+      "kind": "theorem",
+      "object": "theorem_20",
+      "preview": "theorem Th20: for A being non empty set for L be lower-bounded LATTICE for d be BiFunction of A,L for q being QuadrSeq o"
+    },
+    {
+      "counts": {
+        "ConsecutiveSet2": 15,
+        "new_set2": 2
+      },
+      "index": 21,
+      "kind": "theorem",
+      "object": "theorem_21",
+      "preview": "theorem Th21: for A being non empty set for O,O1,O2 being Ordinal holds O1 c= O2 implies ConsecutiveSet2(A,O1) c= Consec"
+    },
+    {
+      "counts": {
+        "BiFunction": 11,
+        "ConsecutiveDelta2": 20,
+        "ConsecutiveSet2": 35,
+        "Function": 3,
+        "Quadr2": 4,
+        "new_bi_fun2": 4,
+        "new_set2": 1
+      },
+      "index": 22,
+      "kind": "theorem",
+      "object": "theorem_22",
+      "preview": "theorem Th22: for A being non empty set for L be lower-bounded LATTICE for d be BiFunction of A,L for q being QuadrSeq o"
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "ConsecutiveDelta2": 1,
+        "ConsecutiveSet2": 1
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition let A be non empty set; let L be lower-bounded LATTICE; let d be BiFunction of A,L; let q be QuadrSeq of d; l"
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "ConsecutiveDelta2": 12,
+        "ConsecutiveSet2": 1,
+        "Quadr2": 2,
+        "new_bi_fun2": 2
+      },
+      "index": 23,
+      "kind": "theorem",
+      "object": "theorem_23",
+      "preview": "theorem Th23: for A being non empty set for L be lower-bounded LATTICE for d be BiFunction of A,L for q being QuadrSeq o"
+    },
+    {
+      "counts": {
+        "BiFunction": 2,
+        "ConsecutiveDelta2": 16,
+        "ConsecutiveSet2": 1,
+        "Quadr2": 2,
+        "new_bi_fun2": 2
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem Th24: for A being non empty set for L be lower-bounded LATTICE for d being BiFunction of A,L for O1,O2 being Ord"
+    },
+    {
+      "counts": {
+        "BiFunction": 4,
+        "ConsecutiveDelta2": 17,
+        "ConsecutiveSet2": 13,
+        "Quadr2": 4,
+        "new_bi_fun2": 4,
+        "new_set2": 1
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem Th25: for A being non empty set for L be lower-bounded LATTICE for d be BiFunction of A,L st d is zeroed for q b"
+    },
+    {
+      "counts": {
+        "BiFunction": 5,
+        "ConsecutiveDelta2": 25,
+        "ConsecutiveSet2": 23,
+        "Quadr2": 4,
+        "new_bi_fun2": 4,
+        "new_set2": 1
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem Th26: for A being non empty set for L be lower-bounded LATTICE for d be BiFunction of A,L st d is symmetric for "
+    },
+    {
+      "counts": {
+        "BiFunction": 6,
+        "ConsecutiveDelta2": 34,
+        "ConsecutiveSet2": 54,
+        "Quadr2": 9,
+        "new_bi_fun2": 4,
+        "new_set2": 1
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem Th27: for A being non empty set for L being lower-bounded LATTICE st L is modular for d be BiFunction of A,L st "
+    },
+    {
+      "counts": {
+        "ConsecutiveDelta2": 1,
+        "ConsecutiveSet2": 1
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem for A being non empty set for L being lower-bounded modular LATTICE for d being distance_function of A,L for O b"
+    },
+    {
+      "counts": {
+        "BiFunction": 1,
+        "ConsecutiveSet2": 1,
+        "NextSet2": 1
+      },
+      "index": 9,
+      "kind": "definition",
+      "object": "definition_9",
+      "preview": "definition let A be non empty set; let L be lower-bounded LATTICE; let d be BiFunction of A,L; func NextSet2(d) -> set e"
+    },
+    {
+      "counts": {
+        "BiFunction": 1,
+        "NextSet2": 1
+      },
+      "index": 5,
+      "kind": "registration",
+      "object": "registration_5",
+      "preview": "registration let A be non empty set; let L be lower-bounded LATTICE; let d be BiFunction of A,L; cluster NextSet2(d) -> "
+    },
+    {
+      "counts": {
+        "BiFunction": 1,
+        "ConsecutiveDelta2": 1,
+        "NextDelta2": 1
+      },
+      "index": 10,
+      "kind": "definition",
+      "object": "definition_10",
+      "preview": "definition let A be non empty set; let L be lower-bounded LATTICE; let d be BiFunction of A,L; let q be QuadrSeq of d; f"
+    },
+    {
+      "counts": {
+        "NextDelta2": 1,
+        "NextSet2": 1
+      },
+      "index": 11,
+      "kind": "definition",
+      "object": "definition_11",
+      "preview": "definition let A be non empty set; let L be lower-bounded modular LATTICE; let d be distance_function of A,L; let q be Q"
+    },
+    {
+      "counts": {
+        "Aq": 4,
+        "NextDelta2": 1,
+        "NextSet2": 1,
+        "is_extension2_of": 1
+      },
+      "index": 12,
+      "kind": "definition",
+      "object": "definition_12",
+      "preview": "definition let A be non empty set; let L be lower-bounded LATTICE; let d be distance_function of A,L; let Aq be non empt"
+    },
+    {
+      "counts": {
+        "Aq": 9,
+        "BiFunction": 1,
+        "ConsecutiveDelta2": 5,
+        "ConsecutiveSet2": 4,
+        "NextDelta2": 1,
+        "NextSet2": 1,
+        "Quadr2": 7,
+        "is_extension2_of": 2,
+        "new_bi_fun2": 9,
+        "new_set2": 7
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem Th29: for A being non empty set for L be lower-bounded LATTICE for d be distance_function of A,L for Aq be non e"
+    },
+    {
+      "counts": {
+        "Aq": 44,
+        "ExtensionSeq2": 1,
+        "Function": 2,
+        "NextDelta2": 2,
+        "NextSet2": 2,
+        "is_extension2_of": 12
+      },
+      "index": 13,
+      "kind": "definition",
+      "object": "definition_13",
+      "preview": "definition let A be non empty set; let L be lower-bounded modular LATTICE; let d be distance_function of A,L; mode Exten"
+    },
+    {
+      "counts": {
+        "Aq": 6,
+        "ConsecutiveSet2": 2,
+        "ExtensionSeq2": 2,
+        "NextDelta2": 1,
+        "NextSet2": 1,
+        "is_extension2_of": 1
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem Th30: for A being non empty set for L be lower-bounded modular LATTICE for d be distance_function of A,L for S b"
+    },
+    {
+      "counts": {
+        "Aq": 6,
+        "ConsecutiveDelta2": 2,
+        "ExtensionSeq2": 2,
+        "NextDelta2": 1,
+        "NextSet2": 1,
+        "is_extension2_of": 1
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem Th31: for A being non empty set for L be lower-bounded modular LATTICE for d be distance_function of A,L for S b"
+    },
+    {
+      "counts": {
+        "Aq": 4,
+        "BiFunction": 1,
+        "ExtensionSeq2": 2,
+        "Function": 4,
+        "is_extension2_of": 10
+      },
+      "index": 32,
+      "kind": "theorem",
+      "object": "theorem_32",
+      "preview": "theorem Th32: for L be lower-bounded modular LATTICE for S being ExtensionSeq2 of the carrier of L, BasicDF(L) for FS be"
+    },
+    {
+      "counts": {
+        "ExtensionSeq2": 2,
+        "is_extension2_of": 2
+      },
+      "index": 33,
+      "kind": "theorem",
+      "object": "theorem_33",
+      "preview": "theorem Th33: for L be lower-bounded modular LATTICE for S being ExtensionSeq2 of the carrier of L, BasicDF(L) for FS be"
+    },
+    {
+      "counts": {
+        "ExtensionSeq2": 2
+      },
+      "index": 34,
+      "kind": "theorem",
+      "object": "theorem_34",
+      "preview": "theorem Th34: for L be lower-bounded modular LATTICE for S being ExtensionSeq2 of the carrier of L, BasicDF(L) for FS be"
+    },
+    {
+      "counts": {
+        "ConsecutiveDelta2": 6,
+        "ConsecutiveSet2": 10,
+        "ExtensionSeq2": 1,
+        "NextDelta2": 8,
+        "NextSet2": 8,
+        "Quadr2": 6,
+        "finitely_typed": 1,
+        "has_a_representation_of_type": 2,
+        "is_extension2_of": 2,
+        "new_bi_fun2": 14,
+        "new_set2": 16
+      },
+      "index": 35,
+      "kind": "theorem",
+      "object": "theorem_35",
+      "preview": "theorem Th35: for L be lower-bounded modular LATTICE holds L has_a_representation_of_type<= 2 proof let L be lower-bound"
+    },
+    {
+      "counts": {
+        "has_a_representation_of_type": 1
+      },
+      "index": 36,
+      "kind": "theorem",
+      "object": "theorem_36",
+      "preview": "theorem for L be lower-bounded LATTICE holds L has_a_representation_of_type<= 2 iff L is modular by Th9,Th35;"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/lattice8.miz"
+}

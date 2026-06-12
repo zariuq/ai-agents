@@ -1,0 +1,4722 @@
+{
+  "baselines": {
+    "top_by_jaccard": [
+      {
+        "antecedent": [
+          "left_projection"
+        ],
+        "baseline": {
+          "antecedent_support": 11,
+          "jaccard": 1.0,
+          "positive": 11,
+          "support_fraction": 0.34375
+        },
+        "consequent": "right_cancellative",
+        "credal": {
+          "lower_strength": 1.0,
+          "observed_gate_count": 3,
+          "upper_strength": 1.0,
+          "width": 0.0
+        },
+        "full_population": {
+          "antecedent_support": 11,
+          "confidence": 0.8461538461538461,
+          "consequent_support": 11,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 11,
+          "strength": 1.0,
+          "support_fraction": 0.34375
+        },
+        "gate_results": {
+          "all": {
+            "antecedent_support": 11,
+            "confidence": 0.8461538461538461,
+            "consequent_support": 11,
+            "jaccard": 1.0,
+            "negative": 0,
+            "object_count": 32,
+            "positive": 11,
+            "strength": 1.0,
+            "support_fraction": 0.34375
+          },
+          "domain_size=2": {
+            "antecedent_support": 5,
+            "confidence": 0.7142857142857143,
+            "consequent_support": 5,
+            "jaccard": 1.0,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 5,
+            "strength": 1.0,
+            "support_fraction": 0.3125
+          },
+          "domain_size=3": {
+            "antecedent_support": 6,
+            "confidence": 0.75,
+            "consequent_support": 6,
+            "jaccard": 1.0,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 6,
+            "strength": 1.0,
+            "support_fraction": 0.375
+          }
+        },
+        "oracle": {
+          "countermodel_found": false,
+          "countermodel_results": [
+            {
+              "domain_size": 2,
+              "finite_model_found": false,
+              "return_code": 0,
+              "status": "Unsatisfiable"
+            },
+            {
+              "domain_size": 3,
+              "finite_model_found": false,
+              "return_code": 0,
+              "status": "Unsatisfiable"
+            },
+            {
+              "domain_size": 4,
+              "finite_model_found": false,
+              "return_code": 0,
+              "status": "Unsatisfiable"
+            }
+          ],
+          "theorem_proved": true,
+          "theorem_return_code": 0,
+          "theorem_status": "Theorem"
+        },
+        "pln": {
+          "confidence": 0.8461538461538461,
+          "kappa": 2.0,
+          "score": 0.8461538461538461,
+          "strength": 1.0
+        }
+      },
+      {
+        "antecedent": [
+          "right_cancellative"
+        ],
+        "baseline": {
+          "antecedent_support": 11,
+          "jaccard": 1.0,
+          "positive": 11,
+          "support_fraction": 0.34375
+        },
+        "consequent": "left_projection",
+        "credal": {
+          "lower_strength": 1.0,
+          "observed_gate_count": 3,
+          "upper_strength": 1.0,
+          "width": 0.0
+        },
+        "full_population": {
+          "antecedent_support": 11,
+          "confidence": 0.8461538461538461,
+          "consequent_support": 11,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 11,
+          "strength": 1.0,
+          "support_fraction": 0.34375
+        },
+        "gate_results": {
+          "all": {
+            "antecedent_support": 11,
+            "confidence": 0.8461538461538461,
+            "consequent_support": 11,
+            "jaccard": 1.0,
+            "negative": 0,
+            "object_count": 32,
+            "positive": 11,
+            "strength": 1.0,
+            "support_fraction": 0.34375
+          },
+          "domain_size=2": {
+            "antecedent_support": 5,
+            "confidence": 0.7142857142857143,
+            "consequent_support": 5,
+            "jaccard": 1.0,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 5,
+            "strength": 1.0,
+            "support_fraction": 0.3125
+          },
+          "domain_size=3": {
+            "antecedent_support": 6,
+            "confidence": 0.75,
+            "consequent_support": 6,
+            "jaccard": 1.0,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 6,
+            "strength": 1.0,
+            "support_fraction": 0.375
+          }
+        },
+        "oracle": {
+          "countermodel_found": true,
+          "countermodel_results": [
+            {
+              "domain_size": 2,
+              "finite_model_found": true,
+              "return_code": 0,
+              "status": "Satisfiable"
+            }
+          ],
+          "theorem_proved": false,
+          "theorem_return_code": 0,
+          "theorem_status": "CounterSatisfiable"
+        },
+        "pln": {
+          "confidence": 0.8461538461538461,
+          "kappa": 2.0,
+          "score": 0.8461538461538461,
+          "strength": 1.0
+        }
+      },
+      {
+        "antecedent": [
+          "associative",
+          "left_projection"
+        ],
+        "baseline": {
+          "antecedent_support": 11,
+          "jaccard": 1.0,
+          "positive": 11,
+          "support_fraction": 0.34375
+        },
+        "consequent": "right_cancellative",
+        "credal": {
+          "lower_strength": 1.0,
+          "observed_gate_count": 3,
+          "upper_strength": 1.0,
+          "width": 0.0
+        },
+        "full_population": {
+          "antecedent_support": 11,
+          "confidence": 0.8461538461538461,
+          "consequent_support": 11,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 11,
+          "strength": 1.0,
+          "support_fraction": 0.34375
+        },
+        "gate_results": {
+          "all": {
+            "antecedent_support": 11,
+            "confidence": 0.8461538461538461,
+            "consequent_support": 11,
+            "jaccard": 1.0,
+            "negative": 0,
+            "object_count": 32,
+            "positive": 11,
+            "strength": 1.0,
+            "support_fraction": 0.34375
+          },
+          "domain_size=2": {
+            "antecedent_support": 5,
+            "confidence": 0.7142857142857143,
+            "consequent_support": 5,
+            "jaccard": 1.0,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 5,
+            "strength": 1.0,
+            "support_fraction": 0.3125
+          },
+          "domain_size=3": {
+            "antecedent_support": 6,
+            "confidence": 0.75,
+            "consequent_support": 6,
+            "jaccard": 1.0,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 6,
+            "strength": 1.0,
+            "support_fraction": 0.375
+          }
+        },
+        "oracle": {
+          "countermodel_found": false,
+          "countermodel_results": [
+            {
+              "domain_size": 2,
+              "finite_model_found": false,
+              "return_code": 0,
+              "status": "Unsatisfiable"
+            },
+            {
+              "domain_size": 3,
+              "finite_model_found": false,
+              "return_code": 0,
+              "status": "Unsatisfiable"
+            },
+            {
+              "domain_size": 4,
+              "finite_model_found": false,
+              "return_code": 0,
+              "status": "Unsatisfiable"
+            }
+          ],
+          "theorem_proved": true,
+          "theorem_return_code": 0,
+          "theorem_status": "Theorem"
+        },
+        "pln": {
+          "confidence": 0.8461538461538461,
+          "kappa": 2.0,
+          "score": 0.8461538461538461,
+          "strength": 1.0
+        }
+      },
+      {
+        "antecedent": [
+          "associative",
+          "right_cancellative"
+        ],
+        "baseline": {
+          "antecedent_support": 11,
+          "jaccard": 1.0,
+          "positive": 11,
+          "support_fraction": 0.34375
+        },
+        "consequent": "left_projection",
+        "credal": {
+          "lower_strength": 1.0,
+          "observed_gate_count": 3,
+          "upper_strength": 1.0,
+          "width": 0.0
+        },
+        "full_population": {
+          "antecedent_support": 11,
+          "confidence": 0.8461538461538461,
+          "consequent_support": 11,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 11,
+          "strength": 1.0,
+          "support_fraction": 0.34375
+        },
+        "gate_results": {
+          "all": {
+            "antecedent_support": 11,
+            "confidence": 0.8461538461538461,
+            "consequent_support": 11,
+            "jaccard": 1.0,
+            "negative": 0,
+            "object_count": 32,
+            "positive": 11,
+            "strength": 1.0,
+            "support_fraction": 0.34375
+          },
+          "domain_size=2": {
+            "antecedent_support": 5,
+            "confidence": 0.7142857142857143,
+            "consequent_support": 5,
+            "jaccard": 1.0,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 5,
+            "strength": 1.0,
+            "support_fraction": 0.3125
+          },
+          "domain_size=3": {
+            "antecedent_support": 6,
+            "confidence": 0.75,
+            "consequent_support": 6,
+            "jaccard": 1.0,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 6,
+            "strength": 1.0,
+            "support_fraction": 0.375
+          }
+        },
+        "oracle": {
+          "countermodel_found": true,
+          "countermodel_results": [
+            {
+              "domain_size": 2,
+              "finite_model_found": true,
+              "return_code": 0,
+              "status": "Satisfiable"
+            }
+          ],
+          "theorem_proved": false,
+          "theorem_return_code": 1,
+          "theorem_status": "GaveUp"
+        },
+        "pln": {
+          "confidence": 0.8461538461538461,
+          "kappa": 2.0,
+          "score": 0.8461538461538461,
+          "strength": 1.0
+        }
+      },
+      {
+        "antecedent": [
+          "has_left_zero",
+          "left_projection"
+        ],
+        "baseline": {
+          "antecedent_support": 11,
+          "jaccard": 1.0,
+          "positive": 11,
+          "support_fraction": 0.34375
+        },
+        "consequent": "right_cancellative",
+        "credal": {
+          "lower_strength": 1.0,
+          "observed_gate_count": 3,
+          "upper_strength": 1.0,
+          "width": 0.0
+        },
+        "full_population": {
+          "antecedent_support": 11,
+          "confidence": 0.8461538461538461,
+          "consequent_support": 11,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 11,
+          "strength": 1.0,
+          "support_fraction": 0.34375
+        },
+        "gate_results": {
+          "all": {
+            "antecedent_support": 11,
+            "confidence": 0.8461538461538461,
+            "consequent_support": 11,
+            "jaccard": 1.0,
+            "negative": 0,
+            "object_count": 32,
+            "positive": 11,
+            "strength": 1.0,
+            "support_fraction": 0.34375
+          },
+          "domain_size=2": {
+            "antecedent_support": 5,
+            "confidence": 0.7142857142857143,
+            "consequent_support": 5,
+            "jaccard": 1.0,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 5,
+            "strength": 1.0,
+            "support_fraction": 0.3125
+          },
+          "domain_size=3": {
+            "antecedent_support": 6,
+            "confidence": 0.75,
+            "consequent_support": 6,
+            "jaccard": 1.0,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 6,
+            "strength": 1.0,
+            "support_fraction": 0.375
+          }
+        },
+        "oracle": {
+          "countermodel_found": false,
+          "countermodel_results": [
+            {
+              "domain_size": 2,
+              "finite_model_found": false,
+              "return_code": 0,
+              "status": "Unsatisfiable"
+            },
+            {
+              "domain_size": 3,
+              "finite_model_found": false,
+              "return_code": 0,
+              "status": "Unsatisfiable"
+            },
+            {
+              "domain_size": 4,
+              "finite_model_found": false,
+              "return_code": 0,
+              "status": "Unsatisfiable"
+            }
+          ],
+          "theorem_proved": true,
+          "theorem_return_code": 0,
+          "theorem_status": "Theorem"
+        },
+        "pln": {
+          "confidence": 0.8461538461538461,
+          "kappa": 2.0,
+          "score": 0.8461538461538461,
+          "strength": 1.0
+        }
+      }
+    ],
+    "top_by_support_fraction": [
+      {
+        "antecedent": [
+          "idempotent"
+        ],
+        "baseline": {
+          "antecedent_support": 27,
+          "jaccard": 0.78125,
+          "positive": 25,
+          "support_fraction": 0.78125
+        },
+        "consequent": "associative",
+        "credal": {
+          "lower_strength": 0.8461538461538461,
+          "observed_gate_count": 3,
+          "upper_strength": 1.0,
+          "width": 0.15384615384615385
+        },
+        "full_population": {
+          "antecedent_support": 27,
+          "confidence": 0.9310344827586207,
+          "consequent_support": 30,
+          "jaccard": 0.78125,
+          "negative": 2,
+          "object_count": 32,
+          "positive": 25,
+          "strength": 0.9259259259259259,
+          "support_fraction": 0.78125
+        },
+        "gate_results": {
+          "all": {
+            "antecedent_support": 27,
+            "confidence": 0.9310344827586207,
+            "consequent_support": 30,
+            "jaccard": 0.78125,
+            "negative": 2,
+            "object_count": 32,
+            "positive": 25,
+            "strength": 0.9259259259259259,
+            "support_fraction": 0.78125
+          },
+          "domain_size=2": {
+            "antecedent_support": 14,
+            "confidence": 0.875,
+            "consequent_support": 16,
+            "jaccard": 0.875,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 14,
+            "strength": 1.0,
+            "support_fraction": 0.875
+          },
+          "domain_size=3": {
+            "antecedent_support": 13,
+            "confidence": 0.8666666666666667,
+            "consequent_support": 14,
+            "jaccard": 0.6875,
+            "negative": 2,
+            "object_count": 16,
+            "positive": 11,
+            "strength": 0.8461538461538461,
+            "support_fraction": 0.6875
+          }
+        },
+        "oracle": {
+          "countermodel_found": true,
+          "countermodel_results": [
+            {
+              "domain_size": 2,
+              "finite_model_found": false,
+              "return_code": 0,
+              "status": "Unsatisfiable"
+            },
+            {
+              "domain_size": 3,
+              "finite_model_found": true,
+              "return_code": 0,
+              "status": "Satisfiable"
+            }
+          ],
+          "theorem_proved": false,
+          "theorem_return_code": 0,
+          "theorem_status": "CounterSatisfiable"
+        },
+        "pln": {
+          "confidence": 0.9310344827586207,
+          "kappa": 2.0,
+          "score": 0.8620689655172413,
+          "strength": 0.9259259259259259
+        }
+      },
+      {
+        "antecedent": [
+          "has_left_zero"
+        ],
+        "baseline": {
+          "antecedent_support": 20,
+          "jaccard": 0.6666666666666666,
+          "positive": 20,
+          "support_fraction": 0.625
+        },
+        "consequent": "associative",
+        "credal": {
+          "lower_strength": 1.0,
+          "observed_gate_count": 3,
+          "upper_strength": 1.0,
+          "width": 0.0
+        },
+        "full_population": {
+          "antecedent_support": 20,
+          "confidence": 0.9090909090909091,
+          "consequent_support": 30,
+          "jaccard": 0.6666666666666666,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 20,
+          "strength": 1.0,
+          "support_fraction": 0.625
+        },
+        "gate_results": {
+          "all": {
+            "antecedent_support": 20,
+            "confidence": 0.9090909090909091,
+            "consequent_support": 30,
+            "jaccard": 0.6666666666666666,
+            "negative": 0,
+            "object_count": 32,
+            "positive": 20,
+            "strength": 1.0,
+            "support_fraction": 0.625
+          },
+          "domain_size=2": {
+            "antecedent_support": 11,
+            "confidence": 0.8461538461538461,
+            "consequent_support": 16,
+            "jaccard": 0.6875,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 11,
+            "strength": 1.0,
+            "support_fraction": 0.6875
+          },
+          "domain_size=3": {
+            "antecedent_support": 9,
+            "confidence": 0.8181818181818182,
+            "consequent_support": 14,
+            "jaccard": 0.6428571428571429,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 9,
+            "strength": 1.0,
+            "support_fraction": 0.5625
+          }
+        },
+        "oracle": {
+          "countermodel_found": true,
+          "countermodel_results": [
+            {
+              "domain_size": 2,
+              "finite_model_found": true,
+              "return_code": 0,
+              "status": "Satisfiable"
+            }
+          ],
+          "theorem_proved": false,
+          "theorem_return_code": 0,
+          "theorem_status": "CounterSatisfiable"
+        },
+        "pln": {
+          "confidence": 0.9090909090909091,
+          "kappa": 2.0,
+          "score": 0.9090909090909091,
+          "strength": 1.0
+        }
+      },
+      {
+        "antecedent": [
+          "has_right_zero"
+        ],
+        "baseline": {
+          "antecedent_support": 18,
+          "jaccard": 0.6,
+          "positive": 18,
+          "support_fraction": 0.5625
+        },
+        "consequent": "associative",
+        "credal": {
+          "lower_strength": 1.0,
+          "observed_gate_count": 3,
+          "upper_strength": 1.0,
+          "width": 0.0
+        },
+        "full_population": {
+          "antecedent_support": 18,
+          "confidence": 0.9,
+          "consequent_support": 30,
+          "jaccard": 0.6,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 18,
+          "strength": 1.0,
+          "support_fraction": 0.5625
+        },
+        "gate_results": {
+          "all": {
+            "antecedent_support": 18,
+            "confidence": 0.9,
+            "consequent_support": 30,
+            "jaccard": 0.6,
+            "negative": 0,
+            "object_count": 32,
+            "positive": 18,
+            "strength": 1.0,
+            "support_fraction": 0.5625
+          },
+          "domain_size=2": {
+            "antecedent_support": 11,
+            "confidence": 0.8461538461538461,
+            "consequent_support": 16,
+            "jaccard": 0.6875,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 11,
+            "strength": 1.0,
+            "support_fraction": 0.6875
+          },
+          "domain_size=3": {
+            "antecedent_support": 7,
+            "confidence": 0.7777777777777778,
+            "consequent_support": 14,
+            "jaccard": 0.5,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 7,
+            "strength": 1.0,
+            "support_fraction": 0.4375
+          }
+        },
+        "oracle": {
+          "countermodel_found": true,
+          "countermodel_results": [
+            {
+              "domain_size": 2,
+              "finite_model_found": true,
+              "return_code": 0,
+              "status": "Satisfiable"
+            }
+          ],
+          "theorem_proved": false,
+          "theorem_return_code": 0,
+          "theorem_status": "CounterSatisfiable"
+        },
+        "pln": {
+          "confidence": 0.9,
+          "kappa": 2.0,
+          "score": 0.9,
+          "strength": 1.0
+        }
+      },
+      {
+        "antecedent": [
+          "has_right_identity"
+        ],
+        "baseline": {
+          "antecedent_support": 16,
+          "jaccard": 0.5333333333333333,
+          "positive": 16,
+          "support_fraction": 0.5
+        },
+        "consequent": "associative",
+        "credal": {
+          "lower_strength": 1.0,
+          "observed_gate_count": 3,
+          "upper_strength": 1.0,
+          "width": 0.0
+        },
+        "full_population": {
+          "antecedent_support": 16,
+          "confidence": 0.8888888888888888,
+          "consequent_support": 30,
+          "jaccard": 0.5333333333333333,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 16,
+          "strength": 1.0,
+          "support_fraction": 0.5
+        },
+        "gate_results": {
+          "all": {
+            "antecedent_support": 16,
+            "confidence": 0.8888888888888888,
+            "consequent_support": 30,
+            "jaccard": 0.5333333333333333,
+            "negative": 0,
+            "object_count": 32,
+            "positive": 16,
+            "strength": 1.0,
+            "support_fraction": 0.5
+          },
+          "domain_size=2": {
+            "antecedent_support": 9,
+            "confidence": 0.8181818181818182,
+            "consequent_support": 16,
+            "jaccard": 0.5625,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 9,
+            "strength": 1.0,
+            "support_fraction": 0.5625
+          },
+          "domain_size=3": {
+            "antecedent_support": 7,
+            "confidence": 0.7777777777777778,
+            "consequent_support": 14,
+            "jaccard": 0.5,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 7,
+            "strength": 1.0,
+            "support_fraction": 0.4375
+          }
+        },
+        "oracle": {
+          "countermodel_found": true,
+          "countermodel_results": [
+            {
+              "domain_size": 2,
+              "finite_model_found": true,
+              "return_code": 0,
+              "status": "Satisfiable"
+            }
+          ],
+          "theorem_proved": false,
+          "theorem_return_code": 0,
+          "theorem_status": "CounterSatisfiable"
+        },
+        "pln": {
+          "confidence": 0.8888888888888888,
+          "kappa": 2.0,
+          "score": 0.8888888888888888,
+          "strength": 1.0
+        }
+      },
+      {
+        "antecedent": [
+          "has_left_zero",
+          "idempotent"
+        ],
+        "baseline": {
+          "antecedent_support": 16,
+          "jaccard": 0.5333333333333333,
+          "positive": 16,
+          "support_fraction": 0.5
+        },
+        "consequent": "associative",
+        "credal": {
+          "lower_strength": 1.0,
+          "observed_gate_count": 3,
+          "upper_strength": 1.0,
+          "width": 0.0
+        },
+        "full_population": {
+          "antecedent_support": 16,
+          "confidence": 0.8888888888888888,
+          "consequent_support": 30,
+          "jaccard": 0.5333333333333333,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 16,
+          "strength": 1.0,
+          "support_fraction": 0.5
+        },
+        "gate_results": {
+          "all": {
+            "antecedent_support": 16,
+            "confidence": 0.8888888888888888,
+            "consequent_support": 30,
+            "jaccard": 0.5333333333333333,
+            "negative": 0,
+            "object_count": 32,
+            "positive": 16,
+            "strength": 1.0,
+            "support_fraction": 0.5
+          },
+          "domain_size=2": {
+            "antecedent_support": 9,
+            "confidence": 0.8181818181818182,
+            "consequent_support": 16,
+            "jaccard": 0.5625,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 9,
+            "strength": 1.0,
+            "support_fraction": 0.5625
+          },
+          "domain_size=3": {
+            "antecedent_support": 7,
+            "confidence": 0.7777777777777778,
+            "consequent_support": 14,
+            "jaccard": 0.5,
+            "negative": 0,
+            "object_count": 16,
+            "positive": 7,
+            "strength": 1.0,
+            "support_fraction": 0.4375
+          }
+        },
+        "oracle": {
+          "countermodel_found": true,
+          "countermodel_results": [
+            {
+              "domain_size": 2,
+              "finite_model_found": false,
+              "return_code": 0,
+              "status": "Unsatisfiable"
+            },
+            {
+              "domain_size": 3,
+              "finite_model_found": true,
+              "return_code": 0,
+              "status": "Satisfiable"
+            }
+          ],
+          "theorem_proved": false,
+          "theorem_return_code": 0,
+          "theorem_status": "CounterSatisfiable"
+        },
+        "pln": {
+          "confidence": 0.8888888888888888,
+          "kappa": 2.0,
+          "score": 0.8888888888888888,
+          "strength": 1.0
+        }
+      }
+    ]
+  },
+  "benchmark": {
+    "countermodel_domain_sizes": [
+      2,
+      3,
+      4
+    ],
+    "evaluated_properties": [
+      "associative",
+      "commutative",
+      "has_identity",
+      "has_left_identity",
+      "has_left_zero",
+      "has_right_identity",
+      "has_right_zero",
+      "idempotent",
+      "left_cancellative",
+      "left_projection",
+      "right_cancellative",
+      "right_projection"
+    ],
+    "gate_labels": [
+      "all",
+      "domain_size=2",
+      "domain_size=3"
+    ],
+    "generating_axioms": [
+      "commutative",
+      "associative",
+      "idempotent",
+      "left_projection",
+      "right_projection"
+    ],
+    "kappa": 2.0,
+    "name": "finite_structure_property_benchmark",
+    "oracle_time_limit": 5,
+    "population_domain_sizes": [
+      2,
+      3
+    ],
+    "population_size": 32,
+    "signature": "one binary operation",
+    "time_limit": 5,
+    "track": "finite-structure-property-implication",
+    "unsatisfied_count": 32
+  },
+  "candidates": [
+    {
+      "antecedent": [
+        "has_left_zero"
+      ],
+      "baseline": {
+        "antecedent_support": 20,
+        "jaccard": 0.6666666666666666,
+        "positive": 20,
+        "support_fraction": 0.625
+      },
+      "consequent": "associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 20,
+        "confidence": 0.9090909090909091,
+        "consequent_support": 30,
+        "jaccard": 0.6666666666666666,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 20,
+        "strength": 1.0,
+        "support_fraction": 0.625
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 20,
+          "confidence": 0.9090909090909091,
+          "consequent_support": 30,
+          "jaccard": 0.6666666666666666,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 20,
+          "strength": 1.0,
+          "support_fraction": 0.625
+        },
+        "domain_size=2": {
+          "antecedent_support": 11,
+          "confidence": 0.8461538461538461,
+          "consequent_support": 16,
+          "jaccard": 0.6875,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 11,
+          "strength": 1.0,
+          "support_fraction": 0.6875
+        },
+        "domain_size=3": {
+          "antecedent_support": 9,
+          "confidence": 0.8181818181818182,
+          "consequent_support": 14,
+          "jaccard": 0.6428571428571429,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 9,
+          "strength": 1.0,
+          "support_fraction": 0.5625
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable"
+      },
+      "pln": {
+        "confidence": 0.9090909090909091,
+        "kappa": 2.0,
+        "score": 0.9090909090909091,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "has_right_zero"
+      ],
+      "baseline": {
+        "antecedent_support": 18,
+        "jaccard": 0.6,
+        "positive": 18,
+        "support_fraction": 0.5625
+      },
+      "consequent": "associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 18,
+        "confidence": 0.9,
+        "consequent_support": 30,
+        "jaccard": 0.6,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 18,
+        "strength": 1.0,
+        "support_fraction": 0.5625
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 18,
+          "confidence": 0.9,
+          "consequent_support": 30,
+          "jaccard": 0.6,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 18,
+          "strength": 1.0,
+          "support_fraction": 0.5625
+        },
+        "domain_size=2": {
+          "antecedent_support": 11,
+          "confidence": 0.8461538461538461,
+          "consequent_support": 16,
+          "jaccard": 0.6875,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 11,
+          "strength": 1.0,
+          "support_fraction": 0.6875
+        },
+        "domain_size=3": {
+          "antecedent_support": 7,
+          "confidence": 0.7777777777777778,
+          "consequent_support": 14,
+          "jaccard": 0.5,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 7,
+          "strength": 1.0,
+          "support_fraction": 0.4375
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable"
+      },
+      "pln": {
+        "confidence": 0.9,
+        "kappa": 2.0,
+        "score": 0.9,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "has_right_identity"
+      ],
+      "baseline": {
+        "antecedent_support": 16,
+        "jaccard": 0.5333333333333333,
+        "positive": 16,
+        "support_fraction": 0.5
+      },
+      "consequent": "associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 16,
+        "confidence": 0.8888888888888888,
+        "consequent_support": 30,
+        "jaccard": 0.5333333333333333,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 16,
+        "strength": 1.0,
+        "support_fraction": 0.5
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 16,
+          "confidence": 0.8888888888888888,
+          "consequent_support": 30,
+          "jaccard": 0.5333333333333333,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 16,
+          "strength": 1.0,
+          "support_fraction": 0.5
+        },
+        "domain_size=2": {
+          "antecedent_support": 9,
+          "confidence": 0.8181818181818182,
+          "consequent_support": 16,
+          "jaccard": 0.5625,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 9,
+          "strength": 1.0,
+          "support_fraction": 0.5625
+        },
+        "domain_size=3": {
+          "antecedent_support": 7,
+          "confidence": 0.7777777777777778,
+          "consequent_support": 14,
+          "jaccard": 0.5,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 7,
+          "strength": 1.0,
+          "support_fraction": 0.4375
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable"
+      },
+      "pln": {
+        "confidence": 0.8888888888888888,
+        "kappa": 2.0,
+        "score": 0.8888888888888888,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "has_left_zero",
+        "idempotent"
+      ],
+      "baseline": {
+        "antecedent_support": 16,
+        "jaccard": 0.5333333333333333,
+        "positive": 16,
+        "support_fraction": 0.5
+      },
+      "consequent": "associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 16,
+        "confidence": 0.8888888888888888,
+        "consequent_support": 30,
+        "jaccard": 0.5333333333333333,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 16,
+        "strength": 1.0,
+        "support_fraction": 0.5
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 16,
+          "confidence": 0.8888888888888888,
+          "consequent_support": 30,
+          "jaccard": 0.5333333333333333,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 16,
+          "strength": 1.0,
+          "support_fraction": 0.5
+        },
+        "domain_size=2": {
+          "antecedent_support": 9,
+          "confidence": 0.8181818181818182,
+          "consequent_support": 16,
+          "jaccard": 0.5625,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 9,
+          "strength": 1.0,
+          "support_fraction": 0.5625
+        },
+        "domain_size=3": {
+          "antecedent_support": 7,
+          "confidence": 0.7777777777777778,
+          "consequent_support": 14,
+          "jaccard": 0.5,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 7,
+          "strength": 1.0,
+          "support_fraction": 0.4375
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": false,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "domain_size": 3,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable"
+      },
+      "pln": {
+        "confidence": 0.8888888888888888,
+        "kappa": 2.0,
+        "score": 0.8888888888888888,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "has_right_identity",
+        "idempotent"
+      ],
+      "baseline": {
+        "antecedent_support": 15,
+        "jaccard": 0.75,
+        "positive": 15,
+        "support_fraction": 0.46875
+      },
+      "consequent": "has_left_zero",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 15,
+        "confidence": 0.8823529411764706,
+        "consequent_support": 20,
+        "jaccard": 0.75,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 15,
+        "strength": 1.0,
+        "support_fraction": 0.46875
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 15,
+          "confidence": 0.8823529411764706,
+          "consequent_support": 20,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 15,
+          "strength": 1.0,
+          "support_fraction": 0.46875
+        },
+        "domain_size=2": {
+          "antecedent_support": 9,
+          "confidence": 0.8181818181818182,
+          "consequent_support": 11,
+          "jaccard": 0.8181818181818182,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 9,
+          "strength": 1.0,
+          "support_fraction": 0.5625
+        },
+        "domain_size=3": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 9,
+          "jaccard": 0.6666666666666666,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.375
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": false,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "domain_size": 3,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable"
+      },
+      "pln": {
+        "confidence": 0.8823529411764706,
+        "kappa": 2.0,
+        "score": 0.8823529411764706,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "has_left_zero",
+        "has_right_identity"
+      ],
+      "baseline": {
+        "antecedent_support": 15,
+        "jaccard": 0.5555555555555556,
+        "positive": 15,
+        "support_fraction": 0.46875
+      },
+      "consequent": "idempotent",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 15,
+        "confidence": 0.8823529411764706,
+        "consequent_support": 27,
+        "jaccard": 0.5555555555555556,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 15,
+        "strength": 1.0,
+        "support_fraction": 0.46875
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 15,
+          "confidence": 0.8823529411764706,
+          "consequent_support": 27,
+          "jaccard": 0.5555555555555556,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 15,
+          "strength": 1.0,
+          "support_fraction": 0.46875
+        },
+        "domain_size=2": {
+          "antecedent_support": 9,
+          "confidence": 0.8181818181818182,
+          "consequent_support": 14,
+          "jaccard": 0.6428571428571429,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 9,
+          "strength": 1.0,
+          "support_fraction": 0.5625
+        },
+        "domain_size=3": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 13,
+          "jaccard": 0.46153846153846156,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.375
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable"
+      },
+      "pln": {
+        "confidence": 0.8823529411764706,
+        "kappa": 2.0,
+        "score": 0.8823529411764706,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "has_left_zero",
+        "has_right_identity"
+      ],
+      "baseline": {
+        "antecedent_support": 15,
+        "jaccard": 0.5,
+        "positive": 15,
+        "support_fraction": 0.46875
+      },
+      "consequent": "associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 15,
+        "confidence": 0.8823529411764706,
+        "consequent_support": 30,
+        "jaccard": 0.5,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 15,
+        "strength": 1.0,
+        "support_fraction": 0.46875
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 15,
+          "confidence": 0.8823529411764706,
+          "consequent_support": 30,
+          "jaccard": 0.5,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 15,
+          "strength": 1.0,
+          "support_fraction": 0.46875
+        },
+        "domain_size=2": {
+          "antecedent_support": 9,
+          "confidence": 0.8181818181818182,
+          "consequent_support": 16,
+          "jaccard": 0.5625,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 9,
+          "strength": 1.0,
+          "support_fraction": 0.5625
+        },
+        "domain_size=3": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 14,
+          "jaccard": 0.42857142857142855,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.375
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable"
+      },
+      "pln": {
+        "confidence": 0.8823529411764706,
+        "kappa": 2.0,
+        "score": 0.8823529411764706,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "has_right_identity",
+        "idempotent"
+      ],
+      "baseline": {
+        "antecedent_support": 15,
+        "jaccard": 0.5,
+        "positive": 15,
+        "support_fraction": 0.46875
+      },
+      "consequent": "associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 15,
+        "confidence": 0.8823529411764706,
+        "consequent_support": 30,
+        "jaccard": 0.5,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 15,
+        "strength": 1.0,
+        "support_fraction": 0.46875
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 15,
+          "confidence": 0.8823529411764706,
+          "consequent_support": 30,
+          "jaccard": 0.5,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 15,
+          "strength": 1.0,
+          "support_fraction": 0.46875
+        },
+        "domain_size=2": {
+          "antecedent_support": 9,
+          "confidence": 0.8181818181818182,
+          "consequent_support": 16,
+          "jaccard": 0.5625,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 9,
+          "strength": 1.0,
+          "support_fraction": 0.5625
+        },
+        "domain_size=3": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 14,
+          "jaccard": 0.42857142857142855,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.375
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": false,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "domain_size": 3,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable"
+      },
+      "pln": {
+        "confidence": 0.8823529411764706,
+        "kappa": 2.0,
+        "score": 0.8823529411764706,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "has_left_identity"
+      ],
+      "baseline": {
+        "antecedent_support": 14,
+        "jaccard": 0.4666666666666667,
+        "positive": 14,
+        "support_fraction": 0.4375
+      },
+      "consequent": "associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 14,
+        "confidence": 0.875,
+        "consequent_support": 30,
+        "jaccard": 0.4666666666666667,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 14,
+        "strength": 1.0,
+        "support_fraction": 0.4375
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 14,
+          "confidence": 0.875,
+          "consequent_support": 30,
+          "jaccard": 0.4666666666666667,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 14,
+          "strength": 1.0,
+          "support_fraction": 0.4375
+        },
+        "domain_size=2": {
+          "antecedent_support": 9,
+          "confidence": 0.8181818181818182,
+          "consequent_support": 16,
+          "jaccard": 0.5625,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 9,
+          "strength": 1.0,
+          "support_fraction": 0.5625
+        },
+        "domain_size=3": {
+          "antecedent_support": 5,
+          "confidence": 0.7142857142857143,
+          "consequent_support": 14,
+          "jaccard": 0.35714285714285715,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 5,
+          "strength": 1.0,
+          "support_fraction": 0.3125
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable"
+      },
+      "pln": {
+        "confidence": 0.875,
+        "kappa": 2.0,
+        "score": 0.875,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "has_right_zero",
+        "idempotent"
+      ],
+      "baseline": {
+        "antecedent_support": 14,
+        "jaccard": 0.4666666666666667,
+        "positive": 14,
+        "support_fraction": 0.4375
+      },
+      "consequent": "associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 14,
+        "confidence": 0.875,
+        "consequent_support": 30,
+        "jaccard": 0.4666666666666667,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 14,
+        "strength": 1.0,
+        "support_fraction": 0.4375
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 14,
+          "confidence": 0.875,
+          "consequent_support": 30,
+          "jaccard": 0.4666666666666667,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 14,
+          "strength": 1.0,
+          "support_fraction": 0.4375
+        },
+        "domain_size=2": {
+          "antecedent_support": 9,
+          "confidence": 0.8181818181818182,
+          "consequent_support": 16,
+          "jaccard": 0.5625,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 9,
+          "strength": 1.0,
+          "support_fraction": 0.5625
+        },
+        "domain_size=3": {
+          "antecedent_support": 5,
+          "confidence": 0.7142857142857143,
+          "consequent_support": 14,
+          "jaccard": 0.35714285714285715,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 5,
+          "strength": 1.0,
+          "support_fraction": 0.3125
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": false,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "domain_size": 3,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable"
+      },
+      "pln": {
+        "confidence": 0.875,
+        "kappa": 2.0,
+        "score": 0.875,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "has_left_identity",
+        "idempotent"
+      ],
+      "baseline": {
+        "antecedent_support": 13,
+        "jaccard": 0.7222222222222222,
+        "positive": 13,
+        "support_fraction": 0.40625
+      },
+      "consequent": "has_right_zero",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 13,
+        "confidence": 0.8666666666666667,
+        "consequent_support": 18,
+        "jaccard": 0.7222222222222222,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 13,
+        "strength": 1.0,
+        "support_fraction": 0.40625
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 13,
+          "confidence": 0.8666666666666667,
+          "consequent_support": 18,
+          "jaccard": 0.7222222222222222,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 13,
+          "strength": 1.0,
+          "support_fraction": 0.40625
+        },
+        "domain_size=2": {
+          "antecedent_support": 9,
+          "confidence": 0.8181818181818182,
+          "consequent_support": 11,
+          "jaccard": 0.8181818181818182,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 9,
+          "strength": 1.0,
+          "support_fraction": 0.5625
+        },
+        "domain_size=3": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 7,
+          "jaccard": 0.5714285714285714,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 0.25
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": false,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "domain_size": 3,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable"
+      },
+      "pln": {
+        "confidence": 0.8666666666666667,
+        "kappa": 2.0,
+        "score": 0.8666666666666667,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "has_left_identity",
+        "has_right_zero"
+      ],
+      "baseline": {
+        "antecedent_support": 13,
+        "jaccard": 0.48148148148148145,
+        "positive": 13,
+        "support_fraction": 0.40625
+      },
+      "consequent": "idempotent",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 13,
+        "confidence": 0.8666666666666667,
+        "consequent_support": 27,
+        "jaccard": 0.48148148148148145,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 13,
+        "strength": 1.0,
+        "support_fraction": 0.40625
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 13,
+          "confidence": 0.8666666666666667,
+          "consequent_support": 27,
+          "jaccard": 0.48148148148148145,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 13,
+          "strength": 1.0,
+          "support_fraction": 0.40625
+        },
+        "domain_size=2": {
+          "antecedent_support": 9,
+          "confidence": 0.8181818181818182,
+          "consequent_support": 14,
+          "jaccard": 0.6428571428571429,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 9,
+          "strength": 1.0,
+          "support_fraction": 0.5625
+        },
+        "domain_size=3": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 13,
+          "jaccard": 0.3076923076923077,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 0.25
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable"
+      },
+      "pln": {
+        "confidence": 0.8666666666666667,
+        "kappa": 2.0,
+        "score": 0.8666666666666667,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "has_left_identity",
+        "has_right_zero"
+      ],
+      "baseline": {
+        "antecedent_support": 13,
+        "jaccard": 0.43333333333333335,
+        "positive": 13,
+        "support_fraction": 0.40625
+      },
+      "consequent": "associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 13,
+        "confidence": 0.8666666666666667,
+        "consequent_support": 30,
+        "jaccard": 0.43333333333333335,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 13,
+        "strength": 1.0,
+        "support_fraction": 0.40625
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 13,
+          "confidence": 0.8666666666666667,
+          "consequent_support": 30,
+          "jaccard": 0.43333333333333335,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 13,
+          "strength": 1.0,
+          "support_fraction": 0.40625
+        },
+        "domain_size=2": {
+          "antecedent_support": 9,
+          "confidence": 0.8181818181818182,
+          "consequent_support": 16,
+          "jaccard": 0.5625,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 9,
+          "strength": 1.0,
+          "support_fraction": 0.5625
+        },
+        "domain_size=3": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 14,
+          "jaccard": 0.2857142857142857,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 0.25
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable"
+      },
+      "pln": {
+        "confidence": 0.8666666666666667,
+        "kappa": 2.0,
+        "score": 0.8666666666666667,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "has_left_identity",
+        "idempotent"
+      ],
+      "baseline": {
+        "antecedent_support": 13,
+        "jaccard": 0.43333333333333335,
+        "positive": 13,
+        "support_fraction": 0.40625
+      },
+      "consequent": "associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 13,
+        "confidence": 0.8666666666666667,
+        "consequent_support": 30,
+        "jaccard": 0.43333333333333335,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 13,
+        "strength": 1.0,
+        "support_fraction": 0.40625
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 13,
+          "confidence": 0.8666666666666667,
+          "consequent_support": 30,
+          "jaccard": 0.43333333333333335,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 13,
+          "strength": 1.0,
+          "support_fraction": 0.40625
+        },
+        "domain_size=2": {
+          "antecedent_support": 9,
+          "confidence": 0.8181818181818182,
+          "consequent_support": 16,
+          "jaccard": 0.5625,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 9,
+          "strength": 1.0,
+          "support_fraction": 0.5625
+        },
+        "domain_size=3": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 14,
+          "jaccard": 0.2857142857142857,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 0.25
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": false,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "domain_size": 3,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable"
+      },
+      "pln": {
+        "confidence": 0.8666666666666667,
+        "kappa": 2.0,
+        "score": 0.8666666666666667,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "idempotent"
+      ],
+      "baseline": {
+        "antecedent_support": 27,
+        "jaccard": 0.78125,
+        "positive": 25,
+        "support_fraction": 0.78125
+      },
+      "consequent": "associative",
+      "credal": {
+        "lower_strength": 0.8461538461538461,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.15384615384615385
+      },
+      "full_population": {
+        "antecedent_support": 27,
+        "confidence": 0.9310344827586207,
+        "consequent_support": 30,
+        "jaccard": 0.78125,
+        "negative": 2,
+        "object_count": 32,
+        "positive": 25,
+        "strength": 0.9259259259259259,
+        "support_fraction": 0.78125
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 27,
+          "confidence": 0.9310344827586207,
+          "consequent_support": 30,
+          "jaccard": 0.78125,
+          "negative": 2,
+          "object_count": 32,
+          "positive": 25,
+          "strength": 0.9259259259259259,
+          "support_fraction": 0.78125
+        },
+        "domain_size=2": {
+          "antecedent_support": 14,
+          "confidence": 0.875,
+          "consequent_support": 16,
+          "jaccard": 0.875,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 14,
+          "strength": 1.0,
+          "support_fraction": 0.875
+        },
+        "domain_size=3": {
+          "antecedent_support": 13,
+          "confidence": 0.8666666666666667,
+          "consequent_support": 14,
+          "jaccard": 0.6875,
+          "negative": 2,
+          "object_count": 16,
+          "positive": 11,
+          "strength": 0.8461538461538461,
+          "support_fraction": 0.6875
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": false,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "domain_size": 3,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable"
+      },
+      "pln": {
+        "confidence": 0.9310344827586207,
+        "kappa": 2.0,
+        "score": 0.8620689655172413,
+        "strength": 0.9259259259259259
+      }
+    },
+    {
+      "antecedent": [
+        "left_projection"
+      ],
+      "baseline": {
+        "antecedent_support": 11,
+        "jaccard": 1.0,
+        "positive": 11,
+        "support_fraction": 0.34375
+      },
+      "consequent": "right_cancellative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 11,
+        "confidence": 0.8461538461538461,
+        "consequent_support": 11,
+        "jaccard": 1.0,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 11,
+        "strength": 1.0,
+        "support_fraction": 0.34375
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 11,
+          "confidence": 0.8461538461538461,
+          "consequent_support": 11,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 11,
+          "strength": 1.0,
+          "support_fraction": 0.34375
+        },
+        "domain_size=2": {
+          "antecedent_support": 5,
+          "confidence": 0.7142857142857143,
+          "consequent_support": 5,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 5,
+          "strength": 1.0,
+          "support_fraction": 0.3125
+        },
+        "domain_size=3": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.375
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": false,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "domain_size": 3,
+            "finite_model_found": false,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "domain_size": 4,
+            "finite_model_found": false,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          }
+        ],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem"
+      },
+      "pln": {
+        "confidence": 0.8461538461538461,
+        "kappa": 2.0,
+        "score": 0.8461538461538461,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "right_cancellative"
+      ],
+      "baseline": {
+        "antecedent_support": 11,
+        "jaccard": 1.0,
+        "positive": 11,
+        "support_fraction": 0.34375
+      },
+      "consequent": "left_projection",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 11,
+        "confidence": 0.8461538461538461,
+        "consequent_support": 11,
+        "jaccard": 1.0,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 11,
+        "strength": 1.0,
+        "support_fraction": 0.34375
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 11,
+          "confidence": 0.8461538461538461,
+          "consequent_support": 11,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 11,
+          "strength": 1.0,
+          "support_fraction": 0.34375
+        },
+        "domain_size=2": {
+          "antecedent_support": 5,
+          "confidence": 0.7142857142857143,
+          "consequent_support": 5,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 5,
+          "strength": 1.0,
+          "support_fraction": 0.3125
+        },
+        "domain_size=3": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.375
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable"
+      },
+      "pln": {
+        "confidence": 0.8461538461538461,
+        "kappa": 2.0,
+        "score": 0.8461538461538461,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative",
+        "left_projection"
+      ],
+      "baseline": {
+        "antecedent_support": 11,
+        "jaccard": 1.0,
+        "positive": 11,
+        "support_fraction": 0.34375
+      },
+      "consequent": "right_cancellative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 11,
+        "confidence": 0.8461538461538461,
+        "consequent_support": 11,
+        "jaccard": 1.0,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 11,
+        "strength": 1.0,
+        "support_fraction": 0.34375
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 11,
+          "confidence": 0.8461538461538461,
+          "consequent_support": 11,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 11,
+          "strength": 1.0,
+          "support_fraction": 0.34375
+        },
+        "domain_size=2": {
+          "antecedent_support": 5,
+          "confidence": 0.7142857142857143,
+          "consequent_support": 5,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 5,
+          "strength": 1.0,
+          "support_fraction": 0.3125
+        },
+        "domain_size=3": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.375
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": false,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "domain_size": 3,
+            "finite_model_found": false,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "domain_size": 4,
+            "finite_model_found": false,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          }
+        ],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem"
+      },
+      "pln": {
+        "confidence": 0.8461538461538461,
+        "kappa": 2.0,
+        "score": 0.8461538461538461,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative",
+        "right_cancellative"
+      ],
+      "baseline": {
+        "antecedent_support": 11,
+        "jaccard": 1.0,
+        "positive": 11,
+        "support_fraction": 0.34375
+      },
+      "consequent": "left_projection",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 11,
+        "confidence": 0.8461538461538461,
+        "consequent_support": 11,
+        "jaccard": 1.0,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 11,
+        "strength": 1.0,
+        "support_fraction": 0.34375
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 11,
+          "confidence": 0.8461538461538461,
+          "consequent_support": 11,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 11,
+          "strength": 1.0,
+          "support_fraction": 0.34375
+        },
+        "domain_size=2": {
+          "antecedent_support": 5,
+          "confidence": 0.7142857142857143,
+          "consequent_support": 5,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 5,
+          "strength": 1.0,
+          "support_fraction": 0.3125
+        },
+        "domain_size=3": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.375
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": true,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 1,
+        "theorem_status": "GaveUp"
+      },
+      "pln": {
+        "confidence": 0.8461538461538461,
+        "kappa": 2.0,
+        "score": 0.8461538461538461,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "has_left_zero",
+        "left_projection"
+      ],
+      "baseline": {
+        "antecedent_support": 11,
+        "jaccard": 1.0,
+        "positive": 11,
+        "support_fraction": 0.34375
+      },
+      "consequent": "right_cancellative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 3,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 11,
+        "confidence": 0.8461538461538461,
+        "consequent_support": 11,
+        "jaccard": 1.0,
+        "negative": 0,
+        "object_count": 32,
+        "positive": 11,
+        "strength": 1.0,
+        "support_fraction": 0.34375
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 11,
+          "confidence": 0.8461538461538461,
+          "consequent_support": 11,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 32,
+          "positive": 11,
+          "strength": 1.0,
+          "support_fraction": 0.34375
+        },
+        "domain_size=2": {
+          "antecedent_support": 5,
+          "confidence": 0.7142857142857143,
+          "consequent_support": 5,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 5,
+          "strength": 1.0,
+          "support_fraction": 0.3125
+        },
+        "domain_size=3": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 16,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.375
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [
+          {
+            "domain_size": 2,
+            "finite_model_found": false,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "domain_size": 3,
+            "finite_model_found": false,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "domain_size": 4,
+            "finite_model_found": false,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          }
+        ],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem"
+      },
+      "pln": {
+        "confidence": 0.8461538461538461,
+        "kappa": 2.0,
+        "score": 0.8461538461538461,
+        "strength": 1.0
+      }
+    }
+  ],
+  "context": {
+    "article": "finite_structure_property_benchmark",
+    "attributes": [
+      "associative",
+      "commutative",
+      "has_identity",
+      "has_left_identity",
+      "has_left_zero",
+      "has_right_identity",
+      "has_right_zero",
+      "idempotent",
+      "left_cancellative",
+      "left_projection",
+      "right_cancellative",
+      "right_projection"
+    ],
+    "metadata": {
+      "attribute_count": 12,
+      "kind": "finite-structure-property-context",
+      "object_count": 32
+    },
+    "rows": [
+      {
+        "counts": {
+          "associative": 1,
+          "commutative": 1,
+          "has_left_zero": 1,
+          "has_right_zero": 1
+        },
+        "object": "n2__empty"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "commutative": 1,
+          "has_left_zero": 1,
+          "has_right_zero": 1
+        },
+        "object": "n2__commutative"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "commutative": 1,
+          "has_identity": 1,
+          "has_left_identity": 1,
+          "has_left_zero": 1,
+          "has_right_identity": 1,
+          "has_right_zero": 1,
+          "idempotent": 1
+        },
+        "object": "n2__associative"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_identity": 1,
+          "has_right_zero": 1,
+          "idempotent": 1,
+          "left_cancellative": 1,
+          "right_projection": 1
+        },
+        "object": "n2__idempotent"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_zero": 1,
+          "has_right_identity": 1,
+          "idempotent": 1,
+          "left_projection": 1,
+          "right_cancellative": 1
+        },
+        "object": "n2__left_projection"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_identity": 1,
+          "has_right_zero": 1,
+          "idempotent": 1,
+          "left_cancellative": 1,
+          "right_projection": 1
+        },
+        "object": "n2__right_projection"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "commutative": 1,
+          "has_identity": 1,
+          "has_left_identity": 1,
+          "has_left_zero": 1,
+          "has_right_identity": 1,
+          "has_right_zero": 1,
+          "idempotent": 1
+        },
+        "object": "n2__commutative+associative"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "commutative": 1,
+          "has_identity": 1,
+          "has_left_identity": 1,
+          "has_left_zero": 1,
+          "has_right_identity": 1,
+          "has_right_zero": 1,
+          "idempotent": 1
+        },
+        "object": "n2__commutative+idempotent"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_zero": 1,
+          "has_right_identity": 1,
+          "idempotent": 1,
+          "left_projection": 1,
+          "right_cancellative": 1
+        },
+        "object": "n2__associative+idempotent"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_zero": 1,
+          "has_right_identity": 1,
+          "idempotent": 1,
+          "left_projection": 1,
+          "right_cancellative": 1
+        },
+        "object": "n2__associative+left_projection"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_identity": 1,
+          "has_right_zero": 1,
+          "idempotent": 1,
+          "left_cancellative": 1,
+          "right_projection": 1
+        },
+        "object": "n2__associative+right_projection"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_zero": 1,
+          "has_right_identity": 1,
+          "idempotent": 1,
+          "left_projection": 1,
+          "right_cancellative": 1
+        },
+        "object": "n2__idempotent+left_projection"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_identity": 1,
+          "has_right_zero": 1,
+          "idempotent": 1,
+          "left_cancellative": 1,
+          "right_projection": 1
+        },
+        "object": "n2__idempotent+right_projection"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "commutative": 1,
+          "has_identity": 1,
+          "has_left_identity": 1,
+          "has_left_zero": 1,
+          "has_right_identity": 1,
+          "has_right_zero": 1,
+          "idempotent": 1
+        },
+        "object": "n2__commutative+associative+idempotent"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_zero": 1,
+          "has_right_identity": 1,
+          "idempotent": 1,
+          "left_projection": 1,
+          "right_cancellative": 1
+        },
+        "object": "n2__associative+idempotent+left_projection"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_identity": 1,
+          "has_right_zero": 1,
+          "idempotent": 1,
+          "left_cancellative": 1,
+          "right_projection": 1
+        },
+        "object": "n2__associative+idempotent+right_projection"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "commutative": 1,
+          "has_left_zero": 1,
+          "has_right_zero": 1
+        },
+        "object": "n3__empty"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "commutative": 1,
+          "has_left_zero": 1,
+          "has_right_zero": 1
+        },
+        "object": "n3__commutative"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_zero": 1,
+          "has_right_identity": 1,
+          "idempotent": 1,
+          "left_projection": 1,
+          "right_cancellative": 1
+        },
+        "object": "n3__associative"
+      },
+      {
+        "counts": {
+          "idempotent": 1
+        },
+        "object": "n3__idempotent"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_zero": 1,
+          "has_right_identity": 1,
+          "idempotent": 1,
+          "left_projection": 1,
+          "right_cancellative": 1
+        },
+        "object": "n3__left_projection"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_identity": 1,
+          "has_right_zero": 1,
+          "idempotent": 1,
+          "left_cancellative": 1,
+          "right_projection": 1
+        },
+        "object": "n3__right_projection"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "commutative": 1,
+          "has_identity": 1,
+          "has_left_identity": 1,
+          "has_right_identity": 1
+        },
+        "object": "n3__commutative+associative"
+      },
+      {
+        "counts": {
+          "commutative": 1,
+          "idempotent": 1
+        },
+        "object": "n3__commutative+idempotent"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_zero": 1,
+          "has_right_identity": 1,
+          "idempotent": 1,
+          "left_projection": 1,
+          "right_cancellative": 1
+        },
+        "object": "n3__associative+idempotent"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_zero": 1,
+          "has_right_identity": 1,
+          "idempotent": 1,
+          "left_projection": 1,
+          "right_cancellative": 1
+        },
+        "object": "n3__associative+left_projection"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_identity": 1,
+          "has_right_zero": 1,
+          "idempotent": 1,
+          "left_cancellative": 1,
+          "right_projection": 1
+        },
+        "object": "n3__associative+right_projection"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_zero": 1,
+          "has_right_identity": 1,
+          "idempotent": 1,
+          "left_projection": 1,
+          "right_cancellative": 1
+        },
+        "object": "n3__idempotent+left_projection"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_identity": 1,
+          "has_right_zero": 1,
+          "idempotent": 1,
+          "left_cancellative": 1,
+          "right_projection": 1
+        },
+        "object": "n3__idempotent+right_projection"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "commutative": 1,
+          "has_left_zero": 1,
+          "has_right_zero": 1,
+          "idempotent": 1
+        },
+        "object": "n3__commutative+associative+idempotent"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_zero": 1,
+          "has_right_identity": 1,
+          "idempotent": 1,
+          "left_projection": 1,
+          "right_cancellative": 1
+        },
+        "object": "n3__associative+idempotent+left_projection"
+      },
+      {
+        "counts": {
+          "associative": 1,
+          "has_left_identity": 1,
+          "has_right_zero": 1,
+          "idempotent": 1,
+          "left_cancellative": 1,
+          "right_projection": 1
+        },
+        "object": "n3__associative+idempotent+right_projection"
+      }
+    ]
+  },
+  "population": [
+    {
+      "axioms": [],
+      "domain_size": 2,
+      "object": "n2__empty",
+      "observed_properties": [
+        "associative",
+        "commutative",
+        "has_left_zero",
+        "has_right_zero"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c0",
+        "c1,c0": "c0",
+        "c1,c1": "c0"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": true,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": true,
+        "has_right_identity": false,
+        "has_right_zero": true,
+        "idempotent": false,
+        "left_cancellative": false,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "commutative"
+      ],
+      "domain_size": 2,
+      "object": "n2__commutative",
+      "observed_properties": [
+        "associative",
+        "commutative",
+        "has_left_zero",
+        "has_right_zero"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c0",
+        "c1,c0": "c0",
+        "c1,c1": "c0"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": true,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": true,
+        "has_right_identity": false,
+        "has_right_zero": true,
+        "idempotent": false,
+        "left_cancellative": false,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "associative"
+      ],
+      "domain_size": 2,
+      "object": "n2__associative",
+      "observed_properties": [
+        "associative",
+        "commutative",
+        "has_identity",
+        "has_left_identity",
+        "has_left_zero",
+        "has_right_identity",
+        "has_right_zero",
+        "idempotent"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c0",
+        "c1,c0": "c0",
+        "c1,c1": "c1"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": true,
+        "has_identity": true,
+        "has_left_identity": true,
+        "has_left_zero": true,
+        "has_right_identity": true,
+        "has_right_zero": true,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "idempotent"
+      ],
+      "domain_size": 2,
+      "object": "n2__idempotent",
+      "observed_properties": [
+        "associative",
+        "has_left_identity",
+        "has_right_zero",
+        "idempotent",
+        "left_cancellative",
+        "right_projection"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c1",
+        "c1,c0": "c0",
+        "c1,c1": "c1"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": true,
+        "has_left_zero": false,
+        "has_right_identity": false,
+        "has_right_zero": true,
+        "idempotent": true,
+        "left_cancellative": true,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": true
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "left_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__left_projection",
+      "observed_properties": [
+        "associative",
+        "has_left_zero",
+        "has_right_identity",
+        "idempotent",
+        "left_projection",
+        "right_cancellative"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c0",
+        "c1,c0": "c1",
+        "c1,c1": "c1"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": true,
+        "has_right_identity": true,
+        "has_right_zero": false,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": true,
+        "right_cancellative": true,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "right_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__right_projection",
+      "observed_properties": [
+        "associative",
+        "has_left_identity",
+        "has_right_zero",
+        "idempotent",
+        "left_cancellative",
+        "right_projection"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c1",
+        "c1,c0": "c0",
+        "c1,c1": "c1"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": true,
+        "has_left_zero": false,
+        "has_right_identity": false,
+        "has_right_zero": true,
+        "idempotent": true,
+        "left_cancellative": true,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": true
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "associative"
+      ],
+      "domain_size": 2,
+      "object": "n2__commutative+associative",
+      "observed_properties": [
+        "associative",
+        "commutative",
+        "has_identity",
+        "has_left_identity",
+        "has_left_zero",
+        "has_right_identity",
+        "has_right_zero",
+        "idempotent"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c0",
+        "c1,c0": "c0",
+        "c1,c1": "c1"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": true,
+        "has_identity": true,
+        "has_left_identity": true,
+        "has_left_zero": true,
+        "has_right_identity": true,
+        "has_right_zero": true,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "idempotent"
+      ],
+      "domain_size": 2,
+      "object": "n2__commutative+idempotent",
+      "observed_properties": [
+        "associative",
+        "commutative",
+        "has_identity",
+        "has_left_identity",
+        "has_left_zero",
+        "has_right_identity",
+        "has_right_zero",
+        "idempotent"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c1",
+        "c1,c0": "c1",
+        "c1,c1": "c1"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": true,
+        "has_identity": true,
+        "has_left_identity": true,
+        "has_left_zero": true,
+        "has_right_identity": true,
+        "has_right_zero": true,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "associative",
+        "idempotent"
+      ],
+      "domain_size": 2,
+      "object": "n2__associative+idempotent",
+      "observed_properties": [
+        "associative",
+        "has_left_zero",
+        "has_right_identity",
+        "idempotent",
+        "left_projection",
+        "right_cancellative"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c0",
+        "c1,c0": "c1",
+        "c1,c1": "c1"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": true,
+        "has_right_identity": true,
+        "has_right_zero": false,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": true,
+        "right_cancellative": true,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "associative",
+        "left_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__associative+left_projection",
+      "observed_properties": [
+        "associative",
+        "has_left_zero",
+        "has_right_identity",
+        "idempotent",
+        "left_projection",
+        "right_cancellative"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c0",
+        "c1,c0": "c1",
+        "c1,c1": "c1"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": true,
+        "has_right_identity": true,
+        "has_right_zero": false,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": true,
+        "right_cancellative": true,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "associative",
+        "right_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__associative+right_projection",
+      "observed_properties": [
+        "associative",
+        "has_left_identity",
+        "has_right_zero",
+        "idempotent",
+        "left_cancellative",
+        "right_projection"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c1",
+        "c1,c0": "c0",
+        "c1,c1": "c1"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": true,
+        "has_left_zero": false,
+        "has_right_identity": false,
+        "has_right_zero": true,
+        "idempotent": true,
+        "left_cancellative": true,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": true
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "idempotent",
+        "left_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__idempotent+left_projection",
+      "observed_properties": [
+        "associative",
+        "has_left_zero",
+        "has_right_identity",
+        "idempotent",
+        "left_projection",
+        "right_cancellative"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c0",
+        "c1,c0": "c1",
+        "c1,c1": "c1"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": true,
+        "has_right_identity": true,
+        "has_right_zero": false,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": true,
+        "right_cancellative": true,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "idempotent",
+        "right_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__idempotent+right_projection",
+      "observed_properties": [
+        "associative",
+        "has_left_identity",
+        "has_right_zero",
+        "idempotent",
+        "left_cancellative",
+        "right_projection"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c1",
+        "c1,c0": "c0",
+        "c1,c1": "c1"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": true,
+        "has_left_zero": false,
+        "has_right_identity": false,
+        "has_right_zero": true,
+        "idempotent": true,
+        "left_cancellative": true,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": true
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "associative",
+        "idempotent"
+      ],
+      "domain_size": 2,
+      "object": "n2__commutative+associative+idempotent",
+      "observed_properties": [
+        "associative",
+        "commutative",
+        "has_identity",
+        "has_left_identity",
+        "has_left_zero",
+        "has_right_identity",
+        "has_right_zero",
+        "idempotent"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c1",
+        "c1,c0": "c1",
+        "c1,c1": "c1"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": true,
+        "has_identity": true,
+        "has_left_identity": true,
+        "has_left_zero": true,
+        "has_right_identity": true,
+        "has_right_zero": true,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "associative",
+        "idempotent",
+        "left_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__associative+idempotent+left_projection",
+      "observed_properties": [
+        "associative",
+        "has_left_zero",
+        "has_right_identity",
+        "idempotent",
+        "left_projection",
+        "right_cancellative"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c0",
+        "c1,c0": "c1",
+        "c1,c1": "c1"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": true,
+        "has_right_identity": true,
+        "has_right_zero": false,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": true,
+        "right_cancellative": true,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "associative",
+        "idempotent",
+        "right_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__associative+idempotent+right_projection",
+      "observed_properties": [
+        "associative",
+        "has_left_identity",
+        "has_right_zero",
+        "idempotent",
+        "left_cancellative",
+        "right_projection"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c1",
+        "c1,c0": "c0",
+        "c1,c1": "c1"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": true,
+        "has_left_zero": false,
+        "has_right_identity": false,
+        "has_right_zero": true,
+        "idempotent": true,
+        "left_cancellative": true,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": true
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [],
+      "domain_size": 3,
+      "object": "n3__empty",
+      "observed_properties": [
+        "associative",
+        "commutative",
+        "has_left_zero",
+        "has_right_zero"
+      ],
+      "operation_table": {
+        "c0,c0": "c1",
+        "c0,c1": "c1",
+        "c0,c2": "c1",
+        "c1,c0": "c1",
+        "c1,c1": "c1",
+        "c1,c2": "c1",
+        "c2,c0": "c1",
+        "c2,c1": "c1",
+        "c2,c2": "c1"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": true,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": true,
+        "has_right_identity": false,
+        "has_right_zero": true,
+        "idempotent": false,
+        "left_cancellative": false,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "commutative"
+      ],
+      "domain_size": 3,
+      "object": "n3__commutative",
+      "observed_properties": [
+        "associative",
+        "commutative",
+        "has_left_zero",
+        "has_right_zero"
+      ],
+      "operation_table": {
+        "c0,c0": "c1",
+        "c0,c1": "c1",
+        "c0,c2": "c1",
+        "c1,c0": "c1",
+        "c1,c1": "c1",
+        "c1,c2": "c1",
+        "c2,c0": "c1",
+        "c2,c1": "c1",
+        "c2,c2": "c1"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": true,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": true,
+        "has_right_identity": false,
+        "has_right_zero": true,
+        "idempotent": false,
+        "left_cancellative": false,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "associative"
+      ],
+      "domain_size": 3,
+      "object": "n3__associative",
+      "observed_properties": [
+        "associative",
+        "has_left_zero",
+        "has_right_identity",
+        "idempotent",
+        "left_projection",
+        "right_cancellative"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c0",
+        "c0,c2": "c0",
+        "c1,c0": "c1",
+        "c1,c1": "c1",
+        "c1,c2": "c1",
+        "c2,c0": "c2",
+        "c2,c1": "c2",
+        "c2,c2": "c2"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": true,
+        "has_right_identity": true,
+        "has_right_zero": false,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": true,
+        "right_cancellative": true,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "idempotent"
+      ],
+      "domain_size": 3,
+      "object": "n3__idempotent",
+      "observed_properties": [
+        "idempotent"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c0",
+        "c0,c2": "c2",
+        "c1,c0": "c2",
+        "c1,c1": "c1",
+        "c1,c2": "c1",
+        "c2,c0": "c1",
+        "c2,c1": "c0",
+        "c2,c2": "c2"
+      },
+      "property_truths": {
+        "associative": false,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": false,
+        "has_right_identity": false,
+        "has_right_zero": false,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "left_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__left_projection",
+      "observed_properties": [
+        "associative",
+        "has_left_zero",
+        "has_right_identity",
+        "idempotent",
+        "left_projection",
+        "right_cancellative"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c0",
+        "c0,c2": "c0",
+        "c1,c0": "c1",
+        "c1,c1": "c1",
+        "c1,c2": "c1",
+        "c2,c0": "c2",
+        "c2,c1": "c2",
+        "c2,c2": "c2"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": true,
+        "has_right_identity": true,
+        "has_right_zero": false,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": true,
+        "right_cancellative": true,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "right_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__right_projection",
+      "observed_properties": [
+        "associative",
+        "has_left_identity",
+        "has_right_zero",
+        "idempotent",
+        "left_cancellative",
+        "right_projection"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c1",
+        "c0,c2": "c2",
+        "c1,c0": "c0",
+        "c1,c1": "c1",
+        "c1,c2": "c2",
+        "c2,c0": "c0",
+        "c2,c1": "c1",
+        "c2,c2": "c2"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": true,
+        "has_left_zero": false,
+        "has_right_identity": false,
+        "has_right_zero": true,
+        "idempotent": true,
+        "left_cancellative": true,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": true
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "associative"
+      ],
+      "domain_size": 3,
+      "object": "n3__commutative+associative",
+      "observed_properties": [
+        "associative",
+        "commutative",
+        "has_identity",
+        "has_left_identity",
+        "has_right_identity"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c1",
+        "c0,c2": "c0",
+        "c1,c0": "c1",
+        "c1,c1": "c0",
+        "c1,c2": "c1",
+        "c2,c0": "c0",
+        "c2,c1": "c1",
+        "c2,c2": "c2"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": true,
+        "has_identity": true,
+        "has_left_identity": true,
+        "has_left_zero": false,
+        "has_right_identity": true,
+        "has_right_zero": false,
+        "idempotent": false,
+        "left_cancellative": false,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "idempotent"
+      ],
+      "domain_size": 3,
+      "object": "n3__commutative+idempotent",
+      "observed_properties": [
+        "commutative",
+        "idempotent"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c2",
+        "c0,c2": "c0",
+        "c1,c0": "c2",
+        "c1,c1": "c1",
+        "c1,c2": "c2",
+        "c2,c0": "c0",
+        "c2,c1": "c2",
+        "c2,c2": "c2"
+      },
+      "property_truths": {
+        "associative": false,
+        "commutative": true,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": false,
+        "has_right_identity": false,
+        "has_right_zero": false,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "associative",
+        "idempotent"
+      ],
+      "domain_size": 3,
+      "object": "n3__associative+idempotent",
+      "observed_properties": [
+        "associative",
+        "has_left_zero",
+        "has_right_identity",
+        "idempotent",
+        "left_projection",
+        "right_cancellative"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c0",
+        "c0,c2": "c0",
+        "c1,c0": "c1",
+        "c1,c1": "c1",
+        "c1,c2": "c1",
+        "c2,c0": "c2",
+        "c2,c1": "c2",
+        "c2,c2": "c2"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": true,
+        "has_right_identity": true,
+        "has_right_zero": false,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": true,
+        "right_cancellative": true,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "associative",
+        "left_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__associative+left_projection",
+      "observed_properties": [
+        "associative",
+        "has_left_zero",
+        "has_right_identity",
+        "idempotent",
+        "left_projection",
+        "right_cancellative"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c0",
+        "c0,c2": "c0",
+        "c1,c0": "c1",
+        "c1,c1": "c1",
+        "c1,c2": "c1",
+        "c2,c0": "c2",
+        "c2,c1": "c2",
+        "c2,c2": "c2"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": true,
+        "has_right_identity": true,
+        "has_right_zero": false,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": true,
+        "right_cancellative": true,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "associative",
+        "right_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__associative+right_projection",
+      "observed_properties": [
+        "associative",
+        "has_left_identity",
+        "has_right_zero",
+        "idempotent",
+        "left_cancellative",
+        "right_projection"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c1",
+        "c0,c2": "c2",
+        "c1,c0": "c0",
+        "c1,c1": "c1",
+        "c1,c2": "c2",
+        "c2,c0": "c0",
+        "c2,c1": "c1",
+        "c2,c2": "c2"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": true,
+        "has_left_zero": false,
+        "has_right_identity": false,
+        "has_right_zero": true,
+        "idempotent": true,
+        "left_cancellative": true,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": true
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "idempotent",
+        "left_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__idempotent+left_projection",
+      "observed_properties": [
+        "associative",
+        "has_left_zero",
+        "has_right_identity",
+        "idempotent",
+        "left_projection",
+        "right_cancellative"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c0",
+        "c0,c2": "c0",
+        "c1,c0": "c1",
+        "c1,c1": "c1",
+        "c1,c2": "c1",
+        "c2,c0": "c2",
+        "c2,c1": "c2",
+        "c2,c2": "c2"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": true,
+        "has_right_identity": true,
+        "has_right_zero": false,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": true,
+        "right_cancellative": true,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "idempotent",
+        "right_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__idempotent+right_projection",
+      "observed_properties": [
+        "associative",
+        "has_left_identity",
+        "has_right_zero",
+        "idempotent",
+        "left_cancellative",
+        "right_projection"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c1",
+        "c0,c2": "c2",
+        "c1,c0": "c0",
+        "c1,c1": "c1",
+        "c1,c2": "c2",
+        "c2,c0": "c0",
+        "c2,c1": "c1",
+        "c2,c2": "c2"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": true,
+        "has_left_zero": false,
+        "has_right_identity": false,
+        "has_right_zero": true,
+        "idempotent": true,
+        "left_cancellative": true,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": true
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "associative",
+        "idempotent"
+      ],
+      "domain_size": 3,
+      "object": "n3__commutative+associative+idempotent",
+      "observed_properties": [
+        "associative",
+        "commutative",
+        "has_left_zero",
+        "has_right_zero",
+        "idempotent"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c1",
+        "c0,c2": "c1",
+        "c1,c0": "c1",
+        "c1,c1": "c1",
+        "c1,c2": "c1",
+        "c2,c0": "c1",
+        "c2,c1": "c1",
+        "c2,c2": "c2"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": true,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": true,
+        "has_right_identity": false,
+        "has_right_zero": true,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "associative",
+        "idempotent",
+        "left_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__associative+idempotent+left_projection",
+      "observed_properties": [
+        "associative",
+        "has_left_zero",
+        "has_right_identity",
+        "idempotent",
+        "left_projection",
+        "right_cancellative"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c0",
+        "c0,c2": "c0",
+        "c1,c0": "c1",
+        "c1,c1": "c1",
+        "c1,c2": "c1",
+        "c2,c0": "c2",
+        "c2,c1": "c2",
+        "c2,c2": "c2"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": false,
+        "has_left_zero": true,
+        "has_right_identity": true,
+        "has_right_zero": false,
+        "idempotent": true,
+        "left_cancellative": false,
+        "left_projection": true,
+        "right_cancellative": true,
+        "right_projection": false
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    },
+    {
+      "axioms": [
+        "associative",
+        "idempotent",
+        "right_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__associative+idempotent+right_projection",
+      "observed_properties": [
+        "associative",
+        "has_left_identity",
+        "has_right_zero",
+        "idempotent",
+        "left_cancellative",
+        "right_projection"
+      ],
+      "operation_table": {
+        "c0,c0": "c0",
+        "c0,c1": "c1",
+        "c0,c2": "c2",
+        "c1,c0": "c0",
+        "c1,c1": "c1",
+        "c1,c2": "c2",
+        "c2,c0": "c0",
+        "c2,c1": "c1",
+        "c2,c2": "c2"
+      },
+      "property_truths": {
+        "associative": true,
+        "commutative": false,
+        "has_identity": false,
+        "has_left_identity": true,
+        "has_left_zero": false,
+        "has_right_identity": false,
+        "has_right_zero": true,
+        "idempotent": true,
+        "left_cancellative": true,
+        "left_projection": false,
+        "right_cancellative": false,
+        "right_projection": true
+      },
+      "return_code": 0,
+      "status": "Satisfiable"
+    }
+  ],
+  "unsatisfied_theories": [
+    {
+      "axioms": [
+        "commutative",
+        "left_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__commutative+left_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "right_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__commutative+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "left_projection",
+        "right_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__left_projection+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "associative",
+        "left_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__commutative+associative+left_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "associative",
+        "right_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__commutative+associative+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "idempotent",
+        "left_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__commutative+idempotent+left_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "idempotent",
+        "right_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__commutative+idempotent+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "left_projection",
+        "right_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__commutative+left_projection+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "associative",
+        "left_projection",
+        "right_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__associative+left_projection+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "idempotent",
+        "left_projection",
+        "right_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__idempotent+left_projection+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "associative",
+        "idempotent",
+        "left_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__commutative+associative+idempotent+left_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "associative",
+        "idempotent",
+        "right_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__commutative+associative+idempotent+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "associative",
+        "left_projection",
+        "right_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__commutative+associative+left_projection+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "idempotent",
+        "left_projection",
+        "right_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__commutative+idempotent+left_projection+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "associative",
+        "idempotent",
+        "left_projection",
+        "right_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__associative+idempotent+left_projection+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "associative",
+        "idempotent",
+        "left_projection",
+        "right_projection"
+      ],
+      "domain_size": 2,
+      "object": "n2__commutative+associative+idempotent+left_projection+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "left_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__commutative+left_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "right_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__commutative+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "left_projection",
+        "right_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__left_projection+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "associative",
+        "left_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__commutative+associative+left_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "associative",
+        "right_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__commutative+associative+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "idempotent",
+        "left_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__commutative+idempotent+left_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "idempotent",
+        "right_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__commutative+idempotent+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "left_projection",
+        "right_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__commutative+left_projection+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "associative",
+        "left_projection",
+        "right_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__associative+left_projection+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "idempotent",
+        "left_projection",
+        "right_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__idempotent+left_projection+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "associative",
+        "idempotent",
+        "left_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__commutative+associative+idempotent+left_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "associative",
+        "idempotent",
+        "right_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__commutative+associative+idempotent+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "associative",
+        "left_projection",
+        "right_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__commutative+associative+left_projection+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "idempotent",
+        "left_projection",
+        "right_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__commutative+idempotent+left_projection+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "associative",
+        "idempotent",
+        "left_projection",
+        "right_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__associative+idempotent+left_projection+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    },
+    {
+      "axioms": [
+        "commutative",
+        "associative",
+        "idempotent",
+        "left_projection",
+        "right_projection"
+      ],
+      "domain_size": 3,
+      "object": "n3__commutative+associative+idempotent+left_projection+right_projection",
+      "return_code": 0,
+      "status": "Unsatisfiable"
+    }
+  ]
+}

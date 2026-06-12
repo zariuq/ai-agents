@@ -1,0 +1,314 @@
+{
+  "credal_summary": {
+    "intent_support_histogram": {
+      "1": 28,
+      "2": 3,
+      "3": 1,
+      "4": 4
+    },
+    "lower_concept_count": 2,
+    "stable_concept_count": 2,
+    "support_histogram": {
+      "1": 45,
+      "4": 2
+    },
+    "unstable_concept_count": 45,
+    "upper_concept_count": 47
+  },
+  "dataset": {
+    "attributes": 12,
+    "is_binary": false,
+    "kind": "mizar-json",
+    "max_count": 8,
+    "name": "yellow_0",
+    "objects": 98,
+    "source": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/mizar_family/yellow_0.json"
+  },
+  "gate_family": {
+    "concept_count_by_gate": [
+      36,
+      8,
+      5,
+      4
+    ],
+    "densities": [
+      0.18112244897959184,
+      0.025510204081632654,
+      0.007653061224489796,
+      0.0017006802721088435
+    ],
+    "distinct_concept_families": 4,
+    "gate_count": 4,
+    "labels": [
+      "threshold>=1",
+      "threshold>=3",
+      "threshold>=6",
+      "threshold>=8"
+    ]
+  },
+  "samples": {
+    "unstable_concepts": [
+      {
+        "extent": [
+          "registration_12"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "RelStr",
+          "SubRelStr",
+          "ex_inf_of",
+          "ex_sup_of",
+          "infs-inheriting",
+          "join-inheriting",
+          "meet-inheriting",
+          "sups-inheriting"
+        ],
+        "intent_size": 8
+      },
+      {
+        "extent": [
+          "definition_12",
+          "registration_12"
+        ],
+        "extent_size": 2,
+        "gate_support": 1,
+        "intent": [
+          "RelStr",
+          "SubRelStr",
+          "ex_inf_of",
+          "ex_sup_of",
+          "infs-inheriting",
+          "sups-inheriting"
+        ],
+        "intent_size": 6
+      },
+      {
+        "extent": [
+          "definition_11",
+          "registration_12"
+        ],
+        "extent_size": 2,
+        "gate_support": 1,
+        "intent": [
+          "RelStr",
+          "SubRelStr",
+          "ex_inf_of",
+          "ex_sup_of",
+          "join-inheriting",
+          "meet-inheriting"
+        ],
+        "intent_size": 6
+      },
+      {
+        "extent": [
+          "definition_11",
+          "definition_12",
+          "registration_12"
+        ],
+        "extent_size": 3,
+        "gate_support": 1,
+        "intent": [
+          "RelStr",
+          "SubRelStr",
+          "ex_inf_of",
+          "ex_sup_of"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "definition_11",
+          "registration_12",
+          "registration_14"
+        ],
+        "extent_size": 3,
+        "gate_support": 1,
+        "intent": [
+          "RelStr",
+          "SubRelStr",
+          "ex_inf_of",
+          "meet-inheriting"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "definition_11",
+          "registration_12",
+          "registration_15"
+        ],
+        "extent_size": 3,
+        "gate_support": 1,
+        "intent": [
+          "RelStr",
+          "SubRelStr",
+          "ex_sup_of",
+          "join-inheriting"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "definition_12",
+          "registration_12",
+          "registration_13"
+        ],
+        "extent_size": 3,
+        "gate_support": 1,
+        "intent": [
+          "RelStr",
+          "SubRelStr",
+          "infs-inheriting",
+          "sups-inheriting"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "theorem_44"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "Bottom",
+          "RelStr",
+          "ex_sup_of",
+          "lower-bounded"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "theorem_45"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "RelStr",
+          "Top",
+          "ex_inf_of",
+          "upper-bounded"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "theorem_42"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "RelStr",
+          "ex_inf_of",
+          "ex_sup_of",
+          "lower-bounded"
+        ],
+        "intent_size": 4
+      }
+    ],
+    "unstable_intents": [
+      {
+        "gate_support": 3,
+        "intent": [
+          "RelStr"
+        ],
+        "intent_size": 1
+      },
+      {
+        "gate_support": 2,
+        "intent": [
+          "RelStr",
+          "ex_inf_of"
+        ],
+        "intent_size": 2
+      },
+      {
+        "gate_support": 2,
+        "intent": [
+          "RelStr",
+          "ex_sup_of"
+        ],
+        "intent_size": 2
+      },
+      {
+        "gate_support": 2,
+        "intent": [
+          "SubRelStr"
+        ],
+        "intent_size": 1
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "RelStr",
+          "SubRelStr",
+          "ex_inf_of",
+          "ex_sup_of",
+          "infs-inheriting",
+          "join-inheriting",
+          "meet-inheriting",
+          "sups-inheriting"
+        ],
+        "intent_size": 8
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "RelStr",
+          "SubRelStr",
+          "ex_inf_of",
+          "ex_sup_of",
+          "infs-inheriting",
+          "sups-inheriting"
+        ],
+        "intent_size": 6
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "RelStr",
+          "SubRelStr",
+          "ex_inf_of",
+          "ex_sup_of",
+          "join-inheriting",
+          "meet-inheriting"
+        ],
+        "intent_size": 6
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "Bottom",
+          "RelStr",
+          "ex_sup_of",
+          "lower-bounded"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "RelStr",
+          "SubRelStr",
+          "ex_inf_of",
+          "ex_sup_of"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "RelStr",
+          "SubRelStr",
+          "ex_inf_of",
+          "meet-inheriting"
+        ],
+        "intent_size": 4
+      }
+    ]
+  },
+  "theoretical_notes": [
+    "Count-valued evidence gives threshold gates a natural semantic axis, so unstable concepts can be interpreted as threshold-sensitive rather than purely artificial."
+  ]
+}

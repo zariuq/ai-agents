@@ -1,0 +1,846 @@
+{
+  "article": "waybel_9",
+  "attributes": [
+    "InternalRel",
+    "NetStr",
+    "RelStr",
+    "TopLattice",
+    "TopRelStr",
+    "TopStruct",
+    "ex_inf_of",
+    "ex_sup_of",
+    "is_a_cluster_point_of",
+    "with_infima",
+    "with_suprema"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 1,
+      "kind": "registration",
+      "object": "registration_1",
+      "preview": "registration let L be non empty RelStr; cluster id L -> monotone; coherence by YELLOW_2:11; end;"
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let S, T be non empty RelStr, f be Function of S,T; redefine attr f is antitone means for x, y being Element "
+    },
+    {
+      "counts": {
+        "RelStr": 13
+      },
+      "index": 1,
+      "kind": "theorem",
+      "object": "theorem_1",
+      "preview": "theorem Th1: for S, T being RelStr, K, L being non empty RelStr for f being Function of S, T, g being Function of K, L s"
+    },
+    {
+      "counts": {
+        "RelStr": 13
+      },
+      "index": 2,
+      "kind": "theorem",
+      "object": "theorem_2",
+      "preview": "theorem Th2: for S, T being RelStr, K, L being non empty RelStr for f being Function of S, T, g being Function of K, L s"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "with_infima": 2
+      },
+      "index": 3,
+      "kind": "theorem",
+      "object": "theorem_3",
+      "preview": "theorem for A, B being 1-sorted for F being Subset-Family of A, G being Subset-Family of B st the carrier of A = the car"
+    },
+    {
+      "counts": {
+        "RelStr": 4,
+        "with_suprema": 4
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem Th4: for L being antisymmetric reflexive with_suprema RelStr, x being Element of L holds uparrow x = {x} \"\\/\" [#"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "with_infima": 2
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem Th5: for L being antisymmetric reflexive with_infima RelStr, x being Element of L holds downarrow x = {x} \"/\\\" ["
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "with_infima": 2
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem for L being antisymmetric reflexive with_infima RelStr, y being Element of L holds (y\"/\\\").:(uparrow y) = {y} pr"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "with_infima": 2
+      },
+      "index": 7,
+      "kind": "theorem",
+      "object": "theorem_7",
+      "preview": "theorem Th7: for L being antisymmetric reflexive with_infima RelStr, x being Element of L holds (x\"/\\\")\"{x} = uparrow x "
+    },
+    {
+      "counts": {
+        "InternalRel": 4,
+        "NetStr": 4,
+        "RelStr": 2
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem Th8: for T being non empty 1-sorted, N being non empty NetStr over T holds N is_eventually_in rng the mapping of"
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "NetStr": 1,
+        "RelStr": 1
+      },
+      "index": 2,
+      "kind": "registration",
+      "object": "registration_2",
+      "preview": "registration let L be non empty reflexive RelStr, D be non empty directed Subset of L, n be Function of D, the carrier o"
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "NetStr": 1,
+        "RelStr": 1
+      },
+      "index": 3,
+      "kind": "registration",
+      "object": "registration_3",
+      "preview": "registration let L be non empty reflexive transitive RelStr, D be non empty directed Subset of L, n be Function of D, th"
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "NetStr": 1,
+        "RelStr": 2
+      },
+      "index": 9,
+      "kind": "theorem",
+      "object": "theorem_9",
+      "preview": "theorem Th9: for L being non empty reflexive transitive RelStr st for x being Element of L, N being net of L st N is eve"
+    },
+    {
+      "counts": {
+        "RelStr": 4
+      },
+      "index": 10,
+      "kind": "theorem",
+      "object": "theorem_10",
+      "preview": "theorem Th10: for L being non empty RelStr, a being Element of L, N being net of L holds a \"/\\\" N is net of L proof let "
+    },
+    {
+      "counts": {
+        "RelStr": 1
+      },
+      "index": 4,
+      "kind": "registration",
+      "object": "registration_4",
+      "preview": "registration let L be non empty RelStr, x be Element of L, N be net of L; cluster x \"/\\\" N -> transitive; coherence by T"
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "NetStr": 1,
+        "RelStr": 3
+      },
+      "index": 5,
+      "kind": "registration",
+      "object": "registration_5",
+      "preview": "registration let L be non empty RelStr, x be Element of L, N be non empty reflexive NetStr over L; cluster x \"/\\\" N -> r"
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "NetStr": 1,
+        "RelStr": 3
+      },
+      "index": 6,
+      "kind": "registration",
+      "object": "registration_6",
+      "preview": "registration let L be non empty RelStr, x be Element of L, N be non empty antisymmetric NetStr over L; cluster x \"/\\\" N "
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "NetStr": 1,
+        "RelStr": 3
+      },
+      "index": 7,
+      "kind": "registration",
+      "object": "registration_7",
+      "preview": "registration let L be non empty RelStr, x be Element of L, N be non empty transitive NetStr over L; cluster x \"/\\\" N -> "
+    },
+    {
+      "counts": {
+        "NetStr": 1,
+        "RelStr": 2
+      },
+      "index": 8,
+      "kind": "registration",
+      "object": "registration_8",
+      "preview": "registration let L be non empty RelStr, J be set, f be Function of J,the carrier of L; cluster FinSups f -> transitive; "
+    },
+    {
+      "counts": {
+        "NetStr": 1,
+        "RelStr": 1
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let L be non empty RelStr, N be NetStr over L; func inf N -> Element of L equals Inf the mapping of N; cohere"
+    },
+    {
+      "counts": {
+        "NetStr": 1,
+        "RelStr": 1,
+        "ex_inf_of": 2,
+        "ex_sup_of": 2
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let L be RelStr, N be NetStr over L; pred ex_sup_of N means ex_sup_of rng the mapping of N,L; pred ex_inf_of "
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "NetStr": 2,
+        "RelStr": 3
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let L be RelStr; func L+id -> strict NetStr over L means :Def5: the RelStr of it = the RelStr of L & the mapp"
+    },
+    {
+      "counts": {
+        "RelStr": 3
+      },
+      "index": 9,
+      "kind": "registration",
+      "object": "registration_9",
+      "preview": "registration let L be non empty RelStr; cluster L+id -> non empty; coherence proof the RelStr of L = the RelStr of L+id "
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "RelStr": 3
+      },
+      "index": 10,
+      "kind": "registration",
+      "object": "registration_10",
+      "preview": "registration let L be reflexive RelStr; cluster L+id -> reflexive; coherence proof the RelStr of L = the RelStr of L+id "
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "RelStr": 3
+      },
+      "index": 11,
+      "kind": "registration",
+      "object": "registration_11",
+      "preview": "registration let L be antisymmetric RelStr; cluster L+id -> antisymmetric; coherence proof the RelStr of L = the RelStr "
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "RelStr": 3
+      },
+      "index": 12,
+      "kind": "registration",
+      "object": "registration_12",
+      "preview": "registration let L be transitive RelStr; cluster L+id -> transitive; coherence proof the RelStr of L = the RelStr of L+i"
+    },
+    {
+      "counts": {
+        "RelStr": 3,
+        "with_suprema": 1
+      },
+      "index": 13,
+      "kind": "registration",
+      "object": "registration_13",
+      "preview": "registration let L be with_suprema RelStr; cluster L+id -> directed; coherence proof A1: the RelStr of L = the RelStr of"
+    },
+    {
+      "counts": {
+        "RelStr": 3
+      },
+      "index": 14,
+      "kind": "registration",
+      "object": "registration_14",
+      "preview": "registration let L be directed RelStr; cluster L+id -> directed; coherence proof [#]L is directed & the RelStr of L = th"
+    },
+    {
+      "counts": {
+        "RelStr": 5
+      },
+      "index": 15,
+      "kind": "registration",
+      "object": "registration_15",
+      "preview": "registration let L be non empty RelStr; cluster L+id -> monotone eventually-directed; coherence proof set N = L+id; netm"
+    },
+    {
+      "counts": {
+        "InternalRel": 3,
+        "NetStr": 2,
+        "RelStr": 1
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let L be RelStr; func L opp+id -> strict NetStr over L means :Def6: the carrier of it = the carrier of L & th"
+    },
+    {
+      "counts": {
+        "InternalRel": 2,
+        "RelStr": 4
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem Th11: for L being RelStr holds the RelStr of L~ = the RelStr of L opp+id proof let L be RelStr; the InternalRel "
+    },
+    {
+      "counts": {
+        "RelStr": 3
+      },
+      "index": 16,
+      "kind": "registration",
+      "object": "registration_16",
+      "preview": "registration let L be non empty RelStr; cluster L opp+id -> non empty; coherence proof the RelStr of L~ = the RelStr of "
+    },
+    {
+      "counts": {
+        "InternalRel": 5,
+        "RelStr": 1
+      },
+      "index": 17,
+      "kind": "registration",
+      "object": "registration_17",
+      "preview": "registration let L be reflexive RelStr; cluster L opp+id -> reflexive; coherence proof the InternalRel of L is_reflexive"
+    },
+    {
+      "counts": {
+        "InternalRel": 5,
+        "RelStr": 1
+      },
+      "index": 18,
+      "kind": "registration",
+      "object": "registration_18",
+      "preview": "registration let L be antisymmetric RelStr; cluster L opp+id -> antisymmetric; coherence proof the InternalRel of L is_a"
+    },
+    {
+      "counts": {
+        "InternalRel": 5,
+        "RelStr": 1
+      },
+      "index": 19,
+      "kind": "registration",
+      "object": "registration_19",
+      "preview": "registration let L be transitive RelStr; cluster L opp+id -> transitive; coherence proof the InternalRel of L is_transit"
+    },
+    {
+      "counts": {
+        "RelStr": 4,
+        "with_infima": 1,
+        "with_suprema": 1
+      },
+      "index": 20,
+      "kind": "registration",
+      "object": "registration_20",
+      "preview": "registration let L be with_infima RelStr; cluster L opp+id -> directed; coherence proof reconsider A = L~ as with_suprem"
+    },
+    {
+      "counts": {
+        "InternalRel": 4,
+        "RelStr": 5
+      },
+      "index": 21,
+      "kind": "registration",
+      "object": "registration_21",
+      "preview": "registration let L be non empty RelStr; cluster L opp+id -> antitone eventually-filtered; coherence proof set N = L opp+"
+    },
+    {
+      "counts": {
+        "InternalRel": 7,
+        "NetStr": 4
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let L be non empty 1-sorted, N be non empty NetStr over L, i be Element of N; func N|i -> strict NetStr over "
+    },
+    {
+      "counts": {
+        "NetStr": 2
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem for L being non empty 1-sorted, N being non empty NetStr over L for i being Element of N holds the carrier of N|"
+    },
+    {
+      "counts": {
+        "NetStr": 2
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem Th13: for L being non empty 1-sorted, N being non empty NetStr over L for i being Element of N holds the carrier"
+    },
+    {
+      "counts": {
+        "InternalRel": 6,
+        "NetStr": 2
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem Th14: for L being non empty 1-sorted, N being non empty NetStr over L for i being Element of N holds N|i is full"
+    },
+    {
+      "counts": {
+        "NetStr": 2
+      },
+      "index": 22,
+      "kind": "registration",
+      "object": "registration_22",
+      "preview": "registration let L be non empty 1-sorted, N be non empty reflexive NetStr over L, i be Element of N; cluster N|i -> non "
+    },
+    {
+      "counts": {
+        "NetStr": 1
+      },
+      "index": 23,
+      "kind": "registration",
+      "object": "registration_23",
+      "preview": "registration let L be non empty 1-sorted, N be non empty directed NetStr over L, i be Element of N; cluster N|i -> non e"
+    },
+    {
+      "counts": {
+        "NetStr": 1
+      },
+      "index": 24,
+      "kind": "registration",
+      "object": "registration_24",
+      "preview": "registration let L be non empty 1-sorted, N be non empty reflexive antisymmetric NetStr over L, i be Element of N; clust"
+    },
+    {
+      "counts": {
+        "NetStr": 1
+      },
+      "index": 25,
+      "kind": "registration",
+      "object": "registration_25",
+      "preview": "registration let L be non empty 1-sorted, N be non empty directed antisymmetric NetStr over L, i be Element of N; cluste"
+    },
+    {
+      "counts": {
+        "NetStr": 1
+      },
+      "index": 26,
+      "kind": "registration",
+      "object": "registration_26",
+      "preview": "registration let L be non empty 1-sorted, N be non empty reflexive transitive NetStr over L, i be Element of N; cluster "
+    },
+    {
+      "counts": {
+        "NetStr": 2
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem for L being non empty 1-sorted, N being non empty reflexive NetStr over L for i, x being Element of N, x1 being "
+    },
+    {
+      "counts": {
+        "NetStr": 2
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem Th16: for L being non empty 1-sorted, N being non empty directed NetStr over L for i, x being Element of N, x1 b"
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "NetStr": 1,
+        "RelStr": 2
+      },
+      "index": 28,
+      "kind": "registration",
+      "object": "registration_28",
+      "preview": "registration let T be non empty 1-sorted, N be net of T; cluster strict for subnet of N; existence proof set A = NetStr "
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "NetStr": 3,
+        "RelStr": 2
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition let S be non empty 1-sorted, T be 1-sorted, f be Function of S, T, N be NetStr over S; func f * N -> strict N"
+    },
+    {
+      "counts": {
+        "NetStr": 1,
+        "RelStr": 2
+      },
+      "index": 29,
+      "kind": "registration",
+      "object": "registration_29",
+      "preview": "registration let S be non empty 1-sorted, T be 1-sorted, f be Function of S, T, N be non empty NetStr over S; cluster f "
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "NetStr": 1,
+        "RelStr": 2
+      },
+      "index": 30,
+      "kind": "registration",
+      "object": "registration_30",
+      "preview": "registration let S be non empty 1-sorted, T be 1-sorted, f be Function of S, T, N be reflexive NetStr over S; cluster f "
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "NetStr": 1,
+        "RelStr": 2
+      },
+      "index": 31,
+      "kind": "registration",
+      "object": "registration_31",
+      "preview": "registration let S be non empty 1-sorted, T be 1-sorted, f be Function of S, T, N be antisymmetric NetStr over S; cluste"
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "NetStr": 1,
+        "RelStr": 2
+      },
+      "index": 32,
+      "kind": "registration",
+      "object": "registration_32",
+      "preview": "registration let S be non empty 1-sorted, T be 1-sorted, f be Function of S, T, N be transitive NetStr over S; cluster f"
+    },
+    {
+      "counts": {
+        "NetStr": 1,
+        "RelStr": 2
+      },
+      "index": 33,
+      "kind": "registration",
+      "object": "registration_33",
+      "preview": "registration let S be non empty 1-sorted, T be 1-sorted, f be Function of S, T, N be directed NetStr over S; cluster f *"
+    },
+    {
+      "counts": {
+        "NetStr": 2,
+        "RelStr": 7
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem Th18: for L being non empty RelStr, N being non empty NetStr over L for x being Element of L holds (x\"/\\\")*N = x"
+    },
+    {
+      "counts": {
+        "TopStruct": 6
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem for S, T being TopStruct for F being Subset-Family of S, G being Subset-Family of T st the TopStruct of S = the "
+    },
+    {
+      "counts": {
+        "TopStruct": 6
+      },
+      "index": 20,
+      "kind": "theorem",
+      "object": "theorem_20",
+      "preview": "theorem for S, T being TopStruct for F being Subset-Family of S, G being Subset-Family of T st the TopStruct of S = the "
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "RelStr": 1,
+        "TopRelStr": 1,
+        "TopStruct": 1
+      },
+      "index": 9,
+      "kind": "definition",
+      "object": "definition_9",
+      "preview": "definition struct(TopStruct,RelStr) TopRelStr (# carrier -> set, InternalRel -> ( Relation of the carrier), topology -> "
+    },
+    {
+      "counts": {
+        "TopRelStr": 1
+      },
+      "index": 34,
+      "kind": "registration",
+      "object": "registration_34",
+      "preview": "registration let A be non empty set, R be Relation of A,A, T be Subset-Family of A; cluster TopRelStr (#A,R,T#) -> non e"
+    },
+    {
+      "counts": {
+        "TopRelStr": 1
+      },
+      "index": 35,
+      "kind": "registration",
+      "object": "registration_35",
+      "preview": "registration let x be set, R be Relation of {x}; let T be Subset-Family of {x}; cluster TopRelStr (#{x}, R, T#) -> 1-ele"
+    },
+    {
+      "counts": {
+        "InternalRel": 4,
+        "TopRelStr": 4
+      },
+      "index": 36,
+      "kind": "registration",
+      "object": "registration_36",
+      "preview": "registration let X be set, O be Order of X, T be Subset-Family of X; cluster TopRelStr (#X, O, T#) -> reflexive transiti"
+    },
+    {
+      "counts": {
+        "TopRelStr": 2
+      },
+      "index": 37,
+      "kind": "registration",
+      "object": "registration_37",
+      "preview": "registration cluster reflexive discrete strict finite 1-element for TopRelStr; existence proof 0 in {0} by TARSKI:def 1;"
+    },
+    {
+      "counts": {
+        "TopLattice": 1,
+        "TopRelStr": 1,
+        "with_infima": 1,
+        "with_suprema": 1
+      },
+      "index": 10,
+      "kind": "definition",
+      "object": "definition_10",
+      "preview": "definition mode TopLattice is with_infima with_suprema reflexive transitive antisymmetric TopSpace-like TopRelStr; end;"
+    },
+    {
+      "counts": {
+        "TopLattice": 2,
+        "TopRelStr": 2
+      },
+      "index": 38,
+      "kind": "registration",
+      "object": "registration_38",
+      "preview": "registration cluster strict discrete finite compact Hausdorff 1-element for TopLattice; existence proof reconsider C = b"
+    },
+    {
+      "counts": {
+        "RelStr": 2,
+        "TopLattice": 2
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem Th25: for T being Hausdorff TopLattice, N being convergent net of T for f being Function of T, T st f is continu"
+    },
+    {
+      "counts": {
+        "TopLattice": 2
+      },
+      "index": 26,
+      "kind": "theorem",
+      "object": "theorem_26",
+      "preview": "theorem Th26: for T being Hausdorff TopLattice, N being convergent net of T for x being Element of T st x\"/\\\" is continu"
+    },
+    {
+      "counts": {
+        "TopLattice": 2
+      },
+      "index": 27,
+      "kind": "theorem",
+      "object": "theorem_27",
+      "preview": "theorem Th27: for S being Hausdorff TopLattice, x being Element of S st for a being Element of S holds a\"/\\\" is continuo"
+    },
+    {
+      "counts": {
+        "TopLattice": 2
+      },
+      "index": 28,
+      "kind": "theorem",
+      "object": "theorem_28",
+      "preview": "theorem Th28: for S being compact Hausdorff TopLattice, x being Element of S st for b being Element of S holds b\"/\\\" is "
+    },
+    {
+      "counts": {
+        "NetStr": 1,
+        "is_a_cluster_point_of": 1
+      },
+      "index": 11,
+      "kind": "definition",
+      "object": "definition_11",
+      "preview": "definition let T be non empty TopSpace, N be non empty NetStr over T, p be Point of T; pred p is_a_cluster_point_of N me"
+    },
+    {
+      "counts": {
+        "is_a_cluster_point_of": 1
+      },
+      "index": 29,
+      "kind": "theorem",
+      "object": "theorem_29",
+      "preview": "theorem for L being non empty TopSpace, N being net of L for c being Point of L st c in Lim N holds c is_a_cluster_point"
+    },
+    {
+      "counts": {
+        "is_a_cluster_point_of": 2
+      },
+      "index": 30,
+      "kind": "theorem",
+      "object": "theorem_30",
+      "preview": "theorem Th30: for T being compact Hausdorff non empty TopSpace, N being net of T ex c being Point of T st c is_a_cluster"
+    },
+    {
+      "counts": {
+        "is_a_cluster_point_of": 2
+      },
+      "index": 31,
+      "kind": "theorem",
+      "object": "theorem_31",
+      "preview": "theorem Th31: for L being non empty TopSpace, N being net of L, M being subnet of N for c being Point of L st c is_a_clu"
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "NetStr": 1,
+        "RelStr": 1,
+        "is_a_cluster_point_of": 2
+      },
+      "index": 32,
+      "kind": "theorem",
+      "object": "theorem_32",
+      "preview": "theorem Th32: for T being non empty TopSpace, N being net of T for x being Point of T st x is_a_cluster_point_of N holds"
+    },
+    {
+      "counts": {
+        "is_a_cluster_point_of": 8
+      },
+      "index": 33,
+      "kind": "theorem",
+      "object": "theorem_33",
+      "preview": "theorem Th33: for L being compact Hausdorff non empty TopSpace, N being net of L st for c, d being Point of L st c is_a_"
+    },
+    {
+      "counts": {
+        "TopLattice": 4,
+        "is_a_cluster_point_of": 7
+      },
+      "index": 34,
+      "kind": "theorem",
+      "object": "theorem_34",
+      "preview": "theorem Th34: for S being non empty TopSpace, c being Point of S for N being net of S, A being Subset of S st c is_a_clu"
+    },
+    {
+      "counts": {
+        "TopLattice": 6,
+        "is_a_cluster_point_of": 7
+      },
+      "index": 35,
+      "kind": "theorem",
+      "object": "theorem_35",
+      "preview": "theorem Th35: for S being compact Hausdorff TopLattice, c being Point of S for N being net of S st (for x being Element "
+    },
+    {
+      "counts": {
+        "TopLattice": 2,
+        "is_a_cluster_point_of": 2
+      },
+      "index": 36,
+      "kind": "theorem",
+      "object": "theorem_36",
+      "preview": "theorem Th36: for S being compact Hausdorff TopLattice, c being Point of S for N being net of S st (for x being Element "
+    },
+    {
+      "counts": {
+        "InternalRel": 1,
+        "NetStr": 1,
+        "TopLattice": 2,
+        "ex_sup_of": 4
+      },
+      "index": 37,
+      "kind": "theorem",
+      "object": "theorem_37",
+      "preview": "theorem Th37: for S being Hausdorff TopLattice st (for N being net of S st N is eventually-directed holds ex_sup_of N & "
+    },
+    {
+      "counts": {
+        "TopLattice": 2,
+        "ex_sup_of": 3,
+        "is_a_cluster_point_of": 5
+      },
+      "index": 38,
+      "kind": "theorem",
+      "object": "theorem_38",
+      "preview": "theorem Th38: for S being compact Hausdorff TopLattice st for x being Element of S holds x\"/\\\" is continuous holds for N"
+    },
+    {
+      "counts": {
+        "TopLattice": 2,
+        "ex_inf_of": 3,
+        "is_a_cluster_point_of": 5
+      },
+      "index": 39,
+      "kind": "theorem",
+      "object": "theorem_39",
+      "preview": "theorem Th39: for S being compact Hausdorff TopLattice st for x being Element of S holds x\"/\\\" is continuous holds for N"
+    },
+    {
+      "counts": {
+        "TopLattice": 2,
+        "ex_inf_of": 2,
+        "ex_sup_of": 2
+      },
+      "index": 40,
+      "kind": "theorem",
+      "object": "theorem_40",
+      "preview": "theorem for S being compact Hausdorff TopLattice st for x being Element of S holds x\"/\\\" is continuous holds S is bounde"
+    },
+    {
+      "counts": {
+        "TopLattice": 2,
+        "ex_sup_of": 1
+      },
+      "index": 41,
+      "kind": "theorem",
+      "object": "theorem_41",
+      "preview": "theorem for S being compact Hausdorff TopLattice st for x being Element of S holds x\"/\\\" is continuous holds S is meet-c"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/waybel_9.miz"
+}

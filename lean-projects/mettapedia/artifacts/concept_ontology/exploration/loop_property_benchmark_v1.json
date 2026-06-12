@@ -1,0 +1,8183 @@
+{
+  "benchmark": {
+    "countermodel_orders": [
+      5,
+      6,
+      8
+    ],
+    "countermodel_time_limit": 8,
+    "evaluated_properties": [
+      "associative",
+      "c_identity",
+      "commutative",
+      "flexible",
+      "left_alternative",
+      "left_bol",
+      "lip",
+      "moufang",
+      "right_alternative",
+      "right_bol",
+      "rip",
+      "two_sided_inverses",
+      "x_cubed_associative"
+    ],
+    "gate_labels": [
+      "all",
+      "order=4",
+      "order=5",
+      "order=6"
+    ],
+    "kappa": 2.0,
+    "min_support": 3,
+    "name": "loop_property_benchmark_v1",
+    "oracle_time_limit": 5,
+    "oracle_verdict_counts": {
+      "proved": 21,
+      "refuted": 2,
+      "unresolved": 7
+    },
+    "population_generation": "exhaustive reduced Latin square enumeration",
+    "population_order_counts": {
+      "4": 4,
+      "5": 56,
+      "6": 9408
+    },
+    "population_orders": [
+      4,
+      5,
+      6
+    ],
+    "population_size": 9468,
+    "signature": "loop (op, ld, rd, e); quasigroup axioms + two-sided identity",
+    "track": "loop-property-implication",
+    "unresolved_rules": [
+      "left_alternative & two_sided_inverses => lip",
+      "right_alternative & two_sided_inverses => rip",
+      "flexible & lip => left_alternative",
+      "flexible & rip => right_alternative",
+      "flexible & left_alternative => lip",
+      "flexible & right_alternative => rip",
+      "c_identity => associative"
+    ]
+  },
+  "candidates": [
+    {
+      "antecedent": [
+        "flexible"
+      ],
+      "baseline": {
+        "antecedent_support": 520,
+        "jaccard": 0.7761194029850746,
+        "positive": 520,
+        "support_fraction": 0.05492184199408534
+      },
+      "consequent": "x_cubed_associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 520,
+        "confidence": 0.9961685823754789,
+        "consequent_support": 670,
+        "jaccard": 0.7761194029850746,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 520,
+        "strength": 1.0,
+        "support_fraction": 0.05492184199408534
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 520,
+          "confidence": 0.9961685823754789,
+          "consequent_support": 670,
+          "jaccard": 0.7761194029850746,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 520,
+          "strength": 1.0,
+          "support_fraction": 0.05492184199408534
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 8,
+          "confidence": 0.8,
+          "consequent_support": 8,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 8,
+          "strength": 1.0,
+          "support_fraction": 0.14285714285714285
+        },
+        "order=6": {
+          "antecedent_support": 508,
+          "confidence": 0.996078431372549,
+          "consequent_support": 658,
+          "jaccard": 0.7720364741641338,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 508,
+          "strength": 1.0,
+          "support_fraction": 0.05399659863945578
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9961685823754789,
+        "kappa": 2.0,
+        "score": 0.9961685823754789,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "flexible"
+      ],
+      "baseline": {
+        "antecedent_support": 520,
+        "jaccard": 0.2857142857142857,
+        "positive": 520,
+        "support_fraction": 0.05492184199408534
+      },
+      "consequent": "two_sided_inverses",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 520,
+        "confidence": 0.9961685823754789,
+        "consequent_support": 1820,
+        "jaccard": 0.2857142857142857,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 520,
+        "strength": 1.0,
+        "support_fraction": 0.05492184199408534
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 520,
+          "confidence": 0.9961685823754789,
+          "consequent_support": 1820,
+          "jaccard": 0.2857142857142857,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 520,
+          "strength": 1.0,
+          "support_fraction": 0.05492184199408534
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 8,
+          "confidence": 0.8,
+          "consequent_support": 8,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 8,
+          "strength": 1.0,
+          "support_fraction": 0.14285714285714285
+        },
+        "order=6": {
+          "antecedent_support": 508,
+          "confidence": 0.996078431372549,
+          "consequent_support": 1808,
+          "jaccard": 0.2809734513274336,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 508,
+          "strength": 1.0,
+          "support_fraction": 0.05399659863945578
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9961685823754789,
+        "kappa": 2.0,
+        "score": 0.9961685823754789,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "commutative"
+      ],
+      "baseline": {
+        "antecedent_support": 466,
+        "jaccard": 0.8961538461538462,
+        "positive": 466,
+        "support_fraction": 0.0492184199408534
+      },
+      "consequent": "flexible",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 466,
+        "confidence": 0.9957264957264957,
+        "consequent_support": 520,
+        "jaccard": 0.8961538461538462,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 466,
+        "strength": 1.0,
+        "support_fraction": 0.0492184199408534
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 466,
+          "confidence": 0.9957264957264957,
+          "consequent_support": 520,
+          "jaccard": 0.8961538461538462,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 466,
+          "strength": 1.0,
+          "support_fraction": 0.0492184199408534
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 456,
+          "confidence": 0.9956331877729258,
+          "consequent_support": 508,
+          "jaccard": 0.8976377952755905,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 456,
+          "strength": 1.0,
+          "support_fraction": 0.04846938775510204
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9957264957264957,
+        "kappa": 2.0,
+        "score": 0.9957264957264957,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "commutative"
+      ],
+      "baseline": {
+        "antecedent_support": 466,
+        "jaccard": 0.6955223880597015,
+        "positive": 466,
+        "support_fraction": 0.0492184199408534
+      },
+      "consequent": "x_cubed_associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 466,
+        "confidence": 0.9957264957264957,
+        "consequent_support": 670,
+        "jaccard": 0.6955223880597015,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 466,
+        "strength": 1.0,
+        "support_fraction": 0.0492184199408534
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 466,
+          "confidence": 0.9957264957264957,
+          "consequent_support": 670,
+          "jaccard": 0.6955223880597015,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 466,
+          "strength": 1.0,
+          "support_fraction": 0.0492184199408534
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 456,
+          "confidence": 0.9956331877729258,
+          "consequent_support": 658,
+          "jaccard": 0.6930091185410334,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 456,
+          "strength": 1.0,
+          "support_fraction": 0.04846938775510204
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9957264957264957,
+        "kappa": 2.0,
+        "score": 0.9957264957264957,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "commutative"
+      ],
+      "baseline": {
+        "antecedent_support": 466,
+        "jaccard": 0.256043956043956,
+        "positive": 466,
+        "support_fraction": 0.0492184199408534
+      },
+      "consequent": "two_sided_inverses",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 466,
+        "confidence": 0.9957264957264957,
+        "consequent_support": 1820,
+        "jaccard": 0.256043956043956,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 466,
+        "strength": 1.0,
+        "support_fraction": 0.0492184199408534
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 466,
+          "confidence": 0.9957264957264957,
+          "consequent_support": 1820,
+          "jaccard": 0.256043956043956,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 466,
+          "strength": 1.0,
+          "support_fraction": 0.0492184199408534
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 456,
+          "confidence": 0.9956331877729258,
+          "consequent_support": 1808,
+          "jaccard": 0.252212389380531,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 456,
+          "strength": 1.0,
+          "support_fraction": 0.04846938775510204
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9957264957264957,
+        "kappa": 2.0,
+        "score": 0.9957264957264957,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "lip"
+      ],
+      "baseline": {
+        "antecedent_support": 326,
+        "jaccard": 0.17912087912087912,
+        "positive": 326,
+        "support_fraction": 0.03443177017321504
+      },
+      "consequent": "two_sided_inverses",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 326,
+        "confidence": 0.9939024390243902,
+        "consequent_support": 1820,
+        "jaccard": 0.17912087912087912,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 326,
+        "strength": 1.0,
+        "support_fraction": 0.03443177017321504
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 326,
+          "confidence": 0.9939024390243902,
+          "consequent_support": 1820,
+          "jaccard": 0.17912087912087912,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 326,
+          "strength": 1.0,
+          "support_fraction": 0.03443177017321504
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 316,
+          "confidence": 0.9937106918238994,
+          "consequent_support": 1808,
+          "jaccard": 0.1747787610619469,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 316,
+          "strength": 1.0,
+          "support_fraction": 0.03358843537414966
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9939024390243902,
+        "kappa": 2.0,
+        "score": 0.9939024390243902,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "rip"
+      ],
+      "baseline": {
+        "antecedent_support": 326,
+        "jaccard": 0.17912087912087912,
+        "positive": 326,
+        "support_fraction": 0.03443177017321504
+      },
+      "consequent": "two_sided_inverses",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 326,
+        "confidence": 0.9939024390243902,
+        "consequent_support": 1820,
+        "jaccard": 0.17912087912087912,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 326,
+        "strength": 1.0,
+        "support_fraction": 0.03443177017321504
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 326,
+          "confidence": 0.9939024390243902,
+          "consequent_support": 1820,
+          "jaccard": 0.17912087912087912,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 326,
+          "strength": 1.0,
+          "support_fraction": 0.03443177017321504
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 316,
+          "confidence": 0.9937106918238994,
+          "consequent_support": 1808,
+          "jaccard": 0.1747787610619469,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 316,
+          "strength": 1.0,
+          "support_fraction": 0.03358843537414966
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9939024390243902,
+        "kappa": 2.0,
+        "score": 0.9939024390243902,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "left_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 156,
+        "jaccard": 0.23283582089552238,
+        "positive": 156,
+        "support_fraction": 0.016476552598225603
+      },
+      "consequent": "x_cubed_associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 156,
+        "confidence": 0.9873417721518988,
+        "consequent_support": 670,
+        "jaccard": 0.23283582089552238,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 156,
+        "strength": 1.0,
+        "support_fraction": 0.016476552598225603
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 156,
+          "confidence": 0.9873417721518988,
+          "consequent_support": 670,
+          "jaccard": 0.23283582089552238,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 156,
+          "strength": 1.0,
+          "support_fraction": 0.016476552598225603
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 146,
+          "confidence": 0.9864864864864865,
+          "consequent_support": 658,
+          "jaccard": 0.22188449848024316,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 146,
+          "strength": 1.0,
+          "support_fraction": 0.015518707482993197
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9873417721518988,
+        "kappa": 2.0,
+        "score": 0.9873417721518988,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "right_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 156,
+        "jaccard": 0.23283582089552238,
+        "positive": 156,
+        "support_fraction": 0.016476552598225603
+      },
+      "consequent": "x_cubed_associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 156,
+        "confidence": 0.9873417721518988,
+        "consequent_support": 670,
+        "jaccard": 0.23283582089552238,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 156,
+        "strength": 1.0,
+        "support_fraction": 0.016476552598225603
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 156,
+          "confidence": 0.9873417721518988,
+          "consequent_support": 670,
+          "jaccard": 0.23283582089552238,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 156,
+          "strength": 1.0,
+          "support_fraction": 0.016476552598225603
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 146,
+          "confidence": 0.9864864864864865,
+          "consequent_support": 658,
+          "jaccard": 0.22188449848024316,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 146,
+          "strength": 1.0,
+          "support_fraction": 0.015518707482993197
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9873417721518988,
+        "kappa": 2.0,
+        "score": 0.9873417721518988,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "lip",
+        "x_cubed_associative"
+      ],
+      "baseline": {
+        "antecedent_support": 116,
+        "jaccard": 0.7435897435897436,
+        "positive": 116,
+        "support_fraction": 0.0122517955217575
+      },
+      "consequent": "left_alternative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 116,
+        "confidence": 0.9830508474576272,
+        "consequent_support": 156,
+        "jaccard": 0.7435897435897436,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 116,
+        "strength": 1.0,
+        "support_fraction": 0.0122517955217575
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 116,
+          "confidence": 0.9830508474576272,
+          "consequent_support": 156,
+          "jaccard": 0.7435897435897436,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 116,
+          "strength": 1.0,
+          "support_fraction": 0.0122517955217575
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 106,
+          "confidence": 0.9814814814814815,
+          "consequent_support": 146,
+          "jaccard": 0.726027397260274,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 106,
+          "strength": 1.0,
+          "support_fraction": 0.011267006802721089
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "finite_model_found": false,
+            "order": 5,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": false,
+            "order": 6,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": true,
+            "order": 8,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable",
+        "verdict": "refuted"
+      },
+      "pln": {
+        "confidence": 0.9830508474576272,
+        "kappa": 2.0,
+        "score": 0.9830508474576272,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "rip",
+        "x_cubed_associative"
+      ],
+      "baseline": {
+        "antecedent_support": 116,
+        "jaccard": 0.7435897435897436,
+        "positive": 116,
+        "support_fraction": 0.0122517955217575
+      },
+      "consequent": "right_alternative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 116,
+        "confidence": 0.9830508474576272,
+        "consequent_support": 156,
+        "jaccard": 0.7435897435897436,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 116,
+        "strength": 1.0,
+        "support_fraction": 0.0122517955217575
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 116,
+          "confidence": 0.9830508474576272,
+          "consequent_support": 156,
+          "jaccard": 0.7435897435897436,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 116,
+          "strength": 1.0,
+          "support_fraction": 0.0122517955217575
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 106,
+          "confidence": 0.9814814814814815,
+          "consequent_support": 146,
+          "jaccard": 0.726027397260274,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 106,
+          "strength": 1.0,
+          "support_fraction": 0.011267006802721089
+        }
+      },
+      "oracle": {
+        "countermodel_found": true,
+        "countermodel_results": [
+          {
+            "finite_model_found": false,
+            "order": 5,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": false,
+            "order": 6,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": true,
+            "order": 8,
+            "return_code": 0,
+            "status": "Satisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 0,
+        "theorem_status": "CounterSatisfiable",
+        "verdict": "refuted"
+      },
+      "pln": {
+        "confidence": 0.9830508474576272,
+        "kappa": 2.0,
+        "score": 0.9830508474576272,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "left_alternative",
+        "two_sided_inverses"
+      ],
+      "baseline": {
+        "antecedent_support": 116,
+        "jaccard": 0.3558282208588957,
+        "positive": 116,
+        "support_fraction": 0.0122517955217575
+      },
+      "consequent": "lip",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 116,
+        "confidence": 0.9830508474576272,
+        "consequent_support": 326,
+        "jaccard": 0.3558282208588957,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 116,
+        "strength": 1.0,
+        "support_fraction": 0.0122517955217575
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 116,
+          "confidence": 0.9830508474576272,
+          "consequent_support": 326,
+          "jaccard": 0.3558282208588957,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 116,
+          "strength": 1.0,
+          "support_fraction": 0.0122517955217575
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 106,
+          "confidence": 0.9814814814814815,
+          "consequent_support": 316,
+          "jaccard": 0.33544303797468356,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 106,
+          "strength": 1.0,
+          "support_fraction": 0.011267006802721089
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [
+          {
+            "finite_model_found": false,
+            "order": 5,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": false,
+            "order": 6,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": false,
+            "order": 8,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 1,
+        "theorem_status": null,
+        "verdict": "unresolved"
+      },
+      "pln": {
+        "confidence": 0.9830508474576272,
+        "kappa": 2.0,
+        "score": 0.9830508474576272,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "right_alternative",
+        "two_sided_inverses"
+      ],
+      "baseline": {
+        "antecedent_support": 116,
+        "jaccard": 0.3558282208588957,
+        "positive": 116,
+        "support_fraction": 0.0122517955217575
+      },
+      "consequent": "rip",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 116,
+        "confidence": 0.9830508474576272,
+        "consequent_support": 326,
+        "jaccard": 0.3558282208588957,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 116,
+        "strength": 1.0,
+        "support_fraction": 0.0122517955217575
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 116,
+          "confidence": 0.9830508474576272,
+          "consequent_support": 326,
+          "jaccard": 0.3558282208588957,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 116,
+          "strength": 1.0,
+          "support_fraction": 0.0122517955217575
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 106,
+          "confidence": 0.9814814814814815,
+          "consequent_support": 316,
+          "jaccard": 0.33544303797468356,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 106,
+          "strength": 1.0,
+          "support_fraction": 0.011267006802721089
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [
+          {
+            "finite_model_found": false,
+            "order": 5,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": false,
+            "order": 6,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": false,
+            "order": 8,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 1,
+        "theorem_status": null,
+        "verdict": "unresolved"
+      },
+      "pln": {
+        "confidence": 0.9830508474576272,
+        "kappa": 2.0,
+        "score": 0.9830508474576272,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "left_alternative",
+        "lip"
+      ],
+      "baseline": {
+        "antecedent_support": 116,
+        "jaccard": 0.17313432835820897,
+        "positive": 116,
+        "support_fraction": 0.0122517955217575
+      },
+      "consequent": "x_cubed_associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 116,
+        "confidence": 0.9830508474576272,
+        "consequent_support": 670,
+        "jaccard": 0.17313432835820897,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 116,
+        "strength": 1.0,
+        "support_fraction": 0.0122517955217575
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 116,
+          "confidence": 0.9830508474576272,
+          "consequent_support": 670,
+          "jaccard": 0.17313432835820897,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 116,
+          "strength": 1.0,
+          "support_fraction": 0.0122517955217575
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 106,
+          "confidence": 0.9814814814814815,
+          "consequent_support": 658,
+          "jaccard": 0.16109422492401215,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 106,
+          "strength": 1.0,
+          "support_fraction": 0.011267006802721089
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9830508474576272,
+        "kappa": 2.0,
+        "score": 0.9830508474576272,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "right_alternative",
+        "rip"
+      ],
+      "baseline": {
+        "antecedent_support": 116,
+        "jaccard": 0.17313432835820897,
+        "positive": 116,
+        "support_fraction": 0.0122517955217575
+      },
+      "consequent": "x_cubed_associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 116,
+        "confidence": 0.9830508474576272,
+        "consequent_support": 670,
+        "jaccard": 0.17313432835820897,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 116,
+        "strength": 1.0,
+        "support_fraction": 0.0122517955217575
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 116,
+          "confidence": 0.9830508474576272,
+          "consequent_support": 670,
+          "jaccard": 0.17313432835820897,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 116,
+          "strength": 1.0,
+          "support_fraction": 0.0122517955217575
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 106,
+          "confidence": 0.9814814814814815,
+          "consequent_support": 658,
+          "jaccard": 0.16109422492401215,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 106,
+          "strength": 1.0,
+          "support_fraction": 0.011267006802721089
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9830508474576272,
+        "kappa": 2.0,
+        "score": 0.9830508474576272,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "left_alternative",
+        "lip"
+      ],
+      "baseline": {
+        "antecedent_support": 116,
+        "jaccard": 0.06373626373626373,
+        "positive": 116,
+        "support_fraction": 0.0122517955217575
+      },
+      "consequent": "two_sided_inverses",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 116,
+        "confidence": 0.9830508474576272,
+        "consequent_support": 1820,
+        "jaccard": 0.06373626373626373,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 116,
+        "strength": 1.0,
+        "support_fraction": 0.0122517955217575
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 116,
+          "confidence": 0.9830508474576272,
+          "consequent_support": 1820,
+          "jaccard": 0.06373626373626373,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 116,
+          "strength": 1.0,
+          "support_fraction": 0.0122517955217575
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 106,
+          "confidence": 0.9814814814814815,
+          "consequent_support": 1808,
+          "jaccard": 0.0586283185840708,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 106,
+          "strength": 1.0,
+          "support_fraction": 0.011267006802721089
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9830508474576272,
+        "kappa": 2.0,
+        "score": 0.9830508474576272,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "right_alternative",
+        "rip"
+      ],
+      "baseline": {
+        "antecedent_support": 116,
+        "jaccard": 0.06373626373626373,
+        "positive": 116,
+        "support_fraction": 0.0122517955217575
+      },
+      "consequent": "two_sided_inverses",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 116,
+        "confidence": 0.9830508474576272,
+        "consequent_support": 1820,
+        "jaccard": 0.06373626373626373,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 116,
+        "strength": 1.0,
+        "support_fraction": 0.0122517955217575
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 116,
+          "confidence": 0.9830508474576272,
+          "consequent_support": 1820,
+          "jaccard": 0.06373626373626373,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 116,
+          "strength": 1.0,
+          "support_fraction": 0.0122517955217575
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 106,
+          "confidence": 0.9814814814814815,
+          "consequent_support": 1808,
+          "jaccard": 0.0586283185840708,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 106,
+          "strength": 1.0,
+          "support_fraction": 0.011267006802721089
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9830508474576272,
+        "kappa": 2.0,
+        "score": 0.9830508474576272,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "lip"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.6153846153846154,
+        "positive": 96,
+        "support_fraction": 0.010139416983523447
+      },
+      "consequent": "left_alternative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 156,
+        "jaccard": 0.6153846153846154,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 96,
+        "strength": 1.0,
+        "support_fraction": 0.010139416983523447
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 156,
+          "jaccard": 0.6153846153846154,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 96,
+          "strength": 1.0,
+          "support_fraction": 0.010139416983523447
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 146,
+          "jaccard": 0.589041095890411,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 86,
+          "strength": 1.0,
+          "support_fraction": 0.009141156462585034
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [
+          {
+            "finite_model_found": false,
+            "order": 5,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": false,
+            "order": 6,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": false,
+            "order": 8,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 1,
+        "theorem_status": null,
+        "verdict": "unresolved"
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9795918367346939,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "rip"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.6153846153846154,
+        "positive": 96,
+        "support_fraction": 0.010139416983523447
+      },
+      "consequent": "right_alternative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 156,
+        "jaccard": 0.6153846153846154,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 96,
+        "strength": 1.0,
+        "support_fraction": 0.010139416983523447
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 156,
+          "jaccard": 0.6153846153846154,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 96,
+          "strength": 1.0,
+          "support_fraction": 0.010139416983523447
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 146,
+          "jaccard": 0.589041095890411,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 86,
+          "strength": 1.0,
+          "support_fraction": 0.009141156462585034
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [
+          {
+            "finite_model_found": false,
+            "order": 5,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": false,
+            "order": 6,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": false,
+            "order": 8,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 1,
+        "theorem_status": null,
+        "verdict": "unresolved"
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9795918367346939,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "left_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.294478527607362,
+        "positive": 96,
+        "support_fraction": 0.010139416983523447
+      },
+      "consequent": "lip",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 326,
+        "jaccard": 0.294478527607362,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 96,
+        "strength": 1.0,
+        "support_fraction": 0.010139416983523447
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 326,
+          "jaccard": 0.294478527607362,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 96,
+          "strength": 1.0,
+          "support_fraction": 0.010139416983523447
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 316,
+          "jaccard": 0.2721518987341772,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 86,
+          "strength": 1.0,
+          "support_fraction": 0.009141156462585034
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [
+          {
+            "finite_model_found": false,
+            "order": 5,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": false,
+            "order": 6,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": false,
+            "order": 8,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 1,
+        "theorem_status": null,
+        "verdict": "unresolved"
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9795918367346939,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "right_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.294478527607362,
+        "positive": 96,
+        "support_fraction": 0.010139416983523447
+      },
+      "consequent": "rip",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 326,
+        "jaccard": 0.294478527607362,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 96,
+        "strength": 1.0,
+        "support_fraction": 0.010139416983523447
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 326,
+          "jaccard": 0.294478527607362,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 96,
+          "strength": 1.0,
+          "support_fraction": 0.010139416983523447
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 316,
+          "jaccard": 0.2721518987341772,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 86,
+          "strength": 1.0,
+          "support_fraction": 0.009141156462585034
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [
+          {
+            "finite_model_found": false,
+            "order": 5,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": false,
+            "order": 6,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": false,
+            "order": 8,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 1,
+        "theorem_status": null,
+        "verdict": "unresolved"
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9795918367346939,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "left_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.14328358208955225,
+        "positive": 96,
+        "support_fraction": 0.010139416983523447
+      },
+      "consequent": "x_cubed_associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 670,
+        "jaccard": 0.14328358208955225,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 96,
+        "strength": 1.0,
+        "support_fraction": 0.010139416983523447
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 670,
+          "jaccard": 0.14328358208955225,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 96,
+          "strength": 1.0,
+          "support_fraction": 0.010139416983523447
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 658,
+          "jaccard": 0.13069908814589665,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 86,
+          "strength": 1.0,
+          "support_fraction": 0.009141156462585034
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9795918367346939,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "right_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.14328358208955225,
+        "positive": 96,
+        "support_fraction": 0.010139416983523447
+      },
+      "consequent": "x_cubed_associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 670,
+        "jaccard": 0.14328358208955225,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 96,
+        "strength": 1.0,
+        "support_fraction": 0.010139416983523447
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 670,
+          "jaccard": 0.14328358208955225,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 96,
+          "strength": 1.0,
+          "support_fraction": 0.010139416983523447
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 658,
+          "jaccard": 0.13069908814589665,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 86,
+          "strength": 1.0,
+          "support_fraction": 0.009141156462585034
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9795918367346939,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "left_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.05274725274725275,
+        "positive": 96,
+        "support_fraction": 0.010139416983523447
+      },
+      "consequent": "two_sided_inverses",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 1820,
+        "jaccard": 0.05274725274725275,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 96,
+        "strength": 1.0,
+        "support_fraction": 0.010139416983523447
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 1820,
+          "jaccard": 0.05274725274725275,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 96,
+          "strength": 1.0,
+          "support_fraction": 0.010139416983523447
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 1808,
+          "jaccard": 0.04756637168141593,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 86,
+          "strength": 1.0,
+          "support_fraction": 0.009141156462585034
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9795918367346939,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "right_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.05274725274725275,
+        "positive": 96,
+        "support_fraction": 0.010139416983523447
+      },
+      "consequent": "two_sided_inverses",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 1820,
+        "jaccard": 0.05274725274725275,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 96,
+        "strength": 1.0,
+        "support_fraction": 0.010139416983523447
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 1820,
+          "jaccard": 0.05274725274725275,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 96,
+          "strength": 1.0,
+          "support_fraction": 0.010139416983523447
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 1808,
+          "jaccard": 0.04756637168141593,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 86,
+          "strength": 1.0,
+          "support_fraction": 0.009141156462585034
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9795918367346939,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "baseline": {
+        "antecedent_support": 90,
+        "jaccard": 1.0,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "c_identity",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 90,
+        "confidence": 0.9782608695652174,
+        "consequent_support": 90,
+        "jaccard": 1.0,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 1.0,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 90,
+          "confidence": 0.9782608695652174,
+          "consequent_support": 90,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 1.0,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 80,
+          "confidence": 0.975609756097561,
+          "consequent_support": 80,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 1.0,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9782608695652174,
+        "kappa": 2.0,
+        "score": 0.9782608695652174,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "baseline": {
+        "antecedent_support": 90,
+        "jaccard": 1.0,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "left_bol",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 90,
+        "confidence": 0.9782608695652174,
+        "consequent_support": 90,
+        "jaccard": 1.0,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 1.0,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 90,
+          "confidence": 0.9782608695652174,
+          "consequent_support": 90,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 1.0,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 80,
+          "confidence": 0.975609756097561,
+          "consequent_support": 80,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 1.0,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9782608695652174,
+        "kappa": 2.0,
+        "score": 0.9782608695652174,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "baseline": {
+        "antecedent_support": 90,
+        "jaccard": 1.0,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "moufang",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 90,
+        "confidence": 0.9782608695652174,
+        "consequent_support": 90,
+        "jaccard": 1.0,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 1.0,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 90,
+          "confidence": 0.9782608695652174,
+          "consequent_support": 90,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 1.0,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 80,
+          "confidence": 0.975609756097561,
+          "consequent_support": 80,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 1.0,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9782608695652174,
+        "kappa": 2.0,
+        "score": 0.9782608695652174,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "baseline": {
+        "antecedent_support": 90,
+        "jaccard": 1.0,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "right_bol",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 90,
+        "confidence": 0.9782608695652174,
+        "consequent_support": 90,
+        "jaccard": 1.0,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 1.0,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 90,
+          "confidence": 0.9782608695652174,
+          "consequent_support": 90,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 1.0,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 80,
+          "confidence": 0.975609756097561,
+          "consequent_support": 80,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 1.0,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [],
+        "theorem_proved": true,
+        "theorem_return_code": 0,
+        "theorem_status": "Theorem",
+        "verdict": "proved"
+      },
+      "pln": {
+        "confidence": 0.9782608695652174,
+        "kappa": 2.0,
+        "score": 0.9782608695652174,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "c_identity"
+      ],
+      "baseline": {
+        "antecedent_support": 90,
+        "jaccard": 1.0,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 90,
+        "confidence": 0.9782608695652174,
+        "consequent_support": 90,
+        "jaccard": 1.0,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 1.0,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 90,
+          "confidence": 0.9782608695652174,
+          "consequent_support": 90,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 1.0,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 80,
+          "confidence": 0.975609756097561,
+          "consequent_support": 80,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 1.0,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "oracle": {
+        "countermodel_found": false,
+        "countermodel_results": [
+          {
+            "finite_model_found": false,
+            "order": 5,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": false,
+            "order": 6,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          },
+          {
+            "finite_model_found": false,
+            "order": 8,
+            "return_code": 0,
+            "status": "Unsatisfiable"
+          }
+        ],
+        "theorem_proved": false,
+        "theorem_return_code": 1,
+        "theorem_status": null,
+        "verdict": "unresolved"
+      },
+      "pln": {
+        "confidence": 0.9782608695652174,
+        "kappa": 2.0,
+        "score": 0.9782608695652174,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "baseline": {
+        "antecedent_support": 90,
+        "jaccard": 0.5769230769230769,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "left_alternative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 90,
+        "confidence": 0.9782608695652174,
+        "consequent_support": 156,
+        "jaccard": 0.5769230769230769,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 1.0,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 90,
+          "confidence": 0.9782608695652174,
+          "consequent_support": 156,
+          "jaccard": 0.5769230769230769,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 1.0,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 80,
+          "confidence": 0.975609756097561,
+          "consequent_support": 146,
+          "jaccard": 0.547945205479452,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 1.0,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9782608695652174,
+        "kappa": 2.0,
+        "score": 0.9782608695652174,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "baseline": {
+        "antecedent_support": 90,
+        "jaccard": 0.5769230769230769,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "right_alternative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 90,
+        "confidence": 0.9782608695652174,
+        "consequent_support": 156,
+        "jaccard": 0.5769230769230769,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 1.0,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 90,
+          "confidence": 0.9782608695652174,
+          "consequent_support": 156,
+          "jaccard": 0.5769230769230769,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 1.0,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 80,
+          "confidence": 0.975609756097561,
+          "consequent_support": 146,
+          "jaccard": 0.547945205479452,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 1.0,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9782608695652174,
+        "kappa": 2.0,
+        "score": 0.9782608695652174,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "baseline": {
+        "antecedent_support": 90,
+        "jaccard": 0.27607361963190186,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "lip",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 90,
+        "confidence": 0.9782608695652174,
+        "consequent_support": 326,
+        "jaccard": 0.27607361963190186,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 1.0,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 90,
+          "confidence": 0.9782608695652174,
+          "consequent_support": 326,
+          "jaccard": 0.27607361963190186,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 1.0,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 80,
+          "confidence": 0.975609756097561,
+          "consequent_support": 316,
+          "jaccard": 0.25316455696202533,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 1.0,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9782608695652174,
+        "kappa": 2.0,
+        "score": 0.9782608695652174,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "baseline": {
+        "antecedent_support": 90,
+        "jaccard": 0.27607361963190186,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "rip",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 90,
+        "confidence": 0.9782608695652174,
+        "consequent_support": 326,
+        "jaccard": 0.27607361963190186,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 1.0,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 90,
+          "confidence": 0.9782608695652174,
+          "consequent_support": 326,
+          "jaccard": 0.27607361963190186,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 1.0,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 80,
+          "confidence": 0.975609756097561,
+          "consequent_support": 316,
+          "jaccard": 0.25316455696202533,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 1.0,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9782608695652174,
+        "kappa": 2.0,
+        "score": 0.9782608695652174,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "baseline": {
+        "antecedent_support": 90,
+        "jaccard": 0.17307692307692307,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "flexible",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 90,
+        "confidence": 0.9782608695652174,
+        "consequent_support": 520,
+        "jaccard": 0.17307692307692307,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 1.0,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 90,
+          "confidence": 0.9782608695652174,
+          "consequent_support": 520,
+          "jaccard": 0.17307692307692307,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 1.0,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 80,
+          "confidence": 0.975609756097561,
+          "consequent_support": 508,
+          "jaccard": 0.15748031496062992,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 1.0,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9782608695652174,
+        "kappa": 2.0,
+        "score": 0.9782608695652174,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "baseline": {
+        "antecedent_support": 90,
+        "jaccard": 0.13432835820895522,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "x_cubed_associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 90,
+        "confidence": 0.9782608695652174,
+        "consequent_support": 670,
+        "jaccard": 0.13432835820895522,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 1.0,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 90,
+          "confidence": 0.9782608695652174,
+          "consequent_support": 670,
+          "jaccard": 0.13432835820895522,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 1.0,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 80,
+          "confidence": 0.975609756097561,
+          "consequent_support": 658,
+          "jaccard": 0.12158054711246201,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 1.0,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9782608695652174,
+        "kappa": 2.0,
+        "score": 0.9782608695652174,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative"
+      ],
+      "baseline": {
+        "antecedent_support": 90,
+        "jaccard": 0.04945054945054945,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "two_sided_inverses",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 90,
+        "confidence": 0.9782608695652174,
+        "consequent_support": 1820,
+        "jaccard": 0.04945054945054945,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 1.0,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 90,
+          "confidence": 0.9782608695652174,
+          "consequent_support": 1820,
+          "jaccard": 0.04945054945054945,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 1.0,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 80,
+          "confidence": 0.975609756097561,
+          "consequent_support": 1808,
+          "jaccard": 0.04424778761061947,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 1.0,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9782608695652174,
+        "kappa": 2.0,
+        "score": 0.9782608695652174,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative",
+        "commutative"
+      ],
+      "baseline": {
+        "antecedent_support": 70,
+        "jaccard": 0.7777777777777778,
+        "positive": 70,
+        "support_fraction": 0.007393324883819181
+      },
+      "consequent": "c_identity",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 70,
+        "confidence": 0.9722222222222222,
+        "consequent_support": 90,
+        "jaccard": 0.7777777777777778,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 70,
+        "strength": 1.0,
+        "support_fraction": 0.007393324883819181
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 70,
+          "confidence": 0.9722222222222222,
+          "consequent_support": 90,
+          "jaccard": 0.7777777777777778,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 70,
+          "strength": 1.0,
+          "support_fraction": 0.007393324883819181
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 60,
+          "confidence": 0.967741935483871,
+          "consequent_support": 80,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 60,
+          "strength": 1.0,
+          "support_fraction": 0.006377551020408163
+        }
+      },
+      "pln": {
+        "confidence": 0.9722222222222222,
+        "kappa": 2.0,
+        "score": 0.9722222222222222,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative",
+        "commutative"
+      ],
+      "baseline": {
+        "antecedent_support": 70,
+        "jaccard": 0.7777777777777778,
+        "positive": 70,
+        "support_fraction": 0.007393324883819181
+      },
+      "consequent": "left_bol",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 70,
+        "confidence": 0.9722222222222222,
+        "consequent_support": 90,
+        "jaccard": 0.7777777777777778,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 70,
+        "strength": 1.0,
+        "support_fraction": 0.007393324883819181
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 70,
+          "confidence": 0.9722222222222222,
+          "consequent_support": 90,
+          "jaccard": 0.7777777777777778,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 70,
+          "strength": 1.0,
+          "support_fraction": 0.007393324883819181
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 60,
+          "confidence": 0.967741935483871,
+          "consequent_support": 80,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 60,
+          "strength": 1.0,
+          "support_fraction": 0.006377551020408163
+        }
+      },
+      "pln": {
+        "confidence": 0.9722222222222222,
+        "kappa": 2.0,
+        "score": 0.9722222222222222,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative",
+        "commutative"
+      ],
+      "baseline": {
+        "antecedent_support": 70,
+        "jaccard": 0.7777777777777778,
+        "positive": 70,
+        "support_fraction": 0.007393324883819181
+      },
+      "consequent": "moufang",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 70,
+        "confidence": 0.9722222222222222,
+        "consequent_support": 90,
+        "jaccard": 0.7777777777777778,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 70,
+        "strength": 1.0,
+        "support_fraction": 0.007393324883819181
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 70,
+          "confidence": 0.9722222222222222,
+          "consequent_support": 90,
+          "jaccard": 0.7777777777777778,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 70,
+          "strength": 1.0,
+          "support_fraction": 0.007393324883819181
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 60,
+          "confidence": 0.967741935483871,
+          "consequent_support": 80,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 60,
+          "strength": 1.0,
+          "support_fraction": 0.006377551020408163
+        }
+      },
+      "pln": {
+        "confidence": 0.9722222222222222,
+        "kappa": 2.0,
+        "score": 0.9722222222222222,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative",
+        "commutative"
+      ],
+      "baseline": {
+        "antecedent_support": 70,
+        "jaccard": 0.7777777777777778,
+        "positive": 70,
+        "support_fraction": 0.007393324883819181
+      },
+      "consequent": "right_bol",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 70,
+        "confidence": 0.9722222222222222,
+        "consequent_support": 90,
+        "jaccard": 0.7777777777777778,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 70,
+        "strength": 1.0,
+        "support_fraction": 0.007393324883819181
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 70,
+          "confidence": 0.9722222222222222,
+          "consequent_support": 90,
+          "jaccard": 0.7777777777777778,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 70,
+          "strength": 1.0,
+          "support_fraction": 0.007393324883819181
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 60,
+          "confidence": 0.967741935483871,
+          "consequent_support": 80,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 60,
+          "strength": 1.0,
+          "support_fraction": 0.006377551020408163
+        }
+      },
+      "pln": {
+        "confidence": 0.9722222222222222,
+        "kappa": 2.0,
+        "score": 0.9722222222222222,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "c_identity",
+        "commutative"
+      ],
+      "baseline": {
+        "antecedent_support": 70,
+        "jaccard": 0.7777777777777778,
+        "positive": 70,
+        "support_fraction": 0.007393324883819181
+      },
+      "consequent": "associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 70,
+        "confidence": 0.9722222222222222,
+        "consequent_support": 90,
+        "jaccard": 0.7777777777777778,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 70,
+        "strength": 1.0,
+        "support_fraction": 0.007393324883819181
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 70,
+          "confidence": 0.9722222222222222,
+          "consequent_support": 90,
+          "jaccard": 0.7777777777777778,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 70,
+          "strength": 1.0,
+          "support_fraction": 0.007393324883819181
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 60,
+          "confidence": 0.967741935483871,
+          "consequent_support": 80,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 60,
+          "strength": 1.0,
+          "support_fraction": 0.006377551020408163
+        }
+      },
+      "pln": {
+        "confidence": 0.9722222222222222,
+        "kappa": 2.0,
+        "score": 0.9722222222222222,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative",
+        "commutative"
+      ],
+      "baseline": {
+        "antecedent_support": 70,
+        "jaccard": 0.44871794871794873,
+        "positive": 70,
+        "support_fraction": 0.007393324883819181
+      },
+      "consequent": "left_alternative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 70,
+        "confidence": 0.9722222222222222,
+        "consequent_support": 156,
+        "jaccard": 0.44871794871794873,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 70,
+        "strength": 1.0,
+        "support_fraction": 0.007393324883819181
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 70,
+          "confidence": 0.9722222222222222,
+          "consequent_support": 156,
+          "jaccard": 0.44871794871794873,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 70,
+          "strength": 1.0,
+          "support_fraction": 0.007393324883819181
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 60,
+          "confidence": 0.967741935483871,
+          "consequent_support": 146,
+          "jaccard": 0.410958904109589,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 60,
+          "strength": 1.0,
+          "support_fraction": 0.006377551020408163
+        }
+      },
+      "pln": {
+        "confidence": 0.9722222222222222,
+        "kappa": 2.0,
+        "score": 0.9722222222222222,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative",
+        "commutative"
+      ],
+      "baseline": {
+        "antecedent_support": 70,
+        "jaccard": 0.44871794871794873,
+        "positive": 70,
+        "support_fraction": 0.007393324883819181
+      },
+      "consequent": "right_alternative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 70,
+        "confidence": 0.9722222222222222,
+        "consequent_support": 156,
+        "jaccard": 0.44871794871794873,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 70,
+        "strength": 1.0,
+        "support_fraction": 0.007393324883819181
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 70,
+          "confidence": 0.9722222222222222,
+          "consequent_support": 156,
+          "jaccard": 0.44871794871794873,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 70,
+          "strength": 1.0,
+          "support_fraction": 0.007393324883819181
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 60,
+          "confidence": 0.967741935483871,
+          "consequent_support": 146,
+          "jaccard": 0.410958904109589,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 60,
+          "strength": 1.0,
+          "support_fraction": 0.006377551020408163
+        }
+      },
+      "pln": {
+        "confidence": 0.9722222222222222,
+        "kappa": 2.0,
+        "score": 0.9722222222222222,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative",
+        "commutative"
+      ],
+      "baseline": {
+        "antecedent_support": 70,
+        "jaccard": 0.2147239263803681,
+        "positive": 70,
+        "support_fraction": 0.007393324883819181
+      },
+      "consequent": "lip",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 70,
+        "confidence": 0.9722222222222222,
+        "consequent_support": 326,
+        "jaccard": 0.2147239263803681,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 70,
+        "strength": 1.0,
+        "support_fraction": 0.007393324883819181
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 70,
+          "confidence": 0.9722222222222222,
+          "consequent_support": 326,
+          "jaccard": 0.2147239263803681,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 70,
+          "strength": 1.0,
+          "support_fraction": 0.007393324883819181
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 60,
+          "confidence": 0.967741935483871,
+          "consequent_support": 316,
+          "jaccard": 0.189873417721519,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 60,
+          "strength": 1.0,
+          "support_fraction": 0.006377551020408163
+        }
+      },
+      "pln": {
+        "confidence": 0.9722222222222222,
+        "kappa": 2.0,
+        "score": 0.9722222222222222,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative",
+        "commutative"
+      ],
+      "baseline": {
+        "antecedent_support": 70,
+        "jaccard": 0.2147239263803681,
+        "positive": 70,
+        "support_fraction": 0.007393324883819181
+      },
+      "consequent": "rip",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 70,
+        "confidence": 0.9722222222222222,
+        "consequent_support": 326,
+        "jaccard": 0.2147239263803681,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 70,
+        "strength": 1.0,
+        "support_fraction": 0.007393324883819181
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 70,
+          "confidence": 0.9722222222222222,
+          "consequent_support": 326,
+          "jaccard": 0.2147239263803681,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 70,
+          "strength": 1.0,
+          "support_fraction": 0.007393324883819181
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 60,
+          "confidence": 0.967741935483871,
+          "consequent_support": 316,
+          "jaccard": 0.189873417721519,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 60,
+          "strength": 1.0,
+          "support_fraction": 0.006377551020408163
+        }
+      },
+      "pln": {
+        "confidence": 0.9722222222222222,
+        "kappa": 2.0,
+        "score": 0.9722222222222222,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative",
+        "commutative"
+      ],
+      "baseline": {
+        "antecedent_support": 70,
+        "jaccard": 0.1346153846153846,
+        "positive": 70,
+        "support_fraction": 0.007393324883819181
+      },
+      "consequent": "flexible",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 70,
+        "confidence": 0.9722222222222222,
+        "consequent_support": 520,
+        "jaccard": 0.1346153846153846,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 70,
+        "strength": 1.0,
+        "support_fraction": 0.007393324883819181
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 70,
+          "confidence": 0.9722222222222222,
+          "consequent_support": 520,
+          "jaccard": 0.1346153846153846,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 70,
+          "strength": 1.0,
+          "support_fraction": 0.007393324883819181
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 60,
+          "confidence": 0.967741935483871,
+          "consequent_support": 508,
+          "jaccard": 0.11811023622047244,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 60,
+          "strength": 1.0,
+          "support_fraction": 0.006377551020408163
+        }
+      },
+      "pln": {
+        "confidence": 0.9722222222222222,
+        "kappa": 2.0,
+        "score": 0.9722222222222222,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative",
+        "commutative"
+      ],
+      "baseline": {
+        "antecedent_support": 70,
+        "jaccard": 0.1044776119402985,
+        "positive": 70,
+        "support_fraction": 0.007393324883819181
+      },
+      "consequent": "x_cubed_associative",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 70,
+        "confidence": 0.9722222222222222,
+        "consequent_support": 670,
+        "jaccard": 0.1044776119402985,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 70,
+        "strength": 1.0,
+        "support_fraction": 0.007393324883819181
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 70,
+          "confidence": 0.9722222222222222,
+          "consequent_support": 670,
+          "jaccard": 0.1044776119402985,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 70,
+          "strength": 1.0,
+          "support_fraction": 0.007393324883819181
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 60,
+          "confidence": 0.967741935483871,
+          "consequent_support": 658,
+          "jaccard": 0.0911854103343465,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 60,
+          "strength": 1.0,
+          "support_fraction": 0.006377551020408163
+        }
+      },
+      "pln": {
+        "confidence": 0.9722222222222222,
+        "kappa": 2.0,
+        "score": 0.9722222222222222,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "associative",
+        "commutative"
+      ],
+      "baseline": {
+        "antecedent_support": 70,
+        "jaccard": 0.038461538461538464,
+        "positive": 70,
+        "support_fraction": 0.007393324883819181
+      },
+      "consequent": "two_sided_inverses",
+      "credal": {
+        "lower_strength": 1.0,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.0
+      },
+      "full_population": {
+        "antecedent_support": 70,
+        "confidence": 0.9722222222222222,
+        "consequent_support": 1820,
+        "jaccard": 0.038461538461538464,
+        "negative": 0,
+        "object_count": 9468,
+        "positive": 70,
+        "strength": 1.0,
+        "support_fraction": 0.007393324883819181
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 70,
+          "confidence": 0.9722222222222222,
+          "consequent_support": 1820,
+          "jaccard": 0.038461538461538464,
+          "negative": 0,
+          "object_count": 9468,
+          "positive": 70,
+          "strength": 1.0,
+          "support_fraction": 0.007393324883819181
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 8,
+          "jaccard": 0.75,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 60,
+          "confidence": 0.967741935483871,
+          "consequent_support": 1808,
+          "jaccard": 0.033185840707964605,
+          "negative": 0,
+          "object_count": 9408,
+          "positive": 60,
+          "strength": 1.0,
+          "support_fraction": 0.006377551020408163
+        }
+      },
+      "pln": {
+        "confidence": 0.9722222222222222,
+        "kappa": 2.0,
+        "score": 0.9722222222222222,
+        "strength": 1.0
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "left_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.9375,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "associative",
+      "credal": {
+        "lower_strength": 0.9302325581395349,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.06976744186046513
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 90,
+        "jaccard": 0.9375,
+        "negative": 6,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 0.9375,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 90,
+          "jaccard": 0.9375,
+          "negative": 6,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 0.9375,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 80,
+          "jaccard": 0.9302325581395349,
+          "negative": 6,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 0.9302325581395349,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9183673469387755,
+        "strength": 0.9375
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "left_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.9375,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "c_identity",
+      "credal": {
+        "lower_strength": 0.9302325581395349,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.06976744186046513
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 90,
+        "jaccard": 0.9375,
+        "negative": 6,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 0.9375,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 90,
+          "jaccard": 0.9375,
+          "negative": 6,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 0.9375,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 80,
+          "jaccard": 0.9302325581395349,
+          "negative": 6,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 0.9302325581395349,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9183673469387755,
+        "strength": 0.9375
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "left_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.9375,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "left_bol",
+      "credal": {
+        "lower_strength": 0.9302325581395349,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.06976744186046513
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 90,
+        "jaccard": 0.9375,
+        "negative": 6,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 0.9375,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 90,
+          "jaccard": 0.9375,
+          "negative": 6,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 0.9375,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 80,
+          "jaccard": 0.9302325581395349,
+          "negative": 6,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 0.9302325581395349,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9183673469387755,
+        "strength": 0.9375
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "left_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.9375,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "moufang",
+      "credal": {
+        "lower_strength": 0.9302325581395349,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.06976744186046513
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 90,
+        "jaccard": 0.9375,
+        "negative": 6,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 0.9375,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 90,
+          "jaccard": 0.9375,
+          "negative": 6,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 0.9375,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 80,
+          "jaccard": 0.9302325581395349,
+          "negative": 6,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 0.9302325581395349,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9183673469387755,
+        "strength": 0.9375
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "left_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.9375,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "right_bol",
+      "credal": {
+        "lower_strength": 0.9302325581395349,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.06976744186046513
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 90,
+        "jaccard": 0.9375,
+        "negative": 6,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 0.9375,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 90,
+          "jaccard": 0.9375,
+          "negative": 6,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 0.9375,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 80,
+          "jaccard": 0.9302325581395349,
+          "negative": 6,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 0.9302325581395349,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9183673469387755,
+        "strength": 0.9375
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "right_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.9375,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "associative",
+      "credal": {
+        "lower_strength": 0.9302325581395349,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.06976744186046513
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 90,
+        "jaccard": 0.9375,
+        "negative": 6,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 0.9375,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 90,
+          "jaccard": 0.9375,
+          "negative": 6,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 0.9375,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 80,
+          "jaccard": 0.9302325581395349,
+          "negative": 6,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 0.9302325581395349,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9183673469387755,
+        "strength": 0.9375
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "right_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.9375,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "c_identity",
+      "credal": {
+        "lower_strength": 0.9302325581395349,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.06976744186046513
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 90,
+        "jaccard": 0.9375,
+        "negative": 6,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 0.9375,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 90,
+          "jaccard": 0.9375,
+          "negative": 6,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 0.9375,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 80,
+          "jaccard": 0.9302325581395349,
+          "negative": 6,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 0.9302325581395349,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9183673469387755,
+        "strength": 0.9375
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "right_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.9375,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "left_bol",
+      "credal": {
+        "lower_strength": 0.9302325581395349,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.06976744186046513
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 90,
+        "jaccard": 0.9375,
+        "negative": 6,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 0.9375,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 90,
+          "jaccard": 0.9375,
+          "negative": 6,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 0.9375,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 80,
+          "jaccard": 0.9302325581395349,
+          "negative": 6,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 0.9302325581395349,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9183673469387755,
+        "strength": 0.9375
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "right_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.9375,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "moufang",
+      "credal": {
+        "lower_strength": 0.9302325581395349,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.06976744186046513
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 90,
+        "jaccard": 0.9375,
+        "negative": 6,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 0.9375,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 90,
+          "jaccard": 0.9375,
+          "negative": 6,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 0.9375,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 80,
+          "jaccard": 0.9302325581395349,
+          "negative": 6,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 0.9302325581395349,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9183673469387755,
+        "strength": 0.9375
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "right_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.9375,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "right_bol",
+      "credal": {
+        "lower_strength": 0.9302325581395349,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.06976744186046513
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 90,
+        "jaccard": 0.9375,
+        "negative": 6,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 0.9375,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 90,
+          "jaccard": 0.9375,
+          "negative": 6,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 0.9375,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 80,
+          "jaccard": 0.9302325581395349,
+          "negative": 6,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 0.9302325581395349,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9183673469387755,
+        "strength": 0.9375
+      }
+    },
+    {
+      "antecedent": [
+        "flexible",
+        "left_alternative"
+      ],
+      "baseline": {
+        "antecedent_support": 96,
+        "jaccard": 0.5555555555555556,
+        "positive": 90,
+        "support_fraction": 0.009505703422053232
+      },
+      "consequent": "right_alternative",
+      "credal": {
+        "lower_strength": 0.9302325581395349,
+        "observed_gate_count": 4,
+        "upper_strength": 1.0,
+        "width": 0.06976744186046513
+      },
+      "full_population": {
+        "antecedent_support": 96,
+        "confidence": 0.9795918367346939,
+        "consequent_support": 156,
+        "jaccard": 0.5555555555555556,
+        "negative": 6,
+        "object_count": 9468,
+        "positive": 90,
+        "strength": 0.9375,
+        "support_fraction": 0.009505703422053232
+      },
+      "gate_results": {
+        "all": {
+          "antecedent_support": 96,
+          "confidence": 0.9795918367346939,
+          "consequent_support": 156,
+          "jaccard": 0.5555555555555556,
+          "negative": 6,
+          "object_count": 9468,
+          "positive": 90,
+          "strength": 0.9375,
+          "support_fraction": 0.009505703422053232
+        },
+        "order=4": {
+          "antecedent_support": 4,
+          "confidence": 0.6666666666666666,
+          "consequent_support": 4,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 4,
+          "positive": 4,
+          "strength": 1.0,
+          "support_fraction": 1.0
+        },
+        "order=5": {
+          "antecedent_support": 6,
+          "confidence": 0.75,
+          "consequent_support": 6,
+          "jaccard": 1.0,
+          "negative": 0,
+          "object_count": 56,
+          "positive": 6,
+          "strength": 1.0,
+          "support_fraction": 0.10714285714285714
+        },
+        "order=6": {
+          "antecedent_support": 86,
+          "confidence": 0.9772727272727273,
+          "consequent_support": 146,
+          "jaccard": 0.5263157894736842,
+          "negative": 6,
+          "object_count": 9408,
+          "positive": 80,
+          "strength": 0.9302325581395349,
+          "support_fraction": 0.008503401360544218
+        }
+      },
+      "pln": {
+        "confidence": 0.9795918367346939,
+        "kappa": 2.0,
+        "score": 0.9183673469387755,
+        "strength": 0.9375
+      }
+    }
+  ],
+  "population_property_histogram": {
+    "associative": 90,
+    "c_identity": 90,
+    "commutative": 466,
+    "flexible": 520,
+    "left_alternative": 156,
+    "left_bol": 90,
+    "lip": 326,
+    "moufang": 90,
+    "right_alternative": 156,
+    "right_bol": 90,
+    "rip": 326,
+    "two_sided_inverses": 1820,
+    "x_cubed_associative": 670
+  },
+  "population_sample": [
+    {
+      "object": "loop_n4_0",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ]
+      ],
+      "order": 4
+    },
+    {
+      "object": "loop_n4_1",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          0,
+          3,
+          2
+        ],
+        [
+          2,
+          3,
+          1,
+          0
+        ],
+        [
+          3,
+          2,
+          0,
+          1
+        ]
+      ],
+      "order": 4
+    },
+    {
+      "object": "loop_n4_2",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "order": 4
+    },
+    {
+      "object": "loop_n4_3",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          3,
+          0,
+          2
+        ],
+        [
+          2,
+          0,
+          3,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          0
+        ]
+      ],
+      "order": 4
+    },
+    {
+      "object": "loop_n5_0",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          0,
+          3,
+          4,
+          2
+        ],
+        [
+          2,
+          3,
+          4,
+          0,
+          1
+        ],
+        [
+          3,
+          4,
+          1,
+          2,
+          0
+        ],
+        [
+          4,
+          2,
+          0,
+          1,
+          3
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_1",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          0,
+          3,
+          4,
+          2
+        ],
+        [
+          2,
+          3,
+          4,
+          1,
+          0
+        ],
+        [
+          3,
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          4,
+          2,
+          1,
+          0,
+          3
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_2",
+      "observed_properties": [
+        "flexible",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          0,
+          3,
+          4,
+          2
+        ],
+        [
+          2,
+          4,
+          0,
+          1,
+          3
+        ],
+        [
+          3,
+          2,
+          4,
+          0,
+          1
+        ],
+        [
+          4,
+          3,
+          1,
+          2,
+          0
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_3",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          0,
+          3,
+          4,
+          2
+        ],
+        [
+          2,
+          4,
+          1,
+          0,
+          3
+        ],
+        [
+          3,
+          2,
+          4,
+          1,
+          0
+        ],
+        [
+          4,
+          3,
+          0,
+          2,
+          1
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_4",
+      "observed_properties": [
+        "flexible",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          0,
+          4,
+          2,
+          3
+        ],
+        [
+          2,
+          3,
+          0,
+          4,
+          1
+        ],
+        [
+          3,
+          4,
+          1,
+          0,
+          2
+        ],
+        [
+          4,
+          2,
+          3,
+          1,
+          0
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_5",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          0,
+          4,
+          2,
+          3
+        ],
+        [
+          2,
+          3,
+          1,
+          4,
+          0
+        ],
+        [
+          3,
+          4,
+          0,
+          1,
+          2
+        ],
+        [
+          4,
+          2,
+          3,
+          0,
+          1
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_6",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          0,
+          4,
+          2,
+          3
+        ],
+        [
+          2,
+          4,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          4,
+          0
+        ],
+        [
+          4,
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_7",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          0,
+          4,
+          2,
+          3
+        ],
+        [
+          2,
+          4,
+          3,
+          1,
+          0
+        ],
+        [
+          3,
+          2,
+          0,
+          4,
+          1
+        ],
+        [
+          4,
+          3,
+          1,
+          0,
+          2
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_8",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          0,
+          4,
+          3
+        ],
+        [
+          2,
+          3,
+          4,
+          0,
+          1
+        ],
+        [
+          3,
+          4,
+          1,
+          2,
+          0
+        ],
+        [
+          4,
+          0,
+          3,
+          1,
+          2
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_9",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          0,
+          4,
+          3
+        ],
+        [
+          2,
+          3,
+          4,
+          1,
+          0
+        ],
+        [
+          3,
+          4,
+          1,
+          0,
+          2
+        ],
+        [
+          4,
+          0,
+          3,
+          2,
+          1
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_10",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          0,
+          4,
+          3
+        ],
+        [
+          2,
+          4,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          4,
+          1,
+          2
+        ],
+        [
+          4,
+          3,
+          1,
+          2,
+          0
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_11",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          0,
+          4,
+          3
+        ],
+        [
+          2,
+          4,
+          3,
+          1,
+          0
+        ],
+        [
+          3,
+          0,
+          4,
+          2,
+          1
+        ],
+        [
+          4,
+          3,
+          1,
+          0,
+          2
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_12",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          3,
+          4,
+          0
+        ],
+        [
+          2,
+          0,
+          4,
+          1,
+          3
+        ],
+        [
+          3,
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          4,
+          3,
+          1,
+          0,
+          2
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_13",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          3,
+          4,
+          0
+        ],
+        [
+          2,
+          0,
+          4,
+          1,
+          3
+        ],
+        [
+          3,
+          4,
+          1,
+          0,
+          2
+        ],
+        [
+          4,
+          3,
+          0,
+          2,
+          1
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_14",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          3,
+          4,
+          0
+        ],
+        [
+          2,
+          3,
+          4,
+          0,
+          1
+        ],
+        [
+          3,
+          4,
+          0,
+          1,
+          2
+        ],
+        [
+          4,
+          0,
+          1,
+          2,
+          3
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_15",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          3,
+          4,
+          0
+        ],
+        [
+          2,
+          4,
+          0,
+          1,
+          3
+        ],
+        [
+          3,
+          0,
+          4,
+          2,
+          1
+        ],
+        [
+          4,
+          3,
+          1,
+          0,
+          2
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_16",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          3,
+          4,
+          0
+        ],
+        [
+          2,
+          4,
+          1,
+          0,
+          3
+        ],
+        [
+          3,
+          0,
+          4,
+          1,
+          2
+        ],
+        [
+          4,
+          3,
+          0,
+          2,
+          1
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_17",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          3,
+          4,
+          0
+        ],
+        [
+          2,
+          4,
+          1,
+          0,
+          3
+        ],
+        [
+          3,
+          0,
+          4,
+          2,
+          1
+        ],
+        [
+          4,
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_18",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          4,
+          0,
+          3
+        ],
+        [
+          2,
+          0,
+          3,
+          4,
+          1
+        ],
+        [
+          3,
+          4,
+          0,
+          1,
+          2
+        ],
+        [
+          4,
+          3,
+          1,
+          2,
+          0
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_19",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          4,
+          0,
+          3
+        ],
+        [
+          2,
+          0,
+          3,
+          4,
+          1
+        ],
+        [
+          3,
+          4,
+          1,
+          2,
+          0
+        ],
+        [
+          4,
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_20",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          4,
+          0,
+          3
+        ],
+        [
+          2,
+          3,
+          0,
+          4,
+          1
+        ],
+        [
+          3,
+          4,
+          1,
+          2,
+          0
+        ],
+        [
+          4,
+          0,
+          3,
+          1,
+          2
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_21",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          4,
+          0,
+          3
+        ],
+        [
+          2,
+          3,
+          1,
+          4,
+          0
+        ],
+        [
+          3,
+          4,
+          0,
+          1,
+          2
+        ],
+        [
+          4,
+          0,
+          3,
+          2,
+          1
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_22",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          4,
+          0,
+          3
+        ],
+        [
+          2,
+          3,
+          1,
+          4,
+          0
+        ],
+        [
+          3,
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          4,
+          0,
+          3,
+          1,
+          2
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_23",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          4,
+          0,
+          3
+        ],
+        [
+          2,
+          4,
+          3,
+          1,
+          0
+        ],
+        [
+          3,
+          0,
+          1,
+          4,
+          2
+        ],
+        [
+          4,
+          3,
+          0,
+          2,
+          1
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_24",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          0,
+          4,
+          2
+        ],
+        [
+          2,
+          0,
+          4,
+          1,
+          3
+        ],
+        [
+          3,
+          4,
+          1,
+          2,
+          0
+        ],
+        [
+          4,
+          2,
+          3,
+          0,
+          1
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_25",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          0,
+          4,
+          2
+        ],
+        [
+          2,
+          4,
+          1,
+          0,
+          3
+        ],
+        [
+          3,
+          0,
+          4,
+          2,
+          1
+        ],
+        [
+          4,
+          2,
+          3,
+          1,
+          0
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_26",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          0,
+          4,
+          2
+        ],
+        [
+          2,
+          4,
+          1,
+          0,
+          3
+        ],
+        [
+          3,
+          2,
+          4,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          3,
+          2,
+          1
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_27",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          0,
+          4,
+          2
+        ],
+        [
+          2,
+          4,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          2,
+          4,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          1,
+          2,
+          3
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_28",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          0,
+          4,
+          2
+        ],
+        [
+          2,
+          4,
+          3,
+          1,
+          0
+        ],
+        [
+          3,
+          0,
+          4,
+          2,
+          1
+        ],
+        [
+          4,
+          2,
+          1,
+          0,
+          3
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_29",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          0,
+          4,
+          2
+        ],
+        [
+          2,
+          4,
+          3,
+          1,
+          0
+        ],
+        [
+          3,
+          2,
+          4,
+          0,
+          1
+        ],
+        [
+          4,
+          0,
+          1,
+          2,
+          3
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_30",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          4,
+          0,
+          2
+        ],
+        [
+          2,
+          0,
+          1,
+          4,
+          3
+        ],
+        [
+          3,
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          4,
+          2,
+          3,
+          1,
+          0
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_31",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          4,
+          0,
+          2
+        ],
+        [
+          2,
+          0,
+          3,
+          4,
+          1
+        ],
+        [
+          3,
+          4,
+          1,
+          2,
+          0
+        ],
+        [
+          4,
+          2,
+          0,
+          1,
+          3
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_32",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          4,
+          0,
+          2
+        ],
+        [
+          2,
+          4,
+          0,
+          1,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          4,
+          0
+        ],
+        [
+          4,
+          0,
+          3,
+          2,
+          1
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_33",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          4,
+          0,
+          2
+        ],
+        [
+          2,
+          4,
+          3,
+          1,
+          0
+        ],
+        [
+          3,
+          2,
+          0,
+          4,
+          1
+        ],
+        [
+          4,
+          0,
+          1,
+          2,
+          3
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_34",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          4,
+          2,
+          0
+        ],
+        [
+          2,
+          0,
+          1,
+          4,
+          3
+        ],
+        [
+          3,
+          4,
+          0,
+          1,
+          2
+        ],
+        [
+          4,
+          2,
+          3,
+          0,
+          1
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_35",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          4,
+          2,
+          0
+        ],
+        [
+          2,
+          0,
+          3,
+          4,
+          1
+        ],
+        [
+          3,
+          4,
+          0,
+          1,
+          2
+        ],
+        [
+          4,
+          2,
+          1,
+          0,
+          3
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_36",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          4,
+          2,
+          0
+        ],
+        [
+          2,
+          0,
+          3,
+          4,
+          1
+        ],
+        [
+          3,
+          4,
+          1,
+          0,
+          2
+        ],
+        [
+          4,
+          2,
+          0,
+          1,
+          3
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_37",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          4,
+          2,
+          0
+        ],
+        [
+          2,
+          4,
+          0,
+          1,
+          3
+        ],
+        [
+          3,
+          0,
+          1,
+          4,
+          2
+        ],
+        [
+          4,
+          2,
+          3,
+          0,
+          1
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_38",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          4,
+          2,
+          0
+        ],
+        [
+          2,
+          4,
+          1,
+          0,
+          3
+        ],
+        [
+          3,
+          2,
+          0,
+          4,
+          1
+        ],
+        [
+          4,
+          0,
+          3,
+          1,
+          2
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_39",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          3,
+          4,
+          2,
+          0
+        ],
+        [
+          2,
+          4,
+          3,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          4,
+          2
+        ],
+        [
+          4,
+          2,
+          0,
+          1,
+          3
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_40",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          4,
+          0,
+          2,
+          3
+        ],
+        [
+          2,
+          0,
+          3,
+          4,
+          1
+        ],
+        [
+          3,
+          2,
+          4,
+          1,
+          0
+        ],
+        [
+          4,
+          3,
+          1,
+          0,
+          2
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_41",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          4,
+          0,
+          2,
+          3
+        ],
+        [
+          2,
+          3,
+          1,
+          4,
+          0
+        ],
+        [
+          3,
+          0,
+          4,
+          1,
+          2
+        ],
+        [
+          4,
+          2,
+          3,
+          0,
+          1
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_42",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          4,
+          0,
+          2,
+          3
+        ],
+        [
+          2,
+          3,
+          1,
+          4,
+          0
+        ],
+        [
+          3,
+          2,
+          4,
+          0,
+          1
+        ],
+        [
+          4,
+          0,
+          3,
+          1,
+          2
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_43",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          4,
+          0,
+          2,
+          3
+        ],
+        [
+          2,
+          3,
+          4,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          4,
+          2
+        ],
+        [
+          4,
+          2,
+          3,
+          1,
+          0
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_44",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          4,
+          0,
+          2,
+          3
+        ],
+        [
+          2,
+          3,
+          4,
+          0,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          4,
+          0
+        ],
+        [
+          4,
+          0,
+          3,
+          1,
+          2
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_45",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          4,
+          0,
+          2,
+          3
+        ],
+        [
+          2,
+          3,
+          4,
+          1,
+          0
+        ],
+        [
+          3,
+          0,
+          1,
+          4,
+          2
+        ],
+        [
+          4,
+          2,
+          3,
+          0,
+          1
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_46",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          4,
+          3,
+          0,
+          2
+        ],
+        [
+          2,
+          0,
+          1,
+          4,
+          3
+        ],
+        [
+          3,
+          2,
+          4,
+          1,
+          0
+        ],
+        [
+          4,
+          3,
+          0,
+          2,
+          1
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_47",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          4,
+          3,
+          0,
+          2
+        ],
+        [
+          2,
+          0,
+          4,
+          1,
+          3
+        ],
+        [
+          3,
+          2,
+          0,
+          4,
+          1
+        ],
+        [
+          4,
+          3,
+          1,
+          2,
+          0
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_48",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          4,
+          3,
+          0,
+          2
+        ],
+        [
+          2,
+          0,
+          4,
+          1,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          4,
+          0
+        ],
+        [
+          4,
+          3,
+          0,
+          2,
+          1
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_49",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          4,
+          3,
+          0,
+          2
+        ],
+        [
+          2,
+          3,
+          0,
+          4,
+          1
+        ],
+        [
+          3,
+          2,
+          4,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          1,
+          2,
+          3
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_50",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          4,
+          3,
+          0,
+          2
+        ],
+        [
+          2,
+          3,
+          1,
+          4,
+          0
+        ],
+        [
+          3,
+          0,
+          4,
+          2,
+          1
+        ],
+        [
+          4,
+          2,
+          0,
+          1,
+          3
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_51",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          4,
+          3,
+          0,
+          2
+        ],
+        [
+          2,
+          3,
+          4,
+          1,
+          0
+        ],
+        [
+          3,
+          2,
+          0,
+          4,
+          1
+        ],
+        [
+          4,
+          0,
+          1,
+          2,
+          3
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_52",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          4,
+          3,
+          2,
+          0
+        ],
+        [
+          2,
+          0,
+          1,
+          4,
+          3
+        ],
+        [
+          3,
+          2,
+          4,
+          0,
+          1
+        ],
+        [
+          4,
+          3,
+          0,
+          1,
+          2
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_53",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          4,
+          3,
+          2,
+          0
+        ],
+        [
+          2,
+          0,
+          4,
+          1,
+          3
+        ],
+        [
+          3,
+          2,
+          0,
+          4,
+          1
+        ],
+        [
+          4,
+          3,
+          1,
+          0,
+          2
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_54",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          4,
+          3,
+          2,
+          0
+        ],
+        [
+          2,
+          3,
+          0,
+          4,
+          1
+        ],
+        [
+          3,
+          0,
+          4,
+          1,
+          2
+        ],
+        [
+          4,
+          2,
+          1,
+          0,
+          3
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n5_55",
+      "observed_properties": [],
+      "operation_table": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          4,
+          3,
+          2,
+          0
+        ],
+        [
+          2,
+          3,
+          4,
+          0,
+          1
+        ],
+        [
+          3,
+          0,
+          1,
+          4,
+          2
+        ],
+        [
+          4,
+          2,
+          0,
+          1,
+          3
+        ]
+      ],
+      "order": 5
+    },
+    {
+      "object": "loop_n6_0",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_1",
+      "observed_properties": [
+        "commutative",
+        "flexible",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_2",
+      "observed_properties": [],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_3",
+      "observed_properties": [],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_4",
+      "observed_properties": [
+        "left_alternative",
+        "lip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_5",
+      "observed_properties": [],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_6",
+      "observed_properties": [],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_7",
+      "observed_properties": [],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_8",
+      "observed_properties": [],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_9",
+      "observed_properties": [],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_10",
+      "observed_properties": [
+        "commutative",
+        "flexible",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_11",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_12",
+      "observed_properties": [],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_13",
+      "observed_properties": [
+        "two_sided_inverses"
+      ],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_14",
+      "observed_properties": [],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_15",
+      "observed_properties": [
+        "lip",
+        "two_sided_inverses"
+      ],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_16",
+      "observed_properties": [
+        "commutative",
+        "flexible",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_17",
+      "observed_properties": [
+        "associative",
+        "c_identity",
+        "commutative",
+        "flexible",
+        "left_alternative",
+        "left_bol",
+        "lip",
+        "moufang",
+        "right_alternative",
+        "right_bol",
+        "rip",
+        "two_sided_inverses",
+        "x_cubed_associative"
+      ],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_18",
+      "observed_properties": [],
+      "order": 6
+    },
+    {
+      "object": "loop_n6_19",
+      "observed_properties": [],
+      "order": 6
+    }
+  ]
+}

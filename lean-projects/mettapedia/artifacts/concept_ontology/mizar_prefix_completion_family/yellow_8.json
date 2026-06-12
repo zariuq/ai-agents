@@ -1,0 +1,324 @@
+{
+  "article": "yellow_8",
+  "attributes": [
+    "Baire",
+    "Basis",
+    "CofinTop",
+    "Subset-Family",
+    "TopStruct",
+    "is_dense_point_of",
+    "x-quasi_basis"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "Subset-Family": 2
+      },
+      "index": 2,
+      "kind": "theorem",
+      "object": "theorem_2",
+      "preview": "theorem Th2: for X being set, F being Subset-Family of X st F c= Fin X holds meet F in Fin X proof let X be set, F be Su"
+    },
+    {
+      "counts": {
+        "Subset-Family": 2
+      },
+      "index": 3,
+      "kind": "theorem",
+      "object": "theorem_3",
+      "preview": "theorem Th3: for X being set, F being Subset-Family of X holds F,COMPLEMENT F are_equipotent proof let X be set, F be Su"
+    },
+    {
+      "counts": {
+        "Subset-Family": 2
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem for X being 1-sorted, F being Subset-Family of X, P being Subset of X holds P` in COMPLEMENT F iff P in F proof "
+    },
+    {
+      "counts": {
+        "Subset-Family": 3
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem Th6: for X being 1-sorted, F being Subset-Family of X holds Intersect COMPLEMENT F = (union F)` proof let X be 1"
+    },
+    {
+      "counts": {
+        "Subset-Family": 2
+      },
+      "index": 7,
+      "kind": "theorem",
+      "object": "theorem_7",
+      "preview": "theorem Th7: for X being 1-sorted, F being Subset-Family of X holds union COMPLEMENT F = (Intersect F)` proof let X be 1"
+    },
+    {
+      "counts": {
+        "Basis": 2,
+        "Subset-Family": 1,
+        "TopStruct": 2
+      },
+      "index": 9,
+      "kind": "theorem",
+      "object": "theorem_9",
+      "preview": "theorem Th9: for T being TopStruct, B being Basis of T, V being Subset of T st V is open holds V = union { G where G is "
+    },
+    {
+      "counts": {
+        "Basis": 2,
+        "TopStruct": 2
+      },
+      "index": 10,
+      "kind": "theorem",
+      "object": "theorem_10",
+      "preview": "theorem Th10: for T being TopStruct, B being Basis of T, S being Subset of T st S in B holds S is open proof let T be To"
+    },
+    {
+      "counts": {
+        "Baire": 1,
+        "Basis": 2
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem for T being non empty TopSpace, B being Basis of T, V being Subset of T holds Int V = union { G where G is Subse"
+    },
+    {
+      "counts": {
+        "Subset-Family": 1,
+        "TopStruct": 1,
+        "x-quasi_basis": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let T be non empty TopStruct, x be Point of T, F be Subset-Family of T; attr F is x-quasi_basis means :Def1: "
+    },
+    {
+      "counts": {
+        "Subset-Family": 3,
+        "TopStruct": 1,
+        "x-quasi_basis": 1
+      },
+      "index": 1,
+      "kind": "registration",
+      "object": "registration_1",
+      "preview": "registration let T be non empty TopStruct, x be Point of T; cluster open x-quasi_basis for Subset-Family of T; existence"
+    },
+    {
+      "counts": {
+        "Basis": 1,
+        "Subset-Family": 1,
+        "TopStruct": 1,
+        "x-quasi_basis": 1
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let T be non empty TopStruct, x be Point of T; mode Basis of x is open x-quasi_basis Subset-Family of T; end;"
+    },
+    {
+      "counts": {
+        "Basis": 2,
+        "TopStruct": 2
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem Th12: for T being non empty TopStruct, x being Point of T, B being Basis of x, V being Subset of T st V in B hol"
+    },
+    {
+      "counts": {
+        "Basis": 1,
+        "TopStruct": 1
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem for T being non empty TopStruct, x being Point of T, B being Basis of x, V being Subset of T st x in V & V is op"
+    },
+    {
+      "counts": {
+        "Basis": 4,
+        "Subset-Family": 3,
+        "TopStruct": 2
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem for T being non empty TopStruct, P being Subset-Family of T st P c= the topology of T & for x being Point of T e"
+    },
+    {
+      "counts": {
+        "Baire": 1,
+        "Subset-Family": 1
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let T be non empty TopSpace; attr T is Baire means for F being Subset-Family of T st F is countable & for S b"
+    },
+    {
+      "counts": {
+        "Baire": 2,
+        "Subset-Family": 6
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem for T being non empty TopSpace holds T is Baire iff for F being Subset-Family of T st F is countable & for S bei"
+    },
+    {
+      "counts": {
+        "TopStruct": 1
+      },
+      "index": 4,
+      "kind": "definition",
+      "object": "definition_4",
+      "preview": "definition let T be TopStruct, S be Subset of T; attr S is irreducible means :Def3: S is non empty closed & for S1,S2 be"
+    },
+    {
+      "counts": {
+        "TopStruct": 1
+      },
+      "index": 2,
+      "kind": "registration",
+      "object": "registration_2",
+      "preview": "registration let T be TopStruct; cluster irreducible -> non empty for Subset of T; coherence; end;"
+    },
+    {
+      "counts": {
+        "is_dense_point_of": 1
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let T be non empty TopSpace, S be Subset of T; let p be Point of T; pred p is_dense_point_of S means p in S &"
+    },
+    {
+      "counts": {
+        "is_dense_point_of": 1
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem for T being non empty TopSpace, S being Subset of T st S is closed for p being Point of T st p is_dense_point_of"
+    },
+    {
+      "counts": {
+        "is_dense_point_of": 2
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let T be non empty TopSpace; attr T is sober means :Def5: for S being irreducible Subset of T ex p being Poin"
+    },
+    {
+      "counts": {
+        "is_dense_point_of": 1
+      },
+      "index": 18,
+      "kind": "theorem",
+      "object": "theorem_18",
+      "preview": "theorem Th18: for T being non empty TopSpace, p being Point of T holds p is_dense_point_of Cl{p} proof let T be non empt"
+    },
+    {
+      "counts": {
+        "is_dense_point_of": 1
+      },
+      "index": 19,
+      "kind": "theorem",
+      "object": "theorem_19",
+      "preview": "theorem Th19: for T being non empty TopSpace, p being Point of T holds p is_dense_point_of {p} by TARSKI:def 1,PRE_TOPC:"
+    },
+    {
+      "counts": {
+        "is_dense_point_of": 2
+      },
+      "index": 22,
+      "kind": "theorem",
+      "object": "theorem_22",
+      "preview": "theorem Th22: for T being Hausdorff non empty TopSpace holds T is sober proof let T be Hausdorff non empty TopSpace; let"
+    },
+    {
+      "counts": {
+        "is_dense_point_of": 2
+      },
+      "index": 24,
+      "kind": "theorem",
+      "object": "theorem_24",
+      "preview": "theorem Th24: for T being sober non empty TopSpace holds T is T_0 proof let T be sober non empty TopSpace; for p,q being"
+    },
+    {
+      "counts": {
+        "CofinTop": 1,
+        "Subset-Family": 2,
+        "TopStruct": 2
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let X be set; func CofinTop X -> strict TopStruct means :Def6: the carrier of it = X & COMPLEMENT the topolog"
+    },
+    {
+      "counts": {
+        "CofinTop": 1
+      },
+      "index": 8,
+      "kind": "registration",
+      "object": "registration_8",
+      "preview": "registration let X be non empty set; cluster CofinTop X -> non empty; coherence by Def6; end;"
+    },
+    {
+      "counts": {
+        "CofinTop": 2,
+        "Subset-Family": 8
+      },
+      "index": 9,
+      "kind": "registration",
+      "object": "registration_9",
+      "preview": "registration let X be set; cluster CofinTop X -> TopSpace-like; coherence proof reconsider F = Fin X as Subset-Family of"
+    },
+    {
+      "counts": {
+        "CofinTop": 3
+      },
+      "index": 25,
+      "kind": "theorem",
+      "object": "theorem_25",
+      "preview": "theorem Th25: for X being non empty set, P being Subset of CofinTop X holds P is closed iff P = X or P is finite proof l"
+    },
+    {
+      "counts": {
+        "CofinTop": 2
+      },
+      "index": 10,
+      "kind": "registration",
+      "object": "registration_10",
+      "preview": "registration let X be non empty set; cluster CofinTop X -> T_1; coherence proof for p being Point of CofinTop X holds {p"
+    },
+    {
+      "counts": {
+        "CofinTop": 2,
+        "is_dense_point_of": 1
+      },
+      "index": 11,
+      "kind": "registration",
+      "object": "registration_11",
+      "preview": "registration let X be infinite set; cluster CofinTop X -> non sober; coherence proof set T = CofinTop X; reconsider S = "
+    },
+    {
+      "counts": {
+        "CofinTop": 1
+      },
+      "index": 12,
+      "kind": "registration",
+      "object": "registration_12",
+      "preview": "registration cluster T_1 non sober for non empty TopSpace; existence proof set X = the infinite set; take CofinTop X; th"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/yellow_8.miz"
+}

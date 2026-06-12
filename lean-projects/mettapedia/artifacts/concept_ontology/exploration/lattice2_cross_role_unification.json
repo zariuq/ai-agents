@@ -1,0 +1,136 @@
+{
+  "bridges": [
+    {
+      "instances": [
+        {
+          "conjecture": "(! [A] : ( ( ~ (v2_struct_0(A)) & (v10_lattices(A) & l3_lattices(A)) ) => (! [B] : (m1_subset_1(B, u1_struct_0(A)) => ( (! [C] : (m1_subset_1(C, u1_struct_0(A)) => k4_binop_1(u1_struct_0(A), u1_lattices(A), B, C)=C) ) => B=k6_lattices(A)) ) ) ) )",
+          "family": "encoded-u1-left-identity",
+          "problem": "lattice2__lattice2__t17_lattice2",
+          "role": "left_identity",
+          "schema_file": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t14_t17_synthesized_schema.json",
+          "schema_kind": "left_identity_extremum_uniqueness",
+          "selector_key": "u1",
+          "symbols": [
+            "k4_binop_1",
+            "k6_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_lattices",
+            "u1_struct_0",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "target_family": "k6-extremum"
+        },
+        {
+          "conjecture": "(! [A] : ( ( ~ (v2_struct_0(A)) & (v10_lattices(A) & l3_lattices(A)) ) => (v1_setwiseo(u1_lattices(A), u1_struct_0(A)) => k6_lattices(A)=k3_binop_1(u1_struct_0(A), u1_lattices(A))) ) )",
+          "family": "encoded-u1-unity",
+          "problem": "lattice2__lattice2__t19_lattice2",
+          "role": "unity",
+          "schema_file": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t18_t19_synthesized_schema.json",
+          "schema_kind": "unity_extremum_identification",
+          "selector_key": "u1",
+          "symbols": [
+            "k3_binop_1",
+            "k6_lattices",
+            "l3_lattices",
+            "u1_lattices",
+            "u1_struct_0",
+            "v10_lattices",
+            "v1_setwiseo",
+            "v2_struct_0"
+          ],
+          "target_family": "k6-extremum"
+        }
+      ],
+      "roles": [
+        "left_identity",
+        "unity"
+      ],
+      "selector_key": "u1",
+      "shared_symbols": [
+        "k6_lattices",
+        "l3_lattices",
+        "u1_lattices",
+        "u1_struct_0",
+        "v10_lattices",
+        "v2_struct_0"
+      ],
+      "target_family": "k6-extremum"
+    },
+    {
+      "instances": [
+        {
+          "conjecture": "(! [A] : ( ( ~ (v2_struct_0(A)) & (v10_lattices(A) & l3_lattices(A)) ) => (! [B] : (m1_subset_1(B, u1_struct_0(A)) => ( (! [C] : (m1_subset_1(C, u1_struct_0(A)) => k4_binop_1(u1_struct_0(A), u2_lattices(A), B, C)=C) ) => B=k5_lattices(A)) ) ) ) )",
+          "family": "encoded-u2-left-identity",
+          "problem": "lattice2__lattice2__t15_lattice2",
+          "role": "left_identity",
+          "schema_file": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t14_t17_synthesized_schema.json",
+          "schema_kind": "left_identity_extremum_uniqueness",
+          "selector_key": "u2",
+          "symbols": [
+            "k4_binop_1",
+            "k5_lattices",
+            "l3_lattices",
+            "m1_subset_1",
+            "u1_struct_0",
+            "u2_lattices",
+            "v10_lattices",
+            "v2_struct_0"
+          ],
+          "target_family": "k5-extremum"
+        },
+        {
+          "conjecture": "(! [A] : ( ( ~ (v2_struct_0(A)) & (v10_lattices(A) & l3_lattices(A)) ) => (v1_setwiseo(u2_lattices(A), u1_struct_0(A)) => k5_lattices(A)=k3_binop_1(u1_struct_0(A), u2_lattices(A))) ) )",
+          "family": "encoded-u2-unity",
+          "problem": "lattice2__lattice2__t18_lattice2",
+          "role": "unity",
+          "schema_file": "/home/zar/claude/lean-projects/mettapedia/artifacts/concept_ontology/exploration/lattice2_t18_t19_synthesized_schema.json",
+          "schema_kind": "unity_extremum_identification",
+          "selector_key": "u2",
+          "symbols": [
+            "k3_binop_1",
+            "k5_lattices",
+            "l3_lattices",
+            "u1_struct_0",
+            "u2_lattices",
+            "v10_lattices",
+            "v1_setwiseo",
+            "v2_struct_0"
+          ],
+          "target_family": "k5-extremum"
+        }
+      ],
+      "roles": [
+        "left_identity",
+        "unity"
+      ],
+      "selector_key": "u2",
+      "shared_symbols": [
+        "k5_lattices",
+        "l3_lattices",
+        "u1_struct_0",
+        "u2_lattices",
+        "v10_lattices",
+        "v2_struct_0"
+      ],
+      "target_family": "k5-extremum"
+    }
+  ],
+  "cluster_name": "lattice2_cross_role_unification",
+  "schema_kind": "selector_extremum_cross_role_unification",
+  "schema_template": {
+    "formula": "selector(OP, TARGET) may appear in multiple theorem roles while preserving the same extremal target and shared bridge vocabulary.",
+    "prose": "In a nonempty bounded lattice context, an encoded selector can determine the same distinguished extremal element through multiple theorem roles, such as left-identity uniqueness and unity identification."
+  },
+  "source_problems": [
+    "lattice2__lattice2__t15_lattice2",
+    "lattice2__lattice2__t17_lattice2",
+    "lattice2__lattice2__t18_lattice2",
+    "lattice2__lattice2__t19_lattice2"
+  ],
+  "source_schema_kinds": [
+    "left_identity_extremum_uniqueness",
+    "unity_extremum_identification"
+  ]
+}

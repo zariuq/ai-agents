@@ -1,0 +1,327 @@
+{
+  "credal_summary": {
+    "intent_support_histogram": {
+      "1": 33,
+      "2": 2
+    },
+    "lower_concept_count": 2,
+    "stable_concept_count": 2,
+    "support_histogram": {
+      "1": 33,
+      "2": 2
+    },
+    "unstable_concept_count": 33,
+    "upper_concept_count": 35
+  },
+  "dataset": {
+    "attributes": 11,
+    "is_binary": true,
+    "kind": "cxt",
+    "max_count": 1,
+    "name": "animals_en.cxt",
+    "objects": 35,
+    "source": "https://github.com/fcatools/contexts/raw/main/contexts/animals_en.cxt"
+  },
+  "gate_family": {
+    "concept_count_by_gate": [
+      35,
+      2
+    ],
+    "densities": [
+      0.36363636363636365,
+      0.0
+    ],
+    "distinct_concept_families": 2,
+    "gate_count": 2,
+    "labels": [
+      "threshold>=1",
+      "threshold>=2"
+    ]
+  },
+  "samples": {
+    "unstable_concepts": [
+      {
+        "extent": [
+          "alligator"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "eggs",
+          "man-eater",
+          "lives in water",
+          "airbreather",
+          "four-legged",
+          "scales"
+        ],
+        "intent_size": 6
+      },
+      {
+        "extent": [
+          "cat"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "nocturnal",
+          "pet",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 6
+      },
+      {
+        "extent": [
+          "horse",
+          "cow",
+          "sheep",
+          "goat"
+        ],
+        "extent_size": 4,
+        "gate_support": 1,
+        "intent": [
+          "livestock",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 5
+      },
+      {
+        "extent": [
+          "cat",
+          "skunk",
+          "possum"
+        ],
+        "extent_size": 3,
+        "gate_support": 1,
+        "intent": [
+          "nocturnal",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 5
+      },
+      {
+        "extent": [
+          "lion",
+          "tiger",
+          "bear"
+        ],
+        "extent_size": 3,
+        "gate_support": 1,
+        "intent": [
+          "man-eater",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 5
+      },
+      {
+        "extent": [
+          "dog",
+          "cat"
+        ],
+        "extent_size": 2,
+        "gate_support": 1,
+        "intent": [
+          "pet",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 5
+      },
+      {
+        "extent": [
+          "pig",
+          "dog",
+          "cat",
+          "lion",
+          "mouse",
+          "skunk",
+          "zebra",
+          "tiger",
+          "bear",
+          "ibex",
+          "antelope",
+          "moose"
+        ],
+        "extent_size": 17,
+        "gate_support": 1,
+        "intent": [
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "alligator",
+          "lizard"
+        ],
+        "extent_size": 2,
+        "gate_support": 1,
+        "intent": [
+          "eggs",
+          "airbreather",
+          "four-legged",
+          "scales"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "rattler"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "eggs",
+          "nocturnal",
+          "airbreather",
+          "scales"
+        ],
+        "intent_size": 4
+      },
+      {
+        "extent": [
+          "parakeet"
+        ],
+        "extent_size": 1,
+        "gate_support": 1,
+        "intent": [
+          "eggs",
+          "pet",
+          "airbreather",
+          "warmblooded"
+        ],
+        "intent_size": 4
+      }
+    ],
+    "unstable_intents": [
+      {
+        "gate_support": 1,
+        "intent": [
+          "eggs",
+          "man-eater",
+          "lives in water",
+          "airbreather",
+          "four-legged",
+          "scales"
+        ],
+        "intent_size": 6
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "nocturnal",
+          "pet",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 6
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "nocturnal",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 5
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "man-eater",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 5
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "pet",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 5
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "livestock",
+          "airbreather",
+          "warmblooded",
+          "four-legged",
+          "fur"
+        ],
+        "intent_size": 5
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "eggs",
+          "nocturnal",
+          "airbreather",
+          "scales"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "eggs",
+          "pet",
+          "airbreather",
+          "warmblooded"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "eggs",
+          "livestock",
+          "airbreather",
+          "warmblooded"
+        ],
+        "intent_size": 4
+      },
+      {
+        "gate_support": 1,
+        "intent": [
+          "eggs",
+          "airbreather",
+          "four-legged",
+          "scales"
+        ],
+        "intent_size": 4
+      }
+    ]
+  },
+  "theoretical_notes": [
+    "Threshold gates over binary evidence are structurally weak: they can only keep the original relation or jump toward a degenerate sparse/null relation.",
+    "At least one gate erased all incidence, so any instability there reflects gate degeneracy more than latent graded structure."
+  ]
+}

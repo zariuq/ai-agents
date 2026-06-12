@@ -1,0 +1,986 @@
+{
+  "attributes": [
+    "failure:timeout"
+  ],
+  "cluster": [
+    "lattice2__lattice2__t18_lattice2",
+    "lattice2__lattice2__t19_lattice2",
+    "lattice2__lattice2__t20_lattice2",
+    "lattice2__lattice2__t21_lattice2",
+    "lattice2__lattice2__t22_lattice2",
+    "lattice2__lattice2__t23_lattice2",
+    "lattice2__lattice2__t24_lattice2",
+    "lattice2__lattice2__t25_lattice2"
+  ],
+  "credal_summary": {
+    "gate_count": 6,
+    "labels": [
+      "full",
+      "move_d1_lattices_right",
+      "move_d2_lattices_right",
+      "move_redefinition_k3_lattices_right",
+      "move_redefinition_k4_lattices_right",
+      "move_redefinition_k4_binop_1_right"
+    ],
+    "lower_concept_count": 1,
+    "unstable_concept_count": 0,
+    "unstable_samples": [],
+    "upper_concept_count": 1
+  },
+  "gate_family_kind": "right_partition",
+  "gates": {
+    "full": [
+      {
+        "extra_right_records": [],
+        "failure_kind": "timeout",
+        "gate": "full",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t18_lattice2"
+      },
+      {
+        "extra_right_records": [],
+        "failure_kind": "timeout",
+        "gate": "full",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t19_lattice2"
+      },
+      {
+        "extra_right_records": [],
+        "failure_kind": "timeout",
+        "gate": "full",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t20_lattice2"
+      },
+      {
+        "extra_right_records": [],
+        "failure_kind": "timeout",
+        "gate": "full",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t21_lattice2"
+      },
+      {
+        "extra_right_records": [],
+        "failure_kind": "timeout",
+        "gate": "full",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t22_lattice2"
+      },
+      {
+        "extra_right_records": [],
+        "failure_kind": "timeout",
+        "gate": "full",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t23_lattice2"
+      },
+      {
+        "extra_right_records": [],
+        "failure_kind": "timeout",
+        "gate": "full",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t24_lattice2"
+      },
+      {
+        "extra_right_records": [],
+        "failure_kind": "timeout",
+        "gate": "full",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t25_lattice2"
+      }
+    ],
+    "move_d1_lattices_right": [
+      {
+        "extra_right_records": [
+          "d1_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_d1_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t18_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d1_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_d1_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t19_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d1_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_d1_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t20_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d1_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_d1_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t21_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d1_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_d1_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t22_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d1_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_d1_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t23_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d1_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_d1_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t24_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d1_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_d1_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t25_lattice2"
+      }
+    ],
+    "move_d2_lattices_right": [
+      {
+        "extra_right_records": [
+          "d2_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_d2_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t18_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d2_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_d2_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t19_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d2_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_d2_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t20_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d2_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_d2_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t21_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d2_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_d2_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t22_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d2_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_d2_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t23_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d2_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_d2_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t24_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "d2_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_d2_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t25_lattice2"
+      }
+    ],
+    "move_redefinition_k3_lattices_right": [
+      {
+        "extra_right_records": [
+          "redefinition_k3_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k3_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t18_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k3_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k3_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t19_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k3_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k3_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t20_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k3_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k3_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t21_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k3_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k3_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t22_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k3_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k3_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t23_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k3_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k3_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t24_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k3_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k3_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t25_lattice2"
+      }
+    ],
+    "move_redefinition_k4_binop_1_right": [
+      {
+        "extra_right_records": [
+          "redefinition_k4_binop_1"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k4_binop_1_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t18_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_binop_1"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k4_binop_1_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t19_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_binop_1"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k4_binop_1_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t20_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_binop_1"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k4_binop_1_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t21_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_binop_1"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k4_binop_1_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t22_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_binop_1"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k4_binop_1_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t23_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_binop_1"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k4_binop_1_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t24_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_binop_1"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k4_binop_1_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t25_lattice2"
+      }
+    ],
+    "move_redefinition_k4_lattices_right": [
+      {
+        "extra_right_records": [
+          "redefinition_k4_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k4_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t18_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k4_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t19_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k4_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t20_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k4_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t21_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k4_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t22_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k4_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t23_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k4_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t24_lattice2"
+      },
+      {
+        "extra_right_records": [
+          "redefinition_k4_lattices"
+        ],
+        "failure_kind": "timeout",
+        "gate": "move_redefinition_k4_lattices_right",
+        "input_symbols": [],
+        "interpolant_found": false,
+        "problem": "lattice2__lattice2__t25_lattice2"
+      }
+    ]
+  },
+  "vocabulary_deltas": [
+    {
+      "changed_problem_count": 0,
+      "gate": "move_d1_lattices_right",
+      "problems": [
+        {
+          "extra_right_records": [
+            "d1_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t18_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d1_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t19_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d1_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t20_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d1_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t21_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d1_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t22_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d1_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t23_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d1_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t24_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d1_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t25_lattice2",
+          "symbols_changed": false
+        }
+      ],
+      "timeout_problem_count": 8
+    },
+    {
+      "changed_problem_count": 0,
+      "gate": "move_d2_lattices_right",
+      "problems": [
+        {
+          "extra_right_records": [
+            "d2_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t18_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d2_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t19_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d2_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t20_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d2_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t21_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d2_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t22_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d2_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t23_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d2_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t24_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "d2_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t25_lattice2",
+          "symbols_changed": false
+        }
+      ],
+      "timeout_problem_count": 8
+    },
+    {
+      "changed_problem_count": 0,
+      "gate": "move_redefinition_k3_lattices_right",
+      "problems": [
+        {
+          "extra_right_records": [
+            "redefinition_k3_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t18_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k3_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t19_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k3_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t20_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k3_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t21_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k3_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t22_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k3_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t23_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k3_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t24_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k3_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t25_lattice2",
+          "symbols_changed": false
+        }
+      ],
+      "timeout_problem_count": 8
+    },
+    {
+      "changed_problem_count": 0,
+      "gate": "move_redefinition_k4_binop_1_right",
+      "problems": [
+        {
+          "extra_right_records": [
+            "redefinition_k4_binop_1"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t18_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_binop_1"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t19_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_binop_1"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t20_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_binop_1"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t21_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_binop_1"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t22_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_binop_1"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t23_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_binop_1"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t24_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_binop_1"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t25_lattice2",
+          "symbols_changed": false
+        }
+      ],
+      "timeout_problem_count": 8
+    },
+    {
+      "changed_problem_count": 0,
+      "gate": "move_redefinition_k4_lattices_right",
+      "problems": [
+        {
+          "extra_right_records": [
+            "redefinition_k4_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t18_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t19_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t20_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t21_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t22_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t23_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t24_lattice2",
+          "symbols_changed": false
+        },
+        {
+          "extra_right_records": [
+            "redefinition_k4_lattices"
+          ],
+          "full_failure_kind": "timeout",
+          "full_symbols": [],
+          "gate_failure_kind": "timeout",
+          "gate_symbols": [],
+          "problem": "lattice2__lattice2__t25_lattice2",
+          "symbols_changed": false
+        }
+      ],
+      "timeout_problem_count": 8
+    }
+  ]
+}

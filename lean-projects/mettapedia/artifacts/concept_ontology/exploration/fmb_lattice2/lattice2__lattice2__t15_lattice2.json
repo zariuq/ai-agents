@@ -1,0 +1,536 @@
+{
+  "domain_sizes": {
+    "$i": 2
+  },
+  "finite_model_found": true,
+  "function_summaries": [
+    {
+      "arity": 3,
+      "assignment_count": 8,
+      "distinct_output_count": 2,
+      "kind": "function",
+      "name": "k1_binop_1",
+      "negative_count": null,
+      "positive_count": null
+    },
+    {
+      "arity": 2,
+      "assignment_count": 4,
+      "distinct_output_count": 2,
+      "kind": "function",
+      "name": "k1_funct_1",
+      "negative_count": null,
+      "positive_count": null
+    },
+    {
+      "arity": 2,
+      "assignment_count": 4,
+      "distinct_output_count": 2,
+      "kind": "function",
+      "name": "k1_funct_4",
+      "negative_count": null,
+      "positive_count": null
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": 2,
+      "kind": "function",
+      "name": "k1_lattice2",
+      "negative_count": null,
+      "positive_count": null
+    },
+    {
+      "arity": 3,
+      "assignment_count": 8,
+      "distinct_output_count": 2,
+      "kind": "function",
+      "name": "k1_lattices",
+      "negative_count": null,
+      "positive_count": null
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": 2,
+      "kind": "function",
+      "name": "k1_zfmisc_1",
+      "negative_count": null,
+      "positive_count": null
+    },
+    {
+      "arity": 4,
+      "assignment_count": 16,
+      "distinct_output_count": 2,
+      "kind": "function",
+      "name": "k2_partfun1",
+      "negative_count": null,
+      "positive_count": null
+    },
+    {
+      "arity": 2,
+      "assignment_count": 4,
+      "distinct_output_count": 2,
+      "kind": "function",
+      "name": "k2_zfmisc_1",
+      "negative_count": null,
+      "positive_count": null
+    },
+    {
+      "arity": 3,
+      "assignment_count": 8,
+      "distinct_output_count": 2,
+      "kind": "function",
+      "name": "k3_lattices",
+      "negative_count": null,
+      "positive_count": null
+    },
+    {
+      "arity": 4,
+      "assignment_count": 16,
+      "distinct_output_count": 2,
+      "kind": "function",
+      "name": "k4_binop_1",
+      "negative_count": null,
+      "positive_count": null
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": 1,
+      "kind": "function",
+      "name": "k5_finsub_1",
+      "negative_count": null,
+      "positive_count": null
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": 2,
+      "kind": "function",
+      "name": "k5_lattices",
+      "negative_count": null,
+      "positive_count": null
+    },
+    {
+      "arity": 4,
+      "assignment_count": 16,
+      "distinct_output_count": 2,
+      "kind": "function",
+      "name": "k9_funct_4",
+      "negative_count": null,
+      "positive_count": null
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": 2,
+      "kind": "function",
+      "name": "k9_xtuple_0",
+      "negative_count": null,
+      "positive_count": null
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": 1,
+      "kind": "function",
+      "name": "u1_lattices",
+      "negative_count": null,
+      "positive_count": null
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": 1,
+      "kind": "function",
+      "name": "u1_struct_0",
+      "negative_count": null,
+      "positive_count": null
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": 1,
+      "kind": "function",
+      "name": "u2_lattices",
+      "negative_count": null,
+      "positive_count": null
+    }
+  ],
+  "input_file": "/home/zar/claude/atps/datasets/extended_mptp5k/chainy/train/lattice2__lattice2__t15_lattice2",
+  "original_role_counts": {
+    "axiom": 112,
+    "conjecture": 1
+  },
+  "predicate_summaries": [
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "l1_lattices",
+      "negative_count": 0,
+      "positive_count": 2
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "l1_struct_0",
+      "negative_count": 0,
+      "positive_count": 2
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "l2_lattices",
+      "negative_count": 1,
+      "positive_count": 1
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "l3_lattices",
+      "negative_count": 1,
+      "positive_count": 1
+    },
+    {
+      "arity": 2,
+      "assignment_count": 4,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "m1_subset_1",
+      "negative_count": 2,
+      "positive_count": 2
+    },
+    {
+      "arity": 6,
+      "assignment_count": 64,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "r1_funct_2",
+      "negative_count": 0,
+      "positive_count": 64
+    },
+    {
+      "arity": 3,
+      "assignment_count": 8,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "r1_lattice2",
+      "negative_count": 8,
+      "positive_count": 0
+    },
+    {
+      "arity": 2,
+      "assignment_count": 4,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "r1_tarski",
+      "negative_count": 2,
+      "positive_count": 2
+    },
+    {
+      "arity": 2,
+      "assignment_count": 4,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "r2_hidden",
+      "negative_count": 3,
+      "positive_count": 1
+    },
+    {
+      "arity": 2,
+      "assignment_count": 4,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "r2_tarski",
+      "negative_count": 3,
+      "positive_count": 1
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v10_lattices",
+      "negative_count": 2,
+      "positive_count": 0
+    },
+    {
+      "arity": 2,
+      "assignment_count": 4,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v13_struct_0",
+      "negative_count": 2,
+      "positive_count": 2
+    },
+    {
+      "arity": 2,
+      "assignment_count": 4,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v18_lattices",
+      "negative_count": 0,
+      "positive_count": 4
+    },
+    {
+      "arity": 2,
+      "assignment_count": 4,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v19_lattices",
+      "negative_count": 0,
+      "positive_count": 4
+    },
+    {
+      "arity": 2,
+      "assignment_count": 4,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v1_binop_1",
+      "negative_count": 0,
+      "positive_count": 4
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v1_finset_1",
+      "negative_count": 1,
+      "positive_count": 1
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v1_funct_1",
+      "negative_count": 0,
+      "positive_count": 2
+    },
+    {
+      "arity": 3,
+      "assignment_count": 8,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v1_funct_2",
+      "negative_count": 6,
+      "positive_count": 2
+    },
+    {
+      "arity": 2,
+      "assignment_count": 4,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v1_partfun1",
+      "negative_count": 3,
+      "positive_count": 1
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v1_relat_1",
+      "negative_count": 0,
+      "positive_count": 2
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v1_xboole_0",
+      "negative_count": 1,
+      "positive_count": 1
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v1_zfmisc_1",
+      "negative_count": 1,
+      "positive_count": 1
+    },
+    {
+      "arity": 2,
+      "assignment_count": 4,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v20_lattices",
+      "negative_count": 0,
+      "positive_count": 4
+    },
+    {
+      "arity": 2,
+      "assignment_count": 4,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v21_lattices",
+      "negative_count": 0,
+      "positive_count": 4
+    },
+    {
+      "arity": 2,
+      "assignment_count": 4,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v2_binop_1",
+      "negative_count": 0,
+      "positive_count": 4
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v2_funct_1",
+      "negative_count": 0,
+      "positive_count": 2
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v2_relat_1",
+      "negative_count": 0,
+      "positive_count": 2
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v2_struct_0",
+      "negative_count": 0,
+      "positive_count": 2
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v3_funct_1",
+      "negative_count": 1,
+      "positive_count": 1
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v3_lattices",
+      "negative_count": 2,
+      "positive_count": 0
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v3_relat_1",
+      "negative_count": 0,
+      "positive_count": 2
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v4_funct_1",
+      "negative_count": 0,
+      "positive_count": 2
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v4_lattices",
+      "negative_count": 2,
+      "positive_count": 0
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v5_lattices",
+      "negative_count": 2,
+      "positive_count": 0
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v6_lattices",
+      "negative_count": 2,
+      "positive_count": 0
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v7_lattices",
+      "negative_count": 2,
+      "positive_count": 0
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v7_struct_0",
+      "negative_count": 0,
+      "positive_count": 2
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v8_lattices",
+      "negative_count": 2,
+      "positive_count": 0
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v8_struct_0",
+      "negative_count": 0,
+      "positive_count": 2
+    },
+    {
+      "arity": 1,
+      "assignment_count": 2,
+      "distinct_output_count": null,
+      "kind": "predicate",
+      "name": "v9_lattices",
+      "negative_count": 2,
+      "positive_count": 0
+    }
+  ],
+  "removed_role_counts": {
+    "conjecture": 1
+  },
+  "return_code": 0,
+  "status": "Satisfiable",
+  "stderr": "",
+  "stdout_excerpt": "% input_syntax=auto not supported for standard input parsing, switching to tptp.\nMonotonicity information:\nSort Inference information:\n3 inferred subsorts\nSubsort 0 has 13 constants and 25 functions\nSubsort 1 has 4 constants and 1 functions\nSubsort 2 has 1 constants and 1 functions\n1 distinct sorts\n0 has 4 inferred subsorts as members [0,1,2,3]\nVampire to distinct sort mapping:\n[$i]\n% TRYING [1]\n% TRYING [2]\n% Finite Model Found!\n% SZS status Satisfiable for \n% SZS output start FiniteModel for \ntff('declare_$i1',type,n1:$i).\ntff('declare_$i2',type,k5_ordinal1:$i).\ntff('finite_domain_$i',axiom,\n      ! [X:$i] : (\n         X = n1 | X = k5_ordinal1\n      ) ).\n\ntff('distinct_domain_$i',axiom,\n         n1 != k5_ordinal1\n).\n\ntff(declare_k1_xboole_0,type,k1_xboole_0:$i).\ntff(k1_xboole_0_definition,axiom,k1_xboole_0 = k5_ordinal1).\ntff(declare_k1_zfmisc_1,type,k1_zfmisc_1: ($i) > $i).\ntff(function_k1_zfmisc_1,axiom,\n           k1_zfmisc_1(n1) = k5_ordinal1\n         & k1_zfmisc_1(k5_ordinal1) = n1\n\n).\n\ntff(declare_k2_zfmisc_1,type,k2_zfmisc_1: ($i * $i) > $i).\ntff(function_k2_zfmisc_1,axiom,\n           k2_zfmisc_1(n1,n1) = k5_ordinal1\n         & k2_zfmisc_1(n1,k5_ordinal1) = n1\n         & k2_zfmisc_1(k5_ordinal1,n1) = n1\n         & k2_zfmisc_1(k5_ordinal1,k5_ordinal1) = n1\n\n).\n\ntff(declare_k2_partfun1,type,k2_partfun1: ($i * $i * $i * $i) > $i).\ntff(function_k2_partfun1,axiom,\n           k2_partfun1(n1,n1,n1,n1) = n1\n         & k2_partfun1(n1,n1,n1,k5_ordinal1) = k5_ordinal1\n         & k2_partfun1(n1,n1,k5_ordinal1,n1) = k5_ordinal1\n         & k2_partfun1(n1,n1,k5_ordinal1,k5_ordinal1) = n1\n         & k2_partfun1(n1,k5_ordinal1,n1,n1) = n1\n         & k2_partfun1(n1,k5_ordinal1,n1,k5_ordinal1) = n1\n         & k2_partfun1(n1,k5_ordinal1,k5_ordinal1,n1) = k5_ordinal1\n         & k2_partfun1(n1,k5_ordinal1,k5_ordinal1,k5_ordinal1) = k5_ordinal1\n         & k2_partfun1(k5_ordinal1,n1,n1,n1) = n1\n         & k2_partfun1(k5_ordinal1,n1,n1,k5_ordinal1) = n1\n         & k2_partfun1(k5_ordinal1,n1,k5_ordinal1,n1) = k5_ordinal1\n         & k2_partfun1(k5_ordinal1,n1,k5_ordinal1,k5_ordinal1) = k5_ordinal1\n         & k2_partfun1(k5_ordinal1,k5_ordinal1,n1,n1) = n1\n         & k2_partfun1(k5_ordinal1,k5_ordinal1,n1,k5_ordinal1) = n1\n         & k2_partfun1(k5_ordinal1,k5_ordinal1,k5_ordinal1,n1) = n1\n         & k2_partfun1(k5_ordinal1,k5_ordinal1,k5_ordinal1,k5_ordinal1) = n1\n\n).\n\ntff(declare_k9_xtuple_0,type,k9_xtuple_0: ($i) > $i).\ntff(function_k9_xtuple_0,axiom,\n           k9_xtuple_0(n1) = n1\n         & k9_xtuple_0(k5_ordinal1) = k5_ordinal1\n\n).\n\ntff(declare_k1_funct_1,type,k1_funct_1: ($i * $i) > $i).\ntff(function_k1_funct_1,axiom,\n           k1_funct_1(n1,n1) = n1\n         & k1_funct_1(n1,k5_ordinal1) = k5_ordinal1\n         & k1_funct_1(k5_ordinal1,n1) = k5_ordinal1\n         & k1_funct_1(k5_ordinal1,k5_ordinal1) = n1\n\n).\n\ntff(declare_k9_funct_4,type,k9_funct_4: ($i * $i * $i * $i) > $i).\ntff(function_k9_funct_4,axiom,\n           k9_funct_4(n1,n1,n1,n1) = n1\n         & k9_funct_4(n1,n1,n1,k5_ordinal1) = n1\n         & k9_funct_4(n1,n1,k5_ordinal1,n1) = n1\n         & k9_funct_4(n1,n1,k5_ordinal1,k5_ordinal1) = k5_ordinal1\n         & k9_funct_4(n1,k5_ordinal1,n1,n1) = n1\n         & k9_funct_4(n1,k5_ordinal1,n1,k5_ordinal1) = k5_ordinal1\n         & k9_funct_4(n1,k5_ordinal1,k5_ordinal1,n1) = n1\n         & k9_funct_4(n1,k5_ordinal1,k5_ordinal1,k5_ordinal1) = k5_ordinal1\n         & k9_funct_4(k5_ordinal1,n1,n1,n1) = n1\n         & k9_funct_4(k5_ordinal1,n1,n1,k5_ordinal1) = k5_ordinal1\n         & k9_funct_4(k5_ordinal1,n1,k5_ordinal1,n1) = k5_ordinal1\n         & k9_funct_4(k5_ordinal1,n1,k5_ordinal1,k5_ordinal1) = k5_ordinal1\n         & k9_funct_4(k5_ordinal1,k5_ordinal1,n1,n1) = n1\n         & k9_funct_4(k5_ordinal1,k5_ordinal1,n1,k5_ordinal1) = n1\n         & k9_funct_4(k5_ordinal1,k5_ordinal1,k5_ordinal1,n1) = n1\n         & k9_funct_4(k5_ordinal1,k5_ordinal1,k5_ordinal1,k5_ordinal1) = k5_ordinal1\n\n).\n\ntff(declare_k1_funct_4,type,k1_funct_4: ($i * $i) > $i).",
+  "strip_numerals": true
+}

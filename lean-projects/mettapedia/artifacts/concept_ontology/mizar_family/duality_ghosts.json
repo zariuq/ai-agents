@@ -1,0 +1,133 @@
+{
+  "candidate_articles": [
+    {
+      "article": "conlat_1",
+      "findings": [
+        {
+          "kind": "one-sided-duality-mention",
+          "left": "Top",
+          "left_count": 5,
+          "right": "Bottom",
+          "right_count": 0
+        }
+      ]
+    },
+    {
+      "article": "yellow_2",
+      "findings": [
+        {
+          "kind": "one-sided-duality-mention",
+          "left": "Top",
+          "left_count": 0,
+          "right": "Bottom",
+          "right_count": 2
+        }
+      ]
+    },
+    {
+      "article": "waybel_0",
+      "findings": [
+        {
+          "kind": "one-sided-duality-mention",
+          "left": "Top",
+          "left_count": 3,
+          "right": "Bottom",
+          "right_count": 0
+        }
+      ]
+    }
+  ],
+  "criterion": "article mentions exactly one side of a named FCA/lattice dual pair",
+  "pairs": [
+    [
+      "ObjectDerivation",
+      "AttributeDerivation"
+    ],
+    [
+      "Concept-with-all-Objects",
+      "Concept-with-all-Attributes"
+    ],
+    [
+      "Top",
+      "Bottom"
+    ]
+  ],
+  "results": [
+    {
+      "article": "conlat_1",
+      "findings": [
+        {
+          "kind": "one-sided-duality-mention",
+          "left": "Top",
+          "left_count": 5,
+          "right": "Bottom",
+          "right_count": 0
+        }
+      ]
+    },
+    {
+      "article": "conlat_2",
+      "findings": []
+    },
+    {
+      "article": "yellow_0",
+      "findings": []
+    },
+    {
+      "article": "yellow_1",
+      "findings": []
+    },
+    {
+      "article": "yellow_2",
+      "findings": [
+        {
+          "kind": "one-sided-duality-mention",
+          "left": "Top",
+          "left_count": 0,
+          "right": "Bottom",
+          "right_count": 2
+        }
+      ]
+    },
+    {
+      "article": "yellow_3",
+      "findings": []
+    },
+    {
+      "article": "waybel_0",
+      "findings": [
+        {
+          "kind": "one-sided-duality-mention",
+          "left": "Top",
+          "left_count": 3,
+          "right": "Bottom",
+          "right_count": 0
+        }
+      ]
+    },
+    {
+      "article": "waybel_1",
+      "findings": []
+    },
+    {
+      "article": "lattices",
+      "findings": []
+    },
+    {
+      "article": "lattice2",
+      "findings": []
+    },
+    {
+      "article": "lattice3",
+      "findings": []
+    },
+    {
+      "article": "lattice4",
+      "findings": []
+    },
+    {
+      "article": "lattice6",
+      "findings": []
+    }
+  ]
+}

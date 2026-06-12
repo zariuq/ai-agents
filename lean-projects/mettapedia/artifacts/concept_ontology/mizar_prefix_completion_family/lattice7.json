@@ -1,0 +1,274 @@
+{
+  "article": "lattice7",
+  "attributes": [
+    "Chain",
+    "Join-IRR",
+    "LOWER",
+    "NAT",
+    "Ring_of_sets",
+    "Subset"
+  ],
+  "rows": [
+    {
+      "counts": {
+        "Subset": 1
+      },
+      "index": 1,
+      "kind": "definition",
+      "object": "definition_1",
+      "preview": "definition let L be 1-sorted; let A,B be Subset of L; redefine pred A c= B means for x be Element of L st x in A holds x"
+    },
+    {
+      "counts": {
+        "Chain": 2
+      },
+      "index": 1,
+      "kind": "registration",
+      "object": "registration_1",
+      "preview": "registration let L be LATTICE; cluster non empty for Chain of L; existence proof {Bottom L} is Chain of L by ORDERS_2:8;"
+    },
+    {
+      "counts": {
+        "Chain": 3
+      },
+      "index": 2,
+      "kind": "definition",
+      "object": "definition_2",
+      "preview": "definition let L be LATTICE; let x,y be Element of L such that A1: x <= y; mode Chain of x,y -> non empty Chain of L mea"
+    },
+    {
+      "counts": {
+        "Chain": 2,
+        "NAT": 1
+      },
+      "index": 1,
+      "kind": "theorem",
+      "object": "theorem_1",
+      "preview": "theorem Th1: for L be LATTICE for x,y be Element of L holds x <= y implies {x, y} is Chain of x,y proof let L be LATTICE"
+    },
+    {
+      "counts": {
+        "Chain": 8,
+        "NAT": 8
+      },
+      "index": 3,
+      "kind": "definition",
+      "object": "definition_3",
+      "preview": "definition let L be finite LATTICE; let x be Element of L; func height(x) -> Element of NAT means :Def3: (ex A be Chain "
+    },
+    {
+      "counts": {
+        "Chain": 5,
+        "Subset": 1
+      },
+      "index": 2,
+      "kind": "theorem",
+      "object": "theorem_2",
+      "preview": "theorem Th2: for L be finite LATTICE for a,b be Element of L holds a < b implies height(a) < height(b) proof let L be fi"
+    },
+    {
+      "counts": {
+        "Chain": 2
+      },
+      "index": 3,
+      "kind": "theorem",
+      "object": "theorem_3",
+      "preview": "theorem Th3: for L be finite LATTICE for C be Chain of L for x,y be Element of L holds x in C & y in C implies ( x < y i"
+    },
+    {
+      "counts": {
+        "Chain": 2
+      },
+      "index": 4,
+      "kind": "theorem",
+      "object": "theorem_4",
+      "preview": "theorem Th4: for L be finite LATTICE for C be Chain of L for x,y be Element of L holds x in C & y in C implies ( x = y i"
+    },
+    {
+      "counts": {
+        "Chain": 2
+      },
+      "index": 5,
+      "kind": "theorem",
+      "object": "theorem_5",
+      "preview": "theorem Th5: for L be finite LATTICE for C be Chain of L for x,y be Element of L holds x in C & y in C implies ( x <= y "
+    },
+    {
+      "counts": {
+        "Chain": 5
+      },
+      "index": 6,
+      "kind": "theorem",
+      "object": "theorem_6",
+      "preview": "theorem for L be finite LATTICE for x be Element of L holds height (x) = 1 iff x = Bottom L proof let L be finite LATTIC"
+    },
+    {
+      "counts": {
+        "Chain": 1
+      },
+      "index": 7,
+      "kind": "theorem",
+      "object": "theorem_7",
+      "preview": "theorem Th7: for L be non empty finite LATTICE for x be Element of L holds height (x) >= 1 proof let L be non empty fini"
+    },
+    {
+      "counts": {
+        "NAT": 4
+      },
+      "index": 1,
+      "kind": "scheme",
+      "object": "scheme_1",
+      "preview": "scheme LattInd { L() -> finite LATTICE, P[set]}: for x be Element of L() holds P[x] provided A1: for x be Element of L()"
+    },
+    {
+      "counts": {
+        "Chain": 2,
+        "NAT": 7,
+        "Subset": 2
+      },
+      "index": 8,
+      "kind": "theorem",
+      "object": "theorem_8",
+      "preview": "theorem Th8: for L be finite LATTICE for X be non empty Subset of L holds ex x be Element of L st x in X & for y be Elem"
+    },
+    {
+      "counts": {
+        "Chain": 3,
+        "NAT": 7
+      },
+      "index": 5,
+      "kind": "definition",
+      "object": "definition_5",
+      "preview": "definition let L be finite LATTICE; let A be non empty Chain of L; func max(A) -> Element of L means :Def5: (for x be El"
+    },
+    {
+      "counts": {
+        "Chain": 6,
+        "Subset": 1
+      },
+      "index": 9,
+      "kind": "theorem",
+      "object": "theorem_9",
+      "preview": "theorem Th9: for L be finite LATTICE for y be Element of L st y <> Bottom L holds ex x be Element of L st x <(1) y proof"
+    },
+    {
+      "counts": {
+        "Join-IRR": 1,
+        "Subset": 1
+      },
+      "index": 6,
+      "kind": "definition",
+      "object": "definition_6",
+      "preview": "definition let L be LATTICE; func Join-IRR L -> Subset of L equals {a where a is Element of L: a<>Bottom L & for b,c be "
+    },
+    {
+      "counts": {
+        "Join-IRR": 3
+      },
+      "index": 10,
+      "kind": "theorem",
+      "object": "theorem_10",
+      "preview": "theorem Th10: for L be LATTICE for x be Element of L holds x in Join-IRR L iff x<>Bottom L & for b,c be Element of L hol"
+    },
+    {
+      "counts": {
+        "Join-IRR": 48
+      },
+      "index": 11,
+      "kind": "theorem",
+      "object": "theorem_11",
+      "preview": "theorem Th11: for L be finite distributive LATTICE for x be Element of L holds x in Join-IRR L implies ex z be Element o"
+    },
+    {
+      "counts": {
+        "Join-IRR": 6
+      },
+      "index": 12,
+      "kind": "theorem",
+      "object": "theorem_12",
+      "preview": "theorem Th12: for L be distributive finite LATTICE for x be Element of L holds sup (downarrow x /\\ Join-IRR L) = x proof"
+    },
+    {
+      "counts": {
+        "LOWER": 3,
+        "Subset": 2
+      },
+      "index": 7,
+      "kind": "definition",
+      "object": "definition_7",
+      "preview": "definition let P be RelStr; func LOWER(P) -> non empty set equals {X where X is Subset of P:X is lower}; coherence proof"
+    },
+    {
+      "counts": {
+        "Join-IRR": 42,
+        "LOWER": 6,
+        "Subset": 6
+      },
+      "index": 13,
+      "kind": "theorem",
+      "object": "theorem_13",
+      "preview": "theorem Th13: for L be distributive finite LATTICE ex r be Function of L, InclPoset LOWER(subrelstr Join-IRR L) st r is "
+    },
+    {
+      "counts": {
+        "Join-IRR": 3,
+        "LOWER": 2
+      },
+      "index": 14,
+      "kind": "theorem",
+      "object": "theorem_14",
+      "preview": "theorem Th14: for L be distributive finite LATTICE holds L, InclPoset LOWER( subrelstr Join-IRR L) are_isomorphic proof "
+    },
+    {
+      "counts": {
+        "Ring_of_sets": 1
+      },
+      "index": 8,
+      "kind": "definition",
+      "object": "definition_8",
+      "preview": "definition mode Ring_of_sets -> set means :Def8: it includes_lattice_of it; existence proof set X = the set; take R = bo"
+    },
+    {
+      "counts": {
+        "Ring_of_sets": 1
+      },
+      "index": 3,
+      "kind": "registration",
+      "object": "registration_3",
+      "preview": "registration cluster non empty for Ring_of_sets; existence proof take A={{}}; A includes_lattice_of A proof let a,b be s"
+    },
+    {
+      "counts": {
+        "Ring_of_sets": 1
+      },
+      "index": 4,
+      "kind": "registration",
+      "object": "registration_4",
+      "preview": "registration let X be non empty Ring_of_sets; cluster InclPoset X -> with_suprema with_infima distributive; coherence pr"
+    },
+    {
+      "counts": {
+        "Join-IRR": 6,
+        "LOWER": 8,
+        "Ring_of_sets": 1,
+        "Subset": 4
+      },
+      "index": 15,
+      "kind": "theorem",
+      "object": "theorem_15",
+      "preview": "theorem Th15: for L be finite LATTICE holds LOWER(subrelstr Join-IRR L) is Ring_of_sets proof let L be finite LATTICE; s"
+    },
+    {
+      "counts": {
+        "Join-IRR": 1,
+        "LOWER": 1,
+        "Ring_of_sets": 4
+      },
+      "index": 16,
+      "kind": "theorem",
+      "object": "theorem_16",
+      "preview": "theorem for L be finite LATTICE holds L is distributive iff ex X be non empty Ring_of_sets st L, InclPoset X are_isomorp"
+    }
+  ],
+  "source_path": "/home/zar/claude/mizar/share/mml/lattice7.miz"
+}
